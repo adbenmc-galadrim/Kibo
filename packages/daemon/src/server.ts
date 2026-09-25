@@ -81,7 +81,7 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
       const url = new URL(req.url);
       if (!hosts().includes(req.headers.get("host") ?? ""))
         return new Response("forbidden host", { status: 403 });
-      if (!url.pathname.startsWith("/api/")) return serveUi(opts.uiDir, url.pathname);
+      if (!url.pathname.startsWith("/api/")) return withUiHeaders(serveUi(opts.uiDir, url.pathname));
       const res = await handleApi(req, url, srv);
       res?.headers.set("cache-control", "no-store");
       return res;
@@ -105,6 +105,19 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
       server.stop(true);
     },
   };
+}
+
+const UI_HEADERS = {
+  "content-security-policy":
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+    "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+};
+
+function withUiHeaders(res: Response): Response {
+  for (const [name, value] of Object.entries(UI_HEADERS)) res.headers.set(name, value);
+  return res;
 }
 
 function serveUi(uiDir: string | null, pathname: string): Response {

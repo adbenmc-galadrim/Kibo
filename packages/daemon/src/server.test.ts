@@ -194,6 +194,24 @@ describe("ui files", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
+  test("ui responses carry the security headers", async () => {
+    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
+    writeFileSync(join(uiDir, "app.js"), "run()");
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    for (const path of ["/", "/app.js", "/projects/KIB", "/%00"]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect(res.headers.get("content-security-policy")).toBe(
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+          "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+      );
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+    }
+    ui.stop();
+    rmSync(uiDir, { recursive: true, force: true });
+  });
+
   test("an unreadable ui path is a clean 400", async () => {
     const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
     writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
