@@ -33,8 +33,9 @@ Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema �
 
 ## Code
 
-- Code, identifiants, commentaires et messages d'erreur internes en **anglais**. Specs, plans, commits, PR et textes d'interface en **français** (textes UI dans `packages/ui/src/i18n/fr.ts`).
+- Code, identifiants et messages d'erreur internes en **anglais**. Specs, plans, commits, PR et textes d'interface en **français** (textes UI dans `packages/ui/src/i18n/fr.ts`).
 - TypeScript `strict`, ESM, pas de `any` ni de `as` non justifié. Les types viennent des schémas Zod (`z.infer`).
+- **Aucun commentaire** dans le code : noms explicites et petites fonctions suffisent. Seule exception : une contrainte externe invisible dans le code (bug d'une dépendance, exigence d'un OS), en une ligne.
 - Exports nommés uniquement. Fichiers en `kebab-case.ts`, composants React en `PascalCase.tsx`. Un fichier = une responsabilité ; au-delà de ~300 lignes, découper.
 - Erreurs du domaine : `KiboError` avec un `code` stable (`packages/schema/src/errors.ts`) ; jamais d'erreur avalée.
 - Formatage et lint : **Biome** (`bun run check`). Aucun commit si `bun run check` ou `bun test` échoue.
