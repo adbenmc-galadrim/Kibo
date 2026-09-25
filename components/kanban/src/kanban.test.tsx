@@ -1,9 +1,9 @@
-import { afterEach, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import type { ProjectCommand, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -16,8 +16,6 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 };
 
 runConformance({ manifest, Component }, seed);
-
-afterEach(cleanup);
 
 const setup = () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
