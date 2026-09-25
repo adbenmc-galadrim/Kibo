@@ -1,3 +1,5 @@
+export * from "./commands";
+export * from "./instances";
 export * from "./links";
 export * from "./pages";
 export * from "./project";

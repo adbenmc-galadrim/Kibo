@@ -1,5 +1,6 @@
 import { KiboError, type Page } from "@kibo/schema";
 import type { LoroDoc, LoroTreeNode, TreeID } from "loro-crdt";
+import { removeInstancesOfPages } from "./instances";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 const toPage = (n: LoroTreeNode): Page => ({
@@ -46,6 +47,6 @@ export function deletePage(doc: LoroDoc, id: string): string[] {
   const tree = doc.getTree("pages");
   const ids = subtreeIds(getNode(tree, id));
   tree.delete(id as TreeID);
-  doc.commit();
+  removeInstancesOfPages(doc, ids);
   return ids;
 }
