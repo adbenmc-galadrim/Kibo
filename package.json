@@ -10,7 +10,7 @@
   "scripts": {
     "check": "biome check .",
     "format": "biome check --write .",
-    "typecheck": "tsc -b packages/schema packages/core packages/daemon packages/sdk packages/ui components/tickets",
+    "typecheck": "tsc -b packages/schema packages/core packages/daemon packages/sdk packages/ui components/tickets components/kanban",
     "test": "bun test packages components"
   },
   "devDependencies": {

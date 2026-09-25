@@ -1,0 +1,17 @@
+export const fr = {
+  filter: { mineAndAgents: "Moi + agents", all: "Tous" },
+  counter: (shown: number, total: number) => `${shown} / ${total} tickets`,
+  newTicketIn: (status: string) => `Nouveau ticket dans ${status}`,
+  actions: (key: string) => `Actions ${key}`,
+  moveTo: "Déplacer vers",
+  moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
+  waitingOn: (key: string) => `attend ${key}`,
+  block: {
+    title: (key: string) => `Bloquer ${key}`,
+    description: "Un ticket bloqué attend une condition extérieure au projet.",
+    reason: "Motif",
+    placeholder: "Informations attendues du client",
+    cancel: "Annuler",
+    confirm: "Bloquer",
+  },
+};

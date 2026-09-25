@@ -1,0 +1,98 @@
+import { afterEach, expect, test } from "bun:test";
+import type { ProjectCommand, Ticket } from "@kibo/schema";
+import { SdkProvider } from "@kibo/sdk";
+import { runConformance } from "@kibo/sdk/conformance";
+import { createMockSdk } from "@kibo/sdk/mock";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Component, manifest } from "./index";
+
+const seed = (run: (cmd: ProjectCommand) => unknown) => {
+  const mine = { kind: "human", ref: "adam" } as const;
+  const a = run({ method: "createTicket", title: "Arbre des pages", assignee: mine }) as Ticket;
+  const b = run({ method: "createTicket", title: "Sync", assignee: mine }) as Ticket;
+  run({ method: "createTicket", title: "Hors filtre", assignee: { kind: "human", ref: "lea" } });
+  run({ method: "addLink", from: a.id, to: b.id, type: "blocks" });
+};
+
+runConformance({ manifest, Component }, seed);
+
+afterEach(cleanup);
+
+const setup = () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return m;
+};
+
+test("columns follow the workflow, counter shows filtered / total, waiting badge is shown", async () => {
+  setup();
+  const todo = await screen.findByRole("region", { name: "À faire" });
+  expect(within(todo).getByText("KIB-1")).toBeTruthy();
+  expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
+  expect(screen.getByText("2 / 3 tickets")).toBeTruthy();
+  expect(screen.getByText("attend KIB-1")).toBeTruthy();
+});
+
+test("moving a card changes its status", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "En cours" }));
+  expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("in_progress");
+});
+
+test("blocking asks for a reason and refuses an empty one", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Bloqué" }));
+  const confirm = await screen.findByRole("button", { name: "Bloquer" });
+  expect(confirm.hasAttribute("disabled")).toBe(true);
+  await user.type(screen.getByLabelText("Motif"), "Attente client");
+  await user.click(confirm);
+  const t = m.snapshot().tickets.find((x) => x.key === "KIB-2");
+  expect(t).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" });
+});
+
+test("the column '+' asks the host for a new ticket in that status", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Nouveau ticket dans En cours" }));
+  expect(m.newTicketRequests).toEqual([{ statusId: "in_progress" }]);
+});
+
+const setupFailing = () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  const sdk = { ...m.sdk, run: () => Promise.reject(new Error("daemon unreachable")) };
+  render(
+    <SdkProvider sdk={sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return m;
+};
+
+test("a failed move shows an alert and keeps the status", async () => {
+  const m = setupFailing();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "En cours" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-1.");
+  expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("todo");
+});
+
+test("a failed block keeps the dialog open and shows an alert", async () => {
+  setupFailing();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Bloqué" }));
+  await user.type(await screen.findByLabelText("Motif"), "Attente client");
+  await user.click(screen.getByRole("button", { name: "Bloquer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-2.");
+  expect(screen.getByRole("dialog")).toBeTruthy();
+});

@@ -1,0 +1,9 @@
+{
+  "id": "kanban",
+  "version": "1.0.0",
+  "kind": "both",
+  "title": "Kanban",
+  "reads": ["ticket", "status"],
+  "writes": ["ticket"],
+  "configSchema": { "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" } }
+}
