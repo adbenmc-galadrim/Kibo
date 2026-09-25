@@ -6,6 +6,7 @@ import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore } from "./store";
 
+const parentPid = process.ppid;
 const { values } = parseArgs({
   options: {
     port: { type: "string", default: "4317" },
@@ -30,4 +31,7 @@ const shutdown = () => {
 };
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+setInterval(() => {
+  if (process.ppid !== parentPid) shutdown();
+}, 2000).unref();
 process.stdout.write(`KIBO_READY ${server.url}/#pair=${token}\n`);
