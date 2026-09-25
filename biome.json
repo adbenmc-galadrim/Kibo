@@ -1,0 +1,28 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!design",
+      "!packages/sdk/src/ui",
+      "!packages/sdk/src/lib",
+      "!apps/desktop/src-tauri/target"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 110 },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "suspicious": { "noExplicitAny": "error" },
+      "style": { "noDefaultExport": "error", "useNamingConvention": "off" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/vite.config.ts", "**/playwright.config.ts"],
+      "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
+    }
+  ]
+}

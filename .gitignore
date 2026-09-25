@@ -1,3 +1,10 @@
 .DS_Store
 design/penpot/exports/
 .claude/worktrees/
+node_modules/
+dist/
+*.tsbuildinfo
+.kibo-dev/
+apps/desktop/src-tauri/target/
+test-results/
+playwright-report/
