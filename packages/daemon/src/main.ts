@@ -23,8 +23,6 @@ const server = startServer({
   uiDir: values.ui ?? null,
   extraOrigins: values.dev ? ["http://localhost:5173"] : [],
 });
-process.stdout.write(`KIBO_READY ${server.url}/#pair=${token}\n`);
-
 const shutdown = () => {
   server.stop();
   store.close();
@@ -32,3 +30,4 @@ const shutdown = () => {
 };
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+process.stdout.write(`KIBO_READY ${server.url}/#pair=${token}\n`);
