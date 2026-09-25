@@ -1,0 +1,143 @@
+import { describe, expect, test } from "bun:test";
+import { KiboError } from "@kibo/schema";
+import fc from "fast-check";
+import { LoroDoc } from "loro-crdt";
+import {
+  childProgress,
+  createProjectDoc,
+  createTicket,
+  deleteTicket,
+  getTicket,
+  listTickets,
+  moveTicket,
+  setStatus,
+  updateTicket,
+} from "./index";
+
+const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+
+describe("keys", () => {
+  test("keys are flat, sequential and independent from the hierarchy", () => {
+    const d = doc();
+    const a = createTicket(d, { title: "Parent" });
+    const b = createTicket(d, { title: "Enfant", parentId: a.id });
+    expect([a.key, b.key]).toEqual(["KIB-1", "KIB-2"]);
+    moveTicket(d, b.id, null);
+    expect(getTicket(d, b.id).key).toBe("KIB-2");
+  });
+
+  test("many tickets under random parents never share a key", () => {
+    fc.assert(
+      fc.property(fc.array(fc.nat(), { minLength: 1, maxLength: 60 }), (parents) => {
+        const d = doc();
+        const ids: string[] = [];
+        for (const p of parents) {
+          const parentId = ids.length > 0 ? (ids[p % ids.length] ?? null) : null;
+          ids.push(createTicket(d, { title: "T", parentId }).id);
+        }
+        const keys = listTickets(d).map((t) => t.key);
+        expect(new Set(keys).size).toBe(parents.length);
+      }),
+    );
+  });
+});
+
+describe("status", () => {
+  test("blocking requires a non-empty reason and unblocking clears it", () => {
+    const d = doc();
+    const t = createTicket(d, { title: "Maquette" });
+    expect(() => setStatus(d, t.id, "blocked")).toThrow("BLOCKED_REASON_REQUIRED");
+    expect(() => setStatus(d, t.id, "blocked", "   ")).toThrow("BLOCKED_REASON_REQUIRED");
+    expect(getTicket(d, t.id).statusId).toBe("todo");
+    expect(setStatus(d, t.id, "blocked", "Attente client").blockedReason).toBe("Attente client");
+    expect(setStatus(d, t.id, "in_progress").blockedReason).toBeNull();
+  });
+
+  test("a ticket cannot be created already blocked", () => {
+    expect(() => createTicket(doc(), { title: "X", statusId: "blocked" })).toThrow("BLOCKED_REASON_REQUIRED");
+  });
+});
+
+describe("tree", () => {
+  test("progress counts direct children only", () => {
+    const d = doc();
+    const p = createTicket(d, { title: "P" });
+    const c1 = createTicket(d, { title: "C1", parentId: p.id });
+    createTicket(d, { title: "C2", parentId: p.id });
+    const g = createTicket(d, { title: "G", parentId: c1.id });
+    setStatus(d, c1.id, "done");
+    setStatus(d, g.id, "done");
+    expect(childProgress(d, p.id)).toEqual({ done: 1, total: 2 });
+  });
+
+  test("refuses to move a ticket under its descendant", () => {
+    const d = doc();
+    const a = createTicket(d, { title: "A" });
+    const b = createTicket(d, { title: "B", parentId: a.id });
+    expect(() => moveTicket(d, a.id, b.id)).toThrow("TREE_CYCLE");
+    expect(() => moveTicket(d, a.id, a.id)).toThrow("TREE_CYCLE");
+    expect(getTicket(d, b.id).parentId).toBe(a.id);
+  });
+
+  test("update keeps the key and rejects an empty title", () => {
+    const d = doc();
+    const t = createTicket(d, { title: "A", description: "v1" });
+    const u = updateTicket(d, t.id, {
+      title: "B",
+      description: "v2",
+      assignee: { kind: "agent", ref: "opus-dev-1" },
+    });
+    expect(u).toMatchObject({
+      key: "KIB-1",
+      title: "B",
+      description: "v2",
+      assignee: { kind: "agent", ref: "opus-dev-1" },
+    });
+    expect(() => updateTicket(d, t.id, { title: "" })).toThrow("INVALID_INPUT");
+  });
+
+  test("delete removes the subtree", () => {
+    const d = doc();
+    const a = createTicket(d, { title: "A" });
+    const b = createTicket(d, { title: "B", parentId: a.id });
+    expect(deleteTicket(d, a.id).sort()).toEqual([a.id, b.id].sort());
+    expect(listTickets(d)).toEqual([]);
+  });
+});
+
+test("concurrent moves on two peers converge without cycles", () => {
+  const move = fc.tuple(fc.boolean(), fc.nat(5), fc.option(fc.nat(5), { nil: null }));
+  fc.assert(
+    fc.property(fc.array(move, { maxLength: 30 }), (ops) => {
+      const base = doc();
+      const ids = Array.from({ length: 6 }, (_, i) => createTicket(base, { title: `T${i}` }).id);
+      const snapshot = base.export({ mode: "snapshot" });
+      const a = LoroDoc.fromSnapshot(snapshot);
+      a.setPeerId(101);
+      const b = LoroDoc.fromSnapshot(snapshot);
+      b.setPeerId(202);
+      for (const [onA, i, p] of ops) {
+        try {
+          moveTicket(onA ? a : b, ids[i] ?? "", p === null ? null : (ids[p] ?? null));
+        } catch (e) {
+          if (!(e instanceof KiboError && e.code === "TREE_CYCLE")) throw e;
+        }
+      }
+      a.import(b.export({ mode: "update" }));
+      b.import(a.export({ mode: "update" }));
+      const la = listTickets(a);
+      expect(la).toEqual(listTickets(b));
+      for (const t of la) {
+        const seen = new Set<string>();
+        let current: string | null = t.id;
+        while (current) {
+          expect(seen.has(current)).toBe(false);
+          seen.add(current);
+          const id: string = current;
+          current = la.find((x) => x.id === id)?.parentId ?? null;
+        }
+      }
+    }),
+    { numRuns: 200 },
+  );
+});
