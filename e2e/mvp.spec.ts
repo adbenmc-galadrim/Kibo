@@ -62,6 +62,23 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   const reloaded = page.getByRole("region", { name: "Bloqué" });
   await reloaded.scrollIntoViewIfNeeded();
   await expect(reloaded.getByText("Attente du client")).toBeVisible();
+
+  const other = `Autre ${key}`;
+  await page.getByRole("button", { name: "Vue d'ensemble" }).click();
+  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await page.getByLabel("Nom").fill(other);
+  await page.getByLabel("Clé").fill(`${key}B`);
+  await page.getByRole("button", { name: "Créer le projet" }).click();
+  await expect(page.getByText("Projet créé")).toBeVisible();
+
+  const main = page.getByRole("main");
+  await page.getByRole("button", { name: "Vue d'ensemble" }).click();
+  await main.getByText(`Kibo ${key}`).click();
+  await expect(page.getByRole("region", { name: "À faire" })).toBeVisible();
+  await page.getByRole("button", { name: "Vue d'ensemble" }).click();
+  await main.getByText(other).click();
+  await expect(page.getByText("Projet créé")).toBeVisible();
+  await expect(page.getByRole("region", { name: "À faire" })).toHaveCount(0);
 });
 
 test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, info) => {

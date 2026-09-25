@@ -23,11 +23,19 @@ export function useProject(projectId: string | null): ProjectSnapshot | null {
   useEffect(() => {
     setSnapshot(null);
     if (!projectId) return;
-    const load = () => client.rpc({ method: "getProject", projectId }).then(setSnapshot, unlessUnauthorized);
+    let current = true;
+    const load = () =>
+      client
+        .rpc({ method: "getProject", projectId })
+        .then((s) => current && setSnapshot(s), unlessUnauthorized);
     void load();
-    return client.subscribe((id) => {
+    const unsubscribe = client.subscribe((id) => {
       if (id === projectId) void load();
     });
+    return () => {
+      current = false;
+      unsubscribe();
+    };
   }, [projectId]);
-  return snapshot;
+  return snapshot?.meta.id === projectId ? snapshot : null;
 }
