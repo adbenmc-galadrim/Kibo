@@ -62,7 +62,7 @@ export const fr = {
     help: "Ajoute une première page pour y poser un Kanban ou une liste de tickets.",
   },
   page: {
-    empty: "Cette page est vide.",
+    empty: "Cette page est vide : ajoute un composant pour commencer.",
     addComponent: "Ajouter un composant",
     unknownComponent: (ref: string) => `Composant introuvable : ${ref}`,
   },

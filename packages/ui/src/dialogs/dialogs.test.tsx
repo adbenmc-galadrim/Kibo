@@ -91,6 +91,8 @@ test("AddComponentDialog describes each component and its permissions", async ()
   const user = userEvent.setup();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
   expect(screen.getByText("Lit : ticket, status")).toBeTruthy();
+  expect(screen.getAllByText("Tickets par statut, glisser-déposer")).toHaveLength(2);
+  expect(screen.getByText("Arbre des tickets, sous-tickets illimités")).toBeTruthy();
 });
 
 test("NewTicketDialog announces the key the ticket will get", () => {

@@ -1,7 +1,7 @@
 export const fr = {
   title: "Tickets",
   newTicket: "Nouveau ticket",
-  empty: "Aucun ticket.",
+  empty: "Aucun ticket pour l'instant.",
   columns: { ticket: "Ticket", status: "Statut", assignee: "Assigné", progress: "Sous-tickets" },
   unassigned: "—",
   collapse: (key: string) => `Replier ${key}`,
