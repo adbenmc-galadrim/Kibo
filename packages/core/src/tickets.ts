@@ -1,5 +1,6 @@
 import { type Assignee, formatTicketKey, KiboError, type StatusId, type Ticket } from "@kibo/schema";
 import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crdt";
+import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
@@ -107,7 +108,7 @@ export function moveTicket(doc: LoroDoc, id: string, parentId: string | null, in
 export function deleteTicket(doc: LoroDoc, id: string): string[] {
   const ids = subtreeIds(getNode(tree(doc), id));
   tree(doc).delete(id as TreeID);
-  doc.commit();
+  pruneLinks(doc, ids);
   return ids;
 }
 
