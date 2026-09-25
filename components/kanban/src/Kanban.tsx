@@ -1,6 +1,6 @@
 import { DndContext, type DragEndEvent, useDroppable } from "@dnd-kit/core";
 import type { Status, StatusId, TicketView } from "@kibo/schema";
-import { useEntities, useSdk } from "@kibo/sdk";
+import { StatusDot, useEntities, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -19,14 +19,16 @@ function Column({ status, count, children, onAdd }: ColumnProps) {
       ref={setNodeRef}
       aria-label={status.label}
       className={cn(
-        "flex w-64 shrink-0 flex-col gap-2 rounded-lg bg-muted/40 p-2",
+        "flex min-w-[180px] flex-1 flex-col gap-2 rounded-lg bg-muted/40 p-2",
         isOver && "ring-2 ring-ring",
       )}
     >
-      <header className="flex items-center gap-2 px-1 text-sm font-medium">
-        {status.label} <span className="text-muted-foreground">{count}</span>
+      <header className="flex h-7 items-center gap-2 px-1 text-sm">
+        <StatusDot statusId={status.id} />
+        <span className="font-medium">{status.label}</span>
         <span className="flex-1" />
-        {onAdd && (
+        <span className="font-mono text-xs text-muted-foreground">{count}</span>
+        {onAdd ? (
           <Button
             size="icon"
             variant="ghost"
@@ -36,6 +38,8 @@ function Column({ status, count, children, onAdd }: ColumnProps) {
           >
             <Plus className="size-3.5" />
           </Button>
+        ) : (
+          <span className="size-6" />
         )}
       </header>
       {children}
@@ -92,10 +96,12 @@ export function Kanban() {
             {error}
           </p>
         )}
-        <span className="ml-auto text-muted-foreground">{fr.counter(shown.length, tickets.length)}</span>
+        <span className="ml-auto font-mono text-xs text-muted-foreground">
+          {fr.counter(shown.length, tickets.length)}
+        </span>
       </header>
       <DndContext onDragEnd={onDragEnd}>
-        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3">
+        <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto p-3">
           {ordered.map((s) => {
             const cards = shown.filter((t) => t.statusId === s.id);
             return (

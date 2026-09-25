@@ -1,5 +1,5 @@
 import { type ProjectSnapshot, StatusId } from "@kibo/schema";
-import type { NewTicketDefaults } from "@kibo/sdk";
+import { type NewTicketDefaults, StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
@@ -81,6 +81,7 @@ export function NewTicketDialog({ project, viewer, defaults, onClose }: Props) {
                     .filter((s) => s.id !== "blocked")
                     .map((s) => (
                       <SelectItem key={s.id} value={s.id}>
+                        <StatusDot statusId={s.id} />
                         {s.label}
                       </SelectItem>
                     ))}

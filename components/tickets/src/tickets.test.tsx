@@ -8,10 +8,18 @@ import { fr } from "./fr";
 import { Component, manifest } from "./index";
 
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  const parent = run({ method: "createTicket", title: "Arbre des pages" }) as Ticket;
+  const parent = run({
+    method: "createTicket",
+    title: "Arbre des pages",
+    assignee: { kind: "human", ref: "adam" },
+  }) as Ticket;
   const child = run({ method: "createTicket", title: "Déplacement", parentId: parent.id }) as Ticket;
   run({ method: "setStatus", ticketId: child.id, statusId: "done" });
-  const other = run({ method: "createTicket", title: "Sync" }) as Ticket;
+  const other = run({
+    method: "createTicket",
+    title: "Sync",
+    assignee: { kind: "agent", ref: "opus-dev" },
+  }) as Ticket;
   run({ method: "setStatus", ticketId: other.id, statusId: "blocked", reason: "Attente client" });
 };
 
@@ -27,6 +35,13 @@ test("shows keys, progress, blocked reason and opens a ticket", async () => {
   expect(await screen.findByText("KIB-1")).toBeTruthy();
   expect(screen.getByText("1/1")).toBeTruthy();
   expect(screen.getByText("Attente client")).toBeTruthy();
+  for (const header of ["Ticket", "Statut", "Assigné", "Sous-tickets"])
+    expect(screen.getByText(header)).toBeTruthy();
+  expect(screen.getByText("Terminé")).toBeTruthy();
+  expect(screen.getByText("Bloqué")).toBeTruthy();
+  expect(screen.getAllByText("À faire")).toHaveLength(1);
+  expect(screen.getByText("adam")).toBeTruthy();
+  expect(screen.getByText("opus-dev")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: /Sync/ }));
   expect(m.opened).toHaveLength(1);
   fireEvent.click(screen.getByRole("button", { name: fr.newSubTicket("KIB-1") }));

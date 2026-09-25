@@ -54,7 +54,9 @@ export function KanbanCard({ ticket: t, statuses, onOpen, onMove }: Props) {
       <button type="button" className="text-left" onClick={onOpen}>
         {t.title}
       </button>
-      {t.blockedReason && <p className="text-xs text-red-600 dark:text-red-400">{t.blockedReason}</p>}
+      {t.blockedReason && (
+        <p className="text-xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
+      )}
       <div className="flex flex-wrap items-center gap-1.5">
         {t.assignee?.kind === "agent" && (
           <Badge variant="outline" className="gap-1 border-brand/40 text-brand-strong dark:text-brand">

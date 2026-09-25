@@ -31,6 +31,8 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   setup();
   const todo = await screen.findByRole("region", { name: "À faire" });
   expect(within(todo).getByText("KIB-1")).toBeTruthy();
+  expect(within(todo).getByText("À faire")).toBeTruthy();
+  expect(within(todo).getByText("2")).toBeTruthy();
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
   expect(screen.getByText("2 / 3 tickets")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
@@ -55,6 +57,8 @@ test("blocking asks for a reason and refuses an empty one", async () => {
   await user.click(confirm);
   const t = m.snapshot().tickets.find((x) => x.key === "KIB-2");
   expect(t).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" });
+  const blocked = screen.getByRole("region", { name: "Bloqué" });
+  expect(await within(blocked).findByText("Motif : Attente client")).toBeTruthy();
 });
 
 test("the column '+' asks the host for a new ticket in that status", async () => {

@@ -6,6 +6,7 @@ export const fr = {
   moveTo: "Déplacer vers",
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
   waitingOn: (key: string) => `attend ${key}`,
+  blockedReason: (reason: string) => `Motif : ${reason}`,
   block: {
     title: (key: string) => `Bloquer ${key}`,
     description: "Un ticket bloqué attend une condition extérieure au projet.",

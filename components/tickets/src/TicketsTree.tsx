@@ -1,20 +1,38 @@
-import type { Status } from "@kibo/schema";
-import { useEntities, useSdk } from "@kibo/sdk";
+import type { Assignee, Status } from "@kibo/schema";
+import { StatusDot, useEntities, useSdk } from "@kibo/sdk";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { Bot, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
 import { buildTree, type TicketNode } from "./build-tree";
 import { fr } from "./fr";
 
-const DOT: Record<string, string> = {
-  backlog: "border border-muted-foreground bg-transparent",
-  todo: "bg-zinc-400",
-  in_progress: "bg-blue-500",
-  in_review: "bg-violet-500",
-  blocked: "bg-red-500",
-  done: "bg-green-500",
-};
+const COLUMNS =
+  "grid grid-cols-[minmax(0,1fr)_7rem_5rem_2rem] items-center gap-3 px-2 @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_2rem]";
+const ASSIGNEE_CELL = "hidden min-w-0 @3xl:flex";
+
+function AssigneeCell({ assignee }: { assignee: Assignee | null }) {
+  if (!assignee) return <span className={cn(ASSIGNEE_CELL, "text-muted-foreground")}>{fr.unassigned}</span>;
+  if (assignee.kind === "agent")
+    return (
+      <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5 font-mono text-xs")}>
+        <Bot aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className="truncate">{assignee.ref}</span>
+      </span>
+    );
+  return (
+    <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5")}>
+      <span
+        aria-hidden="true"
+        className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-semibold"
+      >
+        {assignee.ref.slice(0, 2).toUpperCase()}
+      </span>
+      <span className="truncate">{assignee.ref}</span>
+    </span>
+  );
+}
 
 export function TicketsTree() {
   const sdk = useSdk();
@@ -35,35 +53,50 @@ export function TicketsTree() {
     const open = !collapsed.has(t.id);
     return (
       <li key={t.id}>
-        <div
-          className="group flex h-9 items-center gap-2 border-b px-2 text-sm"
-          style={{ paddingLeft: 8 + n.depth * 20 }}
-        >
-          {n.children.length > 0 ? (
+        <div className={cn(COLUMNS, "group h-8 rounded-md text-sm hover:bg-muted/50")}>
+          <div
+            className="flex min-w-0 items-center gap-2 overflow-hidden"
+            style={{ paddingLeft: n.depth * 20 }}
+          >
+            {n.children.length > 0 ? (
+              <button
+                type="button"
+                className="text-muted-foreground"
+                aria-label={open ? fr.collapse(t.key) : fr.expand(t.key)}
+                onClick={() => toggle(t.id)}
+              >
+                {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+              </button>
+            ) : (
+              <span className="size-4 shrink-0" />
+            )}
+            <span className="shrink-0 font-mono text-xs text-muted-foreground">{t.key}</span>
             <button
               type="button"
-              aria-label={open ? fr.collapse(t.key) : fr.expand(t.key)}
-              onClick={() => toggle(t.id)}
+              className={cn("min-w-16 truncate text-left", t.statusId === "done" && "text-muted-foreground")}
+              onClick={() => sdk.openTicket(t.id)}
             >
-              {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+              {t.title}
             </button>
-          ) : (
-            <span className="size-4" />
-          )}
-          <span className={`size-2 rounded-full ${DOT[t.statusId] ?? ""}`} title={label(t.statusId)} />
-          <span className="w-16 font-mono text-xs text-muted-foreground">{t.key}</span>
-          <button
-            type="button"
-            className="min-w-0 flex-1 truncate text-left"
-            onClick={() => sdk.openTicket(t.id)}
-          >
-            {t.title}
-          </button>
-          {t.blockedReason && <span className="truncate text-xs text-red-500">{t.blockedReason}</span>}
-          {t.waitingOn.length > 0 && <Badge variant="outline">{fr.waitingOn(t.waitingOn)}</Badge>}
-          {t.progress.total > 0 && (
-            <span className="font-mono text-xs text-muted-foreground">{`${t.progress.done}/${t.progress.total}`}</span>
-          )}
+            {t.blockedReason && (
+              <span className="min-w-0 truncate text-xs text-red-600 dark:text-red-400">
+                {t.blockedReason}
+              </span>
+            )}
+            {t.waitingOn.length > 0 && (
+              <Badge variant="outline" className="min-w-0 shrink justify-start">
+                <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
+              </Badge>
+            )}
+          </div>
+          <span className="flex items-center gap-2">
+            <StatusDot statusId={t.statusId} />
+            <span className="truncate">{label(t.statusId)}</span>
+          </span>
+          <AssigneeCell assignee={t.assignee} />
+          <span className="font-mono text-xs text-muted-foreground">
+            {t.progress.total > 0 ? `${t.progress.done}/${t.progress.total}` : null}
+          </span>
           <Button
             size="icon"
             variant="ghost"
@@ -90,7 +123,16 @@ export function TicketsTree() {
       {loading ? null : tickets.length === 0 ? (
         <p className="p-6 text-sm text-muted-foreground">{fr.empty}</p>
       ) : (
-        <ul className="min-h-0 flex-1 overflow-auto">{buildTree(tickets).map(row)}</ul>
+        <div className="@container min-h-0 flex-1 overflow-auto px-1 py-2">
+          <div className={cn(COLUMNS, "h-8 text-xs whitespace-nowrap text-muted-foreground")}>
+            <span className="pl-6">{fr.columns.ticket}</span>
+            <span>{fr.columns.status}</span>
+            <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>
+            <span>{fr.columns.progress}</span>
+            <span />
+          </div>
+          <ul>{buildTree(tickets).map(row)}</ul>
+        </div>
       )}
     </section>
   );
