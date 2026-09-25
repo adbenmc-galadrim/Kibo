@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { KiboError, type KiboErrorCode, RpcRequest, type RpcResponse } from "@kibo/schema";
 import type { Server } from "bun";
@@ -118,6 +118,12 @@ function serveUi(uiDir: string | null, pathname: string): Response {
   }
   const file = resolve(root, `.${decoded}`);
   if (file !== root && !file.startsWith(root + sep)) return new Response("forbidden", { status: 403 });
-  if (existsSync(file) && statSync(file).isFile()) return new Response(Bun.file(file));
+  let isFile: boolean;
+  try {
+    isFile = statSync(file, { throwIfNoEntry: false })?.isFile() ?? false;
+  } catch {
+    return new Response("bad path", { status: 400 });
+  }
+  if (isFile) return new Response(Bun.file(file));
   return new Response(Bun.file(join(root, "index.html")));
 }

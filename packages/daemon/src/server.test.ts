@@ -193,6 +193,19 @@ describe("ui files", () => {
     ui.stop();
     rmSync(root, { recursive: true, force: true });
   });
+
+  test("an unreadable ui path is a clean 400", async () => {
+    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    for (const path of ["/app%00.js", "/%00", `/${"a".repeat(5000)}`]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect(res.status).toBe(400);
+      expect(await res.text()).toBe("bad path");
+    }
+    ui.stop();
+    rmSync(uiDir, { recursive: true, force: true });
+  });
 });
 
 test("the pairing token is created once, private to the user", () => {
