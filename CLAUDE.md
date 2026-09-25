@@ -64,7 +64,7 @@ Boucle, jusqu'au jalon de la phase :
 4. Accepté ⇒ Fable rebase sur `main`, intègre en fast-forward, pousse, coche la tâche dans le plan.
 5. CI rouge sur `main` ⇒ tout s'arrête jusqu'à la correction.
 
-**Jalon** (fin de phase) : Fable tague `v0.<n>`, écrit un rapport (ce qui est livré, écarts, risques) et **s'arrête**. La phase suivante ne démarre qu'après validation d'Adam.
+**Jalon** (fin de phase) : Fable vérifie la conformité aux maquettes, tague `v0.<n>`, écrit un rapport (ce qui est livré, écarts, risques) dans `docs/superpowers/rapports/`, puis enchaîne la phase suivante sans attendre, jusqu'à la phase 7 (décision d'Adam). Adam peut demander un arrêt à tout moment.
 **Escalade vers Adam** : décision absente de la spec, conflit avec la spec, 3 échecs de `kibo-lead` sur une tâche, besoin d'un secret ou d'un compte.
 
 ## Git
