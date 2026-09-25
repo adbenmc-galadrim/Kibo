@@ -8,6 +8,7 @@ export const ComponentManifest = z.object({
   version: z.string().regex(/^\d+\.\d+\.\d+$/),
   kind: z.enum(["widget", "view", "both"]),
   title: z.string().min(1),
+  description: z.string().min(1).optional(),
   reads: z.array(EntityType),
   writes: z.array(EntityType),
   configSchema: z.record(z.string(), z.unknown()).optional(),

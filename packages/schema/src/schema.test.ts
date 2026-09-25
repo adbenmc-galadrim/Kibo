@@ -74,6 +74,20 @@ describe("manifest", () => {
     expect(ComponentManifest.safeParse(m).success).toBe(true);
     expect(ComponentManifest.safeParse({ ...m, version: "v1.0" }).success).toBe(false);
   });
+  test("keeps an optional description", () => {
+    const m = {
+      id: "kanban",
+      version: "1.0.0",
+      kind: "both",
+      title: "Kanban",
+      reads: [],
+      writes: [],
+    };
+    expect(ComponentManifest.parse({ ...m, description: "Tickets par statut" }).description).toBe(
+      "Tickets par statut",
+    );
+    expect(ComponentManifest.parse(m).description).toBeUndefined();
+  });
 });
 
 test("KiboError carries a stable code", () => {

@@ -9,6 +9,7 @@ const snapshotOf = (id: string): ProjectSnapshot => ({
   tickets: [],
   links: [],
   instances: [],
+  nextTicketKey: "KIB-1",
 });
 
 const pending = new Map<string, (s: ProjectSnapshot) => void>();

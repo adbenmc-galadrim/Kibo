@@ -19,7 +19,7 @@ async function pairAndCreateProject(page: Page, info: TestInfo, key: string) {
 
 async function createPage(page: Page, title: string, kind: "Tableau de bord" | "Vue") {
   await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await page.getByLabel("Titre").fill(title);
+  await page.getByLabel("Nom").fill(title);
   await page.getByRole("radio", { name: kind, exact: true }).click();
   await page.getByRole("button", { name: "Créer la page" }).click();
 }
@@ -27,7 +27,7 @@ async function createPage(page: Page, title: string, kind: "Tableau de bord" | "
 async function addComponent(page: Page, title: "Kanban" | "Tickets") {
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   await page.getByRole("radio", { name: title, exact: true }).click();
-  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
+  await page.getByRole("button", { name: "Ajouter à la page" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 }
 

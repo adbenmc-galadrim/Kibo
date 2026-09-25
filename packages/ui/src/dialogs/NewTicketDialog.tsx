@@ -1,7 +1,14 @@
 import { type ProjectSnapshot, StatusId } from "@kibo/schema";
 import { type NewTicketDefaults, StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
@@ -51,6 +58,9 @@ export function NewTicketDialog({ project, viewer, defaults, onClose }: Props) {
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{fr.newTicket.title}</DialogTitle>
+            <DialogDescription>
+              {fr.newTicket.subtitle(project.meta.name, project.nextTicketKey)}
+            </DialogDescription>
           </DialogHeader>
           {parent && (
             <p className="text-sm text-muted-foreground">

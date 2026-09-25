@@ -28,6 +28,7 @@ const project: ProjectSnapshot = {
   tickets: [],
   links: [],
   instances: [],
+  nextTicketKey: "KIB-1",
 };
 const page = { id: "pg1", title: "Vue", kind: "view", parentId: null } as const;
 
@@ -41,7 +42,7 @@ test("AddComponentDialog adds the selected component then closes", async () => {
   render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
-  await user.click(screen.getByRole("button", { name: "Ajouter" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
   expect(calls).toEqual([
     {
       method: "command",
@@ -58,7 +59,7 @@ test("AddComponentDialog places a dashboard widget in the next free slot", async
   render(<AddComponentDialog projectId="p1" page={dashboard} taken={taken} open onOpenChange={() => {}} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
-  await user.click(screen.getByRole("button", { name: "Ajouter" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
   expect(calls).toEqual([
     {
       method: "command",
@@ -79,9 +80,36 @@ test("AddComponentDialog shows an alert and stays open when the RPC fails", asyn
   render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("radio", { name: "Tickets" }));
-  await user.click(screen.getByRole("button", { name: "Ajouter" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'ajouter le composant.");
   expect(onOpenChange).not.toHaveBeenCalled();
+});
+
+test("AddComponentDialog describes each component and its permissions", async () => {
+  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
+  expect(screen.getByText("Choisis un composant pour voir ce qu'il lit et modifie.")).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Kanban" }));
+  expect(screen.getByText("Lit : ticket, status")).toBeTruthy();
+});
+
+test("NewTicketDialog announces the key the ticket will get", () => {
+  render(
+    <NewTicketDialog
+      project={{ ...project, nextTicketKey: "KIB-30" }}
+      viewer="adam"
+      defaults={{}}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("Kibo · la clé KIB-30 sera attribuée à la création.")).toBeTruthy();
+});
+
+test("NewPageDialog offers the page types as described cards", () => {
+  render(<NewPageDialog projectId="p1" projectName="Kibo" parentId={null} open onOpenChange={() => {}} />);
+  expect(screen.getByText("Dans le projet Kibo.")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Tableau de bord" }).getAttribute("aria-checked")).toBe("true");
+  expect(screen.getByText("Un seul composant en plein écran (Kanban, Tickets…).")).toBeTruthy();
 });
 
 test("NewTicketDialog creates the ticket with the defaults then closes", async () => {
@@ -128,9 +156,11 @@ test("NewTicketDialog shows an alert and stays open when the RPC fails", async (
 test("NewPageDialog shows an alert and stays open when the RPC fails", async () => {
   outcome = fail;
   const onOpenChange = mock((_: boolean) => {});
-  render(<NewPageDialog projectId="p1" parentId={null} open onOpenChange={onOpenChange} />);
+  render(
+    <NewPageDialog projectId="p1" projectName="Kibo" parentId={null} open onOpenChange={onOpenChange} />,
+  );
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Titre"), "Tableau");
+  await user.type(screen.getByLabelText("Nom"), "Tableau");
   await user.click(screen.getByRole("button", { name: "Créer la page" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de créer la page.");
   expect(onOpenChange).not.toHaveBeenCalled();
@@ -139,9 +169,11 @@ test("NewPageDialog shows an alert and stays open when the RPC fails", async () 
 test("NewPageDialog shows an alert when the daemon returns an invalid page", async () => {
   outcome = () => Promise.resolve({ id: "x" });
   const onOpenChange = mock((_: boolean) => {});
-  render(<NewPageDialog projectId="p1" parentId={null} open onOpenChange={onOpenChange} />);
+  render(
+    <NewPageDialog projectId="p1" projectName="Kibo" parentId={null} open onOpenChange={onOpenChange} />,
+  );
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Titre"), "Tableau");
+  await user.type(screen.getByLabelText("Nom"), "Tableau");
   await user.click(screen.getByRole("button", { name: "Créer la page" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de créer la page.");
   expect(onOpenChange).not.toHaveBeenCalled();

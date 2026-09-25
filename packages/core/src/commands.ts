@@ -1,9 +1,9 @@
-import type { ProjectCommand, ProjectSnapshot } from "@kibo/schema";
+import type { ProjectCommand, ProjectSnapshot, StatusId } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { addInstance, listInstances, removeInstance } from "./instances";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
-import { getProjectMeta, getWorkflow } from "./project";
+import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
 import {
   childProgress,
   createTicket,
@@ -68,5 +68,19 @@ export function readProject(doc: LoroDoc): ProjectSnapshot {
     })),
     links: listLinks(doc),
     instances: listInstances(doc),
+    nextTicketKey: peekTicketKey(doc),
   };
+}
+
+export function countTicketsByStatus(doc: LoroDoc): Record<StatusId, number> {
+  const counts: Record<StatusId, number> = {
+    backlog: 0,
+    todo: 0,
+    in_progress: 0,
+    in_review: 0,
+    blocked: 0,
+    done: 0,
+  };
+  for (const t of listTickets(doc)) counts[t.statusId] += 1;
+  return counts;
 }

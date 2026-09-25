@@ -1,13 +1,13 @@
 import type { Layout, Page } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
-import { Label } from "@kibo/sdk/ui/label";
-import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
+import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { nextLayout } from "../lib/next-layout";
-import { BUILTIN_COMPONENTS, componentRef } from "../registry";
+import { BUILTIN_COMPONENTS, componentIcon, componentRef } from "../registry";
+import { ChoiceCard } from "./ChoiceCard";
 
 type Props = {
   projectId: string;
@@ -43,32 +43,53 @@ export function AddComponentDialog({ projectId, page, taken, open, onOpenChange 
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{fr.addComponent.title}</DialogTitle>
         </DialogHeader>
-        <p className="text-xs font-medium uppercase text-muted-foreground">{fr.addComponent.builtin}</p>
-        <RadioGroup value={ref ?? ""} onValueChange={setRef} className="grid gap-2">
-          {BUILTIN_COMPONENTS.map((c) => (
-            <Label key={c.manifest.id} className="flex items-center gap-3 rounded-md border p-3 font-normal">
-              <RadioGroupItem value={componentRef(c.manifest)} aria-label={c.manifest.title} />
-              <span className="flex-1">{c.manifest.title}</span>
-              <span className="font-mono text-xs text-muted-foreground">v{c.manifest.version}</span>
-            </Label>
-          ))}
-        </RadioGroup>
-        {selected && (
-          <div className="grid gap-1 text-sm">
-            <p className="font-medium">{fr.addComponent.permissions}</p>
-            <p className="text-muted-foreground">
-              {fr.addComponent.reads} : {selected.manifest.reads.join(", ") || "-"}
-            </p>
-            <p className="text-muted-foreground">
-              {fr.addComponent.writes} : {selected.manifest.writes.join(", ") || "-"}
-            </p>
-            <p className="text-muted-foreground">{fr.addComponent.local}</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid content-start gap-2">
+            <p className="text-xs font-medium uppercase text-muted-foreground">{fr.addComponent.builtin}</p>
+            <RadioGroup value={ref ?? ""} onValueChange={setRef} className="grid gap-2">
+              {BUILTIN_COMPONENTS.map((c) => (
+                <ChoiceCard
+                  key={c.manifest.id}
+                  value={componentRef(c.manifest)}
+                  icon={componentIcon(componentRef(c.manifest))}
+                  title={c.manifest.title}
+                  description={c.manifest.description}
+                  aside={
+                    <span className="font-mono text-xs text-muted-foreground">{c.manifest.version}</span>
+                  }
+                />
+              ))}
+            </RadioGroup>
           </div>
-        )}
+          <div className="grid content-start gap-3 rounded-lg border bg-muted/40 p-4 text-sm">
+            {selected ? (
+              <>
+                <div className="grid gap-1">
+                  <p className="font-semibold">{selected.manifest.title}</p>
+                  {selected.manifest.description && (
+                    <p className="text-muted-foreground">{selected.manifest.description}</p>
+                  )}
+                </div>
+                <div className="grid gap-1">
+                  <p className="font-medium">{fr.addComponent.permissions}</p>
+                  <p className="text-muted-foreground">
+                    {fr.addComponent.reads} : {selected.manifest.reads.join(", ") || "-"}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {fr.addComponent.writes} : {selected.manifest.writes.join(", ") || "-"}
+                  </p>
+                  <p className="text-muted-foreground">{fr.addComponent.local}</p>
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground">{fr.addComponent.pick}</p>
+            )}
+          </div>
+        </div>
         {failed && (
           <p role="alert" className="text-sm text-destructive">
             {fr.addComponent.failed}

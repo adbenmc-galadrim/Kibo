@@ -1,4 +1,4 @@
-import { KiboError, type ProjectMeta, type ProjectSnapshot } from "@kibo/schema";
+import { KiboError, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { client } from "../api";
 
@@ -6,8 +6,8 @@ function unlessUnauthorized(e: unknown): void {
   if (!(e instanceof KiboError && e.code === "UNAUTHORIZED")) throw e;
 }
 
-export function useProjects(): ProjectMeta[] | null {
-  const [projects, setProjects] = useState<ProjectMeta[] | null>(null);
+export function useProjects(): ProjectSummary[] | null {
+  const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
   useEffect(() => {
     const load = () => client.rpc({ method: "listProjects" }).then(setProjects, unlessUnauthorized);
     void load();

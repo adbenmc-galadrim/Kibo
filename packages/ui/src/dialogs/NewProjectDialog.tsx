@@ -1,16 +1,30 @@
 import { ProjectKey } from "@kibo/schema";
+import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
+import { RadioGroup } from "@kibo/sdk/ui/radio-group";
+import { Folder, LayoutDashboard, Plus } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { suggestProjectKey } from "../lib/project-key";
 import { navigate } from "../route";
+import { ChoiceCard } from "./ChoiceCard";
 
 const COLORS = ["#14B8A6", "#6366F1", "#EC4899", "#84CC16", "#D946EF", "#64748B"];
+
+function SoonBadge() {
+  return <Badge variant="secondary">{fr.newProject.soon}</Badge>;
+}
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void; count: number };
 
@@ -42,10 +56,11 @@ export function NewProjectDialog({ open, onOpenChange, count }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{fr.newProject.title}</DialogTitle>
+            <DialogDescription>{fr.newProject.subtitle}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
             <Label htmlFor={`${id}-name`}>{fr.newProject.name}</Label>
@@ -73,20 +88,33 @@ export function NewProjectDialog({ open, onOpenChange, count }: Props) {
             <p className="text-xs text-muted-foreground">{fr.newProject.folderHelp}</p>
           </div>
           <fieldset className="grid gap-2">
-            <legend className="text-sm font-medium">{fr.newProject.start}</legend>
-            <RadioGroup defaultValue="empty">
-              <Label className="flex items-center gap-2 font-normal">
-                <RadioGroupItem value="empty" />
-                {fr.newProject.startEmpty}
-              </Label>
-              <Label className="flex items-center gap-2 font-normal text-muted-foreground">
-                <RadioGroupItem value="dev" disabled />
-                {fr.newProject.startDev}
-              </Label>
-              <Label className="flex items-center gap-2 font-normal text-muted-foreground">
-                <RadioGroupItem value="copy" disabled />
-                {fr.newProject.startCopy}
-              </Label>
+            <legend className="mb-2 text-sm font-medium">{fr.newProject.start}</legend>
+            <RadioGroup defaultValue="empty" className="grid gap-2 sm:grid-cols-3">
+              <ChoiceCard
+                stacked
+                value="empty"
+                icon={Plus}
+                title={fr.newProject.startEmpty}
+                description={fr.newProject.startEmptyHelp}
+              />
+              <ChoiceCard
+                stacked
+                disabled
+                value="dev"
+                icon={LayoutDashboard}
+                title={fr.newProject.startDev}
+                description={fr.newProject.startDevHelp}
+                badge={<SoonBadge />}
+              />
+              <ChoiceCard
+                stacked
+                disabled
+                value="copy"
+                icon={Folder}
+                title={fr.newProject.startCopy}
+                description={fr.newProject.startCopyHelp}
+                badge={<SoonBadge />}
+              />
             </RadioGroup>
           </fieldset>
           {error && <p className="text-sm text-destructive">{error}</p>}

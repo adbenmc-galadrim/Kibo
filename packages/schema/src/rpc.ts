@@ -81,7 +81,9 @@ export type ProjectSnapshot = {
   tickets: TicketView[];
   links: Link[];
   instances: Instance[];
+  nextTicketKey: string;
 };
+export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
 export type Session = { user: string };
 
 export const RpcRequest = z.discriminatedUnion("method", [
@@ -101,7 +103,7 @@ export type RpcRequest = z.infer<typeof RpcRequest>;
 
 export type RpcResult = {
   getSession: Session;
-  listProjects: ProjectMeta[];
+  listProjects: ProjectSummary[];
   createProject: ProjectMeta;
   getProject: ProjectSnapshot;
   command: unknown;

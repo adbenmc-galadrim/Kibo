@@ -9,6 +9,7 @@ import { ProjectHome } from "../pages/ProjectHome";
 import { useRoute } from "../route";
 import { useProject, useProjects } from "../state/use-projects";
 import { AppSidebar } from "./AppSidebar";
+import { Breadcrumb } from "./Breadcrumb";
 import { type Host, HostProvider } from "./Host";
 import { Overview } from "./Overview";
 import { TicketSheet } from "./TicketSheet";
@@ -38,12 +39,12 @@ export function Shell({ viewer }: { viewer: string }) {
         <SidebarInset className="min-w-0">
           <header className="flex h-10 items-center gap-2 border-b px-3">
             <SidebarTrigger />
-            <span className="text-sm text-muted-foreground">
-              {project ? `${project.meta.name}${page ? ` · ${page.title}` : ""}` : ""}
-            </span>
+            <Breadcrumb project={project?.meta.name ?? null} page={page?.title ?? null} />
           </header>
           <div className="min-h-0 flex-1" data-viewer={viewer}>
-            {!route.projectId && <Overview projects={projects} onNewProject={() => setNewProject(true)} />}
+            {!route.projectId && (
+              <Overview viewer={viewer} projects={projects} onNewProject={() => setNewProject(true)} />
+            )}
             {project && !route.pageId && (
               <ProjectHome project={project} onNewPage={() => setNewPageParent(null)} />
             )}
@@ -54,6 +55,7 @@ export function Shell({ viewer }: { viewer: string }) {
         {project && newPageParent !== undefined && (
           <NewPageDialog
             projectId={project.meta.id}
+            projectName={project.meta.name}
             parentId={newPageParent}
             open
             onOpenChange={(o) => !o && setNewPageParent(undefined)}

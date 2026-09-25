@@ -1,4 +1,5 @@
 import {
+  countTicketsByStatus,
   createProjectDoc,
   createWorkspaceDoc,
   executeProjectCommand,
@@ -43,7 +44,10 @@ export function createService(store: Store, opts: { user: string }): Service {
         case "getSession":
           return { user: opts.user };
         case "listProjects":
-          return listProjects(workspace);
+          return listProjects(workspace).map((meta) => ({
+            ...meta,
+            counts: countTicketsByStatus(project(meta.id)),
+          }));
         case "createProject": {
           const meta: ProjectMeta = {
             id: crypto.randomUUID(),

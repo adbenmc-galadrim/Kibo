@@ -1,7 +1,9 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
+import { Plus } from "lucide-react";
 import { useEffect } from "react";
 import { fr } from "../i18n/fr";
+import { abbreviateHome } from "../lib/home-path";
 import { navigate } from "../route";
 
 export function ProjectHome({ project, onNewPage }: { project: ProjectSnapshot; onNewPage: () => void }) {
@@ -11,12 +13,21 @@ export function ProjectHome({ project, onNewPage }: { project: ProjectSnapshot; 
   }, [first, project.meta.id]);
   if (first) return null;
   return (
-    <div className="grid h-full place-items-center p-6">
-      <div className="grid max-w-sm gap-3 text-center">
-        <h1 className="text-xl font-semibold">{fr.projectHome.created}</h1>
-        <p className="text-muted-foreground">{fr.projectHome.help}</p>
-        <Button onClick={onNewPage}>{fr.nav.newPage}</Button>
-      </div>
+    <div className="p-6">
+      <section className="grid gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+        <div className="grid gap-1">
+          <h1 className="text-xl font-semibold">{fr.projectHome.created(project.meta.name)}</h1>
+          {project.meta.folder && (
+            <p className="font-mono text-sm text-muted-foreground">{abbreviateHome(project.meta.folder)}</p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
+          <p className="text-sm text-muted-foreground">{fr.projectHome.help}</p>
+          <Button variant="outline" size="sm" onClick={onNewPage}>
+            <Plus className="size-4" /> {fr.nav.newPage}
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

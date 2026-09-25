@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProjectMeta, ProjectSnapshot, Ticket } from "@kibo/schema";
+import type { ProjectMeta, ProjectSnapshot, ProjectSummary, Ticket } from "@kibo/schema";
 import { createService } from "./service";
 import { openStore } from "./store";
 
@@ -25,6 +25,24 @@ const newProject = {
 } as const;
 
 describe("service", () => {
+  test("lists projects with their ticket counts by status", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    s.handle({ method: "command", projectId: p.id, command: { method: "createTicket", title: "A" } });
+    s.handle({
+      method: "command",
+      projectId: p.id,
+      command: { method: "createTicket", title: "B", statusId: "in_progress" },
+    });
+    const [summary] = s.handle({ method: "listProjects" }) as ProjectSummary[];
+    expect(summary).toEqual({
+      ...p,
+      counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
+    });
+    store.close();
+  });
+
   test("keys stay unique and continue after a restart", () => {
     const home = tmp();
     const store1 = openStore(home);

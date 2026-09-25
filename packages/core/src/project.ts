@@ -1,4 +1,4 @@
-import { DEFAULT_WORKFLOW, type ProjectMeta, type Status } from "@kibo/schema";
+import { DEFAULT_WORKFLOW, formatTicketKey, type ProjectMeta, type Status } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 
 export function createProjectDoc(meta: ProjectMeta): LoroDoc {
@@ -28,10 +28,16 @@ export function getWorkflow(doc: LoroDoc): Status[] {
   return doc.getMap("workflow").get("statuses") as Status[];
 }
 
+const upcomingSeq = (doc: LoroDoc): number =>
+  ((doc.getMap("meta").get("ticketSeq") as number | undefined) ?? 0) + 1;
+
+export function peekTicketKey(doc: LoroDoc): string {
+  return formatTicketKey(getProjectMeta(doc).key, upcomingSeq(doc));
+}
+
 export function nextTicketSeq(doc: LoroDoc): number {
-  const m = doc.getMap("meta");
-  const next = ((m.get("ticketSeq") as number | undefined) ?? 0) + 1;
-  m.set("ticketSeq", next);
+  const next = upcomingSeq(doc);
+  doc.getMap("meta").set("ticketSeq", next);
   doc.commit();
   return next;
 }
