@@ -1,0 +1,28 @@
+const S = storage;
+S.C = { bg:"#09090B", fg:"#FAFAFA", card:"#111113", muted:"#1C1C1F", mfg:"#A1A1AA", dim:"#71717A", border:"#27272A", accent:"#27272A", sidebar:"#0C0C0E", sbBorder:"#1F1F23", primary:"#FAFAFA", pfg:"#18181B", brand:"#F97316", brandSoft:"#431407", blue:"#3B82F6", purple:"#A855F7", green:"#22C55E", red:"#EF4444", amber:"#F59E0B", cyan:"#06B6D4" };
+const C = S.C;
+S.font = penpot.fonts.findByName("Geist"); S.mono = penpot.fonts.findByName("Geist Mono");
+S.txt = (parent, chars, o={}) => { const t = penpot.createText(chars); const f = o.mono ? S.mono : S.font;
+  const v = f.variants.find(v=>v.fontWeight===String(o.weight||400) && v.fontStyle==="normal") || f.variants[0]; f.applyToText(t, v);
+  t.fontSize = String(o.size||13); t.fills = [{fillColor: o.color||C.fg, fillOpacity: 1}]; if (o.lh) t.lineHeight = String(o.lh); t.growType = "auto-width"; if (o.name) t.name = o.name;
+  if (parent) parent.appendChild(t); if (o.fill && t.layoutChild) { t.layoutChild.horizontalSizing="fill"; t.growType="auto-height"; } return t; };
+S.box = (parent, o={}) => { const b = penpot.createBoard(); b.name = o.name || "box"; b.resize(o.w||100, o.h||100);
+  b.fills = o.fill ? [{fillColor:o.fill, fillOpacity:o.op??1}] : []; if (o.radius) b.borderRadius = o.radius;
+  if (o.stroke) b.strokes = [{strokeColor:o.stroke, strokeWidth:o.sw||1, strokeAlignment:"inner", strokeOpacity:1, ...(o.dashed?{strokeStyle:"dashed"}:{})}];
+  if (parent) parent.appendChild(b);
+  if (o.dir) { const fl = b.addFlexLayout(); fl.dir = o.dir; fl.rowGap = o.gap??0; fl.columnGap = o.gap??0;
+    const p = o.pad ?? 0; const [pt,pr,pb,pl] = Array.isArray(p) ? (p.length===2?[p[0],p[1],p[0],p[1]]:p) : [p,p,p,p];
+    fl.topPadding=pt; fl.rightPadding=pr; fl.bottomPadding=pb; fl.leftPadding=pl; fl.alignItems = o.align || "start"; fl.justifyContent = o.justify || "start";
+    if (o.hs) fl.horizontalSizing = o.hs; if (o.vs) fl.verticalSizing = o.vs; }
+  return b; };
+S.child = (s, o) => { const lc = s.layoutChild; if (!lc) return s; if (o.h) lc.horizontalSizing=o.h; if (o.v) lc.verticalSizing=o.v; if (o.abs) lc.absolute=true; return s; };
+S.fillX = s => { if (s.layoutChild) { s.layoutChild.horizontalSizing="fill"; if (s.type==="text") s.growType="auto-height"; } return s; };
+S.dot = (p, c, sz=8) => { const d = penpot.createEllipse(); d.resize(sz,sz); d.fills=[{fillColor:c, fillOpacity:1}]; d.name="dot"; p.appendChild(d); return d; };
+S.border = b => { b.strokes=[{strokeColor:C.sbBorder, strokeWidth:1, strokeAlignment:"inner", strokeOpacity:1}]; return b; };
+S.kanbanLogo = (mode, size) => { const u = size/100, n = v => +(v*u).toFixed(2), dark = mode==="dark";
+  const ink = dark ? "#FAFAFA" : "#09090B", base = dark ? "#18181B" : "#FFFFFF", edge = dark ? "#27272A" : "#E4E4E7";
+  const rr = (x,y,w,h,r,col,op=1) => `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(r)}" fill="${col}" opacity="${op}"/>`;
+  const b = `<rect x="${n(2)}" y="${n(2)}" width="${n(96)}" height="${n(96)}" rx="${n(24)}" fill="${base}" stroke="${edge}" stroke-width="${Math.max(1,n(2))}"/>` + rr(22,24,16,22,4,ink) + rr(22,52,16,16,4,ink,0.45) + rr(42,24,16,16,4,ink) + rr(42,46,16,30,4,"#F97316") + rr(62,24,16,12,4,ink,0.45);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">${b}</svg>`; };
+S.logo = (parent, size, mode="dark") => { const s = penpot.createShapeFromSvg(S.kanbanLogo(mode,size)); s.name="logo"; parent.appendChild(s); return s; };
+return "core ok";
