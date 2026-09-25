@@ -16,3 +16,19 @@ jobs:
       - run: bun run typecheck
       - run: bun run --cwd packages/ui build
       - run: bun test packages components
+  e2e:
+    needs: test
+    strategy:
+      matrix: { os: [ubuntu-latest, macos-latest] }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.2 }
+      - run: bun install --frozen-lockfile
+      - run: cd e2e && bunx playwright install --with-deps chromium
+      - run: bun run --cwd packages/ui build
+      - run: bun run --cwd e2e test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: playwright-${{ matrix.os }}, path: e2e/test-results }
