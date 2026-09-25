@@ -312,8 +312,8 @@ Chaque intégration est un adaptateur activé par un composant synchronisé. Les
 ## 12. Hors périmètre de cette spec / décisions ouvertes
 
 - **Conventions et organisation de l'équipe d'agents** : `CLAUDE.md` et feuille de route.
-- **Clés de ticket en écriture concurrente** : aujourd'hui seul le démon attribue les clés (compteur dans le doc projet). Avec la sync (spec G), deux pairs pourraient attribuer la même clé : à trancher avant la phase 7 (allocation par le serveur de sync ou plages réservées par pair).
-- **Sessions d'appairage** : en mémoire du démon, perdues au redémarrage (l'UI revient à l'écran d'appairage). Persistance à décider avec l'accès distant opt-in.
+- **Clés de ticket en écriture concurrente** et **sessions d'appairage** : tranchées dans `2026-09-26-kibo-sync.md` (clés allouées par le serveur de sync, sessions persistées hachées, 30 jours glissants).
+- **Compléments par phase** : `2026-09-26-kibo-composants.md` (4), `-integrations.md` (5), `-ia.md` (6), `-sync.md` et `-marketplace.md` (7).
 - **Assistant d'onboarding** (rôle → composants conseillés) : spec E, après le noyau.
 - **Sync et multi-utilisateur temps réel** : spec G (serveur de sync Loro, permissions par projet).
 - **Marketplace de composants** : spec H.
