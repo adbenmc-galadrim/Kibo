@@ -14,5 +14,10 @@
     }
   },
   "include": ["src"],
-  "references": [{ "path": "../schema" }, { "path": "../sdk" }]
+  "references": [
+    { "path": "../schema" },
+    { "path": "../sdk" },
+    { "path": "../../components/kanban" },
+    { "path": "../../components/tickets" }
+  ]
 }

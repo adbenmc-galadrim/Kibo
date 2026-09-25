@@ -1,4 +1,4 @@
-import type { Page } from "@kibo/schema";
+import { Page } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
@@ -20,13 +20,23 @@ export function NewPageDialog({ projectId, parentId, open, onOpenChange }: Props
   const titleId = useId();
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<Page["kind"]>("dashboard");
+  const [failed, setFailed] = useState(false);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const page = (await client.rpc({
-      method: "command",
-      projectId,
-      command: { method: "addPage", title: title.trim(), kind, parentId },
-    })) as Page;
+    setFailed(false);
+    let page: Page;
+    try {
+      page = Page.parse(
+        await client.rpc({
+          method: "command",
+          projectId,
+          command: { method: "addPage", title: title.trim(), kind, parentId },
+        }),
+      );
+    } catch {
+      setFailed(true);
+      return;
+    }
     onOpenChange(false);
     setTitle("");
     navigate(projectId, page.id);
@@ -61,6 +71,11 @@ export function NewPageDialog({ projectId, parentId, open, onOpenChange }: Props
               </Label>
             </RadioGroup>
           </fieldset>
+          {failed && (
+            <p role="alert" className="text-sm text-destructive">
+              {fr.newPage.failed}
+            </p>
+          )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {fr.common.cancel}
