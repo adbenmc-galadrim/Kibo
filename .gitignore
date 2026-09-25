@@ -3,6 +3,7 @@ design/penpot/exports/
 .claude/worktrees/
 node_modules/
 dist/
+dist-types/
 *.tsbuildinfo
 .kibo-dev/
 apps/desktop/src-tauri/target/

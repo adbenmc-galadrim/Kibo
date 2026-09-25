@@ -4,10 +4,12 @@
     "includes": [
       "**",
       "!**/dist",
+      "!**/dist-types",
       "!**/node_modules",
       "!design",
       "!packages/sdk/src/ui",
       "!packages/sdk/src/lib",
+      "!packages/sdk/src/hooks",
       "!apps/desktop/src-tauri/target"
     ]
   },
@@ -23,6 +25,10 @@
     {
       "includes": ["**/vite.config.ts", "**/playwright.config.ts"],
       "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
+    },
+    {
+      "includes": ["**/*.css"],
+      "linter": { "rules": { "suspicious": { "noUnknownAtRules": "off" } } }
     }
   ]
 }
