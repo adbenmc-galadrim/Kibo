@@ -1,0 +1,14 @@
+{
+  "name": "@kibo/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sidecar": "bun scripts/build-sidecar.ts",
+    "build:debug": "bun run sidecar && tauri build --debug --no-bundle",
+    "dev": "bun run sidecar && tauri dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.5"
+  }
+}

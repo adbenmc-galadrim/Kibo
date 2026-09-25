@@ -9,3 +9,6 @@ dist-types/
 apps/desktop/src-tauri/target/
 test-results/
 playwright-report/
+apps/desktop/src-tauri/binaries/
+apps/desktop/src-tauri/gen/
+*.bun-build
