@@ -1,0 +1,29 @@
+import { z } from "zod";
+import { NodeId, TicketKey } from "./ids";
+import { StatusId } from "./status";
+
+export const Assignee = z.object({ kind: z.enum(["human", "agent"]), ref: z.string().min(1) });
+export type Assignee = z.infer<typeof Assignee>;
+
+export const Ticket = z
+  .object({
+    id: NodeId,
+    key: TicketKey,
+    title: z.string().trim().min(1),
+    description: z.string(),
+    statusId: StatusId,
+    blockedReason: z.string().nullable(),
+    domainId: z.string().nullable(),
+    assignee: Assignee.nullable(),
+    parentId: NodeId.nullable(),
+  })
+  .superRefine((t, ctx) => {
+    const hasReason = t.blockedReason !== null && t.blockedReason.trim().length > 0;
+    if (t.statusId === "blocked" && !hasReason) {
+      ctx.addIssue({ code: "custom", path: ["blockedReason"], message: "BLOCKED_REASON_REQUIRED" });
+    }
+    if (t.statusId !== "blocked" && t.blockedReason !== null) {
+      ctx.addIssue({ code: "custom", path: ["blockedReason"], message: "reason only allowed when blocked" });
+    }
+  });
+export type Ticket = z.infer<typeof Ticket>;
