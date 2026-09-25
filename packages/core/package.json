@@ -1,0 +1,16 @@
+{
+  "name": "@kibo/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "loro-crdt": "1.16.3"
+  },
+  "devDependencies": {
+    "fast-check": "4.3.0"
+  }
+}
