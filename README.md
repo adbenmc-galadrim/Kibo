@@ -4,7 +4,7 @@ Centre de contrôle de projets de code, local-first, piloté par l'IA.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
 (Kanban, tickets, graphe de dépendances, notes…) que l'utilisateur peut créer lui-même.
 
-État : conception. Pas encore de code.
+État : MVP livré (`v0.1`, rapport dans `docs/superpowers/rapports/`). Lancer : `bun install`, `bun run --cwd packages/ui build`, puis `bun packages/daemon/src/main.ts --ui packages/ui/dist` et ouvrir l'URL `KIBO_READY` affichée.
 
 ## Où trouver quoi
 
