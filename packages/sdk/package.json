@@ -1,0 +1,28 @@
+{
+  "name": "@kibo/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./mock": "./src/mock.ts",
+    "./conformance": "./src/conformance.tsx",
+    "./ui/*": "./src/ui/*.tsx",
+    "./lib/*": "./src/lib/*.ts"
+  },
+  "dependencies": {
+    "@kibo/core": "workspace:*",
+    "@kibo/schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.0",
+    "@types/react": "19.1.13",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  }
+}
