@@ -42,13 +42,13 @@ export function Shell({ viewer }: { viewer: string }) {
               {project ? `${project.meta.name}${page ? ` · ${page.title}` : ""}` : ""}
             </span>
           </header>
-          <main className="min-h-0 flex-1" data-viewer={viewer}>
+          <div className="min-h-0 flex-1" data-viewer={viewer}>
             {!route.projectId && <Overview projects={projects} onNewProject={() => setNewProject(true)} />}
             {project && !route.pageId && (
               <ProjectHome project={project} onNewPage={() => setNewPageParent(null)} />
             )}
             {project && page && <PageView key={page.id} project={project} page={page} viewer={viewer} />}
-          </main>
+          </div>
         </SidebarInset>
         <NewProjectDialog open={newProject} onOpenChange={setNewProject} count={projects.length} />
         {project && newPageParent !== undefined && (

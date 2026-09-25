@@ -14,6 +14,7 @@ async function pairAndCreateProject(page: Page, info: TestInfo, key: string) {
   await page.getByLabel("Clé").fill(key);
   await page.getByRole("button", { name: "Créer le projet" }).click();
   await expect(page.getByText("Projet créé")).toBeVisible();
+  await expect(page.getByRole("main")).toHaveCount(1);
 }
 
 async function createPage(page: Page, title: string, kind: "Tableau de bord" | "Vue") {
