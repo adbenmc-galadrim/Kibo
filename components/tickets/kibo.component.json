@@ -1,0 +1,8 @@
+{
+  "id": "tickets",
+  "version": "1.0.0",
+  "kind": "both",
+  "title": "Tickets",
+  "reads": ["ticket", "status"],
+  "writes": []
+}

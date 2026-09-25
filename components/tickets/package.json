@@ -1,0 +1,22 @@
+{
+  "name": "@kibo/component-tickets",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "@kibo/sdk": "workspace:*",
+    "lucide-react": "1.48.0"
+  },
+  "peerDependencies": {
+    "react": "19.1.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.0",
+    "@types/react": "19.1.13",
+    "react": "19.1.1"
+  }
+}
