@@ -7,7 +7,8 @@ export type KiboErrorCode =
   | "STORE_CORRUPT"
   | "UNAUTHORIZED"
   | "FORBIDDEN"
-  | "PERMISSION_DENIED";
+  | "PERMISSION_DENIED"
+  | "INTERNAL";
 
 export class KiboError extends Error {
   constructor(
