@@ -311,8 +311,9 @@ Chaque intégration est un adaptateur activé par un composant synchronisé. Les
 
 ## 12. Hors périmètre de cette spec / décisions ouvertes
 
-- **Conventions imposées à l'IA** qui construit Kibo : à définir avec le CLAUDE.md.
-- **Organisation de l'équipe d'agents** (Fable chef d'équipe, Opus 5.5 lead dev et devs, sous-agents Sonnet/Haiku, travail en boucle vers un objectif final) : feuille de route et CLAUDE.md.
+- **Conventions et organisation de l'équipe d'agents** : `CLAUDE.md` et feuille de route.
+- **Clés de ticket en écriture concurrente** : aujourd'hui seul le démon attribue les clés (compteur dans le doc projet). Avec la sync (spec G), deux pairs pourraient attribuer la même clé : à trancher avant la phase 7 (allocation par le serveur de sync ou plages réservées par pair).
+- **Sessions d'appairage** : en mémoire du démon, perdues au redémarrage (l'UI revient à l'écran d'appairage). Persistance à décider avec l'accès distant opt-in.
 - **Assistant d'onboarding** (rôle → composants conseillés) : spec E, après le noyau.
 - **Sync et multi-utilisateur temps réel** : spec G (serveur de sync Loro, permissions par projet).
 - **Marketplace de composants** : spec H.
