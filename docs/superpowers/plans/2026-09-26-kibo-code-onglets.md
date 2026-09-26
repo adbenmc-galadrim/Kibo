@@ -2357,7 +2357,7 @@ git commit -m "feat(daemon): état local des onglets"
 **Interfaces:**
 - Produces : `type WatchTarget = { path: string; recursive: boolean }` ; `type WatchHandle = { mode(): "watch" | "poll"; close(): void }` ; `watchPaths(targets: WatchTarget[], onChange: () => void, opts?: { debounceMs?: number; pollMs?: number; onError?: (e: unknown) => void }): WatchHandle` ; `dedupeTargets(targets: WatchTarget[]): WatchTarget[]`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/watcher.test.ts` :
 ```ts
@@ -2421,7 +2421,7 @@ test("targets covered by a recursive parent are dropped", () => {
 Run: `bun test packages/daemon/src/code/watcher.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/code/watcher.ts` :
 ```ts
@@ -2480,12 +2480,12 @@ export function watchPaths(targets: WatchTarget[], onChange: () => void, opts: W
 }
 ```
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/watcher.test.ts`
 Expected: PASS sur macOS et Linux (sur Linux, `fs.watch` récursif de Bun s'appuie sur inotify ; si la CI Linux échoue sur le premier test, relever `debounceMs` et le délai d'attente, jamais retirer l'assertion).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/code/watcher.ts packages/daemon/src/code/watcher.test.ts
