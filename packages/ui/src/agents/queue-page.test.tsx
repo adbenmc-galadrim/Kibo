@@ -42,6 +42,16 @@ test("capacity shows one card per host slot, the gauges and the slot rule", () =
   expect(capacity.getByText("Créneaux hôte : 3 (auto : 8 cœurs, 16 Go)")).toBeTruthy();
 });
 
+test("profiles with runs come first, then the idle ones, each group by name", () => {
+  const byName = [...profilesFixture].sort((a, b) => a.name.localeCompare(b.name));
+  render(<QueuePage state={agentsFixture()} profiles={byName} now={NOW} onAnswer={() => {}} />);
+  const columns = screen
+    .getAllByRole("region")
+    .map((r) => r.getAttribute("aria-label"))
+    .filter((name) => profilesFixture.some((p) => p.name === name));
+  expect(columns).toEqual(["opus-dev", "sonnet-review", "haiku-tests"]);
+});
+
 test("fixed host slots say so and still give the automatic value", () => {
   const state = agentsFixture();
   render(

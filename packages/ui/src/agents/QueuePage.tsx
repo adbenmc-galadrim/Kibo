@@ -17,7 +17,7 @@ import { fr } from "../i18n/fr";
 import { elapsed, formatDuration } from "./format";
 import { QueueCapacity } from "./QueueCapacity";
 import { QueueItem } from "./QueueItem";
-import { byStart, holdsSlot } from "./queue-runs";
+import { byStart, holdsSlot, orderProfiles } from "./queue-runs";
 import { SlotMeter } from "./SlotMeter";
 
 type Props = { state: AgentsState; profiles: AgentProfile[]; now: number; onAnswer: (runId: string) => void };
@@ -103,7 +103,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
       <h2 className="font-semibold">{fr.queue.byProfile}</h2>
       <DndContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
-          {profiles.map((p) => {
+          {orderProfiles(profiles, state.runs, state.queue).map((p) => {
             const running = state.runs.filter((r) => r.profileId === p.id && holdsSlot(r)).sort(byStart);
             const mine = queued.filter(({ run }) => run.profileId === p.id);
             const subs = subagents.get(p.name) ?? [];
