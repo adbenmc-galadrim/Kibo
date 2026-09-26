@@ -7,6 +7,11 @@ export const fr = {
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
   waitingOn: (key: string) => `attend ${key}`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
+  run: {
+    queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),
+    waiting: "Attend",
+    failed: "Échec",
+  },
   block: {
     title: (key: string) => `Bloquer ${key}`,
     description: "Un ticket bloqué attend une condition extérieure au projet.",

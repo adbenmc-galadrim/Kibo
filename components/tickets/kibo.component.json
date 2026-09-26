@@ -4,6 +4,6 @@
   "kind": "both",
   "title": "Tickets",
   "description": "Arbre des tickets, sous-tickets illimités",
-  "reads": ["ticket", "status"],
+  "reads": ["ticket", "status", "run"],
   "writes": []
 }

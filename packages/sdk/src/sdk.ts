@@ -31,14 +31,14 @@ export function createSdk(backend: ProjectBackend, manifest: ComponentManifest, 
       if (!manifest.reads.includes(type)) {
         throw new KiboError("PERMISSION_DENIED", `${manifest.id} does not declare read ${type}`);
       }
-      const s = await backend.snapshot();
-      const lists: { [K in EntityType]: EntityMap[K][] } = {
-        ticket: s.tickets,
-        status: s.workflow,
-        link: s.links,
-        page: s.pages,
+      const loaders: { [K in EntityType]: () => Promise<EntityMap[K][]> } = {
+        ticket: async () => (await backend.snapshot()).tickets,
+        status: async () => (await backend.snapshot()).workflow,
+        link: async () => (await backend.snapshot()).links,
+        page: async () => (await backend.snapshot()).pages,
+        run: () => backend.runs(),
       };
-      return lists[type];
+      return loaders[type]();
     },
     async run<C extends ProjectCommand>(cmd: C): Promise<CommandResult[C["method"]]> {
       const entity = WRITES[cmd.method];
@@ -47,6 +47,7 @@ export function createSdk(backend: ProjectBackend, manifest: ComponentManifest, 
       }
       return (await backend.run(cmd)) as CommandResult[C["method"]];
     },
-    subscribe: backend.subscribe,
+    subscribe: (listener, type) =>
+      type === "run" ? backend.subscribeRuns(listener) : backend.subscribe(listener),
   };
 }

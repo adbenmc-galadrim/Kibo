@@ -51,6 +51,8 @@ export function Kanban() {
   const sdk = useSdk();
   const { data: tickets } = useEntities("ticket");
   const { data: statuses } = useEntities("status");
+  const { data: runs } = useEntities("run");
+  const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const [filter, setFilter] = useState<KanbanFilter>(sdk.config.filter === "all" ? "all" : "mine-and-agents");
   const [blocking, setBlocking] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +117,7 @@ export function Kanban() {
                   <KanbanCard
                     key={t.id}
                     ticket={t}
+                    run={runOf.get(t.id) ?? null}
                     statuses={ordered}
                     onOpen={() => sdk.openTicket(t.id)}
                     onMove={(id) => move(t, id)}

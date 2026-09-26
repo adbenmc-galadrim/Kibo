@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, Ticket } from "@kibo/schema";
+import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
@@ -13,9 +13,22 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const b = run({ method: "createTicket", title: "Sync", assignee: mine }) as Ticket;
   run({ method: "createTicket", title: "Hors filtre", assignee: { kind: "human", ref: "lea" } });
   run({ method: "addLink", from: a.id, to: b.id, type: "blocks" });
+  const agent = (ref: string) => ({ kind: "agent", ref }) as const;
+  run({ method: "createTicket", title: "Récepteur", statusId: "in_progress", assignee: agent("opus-dev") });
+  run({ method: "createTicket", title: "Watcher", statusId: "backlog", assignee: agent("opus-dev") });
+  run({ method: "createTicket", title: "Review", statusId: "in_review", assignee: agent("sonnet-review") });
 };
 
-runConformance({ manifest, Component }, seed);
+const runs = (s: ProjectSnapshot): TicketRun[] => {
+  const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
+  return [
+    { ticketId: id("KIB-4"), runId: "r1", label: "opus-dev-2", state: "waiting_input", position: null },
+    { ticketId: id("KIB-5"), runId: "r2", label: "opus-dev", state: "queued", position: 2 },
+    { ticketId: id("KIB-6"), runId: "r3", label: "sonnet-review-1", state: "done", position: null },
+  ];
+};
+
+runConformance({ manifest, Component }, seed, runs);
 
 const setup = () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
@@ -34,7 +47,7 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   expect(within(todo).getByText("À faire")).toBeTruthy();
   expect(within(todo).getByText("2")).toBeTruthy();
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
-  expect(screen.getByText("2 / 3 tickets")).toBeTruthy();
+  expect(screen.getByText("5 / 6 tickets")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
 });
 
@@ -97,4 +110,17 @@ test("a failed block keeps the dialog open and shows an alert", async () => {
   await user.click(screen.getByRole("button", { name: "Bloquer" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-2.");
   expect(screen.getByRole("dialog")).toBeTruthy();
+});
+
+test("an agent's card shows its run: neutral badge, state dot and short state", async () => {
+  const m = setup();
+  m.setRuns(runs(m.snapshot()));
+  const badge = async (text: string) => (await screen.findByText(text)).closest("[data-slot=badge]");
+  const waiting = await badge("· Attend");
+  expect(waiting?.textContent).toBe("opus-dev-2· Attend");
+  expect(waiting?.querySelector("[data-state]")?.getAttribute("data-state")).toBe("waiting_input");
+  expect(waiting?.className).not.toContain("brand");
+  expect((await badge("· En file #2"))?.textContent).toBe("opus-dev· En file #2");
+  const done = await badge("sonnet-review");
+  expect(done?.querySelector("[data-state]")).toBeNull();
 });

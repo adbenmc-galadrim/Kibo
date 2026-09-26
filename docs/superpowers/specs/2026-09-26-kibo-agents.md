@@ -80,7 +80,8 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 - Couleurs d'état : `starting`/`running` bleu, `waiting_input` ambre, `queued` cyan `#06B6D4`, `done` vert, `failed` rouge, `cancelled` zinc ; orange réservé aux actions d'agent (« Répondre », « Envoyer », « Mettre en file »).
 - Réordonner : glisser-déposer (`@dnd-kit/core`, déjà utilisé par le Kanban) et menu accessible (Monter, Descendre, Prioritaire, Retirer de la file).
 - Journal : le tiroir masque `PreToolUse` (doublon de `PostToolUse`) et les réordonnancements ; la question est en ambre.
-- Écarts assumés aux maquettes 13 et 5 : les lignes « Déclencheur » et « Rôle » des cartes de profil, le résultat détaillé d'un run (« Review postée · PR #15 ») et l'état de run sur les cartes Kanban viennent avec l'éditeur de règles et les intégrations.
+- Écarts assumés aux maquettes 13 et 5 : les lignes « Déclencheur » et « Rôle » des cartes de profil et le résultat détaillé d'un run (« Review postée · PR #15 ») viennent avec l'éditeur de règles et les intégrations.
+- **État du run sur les cartes** (Kanban, Tickets) : entité en lecture seule `run` du SDK (`reads: ["run"]`), un `TicketRun` par ticket (`ticketId`, `runId`, `label`, `state`, `position` en file) pour le dernier run du ticket, rafraîchi sur le sujet `agents`. Badge neutre (pas orange) : icône agent, nom du run, pastille de couleur d'état, état court (« En file #2 », « Attend », « Échec ») ; sans run actif, le nom de l'agent assigné seul.
 - Événements WebSocket : `{ projectId }`, `{ topic: "agents" | "config" }` (regroupés à 50 ms) et `{ type: "run.changed", runId, state }` à chaque changement d'état d'un run.
 
 ## 9. Notifications

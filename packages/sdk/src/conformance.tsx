@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ComponentManifest, type ProjectCommand } from "@kibo/schema";
+import { ComponentManifest, type ProjectCommand, type ProjectSnapshot, type TicketRun } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { createMockSdk } from "./mock";
 import { SdkProvider } from "./react";
@@ -8,6 +8,7 @@ import type { ComponentModule } from "./types";
 export function runConformance(
   mod: ComponentModule,
   seed?: (run: (cmd: ProjectCommand) => unknown) => void,
+  runs?: (snapshot: ProjectSnapshot) => TicketRun[],
 ): void {
   describe(`conformance v0 · ${mod.manifest.id}`, () => {
     test("manifest is valid", () => {
@@ -20,6 +21,7 @@ export function runConformance(
     ] as const) {
       test(`renders an ${label} within its declared permissions`, async () => {
         const m = createMockSdk(mod.manifest, s ? { seed: s } : {});
+        if (s && runs) m.setRuns(runs(m.snapshot()));
         const { container } = render(
           <SdkProvider sdk={m.sdk}>
             <mod.Component />

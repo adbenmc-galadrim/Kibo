@@ -34,7 +34,7 @@ export function useEntities<T extends EntityType>(type: T): EntitiesState<T> {
         },
       );
     void load();
-    const off = sdk.subscribe(() => void load());
+    const off = sdk.subscribe(() => void load(), type);
     return () => {
       alive = false;
       off();

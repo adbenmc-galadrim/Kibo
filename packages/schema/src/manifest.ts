@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const EntityType = z.enum(["ticket", "status", "link", "page"]);
+export const EntityType = z.enum(["ticket", "status", "link", "page", "run"]);
 export type EntityType = z.infer<typeof EntityType>;
 
 export const ComponentManifest = z.object({

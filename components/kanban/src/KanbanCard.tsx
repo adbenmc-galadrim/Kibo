@@ -1,5 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
-import type { Status, StatusId, TicketView } from "@kibo/schema";
+import type { Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
+import { AgentBadge } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -9,17 +10,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { Bot, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { fr } from "./fr";
 
 type Props = {
   ticket: TicketView;
+  run: TicketRun | null;
   statuses: Status[];
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
 };
 
-export function KanbanCard({ ticket: t, statuses, onOpen, onMove }: Props) {
+export function KanbanCard({ ticket: t, run, statuses, onOpen, onMove }: Props) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: t.id });
   const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
   return (
@@ -58,11 +60,7 @@ export function KanbanCard({ ticket: t, statuses, onOpen, onMove }: Props) {
         <p className="text-xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
-        {t.assignee?.kind === "agent" && (
-          <Badge variant="outline" className="gap-1 border-brand/40 text-brand-strong dark:text-brand">
-            <Bot className="size-3" /> {t.assignee.ref}
-          </Badge>
-        )}
+        <AgentBadge agent={t.assignee?.kind === "agent" ? t.assignee.ref : null} run={run} texts={fr.run} />
         {t.waitingOn.map((k) => (
           <Badge key={k} variant="outline">
             {fr.waitingOn(k)}

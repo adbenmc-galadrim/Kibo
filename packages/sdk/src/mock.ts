@@ -1,5 +1,11 @@
 import { createProjectDoc, executeProjectCommand, readProject } from "@kibo/core";
-import { type ComponentManifest, KiboError, type ProjectCommand, type ProjectSnapshot } from "@kibo/schema";
+import {
+  type ComponentManifest,
+  KiboError,
+  type ProjectCommand,
+  type ProjectSnapshot,
+  type TicketRun,
+} from "@kibo/schema";
 import { createSdk } from "./sdk";
 import type { FileOpenRequest, KiboSdk, NewTicketDefaults } from "./types";
 
@@ -11,12 +17,14 @@ export type MockSdk = {
   openedFiles: FileOpenRequest[];
   run(cmd: ProjectCommand): unknown;
   snapshot(): ProjectSnapshot;
+  setRuns(runs: TicketRun[]): void;
 };
 
 export type MockSdkOptions = {
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
   viewer?: string;
   config?: Record<string, unknown>;
+  runs?: TicketRun[];
 };
 
 export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions = {}): MockSdk {
@@ -28,6 +36,8 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
     return result;
   };
   opts.seed?.(run);
+  let runs = opts.runs ?? [];
+  const runListeners = new Set<() => void>();
   const violations: string[] = [];
   const opened: string[] = [];
   const newTicketRequests: NewTicketDefaults[] = [];
@@ -39,6 +49,11 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
       subscribe: (l) => {
         listeners.add(l);
         return () => listeners.delete(l);
+      },
+      runs: async () => runs,
+      subscribeRuns: (l) => {
+        runListeners.add(l);
+        return () => runListeners.delete(l);
       },
     },
     manifest,
@@ -64,5 +79,18 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
     list: (type) => record(`read ${type}`, inner.list(type)),
     run: (cmd) => record(`write ${cmd.method}`, inner.run(cmd)),
   };
-  return { sdk, violations, opened, newTicketRequests, openedFiles, run, snapshot: () => readProject(doc) };
+  const setRuns = (next: TicketRun[]) => {
+    runs = next;
+    for (const l of runListeners) l();
+  };
+  return {
+    sdk,
+    violations,
+    opened,
+    newTicketRequests,
+    openedFiles,
+    run,
+    snapshot: () => readProject(doc),
+    setRuns,
+  };
 }

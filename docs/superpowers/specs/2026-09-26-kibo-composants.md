@@ -27,7 +27,7 @@ Qu'un composant écrit hors du monorepo (par l'utilisateur, plus tard par l'IA o
 Compatible avec les manifestes v0 (tous les nouveaux champs sont optionnels avec défaut).
 
 ```ts
-export const BuiltinEntityType = z.enum(["ticket", "status", "link", "page", "note"]);
+export const BuiltinEntityType = z.enum(["ticket", "status", "link", "page", "run", "note"]);
 export const NetRule = z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}(\/[A-Za-z0-9._~\/-]*)?$/); // "api.github.com/graphql"
 export const ComponentManifest = z.object({
   id, version, kind, title, description,          // inchangés
@@ -42,7 +42,7 @@ export const ComponentManifest = z.object({
 });
 ```
 
-- `EntityType` du v0 devient `BuiltinEntityType` (alias conservé). `note` s'ajoute (§8.2).
+- `EntityType` du v0 devient `BuiltinEntityType` (alias conservé). `run` (état du dernier run d'agent de chaque ticket, lecture seule, ajouté en phase 2) est conservé ; `note` s'ajoute (§8.2).
 - `net` : hôte + préfixe de chemin, HTTPS uniquement, sans joker, sans port, sans IP. Affichage : `net:api.github.com/graphql` (écran 6).
 - La phase 5 ajoute `secrets` et `mcp` (spec F §4.1) ; les phases 6 et 7 n'ajoutent aucun champ.
 - **Entités déclarées par un composant** (`acme.bug`, spec §5) : hors périmètre de la phase 4 (voir §14).

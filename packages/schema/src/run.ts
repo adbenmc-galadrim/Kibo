@@ -160,6 +160,14 @@ export type HostView = HostSettings & {
 export type AgentsState = { runs: RunView[]; queue: QueueEntry[]; host: HostView; tokensToday: number };
 export type AssignPreview = { position: number | null; reason: WaitReason | null; guidelines: number };
 export type RunLogEntry = { id: number; at: number; event: RunEvent };
+export const TicketRun = z.object({
+  ticketId: z.string().min(1),
+  runId: z.string().min(1),
+  label: z.string().min(1),
+  state: RunState,
+  position: z.number().int().positive().nullable(),
+});
+export type TicketRun = z.infer<typeof TicketRun>;
 export type RunChanged = { type: "run.changed"; runId: string; state: RunState };
 
 export function runSubject(

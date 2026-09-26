@@ -55,3 +55,21 @@ test("openFile is forwarded to the host and recorded by the mock", () => {
   m.sdk.openFile({ path: "packages/core/src/ticket.ts", line: 42 });
   expect(m.openedFiles).toEqual([{ path: "packages/core/src/ticket.ts", line: 42 }]);
 });
+
+test("runs are read only when declared, and their listeners hear run changes", async () => {
+  const withRuns = createMockSdk({ ...manifest, reads: ["ticket", "run"] });
+  const heard: string[] = [];
+  const off = withRuns.sdk.subscribe(() => heard.push("run"), "run");
+  const offTickets = withRuns.sdk.subscribe(() => heard.push("ticket"));
+  const t = await withRuns.sdk.run({ method: "createTicket", title: "A" });
+  withRuns.setRuns([{ ticketId: t.id, runId: "r1", label: "opus-dev-1", state: "running", position: null }]);
+  off();
+  offTickets();
+  expect(await withRuns.sdk.list("run")).toEqual([
+    { ticketId: t.id, runId: "r1", label: "opus-dev-1", state: "running", position: null },
+  ]);
+  expect(heard).toEqual(["ticket", "run"]);
+  const without = createMockSdk(manifest);
+  await expect(without.sdk.list("run")).rejects.toThrow("PERMISSION_DENIED");
+  expect(without.violations).toEqual(["read run"]);
+});

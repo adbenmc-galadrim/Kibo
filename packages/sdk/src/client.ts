@@ -9,8 +9,10 @@ import {
   type RpcResult,
   type RunChanged,
   type RunState,
+  type TicketRun,
   type Topic,
 } from "@kibo/schema";
+import { ticketRuns } from "./runs";
 import type { ProjectBackend } from "./types";
 
 export type KiboClient = {
@@ -171,5 +173,7 @@ export function projectBackend(client: KiboClient, projectId: string): ProjectBa
       client.subscribe((id) => {
         if (id === projectId) listener();
       }),
+    runs: async (): Promise<TicketRun[]> => ticketRuns(await client.rpc({ method: "getAgents" }), projectId),
+    subscribeRuns: (listener) => client.subscribeTopic("agents", listener),
   };
 }
