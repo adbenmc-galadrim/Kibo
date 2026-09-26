@@ -113,9 +113,10 @@ export function AgentsPage({ state, config, now }: Props) {
       </ul>
       <section className="grid gap-3">
         <h2 className="text-md font-semibold">{fr.agentsPage.profiles}</h2>
-        {config.profiles.length === 0 ? (
+        {!config.profiles.some((p) => !p.system) && (
           <p className="text-sm text-muted-foreground">{fr.agentsPage.noProfile}</p>
-        ) : (
+        )}
+        {config.profiles.length > 0 && (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-4">
             {config.profiles.map((p) => (
               <ProfileCard

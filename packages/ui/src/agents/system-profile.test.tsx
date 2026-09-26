@@ -2,7 +2,8 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, configFixture, NOW, profilesFixture, systemProfilesFixture } from "./fixtures";
+import { agentsFixture, configFixture, NOW, profilesFixture } from "./fixtures";
+import { systemProfilesFixture } from "./system-profiles-fixture";
 
 const calls: RpcRequest[] = [];
 let respond: () => Promise<unknown> = () => Promise.resolve(null);
@@ -64,4 +65,26 @@ test("a refused change is said and the switch goes back", async () => {
   await user.click(enabled);
   expect((await sheet().findByRole("alert")).textContent).toBe("Impossible d'enregistrer le profil.");
   expect(enabled.getAttribute("aria-checked")).toBe("true");
+});
+
+test("choosing Haiku saves only the model of the system profile", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Modifier le profil assistant" }));
+  sheet().getByRole("combobox", { name: "Modèle" }).focus();
+  await user.keyboard("{Enter}");
+  await user.click(await screen.findByRole("option", { name: "Claude Haiku 4.5" }));
+  expect(calls).toEqual([
+    {
+      method: "config",
+      command: { method: "updateProfile", profileId: "assistant", patch: { model: "haiku" } },
+    },
+  ]);
+});
+
+test("with only system profiles the page still invites to create a profile", () => {
+  const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
+  render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} />);
+  expect(screen.getByText("Aucun profil : crées-en un pour assigner des tickets à un agent.")).toBeTruthy();
+  expect(screen.getByRole("article", { name: "assistant" })).toBeTruthy();
 });
