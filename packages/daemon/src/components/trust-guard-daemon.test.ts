@@ -5,15 +5,17 @@ import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest } from "@kibo/schema";
 import { type Daemon, startDaemon } from "../daemon";
+import { freePort } from "../remote/remote.test-helper";
 import { fakeBuild, okReport } from "./service.test-helper";
-
-const REMOTE_PORT = 4397;
-const REMOTE_URL = `https://127.0.0.1:${REMOTE_PORT}`;
 
 let home: string;
 let daemon: Daemon;
+let remotePort: number;
+let remoteUrl: string;
 
 beforeEach(async () => {
+  remotePort = freePort();
+  remoteUrl = `https://127.0.0.1:${remotePort}`;
   home = mkdtempSync(join(tmpdir(), "kibo-trust-guard-"));
   daemon = await startDaemon({
     home,
@@ -51,14 +53,14 @@ async function remoteSession(): Promise<{ cookie: string; ca: string }> {
   await localRpc(local, {
     method: "enableRemoteAccess",
     address: "127.0.0.1",
-    port: REMOTE_PORT,
+    port: remotePort,
     tls: { kind: "self-signed" },
   });
   const code = (await localRpc(local, { method: "createPairingCode" })) as { result: { code: string } };
   const ca = readFileSync(join(home, "remote", "cert.pem"), "utf8");
-  const res = await fetch(`${REMOTE_URL}/api/pair-code`, {
+  const res = await fetch(`${remoteUrl}/api/pair-code`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: REMOTE_URL },
+    headers: { "content-type": "application/json", origin: remoteUrl },
     body: JSON.stringify({ code: code.result.code }),
     tls: { ca },
   });
@@ -69,9 +71,9 @@ async function remoteSession(): Promise<{ cookie: string; ca: string }> {
 test("a remote session cannot grant trust through the real dispatch", async () => {
   const { cookie, ca } = await remoteSession();
   const remoteRpc = async (req: RpcRequest) => {
-    const res = await fetch(`${REMOTE_URL}/api/rpc`, {
+    const res = await fetch(`${remoteUrl}/api/rpc`, {
       method: "POST",
-      headers: { "content-type": "application/json", origin: REMOTE_URL, cookie },
+      headers: { "content-type": "application/json", origin: remoteUrl, cookie },
       body: JSON.stringify(req),
       tls: { ca },
     });

@@ -28,7 +28,7 @@ export type RemoteFixture = {
 
 const LOOPBACK: NetworkAddress[] = [{ name: "lo0", address: "127.0.0.1" }];
 
-function freePort(): number {
+export function freePort(): number {
   const probe = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
   const port = probe.port;
   probe.stop(true);
