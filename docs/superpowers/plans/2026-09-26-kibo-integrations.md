@@ -2649,7 +2649,7 @@ git commit -m "feat(daemon): socle des intégrations"
 - Consumes: `SecretStore`, `Redactor`, `secretStoreFor`, `IntegrationKit` (Task 2), `SecretNameSchema` (Task 1), `Bun.secrets` (Bun 1.4.2).
 - Produces: `KEYCHAIN_SERVICE = "dev.kibo"` ; `type KeychainBackend` ; `createBunSecretStore(redactor: Redactor, backend?: KeychainBackend): SecretStore`.
 
-- [ ] **Step 1: Test (échoue)**
+- [x] **Step 1: Test (échoue)**
 
 `packages/daemon/src/integrations/bun-secret-store.test.ts` :
 
@@ -2729,7 +2729,7 @@ describe("keychain secret store", () => {
 
 Run: `bun test packages/daemon/src/integrations/bun-secret-store.test.ts` — Expected: FAIL (module absent).
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/integrations/bun-secret-store.ts` :
 
@@ -2794,7 +2794,7 @@ export function createBunSecretStore(redactor: Redactor, backend: KeychainBacken
 
 `Bun.secrets` (Bun 1.4.2, `bun-types` : `get({ service, name }): Promise<string | null>`, `set({ service, name, value, allowUnrestrictedAccess? }): Promise<void>`, `delete({ service, name }): Promise<boolean>`) est structurellement compatible avec `KeychainBackend` : aucune enveloppe ni transtypage. `allowUnrestrictedAccess` reste à `false` (défaut) : sous macOS, le trousseau peut demander l'accord de l'utilisateur au premier accès du binaire, ce qui est voulu. Le test « real keychain round-trip » ne tourne qu'avec `KIBO_TEST_KEYCHAIN=1` (jamais en CI, jamais par les devs sans accord) ; les autres tests n'appellent jamais `Bun.secrets`.
 
-- [ ] **Step 3: Brancher dans l'amorçage**
+- [x] **Step 3: Brancher dans l'amorçage**
 
 `packages/daemon/src/integrations/bootstrap.ts` :
 
@@ -2809,7 +2809,7 @@ Aucun appel au trousseau au démarrage : `startDaemon` est lancé par des dizain
 
 (`unavailableSecretStore` reste exporté pour les tests.)
 
-- [ ] **Step 4: Vérifier et commiter**
+- [x] **Step 4: Vérifier et commiter**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
