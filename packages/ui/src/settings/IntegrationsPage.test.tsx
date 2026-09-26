@@ -1,10 +1,11 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { IntegrationStatus, RpcRequest } from "@kibo/schema";
+import { type IntegrationStatus, KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
 let statuses: IntegrationStatus[] = [];
+let listError: KiboError | null = null;
 const status = (
   id: IntegrationStatus["id"],
   state: IntegrationStatus["state"],
@@ -23,7 +24,10 @@ mock.module("../api", () => ({
   client: {
     rpc: async (req: RpcRequest) => {
       calls.push(req);
-      if (req.method === "listIntegrations") return statuses;
+      if (req.method === "listIntegrations") {
+        if (listError) throw listError;
+        return statuses;
+      }
       if (req.method === "testIntegration") return status(req.id, "connected");
       if (req.method === "getGithubConnectOptions") return { ghAvailable: true, ghLogin: "adam", mode: "gh" };
       return null;
@@ -36,6 +40,7 @@ const { IntegrationsPage } = await import("./IntegrationsPage");
 
 beforeEach(() => {
   calls.length = 0;
+  listError = null;
   statuses = [
     status("git", "active"),
     status("github", "connected", { account: "adam" }),
@@ -82,4 +87,18 @@ test("a keychain failure shows the banner", async () => {
   statuses = [status("github", "error", { error: { code: "SECRET_STORE_UNAVAILABLE", message: "locked" } })];
   render(<IntegrationsPage />);
   expect(await screen.findByText(/Trousseau système indisponible/)).toBeDefined();
+});
+
+test("a failed listing shows its error without the keychain banner", async () => {
+  listError = new KiboError("INTERNAL", "daemon unreachable");
+  render(<IntegrationsPage />);
+  expect((await screen.findByRole("alert")).textContent).toBe("daemon unreachable");
+  expect(screen.queryByText(/Trousseau système indisponible/)).toBeNull();
+});
+
+test("a keychain failure of the listing shows only the banner", async () => {
+  listError = new KiboError("SECRET_STORE_UNAVAILABLE", "locked");
+  render(<IntegrationsPage />);
+  expect((await screen.findByRole("alert")).textContent).toMatch(/Trousseau système indisponible/);
+  expect(screen.queryByText("locked")).toBeNull();
 });
