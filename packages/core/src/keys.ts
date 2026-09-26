@@ -27,7 +27,7 @@ export function localSyncInfo(doc: LoroDoc): ProjectSyncInfo {
   return { shared: keyAllocator === "server", keyAllocator, role: null, access: "write", members: [] };
 }
 
-function currentTicketSeq(doc: LoroDoc): number {
+export function currentTicketSeq(doc: LoroDoc): number {
   const seq = doc.getMap("meta").get("ticketSeq");
   if (typeof seq === "number" && Number.isInteger(seq) && seq >= 0) return seq;
   throw new KiboError("STORE_CORRUPT", "meta.ticketSeq is not a sequence number");
