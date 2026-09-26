@@ -2654,10 +2654,10 @@ Constat de la relecture lead de la tâche 14 : `command-path.ts` transmet `meta`
 - Modify: `packages/daemon/src/command-path.ts`
 - Test: `packages/daemon/src/integrations/host.test.ts`
 
-- [ ] **Step 1: Test d'abord** : « a rule derived from a sync command reaches observers as a user command » (commande `sync` qui termine le dernier enfant, observateur qui reçoit la dérivée `setStatus` du parent avec `meta.origin === "user"`).
-- [ ] **Step 2: Implémenter** : les commandes dérivées d'une règle portent `meta = { origin: "user" }` (sans `instanceId`), quelle que soit l'origine de la commande qui les déclenche.
-- [ ] **Step 3: Vérifier** : `bun test packages components`, `bun run check`, `bun run typecheck`.
-- [ ] **Step 4: Commit** : `fix(daemon): règles dérivées d'origine user`
+- [x] **Step 1: Test d'abord** : « a rule derived from a sync command reaches observers as a user command » (commande `sync` qui termine le dernier enfant, observateur qui reçoit la dérivée `setStatus` du parent avec `meta.origin === "user"`).
+- [x] **Step 2: Implémenter** : les commandes dérivées d'une règle portent `meta = { origin: "user" }` (sans `instanceId`), quelle que soit l'origine de la commande qui les déclenche.
+- [x] **Step 3: Vérifier** : `bun test packages components`, `bun run check`, `bun run typecheck`.
+- [x] **Step 4: Commit** : `fix(daemon): règles dérivées d'origine user`
 
 ### Task 3: Trousseau système (`Bun.secrets`)
 
