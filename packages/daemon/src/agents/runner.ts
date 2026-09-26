@@ -141,12 +141,30 @@ export function permissionFlag(mode: PermissionMode, caps: CliCaps): string | nu
   throw new KiboError("INVALID_INPUT", `the installed claude CLI does not accept --permission-mode ${mode}`);
 }
 
-export function killGroup(pid: number): void {
+export const KILL_GRACE_MS = 5000;
+
+const isMissing = (e: unknown) => e instanceof Error && "code" in e && e.code === "ESRCH";
+
+function signalGroup(pid: number, signal: NodeJS.Signals | 0): boolean {
   try {
-    process.kill(-pid, "SIGTERM");
+    process.kill(-pid, signal);
+    return true;
   } catch (e) {
-    if (!(e instanceof Error && "code" in e && e.code === "ESRCH")) throw e;
+    if (isMissing(e)) return false;
+    throw e;
   }
+}
+
+export function killGroup(pid: number, graceMs = KILL_GRACE_MS): void {
+  if (!signalGroup(pid, "SIGTERM")) return;
+  const escalate = setTimeout(() => {
+    try {
+      if (signalGroup(pid, 0)) signalGroup(pid, "SIGKILL");
+    } catch (e) {
+      console.error(`[kibo-daemon] cannot kill process group ${pid}`, e);
+    }
+  }, graceMs);
+  escalate.unref();
 }
 
 export const readPs: PsReader = (pid) => {

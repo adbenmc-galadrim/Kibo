@@ -8,6 +8,7 @@ import {
   childEnv,
   claudeArgs,
   claudeSettings,
+  killGroup,
   type LaunchInput,
   launch,
   parseHelp,
@@ -235,6 +236,25 @@ test("kill stops a running process", async () => {
   expect(outcome.code).not.toBe(0);
   expect(outcome.result).toBeNull();
   releaseFakeRun(state, "s-hold");
+});
+
+test("a process group that ignores SIGTERM is killed after the grace delay", async () => {
+  const stubborn = Bun.spawn(
+    [
+      process.execPath,
+      "-e",
+      "process.on('SIGTERM', () => {}); console.log('ready'); setInterval(() => {}, 1000);",
+    ],
+    { detached: true, stdout: "pipe" },
+  );
+  const reader = stubborn.stdout.getReader();
+  await reader.read();
+  reader.releaseLock();
+  killGroup(stubborn.pid, 200);
+  await Bun.sleep(100);
+  expect(stubborn.exitCode).toBeNull();
+  await stubborn.exited;
+  expect(stubborn.signalCode).toBe("SIGKILL");
 });
 
 const claudeInCommonPlaces = Bun.which("claude", { PATH: "/opt/homebrew/bin:/usr/local/bin" }) !== null;
