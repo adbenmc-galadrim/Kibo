@@ -17263,6 +17263,21 @@ Décision du lead (relecture de la tâche 34) : la coquille des Paramètres exis
 
 ---
 
+### Task 34c: Notes, une modification locale n'est jamais écrasée (correction, vérification visuelle du jalon)
+
+Constat du jalon v0.4 : une note en cours d'édition (« Non enregistré ») est remplacée par le contenu du disque en moins de 250 ms quand le fichier change hors de Kibo ; la frappe est perdue, l'autosave réécrit le disque et le bandeau D4 « Modifié hors de Kibo » n'apparaît jamais (une fois, le fichier a mélangé les deux versions). Cause probable : l'identité du SDK change (`InstanceFrame` le recrée quand `instance.config` ou `host` changent d'identité), l'effet de `NotesView` qui crée l'autosave et appelle `load(selected)` se relance, et `MarkdownEditor` propage `onChange` pour une valeur venue du prop.
+
+**Files:**
+- Modify: `packages/ui/src/pages/InstanceFrame.tsx` (SDK stable : dépendre du contenu de `instance.config`, pas de son identité)
+- Modify: `components/notes/src/NotesView.tsx` (autosave créé une fois par note ; aucun rechargement d'une note `dirty` ou `saving` : un changement externe la passe en `conflict`)
+- Modify: `components/notes/src/MarkdownEditor.tsx` (aucun `onChange` pour un changement venu de `value`)
+- Test: `components/notes/src/notes.test.tsx`, `packages/ui/src/pages/instance-frame.test.tsx`
+
+- [ ] **Step 1: Tests d'abord** : « a local unsaved edit survives an external change and shows the D4 banner » (frappe, changement disque, texte local conservé, bandeau affiché, disque inchangé) ; « the editor does not report a change it received from its value » ; « the sdk keeps its identity when the project snapshot changes but the instance config does not ».
+- [ ] **Step 2: Implémenter** les trois corrections ci-dessus ; « Garder ma version » et « Recharger » du bandeau D4 restent ceux de la tâche 26.
+- [ ] **Step 3: Vérifier** : `bun test packages components`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build`, `bun run budget`.
+- [ ] **Step 4: Commit** : `fix(notes): édition locale jamais écrasée`
+
 ### Task 35: UI chargée à la demande et budget du bundle d'entrée
 
 Écart de v0.3 : le chunk d'entrée de l'UI fait 1,47 Mo (485 kB gzip, mesuré le 2026-09-26 sur `main` après la tâche 29). En cause, surtout : CodeMirror, Lezer et markdown-it tirés statiquement par la vue Notes (`registry.ts` → `@kibo/component-notes` → `NotesView` → `NoteDocument` → `MarkdownEditor` et `markdown.ts`), puis les écrans secondaires. Mesure faite en excluant ces modules : ~218 kB gzip. Décision 29.
