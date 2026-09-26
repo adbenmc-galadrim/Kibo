@@ -770,14 +770,14 @@ git commit -m "feat(schema): contrats de la phase agents"
 **Interfaces:**
 - Produces : `bun run start` (build de l'UI puis démon avec `--ui packages/ui/dist`).
 
-- [ ] **Step 1: Ajouter le script**
+- [x] **Step 1: Ajouter le script**
 
 `package.json`, dans `scripts` :
 ```json
     "start": "bun run --cwd packages/ui build && bun packages/daemon/src/main.ts --ui packages/ui/dist",
 ```
 
-- [ ] **Step 2: Mettre à jour le README**
+- [x] **Step 2: Mettre à jour le README**
 
 Remplacer le paragraphe « État » de `README.md` par :
 ~~~markdown
@@ -795,12 +795,12 @@ Développement de l'UI : `bun packages/daemon/src/main.ts --dev` puis `bun run -
 Tests : `bun test packages components`, `bun run check`, `bun run typecheck`, E2E : `bun run --cwd e2e test`.
 ~~~
 
-- [ ] **Step 3: Vérifier**
+- [x] **Step 3: Vérifier**
 
 Run: `bun run start` (dans un dossier `KIBO_HOME=$(mktemp -d)` pour ne pas toucher `~/.kibo`), attendre la ligne `KIBO_READY http://127.0.0.1:4317/#pair=…`, l'ouvrir, puis `Ctrl-C`.
 Expected: l'UI s'affiche appairée ; le démon s'arrête proprement.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add package.json README.md
