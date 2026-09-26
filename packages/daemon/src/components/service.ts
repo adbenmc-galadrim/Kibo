@@ -3,6 +3,7 @@ import { listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
 import { type Instance, KiboError, type TicketRun, type ValidationReport } from "@kibo/schema";
 import type { Docs } from "../docs";
+import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
@@ -34,6 +35,7 @@ export type ComponentsDeps = {
   validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
   processCommand?: string[];
   net?: NetProxyOptions;
+  integrations?: () => ComponentIntegrationHooks | null;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -107,6 +109,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       backends: () => backends,
       runs: deps.runs,
       ...(deps.net && { net: deps.net }),
+      ...(deps.integrations && { integrations: deps.integrations }),
     }),
   });
 

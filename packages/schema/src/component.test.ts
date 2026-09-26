@@ -8,6 +8,7 @@ import {
   compareSemver,
   configDefaults,
   diffPermissions,
+  GrantedPermissions,
   grantedOf,
   isActive,
   isSafeNotePath,
@@ -125,6 +126,13 @@ describe("permissions", () => {
       "net:api.github.com/graphql",
     ]);
     expect(addedPermissions(null, before)).toEqual(["read:ticket"]);
+  });
+  test("a granted secret is a new permission, older grants read back without any", () => {
+    const old = GrantedPermissions.parse({ reads: ["ticket"], writes: [], data: false, net: [] });
+    expect(old.secrets).toEqual([]);
+    const next = grantedOf({ ...m, secrets: [{ name: "github", hosts: ["api.github.com"] }] });
+    expect(next.secrets).toEqual([{ name: "github", hosts: ["api.github.com"] }]);
+    expect(addedPermissions(grantedOf(m), next)).toEqual(["secret:github"]);
   });
   test("reserved commands write nothing a component can declare", () => {
     expect(COMMAND_WRITES.setInstanceData).toBeNull();

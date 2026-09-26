@@ -69,7 +69,7 @@ export async function secretFor(
 ): Promise<string | null> {
   const entry = secrets.find((s) => s.hosts.includes(url.hostname));
   if (!entry || url.protocol !== "https:" || !covered(url)) return null;
-  return resolve(entry.name);
+  return (await resolve(entry.name)) || null;
 }
 
 function outgoing(init: Record<string, string> | undefined, bearer: string | null): Record<string, string> {

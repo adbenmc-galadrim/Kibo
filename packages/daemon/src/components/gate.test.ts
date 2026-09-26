@@ -18,6 +18,7 @@ const granted: GrantedPermissions = {
   writes: [],
   data: true,
   net: ["api.github.com/graphql"],
+  secrets: [],
 };
 const instances: Record<string, Instance> = {
   thirdparty: {
@@ -69,8 +70,8 @@ function gate(quotas = createQuotas()) {
         list: handler("list"),
         run: handler("run"),
         data: handler("data"),
-        fetch: async (rules) => {
-          handled.push(`fetch:${rules === null ? "any" : rules.join(",")}`);
+        fetch: async (grant) => {
+          handled.push(`fetch:${grant === null ? "any" : grant.net.join(",")}`);
           return { status: 200, headers: {}, body: "" };
         },
         action: handler("action"),
@@ -327,4 +328,40 @@ test("NOT_FOUND is journaled only when the instance itself is missing", async ()
   });
   await refused(missing.call("p1", "thirdparty", { kind: "list", entity: "ticket" }), "NOT_FOUND");
   expect(events.list()).toEqual([]);
+});
+
+test("the granted secrets reach the fetch handler of a sandboxed component only", async () => {
+  const seen: unknown[] = [];
+  const secrets = [{ name: "github" as const, hosts: ["api.github.com"] }];
+  const eventsDb = new Database(":memory:");
+  ensureEventsTable(eventsDb);
+  const g = createGate({
+    instance: (_p, id) => {
+      const i = instances[id];
+      if (!i) throw new KiboError("NOT_FOUND", `instance ${id}`);
+      return i;
+    },
+    active: (ref) => ({ ref, trust: "sandboxed", granted: { ...granted, secrets } }),
+    handlers: {
+      list: async () => [],
+      run: async () => null,
+      data: async () => null,
+      fetch: async (grant) => {
+        seen.push(grant);
+        return { status: 200, headers: {}, body: "" };
+      },
+      action: async () => null,
+      notes: async () => null,
+    },
+    quotas: createQuotas(),
+    events: createEventLog(eventsDb, () => 42),
+  });
+  const call: ComponentCall = {
+    kind: "fetch",
+    url: "https://api.github.com/graphql",
+    init: { method: "GET", headers: {} },
+  };
+  await g.call("p", "thirdparty", call);
+  await g.call("p", "builtin", call);
+  expect(seen).toEqual([{ net: ["api.github.com/graphql"], secrets }, null]);
 });

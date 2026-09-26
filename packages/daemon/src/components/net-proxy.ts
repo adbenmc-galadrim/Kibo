@@ -1,4 +1,12 @@
-import { type FetchInit, type FetchResponse, KiboError, ruleCovers } from "@kibo/schema";
+import {
+  type ComponentManifest,
+  type FetchInit,
+  type FetchResponse,
+  KiboError,
+  ruleCovers,
+} from "@kibo/schema";
+import { secretFor, transportUrl } from "../integrations/net";
+import type { ComponentIntegrationHooks } from "../integrations/types";
 import {
   bareHost,
   checkedAddress,
@@ -20,7 +28,11 @@ export {
 } from "./net-proxy-address";
 export type { Transport, TransportInit } from "./net-proxy-transport";
 
+export type ProxyHooks = Pick<ComponentIntegrationHooks, "aliases" | "observe" | "secret">;
 export type NetProxyOptions = {
+  hooks?: ProxyHooks;
+  secrets?: ComponentManifest["secrets"];
+  aliasFetch?: typeof fetch;
   resolve?: Resolver;
   transport?: Transport;
   allowAddress?: (ip: string) => boolean;
@@ -73,6 +85,33 @@ function checkedUrl(rules: readonly string[] | null, url: string): URL {
   return u;
 }
 
+type Hop = { method: string; headers: Record<string, string>; body: string | undefined; signal: AbortSignal };
+
+async function send(opts: NetProxyOptions, current: URL, hop: Hop): Promise<Response> {
+  const { target, aliased } = transportUrl(current, opts.hooks?.aliases ?? new Map());
+  if (aliased) return (opts.aliasFetch ?? fetch)(target, { ...hop, redirect: "manual" });
+  const allow = opts.allowAddress ?? isPublicAddress;
+  const address = await checkedAddress(current, opts.resolve ?? systemResolver, allow, hop.signal);
+  const pinned = pinnedRequest(current, address);
+  return (opts.transport ?? directTransport)(pinned.url, {
+    ...hop,
+    headers: { ...hop.headers, host: pinned.host },
+    redirect: "manual",
+    tls: pinned.tls,
+  });
+}
+
+function injectedSecret(
+  opts: NetProxyOptions,
+  rules: readonly string[] | null,
+  current: URL,
+): Promise<string | null> {
+  const hooks = opts.hooks;
+  if (!hooks) return Promise.resolve(null);
+  const covered = (u: URL) => rules === null || rules.some((rule) => ruleCovers(rule, u.href));
+  return secretFor(current, opts.secrets ?? [], covered, hooks.secret);
+}
+
 function redirectTarget(location: string, current: URL): URL {
   if (!URL.canParse(location, current.href))
     throw new KiboError("PERMISSION_DENIED", "invalid redirect location");
@@ -93,9 +132,6 @@ export async function proxyFetch(
   init: FetchInit,
   opts: NetProxyOptions = {},
 ): Promise<FetchResponse> {
-  const resolve = opts.resolve ?? systemResolver;
-  const transport = opts.transport ?? directTransport;
-  const allow = opts.allowAddress ?? isPublicAddress;
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const signal = AbortSignal.timeout(opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   let current = checkedUrl(rules, url);
@@ -104,19 +140,17 @@ export async function proxyFetch(
   let body = init.body;
   try {
     for (let hop = 0; ; hop += 1) {
-      const address = await checkedAddress(current, resolve, allow, signal);
-      const pinned = pinnedRequest(current, address);
-      const res = await transport(pinned.url, {
+      const bearer = await injectedSecret(opts, rules, current);
+      const res = await send(opts, current, {
         method,
-        headers: { ...headers, host: pinned.host },
+        headers: bearer === null ? headers : { ...headers, authorization: `Bearer ${bearer}` },
         body,
-        redirect: "manual",
         signal,
-        tls: pinned.tls,
       });
+      opts.hooks?.observe(bareHost(current), res.headers);
       const location = res.headers.get("location");
       if (res.status < 300 || res.status >= 400 || location === null) {
-        return await readProxiedBody(res, opts.maxBytes ?? DEFAULT_MAX_BYTES);
+        return await readProxiedBody(res, opts.maxBytes ?? DEFAULT_MAX_BYTES, bearer);
       }
       await res.body?.cancel();
       if (hop >= maxRedirects) throw new KiboError("PERMISSION_DENIED", "too many redirects");

@@ -18,6 +18,7 @@ import {
 import type { EventLog } from "./events";
 import type { Quotas } from "./quotas";
 
+export type FetchGrant = { net: readonly string[]; secrets: GrantedPermissions["secrets"] };
 export type ActiveVersion = { ref: string; trust: "trusted" | "sandboxed"; granted: GrantedPermissions };
 export type DataCall = Extract<
   ComponentCall,
@@ -31,7 +32,7 @@ export type GateHandlers = {
   list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
   run(projectId: string, instanceId: string, command: ProjectCommand): Promise<unknown>;
   data(projectId: string, instanceId: string, call: DataCall): Promise<unknown>;
-  fetch(rules: readonly string[] | null, url: string, init: FetchInit): Promise<FetchResponse>;
+  fetch(grant: FetchGrant | null, url: string, init: FetchInit): Promise<FetchResponse>;
   action(
     ref: string,
     projectId: string,
@@ -71,7 +72,7 @@ function dispatch(
   h: GateHandlers,
   projectId: string,
   inst: Instance,
-  rules: readonly string[] | null,
+  grant: FetchGrant | null,
   call: ComponentCall,
 ): Promise<unknown> {
   switch (call.kind) {
@@ -87,7 +88,7 @@ function dispatch(
     case "data.keys":
       return h.data(projectId, inst.id, call);
     case "fetch":
-      return h.fetch(rules, call.url, call.init);
+      return h.fetch(grant, call.url, call.init);
     case "action":
       return h.action(inst.component, projectId, inst.id, inst.config, call.name, call.input);
     default:
@@ -95,12 +96,12 @@ function dispatch(
   }
 }
 
-function netRules(deps: GateDeps, ref: string, call: ComponentCall): readonly string[] | null {
+function fetchGrant(deps: GateDeps, ref: string, call: ComponentCall): FetchGrant | null {
   if (isBuiltinId(splitRef(ref).id)) return null;
   const active = deps.active(ref);
   const missing = missingPermission(active.granted, call);
   if (missing) throw new KiboError("PERMISSION_DENIED", `${ref} was not granted ${missing}`);
-  return active.granted.net;
+  return { net: active.granted.net, secrets: active.granted.secrets };
 }
 
 function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: ComponentCall): void {
@@ -139,9 +140,9 @@ export function createGate(deps: GateDeps): Gate {
         if (call.kind === "run" && isReservedCommand(call.command.method)) {
           throw new KiboError("PERMISSION_DENIED", `${call.command.method} is not available to components`);
         }
-        const rules = netRules(deps, ref, call);
+        const grant = fetchGrant(deps, ref, call);
         takeQuotas(deps.quotas, instanceId, ref, call);
-        return await dispatch(deps.handlers, projectId, inst, rules, call);
+        return await dispatch(deps.handlers, projectId, inst, grant, call);
       } catch (e) {
         journal(e, located, projectId, instanceId, ref, call);
         throw e;

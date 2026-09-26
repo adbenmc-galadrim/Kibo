@@ -20,6 +20,7 @@ test("writes, notes and network are spelled out", () => {
       writes: ["ticket", "note"],
       data: false,
       net: ["api.github.com/graphql"],
+      secrets: [],
     }),
   ).toEqual([
     ["Lire les données du projet", "entités : page"],

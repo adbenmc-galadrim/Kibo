@@ -100,6 +100,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     ...(opts.validate && { validate: opts.validate }),
     ...(opts.processCommand && { processCommand: opts.processCommand }),
     ...(opts.net && { net: opts.net }),
+    integrations: () => integrations.hooks,
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });

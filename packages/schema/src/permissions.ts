@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ComponentCall } from "./call";
 import { COMMAND_WRITES } from "./command";
-import { BuiltinEntityType, type ComponentManifest } from "./manifest";
+import { BuiltinEntityType, ComponentManifest } from "./manifest";
 import { NetRule, ruleCovers } from "./net";
 
 export const GrantedPermissions = z.object({
@@ -9,17 +9,30 @@ export const GrantedPermissions = z.object({
   writes: z.array(BuiltinEntityType),
   data: z.boolean(),
   net: z.array(NetRule),
+  secrets: ComponentManifest.shape.secrets,
 });
 export type GrantedPermissions = z.infer<typeof GrantedPermissions>;
 
-export const NO_PERMISSIONS: GrantedPermissions = { reads: [], writes: [], data: false, net: [] };
+export const NO_PERMISSIONS: GrantedPermissions = {
+  reads: [],
+  writes: [],
+  data: false,
+  net: [],
+  secrets: [],
+};
 
 const unique = <T>(xs: T[]): T[] => [...new Set(xs)];
 
 export function grantedOf(
-  m: Pick<ComponentManifest, "reads" | "writes" | "data" | "net">,
+  m: Pick<ComponentManifest, "reads" | "writes" | "data" | "net" | "secrets">,
 ): GrantedPermissions {
-  return { reads: unique(m.reads), writes: unique(m.writes), data: m.data, net: unique(m.net) };
+  return {
+    reads: unique(m.reads),
+    writes: unique(m.writes),
+    data: m.data,
+    net: unique(m.net),
+    secrets: m.secrets,
+  };
 }
 
 export function permissionList(g: GrantedPermissions): string[] {
@@ -28,6 +41,7 @@ export function permissionList(g: GrantedPermissions): string[] {
     ...g.writes.map((e) => `write:${e}`),
     ...(g.data ? ["data"] : []),
     ...g.net.map((r) => `net:${r}`),
+    ...g.secrets.map((s) => `secret:${s.name}`),
   ];
 }
 

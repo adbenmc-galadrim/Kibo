@@ -1,6 +1,7 @@
 import { readInstanceData, readProject, writeInstanceData } from "@kibo/core";
 import type { TicketRun } from "@kibo/schema";
 import type { Docs } from "../docs";
+import type { ComponentIntegrationHooks } from "../integrations/types";
 import type { NotesService } from "../notes/service";
 import type { Backends } from "./backends";
 import type { DataCall, GateHandlers } from "./gate";
@@ -12,6 +13,7 @@ export type GateHandlersDeps = {
   backends: () => Backends;
   runs(projectId: string): TicketRun[];
   net?: NetProxyOptions;
+  integrations?: () => ComponentIntegrationHooks | null;
 };
 
 function readData(docs: Docs, projectId: string, instanceId: string, call: DataCall): unknown {
@@ -42,7 +44,14 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       changed(projectId);
       return null;
     },
-    fetch: (rules, url, init) => proxyFetch(rules, url, init, deps.net),
+    fetch: (grant, url, init) => {
+      const hooks = deps.integrations?.() ?? null;
+      return proxyFetch(grant?.net ?? null, url, init, {
+        ...deps.net,
+        ...(hooks && { hooks }),
+        ...(grant && { secrets: grant.secrets }),
+      });
+    },
     action: (ref, projectId, instanceId, config, name, input) =>
       deps.backends().action(ref, { projectId, instanceId, config, name, input }),
     notes: (projectId, call) => deps.notes.handle(projectId, call),
