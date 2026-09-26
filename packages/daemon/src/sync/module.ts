@@ -36,8 +36,7 @@ export function syncModule(
           runner: host.user,
         };
         host.command(req.projectId, { method: "addBinding", binding }, { origin: "user", instanceId: null });
-        const firstCycleLogsItsOwnFailure = engine.cycle(req.projectId, binding.id);
-        void firstCycleLogsItsOwnFailure.catch(() => undefined);
+        engine.cycle(req.projectId, binding.id).catch(() => undefined);
         return binding;
       },
       async deleteBinding(req) {

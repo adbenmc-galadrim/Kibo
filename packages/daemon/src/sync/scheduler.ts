@@ -6,10 +6,8 @@ export function startSyncScheduler(engine: SyncEngine, events: EventLog, interva
   const report = (e: unknown) =>
     events.log("github-issues", "error", e instanceof Error ? e.message : String(e));
   const tick = () => {
-    for (const { projectId, bindingId } of engine.runnable()) {
-      const cycleLogsItsOwnFailure = engine.cycle(projectId, bindingId);
-      void cycleLogsItsOwnFailure.catch(() => undefined);
-    }
+    for (const { projectId, bindingId } of engine.runnable())
+      engine.cycle(projectId, bindingId).catch(() => undefined);
   };
   const interval = setInterval(tick, intervalMs);
   return {

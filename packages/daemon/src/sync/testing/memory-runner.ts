@@ -1,7 +1,14 @@
 import { type Binding, KiboError, type MappedRemote, type PushOp, type SyncedFields } from "@kibo/schema";
 import type { AdapterRunner } from "../../integrations/types";
 
-type Issue = { number: number; fields: SyncedFields; updatedAt: string; labels: string[]; gone: boolean };
+type Issue = {
+  number: number;
+  fields: SyncedFields;
+  createdAt: string;
+  updatedAt: string;
+  labels: string[];
+  gone: boolean;
+};
 export type MemoryRunner = AdapterRunner & {
   issues: Map<number, Issue>;
   pulls: number;
@@ -29,6 +36,16 @@ export function createMemoryRunner(clock: { now: number }): MemoryRunner {
       url: `https://github.com/${b.config.repo}/issues/${i.number}`,
     },
   });
+  const adoptable = (fields: SyncedFields, since: string | null): Issue | null =>
+    since === null
+      ? null
+      : ([...r.issues.values()].find(
+          (i) =>
+            !i.gone &&
+            i.createdAt >= since &&
+            i.fields.title === fields.title &&
+            i.fields.description === fields.description,
+        ) ?? null);
   const maybeFail = () => {
     if (!failures) return;
     failures.times -= 1;
@@ -52,6 +69,7 @@ export function createMemoryRunner(clock: { now: number }): MemoryRunner {
           statusId,
           closed: statusId === "done",
         },
+        createdAt: iso(),
         updatedAt: iso(),
         labels,
         gone: false,
@@ -86,7 +104,7 @@ export function createMemoryRunner(clock: { now: number }): MemoryRunner {
     async push(_projectId, binding, op) {
       r.pushes.push(op);
       maybeFail();
-      if (op.kind === "create") return mapped(binding, r.add(op.fields));
+      if (op.kind === "create") return mapped(binding, adoptable(op.fields, op.since) ?? r.add(op.fields));
       const issue = r.issues.get(Number(op.remoteId));
       if (!issue || issue.gone) throw new KiboError("REMOTE_NOT_FOUND", `issue ${op.remoteId}`);
       r.edit(issue.number, op.patch);

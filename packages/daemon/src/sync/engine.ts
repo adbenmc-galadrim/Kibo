@@ -22,6 +22,7 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
   const flushBinding = createFlusher(deps);
   const running = new Map<string, Promise<unknown>>();
   const waitingCycles = new Map<string, Promise<SyncReport>>();
+  const waitingFlushes = new Map<string, Promise<void>>();
   const bindingOf = (projectId: string, bindingId: string): Binding => {
     const b = host.snapshot(projectId).bindings.find((x) => x.id === bindingId);
     if (!b) throw new KiboError("NOT_FOUND", `binding ${bindingId} not found`);
@@ -44,6 +45,20 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
       if (running.get(bindingId) === next) running.delete(bindingId);
     };
     next.then(clear, clear);
+    return next;
+  };
+  const coalesce = <T>(
+    waiting: Map<string, Promise<T>>,
+    bindingId: string,
+    run: () => Promise<T>,
+  ): Promise<T> => {
+    const queued = waiting.get(bindingId);
+    if (queued) return queued;
+    const next = single(bindingId, () => {
+      waiting.delete(bindingId);
+      return run();
+    });
+    waiting.set(bindingId, next);
     return next;
   };
 
@@ -100,18 +115,11 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
   };
 
   return {
-    cycle(projectId, bindingId) {
-      const waiting = waitingCycles.get(bindingId);
-      if (waiting) return waiting;
-      const next = single(bindingId, () => {
-        waitingCycles.delete(bindingId);
-        return runCycle(projectId, bindingId);
-      });
-      waitingCycles.set(bindingId, next);
-      return next;
-    },
+    cycle: (projectId, bindingId) => coalesce(waitingCycles, bindingId, () => runCycle(projectId, bindingId)),
     flush: (projectId, bindingId) =>
-      single(bindingId, () => flushBinding(projectId, bindingOf(projectId, bindingId), emptyReport())),
+      coalesce(waitingFlushes, bindingId, () =>
+        flushBinding(projectId, bindingOf(projectId, bindingId), emptyReport()),
+      ),
     state(projectId) {
       const snap = host.snapshot(projectId);
       return {

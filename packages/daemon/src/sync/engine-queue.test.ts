@@ -20,6 +20,15 @@ test("at most one cycle waits per binding: later calls share it", async () => {
   expect(f.remote.pulls).toBeLessThanOrEqual(2);
 });
 
+test("at most one flush waits per binding: later calls share it", async () => {
+  const flush = () => f.engine.flush(f.host.projectId, "b1");
+  const running = cycle();
+  const second = flush();
+  const third = flush();
+  expect(third).toBe(second);
+  await Promise.all([running, second, third]);
+});
+
 test("a paused rate limit holds the outbox without spending attempts", async () => {
   f.remote.add({ title: "A" });
   await cycle();
