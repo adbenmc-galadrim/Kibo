@@ -38,6 +38,19 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@theme {
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 0.875rem;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-md: 0.875rem;
+  --text-md--line-height: 1.25rem;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.75rem;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -112,7 +125,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground text-sm;
   }
 }
 
