@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import type { Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
+import type { CiRun, Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
 import { AgentBadge } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
@@ -13,15 +13,25 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { fr } from "./fr";
 
+const CI_DOT = { ok: "bg-emerald-500", error: "bg-red-500", running: "bg-amber-500" } as const;
+
+function ciTone(run: Pick<CiRun, "status" | "conclusion">): keyof typeof CI_DOT {
+  if (run.status !== "completed") return "running";
+  return run.conclusion === "success" || run.conclusion === "skipped" || run.conclusion === "neutral"
+    ? "ok"
+    : "error";
+}
+
 type Props = {
   ticket: TicketView;
   run: TicketRun | null;
+  ci?: CiRun;
   statuses: Status[];
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
 };
 
-export function KanbanCard({ ticket: t, run, statuses, onOpen, onMove }: Props) {
+export function KanbanCard({ ticket: t, run, ci, statuses, onOpen, onMove }: Props) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: t.id });
   const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
   return (
@@ -66,6 +76,19 @@ export function KanbanCard({ ticket: t, run, statuses, onOpen, onMove }: Props) 
             {fr.waitingOn(k)}
           </Badge>
         ))}
+        {ci && (
+          <span
+            title={fr.ci[ciTone(ci)]}
+            className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-3xs"
+          >
+            <span
+              role="img"
+              aria-label={fr.ci[ciTone(ci)]}
+              className={`size-2 rounded-full ${CI_DOT[ciTone(ci)]}`}
+            />
+            {ci.prNumber !== null && `#${ci.prNumber}`}
+          </span>
+        )}
         {t.progress.total > 0 && (
           <span className="ml-auto font-mono text-3xs text-muted-foreground">{`${t.progress.done}/${t.progress.total}`}</span>
         )}

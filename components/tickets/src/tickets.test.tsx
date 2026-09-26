@@ -71,3 +71,29 @@ test("an agent assignee shows the state of its run", async () => {
   expect(badge?.textContent).toBe("opus-dev-2· Attend");
   expect(badge?.querySelector("[data-state]")?.getAttribute("data-state")).toBe("waiting_input");
 });
+
+const issueRef = {
+  kind: "github_issue" as const,
+  bindingId: "b1",
+  repo: "adam/kibo",
+  number: 1,
+  nodeId: "I_1",
+  url: "https://github.com/adam/kibo/issues/1",
+};
+const syncedSeed = (run: (cmd: ProjectCommand) => unknown) => {
+  const a = run({ method: "importExternalTicket", title: "Issue synchronisée", ref: issueRef }) as Ticket;
+  run({ method: "createTicket", title: "Sous-tâche locale", parentId: a.id });
+  run({ method: "createTicket", title: "Ticket local" });
+};
+
+test("a synced tree shows only the binding's tickets and their sub-tickets", async () => {
+  const m = createMockSdk(manifest, { seed: syncedSeed, config: { source: { bindingId: "b1" } } });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
+  expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
+  expect(screen.queryByText("Ticket local")).toBeNull();
+});

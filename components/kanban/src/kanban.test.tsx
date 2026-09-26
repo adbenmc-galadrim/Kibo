@@ -1,9 +1,16 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/schema";
+import {
+  type CiRun,
+  KiboError,
+  type ProjectCommand,
+  type ProjectSnapshot,
+  type Ticket,
+  type TicketRun,
+} from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -78,7 +85,7 @@ test("the column '+' asks the host for a new ticket in that status", async () =>
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Nouveau ticket dans En cours" }));
-  expect(m.newTicketRequests).toEqual([{ statusId: "in_progress" }]);
+  expect(m.newTicketRequests).toEqual([{ statusId: "in_progress", instanceId: "mock-instance" }]);
 });
 
 const setupFailing = () => {
@@ -123,4 +130,84 @@ test("an agent's card shows its run: neutral badge, state dot and short state", 
   expect((await badge("· En file #2"))?.textContent).toBe("opus-dev· En file #2");
   const done = await badge("sonnet-review");
   expect(done?.querySelector("[data-state]")).toBeNull();
+});
+
+const issueRef = (n: number) => ({
+  kind: "github_issue" as const,
+  bindingId: "b1",
+  repo: "adam/kibo",
+  number: n,
+  nodeId: `I_${n}`,
+  url: `https://github.com/adam/kibo/issues/${n}`,
+});
+const syncedSeed = (run: (cmd: ProjectCommand) => unknown) => {
+  const a = run({ method: "importExternalTicket", title: "Issue synchronisée", ref: issueRef(1) }) as Ticket;
+  run({ method: "createTicket", title: "Sous-tâche locale", parentId: a.id });
+  run({ method: "createTicket", title: "Ticket local", assignee: { kind: "human", ref: "adam" } });
+  const b = run({ method: "importExternalTicket", title: "Avec PR", ref: issueRef(2) }) as Ticket;
+  run({
+    method: "upsertExternalRef",
+    ticketId: b.id,
+    ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+  });
+};
+const ciRun = (overrides: Partial<CiRun>): CiRun => ({
+  repo: "adam/kibo",
+  runId: 900,
+  prNumber: 12,
+  ticketKey: "KIB-4",
+  headSha: "abc",
+  workflow: "CI",
+  status: "completed",
+  conclusion: "failure",
+  url: "https://github.com/adam/kibo/actions/runs/900",
+  startedAt: null,
+  updatedAt: "2026-09-26T10:03:12Z",
+  jobs: [],
+  ...overrides,
+});
+
+const renderSynced = (
+  sdkOverride?: (m: ReturnType<typeof createMockSdk>) => ReturnType<typeof createMockSdk>["sdk"],
+) => {
+  const m = createMockSdk(manifest, {
+    seed: syncedSeed,
+    viewer: "adam",
+    config: { source: { bindingId: "b1" } },
+    ciRuns: [ciRun({ runId: 899, conclusion: "success", updatedAt: "2026-09-26T09:00:00Z" }), ciRun({})],
+  });
+  render(
+    <SdkProvider sdk={sdkOverride ? sdkOverride(m) : m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return m;
+};
+
+test("a synced Kanban shows only the binding's tickets, on the 'all' filter", async () => {
+  renderSynced();
+  expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
+  expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
+  expect(screen.queryByText("Ticket local")).toBeNull();
+  expect(screen.getByText("3 / 3 tickets")).toBeTruthy();
+  const chip = await screen.findByLabelText("CI cassée");
+  expect(chip.parentElement?.textContent).toBe("#12");
+  expect(screen.queryByLabelText("CI réussie")).toBeNull();
+});
+
+test("an unavailable CI is stated, a missing GitHub account is not", async () => {
+  renderSynced((m) => ({
+    ...m.sdk,
+    list: (type) =>
+      type === "ci_run" ? Promise.reject(new KiboError("REMOTE_UNAVAILABLE", "timeout")) : m.sdk.list(type),
+  }));
+  expect((await screen.findByRole("alert")).textContent).toBe("CI indisponible : timeout");
+  cleanup();
+  renderSynced((m) => ({
+    ...m.sdk,
+    list: (type) =>
+      type === "ci_run" ? Promise.reject(new KiboError("NOT_CONNECTED", "github")) : m.sdk.list(type),
+  }));
+  expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
+  expect(screen.queryByRole("alert")).toBeNull();
 });

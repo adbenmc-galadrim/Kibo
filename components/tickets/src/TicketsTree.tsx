@@ -1,5 +1,5 @@
 import type { Assignee, Status, TicketRun } from "@kibo/schema";
-import { AgentBadge, StatusDot, useEntities, useSdk } from "@kibo/sdk";
+import { AgentBadge, filterBySource, readSource, StatusDot, useEntities, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
@@ -41,7 +41,8 @@ function AssigneeCell({ assignee, run }: { assignee: Assignee | null; run: Ticke
 
 export function TicketsTree() {
   const sdk = useSdk();
-  const { data: tickets, loading } = useEntities("ticket");
+  const { data: all, loading } = useEntities("ticket");
+  const tickets = filterBySource(all, readSource(sdk.config));
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));

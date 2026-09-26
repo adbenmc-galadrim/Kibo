@@ -4,7 +4,7 @@
   "kind": "both",
   "title": "Kanban",
   "description": "Tickets par statut, glisser-déposer",
-  "reads": ["ticket", "status", "run"],
+  "reads": ["ticket", "status", "run", "ci_run"],
   "writes": ["ticket"],
   "configSchema": { "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" } }
 }

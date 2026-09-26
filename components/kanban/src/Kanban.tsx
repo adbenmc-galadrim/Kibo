@@ -1,6 +1,6 @@
 import { DndContext, type DragEndEvent, useDroppable } from "@dnd-kit/core";
-import type { Status, StatusId, TicketView } from "@kibo/schema";
-import { StatusDot, useEntities, useSdk } from "@kibo/sdk";
+import type { CiRun, Status, StatusId, TicketView } from "@kibo/schema";
+import { filterBySource, readSource, StatusDot, useEntities, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -53,10 +53,18 @@ export function Kanban() {
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
-  const [filter, setFilter] = useState<KanbanFilter>(sdk.config.filter === "all" ? "all" : "mine-and-agents");
+  const source = readSource(sdk.config);
+  const { data: ciRuns, error: ciError } = useEntities("ci_run");
+  const [filter, setFilter] = useState<KanbanFilter>(
+    source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
+  );
   const [blocking, setBlocking] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const shown = filterTickets(tickets, filter, sdk.viewer);
+  const scoped = filterBySource(tickets, source);
+  const shown = filterTickets(scoped, filter, sdk.viewer);
+  const ciOf = (t: TicketView): CiRun | undefined =>
+    ciRuns.filter((r) => r.ticketKey === t.key).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
 
   const setStatus = async (t: TicketView, statusId: StatusId, reason?: string): Promise<boolean> => {
@@ -98,8 +106,13 @@ export function Kanban() {
             {error}
           </p>
         )}
+        {ciProblem && (
+          <p role="alert" className="truncate text-destructive">
+            {fr.ciUnavailable(ciProblem)}
+          </p>
+        )}
         <span className="ml-auto font-mono text-xs text-muted-foreground">
-          {fr.counter(shown.length, tickets.length)}
+          {fr.counter(shown.length, scoped.length)}
         </span>
       </header>
       <DndContext onDragEnd={onDragEnd}>
@@ -118,6 +131,7 @@ export function Kanban() {
                     key={t.id}
                     ticket={t}
                     run={runOf.get(t.id) ?? null}
+                    ci={ciOf(t)}
                     statuses={ordered}
                     onOpen={() => sdk.openTicket(t.id)}
                     onMove={(id) => move(t, id)}
