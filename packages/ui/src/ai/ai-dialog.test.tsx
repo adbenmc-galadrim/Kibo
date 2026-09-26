@@ -83,7 +83,8 @@ test("step 3 failure: report, incidents, retry; exhausted: code fallback only", 
       incidents: [{ kind: "restored", path: "kibo.component.json" }],
     });
   const { unmount } = render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
-  expect(await screen.findByText("kibo.component.json restauré (fichier réservé à Kibo)")).toBeTruthy();
+  const incident = await screen.findByText("kibo.component.json restauré (fichier réservé à Kibo)");
+  expect(incident.className).not.toContain("font-mono");
   const user = userEvent.setup();
   await user.click(await retryButton());
   expect(calls.find((c) => c.method === "retryComponentDraft")).toEqual({

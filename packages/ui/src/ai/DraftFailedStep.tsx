@@ -28,7 +28,7 @@ export function DraftFailedStep({
           className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
         >
           <TriangleAlert aria-hidden />
-          <AlertTitle className="font-mono text-xs">{fr.ai.incident[i.kind](i.path)}</AlertTitle>
+          <AlertTitle>{fr.ai.incident[i.kind](i.path)}</AlertTitle>
         </Alert>
       ))}
       {exhausted && (
