@@ -87,7 +87,12 @@ describe("remote access lifecycle", () => {
 
   test("a provided full chain is served and fingerprinted by its leaf", async () => {
     const leaf = await generateSelfSignedCert({ commonName: "Kibo", dns: [], ips: ["127.0.0.1"], days: 30 });
-    const other = await generateSelfSignedCert({ commonName: "CA", dns: [], ips: [], days: 30 });
+    const other = await generateSelfSignedCert({
+      commonName: "CA",
+      dns: ["ca.kibo.test"],
+      ips: [],
+      days: 30,
+    });
     const certFile = join(f.home, "fullchain.pem");
     const keyFile = join(f.home, "key.pem");
     writeFileSync(certFile, leaf.certPem + other.certPem);
