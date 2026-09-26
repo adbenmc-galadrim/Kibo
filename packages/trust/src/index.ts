@@ -5,6 +5,7 @@ export * from "./ed25519";
 export * from "./http-signing";
 export * from "./kpkg";
 export * from "./market-index";
+export * from "./publisher-claim";
 export * from "./source-hash";
 export * from "./verify-package";
 export * from "./x509";
