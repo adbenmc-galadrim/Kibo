@@ -11389,7 +11389,7 @@ Parcours Playwright complet avec le faux `claude`, en sombre et en clair : profi
 - Consumes : l'application complète (Tasks 1 à 24) ; `packages/daemon/src/agents/fake-claude.ts` et `scenarios/question.json` (Task 10) ; option `--claude-bin` du démon (Task 23).
 - Produces : `e2e/agents.spec.ts` (projets Playwright `dark` et `light`) ; captures `ecran-5.png`, `ecran-13.png`, `ecran-14.png`, `ecran-17.png`, `ecran-27.png`, `ecran-28.png` dans le dossier de sortie de chaque test.
 
-- [ ] **Step 1: Démon E2E avec le faux `claude`**
+- [x] **Step 1: Démon E2E avec le faux `claude`**
 
 `e2e/serve.ts` : créer le dossier d'état du faux `claude` et passer l'exécutable au démon :
 ```ts
@@ -11403,7 +11403,7 @@ puis, dans `Bun.spawn`, ajouter `"--claude-bin", join(agents, "fake-claude.ts")`
 ```
 (le reste du fichier est inchangé ; `home` est supprimé à la fin avec l'état du faux `claude`.)
 
-- [ ] **Step 2: Écrire le parcours**
+- [x] **Step 2: Écrire le parcours**
 
 `e2e/agents.spec.ts` :
 ```ts
@@ -11524,12 +11524,12 @@ test("files d'attente, agents et domaines s'affichent", async ({ page }, info) =
 });
 ```
 
-- [ ] **Step 3: Lancer**
+- [x] **Step 3: Lancer**
 
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test`
 Expected: PASS pour `dark` et `light`, parcours MVP compris ; les captures sont dans `e2e/test-results/`.
 
-- [ ] **Step 4: README**
+- [x] **Step 4: README**
 
 Ajouter à `README.md`, après « Lancer » :
 ~~~markdown
