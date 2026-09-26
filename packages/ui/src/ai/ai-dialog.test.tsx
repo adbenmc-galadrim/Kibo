@@ -141,6 +141,28 @@ test("review (create) then permissions then finalize on the current page", async
   await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
 });
 
+test("a finalization refused from a remote session is explained", async () => {
+  answer = (req) => {
+    if (req.method === "finalizeComponentDraft") throw new KiboError("FORBIDDEN", "remote");
+    return details({
+      status: "permissions",
+      diff: [uiDiff],
+      manifest,
+      publish: { ...publish, hash: "3f9a".padEnd(64, "0") },
+    });
+  };
+  const onDone = mock(() => {});
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={onDone} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Autoriser" }));
+  await waitFor(() =>
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
+    ),
+  );
+  expect(onDone).not.toHaveBeenCalled();
+});
+
 test("refusing the approval shows the dialogs again, back to the diff", async () => {
   answer = () =>
     details({
