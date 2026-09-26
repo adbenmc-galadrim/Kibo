@@ -148,6 +148,25 @@ test("agents, rules and derived statuses reach the same observers", () => {
   expect(tickets.map((t) => t.statusId)).toEqual(["done", "done"]);
 });
 
+test("a rule derived from a sync command reaches observers as a user command", () => {
+  const parent = createTicket("Parent");
+  const child = host.command(
+    project.id,
+    { method: "createTicket", title: "Enfant", parentId: parent.id },
+    { origin: "user", instanceId: null },
+  );
+  const seen: CommandEvent[] = [];
+  host.onCommand((e) => seen.push(e));
+  host.command(
+    project.id,
+    { method: "setStatus", ticketId: child.id, statusId: "done" },
+    { origin: "sync", instanceId: null },
+  );
+  const derived = seen.find((e) => e.command.method === "setStatus" && e.command.ticketId === parent.id);
+  expect(seen[0]?.meta).toEqual({ origin: "sync", instanceId: null });
+  expect(derived?.meta).toEqual({ origin: "user", instanceId: null });
+});
+
 test("a failing derived command restores the doc and skips persistence", () => {
   const parent = createTicket("Parent");
   const child = host.command(

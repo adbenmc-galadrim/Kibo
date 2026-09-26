@@ -12,7 +12,7 @@ export type CommandHub = {
 
 export type CommandPath = {
   run(projectId: string, command: ProjectCommand, meta?: CommandMeta): unknown;
-  trigger(projectId: string, trigger: RuleTrigger, meta?: CommandMeta): number;
+  trigger(projectId: string, trigger: RuleTrigger): number;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
 };
@@ -46,15 +46,9 @@ export function createCommandPath(deps: CommandPathDeps): CommandPath {
     done.push({ projectId, command, result, meta });
     return { command, result };
   };
-  const derive = (
-    doc: LoroDoc,
-    projectId: string,
-    trigger: RuleTrigger,
-    meta: CommandMeta,
-    done: CommandEvent[],
-  ) => {
+  const derive = (doc: LoroDoc, projectId: string, trigger: RuleTrigger, done: CommandEvent[]) => {
     for (const command of evaluateRules(readRules(doc), trigger, listTickets(doc)))
-      execute(doc, projectId, command, meta, done);
+      execute(doc, projectId, command, USER_COMMAND, done);
   };
   const restoreAll = (error: unknown, projectIds: Iterable<string>): never => {
     try {
@@ -98,13 +92,13 @@ export function createCommandPath(deps: CommandPathDeps): CommandPath {
       return guarded(projectId, (doc, done) => {
         const { command, result } = execute(doc, projectId, requested, meta, done);
         if (command.method === "setStatus")
-          derive(doc, projectId, { kind: "status_changed", ticketId: command.ticketId }, meta, done);
+          derive(doc, projectId, { kind: "status_changed", ticketId: command.ticketId }, done);
         return result;
       });
     },
-    trigger(projectId, trigger, meta = USER_COMMAND) {
+    trigger(projectId, trigger) {
       return guarded(projectId, (doc, done) => {
-        derive(doc, projectId, trigger, meta, done);
+        derive(doc, projectId, trigger, done);
         return done.length;
       });
     },

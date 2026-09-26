@@ -148,7 +148,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       for (const listener of listeners) listener(message);
     },
     run: (projectId, command, meta) => path.run(projectId, command, meta),
-    trigger: (projectId, trigger, meta) => path.trigger(projectId, trigger, meta),
+    trigger: (projectId, trigger) => path.trigger(projectId, trigger),
   };
   const componentsReady = (): ComponentsPort => {
     if (!components) throw new KiboError("INTERNAL", "components are not ready");

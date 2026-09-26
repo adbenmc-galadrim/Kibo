@@ -19,5 +19,5 @@ export type Docs = {
   save(projectId: string | null): void;
   emit(message: ChangeMessage): void;
   run(projectId: string, command: ProjectCommand, meta?: CommandMeta): unknown;
-  trigger(projectId: string, trigger: RuleTrigger, meta?: CommandMeta): number;
+  trigger(projectId: string, trigger: RuleTrigger): number;
 };
