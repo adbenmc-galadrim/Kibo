@@ -299,6 +299,22 @@ describe("push", () => {
     expect(sameVersion(room.version(), before)).toBe(true);
   });
 
+  test("only an update blob is accepted, never a snapshot", () => {
+    const room = share();
+    const before = room.version();
+    const client = clientOf(room);
+    createTicket(client, { title: "A" });
+    const blobs = [
+      client.export({ mode: "snapshot" }),
+      client.export({ mode: "shallow-snapshot", frontiers: client.oplogFrontiers() }),
+    ];
+    for (const blob of blobs) {
+      expect(rejection(() => room.push(blob, actor(adam, "owner"), NOW)).code).toBe("UPDATE_REJECTED");
+    }
+    expect(sameVersion(room.version(), before)).toBe(true);
+    expect(room.serverSeq()).toBe(0);
+  });
+
   test("a rejected batch leaves the room and the other peers untouched", () => {
     const room = share();
     const forger = clientOf(room);
@@ -374,6 +390,18 @@ describe("history", () => {
   test("diffSince refuses an unreadable version", () => {
     const room = share();
     expect(() => room.diffSince(new Uint8Array(0))).toThrow("INVALID_INPUT");
+  });
+
+  test("a version citing an unknown peer proves nothing about what the client has", () => {
+    const room = share();
+    const client = clientOf(room);
+    createTicket(client, { title: "Hors ligne" });
+    const claimed = new Map(client.oplogVersion().toJSON());
+    for (const peer of docOf(room).oplogVersion().toJSON().keys()) claimed.delete(peer);
+    claimed.set("424242", 1_000_000);
+    const rebuilt = new LoroDoc();
+    rebuilt.import(room.diffSince(VersionVector.parseJSON(claimed).encode()));
+    expect(listTickets(rebuilt)).toEqual(listTickets(docOf(room)));
   });
 
   test("diffSince(null) rebuilds the whole document", () => {

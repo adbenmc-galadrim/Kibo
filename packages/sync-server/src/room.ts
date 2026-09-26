@@ -210,6 +210,9 @@ export class ProjectRoom {
   }
 
   private readCandidate(bytes: Uint8Array): LoroDoc {
+    if (this.updateMode(bytes) !== "update") {
+      throw new RoomReject("UPDATE_REJECTED", "only update blobs are accepted", this.version());
+    }
     const candidate = this.fork();
     let pending: boolean;
     try {
@@ -225,6 +228,14 @@ export class ProjectRoom {
       );
     }
     return candidate;
+  }
+
+  private updateMode(bytes: Uint8Array): string {
+    try {
+      return decodeImportBlobMeta(bytes, true).mode;
+    } catch (e) {
+      throw new RoomReject("UPDATE_REJECTED", `unreadable update: ${String(e)}`, this.version());
+    }
   }
 
   private adopt(candidate: LoroDoc, author: Author, now: number, allocated: Allocation[]): PushResult {
