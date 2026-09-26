@@ -78,6 +78,7 @@ export type PublishedComponent = {
   manifest: ComponentManifest;
   granted: GrantedPermissions;
   origin: ComponentOrigin;
+  hash: string;
 };
 export type ComponentCatalog = {
   entries(): CatalogEntry[];

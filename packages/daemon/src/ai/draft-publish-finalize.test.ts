@@ -107,7 +107,12 @@ describe("finalize", () => {
 
 describe("finalize guards", () => {
   test("a stored hash other than the reviewed one is HASH_MISMATCH and the previous source is restored", async () => {
-    const s = await setup({ mode: "modify", status: "permissions", published, storedHash: "c".repeat(64) });
+    const s = await setup({
+      mode: "modify",
+      status: "permissions",
+      published: { ...published, version: "0.0.9" },
+      storedHash: "c".repeat(64),
+    });
     await expect(s.publisher.finalize(input(hashOf(s.paths.dir)))).rejects.toThrow("HASH_MISMATCH");
     expect(s.approved).toEqual([]);
     expect(s.instances).toEqual([]);

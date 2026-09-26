@@ -45,8 +45,24 @@ const sameBytes = (a: string, b: string) => Buffer.compare(readFileSync(a), read
 const shown = (d: ComponentDraft) => d.status === "review" || d.status === "permissions";
 const fileIn = (root: string, rel: string) => (isSafeFile(join(root, rel)) ? join(root, rel) : null);
 
+async function held<T>(
+  set: Set<string>,
+  key: string,
+  refusal: KiboError,
+  work: () => Promise<T>,
+): Promise<T> {
+  if (set.has(key)) throw refusal;
+  set.add(key);
+  try {
+    return await work();
+  } finally {
+    set.delete(key);
+  }
+}
+
 export function createDraftPublisher(deps: PublishDeps) {
   const busy = new Set<string>();
+  const publishing = new Set<string>();
   const paths = (d: ComponentDraft): DraftPaths => draftPaths(deps.home, d.id);
 
   const apply = (d: ComponentDraft, e: DraftEvent) => {
@@ -56,21 +72,21 @@ export function createDraftPublisher(deps: PublishDeps) {
     return next;
   };
 
-  const exclusive = async <T>(id: string, work: () => Promise<T>): Promise<T> => {
-    if (busy.has(id)) throw new KiboError("INVALID_INPUT", "this draft is already being processed");
-    busy.add(id);
-    try {
-      return await work();
-    } finally {
-      busy.delete(id);
-    }
-  };
+  const exclusive = <T>(id: string, work: () => Promise<T>) =>
+    held(busy, id, new KiboError("INVALID_INPUT", "this draft is already being processed"), work);
 
-  const assertAbovePublished = (d: ComponentDraft, version: string, resuming: boolean) => {
+  const assertAbovePublished = (d: ComponentDraft, version: string, reviewedHash: string | null) => {
     const latest = deps.catalog.latest(d.componentId);
     if (!latest) return;
     const order = compareSemver(version, latest.version);
-    if (order > 0 || (order === 0 && resuming && latest.origin === "ai")) return;
+    if (order > 0) return;
+    if (order === 0 && reviewedHash !== null && latest.origin === "ai") {
+      if (latest.hash === reviewedHash) return;
+      throw new KiboError(
+        "VERSION_EXISTS",
+        `${version} is already published with other sources; review the draft again with a higher version`,
+      );
+    }
     throw new KiboError("INVALID_INPUT", `version must be greater than ${latest.version}`);
   };
 
@@ -148,11 +164,12 @@ export function createDraftPublisher(deps: PublishDeps) {
   const review = (input: ReviewComponentDraftInput) =>
     exclusive(input.draftId, async () => {
       const d = deps.store.get(input.draftId);
-      if (d.status !== "review") throw new KiboError("INVALID_INPUT", `draft is ${d.status}`);
-      assertAbovePublished(d, input.version, false);
+      if (!shown(d)) throw new KiboError("INVALID_INPUT", `draft is ${d.status}`);
+      assertAbovePublished(d, input.version, null);
       const dir = paths(d).dir;
       writeDraftManifest(dir, { ...readDraftManifest(dir), version: input.version, changes: input.changes });
-      apply(d, { type: "reviewed" });
+      if (d.status === "review") apply(d, { type: "reviewed" });
+      else deps.events.publish({ type: "draft.changed", draftId: d.id, status: d.status });
       return details(input.draftId);
     });
 
@@ -174,39 +191,47 @@ export function createDraftPublisher(deps: PublishDeps) {
     }
   };
 
+  const finalizeDraft = async (
+    d: ComponentDraft,
+    input: FinalizeComponentDraftInput,
+  ): Promise<FinalizeResult> => {
+    if (d.status !== "permissions") throw new KiboError("INVALID_INPUT", `draft is ${d.status}`);
+    const p = paths(d);
+    if (readDraftManifest(p.dir).version !== input.version)
+      throw new KiboError("INVALID_INPUT", "version differs from the reviewed one");
+    assertAbovePublished(d, input.version, input.hash);
+    if ((await deps.devkit.hash(p.dir)) !== input.hash)
+      throw new KiboError("HASH_MISMATCH", "the draft changed since review");
+    if (input.target && !deps.projects.pageExists(input.target.projectId, input.target.pageId))
+      throw new KiboError("NOT_FOUND", "target page not found");
+    await checkSource(d, p, deps.catalog.sourceDir(d.componentId), input.hash);
+    const publish = await publishInstalled(d, p, input);
+    const version =
+      publish.needsApproval || publish.version.trust !== input.trust
+        ? await deps.catalog.approve({
+            id: d.componentId,
+            version: publish.version.version,
+            hash: publish.version.hash,
+            trust: input.trust,
+          })
+        : publish.version;
+    const instance = input.target
+      ? await deps.projects.addInstance(
+          input.target.projectId,
+          input.target.pageId,
+          formatRef(d.componentId, version.version),
+        )
+      : null;
+    apply(d, { type: "finalized" });
+    removeDraft(p);
+    return { publish, version, instanceId: instance?.id ?? null };
+  };
+
   const finalize = (input: FinalizeComponentDraftInput): Promise<FinalizeResult> =>
-    exclusive(input.draftId, async () => {
+    exclusive(input.draftId, () => {
       const d = deps.store.get(input.draftId);
-      if (d.status !== "permissions") throw new KiboError("INVALID_INPUT", `draft is ${d.status}`);
-      const p = paths(d);
-      if (readDraftManifest(p.dir).version !== input.version)
-        throw new KiboError("INVALID_INPUT", "version differs from the reviewed one");
-      assertAbovePublished(d, input.version, true);
-      if ((await deps.devkit.hash(p.dir)) !== input.hash)
-        throw new KiboError("HASH_MISMATCH", "the draft changed since review");
-      if (input.target && !deps.projects.pageExists(input.target.projectId, input.target.pageId))
-        throw new KiboError("NOT_FOUND", "target page not found");
-      await checkSource(d, p, deps.catalog.sourceDir(d.componentId), input.hash);
-      const publish = await publishInstalled(d, p, input);
-      const version =
-        publish.needsApproval || publish.version.trust !== input.trust
-          ? await deps.catalog.approve({
-              id: d.componentId,
-              version: publish.version.version,
-              hash: publish.version.hash,
-              trust: input.trust,
-            })
-          : publish.version;
-      const instance = input.target
-        ? await deps.projects.addInstance(
-            input.target.projectId,
-            input.target.pageId,
-            formatRef(d.componentId, version.version),
-          )
-        : null;
-      apply(d, { type: "finalized" });
-      removeDraft(p);
-      return { publish, version, instanceId: instance?.id ?? null };
+      const refusal = new KiboError("CONFLICT", `another draft of ${d.componentId} is being published`);
+      return held(publishing, d.componentId, refusal, () => finalizeDraft(d, input));
     });
 
   const isProcessing = (draftId: string) => busy.has(draftId);

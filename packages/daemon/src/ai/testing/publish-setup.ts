@@ -7,12 +7,14 @@ import { join } from "node:path";
 import {
   type ComponentDraft,
   ComponentManifest,
+  compareSemver,
   type DraftStatus,
+  KiboError,
   NO_PERMISSIONS,
   type RegistryVersion,
   type ValidationReport,
 } from "@kibo/schema";
-import { draftPaths, prepareDraft, readDraftManifest } from "../draft-files";
+import { draftPaths, prepareDraft, readDraftManifest, writeDraftManifest } from "../draft-files";
 import { createDraftPublisher } from "../draft-publish";
 import { openDraftStore } from "../draft-store";
 import type { ComponentCatalog, PublishedComponent } from "../ports";
@@ -24,14 +26,13 @@ export const cleanPublishHomes = () =>
     for (const r of roots.splice(0)) rmSync(r, { recursive: true, force: true });
   });
 export const ID = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
+const hashContent = (parts: string[]) => createHash("sha256").update(parts.join("\0")).digest("hex");
 export const hashOf = (dir: string) =>
-  createHash("sha256")
-    .update(
-      ["kibo.component.json", "ui.tsx"]
-        .map((f) => (existsSync(join(dir, f)) ? readFileSync(join(dir, f), "utf8") : ""))
-        .join("\0"),
-    )
-    .digest("hex");
+  hashContent(
+    ["kibo.component.json", "ui.tsx"].map((f) =>
+      existsSync(join(dir, f)) ? readFileSync(join(dir, f), "utf8") : "",
+    ),
+  );
 const manifest = ComponentManifest.parse({
   id: "burndown",
   version: "0.1.0",
@@ -68,7 +69,41 @@ type SetupOptions = {
   publishFails?: boolean;
   alreadyApproved?: boolean;
   storedHash?: string;
+  publishDelayMs?: number;
 };
+
+const draftOf = (id: string, mode: "create" | "modify", status: DraftStatus): ComponentDraft => ({
+  id,
+  componentId: "burndown",
+  mode,
+  title: "Burndown",
+  kind: "widget",
+  withServer: false,
+  baseVersion: mode === "modify" ? "0.1.0" : null,
+  description: "Ajoute un titre\net une légende",
+  runId: "run-1",
+  sessionId: "s1",
+  status,
+  attempts: 1,
+  failure: null,
+  incidents: [],
+  createdAt: 1,
+  updatedAt: 1,
+});
+
+async function prepareDraftDir(home: string, id: string, ui: string) {
+  const paths = draftPaths(home, id);
+  await prepareDraft({
+    paths,
+    kiboFiles: { "CLAUDE.md": "# Règles\n" },
+    fill: async (dir) => {
+      writeFileSync(join(dir, "kibo.component.json"), JSON.stringify(manifest));
+      writeFileSync(join(dir, "ui.tsx"), "old");
+    },
+  });
+  writeFileSync(join(paths.dir, "ui.tsx"), ui);
+  return paths;
+}
 
 export async function setup(opts: SetupOptions = {}) {
   const home = mkdtempSync(join(tmpdir(), "kibo-pub-"));
@@ -80,55 +115,48 @@ export async function setup(opts: SetupOptions = {}) {
     writeFileSync(join(srcRoot, "burndown", "kibo.component.json"), JSON.stringify(manifest));
     writeFileSync(join(srcRoot, "burndown", "ui.tsx"), "old");
   }
-  const paths = draftPaths(home, ID);
-  await prepareDraft({
-    paths,
-    kiboFiles: { "CLAUDE.md": "# Règles\n" },
-    fill: async (dir) => {
-      writeFileSync(join(dir, "kibo.component.json"), JSON.stringify(manifest));
-      writeFileSync(join(dir, "ui.tsx"), "old");
-    },
-  });
-  writeFileSync(join(paths.dir, "ui.tsx"), "new");
+  const paths = await prepareDraftDir(home, ID, "new");
   const store = openDraftStore(new Database(":memory:", { strict: true }));
-  const draft: ComponentDraft = {
-    id: ID,
-    componentId: "burndown",
-    mode,
-    title: "Burndown",
-    kind: "widget",
-    withServer: false,
-    baseVersion: mode === "modify" ? "0.1.0" : null,
-    description: "Ajoute un titre\net une légende",
-    runId: "run-1",
-    sessionId: "s1",
-    status: opts.status ?? "review",
-    attempts: 1,
-    failure: null,
-    incidents: [],
-    createdAt: 1,
-    updatedAt: 1,
-  };
-  store.insert(draft);
+  store.insert(draftOf(ID, mode, opts.status ?? "review"));
   store.saveReport(ID, green);
+  const addDraft = async (id: string, ui: string, version: string) => {
+    const p = await prepareDraftDir(home, id, ui);
+    writeDraftManifest(p.dir, { ...readDraftManifest(p.dir), version });
+    store.insert(draftOf(id, mode, "permissions"));
+    store.saveReport(id, green);
+    return p;
+  };
+  const registry = new Map<string, string>(
+    opts.published ? [[opts.published.version, opts.published.hash]] : [],
+  );
+  const latestAi = (): PublishedComponent | null => {
+    const top = [...registry.keys()].sort(compareSemver).at(-1);
+    if (!top || top === opts.published?.version) return opts.published ?? null;
+    return { version: top, manifest, granted: NO_PERMISSIONS, origin: "ai", hash: registry.get(top) ?? "" };
+  };
   const published: string[] = [];
+  const sources: string[] = [];
   const approved: unknown[] = [];
   const instances: string[] = [];
   const catalog: ComponentCatalog = {
     entries: () => [],
     isTaken: () => false,
     sourceDir: (id) => join(srcRoot, id),
-    latest: () => opts.published ?? null,
+    latest: latestAi,
     usages: () => [],
     publish: async (input) => {
+      await Bun.sleep(opts.publishDelayMs ?? 0);
       if (opts.publishFails) throw new Error("build failed");
-      published.push(`${input.id}:${input.strategy}:${input.origin}`);
       const dir = join(srcRoot, input.id);
-      const version = stored(
-        readDraftManifest(dir).version,
-        opts.storedHash ?? hashOf(dir),
-        opts.alreadyApproved ? "sandboxed" : null,
-      );
+      const number = readDraftManifest(dir).version;
+      const hash = (published.length === 0 ? opts.storedHash : undefined) ?? hashOf(dir);
+      const existing = registry.get(number);
+      if (existing !== undefined && existing !== hash)
+        throw new KiboError("VERSION_EXISTS", `${number} is already published with another hash`);
+      published.push(`${input.id}:${input.strategy}:${input.origin}`);
+      sources.push(readFileSync(join(dir, "ui.tsx"), "utf8"));
+      registry.set(number, hash);
+      const version = stored(number, hash, opts.alreadyApproved ? "sandboxed" : null);
       return { version, needsApproval: !opts.alreadyApproved, updated: [], failed: [] };
     },
     approve: async (input) => {
@@ -169,7 +197,7 @@ export async function setup(opts: SetupOptions = {}) {
     clock: createFakeClock(),
     home,
   });
-  return { home, srcRoot, paths, store, publisher, published, approved, instances, diffs };
+  return { home, srcRoot, paths, store, publisher, published, sources, approved, instances, diffs, addDraft };
 }
 
 export const publishedAi: PublishedComponent = {
@@ -177,4 +205,5 @@ export const publishedAi: PublishedComponent = {
   manifest,
   granted: { ...NO_PERMISSIONS, reads: ["ticket"] },
   origin: "ai",
+  hash: hashContent([JSON.stringify(manifest), "new"]),
 };
