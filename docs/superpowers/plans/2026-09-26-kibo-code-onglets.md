@@ -3916,7 +3916,7 @@ git commit -m "feat(ui): palette de commandes"
   - `DiffToolbar(props: { path: string; additions: number; deletions: number; mode: DiffMode; onModeChange(m: DiffMode): void; editing: boolean; onEditingChange(e: boolean): void; canEdit: boolean; onOpenFile(): void; onOpenExternal(): void })` ;
   - `type FileSelection = { path: string; area: ChangeArea }` ; `FileList(props: { files: FileChange[]; selected: FileSelection | null; busy: boolean; onSelect(f: FileChange): void; onToggle(f: FileChange): void })`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/ui/src/code/diff.test.tsx` :
 ```tsx
@@ -4030,7 +4030,7 @@ test("the file list groups by area and toggles staging per file", async () => {
 Run: `bun test packages/ui/src/code/diff.test.tsx`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/ui/src/code/diff-rows.ts` :
 ```ts
@@ -4318,12 +4318,12 @@ export function FileList(props: Props) {
 ```
 Le groupe prend son nom du seul titre (`aria-labelledby` pointe vers le `span` du titre, pas vers le compteur).
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/ui/src/code/diff.test.tsx && bun run check`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/ui/src/code/diff-rows.ts packages/ui/src/code/DiffView.tsx packages/ui/src/code/DiffToolbar.tsx packages/ui/src/code/FileList.tsx packages/ui/src/code/diff.test.tsx
