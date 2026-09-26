@@ -49,6 +49,13 @@ function followsBaseStatus(
   return field !== "closed" || value === (nextBase.statusId === "done");
 }
 
+function reopensWithRefusedStatus(
+  field: SyncedField,
+  i: { base: SyncedFields; remote: SyncedFields },
+): boolean {
+  return field === "statusId" && i.base.closed && !i.remote.closed;
+}
+
 function planField<K extends SyncedField>(
   field: K,
   i: { base: SyncedFields; local: SyncedFields; remote: SyncedFields },
@@ -69,6 +76,9 @@ function planField<K extends SyncedField>(
     if (canApply(field, r) && followsBaseStatus(field, r, plan.nextBase)) {
       plan.apply[field] = r;
       plan.nextBase[field] = r;
+    } else if (reopensWithRefusedStatus(field, i)) {
+      plan.apply.statusId = "todo";
+      plan.nextBase.statusId = "todo";
     }
     return;
   }

@@ -8,6 +8,7 @@ import {
 } from "@kibo/schema";
 import fc from "fast-check";
 import {
+  type CanApply,
   canonicalFields,
   normalizeText,
   planSync,
@@ -55,10 +56,20 @@ describe("three-way merge, field by field (spec F §5.3)", () => {
     expect(p.push).toEqual({});
     expect(p.nextBase.statusId).toBe("todo");
   });
-  test("a refused remote status does not reopen nor close on its own", () => {
+  test("an issue reopened with a refused status reopens the ticket as todo", () => {
     const base = f({ statusId: "done", closed: true });
     const p = planSync({ base, local: base, remote: f({ statusId: "blocked" }) });
-    expect(p).toEqual({ push: {}, apply: {}, conflicts: [], nextBase: base });
+    expect(p).toEqual({ push: {}, apply: { statusId: "todo", closed: false }, conflicts: [], nextBase: f() });
+  });
+  test("closed is never applied without the status it follows", () => {
+    const refuseDone: CanApply = (field, value) => !(field === "statusId" && value === "done");
+    const p = planSync({
+      base: f(),
+      local: f(),
+      remote: f({ statusId: "done", closed: true }),
+      canApply: refuseDone,
+    });
+    expect(p).toEqual({ push: {}, apply: {}, conflicts: [], nextBase: f() });
   });
   test("closed is never reported as a conflict on its own", () => {
     const p = planSync({
