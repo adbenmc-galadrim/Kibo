@@ -72,8 +72,19 @@ Cause commune : pas de jeu de données de référence. Correction : figer une ta
 
 ## 7. Écrans et états manquants (hors bloquants)
 
-- **Tickets** : édition dans le Sheet (popovers), ajout de dépendance et cycle détecté, suppression, glisser-déposer, ticket en onglet plein écran, vue Liste, configuration du workflow, états vides.
-- **Agents** : détail d'un run, transcript, run échoué, run terminé, menu de la file, admission en pause.
-- **Code** : diff côte à côte, génération IA du message, amend, reformulation, conflit, push en cours / échec, PR existante, Sheet après la PR, fichier en édition dans un onglet.
-- **Projets** : import de dossier, sélection du projet source, menus de page.
-- **Composants/paramètres** : mise à jour d'instance, rehash, connexion d'intégration, écrans Général / Sécurité / Raccourcis.
+**Faits (écrans 32+, 2026-09-26)** :
+- Page `07 · Agents (suite)` : 32 détail d'un run (timeline des hooks, transcript), 33 run échoué, 34 admission en pause (seuil RAM), 35 notification système et réponse depuis la barre.
+- Page `08 · Code (états)` : 36 diff côte à côte, 37 amender le dernier commit, 38 reformuler un commit non poussé, 39 conflit (rebase en cours, Abandonner), 40 push en cours, 41 push en échec, 42 PR existante.
+- Page `09 · Composants` : 43 menu d'instance « Mettre à jour vers 0.4.0 », 44 instance « Autorisation requise », 45 menu `⋯` de la page Composants, colonne Confiance et Brouillons, 46 note modifiée hors de Kibo, 47 dialogue « Dossier des notes », 48 Notes vides, 49 widgets vides et « Créer une page Graphe ? ».
+- Page `10 · Intégrations` : 50 états de l'écran 16 (erreur, limite GitHub, menu `⋯`, icônes Frame / Plug), 51 trousseau système indisponible, 52 connecter GitHub (gh ou jeton, vérification, refus), 53 connecter Figma (MCP) et ses erreurs, 54 serveurs MCP, 55 ajouter un serveur MCP, 56 confirmer la commande, 57 déconnecter GitHub.
+- Page `11 · IA` : 58 Nouveau projet · « Ton rôle » avec proposition de Claude, 59 suggestion indisponible (point de départ standard), 60 écran 29 étape 2 (génération par l'agent), 61 étape 3 (rapport de validation, Corriger avec l'agent), 62 tentatives épuisées, 63 relecture du diff, 64 « Modifier avec l'IA ».
+- Page `12 · Sync & marketplace` : 65 partager le projet (ce qui part, ce qui reste), 66 membres, rôles et code d'invitation, 67 présence (avatars, « Léa regarde cette page »), ticket à clé provisoire, agent d'une collègue, indicateur de sync, 68 projet en lecture seule, 69 Paramètres › Sync (serveur, compte, appareils, projets partagés dont « Accès retiré »), 70 ajouter un appareil, 71 Paramètres › Sécurité (accès distant TLS, sessions, isolation), 72 activer l'accès distant, 73 marketplace (catalogue), 74 fiche d'un paquet (vérification, permissions, versions), 75 installation refusée (signature invalide).
+- Page `13 · Compléments` : 76 Paramètres › Général (commande kibo), 77 Paramètres › Raccourcis, 78 premier lancement avec une vérification en échec.
+
+Reste :
+
+- **Tickets** : édition dans le Sheet (popovers), ajout de dépendance et cycle détecté, suppression, glisser-déposer, ticket en onglet plein écran, vue Liste, configuration du workflow, états vides du Kanban et des Tickets.
+- **Agents** : run terminé (détail), menu de la file.
+- **Code** : génération IA du message, Sheet après la PR, fichier en édition dans un onglet.
+- **Projets** : import de dossier, sélection du projet source, menus de page et de projet, rail d'icônes.
+- **Composants/paramètres** : rehash au lancement, source synchronisée de l'écran 3, sections CI / Maquettes du Sheet et widget Source MCP (phase 5, P6–P11), Rejoindre un projet et dialogue « Se connecter à un serveur » (phase 7, S1, S3), composant absent (S7), sources de marketplace (M3, M4).

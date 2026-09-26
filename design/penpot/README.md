@@ -24,6 +24,13 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 04 · Workspace & paramètres | 12–19, 28 profil d'agent, 31 appairage web |
 | 05 · Logo | piste 5 « Kanban » retenue |
 | 06 · Onglets, code & fichiers | 20–23 |
+| 07 · Agents (suite) | 32–35 (phase 2) |
+| 08 · Code (états) | 36–42 (phase 3) |
+| 09 · Composants | 43–49 (phase 4) |
+| 10 · Intégrations | 50–57 (phase 5) |
+| 11 · IA | 58–64 (phase 6) |
+| 12 · Sync & marketplace | 65–75 (phase 7) |
+| 13 · Compléments | 76–78 (revue §7) |
 
 Règles :
 - Chaque écran existe en **sombre et en clair**, le clair nommé `… (clair)`. Modifier le sombre, puis régénérer le clair (`S.relight`).
@@ -41,8 +48,13 @@ Plugin : Fichier → MCP Server → Connect. Garder l'onglet au premier plan : C
 ```js
 storage.load = async (n) => new Compartment({ storage, penpot, penpotUtils, setTimeout, fetch, console, Promise })
   .evaluate("(async()=>{" + await (await fetch("http://127.0.0.1:8787/" + n)).text() + "\n})()");
-for (const n of ["01-core", "02-icons", "03-shell", "04-components", "05-tabs", "06-export", "07-data"]) await storage.load(n + ".js");
+for (const n of ["01-core", "02-icons", "03-shell", "04-components", "05-tabs", "06-export", "07-data", "08-extra"]) await storage.load(n + ".js");
 ```
+
+Écrans 32+ : `08-extra.js` (shell reconstruit, menus, alertes, tableaux, `S.relight` + `S.fixLightX`), puis un script par page
+(`09-agents`, `10-code`, `11-composants`, `12-integrations`, `13-ia`, `14-sync`, `15-complements`) qui définit `S.draw[n]()`.
+Un clone ne change pas de page : les écrans de base (`base · n`) sont copiés puis collés (⌘C / ⌘V) sur la page, puis supprimés.
+Après un dessin, appeler `S.retext(écran)` (et `S.recenter` pour un dialogue) dans un **second** appel, une fois la mise en page calculée.
 
 Utiles : `S.screen(n, clair)`, `S.relight(id)`, `S.retext(frame)`, `S.setText(t, "…")`, `S.fillKanban(content)`, `S.newScreen(base, nom)`.
 
@@ -54,6 +66,6 @@ Pièges :
 
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … `("06")` (une page par appel), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … `("13")` (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz`.

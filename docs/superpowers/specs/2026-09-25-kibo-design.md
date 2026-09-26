@@ -261,9 +261,19 @@ Toutes les maquettes sont dans Penpot, en **thème sombre et en thème clair**.
 20. Barre d'onglets (épingler) · 21. Changements (diff, indexation par bloc, commit, amend) · 22. Pousser et créer la PR (seuls les commits poussés entrent dans la PR) · 23. Aperçu de fichier
 24. Nouveau ticket · 25. Nouvelle page · 26. Projet créé (vide) · 27. Assigner un ticket à un agent (file d'attente annoncée) · 28. Profil d'agent · 29. Créer un composant (IA ou code) · 30. Permissions et confiance · 31. Appairage du navigateur
 
+### Écrans des phases 2 à 7 (pages `07` et suivantes)
+
+- `07 · Agents (suite)` : 32. Détail d'un run (timeline des hooks, transcript, fichiers touchés) · 33. Run échoué (sortie des tests, Relancer) · 34. Admission en pause (seuil RAM dépassé) · 35. Notification système « réponse attendue » et réponse depuis la barre d'état
+- `08 · Code (états)` : 36. Diff côte à côte · 37. Amender le dernier commit · 38. Reformuler un commit non poussé · 39. Conflit (rebase en cours, Abandonner) · 40. Push en cours · 41. Push en échec · 42. PR existante (Voir la PR)
+- `09 · Composants` : 43. Menu d'instance « Mettre à jour vers » · 44. Instance « Autorisation requise » · 45. Page Composants : menu `⋯`, confiance, brouillons · 46. Note modifiée hors de Kibo · 47. Dossier des notes · 48. Notes vides · 49. Widgets vides et « Créer une page Graphe ? »
+- `10 · Intégrations` : 50. États des intégrations (erreur, limite, menu) · 51. Trousseau système indisponible · 52. Connecter GitHub · 53. Connecter Figma (MCP) · 54. Serveurs MCP · 55. Ajouter un serveur MCP · 56. Confirmer la commande MCP · 57. Déconnecter GitHub
+- `11 · IA` : 58. Nouveau projet · Ton rôle (proposition de Claude) · 59. Suggestion indisponible · 60. Créer un composant : génération (agent) · 61. Rapport de validation · 62. Tentatives épuisées · 63. Relire le diff · 64. Modifier avec l'IA
+- `12 · Sync & marketplace` : 65. Partager le projet · 66. Membres et invitation · 67. Présence et ticket à clé provisoire · 68. Projet en lecture seule · 69. Paramètres › Sync · 70. Ajouter un appareil · 71. Paramètres › Sécurité (accès distant, sessions) · 72. Activer l'accès distant · 73. Marketplace · 74. Détail d'un paquet · 75. Installation refusée (signature invalide)
+- `13 · Compléments` : 76. Paramètres › Général · 77. Paramètres › Raccourcis · 78. Premier lancement : échec d'une vérification
+
 **Règles d'affichage :** le Kanban affiche les tickets filtrés (« moi + agents » par défaut) avec le compteur `affichés / total` ; les onglets sont nommés « Projet · Page » ; la palette cherche aussi les pages, projets et éléments récents.
 
-**Reste à dessiner** (détail : `design/revue-flows.md` §7) : édition inline dans le Sheet, ajout de dépendance et cycle détecté, suppression, glisser-déposer, ticket en onglet, vue Liste, workflow configurable, états vides ; détail et transcript d'un run, run échoué, admission en pause ; diff côte à côte, amend, reformulation, conflit, push en cours ou en échec ; import de dossier, menus de page, rail ; mise à jour d'une instance, connexion d'une intégration, Paramètres Général / Sécurité / Raccourcis, échec du premier lancement.
+**Reste à dessiner** (détail : `design/revue-flows.md` §7) : édition inline dans le Sheet, ajout de dépendance et cycle détecté, suppression, glisser-déposer, ticket en onglet, vue Liste, workflow configurable, états vides du Kanban ; run terminé, menu de la file ; génération IA du message de commit ; import de dossier, menus de page, rail ; source synchronisée (écran 3), sections CI et Maquettes du Sheet, widget Source MCP ; rejoindre un projet, connexion au serveur de sync, composant absent, sources de marketplace.
 
 ### Système visuel
 
