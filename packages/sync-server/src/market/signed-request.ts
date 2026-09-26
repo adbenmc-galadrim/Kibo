@@ -27,19 +27,24 @@ export class NonceCache {
     opts.sdb.db.exec(NONCE_TABLE);
   }
 
-  seen(nonce: string): boolean {
-    const now = this.opts.now();
-    this.sweep(now);
-    const db = this.opts.sdb.db;
-    const row = db
+  has(nonce: string): boolean {
+    const row = this.opts.sdb.db
       .query<{ expiresAt: number }, { nonce: string }>(
         "SELECT expiresAt FROM market_nonces WHERE nonce = $nonce",
       )
       .get({ nonce });
-    if (row && row.expiresAt >= now) return true;
-    db.query(
-      "INSERT INTO market_nonces (nonce, expiresAt) VALUES ($nonce, $expiresAt) ON CONFLICT(nonce) DO UPDATE SET expiresAt = excluded.expiresAt",
-    ).run({ nonce, expiresAt: now + this.opts.ttlMs });
+    return row !== null && row.expiresAt >= this.opts.now();
+  }
+
+  seen(nonce: string): boolean {
+    const now = this.opts.now();
+    this.sweep(now);
+    if (this.has(nonce)) return true;
+    this.opts.sdb.db
+      .query(
+        "INSERT INTO market_nonces (nonce, expiresAt) VALUES ($nonce, $expiresAt) ON CONFLICT(nonce) DO UPDATE SET expiresAt = excluded.expiresAt",
+      )
+      .run({ nonce, expiresAt: now + this.opts.ttlMs });
     return false;
   }
 
@@ -88,6 +93,7 @@ export async function verifySignedRequest(
   body: Uint8Array,
   nonces: NonceCache,
   now: number,
+  admit: (actor: { userId: string; deviceId: string }) => void,
 ): Promise<{ userId: string; deviceId: string }> {
   const headers = readSignatureHeaders(req, now);
   const device = activeDevice(sdb, headers.deviceId);
@@ -104,7 +110,11 @@ export async function verifySignedRequest(
   if (device.revoked || device.userDisabled) {
     throw new KiboError("DEVICE_REVOKED", "device or user has been revoked");
   }
-  if (nonces.seen(headers.nonce)) throw new KiboError("UNAUTHORIZED", "request nonce was already used");
+  const replayed = () => new KiboError("UNAUTHORIZED", "request nonce was already used");
+  if (nonces.has(headers.nonce)) throw replayed();
+  const actor = { userId: device.userId, deviceId: headers.deviceId };
+  admit(actor);
+  if (nonces.seen(headers.nonce)) throw replayed();
   touchDevice(sdb, headers.deviceId, now);
-  return { userId: device.userId, deviceId: headers.deviceId };
+  return actor;
 }

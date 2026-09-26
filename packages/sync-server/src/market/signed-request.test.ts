@@ -151,4 +151,23 @@ describe("limits", () => {
     expect(await codeOf(res)).toBe("RATE_LIMITED");
     expect(res?.headers.get("retry-after")).toBe(String(MARKET_LIMITS.writeWindowMs / 1000));
   });
+  test("writes over the quota never record their nonce", async () => {
+    const body = json({ hash: "a".repeat(64), reason: "x" });
+    for (let i = 0; i < MARKET_LIMITS.writesPerWindow; i++) await r.route(await r.signed(REVOKE, body));
+    const count = () =>
+      r.kit.sdb.db.query<{ n: number }, []>("SELECT COUNT(*) AS n FROM market_nonces").get()?.n;
+    const before = count();
+    for (let i = 0; i < 5; i++) {
+      expect(await codeOf(await r.route(await r.signed(REVOKE, body)))).toBe("RATE_LIMITED");
+    }
+    expect(count()).toBe(before);
+  });
+  test("a replayed nonce is refused without spending the write quota", async () => {
+    const body = json({ hash: "a".repeat(64), reason: "x" });
+    for (let i = 1; i < MARKET_LIMITS.writesPerWindow; i++) await r.route(await r.signed(REVOKE, body));
+    const last = await r.signed(REVOKE, body);
+    const replay = last.clone();
+    expect((await r.route(last))?.status).toBe(404);
+    expect(await codeOf(await r.route(replay))).toBe("UNAUTHORIZED");
+  });
 });

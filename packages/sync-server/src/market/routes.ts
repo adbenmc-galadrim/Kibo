@@ -87,6 +87,14 @@ function readRoute(req: Request, url: URL, market: TeamMarket): Response | null 
   return found ? file(found, "application/json") : fail("NOT_FOUND", "package not found", 404);
 }
 
+function takeWrite(deps: MarketRouteDeps): (actor: Actor) => void {
+  return (actor) => {
+    if (!deps.limits.writes.take(actor.userId)) {
+      throw new RateLimited("too many market writes", MARKET_LIMITS.writeWindowMs);
+    }
+  };
+}
+
 async function authenticate(
   req: Request,
   deps: MarketRouteDeps,
@@ -99,7 +107,7 @@ async function authenticate(
   try {
     precheckSignedRequest(deps.sdb, req, deps.now());
     const body = await readBoundedBody(req, maxBytes);
-    const actor = await verifySignedRequest(deps.sdb, req, body, deps.nonces, deps.now());
+    const actor = await verifySignedRequest(deps.sdb, req, body, deps.nonces, deps.now(), takeWrite(deps));
     return { body, actor };
   } catch (e) {
     if (!(e instanceof KiboError) || !NOT_AUTH_FAILURES.has(e.code)) limits.failures.fail(ip);
@@ -114,9 +122,6 @@ async function writeRoute(
   action: (body: Uint8Array, actor: Actor) => Promise<unknown>,
 ): Promise<Response> {
   const { body, actor } = await authenticate(req, deps, maxBytes);
-  if (!deps.limits.writes.take(actor.userId)) {
-    throw new RateLimited("too many market writes", MARKET_LIMITS.writeWindowMs);
-  }
   return ok(await action(body, actor));
 }
 
