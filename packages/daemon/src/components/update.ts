@@ -20,6 +20,7 @@ export type MigrateRequest = {
 };
 export type UpdateDeps = {
   doc(projectId: string): LoroDoc;
+  assertWritable(projectId: string): void;
   persist(projectId: string): void;
   manifestOf(ref: string): Promise<ComponentManifest>;
   migrate(targetRef: string, req: MigrateRequest): Promise<{ config: Json; data: Json }>;
@@ -83,6 +84,10 @@ export async function updateInstance(
   if (errors.length > 0)
     throw new KiboError("MIGRATION_FAILED", `${target}: invalid config (${errors.join("; ")})`);
   if (data !== null) assertMigratedData(target, data);
+  deps.assertWritable(projectId);
+  if (deps.doc(projectId) !== doc) {
+    throw new KiboError("CONFLICT", `project ${projectId} was reloaded during the update`);
+  }
   if (changedSince(doc, before, data === null ? null : beforeData)) {
     throw new KiboError("CONFLICT", `instance ${instanceId} changed during the update`);
   }

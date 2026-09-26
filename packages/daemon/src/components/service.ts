@@ -153,6 +153,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     const inst = await updateInstance(
       {
         doc: (id) => docs.project(id),
+        assertWritable: (id) => docs.assertWritable(id),
         persist: (id) => docs.save(id),
         manifestOf: (ref) => registry.manifestOf(ref),
         migrate: (ref, req) => backends.migrate(ref, req),
