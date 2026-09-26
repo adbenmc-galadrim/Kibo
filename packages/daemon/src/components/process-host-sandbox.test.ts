@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
@@ -16,7 +16,7 @@ module.exports.server = {
       const fs = await load("node:fs");
       await attempt("read", () => fs.readFileSync(input.secret, "utf8"));
       const cp = await load("node:child_process");
-      await attempt("spawn", () => cp.execFileSync("/usr/bin/echo", ["x"]));
+      await attempt("spawn", () => cp.execFileSync("/bin/sh", ["-c", "exit 0"]));
       await attempt("child", () => cp.execFileSync(process.execPath, ["-e", 'require("node:fs").readFileSync(' + JSON.stringify(input.secret) + ")"], { stdio: "ignore" }));
       const net = await load("node:net");
       await attempt("connect", () => new Promise((ok, ko) => {
@@ -44,6 +44,7 @@ const escapeCall = (input: unknown) => ({
 });
 
 test("a sandboxed backend cannot escape through a constructed import", async () => {
+  expect(existsSync("/bin/sh")).toBe(true);
   const secret = realpathSync(mkdtempSync(join(tmpdir(), "kibo-secret-")));
   dirs.push(secret);
   writeFileSync(join(secret, "token"), "s3cret");

@@ -1,6 +1,12 @@
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { type ComponentCall, type GrantedPermissions, type Instance, KiboError } from "@kibo/schema";
+import {
+  BuiltinEntityType,
+  type ComponentCall,
+  type GrantedPermissions,
+  type Instance,
+  KiboError,
+} from "@kibo/schema";
 import { createEventLog, ensureEventsTable } from "./events";
 import { createGate, missingPermission } from "./gate";
 import { createQuotas } from "./quotas";
@@ -206,6 +212,26 @@ test("missingPermission names what is lacking", () => {
       init: { method: "GET", headers: {} },
     }),
   ).toBeNull();
+});
+
+test("reserved commands stay refused even with every write granted", () => {
+  const everything: GrantedPermissions = { ...granted, writes: [...BuiltinEntityType.options] };
+  const data: ComponentCall = {
+    kind: "run",
+    command: { method: "setInstanceData", instanceId: "thirdparty", key: "k", value: 1 },
+  };
+  const component: ComponentCall = {
+    kind: "run",
+    command: {
+      method: "setInstanceComponent",
+      instanceId: "thirdparty",
+      component: "evil@0.2.0",
+      config: {},
+      data: null,
+    },
+  };
+  expect(missingPermission(everything, data)).toBe("write:setInstanceData");
+  expect(missingPermission(everything, component)).toBe("write:setInstanceComponent");
 });
 
 test("list(run) needs read:run and reaches the list handler", async () => {

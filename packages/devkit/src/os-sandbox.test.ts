@@ -56,6 +56,7 @@ describe("profiles", () => {
 });
 
 test("on this machine the sandbox blocks reads, writes, processes and the network outside the policy", async () => {
+  expect(existsSync("/usr/bin/true")).toBe(true);
   const sandbox = createOsSandbox();
   await sandbox.ready();
   const secret = temp("kibo-secret-");
@@ -71,7 +72,7 @@ await attempt("read", () => fs.readFileSync(${JSON.stringify(join(secret, "token
 await attempt("write", () => fs.writeFileSync(${JSON.stringify(join(secret, "pwned"))}, "x"));
 const cp = await load("node:child_process");
 await attempt("spawn", () => cp.execFileSync("/bin/echo", ["x"]));
-await attempt("spawnUsr", () => cp.execFileSync("/usr/bin/echo", ["x"]));
+await attempt("spawnUsr", () => cp.execFileSync("/usr/bin/true"));
 await attempt("child", () => cp.execFileSync(process.execPath, ["-e", ${JSON.stringify(`require("node:fs").readFileSync(${JSON.stringify(join(secret, "token"))})`)}], { stdio: "ignore" }));
 await attempt("connect", () => fetch("http://127.0.0.1:${listener.port}/"));
 await attempt("inside", () => fs.writeFileSync("inside", "x"));

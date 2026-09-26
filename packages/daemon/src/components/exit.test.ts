@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
 import { chmodSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -182,15 +182,23 @@ describe("a sandboxed third-party component stays inside its perimeter", () => {
   }, 30_000);
 
   test("the OS sandbox keeps the backend off the disk, other processes and the network", async () => {
-    const input = { secret: join(home, "token"), plant: join(home, "planted"), port: daemon.port };
+    const input = {
+      secret: join(home, "token"),
+      plant: join(home, "planted"),
+      port: daemon.port,
+      daemonPid: process.pid,
+    };
     expect(await client.ok(action("escape", input))).toEqual({
       workdir: "open",
       read: "blocked",
       write: "blocked",
       spawn: "blocked",
       child: "blocked",
+      signal: "blocked",
       connect: "blocked",
-      worker: { net: "blocked", read: "blocked" },
+      env: ["KIBO_COMPONENT"],
+      descriptors: [],
+      worker: { net: "blocked", read: "blocked", signal: "blocked" },
     });
     expect(existsSync(join(home, "planted"))).toBe(false);
   }, 30_000);
@@ -229,7 +237,11 @@ describe("a sandboxed third-party component stays inside its perimeter", () => {
       () => 0,
     );
     await Bun.sleep(200);
+    const errors = spyOn(console, "error");
     await stop();
+    const logged = errors.mock.calls.flat().map(String);
+    errors.mockRestore();
+    expect(logged.filter((m) => m.includes("Database has closed"))).toEqual([]);
     expect(await inFlight).not.toBe(200);
     expect(await runtimeGone(self)).toBe(true);
     expect(await eventually(() => runtimeChildren().every((pid) => earlier.has(pid)))).toBe(true);

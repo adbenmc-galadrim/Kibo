@@ -1,12 +1,17 @@
 import { defineServer, type ServerContext } from "@kibo/sdk/server";
 
-type Escape = { secret: string; plant: string; port: number };
+type Escape = { secret: string; plant: string; port: number; daemonPid: number };
+type Stat = { dev: number; ino: number; isFile(): boolean; isSocket(): boolean };
+type Fs = { fstatSync(fd: number): Stat };
 type Attempt = () => unknown;
 type Socket = { on(event: string, listener: (e?: unknown) => void): void; destroy(): void };
 type Net = { connect(port: number, host: string): Socket };
 
 const load = (() => 0).constructor("s", "return import(s)");
+const INPUT_FD = 3;
 const OUTPUT_FD = 4;
+const FIRST_UNEXPECTED_FD = 5;
+const LAST_PROBED_FD = 255;
 const OVERSIZE = 5 * 1024 * 1024;
 let kept: ServerContext | null = null;
 
@@ -34,15 +39,21 @@ async function barrier(attempt: Attempt): Promise<string> {
 
 function escapeInput(input: unknown): Escape {
   const value = Object(input);
-  return { secret: String(value.secret), plant: String(value.plant), port: Number(value.port) };
+  return {
+    secret: String(value.secret),
+    plant: String(value.plant),
+    port: Number(value.port),
+    daemonPid: Number(value.daemonPid),
+  };
 }
 
-function workerSource({ secret, port }: Escape): string {
+function workerSource({ secret, port, daemonPid }: Escape): string {
   return [
     'const attempt = (fn) => fn().then(() => "open", () => "blocked");',
     `const net = attempt(() => fetch("http://127.0.0.1:${port}/"));`,
     `const read = attempt(() => Bun.file(${JSON.stringify(secret)}).text());`,
-    "Promise.all([net, read]).then(([n, r]) => postMessage({ net: n, read: r }));",
+    `const signal = attempt(async () => process.kill(${daemonPid}, 0));`,
+    "Promise.all([net, read, signal]).then(([n, r, s]) => postMessage({ net: n, read: r, signal: s }));",
   ].join("\n");
 }
 
@@ -71,6 +82,22 @@ function connect(net: Net, port: number): Promise<void> {
     socket.on("error", reject);
     setTimeout(() => reject(new Error("timeout")), 3_000);
   });
+}
+
+const identity = (stat: Stat) => `${stat.dev}:${stat.ino}`;
+
+function inheritedDescriptors(fs: Fs): number[] {
+  const channel = new Set([INPUT_FD, OUTPUT_FD].map((fd) => identity(fs.fstatSync(fd))));
+  const open: number[] = [];
+  for (let fd = FIRST_UNEXPECTED_FD; fd <= LAST_PROBED_FD; fd += 1) {
+    try {
+      const stat = fs.fstatSync(fd);
+      if ((stat.isFile() || stat.isSocket()) && !channel.has(identity(stat))) open.push(fd);
+    } catch (e) {
+      if (codeOf(e) !== "EBADF") throw e;
+    }
+  }
+  return open;
 }
 
 function oversizedCall(): string {
@@ -137,7 +164,10 @@ export const server = defineServer({
         child: await barrier(() =>
           cp.execFileSync(process.execPath, ["-e", readSecret], { stdio: "ignore" }),
         ),
+        signal: await barrier(() => process.kill(target.daemonPid, 0)),
         connect: await barrier(() => connect(net, target.port)),
+        env: Object.keys(process.env).sort(),
+        descriptors: inheritedDescriptors(fs),
         worker: await inWorker(workerSource(target)),
       };
     },
