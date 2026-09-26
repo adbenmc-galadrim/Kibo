@@ -4419,7 +4419,7 @@ git commit -m "feat(core): analyse des notes Markdown"
   - `criticalPath(tickets, edges): string[]` (ids ; `[]` s'il n'y a aucune chaîne de 2 tickets ou plus).
   - `NODE_W = 176`, `NODE_H = 52`, `GAP_X = 96`, `GAP_Y = 40`, `ISOLATED_GAP = 64` ; `type NodePosition = { id: string; layer: number; order: number; x: number; y: number; isolated: boolean }` ; `type GraphLayout = { nodes: NodePosition[]; width: number; height: number }` ; `layoutGraph(tickets, edges): GraphLayout`.
 
-- [ ] **Step 1: Créer le paquet**
+- [x] **Step 1: Créer le paquet**
 
 `components/graph/package.json` :
 ```json
@@ -4468,7 +4468,7 @@ git commit -m "feat(core): analyse des notes Markdown"
 ```
 Racine `package.json` : ajouter `components/graph` au script `typecheck` après `components/kanban`. Run: `bun install`.
 
-- [ ] **Step 2: Écrire le jeu de test et les tests**
+- [x] **Step 2: Écrire le jeu de test et les tests**
 
 `components/graph/src/demo-graph.ts` (liens `blocks` et statuts de `design/donnees-fictives.md`) :
 ```ts
@@ -4592,7 +4592,7 @@ test("the layout is deterministic and positions never overlap", () => {
 Run: `bun test components/graph`
 Expected: FAIL.
 
-- [ ] **Step 3: Implémenter `critical-path.ts`**
+- [x] **Step 3: Implémenter `critical-path.ts`**
 
 ```ts
 import type { StatusId } from "@kibo/schema";
@@ -4649,7 +4649,7 @@ export function criticalPath(tickets: GraphTicket[], edges: GraphEdge[]): string
 }
 ```
 
-- [ ] **Step 4: Implémenter `layout.ts`**
+- [x] **Step 4: Implémenter `layout.ts`**
 
 ```ts
 import { compareKeys, type GraphEdge, type GraphTicket } from "./critical-path";
@@ -4737,7 +4737,7 @@ export function layoutGraph(tickets: GraphTicket[], edges: GraphEdge[]): GraphLa
 ```
 L'ordre final des `nodes` est trié par position : deux entrées dans un ordre différent produisent le même JSON (propriété de déterminisme).
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test components/graph && bun run typecheck && bun run check`
 Expected: PASS.
