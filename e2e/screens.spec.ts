@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { type Browser, expect, type Page, type TestInfo, test } from "@playwright/test";
+import { type Browser, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
 import { assign, rpc, type Seeded, seedWorkspace } from "./agents-seed";
 import { GIT_IDENTITY } from "./git-repo";
 import { E2E_TOKEN } from "./token";
@@ -291,4 +291,19 @@ test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
   const preview = page.getByRole("dialog").filter({ hasText: "Ouvrir dans un onglet" });
   await expect(preview.getByText("Ligne 43, col 3")).toBeVisible();
   await capture(info, "23");
+});
+
+test("densité 13 px des maquettes", async () => {
+  const info = test.info();
+  await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
+  await page.reload();
+  const doing = page.getByRole("region", { name: "En cours" });
+  await expect(doing).toBeVisible();
+  const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
+  expect(await size(page.locator("body"))).toBe("13px");
+  expect(await size(sideButton("Vue d'ensemble"))).toBe("13px");
+  expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("10px");
+  expect(await size(doing.getByText("KIB-12", { exact: true }))).toBe("11px");
+  expect(await size(bar().getByRole("tab", { name: "Kibo · Kanban" }))).toBe("12px");
+  await capture(info, "densite-kanban");
 });
