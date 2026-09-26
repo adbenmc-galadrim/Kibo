@@ -2252,6 +2252,10 @@ git add packages/trust/src/der.ts packages/trust/src/der.test.ts packages/trust/
 git commit -m "feat(trust): certificats auto-signés"
 ```
 
+**Écarts à la livraison :**
+- Extension `keyUsage` retirée du certificat (étape 4) : le TLS de Bun refuse une feuille auto-signée comme sa propre ancre si `keyUsage` n'autorise pas `keyCertSign`, et l'autoriser en ferait un certificat d'autorité. Le certificat garde `basicConstraints` (critique, `cA` absent), `extKeyUsage` `serverAuth` et `subjectAltName`.
+- Suivis de relecture (`fix(trust): durcit la génération des certificats`) : `days` entier de 1 à 825 (plafond Apple, utile à T13) ; au moins un nom (`dns` ou `ips` non vides, un SAN vide est interdit par la RFC 5280) ; `commonName` de 1 à 64 caractères ; noms DNS en étiquettes `^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$`, 253 caractères au plus, nom entièrement numérique refusé (une IPv4 va dans `ips`) ; `certFingerprint` vérifie que le DER est un certificat X.509 (`X509Certificate` de `node:crypto`) et refuse un PEM à plusieurs certificats ; `time()` n'emploie UTCTime que de 1950 à 2049. Tout refus lève `INVALID_INPUT`.
+
 ---
 
 ### Task 4: Schémas du protocole de sync
@@ -7840,6 +7844,8 @@ export function createRemoteAccess(deps: RemoteAccessDeps): RemoteAccess {
   };
 }
 ```
+
+**`certFingerprint` refuse un `fullchain.pem`** (le PEM doit contenir un seul certificat X.509, suivi T3). Pour un certificat fourni (`tls.kind === "provided"`), `provided` extrait le premier bloc `-----BEGIN CERTIFICATE----- … -----END CERTIFICATE-----` du fichier (la feuille) et c'est lui que reçoit `certFingerprint` ; `material.cert` garde le contenu complet du fichier (chaîne entière) pour `listen`. Un test de `remote-access.test.ts` couvre un fichier à deux certificats : l'empreinte affichée est celle de la feuille.
 `resume` ne relance pas l'erreur : le démon doit démarrer même si l'interface a disparu ; l'erreur est journalisée et affichée (`lastError`, écran S8).
 
 `packages/daemon/src/remote/rpc.ts` :
