@@ -2271,7 +2271,7 @@ Toutes les formes échangées entre le démon et `kibo-sync` (spec G §6, décis
 - Produces (nouveau, signalé) : `parseClientFrame(raw: string): ClientFrame`, `parseServerFrame(raw: string): ServerFrame` (taille > `MAX_FRAME_BYTES`, JSON invalide ou Zod ⇒ `KiboError("INVALID_INPUT")`), `encodeFrame(frame: ClientFrame | ServerFrame): string` ; `SYNC_RPC_REQUESTS` (tuple Zod), `SyncRpcRequest`, `SyncRpcResult`, `SYNC_RPC_METHODS` ; `Phase7Event` (schéma Zod : `collab.changed`, `presence.changed` avec `projectId`, `market.changed`, `sessions.changed`, `sandbox.changed`) ajouté à `ChangeMessage` ; `KiboClient.subscribeEvents(listener: (e: Phase7Event) => void): () => void` (SDK).
 - Vérifié en T0 : il n'existe ni `DaemonEvent` ni `packages/schema/src/events.ts`. La diffusion WebSocket est typée par l'union `ChangeMessage` de `packages/schema/src/rpc.ts` (`{ projectId }`, `{ topic }`, `RunChanged`, `CodeEvent`, `IntegrationEvent`, `AiEvent`), émise par `service.docs.emit(message)` et publiée par `server.ts` sur le canal `"changes"`. Le type `"sync"` est déjà pris par `IntegrationEvent`. Côté client (`packages/sdk/src/client.ts`), chaque famille est reconnue par `safeParse` et un message inconnu tombe dans `subscribe` (rechargement du projet ou de la liste) : un événement de phase 7 doit donc être reconnu avant ce repli. `RpcRequest` est un `z.discriminatedUnion("method", [...])` qui étale `...INTEGRATION_RPC, ...AI_RPC` ; `RpcResult` est un type objet intersecté avec `IntegrationRpcResult & AiRpcResult`. Aucune méthode `listSessions`, `listDevices`, `getSyncStatus`… n'existe (seule `getSyncState`, intégrations). `Service.handle` n'a pas de `switch` exhaustif : une méthode non branchée tombe dans le `default` de `handleAgents` (`INTERNAL`).
 
-- [ ] **Step 1: Tests des trames**
+- [x] **Step 1: Tests des trames**
 
 `packages/schema/src/sync.test.ts` :
 ```ts
@@ -2409,7 +2409,7 @@ describe("constants", () => {
 Run: `bun test packages/schema/src/sync.test.ts`
 Expected: FAIL — `Cannot find module './sync'`.
 
-- [ ] **Step 2: Implémenter `sync.ts`**
+- [x] **Step 2: Implémenter `sync.ts`**
 
 ```ts
 import { z } from "zod";
@@ -2578,7 +2578,7 @@ export type Phase7Event = z.infer<typeof Phase7Event>;
 Run: `bun test packages/schema/src/sync.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Tests des types de sécurité**
+- [x] **Step 3: Tests des types de sécurité**
 
 `packages/schema/src/security.test.ts` :
 ```ts
@@ -2609,7 +2609,7 @@ test("a provided certificate needs both files", () => {
 Run: `bun test packages/schema/src/security.test.ts`
 Expected: FAIL — `Cannot find module './security'`.
 
-- [ ] **Step 4: Implémenter `security.ts`**
+- [x] **Step 4: Implémenter `security.ts`**
 
 ```ts
 import { z } from "zod";
@@ -2665,7 +2665,7 @@ export type SandboxStatus = {
 Run: `bun test packages/schema/src/security.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Tests des RPC**
+- [x] **Step 5: Tests des RPC**
 
 `packages/schema/src/sync-rpc.test.ts` :
 ```ts
@@ -2711,7 +2711,7 @@ test("invalid phase 7 RPCs are refused", () => {
 Run: `bun test packages/schema/src/sync-rpc.test.ts`
 Expected: FAIL — les méthodes ne sont pas dans `RpcRequest`.
 
-- [ ] **Step 6: Implémenter `sync-rpc.ts` et brancher `rpc.ts`**
+- [x] **Step 6: Implémenter `sync-rpc.ts` et brancher `rpc.ts`**
 
 `packages/schema/src/sync-rpc.ts` :
 ```ts
@@ -2809,7 +2809,7 @@ export * from "./sync-rpc";
 Run: `bun test packages/schema`
 Expected: PASS (tous les tests du paquet, anciens compris).
 
-- [ ] **Step 6b: Aiguiller les événements de phase 7 dans le client**
+- [x] **Step 6b: Aiguiller les événements de phase 7 dans le client**
 
 Ajouter à la fin de `packages/sdk/src/client.test.ts` (modèle du test `subscribeAi` existant) :
 ```ts
@@ -2858,12 +2858,12 @@ et la méthode `subscribeEvents` sur le modèle exact de `subscribeAi` (import d
 Run: `bun test packages/sdk/src/client.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Vérifications**
+- [x] **Step 7: Vérifications**
 
 Run: `bun run check && bun run typecheck`
 Expected: sans erreur. Aucun `switch` du démon n'est exhaustif par `never` : une nouvelle méthode non encore branchée tombe dans le `default` de `handleAgents` (`service.ts`) et répond `INTERNAL`, jusqu'aux tâches 9, 12, 13, 21, 23 et 24. Aucune modification du démon dans cette tâche.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/schema/src/sync.ts packages/schema/src/sync.test.ts packages/schema/src/security.ts packages/schema/src/security.test.ts packages/schema/src/sync-rpc.ts packages/schema/src/sync-rpc.test.ts packages/schema/src/rpc.ts packages/schema/src/index.ts packages/sdk/src/client.ts packages/sdk/src/client.test.ts
