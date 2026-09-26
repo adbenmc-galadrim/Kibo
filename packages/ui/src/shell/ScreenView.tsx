@@ -1,6 +1,7 @@
 import type { AgentsState, ProjectSummary, Screen, WorkspaceConfig } from "@kibo/schema";
 import { AgentsPage } from "../agents/AgentsPage";
 import { QueuePage } from "../agents/QueuePage";
+import { ComponentsPage } from "../components-page/ComponentsPage";
 import { DomainsPage } from "../settings/DomainsPage";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function ScreenView({ screen, projects, agents, config, now, onAnswer }: Props) {
+  if (screen === "components") return <ComponentsPage />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;
   if (!agents) return null;

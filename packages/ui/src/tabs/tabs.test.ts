@@ -19,6 +19,7 @@ describe("hash codec", () => {
     { kind: "screen", screen: "agents" },
     { kind: "screen", screen: "queue" },
     { kind: "screen", screen: "domains" },
+    { kind: "screen", screen: "components" },
   ];
   test("round-trips every target kind", () => {
     for (const t of targets) expect(hashToTarget(targetToHash(t))).toEqual(t);
@@ -35,6 +36,7 @@ describe("hash codec", () => {
     expect(targetToHash({ kind: "screen", screen: "queue" })).toBe("#/agents/queue");
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
     expect(hashToTarget("#/agents")).toEqual({ kind: "screen", screen: "agents" });
+    expect(targetToHash({ kind: "screen", screen: "components" })).toBe("#/components");
     expect(hashToTarget("#/elsewhere")).toBeNull();
   });
 });

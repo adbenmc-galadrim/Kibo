@@ -6,6 +6,7 @@ const SCREEN_HASHES: Record<Screen, string> = {
   agents: "#/agents",
   queue: "#/agents/queue",
   domains: "#/settings/domains",
+  components: "#/components",
 };
 
 export function targetToHash(target: TabTarget | null): string {

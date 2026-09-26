@@ -193,7 +193,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               <SidebarTrigger />
               <Breadcrumb
                 crumbs={crumbsFor(active, { project, branch })}
-                heading={screen === "agents" || screen === "queue"}
+                heading={screen === "agents" || screen === "queue" || screen === "components"}
               />
               <span className="flex-1" />
               {git.error && (

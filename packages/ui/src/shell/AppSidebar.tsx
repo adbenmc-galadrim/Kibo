@@ -16,7 +16,16 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@kibo/sdk/ui/sidebar";
-import { Bot, GitCommitHorizontal, LayoutGrid, ListOrdered, Plus, Search, Settings } from "lucide-react";
+import {
+  Bot,
+  GitCommitHorizontal,
+  LayoutGrid,
+  ListOrdered,
+  Plus,
+  Puzzle,
+  Search,
+  Settings,
+} from "lucide-react";
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
@@ -203,6 +212,12 @@ export function AppSidebar(p: Props) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton isActive={screen === "components"} {...link(screenTarget("components"))}>
+              <Puzzle />
+              <span>{fr.nav.components}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton isActive={screen === "domains"} {...link(screenTarget("domains"))}>
               <Settings />

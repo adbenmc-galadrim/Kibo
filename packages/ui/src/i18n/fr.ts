@@ -14,6 +14,7 @@ export const fr = {
     queue: "Files d'attente",
     settings: "Paramètres",
     domains: "Domaines & guidelines",
+    components: "Composants",
     changes: "Changements",
     changesCount: (n: number) => `${n} fichier${n > 1 ? "s" : ""} modifié${n > 1 ? "s" : ""}`,
     search: "Rechercher…",
@@ -376,5 +377,5 @@ export const fr = {
   },
   ...frCode,
   ...frComponents,
-  common: { cancel: "Annuler", error: "Une erreur est survenue." },
+  common: { cancel: "Annuler", close: "Fermer", error: "Une erreur est survenue." },
 } as const;

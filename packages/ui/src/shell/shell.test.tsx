@@ -244,6 +244,19 @@ test("an agent screen keeps its URL and opens in a tab like any target", async (
   await waitFor(() => expect(location.hash).toBe("#/agents"));
 });
 
+test("the sidebar opens the Components screen in its own tab", async () => {
+  renderShell();
+  await go("#/");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Composants" }));
+  expect(location.hash).toBe("#/components");
+  expect(await screen.findByRole("columnheader", { name: "Confiance" })).toBeTruthy();
+  expect((await screen.findByRole("tab", { name: "Composants" })).getAttribute("aria-selected")).toBe("true");
+  expect(crumbs().getByRole("heading", { level: 1, name: "Composants" }).getAttribute("aria-current")).toBe(
+    "page",
+  );
+});
+
 test("the header offers a ticket in the current project and shows the user's initials", async () => {
   await go("#/");
   renderShell();

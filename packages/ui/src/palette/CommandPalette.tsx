@@ -48,6 +48,7 @@ const ICONS = {
   agents: SCREENS.agents.icon,
   queue: SCREENS.queue.icon,
   domains: SCREENS.domains.icon,
+  components: SCREENS.components.icon,
 };
 const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
   reply: "text-orange-600 dark:text-orange-400",
