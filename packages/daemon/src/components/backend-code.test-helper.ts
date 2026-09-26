@@ -24,6 +24,7 @@ module.exports.server = {
     hang: () => new Promise(() => {}),
     crash: async () => { process.exit(3); },
     fail: async () => { const e = new Error("nope"); e.code = "CONFLICT"; e.detail = "nope"; throw e; },
+    trust: async () => { const e = new Error("approve me"); e.code = "TRUST_REQUIRED"; throw e; },
     pid: async () => process.pid,
     wait: async (_ctx, ms) => {
       running += 1;

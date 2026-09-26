@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import type { ComponentCall } from "@kibo/schema";
+import { type ComponentCall, KiboError } from "@kibo/schema";
 import { MIGRATIONS_JS, SERVER_JS, TEST_MANIFEST } from "./backend-code.test-helper";
 import type { BackendHost, HostOptions, InvokeRequest } from "./host-core";
 import { createProcessHost } from "./process-host";
@@ -66,6 +66,7 @@ describe("process host", () => {
         "hang",
         "crash",
         "fail",
+        "trust",
         "pid",
         "wait",
         "bigint",
@@ -105,6 +106,14 @@ describe("process host", () => {
     await expect(h.invoke(action("hang"))).rejects.toThrow("TIMEOUT");
     await expect(h.invoke(action("crash"))).rejects.toThrow("COMPONENT_CRASHED");
     expect(await h.invoke(action("ping"))).toBe("pong");
+  });
+  test("a backend cannot choose error codes outside the whitelist", async () => {
+    const h = host();
+    const error = await h.invoke(action("trust")).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(KiboError);
+    expect(error).toMatchObject({ code: "INTERNAL" });
+    expect(String(error)).toContain("TRUST_REQUIRED");
+    expect(String(error)).toContain("approve me");
   });
   test("after a crash, the backend waits for its backoff", async () => {
     const h = host({ backoffMs: [60_000] });

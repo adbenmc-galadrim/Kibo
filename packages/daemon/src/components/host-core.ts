@@ -7,8 +7,9 @@ import {
   type DaemonToBackend,
   type InvokeTarget,
   KiboError,
+  type KiboErrorCode,
 } from "@kibo/schema";
-import { fromWire, toWire } from "./runtime-core";
+import { toWire } from "./runtime-core";
 import { createSlots } from "./slots";
 
 export type Channel = { send(msg: DaemonToBackend): void; close(): void };
@@ -51,6 +52,37 @@ type Inflight = {
 };
 type Boot = { ok: true; description: BackendDescription } | { ok: false; error: KiboError };
 type TimeoutHandle = ReturnType<typeof setTimeout>;
+
+export const BACKEND_ERROR_CODES = [
+  "INVALID_INPUT",
+  "NOT_FOUND",
+  "CONFLICT",
+  "VALIDATION_FAILED",
+  "MIGRATION_FAILED",
+  "PERMISSION_DENIED",
+  "QUOTA_EXCEEDED",
+  "RATE_LIMITED",
+  "TIMEOUT",
+  "TOO_LARGE",
+  "INVALID_TRANSITION",
+  "BLOCKED_REASON_REQUIRED",
+  "TREE_CYCLE",
+  "LINK_CYCLE",
+  "FILE_CHANGED",
+  "PATH_OUTSIDE_PROJECT",
+] as const satisfies readonly KiboErrorCode[];
+
+type BackendErrorCode = (typeof BACKEND_ERROR_CODES)[number];
+const BACKEND_ERRORS = new Set<string>(BACKEND_ERROR_CODES);
+const isBackendErrorCode = (code: string): code is BackendErrorCode => BACKEND_ERRORS.has(code);
+
+export function backendError(error: { code: string; message: string } | undefined): KiboError {
+  const code = error?.code ?? "INTERNAL";
+  const message = error?.message ?? "";
+  return isBackendErrorCode(code)
+    ? new KiboError(code, message)
+    : new KiboError("INTERNAL", `${code}: ${message}`);
+}
 
 export const HOST_DEFAULTS = {
   timeoutMs: 30_000,
@@ -108,7 +140,7 @@ export function createHost(opts: HostOptions, open: ChannelFactory, codeInLoad: 
     }
   };
   const crash = (reason: string) => {
-    log(`backend exited: ${reason}`);
+    log(`backend stopped: ${reason}`);
     crashes += 1;
     retryAt = now() + (backoff[Math.min(crashes - 1, backoff.length - 1)] ?? 0);
     shutdown(reason);
@@ -132,21 +164,21 @@ export function createHost(opts: HostOptions, open: ChannelFactory, codeInLoad: 
 
   const onMessage = (c: Channel, raw: unknown) => {
     const parsed = BackendToDaemon.safeParse(raw);
-    if (!parsed.success) return log(`invalid backend message: ${parsed.error.message}`);
+    if (!parsed.success) return crash(`protocol violation: ${parsed.error.message}`);
     const msg = parsed.data;
     if (msg.type === "call") return onCall(c, msg);
     if (msg.type === "ready") {
-      if (!boot) return log("unexpected ready message");
+      if (!boot) return crash("protocol violation: unexpected ready message");
       description = { actions: msg.actions, jobs: msg.jobs };
       return boot({ ok: true, description });
     }
     const p = inflight.get(msg.id);
-    if (!p) return;
+    if (!p) return crash(`protocol violation: result for unknown invocation ${msg.id}`);
     inflight.delete(msg.id);
     clearTimeout(p.timer);
     crashes = 0;
     if (msg.ok) p.resolve(msg.result ?? null);
-    else p.reject(fromWire(msg.error));
+    else p.reject(backendError(msg.error));
   };
 
   const start = async (): Promise<BackendDescription> => {
@@ -216,7 +248,7 @@ export function createHost(opts: HostOptions, open: ChannelFactory, codeInLoad: 
 
   return {
     async invoke(req) {
-      await slots.acquire();
+      await slots.acquire(timeoutMs);
       try {
         clearIdle();
         await ensure();
