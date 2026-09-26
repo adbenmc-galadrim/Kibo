@@ -2018,7 +2018,7 @@ git commit -m "feat(core): moteur de règles déclaratif"
   - `type ContextFile = { path: string; content: string }`, `type RunContext = { files: ContextFile[]; systemPrompt: string; brief: string; tokens: number }`
   - `buildRunContext(input: BriefInput & { chain: Guideline[]; subagents: AgentModel[] }): RunContext` (fichiers `context/1-workspace/…`, `context/2-projet/…`, `context/3-domaine/…`, `context/4-profil/…`, `CLAUDE.md`, `brief.md`)
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/core/src/context.test.ts` :
 ```ts
@@ -2127,12 +2127,12 @@ test("the run context lists every file to materialize", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/core/src/context.test.ts`
 Expected: FAIL (`Cannot find module "./context"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/core/src/context.ts` :
 ```ts
@@ -2242,12 +2242,12 @@ export function buildRunContext(input: BriefInput & { chain: Guideline[]; subage
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/core/src/context.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/context.ts packages/core/src/context.test.ts
