@@ -7,7 +7,7 @@ import type { ComponentsService } from "../components/service";
 import type { Docs } from "../docs";
 import type { RpcHandler } from "../rpc-extensions";
 import { createHttpGet } from "./http-get";
-import type { InstallDeps } from "./install";
+import { type InstallDeps, purgeInstallDirs } from "./install";
 import { openMarketDb } from "./market-db";
 import { MarketService } from "./market-service";
 import { startMarketRefresh } from "./refresh-schedule";
@@ -18,7 +18,7 @@ const log = (m: string, e: unknown) => console.error(`[kibo-daemon] ${m}`, e);
 
 type Validate = (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
 
-export function startMarket(deps: {
+export async function startMarket(deps: {
   home: string;
   toolchain: Toolchain;
   validate?: Validate;
@@ -28,7 +28,7 @@ export function startMarket(deps: {
   notify(notice: Notice): void;
   allowLoopbackHttp: boolean;
   now?: () => number;
-}): { market: MarketService; handler: RpcHandler; stop(): void } {
+}): Promise<{ market: MarketService; handler: RpcHandler; stop(): void }> {
   const shutdown = new AbortController();
   const registry = createRegistryPort({ docs: deps.docs, components: deps.components });
   const market = new MarketService({
@@ -43,6 +43,8 @@ export function startMarket(deps: {
   const validate: Validate =
     deps.validate ??
     ((dir, signal) => validateComponent(dir, { toolchain: deps.toolchain, conformanceOnly: true, signal }));
+  const tmpRoot = join(deps.home, "tmp", "market");
+  await purgeInstallDirs(tmpRoot).catch((e: unknown) => log("market: purge of install folders failed", e));
   const install: InstallDeps = {
     market,
     store: deps.components.store,
@@ -50,7 +52,8 @@ export function startMarket(deps: {
     validate: (dir) => validate(dir, shutdown.signal),
     sandbox: osSandbox(),
     lock: deps.components.publishLock,
-    tmpRoot: join(deps.home, "tmp", "market"),
+    tmpRoot,
+    log,
   };
   const stopRefresh = startMarketRefresh(market, { intervalMs: MARKET_REFRESH_MS, log });
   const stop = () => {

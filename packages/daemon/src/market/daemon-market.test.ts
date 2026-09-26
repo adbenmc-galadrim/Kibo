@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { osSandbox } from "@kibo/devkit";
@@ -88,4 +88,23 @@ test.if(sandboxAvailable)("an installed market version is listed without trust",
       }),
     ]),
   });
+});
+
+test("the daemon purges leftover install folders when it starts", async () => {
+  await daemon.stop();
+  const leftover = join(home, "tmp", "market", "install-crash");
+  mkdirSync(join(leftover, "lib"), { recursive: true });
+  daemon = await startDaemon({
+    home,
+    port: 0,
+    sandboxPort: 0,
+    uiDir: null,
+    dev: false,
+    toolchain: DEV_TOOLCHAIN,
+    user: "adam",
+    build: fakeBuild,
+    validate: okReport,
+    marketAllowLoopback: true,
+  });
+  expect(existsSync(leftover)).toBe(false);
 });

@@ -42,6 +42,7 @@ beforeEach(async () => {
     sandbox: { ready: async () => {} },
     lock: createPublishLock(),
     tmpRoot: join(home, "tmp"),
+    log: () => {},
   });
 });
 afterEach(() => {
