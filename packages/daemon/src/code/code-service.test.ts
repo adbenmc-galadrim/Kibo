@@ -226,6 +226,57 @@ test("a PR without a ticket, or closed without merging, moves no ticket", async 
   expect(statusOf()).toBe(ticket.statusId);
 });
 
+const createLinkedPr = (c: CodeService, ticketId: string, draft: boolean) => {
+  fx.commit("feat: schéma (KIB-1)", { "a.txt": "a\n" });
+  return c.handle({
+    method: "createPr",
+    ...w(),
+    title: "feat: schéma (KIB-1)",
+    body: "",
+    base: "main",
+    draft,
+    reviewers: [],
+    ticketId,
+  });
+};
+const setFakePrs = (patch: Record<string, unknown>) => {
+  const state = gh.FAKE_GH_STATE ?? "";
+  const prs = JSON.parse(readFileSync(state, "utf8")) as Record<string, unknown>[];
+  writeFileSync(state, JSON.stringify(prs.map((p) => ({ ...p, ...patch }))));
+};
+
+test("a draft PR moves the ticket only once it is marked ready", async () => {
+  const c = start({ prPollMs: 50 });
+  const ticket = createTicket("Schéma");
+  await createLinkedPr(c, ticket.id, true);
+  expect(refs()?.[0]?.state).toBe("draft");
+  expect(statusOf()).toBe(ticket.statusId);
+  setFakePrs({ isDraft: false });
+  expect(await waitFor(() => refs()?.[0]?.state === "open")).toBe(true);
+  expect(statusOf()).toBe("in_review");
+});
+
+test("a failing rule is logged, the PR is still created and followed", async () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  const rules = spyOn(service, "triggerRules").mockImplementation(() => {
+    throw new Error("rules broken");
+  });
+  try {
+    const c = start({ prPollMs: 50 });
+    const ticket = createTicket("Schéma");
+    expect(await createLinkedPr(c, ticket.id, false)).toMatchObject({ number: 1, state: "open" });
+    expect(refs()?.[0]?.state).toBe("open");
+    setFakePrs({ state: "MERGED" });
+    expect(await waitFor(() => refs()?.[0]?.state === "merged")).toBe(true);
+    const logged = errors.mock.calls.map(([m]) => String(m));
+    expect(logged.filter((m) => m.startsWith("[kibo-daemon] rules")).length).toBe(2);
+    expect(rules.mock.calls.map(([, t]) => t.kind)).toEqual(["pr_opened", "pr_merged"]);
+  } finally {
+    rules.mockRestore();
+    errors.mockRestore();
+  }
+});
+
 test("a failing PR lookup is logged and does not stop the others", async () => {
   const errors = spyOn(console, "error").mockImplementation(() => {});
   try {

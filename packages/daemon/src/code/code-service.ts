@@ -4,7 +4,7 @@ import { call, type Service } from "../service";
 import { editorCommand, openInEditor } from "./editor";
 import { abortOperation, commit, reword, undoCommit } from "./history-ops";
 import { stageFiles, stageHunk, unstageFiles, writeFile } from "./index-ops";
-import { type PrPoller, startPrPoller } from "./pr-poller";
+import { type PrPoller, startPrPoller, triggerRules } from "./pr-poller";
 import { compare, readDiff, readFile, readStatus, remoteBranches } from "./read";
 import { createPr, ghStatus, prForBranch, push } from "./remote-ops";
 import { openRepo, type WorktreeHandle } from "./repo";
@@ -122,7 +122,8 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
         projectId: req.projectId,
         command: { method: "upsertExternalRef", ticketId: req.ticketId, ref: { kind: "github_pr", ...pr } },
       });
-      service.triggerRules(req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
+      if (pr.state === "open")
+        triggerRules(service, req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
     }
     return pr;
   };

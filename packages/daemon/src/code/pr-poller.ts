@@ -1,3 +1,4 @@
+import type { RuleTrigger } from "@kibo/core/rules";
 import type { ExternalRef, TicketView } from "@kibo/schema";
 import { call, type Service } from "../service";
 import { prState } from "./remote-ops";
@@ -22,6 +23,14 @@ function trackedRefs(service: Service): Tracked[] {
   return tracked;
 }
 
+export function triggerRules(service: Service, projectId: string, trigger: RuleTrigger): void {
+  try {
+    service.triggerRules(projectId, trigger);
+  } catch (e) {
+    console.error(`[kibo-daemon] rules ${trigger.kind} failed for ticket ${trigger.ticketId}`, e);
+  }
+}
+
 export function startPrPoller(service: Service, env: Env, intervalMs: number, log: Log): PrPoller {
   let stopped = false;
   let running = false;
@@ -34,7 +43,9 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
       projectId,
       command: { method: "upsertExternalRef", ticketId: ticket.id, ref: { ...ref, state: info.state } },
     });
-    if (info.state === "merged") service.triggerRules(projectId, { kind: "pr_merged", ticketId: ticket.id });
+    if (ref.state === "draft" && info.state === "open")
+      triggerRules(service, projectId, { kind: "pr_opened", ticketId: ticket.id });
+    if (info.state === "merged") triggerRules(service, projectId, { kind: "pr_merged", ticketId: ticket.id });
   };
 
   const poll = async () => {
