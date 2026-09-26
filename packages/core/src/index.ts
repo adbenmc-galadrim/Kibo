@@ -6,6 +6,7 @@ export * from "./links";
 export * from "./pages";
 export * from "./project";
 export * from "./registry";
+export * from "./sync-plan";
 export * from "./tickets";
 export * from "./tree";
 export * from "./workspace";
