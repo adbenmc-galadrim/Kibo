@@ -27,6 +27,8 @@ const proc = Bun.spawn(
     join(root, "packages/ui/dist"),
     "--claude-bin",
     join(agents, "fake-claude.ts"),
+    "--host-load",
+    "62,70",
   ],
   {
     env: {

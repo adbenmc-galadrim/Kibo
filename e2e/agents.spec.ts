@@ -35,7 +35,7 @@ async function createOpusProfile(page: Page, info: TestInfo) {
 test("agents au travail : cartes, file, journal, réponse, review", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
-  await rpc(page, { method: "setHost", patch: { hostSlots: 3, cpuThreshold: 100, ramThreshold: 100 } });
+  await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await createOpusProfile(page, info);
 
   repo = createGitRepo();
@@ -80,7 +80,6 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await shot(page, info, "ecran-5");
   await page.getByRole("button", { name: "Replier les agents" }).click();
 
-  await rpc(page, { method: "setHost", patch: { cpuThreshold: 85, ramThreshold: 90 } });
   await page.getByRole("button", { name: "Agents", exact: true }).click();
   await page.getByRole("button", { name: "Files d'attente" }).click();
   const capacity = page.getByRole("region", { name: "Capacité de la machine" });
@@ -89,7 +88,6 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await expect(capacity.getByText(/Créneaux hôte : 3 \(fixé · auto : \d+\)/)).toBeVisible();
   await expect(page.getByRole("region", { name: "En attente de réponse" }).getByText("KIB-14")).toBeVisible();
   await shot(page, info, "ecran-17");
-  await rpc(page, { method: "setHost", patch: { cpuThreshold: 100, ramThreshold: 100 } });
 
   await page.getByRole("button", { name: "Agents", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Historique des runs" })).toBeVisible();

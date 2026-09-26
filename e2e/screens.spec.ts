@@ -174,7 +174,7 @@ test.beforeAll(async ({ browser }, info) => {
   mockup = createMockupRepo();
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
-  await rpc(page, { method: "setHost", patch: { hostSlots: 3, cpuThreshold: 100, ramThreshold: 100 } });
+  await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await rpc(page, {
     method: "config",
     command: {
