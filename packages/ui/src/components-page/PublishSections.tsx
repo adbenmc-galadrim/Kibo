@@ -7,6 +7,8 @@ import { permissionLabel } from "../lib/permission-lines";
 
 export type Strategy = "update-all" | "new-version";
 
+export const NEUTRAL_DOT = "#71717A";
+
 const p = fr.publish;
 
 export function validationErrors(preview: PublishPreview): string[] {

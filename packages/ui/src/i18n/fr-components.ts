@@ -137,25 +137,12 @@ export const frComponents = {
     title: "Créer un composant",
     subtitle:
       "Même procédure pour tous : manifest kibo.component.json, SDK, suite de conformité, puis ajout à la page.",
-    ai: "Décrire à l'IA",
-    aiLabel: "Ce que doit faire le composant",
     aiPlaceholder: "Burndown du sprint : tickets restants par jour, ligne idéale, filtre par domaine.",
-    aiHelp:
-      "Un agent génère le code avec le SDK public, dans un worktree, puis lance la suite de conformité. Tu relis le diff avant l'ajout.",
-    aiSubmit: "Générer avec un agent",
-    soon: "Bientôt",
     code: "Depuis le code",
     codeHelp: "Génère le squelette dans le dossier des composants du workspace :",
     codeFooter: "Le composant apparaît dans « Mes composants » dès que les tests passent.",
     copy: "Copier les commandes",
     copied: "Commandes copiées.",
-    steps: [
-      "1 · Décrire",
-      "2 · Générer (agent)",
-      "3 · Tests de conformité",
-      "4 · Permissions",
-      "5 · Ajouter à la page",
-    ],
   },
   instance: {
     menu: (title: string) => `Actions ${title}`,

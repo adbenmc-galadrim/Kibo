@@ -1,10 +1,11 @@
-import { Badge } from "@kibo/sdk/ui/badge";
+import type { FinalizeComponentDraftInput } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
-import { Label } from "@kibo/sdk/ui/label";
-import { Textarea } from "@kibo/sdk/ui/textarea";
-import { Bot, Copy, Sparkles, SquareTerminal } from "lucide-react";
-import { useId, useState } from "react";
+import { Copy, SquareTerminal } from "lucide-react";
+import { useState } from "react";
+import { AiDraftPanel } from "../ai/AiDraftPanel";
+import { DescribeCard, ResumeDraftBanner } from "../ai/DescribeCard";
+import { DraftStepper } from "../ai/DraftStepper";
 import { fr } from "../i18n/fr";
 
 const COMMANDS = [
@@ -12,27 +13,6 @@ const COMMANDS = [
   "kibo component test burndown",
   "kibo component dev burndown",
 ];
-
-function AiColumn() {
-  const t = fr.createComponent;
-  const describeId = useId();
-  return (
-    <section aria-disabled className="grid content-start gap-3 rounded-lg border p-4">
-      <h3 className="flex items-center gap-2 font-semibold">
-        <Sparkles aria-hidden className="size-4" />
-        {t.ai}
-        <Badge variant="secondary">{t.soon}</Badge>
-      </h3>
-      <Label htmlFor={describeId}>{t.aiLabel}</Label>
-      <Textarea id={describeId} disabled placeholder={t.aiPlaceholder} />
-      <p className="text-xs text-muted-foreground">{t.aiHelp}</p>
-      <Button disabled className="w-fit bg-orange-600 text-white hover:bg-orange-600/90 dark:bg-orange-500">
-        <Bot aria-hidden />
-        {t.aiSubmit}
-      </Button>
-    </section>
-  );
-}
 
 function CodeColumn() {
   const t = fr.createComponent;
@@ -80,35 +60,40 @@ function CodeColumn() {
   );
 }
 
-export function CreateComponentDialog({
-  open,
-  onOpenChange,
-}: {
+type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-}) {
+  target: FinalizeComponentDraftInput["target"];
+  onAdded?: () => void;
+};
+
+export function CreateComponentDialog({ open, onOpenChange, target, onAdded }: Props) {
   const t = fr.createComponent;
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const done = () => {
+    setDraftId(null);
+    onOpenChange(false);
+    onAdded?.();
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
-          <DialogDescription>{t.subtitle}</DialogDescription>
+          <DialogDescription className={draftId ? "sr-only" : undefined}>{t.subtitle}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <AiColumn />
-          <CodeColumn />
-        </div>
-        <ol className="flex flex-wrap gap-2">
-          {t.steps.map((s, i) => (
-            <li
-              key={s}
-              className={`rounded-md border px-2 py-1 text-xs ${i === 0 ? "bg-accent" : "text-muted-foreground"}`}
-            >
-              {s}
-            </li>
-          ))}
-        </ol>
+        {draftId ? (
+          <AiDraftPanel draftId={draftId} target={target} onDone={done} />
+        ) : (
+          <>
+            <ResumeDraftBanner onResume={setDraftId} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DescribeCard onStarted={(d) => setDraftId(d.id)} />
+              <CodeColumn />
+            </div>
+            <DraftStepper current={1} />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

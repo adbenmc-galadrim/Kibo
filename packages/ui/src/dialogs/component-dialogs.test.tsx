@@ -28,6 +28,15 @@ mock.module("../api", () => ({
       if (req.method === "approveComponent") return approve();
       if (req.method === "getGithubConnectOptions")
         return Promise.resolve({ ghAvailable: false, ghLogin: null, mode: null });
+      if (req.method === "getAiStatus")
+        return Promise.resolve({
+          available: false,
+          reason: "missing",
+          version: null,
+          loggedIn: null,
+          profiles: { assistant: true, generateur: true },
+        });
+      if (req.method === "listComponentDrafts") return Promise.resolve([]);
       return add();
     },
     subscribe: () => () => undefined,
@@ -213,6 +222,33 @@ test("TrustDialog: full trust is a choice, a changed hash is explained", async (
   await waitFor(() => expect(onApproved).toHaveBeenCalledWith(approved));
 });
 
+test("TrustDialog with approve delegates the approval instead of calling approveComponent", async () => {
+  const onApproved = mock((_: RegistryVersion) => {});
+  const delegated = mock((_: "sandboxed" | "trusted") => Promise.resolve(approved));
+  const target = {
+    id: "burndown",
+    title: "Burndown",
+    version: "0.1.0",
+    hash: HASH,
+    origin: "ai" as const,
+    permissions: approved.granted,
+  };
+  render(
+    <TrustDialog
+      target={target}
+      mode="approveAndAdd"
+      open
+      onOpenChange={() => {}}
+      onApproved={onApproved}
+      approve={delegated}
+    />,
+  );
+  await userEvent.setup().click(screen.getByRole("button", { name: "Autoriser et ajouter" }));
+  await waitFor(() => expect(onApproved).toHaveBeenCalledWith(approved));
+  expect(delegated).toHaveBeenCalledWith("sandboxed");
+  expect(calls.some((c) => c.method === "approveComponent")).toBe(false);
+});
+
 test("a validated draft shows Publier only when the page can publish", async () => {
   drafts = [
     {
@@ -268,16 +304,17 @@ test("a failure to load or add is shown, never swallowed", async () => {
   }
 });
 
-test("screen 29: the AI column waits for phase 6, commands can be copied", async () => {
-  render(<CreateComponentDialog open onOpenChange={() => {}} />);
+test("screen 29: the AI column explains a blocked agent, commands can be copied", async () => {
+  render(<CreateComponentDialog open onOpenChange={() => {}} target={null} />);
   const user = userEvent.setup();
   const writes: string[] = [];
   Object.defineProperty(navigator, "clipboard", {
     value: { writeText: async (t: string) => writes.push(t) },
     configurable: true,
   });
+  expect(await screen.findByText("claude introuvable")).toBeTruthy();
   expect(screen.getByRole("button", { name: /Générer avec un agent/ }).hasAttribute("disabled")).toBe(true);
-  expect(screen.getByText("Bientôt")).toBeTruthy();
+  expect(screen.queryByText("Bientôt")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Copier les commandes" }));
   expect(writes).toEqual([
     "kibo component new burndown\nkibo component test burndown\nkibo component dev burndown",

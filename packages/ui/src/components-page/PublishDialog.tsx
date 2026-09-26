@@ -18,6 +18,7 @@ import {
   ChangesList,
   hasChanges,
   InvalidPreview,
+  NEUTRAL_DOT,
   PublishReport,
   type Strategy,
   StrategyChoice,
@@ -31,8 +32,6 @@ type Props = {
   onOpenChange(o: boolean): void;
   onPublished?(result: PublishResult): void;
 };
-
-const NEUTRAL_DOT = "#71717A";
 
 function explain(e: unknown, id: string): string {
   const p = fr.publish;

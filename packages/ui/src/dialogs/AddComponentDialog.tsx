@@ -278,7 +278,12 @@ export function AddComponentDialog({
           onApproved={(v) => void addInstance(`${trust.id}@${v.version}`)}
         />
       )}
-      <CreateComponentDialog open={creating} onOpenChange={setCreating} />
+      <CreateComponentDialog
+        open={creating}
+        onOpenChange={setCreating}
+        target={{ projectId, pageId: page.id }}
+        onAdded={() => onOpenChange(false)}
+      />
     </>
   );
 }

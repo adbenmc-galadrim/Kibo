@@ -50,6 +50,7 @@ type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onApproved: (v: RegistryVersion) => void;
+  approve?: (trust: ApprovableTrust) => Promise<RegistryVersion>;
 };
 
 function LevelCard({ value, title, help }: { value: ApprovableTrust; title: string; help: string }) {
@@ -84,7 +85,7 @@ function PermissionList({ permissions }: { permissions: GrantedPermissions }) {
   );
 }
 
-export function TrustDialog({ target, mode, open, onOpenChange, onApproved }: Props) {
+export function TrustDialog({ target, mode, open, onOpenChange, onApproved, approve: delegate }: Props) {
   const t = fr.trust;
   const [level, setLevel] = useState<ApprovableTrust>("sandboxed");
   const [error, setError] = useState<string | null>(null);
@@ -93,13 +94,15 @@ export function TrustDialog({ target, mode, open, onOpenChange, onApproved }: Pr
     setBusy(true);
     setError(null);
     try {
-      const v = await client.rpc({
-        method: "approveComponent",
-        id: target.id,
-        version: target.version,
-        hash: target.hash,
-        trust: level,
-      });
+      const v = delegate
+        ? await delegate(level)
+        : await client.rpc({
+            method: "approveComponent",
+            id: target.id,
+            version: target.version,
+            hash: target.hash,
+            trust: level,
+          });
       onApproved(v);
       onOpenChange(false);
     } catch (e) {
