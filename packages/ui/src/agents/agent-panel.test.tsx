@@ -1,18 +1,11 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import {
-  type HookEventName,
-  type HookPayload,
-  KiboError,
-  type RpcRequest,
-  type RunEvent,
-  type RunLogEntry,
-} from "@kibo/schema";
+import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fr } from "../i18n/fr";
 import { agentsFixture, NOW } from "./fixtures";
+import { RUN_LOG } from "./run-log-fixture";
 
-const MIN = 60_000;
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
 
@@ -25,72 +18,11 @@ mock.module("../api", () => ({
   },
 }));
 
-const hook = (event: HookEventName, p: Partial<HookPayload>): HookPayload => ({
-  event,
-  sessionId: "s-r41",
-  transcriptPath: null,
-  tool: null,
-  detail: null,
-  question: null,
-  agentId: null,
-  ...p,
-});
-
-const LOG: RunLogEntry[] = [
-  { id: 10, at: NOW - 8 * MIN, event: { type: "enqueued", rank: 1 } },
-  { id: 11, at: NOW - 7 * MIN, event: { type: "admitted", lane: 2 } },
-  {
-    id: 1,
-    at: NOW - 7 * MIN,
-    event: { type: "spawned", pid: 42, resume: false, workspace: "worktree:kib-14", guidelines: 3 },
-  },
-  {
-    id: 12,
-    at: NOW - 7 * MIN,
-    event: { type: "hook", payload: hook("SessionStart", { detail: "startup" }) },
-  },
-  {
-    id: 2,
-    at: NOW - 5 * MIN,
-    event: {
-      type: "hook",
-      payload: hook("PreToolUse", { tool: "Write", detail: "apps/daemon/src/hooks/receiver.ts" }),
-    },
-  },
-  {
-    id: 3,
-    at: NOW - 5 * MIN,
-    event: {
-      type: "hook",
-      payload: hook("PostToolUse", { tool: "Write", detail: "apps/daemon/src/hooks/receiver.ts" }),
-    },
-  },
-  {
-    id: 4,
-    at: NOW - MIN,
-    event: {
-      type: "hook",
-      payload: hook("PostToolUse", {
-        tool: "mcp__kibo__ask_user",
-        question: "Quel port pour le récepteur ? 4747 (défaut) ou dynamique ?",
-      }),
-    },
-  },
-  { id: 5, at: NOW, event: { type: "reranked", rank: 3 } },
-  { id: 6, at: NOW, event: { type: "hook", payload: hook("Stop", { detail: "J'attends ta réponse." }) } },
-  { id: 7, at: NOW, event: { type: "hook", payload: hook("SessionEnd", { detail: "other" }) } },
-  {
-    id: 8,
-    at: NOW,
-    event: { type: "exited", code: 0, isError: false, result: "ok", tokens: 1, costUsd: 0, denied: [] },
-  },
-];
-
 mock.module("../state/use-agents", () => ({
   useAgents: () => agentsFixture(),
   useConfig: () => null,
   useNow: () => NOW,
-  useRunLog: (runId: string | null) => (runId === "r41" ? LOG : runId ? [] : null),
+  useRunLog: (runId: string | null) => (runId === "r41" ? RUN_LOG : runId ? [] : null),
   useDaemonOnline: () => true,
 }));
 
@@ -98,7 +30,6 @@ const { AgentBar } = await import("./AgentBar");
 const { AgentDrawer } = await import("./AgentDrawer");
 const { AgentPanel } = await import("./AgentPanel");
 const { ReplyBox } = await import("./ReplyBox");
-const { journalLines, RunJournal } = await import("./RunJournal");
 
 beforeEach(() => {
   calls.length = 0;
@@ -129,7 +60,6 @@ test("the bar sums up slots, queue, running runs and the run waiting for an answ
   await user.click(screen.getByRole("button", { name: "Déplier les agents" }));
   expect(onExpand).toHaveBeenCalled();
 });
-
 test("the bar hides the runs that wrap behind a counter that expands the panel", async () => {
   const wrapped = new Set(["r43", "r44"]);
   const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetTop");
@@ -156,11 +86,9 @@ test("the bar hides the runs that wrap behind a counter that expands the panel",
     if (original) Object.defineProperty(HTMLElement.prototype, "offsetTop", original);
   }
 });
-
 test("the counter speaks of a single run in the singular", () => {
   expect(fr.agents.moreRuns(1)).toBe("1 autre run en cours");
 });
-
 test("the bar says when the daemon is out of reach", () => {
   render(
     <AgentBar state={agentsFixture()} now={NOW} online={false} onExpand={() => {}} onSelect={() => {}} />,
@@ -168,7 +96,6 @@ test("the bar says when the daemon is out of reach", () => {
   expect(screen.getByText("Démon injoignable")).toBeTruthy();
   expect(screen.queryByText("Démon local")).toBeNull();
 });
-
 test("the drawer groups runs like the mockup and numbers the queue", async () => {
   const onSelect = mock((_: string) => {});
   render(
@@ -204,7 +131,6 @@ test("the drawer groups runs like the mockup and numbers the queue", async () =>
   );
   expect(onSelect).toHaveBeenCalledWith("r41");
 });
-
 test("stopping a run cancels it, and a refusal is shown", async () => {
   const props = {
     state: agentsFixture(),
@@ -223,7 +149,6 @@ test("stopping a run cancels it, and a refusal is shown", async () => {
   await user.click(screen.getByRole("button", { name: "Arrêter" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'arrêter le run.");
 });
-
 test("a finished run has no stop button", () => {
   render(
     <AgentDrawer
@@ -239,112 +164,6 @@ test("a finished run has no stop button", () => {
   );
   expect(screen.queryByRole("button", { name: "Arrêter" })).toBeNull();
 });
-
-test("the journal keeps one SessionStart and one Stop, hides internal events, colours by event", () => {
-  render(<RunJournal label="opus-dev-2" log={LOG} files={null} />);
-  const journal = screen.getByRole("list", { name: "Journal de opus-dev-2" });
-  const lines = within(journal).getAllByRole("listitem");
-  expect(lines.map((l) => [l.textContent?.slice(5), l.getAttribute("data-tone")])).toEqual([
-    ["SessionStartbrief.md + 3 guidelines chargés", "blue"],
-    ["PostToolUseWrite apps/daemon/src/hooks/receiver.ts", "blue"],
-    ["NotificationQuel port pour le récepteur ? 4747 (défaut) ou dynamique ?", "amber"],
-    ["StopJ'attends ta réponse.", "green"],
-    ["SessionEndother", "muted"],
-  ]);
-});
-
-test("a failed exit adds a red line, even after a clean Stop", () => {
-  const failed: RunLogEntry[] = [
-    ...LOG.slice(0, -1),
-    {
-      id: 9,
-      at: NOW,
-      event: { type: "exited", code: 1, isError: true, result: "boom", tokens: 1, costUsd: 0, denied: [] },
-    },
-  ];
-  expect(journalLines(failed).at(-1)).toMatchObject({ name: "exited", text: "boom", tone: "red" });
-});
-
-test("file paths in the journal open the file in the run's worktree, with their origin", async () => {
-  const opened = mock((_path: string, _line: number | null, _origin: string) => {});
-  const log: RunLogEntry[] = [
-    ...LOG,
-    {
-      id: 20,
-      at: NOW,
-      event: { type: "hook", payload: hook("PostToolUse", { tool: "Edit", detail: "/wt/kib-14/src/a.ts" }) },
-    },
-  ];
-  render(
-    <RunJournal
-      label="opus-dev-2"
-      log={log}
-      files={{ worktree: "/wt/kib-14", ticketKey: "KIB-14", open: opened }}
-    />,
-  );
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "apps/daemon/src/hooks/receiver.ts" }));
-  await user.click(screen.getByRole("button", { name: "src/a.ts" }));
-  expect(opened.mock.calls).toEqual([
-    ["apps/daemon/src/hooks/receiver.ts", null, "KIB-14 · PostToolUse Write"],
-    ["src/a.ts", null, "KIB-14 · PostToolUse Edit"],
-  ]);
-});
-
-test("a path in the drawer journal opens a preview of the run's worktree", async () => {
-  const onOpenFile = mock((_: unknown) => {});
-  render(
-    <AgentDrawer
-      state={agentsFixture()}
-      now={NOW}
-      selected={{ ...run("r41"), projectId: "kibo", cwd: "/wt/kib-14" }}
-      log={LOG}
-      onSelect={() => {}}
-      onCollapse={() => {}}
-      onLaunch={() => {}}
-      onOpenFile={onOpenFile}
-    />,
-  );
-  await userEvent.setup().click(screen.getByRole("button", { name: "apps/daemon/src/hooks/receiver.ts" }));
-  expect(onOpenFile.mock.calls).toEqual([
-    [
-      {
-        projectId: "kibo",
-        worktree: "/wt/kib-14",
-        path: "apps/daemon/src/hooks/receiver.ts",
-        line: null,
-        origin: "KIB-14 · PostToolUse Write",
-      },
-    ],
-  ]);
-});
-
-test("without a worktree the journal shows paths as plain text", () => {
-  render(<RunJournal label="opus-dev-2" log={LOG} files={null} />);
-  expect(screen.getByText("Write apps/daemon/src/hooks/receiver.ts")).toBeTruthy();
-  expect(screen.queryByRole("button")).toBeNull();
-});
-
-test("daemon events keep their raw type as name", () => {
-  const exited = { type: "exited", code: 0, isError: false, result: null, tokens: 0, costUsd: 0 } as const;
-  const cases: [RunEvent, string | null][] = [
-    [{ type: "enqueued", rank: 1 }, null],
-    [{ type: "admitted", lane: 2 }, null],
-    [{ type: "spawned", pid: 1, resume: true, workspace: "repo", guidelines: 0 }, "SessionStart"],
-    [{ ...exited, denied: [] }, null],
-    [{ ...exited, denied: ["Bash"] }, "exited"],
-    [{ type: "answered", text: "oui", rank: 0 }, "answered"],
-    [{ type: "cancelled" }, "cancelled"],
-    [{ type: "failed", error: "exit code 1" }, "failed"],
-    [{ type: "prioritized", priority: true }, "prioritized"],
-    [{ type: "prioritized", priority: false }, null],
-    [{ type: "reranked", rank: 2 }, null],
-  ];
-  for (const [event, name] of cases) {
-    expect(journalLines([{ id: 1, at: NOW, event }]).at(0)?.name ?? null).toBe(name);
-  }
-});
-
 test("the reply box sends a trimmed answer, and keeps the text when it fails", async () => {
   render(<ReplyBox run={run("r41")} />);
   const user = userEvent.setup();
@@ -361,7 +180,6 @@ test("the reply box sends a trimmed answer, and keeps the text when it fails", a
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'envoyer la réponse.");
   expect(field.value).toBe("4747");
 });
-
 test("the panel opens on the waiting run, shows its journal and folds back", async () => {
   render(<AgentPanel onLaunch={() => {}} focusRunId={null} onFocused={() => {}} onOpenFile={() => {}} />);
   const user = userEvent.setup();
@@ -371,14 +189,12 @@ test("the panel opens on the waiting run, shows its journal and folds back", asy
   await user.click(screen.getByRole("button", { name: "Replier les agents" }));
   expect(screen.getByRole("button", { name: "Déplier les agents" })).toBeTruthy();
 });
-
 test("a focus request opens the drawer on that run", () => {
   const onFocused = mock(() => {});
   render(<AgentPanel onLaunch={() => {}} focusRunId="r42" onFocused={onFocused} onOpenFile={() => {}} />);
   expect(screen.getByRole("list", { name: "Journal de opus-dev-1" })).toBeTruthy();
   expect(onFocused).toHaveBeenCalledTimes(1);
 });
-
 test("the launch button asks the shell to open the assign dialog", async () => {
   const onLaunch = mock(() => {});
   render(<AgentPanel onLaunch={onLaunch} focusRunId="r41" onFocused={() => {}} onOpenFile={() => {}} />);
