@@ -25,6 +25,15 @@ if (process.env.FAKE_GH_FAIL === "1") {
   process.stderr.write("fake gh failure\n");
   process.exit(1);
 }
+if (args[0] === "auth" && args[1] === "token") {
+  const token = process.env.FAKE_GH_TOKEN;
+  if (!token) {
+    process.stderr.write("no oauth token found for github.com\n");
+    process.exit(1);
+  }
+  process.stdout.write(`${token}\n`);
+  process.exit(0);
+}
 if (args[0] === "auth" && args[1] === "status") {
   process.stdout.write("Logged in to github.com as adam\n");
   process.exit(0);

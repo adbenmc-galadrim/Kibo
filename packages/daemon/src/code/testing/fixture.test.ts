@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
+import { runGh } from "../run";
 import {
   createGitFixture,
   type GitFixture,
@@ -47,6 +48,16 @@ test("the fake gh records calls and creates numbered PRs", () => {
     args: ["pr", "create", "--head=kib-12", "--body-file", "-"],
     stdin: "corps",
   });
+});
+
+test("the fake gh prints its token only when one is configured", async () => {
+  const env = installFakeGh(fx.dir);
+  const token = "ghp_TESTSECRET0123456789abcdefghijklmn";
+  const ok = await runGh(["auth", "token"], { cwd: fx.dir, env: { ...env, FAKE_GH_TOKEN: token } });
+  expect(ok.code).toBe(0);
+  expect(ok.stdout).toBe(`${token}\n`);
+  const missing = await runGh(["auth", "token"], { cwd: fx.dir, env });
+  expect(missing.code).toBe(1);
 });
 
 test("a fake binary logs its arguments", () => {
