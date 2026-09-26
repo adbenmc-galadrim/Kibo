@@ -8829,7 +8829,7 @@ Bornes de téléchargement (entrée réseau hostile, lue en flux et coupée dès
   - `startFakeMarket(opts?: { id?: string; name?: string; verified?: boolean }): Promise<FakeMarket>` avec `FakeMarket = { url: string; publicKey: string; publish(pkg: Uint8Array): Promise<void>; revoke(hash: string, reason: string): Promise<void>; setSerial(serial: number): Promise<void>; resignWith(keys: KeyPair): Promise<void>; tamper(path: string, bytes: Uint8Array): void; serial(): number; stop(): void }`.
   - `createMemoryRegistry(): { port: RegistryPort; revoked: { id: string; version: string; reason: string }[] }` (réutilisé par T20 et T22).
 
-- [ ] **Step 1: Écrire les tests de `http-get`**
+- [x] **Step 1: Écrire les tests de `http-get`**
 
 `packages/daemon/src/market/http-get.test.ts` :
 ```ts
@@ -8908,12 +8908,12 @@ describe("createHttpGet", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `bun test packages/daemon/src/market/http-get.test.ts`
 Expected: FAIL avec « Cannot find module './http-get' ».
 
-- [ ] **Step 3: Implémenter `http-get.ts`**
+- [x] **Step 3: Implémenter `http-get.ts`**
 
 `packages/daemon/src/market/http-get.ts` :
 ```ts
@@ -9005,12 +9005,12 @@ async function readLimited(res: Response, maxBytes: number, href: string, signal
 }
 ```
 
-- [ ] **Step 4: Relancer**
+- [x] **Step 4: Relancer**
 
 Run: `bun test packages/daemon/src/market/http-get.test.ts`
 Expected: PASS (9 tests).
 
-- [ ] **Step 5: Écrire la fausse source et le registre en mémoire**
+- [x] **Step 5: Écrire la fausse source et le registre en mémoire**
 
 `packages/daemon/src/testing/fake-market.ts` :
 ```ts
@@ -9156,7 +9156,7 @@ export function createMemoryRegistry(): {
 }
 ```
 
-- [ ] **Step 6: Écrire les tests du service**
+- [x] **Step 6: Écrire les tests du service**
 
 `packages/daemon/src/market/market-service.test.ts` :
 ```ts
@@ -9408,12 +9408,12 @@ describe("search and packages", () => {
 });
 ```
 
-- [ ] **Step 7: Lancer pour voir échouer**
+- [x] **Step 7: Lancer pour voir échouer**
 
 Run: `bun test packages/daemon/src/market/market-service.test.ts`
 Expected: FAIL avec « Cannot find module './market-db' ».
 
-- [ ] **Step 8: Implémenter `market-db.ts`**
+- [x] **Step 8: Implémenter `market-db.ts`**
 
 `packages/daemon/src/market/market-db.ts` :
 ```ts
@@ -9516,7 +9516,7 @@ export function openMarketDb(db: Database): MarketDb {
 ```
 La suppression d'une source garde les épinglages : ils ne portent aucun secret et réinstaller depuis la même source doit retrouver la même exigence (spec H §5.4).
 
-- [ ] **Step 9: Implémenter `market-service.ts`**
+- [x] **Step 9: Implémenter `market-service.ts`**
 
 `packages/daemon/src/market/market-service.ts` :
 ```ts
@@ -9849,12 +9849,12 @@ export class MarketService {
 }
 ```
 
-- [ ] **Step 10: Relancer**
+- [x] **Step 10: Relancer**
 
 Run: `bun test packages/daemon/src/market/market-service.test.ts`
 Expected: PASS (16 tests).
 
-- [ ] **Step 11: Test des RPC**
+- [x] **Step 11: Test des RPC**
 
 `packages/daemon/src/market/rpc.test.ts` :
 ```ts
@@ -9921,7 +9921,7 @@ test("findMarketSource answers null when nothing matches", async () => {
 Run: `bun test packages/daemon/src/market/rpc.test.ts`
 Expected: FAIL avec « Cannot find module './rpc' ».
 
-- [ ] **Step 12: Implémenter `rpc.ts` et la planification**
+- [x] **Step 12: Implémenter `rpc.ts` et la planification**
 
 `packages/daemon/src/market/rpc.ts` :
 ```ts
@@ -9980,7 +9980,7 @@ export function startMarketRefresh(
 }
 ```
 
-- [ ] **Step 12b: Adaptateur du registre réel**
+- [x] **Step 12b: Adaptateur du registre réel**
 
 `packages/daemon/src/market/registry-port.test.ts` :
 ```ts
@@ -10074,7 +10074,7 @@ export function createRegistryPort(input: {
 Run: `bun test packages/daemon/src/market/registry-port.test.ts`
 Expected: PASS.
 
-- [ ] **Step 12c: Branchement dans le démon**
+- [x] **Step 12c: Branchement dans le démon**
 
 `packages/daemon/src/market/bootstrap.ts` :
 ```ts
@@ -10132,17 +10132,17 @@ Dans `packages/daemon/src/daemon.ts` :
 
 Dans `packages/daemon/src/main.ts`, passer `marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1"` à `startDaemon` (même procédé que `KIBO_NATIVE_NOTIFY`). Seuls les E2E (T32) posent cette variable.
 
-- [ ] **Step 13: Relancer tout le dossier**
+- [x] **Step 13: Relancer tout le dossier**
 
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 14: Vérifications**
+- [x] **Step 14: Vérifications**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucune erreur.
 
-- [ ] **Step 15: Commit**
+- [x] **Step 15: Commit**
 
 ```bash
 git add packages/daemon/package.json packages/daemon/src/market packages/daemon/src/components/service.ts packages/daemon/src/testing/fake-market.ts packages/daemon/src/testing/memory-registry.ts packages/daemon/src/daemon.ts packages/daemon/src/main.ts bun.lock
