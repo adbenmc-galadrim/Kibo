@@ -1,3 +1,4 @@
+export * from "./build";
 export * from "./bun-command";
 export * from "./hash";
 export * from "./imports";
