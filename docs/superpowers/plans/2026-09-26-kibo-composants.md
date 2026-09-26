@@ -17273,10 +17273,10 @@ Constat du jalon v0.4 : une note en cours d'édition (« Non enregistré ») est
 - Modify: `components/notes/src/MarkdownEditor.tsx` (aucun `onChange` pour un changement venu de `value`)
 - Test: `components/notes/src/notes.test.tsx`, `packages/ui/src/pages/instance-frame.test.tsx`
 
-- [ ] **Step 1: Tests d'abord** : « a local unsaved edit survives an external change and shows the D4 banner » (frappe, changement disque, texte local conservé, bandeau affiché, disque inchangé) ; « the editor does not report a change it received from its value » ; « the sdk keeps its identity when the project snapshot changes but the instance config does not ».
-- [ ] **Step 2: Implémenter** les trois corrections ci-dessus ; « Garder ma version » et « Recharger » du bandeau D4 restent ceux de la tâche 26.
-- [ ] **Step 3: Vérifier** : `bun test packages components`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build`, `bun run budget`.
-- [ ] **Step 4: Commit** : `fix(notes): édition locale jamais écrasée`
+- [x] **Step 1: Tests d'abord** : « a local unsaved edit survives an external change and shows the D4 banner » (frappe, changement disque, texte local conservé, bandeau affiché, disque inchangé) ; « the editor does not report a change it received from its value » ; « the sdk keeps its identity when the project snapshot changes but the instance config does not ».
+- [x] **Step 2: Implémenter** les trois corrections ci-dessus ; « Garder ma version » et « Recharger » du bandeau D4 restent ceux de la tâche 26.
+- [x] **Step 3: Vérifier** : `bun test packages components`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build`, `bun run budget`.
+- [x] **Step 4: Commit** : `fix(notes): édition locale jamais écrasée`
 
 ### Task 35: UI chargée à la demande et budget du bundle d'entrée
 
