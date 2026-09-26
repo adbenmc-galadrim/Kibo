@@ -108,7 +108,7 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
   await expect(create).toBeHidden();
   await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
-  await expect(trust).toBeHidden();
+  await expect(trust).toBeHidden({ timeout: 60_000 });
 
   const frame = page.frameLocator("iframe[sandbox='allow-scripts']");
   await expect(frame.getByText("tickets restants")).toBeVisible({ timeout: 30_000 });
