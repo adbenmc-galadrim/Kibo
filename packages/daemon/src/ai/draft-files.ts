@@ -221,7 +221,10 @@ const unrestoredMark = (paths: DraftPaths) => `${paths.dir}.unrestored`;
 export const isUnrestored = (paths: DraftPaths): boolean => present(unrestoredMark(paths));
 
 export function markUnrestored(paths: DraftPaths): void {
-  guarded("mark draft unrestored", () => writeFileSync(unrestoredMark(paths), "", { mode: 0o600 }));
+  guarded("mark draft unrestored", () => {
+    removeTree(unrestoredMark(paths));
+    writeFileSync(unrestoredMark(paths), "", { mode: 0o600, flag: "wx" });
+  });
 }
 
 export function clearUnrestored(paths: DraftPaths): void {
