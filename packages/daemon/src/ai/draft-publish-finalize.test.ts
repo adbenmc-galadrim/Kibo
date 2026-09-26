@@ -164,3 +164,28 @@ describe("finalize guards", () => {
     expect(s.publisher.isProcessing(ID)).toBe(false);
   });
 });
+
+describe("idle", () => {
+  test("resolves at once when nothing is being processed", async () => {
+    const s = await setup({ status: "permissions" });
+    await s.publisher.idle();
+    expect(s.published).toEqual([]);
+  });
+
+  test("waits for a finalization in progress to end", async () => {
+    const s = await setup({ status: "permissions", publishDelayMs: 30 });
+    const finalizing = s.publisher.finalize(input(hashOf(s.paths.dir)));
+    await s.publisher.idle();
+    expect(s.store.get(ID).status).toBe("done");
+    expect(s.publisher.isProcessing(ID)).toBe(false);
+    await finalizing;
+  });
+
+  test("resolves after a failed finalization without rethrowing it", async () => {
+    const s = await setup({ status: "permissions", publishDelayMs: 30, publishFails: true });
+    const finalizing = s.publisher.finalize(input(hashOf(s.paths.dir)));
+    await s.publisher.idle();
+    expect(s.publisher.isProcessing(ID)).toBe(false);
+    await expect(finalizing).rejects.toThrow("build failed");
+  });
+});

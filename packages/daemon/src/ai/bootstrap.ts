@@ -67,6 +67,13 @@ function claudeBinOrNull(configured: string | null, env: Record<string, string |
   }
 }
 
+export function createAiStop(shutdown: AbortController, work: { idle(): Promise<void> }[]) {
+  return async () => {
+    shutdown.abort();
+    await Promise.all(work.map((w) => w.idle()));
+  };
+}
+
 function availability(deps: AiBootstrapDeps, exec: Exec): AiAvailability {
   const bin = claudeBinOrNull(deps.claudeBin, deps.agentEnv);
   return createAiAvailability({
@@ -147,11 +154,5 @@ export async function startAi(deps: AiBootstrapDeps): Promise<{ port: AiPort; st
   });
   const port = createAiRpc({ ai, starter, lifecycle, publisher, environment: environmentOf(deps, ai, exec) });
   await lifecycle.recover();
-  return {
-    port,
-    async stop() {
-      shutdown.abort();
-      await lifecycle.idle();
-    },
-  };
+  return { port, stop: createAiStop(shutdown, [lifecycle, publisher]) };
 }

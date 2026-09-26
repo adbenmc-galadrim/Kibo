@@ -31,6 +31,7 @@ function setup(processing: ReadonlySet<string> = new Set()) {
       review: async () => mark("review"),
       finalize: async () => mark("finalize"),
       isProcessing: (id) => processing.has(id),
+      idle: async () => {},
     },
   });
   return { port, seen };

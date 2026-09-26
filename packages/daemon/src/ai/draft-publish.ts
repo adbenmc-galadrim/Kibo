@@ -74,8 +74,19 @@ export function createDraftPublisher(deps: PublishDeps) {
     return next;
   };
 
-  const exclusive = <T>(id: string, work: () => Promise<T>) =>
-    held(busy, id, new KiboError("INVALID_INPUT", "this draft is already being processed"), work);
+  const running = new Set<Promise<unknown>>();
+
+  const exclusive = <T>(id: string, work: () => Promise<T>): Promise<T> => {
+    const job = held(busy, id, new KiboError("INVALID_INPUT", "this draft is already being processed"), work);
+    const forget = () => running.delete(job);
+    running.add(job);
+    job.then(forget, forget);
+    return job;
+  };
+
+  const idle = async () => {
+    while (running.size > 0) await Promise.allSettled([...running]);
+  };
 
   const assertAbovePublished = (d: ComponentDraft, version: string, reviewedHash: string | null) => {
     const latest = deps.catalog.latest(d.componentId);
@@ -237,5 +248,5 @@ export function createDraftPublisher(deps: PublishDeps) {
 
   const isProcessing = (draftId: string) => busy.has(draftId);
 
-  return { details, review, finalize, isProcessing };
+  return { details, review, finalize, isProcessing, idle };
 }
