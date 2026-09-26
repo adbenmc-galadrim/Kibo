@@ -114,3 +114,14 @@ test("running backends are listed until they are stopped", async () => {
   b.stop("probe@0.1.0");
   expect(b.running()).toEqual([]);
 });
+
+test("once stopped, the backends start nothing more", async () => {
+  const b = backends({ trust: "trusted" });
+  b.stopAll();
+  const job = { projectId: "p", instanceId: "i", config: {}, job: "sync" };
+  await expect(b.runJob("probe@0.1.0", job)).rejects.toThrow("COMPONENT_CRASHED");
+  await expect(b.action("probe@0.1.0", { ...req, name: "ping" })).rejects.toThrow("COMPONENT_CRASHED");
+  await expect(b.describe("probe@0.1.0")).rejects.toThrow("COMPONENT_CRASHED");
+  await expect(b.migrate("probe@0.1.0", migration)).rejects.toThrow("COMPONENT_CRASHED");
+  expect(b.running()).toEqual([]);
+});

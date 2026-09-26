@@ -44,7 +44,9 @@ const isRecord = (v: unknown): v is Json => typeof v === "object" && v !== null 
 export function createBackends(deps: BackendsDeps): Backends {
   const hosts = new Map<string, { host: BackendHost; trust: Trust }>();
 
+  let closed = false;
   const sourceOf = (ref: string): BackendSource => {
+    if (closed) throw new KiboError("COMPONENT_CRASHED", `${ref} not started: the daemon is stopping`);
     if (!ComponentRef.safeParse(ref).success)
       throw new KiboError("INVALID_INPUT", `invalid component ref ${ref}`);
     const source = deps.source(ref);
@@ -109,6 +111,7 @@ export function createBackends(deps: BackendsDeps): Backends {
       hosts.delete(ref);
     },
     stopAll() {
+      closed = true;
       for (const { host } of hosts.values()) host.stop();
       hosts.clear();
     },
