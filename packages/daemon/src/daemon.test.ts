@@ -87,6 +87,7 @@ describe("startDaemon", () => {
       "github",
       "github-issues",
       "github-actions",
+      "figma",
       "notifications",
       "markdown",
       "mcp",

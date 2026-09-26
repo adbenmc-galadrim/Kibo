@@ -2,6 +2,7 @@ import { KiboError } from "@kibo/schema";
 import { createCiStore } from "../ci/ci-store";
 import { ciModule } from "../ci/module";
 import { createCiPoller } from "../ci/poller";
+import { figmaModule } from "../figma/module";
 import { createGithubApi, type GithubApi } from "../github/api";
 import { createGithubAccount, type GithubAccount } from "../github/auth";
 import { githubModule } from "../github/handlers";
@@ -139,6 +140,7 @@ export function startIntegrations(
     githubModule(kit, kit.github),
     ciModule(kit, ciPoller, ciStore),
     mcpModule(kit, mcpHub),
+    figmaModule(kit, mcpHub),
   ];
   return createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),
