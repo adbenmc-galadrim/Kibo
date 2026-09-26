@@ -34,12 +34,13 @@ export const RejectCode = z.enum([
 ]);
 export type RejectCode = z.infer<typeof RejectCode>;
 
-const projectId = z.string().min(1).max(128);
+export const SyncId = z.string().min(1).max(128);
+const projectId = SyncId;
 const requestId = z.string().min(1).max(64);
 const seq = z.number().int().nonnegative();
 
 export const ClientFrame = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("auth"), deviceId: z.string().min(1), signature: Base64 }),
+  z.object({ type: z.literal("auth"), deviceId: SyncId, signature: Base64 }),
   z.object({ type: z.literal("subscribe"), projectId, version: Base64.nullable() }),
   z.object({ type: z.literal("unsubscribe"), projectId }),
   z.object({ type: z.literal("push"), projectId, bytes: Base64, clientBatchId: requestId }),
@@ -57,13 +58,13 @@ export const ClientFrame = z.discriminatedUnion("type", [
     type: z.literal("set-role"),
     projectId,
     requestId,
-    userId: z.string().min(1),
+    userId: SyncId,
     role: MemberRole.nullable(),
   }),
   z.object({ type: z.literal("unshare"), projectId, requestId }),
   z.object({ type: z.literal("device-invite"), requestId }),
   z.object({ type: z.literal("list-devices"), requestId }),
-  z.object({ type: z.literal("revoke-device"), requestId, deviceId: z.string().min(1) }),
+  z.object({ type: z.literal("revoke-device"), requestId, deviceId: SyncId }),
 ]);
 export type ClientFrame = z.infer<typeof ClientFrame>;
 
@@ -119,8 +120,29 @@ export function challengePayload(nonce: string, origin: string): Uint8Array {
   return new TextEncoder().encode(`${CHALLENGE_PREFIX}\n${nonce}\n${origin}`);
 }
 
+function utf8ByteLength(text: string): number {
+  let bytes = 0;
+  for (let i = 0; i < text.length; i++) {
+    const unit = text.charCodeAt(i);
+    if (unit < 0x80) bytes += 1;
+    else if (unit < 0x800) bytes += 2;
+    else if (isSurrogatePair(text, i)) {
+      bytes += 4;
+      i++;
+    } else bytes += 3;
+  }
+  return bytes;
+}
+
+function isSurrogatePair(text: string, i: number): boolean {
+  const high = text.charCodeAt(i);
+  const low = text.charCodeAt(i + 1);
+  return high >= 0xd800 && high <= 0xdbff && low >= 0xdc00 && low <= 0xdfff;
+}
+
 function parseWith<T>(schema: z.ZodType<T>, raw: string): T {
-  if (raw.length > MAX_FRAME_BYTES) throw new KiboError("INVALID_INPUT", "frame too large");
+  if (raw.length > MAX_FRAME_BYTES || utf8ByteLength(raw) > MAX_FRAME_BYTES)
+    throw new KiboError("INVALID_INPUT", "frame too large");
   let json: unknown;
   try {
     json = JSON.parse(raw);

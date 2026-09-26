@@ -8,9 +8,9 @@ import {
   type SessionInfo,
 } from "./security";
 import { type MemberInfo, MemberRole, type ProjectSyncInfo } from "./sharing";
-import type { DeviceInfo, PresencePeer, SyncStatus } from "./sync";
+import { type DeviceInfo, type PresencePeer, SyncId, type SyncStatus } from "./sync";
 
-const id = z.string().min(1).max(128);
+const id = SyncId;
 
 export const SYNC_RPC_REQUESTS = [
   z.object({ method: z.literal("listSessions") }),

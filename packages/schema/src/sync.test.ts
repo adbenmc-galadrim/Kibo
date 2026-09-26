@@ -133,6 +133,37 @@ describe("parsing helpers", () => {
     expect(() => parseClientFrame('{"type":"nope"}')).toThrow("INVALID_INPUT");
     expect(() => parseServerFrame("x".repeat(MAX_FRAME_BYTES + 1))).toThrow("INVALID_INPUT");
   });
+
+  test("frame size is measured in UTF-8 bytes, not UTF-16 units", () => {
+    const cjk = `{"type":"auth","deviceId":"${"字".repeat(3_000_000)}","signature":"c2ln"}`;
+    expect(cjk.length).toBeLessThan(MAX_FRAME_BYTES);
+    expect(() => parseClientFrame(cjk)).toThrow("frame too large");
+  });
+
+  test("a non-ASCII frame of exactly the limit is accepted, one byte more is refused", () => {
+    const head = '{"type":"done","requestId":"é😀"}';
+    const headBytes = new TextEncoder().encode(head).byteLength;
+    const atLimit = head + " ".repeat(MAX_FRAME_BYTES - headBytes);
+    expect(parseServerFrame(atLimit)).toEqual({ type: "done", requestId: "é😀" });
+    expect(() => parseServerFrame(`${atLimit} `)).toThrow("frame too large");
+  });
+});
+
+describe("identifier bounds", () => {
+  test("device and user identifiers are bounded like other identifiers", () => {
+    const long = "d".repeat(129);
+    expect(
+      ClientFrame.safeParse({ type: "auth", deviceId: "d".repeat(128), signature: "c2ln" }).success,
+    ).toBe(true);
+    expect(ClientFrame.safeParse({ type: "auth", deviceId: long, signature: "c2ln" }).success).toBe(false);
+    expect(ClientFrame.safeParse({ type: "revoke-device", requestId: "r", deviceId: long }).success).toBe(
+      false,
+    );
+    expect(
+      ClientFrame.safeParse({ type: "set-role", projectId: "p1", requestId: "r", userId: long, role: null })
+        .success,
+    ).toBe(false);
+  });
 });
 
 describe("daemon events", () => {
