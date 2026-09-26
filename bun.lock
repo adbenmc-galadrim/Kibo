@@ -121,6 +121,22 @@
         "@playwright/test": "1.55.0",
       },
     },
+    "packages/cli": {
+      "name": "@kibo/cli",
+      "version": "0.4.0",
+      "bin": {
+        "kibo": "./src/bin.ts",
+      },
+      "dependencies": {
+        "@kibo/devkit": "workspace:*",
+        "@kibo/schema": "workspace:*",
+        "zod": "3.25.76",
+      },
+      "devDependencies": {
+        "@kibo/daemon": "workspace:*",
+        "@types/bun": "1.4.2",
+      },
+    },
     "packages/core": {
       "name": "@kibo/core",
       "version": "0.0.0",
@@ -473,6 +489,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@kibo/cli": ["@kibo/cli@workspace:packages/cli"],
 
     "@kibo/component-graph": ["@kibo/component-graph@workspace:components/graph"],
 

@@ -1,0 +1,21 @@
+{
+  "name": "@kibo/cli",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "kibo": "./src/bin.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kibo/devkit": "workspace:*",
+    "@kibo/schema": "workspace:*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@kibo/daemon": "workspace:*",
+    "@types/bun": "1.4.2"
+  }
+}

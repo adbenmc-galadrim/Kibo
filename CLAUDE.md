@@ -23,13 +23,14 @@ packages/core/       domaine : docs Loro (workspace, projet), arbres, workflow �
 packages/devkit/     outillage des composants : empreinte, imports, build, validation (CLI et démon)
 packages/daemon/     serveur Bun : persistance SQLite, API HTTP/WS, appairage, sert l'UI
 packages/sdk/        SDK des composants (client, SDK simulé, suite de conformité)
+packages/cli/        commande kibo (création, test, aperçu, publication de composants)
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
 components/<id>/     composants intégrés (kanban, tickets…) écrits avec le SDK public
 e2e/                 parcours Playwright
 design/  docs/       maquettes, spec, plans
 ```
 
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon` ; `core ← sdk/mock` (SDK simulé uniquement).
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon`, `devkit ← cli` ; `core ← sdk/mock` (SDK simulé uniquement).
 `core` ne fait aucune I/O ; `ui` ne parle qu'au démon (jamais au disque).
 
 ## Code
