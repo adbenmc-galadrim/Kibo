@@ -3491,7 +3491,7 @@ git commit -m "feat(devkit): build des composants"
   - `@kibo/sdk/migrations` : `defineMigrations(m)`, types `MigrationStep`, `Migrations`.
   - `Host` (UI) gagne `openView(componentId: string): void` (et `openFile` s'il manque, voir « Ancrages »).
 
-- [ ] **Step 1: Écrire les tests du SDK v1**
+- [x] **Step 1: Écrire les tests du SDK v1**
 
 `packages/sdk/src/sdk-v1.test.ts` :
 ```ts
@@ -3607,7 +3607,7 @@ test("defineServer and defineMigrations validate their shape", () => {
 Run: `bun test packages/sdk/src/sdk-v1.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Écrire `types.ts`**
+- [x] **Step 2: Écrire `types.ts`**
 
 ```ts
 import type {
@@ -3685,7 +3685,7 @@ export type ComponentModule = { manifest: ComponentManifest; Component: Componen
 ```
 Si la phase 3 a déjà défini `openFile` avec une autre signature, garder la sienne partout dans ce plan.
 
-- [ ] **Step 3: Écrire `sdk.ts`**
+- [x] **Step 3: Écrire `sdk.ts`**
 
 ```ts
 import {
@@ -3814,7 +3814,7 @@ export function createSdk(
 ```
 Les deux `as` sont les frontières RPC autorisées : la réponse du démon est typée par le genre d'appel, comme `client.rpc` le fait déjà par méthode.
 
-- [ ] **Step 4: Écrire `server.ts`, `migrations.ts`, étendre `client.ts`**
+- [x] **Step 4: Écrire `server.ts`, `migrations.ts`, étendre `client.ts`**
 
 `packages/sdk/src/server.ts` :
 ```ts
@@ -3873,7 +3873,7 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
 }
 ```
 
-- [ ] **Step 5: Garder l'UI compilable**
+- [x] **Step 5: Garder l'UI compilable**
 
 `packages/ui/src/shell/Host.tsx` : `Host` gagne `openView(componentId: string): void` (et `openFile(target: FileTarget): void` si la phase 3 ne l'a pas ajouté). Dans `Shell.tsx`, `openView` ouvre la première page `view` du projet actif dont l'instance a pour composant `componentId` (`splitRef(i.component).id === componentId`) ; s'il n'y en a pas, il ne fait rien pour l'instant (la tâche 28 ajoute la confirmation de l'écran D7 ; aucun composant n'appelle `openView` avant la tâche 25).
 
@@ -3892,7 +3892,7 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
 ```
 où `surface` est une nouvelle prop de `InstanceFrame` (`page.kind === "view" ? "view" : "widget"`), ajoutée aux dépendances du `useMemo`.
 
-- [ ] **Step 6: Vérifier et committer**
+- [x] **Step 6: Vérifier et committer**
 
 Run: `bun test packages components && bun run typecheck && bun run check`
 Expected: PASS (les tests v0.1 de Kanban et Tickets passent sans modification).
