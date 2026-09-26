@@ -94,6 +94,11 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await shot(page, info, "ecran-13");
 
   await page.getByRole("button", { name: "Paramètres" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Général" })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Paramètres" })
+    .getByRole("link", { name: "Domaines & guidelines" })
+    .click();
   await expect(page.getByRole("heading", { level: 1, name: "Domaines & guidelines" })).toBeVisible();
   await page.getByRole("button", { name: "Core", exact: true }).click();
   await expect(page.getByText("skills/loro-patterns.md")).toBeVisible();
