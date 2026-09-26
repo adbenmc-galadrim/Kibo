@@ -1,0 +1,141 @@
+import {
+  type BuiltinEntityType,
+  type ComponentCall,
+  covers,
+  type FetchInit,
+  type FetchResponse,
+  type GrantedPermissions,
+  type Instance,
+  isBuiltinId,
+  isReservedCommand,
+  KiboError,
+  type KiboErrorCode,
+  type ProjectCommand,
+  permissionList,
+  permissionOfCall,
+  splitRef,
+} from "@kibo/schema";
+import type { EventLog } from "./events";
+import type { Quotas } from "./quotas";
+
+export type ActiveVersion = { ref: string; trust: "trusted" | "sandboxed"; granted: GrantedPermissions };
+export type DataCall = Extract<
+  ComponentCall,
+  { kind: "data.get" | "data.set" | "data.delete" | "data.keys" }
+>;
+export type NotesCall =
+  | Extract<ComponentCall, { kind: `notes.${string}` }>
+  | { kind: "list"; entity: "note" };
+
+export type GateHandlers = {
+  list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
+  run(projectId: string, command: ProjectCommand): Promise<unknown>;
+  data(projectId: string, instanceId: string, call: DataCall): Promise<unknown>;
+  fetch(rules: readonly string[] | null, url: string, init: FetchInit): Promise<FetchResponse>;
+  action(
+    ref: string,
+    projectId: string,
+    instanceId: string,
+    config: Record<string, unknown>,
+    name: string,
+    input: unknown,
+  ): Promise<unknown>;
+  notes(projectId: string, call: NotesCall): Promise<unknown>;
+};
+export type GateDeps = {
+  instance(projectId: string, instanceId: string): Instance;
+  active(ref: string): ActiveVersion;
+  handlers: GateHandlers;
+  quotas: Quotas;
+  events: EventLog;
+};
+export type Gate = { call(projectId: string, instanceId: string, call: ComponentCall): Promise<unknown> };
+
+const REFUSALS = new Set<KiboErrorCode>([
+  "NOT_FOUND",
+  "TRUST_REQUIRED",
+  "PERMISSION_DENIED",
+  "RATE_LIMITED",
+  "QUOTA_EXCEEDED",
+  "PATH_OUTSIDE_PROJECT",
+]);
+
+export function missingPermission(granted: GrantedPermissions, call: ComponentCall): string | null {
+  if (call.kind === "run" && isReservedCommand(call.command.method)) return `write:${call.command.method}`;
+  const needed = permissionOfCall(call);
+  if (needed === null) return null;
+  return covers(permissionList(granted), needed) ? null : needed;
+}
+
+function dispatch(
+  h: GateHandlers,
+  projectId: string,
+  inst: Instance,
+  rules: readonly string[] | null,
+  call: ComponentCall,
+): Promise<unknown> {
+  switch (call.kind) {
+    case "list":
+      return call.entity === "note"
+        ? h.notes(projectId, { kind: "list", entity: "note" })
+        : h.list(projectId, call.entity);
+    case "run":
+      return h.run(projectId, call.command);
+    case "data.get":
+    case "data.set":
+    case "data.delete":
+    case "data.keys":
+      return h.data(projectId, inst.id, call);
+    case "fetch":
+      return h.fetch(rules, call.url, call.init);
+    case "action":
+      return h.action(inst.component, projectId, inst.id, inst.config, call.name, call.input);
+    default:
+      return h.notes(projectId, call);
+  }
+}
+
+function netRules(deps: GateDeps, ref: string, call: ComponentCall): readonly string[] | null {
+  if (isBuiltinId(splitRef(ref).id)) return null;
+  const active = deps.active(ref);
+  const missing = missingPermission(active.granted, call);
+  if (missing) throw new KiboError("PERMISSION_DENIED", `${ref} was not granted ${missing}`);
+  return active.granted.net;
+}
+
+function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: ComponentCall): void {
+  if (!quotas.take(instanceId, "call")) throw new KiboError("RATE_LIMITED", `${ref} makes too many calls`);
+  if (call.kind === "fetch" && !quotas.take(instanceId, "fetch")) {
+    throw new KiboError("RATE_LIMITED", `${ref} fetches too often`);
+  }
+}
+
+export function createGate(deps: GateDeps): Gate {
+  const journal = (e: unknown, projectId: string, instanceId: string, ref: string, call: ComponentCall) => {
+    if (!(e instanceof KiboError) || !REFUSALS.has(e.code)) return;
+    try {
+      deps.events.record({ projectId, instanceId, ref, kind: call.kind, code: e.code });
+    } catch (failure) {
+      console.error("[kibo-daemon] component event not recorded", failure);
+    }
+  };
+
+  return {
+    async call(projectId, instanceId, call) {
+      let ref = "unknown";
+      try {
+        const inst = deps.instance(projectId, instanceId);
+        ref = inst.component;
+        if (call.kind === "run" && isReservedCommand(call.command.method)) {
+          throw new KiboError("PERMISSION_DENIED", `${call.command.method} is not available to components`);
+        }
+        const rules = netRules(deps, ref, call);
+        takeQuotas(deps.quotas, instanceId, ref, call);
+        return await dispatch(deps.handlers, projectId, inst, rules, call);
+      } catch (e) {
+        journal(e, projectId, instanceId, ref, call);
+        throw e;
+      }
+    },
+  };
+}
