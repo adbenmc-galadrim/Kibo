@@ -1,5 +1,7 @@
 export * from "./agent";
+export * from "./code";
 export * from "./errors";
+export * from "./external-ref";
 export * from "./ids";
 export * from "./instance";
 export * from "./link";
@@ -10,4 +12,5 @@ export * from "./rpc";
 export * from "./rule";
 export * from "./run";
 export * from "./status";
+export * from "./tabs";
 export * from "./ticket";

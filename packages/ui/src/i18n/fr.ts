@@ -1,3 +1,5 @@
+import { frCode } from "./fr-code";
+
 export const fr = {
   app: { name: "Kibo" },
   nav: {
@@ -11,6 +13,9 @@ export const fr = {
     queue: "Files d'attente",
     settings: "Paramètres",
     domains: "Domaines & guidelines",
+    changes: "Changements",
+    changesCount: (n: number) => `${n} fichier${n > 1 ? "s" : ""} modifié${n > 1 ? "s" : ""}`,
+    search: "Rechercher…",
   },
   pairing: {
     title: "Appairer ce navigateur",
@@ -103,6 +108,9 @@ export const fr = {
     noDomain: "Aucun",
     assignAgent: "Assigner à un agent",
     domainFailed: "Impossible de changer le domaine.",
+    prs: "Pull requests",
+    prState: { open: "ouverte", draft: "brouillon", merged: "fusionnée", closed: "fermée" },
+    openInTab: "Ouvrir dans un onglet",
   },
   agents: {
     bar: "Agents",
@@ -369,5 +377,6 @@ export const fr = {
     done: (label: string) => `${label} a terminé`,
     failed: (label: string) => `${label} a échoué`,
   },
+  ...frCode,
   common: { cancel: "Annuler", error: "Une erreur est survenue." },
 } as const;

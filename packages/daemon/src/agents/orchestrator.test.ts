@@ -44,6 +44,7 @@ const ticket = (id: string, key: string): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
 });

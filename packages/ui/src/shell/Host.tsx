@@ -1,3 +1,4 @@
+import type { FileRef } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { createContext, type ReactNode, useContext } from "react";
 
@@ -5,6 +6,7 @@ export type Host = {
   openTicket(id: string): void;
   openNewTicket(d: NewTicketDefaults): void;
   openAssign(ticketId: string): void;
+  openFile(ref: FileRef): void;
 };
 const HostContext = createContext<Host | null>(null);
 

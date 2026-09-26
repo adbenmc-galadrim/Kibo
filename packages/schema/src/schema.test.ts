@@ -48,6 +48,7 @@ describe("ticket", () => {
     domainId: null,
     assignee: null,
     parentId: null,
+    externalRefs: [],
   };
   test("a blocked ticket needs a non-empty reason", () => {
     expect(Ticket.safeParse({ ...base, statusId: "blocked", blockedReason: null }).success).toBe(false);

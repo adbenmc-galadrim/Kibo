@@ -23,6 +23,14 @@ function InstanceFrame({ projectId, instance, viewer }: FrameProps) {
         viewer,
         openTicket: host.openTicket,
         openNewTicket: host.openNewTicket,
+        openFile: (r) =>
+          host.openFile({
+            projectId,
+            worktree: null,
+            path: r.path,
+            line: r.line ?? null,
+            origin: r.origin ?? null,
+          }),
       }),
     [mod, projectId, instance.id, instance.config, viewer, host],
   );

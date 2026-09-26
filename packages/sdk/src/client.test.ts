@@ -91,3 +91,60 @@ test("the connection status follows the event socket", async () => {
   offAgents();
   offStatus();
 });
+
+test("code posts to /api/code and returns the result", async () => {
+  const seen: string[] = [];
+  const fetchStub = (async (input: RequestInfo | URL) => {
+    seen.push(String(input));
+    return new Response(
+      JSON.stringify({ ok: true, result: { remote: "origin", branches: ["main"], defaultBase: "main" } }),
+    );
+  }) as unknown as typeof fetch;
+  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: fetchStub });
+  const res = await client.code({ method: "remoteBranches", projectId: "p", worktree: "/w" });
+  expect(res.branches).toEqual(["main"]);
+  expect(seen).toEqual(["http://127.0.0.1:1/api/code"]);
+});
+
+test("code rejects with the daemon error code", async () => {
+  const client = createClient({
+    baseUrl: "http://127.0.0.1:1",
+    fetch: stubFetch(409, { ok: false, error: { code: "GIT_PUSHED", message: "pushed" } }),
+  });
+  await expect(
+    client.code({ method: "undoCommit", projectId: "p", worktree: "/w", sha: "abcdef1" }),
+  ).rejects.toMatchObject({ code: "GIT_PUSHED" });
+});
+
+test("code events reach code listeners only, on the shared socket", async () => {
+  let connections = 0;
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        connections += 1;
+        ws.send(JSON.stringify({ type: "code", projectId: "p1", worktree: "/w" }));
+        ws.send(JSON.stringify({ projectId: "p1" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const projects: (string | null)[] = [];
+  const code: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offCode = client.subscribeCode((e) => code.push(`${e.projectId}:${e.worktree}`));
+  const offProject = client.subscribe((id) => {
+    projects.push(id);
+    done.resolve();
+  });
+  await done.promise;
+  expect(code).toEqual(["p1:/w"]);
+  expect(projects).toEqual(["p1"]);
+  expect(connections).toBe(1);
+  offCode();
+  offProject();
+  server.stop(true);
+});

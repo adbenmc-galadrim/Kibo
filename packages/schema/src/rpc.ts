@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./agent";
 import type { KiboErrorCode } from "./errors";
+import { ExternalRef } from "./external-ref";
 import { NodeId, ProjectKey } from "./ids";
 import { ComponentRef, type Instance, Layout } from "./instance";
 import type { Link } from "./link";
@@ -8,6 +9,7 @@ import { type Page, PageKind } from "./page";
 import type { ProjectMeta } from "./project";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { type Status, StatusId } from "./status";
+import { TabsState } from "./tabs";
 import { Assignee, type Ticket } from "./ticket";
 
 const index = z.number().int().nonnegative().optional();
@@ -56,6 +58,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     config: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({ method: z.literal("removeInstance"), instanceId: z.string() }),
+  z.object({ method: z.literal("upsertExternalRef"), ticketId: NodeId, ref: ExternalRef }),
 ]);
 export type ProjectCommand = z.infer<typeof ProjectCommand>;
 
@@ -73,6 +76,7 @@ export type CommandResult = {
   removeLink: null;
   addInstance: Instance;
   removeInstance: null;
+  upsertExternalRef: Ticket;
 };
 
 export type TicketView = Ticket & { progress: { done: number; total: number }; waitingOn: string[] };
@@ -128,6 +132,8 @@ export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("moveRun"), runId: z.string().min(1), index: z.number().int().nonnegative() }),
   z.object({ method: z.literal("setRunPriority"), runId: z.string().min(1), priority: z.boolean() }),
   z.object({ method: z.literal("setHost"), patch: HostSettings.partial() }),
+  z.object({ method: z.literal("getTabs") }),
+  z.object({ method: z.literal("saveTabs"), state: TabsState }),
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -148,6 +154,8 @@ export type RpcResult = {
   moveRun: null;
   setRunPriority: null;
   setHost: HostView;
+  getTabs: TabsState;
+  saveTabs: null;
 };
 
 export type RpcResponse =

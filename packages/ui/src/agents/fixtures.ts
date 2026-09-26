@@ -263,6 +263,7 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   domainId: null,
   assignee: null,
   parentId: null,
+  externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
   ...p,

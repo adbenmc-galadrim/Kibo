@@ -1,4 +1,7 @@
 import {
+  CodeEvent,
+  type CodeRequest,
+  type CodeResult,
   KiboError,
   type ProjectCommand,
   type RpcRequest,
@@ -12,10 +15,12 @@ import type { ProjectBackend } from "./types";
 
 export type KiboClient = {
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
+  code<R extends CodeRequest>(req: R): Promise<CodeResult[R["method"]]>;
   pair(token: string): Promise<void>;
   subscribe(listener: (projectId: string | null) => void): () => void;
   subscribeTopic(topic: Topic, listener: () => void): () => void;
   onRunChanged(listener: (e: RunChanged) => void): () => void;
+  subscribeCode(listener: (event: CodeEvent) => void): () => void;
   online(): boolean;
   onConnection(listener: () => void): () => void;
 };
@@ -35,10 +40,21 @@ export function createClient(opts: ClientOptions): KiboClient {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
+  const call = async (path: string, body: unknown): Promise<unknown> => {
+    const res = await post(path, body);
+    if (res.status === 401) {
+      opts.onUnauthorized?.();
+      throw new KiboError("UNAUTHORIZED", "pairing required");
+    }
+    const payload = (await res.json()) as RpcResponse;
+    if (!payload.ok) throw new KiboError(payload.error.code, payload.error.message);
+    return payload.result;
+  };
 
   const listeners = new Set<(projectId: string | null) => void>();
   const topics = new Map<Topic, Set<() => void>>();
   const runListeners = new Set<(e: RunChanged) => void>();
+  const codeListeners = new Set<(event: CodeEvent) => void>();
   const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
   let open = false;
@@ -48,7 +64,10 @@ export function createClient(opts: ClientOptions): KiboClient {
     for (const l of statusListeners) l();
   };
   const active = () =>
-    listeners.size + runListeners.size + [...topics.values()].reduce((n, set) => n + set.size, 0);
+    listeners.size +
+    runListeners.size +
+    codeListeners.size +
+    [...topics.values()].reduce((n, set) => n + set.size, 0);
 
   const connect = () => {
     const url = new URL("/api/events", opts.baseUrl || globalThis.location.href);
@@ -56,7 +75,13 @@ export function createClient(opts: ClientOptions): KiboClient {
     socket = new WebSocket(url);
     socket.onopen = () => setOpen(true);
     socket.onmessage = (e) => {
-      const msg = JSON.parse(String(e.data)) as {
+      const data: unknown = JSON.parse(String(e.data));
+      const code = CodeEvent.safeParse(data);
+      if (code.success) {
+        for (const l of codeListeners) l(code.data);
+        return;
+      }
+      const msg = data as {
         projectId?: string | null;
         topic?: Topic;
         type?: string;
@@ -85,14 +110,10 @@ export function createClient(opts: ClientOptions): KiboClient {
 
   return {
     async rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]> {
-      const res = await post("/api/rpc", req);
-      if (res.status === 401) {
-        opts.onUnauthorized?.();
-        throw new KiboError("UNAUTHORIZED", "pairing required");
-      }
-      const body = (await res.json()) as RpcResponse;
-      if (!body.ok) throw new KiboError(body.error.code, body.error.message);
-      return body.result as RpcResult[R["method"]];
+      return (await call("/api/rpc", req)) as RpcResult[R["method"]];
+    },
+    async code<R extends CodeRequest>(req: R): Promise<CodeResult[R["method"]]> {
+      return (await call("/api/code", req)) as CodeResult[R["method"]];
     },
     async pair(token) {
       const res = await post("/api/pair", { token });
@@ -121,6 +142,14 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         runListeners.delete(listener);
+        release();
+      };
+    },
+    subscribeCode(listener) {
+      codeListeners.add(listener);
+      if (!socket) connect();
+      return () => {
+        codeListeners.delete(listener);
         release();
       };
     },

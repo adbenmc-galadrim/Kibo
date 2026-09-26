@@ -12,6 +12,7 @@ import {
   moveTicket,
   setStatus,
   updateTicket,
+  upsertExternalRef,
 } from "./index";
 
 const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
@@ -140,4 +141,14 @@ test("concurrent moves on two peers converge without cycles", () => {
     }),
     { numRuns: 200 },
   );
+});
+
+test("upsertExternalRef adds a PR once per URL and keeps the latest state", () => {
+  const d = doc();
+  const t = createTicket(d, { title: "Schéma" });
+  expect(t.externalRefs).toEqual([]);
+  const url = "https://github.com/kibo/test/pull/3";
+  upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "draft" });
+  const after = upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "merged" });
+  expect(after.externalRefs).toEqual([{ kind: "github_pr", url, number: 3, state: "merged" }]);
 });

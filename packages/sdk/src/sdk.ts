@@ -21,6 +21,7 @@ const WRITES: Record<ProjectCommand["method"], EntityType | null> = {
   removeLink: "link",
   addInstance: null,
   removeInstance: null,
+  upsertExternalRef: "ticket",
 };
 
 export function createSdk(backend: ProjectBackend, manifest: ComponentManifest, ctx: SdkContext): KiboSdk {

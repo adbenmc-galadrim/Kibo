@@ -12,7 +12,17 @@ export type KiboErrorCode =
   | "PROFILE_IN_USE"
   | "WORKSPACE_FAILED"
   | "AGENT_CLI_NOT_FOUND"
-  | "INTERNAL";
+  | "INTERNAL"
+  | "NOT_A_REPO"
+  | "PATH_OUTSIDE_PROJECT"
+  | "GIT_FAILED"
+  | "GIT_STALE"
+  | "GIT_PUSHED"
+  | "GIT_BUSY"
+  | "FILE_CHANGED"
+  | "GH_UNAVAILABLE"
+  | "GH_FAILED"
+  | "EDITOR_UNAVAILABLE";
 
 export class KiboError extends Error {
   constructor(

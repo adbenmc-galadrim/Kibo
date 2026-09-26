@@ -1,4 +1,4 @@
-import type { ProjectSnapshot, Session } from "@kibo/schema";
+import type { FileRef, ProjectSnapshot, Session } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { Bell } from "lucide-react";
@@ -50,6 +50,7 @@ export function Shell({ viewer, notifications }: Props) {
   const [assign, setAssign] = useState<{ ticketId: string | null } | null>(null);
   const [newProfile, setNewProfile] = useState(false);
   const [focusRun, setFocusRun] = useState<string | null>(null);
+  const [, setFileRef] = useState<FileRef | null>(null);
   const clearFocus = useCallback(() => setFocusRun(null), []);
   const launch = useCallback(() => setAssign({ ticketId: null }), []);
   const host = useMemo<Host>(
@@ -57,6 +58,7 @@ export function Shell({ viewer, notifications }: Props) {
       openTicket: setTicketId,
       openNewTicket: setNewTicket,
       openAssign: (id) => setAssign({ ticketId: id }),
+      openFile: setFileRef,
     }),
     [],
   );

@@ -1,13 +1,14 @@
 import { createProjectDoc, executeProjectCommand, readProject } from "@kibo/core";
 import { type ComponentManifest, KiboError, type ProjectCommand, type ProjectSnapshot } from "@kibo/schema";
 import { createSdk } from "./sdk";
-import type { KiboSdk, NewTicketDefaults } from "./types";
+import type { FileOpenRequest, KiboSdk, NewTicketDefaults } from "./types";
 
 export type MockSdk = {
   sdk: KiboSdk;
   violations: string[];
   opened: string[];
   newTicketRequests: NewTicketDefaults[];
+  openedFiles: FileOpenRequest[];
   run(cmd: ProjectCommand): unknown;
   snapshot(): ProjectSnapshot;
 };
@@ -30,6 +31,7 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
   const violations: string[] = [];
   const opened: string[] = [];
   const newTicketRequests: NewTicketDefaults[] = [];
+  const openedFiles: FileOpenRequest[] = [];
   const inner = createSdk(
     {
       snapshot: async () => readProject(doc),
@@ -46,6 +48,7 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
       viewer: opts.viewer ?? "adam",
       openTicket: (id) => opened.push(id),
       openNewTicket: (d) => newTicketRequests.push(d),
+      openFile: (r) => openedFiles.push(r),
     },
   );
   const record = async <T>(label: string, p: Promise<T>): Promise<T> => {
@@ -61,5 +64,5 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
     list: (type) => record(`read ${type}`, inner.list(type)),
     run: (cmd) => record(`write ${cmd.method}`, inner.run(cmd)),
   };
-  return { sdk, violations, opened, newTicketRequests, run, snapshot: () => readProject(doc) };
+  return { sdk, violations, opened, newTicketRequests, openedFiles, run, snapshot: () => readProject(doc) };
 }

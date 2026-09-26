@@ -1,4 +1,11 @@
-import { type Assignee, formatTicketKey, KiboError, type StatusId, type Ticket } from "@kibo/schema";
+import {
+  type Assignee,
+  type ExternalRef,
+  formatTicketKey,
+  KiboError,
+  type StatusId,
+  type Ticket,
+} from "@kibo/schema";
 import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crdt";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
@@ -40,6 +47,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     domainId: (d.get("domainId") as string | null | undefined) ?? null,
     assignee: (d.get("assignee") as Assignee | null | undefined) ?? null,
     parentId: n.parent()?.id ?? null,
+    externalRefs: (d.get("externalRefs") as ExternalRef[] | undefined) ?? [],
   };
 }
 
@@ -63,6 +71,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("blockedReason", null);
   node.data.set("domainId", input.domainId ?? null);
   node.data.set("assignee", input.assignee ?? null);
+  node.data.set("externalRefs", []);
   writeDescription(node, input.description ?? "");
   doc.commit();
   return readTicket(node);
@@ -74,6 +83,14 @@ export function getTicket(doc: LoroDoc, id: string): Ticket {
 
 export function listTickets(doc: LoroDoc): Ticket[] {
   return walkDepthFirst(tree(doc)).map(readTicket);
+}
+
+export function upsertExternalRef(doc: LoroDoc, id: string, ref: ExternalRef): Ticket {
+  const node = getNode(tree(doc), id);
+  const current = (node.data.get("externalRefs") as ExternalRef[] | undefined) ?? [];
+  node.data.set("externalRefs", [...current.filter((r) => r.url !== ref.url), ref]);
+  doc.commit();
+  return readTicket(node);
 }
 
 export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Ticket {

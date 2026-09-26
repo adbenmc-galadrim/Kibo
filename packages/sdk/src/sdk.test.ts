@@ -49,3 +49,9 @@ describe("sdk permissions", () => {
     expect(m.snapshot().tickets).toHaveLength(3);
   });
 });
+
+test("openFile is forwarded to the host and recorded by the mock", () => {
+  const m = createMockSdk(manifest);
+  m.sdk.openFile({ path: "packages/core/src/ticket.ts", line: 42 });
+  expect(m.openedFiles).toEqual([{ path: "packages/core/src/ticket.ts", line: 42 }]);
+});

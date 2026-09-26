@@ -14,6 +14,7 @@ import type { ComponentType } from "react";
 
 export type EntityMap = { ticket: TicketView; status: Status; link: Link; page: Page };
 export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null };
+export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };
 
 export type KiboSdk = {
   instanceId: string;
@@ -24,6 +25,7 @@ export type KiboSdk = {
   subscribe(listener: () => void): () => void;
   openTicket(ticketId: string): void;
   openNewTicket(defaults: NewTicketDefaults): void;
+  openFile(request: FileOpenRequest): void;
 };
 
 export type ProjectBackend = {
@@ -32,6 +34,9 @@ export type ProjectBackend = {
   subscribe(listener: () => void): () => void;
 };
 
-export type SdkContext = Pick<KiboSdk, "instanceId" | "config" | "viewer" | "openTicket" | "openNewTicket">;
+export type SdkContext = Pick<
+  KiboSdk,
+  "instanceId" | "config" | "viewer" | "openTicket" | "openNewTicket" | "openFile"
+>;
 
 export type ComponentModule = { manifest: ComponentManifest; Component: ComponentType };

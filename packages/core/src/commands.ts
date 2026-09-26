@@ -12,6 +12,7 @@ import {
   moveTicket,
   setStatus,
   updateTicket,
+  upsertExternalRef,
 } from "./tickets";
 
 export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknown {
@@ -53,6 +54,8 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
     case "removeInstance":
       removeInstance(doc, cmd.instanceId);
       return null;
+    case "upsertExternalRef":
+      return upsertExternalRef(doc, cmd.ticketId, cmd.ref);
   }
 }
 

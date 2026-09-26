@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ExternalRef } from "./external-ref";
 import { NodeId, TicketKey } from "./ids";
 import { StatusId } from "./status";
 
@@ -16,6 +17,7 @@ export const Ticket = z
     domainId: z.string().nullable(),
     assignee: Assignee.nullable(),
     parentId: NodeId.nullable(),
+    externalRefs: z.array(ExternalRef),
   })
   .superRefine((t, ctx) => {
     const hasReason = t.blockedReason !== null && t.blockedReason.trim().length > 0;
