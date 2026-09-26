@@ -21,19 +21,28 @@ const { values } = parseArgs({
 });
 const port = Number(values.port);
 const native = process.env.KIBO_NATIVE_NOTIFY === "1";
-const daemon = await startDaemon({
-  home: kiboHome(),
-  port,
-  sandboxPort: sandboxPortFor(port, values["sandbox-port"]),
-  uiDir: values.ui ?? null,
-  dev: values.dev,
-  toolchain: resolveToolchain({ explicit: values.toolchain ?? null }),
-  user: userInfo().username,
-  notifications: native ? "native" : "browser",
-  notify: native ? stdoutNotifier((line) => process.stdout.write(line)) : () => {},
-  claudeBin: values["claude-bin"] ?? null,
-  sampler: values["host-load"] === undefined ? createLoadSampler() : fixedLoadSampler(values["host-load"]),
-});
+const failStart = (e: unknown): never => {
+  process.stderr.write(`[kibo-daemon] cannot start: ${e instanceof Error ? e.message : String(e)}\n`);
+  process.exit(1);
+};
+const daemon = await Promise.resolve()
+  .then(() =>
+    startDaemon({
+      home: kiboHome(),
+      port,
+      sandboxPort: sandboxPortFor(port, values["sandbox-port"]),
+      uiDir: values.ui ?? null,
+      dev: values.dev,
+      toolchain: resolveToolchain({ explicit: values.toolchain ?? null }),
+      user: userInfo().username,
+      notifications: native ? "native" : "browser",
+      notify: native ? stdoutNotifier((line) => process.stdout.write(line)) : () => {},
+      claudeBin: values["claude-bin"] ?? null,
+      sampler:
+        values["host-load"] === undefined ? createLoadSampler() : fixedLoadSampler(values["host-load"]),
+    }),
+  )
+  .catch(failStart);
 
 let stopping = false;
 const stop = () => {

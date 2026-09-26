@@ -129,3 +129,22 @@ test("accepts the sandbox port and toolchain options", async () => {
   expect(left).toBeNull();
   expect(code).toBe(0);
 });
+
+test("an invalid toolchain stops the start with a clear message", async () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
+  const missing = join(home, "no-toolchain");
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), "--port", "0", "--toolchain", missing], {
+    env: { ...process.env, KIBO_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const code = await proc.exited;
+  const out = await new Response(proc.stdout).text();
+  const err = await new Response(proc.stderr).text();
+  const info = readDaemonInfo(home);
+  rmSync(home, { recursive: true, force: true });
+  expect(code).not.toBe(0);
+  expect(out).not.toContain("KIBO_READY");
+  expect(err).toContain(`[kibo-daemon] cannot start: NOT_FOUND: toolchain not found in ${missing}`);
+  expect(info).toBeNull();
+});
