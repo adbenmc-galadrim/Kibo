@@ -11,14 +11,14 @@ import {
   type SyncStatus,
 } from "@kibo/schema";
 import type { SecretStore } from "../integrations/types";
-import { clearDeviceKeys, createDeviceKeys } from "./device-keys";
+import { clearDeviceKeys } from "./device-keys";
 import { ProjectSync } from "./project-sync";
 import { SyncConnection } from "./sync-connection";
 import type { SyncDb } from "./sync-db";
-import { joinServer } from "./sync-join";
+import { type ConnectInput, configureServer } from "./sync-join";
 import { SyncProjects } from "./sync-projects";
 import { RequestTable, type Timer } from "./sync-requests";
-import { assertSyncUrl, type SyncTransport } from "./transport";
+import type { SyncTransport } from "./transport";
 import type { ProjectHostRegistry } from "./types";
 
 export { backoffDelay } from "./sync-connection";
@@ -37,7 +37,6 @@ export type SyncClientDeps = {
   log(message: string, error?: unknown): void;
   backoff?: { minMs: number; maxMs: number };
 };
-type ConnectInput = { serverUrl: string; code: string; deviceName: string; caFile: string | null };
 type Welcome = Extract<ServerFrame, { type: "welcome" }>;
 
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -105,25 +104,7 @@ export class SyncClient {
   }
 
   private async join(input: ConnectInput): Promise<SyncStatus> {
-    const url = assertSyncUrl(input.serverUrl);
-    if (this.deps.db.config()) throw new KiboError("INVALID_INPUT", "a sync server is already configured");
-    const serverUrl = url.toString().replace(/\/$/, "");
-    const ca = input.caFile ? await this.deps.readFile(input.caFile) : null;
-    const keys = await createDeviceKeys(this.deps.secrets);
-    const request = { code: input.code, publicKey: keys.publicKey, deviceName: input.deviceName };
-    const joined = await joinServer(this.deps.fetchImpl, { serverUrl, ca, request }).catch(
-      async (e: unknown) => {
-        await clearDeviceKeys(this.deps.secrets);
-        throw e;
-      },
-    );
-    this.deps.db.setConfig({
-      serverUrl,
-      caFile: input.caFile,
-      userId: joined.userId,
-      deviceId: joined.deviceId,
-      displayName: joined.name,
-    });
+    await configureServer(this.deps, input);
     this.connection.reset();
     const online = this.connection.waitOnline();
     await this.start();
@@ -160,8 +141,10 @@ export class SyncClient {
     try {
       this.send(frame);
     } catch (e) {
-      const error = e instanceof KiboError ? e : new KiboError("INTERNAL", String(e));
-      this.requests.forget(frame.requestId, error);
+      this.requests.forget(
+        frame.requestId,
+        e instanceof KiboError ? e : new KiboError("INTERNAL", String(e)),
+      );
     }
     return pending;
   }
@@ -177,8 +160,7 @@ export class SyncClient {
   }
 
   detachProject(projectId: string): void {
-    this.syncs.get(projectId)?.disconnected();
-    this.syncs.delete(projectId);
+    this.forget(projectId);
     this.projects.detach(projectId);
   }
 
@@ -239,9 +221,8 @@ export class SyncClient {
     try {
       sync.receive(f);
     } catch (e) {
-      if (!(e instanceof KiboError)) throw e;
       this.deps.log(`sync update for ${f.projectId} refused, project sync suspended`, e);
-      this.suspend(f.projectId, e.code);
+      this.suspend(f.projectId, e instanceof KiboError ? e.code : "INVALID_INPUT");
       return;
     }
     this.projects.synced(f.projectId, false);
@@ -293,15 +274,18 @@ export class SyncClient {
   }
 
   private suspend(projectId: string, code: string): void {
-    this.syncs.get(projectId)?.disconnected();
-    this.syncs.delete(projectId);
+    this.forget(projectId);
     this.projects.suspend(projectId, code);
     if (this.connection.state === "online") this.connection.send({ type: "unsubscribe", projectId });
   }
 
-  private revoke(projectId: string, reason: "removed" | "deleted"): void {
+  private forget(projectId: string): void {
     this.syncs.get(projectId)?.disconnected();
     this.syncs.delete(projectId);
+  }
+
+  private revoke(projectId: string, reason: "removed" | "deleted"): void {
+    this.forget(projectId);
     this.projects.revoke(projectId, reason);
   }
 }

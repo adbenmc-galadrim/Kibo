@@ -1,11 +1,28 @@
 import { depthViolation, getProjectMeta, projectDepthViolation } from "@kibo/core";
 import { KiboError, type ProjectAccess, type ProjectMeta } from "@kibo/schema";
-import type { LoroDoc } from "loro-crdt";
+import { type ImportStatus, LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
 import type { ProjectHostRegistry } from "./types";
 
 function refuseTooDeep(projectId: string, violation: string | null): void {
   if (violation) throw new KiboError("TOO_LARGE", `sync data for ${projectId} refused: ${violation}`);
+}
+
+function importChecked(projectId: string, target: LoroDoc, bytes: Uint8Array): void {
+  let status: ImportStatus;
+  try {
+    status = target.import(bytes);
+  } catch (e) {
+    throw new KiboError("INVALID_INPUT", `sync data for ${projectId} cannot be decoded: ${String(e)}`);
+  }
+  if (status.pending && status.pending.size > 0) {
+    throw new KiboError("TOO_LARGE", `sync data for ${projectId} refused: its dependencies are missing`);
+  }
+}
+
+function withoutPending(projectId: string, doc: LoroDoc): LoroDoc {
+  refuseTooDeep(projectId, projectDepthViolation(doc));
+  return LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
 }
 
 export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistry {
@@ -35,15 +52,12 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
       applyRemote: (bytes) => {
         const doc = docs.project(projectId);
         const candidate = doc.fork();
-        candidate.import(bytes);
+        importChecked(projectId, candidate, bytes);
         refuseTooDeep(projectId, depthViolation(doc, candidate));
         doc.import(bytes);
         docs.imported(projectId);
       },
-      replaceDoc: (doc) => {
-        refuseTooDeep(projectId, projectDepthViolation(doc));
-        docs.replaceProject(projectId, doc);
-      },
+      replaceDoc: (doc) => docs.replaceProject(projectId, withoutPending(projectId, doc)),
     }),
     projectIds: () => docs.projectIds(),
     setAccess: (projectId, next) => {
@@ -66,7 +80,8 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
       doc.commit();
       docs.imported(projectId);
     },
-    addJoinedProject: (doc, folder): ProjectMeta => {
+    addJoinedProject: (joined, folder): ProjectMeta => {
+      const doc = withoutPending(getProjectMeta(joined).id, joined);
       const meta = { ...getProjectMeta(doc), folder };
       docs.addProject(meta, doc);
       return meta;

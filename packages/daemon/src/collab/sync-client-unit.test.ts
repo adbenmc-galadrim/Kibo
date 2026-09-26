@@ -139,3 +139,38 @@ test("an update from the server that nests the project too deep is refused witho
   expect(sentFrames()).toContainEqual({ type: "unsubscribe", projectId });
   expect(client.status().state).toBe("online");
 });
+
+const forged = toBase64(new Uint8Array(64).map((_, i) => (i * 37 + 11) % 256));
+
+test("forged update bytes suspend the project with a stable error", async () => {
+  await online();
+  const { projectId, doc } = sharedProject();
+  await until(() => syncDb.project(projectId)?.lastSyncAt !== null);
+  const version = toBase64(doc.oplogVersion().encode());
+  net.last().deliver({ type: "update", projectId, bytes: forged, serverSeq: 2, version });
+  await until(() => syncDb.project(projectId)?.lastError === "INVALID_INPUT");
+  expect(syncDb.project(projectId)?.enabled).toBe(false);
+  expect(client.status().state).toBe("online");
+});
+
+test("forged bytes received during a resync suspend the project too", async () => {
+  await online();
+  const { projectId, doc } = sharedProject();
+  await until(() => syncDb.project(projectId)?.lastSyncAt !== null);
+  call(service, { method: "command", projectId, command: { method: "createTicket", title: "Refusé" } });
+  flushBatches();
+  const push = sentFrames().find((f) => f.type === "push");
+  if (push?.type !== "push") throw new Error("no push sent");
+  const reject = {
+    type: "reject",
+    projectId,
+    clientBatchId: push.clientBatchId,
+    code: "UPDATE_REJECTED",
+  } as const;
+  net.last().deliver({ ...reject, message: "rejected", version: null });
+  await until(() => sentFrames().some((f) => f.type === "subscribe" && f.version === null));
+  const version = toBase64(doc.oplogVersion().encode());
+  net.last().deliver({ type: "update", projectId, bytes: forged, serverSeq: 2, version });
+  await until(() => syncDb.project(projectId)?.lastError === "INVALID_INPUT");
+  expect(syncDb.project(projectId)?.enabled).toBe(false);
+});

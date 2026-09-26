@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { listTickets } from "@kibo/core";
+import { listTickets, projectDepthViolation } from "@kibo/core";
 import { listGuidelines } from "@kibo/core/agent-config";
 import { KiboError, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
@@ -116,7 +116,7 @@ test("local writes are reported, remote imports are not", async () => {
 test("a replaced document is persisted and still watched", async () => {
   const copy = LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" }));
   hosts.host(projectId).replaceDoc(copy);
-  expect(hosts.host(projectId).doc()).toBe(copy);
+  expect(hosts.host(projectId).doc().toJSON()).toEqual(copy.toJSON());
   const seen: string[] = [];
   hosts.onLocalChange((id) => seen.push(id));
   await create("Après");
@@ -135,7 +135,7 @@ test("a joined project is registered with its local folder", () => {
   const meta = hosts.addJoinedProject(doc, null);
   expect(meta).toMatchObject({ id: "joined-1", key: "JOI", folder: null });
   expect(hosts.projectIds()).toContain("joined-1");
-  expect(hosts.host("joined-1").doc()).toBe(doc);
+  expect(hosts.host("joined-1").doc().toJSON()).toEqual(doc.toJSON());
   expect(hosts.localUser()).toBe("adam");
 });
 
@@ -150,4 +150,53 @@ test("sync data nesting the project too deep is refused before it reaches the pr
   expect(listTickets(hosts.host(projectId).doc())).toEqual([]);
   expect(codeOf(() => hosts.host(projectId).replaceDoc(remote))).toBe("TOO_LARGE");
   expect(hosts.host(projectId).doc()).toBe(current);
+});
+
+function outOfOrderDeepUpdates(current: LoroDoc): { first: Uint8Array; deep: Uint8Array } {
+  const remote = LoroDoc.fromSnapshot(current.export({ mode: "snapshot" }));
+  remote.getMap("probe").set("a", 1);
+  remote.commit();
+  const mid = remote.oplogVersion();
+  const first = remote.export({ mode: "update", from: current.oplogVersion() });
+  let node = remote.getTree("tickets").createNode();
+  for (let i = 0; i < 100; i++) node = node.createNode();
+  remote.commit();
+  return { first, deep: remote.export({ mode: "update", from: mid }) };
+}
+
+test("an update whose dependencies are missing is refused, so it cannot unlock a deep tree later", () => {
+  const { first, deep } = outOfOrderDeepUpdates(hosts.host(projectId).doc());
+  expect(codeOf(() => hosts.host(projectId).applyRemote(deep))).toBe("TOO_LARGE");
+  expect(codeOf(() => hosts.host(projectId).applyRemote(first))).toBeNull();
+  const doc = hosts.host(projectId).doc();
+  expect(projectDepthViolation(doc)).toBeNull();
+  expect(doc.getMap("probe").get("a")).toBe(1);
+  expect(doc.getTree("tickets").getNodes()).toEqual([]);
+});
+
+test("pending operations of a replacement doc are dropped, never unlocked later", () => {
+  const current = hosts.host(projectId).doc();
+  const { first, deep } = outOfOrderDeepUpdates(current);
+  const fresh = LoroDoc.fromSnapshot(current.export({ mode: "snapshot" }));
+  fresh.import(deep);
+  hosts.host(projectId).replaceDoc(fresh);
+  hosts.host(projectId).applyRemote(first);
+  expect(projectDepthViolation(hosts.host(projectId).doc())).toBeNull();
+});
+
+test("a joined project nested too deep is refused before registration", () => {
+  const doc = LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" }));
+  doc.getMap("meta").set("id", "joined-deep");
+  let node = doc.getTree("tickets").createNode();
+  for (let i = 0; i < 100; i++) node = node.createNode();
+  doc.commit();
+  expect(codeOf(() => hosts.addJoinedProject(doc, null))).toBe("TOO_LARGE");
+  expect(hosts.projectIds()).not.toContain("joined-deep");
+});
+
+test("forged update bytes are refused as invalid input and leave the project intact", () => {
+  const before = hosts.host(projectId).doc().toJSON();
+  const forged = new Uint8Array(64).map((_, i) => (i * 37 + 11) % 256);
+  expect(codeOf(() => hosts.host(projectId).applyRemote(forged))).toBe("INVALID_INPUT");
+  expect(hosts.host(projectId).doc().toJSON()).toEqual(before);
 });

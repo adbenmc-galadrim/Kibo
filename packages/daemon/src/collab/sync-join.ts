@@ -1,5 +1,17 @@
 import { isKiboErrorCode, type JoinRequest, JoinResponse, KiboError } from "@kibo/schema";
 import { z } from "zod";
+import type { SecretStore } from "../integrations/types";
+import { clearDeviceKeys, createDeviceKeys } from "./device-keys";
+import type { SyncDb } from "./sync-db";
+import { assertSyncUrl } from "./transport";
+
+export type ConnectInput = { serverUrl: string; code: string; deviceName: string; caFile: string | null };
+type ConfigureDeps = {
+  db: SyncDb;
+  secrets: SecretStore;
+  fetchImpl: typeof fetch;
+  readFile(path: string): Promise<string>;
+};
 
 const JoinReply = z.union([
   z.object({ ok: z.literal(true), result: JoinResponse }),
@@ -39,4 +51,24 @@ export async function joinServer(
   if (reply.data.ok) return reply.data.result;
   const { code, message } = reply.data.error;
   throw new KiboError(isKiboErrorCode(code) ? code : "INVITE_INVALID", message);
+}
+
+export async function configureServer(deps: ConfigureDeps, input: ConnectInput): Promise<void> {
+  const url = assertSyncUrl(input.serverUrl);
+  if (deps.db.config()) throw new KiboError("INVALID_INPUT", "a sync server is already configured");
+  const serverUrl = url.toString().replace(/\/$/, "");
+  const ca = input.caFile ? await deps.readFile(input.caFile) : null;
+  const keys = await createDeviceKeys(deps.secrets);
+  const request = { code: input.code, publicKey: keys.publicKey, deviceName: input.deviceName };
+  const joined = await joinServer(deps.fetchImpl, { serverUrl, ca, request }).catch(async (e: unknown) => {
+    await clearDeviceKeys(deps.secrets);
+    throw e;
+  });
+  deps.db.setConfig({
+    serverUrl,
+    caFile: input.caFile,
+    userId: joined.userId,
+    deviceId: joined.deviceId,
+    displayName: joined.name,
+  });
 }
