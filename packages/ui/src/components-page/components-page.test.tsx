@@ -3,6 +3,9 @@ import {
   type ComponentSummary,
   type DraftSummary,
   KiboError,
+  type MarketHit,
+  type MarketInstallResult,
+  NO_PERMISSIONS,
   type PublishPreview,
   type PublishResult,
   type RpcRequest,
@@ -20,7 +23,7 @@ let preview: () => Promise<PublishPreview> = async () => {
 let publish: () => Promise<PublishResult> = async () => {
   throw new Error("unset");
 };
-let action: () => Promise<unknown> = async () => null;
+let action: (req: RpcRequest) => Promise<unknown> = async () => null;
 
 mock.module("../api", () => ({
   client: {
@@ -43,7 +46,7 @@ mock.module("../api", () => ({
         ]);
       if (req.method === "previewPublish") return preview();
       if (req.method === "publishComponent") return publish();
-      return action();
+      return action(req);
     },
     subscribe: () => () => undefined,
     subscribeEvents: () => () => undefined,
@@ -317,4 +320,65 @@ test("modify with AI: only for user and ai components, opens the dialog", async 
   await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
   expect(await screen.findByRole("dialog", { name: "Modifier « PR en attente » avec l'IA" })).toBeTruthy();
   expect(screen.getByText("Version actuelle 0.1.0 · origine Toi")).toBeTruthy();
+});
+
+test("the components page offers the Installed and Marketplace tabs", async () => {
+  action = async () => [];
+  render(<ComponentsPage />);
+  expect(screen.getByRole("tab", { name: "Installés" }).getAttribute("aria-selected")).toBe("true");
+  await userEvent.setup().click(screen.getByRole("tab", { name: "Marketplace" }));
+  expect(
+    await screen.findByText("Aucune source de marketplace. Ajoute-en une dans Paramètres › Composants."),
+  ).toBeTruthy();
+});
+
+test("installing from the marketplace opens the approval with the publisher", async () => {
+  const hit: MarketHit = {
+    sourceId: "equipe",
+    sourceName: "Équipe",
+    id: "milestones",
+    title: "Calendrier des jalons",
+    description: "Jalons et échéances des tickets sur un calendrier.",
+    kind: "view",
+    latest: "1.2.0",
+    publisher: { name: "Léa", publicKey: "LEA", verified: true },
+    installed: null,
+    updateAvailable: null,
+  };
+  const result: MarketInstallResult = {
+    id: "milestones",
+    title: "Calendrier des jalons",
+    version: "1.2.0",
+    hash: H,
+    permissions: NO_PERMISSIONS,
+    market: { publisherName: "Léa", verified: true, sourceName: "Équipe", newPublisher: true },
+  };
+  const source = { id: "equipe", name: "Équipe", url: "https://market.kibo.test/", fingerprint: H };
+  action = async (req) => {
+    if (req.method === "listMarketSources") return [source];
+    if (req.method === "searchMarket") return [hit];
+    if (req.method === "getMarketPackage")
+      return {
+        ...hit,
+        version: "1.2.0",
+        hash: H,
+        size: 2048,
+        permissions: NO_PERMISSIONS,
+        versions: [],
+        pinnedPublisher: null,
+        newPublisher: true,
+        publisherChanged: false,
+        files: [],
+      };
+    if (req.method === "installFromMarket") return result;
+    return null;
+  };
+  render(<ComponentsPage />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("tab", { name: "Marketplace" }));
+  await user.click(await screen.findByRole("button", { name: "Voir Calendrier des jalons" }));
+  await user.click(await screen.findByRole("button", { name: "Installer 1.2.0" }));
+  const dialog = await screen.findByRole("dialog", { name: "Autoriser « Calendrier des jalons » 1.2.0 ?" });
+  expect(within(dialog).getByText("Publié par Léa · vérifié par Équipe")).toBeTruthy();
+  expect(within(dialog).getByText("Ce code vient d'une marketplace.")).toBeTruthy();
 });

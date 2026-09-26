@@ -1,15 +1,17 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { TooltipProvider } from "@kibo/sdk/ui/tooltip";
 import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
-import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
+import { TrustDialog, type TrustTarget, trustTargetOf, trustTargetOfInstall } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { type FlashTone, useFlash } from "../lib/use-flash";
 import { ModifyWithAiDialog } from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
 import { ComponentRowMenu } from "./ComponentRowMenu";
 import { DraftsSection } from "./DraftsSection";
+import { MarketplaceTab } from "./MarketplaceTab";
 import { PublishDialog } from "./PublishDialog";
 import { type ComponentRow, componentRows } from "./rows";
 import { SandboxBanner } from "./SandboxBanner";
@@ -17,6 +19,8 @@ import { SandboxBanner } from "./SandboxBanner";
 const ORANGE = "text-orange-600 dark:text-orange-400";
 const HEAD = "h-9 px-4 text-2xs font-normal text-muted-foreground";
 const CELL = "px-4 py-3";
+const TAB =
+  "h-8 flex-none px-3 text-sm font-normal text-muted-foreground data-[state=active]:bg-accent data-[state=active]:font-medium data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-accent";
 
 function TrustCell({ row, onReview }: { row: ComponentRow; onReview(): void }) {
   const c = fr.components;
@@ -97,27 +101,52 @@ export function ComponentsPage() {
 
   return (
     <TooltipProvider>
-      <div className="grid content-start gap-6 p-6">
-        <SandboxBanner />
-        <div className="overflow-hidden rounded-lg border bg-card">
-          <ComponentsTable rows={rows ?? []} onReview={review} onDone={done} onModifyWithAi={setModifying} />
-          {rows === null && !error && <p className="px-4 py-3 text-sm text-muted-foreground">{c.loading}</p>}
-        </div>
-        {rows?.every((r) => r.builtin) && <p className="text-sm text-muted-foreground">{c.empty}</p>}
-        {message && (
-          <p
-            role={tone === "error" ? "alert" : "status"}
-            className={`text-sm ${tone === "error" ? "text-destructive" : "text-muted-foreground"}`}
-          >
-            {message}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {c.failed}
-          </p>
-        )}
-        <DraftsSection drafts={drafts ?? []} onPublish={setPublishing} />
+      <Tabs defaultValue="installed" className="gap-4 p-6">
+        <TabsList className="h-auto gap-1 bg-transparent p-0">
+          <TabsTrigger value="installed" className={TAB}>
+            {fr.market.tabInstalled}
+          </TabsTrigger>
+          <TabsTrigger value="market" className={TAB}>
+            {fr.market.tabMarket}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="installed" className="grid content-start gap-6">
+          <SandboxBanner />
+          <div className="overflow-hidden rounded-lg border bg-card">
+            <ComponentsTable
+              rows={rows ?? []}
+              onReview={review}
+              onDone={done}
+              onModifyWithAi={setModifying}
+            />
+            {rows === null && !error && (
+              <p className="px-4 py-3 text-sm text-muted-foreground">{c.loading}</p>
+            )}
+          </div>
+          {rows?.every((r) => r.builtin) && <p className="text-sm text-muted-foreground">{c.empty}</p>}
+          {message && (
+            <p
+              role={tone === "error" ? "alert" : "status"}
+              className={`text-sm ${tone === "error" ? "text-destructive" : "text-muted-foreground"}`}
+            >
+              {message}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {c.failed}
+            </p>
+          )}
+          <DraftsSection drafts={drafts ?? []} onPublish={setPublishing} />
+        </TabsContent>
+        <TabsContent value="market">
+          <MarketplaceTab
+            onInstalled={(r) => {
+              setTrust(trustTargetOfInstall(r));
+              reload();
+            }}
+          />
+        </TabsContent>
         {publishing && (
           <PublishDialog
             id={publishing}
@@ -149,7 +178,7 @@ export function ComponentsPage() {
             }}
           />
         )}
-      </div>
+      </Tabs>
     </TooltipProvider>
   );
 }

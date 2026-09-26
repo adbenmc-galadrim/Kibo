@@ -5,6 +5,8 @@ import {
   type GrantedPermissions,
   grantedOf,
   KiboError,
+  type MarketInstallResult,
+  type MarketTrustInfo,
   type RegistryVersion,
   shortHash,
 } from "@kibo/schema";
@@ -18,10 +20,12 @@ import {
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
+import { TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { permissionLines } from "../lib/permission-lines";
+import { MarketSubtitle } from "./MarketSubtitle";
 
 export type TrustTarget = {
   id: string;
@@ -30,7 +34,20 @@ export type TrustTarget = {
   hash: string;
   origin: ComponentOrigin;
   permissions: GrantedPermissions;
+  market?: MarketTrustInfo | null;
 };
+
+export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
+  return {
+    id: r.id,
+    title: r.title,
+    version: r.version,
+    hash: r.hash,
+    origin: "marketplace",
+    permissions: r.permissions,
+    market: r.market,
+  };
+}
 
 export function trustTargetOf(id: string, title: string, v: ComponentVersionSummary): TrustTarget | null {
   if (!v.hash || !v.manifest) return null;
@@ -54,7 +71,9 @@ type Props = {
   onCloseAutoFocus?: (event: Event) => void;
 };
 
-function LevelCard({ value, title, help }: { value: ApprovableTrust; title: string; help: string }) {
+type LevelProps = { value: ApprovableTrust; title: string; help: string; warning?: string | null };
+
+function LevelCard({ value, title, help, warning }: LevelProps) {
   const id = useId();
   return (
     <label
@@ -65,14 +84,26 @@ function LevelCard({ value, title, help }: { value: ApprovableTrust; title: stri
       <span className="grid gap-1">
         <span className="text-sm font-medium leading-none">{title}</span>
         <span className="text-xs text-muted-foreground">{help}</span>
+        {warning && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
+            {warning}
+          </span>
+        )}
       </span>
     </label>
   );
 }
 
-function PermissionList({ permissions }: { permissions: GrantedPermissions }) {
+export function PermissionList({
+  permissions,
+  framed = true,
+}: {
+  permissions: GrantedPermissions;
+  framed?: boolean;
+}) {
   return (
-    <ul className="grid gap-3 rounded-lg border p-4">
+    <ul className={framed ? "grid gap-3 rounded-lg border p-4" : "grid gap-3"}>
       {permissionLines(permissions).map((line) => (
         <li key={line.title} className="flex items-start gap-3">
           <line.icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -133,7 +164,13 @@ export function TrustDialog({
       <DialogContent className="sm:max-w-xl" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{t.title(target.title, target.version)}</DialogTitle>
-          <DialogDescription>{t.subtitle(t.origin[target.origin], shortHash(target.hash))}</DialogDescription>
+          <DialogDescription asChild={Boolean(target.market)}>
+            {target.market ? (
+              <MarketSubtitle market={target.market} />
+            ) : (
+              t.subtitle(t.origin[target.origin], shortHash(target.hash))
+            )}
+          </DialogDescription>
         </DialogHeader>
         <p className="text-sm font-medium">{t.asks}</p>
         <PermissionList permissions={target.permissions} />
@@ -144,7 +181,12 @@ export function TrustDialog({
           className="grid gap-2"
         >
           <LevelCard value="sandboxed" title={t.sandboxed} help={t.sandboxedHelp} />
-          <LevelCard value="trusted" title={t.trusted} help={t.trustedHelp} />
+          <LevelCard
+            value="trusted"
+            title={t.trusted}
+            help={t.trustedHelp}
+            warning={target.market ? fr.market.fromMarketplace : null}
+          />
         </RadioGroup>
         <p className="text-xs text-muted-foreground">{t.footer}</p>
         {error && (

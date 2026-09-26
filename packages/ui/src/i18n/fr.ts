@@ -3,6 +3,7 @@ import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
 import { frIntegrations } from "./fr-integrations";
+import { frMarket } from "./fr-market";
 import { frSecurity } from "./fr-security";
 
 export const fr = {
@@ -377,6 +378,7 @@ export const fr = {
     domains: "Domaines & guidelines",
     integrations: "Intégrations",
     security: "Sécurité",
+    components: "Composants",
     shortcuts: "Raccourcis",
     soon: "Bientôt",
     generalSubtitle: "Langue, démarrage et outils en ligne de commande.",
@@ -434,6 +436,7 @@ export const fr = {
   security: frSecurity,
   ...frCode,
   ...frComponents,
+  ...frMarket,
   ...frAi,
   common: { cancel: "Annuler", close: "Fermer", error: "Une erreur est survenue." },
 } as const;
