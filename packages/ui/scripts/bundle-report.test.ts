@@ -79,6 +79,7 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/agents/ProfileSheet.tsx",
       "/Kibo/packages/ui/src/shell/TicketSheet.tsx",
       "/Kibo/packages/ui/src/palette/CommandPalette.tsx",
+      "/Kibo/packages/ui/src/components-page/PublishDialog.tsx",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [

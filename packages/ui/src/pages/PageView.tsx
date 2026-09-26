@@ -3,7 +3,6 @@ import { lazyPanel, readSource } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { PublishDialog } from "../components-page/PublishDialog";
 import { fr } from "../i18n/fr";
 import { componentIcon } from "../registry";
 import { SourceHeader } from "../shell/lazy-screens";
@@ -13,6 +12,11 @@ import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
 
 const AddComponentDialog = lazyPanel(
   () => import("../dialogs/AddComponentDialog").then((m) => m.AddComponentDialog),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
+const PublishDialog = lazyPanel(
+  () => import("../components-page/PublishDialog").then((m) => m.PublishDialog),
   fr.lazy,
   { fallback: "sr-only" },
 );
