@@ -15,7 +15,9 @@ module.exports.server = {
       const attempt = async (name, fn) => { try { await fn(); out[name] = "open"; } catch (e) { out[name] = "blocked"; } };
       const fs = await load("node:fs");
       await attempt("read", () => fs.readFileSync(input.secret, "utf8"));
-      await attempt("spawn", async () => (await load("node:child_process")).execFileSync("/bin/echo", ["x"]));
+      const cp = await load("node:child_process");
+      await attempt("spawn", () => cp.execFileSync("/usr/bin/echo", ["x"]));
+      await attempt("child", () => cp.execFileSync(process.execPath, ["-e", 'require("node:fs").readFileSync(' + JSON.stringify(input.secret) + ")"], { stdio: "ignore" }));
       const net = await load("node:net");
       await attempt("connect", () => new Promise((ok, ko) => {
         const s = net.connect(input.port, "127.0.0.1");
@@ -54,7 +56,7 @@ test("a sandboxed backend cannot escape through a constructed import", async () 
   });
   try {
     const out = await host.invoke(escapeCall({ secret: join(secret, "token"), port: listener.port }));
-    expect(out).toEqual({ read: "blocked", spawn: "blocked", connect: "blocked" });
+    expect(out).toEqual({ read: "blocked", spawn: "blocked", child: "blocked", connect: "blocked" });
   } finally {
     host.stop();
     listener.stop(true);

@@ -16,7 +16,7 @@ const MACOS_SYSTEM = [
   "/private/var/db/timezone",
 ];
 const MACOS_LITERALS = ["/", "/dev/null", "/dev/random", "/dev/urandom", "/private/etc/localtime"];
-const LINUX_SYSTEM = ["/usr", "/lib", "/lib64", "/etc/localtime"];
+const LINUX_SYSTEM = ["/usr/lib", "/usr/lib64", "/lib", "/lib64", "/usr/share/zoneinfo", "/etc/localtime"];
 
 const real = (path: string): string => (existsSync(path) ? realpathSync(path) : path);
 const unique = (paths: string[]): string[] => [...new Set(paths)];
@@ -62,7 +62,7 @@ export function bwrapArgv(bwrap: string, policy: SandboxPolicy, argv: string[]):
     "/dev",
     "--tmpfs",
     "/tmp",
-    ...bind("--ro-bind", [...execDirs(policy), ...policy.read].map(real)),
+    ...bind("--ro-bind", [...policy.exec, ...policy.read].map(real)),
     ...bind("--bind", policy.write.map(real)),
     "--chdir",
     real(policy.cwd),

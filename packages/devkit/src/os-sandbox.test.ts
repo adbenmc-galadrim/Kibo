@@ -39,6 +39,9 @@ describe("profiles", () => {
     expect(argv.slice(0, 2)).toEqual(["/usr/bin/bwrap", "--unshare-all"]);
     expect(argv).toContain("--die-with-parent");
     expect(argv.join(" ")).toContain("--ro-bind /opt/kibo/toolchain /opt/kibo/toolchain");
+    expect(argv.join(" ")).toContain("--ro-bind /opt/kibo/bin/kibo-daemon /opt/kibo/bin/kibo-daemon");
+    expect(argv.join(" ")).not.toContain("/opt/kibo/bin /opt/kibo/bin");
+    expect(argv.join(" ")).not.toMatch(/--ro-bind(-try)? \/usr \/usr /);
     expect(argv.join(" ")).toContain("--bind /tmp/kibo-work /tmp/kibo-work");
     expect(argv.slice(-3)).toEqual(["--", "/opt/kibo/bin/kibo-daemon", "component-runtime"]);
   });
@@ -66,7 +69,10 @@ const attempt = async (name, fn) => { try { await fn(); out[name] = "open"; } ca
 const fs = await load("node:fs");
 await attempt("read", () => fs.readFileSync(${JSON.stringify(join(secret, "token"))}, "utf8"));
 await attempt("write", () => fs.writeFileSync(${JSON.stringify(join(secret, "pwned"))}, "x"));
-await attempt("spawn", async () => (await load("node:child_process")).execFileSync("/bin/echo", ["x"]));
+const cp = await load("node:child_process");
+await attempt("spawn", () => cp.execFileSync("/bin/echo", ["x"]));
+await attempt("spawnUsr", () => cp.execFileSync("/usr/bin/echo", ["x"]));
+await attempt("child", () => cp.execFileSync(process.execPath, ["-e", ${JSON.stringify(`require("node:fs").readFileSync(${JSON.stringify(join(secret, "token"))})`)}], { stdio: "ignore" }));
 await attempt("connect", () => fetch("http://127.0.0.1:${listener.port}/"));
 await attempt("inside", () => fs.writeFileSync("inside", "x"));
 console.log(JSON.stringify(out));
@@ -84,6 +90,8 @@ console.log(JSON.stringify(out));
       read: "blocked",
       write: "blocked",
       spawn: "blocked",
+      spawnUsr: "blocked",
+      child: "blocked",
       connect: "blocked",
       inside: "open",
     });
