@@ -235,7 +235,7 @@ Toutes les maquettes sont dans Penpot, en **thème sombre et en thème clair**.
   - Raccourcis : `⌘T` nouvel onglet (ouvre la palette `⌘K`), `⌘W` fermer, `⌘1…9` aller à un onglet, clic du milieu pour fermer, glisser-déposer pour réordonner.
   - Menu contextuel d'un onglet : Épingler / Désépingler, Dupliquer, Fermer les autres, Ouvrir dans une nouvelle fenêtre.
   - Les onglets sont **persistés par workspace** (donnée locale, hors CRDT partagé).
-- **Sidebar** (issue de la variante A) : sélecteur de workspace, recherche `⌘K`, Vue d'ensemble, Mes tickets, Agents, arbre des projets et de leurs pages, puis Composants et Paramètres. Repliable en **rail d'icônes** (issu de la variante B).
+- **Sidebar** (issue de la variante A) : sélecteur de workspace (en-tête et renommage en phase 4 ; création et bascule entre workspaces : point E6 du plan de phase 4), recherche `⌘K`, Vue d'ensemble, Mes tickets, Agents, arbre des projets et de leurs pages, puis Composants et Paramètres. Repliable en **rail d'icônes** (issu de la variante B).
 - **Deux types de pages :**
   - **Tableau de bord** : grille de widgets (variante A) ;
   - **Vue** : un composant en plein écran (variante B).
