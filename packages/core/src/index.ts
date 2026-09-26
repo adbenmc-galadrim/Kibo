@@ -1,4 +1,5 @@
 export * from "./commands";
+export * from "./commit-message";
 export * from "./instances";
 export * from "./links";
 export * from "./pages";
