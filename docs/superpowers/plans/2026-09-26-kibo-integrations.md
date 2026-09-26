@@ -2805,12 +2805,13 @@ git commit -m "feat(daemon): secrets dans le trousseau système"
 - Modify: `packages/schema/src/external-ref.ts`, `packages/schema/src/command.ts` (`ProjectCommand`, `COMMAND_WRITES`, `CommandResult`), `packages/schema/src/rpc.ts` (`ProjectSnapshot.bindings`), `packages/schema/src/component.test.ts` (test « reserved commands » : `upsertExternalRef` devient réservée)
 - Create: `packages/core/src/external-refs.ts`, `packages/core/src/bindings.ts`, `packages/core/src/bindings.test.ts`, `packages/core/src/external-refs-kinds.test.ts`
 - Modify: `packages/core/src/tickets.ts` (retire `upsertExternalRef`, ajoute `readExternalRefs`), `packages/core/src/commands.ts`, `packages/core/src/index.ts`
+- Modify: `packages/daemon/src/components/gate.test.ts` (test « external refs and bindings are refused to every component » : les **cinq** commandes `upsertExternalRef`, `removeExternalRef`, `addBinding`, `removeBinding`, `importExternalTicket` refusées `PERMISSION_DENIED` aux composants tiers et intégrés, `missingPermission` non nul même avec toutes les écritures), `packages/daemon/src/code/pr-poller.ts` (`Tracked.ref: GithubPrRef`), `packages/daemon/src/code/code-service.test.ts` (filtre `github_pr`)
 - Modify (littéraux `ProjectSnapshot` des tests et fixtures, `bindings: []` ajouté) : `packages/ui/src/agents/fixtures.ts`, `packages/ui/src/tabs/TabBar.test.tsx`, `packages/ui/src/shell/shell.test.tsx`, `packages/ui/src/shell/screens.test.tsx`, `packages/ui/src/code/agent-slots.test.tsx`, `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/state/use-projects.test.tsx`, `packages/ui/src/state/use-snapshots.test.tsx`, `packages/ui/src/dialogs/dialogs.test.tsx`, `packages/ui/src/palette/palette.test.tsx`, `packages/daemon/src/agents/orchestrator.test.ts` (liste relevée par `grep -rln "nextTicketKey:" packages components` ; la compléter si `typecheck` en signale d'autres)
 
 **Interfaces:**
 - Consumes: `GithubIssueRef`, `FigmaNodeRef`, `McpItemRef`, `Binding` (Task 1) ; `PrState`, stockage JSON `externalRefs` du nœud de ticket (phase 3, `core/src/tickets.ts`).
 - Produces (schema) :
-  - `GithubPrRef` (extrait tel quel de l'union de la phase 3), `ExternalRef = z.discriminatedUnion("kind", [GithubPrRef, GithubIssueRef, FigmaNodeRef, McpItemRef])`, `ExternalRefKind`, `externalRefKey(ref): string` (`url` · `bindingId` · `fileKey:nodeId` · `server:itemId`), `externalRefTarget(ref): string | null` (objet distant ; `null` pour une issue en attente)
+  - `GithubPrRef` (extrait de l'union de la phase 3, `url: WebUrl`), `ExternalRef = z.discriminatedUnion("kind", [GithubPrRef, GithubIssueRef, FigmaNodeRef, McpItemRef])`, `ExternalRefKind`, `externalRefKey(ref): string` (`url` · `bindingId` · `fileKey:nodeId` · `server:itemId`), `externalRefTarget(ref): string | null` (objet distant ; `null` pour une issue en attente)
   - `ProjectCommand` (`command.ts`) gagne (réservées, `COMMAND_WRITES[…] = null`) : `{ method: "removeExternalRef"; ticketId; kind: ExternalRefKind; key: string }`, `{ method: "addBinding"; binding: Binding }`, `{ method: "removeBinding"; bindingId: string }`, `{ method: "importExternalTicket"; title: string; description?: string; statusId?: StatusId; assignee?: Assignee | null; ref: ExternalRef }` ; `COMMAND_WRITES.upsertExternalRef` passe de `"ticket"` à `null`
   - `CommandResult` : `removeExternalRef: Ticket`, `addBinding: Binding`, `removeBinding: null`, `importExternalTicket: Ticket`
   - `ProjectSnapshot.bindings: Binding[]` (`rpc.ts`)
@@ -2826,7 +2827,7 @@ import type { ExternalRef } from "@kibo/schema";
 import { executeProjectCommand, readProject } from "./commands";
 import { findTicketByRef, importExternalTicket, removeExternalRef, upsertExternalRef } from "./external-refs";
 import { createProjectDoc } from "./project";
-import { createTicket } from "./tickets";
+import { createTicket, getTicket } from "./tickets";
 
 const doc = () => createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
 const issue = (patch: Partial<Extract<ExternalRef, { kind: "github_issue" }>> = {}): ExternalRef => ({
@@ -2886,6 +2887,15 @@ describe("external refs of every kind", () => {
     expect(pendingA.id).not.toBe(pendingB.id);
   });
 
+  test("only http(s) urls are accepted, for every kind", () => {
+    const d = doc();
+    const t = createTicket(d, { title: "A" });
+    const pr: ExternalRef = { kind: "github_pr", url: "javascript:alert(1)", number: 1, state: "open" };
+    expect(() => upsertExternalRef(d, t.id, pr)).toThrow("INVALID_INPUT");
+    expect(() => upsertExternalRef(d, t.id, { ...figma, url: "javascript:alert(1)" })).toThrow("INVALID_INPUT");
+    expect(getTicket(d, t.id).externalRefs).toEqual([]);
+  });
+
   test("new commands go through executeProjectCommand", () => {
     const d = doc();
     const t = executeProjectCommand(d, { method: "importExternalTicket", title: "X", ref: figma }) as { id: string };
@@ -2936,18 +2946,18 @@ Run: `bun test packages/core` — Expected: FAIL.
 
 - [ ] **Step 2: Schéma**
 
-`packages/schema/src/external-ref.ts` (la branche `github_pr` de la phase 3 devient `GithubPrRef`, sans changement de forme) :
+`packages/schema/src/external-ref.ts` (la branche `github_pr` de la phase 3 devient `GithubPrRef` ; seul changement de forme : `url` passe de `z.string().url()` à `WebUrl`, comme les trois autres types, car `z.string().url()` accepte `javascript:` et l'URL est rendue en `href` par `TicketDetail.tsx` ; les réfs `github_pr` déjà stockées viennent de `gh` et sont en `https://`) :
 
 ```ts
 import { z } from "zod";
-import { FigmaNodeRef, GithubIssueRef, McpItemRef } from "./integrations";
+import { FigmaNodeRef, GithubIssueRef, McpItemRef, WebUrl } from "./integrations";
 
 export const PrState = z.enum(["open", "draft", "merged", "closed"]);
 export type PrState = z.infer<typeof PrState>;
 
 export const GithubPrRef = z.object({
   kind: z.literal("github_pr"),
-  url: z.string().url(),
+  url: WebUrl,
   number: z.number().int().positive(),
   state: PrState,
 });
