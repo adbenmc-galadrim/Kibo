@@ -110,3 +110,24 @@ test("the run context lists every file to materialize", () => {
   expect(ctx.tokens).toBe(Math.ceil((ctx.systemPrompt.length + ctx.brief.length) / 4));
   expect(ctx.brief).not.toContain("## Consignes");
 });
+
+test("the brief lists the linked mockups, only their URL", () => {
+  const { project, ticket } = kibo();
+  const figma = {
+    kind: "figma_node" as const,
+    fileKey: "AbC123xyz",
+    nodeId: "12:34",
+    url: "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34",
+    name: "Arbre",
+  };
+  const withMockup = buildBrief({
+    project,
+    ticket: { ...ticket, externalRefs: [figma] },
+    domain: null,
+    note: "",
+  });
+  expect(withMockup).toContain(
+    "## Maquettes\n\n- Arbre : https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34\n",
+  );
+  expect(buildBrief({ project, ticket, domain: null, note: "" })).not.toContain("## Maquettes");
+});

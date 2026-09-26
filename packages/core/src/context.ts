@@ -89,6 +89,10 @@ export function buildBrief({ project, ticket, domain, note }: BriefInput): strin
       ...blockers.map((b) => `- Attend ${b.key} · ${b.title} (${label(b.statusId)})`),
     );
   }
+  const mockups = ticket.externalRefs.filter((r) => r.kind === "figma_node");
+  if (mockups.length > 0) {
+    lines.push("", "## Maquettes", "", ...mockups.map((m) => `- ${m.name} : ${m.url}`));
+  }
   if (note.trim()) lines.push("", "## Consignes", "", note.trim());
   return `${lines.join("\n")}\n`;
 }
