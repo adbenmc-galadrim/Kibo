@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "sidecar": "bun scripts/build-sidecar.ts",
-    "build:debug": "bun run sidecar && tauri build --debug --no-bundle",
-    "dev": "bun run sidecar && tauri dev"
+    "toolchain": "bun scripts/build-toolchain.ts",
+    "build": "bun run sidecar && bun run toolchain && tauri build",
+    "build:debug": "bun run sidecar && bun run toolchain && tauri build --debug --no-bundle",
+    "dev": "bun run sidecar && bun run toolchain && tauri dev"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.5"

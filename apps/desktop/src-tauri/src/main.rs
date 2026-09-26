@@ -30,12 +30,21 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            let ui_dir = app.path().resource_dir()?.join("ui");
+            let resource_dir = app.path().resource_dir()?;
+            let ui_dir = resource_dir.join("ui");
+            let toolchain_dir = resource_dir.join("toolchain");
             let (mut events, child) = app
                 .shell()
                 .sidecar("kibo-daemon")?
                 .env("KIBO_NATIVE_NOTIFY", "1")
-                .args(["--port", "0", "--ui", &ui_dir.to_string_lossy()])
+                .args([
+                    "--port",
+                    "0",
+                    "--ui",
+                    &ui_dir.to_string_lossy(),
+                    "--toolchain",
+                    &toolchain_dir.to_string_lossy(),
+                ])
                 .spawn()?;
             app.manage(Daemon(Mutex::new(Some(child))));
             let handle = app.handle().clone();
