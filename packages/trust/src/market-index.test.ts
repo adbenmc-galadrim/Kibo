@@ -94,6 +94,15 @@ describe("verifyIndex", () => {
     });
     expect(await caught(verify)).toBe("SIGNATURE_INVALID");
   });
+  test("refuses an index listing the same package id twice", async () => {
+    const f = await fixture();
+    const entry = f.index.packages[0];
+    if (!entry) throw new Error("fixture has no package");
+    const duplicated = await signIndex({ ...f.index, packages: [entry, entry] }, f.keys.privateKey);
+    expect(
+      await caught(verifyIndex({ ...duplicated, expectedKey: f.keys.publicKey, lastSerial: null })),
+    ).toBe("INVALID_INPUT");
+  });
   test("refuses signed bytes that are not an index", async () => {
     const keys = await generateKeyPair();
     const bytes = utf8(JSON.stringify({ hello: "world" }));

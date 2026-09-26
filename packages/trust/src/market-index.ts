@@ -21,7 +21,16 @@ function parseIndex(bytes: Uint8Array): MarketIndex {
   if (!parsed.success) {
     throw new KiboError("INVALID_INPUT", `index does not match the format: ${parsed.error.message}`);
   }
+  assertUniqueIds(parsed.data);
   return parsed.data;
+}
+
+function assertUniqueIds(index: MarketIndex): void {
+  const seen = new Set<string>();
+  for (const { id } of index.packages) {
+    if (seen.has(id)) throw new KiboError("INVALID_INPUT", `index lists ${id} more than once`);
+    seen.add(id);
+  }
 }
 
 export async function verifyIndex(input: {

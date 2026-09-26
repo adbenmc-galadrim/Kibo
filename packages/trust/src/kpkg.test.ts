@@ -1,16 +1,24 @@
 import { describe, expect, test } from "bun:test";
-import { KiboError, type KiboErrorCode, KPKG_MAX_BYTES, type Kpkg } from "@kibo/schema";
+import {
+  type ComponentManifest,
+  KiboError,
+  type KiboErrorCode,
+  KPKG_MAX_BYTES,
+  type Kpkg,
+} from "@kibo/schema";
 import { sha256Hex, toBase64, utf8 } from "./bytes";
 import { generateKeyPair, signBytes } from "./ed25519";
 import {
   assertPackagePath,
   decodeKpkg,
   encodeKpkg,
+  KPKG_MAX_RAW_BYTES,
   kpkgSourceFiles,
   packKpkg,
   signingPayload,
   verifyKpkgSignature,
 } from "./kpkg";
+import { type SourceFile, sourceHash } from "./source-hash";
 import { makeTestPackage } from "./testing/fixtures";
 
 async function failure(p: Promise<unknown>): Promise<KiboError | null> {
@@ -25,6 +33,21 @@ async function failure(p: Promise<unknown>): Promise<KiboError | null> {
 
 async function rejectsWith(p: Promise<unknown>, expected: KiboErrorCode) {
   expect((await failure(p))?.code).toBe(expected);
+}
+
+async function signedPackage(manifest: ComponentManifest, files: SourceFile[]): Promise<Kpkg> {
+  const keys = await generateKeyPair();
+  const unsigned = {
+    manifest,
+    hash: sourceHash(files),
+    publisher: { name: "Léa", publicKey: keys.publicKey },
+    publishedAt: "2026-09-26T10:00:00.000Z",
+  };
+  const encoded = await Promise.all(
+    files.map(async (f) => ({ path: f.path, sha256: await sha256Hex(f.bytes), content: toBase64(f.bytes) })),
+  );
+  const signature = await signBytes(keys.privateKey, signingPayload(unsigned));
+  return { format: 1, ...unsigned, files: encoded, signature };
 }
 
 async function extraFile(path: string, text = "export const x = 1;\n") {
@@ -140,13 +163,8 @@ describe("content", () => {
   });
   test("refuses a package without kibo.component.json", async () => {
     const { pkg: reference } = await makeTestPackage();
-    const pkg = await packKpkg({
-      manifest: reference.manifest,
-      files: [{ path: "ui.tsx", bytes: utf8("export function Component() {}\n") }],
-      publisherName: "Léa",
-      keys: await generateKeyPair(),
-      publishedAt: new Date("2026-09-26T10:00:00.000Z"),
-    });
+    const files = [{ path: "ui.tsx", bytes: utf8("export function Component() {}\n") }];
+    const pkg = await signedPackage(reference.manifest, files);
     const error = await failure(kpkgSourceFiles(pkg));
     expect(error?.code).toBe("INVALID_INPUT");
     expect(error?.detail).toContain("kibo.component.json");
@@ -173,14 +191,60 @@ describe("content", () => {
     await rejectsWith(makeTestPackage({ files: { "../evil.ts": "export {};\n" } }), "INVALID_INPUT");
   });
   test("refuses more than 2 MiB of decoded sources", async () => {
-    const big = "x".repeat(KPKG_MAX_BYTES);
-    const { pkg } = await makeTestPackage({ files: { "big.ts": `export const s = "${big}";\n` } });
-    await rejectsWith(kpkgSourceFiles(pkg), "INVALID_INPUT");
+    const { pkg } = await makeTestPackage();
+    const big = await extraFile("big.ts", `export const s = "${"x".repeat(KPKG_MAX_BYTES)}";\n`);
+    await rejectsWith(kpkgSourceFiles({ ...pkg, files: [...pkg.files, big] }), "INVALID_INPUT");
+  });
+  test("refuses paths that collide once lowercased", async () => {
+    const { pkg } = await makeTestPackage();
+    const files = [...pkg.files, await extraFile("util.ts"), await extraFile("Util.ts")];
+    await rejectsWith(kpkgSourceFiles({ ...pkg, files }), "INVALID_INPUT");
+  });
+  test("refuses a file that is also a directory", async () => {
+    const { pkg } = await makeTestPackage();
+    const files = [...pkg.files, await extraFile("a.ts/b.ts"), await extraFile("a.ts")];
+    await rejectsWith(kpkgSourceFiles({ ...pkg, files }), "INVALID_INPUT");
   });
   test("bounds the declared size before decoding base64", async () => {
     const { pkg } = await makeTestPackage();
     const huge = { path: "huge.ts", sha256: "0".repeat(64), content: "A".repeat(KPKG_MAX_BYTES * 2) };
     await rejectsWith(kpkgSourceFiles({ ...pkg, files: [...pkg.files, huge] }), "INVALID_INPUT");
+  });
+});
+
+describe("packKpkg", () => {
+  test("refuses more than 2 MiB of sources", async () => {
+    const big = "x".repeat(KPKG_MAX_BYTES);
+    await rejectsWith(
+      makeTestPackage({ files: { "big.ts": `export const s = "${big}";\n` } }),
+      "INVALID_INPUT",
+    );
+  });
+  test("refuses a manifest that differs from kibo.component.json", async () => {
+    const { pkg, files } = await makeTestPackage();
+    const pack = packKpkg({
+      manifest: { ...pkg.manifest, writes: ["ticket"] },
+      files,
+      publisherName: "Léa",
+      keys: await generateKeyPair(),
+      publishedAt: new Date("2026-09-26T10:00:00.000Z"),
+    });
+    await rejectsWith(pack, "INVALID_INPUT");
+  });
+  test("refuses a package without kibo.component.json", async () => {
+    const { pkg } = await makeTestPackage();
+    const pack = packKpkg({
+      manifest: pkg.manifest,
+      files: [{ path: "ui.tsx", bytes: utf8("export function Component() {}\n") }],
+      publisherName: "Léa",
+      keys: await generateKeyPair(),
+      publishedAt: new Date("2026-09-26T10:00:00.000Z"),
+    });
+    await rejectsWith(pack, "INVALID_INPUT");
+  });
+  test("refuses case colliding paths", async () => {
+    const files = { "util.ts": "export const a = 1;\n", "Util.ts": "export const a = 2;\n" };
+    await rejectsWith(makeTestPackage({ files }), "INVALID_INPUT");
   });
 });
 
@@ -197,6 +261,10 @@ describe("encoding", () => {
   });
   test("refuses a document that is not a kpkg", () => {
     expect(() => decodeKpkg(utf8(JSON.stringify({ format: 2 })))).toThrow("INVALID_INPUT");
+  });
+  test("the raw download bound fits the base64 of a full package", () => {
+    expect(KPKG_MAX_RAW_BYTES).toBeGreaterThan(Math.ceil(KPKG_MAX_BYTES / 3) * 4);
+    expect(() => decodeKpkg(new Uint8Array(KPKG_MAX_RAW_BYTES + 1))).toThrow("package too large");
   });
   test("refuses oversized raw bytes before parsing", () => {
     expect(() => decodeKpkg(new Uint8Array(KPKG_MAX_BYTES * 2))).toThrow("INVALID_INPUT");

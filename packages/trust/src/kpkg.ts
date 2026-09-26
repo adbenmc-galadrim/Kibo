@@ -6,7 +6,7 @@ import { isHashedSource, type SourceFile, sourceHash } from "./source-hash";
 const SEGMENT = /^[A-Za-z0-9._-]+$/;
 const MANIFEST_FILE = "kibo.component.json";
 const MAX_PATH_LENGTH = 256;
-const RAW_LIMIT = Math.ceil((KPKG_MAX_BYTES * 4) / 3) + 256 * 1024;
+export const KPKG_MAX_RAW_BYTES = Math.ceil((KPKG_MAX_BYTES * 4) / 3) + 256 * 1024;
 export const KPKG_MAX_FILES = 200;
 
 const comparePaths = (a: { path: string }, b: { path: string }): number =>
@@ -34,11 +34,23 @@ function assertPackagePaths(files: readonly { path: string }[]): void {
     throw new KiboError("INVALID_INPUT", `package has more than ${KPKG_MAX_FILES} files`);
   }
   const seen = new Set<string>();
+  const directories = new Set<string>();
   for (const { path } of files) {
     assertPackagePath(path);
-    if (seen.has(path)) throw new KiboError("INVALID_INPUT", `duplicated package path: ${path}`);
-    seen.add(path);
+    const folded = path.toLowerCase();
+    if (seen.has(folded)) throw new KiboError("INVALID_INPUT", `duplicated package path: ${path}`);
+    seen.add(folded);
+    for (const directory of parentDirectories(folded)) directories.add(directory);
   }
+  const conflict = [...seen].find((path) => directories.has(path));
+  if (conflict !== undefined) {
+    throw new KiboError("INVALID_INPUT", `package path is both a file and a directory: ${conflict}`);
+  }
+}
+
+function parentDirectories(path: string): string[] {
+  const segments = path.split("/");
+  return segments.slice(1).map((_, i) => segments.slice(0, i + 1).join("/"));
 }
 
 function decodedLength(base64: string): number {
@@ -47,7 +59,10 @@ function decodedLength(base64: string): number {
 }
 
 function assertDeclaredSize(files: readonly KpkgFile[]): void {
-  const total = files.reduce((sum, f) => sum + decodedLength(f.content), 0);
+  assertTotalSize(files.reduce((sum, f) => sum + decodedLength(f.content), 0));
+}
+
+function assertTotalSize(total: number): void {
   if (total > KPKG_MAX_BYTES) {
     throw new KiboError("INVALID_INPUT", `package sources exceed ${KPKG_MAX_BYTES} bytes`);
   }
@@ -62,6 +77,8 @@ export async function packKpkg(input: {
 }): Promise<Kpkg> {
   const files = [...input.files].sort(comparePaths);
   assertPackagePaths(files);
+  assertTotalSize(files.reduce((sum, f) => sum + f.bytes.byteLength, 0));
+  assertManifestMatches(input.manifest, files);
   const hash = sourceHash(files);
   const encoded = await Promise.all(
     files.map(async (f) => ({ path: f.path, sha256: await sha256Hex(f.bytes), content: toBase64(f.bytes) })),
@@ -89,7 +106,7 @@ function parseJson(bytes: Uint8Array, what: string): unknown {
 }
 
 export function decodeKpkg(bytes: Uint8Array): Kpkg {
-  if (bytes.byteLength > RAW_LIMIT) {
+  if (bytes.byteLength > KPKG_MAX_RAW_BYTES) {
     throw new KiboError("INVALID_INPUT", `package too large: ${bytes.byteLength} bytes`);
   }
   const parsed = Kpkg.safeParse(parseJson(bytes, "package"));
@@ -117,11 +134,11 @@ async function decodeFile(file: KpkgFile): Promise<SourceFile> {
   return { path: file.path, bytes };
 }
 
-function assertManifestMatches(pkg: Kpkg, files: SourceFile[]): void {
+function assertManifestMatches(manifest: ComponentManifest, files: SourceFile[]): void {
   const manifestFile = files.find((f) => f.path === MANIFEST_FILE);
   if (!manifestFile) throw new KiboError("INVALID_INPUT", `package has no ${MANIFEST_FILE}`);
   const declared = ComponentManifest.safeParse(parseJson(manifestFile.bytes, MANIFEST_FILE));
-  if (!declared.success || !Bun.deepEquals(declared.data, pkg.manifest, true)) {
+  if (!declared.success || !Bun.deepEquals(declared.data, manifest, true)) {
     throw new KiboError("INVALID_INPUT", `package manifest differs from ${MANIFEST_FILE}`);
   }
 }
@@ -138,6 +155,6 @@ export async function kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]> {
       `recomputed hash of ${pkg.manifest.id}@${pkg.manifest.version} differs`,
     );
   }
-  assertManifestMatches(pkg, files);
+  assertManifestMatches(pkg.manifest, files);
   return files;
 }
