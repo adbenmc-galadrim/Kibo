@@ -17138,7 +17138,7 @@ git commit -m "build(desktop): binaire, toolchain et CLI"
   - `type BuiltChunk = { fileName: string; isEntry: boolean; imports: string[]; code: string; moduleIds: string[] }` ; `type EntryReport = { files: string[]; gzipBytes: number; budget: number; forbidden: { file: string; module: string }[]; ok: boolean }` ; `initialChunks(chunks): BuiltChunk[]` ; `reportEntry(chunks, opts?: { budget: number; forbidden: readonly RegExp[]; gzip(bytes: Uint8Array): number }): EntryReport` ; `ENTRY_GZIP_BUDGET = 230_000` ; `FORBIDDEN_IN_ENTRY: readonly RegExp[]` ; `gzipLevel9(bytes): number`.
   - Script racine `bun run budget` : build Vite réel en mémoire, affiche les fichiers initiaux et leur taille gzip, code de sortie 1 si le budget est dépassé ou si un module interdit est dans l'entrée.
 
-- [ ] **Step 1: Tests du panneau différé**
+- [x] **Step 1: Tests du panneau différé**
 
 `packages/sdk/src/lazy.test.tsx` :
 ```tsx
@@ -17225,7 +17225,7 @@ describe("lazyPanel", () => {
 Run: `bun test packages/sdk/src/lazy.test.tsx`
 Expected: FAIL (`./lazy` absent).
 
-- [ ] **Step 2: Implémenter `lazyPanel`**
+- [x] **Step 2: Implémenter `lazyPanel`**
 
 `packages/sdk/src/lazy.tsx` :
 ```tsx
@@ -17319,7 +17319,7 @@ Si le compilateur refuse `<Loaded {...props} />` pour un `P` générique (`Intri
 Run: `bun test packages/sdk/src/lazy.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 3: Tests du rapport de budget**
+- [x] **Step 3: Tests du rapport de budget**
 
 `packages/ui/scripts/bundle-report.test.ts` :
 ```ts
@@ -17397,7 +17397,7 @@ describe("bundle report", () => {
 Run: `bun test packages/ui/scripts/bundle-report.test.ts`
 Expected: FAIL (`./bundle-report` absent).
 
-- [ ] **Step 4: Implémenter le rapport et le script**
+- [x] **Step 4: Implémenter le rapport et le script**
 
 `packages/ui/scripts/bundle-report.ts` :
 ```ts
@@ -17496,7 +17496,7 @@ L'API `build` de Vite tourne sous Bun (sonde du 2026-09-26 : 1,7 s, mêmes chunk
 Run: `bun test packages/ui/scripts && bun run budget`
 Expected: tests PASS ; `bun run budget` **FAIL** (≈ 485 kB et modules interdits listés : `@codemirror/*`, `@lezer/*`, `markdown-it`, `NotesView`, `GraphView`, `AgentsPage`…). C'est l'état de départ.
 
-- [ ] **Step 5: Différer les écrans de l'UI**
+- [x] **Step 5: Différer les écrans de l'UI**
 
 `packages/ui/src/i18n/fr.ts` : `lazy: { loading: "Chargement…", failed: "Impossible de charger cet écran.", retry: "Réessayer" }`.
 
@@ -17527,7 +17527,7 @@ export const FilePreviewSheet = lazyPanel(
 
 Les tests de l'UI qui rendent ces écrans passent de `getBy*` à `await findBy*` (le premier rendu montre le repli) ; aucun autre changement.
 
-- [ ] **Step 6: Différer les vues Notes et Graphe**
+- [x] **Step 6: Différer les vues Notes et Graphe**
 
 `components/notes/src/fr.ts` : `lazy: { loading: "Chargement des notes…", failed: "Impossible de charger les notes.", retry: "Réessayer" }` ; `components/graph/src/fr.ts` : `lazy: { loading: "Chargement du graphe…", failed: "Impossible de charger le graphe.", retry: "Réessayer" }`.
 
@@ -17562,14 +17562,14 @@ await waitFor(() => expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBe
 Run: `bun test packages components`
 Expected: PASS (tests d'écrans adaptés en `findBy*`).
 
-- [ ] **Step 7: Mesurer et vérifier le budget**
+- [x] **Step 7: Mesurer et vérifier le budget**
 
 Run: `bun run budget`
 Expected: PASS ; chargement initial ≤ 230 kB gzip (estimation ~218 kB), aucun module interdit. Reporter la valeur mesurée dans la décision 29 (« mesure après la tâche 35 : n kB »). Si le budget n'est pas tenu alors que tous les modules listés sont différés, **ne pas relever le seuil** : chercher la dépendance restante (`bun run budget` liste les fichiers initiaux ; un `console.log` temporaire des `moduleIds` du plus gros chunk suffit) et, faute de piste, remonter au `kibo-lead`.
 
 Vérifier aussi à la main, dans l'app (`bun run start`), sombre puis clair : ouvrir Agents, Files d'attente, Paramètres, Composants, Changements, un aperçu de fichier, la vue Notes et la vue Graphe ; le repli « Chargement… » est bref et chaque écran s'affiche. Couper le démon puis ouvrir un écran jamais chargé : l'alerte « Impossible de charger cet écran. » et « Réessayer » apparaissent ; relancer le démon, « Réessayer » affiche l'écran.
 
-- [ ] **Step 8: Vérifier et committer**
+- [x] **Step 8: Vérifier et committer**
 
 Run: `bun test packages components && bun run typecheck && bun run check && bun run budget && bun run --cwd packages/ui build`
 Expected: PASS ; `bun run budget` ≤ 230 kB gzip ; Vite n'affiche plus l'avertissement « Some chunks are larger than 500 kB » grâce à `chunkSizeWarningLimit: 800` (décision 33 : le budget gzip est la garde, le seuil de Vite un filet ; on ne le relève pas pour faire passer une tâche).
