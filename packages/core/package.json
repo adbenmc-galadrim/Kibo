@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./notes": "./src/note-parse.ts",
     "./*": "./src/*.ts"
   },
   "dependencies": {
