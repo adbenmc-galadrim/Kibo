@@ -112,6 +112,10 @@ function injectedSecret(
   return secretFor(current, opts.secrets ?? [], covered, hooks.secret);
 }
 
+function withSecret(headers: Record<string, string>, secret: string): Record<string, string> {
+  return { ...headers, authorization: `Bearer ${secret}`, "accept-encoding": "identity" };
+}
+
 function redirectTarget(location: string, current: URL): URL {
   if (!URL.canParse(location, current.href))
     throw new KiboError("PERMISSION_DENIED", "invalid redirect location");
@@ -143,11 +147,11 @@ export async function proxyFetch(
       const bearer = await injectedSecret(opts, rules, current);
       const res = await send(opts, current, {
         method,
-        headers: bearer === null ? headers : { ...headers, authorization: `Bearer ${bearer}` },
+        headers: bearer === null ? headers : withSecret(headers, bearer),
         body,
         signal,
       });
-      opts.hooks?.observe(bareHost(current), res.headers);
+      if (bearer !== null) opts.hooks?.observe(bareHost(current), res.headers);
       const location = res.headers.get("location");
       if (res.status < 300 || res.status >= 400 || location === null) {
         return await readProxiedBody(res, opts.maxBytes ?? DEFAULT_MAX_BYTES, bearer);

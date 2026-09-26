@@ -7,7 +7,7 @@ import {
   type Resolver,
   systemResolver,
 } from "../components/net-proxy-address";
-import { readCapped, scrubCapped } from "../components/net-proxy-body";
+import { readCapped, scrubCapped, scrubHeaders } from "../components/net-proxy-body";
 import { directTransport, type Transport } from "../components/net-proxy-transport";
 import type { IntegrationFetch, IntegrationFetchInit, InternalRule, SecretResolver } from "./types";
 
@@ -41,7 +41,8 @@ function testOrigin(value: string): [string, URL] {
   }
   const u = new URL(origin);
   const loopback = u.protocol === "http:" && LOOPBACK_NAMES.has(u.hostname);
-  if (!loopback || u.pathname !== "/" || u.search !== "" || u.hash !== "" || u.username !== "") {
+  const credentials = u.username !== "" || u.password !== "";
+  if (!loopback || credentials || u.pathname !== "/" || u.search !== "" || u.hash !== "") {
     throw new KiboError("INVALID_INPUT", `test origin must be a loopback http origin: ${value}`);
   }
   return [host, u];
@@ -78,7 +79,10 @@ function outgoing(init: Record<string, string> | undefined, bearer: string | nul
     if (!STRIPPED.has(name.toLowerCase())) headers[name.toLowerCase()] = value;
   }
   headers["user-agent"] = "kibo";
-  if (bearer) headers.authorization = `Bearer ${bearer}`;
+  if (bearer) {
+    headers.authorization = `Bearer ${bearer}`;
+    headers["accept-encoding"] = "identity";
+  }
   return headers;
 }
 
@@ -136,7 +140,7 @@ export function createIntegrationFetch(deps: IntegrationFetchDeps): IntegrationF
           body: hop === 0 ? init.body : undefined,
           signal,
         });
-        deps.observe?.(bareHost(current), res.headers);
+        if (bearer) deps.observe?.(bareHost(current), res.headers);
         if (!REDIRECTS.has(res.status)) {
           const { bytes, truncated } = scrubCapped(
             await readCapped(res, init.maxBytes ?? DEFAULT_MAX_BYTES),
@@ -144,7 +148,7 @@ export function createIntegrationFetch(deps: IntegrationFetchDeps): IntegrationF
           );
           return {
             status: res.status,
-            headers: res.headers,
+            headers: bearer ? scrubHeaders(res.headers, bearer) : res.headers,
             body: bytes,
             truncated,
             url: current.toString(),

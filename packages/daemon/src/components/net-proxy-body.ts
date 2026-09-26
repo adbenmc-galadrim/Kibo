@@ -40,6 +40,16 @@ export function scrubSecret(bytes: Uint8Array, secret: string): Uint8Array {
   return Buffer.concat(parts);
 }
 
+function scrubHeaderValue(value: string, secret: string): string {
+  return Buffer.from(scrubSecret(Buffer.from(value), secret)).toString();
+}
+
+export function scrubHeaders(headers: Headers, secret: string): Headers {
+  const out = new Headers();
+  for (const [name, value] of headers) out.append(name, scrubHeaderValue(value, secret));
+  return out;
+}
+
 function trailingPrefix(bytes: Uint8Array, needle: Uint8Array): number {
   for (let size = Math.min(needle.length - 1, bytes.length); size > 0; size -= 1) {
     const tail = bytes.subarray(bytes.length - size);
@@ -67,8 +77,9 @@ export async function readProxiedBody(
   secret: string | null = null,
 ): Promise<FetchResponse> {
   const capped = scrubCapped(await readCapped(res, maxBytes), secret);
+  const received = secret === null ? res.headers : scrubHeaders(res.headers, secret);
   const headers: Record<string, string> = Object.fromEntries(
-    [...res.headers].filter(([name]) => !DROPPED_RESPONSE_HEADERS.has(name) && !name.startsWith("x-kibo-")),
+    [...received].filter(([name]) => !DROPPED_RESPONSE_HEADERS.has(name) && !name.startsWith("x-kibo-")),
   );
   if (capped.truncated) headers["x-kibo-truncated"] = "1";
   const type = res.headers.get("content-type") ?? "";

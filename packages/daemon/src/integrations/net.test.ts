@@ -41,6 +41,8 @@ describe("addresses and test origins", () => {
     expect(() => parseTestOrigins(["api.github.com=http://10.0.0.1:80"])).toThrow("INVALID_INPUT");
     expect(() => parseTestOrigins(["api.github.com=http://127.0.0.1:1/x"])).toThrow("INVALID_INPUT");
     expect(() => parseTestOrigins(["nope"])).toThrow("INVALID_INPUT");
+    expect(() => parseTestOrigins(["api.github.com=http://u:p@127.0.0.1:1"])).toThrow("INVALID_INPUT");
+    expect(() => parseTestOrigins(["api.github.com=http://:p@127.0.0.1:1"])).toThrow("INVALID_INPUT");
   });
 });
 
@@ -98,6 +100,37 @@ describe("integration fetch", () => {
     const text = new TextDecoder().decode(res.body);
     expect(text).toBe('{"message":"Bearer ***');
     expect(res.truncated).toBe(true);
+  });
+
+  test("only a response to a request carrying the token is observed", async () => {
+    const seen: string[] = [];
+    const f = createIntegrationFetch({ aliases: aliases(), observe: (host) => seen.push(host) });
+    await f("https://api.github.com/user", {}, GITHUB_RULES);
+    expect(seen).toEqual([]);
+  });
+
+  test("a request carrying the token asks for an uncompressed body", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (_url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      return new Response("{}", { status: 200 });
+    };
+    const f = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["140.82.112.5"],
+      transport,
+    });
+    const headers = { "accept-encoding": "gzip" };
+    await f("https://api.github.com/user", { bearer: gh.token, headers }, GITHUB_RULES);
+    await f("https://api.github.com/user", { headers }, GITHUB_RULES);
+    expect(sent.map((h) => h["accept-encoding"])).toEqual(["identity", "gzip"]);
+  });
+
+  test("a secret echoed in a response header is scrubbed", async () => {
+    gh.failNext("GET", /^\/user$/, 500, "{}", { "x-echo": `Bearer ${gh.token}` });
+    const f = createIntegrationFetch({ aliases: aliases() });
+    const res = await f("https://api.github.com/user", { bearer: gh.token }, GITHUB_RULES);
+    expect(res.headers.get("x-echo")).toBe("Bearer ***");
   });
 
   test("refuses http, unknown hosts and redirects outside the rules", async () => {

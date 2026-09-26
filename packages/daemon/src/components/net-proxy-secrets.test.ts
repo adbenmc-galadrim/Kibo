@@ -55,3 +55,38 @@ test("an alias exists only through the test hooks", async () => {
     }),
   ).rejects.toThrow("PERMISSION_DENIED");
 });
+
+test("an anonymous response is never observed", async () => {
+  const observed: string[] = [];
+  await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, {
+    hooks: hooks(observed),
+    secrets: [],
+  });
+  expect(observed).toEqual([]);
+});
+
+test("a request carrying a secret asks for an uncompressed body", async () => {
+  const sent: Record<string, string>[] = [];
+  const transport = async (_url: string, init: { headers: Record<string, string> }) => {
+    sent.push(init.headers);
+    return new Response("{}", { status: 200 });
+  };
+  const init = { method: "GET" as const, headers: { "accept-encoding": "gzip" } };
+  const base = { resolve: async () => ["140.82.112.5"], transport };
+  await proxyFetch(["api.github.com"], "https://api.github.com/user", init, {
+    ...base,
+    hooks: { aliases: new Map(), observe: () => undefined, secret: async () => gh.token },
+    secrets: SECRETS,
+  });
+  await proxyFetch(["api.github.com"], "https://api.github.com/user", init, base);
+  expect(sent.map((h) => h["accept-encoding"])).toEqual(["identity", "gzip"]);
+});
+
+test("a secret echoed in a response header is scrubbed", async () => {
+  gh.failNext("GET", /^\/user$/, 500, "{}", { "x-echo": `Bearer ${gh.token}` });
+  const out = await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, {
+    hooks: hooks(),
+    secrets: SECRETS,
+  });
+  expect(out.headers["x-echo"]).toBe("Bearer ***");
+});
