@@ -1,6 +1,10 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { E2E_TOKEN } from "./token";
 
+export async function skipRoleStep(page: Page) {
+  await page.getByRole("button", { name: "Passer" }).click();
+}
+
 export async function pairAndCreateProject(page: Page, info: TestInfo, key: string) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   const html = page.locator("html");
@@ -8,6 +12,7 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
   else await expect(html).not.toHaveClass(/dark/);
 
   await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await skipRoleStep(page);
   await page.getByLabel("Nom").fill(`Kibo ${key}`);
   await page.getByLabel("Clé").fill(key);
   await page.getByRole("button", { name: "Créer le projet" }).click();

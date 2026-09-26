@@ -17,7 +17,19 @@ const environment: Environment = {
   github: { connected: false },
 };
 
-mock.module("../api", () => ({ client: { pair: () => Promise.resolve(), rpc: async () => environment } }));
+const none = () => () => {};
+mock.module("../api", () => ({
+  client: {
+    pair: () => Promise.resolve(),
+    rpc: async (req: { method: string }) =>
+      req.method === "listComponents" || req.method === "listDrafts" ? [] : environment,
+    subscribe: none,
+    subscribeAi: none,
+    onRunChanged: none,
+    onConnection: none,
+    online: () => true,
+  },
+}));
 
 const { Overview } = await import("./Overview");
 const { ProjectHome } = await import("../pages/ProjectHome");
@@ -74,7 +86,7 @@ const empty: ProjectSnapshot = {
 };
 
 test("ProjectHome names the created project and its folder", () => {
-  render(<ProjectHome project={empty} onNewPage={() => {}} />);
+  render(<ProjectHome project={empty} onNewPage={() => {}} onSuggest={() => {}} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Projet créé : Kibo");
   expect(screen.getByText("~/goinfre/Kibo")).toBeTruthy();
 });
@@ -95,6 +107,7 @@ const contentProps = {
   onNewProject: () => {},
   onImportProject: () => {},
   onNewPage: () => {},
+  onSuggestPages: () => {},
   onOpen: () => {},
   onOpenFile: () => {},
   onAssign: () => {},
@@ -109,6 +122,22 @@ test("ContentView keeps the overview once a project exists", () => {
   render(<ContentView {...contentProps} projects={[kibo]} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Bonjour Adam");
   expect(screen.queryByText("Bienvenue dans Kibo")).toBeNull();
+});
+
+test("the empty project home suggests pages for its project", async () => {
+  const asked: string[] = [];
+  render(
+    <ContentView
+      {...contentProps}
+      target={{ kind: "project", projectId: "p1" }}
+      project={empty}
+      projects={[kibo]}
+      onSuggestPages={(id) => asked.push(id)}
+    />,
+  );
+  expect(screen.getByText("Pages de départ selon ton rôle")).toBeTruthy();
+  screen.getByRole("button", { name: "Proposer" }).click();
+  expect(asked).toEqual(["p1"]);
 });
 
 test("NewProjectDialog focuses the folder when importing", async () => {

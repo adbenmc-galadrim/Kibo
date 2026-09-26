@@ -6,6 +6,7 @@ import {
   NewProjectDialog,
   NewTicketDialog,
   ProfileSheet,
+  StarterDialog,
   TicketSheet,
 } from "./lazy-dialogs";
 import { FilePreviewSheet } from "./lazy-screens";
@@ -17,6 +18,7 @@ export type DialogsState = {
   newProject: boolean;
   newProjectFocus: "name" | "folder";
   newPageParent: string | null | undefined;
+  suggestFor: string | null;
   sheet: SheetTicket | null;
   newTicket: NewTicketDefaults | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
@@ -28,6 +30,7 @@ export const NO_DIALOG: DialogsState = {
   newProject: false,
   newProjectFocus: "name",
   newPageParent: undefined,
+  suggestFor: null,
   sheet: null,
   newTicket: null,
   assign: null,
@@ -83,6 +86,14 @@ export function ShellDialogs({
           parentId={state.newPageParent}
           open
           onOpenChange={(o) => !o && set({ newPageParent: undefined })}
+          onSuggest={() => set({ newPageParent: undefined, suggestFor: project.meta.id })}
+        />
+      )}
+      {state.suggestFor && (
+        <StarterDialog
+          projectId={state.suggestFor}
+          open
+          onOpenChange={(o) => !o && set({ suggestFor: null })}
         />
       )}
       {sheet && sheetProject && (

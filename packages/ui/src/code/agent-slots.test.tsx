@@ -105,6 +105,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       onNewProject={() => {}}
       onImportProject={() => {}}
       onNewPage={() => {}}
+      onSuggestPages={() => {}}
       onOpen={() => {}}
       onOpenFile={() => {}}
       onAssign={() => {}}

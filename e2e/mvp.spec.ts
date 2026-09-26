@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { addComponent, createPage, pairAndCreateProject, skipRoleStep } from "./helpers";
 import { projectKey } from "./repo-project";
 
 async function createTicket(page: Page, opener: string, title: string) {
@@ -37,6 +37,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   const other = `Autre ${key}`;
   await page.getByRole("button", { name: "Vue d'ensemble" }).click();
   await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await skipRoleStep(page);
   await page.getByLabel("Nom").fill(other);
   await page.getByLabel("Clé").fill(`${key}B`);
   await page.getByRole("button", { name: "Créer le projet" }).click();

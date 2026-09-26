@@ -13,6 +13,11 @@ export const NewPageDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const StarterDialog = lazyPanel(
+  () => import("../onboarding/StarterDialog").then((m) => m.StarterDialog),
+  fr.lazy,
+  hidden,
+);
 export const NewTicketDialog = lazyPanel(
   () => import("../dialogs/NewTicketDialog").then((m) => m.NewTicketDialog),
   fr.lazy,

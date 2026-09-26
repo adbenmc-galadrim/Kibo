@@ -240,6 +240,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onNewProject={() => set({ newProject: true })}
                     onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
                     onNewPage={() => set({ newPageParent: null })}
+                    onSuggestPages={(projectId) => set({ suggestFor: projectId })}
                     onOpen={(t) => go(t)}
                     onOpenFile={(ref) => set({ preview: ref })}
                     onAssign={(ticketId) => set({ assign: { projectId: null, ticketId } })}

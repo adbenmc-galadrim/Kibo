@@ -1,12 +1,14 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { useEffect } from "react";
 import { fr } from "../i18n/fr";
 import { abbreviateHome } from "../lib/home-path";
 import { navigate } from "../route";
 
-export function ProjectHome({ project, onNewPage }: { project: ProjectSnapshot; onNewPage: () => void }) {
+type Props = { project: ProjectSnapshot; onNewPage: () => void; onSuggest: () => void };
+
+export function ProjectHome({ project, onNewPage, onSuggest }: Props) {
   const first = project.pages[0];
   useEffect(() => {
     if (first) navigate(project.meta.id, first.id);
@@ -25,6 +27,12 @@ export function ProjectHome({ project, onNewPage }: { project: ProjectSnapshot; 
           <p className="text-sm text-muted-foreground">{fr.projectHome.help}</p>
           <Button variant="outline" size="sm" onClick={onNewPage}>
             <Plus className="size-4" /> {fr.nav.newPage}
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
+          <p className="text-sm text-muted-foreground">{fr.onboarding.suggestPagesHelp}</p>
+          <Button variant="outline" size="sm" onClick={onSuggest}>
+            <Sparkles className="size-4" /> {fr.onboarding.propose}
           </Button>
         </div>
       </section>

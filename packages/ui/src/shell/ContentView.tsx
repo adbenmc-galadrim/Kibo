@@ -18,6 +18,7 @@ type Props = {
   onNewProject(): void;
   onImportProject(): void;
   onNewPage(): void;
+  onSuggestPages(projectId: string): void;
   onOpen(target: TabTarget): void;
   onOpenFile(ref: FileRef): void;
   onAssign(ticketId: string): void;
@@ -39,7 +40,13 @@ export function ContentView(p: Props) {
   if (!p.project) return null;
   switch (t.kind) {
     case "project":
-      return <ProjectHome project={p.project} onNewPage={p.onNewPage} />;
+      return (
+        <ProjectHome
+          project={p.project}
+          onNewPage={p.onNewPage}
+          onSuggest={() => p.onSuggestPages(t.projectId)}
+        />
+      );
     case "page": {
       const page = p.project.pages.find((x) => x.id === t.pageId);
       if (!page) return missing(fr.tabs.missingPage);
