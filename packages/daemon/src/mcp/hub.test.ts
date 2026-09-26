@@ -165,6 +165,36 @@ describe("http", () => {
     expect(view.error).not.toContain("wrong-bearer-0000");
   });
 
+  test("after a restart, a dead http server is probed and listed in error", async () => {
+    const doomed = await startFakeMcpHttp();
+    const dead: McpServerInput = {
+      transport: "http",
+      id: "dead",
+      name: "Dead",
+      url: doomed.url,
+      bearer: false,
+    };
+    await hub.add(dead, commandLineOf(dead), {});
+    await hub.stop();
+    await doomed.stop();
+    hub = make();
+    expect((await hub.views())[0]).toMatchObject({ id: "dead", state: "error" });
+  });
+
+  test("a live http server is probed without waiting for a call", async () => {
+    const live: McpServerInput = {
+      transport: "http",
+      id: "live",
+      name: "Live",
+      url: open.url,
+      bearer: false,
+    };
+    await hub.add(live, commandLineOf(live), {});
+    await hub.stop();
+    hub = make();
+    expect((await hub.views())[0]).toMatchObject({ id: "live", state: "connected" });
+  });
+
   test("reserved servers are hidden from the list but callable by the daemon", async () => {
     await hub.setReserved("figma", open.url);
     expect(await hub.views()).toEqual([]);

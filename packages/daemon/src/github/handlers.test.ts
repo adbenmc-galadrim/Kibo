@@ -166,3 +166,23 @@ test("issues and actions rows follow an erroneous github row", async () => {
     ["github-actions", "connected"],
   ]);
 });
+
+test("in token mode, a token missing from the keychain turns the github rows into an error", async () => {
+  const stores: SecretStore[] = [];
+  const r = rpc((s) => {
+    stores.push(s);
+    return s;
+  });
+  await r.handle({ method: "connectGithub", auth: { mode: "token", token: gh.token } });
+  for (const store of stores) await store.delete("github");
+  const rows = (await r.handle({ method: "listIntegrations" })) as (Row & { error: unknown })[];
+  expect(rows.find((s) => s.id === "github")).toMatchObject({
+    state: "error",
+    account: "adam",
+    error: { code: "NOT_CONNECTED" },
+  });
+  expect(rows.find((s) => s.id === "github-issues")).toMatchObject({
+    state: "error",
+    error: { code: "NOT_CONNECTED" },
+  });
+});

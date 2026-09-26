@@ -20,6 +20,7 @@ export type PoolDeps = {
 };
 export type McpPool = {
   connection(id: string): Promise<McpConnection | null>;
+  has(id: string): boolean;
   use<T>(id: string, server: McpServerInput, run: (c: McpConnection) => Promise<T>): Promise<T>;
   connect(id: string, server: McpServerInput): Promise<McpConnection>;
   close(id: string): Promise<void>;
@@ -92,6 +93,7 @@ export function createMcpPool(deps: PoolDeps): McpPool {
       const entry = live.get(id);
       return entry ? entry.conn.catch(() => null) : null;
     },
+    has: (id) => live.has(id),
     async connect(id, server) {
       const { conn, entry } = await acquire(id, server);
       arm(id, entry);

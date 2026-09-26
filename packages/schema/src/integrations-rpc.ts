@@ -26,7 +26,7 @@ const bindingId = z.string().min(1);
 export const INTEGRATION_RPC = [
   z.object({ method: z.literal("listIntegrations") }),
   z.object({ method: z.literal("testIntegration"), id: IntegrationId }),
-  z.object({ method: z.literal("disconnectIntegration"), id: z.enum(["github", "figma"]) }),
+  z.object({ method: z.literal("disconnectIntegration"), id: z.enum(["github", "figma", "mcp"]) }),
   z.object({ method: z.literal("getGithubConnectOptions") }),
   z.object({
     method: z.literal("connectGithub"),

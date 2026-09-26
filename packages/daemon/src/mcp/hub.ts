@@ -47,6 +47,7 @@ export type McpHubDeps = {
   redact(text: string): string;
   idleMs?: number;
   callTimeoutMs?: number;
+  probeWaitMs?: number;
   resolve?: Resolver;
 };
 type Secret = { key: string; name: SecretName };
@@ -54,6 +55,18 @@ type Secret = { key: string; name: SecretName };
 const CONNECT_TIMEOUT_MS = 30_000;
 export const MCP_IDLE_MS = 10 * 60_000;
 export const MCP_CALL_TIMEOUT_MS = 60_000;
+const PROBE_WAIT_MS = 2_000;
+
+function settlesWithin(work: Promise<unknown>, ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), ms);
+    const done = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    work.then(done, done);
+  });
+}
 
 function secretsOf(s: McpServerInput): Secret[] {
   if (s.transport === "stdio") return s.envNames.map((n) => ({ key: n, name: `mcp:${s.id}:${n}` }));
@@ -128,6 +141,29 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
     }
     return view(id);
   };
+  const probing = new Map<string, Promise<void>>();
+  const probe = (id: string): Promise<void> => {
+    const current = probing.get(id);
+    if (current) return current;
+    const next = tryConnect(id)
+      .then(() => undefined, report)
+      .finally(() => probing.delete(id));
+    probing.set(id, next);
+    return next;
+  };
+  const unprobedHttp = () =>
+    store
+      .list()
+      .filter((s) => s.enabled && s.server.transport === "http")
+      .map((s) => s.server.id)
+      .filter((id) => !errors.has(id) && !pool.has(id));
+  const probeIdleHttp = async () => {
+    const ids = unprobedHttp();
+    if (ids.length === 0) return;
+    const all = Promise.all(ids.map(probe));
+    if (!(await settlesWithin(all, deps.probeWaitMs ?? PROBE_WAIT_MS)))
+      void all.then(() => host.broadcast({ type: "integrations" }));
+  };
   const timed = async <T>(
     id: string,
     tool: string,
@@ -169,7 +205,10 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
   };
 
   return {
-    views: async () => Promise.all(store.list().map((s) => view(s.server.id))),
+    async views() {
+      await probeIdleHttp();
+      return Promise.all(store.list().map((s) => view(s.server.id)));
+    },
     async add(input, confirmedCommandLine, values) {
       checkNew(input, confirmedCommandLine, values);
       for (const s of secretsOf(input)) await secrets.set(s.name, values[s.key] ?? "");

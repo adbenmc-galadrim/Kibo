@@ -3,18 +3,18 @@ import { baseStatus } from "../integrations/probes";
 import { commandLineOf } from "./command-line";
 import type { McpHub } from "./hub";
 
-export function mcpModule(kit: IntegrationKit, hub: McpHub): IntegrationModule {
+export function mcpModule(kit: Pick<IntegrationKit, "host">, hub: McpHub): IntegrationModule {
   const changed = () => kit.host.broadcast({ type: "integrations" });
   const status = async () => {
     const enabled = (await hub.views()).filter((v) => v.enabled);
     if (enabled.length === 0) return baseStatus("mcp", "disconnected");
-    const failing = enabled.find((v) => v.state === "error");
+    const failing = enabled.filter((v) => v.state === "error").map((v) => v.id);
     const servers = enabled.map((v) => v.id);
-    return failing
+    return failing.length > 0
       ? {
           ...baseStatus("mcp", "error"),
           servers,
-          error: { code: "MCP_UNAVAILABLE" as const, message: `${failing.id} : ${failing.error ?? ""}` },
+          error: { code: "MCP_UNAVAILABLE" as const, message: failing.join(", ") },
         }
       : { ...baseStatus("mcp", "connected"), servers };
   };
@@ -50,6 +50,10 @@ export function mcpModule(kit: IntegrationKit, hub: McpHub): IntegrationModule {
         async test() {
           for (const v of await hub.views()) if (v.enabled) await hub.test(v.id);
           return status();
+        },
+        async disconnect() {
+          for (const v of await hub.views()) if (v.enabled) await hub.setEnabled(v.id, false);
+          changed();
         },
       },
     ],
