@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ConfigSchema } from "./config";
-import { SecretNameSchema } from "./integrations";
+import { GITHUB_SECRET_HOSTS, SecretNameSchema } from "./integrations";
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
 
@@ -21,10 +21,15 @@ export const ComponentManifest = z.object({
   net: z.array(NetRule).default([]),
   secrets: z
     .array(
-      z.object({
-        name: SecretNameSchema,
-        hosts: z.array(z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)).min(1),
-      }),
+      z
+        .object({
+          name: SecretNameSchema,
+          hosts: z.array(z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)).min(1),
+        })
+        .refine((s) => s.name !== "github" || s.hosts.every((h) => GITHUB_SECRET_HOSTS.includes(h)), {
+          message: "INVALID_MANIFEST: the github secret is reserved to api.github.com and uploads.github.com",
+          path: ["hosts"],
+        }),
     )
     .default([]),
   mcp: z

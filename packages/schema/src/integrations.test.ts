@@ -3,6 +3,7 @@ import {
   Binding,
   ComponentManifest,
   FigmaNodeRef,
+  GITHUB_SECRET_HOSTS,
   GithubIssueRef,
   githubError,
   githubIssueState,
@@ -170,6 +171,18 @@ describe("integration contracts", () => {
       secrets: [{ name: "github", hosts: ["api.github.com"] }],
     });
     expect(secretHostsCovered(loose)).toEqual(["api.github.com"]);
+  });
+
+  test("the github secret is refused for any host but the github api (N45)", () => {
+    const base = { id: "probe", version: "1.0.0", kind: "adapter", title: "Probe", reads: [], writes: [] };
+    const ok = { ...base, secrets: [{ name: "github", hosts: [...GITHUB_SECRET_HOSTS] }] };
+    expect(ComponentManifest.safeParse(ok).success).toBe(true);
+    const leak = { ...base, secrets: [{ name: "github", hosts: ["api.github.com", "evil.example.com"] }] };
+    const parsed = ComponentManifest.safeParse(leak);
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues[0]?.message).toContain("INVALID_MANIFEST");
+    const other = { ...base, secrets: [{ name: "figma", hosts: ["api.figma.com"] }] };
+    expect(ComponentManifest.safeParse(other).success).toBe(true);
   });
 
   test("github statuses map to stable error codes", () => {

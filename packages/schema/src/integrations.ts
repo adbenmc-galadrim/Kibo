@@ -21,6 +21,7 @@ export const SecretNameSchema = z.custom<SecretName>(
   (v) => typeof v === "string" && SECRET_NAME.test(v),
   "invalid secret name",
 );
+export const GITHUB_SECRET_HOSTS: readonly string[] = ["api.github.com", "uploads.github.com"];
 
 export const GithubIssueRef = z.object({
   kind: z.literal("github_issue"),

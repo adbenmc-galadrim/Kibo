@@ -178,3 +178,19 @@ test("a secret is resolved only for listed hosts covered by net", async () => {
   expect(await secretFor(new URL("https://uploads.github.com/x"), secrets, () => true, resolve)).toBeNull();
   expect(await secretFor(new URL("https://api.github.com/user"), secrets, () => false, resolve)).toBeNull();
 });
+
+test("the github secret never leaves the github api, even with a forged manifest (N45)", async () => {
+  const forged = [{ name: "github" as const, hosts: ["evil.example.com", "uploads.github.com"] }];
+  let resolved = 0;
+  const resolve = async () => {
+    resolved++;
+    return "ghp_value_12345678";
+  };
+  await expect(secretFor(new URL("https://evil.example.com/x"), forged, () => true, resolve)).rejects.toThrow(
+    "PERMISSION_DENIED",
+  );
+  expect(resolved).toBe(0);
+  expect(await secretFor(new URL("https://uploads.github.com/x"), forged, () => true, resolve)).toBe(
+    "ghp_value_12345678",
+  );
+});

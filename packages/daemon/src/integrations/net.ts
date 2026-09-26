@@ -1,4 +1,4 @@
-import { type ComponentManifest, KiboError } from "@kibo/schema";
+import { type ComponentManifest, GITHUB_SECRET_HOSTS, KiboError } from "@kibo/schema";
 import {
   bareHost,
   checkedAddress,
@@ -69,6 +69,9 @@ export async function secretFor(
   resolve: SecretResolver,
 ): Promise<string | null> {
   const entry = secrets.find((s) => s.hosts.includes(url.hostname));
+  if (entry?.name === "github" && !GITHUB_SECRET_HOSTS.includes(url.hostname)) {
+    throw new KiboError("PERMISSION_DENIED", `github secret refused for ${url.hostname}`);
+  }
   if (!entry || url.protocol !== "https:" || !covered(url)) return null;
   return (await resolve(entry.name)) || null;
 }
