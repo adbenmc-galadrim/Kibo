@@ -1,7 +1,8 @@
 import { KiboError } from "@kibo/schema";
+import { createBunSecretStore } from "./bun-secret-store";
 import { migrateIntegrations } from "./db";
 import { createEventLog, type EventLog } from "./events";
-import { createMemorySecretStore, unavailableSecretStore } from "./memory-secret-store";
+import { createMemorySecretStore } from "./memory-secret-store";
 import { builtinProbes } from "./probes";
 import type { Redactor } from "./redact";
 import { createIntegrationRpc, type IntegrationRpc, NEUTRAL_HOOKS } from "./registry";
@@ -49,7 +50,7 @@ export function parseIntegrationFlags(values: {
 
 function secretStoreFor(flags: IntegrationFlags, redactor: Redactor): SecretStore {
   if (flags.memorySecrets) return createMemorySecretStore(redactor);
-  return unavailableSecretStore("system keychain backend not wired yet");
+  return createBunSecretStore(redactor);
 }
 
 export function startIntegrations(
