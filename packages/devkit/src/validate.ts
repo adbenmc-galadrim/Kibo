@@ -20,7 +20,7 @@ import type { OsSandbox } from "./os-sandbox";
 import type { Toolchain } from "./toolchain";
 import { typecheckComponent } from "./typecheck";
 import { loadTypeScript } from "./typescript";
-import { runComponentTests } from "./validate-tests";
+import { assertNotAborted, runComponentTests } from "./validate-tests";
 
 export type ValidateOptions = {
   toolchain: Toolchain;
@@ -28,6 +28,7 @@ export type ValidateOptions = {
   sandbox?: OsSandbox;
   timeoutMs?: number;
   now?: () => number;
+  signal?: AbortSignal;
 };
 const ValidationStamp = z.object({ hash: z.string(), version: z.string(), ok: z.boolean(), at: z.number() });
 export type ValidationStamp = z.infer<typeof ValidationStamp>;
@@ -136,6 +137,7 @@ async function writeStamp(dir: string, stamp: ValidationStamp): Promise<void> {
 }
 
 export async function validateComponent(dir: string, opts: ValidateOptions): Promise<ValidationReport> {
+  assertNotAborted(opts.signal);
   const report = emptyReport();
   const base = await realpath(await mkdtemp(join(tmpdir(), "kibo-validate-")));
   try {
@@ -152,6 +154,7 @@ export async function validateComponent(dir: string, opts: ValidateOptions): Pro
     }
     report.hash = sources.hash;
     await checkCopy(copy, sources.files, manifest, opts, report);
+    assertNotAborted(opts.signal);
     const at = (opts.now ?? Date.now)();
     await writeStamp(dir, { hash: sources.hash, version: manifest.version, ok: report.ok, at });
     return report;

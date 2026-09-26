@@ -201,6 +201,50 @@ test.skipIf(!sandboxAvailable)(
   60_000,
 );
 
+function validationChildren(): number[] {
+  const out = Bun.spawnSync(["ps", "-A", "-o", "pid=,ppid=,stat=,command="]).stdout.toString();
+  return out
+    .split("\n")
+    .map((line) => line.trim().split(/\s+/))
+    .filter(([, ppid, stat, ...command]) => {
+      const child = Number(ppid) === process.pid && !stat?.startsWith("Z");
+      return child && command.join(" ").includes("kibo-validate-");
+    })
+    .map(([pid]) => Number(pid));
+}
+
+test.skipIf(!sandboxAvailable)(
+  "an aborted validation kills its test process and rejects",
+  async () => {
+    const dir = fixture("hello");
+    writeFileSync(join(dir, "component.test.tsx"), HANGING_TEST);
+    const abort = new AbortController();
+    const outcome = validateComponent(dir, { ...opts, signal: abort.signal }).then(
+      () => "resolved",
+      (e: unknown) => (e instanceof KiboError ? `${e.code} ${e.detail}` : String(e)),
+    );
+    for (const started = Date.now(); validationChildren().length === 0; await Bun.sleep(50)) {
+      if (Date.now() - started > 30_000) throw new Error("the test process never started");
+    }
+    await Bun.sleep(200);
+    const aborted = Date.now();
+    abort.abort();
+    expect(await outcome).toBe("INTERNAL validation aborted");
+    expect(Date.now() - aborted).toBeLessThan(2_000);
+    expect(validationChildren()).toEqual([]);
+  },
+  60_000,
+);
+
+test("a validation aborted before it starts rejects without running anything", async () => {
+  const dir = fixture("hello");
+  const abort = new AbortController();
+  abort.abort();
+  const run = validateComponent(dir, { ...opts, signal: abort.signal });
+  await expect(run).rejects.toMatchObject({ code: "INTERNAL", detail: "validation aborted" });
+  expect(await readValidationStamp(dir)).toBeNull();
+});
+
 describe("readValidationStamp", () => {
   test("an invalid stamp is treated as absent", async () => {
     const dir = fixture("hello");

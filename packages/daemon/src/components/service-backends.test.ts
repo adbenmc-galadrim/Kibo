@@ -35,8 +35,8 @@ beforeEach(async () => {
   home = mkdtempSync(join(tmpdir(), "kibo-backends-"));
   await start();
 });
-afterEach(() => {
-  h.stop();
+afterEach(async () => {
+  await h.stop();
   rmSync(home, { recursive: true, force: true });
 });
 
@@ -61,7 +61,7 @@ describe("store integrity", () => {
   test("a store file changed while the daemon was off is caught at start", async () => {
     writeDraft(home, "0.1.0");
     const { hash } = await publishAndApprove(h);
-    h.stop();
+    await h.stop();
     tamper(hash, "ui.sandbox.js");
     await start();
     expect(await versionOf("0.1.0")).toMatchObject({ tampered: true, active: false });
@@ -124,7 +124,7 @@ describe("backend lifecycle", () => {
   });
 
   test("jobs are scheduled once a version is approved", async () => {
-    h.stop();
+    await h.stop();
     const timers = fakeTimers();
     await start({ timers });
     const { projectId, pageId } = await createProject(h);

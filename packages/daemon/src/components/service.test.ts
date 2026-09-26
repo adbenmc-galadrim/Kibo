@@ -1,8 +1,14 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ComponentCall, Instance, TicketRun } from "@kibo/schema";
+import {
+  type ComponentCall,
+  type Instance,
+  KiboError,
+  type TicketRun,
+  type ValidationReport,
+} from "@kibo/schema";
 import {
   addInstance,
   boot,
@@ -24,8 +30,8 @@ beforeEach(async () => {
   home = mkdtempSync(join(tmpdir(), "kibo-components-"));
   await start();
 });
-afterEach(() => {
-  h.stop();
+afterEach(async () => {
+  await h.stop();
   rmSync(home, { recursive: true, force: true });
 });
 
@@ -97,7 +103,7 @@ describe("components over RPC", () => {
   });
 
   test("runs are listed through the gate with the run entity", async () => {
-    h.stop();
+    await h.stop();
     const run: TicketRun = {
       ticketId: "t1",
       runId: "r1",
@@ -136,7 +142,7 @@ describe("components over RPC", () => {
     for (let i = 0; i < 12; i += 1) {
       await h.rpc({ method: "reportComponentRefusal", projectId, instanceId: inst.id, kind: "navigate" });
     }
-    h.components.stop();
+    await h.components.stop();
     expect(events().reduce((n, e) => n + e.count, 0)).toBe(12);
   });
 
@@ -176,11 +182,76 @@ describe("notes", () => {
 
   test("every project is indexed when the daemon starts", async () => {
     await createProject(h);
-    h.stop();
+    await h.stop();
     mkdirSync(join(home, "notes", "KIB"), { recursive: true });
     writeFileSync(join(home, "notes", "KIB", "offline.md"), "# Écrite hors ligne");
     await start();
     const rows = h.store.db.query<{ path: string }, []>("SELECT path FROM notes").all();
     expect(rows).toEqual([{ path: "offline.md" }]);
+  });
+});
+
+type Validation = { signal: AbortSignal; fail(e: unknown): void };
+
+function suspendedValidation() {
+  const seen: Validation[] = [];
+  const validate = (_dir: string, signal: AbortSignal) =>
+    new Promise<ValidationReport>((_resolve, fail) => {
+      seen.push({ signal, fail });
+    });
+  return { seen, validate };
+}
+
+const settledWithin = (p: Promise<unknown>, ms: number) =>
+  Promise.race([p.then(() => true), Bun.sleep(ms).then(() => false)]);
+
+describe("stopping", () => {
+  test("stop waits for a request in flight and aborts its validation", async () => {
+    const suspended = suspendedValidation();
+    await h.stop();
+    await start({ validate: suspended.validate });
+    writeDraft(home, "0.1.0");
+    const errors = spyOn(console, "error");
+    const publish = h.components.handle({ method: "publishComponent", id: "hello", strategy: "new-version" });
+    const outcome = publish.then(
+      () => "resolved",
+      (e: unknown) => (e instanceof KiboError ? e.code : String(e)),
+    );
+    while (suspended.seen.length === 0) await Bun.sleep(5);
+    const stopping = h.components.stop();
+    expect(await settledWithin(stopping, 50)).toBe(false);
+    const [validation] = suspended.seen;
+    expect(validation?.signal.aborted).toBe(true);
+    validation?.fail(new KiboError("INTERNAL", "validation aborted"));
+    await stopping;
+    expect(await outcome).toBe("INTERNAL");
+    const logged = errors.mock.calls.flat().map(String);
+    errors.mockRestore();
+    expect(logged.filter((m) => m.includes("closed"))).toEqual([]);
+  });
+
+  test("a request after stop is refused at once", async () => {
+    await h.components.stop();
+    const refused = h.components.handle({ method: "listComponents" });
+    await expect(refused).rejects.toThrow("the daemon is stopping");
+    await expect(refused).rejects.toMatchObject({ code: "INTERNAL" });
+  });
+
+  test("a request that never ends only delays the stop by drainMs", async () => {
+    const suspended = suspendedValidation();
+    await h.stop();
+    await start({ validate: suspended.validate, drainMs: 50 });
+    writeDraft(home, "0.1.0");
+    const errors = spyOn(console, "error").mockImplementation(() => undefined);
+    h.components.handle({ method: "publishComponent", id: "hello", strategy: "new-version" });
+    while (suspended.seen.length === 0) await Bun.sleep(5);
+    const started = Date.now();
+    await h.components.stop();
+    const elapsed = Date.now() - started;
+    const logged = errors.mock.calls.flat().map(String);
+    errors.mockRestore();
+    expect(elapsed).toBeGreaterThanOrEqual(45);
+    expect(elapsed).toBeLessThan(1_000);
+    expect(logged).toContain("[kibo-daemon] 1 requests still running at shutdown");
   });
 });

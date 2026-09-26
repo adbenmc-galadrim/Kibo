@@ -98,6 +98,7 @@ beforeEach(() => {
     store,
     registry,
     validate: report,
+    signal: new AbortController().signal,
     update: async (_projectId, instanceId, to) => {
       if (instanceId === failFor) throw new KiboError("MIGRATION_FAILED", "config invalide");
       executeProjectCommand(project, {

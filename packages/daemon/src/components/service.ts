@@ -30,24 +30,39 @@ export type ComponentsDeps = {
   sandboxOrigin(): string;
   runs(projectId: string): TicketRun[];
   build?: (srcDir: string, t: Toolchain) => Promise<BuildOutput>;
-  validate?: (dir: string) => Promise<ValidationReport>;
+  validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
   processCommand?: string[];
   net?: NetProxyOptions;
   installCli?: () => Promise<{ path: string }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
+  drainMs?: number;
 };
 export type ComponentsService = {
   handle(req: ComponentRequest): Promise<unknown>;
   assets: AssetLookup;
   start(): Promise<void>;
-  stop(): void;
+  stop(): Promise<void>;
   afterCommand(projectId: string): void;
 };
 
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
+const DEFAULT_DRAIN_MS = 5_000;
+
+async function drain(inflight: Set<Promise<unknown>>, drainMs: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, drainMs);
+  });
+  await Promise.race([Promise.allSettled([...inflight]), deadline]);
+  clearTimeout(timer);
+  if (inflight.size > 0) console.error(`[kibo-daemon] ${inflight.size} requests still running at shutdown`);
+}
 
 export function createComponentsService(deps: ComponentsDeps): ComponentsService {
   const { docs } = deps;
+  const shutdown = new AbortController();
+  const inflight = new Set<Promise<unknown>>();
+  let stopped: Promise<void> | null = null;
   ensureEventsTable(deps.db);
   ensureSettingsTable(deps.db);
   ensureNotesTables(deps.db);
@@ -148,7 +163,9 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     emit: workspaceChanged,
     store,
     registry,
-    validate: deps.validate ?? ((dir) => validateComponent(dir, { toolchain: deps.toolchain })),
+    validate:
+      deps.validate ?? ((dir, signal) => validateComponent(dir, { toolchain: deps.toolchain, signal })),
+    signal: shutdown.signal,
     update,
   });
 
@@ -165,7 +182,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     return null;
   };
 
-  const handle = async (req: ComponentRequest): Promise<unknown> => {
+  const dispatch = async (req: ComponentRequest): Promise<unknown> => {
     switch (req.method) {
       case "listComponents":
         return registry.list();
@@ -211,6 +228,22 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     }
   };
 
+  const handle = (req: ComponentRequest): Promise<unknown> => {
+    if (stopped) return Promise.reject(new KiboError("INTERNAL", "the daemon is stopping"));
+    const tracked = dispatch(req).finally(() => inflight.delete(tracked));
+    inflight.add(tracked);
+    return tracked;
+  };
+
+  const stopAll = async () => {
+    jobs.stop();
+    backends.stopAll();
+    shutdown.abort();
+    await drain(inflight, deps.drainMs ?? DEFAULT_DRAIN_MS);
+    notes.close();
+    events.flush();
+  };
+
   return {
     handle,
     assets,
@@ -221,10 +254,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       usageChanged();
     },
     stop() {
-      jobs.stop();
-      backends.stopAll();
-      notes.close();
-      events.flush();
+      stopped ??= stopAll();
+      return stopped;
     },
   };
 }

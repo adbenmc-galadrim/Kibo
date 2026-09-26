@@ -10,6 +10,7 @@ export type TestRunOptions = {
   bun?: BunCommand;
   sandbox?: OsSandbox;
   timeoutMs?: number;
+  signal?: AbortSignal;
 };
 export type TestRun = { report: ValidationReport["tests"]; used: string[] | null };
 
@@ -50,6 +51,10 @@ async function readJunit(path: string): Promise<string> {
   return (await file.exists()) ? file.text() : "";
 }
 
+export function assertNotAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) throw new KiboError("INTERNAL", "validation aborted");
+}
+
 async function sandboxReady(sandbox: OsSandbox): Promise<string | null> {
   try {
     await sandbox.ready();
@@ -81,6 +86,7 @@ export async function runComponentTests(copy: string, opts: TestRunOptions): Pro
     "--reporter=junit",
     `--reporter-outfile=${junit}`,
   ];
+  assertNotAborted(opts.signal);
   const policy = { read: [opts.toolchain.root, base], write: [base], exec: bun.argv.slice(0, 1), cwd: copy };
   const proc = Bun.spawn(sandbox.wrap(argv, policy), {
     cwd: copy,
@@ -94,12 +100,17 @@ export async function runComponentTests(copy: string, opts: TestRunOptions): Pro
     timedOut = true;
     proc.kill();
   }, timeoutMs);
+  const abort = () => proc.kill();
+  opts.signal?.addEventListener("abort", abort, { once: true });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
-  ]);
-  clearTimeout(timer);
+  ]).finally(() => {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener("abort", abort);
+  });
+  assertNotAborted(opts.signal);
   const output = `${stdout}\n${stderr}`;
   const xml = await readJunit(junit);
   const total = countOf(xml, "tests");

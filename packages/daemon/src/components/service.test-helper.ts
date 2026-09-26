@@ -96,10 +96,15 @@ export type Harness = {
   service: Service;
   components: ComponentsService;
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
-  stop(): void;
+  stop(): Promise<void>;
 };
 
-export type HarnessOptions = { runs?: (projectId: string) => TicketRun[]; timers?: Timers };
+export type HarnessOptions = {
+  runs?: (projectId: string) => TicketRun[];
+  timers?: Timers;
+  validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
+  drainMs?: number;
+};
 
 export async function boot(home: string, opts: HarnessOptions = {}): Promise<Harness> {
   const store = openStore(home);
@@ -112,8 +117,9 @@ export async function boot(home: string, opts: HarnessOptions = {}): Promise<Har
     sandboxOrigin: () => SANDBOX_ORIGIN,
     runs: opts.runs ?? (() => []),
     build: fakeBuild,
-    validate: okReport,
+    validate: opts.validate ?? okReport,
     ...(opts.timers && { jobTimers: opts.timers }),
+    ...(opts.drainMs !== undefined && { drainMs: opts.drainMs }),
   });
   const detach = service.attachComponents(components);
   await components.start();
@@ -122,9 +128,9 @@ export async function boot(home: string, opts: HarnessOptions = {}): Promise<Har
     service,
     components,
     rpc: async <R extends RpcRequest>(req: R) => (await service.handle(req)) as RpcResult[R["method"]],
-    stop() {
+    async stop() {
       detach();
-      components.stop();
+      await components.stop();
       store.close();
     },
   };

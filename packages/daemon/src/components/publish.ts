@@ -30,7 +30,8 @@ export type PublisherDeps = {
   emit(): void;
   store: ComponentStore;
   registry: RegistryService;
-  validate(dir: string): Promise<ValidationReport>;
+  validate(dir: string, signal: AbortSignal): Promise<ValidationReport>;
+  signal: AbortSignal;
   update(projectId: string, instanceId: string, to: string): Promise<unknown>;
   now?: () => number;
 };
@@ -113,7 +114,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
 
   const preview = async (id: string): Promise<PublishPreview> => {
     const { dir, manifest } = await context(id);
-    const validation = await deps.validate(dir);
+    const validation = await deps.validate(dir, deps.signal);
     const entry = readRegistry(ws)[id];
     const status = statusOf(entry, manifest.version, passedHash(validation));
     const from = entry ? highestVersion(entry) : null;
