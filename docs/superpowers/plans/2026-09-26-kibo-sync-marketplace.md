@@ -117,7 +117,7 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 
 ## Écrans à dessiner (Penpot, avant les tâches UI)
 
-Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Restent à dessiner, par la **tâche 33** (vague 0) : **S3**, **S7**, **M3**, **M4**, **M5**, **M6**, **M7** (bannière de la page Composants, ligne de l'écran 19, message « Backend arrêté — isolation OS indisponible » sur une instance), **M8**, et la variante « Accès retiré » de S6. Ils vont sur la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
+Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Dessinés par la **tâche 33** (vague 0) : **79–81** (S3), **82** (S6 « Accès retiré »), **83** (S7, avec l'instance « Backend arrêté — isolation OS indisponible » de M7 et l'instance révoquée de M4), **84–86** (M3), **87** (M4, avec l'entrée « Publier sur la marketplace » du menu `⋯`), **88–89** (M5), **90** (M6), **91** (M7, bannière de la page Composants), **92** (M7, ligne de l'écran 19), **93–97** (M8). Ils sont sur la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
 
 **S1 · Paramètres › Sync** (nouvelle section du menu Paramètres, entre Intégrations et Sécurité). Sous-titre « Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ». »
 - *Non configuré* : encart vide (icône nuage barré), texte « Aucun serveur de sync configuré. », bouton « Se connecter à un serveur ».
@@ -130,15 +130,15 @@ Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketp
 - *Étape partagé* : liste des membres (avatar initiales, nom, rôle en `Select` Propriétaire / Éditeur / Lecteur pour un propriétaire, texte simple sinon, bouton « Retirer ») ; bloc Inviter (rôle Éditeur ou Lecteur, bouton « Générer un code ») ; code affiché une fois, bouton Copier, « Valable 48 h, usage unique » ; en bas « Arrêter le partage » (propriétaire, confirmation destructive).
 - *États* : « Partage en cours… » (spinner), erreur « Serveur injoignable, réessaie quand tu es en ligne ».
 
-**S3 · Dialogue « Rejoindre un projet »** (bouton dans la sidebar sous « Nouveau projet », visible si un serveur est configuré) : champ Code d'invitation, champ Dossier local (facultatif, aide « Le dossier reste sur ta machine »), bouton Rejoindre ; erreurs « Code invalide ou expiré », « Un projet local utilise déjà la clé KIB ».
+**S3 · Dialogue « Rejoindre un projet »** (écrans 79–81) (bouton dans la sidebar sous « Nouveau projet », visible si un serveur est configuré) : champ Code d'invitation, champ Dossier local (facultatif, aide « Le dossier reste sur ta machine »), bouton Rejoindre ; erreurs « Code invalide ou expiré », « Un projet local utilise déjà la clé KIB ».
 
 **S4 · Présence** : pile d'avatars (initiales, 24 px, bordure de la couleur du fond, 3 max puis « +2 ») à droite de la barre d'onglets pour le projet actif, infobulle « Léa · Kibo › Kanban » ; même pile réduite à droite du titre d'une page ; bandeau discret en haut du Sheet ticket « Léa regarde ce ticket » ; carte Kanban d'un ticket travaillé par l'agent d'un collègue : ligne agent « opus-dev-1 · Léa » (orange, sans barre d'état locale).
 
 **S5 · Ticket à clé provisoire** : `KIB-…` en italique, couleur atténuée, dans la carte Kanban, l'arbre Tickets et le Sheet, infobulle « Clé attribuée à la prochaine synchronisation » ; actions désactivées avec la même infobulle : « Assigner à un agent », « Créer la branche », « Générer le message de commit ».
 
-**S6 · Projet en lecture seule et « Accès retiré »** : bandeau pleine largeur sous la barre d'onglets, icône œil, « Lecture seule — tu es lecteur de ce projet. » ; variante rouge « Accès retiré — ta copie locale reste lisible mais n'est plus synchronisée. » ; boutons d'édition masqués (Nouveau ticket, Ajouter une page, glisser-déposer désactivé).
+**S6 · Projet en lecture seule et « Accès retiré »** (écrans 68 et 82) : bandeau pleine largeur sous la barre d'onglets, icône œil, « Lecture seule — tu es lecteur de ce projet. » ; variante rouge « Accès retiré — ta copie locale reste lisible mais n'est plus synchronisée. » ; boutons d'édition masqués (Nouveau ticket, Ajouter une page, glisser-déposer désactivé).
 
-**S7 · Composant absent** : cadre de l'instance en pointillés, icône paquet, « Composant absent : burndown@0.3.0 », sous-texte selon le cas : bouton « Installer » (source connue) ou « Demande à Léa de le publier sur la marketplace d'équipe ».
+**S7 · Composant absent** (écran 83) : cadre de l'instance en pointillés, icône paquet, « Composant absent : burndown@0.3.0 », sous-texte selon le cas : bouton « Installer » (source connue) ou « Demande à Léa de le publier sur la marketplace d'équipe ».
 
 **S8 · Paramètres › Sécurité**
 - *Accès distant* : interrupteur désactivé par défaut, texte « Le démon n'écoute que sur 127.0.0.1. L'accès distant ouvre un second port, chiffré, sur une interface que tu choisis. » ; dialogue d'activation : Interface (`Select` des adresses locales, ex. « en0 · 192.168.1.20 »), Port (défaut 47832), Certificat (Auto-signé / Fourni : chemins certificat et clé), avertissement ambre, case « Je comprends que cet appareil sera joignable depuis le réseau » requise ; état activé : URL `https://192.168.1.20:47832`, empreinte SHA-256 en mono groupée, « Vérifie cette empreinte dans ton navigateur à la première connexion. », bouton « Désactiver ».
@@ -151,17 +151,17 @@ Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketp
 
 **M2 · Détail d'un paquet** (Sheet à droite) : titre, id, description, éditeur (vérifié par <source> / non vérifié / nouvel éditeur), source, taille, empreinte courte, liste des versions (date, révoquée barrée avec motif), permissions en langage clair (mêmes phrases que l'écran 30), bouton « Voir le code » (liste des fichiers à gauche, aperçu en lecture à droite, bannière « Code vérifié : signature et empreinte correspondent »), bouton principal « Installer » (« Installation… », puis écran 30) ; erreurs de contrôle : « Signature invalide », « L'empreinte ne correspond pas », « Version révoquée : <motif> », « La clé de l'éditeur a changé » avec « Débloquer… ».
 
-**M3 · Paramètres › Composants › Sources** : tableau Nom · Adresse · Empreinte de la clé (courte) · Index n° · Mis à jour · État ; bouton « Ajouter une source » ⇒ dialogue en deux étapes (1 : adresse HTTPS ; 2 : nom de la source, empreinte complète groupée par 4, « Compare cette empreinte avec celle communiquée par l'éditeur de la source », boutons Retour / Ajouter) ; menu `⋯` Rafraîchir, Retirer ; erreur « Index refusé : numéro inférieur au dernier vu ».
+**M3 · Paramètres › Composants › Sources** (écrans 84–86) : tableau Nom · Adresse · Empreinte de la clé (courte) · Index n° · Mis à jour · État ; bouton « Ajouter une source » ⇒ dialogue en deux étapes (1 : adresse HTTPS ; 2 : nom de la source, empreinte complète groupée par 4, « Compare cette empreinte avec celle communiquée par l'éditeur de la source », boutons Retour / Ajouter) ; menu `⋯` Rafraîchir, Retirer ; erreur « Index refusé : numéro inférieur au dernier vu ».
 
-**M4 · Onglet Installés, états marketplace** : colonne Origine « Marketplace · Équipe » ; badge « 0.4.0 disponible » avec bouton « Mettre à jour » (ouvre l'écran 6) ; ligne révoquée : badge rouge « Révoqué », motif en sous-texte, instances en « Autorisation requise — Révoqué : <motif> ».
+**M4 · Onglet Installés, états marketplace** (écrans 87 et 83) : colonne Origine « Marketplace · Équipe » ; badge « 0.4.0 disponible » avec bouton « Mettre à jour » (ouvre l'écran 6) ; ligne révoquée : badge rouge « Révoqué », motif en sous-texte, instances en « Autorisation requise — Révoqué : <motif> ».
 
-**M5 · Écran 30, variantes marketplace** : sous-titre « Publié par Léa · vérifié par Équipe » ou « Publié par Léa · éditeur non vérifié » ; badge « Nouvel éditeur » au premier install ; avertissement supplémentaire sous « Confiance totale » : « Ce code vient d'une marketplace. ».
+**M5 · Écran 30, variantes marketplace** (écrans 88–89) : sous-titre « Publié par Léa · vérifié par Équipe » ou « Publié par Léa · éditeur non vérifié » ; badge « Nouvel éditeur » au premier install ; avertissement supplémentaire sous « Confiance totale » : « Ce code vient d'une marketplace. ».
 
-**M6 · Clé d'éditeur changée** : dialogue destructif « La clé de l'éditeur a changé » (ancienne et nouvelle empreintes, « Ne débloque que si l'éditeur t'a confirmé ce changement »), boutons Annuler / Débloquer.
+**M6 · Clé d'éditeur changée** (écran 90) : dialogue destructif « La clé de l'éditeur a changé » (ancienne et nouvelle empreintes, « Ne débloque que si l'éditeur t'a confirmé ce changement »), boutons Annuler / Débloquer.
 
-**M7 · Backend indisponible faute d'isolation OS** : bannière ambre en haut de la page Composants « Les backends sandboxés sont arrêtés : isolation OS indisponible. » + commande (`sudo apt install bubblewrap` ou `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`) ; instance concernée : « Backend arrêté — isolation OS indisponible » ; écran 19 : ligne « Isolation des composants » (✓ bubblewrap 0.9 / sandbox-exec, ou ⚠ avec la commande).
+**M7 · Backend indisponible faute d'isolation OS** (écrans 91, 92 et 83) : bannière ambre en haut de la page Composants « Les backends sandboxés sont arrêtés : isolation OS indisponible. » + commande (`sudo apt install bubblewrap` ou `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`) ; instance concernée : « Backend arrêté — isolation OS indisponible » ; écran 19 : ligne « Isolation des composants » (✓ bubblewrap 0.9 / sandbox-exec, ou ⚠ avec la commande).
 
-**M8 · Publier sur la marketplace** (menu `⋯` d'un composant utilisateur) : choix de la source (sources d'équipe seulement), nom d'éditeur au premier usage (« Ce nom accompagne tes composants publiés »), récapitulatif version, empreinte, permissions ; états « Publication… », succès « Publié : index n° 42 », erreurs « Version déjà publiée », « Tu n'as pas le droit de publier sur cette source ».
+**M8 · Publier sur la marketplace** (écrans 93–97 ; menu `⋯` d'un composant utilisateur) : choix de la source (sources d'équipe seulement), nom d'éditeur au premier usage (« Ce nom accompagne tes composants publiés »), récapitulatif version, empreinte, permissions ; états « Publication… », succès « Publié : index n° 42 », erreurs « Version déjà publiée », « Tu n'as pas le droit de publier sur cette source ».
 
 ## File Structure
 
@@ -646,14 +646,14 @@ Une vague démarre quand toutes les tâches dont elle dépend sont intégrées d
 
 | Vague | Tâches en parallèle | Dépendances (tâche ← tâches) | Fichiers partagés dans la vague | Écrans |
 |---|---|---|---|---|
-| 0 | T0 (kibo-lead), puis T1, T8 et T33 | T1, T8, T33 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`, T33 que `design/`) | T33 dessine S3, S7, M3–M8, S6 « Accès retiré » |
+| 0 | T0 (kibo-lead), puis T1, T8 et T33 | T1, T8, T33 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`, T33 que `design/`) | T33 dessine S3 (79–81), S6 « Accès retiré » (82), S7 (83), M3 (84–86), M4 (87), M5 (88, 89), M6 (90), M7 (91, 92, 83), M8 (93–97) |
 | 1 | T2, T4, T5, T6 | T2, T4, T5, T6 ← T1 | `schema/src/rpc.ts`, `schema/src/index.ts` (T4, T5, T6) ; fixtures `ProjectSnapshot` (T5, T6) | — |
 | 2 | T3, T7, T9, T10, T11 | T3 ← T2 · T7 ← T6 · T9 ← T1, T4 · T10 ← T2, T5 · T11 ← T2, T4 | `trust/src/index.ts` (T3, T10) | — |
 | 3 | T12, T13, T14, T15, T16 | T12 ← T8, T9 · T13 ← T3, T9 · T14 ← T7, T11 · T15 ← T9, T10 · T16 ← T10, T11 | `daemon/src/daemon.ts` (T12, T13, T15) ; `daemon/src/server.ts` (T13) ; `sync-server/src/index.ts`, `package.json` (T14, T16) ; `daemon/package.json` (T15) | — |
-| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13, T33 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7, écran 19 (78) |
-| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25, T33 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3, M5 |
+| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13, T33 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7 (91, 92), écran 19 (78) |
+| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25, T33 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3 (84–86), M5 (88, 89) |
 | 6 | T22, T23, T28 | T22 ← T16, T20, T21 · T23 ← T7, T21 · T28 ← T21, T25 | `daemon.ts` (T22, T23) ; `collab/rpc.ts`, `collab/bootstrap.ts` (T23 seul) | T28 : S1 (69, 70), S9 |
-| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26, T33 · T29 ← T23, T28, T33 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4, M6, M8, S7 · T29 : S2 (65, 66), S3, S6 (68) |
+| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26, T33 · T29 ← T23, T28, T33 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4 (87), M6 (90), M8 (93–97), S7 et M7 instance (83) · T29 : S2 (65, 66), S3 (79–81), S6 (68, 82) |
 | 8 | T30, T32 | T30 ← T6, T21, T24, T29 · T32 ← T15, T26, T27 | `e2e/playwright.config.ts`, `e2e/package.json` (T32 seul) | T30 : S4, S5 (67) |
 | 9 | T31 | T31 ← T17, T28, T29, T30 | `e2e/playwright.config.ts`, `e2e/package.json` (après T32) | — |
 | Jalon | conformité, tag `v1.0`, rapport final | tout | — | toutes |
@@ -666,11 +666,11 @@ Chemin critique (10 vagues après T0) : T1 → T2 → T11 → T14 → T17 → T2
 | 0 | T0 (kibo-lead), puis T1 | v0.6 | — |
 | 1 | T2, T3, T4, T5, T6, T8, T9 | T1 | — |
 | 2 | T7, T10, T11, T12, T13 | T7 ← T6 · T10 ← T2, T5 · T11 ← T2, T4 · T12 ← T8 · T13 ← T3, T9 | — |
-| 3 | T14, T15, T16, T25 | T14 ← T7, T11 · T15 ← T10 · T16 ← T10, T11 · T25 ← T12, T13 | T25 : S8, M7 |
+| 3 | T14, T15, T16, T25 | T14 ← T7, T11 · T15 ← T10 · T16 ← T10, T11 · T25 ← T12, T13 | T25 : S8, M7 (91, 92) |
 | 4 | T17, T18, T20 | T17 ← T14, T3 · T18 ← T14 · T20 ← T15, T8 | — |
-| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T17, T18 · T26 ← T20 | T26 : M1, M2, M3, M5 |
+| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T17, T18 · T26 ← T20 | T26 : M1, M2, M3 (84–86), M5 (88, 89) |
 | 6 | T22, T23, T24, T28 | T22 ← T16, T20, T21 · T23 ← T21 · T24 ← T21 · T28 ← T21 | T28 : S1, S9 |
-| 7 | T27, T29, T30 | T27 ← T22, T26 · T29 ← T23 · T30 ← T24, T6 | T27 : M4, M6, M8, S7 · T29 : S2, S3, S6 · T30 : S4, S5 |
+| 7 | T27, T29, T30 | T27 ← T22, T26 · T29 ← T23 · T30 ← T24, T6 | T27 : M4 (87), M6 (90), M8 (93–97), S7 (83) · T29 : S2, S3 (79–81), S6 (68, 82) · T30 : S4, S5 |
 | 8 | T31, T32 | T31 ← T28, T29, T30 · T32 ← T27 | — |
 | Jalon | conformité, tag `v1.0`, rapport final | tout | toutes |
 
@@ -23083,7 +23083,7 @@ git commit -m "docs: maquettes restantes de la phase 7"
 | H §5.3 mettre à jour | T15, T27 |
 | H §5.4 désinstaller (épinglage conservé) | T20 |
 | H §5.5 composant absent | T5, T27 |
-| G §11 et H §10 écrans à dessiner | T33 (S3, S7, M3–M8, S6 « Accès retiré ») ; existants 65–75 |
+| G §11 et H §10 écrans à dessiner | T33 : 79–97 (S3, S6 « Accès retiré », S7, M3–M8) ; existants 65–75 |
 | H §6 API | T15, T16, T20, T22 |
 | H §7 sécurité (validation sandboxée, HTTPS) | T15, T20 |
 | H §8 durcissement OS | phase 4 (isolation), T8 (diagnostic), T12 (réglage), T25 (UI) |
