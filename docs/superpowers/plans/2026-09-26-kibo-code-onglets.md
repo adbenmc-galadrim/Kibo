@@ -5227,7 +5227,7 @@ git commit -m "feat(ui): aperçu et liens de fichiers"
   - `UnpushedCommits(props: { commits: CommitInfo[]; busy: boolean; onModify(c: CommitInfo): void; onReword(c: CommitInfo, message: string): Promise<void>; onUndo(c: CommitInfo): Promise<void> })` ;
   - `RewordDialog(props: { commit: CommitInfo; onClose(): void; onSubmit(message: string): Promise<void> })`, `UndoCommitDialog(props: { commit: CommitInfo; newer: number; onClose(): void; onConfirm(): Promise<void> })`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/ui/src/code/commit.test.tsx` :
 ```tsx
@@ -5362,7 +5362,7 @@ test("a refused reword is shown in an alert and keeps the dialog open", async ()
 Run: `bun test packages/ui/src/code/commit.test.tsx`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/ui/src/code/CommitPanel.tsx` :
 ```tsx
@@ -5652,12 +5652,12 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
 }
 ```
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/ui/src/code/commit.test.tsx && bun run check`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/ui/src/code/CommitPanel.tsx packages/ui/src/code/UnpushedCommits.tsx packages/ui/src/code/RewordDialog.tsx packages/ui/src/code/UndoCommitDialog.tsx packages/ui/src/code/commit.test.tsx
