@@ -111,12 +111,19 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
         current.lastRead = Date.now();
         return;
       }
-      const signature = await signatureOf(h);
-      if (stopped || entries.has(key)) return;
+      const handle = watch(projectId, h);
+      const signature = await signatureOf(h).catch((e: unknown) => {
+        handle.close();
+        throw e;
+      });
+      if (stopped || entries.has(key)) {
+        handle.close();
+        return;
+      }
       entries.set(key, {
         projectId,
         worktree: h,
-        handle: watch(projectId, h),
+        handle,
         lastRead: Date.now(),
         signature,
         pending: new Set(),
