@@ -42,6 +42,7 @@ type Props = {
   defaultTitle: string;
   defaultBody: string;
   onCommitFirst(): void;
+  onCloseAutoFocus?(event: Event): void;
   onSubmit(input: PushPrInput): Promise<void>;
   extraOptions?: ReactNode;
   ruleNote?: string | null;
@@ -94,7 +95,7 @@ export function PushPrDialog(p: Props) {
 
   return (
     <Dialog open={p.open} onOpenChange={changeOpen}>
-      <DialogContent className="gap-5 sm:max-w-[620px]">
+      <DialogContent className="gap-5 sm:max-w-[620px]" onCloseAutoFocus={p.onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{fr.pr.title}</DialogTitle>
           <DialogDescription>

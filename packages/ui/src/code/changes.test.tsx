@@ -351,3 +351,16 @@ test("an operation in progress shows a banner with an abort action", async () =>
   await userEvent.click(await enabledButton("Abandonner"));
   expect(count("abortOperation")).toBe(1);
 });
+
+test("Commiter d'abord closes the PR dialog and leaves the focus on the message", async () => {
+  renderView();
+  await prefilled();
+  await userEvent.click(await enabledButton("Pousser et créer la PR"));
+  const dialog = await screen.findByRole("dialog");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Commiter d'abord" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 30));
+  });
+  expect(document.activeElement).toBe(screen.getByLabelText("Message"));
+});

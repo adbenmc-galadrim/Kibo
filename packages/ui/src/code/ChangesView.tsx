@@ -79,6 +79,7 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
   const [pushError, setPushError] = useState<string | null>(null);
   const [base, setBase] = useState<string | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const focusMessageOnClose = useRef(false);
 
   const files = status?.files ?? [];
   const selected = pickSelected(files, selection);
@@ -299,7 +300,13 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
           defaultTitle={defaults?.prTitle ?? head?.subject ?? ""}
           defaultBody={defaults?.prBody ?? ""}
           onCommitFirst={() => {
+            focusMessageOnClose.current = true;
             setPrOpen(false);
+          }}
+          onCloseAutoFocus={(e) => {
+            if (!focusMessageOnClose.current) return;
+            focusMessageOnClose.current = false;
+            e.preventDefault();
             messageRef.current?.focus();
           }}
           onSubmit={createPr}
