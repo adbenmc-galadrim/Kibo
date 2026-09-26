@@ -3,13 +3,15 @@ import { isIP } from "node:net";
 import { type FetchInit, type FetchResponse, KiboError, ruleCovers } from "@kibo/schema";
 import { isPublicAddress } from "./net-proxy-address";
 import { readProxiedBody } from "./net-proxy-body";
+import { directTransport, type Transport } from "./net-proxy-transport";
 
 export { isPublicAddress } from "./net-proxy-address";
+export type { Transport, TransportInit } from "./net-proxy-transport";
 
 export type Resolver = (host: string) => Promise<string[]>;
 export type NetProxyOptions = {
   resolve?: Resolver;
-  transport?: typeof fetch;
+  transport?: Transport;
   allowAddress?: (ip: string) => boolean;
   timeoutMs?: number;
   maxBytes?: number;
@@ -126,7 +128,7 @@ export async function proxyFetch(
   opts: NetProxyOptions = {},
 ): Promise<FetchResponse> {
   const resolve = opts.resolve ?? systemResolver;
-  const transport = opts.transport ?? fetch;
+  const transport = opts.transport ?? directTransport;
   const allow = opts.allowAddress ?? isPublicAddress;
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const signal = AbortSignal.timeout(opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
