@@ -1,0 +1,10 @@
+{
+  "id": "notes",
+  "version": "1.0.0",
+  "kind": "both",
+  "title": "Notes",
+  "description": "Markdown local, compatible Obsidian",
+  "reads": ["note", "ticket", "status"],
+  "writes": ["note"],
+  "configSchema": { "path": { "type": "string", "nullable": true, "default": null } }
+}

@@ -10,11 +10,13 @@ const DOT: Record<StatusId, string> = {
   done: "bg-green-600 dark:bg-green-500",
 };
 
+export const statusDotClass = (statusId: StatusId): string => DOT[statusId];
+
 export function StatusDot({ statusId, className }: { statusId: StatusId; className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={cn("inline-block size-2 shrink-0 rounded-full", DOT[statusId], className)}
+      className={cn("inline-block size-2 shrink-0 rounded-full", statusDotClass(statusId), className)}
     />
   );
 }

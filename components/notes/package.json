@@ -1,0 +1,31 @@
+{
+  "name": "@kibo/component-notes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-markdown": "6.5.2",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.13",
+    "@kibo/schema": "workspace:*",
+    "@kibo/sdk": "workspace:*",
+    "lucide-react": "1.48.0",
+    "markdown-it": "14.1.0"
+  },
+  "peerDependencies": {
+    "react": "19.1.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/markdown-it": "14.1.2",
+    "@types/react": "19.1.13",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  }
+}
