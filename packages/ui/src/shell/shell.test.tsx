@@ -207,7 +207,7 @@ test("a ticket tab shows the detail, its PR and opens file links in the preview"
   renderShell();
   await go("#/p/p1/t/7%401");
   expect(await screen.findByRole("tab", { name: "Kibo · KIB-7" })).toBeTruthy();
-  expect(screen.getByText("#4")).toBeTruthy();
+  expect(await screen.findByRole("link", { name: "#4" })).toBeTruthy();
   expect(crumbs().getByText("KIB-7").getAttribute("aria-current")).toBe("page");
   await userEvent.click(screen.getByRole("button", { name: "src/a.ts:3" }));
   expect(await screen.findByText("Ligne 3, col 3")).toBeTruthy();

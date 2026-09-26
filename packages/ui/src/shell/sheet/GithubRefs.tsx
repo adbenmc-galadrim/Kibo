@@ -1,31 +1,46 @@
-import { githubIssueState, type TicketView } from "@kibo/schema";
+import { type ExternalRef, githubIssueState, type TicketView } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { CircleCheck, CircleDot, Unlink } from "lucide-react";
+import { CircleCheck, CircleDot, GitPullRequest, Unlink } from "lucide-react";
+import type { ReactNode } from "react";
 import { fr } from "../../i18n/fr";
 
 const t = fr.integrations.sheet;
 
+function chip(href: string, title: string, icon: ReactNode, label: string) {
+  return (
+    <Badge key={href} variant="outline" className="font-mono" asChild>
+      <a href={href} target="_blank" rel="noreferrer noopener" title={title}>
+        {icon}
+        <span>{label}</span>
+      </a>
+    </Badge>
+  );
+}
+
+function refChip(ref: ExternalRef, done: boolean): ReactNode {
+  if (ref.kind === "github_pr") {
+    return chip(ref.url, fr.ticket.prState[ref.state], <GitPullRequest aria-hidden />, `#${ref.number}`);
+  }
+  if (ref.kind !== "github_issue" || ref.number === null) return null;
+  if (githubIssueState(ref) === "broken" || ref.url === null) {
+    return (
+      <Badge key={ref.bindingId} variant="outline" className="text-muted-foreground" title={t.brokenHelp}>
+        <Unlink aria-hidden />
+        {t.broken}
+      </Badge>
+    );
+  }
+  const Icon = done ? CircleCheck : CircleDot;
+  return chip(ref.url, t.openOnGithub, <Icon aria-hidden />, t.issue(ref.number));
+}
+
+const order = (ref: ExternalRef) => (ref.kind === "github_issue" ? 0 : 1);
+
 export function GithubRefs({ ticket }: { ticket: TicketView }) {
-  const Icon = ticket.statusId === "done" ? CircleCheck : CircleDot;
-  const chips = ticket.externalRefs.flatMap((ref) => {
-    if (ref.kind !== "github_issue" || ref.number === null) return [];
-    if (githubIssueState(ref) === "broken" || ref.url === null) {
-      return [
-        <Badge key={ref.bindingId} variant="outline" className="text-muted-foreground" title={t.brokenHelp}>
-          <Unlink aria-hidden />
-          {t.broken}
-        </Badge>,
-      ];
-    }
-    return [
-      <Badge key={ref.bindingId} variant="outline" className="font-mono" asChild>
-        <a href={ref.url} target="_blank" rel="noreferrer noopener" title={t.openOnGithub}>
-          <Icon aria-hidden />
-          <span>{t.issue(ref.number)}</span>
-        </a>
-      </Badge>,
-    ];
-  });
+  const chips = [...ticket.externalRefs]
+    .sort((a, b) => order(a) - order(b))
+    .map((ref) => refChip(ref, ticket.statusId === "done"))
+    .filter((c) => c !== null);
   if (chips.length === 0) return null;
   return <span className="flex flex-wrap gap-1">{chips}</span>;
 }

@@ -126,25 +126,25 @@ beforeEach(() => {
   calls.length = 0;
 });
 
-test("the issue chip sits in the header, the PR chip in the properties", async () => {
+test("the issue and PR chips sit in the header, issue first", async () => {
   await show();
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("sheet has a header");
-  expect(within(header).getByRole("link", { name: "#42" })).toBeDefined();
-  expect(within(header).queryByRole("link", { name: "#12" })).toBeNull();
-  expect(screen.getByRole("link", { name: "#42" }).getAttribute("href")).toBe(
-    "https://github.com/adam/kibo/issues/42",
-  );
-  expect(screen.getByRole("link", { name: "#12" }).getAttribute("href")).toBe(
-    "https://github.com/adam/kibo/pull/12",
-  );
+  const links = within(header).getAllByRole("link");
+  expect(links.map((l) => [l.textContent, l.getAttribute("href")])).toEqual([
+    ["#42", "https://github.com/adam/kibo/issues/42"],
+    ["#12", "https://github.com/adam/kibo/pull/12"],
+  ]);
+  expect(screen.getAllByRole("link", { name: "#12" })).toHaveLength(1);
+  expect(screen.queryByText("Pull requests")).toBeNull();
 });
 
-test("the ticket tab shows the issue chip in its header", async () => {
+test("the ticket tab shows the GitHub chips in its header", async () => {
   render(<TicketTab project={project} ticketId="t1" onOpenFile={() => {}} />);
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("tab has a header");
   expect(await within(header).findByRole("link", { name: "#42" })).toBeDefined();
+  expect(within(header).getByRole("link", { name: "#12" })).toBeDefined();
   await screen.findByText("Figma non joignable");
 });
 

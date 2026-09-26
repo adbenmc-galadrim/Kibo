@@ -135,7 +135,6 @@ export const fr = {
     noDomain: "Aucun",
     assignAgent: "Assigner à un agent",
     domainFailed: "Impossible de changer le domaine.",
-    prs: "Pull requests",
     prState: { open: "ouverte", draft: "brouillon", merged: "fusionnée", closed: "fermée" },
     openInTab: "Ouvrir dans un onglet",
   },

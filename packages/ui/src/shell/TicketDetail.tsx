@@ -2,7 +2,6 @@ import type { Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema"
 import { LinkifiedText } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
-import { GitPullRequest } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
@@ -71,7 +70,7 @@ function DomainSelect({
 export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props) {
   const status = project.workflow.find((s) => s.id === t.statusId)?.label ?? t.statusId;
   const children = project.tickets.filter((x) => x.parentId === t.id);
-  const prs = t.externalRefs.filter((r) => r.kind === "github_pr");
+  const hasPr = t.externalRefs.some((r) => r.kind === "github_pr");
   const open = (r: { path: string; line: number | null }) =>
     onOpenFile({ projectId: project.meta.id, worktree: null, path: r.path, line: r.line, origin: t.key });
   return (
@@ -107,21 +106,6 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
           </>
         )}
         <FigmaProperty ticket={t} />
-        {prs.length > 0 && (
-          <>
-            <dt className="text-muted-foreground">{fr.ticket.prs}</dt>
-            <dd className="flex flex-wrap gap-1">
-              {prs.map((pr) => (
-                <Badge key={pr.url} variant="outline" asChild>
-                  <a href={pr.url} target="_blank" rel="noreferrer" title={fr.ticket.prState[pr.state]}>
-                    <GitPullRequest aria-hidden />
-                    <span>#{pr.number}</span>
-                  </a>
-                </Badge>
-              ))}
-            </dd>
-          </>
-        )}
       </dl>
       <section className="grid gap-2 px-4 text-sm">
         <h3 className="text-xs font-medium">{fr.ticket.description}</h3>
@@ -141,7 +125,7 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
           ))}
         </section>
       )}
-      {prs.length > 0 && <CiSection projectId={project.meta.id} ticketId={t.id} />}
+      {hasPr && <CiSection projectId={project.meta.id} ticketId={t.id} />}
       <FigmaSection projectId={project.meta.id} ticket={t} />
     </div>
   );
