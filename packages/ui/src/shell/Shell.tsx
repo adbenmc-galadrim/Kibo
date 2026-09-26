@@ -246,7 +246,12 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 />
               )}
             </div>
-            <AgentPanel onLaunch={launch} focusRunId={focusRun} onFocused={clearFocus} />
+            <AgentPanel
+              onLaunch={launch}
+              focusRunId={focusRun}
+              onFocused={clearFocus}
+              onOpenFile={(ref) => set({ preview: ref })}
+            />
           </SidebarInset>
           <ShellDialogs
             state={dialogs}

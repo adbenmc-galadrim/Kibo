@@ -1,4 +1,11 @@
-import { type AgentsState, isTerminal, type RunLogEntry, type RunView, runSubject } from "@kibo/schema";
+import {
+  type AgentsState,
+  type FileRef,
+  isTerminal,
+  type RunLogEntry,
+  type RunView,
+  runSubject,
+} from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
@@ -8,7 +15,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { elapsed, formatDuration, reasonText, runResultText, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
-import { RunJournal } from "./RunJournal";
+import { type JournalFiles, RunJournal } from "./RunJournal";
 
 type Props = {
   state: AgentsState;
@@ -18,6 +25,7 @@ type Props = {
   onSelect: (runId: string) => void;
   onCollapse: () => void;
   onLaunch: () => void;
+  onOpenFile: (ref: FileRef) => void;
 };
 
 type Row = { run: RunView; detail: string; aside: ReactNode };
@@ -62,7 +70,24 @@ function Group({
   );
 }
 
-function RunDetail({ run, now, log }: { run: RunView; now: number; log: RunLogEntry[] | null }) {
+function journalFiles(run: RunView, onOpenFile: (ref: FileRef) => void): JournalFiles | null {
+  const { projectId, cwd } = run;
+  if (!projectId || !cwd) return null;
+  return {
+    worktree: cwd,
+    ticketKey: run.ticketKey,
+    open: (path, line, origin) => onOpenFile({ projectId, worktree: cwd, path, line, origin }),
+  };
+}
+
+type DetailProps = {
+  run: RunView;
+  now: number;
+  log: RunLogEntry[] | null;
+  onOpenFile: (ref: FileRef) => void;
+};
+
+function RunDetail({ run, now, log, onOpenFile }: DetailProps) {
   const [failed, setFailed] = useState(false);
   const stop = async () => {
     setFailed(false);
@@ -93,13 +118,22 @@ function RunDetail({ run, now, log }: { run: RunView; now: number; log: RunLogEn
           {fr.agents.stopFailed}
         </p>
       )}
-      <RunJournal label={run.label} log={log ?? []} />
+      <RunJournal label={run.label} log={log ?? []} files={journalFiles(run, onOpenFile)} />
       {run.state === "waiting_input" && <ReplyBox run={run} />}
     </div>
   );
 }
 
-export function AgentDrawer({ state, now, selected, log, onSelect, onCollapse, onLaunch }: Props) {
+export function AgentDrawer({
+  state,
+  now,
+  selected,
+  log,
+  onSelect,
+  onCollapse,
+  onLaunch,
+  onOpenFile,
+}: Props) {
   const byId = new Map(state.runs.map((r) => [r.id, r]));
   const waitingRuns = state.runs.filter((r) => r.state === "waiting_input");
   const age = (r: RunView) => formatDuration(elapsed(r, now));
@@ -172,7 +206,7 @@ export function AgentDrawer({ state, now, selected, log, onSelect, onCollapse, o
         </nav>
         <div className="flex min-h-0 flex-col p-3">
           {selected ? (
-            <RunDetail key={selected.id} run={selected} now={now} log={log} />
+            <RunDetail key={selected.id} run={selected} now={now} log={log} onOpenFile={onOpenFile} />
           ) : (
             <p className="text-sm text-muted-foreground">{fr.agents.pick}</p>
           )}

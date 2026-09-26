@@ -180,6 +180,7 @@ test("the drawer groups runs like the mockup and numbers the queue", async () =>
       onSelect={onSelect}
       onCollapse={() => {}}
       onLaunch={() => {}}
+      onOpenFile={() => {}}
     />,
   );
   expect(screen.getByText("3/3 créneaux · 3 en file · 1 attend une réponse")).toBeTruthy();
@@ -212,6 +213,7 @@ test("stopping a run cancels it, and a refusal is shown", async () => {
     onSelect: () => {},
     onCollapse: () => {},
     onLaunch: () => {},
+    onOpenFile: () => {},
   };
   render(<AgentDrawer {...props} selected={run("r42")} />);
   const user = userEvent.setup();
@@ -232,13 +234,14 @@ test("a finished run has no stop button", () => {
       onSelect={() => {}}
       onCollapse={() => {}}
       onLaunch={() => {}}
+      onOpenFile={() => {}}
     />,
   );
   expect(screen.queryByRole("button", { name: "Arrêter" })).toBeNull();
 });
 
 test("the journal keeps one SessionStart and one Stop, hides internal events, colours by event", () => {
-  render(<RunJournal label="opus-dev-2" log={LOG} />);
+  render(<RunJournal label="opus-dev-2" log={LOG} files={null} />);
   const journal = screen.getByRole("list", { name: "Journal de opus-dev-2" });
   const lines = within(journal).getAllByRole("listitem");
   expect(lines.map((l) => [l.textContent?.slice(5), l.getAttribute("data-tone")])).toEqual([
@@ -262,12 +265,64 @@ test("a failed exit adds a red line, even after a clean Stop", () => {
   expect(journalLines(failed).at(-1)).toMatchObject({ name: "exited", text: "boom", tone: "red" });
 });
 
-test("file paths in the journal are styled as links", () => {
-  render(<RunJournal label="opus-dev-2" log={LOG} />);
-  const path = screen.getByText("apps/daemon/src/hooks/receiver.ts");
-  expect(path.getAttribute("data-path")).toBe("");
-  expect(path.className).toContain("underline");
-  expect(screen.getByText("Write").getAttribute("data-path")).toBeNull();
+test("file paths in the journal open the file in the run's worktree, with their origin", async () => {
+  const opened = mock((_path: string, _line: number | null, _origin: string) => {});
+  const log: RunLogEntry[] = [
+    ...LOG,
+    {
+      id: 20,
+      at: NOW,
+      event: { type: "hook", payload: hook("PostToolUse", { tool: "Edit", detail: "/wt/kib-14/src/a.ts" }) },
+    },
+  ];
+  render(
+    <RunJournal
+      label="opus-dev-2"
+      log={log}
+      files={{ worktree: "/wt/kib-14", ticketKey: "KIB-14", open: opened }}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "apps/daemon/src/hooks/receiver.ts" }));
+  await user.click(screen.getByRole("button", { name: "src/a.ts" }));
+  expect(opened.mock.calls).toEqual([
+    ["apps/daemon/src/hooks/receiver.ts", null, "KIB-14 · PostToolUse Write"],
+    ["src/a.ts", null, "KIB-14 · PostToolUse Edit"],
+  ]);
+});
+
+test("a path in the drawer journal opens a preview of the run's worktree", async () => {
+  const onOpenFile = mock((_: unknown) => {});
+  render(
+    <AgentDrawer
+      state={agentsFixture()}
+      now={NOW}
+      selected={{ ...run("r41"), projectId: "kibo", cwd: "/wt/kib-14" }}
+      log={LOG}
+      onSelect={() => {}}
+      onCollapse={() => {}}
+      onLaunch={() => {}}
+      onOpenFile={onOpenFile}
+    />,
+  );
+  await userEvent.setup().click(screen.getByRole("button", { name: "apps/daemon/src/hooks/receiver.ts" }));
+  expect(onOpenFile.mock.calls).toEqual([
+    [
+      {
+        projectId: "kibo",
+        worktree: "/wt/kib-14",
+        path: "apps/daemon/src/hooks/receiver.ts",
+        line: null,
+        origin: "KIB-14 · PostToolUse Write",
+      },
+    ],
+  ]);
+});
+
+test("without a worktree the journal shows paths as plain text", () => {
+  render(<RunJournal label="opus-dev-2" log={LOG} files={null} />);
+  expect(screen.getByText("Write apps/daemon/src/hooks/receiver.ts")).toBeTruthy();
+  expect(screen.queryByRole("button")).toBeNull();
 });
 
 test("daemon events keep their raw type as name", () => {
@@ -308,7 +363,7 @@ test("the reply box sends a trimmed answer, and keeps the text when it fails", a
 });
 
 test("the panel opens on the waiting run, shows its journal and folds back", async () => {
-  render(<AgentPanel onLaunch={() => {}} focusRunId={null} onFocused={() => {}} />);
+  render(<AgentPanel onLaunch={() => {}} focusRunId={null} onFocused={() => {}} onOpenFile={() => {}} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Répondre à opus-dev-2" }));
   expect(screen.getByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
@@ -319,14 +374,14 @@ test("the panel opens on the waiting run, shows its journal and folds back", asy
 
 test("a focus request opens the drawer on that run", () => {
   const onFocused = mock(() => {});
-  render(<AgentPanel onLaunch={() => {}} focusRunId="r42" onFocused={onFocused} />);
+  render(<AgentPanel onLaunch={() => {}} focusRunId="r42" onFocused={onFocused} onOpenFile={() => {}} />);
   expect(screen.getByRole("list", { name: "Journal de opus-dev-1" })).toBeTruthy();
   expect(onFocused).toHaveBeenCalledTimes(1);
 });
 
 test("the launch button asks the shell to open the assign dialog", async () => {
   const onLaunch = mock(() => {});
-  render(<AgentPanel onLaunch={onLaunch} focusRunId="r41" onFocused={() => {}} />);
+  render(<AgentPanel onLaunch={onLaunch} focusRunId="r41" onFocused={() => {}} onOpenFile={() => {}} />);
   await userEvent.setup().click(screen.getByRole("button", { name: "Lancer un agent" }));
   expect(onLaunch).toHaveBeenCalled();
 });

@@ -1,11 +1,16 @@
-import type { AgentsState, RunView } from "@kibo/schema";
+import type { AgentsState, FileRef, RunView } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
 import { useAgents, useDaemonOnline, useNow, useRunLog } from "../state/use-agents";
 import { AgentBar } from "./AgentBar";
 import { AgentDrawer } from "./AgentDrawer";
 
-type Props = { onLaunch: () => void; focusRunId: string | null; onFocused: () => void };
+type Props = {
+  onLaunch: () => void;
+  focusRunId: string | null;
+  onFocused: () => void;
+  onOpenFile: (ref: FileRef) => void;
+};
 
 export function pickRun(state: AgentsState, picked: string | null): RunView | null {
   return (
@@ -16,7 +21,7 @@ export function pickRun(state: AgentsState, picked: string | null): RunView | nu
   );
 }
 
-export function AgentPanel({ onLaunch, focusRunId, onFocused }: Props) {
+export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Props) {
   const state = useAgents();
   const now = useNow();
   const online = useDaemonOnline();
@@ -46,6 +51,7 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused }: Props) {
           onSelect={setPicked}
           onCollapse={() => setExpanded(false)}
           onLaunch={onLaunch}
+          onOpenFile={onOpenFile}
         />
       ) : (
         <AgentBar

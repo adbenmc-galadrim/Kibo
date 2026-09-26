@@ -1,12 +1,24 @@
 import type { HookEventName, HookPayload, RunEvent, RunLogEntry } from "@kibo/schema";
-import { RUN_TEXT } from "@kibo/sdk";
+import { LinkifiedText, RUN_TEXT } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { fr } from "../i18n/fr";
 import { errorText, formatClock } from "./format";
 
 type Tone = "blue" | "amber" | "green" | "red" | "muted";
-export type JournalLine = { id: number; at: number; name: string; text: string; tone: Tone };
-type Line = Omit<JournalLine, "id" | "at">;
+export type JournalLine = {
+  id: number;
+  at: number;
+  name: string;
+  tool: string | null;
+  text: string;
+  tone: Tone;
+};
+export type JournalFiles = {
+  worktree: string;
+  ticketKey: string | null;
+  open(path: string, line: number | null, origin: string): void;
+};
+type Line = Omit<JournalLine, "id" | "at" | "tool"> & { tool?: string | null };
 
 const TONE: Record<Tone, string> = {
   blue: RUN_TEXT.running,
@@ -22,13 +34,12 @@ const HOOK_TONE: Partial<Record<HookEventName, Tone>> = {
   SessionEnd: "muted",
 };
 
-const PATH = /^[\w.~-]*\/[\w./~-]+$/;
-
 function hookLine(p: HookPayload): Line | null {
   if (p.question) return { name: "Notification", text: p.question, tone: "amber" };
   if (p.event === "PreToolUse" || p.event === "SessionStart") return null;
   return {
     name: p.event,
+    tool: p.tool,
     text: [p.tool, p.detail].filter(Boolean).join(" "),
     tone: HOOK_TONE[p.event] ?? "blue",
   };
@@ -74,27 +85,32 @@ function eventLine(event: RunEvent): Line | null {
 export function journalLines(log: RunLogEntry[]): JournalLine[] {
   return log.flatMap((entry) => {
     const line = eventLine(entry.event);
-    return line ? [{ ...line, id: entry.id, at: entry.at }] : [];
+    return line ? [{ ...line, tool: line.tool ?? null, id: entry.id, at: entry.at }] : [];
   });
 }
 
-function JournalText({ text }: { text: string }) {
+function JournalText({
+  line,
+  label,
+  files,
+}: {
+  line: JournalLine;
+  label: string;
+  files: JournalFiles | null;
+}) {
+  if (!files) return <span className="line-clamp-3 break-words">{line.text}</span>;
+  const origin = `${files.ticketKey ?? label} · ${[line.name, line.tool].filter(Boolean).join(" ")}`;
+  const text = line.text.replaceAll(`${files.worktree}/`, "");
   return (
     <span className="line-clamp-3 break-words">
-      {Array.from(text.matchAll(/\S+|\s+/g), (m) =>
-        PATH.test(m[0]) ? (
-          <span key={m.index} data-path="" className={cn("underline underline-offset-2", RUN_TEXT.running)}>
-            {m[0]}
-          </span>
-        ) : (
-          m[0]
-        ),
-      )}
+      <LinkifiedText text={text} onOpen={(ref) => files.open(ref.path, ref.line, origin)} />
     </span>
   );
 }
 
-export function RunJournal({ label, log }: { label: string; log: RunLogEntry[] }) {
+type Props = { label: string; log: RunLogEntry[]; files: JournalFiles | null };
+
+export function RunJournal({ label, log, files }: Props) {
   const lines = journalLines(log);
   return (
     <ol
@@ -105,7 +121,7 @@ export function RunJournal({ label, log }: { label: string; log: RunLogEntry[] }
         <li key={l.id} data-tone={l.tone} className="grid grid-cols-[3rem_8rem_1fr] gap-2">
           <span className="font-mono text-muted-foreground">{formatClock(l.at)}</span>
           <span className={cn("truncate font-mono", TONE[l.tone])}>{l.name}</span>
-          <JournalText text={l.text} />
+          <JournalText line={l} label={label} files={files} />
         </li>
       ))}
     </ol>
