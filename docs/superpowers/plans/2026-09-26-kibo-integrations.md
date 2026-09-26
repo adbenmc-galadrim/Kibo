@@ -13662,11 +13662,11 @@ Critères de sortie de la spec F (§10, §12) : zéro occurrence d'un secret par
 
 Réalité E2E : `e2e/playwright.config.ts` lance **un démon par spec et par thème** (`bun serve.ts <port> <scénario> [brouillons]`, ports 4390 à 4401), et `serve.ts` pose déjà `KIBO_GH` sur le faux binaire `gh` de la phase 3 (`packages/daemon/src/code/testing/fake-gh.ts`, requis par `code.spec.ts`). Des ports fixes 4391/4392 pour les faux serveurs entreraient en collision avec les démons `light` et `agents-dark` : les faux serveurs prennent le port du démon + 100 / + 200, et ne sont lancés que pour les deux démons de cette spec. `KIBO_GH` n'est pas remplacé : le parcours choisit explicitement « Jeton personnel ».
 
-- [ ] **Step 1: Ports des faux serveurs**
+- [x] **Step 1: Ports des faux serveurs**
 
 `fake-github.ts` : `Bun.serve({ port: opts.port ?? 0, hostname: "127.0.0.1", … })`. `fake-mcp.ts` : `http.listen(opts.port ?? 0, "127.0.0.1", …)`. Aucun autre changement.
 
-- [ ] **Step 2: Test de fuite (échoue tant qu'une fuite existe)**
+- [x] **Step 2: Test de fuite (échoue tant qu'une fuite existe)**
 
 Le test lance le vrai démon par `startDaemon` (comme `packages/daemon/src/daemon.test.ts`) : c'est là que l'hôte et les modules d'intégration sont assemblés (N26). Pas de `build` factice : l'adaptateur GitHub Issues est construit depuis `components/github-issues` avec la toolchain de dev (N7, Task 19).
 
@@ -13849,7 +13849,7 @@ test("after a full scenario, no secret appears anywhere", async () => {
 Run: `bun test packages/daemon/src/integrations/leak.test.ts`
 Expected: PASS. Un échec nomme l'endroit (`secret leaked in …`) : corriger à la source (caviardage à l'écriture, `scrubSecret`, jamais en retirant l'étape du test).
 
-- [ ] **Step 3: Démons E2E avec faux GitHub et faux MCP**
+- [x] **Step 3: Démons E2E avec faux GitHub et faux MCP**
 
 `e2e/token.ts`, ajouter :
 
@@ -13875,7 +13875,7 @@ const mcp = await startFakeMcpHttp({ port: fakeMcpPort(Number(port)) });
 
 les arguments du démon gagnent alors `"--test-origins", \`api.github.com=${gh.url},${LOGS_HOST}=${gh.url}\`, "--memory-secrets"` (lus par `main.ts`, N26) ; après `await proc.exited` : `gh.stop(); await mcp.stop();`. Les autres démons E2E sont inchangés (aucune origine de test, trousseau système non sollicité). `KIBO_GH` reste le faux `gh` de la phase 3.
 
-- [ ] **Step 4: Parcours Playwright**
+- [x] **Step 4: Parcours Playwright**
 
 `e2e/integrations.spec.ts` :
 
@@ -13973,7 +13973,7 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test`
 Expected: PASS en `integrations-dark` et `integrations-light` (et toutes les autres specs toujours vertes).
 
-- [ ] **Step 5: Vérifier et commiter**
+- [x] **Step 5: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck && bun run --cwd e2e test` — Expected: PASS. La CI GitHub étant hors service, cette liste est le contrôle local d'intégration ; `.github/workflows/ci.yml` n'est pas modifié (il lance déjà `bun run --cwd e2e test`, la tâche 34 de la phase 4 le réécrit).
 
