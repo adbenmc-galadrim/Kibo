@@ -14537,7 +14537,7 @@ git commit -m "feat(daemon): publication des composants"
 
 Fidélité : en-tête de widget de l'écran 7 (page 13) : barre de 40 px, bordure basse, icône du composant, titre `text-sm font-medium`, `⋯` à droite (bouton `ghost` 28 px, `aria-label` « Actions <titre> »). Page Vue : le `⋯` est dans l'en-tête de l'app, à droite du fil d'Ariane. États D1, D2, D6, D7.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/ui/src/pages/instance.test.tsx` :
 ```tsx
@@ -14689,7 +14689,7 @@ Le test « built-in » vérifie seulement que le Kanban lit le projet via `getPr
 Run: `bun test packages/ui/src/pages/instance.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `page-actions.tsx`, `PendingTrust.tsx`, `NotesDirDialog.tsx`, `OpenViewDialog.tsx`**
+- [x] **Step 2: Implémenter `page-actions.tsx`, `PendingTrust.tsx`, `NotesDirDialog.tsx`, `OpenViewDialog.tsx`**
 
 `packages/ui/src/shell/page-actions.tsx` :
 ```tsx
@@ -14863,7 +14863,7 @@ export function OpenViewDialog({ projectId, componentRef, title, open, onOpenCha
 ```
 Le cast `as Page` est la frontière du bus de commandes (`command` renvoie `unknown`), comme dans les dialogues v0.1. Le titre de la page créée est celui du composant (« Graphe de dépendances » ou « Notes ») ; la maquette nomme la page « Graphe » : le titre reste modifiable par l'utilisateur.
 
-- [ ] **Step 3: Implémenter `InstanceMenu.tsx` et `InstanceFrame.tsx`**
+- [x] **Step 3: Implémenter `InstanceMenu.tsx` et `InstanceFrame.tsx`**
 
 `packages/ui/src/pages/InstanceMenu.tsx` :
 ```tsx
@@ -15082,7 +15082,7 @@ export function InstanceFrame(props: Props) {
 ```
 `findComponent` renvoie un `ComponentModule` (`{ manifest, Component }`), compatible avec `TrustedModule`.
 
-- [ ] **Step 4: Brancher `PageView` et `Shell`**
+- [x] **Step 4: Brancher `PageView` et `Shell`**
 
 `packages/ui/src/pages/PageView.tsx` : supprimer l'ancien `InstanceFrame` local ; importer `InstanceFrame` et `InstanceMenu`. Dans la grille, chaque cellule devient :
 ```tsx
@@ -15157,7 +15157,7 @@ Le `host` mémorisé inclut `openView` dans ses dépendances.
 
 Test à ajouter à `packages/ui/src/shell/shell.test.tsx` : un projet dont une page Vue contient `graph@1.0.0` ⇒ `host.openView("graph")` navigue vers elle ; sans page ⇒ le dialogue « Créer une page Graphe de dépendances ? » s'ouvre et « Créer la page » envoie `addPage` puis `addInstance` (même faux client que les autres tests du fichier).
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test packages/ui && bun run typecheck && bun run check`
 Expected: PASS.
