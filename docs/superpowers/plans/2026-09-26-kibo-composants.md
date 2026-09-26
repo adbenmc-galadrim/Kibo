@@ -9727,7 +9727,7 @@ git commit -m "feat(ui): catalogue, confiance et création"
   - `type ValidationStamp = { hash: string; version: string; ok: boolean; at: number }` ; `readValidationStamp(dir): Promise<ValidationStamp | null>`.
   - `formatIssue(i: SourceIssue): string` et `FR_DEVKIT` (textes français de la validation, affichés par la CLI et l'écran 6).
 
-- [ ] **Step 1: Créer les fixtures**
+- [x] **Step 1: Créer les fixtures**
 
 Chaque fixture reprend le `component.test.tsx.fixture` de `hello` (`runConformance({ manifest, Component })`) sauf `failing`.
 
@@ -9780,7 +9780,7 @@ test("fails on purpose", () => {
 });
 ```
 
-- [ ] **Step 2: Écrire les tests**
+- [x] **Step 2: Écrire les tests**
 
 `packages/devkit/src/fr.test.ts` :
 ```ts
@@ -9883,7 +9883,7 @@ describe("validateComponent", () => {
 Run: `bun test packages/devkit/src/validate.test.ts packages/devkit/src/fr.test.ts`
 Expected: FAIL (modules absents).
 
-- [ ] **Step 3: Implémenter `fr.ts`**
+- [x] **Step 3: Implémenter `fr.ts`**
 
 ```ts
 import type { SourceIssue, SourceIssueCode } from "./issues";
@@ -9914,7 +9914,7 @@ export const FR_DEVKIT = {
 };
 ```
 
-- [ ] **Step 4: Implémenter `validate.ts`**
+- [x] **Step 4: Implémenter `validate.ts`**
 
 ```ts
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
@@ -10134,7 +10134,7 @@ Points notables : les tests du composant sont du code **non approuvé** : ils to
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./validate";` et `export * from "./fr";`.
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test packages/devkit && bun run typecheck && bun run check`
 Expected: PASS.
