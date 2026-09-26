@@ -2,6 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { type AgentModel, ASK_TOOL, HookEventName, KiboError, type PermissionMode } from "@kibo/schema";
 import { z } from "zod";
+import { signalGroup } from "../process-group";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
 import { parseJsonLine, Usage, usageTokens } from "./transcript";
 
@@ -142,18 +143,6 @@ export function permissionFlag(mode: PermissionMode, caps: CliCaps): string | nu
 }
 
 export const KILL_GRACE_MS = 5000;
-
-const isMissing = (e: unknown) => e instanceof Error && "code" in e && e.code === "ESRCH";
-
-function signalGroup(pid: number, signal: NodeJS.Signals | 0): boolean {
-  try {
-    process.kill(-pid, signal);
-    return true;
-  } catch (e) {
-    if (isMissing(e)) return false;
-    throw e;
-  }
-}
 
 export function killGroup(pid: number, graceMs = KILL_GRACE_MS): void {
   if (!signalGroup(pid, "SIGTERM")) return;

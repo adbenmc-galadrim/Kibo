@@ -1,4 +1,5 @@
 import { KiboError } from "@kibo/schema";
+import { signalGroup } from "../process-group";
 
 export type Env = Record<string, string>;
 export type RunResult = { code: number; stdout: string; bytes: Uint8Array; stderr: string };
@@ -21,6 +22,8 @@ export type Git = {
 export const READ_TIMEOUT_MS = 30_000;
 export const WRITE_TIMEOUT_MS = 300_000;
 export const NETWORK_TIMEOUT_MS = 120_000;
+export const MAX_STDOUT_BYTES = 50_000_000;
+export const MAX_STDERR_BYTES = 1_000_000;
 
 const DEFAULT_ENV: Env = {
   GIT_EDITOR: "true",
@@ -65,6 +68,7 @@ function spawn(cmd: string[], opts: RunOptions) {
     stdin: opts.stdin === undefined ? "ignore" : new TextEncoder().encode(opts.stdin),
     stdout: "pipe",
     stderr: "pipe",
+    detached: true,
   });
 }
 
@@ -76,25 +80,46 @@ function start(cmd: string[], opts: RunOptions, failCode: FailCode) {
   }
 }
 
+async function readCapped(
+  stream: ReadableStream<Uint8Array>,
+  max: number,
+  onOverflow: (size: number) => KiboError,
+): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of stream) {
+    size += chunk.byteLength;
+    if (size > max) throw onOverflow(size);
+    chunks.push(chunk);
+  }
+  return new Uint8Array(Buffer.concat(chunks));
+}
+
 export async function run(cmd: string[], opts: RunOptions): Promise<RunResult> {
   const failCode = opts.failCode ?? "GIT_FAILED";
   const proc = start(cmd, opts, failCode);
+  const label = `${cmd[0]} ${cmd[1] ?? ""}`.trim();
+  const killAll = () => signalGroup(proc.pid, "SIGKILL");
+  const overflow = (name: string, max: number) => (size: number) => {
+    killAll();
+    return new KiboError("TOO_LARGE", `${label} wrote more than ${max} bytes on ${name} (${size} read)`);
+  };
   const collected = Promise.all([
-    new Response(proc.stdout).arrayBuffer(),
-    new Response(proc.stderr).text(),
+    readCapped(proc.stdout, MAX_STDOUT_BYTES, overflow("stdout", MAX_STDOUT_BYTES)),
+    readCapped(proc.stderr, MAX_STDERR_BYTES, overflow("stderr", MAX_STDERR_BYTES)),
     proc.exited,
   ]);
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
-      proc.kill("SIGKILL");
-      reject(new KiboError(failCode, `${cmd[0]} ${cmd[1] ?? ""} timed out`));
+      killAll();
+      reject(new KiboError(failCode, `${label} timed out`));
     }, opts.timeoutMs ?? READ_TIMEOUT_MS);
   });
   try {
-    const [buffer, stderr, code] = await Promise.race([collected, timeout]);
-    const bytes = new Uint8Array(buffer);
-    return { code, stdout: new TextDecoder().decode(bytes), bytes, stderr };
+    const [bytes, stderr, code] = await Promise.race([collected, timeout]);
+    const decoder = new TextDecoder();
+    return { code, stdout: decoder.decode(bytes), bytes, stderr: decoder.decode(stderr) };
   } finally {
     clearTimeout(timer);
   }

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { createGit, firstLine, run, runGh } from "./run";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createGit, firstLine, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, run, runGh } from "./run";
 import { createGitFixture, type GitFixture, installFakeGh, readFakeGhLog } from "./testing/git-fixture";
 
 let fx: GitFixture;
@@ -39,6 +41,62 @@ test("a missing binary and a timeout are reported", async () => {
     code: "GIT_FAILED",
   });
   expect(Date.now() - started).toBeLessThan(2_000);
+});
+
+function isAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    if (e instanceof Error && "code" in e && e.code === "ESRCH") return false;
+    throw e;
+  }
+}
+
+async function expectGone(pidFile: string): Promise<void> {
+  const pids = readFileSync(pidFile, "utf8").trim().split(/\s+/).map(Number);
+  expect(pids.length).toBeGreaterThan(0);
+  const deadline = Date.now() + 2_000;
+  while (pids.some(isAlive) && Date.now() < deadline) await Bun.sleep(20);
+  expect(pids.filter(isAlive)).toEqual([]);
+}
+
+test("the output limits are exported", () => {
+  expect(MAX_STDOUT_BYTES).toBe(50_000_000);
+  expect(MAX_STDERR_BYTES).toBe(1_000_000);
+});
+
+test("an endless stdout stops the whole process group", async () => {
+  const pidFile = join(fx.dir, "stdout.pids");
+  const script = `yes & echo $$ $! > ${pidFile}; wait`;
+  await expect(run(["sh", "-c", script], { cwd: fx.repo })).rejects.toMatchObject({ code: "TOO_LARGE" });
+  await expectGone(pidFile);
+});
+
+test("an endless stderr stops the whole process group", async () => {
+  const pidFile = join(fx.dir, "stderr.pids");
+  const script = `yes >&2 & echo $$ $! > ${pidFile}; wait`;
+  await expect(run(["sh", "-c", script], { cwd: fx.repo })).rejects.toMatchObject({ code: "TOO_LARGE" });
+  await expectGone(pidFile);
+});
+
+test("a timeout kills a child that ignores termination", async () => {
+  const pidFile = join(fx.dir, "timeout.pids");
+  const child = `trap '' TERM INT HUP; while :; do sleep 1; done`;
+  const script = `sh -c "${child}" & echo $$ $! > ${pidFile}; wait`;
+  await expect(run(["sh", "-c", script], { cwd: fx.repo, timeoutMs: 300 })).rejects.toMatchObject({
+    code: "GIT_FAILED",
+  });
+  await expectGone(pidFile);
+});
+
+test("a timeout kills children left behind by an exited parent", async () => {
+  const pidFile = join(fx.dir, "orphan.pids");
+  const script = `sleep 30 & echo $! > ${pidFile}`;
+  await expect(run(["sh", "-c", script], { cwd: fx.repo, timeoutMs: 300 })).rejects.toMatchObject({
+    code: "GIT_FAILED",
+  });
+  await expectGone(pidFile);
 });
 
 test("git never prompts and ignores an inherited repository", async () => {
