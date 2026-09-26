@@ -262,7 +262,7 @@ export const fr = {
       tokens: "tokens aujourd'hui (abonnement)",
     },
     profiles: "Profils",
-    noProfile: "Aucun profil : crées-en un pour assigner des tickets à un agent.",
+    noProfile: "Aucun profil à toi : crée-en un pour assigner des tickets à un agent.",
     editProfile: (name: string) => `Modifier le profil ${name}`,
     active: (n: number) => `${n} actif${n > 1 ? "s" : ""}`,
     modelLine: (model: string) => `${model} · CLI headless`,

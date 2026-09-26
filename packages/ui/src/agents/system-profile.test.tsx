@@ -85,6 +85,6 @@ test("choosing Haiku saves only the model of the system profile", async () => {
 test("with only system profiles the page still invites to create a profile", () => {
   const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
   render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} />);
-  expect(screen.getByText("Aucun profil : crées-en un pour assigner des tickets à un agent.")).toBeTruthy();
+  expect(screen.getByText("Aucun profil à toi : crée-en un pour assigner des tickets à un agent.")).toBeTruthy();
   expect(screen.getByRole("article", { name: "assistant" })).toBeTruthy();
 });
