@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./preload/happydom": "./src/preload/happydom.ts",
-    "./preload/restrict": "./src/preload/restrict.ts"
+    "./preload/restrict": "./src/preload/restrict.ts",
+    "./test-kit": "./src/test-kit.ts"
   },
   "dependencies": {
     "@kibo/schema": "workspace:*"

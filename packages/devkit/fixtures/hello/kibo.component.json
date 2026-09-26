@@ -1,0 +1,10 @@
+{
+  "id": "hello",
+  "version": "0.1.0",
+  "kind": "both",
+  "title": "Hello",
+  "description": "Composant de test",
+  "reads": ["ticket"],
+  "writes": [],
+  "changes": ["Premier jet"]
+}
