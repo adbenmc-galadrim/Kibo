@@ -35,6 +35,7 @@ export type ComponentsDeps = {
   build?: (srcDir: string, t: Toolchain) => Promise<BuildOutput>;
   validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
   processCommand?: string[];
+  allowUnsandboxed?: () => boolean;
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
   installCli?: () => Promise<{ path: string }>;
@@ -124,6 +125,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     verify: (ref) => inflight.track(registry.verify(ref)),
     onCall: (projectId, instanceId, call) => inflight.track(gate.call(projectId, instanceId, call)),
     ...(deps.processCommand && { processCommand: deps.processCommand }),
+    ...(deps.allowUnsandboxed && { allowUnsandboxed: deps.allowUnsandboxed }),
   });
 
   const usage = createUsageTracker({ projects, backends });

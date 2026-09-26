@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { OsSandbox } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
-import { TEST_MANIFEST } from "./backend-code.test-helper";
+import { SERVER_JS, TEST_MANIFEST } from "./backend-code.test-helper";
 import { createProcessHost } from "./process-host";
 
 const ESCAPE_JS = `
@@ -88,6 +88,64 @@ test("without an OS sandbox the backend does not start", async () => {
   await expect(host.invoke(escapeCall(null))).rejects.toThrow("SANDBOX_UNAVAILABLE");
   expect(host.running).toBe(false);
 });
+
+const missing: OsSandbox = {
+  ready: async () => {
+    throw new KiboError("SANDBOX_UNAVAILABLE", "bubblewrap (bwrap) is not installed");
+  },
+  diagnose: async () => ({
+    kind: "bwrap",
+    available: false,
+    reason: "bubblewrap (bwrap) is not installed",
+    fix: "sudo apt install bubblewrap",
+  }),
+  wrap: () => {
+    throw new Error("an unsandboxed launch must not be wrapped");
+  },
+};
+const capsCall = { projectId: "p1", instanceId: "i1", config: {}, target: { action: "caps" }, input: null };
+
+test("the explicit setting starts the backend without OS isolation, the phase 4 protections stay", async () => {
+  const lines: string[] = [];
+  const host = createProcessHost({
+    ref: "probe@0.1.0",
+    manifest: TEST_MANIFEST,
+    code: { server: SERVER_JS, migrations: null },
+    onCall: async () => null,
+    sandbox: missing,
+    allowUnsandboxed: () => true,
+    log: (l) => lines.push(l),
+  });
+  try {
+    expect(await host.invoke(capsCall)).toBe("undefined,undefined,undefined,undefined");
+    expect(host.running).toBe(true);
+    expect(lines.some((l) => l.includes("without OS isolation"))).toBe(true);
+  } finally {
+    host.stop();
+  }
+}, 30_000);
+
+test("the setting is read at each start: once withdrawn, the backend no longer starts", async () => {
+  let allowed = true;
+  const host = createProcessHost({
+    ref: "probe@0.1.0",
+    manifest: TEST_MANIFEST,
+    code: { server: SERVER_JS, migrations: null },
+    onCall: async () => null,
+    sandbox: missing,
+    allowUnsandboxed: () => allowed,
+  });
+  try {
+    expect(await host.invoke(capsCall)).toBe("undefined,undefined,undefined,undefined");
+    host.stop();
+    allowed = false;
+    await expect(host.invoke(capsCall)).rejects.toThrow("SANDBOX_UNAVAILABLE");
+    expect(host.running).toBe(false);
+  } finally {
+    host.stop();
+  }
+}, 30_000);
+
 const LIMITS_JS = `
 module.exports.server = {
   actions: {

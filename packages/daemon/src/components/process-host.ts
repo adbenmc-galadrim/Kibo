@@ -16,7 +16,11 @@ import { BACKEND_MESSAGE_LIMIT, readLines } from "./line-channel";
 const LOG_LIMIT = 65_536;
 const DEV_ROOT = resolve(import.meta.dir, "../../../..");
 
-export type ProcessHostOptions = HostOptions & { command?: string[]; sandbox?: OsSandbox };
+export type ProcessHostOptions = HostOptions & {
+  command?: string[];
+  sandbox?: OsSandbox;
+  allowUnsandboxed?: () => boolean;
+};
 
 export function runtimePolicy(command: string[], cwd: string): SandboxPolicy {
   return { read: isCompiled() ? [] : [DEV_ROOT], write: [cwd], exec: command.slice(0, 1), cwd };
@@ -78,16 +82,33 @@ function workDir(): { cwd: string; remove(log: (line: string) => void): void } {
   };
 }
 
+async function isolation(
+  sandbox: OsSandbox,
+  allowed: () => boolean,
+  log: (line: string) => void,
+): Promise<boolean> {
+  try {
+    await sandbox.ready();
+    return true;
+  } catch (e) {
+    if (!(e instanceof KiboError) || e.code !== "SANDBOX_UNAVAILABLE" || !allowed()) throw e;
+    log(`starting without OS isolation (allowed by the user): ${e.detail}`);
+    return false;
+  }
+}
+
 function spawnRuntime(
   opts: ProcessHostOptions,
   sandbox: OsSandbox,
+  isolated: boolean,
   handlers: ChannelHandlers,
   log: (line: string) => void,
 ) {
   const dir = workDir();
   try {
     const command = opts.command ?? runtimeCommand();
-    return Bun.spawn(sandbox.wrap(command, runtimePolicy(command, dir.cwd)), {
+    const argv = isolated ? sandbox.wrap(command, runtimePolicy(command, dir.cwd)) : command;
+    return Bun.spawn(argv, {
       cwd: dir.cwd,
       env: { KIBO_COMPONENT: opts.ref },
       stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
@@ -106,8 +127,9 @@ function spawnRuntime(
 export function createProcessHost(opts: ProcessHostOptions): BackendHost {
   const log = opts.log ?? ((line: string) => console.error(`[kibo-daemon] ${opts.ref}: ${line}`));
   const sandbox = opts.sandbox ?? osSandbox();
+  let isolated = true;
   const open = async (handlers: ChannelHandlers): Promise<Channel> => {
-    const proc = spawnRuntime(opts, sandbox, handlers, log);
+    const proc = spawnRuntime(opts, sandbox, isolated, handlers, log);
     const close = () => killGroup(proc.pid, log);
     pipeLog(proc.stderr, log).catch((e: unknown) => log(`stderr closed: ${String(e)}`));
     const input = proc.stdio[3];
@@ -137,7 +159,7 @@ export function createProcessHost(opts: ProcessHostOptions): BackendHost {
     return { send: write, close };
   };
   const beforeStart = async () => {
-    await sandbox.ready();
+    isolated = await isolation(sandbox, opts.allowUnsandboxed ?? (() => false), log);
     await opts.beforeStart?.();
   };
   return createHost({ ...opts, log, beforeStart }, open, false);
