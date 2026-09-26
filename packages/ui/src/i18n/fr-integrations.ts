@@ -179,6 +179,10 @@ export const frIntegrations = {
     syncError: "Échec de synchronisation :",
     retry: "Réessayer",
     drop: "Abandonner",
+    dropTitle: "Abandonner cet envoi ?",
+    dropHelp:
+      "L'issue a peut-être déjà été créée sur GitHub. Dans ce cas, elle sera réimportée comme un second ticket à la prochaine synchronisation.",
+    dropUnlink: "Retirer le lien GitHub",
     ci: "CI",
     ciEmpty: "Aucun run pour les PR de ce ticket.",
     viewLogs: "Voir les logs",

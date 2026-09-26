@@ -6,7 +6,7 @@ import {
   type RpcRequest,
   type TicketView,
 } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
@@ -166,6 +166,65 @@ test("a sync failure can be retried", async () => {
   expect(alert.textContent).toContain("github 422: Validation Failed");
   await userEvent.setup().click(within(alert).getByRole("button", { name: "Réessayer" }));
   expect(calls).toContainEqual({ method: "resolveOutbox", projectId: "p1", outboxId: 7, action: "retry" });
+});
+
+const pendingCreate: TicketView = {
+  ...ticket,
+  externalRefs: [
+    { kind: "github_issue", bindingId: "b1", repo: "adam/kibo", number: null, nodeId: null, url: null },
+    ...ticket.externalRefs.filter((r) => r.kind !== "github_issue"),
+  ],
+};
+const dropped: RpcRequest = { method: "resolveOutbox", projectId: "p1", outboxId: 7, action: "drop" };
+const unlinked: RpcRequest = {
+  method: "command",
+  projectId: "p1",
+  command: { method: "removeExternalRef", ticketId: "t1", kind: "github_issue", key: "b1" },
+};
+const openDrop = async () => {
+  const user = userEvent.setup();
+  await user.click(within(screen.getByRole("alert")).getByRole("button", { name: "Abandonner" }));
+  const dialog = await screen.findByRole("alertdialog");
+  return { user, dialog };
+};
+
+test("dropping a failed send asks for confirmation and can be cancelled", async () => {
+  await show();
+  const { user, dialog } = await openDrop();
+  expect(dialog.textContent).toContain("réimportée comme un second ticket");
+  expect(within(dialog).queryByRole("checkbox")).toBeNull();
+  await user.click(within(dialog).getByRole("button", { name: "Annuler" }));
+  expect(screen.queryByRole("alertdialog")).toBeNull();
+  expect(calls).not.toContainEqual(dropped);
+});
+
+test("dropping a linked issue only drops the send", async () => {
+  await show();
+  const { user, dialog } = await openDrop();
+  await user.click(within(dialog).getByRole("button", { name: "Abandonner" }));
+  expect(calls).toContainEqual(dropped);
+  expect(calls).not.toContainEqual(unlinked);
+});
+
+test("dropping a pending creation removes the GitHub link by default", async () => {
+  await show(pendingCreate);
+  const { user, dialog } = await openDrop();
+  const box = within(dialog).getByRole("checkbox", { name: "Retirer le lien GitHub" });
+  expect(box.getAttribute("aria-checked")).toBe("true");
+  await user.click(within(dialog).getByRole("button", { name: "Abandonner" }));
+  await waitFor(() => expect(calls).toContainEqual(unlinked));
+  expect(calls.findIndex((c) => c.method === "resolveOutbox")).toBeLessThan(
+    calls.findIndex((c) => c.method === "command"),
+  );
+});
+
+test("dropping a pending creation can keep the GitHub link", async () => {
+  await show(pendingCreate);
+  const { user, dialog } = await openDrop();
+  await user.click(within(dialog).getByRole("checkbox", { name: "Retirer le lien GitHub" }));
+  await user.click(within(dialog).getByRole("button", { name: "Abandonner" }));
+  await waitFor(() => expect(calls).toContainEqual(dropped));
+  expect(calls).not.toContainEqual(unlinked);
 });
 
 test("the CI section opens the logs, filterable to errors", async () => {

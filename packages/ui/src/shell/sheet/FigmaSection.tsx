@@ -19,7 +19,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 function linkError(e: unknown): string {
   if (e instanceof KiboError && e.code === "INVALID_INPUT") return t.figmaInvalid;
   if (e instanceof KiboError && e.code === "NOT_CONNECTED") return t.figmaNotConnected;
-  if (e instanceof KiboError && e.code === "MCP_UNAVAILABLE") return fr.integrations.figma.unreachable;
+  if (e instanceof KiboError && e.code === "MCP_UNAVAILABLE") return fr.integrations.figma.unreachable.title;
   return message(e);
 }
 

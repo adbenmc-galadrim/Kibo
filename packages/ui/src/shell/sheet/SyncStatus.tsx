@@ -1,28 +1,49 @@
-import type { TicketView } from "@kibo/schema";
+import { externalRefKey, type TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Clock } from "lucide-react";
 import { useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
 import { useSyncState } from "../../state/use-sync-state";
+import { DropSendDialog } from "./DropSendDialog";
 
 const t = fr.integrations.sheet;
 
 export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: TicketView }) {
   const { state, error, reload } = useSyncState(projectId);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDrop, setConfirmDrop] = useState(false);
   const failure = state?.errors.find((e) => e.ticketId === ticket.id) ?? null;
-  const pendingCreate = ticket.externalRefs.some((r) => r.kind === "github_issue" && r.number === null);
+  const pendingRefs = ticket.externalRefs.filter((r) => r.kind === "github_issue" && r.number === null);
   const pending = state?.pending.includes(ticket.id) ?? false;
-  const resolve = async (outboxId: number, action: "retry" | "drop") => {
+  const run = async (action: () => Promise<unknown>) => {
     try {
-      await client.rpc({ method: "resolveOutbox", projectId, outboxId, action });
+      await action();
       setActionError(null);
-      await reload();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     }
+    await reload();
   };
+  const resolve = (outboxId: number, action: "retry" | "drop") =>
+    client.rpc({ method: "resolveOutbox", projectId, outboxId, action });
+  const drop = (outboxId: number, unlink: boolean) =>
+    run(async () => {
+      await resolve(outboxId, "drop");
+      if (!unlink) return;
+      for (const ref of pendingRefs) {
+        await client.rpc({
+          method: "command",
+          projectId,
+          command: {
+            method: "removeExternalRef",
+            ticketId: ticket.id,
+            kind: ref.kind,
+            key: externalRefKey(ref),
+          },
+        });
+      }
+    });
   if (failure) {
     return (
       <div
@@ -34,22 +55,32 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
         </p>
         {actionError && <p className="text-destructive">{actionError}</p>}
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => void resolve(failure.outboxId, "retry")}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void run(() => resolve(failure.outboxId, "retry"))}
+          >
             {t.retry}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => void resolve(failure.outboxId, "drop")}>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmDrop(true)}>
             {t.drop}
           </Button>
         </div>
+        <DropSendDialog
+          open={confirmDrop}
+          canUnlink={pendingRefs.length > 0}
+          onOpenChange={setConfirmDrop}
+          onConfirm={(unlink) => void drop(failure.outboxId, unlink)}
+        />
       </div>
     );
   }
   if (error) return <p className="px-4 text-xs text-destructive">{error}</p>;
-  if (!pending && !pendingCreate) return null;
+  if (!pending && pendingRefs.length === 0) return null;
   return (
     <p className="flex items-center gap-2 px-4 text-xs text-muted-foreground">
       <Clock aria-hidden className="size-3.5" />
-      {pendingCreate ? t.pendingCreate : t.pending}
+      {pendingRefs.length > 0 ? t.pendingCreate : t.pending}
     </p>
   );
 }
