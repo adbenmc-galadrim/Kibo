@@ -7,12 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { failureOf, syncErrorText } from "../../lib/sync-error-text";
+import { type LinkedRepos, repoKey } from "./linked-repos";
 import { RepoList } from "./RepoList";
 import { prefillStatusMap, type SyncForm } from "./status-map";
 
 type Props = {
   workflow: Status[];
   value: SyncForm;
+  linked: LinkedRepos;
   onChange(f: SyncForm): void;
   onError(message: string): void;
 };
@@ -66,7 +69,7 @@ function useProjects(repo: string | null, onError: (message: string) => void): G
       .then((p) => {
         if (live) setProjects(p);
       })
-      .catch((e: unknown) => onError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => onError(syncErrorText(failureOf(e), { repo: repo ?? "", resumeAt: null })));
     return () => {
       live = false;
     };
@@ -74,10 +77,11 @@ function useProjects(repo: string | null, onError: (message: string) => void): G
   return projects;
 }
 
-export function SyncSourceForm({ workflow, value, onChange, onError }: Props) {
+export function SyncSourceForm({ workflow, value, linked, onChange, onError }: Props) {
   const ids = { repo: useId(), project: useId(), labels: useId(), closed: useId() };
   const projects = useProjects(value.repo, onError);
   const options = value.project?.statusField?.options ?? null;
+  const linkedBy = value.repo === null ? null : (linked.get(repoKey(value.repo)) ?? null);
   const pickProject = (nodeId: string) => {
     const project = projects.find((p) => p.nodeId === nodeId) ?? null;
     const statusMap = project?.statusField ? prefillStatusMap(workflow, project.statusField.options) : {};
@@ -98,9 +102,11 @@ export function SyncSourceForm({ workflow, value, onChange, onError }: Props) {
         <RepoList
           labelledBy={ids.repo}
           value={value.repo}
+          linked={linked}
           onChange={(r) => onChange({ ...value, repo: r.fullName, project: null, statusMap: {} })}
           onError={onError}
         />
+        {linkedBy && <p className="text-sm text-destructive">{t.alreadyBound(linkedBy)}</p>}
       </div>
       <div className="grid gap-2">
         <Label htmlFor={ids.project}>{t.project}</Label>

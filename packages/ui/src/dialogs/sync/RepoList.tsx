@@ -4,16 +4,19 @@ import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { failureOf, syncErrorText } from "../../lib/sync-error-text";
+import { type LinkedRepos, repoKey } from "./linked-repos";
 
 type Props = {
   labelledBy: string;
   value: string | null;
+  linked: LinkedRepos;
   onChange(r: GithubRepo): void;
   onError(message: string): void;
 };
 const t = fr.integrations.source;
 
-function RepoRow({ name }: { name: string }) {
+function RepoRow({ name, linked }: { name: string; linked: boolean }) {
   const id = useId();
   return (
     <label
@@ -22,11 +25,12 @@ function RepoRow({ name }: { name: string }) {
     >
       <RadioGroupItem id={id} value={name} aria-label={name} />
       <span className="font-mono">{name}</span>
+      {linked && <span className="ml-auto text-xs text-muted-foreground">{t.linked}</span>}
     </label>
   );
 }
 
-export function RepoList({ labelledBy, value, onChange, onError }: Props) {
+export function RepoList({ labelledBy, value, linked, onChange, onError }: Props) {
   const [query, setQuery] = useState("");
   const [repos, setRepos] = useState<GithubRepo[]>([]);
   useEffect(() => {
@@ -36,7 +40,7 @@ export function RepoList({ labelledBy, value, onChange, onError }: Props) {
       .then((r) => {
         if (live) setRepos(r);
       })
-      .catch((e: unknown) => onError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => onError(syncErrorText(failureOf(e), { repo: "", resumeAt: null })));
     return () => {
       live = false;
     };
@@ -62,7 +66,7 @@ export function RepoList({ labelledBy, value, onChange, onError }: Props) {
       >
         {shown.length === 0 && <p className="p-2 text-sm text-muted-foreground">{t.repoEmpty}</p>}
         {shown.map((r) => (
-          <RepoRow key={r.fullName} name={r.fullName} />
+          <RepoRow key={r.fullName} name={r.fullName} linked={linked.has(repoKey(r.fullName))} />
         ))}
       </RadioGroup>
     </div>

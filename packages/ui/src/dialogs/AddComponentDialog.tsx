@@ -1,11 +1,11 @@
 import type { McpSourceStoredConfig } from "@kibo/component-mcp-source";
-import { type Binding, DEFAULT_WORKFLOW, type Layout, type Page, type Status } from "@kibo/schema";
+import { DEFAULT_WORKFLOW, KiboError, type Layout, type Page, type Status } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { Blocks, Search, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { nextLayout } from "../lib/next-layout";
@@ -18,10 +18,12 @@ import { CreateComponentDialog } from "./CreateComponentDialog";
 import { builtinChoices, type Choice, matches, mineChoices } from "./catalog-choices";
 import { DraftRow } from "./DraftRow";
 import { McpSourceStep } from "./mcp-source/McpSourceStep";
+import { FirstSyncStatus } from "./sync/FirstSyncStatus";
+import { type LinkedRepos, repoKey } from "./sync/linked-repos";
 import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
 import { SyncSourceForm } from "./sync/SyncSourceForm";
 import { EMPTY_SYNC_FORM, SYNCABLE_COMPONENTS, type SyncForm, toBindingConfig } from "./sync/status-map";
-import { useSyncProgress } from "./sync/use-sync-progress";
+import { useFirstSync } from "./sync/use-first-sync";
 import { TrustDialog, type TrustTarget, trustTargetOf } from "./TrustDialog";
 
 type Props = {
@@ -32,10 +34,13 @@ type Props = {
   onOpenChange: (o: boolean) => void;
   onPublishDraft?: (id: string) => void;
   workflow?: Status[];
+  linked?: LinkedRepos;
 };
 
 const BUILTINS = builtinChoices(BUILTIN_COMPONENTS);
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const NO_LINK: LinkedRepos = new Map();
+const src = fr.integrations.source;
 
 export function AddComponentDialog({
   projectId,
@@ -45,6 +50,7 @@ export function AddComponentDialog({
   onOpenChange,
   onPublishDraft,
   workflow = DEFAULT_WORKFLOW,
+  linked = NO_LINK,
 }: Props) {
   const a = fr.addComponent;
   const { components, drafts, error } = useComponents();
@@ -63,11 +69,18 @@ export function AddComponentDialog({
   const [source, setSource] = useState<SourceKind>("local");
   const [form, setForm] = useState<SyncForm>(EMPTY_SYNC_FORM);
   const [connected, setConnected] = useState(false);
-  const [binding, setBinding] = useState<Binding | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const progress = useSyncProgress(binding?.id ?? null);
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const firstSync = useFirstSync(projectId, close);
   const syncable = selected !== null && SYNCABLE_COMPONENTS.includes(selected.id);
   const synced = syncable && source === "synced";
+  const ownRepo = firstSync.binding?.config.repo ?? null;
+  const others = useMemo(
+    () => (ownRepo === null ? linked : new Map([...linked].filter(([k]) => k !== repoKey(ownRepo)))),
+    [linked, ownRepo],
+  );
+  const holder = form.repo === null ? null : (others.get(repoKey(form.repo)) ?? null);
+  const canRetry = firstSync.binding !== null && firstSync.error !== null;
   const [mcpConfig, setMcpConfig] = useState<McpSourceStoredConfig | null>(null);
   const mcpSource = selected?.id === "mcp-source";
   const onFormError = useCallback((m: string) => setSyncError(m), []);
@@ -83,18 +96,6 @@ export function AddComponentDialog({
       .then((o) => setConnected(o.mode !== null))
       .catch((e: unknown) => setSyncError(errorText(e)));
   }, [open, syncable]);
-
-  useEffect(() => {
-    if (!binding || !progress || progress.running) return;
-    client
-      .rpc({ method: "getSyncState", projectId })
-      .then((s) => {
-        const b = s.bindings.find((x) => x.bindingId === binding.id);
-        if (b?.lastError) setSyncError(`${fr.integrations.source.failed} ${b.lastError.message}`);
-        else onOpenChange(false);
-      })
-      .catch((e: unknown) => setSyncError(errorText(e)));
-  }, [binding, progress, projectId, onOpenChange]);
 
   const addInstance = async (component: string) => {
     setFailed(false);
@@ -114,12 +115,11 @@ export function AddComponentDialog({
           ...(mcpSource && mcpConfig && { config: mcpConfig }),
         },
       });
-      if (created) {
-        setBinding(created);
-        return;
-      }
+      if (created) return firstSync.start(created);
       onOpenChange(false);
     } catch (e) {
+      if (e instanceof KiboError && e.code === "CONFLICT")
+        return setSyncError(src.alreadyBound(holder ?? fr.integrations.rows["github-issues"].title));
       console.error(e);
       setFailed(true);
     }
@@ -216,6 +216,7 @@ export function AddComponentDialog({
                           <SyncSourceForm
                             workflow={workflow}
                             value={form}
+                            linked={others}
                             onChange={setForm}
                             onError={onFormError}
                           />
@@ -236,33 +237,33 @@ export function AddComponentDialog({
               {a.failed}
             </p>
           )}
-          {progress && (
-            <output className="text-sm text-muted-foreground">
-              {progress.running
-                ? fr.integrations.source.progress(progress.imported)
-                : fr.integrations.source.done(progress.imported)}
-            </output>
-          )}
-          {syncError && (
+          {(syncError ?? firstSync.error) && (
             <p role="alert" className="text-sm text-destructive">
-              {syncError}
+              {syncError ?? firstSync.error}
             </p>
           )}
-          <DialogFooter>
+          <DialogFooter className="sm:items-center">
+            <div className="sm:mr-auto">
+              <FirstSyncStatus sync={firstSync} />
+            </div>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {fr.common.cancel}
             </Button>
-            <Button
-              disabled={
-                !selected ||
-                (synced && toBindingConfig(form) === null) ||
-                (mcpSource && mcpConfig === null) ||
-                binding !== null
-              }
-              onClick={submit}
-            >
-              {synced ? fr.integrations.source.submit : a.submit}
-            </Button>
+            {canRetry ? (
+              <Button onClick={() => void firstSync.retry()}>{src.retry}</Button>
+            ) : (
+              <Button
+                disabled={
+                  !selected ||
+                  (synced && (toBindingConfig(form) === null || holder !== null)) ||
+                  (mcpSource && mcpConfig === null) ||
+                  firstSync.binding !== null
+                }
+                onClick={submit}
+              >
+                {synced ? src.submit : a.submit}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -7,6 +7,7 @@ import {
   GithubIssueRef,
   githubError,
   githubIssueState,
+  githubStatusOf,
   IntegrationEvent,
   MappedRemote,
   McpItemRef,
@@ -213,6 +214,14 @@ describe("integration contracts", () => {
     expect(githubError(403, h({ "x-ratelimit-remaining": "40" }), "{}").code).toBe("REMOTE_REJECTED");
     expect(githubError(401, h({}), "not json").detail).toBe("github 401: not json");
     expect(githubError(502, h({}), "").code).toBe("REMOTE_UNAVAILABLE");
+  });
+
+  test("the github status is read back from an error detail", () => {
+    const h = () => null;
+    expect(githubStatusOf(githubError(404, h, '{"message":"Not Found"}').detail)).toBe(404);
+    expect(githubStatusOf(githubError(401, h, "").detail)).toBe(401);
+    expect(githubStatusOf("github paused until 2026-09-26T14:08:50Z")).toBeNull();
+    expect(githubStatusOf("fetch failed")).toBeNull();
   });
 
   test("integration rpc and events are part of the protocol", () => {

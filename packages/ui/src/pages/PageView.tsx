@@ -3,6 +3,7 @@ import { lazyPanel, readSource } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
 import { componentIcon } from "../registry";
 import { SourceHeader } from "../shell/lazy-screens";
@@ -104,6 +105,7 @@ export function PageView({ project, page, viewer }: Props) {
           onOpenChange={setAdding}
           onPublishDraft={(id) => setPublishing(id)}
           workflow={project.workflow}
+          linked={linkedRepos(project)}
         />
       )}
       {publishing && <PublishDialog id={publishing} open onOpenChange={(o) => !o && setPublishing(null)} />}

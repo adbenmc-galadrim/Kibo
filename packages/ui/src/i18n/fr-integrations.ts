@@ -168,6 +168,9 @@ export const frIntegrations = {
     progress: (n: number) => `Synchronisation… ${n} ${plural(n, "issue importée", "issues importées")}`,
     done: (n: number) => `${n} ${plural(n, "issue importée", "issues importées")}`,
     failed: "La première synchronisation a échoué :",
+    retry: "Réessayer",
+    linked: "déjà synchronisé",
+    alreadyBound: (name: string) => `Ce dépôt est déjà synchronisé dans ce projet par ${name}.`,
   },
   sheet: {
     issue: (n: number) => `#${n}`,
@@ -211,6 +214,8 @@ export const frIntegrations = {
     previewUnavailable: "Aperçu indisponible",
     unlink: "Retirer",
     figmaNotConnected: "Connecte Figma dans Paramètres › Intégrations.",
+    dropUpdateHelp:
+      "Cette modification n'est pas envoyée à GitHub : le ticket la garde dans Kibo, et elle repartira avec sa prochaine modification.",
   },
   instance: {
     header: (repo: string) => `GitHub · ${repo}`,
@@ -221,6 +226,8 @@ export const frIntegrations = {
     bindingRemoved: "Liaison supprimée",
     bindingRemovedHelp:
       "Ce composant n'est plus synchronisé avec GitHub ; ses tickets restent dans le projet.",
+    disconnected: "GitHub déconnecté",
+    disconnectedHelp: "Synchronisation suspendue.",
   },
   conflict: (key: string, field: "title" | "description" | "statusId") =>
     `Conflit résolu sur ${key} : ${{ title: "titre", description: "description", statusId: "statut" }[field]} repris de GitHub`,
@@ -255,5 +262,18 @@ export const frIntegrations = {
       return tool ? `Appeler l'outil ${tool} du serveur MCP ${server}` : `Appeler le serveur MCP ${server}`;
     },
     mcpFromConfig: "Appeler le serveur MCP choisi à l'ajout",
+  },
+  githubErrors: {
+    notFound: (status: number, repo: string) =>
+      `GitHub a répondu ${status}, dépôt ${repo} introuvable pour ce compte.`,
+    unauthorized:
+      "GitHub a répondu 401, connexion GitHub expirée : reconnecte GitHub dans Paramètres › Intégrations.",
+    forbidden: (repo: string) =>
+      `GitHub a répondu 403, accès refusé à ${repo} : vérifie les portées du jeton (repo, project).`,
+    invalid: "GitHub a répondu 422, données refusées par GitHub.",
+    status: (status: number) => `GitHub a répondu ${status}.`,
+    rateLimitedAuto: "Limite GitHub atteinte, reprise automatique.",
+    unavailable: "GitHub est injoignable pour le moment, nouvel essai automatique.",
+    notConnected: "GitHub n'est pas connecté : connecte-le dans Paramètres › Intégrations.",
   },
 };

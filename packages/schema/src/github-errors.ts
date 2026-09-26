@@ -30,3 +30,8 @@ export function githubError(
   if (status >= 500) return new KiboError("REMOTE_UNAVAILABLE", message);
   return new KiboError("REMOTE_REJECTED", message);
 }
+
+export function githubStatusOf(detail: string): number | null {
+  const match = /^github (\d{3})\b/.exec(detail);
+  return match ? Number(match[1]) : null;
+}

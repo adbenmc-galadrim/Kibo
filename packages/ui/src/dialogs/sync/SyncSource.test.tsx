@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { IntegrationEvent, RpcRequest } from "@kibo/schema";
+import { type IntegrationEvent, KiboError, type RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -8,6 +8,8 @@ let listener: ((e: IntegrationEvent) => void) | null = null;
 let connected = true;
 let lastError: { code: string; message: string } | null = null;
 let syncStateFails = false;
+let running = false;
+let createFails: KiboError | null = null;
 const binding = {
   id: "b1",
   adapter: "github-issues",
@@ -22,7 +24,10 @@ const replies: Record<string, () => unknown> = {
     { fullName: "adam/site", private: true, description: null },
   ],
   listGithubProjects: () => [],
-  createBinding: () => binding,
+  createBinding: () => {
+    if (createFails) throw createFails;
+    return binding;
+  },
   command: () => ({ id: "i1" }),
   listComponents: () => [],
   listDrafts: () => [],
@@ -39,7 +44,7 @@ const syncState = () => ({
       bindingId: "b1",
       repo: "adam/kibo",
       runner: "adam",
-      running: false,
+      running,
       lastPullAt: 1,
       lastError,
       imported: 12,
@@ -75,10 +80,21 @@ beforeEach(() => {
   connected = true;
   lastError = null;
   syncStateFails = false;
+  running = false;
+  createFails = null;
 });
 
-async function addSyncedKanban(onOpenChange: (o: boolean) => void) {
-  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
+async function addSyncedKanban(onOpenChange: (o: boolean) => void, linked = new Map<string, string>()) {
+  render(
+    <AddComponentDialog
+      projectId="p1"
+      page={page}
+      taken={[]}
+      open
+      onOpenChange={onOpenChange}
+      linked={linked}
+    />,
+  );
   const user = userEvent.setup();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
   await user.click(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" }));
@@ -146,24 +162,99 @@ test("components that do not show tickets have no source choice", async () => {
   expect(calls.some((c) => c.method === "getGithubConnectOptions")).toBe(false);
 });
 
-test("a failed first sync shows the error and keeps the dialog open until closed", async () => {
-  lastError = { code: "REMOTE_REJECTED", message: "Bad credentials" };
+test("a failed first sync is explained in French and can be retried", async () => {
+  lastError = { code: "REMOTE_NOT_FOUND", message: "github 404: Not Found" };
   const onOpenChange = mock((_: boolean) => {});
   const user = await addSyncedKanban(onOpenChange);
   expect((await screen.findByRole("alert")).textContent).toBe(
-    "La première synchronisation a échoué : Bad credentials",
+    "La première synchronisation a échoué : GitHub a répondu 404, dépôt adam/kibo introuvable pour ce compte.",
   );
   expect(onOpenChange).not.toHaveBeenCalled();
-  expect(screen.getByRole("button", { name: "Ajouter et synchroniser" }).hasAttribute("disabled")).toBe(true);
+  lastError = null;
+  await user.click(screen.getByRole("button", { name: "Réessayer" }));
+  expect(calls).toContainEqual({ method: "syncBinding", projectId: "p1", bindingId: "b1" });
+  await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   expect(calls.filter((c) => c.method === "createBinding")).toHaveLength(1);
-  await user.click(screen.getByRole("button", { name: "Annuler" }));
-  expect(onOpenChange).toHaveBeenCalledWith(false);
+});
+
+test("a first sync that ended before the dialog listened still closes it", async () => {
+  const onOpenChange = mock((_: boolean) => {});
+  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Kanban" }));
+  await user.click(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" }));
+  await user.click(await screen.findByRole("radio", { name: "adam/kibo" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter et synchroniser" }));
+  await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+});
+
+test("a running first sync shows a spinner until its end is heard", async () => {
+  running = true;
+  const onOpenChange = mock((_: boolean) => {});
+  const { rerender } = render(
+    <AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Kanban" }));
+  await user.click(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" }));
+  await user.click(await screen.findByRole("radio", { name: "adam/kibo" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter et synchroniser" }));
+  const status = await screen.findByRole("status");
+  expect(status.textContent).toBe("Synchronisation… 12 issues importées");
+  expect(status.querySelector(".animate-spin")).not.toBeNull();
+  expect(onOpenChange).not.toHaveBeenCalled();
+  rerender(
+    <AddComponentDialog
+      projectId="p1"
+      page={page}
+      taken={[]}
+      open
+      onOpenChange={onOpenChange}
+      linked={new Map([["adam/kibo", "Vue"]])}
+    />,
+  );
+  expect(screen.queryByText("déjà synchronisé")).toBeNull();
+  expect(screen.queryByText("Ce dépôt est déjà synchronisé dans ce projet par Vue.")).toBeNull();
+  running = false;
+  act(() => listener?.({ type: "sync", projectId: "p1", bindingId: "b1", imported: 12, running: false }));
+  await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+});
+
+test("a repo already synced in the project is flagged and cannot be bound twice", async () => {
+  render(
+    <AddComponentDialog
+      projectId="p1"
+      page={page}
+      taken={[]}
+      open
+      onOpenChange={() => {}}
+      linked={new Map([["adam/kibo", "Kanban GitHub"]])}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Kanban" }));
+  await user.click(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" }));
+  expect(await screen.findByText("déjà synchronisé")).toBeDefined();
+  await user.click(await screen.findByRole("radio", { name: "adam/kibo" }));
+  expect(screen.getByText("Ce dépôt est déjà synchronisé dans ce projet par Kanban GitHub.")).toBeDefined();
+  expect(screen.getByRole("button", { name: "Ajouter et synchroniser" }).hasAttribute("disabled")).toBe(true);
+});
+
+test("a binding refused as a duplicate by the daemon is explained", async () => {
+  createFails = new KiboError("CONFLICT", "adam/kibo is already bound in this project");
+  const onOpenChange = mock((_: boolean) => {});
+  await addSyncedKanban(onOpenChange);
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Ce dépôt est déjà synchronisé dans ce projet par GitHub Issues & Projects.",
+  );
+  expect(calls.some((c) => c.method === "command")).toBe(false);
+  expect(onOpenChange).not.toHaveBeenCalled();
 });
 
 test("an unreadable sync state is shown, never swallowed", async () => {
   syncStateFails = true;
   const onOpenChange = mock((_: boolean) => {});
   await addSyncedKanban(onOpenChange);
-  expect((await screen.findByRole("alert")).textContent).toBe("daemon unreachable");
+  expect((await screen.findByRole("alert")).textContent).toBe("Une erreur est survenue.");
   expect(onOpenChange).not.toHaveBeenCalled();
 });
