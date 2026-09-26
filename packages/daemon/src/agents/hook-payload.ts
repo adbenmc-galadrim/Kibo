@@ -59,16 +59,16 @@ export function reduceHookInput(raw: unknown): HookPayload {
 }
 
 const MAX_TEXT = 2000;
-const MAX_ENTRIES = 20;
+export const MAX_INPUT_KEYS = 20;
 
 function clipValue(value: unknown, depth: number): unknown {
   if (typeof value === "string") return value.slice(0, MAX_TEXT);
   if (typeof value === "number" || typeof value === "boolean" || value === null) return value;
   if (depth >= 2 || typeof value !== "object") return null;
-  if (Array.isArray(value)) return value.slice(0, MAX_ENTRIES).map((v) => clipValue(v, depth + 1));
+  if (Array.isArray(value)) return value.slice(0, MAX_INPUT_KEYS).map((v) => clipValue(v, depth + 1));
   return Object.fromEntries(
     Object.entries(value)
-      .slice(0, MAX_ENTRIES)
+      .slice(0, MAX_INPUT_KEYS)
       .map(([k, v]) => [k, clipValue(v, depth + 1)]),
   );
 }
@@ -79,7 +79,7 @@ export function clipToolInput(
   if (!input) return null;
   return Object.fromEntries(
     Object.entries(input)
-      .slice(0, MAX_ENTRIES)
+      .slice(0, MAX_INPUT_KEYS)
       .map(([k, v]) => [k, clipValue(v, 1)]),
   );
 }

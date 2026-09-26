@@ -1,6 +1,7 @@
 import { existsSync, lstatSync, realpathSync } from "node:fs";
-import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { ASK_TOOL } from "@kibo/schema";
+import { MAX_INPUT_KEYS } from "../agents/hook-payload";
 import type { Guard, GuardDecision } from "./ports";
 
 export type DraftGuardOptions = { draftDir: string; readRoots: string[]; allowServer: boolean };
@@ -8,7 +9,8 @@ export type DraftGuardOptions = { draftDir: string; readRoots: string[]; allowSe
 export const TEST_COMMAND = /^kibo component test(?: \.)?\n?$/;
 const TEST_FILE = /^[A-Za-z0-9_-]+\.test\.tsx$/;
 const MAX_PATH_LENGTH = 1024;
-const MAX_INPUT_KEYS = 20;
+const BASH_KEYS = new Set(["command", "description", "timeout"]);
+const GLOB_CHARS = /[*?[\]]/;
 const WRITE_TOOLS = new Map([
   ["Edit", "file_path"],
   ["MultiEdit", "file_path"],
@@ -40,6 +42,19 @@ const pathArg = (input: Record<string, unknown>, key: string): string | null | u
 };
 const confinedPattern = (pattern: string) =>
   !isAbsolute(pattern) && !pattern.startsWith("~") && !/\.\.|[{}]/.test(pattern);
+
+const crossesSymlink = (base: string, pattern: string): boolean => {
+  let current = base;
+  for (const segment of pattern.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (GLOB_CHARS.test(segment)) return false;
+    current = join(current, segment);
+    const stat = lstatSync(current, { throwIfNoEntry: false });
+    if (stat === undefined) return false;
+    if (stat.isSymbolicLink()) return true;
+  }
+  return false;
+};
 
 export const denyAllGuard: Guard = ({ toolName }) => deny(`${toolName} is not available to this profile`);
 
@@ -77,8 +92,12 @@ export function createDraftGuard(opts: DraftGuardOptions): Guard {
     if (pattern === null || (pattern !== undefined && !confinedPattern(pattern)))
       return deny(`invalid ${patternKey}: searches stay in their folder`);
     const p = pathArg(input, pathKey);
-    if (p === undefined) return allow;
-    return p === null ? deny(`invalid ${pathKey}`) : checkRead(p);
+    if (p === null) return deny(`invalid ${pathKey}`);
+    const base = p === undefined ? allow : checkRead(p);
+    if (base.decision === "deny") return base;
+    if (pattern !== undefined && crossesSymlink(resolve(root, p ?? "."), pattern))
+      return deny(`${patternKey} goes through a symbolic link`);
+    return allow;
   };
 
   const check = (toolName: string, toolInput: Record<string, unknown>): GuardDecision => {
@@ -95,6 +114,8 @@ export function createDraftGuard(opts: DraftGuardOptions): Guard {
     const searchKey = SEARCH_TOOLS.get(toolName);
     if (searchKey) return checkSearch(toolInput, searchKey, toolName === "Glob" ? "pattern" : "glob");
     if (toolName === "Bash") {
+      if (Object.keys(toolInput).some((key) => !BASH_KEYS.has(key)))
+        return deny("Bash options are not allowed");
       const command = textArg(toolInput, "command");
       return command && TEST_COMMAND.test(command) ? allow : deny("only `kibo component test .` may run");
     }

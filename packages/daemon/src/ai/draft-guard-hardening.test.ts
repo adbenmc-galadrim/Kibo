@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { reduceHookPost } from "../agents/hook-payload";
+import { MAX_INPUT_KEYS, reduceHookPost } from "../agents/hook-payload";
 import { createDraftGuard } from "./draft-guard";
 
 const roots: string[] = [];
@@ -13,7 +13,7 @@ function setup() {
   mkdirSync(draft);
   writeFileSync(join(draft, "ui.tsx"), "");
   writeFileSync(join(root, "evil.ts"), "");
-  return { draft, guard: createDraftGuard({ draftDir: draft, readRoots: [], allowServer: false }) };
+  return { root, draft, guard: createDraftGuard({ draftDir: draft, readRoots: [], allowServer: false }) };
 }
 afterEach(() => {
   for (const r of roots.splice(0)) rmSync(r, { recursive: true, force: true });
@@ -84,5 +84,43 @@ describe("hostile inputs", () => {
     expect(guard({ toolName: "Read", toolInput: { file_path: `${draft}/../evil.ts` } }).decision).toBe(
       "deny",
     );
+  });
+});
+
+describe("tool options", () => {
+  test("Bash accepts only command, description and timeout", () => {
+    const { guard } = setup();
+    const bash = (extra: Record<string, unknown>) =>
+      guard({ toolName: "Bash", toolInput: { command: "kibo component test .", ...extra } }).decision;
+    expect(bash({ description: "Tests", timeout: 60000 })).toBe("allow");
+    for (const key of ["dangerouslyDisableSandbox", "run_in_background", "shell", "constructor"])
+      expect(bash({ [key]: true })).toBe("deny");
+  });
+  test("search patterns cannot go through a symbolic link of the draft", () => {
+    const { root, draft, guard } = setup();
+    mkdirSync(join(draft, "src"));
+    symlinkSync(root, join(draft, "lnk"));
+    symlinkSync(root, join(draft, "src", "up"));
+    for (const pattern of ["lnk/*", "lnk/**", "lnk", "./lnk/*", "src/up/*.ts"]) {
+      expect(guard({ toolName: "Glob", toolInput: { pattern } }).decision).toBe("deny");
+      expect(guard({ toolName: "Grep", toolInput: { pattern: "x", glob: pattern } }).decision).toBe("deny");
+    }
+    expect(
+      guard({ toolName: "Glob", toolInput: { pattern: "up/*", path: join(draft, "src") } }).decision,
+    ).toBe("deny");
+    expect(guard({ toolName: "Glob", toolInput: { pattern: "src/*.tsx" } }).decision).toBe("allow");
+    expect(guard({ toolName: "Glob", toolInput: { pattern: "**/*.tsx" } }).decision).toBe("allow");
+  });
+  test("the guard and the hook share the same input key limit", () => {
+    const { guard } = setup();
+    const padding = Object.fromEntries(Array.from({ length: MAX_INPUT_KEYS - 1 }, (_, i) => [`k${i}`, i]));
+    expect(guard({ toolName: "Read", toolInput: { ...padding, file_path: "ui.tsx" } }).decision).toBe("deny");
+    const post = reduceHookPost({
+      hook_event_name: "PreToolUse",
+      session_id: "s",
+      tool_name: "Read",
+      tool_input: { ...padding, a: 1, file_path: "ui.tsx" },
+    });
+    expect(Object.keys(post.toolInput ?? {}).length).toBe(MAX_INPUT_KEYS);
   });
 });
