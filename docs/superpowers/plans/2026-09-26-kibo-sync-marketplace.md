@@ -1877,7 +1877,7 @@ Encodeur DER minimal et certificat X.509 v3 auto-signé (ECDSA P-256, WebCrypto)
 - Dépendance réelle : **T2** (importe `packages/trust/src/bytes.ts` et modifie le même `packages/trust/src/index.ts`) ; T3 ne peut donc pas tourner en parallèle de T2. Vérifié en T0 : aucun code de `main` ne génère de certificat (aucune dépendance X.509), `tsconfig.base.json` charge les types `bun` (WebCrypto, `X509Certificate` de `node:crypto`), Bun 1.4.2.
 - Produces : `SelfSigned = { certPem: string; keyPem: string; fingerprint256: string }`, `generateSelfSignedCert(opts: { commonName: string; dns: string[]; ips: string[]; days: number; now?: Date }): Promise<SelfSigned>`, `certFingerprint(certPem: string): Promise<string>` (format `AB:CD:…`, majuscules). Internes exportés pour les tests : `sequence`, `set`, `integer`, `oid`, `utf8String`, `ia5`, `booleanTrue`, `time`, `bitString`, `octetString`, `explicit`, `tlv`, `concat`, `ipBytes`.
 
-- [ ] **Step 1: Tests de l'encodeur DER**
+- [x] **Step 1: Tests de l'encodeur DER**
 
 `packages/trust/src/der.test.ts` :
 ```ts
@@ -1931,7 +1931,7 @@ test("IP addresses", () => {
 Run: `bun test packages/trust/src/der.test.ts`
 Expected: FAIL — `Cannot find module './der'`.
 
-- [ ] **Step 2: Implémenter `der.ts`**
+- [x] **Step 2: Implémenter `der.ts`**
 
 ```ts
 import { KiboError } from "@kibo/schema";
@@ -2017,7 +2017,7 @@ export function ipBytes(ip: string): Uint8Array {
 Run: `bun test packages/trust/src/der.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Tests du certificat**
+- [x] **Step 3: Tests du certificat**
 
 `packages/trust/src/x509.test.ts` :
 ```ts
@@ -2064,7 +2064,7 @@ test("an invalid IP is refused", async () => {
 Run: `bun test packages/trust/src/x509.test.ts`
 Expected: FAIL — `Cannot find module './x509'`.
 
-- [ ] **Step 4: Implémenter `x509.ts`**
+- [x] **Step 4: Implémenter `x509.ts`**
 
 ```ts
 import { owned, sha256Hex, toBase64 } from "./bytes";
@@ -2164,7 +2164,7 @@ export async function certFingerprint(certPem: string): Promise<string> {
 Run: `bun test packages/trust/src/x509.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Tests TLS de plateforme**
+- [x] **Step 5: Tests TLS de plateforme**
 
 `packages/trust/src/tls-platform.test.ts` :
 ```ts
@@ -2232,7 +2232,7 @@ Expected: PASS (4 tests).
 1. **`NODE_EXTRA_CA_CERTS`** : le lanceur du démon (sidecar Tauri, `e2e/serve-sync.ts`, harnais de test en sous-processus) pose la variable vers le `caFile` configuré ; changer d'autorité demande un redémarrage du démon ; le client de sync (T21) ne passe plus `ca`.
 2. **Épinglage d'empreinte** : le client ouvre `wss://` avec `tls: { rejectUnauthorized: false, checkServerIdentity }`, où `checkServerIdentity` compare l'empreinte SHA-256 du certificat présenté à celle du `caFile` et refuse sinon ; la vérification de chaîne standard reste active pour les serveurs sans `caFile`.
 
-- [ ] **Step 6: Exporter et vérifier**
+- [x] **Step 6: Exporter et vérifier**
 
 Ajouter à `packages/trust/src/index.ts` :
 ```ts
@@ -2243,7 +2243,7 @@ export * from "./x509";
 Run: `bun test packages/trust && bun run check && bun run typecheck`
 Expected: PASS, sans erreur.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/trust/src/der.ts packages/trust/src/der.test.ts packages/trust/src/x509.ts packages/trust/src/x509.test.ts packages/trust/src/tls-platform.test.ts packages/trust/src/index.ts
