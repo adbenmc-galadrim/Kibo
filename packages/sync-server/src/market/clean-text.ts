@@ -39,10 +39,10 @@ export function isCleanText(text: string): boolean {
 }
 
 const LATIN = /\p{Script=Latin}/u;
-const CONFUSABLE_WITH_LATIN = /[\p{Script=Cyrillic}\p{Script=Greek}]/u;
+const OUTSIDE_LATIN = /[^\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]/u;
 
 export const isCleanName = (name: string): boolean =>
-  isCleanText(name) && !(LATIN.test(name) && CONFUSABLE_WITH_LATIN.test(name));
+  isCleanText(name) && !(LATIN.test(name) && OUTSIDE_LATIN.test(name));
 
 export const CleanText = (max: number) =>
   z

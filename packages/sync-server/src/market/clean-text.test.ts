@@ -46,7 +46,12 @@ describe("isCleanName", () => {
   test("refuses Latin mixed with Greek", () => {
     expect(isCleanName("Admιn")).toBe(false);
   });
-  for (const name of ["Léa Martin", "Лея", "Λέα", "李 雷", "Léa̸", "Léa 2"]) {
+  for (const name of ["Tօm", "Ꭺdam", "ꓡéa"]) {
+    test(`refuses Latin mixed with another script in ${JSON.stringify(name)}`, () => {
+      expect(isCleanName(name)).toBe(false);
+    });
+  }
+  for (const name of ["Léa Martin", "Лея", "Λέα", "李 雷", "Léa̸", "Léa 2", "Léa-Marie O'Neil"]) {
     test(`accepts ${JSON.stringify(name)}`, () => {
       expect(isCleanName(name)).toBe(true);
     });
