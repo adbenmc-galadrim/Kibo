@@ -12254,11 +12254,11 @@ Dossier : `packages/daemon/src/collab/` et non `sync/`, qui porte depuis la phas
 - Produces (Contrats partagés) : `SyncHost`, `ProjectSyncOptions`, `ProjectSync` (`connected`, `disconnected`, `localChange`, `resync`, `flush`, `receive`, `inFlight`, `resyncing`), `SyncSocket`, `SyncTransport`, `assertSyncUrl`, `createWebSocketTransport`.
 - Produces (**ajout**, pour T19 et T21) : `createMemoryHost(doc: LoroDoc): SyncHost & { replaced: number; current(): LoroDoc }` dans `collab/testing/memory-host.ts`.
 
-- [ ] **Step 1: Dépendances du paquet**
+- [x] **Step 1: Dépendances du paquet**
 
 Dans `packages/daemon/package.json`, ajouter `"@kibo/trust": "workspace:*"` à `dependencies` (si T15 ne l'a pas déjà fait) et créer `"devDependencies": { "@kibo/sync-server": "workspace:*" }`, puis `bun install`. Dans `packages/daemon/tsconfig.json`, ajouter `{ "path": "../trust" }` et `{ "path": "../sync-server" }` à `references` (les tests du démon importent `@kibo/sync-server` et sont compilés par `tsc -b`). `bun.lock` change (arêtes internes seulement, aucune dépendance npm).
 
-- [ ] **Step 2: Écrire les tests du transport qui échouent**
+- [x] **Step 2: Écrire les tests du transport qui échouent**
 
 `packages/daemon/src/collab/transport.test.ts` :
 ```ts
@@ -12282,12 +12282,12 @@ test("other schemes and garbage are invalid", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer le test**
+- [x] **Step 3: Lancer le test**
 
 Run: `bun test packages/daemon/src/collab/transport.test.ts`
 Expected: FAIL (`./transport` introuvable).
 
-- [ ] **Step 4: Implémenter `transport.ts`**
+- [x] **Step 4: Implémenter `transport.ts`**
 
 `packages/daemon/src/collab/transport.ts` :
 ```ts
@@ -12346,12 +12346,12 @@ export function createWebSocketTransport(): SyncTransport {
 ```
 L'option `tls.ca` du constructeur `WebSocket` de Bun est validée par le test de plateforme de T3 ; si Bun 1.4.2 la refuse, T3 l'a signalé et le chef d'équipe a tranché avant cette tâche.
 
-- [ ] **Step 5: Relancer le test**
+- [x] **Step 5: Relancer le test**
 
 Run: `bun test packages/daemon/src/collab/transport.test.ts`
 Expected: PASS (3 tests).
 
-- [ ] **Step 6: Écrire l'hôte en mémoire**
+- [x] **Step 6: Écrire l'hôte en mémoire**
 
 `packages/daemon/src/collab/testing/memory-host.ts` :
 ```ts
@@ -12378,7 +12378,7 @@ export function createMemoryHost(initial: LoroDoc): MemoryHost {
 }
 ```
 
-- [ ] **Step 7: Écrire les tests du moteur qui échouent**
+- [x] **Step 7: Écrire les tests du moteur qui échouent**
 
 `packages/daemon/src/collab/project-sync.test.ts` :
 ```ts
@@ -12626,12 +12626,12 @@ describe("rejections", () => {
 ```
 Dans le test `OUT_OF_DATE`, le moteur croit que le serveur a déjà la création du ticket : le premier lot ne contient que le renommage, le serveur répond `OUT_OF_DATE` avec sa vraie version, le second lot contient les deux opérations.
 
-- [ ] **Step 8: Lancer le test**
+- [x] **Step 8: Lancer le test**
 
 Run: `bun test packages/daemon/src/collab/project-sync.test.ts`
 Expected: FAIL (`./project-sync` introuvable).
 
-- [ ] **Step 9: Implémenter `project-sync.ts`**
+- [x] **Step 9: Implémenter `project-sync.ts`**
 
 `packages/daemon/src/collab/project-sync.ts` :
 ```ts
@@ -12760,12 +12760,12 @@ export class ProjectSync {
 ```
 Un `ack` ou un `reject` dont le `clientBatchId` n'est pas le lot en vol est sans objet (lot d'une connexion précédente, déjà libéré par `disconnected`) : ce n'est pas une erreur et il n'y a rien à journaliser.
 
-- [ ] **Step 10: Relancer le test**
+- [x] **Step 10: Relancer le test**
 
 Run: `bun test packages/daemon/src/collab/project-sync.test.ts`
 Expected: PASS (10 tests).
 
-- [ ] **Step 11: Test d'imports (décision 26)**
+- [x] **Step 11: Test d'imports (décision 26)**
 
 `packages/daemon/src/collab/imports.test.ts` :
 ```ts
@@ -12794,12 +12794,12 @@ test("production code of the daemon never imports the sync server", () => {
 Run: `bun test packages/daemon/src/collab/imports.test.ts`
 Expected: PASS (le test protège contre une régression ; le vérifier une fois en ajoutant temporairement `import "@kibo/sync-server";` à `transport.ts` ⇒ FAIL, puis retirer la ligne).
 
-- [ ] **Step 12: Suite, lint, types**
+- [x] **Step 12: Suite, lint, types**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
 
 ```bash
 git add packages/daemon/package.json packages/daemon/tsconfig.json bun.lock packages/daemon/src/collab/transport.ts \
