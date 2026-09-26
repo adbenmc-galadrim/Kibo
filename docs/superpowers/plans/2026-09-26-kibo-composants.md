@@ -14036,7 +14036,7 @@ git commit -m "feat(notes): composant Notes Markdown"
   - `createPublisher(deps): { preview(id): Promise<PublishPreview>; publish(id, strategy): Promise<PublishResult>; applyUpdateAll(id, version): Promise<PublishResult["failed"]> }`.
   - Règles : même version et même empreinte ⇒ `status: "unchanged"` (publish renvoie la version existante, rien ne change) ; même version, autre empreinte ⇒ `VERSION_EXISTS` ; version ≤ plus haute publiée ⇒ `INVALID_INPUT` ; confiance héritée si la version précédente est active et qu'aucune permission n'est ajoutée ; sinon `trust = null` et, pour « Mettre à jour partout » avec des usages, `autoUpdate = true` (décision 7).
 
-- [ ] **Step 1: Rendre `put` utilisable dans le faux magasin**
+- [x] **Step 1: Rendre `put` utilisable dans le faux magasin**
 
 `packages/daemon/src/components/fake-store.test-helper.ts`, remplacer `put` :
 ```ts
@@ -14053,7 +14053,7 @@ git commit -m "feat(notes): composant Notes Markdown"
 ```
 Imports : `ComponentManifest` en valeur (`@kibo/schema`), `readSources` (`@kibo/devkit`).
 
-- [ ] **Step 2: Écrire les tests**
+- [x] **Step 2: Écrire les tests**
 
 `packages/daemon/src/components/drafts.test.ts` :
 ```ts
@@ -14305,7 +14305,7 @@ describe("publish", () => {
 Run: `bun test packages/daemon/src/components/drafts.test.ts packages/daemon/src/components/publish.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implémenter `drafts.ts`**
+- [x] **Step 3: Implémenter `drafts.ts`**
 
 ```ts
 import { existsSync } from "node:fs";
@@ -14363,7 +14363,7 @@ export async function listDrafts(home: string, workspace: LoroDoc): Promise<Draf
 ```
 Un dossier sans manifeste lisible n'est pas un brouillon (il n'apparaît pas) ; des sources refusées par l'empreinte (lien symbolique, trop gros) donnent un brouillon non validé, `hash: null`.
 
-- [ ] **Step 4: Implémenter `publish.ts`**
+- [x] **Step 4: Implémenter `publish.ts`**
 
 ```ts
 import { existsSync } from "node:fs";
@@ -14509,7 +14509,7 @@ export function createPublisher(deps: PublisherDeps) {
 ```
 `applyUpdateAll` met à jour toutes les instances de `id` (y compris celles déjà sur une version intermédiaire) ; une instance déjà sur la cible est laissée telle quelle par `updateInstance` (tâche 16). Un échec non `KiboError` est journalisé puis rapporté en `INTERNAL` : il ne bloque pas les autres instances (spec §7.2 étape 5).
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components && bun run typecheck && bun run check`
 Expected: PASS.
