@@ -3,6 +3,7 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Instance } from "@kibo/schema";
+import { HOST_DEFAULTS } from "./host-core";
 import {
   addInstance,
   boot,
@@ -19,6 +20,12 @@ let calls = 0;
 module.exports.server = {
   actions: { count: async () => { calls += 1; return calls; } },
   jobs: { sync: { everyMinutes: 5, run: async () => undefined } },
+};
+`;
+const CRASHING_JOB = `
+module.exports.server = {
+  actions: {},
+  jobs: { sync: { everyMinutes: 5, run: async () => { setTimeout(() => { throw new Error("the job broke its host"); }, 0); } } },
 };
 `;
 const FAILING_MIGRATION = `
@@ -51,6 +58,10 @@ const tamper = (hash: string, file: string) => {
   const path = join(home, "components", "store", "hello", "0.1.0", hash, "build", file);
   chmodSync(path, 0o600);
   writeFileSync(path, "evil");
+};
+const until = async (done: () => boolean) => {
+  const deadline = Date.now() + 5_000;
+  while (!done() && Date.now() < deadline) await Bun.sleep(20);
 };
 const versionOf = async (version: string) => {
   const list = await h.rpc({ method: "listComponents" });
@@ -143,25 +154,29 @@ describe("backend lifecycle", () => {
     const timers = fakeTimers();
     await start({ timers });
     const { projectId, pageId } = await createProject(h);
-    writeDraft(home, "0.1.0", { server: COUNTER });
+    writeDraft(home, "0.1.0", { server: CRASHING_JOB });
     const { hash } = await publishAndApprove(h, "trusted");
-    writeDraft(home, "0.2.0", { server: COUNTER });
-    await publishAndApprove(h, "trusted");
-    const inst = await addInstance(h, projectId, pageId, "hello@0.1.0");
-    const deadline = Date.now() + 5_000;
-    while (timers.ticks.length === 0 && Date.now() < deadline) await Bun.sleep(20);
-    const [tick] = timers.ticks;
-    await h.rpc({ method: "updateInstance", projectId, instanceId: inst.id, to: "0.2.0" });
-    tamper(hash, "server.js");
     const errors = spyOn(console, "error").mockImplementation(() => undefined);
-    tick?.();
-    await h.stop();
-    expect(h.components.assets("hello", "0.1.0", hash)).toBeNull();
-    await Bun.sleep(100);
-    const logged = errors.mock.calls.flat().map(String);
-    errors.mockRestore();
-    expect(tick).toBeDefined();
-    expect(logged.filter((m) => m.includes("closed"))).toEqual([]);
+    const logged = () => errors.mock.calls.flat().map(String);
+    try {
+      await addInstance(h, projectId, pageId, "hello@0.1.0");
+      await until(() => timers.ticks.length > 0);
+      const [tick] = timers.ticks;
+      expect(tick).toBeDefined();
+      tick?.();
+      await until(() => logged().some((m) => m.includes("the job broke its host")));
+      await Bun.sleep(HOST_DEFAULTS.backoffMs[0] + 50);
+      tamper(hash, "server.js");
+      tick?.();
+      await Bun.sleep(0);
+      await h.stop();
+      expect(h.components.assets("hello", "0.1.0", hash)).toBeNull();
+      await Bun.sleep(100);
+      expect(logged().some((m) => m.includes("changed on disk"))).toBe(true);
+      expect(logged().filter((m) => m.includes("closed"))).toEqual([]);
+    } finally {
+      errors.mockRestore();
+    }
   });
 
   test("a failed migration keeps its message under MIGRATION_FAILED", async () => {

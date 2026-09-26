@@ -129,3 +129,76 @@ test("a refresh still describing when the scheduler stops starts no timer", asyn
   expect(asked).toEqual(["x@1.0.0"]);
   expect(scheduler.scheduled()).toEqual([]);
 });
+
+const retargetable = (initial: JobTarget, minutesOf: (ref: string) => number = () => 5) => {
+  const timers = new Map<number, { fn: () => void; ms: number }>();
+  const cleared: number[] = [];
+  const runs: { ref: string; config: Record<string, unknown> }[] = [];
+  let seq = 0;
+  const state = { target: initial };
+  const scheduler = createJobScheduler({
+    targets: () => [state.target],
+    describe: async (ref) => ({ actions: [], jobs: [{ name: "sync", everyMinutes: minutesOf(ref) }] }),
+    run: async (t) => {
+      runs.push({ ref: t.ref, config: t.config });
+    },
+    setInterval: (fn, ms) => {
+      seq += 1;
+      timers.set(seq, { fn, ms });
+      return seq;
+    },
+    clearInterval: (id) => {
+      cleared.push(Number(id));
+      timers.delete(Number(id));
+    },
+  });
+  const tickAll = async () => {
+    for (const t of timers.values()) t.fn();
+    await Promise.resolve();
+  };
+  return { scheduler, timers, cleared, runs, state, tickAll };
+};
+
+const helloTarget: JobTarget = { projectId: "p", instanceId: "a", ref: "hello@0.1.0", config: { n: 1 } };
+
+test("a job follows its instance to a new version", async () => {
+  const t = retargetable(helloTarget);
+  await t.scheduler.refresh();
+  t.state.target = { ...helloTarget, ref: "hello@0.2.0" };
+  await t.scheduler.refresh();
+  expect(t.cleared).toEqual([1]);
+  expect([...t.timers.keys()]).toEqual([2]);
+  await t.tickAll();
+  expect(t.runs).toEqual([{ ref: "hello@0.2.0", config: { n: 1 } }]);
+  t.scheduler.stop();
+});
+
+test("a job runs with the instance's new config", async () => {
+  const t = retargetable(helloTarget);
+  await t.scheduler.refresh();
+  t.state.target = { ...helloTarget, config: { n: 2 } };
+  await t.scheduler.refresh();
+  expect(t.cleared).toEqual([1]);
+  await t.tickAll();
+  expect(t.runs).toEqual([{ ref: "hello@0.1.0", config: { n: 2 } }]);
+  t.scheduler.stop();
+});
+
+test("a job takes the interval declared by the new version", async () => {
+  const t = retargetable(helloTarget, (ref) => (ref === "hello@0.1.0" ? 5 : 15));
+  await t.scheduler.refresh();
+  t.state.target = { ...helloTarget, ref: "hello@0.2.0" };
+  await t.scheduler.refresh();
+  expect([...t.timers.values()].map((x) => x.ms)).toEqual([900_000]);
+  t.scheduler.stop();
+});
+
+test("an unchanged target keeps its timer", async () => {
+  const t = retargetable(helloTarget);
+  await t.scheduler.refresh();
+  t.state.target = { ...helloTarget, config: { n: 1 } };
+  await t.scheduler.refresh();
+  expect(t.cleared).toEqual([]);
+  expect([...t.timers.keys()]).toEqual([1]);
+  t.scheduler.stop();
+});

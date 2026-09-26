@@ -18,7 +18,9 @@ export type JobScheduler = { refresh(): Promise<void>; stop(): void; scheduled()
 
 type Wanted = { target: JobTarget; job: string; minutes: number };
 type Cancel = () => void;
+type Scheduled = { cancel: Cancel; signature: string };
 
+const signatureOf = (w: Wanted) => JSON.stringify([w.target.ref, w.target.config, w.minutes]);
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 function timerFactory(deps: JobSchedulerDeps): (fn: () => void, ms: number) => Cancel {
@@ -57,7 +59,7 @@ async function describeAll(
 export function createJobScheduler(deps: JobSchedulerDeps): JobScheduler {
   const every = timerFactory(deps);
   const log = deps.log ?? ((line: string) => console.error(`[kibo-daemon] ${line}`));
-  const timers = new Map<string, Cancel>();
+  const timers = new Map<string, Scheduled>();
   const running = new Set<string>();
   let stopped = false;
 
@@ -85,22 +87,20 @@ export function createJobScheduler(deps: JobSchedulerDeps): JobScheduler {
           });
         }
       }
-      for (const [key, cancel] of timers) {
-        if (wanted.has(key)) continue;
-        cancel();
+      for (const [key, scheduled] of timers) {
+        const w = wanted.get(key);
+        if (w && signatureOf(w) === scheduled.signature) continue;
+        scheduled.cancel();
         timers.delete(key);
       }
       for (const [key, w] of wanted) {
-        if (!timers.has(key))
-          timers.set(
-            key,
-            every(() => tick(key, w), w.minutes * 60_000),
-          );
+        if (timers.has(key)) continue;
+        timers.set(key, { cancel: every(() => tick(key, w), w.minutes * 60_000), signature: signatureOf(w) });
       }
     },
     stop() {
       stopped = true;
-      for (const cancel of timers.values()) cancel();
+      for (const { cancel } of timers.values()) cancel();
       timers.clear();
     },
     scheduled: () => [...timers.keys()].sort(),
