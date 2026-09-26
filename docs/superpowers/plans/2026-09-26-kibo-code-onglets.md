@@ -9505,7 +9505,7 @@ La phase 2 (`docs/superpowers/plans/2026-09-26-kibo-agents.md`) est exécutée a
   - déclencheurs du moteur de règles `pr_opened` (après `createPr` lié à un ticket) et `pr_merged` (quand le suivi passe une référence à `merged`), avec les règles par défaut de la spec §7 : PR ouverte → *En review*, PR mergée → *Terminé* ;
   - chemins cliquables dans la timeline des hooks : `LinkifiedText` avec `origin` = `"<KEY> · <hook> <outil>"` (maquette 23 : « Ouvert depuis KIB-12 · PostToolUse Edit »).
 
-- [ ] **Step 1: Tests (après lecture du plan de phase 2)**
+- [x] **Step 1: Tests (après lecture du plan de phase 2)**
 
 `packages/ui/src/code/agent-slots.test.tsx` : avec un faux client (même motif que `changes.test.tsx`) renvoyant un run `running` du profil `opus-dev-1` dont l'espace de travail est `/wt/kib-12`, vérifier que `ChangesView` rendu par `ContentView` pour ce worktree affiche « opus-dev-1 travaille dans ce worktree. Tes modifications peuvent entrer en conflit avec les siennes. », et qu'il ne l'affiche pas pour `/repo` ni quand le run est `done`. Vérifier que la case « Lancer sonnet-review sur la PR » n'apparaît que si un profil de review existe, et que cocher puis créer la PR appelle l'API de mise en file de la phase 2 avec le numéro de PR.
 
@@ -9516,7 +9516,7 @@ Dans `packages/daemon/src/code/code-service.test.ts`, ajouter : après `createPr
 Run: `bun test packages/ui/src/code/agent-slots.test.tsx packages/ui/src/palette packages/daemon/src/code/code-service.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 - `agent-slots.tsx` : hook `useChangesSlots` qui lit les runs par l'API de la phase 2 (abonnement WebSocket compris) et construit `ChangesSlots` ; `ContentView` le passe à `ChangesView` (`slots={useChangesSlots(...)}` via un petit composant `ChangesTab` pour respecter les règles des hooks).
 - `agent-items.ts` + ajout du groupe `agents` dans `palette-items.ts` et `CommandPalette.tsx` (icônes `Bell` en `text-orange-600 dark:text-orange-400` pour « Répondre », `Bot` pour « Assigner ») ; « Répondre » ouvre la réponse de la barre d'agents de la phase 2 ; « Assigner » ouvre son dialogue d'assignation (écran 27).
@@ -9525,7 +9525,7 @@ Expected: FAIL.
 
 Tout run lancé ici passe par la file d'attente (CLAUDE.md) ; aucun appel direct au binaire `claude`.
 
-- [ ] **Step 3: Vérifier et commiter**
+- [x] **Step 3: Vérifier et commiter**
 
 Run: `bun test && bun run check && bun run typecheck`
 Expected: PASS.
