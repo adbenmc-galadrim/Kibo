@@ -1,4 +1,5 @@
 import { frCode } from "./fr-code";
+import { frComponents } from "./fr-components";
 
 export const fr = {
   app: { name: "Kibo" },
@@ -78,17 +79,6 @@ export const fr = {
     empty: "Cette page est vide : ajoute un composant pour commencer.",
     addComponent: "Ajouter un composant",
     unknownComponent: (ref: string) => `Composant introuvable : ${ref}`,
-  },
-  addComponent: {
-    title: "Ajouter un composant",
-    builtin: "Intégrés",
-    pick: "Choisis un composant pour voir ce qu'il lit et modifie.",
-    permissions: "Permissions",
-    reads: "Lit",
-    writes: "Modifie",
-    local: "Source : locale",
-    submit: "Ajouter à la page",
-    failed: "Impossible d'ajouter le composant.",
   },
   newTicket: {
     title: "Nouveau ticket",
@@ -385,5 +375,6 @@ export const fr = {
     failed: (label: string) => `${label} a échoué`,
   },
   ...frCode,
+  ...frComponents,
   common: { cancel: "Annuler", error: "Une erreur est survenue." },
 } as const;

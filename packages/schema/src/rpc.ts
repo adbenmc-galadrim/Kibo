@@ -1,84 +1,32 @@
 import { z } from "zod";
 import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./agent";
+import { ComponentCall } from "./call";
 import type { CodeEvent } from "./code";
+import { ProjectCommand } from "./command";
+import {
+  ApprovableTrust,
+  type ComponentSummary,
+  type DraftSummary,
+  type PublishPreview,
+  type PublishResult,
+  type RegistryVersion,
+  type RuntimeInfo,
+  Sha256,
+} from "./component";
 import type { KiboErrorCode } from "./errors";
-import { ExternalRef } from "./external-ref";
 import { NodeId, ProjectKey } from "./ids";
-import { ComponentRef, type Instance, Layout } from "./instance";
+import type { Instance } from "./instance";
 import type { Link } from "./link";
-import { type Page, PageKind } from "./page";
+import type { NotesInfo } from "./note";
+import type { Page } from "./page";
 import type { ProjectMeta } from "./project";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
-import { type Status, StatusId } from "./status";
+import { SemVer } from "./semver";
+import type { Status, StatusId } from "./status";
 import { TabsState } from "./tabs";
-import { Assignee, type Ticket } from "./ticket";
+import type { Ticket } from "./ticket";
 
-const index = z.number().int().nonnegative().optional();
-
-export const ProjectCommand = z.discriminatedUnion("method", [
-  z.object({
-    method: z.literal("addPage"),
-    title: z.string(),
-    kind: PageKind,
-    parentId: NodeId.nullable().optional(),
-  }),
-  z.object({ method: z.literal("renamePage"), pageId: NodeId, title: z.string() }),
-  z.object({ method: z.literal("movePage"), pageId: NodeId, parentId: NodeId.nullable(), index }),
-  z.object({ method: z.literal("deletePage"), pageId: NodeId }),
-  z.object({
-    method: z.literal("createTicket"),
-    title: z.string(),
-    description: z.string().optional(),
-    statusId: StatusId.optional(),
-    parentId: NodeId.nullable().optional(),
-    assignee: Assignee.nullable().optional(),
-  }),
-  z.object({
-    method: z.literal("updateTicket"),
-    ticketId: NodeId,
-    title: z.string().optional(),
-    description: z.string().optional(),
-    domainId: z.string().nullable().optional(),
-    assignee: Assignee.nullable().optional(),
-  }),
-  z.object({
-    method: z.literal("setStatus"),
-    ticketId: NodeId,
-    statusId: StatusId,
-    reason: z.string().optional(),
-  }),
-  z.object({ method: z.literal("moveTicket"), ticketId: NodeId, parentId: NodeId.nullable(), index }),
-  z.object({ method: z.literal("deleteTicket"), ticketId: NodeId }),
-  z.object({ method: z.literal("addLink"), from: NodeId, to: NodeId, type: z.enum(["blocks", "relates"]) }),
-  z.object({ method: z.literal("removeLink"), linkId: z.string() }),
-  z.object({
-    method: z.literal("addInstance"),
-    pageId: NodeId,
-    component: ComponentRef,
-    layout: Layout.optional(),
-    config: z.record(z.string(), z.unknown()).optional(),
-  }),
-  z.object({ method: z.literal("removeInstance"), instanceId: z.string() }),
-  z.object({ method: z.literal("upsertExternalRef"), ticketId: NodeId, ref: ExternalRef }),
-]);
-export type ProjectCommand = z.infer<typeof ProjectCommand>;
-
-export type CommandResult = {
-  addPage: Page;
-  renamePage: null;
-  movePage: null;
-  deletePage: string[];
-  createTicket: Ticket;
-  updateTicket: Ticket;
-  setStatus: Ticket;
-  moveTicket: null;
-  deleteTicket: string[];
-  addLink: Link;
-  removeLink: null;
-  addInstance: Instance;
-  removeInstance: null;
-  upsertExternalRef: Ticket;
-};
+const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
 
 export type TicketView = Ticket & { progress: { done: number; total: number }; waitingOn: string[] };
 export type ProjectSnapshot = {
@@ -135,6 +83,44 @@ export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("setHost"), patch: HostSettings.partial() }),
   z.object({ method: z.literal("getTabs") }),
   z.object({ method: z.literal("saveTabs"), state: TabsState }),
+  z.object({ method: z.literal("listComponents") }),
+  z.object({
+    method: z.literal("componentCall"),
+    projectId: z.string().min(1),
+    instanceId: z.string().min(1),
+    call: ComponentCall,
+  }),
+  z.object({
+    method: z.literal("approveComponent"),
+    id: ComponentId,
+    version: SemVer,
+    hash: Sha256,
+    trust: ApprovableTrust,
+  }),
+  z.object({ method: z.literal("revokeComponent"), id: ComponentId, version: SemVer }),
+  z.object({ method: z.literal("rehashComponent"), id: ComponentId, version: SemVer }),
+  z.object({ method: z.literal("previewPublish"), id: ComponentId }),
+  z.object({
+    method: z.literal("publishComponent"),
+    id: ComponentId,
+    strategy: z.enum(["update-all", "new-version"]),
+  }),
+  z.object({
+    method: z.literal("updateInstance"),
+    projectId: z.string().min(1),
+    instanceId: z.string().min(1),
+    to: SemVer,
+  }),
+  z.object({ method: z.literal("uninstallComponent"), id: ComponentId, version: SemVer }),
+  z.object({ method: z.literal("listDrafts") }),
+  z.object({ method: z.literal("getNotesDir"), projectId: z.string().min(1) }),
+  z.object({
+    method: z.literal("setNotesDir"),
+    projectId: z.string().min(1),
+    dir: z.string().min(1).max(4096),
+  }),
+  z.object({ method: z.literal("getRuntimeInfo") }),
+  z.object({ method: z.literal("installCli") }),
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -157,6 +143,20 @@ export type RpcResult = {
   setHost: HostView;
   getTabs: TabsState;
   saveTabs: null;
+  listComponents: ComponentSummary[];
+  componentCall: unknown;
+  approveComponent: RegistryVersion;
+  revokeComponent: null;
+  rehashComponent: RegistryVersion;
+  previewPublish: PublishPreview;
+  publishComponent: PublishResult;
+  updateInstance: Instance;
+  uninstallComponent: null;
+  listDrafts: DraftSummary[];
+  getNotesDir: NotesInfo;
+  setNotesDir: NotesInfo;
+  getRuntimeInfo: RuntimeInfo;
+  installCli: { path: string };
 };
 
 export type RpcResponse =

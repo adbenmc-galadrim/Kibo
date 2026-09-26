@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import type { ComponentManifest } from "@kibo/schema";
+import { ComponentManifest } from "@kibo/schema";
 import { createMockSdk } from "./mock";
 
-const manifest: ComponentManifest = {
+const manifest = ComponentManifest.parse({
   id: "probe",
   version: "1.0.0",
   kind: "view",
   title: "Probe",
   reads: ["ticket", "status"],
   writes: ["ticket"],
-};
+});
 
 describe("sdk permissions", () => {
   test("reads and writes what the manifest declares", async () => {

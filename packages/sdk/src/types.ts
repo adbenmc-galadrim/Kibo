@@ -3,6 +3,7 @@ import type {
   ComponentManifest,
   EntityType,
   Link,
+  NoteMeta,
   Page,
   ProjectCommand,
   ProjectSnapshot,
@@ -13,7 +14,14 @@ import type {
 } from "@kibo/schema";
 import type { ComponentType } from "react";
 
-export type EntityMap = { ticket: TicketView; status: Status; link: Link; page: Page; run: TicketRun };
+export type EntityMap = {
+  ticket: TicketView;
+  status: Status;
+  link: Link;
+  page: Page;
+  run: TicketRun;
+  note: NoteMeta;
+};
 export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null };
 export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };
 

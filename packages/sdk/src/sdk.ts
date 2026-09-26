@@ -1,4 +1,5 @@
 import {
+  COMMAND_WRITES,
   type CommandResult,
   type ComponentManifest,
   type EntityType,
@@ -6,23 +7,6 @@ import {
   type ProjectCommand,
 } from "@kibo/schema";
 import type { EntityMap, KiboSdk, ProjectBackend, SdkContext } from "./types";
-
-const WRITES: Record<ProjectCommand["method"], EntityType | null> = {
-  addPage: "page",
-  renamePage: "page",
-  movePage: "page",
-  deletePage: "page",
-  createTicket: "ticket",
-  updateTicket: "ticket",
-  setStatus: "ticket",
-  moveTicket: "ticket",
-  deleteTicket: "ticket",
-  addLink: "link",
-  removeLink: "link",
-  addInstance: null,
-  removeInstance: null,
-  upsertExternalRef: "ticket",
-};
 
 export function createSdk(backend: ProjectBackend, manifest: ComponentManifest, ctx: SdkContext): KiboSdk {
   return {
@@ -37,11 +21,14 @@ export function createSdk(backend: ProjectBackend, manifest: ComponentManifest, 
         link: async () => (await backend.snapshot()).links,
         page: async () => (await backend.snapshot()).pages,
         run: () => backend.runs(),
+        note: () => {
+          throw new KiboError("PERMISSION_DENIED", "notes are served by componentCall");
+        },
       };
       return loaders[type]();
     },
     async run<C extends ProjectCommand>(cmd: C): Promise<CommandResult[C["method"]]> {
-      const entity = WRITES[cmd.method];
+      const entity = COMMAND_WRITES[cmd.method];
       if (entity === null || !manifest.writes.includes(entity)) {
         throw new KiboError("PERMISSION_DENIED", `${manifest.id} does not declare write ${cmd.method}`);
       }

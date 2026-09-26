@@ -7,6 +7,12 @@
     ".": "./src/index.ts",
     "./mock": "./src/mock.ts",
     "./conformance": "./src/conformance.tsx",
+    "./fixtures": "./src/fixtures.ts",
+    "./sandbox": "./src/sandbox.tsx",
+    "./server": "./src/server.ts",
+    "./migrations": "./src/migrations.ts",
+    "./dev": "./src/dev.tsx",
+    "./theme.css": "./src/theme.css",
     "./ui/*": "./src/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts"

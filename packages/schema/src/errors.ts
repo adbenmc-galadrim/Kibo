@@ -1,29 +1,45 @@
-export type KiboErrorCode =
-  | "TREE_CYCLE"
-  | "NOT_FOUND"
-  | "BLOCKED_REASON_REQUIRED"
-  | "INVALID_INPUT"
-  | "LINK_CYCLE"
-  | "STORE_CORRUPT"
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "PERMISSION_DENIED"
-  | "INVALID_TRANSITION"
-  | "PROFILE_IN_USE"
-  | "WORKSPACE_FAILED"
-  | "AGENT_CLI_NOT_FOUND"
-  | "INTERNAL"
-  | "NOT_A_REPO"
-  | "PATH_OUTSIDE_PROJECT"
-  | "GIT_FAILED"
-  | "GIT_STALE"
-  | "GIT_PUSHED"
-  | "GIT_BUSY"
-  | "FILE_CHANGED"
-  | "GH_UNAVAILABLE"
-  | "GH_FAILED"
-  | "EDITOR_UNAVAILABLE"
-  | "TOO_LARGE";
+export const KIBO_ERROR_CODES = [
+  "TREE_CYCLE",
+  "NOT_FOUND",
+  "BLOCKED_REASON_REQUIRED",
+  "INVALID_INPUT",
+  "LINK_CYCLE",
+  "STORE_CORRUPT",
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "PERMISSION_DENIED",
+  "INVALID_TRANSITION",
+  "PROFILE_IN_USE",
+  "WORKSPACE_FAILED",
+  "AGENT_CLI_NOT_FOUND",
+  "INTERNAL",
+  "NOT_A_REPO",
+  "PATH_OUTSIDE_PROJECT",
+  "GIT_FAILED",
+  "GIT_STALE",
+  "GIT_PUSHED",
+  "GIT_BUSY",
+  "FILE_CHANGED",
+  "GH_UNAVAILABLE",
+  "GH_FAILED",
+  "EDITOR_UNAVAILABLE",
+  "TOO_LARGE",
+  "HASH_MISMATCH",
+  "TRUST_REQUIRED",
+  "VERSION_EXISTS",
+  "VALIDATION_FAILED",
+  "MIGRATION_FAILED",
+  "COMPONENT_CRASHED",
+  "TIMEOUT",
+  "CONFLICT",
+  "RATE_LIMITED",
+  "QUOTA_EXCEEDED",
+] as const;
+
+export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];
+
+export const isKiboErrorCode = (v: unknown): v is KiboErrorCode =>
+  typeof v === "string" && (KIBO_ERROR_CODES as readonly string[]).includes(v);
 
 export class KiboError extends Error {
   constructor(
