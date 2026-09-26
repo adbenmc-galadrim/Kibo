@@ -106,6 +106,7 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 32. **En-tête de workspace** (tâche 38, écart de v0.3) : monogramme de la maquette (glyphe à cinq barres dans une tuile bordée, aussi sur l'onglet Accueil), nom du workspace et « Workspace local » ; nom stocké dans le doc workspace (`settings.name`, affiché « Perso » par défaut), changé par la commande de configuration `renameWorkspace` (1 à 40 caractères) ; menu : workspace courant coché, « Renommer le workspace… », « Paramètres du workspace ». Création et bascule entre plusieurs workspaces : point E6.
 33. **Seuil d'avertissement de Vite à 800 kB bruts** (relecture de la tâche 35, décision 29) : après découpage, le chunk d'entrée fait 724 kB bruts (220 kB gzip) et Vite avertit encore au-delà de 500 kB. Ce qui reste est le socle du premier écran : react-dom (environ un tiers), le code du shell, zod (chaque instantané et chaque RPC est validé au démarrage), @dnd-kit (Kanban), Radix (menus, dialogues, infobulles du shell). `manualChunks` ne réduit pas le chargement initial et n'apporte rien au cache d'une UI servie en local par le démon ; différer zod ou Radix est impossible sans casser le premier rendu, et @dnd-kit ne ferait gagner qu'environ 30 kB gzip. On règle donc `build.chunkSizeWarningLimit: 800` dans `packages/ui/vite.config.ts` : la vraie garde est le budget gzip de `bun run budget` (230 kB, soit environ 760 kB bruts au ratio mesuré) ; l'avertissement de Vite reste un filet grossier juste au-dessus, et le budget se déclenche avant lui. Le budget ne compte que le JS : le CSS (un seul fichier Tailwind généré depuis toutes les sources, 17,5 kB gzip, non découpable) et les polices sont hors budget, volontairement. Les composants tiers construits par le devkit (`Bun.build` sans découpage) gardent un seul fichier : un `import()` y est intégré et évalué à la demande, `lazyPanel` fonctionne sans gain de taille ; chaque composant a sa propre iframe, son poids ne pèse pas sur le chargement du shell.
 34. **Aucun backend lancé après un arrêt** (relecture sécurité de la tâche 30) : `stop()` d'un hôte pendant son `beforeStart` (vérification de l'empreinte, préparation du bac à sable) ne doit pas laisser le démarrage se poursuivre : `start()` relève la génération avant `beforeStart` et, si elle a changé au retour, rejette en `COMPONENT_CRASHED` sans appeler `open` (aucun processus lancé). `beforeStart` vérifie aussi que la version est toujours approuvée (`registry.active(ref)`, sinon `TRUST_REQUIRED`), pas seulement l'empreinte. `createBackends` passe à l'état fermé après `stopAll()` : tout `action`, `runJob`, `migrate` ou `describe` ultérieur rejette (`COMPONENT_CRASHED`) sans créer d'hôte. Tests : arrêt pendant un `beforeStart` suspendu ⇒ `open` jamais appelé ; `revokeComponent` pendant ce `beforeStart` ⇒ le job n'est pas exécuté ; `runJob` après `stopAll()` ⇒ rejet et `running()` vide. En mode `--dev` seulement (drapeau explicite de `main.ts`, jamais passé par la coque Tauri), l'origine Vite `http://localhost:5173` s'ajoute aux origines de l'API et au `frame-ancestors` du port sandbox.
+35. **Arrêt du démon drainé** (relecture sécurité de la tâche 32) : `server.stop(true)` coupe les connexions mais laisse s'exécuter les gestionnaires en cours ; une vérification d'empreinte (`markTampered`), une approbation ou une publication qui finit après `store.close()` écrit dans une base fermée (« Database has closed ») et perd sa ligne de journal ; un processus de tests lancé par la validation survit au démon (son minuteur meurt avec lui). `ComponentsService.stop()` devient asynchrone : il refuse toute nouvelle requête (`INTERNAL`, « the daemon is stopping »), arrête jobs et backends, interrompt les validations en cours (`AbortSignal` jusqu'au processus de tests, tué), puis attend les requêtes en cours (`Promise.allSettled`, borne `drainMs`, défaut 5 000 ms ; au-delà, une ligne `[kibo-daemon] n requests still running at shutdown`) avant `notes.close()`, `events.flush()` et la fermeture de la base. Aucune erreur avalée : une requête interrompue rejette avec son code. Ce n'est pas une faille (rien n'est lancé après l'arrêt, décision 34 ; une empreinte altérée est redétectée par `verifyAll` au démarrage suivant), c'est la garantie qu'aucune écriture n'est perdue ni aucune erreur non gérée à l'arrêt.
 
 ### Points à arbitrer par Adam (option A appliquée par défaut, l'équipe ne s'arrête pas)
 
@@ -16636,6 +16637,67 @@ git commit -m "test(daemon): composant tiers bloqué"
 
 ---
 
+### Task 30b: Arrêt du démon drainé et tests d'évasion durcis (correction, relecture sécurité de la tâche 32)
+
+Tâche à risque (relue par `kibo-lead`). Démarre après l'intégration de la tâche 32 (elle modifie `exit.test.ts`). Applique la décision 35 et comble trois angles morts relevés à la relecture de la tâche 32.
+
+**Files:**
+- Modify: `packages/daemon/src/components/service.ts`, `packages/daemon/src/components/publish.ts`, `packages/devkit/src/validate.ts`, `packages/devkit/src/validate-tests.ts`, `packages/daemon/src/daemon.ts` (si l'ordre des fermetures doit changer), `packages/daemon/src/components/exit.test.ts`, `packages/devkit/fixtures/evil/server.ts`, `packages/daemon/src/components/process-host-sandbox.test.ts`, `packages/devkit/src/os-sandbox.test.ts`, `packages/daemon/src/components/gate.test.ts`, `docs/superpowers/specs/2026-09-26-kibo-composants.md` (§15)
+- Test: `service.test.ts` (ou `service-backends.test.ts`), `validate.test.ts`, `exit.test.ts`
+
+**Interfaces:**
+- `ComponentsService.stop(): Promise<void>` (au lieu de `void`) ; `ComponentsServiceDeps.drainMs?: number` (défaut 5 000).
+- `ValidateOptions.signal?: AbortSignal` et `TestRunOptions.signal?: AbortSignal` : à l'abandon, le processus de tests est tué (`proc.kill()`), le minuteur effacé, et `validateComponent` rejette en `KiboError("INTERNAL", "validation aborted")` (pas un rapport « tests échoués » : ce n'est pas un défaut du composant).
+- `PublisherDeps.validate(dir: string, signal: AbortSignal): Promise<ValidationReport>` ; le service passe le signal de son `AbortController` d'arrêt.
+
+- [ ] **Step 1: Spec d'abord**
+
+Reporter mot pour mot dans la spec de phase, §15, les décisions 33, 34 et 35 de ce plan (après la 32), puis vérifier avec la commande de l'étape 3 de la tâche 39 (aucune différence).
+
+- [ ] **Step 2: Tests qui échouent (arrêt)**
+
+1. `handle` d'une `publishComponent` dont `validate` est suspendue sur un `Promise` différé : appeler `stop()` ; `stop()` ne se résout pas tant que la requête est en cours (course de 50 ms) ; le signal reçu par `validate` est abandonné ; une fois `validate` rejetée, `stop()` se résout, la requête rejette avec son code, et `console.error` (espionné) n'a reçu aucun message contenant « closed ».
+2. `handle` après `stop()` ⇒ rejet `INTERNAL` immédiat, `backends.running()` vide.
+3. Requête qui ne finit jamais, `drainMs: 50` ⇒ `stop()` se résout après ~50 ms et journalise « 1 requests still running at shutdown ».
+4. `validate.test.ts` : fixture dont un test boucle sans fin, `signal` abandonné après 200 ms ⇒ `validateComponent` rejette `INTERNAL` en moins de 2 s et le processus de tests n'existe plus (`ps`, comme `runtimeChildren` de `exit.test-helper.ts`).
+5. `exit.test.ts`, dernier test : espionner `console.error` pendant `stop()` ; aucun message ne contient « Database has closed ».
+
+Run: `bun test packages/daemon/src/components/service.test.ts packages/devkit/src/validate.test.ts` — Expected: FAIL.
+
+- [ ] **Step 3: Implémentation**
+
+Dans `createComponentsService` : `let stopping = false`, `const inflight = new Set<Promise<unknown>>()`, `const shutdown = new AbortController()` ; `handle` rejette si `stopping`, sinon enregistre sa promesse dans `inflight` et l'en retire au `finally`. `stop()` : `stopping = true` ; `jobs.stop()` ; `backends.stopAll()` ; `shutdown.abort()` ; attendre `Promise.allSettled([...inflight])` ou `drainMs` (le premier des deux, minuteur effacé) ; journaliser le reste s'il y en a ; `notes.close()` ; `events.flush()`. `daemon.ts` attend déjà `components.stop()` avant `store.close()` (fermetures « back » en ordre inverse) : le vérifier par le test 5. `runComponentTests` écoute `signal` (`addEventListener("abort", …, { once: true })`, retiré à la fin).
+
+- [ ] **Step 4: Angles morts du test de sortie**
+
+Dans l'action `escape` de `fixtures/evil/server.ts` (entrée enrichie de `daemonPid`, passé par le test) et dans l'objet attendu de `exit.test.ts` :
+- `signal: await barrier(() => process.kill(target.daemonPid, 0))` ⇒ `"blocked"` (macOS : `(deny default)` couvre `signal` ; Linux : `--unshare-pid`, le pid n'existe pas). Le titre du test promet « other processes » : aujourd'hui seul le lancement est essayé.
+- `env: Object.keys(process.env).sort()` ⇒ `["KIBO_COMPONENT"]` (garde contre une régression qui transmettrait `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`… au backend).
+- `descriptors` : pour `fd` de 5 à 255, `fstatSync(fd)` ; retenir ceux qui sont `isFile()` ou `isSocket()` ⇒ `[]` (un descripteur hérité, base SQLite ou socket d'écoute, contournerait le bac à sable, qui ne contrôle que les ouvertures ; vérifié absent sous macOS à la relecture, à prouver sous Linux).
+Comme à la tâche 32 : retirer la barrière (profil permissif, `env` du démon passé tel quel, fichier ouvert sans `O_CLOEXEC` avant le `spawn`) et constater l'échec, puis remettre.
+
+- [ ] **Step 5: Tentatives de lancement non vides**
+
+`/usr/bin/echo` n'existe pas sous macOS : la tentative « spawn » de `process-host-sandbox.test.ts` et « spawnUsr » de `os-sandbox.test.ts` y échouent par `ENOENT`, sans rien prouver. Remplacer par `cp.execFileSync("/bin/sh", ["-c", "exit 0"])` (`process-host-sandbox.test.ts`) et `/usr/bin/true` (`os-sandbox.test.ts`, présent sous macOS et Linux), et poser hors du bac à sable la précondition `expect(existsSync(cible)).toBe(true)`. Sous Linux, l'absence dans le bac à sable reste la barrière voulue (décision 24) : le résultat attendu est inchangé (`"blocked"`).
+
+- [ ] **Step 6: Commandes réservées, chaque couche testée**
+
+Les trois contrôles (`isReservedCommand` en tête de `gate.call`, branche réservée de `missingPermission`, `assertShellCommand` sur la RPC `command`) se recouvrent pour un composant tiers ; le test de sortie ne peut donc pas les isoler, c'est voulu. Ajouter dans `gate.test.ts` : `missingPermission` avec toutes les écritures accordées renvoie `"write:setInstanceData"` et `"write:setInstanceComponent"` (le contrôle de tête l'est déjà par le cas « built-ins included »).
+
+- [ ] **Step 7: Vérifier et committer**
+
+Run: `bun test packages components`, `bun run check`, `bun run typecheck` — Expected: PASS.
+
+```bash
+git add docs/superpowers/specs/2026-09-26-kibo-composants.md packages/daemon/src/components/service.ts packages/daemon/src/components/publish.ts packages/devkit/src/validate.ts packages/devkit/src/validate-tests.ts
+git commit -m "fix(daemon): arrêt drainé, rien après fermeture"
+git add packages/devkit/fixtures/evil/server.ts packages/daemon/src/components/exit.test.ts packages/daemon/src/components/process-host-sandbox.test.ts packages/devkit/src/os-sandbox.test.ts packages/daemon/src/components/gate.test.ts
+git commit -m "test(daemon): évasions signal, env, descripteurs"
+```
+(ajouter aux commandes `git add` les fichiers de test modifiés à l'étape 2)
+
+---
+
 ### Task 33: Parcours Playwright des composants (sombre et clair)
 
 **Files:**
@@ -18204,6 +18266,7 @@ Une vague démarre quand toutes les tâches de la vague précédente sont intég
 | V6 | 22 Serveurs et CSP · 27 Publication et brouillons | `daemon/src/components/{sandbox-server,daemon-info}`, `daemon/src/{server,main}.ts` · `daemon/src/components/{publish,drafts}`, `fake-store.test-helper` (`put`) | V5 |
 | V7 | 30 Assemblage du démon | `daemon/src/{service,store,daemon,main}.ts`, `daemon/src/components/service.ts` | V6 |
 | V8 | 31 CLI · 32 Test de sortie · 33 Playwright | `packages/cli/`, `sdk/src/dev*.tsx`, `CLAUDE.md` · `devkit/fixtures/evil`, `daemon/src/components/exit.test.ts` · `e2e/` | V7 |
+| V8b | 30b Arrêt drainé et tests d'évasion durcis (correction) | `daemon/src/components/{service,publish,exit.test,gate.test,process-host-sandbox.test}`, `devkit/src/{validate,validate-tests,os-sandbox.test}`, `devkit/fixtures/evil/server.ts`, spec §15 | 32 intégrée |
 | V9 | 34 Binaire, toolchain, installation de `kibo`, CI | `apps/desktop/`, `daemon/src/components/install-cli`, `ui/src/settings/`, `.github/workflows/ci.yml` | V8 |
 
 **Piste transverse (écarts de v0.3, tâches 35 à 39).** Elle court en parallèle des vagues V7 à V9 : ni la tâche 30 ni les vagues suivantes ne l'attendent, et elle n'attend pas la tâche 30 (aucune ne touche `daemon/src/{service,store,daemon,main}.ts` ni `components/service.ts`). Seul le jalon v0.4 attend toute la piste. Worktrees `.claude/worktrees/p4-t<n>`, branches `feat/p4-t<n>`.
@@ -18215,7 +18278,7 @@ Une vague démarre quand toutes les tâches de la vague précédente sont intég
 
 Fichiers partagés dans la piste et avec V7 à V9 : `package.json` (scripts, tâches 31 et 35), `packages/ui/src/i18n/fr.ts` (ajouts en fin d'objet), `AppSidebar.tsx` et `Shell.tsx` (37 et 38 : blocs distincts), `e2e/screens.spec.ts` (36, 37, 38 : tests ajoutés en fin de fichier ; la tâche 33 crée `e2e/components.spec.ts`, sans conflit) : conflits triviaux, résolus au rebase. La tâche 28b (`ui/src/shell/SandboxFrame.tsx`) et la tâche 35 ne touchent pas les mêmes fichiers.
 
-Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-reviewer`) : 1, 11, 11b, 15, 22, 23, 30, 32, 34, 35 (chemin de démarrage de l'UI et conformité des vues différées).
+Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-reviewer`) : 1, 11, 11b, 15, 22, 23, 30, 30b, 32, 34, 35 (chemin de démarrage de l'UI et conformité des vues différées).
 
 ## Jalon v0.4
 
