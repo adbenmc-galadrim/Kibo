@@ -23,6 +23,7 @@ export const MyTicketsPage = lazyPanel(
   () => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage),
   fr.lazy,
 );
+export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
 export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
 export const FileTabView = lazyPanel(
   () => import("../files/FileTabView").then((m) => m.FileTabView),

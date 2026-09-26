@@ -26,9 +26,9 @@ function SoonBadge() {
   return <Badge variant="secondary">{fr.newProject.soon}</Badge>;
 }
 
-type Props = { open: boolean; onOpenChange: (o: boolean) => void; count: number };
+type Props = { open: boolean; onOpenChange: (o: boolean) => void; count: number; focusFolder?: boolean };
 
-export function NewProjectDialog({ open, onOpenChange, count }: Props) {
+export function NewProjectDialog({ open, onOpenChange, count, focusFolder = false }: Props) {
   const id = useId();
   const [name, setName] = useState("");
   const [key, setKey] = useState<string | null>(null);
@@ -64,7 +64,12 @@ export function NewProjectDialog({ open, onOpenChange, count }: Props) {
           </DialogHeader>
           <div className="grid gap-2">
             <Label htmlFor={`${id}-name`}>{fr.newProject.name}</Label>
-            <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            <Input
+              id={`${id}-name`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoFocus={!focusFolder}
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor={`${id}-key`}>{fr.newProject.key}</Label>
@@ -82,6 +87,7 @@ export function NewProjectDialog({ open, onOpenChange, count }: Props) {
               id={`${id}-folder`}
               value={folder}
               onChange={(e) => setFolder(e.target.value)}
+              autoFocus={focusFolder}
               placeholder="/Users/adam/code/kibo"
               className="font-mono"
             />

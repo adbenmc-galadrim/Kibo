@@ -15,6 +15,7 @@ export type SheetTicket = { projectId: string; ticketId: string };
 
 export type DialogsState = {
   newProject: boolean;
+  newProjectFocus: "name" | "folder";
   newPageParent: string | null | undefined;
   sheet: SheetTicket | null;
   newTicket: NewTicketDefaults | null;
@@ -25,6 +26,7 @@ export type DialogsState = {
 
 export const NO_DIALOG: DialogsState = {
   newProject: false,
+  newProjectFocus: "name",
   newPageParent: undefined,
   sheet: null,
   newTicket: null,
@@ -69,8 +71,9 @@ export function ShellDialogs({
       {newProjectOpened && (
         <NewProjectDialog
           open={state.newProject}
-          onOpenChange={(o) => set({ newProject: o })}
+          onOpenChange={(o) => set(o ? { newProject: true } : { newProject: false, newProjectFocus: "name" })}
           count={projectsCount}
+          focusFolder={state.newProjectFocus === "folder"}
         />
       )}
       {project && state.newPageParent !== undefined && (

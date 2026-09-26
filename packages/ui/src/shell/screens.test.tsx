@@ -1,12 +1,29 @@
 import { expect, mock, test } from "bun:test";
-import { DEFAULT_WORKFLOW, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
+import { DEFAULT_WORKFLOW, type Environment, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 
-mock.module("../api", () => ({ client: { pair: () => Promise.resolve() } }));
+const environment: Environment = {
+  daemon: { address: "127.0.0.1:47831", home: "/Users/adam/.kibo" },
+  ai: {
+    available: true,
+    reason: null,
+    version: "2.1.283",
+    loggedIn: true,
+    profiles: { assistant: true, generateur: true },
+  },
+  git: "2.51",
+  gh: "2.80",
+  capacity: { cores: 8, ramGb: 16, hostSlots: 3 },
+  github: { connected: false },
+};
+
+mock.module("../api", () => ({ client: { pair: () => Promise.resolve(), rpc: async () => environment } }));
 
 const { Overview } = await import("./Overview");
 const { ProjectHome } = await import("../pages/ProjectHome");
 const { PairingScreen } = await import("./PairingScreen");
+const { ContentView } = await import("./ContentView");
+const { NewProjectDialog } = await import("../dialogs/NewProjectDialog");
 
 const counts = { backlog: 1, todo: 9, in_progress: 6, in_review: 2, blocked: 1, done: 5 };
 const kibo: ProjectSummary = {
@@ -67,4 +84,35 @@ test("PairingScreen shows the logo, a centred title and the security notice", ()
   expect(screen.getByRole("img", { name: "Kibo" })).toBeTruthy();
   expect(screen.getByText("Appairer ce navigateur")).toBeTruthy();
   expect(screen.getByText(/n'est jamais envoyé ailleurs/)).toBeTruthy();
+});
+
+const contentProps = {
+  target: null,
+  viewer: "adam",
+  project: null,
+  domains: undefined,
+  startEditing: false,
+  onNewProject: () => {},
+  onImportProject: () => {},
+  onNewPage: () => {},
+  onOpen: () => {},
+  onOpenFile: () => {},
+  onAssign: () => {},
+};
+
+test("ContentView welcomes a workspace without any project", async () => {
+  render(<ContentView {...contentProps} projects={[]} />);
+  expect(await screen.findByText("Bienvenue dans Kibo")).toBeTruthy();
+});
+
+test("ContentView keeps the overview once a project exists", () => {
+  render(<ContentView {...contentProps} projects={[kibo]} />);
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Bonjour Adam");
+  expect(screen.queryByText("Bienvenue dans Kibo")).toBeNull();
+});
+
+test("NewProjectDialog focuses the folder when importing", async () => {
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} focusFolder />);
+  const folder = await screen.findByLabelText("Dossier du projet");
+  expect(document.activeElement).toBe(folder);
 });

@@ -103,6 +103,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       domains={[]}
       startEditing={false}
       onNewProject={() => {}}
+      onImportProject={() => {}}
       onNewPage={() => {}}
       onOpen={() => {}}
       onOpenFile={() => {}}

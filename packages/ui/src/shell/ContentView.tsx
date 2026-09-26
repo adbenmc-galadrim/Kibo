@@ -5,7 +5,7 @@ import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
 import { TicketTab } from "../pages/TicketTab";
 import { targetToHash } from "../tabs/target-hash";
-import { ChangesView, FileTabView } from "./lazy-screens";
+import { ChangesView, FileTabView, Welcome } from "./lazy-screens";
 import { Overview } from "./Overview";
 
 type Props = {
@@ -16,6 +16,7 @@ type Props = {
   domains: Domain[] | undefined;
   startEditing: boolean;
   onNewProject(): void;
+  onImportProject(): void;
   onNewPage(): void;
   onOpen(target: TabTarget): void;
   onOpenFile(ref: FileRef): void;
@@ -26,6 +27,14 @@ const missing = (label: string) => <p className="p-8 text-sm text-muted-foregrou
 
 export function ContentView(p: Props) {
   const t = p.target;
+  if (!t && p.projects.length === 0)
+    return (
+      <Welcome
+        onCreate={p.onNewProject}
+        onImport={p.onImportProject}
+        onConnectGithub={() => p.onOpen({ kind: "screen", screen: "integrations" })}
+      />
+    );
   if (!t) return <Overview viewer={p.viewer} projects={p.projects} onNewProject={p.onNewProject} />;
   if (!p.project) return null;
   switch (t.kind) {

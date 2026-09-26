@@ -238,6 +238,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     domains={config?.domains}
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
                     onNewProject={() => set({ newProject: true })}
+                    onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
                     onNewPage={() => set({ newPageParent: null })}
                     onOpen={(t) => go(t)}
                     onOpenFile={(ref) => set({ preview: ref })}
