@@ -36,6 +36,7 @@ export type Backends = {
   describe(ref: string): Promise<BackendDescription>;
   stop(ref: string): void;
   stopAll(): void;
+  running(): string[];
 };
 
 const isRecord = (v: unknown): v is Json => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -111,5 +112,6 @@ export function createBackends(deps: BackendsDeps): Backends {
       for (const { host } of hosts.values()) host.stop();
       hosts.clear();
     },
+    running: () => [...hosts.keys()],
   };
 }

@@ -24,6 +24,7 @@ import {
 import type { LoroDoc } from "loro-crdt";
 import { applyRules, createDataPort } from "./agents/data-port";
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
+import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
 import { loadDoc, type Store } from "./store";
 import { readConfig, runConfigCommand } from "./workspace-config";
@@ -44,11 +45,18 @@ export type AgentsPort = Pick<
   | "onRunState"
 >;
 
+export type ComponentsPort = {
+  handle(req: ComponentRequest): Promise<unknown>;
+  afterCommand(projectId: string): void;
+};
+
 export type Service = {
   handle(req: RpcRequest): unknown;
   onChange(listener: (message: ChangeMessage) => void): () => void;
+  docs: Docs;
   agentData: AgentDataPort;
   attachAgents(agents: AgentsPort): () => void;
+  attachComponents(components: ComponentsPort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
 };
 
@@ -60,7 +68,7 @@ const projectDocId = (id: string) => `project:${id}`;
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
 
-export function call<R extends RpcRequest>(service: Service, req: R): RpcResult[R["method"]] {
+export function call<R extends ShellRequest>(service: Service, req: R): RpcResult[R["method"]] {
   return service.handle(req) as RpcResult[R["method"]];
 }
 
@@ -100,6 +108,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   }
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
+  let components: ComponentsPort | null = null;
   const docs: Docs = {
     workspace,
     project(id) {
@@ -116,6 +125,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       for (const listener of listeners) listener(message);
     },
   };
+  const componentsReady = (): ComponentsPort => {
+    if (!components) throw new KiboError("INTERNAL", "components are not ready");
+    return components;
+  };
   const agentsReady = (): AgentsPort => {
     if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
     return agents;
@@ -130,6 +143,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     docs.save(projectId);
     docs.emit({ projectId });
     if (changesDomainUsage(command)) docs.emit({ topic: "config" });
+    components?.afterCommand(projectId);
     return result;
   };
 
@@ -167,6 +181,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   };
 
   return {
+    docs,
     agentData: createDataPort(docs),
     attachAgents(port) {
       agents = port;
@@ -180,12 +195,19 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         agents = null;
       };
     },
+    attachComponents(port) {
+      components = port;
+      return () => {
+        components = null;
+      };
+    },
     triggerRules(projectId, trigger) {
       if (applyRules(docs.project(projectId), trigger).length === 0) return;
       docs.save(projectId);
       docs.emit({ projectId });
     },
     handle(req) {
+      if (isComponentRequest(req)) return componentsReady().handle(req);
       switch (req.method) {
         case "getSession":
           return { user: opts.user, notifications: opts.notifications ?? "browser" };

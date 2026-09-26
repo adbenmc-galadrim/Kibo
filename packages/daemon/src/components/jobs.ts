@@ -40,9 +40,11 @@ async function describeAll(
   deps: JobSchedulerDeps,
   refs: string[],
   log: (line: string) => void,
+  stopped: () => boolean,
 ): Promise<Map<string, BackendDescription>> {
   const described = new Map<string, BackendDescription>();
   for (const ref of refs) {
+    if (stopped()) break;
     try {
       described.set(ref, await deps.describe(ref));
     } catch (e) {
@@ -57,6 +59,7 @@ export function createJobScheduler(deps: JobSchedulerDeps): JobScheduler {
   const log = deps.log ?? ((line: string) => console.error(`[kibo-daemon] ${line}`));
   const timers = new Map<string, Cancel>();
   const running = new Set<string>();
+  let stopped = false;
 
   const tick = (key: string, w: Wanted) => {
     if (running.has(key)) return log(`job ${key} of ${w.target.ref} skipped: previous run not finished`);
@@ -70,7 +73,8 @@ export function createJobScheduler(deps: JobSchedulerDeps): JobScheduler {
   return {
     async refresh() {
       const targets = deps.targets();
-      const described = await describeAll(deps, [...new Set(targets.map((t) => t.ref))], log);
+      const described = await describeAll(deps, [...new Set(targets.map((t) => t.ref))], log, () => stopped);
+      if (stopped) return;
       const wanted = new Map<string, Wanted>();
       for (const target of targets) {
         for (const job of described.get(target.ref)?.jobs ?? []) {
@@ -95,6 +99,7 @@ export function createJobScheduler(deps: JobSchedulerDeps): JobScheduler {
       }
     },
     stop() {
+      stopped = true;
       for (const cancel of timers.values()) cancel();
       timers.clear();
     },

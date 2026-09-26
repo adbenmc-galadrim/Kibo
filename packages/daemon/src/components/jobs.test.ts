@@ -98,3 +98,34 @@ test("a failed run is logged and the job stays scheduled", async () => {
   expect(scheduler.scheduled()).toEqual(["a:sync"]);
   scheduler.stop();
 });
+
+test("a refresh still describing when the scheduler stops starts no timer", async () => {
+  let started = 0;
+  let described: () => void = () => {};
+  const asked: string[] = [];
+  const scheduler = createJobScheduler({
+    targets: () => [
+      { projectId: "p", instanceId: "a", ref: "x@1.0.0", config: {} },
+      { projectId: "p", instanceId: "b", ref: "y@1.0.0", config: {} },
+    ],
+    describe: (ref) => {
+      asked.push(ref);
+      return new Promise((resolve) => {
+        described = () => resolve({ actions: [], jobs: [{ name: "sync", everyMinutes: 5 }] });
+      });
+    },
+    run: async () => undefined,
+    setInterval: () => {
+      started += 1;
+      return started;
+    },
+    clearInterval: () => {},
+  });
+  const refresh = scheduler.refresh();
+  scheduler.stop();
+  described();
+  await refresh;
+  expect(started).toBe(0);
+  expect(asked).toEqual(["x@1.0.0"]);
+  expect(scheduler.scheduled()).toEqual([]);
+});

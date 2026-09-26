@@ -105,3 +105,12 @@ test("a job runs through the backend", async () => {
     );
   expect(failure).toMatchObject({ code: "NOT_FOUND" });
 });
+
+test("running backends are listed until they are stopped", async () => {
+  const b = backends({ trust: "trusted" });
+  expect(b.running()).toEqual([]);
+  await b.action("probe@0.1.0", { ...req, name: "ping" });
+  expect(b.running()).toEqual(["probe@0.1.0"]);
+  b.stop("probe@0.1.0");
+  expect(b.running()).toEqual([]);
+});

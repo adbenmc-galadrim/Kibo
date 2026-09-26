@@ -1,0 +1,230 @@
+import type { Database } from "bun:sqlite";
+import { listProjects, readProject } from "@kibo/core";
+import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
+import { type Instance, KiboError, type TicketRun, type ValidationReport } from "@kibo/schema";
+import type { Docs } from "../docs";
+import { ensureNotesTables } from "../notes/index";
+import { createNotesService } from "../notes/service";
+import { ensureSettingsTable } from "../notes/settings";
+import { createBackends } from "./backends";
+import { listDrafts } from "./drafts";
+import { createEventLog, ensureEventsTable } from "./events";
+import { createGate } from "./gate";
+import { createGateHandlers } from "./gate-handlers";
+import { createJobScheduler, type JobSchedulerDeps } from "./jobs";
+import type { ComponentRequest } from "./methods";
+import type { NetProxyOptions } from "./net-proxy";
+import { createPublisher } from "./publish";
+import { createQuotas } from "./quotas";
+import { createRegistryService } from "./registry-service";
+import type { AssetLookup } from "./sandbox-server";
+import { createComponentStore } from "./store";
+import { updateInstance } from "./update";
+import { createUsageTracker, jobTargets } from "./usage";
+
+export type ComponentsDeps = {
+  home: string;
+  toolchain: Toolchain;
+  db: Database;
+  docs: Docs;
+  sandboxOrigin(): string;
+  runs(projectId: string): TicketRun[];
+  build?: (srcDir: string, t: Toolchain) => Promise<BuildOutput>;
+  validate?: (dir: string) => Promise<ValidationReport>;
+  processCommand?: string[];
+  net?: NetProxyOptions;
+  installCli?: () => Promise<{ path: string }>;
+  jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
+};
+export type ComponentsService = {
+  handle(req: ComponentRequest): Promise<unknown>;
+  assets: AssetLookup;
+  start(): Promise<void>;
+  stop(): void;
+  afterCommand(projectId: string): void;
+};
+
+const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
+
+export function createComponentsService(deps: ComponentsDeps): ComponentsService {
+  const { docs } = deps;
+  ensureEventsTable(deps.db);
+  ensureSettingsTable(deps.db);
+  ensureNotesTables(deps.db);
+  const events = createEventLog(deps.db);
+  const store = createComponentStore({
+    home: deps.home,
+    toolchain: deps.toolchain,
+    ...(deps.build && { build: deps.build }),
+  });
+  const projects = () =>
+    listProjects(docs.workspace).map((m) => ({ id: m.id, name: m.name, doc: docs.project(m.id) }));
+  const instanceOf = (projectId: string, instanceId: string): Instance => {
+    const inst = readProject(docs.project(projectId)).instances.find((i) => i.id === instanceId);
+    if (!inst) throw new KiboError("NOT_FOUND", `instance ${instanceId} not found`);
+    return inst;
+  };
+  const workspaceChanged = () => docs.emit({ projectId: null });
+
+  const notes = createNotesService({
+    db: deps.db,
+    home: deps.home,
+    project: (id) => {
+      const { meta } = readProject(docs.project(id));
+      return { id: meta.id, key: meta.key, folder: meta.folder };
+    },
+    onChange: (id) => docs.emit({ projectId: id }),
+  });
+
+  const registry = createRegistryService({
+    workspace: docs.workspace,
+    persistWorkspace: () => docs.save(null),
+    projects,
+    store,
+    events,
+    stopBackend: (ref) => usage.stop(ref),
+    emit: workspaceChanged,
+    onApproved: async (id, v) => {
+      await publisher.applyUpdateAll(id, v.version);
+    },
+  });
+
+  const gate = createGate({
+    instance: instanceOf,
+    active: (ref) => registry.active(ref),
+    quotas: createQuotas(),
+    events,
+    handlers: createGateHandlers({
+      docs,
+      notes,
+      backends: () => backends,
+      runs: deps.runs,
+      ...(deps.net && { net: deps.net }),
+    }),
+  });
+
+  const backends = createBackends({
+    source: (ref) => registry.source(ref),
+    verify: (ref) => registry.verify(ref),
+    onCall: (projectId, instanceId, call) => gate.call(projectId, instanceId, call),
+    ...(deps.processCommand && { processCommand: deps.processCommand }),
+  });
+
+  const usage = createUsageTracker({ projects, backends });
+
+  const jobs = createJobScheduler({
+    targets: () => jobTargets(projects(), (ref) => registry.source(ref) !== null),
+    describe: (ref) => usage.describe(ref),
+    run: (t, job) =>
+      backends.runJob(t.ref, { projectId: t.projectId, instanceId: t.instanceId, config: t.config, job }),
+    ...deps.jobTimers,
+  });
+  const usageChanged = () => {
+    usage.prune();
+    jobs.refresh().catch(log("jobs refresh failed"));
+  };
+
+  const update = async (projectId: string, instanceId: string, to: string) => {
+    const inst = await updateInstance(
+      {
+        doc: (id) => docs.project(id),
+        persist: (id) => docs.save(id),
+        manifestOf: (ref) => registry.manifestOf(ref),
+        migrate: (ref, req) => backends.migrate(ref, req),
+      },
+      projectId,
+      instanceId,
+      to,
+    );
+    docs.emit({ projectId });
+    usageChanged();
+    return inst;
+  };
+
+  const publisher = createPublisher({
+    home: deps.home,
+    workspace: docs.workspace,
+    persistWorkspace: () => docs.save(null),
+    emit: workspaceChanged,
+    store,
+    registry,
+    validate: deps.validate ?? ((dir) => validateComponent(dir, { toolchain: deps.toolchain })),
+    update,
+  });
+
+  const assets: AssetLookup = (id, version, hash) => {
+    const ref = `${id}@${version}`;
+    const stored = registry.stored(ref);
+    if (!stored || stored.hash !== hash) return null;
+    return { stored, trust: registry.active(ref).trust };
+  };
+
+  const reportRefusal = (projectId: string, instanceId: string, kind: "navigate") => {
+    const inst = instanceOf(projectId, instanceId);
+    events.record({ projectId, instanceId, ref: inst.component, kind, code: "PERMISSION_DENIED" });
+    return null;
+  };
+
+  const handle = async (req: ComponentRequest): Promise<unknown> => {
+    switch (req.method) {
+      case "listComponents":
+        return registry.list();
+      case "componentCall":
+        return gate.call(req.projectId, req.instanceId, req.call);
+      case "approveComponent": {
+        const v = await registry.approve(req.id, req.version, req.hash, req.trust);
+        usageChanged();
+        return v;
+      }
+      case "revokeComponent":
+        registry.revoke(req.id, req.version);
+        usageChanged();
+        return null;
+      case "rehashComponent":
+        return registry.rehash(req.id, req.version);
+      case "previewPublish":
+        return publisher.preview(req.id);
+      case "publishComponent": {
+        const r = await publisher.publish(req.id, req.strategy);
+        usageChanged();
+        return r;
+      }
+      case "updateInstance":
+        return update(req.projectId, req.instanceId, req.to);
+      case "uninstallComponent":
+        await registry.uninstall(req.id, req.version);
+        return null;
+      case "listDrafts":
+        return listDrafts(deps.home, docs.workspace);
+      case "getNotesDir":
+        return notes.info(req.projectId);
+      case "setNotesDir":
+        return notes.setDir(req.projectId, req.dir);
+      case "getRuntimeInfo":
+        return { sandboxOrigin: deps.sandboxOrigin() };
+      case "installCli":
+        if (!deps.installCli)
+          throw new KiboError("INVALID_INPUT", "the kibo command is installed by the desktop app");
+        return deps.installCli();
+      case "reportComponentRefusal":
+        return reportRefusal(req.projectId, req.instanceId, req.kind);
+    }
+  };
+
+  return {
+    handle,
+    assets,
+    afterCommand: () => usageChanged(),
+    async start() {
+      await registry.verifyAll();
+      for (const id of docs.projectIds()) await notes.refresh(id).catch(log(`notes scan failed for ${id}`));
+      usageChanged();
+    },
+    stop() {
+      jobs.stop();
+      backends.stopAll();
+      notes.close();
+      events.flush();
+    },
+  };
+}

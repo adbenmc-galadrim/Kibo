@@ -5,6 +5,7 @@ import { KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 
 export type Store = {
+  db: Database;
   load(id: string): Uint8Array | null;
   save(id: string, snapshot: Uint8Array): void;
   ids(): string[];
@@ -46,6 +47,7 @@ export function openStore(home: string): Store {
   );
   const selectLocal = db.query("SELECT value FROM local_state WHERE key = $key");
   return {
+    db,
     load: (id) => {
       const row = select.get({ id }) as { snapshot: Uint8Array } | null;
       return row ? new Uint8Array(row.snapshot) : null;
