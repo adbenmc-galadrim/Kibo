@@ -17,14 +17,24 @@ function chip(href: string, title: string, icon: ReactNode, label: string) {
   );
 }
 
+const isBroken = (ref: ExternalRef) =>
+  ref.kind === "github_issue" &&
+  ref.number !== null &&
+  (githubIssueState(ref) === "broken" || ref.url === null);
+
 function refChip(ref: ExternalRef, done: boolean): ReactNode {
   if (ref.kind === "github_pr") {
     return chip(ref.url, fr.ticket.prState[ref.state], <GitPullRequest aria-hidden />, `#${ref.number}`);
   }
   if (ref.kind !== "github_issue" || ref.number === null) return null;
-  if (githubIssueState(ref) === "broken" || ref.url === null) {
+  if (isBroken(ref) || ref.url === null) {
     return (
-      <Badge key={ref.bindingId} variant="outline" className="text-muted-foreground" title={t.brokenHelp}>
+      <Badge
+        key={ref.bindingId}
+        variant="outline"
+        className="border-amber-500/50 text-amber-700 dark:text-amber-400"
+        title={t.brokenHelp}
+      >
         <Unlink aria-hidden />
         {t.broken}
       </Badge>
@@ -43,4 +53,9 @@ export function GithubRefs({ ticket }: { ticket: TicketView }) {
     .filter((c) => c !== null);
   if (chips.length === 0) return null;
   return <span className="flex flex-wrap gap-1">{chips}</span>;
+}
+
+export function GithubLinkNote({ ticket }: { ticket: TicketView }) {
+  if (!ticket.externalRefs.some(isBroken)) return null;
+  return <p className="text-xs text-muted-foreground">{t.brokenHelp}</p>;
 }

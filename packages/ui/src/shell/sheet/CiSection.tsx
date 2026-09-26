@@ -4,6 +4,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { failureText } from "../../lib/remote-error";
 import { conclusionLabel, runDuration } from "./ci-format";
 
 const t = fr.integrations.sheet;
@@ -44,7 +45,7 @@ export function CiSection({ projectId, ticketId }: { projectId: string; ticketId
       setRuns(await client.rpc({ method: "listCiRuns", projectId, ticketId }));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(failureText(e));
     }
   }, [projectId, ticketId]);
   useEffect(() => {
@@ -54,12 +55,19 @@ export function CiSection({ projectId, ticketId }: { projectId: string; ticketId
     });
   }, [projectId, load]);
   if (runs === null && !error) return null;
+  const latest = latestCiRunPerWorkflow(runs ?? []);
+  const prs = [...new Set(latest.flatMap((r) => (r.prNumber === null ? [] : [r.prNumber])))].sort(
+    (a, b) => a - b,
+  );
   return (
     <section className="grid gap-2 px-4 text-xs">
-      <h3 className="font-medium">{t.ci}</h3>
+      <header className="flex items-center justify-between">
+        <h3 className="font-medium">{t.ci}</h3>
+        {prs.length > 0 && <span className="font-mono text-2xs text-muted-foreground">{t.ciPr(prs)}</span>}
+      </header>
       {error && <p className="text-destructive">{error}</p>}
       {runs?.length === 0 && <p className="text-muted-foreground">{t.ciEmpty}</p>}
-      {latestCiRunPerWorkflow(runs ?? []).map((run) => (
+      {latest.map((run) => (
         <RunRow key={run.runId} run={run} onOpen={(job) => setOpen({ run, job })} />
       ))}
       {open && (

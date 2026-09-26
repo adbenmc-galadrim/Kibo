@@ -2,7 +2,7 @@ import type { Domain, FileRef, ProjectSnapshot } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { GithubRefs } from "../shell/sheet/lazy-sections";
+import { GithubLinkNote, GithubRefs } from "../shell/sheet/lazy-sections";
 import { TicketDetail } from "../shell/TicketDetail";
 
 type Props = {
@@ -24,6 +24,7 @@ export function TicketTab({ project, ticketId, domains, onAssign, onOpenFile }: 
           <GithubRefs ticket={t} />
         </div>
         <h1 className="text-lg font-semibold">{t.title}</h1>
+        <GithubLinkNote ticket={t} />
         {onAssign && (
           <Button
             variant="outline"

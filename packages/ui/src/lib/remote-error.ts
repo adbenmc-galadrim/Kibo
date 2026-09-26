@@ -1,4 +1,4 @@
-import type { IntegrationId, IntegrationStatus, KiboErrorCode } from "@kibo/schema";
+import { type IntegrationId, type IntegrationStatus, KiboError, type KiboErrorCode } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 
 type IntegrationError = NonNullable<IntegrationStatus["error"]>;
@@ -25,6 +25,10 @@ export function remoteErrorText(code: KiboErrorCode, message: string): string {
   const answer = GITHUB_ANSWER.exec(message);
   if (answer?.[1]) return githubAnswer(Number(answer[1]), answer[2]);
   return CODES[code] ?? fr.common.error;
+}
+
+export function failureText(e: unknown): string {
+  return e instanceof KiboError ? remoteErrorText(e.code, e.detail) : fr.common.error;
 }
 
 export function integrationErrorText(id: IntegrationId, error: IntegrationError): string {

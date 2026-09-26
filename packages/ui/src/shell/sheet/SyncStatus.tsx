@@ -1,6 +1,6 @@
 import { externalRefKey, type TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { Clock } from "lucide-react";
+import { Clock, XCircle } from "lucide-react";
 import { useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
@@ -52,8 +52,11 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
         role="alert"
         className="mx-4 grid gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs"
       >
-        <p>
-          <span className="font-medium">{t.syncError}</span>{" "}
+        <p className="flex items-center gap-1.5 font-medium text-red-600 dark:text-red-400">
+          <XCircle aria-hidden className="size-4" />
+          {t.syncError}
+        </p>
+        <p className="text-muted-foreground">
           {syncErrorText(failure, { repo: failureRepo, resumeAt: null })}
         </p>
         {actionError && <p className="text-destructive">{actionError}</p>}

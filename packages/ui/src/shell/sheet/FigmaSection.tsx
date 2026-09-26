@@ -11,16 +11,16 @@ import { Input } from "@kibo/sdk/ui/input";
 import { useEffect, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { failureText } from "../../lib/remote-error";
 import { figmaRefs } from "./figma-refs";
 
 const t = fr.integrations.sheet;
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 function linkError(e: unknown): string {
   if (e instanceof KiboError && e.code === "INVALID_INPUT") return t.figmaInvalid;
   if (e instanceof KiboError && e.code === "NOT_CONNECTED") return t.figmaNotConnected;
   if (e instanceof KiboError && e.code === "MCP_UNAVAILABLE") return fr.integrations.figma.unreachable.title;
-  return message(e);
+  return failureText(e);
 }
 
 function PreviewBadge({ preview }: { preview: FigmaPreview | null }) {
@@ -59,7 +59,7 @@ function Thumbnail({
         if (live) setPreview(p);
       })
       .catch((e: unknown) => {
-        if (live) setError(message(e));
+        if (live) setError(failureText(e));
       });
     return () => {
       live = false;
@@ -73,7 +73,7 @@ function Thumbnail({
         command: { method: "removeExternalRef", ticketId, kind: "figma_node", key: externalRefKey(node) },
       });
     } catch (e) {
-      setError(message(e));
+      setError(failureText(e));
     }
   };
   return (
@@ -137,7 +137,11 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
           aria-label={t.linkFigma}
           placeholder={t.figmaPlaceholder}
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setError(null);
+          }}
+          aria-invalid={error !== null}
           className="h-8 text-xs"
         />
         <Button type="submit" size="sm" variant="outline" disabled={url.trim() === ""}>

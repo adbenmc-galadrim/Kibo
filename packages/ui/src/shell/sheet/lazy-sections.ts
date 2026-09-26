@@ -8,6 +8,7 @@ const section = <P extends object>(pick: (m: Sections) => ComponentType<P>) =>
   lazyPanel(() => import("./sections").then(pick), fr.lazy, { fallback: "sr-only" });
 
 export const GithubRefs = section((m) => m.GithubRefs);
+export const GithubLinkNote = section((m) => m.GithubLinkNote);
 export const FigmaProperty = section((m) => m.FigmaProperty);
 export const SyncStatus = section((m) => m.SyncStatus);
 export const CiSection = section((m) => m.CiSection);

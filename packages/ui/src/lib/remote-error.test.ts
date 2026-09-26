@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { integrationErrorText, remoteErrorText } from "./remote-error";
+import { KiboError } from "@kibo/schema";
+import { failureText, integrationErrorText, remoteErrorText } from "./remote-error";
 
 test("a github answer is stated in French with its status", () => {
   expect(remoteErrorText("REMOTE_REJECTED", "github 422: Validation Failed: label design unknown")).toBe(
@@ -18,6 +19,8 @@ test("other remote failures fall back on their code", () => {
     "Compte GitHub non connecté : reconnecte ton compte",
   );
   expect(remoteErrorText("INTERNAL", "boom")).toBe("Une erreur est survenue.");
+  expect(failureText(new KiboError("TIMEOUT", "timed out"))).toBe("Délai dépassé");
+  expect(failureText(new Error("boom"))).toBe("Une erreur est survenue.");
 });
 
 test("integration rows explain their error in French", () => {

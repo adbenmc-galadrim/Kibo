@@ -1,9 +1,9 @@
-import { type IntegrationId, KiboError } from "@kibo/schema";
+import type { IntegrationId } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { integrationErrorText, remoteErrorText } from "../lib/remote-error";
+import { integrationErrorText, failureText as message } from "../lib/remote-error";
 import { useFlash } from "../lib/use-flash";
 import { useIntegrations } from "../state/use-integrations";
 import { DisconnectDialog, type DisconnectTarget, disconnectable } from "./DisconnectDialog";
@@ -17,8 +17,6 @@ const hasDialog = (id: IntegrationId) => {
   const d = dialogOf(id);
   return d !== null && INTEGRATION_DIALOGS[d] !== undefined;
 };
-const message = (e: unknown) =>
-  e instanceof KiboError ? remoteErrorText(e.code, e.detail) : fr.common.error;
 const KEYCHAIN = "SECRET_STORE_UNAVAILABLE";
 
 export function IntegrationsPage() {

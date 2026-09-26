@@ -181,7 +181,7 @@ export const frIntegrations = {
     pendingCreate: "Création de l'issue en attente",
     broken: "Lien GitHub rompu",
     brokenHelp: "L'issue a été supprimée ou transférée.",
-    syncError: "Échec de synchronisation :",
+    syncError: "Échec de synchronisation",
     retry: "Réessayer",
     drop: "Abandonner",
     dropTitle: "Abandonner cet envoi ?",
@@ -218,6 +218,8 @@ export const frIntegrations = {
     figmaNotConnected: "Connecte Figma dans Paramètres › Intégrations.",
     dropUpdateHelp:
       "Cette modification n'est pas envoyée à GitHub : le ticket la garde dans Kibo, et elle repartira avec sa prochaine modification.",
+    ciPr: (numbers: number[]) => `PR ${numbers.map((n) => `#${n}`).join(", ")}`,
+    logSubtitle: (parts: string[]) => parts.join(" · "),
   },
   instance: {
     header: (repo: string) => `GitHub · ${repo}`,

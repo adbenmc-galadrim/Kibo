@@ -3,7 +3,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { Bot, Maximize2 } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { GithubRefs } from "./sheet/lazy-sections";
+import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
 import { TicketDetail } from "./TicketDetail";
 
 type Props = {
@@ -36,6 +36,7 @@ export function TicketSheet({
             <GithubRefs ticket={t} />
           </div>
           <SheetTitle className="text-lg">{t.title}</SheetTitle>
+          <GithubLinkNote ticket={t} />
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
               variant="outline"
