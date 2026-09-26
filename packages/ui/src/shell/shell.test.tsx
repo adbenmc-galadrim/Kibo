@@ -108,6 +108,7 @@ mock.module("../api", () => ({
         return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
       return Promise.resolve(null);
     },
+    subscribeIntegrations: () => () => undefined,
     code: (req: CodeRequest) => {
       code.push(req);
       if (req.method === "worktrees")
