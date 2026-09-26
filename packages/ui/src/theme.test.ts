@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { cycleTheme, nextTheme, readThemePreference } from "./theme";
+import { act, renderHook } from "@testing-library/react";
+import { currentTheme, cycleTheme, nextTheme, readThemePreference, useTheme } from "./theme";
 
 beforeEach(() => localStorage.clear());
 afterEach(() => document.documentElement.classList.remove("dark"));
@@ -35,4 +36,16 @@ test("an unavailable storage falls back to the system theme and is reported", ()
     if (storage) Object.defineProperty(window, "localStorage", storage);
     console.error = log;
   }
+});
+
+test("the current theme follows the dark class of the document", async () => {
+  expect(currentTheme()).toBe("light");
+  const { result } = renderHook(() => useTheme());
+  expect(result.current).toBe("light");
+  await act(async () => {
+    document.documentElement.classList.add("dark");
+    await new Promise((r) => setTimeout(r, 0));
+  });
+  expect(currentTheme()).toBe("dark");
+  expect(result.current).toBe("dark");
 });

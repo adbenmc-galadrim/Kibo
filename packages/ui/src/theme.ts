@@ -1,3 +1,6 @@
+import type { Theme } from "@kibo/schema";
+import { useSyncExternalStore } from "react";
+
 export type ThemePreference = "system" | "light" | "dark";
 
 const KEY = "kibo.theme";
@@ -36,3 +39,14 @@ export function followSystemTheme(): void {
   apply(readThemePreference());
   media().addEventListener("change", () => apply(readThemePreference()));
 }
+
+export const currentTheme = (): Theme =>
+  document.documentElement.classList.contains("dark") ? "dark" : "light";
+
+function subscribeTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+
+export const useTheme = (): Theme => useSyncExternalStore(subscribeTheme, currentTheme);
