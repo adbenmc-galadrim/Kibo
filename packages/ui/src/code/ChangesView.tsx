@@ -3,12 +3,14 @@ import { useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
+import { ChangesFiles } from "./ChangesFiles";
 import { CommitPanel } from "./CommitPanel";
 import { type ChangesSlotsHook, useNoSlots } from "./changes-slots";
 import { DiffColumn } from "./DiffColumn";
 import type { DiffMode } from "./DiffView";
-import { FileList, type FileSelection, pickSelected } from "./FileList";
+import { type FileSelection, pickSelected } from "./FileList";
 import { ChangesAlerts } from "./OperationBanner";
+import { linkedTicketKey } from "./PrCard";
 import { PushActions } from "./PushActions";
 import { PushPrDialog, type PushPrInput } from "./PushPrDialog";
 import { UnpushedCommits } from "./UnpushedCommits";
@@ -16,7 +18,6 @@ import { useCodeStatus, useCommitDefaults, useCompare, useFileDiff, useRemoteInf
 import { useCommitDraft } from "./use-commit-draft";
 import { usePush } from "./use-push";
 import { resolveWorktree, useWorktrees } from "./use-worktrees";
-import { WorktreePicker } from "./WorktreePicker";
 
 type Props = {
   project: ProjectSnapshot;
@@ -188,24 +189,17 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
         notice={notice}
       />
       <div className="grid min-h-0 flex-1 grid-cols-[272px_minmax(0,1fr)_340px] grid-rows-1">
-        <aside className="flex min-h-0 flex-col gap-3 overflow-auto border-r p-3">
-          <WorktreePicker
-            worktrees={worktrees}
-            current={current}
-            ahead={status?.ahead ?? 0}
-            onChange={onWorktreeChange}
-          />
-          {status && files.length === 0 && (
-            <p className="px-2 text-sm text-muted-foreground">{fr.changes.clean}</p>
-          )}
-          <FileList
-            files={files}
-            selected={selected && { path: selected.path, area: selected.area }}
-            busy={busy}
-            onSelect={(f) => setSelection({ path: f.path, area: f.area })}
-            onToggle={toggle}
-          />
-        </aside>
+        <ChangesFiles
+          worktrees={worktrees}
+          current={current}
+          ahead={status?.ahead ?? 0}
+          files={status ? files : null}
+          selected={selected && { path: selected.path, area: selected.area }}
+          busy={busy}
+          onWorktreeChange={onWorktreeChange}
+          onSelect={(f) => setSelection({ path: f.path, area: f.area })}
+          onToggle={toggle}
+        />
         <div className="flex min-h-0 min-w-0 flex-col">
           <DiffColumn
             key={selected ? `${selected.area}:${selected.path}` : ""}
@@ -228,6 +222,7 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
         <aside className="flex min-h-0 flex-col gap-5 overflow-auto border-l p-4">
           <CommitPanel
             branch={branch}
+            loading={status === null}
             stagedCount={staged.length}
             message={draft.message}
             onMessageChange={draft.edit}
@@ -249,6 +244,11 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
           />
           <PushActions
             target={status?.upstream ?? `${remoteName}/${branch ?? ""}`}
+            remote={remoteName}
+            branch={branch}
+            base={baseBranch}
+            pending={unpushed}
+            prTicketKey={linkedTicketKey(project.tickets, remote.pr)}
             canPush={branch !== null}
             upToDate={upToDate}
             pushing={pushing}

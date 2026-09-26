@@ -36,7 +36,7 @@ type Props = {
   base: string;
   onBaseChange(base: string): void;
   unpushedCount: number;
-  fileCount: number;
+  fileCount: number | null;
   stagedCount: number;
   ticketKey: string | null;
   defaultTitle: string;
@@ -95,7 +95,10 @@ export function PushPrDialog(p: Props) {
 
   return (
     <Dialog open={p.open} onOpenChange={changeOpen}>
-      <DialogContent className="gap-5 sm:max-w-[620px]" onCloseAutoFocus={p.onCloseAutoFocus}>
+      <DialogContent
+        className="grid-cols-[minmax(0,1fr)] gap-5 sm:max-w-[620px]"
+        onCloseAutoFocus={p.onCloseAutoFocus}
+      >
         <DialogHeader>
           <DialogTitle>{fr.pr.title}</DialogTitle>
           <DialogDescription>
@@ -127,7 +130,7 @@ export function PushPrDialog(p: Props) {
             <Select value={p.base} disabled={busy} onValueChange={p.onBaseChange}>
               <SelectTrigger id={`${id}-base`} className="w-full">
                 <GitBranch aria-hidden className="text-muted-foreground" />
-                <SelectValue />
+                <SelectValue className="flex-1 text-left" />
               </SelectTrigger>
               <SelectContent>
                 {p.bases.map((b) => (
@@ -161,7 +164,7 @@ export function PushPrDialog(p: Props) {
           <div className="flex items-center gap-3 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-600/70 dark:bg-amber-500/10 dark:text-amber-300">
             <TriangleAlert aria-hidden className="size-4 shrink-0 text-amber-500" />
             <span className="flex-1">{fr.pr.staged(p.stagedCount)}</span>
-            <Button variant="outline" size="sm" onClick={p.onCommitFirst}>
+            <Button variant="outline" size="sm" className="text-foreground" onClick={p.onCommitFirst}>
               {fr.pr.commitFirst}
             </Button>
           </div>

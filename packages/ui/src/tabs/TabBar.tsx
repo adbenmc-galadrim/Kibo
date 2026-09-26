@@ -90,7 +90,7 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
         <div
           ref={setNodeRef}
           style={{ transform: CSS.Transform.toString(transform), transition }}
-          className={cn("group flex shrink-0 items-center border-r text-[13px]", tabTone(active))}
+          className={cn("group flex shrink-0 items-center text-[13px]", tabTone(active))}
           onAuxClick={(e) => {
             if (e.button !== 1 || tab.pinned) return;
             e.preventDefault();
@@ -134,7 +134,7 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
               <span
                 role="img"
                 aria-label={fr.tabs.dirty}
-                className="size-1.5 shrink-0 rounded-full bg-orange-500"
+                className="size-1.5 shrink-0 rounded-full bg-amber-500"
               />
             )}
           </button>
@@ -186,24 +186,26 @@ export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWin
         aria-label={fr.tabs.bar}
         className="flex min-w-0 flex-1 items-stretch overflow-x-auto"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={state.activeId === null}
-          aria-label={fr.tabs.home}
-          title={fr.tabs.home}
-          className={cn(
-            "flex w-11 shrink-0 items-center justify-center border-r outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-            tabTone(state.activeId === null),
-          )}
-          onClick={() => dispatch({ type: "activate", id: null })}
-        >
-          <KiboLogo className="size-4" decorative />
-        </button>
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-          <SortableContext items={pinned.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
-            {pinned.map(item)}
-          </SortableContext>
+          <div className="flex shrink-0 items-stretch border-r">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={state.activeId === null}
+              aria-label={fr.tabs.home}
+              title={fr.tabs.home}
+              className={cn(
+                "flex w-11 shrink-0 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                tabTone(state.activeId === null),
+              )}
+              onClick={() => dispatch({ type: "activate", id: null })}
+            >
+              <KiboLogo className="size-4" decorative />
+            </button>
+            <SortableContext items={pinned.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
+              {pinned.map(item)}
+            </SortableContext>
+          </div>
           <SortableContext items={open.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
             {open.map(item)}
           </SortableContext>

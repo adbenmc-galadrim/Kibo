@@ -1,10 +1,13 @@
 import type { CommitInfo } from "@kibo/schema";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ArrowUpFromLine, Pencil, Undo2 } from "lucide-react";
 import { useId, useState } from "react";
 import { fr } from "../i18n/fr";
 import { RewordDialog } from "./RewordDialog";
 import { UndoCommitDialog } from "./UndoCommitDialog";
+
+const COMPACT = "h-7 px-2 text-[13px] has-[>svg]:px-2";
 
 type Props = {
   commits: CommitInfo[];
@@ -21,32 +24,57 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
   const [rewording, setRewording] = useState<CommitInfo | null>(null);
   const [undoing, setUndoing] = useState<CommitInfo | null>(null);
   return (
-    <section aria-labelledby={id} className="grid gap-2 border-t pt-4">
+    <section aria-labelledby={id} className="grid min-w-0 gap-2 border-t pt-4">
       <header className="flex items-center justify-between">
         <h3 id={id} className="text-sm font-semibold">
           {fr.commit.unpushed}
         </h3>
-        <span className="font-mono text-xs text-orange-600 dark:text-orange-400">↑{unpushed.length}</span>
+        <span
+          className={cn(
+            "font-mono text-xs",
+            unpushed.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground",
+          )}
+        >
+          ↑{unpushed.length}
+        </span>
       </header>
-      <ul className="grid gap-2">
+      <ul className="grid min-w-0 gap-2">
         {unpushed.map((c, i) => (
-          <li key={c.sha} className="rounded-lg border p-3">
-            <p className="flex items-center gap-2 text-sm">
+          <li key={c.sha} className="min-w-0 rounded-lg border p-3">
+            <p className="flex min-w-0 items-center gap-2 text-[13px]">
               <span aria-hidden className="size-2 shrink-0 rounded-full bg-orange-500" />
               <span className="font-mono text-xs text-muted-foreground">{c.shortSha}</span>
               <span className="truncate">{c.subject}</span>
             </p>
-            <div className="mt-2 flex gap-1">
+            <div className="mt-2 flex flex-wrap gap-1">
               {i === 0 && (
-                <Button variant="outline" size="sm" disabled={busy} onClick={() => onModify(c)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={COMPACT}
+                  disabled={busy}
+                  onClick={() => onModify(c)}
+                >
                   <Pencil />
                   {fr.commit.modify}
                 </Button>
               )}
-              <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRewording(c)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={COMPACT}
+                disabled={busy}
+                onClick={() => setRewording(c)}
+              >
                 {fr.commit.reword}
               </Button>
-              <Button variant="ghost" size="sm" disabled={busy} onClick={() => setUndoing(c)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={COMPACT}
+                disabled={busy}
+                onClick={() => setUndoing(c)}
+              >
                 <Undo2 />
                 {fr.commit.undo}
               </Button>
@@ -56,10 +84,10 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
         {pushed.map((c) => (
           <li
             key={c.sha}
-            className="rounded-lg border p-3 text-muted-foreground opacity-70"
+            className="min-w-0 rounded-lg border p-3 text-muted-foreground dark:opacity-70"
             title={fr.commit.pushed}
           >
-            <p className="flex items-center gap-2 text-sm">
+            <p className="flex min-w-0 items-center gap-2 text-[13px]">
               <span aria-hidden className="size-2 shrink-0 rounded-full bg-muted-foreground/50" />
               <span className="font-mono text-xs">{c.shortSha}</span>
               <span className="truncate">{c.subject}</span>

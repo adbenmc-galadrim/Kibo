@@ -59,3 +59,12 @@ test("after a commit the next defaults prefill the message again", () => {
   expect(result.current.message).toBe("feat: suite (KIB-12)");
   expect(result.current.prefilled).toBe(true);
 });
+
+test("after committing the prefilled message, the defaults fill it again without waiting for a reload", () => {
+  const { result } = setup();
+
+  act(() => result.current.clear());
+
+  expect(result.current.message).toBe("feat: ticket (KIB-12)");
+  expect(result.current.prefilled).toBe(true);
+});

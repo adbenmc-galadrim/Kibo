@@ -9,6 +9,7 @@ import { fr } from "../i18n/fr";
 
 type Props = {
   branch: string | null;
+  loading?: boolean;
   stagedCount: number;
   message: string;
   onMessageChange(message: string): void;
@@ -25,7 +26,7 @@ type Props = {
 export function CommitPanel(p: Props) {
   const id = useId();
   const branch = p.branch ?? fr.changes.detached;
-  const canCommit = !p.busy && p.message.trim().length > 0 && (p.amend || p.stagedCount > 0);
+  const canCommit = !p.loading && !p.busy && p.message.trim().length > 0 && (p.amend || p.stagedCount > 0);
   return (
     <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3">
       <header className="flex items-center justify-between">
@@ -79,12 +80,16 @@ export function CommitPanel(p: Props) {
       </div>
       <Button onClick={p.onCommit} disabled={!canCommit}>
         <Check />
-        {p.amend ? fr.commit.submitAmend(branch) : fr.commit.submit(branch)}
+        {p.loading
+          ? fr.commit.submitPending
+          : p.amend
+            ? fr.commit.submitAmend(branch)
+            : fr.commit.submit(branch)}
         <kbd aria-hidden className="ml-1 text-xs opacity-60">
           ⌘↵
         </kbd>
       </Button>
-      {p.stagedCount === 0 && !p.amend && (
+      {!p.loading && p.stagedCount === 0 && !p.amend && (
         <p className="text-xs text-muted-foreground">{fr.commit.nothingStaged}</p>
       )}
     </section>

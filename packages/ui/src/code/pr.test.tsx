@@ -136,3 +136,8 @@ test("without a ticket the link option is hidden", () => {
   expect(screen.queryByRole("checkbox", { name: /Lier la PR/ })).toBeNull();
   expect(screen.queryByRole("button", { name: "Commiter d'abord" })).toBeNull();
 });
+
+test("the file count is left out of the summary until the comparison is known", () => {
+  renderDialog({ fileCount: null });
+  expect(screen.getByText("kib-12 → main · 2 commits non poussés")).toBeTruthy();
+});

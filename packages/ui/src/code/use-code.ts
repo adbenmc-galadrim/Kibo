@@ -134,9 +134,10 @@ export function useRemoteInfo(projectId: string, worktree: string, branch: strin
 }
 
 export function useCompare(projectId: string, worktree: string, base: string | null) {
-  const [fileCount, setFileCount] = useState(0);
+  const [fileCount, setFileCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+    setFileCount(null);
     if (!base) return;
     let alive = true;
     client.code({ method: "compare", projectId, worktree, base }).then(

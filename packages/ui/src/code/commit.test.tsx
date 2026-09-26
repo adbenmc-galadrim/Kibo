@@ -170,3 +170,49 @@ test("a refused undo is shown in an alert and keeps the confirmation open", asyn
   );
   expect(screen.getByRole("alertdialog")).toBeTruthy();
 });
+
+test("while the status loads the commit button stays neutral instead of naming a detached HEAD", () => {
+  render(
+    <CommitPanel
+      branch={null}
+      loading
+      stagedCount={0}
+      message=""
+      onMessageChange={() => {}}
+      prefilled={false}
+      amend={false}
+      onAmendChange={() => {}}
+      canAmend={false}
+      busy={false}
+      onCommit={() => {}}
+    />,
+  );
+  const button = screen.getByRole("button", { name: /^Commit/ });
+  expect(button.textContent).not.toContain("HEAD détachée");
+  expect(button.hasAttribute("disabled")).toBe(true);
+  expect(screen.queryByText("Indexe au moins un fichier pour commiter.")).toBeNull();
+});
+
+test("the unpushed counter is only highlighted when something is waiting to be pushed", () => {
+  const { unmount } = render(
+    <UnpushedCommits
+      commits={commits}
+      busy={false}
+      onModify={() => {}}
+      onReword={async () => {}}
+      onUndo={async () => {}}
+    />,
+  );
+  expect(screen.getByText("↑2").className).toContain("text-orange");
+  unmount();
+  render(
+    <UnpushedCommits
+      commits={commits.filter((c) => c.pushed)}
+      busy={false}
+      onModify={() => {}}
+      onReword={async () => {}}
+      onUndo={async () => {}}
+    />,
+  );
+  expect(screen.getByText("↑0").className).not.toContain("text-orange");
+});

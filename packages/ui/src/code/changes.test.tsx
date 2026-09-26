@@ -195,18 +195,20 @@ test("a stale hunk shows an alert and reloads the diff", async () => {
   await waitFor(() => expect(count("diff")).toBeGreaterThanOrEqual(2));
 });
 
-test("committing sends the message, then clears it; Modifier loads the last commit into amend mode", async () => {
+test("committing sends the message, then prefills it again; Modifier loads the last commit into amend mode", async () => {
   renderView();
   await prefilled();
+  await userEvent.clear(screen.getByLabelText("Message"));
+  await userEvent.type(screen.getByLabelText("Message"), "fix: à la main");
   await userEvent.click(await enabledButton(/Commit sur kib-12/));
   expect(calls.find((c) => c.method === "commit")).toEqual({
     method: "commit",
     projectId: "p1",
     worktree: "/repo",
-    message: "feat: schéma Loro des tickets (KIB-12)",
+    message: "fix: à la main",
     amend: false,
   });
-  await waitFor(() => expect(screen.getByLabelText("Message")).toHaveProperty("value", ""));
+  await prefilled();
   const latest = screen.getAllByRole("listitem").find((li) => li.textContent?.includes("feat: move"));
   if (!latest) throw new Error("unpushed commit expected");
   await userEvent.click(within(latest).getByRole("button", { name: "Modifier" }));
@@ -295,7 +297,9 @@ test("a failed push explains the error and offers a retry", async () => {
   await userEvent.click(await enabledButton("Pousser"));
   const alert = await screen.findByRole("alert");
   expect(alert.textContent).toContain("Le push a échoué");
-  expect(alert.textContent).toContain("! [rejected] kib-12 -> kib-12 (fetch first)");
+  expect(screen.getByLabelText("Sortie de git").textContent).toBe(
+    "! [rejected] kib-12 -> kib-12 (fetch first)",
+  );
   await userEvent.click(screen.getByRole("button", { name: "Réessayer" }));
   await waitFor(() => expect(count("push")).toBe(2));
 });

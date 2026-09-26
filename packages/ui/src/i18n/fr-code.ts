@@ -67,6 +67,7 @@ export const frCode = {
     binary: "Fichier binaire : aucun diff à afficher.",
     noSelection: "Choisis un fichier pour voir ses changements.",
     clean: "Aucun changement dans ce worktree.",
+    loading: "Chargement des changements…",
     notRepo: "Ce projet n'est lié à aucun dépôt git. Renseigne son dossier pour voir ses changements.",
     save: "Enregistrer",
     saving: "Enregistrement…",
@@ -112,9 +113,22 @@ export const frCode = {
         ? `Le commit ${sha} est retiré de la branche : ses modifications reviennent dans l'index.`
         : `Le commit ${sha} et ${newer} commit${s(newer)} plus récent${s(newer)} sont retirés de la branche : leurs modifications reviennent dans l'index.`,
     undoSubmit: "Annuler les commits",
+    submitPending: "Commit",
     push: "Pousser",
     pushingTo: (target: string) => `Envoi vers ${target}…`,
     pushFailed: "Le push a échoué",
+    pushFailedHelp:
+      "Git a refusé l'envoi : sa sortie est ci-dessous. Corrige la cause puis réessaie ; Kibo ne force jamais le push.",
+    gitOutput: "Sortie de git",
+    pushCommand: (remote: string, branch: string) => `git push -u ${remote} ${branch}`,
+    pushDetail: (shas: string[]) =>
+      `${shas.length} commit${s(shas.length)}${shas.length > 0 ? ` (${shas.join(", ")})` : ""}. Jamais de force-push. Délai maximal : 2 min.`,
+    elapsed: (seconds: number) => `${seconds} s`,
+    prCard: (n: number, state: string) => `PR #${n} ${state}`,
+    prCardDetail: (branch: string, base: string | null, ticketKey: string | null) =>
+      [base ? `${branch} → ${base}` : branch, ticketKey ? `rattachée à ${ticketKey}` : null]
+        .filter((part) => part !== null)
+        .join(" · "),
     retry: "Réessayer",
     nothingToPush: (upstream: string) => `Rien à pousser : la branche est à jour avec ${upstream}.`,
     pushAndPr: "Pousser et créer la PR",
@@ -126,8 +140,8 @@ export const frCode = {
   },
   pr: {
     title: "Pousser et créer la PR",
-    subtitle: (branch: string, base: string, commits: number, files: number) =>
-      `${branch} → ${base} · ${commits} commit${s(commits)} non poussé${s(commits)} · ${files} fichier${s(files)}`,
+    subtitle: (branch: string, base: string, commits: number, files: number | null) =>
+      `${branch} → ${base} · ${commits} commit${s(commits)} non poussé${s(commits)}${files === null ? "" : ` · ${files} fichier${s(files)}`}`,
     prTitle: "Titre",
     description: "Description",
     base: "Branche de base",

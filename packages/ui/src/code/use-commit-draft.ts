@@ -27,7 +27,9 @@ export function useCommitDraft(defaults: CommitDefaults | null, canAmend: boolea
     setAmend(true);
   };
   const clear = () => {
-    edit("");
+    const next = defaults?.message ?? "";
+    setMessage(next);
+    setPrefilled(next.length > 0);
     setEdited(false);
     setAmend(false);
   };

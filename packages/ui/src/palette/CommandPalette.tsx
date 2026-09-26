@@ -135,7 +135,7 @@ export function CommandPalette({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-[18%] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-[760px]"
+        className="top-[18%] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-[640px]"
       >
         <DialogTitle className="sr-only">{fr.palette.label}</DialogTitle>
         <DialogDescription className="sr-only">{fr.palette.placeholder}</DialogDescription>
