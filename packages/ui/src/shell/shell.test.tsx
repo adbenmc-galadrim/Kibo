@@ -50,3 +50,29 @@ test("the header shows a Project › Page breadcrumb", async () => {
   expect(crumbs.getByText("Kibo")).toBeTruthy();
   expect(crumbs.getByText("Board").getAttribute("aria-current")).toBe("page");
 });
+
+test("the header offers a ticket in the current project and shows the user's initials", async () => {
+  const go = (hash: string) =>
+    act(async () => {
+      location.hash = hash;
+      await new Promise((r) => setTimeout(r, 20));
+    });
+  await go("#/");
+  render(<Shell viewer="adam" notifications="native" />);
+  const header = () =>
+    within(screen.getByRole("navigation", { name: "Fil d'Ariane" }).closest("header") ?? document.body);
+  expect(header().queryByRole("button", { name: "Ticket" })).toBeNull();
+  const avatar = header().getByRole("img", { name: "adam" });
+  expect(avatar.textContent).toBe("AD");
+  await go("#/p/p1/1%401");
+  await go("#/agents");
+  await act(async () => header().getByRole("button", { name: "Ticket" }).click());
+  expect(await screen.findByRole("dialog", { name: "Nouveau ticket" })).toBeTruthy();
+});
+
+test("initials come from the first two words, or the first two letters", async () => {
+  const { initials } = await import("./UserAvatar");
+  expect(initials("Adam Benmchichi")).toBe("AB");
+  expect(initials("adam")).toBe("AD");
+  expect(initials("jean-luc.picard")).toBe("JL");
+});

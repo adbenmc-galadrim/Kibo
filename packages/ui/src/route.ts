@@ -16,18 +16,22 @@ export function parseRoute(hash: string): Route {
   return { projectId: m?.[1] ?? null, pageId: m?.[2] ? decodeURIComponent(m[2]) : null, screen: null };
 }
 
-let current = parseRoute(location.hash);
+let currentHash = location.hash;
+let current = parseRoute(currentHash);
+const snapshot = (): Route => {
+  if (location.hash !== currentHash) {
+    currentHash = location.hash;
+    current = parseRoute(currentHash);
+  }
+  return current;
+};
 const subscribe = (cb: () => void) => {
-  const on = () => {
-    current = parseRoute(location.hash);
-    cb();
-  };
-  window.addEventListener("hashchange", on);
-  return () => window.removeEventListener("hashchange", on);
+  window.addEventListener("hashchange", cb);
+  return () => window.removeEventListener("hashchange", cb);
 };
 
 export function useRoute(): Route {
-  return useSyncExternalStore(subscribe, () => current);
+  return useSyncExternalStore(subscribe, snapshot);
 }
 
 export function navigate(projectId: string | null, pageId: string | null = null): void {

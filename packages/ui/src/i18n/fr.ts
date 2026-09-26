@@ -17,6 +17,10 @@ export const fr = {
     changesCount: (n: number) => `${n} fichier${n > 1 ? "s" : ""} modifié${n > 1 ? "s" : ""}`,
     search: "Rechercher…",
   },
+  header: {
+    newTicket: "Ticket",
+    newTicketIn: (project: string) => `Nouveau ticket dans ${project}`,
+  },
   pairing: {
     title: "Appairer ce navigateur",
     help: "Colle le code affiché par le démon Kibo (fichier ~/.kibo/token).",

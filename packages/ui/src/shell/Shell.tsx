@@ -1,8 +1,9 @@
 import type { FileRef, ProjectSnapshot, Session } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
+import { Button } from "@kibo/sdk/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
-import { Bell } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { Bell, Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { AgentsPage } from "../agents/AgentsPage";
 import { AssignDialog } from "../agents/AssignDialog";
@@ -26,6 +27,7 @@ import { NotifyButton } from "./NotifyButton";
 import { Overview } from "./Overview";
 import { ScreenActions } from "./ScreenActions";
 import { TicketSheet } from "./TicketSheet";
+import { UserAvatar } from "./UserAvatar";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
@@ -39,7 +41,9 @@ function crumbsFor(route: Route, project: ProjectSnapshot | null, page: string |
 export function Shell({ viewer, notifications }: Props) {
   const route = useRoute();
   const projects = useProjects();
-  const project = useProject(route.projectId);
+  const [lastProjectId, setLastProjectId] = useState<string | null>(route.projectId);
+  const project = useProject(route.projectId ?? lastProjectId);
+  const routed = route.projectId ? project : null;
   const agents = useAgents();
   const config = useConfig();
   const now = useNow();
@@ -63,16 +67,19 @@ export function Shell({ viewer, notifications }: Props) {
     [],
   );
   useRunNotifications(agents, notifications === "browser");
+  useEffect(() => {
+    if (route.projectId) setLastProjectId(route.projectId);
+  }, [route.projectId]);
   if (!projects) return null;
 
-  const page = project?.pages.find((p) => p.id === route.pageId) ?? null;
-  const onProject = !route.screen && project;
+  const page = routed?.pages.find((p) => p.id === route.pageId) ?? null;
+  const onProject = !route.screen && routed;
   return (
     <HostProvider host={host}>
       <SidebarProvider>
         <AppSidebar
           projects={projects}
-          active={project}
+          active={routed}
           route={route}
           agents={agents}
           onNewProject={() => setNewProject(true)}
@@ -82,16 +89,28 @@ export function Shell({ viewer, notifications }: Props) {
           <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
             <SidebarTrigger />
             <Breadcrumb
-              items={crumbsFor(route, project, page?.title ?? null)}
+              items={crumbsFor(route, routed, page?.title ?? null)}
               heading={route.screen === "agents" || route.screen === "queue"}
             />
             <span className="flex-1" />
             <ScreenActions screen={route.screen} agents={agents} onNewProfile={() => setNewProfile(true)} />
+            {project && (
+              <Button
+                size="sm"
+                className="h-7"
+                title={fr.header.newTicketIn(project.meta.name)}
+                onClick={() => setNewTicket({})}
+              >
+                <Plus />
+                {fr.header.newTicket}
+              </Button>
+            )}
             {notifications === "browser" ? (
               <NotifyButton />
             ) : (
               <Bell aria-hidden className="size-4 text-muted-foreground" />
             )}
+            <UserAvatar user={viewer} />
           </header>
           <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
             {route.screen === "agents" && agents && config && (
@@ -105,9 +124,9 @@ export function Shell({ viewer, notifications }: Props) {
               <Overview viewer={viewer} projects={projects} onNewProject={() => setNewProject(true)} />
             )}
             {onProject && !route.pageId && (
-              <ProjectHome project={project} onNewPage={() => setNewPageParent(null)} />
+              <ProjectHome project={routed} onNewPage={() => setNewPageParent(null)} />
             )}
-            {onProject && page && <PageView key={page.id} project={project} page={page} viewer={viewer} />}
+            {onProject && page && <PageView key={page.id} project={routed} page={page} viewer={viewer} />}
           </div>
           <AgentPanel onLaunch={launch} focusRunId={focusRun} onFocused={clearFocus} />
         </SidebarInset>
