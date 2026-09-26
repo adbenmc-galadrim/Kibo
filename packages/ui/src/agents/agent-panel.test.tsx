@@ -9,6 +9,7 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { fr } from "../i18n/fr";
 import { agentsFixture, NOW } from "./fixtures";
 
 const MIN = 60_000;
@@ -127,6 +128,37 @@ test("the bar sums up slots, queue, running runs and the run waiting for an answ
   expect(onSelect).toHaveBeenCalledWith("r41");
   await user.click(screen.getByRole("button", { name: "Déplier les agents" }));
   expect(onExpand).toHaveBeenCalled();
+});
+
+test("the bar hides the runs that wrap behind a counter that expands the panel", async () => {
+  const wrapped = new Set(["r43", "r44"]);
+  const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetTop");
+  Object.defineProperty(HTMLElement.prototype, "offsetTop", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return wrapped.has(this.dataset.run ?? "") ? 16 : 0;
+    },
+  });
+  try {
+    const onExpand = mock(() => {});
+    render(<AgentBar state={agentsFixture()} now={NOW} online onExpand={onExpand} onSelect={() => {}} />);
+    const counter = await screen.findByRole("button", { name: "2 autres runs en cours" });
+    expect(counter.textContent).toBe("+2");
+    const item = (label: string) => screen.getByText(label).closest("li");
+    expect(item("opus-dev-1")?.getAttribute("aria-hidden")).toBeNull();
+    for (const label of ["opus-dev-3", "sonnet-review-1"]) {
+      expect(item(label)?.getAttribute("aria-hidden")).toBe("true");
+      expect(item(label)?.querySelector("button")?.tabIndex).toBe(-1);
+    }
+    await userEvent.setup().click(counter);
+    expect(onExpand).toHaveBeenCalled();
+  } finally {
+    if (original) Object.defineProperty(HTMLElement.prototype, "offsetTop", original);
+  }
+});
+
+test("the counter speaks of a single run in the singular", () => {
+  expect(fr.agents.moreRuns(1)).toBe("1 autre run en cours");
 });
 
 test("the bar says when the daemon is out of reach", () => {

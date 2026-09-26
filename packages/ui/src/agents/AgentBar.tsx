@@ -23,7 +23,8 @@ export function AgentBar({ state, now, online, onExpand, onSelect }: Props) {
     .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
   const waiting = state.runs.filter((r) => r.state === "waiting_input");
   const listRef = useRef<HTMLUListElement>(null);
-  const hidden = useWrappedCount(listRef);
+  const hidden = useWrappedCount(listRef, running.map((r) => r.id).join(" "));
+  const visible = running.length - hidden;
   return (
     <div className="flex h-10 items-center gap-3 overflow-hidden px-3 text-[11px]">
       <span className="flex shrink-0 items-center gap-2 text-xs font-medium">
@@ -39,10 +40,16 @@ export function AgentBar({ state, now, online, onExpand, onSelect }: Props) {
         {fr.agents.queued(state.queue.length)}
       </span>
       <ul ref={listRef} className="flex h-4 min-w-0 flex-wrap items-center gap-x-3 overflow-hidden">
-        {running.map((r) => (
-          <li key={r.id} className="flex h-4 shrink-0 items-center">
+        {running.map((r, index) => (
+          <li
+            key={r.id}
+            data-run={r.id}
+            aria-hidden={index >= visible || undefined}
+            className="flex h-4 shrink-0 items-center"
+          >
             <button
               type="button"
+              tabIndex={index >= visible ? -1 : undefined}
               onClick={() => onSelect(r.id)}
               className="flex items-center gap-1.5 whitespace-nowrap"
             >
