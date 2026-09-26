@@ -1,6 +1,13 @@
-import type { ProjectCommand, ProjectSnapshot, StatusId } from "@kibo/schema";
+import { KiboError, type ProjectCommand, type ProjectSnapshot, type StatusId } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { addInstance, listInstances, removeInstance } from "./instances";
+import { writeInstanceData } from "./instance-data";
+import {
+  addInstance,
+  listInstances,
+  removeInstance,
+  setInstanceComponent,
+  setInstanceConfig,
+} from "./instances";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
@@ -57,6 +64,26 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return null;
     case "upsertExternalRef":
       return upsertExternalRef(doc, cmd.ticketId, cmd.ref);
+    case "setInstanceComponent": {
+      const { method: _method, ...input } = cmd;
+      return setInstanceComponent(doc, input);
+    }
+    case "setInstanceConfig":
+      return setInstanceConfig(doc, cmd.instanceId, cmd.config);
+    case "setInstanceData":
+      writeInstanceData(doc, cmd.instanceId, cmd.key, cmd.value);
+      return null;
+  }
+}
+
+const DAEMON_ONLY_COMMANDS: ReadonlySet<ProjectCommand["method"]> = new Set([
+  "setInstanceComponent",
+  "setInstanceData",
+]);
+
+export function assertShellCommand(cmd: ProjectCommand): void {
+  if (DAEMON_ONLY_COMMANDS.has(cmd.method)) {
+    throw new KiboError("PERMISSION_DENIED", `command ${cmd.method} is reserved to the daemon`);
   }
 }
 
