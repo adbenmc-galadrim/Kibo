@@ -17610,7 +17610,7 @@ Correspondance maquette → classe (à appliquer pendant la revue écran par éc
 | 20 px | `text-xl` | titres des Paramètres |
 | 22 px | `text-2xl` | « Bonjour Adam », chiffres des statistiques (écran 13) |
 
-- [ ] **Step 1: Test des tokens**
+- [x] **Step 1: Test des tokens**
 
 `packages/sdk/src/theme.test.ts` :
 ```ts
@@ -17638,7 +17638,7 @@ test("density tokens follow the 13 px mockups", () => {
 Run: `bun test packages/sdk/src/theme.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Tokens**
+- [x] **Step 2: Tokens**
 
 `packages/sdk/src/theme.css`, nouveau bloc après le premier `@theme inline` :
 ```css
@@ -17662,13 +17662,13 @@ Vérifier que Tailwind prend bien la valeur redéfinie (le `@theme` du SDK est l
 Run: `bun test packages/sdk/src/theme.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Revue écran par écran (sombre puis clair)**
+- [x] **Step 3: Revue écran par écran (sombre puis clair)**
 
 Lancer l'app avec le jeu fictif (`bun run start`, projet de démonstration comme au jalon) à 1440 × 940, et comparer côte à côte avec les deux PDF, **sombre puis clair** : écran 1 (page 5), 7 (13), 8 (8), 9 (15), 10 (16), 11 (17), 13 (23), 14 (24), 17 (27), 21 (34), 3 (7), 6 (10), 30 (12). Pour chaque texte qui diverge, appliquer la classe du tableau ci-dessus. Primitives d'abord (`packages/sdk/src/ui/sidebar.tsx` : `SidebarGroupLabel` → `text-3xs font-medium uppercase tracking-wide`, `SidebarMenuBadge` → `text-2xs` ; `badge.tsx` inchangé, les badges de domaine passent `className="text-3xs"`), puis écrans. Inventaire de départ : `grep -rn "text-\(xs\|sm\|base\|lg\|xl\|2xl\)\|text-\[" packages/ui/src packages/sdk/src components/*/src --include=*.tsx` (≈ 182 `text-sm`, 142 `text-xs`, 12 autres).
 
 Kanban et Tickets : seules des classes changent (aucune logique), pour que le critère du jalon « conformité v1 sans modification du code métier » reste vrai ; le rapport du jalon liste ces fichiers comme changements de présentation.
 
-- [ ] **Step 4: Test Playwright de densité**
+- [x] **Step 4: Test Playwright de densité**
 
 `e2e/screens.spec.ts` (tourne en `screens-dark` et `screens-light`), à la fin :
 ```ts
@@ -17691,7 +17691,7 @@ test("densité 13 px des maquettes", async () => {
 Run: `bun run --cwd e2e test --project screens-dark --project screens-light`
 Expected: PASS.
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test packages components && bun run typecheck && bun run check && bun run budget && bun run --cwd e2e test`
 Expected: PASS ; `bun run budget` toujours sous 230 kB (si la tâche 35 est intégrée).
