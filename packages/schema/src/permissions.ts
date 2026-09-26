@@ -41,7 +41,7 @@ export function permissionList(g: GrantedPermissions): string[] {
     ...g.writes.map((e) => `write:${e}`),
     ...(g.data ? ["data"] : []),
     ...g.net.map((r) => `net:${r}`),
-    ...g.secrets.map((s) => `secret:${s.name}`),
+    ...g.secrets.flatMap((s) => s.hosts.map((host) => `secret:${s.name}@${host}`)),
   ];
 }
 

@@ -132,7 +132,12 @@ describe("permissions", () => {
     expect(old.secrets).toEqual([]);
     const next = grantedOf({ ...m, secrets: [{ name: "github", hosts: ["api.github.com"] }] });
     expect(next.secrets).toEqual([{ name: "github", hosts: ["api.github.com"] }]);
-    expect(addedPermissions(grantedOf(m), next)).toEqual(["secret:github"]);
+    expect(addedPermissions(grantedOf(m), next)).toEqual(["secret:github@api.github.com"]);
+    const wider = grantedOf({
+      ...m,
+      secrets: [{ name: "github", hosts: ["api.github.com", "uploads.github.com"] }],
+    });
+    expect(addedPermissions(next, wider)).toEqual(["secret:github@uploads.github.com"]);
   });
   test("reserved commands write nothing a component can declare", () => {
     expect(COMMAND_WRITES.setInstanceData).toBeNull();
