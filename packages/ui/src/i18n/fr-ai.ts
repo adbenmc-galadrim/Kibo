@@ -101,7 +101,7 @@ export const frAi = {
       `${title} · la validation a trouvé ${n} problème${n > 1 ? "s" : ""}.`,
     gaveUp: (title: string) => `${title} · l'agent n'a pas réussi à faire passer la validation.`,
     permissionsUnavailable:
-      "Empreinte ou manifeste manquant : revalide le brouillon ou abandonne-le pour relancer la génération.",
+      "Empreinte ou manifeste manquant : abandonne le brouillon pour relancer la génération.",
     errors: {
       INVALID_INPUT: "Le démon a refusé ces données.",
       CONFLICT: "Le brouillon a changé entre-temps : recharge puis réessaie.",

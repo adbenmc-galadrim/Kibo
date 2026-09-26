@@ -173,7 +173,7 @@ test("permissions without a hash explain the state instead of an empty step", as
   render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   expect(
     await screen.findByText(
-      "Empreinte ou manifeste manquant : revalide le brouillon ou abandonne-le pour relancer la génération.",
+      "Empreinte ou manifeste manquant : abandonne le brouillon pour relancer la génération.",
     ),
   ).toBeTruthy();
 });
