@@ -7444,7 +7444,7 @@ git commit -m "feat(daemon): porte des appels de composants"
   - `type UpdateDeps = { doc(projectId): LoroDoc; persist(projectId): void; manifestOf(ref): Promise<ComponentManifest>; migrate(targetRef, req: MigrateRequest): Promise<{ config; data }> }`.
   - `updateInstance(deps, projectId, instanceId, to: string): Promise<Instance>` : même version ⇒ inchangé ; `configVersion` cible < source ⇒ `INVALID_INPUT` ; cible > source ⇒ migration par le backend de la **version cible** ; config validée contre `configSchema`, données ≤ 256 Kio ; écriture unique `setInstanceComponent` ; tout échec de migration ou de validation ⇒ `MIGRATION_FAILED`, instance inchangée ; instance modifiée pendant la migration ⇒ `CONFLICT`.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/components/update.test.ts` :
 ```ts
@@ -7543,7 +7543,7 @@ describe("updateInstance", () => {
 Run: `bun test packages/daemon/src/components/update.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `update.ts`**
+- [x] **Step 2: Implémenter `update.ts`**
 
 ```ts
 import { dataSize, getInstance, readInstanceData, setInstanceComponent } from "@kibo/core";
@@ -7610,7 +7610,7 @@ export async function updateInstance(deps: UpdateDeps, projectId: string, instan
 }
 ```
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components/update.test.ts && bun run typecheck && bun run check`
 Expected: PASS.
