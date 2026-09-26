@@ -48,8 +48,8 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 - « Pousser et créer la PR » : pousse, puis `gh pr create --head --base --title --body-file - [--draft] [--reviewer]`. Seuls les commits poussés entrent dans la PR ; des fichiers indexés non commités déclenchent l'avertissement de la maquette 22 avec « Commiter d'abord ».
 - Description par défaut : sections `## Ticket`, `## Changements` (sujets des commits de la branche), `## Sous-tickets` (cases cochées si terminé), `## Maquette` seulement si un lien Figma existe (phase 5).
 - PR rattachée au ticket par `upsertExternalRef` (`{ kind: "github_pr", url, number, state }`, dédoublonné par URL). Une PR déjà ouverte pour la branche remplace le bouton par « Voir la PR #n ».
-- **Règles** : créer une PR liée à un ticket déclenche `pr_opened` (règle par défaut : *En review* depuis Backlog, À faire, En cours, brouillon compris) ; le suivi qui voit une PR passer à `merged` déclenche `pr_merged` (*Terminé* depuis Backlog, À faire, En cours, En review, puis cascade des parents). La modale de PR le signale tant que la règle `pr_opened` est active.
-- **Agent dans le worktree** : un run `running` ou `waiting_input` dont le dossier de travail (`cwd`, exposé par le run) est le worktree affiché ajoute un bandeau ambré au-dessus du formulaire de commit.
+- **Règles** : créer une PR non brouillon liée à un ticket, ou voir (suivi) une PR liée passer de `draft` à `open`, déclenche `pr_opened` (règle par défaut : *En review* depuis Backlog, À faire, En cours) ; une PR créée en brouillon ne déclenche rien. Le suivi qui voit une PR passer à `merged` déclenche `pr_merged` (*Terminé* depuis Backlog, À faire, En cours, En review, puis cascade des parents). Une règle en échec est journalisée et ne fait échouer ni la création de la PR ni le suivi. La modale de PR signale la règle tant que `pr_opened` est active.
+- **Agent dans le worktree** : un run `running` ou `waiting_input` dont le dossier de travail (`cwd` du run, chemin réel) est le worktree affiché ou l'un de ses sous-dossiers ajoute un bandeau ambré au-dessus du formulaire de commit. Un sous-dossier qui est lui-même un worktree (`.kibo/worktrees/…`) appartient à ce worktree, pas au worktree principal.
 
 ## 7. Onglets
 
@@ -67,6 +67,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 - Groupes : Récents (requête vide), Tickets (4 premiers puis « + n autres »), Pages, Projets, Actions (nouveau ticket, sous-ticket du ticket actif, nouvelle page, nouveau projet, changements du projet, thème).
 - `↵` ouvre (ticket ⇒ onglet ticket), `⌘↵` ouvre un ticket dans le Sheet, `Tab` fait défiler le filtre Tout → Tickets → Pages → Projets → Actions. `⌘T` ouvre la palette en mode « nouvel onglet ».
 - Thème : système → clair → sombre, préférence gardée dans `localStorage` (commodité propre au navigateur).
+- Écart assumé à la maquette 22 : la case « Lancer <profil de review> sur la PR » vient avec l'éditeur de règles (comme le « Rôle » des profils, spec agents §8) ; l'emplacement `prOptions` reste vide.
 - Groupe **Agents** (après Actions ; filtre `Tab` après Actions) : « Répondre à <agent> (<clé>) » pour chaque run en attente de réponse (ouvre le tiroir sur ce run), « Assigner <clé> à un agent… » pour le ticket actif (ouvre le dialogue d'assignation). Un ticket dont le run est en file affiche « En file #n » à la place de son statut.
 
 ## 9. Aperçu et liens de fichiers
