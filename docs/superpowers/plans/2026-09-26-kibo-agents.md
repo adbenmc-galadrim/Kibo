@@ -1130,7 +1130,7 @@ git commit -m "feat(core): planificateur de la file d'agents"
 
 Transitions : `admitted` (queued → starting, voie) ; `spawned` (starting → running) ; `hook` (question si `PostToolUse` de `ASK_TOOL`, sous-agents sur `SubagentStart` / `SubagentStop`, dernière activité) ; `exited` (running|starting → waiting_input si une question est en attente et sortie propre, sinon done, sinon failed) ; `answered` (waiting_input → queued, prioritaire, voie libérée, réponse en attente de reprise) ; `cancelled` / `failed` (tout état non terminal) ; `reranked` / `prioritized` (queued seulement) ; `enqueued` jamais via `reduceRun`.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/core/src/run-machine.test.ts` :
 ```ts
@@ -1276,12 +1276,12 @@ test("sub-agents live inside their parent run", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/core/src/run-machine.test.ts`
 Expected: FAIL (`Cannot find module "./run-machine"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/core/src/run-machine.ts` :
 ```ts
@@ -1427,12 +1427,12 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/core/src/run-machine.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/run-machine.ts packages/core/src/run-machine.test.ts
