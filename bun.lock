@@ -243,6 +243,25 @@
         "react-dom": "19.1.1",
       },
     },
+    "packages/sync-server": {
+      "name": "@kibo/sync-server",
+      "version": "0.0.0",
+      "dependencies": {
+        "@kibo/core": "workspace:*",
+        "@kibo/schema": "workspace:*",
+        "@kibo/trust": "workspace:*",
+        "loro-crdt": "1.16.3",
+        "zod": "3.25.76",
+      },
+    },
+    "packages/trust": {
+      "name": "@kibo/trust",
+      "version": "0.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "zod": "3.25.76",
+      },
+    },
     "packages/ui": {
       "name": "@kibo/ui",
       "version": "0.0.0",
@@ -552,6 +571,10 @@
     "@kibo/schema": ["@kibo/schema@workspace:packages/schema"],
 
     "@kibo/sdk": ["@kibo/sdk@workspace:packages/sdk"],
+
+    "@kibo/sync-server": ["@kibo/sync-server@workspace:packages/sync-server"],
+
+    "@kibo/trust": ["@kibo/trust@workspace:packages/trust"],
 
     "@kibo/ui": ["@kibo/ui@workspace:packages/ui"],
 

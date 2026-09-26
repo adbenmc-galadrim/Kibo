@@ -1,0 +1,13 @@
+{
+  "name": "@kibo/trust",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "zod": "3.25.76"
+  }
+}
