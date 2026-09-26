@@ -5,12 +5,13 @@ export function useCommitDraft(defaults: CommitDefaults | null, canAmend: boolea
   const [message, setMessage] = useState("");
   const [prefilled, setPrefilled] = useState(false);
   const [amend, setAmend] = useState(false);
+  const [edited, setEdited] = useState(false);
 
   useEffect(() => {
-    if (!defaults) return;
+    if (!defaults || edited) return;
     setMessage(defaults.message);
     setPrefilled(defaults.message.length > 0);
-  }, [defaults]);
+  }, [defaults, edited]);
 
   useEffect(() => {
     if (!canAmend) setAmend(false);
@@ -19,6 +20,7 @@ export function useCommitDraft(defaults: CommitDefaults | null, canAmend: boolea
   const edit = (next: string) => {
     setMessage(next);
     setPrefilled(false);
+    setEdited(true);
   };
   const load = (c: CommitInfo) => {
     edit(c.body ? `${c.subject}\n\n${c.body}` : c.subject);
@@ -26,6 +28,7 @@ export function useCommitDraft(defaults: CommitDefaults | null, canAmend: boolea
   };
   const clear = () => {
     edit("");
+    setEdited(false);
     setAmend(false);
   };
   return { message, prefilled, amend, setAmend, edit, load, clear };
