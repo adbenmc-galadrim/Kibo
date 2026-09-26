@@ -145,11 +145,23 @@ export function unshare(ctx: HubContext, state: ConnState, me: Session, frame: F
   const { projectId } = frame;
   requireRole(ctx.sdb, projectId, me.userId, OWNER);
   deleteProject(ctx.sdb, { projectId, by: me.userId }, ctx.now());
+  ctx.rooms.drop(projectId);
   for (const other of ctx.connections()) {
     if (!other.projects.has(projectId)) continue;
     if (other !== state) other.conn.send({ type: "revoked", projectId, reason: "deleted" });
     ctx.leave(other, projectId);
   }
-  ctx.rooms.drop(projectId);
   state.conn.send({ type: "done", requestId: frame.requestId });
+}
+
+export function withdrawPresence(ctx: HubContext, state: ConnState, projectId: string): void {
+  const deviceId = state.session?.deviceId;
+  const room = ctx.rooms.peek(projectId);
+  if (!deviceId || !room || room.presence.get(deviceId) === undefined) return;
+  for (const s of ctx.connections()) {
+    if (s !== state && s.session?.deviceId === deviceId && s.projects.has(projectId)) return;
+  }
+  room.presence.delete(deviceId);
+  const bytes = toBase64(room.presence.encode(deviceId));
+  ctx.broadcast(projectId, { type: "presence", projectId, bytes }, state.conn.id);
 }

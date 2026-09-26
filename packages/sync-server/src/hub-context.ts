@@ -18,6 +18,7 @@ export type ConnState = {
   session: Session | null;
   projects: Set<string>;
   queue: Promise<void>;
+  authTimer: ReturnType<typeof setTimeout> | null;
 };
 
 export type HubContext = {
@@ -29,4 +30,5 @@ export type HubContext = {
   broadcast(projectId: string, frame: ServerFrame, exceptConnId?: string): void;
   leave(state: ConnState, projectId: string): void;
   membersChanged(projectId: string): void;
+  kickDevice(deviceId: string, code: number): void;
 };

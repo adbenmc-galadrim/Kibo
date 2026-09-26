@@ -8,12 +8,13 @@ import {
   SYNC_LIMITS,
 } from "@kibo/schema";
 import { toBase64 } from "@kibo/trust";
-import { createInvite, deviceRecord, listDevices, redeemProjectInvite, revokeDevice } from "./accounts";
+import { deviceRecord } from "./accounts";
 import { audit } from "./audit";
-import { ChallengeNonces, verifyChallenge } from "./auth";
+import { CHALLENGE_TTL_MS, ChallengeNonces, verifyChallenge } from "./auth";
 import type { ServerDb } from "./db";
+import { handleAccount } from "./hub-account";
 import type { ConnState, HubConnection, HubContext, Session } from "./hub-context";
-import { changeRole, OWNER, presence, push, requireRole, share, subscribe, unshare } from "./hub-projects";
+import { changeRole, presence, push, share, subscribe, unshare, withdrawPresence } from "./hub-projects";
 import { FailureLimiter, RateWindow } from "./limits";
 import { listMembers, projectsOf } from "./members";
 import { publicErrorMessage } from "./public-error";
@@ -21,12 +22,19 @@ import type { RoomRegistry } from "./rooms";
 
 export type { HubConnection } from "./hub-context";
 
-type HubOptions = { sdb: ServerDb; rooms: RoomRegistry; origin: string; now: () => number };
+type HubOptions = {
+  sdb: ServerDb;
+  rooms: RoomRegistry;
+  origin: string;
+  now: () => number;
+  authTimeoutMs?: number;
+};
 
 export class SyncHub {
   readonly failures: FailureLimiter;
   readonly challenges: ChallengeNonces;
   private readonly conns = new Map<string, ConnState>();
+  private readonly pending = new Map<string, number>();
   private readonly ctx: HubContext;
 
   constructor(private readonly opts: HubOptions) {
@@ -46,12 +54,24 @@ export class SyncHub {
       broadcast: (projectId, frame, exceptConnId) => this.broadcast(projectId, frame, exceptConnId),
       leave: (state, projectId) => this.leave(state, projectId),
       membersChanged: (projectId) => this.membersChanged(projectId),
+      kickDevice: (deviceId, code) => this.kickDevice(deviceId, code),
     };
   }
 
   open(conn: HubConnection): void {
     const nonce = this.challenges.issue();
-    this.conns.set(conn.id, { conn, nonce, session: null, projects: new Set(), queue: Promise.resolve() });
+    const state: ConnState = {
+      conn,
+      nonce,
+      session: null,
+      projects: new Set(),
+      queue: Promise.resolve(),
+      authTimer: null,
+    };
+    state.authTimer = setTimeout(() => this.authTimedOut(state), this.opts.authTimeoutMs ?? CHALLENGE_TTL_MS);
+    state.authTimer.unref();
+    this.conns.set(conn.id, state);
+    this.countPending(conn.ip, 1);
     conn.send({ type: "challenge", nonce });
   }
 
@@ -65,9 +85,41 @@ export class SyncHub {
   closed(conn: HubConnection): void {
     const state = this.conns.get(conn.id);
     if (!state) return;
-    if (!state.session) this.challenges.consume(state.nonce);
-    for (const projectId of state.projects) this.opts.rooms.detach(projectId, conn.id);
+    if (!state.session) {
+      this.challenges.consume(state.nonce);
+      this.settle(state);
+    }
+    for (const projectId of [...state.projects]) this.leave(state, projectId);
     this.conns.delete(conn.id);
+  }
+
+  unauthenticated(ip: string): number {
+    return this.pending.get(ip) ?? 0;
+  }
+
+  private countPending(ip: string, delta: number): void {
+    const next = (this.pending.get(ip) ?? 0) + delta;
+    if (next > 0) this.pending.set(ip, next);
+    else this.pending.delete(ip);
+  }
+
+  private settle(state: ConnState): void {
+    if (state.authTimer === null) return;
+    clearTimeout(state.authTimer);
+    state.authTimer = null;
+    this.countPending(state.conn.ip, -1);
+  }
+
+  private authTimedOut(state: ConnState): void {
+    state.authTimer = null;
+    if (state.session || !this.conns.has(state.conn.id)) return;
+    this.countPending(state.conn.ip, -1);
+    state.conn.close(CLOSE_CODES.authFailed, "authentication timeout");
+  }
+
+  private refuseBeforeAuth(state: ConnState): void {
+    this.failures.fail(state.conn.ip);
+    state.conn.close(CLOSE_CODES.authFailed, "authenticate first");
   }
 
   kickDevice(deviceId: string, code: number): void {
@@ -95,7 +147,8 @@ export class SyncHub {
       frame = parseClientFrame(raw);
     } catch (e) {
       if (!(e instanceof KiboError)) throw e;
-      this.error(state, null, e.code);
+      if (state.session) this.error(state, null, e.code);
+      else this.refuseBeforeAuth(state);
       return;
     }
     const requestId = "requestId" in frame ? frame.requestId : null;
@@ -115,7 +168,7 @@ export class SyncHub {
     const session = state.session;
     if (!session) {
       if (frame.type === "auth") await this.auth(state, frame);
-      else state.conn.close(CLOSE_CODES.authFailed, "authenticate first");
+      else this.refuseBeforeAuth(state);
       return;
     }
     if (!this.deviceActive(session.deviceId)) {
@@ -157,6 +210,7 @@ export class SyncHub {
       state.conn.close(CLOSE_CODES.tooManyConnections, "too many connections");
       return;
     }
+    this.settle(state);
     state.session = who;
     audit(sdb, { at: now(), kind: "connect", userId: who.userId, deviceId: who.deviceId, detail: ip });
     const projects = projectsOf(sdb, who.userId);
@@ -195,50 +249,7 @@ export class SyncHub {
         unshare(this.ctx, state, me, frame);
         return;
       default:
-        await this.account(state, me, frame);
-    }
-  }
-
-  private async account(state: ConnState, me: Session, frame: ClientFrame): Promise<void> {
-    const { sdb, now } = this.opts;
-    if (frame.type === "invite") {
-      requireRole(sdb, frame.projectId, me.userId, OWNER);
-      const { projectId, role } = frame;
-      const invite = await createInvite(
-        sdb,
-        { kind: "project", projectId, role, createdBy: me.userId },
-        now(),
-      );
-      state.conn.send({ type: "invite-code", requestId: frame.requestId, ...invite });
-    } else if (frame.type === "redeem") {
-      const joined = await redeemProjectInvite(sdb, { code: frame.code, userId: me.userId }, now());
-      this.membersChanged(joined.projectId);
-      const name =
-        projectsOf(sdb, me.userId).find((p) => p.id === joined.projectId)?.name ?? joined.projectId;
-      state.conn.send({
-        type: "joined",
-        requestId: frame.requestId,
-        projectId: joined.projectId,
-        name,
-        role: joined.role,
-      });
-    } else if (frame.type === "device-invite") {
-      const invite = await createInvite(
-        sdb,
-        { kind: "device", userId: me.userId, createdBy: me.userId },
-        now(),
-      );
-      state.conn.send({ type: "invite-code", requestId: frame.requestId, ...invite });
-    } else if (frame.type === "list-devices") {
-      state.conn.send({ type: "devices", requestId: frame.requestId, devices: listDevices(sdb, me.userId) });
-    } else if (frame.type === "revoke-device") {
-      const target = deviceRecord(sdb, frame.deviceId);
-      if (!target || target.userId !== me.userId) {
-        throw new KiboError("FORBIDDEN", "you can only revoke your own devices");
-      }
-      revokeDevice(sdb, { deviceId: frame.deviceId, by: me.userId }, now());
-      state.conn.send({ type: "done", requestId: frame.requestId });
-      this.kickDevice(frame.deviceId, CLOSE_CODES.deviceRevoked);
+        await handleAccount(this.ctx, state, me, frame);
     }
   }
 
@@ -261,6 +272,7 @@ export class SyncHub {
 
   private leave(state: ConnState, projectId: string): void {
     if (!state.projects.delete(projectId)) return;
+    withdrawPresence(this.ctx, state, projectId);
     this.opts.rooms.detach(projectId, state.conn.id);
   }
 

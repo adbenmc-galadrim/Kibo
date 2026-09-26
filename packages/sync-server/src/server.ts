@@ -22,6 +22,7 @@ export type SyncServerOptions = {
   tls: { cert: string; key: string } | null;
   behindProxy: boolean;
   now?: () => number;
+  authTimeoutMs?: number;
 };
 
 type WsData = { id: string; ip: string };
@@ -30,6 +31,7 @@ export const JOIN_MAX_BYTES = 4096;
 export const MAX_REQUEST_BYTES = Math.max(MAX_FRAME_BYTES, KPKG_MAX_RAW_BYTES);
 const REVOCATION_CHECK_MS = 5_000;
 const SWEEP_MS = 60_000;
+export const UNAUTHENTICATED_PER_IP = 32;
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1"]);
 const JOIN_STATUS: Partial<Record<KiboErrorCode, number>> = {
   INVITE_INVALID: 403,
@@ -78,6 +80,9 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
       `listening on ${opts.hostname} needs TLS; --behind-proxy only on loopback`,
     );
   }
+  if ((!loopback || opts.behindProxy) && !opts.origin) {
+    throw new KiboError("INVALID_INPUT", "--origin is required outside loopback or behind a proxy");
+  }
   mkdirSync(opts.dataDir, { recursive: true, mode: 0o700 });
   chmodSync(opts.dataDir, 0o700);
   const sdb = openServerDb(join(opts.dataDir, "sync.db"));
@@ -91,8 +96,8 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
     if (!hub) throw new KiboError("INTERNAL", "sync hub is not ready");
     return hub;
   };
-  const clientIp = (req: Request, srv: Server<WsData>): string =>
-    (opts.behindProxy ? lastForwarded(req) : null) ?? srv.requestIP(req)?.address ?? "unknown";
+  const clientIp = (req: Request, srv: Server<WsData>): string | null =>
+    opts.behindProxy ? lastForwarded(req) : (srv.requestIP(req)?.address ?? "unknown");
 
   const joinRoute = async (req: Request, ip: string, h: SyncHub): Promise<Response> => {
     if (h.failures.blocked(ip)) return fail("RATE_LIMITED");
@@ -123,8 +128,12 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
       const url = new URL(req.url);
       const h = requireHub();
       const ip = clientIp(req, srv);
+      if (ip === null) return new Response("missing x-forwarded-for", { status: 400 });
       if (url.pathname === "/v1/sync") {
         if (h.failures.blocked(ip)) return new Response("too many failures", { status: 429 });
+        if (h.unauthenticated(ip) >= UNAUTHENTICATED_PER_IP) {
+          return new Response("too many pending connections", { status: 429 });
+        }
         return srv.upgrade(req, { data: { id: crypto.randomUUID(), ip } })
           ? undefined
           : new Response("websocket upgrade required", { status: 426 });
@@ -170,7 +179,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
   });
   const port = server.port ?? opts.port;
   const origin = opts.origin || `${opts.tls ? "wss" : "ws"}://${opts.hostname}:${port}`;
-  hub = new SyncHub({ sdb, rooms, origin, now });
+  hub = new SyncHub({ sdb, rooms, origin, now, authTimeoutMs: opts.authTimeoutMs });
   const sweep = setInterval(() => rooms.sweep(), SWEEP_MS);
   const revocations = setInterval(() => requireHub().checkRevocations(), REVOCATION_CHECK_MS);
   sweep.unref();

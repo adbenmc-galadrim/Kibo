@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { CLOSE_CODES, challengePayload, MAX_FRAME_BYTES, type ServerFrame } from "@kibo/schema";
+import { CLOSE_CODES, challengePayload, MAX_FRAME_BYTES, type ServerFrame, SYNC_LIMITS } from "@kibo/schema";
 import { generateKeyPair, type KeyPair, signBytes } from "@kibo/trust";
 import { createInvite, disableUser, redeemDeviceInvite, revokeDevice } from "./accounts";
 import { CHALLENGE_TTL_MS } from "./auth";
@@ -182,4 +182,50 @@ test("a revoked device reconnecting does not block its address", async () => {
     expect(conn.closedWith).toBe(CLOSE_CODES.deviceRevoked);
   }
   expect(hub.failures.blocked("203.0.113.9")).toBe(false);
+});
+
+test("a connection that never authenticates is closed after the timeout", async () => {
+  hub = new SyncHub({
+    sdb,
+    rooms: new RoomRegistry(sdb, { now: () => now, unloadAfterMs: 60_000 }),
+    origin: ORIGIN,
+    now: () => now,
+    authTimeoutMs: 20,
+  });
+  const idle = new FakeConnection("idle");
+  hub.open(idle);
+  const authed = await connected(await device("Adam"));
+  await Bun.sleep(60);
+  expect(idle.closedWith).toBe(CLOSE_CODES.authFailed);
+  expect(authed.closedWith).toBeNull();
+  hub.closed(idle);
+  expect(hub.unauthenticated(idle.ip)).toBe(0);
+});
+
+test("an invalid frame before auth closes with 4401 and counts as a failure", async () => {
+  for (let i = 0; i < SYNC_LIMITS.authFailuresPerMinute; i++) {
+    const conn = new FakeConnection(`bad${i}`);
+    hub.open(conn);
+    await hub.message(
+      conn,
+      i % 2 === 0 ? "not json" : JSON.stringify({ type: "list-devices", requestId: "x" }),
+    );
+    expect(conn.closedWith).toBe(CLOSE_CODES.authFailed);
+    expect(conn.frames.map((f) => f.type)).toEqual(["challenge"]);
+  }
+  expect(hub.failures.blocked("203.0.113.9")).toBe(true);
+});
+
+test("unauthenticated connections are counted per address until auth or close", async () => {
+  const adam = await device("Adam");
+  const a = new FakeConnection("a");
+  const b = new FakeConnection("b");
+  hub.open(a);
+  hub.open(b);
+  expect(hub.unauthenticated("203.0.113.9")).toBe(2);
+  await hub.message(a, await authFrame(a, adam));
+  expect(hub.unauthenticated("203.0.113.9")).toBe(1);
+  hub.closed(b);
+  hub.closed(a);
+  expect(hub.unauthenticated("203.0.113.9")).toBe(0);
 });

@@ -342,4 +342,38 @@ describe("presence", () => {
     const tom = await member(owner, "Tom", "viewer");
     expect((await tom.client.next("presence")).projectId).toBe(META.id);
   });
+  test("a device's presence is withdrawn when it disconnects or loses its role", async () => {
+    const { owner } = await sharedProject();
+    const shown = new EphemeralStore(30_000);
+    const follow = async () => {
+      const frame = await owner.next("presence");
+      shown.apply(fromBase64(frame.bytes));
+    };
+    const lea = await member(owner, "Léa", "editor");
+    const tom = await member(owner, "Tom", "editor");
+    for (const m of [lea, tom]) {
+      const bytes = encode(m.device.deviceId, state(m.device.userId, m.device.name));
+      m.client.send({ type: "presence", projectId: META.id, bytes });
+      await follow();
+    }
+    expect(shown.keys().sort()).toEqual([lea.device.deviceId, tom.device.deviceId].sort());
+    await Bun.sleep(5);
+    lea.client.close();
+    await follow();
+    expect(shown.keys()).toEqual([tom.device.deviceId]);
+    await Bun.sleep(5);
+    owner.send({
+      type: "set-role",
+      projectId: META.id,
+      requestId: "rm",
+      userId: tom.device.userId,
+      role: null,
+    });
+    await follow();
+    expect(shown.keys()).toEqual([]);
+    shown.destroy();
+    const late = await member(owner, "Zoé", "viewer");
+    await Bun.sleep(50);
+    expect(late.client.received("presence")).toHaveLength(0);
+  });
 });

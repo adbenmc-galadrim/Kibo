@@ -15,6 +15,10 @@ export class RoomRegistry {
     return this.entry(projectId).room;
   }
 
+  peek(projectId: string): ProjectRoom | null {
+    return this.entries.get(projectId)?.room ?? null;
+  }
+
   create(input: Parameters<typeof ProjectRoom.create>[1]): ProjectRoom {
     const room = ProjectRoom.create(this.sdb, input, this.opts.now(), this.opts.limits);
     this.entries.set(input.projectId, { room, connections: new Set(), idleSince: this.opts.now() });

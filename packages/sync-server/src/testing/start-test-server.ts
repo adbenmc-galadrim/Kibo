@@ -12,6 +12,7 @@ export type TestSyncServerOptions = {
   port?: number;
   cert?: SelfSigned;
   market?: { id: string; name: string };
+  authTimeoutMs?: number;
 };
 
 export async function startTestSyncServer(opts: TestSyncServerOptions = {}) {
@@ -34,6 +35,7 @@ export async function startTestSyncServer(opts: TestSyncServerOptions = {}) {
     tls: { cert: cert.certPem, key: cert.keyPem },
     behindProxy: false,
     now,
+    authTimeoutMs: opts.authTimeoutMs,
   });
   const base = `127.0.0.1:${server.port}`;
   return {

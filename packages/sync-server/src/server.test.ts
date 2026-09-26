@@ -4,8 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SYNC_LIMITS } from "@kibo/schema";
 import { generateKeyPair, KPKG_MAX_RAW_BYTES } from "@kibo/trust";
-import { startSyncServer } from "./server";
+import { startSyncServer, UNAUTHENTICATED_PER_IP } from "./server";
 import { startTestSyncServer, type TestSyncServer } from "./testing/start-test-server";
+import { TestClient } from "./testing/ws-client";
 
 let t: TestSyncServer | null = null;
 const cleanups: (() => Promise<void>)[] = [];
@@ -29,6 +30,9 @@ test("refuses to listen on a non loopback address without TLS", async () => {
   const base = { dataDir, hostname: "192.0.2.10", port: 0, origin: "" };
   expect(await outcome(startSyncServer({ ...base, tls: null, behindProxy: false }))).toBe("TLS_REQUIRED");
   expect(await outcome(startSyncServer({ ...base, tls: null, behindProxy: true }))).toBe("TLS_REQUIRED");
+  const tls = { cert: "unused", key: "unused" };
+  const origin = "wss://sync.kibo.test";
+  expect(await outcome(startSyncServer({ ...base, origin, tls, behindProxy: true }))).toBe("TLS_REQUIRED");
   rmSync(dataDir, { recursive: true, force: true });
 });
 
@@ -118,4 +122,38 @@ test("behind a proxy, the address is the one the proxy appended", async () => {
   for (let i = 0; i < SYNC_LIMITS.authFailuresPerMinute; i++) await postJoin("198.51.100.1, 203.0.113.5");
   expect((await postJoin("203.0.113.5")).status).toBe(429);
   expect((await postJoin("203.0.113.5, 198.51.100.2")).status).not.toBe(429);
+  const bare = await fetch(`${server.url}/v1/join`, { method: "POST", body: "{}" });
+  expect(bare.status).toBe(400);
+});
+
+test("without --behind-proxy, x-forwarded-for is ignored", async () => {
+  const s = await startTestSyncServer();
+  t = s;
+  const { publicKey } = await generateKeyPair();
+  const post = (forwardedFor: string) =>
+    fetch(`${s.httpsUrl}/v1/join`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": forwardedFor },
+      body: JSON.stringify({ code: "AAAABBBB", publicKey, deviceName: "Mac" }),
+      tls: { ca: s.caPem },
+    });
+  for (let i = 0; i < SYNC_LIMITS.authFailuresPerMinute; i++) await post(`198.51.100.${i}`);
+  expect((await post("198.51.100.200")).status).toBe(429);
+});
+
+test("a socket that never authenticates is closed with 4401", async () => {
+  const s = await startTestSyncServer({ authTimeoutMs: 50 });
+  t = s;
+  const idle = await TestClient.open(s);
+  expect(await idle.closed).toBe(4401);
+});
+
+test("unauthenticated sockets are capped per address", async () => {
+  const s = await startTestSyncServer();
+  t = s;
+  const pending: TestClient[] = [];
+  for (let i = 0; i < UNAUTHENTICATED_PER_IP; i++) pending.push(await TestClient.open(s));
+  const res = await fetch(`${s.httpsUrl}/v1/sync`, { tls: { ca: s.caPem } });
+  expect(res.status).toBe(429);
+  for (const c of pending) c.close();
 });
