@@ -8,6 +8,7 @@ import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import { loadOrCreateToken } from "./auth";
 import { createCodeService } from "./code/code-service";
+import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
@@ -106,6 +107,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   );
   closers.push(service.attachIntegrations(integrations));
   closers.push(() => integrations.stop());
+  const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
+  closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
   let sandboxOrigin = "";
   const components = createComponentsService({
@@ -164,7 +167,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     assets: components.assets,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [componentTrustGuard, market.handler],
+    handlers: [componentTrustGuard, market.handler, collab.handler],
   });
   front.push(() => server.stop());
   const started = createRemoteAccess({

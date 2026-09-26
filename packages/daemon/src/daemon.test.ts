@@ -126,6 +126,22 @@ describe("startDaemon", () => {
     expect(await survivors(pids)).toEqual([]);
   }, 15_000);
 
+  test("the sync client is wired and unconfigured by default", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const status = await (await rpc({ method: "getSyncStatus" })).json();
+    expect(status).toMatchObject({
+      ok: true,
+      result: { state: "unconfigured", serverUrl: null, projects: [] },
+    });
+    const db = new Database(join(home, "kibo.db"), { readonly: true });
+    const tables = db
+      .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all();
+    db.close();
+    expect(tables.map((t) => t.name)).toEqual(expect.arrayContaining(["sync_config", "sync_projects"]));
+  });
+
   test("remote access is off by default and pairing codes are single use", async () => {
     const { d } = await launch();
     const rpc = await pair(d);
