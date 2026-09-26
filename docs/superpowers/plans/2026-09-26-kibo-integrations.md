@@ -8837,7 +8837,7 @@ Sans recouvrement avec `packages/daemon/src/agents/ask-mcp.ts` : ce dernier est 
   - `mcpModule(kit: IntegrationKit, hub: McpHub): IntegrationModule` (handlers MCP, sonde `mcp`)
   - secrets : `mcp:<id>:<VAR>` (stdio), `mcp:<id>` (jeton HTTP) ; clé `"bearer"` dans `addMcpServer.secrets` pour le jeton HTTP
 
-- [ ] **Step 1: Tests purs (échouent)**
+- [x] **Step 1: Tests purs (échouent)**
 
 `packages/daemon/src/mcp/command-line.test.ts` :
 
@@ -8930,7 +8930,7 @@ test("a remote mcp server is reached at its checked public address only", async 
 
 Run: `bun test packages/daemon/src/mcp` — Expected: FAIL (modules absents).
 
-- [ ] **Step 2: `command-line.ts`, `result.ts` et `http-fetch.ts`**
+- [x] **Step 2: `command-line.ts`, `result.ts` et `http-fetch.ts`**
 
 `checkedAddress` et `pinnedRequest` sont exportés par `components/net-proxy-address.ts` depuis la Task 8 (N27) : aucune modification de la phase 4 ici.
 
@@ -9064,7 +9064,7 @@ export function toReadResult(raw: unknown, maxBytes = MCP_MAX_RESULT_BYTES): Mcp
 
 Run: `bun test packages/daemon/src/mcp/command-line.test.ts packages/daemon/src/mcp/result.test.ts packages/daemon/src/mcp/http-fetch.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Test du hub (échoue)**
+- [x] **Step 3: Test du hub (échoue)**
 
 `packages/daemon/src/mcp/hub.test.ts` :
 
@@ -9243,7 +9243,7 @@ test("importing an item twice returns the same ticket", async () => {
 
 Run: `bun test packages/daemon/src/mcp` — Expected: FAIL.
 
-- [ ] **Step 4: `config-store.ts` et `stdio-transport.ts`**
+- [x] **Step 4: `config-store.ts` et `stdio-transport.ts`**
 
 `packages/daemon/src/mcp/config-store.ts` :
 
@@ -9395,7 +9395,7 @@ export class BunStdioTransport implements Transport {
 
 Le serveur est lancé dans son propre groupe (`detached: true`) et `close` signale tout le groupe (`signalGroup` de `process-group.ts`, comme `code/run.ts`) : un `npx …` laisserait sinon son processus `node` orphelin. `stderr` n'est pas hérité : chaque ligne passe par `console.error`, caviardé au démarrage du démon (N14), pour qu'un serveur qui affiche sa variable secrète ne l'écrive pas en clair dans les journaux.
 
-- [ ] **Step 5: `connection.ts`**
+- [x] **Step 5: `connection.ts`**
 
 ```ts
 import { mkdirSync } from "node:fs";
@@ -9468,7 +9468,7 @@ export async function openMcpConnection(s: McpServerInput, deps: Deps): Promise<
 
 (`mcp:${s.id}:${name}` satisfait le type gabarit `SecretName`. Seule une adresse loopback part par le `fetch` global (serveur Dev Mode de Figma, faux MCP des tests) : `McpServerInput` refuse déjà tout `http:` non loopback (Task 1). `initialize`, `tools/list` et `resources/list` sont faits une fois par connexion et gardés tant qu'elle vit (spec F §8.1).)
 
-- [ ] **Step 6: `hub.ts`**
+- [x] **Step 6: `hub.ts`**
 
 ```ts
 import { rmSync } from "node:fs";
@@ -9651,7 +9651,7 @@ Précisions pour l'implémenteur :
 - `tryConnect` convertit un échec de connexion en vue « error » (état affiché à l'écran) ; toute autre exception remonte.
 - `McpError` et `ErrorCode.RequestTimeout` (`-32001`) sont exportés par `@modelcontextprotocol/sdk/types.js` en 1.30.1.
 
-- [ ] **Step 7: `component-gate.ts` et `module.ts`**
+- [x] **Step 7: `component-gate.ts` et `module.ts`**
 
 `packages/daemon/src/mcp/component-gate.ts` :
 
@@ -9753,7 +9753,7 @@ export function mcpModule(kit: IntegrationKit, hub: McpHub): IntegrationModule {
 
 `packages/daemon/src/integrations/bootstrap.ts` : créer avant le `kit` `const events = createEventLog(host.db, redactor, host.now);` et `const mcpHub = createMcpHub({ host, secrets, events, redact: redactor.redact });`, passer `events` au `kit`, `hooks.mcp: createMcpGate(mcpHub, host)`, et ajouter `mcpModule(kit, mcpHub)` à `modules`.
 
-- [ ] **Step 8: Vérifier et commiter**
+- [x] **Step 8: Vérifier et commiter**
 
 Run: `bun test packages/daemon/src/mcp && bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
