@@ -6,6 +6,8 @@ import userEvent from "@testing-library/user-event";
 const calls: RpcRequest[] = [];
 let listener: ((e: IntegrationEvent) => void) | null = null;
 let connected = true;
+let lastError: { code: string; message: string } | null = null;
+let syncStateFails = false;
 const binding = {
   id: "b1",
   adapter: "github-issues",
@@ -24,23 +26,28 @@ const replies: Record<string, () => unknown> = {
   command: () => ({ id: "i1" }),
   listComponents: () => [],
   listDrafts: () => [],
-  getSyncState: () => ({
-    bindings: [
-      {
-        bindingId: "b1",
-        repo: "adam/kibo",
-        runner: "adam",
-        running: false,
-        lastPullAt: 1,
-        lastError: null,
-        imported: 12,
-        resumeAt: null,
-      },
-    ],
-    pending: [],
-    errors: [],
-  }),
+  getSyncState: () => {
+    if (syncStateFails) throw new Error("daemon unreachable");
+    return syncState();
+  },
 };
+
+const syncState = () => ({
+  bindings: [
+    {
+      bindingId: "b1",
+      repo: "adam/kibo",
+      runner: "adam",
+      running: false,
+      lastPullAt: 1,
+      lastError,
+      imported: 12,
+      resumeAt: null,
+    },
+  ],
+  pending: [],
+  errors: [],
+});
 
 mock.module("../../api", () => ({
   client: {
@@ -65,7 +72,20 @@ beforeEach(() => {
   calls.length = 0;
   listener = null;
   connected = true;
+  lastError = null;
+  syncStateFails = false;
 });
+
+async function addSyncedKanban(onOpenChange: (o: boolean) => void) {
+  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Kanban" }));
+  await user.click(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" }));
+  await user.click(await screen.findByRole("radio", { name: "adam/kibo" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter et synchroniser" }));
+  act(() => listener?.({ type: "sync", projectId: "p1", bindingId: "b1", imported: 0, running: false }));
+  return user;
+}
 
 test("a synced Kanban creates the binding, the instance, then shows progress", async () => {
   const onOpenChange = mock((_: boolean) => {});
@@ -121,4 +141,26 @@ test("components that do not show tickets have no source choice", async () => {
   await user.click(screen.getByRole("radio", { name: "Graphe de dépendances" }));
   expect(screen.queryByText("Source")).toBeNull();
   expect(calls.some((c) => c.method === "getGithubConnectOptions")).toBe(false);
+});
+
+test("a failed first sync shows the error and keeps the dialog open until closed", async () => {
+  lastError = { code: "REMOTE_REJECTED", message: "Bad credentials" };
+  const onOpenChange = mock((_: boolean) => {});
+  const user = await addSyncedKanban(onOpenChange);
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "La première synchronisation a échoué : Bad credentials",
+  );
+  expect(onOpenChange).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Ajouter et synchroniser" }).hasAttribute("disabled")).toBe(true);
+  expect(calls.filter((c) => c.method === "createBinding")).toHaveLength(1);
+  await user.click(screen.getByRole("button", { name: "Annuler" }));
+  expect(onOpenChange).toHaveBeenCalledWith(false);
+});
+
+test("an unreadable sync state is shown, never swallowed", async () => {
+  syncStateFails = true;
+  const onOpenChange = mock((_: boolean) => {});
+  await addSyncedKanban(onOpenChange);
+  expect((await screen.findByRole("alert")).textContent).toBe("daemon unreachable");
+  expect(onOpenChange).not.toHaveBeenCalled();
 });
