@@ -301,7 +301,7 @@ Dépend de `schema` seulement. Exporte `scaffold(opts)`, `hashSources(dir)`, `bu
 
 ### 9.2 Toolchain et CLI
 
-- Toolchain = dossier contenant `typescript`, `@kibo/sdk` (sources et types), `react`, `react-dom`, `lucide-react`, `@testing-library/react`, `@happy-dom/global-registrator`. En dev : `node_modules` du monorepo ; packagé : ressource Tauri `toolchain/`. Le `tsconfig.json` généré y pointe par `paths`.
+- Toolchain = dossier contenant `typescript`, `@kibo/sdk` (sources et types), `react`, `react-dom`, `lucide-react`, `@testing-library/react`, `@happy-dom/global-registrator`. En dev : `node_modules` du monorepo ; packagé : ressource Tauri `toolchain/`. La toolchain packagée est la fermeture des dépendances de ces paquets, de Tailwind (`tailwindcss`, `@tailwindcss/node`, `@tailwindcss/oxide` et son binaire de plateforme, `tw-animate-css`), des types (`@types/bun`, `@types/react`) et de `shadcn`, ce dernier copié sans ses dépendances (seul `shadcn/tailwind.css` sert) ; une version par nom de paquet, un conflit fait échouer le build (plan de phase 4, décision 36). Le `tsconfig.json` généré y pointe par `paths`.
 - `bun` pour `bun test` : `process.execPath` avec `BUN_BE_BUN=1` (le binaire compilé se comporte comme `bun`) ; **à valider en tâche 1** ; à défaut, `bun` requis dans le `PATH` et vérifié à l'écran 19.
 - `packages/cli` : `kibo component new|test|dev|publish [--update-all|--new-version]`. `publish` passe par le démon (lit `~/.kibo/token`, s'appaire comme l'UI) ; si le composant a des usages, l'une des deux options est obligatoire.
 - Le binaire du démon accepte `component <sous-commande>` et `component-runtime` ; Paramètres › Général propose « Installer la commande kibo » (lien symbolique dans `~/.local/bin`).
