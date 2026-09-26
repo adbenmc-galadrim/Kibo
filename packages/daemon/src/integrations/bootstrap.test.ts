@@ -72,3 +72,16 @@ test("the ci runs are served to the UI and to components", async () => {
     host.close();
   }
 });
+
+test("the daemon secret store is exposed for system secrets", async () => {
+  const host = createFakeHost();
+  try {
+    const flags = parseIntegrationFlags({ "test-origins": ORIGIN, "memory-secrets": true });
+    const rpc = startIntegrations(host, flags, createRedactor());
+    await rpc.secrets.set("remote:tls", "key material");
+    expect(await rpc.secrets.get("remote:tls")).toBe("key material");
+    await rpc.stop();
+  } finally {
+    host.close();
+  }
+});

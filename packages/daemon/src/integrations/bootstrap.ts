@@ -70,6 +70,8 @@ export function parseIntegrationFlags(values: {
   return { testOrigins, memorySecrets };
 }
 
+export type StartedIntegrations = IntegrationRpc & { secrets: SecretStore };
+
 function secretStoreFor(flags: IntegrationFlags, redactor: Redactor): SecretStore {
   if (flags.memorySecrets) return createMemorySecretStore(redactor);
   return createBunSecretStore(redactor);
@@ -79,7 +81,7 @@ export function startIntegrations(
   host: IntegrationHost,
   flags: IntegrationFlags,
   redactor: Redactor,
-): IntegrationRpc {
+): StartedIntegrations {
   migrateIntegrations(host.db);
   if (flags.testOrigins.length > 0)
     console.warn(`[kibo-daemon] test origins enabled: ${flags.testOrigins.join(", ")}`);
@@ -144,11 +146,12 @@ export function startIntegrations(
     figmaModule(kit, mcpHub),
     githubIssuesModule(kit),
   ];
-  return createIntegrationRpc({
+  const rpc = createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),
     probes: modules.flatMap((m) => m.probes ?? []),
     stops: modules.flatMap((m) => (m.stop ? [m.stop] : [])),
     hooks: kit.hooks,
     redact: redactor.redact,
   });
+  return { ...rpc, secrets };
 }

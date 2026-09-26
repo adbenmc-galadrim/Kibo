@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { STATUS } from "./server";
+import { STATUS } from "./http-response";
 
 test("phase 7 codes map to HTTP statuses", () => {
   expect(STATUS).toMatchObject({

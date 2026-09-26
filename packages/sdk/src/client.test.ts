@@ -272,3 +272,17 @@ test("phase 7 events reach subscribeEvents and never reload a project", async ()
   offEvents();
   server.stop(true);
 });
+
+test("pairWithCode posts the code, fails on 401 and reports rate limiting", async () => {
+  const seen: { url: string; body: string }[] = [];
+  const statuses = [204, 401, 429];
+  const recording = (async (url: string, init: RequestInit) => {
+    seen.push({ url, body: String(init.body) });
+    return new Response(null, { status: statuses.shift() ?? 500 });
+  }) as unknown as typeof fetch;
+  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: recording });
+  await client.pairWithCode("K7Q4M2");
+  await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "RATE_LIMITED" });
+  expect(seen[0]).toEqual({ url: "http://127.0.0.1:1/api/pair-code", body: '{"code":"K7Q4M2"}' });
+});

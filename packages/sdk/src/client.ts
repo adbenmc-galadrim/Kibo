@@ -23,6 +23,7 @@ export type KiboClient = {
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
   code<R extends CodeRequest>(req: R): Promise<CodeResult[R["method"]]>;
   pair(token: string): Promise<void>;
+  pairWithCode(code: string): Promise<void>;
   subscribe(listener: (projectId: string | null) => void): () => void;
   subscribeTopic(topic: Topic, listener: () => void): () => void;
   onRunChanged(listener: (e: RunChanged) => void): () => void;
@@ -148,6 +149,12 @@ export function createClient(opts: ClientOptions): KiboClient {
     async pair(token) {
       const res = await post("/api/pair", { token });
       if (res.status !== 204) throw new KiboError("UNAUTHORIZED", "invalid pairing token");
+    },
+    async pairWithCode(code) {
+      const res = await post("/api/pair-code", { code });
+      if (res.status === 204) return;
+      if (res.status === 429) throw new KiboError("RATE_LIMITED", "too many attempts");
+      throw new KiboError("UNAUTHORIZED", "invalid or expired code");
     },
     subscribe(listener) {
       listeners.add(listener);

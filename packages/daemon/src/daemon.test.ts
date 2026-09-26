@@ -126,6 +126,24 @@ describe("startDaemon", () => {
     expect(await survivors(pids)).toEqual([]);
   }, 15_000);
 
+  test("remote access is off by default and pairing codes are single use", async () => {
+    const { d } = await launch();
+    const rpc = await pair(d);
+    const status = await (await rpc({ method: "getRemoteAccess" })).json();
+    expect(status).toMatchObject({ ok: true, result: { enabled: false, url: null } });
+    const created = z
+      .object({ result: z.object({ code: z.string() }) })
+      .parse(await (await rpc({ method: "createPairingCode" })).json());
+    const redeem = () =>
+      fetch(`${d.url}/api/pair-code`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: d.url },
+        body: JSON.stringify({ code: created.result.code }),
+      });
+    expect((await redeem()).status).toBe(204);
+    expect((await redeem()).status).toBe(401);
+  });
+
   test("a pairing session survives a daemon restart on the same home", async () => {
     const { d, home, stop } = await launch();
     const cookie = await pairCookie(d);

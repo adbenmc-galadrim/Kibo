@@ -1,5 +1,5 @@
 import type { Toolchain } from "@kibo/devkit";
-import { type HostLoad, type Session, ticketRuns } from "@kibo/schema";
+import { type HostLoad, KiboError, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
@@ -14,9 +14,14 @@ import { type ComponentsDeps, createComponentsService } from "./components/servi
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { listInterfaces } from "./remote/interfaces";
+import { PairingCodes } from "./remote/pairing-codes";
+import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
+import { remoteRpc } from "./remote/rpc";
 import { startServer } from "./server";
 import { call, createService } from "./service";
 import { openSessionStore } from "./sessions/session-store";
+import { openLocalSettings } from "./settings";
 import { openStore } from "./store";
 
 export type DaemonOptions = {
@@ -113,11 +118,19 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   await components.start();
   const code = createCodeService(service);
   closers.push(() => code.stop());
+  const pairingCodes = new PairingCodes(Date.now);
+  let remote: RemoteAccess | null = null;
+  const remoteAccess = () => {
+    if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
+    return remote;
+  };
   const server = startServer({
     service,
     code,
     token,
     sessions: openSessionStore(store.db),
+    pairingCodes,
+    extensions: [remoteRpc(remoteAccess, pairingCodes)],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
@@ -130,6 +143,17 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     redact: redactor.redact,
   });
   front.push(() => server.stop());
+  const started = createRemoteAccess({
+    home: opts.home,
+    settings: openLocalSettings(store),
+    secrets: integrations.secrets,
+    interfaces: () => listInterfaces(),
+    listen: (input) => server.listenRemote(input),
+    log: (message) => console.warn(`[kibo-daemon] ${message}`),
+  });
+  remote = started;
+  front.push(() => started.stop());
+  await started.resume();
   const sandbox = startSandboxServer({
     port: opts.sandboxPort,
     uiPort: server.port,
