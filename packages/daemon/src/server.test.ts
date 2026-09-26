@@ -210,6 +210,40 @@ describe("integration errors", () => {
   });
 });
 
+describe("change channel", () => {
+  test("broadcast messages are redacted before they reach the socket", async () => {
+    const secret = "ghp_TESTSECRET0123456789abcdefghijklmn";
+    const service = createService(store, { user: "adam" });
+    const redacting = startServer({
+      service,
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      redact: (text) => text.split(secret).join("***"),
+    });
+    const paired = await fetch(`${redacting.url}/api/pair`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: redacting.url },
+      body: JSON.stringify({ token: TOKEN }),
+    });
+    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const ws = new WebSocket(`${redacting.url.replace("http", "ws")}/api/events`, {
+      headers: { cookie, origin: redacting.url },
+    });
+    await new Promise<void>((resolve) => {
+      ws.onopen = () => resolve();
+    });
+    const received = new Promise<string>((resolve) => {
+      ws.onmessage = (e) => resolve(String(e.data));
+    });
+    service.docs.emit({ type: "notice", title: "CI", body: `Bearer ${secret}` });
+    const data = await received;
+    ws.close();
+    redacting.stop();
+    expect(JSON.parse(data)).toEqual({ type: "notice", title: "CI", body: "Bearer ***" });
+  });
+});
+
 describe("agents routes", () => {
   const RUN = crypto.randomUUID();
   const hookTo = (url: string, runId: string, headers: Record<string, string>) =>

@@ -1,6 +1,7 @@
 export type Redactor = { add(secret: string): void; redact(text: string): string };
 
 const MIN_SECRET_LENGTH = 8;
+const MAX_ERROR_DEPTH = 5;
 const METHODS = ["log", "info", "warn", "error", "debug"] as const;
 type ConsoleLike = Record<(typeof METHODS)[number], (...args: unknown[]) => void>;
 
@@ -18,9 +19,17 @@ export function createRedactor(): Redactor {
   };
 }
 
-function render(value: unknown): string {
+function renderError(error: Error, depth: number): string {
+  const head = `${error.name}: ${error.message}\n${error.stack ?? ""}`;
+  if (depth >= MAX_ERROR_DEPTH) return head;
+  const inner = error instanceof AggregateError ? [...error.errors] : [];
+  if (error.cause !== undefined) inner.push(error.cause);
+  return [head, ...inner.map((e) => `caused by ${render(e, depth + 1)}`)].join("\n");
+}
+
+function render(value: unknown, depth = 0): string {
   if (typeof value === "string") return value;
-  if (value instanceof Error) return `${value.name}: ${value.message}\n${value.stack ?? ""}`;
+  if (value instanceof Error) return renderError(value, depth);
   try {
     return JSON.stringify(value) ?? String(value);
   } catch (e) {

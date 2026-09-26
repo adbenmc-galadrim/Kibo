@@ -43,6 +43,11 @@ const persistedTitles = () =>
     (t) => t.title,
   );
 
+const persistedStatuses = () =>
+  call(createService(store, { user: "adam" }), { method: "getProject", projectId: project.id }).tickets.map(
+    (t) => t.statusId,
+  );
+
 test("commands carry their origin and observers run inside the persistence transaction", () => {
   const seen: CommandEvent[] = [];
   host.onCommand((e) => {
@@ -91,6 +96,38 @@ test("the command rpc checks its instance and passes it to observers", () => {
     command: { method: "createTicket", title: "Y" },
   });
   expect(seen.map((e) => e.meta)).toEqual([{ origin: "user", instanceId: null }]);
+});
+
+test("the command rpc passes a known instance to observers", () => {
+  const page = call(service, {
+    method: "command",
+    projectId: project.id,
+    command: { method: "addPage", title: "Tableau", kind: "dashboard" },
+  }) as { id: string };
+  const inst = call(service, {
+    method: "command",
+    projectId: project.id,
+    command: { method: "addInstance", pageId: page.id, component: "kanban@1.0.0" },
+  }) as { id: string };
+  const seen: CommandEvent[] = [];
+  host.onCommand((e) => seen.push(e));
+  call(service, {
+    method: "command",
+    projectId: project.id,
+    instanceId: inst.id,
+    command: { method: "createTicket", title: "Z" },
+  });
+  expect(seen.map((e) => e.meta)).toEqual([{ origin: "user", instanceId: inst.id }]);
+});
+
+test("run start and end go through rule triggers", () => {
+  const ticket = createTicket("T");
+  const seen: string[] = [];
+  host.onCommand((e) => seen.push(e.command.method === "setStatus" ? e.command.statusId : e.command.method));
+  service.agentData.runStarted(project.id, ticket.id);
+  service.agentData.runDone(project.id, ticket.id);
+  expect(seen).toEqual(["in_progress", "in_review"]);
+  expect(persistedStatuses()).toEqual(["in_review"]);
 });
 
 test("agents, rules and derived statuses reach the same observers", () => {
@@ -149,6 +186,34 @@ test("a failing host transaction restores the docs it touched", () => {
   expect(host.snapshot(project.id).tickets.map((t) => t.title)).toEqual(["Kept"]);
   expect(persistedTitles()).toEqual(["Kept"]);
   expect(changes.at(-1)).toEqual({ projectId: project.id });
+});
+
+test("a failing nested transaction caught by its parent leaves memory and SQLite equal", () => {
+  host.transaction(() => {
+    createTicket("A");
+    try {
+      host.transaction(() => {
+        createTicket("Lost");
+        throw new Error("nested failure");
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error);
+    }
+  });
+  expect(host.snapshot(project.id).tickets.map((t) => t.title)).toEqual(["A"]);
+  expect(persistedTitles()).toEqual(["A"]);
+});
+
+test("a nested success is restored when its parent fails", () => {
+  createTicket("Kept");
+  expect(() =>
+    host.transaction(() => {
+      host.transaction(() => createTicket("Inner"));
+      throw new Error("outer failure");
+    }),
+  ).toThrow("outer failure");
+  expect(host.snapshot(project.id).tickets.map((t) => t.title)).toEqual(["Kept"]);
+  expect(persistedTitles()).toEqual(["Kept"]);
 });
 
 test("a host transaction commits every command it runs", () => {

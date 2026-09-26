@@ -179,7 +179,7 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
   });
   port = server.port ?? opts.port;
   const publish = (message: ChangeMessage) => {
-    server.publish("changes", JSON.stringify(message));
+    server.publish("changes", redact(JSON.stringify(message)));
   };
   const off = opts.service.onChange(publish);
   const offCode = opts.code?.onChange(publish);

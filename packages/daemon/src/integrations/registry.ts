@@ -23,7 +23,9 @@ export const NEUTRAL_HOOKS: ComponentIntegrationHooks = {
   ciRuns: null,
 };
 
-function errorStatus(id: IntegrationId, e: unknown): IntegrationStatus {
+type Redact = (text: string) => string;
+
+function errorStatus(id: IntegrationId, e: unknown, redact: Redact): IntegrationStatus {
   if (!(e instanceof KiboError)) console.error(`[kibo-daemon] probe ${id} failed`, e);
   return {
     id,
@@ -32,7 +34,7 @@ function errorStatus(id: IntegrationId, e: unknown): IntegrationStatus {
     servers: [],
     error:
       e instanceof KiboError
-        ? { code: e.code, message: e.detail }
+        ? { code: e.code, message: redact(e.detail) }
         : { code: "INTERNAL", message: "probe failed" },
     resumeAt: null,
   };
@@ -41,11 +43,12 @@ function errorStatus(id: IntegrationId, e: unknown): IntegrationStatus {
 async function probeStatus(
   id: IntegrationId,
   fn: () => Promise<IntegrationStatus>,
+  redact: Redact,
 ): Promise<IntegrationStatus> {
   try {
     return await fn();
   } catch (e) {
-    return errorStatus(id, e);
+    return errorStatus(id, e, redact);
   }
 }
 
@@ -66,7 +69,9 @@ export function createIntegrationRpc(parts: {
   probes: IntegrationProbe[];
   stops: (() => void)[];
   hooks?: ComponentIntegrationHooks;
+  redact?: Redact;
 }): IntegrationRpc {
+  const redact = parts.redact ?? ((text: string) => text);
   const table = handlerTable(parts.handlers);
   const probes = new Map<IntegrationId, IntegrationProbe>();
   for (const p of parts.probes) {
@@ -82,12 +87,12 @@ export function createIntegrationRpc(parts: {
     handles: (method) => BUILTIN_METHODS.has(method) || table.has(method),
     async handle(req) {
       if (req.method === "listIntegrations") {
-        return Promise.all(listed().map((p) => probeStatus(p.id, () => p.status())));
+        return Promise.all(listed().map((p) => probeStatus(p.id, () => p.status(), redact)));
       }
       if (req.method === "testIntegration") {
         const p = probes.get(req.id);
         if (!p) throw new KiboError("NOT_FOUND", `no probe for ${req.id}`);
-        return probeStatus(p.id, () => (p.test ? p.test() : p.status()));
+        return probeStatus(p.id, () => (p.test ? p.test() : p.status()), redact);
       }
       if (req.method === "disconnectIntegration") {
         const p = probes.get(req.id);

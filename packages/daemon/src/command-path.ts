@@ -109,17 +109,20 @@ export function createCommandPath(deps: CommandPathDeps): CommandPath {
       });
     },
     transaction<T>(fn: () => T): T {
-      if (touched) return deps.store.transaction(fn);
+      const parent = touched;
       const mine = new Set<string>();
       touched = mine;
+      let out: T;
       try {
-        return deps.store.transaction(fn);
+        out = deps.store.transaction(fn);
       } catch (e) {
-        touched = null;
+        touched = parent;
         return rollback(e, mine);
       } finally {
-        touched = null;
+        touched = parent;
       }
+      for (const id of mine) parent?.add(id);
+      return out;
     },
     commands: {
       onCommand(listener) {

@@ -77,5 +77,6 @@ export function startIntegrations(
     probes: modules.flatMap((m) => m.probes ?? []),
     stops: modules.flatMap((m) => (m.stop ? [m.stop] : [])),
     hooks: kit.hooks,
+    redact: redactor.redact,
   });
 }

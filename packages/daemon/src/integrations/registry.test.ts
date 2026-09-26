@@ -61,3 +61,25 @@ test("duplicate handlers and unknown methods are refused", async () => {
   await expect(rpc.handle({ method: "testIntegration", id: "figma" })).rejects.toThrow("NOT_FOUND");
   await expect(rpc.handle({ method: "disconnectIntegration", id: "github" })).rejects.toThrow("NOT_FOUND");
 });
+
+test("a probe error message is redacted", async () => {
+  const rpc = createIntegrationRpc({
+    handlers: [],
+    probes: [
+      {
+        id: "github",
+        status: async () => {
+          throw new KiboError("REMOTE_REJECTED", "github 401: Bearer ghp_TESTSECRET0123456789abcdefghijklmn");
+        },
+      },
+    ],
+    stops: [],
+    redact: (text) => text.split("ghp_TESTSECRET0123456789abcdefghijklmn").join("***"),
+  });
+  const [s] = (await rpc.handle({ method: "listIntegrations" })) as { error: { message: string } }[];
+  expect(s?.error.message).toBe("github 401: Bearer ***");
+  const tested = (await rpc.handle({ method: "testIntegration", id: "github" })) as {
+    error: { message: string };
+  };
+  expect(tested.error.message).toBe("github 401: Bearer ***");
+});

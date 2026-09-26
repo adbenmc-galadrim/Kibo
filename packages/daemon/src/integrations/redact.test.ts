@@ -35,3 +35,24 @@ describe("redactor", () => {
     expect(lines[2]).toContain("TESTSECRET");
   });
 });
+
+test("aggregated errors and causes are rendered and redacted", () => {
+  const lines: string[] = [];
+  const push = (...a: unknown[]) => lines.push(a.join(" "));
+  const target = { log: push, info: push, warn: push, error: push, debug: push };
+  const r = createRedactor();
+  r.add("s3cret-value-123");
+  installConsoleRedaction(r, target);
+  const failure = new AggregateError(
+    [
+      new Error("first s3cret-value-123"),
+      new Error("restore failed", { cause: new Error("disk s3cret-value-123") }),
+    ],
+    "rollback failed",
+  );
+  target.error(failure);
+  expect(lines[0]).toContain("first ***");
+  expect(lines[0]).toContain("restore failed");
+  expect(lines[0]).toContain("disk ***");
+  expect(lines[0]).not.toContain("s3cret");
+});
