@@ -2840,7 +2840,7 @@ git commit -m "feat(daemon): secrets dans le trousseau système"
   - `ProjectSnapshot.bindings: Binding[]` (`rpc.ts`)
 - Produces (core) : `readExternalRefs(node): ExternalRef[]` (`tickets.ts`, validée, `STORE_CORRUPT` sinon) ; dans `external-refs.ts` : `upsertExternalRef(doc, ticketId, ref): Ticket` (dédoublonné par `kind` + `externalRefKey`, position conservée ; même nom et même signature qu'en phase 3) ; `removeExternalRef(doc, { ticketId, kind, key }): Ticket` ; `findTicketByRef(doc, ref): Ticket | null` (par `externalRefTarget`) ; `importExternalTicket(doc, input): Ticket` (idempotent par cible) ; dans `bindings.ts` : `addBinding`, `removeBinding`, `getBinding(doc, id): Binding`, `listBindings(doc): Binding[]`.
 
-- [ ] **Step 1: Tests (échouent)**
+- [x] **Step 1: Tests (échouent)**
 
 `packages/core/src/external-refs-kinds.test.ts` :
 
@@ -2967,7 +2967,7 @@ test("an invalid binding never reaches the doc", () => {
 
 Run: `bun test packages/core` — Expected: FAIL.
 
-- [ ] **Step 2: Schéma**
+- [x] **Step 2: Schéma**
 
 `packages/schema/src/external-ref.ts` (la branche `github_pr` de la phase 3 devient `GithubPrRef` ; seul changement de forme : `url` passe de `z.string().url()` à `WebUrl`, comme les trois autres types, car `z.string().url()` accepte `javascript:` et l'URL est rendue en `href` par `TicketDetail.tsx` ; les réfs `github_pr` déjà stockées viennent de `gh` et sont en `https://`) :
 
@@ -3032,7 +3032,7 @@ export function externalRefTarget(ref: ExternalRef): string | null {
 
 `packages/schema/src/rpc.ts` : `ProjectSnapshot` gagne `bindings: Binding[];` (`import type { Binding } from "./integrations";`). Les littéraux `ProjectSnapshot` des tests et fixtures listés dans **Files** gagnent `bindings: []`.
 
-- [ ] **Step 3: Core**
+- [x] **Step 3: Core**
 
 `packages/core/src/tickets.ts` : retirer `upsertExternalRef` (déplacée ci-dessous, même nom et même signature, réexportée par `index.ts` : `tickets.test.ts`, qui l'importe de `./index`, reste inchangé) et remplacer la lecture non validée de `readTicket` (`externalRefs: (d.get("externalRefs") as ExternalRef[] | undefined) ?? []`) par `externalRefs: readExternalRefs(n)` :
 
@@ -3146,7 +3146,7 @@ export function getBinding(doc: LoroDoc, id: string): Binding {
 
 `packages/core/src/commands.ts` : `upsertExternalRef` est importée de `./external-refs` (plus de `./tickets`) ; cas `removeExternalRef` (`return removeExternalRef(doc, { ticketId: cmd.ticketId, kind: cmd.kind, key: cmd.key });`), `addBinding` (`return addBinding(doc, cmd.binding);`), `removeBinding` (`removeBinding(doc, cmd.bindingId); return null;`), `importExternalTicket` (`const { method: _method, ...input } = cmd; return importExternalTicket(doc, input);`) dans le `switch` exhaustif d'`executeProjectCommand` ; `readProject` ajoute `bindings: listBindings(doc)`. `packages/core/src/index.ts` : `export * from "./bindings";` et `export * from "./external-refs";`.
 
-- [ ] **Step 4: Vérifier et commiter**
+- [x] **Step 4: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck` — Expected: PASS (tests de la phase 3 sur `github_pr` compris : `core/src/tickets.test.ts`, `daemon/src/code/code-service.test.ts`, suivi des PR).
 
