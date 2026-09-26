@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand } from "@kibo/schema";
+import type { ProjectCommand, ProjectSnapshot, TicketRun } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -12,7 +12,17 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   seedDemo(run);
 };
 
-runConformance({ manifest, Component }, seed);
+const runs = (s: ProjectSnapshot): TicketRun[] => {
+  const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
+  return [
+    { ticketId: id("KIB-12"), runId: "r1", label: "opus-dev-1", state: "running", position: null },
+    { ticketId: id("KIB-14"), runId: "r2", label: "opus-dev-2", state: "waiting_input", position: null },
+    { ticketId: id("KIB-18"), runId: "r3", label: "opus-dev", state: "queued", position: 1 },
+    { ticketId: id("KIB-16"), runId: "r4", label: "opus-dev-3", state: "done", position: null },
+  ];
+};
+
+runConformance({ manifest, Component }, seed, { runs });
 
 const setup = (surface: "view" | "widget", seedFn: typeof seed | null = seed) => {
   const m = createMockSdk(manifest, { ...(seedFn && { seed: seedFn }), surface, viewer: "adam" });
@@ -78,4 +88,21 @@ test("D9: empty states", async () => {
 test("D9: empty widget", async () => {
   setup("widget", null);
   expect(await screen.findByText("Aucun chemin critique : aucun ticket bloquant.")).toBeTruthy();
+});
+
+test("screen 10: an agent's node shows its live run state dot", async () => {
+  const m = setup("view");
+  m.setRuns(runs(m.snapshot()));
+  const canvas = await screen.findByRole("region", { name: "Graphe des dépendances" });
+  const dot = (key: string) =>
+    within(canvas)
+      .getByRole("button", { name: new RegExp(`${key} `) })
+      .querySelector("[data-state]")
+      ?.getAttribute("data-state");
+  await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
+  await waitFor(() => expect(dot("KIB-14")).toBe("waiting_input"));
+  expect(dot("KIB-18")).toBe("queued");
+  expect(dot("KIB-12")).toBe("running");
+  expect(dot("KIB-16")).toBeUndefined();
+  expect(dot("KIB-21")).toBeUndefined();
 });

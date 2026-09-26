@@ -116,6 +116,8 @@ export function GraphView() {
   const sdk = useSdk();
   const tickets = useEntities("ticket");
   const links = useEntities("link");
+  const runList = useEntities("run");
+  const runs = useMemo(() => new Map(runList.data.map((r) => [r.ticketId, r])), [runList.data]);
   const [showCritical, setShowCritical] = useState(true);
   const [filter, setFilter] = useState<GraphFilter>({
     assignee: sdk.config.filter === "all" ? "all" : "mine-and-agents",
@@ -131,7 +133,7 @@ export function GraphView() {
   const critical = useMemo(() => new Set(showCritical ? path : []), [path, showCritical]);
   const blocked = input.tickets.filter((t) => path.includes(t.id) && t.statusId === "blocked").length;
   const loading = tickets.loading || links.loading;
-  const failed = tickets.error !== null || links.error !== null;
+  const failed = tickets.error !== null || links.error !== null || runList.error !== null;
   const hasBlocks = input.edges.some((e) => e.type === "blocks");
 
   return (
@@ -164,6 +166,7 @@ export function GraphView() {
               edges={input.edges}
               layout={layout}
               critical={critical}
+              runs={runs}
               onOpen={(id) => sdk.openTicket(id)}
             />
           </div>

@@ -1,5 +1,5 @@
-import type { TicketView } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import type { TicketRun, TicketView } from "@kibo/schema";
+import { liveRun, RunDot, StatusDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot, Minus, Plus } from "lucide-react";
@@ -13,6 +13,7 @@ type Props = {
   edges: GraphEdge[];
   layout: GraphLayout;
   critical: ReadonlySet<string>;
+  runs: ReadonlyMap<string, TicketRun>;
   onOpen(id: string): void;
 };
 
@@ -91,11 +92,13 @@ function Node({
   ticket,
   at,
   hot,
+  run,
   onOpen,
 }: {
   ticket: TicketView;
   at: NodePosition;
   hot: boolean;
+  run: TicketRun | null;
   onOpen(id: string): void;
 }) {
   return (
@@ -115,6 +118,7 @@ function Node({
         <StatusDot statusId={ticket.statusId} />
         <span className="font-mono text-xs text-muted-foreground">{ticket.key}</span>
         <span className="flex-1" />
+        {run && <RunDot state={run.state} />}
         {ticket.assignee?.kind === "agent" && (
           <Bot aria-label={fr.agent} className="size-3.5 text-muted-foreground" />
         )}
@@ -176,7 +180,7 @@ function ZoomControls({ zoom, onZoom }: { zoom: number; onZoom(z: number): void 
   );
 }
 
-export function GraphCanvas({ tickets, edges, layout, critical, onOpen }: Props) {
+export function GraphCanvas({ tickets, edges, layout, critical, runs, onOpen }: Props) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
   const drag = useRef<{ start: Point; from: Point } | null>(null);
@@ -213,7 +217,16 @@ export function GraphCanvas({ tickets, edges, layout, critical, onOpen }: Props)
         <Edges edges={edges} layout={layout} critical={critical} />
         {layout.nodes.map((n) => {
           const t = byId.get(n.id);
-          return t ? <Node key={t.id} ticket={t} at={n} hot={critical.has(t.id)} onOpen={onOpen} /> : null;
+          return t ? (
+            <Node
+              key={t.id}
+              ticket={t}
+              at={n}
+              hot={critical.has(t.id)}
+              run={liveRun(runs.get(t.id) ?? null)}
+              onOpen={onOpen}
+            />
+          ) : null;
         })}
       </div>
       <Legend />

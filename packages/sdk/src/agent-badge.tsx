@@ -8,6 +8,9 @@ export type RunBadgeTexts = { queued: (position: number | null) => string; waiti
 
 const SHOWN: readonly RunState[] = ["queued", "starting", "running", "waiting_input", "failed"];
 
+export const liveRun = (run: TicketRun | null): TicketRun | null =>
+  run && SHOWN.includes(run.state) ? run : null;
+
 function stateText(run: TicketRun, texts: RunBadgeTexts): string | null {
   if (run.state === "queued") return texts.queued(run.position);
   if (run.state === "waiting_input") return texts.waiting;
@@ -18,7 +21,7 @@ function stateText(run: TicketRun, texts: RunBadgeTexts): string | null {
 type Props = { agent: string | null; run: TicketRun | null; texts: RunBadgeTexts; className?: string };
 
 export function AgentBadge({ agent, run, texts, className }: Props) {
-  const live = run && SHOWN.includes(run.state) ? run : null;
+  const live = liveRun(run);
   const name = live?.label ?? agent;
   if (!name) return null;
   const text = live && stateText(live, texts);
