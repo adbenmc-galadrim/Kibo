@@ -84,7 +84,7 @@ Ce plan a été écrit avant les phases 2 à 4 ; la tâche T0 (2026-09-26, `main
 
 ## Décisions nouvelles
 
-Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N34 viennent de la réconciliation T0 avec le code livré des phases 2 à 4.
+Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N36 viennent de la réconciliation T0 avec le code livré des phases 2 à 4 ; N37 et N38, de la revue de la tâche 5 (fusion à trois).
 
 - **N1 · Scope d'une liaison avec Project** : avec un Project v2 configuré, la liaison porte sur les issues **du dépôt présentes dans le Project** ; le pull lit les éléments du Project en GraphQL (balayage complet, 100 par page) et retient ceux dont `max(item.updatedAt, issue.updatedAt) ≥ since`. Sans Project : REST `since`. Raison : le statut d'un élément de Project ne modifie pas `updated_at` de l'issue ; seul le balayage le voit.
 - **N2 · `config.project.nodeId`** : l'identifiant GraphQL du Project est stocké dans la liaison (mutations sans requête préalable).
@@ -122,6 +122,8 @@ Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions d
 - **N34 · `source` hors `configSchema`** : `config.source = { bindingId }` (spec F §3.2) n'est pas déclaré dans le `configSchema` de Kanban et Tickets (valeurs scalaires seulement) ; c'est une clé posée par le shell à l'écran 3 et lue par `readSource`. `validateConfig` ne s'applique qu'à la mise à jour d'une version publiée, jamais à un intégré.
 - **N35 · Commandes réservées** : `upsertExternalRef`, `removeExternalRef`, `importExternalTicket`, `addBinding`, `removeBinding` valent `null` dans `COMMAND_WRITES` (réservées au shell et au démon, spec F §3.1). En phase 3 et 4, `upsertExternalRef` était ouverte à tout composant qui écrit `ticket` : un composant tiers pourrait forger une réf. `github_issue` et faire pousser des issues avec le compte de l'utilisateur. `assertShellCommand` ne change pas (le shell garde ces commandes). Dans le périmètre de la spec (application de §3.1).
 - **N36 · Permissions `secret:` et `mcp:`** : `GrantedPermissions` gagne `secrets` et `mcp` (défaut `[]` pour les versions déjà approuvées) ; `secret:<name>` apparaît comme permission « non utilisée » dans le rapport de validation (aucune inférence statique ne la détecte), sans effet sur le verdict (seules les permissions manquantes font échouer).
+- **N37 · Statut distant refusé** (précise §5.4) : `closed` suit `statusId` dans la fusion ; un changement distant de `closed` n'est appliqué que s'il concorde avec le statut de la base suivante. Un statut distant refusé (`blocked`) n'est jamais appliqué ; s'il accompagne la réouverture d'une issue dont la base est `done`, le ticket passe à `todo` et la base aussi, comme à l'import (Task 14 `importRemote`) et comme une issue rouverte sans Project. Le Project garde son option `Blocked`, le ticket reste ouvert, rien n'est repoussé. Raison : appliquer `closed = false` sans le statut rendait la base incohérente (`done` et ouverte) et l'issue était refermée au cycle suivant ; ignorer la réouverture laissait un ticket `done` sur une issue ouverte.
+- **N38 · Statut local inchangé** (précise N3) : `projectLocal` garde le statut de la base quand le statut local lui est égal, sans le projeter. Raison : la base peut porter un statut non canonique (`todo` par défaut d'une issue sans option alors que `todo` partage son option avec `backlog`, ou base calculée avec une ancienne correspondance) ; le projeter produisait une modification fantôme poussée à chaque cycle.
 
 ## Écrans à dessiner dans Penpot (avant les tâches UI)
 
@@ -3161,9 +3163,23 @@ git commit -m "feat(core): références externes et liaisons"
 
 ```ts
 import { describe, expect, test } from "bun:test";
-import { remoteStatusId, type StatusId, StatusId as StatusIds, type StatusMap, type SyncedFields } from "@kibo/schema";
+import {
+  remoteStatusId,
+  type StatusId,
+  StatusId as StatusIds,
+  type StatusMap,
+  type SyncedFields,
+} from "@kibo/schema";
 import fc from "fast-check";
-import { canonicalFields, normalizeText, planSync, projectLocal, settleAfterPush } from "./sync-plan";
+import {
+  type CanApply,
+  canonicalFields,
+  normalizeText,
+  planSync,
+  projectLocal,
+  SYNCED_FIELDS,
+  settleAfterPush,
+} from "./sync-plan";
 
 const f = (patch: Partial<SyncedFields> = {}): SyncedFields => ({
   title: "A",
@@ -3175,7 +3191,12 @@ const f = (patch: Partial<SyncedFields> = {}): SyncedFields => ({
 
 describe("three-way merge, field by field (spec F §5.3)", () => {
   test("nothing changed", () => {
-    expect(planSync({ base: f(), local: f(), remote: f() })).toEqual({ push: {}, apply: {}, conflicts: [], nextBase: f() });
+    expect(planSync({ base: f(), local: f(), remote: f() })).toEqual({
+      push: {},
+      apply: {},
+      conflicts: [],
+      nextBase: f(),
+    });
   });
   test("local only is pushed", () => {
     expect(planSync({ base: f(), local: f({ title: "B" }), remote: f() }).push).toEqual({ title: "B" });
@@ -3199,6 +3220,16 @@ describe("three-way merge, field by field (spec F §5.3)", () => {
     expect(p.push).toEqual({});
     expect(p.nextBase.statusId).toBe("todo");
   });
+  test("an issue reopened with a refused status reopens the ticket as todo", () => {
+    const base = f({ statusId: "done", closed: true });
+    const p = planSync({ base, local: base, remote: f({ statusId: "blocked" }) });
+    expect(p).toEqual({ push: {}, apply: { statusId: "todo", closed: false }, conflicts: [], nextBase: f() });
+  });
+  test("closed is never applied without the status it follows", () => {
+    const refuseDone: CanApply = (field, value) => !(field === "statusId" && value === "done");
+    const p = planSync({ base: f(), local: f(), remote: f({ statusId: "done", closed: true }), canApply: refuseDone });
+    expect(p).toEqual({ push: {}, apply: {}, conflicts: [], nextBase: f() });
+  });
   test("closed is never reported as a conflict on its own", () => {
     const p = planSync({
       base: f(),
@@ -3206,6 +3237,12 @@ describe("three-way merge, field by field (spec F §5.3)", () => {
       remote: f({ statusId: "done", closed: true, title: "Z" }),
     });
     expect(p.conflicts).toEqual([]);
+  });
+  test("the base is not mutated", () => {
+    const base = f();
+    planSync({ base, local: f({ title: "B" }), remote: f({ description: "d" }) });
+    expect(base).toEqual(f());
+    expect(SYNCED_FIELDS).toEqual(["title", "description", "statusId", "closed"]);
   });
 });
 
@@ -3223,6 +3260,13 @@ describe("projection and settle", () => {
     const base = f({ statusId: "done", closed: true });
     expect(projectLocal({ title: "A", description: "", statusId: "blocked" }, base, map)).toEqual(base);
   });
+  test("a local status equal to the base stays the base when options are shared", () => {
+    const map: StatusMap = { backlog: "O1", todo: "O1" };
+    expect(projectLocal({ title: "A", description: "", statusId: "todo" }, f(), map).statusId).toBe("todo");
+    expect(projectLocal({ title: "A", description: "", statusId: "in_progress" }, f(), map).statusId).toBe(
+      "todo",
+    );
+  });
   test("a server-normalised pushed value is taken locally instead of re-pushed", () => {
     const p = settleAfterPush({
       base: f(),
@@ -3234,16 +3278,23 @@ describe("projection and settle", () => {
     expect(p.apply).toEqual({ title: "B" });
   });
   test("canonical fields are key-order independent", () => {
-    expect(canonicalFields(f())).toBe(canonicalFields({ closed: false, statusId: "todo", description: "", title: "A" }));
+    expect(canonicalFields(f())).toBe(
+      canonicalFields({ closed: false, statusId: "todo", description: "", title: "A" }),
+    );
     expect(normalizeText("a\rb\r\nc")).toBe("a\nb\nc");
   });
 });
 
-type Remote = { title: string; description: string; closed: boolean; option: string | null };
+type Remote = { title: string; description: string | null; closed: boolean; option: string | null };
 type Local = { title: string; description: string; statusId: StatusId };
 const toFields = (r: Remote, map: StatusMap | null): SyncedFields => {
   const statusId = remoteStatusId(r.closed, r.option, map);
-  return { title: r.title, description: normalizeText(r.description), statusId, closed: statusId === "done" };
+  return {
+    title: r.title.trim(),
+    description: normalizeText(r.description ?? ""),
+    statusId,
+    closed: statusId === "done",
+  };
 };
 const pushTo = (r: Remote, patch: Partial<SyncedFields>, map: StatusMap | null): Remote => {
   const option = patch.statusId !== undefined && map !== null ? map[patch.statusId] : undefined;
@@ -3264,20 +3315,27 @@ const statusArb = fc.constantFrom(...StatusIds.options);
 const optionArb = fc.constantFrom("O1", "O2", "O3");
 const mapArb = fc.option(
   fc.record(
-    { backlog: optionArb, todo: optionArb, in_progress: optionArb, in_review: optionArb, blocked: optionArb, done: optionArb },
+    {
+      backlog: optionArb,
+      todo: optionArb,
+      in_progress: optionArb,
+      in_review: optionArb,
+      blocked: optionArb,
+      done: optionArb,
+    },
     { requiredKeys: [] },
   ),
   { nil: null },
 );
 const remoteArb = fc.record({
-  title: fc.constantFrom("a", "b", "c"),
-  description: fc.constantFrom("", "x", "x\r\ny"),
+  title: fc.constantFrom("a", "b", "c", "a "),
+  description: fc.constantFrom<string | null>(null, "", "x", "x\r\ny", "x\ny"),
   closed: fc.boolean(),
   option: fc.option(optionArb, { nil: null }),
 });
 const localArb = fc.record({
-  title: fc.constantFrom("a", "b", "c"),
-  description: fc.constantFrom("", "x", "x\ny"),
+  title: fc.constantFrom("a", "b", "c", " b "),
+  description: fc.constantFrom("", "x", "x\ny", "x\r\ny"),
   statusId: statusArb,
 });
 
@@ -3287,9 +3345,9 @@ test("property: after one pull-and-push cycle, the next cycle is a fixed point",
       const base = toFields(origin, map);
       const p1 = planSync({ base, local: projectLocal(local, base, map), remote: toFields(remote, map) });
       let localNow = applyLocal(local, p1.apply);
-      let remoteNow = remote;
+      let remoteNow: Remote = remote;
       let baseNow = p1.nextBase;
-      const pushed = Object.keys(p1.push) as (keyof SyncedFields)[];
+      const pushed = SYNCED_FIELDS.filter((field) => field in p1.push);
       if (pushed.length > 0) {
         remoteNow = pushTo(remote, p1.push, map);
         const s = settleAfterPush({
@@ -3302,7 +3360,11 @@ test("property: after one pull-and-push cycle, the next cycle is a fixed point",
         localNow = applyLocal(localNow, s.apply);
         baseNow = s.nextBase;
       }
-      const p2 = planSync({ base: baseNow, local: projectLocal(localNow, baseNow, map), remote: toFields(remoteNow, map) });
+      const p2 = planSync({
+        base: baseNow,
+        local: projectLocal(localNow, baseNow, map),
+        remote: toFields(remoteNow, map),
+      });
       expect(p2.push).toEqual({});
       expect(p2.apply).toEqual({});
     }),
@@ -3311,17 +3373,23 @@ test("property: after one pull-and-push cycle, the next cycle is a fixed point",
 });
 ```
 
-(`Object.keys(p1.push) as (keyof SyncedFields)[]` : `Object.keys` perd le type des clés d'un objet dont les clés sont exactement celles de `SyncedFields`.)
+Le modèle du test normalise le distant comme l'adaptateur (Task 13 : titre sans espaces de fin, corps `null` ⇒ `""`, `\r\n` ⇒ `\n`).
 
 Run: `bun test packages/core/src/sync-plan.test.ts` — Expected: FAIL (module absent).
 
 - [ ] **Step 2: Implémenter `packages/core/src/sync-plan.ts`**
 
 ```ts
-import { projectStatus, type StatusId, type StatusMap, type SyncedField, type SyncedFields } from "@kibo/schema";
+import {
+  projectStatus,
+  type StatusId,
+  type StatusMap,
+  type SyncedField,
+  type SyncedFields,
+} from "@kibo/schema";
 
 export const SYNCED_FIELDS: readonly SyncedField[] = ["title", "description", "statusId", "closed"];
-export type ConflictField = "title" | "description" | "statusId";
+export type ConflictField = Exclude<SyncedField, "closed">;
 export type SyncPlan = {
   push: Partial<SyncedFields>;
   apply: Partial<SyncedFields>;
@@ -3341,13 +3409,33 @@ export function projectLocal(
   base: SyncedFields,
   map: StatusMap | null,
 ): SyncedFields {
-  const statusId = projectStatus(ticket.statusId, map, base.statusId);
+  const statusId =
+    ticket.statusId === base.statusId ? base.statusId : projectStatus(ticket.statusId, map, base.statusId);
   return {
     title: ticket.title.trim(),
     description: normalizeText(ticket.description),
     statusId,
     closed: statusId === "done",
   };
+}
+
+function isConflictField(field: SyncedField): field is ConflictField {
+  return field !== "closed";
+}
+
+function followsBaseStatus(
+  field: SyncedField,
+  value: SyncedFields[SyncedField],
+  nextBase: SyncedFields,
+): boolean {
+  return field !== "closed" || value === (nextBase.statusId === "done");
+}
+
+function reopensWithRefusedStatus(
+  field: SyncedField,
+  i: { base: SyncedFields; remote: SyncedFields },
+): boolean {
+  return field === "statusId" && i.base.closed && !i.remote.closed;
 }
 
 function planField<K extends SyncedField>(
@@ -3367,9 +3455,12 @@ function planField<K extends SyncedField>(
     return;
   }
   if (!localChanged) {
-    if (canApply(field, r)) {
+    if (canApply(field, r) && followsBaseStatus(field, r, plan.nextBase)) {
       plan.apply[field] = r;
       plan.nextBase[field] = r;
+    } else if (reopensWithRefusedStatus(field, i)) {
+      plan.apply.statusId = "todo";
+      plan.nextBase.statusId = "todo";
     }
     return;
   }
@@ -3383,7 +3474,7 @@ function planField<K extends SyncedField>(
   }
   plan.apply[field] = r;
   plan.nextBase[field] = r;
-  if (field !== "closed") plan.conflicts.push(field as ConflictField);
+  if (isConflictField(field)) plan.conflicts.push(field);
 }
 
 export function planSync(i: {
@@ -3425,11 +3516,16 @@ export function settleAfterPush(i: {
 }
 
 export function canonicalFields(f: SyncedFields): string {
-  return JSON.stringify({ closed: f.closed, description: f.description, statusId: f.statusId, title: f.title });
+  return JSON.stringify({
+    closed: f.closed,
+    description: f.description,
+    statusId: f.statusId,
+    title: f.title,
+  });
 }
 ```
 
-(`field as ConflictField` : `field` est exclu de `"closed"` par la condition qui précède ; TypeScript ne rétrécit pas un paramètre générique.) Ajouter `export * from "./sync-plan";` à `packages/core/src/index.ts`.
+`projectLocal` garde la base pour un statut local égal à celui de la base (N38). `closed` suit `statusId` (`followsBaseStatus`, N37), ce qui suppose `statusId` avant `closed` dans `SYNCED_FIELDS` (ordre figé par le test « the base is not mutated ») ; une issue rouverte avec un statut refusé rouvre le ticket en `todo` (`reopensWithRefusedStatus`, N37). Ajouter `export * from "./sync-plan";` à `packages/core/src/index.ts`.
 
 - [ ] **Step 3: Lancer les tests**
 
@@ -7755,6 +7851,21 @@ describe("pull", () => {
     remote.edit(issue.number, { title: "B", closed: true });
     await cycle();
     expect(tickets()[0]).toMatchObject({ title: "B", statusId: "done" });
+  });
+
+  test("an issue reopened as blocked reopens the ticket as todo and stays open (N37)", async () => {
+    remote.add({ title: "A" });
+    await cycle();
+    host.command(host.projectId, { method: "setStatus", ticketId: tickets()[0]?.id ?? "", statusId: "done" }, USER);
+    await cycle();
+    expect(remote.issues.get(1)?.fields.closed).toBe(true);
+    remote.edit(1, { closed: false, statusId: "blocked" });
+    await cycle();
+    expect(tickets()[0]?.statusId).toBe("todo");
+    const before = remote.pushes.length;
+    await cycle();
+    expect(remote.pushes.length).toBe(before);
+    expect(remote.issues.get(1)?.fields).toMatchObject({ closed: false, statusId: "blocked" });
   });
 });
 

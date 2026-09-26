@@ -162,7 +162,7 @@ Raison : pour un ticket lié, GitHub est l'espace partagé de référence ; la v
 
 - Sans Project : `closed = true` ⇔ `statusId = done`. Distant rouvert ⇒ `todo` si le statut local était `done`. Statut local ≠ `done` ⇒ `state = open`.
 - Avec Project : `statusMap` fait foi dans les deux sens ; un statut sans correspondance n'est pas poussé.
-- `blocked` n'est jamais appliqué depuis le distant (motif obligatoire, spec §5) ; un ticket local bloqué pousse l'option mappée à `blocked` si elle existe, sinon rien.
+- `blocked` n'est jamais appliqué depuis le distant (motif obligatoire, spec §5) ; un ticket local bloqué pousse l'option mappée à `blocked` si elle existe, sinon rien ; une issue rouverte avec l'option de `blocked` rouvre un ticket `done` en `todo` (N37).
 - Suppression : supprimer un ticket lié ne supprime ni ne ferme l'issue (la ligne de sync est retirée) ; une issue supprimée ou transférée (404/410) passe la réf. en `url: null` et marque le ticket « Lien GitHub rompu ».
 - Sous-tickets : non synchronisés (les sous-issues GitHub sont hors périmètre, §12).
 
@@ -260,7 +260,7 @@ Lecture de `x-ratelimit-remaining` / `x-ratelimit-reset` et de `retry-after` ; s
 
 ## 14. Décisions du plan
 
-Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.md` (« Décisions nouvelles »). N1 à N21 : écriture du plan ; N22 à N36 : réconciliation avec le code livré des phases 2 à 4 (tâche T0, 2026-09-26).
+Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.md` (« Décisions nouvelles »). N1 à N21 : écriture du plan ; N22 à N36 : réconciliation avec le code livré des phases 2 à 4 (tâche T0, 2026-09-26) ; N37 et N38 : revue de la tâche 5 (fusion à trois), 2026-09-26.
 
 - **N1 · Scope d'une liaison avec Project** : avec un Project v2 configuré, la liaison porte sur les issues **du dépôt présentes dans le Project** ; le pull lit les éléments du Project en GraphQL (balayage complet, 100 par page) et retient ceux dont `max(item.updatedAt, issue.updatedAt) ≥ since`. Sans Project : REST `since`. Raison : le statut d'un élément de Project ne modifie pas `updated_at` de l'issue ; seul le balayage le voit.
 - **N2 · `config.project.nodeId`** : l'identifiant GraphQL du Project est stocké dans la liaison (mutations sans requête préalable).
@@ -298,6 +298,8 @@ Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.
 - **N34 · `source` hors `configSchema`** : `config.source = { bindingId }` (spec F §3.2) n'est pas déclaré dans le `configSchema` de Kanban et Tickets (valeurs scalaires seulement) ; c'est une clé posée par le shell à l'écran 3 et lue par `readSource`. `validateConfig` ne s'applique qu'à la mise à jour d'une version publiée, jamais à un intégré.
 - **N35 · Commandes réservées** : `upsertExternalRef`, `removeExternalRef`, `importExternalTicket`, `addBinding`, `removeBinding` valent `null` dans `COMMAND_WRITES` (réservées au shell et au démon, spec F §3.1). En phase 3 et 4, `upsertExternalRef` était ouverte à tout composant qui écrit `ticket` : un composant tiers pourrait forger une réf. `github_issue` et faire pousser des issues avec le compte de l'utilisateur. `assertShellCommand` ne change pas (le shell garde ces commandes). Dans le périmètre de la spec (application de §3.1).
 - **N36 · Permissions `secret:` et `mcp:`** : `GrantedPermissions` gagne `secrets` et `mcp` (défaut `[]` pour les versions déjà approuvées) ; `secret:<name>` apparaît comme permission « non utilisée » dans le rapport de validation (aucune inférence statique ne la détecte), sans effet sur le verdict (seules les permissions manquantes font échouer).
+- **N37 · Statut distant refusé** (précise §5.4) : `closed` suit `statusId` dans la fusion ; un changement distant de `closed` n'est appliqué que s'il concorde avec le statut de la base suivante. Un statut distant refusé (`blocked`) n'est jamais appliqué ; s'il accompagne la réouverture d'une issue dont la base est `done`, le ticket passe à `todo` et la base aussi, comme à l'import (Task 14 `importRemote`) et comme une issue rouverte sans Project. Le Project garde son option `Blocked`, le ticket reste ouvert, rien n'est repoussé. Raison : appliquer `closed = false` sans le statut rendait la base incohérente (`done` et ouverte) et l'issue était refermée au cycle suivant ; ignorer la réouverture laissait un ticket `done` sur une issue ouverte.
+- **N38 · Statut local inchangé** (précise N3) : `projectLocal` garde le statut de la base quand le statut local lui est égal, sans le projeter. Raison : la base peut porter un statut non canonique (`todo` par défaut d'une issue sans option alors que `todo` partage son option avec `backlog`, ou base calculée avec une ancienne correspondance) ; le projeter produisait une modification fantôme poussée à chaque cycle.
 
 ## Comptes et secrets réels
 
