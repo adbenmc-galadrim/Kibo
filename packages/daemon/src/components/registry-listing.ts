@@ -7,6 +7,7 @@ import {
   compareSemver,
   formatRef,
   isActive,
+  type PublishUsage,
   type RegistryEntry,
   splitRef,
 } from "@kibo/schema";
@@ -14,9 +15,8 @@ import type { LoroDoc } from "loro-crdt";
 import type { ComponentStore } from "./store";
 
 export type ProjectRef = { id: string; name: string; doc: LoroDoc };
-export type VersionedUsage = ComponentUsage & { version: string };
 
-export function findUsages(projects: ProjectRef[], id: string, version?: string): VersionedUsage[] {
+export function findUsages(projects: ProjectRef[], id: string, version?: string): PublishUsage[] {
   return projects.flatMap((p) => {
     const pages = listPages(p.doc);
     return listInstances(p.doc).flatMap((i) => {
@@ -36,7 +36,7 @@ export function findUsages(projects: ProjectRef[], id: string, version?: string)
   });
 }
 
-export const withoutVersion = ({ version: _version, ...usage }: VersionedUsage): ComponentUsage => usage;
+export const withoutVersion = ({ version: _version, ...usage }: PublishUsage): ComponentUsage => usage;
 
 function builtinSummary(projects: ProjectRef[], id: string): ComponentSummary {
   const byVersion = new Map<string, ComponentUsage[]>();
