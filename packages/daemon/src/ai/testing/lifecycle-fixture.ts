@@ -52,6 +52,7 @@ export function setupLifecycle(
   const inferred: string[] = [];
   let validations = 0;
   let inferError: KiboError | null = null;
+  let inferGate: Promise<void> = Promise.resolve();
   let published = opts.published ?? null;
   const devkit: Devkit = {
     scaffold: async ({ dir, id, title, kind }) => {
@@ -64,6 +65,7 @@ export function setupLifecycle(
     },
     infer: async (dir) => {
       inferred.push(dir);
+      await inferGate;
       if (inferError) throw inferError;
       return { ...NO_PERMISSIONS, reads: ["ticket"] };
     },
@@ -125,6 +127,13 @@ export function setupLifecycle(
     validations: () => validations,
     setInferError: (e: KiboError) => {
       inferError = e;
+    },
+    holdInfer: () => {
+      let release = () => {};
+      inferGate = new Promise((resolve) => {
+        release = resolve;
+      });
+      return () => release();
     },
     setPublished: (p: PublishedComponent) => {
       published = p;

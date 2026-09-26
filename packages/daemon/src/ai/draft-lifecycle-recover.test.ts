@@ -81,6 +81,26 @@ describe("recover a generation", () => {
     expect(store.get(d.id).status).toBe("review");
   });
 
+  test("a draft left validating before its restoration is restored, then validated", async () => {
+    const { home, store, life } = setupLifecycle();
+    const d = await life.start(create);
+    const paths = draftPaths(home, d.id);
+    writeFileSync(join(paths.dir, "evil.ts"), "x");
+    store.save(
+      applyDraftEvent(
+        store.get(d.id),
+        { type: "run_ended", runId: "run-1", state: "done", sessionId: "s1", error: null },
+        2_000,
+      ),
+    );
+    await life.recover();
+    expect(store.get(d.id)).toMatchObject({
+      status: "review",
+      incidents: [{ kind: "removed", path: "evil.ts" }],
+    });
+    expect(existsSync(join(paths.dir, "evil.ts"))).toBe(false);
+  });
+
   test("a corrupted draft fails visibly without stopping the others", async () => {
     const { home, store, life } = setupLifecycle();
     const broken = await life.start(create);
@@ -117,6 +137,43 @@ describe("recover a finalization cut short", () => {
     expect(readDraftManifest(src).version).toBe("0.2.0");
     expect(existsSync(backup)).toBe(false);
     expect(store.get(d.id).status).toBe("permissions");
+  });
+
+  test("abandon after a failed recovery puts the backup back", async () => {
+    const { home, store, life, d, src, backup } = await crashedFinalize({ published: false });
+    const dir = draftPaths(home, d.id).dir;
+    rmSync(dir, { recursive: true, force: true });
+    writeFileSync(dir, "not a folder");
+    await life.recover();
+    expect(existsSync(backup)).toBe(true);
+    life.abandon(d.id);
+    expect(readFileSync(join(src, "ui.tsx"), "utf8")).toBe("old");
+    expect(existsSync(backup)).toBe(false);
+    expect(store.get(d.id).status).toBe("abandoned");
+  });
+
+  test("abandon after a published install keeps the new source", async () => {
+    const { home, life, d, src, backup } = await crashedFinalize({ published: true });
+    const dir = draftPaths(home, d.id).dir;
+    rmSync(dir, { recursive: true, force: true });
+    writeFileSync(dir, "not a folder");
+    await life.recover();
+    life.abandon(d.id);
+    expect(readFileSync(join(src, "ui.tsx"), "utf8")).toBe("new");
+    expect(existsSync(backup)).toBe(false);
+  });
+
+  test("abandon of an unpublished create frees the reserved id", async () => {
+    const { home, srcRoot, runs, store, life } = setupLifecycle();
+    const d = await life.start(create);
+    runs.end("run-1", done());
+    await life.idle();
+    toPermissions(store, d);
+    installDraft(draftPaths(home, d.id).dir, join(srcRoot, "burndown"));
+    await life.recover();
+    life.abandon(d.id);
+    expect(existsSync(join(srcRoot, "burndown"))).toBe(false);
+    await expect(life.start(create)).resolves.toMatchObject({ componentId: "burndown" });
   });
 
   test("a draft awaiting permissions without a backup leaves the sources alone", async () => {

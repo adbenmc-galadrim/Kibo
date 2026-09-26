@@ -4,7 +4,9 @@ import {
   type DraftPaths,
   installDraft,
   readDraftManifest,
+  releaseSource,
   removeDraft,
+  type SourceFate,
   verifyAndRestore,
 } from "./draft-files";
 import { present } from "./draft-fs";
@@ -27,7 +29,13 @@ export const errorText = (e: unknown): string => (e instanceof Error ? e.message
 
 const installBackup = (srcDir: string) => join(dirname(srcDir), `.${basename(srcDir)}.kibo-backup`);
 
-export function createDraftRecovery(deps: RecoveryDeps): { recoverAll(): void } {
+export type DraftRecovery = {
+  recoverAll(): void;
+  abandon(d: ComponentDraft): void;
+  noteFailure(d: ComponentDraft, detail: string): boolean;
+};
+
+export function createDraftRecovery(deps: RecoveryDeps): DraftRecovery {
   const noteFailure = (d: ComponentDraft, detail: string) => {
     if (!d.failure) return false;
     const next = { ...d, failure: { ...d.failure, detail }, updatedAt: deps.clock.now() };
@@ -58,20 +66,37 @@ export function createDraftRecovery(deps: RecoveryDeps): { recoverAll(): void } 
     else install.rollback();
   };
 
+  const sourceFate = (d: ComponentDraft): SourceFate => {
+    if ((deps.catalog.latest(d.componentId)?.version ?? null) !== d.baseVersion) return "published";
+    return d.mode === "create" ? "reserved" : "unpublished";
+  };
+
+  const abandon = (d: ComponentDraft) => {
+    if (d.status === "permissions") releaseSource(deps.catalog.sourceDir(d.componentId), sourceFate(d));
+    const abandoned = deps.apply(d, { type: "abandoned" });
+    deps.cancelLiveRun(abandoned);
+    removeDraft(deps.paths(abandoned));
+  };
+
   const recoverOne = (d: ComponentDraft) => {
     if (d.status === "permissions") finishInstall(d);
     const p = deps.paths(d);
-    if (!present(p.baseDir)) {
-      deps.apply(d, { type: "abandoned" });
-      removeDraft(p);
-    } else if (d.status === "describing" || d.status === "generating") {
+    if (!present(p.baseDir)) abandon(deps.store.get(d.id));
+    else if (d.status === "describing" || d.status === "generating") {
+      const incidents = verifyAndRestore(p, d.withServer);
       const failed = deps.apply(d, { type: "interrupted" });
       deps.cancelLiveRun(d);
-      deps.apply(failed, { type: "restored", incidents: verifyAndRestore(p, failed.withServer) });
-    } else if (d.status === "validating") deps.revalidate(d.id);
+      deps.apply(failed, { type: "restored", incidents });
+    } else if (d.status === "validating") {
+      const found = verifyAndRestore(p, d.withServer);
+      if (found.length > 0) deps.apply(d, { type: "restored", incidents: [...d.incidents, ...found] });
+      deps.revalidate(d.id);
+    }
   };
 
   return {
+    abandon,
+    noteFailure,
     recoverAll() {
       for (const d of deps.store.active()) {
         try {

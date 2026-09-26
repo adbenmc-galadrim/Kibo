@@ -1,4 +1,9 @@
-import { type ComponentDraft, KiboError, type StartComponentDraftInput } from "@kibo/schema";
+import {
+  type ComponentDraft,
+  type DraftIncident,
+  KiboError,
+  type StartComponentDraftInput,
+} from "@kibo/schema";
 import {
   copySource,
   type DraftPaths,
@@ -147,26 +152,31 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     }
   };
 
-  const restoreAfterRun = (d: ComponentDraft): boolean => {
+  const restoreAfterRun = (d: ComponentDraft): { incidents: DraftIncident[] } | { detail: string } => {
     try {
-      apply(d, { type: "restored", incidents: verifyAndRestore(paths(d), d.withServer) });
-      return true;
+      return { incidents: verifyAndRestore(paths(d), d.withServer) };
     } catch (e) {
-      apply(d, { type: "validation_crashed", detail: errorText(e) });
-      return false;
+      return { detail: errorText(e) };
     }
   };
 
   const onRunEnd = async (id: string, runId: string, end: RunEnd): Promise<void> => {
-    const d = apply(deps.store.get(id), {
+    const before = deps.store.get(id);
+    if (before.status !== "generating" || before.runId !== runId) return;
+    const restored = restoreAfterRun(before);
+    const ended = apply(before, {
       type: "run_ended",
       runId,
       state: end.state,
       sessionId: end.sessionId,
       error: end.error,
     });
-    if (d.status !== "validating" || d.runId !== runId) return;
-    if (restoreAfterRun(d)) await validate(id);
+    if ("incidents" in restored) {
+      apply(ended, { type: "restored", incidents: restored.incidents });
+      await validate(id);
+    } else if (ended.status === "validating")
+      apply(ended, { type: "validation_crashed", detail: restored.detail });
+    else recovery.noteFailure(ended, restored.detail);
   };
 
   const launch = (d: ComponentDraft, prompt: string, resumeSessionId: string | null): ComponentDraft => {
@@ -186,6 +196,23 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     deps.runs.onEnd(runId, (end) => track(onRunEnd(next.id, runId, end)));
     return next;
   };
+
+  const prepare = (draft: ComponentDraft) =>
+    prepareDraft({
+      paths: paths(draft),
+      kiboFiles: draftKiboFiles(brief(draft)),
+      fill:
+        draft.mode === "create"
+          ? (dir) =>
+              deps.devkit.scaffold({
+                dir,
+                id: draft.componentId,
+                title: draft.title,
+                kind: draft.kind,
+                withServer: draft.withServer,
+              })
+          : async (dir) => copySource(deps.catalog.sourceDir(draft.componentId), dir),
+    });
 
   const idle = async () => {
     while (pending.size > 0) await Promise.all([...pending]);
@@ -211,23 +238,20 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
         id: deps.newId(),
         now: deps.clock.now(),
       });
-      await prepareDraft({
-        paths: paths(draft),
-        kiboFiles: draftKiboFiles(brief(draft)),
-        fill:
-          draft.mode === "create"
-            ? (dir) =>
-                deps.devkit.scaffold({
-                  dir,
-                  id: draft.componentId,
-                  title: draft.title,
-                  kind: draft.kind,
-                  withServer: draft.withServer,
-                })
-            : async (dir) => copySource(deps.catalog.sourceDir(draft.componentId), dir),
-      });
       deps.store.insert(draft);
-      return launch(draft, generatorPrompt(brief(draft)), null);
+      try {
+        await prepare(draft);
+      } catch (e) {
+        const current = deps.store.get(draft.id);
+        if (current.status === "describing") apply(current, { type: "abandoned" });
+        throw e;
+      }
+      const current = deps.store.get(draft.id);
+      if (current.status !== "describing") {
+        removeDraft(paths(current));
+        return current;
+      }
+      return launch(current, generatorPrompt(brief(current)), null);
     },
 
     retry(draftId) {
@@ -246,9 +270,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     },
 
     abandon(draftId) {
-      const d = apply(deps.store.get(draftId), { type: "abandoned" });
-      cancelLiveRun(d);
-      removeDraft(paths(d));
+      recovery.abandon(deps.store.get(draftId));
       return null;
     },
 

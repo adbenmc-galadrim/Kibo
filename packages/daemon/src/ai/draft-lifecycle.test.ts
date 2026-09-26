@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { draftPaths, readDraftManifest } from "./draft-files";
@@ -27,6 +27,21 @@ describe("start", () => {
     await expect(life.start({ ...create, id: "kanban" })).rejects.toThrow("CONFLICT");
     await life.start(create);
     await expect(life.start(create)).rejects.toThrow("CONFLICT");
+  });
+
+  test("two simultaneous starts reserve the id once", async () => {
+    const { store, life } = setupLifecycle();
+    const results = await Promise.allSettled([life.start(create), life.start(create)]);
+    expect(results.map((r) => r.status).sort()).toEqual(["fulfilled", "rejected"]);
+    expect(store.active().filter((d) => d.componentId === "burndown")).toHaveLength(1);
+  });
+
+  test("a failed preparation abandons the reserved draft", async () => {
+    const { home, store, life } = setupLifecycle();
+    mkdirSync(draftPaths(home, "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a10").dir, { recursive: true });
+    await expect(life.start(create)).rejects.toThrow("CONFLICT");
+    expect(store.list().map((d) => d.status)).toEqual(["abandoned"]);
+    await expect(life.start(create)).resolves.toMatchObject({ status: "generating" });
   });
 
   test("modify refuses an unknown component and an adapter", async () => {
@@ -129,6 +144,27 @@ describe("after the run", () => {
     expect(validations()).toBe(0);
   });
 
+  test("a failed run is restored too, so revalidation never sees agent files", async () => {
+    const { home, runs, store, life } = setupLifecycle();
+    const d = await life.start(create);
+    const paths = draftPaths(home, d.id);
+    writeFileSync(join(paths.dir, "evil.ts"), "fetch('https://x')");
+    writeFileSync(join(paths.dir, "component.test.tsx"), "test('ok', () => {});\n");
+    runs.end("run-1", { state: "failed", sessionId: "s1", stdout: "", error: "exit 1" });
+    await life.idle();
+    expect(store.get(d.id)).toMatchObject({
+      status: "failed",
+      incidents: [
+        { kind: "restored", path: "component.test.tsx" },
+        { kind: "removed", path: "evil.ts" },
+      ],
+    });
+    await life.revalidate(d.id);
+    expect(store.get(d.id).status).toBe("review");
+    expect(existsSync(join(paths.dir, "evil.ts"))).toBe(false);
+    expect(readFileSync(join(paths.dir, "component.test.tsx"), "utf8")).toContain("runConformance");
+  });
+
   test("a failed run is recorded; retry without session starts afresh", async () => {
     const { runs, store, life } = setupLifecycle();
     const d = await life.start(create);
@@ -174,6 +210,19 @@ describe("abandon, folder, revalidate", () => {
     await life.idle();
     expect(store.get(d.id).status).toBe("abandoned");
     expect(() => life.abandon(d.id)).toThrow("INVALID_INPUT");
+  });
+
+  test("abandon during inference stays abandoned without a report", async () => {
+    const { runs, store, life, holdInfer, validations } = setupLifecycle();
+    const release = holdInfer();
+    const d = await life.start(create);
+    runs.end("run-1", done());
+    life.abandon(d.id);
+    release();
+    await life.idle();
+    expect(store.get(d.id).status).toBe("abandoned");
+    expect(store.report(d.id)).toBeNull();
+    expect(validations()).toBe(0);
   });
 
   test("openFolder opens the draft folder in the editor", async () => {

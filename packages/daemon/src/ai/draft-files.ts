@@ -270,6 +270,18 @@ export function installDraft(dir: string, srcDir: string): { commit(): void; rol
   });
 }
 
+export type SourceFate = "published" | "unpublished" | "reserved";
+
+export function releaseSource(srcDir: string, fate: SourceFate): void {
+  guarded("release source", () => {
+    const backup = sibling(srcDir, "kibo-backup");
+    const trash = sibling(srcDir, "kibo-trash");
+    if (fate === "published") removeTree(backup);
+    recoverAfterCrash(srcDir, backup, trash);
+    if (fate === "reserved") removeTree(srcDir);
+  });
+}
+
 export function removeDraft(paths: DraftPaths): void {
   guarded("remove draft", () => {
     removeTree(paths.dir);
