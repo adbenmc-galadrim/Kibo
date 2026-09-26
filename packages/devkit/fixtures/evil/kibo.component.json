@@ -1,0 +1,9 @@
+{
+  "id": "evil",
+  "version": "0.1.0",
+  "kind": "widget",
+  "title": "Evil",
+  "reads": ["ticket"],
+  "writes": [],
+  "net": ["kibo-evil.test"]
+}
