@@ -1549,7 +1549,7 @@ export type ComponentIntegrationHooks = {
   - `createEventLog(db, redactor, now): EventLog` avec `EventLog = { log(integration: IntegrationId, level: "info" | "warn" | "error", message: string): void; recent(integration: IntegrationId, limit?: number): { at: number; level: string; message: string }[] }`
   - `createSettings(db): Settings` avec `Settings = { get(key: SettingKey): string | null; set(key: SettingKey, value: string): void; delete(key: SettingKey): void }`, `SettingKey = "github.mode" | "github.login" | "figma.url"`
   - `createMemorySecretStore(redactor, initial?: Record<string, string>): SecretStore & { dump(): Map<string, string> }` ; `unavailableSecretStore(reason: string): SecretStore`
-  - `createIntegrationRpc(parts: { handlers: IntegrationHandlers[]; probes: IntegrationProbe[]; stops: (() => void)[]; hooks: ComponentIntegrationHooks }): IntegrationRpc` avec `IntegrationRpc = { handles(method: string): boolean; handle(req: IntegrationRpcRequest): Promise<unknown>; stop(): void; hooks: ComponentIntegrationHooks }` (les `hooks` sont lus par la porte `componentCall` et le proxy `fetch` de la phase 4, `components/gate-handlers.ts` et `net-proxy.ts` ; les tâches 8, 12, 15 et 16 remplissent leurs champs) ; `NEUTRAL_HOOKS: ComponentIntegrationHooks` (aucun alias, aucun secret, `mcp` et `ciRuns` à `null`)
+  - `createIntegrationRpc(parts: { handlers: IntegrationHandlers[]; probes: IntegrationProbe[]; stops: (() => void)[]; hooks: ComponentIntegrationHooks; redact?: (text: string) => string }): IntegrationRpc` (`redact`, défaut identité, caviarde le message d'erreur des sondes renvoyé par `listIntegrations`/`testIntegration` : c'est un résultat RPC, que le caviardage de `e.detail` par `server.ts` ne couvre pas ; `startIntegrations` passe `redactor.redact`) avec `IntegrationRpc = { handles(method: string): boolean; handle(req: IntegrationRpcRequest): Promise<unknown>; stop(): void; hooks: ComponentIntegrationHooks }` (les `hooks` sont lus par la porte `componentCall` et le proxy `fetch` de la phase 4, `components/gate-handlers.ts` et `net-proxy.ts` ; les tâches 8, 12, 15 et 16 remplissent leurs champs) ; `NEUTRAL_HOOKS: ComponentIntegrationHooks` (aucun alias, aucun secret, `mcp` et `ciRuns` à `null`)
   - `INTEGRATION_METHODS` et `isIntegrationRequest(req: RpcRequest): req is IntegrationRpcRequest` (`integrations/methods.ts`, sur le modèle de `components/methods.ts`)
   - `createIntegrationHost(parts: HostParts): IntegrationHost` (`integrations/host.ts`)
   - `parseGithubRemote(url: string | null): RepoSlug | null` ; `githubRepoOf(host, projectId): Promise<RepoSlug | null>`
@@ -1889,6 +1889,24 @@ test("a failing probe becomes an error state, never a crash", async () => {
   expect(s?.error.code).toBe("NOT_CONNECTED");
 });
 
+test("a probe error message is redacted", async () => {
+  const rpc = createIntegrationRpc({
+    handlers: [],
+    probes: [
+      {
+        id: "github",
+        status: async () => {
+          throw new KiboError("REMOTE_REJECTED", "github 401: Bearer ghp_TESTSECRET0123456789abcdefghijklmn");
+        },
+      },
+    ],
+    stops: [],
+    redact: (text) => text.split("ghp_TESTSECRET0123456789abcdefghijklmn").join("***"),
+  });
+  const [s] = (await rpc.handle({ method: "listIntegrations" })) as { error: { message: string } }[];
+  expect(s?.error.message).toBe("github 401: Bearer ***");
+});
+
 test("duplicate handlers and unknown methods are refused", async () => {
   const h = { listGithubRepos: async () => [] };
   expect(() => createIntegrationRpc({ handlers: [h, h], probes: [], stops: [] })).toThrow("duplicate");
@@ -1938,14 +1956,14 @@ export type IntegrationRpc = {
 };
 type AnyHandler = (req: IntegrationRpcRequest) => Promise<unknown>;
 
-function errorStatus(id: IntegrationId, e: unknown): IntegrationStatus {
+function errorStatus(id: IntegrationId, e: unknown, redact: (text: string) => string): IntegrationStatus {
   if (!(e instanceof KiboError)) console.error(`[kibo-daemon] probe ${id} failed`, e);
   return {
     id,
     state: "error",
     account: null,
     servers: [],
-    error: e instanceof KiboError ? { code: e.code, message: e.detail } : { code: "INTERNAL", message: "probe failed" },
+    error: e instanceof KiboError ? { code: e.code, message: redact(e.detail) } : { code: "INTERNAL", message: "probe failed" },
     resumeAt: null,
   };
 }
@@ -1955,7 +1973,9 @@ export function createIntegrationRpc(parts: {
   probes: IntegrationProbe[];
   stops: (() => void)[];
   hooks?: ComponentIntegrationHooks;
+  redact?: (text: string) => string;
 }): IntegrationRpc {
+  const redact = parts.redact ?? ((text: string) => text);
   const table = new Map<string, AnyHandler>();
   for (const group of parts.handlers) {
     for (const [method, fn] of Object.entries(group)) {
@@ -1968,7 +1988,7 @@ export function createIntegrationRpc(parts: {
     try {
       return await fn();
     } catch (e) {
-      return errorStatus(id, e);
+      return errorStatus(id, e, redact);
     }
   };
   return {
@@ -2170,6 +2190,7 @@ export function startIntegrations(host: IntegrationHost, flags: IntegrationFlags
     probes: modules.flatMap((m) => m.probes ?? []),
     stops: modules.flatMap((m) => (m.stop ? [m.stop] : [])),
     hooks: kit.hooks,
+    redact: redactor.redact,
   });
 }
 ```
@@ -2386,7 +2407,7 @@ et, dans `docs` :
 ```
 
 Les commandes dérivées des règles passent par les intercepteurs et les observateurs, dans la même transaction, sans redéclencher les règles. `emit` est typé `ChangeMessage`, qui inclut `IntegrationEvent` depuis la Task 1 (N24) : le serveur publie déjà tout `service.onChange` sur le canal `changes`, `server.ts` n'a rien de plus à diffuser. Le reste de `service.ts` :
-- `transaction<T>(fn: () => T): T` (utilisé par `host.transaction`, Tasks 14, 15, 16) : `store.transaction(fn)` qui note les projets modifiés par `docs.run`/`docs.trigger` pendant `fn` (ensemble `touched`, rempli par `guarded` quand `done.length > 0`) ; si `fn` échoue, chaque projet noté est rechargé depuis SQLite (`restore`) puis `docs.emit({ projectId })`, et l'erreur est relancée. Imbriqué, il se contente de `store.transaction(fn)` (point de sauvegarde). Raison : une écriture SQLite du moteur de sync qui échoue après une commande annulerait le snapshot persisté mais laisserait le ticket dans le doc en mémoire (import en double à la sauvegarde suivante). Test dans `host.test.ts` : « a failing host transaction restores the docs it touched » (commande dans `host.transaction`, puis `throw` ; le ticket n'est ni en mémoire ni en base) ;
+- `transaction<T>(fn: () => T): T` (utilisé par `host.transaction`, Tasks 14, 15, 16) : `store.transaction(fn)` qui note les projets modifiés par `docs.run`/`docs.trigger` pendant `fn` (ensemble `touched`, rempli par `guarded` quand `done.length > 0`) ; si `fn` échoue, chaque projet noté est rechargé depuis SQLite (`restore`) puis `docs.emit({ projectId })`, et l'erreur est relancée. Imbriqué, il ouvre un point de sauvegarde (`store.transaction(fn)`) avec son propre ensemble `touched` : si le `fn` imbriqué échoue, ses projets sont rechargés (le rechargement lit l'état de la transaction englobante, point de sauvegarde annulé) avant de relancer l'erreur ; s'il réussit, ses projets rejoignent l'ensemble englobant. Sinon, une erreur imbriquée rattrapée par le `fn` englobant laisserait en mémoire une commande dont le snapshot et les écritures des observateurs (boîte d'envoi) ont été annulés, puis persistée à la sauvegarde suivante sans être observée (revue de la Task 2). Raison : une écriture SQLite du moteur de sync qui échoue après une commande annulerait le snapshot persisté mais laisserait le ticket dans le doc en mémoire (import en double à la sauvegarde suivante). Tests dans `host.test.ts` : « a failing host transaction restores the docs it touched » (commande dans `host.transaction`, puis `throw` ; le ticket n'est ni en mémoire ni en base) et « a failing nested transaction caught by its parent leaves memory and SQLite equal » (`host.transaction(() => { createTicket("A"); try { host.transaction(() => { createTicket("Lost"); throw … }); } catch {} })` ⇒ mémoire et base valent `["A"]`) ;
 - `triggerRules(projectId, trigger)` devient `docs.trigger(projectId, trigger)` (le suivi des PR, `code/pr-poller.ts`, n'est pas modifié) ;
 - `case "command"` : `assertShellCommand(req.command)` ; si `req.instanceId` est fourni et absent de `listInstances(docs.project(req.projectId))` ⇒ `KiboError("NOT_FOUND", \`instance ${req.instanceId} not found\`)` ; puis `docs.run(req.projectId, req.command, { origin: "user", instanceId: req.instanceId ?? null })` ;
 - `handle` : `if (isIntegrationRequest(req)) return integrationsReady().handle(req);` à côté de `isComponentRequest` (`integrationsReady` rejette en `INTERNAL`, « integrations are not ready », comme `componentsReady`) ;
@@ -2490,7 +2511,7 @@ installConsoleRedaction(redactor);
 
 et, dans la chaîne `Promise.resolve().then(() => startDaemon({ …, integrations: parseIntegrationFlags(values), redactor }))` (une erreur de drapeau passe par `failStart`).
 
-`packages/daemon/src/server.ts` : `STATUS` gagne `SECRET_STORE_UNAVAILABLE: 503, NOT_CONNECTED: 409, REMOTE_UNAVAILABLE: 502, REMOTE_REJECTED: 502, REMOTE_NOT_FOUND: 404, REMOTE_CONFLICT: 409, MCP_UNAVAILABLE: 502, MCP_FAILED: 502` (`RATE_LIMITED: 429` existe) ; `ServerOptions` gagne `redact?: (text: string) => string` ; `respond(work, redact)` renvoie `fail(e.code, redact(e.detail), …)` et les deux appels (`/api/rpc`, `/api/code`) passent `opts.redact ?? ((t) => t)`. Test ajouté à `server.test.ts` : une RPC qui rejette `KiboError("REMOTE_REJECTED", "github 401: Bearer ghp_TESTSECRET0123456789abcdefghijklmn")` avec `redact` qui remplace ce secret ⇒ statut 502, message `github 401: Bearer ***`.
+`packages/daemon/src/server.ts` : `STATUS` gagne `SECRET_STORE_UNAVAILABLE: 503, NOT_CONNECTED: 409, REMOTE_UNAVAILABLE: 502, REMOTE_REJECTED: 502, REMOTE_NOT_FOUND: 404, REMOTE_CONFLICT: 409, MCP_UNAVAILABLE: 502, MCP_FAILED: 502` (`RATE_LIMITED: 429` existe) ; `ServerOptions` gagne `redact?: (text: string) => string` ; `respond(work, redact)` renvoie `fail(e.code, redact(e.detail), …)` et les deux appels (`/api/rpc`, `/api/code`) passent `opts.redact ?? ((t) => t)`. Test ajouté à `server.test.ts` : une RPC qui rejette `KiboError("REMOTE_REJECTED", "github 401: Bearer ghp_TESTSECRET0123456789abcdefghijklmn")` avec `redact` qui remplace ce secret ⇒ statut 502, message `github 401: Bearer ***`. La diffusion WebSocket passe aussi par `redact` : `publish` envoie `redact(JSON.stringify(message))` sur le canal `changes` (un `IntegrationEvent` ou une `notice` diffusés par un module ne peuvent pas porter un secret en clair) ; test ajouté à `server.test.ts` : un `service.onChange` qui émet `{ type: "notice", title: "CI", body: "Bearer <secret>" }` arrive caviardé au client WebSocket.
 
 `packages/sdk/src/client.ts` (N24) : `KiboClient` gagne `subscribeIntegrations(listener: (e: IntegrationEvent) => void): () => void` ; dans `socket.onmessage`, après le test de `CodeEvent` :
 
