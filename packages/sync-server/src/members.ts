@@ -110,3 +110,22 @@ export function projectsOf(sdb: ServerDb, userId: string): { id: string; name: s
     )
     .all({ u: userId });
 }
+
+export function projectOwner(sdb: ServerDb, projectId: string): string | null {
+  const row = sdb.db
+    .query<{ ownerId: string }, { id: string }>("SELECT ownerId FROM projects WHERE id = $id")
+    .get({ id: projectId });
+  return row?.ownerId ?? null;
+}
+
+const PROJECT_TABLES = ["updates", "snapshots", "invites", "members"] as const;
+
+export function deleteProject(sdb: ServerDb, input: { projectId: string; by: string }, now: number): void {
+  sdb.db.transaction(() => {
+    for (const table of PROJECT_TABLES) {
+      sdb.db.query(`DELETE FROM ${table} WHERE projectId = $id`).run({ id: input.projectId });
+    }
+    sdb.db.query("DELETE FROM projects WHERE id = $id").run({ id: input.projectId });
+    audit(sdb, { at: now, kind: "project-deleted", userId: input.by, projectId: input.projectId });
+  })();
+}
