@@ -1,0 +1,79 @@
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { createGit, firstLine, run, runGh } from "./run";
+import { createGitFixture, type GitFixture, installFakeGh, readFakeGhLog } from "./testing/git-fixture";
+
+let fx: GitFixture;
+beforeEach(() => {
+  fx = createGitFixture({ remote: false });
+});
+afterEach(() => fx.cleanup());
+
+test("run returns code, stdout and stderr without a shell", async () => {
+  const r = await run(["git", "rev-parse", "--is-inside-work-tree"], { cwd: fx.repo, env: fx.env });
+  expect(r).toMatchObject({ code: 0, stdout: "true\n" });
+  const bad = await run(["git", "rev-parse", "$(echo pwned)"], { cwd: fx.repo, env: fx.env });
+  expect(bad.code).not.toBe(0);
+  expect(bad.stderr).toContain("$(echo pwned)");
+});
+
+test("stdin is passed to the process", async () => {
+  const git = createGit(fx.repo, fx.env);
+  const sha = await git.ok(["hash-object", "--stdin"], { stdin: "hello\n" });
+  expect(sha.trim()).toBe("ce013625030ba8dba906f756967f9e9ca394464a");
+});
+
+test("ok throws GIT_FAILED with the first stderr line", async () => {
+  const git = createGit(fx.repo, fx.env);
+  await expect(git.ok(["rev-parse", "--verify", "nope"])).rejects.toMatchObject({ code: "GIT_FAILED" });
+});
+
+test("a missing binary and a timeout are reported", async () => {
+  await expect(run(["kibo-no-such-binary"], { cwd: fx.repo })).rejects.toMatchObject({ code: "GIT_FAILED" });
+  await expect(
+    run(["kibo-no-such-binary"], { cwd: fx.repo, failCode: "GH_UNAVAILABLE" }),
+  ).rejects.toMatchObject({
+    code: "GH_UNAVAILABLE",
+  });
+  const started = Date.now();
+  await expect(run(["sleep", "5"], { cwd: fx.repo, timeoutMs: 100 })).rejects.toMatchObject({
+    code: "GIT_FAILED",
+  });
+  expect(Date.now() - started).toBeLessThan(2_000);
+});
+
+test("git never prompts and ignores an inherited repository", async () => {
+  process.env.GIT_DIR = "/elsewhere/.git";
+  process.env.GIT_INDEX_FILE = "/elsewhere/index";
+  try {
+    const git = createGit(fx.repo, fx.env);
+    expect((await git.ok(["rev-parse", "--show-toplevel"])).trim()).toBe(fx.repo);
+    const r = await run(
+      ["sh", "-c", 'printf "%s|%s|%s" "$GIT_TERMINAL_PROMPT" "$GIT_INDEX_FILE" "$LC_ALL"'],
+      {
+        cwd: fx.repo,
+        env: { GIT_TERMINAL_PROMPT: "1" },
+      },
+    );
+    expect(r.stdout).toBe("0||C");
+  } finally {
+    delete process.env.GIT_DIR;
+    delete process.env.GIT_INDEX_FILE;
+  }
+});
+
+test("runGh uses KIBO_GH and passes stdin", async () => {
+  const env = { ...fx.env, ...installFakeGh(fx.dir) };
+  const r = await runGh(["pr", "create", "--head=kib-1", "--body-file", "-"], {
+    cwd: fx.repo,
+    env,
+    stdin: "b",
+  });
+  expect(r.stdout.trim()).toBe("https://github.com/kibo/test/pull/1");
+  expect(readFakeGhLog(env)).toEqual([
+    { args: ["pr", "create", "--head=kib-1", "--body-file", "-"], stdin: "b" },
+  ]);
+});
+
+test("firstLine trims and keeps one line", () => {
+  expect(firstLine("  fatal: x\nhint: y")).toBe("fatal: x");
+});
