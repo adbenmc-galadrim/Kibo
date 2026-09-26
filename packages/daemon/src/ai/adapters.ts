@@ -48,6 +48,11 @@ function resolveBin(bin: string, env: Record<string, string | undefined>): strin
   return Bun.which(bin, { PATH: env.PATH ?? "" });
 }
 
+const LAUNCH_REFUSED = new Set(["ENOENT", "EACCES"]);
+
+const isLaunchRefused = (e: unknown): boolean =>
+  e instanceof Error && "code" in e && typeof e.code === "string" && LAUNCH_REFUSED.has(e.code);
+
 function spawnOrNull(argv: string[], env: Record<string, string | undefined>) {
   try {
     return Bun.spawn(argv, {
@@ -56,8 +61,9 @@ function spawnOrNull(argv: string[], env: Record<string, string | undefined>) {
       stdout: "pipe",
       stderr: "pipe",
     });
-  } catch {
-    return null;
+  } catch (e) {
+    if (isLaunchRefused(e)) return null;
+    throw e;
   }
 }
 
