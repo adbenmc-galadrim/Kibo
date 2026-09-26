@@ -1,4 +1,4 @@
-import { CONFIG_SERVER_RULE, type GrantedPermissions } from "@kibo/schema";
+import { CONFIG_SERVER_RULE, type GrantedPermissions, RESERVED_MCP_IDS } from "@kibo/schema";
 import {
   Database,
   File,
@@ -20,6 +20,12 @@ const mcpTitle = (rule: string): string =>
     ? fr.integrations.permissions.mcpFromConfig
     : fr.integrations.permissions.mcp(rule);
 
+const usableByThirdParty = (rule: string): boolean =>
+  rule !== CONFIG_SERVER_RULE && !RESERVED_MCP_IDS.includes(rule.split("/")[0] ?? rule);
+
+const entityList = (entities: string[]): string =>
+  fr.trust.entities(entities.map(fr.trust.entityName).join(", "));
+
 const SECRET_ENTRY = /^secret:(.+)@([^@]+)$/;
 
 export function permissionLabel(entry: string): string {
@@ -31,8 +37,9 @@ export function permissionLabel(entry: string): string {
 
 function closingLine(g: GrantedPermissions): PermissionLine | null {
   const t = fr.trust;
+  if (g.mcp.length > 0) return null;
   const notes = g.reads.includes("note") || g.writes.includes("note");
-  const offline = g.net.length === 0 && g.mcp.length === 0;
+  const offline = g.net.length === 0;
   if (offline && !notes) return { icon: X, title: t.noNetworkNoFiles };
   if (offline) return { icon: X, title: t.noNetwork };
   if (!notes) return { icon: X, title: t.noFiles };
@@ -48,18 +55,17 @@ export function permissionLines(g: GrantedPermissions): PermissionLine[] {
     lines.push({
       icon: tickets ? Ticket : Database,
       title: tickets ? t.readTickets : t.readData,
-      detail: t.entities(reads.join(", ")),
+      detail: entityList(reads),
     });
   }
   if (g.reads.includes("note")) lines.push({ icon: NotebookText, title: t.readNotes });
-  if (g.writes.length > 0)
-    lines.push({ icon: Pencil, title: t.writeData, detail: t.entities(g.writes.join(", ")) });
+  if (g.writes.length > 0) lines.push({ icon: Pencil, title: t.writeData, detail: entityList(g.writes) });
   if (g.data) lines.push({ icon: File, title: t.ownData, detail: t.ownDataHelp });
   if (g.net.length > 0)
     lines.push({ icon: Globe, title: t.network, detail: t.networkHelp(g.net.join(", ")) });
   for (const s of g.secrets)
     lines.push({ icon: KeyRound, title: fr.integrations.permissions.secret(s.name, s.hosts) });
-  for (const rule of g.mcp) lines.push({ icon: Plug, title: mcpTitle(rule) });
+  for (const rule of g.mcp.filter(usableByThirdParty)) lines.push({ icon: Plug, title: mcpTitle(rule) });
   const closing = closingLine(g);
   return closing ? [...lines, closing] : lines;
 }

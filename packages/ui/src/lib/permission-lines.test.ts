@@ -42,24 +42,40 @@ test("secrets and mcp rules read in plain French", () => {
       ...NO_PERMISSIONS,
       net: ["api.github.com"],
       secrets: [{ name: "github", hosts: ["api.github.com"] }],
-      mcp: ["context7", "context7/get-library-docs", "{config.server}"],
-    }).slice(1, -1),
+      mcp: ["context7", "context7/get-library-docs"],
+    }).slice(1),
   ).toEqual([
     ["Utiliser ton compte GitHub (api.github.com)", null],
     ["Appeler le serveur MCP context7", null],
     ["Appeler l'outil get-library-docs du serveur MCP context7", null],
-    ["Appeler le serveur MCP choisi à l'ajout", null],
   ]);
 });
 
-test("an mcp server may reach the network, so network absence is never claimed", () => {
-  expect(titles({ ...NO_PERMISSIONS, mcp: ["ctx"] })).toEqual([
+test("rules a third-party component can never use are not shown", () => {
+  expect(titles({ ...NO_PERMISSIONS, mcp: ["{config.server}", "figma", "figma/get_code", "ctx"] })).toEqual([
     ["Appeler le serveur MCP ctx", null],
-    ["Aucun fichier local", null],
   ]);
+});
+
+test("an mcp server may reach the network and local files, so no closing promise is made", () => {
+  expect(titles({ ...NO_PERMISSIONS, mcp: ["ctx"] })).toEqual([["Appeler le serveur MCP ctx", null]]);
   expect(titles({ ...NO_PERMISSIONS, reads: ["note"], mcp: ["ctx"] }).at(-1)).toEqual([
     "Appeler le serveur MCP ctx",
     null,
+  ]);
+  expect(titles({ ...NO_PERMISSIONS, net: ["api.github.com"], mcp: ["{config.server}"] })).toEqual([
+    ["Accéder au réseau", "HTTPS via le démon uniquement : api.github.com"],
+  ]);
+});
+
+test("ci runs are named in French", () => {
+  expect(titles({ ...NO_PERMISSIONS, reads: ["ticket", "ci_run"] })[0]).toEqual([
+    "Lire les tickets du projet",
+    "entités : ticket, runs CI",
+  ]);
+  expect(titles({ ...NO_PERMISSIONS, reads: ["ci_run"] })[0]).toEqual([
+    "Lire les données du projet",
+    "entités : runs CI",
   ]);
 });
 

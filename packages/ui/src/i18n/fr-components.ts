@@ -115,6 +115,7 @@ export const frComponents = {
     readData: "Lire les données du projet",
     writeData: "Modifier les données du projet",
     entities: (list: string) => `entités : ${list}`,
+    entityName: (entity: string) => (entity === "ci_run" ? "runs CI" : entity),
     ownData: "Stocker ses propres données",
     ownDataHelp: "espace de nommage de l'instance uniquement",
     network: "Accéder au réseau",
