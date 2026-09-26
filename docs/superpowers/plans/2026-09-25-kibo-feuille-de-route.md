@@ -11,8 +11,8 @@ spec du sous-système quand la spec générale ne suffit pas (§3 : « chaque so
 | 1. MVP | v0.1 | A noyau, B SDK minimal, C Kanban + Tickets | `2026-09-25-kibo-mvp.md` |
 | 2. Agents | v0.2 | D orchestration, M1 notifications | `2026-09-26-kibo-agents.md` (livrée) |
 | 3. Code et onglets | v0.3 | G1 Git local, G2 GitHub, vue Changements, onglets, aperçu de fichier | `2026-09-26-kibo-code-onglets.md` (livrée) |
-| 4. Composants | v0.4 | B complet (versioning, sandbox), C Graphe + Notes, N1 Markdown/Obsidian | `2026-09-26-kibo-composants.md` (en cours) |
-| 5. Intégrations | v0.5 | T1 Issues/Projects, C1 Actions, D1 Figma MCP, X1 MCP générique | `2026-09-26-kibo-integrations.md` |
+| 4. Composants | v0.4 | B complet (versioning, sandbox), C Graphe + Notes, N1 Markdown/Obsidian | `2026-09-26-kibo-composants.md` (livrée) |
+| 5. Intégrations | v0.5 | T1 Issues/Projects, C1 Actions, D1 Figma MCP, X1 MCP générique | `2026-09-26-kibo-integrations.md` (en cours) |
 | 6. IA dans le produit | v0.6 | E onboarding, génération de composants par IA | spec E puis plan |
 | 7. Sync et marketplace | v1.0 | G multi-utilisateur, H marketplace, durcissement OS du sandbox | specs G et H puis plan |
 
