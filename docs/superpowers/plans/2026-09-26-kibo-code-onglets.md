@@ -7405,7 +7405,7 @@ git commit -m "feat(daemon): indexation par bloc et écriture"
 - Consumes: `WorktreeHandle`, `isPushed`, `currentOperation`, `headCommit` (tâche 15) ; `firstLine`, `WRITE_TIMEOUT_MS` (tâche 3).
 - Produces : `commit(h, message: string, amend: boolean): Promise<CommitInfo>`, `reword(h, sha: string, message: string): Promise<void>`, `undoCommit(h, sha: string): Promise<void>`, `abortOperation(h): Promise<void>`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/history-ops.test.ts` :
 ```ts
@@ -7544,7 +7544,7 @@ test("abortOperation aborts a conflicting merge", async () => {
 Run: `bun test packages/daemon/src/code/history-ops.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/code/history-ops.ts` :
 ```ts
@@ -7636,12 +7636,12 @@ export async function abortOperation(h: WorktreeHandle): Promise<void> {
 ```
 Le `-i` est rendu non interactif par `GIT_SEQUENCE_EDITOR=true` (git lance lui-même cet éditeur, comme le demande la spec §7) ; le commit technique `amend!` est vide et sans crochets (`--no-verify`), la reformulation ne peut donc pas créer de conflit de contenu.
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/history-ops.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/code/history-ops.ts packages/daemon/src/code/history-ops.test.ts
