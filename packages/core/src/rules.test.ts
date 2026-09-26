@@ -25,6 +25,19 @@ describe("run done", () => {
   });
 });
 
+describe("run started", () => {
+  test("moves a backlog or todo ticket to in progress, and nothing else", () => {
+    for (const s of ["backlog", "todo"] as const) {
+      expect(evaluateRules(DEFAULT_RULES, { kind: "run_started", ticketId: "a" }, [t("a", s)])).toEqual([
+        { method: "setStatus", ticketId: "a", statusId: "in_progress" },
+      ]);
+    }
+    for (const s of ["in_progress", "in_review", "blocked", "done"] as const) {
+      expect(evaluateRules(DEFAULT_RULES, { kind: "run_started", ticketId: "a" }, [t("a", s)])).toEqual([]);
+    }
+  });
+});
+
 describe("children done", () => {
   test("closes the parent once every direct child is done, and cascades", () => {
     const tickets = [

@@ -40,3 +40,11 @@ test("a chain of parents closes in the order the rules return", () => {
   ]);
   expect(listTickets(d).map((x) => x.statusId)).toEqual(["done", "done", "done"]);
 });
+
+test("a started run puts its todo ticket in progress", () => {
+  const d = doc();
+  const t = createTicket(d, { title: "A", statusId: "todo" });
+  expect(applyRules(d, { kind: "run_started", ticketId: t.id })).toEqual([
+    { method: "setStatus", ticketId: t.id, statusId: "in_progress" },
+  ]);
+});

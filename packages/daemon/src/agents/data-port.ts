@@ -38,6 +38,10 @@ export function createDataPort(docs: Docs): AgentDataPort {
       });
       changed(projectId);
     },
+    runStarted(projectId, ticketId) {
+      if (applyRules(docs.project(projectId), { kind: "run_started", ticketId }).length > 0)
+        changed(projectId);
+    },
     runDone(projectId, ticketId) {
       if (applyRules(docs.project(projectId), { kind: "run_done", ticketId }).length > 0) changed(projectId);
     },

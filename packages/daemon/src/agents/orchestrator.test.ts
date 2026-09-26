@@ -79,6 +79,7 @@ type Harness = {
   state: string;
   url: string;
   assigned: string[];
+  started: string[];
   done: string[];
   notices: Notice[];
   tokens: Map<string, string>;
@@ -102,6 +103,7 @@ function setup(o: Setup): Harness {
   mkdirSync(state);
   const store = openRunStore(home);
   const assigned: string[] = [];
+  const started: string[] = [];
   const done: string[] = [];
   const notices: Notice[] = [];
   const tokens = new Map<string, string>();
@@ -116,6 +118,9 @@ function setup(o: Setup): Harness {
     guidelines: () => o.guidelines ?? [],
     assignTicket: (_projectId, ticketId, name) => {
       assigned.push(`${ticketId}:${name}`);
+    },
+    runStarted: (_projectId, ticketId) => {
+      started.push(ticketId);
     },
     runDone: (_projectId, ticketId) => {
       done.push(ticketId);
@@ -169,6 +174,7 @@ function setup(o: Setup): Harness {
     state,
     url,
     assigned,
+    started,
     done,
     notices,
     tokens,
@@ -235,6 +241,7 @@ test("a question suspends the run, the answer resumes it, and the ticket moves o
   expect(calls.every((c) => c.hasToken && c.hookUrl === `${h.url}/hooks/${first.id}`)).toBe(true);
   expect(run(h, first.id)).toMatchObject({ tokens: 2800, turns: 2, question: null });
   expect(h.done).toEqual(["t1"]);
+  expect(h.started).toEqual(["t1", "t1"]);
   const log = h.orch.log(first.id);
   expect(log.filter((e) => e.event.type === "spawned")).toHaveLength(2);
   expect(log.some((e) => e.event.type === "hook" && e.event.payload.tool === "Write")).toBe(true);

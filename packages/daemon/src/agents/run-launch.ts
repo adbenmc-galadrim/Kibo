@@ -103,6 +103,14 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     return registry.apply(runId, exited);
   }
 
+  function startRules(runId: string, projectId: string, ticketId: string): void {
+    try {
+      opts.data.runStarted(projectId, ticketId);
+    } catch (e) {
+      console.error(`[kibo-daemon] start rules of run ${runId} failed`, e);
+    }
+  }
+
   async function run(runId: string): Promise<void> {
     const initial = registry.get(runId);
     const task = initial.ticketId === null ? tasks.get(runId) : undefined;
@@ -147,6 +155,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         workspace: prepared.label,
         guidelines: prepared.guidelines,
       });
+      if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);
       const outcome = await proc.exited;
       live.delete(runId);
       if (deps.stopping()) return;

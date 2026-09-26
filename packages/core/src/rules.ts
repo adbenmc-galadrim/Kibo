@@ -9,6 +9,7 @@ import {
 import type { LoroDoc } from "loro-crdt";
 
 export type RuleTrigger =
+  | { kind: "run_started"; ticketId: string }
   | { kind: "run_done"; ticketId: string }
   | { kind: "status_changed"; ticketId: string };
 export type RuleTicket = Pick<Ticket, "id" | "statusId" | "parentId">;
@@ -35,8 +36,8 @@ export function evaluateRules(rules: Rule[], trigger: RuleTrigger, tickets: Rule
       ? undefined
       : active(when).find((r) => r.from.includes(current) && r.to !== current);
 
-  if (trigger.kind === "run_done") {
-    const rule = applicable("run_done", status.get(trigger.ticketId));
+  if (trigger.kind === "run_started" || trigger.kind === "run_done") {
+    const rule = applicable(trigger.kind, status.get(trigger.ticketId));
     if (rule) apply(trigger.ticketId, rule);
   }
 
