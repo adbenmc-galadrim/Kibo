@@ -16486,7 +16486,7 @@ git commit -m "feat(cli): commande kibo component"
 - Consumes: `createService` (tâche 30, avec la vraie construction et le vrai `ProcessHost`) ; `copyFixture`, `DEV_TOOLCHAIN` (test-kit) ; `createEventLog` (tâche 15).
 - Produces: le test qui porte le critère de sortie §13 (CI macOS et Linux).
 
-- [ ] **Step 1: La fixture `evil`**
+- [x] **Step 1: La fixture `evil`**
 
 `packages/devkit/fixtures/evil/kibo.component.json` :
 ```json
@@ -16545,7 +16545,7 @@ export const server = defineServer({
 
 Le code `server.ts` utilise `Bun` et `fetch` en position de valeur : la validation du devkit le refuserait (décision 16). Le test **contourne volontairement la validation** (fonction `validate` injectée qui renvoie « vert ») : il vérifie la défense du démon, pas celle du devkit. Le build accepte ces identifiants (ce ne sont pas des imports) ; c'est le runtime restreint qui a retiré `fetch` et `Bun.file`.
 
-- [ ] **Step 2: Écrire le test**
+- [x] **Step 2: Écrire le test**
 
 `packages/daemon/src/components/exit.test.ts` :
 ```ts
@@ -16628,7 +16628,7 @@ Le cast `call as never` est limité à l'aide `ui` du test. Le test lance le vra
 Run: `bun test packages/daemon/src/components/exit.test.ts`
 Expected: PASS (la défense existe déjà : ce test fige le critère de sortie ; s'il échoue, c'est un défaut des tâches 11, 15 ou 30, à corriger avant de continuer).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/devkit/fixtures/evil packages/daemon/src/components/exit.test.ts
