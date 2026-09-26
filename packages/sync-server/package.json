@@ -3,8 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "kibo-sync": "./src/cli.ts"
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
+    "./testing": "./src/testing/start-test-server.ts",
     "./testing/*": "./src/testing/*.ts"
   },
   "dependencies": {
