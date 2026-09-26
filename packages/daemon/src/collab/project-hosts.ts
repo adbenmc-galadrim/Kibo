@@ -1,7 +1,8 @@
 import { depthViolation, getProjectMeta, projectDepthViolation } from "@kibo/core";
 import { KiboError, type ProjectAccess, type ProjectMeta } from "@kibo/schema";
-import { type ImportStatus, LoroDoc } from "loro-crdt";
+import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
+import { assertCompleteHistory, importUpdateBlob } from "./sync-blob";
 import type { ProjectHostRegistry } from "./types";
 
 function refuseTooDeep(projectId: string, violation: string | null): void {
@@ -9,18 +10,14 @@ function refuseTooDeep(projectId: string, violation: string | null): void {
 }
 
 function importChecked(projectId: string, target: LoroDoc, bytes: Uint8Array): void {
-  let status: ImportStatus;
-  try {
-    status = target.import(bytes);
-  } catch (e) {
-    throw new KiboError("INVALID_INPUT", `sync data for ${projectId} cannot be decoded: ${String(e)}`);
-  }
+  const status = importUpdateBlob(projectId, target, bytes);
   if (status.pending && status.pending.size > 0) {
     throw new KiboError("TOO_LARGE", `sync data for ${projectId} refused: its dependencies are missing`);
   }
 }
 
 function withoutPending(projectId: string, doc: LoroDoc): LoroDoc {
+  assertCompleteHistory(projectId, doc);
   refuseTooDeep(projectId, projectDepthViolation(doc));
   return LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
 }

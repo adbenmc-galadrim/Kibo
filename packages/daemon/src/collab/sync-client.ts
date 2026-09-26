@@ -221,8 +221,8 @@ export class SyncClient {
     try {
       sync.receive(f);
     } catch (e) {
-      this.deps.log(`sync update for ${f.projectId} refused, project sync suspended`, e);
-      this.suspend(f.projectId, e instanceof KiboError ? e.code : "INVALID_INPUT");
+      this.deps.log(`sync update ${f.serverSeq} for ${f.projectId} not applied, project sync suspended`, e);
+      this.suspend(f.projectId, e instanceof KiboError ? e.code : "INTERNAL");
       return;
     }
     this.projects.synced(f.projectId, false);

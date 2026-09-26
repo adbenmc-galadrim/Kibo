@@ -1,6 +1,7 @@
 import { type ClientFrame, type RejectCode, type ServerFrame, SYNC_LIMITS } from "@kibo/schema";
 import { fromBase64, toBase64 } from "@kibo/trust";
 import { LoroDoc, VersionVector } from "loro-crdt";
+import { importUpdateBlob } from "./sync-blob";
 
 export type SyncHost = {
   doc(): LoroDoc;
@@ -124,7 +125,7 @@ export class ProjectSync {
       this.flush();
       return;
     }
-    this.fresh.import(bytes);
+    importUpdateBlob(this.opts.projectId, this.fresh, bytes);
     if (!covers(this.fresh.oplogVersion(), VersionVector.decode(version))) return;
     const complete = this.fresh;
     this.fresh = null;

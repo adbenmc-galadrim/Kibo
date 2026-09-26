@@ -14,6 +14,7 @@ import { createProjectHosts } from "./project-hosts";
 import { SyncClient } from "./sync-client";
 import { openSyncDb, type SyncDb } from "./sync-db";
 import { type FakeNetwork, fakeNetwork, until } from "./testing/fake-socket";
+import type { ProjectHostRegistry } from "./types";
 
 let home: string;
 let store: Store;
@@ -35,10 +36,13 @@ beforeEach(() => {
   syncDb = openSyncDb(store.db);
   secrets = createMemorySecretStore(createRedactor());
   net = fakeNetwork();
-  client = new SyncClient({
+  client = newClient(createProjectHosts(service.docs, "adam"));
+});
+function newClient(hosts: ProjectHostRegistry): SyncClient {
+  return new SyncClient({
     db: syncDb,
     secrets,
-    hosts: createProjectHosts(service.docs, "adam"),
+    hosts,
     transport: net.transport,
     fetchImpl: fakeFetch,
     readFile: async () => "",
@@ -48,7 +52,7 @@ beforeEach(() => {
     emit: () => {},
     log: () => {},
   });
-});
+}
 afterEach(() => {
   client.stop();
   store.close();
@@ -62,14 +66,8 @@ async function online(): Promise<void> {
   await connected;
 }
 
-function sharedProject(): { projectId: string; doc: LoroDoc } {
-  const meta = call(service, {
-    method: "createProject",
-    name: "Kibo",
-    key: "KIB",
-    folder: null,
-    color: "#14B8A6",
-  });
+function sharedProject(key = "KIB"): { projectId: string; doc: LoroDoc } {
+  const meta = call(service, { method: "createProject", name: key, key, folder: null, color: "#14B8A6" });
   client.attachProject(meta.id, "editor");
   const doc = service.docs.project(meta.id);
   const version = toBase64(doc.oplogVersion().encode());
@@ -138,6 +136,86 @@ test("an update from the server that nests the project too deep is refused witho
   expect(listTickets(service.docs.project(projectId))).toEqual([]);
   expect(sentFrames()).toContainEqual({ type: "unsubscribe", projectId });
   expect(client.status().state).toBe("online");
+});
+
+function deepRemote(doc: LoroDoc): LoroDoc {
+  const remote = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
+  let node = remote.getTree("tickets").createNode();
+  for (let i = 0; i < 100; i++) node = node.createNode();
+  remote.commit();
+  return remote;
+}
+
+async function forceResync(projectId: string): Promise<void> {
+  call(service, { method: "command", projectId, command: { method: "createTicket", title: "Refusé" } });
+  flushBatches();
+  const push = sentFrames().find((f) => f.type === "push");
+  if (push?.type !== "push") throw new Error("no push sent");
+  const reject = {
+    type: "reject",
+    projectId,
+    clientBatchId: push.clientBatchId,
+    code: "UPDATE_REJECTED",
+  } as const;
+  net.last().deliver({ ...reject, message: "rejected", version: null });
+  await until(() => sentFrames().some((f) => f.type === "subscribe" && f.version === null));
+}
+
+test("a shallow snapshot sent as the resync stream is refused and suspends the project", async () => {
+  await online();
+  const { projectId, doc } = sharedProject();
+  await until(() => syncDb.project(projectId)?.lastSyncAt !== null);
+  const remote = deepRemote(doc);
+  const shallow = remote.export({ mode: "shallow-snapshot", frontiers: remote.frontiers() });
+  const version = toBase64(remote.oplogVersion().encode());
+  await forceResync(projectId);
+  net.last().deliver({ type: "update", projectId, bytes: toBase64(shallow), serverSeq: 2, version });
+  await until(() => syncDb.project(projectId)?.lastError === "INVALID_INPUT");
+  expect(syncDb.project(projectId)?.enabled).toBe(false);
+  expect(service.docs.project(projectId)).toBe(doc);
+  expect(sentFrames()).toContainEqual({ type: "unsubscribe", projectId });
+});
+
+test("a deep update on one project leaves the other project syncing", async () => {
+  await online();
+  const a = sharedProject("AAA");
+  const b = sharedProject("BBB");
+  await until(() => syncDb.project(b.projectId)?.lastSyncAt !== null);
+  const remote = deepRemote(b.doc);
+  const bytes = toBase64(remote.export({ mode: "update", from: b.doc.oplogVersion() }));
+  const version = toBase64(remote.oplogVersion().encode());
+  net.last().deliver({ type: "update", projectId: b.projectId, bytes, serverSeq: 2, version });
+  await until(() => syncDb.project(b.projectId)?.lastError === "TOO_LARGE");
+  expect(syncDb.project(a.projectId)).toMatchObject({ enabled: true, lastError: null });
+  call(service, {
+    method: "command",
+    projectId: a.projectId,
+    command: { method: "createTicket", title: "A" },
+  });
+  flushBatches();
+  expect(sentFrames().some((f) => f.type === "push" && f.projectId === a.projectId)).toBe(true);
+  expect(sentFrames().filter((f) => f.type === "unsubscribe")).toEqual([
+    { type: "unsubscribe", projectId: b.projectId },
+  ]);
+});
+
+test("a failure of the daemon itself while applying an update is reported as INTERNAL", async () => {
+  client.stop();
+  const real = createProjectHosts(service.docs, "adam");
+  client = newClient({
+    ...real,
+    host: (id) => ({
+      ...real.host(id),
+      applyRemote: () => {
+        throw new Error("disk full");
+      },
+    }),
+  });
+  await online();
+  const { projectId, doc } = sharedProject();
+  await until(() => syncDb.project(projectId)?.lastError === "INTERNAL");
+  expect(syncDb.project(projectId)?.enabled).toBe(false);
+  expect(service.docs.project(projectId)).toBe(doc);
 });
 
 const forged = toBase64(new Uint8Array(64).map((_, i) => (i * 37 + 11) % 256));
