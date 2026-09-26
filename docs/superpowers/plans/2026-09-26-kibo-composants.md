@@ -12988,7 +12988,7 @@ git commit -m "feat(graph): vue et widget du graphe"
 
 Fidélité : écran 11 (page 17 du PDF), trois colonnes (gauche 256 px : recherche « Rechercher une note… », ligne `~/goinfre/Kibo/notes · Obsidian` en `font-mono text-xs`, liste triée par date — titre puis `aujourd'hui · 3 liens`, `hier`, `22/09` —, bouton « Nouvelle note » en bas ; centre : lien du chemin `notes/decisions-architecture.md` souligné en `font-mono text-xs` avec icône fichier, « Enregistré • local » à droite, titre `text-3xl font-bold`, `h2` `text-xl font-semibold`, paragraphes `text-muted-foreground`, puces de tickets `● KIB-12 Schéma Loro` bordées, puces `•`, bloc de code `bg-muted rounded-md font-mono text-sm` ; droite 256 px : « Tickets liés » (cartes bordées : pastille, clé mono, titre), « Rétroliens » (titre + « mentionne cette note » ou « 2 mentions »)). Le compteur « n liens » d'une note = nombre de tickets liés (la maquette l'affiche pour « Décisions d'architecture », 3 tickets). Bascule édition : bouton `ghost` « Modifier » / « Aperçu » à gauche de l'état d'enregistrement (non dessiné : bouton de 28 px, icône `Pencil` / `Eye`). États D4 et D9.
 
-- [ ] **Step 1: Créer le paquet**
+- [x] **Step 1: Créer le paquet**
 
 `components/notes/package.json` :
 ```json
@@ -13044,7 +13044,7 @@ Racine `package.json` : ajouter `components/notes` au script `typecheck` après 
 
 `packages/sdk/src/status.tsx` : exporter `export const statusDotClass = (statusId: StatusId): string => DOT[statusId];` (et `StatusDot` l'utilise).
 
-- [ ] **Step 2: Écrire les tests purs**
+- [x] **Step 2: Écrire les tests purs**
 
 `components/notes/src/dates.test.ts` :
 ```ts
@@ -13170,7 +13170,7 @@ test("other failures are reported, not swallowed", async () => {
 Run: `bun test components/notes`
 Expected: FAIL.
 
-- [ ] **Step 3: Implémenter `fr.ts`, `dates.ts`, `markdown.ts`, `autosave.ts`**
+- [x] **Step 3: Implémenter `fr.ts`, `dates.ts`, `markdown.ts`, `autosave.ts`**
 
 `components/notes/src/fr.ts` :
 ```ts
@@ -13384,7 +13384,7 @@ Le cast de `cancel` est la frontière avec le type opaque des minuteries inject�
 Run: `bun test components/notes/src/dates.test.ts components/notes/src/markdown.test.ts components/notes/src/autosave.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Écrire le test des écrans**
+- [x] **Step 4: Écrire le test des écrans**
 
 `components/notes/src/notes.test.tsx` :
 ```tsx
@@ -13502,7 +13502,7 @@ La frappe dans CodeMirror n'est pas simulable de façon fiable sous happy-dom : 
 Run: `bun test components/notes`
 Expected: FAIL (écrans absents).
 
-- [ ] **Step 5: Implémenter `MarkdownEditor.tsx`, `NoteList.tsx`, `NoteDocument.tsx`**
+- [x] **Step 5: Implémenter `MarkdownEditor.tsx`, `NoteList.tsx`, `NoteDocument.tsx`**
 
 `components/notes/src/MarkdownEditor.tsx` :
 ```tsx
@@ -13720,7 +13720,7 @@ export function NoteDocument({ note, info, tickets, editing, draft, state, onTog
 ```
 `dangerouslySetInnerHTML` est sûr par construction (`renderNote` : `html: false`, texte échappé). Le code ne porte pas de commentaire : si Biome signale `noDangerouslySetInnerHtml`, désactiver cette règle pour le seul fichier `components/notes/src/NoteDocument.tsx` via `overrides` dans `biome.json` (justification dans le plan, ici). Les puces sont des `button` : elles reçoivent le focus et `Enter` déclenche `click` ; le `onKeyDown` du conteneur couvre les liens de notes.
 
-- [ ] **Step 6: Implémenter `NotesView.tsx`, `NotesWidget.tsx`, `index.ts`**
+- [x] **Step 6: Implémenter `NotesView.tsx`, `NotesWidget.tsx`, `index.ts`**
 
 `components/notes/src/NotesView.tsx` :
 ```tsx
@@ -14006,7 +14006,7 @@ export function Component() {
 }
 ```
 
-- [ ] **Step 7: Vérifier et committer**
+- [x] **Step 7: Vérifier et committer**
 
 Run: `bun install && bun test components/notes && bun run typecheck && bun run check`
 Expected: PASS.
