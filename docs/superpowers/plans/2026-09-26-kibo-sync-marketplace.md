@@ -1269,7 +1269,7 @@ Les primitives de confiance partagées par le démon, le serveur de sync, le dev
 - Produces (Contrats partagés, `@kibo/trust`) : `toBase64`, `fromBase64`, `utf8`, `owned`, `sha256Hex`, `constantTimeEqual` ; `KeyPair`, `generateKeyPair`, `signBytes`, `verifyBytes`, `keyFingerprint`, `formatFingerprint`, `shortHash` (réexport du schéma) ; `newInviteCode`, `newPairingCode`, `normalizeCode`, `formatPairingCode`, `hashCode` ; `SourceFile`, `isHashedSource`, `sourceHash(files: SourceFile[]): string` (**synchrone**) ; `HTTP_SIGNATURE_HEADERS`, `httpSigningPayload`, `signRequest`.
 - Vérifié en T0 : `packages/devkit/src/hash.ts` exporte `SourceFile`, `MAX_SOURCE_FILES` (200), `MAX_SOURCE_BYTES` (2 Mio), `isHashed(path): boolean`, `listSourceFiles(dir)`, `hashFiles(files: SourceFile[]): string` (synchrone, `Bun.CryptoHasher`, fichiers triés par unité de code, `${path}\0${byteLength}\0` puis les octets), `readSources(dir): Promise<{ hash; files }>` (filtre `isHashed`, exige `kibo.component.json`, limites, lien symbolique ⇒ `VALIDATION_FAILED`) et `hashSources(dir): Promise<string>`. `isHashed` exclut tout segment commençant par `.` ou égal à `node_modules` ou `dist` (à n'importe quelle profondeur), garde `kibo.component.json` et `*.ts|*.tsx|*.css` hors `*.test.ts(x)`. Appelants : `packages/daemon/src/components/store.ts`, `drafts.ts`, `ai/live-ports.ts`, `devkit/src/build.ts`, `validate.ts`. `shortHash` existe déjà dans le schéma.
 
-- [ ] **Step 1: Test de plateforme et tests des octets**
+- [x] **Step 1: Test de plateforme et tests des octets**
 
 `packages/trust/src/platform.test.ts` :
 ```ts
@@ -1315,7 +1315,7 @@ test("constantTimeEqual compares content and length", () => {
 Run: `bun test packages/trust/src/platform.test.ts packages/trust/src/bytes.test.ts`
 Expected: `platform.test.ts` PASS (si FAIL : arrêter la tâche et escalader, Ed25519 est requis par la spec G §4) ; `bytes.test.ts` FAIL — `Cannot find module './bytes'`.
 
-- [ ] **Step 2: Implémenter `bytes.ts`**
+- [x] **Step 2: Implémenter `bytes.ts`**
 
 ```ts
 import { KiboError } from "@kibo/schema";
@@ -1358,7 +1358,7 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 Run: `bun test packages/trust/src/bytes.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Tests Ed25519**
+- [x] **Step 3: Tests Ed25519**
 
 `packages/trust/src/ed25519.test.ts` :
 ```ts
@@ -1408,7 +1408,7 @@ test("fingerprints are stable and formatted", async () => {
 Run: `bun test packages/trust/src/ed25519.test.ts`
 Expected: FAIL — `Cannot find module './ed25519'`.
 
-- [ ] **Step 4: Implémenter `ed25519.ts`**
+- [x] **Step 4: Implémenter `ed25519.ts`**
 
 ```ts
 import { KiboError } from "@kibo/schema";
@@ -1462,7 +1462,7 @@ export function formatFingerprint(hex: string): string {
 Run: `bun test packages/trust/src/ed25519.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Tests des codes**
+- [x] **Step 5: Tests des codes**
 
 `packages/trust/src/codes.test.ts` :
 ```ts
@@ -1504,7 +1504,7 @@ test("hashCode is identical for every spelling of the same code", async () => {
 Run: `bun test packages/trust/src/codes.test.ts`
 Expected: FAIL — `Cannot find module './codes'`.
 
-- [ ] **Step 6: Implémenter `codes.ts`**
+- [x] **Step 6: Implémenter `codes.ts`**
 
 ```ts
 import { sha256Hex } from "./bytes";
@@ -1556,7 +1556,7 @@ export function hashCode(code: string): Promise<string> {
 Run: `bun test packages/trust/src/codes.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Tests de l'empreinte canonique**
+- [x] **Step 7: Tests de l'empreinte canonique**
 
 `packages/trust/src/source-hash.test.ts` :
 ```ts
@@ -1636,7 +1636,7 @@ test("encoding is path NUL size NUL bytes, sorted by path", async () => {
 Run: `bun test packages/trust/src/source-hash.test.ts`
 Expected: FAIL — `Cannot find module './source-hash'`.
 
-- [ ] **Step 8: Implémenter `source-hash.ts`**
+- [x] **Step 8: Implémenter `source-hash.ts`**
 
 ```ts
 import { utf8 } from "./bytes";
@@ -1671,7 +1671,7 @@ Reprise exacte de `isHashed` et `hashFiles` de `packages/devkit/src/hash.ts` (ph
 Run: `bun test packages/trust/src/source-hash.test.ts`
 Expected: PASS.
 
-- [ ] **Step 9: Tests de la signature HTTP**
+- [x] **Step 9: Tests de la signature HTTP**
 
 `packages/trust/src/http-signing.test.ts` :
 ```ts
@@ -1716,7 +1716,7 @@ test("two requests never share a nonce", async () => {
 Run: `bun test packages/trust/src/http-signing.test.ts`
 Expected: FAIL — `Cannot find module './http-signing'`.
 
-- [ ] **Step 10: Implémenter `http-signing.ts` et l'index**
+- [x] **Step 10: Implémenter `http-signing.ts` et l'index**
 
 `packages/trust/src/http-signing.ts` :
 ```ts
@@ -1779,14 +1779,14 @@ export const TRUST_FORMAT_VERSION = 1;
 Run: `bun test packages/trust`
 Expected: PASS (tous les fichiers de `packages/trust`).
 
-- [ ] **Step 11: Commit trust**
+- [x] **Step 11: Commit trust**
 
 ```bash
 git add packages/trust/src
 git commit -m "feat(trust): signatures, codes et empreinte"
 ```
 
-- [ ] **Step 12: Figer l'empreinte actuelle du devkit avant délégation**
+- [x] **Step 12: Figer l'empreinte actuelle du devkit avant délégation**
 
 Capturer la sortie de l'implémentation de la phase 4 **avant** toute modification de `packages/devkit` :
 
@@ -1830,12 +1830,12 @@ test("devkit and trust are one implementation", () => {
 
 Si `sourceHash(files)` diffère de `PINNED`, la reprise de l'étape 8 s'écarte de la phase 4 : corriger `source-hash.ts`, jamais `PINNED` (toutes les empreintes approuvées changeraient).
 
-- [ ] **Step 13: Vérifier l'échec**
+- [x] **Step 13: Vérifier l'échec**
 
 Run: `bun test packages/devkit/src/hash-delegation.test.ts`
 Expected: FAIL — `Cannot find module '@kibo/trust'` (dépendance absente).
 
-- [ ] **Step 14: Déléguer**
+- [x] **Step 14: Déléguer**
 
 Dans `packages/devkit/package.json`, ajouter `"@kibo/trust": "workspace:*"` aux `dependencies` ; dans `packages/devkit/tsconfig.json`, ajouter `{ "path": "../trust" }` aux `references`. Dans `packages/devkit/src/hash.ts`, supprimer `SKIPPED`, `HASHED`, `TEST`, le corps de `isHashed` et de `hashFiles` et le type local `SourceFile`, et les remplacer par :
 ```ts
@@ -1850,7 +1850,7 @@ export const hashFiles = (files: SourceFile[]): string => sourceHash(files);
 Run: `bun install && bun test packages/devkit packages/daemon/src/components`
 Expected: PASS, y compris `packages/devkit/src/hash.test.ts` et les tests du magasin de la phase 4.
 
-- [ ] **Step 15: Vérifications et commit**
+- [x] **Step 15: Vérifications et commit**
 
 Run: `bun run check && bun run typecheck`
 Expected: sans erreur.
