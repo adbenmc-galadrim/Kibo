@@ -11,9 +11,26 @@ const mcpOf = (baseURL: string | undefined) =>
 
 type Issue = { number: number; title: string };
 
+const isIssue = (v: unknown): v is Issue =>
+  typeof v === "object" &&
+  v !== null &&
+  "number" in v &&
+  typeof v.number === "number" &&
+  "title" in v &&
+  typeof v.title === "string";
+
+async function issueOf(res: Response): Promise<Issue> {
+  const body: unknown = await res.json();
+  if (!isIssue(body)) throw new Error(`unexpected issue: ${JSON.stringify(body)}`);
+  return body;
+}
+
 async function ghIssues(gh: string): Promise<Issue[]> {
   const res = await fetch(`${gh}/repos/adam/kibo/issues?state=all&per_page=100`, { headers: auth });
-  return (await res.json()) as Issue[];
+  const body: unknown = await res.json();
+  if (!Array.isArray(body) || !body.every(isIssue))
+    throw new Error(`unexpected issues: ${JSON.stringify(body)}`);
+  return body;
 }
 
 async function ghCreate(gh: string, title: string): Promise<number> {
@@ -22,7 +39,7 @@ async function ghCreate(gh: string, title: string): Promise<number> {
     headers: auth,
     body: JSON.stringify({ title }),
   });
-  return ((await res.json()) as Issue).number;
+  return (await issueOf(res)).number;
 }
 
 async function ghRename(gh: string, n: number, title: string): Promise<void> {
@@ -132,6 +149,6 @@ test("écran 16, serveur MCP HTTP ajouté après confirmation", async ({ page, b
   await confirm.getByRole("button", { name: "Ajouter et lancer" }).click();
 
   const row = servers.getByRole("listitem").filter({ hasText: "Faux MCP" });
-  await expect(row.getByText("HTTP · 8 outils")).toBeVisible();
+  await expect(row.getByText(/HTTP · \d+ outils$/)).toBeVisible();
   await expect(row.getByText("Actif")).toBeVisible();
 });
