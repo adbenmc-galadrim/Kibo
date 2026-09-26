@@ -1,9 +1,15 @@
-import { basename, dirname, join } from "node:path";
 import type { ComponentDraft, DraftIncident } from "@kibo/schema";
 import { type DraftPaths, readDraftManifest, removeDraft } from "./draft-files";
 import { present } from "./draft-fs";
 import type { DraftEvent } from "./draft-machine";
-import { installDraft, releaseSource, type SourceFate } from "./draft-source";
+import {
+  hasInstallBackup,
+  installDraft,
+  installedIdentity,
+  releaseSource,
+  type SourceFate,
+  type SourceIdentity,
+} from "./draft-source";
 import type { DraftStore } from "./draft-store";
 import type { AiEvents, Clock, ComponentCatalog } from "./ports";
 
@@ -20,8 +26,6 @@ export type RecoveryDeps = {
 };
 
 export const errorText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
-
-const installBackup = (srcDir: string) => join(dirname(srcDir), `.${basename(srcDir)}.kibo-backup`);
 
 export type DraftRecovery = {
   recoverAll(): void;
@@ -50,23 +54,49 @@ export function createDraftRecovery(deps: RecoveryDeps): DraftRecovery {
     console.error(`[kibo-daemon] draft ${id} could not be recovered`, e);
   };
 
+  const isPublished = (d: ComponentDraft, draft: SourceIdentity | null) =>
+    draft !== null &&
+    draft.version !== d.baseVersion &&
+    deps.catalog.latest(d.componentId)?.version === draft.version;
+
+  const draftIdentity = (d: ComponentDraft): SourceIdentity => {
+    const m = readDraftManifest(deps.paths(d).dir);
+    return { id: m.id, version: m.version };
+  };
+
   const finishInstall = (d: ComponentDraft) => {
     const srcDir = deps.catalog.sourceDir(d.componentId);
-    if (!present(installBackup(srcDir))) return;
-    const dir = deps.paths(d).dir;
-    const published = deps.catalog.latest(d.componentId)?.version === readDraftManifest(dir).version;
-    const install = installDraft(dir, srcDir);
+    if (!hasInstallBackup(srcDir)) return;
+    const published = isPublished(d, draftIdentity(d));
+    const install = installDraft(deps.paths(d).dir, srcDir);
     if (published) install.commit();
     else install.rollback();
   };
 
-  const sourceFate = (d: ComponentDraft): SourceFate => {
-    if ((deps.catalog.latest(d.componentId)?.version ?? null) !== d.baseVersion) return "published";
+  const identityForRelease = (d: ComponentDraft, srcDir: string): SourceIdentity | null => {
+    try {
+      return draftIdentity(d);
+    } catch (e) {
+      console.error(`[kibo-daemon] draft ${d.id} manifest is unreadable`, e);
+      const installed = hasInstallBackup(srcDir) ? installedIdentity(srcDir) : null;
+      return installed?.id === d.componentId ? installed : null;
+    }
+  };
+
+  const fateOf = (d: ComponentDraft, draft: SourceIdentity | null): SourceFate => {
+    if (isPublished(d, draft)) return "published";
     return d.mode === "create" ? "reserved" : "unpublished";
   };
 
+  const releaseDraftSource = (d: ComponentDraft) => {
+    const srcDir = deps.catalog.sourceDir(d.componentId);
+    const draft = identityForRelease(d, srcDir);
+    if (!releaseSource(srcDir, fateOf(d, draft), draft))
+      console.error(`[kibo-daemon] ${srcDir} is not the source of draft ${d.id}; left in place`);
+  };
+
   const abandon = (d: ComponentDraft) => {
-    if (d.status === "permissions") releaseSource(deps.catalog.sourceDir(d.componentId), sourceFate(d));
+    if (d.status === "permissions") releaseDraftSource(d);
     const abandoned = deps.apply(d, { type: "abandoned" });
     deps.cancelLiveRun(abandoned);
     removeDraft(deps.paths(abandoned));

@@ -121,7 +121,9 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
 
   const onRunEnd = async (id: string, runId: string, end: RunEnd): Promise<void> => {
     const before = deps.store.get(id);
-    if (before.status !== "generating" || before.runId !== runId) return;
+    if (before.runId !== runId) return;
+    if (before.status === "abandoned") removeDraft(paths(before));
+    if (before.status !== "generating") return;
     const restored = restoreAfterRun(before);
     const ended = apply(before, {
       type: "run_ended",

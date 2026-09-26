@@ -1,8 +1,19 @@
-import { cpSync, mkdirSync, renameSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, renameSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { assertRealDir, guarded, posix, present, removeTree, safeCopy } from "./draft-fs";
+import { ComponentManifest } from "@kibo/schema";
+import {
+  assertRealDir,
+  guarded,
+  isRealDir,
+  isSafeFile,
+  posix,
+  present,
+  removeTree,
+  safeCopy,
+} from "./draft-fs";
 
 const KIBO_ONLY = new Set(["claude.md", ".claude"]);
+const MANIFEST = "kibo.component.json";
 
 const installable = (dir: string) => {
   const safe = safeCopy(dir);
@@ -57,12 +68,48 @@ export function installDraft(dir: string, srcDir: string): { commit(): void; rol
 
 export type SourceFate = "published" | "unpublished" | "reserved";
 
-export function releaseSource(srcDir: string, fate: SourceFate): void {
-  guarded("release source", () => {
+export type SourceIdentity = { id: string; version: string };
+
+export const hasInstallBackup = (srcDir: string): boolean => present(sibling(srcDir, "kibo-backup"));
+
+function readJson(file: string): unknown {
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch (e) {
+    if (e instanceof SyntaxError) return null;
+    throw e;
+  }
+}
+
+export function installedIdentity(srcDir: string): SourceIdentity | null {
+  return guarded("read installed source", () => {
+    const file = join(srcDir, MANIFEST);
+    if (!isRealDir(srcDir) || !isSafeFile(file)) return null;
+    const parsed = ComponentManifest.safeParse(readJson(file));
+    return parsed.success ? { id: parsed.data.id, version: parsed.data.version } : null;
+  });
+}
+
+const holds = (srcDir: string, draft: SourceIdentity | null) => {
+  if (!present(srcDir)) return true;
+  const installed = installedIdentity(srcDir);
+  return draft !== null && installed?.id === draft.id && installed.version === draft.version;
+};
+
+export function releaseSource(srcDir: string, fate: SourceFate, draft: SourceIdentity | null): boolean {
+  return guarded("release source", () => {
     const backup = sibling(srcDir, "kibo-backup");
     const trash = sibling(srcDir, "kibo-trash");
-    if (fate === "published") removeTree(backup);
-    recoverAfterCrash(srcDir, backup, trash);
-    if (fate === "reserved") removeTree(srcDir);
+    const hasBackup = present(backup);
+    removeTree(trash);
+    if (fate === "published") {
+      removeTree(backup);
+      return true;
+    }
+    if (!hasBackup && (fate === "unpublished" || !present(srcDir))) return true;
+    if (!holds(srcDir, draft)) return false;
+    removeTree(srcDir);
+    if (hasBackup) renameSync(backup, srcDir);
+    return true;
   });
 }

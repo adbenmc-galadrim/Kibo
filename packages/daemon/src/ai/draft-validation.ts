@@ -1,5 +1,5 @@
 import { type ComponentDraft, KiboError } from "@kibo/schema";
-import { type DraftPaths, readDraftManifest, writePermissions } from "./draft-files";
+import { type DraftPaths, readDraftManifest, removeDraft, writePermissions } from "./draft-files";
 import type { DraftEvent } from "./draft-machine";
 import { declareMissing } from "./draft-permissions";
 import { errorText } from "./draft-recovery";
@@ -63,6 +63,8 @@ export function createDraftValidation(deps: ValidationDeps): (id: string) => Pro
     } catch (e) {
       const current = stillValidating(id);
       if (current) deps.apply(current, { type: "validation_crashed", detail: errorText(e) });
+    } finally {
+      if (deps.store.get(id).status === "abandoned") removeDraft(p);
     }
   };
 }

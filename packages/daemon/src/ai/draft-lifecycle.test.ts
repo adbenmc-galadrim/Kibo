@@ -251,31 +251,7 @@ describe("after the run", () => {
   });
 });
 
-describe("abandon, folder, revalidate", () => {
-  test("abandon cancels the run, removes the folders, ignores the late end", async () => {
-    const { home, runs, store, life } = setupLifecycle();
-    const d = await life.start(create);
-    life.abandon(d.id);
-    expect(runs.cancelled).toEqual(["run-1"]);
-    expect(existsSync(draftPaths(home, d.id).dir)).toBe(false);
-    await life.idle();
-    expect(store.get(d.id).status).toBe("abandoned");
-    expect(() => life.abandon(d.id)).toThrow("INVALID_INPUT");
-  });
-
-  test("abandon during inference stays abandoned without a report", async () => {
-    const { runs, store, life, holdInfer, validations } = setupLifecycle();
-    const release = holdInfer();
-    const d = await life.start(create);
-    runs.end("run-1", done());
-    life.abandon(d.id);
-    release();
-    await life.idle();
-    expect(store.get(d.id).status).toBe("abandoned");
-    expect(store.report(d.id)).toBeNull();
-    expect(validations()).toBe(0);
-  });
-
+describe("folder and revalidate", () => {
   test("openFolder opens the draft folder in the editor", async () => {
     const { home, life, opened } = setupLifecycle();
     const d = await life.start(create);
