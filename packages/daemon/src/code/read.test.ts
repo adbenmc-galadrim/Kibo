@@ -196,9 +196,9 @@ describe("readDiff", () => {
 
   test("a file too large to diff is refused before running git", async () => {
     writeFileSync(join(fx.repo, "huge.txt"), "x".repeat(MAX_DIFF_SIDE_BYTES + 1));
-    await expect(readDiff(h, "huge.txt", null, "unstaged")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(readDiff(h, "huge.txt", null, "unstaged")).rejects.toMatchObject({ code: "TOO_LARGE" });
     fx.git("add", "huge.txt");
-    await expect(readDiff(h, "huge.txt", null, "staged")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(readDiff(h, "huge.txt", null, "staged")).rejects.toMatchObject({ code: "TOO_LARGE" });
   });
 });
 

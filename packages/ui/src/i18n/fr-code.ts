@@ -184,6 +184,7 @@ export const frCode = {
     GH_UNAVAILABLE: "GitHub CLI (gh) introuvable ou non connecté.",
     GH_FAILED: "GitHub a refusé la demande.",
     EDITOR_UNAVAILABLE: "Aucun éditeur externe autorisé n'a été trouvé.",
+    TOO_LARGE: "Contenu trop volumineux pour être affiché : ouvre-le dans ton éditeur externe.",
     INVALID_INPUT: "Requête invalide.",
     NOT_FOUND: "Élément introuvable.",
   },

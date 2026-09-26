@@ -22,7 +22,8 @@ export type KiboErrorCode =
   | "FILE_CHANGED"
   | "GH_UNAVAILABLE"
   | "GH_FAILED"
-  | "EDITOR_UNAVAILABLE";
+  | "EDITOR_UNAVAILABLE"
+  | "TOO_LARGE";
 
 export class KiboError extends Error {
   constructor(

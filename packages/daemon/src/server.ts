@@ -23,6 +23,9 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   FORBIDDEN: 403,
   PROFILE_IN_USE: 409,
   INVALID_TRANSITION: 409,
+  GIT_PUSHED: 409,
+  PATH_OUTSIDE_PROJECT: 403,
+  TOO_LARGE: 413,
 };
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
 

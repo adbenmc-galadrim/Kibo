@@ -232,8 +232,15 @@ describe("agents routes", () => {
     expect(received).toEqual([`${RUN}:Stop`]);
   });
 
-  test("conflicts on runs and profiles answer 409", async () => {
-    for (const code of ["PROFILE_IN_USE", "INVALID_TRANSITION"] as const) {
+  test("domain errors answer their HTTP status", async () => {
+    const cases = [
+      ["PROFILE_IN_USE", 409],
+      ["INVALID_TRANSITION", 409],
+      ["GIT_PUSHED", 409],
+      ["PATH_OUTSIDE_PROJECT", 403],
+      ["TOO_LARGE", 413],
+    ] as const;
+    for (const [code, status] of cases) {
       const conflicting: Service = {
         ...createService(store, { user: "adam" }),
         handle: () => {
@@ -254,7 +261,7 @@ describe("agents routes", () => {
         body: JSON.stringify({ method: "cancelRun", runId: "r1" }),
       });
       srv.stop();
-      expect(res.status).toBe(409);
+      expect(res.status).toBe(status);
       expect(await res.json()).toMatchObject({ ok: false, error: { code } });
     }
   });

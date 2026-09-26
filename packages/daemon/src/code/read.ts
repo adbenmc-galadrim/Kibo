@@ -150,7 +150,7 @@ async function assertDiffable(path: string, sides: Promise<number | null>[]): Pr
   const largest = Math.max(0, ...(await Promise.all(sides)).map((s) => s ?? 0));
   if (largest > MAX_DIFF_SIDE_BYTES)
     throw new KiboError(
-      "INVALID_INPUT",
+      "TOO_LARGE",
       `${path} is too large to diff (${largest} bytes, max ${MAX_DIFF_SIDE_BYTES})`,
     );
 }
