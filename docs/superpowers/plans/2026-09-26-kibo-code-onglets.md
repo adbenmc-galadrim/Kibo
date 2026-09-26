@@ -2623,7 +2623,7 @@ git commit -m "feat(daemon): ouverture dans l'éditeur externe"
   - `type TabShortcut = { kind: "newTab" } | { kind: "palette" } | { kind: "close" } | { kind: "togglePin" } | { kind: "activate"; index: number }` ; `shortcutFor(e: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean }, mac: boolean): TabShortcut | null` ; `useTabShortcuts(onShortcut: (s: TabShortcut) => void): void` ;
   - `TabBar(props: { state: TabsState; describe(t: TabTarget): TabDescription; isDirty(t: TabTarget): boolean; dispatch(a: TabsAction): void; onNewTab(): void; onOpenWindow: ((t: TabTarget) => void) | null; error: string | null })`.
 
-- [ ] **Step 1: Tests du modèle**
+- [x] **Step 1: Tests du modèle**
 
 `packages/ui/src/tabs/tabs.test.ts` :
 ```ts
@@ -2751,7 +2751,7 @@ test("shortcuts use ⌘ on macOS and Ctrl elsewhere", () => {
 Run: `bun test packages/ui/src/tabs/tabs.test.ts`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 2: Implémenter le codec, le modèle et les raccourcis**
+- [x] **Step 2: Implémenter le codec, le modèle et les raccourcis**
 
 `packages/ui/src/tabs/target-hash.ts` :
 ```ts
@@ -2957,7 +2957,7 @@ export function useTabShortcuts(onShortcut: (s: TabShortcut) => void): void {
 Run: `bun test packages/ui/src/tabs/tabs.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Titres, persistance et barre (test d'abord)**
+- [x] **Step 3: Titres, persistance et barre (test d'abord)**
 
 `packages/ui/src/tabs/TabBar.test.tsx` :
 ```tsx
@@ -3383,12 +3383,12 @@ export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWin
 }
 ```
 
-- [ ] **Step 4: Lancer les tests**
+- [x] **Step 4: Lancer les tests**
 
 Run: `bun test packages/ui/src/tabs && bun run check`
 Expected: PASS. Si Radix n'ouvre pas le menu contextuel sous happy-dom avec `fireEvent.contextMenu`, déclencher `fireEvent.pointerDown(el, { button: 2, pointerType: "mouse" })` puis `fireEvent.contextMenu(el)` ; ne pas supprimer le test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ui/src/tabs
