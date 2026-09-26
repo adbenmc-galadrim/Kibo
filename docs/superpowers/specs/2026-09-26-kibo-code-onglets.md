@@ -48,6 +48,8 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 - « Pousser et créer la PR » : pousse, puis `gh pr create --head --base --title --body-file - [--draft] [--reviewer]`. Seuls les commits poussés entrent dans la PR ; des fichiers indexés non commités déclenchent l'avertissement de la maquette 22 avec « Commiter d'abord ».
 - Description par défaut : sections `## Ticket`, `## Changements` (sujets des commits de la branche), `## Sous-tickets` (cases cochées si terminé), `## Maquette` seulement si un lien Figma existe (phase 5).
 - PR rattachée au ticket par `upsertExternalRef` (`{ kind: "github_pr", url, number, state }`, dédoublonné par URL). Une PR déjà ouverte pour la branche remplace le bouton par « Voir la PR #n ».
+- **Règles** : créer une PR liée à un ticket déclenche `pr_opened` (règle par défaut : *En review* depuis Backlog, À faire, En cours, brouillon compris) ; le suivi qui voit une PR passer à `merged` déclenche `pr_merged` (*Terminé* depuis Backlog, À faire, En cours, En review, puis cascade des parents). La modale de PR le signale tant que la règle `pr_opened` est active.
+- **Agent dans le worktree** : un run `running` ou `waiting_input` dont le dossier de travail (`cwd`, exposé par le run) est le worktree affiché ajoute un bandeau ambré au-dessus du formulaire de commit.
 
 ## 7. Onglets
 
@@ -65,7 +67,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 - Groupes : Récents (requête vide), Tickets (4 premiers puis « + n autres »), Pages, Projets, Actions (nouveau ticket, sous-ticket du ticket actif, nouvelle page, nouveau projet, changements du projet, thème).
 - `↵` ouvre (ticket ⇒ onglet ticket), `⌘↵` ouvre un ticket dans le Sheet, `Tab` fait défiler le filtre Tout → Tickets → Pages → Projets → Actions. `⌘T` ouvre la palette en mode « nouvel onglet ».
 - Thème : système → clair → sombre, préférence gardée dans `localStorage` (commodité propre au navigateur).
-- Les entrées d'agents (répondre, assigner) s'ajoutent quand l'API des runs de la phase 2 est disponible.
+- Groupe **Agents** (après Actions ; filtre `Tab` après Actions) : « Répondre à <agent> (<clé>) » pour chaque run en attente de réponse (ouvre le tiroir sur ce run), « Assigner <clé> à un agent… » pour le ticket actif (ouvre le dialogue d'assignation). Un ticket dont le run est en file affiche « En file #n » à la place de son statut.
 
 ## 9. Aperçu et liens de fichiers
 
