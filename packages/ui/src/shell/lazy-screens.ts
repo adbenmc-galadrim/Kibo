@@ -11,6 +11,10 @@ export const DomainsPage = lazyPanel(
   () => import("../settings/DomainsPage").then((m) => m.DomainsPage),
   fr.lazy,
 );
+export const IntegrationsPage = lazyPanel(
+  () => import("../settings/IntegrationsPage").then((m) => m.IntegrationsPage),
+  fr.lazy,
+);
 export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,

@@ -232,7 +232,7 @@ export function AppSidebar(p: Props) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              isActive={screen === "general" || screen === "domains"}
+              isActive={screen === "general" || screen === "domains" || screen === "integrations"}
               {...link(screenTarget("general"))}
             >
               <Settings />

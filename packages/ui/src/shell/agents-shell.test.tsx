@@ -57,6 +57,10 @@ mock.module("../api", () => ({
       if (req.method === "cliStatus")
         return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
       if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
+      if (req.method === "listIntegrations")
+        return Promise.resolve([
+          { id: "git", state: "active", account: null, servers: [], error: null, resumeAt: null },
+        ]);
       return Promise.resolve(
         req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
       );
@@ -64,6 +68,7 @@ mock.module("../api", () => ({
     code: () => Promise.resolve([]),
     subscribe: () => () => {},
     subscribeCode: () => () => {},
+    subscribeIntegrations: () => () => {},
   },
 }));
 mock.module("../state/use-projects", () => ({
@@ -124,6 +129,7 @@ test("routes name the agent screens", () => {
   expect(parseRoute("#/agents/queue")).toEqual(screenRoute("queue"));
   expect(parseRoute("#/settings/domains")).toEqual(screenRoute("domains"));
   expect(parseRoute("#/settings/general")).toEqual(screenRoute("general"));
+  expect(parseRoute("#/settings/integrations")).toEqual(screenRoute("integrations"));
   expect(parseRoute("#/p/kibo/1%401")).toEqual({
     projectId: "kibo",
     pageId: "1@1",
@@ -156,6 +162,15 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(crumbs.getByText("Paramètres")).toBeTruthy();
   expect(crumbs.getByText("Général").getAttribute("aria-current")).toBe("page");
+  const settingsNav = within(screen.getByRole("navigation", { name: "Paramètres" }));
+  expect(settingsNav.getByRole("link", { name: "Intégrations" }).getAttribute("href")).toBe(
+    "#/settings/integrations",
+  );
+  await go("#/settings/integrations");
+  expect(await screen.findByRole("heading", { level: 1, name: "Intégrations" })).toBeTruthy();
+  expect(await screen.findByText("Branches, commits, worktrees, diff")).toBeTruthy();
+  expect(crumbs.getByText("Intégrations").getAttribute("aria-current")).toBe("page");
+  expect(screen.getByRole("button", { name: "Paramètres" }).getAttribute("data-active")).toBe("true");
 });
 
 test("my tickets: sidebar count, rows of every project, sheet and assign in the right project", async () => {

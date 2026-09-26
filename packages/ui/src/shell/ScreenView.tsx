@@ -4,6 +4,7 @@ import {
   ComponentsPage,
   DomainsPage,
   GeneralPage,
+  IntegrationsPage,
   MyTicketsPage,
   QueuePage,
 } from "./lazy-screens";
@@ -24,6 +25,7 @@ type Props = {
 export function ScreenView({ screen, projects, agents, config, now, onAnswer, ...p }: Props) {
   if (screen === "components") return <ComponentsPage />;
   if (screen === "general") return <GeneralPage />;
+  if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "mine") return <MyTicketsPage projects={projects} config={config} {...p} />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;

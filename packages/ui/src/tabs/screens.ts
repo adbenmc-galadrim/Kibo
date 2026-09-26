@@ -1,5 +1,14 @@
 import type { Screen } from "@kibo/schema";
-import { Bot, List, ListOrdered, type LucideIcon, Puzzle, Settings, SlidersHorizontal } from "lucide-react";
+import {
+  Bot,
+  List,
+  ListOrdered,
+  type LucideIcon,
+  Plug,
+  Puzzle,
+  Settings,
+  SlidersHorizontal,
+} from "lucide-react";
 import { fr } from "../i18n/fr";
 
 type ScreenInfo = { title: string; icon: LucideIcon; crumbs: string[] };
@@ -11,4 +20,9 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
   domains: { title: fr.nav.domains, icon: Settings, crumbs: [fr.nav.settings, fr.nav.domains] },
   components: { title: fr.nav.components, icon: Puzzle, crumbs: [fr.nav.components] },
   mine: { title: fr.nav.mine, icon: List, crumbs: [fr.nav.mine] },
+  integrations: {
+    title: fr.settings.integrations,
+    icon: Plug,
+    crumbs: [fr.nav.settings, fr.settings.integrations],
+  },
 };

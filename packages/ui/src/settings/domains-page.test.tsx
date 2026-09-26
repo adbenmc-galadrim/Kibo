@@ -159,5 +159,8 @@ test("settings navigation marks the current page and disables the unbuilt ones",
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
   expect(nav.getByRole("link", { name: "Domaines & guidelines" }).getAttribute("aria-current")).toBe("page");
   expect(nav.getByRole("link", { name: "Général" }).getAttribute("href")).toBe("#/settings/general");
+  expect(nav.getByRole("link", { name: "Intégrations" }).getAttribute("href")).toBe(
+    "#/settings/integrations",
+  );
   expect(nav.getByRole("button", { name: "Apparence" }).hasAttribute("disabled")).toBe(true);
 });
