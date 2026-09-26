@@ -204,7 +204,7 @@ Profil SBPL généré par le démon (`packages/daemon/src/sandbox/macos.sb.ts`) 
 
 ## 13. Décisions d'implémentation (plan de phase 7)
 
-Reprises du plan `docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md` (« Décisions nouvelles »), recalées sur le code de v0.6 par la tâche 0 ; la numérotation (D1 à D36) est celle du plan, les décisions qui relèvent de la sync sont dans la spec G §13. Le filtre seccomp de §8.1 (« à valider ») est reporté après v1.0 (D14).
+Reprises du plan `docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md` (« Décisions nouvelles »), recalées sur le code de v0.6 par la tâche 0 ; la numérotation (D1 à D38) est celle du plan, les décisions qui relèvent de la sync sont dans la spec G §13. Le filtre seccomp de §8.1 (« à valider ») est reporté après v1.0 (D14).
 
 - **D1** · **Paquet `packages/trust`** (WebCrypto et Zod, sans I/O) : Ed25519, codes, empreinte canonique des sources (spec B §3.2), X.509, `.kpkg`, index signés, signature des requêtes HTTP. `packages/devkit` y délègue `hashSources` pour qu'il n'existe qu'une implémentation de l'empreinte. Arêtes : `schema ← trust ← {devkit, daemon, sync-server, cli}` et `schema ← core ← sync-server`.
 - **D5** · **Requêtes HTTP de la marketplace d'équipe** (`POST /v1/market/*`) signées par la clé d'appareil : en-têtes `x-kibo-device`, `x-kibo-date`, `x-kibo-nonce`, `x-kibo-signature` sur `"kibo-http-v1\n" + méthode + "\n" + chemin + "\n" + date + "\n" + nonce + "\n" + sha256(corps)` ; écart d'horloge ≤ 5 min ; nonce refusé s'il a servi dans les 10 dernières minutes.
