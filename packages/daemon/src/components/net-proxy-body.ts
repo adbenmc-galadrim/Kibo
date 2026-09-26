@@ -1,4 +1,4 @@
-import type { FetchResponse } from "@kibo/schema";
+import { type FetchResponse, KiboError } from "@kibo/schema";
 
 const TEXT_TYPE = /^(text\/|application\/(json|xml|javascript|x-www-form-urlencoded)|[^;]*\+(json|xml))/;
 const DROPPED_RESPONSE_HEADERS = new Set(["set-cookie", "set-cookie2"]);
@@ -50,6 +50,13 @@ export function scrubHeaders(headers: Headers, secret: string): Headers {
   return out;
 }
 
+export async function refuseEncodedBody(res: Response, secret: string | null): Promise<void> {
+  const encoding = res.headers.get("content-encoding")?.trim().toLowerCase() ?? "";
+  if (secret === null || encoding === "" || encoding === "identity") return;
+  await res.body?.cancel();
+  throw new KiboError("REMOTE_REJECTED", `encoded response refused while a secret is attached (${encoding})`);
+}
+
 function trailingPrefix(bytes: Uint8Array, needle: Uint8Array): number {
   for (let size = Math.min(needle.length - 1, bytes.length); size > 0; size -= 1) {
     const tail = bytes.subarray(bytes.length - size);
@@ -76,6 +83,7 @@ export async function readProxiedBody(
   maxBytes: number,
   secret: string | null = null,
 ): Promise<FetchResponse> {
+  await refuseEncodedBody(res, secret);
   const capped = scrubCapped(await readCapped(res, maxBytes), secret);
   const received = secret === null ? res.headers : scrubHeaders(res.headers, secret);
   const headers: Record<string, string> = Object.fromEntries(

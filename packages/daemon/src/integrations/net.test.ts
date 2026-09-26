@@ -126,6 +126,20 @@ describe("integration fetch", () => {
     expect(sent.map((h) => h["accept-encoding"])).toEqual(["identity", "gzip"]);
   });
 
+  test("a compressed response to a request carrying the token is refused", async () => {
+    const transport = async () =>
+      new Response(`Bearer ${gh.token}`, { status: 200, headers: { "content-encoding": "br" } });
+    const f = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["140.82.112.5"],
+      transport,
+    });
+    await expect(f("https://api.github.com/user", { bearer: gh.token }, GITHUB_RULES)).rejects.toThrow(
+      "REMOTE_REJECTED",
+    );
+    expect((await f("https://api.github.com/user", {}, GITHUB_RULES)).status).toBe(200);
+  });
+
   test("a secret echoed in a response header is scrubbed", async () => {
     gh.failNext("GET", /^\/user$/, 500, "{}", { "x-echo": `Bearer ${gh.token}` });
     const f = createIntegrationFetch({ aliases: aliases() });

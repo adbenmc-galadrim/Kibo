@@ -7,7 +7,7 @@ import {
   type Resolver,
   systemResolver,
 } from "../components/net-proxy-address";
-import { readCapped, scrubCapped, scrubHeaders } from "../components/net-proxy-body";
+import { readCapped, refuseEncodedBody, scrubCapped, scrubHeaders } from "../components/net-proxy-body";
 import { directTransport, type Transport } from "../components/net-proxy-transport";
 import type { IntegrationFetch, IntegrationFetchInit, InternalRule, SecretResolver } from "./types";
 
@@ -142,6 +142,7 @@ export function createIntegrationFetch(deps: IntegrationFetchDeps): IntegrationF
         });
         if (bearer) deps.observe?.(bareHost(current), res.headers);
         if (!REDIRECTS.has(res.status)) {
+          await refuseEncodedBody(res, bearer);
           const { bytes, truncated } = scrubCapped(
             await readCapped(res, init.maxBytes ?? DEFAULT_MAX_BYTES),
             bearer,

@@ -90,3 +90,24 @@ test("a secret echoed in a response header is scrubbed", async () => {
   });
   expect(out.headers["x-echo"]).toBe("Bearer ***");
 });
+
+test("a compressed response to a request carrying a secret is refused", async () => {
+  const gzipped = (encoding: string) => async () =>
+    new Response(`Bearer ${gh.token}`, { status: 200, headers: { "content-encoding": encoding } });
+  const opts = (encoding: string) => ({
+    resolve: async () => ["140.82.112.5"],
+    transport: gzipped(encoding),
+    hooks: { aliases: new Map(), observe: () => undefined, secret: async () => gh.token },
+    secrets: SECRETS,
+  });
+  await expect(
+    proxyFetch(["api.github.com"], "https://api.github.com/user", GET, opts("gzip")),
+  ).rejects.toThrow("REMOTE_REJECTED");
+  const plain = await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, opts("identity"));
+  expect(plain.body).toBe("Bearer ***");
+  const anonymous = await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, {
+    resolve: async () => ["140.82.112.5"],
+    transport: gzipped("gzip"),
+  });
+  expect(anonymous.status).toBe(200);
+});
