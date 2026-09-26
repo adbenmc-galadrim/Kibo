@@ -21,10 +21,6 @@ export const frComponents = {
     },
     mineLine: (origin: string, trust: string, hosts: readonly string[]) =>
       [origin, trust, ...hosts].join(" · "),
-    source: "Source des tickets",
-    sourceLocal: "Local (Kibo)",
-    sourceSynced: "Synchronisé · GitHub Issues",
-    sourceSoon: "Disponible avec les intégrations",
     pendingTrust: "Autorisation requise",
     submit: "Ajouter à la page",
     failed: "Impossible d'ajouter le composant.",

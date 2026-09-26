@@ -1,21 +1,25 @@
-import type { DraftSummary, Layout, Page } from "@kibo/schema";
-import { Badge } from "@kibo/sdk/ui/badge";
+import { type Binding, DEFAULT_WORKFLOW, type Layout, type Page, type Status } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { Blocks, Check, Search, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Blocks, Search, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { nextLayout } from "../lib/next-layout";
 import { BUILTIN_COMPONENTS, componentIcon } from "../registry";
+import { navigateTo } from "../route";
 import { useComponents } from "../state/use-components";
 import { CatalogRow, CatalogSection, VersionPill } from "./CatalogRow";
-import { ComponentPreview } from "./ComponentPreview";
+import { Details } from "./ComponentDetails";
 import { CreateComponentDialog } from "./CreateComponentDialog";
 import { builtinChoices, type Choice, matches, mineChoices } from "./catalog-choices";
-import { Segment } from "./Segment";
+import { DraftRow } from "./DraftRow";
+import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
+import { SyncSourceForm } from "./sync/SyncSourceForm";
+import { EMPTY_SYNC_FORM, SYNCABLE_COMPONENTS, type SyncForm, toBindingConfig } from "./sync/status-map";
+import { useSyncProgress } from "./sync/use-sync-progress";
 import { TrustDialog, type TrustTarget, trustTargetOf } from "./TrustDialog";
 
 type Props = {
@@ -25,74 +29,21 @@ type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onPublishDraft?: (id: string) => void;
+  workflow?: Status[];
 };
 
 const BUILTINS = builtinChoices(BUILTIN_COMPONENTS);
+const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-function DraftRow({
-  draft,
-  onPublish,
-}: {
-  draft: DraftSummary;
-  onPublish: ((id: string) => void) | undefined;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-dashed px-2 py-2">
-      <span className="grid size-8 shrink-0 place-items-center rounded-md border bg-background">
-        <Blocks aria-hidden className="size-4" />
-      </span>
-      <span className="flex flex-1 items-center gap-2 text-sm font-medium">
-        {draft.title}
-        <Badge variant="secondary">{fr.addComponent.draft}</Badge>
-      </span>
-      {onPublish ? (
-        <Button size="sm" variant="outline" onClick={() => onPublish(draft.id)}>
-          {fr.addComponent.publish}
-        </Button>
-      ) : (
-        <VersionPill version={draft.version} />
-      )}
-    </div>
-  );
-}
-
-function Details({ choice, page }: { choice: Choice; page: Page }) {
-  const a = fr.addComponent;
-  return (
-    <>
-      <ComponentPreview id={choice.id} icon={componentIcon(choice.ref)} />
-      <div className="grid gap-1">
-        <p className="text-base font-semibold">{choice.title}</p>
-        {choice.description && <p className="text-muted-foreground">{choice.description}</p>}
-      </div>
-      <div className="grid gap-2">
-        <p className="font-medium">{a.display}</p>
-        <Segment
-          value={page.kind}
-          options={[{ value: page.kind, label: page.kind === "dashboard" ? a.widget : a.view }]}
-        />
-      </div>
-      {choice.reads.includes("ticket") && (
-        <div className="grid gap-2">
-          <p className="font-medium">{a.source}</p>
-          <Segment
-            value="local"
-            options={[
-              { value: "local", label: a.sourceLocal },
-              { value: "synced", label: a.sourceSynced, disabled: true, hint: a.sourceSoon },
-            ]}
-          />
-        </div>
-      )}
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Check aria-hidden className="size-3.5 shrink-0 text-green-600 dark:text-green-400" />
-        {choice.line}
-      </p>
-    </>
-  );
-}
-
-export function AddComponentDialog({ projectId, page, taken, open, onOpenChange, onPublishDraft }: Props) {
+export function AddComponentDialog({
+  projectId,
+  page,
+  taken,
+  open,
+  onOpenChange,
+  onPublishDraft,
+  workflow = DEFAULT_WORKFLOW,
+}: Props) {
   const a = fr.addComponent;
   const { components, drafts, error } = useComponents();
   const [query, setQuery] = useState("");
@@ -107,10 +58,46 @@ export function AddComponentDialog({ projectId, page, taken, open, onOpenChange,
   const shownMine = mine.filter(shown);
   const shownDrafts = (drafts ?? []).filter((d) => d.validated && matches(d.title, query));
   const selected = [...BUILTINS, ...mine].find((c) => c.ref === ref) ?? null;
+  const [source, setSource] = useState<SourceKind>("local");
+  const [form, setForm] = useState<SyncForm>(EMPTY_SYNC_FORM);
+  const [connected, setConnected] = useState(false);
+  const [binding, setBinding] = useState<Binding | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const progress = useSyncProgress(binding?.id ?? null);
+  const syncable = selected !== null && SYNCABLE_COMPONENTS.includes(selected.id);
+  const synced = syncable && source === "synced";
+  const onFormError = useCallback((m: string) => setSyncError(m), []);
+  const openIntegrationSettings = () => {
+    onOpenChange(false);
+    navigateTo({ kind: "screen", screen: "integrations" });
+  };
+
+  useEffect(() => {
+    if (!open || !syncable) return;
+    client
+      .rpc({ method: "getGithubConnectOptions" })
+      .then((o) => setConnected(o.mode !== null))
+      .catch((e: unknown) => setSyncError(errorText(e)));
+  }, [open, syncable]);
+
+  useEffect(() => {
+    if (!binding || !progress || progress.running) return;
+    client
+      .rpc({ method: "getSyncState", projectId })
+      .then((s) => {
+        const b = s.bindings.find((x) => x.bindingId === binding.id);
+        if (b?.lastError) setSyncError(`${fr.integrations.source.failed} ${b.lastError.message}`);
+        else onOpenChange(false);
+      })
+      .catch((e: unknown) => setSyncError(errorText(e)));
+  }, [binding, progress, projectId, onOpenChange]);
 
   const addInstance = async (component: string) => {
     setFailed(false);
+    setSyncError(null);
     try {
+      const config = synced ? toBindingConfig(form) : null;
+      const created = config ? await client.rpc({ method: "createBinding", projectId, config }) : null;
       await client.rpc({
         method: "command",
         projectId,
@@ -119,8 +106,13 @@ export function AddComponentDialog({ projectId, page, taken, open, onOpenChange,
           pageId: page.id,
           component,
           ...(page.kind === "dashboard" && { layout: nextLayout(taken) }),
+          ...(created && { config: { source: { bindingId: created.id } } }),
         },
       });
+      if (created) {
+        setBinding(created);
+        return;
+      }
       onOpenChange(false);
     } catch (e) {
       console.error(e);
@@ -141,7 +133,7 @@ export function AddComponentDialog({ projectId, page, taken, open, onOpenChange,
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{a.title}</DialogTitle>
           </DialogHeader>
@@ -201,9 +193,32 @@ export function AddComponentDialog({ projectId, page, taken, open, onOpenChange,
                 </p>
               )}
             </div>
-            <div className="grid content-start gap-4 rounded-lg border bg-muted/30 p-4 text-sm">
+            <div className="grid content-start gap-4 rounded-lg border bg-muted/30 p-4 text-sm sm:max-h-[calc(100dvh-14rem)] sm:overflow-y-auto">
               {selected ? (
-                <Details choice={selected} page={page} />
+                <Details
+                  choice={selected}
+                  page={page}
+                  source={
+                    syncable ? (
+                      <div className="grid gap-4">
+                        <SourcePicker
+                          value={source}
+                          onValueChange={setSource}
+                          connected={connected}
+                          onOpenSettings={openIntegrationSettings}
+                        />
+                        {synced && (
+                          <SyncSourceForm
+                            workflow={workflow}
+                            value={form}
+                            onChange={setForm}
+                            onError={onFormError}
+                          />
+                        )}
+                      </div>
+                    ) : null
+                  }
+                />
               ) : (
                 <p className="text-muted-foreground">{a.pick}</p>
               )}
@@ -214,12 +229,27 @@ export function AddComponentDialog({ projectId, page, taken, open, onOpenChange,
               {a.failed}
             </p>
           )}
+          {progress && (
+            <output className="text-sm text-muted-foreground">
+              {progress.running
+                ? fr.integrations.source.progress(progress.imported)
+                : fr.integrations.source.done(progress.imported)}
+            </output>
+          )}
+          {syncError && (
+            <p role="alert" className="text-sm text-destructive">
+              {syncError}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {fr.common.cancel}
             </Button>
-            <Button disabled={!selected} onClick={submit}>
-              {a.submit}
+            <Button
+              disabled={!selected || (synced && toBindingConfig(form) === null) || binding !== null}
+              onClick={submit}
+            >
+              {synced ? fr.integrations.source.submit : a.submit}
             </Button>
           </DialogFooter>
         </DialogContent>

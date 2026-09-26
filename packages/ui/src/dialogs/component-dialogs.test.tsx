@@ -26,9 +26,12 @@ mock.module("../api", () => ({
       if (req.method === "listComponents") return components();
       if (req.method === "listDrafts") return Promise.resolve(drafts);
       if (req.method === "approveComponent") return approve();
+      if (req.method === "getGithubConnectOptions")
+        return Promise.resolve({ ghAvailable: false, ghLogin: null, mode: null });
       return add();
     },
     subscribe: () => () => undefined,
+    subscribeIntegrations: () => () => undefined,
   },
 }));
 
@@ -93,9 +96,7 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(screen.getByText("IA · autorisation requise")).toBeTruthy();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
   expect(screen.getByText("Widget dans la grille")).toBeTruthy();
-  expect(screen.getByRole("radio", { name: "Synchronisé · GitHub Issues" }).hasAttribute("disabled")).toBe(
-    true,
-  );
+  expect(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy();
   expect(
     screen.getByText("Intégré · confiance totale · lit : ticket, status, run · écrit : ticket"),
   ).toBeTruthy();

@@ -1,14 +1,20 @@
 import { type Instance, isBuiltinId, type Page, type ProjectSnapshot, splitRef } from "@kibo/schema";
+import { lazyPanel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { PublishDialog } from "../components-page/PublishDialog";
-import { AddComponentDialog } from "../dialogs/AddComponentDialog";
 import { fr } from "../i18n/fr";
 import { componentIcon } from "../registry";
 import { PageActions } from "../shell/page-actions";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
+
+const AddComponentDialog = lazyPanel(
+  () => import("../dialogs/AddComponentDialog").then((m) => m.AddComponentDialog),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
 
 function WidgetHeader({ projectId, instance }: { projectId: string; instance: Instance }) {
   const Icon = componentIcon(instance.component);
@@ -90,6 +96,7 @@ export function PageView({ project, page, viewer }: Props) {
           open
           onOpenChange={setAdding}
           onPublishDraft={(id) => setPublishing(id)}
+          workflow={project.workflow}
         />
       )}
       {publishing && <PublishDialog id={publishing} open onOpenChange={(o) => !o && setPublishing(null)} />}
