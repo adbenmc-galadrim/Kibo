@@ -94,7 +94,8 @@ export function createFrameSdk(
       viewer: init.viewer,
       surface: init.surface,
       openTicket: (ticketId) => port.post({ kibo: 1, type: "openTicket", ticketId }),
-      openNewTicket: (defaults) => port.post({ kibo: 1, type: "openNewTicket", defaults }),
+      openNewTicket: ({ statusId, parentId }) =>
+        port.post({ kibo: 1, type: "openNewTicket", defaults: { statusId, parentId } }),
       openFile: ({ path, line }) =>
         port.post({ kibo: 1, type: "openFile", path, ...(typeof line === "number" && { line }) }),
       openView: (componentId) => port.post({ kibo: 1, type: "openView", componentId }),

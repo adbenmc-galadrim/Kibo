@@ -30,6 +30,19 @@ test("the project backend sends component calls with its instance", async () => 
   ]);
 });
 
+test("the project backend sends commands with its instance", async () => {
+  const bodies: unknown[] = [];
+  const recording = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return new Response(JSON.stringify({ ok: true, result: null }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: recording });
+  await projectBackend(client, "p1", "i1").run({ method: "createTicket", title: "A" });
+  expect(bodies).toEqual([
+    { method: "command", projectId: "p1", command: { method: "createTicket", title: "A" }, instanceId: "i1" },
+  ]);
+});
+
 test("a 401 on rpc notifies onUnauthorized before throwing", async () => {
   const events: string[] = [];
   const client = createClient({

@@ -33,7 +33,7 @@ export type EntityMap = {
   note: NoteMeta;
   ci_run: CiRun;
 };
-export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null };
+export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null; instanceId?: string };
 export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };
 export type FileTarget = FileOpenRequest;
 

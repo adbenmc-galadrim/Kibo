@@ -186,7 +186,7 @@ export function createClient(opts: ClientOptions): KiboClient {
 export function projectBackend(client: KiboClient, projectId: string, instanceId: string): ProjectBackend {
   return {
     snapshot: () => client.rpc({ method: "getProject", projectId }),
-    run: (command: ProjectCommand) => client.rpc({ method: "command", projectId, command }),
+    run: (command: ProjectCommand) => client.rpc({ method: "command", projectId, command, instanceId }),
     call: (call: ComponentCall) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
     subscribe: (listener) =>
       client.subscribe((id) => {

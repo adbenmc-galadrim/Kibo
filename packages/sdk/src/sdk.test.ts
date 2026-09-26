@@ -45,7 +45,7 @@ describe("sdk permissions", () => {
     m.sdk.openTicket("1@1");
     m.sdk.openNewTicket({ statusId: "todo" });
     expect(m.opened).toEqual(["1@1"]);
-    expect(m.newTicketRequests).toEqual([{ statusId: "todo" }]);
+    expect(m.newTicketRequests).toEqual([{ statusId: "todo", instanceId: "mock-instance" }]);
     expect(m.snapshot().tickets).toHaveLength(3);
   });
 });

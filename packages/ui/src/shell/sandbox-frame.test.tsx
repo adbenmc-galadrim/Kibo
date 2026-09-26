@@ -1,5 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import type { FileRef, HostToFrame, RpcRequest } from "@kibo/schema";
+import type { NewTicketDefaults } from "@kibo/sdk";
 import { act, render } from "@testing-library/react";
 import type { Host } from "./Host";
 
@@ -28,9 +29,10 @@ const { HostProvider }: typeof import("./Host") = await import("./Host");
 
 function mount(src = "about:blank") {
   const opened: FileRef[] = [];
+  const newTickets: NewTicketDefaults[] = [];
   const host: Host = {
     openTicket: () => {},
-    openNewTicket: () => {},
+    openNewTicket: (d) => newTickets.push(d),
     openAssign: () => {},
     openFile: (ref) => opened.push(ref),
     openView: () => {},
@@ -93,8 +95,15 @@ function mount(src = "about:blank") {
       await load;
     });
   };
-  return { view, iframe, posted, opened, fromFrame, loaded, navigate, changeSrc };
+  return { view, iframe, posted, opened, newTickets, fromFrame, loaded, navigate, changeSrc };
 }
+
+test("a new ticket asked by the frame carries the instance fixed by the host", () => {
+  const { newTickets, fromFrame, view } = mount();
+  fromFrame({ kibo: 1, type: "openNewTicket", defaults: { statusId: "todo" } });
+  expect(newTickets).toEqual([{ statusId: "todo", instanceId: "inst-1" }]);
+  view.unmount();
+});
 
 test("the iframe is sandboxed without same-origin and sends no referrer", () => {
   const { iframe, view } = mount();

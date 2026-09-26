@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
-import { matchesSource, readSource } from "./source";
+import { filterBySource, matchesSource, readSource } from "./source";
 
 const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
   id: "1@1",
@@ -46,4 +46,29 @@ test("a synced instance only shows tickets of its binding", () => {
   expect(matchesSource(ticket([]), null)).toBe(true);
   expect(readSource({ source: { bindingId: 3 } })).toBeNull();
   expect(readSource({})).toBeNull();
+});
+
+test("a synced view keeps the binding's tickets and their local sub-tickets", () => {
+  const ref = {
+    kind: "github_issue" as const,
+    bindingId: "b1",
+    repo: "adam/kibo",
+    number: 1,
+    nodeId: "I_1",
+    url: "https://github.com/adam/kibo/issues/1",
+  };
+  const t = (id: string, parentId: string | null, refs: TicketView["externalRefs"] = []): TicketView => ({
+    ...ticket(refs),
+    id,
+    parentId,
+  });
+  const tickets = [
+    t("a", null, [ref]),
+    t("a1", "a"),
+    t("a11", "a1"),
+    t("b", null),
+    t("c", null, [{ ...ref, bindingId: "b2" }]),
+  ];
+  expect(filterBySource(tickets, { bindingId: "b1" }).map((x) => x.id)).toEqual(["a", "a1", "a11"]);
+  expect(filterBySource(tickets, null)).toHaveLength(5);
 });

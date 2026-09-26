@@ -153,6 +153,7 @@ export function createSdk(
 
   return {
     ...ctx,
+    openNewTicket: (d) => ctx.openNewTicket({ ...d, instanceId: ctx.instanceId }),
     async list<T extends EntityType>(type: T): Promise<EntityMap[T][]> {
       guard.needRead(type);
       return mode === "gated" ? call<EntityMap[T][]>({ kind: "list", entity: type }) : fromSnapshot(type);
