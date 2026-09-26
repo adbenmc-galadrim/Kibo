@@ -13,6 +13,7 @@ import {
 } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import type { ComponentType } from "react";
+import { LAZY_FALLBACK_SELECTOR } from "./lazy";
 import { createMockSdk, type MockSdkOptions } from "./mock";
 import { SdkProvider } from "./react";
 
@@ -62,6 +63,7 @@ export function runConformance(
             );
             try {
               await waitFor(() => expect(container.childElementCount).toBeGreaterThan(0));
+              await waitFor(() => expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull());
               await settle();
               console.log(`${USED_MARKER}${JSON.stringify(m.used)}`);
               expect(m.violations).toEqual([]);
