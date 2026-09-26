@@ -15280,13 +15280,13 @@ git commit -m "feat(ui): Graphe et Notes intégrés"
   - `startDaemon(opts: { home; port; sandboxPort; uiDir; dev; toolchain: Toolchain; user; build?; validate? }): Promise<{ url: string; port: number; sandboxPort: number; token: string; stop(): Promise<void> }>` (utilisé par `main.ts`, les tests de sortie et l'E2E).
   - RPC `command` : `setInstanceComponent` et `setInstanceData` refusées (`PERMISSION_DENIED`) : elles ne passent que par le démon (mise à jour, `data.set`).
 
-- [ ] **Step 1: `Store.db`, `handle` asynchrone**
+- [x] **Step 1: `Store.db`, `handle` asynchrone**
 
 `packages/daemon/src/store.ts` : `Store` gagne `db: Database` (la base déjà ouverte, exposée telle quelle) ; si la phase 2 ou 3 l'a déjà ajouté, ne rien changer.
 
 `packages/daemon/src/server.ts` : `result: (await opts.service.handle(parsed.data)) ?? null` (si la phase 3 l'a déjà rendu asynchrone, rien à faire).
 
-- [ ] **Step 2: Écrire les tests du service des composants**
+- [x] **Step 2: Écrire les tests du service des composants**
 
 `packages/daemon/src/components/service.test.ts` :
 ```ts
@@ -15451,7 +15451,7 @@ test("the daemon starts both listeners, writes daemon.json and removes it on sto
 Run: `bun test packages/daemon/src/components/service.test.ts packages/daemon/src/daemon.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implémenter `components/service.ts`**
+- [x] **Step 3: Implémenter `components/service.ts`**
 
 ```ts
 import type { Database } from "bun:sqlite";
@@ -15733,7 +15733,7 @@ export function createComponentsService(deps: ComponentsDeps) {
 ```
 `registry`, `gate`, `backends`, `publisher` et `jobs` se référencent mutuellement uniquement dans des fermetures appelées après la construction (jamais pendant) : l'ordre des déclarations est sans effet à l'exécution.
 
-- [ ] **Step 4: Brancher `service.ts`**
+- [x] **Step 4: Brancher `service.ts`**
 
 `packages/daemon/src/service.ts` :
 ```ts
@@ -15792,7 +15792,7 @@ Dans `createService(store, opts)`, après la création de `projects` et `emit` :
 ```
 et l'objet renvoyé expose `assets: components.assets`, `start: () => components.start()`, `stop: () => components.stop()`. Les appels existants de `createService(store, { user })` dans les tests v0.1 passent désormais `{ user, home, toolchain: DEV_TOOLCHAIN, sandboxOrigin: () => "http://127.0.0.1:0" }` (ajuster `service.test.ts`, `server.test.ts`) et leurs `expect(service.handle(…))` deviennent `expect(await service.handle(…))`.
 
-- [ ] **Step 5: `daemon.ts` et `main.ts`**
+- [x] **Step 5: `daemon.ts` et `main.ts`**
 
 `packages/daemon/src/daemon.ts` :
 ```ts
@@ -15908,7 +15908,7 @@ process.stdout.write(`KIBO_READY ${daemon.url}/#pair=${daemon.token}\n`);
 ```
 (La tâche 34 ajoute en tête la répartition des sous-commandes `component` et `component-runtime`.)
 
-- [ ] **Step 6: Vérifier et committer**
+- [x] **Step 6: Vérifier et committer**
 
 Run: `bun test packages components && bun run typecheck && bun run check && bun run --cwd e2e test`
 Expected: PASS (les parcours Playwright v0.1 restent verts : la ligne `KIBO_READY` et l'appairage sont inchangés).
