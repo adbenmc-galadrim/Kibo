@@ -1096,7 +1096,7 @@ git commit -m "feat(schema): contrats du code et des onglets"
 
 Justification des dépendances (à reprendre dans le plan, pas dans le commit) : `cmdk` est la base de `Command` shadcn (palette) ; CodeMirror 6 est imposé par la spec (§7), `@codemirror/merge` fournit l'édition dans le diff, `@codemirror/language-data` charge les langages à la demande ; Shiki est imposé par la spec (aperçu), avec `@shikijs/langs` et `@shikijs/themes` pour n'embarquer que les langages utiles et le moteur JavaScript (pas de WebAssembly, compatible avec la CSP `script-src 'self'`) ; `@dnd-kit/sortable` réordonne les onglets avec la même bibliothèque que le Kanban. Aucun de ces paquets n'a de script `postinstall`.
 
-- [ ] **Step 1: Test de fumée des primitives**
+- [x] **Step 1: Test de fumée des primitives**
 
 `packages/sdk/src/primitives.test.tsx` :
 ```tsx
@@ -1149,12 +1149,12 @@ test("the new shadcn primitives render and are accessible", async () => {
 Run: `bun test packages/sdk/src/primitives.test.tsx`
 Expected: FAIL, modules `./ui/*` introuvables.
 
-- [ ] **Step 2: Générer les primitives**
+- [x] **Step 2: Générer les primitives**
 
 Run: `cd packages/ui && bunx shadcn@4.21.0 add context-menu command toggle toggle-group checkbox alert-dialog`
 Expected: six fichiers créés dans `packages/sdk/src/ui/` (alias de `components.json`). Si la CLI installe `cmdk` dans `packages/ui`, le retirer (`bun remove --cwd packages/ui cmdk`) : il appartient au SDK.
 
-- [ ] **Step 3: Installer les dépendances exactes**
+- [x] **Step 3: Installer les dépendances exactes**
 
 Run :
 ```bash
@@ -1163,12 +1163,12 @@ bun add --cwd packages/ui codemirror@6.0.2 @codemirror/state@6.7.6 @codemirror/v
 ```
 Vérifier qu'aucun paquet ajouté n'exécute de script : `bun pm untrusted` ne liste rien de nouveau.
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/sdk && bun run check && bun run typecheck && bun run --cwd packages/ui build`
 Expected: PASS ; le build Vite réussit (les primitives sont exclues de Biome par `biome.json`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/sdk/src/ui/context-menu.tsx packages/sdk/src/ui/command.tsx packages/sdk/src/ui/toggle.tsx packages/sdk/src/ui/toggle-group.tsx packages/sdk/src/ui/checkbox.tsx packages/sdk/src/ui/alert-dialog.tsx packages/sdk/src/primitives.test.tsx packages/sdk/package.json packages/ui/package.json bun.lock
