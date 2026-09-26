@@ -6951,7 +6951,7 @@ Composant sans UI (`kind: "adapter"`), écrit avec le SDK public : il traduit, i
   - curseur opaque : `{"mode":"rest","since":…,"page":n}` ou `{"mode":"project","since":…,"after":…,"max":…}`
   - issues créées : titre, corps, **libellés du filtre de la liaison** (pour rester dans son périmètre), puis fermeture si `closed`, puis ajout au Project et statut si la correspondance existe
 
-- [ ] **Step 1: Paquet**
+- [x] **Step 1: Paquet**
 
 `components/github-issues/kibo.component.json` :
 
@@ -7004,7 +7004,7 @@ const BUILTIN_ANY: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];
 export const isBuiltinId = (id: string): boolean => BUILTIN_ANY.includes(id);
 ```
 
-- [ ] **Step 2: Test du mapping (échoue)**
+- [x] **Step 2: Test du mapping (échoue)**
 
 `components/github-issues/src/map.test.ts` :
 
@@ -7090,7 +7090,7 @@ describe("github issue mapping", () => {
 
 Run: `bun test components/github-issues/src/map.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: `remote.ts`, `map.ts`, `cursor.ts`**
+- [x] **Step 3: `remote.ts`, `map.ts`, `cursor.ts`**
 
 `components/github-issues/src/remote.ts` :
 
@@ -7258,7 +7258,7 @@ export function readProjectCursor(raw: string | null): ProjectCursor {
 
 Run: `bun test components/github-issues/src/map.test.ts` — Expected: PASS.
 
-- [ ] **Step 4: Test de l'adaptateur (échoue)**
+- [x] **Step 4: Test de l'adaptateur (échoue)**
 
 `components/github-issues/src/adapter.test.ts` :
 
@@ -7443,7 +7443,7 @@ describe("push", () => {
 
 Run: `bun test components/github-issues` — Expected: FAIL (`./adapter` absent).
 
-- [ ] **Step 5: `rest.ts` et `project.ts`**
+- [x] **Step 5: `rest.ts` et `project.ts`**
 
 `components/github-issues/src/rest.ts` :
 
@@ -7526,7 +7526,7 @@ export async function currentItem(ctx: Ctx, project: Project, number: number): P
 }
 ```
 
-- [ ] **Step 6: `adapter.ts`, `server.ts`, `index.ts`**
+- [x] **Step 6: `adapter.ts`, `server.ts`, `index.ts`**
 
 `components/github-issues/src/adapter.ts` :
 
@@ -7670,7 +7670,7 @@ export const manifest = ComponentManifest.parse(manifestJson);
 export { githubIssuesAdapter } from "./adapter";
 ```
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Ajouter `components/github-issues` au script `typecheck` racine (après `components/notes`).
 
