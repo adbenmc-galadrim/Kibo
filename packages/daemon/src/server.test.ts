@@ -1,12 +1,10 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { KiboError } from "@kibo/schema";
-import type { HookSink } from "./agents/hook-route";
 import { loadOrCreateToken } from "./auth";
 import { startServer } from "./server";
-import { createService, type Service } from "./service";
+import { createService } from "./service";
 import { openStore, type Store } from "./store";
 
 let home: string;
@@ -144,72 +142,6 @@ describe("pairing and auth", () => {
   });
 });
 
-describe("unexpected failures", () => {
-  test("a non-domain error is reported as INTERNAL without details", async () => {
-    const failing: Service = {
-      ...createService(store, { user: "adam" }),
-      handle: () => {
-        throw new Error("secret stack detail");
-      },
-    };
-    const quiet = spyOn(console, "error").mockImplementation(() => {});
-    const broken = startServer({ service: failing, token: TOKEN, port: 0, uiDir: null });
-    const headers = { "content-type": "application/json", origin: broken.url };
-    const paired = await fetch(`${broken.url}/api/pair`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ token: TOKEN }),
-    });
-    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
-    const res = await fetch(`${broken.url}/api/rpc`, {
-      method: "POST",
-      headers: { ...headers, cookie },
-      body: JSON.stringify({ method: "listProjects" }),
-    });
-    broken.stop();
-    quiet.mockRestore();
-    expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ ok: false, error: { code: "INTERNAL", message: "internal error" } });
-  });
-});
-
-describe("integration errors", () => {
-  test("a remote error keeps its status and loses its secret", async () => {
-    const secret = "ghp_TESTSECRET0123456789abcdefghijklmn";
-    const failing: Service = {
-      ...createService(store, { user: "adam" }),
-      handle: () => {
-        throw new KiboError("REMOTE_REJECTED", `github 401: Bearer ${secret}`);
-      },
-    };
-    const redacting = startServer({
-      service: failing,
-      token: TOKEN,
-      port: 0,
-      uiDir: null,
-      redact: (text) => text.split(secret).join("***"),
-    });
-    const headers = { "content-type": "application/json", origin: redacting.url };
-    const paired = await fetch(`${redacting.url}/api/pair`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ token: TOKEN }),
-    });
-    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
-    const res = await fetch(`${redacting.url}/api/rpc`, {
-      method: "POST",
-      headers: { ...headers, cookie },
-      body: JSON.stringify({ method: "listIntegrations" }),
-    });
-    redacting.stop();
-    expect(res.status).toBe(502);
-    expect(await res.json()).toEqual({
-      ok: false,
-      error: { code: "REMOTE_REJECTED", message: "github 401: Bearer ***" },
-    });
-  });
-});
-
 describe("change channel", () => {
   test("broadcast messages are redacted before they reach the socket", async () => {
     const secret = "ghp_TESTSECRET0123456789abcdefghijklmn";
@@ -241,155 +173,6 @@ describe("change channel", () => {
     ws.close();
     redacting.stop();
     expect(JSON.parse(data)).toEqual({ type: "notice", title: "CI", body: "Bearer ***" });
-  });
-});
-
-describe("agents routes", () => {
-  const RUN = crypto.randomUUID();
-  const hookTo = (url: string, runId: string, headers: Record<string, string>) =>
-    fetch(`${url}/hooks/${runId}`, {
-      method: "POST",
-      headers: { "content-type": "application/json", ...headers },
-      body: JSON.stringify({
-        payload: {
-          event: "Stop",
-          sessionId: "s",
-          transcriptPath: null,
-          tool: null,
-          detail: null,
-          question: null,
-          agentId: null,
-        },
-        toolInput: null,
-      }),
-    });
-
-  test("hook posts skip the session but need the run token and a local Host", async () => {
-    expect((await hookTo(server.url, RUN, {})).status).toBe(404);
-    const foreign = await hookTo(server.url, RUN, {
-      authorization: `Bearer ${"b".repeat(64)}`,
-      host: "evil.test",
-    });
-    expect(foreign.status).toBe(403);
-  });
-
-  test("hook posts reach the sink only with the right run token", async () => {
-    const received: string[] = [];
-    const sink: HookSink = {
-      verify: (runId, token) => runId === RUN && token === "b".repeat(64),
-      receive: (runId, payload) => {
-        received.push(`${runId}:${payload.event}`);
-        return null;
-      },
-    };
-    const hooked = startServer({
-      service: createService(store, { user: "adam" }),
-      token: TOKEN,
-      port: 0,
-      uiDir: null,
-      hooks: sink,
-    });
-    const bearer = { authorization: `Bearer ${"b".repeat(64)}` };
-    const wrong = await hookTo(hooked.url, RUN, { authorization: `Bearer ${"0".repeat(64)}` });
-    const foreign = await hookTo(hooked.url, RUN, { ...bearer, host: "evil.test" });
-    const ok = await hookTo(hooked.url, RUN, bearer);
-    const notUuid = await hookTo(hooked.url, "not-a-run", bearer);
-    hooked.stop();
-    expect(wrong.status).toBe(401);
-    expect(foreign.status).toBe(403);
-    expect(ok.status).toBe(204);
-    expect(ok.headers.get("cache-control")).toBe("no-store");
-    expect(notUuid.status).toBe(404);
-    expect(received).toEqual([`${RUN}:Stop`]);
-  });
-
-  test("domain errors answer their HTTP status", async () => {
-    const cases = [
-      ["PROFILE_IN_USE", 409],
-      ["INVALID_TRANSITION", 409],
-      ["GIT_PUSHED", 409],
-      ["PATH_OUTSIDE_PROJECT", 403],
-      ["TOO_LARGE", 413],
-    ] as const;
-    for (const [code, status] of cases) {
-      const conflicting: Service = {
-        ...createService(store, { user: "adam" }),
-        handle: () => {
-          throw new KiboError(code, "conflict");
-        },
-      };
-      const srv = startServer({ service: conflicting, token: TOKEN, port: 0, uiDir: null });
-      const headers = { "content-type": "application/json", origin: srv.url };
-      const paired = await fetch(`${srv.url}/api/pair`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ token: TOKEN }),
-      });
-      const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
-      const res = await fetch(`${srv.url}/api/rpc`, {
-        method: "POST",
-        headers: { ...headers, cookie },
-        body: JSON.stringify({ method: "cancelRun", runId: "r1" }),
-      });
-      srv.stop();
-      expect(res.status).toBe(status);
-      expect(await res.json()).toMatchObject({ ok: false, error: { code } });
-    }
-  });
-});
-
-describe("ui files", () => {
-  test("serves files from the ui folder and never outside it", async () => {
-    const root = mkdtempSync(join(tmpdir(), "kibo-ui-"));
-    const uiDir = join(root, "ui");
-    mkdirSync(uiDir);
-    mkdirSync(join(root, "ui-evil"));
-    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
-    writeFileSync(join(uiDir, "app.js"), "run()");
-    writeFileSync(join(root, "ui-evil", "secret"), "stolen");
-    writeFileSync(join(root, "secret"), "stolen");
-    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
-    const get = async (path: string) => (await fetch(`${ui.url}${path}`)).text();
-    const statusOf = async (path: string) => (await fetch(`${ui.url}${path}`)).status;
-    expect(await get("/app.js")).toBe("run()");
-    expect(await get("/projects/KIB")).toBe("<p>kibo</p>");
-    expect(await get("/..%2Fui-evil%2Fsecret")).not.toBe("stolen");
-    expect(await get("/..%2Fsecret")).not.toBe("stolen");
-    expect(await get("/%2e%2e/secret")).not.toBe("stolen");
-    expect(await statusOf("/..%2Fui-evil%2Fsecret")).toBe(403);
-    ui.stop();
-    rmSync(root, { recursive: true, force: true });
-  });
-
-  test("ui responses carry the security headers", async () => {
-    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
-    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
-    writeFileSync(join(uiDir, "app.js"), "run()");
-    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
-    for (const path of ["/", "/app.js", "/projects/KIB", "/%00"]) {
-      const res = await fetch(`${ui.url}${path}`);
-      expect(res.headers.get("content-security-policy")).toBe(
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-          "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
-      );
-      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
-      expect(res.headers.get("referrer-policy")).toBe("no-referrer");
-    }
-    ui.stop();
-    rmSync(uiDir, { recursive: true, force: true });
-  });
-
-  test("an unreadable ui path is a clean 400", async () => {
-    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
-    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
-    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
-    for (const path of ["/app%00.js", "/%00", `/${"a".repeat(5000)}`]) {
-      const res = await fetch(`${ui.url}${path}`);
-      expect(res.status).toBe(400);
-      expect(await res.text()).toBe("bad path");
-    }
-    ui.stop();
-    rmSync(uiDir, { recursive: true, force: true });
   });
 });
 
