@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,6 +29,7 @@ import {
   type Orchestrator,
   type OrchestratorOptions,
 } from "./orchestrator";
+import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import { openRunStore, type RunStore } from "./run-store";
 import { newRunToken } from "./run-token";
@@ -481,3 +482,123 @@ test("invalid host settings are refused and not saved", () => {
   expect(() => h.orch.setHost({ cpuThreshold: 5 })).toThrow("INVALID_INPUT");
   expect(h.store.hostSettings()).toEqual({});
 });
+
+test("a guard that throws denies the tool, logs the error and lets the run finish", async () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const h = setup({ scenario: "guard" });
+    const cwd = join(h.home, "draft");
+    mkdirSync(cwd);
+    const r = h.orch.submit({
+      profileId: "opus",
+      projectId: null,
+      title: "Tâche gardée",
+      cwd,
+      prompt: "x",
+      guard: ({ tool }) => {
+        if (tool === "Bash") throw new Error("guard exploded");
+        return null;
+      },
+    });
+    await waitUntil(() => run(h, r.id).state === "done");
+    expect(run(h, r.id).denied).toEqual(["Bash"]);
+    expect(errors.mock.calls.some((c) => String(c[0]).includes(`guard of run ${r.id}`))).toBe(true);
+  } finally {
+    errors.mockRestore();
+  }
+}, 30_000);
+
+test("a throwing listener neither silences the others nor stops the orchestrator", async () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const h = setup({ scenario: "done" });
+    const states: string[] = [];
+    let changes = 0;
+    h.orch.onRunState(() => {
+      throw new Error("state listener exploded");
+    });
+    h.orch.onRunState((r) => states.push(r.state));
+    h.orch.onChange(() => {
+      throw new Error("change listener exploded");
+    });
+    h.orch.onChange(() => {
+      changes += 1;
+    });
+    const r = assign(h, "t1");
+    await waitUntil(() => run(h, r.id).state === "done" && changes > 0);
+    expect(states).toEqual(["queued", "starting", "running", "done"]);
+    expect(h.done).toEqual(["t1"]);
+    const again = assign(h, "t2");
+    await waitUntil(() => run(h, again.id).state === "done");
+    expect(errors.mock.calls.some((c) => String(c[0]).includes("run state listener"))).toBe(true);
+    expect(errors.mock.calls.some((c) => String(c[0]).includes("change listener"))).toBe(true);
+  } finally {
+    errors.mockRestore();
+  }
+}, 30_000);
+
+test("a process ending while its run is queued again records no exit", async () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const h = setup({ scenario: "hold" });
+    const registry = openRunRegistry(h.store);
+    const live = new Map<string, LiveRun>();
+    const launchRun = createRunLauncher({
+      opts: h.options,
+      registry,
+      tasks: new Map(),
+      live,
+      profileOf: () => profile(),
+      stopping: () => false,
+    });
+    const view = registry.create(
+      {
+        id: "stray",
+        projectId: "p1",
+        ticketId: "t1",
+        ticketKey: "KIB-1",
+        ticketTitle: "Ticket KIB-1",
+        profileId: "opus",
+        profileName: "opus-dev",
+        sessionId: crypto.randomUUID(),
+        brief: "",
+      },
+      0,
+    );
+    registry.apply(view.id, { type: "admitted", lane: 1 });
+    const running = launchRun(view.id);
+    await waitUntil(() => live.has(view.id) && fakeCalls(h.state, view.sessionId).length > 0);
+    registry.apply(view.id, {
+      type: "hook",
+      payload: {
+        event: "PostToolUse",
+        sessionId: view.sessionId,
+        transcriptPath: null,
+        tool: "mcp__kibo__ask_user",
+        detail: null,
+        question: "Quel port ?",
+        agentId: null,
+      },
+    });
+    registry.apply(view.id, {
+      type: "exited",
+      code: 0,
+      isError: false,
+      result: null,
+      tokens: 0,
+      costUsd: 0,
+      denied: [],
+    });
+    registry.apply(view.id, { type: "answered", text: "8080", rank: -1 });
+    const exits = () => registry.log(view.id).filter((e) => e.event.type === "exited").length;
+    expect(exits()).toBe(1);
+    live.get(view.id)?.proc.kill();
+    await running;
+    expect(registry.get(view.id).state).toBe("queued");
+    expect(exits()).toBe(1);
+    expect(registry.log(view.id).some((e) => e.event.type === "failed")).toBe(false);
+    expect(errors.mock.calls.some((c) => String(c[0]).includes("exit not recorded"))).toBe(true);
+  } finally {
+    errors.mockRestore();
+  }
+}, 30_000);
