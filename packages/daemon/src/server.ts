@@ -14,6 +14,7 @@ import { newSessionId, readCookie, sameSecret } from "./auth";
 import type { CodeService } from "./code/code-service";
 import type { AssetLookup } from "./components/sandbox-server";
 import { serveTrusted } from "./components/trusted-route";
+import { rpcRefusal } from "./rpc-refusal";
 import type { Service } from "./service";
 
 export type ServerOptions = {
@@ -65,6 +66,7 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   REMOTE_CONFLICT: 409,
   MCP_UNAVAILABLE: 502,
   MCP_FAILED: 502,
+  AI_UNAVAILABLE: 503,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
@@ -132,7 +134,7 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     }
     if (url.pathname === "/api/rpc" && req.method === "POST") {
       const parsed = RpcRequest.safeParse(await req.json().catch(() => null));
-      if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
+      if (!parsed.success) return fail("INVALID_INPUT", rpcRefusal(parsed.error), 400);
       return respond(() => opts.service.handle(parsed.data), redact);
     }
     if (url.pathname === "/api/code" && req.method === "POST" && opts.code) {

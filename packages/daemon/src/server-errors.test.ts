@@ -94,6 +94,8 @@ describe("domain errors", () => {
       ["GIT_PUSHED", 409],
       ["PATH_OUTSIDE_PROJECT", 403],
       ["TOO_LARGE", 413],
+      ["AI_UNAVAILABLE", 503],
+      ["CONFLICT", 409],
     ] as const;
     for (const [code, status] of cases) {
       const conflicting: Service = {
@@ -119,5 +121,34 @@ describe("domain errors", () => {
       expect(res.status).toBe(status);
       expect(await res.json()).toMatchObject({ ok: false, error: { code } });
     }
+  });
+});
+
+describe("invalid requests", () => {
+  test("an invalid AI request is refused with a short message, never the raw schema error", async () => {
+    const srv = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+    });
+    const headers = { "content-type": "application/json", origin: srv.url };
+    const paired = await fetch(`${srv.url}/api/pair`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ token: TOKEN }),
+    });
+    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const res = await fetch(`${srv.url}/api/rpc`, {
+      method: "POST",
+      headers: { ...headers, cookie },
+      body: JSON.stringify({ method: "reviewComponentDraft", draftId: "x", version: "1", changes: [] }),
+    });
+    srv.stop();
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      ok: false,
+      error: { code: "INVALID_INPUT", message: "invalid request: draftId, version" },
+    });
   });
 });
