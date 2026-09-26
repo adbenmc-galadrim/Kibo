@@ -133,6 +133,15 @@ describe("create", () => {
     expect(() => createFrom(forged)).toThrow("INVALID_INPUT");
   });
 
+  test("refuses a snapshot nested too deep before any export", () => {
+    const deep = editedSnapshot((d) => {
+      let node = d.getTree("pages").createNode();
+      for (let i = 0; i < 100; i++) node = node.createNode();
+    });
+    expect(() => createFrom(deep)).toThrow("deeper than 64");
+    expect(sdb.db.query("SELECT COUNT(*) AS n FROM projects").get()).toEqual({ n: 0 });
+  });
+
   test("refuses anything but a complete snapshot", () => {
     const doc = LoroDoc.fromSnapshot(ownerSnapshot());
     expect(() => createFrom(doc.export({ mode: "update" }))).toThrow("INVALID_INPUT");

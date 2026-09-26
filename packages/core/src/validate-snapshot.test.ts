@@ -117,3 +117,11 @@ test("refuses malformed ticket keys and live tickets without key", () => {
     ),
   ).toContain("no key");
 });
+
+test("refuses a document nested deeper than the sync bound", () => {
+  const deep = edited((doc) => {
+    let node = doc.getTree("pages").createNode();
+    for (let i = 0; i < 100; i++) node = node.createNode();
+  });
+  expect(reasonOf(deep)).toContain("deeper than 64");
+});
