@@ -7,6 +7,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { defaultMcpSourceConfig } from "./config";
 import { Component, manifest } from "./index";
+import { McpSource } from "./McpSource";
 
 const items = {
   items: [
@@ -30,7 +31,7 @@ const setup = (opts: Partial<Parameters<typeof createMockSdk>[1]> = {}) => {
   const m = createMockSdk(manifest, { config, mcp, ...opts });
   render(
     <SdkProvider sdk={m.sdk}>
-      <Component />
+      <McpSource />
     </SdkProvider>,
   );
   return m;
