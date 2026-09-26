@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
+  chmodSync,
   existsSync,
+  linkSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -10,32 +12,10 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { NO_PERMISSIONS } from "@kibo/schema";
-import { copySource, installDraft, readDraftManifest, removeDraft, writePermissions } from "./draft-files";
+import { copySource, installDraft, removeDraft } from "./draft-files";
 import { cleanHomes, home, prepared } from "./testing/draft-fixture";
 
 cleanHomes();
-
-test("writePermissions rewrites the inferable permission fields and keeps declared secrets", async () => {
-  const paths = await prepared();
-  writePermissions(paths.dir, { ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true, mcp: ["figma"] });
-  expect(readDraftManifest(paths.dir)).toMatchObject({
-    id: "burndown",
-    reads: ["ticket", "status"],
-    data: true,
-    mcp: ["figma"],
-    secrets: [],
-  });
-});
-
-test("writePermissions never writes granted secrets", async () => {
-  const paths = await prepared();
-  writePermissions(paths.dir, {
-    ...NO_PERMISSIONS,
-    secrets: [{ name: "github", hosts: ["api.github.com"] }],
-  });
-  expect(readDraftManifest(paths.dir).secrets).toEqual([]);
-});
 
 describe("copySource and installDraft", () => {
   test("copySource skips symbolic links, node_modules and dist", () => {
@@ -158,5 +138,41 @@ describe("installDraft against a hostile draft", () => {
     expect(readdirSync(src)).toEqual(["ui.tsx"]);
     expect(readFileSync(join(src, "ui.tsx"), "utf8")).toBe("the only good copy");
     expect(existsSync(backup)).toBe(false);
+  });
+  test("a trash left by a crash during commit is deleted, never restored", async () => {
+    const paths = await prepared();
+    const src = join(home(), "src", "burndown");
+    installDraft(paths.dir, src).commit();
+    const trash = join(dirname(src), ".burndown.kibo-trash");
+    mkdirSync(trash);
+    writeFileSync(join(trash, "kibo.component.json"), "{}");
+    installDraft(paths.dir, src).rollback();
+    expect(readFileSync(join(src, "ui.tsx"), "utf8")).toContain("=> null");
+    expect(readdirSync(dirname(src))).toEqual(["burndown"]);
+  });
+  test("commit leaves neither backup nor trash", async () => {
+    const paths = await prepared();
+    const src = join(home(), "src", "burndown");
+    mkdirSync(src, { recursive: true });
+    mkdirSync(join(src, "locked"));
+    writeFileSync(join(src, "locked", "old.tsx"), "old");
+    chmodSync(join(src, "locked"), 0o500);
+    installDraft(paths.dir, src).commit();
+    expect(readdirSync(dirname(src))).toEqual(["burndown"]);
+  });
+  test("never copies special files or hard links", async () => {
+    const paths = await prepared();
+    const victim = join(home(), "secret.txt");
+    writeFileSync(victim, "SECRET");
+    linkSync(victim, join(paths.dir, "copy.ts"));
+    expect(Bun.spawnSync(["mkfifo", join(paths.dir, "pipe")]).exitCode).toBe(0);
+    const src = join(home(), "src", "burndown");
+    installDraft(paths.dir, src).commit();
+    expect(readdirSync(src).sort()).toEqual([
+      "component.test.tsx",
+      "kibo.component.json",
+      "tsconfig.json",
+      "ui.tsx",
+    ]);
   });
 });

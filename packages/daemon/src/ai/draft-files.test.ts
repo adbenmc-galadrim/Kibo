@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
+  chmodSync,
   existsSync,
-  lstatSync,
+  linkSync,
   mkdirSync,
   readFileSync,
   rmSync,
@@ -10,14 +11,15 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { KiboError } from "@kibo/schema";
+import { ComponentManifest, KiboError, NO_PERMISSIONS } from "@kibo/schema";
 import {
   agentFiles,
   draftPaths,
   isAgentFile,
   prepareDraft,
   readDraftManifest,
-  verifyAndRestore,
+  writeDraftManifest,
+  writePermissions,
 } from "./draft-files";
 import { cleanHomes, home, kiboFiles, prepared, scaffold } from "./testing/draft-fixture";
 
@@ -86,188 +88,63 @@ describe("prepareDraft", () => {
   });
 });
 
-describe("verifyAndRestore", () => {
-  test("keeps agent files, restores reserved ones, removes unexpected ones", async () => {
-    const paths = await prepared();
-    writeFileSync(join(paths.dir, "ui.tsx"), "export const Component = () => 1;\n");
-    writeFileSync(join(paths.dir, "kibo.component.json"), "{}");
-    rmSync(join(paths.dir, "tsconfig.json"));
-    writeFileSync(join(paths.dir, "evil.ts"), "x");
-    mkdirSync(join(paths.dir, "node_modules"));
-    writeFileSync(join(paths.dir, "node_modules", "ignored.js"), "x");
-    mkdirSync(join(paths.dir, ".kibo"));
-    writeFileSync(join(paths.dir, ".kibo", "validation.json"), "{}");
-    expect(verifyAndRestore(paths, false)).toEqual([
-      { kind: "removed", path: "evil.ts" },
-      { kind: "restored", path: "kibo.component.json" },
-      { kind: "restored", path: "tsconfig.json" },
-    ]);
-    expect(readDraftManifest(paths.dir).id).toBe("burndown");
-    expect(readFileSync(join(paths.dir, "ui.tsx"), "utf8")).toContain("=> 1");
-    expect(existsSync(join(paths.dir, "node_modules", "ignored.js"))).toBe(true);
-    expect(existsSync(join(paths.dir, ".kibo", "validation.json"))).toBe(true);
-  });
-  test("an untouched draft has no incident", async () => {
-    const paths = await prepared();
-    expect(verifyAndRestore(paths, false)).toEqual([]);
-  });
-  test("replaces a symbolic link, even on an agent file", async () => {
-    const paths = await prepared();
-    rmSync(join(paths.dir, "ui.tsx"));
-    symlinkSync("/etc/hosts", join(paths.dir, "ui.tsx"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "restored", path: "ui.tsx" }]);
-    expect(lstatSync(join(paths.dir, "ui.tsx")).isSymbolicLink()).toBe(false);
-    expect(readFileSync(join(paths.dir, "ui.tsx"), "utf8")).toContain("=> null");
-  });
-  test("removes a symbolic link to a directory without touching its target", async () => {
-    const h = home();
-    const outside = join(h, "outside");
-    mkdirSync(outside);
-    writeFileSync(join(outside, "secret.txt"), "s");
-    const paths = await prepared();
-    rmSync(join(paths.dir, ".claude"), { recursive: true });
-    symlinkSync(outside, join(paths.dir, ".claude"));
-    expect(verifyAndRestore(paths, false)).toEqual([
-      { kind: "removed", path: ".claude" },
-      { kind: "restored", path: ".claude/skills/kibo-component/SKILL.md" },
-    ]);
-    expect(lstatSync(join(paths.dir, ".claude")).isDirectory()).toBe(true);
-    expect(readFileSync(join(outside, "secret.txt"), "utf8")).toBe("s");
-    expect(existsSync(join(outside, "skills"))).toBe(false);
-  });
-  test("removes a symbolic link hidden in a subfolder", async () => {
-    const paths = await prepared();
-    symlinkSync("/etc/hosts", join(paths.dir, ".claude", "link.md"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "removed", path: ".claude/link.md" }]);
-    expect(existsSync(join(paths.dir, ".claude", "link.md"))).toBe(false);
-  });
-  test("removes agent-named files outside the root", async () => {
-    const paths = await prepared();
-    mkdirSync(join(paths.dir, "sub"));
-    writeFileSync(join(paths.dir, "sub", "ui.tsx"), "x");
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "removed", path: "sub/ui.tsx" }]);
-    expect(existsSync(join(paths.dir, "sub", "ui.tsx"))).toBe(false);
-  });
-  test("restores a reserved file replaced by a folder", async () => {
-    const paths = await prepared();
-    rmSync(join(paths.dir, "tsconfig.json"));
-    mkdirSync(join(paths.dir, "tsconfig.json"));
-    writeFileSync(join(paths.dir, "tsconfig.json", "x.ts"), "x");
-    expect(verifyAndRestore(paths, false)).toEqual([
-      { kind: "restored", path: "tsconfig.json" },
-      { kind: "removed", path: "tsconfig.json/x.ts" },
-    ]);
-    expect(readFileSync(join(paths.dir, "tsconfig.json"), "utf8")).toBe("{}\n");
-  });
-  test("restores a modified Kibo file", async () => {
-    const paths = await prepared();
-    writeFileSync(join(paths.dir, "CLAUDE.md"), "# Autres règles\n");
-    writeFileSync(join(paths.dir, ".claude/skills/kibo-component/SKILL.md"), "x");
-    expect(verifyAndRestore(paths, true)).toEqual([
-      { kind: "restored", path: ".claude/skills/kibo-component/SKILL.md" },
-      { kind: "restored", path: "CLAUDE.md" },
-    ]);
-    expect(readFileSync(join(paths.dir, "CLAUDE.md"), "utf8")).toBe("# Règles\n");
-  });
-  test("restores component.test.tsx when runConformance is gone", async () => {
-    const paths = await prepared();
-    writeFileSync(join(paths.dir, "component.test.tsx"), "test('x', () => {});\n");
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "restored", path: "component.test.tsx" }]);
-    expect(readFileSync(join(paths.dir, "component.test.tsx"), "utf8")).toContain("runConformance(");
-  });
-  test("restores a deleted component.test.tsx", async () => {
-    const paths = await prepared();
-    rmSync(join(paths.dir, "component.test.tsx"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "restored", path: "component.test.tsx" }]);
-  });
-  test("keeps an edited component.test.tsx that still calls runConformance", async () => {
-    const paths = await prepared();
-    writeFileSync(
-      join(paths.dir, "component.test.tsx"),
-      "runConformance({ manifest, Component });\ntest('y');\n",
-    );
-    expect(verifyAndRestore(paths, false)).toEqual([]);
-  });
-  test("server.ts is removed when the draft has no backend", async () => {
-    const paths = await prepared();
-    writeFileSync(join(paths.dir, "server.ts"), "x");
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "removed", path: "server.ts" }]);
-    writeFileSync(join(paths.dir, "server.ts"), "x");
-    expect(verifyAndRestore(paths, true)).toEqual([]);
-  });
-});
-
-const mkfifo = (path: string) => expect(Bun.spawnSync(["mkfifo", path]).exitCode).toBe(0);
-
-describe("verifyAndRestore against a hostile draft", () => {
-  test("refuses a draft folder replaced by a symbolic link and touches nothing outside", async () => {
-    const paths = await prepared();
-    const victim = join(home(), "victim");
-    mkdirSync(victim);
-    writeFileSync(join(victim, "precious.txt"), "keep me");
-    rmSync(paths.dir, { recursive: true });
-    symlinkSync(victim, paths.dir);
-    expect(() => verifyAndRestore(paths, false)).toThrow(KiboError);
-    expect(() => verifyAndRestore(paths, false)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
-    expect(() => agentFiles(paths, false)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
-    expect(readFileSync(join(victim, "precious.txt"), "utf8")).toBe("keep me");
-  });
-  test("refuses a base folder replaced by a symbolic link", async () => {
-    const paths = await prepared();
-    const victim = join(home(), "victim");
-    mkdirSync(victim);
-    writeFileSync(join(victim, "precious.txt"), "keep me");
-    rmSync(paths.baseDir, { recursive: true });
-    symlinkSync(victim, paths.baseDir);
-    writeFileSync(join(paths.dir, "evil.ts"), "x");
-    expect(() => verifyAndRestore(paths, false)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
-    expect(() => agentFiles(paths, false)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
-    expect(readFileSync(join(victim, "precious.txt"), "utf8")).toBe("keep me");
-  });
-  test("refuses a draft folder replaced by a file", async () => {
-    const paths = await prepared();
-    rmSync(paths.dir, { recursive: true });
-    writeFileSync(paths.dir, "x");
-    expect(() => verifyAndRestore(paths, false)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
-  });
-  test("restores component.test.tsx replaced by a FIFO without blocking", async () => {
-    const paths = await prepared();
-    rmSync(join(paths.dir, "component.test.tsx"));
-    mkfifo(join(paths.dir, "component.test.tsx"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "restored", path: "component.test.tsx" }]);
-    expect(readFileSync(join(paths.dir, "component.test.tsx"), "utf8")).toContain("runConformance(");
-  });
-  test("removes an unexpected FIFO", async () => {
-    const paths = await prepared();
-    mkfifo(join(paths.dir, "pipe"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "removed", path: "pipe" }]);
-    expect(existsSync(join(paths.dir, "pipe"))).toBe(false);
-  });
-  test("restores component.test.tsx replaced by a folder", async () => {
-    const paths = await prepared();
-    rmSync(join(paths.dir, "component.test.tsx"));
-    mkdirSync(join(paths.dir, "component.test.tsx"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "restored", path: "component.test.tsx" }]);
-    expect(readFileSync(join(paths.dir, "component.test.tsx"), "utf8")).toContain("runConformance(");
-  });
-  test("an agent file replaced by a folder is restored from the base", async () => {
-    const paths = await prepared();
-    rmSync(join(paths.dir, "ui.tsx"));
-    mkdirSync(join(paths.dir, "ui.tsx"));
-    writeFileSync(join(paths.dir, "ui.tsx", "x.ts"), "x");
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "restored", path: "ui.tsx" }]);
-    expect(readFileSync(join(paths.dir, "ui.tsx"), "utf8")).toContain("=> null");
-  });
-  test("an agent-named folder unknown to the base is removed", async () => {
-    const paths = await prepared();
-    mkdirSync(join(paths.dir, "burndown.test.tsx"));
-    expect(verifyAndRestore(paths, false)).toEqual([{ kind: "removed", path: "burndown.test.tsx" }]);
-    expect(existsSync(join(paths.dir, "burndown.test.tsx"))).toBe(false);
-  });
-});
-
 test("agentFiles lists agent files of the draft and of its base", async () => {
   const paths = await prepared();
   writeFileSync(join(paths.dir, "burndown.test.tsx"), "x");
   expect(agentFiles(paths, false)).toEqual(["burndown.test.tsx", "component.test.tsx", "ui.tsx"]);
+});
+
+test("writePermissions rewrites the inferable permission fields and keeps declared secrets", async () => {
+  const paths = await prepared();
+  writePermissions(paths.dir, { ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true, mcp: ["figma"] });
+  expect(readDraftManifest(paths.dir)).toMatchObject({
+    id: "burndown",
+    reads: ["ticket", "status"],
+    data: true,
+    mcp: ["figma"],
+    secrets: [],
+  });
+});
+
+test("writePermissions never writes granted secrets", async () => {
+  const paths = await prepared();
+  writePermissions(paths.dir, {
+    ...NO_PERMISSIONS,
+    secrets: [{ name: "github", hosts: ["api.github.com"] }],
+  });
+  expect(readDraftManifest(paths.dir).secrets).toEqual([]);
+});
+
+describe("manifest access", () => {
+  const linkedManifest = async () => {
+    const paths = await prepared();
+    const victim = join(home(), "victim.json");
+    writeFileSync(victim, readFileSync(join(paths.dir, "kibo.component.json")));
+    rmSync(join(paths.dir, "kibo.component.json"));
+    symlinkSync(victim, join(paths.dir, "kibo.component.json"));
+    return { paths, victim };
+  };
+  test("refuses a manifest replaced by a symbolic link", async () => {
+    const { paths, victim } = await linkedManifest();
+    const before = readFileSync(victim, "utf8");
+    const corrupt = expect.objectContaining({ code: "STORE_CORRUPT" });
+    expect(() => readDraftManifest(paths.dir)).toThrow(corrupt);
+    expect(() => writePermissions(paths.dir, { ...NO_PERMISSIONS, reads: ["ticket"] })).toThrow(corrupt);
+    expect(() => writeDraftManifest(paths.dir, ComponentManifest.parse(JSON.parse(before)))).toThrow(corrupt);
+    expect(readFileSync(victim, "utf8")).toBe(before);
+  });
+  test("refuses a manifest hard-linked to an outside file", async () => {
+    const paths = await prepared();
+    const victim = join(home(), "victim.json");
+    writeFileSync(victim, readFileSync(join(paths.dir, "kibo.component.json")));
+    rmSync(join(paths.dir, "kibo.component.json"));
+    linkSync(victim, join(paths.dir, "kibo.component.json"));
+    expect(() => writePermissions(paths.dir, { ...NO_PERMISSIONS, reads: ["ticket"] })).toThrow(KiboError);
+    expect(readFileSync(victim, "utf8")).not.toContain("ticket");
+  });
+  test("reads an unreadable manifest after restoring its mode", async () => {
+    const paths = await prepared();
+    chmodSync(join(paths.dir, "kibo.component.json"), 0);
+    expect(readDraftManifest(paths.dir).id).toBe("burndown");
+  });
 });

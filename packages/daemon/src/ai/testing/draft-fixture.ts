@@ -14,7 +14,10 @@ export const home = () => {
 
 export const cleanHomes = () =>
   afterEach(() => {
-    for (const h of homes.splice(0)) rmSync(h, { recursive: true, force: true });
+    for (const h of homes.splice(0)) {
+      Bun.spawnSync(["chmod", "-R", "u+rwx", h]);
+      rmSync(h, { recursive: true, force: true });
+    }
   });
 
 const manifest = {
