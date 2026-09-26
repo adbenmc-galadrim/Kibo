@@ -123,6 +123,12 @@ export const RpcRequest = z.discriminatedUnion("method", [
   }),
   z.object({ method: z.literal("getRuntimeInfo") }),
   z.object({ method: z.literal("installCli") }),
+  z.object({
+    method: z.literal("reportComponentRefusal"),
+    projectId: z.string().min(1),
+    instanceId: z.string().min(1),
+    kind: z.literal("navigate"),
+  }),
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -159,6 +165,7 @@ export type RpcResult = {
   setNotesDir: NotesInfo;
   getRuntimeInfo: RuntimeInfo;
   installCli: { path: string };
+  reportComponentRefusal: null;
 };
 
 export type RpcResponse =

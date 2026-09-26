@@ -14,6 +14,7 @@ import {
   NetRule,
   permissionList,
   permissionOfCall,
+  RpcRequest,
   ruleCovers,
   shortHash,
   splitRef,
@@ -154,6 +155,12 @@ describe("calls", () => {
     ]) {
       expect(isSafeNotePath(bad)).toBe(false);
     }
+  });
+  test("the host reports a navigating frame, and only that refusal", () => {
+    const report = { method: "reportComponentRefusal", projectId: "p", instanceId: "i", kind: "navigate" };
+    expect(RpcRequest.safeParse(report).success).toBe(true);
+    expect(RpcRequest.safeParse({ ...report, kind: "fetch" }).success).toBe(false);
+    expect(RpcRequest.safeParse({ ...report, instanceId: "" }).success).toBe(false);
   });
 });
 
