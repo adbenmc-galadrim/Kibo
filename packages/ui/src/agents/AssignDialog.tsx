@@ -16,9 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
+import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
-import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot, TriangleAlert } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
@@ -29,11 +29,14 @@ type Props = {
   project: ProjectSnapshot | null;
   ticketId: string | null;
   config: WorkspaceConfig | null;
+  baseBranch?: string;
   onClose: () => void;
 };
 
-function spaceText(profile: AgentProfile, ticket: TicketView): string {
-  if (profile.workspace === "worktree") return fr.assign.newWorktree(ticket.key.toLowerCase());
+const DEFAULT_BASE_BRANCH = "main";
+
+function spaceText(profile: AgentProfile, ticket: TicketView, baseBranch: string): string {
+  if (profile.workspace === "worktree") return fr.assign.newWorktree(ticket.key.toLowerCase(), baseBranch);
   return profile.workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
 }
 
@@ -55,15 +58,27 @@ function Notice({ title, text, onClose }: { title: string; text: string; onClose
   );
 }
 
+function waitingText(project: ProjectSnapshot, ticket: TicketView): string {
+  const deps = ticket.waitingOn.map((key) => project.tickets.find((t) => t.key === key) ?? key);
+  const labels = deps.map((dep) => {
+    if (typeof dep === "string") return dep;
+    const status = project.workflow.find((s) => s.id === dep.statusId)?.label.toLowerCase();
+    return status ? fr.assign.dependency(dep.key, status) : dep.key;
+  });
+  const titles = deps.map((dep) => (typeof dep === "string" ? dep : `« ${dep.title} »`));
+  return fr.assign.waiting(ticket.key, labels.join(", "), titles.join(", "));
+}
+
 type FormProps = {
   project: ProjectSnapshot;
   ticketId: string | null;
+  baseBranch: string;
   profiles: AgentProfile[];
   domains: Domain[];
   onClose: () => void;
 };
 
-function AssignForm({ project, ticketId, profiles, domains, onClose }: FormProps) {
+function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose }: FormProps) {
   const id = useId();
   const open = project.tickets.filter((t) => t.statusId !== "done");
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
@@ -148,25 +163,29 @@ function AssignForm({ project, ticketId, profiles, domains, onClose }: FormProps
                 {profiles.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     <Bot aria-hidden />
-                    {fr.assign.profileOption(p.name, fr.models[p.model], fr.strategiesShort[p.workspace])}
+                    {fr.assign.profileOption(
+                      p.name,
+                      fr.agents.modelNames[p.model],
+                      fr.strategiesShort[p.workspace],
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           {ticket && ticket.waitingOn.length > 0 && (
-            <Alert className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+            <Alert
+              role="status"
+              className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+            >
               <TriangleAlert aria-hidden />
-              <AlertDescription className="text-inherit">
-                {fr.assign.waiting(ticket.key, ticket.waitingOn.join(", "))}
-              </AlertDescription>
+              <AlertDescription className="text-inherit">{waitingText(project, ticket)}</AlertDescription>
             </Alert>
           )}
           <div className="grid gap-2">
             <Label htmlFor={`${id}-brief`}>{fr.assign.brief}</Label>
-            <Textarea
+            <Input
               id={`${id}-brief`}
-              rows={2}
               value={brief}
               placeholder={fr.assign.briefPlaceholder}
               onChange={(e) => setBrief(e.target.value)}
@@ -175,7 +194,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose }: FormProps
           {ticket && profile && (
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
               <dt className="text-muted-foreground">{fr.assign.space}</dt>
-              <dd>{spaceText(profile, ticket)}</dd>
+              <dd>{spaceText(profile, ticket, baseBranch)}</dd>
               <dt className="text-muted-foreground">{fr.assign.permissions}</dt>
               <dd>{profile.permissionMode}</dd>
               <dt className="text-muted-foreground">{fr.assign.guidelines}</dt>
@@ -219,16 +238,30 @@ function AssignForm({ project, ticketId, profiles, domains, onClose }: FormProps
   );
 }
 
-export function AssignDialog({ project, ticketId, config, onClose }: Props) {
+function hasOpenTicket(project: ProjectSnapshot): boolean {
+  return project.tickets.some((t) => t.statusId !== "done");
+}
+
+export function AssignDialog({
+  project,
+  ticketId,
+  config,
+  baseBranch = DEFAULT_BASE_BRANCH,
+  onClose,
+}: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
   if (!config) return null;
   if (config.profiles.length === 0) {
     return <Notice title={fr.assign.launchTitle} text={fr.assign.noProfile} onClose={onClose} />;
   }
+  if (!ticketId && !hasOpenTicket(project)) {
+    return <Notice title={fr.assign.launchTitle} text={fr.assign.noTicket} onClose={onClose} />;
+  }
   return (
     <AssignForm
       project={project}
       ticketId={ticketId}
+      baseBranch={baseBranch}
       profiles={config.profiles}
       domains={config.domains}
       onClose={onClose}

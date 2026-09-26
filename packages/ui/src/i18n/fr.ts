@@ -170,6 +170,7 @@ export const fr = {
       profileMissing: "profil supprimé",
       next: "admission au prochain passage",
     },
+    modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },
     workspace: {
       worktree: (branch: string) => `worktree ${branch}`,
       repo: "dossier du projet",
@@ -302,15 +303,16 @@ export const fr = {
     subtitle: (title: string, domain: string | null) => (domain ? `${title} · domaine ${domain}` : title),
     profile: "Profil",
     profileOption: (name: string, model: string, workspace: string) => `${name} · ${model} · ${workspace}`,
-    waiting: (key: string, deps: string) =>
-      `${key} attend ${deps}. L'agent peut démarrer, mais son résultat dépendra de ${deps}.`,
+    dependency: (key: string, status: string) => `${key} (${status})`,
+    waiting: (key: string, deps: string, titles: string) =>
+      `${key} attend ${deps}. L'agent peut démarrer, mais son résultat dépendra de ${titles}.`,
     brief: "Brief (optionnel)",
     briefPlaceholder: "Consignes pour l'agent",
     space: "Espace",
     permissions: "Permissions",
     guidelines: "Guidelines",
     queue: "File d'attente",
-    newWorktree: (branch: string) => `nouveau worktree ${branch}`,
+    newWorktree: (branch: string, base: string) => `nouveau worktree ${branch} (depuis ${base})`,
     guidelineChain: (project: string, domain: string | null, n: number) =>
       `workspace · projet ${project}${domain ? ` · domaine ${domain}` : ""} (${n} fichier${n > 1 ? "s" : ""} .md)`,
     startsNow: "créneau libre · démarre tout de suite",
@@ -320,6 +322,7 @@ export const fr = {
     failed: "Impossible de mettre le run en file.",
     noProfile: "Crée d'abord un profil d'agent dans la page Agents.",
     noProject: "Ouvre un projet pour lancer un agent.",
+    noTicket: "Aucun ticket ouvert : crée d'abord un ticket à confier à un agent.",
   },
   settings: {
     title: "Paramètres",

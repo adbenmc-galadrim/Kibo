@@ -35,13 +35,18 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
   render(<AssignDialog project={kiboProject()} ticketId="t15" config={configFixture()} onClose={onClose} />);
   expect(screen.getByText("Assigner KIB-15 à un agent")).toBeTruthy();
   expect(screen.getByText("Kanban : drag & drop entre colonnes · domaine UI")).toBeTruthy();
-  expect(
-    screen.getByText("KIB-15 attend KIB-12. L'agent peut démarrer, mais son résultat dépendra de KIB-12."),
-  ).toBeTruthy();
+  expect(screen.getByRole("status").textContent).toBe(
+    "KIB-15 attend KIB-12 (en cours). L'agent peut démarrer, mais son résultat dépendra de « Schéma Loro des tickets (LoroTree) ».",
+  );
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toBe(
+    "opus-dev · Claude Opus 5.5 · worktree par ticket",
+  );
   expect(
     await screen.findByText("attend un créneau opus-dev (2/2) · entrera en file en position #4"),
   ).toBeTruthy();
-  expect(screen.getByText("nouveau worktree kib-15")).toBeTruthy();
+  expect(screen.getByText("nouveau worktree kib-15 (depuis main)")).toBeTruthy();
+  expect(screen.getByLabelText("Brief (optionnel)").tagName).toBe("INPUT");
   expect(screen.getByText("acceptEdits")).toBeTruthy();
   expect(screen.getByText("workspace · projet Kibo · domaine UI (6 fichiers .md)")).toBeTruthy();
   const user = userEvent.setup();
@@ -106,5 +111,28 @@ test("without a profile or a project the dialog explains what to do", () => {
   view.unmount();
   render(<AssignDialog project={null} ticketId={null} config={configFixture()} onClose={() => {}} />);
   expect(screen.getByText("Ouvre un projet pour lancer un agent.")).toBeTruthy();
+  expect(calls).toEqual([]);
+});
+
+test("the worktree base branch can be given", async () => {
+  render(
+    <AssignDialog
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      baseBranch="develop"
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("nouveau worktree kib-14 (depuis develop)")).toBeTruthy();
+  await waitFor(() => expect(calls.length).toBe(1));
+});
+
+test("without an open ticket the drawer launch explains what to do", () => {
+  const project = kiboProject();
+  const closed = { ...project, tickets: project.tickets.map((t) => ({ ...t, statusId: "done" as const })) };
+  render(<AssignDialog project={closed} ticketId={null} config={configFixture()} onClose={() => {}} />);
+  expect(screen.getByText("Aucun ticket ouvert : crée d'abord un ticket à confier à un agent.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
   expect(calls).toEqual([]);
 });
