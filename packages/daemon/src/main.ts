@@ -4,6 +4,7 @@ import { resolveToolchain } from "@kibo/devkit";
 import { createLoadSampler, fixedLoadSampler } from "./agents/host-load";
 import { stdoutNotifier } from "./agents/notifier";
 import { sandboxPortFor } from "./components/daemon-info";
+import { installCli } from "./components/install-cli";
 import { startDaemon } from "./daemon";
 import { kiboHome } from "./paths";
 
@@ -40,6 +41,7 @@ const daemon = await Promise.resolve()
       claudeBin: values["claude-bin"] ?? null,
       sampler:
         values["host-load"] === undefined ? createLoadSampler() : fixedLoadSampler(values["host-load"]),
+      installCli: () => installCli(),
     }),
   )
   .catch(failStart);
