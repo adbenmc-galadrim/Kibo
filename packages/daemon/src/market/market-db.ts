@@ -17,7 +17,10 @@ export type MarketDb = {
   source(id: string): MarketSourceRow | null;
   addSource(row: MarketSourceRow): boolean;
   removeSource(id: string): void;
-  setFetched(id: string, input: { serial: number; bytes: Uint8Array; sig: string; at: number }): boolean;
+  setFetched(
+    id: string,
+    input: { serial: number; bytes: Uint8Array; sig: string; at: number; publicKey: string },
+  ): boolean;
   setError(id: string, message: string | null): void;
   cachedIndex(id: string): { bytes: Uint8Array; sig: string } | null;
   pin(sourceId: string, componentId: string): string | null;
@@ -71,14 +74,14 @@ export function openMarketDb(db: Database): MarketDb {
       db.query("DELETE FROM market_sources WHERE id = ?").run(id);
       db.query("DELETE FROM market_index_cache WHERE sourceId = ?").run(id);
     },
-    setFetched: (id, { serial, bytes, sig, at }) =>
+    setFetched: (id, { serial, bytes, sig, at, publicKey }) =>
       db.transaction(() => {
         const touched = db
           .query(
             "UPDATE market_sources SET lastSerial = ?1, lastFetchedAt = ?2, lastError = NULL " +
-              "WHERE id = ?3 AND (lastSerial IS NULL OR lastSerial <= ?1)",
+              "WHERE id = ?3 AND publicKey = ?4 AND (lastSerial IS NULL OR lastSerial <= ?1)",
           )
-          .run(serial, at, id);
+          .run(serial, at, id, publicKey);
         if (touched.changes !== 1) return false;
         db.query(
           "INSERT INTO market_index_cache (sourceId, bytes, sig, fetchedAt) VALUES (?, ?, ?, ?) " +

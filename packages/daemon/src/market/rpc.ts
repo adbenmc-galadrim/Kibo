@@ -15,7 +15,7 @@ export function createMarketRpc(market: MarketService): RpcHandler {
         return done(await market.addSource({ url: req.url, publicKey: req.publicKey }));
       case "removeMarketSource":
         requireLocal(ctx);
-        market.removeSource(req.id);
+        await market.removeSource(req.id);
         return done(null);
       case "refreshMarket":
         await market.refresh();

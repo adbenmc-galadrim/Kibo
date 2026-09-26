@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { grantedOf, type MarketIndex } from "@kibo/schema";
+import { grantedOf, type MarketIndex, NO_PERMISSIONS } from "@kibo/schema";
 import { generateKeyPair, type KeyPair, signIndex, utf8 } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
 import { createMemoryRegistry } from "../testing/memory-registry";
@@ -15,17 +15,22 @@ const SOURCE = "https://m.example/";
 let keys: KeyPair;
 let db: Database;
 
-async function signed(id: string, serial: number, packages: MarketIndex["packages"] = []): Promise<Signed> {
+async function signed(
+  id: string,
+  serial: number,
+  packages: MarketIndex["packages"] = [],
+  signer: KeyPair = keys,
+): Promise<Signed> {
   const index: MarketIndex = {
     format: 1,
-    source: { id, name: id, publicKey: keys.publicKey },
+    source: { id, name: id, publicKey: signer.publicKey },
     serial,
     generatedAt: new Date(0).toISOString(),
     publishers: [],
     packages,
     revoked: [],
   };
-  const s = await signIndex(index, keys.privateKey);
+  const s = await signIndex(index, signer.privateKey);
   return { bytes: s.bytes, sig: utf8(s.sig) };
 }
 
@@ -115,10 +120,98 @@ describe("index freshness", () => {
       bytes: other.bytes,
       sig: new TextDecoder().decode(other.sig),
       at: 1,
+      publicKey: keys.publicKey,
     });
     await market.load();
     expect(market.listSources()[0]?.lastError).toContain("SIGNATURE_INVALID");
     expect(market.findSourceFor({ id: "burndown", version: "0.1.0", hash: null })).toBeNull();
+  });
+});
+
+describe("source replaced during a refresh", () => {
+  const listed = (id: string): MarketIndex["packages"][number] => ({
+    id,
+    title: id,
+    description: "",
+    kind: "widget",
+    versions: [
+      {
+        version: "1.0.0",
+        hash: "a".repeat(64),
+        publisherKey: "p",
+        size: 1,
+        permissions: NO_PERMISSIONS,
+        publishedAt: new Date(0).toISOString(),
+        url: `packages/${id}/1.0.0.kpkg`,
+      },
+    ],
+  });
+
+  test("a slow refresh under the old key never lands on the source added with a new key", async () => {
+    const rotated = await generateKeyPair();
+    const old1 = await signed("equipe", 1, [listed("ancien")]);
+    const old9 = await signed("equipe", 9, [listed("ancien")]);
+    const new1 = await signed("equipe", 1, [listed("nouveau")], rotated);
+    const new2 = await signed("equipe", 2, [listed("nouveau")], rotated);
+    let mode: "old" | "slow-old" | "new" | "new-2" = "old";
+    let last = old1;
+    const get = mock<HttpGet>(async (url) => {
+      if (url.endsWith(".sig")) return last.sig;
+      if (mode === "slow-old") {
+        mode = "new";
+        await Bun.sleep(80);
+        last = old9;
+        return old9.bytes;
+      }
+      last = mode === "old" ? old1 : mode === "new" ? new1 : new2;
+      return last.bytes;
+    });
+    const market = service(get);
+    await market.addSource({ url: SOURCE, publicKey: keys.publicKey });
+    mode = "slow-old";
+    const slow = market.refresh().catch((e: unknown) => e);
+    await Bun.sleep(10);
+    const removed = market.removeSource("equipe");
+    const added = market.addSource({ url: SOURCE, publicKey: rotated.publicKey });
+    expect(market.search({ query: "" }).map((h) => h.id)).not.toContain("nouveau");
+    await Promise.all([slow, removed, added]);
+    const [row] = market.listSources();
+    expect(row?.publicKey).toBe(rotated.publicKey);
+    expect(row?.lastSerial).toBe(1);
+    expect(market.search({ query: "" }).map((h) => h.id)).toEqual(["nouveau"]);
+    const restarted = service(get);
+    await restarted.load();
+    expect(restarted.search({ query: "" }).map((h) => h.id)).toEqual(["nouveau"]);
+    mode = "new-2";
+    await restarted.refresh("equipe");
+    expect(restarted.listSources()[0]?.lastError).toBeNull();
+    expect(restarted.listSources()[0]?.lastSerial).toBe(2);
+  });
+
+  test("an index fetched for a removed source is neither stored nor served", async () => {
+    let slow = false;
+    const v1 = await signed("equipe", 1, [listed("ancien")]);
+    const v2 = await signed("equipe", 2, [listed("ancien")]);
+    let last = v1;
+    const get = mock<HttpGet>(async (url) => {
+      if (url.endsWith(".sig")) return last.sig;
+      if (slow) {
+        await Bun.sleep(60);
+        last = v2;
+        return v2.bytes;
+      }
+      last = v1;
+      return v1.bytes;
+    });
+    const market = service(get);
+    await market.addSource({ url: SOURCE, publicKey: keys.publicKey });
+    slow = true;
+    const refreshing = market.refresh();
+    await Bun.sleep(10);
+    await Promise.all([refreshing, market.removeSource("equipe")]);
+    expect(market.listSources()).toEqual([]);
+    expect(market.search({ query: "" })).toEqual([]);
+    expect(db.query<{ n: number }, []>("SELECT count(*) AS n FROM market_index_cache").get()?.n).toBe(0);
   });
 });
 

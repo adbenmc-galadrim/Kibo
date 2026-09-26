@@ -1,5 +1,11 @@
 import { KiboError, type Kpkg, MARKET_FETCH_TIMEOUT_MS, type MarketIndex } from "@kibo/schema";
-import { decodeKpkg, KPKG_MAX_RAW_BYTES, verifyIndex } from "@kibo/trust";
+import {
+  decodeKpkg,
+  KPKG_MAX_RAW_BYTES,
+  type VerifiedMarketPackage,
+  verifyIndex,
+  verifyMarketPackage,
+} from "@kibo/trust";
 import type { HttpGet } from "./http-get";
 
 export const INDEX_MAX_BYTES = 8 * 1024 * 1024;
@@ -52,4 +58,20 @@ export async function verifySourceIndex(
     throw new KiboError("SIGNATURE_INVALID", `index of ${row.id} declares another source`);
   }
   return index;
+}
+
+export async function verifyForDetail(
+  pkg: Kpkg,
+  index: MarketIndex,
+  pinned: string | null,
+): Promise<{ verified: VerifiedMarketPackage; publisherChanged: boolean }> {
+  try {
+    return {
+      verified: await verifyMarketPackage({ pkg, index, pinnedKey: pinned }),
+      publisherChanged: false,
+    };
+  } catch (e) {
+    if (!(e instanceof KiboError) || e.code !== "PUBLISHER_CHANGED") throw e;
+    return { verified: await verifyMarketPackage({ pkg, index, pinnedKey: null }), publisherChanged: true };
+  }
 }

@@ -14,7 +14,6 @@ import {
   type MarketPublisher,
   parsePublicKey,
   type SourceFile,
-  type VerifiedMarketPackage,
   verifyIndex,
   verifyMarketPackage,
 } from "@kibo/trust";
@@ -22,7 +21,7 @@ import type { Notice } from "../agents/notifier";
 import type { HttpGet } from "./http-get";
 import { createKeyedQueue } from "./keyed-queue";
 import type { MarketDb, MarketSourceRow } from "./market-db";
-import { downloadKpkg, fetchIndex, sourceBase, verifySourceIndex } from "./market-fetch";
+import { downloadKpkg, fetchIndex, sourceBase, verifyForDetail, verifySourceIndex } from "./market-fetch";
 import {
   announcedSource,
   assertSourceId,
@@ -104,30 +103,35 @@ export class MarketService {
     const index = await verifyIndex({ ...fetched, expectedKey: input.publicKey, lastSerial: null });
     const id = index.source.id;
     assertSourceId(id);
-    const added = this.deps.db.addSource({
-      id,
-      url,
-      name: index.source.name,
-      publicKey: input.publicKey,
-      fingerprint,
-      lastSerial: null,
-      lastFetchedAt: null,
-      enabled: true,
-      lastError: null,
+    const row = await this.exclusive(id, async () => {
+      const added = this.deps.db.addSource({
+        id,
+        url,
+        name: index.source.name,
+        publicKey: input.publicKey,
+        fingerprint,
+        lastSerial: null,
+        lastFetchedAt: null,
+        enabled: true,
+        lastError: null,
+      });
+      if (!added) throw new KiboError("INVALID_INPUT", `market source ${id} already exists`);
+      const at = this.deps.now();
+      if (this.deps.db.setFetched(id, { serial: index.serial, ...fetched, at, publicKey: input.publicKey })) {
+        this.indexes.set(id, index);
+      }
+      return this.deps.db.source(id);
     });
-    if (!added) throw new KiboError("INVALID_INPUT", `market source ${id} already exists`);
-    if (this.deps.db.setFetched(id, { serial: index.serial, ...fetched, at: this.deps.now() })) {
-      this.indexes.set(id, index);
-    }
-    const row = this.deps.db.source(id);
     if (!row) throw new KiboError("INTERNAL", `market source ${id} was not stored`);
     this.deps.emit();
     return sourceInfo(row);
   }
 
-  removeSource(id: string): void {
-    this.deps.db.removeSource(id);
-    this.indexes.delete(id);
+  async removeSource(id: string): Promise<void> {
+    await this.exclusive(id, async () => {
+      this.deps.db.removeSource(id);
+      this.indexes.delete(id);
+    });
     this.deps.emit();
   }
 
@@ -171,7 +175,7 @@ export class MarketService {
     const { row, index } = this.source(input.sourceId);
     const pkg = await this.download(row, index, input.id, input.version);
     const pinned = this.deps.db.pin(input.sourceId, input.id);
-    const { verified, publisherChanged } = await this.verifyForDetail(pkg, index, pinned);
+    const { verified, publisherChanged } = await verifyForDetail(pkg, index, pinned);
     const entry = index.packages.find((p) => p.id === input.id);
     const version = entry?.versions.find((v) => v.version === input.version);
     const hit = entry ? buildHit(row, index, entry, this.deps.registry.installed()) : null;
@@ -229,27 +233,17 @@ export class MarketService {
     return this.source(sourceId).row.url;
   }
 
-  private async verifyForDetail(
-    pkg: Kpkg,
-    index: MarketIndex,
-    pinned: string | null,
-  ): Promise<{ verified: VerifiedMarketPackage; publisherChanged: boolean }> {
-    try {
-      return {
-        verified: await verifyMarketPackage({ pkg, index, pinnedKey: pinned }),
-        publisherChanged: false,
-      };
-    } catch (e) {
-      if (!(e instanceof KiboError) || e.code !== "PUBLISHER_CHANGED") throw e;
-      return { verified: await verifyMarketPackage({ pkg, index, pinnedKey: null }), publisherChanged: true };
-    }
-  }
-
   private async loadOne(id: string): Promise<void> {
     const row = this.deps.db.source(id);
     const cached = this.deps.db.cachedIndex(id);
     if (!row || !cached) return;
-    this.indexes.set(id, await verifySourceIndex(row, cached));
+    const index = await verifySourceIndex(row, cached);
+    if (this.sameSource(row)) this.indexes.set(id, index);
+  }
+
+  private sameSource(row: MarketSourceRow): boolean {
+    const current = this.deps.db.source(row.id);
+    return current !== null && current.publicKey === row.publicKey && current.url === row.url;
   }
 
   private async refreshOne(id: string): Promise<void> {
@@ -257,8 +251,11 @@ export class MarketService {
     if (!row?.enabled) return;
     const fetched = await fetchIndex(this.deps.get, row.url);
     const index = await verifySourceIndex(row, fetched);
-    if (!this.deps.db.setFetched(row.id, { serial: index.serial, ...fetched, at: this.deps.now() })) {
-      if (!this.deps.db.source(row.id)) return;
+    const at = this.deps.now();
+    if (
+      !this.deps.db.setFetched(row.id, { serial: index.serial, ...fetched, at, publicKey: row.publicKey })
+    ) {
+      if (!this.sameSource(row)) return;
       throw new KiboError("INDEX_ROLLBACK", `a newer index of ${row.id} is already stored`);
     }
     this.indexes.set(row.id, index);

@@ -114,7 +114,7 @@ describe("sources", () => {
     expect(info.lastSerial).toBe(1);
     expect(service.listSources()).toHaveLength(1);
     expect(emitted).toBe(1);
-    service.removeSource("equipe");
+    await service.removeSource("equipe");
     expect(emitted).toBe(2);
   });
 

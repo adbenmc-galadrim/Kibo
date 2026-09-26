@@ -28,11 +28,26 @@ test("a second source with the same id is not stored", () => {
 
 test("an older index never replaces a newer one", () => {
   db.addSource(row);
-  expect(db.setFetched("equipe", { serial: 6, bytes: bytes("six"), sig: "s6", at: 1 })).toBe(true);
-  expect(db.setFetched("equipe", { serial: 5, bytes: bytes("cinq"), sig: "s5", at: 2 })).toBe(false);
+  expect(
+    db.setFetched("equipe", { serial: 6, bytes: bytes("six"), sig: "s6", at: 1, publicKey: "key" }),
+  ).toBe(true);
+  expect(
+    db.setFetched("equipe", { serial: 5, bytes: bytes("cinq"), sig: "s5", at: 2, publicKey: "key" }),
+  ).toBe(false);
   expect(db.source("equipe")?.lastSerial).toBe(6);
   expect(db.cachedIndex("equipe")?.sig).toBe("s6");
-  expect(db.setFetched("equipe", { serial: 6, bytes: bytes("six"), sig: "s6b", at: 3 })).toBe(true);
+  expect(
+    db.setFetched("equipe", { serial: 6, bytes: bytes("six"), sig: "s6b", at: 3, publicKey: "key" }),
+  ).toBe(true);
+});
+
+test("an index fetched for another key of the source is not stored", () => {
+  db.addSource(row);
+  expect(
+    db.setFetched("equipe", { serial: 9, bytes: bytes("old"), sig: "old", at: 1, publicKey: "old-key" }),
+  ).toBe(false);
+  expect(db.source("equipe")?.lastSerial).toBeNull();
+  expect(db.cachedIndex("equipe")).toBeNull();
 });
 
 test("removing a source keeps its publisher pins", () => {
