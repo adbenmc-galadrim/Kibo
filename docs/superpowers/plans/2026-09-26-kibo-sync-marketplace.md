@@ -10182,7 +10182,7 @@ Réponses HTTP : succès `{ ok: true, result }`, erreur `{ ok: false, error: { c
 - **Revue du lead (refus 1)** : noms et motifs de révocation passent par `isCleanText` / `CleanText` (`clean-text.ts`, partagé) : refus de `\p{Cc}`, `\p{Cf}`, `\p{Co}` (usage privé), `\p{Cn}` (non attribué), `\p{Cs}` (surrogat isolé), `\p{Zl}`, `\p{Zp}`, des blancs invisibles (`INVISIBLE_BLANKS` : U+00AD, U+034F, U+115F-1160, U+17B4-17B5, U+180B-180F, U+200B-200F, U+202A-202E, U+2060-206F, U+2800 blanc braille, U+3164, U+FE00-FE0F, U+FEFF, U+FFA0, U+E0000-E0FFF), de deux blancs consécutifs, des blancs de bord et d'un texte non NFC ; les marques combinantes visibles (U+0338…) restent admises. Le nom d'éditeur passe en plus par `isCleanName` : un nom qui contient une lettre latine ne contient que des caractères d'écriture latine, commune ou héritée (refus de « Lеa », « Admιn », « Tօm », « Ꭺdam », « ꓡéa »). Risque résiduel, noté au rapport de jalon : homoglyphes d'une seule écriture et squelette de confusion UTS #39 non traités. Preuve de possession de la clé d'éditeur (décision 41, `publisher-claim.ts` dans `@kibo/trust`, en-tête `x-kibo-publisher-claim`, vérifiée par `publisher-rules.ts`). Nonces persistés dans la table SQLite `market_nonces` (expiration, purge périodique) : un rejeu reste refusé après redémarrage ; `NonceCache` prend `sdb`. Tout échec d'authentification compte pour le blocage de l'adresse sauf `DEVICE_REVOKED` et `RATE_LIMITED` (corps trop gros, `content-length` mal formé compris). Index en cache mémoire pour le `serial` courant, `ETag: "<serial>"` sur `index.json` et `index.json.sig`, `304` sur `If-None-Match`. `Retry-After` (secondes) sur chaque 429. `signRequest` (`@kibo/trust`) signe la méthode en majuscules.
 - Fichiers ajoutés : `index-builder.ts` (construction pure de l'index), `market-store.ts` (SQL), `bounded-body.ts`, `market-limits.ts`, `routes-http.test.ts` (aller-retour réel sur `127.0.0.1`, vérifié par `verifyIndex` et `verifyMarketPackage` comme le démon), puis `clean-text.ts`, `publisher-rules.ts`, `packages/trust/src/publisher-claim.ts`, les aides de test `market-test-kit.ts` et `route-test-kit.ts`, et les tests `team-market-publishers.test.ts` et `signed-request.test.ts`. Seules les erreurs à statut connu renvoient leur détail ; les autres (`STORE_CORRUPT`…) répondent `INTERNAL` « internal error ».
 
-- [ ] **Step 1: Écrire les tests de la source d'équipe**
+- [x] **Step 1: Écrire les tests de la source d'équipe**
 
 `packages/sync-server/src/market/team-market.test.ts` :
 ```ts
@@ -10326,12 +10326,12 @@ describe("revoke", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/market/team-market.test.ts`
 Expected: FAIL — `Cannot find module './team-market'`.
 
-- [ ] **Step 3: Implémenter la source d'équipe**
+- [x] **Step 3: Implémenter la source d'équipe**
 
 `packages/sync-server/src/market/team-market.ts` :
 ```ts
@@ -10587,12 +10587,12 @@ export class TeamMarket {
 }
 ```
 
-- [ ] **Step 4: Vérifier le succès**
+- [x] **Step 4: Vérifier le succès**
 
 Run: `bun test packages/sync-server/src/market/team-market.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Écrire les tests des requêtes signées et des routes**
+- [x] **Step 5: Écrire les tests des requêtes signées et des routes**
 
 `packages/sync-server/src/market/routes.test.ts` :
 ```ts
@@ -10717,12 +10717,12 @@ describe("routes", () => {
 });
 ```
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/market/routes.test.ts`
 Expected: FAIL — `Cannot find module './routes'`.
 
-- [ ] **Step 7: Implémenter les requêtes signées et les routes**
+- [x] **Step 7: Implémenter les requêtes signées et les routes**
 
 `packages/sync-server/src/market/signed-request.ts` :
 ```ts
@@ -10868,12 +10868,12 @@ export * from "./market/signed-request";
 export * from "./market/team-market";
 ```
 
-- [ ] **Step 8: Vérifier le succès, lint et types**
+- [x] **Step 8: Vérifier le succès, lint et types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck`
 Expected: PASS, Biome et `tsc` sans erreur.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/sync-server/src/market packages/sync-server/src/index.ts
