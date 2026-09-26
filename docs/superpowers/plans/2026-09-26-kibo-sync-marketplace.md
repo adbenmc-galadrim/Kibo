@@ -2906,7 +2906,7 @@ Formats signés de la spec H §3 (`.kpkg`, index de source), types des RPC marke
   - `updateRegistryVersion(ws, id, version, patch)` accepte `revoked` dans `patch` (`core/src/registry.ts`).
 - Vérifié en T0 : `SemVer` vient de `packages/schema/src/semver.ts`, `GrantedPermissions` de `packages/schema/src/permissions.ts` (champs `reads`, `writes`, `data`, `net`, `secrets` et `mcp`, ces deux derniers avec défaut `[]`), `ComponentManifest` de `manifest.ts` (où `kind` est un `z.enum` en ligne, `["widget", "view", "both", "adapter"]`, et `id` une regex en ligne) ; `ComponentId` n'est qu'une constante locale non exportée de `rpc.ts` ; `ComponentKind` n'existe que comme type local de `packages/cli/src/commands/new.ts`. `RegistryVersion` (avec `autoUpdate: z.boolean().default(false)`), `Sha256`, `ComponentOrigin` (`"kibo" | "user" | "ai" | "marketplace"`, `marketplace` déjà présent) et `TrustLevel` vivent dans `packages/schema/src/component.ts` (il n'y a pas de `registry.ts` dans le schéma). `TrustPreview`, `previewTrust` et `buildTrustPreview` n'existent pas : l'écran 30 construit sa cible dans l'UI (`trustTargetOf`). `core/src/instances.ts` n'a pas de `readInstance` : `getInstance` fait `Instance.parse`, mais `listInstances` renvoie le JSON brut de la map `instances` (valeurs JSON simples, pas de `LoroMap` par instance). `core/src/registry.ts` lit par `RegistryEntry.safeParse` (défauts appliqués) et son `VersionPatch` (non exporté) couvre `trust`, `approvedHash`, `granted`, `autoUpdate`.
 
-- [ ] **Step 1: Tests des formats signés**
+- [x] **Step 1: Tests des formats signés**
 
 `packages/schema/src/market.test.ts` :
 ```ts
@@ -3018,7 +3018,7 @@ test("limits", () => {
 Run: `bun test packages/schema/src/market.test.ts`
 Expected: FAIL — `ComponentId` et `Kpkg` ne sont pas exportés.
 
-- [ ] **Step 2: Exporter `ComponentId` et `ComponentKind`, implémenter `market.ts`**
+- [x] **Step 2: Exporter `ComponentId` et `ComponentKind`, implémenter `market.ts`**
 
 Dans `packages/schema/src/manifest.ts`, avant `ComponentManifest` :
 ```ts
@@ -3145,7 +3145,7 @@ Ajouter à `packages/schema/src/index.ts` : `export * from "./market";`
 Run: `bun test packages/schema/src/market.test.ts`
 Expected: FAIL tant que `TrustPreview` n'existe pas (étape 4) ; après l'étape 4, PASS.
 
-- [ ] **Step 3: Tests de rétrocompatibilité**
+- [x] **Step 3: Tests de rétrocompatibilité**
 
 `packages/schema/src/compat.test.ts` :
 ```ts
@@ -3264,7 +3264,7 @@ test("instances stored before v1.0 are listed with componentHash null", () => {
 Run: `bun test packages/schema/src/compat.test.ts packages/core/src/registry.test.ts packages/core/src/instances.test.ts`
 Expected: FAIL — `parsed.source` vaut `undefined` (champ inconnu retiré par Zod), `TrustPreview` introuvable, `revoked` refusé par le type du patch, `componentHash` absent de `listInstances`.
 
-- [ ] **Step 4: Étendre le registre, l'aperçu de confiance et l'instance**
+- [x] **Step 4: Étendre le registre, l'aperçu de confiance et l'instance**
 
 Dans `packages/schema/src/component.ts`, ajouter à l'objet `RegistryVersion` (après `autoUpdate`) :
 ```ts
@@ -3316,7 +3316,7 @@ type VersionPatch = Partial<Pick<RegistryVersion, "trust" | "approvedHash" | "gr
 Run: `bun test packages/schema/src/compat.test.ts packages/schema/src/market.test.ts packages/core`
 Expected: PASS.
 
-- [ ] **Step 5: Réparer les littéraux typés**
+- [x] **Step 5: Réparer les littéraux typés**
 
 Run: `bun run typecheck`
 Expected: des erreurs `Property 'componentHash' is missing` (type `Instance`, sortie de `z.infer` avec défaut) et `Property 'source' is missing` / `'revoked'` (type `RegistryVersion`) uniquement dans des littéraux : `packages/daemon/src/components/publish.ts` et `registry-service.ts` (construction d'une `RegistryVersion` à la publication et à la réécriture), `packages/daemon/src/ai/testing/publish-setup.ts`, et les tests `packages/core/src/registry.test.ts`, `packages/daemon/src/components/{registry-service,publish,backends-revoke,drafts}.test.ts`, `packages/daemon/src/ai/live-ports.test.ts`, `packages/ui/src/dialogs/component-dialogs.test.tsx`, plus les fixtures d'instances des composants et de l'UI si `tsc` en signale. Ajouter `componentHash: null` et `source: null, revoked: null` à chacun (les fonctions du démon qui créent un `RegistryVersion` pour un composant utilisateur ou IA écrivent `source: null, revoked: null`). Aucune attente de test existante ne change.
@@ -3324,7 +3324,7 @@ Expected: des erreurs `Property 'componentHash' is missing` (type `Instance`, so
 Run: `bun run typecheck && bun test packages components`
 Expected: sans erreur, PASS.
 
-- [ ] **Step 6: Tests des RPC marketplace**
+- [x] **Step 6: Tests des RPC marketplace**
 
 `packages/schema/src/market-rpc.test.ts` :
 ```ts
@@ -3362,7 +3362,7 @@ test("invalid marketplace RPCs are refused", () => {
 Run: `bun test packages/schema/src/market-rpc.test.ts`
 Expected: FAIL — méthodes absentes de `RpcRequest`.
 
-- [ ] **Step 7: Implémenter `market-rpc.ts` et brancher**
+- [x] **Step 7: Implémenter `market-rpc.ts` et brancher**
 
 `packages/schema/src/market-rpc.ts` (même forme que `ai-rpc.ts` et `integrations-rpc.ts`) :
 ```ts
@@ -3425,12 +3425,12 @@ Dans `packages/schema/src/rpc.ts`, ajouter `...MARKET_RPC_REQUESTS` au tableau d
 Run: `bun test packages/schema`
 Expected: PASS.
 
-- [ ] **Step 8: Vérifications**
+- [x] **Step 8: Vérifications**
 
 Run: `bun run check && bun run typecheck`
 Expected: sans erreur. `Service.handle` (`packages/daemon/src/service.ts`) n'a pas de `switch` exhaustif : une méthode marketplace non encore routée tombe dans `handleAgents`, qui lève `INTERNAL` (« … is not an agents method ») jusqu'au branchement de T15, T20 et T22 ; aucune branche provisoire n'est à ajouter.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/schema/src/market.ts packages/schema/src/market.test.ts packages/schema/src/market-rpc.ts packages/schema/src/market-rpc.test.ts packages/schema/src/manifest.ts packages/schema/src/component.ts packages/schema/src/instance.ts packages/schema/src/compat.test.ts packages/schema/src/rpc.ts packages/schema/src/index.ts packages/core/src/instances.ts packages/core/src/instances.test.ts packages/core/src/registry.ts packages/core/src/registry.test.ts
