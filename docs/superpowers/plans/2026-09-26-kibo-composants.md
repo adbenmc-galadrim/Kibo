@@ -5764,7 +5764,7 @@ export function osSandbox(): OsSandbox {
   return shared;
 }
 ```
-Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; sous Linux, le binaire du runtime est monté seul (fichier, pas son dossier : installé par le `.deb` dans `/usr/bin`, son dossier exposerait tous les outils du système) et `/usr` n'est pas monté en entier (seulement `/usr/lib`, `/usr/lib64`, `/usr/share/zoneinfo` : mesuré sous Debian arm64, `oven/bun:1.4.2`, `bwrap` non root : `bun --version` passe, `/bin/echo`, `/usr/bin/echo` et `/bin/sh` sont introuvables, un `bun` relancé à l'intérieur ne lit pas le secret) ; sous macOS, `file-read-metadata` reste global (Bun fait `lstat` sur les ancêtres de ses chemins) : un backend peut savoir qu'un fichier existe et sa taille, pas le lire ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal ; le canal passe par les descripteurs 3 et 4, hérités à travers `sandbox-exec` et `bwrap` sans variable d'environnement (vérifié sous Linux par la CI de la branche). La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige.
+Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; sous Linux, le binaire du runtime est monté seul (fichier, pas son dossier : installé par le `.deb` dans `/usr/bin`, son dossier exposerait tous les outils du système) et `/usr` n'est pas monté en entier (seulement `/usr/lib`, `/usr/lib64`, `/usr/share/zoneinfo` : mesuré sous Debian arm64, `oven/bun:1.4.2`, `bwrap` non root : `bun --version` passe, `/bin/echo`, `/usr/bin/echo` et `/bin/sh` sont introuvables, un `bun` relancé à l'intérieur ne lit pas le secret) ; sous macOS, `file-read-metadata` reste global (Bun fait `lstat` sur les ancêtres de ses chemins) : un backend peut savoir qu'un fichier existe et sa taille, pas le lire ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal ; le canal passe par les descripteurs 3 et 4, hérités à travers `sandbox-exec` et `bwrap` sans variable d'environnement (vérifié sous Linux par la CI de la branche). La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige. Preuves : `os-sandbox.test.ts` prouve la politique (processus Bun non restreint sous le même `wrap`) ; `process-host-sandbox.test.ts` prouve que le `ProcessHost` l'applique, par `read` et `connect` (`node:fs` et `node:net` ne sont pas retirés par le runtime) ; ses tentatives `spawn` et `child` peuvent échouer dès le runtime restreint (`Bun.spawnSync` retiré) et n'y valent que comme défense en profondeur. Vérification sous Docker : `bwrap` non root exige `--privileged --security-opt systempaths=unconfined` (sinon `/proc` ne se monte pas et la sonde lève `SANDBOX_UNAVAILABLE`), contrainte du conteneur seulement.
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./os-sandbox";`.
 
@@ -12415,9 +12415,9 @@ git commit -m "feat(ui): page Composants et publication"
   - `type GraphFilter = { assignee: "mine-and-agents" | "all"; hideDone: boolean; domain: string | null }` ; `graphInput(tickets: TicketView[], links: Link[], f: GraphFilter, viewer: string): { tickets: TicketView[]; edges: GraphEdge[] }` ; `domainsOf(tickets): string[]`.
   - `@kibo/component-graph` : `manifest`, `Component` (vue si `sdk.surface === "view"`, widget sinon).
 
-Fidélité : écran 10 (page 16 du PDF) et widget de l'écran 7 (page 13). Vue : barre d'outils (boutons `outline` de 28 px : « Hiérarchique » pressé et désactivé — point E3 —, « Chemin critique » bascule pressée par défaut, « Masquer terminés » bascule, « Filtrer » avec icône entonnoir ouvrant un menu Assigné / Domaine) ; à droite « Chemin critique : 3 tickets · 1 bloqué » ; fond à points (`radial-gradient` 1 px tous les 16 px) ; nœud `176 × 52` arrondi 6 px, `bg-card`, bordure, ligne 1 : pastille de statut + clé en `font-mono text-xs text-muted-foreground`, à droite icône `Bot` si l'assigné est un agent ; ligne 2 : titre tronqué `text-sm font-medium` ; ticket terminé à 45 % d'opacité ; nœud du chemin critique : bordure 2 px `border-foreground` ; arêtes `blocks` courbes avec flèche, `relates` pointillées, arêtes du chemin critique en trait 2 px `stroke-foreground` ; légende en bas à gauche (Bloque, Chemin critique, Lié à) ; zoom en bas à droite `+ | 100 % | −`. La pastille d'état du run d'agent (orange « attend », cyan « en file ») n'est pas lisible par un composant en v0.4 (aucune entité `run` dans le SDK) : seule l'icône `Bot` est affichée, écart signalé au jalon.
+Fidélité : écran 10 (page 16 du PDF) et widget de l'écran 7 (page 13). Vue : barre d'outils (boutons `outline` de 28 px : « Hiérarchique » pressé et désactivé — point E3 —, « Chemin critique » bascule pressée par défaut, « Masquer terminés » bascule, « Filtrer » avec icône entonnoir ouvrant un menu Assigné / Domaine) ; à droite « Chemin critique : 3 tickets · 1 bloqué » ; fond à points (`radial-gradient` 1 px tous les 16 px) ; nœud `176 × 52` arrondi 6 px, `bg-card`, bordure, ligne 1 : pastille de statut + clé en `font-mono text-xs text-muted-foreground`, à droite icône `Bot` si l'assigné est un agent ; ligne 2 : titre tronqué `text-sm font-medium` ; ticket terminé à 45 % d'opacité ; nœud du chemin critique : bordure 2 px `border-foreground` ; arêtes `blocks` courbes avec flèche, `relates` pointillées, arêtes du chemin critique en trait 2 px `stroke-foreground` ; légende en bas à gauche (Bloque, Chemin critique, Lié à) ; zoom en bas à droite `+ | 100 % | −`. Pastille d'état du run d'agent (orange « attend », cyan « en file ») à côté de l'icône `Bot` : le graphe lit `run` en lecture seule, comme le Kanban (spec §8.1).
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `components/graph/src/filter.test.ts` :
 ```ts
@@ -12544,7 +12544,7 @@ test("D9: empty widget", async () => {
 Run: `bun test components/graph`
 Expected: FAIL (fichiers absents).
 
-- [ ] **Step 2: Implémenter `fr.ts` et `filter.ts`**
+- [x] **Step 2: Implémenter `fr.ts` et `filter.ts`**
 
 `components/graph/src/fr.ts` :
 ```ts
@@ -12602,7 +12602,7 @@ export const domainsOf = (tickets: TicketView[]): string[] =>
   [...new Set(tickets.flatMap((t) => (t.domainId ? [t.domainId] : [])))].sort((a, b) => a.localeCompare(b, "fr"));
 ```
 
-- [ ] **Step 3: Implémenter `GraphCanvas.tsx`**
+- [x] **Step 3: Implémenter `GraphCanvas.tsx`**
 
 ```tsx
 import type { TicketView } from "@kibo/schema";
@@ -12759,7 +12759,7 @@ export function GraphCanvas({ tickets, edges, layout, critical, onOpen }: Props)
 ```
 Le cast `e.target as HTMLElement` vise la cible DOM d'un événement pointeur (toujours un élément ici). L'import `GraphLayout` vient de `./layout` (tâche 10).
 
-- [ ] **Step 4: Implémenter `GraphView.tsx`, `GraphWidget.tsx` et `index.ts`**
+- [x] **Step 4: Implémenter `GraphView.tsx`, `GraphWidget.tsx` et `index.ts`**
 
 `components/graph/src/GraphView.tsx` :
 ```tsx
@@ -12959,7 +12959,7 @@ export function Component() {
 }
 ```
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test components/graph && bun run typecheck && bun run check`
 Expected: PASS (conformité v1 comprise : widget et vue, sombre et clair, vide et peuplé).
@@ -17120,7 +17120,7 @@ Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-review
 
 1. **CI verte** sur `main`, macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont le test de sortie de la tâche 32), fumée CLI compilée (tâche 34), Playwright `dark` et `light` (tâche 33), fumée desktop.
 2. **Critères de sortie de la spec (§13)** cochés un par un dans le rapport, avec le test qui les prouve : composant tiers sandboxé bloqué (tâche 32) ; `new → test → publish` hors monorepo en dev (tâche 31) et compilé (tâche 34) ; écrans conformes (point 3) ; Kanban et Tickets passent la conformité v1 sans modification de leur code métier (tâche 12, étape 5 : `git diff v0.3..HEAD -- components/kanban/src components/tickets/src` ne touche aucun fichier métier).
-3. **Conformité visuelle** : le chef lance l'app (`bun run --cwd apps/desktop dev` ou démon + UI), charge le jeu fictif (`seedDemo` et `DEMO_NOTES` via un projet de démonstration) et compare côte à côte, **en sombre puis en clair**, avec les PDF : écran 3 (page 7), 6 (page 10), 7 (page 13, widgets Graphe et Notes), 10 (page 16), 11 (page 17), 29 (page 11), 30 (page 12), et les écrans dessinés D1 à D10. Chaque écart est corrigé (tâche de correction ajoutée au plan) ou consigné comme écart assumé : pastille d'état de run sur les nœuds du graphe (tâche 25), « lit et écrit » de l'écran 3 (tâche 19), placement des tickets isolés (E4), bouton « Hiérarchique » (E3), carte D8 hors Paramètres si l'écran n'existe pas (tâche 34).
+3. **Conformité visuelle** : le chef lance l'app (`bun run --cwd apps/desktop dev` ou démon + UI), charge le jeu fictif (`seedDemo` et `DEMO_NOTES` via un projet de démonstration) et compare côte à côte, **en sombre puis en clair**, avec les PDF : écran 3 (page 7), 6 (page 10), 7 (page 13, widgets Graphe et Notes), 10 (page 16), 11 (page 17), 29 (page 11), 30 (page 12), et les écrans dessinés D1 à D10. Chaque écart est corrigé (tâche de correction ajoutée au plan) ou consigné comme écart assumé : « lit et écrit » de l'écran 3 (tâche 19), placement des tickets isolés (E4), bouton « Hiérarchique » (E3), carte D8 hors Paramètres si l'écran n'existe pas (tâche 34).
 4. **Maquettes** : si un écran a changé pendant la phase, réexporter `design/penpot/kibo.penpot.xz` et `design/pdf/` (règle `CLAUDE.md`).
 5. **Feuille de route** : corriger la ligne « phase 4 » pour les entités déclarées `acme.bug` selon l'option retenue pour E1 (par défaut : retirées de la phase 4, reportées après v1.0).
 6. **Tag** `v0.4` sur `main`, poussé.
