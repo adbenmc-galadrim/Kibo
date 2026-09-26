@@ -2611,7 +2611,7 @@ git commit -m "feat(daemon): journal append-only des runs"
   - `forwardHook(input: { stdin: string; env: Record<string, string | undefined>; fetch?: PostFn; log?: (line: string) => void; out?: (text: string) => void }): Promise<number>` avec `type PostFn = (url: string, init: RequestInit) => Promise<Response>` ; exécutable `kibo-hook event` (stdin → POST `HookPost`, recopie sur stdout la décision renvoyée par le démon ; code 0 ou 1, jamais 2 ; avec `KIBO_HOOK_FAIL_CLOSED=1`, un `PreToolUse` qui n'a pas pu joindre le démon est refusé au lieu d'être laissé passer) et `kibo-hook mcp`
   - binaire compilé `apps/desktop/src-tauri/binaries/kibo-hook-<triple>`, déclaré dans `externalBin`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/hook-payload.test.ts` :
 ```ts
@@ -2937,12 +2937,12 @@ test("the executable serves MCP on stdio", async () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents`
 Expected: FAIL (modules introuvables).
 
-- [ ] **Step 3: Implémenter la réduction, le jeton et la route**
+- [x] **Step 3: Implémenter la réduction, le jeton et la route**
 
 `packages/daemon/src/agents/hook-payload.ts` :
 ```ts
@@ -3075,7 +3075,7 @@ export async function handleHook(req: Request, runId: string, sink: HookSink): P
 }
 ```
 
-- [ ] **Step 4: Implémenter le serveur MCP, le lanceur et l'exécutable**
+- [x] **Step 4: Implémenter le serveur MCP, le lanceur et l'exécutable**
 
 `packages/daemon/src/agents/ask-mcp.ts` :
 ```ts
@@ -3268,7 +3268,7 @@ if (import.meta.main) {
 }
 ```
 
-- [ ] **Step 5: Compiler `kibo-hook` avec le sidecar**
+- [x] **Step 5: Compiler `kibo-hook` avec le sidecar**
 
 `apps/desktop/scripts/build-sidecar.ts` : remplacer le bloc `const out = …` → `console.log(...)` par
 ```ts
@@ -3296,14 +3296,14 @@ for (const [name, entry] of targets) {
 ```
 `apps/desktop/src-tauri/tauri.conf.json` : `"externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"]`.
 
-- [ ] **Step 6: Vérifier**
+- [x] **Step 6: Vérifier**
 
 Run: `bun test packages/daemon/src/agents && bun run check && bun run typecheck`
 Expected: PASS.
 Run (si Rust est installé) : `bun run --cwd apps/desktop sidecar`, puis `echo '{}' | apps/desktop/src-tauri/binaries/kibo-hook-$(rustc -vV | sed -n 's/host: //p') event; echo $?`
 Expected: message `kibo-hook: KIBO_HOOK_URL and KIBO_RUN_TOKEN are required`, code `1`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/daemon/src/agents apps/desktop/scripts/build-sidecar.ts apps/desktop/src-tauri/tauri.conf.json
