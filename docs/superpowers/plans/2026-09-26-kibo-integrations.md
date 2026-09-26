@@ -11626,7 +11626,7 @@ Dépend de : Tasks 12, 13, 14 ; Task 8 (`proxyFetch` avec `hooks` et `secrets`) 
   - `BACKEND_ERROR_CODES` gagne `REMOTE_UNAVAILABLE`, `REMOTE_REJECTED`, `REMOTE_NOT_FOUND`, `REMOTE_CONFLICT`, `NOT_CONNECTED` (N23)
   - variable d'environnement `KIBO_BUILTIN_DIR` (paquet : `builtin/<id>/{kibo.component.json,server.js}`)
 
-- [ ] **Step 1: Tests unitaires (échouent)**
+- [x] **Step 1: Tests unitaires (échouent)**
 
 `packages/daemon/src/sync/worker-runner.test.ts` :
 
@@ -11766,7 +11766,7 @@ test("remote error codes cross the backend boundary, trust codes do not", () => 
 
 Run: `bun test packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.test.ts packages/daemon/src/components/host-core.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: `host-core.ts`, `worker-runner.ts` et `binding-calls.ts`**
+- [x] **Step 2: `host-core.ts`, `worker-runner.ts` et `binding-calls.ts`**
 
 `packages/daemon/src/components/host-core.ts` : ajouter à `BACKEND_ERROR_CODES` `"REMOTE_UNAVAILABLE"`, `"REMOTE_REJECTED"`, `"REMOTE_NOT_FOUND"`, `"REMOTE_CONFLICT"`, `"NOT_CONNECTED"` (codes créés par la Task 1 ; `RATE_LIMITED` y est déjà). Aucun ne permet à un backend de réclamer une confiance ou un réappairage (décision 25 de la phase 4).
 
@@ -11867,7 +11867,7 @@ export function createBindingCalls(deps: BindingCallsDeps): CallHandler {
 
 Run: `bun test packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.test.ts packages/daemon/src/components/host-core.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Construction d'un backend intégré (devkit)**
+- [x] **Step 3: Construction d'un backend intégré (devkit)**
 
 `packages/devkit/src/build-builtin.test.ts` :
 
@@ -11954,7 +11954,7 @@ export async function writeBuiltinBackend(b: BuiltinBackend, dir: string): Promi
 
 Run: `bun test packages/devkit/src/build-builtin.test.ts` — Expected: PASS.
 
-- [ ] **Step 4: `builtin-adapter.ts` et amorçage**
+- [x] **Step 4: `builtin-adapter.ts` et amorçage**
 
 `packages/daemon/src/sync/builtin-adapter.ts` :
 
@@ -12048,7 +12048,7 @@ export function createAdapterHosts(deps: AdapterHostsDeps): { invoke: AdapterInv
 
 puis, dans `modules`, `syncModule(kit, createWorkerRunner(adapters.invoke), () => kit.github.account.mode() !== null)` et `{ stop: () => { adapters.stop(); refusals.flush(); } }`. Imports : `createEventLog as createRefusalLog` et `ensureEventsTable` de `../components/events` (renommés : `integrations/events.ts` exporte déjà `createEventLog`, N28), `createQuotas` de `../components/quotas`, `proxyFetch` de `../components/net-proxy`.
 
-- [ ] **Step 5: Test d'aller-retour (échoue tant que les étapes 2 à 4 ne sont pas faites)**
+- [x] **Step 5: Test d'aller-retour (échoue tant que les étapes 2 à 4 ne sont pas faites)**
 
 `packages/daemon/src/sync/roundtrip.test.ts` (sur le vrai service, câblé comme dans `startDaemon` (Task 2, N26) : `createService(store, { user })`, hôte `createIntegrationHost({ user, home, store, service, notify, now })` dont `now` est l'horloge du test, `startIntegrations(host, flags, redactor)` puis `service.attachIntegrations(rpc)` ; le Worker réel exécute l'adaptateur construit depuis `components/github-issues`) :
 
@@ -12200,7 +12200,7 @@ test("a 403 rate limit suspends the binding until the reset", async () => {
 Run: `bun test packages/daemon/src/sync/roundtrip.test.ts`
 Expected: PASS une fois les étapes 2 à 4 faites. En cas d'échec, `gh.requests` (méthode, chemin) situe l'écart : adaptateur (Task 13), proxy (Task 8), frontière du Worker (N23) ou moteur (Task 14).
 
-- [ ] **Step 6: Paquet desktop**
+- [x] **Step 6: Paquet desktop**
 
 `apps/desktop/scripts/build-sidecar.ts` (tel que livré par la tâche 34 de la phase 4), après la construction des binaires :
 
@@ -12222,7 +12222,7 @@ for (const id of BUILTIN_ADAPTER_IDS) {
 - `.gitignore` : `apps/desktop/src-tauri/builtin/`.
 - Contrôle local (la CI GitHub est hors service ; `desktop-smoke` de `.github/workflows/ci.yml` exécute déjà `build:debug`, donc `sidecar`) : après `bun run --cwd apps/desktop build:debug`, `test -f apps/desktop/src-tauri/builtin/github-issues/server.js` réussit.
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Run: `bun test packages/daemon && bun test packages/devkit && bun test components && bun run check && bun run typecheck` — Expected: PASS (dont `roundtrip.test.ts`).
 
