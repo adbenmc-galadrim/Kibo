@@ -43,3 +43,8 @@ export const CommandPalette = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const ModifyWithAiDialog = lazyPanel(
+  () => import("../ai/ModifyWithAiDialog").then((m) => m.ModifyWithAiDialog),
+  fr.lazy,
+  hidden,
+);

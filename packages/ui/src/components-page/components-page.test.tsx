@@ -28,6 +28,7 @@ mock.module("../api", () => ({
       calls.push(req);
       if (req.method === "listComponents") return Promise.resolve(components);
       if (req.method === "listDrafts") return Promise.resolve(drafts);
+      if (req.method === "listComponentDrafts") return Promise.resolve([]);
       if (req.method === "listProjects")
         return Promise.resolve([
           { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#F97316", counts: {} },
@@ -280,4 +281,30 @@ test("drafts: validated ones can be published, others show the command", async (
   expect(screen.getByText("Tests verts")).toBeTruthy();
   expect(screen.getByText("À valider : kibo component test burndown")).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "Publier" })).toHaveLength(1);
+});
+
+test("modify with AI: only for user and ai components, opens the dialog", async () => {
+  components = [
+    prQueue([
+      v030,
+      { ...v030, version: "0.2.0", origin: "marketplace" },
+      { ...v030, version: "0.1.0", origin: "user" },
+    ]),
+  ];
+  render(<ComponentsPage />);
+  const user = userEvent.setup();
+  const entries = async (version: string) => {
+    await user.click(await screen.findByRole("button", { name: `Actions PR en attente ${version}` }));
+    const names = (await screen.findAllByRole("menuitem")).map((i) => i.textContent);
+    await user.keyboard("{Escape}");
+    return names.includes("Modifier avec l'IA");
+  };
+  expect(await entries("0.3.0")).toBe(true);
+  expect(await entries("0.2.0")).toBe(false);
+  expect(await entries("0.1.0")).toBe(true);
+  expect(screen.getByRole("button", { name: "Actions Kanban 1.0.0" }).hasAttribute("disabled")).toBe(true);
+  await user.click(screen.getByRole("button", { name: "Actions PR en attente 0.1.0" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
+  expect(await screen.findByRole("dialog", { name: "Modifier « PR en attente » avec l'IA" })).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · origine Toi")).toBeTruthy();
 });

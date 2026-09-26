@@ -17,6 +17,7 @@ mock.module("../api", () => ({
       calls.push(req);
       if (req.method === "listComponents") return Promise.resolve(components);
       if (req.method === "listDrafts") return Promise.resolve([]);
+      if (req.method === "listComponentDrafts") return Promise.resolve([]);
       if (req.method === "getRuntimeInfo") return runtime();
       return answer(req);
     },
@@ -203,6 +204,7 @@ test("D1: update to a higher version, remove from the page", async () => {
   expect(items.map((i) => i.textContent)).toEqual([
     "Mettre à jour vers 0.5.0",
     "Mettre à jour vers 0.4.0",
+    "Modifier avec l'IA",
     "Retirer de la page",
   ]);
   await user.click(items[0] as HTMLElement);
@@ -276,4 +278,30 @@ test("D6: the notes folder dialog shows and saves the folder", async () => {
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   expect(calls.at(-1)).toEqual({ method: "setNotesDir", projectId: "p1", dir: "/vault" });
+});
+
+test("modify with AI: offered on an ai instance, not on a marketplace one", async () => {
+  components = [
+    { id: "burndown", title: "Burndown", builtin: false, versions: [version("0.1.0")] },
+    {
+      id: "gh-stats",
+      title: "GH Stats",
+      builtin: false,
+      versions: [version("1.0.0", { origin: "marketplace" })],
+    },
+  ];
+  wrap(
+    <>
+      <InstanceMenu projectId="p1" instance={inst("burndown@0.1.0")} title="Burndown" />
+      <InstanceMenu projectId="p1" instance={inst("gh-stats@1.0.0")} title="GH Stats" />
+    </>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions GH Stats" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Retirer de la page"]);
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions Burndown" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
+  expect(await screen.findByRole("dialog", { name: "Modifier « Burndown » avec l'IA" })).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · origine IA")).toBeTruthy();
 });

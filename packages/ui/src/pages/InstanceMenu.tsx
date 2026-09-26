@@ -7,14 +7,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { ArrowUpCircle, Ellipsis, FolderOpen, Trash2 } from "lucide-react";
+import { ArrowUpCircle, Ellipsis, FolderOpen, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
+import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
+import { modifiable } from "../components-page/rows";
 import { NotesDirDialog } from "../dialogs/NotesDirDialog";
 import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { useFlash } from "../lib/use-flash";
 import { findComponent } from "../registry";
+import { ModifyWithAiDialog } from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
 
 type Props = { projectId: string; instance: Instance; title: string };
@@ -42,9 +45,13 @@ export function InstanceMenu({ projectId, instance, title }: Props) {
   const { message, tone, flash } = useFlash();
   const [notesDir, setNotesDir] = useState(false);
   const [pending, setPending] = useState<PendingUpdate | null>(null);
+  const [modifying, setModifying] = useState<ModifyTarget | null>(null);
   const summary = components?.find((c) => c.id === id && !c.builtin);
   const higher = higherVersions(summary, id, version);
   const isNotes = id === "notes";
+  const origin = summary?.versions.find((v) => v.version === version)?.origin ?? null;
+  const target: ModifyTarget | null =
+    summary && origin !== null && modifiable(origin) ? { id, version, origin, title: summary.title } : null;
 
   const update = async (to: string) => {
     try {
@@ -102,7 +109,13 @@ export function InstanceMenu({ projectId, instance, title }: Props) {
               {i.notesDir}
             </DropdownMenuItem>
           )}
-          {(higher.length > 0 || isNotes) && <DropdownMenuSeparator />}
+          {target && (
+            <DropdownMenuItem onSelect={() => setModifying(target)}>
+              <Sparkles aria-hidden />
+              {fr.ai.modify}
+            </DropdownMenuItem>
+          )}
+          {(higher.length > 0 || isNotes || target) && <DropdownMenuSeparator />}
           <DropdownMenuItem variant="destructive" onSelect={() => void remove()}>
             <Trash2 aria-hidden />
             {i.remove}
@@ -110,6 +123,9 @@ export function InstanceMenu({ projectId, instance, title }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
       {notesDir && <NotesDirDialog projectId={projectId} open onOpenChange={setNotesDir} />}
+      {modifying && (
+        <ModifyWithAiDialog component={modifying} open onOpenChange={(o) => !o && setModifying(null)} />
+      )}
       {pending && (
         <TrustDialog
           target={pending.target}

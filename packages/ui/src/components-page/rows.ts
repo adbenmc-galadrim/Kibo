@@ -75,3 +75,5 @@ export function componentRows(components: ComponentSummary[]): ComponentRow[] {
     (a, b) => a.title.localeCompare(b.title, "fr") || compareSemver(b.version, a.version),
   );
 }
+
+export const modifiable = (origin: string): origin is "user" | "ai" => origin === "user" || origin === "ai";

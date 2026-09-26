@@ -2,9 +2,11 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { TooltipProvider } from "@kibo/sdk/ui/tooltip";
 import { useState } from "react";
+import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { type FlashTone, useFlash } from "../lib/use-flash";
+import { ModifyWithAiDialog } from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
 import { ComponentRowMenu } from "./ComponentRowMenu";
 import { DraftsSection } from "./DraftsSection";
@@ -35,9 +37,10 @@ type TableProps = {
   rows: ComponentRow[];
   onReview(row: ComponentRow): void;
   onDone(m: string, t: FlashTone): void;
+  onModifyWithAi(target: ModifyTarget): void;
 };
 
-function ComponentsTable({ rows, onReview, onDone }: TableProps) {
+function ComponentsTable({ rows, onReview, onDone, onModifyWithAi }: TableProps) {
   const c = fr.components;
   return (
     <Table>
@@ -64,7 +67,7 @@ function ComponentsTable({ rows, onReview, onDone }: TableProps) {
               {c.usage(row.pages, row.projects)}
             </TableCell>
             <TableCell className={`${CELL} py-1.5 text-right`}>
-              <ComponentRowMenu row={row} onDone={onDone} />
+              <ComponentRowMenu row={row} onDone={onDone} onModifyWithAi={onModifyWithAi} />
             </TableCell>
           </TableRow>
         ))}
@@ -79,6 +82,7 @@ export function ComponentsPage() {
   const { message, tone, flash } = useFlash();
   const [publishing, setPublishing] = useState<string | null>(null);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
+  const [modifying, setModifying] = useState<ModifyTarget | null>(null);
   const rows = components ? componentRows(components) : null;
 
   const review = (row: ComponentRow) => {
@@ -94,7 +98,7 @@ export function ComponentsPage() {
     <TooltipProvider>
       <div className="grid content-start gap-6 p-6">
         <div className="overflow-hidden rounded-lg border bg-card">
-          <ComponentsTable rows={rows ?? []} onReview={review} onDone={done} />
+          <ComponentsTable rows={rows ?? []} onReview={review} onDone={done} onModifyWithAi={setModifying} />
           {rows === null && !error && <p className="px-4 py-3 text-sm text-muted-foreground">{c.loading}</p>}
         </div>
         {rows?.every((r) => r.builtin) && <p className="text-sm text-muted-foreground">{c.empty}</p>}
@@ -118,6 +122,17 @@ export function ComponentsPage() {
             open
             onOpenChange={(o) => !o && setPublishing(null)}
             onPublished={reload}
+          />
+        )}
+        {modifying && (
+          <ModifyWithAiDialog
+            component={modifying}
+            open
+            onOpenChange={(o) => {
+              if (o) return;
+              setModifying(null);
+              reload();
+            }}
           />
         )}
         {trust && (

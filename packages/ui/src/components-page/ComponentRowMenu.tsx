@@ -8,14 +8,19 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
-import { Ellipsis, ScanSearch, ShieldOff, Trash2 } from "lucide-react";
+import { Ellipsis, ScanSearch, ShieldOff, Sparkles, Trash2 } from "lucide-react";
 import type { ComponentProps } from "react";
+import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import type { FlashTone } from "../lib/use-flash";
-import type { ComponentRow } from "./rows";
+import { type ComponentRow, modifiable } from "./rows";
 
-type Props = { row: ComponentRow; onDone(message: string, tone: FlashTone): void };
+type Props = {
+  row: ComponentRow;
+  onDone(message: string, tone: FlashTone): void;
+  onModifyWithAi(target: ModifyTarget): void;
+};
 
 const rehashChanged = (e: unknown): string | null =>
   e instanceof KiboError && e.code === "TRUST_REQUIRED" ? fr.components.rehashChanged : null;
@@ -45,11 +50,12 @@ function BlockedUninstall() {
   );
 }
 
-export function ComponentRowMenu({ row, onDone }: Props) {
+export function ComponentRowMenu({ row, onDone, onModifyWithAi }: Props) {
   const c = fr.components;
   const label = c.actions(row.title, row.version);
   if (row.builtin) return <MenuButton label={label} disabled />;
   const ref = { id: row.id, version: row.version };
+  const origin = row.origin;
   const run = async (work: () => Promise<unknown>, ok: string, explain?: (e: unknown) => string | null) => {
     try {
       await work();
@@ -80,6 +86,12 @@ export function ComponentRowMenu({ row, onDone }: Props) {
           >
             <ShieldOff aria-hidden />
             {c.revoke}
+          </DropdownMenuItem>
+        )}
+        {modifiable(origin) && (
+          <DropdownMenuItem onSelect={() => onModifyWithAi({ ...ref, title: row.title, origin })}>
+            <Sparkles aria-hidden />
+            {fr.ai.modify}
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
