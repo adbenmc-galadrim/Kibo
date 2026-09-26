@@ -5,21 +5,22 @@ import {
   type StartComponentDraftInput,
 } from "@kibo/schema";
 import {
+  clearUnrestored,
   copySource,
   type DraftPaths,
   draftPaths,
+  isUnrestored,
+  markUnrestored,
   prepareDraft,
-  readDraftManifest,
   removeDraft,
   verifyAndRestore,
-  writePermissions,
 } from "./draft-files";
 import { createDraftGuard } from "./draft-guard";
 import { applyDraftEvent, canRetry, type DraftEvent, isActive } from "./draft-machine";
 import { newDraft } from "./draft-new";
-import { declareMissing } from "./draft-permissions";
 import { createDraftRecovery, errorText } from "./draft-recovery";
 import type { DraftStore } from "./draft-store";
+import { createDraftValidation } from "./draft-validation";
 import type {
   AgentRuns,
   AiAvailability,
@@ -46,6 +47,7 @@ export type LifecycleDeps = {
   args: () => string[];
   env: () => Record<string, string>;
   newId: () => string;
+  restore?: (paths: DraftPaths, allowServer: boolean) => DraftIncident[];
 };
 
 export type DraftLifecycle = {
@@ -81,18 +83,10 @@ const brief = (d: ComponentDraft): GeneratorBrief => ({
   baseVersion: d.baseVersion,
 });
 
-const configChanged = (p: DraftPaths) => {
-  const base = readDraftManifest(p.baseDir);
-  const current = readDraftManifest(p.dir);
-  return (
-    base.configVersion !== current.configVersion ||
-    JSON.stringify(base.configSchema ?? null) !== JSON.stringify(current.configSchema ?? null)
-  );
-};
-
 export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
   const apply = applyAndPublish(deps.store, deps.events, deps.clock);
   const paths = (d: ComponentDraft): DraftPaths => draftPaths(deps.home, d.id);
+  const restore = deps.restore ?? verifyAndRestore;
   const pending = new Set<Promise<void>>();
   const track = (work: Promise<void>) => {
     const p = work.catch((e: unknown) => console.error("[kibo-daemon] draft work failed", e));
@@ -109,52 +103,17 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     if (!s.profiles.generateur) throw new KiboError("AI_UNAVAILABLE", "generator profile is disabled");
   };
 
-  const inferOrNull = async (dir: string) => {
-    try {
-      return await deps.devkit.infer(dir);
-    } catch (e) {
-      if (e instanceof KiboError && e.code === "VALIDATION_FAILED") return null;
-      throw e;
-    }
-  };
+  const validate = createDraftValidation({ store: deps.store, devkit: deps.devkit, apply, paths });
 
-  const stillValidating = (id: string) => {
-    const d = deps.store.get(id);
-    return d.status === "validating" ? d : null;
-  };
-
-  const checkPermissions = async (id: string, dir: string) => {
-    const permissions = await inferOrNull(dir);
-    if (!stillValidating(id)) return null;
-    if (permissions) writePermissions(dir, permissions);
-    const report = await deps.devkit.validate(dir);
-    if (report.ok || !stillValidating(id) || !declareMissing(dir, report.permissions.missing)) return report;
-    return deps.devkit.validate(dir);
-  };
-
-  const validate = async (id: string): Promise<void> => {
-    const d = stillValidating(id);
-    if (!d) return;
-    const p = paths(d);
-    try {
-      if (d.mode === "modify" && configChanged(p)) {
-        apply(d, { type: "config_changed" });
-        return;
-      }
-      const report = await checkPermissions(id, p.dir);
-      const current = stillValidating(id);
-      if (!report || !current) return;
-      deps.store.saveReport(id, report);
-      apply(current, { type: "validated", ok: report.ok });
-    } catch (e) {
-      const current = stillValidating(id);
-      if (current) apply(current, { type: "validation_crashed", detail: errorText(e) });
-    }
+  const restoreDraft = (d: ComponentDraft): DraftIncident[] => {
+    const incidents = restore(paths(d), d.withServer);
+    clearUnrestored(paths(d));
+    return incidents;
   };
 
   const restoreAfterRun = (d: ComponentDraft): { incidents: DraftIncident[] } | { detail: string } => {
     try {
-      return { incidents: verifyAndRestore(paths(d), d.withServer) };
+      return { incidents: restoreDraft(d) };
     } catch (e) {
       return { detail: errorText(e) };
     }
@@ -182,6 +141,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
   const launch = (d: ComponentDraft, prompt: string, resumeSessionId: string | null): ComponentDraft => {
     applyDraftEvent(d, { type: "enqueued", runId: "check" }, deps.clock.now());
     const p = paths(d);
+    markUnrestored(p);
     const runId = deps.runs.enqueue({
       profileId: "generateur",
       label: `Composant ${d.title}`,
@@ -226,6 +186,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     apply,
     paths,
     cancelLiveRun,
+    restore: restoreDraft,
     revalidate: (id) => track(validate(id)),
   });
 
@@ -258,14 +219,26 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       requireGenerator();
       const d = deps.store.get(draftId);
       if (!canRetry(d)) throw new KiboError("INVALID_INPUT", "this draft cannot be retried");
+      const restored = isUnrestored(paths(d)) ? restoreAfterRun(d) : { incidents: [] };
+      if ("detail" in restored) {
+        recovery.noteFailure(d, restored.detail);
+        return deps.store.get(draftId);
+      }
       const report = deps.store.report(draftId);
       const prompt = report && !report.ok ? fixPrompt(report) : generatorPrompt(brief(d));
       return launch(d, prompt, d.sessionId);
     },
 
     async revalidate(draftId) {
-      apply(deps.store.get(draftId), { type: "validation_started" });
-      await validate(draftId);
+      const started = apply(deps.store.get(draftId), { type: "validation_started" });
+      const restored = isUnrestored(paths(started)) ? restoreAfterRun(started) : { incidents: [] };
+      if ("detail" in restored) apply(started, { type: "validation_crashed", detail: restored.detail });
+      else {
+        const found = restored.incidents;
+        if (found.length > 0)
+          apply(started, { type: "restored", incidents: [...started.incidents, ...found] });
+        await validate(draftId);
+      }
       return deps.store.get(draftId);
     },
 

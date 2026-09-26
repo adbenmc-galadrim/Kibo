@@ -1,5 +1,5 @@
 import { basename, dirname, join } from "node:path";
-import type { ComponentDraft } from "@kibo/schema";
+import type { ComponentDraft, DraftIncident } from "@kibo/schema";
 import {
   type DraftPaths,
   installDraft,
@@ -7,7 +7,6 @@ import {
   releaseSource,
   removeDraft,
   type SourceFate,
-  verifyAndRestore,
 } from "./draft-files";
 import { present } from "./draft-fs";
 import type { DraftEvent } from "./draft-machine";
@@ -22,6 +21,7 @@ export type RecoveryDeps = {
   apply: (d: ComponentDraft, e: DraftEvent) => ComponentDraft;
   paths: (d: ComponentDraft) => DraftPaths;
   cancelLiveRun: (d: ComponentDraft) => void;
+  restore: (d: ComponentDraft) => DraftIncident[];
   revalidate: (draftId: string) => void;
 };
 
@@ -83,12 +83,12 @@ export function createDraftRecovery(deps: RecoveryDeps): DraftRecovery {
     const p = deps.paths(d);
     if (!present(p.baseDir)) abandon(deps.store.get(d.id));
     else if (d.status === "describing" || d.status === "generating") {
-      const incidents = verifyAndRestore(p, d.withServer);
+      const incidents = deps.restore(d);
       const failed = deps.apply(d, { type: "interrupted" });
       deps.cancelLiveRun(d);
       deps.apply(failed, { type: "restored", incidents });
     } else if (d.status === "validating") {
-      const found = verifyAndRestore(p, d.withServer);
+      const found = deps.restore(d);
       if (found.length > 0) deps.apply(d, { type: "restored", incidents: [...d.incidents, ...found] });
       deps.revalidate(d.id);
     }

@@ -165,6 +165,57 @@ describe("after the run", () => {
     expect(readFileSync(join(paths.dir, "component.test.tsx"), "utf8")).toContain("runConformance");
   });
 
+  test("Revalider restores first: an impossible restore fails again, then validation follows", async () => {
+    const { home, runs, store, life, failRestore, validations } = setupLifecycle();
+    const d = await life.start(create);
+    const evil = join(draftPaths(home, d.id).dir, "evil.ts");
+    writeFileSync(evil, "fetch('https://x')");
+    failRestore("locked file");
+    runs.end("run-1", done());
+    await life.idle();
+    expect(store.get(d.id)).toMatchObject({ status: "failed", failure: { kind: "validation" } });
+    await life.revalidate(d.id);
+    expect(store.get(d.id).failure?.detail).toContain("locked file");
+    expect(store.get(d.id).status).toBe("failed");
+    expect(validations()).toBe(0);
+    failRestore(null);
+    await life.revalidate(d.id);
+    expect(store.get(d.id)).toMatchObject({
+      status: "review",
+      incidents: [{ kind: "removed", path: "evil.ts" }],
+    });
+    expect(existsSync(evil)).toBe(false);
+  });
+
+  test("Corriger avec l'agent restores first; an impossible restore launches no run", async () => {
+    const { home, runs, life, failRestore } = setupLifecycle();
+    const d = await life.start(create);
+    const evil = join(draftPaths(home, d.id).dir, "evil.ts");
+    writeFileSync(evil, "x");
+    failRestore("locked file");
+    runs.end("run-1", done());
+    await life.idle();
+    const refused = life.retry(d.id);
+    expect(refused).toMatchObject({ status: "failed", failure: { kind: "validation" } });
+    expect(refused.failure?.detail).toContain("locked file");
+    expect(runs.runs).toHaveLength(1);
+    failRestore(null);
+    expect(life.retry(d.id)).toMatchObject({ status: "generating", runId: "run-2" });
+    expect(existsSync(evil)).toBe(false);
+  });
+
+  test("once restored, a hand correction survives Revalider", async () => {
+    const { home, runs, store, life } = setupLifecycle({ reports: [report(false)] });
+    const d = await life.start(create);
+    runs.end("run-1", done());
+    await life.idle();
+    const test = join(draftPaths(home, d.id).dir, "component.test.tsx");
+    writeFileSync(test, "runConformance({ manifest, Component, strict: true });\n");
+    await life.revalidate(d.id);
+    expect(store.get(d.id).status).toBe("review");
+    expect(readFileSync(test, "utf8")).toContain("strict: true");
+  });
+
   test("a failed run is recorded; retry without session starts afresh", async () => {
     const { runs, store, life } = setupLifecycle();
     const d = await life.start(create);

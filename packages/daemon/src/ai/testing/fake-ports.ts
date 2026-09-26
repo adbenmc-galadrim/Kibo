@@ -7,6 +7,7 @@ export type FakeRuns = AgentRuns & {
   cancelled: string[];
   setState(runId: string, state: RunState): void;
   end(runId: string, end: RunEnd): void;
+  deferCancel(): void;
 };
 
 export function createFakeRuns(): FakeRuns {
@@ -15,6 +16,7 @@ export function createFakeRuns(): FakeRuns {
   const stateListeners = new Map<string, Set<(s: RunState) => void>>();
   const endListeners = new Map<string, Set<(e: RunEnd) => void>>();
   const ended = new Map<string, RunEnd>();
+  let cancelEndsRun = true;
   const find = (id: string) => runs.find((r) => r.id === id);
   const end = (runId: string, e: RunEnd) => {
     const run = find(runId);
@@ -34,7 +36,7 @@ export function createFakeRuns(): FakeRuns {
     cancel(runId) {
       if (ended.has(runId)) return;
       cancelled.push(runId);
-      end(runId, { state: "cancelled", sessionId: null, stdout: "", error: null });
+      if (cancelEndsRun) end(runId, { state: "cancelled", sessionId: null, stdout: "", error: null });
     },
     state: (runId) => find(runId)?.state ?? null,
     onState(runId, listener) {
@@ -61,6 +63,9 @@ export function createFakeRuns(): FakeRuns {
       for (const l of [...(stateListeners.get(runId) ?? [])]) l(state);
     },
     end,
+    deferCancel() {
+      cancelEndsRun = false;
+    },
   };
 }
 

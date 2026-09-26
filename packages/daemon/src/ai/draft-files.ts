@@ -282,9 +282,22 @@ export function releaseSource(srcDir: string, fate: SourceFate): void {
   });
 }
 
+const unrestoredMark = (paths: DraftPaths) => `${paths.dir}.unrestored`;
+
+export const isUnrestored = (paths: DraftPaths): boolean => present(unrestoredMark(paths));
+
+export function markUnrestored(paths: DraftPaths): void {
+  guarded("mark draft unrestored", () => writeFileSync(unrestoredMark(paths), "", { mode: 0o600 }));
+}
+
+export function clearUnrestored(paths: DraftPaths): void {
+  guarded("clear draft mark", () => removeTree(unrestoredMark(paths)));
+}
+
 export function removeDraft(paths: DraftPaths): void {
   guarded("remove draft", () => {
     removeTree(paths.dir);
     removeTree(paths.baseDir);
+    removeTree(unrestoredMark(paths));
   });
 }

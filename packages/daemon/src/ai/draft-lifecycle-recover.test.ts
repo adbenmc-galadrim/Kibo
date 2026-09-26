@@ -101,6 +101,33 @@ describe("recover a generation", () => {
     expect(existsSync(join(paths.dir, "evil.ts"))).toBe(false);
   });
 
+  test("a validating draft whose restore fails is restored again by Revalider", async () => {
+    const { home, store, life, failRestore, validations } = setupLifecycle();
+    const d = await life.start(create);
+    const evil = join(draftPaths(home, d.id).dir, "evil.ts");
+    writeFileSync(evil, "x");
+    store.save(
+      applyDraftEvent(
+        store.get(d.id),
+        { type: "run_ended", runId: "run-1", state: "done", sessionId: "s1", error: null },
+        2_000,
+      ),
+    );
+    failRestore("locked file");
+    await life.recover();
+    expect(store.get(d.id)).toMatchObject({ status: "failed", failure: { kind: "validation" } });
+    await life.revalidate(d.id);
+    expect(store.get(d.id).failure?.detail).toContain("locked file");
+    expect(validations()).toBe(0);
+    failRestore(null);
+    await life.revalidate(d.id);
+    expect(store.get(d.id)).toMatchObject({
+      status: "review",
+      incidents: [{ kind: "removed", path: "evil.ts" }],
+    });
+    expect(existsSync(evil)).toBe(false);
+  });
+
   test("a corrupted draft fails visibly without stopping the others", async () => {
     const { home, store, life } = setupLifecycle();
     const broken = await life.start(create);

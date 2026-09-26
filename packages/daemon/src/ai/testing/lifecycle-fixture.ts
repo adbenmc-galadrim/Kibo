@@ -6,10 +6,11 @@ import { join } from "node:path";
 import {
   type AiStatus,
   ComponentManifest,
-  type KiboError,
+  KiboError,
   NO_PERMISSIONS,
   type ValidationReport,
 } from "@kibo/schema";
+import { verifyAndRestore } from "../draft-files";
 import { createDraftLifecycle } from "../draft-lifecycle";
 import { openDraftStore } from "../draft-store";
 import type { AiAvailability, ComponentCatalog, Devkit, PublishedComponent } from "../ports";
@@ -54,6 +55,7 @@ export function setupLifecycle(
   let inferError: KiboError | null = null;
   let inferGate: Promise<void> = Promise.resolve();
   let published = opts.published ?? null;
+  let restoreError: string | null = null;
   const devkit: Devkit = {
     scaffold: async ({ dir, id, title, kind }) => {
       writeFileSync(
@@ -114,6 +116,10 @@ export function setupLifecycle(
     args: () => ["--tools", "Read,Edit,Write,Glob,Grep,Bash"],
     env: () => ({ PATH: "/kibo/bin" }),
     newId: () => `0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a1${n++}`,
+    restore: (paths, allowServer) => {
+      if (restoreError) throw new KiboError("STORE_CORRUPT", restoreError);
+      return verifyAndRestore(paths, allowServer);
+    },
   });
   return {
     home,
@@ -135,8 +141,11 @@ export function setupLifecycle(
       });
       return () => release();
     },
-    setPublished: (p: PublishedComponent) => {
+    setPublished: (p: PublishedComponent | null) => {
       published = p;
+    },
+    failRestore: (detail: string | null) => {
+      restoreError = detail;
     },
   };
 }
