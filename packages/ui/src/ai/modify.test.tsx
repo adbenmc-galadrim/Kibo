@@ -125,3 +125,21 @@ test("a start failure is translated, never shown raw", async () => {
     "claude est indisponible : vérifie son installation et sa connexion.",
   );
 });
+
+test("a conflict without a draft to resume says the component is busy", async () => {
+  start = async () => {
+    throw new KiboError("CONFLICT", "component burndown already has an active draft");
+  };
+  render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Ce qu'il faut changer"), "Ajoute un titre");
+  await user.click(await screen.findByRole("button", { name: "Lancer l'agent" }));
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Un brouillon est déjà en cours pour ce composant : réessaie dans un instant.",
+  );
+});
+
+test("cancel is an outline button, as on the mockup", () => {
+  render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
+  expect(screen.getByRole("button", { name: "Annuler" }).getAttribute("data-variant")).toBe("outline");
+});

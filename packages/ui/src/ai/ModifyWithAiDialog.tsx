@@ -87,8 +87,9 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
       });
       onStarted(draft.id);
     } catch (err) {
-      const resumable = err instanceof KiboError && err.code === "CONFLICT" && (await onConflict());
-      if (!resumable) setError(aiErrorMessage(err));
+      const conflict = err instanceof KiboError && err.code === "CONFLICT";
+      if (!conflict) setError(aiErrorMessage(err));
+      else if (!(await onConflict())) setError(fr.ai.modifyBusy);
     } finally {
       setBusy(false);
     }
@@ -112,7 +113,7 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
         </p>
       )}
       <DialogFooter>
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel}>
           {fr.common.cancel}
         </Button>
         <Button type="submit" variant="agent" disabled={!ready || block !== null || !valid || busy}>

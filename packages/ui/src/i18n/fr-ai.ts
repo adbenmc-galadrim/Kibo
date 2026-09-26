@@ -1,3 +1,5 @@
+import type { KiboErrorCode } from "@kibo/schema";
+
 export const frAi = {
   welcome: {
     title: "Bienvenue dans Kibo",
@@ -115,7 +117,7 @@ export const frAi = {
       TIMEOUT: "Le démon n'a pas répondu à temps.",
       STORE_CORRUPT: "Le stockage des brouillons est illisible.",
       INTERNAL: "Erreur interne du démon.",
-    },
+    } satisfies Partial<Record<KiboErrorCode, string>>,
     attempt: (n: number) => `Tentative ${n} sur 3`,
     abandon: "Abandonner",
     validating: "Validation en cours…",
@@ -163,5 +165,6 @@ export const frAi = {
     modifyHelp:
       "L'agent reprend le code actuel. La forme de la config ne peut pas changer : pour ça, passe par le code.",
     launch: "Lancer l'agent",
+    modifyBusy: "Un brouillon est déjà en cours pour ce composant : réessaie dans un instant.",
   },
 } as const;
