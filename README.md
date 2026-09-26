@@ -4,7 +4,7 @@ Centre de contrôle de projets de code, local-first, piloté par l'IA.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
 (Kanban, tickets, graphe de dépendances, notes…) que l'utilisateur peut créer lui-même.
 
-État : MVP livré (`v0.1`), phase 2 · Agents en cours. Rapports dans `docs/superpowers/rapports/`.
+État : phase 2 · Agents livrée (`v0.2`), phase 3 · Code et onglets en cours. Rapports dans `docs/superpowers/rapports/`.
 
 ## Lancer
 
