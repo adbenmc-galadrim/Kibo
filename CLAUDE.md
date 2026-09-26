@@ -20,6 +20,7 @@ Feuille de route : `docs/superpowers/plans/2026-09-25-kibo-feuille-de-route.md`.
 apps/desktop/        coque Tauri 2 (Rust minimal) qui lance le démon en sidecar
 packages/schema/     schémas Zod partagés (ticket, page, statut, lien, manifest) — aucune dépendance runtime hors zod
 packages/core/       domaine : docs Loro (workspace, projet), arbres, workflow — pur, sans I/O
+packages/devkit/     outillage des composants : empreinte, imports, build, validation (CLI et démon)
 packages/daemon/     serveur Bun : persistance SQLite, API HTTP/WS, appairage, sert l'UI
 packages/sdk/        SDK des composants (client, SDK simulé, suite de conformité)
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
@@ -28,7 +29,7 @@ e2e/                 parcours Playwright
 design/  docs/       maquettes, spec, plans
 ```
 
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui` ; `core ← sdk/mock` (SDK simulé uniquement).
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon` ; `core ← sdk/mock` (SDK simulé uniquement).
 `core` ne fait aucune I/O ; `ui` ne parle qu'au démon (jamais au disque).
 
 ## Code
