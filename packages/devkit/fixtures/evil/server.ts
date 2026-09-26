@@ -53,7 +53,10 @@ function workerSource({ secret, port, daemonPid }: Escape): string {
     `const net = attempt(() => fetch("http://127.0.0.1:${port}/"));`,
     `const read = attempt(() => Bun.file(${JSON.stringify(secret)}).text());`,
     `const signal = attempt(async () => process.kill(${daemonPid}, 0));`,
-    "Promise.all([net, read, signal]).then(([n, r, s]) => postMessage({ net: n, read: r, signal: s }));",
+    'const spawn = attempt(async () => Bun.spawnSync(["/usr/bin/true"]));',
+    "Promise.all([net, read, signal, spawn]).then(([n, r, s, p]) =>",
+    "  postMessage({ net: n, read: r, signal: s, spawn: p }),",
+    ");",
   ].join("\n");
 }
 

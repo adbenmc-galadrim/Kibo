@@ -198,7 +198,7 @@ describe("a sandboxed third-party component stays inside its perimeter", () => {
       connect: "blocked",
       env: ["KIBO_COMPONENT"],
       descriptors: [],
-      worker: { net: "blocked", read: "blocked", signal: "blocked" },
+      worker: { net: "blocked", read: "blocked", signal: "blocked", spawn: "blocked" },
     });
     expect(existsSync(join(home, "planted"))).toBe(false);
   }, 30_000);
