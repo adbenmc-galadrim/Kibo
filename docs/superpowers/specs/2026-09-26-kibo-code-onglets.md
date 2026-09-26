@@ -74,6 +74,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 ## 9. Aperçu et liens de fichiers
 
 - `FileLink` (SDK) reconnaît `chemin`, `chemin:ligne` et `chemin:ligne:colonne` ; `linkifyPaths` découpe un texte libre. Un composant ouvre un fichier par `sdk.openFile({ path, line })`, relatif au worktree principal.
+- **Journal d'un run** : ses chemins s'ouvrent dans le worktree qui contient le dossier de travail du run (le plus profond, comme le bandeau du §6), même si l'agent travaille dans un sous-dossier. Un run `isolated` (hors dépôt) ou dont le dossier n'appartient à aucun worktree du projet affiche ses chemins en texte simple.
 - Aperçu : Shiki (moteur d'expressions régulières JavaScript, sans WebAssembly, compatible avec la CSP), thèmes `github-light` / `github-dark` par variables CSS, coloration jusqu'à 5 000 lignes, aperçu refusé au-delà de 1 Mo ou pour un binaire.
 - Éditeur externe : `$VISUAL` puis `$EDITOR`, seulement si le binaire est dans la liste `code`, `code-insiders`, `cursor`, `windsurf`, `zed`, `subl`, `webstorm`, `idea` ; sinon `open` (macOS) ou `xdg-open` (Linux), sans numéro de ligne. Raccourci `⌘⇧O`.
 

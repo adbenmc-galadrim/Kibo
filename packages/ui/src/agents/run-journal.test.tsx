@@ -1,12 +1,20 @@
 import { expect, mock, test } from "bun:test";
-import type { RunEvent, RunLogEntry } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import type { RunEvent, RunLogEntry, RunView, Worktree } from "@kibo/schema";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, NOW } from "./fixtures";
 import { hook, RUN_LOG } from "./run-log-fixture";
 
+const worktrees: Worktree[] = [
+  { path: "/repo", branch: "main", head: "a1", isMain: true },
+  { path: "/repo/.kibo/worktrees/kib-14", branch: "kib-14", head: "b2", isMain: false },
+];
 mock.module("../api", () => ({
-  client: { rpc: () => Promise.resolve(null) },
+  client: {
+    rpc: () => Promise.resolve(null),
+    code: () => Promise.resolve(worktrees),
+    subscribeCode: () => () => {},
+  },
 }));
 
 const { AgentDrawer } = await import("./AgentDrawer");
@@ -66,26 +74,37 @@ test("file paths in the journal open the file in the run's worktree, with their 
     ["src/a.ts", null, "KIB-14 · PostToolUse Edit"],
   ]);
 });
-test("a path in the drawer journal opens a preview of the run's worktree", async () => {
+const WT = "/repo/.kibo/worktrees/kib-14";
+const edited = (detail: string): RunLogEntry[] => [
+  ...RUN_LOG,
+  { id: 20, at: NOW, event: { type: "hook", payload: hook("PostToolUse", { tool: "Edit", detail }) } },
+];
+function renderDrawer(selected: RunView, log: RunLogEntry[] = RUN_LOG) {
   const onOpenFile = mock((_: unknown) => {});
   render(
     <AgentDrawer
       state={agentsFixture()}
       now={NOW}
-      selected={{ ...run("r41"), projectId: "kibo", cwd: "/wt/kib-14" }}
-      log={RUN_LOG}
+      selected={selected}
+      log={log}
       onSelect={() => {}}
       onCollapse={() => {}}
       onLaunch={() => {}}
       onOpenFile={onOpenFile}
     />,
   );
-  await userEvent.setup().click(screen.getByRole("button", { name: "apps/daemon/src/hooks/receiver.ts" }));
+  return onOpenFile;
+}
+
+test("a path in the drawer journal opens a preview of the run's worktree", async () => {
+  const onOpenFile = renderDrawer({ ...run("r41"), projectId: "kibo", cwd: WT });
+  const link = await screen.findByRole("button", { name: "apps/daemon/src/hooks/receiver.ts" });
+  await userEvent.setup().click(link);
   expect(onOpenFile.mock.calls).toEqual([
     [
       {
         projectId: "kibo",
-        worktree: "/wt/kib-14",
+        worktree: WT,
         path: "apps/daemon/src/hooks/receiver.ts",
         line: null,
         origin: "KIB-14 · PostToolUse Write",
@@ -93,6 +112,27 @@ test("a path in the drawer journal opens a preview of the run's worktree", async
     ],
   ]);
 });
+
+test("a run in a subfolder opens its files in the worktree that owns that folder", async () => {
+  const onOpenFile = renderDrawer(
+    { ...run("r41"), projectId: "kibo", cwd: `${WT}/packages/ui` },
+    edited(`${WT}/packages/ui/src/a.ts`),
+  );
+  await userEvent.setup().click(await screen.findByRole("button", { name: "packages/ui/src/a.ts" }));
+  expect(onOpenFile.mock.calls[0]?.[0]).toMatchObject({ worktree: WT, path: "packages/ui/src/a.ts" });
+});
+
+test("an isolated run, or one outside every worktree, shows its paths as plain text", async () => {
+  const isolated = { ...run("r41"), projectId: "kibo", workspace: "isolated", cwd: "/repo/tmp/iso" };
+  renderDrawer(isolated, edited("/repo/tmp/iso/a.ts"));
+  expect(await screen.findByText("Edit /repo/tmp/iso/a.ts")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /a\.ts/ })).toBeNull();
+  cleanup();
+  renderDrawer({ ...run("r41"), projectId: "kibo", cwd: "/elsewhere" }, edited("/elsewhere/b.ts"));
+  expect(await screen.findByText("Edit /elsewhere/b.ts")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /b\.ts/ })).toBeNull();
+});
+
 test("without a worktree the journal shows paths as plain text", () => {
   render(<RunJournal label="opus-dev-2" log={RUN_LOG} files={null} />);
   expect(screen.getByText("Write apps/daemon/src/hooks/receiver.ts")).toBeTruthy();

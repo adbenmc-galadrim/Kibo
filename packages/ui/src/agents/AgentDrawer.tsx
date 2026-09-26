@@ -5,6 +5,7 @@ import {
   type RunLogEntry,
   type RunView,
   runSubject,
+  type Worktree,
 } from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
@@ -12,6 +13,8 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Bot, ChevronDown, Plus, Square } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { client } from "../api";
+import { owningWorktree } from "../code/agent-slots";
+import { useWorktrees } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
 import { elapsed, formatDuration, reasonText, runResultText, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
@@ -70,13 +73,22 @@ function Group({
   );
 }
 
-function journalFiles(run: RunView, onOpenFile: (ref: FileRef) => void): JournalFiles | null {
+function journalFiles(
+  run: RunView,
+  worktrees: Worktree[] | null,
+  onOpenFile: (ref: FileRef) => void,
+): JournalFiles | null {
   const { projectId, cwd } = run;
-  if (!projectId || !cwd) return null;
+  if (!projectId || !cwd || !worktrees || run.workspace === "isolated") return null;
+  const worktree = owningWorktree(
+    worktrees.map((w) => w.path),
+    cwd,
+  );
+  if (!worktree) return null;
   return {
-    worktree: cwd,
+    worktree,
     ticketKey: run.ticketKey,
-    open: (path, line, origin) => onOpenFile({ projectId, worktree: cwd, path, line, origin }),
+    open: (path, line, origin) => onOpenFile({ projectId, worktree, path, line, origin }),
   };
 }
 
@@ -89,6 +101,7 @@ type DetailProps = {
 
 function RunDetail({ run, now, log, onOpenFile }: DetailProps) {
   const [failed, setFailed] = useState(false);
+  const { worktrees } = useWorktrees(run.cwd && run.workspace !== "isolated" ? run.projectId : null);
   const stop = async () => {
     setFailed(false);
     try {
@@ -118,7 +131,7 @@ function RunDetail({ run, now, log, onOpenFile }: DetailProps) {
           {fr.agents.stopFailed}
         </p>
       )}
-      <RunJournal label={run.label} log={log ?? []} files={journalFiles(run, onOpenFile)} />
+      <RunJournal label={run.label} log={log ?? []} files={journalFiles(run, worktrees, onOpenFile)} />
       {run.state === "waiting_input" && <ReplyBox run={run} />}
     </div>
   );
