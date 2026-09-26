@@ -306,6 +306,21 @@ test("12 · Mes tickets", async () => {
   await capture(info, "12");
 });
 
+test("D11 · menu du workspace et renommage", async () => {
+  const info = test.info();
+  const trigger = page.getByRole("button", { name: /Perso/ }).first();
+  await trigger.click();
+  await expect(page.getByRole("menuitem", { name: "Renommer le workspace…" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Paramètres du workspace" })).toBeVisible();
+  await capture(info, "D11-menu");
+  await page.getByRole("menuitem", { name: "Renommer le workspace…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Renommer le workspace" });
+  await expect(dialog.getByLabel("Nom")).toHaveValue("Perso");
+  await capture(info, "D11-dialogue");
+  await dialog.getByRole("button", { name: "Annuler" }).click();
+  await expect(dialog).toBeHidden();
+});
+
 test("densité 13 px des maquettes", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
@@ -318,5 +333,7 @@ test("densité 13 px des maquettes", async () => {
   expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("10px");
   expect(await size(doing.getByText("KIB-12", { exact: true }))).toBe("11px");
   expect(await size(bar().getByRole("tab", { name: "Kibo · Kanban" }))).toBe("12px");
+  const header = page.getByRole("button", { name: /Perso/ }).first();
+  await expect(header).toContainText("Workspace local");
   await capture(info, "densite-kanban");
 });

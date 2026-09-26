@@ -4,6 +4,18 @@ import { frComponents } from "./fr-components";
 export const fr = {
   app: { name: "Kibo" },
   lazy: { loading: "Chargement…", failed: "Impossible de charger cet écran.", retry: "Réessayer" },
+  workspace: {
+    defaultName: "Perso",
+    local: "Workspace local",
+    menu: "Workspaces",
+    rename: "Renommer le workspace…",
+    settings: "Paramètres du workspace",
+    renameTitle: "Renommer le workspace",
+    name: "Nom",
+    cancel: "Annuler",
+    save: "Enregistrer",
+    renameFailed: "Impossible de renommer le workspace.",
+  },
   nav: {
     breadcrumb: "Fil d'Ariane",
     overview: "Vue d'ensemble",

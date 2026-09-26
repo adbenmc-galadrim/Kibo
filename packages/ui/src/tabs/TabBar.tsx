@@ -14,7 +14,7 @@ import {
 } from "@kibo/sdk/ui/context-menu";
 import { AppWindow, Copy, Pin, PinOff, Plus, X } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { KiboLogo } from "../shell/KiboLogo";
+import { WorkspaceTile } from "../shell/WorkspaceMark";
 import type { TabDescription } from "./tab-title";
 import type { TabsAction } from "./tabs-model";
 
@@ -200,7 +200,7 @@ export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWin
               )}
               onClick={() => dispatch({ type: "activate", id: null })}
             >
-              <KiboLogo className="size-4" decorative />
+              <WorkspaceTile size="sm" />
             </button>
             <SortableContext items={pinned.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
               {pinned.map(item)}

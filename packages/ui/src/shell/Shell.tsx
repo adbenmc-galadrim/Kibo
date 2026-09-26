@@ -5,6 +5,7 @@ import { Bell, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
+import { client } from "../api";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
@@ -53,6 +54,10 @@ export function Shell({ viewer, notifications }: Props) {
     />
   );
 }
+
+const renameWorkspace = async (name: string) => {
+  await client.rpc({ method: "config", command: { method: "renameWorkspace", name } });
+};
 
 const inTauri = () => "__TAURI_INTERNALS__" in window;
 const openWindow = (t: TabTarget) =>
@@ -189,6 +194,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               agents={agents}
               changesCount={git.worktrees ? git.changesCount : null}
               mineCount={mineCount}
+              workspaceName={config?.workspaceName ?? null}
+              onRenameWorkspace={renameWorkspace}
               onOpen={go}
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}

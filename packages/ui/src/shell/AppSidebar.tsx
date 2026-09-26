@@ -30,7 +30,7 @@ import {
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
-import { KiboLogo } from "./KiboLogo";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type Props = {
   className?: string;
@@ -41,6 +41,8 @@ type Props = {
   agents: AgentsState | null;
   changesCount: number | null;
   mineCount: number | null;
+  workspaceName: string | null;
+  onRenameWorkspace(name: string): Promise<void>;
   onOpen(target: TabTarget | null, newTab: boolean): void;
   onSearch(): void;
   onNewProject(): void;
@@ -150,10 +152,11 @@ export function AppSidebar(p: Props) {
   return (
     <Sidebar className={p.className}>
       <SidebarHeader>
-        <span className="flex items-center gap-2 px-2 py-1 text-sm font-semibold">
-          <KiboLogo className="size-5" decorative />
-          {fr.app.name}
-        </span>
+        <WorkspaceSwitcher
+          name={p.workspaceName ?? fr.workspace.defaultName}
+          onRename={p.onRenameWorkspace}
+          onSettings={() => onOpen(screenTarget("domains"), false)}
+        />
         <button
           type="button"
           onClick={p.onSearch}
