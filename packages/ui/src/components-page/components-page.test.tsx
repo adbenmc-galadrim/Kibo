@@ -195,6 +195,7 @@ test("publishing errors are explained", async () => {
       "Cette version existe déjà avec un autre code. Change la version dans kibo.component.json.",
     ],
     [new KiboError("INVALID_INPUT", "x"), "La version doit être plus haute que la dernière publiée."],
+    [new KiboError("FORBIDDEN", "x"), "Cette action n'est possible que depuis l'ordinateur où tourne Kibo."],
   ] as const) {
     preview = async () => {
       throw error;

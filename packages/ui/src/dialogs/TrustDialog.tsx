@@ -86,6 +86,13 @@ function PermissionList({ permissions }: { permissions: GrantedPermissions }) {
   );
 }
 
+function failureOf(e: unknown): string {
+  if (!(e instanceof KiboError)) return fr.trust.failed;
+  if (e.code === "HASH_MISMATCH") return fr.trust.hashMismatch;
+  if (e.code === "FORBIDDEN") return fr.componentErrors.FORBIDDEN;
+  return fr.trust.failed;
+}
+
 export function TrustDialog({
   target,
   mode,
@@ -116,7 +123,7 @@ export function TrustDialog({
       onOpenChange(false);
     } catch (e) {
       if (!(e instanceof KiboError)) console.error(e);
-      setError(e instanceof KiboError && e.code === "HASH_MISMATCH" ? t.hashMismatch : t.failed);
+      setError(failureOf(e));
     } finally {
       setBusy(false);
     }

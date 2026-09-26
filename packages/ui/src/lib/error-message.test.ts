@@ -27,6 +27,7 @@ test("every component error code has its own French text", () => {
     "QUOTA_EXCEEDED",
     "SANDBOX_UNAVAILABLE",
     "PERMISSION_DENIED",
+    "FORBIDDEN",
   ] as const;
   const texts = codes.map((code) => errorMessage(new KiboError(code, "x")));
   for (const text of texts) expect(text).not.toBe("Une erreur est survenue.");

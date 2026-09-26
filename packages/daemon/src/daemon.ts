@@ -11,6 +11,7 @@ import { createCodeService } from "./code/code-service";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
+import { componentTrustGuard } from "./components/trust-guard";
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
@@ -163,7 +164,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     assets: components.assets,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [market.handler],
+    handlers: [componentTrustGuard, market.handler],
   });
   front.push(() => server.stop());
   const started = createRemoteAccess({

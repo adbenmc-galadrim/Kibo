@@ -42,6 +42,7 @@ function explain(e: unknown, id: string): string {
   if (e.code === "VERSION_EXISTS") return p.versionExists;
   if (e.code === "INVALID_INPUT") return p.versionTooLow;
   if (e.code === "VALIDATION_FAILED") return p.invalid(id);
+  if (e.code === "FORBIDDEN") return fr.componentErrors.FORBIDDEN;
   console.error(e);
   return p.failed;
 }
