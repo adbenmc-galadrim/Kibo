@@ -1,5 +1,6 @@
 import { McpServerId } from "@kibo/schema";
 import { z } from "zod";
+import { fr } from "./fr";
 
 const JsonPointer = z
   .string()
@@ -9,6 +10,7 @@ const JsonObject = z.record(z.string(), z.unknown());
 
 const Stored = z
   .object({
+    title: z.string().max(80).optional(),
     server: McpServerId,
     mode: z.enum(["tool", "resource"]),
     tool: z.string().min(1).max(128).optional(),
@@ -62,6 +64,7 @@ export type McpSourceConfig = z.output<typeof McpSourceConfig>;
 
 export function defaultMcpSourceConfig(server: string): McpSourceStoredConfig {
   return {
+    title: fr.defaultTitle,
     server,
     mode: "tool",
     tool: "list_items",

@@ -10,6 +10,7 @@ import { SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
+import { instanceTitle } from "./instance-title";
 
 const AddComponentDialog = lazyPanel(
   () => import("../dialogs/AddComponentDialog").then((m) => m.AddComponentDialog),
@@ -24,7 +25,7 @@ const PublishDialog = lazyPanel(
 
 function WidgetHeader({ projectId, instance }: { projectId: string; instance: Instance }) {
   const Icon = componentIcon(instance.component);
-  const title = useInstanceTitle(instance.component);
+  const title = instanceTitle(instance, useInstanceTitle(instance.component));
   const { id, version } = splitRef(instance.component);
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3">

@@ -15,6 +15,7 @@ export const POINTER_KEYS: readonly PointerKey[] = [
 ];
 
 export type McpSourceDraft = {
+  title: string;
   server: string;
   mode: SourceMode;
   tool: string;
@@ -25,6 +26,7 @@ export type McpSourceDraft = {
 
 export function draftOf(stored: McpSourceStoredConfig): McpSourceDraft {
   return {
+    title: stored.title ?? "",
     server: stored.server,
     mode: stored.mode,
     tool: stored.tool ?? "",
@@ -60,6 +62,8 @@ export function storedOf(d: McpSourceDraft): McpSourceStoredConfig {
   if (target !== null && d.mode === "resource") stored.uri = target;
   const subtitle = filled(d.subtitlePointer);
   if (subtitle !== null) stored.subtitlePointer = subtitle;
+  const title = filled(d.title);
+  if (title !== null) stored.title = title;
   const url = filled(d.urlPointer);
   if (url !== null) stored.urlPointer = url;
   return stored;

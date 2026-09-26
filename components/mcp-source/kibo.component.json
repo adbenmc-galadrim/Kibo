@@ -9,6 +9,7 @@
   "data": true,
   "mcp": ["{config.server}"],
   "configSchema": {
+    "title": { "type": "string", "default": "Source MCP" },
     "server": { "type": "string" },
     "mode": { "enum": ["tool", "resource"], "default": "tool" },
     "tool": { "type": "string" },

@@ -77,6 +77,7 @@ test("the MCP source is added with its flat configuration, never as a synced sou
         titlePointer: "/name",
         subtitlePointer: "/detail",
         urlPointer: "/link",
+        title: "Source MCP",
       },
     },
   });

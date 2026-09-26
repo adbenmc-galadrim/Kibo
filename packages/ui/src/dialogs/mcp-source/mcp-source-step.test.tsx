@@ -67,3 +67,17 @@ test("without an enabled server, the step says where to add one", async () => {
   ).toBeDefined();
   expect(onChange).toHaveBeenLastCalledWith(null);
 });
+
+test("the widget title defaults to Source MCP and can be renamed", async () => {
+  const onChange = mock((_: unknown) => {});
+  render(<McpSourceStep value={null} onChange={onChange} />);
+  const title = await screen.findByLabelText("Titre du widget");
+  expect(title).toHaveProperty("value", "Source MCP");
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ title: "Source MCP" }));
+  const user = userEvent.setup();
+  await user.clear(title);
+  await user.type(title, "Erreurs Sentry");
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ title: "Erreurs Sentry" }));
+  await user.clear(title);
+  expect(onChange.mock.lastCall?.[0]).not.toHaveProperty("title");
+});

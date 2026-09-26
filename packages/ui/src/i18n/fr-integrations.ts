@@ -255,6 +255,7 @@ export const frIntegrations = {
     pointerHelp: "Pointeurs JSON, par exemple /items et /name.",
     refresh: "Rafraîchissement (minutes, 5 minimum)",
     serverLabel: (name: string, id: string) => `${name} (${id})`,
+    widgetTitle: "Titre du widget",
   },
   permissions: {
     secret: (name: string, hosts: string[]) =>

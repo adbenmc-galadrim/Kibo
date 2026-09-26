@@ -32,7 +32,7 @@ function useEnabledServers(): { servers: McpServerView[] | null; error: string |
 }
 
 export function McpSourceStep({ value, onChange }: Props) {
-  const ids = { server: useId(), args: useId(), argsError: useId(), refresh: useId() };
+  const ids = { title: useId(), server: useId(), args: useId(), argsError: useId(), refresh: useId() };
   const { servers, error } = useEnabledServers();
   const [draft, setDraft] = useState<McpSourceDraft | null>(value ? draftOf(value) : null);
 
@@ -74,6 +74,15 @@ export function McpSourceStep({ value, onChange }: Props) {
   return (
     <section className="grid gap-4">
       <p className="font-medium">{t.title}</p>
+      <div className="grid gap-2">
+        <Label htmlFor={ids.title}>{t.widgetTitle}</Label>
+        <Input
+          id={ids.title}
+          maxLength={80}
+          value={draft.title}
+          onChange={(e) => update({ ...draft, title: e.target.value })}
+        />
+      </div>
       <div className="grid gap-2">
         <Label htmlFor={ids.server}>{t.server}</Label>
         <Select value={draft.server} onValueChange={pickServer}>

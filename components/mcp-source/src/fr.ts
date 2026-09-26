@@ -1,4 +1,5 @@
 export const fr = {
+  defaultTitle: "Source MCP",
   lazy: {
     loading: "Chargement de la source…",
     failed: "Impossible de charger la source.",
