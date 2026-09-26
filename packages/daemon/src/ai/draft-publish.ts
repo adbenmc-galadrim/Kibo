@@ -18,13 +18,13 @@ import {
   agentFiles,
   type DraftPaths,
   draftPaths,
-  installDraft,
   readDraftManifest,
   removeDraft,
   writeDraftManifest,
 } from "./draft-files";
 import { isSafeFile, present } from "./draft-fs";
 import { applyDraftEvent, type DraftEvent } from "./draft-machine";
+import { installDraft } from "./draft-source";
 import type { DraftStore } from "./draft-store";
 import { proposeVersion } from "./draft-version";
 import type { AiEvents, Clock, ComponentCatalog, Devkit, Differ, ProjectAccess } from "./ports";

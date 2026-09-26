@@ -172,6 +172,7 @@ export const burndownAt = (version: string): PublishedComponent => ({
   }),
   granted: { ...NO_PERMISSIONS, reads: ["ticket"] },
   origin: "ai",
+  hash: `hash-${version}`,
 });
 
 export function writeSource(srcRoot: string): string {
