@@ -33,7 +33,7 @@ const runs = (s: ProjectSnapshot): TicketRun[] => [
   },
 ];
 
-runConformance({ manifest, Component }, seed, runs);
+runConformance({ manifest, Component }, seed, { runs });
 
 test("shows keys, progress, blocked reason and opens a ticket", async () => {
   const m = createMockSdk(manifest, { seed });

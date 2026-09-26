@@ -28,7 +28,7 @@ const runs = (s: ProjectSnapshot): TicketRun[] => {
   ];
 };
 
-runConformance({ manifest, Component }, seed, runs);
+runConformance({ manifest, Component }, seed, { runs });
 
 const setup = () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
