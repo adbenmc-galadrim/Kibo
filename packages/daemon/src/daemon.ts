@@ -1,4 +1,4 @@
-import type { Toolchain } from "@kibo/devkit";
+import { osSandbox, type Toolchain } from "@kibo/devkit";
 import { type HostLoad, KiboError, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
@@ -18,6 +18,8 @@ import { listInterfaces } from "./remote/interfaces";
 import { PairingCodes } from "./remote/pairing-codes";
 import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
+import { sandboxRpc } from "./sandbox/rpc";
+import { createSandboxService } from "./sandbox/sandbox-service";
 import { startServer } from "./server";
 import { call, createService } from "./service";
 import { openSessionStore } from "./sessions/session-store";
@@ -82,6 +84,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
   });
+  const sandboxService = createSandboxService({
+    sandbox: osSandbox(),
+    settings: openLocalSettings(store),
+    emit: (message) => service.docs.emit(message),
+  });
   const redactor = opts.redactor ?? createRedactor();
   const integrations = startIntegrations(
     createIntegrationHost({
@@ -108,6 +115,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     ...(opts.build && { build: opts.build }),
     ...(opts.validate && { validate: opts.validate }),
     ...(opts.processCommand && { processCommand: opts.processCommand }),
+    allowUnsandboxed: () => sandboxService.allowUnsandboxed(),
     ...(opts.net && { net: opts.net }),
     integrations: () => integrations.hooks,
     ...(opts.installCli && { installCli: opts.installCli }),
@@ -130,7 +138,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     token,
     sessions: openSessionStore(store.db),
     pairingCodes,
-    extensions: [remoteRpc(remoteAccess, pairingCodes)],
+    extensions: [remoteRpc(remoteAccess, pairingCodes), sandboxRpc(sandboxService)],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
