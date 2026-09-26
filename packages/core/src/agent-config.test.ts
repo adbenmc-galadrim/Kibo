@@ -274,12 +274,64 @@ describe("system profiles", () => {
 
   test("a user profile already named like a system profile keeps working", () => {
     const ws = createWorkspaceDoc();
-    const old = run<AgentProfile>(ws, { method: "createProfile", profile: { ...opus, name: "assistant" } });
+    ws.getMap("profiles").set("legacy", { ...opus, name: "assistant", id: "legacy" });
+    ws.commit();
+    const old = getProfile(ws, "legacy");
     ensureSystemProfiles(ws);
     run(ws, { method: "updateProfile", profileId: old.id, patch: { maxParallel: 3 } });
     run(ws, { method: "updateProfile", profileId: "assistant", patch: { model: "haiku" } });
     expect(getProfile(ws, old.id).maxParallel).toBe(3);
     expect(getProfile(ws, "assistant").model).toBe("haiku");
+  });
+
+  test("the system flag comes from the id, not from the stored value", () => {
+    const ws = createWorkspaceDoc();
+    ensureSystemProfiles(ws);
+    const { system: _system, ...rewritten } = getProfile(ws, "assistant");
+    ws.getMap("profiles").set("assistant", rewritten);
+    ws.getMap("profiles").set("u1", { ...opus, name: "forged", id: "u1", system: true });
+    ws.commit();
+    expect(getProfile(ws, "assistant").system).toBe(true);
+    expect(getProfile(ws, "u1").system).toBe(false);
+    expect(
+      listProfiles(ws)
+        .filter((p) => p.system)
+        .map((p) => p.id),
+    ).toEqual(["assistant", "generateur"]);
+    expect(() => run(ws, { method: "deleteProfile", profileId: "assistant" })).toThrow("INVALID_INPUT");
+  });
+
+  test("a create or a patch cannot set the system flag", () => {
+    const ws = createWorkspaceDoc();
+    const user = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
+    const patch = { maxParallel: 3, system: true };
+    expect(() => run(ws, { method: "updateProfile", profileId: user.id, patch })).toThrow("INVALID_INPUT");
+    expect(getProfile(ws, user.id)).toMatchObject({ system: false, maxParallel: 2 });
+    const profile = { ...opus, name: "sneaky", system: true };
+    expect(() => run(ws, { method: "createProfile", profile })).toThrow("INVALID_INPUT");
+    expect(listProfiles(ws).map((p) => p.name)).toEqual(["opus-dev"]);
+  });
+
+  test("a system profile name is reserved even before the system profiles exist", () => {
+    const ws = createWorkspaceDoc();
+    expect(() => run(ws, { method: "createProfile", profile: { ...opus, name: "generateur" } })).toThrow(
+      "INVALID_INPUT",
+    );
+    const user = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
+    expect(() =>
+      run(ws, { method: "updateProfile", profileId: user.id, patch: { name: "assistant" } }),
+    ).toThrow("INVALID_INPUT");
+    expect(listProfiles(ws).map((p) => p.name)).toEqual(["opus-dev"]);
+  });
+
+  test("a legacy user profile named like a system profile can be renamed away", () => {
+    const ws = createWorkspaceDoc();
+    ws.getMap("profiles").set("old", { ...opus, name: "assistant", id: "old" });
+    ws.commit();
+    ensureSystemProfiles(ws);
+    run(ws, { method: "updateProfile", profileId: "old", patch: { name: "assistant", maxParallel: 3 } });
+    run(ws, { method: "updateProfile", profileId: "old", patch: { name: "legacy" } });
+    expect(getProfile(ws, "old")).toMatchObject({ name: "legacy", maxParallel: 3, system: false });
   });
 
   test("a stored profile written before phase 6 reads as a user profile, enabled", () => {

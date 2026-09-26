@@ -1,119 +1,38 @@
 import {
-  type AgentModel,
-  AgentProfile,
   type ConfigCommand,
   Domain,
   Guideline,
   type GuidelineOwner,
   KiboError,
-  SYSTEM_PROFILE_IDS,
-  type SystemProfileId,
   WorkspaceName,
 } from "@kibo/schema";
-import type { LoroDoc, LoroMap } from "loro-crdt";
+import type { LoroDoc } from "loro-crdt";
+import { assertDeletableProfile, createProfile, getProfile, updateProfile } from "./agent-profiles";
+import {
+  assertUniqueName,
+  byName,
+  domainsMap,
+  entries,
+  guidelinesMap,
+  profilesMap,
+  projectIdOf,
+  requireWorkspace,
+  settingsMap,
+  stored,
+  valid,
+} from "./config-store";
 
-type Parsed<T> = { success: true; data: T } | { success: false; error: { message: string } };
-
-const profilesMap = (doc: LoroDoc) => doc.getMap("profiles");
-const domainsMap = (doc: LoroDoc) => doc.getMap("domains");
-const guidelinesMap = (doc: LoroDoc) => doc.getMap("guidelines");
-const settingsMap = (doc: LoroDoc) => doc.getMap("settings");
-const projectIdOf = (doc: LoroDoc) => doc.getMap("meta").get("id") as string | undefined;
-const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
-
-function valid<T>(result: Parsed<T>): T {
-  if (!result.success) throw new KiboError("INVALID_INPUT", result.error.message);
-  return result.data;
-}
-
-function stored<T>(result: Parsed<T>, what: string): T {
-  if (!result.success) throw new KiboError("STORE_CORRUPT", `${what}: ${result.error.message}`);
-  return result.data;
-}
-
-function entries(map: LoroMap): unknown[] {
-  return Object.values(map.toJSON() as Record<string, unknown>);
-}
-
-function requireWorkspace(doc: LoroDoc): void {
-  if (projectIdOf(doc) !== undefined) {
-    throw new KiboError("INVALID_INPUT", "profiles, domains and shared guidelines live in the workspace");
-  }
-}
+export {
+  assertDeletableProfile,
+  ensureSystemProfiles,
+  getProfile,
+  listProfiles,
+  systemModel,
+} from "./agent-profiles";
 
 export function workspaceName(ws: LoroDoc): string | null {
   const name = settingsMap(ws).get("name");
   return typeof name === "string" ? name : null;
-}
-
-export function listProfiles(ws: LoroDoc): AgentProfile[] {
-  return entries(profilesMap(ws))
-    .map((v) => stored(AgentProfile.safeParse(v), "profile"))
-    .sort(byName);
-}
-
-const SYSTEM_FIELDS: Record<SystemProfileId, Pick<AgentProfile, "name" | "permissionMode">> = {
-  assistant: { name: "assistant", permissionMode: "default" },
-  generateur: { name: "generateur", permissionMode: "acceptEdits" },
-};
-const SYSTEM_EDITABLE = new Set(["model", "enabled"]);
-
-export function systemModel(profiles: AgentProfile[]): AgentModel {
-  return profiles.filter((p) => !p.system).sort(byName)[0]?.model ?? "sonnet";
-}
-
-function systemProfile(
-  id: SystemProfileId,
-  current: AgentProfile | null,
-  profiles: AgentProfile[],
-): AgentProfile {
-  return valid(
-    AgentProfile.safeParse({
-      ...SYSTEM_FIELDS[id],
-      id,
-      system: true,
-      execution: "cli",
-      workspace: "isolated",
-      maxParallel: 1,
-      subagents: [],
-      model: current?.model ?? systemModel(profiles),
-      enabled: current?.enabled ?? true,
-    }),
-  );
-}
-
-const sameProfile = (a: AgentProfile, b: AgentProfile) =>
-  JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
-
-export function ensureSystemProfiles(ws: LoroDoc): boolean {
-  requireWorkspace(ws);
-  const profiles = listProfiles(ws);
-  let changed = false;
-  for (const id of SYSTEM_PROFILE_IDS) {
-    const current = profiles.find((p) => p.id === id) ?? null;
-    const next = systemProfile(id, current, profiles);
-    if (current && sameProfile(current, next)) continue;
-    profilesMap(ws).set(id, next);
-    changed = true;
-  }
-  if (changed) ws.commit();
-  return changed;
-}
-
-function assertEditable(current: AgentProfile, patch: Record<string, unknown>): void {
-  if (!current.system) return;
-  if (Object.keys(patch).some((key) => !SYSTEM_EDITABLE.has(key))) {
-    throw new KiboError(
-      "INVALID_INPUT",
-      "only the model and the enabled flag of a system profile can change",
-    );
-  }
-}
-
-export function getProfile(ws: LoroDoc, id: string): AgentProfile {
-  const found = listProfiles(ws).find((p) => p.id === id);
-  if (!found) throw new KiboError("NOT_FOUND", `profile ${id} not found`);
-  return found;
 }
 
 export function listDomains(ws: LoroDoc): Domain[] {
@@ -159,14 +78,6 @@ function assertOwner(doc: LoroDoc, owner: GuidelineOwner): void {
   if (owner.scope === "profile") getProfile(doc, owner.profileId);
 }
 
-function assertUniqueName(
-  existing: { id: string; name: string }[],
-  item: { id: string; name: string },
-): void {
-  const clash = existing.some((e) => e.id !== item.id && e.name.toLowerCase() === item.name.toLowerCase());
-  if (clash) throw new KiboError("INVALID_INPUT", `name ${item.name} is already used`);
-}
-
 function assertUniquePath(doc: LoroDoc, g: Guideline): void {
   const clash = listGuidelines(doc).some(
     (e) => e.id !== g.id && e.path === g.path && ownerKey(e.owner) === ownerKey(g.owner),
@@ -199,29 +110,13 @@ export function configTarget(cmd: ConfigCommand): string | null {
 
 export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown {
   switch (cmd.method) {
-    case "createProfile": {
-      requireWorkspace(doc);
-      const profile = valid(AgentProfile.safeParse({ ...cmd.profile, id: crypto.randomUUID() }));
-      assertUniqueName(listProfiles(doc), profile);
-      profilesMap(doc).set(profile.id, profile);
-      doc.commit();
-      return profile;
-    }
-    case "updateProfile": {
-      requireWorkspace(doc);
-      const current = getProfile(doc, cmd.profileId);
-      assertEditable(current, cmd.patch);
-      const profile = valid(AgentProfile.safeParse({ ...current, ...cmd.patch, id: current.id }));
-      if (profile.name !== current.name) assertUniqueName(listProfiles(doc), profile);
-      profilesMap(doc).set(profile.id, profile);
-      doc.commit();
-      return profile;
-    }
+    case "createProfile":
+      return createProfile(doc, cmd.profile);
+    case "updateProfile":
+      return updateProfile(doc, cmd.profileId, cmd.patch);
     case "deleteProfile": {
       requireWorkspace(doc);
-      if (getProfile(doc, cmd.profileId).system) {
-        throw new KiboError("INVALID_INPUT", "a system profile cannot be deleted");
-      }
+      assertDeletableProfile(doc, cmd.profileId);
       profilesMap(doc).delete(cmd.profileId);
       dropGuidelines(doc, { scope: "profile", profileId: cmd.profileId });
       doc.commit();
