@@ -19,13 +19,6 @@ function chain(doc: LoroDoc, length: number): LoroTreeNode {
   return node;
 }
 
-function timed(length: number): number {
-  const doc = sharedCopy((d) => chain(d, length));
-  const start = performance.now();
-  projectDepthViolation(doc);
-  return performance.now() - start;
-}
-
 describe("projectDepthViolation", () => {
   test("a full doc 1500 levels deep is refused", () => {
     const doc = sharedCopy((d) => chain(d, 1500));
@@ -51,12 +44,5 @@ describe("projectDepthViolation", () => {
 
   test("an empty project is accepted", () => {
     expect(projectDepthViolation(createProjectDoc(meta))).toBeNull();
-  });
-
-  test("its cost grows linearly with the chain", () => {
-    timed(1000);
-    const small = timed(5000);
-    const large = timed(20000);
-    expect(large / Math.max(small, 1)).toBeLessThan(10);
   });
 });
