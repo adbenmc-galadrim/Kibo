@@ -61,6 +61,8 @@ const matches = (matcher: string | undefined, tool: string) =>
 
 type HookRun = { code: number; stdout: string };
 
+const launcher = process.ppid;
+
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   if (argv.includes("--help")) {
@@ -158,7 +160,10 @@ async function main(): Promise<number> {
     }
     if ("hold" in step) {
       const release = join(stateDir, `${sessionId}.release`);
-      while (!existsSync(release)) await Bun.sleep(25);
+      while (!existsSync(release)) {
+        if (process.ppid !== launcher) process.exit(1);
+        await Bun.sleep(25);
+      }
       rmSync(release);
       return;
     }

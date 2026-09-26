@@ -166,6 +166,41 @@ test("hold keeps the process alive until released", async () => {
   expect((await finish(proc)).code).toBe(0);
 });
 
+test("hold gives up when the process that launched it dies", async () => {
+  const state = tmp();
+  const parentScript = `
+    const child = Bun.spawn([${JSON.stringify(FAKE_CLAUDE)}, "-p", "--output-format", "stream-json", "--verbose", "--session-id", "s9"], {
+      stdin: new TextEncoder().encode("x"),
+      stdout: "ignore",
+      stderr: "ignore",
+      detached: true,
+    });
+    process.stdout.write(String(child.pid));
+    while (!(await Bun.file(${JSON.stringify(join(state, "s9.calls.jsonl"))}).exists())) await Bun.sleep(20);
+    process.exit(0);
+  `;
+  const parent = Bun.spawn(["bun", "-e", parentScript], {
+    env: { ...process.env, KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath("hold"), KIBO_FAKE_CLAUDE_STATE: state },
+    stdout: "pipe",
+  });
+  const pid = Number(await new Response(parent.stdout).text());
+  await parent.exited;
+  const alive = () => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const deadline = Date.now() + 3000;
+  while (alive() && Date.now() < deadline) await Bun.sleep(25);
+  const stillAlive = alive();
+  if (stillAlive) process.kill(pid, "SIGKILL");
+  expect(pid).toBeGreaterThan(0);
+  expect(stillAlive).toBe(false);
+});
+
 test("a hook exiting with 2 on PreToolUse denies the tool", async () => {
   const state = tmp();
   const command = `if grep -q '"tool_name":"Bash"'; then exit 2; fi`;
