@@ -7216,7 +7216,7 @@ git commit -m "feat(ui): vue Changements"
 - Consumes: `WorktreeHandle`, `readDiff`, `hasHead`, `sha1` (tâche 15) ; `hunkPatch` (tâche 4) ; `resolveInWorktree`, `assertNotSymlink` (tâche 3).
 - Produces : `stageFiles(h, paths: string[]): Promise<void>`, `unstageFiles(h, paths: string[]): Promise<void>`, `stageHunk(h, input: { path: string; area: ChangeArea; index: number; header: string }): Promise<void>`, `writeFile(h, path: string, content: string, baseHash: string): Promise<{ hash: string }>`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/index-ops.test.ts` :
 ```ts
@@ -7330,7 +7330,7 @@ test("symlinks, missing files and paths outside the worktree are refused", async
 Run: `bun test packages/daemon/src/code/index-ops.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/code/index-ops.ts` :
 ```ts
@@ -7382,12 +7382,12 @@ export async function writeFile(h: WorktreeHandle, path: string, content: string
 }
 ```
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/index-ops.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/code/index-ops.ts packages/daemon/src/code/index-ops.test.ts
