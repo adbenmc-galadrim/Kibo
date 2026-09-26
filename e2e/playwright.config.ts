@@ -27,6 +27,22 @@ const daemons = [
     scenario: "question",
     drafts: "hello",
   },
+  {
+    name: "integrations-dark",
+    scheme: "dark",
+    port: 4402,
+    spec: /integrations\.spec\.ts/,
+    scenario: "question",
+    integrations: true,
+  },
+  {
+    name: "integrations-light",
+    scheme: "light",
+    port: 4403,
+    spec: /integrations\.spec\.ts/,
+    scenario: "question",
+    integrations: true,
+  },
 ] as const;
 
 export default defineConfig({
@@ -39,7 +55,15 @@ export default defineConfig({
     use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
   })),
   webServer: daemons.map((d) => ({
-    command: `bun serve.ts ${d.port} ${d.scenario} ${"drafts" in d ? d.drafts : ""}`.trim(),
+    command: [
+      "bun serve.ts",
+      d.port,
+      d.scenario,
+      "integrations" in d ? "--integrations" : "",
+      "drafts" in d ? d.drafts : "",
+    ]
+      .filter((part) => part !== "")
+      .join(" "),
     url: `http://127.0.0.1:${d.port}/`,
     reuseExistingServer: false,
     gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
