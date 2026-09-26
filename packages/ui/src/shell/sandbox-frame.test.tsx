@@ -3,6 +3,7 @@ import type { FileRef, HostToFrame, RpcRequest } from "@kibo/schema";
 import { act, render } from "@testing-library/react";
 import type { Host } from "./Host";
 
+const DEADLINE = 30;
 const requests: RpcRequest[] = [];
 const listeners = new Set<(projectId: string | null) => void>();
 
@@ -23,7 +24,7 @@ const unmockedModule = "./SandboxFrame?unmocked";
 const { SandboxFrame }: typeof import("./SandboxFrame") = await import(unmockedModule);
 const { HostProvider }: typeof import("./Host") = await import("./Host");
 
-function mount() {
+function mount(src = "about:blank") {
   const opened: FileRef[] = [];
   const host: Host = {
     openTicket: () => {},
@@ -41,8 +42,9 @@ function mount() {
         config={{ filter: "all" }}
         viewer="adam"
         surface="widget"
-        src="about:blank"
+        src={src}
         title="Mine"
+        readyTimeoutMs={DEADLINE}
       />
     </HostProvider>,
   );
@@ -55,9 +57,41 @@ function mount() {
   };
   const fromFrame = (data: unknown) =>
     act(() => {
-      window.dispatchEvent(new MessageEvent("message", { data, source: win }));
+      window.dispatchEvent(new MessageEvent("message", { data, source: iframe.contentWindow }));
     });
-  return { view, iframe, posted, opened, fromFrame };
+  const navigate = () =>
+    act(() => {
+      iframe.dispatchEvent(new Event("load"));
+    });
+  const nextLoad = () => new Promise((resolve) => iframe.addEventListener("load", resolve, { once: true }));
+  const firstLoad = nextLoad();
+  const loaded = () =>
+    act(async () => {
+      await firstLoad;
+    });
+  const rerender = (nextSrc: string) =>
+    view.rerender(
+      <HostProvider host={host}>
+        <SandboxFrame
+          projectId="p1"
+          instanceId="inst-1"
+          config={{ filter: "all" }}
+          viewer="adam"
+          surface="widget"
+          src={nextSrc}
+          title="Mine"
+          readyTimeoutMs={DEADLINE}
+        />
+      </HostProvider>,
+    );
+  const changeSrc = async (nextSrc: string) => {
+    const load = nextLoad();
+    rerender(nextSrc);
+    await act(async () => {
+      await load;
+    });
+  };
+  return { view, iframe, posted, opened, fromFrame, loaded, navigate, changeSrc };
 }
 
 test("the iframe is sandboxed without same-origin and sends no referrer", () => {
@@ -100,37 +134,113 @@ test("resize, files and change notifications go through the host", () => {
   expect(listeners.size).toBe(0);
 });
 
-test("the initial load keeps the frame in place", () => {
-  const { iframe, view } = mount();
-  act(() => {
-    iframe.dispatchEvent(new Event("load"));
+const pastDeadline = () =>
+  act(async () => {
+    await new Promise((r) => setTimeout(r, DEADLINE * 2));
   });
-  expect(view.container.querySelector("iframe")).toBe(iframe);
-  expect(view.queryByRole("alert")).toBeNull();
-  view.unmount();
-});
 
-test("a second load destroys the frame and offers to reload the page", () => {
+function captureErrors() {
   const errors: unknown[][] = [];
   const original = console.error;
   console.error = (...args: unknown[]) => {
     errors.push(args);
   };
+  const restore = () => {
+    console.error = original;
+  };
+  return { errors, restore };
+}
+
+const ready = { kibo: 1, type: "ready" };
+
+test("ready before the first load keeps the frame", async () => {
+  const { iframe, view, fromFrame, loaded } = mount();
+  fromFrame(ready);
+  await loaded();
+  await pastDeadline();
+  expect(view.container.querySelector("iframe")).toBe(iframe);
+  expect(view.queryByRole("alert")).toBeNull();
+  view.unmount();
+});
+
+test("ready after the first load, within the deadline, keeps the frame", async () => {
+  const { iframe, view, fromFrame, loaded } = mount();
+  await loaded();
+  fromFrame(ready);
+  await pastDeadline();
+  expect(view.container.querySelector("iframe")).toBe(iframe);
+  expect(view.queryByRole("alert")).toBeNull();
+  view.unmount();
+});
+
+test("a navigation before the first load is caught when ready never comes", async () => {
+  const capture = captureErrors();
   try {
-    const { iframe, view, posted, fromFrame } = mount();
-    act(() => {
-      iframe.dispatchEvent(new Event("load"));
-      iframe.dispatchEvent(new Event("load"));
-    });
+    const { view, posted, fromFrame, loaded } = mount();
+    await loaded();
+    expect(view.queryByRole("alert")).toBeNull();
+    await pastDeadline();
     expect(view.container.querySelector("iframe")).toBeNull();
     expect(view.getByRole("alert").textContent).toContain("Recharge la page");
-    expect(errors).toHaveLength(1);
-    expect(String(errors[0]?.[0])).toContain("inst-1");
-    fromFrame({ kibo: 1, type: "ready" });
+    expect(capture.errors).toHaveLength(1);
+    expect(String(capture.errors[0]?.[0])).toContain("inst-1");
+    fromFrame(ready);
     expect(posted).toHaveLength(0);
     expect(listeners.size).toBe(0);
     view.unmount();
   } finally {
-    console.error = original;
+    capture.restore();
+  }
+});
+
+test("a second load destroys the frame and offers to reload the page", async () => {
+  const capture = captureErrors();
+  try {
+    const { view, posted, fromFrame, loaded, navigate } = mount();
+    fromFrame(ready);
+    await loaded();
+    navigate();
+    expect(view.container.querySelector("iframe")).toBeNull();
+    expect(view.getByRole("alert").textContent).toContain("Recharge la page");
+    expect(capture.errors).toHaveLength(1);
+    fromFrame(ready);
+    expect(posted).toHaveLength(1);
+    expect(listeners.size).toBe(0);
+    view.unmount();
+  } finally {
+    capture.restore();
+  }
+});
+
+test("a new src gets its own first load, with its own ready", async () => {
+  const capture = captureErrors();
+  try {
+    const { iframe, view, fromFrame, loaded, changeSrc } = mount("about:blank#a");
+    fromFrame(ready);
+    await loaded();
+    await changeSrc("about:blank#b");
+    fromFrame(ready);
+    await pastDeadline();
+    expect(view.container.querySelector("iframe")).toBe(iframe);
+    await changeSrc("about:blank#c");
+    await pastDeadline();
+    expect(view.container.querySelector("iframe")).toBeNull();
+    expect(capture.errors).toHaveLength(1);
+    view.unmount();
+  } finally {
+    capture.restore();
+  }
+});
+
+test("unmounting while waiting for ready leaves no timer behind", async () => {
+  const capture = captureErrors();
+  try {
+    const { view, loaded } = mount();
+    await loaded();
+    view.unmount();
+    await pastDeadline();
+    expect(capture.errors).toHaveLength(0);
+  } finally {
+    capture.restore();
   }
 });

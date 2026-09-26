@@ -1,10 +1,11 @@
 import type { Surface } from "@kibo/schema";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { useTheme } from "../theme";
 import { createFrameBridge, dispatchCombo, type FrameBridge } from "./frame-bridge";
 import { useHost } from "./Host";
+import { createLoadGuard, type LoadGuard } from "./load-guard";
 
 type Props = {
   projectId: string;
@@ -14,9 +15,19 @@ type Props = {
   surface: Surface;
   src: string;
   title: string;
+  readyTimeoutMs?: number;
 };
 
-export function SandboxFrame({ projectId, instanceId, config, viewer, surface, src, title }: Props) {
+export function SandboxFrame({
+  projectId,
+  instanceId,
+  config,
+  viewer,
+  surface,
+  src,
+  title,
+  readyTimeoutMs = 2000,
+}: Props) {
   const host = useHost();
   const theme = useTheme();
   const ref = useRef<HTMLIFrameElement>(null);
@@ -24,8 +35,28 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
   const latest = useRef({ config, viewer, theme, surface, host });
   latest.current = { config, viewer, theme, surface, host };
   const bridge = useRef<FrameBridge | null>(null);
-  const loadedSrc = useRef<string | null>(null);
+  const guard = useRef<LoadGuard | null>(null);
   const [escaped, setEscaped] = useState(false);
+
+  useLayoutEffect(() => {
+    if (escaped) return;
+    const g = createLoadGuard({
+      readyTimeoutMs,
+      onEscape: (reason) => {
+        console.error(
+          `[kibo-ui] component instance ${instanceId} navigated away from ${src} (${reason}), frame destroyed`,
+        );
+        setEscaped(true);
+      },
+      setTimer: (fn, ms) => window.setTimeout(fn, ms),
+      clearTimer: (id) => window.clearTimeout(id),
+    });
+    guard.current = g;
+    return () => {
+      g.dispose();
+      guard.current = null;
+    };
+  }, [src, instanceId, readyTimeoutMs, escaped]);
 
   useEffect(() => {
     if (escaped) return;
@@ -52,6 +83,7 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
       onOpenView: (id) => latest.current.host.openView(id),
       onKey: (combo) => dispatchCombo(combo),
       onResize: (h) => setHeight(h),
+      onReady: () => guard.current?.ready(),
     });
     bridge.current = b;
     window.addEventListener("message", b.handle);
@@ -70,15 +102,6 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
     bridge.current?.theme(theme);
   }, [theme]);
 
-  const onLoad = () => {
-    if (loadedSrc.current !== src) {
-      loadedSrc.current = src;
-      return;
-    }
-    console.error(`[kibo-ui] component instance ${instanceId} navigated inside its sandbox, frame destroyed`);
-    setEscaped(true);
-  };
-
   if (escaped) {
     return (
       <p role="alert" className="p-4 text-sm text-destructive">
@@ -90,7 +113,7 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
   return (
     <iframe
       ref={ref}
-      onLoad={onLoad}
+      onLoad={() => guard.current?.load()}
       title={title}
       src={src}
       sandbox="allow-scripts"

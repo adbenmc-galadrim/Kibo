@@ -20,6 +20,7 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
     onOpenView: mock((_: string) => {}),
     onKey: mock(() => {}),
     onResize: mock((_: number) => {}),
+    onReady: mock(() => {}),
   };
   const bridge = createFrameBridge({
     frame: () => frame,
@@ -39,8 +40,9 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 test("ready gets the init message, bound to the frame's own instance, posted to any origin", () => {
-  const { posted, frame, from } = setup();
+  const { posted, frame, from, handlers } = setup();
   from(frame, { kibo: 1, type: "ready" });
+  expect(handlers.onReady).toHaveBeenCalledTimes(1);
   expect(posted).toEqual([
     {
       msg: {

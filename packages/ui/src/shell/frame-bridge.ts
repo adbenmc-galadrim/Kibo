@@ -22,6 +22,7 @@ export type BridgeDeps = {
   onOpenView(componentId: string): void;
   onKey(combo: KeyCombo): void;
   onResize(height: number): void;
+  onReady(): void;
   log?: (line: string) => void;
 };
 
@@ -73,6 +74,7 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
   const dispatch = (m: FrameToHost) => {
     switch (m.type) {
       case "ready":
+        deps.onReady();
         send({ kibo: 1, type: "init", ...deps.init() });
         return;
       case "call":
