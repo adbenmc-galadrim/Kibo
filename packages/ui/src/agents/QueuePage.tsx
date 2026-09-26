@@ -34,7 +34,10 @@ function Label({ children }: { children: ReactNode }) {
 
 function Column({ label, aside, children }: { label: string; aside: ReactNode; children: ReactNode }) {
   return (
-    <section aria-label={label} className="grid content-start gap-2 rounded-lg border bg-card p-3">
+    <section
+      aria-label={label}
+      className="grid min-w-0 grid-cols-1 content-start gap-2 rounded-lg border bg-card p-3"
+    >
       <header className="flex items-center gap-2">
         <Bot aria-hidden className="size-4" />
         <span className="font-mono text-sm font-semibold">{label}</span>
@@ -48,7 +51,7 @@ function Column({ label, aside, children }: { label: string; aside: ReactNode; c
 
 function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: number; since?: number }) {
   return (
-    <li className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm">
+    <li className="flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm">
       <RunDot state={run.state} />
       <span className="min-w-0 flex-1 truncate">{text ?? runSubject(run)}</span>
       <span className="font-mono text-xs text-muted-foreground">
@@ -119,7 +122,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                 {running.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{fr.queue.empty}</p>
                 ) : (
-                  <ul className="grid gap-1.5">
+                  <ul className="grid grid-cols-1 gap-1.5">
                     {running.map((r) => (
                       <RunLine key={r.id} run={r} now={now} />
                     ))}
@@ -129,7 +132,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                 {mine.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{fr.queue.empty}</p>
                 ) : (
-                  <ul className="grid gap-1.5">
+                  <ul className="grid grid-cols-1 gap-1.5">
                     {mine.map(({ run, entry }) => (
                       <QueueItem
                         key={run.id}
@@ -167,7 +170,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
             ))}
           <section
             aria-label={fr.queue.waiting}
-            className="grid content-start gap-2 rounded-lg border bg-card p-3"
+            className="grid min-w-0 grid-cols-1 content-start gap-2 rounded-lg border bg-card p-3"
           >
             <header className="flex items-center gap-2 text-sm font-semibold">
               <Bell aria-hidden className="size-4 text-amber-500" />
