@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { FakeScenario, type FakeStep } from "./fake-claude-scenario";
+import { FakeScenario, type FakeStep, scenarioFor } from "./fake-claude-scenario";
 
 const Settings = z.object({
   hooks: z
@@ -96,7 +96,14 @@ async function main(): Promise<number> {
   };
   appendFileSync(callsFile, `${JSON.stringify(call)}\n`);
   const turnIndex = readFileSync(callsFile, "utf8").trim().split("\n").length - 1;
-  const scenario = FakeScenario.parse(JSON.parse(readFileSync(scenarioFile, "utf8")));
+  const chosenFile = join(stateDir, `${sessionId}.scenario`);
+  const chosen = scenarioFor(
+    scenarioFile,
+    prompt,
+    existsSync(chosenFile) ? readFileSync(chosenFile, "utf8") : null,
+  );
+  writeFileSync(chosenFile, chosen);
+  const scenario = FakeScenario.parse(JSON.parse(readFileSync(chosen, "utf8")));
   const turn = scenario.turns[Math.min(turnIndex, scenario.turns.length - 1)];
   if (!turn) return fail("empty scenario", 2);
 

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { HookEventName } from "@kibo/schema";
 import { z } from "zod";
 
@@ -26,6 +26,19 @@ export const FakeTurn = z.object({
 export const FakeScenario = z.object({ turns: z.array(FakeTurn).min(1) });
 export type FakeScenario = z.infer<typeof FakeScenario>;
 
+export const FakeRoutes = z.object({
+  routes: z.array(z.object({ prompt: z.string().min(1), scenario: z.string().min(1) })),
+  fallback: z.string().min(1),
+});
+
+export function scenarioFor(file: string, prompt: string, remembered: string | null): string {
+  if (remembered) return remembered;
+  const routes = FakeRoutes.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  if (!routes.success) return file;
+  const route = routes.data.routes.find((r) => prompt.includes(r.prompt));
+  return resolve(dirname(file), route?.scenario ?? routes.data.fallback);
+}
+
 export const FakeCall = z.object({
   argv: z.array(z.string()),
   cwd: z.string(),
@@ -37,7 +50,7 @@ export type FakeCall = z.infer<typeof FakeCall>;
 
 export const FAKE_CLAUDE = join(import.meta.dir, "fake-claude.ts");
 
-export type FakeScenarioName = "done" | "question" | "hold" | "fail" | "guard";
+export type FakeScenarioName = "done" | "question" | "hold" | "fail" | "guard" | "routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

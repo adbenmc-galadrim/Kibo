@@ -8,13 +8,14 @@ writeFileSync(join(home, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
 const fakeState = join(home, "fake-claude");
 mkdirSync(fakeState);
 const root = resolve(import.meta.dir, "..");
+const [port = "4390", scenario = "question"] = process.argv.slice(2);
 const agents = join(root, "packages/daemon/src/agents");
 const proc = Bun.spawn(
   [
     "bun",
     join(root, "packages/daemon/src/main.ts"),
     "--port",
-    "4390",
+    port,
     "--ui",
     join(root, "packages/ui/dist"),
     "--claude-bin",
@@ -24,7 +25,7 @@ const proc = Bun.spawn(
     env: {
       ...process.env,
       KIBO_HOME: home,
-      KIBO_FAKE_CLAUDE_SCENARIO: join(agents, "scenarios/question.json"),
+      KIBO_FAKE_CLAUDE_SCENARIO: join(agents, "scenarios", `${scenario}.json`),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
     },
     stdout: "inherit",

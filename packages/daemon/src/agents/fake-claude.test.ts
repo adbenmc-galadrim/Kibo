@@ -199,3 +199,15 @@ test("stream-json output requires --verbose", async () => {
   expect(await proc.exited).toBe(1);
   expect(await new Response(proc.stderr).text()).toContain("requires --verbose");
 });
+
+test("a routing file picks the scenario from the prompt and keeps it on resume", async () => {
+  const state = tmp();
+  const env = { KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath("routes"), KIBO_FAKE_CLAUDE_STATE: state };
+  const asking = await finish(start(["--session-id", "s1"], env, "# KIB-14 · Récepteur de hooks"));
+  expect(asking.lines.at(-1)).toMatchObject({ result: "J'attends ta réponse." });
+  const resumed = await finish(start(["--resume", "s1"], env, "Port dynamique"));
+  expect(resumed.lines.at(-1)).toMatchObject({ result: "Port dynamique appliqué." });
+  const held = start(["--session-id", "s2"], env, "# KIB-12 · Schéma Loro");
+  releaseFakeRun(state, "s2");
+  expect((await finish(held)).lines.at(-1)).toMatchObject({ result: "Tests verts." });
+});

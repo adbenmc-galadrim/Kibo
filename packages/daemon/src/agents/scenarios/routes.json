@@ -1,0 +1,4 @@
+{
+  "routes": [{ "prompt": "Récepteur de hooks", "scenario": "question.json" }],
+  "fallback": "hold.json"
+}
