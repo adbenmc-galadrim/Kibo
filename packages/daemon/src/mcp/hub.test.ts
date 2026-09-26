@@ -128,6 +128,14 @@ describe("stdio", () => {
     expect(failure).not.toContain("tok-123456789");
   });
 
+  test("a secret echoed by the server is redacted in call and read results (N50)", async () => {
+    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
+    const call = await hub.call("fake", "echo_env", {}, "inst-1");
+    expect(call).toMatchObject({ isError: true, content: [{ type: "text", text: "invalid token ***" }] });
+    const read = await hub.read("fake", "fake://echo/tok-123456789", "inst-1");
+    expect(text(read)).toBe("fake://echo/***");
+  });
+
   test("a disabled server cannot be called", async () => {
     await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
     await hub.setEnabled("fake", false);

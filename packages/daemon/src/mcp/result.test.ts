@@ -25,7 +25,7 @@ test("keeps text and images only, and truncates at the byte limit", () => {
         { type: "text", text: "tail" },
       ],
     },
-    7,
+    { maxBytes: 7 },
   );
   expect(big).toEqual({ content: [{ type: "text", text: "ééé" }], isError: false, truncated: true });
   expect(toCallResult({ content: [], isError: true }).isError).toBe(true);
@@ -44,4 +44,34 @@ test("resources become text or image content", () => {
     { type: "text", text: '{"a":1}' },
     { type: "image", data: "AAAA", mimeType: "image/png" },
   ]);
+});
+
+test("known secrets are redacted in text content before truncation, images are left as is", () => {
+  const redact = (t: string) => t.split("tok-123456789").join("***");
+  const call = toCallResult(
+    {
+      content: [
+        { type: "text", text: "invalid token tok-123456789" },
+        { type: "image", data: "tok-123456789", mimeType: "image/png" },
+      ],
+      isError: true,
+    },
+    { redact },
+  );
+  expect(call.content).toEqual([
+    { type: "text", text: "invalid token ***" },
+    { type: "image", data: "tok-123456789", mimeType: "image/png" },
+  ]);
+  expect(
+    toCallResult({ content: [{ type: "text", text: "tok-123456789" }] }, { redact, maxBytes: 3 }),
+  ).toEqual({
+    content: [{ type: "text", text: "***" }],
+    isError: false,
+    truncated: false,
+  });
+  const read = toReadResult(
+    { contents: [{ uri: "fake://echo/tok-123456789", text: "fake://echo/tok-123456789" }] },
+    { redact },
+  );
+  expect(read.content).toEqual([{ type: "text", text: "fake://echo/***" }]);
 });

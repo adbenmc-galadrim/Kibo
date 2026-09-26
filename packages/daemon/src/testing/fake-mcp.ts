@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { Socket } from "node:net";
 import { join } from "node:path";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 
@@ -56,6 +56,20 @@ export function buildFakeMcpServer(opts: { omit?: string[] } = {}): McpServer {
         hasToken: Boolean(process.env.FAKE_TOKEN),
       }),
     ),
+  );
+  tool("echo_env", { description: "Echoes its secret in an error" }, async () => ({
+    isError: true,
+    ...text(`invalid token ${process.env.FAKE_TOKEN ?? ""}`),
+  }));
+  tool("log_env", { description: "Writes its secret on stderr" }, async () => {
+    process.stderr.write(`token ${process.env.FAKE_TOKEN ?? ""}\n`);
+    return text("logged");
+  });
+  s.registerResource(
+    "echo",
+    new ResourceTemplate("fake://echo/{value}", { list: undefined }),
+    { mimeType: "text/plain" },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/plain", text: uri.href }] }),
   );
   s.registerResource("items", "fake://items", { mimeType: "application/json" }, async (uri) => ({
     contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(FAKE_ITEMS) }],

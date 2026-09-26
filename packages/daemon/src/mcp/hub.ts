@@ -211,6 +211,7 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
         async (c) =>
           toCallResult(
             await c.client.callTool({ name: tool, arguments: args }, undefined, { timeout: timeoutMs }),
+            { redact: deps.redact },
           ),
         (r) => !r.isError,
       ),
@@ -219,7 +220,8 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
         id,
         "resources/read",
         instanceId,
-        async (c) => toReadResult(await c.client.readResource({ uri }, { timeout: timeoutMs })),
+        async (c) =>
+          toReadResult(await c.client.readResource({ uri }, { timeout: timeoutMs }), { redact: deps.redact }),
         () => true,
       ),
     async setReserved(id, url) {
