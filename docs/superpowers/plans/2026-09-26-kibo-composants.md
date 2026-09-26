@@ -80,7 +80,7 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 14. **`buildComponent(srcDir, toolchain)`** renvoie les fichiers en mémoire (`Record<nom, Uint8Array>`) au lieu d'écrire dans `outDir` : le démon les écrit lui-même dans le magasin.
 15. **Appels d'un backend rattachés à leur invocation** : le message `call` du backend porte `invocation` (l'`id` de l'`invoke` en cours) ; le démon en déduit projet et instance, et refuse (`PERMISSION_DENIED`) un appel dont l'invocation est terminée ou inconnue (un `ctx` conservé après la fin d'une action ne sert plus à rien). Limite résiduelle : pendant deux invocations simultanées du même `id@version`, le code peut choisir l'une ou l'autre ; les deux instances ont les mêmes permissions accordées.
 16. **Imports refusés en défense en profondeur** : en plus des modules, les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis`, `global`, `self`, `module`, `Worker`, `SharedWorker` et `import.meta` sont refusés en position de valeur dans les sources d'un composant non intégré, ainsi que tout attribut d'import (macros Bun). Défense en profondeur seulement (voir décision 24).
-17. **`ui.sandbox.js` servi avec `access-control-allow-origin: *`** : le document sandboxé a une origine opaque et un script `type="module"` se charge en mode CORS ; le fichier ne porte ni secret ni cookie. Aucun autre fichier du port sandbox n'a cet en-tête.
+17. **`ui.sandbox.js` et `ui.css` servis avec `access-control-allow-origin: *`** (relecture sécurité de la tâche 22) : le document sandboxé a une origine opaque (`null`) ; le script `type="module"` se charge en mode CORS, et la feuille de style est liée avec `crossorigin="anonymous"` dans `SANDBOX_INDEX` pour passer elle aussi en mode CORS. Sans cela, `<link rel="stylesheet">` part en mode `no-cors` et `cross-origin-resource-policy: same-site` la bloque (Chromium et WebKit tiennent un initiateur opaque pour inter-site). Ces fichiers ne portent ni secret ni cookie, et une requête CORS depuis une origine opaque n'envoie pas de cookie ; `*` équivaut ici à `null`, que toute iframe sandboxée présente. `index.html` n'a pas cet en-tête (navigation, CORP non appliqué sans COEP).
 18. **`lucide-react` embarqué dans `ui.trusted.js`** (non partagé via `globalThis.__kiboShared`) : icônes sans état ; l'UI n'expose ainsi que React et le SDK, sans gonfler son bundle de toute la bibliothèque d'icônes.
 19. **Messages de statut plutôt que toasts** : l'UI v0.1 n'a pas de `Toaster` (celui de shadcn dépend de `next-themes`) ; `useFlash` affiche un `role="status"` 4 s près de l'action. Si une phase antérieure a monté un `Toaster`, les tâches 24 et 28 l'utilisent à la place.
 20. **Commandes réservées refusées sur la RPC `command`** : `setInstanceComponent` et `setInstanceData` ne sont émises que par le démon (mise à jour, `data.set`) ; `addInstance`, `removeInstance` et `setInstanceConfig` restent permises au shell.
@@ -10706,7 +10706,11 @@ describe("sandbox server", () => {
     expect(await js.text()).toBe("sandbox:pr-queue@0.3.0");
     expect(js.headers.get("content-type")).toContain("javascript");
     expect(js.headers.get("access-control-allow-origin")).toBe("*");
-    expect((await get(s, `/c/pr-queue/0.3.0/${H}/ui.css`)).status).toBe(200);
+    expect(html.headers.get("access-control-allow-origin")).toBeNull();
+    expect(await html.text()).toContain('<link rel="stylesheet" href="ui.css" crossorigin="anonymous">');
+    const css = await get(s, `/c/pr-queue/0.3.0/${H}/ui.css`);
+    expect(css.status).toBe(200);
+    expect(css.headers.get("access-control-allow-origin")).toBe("*");
   });
   test("anything else is a 404, even with a session cookie", async () => {
     const s = start();
@@ -10769,7 +10773,7 @@ export type AssetLookup = (
 ) => { stored: StoredVersion; trust: "trusted" | "sandboxed" } | null;
 
 export const SANDBOX_INDEX =
-  '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css"></head>' +
+  '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css" crossorigin="anonymous"></head>' +
   '<body><div id="root"></div><script type="module" src="ui.sandbox.js"></script></body></html>';
 
 const PATH = /^\/c\/([a-z][a-z0-9-]*(?:\.[a-z0-9-]+)*)\/(\d+\.\d+\.\d+)\/([0-9a-f]{64})\/(index\.html|ui\.sandbox\.js|ui\.css)$/;
@@ -10816,7 +10820,7 @@ export function startSandboxServer(opts: { port: number; uiPort: number; assets:
       const body = name === "index.html" ? SANDBOX_INDEX : found.stored.build[name];
       if (body === undefined) return notFound();
       const headers: Record<string, string> = { ...sandboxHeaders(opts.uiPort), "content-type": TYPES[name] };
-      if (name === "ui.sandbox.js") headers["access-control-allow-origin"] = "*";
+      if (name !== "index.html") headers["access-control-allow-origin"] = "*";
       return new Response(body, { headers });
     },
   });
@@ -10824,7 +10828,7 @@ export function startSandboxServer(opts: { port: number; uiPort: number; assets:
   return { url: `http://127.0.0.1:${port}`, port, stop: () => server.stop(true) };
 }
 ```
-Le cast `file as SandboxFile` est sûr : l'expression régulière n'accepte que ces trois noms. `access-control-allow-origin: *` sur `ui.sandbox.js` seulement : le document sandboxé a une origine opaque (`null`) et un script `type="module"` est chargé en mode CORS ; le fichier ne contient aucun secret (code du composant, déjà approuvé) et la réponse ne porte ni cookie ni identifiant.
+Le cast `file as SandboxFile` est sûr : l'expression régulière n'accepte que ces trois noms. `access-control-allow-origin: *` sur `ui.sandbox.js` et `ui.css`, jamais sur `index.html` (décision 17) : le document sandboxé a une origine opaque (`null`), le script `type="module"` est chargé en mode CORS et la feuille de style aussi grâce à `crossorigin="anonymous"` ; en mode `no-cors`, `cross-origin-resource-policy: same-site` bloquerait `ui.css` (initiateur opaque tenu pour inter-site). Ces fichiers ne contiennent aucun secret (code du composant, déjà approuvé) et la réponse ne porte ni cookie ni identifiant.
 
 `packages/daemon/src/components/daemon-info.ts` :
 ```ts
