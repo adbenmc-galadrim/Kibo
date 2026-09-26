@@ -11,6 +11,7 @@ import { listDrafts } from "./drafts";
 import { createEventLog, ensureEventsTable } from "./events";
 import { createGate } from "./gate";
 import { createGateHandlers } from "./gate-handlers";
+import { createInflight } from "./inflight";
 import { createJobScheduler, type JobSchedulerDeps } from "./jobs";
 import type { ComponentRequest } from "./methods";
 import type { NetProxyOptions } from "./net-proxy";
@@ -48,20 +49,10 @@ export type ComponentsService = {
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
 const DEFAULT_DRAIN_MS = 5_000;
 
-async function drain(inflight: Set<Promise<unknown>>, drainMs: number): Promise<void> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<void>((resolve) => {
-    timer = setTimeout(resolve, drainMs);
-  });
-  await Promise.race([Promise.allSettled([...inflight]), deadline]);
-  clearTimeout(timer);
-  if (inflight.size > 0) console.error(`[kibo-daemon] ${inflight.size} requests still running at shutdown`);
-}
-
 export function createComponentsService(deps: ComponentsDeps): ComponentsService {
   const { docs } = deps;
   const shutdown = new AbortController();
-  const inflight = new Set<Promise<unknown>>();
+  const inflight = createInflight();
   let stopped: Promise<void> | null = null;
   ensureEventsTable(deps.db);
   ensureSettingsTable(deps.db);
@@ -120,8 +111,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
 
   const backends = createBackends({
     source: (ref) => registry.source(ref),
-    verify: (ref) => registry.verify(ref),
-    onCall: (projectId, instanceId, call) => gate.call(projectId, instanceId, call),
+    verify: (ref) => inflight.track(registry.verify(ref)),
+    onCall: (projectId, instanceId, call) => inflight.track(gate.call(projectId, instanceId, call)),
     ...(deps.processCommand && { processCommand: deps.processCommand }),
   });
 
@@ -230,16 +221,14 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
 
   const handle = (req: ComponentRequest): Promise<unknown> => {
     if (stopped) return Promise.reject(new KiboError("INTERNAL", "the daemon is stopping"));
-    const tracked = dispatch(req).finally(() => inflight.delete(tracked));
-    inflight.add(tracked);
-    return tracked;
+    return inflight.track(dispatch(req));
   };
 
   const stopAll = async () => {
     jobs.stop();
     backends.stopAll();
     shutdown.abort();
-    await drain(inflight, deps.drainMs ?? DEFAULT_DRAIN_MS);
+    await inflight.drain(deps.drainMs ?? DEFAULT_DRAIN_MS);
     notes.close();
     events.flush();
   };

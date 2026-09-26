@@ -77,14 +77,20 @@ export function writeDraft(home: string, version: string, opts: DraftOptions = {
   if (migrations !== undefined) writeFileSync(join(dir, "migrations.ts"), migrations);
 }
 
-export type Timers = { started: string[] } & Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
+export type Timers = { started: string[]; ticks: (() => void)[] } & Pick<
+  JobSchedulerDeps,
+  "setInterval" | "clearInterval"
+>;
 
 export function fakeTimers(): Timers {
   const started: string[] = [];
+  const ticks: (() => void)[] = [];
   return {
     started,
-    setInterval: (_fn, ms) => {
+    ticks,
+    setInterval: (fn, ms) => {
       started.push(String(ms));
+      ticks.push(fn);
       return started.length;
     },
     clearInterval: () => {},

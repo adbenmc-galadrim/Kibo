@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -136,6 +136,32 @@ describe("backend lifecycle", () => {
     const deadline = Date.now() + 5_000;
     while (timers.started.length === 0 && Date.now() < deadline) await Bun.sleep(20);
     expect(timers.started).toEqual(["300000"]);
+  });
+
+  test("stopping waits for a store check started by a job", async () => {
+    await h.stop();
+    const timers = fakeTimers();
+    await start({ timers });
+    const { projectId, pageId } = await createProject(h);
+    writeDraft(home, "0.1.0", { server: COUNTER });
+    const { hash } = await publishAndApprove(h, "trusted");
+    writeDraft(home, "0.2.0", { server: COUNTER });
+    await publishAndApprove(h, "trusted");
+    const inst = await addInstance(h, projectId, pageId, "hello@0.1.0");
+    const deadline = Date.now() + 5_000;
+    while (timers.ticks.length === 0 && Date.now() < deadline) await Bun.sleep(20);
+    const [tick] = timers.ticks;
+    await h.rpc({ method: "updateInstance", projectId, instanceId: inst.id, to: "0.2.0" });
+    tamper(hash, "server.js");
+    const errors = spyOn(console, "error").mockImplementation(() => undefined);
+    tick?.();
+    await h.stop();
+    expect(h.components.assets("hello", "0.1.0", hash)).toBeNull();
+    await Bun.sleep(100);
+    const logged = errors.mock.calls.flat().map(String);
+    errors.mockRestore();
+    expect(tick).toBeDefined();
+    expect(logged.filter((m) => m.includes("closed"))).toEqual([]);
   });
 
   test("a failed migration keeps its message under MIGRATION_FAILED", async () => {
