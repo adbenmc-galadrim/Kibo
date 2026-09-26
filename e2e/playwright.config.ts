@@ -43,6 +43,8 @@ const daemons = [
     scenario: "question",
     integrations: true,
   },
+  { name: "ia-dark", scheme: "dark", port: 4404, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
+  { name: "ia-light", scheme: "light", port: 4405, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
 ] as const;
 
 export default defineConfig({
