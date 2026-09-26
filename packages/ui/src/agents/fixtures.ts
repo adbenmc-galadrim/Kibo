@@ -62,6 +62,8 @@ export const profilesFixture: AgentProfile[] = [
     workspace: "worktree",
     maxParallel: 2,
     subagents: ["sonnet", "haiku"],
+    enabled: true,
+    system: false,
   },
   {
     id: "sonnet",
@@ -72,6 +74,8 @@ export const profilesFixture: AgentProfile[] = [
     workspace: "isolated",
     maxParallel: 3,
     subagents: [],
+    enabled: true,
+    system: false,
   },
   {
     id: "haiku",
@@ -82,7 +86,27 @@ export const profilesFixture: AgentProfile[] = [
     workspace: "worktree",
     maxParallel: 1,
     subagents: [],
+    enabled: true,
+    system: false,
   },
+];
+
+const systemProfile = (id: string, permissionMode: AgentProfile["permissionMode"]): AgentProfile => ({
+  id,
+  name: id,
+  model: "opus",
+  execution: "cli",
+  permissionMode,
+  workspace: "isolated",
+  maxParallel: 1,
+  subagents: [],
+  enabled: true,
+  system: true,
+});
+
+export const systemProfilesFixture: AgentProfile[] = [
+  systemProfile("assistant", "default"),
+  systemProfile("generateur", "acceptEdits"),
 ];
 
 export function agentsFixture(): AgentsState {

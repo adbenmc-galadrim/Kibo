@@ -135,6 +135,7 @@ test("a new profile is created with its guidelines", async () => {
           workspace: "isolated",
           maxParallel: 2,
           subagents: ["sonnet"],
+          enabled: true,
         },
       },
     },
@@ -167,6 +168,7 @@ test("a new profile starts with safe defaults", async () => {
         workspace: "worktree",
         maxParallel: 1,
         subagents: [],
+        enabled: true,
       },
     },
   });
@@ -192,8 +194,8 @@ test("editing saves the whole profile; deleting a busy profile is refused", asyn
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
   expect(sheet().getByText("Profil opus-dev")).toBeTruthy();
   await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  const { id, ...input } = profilesFixture[0] ?? { id: "" };
-  expect(id).toBe("opus");
+  const { id, system, ...input } = profilesFixture[0] ?? { id: "", system: false };
+  expect([id, system]).toEqual(["opus", false]);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(calls).toEqual([
     { method: "config", command: { method: "updateProfile", profileId: "opus", patch: input } },

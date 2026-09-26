@@ -19,6 +19,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import type { GuidelineDraft } from "./GuidelineRow";
 import { ProfileGuidelines } from "./ProfileGuidelines";
+import { SystemProfileFields } from "./SystemProfileFields";
 
 type Props = {
   profile: AgentProfile | null;
@@ -76,6 +77,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
       workspace,
       maxParallel: Number(maxParallel),
       subagents,
+      enabled: profile?.enabled ?? true,
     });
     if (!input.success) {
       setError(ProfileName.safeParse(name.trim()).success ? fr.profile.failed : fr.profile.invalidName);
@@ -121,6 +123,19 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
     }
     onClose();
   };
+
+  if (profile?.system) {
+    return (
+      <Sheet open onOpenChange={(o) => !o && onClose()}>
+        <SheetContent className="w-[520px] overflow-y-auto sm:max-w-[520px]">
+          <SheetHeader>
+            <SheetTitle>{fr.profile.editTitle(profile.name)}</SheetTitle>
+          </SheetHeader>
+          <SystemProfileFields profile={profile} onSaved={onClose} />
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>

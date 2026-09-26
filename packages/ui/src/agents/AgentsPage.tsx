@@ -57,6 +57,11 @@ function ProfileCard({
             {fr.agentsPage.modelLine(fr.agents.modelNames[profile.model])}
           </span>
         </div>
+        {profile.system && (
+          <Badge variant="secondary" className="text-3xs">
+            {fr.agentsPage.system}
+          </Badge>
+        )}
         {active > 0 && (
           <Badge variant="secondary" className="text-3xs bg-blue-500/15 text-blue-600 dark:text-blue-400">
             {fr.agentsPage.active(active)}

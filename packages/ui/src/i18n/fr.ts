@@ -284,6 +284,7 @@ export const fr = {
       result: "Résultat",
     },
     noRuns: "Aucun run pour l'instant.",
+    system: "Système",
   },
   profile: {
     createTitle: "Nouveau profil d'agent",
@@ -314,6 +315,8 @@ export const fr = {
     inUse: "Ce profil a des runs en cours ou en file.",
     invalidName: "Nom invalide : minuscules, chiffres et tirets.",
     invalidPath: "Chemin invalide : minuscules, chiffres et tirets, terminé par .md.",
+    systemHelp: "Profil utilisé par Kibo pour l'IA dans le produit.",
+    enabled: "Activé",
   },
   models: { opus: "Claude Opus", sonnet: "Claude Sonnet", haiku: "Claude Haiku" },
   modelsShort: { opus: "Opus", sonnet: "Sonnet", haiku: "Haiku" },

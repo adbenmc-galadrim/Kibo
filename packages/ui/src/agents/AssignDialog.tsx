@@ -251,7 +251,8 @@ export function AssignDialog({
 }: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
   if (!config) return null;
-  if (config.profiles.length === 0) {
+  const assignable = config.profiles.filter((p) => !p.system);
+  if (assignable.length === 0) {
     return <Notice title={fr.assign.launchTitle} text={fr.assign.noProfile} onClose={onClose} />;
   }
   if (!ticketId && !hasOpenTicket(project)) {
@@ -262,7 +263,7 @@ export function AssignDialog({
       project={project}
       ticketId={ticketId}
       baseBranch={baseBranch}
-      profiles={config.profiles}
+      profiles={assignable}
       domains={config.domains}
       onClose={onClose}
     />

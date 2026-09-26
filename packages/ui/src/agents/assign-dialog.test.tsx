@@ -2,7 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type AssignPreview, KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { configFixture, kiboProject } from "./fixtures";
+import { configFixture, kiboProject, systemProfilesFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 const QUEUED: AssignPreview = {
@@ -135,4 +135,19 @@ test("without an open ticket the drawer launch explains what to do", () => {
   expect(screen.getByText("Aucun ticket ouvert : crée d'abord un ticket à confier à un agent.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
   expect(calls).toEqual([]);
+});
+
+test("system profiles are never offered for a ticket", () => {
+  const config = configFixture();
+  const withSystem = { ...config, profiles: [...systemProfilesFixture, ...config.profiles] };
+  const view = render(
+    <AssignDialog project={kiboProject()} ticketId="t14" config={withSystem} onClose={() => {}} />,
+  );
+  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toBe(
+    "opus-dev · Claude Opus 5.5 · worktree par ticket",
+  );
+  view.unmount();
+  const onlySystem = { ...config, profiles: systemProfilesFixture };
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={onlySystem} onClose={() => {}} />);
+  expect(screen.getByText("Crée d'abord un profil d'agent dans la page Agents.")).toBeTruthy();
 });
