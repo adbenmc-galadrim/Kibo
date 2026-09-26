@@ -19,7 +19,7 @@ import { fr } from "./fr";
 import { GraphCanvas } from "./GraphCanvas";
 import { layoutGraph } from "./layout";
 
-const TOGGLE = "h-7 aria-pressed:bg-accent dark:aria-pressed:bg-accent";
+const TOGGLE = "h-7 text-xs aria-pressed:bg-accent dark:aria-pressed:bg-accent";
 
 type ToolbarProps = {
   tickets: TicketView[];
@@ -33,7 +33,7 @@ function FilterMenu({ tickets, filter, setFilter }: Omit<ToolbarProps, "showCrit
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline" className="h-7">
+        <Button size="sm" variant="outline" className="h-7 text-xs">
           <Filter aria-hidden="true" />
           {fr.filter}
         </Button>
