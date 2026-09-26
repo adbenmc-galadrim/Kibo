@@ -60,7 +60,7 @@ export function GuidelineRow({ guideline, onSave, onRemove }: Props) {
             id={`${id}-content`}
             value={content}
             rows={6}
-            className="border-0 bg-muted/50 font-mono text-xs shadow-none dark:bg-muted/30"
+            className="resize-none border-0 bg-muted/50 font-mono text-xs shadow-none md:text-xs dark:bg-muted/30"
             onChange={(e) => setContent(e.target.value)}
           />
           <Button

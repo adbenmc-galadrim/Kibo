@@ -141,12 +141,12 @@ export function DomainsPage({ config, projects }: Props) {
   return (
     <div className="grid min-h-full grid-cols-[14rem_1fr]">
       <SettingsNav active="domains" />
-      <div className="grid content-start gap-4 p-8">
+      <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-2xl font-semibold">{fr.domains.title}</h1>
           <p className="text-sm text-muted-foreground">{fr.domains.subtitle}</p>
         </div>
-        <div className="grid min-h-[32rem] grid-cols-[17rem_1fr] gap-4">
+        <div className="grid min-h-[32rem] flex-1 grid-cols-[17rem_1fr] gap-4">
           <nav
             aria-label={fr.domains.levels}
             className="grid content-start gap-1 rounded-lg border bg-card p-2"
@@ -250,7 +250,7 @@ export function DomainsPage({ config, projects }: Props) {
                       aria-label={fr.domains.content(selected.path)}
                       value={content}
                       onChange={(e) => setDrafts((d) => ({ ...d, [selected.id]: e.target.value }))}
-                      className="min-h-[18rem] flex-1 rounded-none border-none bg-transparent px-0 font-mono text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
+                      className="min-h-[18rem] flex-1 resize-none rounded-none border-none bg-transparent px-0 font-mono text-xs leading-5 shadow-none focus-visible:ring-0 md:text-xs dark:bg-transparent"
                     />
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => void save()}>
