@@ -182,7 +182,32 @@ async function githubScenario(): Promise<string> {
   return project.id;
 }
 
-async function mcpScenario(): Promise<void> {
+const McpText = z.object({ content: z.array(z.object({ type: z.literal("text"), text: z.string() })) });
+
+async function mcpSourceScenario(projectId: string): Promise<void> {
+  const command = (c: Extract<RpcRequest, { method: "command" }>["command"]) =>
+    ok({ method: "command", projectId, command: c });
+  const page = z
+    .object({ id: z.string() })
+    .parse(await command({ method: "addPage", title: "M", kind: "view" }));
+  const instance = z.object({ id: z.string() }).parse(
+    await command({
+      method: "addInstance",
+      pageId: page.id,
+      component: "mcp-source@1.0.0",
+      config: { server: "fake", mode: "tool", tool: "env", args: "{}", itemsPointer: "/items" },
+    }),
+  );
+  const env = await ok({
+    method: "componentCall",
+    projectId,
+    instanceId: instance.id,
+    call: { kind: "mcp.call", server: "fake", tool: "env", args: {} },
+  });
+  expect(McpText.parse(env).content[0]?.text).toContain('"hasToken":true');
+}
+
+async function mcpScenario(projectId: string): Promise<void> {
   const stdio = {
     transport: "stdio" as const,
     id: "fake",
@@ -208,11 +233,12 @@ async function mcpScenario(): Promise<void> {
   });
   expect((await ok({ method: "testMcpServer", id: "remote" })).state).toBe("connected");
   await ok({ method: "listMcpServers" });
+  await mcpSourceScenario(projectId);
 }
 
 test("after a full scenario, no secret appears anywhere", async () => {
   const projectId = await githubScenario();
-  await mcpScenario();
+  await mcpScenario(projectId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });
 
@@ -223,13 +249,20 @@ test("after a full scenario, no secret appears anywhere", async () => {
   events.close();
   await daemon.stop();
   stopped = true;
+  const tables = sqliteDumps(home);
+  const table = (name: string) => tables.find(([where]) => where.startsWith(`table ${name} in `))?.[1] ?? "";
+  expect(table("mcp_calls")).toContain('"tool":"env"');
+  expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
+  expect(table("integration_events")).not.toBe("[]");
+  expect(table("component_events")).not.toBe("");
+  expect(tables.some(([where]) => where.startsWith("loro doc "))).toBe(true);
   const leaks = leaksIn(
     [
       ["rpc responses", responses.join("\n")],
       ["console and std streams", output.lines().join("\n")],
       ["websocket events", events.messages.join("\n")],
       ["project snapshot", JSON.stringify(snapshot)],
-      ...sqliteDumps(home),
+      ...tables,
       ...rawFiles(home),
     ],
     SECRETS,
