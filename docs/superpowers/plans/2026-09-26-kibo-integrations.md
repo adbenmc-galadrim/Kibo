@@ -3178,7 +3178,7 @@ git commit -m "feat(core): références externes et liaisons"
   - `settleAfterPush(i: { base: SyncedFields; pushed: SyncedField[]; returned: SyncedFields; local: SyncedFields; canApply?: CanApply }): SyncPlan`
   - `canonicalFields(f: SyncedFields): string` (JSON à clés triées, entrée du hash anti-écho)
 
-- [ ] **Step 1: Tests (échouent)**
+- [x] **Step 1: Tests (échouent)**
 
 `packages/core/src/sync-plan.test.ts` :
 
@@ -3398,7 +3398,7 @@ Le modèle du test normalise le distant comme l'adaptateur (Task 13 : titre sans
 
 Run: `bun test packages/core/src/sync-plan.test.ts` — Expected: FAIL (module absent).
 
-- [ ] **Step 2: Implémenter `packages/core/src/sync-plan.ts`**
+- [x] **Step 2: Implémenter `packages/core/src/sync-plan.ts`**
 
 ```ts
 import {
@@ -3548,12 +3548,12 @@ export function canonicalFields(f: SyncedFields): string {
 
 `projectLocal` garde la base pour un statut local égal à celui de la base (N38). `closed` suit `statusId` (`followsBaseStatus`, N37), ce qui suppose `statusId` avant `closed` dans `SYNCED_FIELDS` (ordre figé par le test « the base is not mutated ») ; une issue rouverte avec un statut refusé rouvre le ticket en `todo` (`reopensWithRefusedStatus`, N37). Ajouter `export * from "./sync-plan";` à `packages/core/src/index.ts`.
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/core/src/sync-plan.test.ts`
 Expected: PASS (dont 2 000 exécutions de la propriété). Un contre-exemple de fast-check est un bug de `projectLocal` ou de `settleAfterPush`, jamais du test : le corriger avant de continuer.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/core/src/sync-plan.ts packages/core/src/sync-plan.test.ts packages/core/src/index.ts
