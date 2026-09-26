@@ -5,7 +5,32 @@ import { KiboError } from "@kibo/schema";
 import { bunCommand } from "./bun-command";
 
 export type SandboxPolicy = { read: string[]; write: string[]; exec: string[]; cwd: string };
-export type OsSandbox = { ready(): Promise<void>; wrap(argv: string[], policy: SandboxPolicy): string[] };
+export type SandboxKind = "bwrap" | "sandbox-exec";
+export type SandboxDiagnosis = {
+  kind: SandboxKind | null;
+  available: boolean;
+  reason: string | null;
+  fix: string | null;
+};
+export type SandboxProbeRun = (
+  argv: string[],
+  opts: { cwd: string; env: Record<string, string> },
+) => Promise<{ code: number; stderr: string }>;
+export type OsSandbox = {
+  ready(): Promise<void>;
+  diagnose(): Promise<SandboxDiagnosis>;
+  wrap(argv: string[], policy: SandboxPolicy): string[];
+};
+export type OsSandboxOptions = {
+  platform?: NodeJS.Platform;
+  which?: (bin: string) => string | null;
+  exists?: (path: string) => boolean;
+  run?: SandboxProbeRun;
+};
+
+export const BWRAP_FIX_INSTALL = "sudo apt install bubblewrap";
+export const BWRAP_FIX_USERNS = "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0";
+const USERNS_REFUSED = /namespace|uid map|Operation not permitted|Permission denied/i;
 
 const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const MACOS_SYSTEM = [
@@ -71,22 +96,43 @@ export function bwrapArgv(bwrap: string, policy: SandboxPolicy, argv: string[]):
   ];
 }
 
-export function createOsSandbox(
-  opts: { platform?: NodeJS.Platform; which?: (bin: string) => string | null } = {},
-): OsSandbox {
+const spawnProbe: SandboxProbeRun = async (argv, { cwd, env }) => {
+  const proc = Bun.spawn(argv, { cwd, env, stdout: "ignore", stderr: "pipe" });
+  const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+  return { code, stderr };
+};
+
+const kindOf = (platform: NodeJS.Platform): SandboxKind | null =>
+  platform === "darwin" ? "sandbox-exec" : platform === "linux" ? "bwrap" : null;
+
+function fixFor(kind: SandboxKind, reason: string): string | null {
+  if (kind !== "bwrap") return null;
+  if (reason.includes("not installed")) return BWRAP_FIX_INSTALL;
+  return USERNS_REFUSED.test(reason) ? BWRAP_FIX_USERNS : null;
+}
+
+function missingReason(platform: NodeJS.Platform): string {
+  if (platform === "darwin") return "sandbox-exec is missing";
+  if (platform === "linux") return "bubblewrap (bwrap) is not installed";
+  return `no OS sandbox on ${platform}`;
+}
+
+export function createOsSandbox(opts: OsSandboxOptions = {}): OsSandbox {
   const platform = opts.platform ?? process.platform;
   const which = opts.which ?? Bun.which;
+  const exists = opts.exists ?? existsSync;
+  const run = opts.run ?? spawnProbe;
   let probe: Promise<void> | null = null;
 
   const wrap = (argv: string[], policy: SandboxPolicy): string[] => {
     const [head, ...rest] = argv;
     if (!head) throw new KiboError("INTERNAL", "empty sandboxed command");
     const command = [real(head), ...rest];
-    if (platform === "darwin" && existsSync(SANDBOX_EXEC))
+    if (platform === "darwin" && exists(SANDBOX_EXEC))
       return [SANDBOX_EXEC, "-p", macosProfile(policy), ...command];
     const bwrap = platform === "linux" ? which("bwrap") : null;
     if (bwrap) return bwrapArgv(bwrap, policy, command);
-    throw new KiboError("SANDBOX_UNAVAILABLE", `no OS sandbox on ${platform}`);
+    throw new KiboError("SANDBOX_UNAVAILABLE", missingReason(platform));
   };
 
   const check = async (): Promise<void> => {
@@ -99,8 +145,7 @@ export function createOsSandbox(
         exec: bun.argv.slice(0, 1),
         cwd,
       });
-      const proc = Bun.spawn(argv, { cwd, env: bun.env, stdout: "ignore", stderr: "pipe" });
-      const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+      const { code, stderr } = await run(argv, { cwd, env: bun.env });
       if (code !== 0)
         throw new KiboError(
           "SANDBOX_UNAVAILABLE",
@@ -111,16 +156,27 @@ export function createOsSandbox(
     }
   };
 
-  return {
-    wrap,
-    ready() {
-      probe ??= check().catch((e: unknown) => {
-        probe = null;
-        throw e;
-      });
-      return probe;
-    },
+  const ready = (): Promise<void> => {
+    probe ??= check().catch((e: unknown) => {
+      probe = null;
+      throw e;
+    });
+    return probe;
   };
+
+  const diagnose = async (): Promise<SandboxDiagnosis> => {
+    const kind = kindOf(platform);
+    if (kind === null) return { kind, available: false, reason: missingReason(platform), fix: null };
+    try {
+      await ready();
+      return { kind, available: true, reason: null, fix: null };
+    } catch (e) {
+      if (!(e instanceof KiboError) || e.code !== "SANDBOX_UNAVAILABLE") throw e;
+      return { kind, available: false, reason: e.detail, fix: fixFor(kind, e.detail) };
+    }
+  };
+
+  return { wrap, ready, diagnose };
 }
 
 let shared: OsSandbox | null = null;

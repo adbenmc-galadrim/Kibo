@@ -2,7 +2,14 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { bwrapArgv, createOsSandbox, macosProfile } from "./os-sandbox";
+import {
+  BWRAP_FIX_INSTALL,
+  BWRAP_FIX_USERNS,
+  bwrapArgv,
+  createOsSandbox,
+  macosProfile,
+  type SandboxProbeRun,
+} from "./os-sandbox";
 
 const made: string[] = [];
 afterAll(() => {
@@ -101,3 +108,90 @@ console.log(JSON.stringify(out));
     listener.stop(true);
   }
 }, 30_000);
+
+const ok: SandboxProbeRun = async () => ({ code: 0, stderr: "" });
+const failing =
+  (stderr: string): SandboxProbeRun =>
+  async () => ({ code: 1, stderr });
+const never: SandboxProbeRun = async () => {
+  throw new Error("the probe must not run");
+};
+
+describe("diagnosis", () => {
+  test("Linux without bubblewrap says so and proposes the install command, without probing", async () => {
+    const sandbox = createOsSandbox({ platform: "linux", which: () => null, run: never });
+    expect(await sandbox.diagnose()).toEqual({
+      kind: "bwrap",
+      available: false,
+      reason: "bubblewrap (bwrap) is not installed",
+      fix: BWRAP_FIX_INSTALL,
+    });
+  });
+  test("Linux with bubblewrap but no user namespaces proposes the sysctl command", async () => {
+    const sandbox = createOsSandbox({
+      platform: "linux",
+      which: () => "/usr/bin/bwrap",
+      run: failing("bwrap: setting up uid map: Permission denied"),
+    });
+    const diagnosis = await sandbox.diagnose();
+    expect(diagnosis).toMatchObject({ kind: "bwrap", available: false, fix: BWRAP_FIX_USERNS });
+    expect(diagnosis.reason).toContain("setting up uid map: Permission denied");
+  });
+  test("Linux with a working bubblewrap is available", async () => {
+    const sandbox = createOsSandbox({ platform: "linux", which: () => "/usr/bin/bwrap", run: ok });
+    expect(await sandbox.diagnose()).toEqual({ kind: "bwrap", available: true, reason: null, fix: null });
+  });
+  test("macOS with sandbox-exec is available", async () => {
+    const sandbox = createOsSandbox({ platform: "darwin", exists: () => true, run: ok });
+    expect(await sandbox.diagnose()).toEqual({
+      kind: "sandbox-exec",
+      available: true,
+      reason: null,
+      fix: null,
+    });
+  });
+  test("macOS where sandbox-exec refuses to start has a reason but no command to propose", async () => {
+    const sandbox = createOsSandbox({
+      platform: "darwin",
+      exists: () => true,
+      run: failing("sandbox-exec: sandbox_apply: Operation not permitted"),
+    });
+    const diagnosis = await sandbox.diagnose();
+    expect(diagnosis).toMatchObject({ kind: "sandbox-exec", available: false, fix: null });
+    expect(diagnosis.reason).toContain("Operation not permitted");
+  });
+  test("macOS without sandbox-exec is reported", async () => {
+    const sandbox = createOsSandbox({ platform: "darwin", exists: () => false, run: never });
+    expect(await sandbox.diagnose()).toEqual({
+      kind: "sandbox-exec",
+      available: false,
+      reason: "sandbox-exec is missing",
+      fix: null,
+    });
+  });
+  test("another platform has no mechanism", async () => {
+    expect(await createOsSandbox({ platform: "win32", run: never }).diagnose()).toEqual({
+      kind: null,
+      available: false,
+      reason: "no OS sandbox on win32",
+      fix: null,
+    });
+  });
+  test("an unexpected probe failure is not turned into a diagnosis", async () => {
+    const run: SandboxProbeRun = async () => {
+      throw new Error("spawn exploded");
+    };
+    const sandbox = createOsSandbox({ platform: "linux", which: () => "/usr/bin/bwrap", run });
+    await expect(sandbox.diagnose()).rejects.toThrow("spawn exploded");
+  });
+});
+
+test("on this machine the diagnosis matches the platform and is available", async () => {
+  const expected = process.platform === "darwin" ? "sandbox-exec" : "bwrap";
+  expect(await createOsSandbox().diagnose()).toEqual({
+    kind: expected,
+    available: true,
+    reason: null,
+    fix: null,
+  });
+});

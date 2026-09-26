@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { FR_DEVKIT } from "./fr";
-import { osSandbox } from "./os-sandbox";
+import { type OsSandbox, osSandbox } from "./os-sandbox";
 import { scaffold } from "./scaffold";
 import { copyFixture, DEV_TOOLCHAIN } from "./test-kit";
 import { readValidationStamp, validateComponent } from "./validate";
@@ -177,10 +177,16 @@ describe("validateComponent", () => {
     expect(existsSync(join(dir, ".kibo", "validation.json"))).toBe(true);
   }, 240_000);
   test("without an OS sandbox the component tests are not run", async () => {
-    const unavailable = {
+    const unavailable: OsSandbox = {
       ready: async () => {
         throw new KiboError("SANDBOX_UNAVAILABLE", "bwrap is not installed");
       },
+      diagnose: async () => ({
+        kind: "bwrap",
+        available: false,
+        reason: "bwrap is not installed",
+        fix: null,
+      }),
       wrap: () => [],
     };
     const report = await validateComponent(fixture("hello"), { ...opts, sandbox: unavailable });
@@ -192,9 +198,13 @@ describe("validateComponent", () => {
     const dir = fixture("hello");
     symlinkSync(join(dir, "ui.tsx"), join(dir, "linked.tsx"));
     const calls: string[] = [];
-    const spy = {
+    const spy: OsSandbox = {
       ready: async () => {
         calls.push("ready");
+      },
+      diagnose: async () => {
+        calls.push("diagnose");
+        return { kind: "bwrap", available: true, reason: null, fix: null };
       },
       wrap: () => {
         calls.push("wrap");

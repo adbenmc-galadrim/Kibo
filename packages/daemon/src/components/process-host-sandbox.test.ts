@@ -2,6 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { OsSandbox } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
 import { TEST_MANIFEST } from "./backend-code.test-helper";
 import { createProcessHost } from "./process-host";
@@ -65,10 +66,16 @@ test("a sandboxed backend cannot escape through a constructed import", async () 
 }, 30_000);
 
 test("without an OS sandbox the backend does not start", async () => {
-  const unavailable = {
+  const unavailable: OsSandbox = {
     ready: async () => {
       throw new KiboError("SANDBOX_UNAVAILABLE", "bwrap is not installed");
     },
+    diagnose: async () => ({
+      kind: "bwrap",
+      available: false,
+      reason: "bwrap is not installed",
+      fix: null,
+    }),
     wrap: () => [],
   };
   const host = createProcessHost({
