@@ -8528,7 +8528,7 @@ Maquette : page 24. Navigation des paramètres à gauche (seul « Domaines & gui
   - `SettingsNav({ active: "domains" })`
   - `previewBlocks(markdown: string): PreviewBlock[]` avec `PreviewBlock = { kind: "h1" | "h2" | "li" | "p"; text: string }`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ui/src/settings/domains-page.test.tsx` :
 ```tsx
@@ -8680,12 +8680,12 @@ test("settings navigation marks the current page and disables the others", () =>
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/settings`
 Expected: FAIL (`Cannot find module "./preview"`).
 
-- [ ] **Step 3: Aperçu et navigation**
+- [x] **Step 3: Aperçu et navigation**
 
 `packages/ui/src/settings/preview.ts` :
 ```ts
@@ -8748,7 +8748,7 @@ export function SettingsNav({ active }: { active: "domains" }) {
 }
 ```
 
-- [ ] **Step 4: Page Domaines & guidelines**
+- [x] **Step 4: Page Domaines & guidelines**
 
 `packages/ui/src/settings/DomainsPage.tsx` :
 ```tsx
@@ -9069,12 +9069,12 @@ export function DomainsPage({ config, projects }: Props) {
 }
 ```
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/ui/src/settings && bun run format && bun run check && bun run typecheck`
 Expected: PASS. `bun run format` remet en forme les longues lignes JSX de l'extrait.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ui/src/settings
