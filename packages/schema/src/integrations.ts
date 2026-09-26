@@ -260,7 +260,13 @@ export type BindingState = {
   imported: number;
   resumeAt: number | null;
 };
-export type OutboxError = { outboxId: number; ticketId: string; code: KiboErrorCode; message: string };
+export type OutboxError = {
+  outboxId: number;
+  ticketId: string;
+  op: "create" | "update";
+  code: KiboErrorCode;
+  message: string;
+};
 export type SyncState = {
   connected: boolean;
   bindings: BindingState[];

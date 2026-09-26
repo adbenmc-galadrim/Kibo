@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import { useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { failureOf, syncErrorText } from "../../lib/sync-error-text";
 import { useSyncState } from "../../state/use-sync-state";
 import { DropSendDialog } from "./DropSendDialog";
 
@@ -16,12 +17,13 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
   const failure = state?.errors.find((e) => e.ticketId === ticket.id) ?? null;
   const pendingRefs = ticket.externalRefs.filter((r) => r.kind === "github_issue" && r.number === null);
   const pending = state?.pending.includes(ticket.id) ?? false;
+  const failureRepo = ticket.externalRefs.find((r) => r.kind === "github_issue")?.repo ?? "";
   const run = async (action: () => Promise<unknown>) => {
     try {
       await action();
       setActionError(null);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
+      setActionError(syncErrorText(failureOf(e), { repo: failureRepo, resumeAt: null }));
     }
     await reload();
   };
@@ -51,7 +53,8 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
         className="mx-4 grid gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs"
       >
         <p>
-          <span className="font-medium">{t.syncError}</span> {failure.message}
+          <span className="font-medium">{t.syncError}</span>{" "}
+          {syncErrorText(failure, { repo: failureRepo, resumeAt: null })}
         </p>
         {actionError && <p className="text-destructive">{actionError}</p>}
         <div className="flex gap-2">
@@ -68,6 +71,7 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
         </div>
         <DropSendDialog
           open={confirmDrop}
+          op={failure.op}
           canUnlink={pendingRefs.length > 0}
           onOpenChange={setConfirmDrop}
           onConfirm={(unlink) => void drop(failure.outboxId, unlink)}

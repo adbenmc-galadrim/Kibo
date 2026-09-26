@@ -4,10 +4,11 @@ import { ListTodo, RefreshCw, Unlink } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { failureOf, hourMinute, type SyncFailure, syncErrorText } from "../lib/sync-error-text";
+import { navigateTo } from "../route";
 import { useSyncState } from "../state/use-sync-state";
 
 const t = fr.integrations.instance;
-const time = (ms: number) => new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
 function RemovedBinding() {
   return (
@@ -19,20 +20,38 @@ function RemovedBinding() {
   );
 }
 
+function Disconnected() {
+  return (
+    <>
+      <span className="shrink-0 text-xs font-medium text-destructive">{t.disconnected}</span>
+      <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">{t.disconnectedHelp}</span>
+      <Button
+        variant="link"
+        size="sm"
+        className="h-auto shrink-0 p-0 text-xs underline"
+        onClick={() => navigateTo({ kind: "screen", screen: "integrations" })}
+      >
+        {fr.integrations.source.openSettings}
+      </Button>
+    </>
+  );
+}
+
 function SyncedHeader({ projectId, binding }: { projectId: string; binding: Binding }) {
   const { state } = useSyncState(projectId);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SyncFailure | null>(null);
   const b = state?.bindings.find((x) => x.bindingId === binding.id);
+  const connected = state?.connected ?? true;
   const running = busy || b?.running === true;
-  const problem = error ?? b?.lastError?.message ?? null;
+  const problem = error ?? b?.lastError ?? null;
   const sync = async () => {
     setBusy(true);
     try {
       await client.rpc({ method: "syncBinding", projectId, bindingId: binding.id });
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(failureOf(e));
     } finally {
       setBusy(false);
     }
@@ -41,15 +60,27 @@ function SyncedHeader({ projectId, binding }: { projectId: string; binding: Bind
     <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3 text-sm">
       <ListTodo aria-hidden className="size-4 shrink-0 text-muted-foreground" />
       <span className="shrink-0 font-medium">{t.header(binding.config.repo)}</span>
-      <span className="shrink-0 text-xs text-muted-foreground">
-        {b?.lastPullAt ? t.lastSync(time(b.lastPullAt)) : t.never}
-      </span>
-      {problem && (
-        <span role="alert" className="min-w-0 truncate text-xs text-destructive">
-          {problem}
-        </span>
+      {connected ? (
+        <>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {b?.lastPullAt ? t.lastSync(hourMinute(b.lastPullAt)) : t.never}
+          </span>
+          {problem && (
+            <span role="alert" className="min-w-0 truncate text-xs text-destructive">
+              {syncErrorText(problem, { repo: binding.config.repo, resumeAt: b?.resumeAt ?? null })}
+            </span>
+          )}
+        </>
+      ) : (
+        <Disconnected />
       )}
-      <Button size="sm" variant="ghost" className="ml-auto" disabled={running} onClick={() => void sync()}>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="ml-auto"
+        disabled={running || !connected}
+        onClick={() => void sync()}
+      >
         <RefreshCw aria-hidden className={running ? "size-3.5 animate-spin" : "size-3.5"} />
         {running ? t.syncing : t.sync}
       </Button>

@@ -1,5 +1,11 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { Instance, ProjectSnapshot, RpcRequest, SyncState } from "@kibo/schema";
+import {
+  type Instance,
+  KiboError,
+  type ProjectSnapshot,
+  type RpcRequest,
+  type SyncState,
+} from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -33,6 +39,19 @@ beforeEach(() => {
   calls.length = 0;
   syncState = { connected: true, bindings: [], pending: [], errors: [] };
   syncFailure = null;
+  location.hash = "";
+});
+
+const bindingState = (patch: Partial<SyncState["bindings"][number]>): SyncState["bindings"][number] => ({
+  bindingId: "b1",
+  repo: "adam/kibo",
+  runner: "adam",
+  running: false,
+  lastPullAt: new Date(2026, 8, 26, 10, 3).getTime(),
+  lastError: null,
+  imported: 3,
+  resumeAt: null,
+  ...patch,
 });
 
 test("a synced instance shows its repo and syncs on demand", async () => {
@@ -61,11 +80,31 @@ test("the last sync time and a failed sync are shown", async () => {
     pending: [],
     errors: [],
   };
-  syncFailure = new Error("GitHub injoignable");
+  syncFailure = new KiboError("REMOTE_UNAVAILABLE", "github 502");
   render(<SourceHeader project={project} instance={instance} />);
   expect(await screen.findByText("Synchronisé à 10:03")).toBeDefined();
   await userEvent.setup().click(screen.getByRole("button", { name: "Synchroniser" }));
-  expect((await screen.findByRole("alert")).textContent).toBe("GitHub injoignable");
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "GitHub est injoignable pour le moment, nouvel essai automatique.",
+  );
+});
+
+test("a rate limit shows the local resume time, never the raw error", async () => {
+  const resumeAt = new Date(2026, 8, 26, 16, 8).getTime();
+  const lastError = { code: "RATE_LIMITED" as const, message: "github paused until 2026-09-26T14:08:50Z" };
+  syncState = { connected: true, bindings: [bindingState({ lastError, resumeAt })], pending: [], errors: [] };
+  render(<SourceHeader project={project} instance={instance} />);
+  expect((await screen.findByRole("alert")).textContent).toBe("Limite GitHub atteinte, reprise à 16:08");
+});
+
+test("a disconnected GitHub disables the sync and points to the integrations", async () => {
+  syncState = { connected: false, bindings: [bindingState({})], pending: [], errors: [] };
+  render(<SourceHeader project={project} instance={instance} />);
+  expect(await screen.findByText("GitHub déconnecté")).toBeDefined();
+  expect(screen.queryByText("Synchronisé à 10:03")).toBeNull();
+  expect(screen.getByRole("button", { name: "Synchroniser" }).hasAttribute("disabled")).toBe(true);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir les intégrations" }));
+  expect(location.hash).toBe("#/settings/integrations");
 });
 
 test("a removed binding is stated plainly", () => {

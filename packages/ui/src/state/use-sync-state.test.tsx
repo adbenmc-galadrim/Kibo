@@ -34,7 +34,10 @@ test("the sync state reloads on its project's sync events only", async () => {
   expect(requests).toHaveLength(1);
   await emit({ type: "sync", projectId: "p1", bindingId: "b", imported: 3, running: true });
   await emit({ type: "integrations" });
+  await emit({ type: "sync.outbox", projectId: "p2", bindingId: "b" });
   expect(requests).toHaveLength(3);
+  await emit({ type: "sync.outbox", projectId: "p1", bindingId: "b" });
+  expect(requests).toHaveLength(4);
   unmount();
   expect(listeners.size).toBe(0);
 });

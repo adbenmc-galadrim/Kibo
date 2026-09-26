@@ -213,7 +213,8 @@ export function createSyncStore(db: Database) {
     errors: (p: string): OutboxError[] =>
       q.errors.all({ p }).flatMap((r) => {
         const e = readError(r.last_error);
-        return e ? [{ outboxId: r.id, ticketId: r.ticket_id, code: e.code, message: e.message }] : [];
+        const op = r.op === "create" ? "create" : "update";
+        return e ? [{ outboxId: r.id, ticketId: r.ticket_id, op, code: e.code, message: e.message }] : [];
       }),
     cursor(b: string): CursorRow | null {
       const r = q.cursor.get({ b });

@@ -18,7 +18,8 @@ export function useSyncState(projectId: string): SyncStateView {
   useEffect(() => {
     void reload();
     return client.subscribeIntegrations((e) => {
-      if (e.type === "integrations" || (e.type === "sync" && e.projectId === projectId)) void reload();
+      if (e.type === "integrations") void reload();
+      else if ((e.type === "sync" || e.type === "sync.outbox") && e.projectId === projectId) void reload();
     });
   }, [projectId, reload]);
   return { state, error, reload };

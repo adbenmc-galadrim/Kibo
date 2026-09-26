@@ -15,7 +15,13 @@ const replies: Record<string, (req: RpcRequest) => unknown> = {
     bindings: [],
     pending: ["t1"],
     errors: [
-      { outboxId: 7, ticketId: "t1", code: "REMOTE_REJECTED", message: "github 422: Validation Failed" },
+      {
+        outboxId: 7,
+        ticketId: "t1",
+        op: "create",
+        code: "REMOTE_REJECTED",
+        message: "github 422: Validation Failed",
+      },
     ],
   }),
   listCiRuns: () => [
@@ -163,7 +169,7 @@ test("a broken issue link shows a badge instead of a link", async () => {
 test("a sync failure can be retried", async () => {
   await show();
   const alert = screen.getByRole("alert");
-  expect(alert.textContent).toContain("github 422: Validation Failed");
+  expect(alert.textContent).toContain("GitHub a répondu 422, données refusées par GitHub.");
   await userEvent.setup().click(within(alert).getByRole("button", { name: "Réessayer" }));
   expect(calls).toContainEqual({ method: "resolveOutbox", projectId: "p1", outboxId: 7, action: "retry" });
 });

@@ -36,7 +36,7 @@ test("one pending row per ticket, FIFO head, manual errors block the binding", (
   });
   expect(s.head("b", 1_000)).toBeNull();
   expect(s.errors("p")).toEqual([
-    { outboxId: head.id, ticketId: "t1", code: "REMOTE_REJECTED", message: "422" },
+    { outboxId: head.id, ticketId: "t1", op: "create", code: "REMOTE_REJECTED", message: "422" },
   ]);
   expect(s.pending("p")).toEqual(["t1", "t2"]);
 });

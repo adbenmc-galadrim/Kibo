@@ -17,12 +17,13 @@ const t = fr.integrations.sheet;
 
 type Props = {
   open: boolean;
+  op: "create" | "update";
   canUnlink: boolean;
   onOpenChange(open: boolean): void;
   onConfirm(unlink: boolean): void;
 };
 
-export function DropSendDialog({ open, canUnlink, onOpenChange, onConfirm }: Props) {
+export function DropSendDialog({ open, op, canUnlink, onOpenChange, onConfirm }: Props) {
   const [unlink, setUnlink] = useState(true);
   const unlinkId = useId();
   return (
@@ -30,7 +31,7 @@ export function DropSendDialog({ open, canUnlink, onOpenChange, onConfirm }: Pro
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t.dropTitle}</AlertDialogTitle>
-          <AlertDialogDescription>{t.dropHelp}</AlertDialogDescription>
+          <AlertDialogDescription>{op === "create" ? t.dropHelp : t.dropUpdateHelp}</AlertDialogDescription>
         </AlertDialogHeader>
         {canUnlink && (
           <div className="flex items-center gap-2">
