@@ -2593,6 +2593,8 @@ git commit -m "feat(daemon): journal append-only des runs"
 
 ### Task 9: Récepteur de hooks, jeton de run et `kibo-hook`
 
+> **Décision du chef d'équipe (prime sur le code ci-dessous) :** fail-closed inconditionnel. `KIBO_HOOK_FAIL_CLOSED` et le paramètre `failClosed` n'existent pas : `kibo-hook` refuse tout `PreToolUse` qui n'a pas pu joindre le démon, pour tous les runs. Adapter le code et les tests de la tâche en conséquence.
+
 **Files:**
 - Create: `packages/daemon/src/agents/hook-payload.ts`, `packages/daemon/src/agents/run-token.ts`, `packages/daemon/src/agents/hook-route.ts`, `packages/daemon/src/agents/ask-mcp.ts`, `packages/daemon/src/agents/hook-launcher.ts`, `packages/daemon/src/agents/kibo-hook.ts`, et leurs tests `hook-payload.test.ts`, `run-token.test.ts`, `hook-route.test.ts`, `ask-mcp.test.ts`, `hook-launcher.test.ts`, `kibo-hook.test.ts`
 - Modify: `apps/desktop/scripts/build-sidecar.ts`, `apps/desktop/src-tauri/tauri.conf.json`
@@ -5270,6 +5272,8 @@ git commit -m "feat(ui): fondations des écrans agents"
 
 ---
 ### Task 15: Runner Claude Code headless
+
+> **Décision du chef d'équipe (prime sur le code ci-dessous) :** fail-closed inconditionnel. `KIBO_HOOK_FAIL_CLOSED` et le paramètre `failClosed` n'existent pas : `kibo-hook` refuse tout `PreToolUse` qui n'a pas pu joindre le démon, pour tous les runs. Adapter le code et les tests de la tâche en conséquence.
 
 **Files:**
 - Create: `packages/daemon/src/agents/runner.ts`, `packages/daemon/src/agents/transcript.ts`, `packages/daemon/src/agents/runner.test.ts`, `packages/daemon/src/agents/transcript.test.ts`
@@ -9080,6 +9084,8 @@ git commit -m "feat(ui): domaines et guidelines"
 ---
 
 ### Task 22: Orchestrateur (file, lancement, hooks, réponses)
+
+> **Décision du chef d'équipe (prime sur le code ci-dessous) :** fail-closed inconditionnel. `KIBO_HOOK_FAIL_CLOSED` et le paramètre `failClosed` n'existent pas : `kibo-hook` refuse tout `PreToolUse` qui n'a pas pu joindre le démon, pour tous les runs. Adapter le code et les tests de la tâche en conséquence.
 
 Assemble les briques des vagues 2 et 3 : à chaque passage, `planAdmissions` décide des admissions ; un run admis matérialise son contexte (`~/.kibo/runs/<id>/`), prépare son espace de travail, reçoit un jeton neuf (en mémoire, haché dans `runs.db`) et lance `claude -p`. Les hooks arrivent par `hooks` (branché sur `POST /hooks/<runId>` en Task 23). La fin du processus donne `done`, `waiting_input` (question posée) ou `failed`. Un run peut aussi exister **sans ticket** (`submit`, pour les profils système de la phase 6) : dossier de travail fourni par l'appelant, arguments et variables supplémentaires, reprise d'une session existante, garde-fou `PreToolUse` déterministe et capture de la ligne de résultat finale. Tout est testé avec le faux `claude` et un vrai serveur HTTP local, sans tokens.
 
