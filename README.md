@@ -4,7 +4,18 @@ Centre de contrôle de projets de code, local-first, piloté par l'IA.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
 (Kanban, tickets, graphe de dépendances, notes…) que l'utilisateur peut créer lui-même.
 
-État : MVP livré (`v0.1`, rapport dans `docs/superpowers/rapports/`). Lancer : `bun install`, `bun run --cwd packages/ui build`, puis `bun packages/daemon/src/main.ts --ui packages/ui/dist` et ouvrir l'URL `KIBO_READY` affichée.
+État : MVP livré (`v0.1`), phase 2 · Agents en cours. Rapports dans `docs/superpowers/rapports/`.
+
+## Lancer
+
+```sh
+bun install
+bun run start
+```
+
+`bun run start` construit l'UI puis lance le démon : ouvrir l'URL `KIBO_READY` affichée.
+Développement de l'UI : `bun packages/daemon/src/main.ts --dev` puis `bun run --cwd packages/ui dev` (Vite sur `http://localhost:5173`, appairage avec le jeton de `~/.kibo/token`).
+Tests : `bun test packages components`, `bun run check`, `bun run typecheck`, E2E : `bun run --cwd e2e test`.
 
 ## Où trouver quoi
 
