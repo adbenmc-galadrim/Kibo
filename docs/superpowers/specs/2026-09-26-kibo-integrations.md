@@ -309,6 +309,7 @@ Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.
 - **N45 · Hôtes du secret `github`** (décision du chef d'équipe) : le secret réservé `github` n'est injecté que vers `api.github.com` et `uploads.github.com`. Un manifeste qui déclare `github` pour un autre hôte est refusé à la validation (`INVALID_MANIFEST`), et `secretFor` le refuse aussi à l'exécution (défense en profondeur). Raison : le secret peut être le jeton de `gh`, aux portées larges.
 - **N46 · Trousseau indisponible** (décision du chef d'équipe) : en mode jeton personnel, la sonde `github` renvoie `error` avec `SECRET_STORE_UNAVAILABLE` quand `availability()` échoue ; le délai borné du trousseau et le regroupement des appels en cours garantissent que `listIntegrations` ne se fige jamais.
 - **N47 · Quota des appels MCP** (décision du chef d'équipe) : en plus du quota générique `call`, un quota `mcpPerMinute` de 30 appels par minute et par instance ; au-delà, `RATE_LIMITED`, refus journalisé. Raison : un appel MCP peut durer 60 s et lancer un processus stdio.
+- **N48 · Serveur MCP en boucle locale** (décision du chef d'équipe) : un serveur MCP HTTP en boucle locale (`127.0.0.1`, `[::1]`, `localhost`) est joint sans épinglage, mais aucune redirection n'est suivie ; `localhost` n'est accepté que s'il résout vers une adresse de boucle locale. Les arguments et variables d'un serveur stdio refusent les caractères de contrôle et bidi, et les noms `PATH`, `HOME`, `LANG` (environnement minimal non surchargeable).
 
 ## Comptes et secrets réels
 
