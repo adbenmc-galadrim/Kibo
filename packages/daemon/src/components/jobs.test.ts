@@ -69,8 +69,10 @@ test("a job is not started again while its previous run is still going", async (
   expect(runs).toBe(1);
   expect(logs.some((l) => l.includes("skipped"))).toBe(true);
   finish.resolve();
-  await new Promise((r) => setTimeout(r, 0));
-  ticks[0]?.();
+  while (runs < 2) {
+    ticks[0]?.();
+    await Promise.resolve();
+  }
   expect(runs).toBe(2);
   scheduler.stop();
 });
@@ -78,6 +80,7 @@ test("a job is not started again while its previous run is still going", async (
 test("a failed run is logged and the job stays scheduled", async () => {
   const ticks: (() => void)[] = [];
   const logs: string[] = [];
+  const logged = Promise.withResolvers<void>();
   const scheduler = createJobScheduler({
     targets: () => [{ projectId: "p", instanceId: "a", ref: "x@1.0.0", config: {} }],
     describe: async () => ({ actions: [], jobs: [{ name: "sync", everyMinutes: 1 }] }),
@@ -89,11 +92,14 @@ test("a failed run is logged and the job stays scheduled", async () => {
       return ticks.length;
     },
     clearInterval: () => undefined,
-    log: (line) => logs.push(line),
+    log: (line) => {
+      logs.push(line);
+      logged.resolve();
+    },
   });
   await scheduler.refresh();
   ticks[0]?.();
-  await new Promise((r) => setTimeout(r, 0));
+  await logged.promise;
   expect(logs).toEqual(["job a:sync of x@1.0.0 failed: COMPONENT_CRASHED: boom"]);
   expect(scheduler.scheduled()).toEqual(["a:sync"]);
   scheduler.stop();
