@@ -98,5 +98,5 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 - Les hooks de l'utilisateur (`~/.claude/settings.json`) s'exécutent aussi : un hook bloquant de l'utilisateur peut bloquer un agent.
 - Mode `plan` et outil MCP de question : à vérifier sur un vrai run ; en cas de refus, la question passe par `permission_denials` et le run finit en `done` sans question.
 - `tauri-plugin-notification` sous Linux dépend de `notify-rust` / D-Bus : sans service de notification, l'affichage échoue (journalisé), le reste fonctionne.
-- Seuil CPU en CI : un runner chargé peut retenir un run en file ; les tests E2E montent les seuils à 100 %.
+- Seuil CPU en CI : un runner chargé peut retenir un run en file, même avec des seuils à 100 % (une charge saturée les atteint). Les tests E2E lancent donc le démon avec une charge fixe, `--host-load 62,70` (CPU et RAM en %, valeurs de l'écran 17), à la place de la mesure réelle ; les seuils gardent leurs valeurs par défaut.
 - La détection du binaire compilé (`/$bunfs`) pour trouver `kibo-hook` à côté du démon est vérifiée par le smoke Tauri.

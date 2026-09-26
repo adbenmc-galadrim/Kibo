@@ -72,3 +72,12 @@ export function createLoadSampler(deps: LoadDeps = defaults()): () => HostLoad {
 export function readHostInfo(): HostInfo {
   return { cores: cpus().length, ramGb: Math.round(totalmem() / 1024 ** 3) };
 }
+
+export function fixedLoadSampler(spec: string): () => HostLoad {
+  const match = /^(\d{1,3}),(\d{1,3})$/.exec(spec);
+  const load = match ? { cpu: Number(match[1]), ram: Number(match[2]) } : null;
+  if (!load || load.cpu > 100 || load.ram > 100) {
+    throw new KiboError("INVALID_INPUT", `host load must be "cpu,ram" in percent, got "${spec}"`);
+  }
+  return () => ({ ...load });
+}

@@ -1,7 +1,7 @@
 import { userInfo } from "node:os";
 import { parseArgs } from "node:util";
 import { defaultHookLauncher } from "./agents/hook-launcher";
-import { createLoadSampler, readHostInfo } from "./agents/host-load";
+import { createLoadSampler, fixedLoadSampler, readHostInfo } from "./agents/host-load";
 import { stdoutNotifier } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
@@ -19,6 +19,7 @@ const { values } = parseArgs({
     ui: { type: "string" },
     dev: { type: "boolean", default: false },
     "claude-bin": { type: "string" },
+    "host-load": { type: "string" },
   },
 });
 const home = kiboHome();
@@ -51,7 +52,7 @@ const orchestrator = createOrchestrator({
   claudeBin: values["claude-bin"] ?? null,
   hook: defaultHookLauncher(),
   baseUrl: () => server.url,
-  sampler: createLoadSampler(),
+  sampler: values["host-load"] === undefined ? createLoadSampler() : fixedLoadSampler(values["host-load"]),
   hostInfo: readHostInfo(),
   notify: native ? stdoutNotifier((line) => process.stdout.write(line)) : () => {},
 });

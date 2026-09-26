@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { createLoadSampler, parseMeminfo, parseMemoryPressure, readHostInfo } from "./host-load";
+import {
+  createLoadSampler,
+  fixedLoadSampler,
+  parseMeminfo,
+  parseMemoryPressure,
+  readHostInfo,
+} from "./host-load";
 
 const LINUX_MEMINFO = [
   "MemTotal:       16318412 kB",
@@ -74,4 +80,16 @@ test("the real sampler and host info work on this machine", () => {
   const info = readHostInfo();
   expect(info.cores).toBeGreaterThan(0);
   expect(info.ramGb).toBeGreaterThan(0);
+});
+
+test("a fixed load replaces the measure, for end-to-end tests", () => {
+  const sample = fixedLoadSampler("62,70");
+  expect(sample()).toEqual({ cpu: 62, ram: 70 });
+  expect(sample()).toEqual({ cpu: 62, ram: 70 });
+});
+
+test("a malformed fixed load is refused", () => {
+  for (const spec of ["", "62", "62,", "62,70,1", "a,b", "101,50", "50,101", "-1,50", "6.2,70"]) {
+    expect(() => fixedLoadSampler(spec)).toThrow("INVALID_INPUT");
+  }
 });
