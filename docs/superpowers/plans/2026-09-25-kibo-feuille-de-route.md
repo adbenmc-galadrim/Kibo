@@ -58,7 +58,7 @@ Voir, modifier et livrer le code d'un worktree sans quitter Kibo.
 
 - Versioning semver avec « mettre à jour partout / nouvelle version » et migrations ; sandbox (iframe + processus séparé) avec permissions vérifiées par le démon ; empreinte qui redemande la confiance.
 - `kibo component new` ; composants Graphe de dépendances (chemin critique) et Notes (Markdown, Obsidian).
-- Entités déclarées par un composant dans son espace de nommage (`acme.bug`, spec §5), lisibles par les autres composants via le SDK.
+- Entités déclarées par un composant (`acme.bug`, spec §5) : reportées après v1.0 (spec composants §14).
 
 **Sortie** : un composant tiers sandboxé qui tente une action non déclarée est bloqué (test de conformité) ; écrans 6, 10, 11, 29, 30.
 
