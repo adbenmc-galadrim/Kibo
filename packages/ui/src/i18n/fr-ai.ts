@@ -61,6 +61,7 @@ export const frAi = {
     back: "Retour",
     startSuggested: "Pages conseillées",
     partial: "Projet créé, mais certaines pages n'ont pas pu être ajoutées.",
+    partialPages: (failed: string[]) => `Pages créées en partie, échec pour : ${failed.join(", ")}.`,
     openProject: "Ouvrir le projet",
     suggestPages: "Suggérer des pages",
     suggestPagesHelp: "Pages de départ selon ton rôle",

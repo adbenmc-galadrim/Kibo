@@ -23,7 +23,8 @@ export function StarterDialog({ projectId, open, onOpenChange }: Props) {
   const available = useMemo(() => new Set(refs.keys()), [refs]);
   const [selection, setSelection] = useState(() => toSelection(presetFor("dev", available)));
   const [busy, setBusy] = useState(false);
-  const [partial, setPartial] = useState(false);
+  const [failed, setFailed] = useState<string[]>([]);
+  const partial = failed.length > 0;
   const pages = chosenPages(selection);
   const submit = async () => {
     setBusy(true);
@@ -31,7 +32,7 @@ export function StarterDialog({ projectId, open, onOpenChange }: Props) {
     setBusy(false);
     if (failures.length === 0) return onOpenChange(false);
     console.error(failures);
-    setPartial(true);
+    setFailed(failures.map((f) => f.title));
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,7 +43,7 @@ export function StarterDialog({ projectId, open, onOpenChange }: Props) {
         </DialogHeader>
         {partial ? (
           <Alert>
-            <AlertDescription>{fr.onboarding.partial}</AlertDescription>
+            <AlertDescription>{fr.onboarding.partialPages(failed)}</AlertDescription>
           </Alert>
         ) : (
           <RoleStep available={available} titles={titles} selection={selection} onSelection={setSelection} />

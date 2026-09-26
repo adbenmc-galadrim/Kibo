@@ -19,6 +19,7 @@ import { chosenPages, presetFor, toSelection } from "../onboarding/presets";
 import { RoleStep } from "../onboarding/RoleStep";
 import { navigate } from "../route";
 import { NewProjectForm, type ProjectFields, type ProjectStart } from "./NewProjectForm";
+import { projectErrorMessage } from "./project-error";
 
 const COLORS = ["#14B8A6", "#6366F1", "#EC4899", "#84CC16", "#D946EF", "#64748B"];
 
@@ -40,18 +41,19 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
   const [step, setStep] = useState<1 | 2>(focusFolder ? 2 : 1);
   const [role, setRole] = useState<Role>("dev");
   const [selection, setSelection] = useState(() => toSelection(presetFor("dev", available)));
-  const [start, setStart] = useState<ProjectStart>(focusFolder ? "suggested" : "empty");
+  const [start, setStart] = useState<ProjectStart>("empty");
+  const [skipped, setSkipped] = useState(false);
   const [fields, setFields] = useState<ProjectFields>({ name: "", key: null, folder: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
-  const pages = chosenPages(selection);
+  const pages = skipped ? [] : chosenPages(selection);
   const effectiveKey = fields.key ?? suggestProjectKey(fields.name);
   const valid = fields.name.trim().length > 0 && ProjectKey.safeParse(effectiveKey).success;
 
-  const toForm = (next: typeof selection) => {
-    setSelection(next);
-    setStart(chosenPages(next).length > 0 ? "suggested" : "empty");
+  const toForm = (skip: boolean) => {
+    setSkipped(skip);
+    setStart(!skip && chosenPages(selection).length > 0 ? "suggested" : "empty");
     setStep(2);
   };
   const openProject = (projectId: string) => {
@@ -74,7 +76,7 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
       console.error(failures);
       setCreated(p.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : fr.common.error);
+      setError(projectErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -112,14 +114,10 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
               <DialogFooter className="items-center sm:justify-between">
                 <span className="text-xs text-muted-foreground">{fr.onboarding.step(1)}</span>
                 <div className="flex flex-col-reverse gap-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => toForm(selection.map((p) => ({ ...p, checked: false })))}
-                  >
+                  <Button type="button" variant="ghost" onClick={() => toForm(true)}>
                     {fr.onboarding.skip}
                   </Button>
-                  <Button type="button" onClick={() => toForm(selection)}>
+                  <Button type="button" onClick={() => toForm(false)}>
                     {fr.onboarding.continue}
                   </Button>
                 </div>

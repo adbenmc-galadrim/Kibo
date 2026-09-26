@@ -1,3 +1,4 @@
+import type { KiboErrorCode } from "@kibo/schema";
 import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
@@ -70,12 +71,17 @@ export const fr = {
     start: "Démarrer depuis",
     startEmpty: "Projet vide",
     startEmptyHelp: "Aucune page, aucun composant.",
-    startDev: "Projet dev",
-    startDevHelp: "Tableau de bord, Kanban, Tickets, Graphe, Notes, Changements.",
     startCopy: "Depuis un projet",
     startCopyHelp: "Copie les pages et les composants d'un projet.",
     soon: "Bientôt",
     submit: "Créer le projet",
+    errors: {
+      INVALID_INPUT: "Projet refusé : cette clé est peut-être déjà prise, ou un champ est invalide.",
+      STORE_CORRUPT: "Le stockage du workspace est illisible.",
+      UNAUTHORIZED: "Ce navigateur n'est plus appairé : recharge la page.",
+      TIMEOUT: "Le démon n'a pas répondu à temps.",
+      INTERNAL: "Erreur interne du démon.",
+    } satisfies Partial<Record<KiboErrorCode, string>>,
   },
   newPage: {
     title: "Nouvelle page",
