@@ -4353,7 +4353,7 @@ git commit -m "feat(ui): diff unifié et côte à côte"
   - `FileTabView(props: { fileRef: FileRef; startEditing: boolean })` ;
   - `relativeTime(then: number, now?: number): string`.
 
-- [ ] **Step 1: Tests des liens (SDK)**
+- [x] **Step 1: Tests des liens (SDK)**
 
 `packages/sdk/src/file-link.test.tsx` :
 ```tsx
@@ -4396,7 +4396,7 @@ test("LinkifiedText renders clickable references", async () => {
 Run: `bun test packages/sdk/src/file-link.test.tsx`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter les liens**
+- [x] **Step 2: Implémenter les liens**
 
 `packages/sdk/src/file-link.tsx` :
 ```tsx
@@ -4475,7 +4475,7 @@ export function LinkifiedText({ text, onOpen }: { text: string; onOpen(ref: Open
 Run: `bun test packages/sdk/src/file-link.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 3: Tests de l'aperçu et de l'éditeur**
+- [x] **Step 3: Tests de l'aperçu et de l'éditeur**
 
 `packages/ui/src/lib/relative-time.test.ts` :
 ```ts
@@ -4587,7 +4587,7 @@ test("saving a file changed on disk shows an alert and offers a reload", async (
 Run: `bun test packages/ui/src/files packages/ui/src/lib/relative-time.test.ts`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 4: Implémenter les utilitaires**
+- [x] **Step 4: Implémenter les utilitaires**
 
 `packages/ui/src/lib/relative-time.ts` :
 ```ts
@@ -4797,7 +4797,7 @@ export function useFileContent(ref: FileRef): FileContentState {
 }
 ```
 
-- [ ] **Step 5: Implémenter l'affichage, l'éditeur, l'aperçu et l'onglet**
+- [x] **Step 5: Implémenter l'affichage, l'éditeur, l'aperçu et l'onglet**
 
 `packages/ui/src/index.css` : ajouter à la fin
 ```css
@@ -5199,12 +5199,12 @@ export function FileTabView({ fileRef, startEditing }: Props) {
 ```
 Le bouton « Recharger » est dans l'alerte, ce qui donne à l'utilisateur la seule action utile après un `FILE_CHANGED` (Review Focus 1). Dans le test, `startEditing` rend l'éditeur ; « Enregistrer » est désactivé sans brouillon, mais `⌘S` dans l'éditeur appelle `save()` avec le contenu courant.
 
-- [ ] **Step 6: Lancer les tests**
+- [x] **Step 6: Lancer les tests**
 
 Run: `bun test packages/ui/src/files packages/ui/src/lib packages/sdk && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/sdk/src/file-link.tsx packages/sdk/src/file-link.test.tsx packages/sdk/src/index.ts packages/ui/src/code/use-worktrees.ts packages/ui/src/files packages/ui/src/lib/relative-time.ts packages/ui/src/lib/relative-time.test.ts packages/ui/src/index.css
