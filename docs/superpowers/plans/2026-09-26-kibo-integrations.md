@@ -279,7 +279,7 @@ Fige tous les types échangés entre tâches. Aucune logique métier ; tout est 
 - Produces (schema, `integrations.ts`) : `BINDING_PREFIX = "binding:"`, `bindingIdOf(instanceId)` (le démon ne dépend pas du SDK : Task 19)
 - Produces (ui) : `frIntegrations` (tous les textes de la phase), exposé en `fr.integrations`.
 
-- [ ] **Step 1: Vérifier les décisions dans la spec, mettre à jour le monorepo**
+- [x] **Step 1: Vérifier les décisions dans la spec, mettre à jour le monorepo**
 
 La section `## 14. Décisions du plan` de `docs/superpowers/specs/2026-09-26-kibo-integrations.md` a été écrite par la tâche T0 ; vérifier qu'elle recopie mot pour mot les puces N1 à N36 de ce plan (une différence ⇒ corriger la spec d'abord, conformément à `CLAUDE.md`). Mettre à jour la liste du monorepo de `CLAUDE.md` :
 
@@ -287,7 +287,7 @@ La section `## 14. Décisions du plan` de `docs/superpowers/specs/2026-09-26-kib
 components/<id>/     composants intégrés (kanban, tickets, github-issues sans UI, mcp-source…) écrits avec le SDK public
 ```
 
-- [ ] **Step 2: Écrire le test des schémas (échoue : modules absents)**
+- [x] **Step 2: Écrire le test des schémas (échoue : modules absents)**
 
 `packages/schema/src/integrations.test.ts` :
 
@@ -441,12 +441,12 @@ describe("integration contracts", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer le test**
+- [x] **Step 3: Lancer le test**
 
 Run: `bun test packages/schema/src/integrations.test.ts`
 Expected: FAIL (`Cannot find module` / exports manquants).
 
-- [ ] **Step 4: Écrire `packages/schema/src/integrations.ts`**
+- [x] **Step 4: Écrire `packages/schema/src/integrations.ts`**
 
 ```ts
 import { z } from "zod";
@@ -716,7 +716,7 @@ export const IntegrationEvent = z.discriminatedUnion("type", [
 export type IntegrationEvent = z.infer<typeof IntegrationEvent>;
 ```
 
-- [ ] **Step 5: Écrire `status-projection.ts`, `mcp-rules.ts`, `github-graphql.ts`**
+- [x] **Step 5: Écrire `status-projection.ts`, `mcp-rules.ts`, `github-graphql.ts`**
 
 `packages/schema/src/status-projection.ts` :
 
@@ -864,7 +864,7 @@ export function githubError(status: number, header: (name: string) => string | n
 
 (Un corps non JSON n'est pas une erreur : il devient le message, tronqué.)
 
-- [ ] **Step 6: Étendre le manifeste, les erreurs et le RPC**
+- [x] **Step 6: Étendre le manifeste, les erreurs et le RPC**
 
 `packages/schema/src/manifest.ts` (manifeste v1 de la phase 4) : `kind` devient `z.enum(["widget", "view", "both", "adapter"])` et l'objet gagne :
 
@@ -1028,12 +1028,12 @@ export * from "./mcp-rules";
 export * from "./status-projection";
 ```
 
-- [ ] **Step 7: Lancer le test**
+- [x] **Step 7: Lancer le test**
 
 Run: `bun test packages/schema`
 Expected: PASS (tous les tests de `schema`, anciens compris).
 
-- [ ] **Step 8: Test du contrat d'adaptateur (échoue)**
+- [x] **Step 8: Test du contrat d'adaptateur (échoue)**
 
 `packages/sdk/src/adapter.test.ts` :
 
@@ -1123,7 +1123,7 @@ describe("adapter contract", () => {
 
 Run: `bun test packages/sdk/src/adapter.test.ts` — Expected: FAIL (module absent).
 
-- [ ] **Step 9: Écrire `packages/sdk/src/adapter.ts`**
+- [x] **Step 9: Écrire `packages/sdk/src/adapter.ts`**
 
 ```ts
 import {
@@ -1204,7 +1204,7 @@ export function adapterActions<R, C>(adapter: Adapter<R, C>) {
 
 `pull` et `push` renvoient `unknown` : l'adaptateur ne peut pas contourner la validation, `mapRemote` parse chaque objet avec `remote`. Ajouter `export * from "./adapter";` à `packages/sdk/src/index.ts`.
 
-- [ ] **Step 10: Textes de l'interface**
+- [x] **Step 10: Textes de l'interface**
 
 `packages/ui/src/i18n/fr-integrations.ts` (source unique des libellés des Tasks 10, 11, 17, 18, 21 ; tutoiement) :
 
@@ -1409,7 +1409,7 @@ export const frIntegrations = {
 
 `packages/ui/src/i18n/fr.ts` : `import { frIntegrations } from "./fr-integrations";` et ajouter la clé `integrations: frIntegrations,` à l'objet `fr` (`as const`), juste avant `...frCode,` (aucune collision : `fr.settings.integrations` est une chaîne sous `settings`).
 
-- [ ] **Step 11: Vérifier et commiter**
+- [x] **Step 11: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck`
 Expected: PASS.
