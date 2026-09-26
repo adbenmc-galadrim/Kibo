@@ -9575,6 +9575,14 @@ git commit -m "fix(ui): conformité visuelle du code"
 
 ---
 
+### Tâche de durcissement (décision du chef d'équipe)
+
+Hors plan initial, décidée pendant la vague 2, branche `feat/p3-run`.
+
+- [x] `packages/daemon/src/code/run.ts` : sortie bornée (`MAX_STDOUT_BYTES` = 50 Mo, `MAX_STDERR_BYTES` = 1 Mo) ; au-delà, arrêt du processus et `KiboError` `TOO_LARGE`. Processus lancé détaché ; au timeout ou au dépassement, `SIGKILL` sur tout le groupe (`signalGroup`, extrait dans `packages/daemon/src/process-group.ts` et partagé avec le runner des agents). Tests : sortie infinie sur stdout et stderr, enfant qui ignore `SIGTERM`, enfant laissé par un parent terminé ; aucun processus résiduel.
+- [x] Code d'erreur `TOO_LARGE` (`packages/schema/src/errors.ts`), HTTP 413 ; `PATH_OUTSIDE_PROJECT` → 403 et `GIT_PUSHED` → 409 dans `STATUS` (`packages/daemon/src/server.ts`) ; message dans `fr-code.ts` (`errors.TOO_LARGE`). Un diff trop gros (`read.ts`) lève `TOO_LARGE` au lieu d'`INVALID_INPUT` ; un fichier trop gros reste signalé par `tooLarge: true` dans `readFile`, sans erreur.
+- [x] `@types/node` dédoublonné par `overrides` à la racine (26.6.2, la version tirée par `bun-types` ; `happy-dom` demandait `^20`) ; `bun.lock` régénéré, `bun install --frozen-lockfile` vert. Garde `instanceof EventEmitter` retiré de `watcher.ts`, qui réutilise `isInside` de `safe-path.ts`.
+
 ## Vagues d'exécution
 
 Chaque vague démarre quand la précédente est intégrée dans `main`. Les tâches d'une même vague touchent des fichiers disjoints et peuvent être confiées en parallèle (worktrees `.claude/worktrees/p3-<n>`, branches `feat/p3-<n>`).
