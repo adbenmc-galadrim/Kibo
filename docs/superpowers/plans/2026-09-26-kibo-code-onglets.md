@@ -9583,6 +9583,16 @@ Hors plan initial, décidée pendant la vague 2, branche `feat/p3-run`.
 - [x] Code d'erreur `TOO_LARGE` (`packages/schema/src/errors.ts`), HTTP 413 ; `PATH_OUTSIDE_PROJECT` → 403 et `GIT_PUSHED` → 409 dans `STATUS` (`packages/daemon/src/server.ts`) ; message dans `fr-code.ts` (`errors.TOO_LARGE`). Un diff trop gros (`read.ts`) lève `TOO_LARGE` au lieu d'`INVALID_INPUT` ; un fichier trop gros reste signalé par `tooLarge: true` dans `readFile`, sans erreur.
 - [x] `@types/node` dédoublonné par `overrides` à la racine (26.6.2, la version tirée par `bun-types` ; `happy-dom` demandait `^20`) ; `bun.lock` régénéré, `bun install --frozen-lockfile` vert. Garde `instanceof EventEmitter` retiré de `watcher.ts`, qui réutilise `isInside` de `safe-path.ts`.
 
+### Tâche 25 : robustesse (décision du chef d'équipe)
+
+Hors plan initial, décidée après la vague 5, branche `feat/p3-t25`. Décisions écrites dans la spec de phase (§2, §7, §8, §9).
+
+- [x] **Écrans en onglet** : cible `{ kind: "screen", screen: "agents" | "queue" | "domains" }` dans `TabTarget` (`packages/schema/src/tabs.ts`), adresses inchangées (`#/agents`, `#/agents/queue`, `#/settings/domains`) dans `target-hash.ts`, titre et icône (`packages/ui/src/tabs/screens.ts`, `tab-title.ts`), fil d'Ariane (`crumbsFor`), ouverture depuis la barre latérale et la palette (groupe Pages, récents). Le contournement `useHashSync(..., onScreen)` et l'aiguillage `screen` de `Shell.tsx` disparaissent : l'écran actif se lit dans l'onglet actif. Lecture tolérante de l'état persisté (`salvageTabsState`) : un onglet dont la cible n'est plus reconnue est écarté, les autres restent.
+- [x] **Dépôt supprimé** : `worktree-watch.ts` détecte un worktree dont le dossier a disparu (événement, erreur du watcher, balayage périodique, lecture), libère son watcher et journalise une seule ligne ; la lecture suivante le resurveille s'il est revenu. Tests sur un vrai dépôt temporaire et un worktree lié supprimés.
+- [x] **Liens du journal d'un run** : `AgentDrawer` résout le worktree par `owningWorktree` (comme le bandeau de `agent-slots.tsx`) ; run `isolated` ou hors de tout worktree : texte simple.
+- [x] **`CodeEvent.paths`** : chemins relatifs au worktree (`MAX_EVENT_PATHS` = 200), émis par le watcher quand il les connaît, absents sinon (état git, sondage, mutation, dépassement). `eventTouches` (schéma) ; `useFileContent` ne relit l'aperçu que si l'événement concerne son fichier.
+- [x] **Découpage** : les tests du journal quittent `agent-panel.test.tsx` pour `run-journal.test.tsx`, avec `run-log-fixture.ts` partagé.
+
 ## Vagues d'exécution
 
 Chaque vague démarre quand la précédente est intégrée dans `main`. Les tâches d'une même vague touchent des fichiers disjoints et peuvent être confiées en parallèle (worktrees `.claude/worktrees/p3-<n>`, branches `feat/p3-<n>`).
