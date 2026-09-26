@@ -9,7 +9,11 @@
     "active": true,
     "targets": "all",
     "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
-    "resources": { "../../../packages/ui/dist/": "ui/", "toolchain/": "toolchain/" },
+    "resources": {
+      "../../../packages/ui/dist/": "ui/",
+      "toolchain/": "toolchain/",
+      "builtin/": "builtin/"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

@@ -1,6 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { buildBuiltinBackend, writeBuiltinBackend } from "@kibo/devkit";
+import { BUILTIN_ADAPTER_IDS } from "@kibo/schema";
 
 const root = resolve(import.meta.dir, "../../..");
 const { values } = parseArgs({ options: { out: { type: "string" } } });
@@ -43,12 +45,21 @@ const daemon: Binary = {
 };
 const hook: Binary = { entrypoints: ["packages/daemon/src/agents/kibo-hook.ts"], loadsToolchain: false };
 
+async function prebuildAdapters(outDir: string): Promise<void> {
+  for (const id of BUILTIN_ADAPTER_IDS) {
+    await writeBuiltinBackend(await buildBuiltinBackend(join(root, "components", id)), join(outDir, id));
+    console.log(`builtin: ${join(outDir, id)}`);
+  }
+}
+
 if (values.out) {
   await compile(daemon, resolve(values.out));
   await compile(hook, join(dirname(resolve(values.out)), "kibo-hook"));
+  await prebuildAdapters(join(dirname(resolve(values.out)), "builtin"));
 } else {
   const outDir = join(root, "apps/desktop/src-tauri/binaries");
   const triple = hostTriple();
   await compile(daemon, join(outDir, `kibo-daemon-${triple}`));
   await compile(hook, join(outDir, `kibo-hook-${triple}`));
+  await prebuildAdapters(join(root, "apps/desktop/src-tauri/builtin"));
 }

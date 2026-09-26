@@ -6,5 +6,10 @@
     "lib": ["ES2022"]
   },
   "include": ["scripts", "sidecar"],
-  "references": [{ "path": "../../packages/daemon" }, { "path": "../../packages/cli" }]
+  "references": [
+    { "path": "../../packages/schema" },
+    { "path": "../../packages/devkit" },
+    { "path": "../../packages/daemon" },
+    { "path": "../../packages/cli" }
+  ]
 }

@@ -29,6 +29,8 @@
       "name": "@kibo/desktop",
       "version": "0.1.0",
       "devDependencies": {
+        "@kibo/devkit": "workspace:*",
+        "@kibo/schema": "workspace:*",
         "@tauri-apps/cli": "2.11.5",
       },
     },
