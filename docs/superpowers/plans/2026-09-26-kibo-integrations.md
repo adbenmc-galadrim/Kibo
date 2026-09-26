@@ -3584,7 +3584,7 @@ export const LOGS_HOST = "pipelines.actions.githubusercontent.com";
 
 Routes : `GET /user`, `GET /user/repos`, `GET|POST /repos/:o/:r/issues` (`state`, `since` inclusif, `creator`, `per_page`, `page`, tri `updated` croissant, `ETag`/`If-None-Match` → 304, en-tête `Link`), `GET|PATCH /repos/:o/:r/issues/:n` (404/410 si `gone`, 422 si titre vide), `GET /repos/:o/:r/pulls/:n`, `GET /repos/:o/:r/actions/runs?head_sha=`, `GET /repos/:o/:r/actions/runs/:id/jobs`, `GET /repos/:o/:r/actions/jobs/:id/logs` (302 vers `https://pipelines.actions.githubusercontent.com/logs/:id`), `GET /logs/:id` (400 si un en-tête `Authorization` arrive : fuite d'identifiant), `POST /graphql` (5 opérations). Toute réponse porte `x-ratelimit-remaining` et `x-ratelimit-reset` ; à 0 restant : 403 « API rate limit exceeded ». `failNext(…, ECHO_AUTH)` renvoie l'en-tête `Authorization` reçu dans le corps de l'erreur (test de fuite).
 
-- [ ] **Step 1: Test du faux (échoue)**
+- [x] **Step 1: Test du faux (échoue)**
 
 `packages/daemon/src/testing/fake-github.test.ts` :
 
@@ -3684,7 +3684,7 @@ describe("fake github graphql", () => {
 
 Run: `bun test packages/daemon/src/testing/fake-github.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `fake-github.ts`**
+- [x] **Step 2: Implémenter `fake-github.ts`**
 
 ```ts
 import { createHash } from "node:crypto";
@@ -4011,7 +4011,7 @@ function repoRoute(gh: FakeGithub, slug: string, r: FakeRepo, req: Request, url:
 }
 ```
 
-- [ ] **Step 3: Implémenter `fake-github-graphql.ts`**
+- [x] **Step 3: Implémenter `fake-github-graphql.ts`**
 
 ```ts
 import { GITHUB_GRAPHQL, type GithubOperation } from "@kibo/schema";
@@ -4128,7 +4128,7 @@ export function handleGraphql(gh: FakeGithub, body: GqlBody): Out {
 
 (`Object.entries(…) as […]` : `Object.entries` perd le type des clés d'un objet littéral `as const`.)
 
-- [ ] **Step 4: Vérifier et commiter**
+- [x] **Step 4: Vérifier et commiter**
 
 Run: `bun test packages/daemon/src/testing && bun run check && bun run typecheck` — Expected: PASS.
 
