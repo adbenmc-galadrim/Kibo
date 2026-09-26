@@ -87,7 +87,7 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 21. **Brouillons dans `<KIBO_HOME>/components/src/<id>/`** (hors monorepo, spec §3.2) ; `kibo component test` accepte aussi un chemin de dossier.
 22. **Point d'entrée unique du binaire** (`apps/desktop/sidecar/entry.ts`) : répartit entre démon, CLI (`component …` ou lien nommé `kibo`) et runtime sandboxé (`component-runtime`), sans créer d'arête `cli ← daemon`.
 23. **Démarrage factorisé** : `startDaemon` (tâche 30) sert à `main.ts`, aux tests d'intégration, à la CLI (tests) et à l'E2E.
-24. **Bac à sable OS dès la phase 4 (point E2 tranché)** : le spike 1-C montre que le runtime restreint ne bloque pas l'import construit, et la relecture en a mesuré d'autres (même Bun 1.4.2) : `(() => 0).constructor("return import('node:fs')")()` passe l'analyse statique (propriété `constructor`) et le runtime ; `new Worker(URL.createObjectURL(new Blob([…])))` démarre un Worker dont `Bun.spawn` et `fetch` sont intacts ; `import("bun:ffi")` reste chargeable ; `Bun.build` exécute les macros (`import … with { type: "macro" }`) dans le processus qui construit, sans passer par `onResolve`. Sans barrière OS, un backend « sandboxé » lit `~/.ssh` et `~/.kibo`, lance des processus et ouvre le réseau. Donc : le `ProcessHost` **et** les tests exécutés par la validation (code non encore approuvé) tournent sous `sandbox-exec` (macOS) ou `bwrap` (Linux) dès la phase 4 (tâche 11b, profil de la spec H §8 adapté), en échec fermé (`SANDBOX_UNAVAILABLE`, aucun repli sans isolation) ; la tâche 4 refuse les attributs d'import et `Worker`, `global`, `self` ; la tâche 6 construit avec `macros: false`. Restent en phase 7 : réglage « Autoriser les backends sandboxés sans isolation OS », écran 19, filtre seccomp. Les backends `trusted` restent en Worker (confiance totale explicite à l'écran 30).
+24. **Bac à sable OS dès la phase 4 (point E2 tranché)** : le spike 1-C montre que le runtime restreint ne bloque pas l'import construit, et la relecture en a mesuré d'autres (même Bun 1.4.2) : `(() => 0).constructor("return import('node:fs')")()` passe l'analyse statique (propriété `constructor`) et le runtime ; `new Worker(URL.createObjectURL(new Blob([…])))` démarre un Worker dont `Bun.spawn` et `fetch` sont intacts ; `import("bun:ffi")` reste chargeable ; `Bun.build` exécute les macros (`import … with { type: "macro" }`) dans le processus qui construit, sans passer par `onResolve`. Sans barrière OS, un backend « sandboxé » lit `~/.ssh` et `~/.kibo`, lance des processus et ouvre le réseau. Donc : le `ProcessHost` **et** les tests exécutés par la validation (code non encore approuvé) tournent sous `sandbox-exec` (macOS) ou `bwrap` (Linux) dès la phase 4 (tâche 11b, profil de la spec H §8 adapté), en échec fermé (`SANDBOX_UNAVAILABLE`, aucun repli sans isolation) ; la tâche 4 refuse les attributs d'import et `Worker`, `global`, `self` ; la tâche 6 construit avec `macros: false`. Restent en phase 7 : réglage « Autoriser les backends sandboxés sans isolation OS », écran 19, filtre seccomp. Les backends `trusted` restent en Worker (confiance totale explicite à l'écran 30). Lancement de processus (relecture de la tâche 11b) : sous macOS, le profil n'autorise que l'exécution du binaire du runtime (`process-exec` littéral, `fork` refusé) ; sous Linux, `bwrap` n'a pas de liste d'exécutables (le runtime, interprète complet, peut exécuter tout fichier visible), donc on réduit ce qui est visible (bibliothèques système et binaire du runtime, pas `/usr/bin`) et tout processus lancé hérite du même bac à sable (espaces de noms, aucun réseau, aucune capacité, `no_new_privs`, mêmes montages, arrêté avec le runtime) ; interdire `execve` relève du filtre seccomp (phase 7). Un autre exécutable n'ajoute aucun accès à ce que le runtime a déjà.
 25. **Frontière démon ↔ backend durcie** (relecture de la tâche 11) : (a) les codes d'erreur renvoyés par un backend passent par une liste blanche (`BACKEND_ERROR_CODES`, tâche 11) ; tout autre code (`TRUST_REQUIRED`, `UNAUTHORIZED`, `COMPONENT_CRASHED`…) devient `INTERNAL`, le code d'origine restant dans le message : un backend ne peut pas faire croire à l'UI qu'il faut accorder la confiance ou se réappairer ; (b) tout message invalide d'un backend (schéma, `ready` inattendu, JSON illisible, ligne trop longue) est une violation de protocole : arrêt du backend, compté comme un crash (attente croissante), au lieu d'une ligne de journal qu'un backend répéterait sans fin ; (c) l'attente d'un créneau est bornée par `timeoutMs` (`TIMEOUT`, tâche 11) et un job n'est pas relancé tant que son exécution précédente n'est pas finie (tâche 17) ; (d) le `ProcessHost` n'utilise plus le canal IPC de Bun, dont le tampon de lecture est sans limite : deux tubes JSON par ligne (descripteur 3 démon → runtime, descripteur 4 runtime → démon) ; une ligne reçue de plus de `BACKEND_MESSAGE_LIMIT` (4 Mio) arrête le backend, et le runtime honnête renvoie `TOO_LARGE` au lieu d'un résultat trop gros (tâche 11b). Reste pour la phase 7 (avec le filtre seccomp) : plafond mémoire et CPU du processus backend lui-même.
 26. **Journal des refus borné** (relecture de la tâche 15) : l'ordre de la spec §6.4 (permissions avant quotas) laisse un composant enchaîner des refus sans limite ; prendre un quota avant les permissions ne suffirait pas (les refus `RATE_LIMITED` sont eux aussi journalisés). C'est donc le journal qui est borné (spec §6.4, point 6) : colonne `count`, par clé (`instanceId`, `call.kind`, `code`) et fenêtre de 60 s, 10 lignes puis une ligne de synthèse `count = n` sans écriture SQLite par refus ; rétention 1 000 lignes par instance et 10 000 au total. Le premier refus de chaque clé est toujours écrit immédiatement, avec son horodatage : un flot de refus d'un autre type ne le remplace pas avant la rétention, et le compteur montre l'ampleur du flot.
 
@@ -5450,8 +5450,8 @@ Applique la décision 24 : sans barrière OS, le runtime restreint ne protège d
 - [ ] **Step 1: Écrire la spec avant le code**
 
 `docs/superpowers/specs/2026-09-26-kibo-composants.md` :
-- §4.4, remplacer la puce « **Limite assumée** … » par : « **Bac à sable OS** (décision 24) : le runtime est lancé sous `sandbox-exec` (macOS) ou `bwrap` (Linux) : lecture du binaire (en dev : du dépôt) et des bibliothèques système, écriture dans son `cwd` temporaire seulement, aucun réseau, aucun autre exécutable. Sans bac à sable utilisable : `SANDBOX_UNAVAILABLE`, le backend ne démarre pas (l'UI sandboxée fonctionne). Le retrait des capacités et le refus des imports restent en défense en profondeur. Les tests d'un composant lancés par la validation (§7.4) tournent dans le même bac à sable (lecture de la toolchain et de la copie, écriture dans la copie). »
-- §10 : même idée en une ligne ; §15 : ajouter la décision 24 de ce plan (texte identique) et le code `SANDBOX_UNAVAILABLE` ; tableau des points à arbitrer : ligne E2 identique à celle de ce plan.
+- §4.4, remplacer la puce « **Limite assumée** … » par : « **Bac à sable OS** (décision 24) : le runtime est lancé sous `sandbox-exec` (macOS) ou `bwrap` (Linux) : lecture du binaire (en dev : du dépôt) et des bibliothèques système, écriture dans son `cwd` temporaire seulement, aucun réseau ; sous macOS, aucun autre exécutable ; sous Linux, seuls les bibliothèques système et le binaire du runtime sont visibles, et tout processus lancé reste dans le même bac à sable (interdire `execve` : filtre seccomp, phase 7). Sans bac à sable utilisable : `SANDBOX_UNAVAILABLE`, le backend ne démarre pas (l'UI sandboxée fonctionne). Le retrait des capacités et le refus des imports restent en défense en profondeur. Les tests d'un composant lancés par la validation (§7.4) tournent dans le même bac à sable (lecture de la toolchain et de la copie, écriture dans la copie). »
+- §10 : « Backend sandboxé et tests de la validation isolés par l'OS (`sandbox-exec`, `bwrap`) : ni réseau, ni disque hors de leur dossier, ni processus hors du bac à sable ; sans bac à sable, `SANDBOX_UNAVAILABLE` et rien ne démarre. » ; §15 : ajouter la décision 24 de ce plan (texte identique) et le code `SANDBOX_UNAVAILABLE` ; tableau des points à arbitrer : ligne E2 identique à celle de ce plan.
 
 `docs/superpowers/specs/2026-09-26-kibo-marketplace.md` §8, en tête : « Livré dès la phase 4 (spec B, décision 24) pour `ProcessHost` et les tests de la validation. Restent en phase 7 : le réglage « Autoriser les backends sandboxés sans isolation OS », l'écran 19, le filtre seccomp, et l'exécution des tests d'installation du marketplace dans ce bac à sable. » ; dans le tableau §8.3, colonne « Phase 4 », remplacer chaque cellule par « bloqué par l'OS (décision 24) ».
 
@@ -5504,6 +5504,9 @@ describe("profiles", () => {
     expect(argv.slice(0, 2)).toEqual(["/usr/bin/bwrap", "--unshare-all"]);
     expect(argv).toContain("--die-with-parent");
     expect(argv.join(" ")).toContain("--ro-bind /opt/kibo/toolchain /opt/kibo/toolchain");
+    expect(argv.join(" ")).toContain("--ro-bind /opt/kibo/bin/kibo-daemon /opt/kibo/bin/kibo-daemon");
+    expect(argv.join(" ")).not.toContain("/opt/kibo/bin /opt/kibo/bin");
+    expect(argv.join(" ")).not.toMatch(/--ro-bind(-try)? \/usr \/usr /);
     expect(argv.join(" ")).toContain("--bind /tmp/kibo-work /tmp/kibo-work");
     expect(argv.slice(-3)).toEqual(["--", "/opt/kibo/bin/kibo-daemon", "component-runtime"]);
   });
@@ -5529,7 +5532,10 @@ const attempt = async (name, fn) => { try { await fn(); out[name] = "open"; } ca
 const fs = await load("node:fs");
 await attempt("read", () => fs.readFileSync(${JSON.stringify(join(secret, "token"))}, "utf8"));
 await attempt("write", () => fs.writeFileSync(${JSON.stringify(join(secret, "pwned"))}, "x"));
-await attempt("spawn", async () => (await load("node:child_process")).execFileSync("/bin/echo", ["x"]));
+const cp = await load("node:child_process");
+await attempt("spawn", () => cp.execFileSync("/bin/echo", ["x"]));
+await attempt("spawnUsr", () => cp.execFileSync("/usr/bin/echo", ["x"]));
+await attempt("child", () => cp.execFileSync(process.execPath, ["-e", ${JSON.stringify(`require("node:fs").readFileSync(${JSON.stringify(join(secret, "token"))})`)}], { stdio: "ignore" }));
 await attempt("connect", () => fetch("http://127.0.0.1:${listener.port}/"));
 await attempt("inside", () => fs.writeFileSync("inside", "x"));
 console.log(JSON.stringify(out));
@@ -5538,14 +5544,22 @@ console.log(JSON.stringify(out));
     const argv = sandbox.wrap([process.execPath, "-e", script], { read: [], write: [work], exec: [process.execPath], cwd: work });
     const proc = Bun.spawn(argv, { cwd: work, env: {}, stdout: "pipe", stderr: "pipe" });
     const out: unknown = JSON.parse((await new Response(proc.stdout).text()).trim());
-    expect(out).toEqual({ read: "blocked", write: "blocked", spawn: "blocked", connect: "blocked", inside: "open" });
+    expect(out).toEqual({
+      read: "blocked",
+      write: "blocked",
+      spawn: "blocked",
+      spawnUsr: "blocked",
+      child: "blocked",
+      connect: "blocked",
+      inside: "open",
+    });
     expect(existsSync(join(secret, "pwned"))).toBe(false);
   } finally {
     listener.stop(true);
   }
 }, 30_000);
 ```
-Le script est une chaîne exécutée dans le processus isolé (pas du code du dépôt) : il simule un composant hostile qui a passé l'analyse statique.
+Le script est une chaîne exécutée dans le processus isolé (pas du code du dépôt) : il simule un composant hostile qui a passé l'analyse statique. `child` relance le binaire du runtime (seul exécutable visible sous Linux) pour lire le secret : bloqué par `process-fork` sous macOS, lancé mais confiné sous Linux (lecture refusée, code de sortie non nul) ; dans les deux cas `execFileSync` lève.
 
 `packages/daemon/src/components/process-host-sandbox.test.ts` :
 ```ts
@@ -5566,7 +5580,9 @@ module.exports.server = {
       const attempt = async (name, fn) => { try { await fn(); out[name] = "open"; } catch (e) { out[name] = "blocked"; } };
       const fs = await load("node:fs");
       await attempt("read", () => fs.readFileSync(input.secret, "utf8"));
-      await attempt("spawn", async () => (await load("node:child_process")).execFileSync("/bin/echo", ["x"]));
+      const cp = await load("node:child_process");
+      await attempt("spawn", () => cp.execFileSync("/usr/bin/echo", ["x"]));
+      await attempt("child", () => cp.execFileSync(process.execPath, ["-e", 'require("node:fs").readFileSync(' + JSON.stringify(input.secret) + ")"], { stdio: "ignore" }));
       const net = await load("node:net");
       await attempt("connect", () => new Promise((ok, ko) => {
         const s = net.connect(input.port, "127.0.0.1");
@@ -5594,7 +5610,7 @@ test("a sandboxed backend cannot escape through a constructed import", async () 
   const host = createProcessHost({ ref: "escape@0.1.0", manifest: TEST_MANIFEST, code: { server: ESCAPE_JS }, onCall: async () => null });
   try {
     const out = await host.invoke(escape({ secret: join(secret, "token"), port: listener.port }));
-    expect(out).toEqual({ read: "blocked", spawn: "blocked", connect: "blocked" });
+    expect(out).toEqual({ read: "blocked", spawn: "blocked", child: "blocked", connect: "blocked" });
   } finally {
     host.stop();
     listener.stop(true);
@@ -5645,7 +5661,7 @@ const MACOS_SYSTEM = [
   "/private/var/db/timezone",
 ];
 const MACOS_LITERALS = ["/", "/dev/null", "/dev/random", "/dev/urandom", "/private/etc/localtime"];
-const LINUX_SYSTEM = ["/usr", "/lib", "/lib64", "/etc/localtime"];
+const LINUX_SYSTEM = ["/usr/lib", "/usr/lib64", "/lib", "/lib64", "/usr/share/zoneinfo", "/etc/localtime"];
 
 const real = (path: string): string => (existsSync(path) ? realpathSync(path) : path);
 const unique = (paths: string[]): string[] => [...new Set(paths)];
@@ -5688,7 +5704,7 @@ export function bwrapArgv(bwrap: string, policy: SandboxPolicy, argv: string[]):
     "/dev",
     "--tmpfs",
     "/tmp",
-    ...bind("--ro-bind", [...execDirs(policy), ...policy.read].map(real)),
+    ...bind("--ro-bind", [...policy.exec, ...policy.read].map(real)),
     ...bind("--bind", policy.write.map(real)),
     "--chdir",
     real(policy.cwd),
@@ -5746,7 +5762,7 @@ export function osSandbox(): OsSandbox {
   return shared;
 }
 ```
-Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal ; le canal passe par les descripteurs 3 et 4, hérités à travers `sandbox-exec` et `bwrap` sans variable d'environnement (vérifié sous Linux par la CI de la branche). La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige.
+Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; sous Linux, le binaire du runtime est monté seul (fichier, pas son dossier : installé par le `.deb` dans `/usr/bin`, son dossier exposerait tous les outils du système) et `/usr` n'est pas monté en entier (seulement `/usr/lib`, `/usr/lib64`, `/usr/share/zoneinfo` : mesuré sous Debian arm64, `oven/bun:1.4.2`, `bwrap` non root : `bun --version` passe, `/bin/echo`, `/usr/bin/echo` et `/bin/sh` sont introuvables, un `bun` relancé à l'intérieur ne lit pas le secret) ; sous macOS, `file-read-metadata` reste global (Bun fait `lstat` sur les ancêtres de ses chemins) : un backend peut savoir qu'un fichier existe et sa taille, pas le lire ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal ; le canal passe par les descripteurs 3 et 4, hérités à travers `sandbox-exec` et `bwrap` sans variable d'environnement (vérifié sous Linux par la CI de la branche). La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige.
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./os-sandbox";`.
 
@@ -17102,4 +17118,4 @@ Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-review
 7. **Rapport** `docs/superpowers/rapports/2026-xx-xx-v0.4.md` : livré (par tâche), écarts (liste du point 3, résultats des spikes A–G, ancrages phases 2/3 réellement rencontrés), risques ouverts (voir ci-dessous), décisions E1–E4 en attente d'Adam.
 8. **Pas d'attente** : la phase 5 démarre aussitôt (décision d'Adam) ; E1–E4 restent en option A jusqu'à son arbitrage.
 
-Risques à suivre dans le rapport : contournement du runtime restreint par import dynamique construit (E2, spike C : neutralisé par le bac à sable OS de la tâche 11b ; restent la dépréciation de `sandbox-exec`, les espaces de noms utilisateur désactivés sur certaines distributions Linux, et l'absence de seccomp) ; TOCTOU DNS du proxy (résolution puis connexion : atténué par la connexion à l'adresse résolue, tâche 8) ; appels d'un backend rattachés à une invocation en cours (limite résiduelle de la décision 15) ; chargement natif de Tailwind et de TypeScript depuis la toolchain dans le binaire (spikes D, E) ; `BUN_BE_BUN` (spike A) ; descripteur 3 (spike G) ; Worker dans le binaire compilé (spike F) ; taille de la toolchain packagée ; ancrages non vérifiés sur les phases 2 et 3.
+Risques à suivre dans le rapport : contournement du runtime restreint par import dynamique construit (E2, spike C : neutralisé par le bac à sable OS de la tâche 11b ; restent la dépréciation de `sandbox-exec`, les espaces de noms utilisateur désactivés sur certaines distributions Linux (Ubuntu ≥ 23.10 par AppArmor : échec fermé chez l'utilisateur, profil AppArmor du paquet `.deb` à étudier), l'absence de seccomp (sous Linux, un processus lancé dans le bac à sable y reste confiné mais n'est pas interdit), `file-read-metadata` global sous macOS (existence et taille des fichiers visibles), et le binaire compilé sous `bwrap` non vérifié hors CI) ; TOCTOU DNS du proxy (résolution puis connexion : atténué par la connexion à l'adresse résolue, tâche 8) ; appels d'un backend rattachés à une invocation en cours (limite résiduelle de la décision 15) ; chargement natif de Tailwind et de TypeScript depuis la toolchain dans le binaire (spikes D, E) ; `BUN_BE_BUN` (spike A) ; descripteur 3 (spike G) ; Worker dans le binaire compilé (spike F) ; taille de la toolchain packagée ; ancrages non vérifiés sur les phases 2 et 3.
