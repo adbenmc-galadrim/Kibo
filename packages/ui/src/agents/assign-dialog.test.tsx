@@ -2,7 +2,8 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type AssignPreview, KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { configFixture, kiboProject, systemProfilesFixture } from "./fixtures";
+import { configFixture, kiboProject } from "./fixtures";
+import { systemProfilesFixture } from "./system-profiles-fixture";
 
 const calls: RpcRequest[] = [];
 const QUEUED: AssignPreview = {
