@@ -3,6 +3,7 @@ import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
 import { frIntegrations } from "./fr-integrations";
+import { frSecurity } from "./fr-security";
 
 export const fr = {
   app: { name: "Kibo" },
@@ -43,12 +44,15 @@ export const fr = {
   },
   pairing: {
     title: "Appairer ce navigateur",
-    help: "Colle le code affiché par le démon Kibo (fichier ~/.kibo/token).",
-    token: "Code d'appairage",
+    help: "Dans l'app Kibo : Paramètres › Apparence & général › Accès web › Générer un code. Entre le code à 6 caractères ci-dessous.",
+    code: "Code d'appairage",
+    digit: (n: number) => `Caractère ${n} sur 6`,
+    validity: "Code valable 5 minutes · usage unique",
     submit: "Appairer",
-    invalid: "Code invalide.",
+    invalid: "Code invalide ou expiré.",
+    rateLimited: "Trop d'essais : génère un nouveau code dans l'app Kibo.",
     security:
-      "Le démon n'écoute que sur 127.0.0.1. Le jeton reste sur ta machine et n'est jamais envoyé ailleurs.",
+      "Le démon n'écoute que sur 127.0.0.1. Le code est échangé contre un cookie HttpOnly, révocable dans Paramètres › Sécurité.",
   },
   overview: {
     greeting: (user: string) => `Bonjour ${user}`,
@@ -427,6 +431,7 @@ export const fr = {
     failed: (label: string) => `${label} a échoué`,
   },
   integrations: frIntegrations,
+  security: frSecurity,
   ...frCode,
   ...frComponents,
   ...frAi,
