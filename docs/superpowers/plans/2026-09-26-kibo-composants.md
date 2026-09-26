@@ -733,11 +733,11 @@ Toutes les tâches suivantes consomment ces types ; aucune ne les modifie sans p
   - `RpcRequest` (+ 15 méthodes) et `RpcResult` correspondant.
   - `fr.components`, `fr.publish`, `fr.trust`, `fr.addComponent` (complété), `fr.createComponent`, `fr.instance`, `fr.notesDir`, `fr.openView`, `fr.cli`.
 
-- [ ] **Step 1: Reporter les décisions dans la spec**
+- [x] **Step 1: Reporter les décisions dans la spec**
 
 Ajouter à la fin de `docs/superpowers/specs/2026-09-26-kibo-composants.md` une section `## 15. Décisions d'implémentation (plan de phase 4)` qui reprend mot pour mot la liste « Décisions techniques de ce plan » (points 1 à 23) et le tableau des points E1 à E4 avec la mention « option A appliquée en attendant l'arbitrage d'Adam ».
 
-- [ ] **Step 2: Écrire les tests du schéma v1**
+- [x] **Step 2: Écrire les tests du schéma v1**
 
 `packages/schema/src/component.test.ts` :
 ```ts
@@ -947,7 +947,7 @@ Dans `schema.test.ts`, le test « manifest » existant reste valide (les nouveau
 Run: `bun test packages/schema`
 Expected: FAIL (exports manquants).
 
-- [ ] **Step 3: Écrire `errors.ts`, `semver.ts`, `net.ts`, `config.ts`**
+- [x] **Step 3: Écrire `errors.ts`, `semver.ts`, `net.ts`, `config.ts`**
 
 `packages/schema/src/errors.ts` :
 ```ts
@@ -1079,7 +1079,7 @@ export function validateConfig(schema: ConfigSchema | undefined, config: Record<
 }
 ```
 
-- [ ] **Step 4: Écrire `manifest.ts`, `instance.ts`, `command.ts`, `note.ts`, `call.ts`**
+- [x] **Step 4: Écrire `manifest.ts`, `instance.ts`, `command.ts`, `note.ts`, `call.ts`**
 
 `packages/schema/src/manifest.ts` :
 ```ts
@@ -1331,7 +1331,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
 export type ComponentCall = z.infer<typeof ComponentCall>;
 ```
 
-- [ ] **Step 5: Écrire `permissions.ts`, `migrations.ts`, `component.ts`, `protocol.ts`**
+- [x] **Step 5: Écrire `permissions.ts`, `migrations.ts`, `component.ts`, `protocol.ts`**
 
 `packages/schema/src/permissions.ts` :
 ```ts
@@ -1714,7 +1714,7 @@ export const BackendToDaemon = z.discriminatedUnion("type", [
 export type BackendToDaemon = z.infer<typeof BackendToDaemon>;
 ```
 
-- [ ] **Step 6: Étendre `rpc.ts` et `index.ts`**
+- [x] **Step 6: Étendre `rpc.ts` et `index.ts`**
 
 `packages/schema/src/rpc.ts` : supprimer la définition de `ProjectCommand`, `COMMAND`… (désormais dans `command.ts`) et `CommandResult` ; importer ce qu'il faut ; ajouter les requêtes et résultats :
 ```ts
@@ -1857,7 +1857,7 @@ export * from "./ticket";
 Run: `bun test packages/schema`
 Expected: PASS.
 
-- [ ] **Step 7: Correctifs de compilation dans le SDK**
+- [x] **Step 7: Correctifs de compilation dans le SDK**
 
 `packages/sdk/package.json`, `exports` :
 ```json
@@ -1900,7 +1900,7 @@ Expected: PASS.
 Run: `bun test packages/sdk && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 8: Ajouter les textes UI de la phase**
+- [x] **Step 8: Ajouter les textes UI de la phase**
 
 `packages/ui/src/i18n/fr.ts` : remplacer la section `addComponent` et ajouter les sections suivantes (avant `common`) :
 ```ts
@@ -2077,7 +2077,7 @@ Les clés existantes de `addComponent` (`builtin`, `pick`, `permissions`, `reads
 Run: `bun run typecheck && bun test packages && bun run check`
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/schema packages/sdk/package.json packages/sdk/src/types.ts packages/sdk/src/sdk.ts packages/sdk/src/sdk.test.ts packages/ui/src/i18n/fr.ts docs/superpowers/specs/2026-09-26-kibo-composants.md
