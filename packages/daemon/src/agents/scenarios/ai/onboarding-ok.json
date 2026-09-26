@@ -1,0 +1,18 @@
+{
+  "turns": [
+    {
+      "steps": [],
+      "result": "",
+      "structuredOutput": {
+        "pages": [
+          {
+            "title": "Suivi clients",
+            "kind": "dashboard",
+            "components": [{ "id": "kanban" }, { "id": "tickets", "config": { "filter": "mine" } }]
+          },
+          { "title": "Tickets", "kind": "view", "components": [{ "id": "tickets" }] }
+        ]
+      }
+    }
+  ]
+}

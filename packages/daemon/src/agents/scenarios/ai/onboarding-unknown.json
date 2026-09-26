@@ -1,0 +1,11 @@
+{
+  "turns": [
+    {
+      "steps": [],
+      "result": "",
+      "structuredOutput": {
+        "pages": [{ "title": "Burndown", "kind": "view", "components": [{ "id": "burndown" }] }]
+      }
+    }
+  ]
+}

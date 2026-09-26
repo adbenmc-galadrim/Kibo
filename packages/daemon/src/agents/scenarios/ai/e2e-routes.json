@@ -1,0 +1,7 @@
+{
+  "routes": [
+    { "prompt": "Composants installés", "scenario": "onboarding-ok.json" },
+    { "prompt": "Écris le composant Kibo", "scenario": "generate-ok.json" }
+  ],
+  "fallback": "onboarding-invalid.json"
+}

@@ -13,6 +13,7 @@ export const FakeStep = z.union([
   z.object({ sleepMs: z.number().int().nonnegative() }),
   z.object({ hold: z.literal(true) }),
   z.object({ stderr: z.string() }),
+  z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
 ]);
 export type FakeStep = z.infer<typeof FakeStep>;
 
@@ -22,6 +23,7 @@ export const FakeTurn = z.object({
   isError: z.boolean().default(false),
   exitCode: z.number().int().default(0),
   tokens: z.number().int().nonnegative().default(1000),
+  structuredOutput: z.record(z.string(), z.unknown()).optional(),
 });
 export const FakeScenario = z.object({ turns: z.array(FakeTurn).min(1) });
 export type FakeScenario = z.infer<typeof FakeScenario>;

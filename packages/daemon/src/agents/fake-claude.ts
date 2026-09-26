@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileS
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
+import { appendWrite, denialReason, fakeMeta, runWriteStep } from "./fake-claude-ai";
 import { FakeScenario, type FakeStep, scenarioFor } from "./fake-claude-scenario";
 
 const Settings = z.object({
@@ -18,13 +19,6 @@ const Settings = z.object({
     )
     .optional(),
 });
-
-const HELP = [
-  "Usage: claude [options] [command] [prompt]",
-  '  --output-format <format>   Output format (only works with --print): (choices: "text", "json", "stream-json")',
-  '  --permission-mode <mode>   Permission mode to use for the session (choices: "acceptEdits", "auto", "bypassPermissions", "manual", "dontAsk", "plan")',
-  "",
-].join("\n");
 
 const Decision = z.object({
   hookSpecificOutput: z.object({ permissionDecision: z.enum(["allow", "deny", "ask"]) }),
@@ -65,8 +59,9 @@ const launcher = process.ppid;
 
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
-  if (argv.includes("--help")) {
-    process.stdout.write(HELP);
+  const meta = fakeMeta(argv, process.env);
+  if (meta !== null) {
+    process.stdout.write(meta);
     return 0;
   }
   const mode = flag(argv, "--permission-mode") ?? "default";
@@ -154,6 +149,20 @@ async function main(): Promise<number> {
       if (step.hook === "PreToolUse" && denied(runs)) denials.push(step.tool ?? "?");
       return;
     }
+    if ("write" in step) {
+      const entry = await runWriteStep(step, {
+        cwd: process.cwd(),
+        hook: async (event, extra) => {
+          const runs = await runHooks(event, extra);
+          return event === "PreToolUse" && denied(runs)
+            ? (denialReason(runs.map((r) => r.stdout)) ?? "denied")
+            : null;
+        },
+        log: (logged) => appendWrite(stateDir, sessionId, logged),
+      });
+      if ("denied" in entry) denials.push("Write");
+      return;
+    }
     if ("sleepMs" in step) {
       await Bun.sleep(step.sleepMs);
       return;
@@ -201,6 +210,7 @@ async function main(): Promise<number> {
     total_cost_usd: turn.tokens / 1_000_000,
     usage,
     permission_denials: denials.map((tool_name) => ({ tool_name })),
+    ...(turn.structuredOutput ? { structured_output: turn.structuredOutput } : {}),
   });
   return turn.exitCode;
 }

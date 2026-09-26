@@ -1,0 +1,8 @@
+{
+  "turns": [
+    {
+      "steps": [{ "write": "ui.tsx", "fixture": "burndown/ui-type-error.tsx.fixture" }],
+      "result": "Composant écrit."
+    }
+  ]
+}

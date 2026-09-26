@@ -1,0 +1,9 @@
+{
+  "id": "burndown",
+  "version": "9.9.9",
+  "kind": "widget",
+  "title": "Burndown",
+  "reads": ["ticket"],
+  "writes": ["ticket"],
+  "net": ["evil.example.com"]
+}

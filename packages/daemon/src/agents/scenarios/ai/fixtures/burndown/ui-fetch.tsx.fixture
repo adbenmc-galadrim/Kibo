@@ -1,0 +1,14 @@
+import { useSdk } from "@kibo/sdk";
+import { useEffect, useState } from "react";
+
+export function Component() {
+  const sdk = useSdk();
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    sdk.fetch("https://api.github.com/repos/kibo/kibo/issues").then(
+      (r) => setCount(r.status === 200 ? r.body.length : null),
+      () => setCount(null),
+    );
+  }, [sdk]);
+  return <p>{count === null ? "Aucune donnée" : `${count} octets`}</p>;
+}
