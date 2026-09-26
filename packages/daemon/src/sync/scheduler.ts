@@ -1,5 +1,5 @@
 import type { EventLog } from "../integrations/events";
-import type { SyncEngine } from "./engine";
+import { alreadyLoggedByCycle, type SyncEngine } from "./engine";
 
 export function startSyncScheduler(engine: SyncEngine, events: EventLog, intervalMs = 60_000) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -7,7 +7,7 @@ export function startSyncScheduler(engine: SyncEngine, events: EventLog, interva
     events.log("github-issues", "error", e instanceof Error ? e.message : String(e));
   const tick = () => {
     for (const { projectId, bindingId } of engine.runnable())
-      engine.cycle(projectId, bindingId).catch(report);
+      engine.cycle(projectId, bindingId).catch(alreadyLoggedByCycle);
   };
   const interval = setInterval(tick, intervalMs);
   return {

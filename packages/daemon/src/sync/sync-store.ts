@@ -90,7 +90,7 @@ export function createSyncStore(db: Database) {
       "SELECT * FROM sync_items WHERE binding_id = $b AND remote_id = $r",
     ),
     itemByTicket: db.query<ItemRow, { b: string; t: string }>(
-      "SELECT * FROM sync_items WHERE binding_id = $b AND ticket_id = $t",
+      "SELECT * FROM sync_items WHERE binding_id = $b AND ticket_id = $t AND ticket_id <> ''",
     ),
     upsertItem: db.query(
       "INSERT INTO sync_items VALUES ($b, $r, $t, $base, $at, $hash) ON CONFLICT(binding_id, remote_id) DO UPDATE SET ticket_id = excluded.ticket_id, base_json = excluded.base_json, remote_updated_at = excluded.remote_updated_at, last_pushed_hash = excluded.last_pushed_hash",
@@ -98,6 +98,12 @@ export function createSyncStore(db: Database) {
     ignoreTicket: db.query("UPDATE sync_items SET ticket_id = '' WHERE ticket_id = $t"),
     deleteItem: db.query("DELETE FROM sync_items WHERE binding_id = $b AND remote_id = $r"),
     outbox: db.query<OutRow, { b: string }>("SELECT * FROM sync_outbox WHERE binding_id = $b ORDER BY id"),
+    head: db.query<OutRow, { b: string }>(
+      "SELECT * FROM sync_outbox WHERE binding_id = $b ORDER BY id LIMIT 1",
+    ),
+    uncertainCreate: db.query<{ found: number }, { b: string }>(
+      "SELECT EXISTS (SELECT 1 FROM sync_outbox WHERE binding_id = $b AND op = 'create' AND attempts > 0) AS found",
+    ),
     row: db.query<OutRow, { id: number }>("SELECT * FROM sync_outbox WHERE id = $id"),
     outboxOfTicket: db.query<OutRow, { b: string; t: string }>(
       "SELECT * FROM sync_outbox WHERE binding_id = $b AND ticket_id = $t ORDER BY id",
@@ -169,14 +175,14 @@ export function createSyncStore(db: Database) {
     },
     outbox: (b: string) => q.outbox.all({ b }).map(toOut),
     head(b: string, now: number): OutboxRow | null {
-      const first = q.outbox.all({ b })[0];
+      const first = q.head.get({ b });
       if (!first) return null;
       const row = toOut(first);
       if (row.nextAttemptAt === null && row.lastError !== null) return null;
       if (row.nextAttemptAt !== null && row.nextAttemptAt > now) return null;
       return row;
     },
-    uncertainCreate: (b: string) => q.outbox.all({ b }).some((r) => r.op === "create" && r.attempts > 0),
+    uncertainCreate: (b: string) => q.uncertainCreate.get({ b })?.found === 1,
     attempt(
       id: number,
       patch: Pick<OutboxRow, "attempts" | "nextAttemptAt" | "firstAttemptAt" | "lastError">,

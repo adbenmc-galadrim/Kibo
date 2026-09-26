@@ -1,7 +1,7 @@
 import { KiboError } from "@kibo/schema";
 import type { IntegrationKit, IntegrationModule } from "../integrations/bootstrap";
 import type { AdapterRunner } from "../integrations/types";
-import { createSyncEngine, type PauseGate } from "./engine";
+import { alreadyLoggedByCycle, createSyncEngine, type PauseGate } from "./engine";
 import { outboxObserver, syncInterceptor } from "./outbox";
 import { startSyncScheduler } from "./scheduler";
 import { createSyncStore } from "./sync-store";
@@ -24,8 +24,6 @@ export function syncModule(
   const scheduler = startSyncScheduler(engine, events);
   const offIntercept = host.intercept(syncInterceptor(host));
   const offObserve = host.onCommand(outboxObserver(store, host, (p, b) => scheduler.kick(p, b)));
-  const log = (e: unknown) =>
-    events.log("github-issues", "error", e instanceof Error ? e.message : String(e));
   return {
     handlers: {
       async createBinding(req) {
@@ -38,11 +36,11 @@ export function syncModule(
           runner: host.user,
         };
         host.command(req.projectId, { method: "addBinding", binding }, { origin: "user", instanceId: null });
-        engine.cycle(req.projectId, binding.id).catch(log);
+        engine.cycle(req.projectId, binding.id).catch(alreadyLoggedByCycle);
         return binding;
       },
       async deleteBinding(req) {
-        engine.deleteBinding(req.projectId, req.bindingId);
+        await engine.deleteBinding(req.projectId, req.bindingId);
         return null;
       },
       syncBinding: (req) => engine.cycle(req.projectId, req.bindingId),

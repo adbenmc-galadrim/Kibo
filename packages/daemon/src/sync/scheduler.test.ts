@@ -19,10 +19,11 @@ const engine: SyncEngine = {
   },
   async flush(projectId, bindingId) {
     calls.push(`flush ${projectId}/${bindingId}`);
+    throw new KiboError("INTERNAL", "flush broke");
   },
   state: () => ({ bindings: [], pending: [], errors: [] }),
   resolveOutbox: () => undefined,
-  deleteBinding: () => undefined,
+  deleteBinding: async () => undefined,
   runnable: () => [{ projectId: "p1", bindingId: "b1" }],
 };
 
@@ -33,16 +34,16 @@ beforeEach(() => {
 });
 afterEach(() => jest.useRealTimers());
 
-test("each interval cycles every runnable binding and logs its failure", async () => {
+test("each interval cycles every runnable binding, whose failure the engine already logged", async () => {
   const scheduler = startSyncScheduler(engine, events, 60_000);
   jest.advanceTimersByTime(60_000);
   await Promise.resolve();
   scheduler.stop();
   expect(calls).toEqual(["cycle p1/b1"]);
-  expect(logged).toEqual(["REMOTE_UNAVAILABLE: offline"]);
+  expect(logged).toEqual([]);
 });
 
-test("kick flushes once, one second after the last change", () => {
+test("kick flushes once, one second after the last change, and logs its failure", async () => {
   const scheduler = startSyncScheduler(engine, events, 60_000);
   scheduler.kick("p1", "b1");
   jest.advanceTimersByTime(900);
@@ -50,8 +51,10 @@ test("kick flushes once, one second after the last change", () => {
   jest.advanceTimersByTime(900);
   expect(calls).toEqual([]);
   jest.advanceTimersByTime(100);
+  await Promise.resolve();
   scheduler.stop();
   expect(calls).toEqual(["flush p1/b1"]);
+  expect(logged).toEqual(["INTERNAL: flush broke"]);
 });
 
 test("stop cancels the interval and pending kicks", () => {

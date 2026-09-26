@@ -1,60 +1,23 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type Binding, KiboError, type TicketView } from "@kibo/schema";
-import { createEventLog } from "../integrations/events";
-import { createRedactor } from "../integrations/redact";
-import { createFakeHost, type FakeHost } from "../integrations/testing/fake-host";
-import { createSyncEngine, type SyncEngine } from "./engine";
-import { outboxObserver, syncInterceptor } from "./outbox";
-import { createSyncStore, type SyncStore } from "./sync-store";
-import { createMemoryRunner, type MemoryRunner } from "./testing/memory-runner";
+import { KiboError, type TicketView } from "@kibo/schema";
+import type { FakeHost } from "../integrations/testing/fake-host";
+import type { SyncEngine } from "./engine";
+import type { MemoryRunner } from "./testing/memory-runner";
+import { createSyncFixture, type SyncFixture, TEST_BINDING, USER } from "./testing/sync-fixture";
 
+let f: SyncFixture;
 let host: FakeHost;
 let remote: MemoryRunner;
-let store: SyncStore;
 let engine: SyncEngine;
-const binding: Binding = {
-  id: "b1",
-  adapter: "github-issues",
-  config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
-  createdBy: "adam",
-  runner: "adam",
-};
-const USER = { origin: "user" as const, instanceId: null };
 
 beforeEach(() => {
-  host = createFakeHost();
-  remote = createMemoryRunner(host.clock);
-  store = createSyncStore(host.db);
-  const gate = { blockedUntil: () => null };
-  engine = createSyncEngine({
-    host,
-    store,
-    runner: remote,
-    gate,
-    events: createEventLog(host.db, createRedactor(), host.now),
-    redact: createRedactor().redact,
-  });
-  host.intercept(syncInterceptor(host));
-  host.onCommand(outboxObserver(store, host, () => undefined));
-  host.command(host.projectId, { method: "addBinding", binding }, USER);
-  host.command(host.projectId, { method: "addPage", title: "Kanban", kind: "view" }, USER);
-  const page = host.snapshot(host.projectId).pages[0];
-  if (!page) throw new Error("page missing");
-  host.command(
-    host.projectId,
-    {
-      method: "addInstance",
-      pageId: page.id,
-      component: "kanban@1.0.0",
-      config: { source: { bindingId: "b1" } },
-    },
-    USER,
-  );
+  f = createSyncFixture();
+  ({ host, remote, engine } = f);
 });
 afterEach(() => host.close());
 
 const tickets = (): TicketView[] => host.snapshot(host.projectId).tickets;
-const instanceId = () => host.snapshot(host.projectId).instances[0]?.id ?? "";
+const instanceId = () => f.instanceId();
 const cycle = () => engine.cycle(host.projectId, "b1");
 
 describe("pull", () => {
@@ -191,6 +154,7 @@ describe("push", () => {
     remote.failNext(new KiboError("TIMEOUT", "no answer"));
     await cycle();
     remote.add({ title: "Venue d'ailleurs" });
+    remote.add({ title: "Venue ensuite" });
     await cycle();
     expect(tickets().map((t) => t.title)).toEqual(["Incertaine"]);
     host.clock.now += 5_000;
@@ -200,10 +164,28 @@ describe("push", () => {
       tickets()
         .map((t) => t.title)
         .sort(),
-    ).toEqual(["Incertaine", "Venue d'ailleurs"]);
+    ).toEqual(["Incertaine", "Venue d'ailleurs", "Venue ensuite"]);
     expect(remote.pushes.filter((p) => p.kind === "create").at(-1)).toMatchObject({
       since: expect.any(String),
     });
+  });
+  test("a ticket deleted while its create is in flight is never imported back", async () => {
+    const created = host.command(
+      host.projectId,
+      { method: "createTicket", title: "Fantôme" },
+      { origin: "user", instanceId: instanceId() },
+    );
+    const push = remote.push;
+    remote.push = async (projectId, b, op) => {
+      const m = await push(projectId, b, op);
+      host.command(host.projectId, { method: "deleteTicket", ticketId: created.id }, USER);
+      return m;
+    };
+    await cycle();
+    remote.push = push;
+    await cycle();
+    expect(tickets()).toEqual([]);
+    expect(remote.issues.get(1)?.fields.closed).toBe(false);
   });
 });
 
@@ -228,26 +210,17 @@ describe("conflicts, limits and ownership", () => {
   });
 
   test("a paused rate limit skips the pull without calling the adapter", async () => {
-    const pausedUntil = host.now() + 600_000;
-    const gate = { blockedUntil: () => pausedUntil };
-    const paused = createSyncEngine({
-      host,
-      store,
-      runner: remote,
-      gate,
-      events: createEventLog(host.db, createRedactor(), host.now),
-      redact: (t) => t,
-    });
-    await expect(paused.cycle(host.projectId, "b1")).rejects.toThrow("RATE_LIMITED");
+    f.gate.until = host.now() + 600_000;
+    await expect(cycle()).rejects.toThrow("RATE_LIMITED");
     expect(remote.pulls).toBe(0);
-    expect(paused.state(host.projectId).bindings[0]?.resumeAt).toBeGreaterThan(host.now());
+    expect(engine.state(host.projectId).bindings[0]?.resumeAt).toBeGreaterThan(host.now());
   });
 
   test("only the runner machine syncs a binding", () => {
     expect(engine.runnable()).toEqual([{ projectId: host.projectId, bindingId: "b1" }]);
     host.command(
       host.projectId,
-      { method: "addBinding", binding: { ...binding, id: "b2", runner: "lea" } },
+      { method: "addBinding", binding: { ...TEST_BINDING, id: "b2", runner: "lea" } },
       USER,
     );
     expect(engine.runnable()).toEqual([{ projectId: host.projectId, bindingId: "b1" }]);
