@@ -220,7 +220,12 @@ test("a question suspends the run, the answer resumes it, and the ticket moves o
   });
   expect(h.assigned).toEqual(["t1:opus-dev"]);
   await waitUntil(() => run(h, first.id).state === "waiting_input");
-  expect(run(h, first.id)).toMatchObject({ question: "Quel port pour le récepteur ?", label: "opus-dev-1" });
+  expect(run(h, first.id)).toMatchObject({
+    question: "Quel port pour le récepteur ?",
+    label: "opus-dev-1",
+    workspace: "isolated",
+    cwd: join(h.home, "runs", first.id, "workspace"),
+  });
   expect(h.orch.state().host.used).toBe(0);
   await waitUntil(() => h.notices.length > 0);
   expect(h.notices).toContainEqual({

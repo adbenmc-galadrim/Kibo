@@ -21,6 +21,7 @@ const run = (p: Pick<RunView, "id" | "seq" | "state"> & Partial<RunView>): RunVi
   lastActivity: null,
   subagents: [],
   workspace: null,
+  cwd: null,
   guidelines: 0,
   transcriptPath: null,
   tokens: 0,

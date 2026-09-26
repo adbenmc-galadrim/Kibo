@@ -26,6 +26,7 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     lastActivity: null,
     subagents: [],
     workspace: null,
+    cwd: null,
     guidelines: 0,
     transcriptPath: null,
     tokens: 0,

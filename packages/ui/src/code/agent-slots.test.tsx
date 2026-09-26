@@ -84,8 +84,15 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
   rules,
   nextTicketKey: "KIB-13",
 });
-const working = (state: RunView["state"], workspace = "/wt/kib-12") =>
-  runFixture({ id: "r12", projectId: "p1", label: "opus-dev-1", state, workspace });
+const working = (state: RunView["state"]) =>
+  runFixture({
+    id: "r12",
+    projectId: "p1",
+    label: "opus-dev-1",
+    state,
+    workspace: "worktree:kib-12",
+    cwd: "/wt/kib-12",
+  });
 
 beforeEach(() => {
   runs = [];

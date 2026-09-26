@@ -73,6 +73,7 @@ export const RunEvent = z.discriminatedUnion("type", [
     pid: z.number().int(),
     resume: z.boolean(),
     workspace: z.string(),
+    cwd: z.string().optional(),
     guidelines: z.number().int().nonnegative(),
   }),
   z.object({ type: z.literal("hook"), payload: HookPayload }),
@@ -122,6 +123,7 @@ export type RunView = RunRecord & {
   lastActivity: RunActivity | null;
   subagents: ActiveSubagent[];
   workspace: string | null;
+  cwd: string | null;
   guidelines: number;
   transcriptPath: string | null;
   tokens: number;

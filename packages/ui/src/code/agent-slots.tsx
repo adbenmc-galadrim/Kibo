@@ -8,8 +8,7 @@ const WORKING: readonly RunState[] = ["running", "waiting_input"];
 
 export function agentInWorktree(runs: RunView[], projectId: string, worktree: string): RunView | null {
   return (
-    runs.find((r) => r.projectId === projectId && r.workspace === worktree && WORKING.includes(r.state)) ??
-    null
+    runs.find((r) => r.projectId === projectId && r.cwd === worktree && WORKING.includes(r.state)) ?? null
   );
 }
 

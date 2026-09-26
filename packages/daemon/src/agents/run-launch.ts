@@ -153,6 +153,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         pid: proc.pid,
         resume,
         workspace: prepared.label,
+        cwd: prepared.cwd,
         guidelines: prepared.guidelines,
       });
       if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);

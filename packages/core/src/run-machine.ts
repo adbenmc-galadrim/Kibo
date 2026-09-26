@@ -28,6 +28,7 @@ export function initRun(record: RunRecord, rank: number, at: number): RunView {
     lastActivity: null,
     subagents: [],
     workspace: null,
+    cwd: null,
     guidelines: 0,
     transcriptPath: null,
     tokens: 0,
@@ -107,6 +108,7 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
       requireState(view, event, ["starting"]);
       return enter(view, "running", at, {
         workspace: event.workspace,
+        cwd: event.cwd ?? null,
         guidelines: event.guidelines,
         startedAt: view.startedAt ?? at,
         pendingAnswer: null,

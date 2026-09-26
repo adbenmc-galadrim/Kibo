@@ -43,6 +43,7 @@ const spawned = (resume: boolean): RunEvent => ({
   pid: 42,
   resume,
   workspace: "worktree:kib-14",
+  cwd: "/repo/.kibo/worktrees/kib-14",
   guidelines: 3,
 });
 const running = () =>
@@ -63,6 +64,7 @@ test("full cycle: queue, run, question, answer, resume, done", () => {
     state: "running",
     startedAt: 120,
     workspace: "worktree:kib-14",
+    cwd: "/repo/.kibo/worktrees/kib-14",
     guidelines: 3,
     turns: 1,
   });
