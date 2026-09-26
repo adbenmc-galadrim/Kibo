@@ -60,10 +60,12 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
   const titleId = useId();
   const { project, tickets } = group;
   const domainOf = (id: string | null) => config?.domains.find((d) => d.id === id) ?? null;
+  const agentName = (ref: string) =>
+    config?.profiles.find((p) => p.id === ref || p.name === ref)?.name ?? ref;
   return (
     <section aria-labelledby={titleId} className="grid gap-2">
       <h2 className="flex items-center gap-2 px-1">
-        <span aria-hidden className="size-2 rounded-[2px]" style={{ background: project.color }} />
+        <span aria-hidden className="size-2 rounded-full" style={{ background: project.color }} />
         <span id={titleId} className="text-sm font-semibold">
           {project.name}
         </span>
@@ -76,6 +78,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
             ticket={ticket}
             tab={tab}
             domain={domainOf(ticket.domainId)}
+            agent={ticket.assignee?.kind === "agent" ? agentName(ticket.assignee.ref) : null}
             workflow={snapshot?.workflow ?? []}
             canRun={project.folder !== null}
             onOpen={() => onOpenTicket(project.id, ticket.id)}

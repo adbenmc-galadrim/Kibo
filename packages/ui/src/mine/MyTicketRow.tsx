@@ -11,6 +11,7 @@ type Props = {
   ticket: TicketView;
   tab: MineTab;
   domain: Domain | null;
+  agent: string | null;
   workflow: readonly Status[];
   canRun: boolean;
   onOpen(): void;
@@ -48,7 +49,7 @@ function AssignAction({ canRun, onAssign }: { canRun: boolean; onAssign(): void 
   );
 }
 
-export function MyTicketRow({ ticket, tab, domain, workflow, canRun, onOpen, onAssign }: Props) {
+export function MyTicketRow({ ticket, tab, domain, agent, workflow, canRun, onOpen, onAssign }: Props) {
   const status = workflow.find((s) => s.id === ticket.statusId)?.label ?? ticket.statusId;
   return (
     <li className="flex h-12 items-center gap-3 rounded-lg border bg-card pr-4">
@@ -69,8 +70,8 @@ export function MyTicketRow({ ticket, tab, domain, workflow, canRun, onOpen, onA
         </Badge>
       )}
       <span className="w-24 shrink-0 text-sm text-muted-foreground">{status}</span>
-      {tab === "agents" && ticket.assignee ? (
-        <AgentName name={ticket.assignee.ref} />
+      {tab === "agents" && agent ? (
+        <AgentName name={agent} />
       ) : (
         <AssignAction canRun={canRun} onAssign={onAssign} />
       )}

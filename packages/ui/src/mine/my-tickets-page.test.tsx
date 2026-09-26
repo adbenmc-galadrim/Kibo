@@ -66,6 +66,21 @@ describe("my tickets page", () => {
     expect(within(kibo).queryByRole("button", { name: "Assigner" })).toBeNull();
   });
 
+  test("my agents falls back on the assignee ref without a known profile", () => {
+    render(
+      <MyTicketsPage
+        viewer="adam"
+        projects={[kib]}
+        snapshots={mineSnapshots}
+        config={null}
+        onOpenTicket={() => {}}
+        onAssign={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
+    expect(within(screen.getByRole("region", { name: "Kibo" })).getByText("opus")).toBeTruthy();
+  });
+
   test("an empty tab says so", () => {
     render(
       <MyTicketsPage
