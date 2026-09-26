@@ -150,6 +150,22 @@ describe("validateComponent", () => {
       ok: false,
       errors: ["{config.server} est réservé aux composants intégrés"],
     });
+    writeFileSync(
+      join(dir, "kibo.component.json"),
+      JSON.stringify({
+        id: "hello",
+        version: "0.1.0",
+        kind: "widget",
+        title: "H",
+        reads: [],
+        writes: [],
+        mcp: ["context7", "figma/get_metadata"],
+      }),
+    );
+    expect((await validateComponent(dir, opts)).manifest).toEqual({
+      ok: false,
+      errors: ["serveur MCP réservé à Kibo : figma"],
+    });
     writeFileSync(join(dir, "kibo.component.json"), "{");
     expect((await validateComponent(dir, opts)).manifest.ok).toBe(false);
   }, 120_000);

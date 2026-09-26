@@ -9,6 +9,7 @@ import {
   isBuiltinId,
   KiboError,
   permissionList,
+  RESERVED_MCP_IDS,
   type ValidationReport,
 } from "@kibo/schema";
 import { z } from "zod";
@@ -62,6 +63,11 @@ export async function readValidationStamp(dir: string): Promise<ValidationStamp 
   }
 }
 
+function reservedMcpServers(rules: readonly string[]): string[] {
+  const servers = new Set(rules.map((rule) => rule.split("/")[0] ?? rule));
+  return RESERVED_MCP_IDS.filter((id) => servers.has(id));
+}
+
 async function readManifest(dir: string): Promise<ComponentManifest | string[]> {
   let raw: unknown;
   try {
@@ -74,6 +80,8 @@ async function readManifest(dir: string): Promise<ComponentManifest | string[]> 
   if (!parsed.success) return parsed.error.issues.map((i) => `${i.path.join(".")} : ${i.message}`);
   if (isBuiltinId(parsed.data.id)) return [FR_DEVKIT.reservedId(parsed.data.id)];
   if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];
+  const reserved = reservedMcpServers(parsed.data.mcp);
+  if (reserved.length > 0) return reserved.map(FR_DEVKIT.reservedMcpServer);
   return parsed.data;
 }
 

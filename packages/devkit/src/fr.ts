@@ -15,6 +15,7 @@ export const formatIssue = (i: SourceIssue): string => `${i.file}:${i.line} · $
 export const FR_DEVKIT = {
   reservedId: (id: string) => `identifiant réservé à un composant intégré : ${id}`,
   configServerReserved: "{config.server} est réservé aux composants intégrés",
+  reservedMcpServer: (id: string) => `serveur MCP réservé à Kibo : ${id}`,
   manifestUnreadable: "kibo.component.json est absent ou n'est pas du JSON valide",
   sourcesRefused: (detail: string) => `sources refusées : ${detail}`,
   typeError: (file: string, line: number, text: string) => `${file}:${line} · ${text}`,
