@@ -18,6 +18,7 @@ jobs:
       - run: bun run typecheck
       - run: bun run --cwd packages/ui build
       - run: bun test packages components
+      - run: bun apps/desktop/scripts/cli-smoke.ts
   e2e:
     needs: test
     strategy:
