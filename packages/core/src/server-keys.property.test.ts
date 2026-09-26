@@ -76,7 +76,6 @@ function play(server: LoroDoc, client: LoroDoc, s: Step): void {
   if (s.kind === "delete") {
     const id = nth(ids, s.pick);
     if (id) deleteTicket(client, id);
-    client.commit();
   }
   if (s.kind === "move") {
     const id = nth(ids, s.pick);
