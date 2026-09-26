@@ -7982,7 +7982,7 @@ git commit -m "feat(daemon): backends, actions et jobs"
   - `type WatchFn = (dir: string, onEvent: () => void) => { close(): void }` ; `watchNotes(dir, onChange, opts?: { debounceMs?: number; pollMs?: number; watch?: WatchFn; log?: (line: string) => void }): { close(): void; readonly polling: boolean }`.
   - `type NotesProject = { id: string; key: string; folder: string | null }` ; `createNotesService(deps: { db: Database; home: string; homeDir?: string; project(projectId): NotesProject; onChange?: (projectId: string) => void; watch?: WatchFn; debounceMs?: number }): NotesService` avec `info(projectId): NotesInfo`, `setDir(projectId, dir): Promise<NotesInfo>`, `handle(projectId, call: ComponentCall): Promise<unknown>`, `refresh(projectId): Promise<void>`, `close(): void`.
 
-- [ ] **Step 1: Écrire les tests des fichiers**
+- [x] **Step 1: Écrire les tests des fichiers**
 
 `packages/daemon/src/notes/notes-fs.test.ts` :
 ```ts
@@ -8066,7 +8066,7 @@ describe("writes", () => {
 Run: `bun test packages/daemon/src/notes/notes-fs.test.ts`
 Expected: FAIL (module absent).
 
-- [ ] **Step 2: Implémenter `notes-fs.ts`**
+- [x] **Step 2: Implémenter `notes-fs.ts`**
 
 ```ts
 import { lstat, mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -8168,7 +8168,7 @@ export async function removeNoteFile(dir: string, rel: string): Promise<void> {
 ```
 La deuxième `resolveNotePath` après `mkdir` revérifie qu'aucun lien symbolique n'a été glissé entre-temps dans les dossiers créés. Le fichier temporaire est caché : l'index et la surveillance l'ignorent.
 
-- [ ] **Step 3: Écrire les tests de l'index et implémenter `settings.ts` et `index.ts`**
+- [x] **Step 3: Écrire les tests de l'index et implémenter `settings.ts` et `index.ts`**
 
 `packages/daemon/src/notes/index.test.ts` :
 ```ts
@@ -8330,7 +8330,7 @@ export function createNotesIndex(db: Database): NotesIndex {
 Run: `bun test packages/daemon/src/notes/index.test.ts packages/daemon/src/notes/notes-fs.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Écrire les tests de la surveillance et du service**
+- [x] **Step 4: Écrire les tests de la surveillance et du service**
 
 `packages/daemon/src/notes/watch.test.ts` :
 ```ts
@@ -8503,7 +8503,7 @@ Note : `ComponentCall` valide les chemins par Zod côté RPC ; le service revér
 Run: `bun test packages/daemon/src/notes`
 Expected: FAIL (modules `watch` et `service` absents).
 
-- [ ] **Step 5: Implémenter `watch.ts`**
+- [x] **Step 5: Implémenter `watch.ts`**
 
 ```ts
 import { watch as fsWatch } from "node:fs";
@@ -8586,7 +8586,7 @@ export function watchNotes(
 }
 ```
 
-- [ ] **Step 6: Implémenter `service.ts`**
+- [x] **Step 6: Implémenter `service.ts`**
 
 ```ts
 import type { Database } from "bun:sqlite";
@@ -8752,7 +8752,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
 ```
 `Bun.write` d'un fichier caché `.keep` crée le dossier par défaut (et ses parents) à la première écriture seulement : lire ne crée jamais rien sur le disque. `isDirectory` renvoie `false` sur toute erreur de `stat` : c'est la question posée (« ce dossier est-il utilisable ? »), l'erreur n'est pas perdue puisque l'appelant répond `INVALID_INPUT` ou une liste vide.
 
-- [ ] **Step 7: Vérifier et committer**
+- [x] **Step 7: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/notes && bun run typecheck && bun run check`
 Expected: PASS.
