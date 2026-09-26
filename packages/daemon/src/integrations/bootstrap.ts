@@ -3,12 +3,15 @@ import { createBunSecretStore } from "./bun-secret-store";
 import { migrateIntegrations } from "./db";
 import { createEventLog, type EventLog } from "./events";
 import { createMemorySecretStore } from "./memory-secret-store";
+import { createIntegrationFetch, GITHUB_API, parseTestOrigins } from "./net";
 import { builtinProbes } from "./probes";
+import { createRateLimitGate, type RateLimitGate } from "./rate-limit";
 import type { Redactor } from "./redact";
 import { createIntegrationRpc, type IntegrationRpc, NEUTRAL_HOOKS } from "./registry";
 import { createSettings, type Settings } from "./settings";
 import type {
   ComponentIntegrationHooks,
+  IntegrationFetch,
   IntegrationHandlers,
   IntegrationHost,
   IntegrationProbe,
@@ -24,7 +27,9 @@ export type IntegrationKit = {
   settings: Settings;
   secrets: SecretStore;
   hooks: ComponentIntegrationHooks;
+  net: IntegrationNet;
 };
+export type IntegrationNet = { fetch: IntegrationFetch; gate: RateLimitGate; aliases: Map<string, URL> };
 export type IntegrationModule = {
   handlers?: IntegrationHandlers;
   probes?: IntegrationProbe[];
@@ -41,6 +46,7 @@ export function parseIntegrationFlags(values: {
     .split(",")
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
+  parseTestOrigins(testOrigins);
   const memorySecrets = values["memory-secrets"] === true;
   if (memorySecrets && testOrigins.length === 0) {
     throw new KiboError("INVALID_INPUT", "--memory-secrets requires --test-origins");
@@ -63,6 +69,11 @@ export function startIntegrations(
     console.warn(`[kibo-daemon] test origins enabled: ${flags.testOrigins.join(", ")}`);
   if (flags.memorySecrets) console.warn("[kibo-daemon] in-memory secret store (test mode)");
   const secrets = secretStoreFor(flags, redactor);
+  const aliases = parseTestOrigins(flags.testOrigins);
+  const gate = createRateLimitGate(host.now);
+  const observe = (h: string, headers: Headers) => {
+    if (h === GITHUB_API) gate.observe(headers);
+  };
   const kit: IntegrationKit = {
     host,
     flags,
@@ -70,7 +81,8 @@ export function startIntegrations(
     events: createEventLog(host.db, redactor, host.now),
     settings: createSettings(host.db),
     secrets,
-    hooks: { ...NEUTRAL_HOOKS, secret: (name) => secrets.get(name) },
+    hooks: { ...NEUTRAL_HOOKS, aliases, observe, secret: (name) => secrets.get(name) },
+    net: { fetch: createIntegrationFetch({ aliases, observe }), gate, aliases },
   };
   const modules: IntegrationModule[] = [{ probes: builtinProbes(kit.host) }];
   return createIntegrationRpc({

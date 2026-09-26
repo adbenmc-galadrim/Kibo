@@ -9,3 +9,10 @@ test("memory secrets require test origins", () => {
   });
   expect(() => parseIntegrationFlags({ "memory-secrets": true })).toThrow("INVALID_INPUT");
 });
+
+test("a malformed test origin stops the daemon at startup", () => {
+  expect(() => parseIntegrationFlags({ "test-origins": "api.github.com=https://api.github.com" })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(() => parseIntegrationFlags({ "test-origins": "nope" })).toThrow("INVALID_INPUT");
+});
