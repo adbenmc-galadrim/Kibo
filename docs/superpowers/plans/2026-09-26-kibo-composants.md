@@ -17788,7 +17788,7 @@ git commit -m "test(e2e): tailles de texte des maquettes"
 
 Règles (décision 31) : « Assignés à moi » = non terminés, assigné humain égal à l'utilisateur (compteur de la barre latérale) ; « Mes agents » = non terminés, assignés à un agent ; « Créés par moi » = onglet désactivé (point E5, option A). Groupes par projet dans l'ordre de la barre latérale, projets vides masqués ; tri : Bloqué, En cours, À faire, En review, Backlog, puis ticket en attente d'un bloquant d'abord, puis ordre naturel des clés. Ligne : pastille de statut, clé (mono, 11 px), titre, badge de domaine (carré de couleur + nom, 10 px), libellé du statut (workflow du projet), puis « Assigner » (icône `Bot` + texte) si le projet a un dossier, sinon bouton icône `Bot` désactivé avec infobulle (un run exige un dossier : `workspace-prep.ts`, « the project has no local folder ») ; dans « Mes agents », la colonne d'action montre `Bot` + nom du profil. Clic sur la ligne ⇒ sheet du ticket. En-tête : segmenté « Assignés à moi · Mes agents · Créés par moi » à gauche, « 9 tickets · 3 projets » à droite.
 
-- [ ] **Step 1: Tests du calcul**
+- [x] **Step 1: Tests du calcul**
 
 `packages/ui/src/mine/my-tickets.test.ts` (jeu fictif, `design/donnees-fictives.md` § Mes tickets) :
 ```ts
@@ -17866,7 +17866,7 @@ describe("my tickets", () => {
 Run: `bun test packages/ui/src/mine/my-tickets.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter le calcul**
+- [x] **Step 2: Implémenter le calcul**
 
 `packages/ui/src/mine/my-tickets.ts` :
 ```ts
@@ -17910,7 +17910,7 @@ export const countMine = (groups: readonly MineGroup[]): number => groups.reduce
 Run: `bun test packages/ui/src/mine/my-tickets.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Tests de la page**
+- [x] **Step 3: Tests de la page**
 
 `packages/ui/src/i18n/fr.ts` : `nav.mine: "Mes tickets"` et
 ```ts
@@ -17963,7 +17963,7 @@ test("my agents tab and the disabled created tab", async () => {
 Run: `bun test packages/ui/src/mine`
 Expected: FAIL.
 
-- [ ] **Step 4: Implémenter la page et la ligne**
+- [x] **Step 4: Implémenter la page et la ligne**
 
 `MyTicketsPage.tsx` : état local `tab` (défaut `assigned`) ; `groups = myTickets(...)` mémorisé ; en-tête `flex items-center justify-between border-b px-6 py-3` avec le `ToggleGroup` (fond `bg-muted`, élément actif `bg-background shadow-sm`, `text-xs`) et le résumé `text-xs text-muted-foreground` ; « Créés par moi » désactivé, enveloppé d'un `Tooltip` `fr.mine.createdLater` ; corps `grid gap-6 p-6` ; un `section` par groupe `aria-labelledby` sur le titre (pastille carrée de la couleur du projet, nom `text-sm font-semibold`, nombre `text-2xs text-muted-foreground`) puis une liste de `MyTicketRow` ; état vide `text-sm text-muted-foreground` (`fr.mine.empty[tab]`).
 
@@ -17972,7 +17972,7 @@ Expected: FAIL.
 Run: `bun test packages/ui/src/mine`
 Expected: PASS.
 
-- [ ] **Step 5: Brancher l'écran**
+- [x] **Step 5: Brancher l'écran**
 
 - `packages/schema/src/tabs.ts` : `Screen = z.enum(["agents", "queue", "domains", "components", "mine"])`. Un onglet persisté reste valide (ajout seulement).
 - `SCREENS.mine = { title: fr.nav.mine, icon: List, crumbs: [fr.nav.mine] }` ; `Breadcrumb` : `heading` vrai pour `mine`.
@@ -18008,7 +18008,7 @@ test("12 · Mes tickets", async () => {
 Run: `bun test packages components && bun run --cwd e2e test --project screens-dark --project screens-light`
 Expected: PASS.
 
-- [ ] **Step 6: Contrôle visuel, vérifier et committer**
+- [x] **Step 6: Contrôle visuel, vérifier et committer**
 
 Comparer l'écran 12 à la page 22 des deux PDF (sombre puis clair) avec le jeu fictif : groupes, ordre, badges, « Assigner », résumé, entrée de la barre latérale et son compteur.
 
