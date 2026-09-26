@@ -129,6 +129,21 @@ test("an oversized body is a 413 and records nothing", async () => {
   expect(got).toEqual([]);
 });
 
+test("an endless body is cut off as soon as it exceeds the limit", async () => {
+  const { s, got } = sink();
+  let pulled = 0;
+  const endless = new ReadableStream<Uint8Array>({
+    pull(c) {
+      pulled += 1;
+      c.enqueue(new Uint8Array(16_384).fill(32));
+    },
+  });
+  const req = new Request("http://127.0.0.1:1/hooks/r1", { method: "POST", headers: auth, body: endless });
+  expect((await handleHook(req, "r1", s)).status).toBe(413);
+  expect(pulled * 16_384).toBeLessThan(MAX_HOOK_BYTES * 2);
+  expect(got).toEqual([]);
+});
+
 test("an oversized body without the token is still a 401", async () => {
   const { s } = sink();
   const big = body(payload, { content: "x".repeat(MAX_HOOK_BYTES) });
