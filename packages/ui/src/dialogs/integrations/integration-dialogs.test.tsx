@@ -218,6 +218,8 @@ test("mcp list: toggles, removes after confirmation, reports on close", async ()
   render(<McpServersDialog open onOpenChange={() => {}} onDone={onDone} />);
   expect(await screen.findByText("Commande locale (stdio) · 2 outils")).toBeDefined();
   expect(screen.getByText("Désactivé")).toBeDefined();
+  expect(screen.getByText("Commande locale (stdio) · —")).toBeDefined();
+  expect(screen.queryByText(/0 outil/)).toBeNull();
   await user.click(screen.getByRole("switch", { name: "Activé Linear" }));
   expect(calls).toContainEqual({ method: "setMcpServerEnabled", id: "linear", enabled: true });
   await user.click(screen.getAllByRole("button", { name: "Retirer" })[0] as HTMLElement);

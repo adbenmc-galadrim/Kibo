@@ -97,7 +97,7 @@ export const frIntegrations = {
     subtitle: "Connecteurs génériques utilisables par les widgets Source MCP et par les agents.",
     add: "Ajouter un serveur",
     empty: "Aucun serveur MCP.",
-    tools: (n: number) => `${n} ${plural(n, "outil", "outils")}`,
+    tools: (n: number) => (n === 0 ? "—" : `${n} ${plural(n, "outil", "outils")}`),
     enabled: "Activé",
     active: "Actif",
     disabled: "Désactivé",
