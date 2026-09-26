@@ -1,4 +1,5 @@
-import { type ComponentManifest, KiboError } from "@kibo/schema";
+import { readSources } from "@kibo/devkit";
+import { ComponentManifest, KiboError } from "@kibo/schema";
 import type { ComponentStore, StoredVersion } from "./store";
 
 export type FakeStore = ComponentStore & {
@@ -46,8 +47,18 @@ export function createFakeStore(): FakeStore {
     tamper: (id, version) => {
       tampered.add(key(id, version));
     },
-    put: async () => {
-      throw new KiboError("INTERNAL", "use add() in tests");
+    put: async (srcDir, expectedHash) => {
+      const { hash, files } = await readSources(srcDir);
+      if (expectedHash !== undefined && expectedHash !== hash)
+        throw new KiboError("HASH_MISMATCH", "sources changed");
+      const raw = files.find((f) => f.path === "kibo.component.json");
+      const manifest = ComponentManifest.parse(
+        JSON.parse(new TextDecoder().decode(raw?.bytes ?? new Uint8Array())),
+      );
+      const v = storedVersion(manifest, hash);
+      disk.set(key(v.id, v.version), v);
+      cache.set(key(v.id, v.version), v);
+      return v;
     },
     load,
     verify: async (id, version, hash) => {
