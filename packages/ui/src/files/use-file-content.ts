@@ -17,7 +17,7 @@ export type FileContentState = {
   replaceContent(content: FileContent): void;
 };
 
-export function useFileContent(ref: FileRef): FileContentState {
+export function useFileContent(ref: FileRef, follow = true): FileContentState {
   const { worktrees, error: worktreeError } = useWorktrees(ref.projectId);
   const worktree = resolveWorktree(worktrees, ref.worktree);
   const [content, setContent] = useState<FileContent | null>(null);
@@ -69,6 +69,29 @@ export function useFileContent(ref: FileRef): FileContentState {
       request.current++;
     };
   }, [load]);
+
+  const refresh = useCallback(() => {
+    if (!worktreePath) return;
+    const id = ++request.current;
+    client.code({ method: "readFile", projectId, worktree: worktreePath, path, revision: "worktree" }).then(
+      (c) => {
+        if (id !== request.current) return;
+        setError(null);
+        if (c.hash !== null && c.hash === latest.current?.hash) setContent(c);
+        else replaceContent(c);
+      },
+      (e: unknown) => {
+        if (id === request.current) setError(errorMessage(e));
+      },
+    );
+  }, [projectId, path, worktreePath, replaceContent]);
+
+  useEffect(() => {
+    if (!follow || !worktreePath) return;
+    return client.subscribeCode((e) => {
+      if (e.projectId === projectId && e.worktree === worktreePath) refresh();
+    });
+  }, [follow, projectId, worktreePath, refresh]);
 
   const missingWorktree = worktrees !== null && worktree === null ? fr.errors.NOT_FOUND : null;
 

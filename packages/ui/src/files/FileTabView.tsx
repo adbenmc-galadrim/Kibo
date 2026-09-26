@@ -14,8 +14,8 @@ import { useFileContent } from "./use-file-content";
 type Props = { fileRef: FileRef; startEditing: boolean };
 
 export function FileTabView({ fileRef, startEditing }: Props) {
-  const file = useFileContent(fileRef);
   const [editing, setEditing] = useState(startEditing);
+  const file = useFileContent(fileRef, !editing);
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [stale, setStale] = useState(false);

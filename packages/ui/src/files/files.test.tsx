@@ -1,9 +1,10 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type CodeRequest, type FileContent, KiboError } from "@kibo/schema";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { type CodeEvent, type CodeRequest, type FileContent, KiboError } from "@kibo/schema";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: CodeRequest[] = [];
+const listeners = new Set<(e: CodeEvent) => void>();
 let writeOutcome: () => Promise<unknown> = () => Promise.resolve({ hash: "b".repeat(40) });
 const content: FileContent = {
   path: "packages/core/ticket.ts",
@@ -30,7 +31,10 @@ mock.module("../api", () => ({
       if (req.method === "writeFile") return writeOutcome();
       return Promise.resolve(null);
     },
-    subscribeCode: () => () => {},
+    subscribeCode: (l: (e: CodeEvent) => void) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
   },
 }));
 const { FilePreviewSheet } = await import("./FilePreviewSheet");
@@ -153,4 +157,30 @@ test("an unknown worktree is reported instead of loading forever", async () => {
   );
   expect((await screen.findByRole("alert")).textContent).toBe("Élément introuvable.");
   expect(calls.some((c) => c.method === "readFile")).toBe(false);
+});
+
+const reads = () => calls.filter((c) => c.method === "readFile").length;
+const emitCode = (worktree: string) =>
+  act(async () => {
+    for (const l of listeners) l({ type: "code", projectId: "p1", worktree });
+    await new Promise((r) => setTimeout(r, 20));
+  });
+
+test("the preview re-reads the file when its worktree changes", async () => {
+  render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} />);
+  await waitFor(() => expect(document.querySelector('[data-line="4"]')).toBeTruthy());
+  readOutcome = () =>
+    Promise.resolve({ ...content, content: "export const changed = 1;\n", hash: "c".repeat(40), lines: 1 });
+  await emitCode("/elsewhere");
+  expect(reads()).toBe(1);
+  await emitCode("/repo");
+  await waitFor(() => expect(document.body.textContent).toContain("export const changed = 1;"));
+});
+
+test("a file tab being edited is not re-read on a change", async () => {
+  render(<FileTabView fileRef={ref} startEditing />);
+  await screen.findByRole("textbox", { name: "packages/core/ticket.ts" });
+  const before = reads();
+  await emitCode("/repo");
+  expect(reads()).toBe(before);
 });
