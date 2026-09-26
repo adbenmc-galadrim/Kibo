@@ -3325,7 +3325,7 @@ git commit -m "feat(daemon): récepteur de hooks et kibo-hook"
 
 Le tour joué est le n-ième appel pour la même session (1er appel `--session-id` → `turns[0]`, reprise `--resume` → `turns[1]`…). L'étape `hold` bloque jusqu'à `releaseFakeRun`.
 
-- [ ] **Step 1: Écrire les scénarios**
+- [x] **Step 1: Écrire les scénarios**
 
 `packages/daemon/src/agents/scenarios/done.json` :
 ```json
@@ -3415,7 +3415,7 @@ Le tour joué est le n-ième appel pour la même session (1er appel `--session-i
 }
 ```
 
-- [ ] **Step 2: Écrire les tests qui échouent**
+- [x] **Step 2: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/fake-claude.test.ts` :
 ```ts
@@ -3555,12 +3555,12 @@ test("hold keeps the process alive until released", async () => {
 });
 ```
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/fake-claude.test.ts`
 Expected: FAIL (`Cannot find module "./fake-claude-scenario"`).
 
-- [ ] **Step 4: Implémenter**
+- [x] **Step 4: Implémenter**
 
 `packages/daemon/src/agents/fake-claude-scenario.ts` :
 ```ts
@@ -3780,12 +3780,12 @@ process.exit(await main());
 ```
 Puis : `chmod +x packages/daemon/src/agents/fake-claude.ts` (le mode `755` est versionné par git).
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/fake-claude.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/daemon/src/agents/fake-claude.ts packages/daemon/src/agents/fake-claude-scenario.ts packages/daemon/src/agents/scenarios packages/daemon/src/agents/fake-claude.test.ts
