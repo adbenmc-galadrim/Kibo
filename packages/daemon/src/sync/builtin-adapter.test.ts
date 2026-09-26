@@ -21,6 +21,10 @@ const SERVER = `module.exports.server = { actions: {
   "adapter.pull": async () => ({ items: [], cursor: null, more: false }),
   "adapter.push": async () => { for (;;) {} },
 } };`;
+const HANGING_SERVER = `module.exports.server = { actions: {
+  "adapter.pull": () => new Promise(() => {}),
+  "adapter.push": async () => null,
+} };`;
 
 const RealWorker = globalThis.Worker;
 const live = new Set<Worker>();
@@ -46,19 +50,19 @@ afterEach(() => {
   live.clear();
 });
 
-const req = (action: "adapter.pull" | "adapter.push") => ({
+const req = (action: "adapter.pull" | "adapter.push", bindingId = "b1") => ({
   projectId: "p1",
-  bindingId: "b1",
+  bindingId,
   adapter: "github-issues" as const,
   config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
   action,
   input: { cursor: null },
 });
-const hosts = (loadDelayMs = 0, timeoutMs = 60_000) =>
+const hosts = (loadDelayMs = 0, timeoutMs = 60_000, server = SERVER) =>
   createAdapterHosts({
     load: async () => {
       await Bun.sleep(loadDelayMs);
-      return { manifest, server: SERVER };
+      return { manifest, server };
     },
     calls: () => async () => null,
     timeoutMs,
@@ -109,6 +113,20 @@ test("an invocation racing with stop after the load leaves no worker", async () 
   h.stop();
   await pending;
   await Bun.sleep(50);
+  expect(live.size).toBe(0);
+});
+
+test("an invocation queued behind busy slots does not restart the worker after stop", async () => {
+  const h = hosts(0, 60_000, HANGING_SERVER);
+  const all = ["b1", "b2", "b3", "b4", "b5"].map((b) =>
+    h.invoke(req("adapter.pull", b)).catch((e: unknown) => String(e)),
+  );
+  await Bun.sleep(300);
+  expect(live.size).toBe(1);
+  h.stop();
+  const outcomes = await Promise.all(all);
+  await Bun.sleep(300);
+  expect(outcomes.map(String).every((o) => o.includes("COMPONENT_CRASHED"))).toBe(true);
   expect(live.size).toBe(0);
 });
 

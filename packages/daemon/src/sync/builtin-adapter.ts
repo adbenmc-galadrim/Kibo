@@ -53,6 +53,7 @@ export function createAdapterHosts(deps: AdapterHostsDeps): AdapterHosts {
       code: { server: b.server, migrations: null },
       onCall: deps.calls(b.manifest),
       timeoutMs: deps.timeoutMs ?? ADAPTER_TIMEOUT_MS,
+      beforeStart: async () => refuseIfStopped(),
     });
   };
   const hostOf = (id: Binding["adapter"]): Promise<BackendHost> => {
