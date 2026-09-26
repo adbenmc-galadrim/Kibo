@@ -1,6 +1,7 @@
-import { Assignee, type Domain } from "@kibo/schema";
+import { Assignee, type Domain, KiboError } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { listBindings } from "./bindings";
+import { getKeyAllocator } from "./keys";
 import { getProjectMeta } from "./project";
 import { walkDepthFirst } from "./tree";
 
@@ -49,7 +50,11 @@ function migrateBindings(doc: LoroDoc, input: ShareMigrationInput): void {
 }
 
 export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null } {
-  const { folder } = getProjectMeta(doc);
+  const meta = getProjectMeta(doc);
+  if (getKeyAllocator(doc) === "server") {
+    throw new KiboError("INVALID_INPUT", `project ${meta.key} is already shared`);
+  }
+  const { folder } = meta;
   doc.getMap("meta").delete("folder");
   migrateAssignees(doc, input);
   copyUsedDomains(doc, input);

@@ -7,8 +7,10 @@ import {
   createTicket,
   deleteTicket,
   enableServerAllocation,
+  getProjectMeta,
   isDescendant,
   listTickets,
+  migrateForSharing,
   moveTicket,
   updateTicket,
   validateProjectUpdate,
@@ -22,7 +24,7 @@ type Step =
   | { kind: "push"; replica: number }
   | { kind: "pull"; replica: number };
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: "/Users/adam/kibo", color: "#F97316" };
 
 const replicaIndex = fc.nat({ max: 4 });
 const pick = fc.nat({ max: 20 });
@@ -38,6 +40,7 @@ const step: fc.Arbitrary<Step> = fc.oneof(
 function sharedServer(): LoroDoc {
   const doc = createProjectDoc(meta);
   createTicket(doc, { title: "Existant" });
+  migrateForSharing(doc, { localUser: "adam", userId: "u-adam", domains: [] });
   enableServerAllocation(doc);
   return doc;
 }
@@ -117,6 +120,8 @@ test("server keys stay unique and contiguous across concurrent replicas", () => 
       for (const client of replicas) {
         expect(client.oplogVersion().compare(server.oplogVersion())).toBe(0);
         expect(listTickets(client)).toEqual(listTickets(server));
+        expect(getProjectMeta(client)).toMatchObject({ id: "p1", key: "KIB", folder: null });
+        expect(client.getMap("meta").get("folder")).toBeUndefined();
       }
     }),
     { numRuns: 100 },

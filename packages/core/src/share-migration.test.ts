@@ -4,6 +4,7 @@ import {
   addBinding,
   createProjectDoc,
   createTicket,
+  enableServerAllocation,
   getProjectMeta,
   getTicket,
   listBindings,
@@ -85,4 +86,11 @@ test("moves the local user's bindings to the account id", () => {
     { ...binding("b1", "adam"), createdBy: "u-adam", runner: "u-adam" },
     binding("b2", "lea"),
   ]);
+});
+
+test("refuses a project that is already shared", () => {
+  const { doc } = localProject();
+  migrateForSharing(doc, input);
+  enableServerAllocation(doc);
+  expect(() => migrateForSharing(doc, input)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
 });

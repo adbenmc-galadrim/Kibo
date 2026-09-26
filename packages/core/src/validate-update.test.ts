@@ -104,6 +104,46 @@ describe("refused updates", () => {
   });
 });
 
+describe("fields frozen once shared", () => {
+  test("meta.key changed, even to rename the prefix", () => {
+    const verdict = verdictFor(sharedServer(), (c) => {
+      c.getMap("meta").set("key", "KBO");
+      c.commit();
+    });
+    expect(verdict).toEqual({ ok: false, reason: expect.stringContaining("meta.key") });
+  });
+
+  test("meta.id changed", () => {
+    const verdict = verdictFor(sharedServer(), (c) => {
+      c.getMap("meta").set("id", "p2");
+      c.commit();
+    });
+    expect(verdict).toEqual({ ok: false, reason: expect.stringContaining("meta.id") });
+  });
+
+  test("meta.folder written back after the share migration", () => {
+    const server = sharedServer();
+    server.getMap("meta").delete("folder");
+    server.commit();
+    const verdict = verdictFor(server, (c) => {
+      c.getMap("meta").set("folder", "/Users/mallory/kibo");
+      c.commit();
+    });
+    expect(verdict).toEqual({ ok: false, reason: expect.stringContaining("meta.folder") });
+  });
+
+  test("meta.folder brought back even as null", () => {
+    const server = sharedServer();
+    server.getMap("meta").delete("folder");
+    server.commit();
+    const verdict = verdictFor(server, (c) => {
+      c.getMap("meta").set("folder", null);
+      c.commit();
+    });
+    expect(verdict.ok).toBe(false);
+  });
+});
+
 describe("reserved fields forged in another shape", () => {
   test("meta.members written as a plain value on a project without directory", () => {
     const server = createProjectDoc(meta);

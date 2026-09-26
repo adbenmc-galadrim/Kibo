@@ -3,6 +3,8 @@ import type { LoroDoc } from "loro-crdt";
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
 
 const SERVER_META_FIELDS = ["ticketSeq", "keyAllocator", "members"] as const;
+const FROZEN_META_FIELDS = ["id", "key", "folder"] as const;
+const ABSENT = "absent";
 
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -15,7 +17,7 @@ function canonical(value: unknown): string {
 
 function metaField(doc: LoroDoc, field: string): string {
   const meta: Record<string, unknown> = doc.getMap("meta").toJSON();
-  return canonical(meta[field]);
+  return field in meta ? canonical(meta[field]) : ABSENT;
 }
 
 function ticketKeys(doc: LoroDoc): Map<string, string> {
@@ -50,6 +52,11 @@ export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVe
   for (const field of SERVER_META_FIELDS) {
     if (metaField(before, field) !== metaField(after, field)) {
       return { ok: false, reason: `meta.${field} is written by the server only` };
+    }
+  }
+  for (const field of FROZEN_META_FIELDS) {
+    if (metaField(before, field) !== metaField(after, field)) {
+      return { ok: false, reason: `meta.${field} is frozen once the project is shared` };
     }
   }
   const violation = keyViolation(before, after);
