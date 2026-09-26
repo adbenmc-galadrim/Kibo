@@ -96,6 +96,19 @@ describe("backend lifecycle", () => {
     expect(await count(projectId, second)).toBe(1);
   });
 
+  test("a backend stops when its trust is withdrawn", async () => {
+    const { projectId, pageId } = await createProject(h);
+    writeDraft(home, "0.1.0", { server: COUNTER });
+    await publishAndApprove(h, "trusted");
+    const inst = await addInstance(h, projectId, pageId, "hello@0.1.0");
+    expect(await count(projectId, inst)).toBe(1);
+    expect(await count(projectId, inst)).toBe(2);
+    await h.rpc({ method: "revokeComponent", id: "hello", version: "0.1.0" });
+    await expect(count(projectId, inst)).rejects.toThrow("TRUST_REQUIRED");
+    await publishAndApprove(h, "trusted");
+    expect(await count(projectId, inst)).toBe(1);
+  });
+
   test("a backend stops when its instance moves to another version", async () => {
     const { projectId, pageId } = await createProject(h);
     writeDraft(home, "0.1.0", { server: COUNTER });
