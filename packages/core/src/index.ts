@@ -12,4 +12,5 @@ export * from "./registry";
 export * from "./sync-plan";
 export * from "./tickets";
 export * from "./tree";
+export * from "./validate-update";
 export * from "./workspace";
