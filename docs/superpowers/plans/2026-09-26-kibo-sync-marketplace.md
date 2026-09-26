@@ -787,7 +787,7 @@ Petite tâche série qui débloque tout le reste : codes d'erreur, encodage `Bas
   - Paquets `@kibo/trust` et `@kibo/sync-server` (vides, testés, typés).
 - Vérifié en T0 : `SecretName` (type gabarit), la regex privée `SECRET_NAME` et `SecretNameSchema` vivent dans `packages/schema/src/integrations.ts` ; `SecretNameSchema` sert aussi à `ComponentManifest.secrets` (`packages/schema/src/manifest.ts`) et à `createMemorySecretStore` (`packages/daemon/src/integrations/memory-secret-store.ts`) ; il n'existe ni dossier `packages/daemon/src/secrets/` ni `MemorySecretStore` classe. `STATUS` est une constante non exportée de `packages/daemon/src/server.ts` ; `Store` expose déjà `db`, `getLocal`, `setLocal`. `@kibo/daemon` dépend déjà de `zod` 3.25.76.
 
-- [ ] **Step 1: Écrire les tests des codes d'erreur et de `Base64`**
+- [x] **Step 1: Écrire les tests des codes d'erreur et de `Base64`**
 
 Ajouter `Base64` et `Sha256` à l'import `./index` en tête de `packages/schema/src/schema.test.ts`, puis à la fin :
 ```ts
@@ -862,12 +862,12 @@ test("existing mappings are unchanged", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/schema/src/schema.test.ts packages/daemon/src/server-status.test.ts`
 Expected: FAIL — `Base64` introuvable et `SyntaxError: Export named 'STATUS' not found in module`.
 
-- [ ] **Step 3: Ajouter les codes, `Base64` et la table**
+- [x] **Step 3: Ajouter les codes, `Base64` et la table**
 
 Dans `packages/schema/src/ids.ts` :
 ```ts
@@ -908,7 +908,7 @@ Dans `packages/daemon/src/server.ts`, remplacer `const STATUS` par `export const
 Run: `bun test packages/schema/src/schema.test.ts packages/daemon/src/server-status.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Tests des noms de secrets système**
+- [x] **Step 4: Tests des noms de secrets système**
 
 Dans `packages/schema/src/integrations.test.ts`, ajouter `ComponentManifest`, `IntegrationSecretNameSchema`, `SECRET_MARKET_PUBLISHER`, `SECRET_REMOTE_TLS`, `SECRET_SYNC_DEVICE` à l'import `./index`, puis dans le `describe` existant :
 ```ts
@@ -945,7 +945,7 @@ Dans `packages/schema/src/integrations.test.ts`, ajouter `ComponentManifest`, `I
 Run: `bun test packages/schema/src/integrations.test.ts`
 Expected: FAIL — `SECRET_SYNC_DEVICE` introuvable.
 
-- [ ] **Step 5: Étendre `SecretName`**
+- [x] **Step 5: Étendre `SecretName`**
 
 Dans `packages/schema/src/integrations.ts`, remplacer le bloc `SECRET_NAME` / `SecretName` / `SecretNameSchema` par :
 ```ts
@@ -972,7 +972,7 @@ Dans `packages/schema/src/manifest.ts`, remplacer `name: SecretNameSchema` par `
 Run: `bun test packages/schema && bun test packages/daemon/src/integrations packages/daemon/src/mcp`
 Expected: PASS (les tests de la phase 5 inchangés).
 
-- [ ] **Step 6: Types de partage**
+- [x] **Step 6: Types de partage**
 
 `packages/schema/src/sharing.test.ts` :
 ```ts
@@ -1018,7 +1018,7 @@ Ajouter `export * from "./sharing";` à `packages/schema/src/index.ts` (ordre al
 Run: `bun test packages/schema/src/sharing.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Tests des réglages locaux**
+- [x] **Step 7: Tests des réglages locaux**
 
 `packages/daemon/src/settings.test.ts` :
 ```ts
@@ -1083,7 +1083,7 @@ test("unparsable JSON is reported", () => {
 Run: `bun test packages/daemon/src/settings.test.ts`
 Expected: FAIL — `Cannot find module './settings'`.
 
-- [ ] **Step 8: Implémenter `settings.ts`**
+- [x] **Step 8: Implémenter `settings.ts`**
 
 `packages/daemon/src/settings.ts` :
 ```ts
@@ -1123,7 +1123,7 @@ export function openLocalSettings(store: Pick<Store, "getLocal" | "setLocal">): 
 Run: `bun test packages/daemon/src/settings.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 9: Commit du socle**
+- [x] **Step 9: Commit du socle**
 
 Run: `bun run check && bun run typecheck && bun test packages/schema packages/daemon/src/settings.test.ts packages/daemon/src/server-status.test.ts`
 Expected: sans erreur.
@@ -1133,7 +1133,7 @@ git add packages/schema/src/errors.ts packages/schema/src/ids.ts packages/schema
 git commit -m "feat: codes, secrets et réglages de phase 7"
 ```
 
-- [ ] **Step 10: Squelette `packages/trust`**
+- [x] **Step 10: Squelette `packages/trust`**
 
 `packages/trust/package.json` :
 ```json
@@ -1174,7 +1174,7 @@ test("trust package is wired", () => {
 });
 ```
 
-- [ ] **Step 11: Squelette `packages/sync-server`**
+- [x] **Step 11: Squelette `packages/sync-server`**
 
 `packages/sync-server/package.json` :
 ```json
@@ -1223,12 +1223,12 @@ Dans le script `typecheck` du `package.json` racine, insérer `packages/trust` a
 "typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/tickets components/kanban components/graph components/notes components/github-issues components/mcp-source e2e apps/desktop"
 ```
 
-- [ ] **Step 12: Installer et vérifier**
+- [x] **Step 12: Installer et vérifier**
 
 Run: `bun install && bun test packages/trust packages/sync-server && bun run check && bun run typecheck`
 Expected: 2 tests PASS, Biome et tsc sans erreur ; `bun.lock` gagne les deux espaces de travail, aucun paquet npm nouveau.
 
-- [ ] **Step 13: Mettre à jour `CLAUDE.md`**
+- [x] **Step 13: Mettre à jour `CLAUDE.md`**
 
 Dans le bloc « Monorepo », ajouter après la ligne `packages/devkit/` :
 ```
@@ -1240,7 +1240,7 @@ Remplacer la phrase des dépendances autorisées par :
 Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon`, `devkit ← cli`, `schema ← trust ← {devkit, daemon, sync-server, cli}`, `schema ← core ← sync-server` ; `core ← sdk/mock` (SDK simulé uniquement). `sync-server` n'est qu'une `devDependency` du démon et d'`e2e`, pour leurs tests.
 ```
 
-- [ ] **Step 14: Commit des paquets**
+- [x] **Step 14: Commit des paquets**
 
 ```bash
 git add packages/trust packages/sync-server package.json bun.lock CLAUDE.md
