@@ -5291,7 +5291,7 @@ git commit -m "feat(ui): fondations des écrans agents"
 
 Ligne de commande (faits vérifiés sur Claude Code 2.1.283, voir le complément de spec) : `claude -p --output-format stream-json --verbose [--permission-mode <mode>] --permission-prompts none --model <alias> --settings <json> --mcp-config <json> --append-system-prompt-file <run>/CLAUDE.md (--session-id <uuid> | --resume <uuid>)`, prompt sur **stdin** (le CLI attend 3 s un stdin qui n'est pas fermé). L'aide de la 2.1.283 liste `manual` et plus `default` pour `--permission-mode` : le mode est choisi d'après `claude --help` lu une fois par binaire. Le processus est lancé dans son propre groupe (`detached`) : annulation, échec et arrêt du démon tuent le groupe entier (sous-processus de l'agent compris). Hooks « commande » sur les 9 événements (`matcher: "*"` pour les outils, `timeout: 10`), `permissions.allow: ["mcp__kibo__ask_user"]`. L'environnement hérité perd toutes les variables `CLAUDE*` (sauf `CLAUDE_CONFIG_DIR`) pour qu'un démon lancé depuis une session Claude Code ne contamine pas l'agent.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/transcript.test.ts` :
 ```ts
@@ -5533,12 +5533,12 @@ test.skipIf(claudeInCommonPlaces)("the claude binary is found in PATH or common 
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/runner.test.ts packages/daemon/src/agents/transcript.test.ts`
 Expected: FAIL (modules introuvables).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/agents/transcript.ts` :
 ```ts
@@ -5827,12 +5827,12 @@ export function resolveClaudeBin(
   return found;
 }
 ```
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/runner.test.ts packages/daemon/src/agents/transcript.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/agents/runner.ts packages/daemon/src/agents/transcript.ts packages/daemon/src/agents/runner.test.ts packages/daemon/src/agents/transcript.test.ts
