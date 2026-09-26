@@ -142,9 +142,7 @@ test("NewProjectDialog Passer then Retour brings the role preset back", async ()
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Passer" }));
   await user.click(screen.getByRole("button", { name: "Retour" }));
-  expect(
-    (screen.getByLabelText("Inclure Tableau de bord") as HTMLInputElement).getAttribute("data-state"),
-  ).toBe("checked");
+  expect(screen.getByLabelText("Inclure Tableau de bord").getAttribute("data-state")).toBe("checked");
   await user.click(screen.getByRole("button", { name: "Continuer" }));
   expect(checked("Pages conseillées")).toBe("checked");
 });
