@@ -10068,7 +10068,7 @@ Branche l'orchestrateur, la configuration (profils, domaines, guidelines) et le 
   - `startServer({ …, hooks?: HookSink })` : `POST /hooks/<uuid>` (contrôle `Host` puis jeton de run, sans cookie ni `Origin`) ; `PROFILE_IN_USE` et `INVALID_TRANSITION` → HTTP 409 ; le WebSocket publie des `ChangeMessage` (`{ projectId }`, `{ topic }` ou `{ type: "run.changed", runId, state }` à chaque changement d'état d'un run)
   - `main.ts` : option `--claude-bin <chemin>` ; `~/.kibo/runs.db` ; `getSession.notifications = "native"` si `KIBO_NATIVE_NOTIFY=1`, sinon `"browser"`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/data-port.test.ts` :
 ```ts
@@ -10340,12 +10340,12 @@ test("four runs on three slots leave one queued", async () => {
 }, 40_000);
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon`
 Expected: FAIL (`Cannot find module "./agents/data-port"`, `getSession` sans `notifications`, `hooks` inconnu de `startServer`).
 
-- [ ] **Step 3: Docs, configuration et port de données**
+- [x] **Step 3: Docs, configuration et port de données**
 
 `packages/daemon/src/docs.ts` :
 ```ts
@@ -10462,7 +10462,7 @@ export function createDataPort(docs: Docs): AgentDataPort {
 }
 ```
 
-- [ ] **Step 4: Service**
+- [x] **Step 4: Service**
 
 Remplacer `packages/daemon/src/service.ts` par :
 ```ts
@@ -10628,7 +10628,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
 }
 ```
 
-- [ ] **Step 5: Serveur**
+- [x] **Step 5: Serveur**
 
 `packages/daemon/src/server.ts` :
 - importer `handleHook` et `type HookSink` depuis `./agents/hook-route` ;
@@ -10652,7 +10652,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   });
 ```
 
-- [ ] **Step 6: Lancement**
+- [x] **Step 6: Lancement**
 
 Remplacer `packages/daemon/src/main.ts` par :
 ```ts
@@ -10728,12 +10728,12 @@ process.stdout.write(`KIBO_READY ${server.url}/#pair=${token}\n`);
 ```
 Le démon reste sur `127.0.0.1` ; aucune nouvelle origine. Les tests existants de `main.test.ts` restent verts (première ligne `KIBO_READY`, arrêt propre sur `SIGTERM`).
 
-- [ ] **Step 7: Vérifier**
+- [x] **Step 7: Vérifier**
 
 Run: `bun test packages/daemon && bun run format && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/daemon/src/docs.ts packages/daemon/src/workspace-config.ts packages/daemon/src/agents/data-port.ts packages/daemon/src/agents/data-port.test.ts packages/daemon/src/agents.integration.test.ts packages/daemon/src/service.ts packages/daemon/src/service.test.ts packages/daemon/src/server.ts packages/daemon/src/server.test.ts packages/daemon/src/main.ts
