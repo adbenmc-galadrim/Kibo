@@ -86,7 +86,7 @@ Tâche courte et bloquante : elle fige tous les types, requêtes, événements e
 - Produces (`@kibo/sdk`) : `FileOpenRequest = { path: string; line?: number | null; origin?: string | null }` ; `KiboSdk.openFile(req)` ; `MockSdk.openedFiles: FileOpenRequest[]` ; `KiboClient.code(req)` et `KiboClient.subscribeCode(listener: (e: CodeEvent) => void): () => void`.
 - Produces (`packages/ui`) : `fr` complet de la phase ; `errorMessage(e: unknown): string` ; `useSnapshots(projectIds: string[]): Map<string, ProjectSnapshot>` ; `Host.openFile(ref: FileRef): void`.
 
-- [ ] **Step 1: Écrire les tests des schémas**
+- [x] **Step 1: Écrire les tests des schémas**
 
 `packages/schema/src/code.test.ts` :
 ```ts
@@ -165,12 +165,12 @@ describe("tabs contracts", () => {
 
 Dans `packages/schema/src/schema.test.ts`, ajouter `externalRefs: [],` à l'objet `base` du bloc `describe("ticket")`. Même ajout (`externalRefs: [],`) dans les fabriques de `components/tickets/src/build-tree.test.ts` et `components/kanban/src/filter.test.ts`.
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `bun test packages/schema`
 Expected: FAIL, `Cannot find module './code'`.
 
-- [ ] **Step 3: Écrire les schémas**
+- [x] **Step 3: Écrire les schémas**
 
 `packages/schema/src/external-ref.ts` :
 ```ts
@@ -489,12 +489,12 @@ export type KiboErrorCode =
 
 `packages/schema/src/index.ts` : ajouter `export * from "./code";`, `export * from "./external-ref";`, `export * from "./tabs";`.
 
-- [ ] **Step 4: Relancer les tests du schéma**
+- [x] **Step 4: Relancer les tests du schéma**
 
 Run: `bun test packages/schema`
 Expected: PASS.
 
-- [ ] **Step 5: Test du noyau pour `upsertExternalRef`**
+- [x] **Step 5: Test du noyau pour `upsertExternalRef`**
 
 Ajouter à `packages/core/src/tickets.test.ts` (même style que les tests existants, avec l'import `upsertExternalRef` depuis `./tickets`) :
 ```ts
@@ -512,7 +512,7 @@ test("upsertExternalRef adds a PR once per URL and keeps the latest state", () =
 Run: `bun test packages/core/src/tickets.test.ts`
 Expected: FAIL, `upsertExternalRef` introuvable.
 
-- [ ] **Step 6: Implémenter dans le noyau**
+- [x] **Step 6: Implémenter dans le noyau**
 
 `packages/core/src/tickets.ts` :
 - importer `type ExternalRef` depuis `@kibo/schema` ;
@@ -538,7 +538,7 @@ export function upsertExternalRef(doc: LoroDoc, id: string, ref: ExternalRef): T
 Run: `bun test packages/core`
 Expected: PASS.
 
-- [ ] **Step 7: Tests du SDK (client et openFile)**
+- [x] **Step 7: Tests du SDK (client et openFile)**
 
 Ajouter à `packages/sdk/src/client.test.ts` :
 ```ts
@@ -609,7 +609,7 @@ test("openFile is forwarded to the host and recorded by the mock", () => {
 Run: `bun test packages/sdk`
 Expected: FAIL (`client.code` et `openFile` absents).
 
-- [ ] **Step 8: Implémenter le SDK**
+- [x] **Step 8: Implémenter le SDK**
 
 `packages/sdk/src/types.ts` :
 ```ts
@@ -750,7 +750,7 @@ Les deux `as` sur le résultat sont justifiés : `RpcResult` / `CodeResult` sont
 Run: `bun test packages/sdk`
 Expected: PASS.
 
-- [ ] **Step 9: Textes UI de la phase**
+- [x] **Step 9: Textes UI de la phase**
 
 Dans `packages/ui/src/i18n/fr.ts`, ajouter en tête du fichier `const s = (n: number) => (n > 1 ? "s" : "");`, puis :
 - dans `nav` : `changes: "Changements",`, `changesCount: (n: number) => \`${n} fichier${s(n)} modifié${s(n)}\`,` et `search: "Rechercher…",` ;
@@ -941,7 +941,7 @@ Dans `packages/ui/src/i18n/fr.ts`, ajouter en tête du fichier `const s = (n: nu
   },
 ```
 
-- [ ] **Step 10: `errorMessage` et `useSnapshots` (test d'abord)**
+- [x] **Step 10: `errorMessage` et `useSnapshots` (test d'abord)**
 
 `packages/ui/src/lib/error-message.test.ts` :
 ```ts
@@ -1053,7 +1053,7 @@ export function useSnapshots(projectIds: string[]): Map<string, ProjectSnapshot>
 Run: `bun test packages/ui/src/lib packages/ui/src/state`
 Expected: PASS.
 
-- [ ] **Step 11: Hôte et page : `openFile`**
+- [x] **Step 11: Hôte et page : `openFile`**
 
 `packages/ui/src/shell/Host.tsx` : importer `type FileRef` depuis `@kibo/schema` et étendre
 ```ts
@@ -1072,7 +1072,7 @@ export type Host = {
           host.openFile({ projectId, worktree: null, path: r.path, line: r.line ?? null, origin: r.origin ?? null }),
 ```
 
-- [ ] **Step 12: Vérifier et commiter**
+- [x] **Step 12: Vérifier et commiter**
 
 Run: `bun test && bun run check && bun run typecheck`
 Expected: tout vert.
