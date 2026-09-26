@@ -91,26 +91,26 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     watchers.delete(projectId);
   };
 
-  const follow = (projectId: string, dir: string) => {
-    if (watchers.has(projectId)) return;
+  const follow = (projectId: string, dir: string): Promise<void> => {
+    const current = watchers.get(projectId);
+    if (current) return current.ready;
     const onEvent = () => {
       refresh(projectId).catch((e: unknown) => log(`notes refresh failed for ${projectId}: ${String(e)}`));
     };
-    watchers.set(
-      projectId,
-      watchNotes(dir, onEvent, {
-        ...(deps.watch && { watch: deps.watch }),
-        ...(deps.debounceMs !== undefined && { debounceMs: deps.debounceMs }),
-      }),
-    );
+    const watcher = watchNotes(dir, onEvent, {
+      ...(deps.watch && { watch: deps.watch }),
+      ...(deps.debounceMs !== undefined && { debounceMs: deps.debounceMs }),
+    });
+    watchers.set(projectId, watcher);
+    return watcher.ready;
   };
 
   const refresh = async (projectId: string): Promise<void> => {
     const dir = dirOf(projectId);
     let notes: IndexedNote[] = [];
     if (await isDirectory(dir)) {
+      await follow(projectId, dir);
       notes = await readAll(dir);
-      follow(projectId, dir);
     } else if (watchers.has(projectId)) {
       release(projectId);
       log(`notes folder ${dir} disappeared, watch released`);

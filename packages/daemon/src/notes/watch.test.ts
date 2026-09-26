@@ -18,14 +18,37 @@ test("an external write is detected once, after the debounce", async () => {
   const dir = mkdtempSync(join(tmpdir(), "kibo-watch-"));
   roots.push(dir);
   let changes = 0;
-  const w = watchNotes(dir, () => {
-    changes += 1;
-  });
+  const w = watchNotes(
+    dir,
+    () => {
+      changes += 1;
+    },
+    { pollMs: 300 },
+  );
+  await w.ready;
   writeFileSync(join(dir, "a.md"), "# A");
   writeFileSync(join(dir, "a.md"), "# A2");
   expect(await until(() => changes > 0)).toBe(true);
-  await new Promise((r) => setTimeout(r, 400));
+  await new Promise((r) => setTimeout(r, 700));
   expect(changes).toBe(1);
+  w.close();
+});
+
+test("a write whose event never arrives is caught by the sweep", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "kibo-watch-"));
+  roots.push(dir);
+  let changes = 0;
+  const w = watchNotes(
+    dir,
+    () => {
+      changes += 1;
+    },
+    { pollMs: 50, watch: () => ({ close: () => undefined }) },
+  );
+  await w.ready;
+  writeFileSync(join(dir, "a.md"), "# A");
+  expect(await until(() => changes > 0)).toBe(true);
+  expect(w.polling).toBe(false);
   w.close();
 });
 

@@ -17,7 +17,7 @@ afterAll(() => {
 
 const watches = { opened: 0, closed: 0 };
 
-function setup(folder: "repo" | null = "repo") {
+function setup(folder: "repo" | null = "repo", onWatch: (dir: string) => void = () => undefined) {
   const root = mkdtempSync(join(tmpdir(), "kibo-notes-svc-"));
   roots.push(root);
   const repo = join(root, "users", "adam", "goinfre", "Kibo");
@@ -39,8 +39,9 @@ function setup(folder: "repo" | null = "repo") {
       return p;
     },
     onChange: (id) => changed.push(id),
-    watch: () => {
+    watch: (dir) => {
       watches.opened += 1;
+      onWatch(dir);
       return {
         close: () => {
           watches.closed += 1;
@@ -137,6 +138,12 @@ describe("notes calls", () => {
     await expect(
       svc.handle("p1", { kind: "notes.write", path: "a.md", markdown: "# mine", expectedMtime: a.mtime }),
     ).rejects.toThrow("CONFLICT");
+  });
+  test("a note written while the watch starts is indexed", async () => {
+    const { repo, svc } = setup("repo", (dir) => writeFileSync(join(dir, "late.md"), "# Tardive"));
+    mkdirSync(join(repo, "notes"));
+    const list = (await svc.handle("p1", { kind: "list", entity: "note" })) as NoteMeta[];
+    expect(list.map((n) => n.path)).toEqual(["late.md"]);
   });
   test("a missing folder lists nothing, and hostile paths never touch the disk", async () => {
     const { svc } = setup();

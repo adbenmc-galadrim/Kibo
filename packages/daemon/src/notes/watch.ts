@@ -3,7 +3,7 @@ import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 export type WatchFn = (dir: string, onEvent: () => void, onError: (e: unknown) => void) => { close(): void };
-export type NotesWatcher = { close(): void; readonly polling: boolean };
+export type NotesWatcher = { close(): void; readonly polling: boolean; readonly ready: Promise<void> };
 export type WatchNotesOptions = {
   debounceMs?: number;
   pollMs?: number;
@@ -43,43 +43,55 @@ export function watchNotes(dir: string, onChange: () => void, opts: WatchNotesOp
   const pollMs = opts.pollMs ?? 3_000;
   const log = opts.log ?? ((line: string) => console.error(`[kibo-daemon] ${line}`));
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let poll: ReturnType<typeof setInterval> | null = null;
   let handle: { close(): void } | null = null;
+  let fellBack = false;
   let closed = false;
+  let last: string | null = null;
+  let running: Promise<void> | null = null;
+  let again = false;
+
+  const compare = async () => {
+    try {
+      const sig = await signature(dir);
+      if (closed) return;
+      if (last !== null && sig !== last) onChange();
+      last = sig;
+    } catch (e) {
+      log(`scanning ${dir} failed: ${message(e)}`);
+    }
+  };
+
+  const check = (): Promise<void> => {
+    if (running) {
+      again = true;
+      return running;
+    }
+    running = (async () => {
+      do {
+        again = false;
+        await compare();
+      } while (again && !closed);
+    })().finally(() => {
+      running = null;
+    });
+    return running;
+  };
 
   const fire = () => {
     if (closed) return;
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
-      onChange();
+      void check();
     }, opts.debounceMs ?? 200);
   };
 
-  const startPolling = () => {
-    let last: string | null = null;
-    let busy = false;
-    poll = setInterval(() => {
-      if (busy) return;
-      busy = true;
-      signature(dir)
-        .then((sig) => {
-          if (last !== null && sig !== last) fire();
-          last = sig;
-        })
-        .catch((e: unknown) => log(`polling ${dir} failed: ${message(e)}`))
-        .finally(() => {
-          busy = false;
-        });
-    }, pollMs);
-  };
-
   const fallBack = (e: unknown) => {
-    if (closed || poll) return;
+    if (closed || fellBack) return;
+    fellBack = true;
     log(`fs.watch unavailable on ${dir} (${message(e)}): polling every ${pollMs} ms`);
     handle?.close();
     handle = null;
-    startPolling();
   };
 
   try {
@@ -87,15 +99,18 @@ export function watchNotes(dir: string, onChange: () => void, opts: WatchNotesOp
   } catch (e) {
     fallBack(e);
   }
+  const ready = check();
+  const sweep = setInterval(() => void check(), pollMs);
 
   return {
+    ready,
     get polling() {
-      return poll !== null;
+      return fellBack;
     },
     close: () => {
       closed = true;
       if (timer) clearTimeout(timer);
-      if (poll) clearInterval(poll);
+      clearInterval(sweep);
       handle?.close();
       handle = null;
     },
