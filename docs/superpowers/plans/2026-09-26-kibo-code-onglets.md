@@ -7881,7 +7881,7 @@ Relie les tâches 9 à 16 au shell : barre d'onglets au-dessus de la sidebar (é
   - `crumbsFor(target: TabTarget | null, ctx: { project: ProjectSnapshot | null; branch: string | null }): string[]`, `Breadcrumb({ crumbs }: { crumbs: string[] })` ;
   - `TicketDetail({ project, ticket, onOpenFile })`, `TicketTab({ project, ticketId, onOpenFile })`, `ContentView(props)`.
 
-- [ ] **Step 1: Tests du shell**
+- [x] **Step 1: Tests du shell**
 
 Remplacer `packages/ui/src/shell/shell.test.tsx` par :
 ```tsx
@@ -8031,7 +8031,7 @@ test("a project without folder has no Changements entry", async () => {
 Run: `bun test packages/ui/src/shell`
 Expected: FAIL (pas de barre d'onglets, pas de palette).
 
-- [ ] **Step 2: Route et synchronisation avec l'URL**
+- [x] **Step 2: Route et synchronisation avec l'URL**
 
 `packages/ui/src/route.ts` :
 ```ts
@@ -8102,7 +8102,7 @@ export function useHashSync(tabs: TabsApi, routeTarget: TabTarget | null): void 
 ```
 Au chargement, une URL qui vise une cible l'emporte sur l'onglet actif enregistré ; une URL d'accueil rouvre l'onglet actif enregistré. Ensuite, un changement d'URL (retour arrière, `navigate`) ouvre la cible selon la règle d'ouverture, et un changement d'onglet met l'URL à jour.
 
-- [ ] **Step 3: Git du projet actif**
+- [x] **Step 3: Git du projet actif**
 
 `packages/ui/src/code/use-project-git.ts` :
 ```ts
@@ -8144,7 +8144,7 @@ export function useProjectGit(projectId: string | null, folder: string | null) {
 
 Un projet sans dossier ou hors dépôt n'a pas de worktree : l'entrée Changements est masquée (complément de spec §10). La pastille d'un onglet Changements n'est calculée que pour le worktree principal du projet actif.
 
-- [ ] **Step 4: Hôte, fil d'Ariane, ticket**
+- [x] **Step 4: Hôte, fil d'Ariane, ticket**
 
 `packages/ui/src/shell/Host.tsx` :
 ```tsx
@@ -8356,7 +8356,7 @@ export function TicketTab({ project, ticketId, onOpenFile }: Props) {
 }
 ```
 
-- [ ] **Step 5: Contenu, sidebar et shell**
+- [x] **Step 5: Contenu, sidebar et shell**
 
 `packages/ui/src/shell/ContentView.tsx` :
 ```tsx
@@ -8769,12 +8769,12 @@ function Workspace({ viewer, projects, tabs }: { viewer: string; projects: Proje
 ```
 `PageView` passe déjà `host.openFile` au SDK (tâche 1). Si le fichier dépasse 300 lignes, extraire les dialogues dans `shell/ShellDialogs.tsx`. Le `useMemo` du contexte de la palette est inutile : `buildItems` est mémoïsé dans la palette sur l'objet `context` ; si la review relève des recalculs, mémoïser `context` avec `useMemo([projects, snapshots, tabs.state.recents, activeProjectId, …])`.
 
-- [ ] **Step 6: Lancer les tests et vérifier l'E2E du MVP**
+- [x] **Step 6: Lancer les tests et vérifier l'E2E du MVP**
 
 Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run --cwd e2e test`
 Expected: PASS, y compris le parcours `e2e/mvp.spec.ts` inchangé (la navigation passe par les onglets).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ui/src/route.ts packages/ui/src/tabs/use-hash-sync.ts packages/ui/src/code/use-project-git.ts packages/ui/src/shell packages/ui/src/pages/TicketTab.tsx
