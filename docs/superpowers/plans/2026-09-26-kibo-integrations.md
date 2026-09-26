@@ -5244,7 +5244,7 @@ Référence : page PDF 26 (sombre et clair) et maquette P1 (états). Une ligne p
 
 Pas de `Toaster` ici (N29 : il est monté par la Task 21) : les messages de l'écran 16 (test de connexion, connexion réussie, échec) sont des `useFlash` affichés sous l'en-tête (`role="status"` ou `role="alert"`), comme les messages d'action de la phase 4.
 
-- [ ] **Step 1: Test du modèle de ligne (échoue)**
+- [x] **Step 1: Test du modèle de ligne (échoue)**
 
 `packages/ui/src/settings/integration-rows.test.ts` :
 
@@ -5295,7 +5295,7 @@ describe("integration rows (screen 16)", () => {
 
 Run: `bun test packages/ui/src/settings/integration-rows.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: Implémenter le modèle et le registre**
+- [x] **Step 2: Implémenter le modèle et le registre**
 
 `packages/ui/src/settings/integration-dialogs.ts` :
 
@@ -5405,7 +5405,7 @@ export function integrationRow(
 
 Run: `bun test packages/ui/src/settings/integration-rows.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Test de la page (échoue)**
+- [x] **Step 3: Test de la page (échoue)**
 
 `packages/ui/src/settings/IntegrationsPage.test.tsx` :
 
@@ -5487,7 +5487,7 @@ test("a keychain failure shows the banner", async () => {
 
 Run: `bun test packages/ui/src/settings/IntegrationsPage.test.tsx` — Expected: FAIL.
 
-- [ ] **Step 4: Implémenter hook, ligne, dialogue de déconnexion, page**
+- [x] **Step 4: Implémenter hook, ligne, dialogue de déconnexion, page**
 
 `packages/ui/src/state/use-integrations.ts` :
 
@@ -5769,7 +5769,7 @@ Le texte de déconnexion de GitHub dépend du mode (`getGithubConnectOptions().m
 - `packages/ui/src/shell/AppSidebar.tsx` : le bouton « Paramètres » est actif pour `screen === "domains" || screen === "integrations"` (il ouvre toujours `domains`).
 - `packages/ui/src/settings/SettingsNav.tsx` : `active: "domains" | "integrations"` ; les entrées `domains` et `integrations` sont activées et appellent `navigateTo({ kind: "screen", screen: id })` (`packages/ui/src/route.ts` : le changement de hash ouvre l'écran dans l'onglet courant par `useHashSync`) ; les autres restent `disabled` avec `title={fr.settings.soon}`. `domains-page.test.tsx` : « Intégrations » n'est plus désactivé, « Général » l'est toujours.
 
-- [ ] **Step 5: `Switch` shadcn et `useSyncState`**
+- [x] **Step 5: `Switch` shadcn et `useSyncState`**
 
 `packages/sdk/src/ui/switch.tsx` : généré par `bunx shadcn@4.21.0 add switch` lancé depuis `packages/ui` (son `components.json` pointe vers `packages/sdk/src/ui`, règle de la phase 4), `import { Switch as SwitchPrimitive } from "radix-ui"` et `import { cn } from "cn"` comme `checkbox.tsx`. Aucune dépendance nouvelle (`radix-ui` 1.6.7 est déjà une dépendance du SDK). `switch` n'est pas ajouté à `SDK_UI_PRIMITIVES` (primitive de l'application, pas encore offerte aux composants tiers). Livré ici pour que les Tasks 11 et 18 (vague 2) le consomment sans dépendre l'une de l'autre.
 
@@ -5801,7 +5801,7 @@ export function useSyncState(projectId: string) {
 }
 ```
 
-- [ ] **Step 6: Vérifier et commiter**
+- [x] **Step 6: Vérifier et commiter**
 
 Run: `bun test packages/schema packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget` — Expected: PASS (budget du chargement initial ≤ 230 kB gzip inchangé : l'écran est différé). Contrôle visuel : ouvrir Paramètres › Intégrations avec le démon de dev en sombre puis en clair et comparer à la page PDF 26 (espacements, pastilles, bouton « Connecter » de Figma).
 
