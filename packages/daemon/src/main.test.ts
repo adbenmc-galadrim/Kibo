@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { readDaemonInfo } from "./components/daemon-info";
 
 test("announces readiness with the pairing link on stdout only", async () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
@@ -103,7 +105,7 @@ test("tells the ui to leave notifications to the desktop shell", async () => {
 
 test("accepts the sandbox port and toolchain options", async () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
-  const args = ["--port", "0", "--sandbox-port", "0", "--toolchain", home];
+  const args = ["--port", "0", "--sandbox-port", "0", "--toolchain", DEV_TOOLCHAIN.root];
   const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), ...args], {
     env: { ...process.env, KIBO_HOME: home },
     stdout: "pipe",
@@ -116,9 +118,14 @@ test("accepts the sandbox port and toolchain options", async () => {
     if (done) break;
     out += new TextDecoder().decode(value);
   }
+  const info = readDaemonInfo(home);
   proc.kill("SIGTERM");
   const code = await proc.exited;
+  const left = readDaemonInfo(home);
   rmSync(home, { recursive: true, force: true });
-  expect(out).toStartWith("KIBO_READY http://127.0.0.1:");
+  expect(out).toStartWith(`KIBO_READY http://127.0.0.1:${info?.port}/`);
+  expect(info?.sandboxPort).toBeGreaterThan(0);
+  expect(info?.pid).toBe(proc.pid);
+  expect(left).toBeNull();
   expect(code).toBe(0);
 });

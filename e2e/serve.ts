@@ -23,6 +23,8 @@ const proc = Bun.spawn(
     join(root, "packages/daemon/src/main.ts"),
     "--port",
     port,
+    "--sandbox-port",
+    "0",
     "--ui",
     join(root, "packages/ui/dist"),
     "--claude-bin",
