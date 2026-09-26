@@ -29,6 +29,14 @@ mock.module("../api", () => ({
       if (req.method === "listComponents") return Promise.resolve(components);
       if (req.method === "listDrafts") return Promise.resolve(drafts);
       if (req.method === "listComponentDrafts") return Promise.resolve([]);
+      if (req.method === "getSandboxStatus")
+        return Promise.resolve({
+          kind: "bwrap",
+          available: true,
+          reason: null,
+          fix: null,
+          allowUnsandboxed: false,
+        });
       if (req.method === "listProjects")
         return Promise.resolve([
           { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#F97316", counts: {} },
@@ -38,6 +46,7 @@ mock.module("../api", () => ({
       return action();
     },
     subscribe: () => () => undefined,
+    subscribeEvents: () => () => undefined,
   },
 }));
 

@@ -15,6 +15,14 @@ export const IntegrationsPage = lazyPanel(
   () => import("../settings/IntegrationsPage").then((m) => m.IntegrationsPage),
   fr.lazy,
 );
+export const AppearancePage = lazyPanel(
+  () => import("../settings/AppearancePage").then((m) => m.AppearancePage),
+  fr.lazy,
+);
+export const SecurityPage = lazyPanel(
+  () => import("../settings/SecurityPage").then((m) => m.SecurityPage),
+  fr.lazy,
+);
 export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,

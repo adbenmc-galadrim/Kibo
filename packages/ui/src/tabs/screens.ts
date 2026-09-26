@@ -4,9 +4,11 @@ import {
   List,
   ListOrdered,
   type LucideIcon,
+  Palette,
   Plug,
   Puzzle,
   Settings,
+  Shield,
   SlidersHorizontal,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
@@ -25,4 +27,10 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     icon: Plug,
     crumbs: [fr.nav.settings, fr.settings.integrations],
   },
+  appearance: {
+    title: fr.settings.appearance,
+    icon: Palette,
+    crumbs: [fr.nav.settings, fr.settings.appearance],
+  },
+  security: { title: fr.settings.security, icon: Shield, crumbs: [fr.nav.settings, fr.settings.security] },
 };

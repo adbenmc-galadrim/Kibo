@@ -162,5 +162,6 @@ test("settings navigation marks the current page and disables the unbuilt ones",
   expect(nav.getByRole("link", { name: "Intégrations" }).getAttribute("href")).toBe(
     "#/settings/integrations",
   );
-  expect(nav.getByRole("button", { name: "Apparence" }).hasAttribute("disabled")).toBe(true);
+  expect(nav.getByRole("link", { name: "Sécurité" }).getAttribute("href")).toBe("#/settings/security");
+  expect(nav.getByRole("button", { name: "Raccourcis" }).hasAttribute("disabled")).toBe(true);
 });

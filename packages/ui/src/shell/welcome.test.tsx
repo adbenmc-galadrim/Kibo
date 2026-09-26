@@ -1,10 +1,23 @@
 import { expect, mock, test } from "bun:test";
-import type { Environment } from "@kibo/schema";
+import type { Environment, RpcRequest, SandboxStatus } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 let env: Environment;
-mock.module("../api", () => ({ client: { rpc: async () => env } }));
+const isolated: SandboxStatus = {
+  kind: "bwrap",
+  available: true,
+  reason: null,
+  fix: null,
+  allowUnsandboxed: false,
+};
+let sandbox: SandboxStatus = isolated;
+mock.module("../api", () => ({
+  client: {
+    rpc: async (req: RpcRequest) => (req.method === "getSandboxStatus" ? sandbox : env),
+    subscribeEvents: () => () => {},
+  },
+}));
 const { Welcome } = await import("./Welcome");
 
 const base: Environment = {
@@ -68,4 +81,34 @@ test("buttons call their handlers", async () => {
   expect([onConnectGithub.mock.calls.length, onImport.mock.calls.length, onCreate.mock.calls.length]).toEqual(
     [1, 1, 1],
   );
+});
+
+test("the isolation row shows the active mechanism", async () => {
+  env = base;
+  sandbox = isolated;
+  render(<Welcome onCreate={() => {}} onImport={() => {}} onConnectGithub={() => {}} />);
+  expect(await screen.findByText("bubblewrap actif")).toBeTruthy();
+  expect(screen.getByText("Isolation des composants")).toBeTruthy();
+});
+
+test("warns when the OS isolation is unavailable, with the command to run", async () => {
+  env = base;
+  sandbox = {
+    kind: "bwrap",
+    available: false,
+    reason: "bubblewrap (bwrap) is not installed",
+    fix: "sudo apt install bubblewrap",
+    allowUnsandboxed: false,
+  };
+  render(<Welcome onCreate={() => {}} onImport={() => {}} onConnectGithub={() => {}} />);
+  expect(
+    await screen.findByText("⚠ bubblewrap introuvable · les backends sandboxés ne démarreront pas"),
+  ).toBeTruthy();
+  expect(screen.getByText("sudo apt install bubblewrap")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "Une vérification demande ton attention. Tu peux continuer : seuls les backends sandboxés sont arrêtés.",
+    ),
+  ).toBeTruthy();
+  sandbox = isolated;
 });

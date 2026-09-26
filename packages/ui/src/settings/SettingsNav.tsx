@@ -4,15 +4,15 @@ import { FileText, Keyboard, type LucideIcon, Palette, Plug, Shield, SlidersHori
 import { fr } from "../i18n/fr";
 import { targetToHash } from "../tabs/target-hash";
 
-type SettingsScreen = Extract<Screen, "general" | "domains" | "integrations">;
+type SettingsScreen = Extract<Screen, "general" | "appearance" | "domains" | "integrations" | "security">;
 type Item = { id: string; label: string; icon: LucideIcon; screen?: SettingsScreen };
 
 const ITEMS: Item[] = [
   { id: "general", label: fr.settings.general, icon: SlidersHorizontal, screen: "general" },
-  { id: "appearance", label: fr.settings.appearance, icon: Palette },
+  { id: "appearance", label: fr.settings.appearance, icon: Palette, screen: "appearance" },
   { id: "domains", label: fr.settings.domains, icon: FileText, screen: "domains" },
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
-  { id: "security", label: fr.settings.security, icon: Shield },
+  { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard },
 ];
 

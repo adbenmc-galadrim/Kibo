@@ -56,6 +56,13 @@ type Link = (target: TabTarget | null) => {
   onAuxClick(e: MouseEvent): void;
 };
 const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen });
+const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
+  "general",
+  "appearance",
+  "domains",
+  "integrations",
+  "security",
+]);
 
 type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };
 
@@ -232,7 +239,7 @@ export function AppSidebar(p: Props) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              isActive={screen === "general" || screen === "domains" || screen === "integrations"}
+              isActive={screen !== null && SETTINGS_SCREENS.has(screen)}
               {...link(screenTarget("general"))}
             >
               <Settings />

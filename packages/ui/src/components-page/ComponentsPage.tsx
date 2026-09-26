@@ -12,6 +12,7 @@ import { ComponentRowMenu } from "./ComponentRowMenu";
 import { DraftsSection } from "./DraftsSection";
 import { PublishDialog } from "./PublishDialog";
 import { type ComponentRow, componentRows } from "./rows";
+import { SandboxBanner } from "./SandboxBanner";
 
 const ORANGE = "text-orange-600 dark:text-orange-400";
 const HEAD = "h-9 px-4 text-2xs font-normal text-muted-foreground";
@@ -97,6 +98,7 @@ export function ComponentsPage() {
   return (
     <TooltipProvider>
       <div className="grid content-start gap-6 p-6">
+        <SandboxBanner />
         <div className="overflow-hidden rounded-lg border bg-card">
           <ComponentsTable rows={rows ?? []} onReview={review} onDone={done} onModifyWithAi={setModifying} />
           {rows === null && !error && <p className="px-4 py-3 text-sm text-muted-foreground">{c.loading}</p>}
