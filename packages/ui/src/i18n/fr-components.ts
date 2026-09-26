@@ -174,6 +174,8 @@ export const frComponents = {
     pendingChanged: "Son code a changé depuis ton accord.",
     review: "Examiner et autoriser",
     loadFailed: "Impossible de charger le composant.",
+    navigated:
+      "Ce composant a tenté de quitter son bac à sable et a été arrêté. Recharge la page pour le relancer.",
   },
   notesDir: {
     title: "Dossier des notes",

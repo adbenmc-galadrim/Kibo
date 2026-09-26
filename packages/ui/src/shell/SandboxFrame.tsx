@@ -1,6 +1,7 @@
 import type { Surface } from "@kibo/schema";
 import { useEffect, useRef, useState } from "react";
 import { client } from "../api";
+import { fr } from "../i18n/fr";
 import { useTheme } from "../theme";
 import { createFrameBridge, dispatchCombo, type FrameBridge } from "./frame-bridge";
 import { useHost } from "./Host";
@@ -23,8 +24,11 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
   const latest = useRef({ config, viewer, theme, surface, host });
   latest.current = { config, viewer, theme, surface, host };
   const bridge = useRef<FrameBridge | null>(null);
+  const loadedSrc = useRef<string | null>(null);
+  const [escaped, setEscaped] = useState(false);
 
   useEffect(() => {
+    if (escaped) return;
     const b = createFrameBridge({
       frame: () => ref.current?.contentWindow ?? null,
       init: () => ({
@@ -60,15 +64,33 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
       b.dispose();
       bridge.current = null;
     };
-  }, [projectId, instanceId]);
+  }, [projectId, instanceId, escaped]);
 
   useEffect(() => {
     bridge.current?.theme(theme);
   }, [theme]);
 
+  const onLoad = () => {
+    if (loadedSrc.current !== src) {
+      loadedSrc.current = src;
+      return;
+    }
+    console.error(`[kibo-ui] component instance ${instanceId} navigated inside its sandbox, frame destroyed`);
+    setEscaped(true);
+  };
+
+  if (escaped) {
+    return (
+      <p role="alert" className="p-4 text-sm text-destructive">
+        {fr.instance.navigated}
+      </p>
+    );
+  }
+
   return (
     <iframe
       ref={ref}
+      onLoad={onLoad}
       title={title}
       src={src}
       sandbox="allow-scripts"

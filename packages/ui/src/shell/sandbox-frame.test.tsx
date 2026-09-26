@@ -99,3 +99,38 @@ test("resize, files and change notifications go through the host", () => {
   view.unmount();
   expect(listeners.size).toBe(0);
 });
+
+test("the initial load keeps the frame in place", () => {
+  const { iframe, view } = mount();
+  act(() => {
+    iframe.dispatchEvent(new Event("load"));
+  });
+  expect(view.container.querySelector("iframe")).toBe(iframe);
+  expect(view.queryByRole("alert")).toBeNull();
+  view.unmount();
+});
+
+test("a second load destroys the frame and offers to reload the page", () => {
+  const errors: unknown[][] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => {
+    errors.push(args);
+  };
+  try {
+    const { iframe, view, posted, fromFrame } = mount();
+    act(() => {
+      iframe.dispatchEvent(new Event("load"));
+      iframe.dispatchEvent(new Event("load"));
+    });
+    expect(view.container.querySelector("iframe")).toBeNull();
+    expect(view.getByRole("alert").textContent).toContain("Recharge la page");
+    expect(errors).toHaveLength(1);
+    expect(String(errors[0]?.[0])).toContain("inst-1");
+    fromFrame({ kibo: 1, type: "ready" });
+    expect(posted).toHaveLength(0);
+    expect(listeners.size).toBe(0);
+    view.unmount();
+  } finally {
+    console.error = original;
+  }
+});
