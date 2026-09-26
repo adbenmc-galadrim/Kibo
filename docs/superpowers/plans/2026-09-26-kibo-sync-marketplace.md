@@ -4578,7 +4578,7 @@ git add packages/core/src/share-migration.ts packages/core/src/share-migration.t
 git commit -m "feat(core): migrations du premier partage"
 ```
 
-- [ ] **Suivi T7b** : profondeur bornée dans `validateProjectUpdate` (D42) : arbres ≤ 64 niveaux, conteneurs ≤ 32, refus en `UPDATE_REJECTED` sans conversion profonde (`packages/core/src/update-depth.ts`, `validate-update-depth.test.ts`).
+- [x] **Suivi T7b** : profondeur bornée dans `validateProjectUpdate` (D42) : arbres ≤ 64 niveaux, conteneurs ≤ 32, refus en `UPDATE_REJECTED` sans conversion profonde (`packages/core/src/update-depth.ts`, `validate-update-depth.test.ts`).
 
 ---
 
