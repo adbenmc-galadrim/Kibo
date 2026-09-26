@@ -132,6 +132,7 @@ Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions d
 - **N44 · Réponse compressée malgré `identity`** (décision du chef d'équipe) : quand un secret a été injecté, une réponse dont `content-encoding` n'est ni absent ni `identity` est refusée (échec fermé, `KiboError` réseau, corps jamais transmis), dans le proxy des composants comme dans le réseau des intégrations. Raison : le caviardage porte sur les octets ; un corps compressé l'éviterait.
 - **N45 · Hôtes du secret `github`** (décision du chef d'équipe) : le secret réservé `github` n'est injecté que vers `api.github.com` et `uploads.github.com`. Un manifeste qui déclare `github` pour un autre hôte est refusé à la validation (`INVALID_MANIFEST`), et `secretFor` le refuse aussi à l'exécution (défense en profondeur). Raison : le secret peut être le jeton de `gh`, aux portées larges.
 - **N46 · Trousseau indisponible** (décision du chef d'équipe) : en mode jeton personnel, la sonde `github` renvoie `error` avec `SECRET_STORE_UNAVAILABLE` quand `availability()` échoue ; le délai borné du trousseau et le regroupement des appels en cours garantissent que `listIntegrations` ne se fige jamais.
+- **N47 · Quota des appels MCP** (décision du chef d'équipe) : en plus du quota générique `call`, un quota `mcpPerMinute` de 30 appels par minute et par instance ; au-delà, `RATE_LIMITED`, refus journalisé. Raison : un appel MCP peut durer 60 s et lancer un processus stdio.
 
 ## Écrans à dessiner dans Penpot (avant les tâches UI)
 
@@ -5252,7 +5253,7 @@ test("secrets and mcp rules read in plain French", () => {
 });
 ```
 
-`packages/ui/src/lib/permission-lines.ts` : après la ligne réseau, une ligne `{ icon: KeyRound, title: p.secret(s.name, s.hosts) }` par secret et `{ icon: Plug, title: rule === CONFIG_SERVER_RULE ? p.mcpFromConfig : p.mcp(rule) }` par règle MCP (`p = fr.integrations.permissions`, Task 1) ; `closingLine` ne rend plus « Aucun accès réseau… » quand `mcp` n'est pas vide (un serveur MCP peut accéder au réseau). `TrustDialog.tsx` n'est pas modifié : il rend `permissionLines(grantedOf(manifest))`.
+`packages/ui/src/lib/permission-lines.ts` : après la ligne réseau, une ligne `{ icon: KeyRound, title: p.secret(s.name, s.hosts) }` par secret et `{ icon: Plug, title: rule === CONFIG_SERVER_RULE ? p.mcpFromConfig : p.mcp(rule) }` par règle MCP (`p = fr.integrations.permissions`, Task 1) ; `closingLine` ne rend aucune ligne de fermeture quand `mcp` n'est pas vide : un serveur MCP peut accéder au réseau comme aux fichiers locaux. `TrustDialog.tsx` n'est pas modifié : il rend `permissionLines(grantedOf(manifest))`.
 
 - [ ] **Step 7: Vérifier et commiter**
 

@@ -308,6 +308,7 @@ Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.
 - **N44 · Réponse compressée malgré `identity`** (décision du chef d'équipe) : quand un secret a été injecté, une réponse dont `content-encoding` n'est ni absent ni `identity` est refusée (échec fermé, `KiboError` réseau, corps jamais transmis), dans le proxy des composants comme dans le réseau des intégrations. Raison : le caviardage porte sur les octets ; un corps compressé l'éviterait.
 - **N45 · Hôtes du secret `github`** (décision du chef d'équipe) : le secret réservé `github` n'est injecté que vers `api.github.com` et `uploads.github.com`. Un manifeste qui déclare `github` pour un autre hôte est refusé à la validation (`INVALID_MANIFEST`), et `secretFor` le refuse aussi à l'exécution (défense en profondeur). Raison : le secret peut être le jeton de `gh`, aux portées larges.
 - **N46 · Trousseau indisponible** (décision du chef d'équipe) : en mode jeton personnel, la sonde `github` renvoie `error` avec `SECRET_STORE_UNAVAILABLE` quand `availability()` échoue ; le délai borné du trousseau et le regroupement des appels en cours garantissent que `listIntegrations` ne se fige jamais.
+- **N47 · Quota des appels MCP** (décision du chef d'équipe) : en plus du quota générique `call`, un quota `mcpPerMinute` de 30 appels par minute et par instance ; au-delà, `RATE_LIMITED`, refus journalisé. Raison : un appel MCP peut durer 60 s et lancer un processus stdio.
 
 ## Comptes et secrets réels
 
