@@ -9265,7 +9265,7 @@ Sortie de la phase (feuille de route) : parcours Playwright sur un dépôt de te
 - Consumes: l'application complète (tâches 1 à 21) ; `packages/daemon/src/code/testing/fake-gh.ts`.
 - Produces : `createE2eRepo(key: string): { repo: string; branch: string; git(...args: string[]): string; write(path: string, content: string): void }` ; `FAKE_GH_DIR` (dossier fixe partagé entre `serve.ts` et les tests).
 
-- [ ] **Step 1: Faux `gh` et identité git pour le démon d'E2E**
+- [x] **Step 1: Faux `gh` et identité git pour le démon d'E2E**
 
 `e2e/git-repo.ts` :
 ```ts
@@ -9321,7 +9321,7 @@ chmodSync(gh, 0o755);
 ```
 et dans l'environnement du démon : `{ ...process.env, ...GIT_IDENTITY, KIBO_HOME: home, KIBO_GH: gh, FAKE_GH_STATE: join(FAKE_GH_DIR, "state.json"), FAKE_GH_LOG: join(FAKE_GH_DIR, "log.jsonl") }` (fusionner avec les imports existants de `serve.ts`).
 
-- [ ] **Step 2: Parcours du code**
+- [x] **Step 2: Parcours du code**
 
 `e2e/code.spec.ts` :
 ```ts
@@ -9410,7 +9410,7 @@ test("modifier → indexer un bloc → commit → amend → PR", async ({ page }
 });
 ```
 
-- [ ] **Step 3: Parcours des onglets, de la palette et de l'aperçu**
+- [x] **Step 3: Parcours des onglets, de la palette et de l'aperçu**
 
 `e2e/tabs.spec.ts` :
 ```ts
@@ -9475,12 +9475,12 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
 ```
 Si un raccourci est intercepté par Chromium en headless (`⌘W`, `⌘T`), le déclencher par `page.dispatchEvent("body", "keydown", …)` n'est pas équivalent : conserver `page.keyboard.press` (CDP envoie l'événement à la page) et, en cas d'échec avéré en CI, le noter dans le rapport du jalon plutôt que de retirer l'étape.
 
-- [ ] **Step 4: Lancer l'E2E**
+- [x] **Step 4: Lancer l'E2E**
 
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test`
 Expected: les trois fichiers passent dans les projets `dark` et `light`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add e2e/git-repo.ts e2e/code.spec.ts e2e/tabs.spec.ts e2e/serve.ts
