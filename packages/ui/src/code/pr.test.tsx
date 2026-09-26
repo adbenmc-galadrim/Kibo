@@ -122,6 +122,11 @@ test("the submit button shows progress while the push runs", async () => {
   });
   await userEvent.click(screen.getByRole("button", { name: "Créer la PR" }));
   expect(screen.getByRole("button", { name: "Création…" }).hasAttribute("disabled")).toBe(true);
+  for (const label of ["Titre", "Description", "Branche de base", "Reviewers"]) {
+    expect(screen.getByLabelText(label).hasAttribute("disabled")).toBe(true);
+  }
+  expect(screen.getByRole("checkbox", { name: "Brouillon (draft)" }).hasAttribute("disabled")).toBe(true);
+  expect(screen.getByRole("checkbox", { name: "Lier la PR à KIB-12" }).hasAttribute("disabled")).toBe(true);
   finish();
   expect(await screen.findByRole("button", { name: "Créer la PR" })).toBeTruthy();
 });

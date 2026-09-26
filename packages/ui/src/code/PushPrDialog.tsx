@@ -103,12 +103,18 @@ export function PushPrDialog(p: Props) {
         </DialogHeader>
         <div className="grid gap-2">
           <Label htmlFor={`${id}-title`}>{fr.pr.prTitle}</Label>
-          <Input id={`${id}-title`} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input
+            id={`${id}-title`}
+            disabled={busy}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor={`${id}-body`}>{fr.pr.description}</Label>
           <Textarea
             id={`${id}-body`}
+            disabled={busy}
             className="max-h-80 min-h-60 font-mono text-[13px]"
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -117,7 +123,7 @@ export function PushPrDialog(p: Props) {
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label htmlFor={`${id}-base`}>{fr.pr.base}</Label>
-            <Select value={p.base} onValueChange={p.onBaseChange}>
+            <Select value={p.base} disabled={busy} onValueChange={p.onBaseChange}>
               <SelectTrigger id={`${id}-base`} className="w-full">
                 <GitBranch aria-hidden className="text-muted-foreground" />
                 <SelectValue />
@@ -137,6 +143,7 @@ export function PushPrDialog(p: Props) {
               <User aria-hidden className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
               <Input
                 id={`${id}-reviewers`}
+                disabled={busy}
                 className="pl-9"
                 placeholder={fr.pr.reviewersPlaceholder}
                 value={reviewers}
@@ -160,14 +167,24 @@ export function PushPrDialog(p: Props) {
         )}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <Checkbox id={`${id}-draft`} checked={draft} onCheckedChange={(v) => setDraft(v === true)} />
+            <Checkbox
+              id={`${id}-draft`}
+              disabled={busy}
+              checked={draft}
+              onCheckedChange={(v) => setDraft(v === true)}
+            />
             <Label htmlFor={`${id}-draft`} className="font-normal">
               {fr.pr.draft}
             </Label>
           </div>
           {p.ticketKey && (
             <div className="flex items-center gap-2">
-              <Checkbox id={`${id}-link`} checked={link} onCheckedChange={(v) => setLink(v === true)} />
+              <Checkbox
+                id={`${id}-link`}
+                disabled={busy}
+                checked={link}
+                onCheckedChange={(v) => setLink(v === true)}
+              />
               <Label htmlFor={`${id}-link`} className="font-normal">
                 {fr.pr.link(p.ticketKey)}
               </Label>
