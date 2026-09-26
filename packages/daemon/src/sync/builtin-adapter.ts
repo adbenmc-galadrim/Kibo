@@ -38,8 +38,13 @@ export function loadBuiltinAdapter(
 
 export function createAdapterHosts(deps: AdapterHostsDeps): AdapterHosts {
   const hosts = new Map<string, Promise<BackendHost>>();
+  let stopped = false;
+  const refuseIfStopped = () => {
+    if (stopped) throw new KiboError("COMPONENT_CRASHED", "adapters stopped");
+  };
   const start = async (id: Binding["adapter"]): Promise<BackendHost> => {
     const b = await deps.load(id);
+    refuseIfStopped();
     if (b.manifest.kind !== "adapter" || b.manifest.id !== id)
       throw new KiboError("INTERNAL", `${id} is not a builtin adapter`);
     return createWorkerHost({
@@ -51,6 +56,7 @@ export function createAdapterHosts(deps: AdapterHostsDeps): AdapterHosts {
     });
   };
   const hostOf = (id: Binding["adapter"]): Promise<BackendHost> => {
+    refuseIfStopped();
     const known = hosts.get(id);
     if (known) return known;
     const next = start(id);
@@ -61,15 +67,20 @@ export function createAdapterHosts(deps: AdapterHostsDeps): AdapterHosts {
     return next;
   };
   return {
-    invoke: async (req) =>
-      (await hostOf(req.adapter)).invoke({
+    async invoke(req) {
+      refuseIfStopped();
+      const host = await hostOf(req.adapter);
+      refuseIfStopped();
+      return host.invoke({
         projectId: req.projectId,
         instanceId: `${BINDING_PREFIX}${req.bindingId}`,
         config: req.config,
         target: { action: req.action },
         input: req.input,
-      }),
+      });
+    },
     stop() {
+      stopped = true;
       for (const host of hosts.values())
         host.then(
           (h) => h.stop(),
