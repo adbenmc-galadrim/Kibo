@@ -7659,7 +7659,7 @@ git commit -m "feat(daemon): amend et reformulation des commits"
 - Consumes: `WorktreeHandle`, `currentBranch`, `pushRemote`, `remoteBranches` (tâche 15) ; `runGh`, `firstLine`, `NETWORK_TIMEOUT_MS`, `Env` (tâche 3) ; `installFakeGh`, `readFakeGhLog` (tâche 3) ; `PrInfo` (tâche 1).
 - Produces : `push(h): Promise<void>`, `ghStatus(h): Promise<GhStatus>`, `prForBranch(h): Promise<PrInfo | null>`, `prState(url: string, cwd: string, env: Env): Promise<PrInfo>`, `createPr(h, input: { title: string; body: string; base: string; draft: boolean; reviewers: string[] }): Promise<PrInfo>`, `toPrInfo(raw: string): PrInfo`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/remote-ops.test.ts` :
 ```ts
@@ -7751,7 +7751,7 @@ test("PR states map from gh JSON", async () => {
 Run: `bun test packages/daemon/src/code/remote-ops.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/code/remote-ops.ts` :
 ```ts
@@ -7849,12 +7849,12 @@ export async function createPr(
 }
 ```
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/remote-ops.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/code/remote-ops.ts packages/daemon/src/code/remote-ops.test.ts
