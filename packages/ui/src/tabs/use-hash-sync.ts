@@ -20,7 +20,7 @@ export function useHashSync(tabs: TabsApi, routeTarget: TabTarget | null, onScre
       else navigateTo(active);
       return;
     }
-    if (routeHash !== prev.route) open(routeTarget);
+    if (routeHash !== prev.route && routeHash !== prev.active) open(routeTarget);
     else if (activeHash !== prev.active) navigateTo(active);
   }, [routeHash, activeHash, routeTarget, active, open, onScreen]);
 }
