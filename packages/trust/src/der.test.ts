@@ -36,6 +36,14 @@ test("UTCTime before 2050, GeneralizedTime after", () => {
   expect(time(new Date("2051-01-02T03:04:05Z"))[0]).toBe(0x18);
 });
 
+test("UTCTime only from 1950 to 2049", () => {
+  expect(time(new Date("1950-01-01T00:00:00Z"))[0]).toBe(0x17);
+  expect(time(new Date("2049-12-31T23:59:59Z"))[0]).toBe(0x17);
+  expect(time(new Date("2050-01-01T00:00:00Z"))[0]).toBe(0x18);
+  expect(time(new Date("1949-12-31T23:59:59Z"))[0]).toBe(0x18);
+  expect(new TextDecoder().decode(time(new Date("1949-12-31T23:59:59Z")).slice(2))).toBe("19491231235959Z");
+});
+
 test("IP addresses", () => {
   expect(ipBytes("127.0.0.1")).toEqual(new Uint8Array([127, 0, 0, 1]));
   expect(ipBytes("::1")).toEqual(new Uint8Array([...new Array(15).fill(0), 1]));

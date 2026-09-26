@@ -76,3 +76,61 @@ test("a malformed PEM has no fingerprint", async () => {
     certFingerprint("-----BEGIN CERTIFICATE-----\n@@@\n-----END CERTIFICATE-----\n"),
   ).rejects.toThrow("INVALID_INPUT");
 });
+
+const base = { commonName: "Kibo", dns: ["localhost"], ips: [], days: 1, now };
+
+test("the duration is an integer from 1 to 825 days", async () => {
+  for (const days of [0, 826, 1.5, Number.NaN]) {
+    await expect(generateSelfSignedCert({ ...base, days })).rejects.toThrow("INVALID_INPUT");
+  }
+  const cert = await generateSelfSignedCert({ ...base, days: 825 });
+  expect(new Date(new X509Certificate(cert.certPem).validTo).getTime()).toBe(
+    now.getTime() + 825 * 86_400_000,
+  );
+});
+
+test("at least one name and a common name of 1 to 64 characters", async () => {
+  await expect(generateSelfSignedCert({ ...base, dns: [], ips: [] })).rejects.toThrow("INVALID_INPUT");
+  await expect(generateSelfSignedCert({ ...base, commonName: "" })).rejects.toThrow("INVALID_INPUT");
+  await expect(generateSelfSignedCert({ ...base, commonName: "k".repeat(65) })).rejects.toThrow(
+    "INVALID_INPUT",
+  );
+  const cert = await generateSelfSignedCert({ ...base, commonName: "k".repeat(64) });
+  expect(new X509Certificate(cert.certPem).subject).toContain(`CN=${"k".repeat(64)}`);
+});
+
+test("DNS names follow the label rules", async () => {
+  const refused = [
+    "-kibo.local",
+    "kibo-.local",
+    "kibo..local",
+    ".kibo",
+    `${"a".repeat(64)}.local`,
+    `${"a.".repeat(126)}ab`,
+    "127.0.0.1",
+    "10",
+  ];
+  for (const name of refused) {
+    await expect(generateSelfSignedCert({ ...base, dns: [name] })).rejects.toThrow("INVALID_INPUT");
+  }
+  const accepted = ["kibo-1.local", `${"a".repeat(63)}.local`, "9kibo.local", "a"];
+  const cert = await generateSelfSignedCert({ ...base, dns: accepted });
+  for (const name of accepted)
+    expect(new X509Certificate(cert.certPem).subjectAltName).toContain(`DNS:${name}`);
+});
+
+test("a PEM that does not hold a certificate has no fingerprint", async () => {
+  const wrap = (bytes: Uint8Array) =>
+    `-----BEGIN CERTIFICATE-----\n${Buffer.from(bytes).toString("base64")}\n-----END CERTIFICATE-----\n`;
+  await expect(certFingerprint(wrap(new Uint8Array([1, 2, 3])))).rejects.toThrow("INVALID_INPUT");
+  await expect(certFingerprint(wrap(new Uint8Array([0x30, 0x03, 1, 2, 3, 4])))).rejects.toThrow(
+    "INVALID_INPUT",
+  );
+  await expect(certFingerprint(wrap(new Uint8Array([0x30, 0x01, 0x05])))).rejects.toThrow("INVALID_INPUT");
+});
+
+test("a full chain PEM is refused", async () => {
+  const a = await generateSelfSignedCert(base);
+  const b = await generateSelfSignedCert(base);
+  await expect(certFingerprint(a.certPem + b.certPem)).rejects.toThrow("INVALID_INPUT");
+});

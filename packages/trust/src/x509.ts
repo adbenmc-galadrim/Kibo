@@ -1,3 +1,4 @@
+import { X509Certificate } from "node:crypto";
 import { KiboError } from "@kibo/schema";
 import { fromBase64, owned, sha256Hex, toBase64 } from "./bytes";
 import {
@@ -38,7 +39,11 @@ const OID = {
 const DAY_MS = 86_400_000;
 const DNS_NAME_TAG = 0x82;
 const IP_ADDRESS_TAG = 0x87;
-const DNS_NAME = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*$/;
+const DNS_LABEL = /^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
+const NUMERIC_NAME = /^[0-9.]+$/;
+const MAX_DNS_NAME = 253;
+const MAX_DAYS = 825;
+const MAX_COMMON_NAME = 64;
 const CERT_PEM = /^\s*-----BEGIN CERTIFICATE-----([A-Za-z0-9+/=\s]+)-----END CERTIFICATE-----\s*$/;
 
 function extension(id: string, critical: boolean, value: Uint8Array): Uint8Array {
@@ -56,6 +61,14 @@ function p1363ToDer(signature: Uint8Array): Uint8Array {
   return sequence(integer(signature.slice(0, 32)), integer(signature.slice(32)));
 }
 
+function assertCertificate(der: Uint8Array): void {
+  try {
+    new X509Certificate(der);
+  } catch (e) {
+    throw new KiboError("INVALID_INPUT", `the PEM does not hold an X.509 certificate: ${String(e)}`);
+  }
+}
+
 async function fingerprintOf(der: Uint8Array): Promise<string> {
   return (await sha256Hex(der)).toUpperCase().match(/.{2}/g)?.join(":") ?? "";
 }
@@ -66,8 +79,13 @@ function randomSerial(): Uint8Array {
   return serial;
 }
 
+function isDnsName(name: string): boolean {
+  if (name.length > MAX_DNS_NAME || NUMERIC_NAME.test(name)) return false;
+  return name.split(".").every((label) => DNS_LABEL.test(label));
+}
+
 function dnsName(name: string): Uint8Array {
-  if (!DNS_NAME.test(name)) throw new KiboError("INVALID_INPUT", `invalid DNS name ${name}`);
+  if (!isDnsName(name)) throw new KiboError("INVALID_INPUT", `invalid DNS name ${name}`);
   return ia5(DNS_NAME_TAG, name);
 }
 
@@ -84,9 +102,17 @@ function certificateExtensions(altNames: Uint8Array): Uint8Array {
   );
 }
 
+function checkOptions(opts: SelfSignedOptions): void {
+  if (!Number.isInteger(opts.days) || opts.days < 1 || opts.days > MAX_DAYS)
+    throw new KiboError("INVALID_INPUT", `days must be an integer from 1 to ${MAX_DAYS}`);
+  if (opts.dns.length === 0 && opts.ips.length === 0)
+    throw new KiboError("INVALID_INPUT", "a certificate needs at least one DNS name or IP");
+  if (opts.commonName.length < 1 || opts.commonName.length > MAX_COMMON_NAME)
+    throw new KiboError("INVALID_INPUT", `commonName must have 1 to ${MAX_COMMON_NAME} characters`);
+}
+
 export async function generateSelfSignedCert(opts: SelfSignedOptions): Promise<SelfSigned> {
-  if (!Number.isInteger(opts.days) || opts.days < 1)
-    throw new KiboError("INVALID_INPUT", "days must be a positive integer");
+  checkOptions(opts);
   const altNames = subjectAltNames(opts);
   const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
     "sign",
@@ -122,5 +148,7 @@ export async function generateSelfSignedCert(opts: SelfSignedOptions): Promise<S
 export async function certFingerprint(certPem: string): Promise<string> {
   const body = CERT_PEM.exec(certPem)?.[1];
   if (body === undefined) throw new KiboError("INVALID_INPUT", "invalid certificate PEM");
-  return fingerprintOf(fromBase64(body.replace(/\s+/g, "")));
+  const der = fromBase64(body.replace(/\s+/g, ""));
+  assertCertificate(der);
+  return fingerprintOf(der);
 }

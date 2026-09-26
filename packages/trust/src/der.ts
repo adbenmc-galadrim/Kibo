@@ -55,7 +55,7 @@ const pad = (n: number, width = 2) => String(n).padStart(width, "0");
 export function time(d: Date): Uint8Array {
   const body = `${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
   const year = d.getUTCFullYear();
-  if (year < 2050) return tlv(0x17, utf8(`${pad(year % 100)}${body}`));
+  if (year >= 1950 && year < 2050) return tlv(0x17, utf8(`${pad(year % 100)}${body}`));
   return tlv(0x18, utf8(`${pad(year, 4)}${body}`));
 }
 
