@@ -1,5 +1,34 @@
+import type { ProjectSnapshot, TabTarget } from "@kibo/schema";
 import { ChevronRight } from "lucide-react";
 import { fr } from "../i18n/fr";
+import type { Screen } from "../route";
+
+export function crumbsFor(
+  target: TabTarget | null,
+  ctx: { project: ProjectSnapshot | null; branch: string | null },
+): string[] {
+  const p = ctx.project;
+  if (!target || !p) return [fr.nav.overview];
+  const name = p.meta.name;
+  switch (target.kind) {
+    case "project":
+      return [name];
+    case "page":
+      return [name, p.pages.find((x) => x.id === target.pageId)?.title ?? fr.tabs.missingPage];
+    case "changes":
+      return ctx.branch ? [name, fr.nav.changes, ctx.branch] : [name, fr.nav.changes];
+    case "file":
+      return [name, target.path];
+    case "ticket":
+      return [name, p.tickets.find((t) => t.id === target.ticketId)?.key ?? fr.tabs.missingTicket];
+  }
+}
+
+export function screenCrumbs(screen: Screen): string[] {
+  if (screen === "agents") return [fr.nav.agents];
+  if (screen === "queue") return [fr.nav.agents, fr.nav.queue];
+  return [fr.nav.settings, fr.nav.domains];
+}
 
 function Crumb({
   label,
@@ -26,15 +55,15 @@ function Crumb({
   );
 }
 
-export function Breadcrumb({ items, heading = false }: { items: string[]; heading?: boolean }) {
+export function Breadcrumb({ crumbs, heading = false }: { crumbs: string[]; heading?: boolean }) {
   return (
     <nav aria-label={fr.nav.breadcrumb} className="min-w-0">
       <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        {items.map((label, i) => (
+        {crumbs.map((label, i) => (
           <Crumb
             key={`${i}-${label}`}
             label={label}
-            current={i === items.length - 1}
+            current={i === crumbs.length - 1}
             first={i === 0}
             heading={heading}
           />

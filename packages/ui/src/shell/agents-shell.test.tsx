@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { RpcRequest } from "@kibo/schema";
+import { EMPTY_TABS, type RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -16,10 +16,15 @@ mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
+      if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+      if (req.method === "getProject") return Promise.resolve(kiboProject());
       return Promise.resolve(
         req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
       );
     },
+    code: () => Promise.resolve([]),
+    subscribe: () => () => {},
+    subscribeCode: () => () => {},
   },
 }));
 mock.module("../state/use-projects", () => ({
@@ -71,11 +76,17 @@ function fakeNotification(initial: NotificationPermission) {
 }
 
 test("routes name the agent screens", () => {
-  expect(parseRoute("#/agents")).toEqual({ projectId: null, pageId: null, screen: "agents" });
-  expect(parseRoute("#/agents/queue")).toEqual({ projectId: null, pageId: null, screen: "queue" });
-  expect(parseRoute("#/settings/domains")).toEqual({ projectId: null, pageId: null, screen: "domains" });
-  expect(parseRoute("#/p/kibo/1%401")).toEqual({ projectId: "kibo", pageId: "1@1", screen: null });
-  expect(parseRoute("#/elsewhere")).toEqual({ projectId: null, pageId: null, screen: null });
+  const none = { projectId: null, pageId: null, target: null };
+  expect(parseRoute("#/agents")).toEqual({ ...none, screen: "agents" });
+  expect(parseRoute("#/agents/queue")).toEqual({ ...none, screen: "queue" });
+  expect(parseRoute("#/settings/domains")).toEqual({ ...none, screen: "domains" });
+  expect(parseRoute("#/p/kibo/1%401")).toEqual({
+    projectId: "kibo",
+    pageId: "1@1",
+    target: { kind: "page", projectId: "kibo", pageId: "1@1" },
+    screen: null,
+  });
+  expect(parseRoute("#/elsewhere")).toEqual({ ...none, screen: null });
 });
 
 test("the sidebar leads to the agents, the queue and the settings", async () => {
@@ -138,6 +149,8 @@ test("the ticket sheet offers a domain and the assign action", async () => {
       domains={domainsFixture}
       onClose={() => {}}
       onAssign={onAssign}
+      onOpenInTab={() => {}}
+      onOpenFile={() => {}}
     />,
   );
   expect(screen.getByRole("combobox", { name: "Domaine" }).textContent).toContain("UI");
@@ -161,6 +174,7 @@ test("the bell is offered in the browser only", async () => {
   expect(header().queryByRole("button", { name: "Activer les notifications" })).toBeNull();
   view.unmount();
   render(<Shell viewer="adam" notifications="browser" />);
+  await go("#/");
   expect(header().getByRole("button", { name: "Activer les notifications" })).toBeTruthy();
   fake.restore();
 });

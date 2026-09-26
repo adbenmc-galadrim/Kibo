@@ -1,4 +1,4 @@
-import type { FileRef } from "@kibo/schema";
+import type { FileRef, TabTarget } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { createContext, type ReactNode, useContext } from "react";
 
@@ -7,6 +7,7 @@ export type Host = {
   openNewTicket(d: NewTicketDefaults): void;
   openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;
+  openTarget(target: TabTarget, opts?: { newTab?: boolean }): void;
 };
 const HostContext = createContext<Host | null>(null);
 

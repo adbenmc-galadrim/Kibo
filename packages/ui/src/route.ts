@@ -1,7 +1,14 @@
+import type { TabTarget } from "@kibo/schema";
 import { useSyncExternalStore } from "react";
+import { hashToTarget, targetToHash } from "./tabs/target-hash";
 
 export type Screen = "agents" | "queue" | "domains";
-export type Route = { projectId: string | null; pageId: string | null; screen: Screen | null };
+export type Route = {
+  projectId: string | null;
+  pageId: string | null;
+  target: TabTarget | null;
+  screen: Screen | null;
+};
 
 const SCREENS: [Screen, string][] = [
   ["agents", "#/agents"],
@@ -11,20 +18,27 @@ const SCREENS: [Screen, string][] = [
 
 export function parseRoute(hash: string): Route {
   const screen = SCREENS.find(([, h]) => h === hash.replace(/\/$/, ""))?.[0];
-  if (screen) return { projectId: null, pageId: null, screen };
-  const m = /^#\/p\/([^/]+)(?:\/([^/]+))?/.exec(hash);
-  return { projectId: m?.[1] ?? null, pageId: m?.[2] ? decodeURIComponent(m[2]) : null, screen: null };
+  if (screen) return { projectId: null, pageId: null, target: null, screen };
+  const target = hashToTarget(hash);
+  return {
+    projectId: target?.projectId ?? null,
+    pageId: target?.kind === "page" ? target.pageId : null,
+    target,
+    screen: null,
+  };
 }
 
-let currentHash = location.hash;
-let current = parseRoute(currentHash);
-const snapshot = (): Route => {
-  if (location.hash !== currentHash) {
-    currentHash = location.hash;
-    current = parseRoute(currentHash);
+let lastHash = location.hash;
+let current = parseRoute(lastHash);
+
+function snapshot(): Route {
+  if (location.hash !== lastHash) {
+    lastHash = location.hash;
+    current = parseRoute(lastHash);
   }
   return current;
-};
+}
+
 const subscribe = (cb: () => void) => {
   window.addEventListener("hashchange", cb);
   return () => window.removeEventListener("hashchange", cb);
@@ -34,8 +48,14 @@ export function useRoute(): Route {
   return useSyncExternalStore(subscribe, snapshot);
 }
 
+export function navigateTo(target: TabTarget | null): void {
+  location.hash = targetToHash(target);
+}
+
 export function navigate(projectId: string | null, pageId: string | null = null): void {
-  location.hash = projectId ? `#/p/${projectId}/${pageId ? encodeURIComponent(pageId) : ""}` : "#/";
+  navigateTo(
+    projectId ? (pageId ? { kind: "page", projectId, pageId } : { kind: "project", projectId }) : null,
+  );
 }
 
 export function openScreen(screen: Screen): void {

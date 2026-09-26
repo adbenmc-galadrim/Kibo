@@ -1,182 +1,275 @@
-import type { FileRef, ProjectSnapshot, Session } from "@kibo/schema";
-import type { NewTicketDefaults } from "@kibo/sdk";
+import type { AgentsState, FileRef, ProjectSummary, Session, TabTarget } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { Bell, Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
-import { AgentsPage } from "../agents/AgentsPage";
-import { AssignDialog } from "../agents/AssignDialog";
-import { ProfileSheet } from "../agents/ProfileSheet";
-import { QueuePage } from "../agents/QueuePage";
 import { useRunNotifications } from "../agents/use-run-notifications";
-import { NewPageDialog } from "../dialogs/NewPageDialog";
-import { NewProjectDialog } from "../dialogs/NewProjectDialog";
-import { NewTicketDialog } from "../dialogs/NewTicketDialog";
+import { useProjectGit } from "../code/use-project-git";
+import { resolveWorktree } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
-import { PageView } from "../pages/PageView";
-import { ProjectHome } from "../pages/ProjectHome";
-import { type Route, useRoute } from "../route";
-import { DomainsPage } from "../settings/DomainsPage";
+import { CommandPalette } from "../palette/CommandPalette";
+import type { PaletteAction, PaletteContext } from "../palette/palette-items";
+import { navigateTo, useRoute } from "../route";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
 import { useProject, useProjects } from "../state/use-projects";
+import { useSnapshots } from "../state/use-snapshots";
+import { TabBar } from "../tabs/TabBar";
+import { describeTarget } from "../tabs/tab-title";
+import { activeTarget, type TabsAction } from "../tabs/tabs-model";
+import { targetToHash } from "../tabs/target-hash";
+import { useHashSync } from "../tabs/use-hash-sync";
+import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
+import { type TabsApi, useTabs } from "../tabs/use-tabs";
+import { cycleTheme } from "../theme";
 import { AppSidebar } from "./AppSidebar";
-import { Breadcrumb } from "./Breadcrumb";
+import { Breadcrumb, crumbsFor, screenCrumbs } from "./Breadcrumb";
+import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { NotifyButton } from "./NotifyButton";
-import { Overview } from "./Overview";
 import { ScreenActions } from "./ScreenActions";
-import { TicketSheet } from "./TicketSheet";
+import { ScreenView } from "./ScreenView";
+import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { UserAvatar } from "./UserAvatar";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
-function crumbsFor(route: Route, project: ProjectSnapshot | null, page: string | null): string[] {
-  if (route.screen === "agents") return [fr.nav.agents];
-  if (route.screen === "queue") return [fr.nav.agents, fr.nav.queue];
-  if (route.screen === "domains") return [fr.nav.settings, fr.nav.domains];
-  return [project?.meta.name ?? fr.nav.overview, ...(project && page ? [page] : [])];
+export function Shell({ viewer, notifications }: Props) {
+  const projects = useProjects();
+  const tabs = useTabs();
+  const agents = useAgents();
+  useRunNotifications(agents, notifications === "browser");
+  if (!projects || !tabs) return null;
+  return (
+    <Workspace
+      viewer={viewer}
+      notifications={notifications}
+      projects={projects}
+      tabs={tabs}
+      agents={agents}
+    />
+  );
 }
 
-export function Shell({ viewer, notifications }: Props) {
+const inTauri = () => "__TAURI_INTERNALS__" in window;
+const openWindow = (t: TabTarget) =>
+  window.open(`${location.pathname}${targetToHash(t)}`, "_blank", "noopener");
+
+type WorkspaceProps = Props & { projects: ProjectSummary[]; tabs: TabsApi; agents: AgentsState | null };
+
+function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceProps) {
   const route = useRoute();
-  const projects = useProjects();
-  const [lastProjectId, setLastProjectId] = useState<string | null>(route.projectId);
-  const project = useProject(route.projectId ?? lastProjectId);
-  const routed = route.projectId ? project : null;
-  const agents = useAgents();
+  const screen = route.screen;
+  useHashSync(tabs, route.target, screen !== null);
+  const active = activeTarget(tabs.state);
+  const activeProjectId = active?.projectId ?? null;
+  const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
+  const ticketProject = useProject(activeProjectId ?? lastProjectId);
+  const project = activeProjectId ? ticketProject : null;
+  const snapshots = useSnapshots(projects.map((p) => p.id));
   const config = useConfig();
   const now = useNow();
-  const [newProject, setNewProject] = useState(false);
-  const [newPageParent, setNewPageParent] = useState<string | null | undefined>(undefined);
-  const [ticketId, setTicketId] = useState<string | null>(null);
-  const [newTicket, setNewTicket] = useState<NewTicketDefaults | null>(null);
-  const [assign, setAssign] = useState<{ ticketId: string | null } | null>(null);
-  const [newProfile, setNewProfile] = useState(false);
+  const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
+  const [palette, setPalette] = useState<{ newTab: boolean } | null>(null);
+  const [dialogs, setDialogs] = useState<DialogsState>(NO_DIALOG);
   const [focusRun, setFocusRun] = useState<string | null>(null);
-  const [, setFileRef] = useState<FileRef | null>(null);
+  const editRequests = useRef(new Set<string>());
+  const { open } = tabs;
+
+  useEffect(() => {
+    if (activeProjectId) setLastProjectId(activeProjectId);
+  }, [activeProjectId]);
+
+  const set = useCallback((patch: Partial<DialogsState>) => setDialogs((d) => ({ ...d, ...patch })), []);
   const clearFocus = useCallback(() => setFocusRun(null), []);
-  const launch = useCallback(() => setAssign({ ticketId: null }), []);
+  const launch = useCallback(() => set({ assign: { ticketId: null } }), [set]);
+  const go = useCallback(
+    (target: TabTarget | null, newTab = false) => {
+      if (screen && !newTab) navigateTo(target);
+      else open(target, { newTab });
+    },
+    [screen, open],
+  );
+  const dispatch = (action: TabsAction) => {
+    if (screen && (action.type === "activate" || action.type === "activateIndex")) navigateTo(null);
+    tabs.dispatch(action);
+  };
+
   const host = useMemo<Host>(
     () => ({
-      openTicket: setTicketId,
-      openNewTicket: setNewTicket,
-      openAssign: (id) => setAssign({ ticketId: id }),
-      openFile: setFileRef,
+      openTicket: (ticketId) => {
+        if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
+      },
+      openNewTicket: (d) => set({ newTicket: d }),
+      openAssign: (ticketId) => set({ assign: { ticketId } }),
+      openFile: (ref) => set({ preview: ref }),
+      openTarget: (target, opts) => go(target, opts?.newTab),
     }),
-    [],
+    [activeProjectId, set, go],
   );
-  useRunNotifications(agents, notifications === "browser");
-  useEffect(() => {
-    if (route.projectId) setLastProjectId(route.projectId);
-  }, [route.projectId]);
-  if (!projects) return null;
 
-  const page = routed?.pages.find((p) => p.id === route.pageId) ?? null;
-  const onProject = !route.screen && routed;
+  useTabShortcuts((s) => {
+    if (s.kind === "palette") return setPalette({ newTab: false });
+    if (s.kind === "newTab") return setPalette({ newTab: true });
+    if (s.kind === "activate") return dispatch({ type: "activateIndex", index: s.index });
+    const id = tabs.state.activeId;
+    if (!id) return;
+    if (s.kind === "close") tabs.dispatch({ type: "close", id });
+    if (s.kind === "togglePin")
+      tabs.dispatch({ type: "pin", id, pinned: !tabs.state.tabs.find((t) => t.id === id)?.pinned });
+  });
+
+  const onAction = (a: PaletteAction) => {
+    if (a.kind === "newProject") return set({ newProject: true });
+    if (a.kind === "toggleTheme") return void cycleTheme();
+    if (a.projectId !== activeProjectId) go({ kind: "project", projectId: a.projectId });
+    if (a.kind === "newPage") set({ newPageParent: null });
+    if (a.kind === "newTicket") set({ newTicket: { parentId: a.parentId } });
+  };
+  const openFileTab = (ref: FileRef, edit: boolean) => {
+    const target: TabTarget = {
+      kind: "file",
+      projectId: ref.projectId,
+      worktree: ref.worktree,
+      path: ref.path,
+      line: ref.line,
+    };
+    if (edit) editRequests.current.add(targetToHash(target));
+    set({ preview: null });
+    go(target, true);
+  };
+
+  const branch =
+    active?.kind === "changes" ? (resolveWorktree(git.worktrees, active.worktree)?.branch ?? null) : null;
+  const isDirty = (t: TabTarget) =>
+    t.kind === "changes" &&
+    t.projectId === project?.meta.id &&
+    (t.worktree === null || t.worktree === git.main?.path) &&
+    (git.changesCount ?? 0) > 0;
+  const sheetProjectId = dialogs.sheet?.projectId ?? null;
+  const sheetProject =
+    sheetProjectId === project?.meta.id
+      ? project
+      : sheetProjectId
+        ? (snapshots.get(sheetProjectId) ?? null)
+        : null;
+  const recents = tabs.state.recents;
+  const activeTicketId = active?.kind === "ticket" ? active.ticketId : (dialogs.sheet?.ticketId ?? null);
+  const paletteContext = useMemo<PaletteContext>(
+    () => ({ projects, snapshots, recents, activeProjectId, activeTicketId }),
+    [projects, snapshots, recents, activeProjectId, activeTicketId],
+  );
+
   return (
     <HostProvider host={host}>
-      <SidebarProvider>
-        <AppSidebar
-          projects={projects}
-          active={routed}
-          route={route}
-          agents={agents}
-          onNewProject={() => setNewProject(true)}
-          onNewPage={(parentId) => setNewPageParent(parentId)}
+      <div className="flex h-svh flex-col [--tabbar-h:2.5rem]">
+        <TabBar
+          state={tabs.state}
+          describe={(t) => describeTarget(t, { projects, snapshots })}
+          isDirty={isDirty}
+          dispatch={dispatch}
+          onNewTab={() => setPalette({ newTab: true })}
+          onOpenWindow={inTauri() ? null : openWindow}
+          error={tabs.error}
         />
-        <SidebarInset className="h-svh min-w-0">
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
-            <SidebarTrigger />
-            <Breadcrumb
-              items={crumbsFor(route, routed, page?.title ?? null)}
-              heading={route.screen === "agents" || route.screen === "queue"}
-            />
-            <span className="flex-1" />
-            <ScreenActions screen={route.screen} agents={agents} onNewProfile={() => setNewProfile(true)} />
-            {project && (
-              <Button
-                size="sm"
-                className="h-7"
-                title={fr.header.newTicketIn(project.meta.name)}
-                onClick={() => setNewTicket({})}
-              >
-                <Plus />
-                {fr.header.newTicket}
-              </Button>
-            )}
-            {notifications === "browser" ? (
-              <NotifyButton />
-            ) : (
-              <Bell aria-hidden className="size-4 text-muted-foreground" />
-            )}
-            <UserAvatar user={viewer} />
-          </header>
-          <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
-            {route.screen === "agents" && agents && config && (
-              <AgentsPage state={agents} config={config} now={now} />
-            )}
-            {route.screen === "queue" && agents && config && (
-              <QueuePage state={agents} profiles={config.profiles} now={now} onAnswer={setFocusRun} />
-            )}
-            {route.screen === "domains" && config && <DomainsPage config={config} projects={projects} />}
-            {!route.screen && !route.projectId && (
-              <Overview viewer={viewer} projects={projects} onNewProject={() => setNewProject(true)} />
-            )}
-            {onProject && !route.pageId && (
-              <ProjectHome project={routed} onNewPage={() => setNewPageParent(null)} />
-            )}
-            {onProject && page && <PageView key={page.id} project={routed} page={page} viewer={viewer} />}
-          </div>
-          <AgentPanel onLaunch={launch} focusRunId={focusRun} onFocused={clearFocus} />
-        </SidebarInset>
-        <NewProjectDialog open={newProject} onOpenChange={setNewProject} count={projects.length} />
-        {project && newPageParent !== undefined && (
-          <NewPageDialog
-            projectId={project.meta.id}
-            projectName={project.meta.name}
-            parentId={newPageParent}
-            open
-            onOpenChange={(o) => !o && setNewPageParent(undefined)}
+        <SidebarProvider className="min-h-0 flex-1">
+          <AppSidebar
+            className="top-(--tabbar-h) h-[calc(100svh-var(--tabbar-h))]!"
+            projects={projects}
+            active={project}
+            activeTarget={active}
+            screen={screen}
+            agents={agents}
+            changesCount={git.worktrees ? git.changesCount : null}
+            onOpen={go}
+            onSearch={() => setPalette({ newTab: false })}
+            onNewProject={() => set({ newProject: true })}
+            onNewPage={(parentId) => set({ newPageParent: parentId })}
           />
-        )}
-        {project && ticketId && (
-          <TicketSheet
-            project={project}
-            ticketId={ticketId}
-            domains={config?.domains ?? []}
-            onClose={() => setTicketId(null)}
-            onAssign={() => {
-              setAssign({ ticketId });
-              setTicketId(null);
-            }}
-          />
-        )}
-        {project && newTicket && (
-          <NewTicketDialog
-            project={project}
+          <SidebarInset className="min-h-0 min-w-0">
+            <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+              <SidebarTrigger />
+              <Breadcrumb
+                crumbs={screen ? screenCrumbs(screen) : crumbsFor(active, { project, branch })}
+                heading={screen === "agents" || screen === "queue"}
+              />
+              <span className="flex-1" />
+              {git.error && (
+                <p role="alert" className="truncate text-xs text-destructive">
+                  {git.error}
+                </p>
+              )}
+              <ScreenActions screen={screen} agents={agents} onNewProfile={() => set({ newProfile: true })} />
+              {ticketProject && (
+                <Button
+                  size="sm"
+                  className="h-7"
+                  title={fr.header.newTicketIn(ticketProject.meta.name)}
+                  onClick={() => set({ newTicket: {} })}
+                >
+                  <Plus />
+                  {fr.header.newTicket}
+                </Button>
+              )}
+              {notifications === "browser" ? (
+                <NotifyButton />
+              ) : (
+                <Bell aria-hidden className="size-4 text-muted-foreground" />
+              )}
+              <UserAvatar user={viewer} />
+            </header>
+            <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
+              {screen ? (
+                <ScreenView
+                  screen={screen}
+                  projects={projects}
+                  agents={agents}
+                  config={config}
+                  now={now}
+                  onAnswer={setFocusRun}
+                />
+              ) : (
+                <ContentView
+                  target={active}
+                  viewer={viewer}
+                  projects={projects}
+                  project={project}
+                  domains={config?.domains}
+                  startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
+                  onNewProject={() => set({ newProject: true })}
+                  onNewPage={() => set({ newPageParent: null })}
+                  onOpen={(t) => go(t)}
+                  onOpenFile={(ref) => set({ preview: ref })}
+                  onAssign={(ticketId) => set({ assign: { ticketId } })}
+                />
+              )}
+            </div>
+            <AgentPanel onLaunch={launch} focusRunId={focusRun} onFocused={clearFocus} />
+          </SidebarInset>
+          <ShellDialogs
+            state={dialogs}
+            set={set}
             viewer={viewer}
-            defaults={newTicket}
-            onClose={() => setNewTicket(null)}
-          />
-        )}
-        {assign && (
-          <AssignDialog
+            projectsCount={projects.length}
             project={project}
-            ticketId={assign.ticketId}
+            ticketProject={ticketProject}
+            sheetProject={sheetProject}
+            agents={agents}
             config={config}
-            onClose={() => setAssign(null)}
+            onOpenTarget={go}
+            onOpenFileTab={openFileTab}
           />
-        )}
-        {newProfile && config && agents && (
-          <ProfileSheet
-            profile={null}
-            config={config}
-            hostSlots={agents.host.hostSlots}
-            onClose={() => setNewProfile(false)}
+          <CommandPalette
+            open={palette !== null}
+            onOpenChange={(o) => !o && setPalette(null)}
+            newTab={palette?.newTab ?? false}
+            context={paletteContext}
+            onOpenTarget={go}
+            onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+            onAction={onAction}
           />
-        )}
-      </SidebarProvider>
+        </SidebarProvider>
+      </div>
     </HostProvider>
   );
 }

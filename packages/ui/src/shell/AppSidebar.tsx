@@ -1,4 +1,4 @@
-import type { AgentsState, Page, ProjectMeta, ProjectSnapshot } from "@kibo/schema";
+import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, TabTarget } from "@kibo/schema";
 import {
   Sidebar,
   SidebarContent,
@@ -16,122 +16,185 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@kibo/sdk/ui/sidebar";
-import { Bot, LayoutGrid, ListOrdered, Plus, Settings } from "lucide-react";
+import { Bot, GitCommitHorizontal, LayoutGrid, ListOrdered, Plus, Search, Settings } from "lucide-react";
+import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
-import { navigate, openScreen, type Route } from "../route";
+import { openScreen, type Screen } from "../route";
 import { KiboLogo } from "./KiboLogo";
 
 type Props = {
+  className?: string;
   projects: ProjectMeta[];
   active: ProjectSnapshot | null;
-  route: Route;
+  activeTarget: TabTarget | null;
+  screen: Screen | null;
   agents: AgentsState | null;
-  onNewProject: () => void;
-  onNewPage: (parentId: string | null) => void;
+  changesCount: number | null;
+  onOpen(target: TabTarget | null, newTab: boolean): void;
+  onSearch(): void;
+  onNewProject(): void;
+  onNewPage(parentId: string | null): void;
 };
 
-export function AppSidebar({ projects, active, route, agents, onNewProject, onNewPage }: Props) {
-  const inAgents = route.screen === "agents" || route.screen === "queue";
+const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
+
+function AgentsEntry({ screen, agents }: { screen: Screen | null; agents: AgentsState | null }) {
+  const inAgents = screen === "agents" || screen === "queue";
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton isActive={inAgents} onClick={() => openScreen("agents")}>
+        <Bot />
+        <span>{fr.nav.agents}</span>
+      </SidebarMenuButton>
+      {agents && (
+        <SidebarMenuBadge className="gap-1.5">
+          {agents.host.used}
+          {agents.runs.some((r) => r.state === "waiting_input") && (
+            <span aria-hidden className="size-1.5 rounded-full bg-brand" />
+          )}
+        </SidebarMenuBadge>
+      )}
+      {inAgents && (
+        <SidebarMenuSub>
+          <SidebarMenuSubItem>
+            <SidebarMenuSubButton asChild isActive={screen === "queue"}>
+              <button type="button" onClick={() => openScreen("queue")}>
+                <ListOrdered />
+                <span>{fr.nav.queue}</span>
+              </button>
+            </SidebarMenuSubButton>
+          </SidebarMenuSubItem>
+        </SidebarMenuSub>
+      )}
+    </SidebarMenuItem>
+  );
+}
+
+export function AppSidebar(p: Props) {
+  const { active, activeTarget, screen, changesCount, onOpen } = p;
+  const onTarget = (kind: TabTarget["kind"], projectId: string) =>
+    !screen && activeTarget?.kind === kind && activeTarget.projectId === projectId;
+  const link = (target: TabTarget | null) => ({
+    onClick: (e: MouseEvent) => onOpen(target, wantsNewTab(e)),
+    onAuxClick: (e: MouseEvent) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      onOpen(target, true);
+    },
+  });
   const children = (parentId: string | null): Page[] =>
-    active?.pages.filter((p) => p.parentId === parentId) ?? [];
-  const renderPages = (parentId: string | null) =>
+    active?.pages.filter((x) => x.parentId === parentId) ?? [];
+  const renderPages = (projectId: string, parentId: string | null) =>
     children(parentId).map((page) => {
       const Icon = pageIcon(page, active?.instances ?? []);
       return (
         <SidebarMenuSubItem key={page.id}>
           <SidebarMenuSubButton
-            isActive={route.pageId === page.id}
-            onClick={() => navigate(route.projectId, page.id)}
+            asChild
+            isActive={
+              onTarget("page", projectId) && activeTarget?.kind === "page" && activeTarget.pageId === page.id
+            }
           >
-            <Icon />
-            <span>{page.title}</span>
+            <button type="button" {...link({ kind: "page", projectId, pageId: page.id })}>
+              <Icon />
+              <span>{page.title}</span>
+            </button>
           </SidebarMenuSubButton>
-          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(page.id)}</SidebarMenuSub>}
+          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(projectId, page.id)}</SidebarMenuSub>}
         </SidebarMenuSubItem>
       );
     });
+  const changesEntry = (projectId: string) =>
+    changesCount !== null && (
+      <SidebarMenuSubItem>
+        <SidebarMenuSubButton asChild isActive={onTarget("changes", projectId)}>
+          <button
+            type="button"
+            aria-label={`${fr.nav.changes} · ${fr.nav.changesCount(changesCount)}`}
+            {...link({ kind: "changes", projectId, worktree: null })}
+          >
+            <GitCommitHorizontal />
+            <span>{fr.nav.changes}</span>
+            {changesCount > 0 && (
+              <span className="ml-auto font-mono text-xs text-muted-foreground tabular-nums">
+                {changesCount}
+              </span>
+            )}
+          </button>
+        </SidebarMenuSubButton>
+      </SidebarMenuSubItem>
+    );
 
   return (
-    <Sidebar>
+    <Sidebar className={p.className}>
       <SidebarHeader>
         <span className="flex items-center gap-2 px-2 py-1 text-sm font-semibold">
           <KiboLogo className="size-5" decorative />
           {fr.app.name}
         </span>
+        <button
+          type="button"
+          onClick={p.onSearch}
+          className="flex h-8 items-center gap-2 rounded-md border bg-background px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Search aria-hidden className="size-4" />
+          <span className="flex-1 text-left">{fr.nav.search}</span>
+          <kbd className="font-mono text-xs">⌘K</kbd>
+        </button>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={route.projectId === null && route.screen === null}
-                onClick={() => navigate(null)}
-              >
+              <SidebarMenuButton isActive={activeTarget === null && screen === null} {...link(null)}>
                 <LayoutGrid />
                 <span>{fr.nav.overview}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton isActive={inAgents} onClick={() => openScreen("agents")}>
-                <Bot />
-                <span>{fr.nav.agents}</span>
-              </SidebarMenuButton>
-              {agents && (
-                <SidebarMenuBadge className="gap-1.5">
-                  {agents.host.used}
-                  {agents.runs.some((r) => r.state === "waiting_input") && (
-                    <span aria-hidden className="size-1.5 rounded-full bg-brand" />
-                  )}
-                </SidebarMenuBadge>
-              )}
-              {inAgents && (
-                <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton asChild isActive={route.screen === "queue"}>
-                      <button type="button" onClick={() => openScreen("queue")}>
-                        <ListOrdered />
-                        <span>{fr.nav.queue}</span>
-                      </button>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              )}
-            </SidebarMenuItem>
+            <AgentsEntry screen={screen} agents={p.agents} />
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>{fr.nav.projects}</SidebarGroupLabel>
-          <SidebarGroupAction aria-label={fr.nav.newProject} onClick={onNewProject}>
+          <SidebarGroupAction aria-label={fr.nav.newProject} onClick={p.onNewProject}>
             <Plus />
           </SidebarGroupAction>
           <SidebarMenu>
-            {projects.map((p) => (
-              <SidebarMenuItem key={p.id}>
-                <SidebarMenuButton
-                  isActive={route.projectId === p.id && !route.pageId}
-                  onClick={() => navigate(p.id)}
-                >
-                  <span className="size-2 rounded-[2px]" style={{ background: p.color }} />
-                  <span>{p.name}</span>
-                </SidebarMenuButton>
-                {route.projectId === p.id && (
-                  <>
-                    <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => onNewPage(null)}>
-                      <Plus />
-                    </SidebarMenuAction>
-                    {children(null).length > 0 && <SidebarMenuSub>{renderPages(null)}</SidebarMenuSub>}
-                  </>
-                )}
-              </SidebarMenuItem>
-            ))}
+            {p.projects.map((project) => {
+              const current = active?.meta.id === project.id;
+              return (
+                <SidebarMenuItem key={project.id}>
+                  <SidebarMenuButton
+                    isActive={onTarget("project", project.id)}
+                    {...link({ kind: "project", projectId: project.id })}
+                  >
+                    <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
+                    <span>{project.name}</span>
+                  </SidebarMenuButton>
+                  {current && (
+                    <>
+                      <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
+                        <Plus />
+                      </SidebarMenuAction>
+                      {(children(null).length > 0 || changesCount !== null) && (
+                        <SidebarMenuSub>
+                          {renderPages(project.id, null)}
+                          {changesEntry(project.id)}
+                        </SidebarMenuSub>
+                      )}
+                    </>
+                  )}
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton isActive={route.screen === "domains"} onClick={() => openScreen("domains")}>
+            <SidebarMenuButton isActive={screen === "domains"} onClick={() => openScreen("domains")}>
               <Settings />
               <span>{fr.nav.settings}</span>
             </SidebarMenuButton>
