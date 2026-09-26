@@ -106,7 +106,6 @@ export const fr = {
   },
   agents: {
     bar: "Agents",
-    modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },
     runs: "Runs",
     slots: (used: number, total: number) => `${used}/${total}`,
     queued: (n: number) => `${n} en file`,
@@ -224,7 +223,7 @@ export const fr = {
       tokens: "tokens aujourd'hui (abonnement)",
     },
     profiles: "Profils",
-    noProfile: "Aucun profil : crée-en un pour assigner des tickets à un agent.",
+    noProfile: "Aucun profil : crées-en un pour assigner des tickets à un agent.",
     editProfile: (name: string) => `Modifier le profil ${name}`,
     active: (n: number) => `${n} actif${n > 1 ? "s" : ""}`,
     modelLine: (model: string) => `${model} · CLI headless`,

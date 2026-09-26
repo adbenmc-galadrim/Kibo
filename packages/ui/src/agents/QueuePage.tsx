@@ -78,6 +78,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
     for (const sub of parent.subagents)
       subagents.set(sub.type, [...(subagents.get(sub.type) ?? []), { parent, sub }]);
   }
+  const profileNames = new Set(profiles.map((p) => p.name));
   const waiting = state.runs.filter((r) => r.state === "waiting_input");
   const onDragEnd = (e: DragEndEvent) => {
     const runId = String(e.active.id);
@@ -115,6 +116,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
           {profiles.map((p) => {
             const running = state.runs.filter((r) => r.profileId === p.id && holdsSlot(r)).sort(byStart);
             const mine = queued.filter(({ run }) => run.profileId === p.id);
+            const subs = subagents.get(p.name) ?? [];
             return (
               <Column
                 key={p.id}
@@ -156,26 +158,26 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                     ))}
                   </ul>
                 )}
+                {subs.length > 0 && (
+                  <>
+                    <Label>{fr.queue.subagent}</Label>
+                    <SubagentSlots items={subs} now={now} />
+                  </>
+                )}
               </Column>
             );
           })}
-          {[...subagents].map(([type, items]) => (
-            <Column
-              key={type}
-              label={type}
-              aside={<span className="text-xs text-muted-foreground">{fr.queue.subagent}</span>}
-            >
-              {items.map(({ parent, sub }) => (
-                <div key={sub.id} className="grid gap-1.5">
-                  <Label>{fr.queue.inSlotOf(parent.label)}</Label>
-                  <ul>
-                    <RunLine run={parent} now={now} since={sub.since} />
-                  </ul>
-                </div>
-              ))}
-              <p className="text-xs text-muted-foreground">{fr.queue.subagentHelp}</p>
-            </Column>
-          ))}
+          {[...subagents]
+            .filter(([type]) => !profileNames.has(type))
+            .map(([type, items]) => (
+              <Column
+                key={type}
+                label={type}
+                aside={<span className="text-xs text-muted-foreground">{fr.queue.subagent}</span>}
+              >
+                <SubagentSlots items={items} now={now} />
+              </Column>
+            ))}
           <section
             aria-label={fr.queue.waiting}
             className="grid content-start gap-2 rounded-lg border bg-card p-3"
@@ -208,5 +210,21 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
         </div>
       </DndContext>
     </div>
+  );
+}
+
+function SubagentSlots({ items, now }: { items: { parent: RunView; sub: ActiveSubagent }[]; now: number }) {
+  return (
+    <>
+      {items.map(({ parent, sub }) => (
+        <div key={sub.id} className="grid gap-1.5">
+          <Label>{fr.queue.inSlotOf(parent.label)}</Label>
+          <ul>
+            <RunLine run={parent} now={now} since={sub.since} />
+          </ul>
+        </div>
+      ))}
+      <p className="text-xs text-muted-foreground">{fr.queue.subagentHelp}</p>
+    </>
   );
 }
