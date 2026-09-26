@@ -18,7 +18,7 @@ export type { RunState };
 export type ExecResult = { code: number; stdout: string; stderr: string };
 export type Exec = (argv: string[], timeoutMs: number) => Promise<ExecResult | null>;
 
-export type ToolCall = { toolName: string; toolInput: Record<string, unknown> };
+export type ToolCall = { toolName: string; toolInput: unknown };
 export type GuardDecision = { decision: "allow" } | { decision: "deny"; reason: string };
 export type Guard = (call: ToolCall) => GuardDecision;
 

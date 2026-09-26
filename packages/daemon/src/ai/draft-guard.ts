@@ -5,12 +5,19 @@ import type { Guard, GuardDecision } from "./ports";
 
 export type DraftGuardOptions = { draftDir: string; readRoots: string[]; allowServer: boolean };
 
-export const TEST_COMMAND = /^kibo component test(?: \.)?$/;
+export const TEST_COMMAND = /^kibo component test(?: \.)?\n?$/;
 const TEST_FILE = /^[A-Za-z0-9_-]+\.test\.tsx$/;
 const MAX_PATH_LENGTH = 1024;
 const MAX_INPUT_KEYS = 20;
-const WRITE_TOOLS: Record<string, string> = { Edit: "file_path", MultiEdit: "file_path", Write: "file_path" };
-const SEARCH_TOOLS: Record<string, string> = { Glob: "path", Grep: "path" };
+const WRITE_TOOLS = new Map([
+  ["Edit", "file_path"],
+  ["MultiEdit", "file_path"],
+  ["Write", "file_path"],
+]);
+const SEARCH_TOOLS = new Map([
+  ["Glob", "path"],
+  ["Grep", "path"],
+]);
 
 const allow: GuardDecision = { decision: "allow" };
 const deny = (reason: string): GuardDecision => ({ decision: "deny", reason });
@@ -19,14 +26,20 @@ const within = (root: string, target: string) => {
   const rel = relative(root, target);
   return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 };
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 const textArg = (input: Record<string, unknown>, key: string): string | null | undefined => {
+  if (!Object.hasOwn(input, key)) return undefined;
   const v = input[key];
-  if (v === undefined) return undefined;
   const valid = typeof v === "string" && v.length > 0 && v.length < MAX_PATH_LENGTH && !v.includes("\0");
   return valid ? v : null;
 };
+const pathArg = (input: Record<string, unknown>, key: string): string | null | undefined => {
+  const v = textArg(input, key);
+  return v?.split(sep).includes("..") ? null : v;
+};
 const confinedPattern = (pattern: string) =>
-  !isAbsolute(pattern) && !pattern.startsWith("~") && !pattern.includes("..");
+  !isAbsolute(pattern) && !pattern.startsWith("~") && !/\.\.|[{}]/.test(pattern);
 
 export const denyAllGuard: Guard = ({ toolName }) => deny(`${toolName} is not available to this profile`);
 
@@ -63,32 +76,33 @@ export function createDraftGuard(opts: DraftGuardOptions): Guard {
     const pattern = textArg(input, patternKey);
     if (pattern === null || (pattern !== undefined && !confinedPattern(pattern)))
       return deny(`invalid ${patternKey}: searches stay in their folder`);
-    const p = textArg(input, pathKey);
+    const p = pathArg(input, pathKey);
     if (p === undefined) return allow;
     return p === null ? deny(`invalid ${pathKey}`) : checkRead(p);
   };
 
   const check = (toolName: string, toolInput: Record<string, unknown>): GuardDecision => {
     if (toolName === ASK_TOOL) return allow;
-    const writeKey = WRITE_TOOLS[toolName];
+    const writeKey = WRITE_TOOLS.get(toolName);
     if (writeKey) {
-      const p = textArg(toolInput, writeKey);
+      const p = pathArg(toolInput, writeKey);
       return p ? checkWrite(p) : deny(`invalid ${writeKey}`);
     }
     if (toolName === "Read") {
-      const p = textArg(toolInput, "file_path");
+      const p = pathArg(toolInput, "file_path");
       return p ? checkRead(p) : deny("invalid file_path");
     }
-    const searchKey = SEARCH_TOOLS[toolName];
+    const searchKey = SEARCH_TOOLS.get(toolName);
     if (searchKey) return checkSearch(toolInput, searchKey, toolName === "Glob" ? "pattern" : "glob");
     if (toolName === "Bash") {
-      const command = typeof toolInput.command === "string" ? toolInput.command.trim() : "";
-      return TEST_COMMAND.test(command) ? allow : deny("only `kibo component test .` may run");
+      const command = textArg(toolInput, "command");
+      return command && TEST_COMMAND.test(command) ? allow : deny("only `kibo component test .` may run");
     }
     return deny(`${toolName} is not available to the component generator`);
   };
 
   return ({ toolName, toolInput }) => {
+    if (!isRecord(toolInput)) return deny(`${toolName} input is not an object`);
     if (Object.keys(toolInput).length >= MAX_INPUT_KEYS) return deny(`${toolName} input has too many fields`);
     return check(toolName, toolInput);
   };
