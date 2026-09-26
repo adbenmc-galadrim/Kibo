@@ -1,5 +1,6 @@
 export * from "./build";
 export * from "./bun-command";
+export * from "./fr";
 export * from "./hash";
 export * from "./imports";
 export * from "./infer-permissions";
@@ -10,3 +11,4 @@ export * from "./scaffold";
 export * from "./tailwind";
 export * from "./toolchain";
 export * from "./typescript";
+export * from "./validate";

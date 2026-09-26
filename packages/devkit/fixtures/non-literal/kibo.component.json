@@ -1,0 +1,8 @@
+{
+  "id": "non-literal",
+  "version": "0.1.0",
+  "kind": "widget",
+  "title": "Non literal",
+  "reads": ["ticket"],
+  "writes": []
+}

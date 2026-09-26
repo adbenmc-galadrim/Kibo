@@ -1,0 +1,9 @@
+import { expect, test } from "bun:test";
+import { runConformance } from "@kibo/sdk/conformance";
+import manifest from "./kibo.component.json";
+import { Component } from "./ui";
+
+runConformance({ manifest, Component });
+test("fails on purpose", () => {
+  expect(1).toBe(2);
+});
