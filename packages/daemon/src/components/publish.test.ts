@@ -32,6 +32,7 @@ let registry: RegistryService;
 let updates: string[];
 let failFor: string | null;
 let validationOk: boolean;
+let sourcesRefused: boolean;
 let publisher: ReturnType<typeof createPublisher>;
 
 function writeDraft(
@@ -64,7 +65,7 @@ const report = async (dir: string): Promise<ValidationReport> => ({
   tests: { ok: validationOk, passed: 9, failed: validationOk ? 0 : 1, output: "" },
   conformance: { ok: true, errors: [] },
   permissions: { declared: [], used: [], missing: [], unused: [], errors: [] },
-  hash: await hashSources(dir),
+  hash: sourcesRefused ? null : await hashSources(dir),
   ok: validationOk,
 });
 
@@ -76,6 +77,7 @@ beforeEach(() => {
   updates = [];
   failFor = null;
   validationOk = true;
+  sourcesRefused = false;
   const store = createFakeStore();
   const db = new Database(":memory:", { strict: true });
   ensureEventsTable(db);
@@ -186,6 +188,19 @@ describe("preview", () => {
     expect((await publisher.preview("pr-queue")).validation.ok).toBe(false);
     await expect(publisher.publish("pr-queue", "new-version")).rejects.toThrow("VALIDATION_FAILED");
     await expect(publisher.preview("absent")).rejects.toThrow("NOT_FOUND");
+  });
+  test("a failing validation wins over an already published version", async () => {
+    await publishApproved("0.3.0");
+    writeDraft("0.3.0", {}, "export function Component() { return 1; }");
+    validationOk = false;
+    const red = await publisher.preview("pr-queue");
+    expect(red).toMatchObject({ status: "update", from: "0.3.0", to: "0.3.0" });
+    expect(red.validation.ok).toBe(false);
+    sourcesRefused = true;
+    const refused = await publisher.preview("pr-queue");
+    expect(refused.hash).toBeNull();
+    expect(refused.validation.ok).toBe(false);
+    await expect(publisher.publish("pr-queue", "new-version")).rejects.toThrow("VALIDATION_FAILED");
   });
   test("a draft must stay inside the drafts folder", async () => {
     await expect(publisher.preview("../outside")).rejects.toThrow("INVALID_INPUT");

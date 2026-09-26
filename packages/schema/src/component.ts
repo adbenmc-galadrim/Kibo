@@ -141,7 +141,7 @@ export type PublishPreview = {
   title: string;
   from: string | null;
   to: string;
-  hash: string;
+  hash: string | null;
   status: "new" | "update" | "unchanged";
   usages: PublishUsage[];
   changes: string[];

@@ -41,8 +41,26 @@ export type Publisher = {
 };
 type Failure = PublishResult["failed"][number];
 
-function statusOf(entry: RegistryEntry | undefined, version: string, hash: string): PublishPreview["status"] {
+const passedHash = (v: ValidationReport): string | null => (v.ok ? v.hash : null);
+
+function reportErrors(v: ValidationReport): string {
+  const errors = [
+    ...v.manifest.errors,
+    ...v.imports.errors,
+    ...v.typecheck.errors,
+    ...v.conformance.errors,
+    ...v.permissions.errors,
+  ];
+  return errors.length > 0 ? errors.join("; ") : "validation is not green";
+}
+
+function statusOf(
+  entry: RegistryEntry | undefined,
+  version: string,
+  hash: string | null,
+): PublishPreview["status"] {
   const from = entry ? highestVersion(entry) : null;
+  if (hash === null) return from === null ? "new" : "update";
   const same = entry?.versions[version];
   if (same) {
     if (same.hash !== hash)
@@ -96,9 +114,8 @@ export function createPublisher(deps: PublisherDeps): Publisher {
   const preview = async (id: string): Promise<PublishPreview> => {
     const { dir, manifest } = await context(id);
     const validation = await deps.validate(dir);
-    const hash = validation.hash ?? "";
     const entry = readRegistry(ws)[id];
-    const status = statusOf(entry, manifest.version, hash);
+    const status = statusOf(entry, manifest.version, passedHash(validation));
     const from = entry ? highestVersion(entry) : null;
     const prev = from ? getRegistryVersion(ws, id, from) : null;
     const prevManifest = await previousManifest(id, from);
@@ -109,7 +126,7 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       title: manifest.title,
       from,
       to: manifest.version,
-      hash,
+      hash: validation.hash,
       status,
       usages: usagesOf(id),
       changes: manifest.changes,
@@ -139,14 +156,15 @@ export function createPublisher(deps: PublisherDeps): Publisher {
 
   const publish = async (id: string, strategy: "update-all" | "new-version"): Promise<PublishResult> => {
     const p = await preview(id);
-    if (!p.validation.ok) throw new KiboError("VALIDATION_FAILED", `${id} did not pass validation`);
+    const hash = passedHash(p.validation);
+    if (hash === null) throw new KiboError("VALIDATION_FAILED", `${id}: ${reportErrors(p.validation)}`);
     if (p.status === "unchanged") {
       const existing = getRegistryVersion(ws, id, p.to);
       if (!existing) throw new KiboError("INTERNAL", `${id}@${p.to} vanished`);
       return { version: existing, needsApproval: !isActive(existing), updated: [], failed: [] };
     }
     const { dir, manifest } = await context(id);
-    const stored = await deps.store.put(dir, p.hash);
+    const stored = await deps.store.put(dir, hash);
     const trust = inheritedTrust(p.from ? getRegistryVersion(ws, id, p.from) : null, p);
     const usages = deps.registry.usages(id);
     const version: RegistryVersion = {
