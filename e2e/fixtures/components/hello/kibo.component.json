@@ -1,0 +1,9 @@
+{
+  "id": "hello",
+  "version": "0.1.0",
+  "kind": "widget",
+  "title": "Hello",
+  "reads": ["ticket"],
+  "writes": [],
+  "changes": ["Premier jet"]
+}

@@ -1,15 +1,22 @@
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { chmodSync, copyFileSync, cpSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { e2eHome } from "./e2e-home";
 import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
 import { E2E_TOKEN } from "./token";
 
-const home = mkdtempSync(join(tmpdir(), "kibo-e2e-"));
+const root = resolve(import.meta.dir, "..");
+const [port = "4390", scenario = "question", ...drafts] = process.argv.slice(2);
+const home = e2eHome(port);
+rmSync(home, { recursive: true, force: true });
+mkdirSync(home, { recursive: true, mode: 0o700 });
 writeFileSync(join(home, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
 const fakeState = join(home, "fake-claude");
 mkdirSync(fakeState);
-const root = resolve(import.meta.dir, "..");
-const [port = "4390", scenario = "question"] = process.argv.slice(2);
+for (const draft of drafts) {
+  const dir = join(home, "components", "src", draft);
+  cpSync(join(import.meta.dir, "fixtures", "components", draft), dir, { recursive: true });
+  renameSync(join(dir, "component.test.tsx.fixture"), join(dir, "component.test.tsx"));
+}
 const agents = join(root, "packages/daemon/src/agents");
 const ghDir = fakeGhDir(port);
 rmSync(ghDir, { recursive: true, force: true });
