@@ -1,6 +1,7 @@
 const s = (n: number) => (n > 1 ? "s" : "");
 
 export const fr = {
+  lazy: { loading: "Chargement du graphe…", failed: "Impossible de charger le graphe.", retry: "Réessayer" },
   canvas: "Graphe des dépendances",
   hierarchical: "Hiérarchique",
   hierarchicalHelp: "Seule mise en page disponible pour l'instant",

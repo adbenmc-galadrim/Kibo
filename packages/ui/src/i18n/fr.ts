@@ -3,6 +3,7 @@ import { frComponents } from "./fr-components";
 
 export const fr = {
   app: { name: "Kibo" },
+  lazy: { loading: "Chargement…", failed: "Impossible de charger cet écran.", retry: "Réessayer" },
   nav: {
     breadcrumb: "Fil d'Ariane",
     overview: "Vue d'ensemble",

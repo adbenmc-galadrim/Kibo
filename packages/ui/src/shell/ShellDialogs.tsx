@@ -1,16 +1,12 @@
 import type { AgentsState, FileRef, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
-import { lazy, Suspense } from "react";
 import { AssignDialog } from "../agents/AssignDialog";
 import { ProfileSheet } from "../agents/ProfileSheet";
 import { NewPageDialog } from "../dialogs/NewPageDialog";
 import { NewProjectDialog } from "../dialogs/NewProjectDialog";
 import { NewTicketDialog } from "../dialogs/NewTicketDialog";
+import { FilePreviewSheet } from "./lazy-screens";
 import { TicketSheet } from "./TicketSheet";
-
-const FilePreviewSheet = lazy(() =>
-  import("../files/FilePreviewSheet").then((m) => ({ default: m.FilePreviewSheet })),
-);
 
 export type SheetTicket = { projectId: string; ticketId: string };
 
@@ -117,13 +113,11 @@ export function ShellDialogs({
         />
       )}
       {preview && (
-        <Suspense fallback={null}>
-          <FilePreviewSheet
-            fileRef={preview}
-            onClose={() => set({ preview: null })}
-            onOpenInTab={(edit) => p.onOpenFileTab(preview, edit)}
-          />
-        </Suspense>
+        <FilePreviewSheet
+          fileRef={preview}
+          onClose={() => set({ preview: null })}
+          onOpenInTab={(edit) => p.onOpenFileTab(preview, edit)}
+        />
       )}
     </>
   );

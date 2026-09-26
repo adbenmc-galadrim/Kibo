@@ -1,15 +1,12 @@
 import type { Domain, FileRef, ProjectSnapshot, ProjectSummary, TabTarget } from "@kibo/schema";
-import { lazy, Suspense } from "react";
 import { useChangesSlots } from "../code/agent-slots";
 import { fr } from "../i18n/fr";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
 import { TicketTab } from "../pages/TicketTab";
 import { targetToHash } from "../tabs/target-hash";
+import { ChangesView, FileTabView } from "./lazy-screens";
 import { Overview } from "./Overview";
-
-const ChangesView = lazy(() => import("../code/ChangesView").then((m) => ({ default: m.ChangesView })));
-const FileTabView = lazy(() => import("../files/FileTabView").then((m) => ({ default: m.FileTabView })));
 
 type Props = {
   target: TabTarget | null;
@@ -41,31 +38,27 @@ export function ContentView(p: Props) {
     }
     case "changes":
       return (
-        <Suspense fallback={null}>
-          <ChangesView
-            project={p.project}
-            worktree={t.worktree}
-            onWorktreeChange={(worktree) => p.onOpen({ ...t, worktree })}
-            onOpenFile={p.onOpenFile}
-            useSlots={useChangesSlots}
-          />
-        </Suspense>
+        <ChangesView
+          project={p.project}
+          worktree={t.worktree}
+          onWorktreeChange={(worktree) => p.onOpen({ ...t, worktree })}
+          onOpenFile={p.onOpenFile}
+          useSlots={useChangesSlots}
+        />
       );
     case "file":
       return (
-        <Suspense fallback={null}>
-          <FileTabView
-            key={targetToHash(t)}
-            fileRef={{
-              projectId: t.projectId,
-              worktree: t.worktree,
-              path: t.path,
-              line: t.line,
-              origin: null,
-            }}
-            startEditing={p.startEditing}
-          />
-        </Suspense>
+        <FileTabView
+          key={targetToHash(t)}
+          fileRef={{
+            projectId: t.projectId,
+            worktree: t.worktree,
+            path: t.path,
+            line: t.line,
+            origin: null,
+          }}
+          startEditing={p.startEditing}
+        />
       );
     case "ticket":
       return (

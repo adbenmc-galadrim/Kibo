@@ -1,8 +1,5 @@
 import type { AgentsState, ProjectSummary, Screen, WorkspaceConfig } from "@kibo/schema";
-import { AgentsPage } from "../agents/AgentsPage";
-import { QueuePage } from "../agents/QueuePage";
-import { ComponentsPage } from "../components-page/ComponentsPage";
-import { DomainsPage } from "../settings/DomainsPage";
+import { AgentsPage, ComponentsPage, DomainsPage, QueuePage } from "./lazy-screens";
 
 type Props = {
   screen: Screen;

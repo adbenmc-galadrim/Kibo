@@ -1,6 +1,7 @@
 const s = (n: number) => (n > 1 ? "s" : "");
 
 export const fr = {
+  lazy: { loading: "Chargement des notes…", failed: "Impossible de charger les notes.", retry: "Réessayer" },
   search: "Rechercher une note…",
   obsidian: "Obsidian",
   newNote: "Nouvelle note",
