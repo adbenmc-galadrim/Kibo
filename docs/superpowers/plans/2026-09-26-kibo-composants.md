@@ -88,6 +88,7 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 22. **Point d'entrée unique du binaire** (`apps/desktop/sidecar/entry.ts`) : répartit entre démon, CLI (`component …` ou lien nommé `kibo`) et runtime sandboxé (`component-runtime`), sans créer d'arête `cli ← daemon`.
 23. **Démarrage factorisé** : `startDaemon` (tâche 30) sert à `main.ts`, aux tests d'intégration, à la CLI (tests) et à l'E2E.
 24. **Bac à sable OS dès la phase 4 (point E2 tranché)** : le spike 1-C montre que le runtime restreint ne bloque pas l'import construit, et la relecture en a mesuré d'autres (même Bun 1.4.2) : `(() => 0).constructor("return import('node:fs')")()` passe l'analyse statique (propriété `constructor`) et le runtime ; `new Worker(URL.createObjectURL(new Blob([…])))` démarre un Worker dont `Bun.spawn` et `fetch` sont intacts ; `import("bun:ffi")` reste chargeable ; `Bun.build` exécute les macros (`import … with { type: "macro" }`) dans le processus qui construit, sans passer par `onResolve`. Sans barrière OS, un backend « sandboxé » lit `~/.ssh` et `~/.kibo`, lance des processus et ouvre le réseau. Donc : le `ProcessHost` **et** les tests exécutés par la validation (code non encore approuvé) tournent sous `sandbox-exec` (macOS) ou `bwrap` (Linux) dès la phase 4 (tâche 11b, profil de la spec H §8 adapté), en échec fermé (`SANDBOX_UNAVAILABLE`, aucun repli sans isolation) ; la tâche 4 refuse les attributs d'import et `Worker`, `global`, `self` ; la tâche 6 construit avec `macros: false`. Restent en phase 7 : réglage « Autoriser les backends sandboxés sans isolation OS », écran 19, filtre seccomp. Les backends `trusted` restent en Worker (confiance totale explicite à l'écran 30).
+25. **Frontière démon ↔ backend durcie** (relecture de la tâche 11) : (a) les codes d'erreur renvoyés par un backend passent par une liste blanche (`BACKEND_ERROR_CODES`, tâche 11) ; tout autre code (`TRUST_REQUIRED`, `UNAUTHORIZED`, `COMPONENT_CRASHED`…) devient `INTERNAL`, le code d'origine restant dans le message : un backend ne peut pas faire croire à l'UI qu'il faut accorder la confiance ou se réappairer ; (b) tout message invalide d'un backend (schéma, `ready` inattendu, JSON illisible, ligne trop longue) est une violation de protocole : arrêt du backend, compté comme un crash (attente croissante), au lieu d'une ligne de journal qu'un backend répéterait sans fin ; (c) l'attente d'un créneau est bornée par `timeoutMs` (`TIMEOUT`, tâche 11) et un job n'est pas relancé tant que son exécution précédente n'est pas finie (tâche 17) ; (d) le `ProcessHost` n'utilise plus le canal IPC de Bun, dont le tampon de lecture est sans limite : deux tubes JSON par ligne (descripteur 3 démon → runtime, descripteur 4 runtime → démon) ; une ligne reçue de plus de `BACKEND_MESSAGE_LIMIT` (4 Mio) arrête le backend, et le runtime honnête renvoie `TOO_LARGE` au lieu d'un résultat trop gros (tâche 11b). Reste pour la phase 7 (avec le filtre seccomp) : plafond mémoire et CPU du processus backend lui-même.
 
 ### Points à arbitrer par Adam (option A appliquée par défaut, l'équipe ne s'arrête pas)
 
@@ -5432,8 +5433,8 @@ git commit -m "feat(daemon): runtime et hôtes de backend"
 Applique la décision 24 : sans barrière OS, le runtime restreint ne protège de rien (spike 1-C et contournements mesurés à la relecture de la tâche 1). Profil `sandbox-exec` validé à la main sur macOS arm64, Bun 1.4.2 : canal IPC Bun et descripteur 3 intacts ; lecture d'un fichier hors politique, `readdir` de `$HOME`, écriture hors du `cwd`, `execSync`, `fetch` et `net.connect` bloqués (`EPERM`, `ENOTFOUND`, `ECONNREFUSED`) ; écriture dans le `cwd` permise. Sans `(literal "/")` en lecture, Bun meurt au démarrage (`SIGABRT`).
 
 **Files:**
-- Create: `packages/devkit/src/os-sandbox.ts`, `packages/devkit/src/os-sandbox.test.ts`, `packages/daemon/src/components/process-host-sandbox.test.ts`
-- Modify: `packages/schema/src/errors.ts` (code `SANDBOX_UNAVAILABLE`), `packages/devkit/src/index.ts`, `packages/daemon/src/components/process-host.ts`, `.github/workflows/ci.yml`, `docs/superpowers/specs/2026-09-26-kibo-composants.md` (§4.4, §10, §15, E2), `docs/superpowers/specs/2026-09-26-kibo-marketplace.md` (§8)
+- Create: `packages/devkit/src/os-sandbox.ts`, `packages/devkit/src/os-sandbox.test.ts`, `packages/daemon/src/components/process-host-sandbox.test.ts`, `packages/daemon/src/components/line-channel.ts`, `packages/daemon/src/components/line-channel.test.ts`
+- Modify: `packages/schema/src/errors.ts` (code `SANDBOX_UNAVAILABLE`), `packages/devkit/src/index.ts`, `packages/daemon/src/components/process-host.ts`, `packages/daemon/src/component-runtime.ts`, `packages/daemon/src/components/runtime-core.ts`, `.github/workflows/ci.yml`, `docs/superpowers/specs/2026-09-26-kibo-composants.md` (§4.4, §10, §15, E2), `docs/superpowers/specs/2026-09-26-kibo-marketplace.md` (§8)
 
 **Interfaces:**
 - Consumes: `bunCommand` (tâche 1) ; `KiboError` (tâche 2) ; `createProcessHost`, `runtimeCommand`, `HostOptions`, `TEST_MANIFEST` (tâche 11).
@@ -5442,6 +5443,7 @@ Applique la décision 24 : sans barrière OS, le runtime restreint ne protège d
   - `macosProfile(policy): string` ; `bwrapArgv(bwrap: string, policy, argv): string[]` ; `createOsSandbox(opts?: { platform?: NodeJS.Platform; which?: (bin: string) => string | null }): OsSandbox` ; `osSandbox(): OsSandbox` (instance partagée).
   - `createProcessHost(opts: HostOptions & { command?: string[]; sandbox?: OsSandbox })` ; `runtimePolicy(command: string[], cwd: string): SandboxPolicy`.
   - Code d'erreur `SANDBOX_UNAVAILABLE` : aucun bac à sable utilisable ⇒ le backend sandboxé ne démarre pas, les tests d'une validation ne sont pas lancés. Jamais de repli sans isolation.
+  - Canal borné (décision 25) : `BACKEND_MESSAGE_LIMIT = 4 * 1024 * 1024` ; `type LineSink = { line(text: string): void; overflow(): void }` ; `readLines(stream: ReadableStream<Uint8Array>, limit: number, sink: LineSink): Promise<void>`. Protocole du runtime : descripteur 3 = une ligne `BackendCode` puis un `DaemonToBackend` par ligne (fin du flux ⇒ le runtime s'arrête) ; descripteur 4 = un `BackendToDaemon` par ligne. Plus de canal IPC Bun (`ipc`, `serialization`) dans le `ProcessHost` ; le `WorkerHost` (backends `trusted`) est inchangé.
   - Consommé par la tâche 20 (`ValidateOptions.sandbox`, tests du composant dans le bac à sable) et, sans changement d'interface, par les tâches 17, 30 et 32 (le `ProcessHost` réel est isolé).
 
 - [ ] **Step 1: Écrire la spec avant le code**
@@ -5743,7 +5745,7 @@ export function osSandbox(): OsSandbox {
   return shared;
 }
 ```
-Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal et Bun y ajoute la variable du canal IPC, indispensable au runtime. La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige.
+Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal ; le canal passe par les descripteurs 3 et 4, hérités à travers `sandbox-exec` et `bwrap` sans variable d'environnement (vérifié sous Linux par la CI de la branche). La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige.
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./os-sandbox";`.
 
@@ -5762,7 +5764,250 @@ export function runtimePolicy(command: string[], cwd: string): SandboxPolicy {
 - `createProcessHost(opts: HostOptions & { command?: string[]; sandbox?: OsSandbox })` : `const sandbox = opts.sandbox ?? osSandbox();` ; passer à `createHost` `{ ...opts, log, beforeStart: async () => { await sandbox.ready(); await opts.beforeStart?.(); } }` (la sonde passe avant la création de la promesse `ready` du démarrage : un échec ne laisse ni minuterie ni rejet orphelin, et ne compte pas comme un crash) ;
 - dans la fabrique de canal : `const cwd = realpathSync(mkdtempSync(join(tmpdir(), "kibo-backend-")));`, puis `const command = opts.command ?? runtimeCommand();` et `Bun.spawn(sandbox.wrap(command, runtimePolicy(command, cwd)), { … })` (options inchangées).
 
-En dev, le runtime lit le dépôt (`component-runtime.ts` et `node_modules`) ; dans le binaire compilé, il ne lit que le binaire. Les tests existants de la tâche 11 (`process-host.test.ts`) passent désormais par le bac à sable réel : ils doivent rester verts sans modification (c'est la preuve que l'IPC, le descripteur 3, les délais et les redémarrages fonctionnent isolés).
+En dev, le runtime lit le dépôt (`component-runtime.ts` et `node_modules`) ; dans le binaire compilé, il ne lit que le binaire. Les tests existants de la tâche 11 (`process-host.test.ts`) passent désormais par le bac à sable réel : ils doivent rester verts sans modification (c'est la preuve que les tubes des descripteurs 3 et 4, les délais et les redémarrages fonctionnent isolés).
+
+- [ ] **Step 5b: Canal borné entre le démon et le runtime (décision 25)**
+
+Le canal IPC de Bun accumule sans limite ce que le runtime écrit jusqu'au saut de ligne : un backend qui écrit 1 Gio sur son socket (import construit de `node:fs`, puis `writeSync` sur le descripteur déjà ouvert, que le bac à sable n'interdit pas) sature la mémoire du démon avant tout contrôle. Le démon lit donc lui-même la sortie du runtime, ligne par ligne, avec un plafond. Mesuré (Bun 1.4.2, macOS) : un tube supplémentaire (`stdio[4]: "pipe"`) se lit côté parent par `Bun.file(fd).stream()` et s'écrit côté enfant par `Bun.file(4).writer()` ; les écritures non attendues d'un `FileSink` sur un tube sont mises en tampon (6 Mo reçus intacts) ; `FileSink.end()` ne ferme pas un descripteur numérique (`closeSync` explicite pour signaler la fin) ; Bun ne ferme pas `stdio[3]` ni `stdio[4]` à la sortie de l'enfant (à fermer par le démon, sinon fuite de descripteurs).
+
+`packages/daemon/src/components/line-channel.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { readLines } from "./line-channel";
+
+const bytes = (text: string) => new TextEncoder().encode(text);
+const stream = (...chunks: Uint8Array[]) =>
+  new ReadableStream<Uint8Array>({
+    start(c) {
+      for (const chunk of chunks) c.enqueue(chunk);
+      c.close();
+    },
+  });
+
+async function collect(limit: number, ...chunks: Uint8Array[]) {
+  const lines: string[] = [];
+  let overflow = false;
+  await readLines(stream(...chunks), limit, {
+    line: (l) => lines.push(l),
+    overflow: () => {
+      overflow = true;
+    },
+  });
+  return { lines, overflow };
+}
+
+test("lines are split across chunks, even inside a multibyte character", async () => {
+  const e = bytes('{"b":"é"}\n');
+  expect(await collect(100, bytes('{"a":'), bytes('1}\n{"b'), e.subarray(3, 7), e.subarray(7), bytes('{"c":3}\n'))).toEqual({
+    lines: ['{"a":1}', '{"b":"é"}', '{"c":3}'],
+    overflow: false,
+  });
+});
+
+test("a line longer than the limit stops the reading, with or without its newline", async () => {
+  expect(await collect(8, bytes("12345678\n"), bytes("123456789\nlost\n"))).toEqual({ lines: ["12345678"], overflow: true });
+  expect(await collect(8, bytes("1234"), bytes("56789"))).toEqual({ lines: [], overflow: true });
+});
+```
+(Le premier test coupe `é`, deux octets `c3 a9`, entre deux morceaux : `e.subarray(3, 7)` finit au milieu du caractère ; les octets sont concaténés avant décodage.)
+
+Dans `packages/daemon/src/components/process-host-sandbox.test.ts`, ajouter :
+```ts
+const LIMITS_JS = `
+module.exports.server = {
+  actions: {
+    ping: async () => "pong",
+    huge: async () => "x".repeat(5 * 1024 * 1024),
+    flood: async () => {
+      const fs = await (() => 0).constructor("s", "return import(s)")("node:fs");
+      fs.writeSync(4, "x".repeat(10 * 1024 * 1024));
+      return null;
+    },
+  },
+};
+`;
+const limits = (log: (line: string) => void = () => undefined) =>
+  createProcessHost({ ref: "limits@0.1.0", manifest: TEST_MANIFEST, code: { server: LIMITS_JS, migrations: null }, onCall: async () => null, log });
+const call = (name: string) => ({ projectId: "p1", instanceId: "i1", config: {}, target: { action: name }, input: null });
+
+test("a result over the limit is refused by the runtime and the backend keeps running", async () => {
+  const host = limits();
+  try {
+    await expect(host.invoke(call("huge"))).rejects.toThrow("TOO_LARGE");
+    expect(await host.invoke(call("ping"))).toBe("pong");
+  } finally {
+    host.stop();
+  }
+}, 30_000);
+
+test("a backend writing past the limit on its output is killed, the daemon never buffers it", async () => {
+  const lines: string[] = [];
+  const host = limits((l) => lines.push(l));
+  try {
+    await expect(host.invoke(call("flood"))).rejects.toThrow("COMPONENT_CRASHED");
+    expect(host.running).toBe(false);
+    expect(lines.some((l) => l.includes("larger than"))).toBe(true);
+  } finally {
+    host.stop();
+  }
+}, 30_000);
+```
+Si `BackendCode` n'accepte pas `migrations: null`, reprendre la forme du schéma de la tâche 2.
+
+Run: `bun test packages/daemon/src/components/line-channel.test.ts packages/daemon/src/components/process-host-sandbox.test.ts`
+Expected: FAIL (`./line-channel` manquant).
+
+`packages/daemon/src/components/line-channel.ts` :
+```ts
+export const BACKEND_MESSAGE_LIMIT = 4 * 1024 * 1024;
+
+export type LineSink = { line(text: string): void; overflow(): void };
+
+const NEWLINE = 10;
+
+export async function readLines(stream: ReadableStream<Uint8Array>, limit: number, sink: LineSink): Promise<void> {
+  const decoder = new TextDecoder();
+  let parts: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of stream) {
+    let start = 0;
+    for (let end = chunk.indexOf(NEWLINE); end !== -1; end = chunk.indexOf(NEWLINE, start)) {
+      size += end - start;
+      if (size > limit) return sink.overflow();
+      parts.push(chunk.subarray(start, end));
+      sink.line(decoder.decode(Buffer.concat(parts)));
+      parts = [];
+      size = 0;
+      start = end + 1;
+    }
+    size += chunk.byteLength - start;
+    if (size > limit) return sink.overflow();
+    parts.push(chunk.slice(start));
+  }
+}
+```
+Le reste d'un morceau est copié (`slice`) : le tampon d'un flux peut être réutilisé après l'itération. Sortir de la boucle annule le flux ; le démon tue alors le runtime.
+
+`packages/daemon/src/components/runtime-core.ts`, dans `contextFactory` : envoyer **avant** d'enregistrer l'attente, pour qu'un envoi refusé (`TOO_LARGE`, levé dans l'exécuteur de la promesse) ne laisse aucune entrée orpheline :
+```ts
+      return new Promise<unknown>((resolve, reject) => {
+        seq += 1;
+        const id = seq;
+        send({ type: "call", id, invocation, call: parsed.data });
+        pending.set(id, { resolve, reject });
+      });
+```
+(La réponse arrive toujours dans un message ultérieur : l'ordre est sûr.)
+
+`packages/daemon/src/component-runtime.ts` (remplace la lecture du descripteur 3 et le canal IPC) :
+```ts
+import type { FileSink } from "bun";
+import { restrictGlobals } from "@kibo/devkit";
+import { BackendCode, type BackendToDaemon, DaemonToBackend, KiboError } from "@kibo/schema";
+import { BACKEND_MESSAGE_LIMIT, readLines } from "./components/line-channel";
+import { createRuntime } from "./components/runtime-core";
+
+const INPUT_FD = 3;
+const OUTPUT_FD = 4;
+
+function lineWriter(sink: FileSink): (m: BackendToDaemon) => void {
+  const encoder = new TextEncoder();
+  const tooLarge = (what: string) => `${what} larger than ${BACKEND_MESSAGE_LIMIT} bytes`;
+  const send = (m: BackendToDaemon): void => {
+    const line = JSON.stringify(m);
+    if (encoder.encode(line).byteLength <= BACKEND_MESSAGE_LIMIT) {
+      sink.write(`${line}\n`);
+      sink.flush();
+      return;
+    }
+    if (m.type !== "result") throw new KiboError("TOO_LARGE", tooLarge(m.type));
+    send({ type: "result", id: m.id, ok: false, error: { code: "TOO_LARGE", message: tooLarge("result") } });
+  };
+  return send;
+}
+
+export async function startComponentRuntime(): Promise<void> {
+  const input = Bun.file(INPUT_FD).stream();
+  const send = lineWriter(Bun.file(OUTPUT_FD).writer());
+  restrictGlobals({ freeze: true });
+  let runtime: { handle(m: DaemonToBackend): void } | null = null;
+  await readLines(input, Number.POSITIVE_INFINITY, {
+    line(text) {
+      const raw: unknown = JSON.parse(text);
+      if (!runtime) {
+        runtime = createRuntime(send, BackendCode.parse(raw));
+        return;
+      }
+      const parsed = DaemonToBackend.safeParse(raw);
+      if (!parsed.success) return console.error(`[kibo-runtime] invalid message: ${parsed.error.message}`);
+      runtime.handle(parsed.data);
+    },
+    overflow: () => undefined,
+  });
+  process.exit(0);
+}
+
+if (import.meta.main) await startComponentRuntime();
+```
+Le flux du descripteur 3 et l'écrivain du descripteur 4 sont créés **avant** `restrictGlobals` (qui retire `Bun.file`) ; la lecture et l'écriture continuent ensuite sur ces objets. Le démon est de confiance : pas de plafond en entrée du runtime.
+
+`packages/daemon/src/components/process-host.ts` :
+- `spawnRuntime` : `stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"]`, retirer `serialization` et `ipc` ; supprimer `writeCode` ;
+- ajouter :
+```ts
+function closeQuietly(fd: number, log: (line: string) => void): void {
+  try {
+    closeSync(fd);
+  } catch (e) {
+    log(`cannot close descriptor ${fd}: ${String(e)}`);
+  }
+}
+
+function parseLine(text: string): { ok: true; value: unknown } | { ok: false } {
+  try {
+    return { ok: true, value: JSON.parse(text) };
+  } catch {
+    return { ok: false };
+  }
+}
+```
+- la fabrique de canal devient :
+```ts
+  const open = async (handlers: ChannelHandlers): Promise<Channel> => {
+    const proc = spawnRuntime(opts, handlers, log);
+    const close = () => killGroup(proc.pid, log);
+    pipeLog(proc.stderr, log).catch((e: unknown) => log(`stderr closed: ${String(e)}`));
+    const input = proc.stdio[3];
+    const output = proc.stdio[4];
+    if (typeof input !== "number" || typeof output !== "number") {
+      close();
+      throw new KiboError("COMPONENT_CRASHED", "the runtime pipes are missing");
+    }
+    const reading = readLines(Bun.file(output).stream(), BACKEND_MESSAGE_LIMIT, {
+      line: (text) => {
+        const parsed = parseLine(text);
+        if (parsed.ok) handlers.message(parsed.value);
+        else handlers.exit("invalid JSON from the runtime");
+      },
+      overflow: () => handlers.exit(`message larger than ${BACKEND_MESSAGE_LIMIT} bytes`),
+    }).catch((e: unknown) => log(`runtime output closed: ${String(e)}`));
+    Promise.all([proc.exited, reading]).then(() => {
+      closeQuietly(input, log);
+      closeQuietly(output, log);
+    });
+    const sink = Bun.file(input).writer();
+    const write = (m: unknown) => {
+      sink.write(`${JSON.stringify(m)}\n`);
+      sink.flush();
+    };
+    write(opts.code);
+    return { send: write, close };
+  };
+```
+Un JSON illisible ou une ligne trop longue passent par `handlers.exit` : même chemin qu'un crash (arrêt du groupe, attente croissante, invocations rejetées en `COMPONENT_CRASHED`), conformément à la décision 25 (b). L'échec de `parseLine` n'est pas avalé : il devient cette violation. Vérifier qu'une écriture sur le tube d'un runtime déjà mort (`EPIPE`) ne produit ni exception non gérée ni rejet orphelin (test `crash` existant, puis `ping` sur le runtime redémarré) ; sinon, protéger `write` et journaliser.
+
+Run: `bun test packages/daemon/src/components`
+Expected: PASS, tests existants de la tâche 11 compris (sans modification).
 
 - [ ] **Step 6: CI Linux**
 
@@ -5779,7 +6024,7 @@ Run: `bun test packages/devkit packages/daemon/src/components && bun run typeche
 Expected: PASS (sur macOS en local ; Linux vérifié par la CI de la branche).
 
 ```bash
-git add packages/schema/src/errors.ts packages/devkit/src/os-sandbox.ts packages/devkit/src/os-sandbox.test.ts packages/devkit/src/index.ts packages/daemon/src/components/process-host.ts packages/daemon/src/components/process-host-sandbox.test.ts .github/workflows/ci.yml docs/superpowers/specs/2026-09-26-kibo-composants.md docs/superpowers/specs/2026-09-26-kibo-marketplace.md
+git add packages/schema/src/errors.ts packages/devkit/src/os-sandbox.ts packages/devkit/src/os-sandbox.test.ts packages/devkit/src/index.ts packages/daemon/src/components/process-host.ts packages/daemon/src/components/process-host-sandbox.test.ts packages/daemon/src/components/line-channel.ts packages/daemon/src/components/line-channel.test.ts packages/daemon/src/components/runtime-core.ts packages/daemon/src/component-runtime.ts .github/workflows/ci.yml docs/superpowers/specs/2026-09-26-kibo-composants.md docs/superpowers/specs/2026-09-26-kibo-marketplace.md
 git commit -m "feat(daemon): bac à sable OS des backends"
 ```
 
@@ -7491,6 +7736,37 @@ test("each instance gets its own timer per job, removed with the instance", asyn
   scheduler.stop();
   expect(timers.size).toBe(0);
 });
+
+test("a job is not started again while its previous run is still going", async () => {
+  const ticks: (() => void)[] = [];
+  const finish = Promise.withResolvers<void>();
+  let runs = 0;
+  const logs: string[] = [];
+  const scheduler = createJobScheduler({
+    targets: () => [{ projectId: "p", instanceId: "a", ref: "x@1.0.0", config: {} }],
+    describe: async () => ({ actions: [], jobs: [{ name: "sync", everyMinutes: 1 }] }),
+    run: async () => {
+      runs += 1;
+      await finish.promise;
+    },
+    setInterval: (fn) => {
+      ticks.push(fn);
+      return ticks.length;
+    },
+    clearInterval: () => undefined,
+    log: (line) => logs.push(line),
+  });
+  await scheduler.refresh();
+  ticks[0]?.();
+  ticks[0]?.();
+  expect(runs).toBe(1);
+  expect(logs.some((l) => l.includes("skipped"))).toBe(true);
+  finish.resolve();
+  await new Promise((r) => setTimeout(r, 0));
+  ticks[0]?.();
+  expect(runs).toBe(2);
+  scheduler.stop();
+});
 ```
 
 Run: `bun test packages/daemon/src/components/backends.test.ts packages/daemon/src/components/jobs.test.ts`
@@ -7626,6 +7902,7 @@ export function createJobScheduler(deps: JobSchedulerDeps): { refresh(): Promise
   const clear = deps.clearInterval ?? ((t: Timer) => clearInterval(t as ReturnType<typeof setInterval>));
   const log = deps.log ?? ((line: string) => console.error(`[kibo-daemon] ${line}`));
   const timers = new Map<string, Timer>();
+  const running = new Set<string>();
 
   return {
     async refresh() {
@@ -7655,7 +7932,12 @@ export function createJobScheduler(deps: JobSchedulerDeps): { refresh(): Promise
         timers.set(
           key,
           every(() => {
-            deps.run(w.target, w.job).catch((e: unknown) => log(`job ${key} of ${w.target.ref} failed: ${message(e)}`));
+            if (running.has(key)) return log(`job ${key} of ${w.target.ref} skipped: previous run not finished`);
+            running.add(key);
+            deps
+              .run(w.target, w.job)
+              .catch((e: unknown) => log(`job ${key} of ${w.target.ref} failed: ${message(e)}`))
+              .finally(() => running.delete(key));
           }, w.minutes * 60_000),
         );
       }
@@ -7668,7 +7950,7 @@ export function createJobScheduler(deps: JobSchedulerDeps): { refresh(): Promise
   };
 }
 ```
-Le cast de `clear` est la frontière avec le type opaque des minuteries injectées (le défaut est un vrai `setInterval`). Une instance dont la version n'est pas active est journalisée et ignorée ; elle sera planifiée au `refresh` qui suit son approbation (tâche 30).
+Le cast de `clear` est la frontière avec le type opaque des minuteries injectées (le défaut est un vrai `setInterval`). Un job dont l'exécution précédente n'est pas finie n'est pas relancé (décision 25 c) : sans cela, un job lent empilerait des invocations dans la file du backend. Une instance dont la version n'est pas active est journalisée et ignorée ; elle sera planifiée au `refresh` qui suit son approbation (tâche 30).
 
 - [ ] **Step 4: Vérifier et committer**
 
@@ -14935,7 +15217,7 @@ git commit -m "feat(ui): Graphe et Notes intégrés"
 
 **Files:**
 - Create: `packages/daemon/src/components/service.ts`, `packages/daemon/src/components/service.test.ts`, `packages/daemon/src/daemon.ts`, `packages/daemon/src/daemon.test.ts`
-- Modify: `packages/daemon/src/store.ts` (`Store.db`), `packages/daemon/src/service.ts` (asynchrone, délégation, commandes réservées), `packages/daemon/src/service.test.ts`, `packages/daemon/src/server.ts` (`await` de `handle`), `packages/daemon/src/server.test.ts`, `packages/daemon/src/main.ts` (démarrage via `startDaemon`), `packages/daemon/src/components/sandbox-server.ts` et son test (`extraAncestors`)
+- Modify: `packages/daemon/src/store.ts` (`Store.db`), `packages/daemon/src/service.ts` (asynchrone, délégation ; le refus des commandes réservées sur la RPC `command` est déjà livré par la tâche 3 via `assertShellCommand`), `packages/daemon/src/service.test.ts`, `packages/daemon/src/server.ts` (`await` de `handle`), `packages/daemon/src/server.test.ts`, `packages/daemon/src/main.ts` (démarrage via `startDaemon`), `packages/daemon/src/components/sandbox-server.ts` et son test (`extraAncestors`)
 
 **Interfaces:**
 - Consumes: toutes les briques du démon : `createComponentStore` (14), `createGate`, `createQuotas`, `createEventLog`, `ensureEventsTable` (15), `updateInstance` (16), `createBackends`, `createJobScheduler` (17), `createNotesService`, `ensureNotesTables`, `ensureSettingsTable` (18), `validateComponent` (20), `createRegistryService` (21), `startSandboxServer`, `AssetLookup`, `writeDaemonInfo`, `removeDaemonInfo`, `sandboxPortFor` (22), `createPublisher`, `listDrafts` (27), `proxyFetch`, `systemResolver` (8) ; `readProject`, `executeProjectCommand`, `readInstanceData`, `writeInstanceData`, `listProjects` (core) ; `resolveToolchain`, `Toolchain`, `BuildOutput` (devkit).
