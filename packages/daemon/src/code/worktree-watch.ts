@@ -24,7 +24,7 @@ type Entry = {
   pending: Set<string> | null;
 };
 
-const MAX_SWEEP_MS = 60_000;
+const VANISH_CHECK_MS = 1_000;
 
 function mergePaths(pending: Set<string> | null, paths: ChangedPaths): Set<string> | null {
   if (pending === null || paths === null) return null;
@@ -100,7 +100,7 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
         entries.delete(key);
       }
     },
-    Math.min(opts.idleMs, MAX_SWEEP_MS),
+    Math.min(opts.idleMs, VANISH_CHECK_MS),
   );
 
   return {
