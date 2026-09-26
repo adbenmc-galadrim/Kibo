@@ -184,7 +184,7 @@ export const mcpUrlAllowed = (raw: string): boolean => {
   return u.protocol === "http:" && loopbackHosts.includes(u.hostname);
 };
 
-const UNSAFE_TEXT = /[\p{Cc}\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/u;
+const UNSAFE_TEXT = /[\p{Cc}\p{Zl}\p{Zp}\u061C\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/u;
 const SafeText = (max: number) =>
   z
     .string()

@@ -145,6 +145,10 @@ describe("integration contracts", () => {
     expect(ok({ args: ["a\u0000b"] })).toBe(false);
     expect(ok({ args: ["a\u202Eb"] })).toBe(false);
     expect(ok({ args: ["a\u2066b"] })).toBe(false);
+    for (const ch of ["\u2028", "\u2029", "\u200B", "\u200C", "\u200D", "\uFEFF"]) {
+      expect(ok({ args: [`a${ch}b`] })).toBe(false);
+      expect(ok({ command: `np${ch}x` })).toBe(false);
+    }
     expect(ok({ command: "np\u200Fx" })).toBe(false);
     expect(ok({ envNames: ["TOKEN"] })).toBe(true);
     for (const name of ["PATH", "HOME", "LANG"]) expect(ok({ envNames: [name] })).toBe(false);

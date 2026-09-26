@@ -182,9 +182,12 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
       if (!s) throw new KiboError("NOT_FOUND", `mcp server ${id} not found`);
       store.remove(id);
       errors.delete(id);
-      await pool.close(id);
-      for (const secret of secretsOf(s.server)) await secrets.delete(secret.name);
-      rmSync(join(host.home, "mcp", id), { recursive: true, force: true });
+      try {
+        await pool.close(id);
+      } finally {
+        for (const secret of secretsOf(s.server)) await secrets.delete(secret.name);
+        rmSync(join(host.home, "mcp", id), { recursive: true, force: true });
+      }
       events.log("mcp", "info", `server ${id} removed`);
     },
     async setEnabled(id, enabled) {

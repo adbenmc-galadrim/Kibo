@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { createEventLog } from "../integrations/events";
-import { createMemorySecretStore } from "../integrations/memory-secret-store";
+import { createMemorySecretStore, type MemorySecretStore } from "../integrations/memory-secret-store";
 import { createRedactor } from "../integrations/redact";
 import { createFakeHost, type FakeHost } from "../integrations/testing/fake-host";
 import { commandLineOf } from "./command-line";
@@ -9,12 +9,14 @@ import { crashyServer, groupMembers, pidsMatching, stubbornServer, survivors } f
 
 let host: FakeHost;
 let hub: McpHub;
+let secrets: MemorySecretStore;
 beforeEach(() => {
   host = createFakeHost();
   const redactor = createRedactor();
+  secrets = createMemorySecretStore(redactor);
   hub = createMcpHub({
     host,
-    secrets: createMemorySecretStore(redactor),
+    secrets,
     events: createEventLog(host.db, redactor, host.now),
     redact: redactor.redact,
   });
@@ -79,4 +81,25 @@ test("a group already killed from outside stops cleanly", async () => {
   process.kill(-leader, "SIGKILL");
   await hub.stop();
   expect(await survivors(members)).toEqual([]);
+}, 10_000);
+
+test("secrets are erased even when closing the server fails", async () => {
+  const marker = `kibo-mcp-secret-${crypto.randomUUID()}`;
+  const server = { ...stubbornServer("stubborn", marker), envNames: ["TOKEN"] };
+  await hub.add(server, commandLineOf(server), { TOKEN: "tok-stubborn-123456" });
+  const [leader] = pidsMatching(marker);
+  if (leader === undefined) throw new Error("leader not found");
+  const kill = process.kill;
+  process.kill = (pid: number, signal?: string | number) => {
+    if (pid < 0) throw Object.assign(new Error("refused"), { code: "EINVAL" });
+    return kill(pid, signal);
+  };
+  try {
+    await expect(hub.remove("stubborn")).rejects.toThrow("refused");
+  } finally {
+    process.kill = kill;
+    kill(-leader, "SIGKILL");
+  }
+  expect(await secrets.has("mcp:stubborn:TOKEN")).toBe(false);
+  expect(await survivors(pidsMatching(marker))).toEqual([]);
 }, 10_000);
