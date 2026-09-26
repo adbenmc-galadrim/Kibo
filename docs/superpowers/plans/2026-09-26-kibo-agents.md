@@ -3806,7 +3806,7 @@ git commit -m "test(daemon): faux binaire claude"
   - `createLoadSampler(deps?: LoadDeps): () => HostLoad` (CPU = part occupée depuis l'échantillon précédent ; RAM : `memory_pressure -Q` sur macOS, `MemAvailable` de `/proc/meminfo` ailleurs ; lève `KiboError("INTERNAL")` si la sortie est illisible)
   - `parseMemoryPressure(text: string): number`, `parseMeminfo(text: string): number`, `readHostInfo(): HostInfo`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/host-load.test.ts` :
 ```ts
@@ -3874,12 +3874,12 @@ test("the real sampler and host info work on this machine", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/host-load.test.ts`
 Expected: FAIL (`Cannot find module "./host-load"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/agents/host-load.ts` :
 ```ts
@@ -3943,12 +3943,12 @@ export function readHostInfo(): HostInfo {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/host-load.test.ts && bun run check`
 Expected: PASS sur macOS et sur Linux (CI).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/agents/host-load.ts packages/daemon/src/agents/host-load.test.ts
