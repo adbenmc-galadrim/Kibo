@@ -27,7 +27,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 07 · Agents (suite) | 32–35 (phase 2) |
 | 08 · Code (états) | 36–42 (phase 3) |
 | 09 · Composants | 43–49 (phase 4) |
-| 10 · Intégrations | 50–57 (phase 5) |
+| 10 · Intégrations | 50–57, 57b–57n (phase 5 : source synchronisée, Sheet ticket GitHub / CI / Maquettes, Source MCP, vues synchronisées) |
 | 11 · IA | 58–64 (phase 6) |
 | 12 · Sync & marketplace | 65–75 (phase 7) |
 | 13 · Compléments | 76–78 (revue §7) |
@@ -52,7 +52,7 @@ for (const n of ["01-core", "02-icons", "03-shell", "04-components", "05-tabs", 
 ```
 
 Écrans 32+ : `08-extra.js` (shell reconstruit, menus, alertes, tableaux, `S.relight` + `S.fixLightX`), puis un script par page
-(`09-agents`, `10-code`, `11-composants`, `12-integrations`, `13-ia`, `14-sync`, `15-complements`) qui définit `S.draw[n]()`.
+(`09-agents`, `10-code`, `11-composants`, `12-integrations`, `13-ia`, `14-sync`, `15-complements`, `16-integrations-suite`) qui définit `S.draw[n]()`.
 Un clone ne change pas de page : les écrans de base (`base · n`) sont copiés puis collés (⌘C / ⌘V) sur la page, puis supprimés.
 Après un dessin, appeler `S.retext(écran)` (et `S.recenter` pour un dialogue) dans un **second** appel, une fois la mise en page calculée.
 

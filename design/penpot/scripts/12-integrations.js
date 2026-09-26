@@ -41,7 +41,7 @@ S.draw[52] = async () => {
   const f = await fromBase("52 · Connecter GitHub (dialogue)", 2);
   const d = S.modal(f, 480, "Connecter GitHub", "PR, reviews et statuts CI de tes projets. Le jeton reste dans le trousseau système.");
   radioCard(d, false, "Utiliser gh", "Recommandé", [tv => { const r = S.row(tv, { gap: 6 }); S.dot(r, C.green, 7); S.txt(r, "gh est connecté (adam)", { size: 12, color: C.mfg }); }]);
-  radioCard(d, true, "Jeton personnel", null, [tv => { S.field(tv, "Jeton", "github_pat_11A•••••••••••••••••", { mono: true, focus: true, icon: "key" }); }, "Portées requises : repo, read:org, workflow", tv => { const e = S.row(tv, { gap: 6 }); S.icon(e, "circleX", 13, C.red); S.txt(e, "GitHub a refusé ce jeton.", { size: 12, color: C.red }); }]);
+  radioCard(d, true, "Jeton personnel", null, [tv => { S.field(tv, "Jeton", "github_pat_11A•••••••••••••••••", { mono: true, focus: true, icon: "key" }); }, "Portées requises : repo, project (Projects v2). read:org si le Project appartient à une organisation. workflow n'est pas requis.", tv => { const e = S.row(tv, { gap: 6 }); S.icon(e, "circleX", 13, C.red); S.txt(e, "GitHub a refusé ce jeton.", { size: 12, color: C.red }); }]);
   const ft = S.row(d, { gap: 8, justify: "end" }); S.button(ft, "Annuler", "outline");
   const b = S.button(ft, "Vérification…", "default", {}); b.opacity = 0.7; b.insertChild(0, S.spinner(null, C.pfg, 14));
   S.center(f, d); S.frontAbs(f); return f.id; };

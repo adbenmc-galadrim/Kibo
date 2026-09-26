@@ -142,6 +142,9 @@ services:
     environment:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
 
+      # The default heap runs out of memory saving kibo.penpot (over 150 MB).
+      JAVA_OPTS: "-Xmx950m -XX:+UseSerialGC -XX:MaxMetaspaceSize=320m -XX:ReservedCodeCacheSize=96m -Xss512k -XX:MaxDirectMemorySize=128m"
+
       # Don't touch it; this uses an internal docker network to
       # communicate with the admin-console.
       PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
