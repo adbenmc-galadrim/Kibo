@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AiStatus, StarterPlan } from "@kibo/schema";
+import { denyAllGuard } from "./draft-guard";
 import type { AiAvailability } from "./ports";
 import { createStarterService, parseStarterOutput, STARTER_TIMEOUT_MS } from "./starter";
 import { createFakeClock, createFakeRuns, createRecordingEvents } from "./testing/fake-ports";
@@ -124,6 +125,7 @@ describe("createStarterService", () => {
       prompt: "pm|Je pilote trois équipes|kanban",
       args: ["--tools", ""],
     });
+    expect(req?.guard).toBe(denyAllGuard);
     expect(req?.guard({ toolName: "Read", toolInput: { file_path: "/etc/hosts" } }).decision).toBe("deny");
     expect(existsSync(req?.cwd ?? "")).toBe(true);
   });

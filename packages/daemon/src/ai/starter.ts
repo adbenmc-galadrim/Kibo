@@ -1,7 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError, type Role, StarterComponent, StarterPage, StarterPlan } from "@kibo/schema";
-import type { AgentRuns, AiAvailability, AiEvents, CatalogEntry, Clock, Guard, RunState } from "./ports";
+import { denyAllGuard } from "./draft-guard";
+import type { AgentRuns, AiAvailability, AiEvents, CatalogEntry, Clock, RunState } from "./ports";
 
 export const STARTER_TIMEOUT_MS = 60_000;
 const MAX_PAGES = 8;
@@ -67,11 +68,6 @@ export function parseStarterOutput(stdout: string, known: ReadonlySet<string>): 
   return plan.success ? plan.data : null;
 }
 
-const denyAll: Guard = ({ toolName }) => ({
-  decision: "deny",
-  reason: `${toolName} is not available to the assistant`,
-});
-
 export function createStarterService(deps: StarterDeps): {
   suggest(input: { role: Role; text: string }): { runId: string };
 } {
@@ -96,7 +92,7 @@ export function createStarterService(deps: StarterDeps): {
           args: deps.args(),
           env: {},
           resumeSessionId: null,
-          guard: denyAll,
+          guard: denyAllGuard,
         });
       } catch (error) {
         rmSync(cwd, { recursive: true, force: true });
