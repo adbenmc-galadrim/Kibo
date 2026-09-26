@@ -1,9 +1,9 @@
+export { ticketRuns } from "@kibo/schema";
 export * from "./agent-badge";
 export * from "./client";
 export * from "./file-link";
 export * from "./lazy";
 export * from "./react";
-export * from "./runs";
 export * from "./sdk";
 export * from "./status";
 export * from "./types";

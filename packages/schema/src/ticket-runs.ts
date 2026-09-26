@@ -1,4 +1,4 @@
-import type { AgentsState, RunView, TicketRun } from "@kibo/schema";
+import type { AgentsState, RunView, TicketRun } from "./run";
 
 export function ticketRuns(state: AgentsState, projectId: string): TicketRun[] {
   const positions = new Map(state.queue.map((q) => [q.runId, q.position]));

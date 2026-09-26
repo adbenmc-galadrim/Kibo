@@ -12,8 +12,8 @@ import {
   type RunState,
   type TicketRun,
   type Topic,
+  ticketRuns,
 } from "@kibo/schema";
-import { ticketRuns } from "./runs";
 import type { ProjectBackend } from "./types";
 
 export type KiboClient = {

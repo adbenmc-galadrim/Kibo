@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { AgentsState, RunView } from "@kibo/schema";
-import { ticketRuns } from "./runs";
+import type { AgentsState, RunView } from "./run";
+import { ticketRuns } from "./ticket-runs";
 
 const run = (p: Pick<RunView, "id" | "seq" | "state"> & Partial<RunView>): RunView => ({
   projectId: "kibo",
