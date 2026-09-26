@@ -90,6 +90,15 @@ describe("nonce store", () => {
     now = 1001;
     expect(nonces.seen("n1")).toBe(false);
   });
+  test("the sweep deletes expired nonces", () => {
+    let now = 0;
+    const nonces = new NonceCache({ sdb: r.kit.sdb, ttlMs: 1000, now: () => now });
+    nonces.seen("n1");
+    now = 2000;
+    nonces.seen("n2");
+    const rows = r.kit.sdb.db.query<{ nonce: string }, []>("SELECT nonce FROM market_nonces").all();
+    expect(rows.map((row) => row.nonce)).toEqual(["n2"]);
+  });
 });
 
 describe("limits", () => {
