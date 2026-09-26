@@ -1,4 +1,11 @@
+import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { KiboError } from "@kibo/schema";
+
+export type Resolver = (host: string) => Promise<string[]>;
+
+export const systemResolver: Resolver = async (host) =>
+  (await lookup(host, { all: true, verbatim: true })).map((a) => a.address);
 
 function v4Octets(ip: string): number[] {
   return ip.split(".").map(Number);
@@ -50,4 +57,46 @@ export function isPublicAddress(ip: string): boolean {
   const groups = v6Groups(ip.toLowerCase());
   if (groups.length !== 8 || groups.some((g) => Number.isNaN(g))) return false;
   return isPublicV6(groups);
+}
+
+export const bareHost = (u: URL) => (u.hostname.startsWith("[") ? u.hostname.slice(1, -1) : u.hostname);
+
+function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(signal.reason);
+    if (signal.aborted) return onAbort();
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      },
+    );
+  });
+}
+
+export async function checkedAddress(
+  u: URL,
+  resolve: Resolver,
+  allow: (ip: string) => boolean,
+  signal: AbortSignal,
+): Promise<string> {
+  const host = bareHost(u);
+  const addresses = isIP(host) ? [host] : await untilAborted(resolve(host), signal);
+  const [first] = addresses;
+  if (first === undefined || !addresses.every(allow)) {
+    throw new KiboError("PERMISSION_DENIED", `address not allowed for ${host}`);
+  }
+  return first;
+}
+
+export function pinnedRequest(u: URL, address: string) {
+  const pinned = new URL(u.href);
+  pinned.hostname = isIP(address) === 6 ? `[${address}]` : address;
+  const host = bareHost(u);
+  return { url: pinned.href, host: u.host, tls: isIP(host) ? undefined : { serverName: host } };
 }

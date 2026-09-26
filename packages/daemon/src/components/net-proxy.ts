@@ -1,14 +1,25 @@
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import { type FetchInit, type FetchResponse, KiboError, ruleCovers } from "@kibo/schema";
-import { isPublicAddress } from "./net-proxy-address";
+import {
+  bareHost,
+  checkedAddress,
+  isPublicAddress,
+  pinnedRequest,
+  type Resolver,
+  systemResolver,
+} from "./net-proxy-address";
 import { readProxiedBody } from "./net-proxy-body";
 import { directTransport, type Transport } from "./net-proxy-transport";
 
-export { isPublicAddress } from "./net-proxy-address";
+export {
+  bareHost,
+  checkedAddress,
+  isPublicAddress,
+  pinnedRequest,
+  type Resolver,
+  systemResolver,
+} from "./net-proxy-address";
 export type { Transport, TransportInit } from "./net-proxy-transport";
 
-export type Resolver = (host: string) => Promise<string[]>;
 export type NetProxyOptions = {
   resolve?: Resolver;
   transport?: Transport;
@@ -37,9 +48,6 @@ const STRIPPED_HEADERS = new Set([
 const HEADER_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
 const HEADER_VALUE = /^[^\r\n\0]*$/;
 
-export const systemResolver: Resolver = async (host) =>
-  (await lookup(host, { all: true, verbatim: true })).map((a) => a.address);
-
 function outgoingHeaders(headers: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [name, value] of Object.entries(headers)) {
@@ -63,48 +71,6 @@ function checkedUrl(rules: readonly string[] | null, url: string): URL {
     throw new KiboError("PERMISSION_DENIED", `no net rule covers a url on ${u.hostname}`);
   }
   return u;
-}
-
-const bareHost = (u: URL) => (u.hostname.startsWith("[") ? u.hostname.slice(1, -1) : u.hostname);
-
-function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason);
-    if (signal.aborted) return onAbort();
-    signal.addEventListener("abort", onAbort, { once: true });
-    promise.then(
-      (value) => {
-        signal.removeEventListener("abort", onAbort);
-        resolve(value);
-      },
-      (error: unknown) => {
-        signal.removeEventListener("abort", onAbort);
-        reject(error);
-      },
-    );
-  });
-}
-
-async function checkedAddress(
-  u: URL,
-  resolve: Resolver,
-  allow: (ip: string) => boolean,
-  signal: AbortSignal,
-): Promise<string> {
-  const host = bareHost(u);
-  const addresses = isIP(host) ? [host] : await untilAborted(resolve(host), signal);
-  const [first] = addresses;
-  if (first === undefined || !addresses.every(allow)) {
-    throw new KiboError("PERMISSION_DENIED", `address not allowed for ${host}`);
-  }
-  return first;
-}
-
-function pinnedRequest(u: URL, address: string) {
-  const pinned = new URL(u.href);
-  pinned.hostname = isIP(address) === 6 ? `[${address}]` : address;
-  const host = bareHost(u);
-  return { url: pinned.href, host: u.host, tls: isIP(host) ? undefined : { serverName: host } };
 }
 
 function redirectTarget(location: string, current: URL): URL {

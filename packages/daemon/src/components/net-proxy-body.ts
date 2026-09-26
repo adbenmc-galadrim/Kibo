@@ -3,9 +3,9 @@ import type { FetchResponse } from "@kibo/schema";
 const TEXT_TYPE = /^(text\/|application\/(json|xml|javascript|x-www-form-urlencoded)|[^;]*\+(json|xml))/;
 const DROPPED_RESPONSE_HEADERS = new Set(["set-cookie", "set-cookie2"]);
 
-type CappedBody = { bytes: Uint8Array; truncated: boolean };
+export type CappedBody = { bytes: Uint8Array; truncated: boolean };
 
-async function readCapped(res: Response, maxBytes: number): Promise<CappedBody> {
+export async function readCapped(res: Response, maxBytes: number): Promise<CappedBody> {
   const chunks: Uint8Array[] = [];
   let total = 0;
   const reader = res.body?.getReader();
