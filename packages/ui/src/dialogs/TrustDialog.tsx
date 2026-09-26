@@ -51,6 +51,7 @@ type Props = {
   onOpenChange: (o: boolean) => void;
   onApproved: (v: RegistryVersion) => void;
   approve?: (trust: ApprovableTrust) => Promise<RegistryVersion>;
+  onCloseAutoFocus?: (event: Event) => void;
 };
 
 function LevelCard({ value, title, help }: { value: ApprovableTrust; title: string; help: string }) {
@@ -85,7 +86,15 @@ function PermissionList({ permissions }: { permissions: GrantedPermissions }) {
   );
 }
 
-export function TrustDialog({ target, mode, open, onOpenChange, onApproved, approve: delegate }: Props) {
+export function TrustDialog({
+  target,
+  mode,
+  open,
+  onOpenChange,
+  onApproved,
+  approve: delegate,
+  onCloseAutoFocus,
+}: Props) {
   const t = fr.trust;
   const [level, setLevel] = useState<ApprovableTrust>("sandboxed");
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +123,7 @@ export function TrustDialog({ target, mode, open, onOpenChange, onApproved, appr
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{t.title(target.title, target.version)}</DialogTitle>
           <DialogDescription>{t.subtitle(t.origin[target.origin], shortHash(target.hash))}</DialogDescription>

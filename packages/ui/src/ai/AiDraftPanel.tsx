@@ -5,6 +5,7 @@ import { Info } from "lucide-react";
 import { useRef, useState } from "react";
 import { client } from "../api";
 import type { Strategy } from "../components-page/PublishSections";
+import { useReportApproval } from "../dialogs/approval-scope";
 import { TrustDialog } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { aiErrorMessage } from "./ai-error";
@@ -30,7 +31,14 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [reviewed, setReviewed] = useState(false);
   const [strategy, setStrategy] = useState<Strategy>("update-all");
+  const [refused, setRefused] = useState(false);
   const finished = useRef(false);
+  const reviewedButton = useRef<HTMLButtonElement>(null);
+  const approval =
+    details?.status === "permissions" && details.publish?.hash && details.manifest && !refused
+      ? { publish: details.publish, hash: details.publish.hash, manifest: details.manifest }
+      : null;
+  useReportApproval(approval !== null);
 
   const act = async (run: () => Promise<unknown>) => {
     setBusy(true);
@@ -63,7 +71,8 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
   const review = (version: string, changes: string[]) =>
     act(() => client.rpc({ method: "reviewComponentDraft", draftId, version, changes }));
   const onReviewed = () => {
-    if (details.mode === "modify") setReviewed(true);
+    if (refused) setRefused(false);
+    else if (details.mode === "modify") setReviewed(true);
     else void review(publish?.to ?? "0.1.0", []);
   };
 
@@ -79,7 +88,7 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
         </div>
       )}
       {details.status === "failed" && <DraftFailedStep details={details} exhausted={actions.codeFallback} />}
-      {details.status === "review" && !reviewed && <DraftDiffReview diff={details.diff} />}
+      {((details.status === "review" && !reviewed) || refused) && <DraftDiffReview diff={details.diff} />}
       {details.status === "review" && reviewed && (
         <DraftPublishStep
           details={details}
@@ -96,25 +105,30 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
           <AlertTitle>{fr.ai.permissionsUnavailable}</AlertTitle>
         </Alert>
       )}
-      {details.status === "permissions" && publish && hash && details.manifest && (
+      {approval && (
         <TrustDialog
           open
           mode={target ? "approveAndAdd" : "approve"}
           target={{
             id: details.componentId,
             title: details.title,
-            version: publish.to,
-            hash,
+            version: approval.publish.to,
+            hash: approval.hash,
             origin: "ai",
-            permissions: grantedOf(details.manifest),
+            permissions: grantedOf(approval.manifest),
           }}
-          onOpenChange={(o) => !o && finish()}
+          onOpenChange={(o) => !o && !finished.current && setRefused(true)}
+          onCloseAutoFocus={(e) => {
+            if (finished.current) return;
+            e.preventDefault();
+            reviewedButton.current?.focus();
+          }}
           approve={async (trust) => {
             const result = await client.rpc({
               method: "finalizeComponentDraft",
               draftId,
-              version: publish.to,
-              hash,
+              version: approval.publish.to,
+              hash: approval.hash,
               trust,
               strategy,
               target,
@@ -134,7 +148,8 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
         details={details}
         actions={actions}
         busy={busy}
-        reviewing={details.status === "review" && !reviewed}
+        reviewing={(details.status === "review" && !reviewed) || refused}
+        reviewedRef={reviewedButton}
         onAct={(method) => void act(() => client.rpc({ method, draftId }))}
         onReviewed={onReviewed}
         onAbandon={() =>

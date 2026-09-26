@@ -7,6 +7,7 @@ import { AiDraftPanel } from "../ai/AiDraftPanel";
 import { DescribeCard, ResumeDraftBanner } from "../ai/DescribeCard";
 import { DraftStepper } from "../ai/DraftStepper";
 import { fr } from "../i18n/fr";
+import { ApprovalScope, useApprovalScope } from "./approval-scope";
 
 const COMMANDS = [
   "kibo component new burndown",
@@ -70,6 +71,7 @@ type Props = {
 export function CreateComponentDialog({ open, onOpenChange, target, onAdded }: Props) {
   const t = fr.createComponent;
   const [draftId, setDraftId] = useState<string | null>(null);
+  const scope = useApprovalScope();
   const done = () => {
     setDraftId(null);
     onOpenChange(false);
@@ -77,13 +79,15 @@ export function CreateComponentDialog({ open, onOpenChange, target, onAdded }: P
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent hidden={scope.hidden} className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
           <DialogDescription className={draftId ? "sr-only" : undefined}>{t.subtitle}</DialogDescription>
         </DialogHeader>
         {draftId ? (
-          <AiDraftPanel draftId={draftId} target={target} onDone={done} />
+          <ApprovalScope scope={scope}>
+            <AiDraftPanel draftId={draftId} target={target} onDone={done} />
+          </ApprovalScope>
         ) : (
           <>
             <ResumeDraftBanner onResume={setDraftId} />

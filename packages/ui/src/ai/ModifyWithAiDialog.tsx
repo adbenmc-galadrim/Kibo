@@ -13,6 +13,7 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { client } from "../api";
+import { ApprovalScope, useApprovalScope } from "../dialogs/approval-scope";
 import { fr } from "../i18n/fr";
 import { AiDraftPanel } from "./AiDraftPanel";
 import { aiErrorMessage } from "./ai-error";
@@ -127,6 +128,7 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
 export function ModifyWithAiDialog({ component, open, onOpenChange }: Props) {
   const [draftId, setDraftId] = useState<string | null>(null);
   const { active, error, refresh } = useActiveDraft(component.id);
+  const scope = useApprovalScope();
 
   const body = () => {
     if (draftId) return <AiDraftPanel draftId={draftId} target={null} onDone={() => onOpenChange(false)} />;
@@ -143,7 +145,7 @@ export function ModifyWithAiDialog({ component, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={draftId ? "sm:max-w-3xl" : "sm:max-w-[520px]"}>
+      <DialogContent hidden={scope.hidden} className={draftId ? "sm:max-w-3xl" : "sm:max-w-[520px]"}>
         <DialogHeader>
           <DialogTitle>{fr.ai.modifyTitle(component.title)}</DialogTitle>
           <DialogDescription>
@@ -151,7 +153,7 @@ export function ModifyWithAiDialog({ component, open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
         {error && !draftId && <p className="text-xs text-destructive">{error}</p>}
-        {body()}
+        <ApprovalScope scope={scope}>{body()}</ApprovalScope>
       </DialogContent>
     </Dialog>
   );

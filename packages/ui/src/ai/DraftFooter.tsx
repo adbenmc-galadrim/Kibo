@@ -1,6 +1,7 @@
 import type { ComponentDraft } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot, ExternalLink, RefreshCw } from "lucide-react";
+import type { Ref } from "react";
 import { fr } from "../i18n/fr";
 import type { draftActions } from "./draft-flow";
 import { useAiAvailability } from "./use-ai-availability";
@@ -15,9 +16,19 @@ type Props = {
   onAct: (method: DraftMethod) => void;
   onReviewed: () => void;
   onAbandon: () => void;
+  reviewedRef?: Ref<HTMLButtonElement>;
 };
 
-export function DraftFooter({ details, actions, busy, reviewing, onAct, onReviewed, onAbandon }: Props) {
+export function DraftFooter({
+  details,
+  actions,
+  busy,
+  reviewing,
+  onAct,
+  onReviewed,
+  onAbandon,
+  reviewedRef,
+}: Props) {
   const failed = details.status === "failed";
   const { ready, block } = useAiAvailability("generateur");
   return (
@@ -60,7 +71,7 @@ export function DraftFooter({ details, actions, busy, reviewing, onAct, onReview
         </Button>
       )}
       {reviewing && (
-        <Button disabled={busy} onClick={onReviewed}>
+        <Button ref={reviewedRef} disabled={busy} onClick={onReviewed}>
           {fr.ai.reviewed}
         </Button>
       )}

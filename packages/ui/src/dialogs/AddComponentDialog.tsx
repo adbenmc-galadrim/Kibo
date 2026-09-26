@@ -12,6 +12,7 @@ import { nextLayout } from "../lib/next-layout";
 import { BUILTIN_COMPONENTS, componentIcon } from "../registry";
 import { navigateTo } from "../route";
 import { useComponents } from "../state/use-components";
+import { ApprovalScope, useApprovalScope } from "./approval-scope";
 import { CatalogRow, CatalogSection, VersionPill } from "./CatalogRow";
 import { Details } from "./ComponentDetails";
 import { CreateComponentDialog } from "./CreateComponentDialog";
@@ -59,6 +60,7 @@ export function AddComponentDialog({
   const [failed, setFailed] = useState(false);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
   const [creating, setCreating] = useState(false);
+  const scope = useApprovalScope();
 
   const mine = mineChoices(components ?? []);
   const shown = (c: Choice) => matches(`${c.title} ${c.description ?? ""}`, query);
@@ -138,7 +140,10 @@ export function AddComponentDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-4xl">
+        <DialogContent
+          hidden={scope.hidden}
+          className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-4xl"
+        >
           <DialogHeader>
             <DialogTitle>{a.title}</DialogTitle>
           </DialogHeader>
@@ -278,12 +283,14 @@ export function AddComponentDialog({
           onApproved={(v) => void addInstance(`${trust.id}@${v.version}`)}
         />
       )}
-      <CreateComponentDialog
-        open={creating}
-        onOpenChange={setCreating}
-        target={{ projectId, pageId: page.id }}
-        onAdded={() => onOpenChange(false)}
-      />
+      <ApprovalScope scope={scope}>
+        <CreateComponentDialog
+          open={creating}
+          onOpenChange={setCreating}
+          target={{ projectId, pageId: page.id }}
+          onAdded={() => onOpenChange(false)}
+        />
+      </ApprovalScope>
     </>
   );
 }

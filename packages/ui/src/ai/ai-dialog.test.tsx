@@ -44,6 +44,7 @@ mock.module("../state/use-agents", () => ({
 mock.module("../state/use-projects", () => ({ useProjects: () => [], useProject: () => null }));
 
 const { AiDraftPanel } = await import("./AiDraftPanel");
+const { ApprovalScope } = await import("../dialogs/approval-scope");
 
 beforeEach(() => {
   calls.length = 0;
@@ -138,6 +139,34 @@ test("review (create) then permissions then finalize on the current page", async
     target: { projectId: "p1", pageId: "pg1" },
   });
   await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+});
+
+test("refusing the approval shows the dialogs again, back to the diff", async () => {
+  answer = () =>
+    details({
+      status: "permissions",
+      diff: [uiDiff],
+      manifest,
+      publish: { ...publish, hash: "3f9a".padEnd(64, "0") },
+    });
+  const onDone = mock(() => {});
+  const report = mock((_approving: boolean) => {});
+  render(
+    <ApprovalScope scope={{ hidden: false, report }}>
+      <AiDraftPanel draftId={DRAFT_ID} target={{ projectId: "p1", pageId: "pg1" }} onDone={onDone} />
+    </ApprovalScope>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Refuser" }));
+  expect(report.mock.calls).toEqual([[true], [false]]);
+  expect(onDone).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Autoriser et ajouter" })).toBeNull();
+  expect(screen.getByText("export function Burndown() {}")).toBeTruthy();
+  const reviewed = screen.getByRole("button", { name: "J'ai relu, continuer" });
+  await waitFor(() => expect(document.activeElement).toBe(reviewed));
+  await user.click(reviewed);
+  expect(await screen.findByRole("button", { name: "Autoriser et ajouter" })).toBeTruthy();
+  expect(report.mock.calls).toEqual([[true], [false], [true]]);
 });
 
 test("review (modify) goes through the publish step with an editable version", async () => {

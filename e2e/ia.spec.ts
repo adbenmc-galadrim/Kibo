@@ -95,6 +95,17 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
 
   const trust = page.getByRole("dialog", { name: new RegExp(`Autoriser « Burndown ${s} » 0\\.1\\.0 \\?`) });
   await expect(trust.getByText(/Composant généré par IA/)).toBeVisible();
+  const create = page.getByRole("dialog", { name: "Créer un composant" });
+  await expect(create).toBeHidden();
+  await expect(page.getByRole("dialog", { name: "Ajouter un composant" })).toBeHidden();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(trust).toBeHidden();
+  await expect(create).toBeVisible();
+  await expect(create.getByRole("list", { name: "Relire le diff" })).toBeVisible();
+  await create.getByRole("button", { name: "J'ai relu, continuer" }).click();
+  await expect(trust).toBeVisible();
+  await expect(create).toBeHidden();
   await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
   await expect(trust).toBeHidden();
