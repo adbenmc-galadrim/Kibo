@@ -31,7 +31,7 @@ export type PaletteItem = {
   color: string | null;
   icon: "ticket" | "page" | "project" | "changes" | "new" | "theme" | "reply" | "assign" | Screen;
   run: { kind: "target"; target: TabTarget } | { kind: "action"; action: PaletteAction };
-  ticket: { projectId: string; ticketId: string; key: string } | null;
+  ticket: { projectId: string; ticketId: string; keyLabel: string } | null;
 };
 export type PaletteSection = { group: PaletteGroup; items: PaletteItem[]; more: string[] };
 export type PaletteContext = {
@@ -68,7 +68,7 @@ function queuePositions(agents: AgentsState | null): Map<string, number> {
 export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
   if (!ctx.activeProjectId || !ctx.activeTicketId) return null;
   const t = ctx.snapshots.get(ctx.activeProjectId)?.tickets.find((x) => x.id === ctx.activeTicketId);
-  return t ? { projectId: ctx.activeProjectId, ticketId: t.id, key: t.keyLabel } : null;
+  return t ? { projectId: ctx.activeProjectId, ticketId: t.id, keyLabel: t.keyLabel } : null;
 }
 
 const screenItems = (): PaletteItem[] =>
@@ -123,7 +123,7 @@ function targets(ctx: PaletteContext): PaletteItem[] {
         statusId: t.statusId,
         icon: "ticket",
         run: { kind: "target", target: { kind: "ticket", projectId: project.id, ticketId: t.id } },
-        ticket: { projectId: project.id, ticketId: t.id, key: t.keyLabel },
+        ticket: { projectId: project.id, ticketId: t.id, keyLabel: t.keyLabel },
       });
     }
   }
@@ -212,12 +212,12 @@ export function searchItems(items: PaletteItem[], query: string, filter: Palette
   const matched = items.filter((i) => visible(i.group) && tokens.every((t) => i.keywords.includes(t)));
   const needle = tokens.join(" ");
   const score = (i: PaletteItem) =>
-    i.ticket && normalize(i.ticket.key) === needle ? 0 : i.keywords.startsWith(needle) ? 1 : 2;
+    i.ticket && normalize(i.ticket.keyLabel) === needle ? 0 : i.keywords.startsWith(needle) ? 1 : 2;
   return ORDER.flatMap((group) => {
     const all = matched.filter((i) => i.group === group).sort((a, b) => score(a) - score(b));
     if (all.length === 0) return [];
     const capped = group === "tickets" && filter === "all" ? all.slice(0, TICKET_CAP) : all;
-    const more = all.slice(capped.length).flatMap((i) => (i.ticket ? [i.ticket.key] : []));
+    const more = all.slice(capped.length).flatMap((i) => (i.ticket ? [i.ticket.keyLabel] : []));
     return [{ group, items: capped, more }];
   });
 }

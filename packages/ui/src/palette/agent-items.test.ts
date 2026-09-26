@@ -13,7 +13,7 @@ const runs = [
   }),
   runFixture({ id: "r12", ticketId: "12@1", ticketKey: "KIB-12", label: "opus-dev-1", state: "running" }),
 ];
-const active = { projectId: "p1", ticketId: "12@1", key: "KIB-12" };
+const active = { projectId: "p1", ticketId: "12@1", keyLabel: "KIB-12" };
 
 test("a waiting run can be answered, the active ticket can be assigned", () => {
   const items = agentItems(runs, active);

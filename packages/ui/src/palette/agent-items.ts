@@ -37,7 +37,7 @@ export function agentItems(runs: RunView[], active: PaletteItem["ticket"]): Pale
       ),
     );
   if (!active) return replies;
-  const assign = agentItem(`assign:${active.ticketId}`, fr.palette.assign(active.key), "", "assign", {
+  const assign = agentItem(`assign:${active.ticketId}`, fr.palette.assign(active.keyLabel), "", "assign", {
     kind: "action",
     action: { kind: "assign", projectId: active.projectId, ticketId: active.ticketId },
   });
