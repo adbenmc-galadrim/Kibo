@@ -70,12 +70,15 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/pages/SourceHeader.tsx",
       "/Kibo/components/graph/src/GraphView.tsx",
       "/Kibo/components/notes/src/NotesView.tsx",
+      "/Kibo/components/mcp-source/src/McpSource.tsx",
+      "/Kibo/packages/ui/src/dialogs/mcp-source/McpSourceStep.tsx",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [
       "/Kibo/components/notes/src/NotesWidget.tsx",
       "/Kibo/components/graph/src/GraphWidget.tsx",
       "/Kibo/packages/ui/src/agents/AgentPanel.tsx",
+      "/Kibo/components/mcp-source/src/config.ts",
     ])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(false);
   });

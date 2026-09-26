@@ -23,8 +23,8 @@ export const ENTRY_GZIP_BUDGET = 230_000;
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/IntegrationNotices|pages\/SourceHeader)\.tsx$/,
-  /\/components\/(graph\/src\/GraphView|notes\/src\/NotesView)\.tsx$/,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/IntegrationNotices|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep)\.tsx$/,
+  /\/components\/(graph\/src\/GraphView|notes\/src\/NotesView|mcp-source\/src\/McpSource)\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

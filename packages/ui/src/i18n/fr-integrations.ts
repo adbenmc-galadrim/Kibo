@@ -224,6 +224,27 @@ export const frIntegrations = {
   },
   conflict: (key: string, field: "title" | "description" | "statusId") =>
     `Conflit résolu sur ${key} : ${{ title: "titre", description: "description", statusId: "statut" }[field]} repris de GitHub`,
+  mcpSource: {
+    title: "Source",
+    loading: "Chargement des serveurs MCP…",
+    server: "Serveur MCP",
+    noServer: "Aucun serveur MCP configuré : ajoute-en un dans Paramètres › Intégrations.",
+    mode: "Mode",
+    tool: "Outil",
+    resource: "Ressource",
+    uri: "URI de la ressource",
+    args: "Arguments (JSON)",
+    argsInvalid: "Arguments : JSON invalide.",
+    mapping: "Correspondance des champs",
+    items: "Éléments",
+    id: "Identifiant",
+    itemTitle: "Titre",
+    subtitle: "Sous-titre",
+    url: "Lien",
+    pointerHelp: "Pointeurs JSON, par exemple /items et /name.",
+    refresh: "Rafraîchissement (minutes, 5 minimum)",
+    serverLabel: (name: string, id: string) => `${name} (${id})`,
+  },
   permissions: {
     secret: (name: string, hosts: string[]) =>
       name === "github"

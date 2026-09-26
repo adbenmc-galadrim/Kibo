@@ -1,0 +1,24 @@
+{
+  "id": "mcp-source",
+  "version": "1.0.0",
+  "kind": "widget",
+  "title": "Source MCP",
+  "description": "Liste des éléments d'un serveur MCP, un ticket par élément sur demande",
+  "reads": ["ticket"],
+  "writes": ["ticket"],
+  "data": true,
+  "mcp": ["{config.server}"],
+  "configSchema": {
+    "server": { "type": "string" },
+    "mode": { "enum": ["tool", "resource"], "default": "tool" },
+    "tool": { "type": "string" },
+    "uri": { "type": "string" },
+    "args": { "type": "string", "default": "{}" },
+    "refreshMinutes": { "type": "number", "default": 15 },
+    "itemsPointer": { "type": "string", "default": "/items" },
+    "idPointer": { "type": "string", "default": "/id" },
+    "titlePointer": { "type": "string", "default": "/name" },
+    "subtitlePointer": { "type": "string" },
+    "urlPointer": { "type": "string" }
+  }
+}

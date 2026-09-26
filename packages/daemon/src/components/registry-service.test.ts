@@ -175,6 +175,7 @@ describe("listing and uninstall", () => {
       ["tickets", true],
       ["graph", true],
       ["notes", true],
+      ["mcp-source", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -186,7 +187,7 @@ describe("listing and uninstall", () => {
         usages: [expect.objectContaining({ pageTitle: "Tableau de bord", projectName: "Kibo" })],
       }),
     ]);
-    expect(list[4]?.versions[0]).toMatchObject({
+    expect(list.find((c) => c.id === "pr-queue")?.versions[0]).toMatchObject({
       version: "0.3.0",
       hash: H1,
       active: false,
@@ -198,7 +199,7 @@ describe("listing and uninstall", () => {
     await svc.uninstall("pr-queue", "0.3.0");
     expect(getRegistryVersion(ws, "pr-queue", "0.3.0")).toBeNull();
     expect(await store.verify("pr-queue", "0.3.0", H1)).toBe(false);
-    expect(svc.list().map((c) => c.id)).toEqual(["kanban", "tickets", "graph", "notes"]);
+    expect(svc.list().map((c) => c.id)).toEqual(["kanban", "tickets", "graph", "notes", "mcp-source"]);
   });
 });
 

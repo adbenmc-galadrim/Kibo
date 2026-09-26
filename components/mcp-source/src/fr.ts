@@ -1,0 +1,24 @@
+export const fr = {
+  lazy: {
+    loading: "Chargement de la source…",
+    failed: "Impossible de charger la source.",
+    retry: "Réessayer",
+  },
+  create: "Créer un ticket",
+  refresh: "Rafraîchir",
+  updated: (ago: string) => `Mis à jour ${ago}`,
+  never: "Jamais mis à jour",
+  empty: "Aucun élément.",
+  loading: "Chargement…",
+  unconfigured: "Configure la source dans les réglages du composant.",
+  unreachable: "Serveur MCP injoignable",
+  toolError: "L'outil a renvoyé une erreur :",
+  failed: "Échec de l'appel MCP :",
+  extract: {
+    empty: "Réponse vide.",
+    "not-json": "La réponse n'est pas du JSON.",
+    "not-a-list": "Le pointeur « éléments » ne désigne pas une liste.",
+  },
+  truncated: "Réponse tronquée à 1 Mio.",
+  ago: (minutes: number) => (minutes < 1 ? "à l'instant" : `il y a ${minutes} min`),
+};

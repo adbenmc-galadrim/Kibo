@@ -1,5 +1,6 @@
 import * as graph from "@kibo/component-graph";
 import * as kanban from "@kibo/component-kanban";
+import * as mcpSource from "@kibo/component-mcp-source";
 import * as notes from "@kibo/component-notes";
 import * as tickets from "@kibo/component-tickets";
 import type { ComponentManifest, Instance, Page } from "@kibo/schema";
@@ -12,16 +13,18 @@ import {
   ListTree,
   type LucideIcon,
   Network,
+  Plug,
   SquareKanban,
 } from "lucide-react";
 
-export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets, graph, notes];
+export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets, graph, notes, mcpSource];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
   kanban: SquareKanban,
   tickets: ListTree,
   graph: Network,
   notes: FileText,
+  "mcp-source": Plug,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;

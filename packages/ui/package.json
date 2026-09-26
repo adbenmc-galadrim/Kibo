@@ -20,6 +20,7 @@
     "@fontsource-variable/geist-mono": "5.3.0",
     "@kibo/component-graph": "workspace:*",
     "@kibo/component-kanban": "workspace:*",
+    "@kibo/component-mcp-source": "workspace:*",
     "@kibo/component-notes": "workspace:*",
     "@kibo/component-tickets": "workspace:*",
     "@kibo/schema": "workspace:*",

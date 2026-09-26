@@ -82,6 +82,26 @@
         "react": "19.1.1",
       },
     },
+    "components/mcp-source": {
+      "name": "@kibo/component-mcp-source",
+      "version": "1.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "lucide-react": "1.48.0",
+        "zod": "3.25.76",
+      },
+      "devDependencies": {
+        "@testing-library/dom": "10.4.2",
+        "@testing-library/react": "16.3.0",
+        "@types/react": "19.1.13",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+      },
+      "peerDependencies": {
+        "react": "19.1.1",
+      },
+    },
     "components/notes": {
       "name": "@kibo/component-notes",
       "version": "1.0.0",
@@ -239,6 +259,7 @@
         "@fontsource-variable/geist-mono": "5.3.0",
         "@kibo/component-graph": "workspace:*",
         "@kibo/component-kanban": "workspace:*",
+        "@kibo/component-mcp-source": "workspace:*",
         "@kibo/component-notes": "workspace:*",
         "@kibo/component-tickets": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -511,6 +532,8 @@
     "@kibo/component-graph": ["@kibo/component-graph@workspace:components/graph"],
 
     "@kibo/component-kanban": ["@kibo/component-kanban@workspace:components/kanban"],
+
+    "@kibo/component-mcp-source": ["@kibo/component-mcp-source@workspace:components/mcp-source"],
 
     "@kibo/component-notes": ["@kibo/component-notes@workspace:components/notes"],
 

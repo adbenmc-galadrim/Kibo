@@ -1,3 +1,4 @@
+import type { McpSourceStoredConfig } from "@kibo/component-mcp-source";
 import { type Binding, DEFAULT_WORKFLOW, type Layout, type Page, type Status } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
@@ -16,6 +17,7 @@ import { Details } from "./ComponentDetails";
 import { CreateComponentDialog } from "./CreateComponentDialog";
 import { builtinChoices, type Choice, matches, mineChoices } from "./catalog-choices";
 import { DraftRow } from "./DraftRow";
+import { McpSourceStep } from "./mcp-source/McpSourceStep";
 import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
 import { SyncSourceForm } from "./sync/SyncSourceForm";
 import { EMPTY_SYNC_FORM, SYNCABLE_COMPONENTS, type SyncForm, toBindingConfig } from "./sync/status-map";
@@ -66,6 +68,8 @@ export function AddComponentDialog({
   const progress = useSyncProgress(binding?.id ?? null);
   const syncable = selected !== null && SYNCABLE_COMPONENTS.includes(selected.id);
   const synced = syncable && source === "synced";
+  const [mcpConfig, setMcpConfig] = useState<McpSourceStoredConfig | null>(null);
+  const mcpSource = selected?.id === "mcp-source";
   const onFormError = useCallback((m: string) => setSyncError(m), []);
   const openIntegrationSettings = () => {
     onOpenChange(false);
@@ -107,6 +111,7 @@ export function AddComponentDialog({
           component,
           ...(page.kind === "dashboard" && { layout: nextLayout(taken) }),
           ...(created && { config: { source: { bindingId: created.id } } }),
+          ...(mcpSource && mcpConfig && { config: mcpConfig }),
         },
       });
       if (created) {
@@ -216,6 +221,8 @@ export function AddComponentDialog({
                           />
                         )}
                       </div>
+                    ) : mcpSource ? (
+                      <McpSourceStep value={mcpConfig} onChange={setMcpConfig} />
                     ) : null
                   }
                 />
@@ -246,7 +253,12 @@ export function AddComponentDialog({
               {fr.common.cancel}
             </Button>
             <Button
-              disabled={!selected || (synced && toBindingConfig(form) === null) || binding !== null}
+              disabled={
+                !selected ||
+                (synced && toBindingConfig(form) === null) ||
+                (mcpSource && mcpConfig === null) ||
+                binding !== null
+              }
               onClick={submit}
             >
               {synced ? fr.integrations.source.submit : a.submit}
