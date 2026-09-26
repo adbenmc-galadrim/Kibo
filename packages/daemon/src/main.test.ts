@@ -66,3 +66,37 @@ test("stops when its parent process disappears", async () => {
   expect(pid).toBeGreaterThan(0);
   expect(stillAlive).toBe(false);
 }, 10000);
+
+test("tells the ui to leave notifications to the desktop shell", async () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
+  const proc = Bun.spawn(
+    ["bun", join(import.meta.dir, "main.ts"), "--port", "0", "--claude-bin", "/nonexistent/claude"],
+    { env: { ...process.env, KIBO_HOME: home, KIBO_NATIVE_NOTIFY: "1" }, stdout: "pipe", stderr: "pipe" },
+  );
+  const reader = proc.stdout.getReader();
+  let out = "";
+  while (!out.includes("\n")) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    out += new TextDecoder().decode(value);
+  }
+  const [, origin = "", token = ""] = /^KIBO_READY (\S+)\/#pair=(\w+)\n$/.exec(out) ?? [];
+  const headers = { "content-type": "application/json", origin };
+  const paired = await fetch(`${origin}/api/pair`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ token }),
+  });
+  const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const res = await fetch(`${origin}/api/rpc`, {
+    method: "POST",
+    headers: { ...headers, cookie },
+    body: JSON.stringify({ method: "getSession" }),
+  });
+  const session = await res.json();
+  proc.kill("SIGTERM");
+  const code = await proc.exited;
+  rmSync(home, { recursive: true, force: true });
+  expect(session).toMatchObject({ ok: true, result: { notifications: "native" } });
+  expect(code).toBe(0);
+});

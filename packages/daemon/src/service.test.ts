@@ -2,7 +2,15 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProjectMeta, ProjectSnapshot, ProjectSummary, Ticket } from "@kibo/schema";
+import type {
+  Domain,
+  ProjectCommand,
+  ProjectMeta,
+  ProjectSnapshot,
+  ProjectSummary,
+  Ticket,
+  WorkspaceConfig,
+} from "@kibo/schema";
 import { createService } from "./service";
 import { openStore } from "./store";
 
@@ -70,7 +78,9 @@ describe("service", () => {
     const store = openStore(tmp());
     const s = createService(store, { user: "adam" });
     const seen: (string | null)[] = [];
-    const off = s.onChange((id) => seen.push(id));
+    const off = s.onChange((m) =>
+      seen.push("projectId" in m ? m.projectId : "topic" in m ? m.topic : m.runId),
+    );
     const p = s.handle(newProject) as ProjectMeta;
     s.handle({
       method: "command",
@@ -90,8 +100,94 @@ describe("service", () => {
   test("reports unknown projects and exposes the session", () => {
     const store = openStore(tmp());
     const s = createService(store, { user: "adam" });
-    expect(s.handle({ method: "getSession" })).toEqual({ user: "adam" });
+    expect(s.handle({ method: "getSession" })).toEqual({ user: "adam", notifications: "browser" });
     expect(() => s.handle({ method: "getProject", projectId: "nope" })).toThrow("NOT_FOUND");
+    store.close();
+  });
+  test("session, configuration and domain usage", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam", notifications: "native" });
+    expect(s.handle({ method: "getSession" })).toEqual({ user: "adam", notifications: "native" });
+    const messages: unknown[] = [];
+    s.onChange((m) => messages.push(m));
+    const p = s.handle(newProject) as ProjectMeta;
+    const core = s.handle({
+      method: "config",
+      command: { method: "createDomain", domain: { name: "Core", color: "#14B8A6" } },
+    }) as Domain;
+    expect(messages).toContainEqual({ topic: "config" });
+    const t = s.handle({
+      method: "command",
+      projectId: p.id,
+      command: { method: "createTicket", title: "A" },
+    }) as Ticket;
+    messages.length = 0;
+    s.handle({
+      method: "command",
+      projectId: p.id,
+      command: { method: "updateTicket", ticketId: t.id, domainId: core.id },
+    });
+    expect(messages).toEqual([{ projectId: p.id }, { topic: "config" }]);
+    s.handle({
+      method: "config",
+      command: {
+        method: "addGuideline",
+        owner: { scope: "project", projectId: p.id },
+        path: "kibo.md",
+        content: "# K",
+      },
+    });
+    s.handle({
+      method: "config",
+      command: { method: "addGuideline", owner: { scope: "workspace" }, path: "general.md", content: "# G" },
+    });
+    const config = s.handle({ method: "getConfig" }) as WorkspaceConfig;
+    expect(config.domains.map((d) => d.name)).toEqual(["Core"]);
+    expect(config.guidelines.map((g) => g.path).sort()).toEqual(["general.md", "kibo.md"]);
+    expect(config.domainUsage).toEqual({ [core.id]: 1 });
+    expect(() =>
+      s.handle({ method: "config", command: { method: "deleteDomain", domainId: core.id } }),
+    ).toThrow("INVALID_INPUT");
+    expect(() => s.handle({ method: "getAgents" })).toThrow("INTERNAL");
+    store.close();
+  });
+
+  test("configuration survives a restart", () => {
+    const home = tmp();
+    const store1 = openStore(home);
+    const s1 = createService(store1, { user: "adam" });
+    const p = s1.handle(newProject) as ProjectMeta;
+    s1.handle({
+      method: "config",
+      command: { method: "createDomain", domain: { name: "Core", color: "#14B8A6" } },
+    });
+    s1.handle({
+      method: "config",
+      command: {
+        method: "addGuideline",
+        owner: { scope: "project", projectId: p.id },
+        path: "k.md",
+        content: "#",
+      },
+    });
+    store1.close();
+    const store2 = openStore(home);
+    const config = createService(store2, { user: "adam" }).handle({ method: "getConfig" }) as WorkspaceConfig;
+    expect(config.domains.map((d) => d.name)).toEqual(["Core"]);
+    expect(config.guidelines.map((g) => g.path)).toEqual(["k.md"]);
+    store2.close();
+  });
+
+  test("setting the last child done closes the parent through the rules", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    const run = (command: ProjectCommand) => s.handle({ method: "command", projectId: p.id, command });
+    const parent = run({ method: "createTicket", title: "P", statusId: "in_progress" }) as Ticket;
+    const child = run({ method: "createTicket", title: "C", parentId: parent.id }) as Ticket;
+    run({ method: "setStatus", ticketId: child.id, statusId: "done" });
+    const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
+    expect(snap.tickets.find((x) => x.id === parent.id)?.statusId).toBe("done");
     store.close();
   });
 });
