@@ -1,0 +1,11 @@
+{
+  "turns": [
+    {
+      "steps": [{ "stderr": "boom" }],
+      "result": "Échec : tests",
+      "isError": true,
+      "exitCode": 1,
+      "tokens": 300
+    }
+  ]
+}

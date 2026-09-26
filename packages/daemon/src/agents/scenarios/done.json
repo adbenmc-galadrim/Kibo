@@ -1,0 +1,12 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Read", "input": { "file_path": "src/index.ts" } },
+        { "hook": "PostToolUse", "tool": "Read", "input": { "file_path": "src/index.ts" } }
+      ],
+      "result": "Travail terminé.",
+      "tokens": 1200
+    }
+  ]
+}

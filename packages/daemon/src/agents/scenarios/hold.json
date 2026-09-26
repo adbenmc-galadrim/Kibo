@@ -1,0 +1,13 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Bash", "input": { "command": "bun test" } },
+        { "hold": true },
+        { "hook": "PostToolUse", "tool": "Bash", "input": { "command": "bun test" } }
+      ],
+      "result": "Tests verts.",
+      "tokens": 500
+    }
+  ]
+}

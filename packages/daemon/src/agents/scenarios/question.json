@@ -1,0 +1,46 @@
+{
+  "turns": [
+    {
+      "steps": [
+        {
+          "hook": "PreToolUse",
+          "tool": "Write",
+          "input": { "file_path": "apps/daemon/src/hooks/receiver.ts" }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "Write",
+          "input": { "file_path": "apps/daemon/src/hooks/receiver.ts" }
+        },
+        {
+          "hook": "PreToolUse",
+          "tool": "mcp__kibo__ask_user",
+          "input": { "question": "Quel port pour le récepteur ?" }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "mcp__kibo__ask_user",
+          "input": { "question": "Quel port pour le récepteur ?" }
+        }
+      ],
+      "result": "J'attends ta réponse.",
+      "tokens": 2000
+    },
+    {
+      "steps": [
+        {
+          "hook": "PreToolUse",
+          "tool": "Edit",
+          "input": { "file_path": "apps/daemon/src/hooks/receiver.ts" }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "Edit",
+          "input": { "file_path": "apps/daemon/src/hooks/receiver.ts" }
+        }
+      ],
+      "result": "Port dynamique appliqué.",
+      "tokens": 800
+    }
+  ]
+}
