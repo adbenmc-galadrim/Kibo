@@ -4420,13 +4420,13 @@ git commit -m "feat(desktop): notifications système des agents"
   - depuis `packages/ui/src/agents/fixtures.ts` (tests et contrôle visuel, données de `design/donnees-fictives.md`) : `NOW`, `runFixture(p)`, `profilesFixture`, `domainsFixture`, `agentsFixture()`, `configFixture()`, `kiboProject()`, `projectsFixture`
   - `SlotMeter({ used, total, className })` ; primitives `@kibo/sdk/ui/{table,progress,toggle,toggle-group,tabs,alert}`
 
-- [ ] **Step 1: Ajouter les primitives shadcn et la dépendance**
+- [x] **Step 1: Ajouter les primitives shadcn et la dépendance**
 
 Run: `cd packages/ui && bunx --bun shadcn@4.21.0 add table progress toggle toggle-group tabs alert --yes`
 Expected: six fichiers créés dans `packages/sdk/src/ui/` (alias `ui` de `components.json`), aucun autre fichier modifié ; `git status` le confirme.
 Ajouter `"@dnd-kit/core": "6.3.1"` aux `dependencies` de `packages/ui/package.json`, puis `bun install`.
 
-- [ ] **Step 2: Écrire les tests qui échouent**
+- [x] **Step 2: Écrire les tests qui échouent**
 
 `packages/ui/src/agents/format.test.ts` :
 ```ts
@@ -4558,12 +4558,12 @@ test("every run state has a dot; queued is cyan, waiting amber", () => {
 ```
 (fusionner les imports avec ceux du fichier.)
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/agents packages/ui/src/state/use-agents.test.tsx packages/sdk/src/status.test.tsx`
 Expected: FAIL (modules et exports manquants).
 
-- [ ] **Step 4: Textes**
+- [x] **Step 4: Textes**
 
 `packages/ui/src/i18n/fr.ts` : ajouter à `nav` :
 ```ts
@@ -4846,7 +4846,7 @@ et ajouter, avant `common`, les sections :
   },
 ```
 
-- [ ] **Step 5: RunDot**
+- [x] **Step 5: RunDot**
 
 `packages/sdk/src/status.tsx` : importer `type RunState` depuis `@kibo/schema` et ajouter :
 ```tsx
@@ -4881,7 +4881,7 @@ export function RunDot({ state, className }: { state: RunState; className?: stri
 }
 ```
 
-- [ ] **Step 6: Formats, état et compteur de créneaux**
+- [x] **Step 6: Formats, état et compteur de créneaux**
 
 `packages/ui/src/agents/format.ts` :
 ```ts
@@ -5044,7 +5044,7 @@ export function SlotMeter({ used, total, className }: { used: number; total: num
 }
 ```
 
-- [ ] **Step 7: Données de démonstration**
+- [x] **Step 7: Données de démonstration**
 
 `packages/ui/src/agents/fixtures.ts` (reprend `design/donnees-fictives.md` ; importé seulement par les tests et pour le contrôle visuel) :
 ```ts
@@ -5258,12 +5258,12 @@ export const projectsFixture: ProjectSummary[] = [
 ];
 ```
 
-- [ ] **Step 8: Vérifier**
+- [x] **Step 8: Vérifier**
 
 Run: `bun test packages/ui packages/sdk && bun run format && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/ui/src/i18n/fr.ts packages/ui/src/state/use-agents.ts packages/ui/src/state/use-agents.test.tsx packages/ui/src/agents packages/ui/package.json packages/sdk/src/status.tsx packages/sdk/src/status.test.tsx packages/sdk/src/ui bun.lock
