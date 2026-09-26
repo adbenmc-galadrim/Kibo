@@ -291,6 +291,10 @@ test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
   const preview = page.getByRole("dialog").filter({ hasText: "Ouvrir dans un onglet" });
   await expect(preview.getByText("Ligne 43, col 3")).toBeVisible();
   await capture(info, "23");
+  await page.keyboard.press("Escape");
+  await expect(preview.getByText("Ligne 43, col 3")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
 });
 
 test("12 · Mes tickets", async () => {
