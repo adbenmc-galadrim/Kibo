@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server } from "node:http";
+import type { Socket } from "node:net";
 import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -16,34 +17,38 @@ export const FAKE_ITEMS = {
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
-export function buildFakeMcpServer(): McpServer {
+export function buildFakeMcpServer(opts: { omit?: string[] } = {}): McpServer {
   const s = new McpServer({ name: "fake-mcp", version: "1.0.0" });
-  s.registerTool("echo", { description: "Echo", inputSchema: { text: z.string() } }, async ({ text: t }) =>
-    text(t),
-  );
-  s.registerTool("list_items", { description: "Items" }, async () => text(JSON.stringify(FAKE_ITEMS)));
-  s.registerTool(
+  const omit = opts.omit ?? [];
+  const tool: McpServer["registerTool"] = (name, config, handler) => {
+    const registered = s.registerTool(name, config, handler);
+    if (omit.includes(name)) registered.remove();
+    return registered;
+  };
+  tool("echo", { description: "Echo", inputSchema: { text: z.string() } }, async ({ text: t }) => text(t));
+  tool("list_items", { description: "Items" }, async () => text(JSON.stringify(FAKE_ITEMS)));
+  tool(
     "get_metadata",
     { description: "Node metadata", inputSchema: { nodeId: z.string() } },
     async ({ nodeId }) =>
       text(`<frame id="${nodeId}" name="Kibo › Tickets / Arbre" x="0" y="0" width="1440" height="900" />`),
   );
-  s.registerTool(
+  tool(
     "get_screenshot",
     { description: "Node screenshot", inputSchema: { nodeId: z.string() } },
     async () => ({
       content: [{ type: "image" as const, data: FAKE_PNG_BASE64, mimeType: "image/png" }],
     }),
   );
-  s.registerTool("slow", { description: "Slow", inputSchema: { ms: z.number() } }, async ({ ms }) => {
+  tool("slow", { description: "Slow", inputSchema: { ms: z.number() } }, async ({ ms }) => {
     await Bun.sleep(ms);
     return text("late");
   });
-  s.registerTool("fail", { description: "Fails" }, async () => ({ isError: true, ...text("boom") }));
-  s.registerTool("big", { description: "Big", inputSchema: { bytes: z.number() } }, async ({ bytes }) =>
+  tool("fail", { description: "Fails" }, async () => ({ isError: true, ...text("boom") }));
+  tool("big", { description: "Big", inputSchema: { bytes: z.number() } }, async ({ bytes }) =>
     text("x".repeat(bytes)),
   );
-  s.registerTool("env", { description: "Env" }, async () =>
+  tool("env", { description: "Env" }, async () =>
     text(
       JSON.stringify({
         keys: Object.keys(process.env).sort(),
@@ -72,14 +77,14 @@ function listeningPort(http: Server): number {
 }
 
 export async function startFakeMcpHttp(
-  opts: { bearer?: string } = {},
+  opts: { bearer?: string; omit?: string[] } = {},
 ): Promise<{ url: string; stop(): Promise<void> }> {
   const http = createServer((req, res) => {
     if (opts.bearer && req.headers.authorization !== `Bearer ${opts.bearer}`) {
       res.writeHead(401).end();
       return;
     }
-    const server = buildFakeMcpServer();
+    const server = buildFakeMcpServer({ omit: opts.omit });
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     res.on("close", () => {
       void transport.close();
@@ -94,9 +99,18 @@ export async function startFakeMcpHttp(
         if (!res.headersSent) res.writeHead(500).end();
       });
   });
+  const sockets = new Set<Socket>();
+  http.on("connection", (socket: Socket) => {
+    sockets.add(socket);
+    socket.on("close", () => sockets.delete(socket));
+  });
   await new Promise<void>((resolve) => http.listen(0, "127.0.0.1", resolve));
   return {
     url: `http://127.0.0.1:${listeningPort(http)}/mcp`,
-    stop: () => new Promise<void>((resolve, reject) => http.close((e) => (e ? reject(e) : resolve()))),
+    stop: () =>
+      new Promise<void>((resolve, reject) => {
+        http.close((e) => (e ? reject(e) : resolve()));
+        for (const socket of sockets) socket.destroy();
+      }),
   };
 }
