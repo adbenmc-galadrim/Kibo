@@ -7,6 +7,7 @@ const native = {
   Response: globalThis.Response,
   Headers: globalThis.Headers,
   WebSocket: globalThis.WebSocket,
+  Blob: globalThis.Blob,
 };
 
 GlobalRegistrator.register();
