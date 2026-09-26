@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest, type RunState } from "@kibo/schema";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   DRAFT_ID,
@@ -14,10 +14,19 @@ import {
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
 let runState: RunState = "running";
+const aiReady = {
+  available: true,
+  reason: null,
+  version: "2.1.283",
+  loggedIn: true,
+  profiles: { assistant: true, generateur: true },
+};
+let aiStatus: unknown = aiReady;
 mock.module("../api", () => ({
   client: {
     rpc: async (req: RpcRequest) => {
       calls.push(req);
+      if (req.method === "getAiStatus") return aiStatus;
       const out = answer(req);
       if (out instanceof Error) throw out;
       return out;
@@ -39,7 +48,19 @@ const { AiDraftPanel } = await import("./AiDraftPanel");
 beforeEach(() => {
   calls.length = 0;
   runState = "running";
+  aiStatus = aiReady;
 });
+
+const stepLabels = () =>
+  within(screen.getByRole("list", { name: "Créer un composant" }))
+    .getAllByRole("listitem")
+    .map((li) => li.textContent);
+
+const retryButton = async () => {
+  const button = await screen.findByRole("button", { name: "Corriger avec l'agent" });
+  await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
+  return button;
+};
 
 test("step 2 shows the attempt and the run journal", async () => {
   answer = () => details({});
@@ -64,7 +85,7 @@ test("step 3 failure: report, incidents, retry; exhausted: code fallback only", 
   const { unmount } = render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   expect(await screen.findByText("kibo.component.json restauré (fichier réservé à Kibo)")).toBeTruthy();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Corriger avec l'agent" }));
+  await user.click(await retryButton());
   expect(calls.find((c) => c.method === "retryComponentDraft")).toEqual({
     method: "retryComponentDraft",
     draftId: DRAFT_ID,
@@ -198,7 +219,7 @@ test("an action failure is shown in French, never as the raw detail", async () =
       : details({ status: "failed", failure: { kind: "validation", detail: null }, report });
   render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Corriger avec l'agent" }));
+  await user.click(await retryButton());
   expect((await screen.findByRole("alert")).textContent).toBe("Erreur interne du démon.");
   expect(screen.queryByText(/ENOSPC/)).toBeNull();
 });
@@ -207,4 +228,27 @@ test("a loading failure is shown in French", async () => {
   answer = () => new KiboError("NOT_FOUND", "draft 0b5c missing");
   render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   expect((await screen.findByRole("alert")).textContent).toBe("Brouillon introuvable.");
+});
+
+test("create mode shows five steps, ending on the page", async () => {
+  answer = () => details({});
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  await screen.findByText("Tentative 1 sur 3 · opus · En cours");
+  expect(stepLabels().at(-1)).toBe("5 · Ajouter à la page");
+});
+
+test("modify mode has no step 5: the draft updates the component", async () => {
+  answer = () => details({ mode: "modify", baseVersion: "0.1.0" });
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  await screen.findByText("Tentative 1 sur 3 · opus · En cours");
+  expect(stepLabels()).toHaveLength(4);
+  expect(screen.queryByText("5 · Ajouter à la page")).toBeNull();
+});
+
+test("retry is disabled with the reason when the AI is unavailable", async () => {
+  aiStatus = { ...aiReady, available: false, reason: "logged_out", loggedIn: false };
+  answer = () => details({ status: "failed", failure: { kind: "validation", detail: null }, report });
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  expect(await screen.findByText("claude n'est pas connecté")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Corriger avec l'agent" }).hasAttribute("disabled")).toBe(true);
 });

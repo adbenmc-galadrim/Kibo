@@ -1,12 +1,16 @@
+import type { ComponentDraft } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Check } from "lucide-react";
 import { fr } from "../i18n/fr";
 import type { DraftStep } from "./draft-flow";
 
-export function DraftStepper({ current }: { current: DraftStep }) {
+type Props = { current: DraftStep; mode?: ComponentDraft["mode"] };
+
+export function DraftStepper({ current, mode = "create" }: Props) {
+  const steps = mode === "modify" ? fr.ai.steps.slice(0, 4) : fr.ai.steps;
   return (
     <ol aria-label={fr.ai.create.title} className="flex flex-wrap gap-2">
-      {fr.ai.steps.map((label, i) => {
+      {steps.map((label, i) => {
         const n = i + 1;
         return (
           <li

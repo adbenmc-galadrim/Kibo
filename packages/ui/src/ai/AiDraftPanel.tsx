@@ -124,7 +124,7 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
           onApproved={finish}
         />
       )}
-      <DraftStepper current={draftStep(details)} />
+      <DraftStepper current={draftStep(details)} mode={details.mode} />
       {actionError && (
         <p role="alert" className="text-sm text-destructive">
           {actionError}
