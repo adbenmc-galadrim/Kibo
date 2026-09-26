@@ -42,7 +42,7 @@ export const server = defineServer({
 });
 `;
 
-const TEST = `import { runConformance } from "@kibo/sdk/conformance";
+export const CONFORMANCE_TEST = `import { runConformance } from "@kibo/sdk/conformance";
 import manifest from "./kibo.component.json";
 import { Component } from "./ui";
 
@@ -89,7 +89,7 @@ export async function scaffold(opts: ScaffoldOptions): Promise<string> {
   await writeFile(join(dir, "kibo.component.json"), json(manifest));
   await writeFile(join(dir, "ui.tsx"), UI(title));
   if (opts.server) await writeFile(join(dir, "server.ts"), SERVER);
-  await writeFile(join(dir, "component.test.tsx"), TEST);
+  await writeFile(join(dir, "component.test.tsx"), CONFORMANCE_TEST);
   await writeFile(join(dir, "tsconfig.json"), json(TSCONFIG));
   await symlink(toolchainModules(opts.toolchain), join(dir, "node_modules"), "dir");
   return dir;

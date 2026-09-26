@@ -19,6 +19,7 @@ import { listSourceFiles, readSources } from "./hash";
 import { checkImports } from "./imports";
 import { inferPermissions } from "./infer-permissions";
 import type { OsSandbox } from "./os-sandbox";
+import { CONFORMANCE_TEST } from "./scaffold";
 import type { Toolchain } from "./toolchain";
 import { typecheckComponent } from "./typecheck";
 import { loadTypeScript } from "./typescript";
@@ -31,6 +32,7 @@ export type ValidateOptions = {
   timeoutMs?: number;
   now?: () => number;
   signal?: AbortSignal;
+  conformanceOnly?: boolean;
 };
 const ValidationStamp = z.object({ hash: z.string(), version: z.string(), ok: z.boolean(), at: z.number() });
 export type ValidationStamp = z.infer<typeof ValidationStamp>;
@@ -105,6 +107,11 @@ async function sourcesOf(dir: string, copy: string, toolchain: Toolchain) {
   }
 }
 
+async function useGenericSuite(copy: string, files: string[]): Promise<void> {
+  for (const f of files.filter((p) => /\.test\.tsx?$/.test(p))) await rm(join(copy, f), { force: true });
+  await writeFile(join(copy, "kibo-conformance.test.tsx"), CONFORMANCE_TEST);
+}
+
 async function checkCopy(
   copy: string,
   files: string[],
@@ -119,6 +126,7 @@ async function checkCopy(
   );
   report.imports = step(checkImports(ts, texts).map(formatIssue));
   report.typecheck = step(typecheckComponent(ts, copy, files, opts.toolchain));
+  if (opts.conformanceOnly) await useGenericSuite(copy, files);
   const tests = await runComponentTests(copy, opts);
   report.tests = tests.report;
 

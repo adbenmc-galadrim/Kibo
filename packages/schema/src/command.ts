@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ExternalRef, ExternalRefKind } from "./external-ref";
-import { NodeId } from "./ids";
+import { NodeId, Sha256 } from "./ids";
 import { ComponentRef, DataKey, type Instance, Layout } from "./instance";
 import { Binding } from "./integrations";
 import type { Link } from "./link";
@@ -54,6 +54,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     component: ComponentRef,
     layout: Layout.optional(),
     config: JsonRecord.optional(),
+    componentHash: Sha256.nullable().optional(),
   }),
   z.object({ method: z.literal("removeInstance"), instanceId: z.string() }),
   z.object({ method: z.literal("upsertExternalRef"), ticketId: NodeId, ref: ExternalRef }),
@@ -79,6 +80,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     component: ComponentRef,
     config: JsonRecord,
     data: JsonRecord.nullable(),
+    componentHash: Sha256.nullable().optional(),
   }),
   z.object({ method: z.literal("setInstanceConfig"), instanceId: z.string(), config: JsonRecord }),
   z.object({

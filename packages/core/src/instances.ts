@@ -21,7 +21,13 @@ export function getInstance(doc: LoroDoc, id: string): Instance {
 
 export function addInstance(
   doc: LoroDoc,
-  input: { pageId: string; component: string; layout?: Layout; config?: Record<string, unknown> },
+  input: {
+    pageId: string;
+    component: string;
+    layout?: Layout;
+    config?: Record<string, unknown>;
+    componentHash?: string | null;
+  },
 ): Instance {
   const page = getNode(doc.getTree("pages"), input.pageId);
   if (page.data.get("kind") === "view" && listInstances(doc, input.pageId).length > 0) {
@@ -33,6 +39,7 @@ export function addInstance(
     component: input.component,
     layout: input.layout ?? DEFAULT_LAYOUT,
     config: input.config ?? {},
+    componentHash: input.componentHash ?? null,
   });
   if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
   instances(doc).set(parsed.data.id, parsed.data);
@@ -64,10 +71,16 @@ export function setInstanceComponent(
     component: string;
     config: Record<string, unknown>;
     data: Record<string, unknown> | null;
+    componentHash?: string | null;
   },
 ): Instance {
   const current = getInstance(doc, input.instanceId);
-  const parsed = Instance.safeParse({ ...current, component: input.component, config: input.config });
+  const parsed = Instance.safeParse({
+    ...current,
+    component: input.component,
+    config: input.config,
+    componentHash: input.componentHash ?? null,
+  });
   if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
   if (input.data !== null) assertInstanceData(input.data);
   instances(doc).set(current.id, parsed.data);
