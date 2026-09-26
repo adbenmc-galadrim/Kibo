@@ -52,7 +52,7 @@ export function McpServerRow({ server, error, onToggle, onRemove }: Props) {
         </Button>
       </div>
       {server.enabled && server.state === "error" && server.error && (
-        <p className="pl-7 text-xs text-destructive">{server.error}</p>
+        <p className="pl-7 text-xs text-destructive">{fr.integrations.errors.mcpServer}</p>
       )}
       <FormError message={error} />
     </li>

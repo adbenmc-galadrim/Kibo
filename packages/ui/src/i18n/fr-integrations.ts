@@ -39,6 +39,7 @@ export const frIntegrations = {
     error: "Erreur",
     retry: "Réessayer",
     rateLimited: (time: string) => `Limite GitHub atteinte, reprise à ${time}`,
+    reconnect: "Reconnecter",
   },
   menu: {
     label: (title: string) => `Actions pour ${title}`,
@@ -54,6 +55,7 @@ export const frIntegrations = {
     githubGh: "Kibo cesse d'utiliser ton compte gh. gh reste connecté sur ta machine.",
     figma: "Les liens vers les nœuds restent, les aperçus en cache aussi.",
     confirm: "Déconnecter",
+    mcp: "Tous les serveurs MCP sont désactivés. Leur configuration et leurs secrets restent ; réactive-les dans Configurer.",
   },
   github: {
     title: "Connecter GitHub",
@@ -275,5 +277,33 @@ export const frIntegrations = {
     rateLimitedAuto: "Limite GitHub atteinte, reprise automatique.",
     unavailable: "GitHub est injoignable pour le moment, nouvel essai automatique.",
     notConnected: "GitHub n'est pas connecté : connecte-le dans Paramètres › Intégrations.",
+  },
+  errors: {
+    githubStatus: (status: number) => `GitHub a répondu ${status}`,
+    githubDetail: (status: number, detail: string) => `GitHub a répondu ${status} : ${detail}`,
+    reconnect: "reconnecte ton compte",
+    githubPhrases: {
+      "Validation Failed": "validation refusée",
+      "Bad credentials": "identifiants refusés",
+      "Not Found": "introuvable",
+      "Resource not accessible by personal access token": "accès refusé au jeton",
+      "Resource not accessible by integration": "accès refusé",
+    },
+    codes: {
+      RATE_LIMITED: "Limite GitHub atteinte",
+      REMOTE_UNAVAILABLE: "GitHub injoignable",
+      REMOTE_NOT_FOUND: "Introuvable sur GitHub",
+      REMOTE_CONFLICT: "Conflit avec GitHub",
+      REMOTE_REJECTED: "GitHub a refusé la demande",
+      NOT_CONNECTED: "Compte GitHub non connecté : reconnecte ton compte",
+      TIMEOUT: "Délai dépassé",
+      SECRET_STORE_UNAVAILABLE: "Trousseau système indisponible",
+    },
+    mcpServers: (ids: string[]) =>
+      ids.length > 1 ? `Serveurs ${ids.join(", ")} injoignables` : `Serveur ${ids[0] ?? ""} injoignable`,
+    figmaUnreachable: "Serveur Figma injoignable",
+    figmaNotConnected: "Figma n'est pas connecté",
+    gitMissing: "git introuvable",
+    mcpServer: "Connexion impossible : vérifie l'adresse ou la commande du serveur.",
   },
 };

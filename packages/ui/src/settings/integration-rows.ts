@@ -11,15 +11,17 @@ import {
   SquareTerminal,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { integrationErrorText } from "../lib/remote-error";
 
 export type RowMenuItem = "configure" | "test" | "disconnect";
+export type RowAction = "connect" | "retry" | "reconnect";
 export type RowView = {
   id: IntegrationId;
   icon: LucideIcon;
   title: string;
   description: string;
   badge: { tone: "ok" | "warn" | "error"; label: string } | null;
-  action: "connect" | "retry" | null;
+  action: RowAction | null;
   menu: RowMenuItem[];
   error: string | null;
 };
@@ -43,8 +45,12 @@ const MENUS: Record<IntegrationId, RowMenuItem[]> = {
   figma: ["configure", "test", "disconnect"],
   notifications: [],
   markdown: ["test"],
-  mcp: ["configure", "test"],
+  mcp: ["configure", "test", "disconnect"],
 };
+const GITHUB_ROWS: ReadonlySet<IntegrationId> = new Set(["github", "github-issues", "github-actions"]);
+
+const errorAction = (s: IntegrationStatus): RowAction =>
+  GITHUB_ROWS.has(s.id) && s.error?.code === "NOT_CONNECTED" ? "reconnect" : "retry";
 
 function describe(s: IntegrationStatus): { title: string; description: string } {
   const r = fr.integrations.rows;
@@ -73,8 +79,8 @@ export function integrationRow(
       return {
         ...base,
         badge: { tone: "error", label: t.error },
-        action: "retry",
-        error: s.error?.message ?? t.error,
+        action: errorAction(s),
+        error: s.error ? integrationErrorText(s.id, s.error) : t.error,
       };
     case "connected":
       return {

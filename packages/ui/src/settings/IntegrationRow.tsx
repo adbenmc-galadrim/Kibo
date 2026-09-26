@@ -7,13 +7,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, RefreshCw } from "lucide-react";
 import { fr } from "../i18n/fr";
-import type { RowMenuItem, RowView } from "./integration-rows";
+import type { RowAction, RowMenuItem, RowView } from "./integration-rows";
 
 const DOT = { ok: "bg-green-500", warn: "bg-amber-500", error: "bg-red-500" } as const;
+const LABEL = {
+  ok: "text-muted-foreground",
+  warn: "text-amber-700 dark:text-amber-400",
+  error: "text-red-600 dark:text-red-400",
+} as const;
 
-type Props = { row: RowView; onAction(action: "connect" | "retry"): void; onMenu(item: RowMenuItem): void };
+type Props = { row: RowView; onAction(action: RowAction): void; onMenu(item: RowMenuItem): void };
+
+function ActionButton({ action, onAction }: { action: RowAction; onAction(action: RowAction): void }) {
+  const t = fr.integrations.state;
+  return (
+    <Button variant="outline" size="sm" onClick={() => onAction(action)}>
+      {action === "retry" && <RefreshCw aria-hidden />}
+      {{ connect: t.connect, retry: t.retry, reconnect: t.reconnect }[action]}
+    </Button>
+  );
+}
 
 function RowMenu({ row, onMenu }: Pick<Props, "row" | "onMenu">) {
   const t = fr.integrations.menu;
@@ -45,7 +60,6 @@ function RowMenu({ row, onMenu }: Pick<Props, "row" | "onMenu">) {
 }
 
 export function IntegrationRow({ row, onAction, onMenu }: Props) {
-  const t = fr.integrations.state;
   const Icon = row.icon;
   const action = row.action;
   return (
@@ -65,16 +79,12 @@ export function IntegrationRow({ row, onAction, onMenu }: Props) {
         </p>
       </div>
       {row.badge && (
-        <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <span className={cn("flex shrink-0 items-center gap-1.5 text-xs", LABEL[row.badge.tone])}>
           <span aria-hidden className={cn("size-1.5 rounded-full", DOT[row.badge.tone])} />
           {row.badge.label}
         </span>
       )}
-      {action && (
-        <Button variant="outline" size="sm" onClick={() => onAction(action)}>
-          {action === "connect" ? t.connect : t.retry}
-        </Button>
-      )}
+      {action && <ActionButton action={action} onAction={onAction} />}
       {row.menu.length > 0 && <RowMenu row={row} onMenu={onMenu} />}
     </li>
   );

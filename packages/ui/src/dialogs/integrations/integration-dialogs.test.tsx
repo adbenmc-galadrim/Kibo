@@ -21,7 +21,7 @@ const { McpServersDialog } = await import("./McpServersDialog");
 const { INTEGRATION_DIALOGS } = await import("../../settings/integration-dialogs");
 
 const server = (
-  patch: Partial<Pick<McpServerView, "id" | "name" | "enabled" | "state" | "tools">> = {},
+  patch: Partial<Pick<McpServerView, "id" | "name" | "enabled" | "state" | "tools" | "error">> = {},
 ): McpServerView => ({
   transport: "stdio",
   id: "context7",
@@ -231,6 +231,21 @@ test("mcp list: toggles, removes after confirmation, reports on close", async ()
   expect(screen.queryByText("Context7")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Fermer" }));
   expect(onDone).toHaveBeenCalled();
+});
+
+test("mcp list: a failing server is explained in French", async () => {
+  const failing = server({
+    id: "sentry-staging",
+    name: "Sentry staging",
+    state: "error",
+    error: "sentry-staging: Unable to connect. Is the computer able to access the url?",
+  });
+  reply = async (req) => (req.method === "listMcpServers" ? [failing] : null);
+  render(<McpServersDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  expect(
+    await screen.findByText("Connexion impossible : vérifie l'adresse ou la commande du serveur."),
+  ).toBeDefined();
+  expect(screen.queryByText(/Unable to connect/)).toBeNull();
 });
 
 test("mcp list: empty state and add flow", async () => {

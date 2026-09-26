@@ -3,6 +3,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { integrationErrorText, remoteErrorText } from "../lib/remote-error";
 import { useFlash } from "../lib/use-flash";
 import { useIntegrations } from "../state/use-integrations";
 import { DisconnectDialog, type DisconnectTarget, disconnectable } from "./DisconnectDialog";
@@ -16,7 +17,8 @@ const hasDialog = (id: IntegrationId) => {
   const d = dialogOf(id);
   return d !== null && INTEGRATION_DIALOGS[d] !== undefined;
 };
-const message = (e: unknown) => (e instanceof KiboError ? e.detail : String(e));
+const message = (e: unknown) =>
+  e instanceof KiboError ? remoteErrorText(e.code, e.detail) : fr.common.error;
 const KEYCHAIN = "SECRET_STORE_UNAVAILABLE";
 
 export function IntegrationsPage() {
@@ -30,7 +32,8 @@ export function IntegrationsPage() {
   const test = async (id: IntegrationId) => {
     try {
       const s = await client.rpc({ method: "testIntegration", id });
-      if (s.state === "error") flash.flash(s.error?.message ?? t.state.error, "error");
+      if (s.state === "error")
+        flash.flash(s.error ? integrationErrorText(id, s.error) : t.state.error, "error");
       else flash.flash(t.menu.tested);
     } catch (e) {
       flash.flash(message(e), "error");
@@ -52,7 +55,7 @@ export function IntegrationsPage() {
     else if (item === "configure") setDialog(dialogOf(id));
     else void askDisconnect(id);
   };
-  const confirmDisconnect = async (id: "github" | "figma") => {
+  const confirmDisconnect = async (id: DisconnectTarget["id"]) => {
     setDisconnect(null);
     try {
       await client.rpc({ method: "disconnectIntegration", id });
@@ -81,7 +84,7 @@ export function IntegrationsPage() {
         )}
         {error && !keychainDown && (
           <p role="alert" className="text-sm text-destructive">
-            {error.detail}
+            {message(error)}
           </p>
         )}
         {flash.message && (

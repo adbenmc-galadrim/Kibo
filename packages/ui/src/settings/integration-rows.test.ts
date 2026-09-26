@@ -33,7 +33,7 @@ describe("integration rows (screen 16)", () => {
   test("mcp lists its servers", () => {
     const r = integrationRow(s({ id: "mcp", state: "connected", servers: ["context7", "filesystem"] }), opts);
     expect(r.description).toBe("Connecteur générique · 2 serveurs (context7, filesystem)");
-    expect(r.menu).toEqual(["configure", "test"]);
+    expect(r.menu).toEqual(["configure", "test", "disconnect"]);
   });
   test("disconnected rows offer Connecter only when a dialog exists", () => {
     expect(integrationRow(s({ id: "figma", state: "disconnected" }), opts)).toMatchObject({
@@ -45,16 +45,42 @@ describe("integration rows (screen 16)", () => {
       integrationRow(s({ id: "figma", state: "disconnected" }), { ...opts, hasDialog: () => false }).action,
     ).toBeNull();
   });
-  test("errors show the message, Réessayer and the menu", () => {
+  test("errors show a French message, Réessayer and the menu", () => {
     const r = integrationRow(
-      s({ id: "github", state: "error", error: { code: "REMOTE_REJECTED", message: "Jeton refusé" } }),
+      s({
+        id: "github",
+        state: "error",
+        error: { code: "REMOTE_REJECTED", message: "github 403: Forbidden" },
+      }),
       opts,
     );
     expect(r).toMatchObject({
-      error: "Jeton refusé",
+      error: "GitHub a répondu 403 : Forbidden",
       action: "retry",
       badge: { tone: "error", label: "Erreur" },
     });
+  });
+  test("a github token missing from the keychain asks to reconnect", () => {
+    const error = { code: "NOT_CONNECTED" as const, message: "github token missing from the keychain" };
+    const r = integrationRow(s({ id: "github", state: "error", account: "adam", error }), opts);
+    expect(r).toMatchObject({
+      error: "Compte GitHub non connecté : reconnecte ton compte",
+      action: "reconnect",
+      badge: { tone: "error", label: "Erreur" },
+    });
+    expect(integrationRow(s({ id: "github-issues", state: "error", error }), opts).action).toBe("reconnect");
+  });
+  test("a dead mcp server is named in French", () => {
+    const r = integrationRow(
+      s({
+        id: "mcp",
+        state: "error",
+        servers: ["sentry-staging"],
+        error: { code: "MCP_UNAVAILABLE", message: "sentry-staging" },
+      }),
+      opts,
+    );
+    expect(r.error).toBe("Serveur sentry-staging injoignable");
   });
   test("a rate limit pauses with its resume time", () => {
     const r = integrationRow(s({ id: "github-issues", state: "connected", resumeAt: 1 }), opts);

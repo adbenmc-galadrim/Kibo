@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 const calls: RpcRequest[] = [];
 let statuses: IntegrationStatus[] = [];
 let listError: KiboError | null = null;
+let testError: KiboError | null = null;
 const status = (
   id: IntegrationStatus["id"],
   state: IntegrationStatus["state"],
@@ -28,7 +29,10 @@ mock.module("../api", () => ({
         if (listError) throw listError;
         return statuses;
       }
-      if (req.method === "testIntegration") return status(req.id, "connected");
+      if (req.method === "testIntegration") {
+        if (testError) throw testError;
+        return status(req.id, "connected");
+      }
       if (req.method === "getGithubConnectOptions") return { ghAvailable: true, ghLogin: "adam", mode: "gh" };
       return null;
     },
@@ -41,6 +45,7 @@ const { IntegrationsPage } = await import("./IntegrationsPage");
 beforeEach(() => {
   calls.length = 0;
   listError = null;
+  testError = null;
   statuses = [
     status("git", "active"),
     status("github", "connected", { account: "adam" }),
@@ -86,13 +91,15 @@ test("tests and disconnects through the row menu, after confirmation", async () 
 test("a keychain failure shows the banner", async () => {
   statuses = [status("github", "error", { error: { code: "SECRET_STORE_UNAVAILABLE", message: "locked" } })];
   render(<IntegrationsPage />);
-  expect(await screen.findByText(/Trousseau système indisponible/)).toBeDefined();
+  expect((await screen.findByRole("alert")).textContent).toMatch(
+    /Trousseau système indisponible : déverrouille/,
+  );
 });
 
 test("a failed listing shows its error without the keychain banner", async () => {
   listError = new KiboError("INTERNAL", "daemon unreachable");
   render(<IntegrationsPage />);
-  expect((await screen.findByRole("alert")).textContent).toBe("daemon unreachable");
+  expect((await screen.findByRole("alert")).textContent).toBe("Une erreur est survenue.");
   expect(screen.queryByText(/Trousseau système indisponible/)).toBeNull();
 });
 
@@ -101,4 +108,47 @@ test("a keychain failure of the listing shows only the banner", async () => {
   render(<IntegrationsPage />);
   expect((await screen.findByRole("alert")).textContent).toMatch(/Trousseau système indisponible/);
   expect(screen.queryByText("locked")).toBeNull();
+});
+
+test("a failed connection test is explained in French", async () => {
+  testError = new KiboError("NOT_CONNECTED", "github account not connected");
+  const user = userEvent.setup();
+  render(<IntegrationsPage />);
+  await user.click(await screen.findByRole("button", { name: "Actions pour GitHub" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Tester la connexion" }));
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Compte GitHub non connecté : reconnecte ton compte",
+  );
+  expect(screen.queryByText(/account not connected/)).toBeNull();
+});
+
+test("a token lost after a restart turns the github row into Reconnecter", async () => {
+  statuses = [
+    status("github", "error", {
+      account: "adam",
+      error: { code: "NOT_CONNECTED", message: "github token missing from the keychain" },
+    }),
+  ];
+  render(<IntegrationsPage />);
+  expect(await screen.findByText("Compte GitHub non connecté : reconnecte ton compte")).toBeDefined();
+  expect(screen.queryByText("Connecté")).toBeNull();
+  expect(screen.getByRole("button", { name: "Reconnecter" })).toBeDefined();
+});
+
+test("a failing mcp row offers Réessayer and Déconnecter, after confirmation", async () => {
+  statuses = [
+    status("mcp", "error", {
+      servers: ["sentry-staging"],
+      error: { code: "MCP_UNAVAILABLE", message: "sentry-staging" },
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<IntegrationsPage />);
+  expect(await screen.findByText("Serveur sentry-staging injoignable")).toBeDefined();
+  expect(screen.getByRole("button", { name: "Réessayer" })).toBeDefined();
+  await user.click(screen.getByRole("button", { name: "Actions pour Serveurs MCP" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déconnecter" }));
+  const dialog = await screen.findByRole("dialog", { name: "Déconnecter Serveurs MCP ?" });
+  await user.click(within(dialog).getByRole("button", { name: "Déconnecter" }));
+  expect(calls).toContainEqual({ method: "disconnectIntegration", id: "mcp" });
 });
