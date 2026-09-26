@@ -6,8 +6,17 @@ const media = () => window.matchMedia("(prefers-color-scheme: dark)");
 export const nextTheme = (p: ThemePreference): ThemePreference =>
   p === "system" ? "light" : p === "light" ? "dark" : "system";
 
+function withStorage<T>(work: (storage: Storage) => T, fallback: T): T {
+  try {
+    return work(window.localStorage);
+  } catch (e) {
+    console.error("theme storage unavailable", e);
+    return fallback;
+  }
+}
+
 export function readThemePreference(): ThemePreference {
-  const value = localStorage.getItem(KEY);
+  const value = withStorage((s) => s.getItem(KEY), null);
   return value === "light" || value === "dark" ? value : "system";
 }
 
@@ -18,8 +27,7 @@ function apply(preference: ThemePreference): void {
 
 export function cycleTheme(): ThemePreference {
   const next = nextTheme(readThemePreference());
-  if (next === "system") localStorage.removeItem(KEY);
-  else localStorage.setItem(KEY, next);
+  withStorage((s) => (next === "system" ? s.removeItem(KEY) : s.setItem(KEY, next)), undefined);
   apply(next);
   return next;
 }
