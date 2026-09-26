@@ -6,6 +6,7 @@
     { "path": "../schema" },
     { "path": "../core" },
     { "path": "../devkit" },
-    { "path": "../trust" }
+    { "path": "../trust" },
+    { "path": "../sync-server" }
   ]
 }
