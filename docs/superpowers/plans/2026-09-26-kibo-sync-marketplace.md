@@ -116,6 +116,7 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 38. **Écran 15 réduit** (choix du chef d'équipe, délégué par Adam) : l'entrée « Apparence » des Paramètres est activée avec le seul bloc « Accès web » (générer un code d'appairage) ; le reste de l'écran 15 est un écart listé au jalon (T25).
 39. **Champs figés au partage** (choix du chef d'équipe) : une fois le projet partagé, `meta.id` et `meta.key` sont immuables (`validateProjectUpdate` refuse toute modification en `UPDATE_REJECTED`, même par l'`owner`) ; `meta.folder` est un chemin local qui ne vit pas dans le doc partagé : `migrateForSharing` le retire du doc (T23 le range dans `project_settings`) et `validateProjectUpdate` refuse sa réapparition, même à `null`. `migrateForSharing` refuse un doc déjà partagé (`keyAllocator = server`) en `INVALID_INPUT`. Raison : changer le préfixe casse toutes les clés et mentions existantes, changer l'id casse l'identité du projet, et un chemin local ne concerne qu'une machine. Ajoutée pendant T7, reportée en spec G §13. Précision (T7) : dans `meta`, un éditeur ne peut modifier que `name` et `color` (valeur conforme à `ProjectMeta`) ; tout autre champ de `meta` ne peut être ni ajouté ni modifié ; conteneur Loro toujours refusé.
 40. **Garde-fous des sources de marketplace dans le démon** (choix du chef d'équipe, T15) : supprimer une source conserve ses épinglages d'éditeur (`market_pins`), si bien qu'un changement de clé d'éditeur reste détecté (`PUBLISHER_CHANGED`) quand la source revient ; `probeMarketSource` et `removeMarketSource` sont réservées aux sessions locales, comme `addMarketSource` et `unpinPublisher` ; les erreurs réseau renvoyées au client restent génériques (ni hôte ni port), le détail va au journal du démon ; une URL de source mal formée ou portant un identifiant ou un mot de passe est refusée en `INVALID_INPUT`, au sondage comme à l'ajout ; l'URL d'un paquet doit avoir la même origine que sa source (§6), sinon `INVALID_INPUT` avant tout téléchargement. Reportée en spec H §13 (D40).
+39. **Preuve de possession de la clé d'éditeur** (sécurité, choix du chef d'équipe) : sur une source d'équipe, le premier enregistrement d'une clé d'éditeur exige une signature de cette clé sur `"kibo-publisher-claim-v1\n" + sourceId + "\n" + userId` (userId du compte qui publie), envoyée dans l'en-tête `x-kibo-publisher-claim` de `POST /v1/market/packages` ; absente ou invalide ⇒ `SIGNATURE_INVALID`. Une clé déjà enregistrée n'en demande plus. Raison : sans elle, un membre `publisher` pourrait téléverser un `.kpkg` signé par la clé d'un autre (copié d'une autre source) et s'approprier cette clé et ce nom sur la source. `signPublisherClaim` et `verifyPublisherClaim` sont dans `@kibo/trust` (T16) ; le client (T22) envoie l'en-tête.
 
 ## Écrans à dessiner (Penpot, avant les tâches UI)
 
@@ -480,7 +481,7 @@ export class TeamMarket {
   index(): { bytes: Uint8Array; sig: string };
   packageBytes(id: string, version: string): Uint8Array | null;
 }
-export class NonceCache { constructor(opts: { ttlMs: number; now: () => number }); seen(nonce: string): boolean }
+export class NonceCache { constructor(opts: { sdb: ServerDb; ttlMs: number; now: () => number }); seen(nonce: string): boolean }   // table market_nonces (T16)
 export function verifySignedRequest(sdb: ServerDb, req: Request, body: Uint8Array, nonces: NonceCache, now: number): Promise<{ userId: string; deviceId: string }>;
 ```
 
@@ -10165,7 +10166,7 @@ Source de marketplace servie par `kibo-sync` (spec H §5.1 point 4, §6, décisi
 - Consumes (T10) : `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `encodeKpkg`, `signIndex`, `verifyIndex` ; `makeTestPackage` (`@kibo/trust/testing`). (T2) : `generateKeyPair`, `keyFingerprint`, `sha256Hex`, `httpSigningPayload`, `HTTP_SIGNATURE_HEADERS`, `signRequest`, `verifyBytes`. (T11) : `ServerDb`, `openServerDb`, `deviceRecord`, `createInvite`, `redeemDeviceInvite`, `audit`. (T5) : `MarketIndex`, `Sha256`, `KPKG_MAX_BYTES`.
 - Vérifié en T0 : `compareSemver(a, b): -1 | 0 | 1` et `grantedOf(manifest): GrantedPermissions` (six champs : `reads`, `writes`, `data`, `net`, `secrets`, `mcp`) sont exportés par `@kibo/schema` (`semver.ts`, `permissions.ts`) : aucune copie locale ; `ComponentManifest.description` est optionnel, l'index écrit `""` à défaut ; le code `TOO_LARGE` existe (phase 3, 413 dans le `STATUS` du démon) et sert au corps trop gros ; `zod` est une dépendance de `@kibo/sync-server` depuis T1.
 - Produces : `initMarketSource`, `TeamMarket`, `NonceCache`, `verifySignedRequest` (Contrats), et **nouveau** :
-  - `type MarketRouteDeps = { sdb: ServerDb; market: TeamMarket; nonces: NonceCache; now: () => number }`
+  - `type MarketRouteDeps = { sdb: ServerDb; market: TeamMarket; nonces: NonceCache; now: () => number; limits: MarketLimits; ip: string }` (`createMarketLimits(now)`, recalage ci-dessous)
   - `handleMarketRoute(req: Request, url: URL, deps: MarketRouteDeps): Promise<Response | null>` (`null` = route non marketplace)
   - `TeamMarket.source(): { id: string; name: string; publicKey: string }`
   - `MARKET_SOURCE_FILE = "market-source.json"`, `SIGNED_REQUEST_SKEW_MS = 300_000`, `NONCE_TTL_MS = 600_000`
@@ -10178,7 +10179,8 @@ Réponses HTTP : succès `{ ok: true, result }`, erreur `{ ok: false, error: { c
 - **Débit** (`market-limits.ts`) : 10 échecs d'authentification par minute et par adresse bloquent l'adresse 5 min ; 30 écritures par minute et par utilisateur ; `RATE_LIMITED` 429. `MarketRouteDeps` gagne donc `limits: MarketLimits` (`createMarketLimits(now)`) et `ip: string` (T17 les fournit).
 - **Nom d'éditeur figé** : le nom (non signé, spec H §3.1) est enregistré avec la clé à la première publication et resservi tel quel dans `index.publishers` ; un paquet de la même clé sous un autre nom, un nom déjà pris par un autre utilisateur (comparaison NFKC, casse ignorée) ou un nom avec espaces de bord ou caractères de contrôle sont refusés en `INVALID_INPUT`. Clé d'éditeur contrôlée par `parsePublicKey`.
 - **Index jamais en retour arrière** : publication et révocation sérialisées (file d'attente) ; l'index suivant est construit et signé avant l'écriture, puis paquet, révocation, audit et index sont écrits dans une seule transaction qui refuse (`CONFLICT`) si le `serial` a bougé. Révoquer exige un rôle (`owner`, ou `publisher` auteur du paquet) ; `TeamMarket.ungrant(userId)` retire le rôle.
-- Fichiers ajoutés : `index-builder.ts` (construction pure de l'index), `market-store.ts` (SQL), `bounded-body.ts`, `market-limits.ts`, `routes-http.test.ts` (aller-retour réel sur `127.0.0.1`, vérifié par `verifyIndex` et `verifyMarketPackage` comme le démon). Seules les erreurs à statut connu renvoient leur détail ; les autres (`STORE_CORRUPT`…) répondent `INTERNAL` « internal error ».
+- **Revue du lead (refus 1)** : noms et motifs de révocation passent par `isCleanText` / `CleanText` (`clean-text.ts`, partagé) : refus de `\p{Cc}`, `\p{Cf}`, `\p{Zl}`, `\p{Zp}`, des points de code ignorables par défaut (U+00AD, U+034F, U+115F-1160, U+17B4-17B5, U+180B-180F, U+200B-200F, U+202A-202E, U+2060-206F, U+3164, U+FE00-FE0F, U+FEFF, U+FFA0, U+E0000-E0FFF), de deux blancs consécutifs, des blancs de bord et d'un texte non NFC. Preuve de possession de la clé d'éditeur (décision 39, `publisher-claim.ts` dans `@kibo/trust`, en-tête `x-kibo-publisher-claim`, vérifiée par `publisher-rules.ts`). Nonces persistés dans la table SQLite `market_nonces` (expiration, purge périodique) : un rejeu reste refusé après redémarrage ; `NonceCache` prend `sdb`. Tout échec d'authentification compte pour le blocage de l'adresse sauf `DEVICE_REVOKED` et `RATE_LIMITED` (corps trop gros, `content-length` mal formé compris). Index en cache mémoire pour le `serial` courant, `ETag: "<serial>"` sur `index.json` et `index.json.sig`, `304` sur `If-None-Match`. `Retry-After` (secondes) sur chaque 429. `signRequest` (`@kibo/trust`) signe la méthode en majuscules.
+- Fichiers ajoutés : `index-builder.ts` (construction pure de l'index), `market-store.ts` (SQL), `bounded-body.ts`, `market-limits.ts`, `routes-http.test.ts` (aller-retour réel sur `127.0.0.1`, vérifié par `verifyIndex` et `verifyMarketPackage` comme le démon), puis `clean-text.ts`, `publisher-rules.ts`, `packages/trust/src/publisher-claim.ts`, les aides de test `market-test-kit.ts` et `route-test-kit.ts`, et les tests `team-market-publishers.test.ts` et `signed-request.test.ts`. Seules les erreurs à statut connu renvoient leur détail ; les autres (`STORE_CORRUPT`…) répondent `INTERNAL` « internal error ».
 
 - [ ] **Step 1: Écrire les tests de la source d'équipe**
 
@@ -10896,7 +10898,7 @@ Tâche à risque : relue aussi par `kibo-lead`.
   - (T4) `ClientFrame`, `ServerFrame`, `CLOSE_CODES`, `SYNC_LIMITS`, `MAX_FRAME_BYTES`, `JoinRequest`, `PresenceState`, `challengePayload`. Formes utilisées : `subscribe { projectId, version }`, `unsubscribe { projectId }`, `push { projectId, bytes, clientBatchId }`, `presence { projectId, bytes }`, `share { projectId, requestId, name, snapshot }`, `invite { projectId, requestId, role }`, `redeem { requestId, code }`, `set-role { projectId, requestId, userId, role }`, `unshare { projectId, requestId }`, `device-invite { requestId }`, `list-devices { requestId }`, `revoke-device { requestId, deviceId }` ; côté serveur `challenge { nonce }`, `welcome { userId, name, deviceId, projects }`, `update { projectId, bytes, serverSeq, version }`, `ack { projectId, clientBatchId, serverSeq, version }`, `reject { projectId, clientBatchId, code, message, version }`, `presence`, `members { projectId, members }`, `invite-code { requestId, code, expiresAt }`, `shared { requestId, projectId }`, `joined { requestId, projectId, name, role }`, `revoked { projectId, reason }`, `devices { requestId, devices }`, `done { requestId }`, `error { requestId, code, message }`.
   - (T11) `openServerDb`, `createInvite`, `redeemDeviceInvite`, `redeemProjectInvite`, `deviceRecord`, `listDevices`, `revokeDevice`, `disableUser`, `roleOf`, `listMembers`, `setRole`, `projectsOf`, `audit`, `readAudit`, `newNonce`, `verifyChallenge`, `FailureLimiter`, `RateWindow`.
   - (T14) `ProjectRoom` (`diffSince`, `version`, `serverSeq`, `push`, `syncMembers`, `presence`), `RoomReject`, `RoomRegistry` (`get` lève `NOT_FOUND` pour un projet inconnu, `create` insère `projects` et le membre `owner` via `insertProject`, `attach`, `detach`, `drop`, `sweep`).
-  - (T16) `TeamMarket.open`, `initMarketSource`, `NonceCache`, `NONCE_TTL_MS`, `handleMarketRoute`.
+  - (T16) `TeamMarket.open`, `initMarketSource`, `NonceCache` (construit avec `{ sdb, ttlMs, now }`), `NONCE_TTL_MS`, `handleMarketRoute` avec `MarketRouteDeps = { sdb, market, nonces, now, limits, ip }` (`limits` = `createMarketLimits(now)`, créé une fois au démarrage ; `ip` = `clientIp(req, srv)`), `KPKG_MAX_RAW_BYTES` (`@kibo/trust`). `maxRequestBodySize` de `Bun.serve` doit rester ≥ `KPKG_MAX_RAW_BYTES`, sinon une publication de paquet est coupée avant la route.
   - (T3) `generateSelfSignedCert` ; (T2) `toBase64`, `fromBase64`, `signBytes`, `generateKeyPair`, `formatFingerprint`.
   - (v0.6, `@kibo/core`) `createProjectDoc(meta: ProjectMeta): LoroDoc`, `createTicket(doc: LoroDoc, input: NewTicket): Ticket`, `listTickets(doc)` (tests ; vérifié en T0 : signatures réelles de `packages/core/src/project.ts` et `tickets.ts`, `ProjectMeta = { id, key, name, folder, color }`), avec la clé nullable de T6 et l'attribution serveur de T7.
 - Produces : `HubConnection`, `SyncHub`, `SyncServerOptions`, `startSyncServer`, `startTestSyncServer` (Contrats) et **nouveau** :
@@ -10906,6 +10908,7 @@ Tâche à risque : relue aussi par `kibo-lead`.
   - `type TestSyncServer = Awaited<ReturnType<typeof startTestSyncServer>>` ; `startTestSyncServer` renvoie `url` = `wss://127.0.0.1:<port>` (base, sans chemin), `httpsUrl` = `https://127.0.0.1:<port>` (**ajouté**).
   - `@kibo/sync-server/testing/ws-client` : `type TestDevice = { userId: string; deviceId: string; name: string; keys: KeyPair }`, `joinTestAccount(t: TestSyncServer, name: string): Promise<TestDevice>`, `addTestDevice(t: TestSyncServer, user: TestDevice, deviceName: string): Promise<TestDevice>`, `class TestClient { static open(t: TestSyncServer): Promise<TestClient>; auth(device: TestDevice, override?: { privateKey?: string; origin?: string }): Promise<void>; send(frame: ClientFrame): void; sendRaw(text: string): void; next<T extends ServerFrame["type"]>(type: T, match?: (f: Extract<ServerFrame, { type: T }>) => boolean, timeoutMs?: number): Promise<Extract<ServerFrame, { type: T }>>; received(type: ServerFrame["type"]): ServerFrame[]; readonly closed: Promise<number>; close(): void }`.
   - `runCli(argv: string[], io: { out(line: string): void; err(line: string): void; now(): number }): Promise<number>`.
+- Risques (reportés de la revue de T16) : aucun quota de stockage par éditeur sur la marketplace d'équipe (un membre `publisher` peut remplir le disque, borné seulement par 30 écritures par minute et `KPKG_MAX_RAW_BYTES` par paquet) ; les lectures publiques (`/market/index.json`, `.sig`, paquets) n'ont pas de limite de débit par IP (l'index est en cache mémoire avec `ETag`, les paquets sont lus dans SQLite à chaque requête).
 
 Règles du hub, dans l'ordre pour chaque trame :
 1. Trame non JSON ou refusée par Zod ⇒ `error { requestId: null, code: "INVALID_INPUT" }`, la connexion reste ouverte.
@@ -11828,10 +11831,12 @@ Le `DELETE` construit ses noms de table depuis une liste figée du code (jamais 
 import { chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { JoinRequest, KiboError, type KiboErrorCode, MAX_FRAME_BYTES, SYNC_LIMITS } from "@kibo/schema";
+import { KPKG_MAX_RAW_BYTES } from "@kibo/trust";
 import type { Server } from "bun";
 import { redeemDeviceInvite } from "./accounts";
 import { openServerDb, type ServerDb } from "./db";
 import { type HubConnection, SyncHub } from "./hub";
+import { createMarketLimits } from "./market/market-limits";
 import { handleMarketRoute } from "./market/routes";
 import { NONCE_TTL_MS, NonceCache } from "./market/signed-request";
 import { TeamMarket } from "./market/team-market";
@@ -11871,7 +11876,8 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
   const sdb = openServerDb(join(opts.dataDir, "sync.db"));
   const rooms = new RoomRegistry(sdb, { now, unloadAfterMs: SYNC_LIMITS.unloadAfterMs });
   const market = await TeamMarket.open(sdb, opts.dataDir);
-  const nonces = new NonceCache({ ttlMs: NONCE_TTL_MS, now });
+  const nonces = new NonceCache({ sdb, ttlMs: NONCE_TTL_MS, now });
+  const marketLimits = createMarketLimits(now);
   const conns = new Map<string, HubConnection>();
   let hub: SyncHub | null = null;
   const requireHub = (): SyncHub => {
@@ -11912,7 +11918,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
     hostname: opts.hostname,
     port: opts.port,
     tls: opts.tls ? { cert: opts.tls.cert, key: opts.tls.key } : undefined,
-    maxRequestBodySize: MAX_FRAME_BYTES,
+    maxRequestBodySize: Math.max(MAX_FRAME_BYTES, KPKG_MAX_RAW_BYTES),
     async fetch(req, srv) {
       const url = new URL(req.url);
       const h = requireHub();
@@ -11925,7 +11931,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
       }
       if (url.pathname === "/v1/join" && req.method === "POST") return join(req, ip, h);
       if (market) {
-        const res = await handleMarketRoute(req, url, { sdb, market, nonces, now });
+        const res = await handleMarketRoute(req, url, { sdb, market, nonces, now, limits: marketLimits, ip });
         if (res) return res;
       }
       return new Response("not found", { status: 404 });
@@ -15141,13 +15147,15 @@ git commit -m "feat(daemon): client de sync d'équipe"
 
 Publier un composant utilisateur sur la source d'équipe servie par `kibo-sync` (spec H §5.1 points 1 à 4), produire un `.kpkg` et un index statique signé pour un hébergement quelconque (§5.1 point 5), et prouver le critère de sortie « publication sur la source d'équipe puis installation sur un second démon, avec vérification complète » (§10).
 
+**Preuve de possession (décision 39, ajoutée par T16)** : chaque `POST /v1/market/packages` envoie l'en-tête `x-kibo-publisher-claim` = `signPublisherClaim({ sourceId, userId, privateKey })` avec la clé d'éditeur (`market:publisher`), `sourceId` étant l'`id` de la source d'équipe (celui de son index signé) et `userId` celui du compte de sync ; le serveur l'exige au premier enregistrement de la clé et renvoie `SIGNATURE_INVALID` sinon. L'extrait de `send` ci-dessous suppose `config.userId`, `config.marketSourceId` et `loadPublisherKeys` : les recaler sur le code réel (T15, T21) à l'exécution. `signRequest` signe la méthode en majuscules.
+
 **Files:**
 - Create: `packages/daemon/src/market/publisher-keys.ts`, `packages/daemon/src/market/publish.ts`, `packages/cli/src/commands/market.ts`, `packages/cli/src/market-index-builder.ts`
 - Modify: `packages/daemon/src/market/market-service.ts` (`hasVersion`), `packages/daemon/src/market/rpc.ts` (`publishToMarket`, `exportKpkg`), `packages/daemon/src/market/bootstrap.ts` (branchement, `ca` de la sync pour `createHttpGet`), `packages/daemon/src/market/install.ts` (export de `writeSources`), `packages/cli/src/index.ts` (portée `market`, `publish --to`), `packages/cli/src/args.ts` (options à valeur `to`, `publisher`, `out`, `dir`, `key`, `id`, `name`, `verify`), `packages/cli/src/commands/publish.ts` (`--to`), `packages/cli/src/fr.ts` (textes), `packages/cli/package.json` (`@kibo/trust`)
 - Test: `packages/daemon/src/market/publish.test.ts`, `packages/daemon/src/market/team-publish.integration.test.ts`, `packages/cli/src/market-index-builder.test.ts`, `packages/cli/src/commands/market.test.ts`
 
 **Interfaces:**
-- Consumes: `packKpkg`, `encodeKpkg`, `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `signIndex`, `verifyIndex`, `generateKeyPair`, `signRequest`, `keyFingerprint`, `formatFingerprint`, `type KeyPair` (`@kibo/trust`, T2, T10) ; `startTestSyncServer`, `TeamMarket` (T16, T17) ; `MarketService`, `createHttpGet`, `openMarketDb`, `createMemoryRegistry`, `startFakeMarket` (T15) ; `installFromMarket`, `writeSources`, `ValidateOptions.conformanceOnly` (T20) ; `SyncConfig` (T21, `packages/daemon/src/collab/sync-db.ts`), `loadDeviceKeys(secrets): Promise<KeyPair>` (T21, `packages/daemon/src/collab/device-keys.ts`, `UNAUTHORIZED` si l'appareil n'a pas de clé) ; `SECRET_SYNC_DEVICE`, `SECRET_MARKET_PUBLISHER` (T1, `@kibo/schema`) ; `ComponentStore`, `createComponentStore`, `fakeBuild`, `okReport`, `createPublishLock`, `PublishLock` (phase 4).
+- Consumes: `packKpkg`, `encodeKpkg`, `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `signIndex`, `verifyIndex`, `generateKeyPair`, `signRequest`, `keyFingerprint`, `formatFingerprint`, `type KeyPair` (`@kibo/trust`, T2, T10), `signPublisherClaim`, `PUBLISHER_CLAIM_HEADER` (`@kibo/trust`, T16, décision 39) ; `startTestSyncServer`, `TeamMarket` (T16, T17) ; `MarketService`, `createHttpGet`, `openMarketDb`, `createMemoryRegistry`, `startFakeMarket` (T15) ; `installFromMarket`, `writeSources`, `ValidateOptions.conformanceOnly` (T20) ; `SyncConfig` (T21, `packages/daemon/src/collab/sync-db.ts`), `loadDeviceKeys(secrets): Promise<KeyPair>` (T21, `packages/daemon/src/collab/device-keys.ts`, `UNAUTHORIZED` si l'appareil n'a pas de clé) ; `SECRET_SYNC_DEVICE`, `SECRET_MARKET_PUBLISHER` (T1, `@kibo/schema`) ; `ComponentStore`, `createComponentStore`, `fakeBuild`, `okReport`, `createPublishLock`, `PublishLock` (phase 4).
 - Vérifié en T0 :
   - Les secrets vivent dans `packages/daemon/src/integrations/` : `SecretStore` (`types.ts`), `createMemorySecretStore(redactor: Redactor, initial?)` (`memory-secret-store.ts`), `createRedactor()` (`redact.ts`) ; il n'y a ni `secrets/secret-store.ts` ni `MemorySecretStore` constructible. `SecretName` et `SecretNameSchema` sont dans `packages/schema/src/integrations.ts` (préfixes `sync`, `market`, `remote` ajoutés par T1).
   - Le magasin n'a pas de `readSources` : les sources d'une version sont lues par `readSources(join(store.root, id, version, hash, "source"))` (`@kibo/devkit`, renvoie `{ hash, files }`), et `store.put(srcDir, expectedHash?)` prend un dossier.
@@ -15336,7 +15344,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { readSources } from "@kibo/devkit";
 import { ComponentManifest, isKiboErrorCode, KiboError, type Kpkg, type ValidationReport } from "@kibo/schema";
-import { encodeKpkg, packKpkg, signRequest } from "@kibo/trust";
+import { encodeKpkg, PUBLISHER_CLAIM_HEADER, packKpkg, signPublisherClaim, signRequest } from "@kibo/trust";
 import { loadDeviceKeys } from "../collab/device-keys";
 import type { SyncConfig } from "../collab/sync-db";
 import type { PublishLock } from "../components/publish-lock";
@@ -15425,10 +15433,16 @@ async function send(deps: PublishDeps, config: SyncConfig, body: Uint8Array): Pr
     body,
     now: deps.now(),
   });
+  const publisher = await loadPublisherKeys(deps.secrets);
+  const claim = await signPublisherClaim({
+    sourceId: config.marketSourceId,
+    userId: config.userId,
+    privateKey: publisher.privateKey,
+  });
   const ca = deps.caPem();
   const res = await fetch(`${httpOrigin(config.serverUrl)}${PUBLISH_PATH}`, {
     method: "POST",
-    headers: { ...headers, "content-type": "application/octet-stream" },
+    headers: { ...headers, [PUBLISHER_CLAIM_HEADER]: claim, "content-type": "application/octet-stream" },
     body,
     ...(ca ? { tls: { ca } } : {}),
   });
