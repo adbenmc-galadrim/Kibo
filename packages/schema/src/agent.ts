@@ -19,11 +19,18 @@ export const ProfileInput = z.object({
   workspace: WorkspaceStrategy,
   maxParallel: z.number().int().min(1).max(16),
   subagents: z.array(AgentModel),
+  enabled: z.boolean().default(true),
 });
 export type ProfileInput = z.infer<typeof ProfileInput>;
 
-export const AgentProfile = ProfileInput.extend({ id: z.string().min(1) });
+export const AgentProfile = ProfileInput.extend({
+  id: z.string().min(1),
+  system: z.boolean().default(false),
+});
 export type AgentProfile = z.infer<typeof AgentProfile>;
+
+export const SYSTEM_PROFILE_IDS = ["assistant", "generateur"] as const;
+export type SystemProfileId = (typeof SYSTEM_PROFILE_IDS)[number];
 
 export const DOMAIN_COLORS = [
   "#14B8A6",

@@ -70,6 +70,8 @@ const profile = (p: Partial<AgentProfile> = {}): AgentProfile => ({
   workspace: "isolated",
   maxParallel: 4,
   subagents: [],
+  enabled: true,
+  system: false,
   ...p,
 });
 
@@ -443,6 +445,24 @@ test("a run without ticket uses its own folder, its guard and keeps its result l
   expect(() => h.orch.submit({ profileId: "gone", projectId: null, title: "x", cwd, prompt: "x" })).toThrow(
     "NOT_FOUND",
   );
+}, 30_000);
+
+test("a system profile cannot take a ticket but runs tasks without ticket", async () => {
+  const h = setup({
+    scenario: "done",
+    profiles: [profile(), profile({ id: "assistant", name: "assistant", system: true, maxParallel: 1 })],
+  });
+  expect(() => assign(h, "t1", "assistant")).toThrow("INVALID_INPUT");
+  expect(() => h.orch.preview({ projectId: "p1", ticketId: "t1", profileId: "assistant" })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.assigned).toEqual([]);
+  const cwd = join(h.home, "tmp");
+  mkdirSync(cwd);
+  const r = h.orch.submit({ profileId: "assistant", projectId: null, title: "Suggérer", cwd, prompt: "x" });
+  expect(r).toMatchObject({ ticketId: null, profileName: "assistant" });
+  await waitUntil(() => run(h, r.id).state === "done");
 }, 30_000);
 
 test("each state change is announced, run by run", async () => {

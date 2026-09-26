@@ -1,10 +1,13 @@
 import {
+  type AgentModel,
   AgentProfile,
   type ConfigCommand,
   Domain,
   Guideline,
   type GuidelineOwner,
   KiboError,
+  SYSTEM_PROFILE_IDS,
+  type SystemProfileId,
   WorkspaceName,
 } from "@kibo/schema";
 import type { LoroDoc, LoroMap } from "loro-crdt";
@@ -47,6 +50,64 @@ export function listProfiles(ws: LoroDoc): AgentProfile[] {
   return entries(profilesMap(ws))
     .map((v) => stored(AgentProfile.safeParse(v), "profile"))
     .sort(byName);
+}
+
+const SYSTEM_FIELDS: Record<SystemProfileId, Pick<AgentProfile, "name" | "permissionMode">> = {
+  assistant: { name: "assistant", permissionMode: "default" },
+  generateur: { name: "generateur", permissionMode: "acceptEdits" },
+};
+const SYSTEM_EDITABLE = new Set(["model", "enabled"]);
+
+export function systemModel(profiles: AgentProfile[]): AgentModel {
+  return profiles.filter((p) => !p.system).sort(byName)[0]?.model ?? "sonnet";
+}
+
+function systemProfile(
+  id: SystemProfileId,
+  current: AgentProfile | null,
+  profiles: AgentProfile[],
+): AgentProfile {
+  return valid(
+    AgentProfile.safeParse({
+      ...SYSTEM_FIELDS[id],
+      id,
+      system: true,
+      execution: "cli",
+      workspace: "isolated",
+      maxParallel: 1,
+      subagents: [],
+      model: current?.model ?? systemModel(profiles),
+      enabled: current?.enabled ?? true,
+    }),
+  );
+}
+
+const sameProfile = (a: AgentProfile, b: AgentProfile) =>
+  JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
+
+export function ensureSystemProfiles(ws: LoroDoc): boolean {
+  requireWorkspace(ws);
+  const profiles = listProfiles(ws);
+  let changed = false;
+  for (const id of SYSTEM_PROFILE_IDS) {
+    const current = profiles.find((p) => p.id === id) ?? null;
+    const next = systemProfile(id, current, profiles);
+    if (current && sameProfile(current, next)) continue;
+    profilesMap(ws).set(id, next);
+    changed = true;
+  }
+  if (changed) ws.commit();
+  return changed;
+}
+
+function assertEditable(current: AgentProfile, patch: Record<string, unknown>): void {
+  if (!current.system) return;
+  if (Object.keys(patch).some((key) => !SYSTEM_EDITABLE.has(key))) {
+    throw new KiboError(
+      "INVALID_INPUT",
+      "only the model and the enabled flag of a system profile can change",
+    );
+  }
 }
 
 export function getProfile(ws: LoroDoc, id: string): AgentProfile {
@@ -149,15 +210,18 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
     case "updateProfile": {
       requireWorkspace(doc);
       const current = getProfile(doc, cmd.profileId);
+      assertEditable(current, cmd.patch);
       const profile = valid(AgentProfile.safeParse({ ...current, ...cmd.patch, id: current.id }));
-      assertUniqueName(listProfiles(doc), profile);
+      if (profile.name !== current.name) assertUniqueName(listProfiles(doc), profile);
       profilesMap(doc).set(profile.id, profile);
       doc.commit();
       return profile;
     }
     case "deleteProfile": {
       requireWorkspace(doc);
-      getProfile(doc, cmd.profileId);
+      if (getProfile(doc, cmd.profileId).system) {
+        throw new KiboError("INVALID_INPUT", "a system profile cannot be deleted");
+      }
       profilesMap(doc).delete(cmd.profileId);
       dropGuidelines(doc, { scope: "profile", profileId: cmd.profileId });
       doc.commit();

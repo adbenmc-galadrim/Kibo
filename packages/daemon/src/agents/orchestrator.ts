@@ -96,6 +96,11 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     if (!found) throw new KiboError("NOT_FOUND", `profile ${id} not found`);
     return found;
   };
+  const ticketProfileOf = (id: string): AgentProfile => {
+    const found = profileOf(id);
+    if (found.system) throw new KiboError("INVALID_INPUT", `profile ${found.name} is reserved to Kibo`);
+    return found;
+  };
   const plan = (runs: RunView[]) =>
     planAdmissions({ runs, profiles: opts.data.profiles(), settings: settings(), load });
   const sample = () => {
@@ -178,7 +183,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
 
   return {
     assign(input) {
-      const profile = profileOf(input.profileId);
+      const profile = ticketProfileOf(input.profileId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       const view = enqueue({
         id: crypto.randomUUID(),
@@ -220,7 +225,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       return registry.get(id);
     },
     preview(input) {
-      const profile = profileOf(input.profileId);
+      const profile = ticketProfileOf(input.profileId);
       const ctx = opts.data.ticketContext(input.projectId, input.ticketId);
       const runs = registry.all();
       const at = now();

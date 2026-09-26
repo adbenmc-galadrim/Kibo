@@ -18,6 +18,7 @@ import {
 } from "@kibo/schema";
 import { call, createService } from "./service";
 import { openStore } from "./store";
+import { ensureSystemProfiles } from "./workspace-config";
 
 const dirs: string[] = [];
 const tmp = () => {
@@ -183,6 +184,31 @@ describe("service", () => {
     expect(config.domains.map((d) => d.name)).toEqual(["Core"]);
     expect(config.guidelines.map((g) => g.path)).toEqual(["k.md"]);
     expect(config.workspaceName).toBe("Maison");
+    store2.close();
+  });
+
+  test("system profiles are created once and survive a restart", () => {
+    const home = tmp();
+    const store1 = openStore(home);
+    const s1 = createService(store1, { user: "adam" });
+    const messages: unknown[] = [];
+    s1.onChange((m) => messages.push(m));
+    ensureSystemProfiles(s1.docs);
+    ensureSystemProfiles(s1.docs);
+    expect(messages).toEqual([{ topic: "config" }]);
+    s1.handle({
+      method: "config",
+      command: { method: "updateProfile", profileId: "assistant", patch: { enabled: false } },
+    });
+    store1.close();
+    const store2 = openStore(home);
+    const s2 = createService(store2, { user: "adam" });
+    ensureSystemProfiles(s2.docs);
+    const config = s2.handle({ method: "getConfig" }) as WorkspaceConfig;
+    expect(config.profiles.map((p) => [p.id, p.system, p.enabled])).toEqual([
+      ["assistant", true, false],
+      ["generateur", true, true],
+    ]);
     store2.close();
   });
 

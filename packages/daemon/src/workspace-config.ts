@@ -1,6 +1,7 @@
 import { listTickets } from "@kibo/core";
 import {
   configTarget,
+  ensureSystemProfiles as ensureSystemProfilesIn,
   executeConfigCommand,
   listDomains,
   listGuidelines,
@@ -50,4 +51,10 @@ export function runConfigCommand(
   docs.save(target);
   docs.emit({ topic: "config" });
   return result;
+}
+
+export function ensureSystemProfiles(docs: Docs): void {
+  if (!ensureSystemProfilesIn(docs.workspace)) return;
+  docs.save(null);
+  docs.emit({ topic: "config" });
 }
