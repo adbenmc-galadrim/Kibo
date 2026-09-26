@@ -14,7 +14,10 @@ import type { ComponentStore } from "../components/store";
 import type { FetchedPackage, MarketService, PackageRef, RegistryPort } from "./market-service";
 
 export type InstallDeps = {
-  market: Pick<MarketService, "fetchVerified" | "assertListed" | "pinPublisher" | "search">;
+  market: Pick<
+    MarketService,
+    "fetchVerified" | "assertListed" | "pinPublisher" | "unpinPublisher" | "search"
+  >;
   store: Pick<ComponentStore, "put" | "remove">;
   registry: RegistryPort;
   validate(dir: string): Promise<ValidationReport>;
@@ -121,14 +124,16 @@ async function install(deps: InstallDeps, input: PackageRef): Promise<MarketInst
   if (existing) return result;
   await deps.sandbox.ready();
   await storeValidated(deps, fetched, input);
+  const pin = { sourceId: input.sourceId, componentId: input.id };
   try {
+    if (fetched.newPublisher)
+      deps.market.pinPublisher(pin.sourceId, pin.componentId, fetched.pkg.publisher.publicKey);
     register(deps, fetched, input);
   } catch (e) {
+    if (fetched.newPublisher) deps.market.unpinPublisher(pin);
     await deps.store.remove(input.id, input.version);
     throw e;
   }
-  if (fetched.newPublisher)
-    deps.market.pinPublisher(input.sourceId, input.id, fetched.pkg.publisher.publicKey);
   return result;
 }
 

@@ -58,6 +58,9 @@ test("source changes and unpinPublisher are refused from a remote session", asyn
   await expect(
     rpc({ method: "unpinPublisher", sourceId: "equipe", componentId: "x" }, remote),
   ).rejects.toThrow("FORBIDDEN");
+  await expect(
+    rpc({ method: "installFromMarket", sourceId: "equipe", id: "burndown", version: "0.1.0" }, remote),
+  ).rejects.toThrow("FORBIDDEN");
 });
 
 test("a local session adds a source then lists it", async () => {
@@ -87,7 +90,7 @@ test("installFromMarket answers the screen 30 target", async () => {
   await rpc({ method: "addMarketSource", url: fake.url, publicKey: fake.publicKey }, local);
   const out = await rpc(
     { method: "installFromMarket", sourceId: "equipe", id: "burndown", version: "0.1.0" },
-    remote,
+    local,
   );
   expect(out).toEqual({
     handled: true,

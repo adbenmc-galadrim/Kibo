@@ -174,6 +174,7 @@ describe("installFromMarket", () => {
       }),
       assertListed: (ref, hash) => market.assertListed(ref, hash),
       pinPublisher: (sourceId, id, key) => market.pinPublisher(sourceId, id, key),
+      unpinPublisher: (input) => market.unpinPublisher(input),
       search: (input) => market.search(input),
     };
     const validate = mock(okReport);
@@ -258,6 +259,33 @@ describe("installFromMarket", () => {
     };
     await expect(installFromMarket(deps({ registry: failing }), REF)).rejects.toThrow("disk full");
     expect(existsSync(join(storeDir(), "0.1.0"))).toBe(false);
+  });
+
+  test("a registry failure leaves no publisher pin", async () => {
+    await publish();
+    const failing = {
+      ...registry.port,
+      put: () => {
+        throw new Error("disk full");
+      },
+    };
+    await expect(installFromMarket(deps({ registry: failing }), REF)).rejects.toThrow("disk full");
+    const detail = await market.getPackage(REF);
+    expect(detail.pinnedPublisher).toBeNull();
+    expect(detail.newPublisher).toBe(true);
+  });
+
+  test("a registry failure keeps an earlier publisher pin", async () => {
+    const made = await publish();
+    market.pinPublisher("equipe", "burndown", made.publisher.keys.publicKey);
+    const failing = {
+      ...registry.port,
+      put: () => {
+        throw new Error("disk full");
+      },
+    };
+    await expect(installFromMarket(deps({ registry: failing }), REF)).rejects.toThrow("disk full");
+    expect((await market.getPackage(REF)).pinnedPublisher).toBe(made.publisher.keys.publicKey);
   });
 
   test("an install and a publish of the same id never overlap", async () => {

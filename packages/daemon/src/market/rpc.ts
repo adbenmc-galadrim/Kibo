@@ -30,6 +30,7 @@ export function createMarketRpc(market: MarketService, install: InstallDeps): Rp
         market.unpinPublisher({ sourceId: req.sourceId, componentId: req.componentId });
         return done(null);
       case "installFromMarket":
+        requireLocal(ctx);
         return done(
           await installFromMarket(install, { sourceId: req.sourceId, id: req.id, version: req.version }),
         );
