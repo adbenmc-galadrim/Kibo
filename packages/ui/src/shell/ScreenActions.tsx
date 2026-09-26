@@ -1,9 +1,8 @@
-import type { AgentsState } from "@kibo/schema";
+import type { AgentsState, Screen } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { PauseAdmission } from "../agents/PauseAdmission";
 import { fr } from "../i18n/fr";
-import type { Screen } from "../route";
 
 type Props = { screen: Screen | null; agents: AgentsState | null; onNewProfile: () => void };
 

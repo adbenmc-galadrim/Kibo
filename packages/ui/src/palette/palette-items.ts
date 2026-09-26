@@ -1,5 +1,13 @@
-import type { AgentsState, ProjectSnapshot, ProjectSummary, StatusId, TabTarget } from "@kibo/schema";
+import {
+  type AgentsState,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  Screen,
+  type StatusId,
+  type TabTarget,
+} from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { SCREENS } from "../tabs/screens";
 
 export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
 export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions" | "agents";
@@ -21,7 +29,7 @@ export type PaletteItem = {
   detail: string | null;
   statusId: StatusId | null;
   color: string | null;
-  icon: "ticket" | "page" | "project" | "changes" | "new" | "theme" | "reply" | "assign";
+  icon: "ticket" | "page" | "project" | "changes" | "new" | "theme" | "reply" | "assign" | Screen;
   run: { kind: "target"; target: TabTarget } | { kind: "action"; action: PaletteAction };
   ticket: { projectId: string; ticketId: string; key: string } | null;
 };
@@ -63,8 +71,19 @@ export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
   return t ? { projectId: ctx.activeProjectId, ticketId: t.id, key: t.key } : null;
 }
 
+const screenItems = (): PaletteItem[] =>
+  Screen.options.map((screen) => ({
+    ...base,
+    id: `screen:${screen}`,
+    group: "pages",
+    label: SCREENS[screen].title,
+    keywords: normalize(SCREENS[screen].crumbs.join(" ")),
+    icon: screen,
+    run: { kind: "target", target: { kind: "screen", screen } },
+  }));
+
 function targets(ctx: PaletteContext): PaletteItem[] {
-  const out: PaletteItem[] = [];
+  const out: PaletteItem[] = screenItems();
   const queued = queuePositions(ctx.agents);
   for (const project of ctx.projects) {
     const snapshot = ctx.snapshots.get(project.id);

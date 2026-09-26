@@ -5,7 +5,7 @@ import { activeTarget } from "./tabs-model";
 import { targetToHash } from "./target-hash";
 import type { TabsApi } from "./use-tabs";
 
-export function useHashSync(tabs: TabsApi, routeTarget: TabTarget | null, onScreen = false): void {
+export function useHashSync(tabs: TabsApi, routeTarget: TabTarget | null): void {
   const active = activeTarget(tabs.state);
   const routeHash = targetToHash(routeTarget);
   const activeHash = targetToHash(active);
@@ -16,11 +16,11 @@ export function useHashSync(tabs: TabsApi, routeTarget: TabTarget | null, onScre
     last.current = { route: routeHash, active: activeHash };
     if (routeHash === activeHash) return;
     if (!prev) {
-      if (routeTarget || onScreen) open(routeTarget);
+      if (routeTarget) open(routeTarget);
       else navigateTo(active);
       return;
     }
     if (routeHash !== prev.route && routeHash !== prev.active) open(routeTarget);
     else if (activeHash !== prev.active) navigateTo(active);
-  }, [routeHash, activeHash, routeTarget, active, open, onScreen]);
+  }, [routeHash, activeHash, routeTarget, active, open]);
 }

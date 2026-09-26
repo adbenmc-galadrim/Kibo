@@ -1,7 +1,6 @@
-import type { AgentsState, ProjectSummary, WorkspaceConfig } from "@kibo/schema";
+import type { AgentsState, ProjectSummary, Screen, WorkspaceConfig } from "@kibo/schema";
 import { AgentsPage } from "../agents/AgentsPage";
 import { QueuePage } from "../agents/QueuePage";
-import type { Screen } from "../route";
 import { DomainsPage } from "../settings/DomainsPage";
 
 type Props = {

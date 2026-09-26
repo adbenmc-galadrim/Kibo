@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@kibo/sdk
 import { Bell, Bot, FileText, FolderKanban, GitCommitHorizontal, Plus, SunMoon, Ticket } from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { SCREENS } from "../tabs/screens";
 import { agentItems } from "./agent-items";
 import {
   activeTicket,
@@ -44,6 +45,9 @@ const ICONS = {
   theme: SunMoon,
   reply: Bell,
   assign: Bot,
+  agents: SCREENS.agents.icon,
+  queue: SCREENS.queue.icon,
+  domains: SCREENS.domains.icon,
 };
 const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
   reply: "text-orange-600 dark:text-orange-400",

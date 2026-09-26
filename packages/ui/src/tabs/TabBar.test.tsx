@@ -88,6 +88,15 @@ test("titles follow « Projet · Page », pinned tabs are compact, missing targe
   expect(within(bar).queryByRole("button", { name: "Fermer Kibo" })).toBeNull();
 });
 
+test("a screen tab is named after the screen, outside any project", () => {
+  expect(describeTarget({ kind: "screen", screen: "queue" }, ctx)).toMatchObject({
+    title: "Files d'attente",
+    color: null,
+    missing: false,
+  });
+  expect(describeTarget({ kind: "screen", screen: "domains" }, ctx).title).toBe("Domaines & guidelines");
+});
+
 test("click activates, the cross and the middle button close, + opens a new tab", async () => {
   const actions = renderBar();
   await userEvent.click(screen.getByRole("tab", { name: "Kibo · Changements" }));

@@ -11,20 +11,20 @@ import { fr } from "../i18n/fr";
 import { viewPageFor } from "../pages/view-page";
 import { CommandPalette } from "../palette/CommandPalette";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
-import { navigateTo, useRoute } from "../route";
+import { useRoute } from "../route";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
 import { useProject, useProjects } from "../state/use-projects";
 import { useSnapshots } from "../state/use-snapshots";
 import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
-import { activeTarget, type TabsAction } from "../tabs/tabs-model";
+import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
 import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import { type TabsApi, useTabs } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
 import { AppSidebar } from "./AppSidebar";
-import { Breadcrumb, crumbsFor, screenCrumbs } from "./Breadcrumb";
+import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { NotifyButton } from "./NotifyButton";
@@ -60,10 +60,10 @@ type WorkspaceProps = Props & { projects: ProjectSummary[]; tabs: TabsApi; agent
 
 function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceProps) {
   const route = useRoute();
-  const screen = route.screen;
-  useHashSync(tabs, route.target, screen !== null);
+  useHashSync(tabs, route.target);
   const active = activeTarget(tabs.state);
-  const activeProjectId = active?.projectId ?? null;
+  const screen = active?.kind === "screen" ? active.screen : null;
+  const activeProjectId = active && active.kind !== "screen" ? active.projectId : null;
   const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;
@@ -88,17 +88,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const set = useCallback((patch: Partial<DialogsState>) => setDialogs((d) => ({ ...d, ...patch })), []);
   const clearFocus = useCallback(() => setFocusRun(null), []);
   const launch = useCallback(() => set({ assign: { ticketId: null } }), [set]);
-  const go = useCallback(
-    (target: TabTarget | null, newTab = false) => {
-      if (screen && !newTab) navigateTo(target);
-      else open(target, { newTab });
-    },
-    [screen, open],
-  );
-  const dispatch = (action: TabsAction) => {
-    if (screen && (action.type === "activate" || action.type === "activateIndex")) navigateTo(null);
-    tabs.dispatch(action);
-  };
+  const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
 
   const host = useMemo<Host>(
     () => ({
@@ -121,7 +111,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   useTabShortcuts((s) => {
     if (s.kind === "palette") return setPalette({ newTab: false });
     if (s.kind === "newTab") return setPalette({ newTab: true });
-    if (s.kind === "activate") return dispatch({ type: "activateIndex", index: s.index });
+    if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
     const id = tabs.state.activeId;
     if (!id) return;
     if (s.kind === "close") tabs.dispatch({ type: "close", id });
@@ -179,7 +169,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
           state={tabs.state}
           describe={(t) => describeTarget(t, { projects, snapshots })}
           isDirty={isDirty}
-          dispatch={dispatch}
+          dispatch={tabs.dispatch}
           onNewTab={() => setPalette({ newTab: true })}
           onOpenWindow={inTauri() ? null : openWindow}
           error={tabs.error}
@@ -202,7 +192,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
             <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
               <SidebarTrigger />
               <Breadcrumb
-                crumbs={screen ? screenCrumbs(screen) : crumbsFor(active, { project, branch })}
+                crumbs={crumbsFor(active, { project, branch })}
                 heading={screen === "agents" || screen === "queue"}
               />
               <span className="flex-1" />

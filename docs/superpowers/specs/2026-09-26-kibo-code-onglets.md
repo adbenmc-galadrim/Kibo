@@ -53,7 +53,8 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 
 ## 7. Onglets
 
-- **Cibles** : `project`, `page`, `changes` (worktree), `file` (worktree, chemin, ligne), `ticket`. L'Accueil (Vue d'ensemble) est fixe et n'est pas stocké.
+- **Cibles** : `project`, `page`, `changes` (worktree), `file` (worktree, chemin, ligne), `ticket`, `screen` (écran hors projet : `agents`, `queue` pour les Files d'attente, `domains`). L'Accueil (Vue d'ensemble) est fixe et n'est pas stocké.
+- **Écrans** : un écran est une cible comme les autres (spec générale §8) : la barre latérale et la palette l'ouvrent avec les règles d'ouverture ci-dessous, il a son onglet, son titre (« Agents », « Files d'attente », « Domaines & guidelines ») et sa place dans les récents. Adresses inchangées (`#/agents`, `#/agents/queue`, `#/settings/domains`). L'ajout de la cible est rétrocompatible : un état persisté avant elle reste valide ; un onglet dont la cible n'est plus reconnue est écarté à la lecture, les autres sont conservés.
 - **Ouverture** : une cible déjà ouverte est activée. Sinon, un clic ordinaire remplace la cible de l'onglet actif, sauf si l'Accueil ou un onglet épinglé est actif (nouvel onglet). `⌘`-clic, clic du milieu et `⌘T` ouvrent un nouvel onglet.
 - **Raccourcis** : `⌘` sur macOS, `Ctrl` ailleurs. `⌘1` = Accueil, `⌘2…8` = onglets dans l'ordre, `⌘9` = dernier onglet. `⌘W` ne ferme ni l'Accueil ni un onglet épinglé. Dans un navigateur, certains raccourcis restent pris par le navigateur ; ils fonctionnent dans la fenêtre Tauri.
 - **Persistance** : un seul état `{ tabs, activeId, recents }` par workspace dans la table SQLite `local_state` du démon (hors CRDT), 50 onglets et 10 récents au plus, enregistré 300 ms après chaque changement. Deux fenêtres ouvertes : la dernière écriture gagne.
@@ -64,7 +65,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 
 ## 8. Palette `⌘K`
 
-- Groupes : Récents (requête vide), Tickets (4 premiers puis « + n autres »), Pages, Projets, Actions (nouveau ticket, sous-ticket du ticket actif, nouvelle page, nouveau projet, changements du projet, thème).
+- Groupes : Récents (requête vide), Tickets (4 premiers puis « + n autres »), Pages (dont les écrans Agents, Files d'attente et Domaines & guidelines), Projets, Actions (nouveau ticket, sous-ticket du ticket actif, nouvelle page, nouveau projet, changements du projet, thème).
 - `↵` ouvre (ticket ⇒ onglet ticket), `⌘↵` ouvre un ticket dans le Sheet, `Tab` fait défiler le filtre Tout → Tickets → Pages → Projets → Actions. `⌘T` ouvre la palette en mode « nouvel onglet ».
 - Thème : système → clair → sombre, préférence gardée dans `localStorage` (commodité propre au navigateur).
 - Écart assumé à la maquette 22 : la case « Lancer <profil de review> sur la PR » vient avec l'éditeur de règles (comme le « Rôle » des profils, spec agents §8) ; l'emplacement `prOptions` reste vide.

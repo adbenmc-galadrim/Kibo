@@ -256,6 +256,17 @@ describe("tabs", () => {
     store.close();
   });
 
+  test("a stored tab with an unknown target is dropped, the others are kept", () => {
+    const store = openStore(tmp());
+    const unknown = { id: "t2", target: { kind: "future" }, pinned: false };
+    store.setLocal("tabs:workspace", JSON.stringify({ ...state, tabs: [...state.tabs, unknown] }));
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    expect(call(createService(store, { user: "adam" }), { method: "getTabs" })).toEqual(state);
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
+    store.close();
+  });
+
   test("a stored state beyond the bounds is reported and replaced by the empty state", () => {
     const store = openStore(tmp());
     store.setLocal("tabs:workspace", JSON.stringify(tooManyTabs));

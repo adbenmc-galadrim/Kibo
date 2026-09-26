@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { EMPTY_TABS, type RpcRequest } from "@kibo/schema";
+import { EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -10,6 +10,7 @@ import {
   NOW,
   projectsFixture,
 } from "../agents/fixtures";
+import type { Route } from "../route";
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () => ({
@@ -76,17 +77,20 @@ function fakeNotification(initial: NotificationPermission) {
 }
 
 test("routes name the agent screens", () => {
-  const none = { projectId: null, pageId: null, target: null };
-  expect(parseRoute("#/agents")).toEqual({ ...none, screen: "agents" });
-  expect(parseRoute("#/agents/queue")).toEqual({ ...none, screen: "queue" });
-  expect(parseRoute("#/settings/domains")).toEqual({ ...none, screen: "domains" });
+  const screenRoute = (screen: Screen): Route => ({
+    projectId: null,
+    pageId: null,
+    target: { kind: "screen", screen },
+  });
+  expect(parseRoute("#/agents")).toEqual(screenRoute("agents"));
+  expect(parseRoute("#/agents/queue")).toEqual(screenRoute("queue"));
+  expect(parseRoute("#/settings/domains")).toEqual(screenRoute("domains"));
   expect(parseRoute("#/p/kibo/1%401")).toEqual({
     projectId: "kibo",
     pageId: "1@1",
     target: { kind: "page", projectId: "kibo", pageId: "1@1" },
-    screen: null,
   });
-  expect(parseRoute("#/elsewhere")).toEqual({ ...none, screen: null });
+  expect(parseRoute("#/elsewhere")).toEqual({ projectId: null, pageId: null, target: null });
 });
 
 test("the sidebar leads to the agents, the queue and the settings", async () => {
@@ -99,8 +103,12 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   await user.click(screen.getByRole("button", { name: /^Agents/ }));
   expect(location.hash).toBe("#/agents");
   expect(await screen.findByRole("heading", { level: 1, name: "Agents" })).toBeTruthy();
+  const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
+  expect(bar.getByRole("tab", { name: "Agents" }).getAttribute("aria-selected")).toBe("true");
   await user.click(screen.getByRole("button", { name: "Files d'attente" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Files d'attente" })).toBeTruthy();
+  expect(bar.getByRole("tab", { name: "Files d'attente" }).getAttribute("aria-selected")).toBe("true");
+  expect(bar.queryByRole("tab", { name: "Agents" })).toBeNull();
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
   expect(crumbs.getByText("Agents")).toBeTruthy();
   expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");

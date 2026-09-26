@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
+import { SCREENS } from "./screens";
 
 export type TabDescription = { title: string; icon: LucideIcon; color: string | null; missing: boolean };
 export type DescribeContext = { projects: ProjectSummary[]; snapshots: Map<string, ProjectSnapshot> };
@@ -16,6 +17,10 @@ export type DescribeContext = { projects: ProjectSummary[]; snapshots: Map<strin
 const basename = (path: string) => path.slice(path.lastIndexOf("/") + 1);
 
 export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDescription {
+  if (target.kind === "screen") {
+    const { title, icon } = SCREENS[target.screen];
+    return { title, icon, color: null, missing: false };
+  }
   const project = ctx.projects.find((p) => p.id === target.projectId);
   if (!project) return { title: fr.tabs.missingProject, icon: FolderKanban, color: null, missing: true };
   const snapshot = ctx.snapshots.get(target.projectId);

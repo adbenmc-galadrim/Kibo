@@ -228,16 +228,20 @@ test("a git project lists Changements with its count, its tab shows the branch a
   expect(screen.getByRole("img", { name: "Changements non commités" })).toBeTruthy();
 });
 
-test("the agent screens keep their URL and a tab click leaves them", async () => {
+test("an agent screen keeps its URL and opens in a tab like any target", async () => {
   renderShell();
   await go("#/p/p1/1%401");
   await screen.findByRole("tab", { name: "Kibo · Board" });
   await go("#/agents");
   expect(location.hash).toBe("#/agents");
   expect(crumbs().getByText("Agents")).toBeTruthy();
-  await userEvent.click(screen.getByRole("tab", { name: "Kibo · Board" }));
-  await waitFor(() => expect(location.hash).toBe("#/p/p1/1%401"));
-  expect(crumbs().getByText("Board")).toBeTruthy();
+  const agents = await screen.findByRole("tab", { name: "Agents" });
+  expect(agents.getAttribute("aria-selected")).toBe("true");
+  expect(screen.queryByRole("tab", { name: "Kibo · Board" })).toBeNull();
+  await userEvent.click(screen.getByRole("tab", { name: "Accueil" }));
+  await waitFor(() => expect(location.hash).toBe("#/"));
+  await userEvent.click(screen.getByRole("tab", { name: "Agents" }));
+  await waitFor(() => expect(location.hash).toBe("#/agents"));
 });
 
 test("the header offers a ticket in the current project and shows the user's initials", async () => {

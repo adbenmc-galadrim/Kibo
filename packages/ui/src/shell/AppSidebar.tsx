@@ -1,4 +1,4 @@
-import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, TabTarget } from "@kibo/schema";
+import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +20,6 @@ import { Bot, GitCommitHorizontal, LayoutGrid, ListOrdered, Plus, Search, Settin
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
-import { openScreen, type Screen } from "../route";
 import { KiboLogo } from "./KiboLogo";
 
 type Props = {
@@ -39,11 +38,19 @@ type Props = {
 
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
 
-function AgentsEntry({ screen, agents }: { screen: Screen | null; agents: AgentsState | null }) {
+type Link = (target: TabTarget | null) => {
+  onClick(e: MouseEvent): void;
+  onAuxClick(e: MouseEvent): void;
+};
+const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen });
+
+type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };
+
+function AgentsEntry({ screen, agents, link }: AgentsEntryProps) {
   const inAgents = screen === "agents" || screen === "queue";
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton isActive={inAgents} onClick={() => openScreen("agents")}>
+      <SidebarMenuButton isActive={inAgents} {...link(screenTarget("agents"))}>
         <Bot />
         <span>{fr.nav.agents}</span>
       </SidebarMenuButton>
@@ -59,7 +66,7 @@ function AgentsEntry({ screen, agents }: { screen: Screen | null; agents: Agents
         <SidebarMenuSub>
           <SidebarMenuSubItem>
             <SidebarMenuSubButton asChild isActive={screen === "queue"}>
-              <button type="button" onClick={() => openScreen("queue")}>
+              <button type="button" {...link(screenTarget("queue"))}>
                 <ListOrdered />
                 <span>{fr.nav.queue}</span>
               </button>
@@ -74,8 +81,11 @@ function AgentsEntry({ screen, agents }: { screen: Screen | null; agents: Agents
 export function AppSidebar(p: Props) {
   const { active, activeTarget, screen, changesCount, onOpen } = p;
   const onTarget = (kind: TabTarget["kind"], projectId: string) =>
-    !screen && activeTarget?.kind === kind && activeTarget.projectId === projectId;
-  const link = (target: TabTarget | null) => ({
+    activeTarget !== null &&
+    activeTarget.kind !== "screen" &&
+    activeTarget.kind === kind &&
+    activeTarget.projectId === projectId;
+  const link: Link = (target) => ({
     onClick: (e: MouseEvent) => onOpen(target, wantsNewTab(e)),
     onAuxClick: (e: MouseEvent) => {
       if (e.button !== 1) return;
@@ -147,12 +157,12 @@ export function AppSidebar(p: Props) {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive={activeTarget === null && screen === null} {...link(null)}>
+              <SidebarMenuButton isActive={activeTarget === null} {...link(null)}>
                 <LayoutGrid />
                 <span>{fr.nav.overview}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <AgentsEntry screen={screen} agents={p.agents} />
+            <AgentsEntry screen={screen} agents={p.agents} link={link} />
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
@@ -194,7 +204,7 @@ export function AppSidebar(p: Props) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton isActive={screen === "domains"} onClick={() => openScreen("domains")}>
+            <SidebarMenuButton isActive={screen === "domains"} {...link(screenTarget("domains"))}>
               <Settings />
               <span>{fr.nav.settings}</span>
             </SidebarMenuButton>

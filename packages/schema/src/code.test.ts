@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { CodeEvent, CodeRequest, GhLogin, RelPath } from "./code";
 import { ExternalRef } from "./external-ref";
-import { EMPTY_TABS, TabsState, TabTarget } from "./tabs";
+import { EMPTY_TABS, salvageTabsState, TabsState, TabTarget } from "./tabs";
 
 describe("code contracts", () => {
   test("RelPath refuses absolute paths, parent segments and NUL", () => {
@@ -71,6 +71,29 @@ describe("tabs contracts", () => {
     expect(
       TabTarget.safeParse({ kind: "file", projectId: "p", worktree: null, path: "../a", line: null }).success,
     ).toBe(false);
+  });
+
+  test("a screen outside any project is a target", () => {
+    expect(TabTarget.safeParse({ kind: "screen", screen: "queue" }).success).toBe(true);
+    expect(TabTarget.safeParse({ kind: "screen", screen: "elsewhere" }).success).toBe(false);
+  });
+
+  test("salvaging a stored state drops the unknown targets and keeps the others", () => {
+    const project = { kind: "project", projectId: "p" };
+    const stored = {
+      tabs: [
+        { id: "a", target: project, pinned: true },
+        { id: "b", target: { kind: "future", x: 1 }, pinned: false },
+      ],
+      activeId: "b",
+      recents: [{ kind: "future" }, project],
+    };
+    expect(salvageTabsState(stored)).toEqual({
+      tabs: [{ id: "a", target: { kind: "project", projectId: "p" }, pinned: true }],
+      activeId: null,
+      recents: [{ kind: "project", projectId: "p" }],
+    });
+    expect(salvageTabsState({ tabs: "nope" })).toBeNull();
   });
 
   test("the empty state is valid and the tab count is bounded", () => {

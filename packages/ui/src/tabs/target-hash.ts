@@ -1,9 +1,16 @@
-import { TabTarget } from "@kibo/schema";
+import { Screen, TabTarget } from "@kibo/schema";
 
 const enc = encodeURIComponent;
 
+const SCREEN_HASHES: Record<Screen, string> = {
+  agents: "#/agents",
+  queue: "#/agents/queue",
+  domains: "#/settings/domains",
+};
+
 export function targetToHash(target: TabTarget | null): string {
   if (!target) return "#/";
+  if (target.kind === "screen") return SCREEN_HASHES[target.screen];
   const base = `#/p/${enc(target.projectId)}`;
   switch (target.kind) {
     case "project":
@@ -41,7 +48,15 @@ function candidate(projectId: string, rest: string, q: URLSearchParams): unknown
   return { kind: "page", projectId, pageId: decodeURIComponent(rest) };
 }
 
+function screenTarget(hash: string): TabTarget | null {
+  const bare = hash.replace(/\/$/, "");
+  const screen = Screen.options.find((s) => SCREEN_HASHES[s] === bare);
+  return screen ? { kind: "screen", screen } : null;
+}
+
 export function hashToTarget(hash: string): TabTarget | null {
+  const screen = screenTarget(hash);
+  if (screen) return screen;
   const [path = "", query = ""] = hash.replace(/^#/, "").split("?");
   const m = /^\/p\/([^/]+)(?:\/(.*))?$/.exec(path);
   if (!m?.[1]) return null;

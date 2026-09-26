@@ -18,6 +18,7 @@ import {
   type RpcRequest,
   type RpcResult,
   type Session,
+  salvageTabsState,
   TabsState,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
@@ -67,8 +68,14 @@ function readTabs(store: Store): TabsState {
   const raw = store.getLocal(TABS_KEY);
   if (raw === null) return EMPTY_TABS;
   try {
-    const parsed = TabsState.safeParse(JSON.parse(raw));
+    const json: unknown = JSON.parse(raw);
+    const parsed = TabsState.safeParse(json);
     if (parsed.success) return parsed.data;
+    const salvaged = salvageTabsState(json);
+    if (salvaged) {
+      console.error("[kibo-daemon] stored tabs had invalid entries, dropped", parsed.error.message);
+      return salvaged;
+    }
     console.error("[kibo-daemon] stored tabs are invalid, starting empty", parsed.error.message);
   } catch (e) {
     console.error("[kibo-daemon] stored tabs are unreadable, starting empty", e);

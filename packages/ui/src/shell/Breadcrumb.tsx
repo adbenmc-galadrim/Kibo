@@ -1,12 +1,13 @@
 import type { ProjectSnapshot, TabTarget } from "@kibo/schema";
 import { ChevronRight } from "lucide-react";
 import { fr } from "../i18n/fr";
-import type { Screen } from "../route";
+import { SCREENS } from "../tabs/screens";
 
 export function crumbsFor(
   target: TabTarget | null,
   ctx: { project: ProjectSnapshot | null; branch: string | null },
 ): string[] {
+  if (target?.kind === "screen") return SCREENS[target.screen].crumbs;
   const p = ctx.project;
   if (!target || !p) return [fr.nav.overview];
   const name = p.meta.name;
@@ -22,12 +23,6 @@ export function crumbsFor(
     case "ticket":
       return [name, p.tickets.find((t) => t.id === target.ticketId)?.key ?? fr.tabs.missingTicket];
   }
-}
-
-export function screenCrumbs(screen: Screen): string[] {
-  if (screen === "agents") return [fr.nav.agents];
-  if (screen === "queue") return [fr.nav.agents, fr.nav.queue];
-  return [fr.nav.settings, fr.nav.domains];
 }
 
 function Crumb({

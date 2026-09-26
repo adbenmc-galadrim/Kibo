@@ -16,6 +16,9 @@ describe("hash codec", () => {
     { kind: "changes", projectId: "p1", worktree: null },
     { kind: "changes", projectId: "p1", worktree: "/wt/kib 12" },
     { kind: "file", projectId: "p1", worktree: "/wt", path: "packages/core/ticket.ts", line: 42 },
+    { kind: "screen", screen: "agents" },
+    { kind: "screen", screen: "queue" },
+    { kind: "screen", screen: "domains" },
   ];
   test("round-trips every target kind", () => {
     for (const t of targets) expect(hashToTarget(targetToHash(t))).toEqual(t);
@@ -27,6 +30,12 @@ describe("hash codec", () => {
     expect(hashToTarget("#/p/p1/")).toEqual({ kind: "project", projectId: "p1" });
     expect(hashToTarget("#/p/p1/file?path=..%2Fetc")).toBeNull();
     expect(hashToTarget("#/p/%E0%A4%A/")).toBeNull();
+  });
+  test("screens keep their addresses", () => {
+    expect(targetToHash({ kind: "screen", screen: "queue" })).toBe("#/agents/queue");
+    expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
+    expect(hashToTarget("#/agents")).toEqual({ kind: "screen", screen: "agents" });
+    expect(hashToTarget("#/elsewhere")).toBeNull();
   });
 });
 

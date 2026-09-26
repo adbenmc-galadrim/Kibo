@@ -5,6 +5,9 @@ import { NodeId } from "./ids";
 const ProjectId = z.string().min(1);
 const WorktreePath = z.string().min(1).nullable();
 
+export const Screen = z.enum(["agents", "queue", "domains"]);
+export type Screen = z.infer<typeof Screen>;
+
 export const TabTarget = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("project"), projectId: ProjectId }),
   z.object({ kind: z.literal("page"), projectId: ProjectId, pageId: NodeId }),
@@ -17,6 +20,7 @@ export const TabTarget = z.discriminatedUnion("kind", [
     line: z.number().int().positive().nullable(),
   }),
   z.object({ kind: z.literal("ticket"), projectId: ProjectId, ticketId: NodeId }),
+  z.object({ kind: z.literal("screen"), screen: Screen }),
 ]);
 export type TabTarget = z.infer<typeof TabTarget>;
 
@@ -34,3 +38,24 @@ export const TabsState = z.object({
 export type TabsState = z.infer<typeof TabsState>;
 
 export const EMPTY_TABS: TabsState = { tabs: [], activeId: null, recents: [] };
+
+const StoredTabs = z.object({
+  tabs: z.array(z.unknown()),
+  activeId: z.string().nullable(),
+  recents: z.array(z.unknown()),
+});
+
+const keepValid = <T>(schema: z.ZodType<T>, items: unknown[]): T[] =>
+  items.flatMap((item) => {
+    const parsed = schema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
+
+export function salvageTabsState(raw: unknown): TabsState | null {
+  const stored = StoredTabs.safeParse(raw);
+  if (!stored.success) return null;
+  const tabs = keepValid(Tab, stored.data.tabs);
+  const activeId = tabs.some((t) => t.id === stored.data.activeId) ? stored.data.activeId : null;
+  const parsed = TabsState.safeParse({ tabs, activeId, recents: keepValid(TabTarget, stored.data.recents) });
+  return parsed.success ? parsed.data : null;
+}
