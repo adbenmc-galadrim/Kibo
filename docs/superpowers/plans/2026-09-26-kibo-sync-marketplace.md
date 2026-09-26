@@ -6127,7 +6127,7 @@ Base SQLite de `kibo-sync` (spec G §3.1) et tout ce qui touche à l'identité :
 
 Les codes ne sont jamais écrits en clair : seule `hashCode(code)` est stockée. Une invitation est consommée dans la même transaction que ses effets (utilisateur, appareil, membre) : si l'insertion échoue, le code reste utilisable. La clé publique est vérifiée (import SPKI Ed25519) **avant** de consommer le code.
 
-- [ ] **Step 1: Écrire les tests de la base et des invitations**
+- [x] **Step 1: Écrire les tests de la base et des invitations**
 
 `packages/sync-server/src/db.test.ts` :
 ```ts
@@ -6320,12 +6320,12 @@ describe("project invites and members", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/db.test.ts packages/sync-server/src/accounts.test.ts`
 Expected: FAIL — `Cannot find module './db'`.
 
-- [ ] **Step 3: Implémenter la base, l'audit, les comptes et les membres**
+- [x] **Step 3: Implémenter la base, l'audit, les comptes et les membres**
 
 `packages/sync-server/src/db.ts` :
 ```ts
@@ -6703,12 +6703,12 @@ export function projectsOf(sdb: ServerDb, userId: string): { id: string; name: s
 }
 ```
 
-- [ ] **Step 4: Vérifier le succès**
+- [x] **Step 4: Vérifier le succès**
 
 Run: `bun test packages/sync-server/src/db.test.ts packages/sync-server/src/accounts.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Écrire les tests d'authentification et des limiteurs**
+- [x] **Step 5: Écrire les tests d'authentification et des limiteurs**
 
 `packages/sync-server/src/auth.test.ts` :
 ```ts
@@ -6833,12 +6833,12 @@ test("a rate window allows the limit per window, per key", () => {
 });
 ```
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/auth.test.ts packages/sync-server/src/limits.test.ts`
 Expected: FAIL — `Cannot find module './auth'`.
 
-- [ ] **Step 7: Implémenter l'authentification et les limiteurs**
+- [x] **Step 7: Implémenter l'authentification et les limiteurs**
 
 `packages/sync-server/src/auth.ts` :
 ```ts
@@ -6924,12 +6924,12 @@ export * from "./limits";
 export * from "./members";
 ```
 
-- [ ] **Step 8: Vérifier le succès, lint et types**
+- [x] **Step 8: Vérifier le succès, lint et types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck`
 Expected: PASS (dont le test de fumée de T1), Biome et `tsc` sans erreur.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/sync-server/src/db.ts packages/sync-server/src/accounts.ts packages/sync-server/src/members.ts packages/sync-server/src/audit.ts packages/sync-server/src/auth.ts packages/sync-server/src/limits.ts packages/sync-server/src/index.ts packages/sync-server/src/db.test.ts packages/sync-server/src/accounts.test.ts packages/sync-server/src/auth.test.ts packages/sync-server/src/limits.test.ts
