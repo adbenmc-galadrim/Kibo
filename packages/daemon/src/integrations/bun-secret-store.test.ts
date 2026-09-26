@@ -66,10 +66,54 @@ describe("keychain secret store", () => {
     const stuck: KeychainBackend = { get: () => pending, set: () => pending, delete: () => pending };
     const store = createBunSecretStore(createRedactor(), stuck, { timeoutMs: 10 });
     expect(await store.availability()).toEqual({ ok: false, reason: "keychain timed out" });
-    await expect(store.get("github")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
-    await expect(store.get("github")).rejects.toThrow("keychain timed out");
+    await expect(store.get("github")).rejects.toThrow("SECRET_STORE_UNAVAILABLE: get: keychain timed out");
     await expect(store.set("github", "ghp_value_123456")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
     await expect(store.delete("github")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+  });
+
+  test("a call still stuck after its timeout makes the next ones fail fast", async () => {
+    let started = 0;
+    let finish: (v: string | null) => void = () => undefined;
+    const late = new Promise<string | null>((resolve) => {
+      finish = resolve;
+    });
+    const stuck: KeychainBackend = {
+      get: () => {
+        started++;
+        return late;
+      },
+      set: async () => undefined,
+      delete: async () => true,
+    };
+    const store = createBunSecretStore(createRedactor(), stuck, { timeoutMs: 10 });
+    await expect(store.get("github")).rejects.toThrow("keychain timed out");
+    await expect(store.get("github")).rejects.toThrow("keychain busy");
+    await expect(store.get("github")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+    expect(started).toBe(1);
+    expect(await store.availability()).toEqual({ ok: false, reason: "keychain timed out" });
+    expect(await store.availability()).toEqual({ ok: false, reason: "keychain busy" });
+    expect(started).toBe(2);
+    finish("ghp_late_value_123456");
+    await late;
+    await Bun.sleep(0);
+    expect(await store.get("github")).toBe("ghp_late_value_123456");
+    expect(started).toBe(3);
+  });
+
+  test("simultaneous reads share one keychain call", async () => {
+    let started = 0;
+    const backend: KeychainBackend = {
+      get: async () => {
+        started++;
+        return "ghp_shared_value_123456";
+      },
+      set: async () => undefined,
+      delete: async () => true,
+    };
+    const store = createBunSecretStore(createRedactor(), backend);
+    const values = await Promise.all([store.get("github"), store.get("github"), store.has("github")]);
+    expect(values).toEqual(["ghp_shared_value_123456", "ghp_shared_value_123456", true]);
+    expect(started).toBe(1);
   });
 
   test.if(process.env.KIBO_TEST_KEYCHAIN === "1")("real keychain round-trip", async () => {
