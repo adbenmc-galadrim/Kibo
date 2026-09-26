@@ -1,11 +1,14 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { E2E_TOKEN } from "./token";
 
 const home = mkdtempSync(join(tmpdir(), "kibo-e2e-"));
 writeFileSync(join(home, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
+const fakeState = join(home, "fake-claude");
+mkdirSync(fakeState);
 const root = resolve(import.meta.dir, "..");
+const agents = join(root, "packages/daemon/src/agents");
 const proc = Bun.spawn(
   [
     "bun",
@@ -14,8 +17,19 @@ const proc = Bun.spawn(
     "4390",
     "--ui",
     join(root, "packages/ui/dist"),
+    "--claude-bin",
+    join(agents, "fake-claude.ts"),
   ],
-  { env: { ...process.env, KIBO_HOME: home }, stdout: "inherit", stderr: "inherit" },
+  {
+    env: {
+      ...process.env,
+      KIBO_HOME: home,
+      KIBO_FAKE_CLAUDE_SCENARIO: join(agents, "scenarios/question.json"),
+      KIBO_FAKE_CLAUDE_STATE: fakeState,
+    },
+    stdout: "inherit",
+    stderr: "inherit",
+  },
 );
 const forward = (signal: NodeJS.Signals) => () => proc.kill(signal);
 process.on("SIGTERM", forward("SIGTERM"));

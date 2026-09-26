@@ -4,7 +4,7 @@ Centre de contrôle de projets de code, local-first, piloté par l'IA.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
 (Kanban, tickets, graphe de dépendances, notes…) que l'utilisateur peut créer lui-même.
 
-État : MVP livré (`v0.1`), phase 2 · Agents en cours. Rapports dans `docs/superpowers/rapports/`.
+État : MVP livré (`v0.1`), phase 2 · Agents terminée (profils, file d'attente, questions et réponses, domaines et guidelines), jalon `v0.2` en cours de validation. Rapports dans `docs/superpowers/rapports/`.
 
 ## Lancer
 
@@ -17,6 +17,16 @@ bun run start
 Développement de l'UI : `bun packages/daemon/src/main.ts --dev` puis `bun run --cwd packages/ui dev` (Vite sur `http://localhost:5173`, appairage avec le jeton de `~/.kibo/token`).
 Tests : `bun test packages components`, `bun run check`, `bun run typecheck`, E2E : `bun run --cwd e2e test`.
 
+## Agents
+
+Kibo lance Claude Code en local (`claude -p`, sur ton abonnement) : installe le CLI (version 2.1.259 ou plus récente) et connecte-toi une fois avec `claude`. Le démon le cherche dans le `PATH`, `~/.local/bin`, `~/.claude/local`, `/opt/homebrew/bin` et `/usr/local/bin` ; sinon, passe `--claude-bin <chemin>` au démon.
+
+- Crée un profil dans **Agents** (modèle, espace de travail, permissions, runs en parallèle), puis « Assigner à un agent » depuis la fiche d'un ticket.
+- Tout run passe par la file (**Files d'attente**) : créneaux hôte, créneaux du profil, seuils CPU 85 % et RAM 90 %.
+- Un run qui pose une question attend ta réponse dans la barre des agents, sans occuper de créneau.
+- Les guidelines (**Paramètres › Domaines & guidelines**) sont injectées dans l'ordre workspace → projet → domaine → profil.
+- Les tests n'utilisent jamais le vrai CLI : `packages/daemon/src/agents/fake-claude.ts` le remplace.
+
 ## Où trouver quoi
 
 | Chemin | Contenu |
@@ -28,6 +38,8 @@ Tests : `bun test packages components`, `bun run check`, `bun run typecheck`, E2
 | `design/revue-flows.md` | Revue des flows : décisions, corrections, écrans restant à dessiner |
 | `docs/superpowers/plans/2026-09-25-kibo-feuille-de-route.md` | Feuille de route par phases et jalons |
 | `docs/superpowers/plans/2026-09-25-kibo-mvp.md` | Plan détaillé de la phase 1 (MVP) |
+| `docs/superpowers/specs/2026-09-26-kibo-agents.md` | Complément de spec de la phase 2 (agents) |
+| `docs/superpowers/plans/2026-09-26-kibo-agents.md` | Plan détaillé de la phase 2 (agents) |
 | `CLAUDE.md` | Règles de travail (humains et agents) |
 | `.claude/agents/` | Agents de l'équipe (lead, dev, reviewer, runner) |
 
