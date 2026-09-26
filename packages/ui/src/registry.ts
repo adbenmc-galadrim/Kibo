@@ -1,12 +1,28 @@
+import * as graph from "@kibo/component-graph";
 import * as kanban from "@kibo/component-kanban";
+import * as notes from "@kibo/component-notes";
 import * as tickets from "@kibo/component-tickets";
 import type { ComponentManifest, Instance, Page } from "@kibo/schema";
 import type { ComponentModule } from "@kibo/sdk";
-import { AppWindow, Blocks, LayoutDashboard, ListTree, type LucideIcon, SquareKanban } from "lucide-react";
+import {
+  AppWindow,
+  Blocks,
+  FileText,
+  LayoutDashboard,
+  ListTree,
+  type LucideIcon,
+  Network,
+  SquareKanban,
+} from "lucide-react";
 
-export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets];
+export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets, graph, notes];
 
-const BUILTIN_ICONS: Record<string, LucideIcon> = { kanban: SquareKanban, tickets: ListTree };
+const BUILTIN_ICONS: Record<string, LucideIcon> = {
+  kanban: SquareKanban,
+  tickets: ListTree,
+  graph: Network,
+  notes: FileText,
+};
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;
 

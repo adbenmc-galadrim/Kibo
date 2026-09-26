@@ -60,7 +60,9 @@ test("built-ins come from the UI registry, installed versions one row each, sort
   expect(
     componentRows(summaries).map((r) => [r.title, r.version, r.trust, r.pages, r.projects, r.used]),
   ).toEqual([
+    ["Graphe de dépendances", "1.0.0", "builtin", 0, 0, false],
     ["Kanban", "1.0.0", "builtin", 3, 2, true],
+    ["Notes", "1.0.0", "builtin", 0, 0, false],
     ["PR en attente", "0.4.0", "pending", 0, 0, false],
     ["PR en attente", "0.3.0", "sandboxed", 1, 1, true],
     ["Tickets", "1.0.0", "builtin", 0, 0, false],

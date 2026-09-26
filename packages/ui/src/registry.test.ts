@@ -1,10 +1,13 @@
 import { expect, test } from "bun:test";
-import { AppWindow, Blocks, LayoutDashboard, ListTree, SquareKanban } from "lucide-react";
-import { BUILTIN_COMPONENTS, componentRef, findComponent, pageIcon } from "./registry";
+import { BUILTIN_IDS } from "@kibo/schema";
+import { AppWindow, Blocks, FileText, LayoutDashboard, ListTree, Network, SquareKanban } from "lucide-react";
+import { BUILTIN_COMPONENTS, componentIcon, componentRef, findComponent, pageIcon } from "./registry";
 
 test("built-in components resolve by exact id@version", () => {
   expect(BUILTIN_COMPONENTS.map((c) => componentRef(c.manifest)).sort()).toEqual([
+    "graph@1.0.0",
     "kanban@1.0.0",
+    "notes@1.0.0",
     "tickets@1.0.0",
   ]);
   expect(findComponent("kanban@1.0.0")?.manifest.title).toBe("Kanban");
@@ -27,4 +30,11 @@ test("a page shows the icon of its kind, or of the component a view holds", () =
   expect(pageIcon(view, [kanban])).toBe(SquareKanban);
   expect(pageIcon(view, [{ ...kanban, component: "tickets@1.0.0" }])).toBe(ListTree);
   expect(pageIcon(view, [{ ...kanban, component: "nope@1.0.0" }])).toBe(Blocks);
+});
+
+test("graph and notes are built-ins with their sidebar icons", () => {
+  expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual(["kanban", "tickets", "graph", "notes"]);
+  expect(componentIcon("graph@1.0.0")).toBe(Network);
+  expect(componentIcon("notes@1.0.0")).toBe(FileText);
+  expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([...BUILTIN_IDS]);
 });

@@ -17,7 +17,9 @@
   "references": [
     { "path": "../schema" },
     { "path": "../sdk" },
+    { "path": "../../components/graph" },
     { "path": "../../components/kanban" },
+    { "path": "../../components/notes" },
     { "path": "../../components/tickets" }
   ]
 }
