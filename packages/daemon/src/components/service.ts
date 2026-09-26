@@ -16,9 +16,10 @@ import { createInflight } from "./inflight";
 import { createJobScheduler, type JobSchedulerDeps } from "./jobs";
 import type { ComponentRequest } from "./methods";
 import type { NetProxyOptions } from "./net-proxy";
-import { createPublisher } from "./publish";
+import { createPublisher, type Publisher } from "./publish";
+import { createPublishLock, type PublishLock } from "./publish-lock";
 import { createQuotas } from "./quotas";
-import { createRegistryService } from "./registry-service";
+import { createRegistryService, type RegistryService } from "./registry-service";
 import type { AssetLookup } from "./sandbox-server";
 import { createComponentStore } from "./store";
 import { updateInstance } from "./update";
@@ -44,6 +45,10 @@ export type ComponentsDeps = {
 export type ComponentsService = {
   handle(req: ComponentRequest): Promise<unknown>;
   assets: AssetLookup;
+  registry: RegistryService;
+  publisher: Publisher;
+  publishLock: PublishLock;
+  usageChanged(): void;
   start(): Promise<void>;
   stop(): Promise<void>;
   afterCommand(projectId: string): void;
@@ -56,6 +61,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   const { docs } = deps;
   const shutdown = new AbortController();
   const inflight = createInflight();
+  const publishLock = createPublishLock();
   let stopped: Promise<void> | null = null;
   ensureEventsTable(deps.db);
   ensureSettingsTable(deps.db);
@@ -197,7 +203,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       case "previewPublish":
         return publisher.preview(req.id);
       case "publishComponent": {
-        const r = await publisher.publish(req.id, req.strategy);
+        const r = await publishLock.hold(req.id, () => publisher.publish(req.id, req.strategy));
         usageChanged();
         return r;
       }
@@ -244,6 +250,10 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   return {
     handle,
     assets,
+    registry,
+    publisher,
+    publishLock,
+    usageChanged,
     afterCommand: () => usageChanged(),
     async start() {
       await registry.verifyAll();

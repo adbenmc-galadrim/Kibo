@@ -164,6 +164,34 @@ describe("components over RPC", () => {
     expect(await h.rpc({ method: "listDrafts" })).toEqual([]);
   });
 
+  test("a manual publication is refused while an AI draft of the component is being finalized", async () => {
+    writeDraft(home, "0.1.0");
+    let release = () => {};
+    const finalizing = h.components.publishLock.hold(
+      "hello",
+      () =>
+        new Promise<void>((r) => {
+          release = r;
+        }),
+    );
+    const refused = h.rpc({ method: "publishComponent", id: "hello", strategy: "new-version" });
+    await expect(refused).rejects.toMatchObject({ code: "CONFLICT" });
+    release();
+    await finalizing;
+    expect(await h.rpc({ method: "publishComponent", id: "hello", strategy: "new-version" })).toMatchObject({
+      version: { version: "0.1.0" },
+    });
+  });
+
+  test("the registry and the publisher are shared with the AI", async () => {
+    writeDraft(home, "0.1.0");
+    const published = await h.components.publisher.publish("hello", "new-version", { origin: "ai" });
+    expect(published.version.origin).toBe("ai");
+    expect(h.components.registry.list().find((c) => c.id === "hello")?.versions[0]?.hash).toBe(
+      published.version.hash,
+    );
+  });
+
   test("installing the command line is left to the desktop app", async () => {
     await expect(h.rpc({ method: "installCli" })).rejects.toThrow("INVALID_INPUT");
     await expect(h.rpc({ method: "cliStatus" })).rejects.toThrow("INVALID_INPUT");

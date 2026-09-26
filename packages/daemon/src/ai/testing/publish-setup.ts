@@ -14,6 +14,7 @@ import {
   type RegistryVersion,
   type ValidationReport,
 } from "@kibo/schema";
+import { createPublishLock } from "../../components/publish-lock";
 import { draftPaths, prepareDraft, readDraftManifest, writeDraftManifest } from "../draft-files";
 import { createDraftPublisher } from "../draft-publish";
 import { type DraftStore, openDraftStore } from "../draft-store";
@@ -182,7 +183,9 @@ export async function setup(opts: SetupOptions = {}) {
     },
   };
   const diffs: string[] = [];
+  const lock = createPublishLock();
   const publisher = createDraftPublisher({
+    lock,
     store,
     devkit: {
       scaffold: async () => {},
@@ -220,6 +223,7 @@ export async function setup(opts: SetupOptions = {}) {
     paths,
     store,
     publisher,
+    lock,
     published,
     sources,
     approved,

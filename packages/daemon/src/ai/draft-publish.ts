@@ -14,6 +14,7 @@ import {
   type PublishPreview,
   type ReviewComponentDraftInput,
 } from "@kibo/schema";
+import { createPublishLock, type PublishLock } from "../components/publish-lock";
 import {
   agentFiles,
   type DraftPaths,
@@ -38,6 +39,7 @@ export type PublishDeps = {
   events: AiEvents;
   clock: Clock;
   home: string;
+  lock?: PublishLock;
 };
 
 const firstLine = (text: string) => (text.split("\n")[0] ?? "").trim().slice(0, 200);
@@ -62,7 +64,7 @@ async function held<T>(
 
 export function createDraftPublisher(deps: PublishDeps) {
   const busy = new Set<string>();
-  const publishing = new Set<string>();
+  const lock = deps.lock ?? createPublishLock();
   const paths = (d: ComponentDraft): DraftPaths => draftPaths(deps.home, d.id);
 
   const apply = (d: ComponentDraft, e: DraftEvent) => {
@@ -230,8 +232,7 @@ export function createDraftPublisher(deps: PublishDeps) {
   const finalize = (input: FinalizeComponentDraftInput): Promise<FinalizeResult> =>
     exclusive(input.draftId, () => {
       const d = deps.store.get(input.draftId);
-      const refusal = new KiboError("CONFLICT", `another draft of ${d.componentId} is being published`);
-      return held(publishing, d.componentId, refusal, () => finalizeDraft(d, input));
+      return lock.hold(d.componentId, () => finalizeDraft(d, input));
     });
 
   const isProcessing = (draftId: string) => busy.has(draftId);

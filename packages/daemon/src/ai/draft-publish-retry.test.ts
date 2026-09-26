@@ -75,6 +75,45 @@ describe("two drafts of the same component", () => {
   });
 });
 
+describe("a manual publication of the same component", () => {
+  test("in progress, it refuses the finalize and leaves the draft untouched", async () => {
+    const s = await setup({
+      mode: "modify",
+      status: "permissions",
+      published: { ...published, version: "0.0.9" },
+    });
+    let release = () => {};
+    const manual = s.lock.hold(
+      "burndown",
+      () =>
+        new Promise<void>((r) => {
+          release = r;
+        }),
+    );
+    await expect(s.publisher.finalize(finalizeOf(ID, "0.1.0", s.paths.dir))).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    release();
+    await manual;
+    expect(s.published).toEqual([]);
+    expect(s.store.get(ID).status).toBe("permissions");
+  });
+
+  test("it is refused while the draft is being finalized", async () => {
+    const s = await setup({
+      mode: "modify",
+      status: "permissions",
+      published: { ...published, version: "0.0.9" },
+      publishDelayMs: 20,
+    });
+    const finalizing = s.publisher.finalize(finalizeOf(ID, "0.1.0", s.paths.dir));
+    await Bun.sleep(5);
+    await expect(s.lock.hold("burndown", async () => "manual")).rejects.toMatchObject({ code: "CONFLICT" });
+    await finalizing;
+    expect(await s.lock.hold("burndown", async () => "manual")).toBe("manual");
+  });
+});
+
 describe("retry after a hash mismatch", () => {
   for (const mode of ["create", "modify"] as const) {
     test(`${mode}: the leftover ai version is VERSION_EXISTS, then a higher version publishes`, async () => {
