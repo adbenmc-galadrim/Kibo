@@ -6,7 +6,15 @@ export type Ctx = AdapterContext<BindingConfig>;
 type Method = "GET" | "POST" | "PATCH";
 const API = "https://api.github.com";
 const HEADERS = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" };
+const ETAG_CACHE_SIZE = 100;
 const etags = new Map<string, { etag: string; body: string }>();
+
+function remember(path: string, etag: string, body: string): void {
+  etags.delete(path);
+  etags.set(path, { etag, body });
+  const oldest = etags.keys().next();
+  if (etags.size > ETAG_CACHE_SIZE && !oldest.done) etags.delete(oldest.value);
+}
 
 function parseJson(text: string, path: string): unknown {
   try {
@@ -38,7 +46,7 @@ export async function call<T>(
   if (res.status !== 304 && (res.status < 200 || res.status >= 300))
     throw githubError(res.status, header, res.body);
   const etag = header("etag");
-  if (method === "GET" && etag && res.status !== 304) etags.set(path, { etag, body: res.body });
+  if (method === "GET" && etag && res.status !== 304) remember(path, etag, res.body);
   const parsed = schema.safeParse(parseJson(text, path));
   if (!parsed.success) throw new KiboError("REMOTE_REJECTED", `unexpected github response for ${path}`);
   return parsed.data;

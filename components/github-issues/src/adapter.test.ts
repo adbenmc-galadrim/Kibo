@@ -7,7 +7,7 @@ import { manifest } from "./index";
 
 type Reply = { status: number; body: unknown; headers?: Record<string, string> };
 type Handler = (url: URL, body: unknown) => Reply;
-type Call = { method: string; path: string; body: unknown };
+type Call = { method: string; path: string; body: unknown; headers: Record<string, string> };
 
 function fakeFetch(routes: Record<string, Handler>) {
   const calls: Call[] = [];
@@ -18,7 +18,7 @@ function fakeFetch(routes: Record<string, Handler>) {
     const u = new URL(url);
     const method = init?.method ?? "GET";
     const body: unknown = init?.body ? JSON.parse(init.body) : undefined;
-    calls.push({ method, path: u.pathname + u.search, body });
+    calls.push({ method, path: u.pathname + u.search, body, headers: init?.headers ?? {} });
     const gql =
       u.pathname === "/graphql" && typeof body === "object" && body !== null && "query" in body
         ? body.query
@@ -108,6 +108,25 @@ describe("rest calls", () => {
     await actions["adapter.pull"](ctx(config, f.fetch), { cursor: null });
     const again = await actions["adapter.pull"](ctx(config, f.fetch), { cursor: null });
     expect(again.items.map((i) => i.remoteId)).toEqual(["5"]);
+  });
+
+  test("the etag cache keeps at most 100 entries", async () => {
+    const repos = Array.from({ length: 101 }, (_, i) => `adam/cap-${i}`);
+    const f = fakeFetch(
+      Object.fromEntries(
+        repos.map((repo): [string, Handler] => [
+          `GET /repos/${repo}/issues`,
+          () => ({ status: 200, body: [], headers: { etag: `"${repo}"` } }),
+        ]),
+      ),
+    );
+    const pull = (repo: string) =>
+      actions["adapter.pull"](ctx({ ...plain, repo }, f.fetch), { cursor: null });
+    for (const repo of repos) await pull(repo);
+    await pull("adam/cap-100");
+    await pull("adam/cap-0");
+    const conditional = f.calls.slice(-2).map((c) => c.headers["if-none-match"] ?? null);
+    expect(conditional).toEqual(['"adam/cap-100"', null]);
   });
 
   test("a response that is not json is rejected with a stable code", async () => {
