@@ -4,7 +4,7 @@ Centre de contrôle de projets de code, local-first, piloté par l'IA.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
 (Kanban, tickets, graphe de dépendances, notes…) que l'utilisateur peut créer lui-même.
 
-État : MVP livré (`v0.1`), phase 2 · Agents terminée (profils, file d'attente, questions et réponses, domaines et guidelines), jalon `v0.2` en cours de validation. Rapports dans `docs/superpowers/rapports/`.
+État : MVP livré (`v0.1`), phase 2 · Agents en cours. Rapports dans `docs/superpowers/rapports/`.
 
 ## Lancer
 
@@ -38,8 +38,6 @@ Kibo lance Claude Code en local (`claude -p`, sur ton abonnement) : installe le 
 | `design/revue-flows.md` | Revue des flows : décisions, corrections, écrans restant à dessiner |
 | `docs/superpowers/plans/2026-09-25-kibo-feuille-de-route.md` | Feuille de route par phases et jalons |
 | `docs/superpowers/plans/2026-09-25-kibo-mvp.md` | Plan détaillé de la phase 1 (MVP) |
-| `docs/superpowers/specs/2026-09-26-kibo-agents.md` | Complément de spec de la phase 2 (agents) |
-| `docs/superpowers/plans/2026-09-26-kibo-agents.md` | Plan détaillé de la phase 2 (agents) |
 | `CLAUDE.md` | Règles de travail (humains et agents) |
 | `.claude/agents/` | Agents de l'équipe (lead, dev, reviewer, runner) |
 
