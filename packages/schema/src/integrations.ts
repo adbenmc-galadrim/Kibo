@@ -15,10 +15,22 @@ export const McpServerId = z.string().regex(/^[a-z0-9-]{1,32}$/);
 export const RESERVED_MCP_IDS: readonly string[] = ["figma"];
 export const EnvName = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
 
-const SECRET_NAME = /^(github|figma|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
-export type SecretName = `${"github" | "mcp" | "figma"}${"" | `:${string}`}`;
+const INTEGRATION_SECRET = /^(github|figma|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
+export const SYSTEM_SECRET_NAMES = ["sync:device", "market:publisher", "remote:tls"] as const;
+export type SystemSecretName = (typeof SYSTEM_SECRET_NAMES)[number];
+export type IntegrationSecretName = `${"github" | "mcp" | "figma"}${"" | `:${string}`}`;
+export type SecretName = IntegrationSecretName | SystemSecretName;
+export const SECRET_SYNC_DEVICE: SystemSecretName = "sync:device";
+export const SECRET_MARKET_PUBLISHER: SystemSecretName = "market:publisher";
+export const SECRET_REMOTE_TLS: SystemSecretName = "remote:tls";
+const isSystemSecret = (v: string): v is SystemSecretName =>
+  (SYSTEM_SECRET_NAMES as readonly string[]).includes(v);
+export const IntegrationSecretNameSchema = z.custom<IntegrationSecretName>(
+  (v) => typeof v === "string" && INTEGRATION_SECRET.test(v),
+  "invalid secret name",
+);
 export const SecretNameSchema = z.custom<SecretName>(
-  (v) => typeof v === "string" && SECRET_NAME.test(v),
+  (v) => typeof v === "string" && (INTEGRATION_SECRET.test(v) || isSystemSecret(v)),
   "invalid secret name",
 );
 export const GITHUB_SECRET_HOSTS: readonly string[] = ["api.github.com", "uploads.github.com"];

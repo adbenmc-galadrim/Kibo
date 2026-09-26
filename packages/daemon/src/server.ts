@@ -32,7 +32,7 @@ export type ServerOptions = {
 
 const COOKIE = "kibo_session";
 const MAX_BODY_BYTES = 1_048_576;
-const STATUS: Partial<Record<KiboErrorCode, number>> = {
+export const STATUS: Partial<Record<KiboErrorCode, number>> = {
   NOT_FOUND: 404,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
@@ -67,6 +67,16 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   MCP_UNAVAILABLE: 502,
   MCP_FAILED: 502,
   AI_UNAVAILABLE: 503,
+  UPDATE_REJECTED: 409,
+  ACCESS_REVOKED: 403,
+  INVITE_INVALID: 400,
+  DEVICE_REVOKED: 401,
+  TLS_REQUIRED: 400,
+  SYNC_OFFLINE: 503,
+  SIGNATURE_INVALID: 422,
+  PUBLISHER_CHANGED: 409,
+  REVOKED: 410,
+  INDEX_ROLLBACK: 409,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;

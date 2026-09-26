@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   addedPermissions,
+  Base64,
   ComponentCall,
   ComponentManifest,
   covers,
@@ -9,11 +10,13 @@ import {
   formatTicketKey,
   GrantedPermissions,
   grantedOf,
+  isKiboErrorCode,
   KiboError,
   NO_PERMISSIONS,
   ProjectKey,
   permissionList,
   permissionOfCall,
+  Sha256,
   Ticket,
   TicketKey,
 } from "./index";
@@ -187,5 +190,41 @@ describe("mcp and ci_run permissions", () => {
     );
     expect(addedPermissions(before, after)).toEqual(["secret:github@api.github.com", "mcp:ctx"]);
     expect(addedPermissions(after, { ...after, mcp: ["ctx", "ctx/echo"] })).toEqual(["mcp:ctx/echo"]);
+  });
+});
+
+describe("phase 7 error codes", () => {
+  test("new codes are accepted by KiboError", () => {
+    const codes = [
+      "UPDATE_REJECTED",
+      "ACCESS_REVOKED",
+      "INVITE_INVALID",
+      "DEVICE_REVOKED",
+      "TLS_REQUIRED",
+      "SYNC_OFFLINE",
+      "SIGNATURE_INVALID",
+      "PUBLISHER_CHANGED",
+      "REVOKED",
+      "INDEX_ROLLBACK",
+    ] as const;
+    for (const code of codes) {
+      expect(isKiboErrorCode(code)).toBe(true);
+      const err = new KiboError(code, "detail");
+      expect(err.code).toBe(code);
+      expect(err.message).toBe(`${code}: detail`);
+    }
+  });
+});
+
+describe("shared encodings", () => {
+  test("Base64 accepts padded standard base64 only", () => {
+    expect(Base64.safeParse("a2libw==").success).toBe(true);
+    expect(Base64.safeParse("").success).toBe(true);
+    expect(Base64.safeParse("a2libw").success).toBe(false);
+    expect(Base64.safeParse("a2l-bw==").success).toBe(false);
+  });
+  test("Sha256 is 64 lowercase hex characters", () => {
+    expect(Sha256.safeParse("a".repeat(64)).success).toBe(true);
+    expect(Sha256.safeParse("A".repeat(64)).success).toBe(false);
   });
 });

@@ -29,6 +29,7 @@ export * from "./rpc";
 export * from "./rule";
 export * from "./run";
 export * from "./semver";
+export * from "./sharing";
 export * from "./status";
 export * from "./status-projection";
 export * from "./tabs";

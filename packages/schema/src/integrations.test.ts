@@ -9,6 +9,7 @@ import {
   githubIssueState,
   githubStatusOf,
   IntegrationEvent,
+  IntegrationSecretNameSchema,
   MappedRemote,
   McpItemRef,
   McpServerInput,
@@ -18,6 +19,9 @@ import {
   RepoSlug,
   RpcRequest,
   remoteStatusId,
+  SECRET_MARKET_PUBLISHER,
+  SECRET_REMOTE_TLS,
+  SECRET_SYNC_DEVICE,
   SecretNameSchema,
   secretHostsCovered,
   WebUrl,
@@ -48,6 +52,35 @@ describe("integration contracts", () => {
     for (const ko of ["aws", "github:", "mcp:Bad", "mcp:ctx:lower", ""]) {
       expect(SecretNameSchema.safeParse(ko).success).toBe(false);
     }
+  });
+
+  test("system secret names are exact and stable", () => {
+    expect([SECRET_SYNC_DEVICE, SECRET_MARKET_PUBLISHER, SECRET_REMOTE_TLS]).toEqual([
+      "sync:device",
+      "market:publisher",
+      "remote:tls",
+    ]);
+    for (const ok of ["sync:device", "market:publisher", "remote:tls"]) {
+      expect(SecretNameSchema.safeParse(ok).success).toBe(true);
+      expect(IntegrationSecretNameSchema.safeParse(ok).success).toBe(false);
+    }
+    for (const ko of ["sync", "sync:other", "market", "remote:tls:X"]) {
+      expect(SecretNameSchema.safeParse(ko).success).toBe(false);
+    }
+  });
+
+  test("a component cannot declare a system secret", () => {
+    const manifest = (name: string) => ({
+      id: "burndown",
+      version: "0.1.0",
+      kind: "widget",
+      title: "Burndown",
+      reads: [],
+      writes: [],
+      secrets: [{ name, hosts: ["api.example.com"] }],
+    });
+    expect(ComponentManifest.safeParse(manifest("mcp:ctx:API_KEY")).success).toBe(true);
+    expect(ComponentManifest.safeParse(manifest("sync:device")).success).toBe(false);
   });
 
   test("github issue refs expose pending, linked and broken", () => {
