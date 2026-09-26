@@ -8,6 +8,8 @@ const native = {
   Headers: globalThis.Headers,
   WebSocket: globalThis.WebSocket,
   Blob: globalThis.Blob,
+  AbortController: globalThis.AbortController,
+  AbortSignal: globalThis.AbortSignal,
 };
 
 GlobalRegistrator.register();
