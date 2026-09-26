@@ -57,7 +57,7 @@ function DialogContent({
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay hidden={props.hidden} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
