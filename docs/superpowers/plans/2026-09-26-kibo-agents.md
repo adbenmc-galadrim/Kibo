@@ -6791,7 +6791,7 @@ Maquette : page 27. Capacité de la machine (un carton par créneau hôte, jauge
   - `QueueItem({ run, entry, count, onMove(index), onPriority(priority), onCancel() })`
   - `moveTarget(queue: QueueEntry[], activeId: string, overId: string | null): number | null` (index cible de `moveRun`, ou `null` si rien à faire)
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ui/src/agents/queue-page.test.tsx` :
 ```tsx
@@ -6917,12 +6917,12 @@ test("dropping a run on another one takes that run's place in the whole queue", 
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/agents/queue-page.test.tsx`
 Expected: FAIL (`Cannot find module "./QueuePage"`).
 
-- [ ] **Step 3: Élément de file**
+- [x] **Step 3: Élément de file**
 
 `packages/ui/src/agents/QueueItem.tsx` :
 ```tsx
@@ -7020,7 +7020,7 @@ export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: P
 }
 ```
 
-- [ ] **Step 4: Page**
+- [x] **Step 4: Page**
 
 `packages/ui/src/agents/QueuePage.tsx` :
 ```tsx
@@ -7351,12 +7351,12 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
 }
 ```
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/ui/src/agents && bun run format && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ui/src/agents/QueuePage.tsx packages/ui/src/agents/QueueItem.tsx packages/ui/src/agents/queue-page.test.tsx
