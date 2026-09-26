@@ -7,9 +7,10 @@ test.setTimeout(180_000);
 test.use({ viewport: { width: 1440, height: 900 } });
 
 let repo: string | null = null;
-test.afterAll(() => {
-  if (repo) rmSync(repo, { recursive: true, force: true });
+test.afterAll(async () => {
+  const dir = repo;
   repo = null;
+  if (dir) await expect(() => rmSync(dir, { recursive: true, force: true })).toPass();
 });
 
 async function shot(page: Page, info: TestInfo, name: string) {
