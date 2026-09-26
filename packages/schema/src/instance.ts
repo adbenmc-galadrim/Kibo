@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { KiboError } from "./errors";
-import { NodeId } from "./ids";
+import { NodeId, Sha256 } from "./ids";
 
 export const ComponentRef = z.string().regex(/^[a-z][a-z0-9.-]*@\d+\.\d+\.\d+$/);
 export const Layout = z.object({
@@ -16,6 +16,7 @@ export const Instance = z.object({
   component: ComponentRef,
   layout: Layout,
   config: z.record(z.string(), z.unknown()),
+  componentHash: Sha256.nullable().default(null),
 });
 export type Instance = z.infer<typeof Instance>;
 

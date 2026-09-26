@@ -17,6 +17,7 @@ const instance = (id: string, component: string, config: Record<string, unknown>
   component,
   layout: { x: 0, y: 0, w: 6, h: 4 },
   config,
+  componentHash: null,
 });
 const instances: Record<string, Instance> = {
   thirdparty: instance("thirdparty", "evil@0.1.0", { server: "ctx" }),

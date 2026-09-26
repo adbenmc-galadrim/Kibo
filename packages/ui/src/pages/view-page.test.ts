@@ -9,6 +9,7 @@ const instance = (pageId: string, component: string): Instance => ({
   component,
   layout: { x: 0, y: 0, w: 1, h: 1 },
   config: {},
+  componentHash: null,
 });
 
 test("finds the first view page showing the component", () => {

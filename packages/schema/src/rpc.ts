@@ -13,14 +13,15 @@ import {
   type PublishResult,
   type RegistryVersion,
   type RuntimeInfo,
-  Sha256,
 } from "./component";
 import type { KiboErrorCode } from "./errors";
-import { NodeId, ProjectKey } from "./ids";
+import { NodeId, ProjectKey, Sha256 } from "./ids";
 import type { Instance } from "./instance";
 import type { Binding, IntegrationEvent } from "./integrations";
 import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
+import { ComponentId } from "./manifest";
+import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { NotesInfo } from "./note";
 import type { Page } from "./page";
 import type { ProjectMeta } from "./project";
@@ -30,8 +31,6 @@ import { SemVer } from "./semver";
 import type { Status, StatusId } from "./status";
 import { TabsState } from "./tabs";
 import type { Ticket } from "./ticket";
-
-const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
 
 export type TicketView = Ticket & { progress: { done: number; total: number }; waitingOn: string[] };
 export type ProjectSnapshot = {
@@ -148,6 +147,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   }),
   ...INTEGRATION_RPC,
   ...AI_RPC,
+  ...MARKET_RPC_REQUESTS,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -187,7 +187,8 @@ export type RpcResult = {
   cliStatus: { path: string; installed: boolean };
   reportComponentRefusal: null;
 } & IntegrationRpcResult &
-  AiRpcResult;
+  AiRpcResult &
+  MarketRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

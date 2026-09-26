@@ -55,6 +55,8 @@ test("drafts are listed with their validation state and hide what is already pub
     granted: NO_PERMISSIONS,
     publishedAt: 1,
     autoUpdate: false,
+    source: null,
+    revoked: null,
   });
   putRegistryVersion(ws, "pr-queue", "PR", {
     version: "0.3.0",
@@ -65,6 +67,8 @@ test("drafts are listed with their validation state and hide what is already pub
     granted: NO_PERMISSIONS,
     publishedAt: 1,
     autoUpdate: false,
+    source: null,
+    revoked: null,
   });
   expect(await listDrafts(home, ws)).toEqual([
     {

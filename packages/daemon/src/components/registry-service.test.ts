@@ -34,6 +34,8 @@ const entry = (version: string, hash: string, patch: Partial<RegistryVersion> = 
   granted: NO_PERMISSIONS,
   publishedAt: 1,
   autoUpdate: false,
+  source: null,
+  revoked: null,
   ...patch,
 });
 

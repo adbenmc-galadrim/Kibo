@@ -34,6 +34,7 @@ test("a page shows the icon of its kind, or of the component a view holds", () =
     component: "kanban@1.0.0",
     layout: { x: 0, y: 0, w: 12, h: 6 },
     config: {},
+    componentHash: null,
   };
   expect(pageIcon(dashboard, [])).toBe(LayoutDashboard);
   expect(pageIcon(view, [])).toBe(AppWindow);

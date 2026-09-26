@@ -8,6 +8,7 @@ const inst = (config: Record<string, unknown>): Instance => ({
   component: "mcp-source@1.0.0",
   config,
   layout: { x: 0, y: 0, w: 6, h: 6 },
+  componentHash: null,
 });
 
 test("an instance title set in its config wins over the component title", () => {

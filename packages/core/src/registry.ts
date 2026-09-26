@@ -1,7 +1,9 @@
 import { compareSemver, KiboError, RegistryEntry, type RegistryVersion } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 
-type VersionPatch = Partial<Pick<RegistryVersion, "trust" | "approvedHash" | "granted" | "autoUpdate">>;
+type VersionPatch = Partial<
+  Pick<RegistryVersion, "trust" | "approvedHash" | "granted" | "autoUpdate" | "revoked">
+>;
 
 const registry = (ws: LoroDoc) => ws.getMap("componentRegistry");
 

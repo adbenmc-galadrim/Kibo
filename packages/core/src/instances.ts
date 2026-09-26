@@ -7,7 +7,9 @@ const DEFAULT_LAYOUT: Layout = { x: 0, y: 0, w: 12, h: 6 };
 const instances = (doc: LoroDoc) => doc.getMap("instances");
 
 export function listInstances(doc: LoroDoc, pageId?: string): Instance[] {
-  const all = Object.values(instances(doc).toJSON() as Record<string, Instance>);
+  const all = Object.values(instances(doc).toJSON() as Record<string, unknown>).map((raw) =>
+    Instance.parse(raw),
+  );
   return pageId === undefined ? all : all.filter((i) => i.pageId === pageId);
 }
 

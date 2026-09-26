@@ -30,6 +30,8 @@ const stored: RegistryVersion = {
   granted: NO_PERMISSIONS,
   publishedAt: 1,
   autoUpdate: false,
+  source: null,
+  revoked: null,
 };
 
 function fakeComponents(list: ComponentSummary[] = []) {

@@ -293,6 +293,7 @@ test("openView goes to the view page showing the component, or offers to create 
     component: "graph@1.0.0",
     layout: { x: 0, y: 0, w: 12, h: 8 },
     config: {},
+    componentHash: null,
   };
   let current: ProjectSnapshot = { ...project, instances: [graph] };
   const get = () => current;

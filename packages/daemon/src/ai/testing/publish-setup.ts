@@ -61,6 +61,8 @@ const stored = (version: string, hash: string, trust: RegistryVersion["trust"]):
   granted: trust ? { ...NO_PERMISSIONS, reads: ["ticket"] } : NO_PERMISSIONS,
   publishedAt: 1,
   autoUpdate: false,
+  source: null,
+  revoked: null,
 });
 
 function mergedStores(current: DraftStore, legacy: DraftStore): DraftStore {
@@ -198,7 +200,14 @@ export async function setup(opts: SetupOptions = {}) {
       pageExists: (projectId, pageId) => projectId === "p1" && pageId === "pg1",
       addInstance: async (_p, pageId, ref) => {
         instances.push(ref);
-        return { id: "i1", pageId, component: ref, layout: { x: 0, y: 0, w: 4, h: 3 }, config: {} };
+        return {
+          id: "i1",
+          pageId,
+          component: ref,
+          layout: { x: 0, y: 0, w: 4, h: 3 },
+          config: {},
+          componentHash: null,
+        };
       },
     },
     differ: async ({ path }) => {

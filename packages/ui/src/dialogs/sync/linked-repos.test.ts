@@ -16,6 +16,7 @@ const instance = (id: string, pageId: string, bindingId: string): Instance => ({
   component: "kanban@1.0.0",
   layout: { x: 0, y: 0, w: 6, h: 4 },
   config: { source: { bindingId } },
+  componentHash: null,
 });
 
 test("each bound repo is named after the view or widget that shows it", () => {

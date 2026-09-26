@@ -39,6 +39,8 @@ test("a version revoked while its backend is being checked never runs its job", 
     granted: grantedOf(manifest),
     publishedAt: 1,
     autoUpdate: false,
+    source: null,
+    revoked: null,
   });
   const store = createFakeStore();
   store.add(storedVersion(manifest, H, SERVER));

@@ -185,6 +185,8 @@ export function createPublisher(deps: PublisherDeps): Publisher {
       granted: trust ? grantedOf(manifest) : NO_PERMISSIONS,
       publishedAt: (deps.now ?? Date.now)(),
       autoUpdate: trust === null && strategy === "update-all" && usages.length > 0,
+      source: null,
+      revoked: null,
     };
     putRegistryVersion(ws, id, manifest.title, version);
     deps.persistWorkspace();

@@ -20,6 +20,7 @@ export const instances: Record<string, Instance> = {
     component: "evil@0.1.0",
     layout: { x: 0, y: 0, w: 6, h: 4 },
     config: {},
+    componentHash: null,
   },
   builtin: {
     id: "builtin",
@@ -27,6 +28,7 @@ export const instances: Record<string, Instance> = {
     component: "notes@1.0.0",
     layout: { x: 0, y: 0, w: 6, h: 4 },
     config: {},
+    componentHash: null,
   },
   untrusted: {
     id: "untrusted",
@@ -34,6 +36,7 @@ export const instances: Record<string, Instance> = {
     component: "pending@0.1.0",
     layout: { x: 0, y: 0, w: 6, h: 4 },
     config: {},
+    componentHash: null,
   },
 };
 

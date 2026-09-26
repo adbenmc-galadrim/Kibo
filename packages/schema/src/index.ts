@@ -17,6 +17,8 @@ export * from "./integrations";
 export * from "./integrations-rpc";
 export * from "./link";
 export * from "./manifest";
+export * from "./market";
+export * from "./market-rpc";
 export * from "./mcp-rules";
 export * from "./migrations";
 export * from "./net";

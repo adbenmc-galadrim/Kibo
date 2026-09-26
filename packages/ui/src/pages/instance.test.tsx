@@ -62,6 +62,7 @@ const inst = (component: string): Instance => ({
   component,
   layout: { x: 0, y: 0, w: 6, h: 6 },
   config: {},
+  componentHash: null,
 });
 type Version = ComponentSummary["versions"][number];
 const version = (v: string, patch: Partial<Version> = {}): Version => ({

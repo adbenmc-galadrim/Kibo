@@ -84,6 +84,8 @@ const approved: RegistryVersion = {
   granted: { ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true },
   publishedAt: 1,
   autoUpdate: false,
+  source: null,
+  revoked: null,
 };
 const page = { id: "pg1", title: "Tableau de bord", kind: "dashboard", parentId: null } as const;
 const search = () => screen.getByPlaceholderText("Rechercher un composant…");

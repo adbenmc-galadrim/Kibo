@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { KiboErrorCode } from "./errors";
+import { Sha256 } from "./ids";
 import type { ComponentManifest } from "./manifest";
 import { GrantedPermissions } from "./permissions";
 import { SemVer } from "./semver";
@@ -15,7 +16,6 @@ export const ApprovableTrust = z.enum(["trusted", "sandboxed"]);
 export type ApprovableTrust = z.infer<typeof ApprovableTrust>;
 export const ComponentOrigin = z.enum(["kibo", "user", "ai", "marketplace"]);
 export type ComponentOrigin = z.infer<typeof ComponentOrigin>;
-export const Sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 
 export const RegistryVersion = z.object({
   version: SemVer,
@@ -26,6 +26,11 @@ export const RegistryVersion = z.object({
   granted: GrantedPermissions,
   publishedAt: z.number().int(),
   autoUpdate: z.boolean().default(false),
+  source: z
+    .object({ sourceId: z.string().min(1), publisherKey: z.string().min(1) })
+    .nullable()
+    .default(null),
+  revoked: z.object({ reason: z.string(), at: z.number().int() }).nullable().default(null),
 });
 export type RegistryVersion = z.infer<typeof RegistryVersion>;
 
@@ -34,6 +39,22 @@ export const RegistryEntry = z.object({
   versions: z.record(SemVer, RegistryVersion),
 });
 export type RegistryEntry = z.infer<typeof RegistryEntry>;
+
+export type MarketTrustInfo = {
+  publisherName: string;
+  verified: boolean;
+  sourceName: string;
+  newPublisher: boolean;
+};
+export type TrustPreview = {
+  id: string;
+  title: string;
+  version: string;
+  hash: string;
+  origin: ComponentOrigin;
+  permissions: GrantedPermissions;
+  market: MarketTrustInfo | null;
+};
 
 export const isActive = (v: Pick<RegistryVersion, "trust" | "hash" | "approvedHash">): boolean =>
   v.trust !== null && v.approvedHash === v.hash;

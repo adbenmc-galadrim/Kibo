@@ -9,10 +9,15 @@ export type BuiltinEntityType = z.infer<typeof BuiltinEntityType>;
 export const EntityType = BuiltinEntityType;
 export type EntityType = BuiltinEntityType;
 
+export const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
+export type ComponentId = z.infer<typeof ComponentId>;
+export const ComponentKind = z.enum(["widget", "view", "both", "adapter"]);
+export type ComponentKind = z.infer<typeof ComponentKind>;
+
 export const ComponentManifest = z.object({
-  id: z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/),
+  id: ComponentId,
   version: SemVer,
-  kind: z.enum(["widget", "view", "both", "adapter"]),
+  kind: ComponentKind,
   title: z.string().min(1),
   description: z.string().min(1).optional(),
   reads: z.array(BuiltinEntityType),

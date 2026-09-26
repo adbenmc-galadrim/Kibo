@@ -19,6 +19,8 @@ const version = (v: string, hash = "a".repeat(64)): RegistryVersion => ({
   granted: { reads: ["ticket"], writes: [], data: false, net: [], secrets: [], mcp: [] },
   publishedAt: 1,
   autoUpdate: false,
+  source: null,
+  revoked: null,
 });
 
 test("versions are stored per component and survive a snapshot", () => {
@@ -53,4 +55,22 @@ test("a corrupt registry entry is reported", () => {
   const ws = createWorkspaceDoc();
   ws.getMap("componentRegistry").set("bad", { title: "" });
   expect(() => readRegistry(ws)).toThrow("STORE_CORRUPT");
+});
+
+test("a revocation is written through updateRegistryVersion", () => {
+  const ws = createWorkspaceDoc();
+  putRegistryVersion(ws, "burndown", "Burndown", {
+    ...version("0.3.0", "c".repeat(64)),
+    origin: "marketplace",
+    trust: "sandboxed",
+    approvedHash: "c".repeat(64),
+    source: { sourceId: "team", publisherKey: "AAAA" },
+  });
+  const next = updateRegistryVersion(ws, "burndown", "0.3.0", {
+    trust: null,
+    approvedHash: null,
+    revoked: { reason: "fuite de données", at: 5 },
+  });
+  expect(next.revoked).toEqual({ reason: "fuite de données", at: 5 });
+  expect(getRegistryVersion(ws, "burndown", "0.3.0")?.revoked?.reason).toBe("fuite de données");
 });
