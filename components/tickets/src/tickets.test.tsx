@@ -97,3 +97,15 @@ test("a synced tree shows only the binding's tickets and their sub-tickets", asy
   expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
   expect(screen.queryByText("Ticket local")).toBeNull();
 });
+
+test("filter mine shows only my tickets with a count", async () => {
+  const m = createMockSdk(manifest, { seed, config: { filter: "mine" }, viewer: "adam" });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect(await screen.findByText("Mes tickets · 1 sur 3")).toBeTruthy();
+  expect(screen.getByText("KIB-1")).toBeTruthy();
+  expect(screen.queryByText("KIB-3")).toBeNull();
+});

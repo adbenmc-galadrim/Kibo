@@ -1,5 +1,7 @@
 export const fr = {
   title: "Tickets",
+  mine: "Mes tickets",
+  mineCount: (shown: number, total: number) => `Mes tickets · ${shown} sur ${total}`,
   newTicket: "Nouveau ticket",
   empty: "Aucun ticket pour l'instant.",
   columns: { ticket: "Ticket", status: "Statut", assignee: "Assigné", progress: "Sous-tickets" },

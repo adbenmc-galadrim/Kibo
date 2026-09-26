@@ -13,3 +13,9 @@ export function buildTree(tickets: TicketView[]): TicketNode[] {
     }));
   return build(null, 0);
 }
+
+export function mineOnly(tickets: TicketView[], viewer: string): TicketView[] {
+  const mine = tickets.filter((t) => t.assignee?.kind === "human" && t.assignee.ref === viewer);
+  const ids = new Set(mine.map((t) => t.id));
+  return mine.map((t) => (t.parentId !== null && !ids.has(t.parentId) ? { ...t, parentId: null } : t));
+}

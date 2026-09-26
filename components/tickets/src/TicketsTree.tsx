@@ -5,7 +5,7 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
-import { buildTree, type TicketNode } from "./build-tree";
+import { buildTree, mineOnly, type TicketNode } from "./build-tree";
 import { fr } from "./fr";
 
 const COLUMNS =
@@ -43,6 +43,8 @@ export function TicketsTree() {
   const sdk = useSdk();
   const { data: all, loading } = useEntities("ticket");
   const tickets = filterBySource(all, readSource(sdk.config));
+  const mine = sdk.config.filter === "mine";
+  const visible = mine ? mineOnly(tickets, sdk.viewer) : tickets;
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
@@ -123,12 +125,14 @@ export function TicketsTree() {
   return (
     <section aria-label={fr.title} className="flex h-full flex-col">
       <header className="flex h-10 items-center justify-between border-b px-3">
-        <span className="text-sm font-medium">{fr.title}</span>
+        <span className="text-sm font-medium">
+          {mine ? fr.mineCount(visible.length, tickets.length) : fr.title}
+        </span>
         <Button size="sm" variant="outline" onClick={() => sdk.openNewTicket({})}>
           <Plus className="size-3.5" /> {fr.newTicket}
         </Button>
       </header>
-      {loading ? null : tickets.length === 0 ? (
+      {loading ? null : visible.length === 0 ? (
         <p className="p-6 text-sm text-muted-foreground">{fr.empty}</p>
       ) : (
         <div className="@container min-h-0 flex-1 overflow-auto px-1 py-2">
@@ -139,7 +143,7 @@ export function TicketsTree() {
             <span>{fr.columns.progress}</span>
             <span />
           </div>
-          <ul>{buildTree(tickets).map(row)}</ul>
+          <ul>{buildTree(visible).map(row)}</ul>
         </div>
       )}
     </section>
