@@ -419,7 +419,7 @@ test("a run without ticket uses its own folder, its guard and keeps its result l
     extraArgs: ["--tools", "Read,Bash"],
     env: { NO_COLOR: "1" },
     guard: ({ tool, input }) => {
-      seen.push(`${tool}:${String(input.command ?? input.file_path)}`);
+      seen.push(`${tool}:${String(input?.command ?? input?.file_path)}`);
       return tool === "Bash" ? { decision: "deny", reason: "outil interdit" } : null;
     },
   });
@@ -517,6 +517,37 @@ test("invalid host settings are refused and not saved", () => {
   const h = setup({ scenario: "done" });
   expect(() => h.orch.setHost({ cpuThreshold: 5 })).toThrow("INVALID_INPUT");
   expect(h.store.hostSettings()).toEqual({});
+});
+
+test("a PreToolUse without tool input reaches the guard as null, never as an empty object", () => {
+  const h = setup({ scenario: "hold" });
+  const cwd = join(h.home, "draft");
+  mkdirSync(cwd);
+  const inputs: unknown[] = [];
+  const r = h.orch.submit({
+    profileId: "opus",
+    projectId: null,
+    title: "Tâche gardée",
+    cwd,
+    prompt: "x",
+    guard: ({ input }) => {
+      inputs.push(input);
+      return input === null ? { decision: "deny", reason: "no input" } : null;
+    },
+  });
+  const payload = {
+    event: "PreToolUse" as const,
+    sessionId: r.sessionId,
+    transcriptPath: null,
+    tool: "Write",
+    detail: null,
+    question: null,
+    agentId: null,
+  };
+  expect(h.orch.hooks.receive(r.id, payload, null)).toEqual({ decision: "deny", reason: "no input" });
+  expect(h.orch.hooks.receive(r.id, payload, { file_path: "ui.tsx" })).toBeNull();
+  expect(inputs).toEqual([null, { file_path: "ui.tsx" }]);
+  h.orch.cancel(r.id);
 });
 
 test("a guard that throws denies the tool, logs the error and lets the run finish", async () => {

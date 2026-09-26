@@ -156,7 +156,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       const guard = tasks.get(runId)?.guard;
       if (!guard || payload.event !== "PreToolUse") return null;
       try {
-        return guard({ tool: payload.tool ?? "", input: toolInput ?? {} });
+        return guard({ tool: payload.tool ?? "", input: toolInput ?? null });
       } catch (e) {
         console.error(`[kibo-daemon] guard of run ${runId} failed, denying`, e);
         return { decision: "deny", reason: "guard error" };
@@ -318,7 +318,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       if (emitTimer) clearTimeout(emitTimer);
       emitTimer = null;
       const procs = [...live.values()].map((entry) => entry.proc);
-      for (const proc of procs) proc.kill();
+      for (const proc of procs) guarded(`stopping process ${proc.pid}`, () => proc.kill());
       await Promise.allSettled(procs.map((proc) => proc.exited));
     },
   };

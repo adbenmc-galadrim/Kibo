@@ -48,7 +48,10 @@ export type OrchestratorOptions = {
 };
 
 export type AssignInput = { projectId: string; ticketId: string; profileId: string; brief: string };
-export type ToolGuard = (input: { tool: string; input: Record<string, unknown> }) => GuardDecision | null;
+export type ToolGuard = (call: {
+  tool: string;
+  input: Record<string, unknown> | null;
+}) => GuardDecision | null;
 export type TaskInput = {
   profileId: string;
   projectId: string | null;
