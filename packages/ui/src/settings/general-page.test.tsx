@@ -20,13 +20,14 @@ test("the general settings hold the application and the kibo command", async () 
   expect(await screen.findByText("Non installée")).toBeTruthy();
 });
 
-test("the application settings are shown but not yet available", () => {
+test("the application settings are shown but not yet available", async () => {
   render(<GeneralPage />);
   expect(screen.getByRole("combobox", { name: "Langue" }).hasAttribute("disabled")).toBe(true);
   expect(
     screen.getByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" }).hasAttribute("disabled"),
   ).toBe(true);
   expect(screen.getByRole("button", { name: "Ouvrir" }).hasAttribute("disabled")).toBe(true);
+  expect(await screen.findByText("Non installée")).toBeTruthy();
 });
 
 test("the settings navigation marks Général and leads to the domains", async () => {

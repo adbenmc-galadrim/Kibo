@@ -83,7 +83,9 @@ async function addSyncedKanban(onOpenChange: (o: boolean) => void) {
   await user.click(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" }));
   await user.click(await screen.findByRole("radio", { name: "adam/kibo" }));
   await user.click(screen.getByRole("button", { name: "Ajouter et synchroniser" }));
-  act(() => listener?.({ type: "sync", projectId: "p1", bindingId: "b1", imported: 0, running: false }));
+  await act(async () =>
+    listener?.({ type: "sync", projectId: "p1", bindingId: "b1", imported: 0, running: false }),
+  );
   return user;
 }
 
