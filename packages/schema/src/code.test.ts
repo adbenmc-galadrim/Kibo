@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { CodeEvent, CodeRequest, GhLogin, RelPath } from "./code";
+import { CodeEvent, CodeRequest, eventTouches, GhLogin, MAX_EVENT_PATHS, RelPath } from "./code";
 import { ExternalRef } from "./external-ref";
 import { EMPTY_TABS, salvageTabsState, TabsState, TabTarget } from "./tabs";
 
@@ -53,6 +53,21 @@ describe("code contracts", () => {
   test("CodeEvent is tagged", () => {
     expect(CodeEvent.safeParse({ type: "code", projectId: "p", worktree: "/w" }).success).toBe(true);
     expect(CodeEvent.safeParse({ projectId: "p" }).success).toBe(false);
+  });
+
+  test("CodeEvent may name the changed paths, within a bound", () => {
+    const event = { type: "code", projectId: "p", worktree: "/w" } as const;
+    expect(CodeEvent.safeParse({ ...event, paths: ["src/a.ts"] }).success).toBe(true);
+    const tooMany = Array.from({ length: MAX_EVENT_PATHS + 1 }, (_, i) => `f${i}`);
+    expect(CodeEvent.safeParse({ ...event, paths: tooMany }).success).toBe(false);
+  });
+
+  test("an event touches a path it names, one inside a named folder, or any path when unnamed", () => {
+    const event = { type: "code", projectId: "p", worktree: "/w" } as const;
+    expect(eventTouches(event, "src/a.ts")).toBe(true);
+    expect(eventTouches({ ...event, paths: ["src/a.ts"] }, "src/a.ts")).toBe(true);
+    expect(eventTouches({ ...event, paths: ["src"] }, "src/a.ts")).toBe(true);
+    expect(eventTouches({ ...event, paths: ["src/b.ts", "sr"] }, "src/a.ts")).toBe(false);
   });
 
   test("ExternalRef describes a GitHub PR", () => {

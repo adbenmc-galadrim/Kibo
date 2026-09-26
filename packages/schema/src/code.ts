@@ -153,8 +153,17 @@ export const FileRef = z.object({
 });
 export type FileRef = z.infer<typeof FileRef>;
 
-export const CodeEvent = z.object({ type: z.literal("code"), projectId: z.string(), worktree: z.string() });
+export const MAX_EVENT_PATHS = 200;
+export const CodeEvent = z.object({
+  type: z.literal("code"),
+  projectId: z.string(),
+  worktree: z.string(),
+  paths: z.array(z.string()).max(MAX_EVENT_PATHS).optional(),
+});
 export type CodeEvent = z.infer<typeof CodeEvent>;
+
+export const eventTouches = (event: CodeEvent, path: string): boolean =>
+  !event.paths || event.paths.some((p) => path === p || path.startsWith(`${p}/`));
 
 const P = { projectId: z.string().min(1) };
 const W = { ...P, worktree: z.string().min(1) };

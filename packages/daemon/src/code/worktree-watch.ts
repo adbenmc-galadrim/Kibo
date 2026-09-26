@@ -1,8 +1,9 @@
 import { existsSync, lstatSync } from "node:fs";
 import { join } from "node:path";
+import { MAX_EVENT_PATHS } from "@kibo/schema";
 import { parseStatus } from "./parse-status";
 import type { WorktreeHandle } from "./repo";
-import { type WatchHandle, watchPaths } from "./watcher";
+import { type ChangedPaths, type WatchHandle, watchPaths } from "./watcher";
 
 export type WorktreeWatch = {
   touch(projectId: string, h: WorktreeHandle): Promise<void>;
@@ -11,7 +12,7 @@ export type WorktreeWatch = {
 };
 export type WorktreeWatchOptions = {
   idleMs: number;
-  onChange(projectId: string, worktree: string): void;
+  onChange(projectId: string, worktree: string, paths: string[] | undefined): void;
   log(what: string): (e: unknown) => void;
 };
 type Entry = {
@@ -20,9 +21,16 @@ type Entry = {
   handle: WatchHandle;
   lastRead: number;
   signature: string;
+  pending: Set<string> | null;
 };
 
 const MAX_SWEEP_MS = 60_000;
+
+function mergePaths(pending: Set<string> | null, paths: ChangedPaths): Set<string> | null {
+  if (pending === null || paths === null) return null;
+  const merged = new Set([...pending, ...paths]);
+  return merged.size > MAX_EVENT_PATHS ? null : merged;
+}
 
 function fileStamp(root: string, path: string): string {
   const stat = lstatSync(join(root, path), { throwIfNoEntry: false });
@@ -58,13 +66,16 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
     if (!vanished(projectId, h)) opts.log(what)(e);
   };
 
-  const refresh = async (projectId: string, h: WorktreeHandle) => {
+  const refresh = async (projectId: string, h: WorktreeHandle, paths: ChangedPaths) => {
     const entry = entries.get(keyOf(projectId, h));
     if (!entry || vanished(projectId, h)) return;
+    entry.pending = mergePaths(entry.pending, paths);
     const signature = await signatureOf(h);
     if (entries.get(keyOf(projectId, h)) !== entry || signature === entry.signature) return;
     entry.signature = signature;
-    opts.onChange(projectId, h.path);
+    const changed = entry.pending ? [...entry.pending] : undefined;
+    entry.pending = new Set();
+    opts.onChange(projectId, h.path, changed);
   };
 
   const watch = (projectId: string, h: WorktreeHandle) =>
@@ -74,9 +85,11 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
         { path: h.gitDir, recursive: false },
         { path: h.commonDir, recursive: true },
       ],
-      () =>
-        void refresh(projectId, h).catch(unlessVanished(projectId, h, `git refresh failed for ${h.path}`)),
-      { onError: unlessVanished(projectId, h, `watcher failed for ${h.path}`) },
+      (paths) =>
+        void refresh(projectId, h, paths).catch(
+          unlessVanished(projectId, h, `git refresh failed for ${h.path}`),
+        ),
+      { root: h.path, onError: unlessVanished(projectId, h, `watcher failed for ${h.path}`) },
     );
 
   const sweep = setInterval(
@@ -106,6 +119,7 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
         handle: watch(projectId, h),
         lastRead: Date.now(),
         signature,
+        pending: new Set(),
       });
     },
     async settle(projectId, h) {

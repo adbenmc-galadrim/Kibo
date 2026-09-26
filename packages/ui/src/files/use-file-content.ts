@@ -1,4 +1,4 @@
-import type { FileContent, FileRef, Worktree } from "@kibo/schema";
+import { eventTouches, type FileContent, type FileRef, type Worktree } from "@kibo/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { resolveWorktree, useWorktrees } from "../code/use-worktrees";
@@ -89,9 +89,9 @@ export function useFileContent(ref: FileRef, follow = true): FileContentState {
   useEffect(() => {
     if (!follow || !worktreePath) return;
     return client.subscribeCode((e) => {
-      if (e.projectId === projectId && e.worktree === worktreePath) refresh();
+      if (e.projectId === projectId && e.worktree === worktreePath && eventTouches(e, path)) refresh();
     });
-  }, [follow, projectId, worktreePath, refresh]);
+  }, [follow, projectId, worktreePath, path, refresh]);
 
   const missingWorktree = worktrees !== null && worktree === null ? fr.errors.NOT_FOUND : null;
 

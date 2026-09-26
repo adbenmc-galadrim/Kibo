@@ -7,7 +7,7 @@ import { createWorktreeWatch, type WorktreeWatch } from "./worktree-watch";
 
 let fx: GitFixture;
 let watch: WorktreeWatch | null;
-const changes: string[] = [];
+const changes: { worktree: string; paths: string[] | undefined }[] = [];
 const logs: { what: string; error: unknown }[] = [];
 
 beforeEach(() => {
@@ -25,7 +25,7 @@ afterEach(() => {
 const start = (idleMs = 600_000): WorktreeWatch => {
   watch = createWorktreeWatch({
     idleMs,
-    onChange: (_projectId, worktree) => changes.push(worktree),
+    onChange: (_projectId, worktree, paths) => changes.push({ worktree, paths }),
     log: (what) => (error) => logs.push({ what, error }),
   });
   return watch;
@@ -63,7 +63,7 @@ test("a deleted worktree stops being watched until it comes back", async () => {
   await w.touch("p", await handle(linked));
   await Bun.write(join(linked, "README.md"), "# back\n");
   expect(await waitFor(() => changes.length > 0)).toBe(true);
-  expect(changes).toContain(linked);
+  expect(changes).toContainEqual({ worktree: linked, paths: ["README.md"] });
   expect(logs).toHaveLength(1);
 });
 

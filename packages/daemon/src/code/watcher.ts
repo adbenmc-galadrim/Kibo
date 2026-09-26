@@ -1,5 +1,6 @@
 import { watch as fsWatch } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
+import { MAX_EVENT_PATHS } from "@kibo/schema";
 import { isInside } from "./safe-path";
 
 export type WatchTarget = { path: string; recursive: boolean };
@@ -11,7 +12,9 @@ export type WatchFn = (
   onEvent: (filename: string | null) => void,
   onError: (e: unknown) => void,
 ) => Watcher;
+export type ChangedPaths = string[] | null;
 export type WatchOptions = {
+  root?: string;
   debounceMs?: number;
   pollMs?: number;
   onError?: (e: unknown) => void;
@@ -63,6 +66,14 @@ export function dedupeTargets(targets: WatchTarget[]): WatchTarget[] {
   return targets.filter((t, i) => !targets.some((o, j) => j !== i && covers(o, t, j < i)));
 }
 
+function changedPath(root: string | undefined, targetPath: string, filename: string | null): string | null {
+  if (root === undefined || filename === null) return null;
+  const path = resolve(targetPath, filename);
+  if (!isInside(resolve(root), path)) return null;
+  const rel = segments(relative(resolve(root), path));
+  return rel.length === 0 || rel.includes(".git") ? null : rel.join("/");
+}
+
 const defaultWatch: WatchFn = (path, options, onEvent, onError) => {
   const watcher = fsWatch(path, options, (_event, filename) => onEvent(filename));
   watcher.on("error", onError);
@@ -71,7 +82,7 @@ const defaultWatch: WatchFn = (path, options, onEvent, onError) => {
 
 export function watchPaths(
   targets: WatchTarget[],
-  onChange: () => void,
+  onChange: (paths: ChangedPaths) => void,
   opts: WatchOptions = {},
 ): WatchHandle {
   const report = opts.onError ?? ((e: unknown) => console.error("[kibo-daemon] watcher failed", e));
@@ -79,14 +90,23 @@ export function watchPaths(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let poll: ReturnType<typeof setInterval> | null = null;
   let closed = false;
+  let pending: Set<string> | null = new Set();
   const watchers: Watcher[] = [];
 
-  const fire = () => {
+  const remember = (path: string | null) => {
+    if (path === null || pending === null) pending = null;
+    else pending.add(path);
+    if (pending && pending.size > MAX_EVENT_PATHS) pending = null;
+  };
+  const fire = (path: string | null) => {
     if (closed || poll) return;
+    remember(path);
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
-      onChange();
+      const paths = pending ? [...pending] : null;
+      pending = new Set();
+      onChange(paths);
     }, opts.debounceMs ?? 150);
   };
   const closeWatchers = () => {
@@ -101,13 +121,13 @@ export function watchPaths(
     if (closed || poll) return;
     closeWatchers();
     clearTimer();
-    poll = setInterval(onChange, opts.pollMs ?? 3000);
+    poll = setInterval(() => onChange(null), opts.pollMs ?? 3000);
   };
 
   try {
     for (const t of dedupeTargets(targets)) {
       const onEvent = (filename: string | null) => {
-        if (isRelevantChange(t.path, filename)) fire();
+        if (isRelevantChange(t.path, filename)) fire(changedPath(opts.root, t.path, filename));
       };
       watchers.push(watch(t.path, { recursive: t.recursive }, onEvent, fallBack));
     }

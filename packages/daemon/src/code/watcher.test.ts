@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { MAX_EVENT_PATHS } from "@kibo/schema";
 import { dedupeTargets, isRelevantChange, type WatchFn, type WatchHandle, watchPaths } from "./watcher";
 
 let dir: string;
@@ -174,6 +175,36 @@ test("close stops pending debounce and ignores later events", async () => {
   expect(watchers.map((w) => w.closed)).toEqual([true]);
   expect(errors).toEqual([late]);
   expect(handle.mode()).not.toBe("poll");
+});
+
+test("the change names the paths relative to the root, or none when it cannot", async () => {
+  const { watch, watchers } = fakeWatch();
+  const changes: (string[] | null)[] = [];
+  track(
+    watchPaths(
+      [
+        { path: "/repo", recursive: true },
+        { path: "/common/.git", recursive: true },
+      ],
+      (paths) => changes.push(paths),
+      { debounceMs: 10, root: "/repo", watch },
+    ),
+  );
+  const [tree, common] = watchers;
+  tree?.emit("src/a.ts");
+  tree?.emit("src/b.ts");
+  tree?.emit("src/a.ts");
+  await waitFor(() => changes.length === 1);
+  tree?.emit(".git/HEAD");
+  tree?.emit("src/c.ts");
+  await waitFor(() => changes.length === 2);
+  common?.emit("refs/heads/main");
+  await waitFor(() => changes.length === 3);
+  tree?.emit(null);
+  await waitFor(() => changes.length === 4);
+  for (let i = 0; i <= MAX_EVENT_PATHS; i++) tree?.emit(`f${i}.ts`);
+  await waitFor(() => changes.length === 5);
+  expect(changes).toEqual([["src/a.ts", "src/b.ts"], null, null, null, null]);
 });
 
 test("targets covered by a recursive parent are dropped", () => {

@@ -49,8 +49,9 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
   const env = opts.env ?? {};
   const listeners = new Set<(e: CodeEvent) => void>();
   const locks = new Map<string, Promise<unknown>>();
-  const emit = (projectId: string, worktree: string) => {
-    for (const l of listeners) l({ type: "code", projectId, worktree });
+  const emit = (projectId: string, worktree: string, paths?: string[]) => {
+    const event: CodeEvent = { type: "code", projectId, worktree, ...(paths ? { paths } : {}) };
+    for (const l of listeners) l(event);
   };
   const watch = createWorktreeWatch({ idleMs: opts.idleMs ?? IDLE_MS, onChange: emit, log });
   const pollMs = opts.prPollMs ?? PR_POLL_MS;

@@ -16,7 +16,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 ## 2. État dérivé et watchers
 
 - État = `git status --porcelain=v2 -z --branch --untracked-files=all` + `git diff --numstat -z` (indexé et non indexé) + commits.
-- Watcher `fs.watch` récursif sur le worktree, non récursif sur son `git-dir`, récursif sur le `git-common-dir` ; debounce 150 ms ; événement WebSocket `{ type: "code", projectId, worktree }`. Si `fs.watch` échoue (limite inotify, système sans récursif), repli sur un sondage toutes les 3 s, journalisé.
+- Watcher `fs.watch` récursif sur le worktree, non récursif sur son `git-dir`, récursif sur le `git-common-dir` ; debounce 150 ms ; événement WebSocket `{ type: "code", projectId, worktree, paths? }`. `paths` liste les chemins modifiés, relatifs au worktree (200 au plus), quand le watcher les connaît ; il est absent (« tout a pu changer ») pour un changement de l'état git, un sondage, une mutation ou au-delà de 200 chemins. L'aperçu d'un fichier ne se relit que si son chemin (ou un dossier parent) figure dans `paths`, ou si `paths` est absent. Si `fs.watch` échoue (limite inotify, système sans récursif), repli sur un sondage toutes les 3 s, journalisé.
 - Un worktree est surveillé dès sa première lecture d'état, et libéré après 10 minutes sans lecture. Un worktree dont le dossier a disparu (événement, balayage périodique ou lecture) est libéré aussitôt, avec une seule ligne de journal ; il est de nouveau surveillé à la première lecture après sa réapparition.
 - **Suivi des PR** : toutes les 60 s, pour chaque ticket portant une référence `github_pr` ouverte ou en brouillon, `gh pr view` met à jour son état (`open`, `draft`, `merged`, `closed`). `gh` absent : aucune mise à jour, erreur journalisée.
 

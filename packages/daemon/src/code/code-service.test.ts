@@ -99,7 +99,7 @@ test("a mutation emits an event at once, an external change emits one through th
   await c.handle({ method: "status", ...w() });
   fx.write("README.md", "# kibo\nedit\n");
   expect(await waitFor(() => events.length > 0)).toBe(true);
-  expect(events).toContainEqual(event());
+  expect(events).toContainEqual({ ...event(), paths: ["README.md"] });
   events.length = 0;
   fx.write("README.md", "# kibo\nedit again\n");
   expect(await waitFor(() => events.length > 0)).toBe(true);
