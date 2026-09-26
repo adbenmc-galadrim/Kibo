@@ -15,6 +15,7 @@ import { fr } from "../../i18n/fr";
 import { FormError } from "./FormError";
 import { McpServerFields } from "./McpServerFields";
 import { type McpForm, slugId, toServerInput } from "./mcp-form";
+import { Notice } from "./Notice";
 
 const t = fr.integrations.mcpServer;
 
@@ -61,12 +62,18 @@ function ConfirmStep({
       <DialogHeader>
         <DialogTitle>{t.confirmTitle}</DialogTitle>
         <DialogDescription>
-          {pending.server.transport === "stdio" ? t.confirmBody : t.confirmHttp}
+          {pending.server.transport === "stdio" ? t.confirmStdio : t.confirmHttp}
         </DialogDescription>
       </DialogHeader>
       <pre className="overflow-x-auto rounded-md border bg-muted/50 p-3 font-mono text-xs whitespace-pre-wrap break-all">
         {pending.commandLine}
       </pre>
+      {pending.server.transport === "stdio" && (
+        <>
+          <p className="text-sm text-muted-foreground">{t.environment(pending.server.envNames)}</p>
+          <Notice tone="security" title={t.warningTitle} detail={t.warningBody} />
+        </>
+      )}
       <FormError message={error} />
       <DialogFooter className="sm:justify-between">
         <Button variant="ghost" onClick={onBack}>

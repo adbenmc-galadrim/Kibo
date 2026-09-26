@@ -17,7 +17,7 @@ import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
 import type { IntegrationDialogProps } from "../../settings/integration-dialogs";
-import { ChoiceCard } from "../ChoiceCard";
+import { ChoicePanel } from "./ChoicePanel";
 import { FormError } from "./FormError";
 
 const t = fr.integrations.github;
@@ -29,11 +29,46 @@ function connectError(e: unknown): string {
   return e.detail;
 }
 
-const ghDescription = (options: GithubConnectOptions | null) =>
-  options?.ghAvailable && options.ghLogin ? `${t.ghHelp} ${t.ghDetected(options.ghLogin)}` : t.ghMissing;
+function GhState({ options }: { options: GithubConnectOptions | null }) {
+  const login = options?.ghAvailable ? options.ghLogin : null;
+  return (
+    <p className="flex items-center gap-2 text-xs text-muted-foreground">
+      {login && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-emerald-500" />}
+      {login ? t.ghDetected(login) : t.ghMissing}
+    </p>
+  );
+}
+
+type TokenFieldProps = { value: string; invalid: boolean; onChange(value: string): void };
+
+function TokenField({ value, invalid, onChange }: TokenFieldProps) {
+  const id = useId();
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{t.tokenLabel}</Label>
+      <div className="relative">
+        <KeyRound
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          id={id}
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          className="pl-9 font-mono"
+          placeholder={t.tokenPlaceholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={invalid}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">{t.scopes}</p>
+    </div>
+  );
+}
 
 export function GithubConnectDialog({ open, onOpenChange, onDone }: IntegrationDialogProps) {
-  const tokenId = useId();
   const [options, setOptions] = useState<GithubConnectOptions | null>(null);
   const [mode, setMode] = useState<"gh" | "token">("token");
   const [token, setToken] = useState("");
@@ -77,34 +112,25 @@ export function GithubConnectDialog({ open, onOpenChange, onDone }: IntegrationD
           onValueChange={(v) => setMode(v === "gh" ? "gh" : "token")}
           className="grid gap-2"
         >
-          <ChoiceCard
+          <ChoicePanel
             value="gh"
             icon={Terminal}
             title={t.gh}
             badge={<Badge variant="outline">{t.ghRecommended}</Badge>}
-            description={ghDescription(options)}
             disabled={!options?.ghAvailable}
-          />
-          <ChoiceCard value="token" icon={KeyRound} title={t.token} description={t.tokenHelp} />
+          >
+            <GhState options={options} />
+          </ChoicePanel>
+          <ChoicePanel value="token" icon={KeyRound} title={t.token}>
+            {mode === "token" && (
+              <div className="grid gap-2 pt-1">
+                <TokenField value={token} invalid={error !== null} onChange={setToken} />
+                <FormError message={error} />
+              </div>
+            )}
+          </ChoicePanel>
         </RadioGroup>
-        {mode === "token" && (
-          <div className="grid gap-2">
-            <Label htmlFor={tokenId}>{t.tokenLabel}</Label>
-            <Input
-              id={tokenId}
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              className="font-mono"
-              placeholder={t.tokenPlaceholder}
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              aria-invalid={error !== null}
-            />
-            <p className="text-xs text-muted-foreground">{t.scopes}</p>
-          </div>
-        )}
-        <FormError message={error} />
+        {mode === "gh" && <FormError message={error} />}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {fr.common.cancel}

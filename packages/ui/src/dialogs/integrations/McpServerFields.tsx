@@ -44,7 +44,6 @@ function EnvRows({ env, onChange }: { env: McpForm["env"]; onChange(env: McpForm
   return (
     <fieldset className="grid gap-2">
       <legend className="mb-2 text-sm font-medium">{t.env}</legend>
-      <p className="text-xs text-muted-foreground">{t.envHelp}</p>
       {env.map((e, i) => (
         <div key={e.key} className="flex gap-2">
           <Input
@@ -97,7 +96,7 @@ function StdioFields({ form, onChange }: Pick<Props, "form" | "onChange">) {
           onChange={(e) => onChange({ command: e.target.value })}
         />
       </Field>
-      <Field id={ids.args} label={t.args} help={t.argsHelp}>
+      <Field id={ids.args} label={t.args}>
         <Textarea
           id={ids.args}
           className="font-mono"
@@ -146,7 +145,7 @@ export function McpServerFields({ form, id, onChange, onIdChange }: Props) {
         <Field id={ids.name} label={t.name}>
           <Input id={ids.name} value={form.name} onChange={(e) => onChange({ name: e.target.value })} />
         </Field>
-        <Field id={ids.id} label={t.id} help={t.idHelp}>
+        <Field id={ids.id} label={t.id}>
           <Input
             id={ids.id}
             className="font-mono"

@@ -62,9 +62,15 @@ test("github: gh is disabled when missing, a refused token is explained", async 
   await user.click(screen.getByRole("radio", { name: "Jeton personnel" }));
   const field = screen.getByLabelText("Jeton");
   expect(field.getAttribute("type")).toBe("password");
+  const card = screen
+    .getByRole("radio", { name: "Jeton personnel" })
+    .closest<HTMLElement>("[data-slot=choice-panel]");
+  if (!card) throw new Error("token card not found");
+  expect(within(card).getByLabelText("Jeton")).toBe(field);
+  expect(within(card).getByText(/^Portées requises/)).toBeDefined();
   await user.type(field, "ghp_wrong");
   await user.click(screen.getByRole("button", { name: "Connecter" }));
-  expect((await screen.findByRole("alert")).textContent).toBe("GitHub a refusé ce jeton.");
+  expect((await within(card).findByRole("alert")).textContent).toBe("GitHub a refusé ce jeton.");
   expect(screen.queryByText(/ghp_wrong/)).toBeNull();
   expect(calls).toContainEqual({ method: "connectGithub", auth: { mode: "token", token: "ghp_wrong" } });
 });
@@ -77,8 +83,9 @@ test("github: gh is preselected when connected", async () => {
   const onDone = mock((_message?: string) => {});
   const user = userEvent.setup();
   render(<GithubConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
+  expect(await screen.findByText("gh est connecté (adam)")).toBeDefined();
   expect(
-    await screen.findByText("Kibo lit le jeton de gh à la demande, sans le stocker. gh est connecté (adam)."),
+    screen.getByText("PR, reviews et statuts CI de tes projets. Le jeton reste dans le trousseau système."),
   ).toBeDefined();
   await user.click(screen.getByRole("button", { name: "Connecter" }));
   expect(calls).toContainEqual({ method: "connectGithub", auth: { mode: "gh" } });
@@ -113,10 +120,29 @@ test("figma: the default address is sent, an unreachable server is explained", a
   expect(screen.getByLabelText("Adresse du serveur")).toHaveProperty("value", "http://127.0.0.1:3845/mcp");
   await user.click(screen.getByRole("button", { name: "Connecter" }));
   expect(calls).toContainEqual({ method: "configureFigma", url: "http://127.0.0.1:3845/mcp" });
-  expect((await screen.findByRole("alert")).textContent).toMatch(/^Serveur Figma injoignable/);
+  const alert = await screen.findByRole("alert");
+  expect(within(alert).getByText("Serveur Figma injoignable")).toBeDefined();
+  expect(
+    within(alert).getByText(
+      "Rien n'écoute sur 127.0.0.1:3845. Vérifie que Figma est lancé et que le serveur MCP est activé.",
+    ),
+  ).toBeDefined();
   state = "connected";
   await user.click(screen.getByRole("button", { name: "Connecter" }));
   expect(onDone).toHaveBeenCalled();
+});
+
+test("figma: missing tools are listed as a warning", async () => {
+  reply = async () => {
+    throw new KiboError("MCP_FAILED", "figma server lacks tools: get_screenshot");
+  };
+  const user = userEvent.setup();
+  render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  const alert = await screen.findByRole("alert");
+  expect(within(alert).getByText("Ce serveur n'expose pas les outils Figma attendus")).toBeDefined();
+  expect(within(alert).getByText("Outils manquants : get_screenshot. Mets Figma à jour.")).toBeDefined();
+  expect(alert.dataset.tone).toBe("warning");
 });
 
 test("mcp: the exact command is shown and confirmed before adding", async () => {
@@ -129,10 +155,19 @@ test("mcp: the exact command is shown and confirmed before adding", async () => 
   render(<McpServerDialog open onOpenChange={() => {}} onAdded={onAdded} takenIds={[]} />);
   await user.type(screen.getByLabelText("Nom"), "Context7");
   await user.type(screen.getByLabelText("Commande"), "npx");
-  await user.type(screen.getByLabelText("Arguments"), "-y{Enter}@upstash/context7-mcp");
+  await user.type(screen.getByLabelText("Arguments (un par ligne)"), "-y{Enter}@upstash/context7-mcp");
   await user.click(screen.getByRole("button", { name: "Continuer" }));
   const dialog = await screen.findByRole("dialog", { name: "Confirmer la commande" });
   expect(within(dialog).getByText("npx -y @upstash/context7-mcp")).toBeDefined();
+  expect(within(dialog).getByText("Étape 2 sur 2 · Kibo lancera exactement ceci, sans shell.")).toBeDefined();
+  expect(
+    within(dialog).getByText(
+      "Environnement réduit : PATH, HOME et LANG. Aucune autre variable n'est transmise.",
+    ),
+  ).toBeDefined();
+  const warning = within(dialog).getByRole("note");
+  expect(within(warning).getByText("Ce processus aura les droits de ton utilisateur")).toBeDefined();
+  expect(within(warning).getByText("N'ajoute qu'un serveur dont tu connais la source.")).toBeDefined();
   await user.click(within(dialog).getByRole("button", { name: "Ajouter et lancer" }));
   expect(calls.at(-1)).toEqual({
     method: "addMcpServer",
@@ -203,4 +238,15 @@ test("mcp list: empty state and add flow", async () => {
   expect(await screen.findByText("Aucun serveur MCP.")).toBeDefined();
   await user.click(screen.getByRole("button", { name: "Ajouter un serveur" }));
   expect(await screen.findByRole("dialog", { name: "Ajouter un serveur MCP" })).toBeDefined();
+});
+
+test("mcp: the reduced environment names the secret variables", async () => {
+  const { fr } = await import("../../i18n/fr");
+  const env = fr.integrations.mcpServer.environment;
+  expect(env(["FS_TOKEN"])).toBe(
+    "Environnement réduit : PATH, HOME, LANG et FS_TOKEN (lu dans le trousseau). Aucune autre variable n'est transmise.",
+  );
+  expect(env(["A", "B"])).toBe(
+    "Environnement réduit : PATH, HOME, LANG, A et B (lues dans le trousseau). Aucune autre variable n'est transmise.",
+  );
 });

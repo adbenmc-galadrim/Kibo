@@ -57,14 +57,12 @@ export const frIntegrations = {
   },
   github: {
     title: "Connecter GitHub",
-    subtitle: "Un seul compte GitHub par workspace, partagé par les PR, les issues et Actions.",
+    subtitle: "PR, reviews et statuts CI de tes projets. Le jeton reste dans le trousseau système.",
     gh: "Utiliser gh",
     ghRecommended: "Recommandé",
-    ghHelp: "Kibo lit le jeton de gh à la demande, sans le stocker.",
-    ghDetected: (login: string) => `gh est connecté (${login}).`,
+    ghDetected: (login: string) => `gh est connecté (${login})`,
     ghMissing: "gh n'est pas installé ou pas connecté (gh auth login).",
     token: "Jeton personnel",
-    tokenHelp: "Stocké dans le trousseau système, jamais dans les données du projet.",
     tokenLabel: "Jeton",
     tokenPlaceholder: "ghp_…",
     scopes:
@@ -75,18 +73,28 @@ export const frIntegrations = {
     connected: (login: string) => `Connecté en tant que ${login}`,
   },
   figma: {
-    title: "Connecter Figma",
-    subtitle: "Kibo utilise le serveur MCP Dev Mode de l'application Figma : aucun compte ni secret stocké.",
+    title: "Connecter Figma (MCP)",
+    subtitle: "Kibo lit les nœuds Figma liés aux tickets via le serveur MCP de l'application Figma.",
     url: "Adresse du serveur",
-    urlHelp: "Figma › Préférences › Activer le serveur MCP Dev Mode. Par défaut : http://127.0.0.1:3845/mcp",
+    urlHelp:
+      "Active « Dev Mode MCP Server » dans les préférences de Figma, puis garde l'application ouverte.",
     defaultUrl: "http://127.0.0.1:3845/mcp",
     submit: "Connecter",
-    unreachable: "Serveur Figma injoignable : ouvre l'application Figma et active le serveur Dev Mode.",
-    missingTools: "Ce serveur n'expose pas les outils Figma attendus (get_metadata, get_screenshot).",
+    expectedTools: "get_metadata, get_screenshot",
+    unreachable: {
+      title: "Serveur Figma injoignable",
+      detail: (address: string) =>
+        `Rien n'écoute sur ${address}. Vérifie que Figma est lancé et que le serveur MCP est activé.`,
+    },
+    missingTools: {
+      title: "Ce serveur n'expose pas les outils Figma attendus",
+      detail: (tools: string) => `Outils manquants : ${tools}. Mets Figma à jour.`,
+    },
+    invalidUrl: { title: "Adresse invalide", detail: "https obligatoire, sauf 127.0.0.1." },
   },
   mcpServers: {
     title: "Serveurs MCP",
-    subtitle: "La configuration reste sur cette machine : elle n'est jamais synchronisée.",
+    subtitle: "Connecteurs génériques utilisables par les widgets Source MCP et par les agents.",
     add: "Ajouter un serveur",
     empty: "Aucun serveur MCP.",
     tools: (n: number) => `${n} ${plural(n, "outil", "outils")}`,
@@ -106,18 +114,15 @@ export const frIntegrations = {
     invalid: (field: string) => `${field} : valeur invalide.`,
     name: "Nom",
     id: "Identifiant",
-    idHelp: "Minuscules, chiffres et tirets. Sert dans les permissions (mcp:context7).",
     idTaken: "Identifiant déjà utilisé.",
     type: "Type",
     stdio: "Commande locale (stdio)",
-    stdioHelp: "Kibo lance le serveur sur ta machine.",
+    stdioHelp: "Kibo lance le processus",
     http: "Adresse HTTP",
-    httpHelp: "Serveur déjà lancé, local ou distant.",
+    httpHelp: "Serveur déjà lancé",
     command: "Commande",
-    args: "Arguments",
-    argsHelp: "Un argument par ligne.",
+    args: "Arguments (un par ligne)",
     env: "Variables secrètes",
-    envHelp: "La valeur va dans le trousseau et n'est transmise qu'à ce serveur.",
     envName: "Nom",
     envValue: "Valeur",
     envAdd: "Ajouter une variable",
@@ -126,9 +131,17 @@ export const frIntegrations = {
     bearer: "Jeton d'accès (facultatif)",
     next: "Continuer",
     confirmTitle: "Confirmer la commande",
-    confirmBody:
-      "Kibo exécutera exactement cette commande sur ta machine, avec un environnement réduit (PATH, HOME, LANG et les variables secrètes ci-dessus) :",
-    confirmHttp: "Kibo se connectera à cette adresse :",
+    confirmStdio: "Étape 2 sur 2 · Kibo lancera exactement ceci, sans shell.",
+    confirmHttp: "Étape 2 sur 2 · Kibo se connectera à cette adresse.",
+    environment: (secrets: string[]) => {
+      const names = ["PATH", "HOME", "LANG", ...secrets];
+      const list = `${names.slice(0, -1).join(", ")} et ${names.at(-1)}`;
+      const origin =
+        secrets.length === 0 ? "" : ` (${plural(secrets.length, "lu", "lues")} dans le trousseau)`;
+      return `Environnement réduit : ${list}${origin}. Aucune autre variable n'est transmise.`;
+    },
+    warningTitle: "Ce processus aura les droits de ton utilisateur",
+    warningBody: "N'ajoute qu'un serveur dont tu connais la source.",
     confirm: "Ajouter et lancer",
     back: "Retour",
   },
