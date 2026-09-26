@@ -14,6 +14,7 @@ import { type ComponentsDeps, createComponentsService } from "./components/servi
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { startMarket } from "./market/bootstrap";
 import { listInterfaces } from "./remote/interfaces";
 import { PairingCodes } from "./remote/pairing-codes";
 import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
@@ -42,6 +43,7 @@ export type DaemonOptions = {
   redactor?: Redactor;
   agentEnv?: Record<string, string | undefined>;
   assistantTimeoutMs?: number;
+  marketAllowLoopback?: boolean;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -124,6 +126,14 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   closers.push(service.attachComponents(components));
   closers.push(() => components.stop());
   await components.start();
+  const market = startMarket({
+    db: store.db,
+    docs: service.docs,
+    components,
+    notify: opts.notify ?? (() => {}),
+    allowLoopbackHttp: opts.marketAllowLoopback ?? false,
+  });
+  closers.push(() => market.stop());
   const code = createCodeService(service);
   closers.push(() => code.stop());
   const pairingCodes = new PairingCodes(Date.now);
@@ -149,6 +159,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     assets: components.assets,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
+    handlers: [market.handler],
   });
   front.push(() => server.stop());
   const started = createRemoteAccess({

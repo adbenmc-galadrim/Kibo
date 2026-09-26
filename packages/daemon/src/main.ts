@@ -51,6 +51,7 @@ const daemon = await Promise.resolve()
       cliStatus: () => cliStatus(),
       integrations: parseIntegrationFlags(values),
       redactor,
+      marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1",
     }),
   )
   .catch(failStart);

@@ -9,7 +9,7 @@ import { createNotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
 import { createBackends } from "./backends";
 import { listDrafts } from "./drafts";
-import { createEventLog, ensureEventsTable } from "./events";
+import { createEventLog, type EventLog, ensureEventsTable } from "./events";
 import { createGate } from "./gate";
 import { createGateHandlers } from "./gate-handlers";
 import { createInflight } from "./inflight";
@@ -49,6 +49,7 @@ export type ComponentsService = {
   registry: RegistryService;
   publisher: Publisher;
   publishLock: PublishLock;
+  events: EventLog;
   usageChanged(): void;
   start(): Promise<void>;
   stop(): Promise<void>;
@@ -255,6 +256,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     registry,
     publisher,
     publishLock,
+    events,
     usageChanged,
     afterCommand: () => usageChanged(),
     async start() {
