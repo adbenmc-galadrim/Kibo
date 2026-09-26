@@ -116,12 +116,14 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
 
   const linkPr = async (h: WorktreeHandle, req: Extract<Mutation, { method: "createPr" }>) => {
     const pr = await createPr(h, req);
-    if (req.ticketId)
+    if (req.ticketId) {
       call(service, {
         method: "command",
         projectId: req.projectId,
         command: { method: "upsertExternalRef", ticketId: req.ticketId, ref: { kind: "github_pr", ...pr } },
       });
+      service.triggerRules(req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
+    }
     return pr;
   };
 

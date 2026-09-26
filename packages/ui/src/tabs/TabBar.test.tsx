@@ -42,6 +42,7 @@ const snapshot: ProjectSnapshot = {
   tickets: [],
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-1",
 };
 const ctx = { projects: [summary], snapshots: new Map([["p1", snapshot]]) };

@@ -308,6 +308,7 @@ export function kiboProject(): ProjectSnapshot {
     ],
     links: [{ id: "l1", from: "t12", to: "t15", type: "blocks" }],
     instances: [],
+    rules: [],
     nextTicketKey: "KIB-30",
   };
 }

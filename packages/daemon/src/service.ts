@@ -7,6 +7,7 @@ import {
   readProject,
   registerProject,
 } from "@kibo/core";
+import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
   EMPTY_TABS,
@@ -46,6 +47,7 @@ export type Service = {
   onChange(listener: (message: ChangeMessage) => void): () => void;
   agentData: AgentDataPort;
   attachAgents(agents: AgentsPort): () => void;
+  triggerRules(projectId: string, trigger: RuleTrigger): void;
 };
 
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
@@ -169,6 +171,11 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         offRuns();
         agents = null;
       };
+    },
+    triggerRules(projectId, trigger) {
+      if (applyRules(docs.project(projectId), trigger).length === 0) return;
+      docs.save(projectId);
+      docs.emit({ projectId });
     },
     handle(req) {
       switch (req.method) {

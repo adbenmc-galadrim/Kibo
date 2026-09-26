@@ -141,6 +141,7 @@ const project: ProjectSnapshot = {
   tickets: [],
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-1",
 };
 const count = (method: CodeRequest["method"]) => calls.filter((c) => c.method === method).length;

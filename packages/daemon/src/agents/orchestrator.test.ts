@@ -56,6 +56,7 @@ const project: ProjectSnapshot = {
   tickets: [1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)),
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-5",
 };
 

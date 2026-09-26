@@ -65,6 +65,7 @@ const createTicket = (title: string) =>
     command: { method: "createTicket", title },
   }) as Ticket;
 const refs = () => call(service, { method: "getProject", projectId: project.id }).tickets[0]?.externalRefs;
+const statusOf = () => call(service, { method: "getProject", projectId: project.id }).tickets[0]?.statusId;
 const waitFor = async (check: () => boolean, ms = 3000) => {
   const end = Date.now() + ms;
   while (!check() && Date.now() < end) await Bun.sleep(20);
@@ -186,10 +187,43 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
     { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
   ]);
   expect(events).toContainEqual(event());
+  expect(statusOf()).toBe("in_review");
   const state = gh.FAKE_GH_STATE ?? "";
   const prs = JSON.parse(readFileSync(state, "utf8")) as { state: string }[];
   writeFileSync(state, JSON.stringify(prs.map((p) => ({ ...p, state: "MERGED" }))));
   expect(await waitFor(() => refs()?.[0]?.state === "merged")).toBe(true);
+  expect(statusOf()).toBe("done");
+});
+
+test("a PR without a ticket, or closed without merging, moves no ticket", async () => {
+  const c = start({ prPollMs: 50 });
+  const ticket = createTicket("Schéma");
+  fx.commit("feat: schéma", { "a.txt": "a\n" });
+  await c.handle({
+    method: "createPr",
+    ...w(),
+    title: "feat: schéma",
+    body: "",
+    base: "main",
+    draft: false,
+    reviewers: [],
+    ticketId: null,
+  });
+  expect(statusOf()).toBe(ticket.statusId);
+  call(service, {
+    method: "command",
+    projectId: project.id,
+    command: {
+      method: "upsertExternalRef",
+      ticketId: ticket.id,
+      ref: { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
+    },
+  });
+  const state = gh.FAKE_GH_STATE ?? "";
+  const prs = JSON.parse(readFileSync(state, "utf8")) as { state: string }[];
+  writeFileSync(state, JSON.stringify(prs.map((p) => ({ ...p, state: "CLOSED" }))));
+  expect(await waitFor(() => refs()?.[0]?.state === "closed")).toBe(true);
+  expect(statusOf()).toBe(ticket.statusId);
 });
 
 test("a failing PR lookup is logged and does not stop the others", async () => {

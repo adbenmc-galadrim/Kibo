@@ -4,6 +4,7 @@ import { addInstance, listInstances, removeInstance } from "./instances";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
+import { readRules } from "./rules";
 import {
   childProgress,
   createTicket,
@@ -71,6 +72,7 @@ export function readProject(doc: LoroDoc): ProjectSnapshot {
     })),
     links: listLinks(doc),
     instances: listInstances(doc),
+    rules: readRules(doc),
     nextTicketKey: peekTicketKey(doc),
   };
 }

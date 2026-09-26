@@ -20,6 +20,7 @@ import type { Link } from "./link";
 import type { NotesInfo } from "./note";
 import type { Page } from "./page";
 import type { ProjectMeta } from "./project";
+import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
 import type { Status, StatusId } from "./status";
@@ -36,6 +37,7 @@ export type ProjectSnapshot = {
   tickets: TicketView[];
   links: Link[];
   instances: Instance[];
+  rules: Rule[];
   nextTicketKey: string;
 };
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };

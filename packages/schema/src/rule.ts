@@ -4,7 +4,7 @@ import { StatusId } from "./status";
 export const Rule = z.object({
   id: z.string().min(1),
   enabled: z.boolean(),
-  when: z.enum(["run_started", "run_done", "children_done"]),
+  when: z.enum(["run_started", "run_done", "pr_opened", "pr_merged", "children_done"]),
   from: z.array(StatusId),
   to: StatusId.exclude(["blocked"]),
 });
@@ -24,6 +24,20 @@ export const DEFAULT_RULES: Rule[] = [
     when: "run_done",
     from: ["backlog", "todo", "in_progress"],
     to: "in_review",
+  },
+  {
+    id: "pr-opened-review",
+    enabled: true,
+    when: "pr_opened",
+    from: ["backlog", "todo", "in_progress"],
+    to: "in_review",
+  },
+  {
+    id: "pr-merged-done",
+    enabled: true,
+    when: "pr_merged",
+    from: ["backlog", "todo", "in_progress", "in_review"],
+    to: "done",
   },
   {
     id: "children-done-parent",

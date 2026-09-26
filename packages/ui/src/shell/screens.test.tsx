@@ -51,6 +51,7 @@ const empty: ProjectSnapshot = {
   tickets: [],
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-1",
 };
 

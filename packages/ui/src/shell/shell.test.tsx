@@ -34,6 +34,7 @@ const project: ProjectSnapshot = {
   ],
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-8",
 };
 const repo: ProjectSnapshot = {

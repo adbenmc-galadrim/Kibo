@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_RULES, type Rule } from "@kibo/schema";
+import { readProject } from "./commands";
 import { createProjectDoc } from "./project";
 import { evaluateRules, type RuleTicket, readRules } from "./rules";
 
@@ -38,6 +39,28 @@ describe("run started", () => {
   });
 });
 
+describe("pull requests", () => {
+  test("an opened PR moves the ticket to review, never back from done or blocked", () => {
+    expect(
+      evaluateRules(DEFAULT_RULES, { kind: "pr_opened", ticketId: "a" }, [t("a", "in_progress")]),
+    ).toEqual([{ method: "setStatus", ticketId: "a", statusId: "in_review" }]);
+    for (const s of ["in_review", "blocked", "done"] as const) {
+      expect(evaluateRules(DEFAULT_RULES, { kind: "pr_opened", ticketId: "a" }, [t("a", s)])).toEqual([]);
+    }
+  });
+
+  test("a merged PR closes the ticket, then its parent when it was the last child", () => {
+    const tickets = [t("p", "in_progress"), t("c1", "done", "p"), t("c2", "in_review", "p")];
+    expect(evaluateRules(DEFAULT_RULES, { kind: "pr_merged", ticketId: "c2" }, tickets)).toEqual([
+      { method: "setStatus", ticketId: "c2", statusId: "done" },
+      { method: "setStatus", ticketId: "p", statusId: "done" },
+    ]);
+    expect(evaluateRules(DEFAULT_RULES, { kind: "pr_merged", ticketId: "a" }, [t("a", "blocked")])).toEqual(
+      [],
+    );
+  });
+});
+
 describe("children done", () => {
   test("closes the parent once every direct child is done, and cascades", () => {
     const tickets = [
@@ -72,8 +95,9 @@ describe("children done", () => {
 
 describe("storage", () => {
   const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
-  test("projects without rules use the defaults", () => {
+  test("projects without rules use the defaults, and the snapshot carries them", () => {
     expect(readRules(doc())).toEqual(DEFAULT_RULES);
+    expect(readProject(doc()).rules).toEqual(DEFAULT_RULES);
   });
   test("stored rules are validated", () => {
     const d = doc();

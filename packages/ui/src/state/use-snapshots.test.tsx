@@ -9,6 +9,7 @@ const snapshot = (id: string): ProjectSnapshot => ({
   tickets: [],
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-1",
 });
 const requested: string[] = [];

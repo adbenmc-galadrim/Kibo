@@ -28,6 +28,7 @@ const project: ProjectSnapshot = {
   tickets: [],
   links: [],
   instances: [],
+  rules: [],
   nextTicketKey: "KIB-1",
 };
 const page = { id: "pg1", title: "Vue", kind: "view", parentId: null } as const;

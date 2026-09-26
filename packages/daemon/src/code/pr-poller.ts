@@ -34,6 +34,7 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
       projectId,
       command: { method: "upsertExternalRef", ticketId: ticket.id, ref: { ...ref, state: info.state } },
     });
+    if (info.state === "merged") service.triggerRules(projectId, { kind: "pr_merged", ticketId: ticket.id });
   };
 
   const poll = async () => {
