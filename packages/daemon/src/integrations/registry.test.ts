@@ -83,3 +83,27 @@ test("a probe error message is redacted", async () => {
   };
   expect(tested.error.message).toBe("github 401: Bearer ***");
 });
+
+test("a returned probe error message is redacted", async () => {
+  const secret = "ghp_TESTSECRET0123456789abcdefghijklmn";
+  const failed = async () => ({
+    id: "github" as const,
+    state: "error" as const,
+    account: null,
+    servers: [],
+    error: { code: "REMOTE_REJECTED" as const, message: `github 401: Bearer ${secret}` },
+    resumeAt: null,
+  });
+  const rpc = createIntegrationRpc({
+    handlers: [],
+    probes: [{ id: "github", status: failed, test: failed }],
+    stops: [],
+    redact: (text) => text.split(secret).join("***"),
+  });
+  const [s] = (await rpc.handle({ method: "listIntegrations" })) as { error: { message: string } }[];
+  expect(s?.error.message).toBe("github 401: Bearer ***");
+  const tested = (await rpc.handle({ method: "testIntegration", id: "github" })) as {
+    error: { message: string };
+  };
+  expect(tested.error.message).toBe("github 401: Bearer ***");
+});

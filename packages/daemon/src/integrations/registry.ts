@@ -45,11 +45,15 @@ async function probeStatus(
   fn: () => Promise<IntegrationStatus>,
   redact: Redact,
 ): Promise<IntegrationStatus> {
+  let status: IntegrationStatus;
   try {
-    return await fn();
+    status = await fn();
   } catch (e) {
     return errorStatus(id, e, redact);
   }
+  return status.error
+    ? { ...status, error: { ...status.error, message: redact(status.error.message) } }
+    : status;
 }
 
 function handlerTable(groups: IntegrationHandlers[]): Map<string, AnyHandler> {
