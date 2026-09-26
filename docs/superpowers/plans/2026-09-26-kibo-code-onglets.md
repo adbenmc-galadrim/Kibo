@@ -2503,7 +2503,7 @@ git commit -m "feat(daemon): watcher de worktree"
 - Consumes: `installFakeBin`, `readFakeBinLog` (tâche 3).
 - Produces : `ALLOWED_EDITORS: readonly string[]` ; `editorCommand(file: string, line: number | null, env: Record<string, string | undefined>, platform: NodeJS.Platform): string[]` ; `openInEditor(cmd: string[], env?: Record<string, string>): void`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/editor.test.ts` :
 ```ts
@@ -2550,7 +2550,7 @@ test("openInEditor spawns the command detached, without a shell", async () => {
 Run: `bun test packages/daemon/src/code/editor.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/code/editor.ts` :
 ```ts
@@ -2592,12 +2592,12 @@ export function openInEditor(cmd: string[], env: Record<string, string> = {}): v
 ```
 Les arguments supplémentaires de `$EDITOR` (comme `--wait`) sont volontairement ignorés : seul le binaire de la liste blanche est lancé.
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/editor.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/code/editor.ts packages/daemon/src/code/editor.test.ts
