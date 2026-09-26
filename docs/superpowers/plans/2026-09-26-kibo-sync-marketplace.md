@@ -18189,7 +18189,7 @@ git commit -m "feat(ui): paramètres de sécurité"
   - `groupFingerprint(hex: string): string` (`lib/fingerprint.ts`).
   - Écran `sources` (`Screen`), adresse `#/settings/components`, page `ComponentSourcesPage`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-market.ts` :
 ```ts
@@ -18269,7 +18269,7 @@ export const frMarket = {
 ```
 Dans `packages/ui/src/i18n/fr.ts`, importer `frMarket` et l'étaler (`...frMarket`) à côté de `...frComponents` ; ajouter `components: "Composants"` à `settings`.
 
-- [ ] **Step 2: Tests des utilitaires**
+- [x] **Step 2: Tests des utilitaires**
 
 `packages/ui/src/lib/market-errors.test.ts` :
 ```ts
@@ -18325,7 +18325,7 @@ export function marketErrorText(error: unknown): string {
 Run: `bun test packages/ui/src/lib/market-errors.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Tests du catalogue et du détail**
+- [x] **Step 3: Tests du catalogue et du détail**
 
 `packages/ui/src/components-page/marketplace.test.tsx` :
 ```tsx
@@ -18498,7 +18498,7 @@ test("a changed publisher key disables install and offers to unlock", async () =
 Run: `bun test packages/ui/src/components-page/marketplace.test.tsx`
 Expected: FAIL avec « Cannot find module './MarketplaceTab' ».
 
-- [ ] **Step 4: Implémenter le catalogue**
+- [x] **Step 4: Implémenter le catalogue**
 
 `packages/ui/src/components-page/MarketCard.tsx` :
 ```tsx
@@ -18646,7 +18646,7 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
 ```
 La requête `searchMarket` n'envoie `sourceId` et `kind` que lorsqu'ils sont choisis : le test attend `{ method: "searchMarket", query: "burn" }` exactement. Un composant `adapter` apparaît sous « Tous » (sans filtre dédié : il n'a pas d'UI à placer sur une page).
 
-- [ ] **Step 5: Implémenter le détail et « Voir le code »**
+- [x] **Step 5: Implémenter le détail et « Voir le code »**
 
 Dans `packages/ui/src/dialogs/TrustDialog.tsx`, exporter la fonction `PermissionList` (aucun autre changement à cette étape).
 
@@ -18846,7 +18846,7 @@ export function MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: P
 Run: `bun test packages/ui/src/components-page/marketplace.test.tsx`
 Expected: PASS (8 tests).
 
-- [ ] **Step 6: Variantes M5 de l'écran 30**
+- [x] **Step 6: Variantes M5 de l'écran 30**
 
 `packages/ui/src/dialogs/trust-market.test.tsx` :
 ```tsx
@@ -18905,7 +18905,7 @@ export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
 Run: `bun test packages/ui/src/dialogs/trust-market.test.tsx packages/ui/src/dialogs`
 Expected: PASS ; les tests existants de l'écran 30 passent sans changement de leurs attentes.
 
-- [ ] **Step 7: Onglets de la page Composants**
+- [x] **Step 7: Onglets de la page Composants**
 
 Dans `ComponentsPage.tsx`, placer la page sous deux onglets (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` de `@kibo/sdk/ui/tabs`) : `<Tabs defaultValue="installed">` avec les déclencheurs `fr.market.tabInstalled` (valeur `installed`) et `fr.market.tabMarket` (valeur `market`) ; le contenu `installed` (classe `grid content-start gap-6`) reçoit, inchangés, le bloc du tableau (`<div className="overflow-hidden rounded-lg border bg-card">…`), le texte vide, les messages et `DraftsSection` ; le contenu `market` reçoit :
 ```tsx
@@ -18932,7 +18932,7 @@ test("the components page offers the Installed and Marketplace tabs", async () =
 Run: `bun test packages/ui/src/components-page`
 Expected: PASS ; les tests existants de la page passent sans changement de leurs attentes (l'onglet « Installés » est affiché par défaut).
 
-- [ ] **Step 8: Tests des sources (M3)**
+- [x] **Step 8: Tests des sources (M3)**
 
 `packages/ui/src/settings/sources.test.tsx` :
 ```tsx
@@ -19025,7 +19025,7 @@ test("a probe failure is explained on the first step", async () => {
 Run: `bun test packages/ui/src/settings/sources.test.tsx`
 Expected: FAIL avec « Cannot find module './ComponentSourcesPage' ».
 
-- [ ] **Step 9: Implémenter les sources et l'écran `sources`**
+- [x] **Step 9: Implémenter les sources et l'écran `sources`**
 
 `packages/ui/src/dialogs/AddSourceDialog.tsx` :
 ```tsx
@@ -19243,12 +19243,12 @@ Les tests existants qui énumèrent les écrans (`palette/screen-items.test.ts`,
 Run: `bun test packages/ui/src/settings/sources.test.tsx packages/ui/src/tabs packages/ui/src/palette`
 Expected: PASS.
 
-- [ ] **Step 10: Vérifications**
+- [x] **Step 10: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui packages/schema && bun run --cwd packages/ui build && bun run budget`
 Expected: aucune erreur ; budget du chargement initial ≤ 230 kB gzip (le code de la tâche est dans les écrans chargés à la demande). Contrôle visuel en sombre et en clair (`bun run --cwd packages/ui dev` avec un démon et `startFakeMarket`) face aux exports M1, M2, M3, M5 ; écarts corrigés avant la review.
 
-- [ ] **Step 11: Commits**
+- [x] **Step 11: Commits**
 
 ```bash
 git add packages/ui/src/i18n/fr-market.ts packages/ui/src/i18n/fr.ts packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/components-page/MarketplaceTab.tsx packages/ui/src/components-page/MarketCard.tsx packages/ui/src/components-page/MarketPackageSheet.tsx packages/ui/src/components-page/SourceCode.tsx packages/ui/src/components-page/ComponentsPage.tsx packages/ui/src/components-page/marketplace.test.tsx packages/ui/src/components-page/components-page.test.tsx packages/ui/src/dialogs/TrustDialog.tsx packages/ui/src/dialogs/trust-market.test.tsx
