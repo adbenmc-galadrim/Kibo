@@ -12256,7 +12256,7 @@ Serveur MCP Dev Mode de l'application Figma, ouvert par le hub sous l'identifian
   - `figmaModule(kit: IntegrationKit, hub: McpHub): IntegrationModule` (handlers `configureFigma`, `linkFigmaNode`, `getFigmaPreview` ; sonde `figma` avec `test` et `disconnect`)
   - `buildFakeMcpServer(opts?: { omit?: string[] })`, `startFakeMcpHttp(opts?: { bearer?: string; omit?: string[] })`
 
-- [ ] **Step 1: Tests (échouent)**
+- [x] **Step 1: Tests (échouent)**
 
 `packages/daemon/src/figma/figma-url.test.ts` :
 
@@ -12405,11 +12405,11 @@ test("disconnecting forgets the address, never the links", async () => {
 
 Run: `bun test packages/daemon/src/figma` — Expected: FAIL.
 
-- [ ] **Step 2: Option `omit` du faux MCP**
+- [x] **Step 2: Option `omit` du faux MCP**
 
 `packages/daemon/src/testing/fake-mcp.ts` : `buildFakeMcpServer(opts: { omit?: string[] } = {})` n'enregistre pas les outils dont le nom figure dans `opts.omit` (garde `if (!omit.includes(name))` autour de chaque `registerTool`, via une fonction locale `tool(name, config, handler)`) ; `startFakeMcpHttp(opts: { bearer?: string; omit?: string[] } = {})` passe `omit` à `buildFakeMcpServer`.
 
-- [ ] **Step 3: `figma-url.ts` et section « Maquettes » du brief**
+- [x] **Step 3: `figma-url.ts` et section « Maquettes » du brief**
 
 `packages/daemon/src/figma/figma-url.ts` :
 
@@ -12447,7 +12447,7 @@ export function nameFromMetadata(text: string): string | null {
 
 (`ticket.externalRefs` est l'union `ExternalRef` étendue par la Task 4 ; le filtre sur `kind` la resserre à `figma_node`.) Le brief est pur et déjà écrit dans `brief.md` par `buildRunContext` (`run-launch.ts`) : aucun code démon de plus. Aucun secret ni aperçu dans le brief (URL seulement).
 
-- [ ] **Step 4: `figma.ts`**
+- [x] **Step 4: `figma.ts`**
 
 ```ts
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -12585,7 +12585,7 @@ export function createFigma(deps: Deps) {
 - `preview` : Figma fermé ou lent ⇒ aperçu en cache (même périmé) et badge « Figma non joignable » (journalisé en avertissement) ; toute autre erreur remonte.
 - Un PNG invalide ou de plus de 2 Mio n'est jamais écrit.
 
-- [ ] **Step 5: `module.ts` et amorçage**
+- [x] **Step 5: `module.ts` et amorçage**
 
 ```ts
 import { KiboError } from "@kibo/schema";
@@ -12619,7 +12619,7 @@ export function figmaModule(kit: IntegrationKit, hub: McpHub): IntegrationModule
 
 `bootstrap.ts` : ajouter `figmaModule(kit, mcpHub)` à `modules`.
 
-- [ ] **Step 6: Vérifier et commiter**
+- [x] **Step 6: Vérifier et commiter**
 
 Run: `bun test packages/daemon/src/figma packages/daemon/src/testing packages/core/src/context.test.ts && bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
