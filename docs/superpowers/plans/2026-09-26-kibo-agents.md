@@ -8149,7 +8149,7 @@ Maquette : page 21. Profil, avertissement si le ticket attend un autre ticket, b
 - Consumes (Task 14) : `reasonText`, `fr.assign.*`, `fr.models`, `fr.strategiesShort`, `fr.agents.workspace`, `fr.common.cancel`, primitive `alert` ; fixtures `kiboProject`, `configFixture`. (Task 1) : `ProjectSnapshot`, `WorkspaceConfig`, `AssignPreview` ; RPC `previewAssign`, `assignAgent`.
 - Produces : `AssignDialog({ project: ProjectSnapshot | null; ticketId: string | null; config: WorkspaceConfig | null; onClose: () => void })`.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ui/src/agents/assign-dialog.test.tsx` :
 ```tsx
@@ -8257,12 +8257,12 @@ test("without a profile or a project the dialog explains what to do", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/agents/assign-dialog.test.tsx`
 Expected: FAIL (`Cannot find module "./AssignDialog"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/ui/src/agents/AssignDialog.tsx` :
 ```tsx
@@ -8500,12 +8500,12 @@ export function AssignDialog({ project, ticketId, config, onClose }: Props) {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/ui/src/agents/assign-dialog.test.tsx && bun run format && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ui/src/agents/AssignDialog.tsx packages/ui/src/agents/assign-dialog.test.tsx
