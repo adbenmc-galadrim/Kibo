@@ -25,6 +25,7 @@ const ROOTS = [
   "tw-animate-css",
   "shadcn",
 ];
+const LEAVES = ["shadcn"];
 const DEPENDENCY_FIELDS = ["dependencies", "optionalDependencies", "peerDependencies"];
 
 function packageDir(name: string, from: string): string | null {
@@ -48,10 +49,13 @@ function closure(): Map<string, string> {
   const queue: [string, string][] = ROOTS.map((name) => [name, root]);
   for (let next = queue.shift(); next; next = queue.shift()) {
     const [name, from] = next;
-    if (seen.has(name)) continue;
     const dir = packageDir(name, from);
     if (!dir) continue;
+    const known = seen.get(name);
+    if (known === dir) continue;
+    if (known) throw new Error(`toolchain package ${name} resolves to two versions: ${known} and ${dir}`);
     seen.set(name, dir);
+    if (LEAVES.includes(name)) continue;
     const manifest: unknown = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
     for (const dep of dependencyNames(manifest)) queue.push([dep, dir]);
   }

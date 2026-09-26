@@ -21,11 +21,13 @@ const loro = {
   },
 };
 
-async function compile(entrypoints: string[], outfile: string): Promise<void> {
+type Binary = { entrypoints: string[]; loadsToolchain: boolean };
+
+async function compile({ entrypoints, loadsToolchain }: Binary, outfile: string): Promise<void> {
   mkdirSync(dirname(outfile), { recursive: true });
   const result = await Bun.build({
     entrypoints: entrypoints.map((e) => join(root, e)),
-    compile: { outfile, autoloadPackageJson: true, autoloadBunfig: false, autoloadDotenv: false },
+    compile: { outfile, autoloadPackageJson: loadsToolchain, autoloadBunfig: false, autoloadDotenv: false },
     plugins: [loro],
   });
   if (!result.success) {
@@ -35,15 +37,18 @@ async function compile(entrypoints: string[], outfile: string): Promise<void> {
   console.log(`sidecar: ${outfile}`);
 }
 
-const daemonEntries = ["apps/desktop/sidecar/entry.ts", "apps/desktop/sidecar/component-worker.ts"];
-const hookEntry = "packages/daemon/src/agents/kibo-hook.ts";
+const daemon: Binary = {
+  entrypoints: ["apps/desktop/sidecar/entry.ts", "apps/desktop/sidecar/component-worker.ts"],
+  loadsToolchain: true,
+};
+const hook: Binary = { entrypoints: ["packages/daemon/src/agents/kibo-hook.ts"], loadsToolchain: false };
 
 if (values.out) {
-  await compile(daemonEntries, resolve(values.out));
-  await compile([hookEntry], join(dirname(resolve(values.out)), "kibo-hook"));
+  await compile(daemon, resolve(values.out));
+  await compile(hook, join(dirname(resolve(values.out)), "kibo-hook"));
 } else {
   const outDir = join(root, "apps/desktop/src-tauri/binaries");
   const triple = hostTriple();
-  await compile(daemonEntries, join(outDir, `kibo-daemon-${triple}`));
-  await compile([hookEntry], join(outDir, `kibo-hook-${triple}`));
+  await compile(daemon, join(outDir, `kibo-daemon-${triple}`));
+  await compile(hook, join(outDir, `kibo-hook-${triple}`));
 }
