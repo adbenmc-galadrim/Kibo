@@ -13041,7 +13041,7 @@ La config d'instance est **plate et scalaire** (N33) : le `configSchema` de la p
   - `defaultMcpSourceConfig(server: string): McpSourceStoredConfig`, exportés par `components/mcp-source/src/index.ts` avec `McpSourceConfig` (l'UI dépend déjà des composants intégrés : `schema ← sdk ← components ← ui`)
   - `McpSourceStep({ value, onChange })` (écran 3)
 
-- [ ] **Step 1: Paquet**
+- [x] **Step 1: Paquet**
 
 `components/mcp-source/kibo.component.json` :
 
@@ -13076,7 +13076,7 @@ La config d'instance est **plate et scalaire** (N33) : le `configSchema` de la p
 
 `components/mcp-source/package.json` et `tsconfig.json` : calqués sur `components/kanban` (`package.json` : nom `@kibo/component-mcp-source`, `exports: { ".": "./src/index.ts" }`, dépendances `@kibo/schema` et `@kibo/sdk` en `workspace:*`, `lucide-react` 1.48.0, `zod` 3.25.76, `react` 19.1.1 en `peerDependencies`, `devDependencies` identiques à Kanban ; `tsconfig.json` identique à celui de Kanban). Ajouter `components/mcp-source` au script `typecheck` racine, `"@kibo/component-mcp-source": "workspace:*"` aux dépendances de `packages/ui/package.json`, `{ "path": "../../components/mcp-source" }` aux `references` de `packages/ui/tsconfig.json`, puis `bun install` (lien d'espace de travail seulement). `packages/schema/src/component.ts` : `BUILTIN_IDS = ["kanban", "tickets", "graph", "notes", "mcp-source"]` (la porte de la phase 4 traite alors l'instance comme intégrée : pas de contrôle de permission côté démon, le SDK contrôle `mcp` avec la config de l'instance).
 
-- [ ] **Step 2: Tests d'extraction (échouent)**
+- [x] **Step 2: Tests d'extraction (échouent)**
 
 `components/mcp-source/src/extract.test.ts` :
 
@@ -13144,7 +13144,7 @@ test("the flat stored config becomes arguments and a mapping", () => {
 
 Run: `bun test components/mcp-source` — Expected: FAIL.
 
-- [ ] **Step 3: `config.ts` et `extract.ts`**
+- [x] **Step 3: `config.ts` et `extract.ts`**
 
 `components/mcp-source/src/config.ts` :
 
@@ -13291,7 +13291,7 @@ export function extractItems(result: McpCallResult, mapping: McpSourceConfig["ma
 
 Run: `bun test components/mcp-source/src/extract.test.ts` — Expected: PASS.
 
-- [ ] **Step 4: Test du widget (échoue)**
+- [x] **Step 4: Test du widget (échoue)**
 
 `components/mcp-source/src/mcp-source.test.tsx` :
 
@@ -13355,7 +13355,7 @@ test("a missing configuration asks to configure", async () => {
 
 Run: `bun test components/mcp-source` — Expected: FAIL.
 
-- [ ] **Step 5: Widget**
+- [x] **Step 5: Widget**
 
 `components/mcp-source/src/fr.ts` :
 
@@ -13566,7 +13566,7 @@ export const Component = McpSource;
 export { defaultMcpSourceConfig, McpSourceConfig, type McpSourceStoredConfig, parseArgs } from "./config";
 ```
 
-- [ ] **Step 6: Étape de config à l'écran 3**
+- [x] **Step 6: Étape de config à l'écran 3**
 
 `packages/ui/src/dialogs/mcp-source/mcp-source-step.test.tsx` :
 
@@ -13635,7 +13635,7 @@ test("server and tool come from the configured MCP servers; bad JSON args are re
 
 `packages/ui/src/registry.ts` : `import * as mcpSource from "@kibo/component-mcp-source";`, ajouter `mcpSource` à `BUILTIN_COMPONENTS` (le catalogue `builtinChoices` le liste alors dans « Intégrés ») et `"mcp-source": Plug` à `BUILTIN_ICONS`. `AddComponentDialog.tsx` : état `mcpConfig: McpSourceStoredConfig | null` ; si le composant choisi a l'id `mcp-source`, afficher `<McpSourceStep value={mcpConfig} onChange={setMcpConfig} />` dans `Details`, désactiver « Ajouter à la page » tant que `mcpConfig === null`, et ajouter `config: mcpConfig` à la commande `addInstance` (champ `config` déjà accepté par `ProjectCommand`). Le bloc « Source » Locale / Synchronisée (Task 17) ne s'affiche pas pour `mcp-source`, bien qu'il lise `ticket` (spec F §9 : Kanban et Tickets seulement). Un widget ne s'ajoute qu'à une page tableau de bord (`kind: "widget"`, comportement de la phase 4). L'écran 30 n'est pas montré pour un intégré ; la ligne « Appeler le serveur MCP choisi à l'ajout » (`fr.integrations.permissions.mcpFromConfig`, Task 9) sert au catalogue et à la page Composants. Budget du chargement initial (`bun run budget`, 230 kB gzip, décision 29 de la phase 4) : `registry.ts` importe les intégrés statiquement ; le widget est petit (zod est déjà dans l'entrée) et le budget est vérifié à l'étape 7.
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Run: `bun test components packages/ui packages/sdk && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget` — Expected: PASS. Contrôle visuel : widget (liste, vide, erreur, chargement) et étape de config, en sombre puis en clair, contre P10.
 
