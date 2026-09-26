@@ -1457,7 +1457,7 @@ git commit -m "feat(core): machine d'état des runs"
 
 Stockage : maps Loro `profiles`, `domains`, `guidelines` (valeurs JSON) du doc workspace ; map `guidelines` du doc projet. Noms de profil uniques ; noms de domaine uniques sans tenir compte de la casse ; chemin de guideline unique par propriétaire. Supprimer un profil ou un domaine supprime ses guidelines. Les contrôles « runs actifs » et « domaine utilisé » sont faits par le démon (Task 23).
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/core/src/agent-config.test.ts` :
 ```ts
@@ -1601,12 +1601,12 @@ describe("guidelines", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/core/src/agent-config.test.ts`
 Expected: FAIL (`Cannot find module "./agent-config"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/core/src/agent-config.ts` :
 ```ts
@@ -1826,12 +1826,12 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/core/src/agent-config.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/agent-config.ts packages/core/src/agent-config.test.ts
