@@ -16651,11 +16651,11 @@ Tâche à risque (relue par `kibo-lead`). Démarre après l'intégration de la t
 - `ValidateOptions.signal?: AbortSignal` et `TestRunOptions.signal?: AbortSignal` : à l'abandon, le processus de tests est tué (`proc.kill()`), le minuteur effacé, et `validateComponent` rejette en `KiboError("INTERNAL", "validation aborted")` (pas un rapport « tests échoués » : ce n'est pas un défaut du composant).
 - `PublisherDeps.validate(dir: string, signal: AbortSignal): Promise<ValidationReport>` ; le service passe le signal de son `AbortController` d'arrêt.
 
-- [ ] **Step 1: Spec d'abord**
+- [x] **Step 1: Spec d'abord**
 
 Reporter mot pour mot dans la spec de phase, §15, les décisions 33, 34 et 35 de ce plan (après la 32), puis vérifier avec la commande de l'étape 3 de la tâche 39 (aucune différence).
 
-- [ ] **Step 2: Tests qui échouent (arrêt)**
+- [x] **Step 2: Tests qui échouent (arrêt)**
 
 1. `handle` d'une `publishComponent` dont `validate` est suspendue sur un `Promise` différé : appeler `stop()` ; `stop()` ne se résout pas tant que la requête est en cours (course de 50 ms) ; le signal reçu par `validate` est abandonné ; une fois `validate` rejetée, `stop()` se résout, la requête rejette avec son code, et `console.error` (espionné) n'a reçu aucun message contenant « closed ».
 2. `handle` après `stop()` ⇒ rejet `INTERNAL` immédiat (« the daemon is stopping ») ; `backends.running()` n'est pas exposé par le service, l'absence d'hôte après `stopAll()` est déjà prouvée par le test de la décision 34.
@@ -16665,11 +16665,11 @@ Reporter mot pour mot dans la spec de phase, §15, les décisions 33, 34 et 35 d
 
 Run: `bun test packages/daemon/src/components/service.test.ts packages/devkit/src/validate.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implémentation**
+- [x] **Step 3: Implémentation**
 
 Dans `createComponentsService` : `let stopping = false`, `const inflight = new Set<Promise<unknown>>()`, `const shutdown = new AbortController()` ; `handle` rejette si `stopping`, sinon enregistre sa promesse dans `inflight` et l'en retire au `finally`. `stop()` : `stopping = true` ; `jobs.stop()` ; `backends.stopAll()` ; `shutdown.abort()` ; attendre `Promise.allSettled([...inflight])` ou `drainMs` (le premier des deux, minuteur effacé) ; journaliser le reste s'il y en a ; `notes.close()` ; `events.flush()`. `daemon.ts` attend déjà `components.stop()` avant `store.close()` (fermetures « back » en ordre inverse) : le vérifier par le test 5. `runComponentTests` écoute `signal` (`addEventListener("abort", …, { once: true })`, retiré à la fin).
 
-- [ ] **Step 3b: Drainer aussi ce que lancent les backends (reprise après la relecture de `kibo-lead`)**
+- [x] **Step 3b: Drainer aussi ce que lancent les backends (reprise après la relecture de `kibo-lead`)**
 
 Le premier rendu ne suit que `handle`. Or un job (`jobs` → `backends.runJob` → `beforeStart` → `registry.verify` → `markTampered` → `events.record` et `docs.save(null)`) ou un `describe` lancé par `jobs.refresh` (via `afterCommand`, hors RPC) vérifie une empreinte sans passer par `handle` : `jobs.stop()` n'attend rien, le drainage se résout aussitôt et `markTampered` écrit après `store.close()`, exactement le cas que cite la décision 35. Idem pour un appel `onCall` d'un backend lancé par un job.
 1. Test d'abord (`service-backends.test.ts`, faux minuteurs comme « jobs are scheduled once a version is approved ») : version approuvée avec un job, fichier du magasin altéré (`tamper`), tick du job, puis `await h.stop()` immédiatement ; `console.error` espionné ne contient aucun message avec « closed », et `stop()` ne s'est pas résolu avant la fin de la vérification. Le voir échouer sur le code actuel (sinon rendre la vérification plus lente avec un magasin plus gros, ou suspendre `store.verify` par une dépendance de test).
@@ -16677,7 +16677,7 @@ Le premier rendu ne suit que `handle`. Or un job (`jobs` → `backends.runJob` �
 3. `drain` boucle tant que `inflight` n'est pas vide et que la borne n'est pas atteinte (`Promise.allSettled` d'un instantané, puis on recommence) : un travail ajouté pendant le drainage est attendu. Un test : une requête en cours dont la fin déclenche un second travail suivi ⇒ `stop()` attend les deux.
 4. Reporter la décision 35 à jour mot pour mot dans la spec (§15).
 
-- [ ] **Step 4: Angles morts du test de sortie**
+- [x] **Step 4: Angles morts du test de sortie**
 
 Dans l'action `escape` de `fixtures/evil/server.ts` (entrée enrichie de `daemonPid`, passé par le test) et dans l'objet attendu de `exit.test.ts` :
 - `signal: await barrier(() => process.kill(target.daemonPid, 0))` ⇒ `"blocked"` (macOS : `(deny default)` couvre `signal` ; Linux : `--unshare-pid`, le pid n'existe pas). Le titre du test promet « other processes » : aujourd'hui seul le lancement est essayé.
@@ -16686,15 +16686,15 @@ Dans l'action `escape` de `fixtures/evil/server.ts` (entrée enrichie de `daemon
 Comme à la tâche 32 : retirer la barrière (profil permissif, `env` du démon passé tel quel, fichier ouvert sans `O_CLOEXEC` avant le `spawn`) et constater l'échec, puis remettre.
 Dans le fil principal, `process.kill`, `Bun.spawn` et `fetch` sont retirés par `restrictGlobals` : les sondes `signal`, `spawn` et `child` y échouent par `TypeError` ou par la couche JS et ne prouvent rien sur l'OS (`barrier` ne distingue pas la cause). Le Worker garde toutes les capacités (vérifié hors bac à sable : `signal` et `spawn` y sont `"open"`) : c'est lui qui prouve la barrière de l'OS. Le Worker porte donc `signal: process.kill(daemonPid, 0)` et `spawn: Bun.spawnSync(["/usr/bin/true"])` (sous macOS les deux échouent en `EPERM` sous le profil) ; objet attendu `worker: { net, read, signal, spawn }` tous `"blocked"`.
 
-- [ ] **Step 5: Tentatives de lancement non vides**
+- [x] **Step 5: Tentatives de lancement non vides**
 
 `/usr/bin/echo` n'existe pas sous macOS : la tentative « spawn » de `process-host-sandbox.test.ts` et « spawnUsr » de `os-sandbox.test.ts` y échouent par `ENOENT`, sans rien prouver. Remplacer par `cp.execFileSync("/bin/sh", ["-c", "exit 0"])` (`process-host-sandbox.test.ts`) et `/usr/bin/true` (`os-sandbox.test.ts`, présent sous macOS et Linux), et poser hors du bac à sable la précondition `expect(existsSync(cible)).toBe(true)`. Sous Linux, l'absence dans le bac à sable reste la barrière voulue (décision 24) : le résultat attendu est inchangé (`"blocked"`).
 
-- [ ] **Step 6: Commandes réservées, chaque couche testée**
+- [x] **Step 6: Commandes réservées, chaque couche testée**
 
 Les trois contrôles (`isReservedCommand` en tête de `gate.call`, branche réservée de `missingPermission`, `assertShellCommand` sur la RPC `command`) se recouvrent pour un composant tiers ; le test de sortie ne peut donc pas les isoler, c'est voulu. Ajouter dans `gate.test.ts` : `missingPermission` avec toutes les écritures accordées renvoie `"write:setInstanceData"` et `"write:setInstanceComponent"` (le contrôle de tête l'est déjà par le cas « built-ins included »). Ce test ne distingue pas la branche réservée de `missingPermission` du chemin normal (`permissionOfCall` renvoie déjà `write:<méthode>` pour une commande sans entité, et `writes` n'accepte que des `BuiltinEntityType`) : c'est une garde de non-régression du comportement combiné, qui échouerait si une commande réservée recevait un jour une entité dans `COMMAND_WRITES` et que la branche disparaissait. La branche reste (défense en profondeur), le test aussi.
 
-- [ ] **Step 7: Vérifier et committer**
+- [x] **Step 7: Vérifier et committer**
 
 Run: `bun test packages components`, `bun run check`, `bun run typecheck` — Expected: PASS.
 
