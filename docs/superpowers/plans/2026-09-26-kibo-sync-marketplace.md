@@ -3486,7 +3486,7 @@ Pour éviter que chaque composant doive connaître la clé du projet, `TicketVie
 
 **Valeur par défaut de `sync`.** `core` ne connaît ni la connexion ni les rôles : `localSyncInfo` renvoie `{ shared: keyAllocator === "server", keyAllocator, role: null, access: "write", members: [] }`. C'est l'état exact d'un projet non partagé ; pour un projet partagé, le démon remplace cette valeur (rôle, accès, membres) en T21.
 
-- [ ] **Step 1: Écrire les tests de schéma qui échouent**
+- [x] **Step 1: Écrire les tests de schéma qui échouent**
 
 `packages/schema/src/ticket-key.test.ts` :
 ```ts
@@ -3527,12 +3527,12 @@ describe("ticket key", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test**
+- [x] **Step 2: Lancer le test**
 
 Run: `bun test packages/schema/src/ticket-key.test.ts`
 Expected: FAIL (`ticketKeyLabel` n'est pas exporté, `key: null` refusé).
 
-- [ ] **Step 3: Rendre la clé nullable**
+- [x] **Step 3: Rendre la clé nullable**
 
 `packages/schema/src/ticket.ts` (seuls `key`, `pendingSeq`, la troisième règle du `superRefine` et `ticketKeyLabel` changent) :
 ```ts
@@ -3599,12 +3599,12 @@ export type ProjectSnapshot = {
 ```
 et ajouter `import type { ProjectSyncInfo } from "./sharing";`.
 
-- [ ] **Step 4: Relancer le test de schéma**
+- [x] **Step 4: Relancer le test de schéma**
 
 Run: `bun test packages/schema/src/ticket-key.test.ts`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Écrire les tests de `core` qui échouent**
+- [x] **Step 5: Écrire les tests de `core` qui échouent**
 
 `packages/core/src/keys.test.ts` :
 ```ts
@@ -3720,12 +3720,12 @@ describe("server allocator", () => {
 });
 ```
 
-- [ ] **Step 6: Lancer le test**
+- [x] **Step 6: Lancer le test**
 
 Run: `bun test packages/core/src/keys.test.ts`
 Expected: FAIL (`getKeyAllocator` et `nextPendingSeq` introuvables).
 
-- [ ] **Step 7: Implémenter la partie client de `keys.ts`**
+- [x] **Step 7: Implémenter la partie client de `keys.ts`**
 
 `packages/core/src/keys.ts` :
 ```ts
@@ -3849,12 +3849,12 @@ et `export * from "./keys";` dans `packages/core/src/index.ts`.
 
 Dans `packages/core/src/commit-message.ts` et `packages/core/src/context.ts`, les textes affichent une étiquette : `MessageTicket = { key: string | null; title: string }` et chaque `${ticket.key}` / `${c.key}` / `${b.key}` des textes devient `${ticket.key ?? "…"}` pour `commitSubject` (inatteignable en pratique : `commitDefaults` ne trouve un ticket que par une clé réelle) et `keyLabel` pour `context.ts` (qui reçoit des `TicketView`, vérifier le type réel de `buildRunContext` et passer par `ticketKeyLabel(t, meta.key)` s'il reçoit des `Ticket`).
 
-- [ ] **Step 8: Relancer les tests de `core`**
+- [x] **Step 8: Relancer les tests de `core`**
 
 Run: `bun test packages/core`
 Expected: PASS, y compris `tickets.test.ts`, `project.test.ts`, `commands.test.ts`, `commit-message.test.ts` et `context.test.ts` sans attente modifiée (seules les fixtures gagnent `pendingSeq`, `keyLabel`, `sync`).
 
-- [ ] **Step 9: Écrire le test UI qui échoue (sous-titre de Nouveau ticket)**
+- [x] **Step 9: Écrire le test UI qui échoue (sous-titre de Nouveau ticket)**
 
 Ajouter à `packages/ui/src/dialogs/dialogs.test.tsx`, après le test existant « NewTicketDialog announces the key the ticket will get » (qui vérifie « Kibo · la clé KIB-30 sera attribuée à la création. ») :
 ```ts
@@ -3870,7 +3870,7 @@ Dans le même fichier, compléter la fixture `project` avec `sync: { shared: fal
 Run: `bun test packages/ui/src/dialogs/dialogs.test.tsx`
 Expected: FAIL (`fr.newTicket.keyPending` n'existe pas).
 
-- [ ] **Step 10: Propager `keyLabel` et le sous-titre**
+- [x] **Step 10: Propager `keyLabel` et le sous-titre**
 
 `packages/ui/src/i18n/fr.ts`, dans `newTicket` (à côté de `subtitle: (project, key) => …`) :
 ```ts
@@ -3897,7 +3897,7 @@ Remplacer chaque affichage de `t.key` d'un `TicketView` par `t.keyLabel` (vérif
 
 Fixtures : dans `components/kanban/src/filter.test.ts` et `components/tickets/src/build-tree.test.ts`, la fabrique `t(...)` ajoute `pendingSeq: null` et `keyLabel: <même valeur que key>` ; les attentes ne changent pas.
 
-- [ ] **Step 11: Garde des actions dérivées de la clé côté démon**
+- [x] **Step 11: Garde des actions dérivées de la clé côté démon**
 
 Ajouter à `packages/daemon/src/agents/orchestrator.test.ts`, à côté des tests existants de `assign` (réutiliser la fabrique d'orchestrateur et le `data` de test du fichier ; le `ticketContext` renvoie un ticket dont `key` vaut `null` et `pendingSeq` `1`) :
 ```ts
@@ -3923,12 +3923,12 @@ Journaux et notifications du démon (affichage) : `packages/daemon/src/ci/poller
 Run: `bun test packages/daemon/src/agents/orchestrator.test.ts && bun run typecheck`
 Expected: PASS, aucune erreur de typage.
 
-- [ ] **Step 12: Suite complète**
+- [x] **Step 12: Suite complète**
 
 Run: `bun test packages components && bun run check && bun run typecheck && bun run budget`
 Expected: PASS, aucune attente de test existante modifiée (seules les fixtures `Ticket`, `TicketView` et `ProjectSnapshot` gagnent `pendingSeq`, `keyLabel` et `sync`) ; budget du chargement initial ≤ 230 kB.
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
 
 ```bash
 git add packages/schema/src/ticket.ts packages/schema/src/rpc.ts packages/schema/src/ticket-key.test.ts \
