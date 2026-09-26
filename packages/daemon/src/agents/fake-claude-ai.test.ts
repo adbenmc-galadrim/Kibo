@@ -140,6 +140,7 @@ test("every AI scenario parses and every fixture or route target exists", () => 
       "generate-ok",
       "generate-retry",
       "modify-ok",
+      "modify-routes",
       "onboarding-invalid",
       "onboarding-ok",
       "onboarding-slow",
