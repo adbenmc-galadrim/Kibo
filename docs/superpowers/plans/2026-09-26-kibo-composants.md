@@ -15174,7 +15174,7 @@ git commit -m "feat(ui): cadres et menu des instances"
 - Consumes: `@kibo/component-graph` et `@kibo/component-notes` (`manifest`, `Component`, tâches 25 et 26).
 - Produces: `BUILTIN_COMPONENTS = [kanban, tickets, graph, notes]` ; icônes `graph` ⇒ `Network`, `notes` ⇒ `FileText` (celles de la barre latérale des maquettes : « Graphe » et « Notes »).
 
-- [ ] **Step 1: Test**
+- [x] **Step 1: Test**
 
 `packages/ui/src/registry.test.ts`, ajouter :
 ```ts
@@ -15200,7 +15200,7 @@ test("graph and notes are built-ins with their sidebar icons", () => {
 Run: `bun test packages/ui/src/registry.test.ts packages/ui/src/components-page/rows.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/ui/package.json`, `dependencies` : `"@kibo/component-graph": "workspace:*"`, `"@kibo/component-notes": "workspace:*"` ; `packages/ui/tsconfig.json`, `references` : `{ "path": "../../components/graph" }`, `{ "path": "../../components/notes" }`. Run: `bun install`.
 
@@ -15222,7 +15222,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = { kanban: SquareKanban, ticket
 
 Vérifier aussi que les tests existants de l'UI qui comptent les intégrés (catalogue de l'écran 3, dialogue de la tâche 19) passent : ils cherchent des noms précis, pas un nombre.
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/ui && bun run typecheck && bun run check && bun run --cwd packages/ui build`
 Expected: PASS ; le build Vite inclut CodeMirror et markdown-it.
