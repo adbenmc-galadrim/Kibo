@@ -33,7 +33,7 @@ export function builtinChoices(modules: ComponentModule[]): Choice[] {
     description: m.description,
     version: m.version,
     reads: m.reads,
-    line: fr.addComponent.builtinTrust(m.reads, m.writes),
+    line: fr.addComponent.builtinTrust(m.reads.map(fr.trust.entityName), m.writes.map(fr.trust.entityName)),
     pending: null,
   }));
 }

@@ -98,7 +98,7 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(screen.getByText("Widget dans la grille")).toBeTruthy();
   expect(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy();
   expect(
-    screen.getByText("Intégré · confiance totale · lit : ticket, status, run, ci_run · écrit : ticket"),
+    screen.getByText("Intégré · confiance totale · lit : ticket, status, run, runs CI · écrit : ticket"),
   ).toBeTruthy();
   await user.type(search(), "burn");
   expect(screen.queryByRole("radio", { name: "Kanban" })).toBeNull();
