@@ -24,14 +24,18 @@ test("a stale daemon.json from a looser umask is rewritten private", () => {
   rmSync(home, { recursive: true, force: true });
 });
 
-test("a malformed daemon.json reads as absent", () => {
+test("an unreadable or malformed daemon.json is a STORE_CORRUPT error", () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-info-"));
-  for (const raw of ["null", "[]", '{"port":"4317","sandboxPort":4318,"pid":1}', '{"port":4317}']) {
+  for (const raw of [
+    "{not json",
+    "null",
+    "[]",
+    '{"port":"4317","sandboxPort":4318,"pid":1}',
+    '{"port":4317}',
+  ]) {
     writeFileSync(join(home, "daemon.json"), raw);
-    expect(readDaemonInfo(home)).toBeNull();
+    expect(() => readDaemonInfo(home)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
   }
-  writeFileSync(join(home, "daemon.json"), "{not json");
-  expect(() => readDaemonInfo(home)).toThrow();
   rmSync(home, { recursive: true, force: true });
 });
 
