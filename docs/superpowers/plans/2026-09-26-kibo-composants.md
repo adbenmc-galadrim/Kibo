@@ -4190,7 +4190,7 @@ git commit -m "feat(daemon): proxy fetch anti-SSRF"
   - `resolveLinks(fromPath, links, allPaths): string[]` (une entrée par occurrence résolue ; résolution Obsidian).
   - `parseNote(path, markdown, projectKey, allPaths): { title: string; tickets: string[]; links: string[] }`.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/core/src/note-parse.test.ts` :
 ```ts
@@ -4266,7 +4266,7 @@ describe("links", () => {
 Run: `bun test packages/core/src/note-parse.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `note-parse.ts`**
+- [x] **Step 2: Implémenter `note-parse.ts`**
 
 ```ts
 export type RawLink = { kind: "wiki" | "relative"; target: string };
@@ -4393,7 +4393,7 @@ Le seul `catch` n'avale que `URIError` (lien mal encodé, ignoré comme un lien 
 
 `packages/core/package.json`, `exports` : ajouter `"./notes": "./src/note-parse.ts"`.
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/core && bun run typecheck && bun run check`
 Expected: PASS.
