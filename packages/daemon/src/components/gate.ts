@@ -117,6 +117,9 @@ function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: Compo
   if (call.kind === "fetch" && !quotas.take(instanceId, "fetch")) {
     throw new KiboError("RATE_LIMITED", `${ref} fetches too often`);
   }
+  if (call.kind.startsWith("mcp.") && !quotas.take(instanceId, "mcp")) {
+    throw new KiboError("RATE_LIMITED", `${ref} calls mcp servers too often`);
+  }
 }
 
 export function createGate(deps: GateDeps): Gate {

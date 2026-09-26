@@ -131,6 +131,25 @@ describe("mcp calls through componentCall", () => {
     expect(events.list().map((e) => [e.kind, e.code])).toEqual([["mcp.read", "RATE_LIMITED"]]);
   });
 
+  test("mcp calls have their own per-minute quota, journaled (N47)", async () => {
+    const { gate, events } = harness(
+      { mcp: ["ctx"], writes: ["ticket"], data: true },
+      createQuotas({ mcpPerMinute: 2 }),
+    );
+    await gate.call("p", "thirdparty", mcpCall);
+    await gate.call("p", "thirdparty", mcpRead);
+    await denied(gate.call("p", "thirdparty", mcpImport), "RATE_LIMITED");
+    await gate.call("p", "thirdparty", { kind: "data.keys" });
+    expect(handled).toEqual(["mcp:thirdparty:mcp.call", "mcp:thirdparty:mcp.read"]);
+    expect(events.list().map((e) => [e.kind, e.code])).toEqual([["mcp.import", "RATE_LIMITED"]]);
+  });
+
+  test("built-ins share the mcp quota", async () => {
+    const { gate } = harness({}, createQuotas({ mcpPerMinute: 1 }));
+    await gate.call("p", "builtin", mcpCall);
+    await denied(gate.call("p", "builtin", mcpRead), "RATE_LIMITED");
+  });
+
   test("built-ins skip the daemon grant check, their SDK checks the manifest", async () => {
     const { gate } = harness({});
     await gate.call("p", "builtin", mcpCall);
