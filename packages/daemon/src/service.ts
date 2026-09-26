@@ -1,4 +1,5 @@
 import {
+  assertShellCommand,
   countTicketsByStatus,
   createProjectDoc,
   createWorkspaceDoc,
@@ -204,6 +205,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         case "getProject":
           return readProject(docs.project(req.projectId));
         case "command":
+          assertShellCommand(req.command);
           return runProjectCommand(req.projectId, req.command);
         case "getConfig":
           return readConfig(docs);

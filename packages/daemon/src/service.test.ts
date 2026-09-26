@@ -5,8 +5,10 @@ import { join } from "node:path";
 import {
   type Domain,
   EMPTY_TABS,
+  type Instance,
   MAX_RECENTS,
   MAX_TABS,
+  type Page,
   type ProjectCommand,
   type ProjectMeta,
   type ProjectSnapshot,
@@ -191,6 +193,34 @@ describe("service", () => {
     run({ method: "setStatus", ticketId: child.id, statusId: "done" });
     const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
     expect(snap.tickets.find((x) => x.id === parent.id)?.statusId).toBe("done");
+    store.close();
+  });
+
+  test("the command RPC refuses daemon-only commands and allows instance config", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    const run = (command: ProjectCommand) => s.handle({ method: "command", projectId: p.id, command });
+    const page = run({ method: "addPage", title: "Board", kind: "dashboard" }) as Page;
+    const inst = run({ method: "addInstance", pageId: page.id, component: "hello@0.1.0" }) as Instance;
+    const changes: unknown[] = [];
+    s.onChange((m) => changes.push(m));
+    expect(() => run({ method: "setInstanceData", instanceId: inst.id, key: "k", value: 1 })).toThrow(
+      "PERMISSION_DENIED",
+    );
+    expect(() =>
+      run({
+        method: "setInstanceComponent",
+        instanceId: inst.id,
+        component: "hello@0.2.0",
+        config: {},
+        data: null,
+      }),
+    ).toThrow("PERMISSION_DENIED");
+    expect(changes).toEqual([]);
+    run({ method: "setInstanceConfig", instanceId: inst.id, config: { a: 1 } });
+    const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
+    expect(snap.instances).toMatchObject([{ id: inst.id, component: "hello@0.1.0", config: { a: 1 } }]);
     store.close();
   });
 });
