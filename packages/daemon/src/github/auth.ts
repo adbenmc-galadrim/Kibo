@@ -12,10 +12,21 @@ export type GithubAccount = GithubCredentials & {
   connect(auth: GithubAuth): Promise<{ login: string }>;
   disconnect(): Promise<void>;
   verify(): Promise<string>;
+  forgetGhToken(): void;
 };
 
 const GH_TTL_MS = 10 * 60_000;
 const User = z.object({ login: z.string().min(1) });
+const REMOTE_FAILURES: ReadonlySet<string> = new Set([
+  "REMOTE_REJECTED",
+  "REMOTE_UNAVAILABLE",
+  "REMOTE_NOT_FOUND",
+  "REMOTE_CONFLICT",
+  "RATE_LIMITED",
+  "TIMEOUT",
+]);
+
+const isRemoteFailure = (e: unknown) => e instanceof KiboError && REMOTE_FAILURES.has(e.code);
 
 async function runGhToken(gh: GhRunner): Promise<{ code: number; stdout: string } | null> {
   try {
@@ -35,17 +46,32 @@ export function createGithubAccount(deps: {
   now(): number;
 }): GithubAccount {
   let ghCache: { token: string; at: number } | null = null;
-  const ghToken = async (): Promise<string | null> => {
-    if (ghCache && deps.now() - ghCache.at < GH_TTL_MS) return ghCache.token;
+  let ghLoading: Promise<string | null> | null = null;
+  let generation = 0;
+  const forgetGhToken = () => {
+    ghCache = null;
+    ghLoading = null;
+  };
+  const renew = () => {
+    generation++;
+    forgetGhToken();
+  };
+  const loadGhToken = async (): Promise<string | null> => {
+    const started = generation;
     const r = await runGhToken(deps.gh);
     const token = r !== null && r.code === 0 ? r.stdout.trim() : "";
-    if (!token) {
-      ghCache = null;
-      return null;
-    }
-    deps.redactor.add(token);
-    ghCache = { token, at: deps.now() };
-    return token;
+    if (token) deps.redactor.add(token);
+    if (started === generation) ghCache = token ? { token, at: deps.now() } : null;
+    return token || null;
+  };
+  const ghToken = (): Promise<string | null> => {
+    if (ghCache && deps.now() - ghCache.at < GH_TTL_MS) return Promise.resolve(ghCache.token);
+    if (ghLoading) return ghLoading;
+    const loading = loadGhToken().finally(() => {
+      if (ghLoading === loading) ghLoading = null;
+    });
+    ghLoading = loading;
+    return loading;
   };
   const loginOf = async (token: string): Promise<string> => {
     const res = await deps.fetch(`https://${GITHUB_API}/user`, { bearer: token }, GITHUB_RULES);
@@ -71,15 +97,19 @@ export function createGithubAccount(deps: {
     },
     async options() {
       const token = await ghToken();
-      return {
-        ghAvailable: token !== null,
-        ghLogin: token === null ? null : await loginOf(token),
-        mode: mode(),
-      };
+      const ghLogin =
+        token === null
+          ? null
+          : await loginOf(token).catch((e: unknown) => {
+              if (!isRemoteFailure(e)) throw e;
+              forgetGhToken();
+              return null;
+            });
+      return { ghAvailable: ghLogin !== null, ghLogin, mode: mode() };
     },
     async connect(auth) {
+      renew();
       if (auth.mode === "gh") {
-        ghCache = null;
         const token = await ghToken();
         if (!token) throw new KiboError("NOT_CONNECTED", "gh is not logged in");
         const login = await loginOf(token);
@@ -92,18 +122,20 @@ export function createGithubAccount(deps: {
       return remember("token", login);
     },
     async disconnect() {
+      renew();
       if (mode() === "token") await deps.secrets.delete("github");
-      ghCache = null;
       deps.settings.delete("github.mode");
       deps.settings.delete("github.login");
     },
     async verify() {
+      const started = generation;
       const token = await account.token();
       if (!token) throw new KiboError("NOT_CONNECTED", "github account not connected");
       const login = await loginOf(token);
-      deps.settings.set("github.login", login);
+      if (started === generation) deps.settings.set("github.login", login);
       return login;
     },
+    forgetGhToken,
   };
   return account;
 }

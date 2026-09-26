@@ -45,6 +45,13 @@ function nextLink(headers: Headers): string | null {
   return m?.[1] ?? null;
 }
 
+function apiUrl(path: string): string {
+  if (!path.startsWith("/") || path.startsWith("//")) {
+    throw new KiboError("INVALID_INPUT", "github api path must start with a single /");
+  }
+  return `https://${GITHUB_API}${path}`;
+}
+
 function onGithub(link: string): string {
   if (!URL.canParse(link)) throw new KiboError("REMOTE_REJECTED", "invalid github pagination link");
   const u = new URL(link);
@@ -55,6 +62,7 @@ export function createGithubApi(deps: {
   fetch: IntegrationFetch;
   token(): Promise<string | null>;
   gate: RateLimitGate;
+  onUnauthorized?(): void;
 }): GithubApi {
   const send = async (
     url: string,
@@ -69,7 +77,7 @@ export function createGithubApi(deps: {
     }
     const token = await deps.token();
     if (!token) throw new KiboError("NOT_CONNECTED", "github account not connected");
-    return deps.fetch(
+    const res = await deps.fetch(
       url,
       {
         method,
@@ -84,13 +92,15 @@ export function createGithubApi(deps: {
       },
       rules,
     );
+    if (res.status === 401) deps.onUnauthorized?.();
+    return res;
   };
   const get = (url: string) => send(url, "GET", undefined, GITHUB_RULES);
   return {
     async rest(method, path, schema, body) {
-      return parseGithub(await send(`https://${GITHUB_API}${path}`, method, body, GITHUB_RULES), schema);
+      return parseGithub(await send(apiUrl(path), method, body, GITHUB_RULES), schema);
     },
-    raw: (path, rules, maxBytes) => send(`https://${GITHUB_API}${path}`, "GET", undefined, rules, maxBytes),
+    raw: async (path, rules, maxBytes) => send(apiUrl(path), "GET", undefined, rules, maxBytes),
     async graphql(query, variables, schema) {
       const res = await send(`https://${GITHUB_API}/graphql`, "POST", { query, variables }, GITHUB_RULES);
       const env = parseGithub(res, GraphqlEnvelope);

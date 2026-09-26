@@ -92,7 +92,13 @@ export function startIntegrations(
     fetch: net.fetch,
     now: host.now,
   });
-  const github = { account, api: createGithubApi({ fetch: net.fetch, token: () => account.token(), gate }) };
+  const api = createGithubApi({
+    fetch: net.fetch,
+    token: () => account.token(),
+    gate,
+    onUnauthorized: () => account.forgetGhToken(),
+  });
+  const github = { account, api };
   const secret: SecretResolver = (name) => (name === "github" ? account.token() : secrets.get(name));
   const kit: IntegrationKit = {
     host,
