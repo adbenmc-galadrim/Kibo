@@ -6385,6 +6385,8 @@ git commit -m "feat(ui): dialogues de connexion"
 
 Tâche à risque (secrets : jeton personnel, jeton de `gh`) : relecture `kibo-lead` en plus de `kibo-reviewer`.
 
+Reprise de la relecture de la Task 3 : `createBunSecretStore` (`integrations/bun-secret-store.ts`) borne chaque appel au trousseau, `availability()` compris, par un délai (`KEYCHAIN_TIMEOUT_MS = 60_000`, injectable pour les tests) ; au-delà, `SECRET_STORE_UNAVAILABLE` (« keychain timed out »). Raison : sous Linux, un Secret Service verrouillé ou un lancement automatique de D-Bus peut ne jamais répondre, et la sonde `github` (sans délai dans le registre) bloquerait `listIntegrations`. Test : backend dont `get` ne se résout jamais, délai de 10 ms, `availability()` rend `{ ok: false }` et `get` rejette `SECRET_STORE_UNAVAILABLE`.
+
 **Files:**
 - Create: `packages/daemon/src/github/api.ts`, `packages/daemon/src/github/auth.ts`, `packages/daemon/src/github/handlers.ts`, `packages/daemon/src/github/github.test.ts`, `packages/daemon/src/github/handlers.test.ts`
 - Modify: `packages/daemon/src/integrations/bootstrap.ts`, `packages/daemon/src/code/testing/fake-gh.ts` (sous-commande `auth token`), `packages/daemon/src/code/testing/fixture.test.ts`
