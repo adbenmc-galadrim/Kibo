@@ -6451,7 +6451,7 @@ Reprise de la relecture de la Task 3 : `createBunSecretStore` (`integrations/bun
   - `githubModule(kit: IntegrationKit, github: { account: GithubAccount; api: GithubApi }): IntegrationModule` (handlers `getGithubConnectOptions`, `connectGithub`, `listGithubRepos`, `listGithubProjects` ; sondes `github`, `github-issues`, `github-actions`)
   - `IntegrationKit.github: { account: GithubAccount; api: GithubApi }` ; `kit.hooks.secret` résout `github` par le compte (gh ou jeton)
 
-- [ ] **Step 1: Tests (échouent)**
+- [x] **Step 1: Tests (échouent)**
 
 `packages/daemon/src/github/github.test.ts` :
 
@@ -6630,7 +6630,7 @@ test("connect, statuses of the three github rows, repos and projects", async () 
 
 Run: `bun test packages/daemon/src/github` — Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `api.ts`**
+- [x] **Step 2: Implémenter `api.ts`**
 
 ```ts
 import { githubError, KiboError } from "@kibo/schema";
@@ -6727,7 +6727,7 @@ async function paginateWith<T>(
 
 Le lien `next` est réécrit vers l'hôte logique `api.github.com` : une origine de test ou un hôte inattendu dans l'en-tête `Link` ne change jamais la destination.
 
-- [ ] **Step 3: Implémenter `auth.ts`**
+- [x] **Step 3: Implémenter `auth.ts`**
 
 ```ts
 import { type GithubConnectOptions, githubError, KiboError } from "@kibo/schema";
@@ -6836,7 +6836,7 @@ export function createGithubAccount(deps: {
 }
 ```
 
-- [ ] **Step 4: Implémenter `handlers.ts`**
+- [x] **Step 4: Implémenter `handlers.ts`**
 
 ```ts
 import { GITHUB_GRAPHQL, type GithubProject, KiboError } from "@kibo/schema";
@@ -6937,7 +6937,7 @@ export function githubModule(kit: IntegrationKit, github: { account: GithubAccou
 
 `gh` absent (échec de lancement, `GH_UNAVAILABLE` de `runGh`) équivaut à « gh non connecté » (`ghAvailable: false`), comme `ghStatus` de `code/remote-ops.ts` ; toute autre erreur remonte.
 
-- [ ] **Step 5: Faux `gh` : `auth token`**
+- [x] **Step 5: Faux `gh` : `auth token`**
 
 `packages/daemon/src/code/testing/fake-gh.ts` (faux binaire de la phase 3, utilisé par `KIBO_GH` en E2E) : avant le cas `auth status`,
 
@@ -6955,7 +6955,7 @@ if (args[0] === "auth" && args[1] === "token") {
 
 Test ajouté à `packages/daemon/src/code/testing/fixture.test.ts` (harnais réel : `installFakeGh(fx.dir)` rend l'env `KIBO_GH`, `FAKE_GH_STATE`, `FAKE_GH_LOG`) : `runGh(["auth", "token"], { cwd: fx.dir, env: { ...installFakeGh(fx.dir), FAKE_GH_TOKEN: "ghp_TESTSECRET0123456789abcdefghijklmn" } })` rend `code 0` et le jeton suivi d'un saut de ligne ; sans `FAKE_GH_TOKEN`, `code 1`. Le parcours E2E (Task 23) s'en sert pour le mode « Utiliser gh ».
 
-- [ ] **Step 6: Amorçage**
+- [x] **Step 6: Amorçage**
 
 `packages/daemon/src/integrations/bootstrap.ts` : `IntegrationKit` gagne `github: { account: GithubAccount; api: GithubApi }`. Les dépendances sont créées en variables locales **avant** le `kit` (aucun champ optionnel, aucune affectation après coup) :
 
@@ -6968,7 +6968,7 @@ Test ajouté à `packages/daemon/src/code/testing/fixture.test.ts` (harnais rée
 
 puis `settings`, `github` et `hooks: { aliases: net.aliases, observe, secret, mcp: null, ciRuns: null }` dans le `kit`, et `githubModule(kit, kit.github)` dans `modules`.
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
