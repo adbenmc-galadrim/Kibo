@@ -10377,7 +10377,7 @@ Référence : maquette P6, sombre et clair. Le choix de source n'apparaît que p
   - `SYNCABLE_COMPONENTS = ["kanban", "tickets"]`
   - `AddComponentDialog` gagne la prop facultative `workflow?: Status[]` (défaut `DEFAULT_WORKFLOW`)
 
-- [ ] **Step 1: Tests purs (échouent)**
+- [x] **Step 1: Tests purs (échouent)**
 
 `packages/ui/src/dialogs/sync/status-map.test.ts` :
 
@@ -10421,7 +10421,7 @@ test("the form becomes a binding config", () => {
 
 Run: `bun test packages/ui/src/dialogs/sync/status-map.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: `status-map.ts`**
+- [x] **Step 2: `status-map.ts`**
 
 ```ts
 import { BindingConfig, type GithubProject, type RepoSlug, type Status, type StatusMap } from "@kibo/schema";
@@ -10462,7 +10462,7 @@ export function toBindingConfig(f: SyncForm): BindingConfig | null {
 
 Run: `bun test packages/ui/src/dialogs/sync/status-map.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Test du dialogue (échoue)**
+- [x] **Step 3: Test du dialogue (échoue)**
 
 `packages/ui/src/dialogs/sync/SyncSource.test.tsx` :
 
@@ -10571,7 +10571,7 @@ test("components that do not show tickets have no source choice", async () => {
 
 Run: `bun test packages/ui/src/dialogs/sync` — Expected: FAIL.
 
-- [ ] **Step 4: `use-sync-progress.ts`**
+- [x] **Step 4: `use-sync-progress.ts`**
 
 `packages/ui/src/dialogs/sync/use-sync-progress.ts` :
 
@@ -10594,7 +10594,7 @@ export function useSyncProgress(bindingId: string | null): { imported: number; r
 
 (`subscribeIntegrations` ne livre que des `IntegrationEvent` validés par le client, Task 2.)
 
-- [ ] **Step 5: `SourcePicker.tsx`**
+- [x] **Step 5: `SourcePicker.tsx`**
 
 ```tsx
 import { Button } from "@kibo/sdk/ui/button";
@@ -10634,7 +10634,7 @@ export function SourcePicker({ value, onValueChange, connected, onOpenSettings }
 
 (Icônes : `ListTodo`, celle de la ligne « GitHub Issues & Projects » de l'écran 16, et `HardDrive` pour Locale ; Lucide 1.x n'a plus d'icônes de marque, N15. Le radio porte `aria-label={title}` par `ChoiceCard`.)
 
-- [ ] **Step 6: `SyncSourceForm.tsx`**
+- [x] **Step 6: `SyncSourceForm.tsx`**
 
 ```tsx
 import type { GithubProject, GithubRepo, Status, StatusId } from "@kibo/schema";
@@ -10794,7 +10794,7 @@ function StatusRow({ status, options, value, onChange }: { status: Status; optio
 
 Précisions : la pastille de statut est le `StatusDot` du SDK (mêmes couleurs que les colonnes du Kanban) ; `onError` est stable (`useCallback` dans le parent) pour ne pas relancer les requêtes. `RepoList` est dans ce fichier (< 300 lignes au total) ; s'il dépasse, le sortir en `RepoList.tsx`.
 
-- [ ] **Step 7: Brancher dans `AddComponentDialog.tsx`**
+- [x] **Step 7: Brancher dans `AddComponentDialog.tsx`**
 
 Le fichier réel (241 lignes) a un panneau `Details({ choice, page })` qui affiche, pour tout composant qui lit `ticket`, un bloc « Source des tickets » en `Segment` avec « Synchronisé · GitHub Issues » désactivé (« Disponible avec les intégrations »). La sélection est un `Choice` (`catalog-choices.ts` : `ref`, `id`, `title`, `reads`, `pending`…) et l'ajout passe par `addInstance(component)` (directement, ou après `TrustDialog` pour une version à autoriser). Le choix de source remplace ce bloc ; au-delà de ~300 lignes, sortir `Details` dans `dialogs/ComponentDetails.tsx`.
 
@@ -10914,7 +10914,7 @@ Bouton principal : libellé `synced ? fr.integrations.source.submit : a.submit`,
 
 `fr-components.ts` : retirer `source`, `sourceLocal`, `sourceSynced`, `sourceSoon` de `addComponent` (plus aucun usage). `component-dialogs.test.tsx` : l'assertion sur le radio désactivé « Synchronisé · GitHub Issues » devient `expect(screen.getByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy()` ; le faux `client` gagne `subscribeIntegrations: () => () => undefined` et répond `{ ghAvailable: false, ghLogin: null, mode: null }` à `getGithubConnectOptions`.
 
-- [ ] **Step 8: Vérifier et commiter**
+- [x] **Step 8: Vérifier et commiter**
 
 Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel : écran 3 avec Kanban choisi, source synchronisée ouverte, en sombre puis en clair, comparé à P6.
 
