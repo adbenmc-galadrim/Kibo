@@ -7756,7 +7756,7 @@ Chemin des commandes (N22) : l'observateur de la boîte d'envoi voit **toute** c
   - `syncModule(kit: IntegrationKit, runner: AdapterRunner, connected: () => boolean): IntegrationModule` (handlers `createBinding`, `deleteBinding`, `syncBinding`, `getSyncState`, `resolveOutbox`)
   - `backoffMs(attempts: number): number` = `min(5 s × 2^(attempts−1), 30 min)`
 
-- [ ] **Step 1: Distant en mémoire pour les tests**
+- [x] **Step 1: Distant en mémoire pour les tests**
 
 `packages/daemon/src/sync/testing/memory-runner.ts` :
 
@@ -7853,7 +7853,7 @@ export function createMemoryRunner(clock: { now: number }): MemoryRunner {
 
 Ce distant se comporte comme GitHub sans Project : `done` ⇔ fermé, tout autre statut ouvert revient en `todo`.
 
-- [ ] **Step 2: Tests du moteur (échouent)**
+- [x] **Step 2: Tests du moteur (échouent)**
 
 `packages/daemon/src/sync/engine.test.ts` :
 
@@ -8089,7 +8089,7 @@ Supprimer un ticket lié ne touche jamais l'issue (spec F §5) ; la ligne `sync_
 
 Run: `bun test packages/daemon/src/sync` — Expected: FAIL.
 
-- [ ] **Step 3: `hash.ts` et `sync-store.ts`**
+- [x] **Step 3: `hash.ts` et `sync-store.ts`**
 
 `packages/daemon/src/sync/hash.ts` :
 
@@ -8302,7 +8302,7 @@ test("one pending row per ticket, FIFO head, manual errors block the binding", (
 });
 ```
 
-- [ ] **Step 4: `outbox.ts` (intercepteur et observateur)**
+- [x] **Step 4: `outbox.ts` (intercepteur et observateur)**
 
 ```ts
 import {
@@ -8382,7 +8382,7 @@ export function outboxObserver(
 
 (Une réf. déjà rompue — `url: null` et `number` renseigné — n'est plus poussée.)
 
-- [ ] **Step 5: `apply.ts`**
+- [x] **Step 5: `apply.ts`**
 
 ```ts
 import { canApplyRemote, type ConflictField, planSync, projectLocal, type SyncPlan } from "@kibo/core";
@@ -8479,7 +8479,7 @@ function merge(deps: Deps, projectId: string, b: Binding, item: SyncItem, ticket
 
 `packages/core` exporte déjà `ConflictField`, `SyncPlan`, `canApplyRemote`, `planSync`, `projectLocal`, `settleAfterPush` (Task 5).
 
-- [ ] **Step 6: `engine.ts`**
+- [x] **Step 6: `engine.ts`**
 
 ```ts
 import { planSync, projectLocal, SYNCED_FIELDS, settleAfterPush } from "@kibo/core";
@@ -8711,7 +8711,7 @@ export function createSyncEngine(deps: Deps): SyncEngine {
 
 `asKibo` convertit une exception inattendue en `KiboError("INTERNAL")` : elle est journalisée et remonte, jamais avalée. Un ticket supprimé pendant un envoi : l'observateur retire sa ligne d'envoi et marque l'élément `IGNORED` ; `pushUpdate` relit le ticket dans sa transaction.
 
-- [ ] **Step 7: `scheduler.ts` et `module.ts`**
+- [x] **Step 7: `scheduler.ts` et `module.ts`**
 
 `packages/daemon/src/sync/scheduler.ts` :
 
@@ -8797,7 +8797,7 @@ export function syncModule(kit: IntegrationKit, runner: AdapterRunner, connected
 
 (Le module n'est pas encore branché dans `bootstrap.ts` : il attend l'`AdapterRunner` du Worker, Task 19.)
 
-- [ ] **Step 8: Vérifier et commiter**
+- [x] **Step 8: Vérifier et commiter**
 
 Run: `bun test packages/daemon/src/sync && bun run check && bun run typecheck` — Expected: PASS.
 
