@@ -4193,7 +4193,7 @@ git commit -m "feat(daemon): worktree et contexte d'un run"
   - `stdoutNotifier(write: (line: string) => void): (notice: Notice) => void` (ligne `KIBO_NOTIFY {json}`)
   - coque Tauri : lance le sidecar avec `KIBO_NATIVE_NOTIFY=1`, affiche chaque ligne `KIBO_NOTIFY` via `tauri-plugin-notification` **côté Rust** ; aucune capacité donnée à la fenêtre. Le démon lit `KIBO_NATIVE_NOTIFY` en Task 23.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/notifier.test.ts` :
 ```ts
@@ -4262,12 +4262,12 @@ test("the stdout line stays on one line", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/notifier.test.ts`
 Expected: FAIL (`Cannot find module "./notifier"`).
 
-- [ ] **Step 3: Implémenter le côté démon**
+- [x] **Step 3: Implémenter le côté démon**
 
 `packages/daemon/src/agents/fr.ts` :
 ```ts
@@ -4304,7 +4304,7 @@ export function stdoutNotifier(write: (line: string) => void): (notice: Notice) 
 }
 ```
 
-- [ ] **Step 4: Implémenter le côté Tauri**
+- [x] **Step 4: Implémenter le côté Tauri**
 
 `apps/desktop/src-tauri/Cargo.toml`, dans `[dependencies]` :
 ```toml
@@ -4389,14 +4389,14 @@ mod tests {
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
 ```
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/notifier.test.ts && bun run check`
 Expected: PASS.
 Run (Rust installé) : `bun run --cwd packages/ui build && bun run --cwd apps/desktop sidecar && cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
 Expected: 3 tests Rust PASS. Le smoke Tauri reste vert en CI (le démon ignore encore `KIBO_NATIVE_NOTIFY`).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/daemon/src/agents/notifier.ts packages/daemon/src/agents/fr.ts packages/daemon/src/agents/notifier.test.ts apps/desktop/src-tauri/Cargo.toml apps/desktop/src-tauri/Cargo.lock apps/desktop/src-tauri/src/main.rs .github/workflows/ci.yml
