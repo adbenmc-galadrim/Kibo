@@ -35,6 +35,7 @@ export type ConnectionEvents = {
 type WelcomeWaiter = { resolve(): void; reject(error: KiboError): void };
 
 const NORMAL_CLOSE = 1000;
+export const HANDSHAKE_TIMEOUT_MS = 10_000;
 
 export function backoffDelay(attempt: number, random: number, limits: Limits): number {
   const base = Math.min(limits.maxMs, limits.minMs * 2 ** attempt);
@@ -51,6 +52,7 @@ export class SyncConnection {
   private socket: SyncSocket | null = null;
   private attempt = 0;
   private cancelRetry: (() => void) | null = null;
+  private cancelHandshake: (() => void) | null = null;
   private halted = false;
   private stopped = true;
   private inbox: Promise<void> = Promise.resolve();
@@ -71,6 +73,7 @@ export class SyncConnection {
   stop(): void {
     this.stopped = true;
     this.clearRetry();
+    this.clearHandshake();
     const socket = this.socket;
     this.socket = null;
     socket?.close(NORMAL_CLOSE);
@@ -96,6 +99,7 @@ export class SyncConnection {
   private launch(): void {
     this.open().catch((e: unknown) => {
       this.deps.log("sync connection failed to open", e);
+      this.clearHandshake();
       this.socket = null;
       this.lastError = asKiboError(e).code;
       this.drop(asKiboError(e));
@@ -114,6 +118,7 @@ export class SyncConnection {
     if (this.stopped) return;
     const socket = this.deps.transport.open(`${config.serverUrl}/v1/sync`, { ca });
     this.socket = socket;
+    this.cancelHandshake = this.deps.setTimer(() => this.handshakeTimedOut(socket), HANDSHAKE_TIMEOUT_MS);
     socket.onMessage((text) => {
       if (this.socket !== socket) return;
       this.inbox = this.inbox
@@ -139,6 +144,7 @@ export class SyncConnection {
       return;
     }
     if (frame.type === "welcome") {
+      this.clearHandshake();
       this.state = "online";
       this.attempt = 0;
       this.lastError = null;
@@ -162,7 +168,19 @@ export class SyncConnection {
     }
   }
 
+  private handshakeTimedOut(socket: SyncSocket): void {
+    this.cancelHandshake = null;
+    if (this.socket !== socket) return;
+    this.socket = null;
+    socket.close(NORMAL_CLOSE);
+    this.lastError = "SYNC_OFFLINE";
+    this.drop(new KiboError("SYNC_OFFLINE", "the sync server did not complete the handshake in time"));
+    this.retry(backoffDelay(this.attempt, this.deps.random(), this.limits));
+    this.deps.emit({ type: "collab.changed" });
+  }
+
   private closed(code: number): void {
+    this.clearHandshake();
     this.socket = null;
     if (code === CLOSE_CODES.deviceRevoked) {
       this.halted = true;
@@ -195,6 +213,11 @@ export class SyncConnection {
       this.retryAt = null;
       this.launch();
     }, delay);
+  }
+
+  private clearHandshake(): void {
+    this.cancelHandshake?.();
+    this.cancelHandshake = null;
   }
 
   private clearRetry(): void {

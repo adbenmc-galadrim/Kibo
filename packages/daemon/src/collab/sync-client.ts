@@ -37,6 +37,7 @@ export type SyncClientDeps = {
   log(message: string, error?: unknown): void;
   backoff?: { minMs: number; maxMs: number };
 };
+type ConnectInput = { serverUrl: string; code: string; deviceName: string; caFile: string | null };
 type Welcome = Extract<ServerFrame, { type: "welcome" }>;
 
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -44,6 +45,7 @@ const REQUEST_TIMEOUT_MS = 10_000;
 export class SyncClient {
   private user: { id: string; name: string } | null = null;
   private offLocal: (() => void) | null = null;
+  private connecting = false;
   private readonly syncs = new Map<string, ProjectSync>();
   private readonly projects: SyncProjects;
   private readonly requests: RequestTable;
@@ -92,12 +94,17 @@ export class SyncClient {
     return this.projects.membersOf(projectId);
   }
 
-  async connect(input: {
-    serverUrl: string;
-    code: string;
-    deviceName: string;
-    caFile: string | null;
-  }): Promise<SyncStatus> {
+  async connect(input: ConnectInput): Promise<SyncStatus> {
+    if (this.connecting) throw new KiboError("CONFLICT", "a connection to a sync server is already running");
+    this.connecting = true;
+    try {
+      return await this.join(input);
+    } finally {
+      this.connecting = false;
+    }
+  }
+
+  private async join(input: ConnectInput): Promise<SyncStatus> {
     const url = assertSyncUrl(input.serverUrl);
     if (this.deps.db.config()) throw new KiboError("INVALID_INPUT", "a sync server is already configured");
     const serverUrl = url.toString().replace(/\/$/, "");
@@ -120,7 +127,7 @@ export class SyncClient {
     this.connection.reset();
     const online = this.connection.waitOnline();
     await this.start();
-    await online;
+    await online.catch((e: unknown) => this.deps.log("sync server joined but not reachable yet", e));
     return this.status();
   }
 
@@ -229,7 +236,14 @@ export class SyncClient {
     const sync = this.syncs.get(f.projectId);
     if (!sync) return;
     const wasResyncing = sync.resyncing;
-    sync.receive(f);
+    try {
+      sync.receive(f);
+    } catch (e) {
+      if (!(e instanceof KiboError)) throw e;
+      this.deps.log(`sync update for ${f.projectId} refused, project sync suspended`, e);
+      this.suspend(f.projectId, e.code);
+      return;
+    }
     this.projects.synced(f.projectId, false);
     if (wasResyncing && !sync.resyncing) {
       this.deps.log(`local changes of ${f.projectId} were dropped by a resync from the server`);
@@ -275,7 +289,14 @@ export class SyncClient {
   private rejected(projectId: string, code: RejectCode, message: string): void {
     this.deps.log(`sync push rejected for ${projectId}: ${code} ${message}`);
     this.projects.failed(projectId, code);
-    if (code === "FORBIDDEN") this.deps.hosts.setAccess(projectId, "read-only");
+    if (code === "FORBIDDEN") this.projects.setRole(projectId, "viewer");
+  }
+
+  private suspend(projectId: string, code: string): void {
+    this.syncs.get(projectId)?.disconnected();
+    this.syncs.delete(projectId);
+    this.projects.suspend(projectId, code);
+    if (this.connection.state === "online") this.connection.send({ type: "unsubscribe", projectId });
   }
 
   private revoke(projectId: string, reason: "removed" | "deleted"): void {

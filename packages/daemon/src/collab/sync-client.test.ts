@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getNode, getTicket, listTickets } from "@kibo/core";
 import { KiboError, type RpcRequest, SYNC_LIMITS } from "@kibo/schema";
@@ -53,9 +53,13 @@ describe("device authentication", () => {
     const stored = await d(0).secrets.get("sync:device");
     const keys = z.object({ privateKey: z.string() }).parse(JSON.parse(stored ?? "{}"));
     expect(keys.privateKey.length).toBeGreaterThan(0);
-    const db = readFileSync(join(d(0).home, "kibo.db"));
-    expect(db.includes(Buffer.from(keys.privateKey))).toBe(false);
-    expect(db.includes(Buffer.from(keys.privateKey, "base64"))).toBe(false);
+    const files = ["kibo.db", "kibo.db-wal"].map((name) => join(d(0).home, name)).filter(existsSync);
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const bytes = readFileSync(file);
+      expect(bytes.includes(Buffer.from(keys.privateKey))).toBe(false);
+      expect(bytes.includes(Buffer.from(keys.privateKey, "base64"))).toBe(false);
+    }
   });
 
   test("a wrong account code leaves nothing configured", async () => {

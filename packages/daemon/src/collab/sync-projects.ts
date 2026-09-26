@@ -106,6 +106,11 @@ export class SyncProjects {
     if (this.row(projectId) && this.exists(projectId)) this.deps.emit({ projectId });
   }
 
+  suspend(projectId: string, code: string): void {
+    const row = this.row(projectId);
+    if (row) this.save({ ...row, enabled: false, lastError: code });
+  }
+
   revoke(projectId: string, reason: RevokeReason): void {
     const row = this.row(projectId);
     if (!row) return;

@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { listTickets } from "@kibo/core";
+import { listGuidelines } from "@kibo/core/agent-config";
 import { KiboError, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { call, createService, type Service } from "../service";
@@ -57,6 +58,21 @@ test("a read-only project refuses commands and rule triggers", async () => {
   hosts.setAccess(projectId, "write");
   await create("Oui");
   expect(listTickets(hosts.host(projectId).doc()).map((t) => t.title)).toEqual(["Oui"]);
+});
+
+test("project guidelines go through the write guard", () => {
+  const add = {
+    method: "addGuideline",
+    owner: { scope: "project", projectId },
+    path: "x.md",
+    content: "hi",
+  } as const;
+  hosts.setAccess(projectId, "revoked");
+  expect(codeOf(() => service.handle({ method: "config", command: add }))).toBe("FORBIDDEN");
+  expect(listGuidelines(hosts.host(projectId).doc())).toEqual([]);
+  hosts.setAccess(projectId, "write");
+  service.handle({ method: "config", command: add });
+  expect(listGuidelines(hosts.host(projectId).doc())).toHaveLength(1);
 });
 
 test("a project being shared refuses commands with CONFLICT", async () => {
@@ -121,4 +137,17 @@ test("a joined project is registered with its local folder", () => {
   expect(hosts.projectIds()).toContain("joined-1");
   expect(hosts.host("joined-1").doc()).toBe(doc);
   expect(hosts.localUser()).toBe("adam");
+});
+
+test("sync data nesting the project too deep is refused before it reaches the project", () => {
+  const current = hosts.host(projectId).doc();
+  const remote = LoroDoc.fromSnapshot(current.export({ mode: "snapshot" }));
+  let node = remote.getTree("tickets").createNode();
+  for (let i = 0; i < 100; i++) node = node.createNode();
+  remote.commit();
+  const bytes = remote.export({ mode: "update", from: current.oplogVersion() });
+  expect(codeOf(() => hosts.host(projectId).applyRemote(bytes))).toBe("TOO_LARGE");
+  expect(listTickets(hosts.host(projectId).doc())).toEqual([]);
+  expect(codeOf(() => hosts.host(projectId).replaceDoc(remote))).toBe("TOO_LARGE");
+  expect(hosts.host(projectId).doc()).toBe(current);
 });

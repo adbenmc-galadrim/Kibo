@@ -1,8 +1,12 @@
-import { getProjectMeta } from "@kibo/core";
+import { depthViolation, getProjectMeta, projectDepthViolation } from "@kibo/core";
 import { KiboError, type ProjectAccess, type ProjectMeta } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
 import type { ProjectHostRegistry } from "./types";
+
+function refuseTooDeep(projectId: string, violation: string | null): void {
+  if (violation) throw new KiboError("TOO_LARGE", `sync data for ${projectId} refused: ${violation}`);
+}
 
 export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistry {
   const access = new Map<string, ProjectAccess>();
@@ -29,10 +33,17 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
     host: (projectId) => ({
       doc: () => docs.project(projectId),
       applyRemote: (bytes) => {
-        docs.project(projectId).import(bytes);
+        const doc = docs.project(projectId);
+        const candidate = doc.fork();
+        candidate.import(bytes);
+        refuseTooDeep(projectId, depthViolation(doc, candidate));
+        doc.import(bytes);
         docs.imported(projectId);
       },
-      replaceDoc: (doc) => docs.replaceProject(projectId, doc),
+      replaceDoc: (doc) => {
+        refuseTooDeep(projectId, projectDepthViolation(doc));
+        docs.replaceProject(projectId, doc);
+      },
     }),
     projectIds: () => docs.projectIds(),
     setAccess: (projectId, next) => {

@@ -27,8 +27,10 @@ export async function handleSyncRpc(
     case "listDevices":
       return { handled: true, result: await client.listDevices() };
     case "addDevice":
+      requireLocal(ctx);
       return { handled: true, result: await client.addDevice() };
     case "revokeDevice":
+      requireLocal(ctx);
       await client.revokeDevice(req.deviceId);
       return { handled: true, result: null };
     default:

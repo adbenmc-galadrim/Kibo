@@ -40,14 +40,23 @@ const connect = {
   caFile: null,
 } as const;
 
-test("connecting and disconnecting are refused from a remote session", async () => {
+test("connecting, disconnecting and managing devices are refused from a remote session", async () => {
   const calls: string[] = [];
   const client = fakeClient(calls);
-  await expect(handleSyncRpc(client, connect, remote)).rejects.toMatchObject({ code: "FORBIDDEN" });
-  await expect(handleSyncRpc(client, { method: "disconnectSyncServer" }, remote)).rejects.toMatchObject({
-    code: "FORBIDDEN",
-  });
+  const localOnly = [
+    connect,
+    { method: "disconnectSyncServer" },
+    { method: "addDevice" },
+    { method: "revokeDevice", deviceId: "d2" },
+  ] as const;
+  for (const req of localOnly) {
+    await expect(handleSyncRpc(client, req, remote)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  }
   expect(calls).toEqual([]);
+  expect(await handleSyncRpc(client, { method: "listDevices" }, remote)).toEqual({
+    handled: true,
+    result: [],
+  });
 });
 
 test("sync methods reach the client, others are left to the next handler", async () => {
@@ -58,11 +67,11 @@ test("sync methods reach the client, others are left to the next handler", async
     result: status,
   });
   expect(await handleSyncRpc(client, connect, local)).toEqual({ handled: true, result: status });
-  expect(await handleSyncRpc(client, { method: "revokeDevice", deviceId: "d2" }, remote)).toEqual({
+  expect(await handleSyncRpc(client, { method: "revokeDevice", deviceId: "d2" }, local)).toEqual({
     handled: true,
     result: null,
   });
-  expect(await handleSyncRpc(client, { method: "addDevice" }, remote)).toEqual({
+  expect(await handleSyncRpc(client, { method: "addDevice" }, local)).toEqual({
     handled: true,
     result: { code: "C", expiresAt: 1 },
   });

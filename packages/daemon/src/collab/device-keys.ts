@@ -9,8 +9,8 @@ function parseStored(raw: string): KeyPair {
   let json: unknown;
   try {
     json = JSON.parse(raw);
-  } catch (e) {
-    throw new KiboError("UNAUTHORIZED", `device key in the secret store is not JSON: ${String(e)}`);
+  } catch {
+    throw new KiboError("UNAUTHORIZED", "device key in the secret store is not JSON");
   }
   const parsed = Stored.safeParse(json);
   if (!parsed.success) throw new KiboError("UNAUTHORIZED", "device key in the secret store is malformed");
