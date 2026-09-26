@@ -1,0 +1,206 @@
+import { beforeEach, expect, mock, test } from "bun:test";
+import { KiboError, type McpServerView, type RpcRequest } from "@kibo/schema";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+const calls: RpcRequest[] = [];
+let reply: (req: RpcRequest) => Promise<unknown> = async () => null;
+mock.module("../../api", () => ({
+  client: {
+    rpc: (req: RpcRequest) => {
+      calls.push(req);
+      return reply(req);
+    },
+  },
+}));
+
+const { GithubConnectDialog } = await import("./GithubConnectDialog");
+const { FigmaConnectDialog } = await import("./FigmaConnectDialog");
+const { McpServerDialog } = await import("./McpServerDialog");
+const { McpServersDialog } = await import("./McpServersDialog");
+const { INTEGRATION_DIALOGS } = await import("../../settings/integration-dialogs");
+
+const server = (
+  patch: Partial<Pick<McpServerView, "id" | "name" | "enabled" | "state" | "tools">> = {},
+): McpServerView => ({
+  transport: "stdio",
+  id: "context7",
+  name: "Context7",
+  command: "npx",
+  args: [],
+  envNames: [],
+  enabled: true,
+  state: "connected",
+  error: null,
+  tools: [
+    { name: "a", description: null, inputSchema: {} },
+    { name: "b", description: null, inputSchema: {} },
+  ],
+  secretsSet: [],
+  ...patch,
+});
+
+beforeEach(() => {
+  calls.length = 0;
+  reply = async (req) =>
+    req.method === "getGithubConnectOptions" ? { ghAvailable: false, ghLogin: null, mode: null } : null;
+});
+
+test("the three dialogs are registered", () => {
+  expect(Object.keys(INTEGRATION_DIALOGS).sort()).toEqual(["figma", "github", "mcp"]);
+});
+
+test("github: gh is disabled when missing, a refused token is explained", async () => {
+  reply = async (req) => {
+    if (req.method === "getGithubConnectOptions") return { ghAvailable: false, ghLogin: null, mode: null };
+    throw new KiboError("REMOTE_REJECTED", "401");
+  };
+  const user = userEvent.setup();
+  render(<GithubConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  expect(await screen.findByText("gh n'est pas installé ou pas connecté (gh auth login).")).toBeDefined();
+  expect(screen.getByRole("radio", { name: "Utiliser gh" })).toHaveProperty("disabled", true);
+  await user.click(screen.getByRole("radio", { name: "Jeton personnel" }));
+  const field = screen.getByLabelText("Jeton");
+  expect(field.getAttribute("type")).toBe("password");
+  await user.type(field, "ghp_wrong");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("GitHub a refusé ce jeton.");
+  expect(screen.queryByText(/ghp_wrong/)).toBeNull();
+  expect(calls).toContainEqual({ method: "connectGithub", auth: { mode: "token", token: "ghp_wrong" } });
+});
+
+test("github: gh is preselected when connected", async () => {
+  reply = async (req) => {
+    if (req.method === "getGithubConnectOptions") return { ghAvailable: true, ghLogin: "adam", mode: null };
+    return { login: "adam" };
+  };
+  const onDone = mock((_message?: string) => {});
+  const user = userEvent.setup();
+  render(<GithubConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
+  expect(
+    await screen.findByText("Kibo lit le jeton de gh à la demande, sans le stocker. gh est connecté (adam)."),
+  ).toBeDefined();
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect(calls).toContainEqual({ method: "connectGithub", auth: { mode: "gh" } });
+  expect(onDone).toHaveBeenCalledWith("Connecté en tant que adam");
+});
+
+test("github: a locked keychain is explained", async () => {
+  reply = async (req) => {
+    if (req.method === "getGithubConnectOptions") return { ghAvailable: false, ghLogin: null, mode: null };
+    throw new KiboError("SECRET_STORE_UNAVAILABLE", "locked");
+  };
+  const user = userEvent.setup();
+  render(<GithubConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  await user.type(await screen.findByLabelText("Jeton"), "ghp_x");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect((await screen.findByRole("alert")).textContent).toMatch(/^Trousseau système indisponible/);
+});
+
+test("figma: the default address is sent, an unreachable server is explained", async () => {
+  let state = "error";
+  reply = async () => ({
+    id: "figma",
+    state,
+    account: null,
+    servers: [],
+    error: { code: "NETWORK", message: "down" },
+    resumeAt: null,
+  });
+  const onDone = mock((_message?: string) => {});
+  const user = userEvent.setup();
+  render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
+  expect(screen.getByLabelText("Adresse du serveur")).toHaveProperty("value", "http://127.0.0.1:3845/mcp");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect(calls).toContainEqual({ method: "configureFigma", url: "http://127.0.0.1:3845/mcp" });
+  expect((await screen.findByRole("alert")).textContent).toMatch(/^Serveur Figma injoignable/);
+  state = "connected";
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect(onDone).toHaveBeenCalled();
+});
+
+test("mcp: the exact command is shown and confirmed before adding", async () => {
+  reply = async (req) => {
+    if (req.method === "previewMcpServer") return { commandLine: "npx -y @upstash/context7-mcp" };
+    return null;
+  };
+  const onAdded = mock(() => {});
+  const user = userEvent.setup();
+  render(<McpServerDialog open onOpenChange={() => {}} onAdded={onAdded} takenIds={[]} />);
+  await user.type(screen.getByLabelText("Nom"), "Context7");
+  await user.type(screen.getByLabelText("Commande"), "npx");
+  await user.type(screen.getByLabelText("Arguments"), "-y{Enter}@upstash/context7-mcp");
+  await user.click(screen.getByRole("button", { name: "Continuer" }));
+  const dialog = await screen.findByRole("dialog", { name: "Confirmer la commande" });
+  expect(within(dialog).getByText("npx -y @upstash/context7-mcp")).toBeDefined();
+  await user.click(within(dialog).getByRole("button", { name: "Ajouter et lancer" }));
+  expect(calls.at(-1)).toEqual({
+    method: "addMcpServer",
+    server: {
+      transport: "stdio",
+      id: "context7",
+      name: "Context7",
+      command: "npx",
+      args: ["-y", "@upstash/context7-mcp"],
+      envNames: [],
+    },
+    confirmedCommandLine: "npx -y @upstash/context7-mcp",
+    secrets: {},
+  });
+  expect(onAdded).toHaveBeenCalled();
+});
+
+test("mcp: secret values are masked, a taken id or invalid field is refused", async () => {
+  const user = userEvent.setup();
+  render(<McpServerDialog open onOpenChange={() => {}} onAdded={() => {}} takenIds={["context7"]} />);
+  await user.type(screen.getByLabelText("Nom"), "Context7");
+  await user.click(screen.getByRole("button", { name: "Ajouter une variable" }));
+  expect(screen.getByLabelText("Valeur").getAttribute("type")).toBe("password");
+  await user.click(screen.getByRole("button", { name: "Continuer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Identifiant déjà utilisé.");
+  await user.clear(screen.getByLabelText("Identifiant"));
+  await user.type(screen.getByLabelText("Identifiant"), "ctx");
+  await user.click(screen.getByRole("button", { name: "Continuer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Commande : valeur invalide.");
+  expect(calls.some((c) => c.method === "previewMcpServer")).toBe(false);
+});
+
+test("mcp list: toggles, removes after confirmation, reports on close", async () => {
+  let servers = [
+    server(),
+    server({ id: "linear", name: "Linear", enabled: false, state: "idle", tools: [] }),
+  ];
+  reply = async (req) => {
+    if (req.method === "listMcpServers") return servers;
+    if (req.method === "removeMcpServer") {
+      servers = servers.filter((s) => s.id !== req.id);
+      return null;
+    }
+    return null;
+  };
+  const onDone = mock((_message?: string) => {});
+  const user = userEvent.setup();
+  render(<McpServersDialog open onOpenChange={() => {}} onDone={onDone} />);
+  expect(await screen.findByText("Commande locale (stdio) · 2 outils")).toBeDefined();
+  expect(screen.getByText("Désactivé")).toBeDefined();
+  await user.click(screen.getByRole("switch", { name: "Activé Linear" }));
+  expect(calls).toContainEqual({ method: "setMcpServerEnabled", id: "linear", enabled: true });
+  await user.click(screen.getAllByRole("button", { name: "Retirer" })[0] as HTMLElement);
+  const confirm = await screen.findByRole("alertdialog");
+  expect(within(confirm).getByText(/^Retirer Context7 \?/)).toBeDefined();
+  await user.click(within(confirm).getByRole("button", { name: "Retirer" }));
+  expect(calls).toContainEqual({ method: "removeMcpServer", id: "context7" });
+  expect(await screen.findByText("Linear")).toBeDefined();
+  expect(screen.queryByText("Context7")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Fermer" }));
+  expect(onDone).toHaveBeenCalled();
+});
+
+test("mcp list: empty state and add flow", async () => {
+  reply = async (req) => (req.method === "listMcpServers" ? [] : null);
+  const user = userEvent.setup();
+  render(<McpServersDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  expect(await screen.findByText("Aucun serveur MCP.")).toBeDefined();
+  await user.click(screen.getByRole("button", { name: "Ajouter un serveur" }));
+  expect(await screen.findByRole("dialog", { name: "Ajouter un serveur MCP" })).toBeDefined();
+});
