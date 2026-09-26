@@ -7336,7 +7336,7 @@ Vague 3 (dépend de T1, T2, T3, T4, T9 ; mêmes fichiers `server.ts` et `daemon.
 - Vérifié en T0 : `server.ts` a aussi `hosts()` / `origins()` (avec les origines du bac à sable `sandboxOrigins(opts.sandboxOrigin?.())`), `/hooks/<runId>` (hooks des agents locaux), `/components/` (`serveTrusted`), `/api/code`, et `withUiHeaders(res, sandboxOrigin)` dont le CSP autorise `frame-src` vers le serveur de bac à sable (`startSandboxServer`, `127.0.0.1` seulement). L'écran 15 (« Accès web · Générer un code ») n'existe pas dans l'UI : l'entrée « Apparence » de `SettingsNav` est désactivée (« Bientôt ») ; son UI est livrée par T25.
 - Limite connue (voir rapport T0) : depuis l'écouteur distant, l'UI et les composants intégrés et `trusted` (`/components/`) fonctionnent ; les iframes des composants **sandboxés** pointent vers le serveur de bac à sable en `127.0.0.1` et ne se chargent pas à distance. T13 ne l'étend pas : décision à faire valider (rapport de T0).
 
-- [ ] **Step 1: Écrire le test des codes d'appairage**
+- [x] **Step 1: Écrire le test des codes d'appairage**
 
 `packages/daemon/src/remote/pairing-codes.test.ts` :
 ```ts
@@ -7390,7 +7390,7 @@ Un succès ne remet pas le compteur d'échecs à zéro (seul `create` le fait) :
 Run: `bun test packages/daemon/src/remote/pairing-codes.test.ts`
 Expected: FAIL avec « Cannot find module './pairing-codes' ».
 
-- [ ] **Step 2: Implémenter les codes**
+- [x] **Step 2: Implémenter les codes**
 
 `packages/daemon/src/remote/pairing-codes.ts` :
 ```ts
@@ -7435,7 +7435,7 @@ export class PairingCodes {
 Run: `bun test packages/daemon/src/remote/pairing-codes.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 3: Interfaces réseau**
+- [x] **Step 3: Interfaces réseau**
 
 `packages/daemon/src/remote/interfaces.test.ts` :
 ```ts
@@ -7486,7 +7486,7 @@ export function listInterfaces(
 Run: `bun test packages/daemon/src/remote/interfaces.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Écrire le test d'intégration de l'accès distant**
+- [x] **Step 4: Écrire le test d'intégration de l'accès distant**
 
 `packages/daemon/src/remote/remote-access.test.ts` :
 ```ts
@@ -7699,7 +7699,7 @@ Dans `beforeEach`, l'extension enveloppe `remoteRpc` parce que `remote` dépend 
 Run: `bun test packages/daemon/src/remote/remote-access.test.ts`
 Expected: FAIL (`./remote-access` introuvable, `/api/pair-code` inconnu).
 
-- [ ] **Step 5: Implémenter l'accès distant et ses RPC**
+- [x] **Step 5: Implémenter l'accès distant et ses RPC**
 
 `packages/daemon/src/remote/remote-access.ts` :
 ```ts
@@ -7880,7 +7880,7 @@ export function remoteRpc(remote: RemoteAccess, codes: PairingCodes): RpcExtensi
 }
 ```
 
-- [ ] **Step 6: Gestionnaire HTTP partagé par les deux écouteurs**
+- [x] **Step 6: Gestionnaire HTTP partagé par les deux écouteurs**
 
 Dans `packages/daemon/src/server.ts` (base : la version de T9). Tout ce qui existe reste en place ; seul le contexte d'écoute (`ListenInfo`) est ajouté et passé aux contrôles :
 ```ts
@@ -7988,7 +7988,7 @@ Le gestionnaire `fetch` de la v0.6 devient une fabrique ; il garde son ordre de 
 ```
 `websocket` est l'objet `open` / `close` / `message` de T9, extrait dans une constante. `publish` remplace le `server.publish("changes", …)` de la v0.6 et reste branché sur `opts.service.onChange` et `opts.code?.onChange` : les deux écouteurs reçoivent les mêmes événements, masqués par `redact`. `ServerOptions` gagne `pairingCodes?: PairingCodes` ; `startServer` renvoie `{ url, port, stop, listenRemote }`, et `stop` ferme aussi les écouteurs distants restants. Le CSP de l'UI est identique sur les deux écouteurs (`withUiHeaders`), `connect-src 'self'` couvrant `wss:` de la même origine. Les hooks des agents (`/hooks/<runId>`) ne répondent que sur `127.0.0.1` (test « agent hooks are refused on the remote listener »).
 
-- [ ] **Step 7: Brancher `daemon.ts` et le client du SDK**
+- [x] **Step 7: Brancher `daemon.ts` et le client du SDK**
 
 Dans `packages/daemon/src/daemon.ts` (`assemble`), avant `startServer` :
 ```ts
@@ -8051,12 +8051,12 @@ test("pairWithCode posts the code and fails on 401", async () => {
 
 Le test d'aiguillage des `Phase7Event` est celui de T4 ; ici, seul `pairWithCode` est testé.
 
-- [ ] **Step 8: Lancer les tests**
+- [x] **Step 8: Lancer les tests**
 
 Run: `bun test packages/daemon packages/sdk`
 Expected: PASS (dont les 13 tests de `remote-access.test.ts`) ; les fichiers `server*.test.ts`, `exit.test.ts` et `agents.integration.test.ts` passent **sans modification** (`sessions` et `pairingCodes` sont facultatifs).
 
-- [ ] **Step 9: Vérifier le lint et les types, commiter**
+- [x] **Step 9: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
