@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ProjectCommand } from "./command";
 import { DataKey } from "./instance";
+import { McpImportItem, McpServerId } from "./integrations";
 import { BuiltinEntityType } from "./manifest";
 import { NotePath } from "./note";
 
@@ -33,5 +34,13 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("notes.remove"), path: NotePath }),
   z.object({ kind: z.literal("notes.search"), query: z.string().max(200) }),
   z.object({ kind: z.literal("notes.info") }),
+  z.object({
+    kind: z.literal("mcp.call"),
+    server: McpServerId,
+    tool: z.string().min(1).max(128),
+    args: z.record(z.string(), z.unknown()),
+  }),
+  z.object({ kind: z.literal("mcp.read"), server: McpServerId, uri: z.string().min(1).max(2048) }),
+  z.object({ kind: z.literal("mcp.import"), server: McpServerId, item: McpImportItem }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

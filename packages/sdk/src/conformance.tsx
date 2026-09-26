@@ -7,6 +7,7 @@ import {
   type ProjectSnapshot,
   permissionList,
   type Surface,
+  secretHostsCovered,
   type Theme,
   type TicketRun,
   USED_MARKER,
@@ -21,7 +22,7 @@ export type ConformanceModule = { manifest: unknown; Component: ComponentType };
 export type ConformanceSeed = (run: (cmd: ProjectCommand) => unknown) => void;
 export type ConformanceOptions = Pick<
   MockSdkOptions,
-  "fetch" | "server" | "notes" | "config" | "noteAges"
+  "fetch" | "server" | "notes" | "config" | "noteAges" | "mcp" | "ciRuns"
 > & {
   runs?: (snapshot: ProjectSnapshot) => TicketRun[];
 };
@@ -42,6 +43,9 @@ export function runConformance(
     });
     if (!parsed.success) return;
     const manifest = parsed.data;
+    test("secrets are only requested for hosts covered by net", () => {
+      expect(secretHostsCovered(manifest)).toEqual([]);
+    });
     const declared = permissionList(grantedOf(manifest));
     const surfaces: Surface[] =
       manifest.kind === "both" ? ["widget", "view"] : manifest.kind === "adapter" ? [] : [manifest.kind];
@@ -68,7 +72,7 @@ export function runConformance(
               await settle();
               console.log(`${USED_MARKER}${JSON.stringify(m.used)}`);
               expect(m.violations).toEqual([]);
-              expect(diffPermissions(declared, m.used).missing).toEqual([]);
+              expect(diffPermissions(declared, m.used, mockOpts.config ?? null).missing).toEqual([]);
             } finally {
               cleanup();
               document.documentElement.classList.remove("dark");

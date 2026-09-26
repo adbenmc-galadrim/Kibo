@@ -1,5 +1,5 @@
 import { readInstanceData, readProject, writeInstanceData } from "@kibo/core";
-import type { TicketRun } from "@kibo/schema";
+import { KiboError, type TicketRun } from "@kibo/schema";
 import type { Docs } from "../docs";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import type { NotesService } from "../notes/service";
@@ -30,6 +30,11 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
   return {
     async list(projectId, entity) {
       if (entity === "run") return deps.runs(projectId);
+      if (entity === "ci_run") {
+        const ciRuns = deps.integrations?.()?.ciRuns ?? null;
+        if (!ciRuns) throw new KiboError("NOT_CONNECTED", "ci not started");
+        return ciRuns(projectId);
+      }
       const snap = readProject(docs.project(projectId));
       const lists = { ticket: snap.tickets, status: snap.workflow, link: snap.links, page: snap.pages };
       return lists[entity];
@@ -55,5 +60,13 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     action: (ref, projectId, instanceId, config, name, input) =>
       deps.backends().action(ref, { projectId, instanceId, config, name, input }),
     notes: (projectId, call) => deps.notes.handle(projectId, call),
+    async mcp(projectId, instanceId, call) {
+      const gate = deps.integrations?.()?.mcp ?? null;
+      if (!gate) throw new KiboError("MCP_UNAVAILABLE", "mcp hub not started");
+      const ctx = { projectId, instanceId };
+      if (call.kind === "mcp.call") return gate.call(ctx, call.server, call.tool, call.args);
+      if (call.kind === "mcp.read") return gate.read(ctx, call.server, call.uri);
+      return gate.importItem(ctx, call.server, call.item);
+    },
   };
 }

@@ -1,5 +1,6 @@
 import { createProjectDoc, executeProjectCommand, readProject } from "@kibo/core";
 import {
+  type CiRun,
   type ComponentCall,
   ComponentManifest,
   type ComponentManifestInput,
@@ -7,6 +8,7 @@ import {
   type FetchInit,
   type FetchResponse,
   KiboError,
+  type McpCallResult,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionOfCall,
@@ -45,6 +47,8 @@ export type MockSdkOptions = {
   server?: ServerDefinition;
   notes?: Record<string, string>;
   noteAges?: Record<string, number>;
+  mcp?: Record<string, McpCallResult>;
+  ciRuns?: CiRun[];
 };
 
 const PROJECT_KEY = "KIB";
@@ -103,6 +107,7 @@ export function createMockSdk(
       page: () => snapshot.pages,
       run: () => runs,
       note: () => folder.list(),
+      ci_run: () => opts.ciRuns ?? [],
     };
     return lists[entity]();
   };
@@ -153,6 +158,25 @@ export function createMockSdk(
         return folder.search(c.query);
       case "notes.info":
         return folder.info();
+      case "mcp.call":
+      case "mcp.read": {
+        const key = c.kind === "mcp.call" ? `${c.server}/${c.tool}` : `${c.server}@${c.uri}`;
+        const reply = opts.mcp?.[key];
+        if (!reply) throw new KiboError("MCP_FAILED", `no programmed response for ${key}`);
+        return reply;
+      }
+      case "mcp.import":
+        return run({
+          method: "importExternalTicket",
+          title: c.item.title,
+          ref: {
+            kind: "mcp_item",
+            server: c.server,
+            itemId: c.item.itemId,
+            url: c.item.url,
+            title: c.item.title,
+          },
+        });
     }
   };
 
@@ -178,8 +202,11 @@ export function createMockSdk(
     },
   );
 
+  const markUsed = (permission: string) => {
+    if (!used.includes(permission)) used.push(permission);
+  };
   const record = async <T>(permission: string | null, label: string, work: () => Promise<T>): Promise<T> => {
-    if (permission !== null && !used.includes(permission)) used.push(permission);
+    if (permission !== null) markUsed(permission);
     try {
       return await work();
     } catch (e) {
@@ -214,6 +241,15 @@ export function createMockSdk(
         writeNote(() => inner.notes.write(path, markdown, expectedMtime)),
       rename: (from, to) => writeNote(() => inner.notes.rename(from, to)),
       remove: (path) => writeNote(() => inner.notes.remove(path)),
+    },
+    mcp: {
+      call: (server, tool, args) =>
+        record(`mcp:${server}/${tool}`, `mcp ${server}/${tool}`, () => inner.mcp.call(server, tool, args)),
+      read: (server, uri) => record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.read(server, uri)),
+      importItem: (server, item) => {
+        markUsed("write:ticket");
+        return record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.importItem(server, item));
+      },
     },
   };
 

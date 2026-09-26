@@ -19,6 +19,7 @@ const granted: GrantedPermissions = {
   data: true,
   net: ["api.github.com/graphql"],
   secrets: [],
+  mcp: [],
 };
 const instances: Record<string, Instance> = {
   thirdparty: {
@@ -76,6 +77,7 @@ function gate(quotas = createQuotas()) {
         },
         action: handler("action"),
         notes: handler("notes"),
+        mcp: handler("mcp"),
       },
       quotas,
       events,
@@ -226,6 +228,7 @@ describe("componentCall checks, in order", () => {
         },
         action: async () => null,
         notes: async () => null,
+        mcp: async () => null,
       },
       quotas: createQuotas(),
       events,
@@ -289,6 +292,7 @@ test("list(run) needs read:run and reaches the list handler", async () => {
       fetch: async () => ({ status: 200, headers: {}, body: "" }),
       action: async () => null,
       notes: async () => null,
+      mcp: async () => null,
     },
     quotas: createQuotas(),
     events: createEventLog(db),
@@ -322,6 +326,7 @@ test("NOT_FOUND is journaled only when the instance itself is missing", async ()
       fetch: async () => ({ status: 200, headers: {}, body: "" }),
       action: async () => null,
       notes: async () => null,
+      mcp: async () => null,
     },
     quotas: createQuotas(),
     events,
@@ -352,6 +357,7 @@ test("the granted secrets reach the fetch handler of a sandboxed component only"
       },
       action: async () => null,
       notes: async () => null,
+      mcp: async () => null,
     },
     quotas: createQuotas(),
     events: createEventLog(eventsDb, () => 42),

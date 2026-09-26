@@ -1,4 +1,5 @@
 import {
+  type CiRun,
   COMMAND_WRITES,
   type CommandResult,
   type ComponentCall,
@@ -7,16 +8,20 @@ import {
   type FetchInitInput,
   type FetchResponse,
   KiboError,
+  type McpCallResult,
+  mcpCovered,
   type NoteContent,
   type NoteMeta,
   type NotesInfo,
   type ProjectCommand,
   ruleCovers,
+  type Ticket,
 } from "@kibo/schema";
 import type {
   EntityMap,
   InstanceData,
   KiboSdk,
+  McpApi,
   NotesApi,
   ProjectBackend,
   SdkContext,
@@ -98,6 +103,33 @@ function notesApi(guard: Guard, call: Call): NotesApi {
   };
 }
 
+function mcpApi(
+  manifest: ComponentManifest,
+  guard: Guard,
+  call: Call,
+  config: Record<string, unknown>,
+): McpApi {
+  const need = (server: string, tool: string | null) => {
+    if (!mcpCovered(manifest.mcp, server, tool, config))
+      guard.deny(`mcp ${tool === null ? server : `${server}/${tool}`}`);
+  };
+  return {
+    async call(server, tool, args = {}) {
+      need(server, tool);
+      return call<McpCallResult>({ kind: "mcp.call", server, tool, args });
+    },
+    async read(server, uri) {
+      need(server, null);
+      return call<McpCallResult>({ kind: "mcp.read", server, uri });
+    },
+    async importItem(server, item) {
+      guard.needWrite("ticket");
+      need(server, null);
+      return call<Ticket>({ kind: "mcp.import", server, item });
+    },
+  };
+}
+
 export function createSdk(
   backend: ProjectBackend,
   manifest: ComponentManifest,
@@ -114,6 +146,7 @@ export function createSdk(
       page: async () => (await backend.snapshot()).pages,
       run: () => backend.runs(),
       note: () => call<NoteMeta[]>({ kind: "list", entity: "note" }),
+      ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
     };
     return loaders[type]();
   };
@@ -151,5 +184,6 @@ export function createSdk(
       return call<T>({ kind: "action", name, input: input ?? null });
     },
     notes: notesApi(guard, call),
+    mcp: mcpApi(manifest, guard, call, ctx.config),
   };
 }

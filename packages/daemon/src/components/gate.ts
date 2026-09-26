@@ -27,6 +27,7 @@ export type DataCall = Extract<
 export type NotesCall =
   | Extract<ComponentCall, { kind: `notes.${string}` }>
   | { kind: "list"; entity: "note" };
+export type McpCall = Extract<ComponentCall, { kind: `mcp.${string}` }>;
 
 export type GateHandlers = {
   list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
@@ -42,6 +43,7 @@ export type GateHandlers = {
     input: unknown,
   ): Promise<unknown>;
   notes(projectId: string, call: NotesCall): Promise<unknown>;
+  mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
 };
 export type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
@@ -63,9 +65,11 @@ const REFUSALS = new Set<KiboErrorCode>([
 
 export function missingPermission(granted: GrantedPermissions, call: ComponentCall): string | null {
   if (call.kind === "run" && isReservedCommand(call.command.method)) return `write:${call.command.method}`;
+  const declared = permissionList(granted);
   const needed = permissionOfCall(call);
-  if (needed === null) return null;
-  return covers(permissionList(granted), needed) ? null : needed;
+  if (needed !== null && !covers(declared, needed)) return needed;
+  if (call.kind === "mcp.import" && !covers(declared, "write:ticket")) return "write:ticket";
+  return null;
 }
 
 function dispatch(
@@ -91,6 +95,10 @@ function dispatch(
       return h.fetch(grant, call.url, call.init);
     case "action":
       return h.action(inst.component, projectId, inst.id, inst.config, call.name, call.input);
+    case "mcp.call":
+    case "mcp.read":
+    case "mcp.import":
+      return h.mcp(projectId, inst.id, call);
     default:
       return h.notes(projectId, call);
   }

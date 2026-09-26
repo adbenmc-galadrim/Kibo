@@ -1,4 +1,5 @@
 import type {
+  CiRun,
   CommandResult,
   ComponentCall,
   ComponentManifest,
@@ -6,6 +7,8 @@ import type {
   FetchInitInput,
   FetchResponse,
   Link,
+  McpCallResult,
+  McpImportItem,
   NoteContent,
   NoteMeta,
   NotesInfo,
@@ -15,6 +18,7 @@ import type {
   Status,
   StatusId,
   Surface,
+  Ticket,
   TicketRun,
   TicketView,
 } from "@kibo/schema";
@@ -27,6 +31,7 @@ export type EntityMap = {
   page: Page;
   run: TicketRun;
   note: NoteMeta;
+  ci_run: CiRun;
 };
 export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null };
 export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };
@@ -48,6 +53,12 @@ export type NotesApi = {
   info(): Promise<NotesInfo>;
 };
 
+export type McpApi = {
+  call(server: string, tool: string, args?: Record<string, unknown>): Promise<McpCallResult>;
+  read(server: string, uri: string): Promise<McpCallResult>;
+  importItem(server: string, item: McpImportItem): Promise<Ticket>;
+};
+
 export type KiboSdk = {
   instanceId: string;
   config: Record<string, unknown>;
@@ -64,6 +75,7 @@ export type KiboSdk = {
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
   notes: NotesApi;
+  mcp: McpApi;
 };
 
 export type ProjectBackend = {
