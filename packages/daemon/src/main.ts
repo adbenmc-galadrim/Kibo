@@ -6,6 +6,7 @@ import { stdoutNotifier } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
 import { loadOrCreateToken } from "./auth";
+import { createCodeService } from "./code/code-service";
 import { kiboHome } from "./paths";
 import { startServer } from "./server";
 import { createService } from "./service";
@@ -29,9 +30,11 @@ const service = createService(store, {
   user: userInfo().username,
   notifications: native ? "native" : "browser",
 });
+const code = createCodeService(service);
 let agents: Orchestrator | null = null;
 const server = startServer({
   service,
+  code,
   token,
   port: Number(values.port),
   uiDir: values.ui ?? null,
@@ -63,6 +66,7 @@ const shutdown = async () => {
   try {
     await orchestrator.stop();
   } finally {
+    code.stop();
     runs.close();
     store.close();
   }

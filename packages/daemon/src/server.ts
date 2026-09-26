@@ -1,9 +1,17 @@
 import { statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { KiboError, type KiboErrorCode, RpcRequest, type RpcResponse } from "@kibo/schema";
+import {
+  type ChangeMessage,
+  CodeRequest,
+  KiboError,
+  type KiboErrorCode,
+  RpcRequest,
+  type RpcResponse,
+} from "@kibo/schema";
 import type { Server } from "bun";
 import { type HookSink, handleHook } from "./agents/hook-route";
 import { newSessionId, readCookie, sameSecret } from "./auth";
+import type { CodeService } from "./code/code-service";
 import type { Service } from "./service";
 
 export type ServerOptions = {
@@ -13,6 +21,7 @@ export type ServerOptions = {
   uiDir: string | null;
   extraOrigins?: string[];
   hooks?: HookSink;
+  code?: CodeService;
 };
 
 const COOKIE = "kibo_session";
@@ -24,14 +33,32 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   PROFILE_IN_USE: 409,
   INVALID_TRANSITION: 409,
   GIT_PUSHED: 409,
+  GIT_STALE: 409,
+  GIT_BUSY: 409,
+  FILE_CHANGED: 409,
   PATH_OUTSIDE_PROJECT: 403,
   TOO_LARGE: 413,
+  GH_UNAVAILABLE: 502,
+  GH_FAILED: 502,
 };
+const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
 
 const json = (body: RpcResponse, status = 200) => Response.json(body, { status });
 const fail = (code: KiboErrorCode, message: string, status: number) =>
   json({ ok: false, error: { code, message } }, status);
+const internal = (e: unknown) => {
+  console.error("[kibo-daemon] request failed", e);
+  return fail("INTERNAL", "internal error", 500);
+};
+const respond = async (work: () => unknown): Promise<Response> => {
+  try {
+    return json({ ok: true, result: (await work()) ?? null });
+  } catch (e) {
+    if (!(e instanceof KiboError) || HIDDEN.has(e.code)) return internal(e);
+    return fail(e.code, e.detail, STATUS[e.code] ?? 400);
+  }
+};
 
 export function startServer(opts: ServerOptions): { url: string; port: number; stop(): void } {
   const sessions = new Set<string>();
@@ -74,13 +101,13 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     if (url.pathname === "/api/rpc" && req.method === "POST") {
       const parsed = RpcRequest.safeParse(await req.json().catch(() => null));
       if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
-      try {
-        return json({ ok: true, result: opts.service.handle(parsed.data) ?? null });
-      } catch (e) {
-        if (e instanceof KiboError) return fail(e.code, e.detail, STATUS[e.code] ?? 400);
-        console.error("[kibo-daemon] rpc failed", e);
-        return fail("INTERNAL", "internal error", 500);
-      }
+      return respond(() => opts.service.handle(parsed.data));
+    }
+    if (url.pathname === "/api/code" && req.method === "POST" && opts.code) {
+      const code = opts.code;
+      const parsed = CodeRequest.safeParse(await req.json().catch(() => null));
+      if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
+      return respond(() => code.handle(parsed.data));
     }
     return new Response("not found", { status: 404 });
   };
@@ -114,14 +141,17 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     },
   });
   port = server.port ?? opts.port;
-  const off = opts.service.onChange((message) => {
+  const publish = (message: ChangeMessage) => {
     server.publish("changes", JSON.stringify(message));
-  });
+  };
+  const off = opts.service.onChange(publish);
+  const offCode = opts.code?.onChange(publish);
   return {
     url: `http://127.0.0.1:${port}`,
     port,
     stop: () => {
       off();
+      offCode?.();
       server.stop(true);
     },
   };

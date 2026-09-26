@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./agent";
+import type { CodeEvent } from "./code";
 import type { KiboErrorCode } from "./errors";
 import { ExternalRef } from "./external-ref";
 import { NodeId, ProjectKey } from "./ids";
@@ -92,7 +93,7 @@ export type ProjectSnapshot = {
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
 export type Session = { user: string; notifications: "native" | "browser" };
 export type Topic = "agents" | "config";
-export type ChangeMessage = { projectId: string | null } | { topic: Topic } | RunChanged;
+export type ChangeMessage = { projectId: string | null } | { topic: Topic } | RunChanged | CodeEvent;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("getSession") }),
