@@ -3987,7 +3987,7 @@ Vérifié en T0 :
 - API Loro 1.16.3 présentes : `idStrToId`, `LoroDoc.getChangeAt`, `LoroDoc.fork`, `LoroTree.getNodes({ withDeleted })`, `commit({ origin })`, `peerIdStr`.
 - `addPage(doc, { title, kind, parentId? })` (`packages/core/src/pages.ts`) ; `addLink(doc, { from, to, type })`, `setStatus(doc, id, statusId, reason?)`, `moveTicket(doc, id, parentId, index?)`, `deleteTicket(doc, id)`.
 
-- [ ] **Step 1: Écrire les tests d'attribution qui échouent**
+- [x] **Step 1: Écrire les tests d'attribution qui échouent**
 
 `packages/core/src/server-keys.test.ts` :
 ```ts
@@ -4117,12 +4117,12 @@ describe("members", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test**
+- [x] **Step 2: Lancer le test**
 
 Run: `bun test packages/core/src/server-keys.test.ts`
 Expected: FAIL (`allocateTicketKeys` introuvable).
 
-- [ ] **Step 3: Implémenter la partie serveur de `keys.ts`**
+- [x] **Step 3: Implémenter la partie serveur de `keys.ts`**
 
 Ajouter à `packages/core/src/keys.ts` (les imports existants de T6 sont complétés) :
 ```ts
@@ -4193,12 +4193,12 @@ export function readMembers(doc: LoroDoc): { userId: string; name: string }[] {
 ```
 Le cast `ticketId as TreeID` est justifié : les ids de ticket sont les `TreeID` Loro (`counter@peer`), produits par `createNode`.
 
-- [ ] **Step 4: Relancer le test**
+- [x] **Step 4: Relancer le test**
 
 Run: `bun test packages/core/src/server-keys.test.ts`
 Expected: PASS (8 tests).
 
-- [ ] **Step 5: Écrire les tests de validation qui échouent**
+- [x] **Step 5: Écrire les tests de validation qui échouent**
 
 `packages/core/src/validate-update.test.ts` :
 ```ts
@@ -4358,12 +4358,12 @@ describe("accepted updates", () => {
 });
 ```
 
-- [ ] **Step 6: Lancer le test**
+- [x] **Step 6: Lancer le test**
 
 Run: `bun test packages/core/src/validate-update.test.ts`
 Expected: FAIL (`validateProjectUpdate` introuvable).
 
-- [ ] **Step 7: Implémenter `validate-update.ts`**
+- [x] **Step 7: Implémenter `validate-update.ts`**
 
 `packages/core/src/validate-update.ts` :
 ```ts
@@ -4407,12 +4407,12 @@ export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVe
 }
 ```
 
-- [ ] **Step 8: Relancer le test**
+- [x] **Step 8: Relancer le test**
 
 Run: `bun test packages/core/src/validate-update.test.ts`
 Expected: PASS (10 tests).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/core/src/keys.ts packages/core/src/validate-update.ts packages/core/src/index.ts \
@@ -4421,7 +4421,7 @@ git commit -m "feat(core): attribution serveur des clés"
 ```
 `packages/core/src/index.ts` gagne `export * from "./validate-update";`.
 
-- [ ] **Step 10: Écrire les tests de migration qui échouent**
+- [x] **Step 10: Écrire les tests de migration qui échouent**
 
 `packages/core/src/share-migration.test.ts` :
 ```ts
@@ -4505,12 +4505,12 @@ test("moves the local user's bindings to the account id", () => {
 });
 ```
 
-- [ ] **Step 11: Lancer le test**
+- [x] **Step 11: Lancer le test**
 
 Run: `bun test packages/core/src/share-migration.test.ts`
 Expected: FAIL (`migrateForSharing` introuvable).
 
-- [ ] **Step 12: Implémenter `share-migration.ts`**
+- [x] **Step 12: Implémenter `share-migration.ts`**
 
 `packages/core/src/share-migration.ts` :
 ```ts
@@ -4564,12 +4564,12 @@ export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { f
 ```
 et `export * from "./share-migration";` dans `packages/core/src/index.ts`.
 
-- [ ] **Step 13: Suite complète**
+- [x] **Step 13: Suite complète**
 
 Run: `bun test packages/core && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 14: Commit**
+- [x] **Step 14: Commit**
 
 ```bash
 git add packages/core/src/share-migration.ts packages/core/src/share-migration.test.ts packages/core/src/index.ts
