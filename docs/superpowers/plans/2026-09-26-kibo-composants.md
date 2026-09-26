@@ -7089,7 +7089,7 @@ git commit -m "feat(daemon): magasin immuable des composants"
   - `type Quotas = { take(instanceId: string, kind: "call" | "fetch"): boolean }` ; `createQuotas(opts?: { now?; callsPerSecond?: number; fetchPerMinute?: number }): Quotas` (défauts 200 / s et 20 / min).
   - `type ComponentEvent = { at; projectId; instanceId; ref; kind; code; count: number }` ; `ensureEventsTable(db)` ; `type EventLogLimits = { maxRows?: number; maxPerInstance?: number; burst?: number; windowMs?: number }` (défauts 10 000, 1 000, 10, 60 000) ; `createEventLog(db, now?, limits?): { record(e: Omit<ComponentEvent, "at" | "count">): void; list(limit?: number): ComponentEvent[]; flush(): void }` (append-only, aucune API de modification ; `list` et `flush` écrivent d'abord les synthèses en attente ; décision 26).
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/components/quotas.test.ts` :
 ```ts
@@ -7257,7 +7257,7 @@ test("missingPermission names what is lacking", () => {
 Run: `bun test packages/daemon/src/components/gate.test.ts packages/daemon/src/components/quotas.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `quotas.ts` et `events.ts`**
+- [x] **Step 2: Implémenter `quotas.ts` et `events.ts`**
 
 `packages/daemon/src/components/quotas.ts` :
 ```ts
@@ -7321,7 +7321,7 @@ Le cast de `select.all` est la frontière SQLite (colonnes renommées par `AS`, 
 
 **Journal borné (décision 26, remplace le code ci-dessus sur ces points).** Colonne `count INTEGER NOT NULL DEFAULT 1` et index `(instance_id, id)`. `record` : clé `instanceId`, `kind`, `code` ; fenêtre de `windowMs` ouverte au premier refus ; les `burst` premiers refus de la fenêtre sont insérés (`count = 1`), les suivants incrémentent un compteur en mémoire sans accès SQLite ; une ligne de synthèse (`count = n`, `at` = dernier refus compté, mêmes `projectId` et `ref`) est insérée quand un refus de la même clé arrive après la fin de la fenêtre (avant d'ouvrir la nouvelle), pour toutes les fenêtres expirées à chaque insertion (balayage, puis entrée retirée de la table en mémoire), et par `list()` et `flush()` pour les compteurs non nuls (la fenêtre reste ouverte, compteur remis à 0). Chaque insertion, dans une transaction, supprime au-delà de `maxPerInstance` lignes pour l'instance puis de `maxRows` au total, les plus anciennes d'abord. Tests à ajouter dans `events.test.ts` : (1) 50 refus identiques avec `burst: 3` ⇒ 3 lignes puis, à `list()`, une 4e ligne `count: 47` ; (2) 30 refus identiques puis 1 refus d'une autre clé ⇒ ce dernier a sa ligne immédiatement ; (3) après la fin de la fenêtre, le refus suivant de la même clé écrit la synthèse puis sa propre ligne `count: 1` ; (4) aucune écriture SQLite pendant les refus comptés : `SELECT count(*)` lu directement sur la base reste à `burst` pendant le flot ; (5) les tests de rétention existants. Dans `gate.test.ts`, les objets attendus de `events.list()` gagnent `count: 1`.
 
-- [ ] **Step 3: Implémenter `gate.ts`**
+- [x] **Step 3: Implémenter `gate.ts`**
 
 ```ts
 import {
@@ -7436,7 +7436,7 @@ export function createGate(deps: GateDeps): { call(projectId: string, instanceId
 ```
 Ordre de la spec §6.4 respecté : 1 (instance), 2 (version active, via `active`), 3 (permissions accordées), 4 (garde `fetch`, dans le handler qui appelle `proxyFetch`), 5 (quotas), 6 (journal). Un intégré garde les contrôles 4 et 5 et le refus des commandes réservées.
 
-- [ ] **Step 4: Vérifier et committer**
+- [x] **Step 4: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components && bun run typecheck && bun run check`
 Expected: PASS.
