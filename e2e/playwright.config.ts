@@ -5,6 +5,10 @@ const daemons = [
   { name: "light", scheme: "light", port: 4391, spec: /mvp\.spec\.ts/, scenario: "question" },
   { name: "agents-dark", scheme: "dark", port: 4392, spec: /agents\.spec\.ts/, scenario: "routes" },
   { name: "agents-light", scheme: "light", port: 4393, spec: /agents\.spec\.ts/, scenario: "routes" },
+  { name: "code-dark", scheme: "dark", port: 4394, spec: /code\.spec\.ts/, scenario: "question" },
+  { name: "code-light", scheme: "light", port: 4395, spec: /code\.spec\.ts/, scenario: "question" },
+  { name: "tabs-dark", scheme: "dark", port: 4396, spec: /tabs\.spec\.ts/, scenario: "question" },
+  { name: "tabs-light", scheme: "light", port: 4397, spec: /tabs\.spec\.ts/, scenario: "question" },
 ] as const;
 
 export default defineConfig({
