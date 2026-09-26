@@ -10159,7 +10159,7 @@ git commit -m "feat(devkit): validation d'un composant"
   - `createRegistryService(deps): RegistryService` avec `list(): ComponentSummary[]`, `usages(id, version?): ComponentUsage[]`, `active(ref): ActiveVersion`, `source(ref): BackendSource | null`, `stored(ref): StoredVersion | null` (version active et chargée), `manifestOf(ref): Promise<ComponentManifest>`, `approve(id, version, hash, trust): Promise<RegistryVersion>`, `revoke(id, version): RegistryVersion`, `rehash(id, version): Promise<RegistryVersion>`, `uninstall(id, version): Promise<void>`, `verify(ref): Promise<void>`, `verifyAll(): Promise<string[]>`, `isTampered(ref): boolean`.
   - `createFakeStore(): ComponentStore & { add(v: StoredVersion): void; tamper(id, version): void }` (aide de test partagée avec les tâches 27 et 30).
 
-- [ ] **Step 1: Écrire l'aide de test et les tests**
+- [x] **Step 1: Écrire l'aide de test et les tests**
 
 `packages/daemon/src/components/fake-store.test-helper.ts` :
 ```ts
@@ -10383,7 +10383,7 @@ describe("listing and uninstall", () => {
 Run: `bun test packages/daemon/src/components/registry-service.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `registry-service.ts`**
+- [x] **Step 2: Implémenter `registry-service.ts`**
 
 ```ts
 import {
@@ -10635,7 +10635,7 @@ export function createRegistryService(deps: RegistryServiceDeps): RegistryServic
 ```
 Un intégré reçoit une ligne par version réellement utilisée ; l'UI complète titre, description et version courante avec `BUILTIN_COMPONENTS` (tâche 24). L'état « altéré » vit en mémoire et se recalcule au démarrage par `verifyAll` (tâche 30) : la confiance, elle, est bien retirée du registre (`trust = null`).
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components && bun run typecheck && bun run check`
 Expected: PASS.
