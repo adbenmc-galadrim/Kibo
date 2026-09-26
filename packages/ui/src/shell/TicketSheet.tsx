@@ -32,7 +32,7 @@ export function TicketSheet({
       <SheetContent className="w-[480px] sm:max-w-[480px]">
         <SheetHeader>
           <div className="flex items-center gap-2">
-            <SheetDescription className="font-mono text-xs">{t.key}</SheetDescription>
+            <SheetDescription className="font-mono text-xs">{t.keyLabel}</SheetDescription>
             <GithubRefs ticket={t} />
           </div>
           <SheetTitle className="text-lg">{t.title}</SheetTitle>

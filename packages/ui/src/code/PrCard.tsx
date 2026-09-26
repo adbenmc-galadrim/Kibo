@@ -16,7 +16,7 @@ type Props = { pr: PrInfo; branch: string; base: string | null; ticketKey: strin
 export function linkedTicketKey(tickets: ProjectSnapshot["tickets"], pr: PrInfo | null): string | null {
   if (!pr) return null;
   const linked = tickets.find((t) => t.externalRefs.some((r) => r.kind === "github_pr" && r.url === pr.url));
-  return linked?.key ?? null;
+  return linked?.keyLabel ?? null;
 }
 
 export function PrCard({ pr, branch, base, ticketKey }: Props) {

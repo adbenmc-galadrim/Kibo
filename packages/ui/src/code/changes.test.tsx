@@ -144,6 +144,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const count = (method: CodeRequest["method"]) => calls.filter((c) => c.method === method).length;
 

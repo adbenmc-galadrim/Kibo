@@ -5,6 +5,8 @@ import { buildTree, mineOnly } from "./build-tree";
 const t = (id: string, parentId: string | null, assignee: TicketView["assignee"] = null): TicketView => ({
   id,
   key: `KIB-${id}`,
+  pendingSeq: null,
+  keyLabel: `KIB-${id}`,
   title: id,
   description: "",
   statusId: "todo",

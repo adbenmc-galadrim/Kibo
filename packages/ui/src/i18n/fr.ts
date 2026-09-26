@@ -123,6 +123,7 @@ export const fr = {
   newTicket: {
     title: "Nouveau ticket",
     subtitle: (project: string, key: string) => `${project} · la clé ${key} sera attribuée à la création.`,
+    keyPending: (project: string) => `${project} · la clé sera attribuée à la prochaine synchronisation.`,
     name: "Titre",
     description: "Description",
     status: "Statut",

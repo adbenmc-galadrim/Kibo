@@ -21,7 +21,7 @@ export function crumbsFor(
     case "file":
       return [name, target.path];
     case "ticket":
-      return [name, p.tickets.find((t) => t.id === target.ticketId)?.key ?? fr.tabs.missingTicket];
+      return [name, p.tickets.find((t) => t.id === target.ticketId)?.keyLabel ?? fr.tabs.missingTicket];
   }
 }
 

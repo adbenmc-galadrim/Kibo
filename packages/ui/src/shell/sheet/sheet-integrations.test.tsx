@@ -75,6 +75,8 @@ const { TicketTab } = await import("../../pages/TicketTab");
 const ticket: TicketView = {
   id: "t1",
   key: "KIB-1",
+  pendingSeq: null,
+  keyLabel: "KIB-1",
   title: "Arbre",
   description: "<img src=x onerror=alert(1)> **gras**",
   statusId: "in_progress",
@@ -112,6 +114,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-2",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   tickets: [ticket],
 };
 const show = async (shown: TicketView = ticket) => {

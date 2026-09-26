@@ -55,12 +55,12 @@ export function MyTicketRow({ ticket, tab, domain, agent, workflow, canRun, onOp
     <li className="flex h-12 items-center gap-3 rounded-lg border bg-card pr-4">
       <button
         type="button"
-        aria-label={`${ticket.key} ${ticket.title}`}
+        aria-label={`${ticket.keyLabel} ${ticket.title}`}
         onClick={onOpen}
         className="flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-lg pl-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <StatusDot statusId={ticket.statusId} />
-        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{ticket.key}</span>
+        <span className="shrink-0 font-mono text-2xs text-muted-foreground">{ticket.keyLabel}</span>
         <span className="truncate text-sm">{ticket.title}</span>
       </button>
       {domain && (

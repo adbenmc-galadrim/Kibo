@@ -58,7 +58,7 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
           color,
           missing: !!snapshot,
         };
-      return { title: titled(ticket.key), icon: Ticket, color, missing: false };
+      return { title: titled(ticket.keyLabel), icon: Ticket, color, missing: false };
     }
   }
 }

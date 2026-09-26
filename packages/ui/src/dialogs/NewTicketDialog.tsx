@@ -60,12 +60,14 @@ export function NewTicketDialog({ project, viewer, defaults, onClose }: Props) {
           <DialogHeader>
             <DialogTitle>{fr.newTicket.title}</DialogTitle>
             <DialogDescription>
-              {fr.newTicket.subtitle(project.meta.name, project.nextTicketKey)}
+              {project.nextTicketKey === null
+                ? fr.newTicket.keyPending(project.meta.name)
+                : fr.newTicket.subtitle(project.meta.name, project.nextTicketKey)}
             </DialogDescription>
           </DialogHeader>
           {parent && (
             <p className="text-sm text-muted-foreground">
-              {fr.newTicket.parent} : <span className="font-mono">{parent.key}</span> {parent.title}
+              {fr.newTicket.parent} : <span className="font-mono">{parent.keyLabel}</span> {parent.title}
             </p>
           )}
           <div className="grid gap-2">

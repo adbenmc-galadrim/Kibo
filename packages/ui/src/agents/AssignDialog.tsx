@@ -36,7 +36,8 @@ type Props = {
 const DEFAULT_BASE_BRANCH = "main";
 
 function spaceText(profile: AgentProfile, ticket: TicketView, baseBranch: string): string {
-  if (profile.workspace === "worktree") return fr.assign.newWorktree(ticket.key.toLowerCase(), baseBranch);
+  if (profile.workspace === "worktree")
+    return fr.assign.newWorktree(ticket.keyLabel.toLowerCase(), baseBranch);
   return profile.workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
 }
 
@@ -63,10 +64,10 @@ function waitingText(project: ProjectSnapshot, ticket: TicketView): string {
   const labels = deps.map((dep) => {
     if (typeof dep === "string") return dep;
     const status = project.workflow.find((s) => s.id === dep.statusId)?.label.toLowerCase();
-    return status ? fr.assign.dependency(dep.key, status) : dep.key;
+    return status ? fr.assign.dependency(dep.keyLabel, status) : dep.keyLabel;
   });
   const titles = deps.map((dep) => (typeof dep === "string" ? dep : `« ${dep.title} »`));
-  return fr.assign.waiting(ticket.key, labels.join(", "), titles.join(", "));
+  return fr.assign.waiting(ticket.keyLabel, labels.join(", "), titles.join(", "));
 }
 
 type FormProps = {
@@ -131,7 +132,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>
-              {ticketId && ticket ? fr.assign.title(ticket.key) : fr.assign.launchTitle}
+              {ticketId && ticket ? fr.assign.title(ticket.keyLabel) : fr.assign.launchTitle}
             </DialogTitle>
             {ticket && <DialogDescription>{fr.assign.subtitle(ticket.title, domain)}</DialogDescription>}
           </DialogHeader>
@@ -145,7 +146,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
                 <SelectContent>
                   {open.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
-                      <span className="font-mono text-xs text-muted-foreground">{t.key}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{t.keyLabel}</span>
                       {t.title}
                     </SelectItem>
                   ))}

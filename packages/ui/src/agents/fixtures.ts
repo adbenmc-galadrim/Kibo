@@ -275,6 +275,8 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  pendingSeq: null,
+  keyLabel: p.key ?? "KIB-…",
   ...p,
 });
 
@@ -319,6 +321,7 @@ export function kiboProject(): ProjectSnapshot {
     rules: [],
     bindings: [],
     nextTicketKey: "KIB-30",
+    sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   };
 }
 

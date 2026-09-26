@@ -5,6 +5,8 @@ import { domainsOf, graphInput } from "./filter";
 const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
   key: id,
+  pendingSeq: null,
+  keyLabel: id,
   title: id,
   description: "",
   statusId: "todo",

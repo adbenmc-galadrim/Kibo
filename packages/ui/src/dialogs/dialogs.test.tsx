@@ -30,6 +30,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 beforeEach(() => {
@@ -47,6 +48,18 @@ test("NewTicketDialog announces the key the ticket will get", () => {
     />,
   );
   expect(screen.getByText("Kibo · la clé KIB-30 sera attribuée à la création.")).toBeTruthy();
+});
+
+test("NewTicketDialog explains that the key comes with the next sync", () => {
+  render(
+    <NewTicketDialog
+      project={{ ...project, nextTicketKey: null }}
+      viewer="adam"
+      defaults={{}}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("Kibo · la clé sera attribuée à la prochaine synchronisation.")).toBeTruthy();
 });
 
 test("NewTicketDialog opened from an instance sends its id with the command", async () => {

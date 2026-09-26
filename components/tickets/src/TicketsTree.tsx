@@ -72,7 +72,7 @@ export function TicketsTree() {
               <button
                 type="button"
                 className="text-muted-foreground"
-                aria-label={open ? fr.collapse(t.key) : fr.expand(t.key)}
+                aria-label={open ? fr.collapse(t.keyLabel) : fr.expand(t.keyLabel)}
                 onClick={() => toggle(t.id)}
               >
                 {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
@@ -80,7 +80,7 @@ export function TicketsTree() {
             ) : (
               <span className="size-4 shrink-0" />
             )}
-            <span className="shrink-0 font-mono text-2xs text-muted-foreground">{t.key}</span>
+            <span className="shrink-0 font-mono text-2xs text-muted-foreground">{t.keyLabel}</span>
             <button
               type="button"
               className={cn("min-w-16 truncate text-left", t.statusId === "done" && "text-muted-foreground")}
@@ -111,7 +111,7 @@ export function TicketsTree() {
             size="icon"
             variant="ghost"
             className="size-6 opacity-0 group-hover:opacity-100 focus:opacity-100"
-            aria-label={fr.newSubTicket(t.key)}
+            aria-label={fr.newSubTicket(t.keyLabel)}
             onClick={() => sdk.openNewTicket({ parentId: t.id })}
           >
             <Plus className="size-3.5" />

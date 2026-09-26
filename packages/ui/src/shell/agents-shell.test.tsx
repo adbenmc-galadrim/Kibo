@@ -22,6 +22,8 @@ import type { Route } from "../route";
 const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
   id,
   key,
+  pendingSeq: null,
+  keyLabel: key,
   title,
   description: "",
   statusId,

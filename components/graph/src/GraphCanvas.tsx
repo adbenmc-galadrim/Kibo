@@ -105,7 +105,7 @@ function Node({
     <button
       type="button"
       data-critical={hot ? "true" : "false"}
-      aria-label={`${ticket.key} ${ticket.title}`}
+      aria-label={`${ticket.keyLabel} ${ticket.title}`}
       onClick={() => onOpen(ticket.id)}
       className={cn(
         "absolute grid content-center gap-1 rounded-md border bg-card px-3 text-left hover:bg-accent",
@@ -116,7 +116,7 @@ function Node({
     >
       <span className="flex items-center gap-1.5">
         <StatusDot statusId={ticket.statusId} />
-        <span className="font-mono text-2xs text-muted-foreground">{ticket.key}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{ticket.keyLabel}</span>
         <span className="flex-1" />
         {run && <RunDot state={run.state} />}
         {ticket.assignee?.kind === "agent" && (

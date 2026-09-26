@@ -19,6 +19,8 @@ const project: ProjectSnapshot = {
     {
       id: "7@1",
       key: "KIB-7",
+      pendingSeq: null,
+      keyLabel: "KIB-7",
       title: "Schéma",
       description: "Voir src/a.ts:3",
       statusId: "todo",
@@ -38,6 +40,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-8",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const repo: ProjectSnapshot = {
   ...project,

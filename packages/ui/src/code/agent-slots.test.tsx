@@ -84,6 +84,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
   rules,
   bindings: [],
   nextTicketKey: "KIB-13",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 const working = (state: RunView["state"], cwd = "/repo/.kibo/worktrees/kib-12") =>
   runFixture({ id: "r12", projectId: "p1", label: "opus-dev-1", state, workspace: "worktree:kib-12", cwd });

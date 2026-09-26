@@ -45,6 +45,7 @@ const snapshot: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const ctx = { projects: [summary], snapshots: new Map([["p1", snapshot]]) };
 const state: TabsState = {

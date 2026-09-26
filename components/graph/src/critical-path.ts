@@ -3,7 +3,7 @@ import { blocksDag, compareKeys, sortTickets } from "./blocks-dag";
 
 export { compareKeys };
 
-export type GraphTicket = { id: string; key: string; statusId: StatusId };
+export type GraphTicket = { id: string; key: string | null; statusId: StatusId };
 export type GraphEdge = { from: string; to: string; type: "blocks" | "relates" };
 
 type Chain = { length: number; next: string | undefined };
@@ -17,7 +17,7 @@ export function criticalPath(tickets: GraphTicket[], edges: GraphEdge[]): string
     let x = a;
     let y = b;
     while (x !== undefined && y !== undefined) {
-      const c = compareKeys(keyOf.get(x) ?? x, keyOf.get(y) ?? y);
+      const c = compareKeys(keyOf.get(x) ?? null, keyOf.get(y) ?? null);
       if (c !== 0) return c;
       x = chains.get(x)?.next;
       y = chains.get(y)?.next;

@@ -12,7 +12,8 @@ export const MINE_STATUS_ORDER: readonly StatusId[] = [
 ];
 
 const rank = (s: StatusId) => MINE_STATUS_ORDER.indexOf(s);
-const keyNumber = (key: string) => Number(key.slice(key.lastIndexOf("-") + 1));
+const keyNumber = (key: string | null) =>
+  key === null ? Number.MAX_SAFE_INTEGER : Number(key.slice(key.lastIndexOf("-") + 1));
 const waits = (t: TicketView) => (t.waitingOn.length > 0 ? 0 : 1);
 
 export function isMine(t: TicketView, viewer: string, tab: MineTab): boolean {

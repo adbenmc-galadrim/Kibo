@@ -20,7 +20,7 @@ export function TicketTab({ project, ticketId, domains, onAssign, onOpenFile }: 
     <article className="mx-auto grid max-w-3xl gap-4 py-8">
       <header className="grid gap-1 px-4">
         <div className="flex items-center gap-2">
-          <p className="font-mono text-xs text-muted-foreground">{t.key}</p>
+          <p className="font-mono text-xs text-muted-foreground">{t.keyLabel}</p>
           <GithubRefs ticket={t} />
         </div>
         <h1 className="text-lg font-semibold">{t.title}</h1>

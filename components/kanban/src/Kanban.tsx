@@ -62,7 +62,8 @@ export function Kanban() {
   const [error, setError] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
-  const ciOf = (t: TicketView): CiChip | undefined => ciChipOf(ciRuns.filter((r) => r.ticketKey === t.key));
+  const ciOf = (t: TicketView): CiChip | undefined =>
+    ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
 
@@ -72,7 +73,7 @@ export function Kanban() {
       setError(null);
       return true;
     } catch {
-      setError(fr.moveFailed(t.key));
+      setError(fr.moveFailed(t.keyLabel));
       return false;
     }
   };
@@ -143,7 +144,7 @@ export function Kanban() {
       </DndContext>
       {blocking && (
         <BlockDialog
-          ticketKey={blocking.key}
+          ticketKey={blocking.keyLabel}
           error={error}
           onCancel={() => setBlocking(null)}
           onConfirm={async (reason) => {

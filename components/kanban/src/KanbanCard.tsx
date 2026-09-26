@@ -49,12 +49,12 @@ export function KanbanCard({ ticket: t, run, ci, statuses, onOpen, onMove }: Pro
     >
       <div className="flex items-center gap-2">
         <span className="font-mono text-2xs text-muted-foreground" {...listeners} {...attributes}>
-          {t.key}
+          {t.keyLabel}
         </span>
         <span className="flex-1" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="size-6" aria-label={fr.actions(t.key)}>
+            <Button size="icon" variant="ghost" className="size-6" aria-label={fr.actions(t.keyLabel)}>
               <MoreHorizontal className="size-3.5" />
             </Button>
           </DropdownMenuTrigger>

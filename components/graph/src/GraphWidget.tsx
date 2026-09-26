@@ -26,7 +26,7 @@ function Chain({ chain, onOpen }: { chain: TicketView[]; onOpen(id: string): voi
             )}
           >
             <StatusDot statusId={t.statusId} />
-            {t.key}
+            {t.keyLabel}
           </button>
         </li>
       ))}
@@ -68,7 +68,7 @@ export function GraphWidget() {
       <Chain chain={chain} onOpen={(id) => sdk.openTicket(id)} />
       {firstBlocked?.blockedReason && (
         <p className="text-red-600 dark:text-red-500">
-          {fr.blocked(firstBlocked.key, firstBlocked.blockedReason)}
+          {fr.blocked(firstBlocked.keyLabel, firstBlocked.blockedReason)}
         </p>
       )}
       <Button

@@ -4,7 +4,7 @@ import { kiboProject } from "../agents/fixtures";
 let seq = 0;
 
 export function mineTicket(
-  key: string,
+  key: string | null,
   statusId: StatusId,
   assignee: Assignee | null,
   waitingOn: string[] = [],
@@ -13,7 +13,9 @@ export function mineTicket(
   return {
     id: `${seq}@1`,
     key,
-    title: key,
+    pendingSeq: key === null ? seq : null,
+    keyLabel: key ?? "KIB-…",
+    title: key ?? `Ticket ${seq}`,
     description: "",
     statusId,
     blockedReason: statusId === "blocked" ? "Audit sécurité externe en attente" : null,

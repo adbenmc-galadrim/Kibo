@@ -80,10 +80,10 @@ export function McpSource() {
 
   if (!config.success) return <p className="p-4 text-sm text-muted-foreground">{fr.unconfigured}</p>;
   const server = config.data.server;
-  const keyOf = (id: string) =>
+  const linkedTicket = (id: string) =>
     tickets.find((t) =>
       t.externalRefs.some((r) => r.kind === "mcp_item" && r.server === server && r.itemId === id),
-    )?.key ?? null;
+    );
   const create = async (item: SourceItem) => {
     setBusy(item.id);
     try {
@@ -93,10 +93,6 @@ export function McpSource() {
     } finally {
       setBusy(null);
     }
-  };
-  const openKey = (key: string) => {
-    const t = tickets.find((x) => x.key === key);
-    if (t) sdk.openTicket(t.id);
   };
   const message = problemMessage(problem);
 
@@ -118,15 +114,15 @@ export function McpSource() {
       {loaded && (
         <ul className="min-h-0 flex-1 overflow-y-auto">
           {loaded.items.map((item) => {
-            const key = keyOf(item.id);
+            const linked = linkedTicket(item.id);
             return (
               <SourceItemRow
                 key={item.id}
                 item={item}
-                ticketKey={key}
+                ticketKey={linked?.keyLabel ?? null}
                 busy={busy === item.id}
                 onCreate={() => void create(item)}
-                onOpen={() => key && openKey(key)}
+                onOpen={() => linked && sdk.openTicket(linked.id)}
               />
             );
           })}

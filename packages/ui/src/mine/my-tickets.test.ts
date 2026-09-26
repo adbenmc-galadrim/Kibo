@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { fac, kib, mineMeta, mineSnapshots, por } from "./fixtures";
-import { countMine, type MineTab, myTickets } from "./my-tickets";
+import type { Assignee } from "@kibo/schema";
+import { fac, kib, mineMeta, mineSnapshots, mineTicket, por } from "./fixtures";
+import { compareMine, countMine, type MineTab, myTickets } from "./my-tickets";
 
 const keys = (tab: MineTab) =>
   myTickets([kib, por, fac], mineSnapshots, "adam", tab).map((g) => [
@@ -22,6 +23,12 @@ describe("my tickets", () => {
   });
   test("created by me is empty until tickets record their author (E5)", () => {
     expect(keys("created")).toEqual([]);
+  });
+  test("a ticket waiting for its key comes after the keyed tickets of its rank", () => {
+    const adam: Assignee = { kind: "human", ref: "adam" };
+    const pending = mineTicket(null, "todo", adam);
+    const keyed = mineTicket("KIB-40", "todo", adam);
+    expect([pending, keyed].sort(compareMine).map((t) => t.keyLabel)).toEqual(["KIB-40", "KIB-…"]);
   });
   test("a project without snapshot yet is skipped", () => {
     expect(myTickets([mineMeta("x", "X", "X")], mineSnapshots, "adam", "assigned")).toEqual([]);

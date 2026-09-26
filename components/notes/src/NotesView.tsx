@@ -93,7 +93,9 @@ export function NotesView() {
   const tickets = useMemo(
     () =>
       new Map<string, TicketRef>(
-        ticketList.data.map((t) => [t.key, { id: t.id, title: t.title, statusId: t.statusId }]),
+        ticketList.data.flatMap((t): [string, TicketRef][] =>
+          t.key === null ? [] : [[t.key, { id: t.id, title: t.title, statusId: t.statusId }]],
+        ),
       ),
     [ticketList.data],
   );

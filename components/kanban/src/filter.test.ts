@@ -5,6 +5,8 @@ import { filterTickets } from "./filter";
 const t = (key: string, assignee: TicketView["assignee"]): TicketView => ({
   id: key,
   key,
+  pendingSeq: null,
+  keyLabel: key,
   title: key,
   description: "",
   statusId: "todo",

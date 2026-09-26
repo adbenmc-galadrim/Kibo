@@ -22,6 +22,14 @@ test("keys compare by prefix then by number", () => {
   expect(compareKeys("KIB-30", "KIB-4")).toBeGreaterThan(0);
 });
 
+test("a ticket waiting for its key sorts after every keyed ticket", () => {
+  expect(compareKeys(null, "KIB-30")).toBeGreaterThan(0);
+  expect(compareKeys("KIB-30", null)).toBeLessThan(0);
+  expect(compareKeys(null, null)).toBe(0);
+  const pending: GraphTicket = { id: "p", key: null, statusId: "todo" };
+  expect(criticalPath([pending, ...todo(2)], [blocks("p", "t0"), blocks("t1", "t0")])).toEqual(["t1", "t0"]);
+});
+
 test("no chain means no critical path", () => {
   expect(criticalPath(DEMO_TICKETS, [])).toEqual([]);
   expect(criticalPath([], [])).toEqual([]);

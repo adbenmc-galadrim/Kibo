@@ -12,6 +12,7 @@ const snapshot = (id: string): ProjectSnapshot => ({
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 const requested: string[] = [];
 mock.module("../api", () => ({

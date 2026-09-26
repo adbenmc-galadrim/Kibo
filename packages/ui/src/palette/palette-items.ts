@@ -68,7 +68,7 @@ function queuePositions(agents: AgentsState | null): Map<string, number> {
 export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
   if (!ctx.activeProjectId || !ctx.activeTicketId) return null;
   const t = ctx.snapshots.get(ctx.activeProjectId)?.tickets.find((x) => x.id === ctx.activeTicketId);
-  return t ? { projectId: ctx.activeProjectId, ticketId: t.id, key: t.key } : null;
+  return t ? { projectId: ctx.activeProjectId, ticketId: t.id, key: t.keyLabel } : null;
 }
 
 const screenItems = (): PaletteItem[] =>
@@ -114,8 +114,8 @@ function targets(ctx: PaletteContext): PaletteItem[] {
         ...base,
         id: `ticket:${project.id}:${t.id}`,
         group: "tickets",
-        label: `${t.key} · ${t.title}`,
-        keywords: normalize(`${t.key} ${t.title} ${project.name}`),
+        label: `${t.keyLabel} · ${t.title}`,
+        keywords: normalize(`${t.keyLabel} ${t.title} ${project.name}`),
         detail:
           position !== undefined
             ? fr.agents.position(position)
@@ -123,7 +123,7 @@ function targets(ctx: PaletteContext): PaletteItem[] {
         statusId: t.statusId,
         icon: "ticket",
         run: { kind: "target", target: { kind: "ticket", projectId: project.id, ticketId: t.id } },
-        ticket: { projectId: project.id, ticketId: t.id, key: t.key },
+        ticket: { projectId: project.id, ticketId: t.id, key: t.keyLabel },
       });
     }
   }
@@ -159,7 +159,7 @@ function actions(ctx: PaletteContext): PaletteItem[] {
     );
     if (ticket)
       out.push(
-        action("newSubTicket", fr.palette.newSubTicket(ticket.key), "new", {
+        action("newSubTicket", fr.palette.newSubTicket(ticket.keyLabel), "new", {
           kind: "action",
           action: { kind: "newTicket", projectId: project.id, parentId: ticket.id },
         }),

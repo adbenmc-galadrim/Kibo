@@ -72,7 +72,13 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
   const children = project.tickets.filter((x) => x.parentId === t.id);
   const hasPr = t.externalRefs.some((r) => r.kind === "github_pr");
   const open = (r: { path: string; line: number | null }) =>
-    onOpenFile({ projectId: project.meta.id, worktree: null, path: r.path, line: r.line, origin: t.key });
+    onOpenFile({
+      projectId: project.meta.id,
+      worktree: null,
+      path: r.path,
+      line: r.line,
+      origin: t.keyLabel,
+    });
   return (
     <div className="grid gap-4">
       <SyncStatus projectId={project.meta.id} ticket={t} />
@@ -120,7 +126,7 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
           </h3>
           {children.map((c) => (
             <p key={c.id}>
-              <span className="font-mono text-2xs text-muted-foreground">{c.key}</span> {c.title}
+              <span className="font-mono text-2xs text-muted-foreground">{c.keyLabel}</span> {c.title}
             </p>
           ))}
         </section>
