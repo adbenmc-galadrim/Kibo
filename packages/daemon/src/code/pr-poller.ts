@@ -1,14 +1,14 @@
 import type { RuleTrigger } from "@kibo/core/rules";
-import type { ExternalRef, TicketView } from "@kibo/schema";
+import type { ExternalRef, GithubPrRef, TicketView } from "@kibo/schema";
 import { call, type Service } from "../service";
 import { prState } from "./remote-ops";
 import type { Env } from "./run";
 
 export type PrPoller = { stop(): void };
 type Log = (what: string) => (e: unknown) => void;
-type Tracked = { projectId: string; folder: string; ticket: TicketView; ref: ExternalRef };
+type Tracked = { projectId: string; folder: string; ticket: TicketView; ref: GithubPrRef };
 
-const isFollowed = (ref: ExternalRef) =>
+const isFollowed = (ref: ExternalRef): ref is GithubPrRef =>
   ref.kind === "github_pr" && (ref.state === "open" || ref.state === "draft");
 
 function trackedRefs(service: Service): Tracked[] {

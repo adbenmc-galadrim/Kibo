@@ -10,6 +10,7 @@ const snapshot = (id: string): ProjectSnapshot => ({
   links: [],
   instances: [],
   rules: [],
+  bindings: [],
   nextTicketKey: "KIB-1",
 });
 const requested: string[] = [];

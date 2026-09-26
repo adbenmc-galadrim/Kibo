@@ -130,7 +130,11 @@ describe("permissions", () => {
     expect(COMMAND_WRITES.setInstanceData).toBeNull();
     expect(COMMAND_WRITES.setInstanceComponent).toBeNull();
     expect(COMMAND_WRITES.addInstance).toBeNull();
-    expect(COMMAND_WRITES.upsertExternalRef).toBe("ticket");
+    expect(COMMAND_WRITES.upsertExternalRef).toBeNull();
+    expect(COMMAND_WRITES.removeExternalRef).toBeNull();
+    expect(COMMAND_WRITES.importExternalTicket).toBeNull();
+    expect(COMMAND_WRITES.addBinding).toBeNull();
+    expect(COMMAND_WRITES.removeBinding).toBeNull();
   });
 });
 

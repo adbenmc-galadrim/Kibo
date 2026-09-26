@@ -1,6 +1,6 @@
 import {
   type Assignee,
-  type ExternalRef,
+  ExternalRef,
   formatTicketKey,
   KiboError,
   type StatusId,
@@ -28,6 +28,16 @@ export type TicketPatch = {
 
 const tree = (doc: LoroDoc) => doc.getTree("tickets");
 
+const RefList = ExternalRef.array();
+
+export function readExternalRefs(node: LoroTreeNode): ExternalRef[] {
+  const raw = node.data.get("externalRefs");
+  if (raw === undefined || raw === null) return [];
+  const parsed = RefList.safeParse(raw);
+  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid external refs on ${node.id}`);
+  return parsed.data;
+}
+
 const cleanTitle = (title: string): string => {
   const t = title.trim();
   if (!t) throw new KiboError("INVALID_INPUT", "ticket title is empty");
@@ -47,7 +57,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     domainId: (d.get("domainId") as string | null | undefined) ?? null,
     assignee: (d.get("assignee") as Assignee | null | undefined) ?? null,
     parentId: n.parent()?.id ?? null,
-    externalRefs: (d.get("externalRefs") as ExternalRef[] | undefined) ?? [],
+    externalRefs: readExternalRefs(n),
   };
 }
 
@@ -83,14 +93,6 @@ export function getTicket(doc: LoroDoc, id: string): Ticket {
 
 export function listTickets(doc: LoroDoc): Ticket[] {
   return walkDepthFirst(tree(doc)).map(readTicket);
-}
-
-export function upsertExternalRef(doc: LoroDoc, id: string, ref: ExternalRef): Ticket {
-  const node = getNode(tree(doc), id);
-  const current = (node.data.get("externalRefs") as ExternalRef[] | undefined) ?? [];
-  node.data.set("externalRefs", [...current.filter((r) => r.url !== ref.url), ref]);
-  doc.commit();
-  return readTicket(node);
 }
 
 export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Ticket {

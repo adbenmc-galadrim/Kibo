@@ -16,7 +16,7 @@ import {
 import type { KiboErrorCode } from "./errors";
 import { NodeId, ProjectKey } from "./ids";
 import type { Instance } from "./instance";
-import type { IntegrationEvent } from "./integrations";
+import type { Binding, IntegrationEvent } from "./integrations";
 import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
 import type { NotesInfo } from "./note";
@@ -40,6 +40,7 @@ export type ProjectSnapshot = {
   links: Link[];
   instances: Instance[];
   rules: Rule[];
+  bindings: Binding[];
   nextTicketKey: string;
 };
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };

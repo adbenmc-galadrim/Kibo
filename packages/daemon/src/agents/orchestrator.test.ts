@@ -57,6 +57,7 @@ const project: ProjectSnapshot = {
   links: [],
   instances: [],
   rules: [],
+  bindings: [],
   nextTicketKey: "KIB-5",
 };
 

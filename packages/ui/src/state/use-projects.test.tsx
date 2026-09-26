@@ -10,6 +10,7 @@ const snapshotOf = (id: string): ProjectSnapshot => ({
   links: [],
   instances: [],
   rules: [],
+  bindings: [],
   nextTicketKey: "KIB-1",
 });
 

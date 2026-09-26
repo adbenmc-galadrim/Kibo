@@ -1,5 +1,7 @@
 import { KiboError, type ProjectCommand, type ProjectSnapshot, type StatusId } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { addBinding, listBindings, removeBinding } from "./bindings";
+import { importExternalTicket, removeExternalRef, upsertExternalRef } from "./external-refs";
 import { writeInstanceData } from "./instance-data";
 import {
   addInstance,
@@ -20,7 +22,6 @@ import {
   moveTicket,
   setStatus,
   updateTicket,
-  upsertExternalRef,
 } from "./tickets";
 
 export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknown {
@@ -64,6 +65,17 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return null;
     case "upsertExternalRef":
       return upsertExternalRef(doc, cmd.ticketId, cmd.ref);
+    case "removeExternalRef":
+      return removeExternalRef(doc, { ticketId: cmd.ticketId, kind: cmd.kind, key: cmd.key });
+    case "addBinding":
+      return addBinding(doc, cmd.binding);
+    case "removeBinding":
+      removeBinding(doc, cmd.bindingId);
+      return null;
+    case "importExternalTicket": {
+      const { method: _method, ...input } = cmd;
+      return importExternalTicket(doc, input);
+    }
     case "setInstanceComponent": {
       const { method: _method, ...input } = cmd;
       return setInstanceComponent(doc, input);
@@ -100,6 +112,7 @@ export function readProject(doc: LoroDoc): ProjectSnapshot {
     links: listLinks(doc),
     instances: listInstances(doc),
     rules: readRules(doc),
+    bindings: listBindings(doc),
     nextTicketKey: peekTicketKey(doc),
   };
 }

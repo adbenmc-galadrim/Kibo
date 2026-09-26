@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import {
   BuiltinEntityType,
   type ComponentCall,
+  type ExternalRef,
   type GrantedPermissions,
   type Instance,
   KiboError,
@@ -150,6 +151,37 @@ describe("componentCall checks, in order", () => {
       }),
       "PERMISSION_DENIED",
     );
+    expect(handled).toEqual([]);
+  });
+  test("external refs and bindings are refused to every component", async () => {
+    const { gate: g } = gate();
+    const ref: ExternalRef = {
+      kind: "github_issue",
+      bindingId: "b1",
+      repo: "adam/kibo",
+      number: null,
+      nodeId: null,
+      url: null,
+    };
+    const forged: ComponentCall = {
+      kind: "run",
+      command: { method: "upsertExternalRef", ticketId: "t1", ref },
+    };
+    const commands: ComponentCall[] = [
+      forged,
+      { kind: "run", command: { method: "removeExternalRef", ticketId: "t1", kind: "github_pr", key: "x" } },
+      { kind: "run", command: { method: "removeBinding", bindingId: "b1" } },
+      {
+        kind: "run",
+        command: { method: "importExternalTicket", title: "X", ref },
+      },
+    ];
+    for (const call of commands) {
+      await refused(g.call("p1", "thirdparty", call), "PERMISSION_DENIED");
+      await refused(g.call("p1", "builtin", call), "PERMISSION_DENIED");
+    }
+    const everything: GrantedPermissions = { ...granted, writes: [...BuiltinEntityType.options] };
+    expect(missingPermission(everything, forged)).toBe("write:upsertExternalRef");
     expect(handled).toEqual([]);
   });
   test("built-ins skip trust and grant checks but not the fetch guard", async () => {

@@ -64,7 +64,10 @@ const createTicket = (title: string) =>
     projectId: project.id,
     command: { method: "createTicket", title },
   }) as Ticket;
-const refs = () => call(service, { method: "getProject", projectId: project.id }).tickets[0]?.externalRefs;
+const refs = () =>
+  call(service, { method: "getProject", projectId: project.id }).tickets[0]?.externalRefs.filter(
+    (r) => r.kind === "github_pr",
+  );
 const statusOf = () => call(service, { method: "getProject", projectId: project.id }).tickets[0]?.statusId;
 const waitFor = async (check: () => boolean, ms = 3000) => {
   const end = Date.now() + ms;

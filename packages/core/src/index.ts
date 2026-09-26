@@ -1,5 +1,7 @@
+export * from "./bindings";
 export * from "./commands";
 export * from "./commit-message";
+export * from "./external-refs";
 export * from "./instance-data";
 export * from "./instances";
 export * from "./links";

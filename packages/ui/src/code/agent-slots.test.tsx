@@ -82,6 +82,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
   links: [],
   instances: [],
   rules,
+  bindings: [],
   nextTicketKey: "KIB-13",
 });
 const working = (state: RunView["state"], cwd = "/repo/.kibo/worktrees/kib-12") =>

@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { ExternalRef } from "./external-ref";
+import { ExternalRef, ExternalRefKind } from "./external-ref";
 import { NodeId } from "./ids";
 import { ComponentRef, DataKey, type Instance, Layout } from "./instance";
+import { Binding } from "./integrations";
 import type { Link } from "./link";
 import type { EntityType } from "./manifest";
 import { type Page, PageKind } from "./page";
@@ -57,6 +58,22 @@ export const ProjectCommand = z.discriminatedUnion("method", [
   z.object({ method: z.literal("removeInstance"), instanceId: z.string() }),
   z.object({ method: z.literal("upsertExternalRef"), ticketId: NodeId, ref: ExternalRef }),
   z.object({
+    method: z.literal("removeExternalRef"),
+    ticketId: NodeId,
+    kind: ExternalRefKind,
+    key: z.string().min(1),
+  }),
+  z.object({ method: z.literal("addBinding"), binding: Binding }),
+  z.object({ method: z.literal("removeBinding"), bindingId: z.string().min(1) }),
+  z.object({
+    method: z.literal("importExternalTicket"),
+    title: z.string(),
+    description: z.string().optional(),
+    statusId: StatusId.optional(),
+    assignee: Assignee.nullable().optional(),
+    ref: ExternalRef,
+  }),
+  z.object({
     method: z.literal("setInstanceComponent"),
     instanceId: z.string(),
     component: ComponentRef,
@@ -87,7 +104,11 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   removeLink: "link",
   addInstance: null,
   removeInstance: null,
-  upsertExternalRef: "ticket",
+  upsertExternalRef: null,
+  removeExternalRef: null,
+  addBinding: null,
+  removeBinding: null,
+  importExternalTicket: null,
   setInstanceComponent: null,
   setInstanceConfig: null,
   setInstanceData: null,
@@ -111,6 +132,10 @@ export type CommandResult = {
   addInstance: Instance;
   removeInstance: null;
   upsertExternalRef: Ticket;
+  removeExternalRef: Ticket;
+  addBinding: Binding;
+  removeBinding: null;
+  importExternalTicket: Ticket;
   setInstanceComponent: Instance;
   setInstanceConfig: Instance;
   setInstanceData: null;

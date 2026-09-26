@@ -44,6 +44,7 @@ const snapshot: ProjectSnapshot = {
   links: [],
   instances: [],
   rules: [],
+  bindings: [],
   nextTicketKey: "KIB-19",
 };
 const context: PaletteContext = {
