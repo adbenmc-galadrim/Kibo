@@ -17091,6 +17091,13 @@ git commit -m "build(desktop): binaire, toolchain et CLI"
 
 ---
 
+## Tâche de stabilisation (décision du chef d'équipe)
+
+- [x] **Tests intermittents sous charge** (branche `feat/p4-stab`) : chaque cause corrigée, preuve par passages répétés pendant une charge CPU et une suite complète en parallèle.
+  - `worktree-watch` : un événement de fichier n'est pas garanti (le flux FSEvents démarre après le retour de `fs.watch`). Le worktree est désormais surveillé avant la lecture de sa signature, et le balayage vérifie la disparition au moins chaque seconde au lieu de 60 s.
+  - `run.test.ts` (sortie sans fin) : le groupe était tué avant que le shell n'écrive les pids (1 Mo de stderr en ~20 ms). Chaque processus note son pid avant toute sortie.
+  - E2E agents et écrans : des seuils à 100 % retiennent quand même un run sur une machine saturée. Le démon E2E tourne avec une charge fixe `--host-load 62,70` (valeurs de l'écran 17) ; spec agents §10 mise à jour.
+
 ## Vagues d'exécution
 
 Une vague démarre quand toutes les tâches de la vague précédente sont intégrées à `main`. Dans une vague, les tâches sont confiées en parallèle (un `kibo-dev` par tâche, worktree `.claude/worktrees/p4-t<n>`, branche `feat/p4-t<n>`). Les seuls fichiers partagés dans une même vague sont `package.json` (script `typecheck`), `bun.lock` et `packages/devkit/src/index.ts` (lignes `export *` ajoutées) : conflits triviaux, résolus au rebase par `bun install` et la concaténation des lignes.
