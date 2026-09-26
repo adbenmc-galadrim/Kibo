@@ -18045,7 +18045,7 @@ Monogramme relevé dans le PDF (page 22, vecteurs) : tuile carrée bordée de 23
 
 Menu (D11) : déclencheur pleine largeur (tuile, nom `text-sm font-semibold`, « Workspace local » `text-2xs text-muted-foreground`, `ChevronDown` à droite) ; contenu aligné au début, largeur du déclencheur : libellé « Workspaces », workspace courant (tuile, nom, sous-titre, `Check`), séparateur, « Renommer le workspace… » (`Pencil`), « Paramètres du workspace » (`Settings`, écran Domaines & guidelines, comme l'entrée Paramètres). Dialogue « Renommer le workspace » : champ « Nom » prérempli, « Annuler » / « Enregistrer », alerte « Impossible de renommer le workspace. » (message de `KiboError` via `errorMessage` s'il existe). Création et bascule entre workspaces : point E6, pas d'entrée désactivée dans le menu.
 
-- [ ] **Step 1: Tests du core**
+- [x] **Step 1: Tests du core**
 
 `packages/core/src/agent-config.test.ts`, ajouter :
 ```ts
@@ -18065,7 +18065,7 @@ test("an empty or too long workspace name is refused by the schema", () => {
 Run: `bun test packages/core/src/agent-config.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Schéma, core, démon**
+- [x] **Step 2: Schéma, core, démon**
 
 `packages/schema/src/agent.ts` : `export const WorkspaceName = z.string().trim().min(1).max(40);` ; dans `ConfigCommand`, `z.object({ method: z.literal("renameWorkspace"), name: WorkspaceName })` ; `ConfigResult` : `renameWorkspace: { name: string }` ; `WorkspaceConfig` : `workspaceName: string | null`.
 
@@ -18087,7 +18087,7 @@ et, dans `executeConfigCommand`, le cas `renameWorkspace` : `settingsMap(doc).se
 Run: `bun test packages/core packages/daemon/src && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 3: Tests de l'en-tête**
+- [x] **Step 3: Tests de l'en-tête**
 
 `packages/ui/src/i18n/fr.ts` :
 ```ts
@@ -18150,7 +18150,7 @@ describe("workspace switcher", () => {
 Run: `bun test packages/ui/src/shell/workspace-switcher.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 4: Implémenter**
+- [x] **Step 4: Implémenter**
 
 `WorkspaceMark.tsx` :
 ```tsx
@@ -18193,7 +18193,7 @@ await expect(header).toContainText("Workspace local");
 Run: `bun test packages components && bun run --cwd e2e test --project screens-dark --project screens-light`
 Expected: PASS.
 
-- [ ] **Step 5: Contrôle visuel, vérifier et committer**
+- [x] **Step 5: Contrôle visuel, vérifier et committer**
 
 Comparer l'en-tête et l'onglet Accueil avec la page 22 (et n'importe quelle autre page) des deux PDF, sombre puis clair : tuile, glyphe, graisse du nom, sous-titre, chevron ; ouvrir le menu et le dialogue (écran D11).
 
