@@ -1,7 +1,6 @@
 import {
   AgentModel,
   AgentProfile,
-  GuidelinePath,
   KiboError,
   PermissionMode,
   ProfileInput,
@@ -14,12 +13,11 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
-import { Textarea } from "@kibo/sdk/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { FileText, X } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { type GuidelineDraft, ProfileGuidelines } from "./ProfileGuidelines";
 
 type Props = {
   profile: AgentProfile | null;
@@ -27,7 +25,6 @@ type Props = {
   hostSlots: number;
   onClose: () => void;
 };
-type Draft = { id: string; path: string; content: string };
 
 const STRATEGIES = ["worktree", "isolated", "repo"] as const;
 const MODES = ["plan", "acceptEdits", "default"] as const;
@@ -44,14 +41,8 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
   const [permissionMode, setPermissionMode] = useState<PermissionMode>(profile?.permissionMode ?? "default");
   const [maxParallel, setMaxParallel] = useState(String(profile?.maxParallel ?? 1));
   const [subagents, setSubagents] = useState<AgentModel[]>(profile?.subagents ?? []);
-  const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [path, setPath] = useState("");
-  const [content, setContent] = useState("");
+  const [drafts, setDrafts] = useState<GuidelineDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const saved = profile
-    ? config.guidelines.filter((g) => g.owner.scope === "profile" && g.owner.profileId === profile.id)
-    : [];
-  const listed: Draft[] = profile ? saved : drafts;
 
   const pickModel = (v: string) => {
     const parsed = AgentModel.safeParse(v);
@@ -72,55 +63,6 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
         return parsed.success ? [parsed.data] : [];
       }),
     );
-
-  const addGuideline = async () => {
-    setError(null);
-    const parsed = GuidelinePath.safeParse(path.trim());
-    if (!parsed.success) {
-      setError(fr.profile.invalidPath);
-      return;
-    }
-    if (!profile) {
-      setDrafts((d) => [...d, { id: crypto.randomUUID(), path: parsed.data, content }]);
-    } else {
-      try {
-        await client.rpc({
-          method: "config",
-          command: {
-            method: "addGuideline",
-            owner: { scope: "profile", profileId: profile.id },
-            path: parsed.data,
-            content,
-          },
-        });
-      } catch (e) {
-        setError(failure(e));
-        return;
-      }
-    }
-    setPath("");
-    setContent("");
-  };
-
-  const removeGuideline = async (guidelineId: string) => {
-    setError(null);
-    if (!profile) {
-      setDrafts((d) => d.filter((g) => g.id !== guidelineId));
-      return;
-    }
-    try {
-      await client.rpc({
-        method: "config",
-        command: {
-          method: "removeGuideline",
-          owner: { scope: "profile", profileId: profile.id },
-          guidelineId,
-        },
-      });
-    } catch (e) {
-      setError(failure(e));
-    }
-  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -293,54 +235,14 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">{fr.profile.subagentsHelp(hostSlots)}</p>
-            <div className="grid gap-2">
-              <p className="text-sm font-medium">{fr.profile.guidelines}</p>
-              <ul className="grid gap-1.5">
-                {listed.map((g) => (
-                  <li key={g.id} className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm">
-                    <FileText aria-hidden className="size-4 text-muted-foreground" />
-                    <span className="flex-1 truncate">{g.path}</span>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="size-6"
-                      aria-label={fr.profile.removeGuideline(g.path)}
-                      onClick={() => void removeGuideline(g.id)}
-                    >
-                      <X className="size-3.5" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              <div className="grid gap-2 rounded-md border border-dashed p-2.5">
-                <Label htmlFor={`${id}-path`}>{fr.profile.guidelinePath}</Label>
-                <Input
-                  id={`${id}-path`}
-                  value={path}
-                  placeholder="guidelines/front.md"
-                  onChange={(e) => setPath(e.target.value)}
-                />
-                <Label htmlFor={`${id}-content`}>{fr.profile.guidelineContent}</Label>
-                <Textarea
-                  id={`${id}-content`}
-                  value={content}
-                  rows={3}
-                  className="font-mono text-xs"
-                  onChange={(e) => setContent(e.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-fit"
-                  disabled={!path.trim()}
-                  onClick={() => void addGuideline()}
-                >
-                  {fr.profile.addGuideline}
-                </Button>
-              </div>
-            </div>
+            <ProfileGuidelines
+              profile={profile}
+              config={config}
+              drafts={drafts}
+              onDraftsChange={setDrafts}
+              onError={setError}
+              onFailure={(e) => setError(failure(e))}
+            />
             {error && (
               <p role="alert" className="text-sm text-destructive">
                 {error}
