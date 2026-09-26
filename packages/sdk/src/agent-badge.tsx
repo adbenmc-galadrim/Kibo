@@ -26,7 +26,7 @@ export function AgentBadge({ agent, run, texts, className }: Props) {
   if (!name) return null;
   const text = live && stateText(live, texts);
   return (
-    <Badge variant="outline" className={cn("gap-1 font-normal text-muted-foreground", className)}>
+    <Badge variant="outline" className={cn("gap-1 text-3xs font-normal text-muted-foreground", className)}>
       {live && <RunDot state={live.state} className="size-1.5" />}
       <Bot aria-hidden className="size-3" />
       <span className="font-mono text-foreground/80">{name}</span>

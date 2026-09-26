@@ -24,7 +24,7 @@ export function NewDomainForm({ onCreate }: { onCreate: (name: string) => Promis
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:text-foreground"
+        className="flex items-center gap-2 px-2 py-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
       >
         <Plus aria-hidden className="size-4" />
         {fr.domains.newDomain}

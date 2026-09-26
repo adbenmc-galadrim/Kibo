@@ -29,7 +29,7 @@ export function moveTarget(queue: QueueEntry[], activeId: string, overId: string
 }
 
 function Label({ children }: { children: ReactNode }) {
-  return <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{children}</p>;
+  return <p className="text-3xs font-medium uppercase tracking-wide text-muted-foreground">{children}</p>;
 }
 
 function Column({ label, aside, children }: { label: string; aside: ReactNode; children: ReactNode }) {
@@ -51,10 +51,10 @@ function Column({ label, aside, children }: { label: string; aside: ReactNode; c
 
 function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: number; since?: number }) {
   return (
-    <li className="flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm">
+    <li className="flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
       <RunDot state={run.state} />
       <span className="min-w-0 flex-1 truncate">{text ?? runSubject(run)}</span>
-      <span className="font-mono text-xs text-muted-foreground">
+      <span className="font-mono text-3xs text-muted-foreground">
         {formatDuration(since === undefined ? elapsed(run, now) : now - since)}
       </span>
     </li>
@@ -100,7 +100,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
         now={now}
         onSlots={(hostSlots) => void act({ method: "setHost", patch: { hostSlots } })}
       />
-      <h2 className="font-semibold">{fr.queue.byProfile}</h2>
+      <h2 className="text-md font-semibold">{fr.queue.byProfile}</h2>
       <DndContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
           {orderProfiles(profiles, state.runs, state.queue).map((p) => {
@@ -112,7 +112,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                 key={p.id}
                 label={p.name}
                 aside={
-                  <span className="flex items-center gap-1.5 font-mono text-xs">
+                  <span className="flex items-center gap-1.5 font-mono text-2xs">
                     <SlotMeter used={running.length} total={p.maxParallel} />
                     {`${running.length}/${p.maxParallel}`}
                   </span>
@@ -120,7 +120,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
               >
                 <Label>{fr.queue.running}</Label>
                 {running.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{fr.queue.empty}</p>
+                  <p className="text-xs text-muted-foreground">{fr.queue.empty}</p>
                 ) : (
                   <ul className="grid grid-cols-1 gap-1.5">
                     {running.map((r) => (
@@ -130,7 +130,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                 )}
                 <Label>{fr.queue.queued}</Label>
                 {mine.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{fr.queue.empty}</p>
+                  <p className="text-xs text-muted-foreground">{fr.queue.empty}</p>
                 ) : (
                   <ul className="grid grid-cols-1 gap-1.5">
                     {mine.map(({ run, entry }) => (
@@ -163,7 +163,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
               <Column
                 key={type}
                 label={type}
-                aside={<span className="text-xs text-muted-foreground">{fr.queue.subagent}</span>}
+                aside={<span className="text-2xs text-muted-foreground">{fr.queue.subagent}</span>}
               >
                 <SubagentSlots items={items} now={now} />
               </Column>
@@ -176,16 +176,16 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
               <Bell aria-hidden className="size-4 text-amber-500" />
               {fr.queue.waiting}
             </header>
-            <p className="text-xs text-muted-foreground">{fr.queue.waitingHelp}</p>
+            <p className="text-2xs text-muted-foreground">{fr.queue.waitingHelp}</p>
             {waiting.map((r) => (
               <div
                 key={r.id}
                 className="grid gap-2 rounded-md border border-amber-400 bg-amber-50 p-3 dark:border-amber-600/70 dark:bg-amber-500/10"
               >
-                <span className="font-mono text-sm">
+                <span className="font-mono text-xs">
                   {[r.label, r.ticketKey].filter(Boolean).join(" · ")}
                 </span>
-                {r.question && <p className="text-xs text-muted-foreground">{`« ${r.question} »`}</p>}
+                {r.question && <p className="text-2xs text-muted-foreground">{`« ${r.question} »`}</p>}
                 <Button
                   size="sm"
                   className="w-fit bg-brand-strong text-white hover:bg-brand-strong/90"
@@ -214,7 +214,7 @@ function SubagentSlots({ items, now }: { items: { parent: RunView; sub: ActiveSu
           </ul>
         </div>
       ))}
-      <p className="text-xs text-muted-foreground">{fr.queue.subagentHelp}</p>
+      <p className="text-2xs text-muted-foreground">{fr.queue.subagentHelp}</p>
     </>
   );
 }

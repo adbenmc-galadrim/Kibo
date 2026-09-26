@@ -17,7 +17,7 @@ function WidgetHeader({ projectId, instance }: { projectId: string; instance: In
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
       <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+      <span className="min-w-0 flex-1 truncate text-xs font-medium">
         {isBuiltinId(id) ? title : `${title} · ${version}`}
       </span>
       <InstanceMenu projectId={projectId} instance={instance} title={title} />

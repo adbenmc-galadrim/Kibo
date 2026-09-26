@@ -64,18 +64,18 @@ function Row({ file, active, busy, onSelect, onToggle }: RowProps) {
       >
         <span
           aria-hidden
-          className={cn("w-3 shrink-0 font-mono text-xs font-semibold", KIND_TONE[file.kind])}
+          className={cn("w-3 shrink-0 font-mono text-2xs font-semibold", KIND_TONE[file.kind])}
         >
           {fr.changes.kind[file.kind]}
         </span>
         <span className="sr-only">{fr.changes.kindLabel[file.kind]}</span>
         <span className="min-w-0 flex-1">
-          <span className={cn("block truncate font-mono text-sm", file.kind === "deleted" && MUTED)}>
+          <span className={cn("block truncate font-mono text-xs", file.kind === "deleted" && MUTED)}>
             {name}
           </span>
-          <span className={cn("block truncate font-mono text-xs", MUTED)}>{dir}</span>
+          <span className={cn("block truncate font-mono text-3xs", MUTED)}>{dir}</span>
         </span>
-        <span className="flex shrink-0 gap-1.5 font-mono text-xs">
+        <span className="flex shrink-0 gap-1.5 font-mono text-3xs">
           {Boolean(file.additions) && <span className={ADDED}>+{file.additions}</span>}
           {Boolean(file.deletions) && <span className={REMOVED}>−{file.deletions}</span>}
         </span>
@@ -95,7 +95,7 @@ function Section({ area, title, files, selected, busy, onSelect, onToggle }: Sec
         type="button"
         aria-expanded={open}
         className={cn(
-          "flex w-full items-center gap-1 px-2 py-2 text-xs font-medium uppercase tracking-wide",
+          "flex w-full items-center gap-1 px-2 py-2 text-2xs font-medium uppercase tracking-wide",
           MUTED,
         )}
         onClick={() => setOpen((o) => !o)}

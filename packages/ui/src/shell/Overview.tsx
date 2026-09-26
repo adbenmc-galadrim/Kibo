@@ -15,7 +15,7 @@ function Count({ statusId, value, label }: { statusId: StatusId; value: number; 
   return (
     <span className="inline-flex items-center gap-1.5">
       <StatusDot statusId={statusId} />
-      <span className="font-medium text-foreground">{value}</span> {label}
+      <span className="text-xs font-medium text-foreground">{value}</span> {label}
     </span>
   );
 }
@@ -32,7 +32,7 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
       <div className="flex items-center gap-3">
         <span
           aria-hidden
-          className="grid size-8 shrink-0 place-items-center rounded-md text-sm font-semibold"
+          className="grid size-8 shrink-0 place-items-center rounded-md text-md font-semibold"
           style={{ background: `color-mix(in oklab, ${project.color} 22%, transparent)` }}
         >
           {project.name.charAt(0).toUpperCase()}
@@ -42,11 +42,11 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
             type="button"
             id={nameId}
             onClick={() => navigate(project.id)}
-            className="block truncate text-left font-semibold outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
+            className="block truncate text-left text-md font-semibold outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
           >
             {project.name}
           </button>
-          <p className="truncate font-mono text-xs text-muted-foreground">
+          <p className="truncate font-mono text-2xs text-muted-foreground">
             {project.folder ? abbreviateHome(project.folder) : project.key}
           </p>
         </div>
@@ -64,7 +64,7 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
           style={{ width: `${all ? (done / all) * 100 : 0}%`, background: project.color }}
         />
       </div>
-      <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-2xs text-muted-foreground">
         <Count statusId="in_progress" value={project.counts.in_progress} label={fr.overview.inProgress} />
         <Count statusId="todo" value={project.counts.todo} label={fr.overview.todo} />
         <Count statusId="blocked" value={project.counts.blocked} label={fr.overview.blocked} />

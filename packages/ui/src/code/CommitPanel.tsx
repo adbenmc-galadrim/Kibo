@@ -30,11 +30,11 @@ export function CommitPanel(p: Props) {
   return (
     <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3">
       <header className="flex items-center justify-between">
-        <h2 id={`${id}-title`} className="flex items-center gap-2 font-semibold">
+        <h2 id={`${id}-title`} className="flex items-center gap-2 text-md font-semibold">
           <GitCommitHorizontal aria-hidden className="size-4" />
           {fr.commit.title}
         </h2>
-        <span className="text-xs text-muted-foreground">{fr.commit.stagedCount(p.stagedCount)}</span>
+        <span className="text-2xs text-muted-foreground">{fr.commit.stagedCount(p.stagedCount)}</span>
       </header>
       {p.banner}
       <Label htmlFor={`${id}-message`}>{fr.commit.message}</Label>
@@ -51,7 +51,7 @@ export function CommitPanel(p: Props) {
           p.onCommit();
         }}
       />
-      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 text-2xs text-muted-foreground">
         <span>{p.prefilled ? fr.commit.prefilled : ""}</span>
         <TooltipProvider>
           <Tooltip>
@@ -90,7 +90,7 @@ export function CommitPanel(p: Props) {
         </kbd>
       </Button>
       {!p.loading && p.stagedCount === 0 && !p.amend && (
-        <p className="text-xs text-muted-foreground">{fr.commit.nothingStaged}</p>
+        <p className="text-2xs text-muted-foreground">{fr.commit.nothingStaged}</p>
       )}
     </section>
   );

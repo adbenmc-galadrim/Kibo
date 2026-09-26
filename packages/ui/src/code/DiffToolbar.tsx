@@ -18,7 +18,7 @@ type Props = {
   onOpenExternal(): void;
 };
 
-const COMPACT = "h-7 px-2 text-xs";
+const COMPACT = "h-7 px-2 text-2xs";
 
 const isDiffMode = (value: string): value is DiffMode => value === "unified" || value === "split";
 
@@ -28,12 +28,12 @@ export function DiffToolbar(p: Props) {
       <FileCode aria-hidden className="size-4 shrink-0 text-sky-700 dark:text-sky-400" />
       <button
         type="button"
-        className="min-w-0 truncate font-mono text-[13px] text-sky-700 hover:underline dark:text-sky-400"
+        className="min-w-0 truncate font-mono text-xs text-sky-700 hover:underline dark:text-sky-400"
         onClick={p.onOpenFile}
       >
         {p.path}
       </button>
-      <span className="flex shrink-0 gap-1.5 font-mono text-xs text-zinc-600 dark:text-zinc-400">
+      <span className="flex shrink-0 gap-1.5 font-mono text-2xs text-zinc-600 dark:text-zinc-400">
         <span>+{p.additions}</span>
         <span>−{p.deletions}</span>
       </span>
@@ -61,7 +61,7 @@ export function DiffToolbar(p: Props) {
         pressed={p.editing}
         disabled={!p.canEdit}
         onPressedChange={p.onEditingChange}
-        className="h-7 shrink-0 px-2 text-xs data-[state=on]:border-orange-500 data-[state=on]:bg-orange-500/15 data-[state=on]:text-foreground"
+        className="h-7 shrink-0 px-2 text-2xs data-[state=on]:border-orange-500 data-[state=on]:bg-orange-500/15 data-[state=on]:text-foreground"
       >
         <Pencil aria-hidden />
         {fr.changes.edit}

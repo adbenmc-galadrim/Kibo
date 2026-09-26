@@ -7,7 +7,7 @@ import { fr } from "../i18n/fr";
 export function InjectionChain({ labels, tokens }: { labels: string[]; tokens: number }) {
   const id = useId();
   return (
-    <footer className="flex items-center gap-2 border-t px-4 py-2 text-xs text-muted-foreground">
+    <footer className="flex items-center gap-2 border-t px-4 py-2 text-2xs text-muted-foreground">
       <span id={id}>{fr.domains.injection}</span>
       <ol aria-labelledby={id} className="flex items-center gap-2">
         {labels.map((label, i) => (

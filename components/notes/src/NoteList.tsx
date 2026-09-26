@@ -18,7 +18,7 @@ type Props = {
 
 function FolderLine({ info }: { info: NotesInfo }) {
   return (
-    <p className="truncate px-1 font-mono text-[11px] text-muted-foreground">
+    <p className="truncate px-1 font-mono text-2xs text-muted-foreground">
       <span>{info.displayDir}</span>
       {info.obsidian && (
         <>

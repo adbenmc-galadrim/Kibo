@@ -10,7 +10,7 @@ export function UserAvatar({ user }: { user: string }) {
       role="img"
       aria-label={user}
       title={user}
-      className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-semibold"
+      className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-2xs font-semibold"
     >
       {initials(user)}
     </span>

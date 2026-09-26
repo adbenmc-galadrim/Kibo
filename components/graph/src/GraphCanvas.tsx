@@ -116,7 +116,7 @@ function Node({
     >
       <span className="flex items-center gap-1.5">
         <StatusDot statusId={ticket.statusId} />
-        <span className="font-mono text-xs text-muted-foreground">{ticket.key}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{ticket.key}</span>
         <span className="flex-1" />
         {run && <RunDot state={run.state} />}
         {ticket.assignee?.kind === "agent" && (
@@ -130,7 +130,7 @@ function Node({
 
 function Legend() {
   return (
-    <div className="absolute bottom-3 left-3 grid gap-1 rounded-md border bg-card p-2 text-xs text-muted-foreground">
+    <div className="absolute bottom-3 left-3 grid gap-1 rounded-md border bg-card p-2 text-2xs text-muted-foreground">
       <span className="flex items-center gap-2">
         <span aria-hidden="true" className="h-px w-5 bg-muted-foreground" />
         {fr.legend.blocks}
@@ -161,7 +161,7 @@ function ZoomControls({ zoom, onZoom }: { zoom: number; onZoom(z: number): void 
       </Button>
       <Button
         variant="ghost"
-        className="h-7 px-2 font-mono text-xs"
+        className="h-7 px-2 font-mono text-2xs"
         aria-label={fr.zoomReset}
         onClick={() => onZoom(1)}
       >

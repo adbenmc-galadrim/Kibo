@@ -143,7 +143,7 @@ export function DomainsPage({ config, projects }: Props) {
       <SettingsNav active="domains" />
       <div className="flex flex-col gap-4 p-8">
         <div>
-          <h1 className="text-2xl font-semibold">{fr.domains.title}</h1>
+          <h1 className="text-xl font-semibold">{fr.domains.title}</h1>
           <p className="text-sm text-muted-foreground">{fr.domains.subtitle}</p>
         </div>
         <div className="grid min-h-[32rem] flex-1 grid-cols-[17rem_1fr] gap-4">
@@ -151,7 +151,7 @@ export function DomainsPage({ config, projects }: Props) {
             aria-label={fr.domains.levels}
             className="grid content-start gap-1 rounded-lg border bg-card p-2"
           >
-            <p className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="px-2 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
               {fr.domains.levels}
             </p>
             <LevelButton
@@ -186,7 +186,7 @@ export function DomainsPage({ config, projects }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <p className="px-2 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="px-2 pt-2 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
               {fr.domains.domains}
             </p>
             {config.domains.map((d) => (
@@ -206,9 +206,9 @@ export function DomainsPage({ config, projects }: Props) {
                 {domain && (
                   <span aria-hidden className="size-3 rounded-[3px]" style={{ background: domain.color }} />
                 )}
-                <h2 className="font-semibold">{title}</h2>
+                <h2 className="text-md font-semibold">{title}</h2>
                 {domain && (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {fr.domains.usedBy(config.domainUsage[domain.id] ?? 0)}
                   </span>
                 )}

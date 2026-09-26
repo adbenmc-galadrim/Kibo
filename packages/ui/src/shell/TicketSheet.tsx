@@ -30,8 +30,8 @@ export function TicketSheet({
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-[480px] sm:max-w-[480px]">
         <SheetHeader>
-          <SheetDescription className="font-mono">{t.key}</SheetDescription>
-          <SheetTitle>{t.title}</SheetTitle>
+          <SheetDescription className="font-mono text-xs">{t.key}</SheetDescription>
+          <SheetTitle className="text-lg">{t.title}</SheetTitle>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
               variant="outline"

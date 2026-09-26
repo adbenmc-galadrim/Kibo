@@ -90,7 +90,7 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
         <div
           ref={setNodeRef}
           style={{ transform: CSS.Transform.toString(transform), transition }}
-          className={cn("group flex shrink-0 items-center text-[13px]", tabTone(active))}
+          className={cn("group flex shrink-0 items-center text-xs", tabTone(active))}
           onAuxClick={(e) => {
             if (e.button !== 1 || tab.pinned) return;
             e.preventDefault();

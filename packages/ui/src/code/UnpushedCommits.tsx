@@ -7,7 +7,7 @@ import { fr } from "../i18n/fr";
 import { RewordDialog } from "./RewordDialog";
 import { UndoCommitDialog } from "./UndoCommitDialog";
 
-const COMPACT = "h-7 px-2 text-[13px] has-[>svg]:px-2";
+const COMPACT = "h-7 px-2 text-xs has-[>svg]:px-2";
 
 type Props = {
   commits: CommitInfo[];
@@ -26,12 +26,12 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
   return (
     <section aria-labelledby={id} className="grid min-w-0 gap-2 border-t pt-4">
       <header className="flex items-center justify-between">
-        <h3 id={id} className="text-sm font-semibold">
+        <h3 id={id} className="text-xs font-semibold">
           {fr.commit.unpushed}
         </h3>
         <span
           className={cn(
-            "font-mono text-xs",
+            "font-mono text-2xs",
             unpushed.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground",
           )}
         >
@@ -41,9 +41,9 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
       <ul className="grid min-w-0 gap-2">
         {unpushed.map((c, i) => (
           <li key={c.sha} className="min-w-0 rounded-lg border p-3">
-            <p className="flex min-w-0 items-center gap-2 text-[13px]">
+            <p className="flex min-w-0 items-center gap-2 text-xs">
               <span aria-hidden className="size-2 shrink-0 rounded-full bg-orange-500" />
-              <span className="font-mono text-xs text-muted-foreground">{c.shortSha}</span>
+              <span className="font-mono text-2xs text-muted-foreground">{c.shortSha}</span>
               <span className="truncate">{c.subject}</span>
             </p>
             <div className="mt-2 flex flex-wrap gap-1">
@@ -87,12 +87,12 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
             className="min-w-0 rounded-lg border p-3 text-muted-foreground dark:opacity-70"
             title={fr.commit.pushed}
           >
-            <p className="flex min-w-0 items-center gap-2 text-[13px]">
+            <p className="flex min-w-0 items-center gap-2 text-xs">
               <span aria-hidden className="size-2 shrink-0 rounded-full bg-muted-foreground/50" />
-              <span className="font-mono text-xs">{c.shortSha}</span>
+              <span className="font-mono text-2xs">{c.shortSha}</span>
               <span className="truncate">{c.subject}</span>
             </p>
-            <p className="mt-1 flex items-center gap-1 text-xs">
+            <p className="mt-1 flex items-center gap-1 text-2xs">
               <ArrowUpFromLine aria-hidden className="size-3.5" />
               {fr.commit.pushed}
             </p>

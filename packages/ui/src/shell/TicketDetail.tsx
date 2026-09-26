@@ -75,7 +75,7 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
     onOpenFile({ projectId: project.meta.id, worktree: null, path: r.path, line: r.line, origin: t.key });
   return (
     <div className="grid gap-4">
-      <dl className="grid grid-cols-[120px_1fr] items-center gap-y-2 px-4 text-sm">
+      <dl className="grid grid-cols-[120px_1fr] items-center gap-y-2 px-4 text-xs">
         <dt className="text-muted-foreground">{fr.ticket.status}</dt>
         <dd>{status}</dd>
         {domains && (
@@ -121,19 +121,19 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
         )}
       </dl>
       <section className="grid gap-2 px-4 text-sm">
-        <h3 className="font-medium">{fr.ticket.description}</h3>
+        <h3 className="text-xs font-medium">{fr.ticket.description}</h3>
         <p className="whitespace-pre-wrap text-muted-foreground">
           {t.description ? <LinkifiedText text={t.description} onOpen={open} /> : "-"}
         </p>
       </section>
       {children.length > 0 && (
-        <section className="grid gap-1 px-4 text-sm">
+        <section className="grid gap-1 px-4 text-xs">
           <h3 className="font-medium">
             {fr.ticket.subtickets} {`${t.progress.done}/${t.progress.total}`}
           </h3>
           {children.map((c) => (
             <p key={c.id}>
-              <span className="font-mono text-xs text-muted-foreground">{c.key}</span> {c.title}
+              <span className="font-mono text-2xs text-muted-foreground">{c.key}</span> {c.title}
             </p>
           ))}
         </section>

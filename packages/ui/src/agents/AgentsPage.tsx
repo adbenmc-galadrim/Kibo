@@ -53,17 +53,17 @@ function ProfileCard({
               {profile.name}
             </button>
           </h3>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-2xs text-muted-foreground">
             {fr.agentsPage.modelLine(fr.agents.modelNames[profile.model])}
           </span>
         </div>
         {active > 0 && (
-          <Badge variant="secondary" className="bg-blue-500/15 text-blue-600 dark:text-blue-400">
+          <Badge variant="secondary" className="text-3xs bg-blue-500/15 text-blue-600 dark:text-blue-400">
             {fr.agentsPage.active(active)}
           </Badge>
         )}
       </header>
-      <dl className="grid grid-cols-[7rem_1fr] gap-y-1.5 text-xs">
+      <dl className="grid grid-cols-[7rem_1fr] gap-y-1.5 text-2xs">
         {fields.map(([label, value]) => (
           <div key={label} className="contents">
             <dt className="text-muted-foreground">{label}</dt>
@@ -82,7 +82,7 @@ function Stat({ state, value, label }: { state: RunState; value: string; label: 
         <RunDot state={state} />
         {value}
       </span>
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </li>
   );
 }
@@ -107,7 +107,7 @@ export function AgentsPage({ state, config, now }: Props) {
         <Stat state="cancelled" value={formatTokens(state.tokensToday)} label={s.tokens} />
       </ul>
       <section className="grid gap-3">
-        <h2 className="font-semibold">{fr.agentsPage.profiles}</h2>
+        <h2 className="text-md font-semibold">{fr.agentsPage.profiles}</h2>
         {config.profiles.length === 0 ? (
           <p className="text-sm text-muted-foreground">{fr.agentsPage.noProfile}</p>
         ) : (
@@ -126,7 +126,7 @@ export function AgentsPage({ state, config, now }: Props) {
         )}
       </section>
       <section className="grid gap-3">
-        <h2 className="font-semibold">{fr.agentsPage.history}</h2>
+        <h2 className="text-md font-semibold">{fr.agentsPage.history}</h2>
         {history.length === 0 ? (
           <p className="text-sm text-muted-foreground">{fr.agentsPage.noRuns}</p>
         ) : (

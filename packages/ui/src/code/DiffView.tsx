@@ -74,7 +74,7 @@ export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
   if (diff.binary) return <p className="p-6 text-sm text-muted-foreground">{fr.changes.binary}</p>;
   const label = area === "unstaged" ? fr.changes.stageHunk : fr.changes.unstageHunk;
   return (
-    <div className="min-w-0 flex-1 overflow-auto font-mono text-[13px] leading-6">
+    <div className="min-w-0 flex-1 overflow-auto font-mono text-xs leading-6">
       {diff.hunks.map((hunk, index) => (
         <section
           key={hunk.header}
@@ -84,13 +84,13 @@ export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
             containIntrinsicSize: `auto ${(hunk.lines.length + 1) * LINE_HEIGHT_PX}px`,
           }}
         >
-          <header className="sticky top-0 z-10 flex h-7 items-center justify-between gap-4 bg-muted px-4 text-xs text-zinc-600 dark:text-zinc-400">
+          <header className="sticky top-0 z-10 flex h-7 items-center justify-between gap-4 bg-muted px-4 text-2xs text-zinc-600 dark:text-zinc-400">
             <span className="truncate">{hunk.header}</span>
             {diff.hunkStaging && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 px-2 text-xs"
+                className="h-6 px-2 text-2xs"
                 disabled={busy}
                 onClick={() => onHunk(index, hunk.header)}
               >

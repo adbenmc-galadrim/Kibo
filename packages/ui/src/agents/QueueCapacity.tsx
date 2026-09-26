@@ -25,10 +25,10 @@ function Gauge({
   const over = value >= threshold;
   return (
     <div className="grid gap-1.5">
-      <div className="flex items-baseline gap-2 text-sm">
+      <div className="flex items-baseline gap-2 text-xs">
         <span>{label}</span>
         <span className="flex-1" />
-        <span className="font-mono text-xs text-muted-foreground">{`${text} · ${fr.queue.threshold(threshold)}`}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{`${text} · ${fr.queue.threshold(threshold)}`}</span>
       </div>
       <div className="relative">
         <Progress
@@ -59,7 +59,7 @@ function HostSlotsEditor({ host, onSave }: { host: HostView; onSave: (slots: num
   };
   if (!editing) {
     return (
-      <p className="text-xs text-muted-foreground">
+      <p className="text-2xs text-muted-foreground">
         <span>
           {host.slotsFixed
             ? fr.queue.hostSlotsFixed(host.hostSlots, host.autoSlots)
@@ -108,10 +108,10 @@ export function QueueCapacity({
   return (
     <section aria-labelledby={titleId} className="grid gap-3 rounded-lg border bg-card p-4">
       <div>
-        <h2 id={titleId} className="font-semibold">
+        <h2 id={titleId} className="text-md font-semibold">
           {fr.queue.capacity}
         </h2>
-        <p className="text-sm text-muted-foreground">{fr.queue.capacityHelp}</p>
+        <p className="text-xs text-muted-foreground">{fr.queue.capacityHelp}</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
@@ -125,17 +125,17 @@ export function QueueCapacity({
                   run ? "border-blue-500/70" : "border-dashed",
                 )}
               >
-                <span className="text-[11px] text-muted-foreground">{fr.queue.slot(slot)}</span>
+                <span className="text-3xs text-muted-foreground">{fr.queue.slot(slot)}</span>
                 {run ? (
                   <>
                     <RunDot state={run.state} className="absolute top-2.5 right-2.5" />
-                    <span className="font-mono text-sm">{run.label}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="font-mono text-xs">{run.label}</span>
+                    <span className="text-2xs text-muted-foreground">
                       {runSubject(run, formatDuration(elapsed(run, now)))}
                     </span>
                   </>
                 ) : (
-                  <span className="text-sm text-muted-foreground">{fr.queue.free}</span>
+                  <span className="text-xs text-muted-foreground">{fr.queue.free}</span>
                 )}
               </li>
             );

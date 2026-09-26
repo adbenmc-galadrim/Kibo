@@ -136,7 +136,7 @@ export function AppSidebar(p: Props) {
             <GitCommitHorizontal />
             <span>{fr.nav.changes}</span>
             {changesCount > 0 && (
-              <span className="ml-auto font-mono text-xs text-muted-foreground tabular-nums">
+              <span className="ml-auto font-mono text-2xs text-muted-foreground tabular-nums">
                 {changesCount}
               </span>
             )}
@@ -155,11 +155,11 @@ export function AppSidebar(p: Props) {
         <button
           type="button"
           onClick={p.onSearch}
-          className="flex h-8 items-center gap-2 rounded-md border bg-background px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-8 items-center gap-2 rounded-md border bg-background px-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Search aria-hidden className="size-4" />
           <span className="flex-1 text-left">{fr.nav.search}</span>
-          <kbd className="font-mono text-xs">⌘K</kbd>
+          <kbd className="font-mono text-3xs">⌘K</kbd>
         </button>
       </SidebarHeader>
       <SidebarContent>

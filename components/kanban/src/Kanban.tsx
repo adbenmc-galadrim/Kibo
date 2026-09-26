@@ -23,11 +23,11 @@ function Column({ status, count, children, onAdd }: ColumnProps) {
         isOver && "ring-2 ring-ring",
       )}
     >
-      <header className="flex h-7 items-center gap-2 px-1 text-sm">
+      <header className="flex h-7 items-center gap-2 px-1 text-xs">
         <StatusDot statusId={status.id} />
         <span className="font-medium">{status.label}</span>
         <span className="flex-1" />
-        <span className="font-mono text-xs text-muted-foreground">{count}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{count}</span>
         {onAdd ? (
           <Button
             size="icon"

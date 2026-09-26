@@ -12,7 +12,7 @@ import { PublishDialog } from "./PublishDialog";
 import { type ComponentRow, componentRows } from "./rows";
 
 const ORANGE = "text-orange-600 dark:text-orange-400";
-const HEAD = "h-9 px-4 text-xs font-normal text-muted-foreground";
+const HEAD = "h-9 px-4 text-2xs font-normal text-muted-foreground";
 const CELL = "px-4 py-3";
 
 function TrustCell({ row, onReview }: { row: ComponentRow; onReview(): void }) {

@@ -31,7 +31,7 @@ export function KanbanCard({ ticket: t, run, statuses, onOpen, onMove }: Props) 
       className="grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs"
     >
       <div className="flex items-center gap-2">
-        <span className="font-mono text-xs text-muted-foreground" {...listeners} {...attributes}>
+        <span className="font-mono text-2xs text-muted-foreground" {...listeners} {...attributes}>
           {t.key}
         </span>
         <span className="flex-1" />
@@ -57,17 +57,17 @@ export function KanbanCard({ ticket: t, run, statuses, onOpen, onMove }: Props) 
         {t.title}
       </button>
       {t.blockedReason && (
-        <p className="text-xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
+        <p className="text-2xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
         <AgentBadge agent={t.assignee?.kind === "agent" ? t.assignee.ref : null} run={run} texts={fr.run} />
         {t.waitingOn.map((k) => (
-          <Badge key={k} variant="outline">
+          <Badge key={k} variant="outline" className="text-3xs">
             {fr.waitingOn(k)}
           </Badge>
         ))}
         {t.progress.total > 0 && (
-          <span className="ml-auto font-mono text-xs text-muted-foreground">{`${t.progress.done}/${t.progress.total}`}</span>
+          <span className="ml-auto font-mono text-3xs text-muted-foreground">{`${t.progress.done}/${t.progress.total}`}</span>
         )}
       </div>
     </article>

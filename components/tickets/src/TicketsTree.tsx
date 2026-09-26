@@ -20,16 +20,17 @@ function AssigneeCell({ assignee, run }: { assignee: Assignee | null; run: Ticke
           agent={assignee?.ref ?? null}
           run={run}
           texts={fr.run}
-          className="min-w-0 shrink justify-start truncate"
+          className="min-w-0 shrink justify-start truncate text-xs"
         />
       </span>
     );
-  if (!assignee) return <span className={cn(ASSIGNEE_CELL, "text-muted-foreground")}>{fr.unassigned}</span>;
+  if (!assignee)
+    return <span className={cn(ASSIGNEE_CELL, "text-xs text-muted-foreground")}>{fr.unassigned}</span>;
   return (
-    <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5")}>
+    <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5 text-xs")}>
       <span
         aria-hidden="true"
-        className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-semibold"
+        className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-3xs font-semibold"
       >
         {assignee.ref.slice(0, 2).toUpperCase()}
       </span>
@@ -76,7 +77,7 @@ export function TicketsTree() {
             ) : (
               <span className="size-4 shrink-0" />
             )}
-            <span className="shrink-0 font-mono text-xs text-muted-foreground">{t.key}</span>
+            <span className="shrink-0 font-mono text-2xs text-muted-foreground">{t.key}</span>
             <button
               type="button"
               className={cn("min-w-16 truncate text-left", t.statusId === "done" && "text-muted-foreground")}
@@ -85,22 +86,22 @@ export function TicketsTree() {
               {t.title}
             </button>
             {t.blockedReason && (
-              <span className="min-w-0 truncate text-xs text-red-600 dark:text-red-400">
+              <span className="min-w-0 truncate text-2xs text-red-600 dark:text-red-400">
                 {t.blockedReason}
               </span>
             )}
             {t.waitingOn.length > 0 && (
-              <Badge variant="outline" className="min-w-0 shrink justify-start">
+              <Badge variant="outline" className="min-w-0 shrink justify-start text-3xs">
                 <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
               </Badge>
             )}
           </div>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 text-xs">
             <StatusDot statusId={t.statusId} />
             <span className="truncate">{label(t.statusId)}</span>
           </span>
           <AssigneeCell assignee={t.assignee} run={runOf.get(t.id) ?? null} />
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-2xs text-muted-foreground">
             {t.progress.total > 0 ? `${t.progress.done}/${t.progress.total}` : null}
           </span>
           <Button
@@ -130,7 +131,7 @@ export function TicketsTree() {
         <p className="p-6 text-sm text-muted-foreground">{fr.empty}</p>
       ) : (
         <div className="@container min-h-0 flex-1 overflow-auto px-1 py-2">
-          <div className={cn(COLUMNS, "h-8 text-xs whitespace-nowrap text-muted-foreground")}>
+          <div className={cn(COLUMNS, "h-8 text-2xs whitespace-nowrap text-muted-foreground")}>
             <span className="pl-6">{fr.columns.ticket}</span>
             <span>{fr.columns.status}</span>
             <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>

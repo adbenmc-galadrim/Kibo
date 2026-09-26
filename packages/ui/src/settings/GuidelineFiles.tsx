@@ -39,7 +39,7 @@ export function GuidelineFiles({ title, files, selectedId, canAdd, onSelect, onA
                 aria-pressed={g.id === selectedId}
                 onClick={() => onSelect(g.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-xs underline underline-offset-2",
+                  "flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-2xs underline underline-offset-2",
                   g.id === selectedId && "bg-accent",
                 )}
               >

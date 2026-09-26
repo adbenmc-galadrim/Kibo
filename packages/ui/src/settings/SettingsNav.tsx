@@ -14,7 +14,7 @@ const ITEMS = [
 export function SettingsNav({ active }: { active: "domains" }) {
   return (
     <nav aria-label={fr.settings.title} className="grid content-start gap-0.5 border-r p-3">
-      <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <p className="px-2 pb-1 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
         {fr.settings.workspace}
       </p>
       {ITEMS.map(({ id, label, icon: Icon }) => {

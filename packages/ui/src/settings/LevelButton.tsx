@@ -24,7 +24,7 @@ export function LevelButton({ active, icon, label, count, onClick }: Props) {
       {icon}
       <span className="flex-1 truncate">{label}</span>{" "}
       {count !== undefined && (
-        <span className="font-mono text-xs text-muted-foreground">{fr.domains.count(count)}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{fr.domains.count(count)}</span>
       )}
     </button>
   );
