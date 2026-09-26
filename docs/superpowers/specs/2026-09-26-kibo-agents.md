@@ -87,6 +87,8 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 
 - App Tauri : le démon, lancé avec `KIBO_NATIVE_NOTIFY=1`, écrit `KIBO_NOTIFY {json}` sur sa sortie ; la coque Rust l'affiche avec `tauri-plugin-notification`. Aucune capacité n'est donnée à la fenêtre.
 - Navigateur : API `Notification` après un clic explicite sur la cloche (« Activer les notifications ») ; notifications sur l'entrée en `waiting_input`, `done` et `failed`.
+- Barre des agents : la pastille « Démon local » suit l'état réel du WebSocket (`client.online()`/`onConnection` du SDK) ; hors connexion, pastille rouge et « Démon injoignable ».
+- Sidebar : « Files d'attente » est une sous-entrée d'« Agents », visible quand un écran agents est ouvert.
 
 ## 10. Risques connus
 
