@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readDaemonInfo, removeDaemonInfo, sandboxPortFor, writeDaemonInfo } from "./daemon-info";
@@ -21,6 +21,23 @@ test("a stale daemon.json from a looser umask is rewritten private", () => {
   writeFileSync(join(home, "daemon.json"), "{}", { mode: 0o644 });
   writeDaemonInfo(home, { port: 1, sandboxPort: 2, pid: 3 });
   expect(statSync(join(home, "daemon.json")).mode & 0o777).toBe(0o600);
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("a corrupt, read-only or linked daemon.json is replaced, never followed", () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-info-"));
+  const file = join(home, "daemon.json");
+  writeFileSync(file, "{not json", { mode: 0o400 });
+  writeDaemonInfo(home, { port: 1, sandboxPort: 2, pid: 3 });
+  expect(readDaemonInfo(home)).toEqual({ port: 1, sandboxPort: 2, pid: 3 });
+  rmSync(file);
+  const elsewhere = join(home, "elsewhere");
+  writeFileSync(elsewhere, "untouched");
+  symlinkSync(elsewhere, file);
+  writeDaemonInfo(home, { port: 4, sandboxPort: 5, pid: 6 });
+  expect(lstatSync(file).isSymbolicLink()).toBe(false);
+  expect(readFileSync(elsewhere, "utf8")).toBe("untouched");
+  expect(statSync(file).mode & 0o777).toBe(0o600);
   rmSync(home, { recursive: true, force: true });
 });
 

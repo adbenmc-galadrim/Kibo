@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { z } from "zod";
@@ -21,8 +21,13 @@ function parseJson(text: string): unknown {
 }
 
 export function writeDaemonInfo(home: string, info: DaemonInfo): void {
-  writeFileSync(fileOf(home), JSON.stringify(DaemonInfo.parse(info)), { mode: 0o600 });
-  chmodSync(fileOf(home), 0o600);
+  const staging = join(home, `.daemon.json.${process.pid}.${crypto.randomUUID()}`);
+  try {
+    writeFileSync(staging, JSON.stringify(DaemonInfo.parse(info)), { mode: 0o600, flag: "wx" });
+    renameSync(staging, fileOf(home));
+  } finally {
+    rmSync(staging, { force: true });
+  }
 }
 
 export function readDaemonInfo(home: string): DaemonInfo | null {
