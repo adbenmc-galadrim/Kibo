@@ -1,8 +1,8 @@
 import { KiboError, type KiboErrorCode } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 
-const KNOWN: Partial<Record<KiboErrorCode, string>> = fr.errors;
-const WITH_DETAIL = new Set<KiboErrorCode>(["GIT_FAILED", "GH_FAILED"]);
+const KNOWN: Partial<Record<KiboErrorCode, string>> = { ...fr.errors, ...fr.componentErrors };
+const WITH_DETAIL = new Set<KiboErrorCode>(["GIT_FAILED", "GH_FAILED", "MIGRATION_FAILED"]);
 
 export function errorMessage(e: unknown): string {
   if (!(e instanceof KiboError)) return fr.common.error;

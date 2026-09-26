@@ -12,3 +12,26 @@ test("known codes map to French text, git failures keep the first line of stderr
   expect(errorMessage(new KiboError("INTERNAL", "x"))).toBe("Une erreur est survenue.");
   expect(errorMessage(new Error("boom"))).toBe("Une erreur est survenue.");
 });
+
+test("every component error code has its own French text", () => {
+  const codes = [
+    "HASH_MISMATCH",
+    "TRUST_REQUIRED",
+    "VERSION_EXISTS",
+    "VALIDATION_FAILED",
+    "MIGRATION_FAILED",
+    "COMPONENT_CRASHED",
+    "TIMEOUT",
+    "CONFLICT",
+    "RATE_LIMITED",
+    "QUOTA_EXCEEDED",
+    "SANDBOX_UNAVAILABLE",
+    "PERMISSION_DENIED",
+  ] as const;
+  const texts = codes.map((code) => errorMessage(new KiboError(code, "x")));
+  for (const text of texts) expect(text).not.toBe("Une erreur est survenue.");
+  expect(new Set(texts).size).toBe(codes.length);
+  expect(errorMessage(new KiboError("MIGRATION_FAILED", "hello@0.2.0: step 1 failed\nstack"))).toBe(
+    "La migration de la configuration a échoué. (hello@0.2.0: step 1 failed)",
+  );
+});
