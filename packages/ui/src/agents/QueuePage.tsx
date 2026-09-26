@@ -10,7 +10,7 @@ import {
 } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
-import { Bell, Bot, Pause, Play } from "lucide-react";
+import { Bell, Bot } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
@@ -85,21 +85,8 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
     const index = moveTarget(state.queue, runId, e.over ? String(e.over.id) : null);
     if (index !== null) void act({ method: "moveRun", runId, index });
   };
-  const paused = state.host.paused;
   return (
     <div className="grid content-start gap-6 p-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold">{fr.queue.title}</h1>
-        <span className="flex-1" />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void act({ method: "setHost", patch: { paused: !paused } })}
-        >
-          {paused ? <Play /> : <Pause />}
-          {paused ? fr.queue.resume : fr.queue.pause}
-        </Button>
-      </div>
       {failed && (
         <p role="alert" className="text-sm text-destructive">
           {fr.queue.failed}

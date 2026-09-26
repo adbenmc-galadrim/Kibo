@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { agentsFixture, configFixture, NOW, profilesFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
@@ -17,6 +18,7 @@ mock.module("../api", () => ({
 }));
 
 const { AgentsPage } = await import("./AgentsPage");
+const { ProfileSheet } = await import("./ProfileSheet");
 
 beforeEach(() => {
   calls.length = 0;
@@ -25,6 +27,15 @@ beforeEach(() => {
 
 const show = () => render(<AgentsPage state={agentsFixture()} config={configFixture()} now={NOW} />);
 const sheet = () => within(screen.getByRole("dialog"));
+
+function NewProfile() {
+  const [open, setOpen] = useState(true);
+  return open ? (
+    <ProfileSheet profile={null} config={configFixture()} hostSlots={3} onClose={() => setOpen(false)} />
+  ) : null;
+}
+
+const showNew = () => render(<NewProfile />);
 
 test("the page counts slots, queue, waiting runs and today's tokens", () => {
   show();
@@ -35,6 +46,12 @@ test("the page counts slots, queue, waiting runs and today's tokens", () => {
     "1attend une réponse (créneau libéré)",
     "1,2Mtokens aujourd'hui (abonnement)",
   ]);
+});
+
+test("the page leaves its title and actions to the shell header", () => {
+  show();
+  expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Nouveau profil" })).toBeNull();
 });
 
 test("profile cards describe each profile", () => {
@@ -80,9 +97,8 @@ test("a new profile is created with its guidelines", async () => {
         ? { ...req.command.profile, id: "new-id" }
         : null,
     );
-  show();
+  showNew();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Nouveau profil" }));
   expect(sheet().getByText("Nouveau profil d'agent")).toBeTruthy();
   await user.type(sheet().getByLabelText("Nom"), "opus-front");
   await user.click(sheet().getByText("Dossier isolé"));
@@ -135,9 +151,8 @@ test("a new profile is created with its guidelines", async () => {
 });
 
 test("a new profile starts with safe defaults", async () => {
-  show();
+  showNew();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Nouveau profil" }));
   await user.type(sheet().getByLabelText("Nom"), "haiku-tests");
   await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
   expect(calls[0]).toEqual({
@@ -158,9 +173,8 @@ test("a new profile starts with safe defaults", async () => {
 });
 
 test("invalid names and guideline paths are refused before any call", async () => {
-  show();
+  showNew();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Nouveau profil" }));
   await user.type(sheet().getByLabelText("Nom"), "Opus Front");
   await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
   expect(sheet().getByRole("alert").textContent).toBe("Nom invalide : minuscules, chiffres et tirets.");
@@ -212,9 +226,8 @@ test("in edit mode a guideline is added to the profile at once", async () => {
 });
 
 test("enter in the guideline field adds the file without submitting the profile", async () => {
-  show();
+  showNew();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Nouveau profil" }));
   await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md{Enter}");
   expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
   expect(sheet().getByLabelText("Fichier")).toHaveProperty("value", "");

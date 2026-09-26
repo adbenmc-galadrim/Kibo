@@ -17,6 +17,7 @@ mock.module("../api", () => ({
 }));
 
 const { moveTarget, QueuePage } = await import("./QueuePage");
+const { PauseAdmission } = await import("./PauseAdmission");
 
 beforeEach(() => {
   calls.length = 0;
@@ -94,21 +95,34 @@ test("the item menu moves, prioritizes and removes queued runs", async () => {
   ]);
 });
 
-test("admission can be paused and host slots changed; a refusal is shown", async () => {
+test("host slots can be changed; a refusal is shown", async () => {
   show();
+  expect(screen.queryByRole("button", { name: "Mettre en pause l'admission" })).toBeNull();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Mettre en pause l'admission" }));
   await user.click(screen.getByRole("button", { name: "modifiable" }));
   const slots = screen.getByLabelText("Créneaux hôte");
   await user.clear(slots);
   await user.type(slots, "4");
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(calls).toEqual([{ method: "setHost", patch: { hostSlots: 4 } }]);
+  outcome = () => Promise.reject(new KiboError("INVALID_INPUT", "no"));
+  await user.click(screen.getByRole("button", { name: "modifiable" }));
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Action impossible.");
+});
+
+test("admission is paused and resumed from the header; a refusal is shown", async () => {
+  const user = userEvent.setup();
+  const view = render(<PauseAdmission paused={false} />);
+  await user.click(screen.getByRole("button", { name: "Mettre en pause l'admission" }));
+  view.rerender(<PauseAdmission paused />);
+  await user.click(screen.getByRole("button", { name: "Reprendre l'admission" }));
   expect(calls).toEqual([
     { method: "setHost", patch: { paused: true } },
-    { method: "setHost", patch: { hostSlots: 4 } },
+    { method: "setHost", patch: { paused: false } },
   ]);
   outcome = () => Promise.reject(new KiboError("INVALID_INPUT", "no"));
-  await user.click(screen.getByRole("button", { name: "Mettre en pause l'admission" }));
+  await user.click(screen.getByRole("button", { name: "Reprendre l'admission" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Action impossible.");
 });
 

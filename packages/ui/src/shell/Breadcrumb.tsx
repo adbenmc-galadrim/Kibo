@@ -1,26 +1,44 @@
 import { ChevronRight } from "lucide-react";
 import { fr } from "../i18n/fr";
 
-function Crumb({ label, current, first }: { label: string; current: boolean; first: boolean }) {
+function Crumb({
+  label,
+  current,
+  first,
+  heading,
+}: {
+  label: string;
+  current: boolean;
+  first: boolean;
+  heading: boolean;
+}) {
+  const Label = current && heading ? "h1" : "span";
   return (
     <li className="flex min-w-0 items-center gap-1.5">
       {!first && <ChevronRight aria-hidden className="size-3.5 shrink-0" />}
-      <span
+      <Label
         aria-current={current ? "page" : undefined}
         className={current ? "truncate font-medium text-foreground" : "truncate"}
       >
         {label}
-      </span>
+      </Label>
     </li>
   );
 }
 
-export function Breadcrumb({ project, page }: { project: string | null; page: string | null }) {
+export function Breadcrumb({ items, heading = false }: { items: string[]; heading?: boolean }) {
   return (
     <nav aria-label={fr.nav.breadcrumb} className="min-w-0">
       <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Crumb label={project ?? fr.nav.overview} current={!page} first />
-        {project && page && <Crumb label={page} current first={false} />}
+        {items.map((label, i) => (
+          <Crumb
+            key={`${i}-${label}`}
+            label={label}
+            current={i === items.length - 1}
+            first={i === 0}
+            heading={heading}
+          />
+        ))}
       </ol>
     </nav>
   );

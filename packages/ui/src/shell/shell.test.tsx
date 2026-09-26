@@ -19,11 +19,20 @@ mock.module("../state/use-projects", () => ({
   useProject: (id: string | null) => (id === "p1" ? project : null),
 }));
 
+mock.module("../api", () => ({ client: { rpc: () => Promise.resolve(null) } }));
+mock.module("../state/use-agents", () => ({
+  useAgents: () => null,
+  useConfig: () => null,
+  useNow: () => 0,
+  useRunLog: () => null,
+  useDaemonOnline: () => false,
+}));
+
 const { Shell } = await import("./Shell");
 
 test("a page missing from the snapshot does not redirect to the first page", async () => {
   location.hash = "";
-  render(<Shell viewer="adam" />);
+  render(<Shell viewer="adam" notifications="native" />);
   await act(async () => {
     location.hash = "#/p/p1/2%401";
     await new Promise((r) => setTimeout(r, 20));
@@ -32,7 +41,7 @@ test("a page missing from the snapshot does not redirect to the first page", asy
 });
 
 test("the header shows a Project › Page breadcrumb", async () => {
-  render(<Shell viewer="adam" />);
+  render(<Shell viewer="adam" notifications="native" />);
   await act(async () => {
     location.hash = "#/p/p1/1%401";
     await new Promise((r) => setTimeout(r, 20));

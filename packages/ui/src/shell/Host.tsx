@@ -1,7 +1,11 @@
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { createContext, type ReactNode, useContext } from "react";
 
-export type Host = { openTicket(id: string): void; openNewTicket(d: NewTicketDefaults): void };
+export type Host = {
+  openTicket(id: string): void;
+  openNewTicket(d: NewTicketDefaults): void;
+  openAssign(ticketId: string): void;
+};
 const HostContext = createContext<Host | null>(null);
 
 export function HostProvider({ host, children }: { host: Host; children: ReactNode }) {

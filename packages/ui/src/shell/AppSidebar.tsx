@@ -1,34 +1,38 @@
-import type { Page, ProjectMeta, ProjectSnapshot } from "@kibo/schema";
+import type { AgentsState, Page, ProjectMeta, ProjectSnapshot } from "@kibo/schema";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupAction,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@kibo/sdk/ui/sidebar";
-import { Plus } from "lucide-react";
+import { Bot, LayoutGrid, ListOrdered, Plus, Settings } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
-import { navigate, type Route } from "../route";
+import { navigate, openScreen, type Route } from "../route";
 import { KiboLogo } from "./KiboLogo";
 
 type Props = {
   projects: ProjectMeta[];
   active: ProjectSnapshot | null;
   route: Route;
+  agents: AgentsState | null;
   onNewProject: () => void;
   onNewPage: (parentId: string | null) => void;
 };
 
-export function AppSidebar({ projects, active, route, onNewProject, onNewPage }: Props) {
+export function AppSidebar({ projects, active, route, agents, onNewProject, onNewPage }: Props) {
+  const inAgents = route.screen === "agents" || route.screen === "queue";
   const children = (parentId: string | null): Page[] =>
     active?.pages.filter((p) => p.parentId === parentId) ?? [];
   const renderPages = (parentId: string | null) =>
@@ -60,9 +64,39 @@ export function AppSidebar({ projects, active, route, onNewProject, onNewPage }:
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive={route.projectId === null} onClick={() => navigate(null)}>
-                {fr.nav.overview}
+              <SidebarMenuButton
+                isActive={route.projectId === null && route.screen === null}
+                onClick={() => navigate(null)}
+              >
+                <LayoutGrid />
+                <span>{fr.nav.overview}</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={inAgents} onClick={() => openScreen("agents")}>
+                <Bot />
+                <span>{fr.nav.agents}</span>
+              </SidebarMenuButton>
+              {agents && (
+                <SidebarMenuBadge className="gap-1.5">
+                  {agents.host.used}
+                  {agents.runs.some((r) => r.state === "waiting_input") && (
+                    <span aria-hidden className="size-1.5 rounded-full bg-brand" />
+                  )}
+                </SidebarMenuBadge>
+              )}
+              {inAgents && (
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={route.screen === "queue"}>
+                      <button type="button" onClick={() => openScreen("queue")}>
+                        <ListOrdered />
+                        <span>{fr.nav.queue}</span>
+                      </button>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
@@ -94,6 +128,16 @@ export function AppSidebar({ projects, active, route, onNewProject, onNewPage }:
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton isActive={route.screen === "domains"} onClick={() => openScreen("domains")}>
+              <Settings />
+              <span>{fr.nav.settings}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

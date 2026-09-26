@@ -8,9 +8,8 @@ import {
 } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { Button } from "@kibo/sdk/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
-import { Bot, Plus } from "lucide-react";
+import { Bot } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { elapsed, formatDuration, formatTokens, runResultText } from "./format";
@@ -89,7 +88,7 @@ function Stat({ state, value, label }: { state: RunState; value: string; label: 
 }
 
 export function AgentsPage({ state, config, now }: Props) {
-  const [editing, setEditing] = useState<AgentProfile | "new" | null>(null);
+  const [editing, setEditing] = useState<AgentProfile | null>(null);
   const positions = new Map(state.queue.map((q) => [q.runId, q.position]));
   const waiting = state.runs.filter((r) => r.state === "waiting_input").length;
   const history = [...state.runs].sort((a, b) => b.seq - a.seq);
@@ -97,14 +96,6 @@ export function AgentsPage({ state, config, now }: Props) {
   const s = fr.agentsPage.stats;
   return (
     <div className="grid content-start gap-6 p-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold">{fr.agentsPage.title}</h1>
-        <span className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => setEditing("new")}>
-          <Plus />
-          {fr.agentsPage.newProfile}
-        </Button>
-      </div>
       <ul aria-label={fr.agentsPage.title} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           state="running"
@@ -176,7 +167,7 @@ export function AgentsPage({ state, config, now }: Props) {
       </section>
       {editing && (
         <ProfileSheet
-          profile={editing === "new" ? null : editing}
+          profile={editing}
           config={config}
           hostSlots={state.host.hostSlots}
           onClose={() => setEditing(null)}
