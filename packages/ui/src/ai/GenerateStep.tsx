@@ -4,6 +4,7 @@ import { RunJournal } from "../agents/RunJournal";
 import { fr } from "../i18n/fr";
 import { useAgents, useRunLog } from "../state/use-agents";
 import { AttemptLine } from "./AttemptLine";
+import { draftRelativeLog } from "./draft-log";
 
 export function GenerateStep({ draft }: { draft: ComponentDraft }) {
   const agents = useAgents();
@@ -12,7 +13,7 @@ export function GenerateStep({ draft }: { draft: ComponentDraft }) {
   return (
     <div className="grid gap-3">
       <AttemptLine draft={draft} run={run} />
-      {run && <RunJournal label={run.label} log={log ?? []} files={null} />}
+      {run && <RunJournal label={run.label} log={draftRelativeLog(log ?? [], draft.id)} files={null} />}
       {run?.state === "waiting_input" && <ReplyBox run={run} />}
       <p className="text-xs text-muted-foreground">{fr.ai.sandboxNote}</p>
     </div>
