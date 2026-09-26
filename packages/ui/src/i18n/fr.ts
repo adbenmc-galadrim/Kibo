@@ -7,6 +7,7 @@ export const fr = {
   nav: {
     breadcrumb: "Fil d'Ariane",
     overview: "Vue d'ensemble",
+    mine: "Mes tickets",
     projects: "Projets",
     newProject: "Nouveau projet",
     newPage: "Nouvelle page",
@@ -76,6 +77,22 @@ export const fr = {
   projectHome: {
     created: (name: string) => `Projet créé : ${name}`,
     help: "Ajoute une première page pour y poser un Kanban ou une liste de tickets.",
+  },
+  mine: {
+    tabs: "Filtre des tickets",
+    assigned: "Assignés à moi",
+    agents: "Mes agents",
+    created: "Créés par moi",
+    createdLater: "Kibo n'enregistre pas encore l'auteur d'un ticket.",
+    summary: (tickets: number, projects: number) =>
+      `${tickets} ticket${tickets > 1 ? "s" : ""} · ${projects} projet${projects > 1 ? "s" : ""}`,
+    assign: "Assigner",
+    noFolder: "Ajoute un dossier au projet pour lancer un agent.",
+    empty: {
+      assigned: "Aucun ticket ouvert ne t'est assigné.",
+      agents: "Aucun ticket ouvert n'est confié à un agent.",
+      created: "Kibo n'enregistre pas encore l'auteur d'un ticket.",
+    },
   },
   page: {
     empty: "Cette page est vide : ajoute un composant pour commencer.",
