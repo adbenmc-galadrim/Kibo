@@ -139,6 +139,14 @@ describe("tampering", () => {
     await expect(svc.verify("pr-queue@0.3.0")).rejects.toThrow("TRUST_REQUIRED");
     expect(svc.source("pr-queue@0.3.0")).toBeNull();
   });
+  test("verify before a backend launch refuses an intact version that is not approved", async () => {
+    await expect(svc.verify("pr-queue@0.3.0")).rejects.toThrow("TRUST_REQUIRED");
+    await svc.approve("pr-queue", "0.3.0", H1, "sandboxed");
+    await svc.verify("pr-queue@0.3.0");
+    svc.revoke("pr-queue", "0.3.0");
+    await expect(svc.verify("pr-queue@0.3.0")).rejects.toThrow("TRUST_REQUIRED");
+    expect(svc.isTampered("pr-queue@0.3.0")).toBe(false);
+  });
   test("rehash keeps the flag while the files differ", async () => {
     await svc.approve("pr-queue", "0.3.0", H1, "sandboxed");
     store.tamper("pr-queue", "0.3.0");

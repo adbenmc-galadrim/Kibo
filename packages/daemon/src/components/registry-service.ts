@@ -199,6 +199,7 @@ export function createRegistryService(deps: RegistryServiceDeps): RegistryServic
       if (!(await checkIntact(id, version, v.hash))) {
         throw new KiboError("TRUST_REQUIRED", `${ref} changed on disk`);
       }
+      active(ref);
     },
     async verifyAll() {
       const bad: string[] = [];
