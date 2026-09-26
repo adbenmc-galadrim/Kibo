@@ -23022,24 +23022,24 @@ En dépendent : T25 (M7), T26 (M3, M5), T27 (M4, M6, M7 instance, M8, S7), T29 (
 - Modify: `design/penpot/scripts/14-sync.js` (écrans numérotés à la suite, 79 et plus), `design/penpot/kibo.penpot.xz`, `design/pdf/kibo-design-sombre.pdf`, `design/pdf/kibo-design-clair.pdf`
 - Modify: `design/penpot/README.md` (liste des écrans, si elle les énumère)
 
-- [ ] **Step 1: Dessiner chaque écran en sombre**
+- [x] **Step 1: Dessiner chaque écran en sombre**
 
 Dans Penpot (onglet piloté par l'extension Chrome, procédure de `design/penpot/README.md`), à partir des bases existantes (écran 6 pour M3, M4, M8 ; écran 30 pour M5 ; écran 8 pour S3, S6, S7 ; écran 19 / 78 pour M7), avec shadcn, tokens zinc, orange réservé aux agents, textes au tutoiement repris mot pour mot des descriptions du plan.
 
-- [ ] **Step 2: Variante claire de chaque écran**
+- [x] **Step 2: Variante claire de chaque écran**
 
 Chaque écran existe **en sombre et en clair** (règle de `CLAUDE.md`), contrôlé visuellement côte à côte.
 
-- [ ] **Step 3: Réexporter**
+- [x] **Step 3: Réexporter**
 
 Run: `bash design/penpot/scripts/pack-penpot.sh && bash design/penpot/scripts/build-pdf.sh`
 Expected: `kibo.penpot.xz` et les deux PDF régénérés, les nouveaux écrans présents dans les deux PDF.
 
-- [ ] **Step 4: Reporter les numéros**
+- [x] **Step 4: Reporter les numéros**
 
 Remplacer, dans « Écrans à dessiner » et dans la colonne « Écrans » des vagues, les identifiants S3, S7, M3–M8 et S6 « Accès retiré » par leurs numéros d'écran.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add design/penpot/scripts/14-sync.js design/penpot/kibo.penpot.xz design/pdf/kibo-design-sombre.pdf design/pdf/kibo-design-clair.pdf docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md
