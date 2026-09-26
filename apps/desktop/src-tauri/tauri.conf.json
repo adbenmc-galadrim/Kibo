@@ -8,7 +8,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "externalBin": ["binaries/kibo-daemon"],
+    "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
     "resources": { "../../../packages/ui/dist/": "ui/" },
     "icon": [
       "icons/32x32.png",
