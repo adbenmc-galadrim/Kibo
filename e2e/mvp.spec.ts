@@ -1,35 +1,6 @@
-import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { E2E_TOKEN } from "./token";
-
-const projectKey = (base: string, info: TestInfo) => `${base}${info.project.name === "light" ? "L" : "D"}`;
-
-async function pairAndCreateProject(page: Page, info: TestInfo, key: string) {
-  await page.goto(`/#pair=${E2E_TOKEN}`);
-  const html = page.locator("html");
-  if (info.project.name === "dark") await expect(html).toHaveClass(/dark/);
-  else await expect(html).not.toHaveClass(/dark/);
-
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
-  await page.getByLabel("Nom").fill(`Kibo ${key}`);
-  await page.getByLabel("Clé").fill(key);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
-  await expect(page.getByText("Projet créé")).toBeVisible();
-  await expect(page.getByRole("main")).toHaveCount(1);
-}
-
-async function createPage(page: Page, title: string, kind: "Tableau de bord" | "Vue") {
-  await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await page.getByLabel("Nom").fill(title);
-  await page.getByRole("radio", { name: kind, exact: true }).click();
-  await page.getByRole("button", { name: "Créer la page" }).click();
-}
-
-async function addComponent(page: Page, title: "Kanban" | "Tickets") {
-  await page.getByRole("button", { name: "Ajouter un composant" }).click();
-  await page.getByRole("radio", { name: title, exact: true }).click();
-  await page.getByRole("button", { name: "Ajouter à la page" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
-}
+import { expect, type Page, test } from "@playwright/test";
+import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { projectKey } from "./repo-project";
 
 async function createTicket(page: Page, opener: string, title: string) {
   await page.getByRole("button", { name: opener, exact: true }).click();
