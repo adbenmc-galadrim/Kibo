@@ -54,3 +54,11 @@ test("two requests never share a nonce", async () => {
   const b = await signRequest(input);
   expect(a["x-kibo-nonce"]).not.toBe(b["x-kibo-nonce"]);
 });
+
+test("control characters in method or path are refused", () => {
+  const input = { method: "POST", path: "/p", date: "1", nonce: "n", bodySha256: "h" };
+  expect(() => httpSigningPayload({ ...input, path: "/a\n1" })).toThrow("INVALID_INPUT");
+  expect(() => httpSigningPayload({ ...input, path: "/a\r" })).toThrow("INVALID_INPUT");
+  expect(() => httpSigningPayload({ ...input, method: "POST\nGET" })).toThrow("INVALID_INPUT");
+  expect(() => httpSigningPayload({ ...input, method: "PO\0ST" })).toThrow("INVALID_INPUT");
+});

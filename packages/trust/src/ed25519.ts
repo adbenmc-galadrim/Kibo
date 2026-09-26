@@ -1,7 +1,9 @@
 import { KiboError } from "@kibo/schema";
 import { fromBase64, owned, sha256Hex, toBase64 } from "./bytes";
+import { parsePublicKey } from "./public-key";
 
 export { shortHash } from "@kibo/schema";
+export { parsePublicKey } from "./public-key";
 
 export type KeyPair = { publicKey: string; privateKey: string };
 
@@ -36,7 +38,7 @@ export async function signBytes(privateKey: string, data: Uint8Array): Promise<s
 
 export async function verifyBytes(publicKey: string, data: Uint8Array, signature: string): Promise<boolean> {
   try {
-    const key = await crypto.subtle.importKey("spki", owned(fromBase64(publicKey)), ALG, false, ["verify"]);
+    const key = await crypto.subtle.importKey("spki", parsePublicKey(publicKey), ALG, false, ["verify"]);
     return await crypto.subtle.verify(ALG, key, owned(fromBase64(signature)), owned(data));
   } catch (e) {
     if (isMalformedInput(e)) return false;
@@ -45,7 +47,7 @@ export async function verifyBytes(publicKey: string, data: Uint8Array, signature
 }
 
 export async function keyFingerprint(publicKey: string): Promise<string> {
-  return sha256Hex(fromBase64(publicKey));
+  return sha256Hex(parsePublicKey(publicKey));
 }
 
 export function formatFingerprint(hex: string): string {

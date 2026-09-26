@@ -22,3 +22,10 @@ test("constantTimeEqual compares content and length", () => {
   expect(constantTimeEqual(utf8("ab"), utf8("ac"))).toBe(false);
   expect(constantTimeEqual(utf8("ab"), utf8("abc"))).toBe(false);
 });
+
+test("base64 with non-zero padding bits is refused", () => {
+  expect(toBase64(fromBase64("a2libw=="))).toBe("a2libw==");
+  expect(() => fromBase64("a2libx==")).toThrow("INVALID_INPUT");
+  expect(() => fromBase64("AB==")).toThrow("INVALID_INPUT");
+  expect(() => fromBase64("AAB=")).toThrow("INVALID_INPUT");
+});

@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { utf8 } from "./bytes";
 import {
   formatFingerprint,
@@ -45,4 +45,17 @@ test("fingerprints are stable and formatted", async () => {
   expect(formatFingerprint(fp).split(" ")).toHaveLength(16);
   expect(formatFingerprint("3f9a8b21")).toBe("3f9a 8b21");
   expect(shortHash("3f9a0000000000000000000000000000000000000000000000000000000c21e")).toBe("3f9a…c21e");
+});
+
+test("an unexpected WebCrypto failure is not turned into false", async () => {
+  const keys = await generateKeyPair();
+  const sig = await signBytes(keys.privateKey, utf8("x"));
+  const verify = spyOn(crypto.subtle, "verify").mockImplementation(() =>
+    Promise.reject(new Error("engine down")),
+  );
+  try {
+    await expect(verifyBytes(keys.publicKey, utf8("x"), sig)).rejects.toThrow("engine down");
+  } finally {
+    verify.mockRestore();
+  }
 });

@@ -10,7 +10,9 @@ export function fromBase64(text: string): Uint8Array {
   if (!BASE64.test(text) || text.length % 4 !== 0) {
     throw new KiboError("INVALID_INPUT", "invalid base64");
   }
-  return new Uint8Array(Buffer.from(text, "base64"));
+  const bytes = new Uint8Array(Buffer.from(text, "base64"));
+  if (toBase64(bytes) !== text) throw new KiboError("INVALID_INPUT", "non-canonical base64");
+  return bytes;
 }
 
 export function utf8(text: string): Uint8Array {

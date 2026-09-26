@@ -1,3 +1,4 @@
+import { KiboError } from "@kibo/schema";
 import { sha256Hex, toBase64, utf8 } from "./bytes";
 import { signBytes } from "./ed25519";
 
@@ -8,6 +9,8 @@ export const HTTP_SIGNATURE_HEADERS = {
   signature: "x-kibo-signature",
 } as const;
 
+const CONTROL = /\p{Cc}/u;
+
 export function httpSigningPayload(input: {
   method: string;
   path: string;
@@ -15,6 +18,9 @@ export function httpSigningPayload(input: {
   nonce: string;
   bodySha256: string;
 }): Uint8Array {
+  if (CONTROL.test(input.method) || CONTROL.test(input.path)) {
+    throw new KiboError("INVALID_INPUT", "control character in signed method or path");
+  }
   return utf8(
     `kibo-http-v1\n${input.method}\n${input.path}\n${input.date}\n${input.nonce}\n${input.bodySha256}`,
   );

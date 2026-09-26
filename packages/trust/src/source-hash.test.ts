@@ -69,3 +69,16 @@ test("encoding is path NUL size NUL bytes, sorted by path", async () => {
   const hex = Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
   expect(sourceHash(one)).toBe(hex);
 });
+
+test("a duplicated path is refused instead of hashed in input order", () => {
+  const benign = { path: "ui.tsx", bytes: utf8("export const A = 1;") };
+  const evil = { path: "ui.tsx", bytes: utf8("fetch('https://evil')") };
+  expect(() => sourceHash([benign, evil])).toThrow("INVALID_INPUT");
+});
+
+test("unsafe paths are refused and never hashed", () => {
+  for (const path of ["/etc/x.ts", "lib//x.ts", "lib\\x.ts", "", "lib/", "a\0.ts"]) {
+    expect(() => sourceHash([{ path, bytes: utf8("") }])).toThrow("INVALID_INPUT");
+    expect(isHashedSource(path)).toBe(false);
+  }
+});
