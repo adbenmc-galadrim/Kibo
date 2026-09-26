@@ -13988,11 +13988,11 @@ git commit -m "test: fuite de secret et parcours E2E"
 
 Aucun code. Le chef d'équipe, quand la Task 23 est intégrée :
 
-- [ ] **Conformité** : CI verte sur `main` en macOS **et** Linux (`bun run check`, `bun run typecheck`, `bun test packages components`, `bun run budget`, E2E `dark` et `light`, smoke test Tauri avec `builtin/github-issues/server.js` présent). CI GitHub hors service : même liste en contrôle local avant chaque intégration et au jalon (workflows maintenus à jour).
-- [ ] **Critères de sortie de la spec F §12** : aller-retour ticket ↔ issue (création, titre, description, statut, fermeture) vert en CI (`roundtrip.test.ts`, `integrations.spec.ts`) ; test de fuite vert (`leak.test.ts`) ; écran 16 conforme en sombre et en clair (page PDF 26 + état P1) ; dialogues conformes à P2 à P5.
-- [ ] **Contrôle visuel** des écrans 16, 3 (source synchronisée, P6), 4 (Sheet : P7, P8, P9), P10, P11, en sombre et en clair, contre `design/pdf/kibo-design-{sombre,clair}.pdf` ; écarts notés dans le rapport.
-- [ ] **Spec** : `docs/superpowers/specs/2026-09-26-kibo-integrations.md` §14 contient N1 à N36 ; tableau « Points d'ancrage » de ce plan à jour (colonne « Réel »).
-- [ ] **Tag** : `git tag v0.5 && git push origin v0.5`.
-- [ ] **Rapport** : `docs/superpowers/rapports/2026-09-26-jalon-v0.5.md` (livré, écarts de maquette, décisions N1 à N36, risques ouverts : écarts de la réconciliation T0 réellement rencontrés, formes réelles de l'API GitHub non vérifiées en CI, dépendance `@modelcontextprotocol/sdk`, `Bun.secrets` sous Linux, TOCTOU DNS), commit `docs: rapport du jalon v0.5`.
+- [x] **Conformité** : CI verte sur `main` en macOS **et** Linux (`bun run check`, `bun run typecheck`, `bun test packages components`, `bun run budget`, E2E `dark` et `light`, smoke test Tauri avec `builtin/github-issues/server.js` présent). CI GitHub hors service : même liste en contrôle local avant chaque intégration et au jalon (workflows maintenus à jour).
+- [x] **Critères de sortie de la spec F §12** : aller-retour ticket ↔ issue (création, titre, description, statut, fermeture) vert en CI (`roundtrip.test.ts`, `integrations.spec.ts`) ; test de fuite vert (`leak.test.ts`) ; écran 16 conforme en sombre et en clair (page PDF 26 + état P1) ; dialogues conformes à P2 à P5.
+- [x] **Contrôle visuel** des écrans 16, 3 (source synchronisée, P6), 4 (Sheet : P7, P8, P9), P10, P11, en sombre et en clair, contre `design/pdf/kibo-design-{sombre,clair}.pdf` ; écarts notés dans le rapport.
+- [x] **Spec** : `docs/superpowers/specs/2026-09-26-kibo-integrations.md` §14 contient N1 à N36 ; tableau « Points d'ancrage » de ce plan à jour (colonne « Réel »).
+- [x] **Tag** : `git tag v0.5 && git push origin v0.5`.
+- [x] **Rapport** : `docs/superpowers/rapports/2026-09-26-jalon-v0.5.md` (livré, écarts de maquette, décisions N1 à N36, risques ouverts : écarts de la réconciliation T0 réellement rencontrés, formes réelles de l'API GitHub non vérifiées en CI, dépendance `@modelcontextprotocol/sdk`, `Bun.secrets` sous Linux, TOCTOU DNS), commit `docs: rapport du jalon v0.5`.
 - [ ] **Contrôle manuel optionnel** (non bloquant, spec F « Comptes et secrets réels ») : Adam, sur un dépôt de test avec un Project v2 et un jeton (`repo`, `project`), puis Figma desktop avec le serveur Dev Mode ; retours consignés dans le rapport.
-- [ ] **Suite** : sur décision d'Adam, les phases s'enchaînent jusqu'à la 7 sans attente ; le chef d'équipe passe directement au plan de la phase 6.
+- [x] **Suite** : sur décision d'Adam, les phases s'enchaînent jusqu'à la 7 sans attente ; le chef d'équipe passe directement au plan de la phase 6.
