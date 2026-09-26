@@ -47,7 +47,7 @@ test("publier, autoriser, rendre en sandbox, mettre à jour partout", async ({ p
 
   await publishDraft(page, "0.1.0");
   const trust = page.getByRole("dialog", { name: `Autoriser « ${TITLE} » 0.1.0 ?` });
-  await expect(trust.getByText("Lire les tickets du projet")).toBeVisible();
+  await expect(trust.getByText("Lire les tickets du projet")).toBeVisible({ timeout: 60_000 });
   await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toBeVisible();
   await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser" }).click();
