@@ -1,4 +1,7 @@
 import { KiboError } from "@kibo/schema";
+import { createGithubApi, type GithubApi } from "../github/api";
+import { createGithubAccount, type GithubAccount } from "../github/auth";
+import { githubModule } from "../github/handlers";
 import { createBunSecretStore } from "./bun-secret-store";
 import { migrateIntegrations } from "./db";
 import { createEventLog, type EventLog } from "./events";
@@ -15,6 +18,7 @@ import type {
   IntegrationHandlers,
   IntegrationHost,
   IntegrationProbe,
+  SecretResolver,
   SecretStore,
 } from "./types";
 
@@ -28,6 +32,7 @@ export type IntegrationKit = {
   secrets: SecretStore;
   hooks: ComponentIntegrationHooks;
   net: IntegrationNet;
+  github: { account: GithubAccount; api: GithubApi };
 };
 export type IntegrationNet = { fetch: IntegrationFetch; gate: RateLimitGate; aliases: Map<string, URL> };
 export type IntegrationModule = {
@@ -77,17 +82,30 @@ export function startIntegrations(
   const observe = (h: string, headers: Headers) => {
     if (h === GITHUB_API) gate.observe(headers);
   };
+  const net: IntegrationNet = { fetch: createIntegrationFetch({ aliases, observe }), gate, aliases };
+  const settings = createSettings(host.db);
+  const account = createGithubAccount({
+    settings,
+    secrets,
+    redactor,
+    gh: host.gh,
+    fetch: net.fetch,
+    now: host.now,
+  });
+  const github = { account, api: createGithubApi({ fetch: net.fetch, token: () => account.token(), gate }) };
+  const secret: SecretResolver = (name) => (name === "github" ? account.token() : secrets.get(name));
   const kit: IntegrationKit = {
     host,
     flags,
     redactor,
     events: createEventLog(host.db, redactor, host.now),
-    settings: createSettings(host.db),
+    settings,
     secrets,
-    hooks: { ...NEUTRAL_HOOKS, aliases, observe, secret: (name) => secrets.get(name) },
-    net: { fetch: createIntegrationFetch({ aliases, observe }), gate, aliases },
+    hooks: { ...NEUTRAL_HOOKS, aliases, observe, secret },
+    net,
+    github,
   };
-  const modules: IntegrationModule[] = [{ probes: builtinProbes(kit.host) }];
+  const modules: IntegrationModule[] = [{ probes: builtinProbes(kit.host) }, githubModule(kit, kit.github)];
   return createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),
     probes: modules.flatMap((m) => m.probes ?? []),

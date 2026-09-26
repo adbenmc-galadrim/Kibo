@@ -80,8 +80,15 @@ describe("startDaemon", () => {
     const rpc = await pair(d);
     const res = await rpc({ method: "listIntegrations" });
     const body = z.object({ result: z.array(z.object({ id: z.string() })) }).parse(await res.json());
-    expect(body.result.map((s) => s.id)).toEqual(["git", "notifications", "markdown"]);
-    expect((await rpc({ method: "listGithubRepos", query: "" })).status).toBe(404);
+    expect(body.result.map((s) => s.id)).toEqual([
+      "git",
+      "github",
+      "github-issues",
+      "github-actions",
+      "notifications",
+      "markdown",
+    ]);
+    expect((await rpc({ method: "listGithubRepos", query: "" })).status).toBe(409);
     const db = new Database(join(home, "kibo.db"), { readonly: true });
     const tables = db
       .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
