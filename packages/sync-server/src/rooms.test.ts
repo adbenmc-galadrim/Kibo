@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { SYNC_LIMITS } from "@kibo/schema";
+import { VersionVector } from "loro-crdt";
 import { openServerDb, type ServerDb } from "./db";
 import { RoomRegistry } from "./rooms";
 import { ownerSnapshot, type SeededUser, seedUser } from "./testing/fixtures";
@@ -57,5 +58,5 @@ test("a room loaded without client is also unloaded", () => {
 test("a reloaded room has the same state", () => {
   const version = rooms.get("p1").version();
   rooms.drop("p1");
-  expect(rooms.get("p1").version()).toEqual(version);
+  expect(VersionVector.decode(rooms.get("p1").version()).compare(VersionVector.decode(version))).toBe(0);
 });

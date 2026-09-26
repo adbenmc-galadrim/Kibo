@@ -2,12 +2,12 @@ import {
   allocateTicketKeys,
   currentTicketSeq,
   enableServerAllocation,
-  listTickets,
   validateProjectUpdate,
+  validateSharedSnapshot,
   writeMembers,
 } from "@kibo/core";
 import { KiboError, MAX_FRAME_BYTES, type MemberRole, type RejectCode, SYNC_LIMITS } from "@kibo/schema";
-import { EphemeralStore, LoroDoc, VersionVector } from "loro-crdt";
+import { decodeImportBlobMeta, EphemeralStore, type ImportStatus, LoroDoc, VersionVector } from "loro-crdt";
 import { audit } from "./audit";
 import type { ServerDb } from "./db";
 import { insertProject, listMembers } from "./members";
@@ -39,20 +39,35 @@ const DEFAULT_LIMITS: RoomLimits = {
 };
 
 const versionJson = (doc: LoroDoc): string => JSON.stringify(Object.fromEntries(doc.oplogVersion().toJSON()));
+const hasPending = (status: ImportStatus): boolean => status.pending !== null && status.pending.size > 0;
 
 type State = { seq: number; sinceSnapshot: number; size: number };
 type SnapshotRow = { bytes: Uint8Array; uptoSeq: number };
 type UpdateRow = { seq: number; bytes: Uint8Array };
+type Author = { userId: string; deviceId: string };
+type Allocation = { ticketId: string; key: string };
+
+function blobMode(blob: Uint8Array): string {
+  try {
+    return decodeImportBlobMeta(blob, true).mode;
+  } catch (e) {
+    throw new KiboError("INVALID_INPUT", `unreadable project snapshot: ${String(e)}`);
+  }
+}
 
 function importSnapshot(snapshot: Uint8Array): LoroDoc {
   if (snapshot.length > MAX_FRAME_BYTES)
     throw new KiboError("INVALID_INPUT", "project snapshot is too large");
+  if (blobMode(snapshot) !== "snapshot")
+    throw new KiboError("INVALID_INPUT", "a complete snapshot is required");
   const doc = new LoroDoc();
+  let pending: boolean;
   try {
-    doc.import(snapshot);
+    pending = hasPending(doc.import(snapshot));
   } catch (e) {
     throw new KiboError("INVALID_INPUT", `unreadable project snapshot: ${String(e)}`);
   }
+  if (pending) throw new KiboError("INVALID_INPUT", "project snapshot depends on missing changes");
   return doc;
 }
 
@@ -62,7 +77,7 @@ export class ProjectRoom {
   private constructor(
     private readonly sdb: ServerDb,
     readonly projectId: string,
-    private readonly doc: LoroDoc,
+    private doc: LoroDoc,
     private readonly state: State,
     private readonly limits: RoomLimits,
   ) {}
@@ -74,9 +89,8 @@ export class ProjectRoom {
     limits?: Partial<RoomLimits>,
   ): ProjectRoom {
     const doc = importSnapshot(input.snapshot);
-    if (listTickets(doc).some((t) => t.key === null)) {
-      throw new KiboError("INVALID_INPUT", "a shared snapshot must have a key on every ticket");
-    }
+    const verdict = validateSharedSnapshot(doc, input.projectId);
+    if (!verdict.ok) throw new KiboError("INVALID_INPUT", verdict.reason);
     const ticketSeq = enableServerAllocation(doc);
     writeMembers(doc, [{ userId: input.ownerId, name: input.ownerName }]);
     const snapshot = doc.export({ mode: "snapshot" });
@@ -147,7 +161,11 @@ export class ProjectRoom {
 
   diffSince(version: Uint8Array | null): Uint8Array {
     if (version === null) return this.doc.export({ mode: "update" });
-    return this.doc.export({ mode: "update", from: VersionVector.decode(version) });
+    try {
+      return this.doc.export({ mode: "update", from: VersionVector.decode(version) });
+    } catch (e) {
+      throw new KiboError("INVALID_INPUT", `unreadable version: ${String(e)}`);
+    }
   }
 
   push(bytes: Uint8Array, actor: Actor, now: number): PushResult {
@@ -171,28 +189,31 @@ export class ProjectRoom {
     if (this.state.size + bytes.length > this.limits.projectBytes) {
       throw new RoomReject("QUOTA_EXCEEDED", "project is over its size quota", this.version());
     }
-    const before = this.doc.oplogVersion();
-    this.doc.import(bytes);
-    const allocated = allocateTicketKeys(this.doc);
-    return this.record(before, { userId: actor.userId, deviceId: actor.deviceId }, now, allocated);
+    const allocated = allocateTicketKeys(candidate);
+    return this.adopt(candidate, { userId: actor.userId, deviceId: actor.deviceId }, now, allocated);
   }
 
   syncMembers(now: number): PushResult | null {
-    const before = this.doc.oplogVersion();
+    const candidate = this.fork();
     writeMembers(
-      this.doc,
+      candidate,
       listMembers(this.sdb, this.projectId).map((m) => ({ userId: m.userId, name: m.name })),
     );
-    const result = this.record(before, { userId: SERVER_AUTHOR, deviceId: SERVER_AUTHOR }, now, []);
+    const result = this.adopt(candidate, { userId: SERVER_AUTHOR, deviceId: SERVER_AUTHOR }, now, []);
     return result.bytes === null ? null : result;
   }
 
-  private readCandidate(bytes: Uint8Array): LoroDoc {
+  private fork(): LoroDoc {
     const candidate = this.doc.fork();
+    candidate.setPeerId(this.doc.peerId);
+    return candidate;
+  }
+
+  private readCandidate(bytes: Uint8Array): LoroDoc {
+    const candidate = this.fork();
     let pending: boolean;
     try {
-      const status = candidate.import(bytes);
-      pending = status.pending !== null && status.pending.size > 0;
+      pending = hasPending(candidate.import(bytes));
     } catch (e) {
       throw new RoomReject("UPDATE_REJECTED", `unreadable update: ${String(e)}`, this.version());
     }
@@ -206,39 +227,43 @@ export class ProjectRoom {
     return candidate;
   }
 
-  private record(
-    before: VersionVector,
-    author: { userId: string; deviceId: string },
-    now: number,
-    allocated: { ticketId: string; key: string }[],
-  ): PushResult {
-    if (this.doc.oplogVersion().compare(before) === 0) {
+  private adopt(candidate: LoroDoc, author: Author, now: number, allocated: Allocation[]): PushResult {
+    const before = this.doc.oplogVersion();
+    if (candidate.oplogVersion().compare(before) === 0) {
       return { bytes: null, serverSeq: this.state.seq, version: this.version(), allocated: [] };
     }
-    const delta = this.doc.export({ mode: "update", from: before });
+    const delta = candidate.export({ mode: "update", from: before });
     const seq = this.state.seq + 1;
-    const ticketSeq = currentTicketSeq(this.doc);
+    const compacted =
+      this.state.sinceSnapshot + 1 >= this.limits.compactEvery
+        ? candidate.export({ mode: "snapshot" })
+        : null;
+    this.persist(candidate, { seq, delta, compacted, author, now });
+    this.doc = candidate;
+    this.state.seq = seq;
+    this.state.sinceSnapshot = compacted === null ? this.state.sinceSnapshot + 1 : 0;
+    this.state.size = compacted === null ? this.state.size + delta.length : compacted.length;
+    return { bytes: delta, serverSeq: seq, version: this.version(), allocated };
+  }
+
+  private persist(
+    candidate: LoroDoc,
+    write: { seq: number; delta: Uint8Array; compacted: Uint8Array | null; author: Author; now: number },
+  ): void {
+    const ticketSeq = currentTicketSeq(candidate);
     this.sdb.db.transaction(() => {
       this.sdb.db
         .query(
           "INSERT INTO updates (projectId, seq, bytes, userId, deviceId, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         )
-        .run(this.projectId, seq, delta, author.userId, author.deviceId, now);
+        .run(this.projectId, write.seq, write.delta, write.author.userId, write.author.deviceId, write.now);
       this.sdb.db.query("UPDATE projects SET ticketSeq = ?2 WHERE id = ?1").run(this.projectId, ticketSeq);
+      if (write.compacted === null) return;
+      this.sdb.db
+        .query(
+          "INSERT INTO snapshots (projectId, bytes, versionJson, uptoSeq, at) VALUES (?1, ?2, ?3, ?4, ?5)",
+        )
+        .run(this.projectId, write.compacted, versionJson(candidate), write.seq, write.now);
     })();
-    this.state.seq = seq;
-    this.state.size += delta.length;
-    this.state.sinceSnapshot += 1;
-    if (this.state.sinceSnapshot >= this.limits.compactEvery) this.compact(now);
-    return { bytes: delta, serverSeq: seq, version: this.version(), allocated };
-  }
-
-  private compact(now: number): void {
-    const snapshot = this.doc.export({ mode: "snapshot" });
-    this.sdb.db
-      .query("INSERT INTO snapshots (projectId, bytes, versionJson, uptoSeq, at) VALUES (?1, ?2, ?3, ?4, ?5)")
-      .run(this.projectId, snapshot, versionJson(this.doc), this.state.seq, now);
-    this.state.sinceSnapshot = 0;
-    this.state.size = snapshot.length;
   }
 }

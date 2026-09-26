@@ -1,4 +1,4 @@
-import { createProjectDoc, createTicket } from "@kibo/core";
+import { createProjectDoc, createTicket, migrateForSharing } from "@kibo/core";
 import { generateKeyPair } from "@kibo/trust";
 import { createInvite, redeemDeviceInvite, redeemProjectInvite } from "../accounts";
 import type { ServerDb } from "../db";
@@ -29,9 +29,10 @@ export async function addMember(
   await redeemProjectInvite(sdb, { code: invite.code, userId: input.user.userId }, now);
 }
 
-export function ownerSnapshot(): Uint8Array {
-  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+export function ownerSnapshot(projectId = "p1"): Uint8Array {
+  const doc = createProjectDoc({ id: projectId, key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });
+  migrateForSharing(doc, { localUser: "adam", userId: "u-adam", domains: [] });
   return doc.export({ mode: "snapshot" });
 }
