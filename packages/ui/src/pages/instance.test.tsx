@@ -134,14 +134,15 @@ test("D2: an unapproved or tampered version asks for trust", async () => {
   const { unmount } = wrap(
     <InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="view" />,
   );
-  expect(await screen.findByText("Autorisation requise")).toBeTruthy();
+  expect((await screen.findByText("Autorisation requise")).closest("[data-tampered]")).toBeNull();
   expect(screen.getByText("« PR en attente » 0.3.0 doit être autorisé avant de s'afficher.")).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("button", { name: "Examiner et autoriser" }));
   expect(await screen.findByText("Autoriser « PR en attente » 0.3.0 ?")).toBeTruthy();
   unmount();
   components = prQueue(version("0.3.0", { active: false, trust: null, tampered: true }));
   wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
-  expect(await screen.findByText("Son code a changé depuis ton accord.")).toBeTruthy();
+  const changed = await screen.findByText("Son code a changé depuis ton accord.");
+  expect(changed.closest("[data-tampered]")).not.toBeNull();
   expect(screen.getByRole("button", { name: "Examiner et autoriser" }).hasAttribute("disabled")).toBe(true);
 });
 

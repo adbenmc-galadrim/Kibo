@@ -67,7 +67,7 @@ export function PageView({ project, page, viewer }: Props) {
           {instances.map((i) => (
             <div
               key={i.id}
-              className="flex flex-col overflow-hidden rounded-lg border bg-card"
+              className="flex flex-col overflow-hidden rounded-lg border bg-card has-[[data-tampered]]:border-destructive"
               style={{
                 gridColumn: `${i.layout.x + 1} / span ${i.layout.w}`,
                 gridRow: `${i.layout.y + 1} / span ${i.layout.h}`,

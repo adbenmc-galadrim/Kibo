@@ -19,7 +19,10 @@ export function PendingTrust({ id, title, version, summary, tampered, compact }:
   const [open, setOpen] = useState(false);
   const target = summary ? trustTargetOf(id, title, summary) : null;
   return (
-    <div className={`grid h-full place-items-center text-center ${compact ? "p-4" : "p-10"}`}>
+    <div
+      data-tampered={tampered || undefined}
+      className={`grid h-full place-items-center text-center ${compact ? "p-4" : "p-10"}`}
+    >
       <div className="grid max-w-sm justify-items-center gap-2">
         <ShieldAlert aria-hidden className="size-6 text-orange-600 dark:text-orange-400" />
         <p className="font-medium">{i.pendingTitle}</p>
