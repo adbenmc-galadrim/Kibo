@@ -8800,7 +8800,7 @@ git commit -m "feat(daemon): notes Markdown indexées"
 
 Fidélité : écran 3 (page 7 du PDF), écran 29 (page 11), écran 30 (page 12). Écran 3 : champ « Rechercher un composant… » avec icône loupe ; sections en petites capitales « INTÉGRÉS » puis « MES COMPOSANTS » ; chaque ligne = icône dans un carré `size-8 rounded-md border`, titre, description sur une ligne, version en `font-mono text-xs` dans une pastille bordée à droite ; ligne pointillée « Créer un composant (code ou IA) » avec icône `Sparkles` ; colonne droite : aperçu schématique, titre, description, « Affichage » (une seule option, pleine largeur, selon le type de page), « Source des tickets » (segmenté « Local (Kibo) » actif et « Synchronisé · GitHub Issues » désactivé jusqu'à la phase 5, affiché seulement si le composant lit `ticket`), ligne verte avec coche « Intégré · confiance totale · lit et écrit : ticket, status ». Si une phase antérieure a ajouté un intégré « Mes tickets » à `BUILTIN_COMPONENTS`, il apparaît naturellement (aucun code spécifique).
 
-- [ ] **Step 1: Ajuster les textes de `fr.addComponent`**
+- [x] **Step 1: Ajuster les textes de `fr.addComponent`**
 
 Dans `packages/ui/src/i18n/fr.ts`, section `addComponent` uniquement : remplacer `builtinTrust` et `mineLine`, ajouter `source`, `sourceLocal`, `sourceSynced`, `sourceSoon`, `pendingTrust` :
 ```ts
@@ -8818,7 +8818,7 @@ Dans `packages/ui/src/i18n/fr.ts`, section `addComponent` uniquement : remplacer
 ```
 Les hôtes réseau sont affichés par leur nom court : `api.github.com/graphql` ⇒ « GitHub » via une table `{ "api.github.com": "GitHub", "gitlab.com": "GitLab", "linear.app": "Linear" }` dans `AddComponentDialog.tsx`, sinon l'hôte brut.
 
-- [ ] **Step 2: Écrire les tests des lignes de permissions**
+- [x] **Step 2: Écrire les tests des lignes de permissions**
 
 `packages/ui/src/lib/permission-lines.test.ts` :
 ```ts
@@ -8853,7 +8853,7 @@ test("writes, notes and network are spelled out", () => {
 Run: `bun test packages/ui/src/lib/permission-lines.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implémenter `permission-lines.ts` et `use-components.ts`**
+- [x] **Step 3: Implémenter `permission-lines.ts` et `use-components.ts`**
 
 `packages/ui/src/lib/permission-lines.ts` :
 ```ts
@@ -8930,7 +8930,7 @@ export function useComponents(): ComponentsState {
 Run: `bun test packages/ui/src/lib/permission-lines.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Écrire les tests des dialogues**
+- [x] **Step 4: Écrire les tests des dialogues**
 
 Retirer de `packages/ui/src/dialogs/dialogs.test.tsx` les trois tests `AddComponentDialog…` et l'import correspondant (ils sont réécrits ci-dessous).
 
@@ -9143,7 +9143,7 @@ test("screen 29: the AI column waits for phase 6, commands can be copied", async
 Run: `bun test packages/ui/src/dialogs/component-dialogs.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 5: Implémenter `TrustDialog.tsx`**
+- [x] **Step 5: Implémenter `TrustDialog.tsx`**
 
 ```tsx
 import {
@@ -9264,7 +9264,7 @@ export function TrustDialog({ target, mode, open, onOpenChange, onApproved }: Pr
 }
 ```
 
-- [ ] **Step 6: Implémenter `ComponentPreview.tsx` et `CreateComponentDialog.tsx`**
+- [x] **Step 6: Implémenter `ComponentPreview.tsx` et `CreateComponentDialog.tsx`**
 
 `packages/ui/src/dialogs/ComponentPreview.tsx` (aperçu schématique de l'écran 3, couleurs des statuts du workflow par défaut) :
 ```tsx
@@ -9418,7 +9418,7 @@ export function CreateComponentDialog({ open, onOpenChange }: { open: boolean; o
 ```
 L'orange est réservé aux agents : le bouton « Générer avec un agent » l'est, désactivé jusqu'à la phase 6 qui branchera la génération.
 
-- [ ] **Step 7: Réécrire `AddComponentDialog.tsx`**
+- [x] **Step 7: Réécrire `AddComponentDialog.tsx`**
 
 ```tsx
 import type { ComponentVersionSummary, Layout, Page } from "@kibo/schema";
@@ -9700,7 +9700,7 @@ Choix de la version d'un composant tiers : la plus haute version non altérée ;
 
 Écart assumé avec la maquette : l'écran 3 écrit « lit et écrit : ticket, status » pour Kanban, alors que son manifeste n'écrit que `ticket`. Le texte affiché suit le manifeste (« lit : ticket, status · écrit : ticket ») : un résumé de permissions faux serait un défaut de sécurité. Le chef corrige la maquette au jalon.
 
-- [ ] **Step 8: Vérifier et committer**
+- [x] **Step 8: Vérifier et committer**
 
 Run: `bun test packages/ui && bun run typecheck && bun run check`
 Expected: PASS (dont `dialogs.test.tsx` sans les tests déplacés).
