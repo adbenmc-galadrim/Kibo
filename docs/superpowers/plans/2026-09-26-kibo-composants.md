@@ -79,7 +79,7 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 13. **Chargement dynamique depuis la toolchain** : `typescript`, `@tailwindcss/node` et `@tailwindcss/oxide` sont chargés au runtime depuis la toolchain (et non embarqués dans le binaire), ce qui évite d'embarquer un module natif et règle le chemin des `lib.d.ts`.
 14. **`buildComponent(srcDir, toolchain)`** renvoie les fichiers en mémoire (`Record<nom, Uint8Array>`) au lieu d'écrire dans `outDir` : le démon les écrit lui-même dans le magasin.
 15. **Appels d'un backend rattachés à leur invocation** : le message `call` du backend porte `invocation` (l'`id` de l'`invoke` en cours) ; le démon en déduit projet et instance, et refuse (`PERMISSION_DENIED`) un appel dont l'invocation est terminée ou inconnue (un `ctx` conservé après la fin d'une action ne sert plus à rien). Limite résiduelle : pendant deux invocations simultanées du même `id@version`, le code peut choisir l'une ou l'autre ; les deux instances ont les mêmes permissions accordées.
-16. **Imports refusés en défense en profondeur** : en plus des modules, les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis`, `module` et `import.meta` sont refusés en position de valeur dans les sources d'un composant non intégré.
+16. **Imports refusés en défense en profondeur** : en plus des modules, les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis`, `global`, `self`, `module`, `Worker`, `SharedWorker` et `import.meta` sont refusés en position de valeur dans les sources d'un composant non intégré, ainsi que tout attribut d'import (macros Bun). Défense en profondeur seulement (voir décision 24).
 17. **`ui.sandbox.js` servi avec `access-control-allow-origin: *`** : le document sandboxé a une origine opaque et un script `type="module"` se charge en mode CORS ; le fichier ne porte ni secret ni cookie. Aucun autre fichier du port sandbox n'a cet en-tête.
 18. **`lucide-react` embarqué dans `ui.trusted.js`** (non partagé via `globalThis.__kiboShared`) : icônes sans état ; l'UI n'expose ainsi que React et le SDK, sans gonfler son bundle de toute la bibliothèque d'icônes.
 19. **Messages de statut plutôt que toasts** : l'UI v0.1 n'a pas de `Toaster` (celui de shadcn dépend de `next-themes`) ; `useFlash` affiche un `role="status"` 4 s près de l'action. Si une phase antérieure a monté un `Toaster`, les tâches 24 et 28 l'utilisent à la place.
@@ -87,13 +87,14 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 21. **Brouillons dans `<KIBO_HOME>/components/src/<id>/`** (hors monorepo, spec §3.2) ; `kibo component test` accepte aussi un chemin de dossier.
 22. **Point d'entrée unique du binaire** (`apps/desktop/sidecar/entry.ts`) : répartit entre démon, CLI (`component …` ou lien nommé `kibo`) et runtime sandboxé (`component-runtime`), sans créer d'arête `cli ← daemon`.
 23. **Démarrage factorisé** : `startDaemon` (tâche 30) sert à `main.ts`, aux tests d'intégration, à la CLI (tests) et à l'E2E.
+24. **Bac à sable OS dès la phase 4 (point E2 tranché)** : le spike 1-C montre que le runtime restreint ne bloque pas l'import construit, et la relecture en a mesuré d'autres (même Bun 1.4.2) : `(() => 0).constructor("return import('node:fs')")()` passe l'analyse statique (propriété `constructor`) et le runtime ; `new Worker(URL.createObjectURL(new Blob([…])))` démarre un Worker dont `Bun.spawn` et `fetch` sont intacts ; `import("bun:ffi")` reste chargeable ; `Bun.build` exécute les macros (`import … with { type: "macro" }`) dans le processus qui construit, sans passer par `onResolve`. Sans barrière OS, un backend « sandboxé » lit `~/.ssh` et `~/.kibo`, lance des processus et ouvre le réseau. Donc : le `ProcessHost` **et** les tests exécutés par la validation (code non encore approuvé) tournent sous `sandbox-exec` (macOS) ou `bwrap` (Linux) dès la phase 4 (tâche 11b, profil de la spec H §8 adapté), en échec fermé (`SANDBOX_UNAVAILABLE`, aucun repli sans isolation) ; la tâche 4 refuse les attributs d'import et `Worker`, `global`, `self` ; la tâche 6 construit avec `macros: false`. Restent en phase 7 : réglage « Autoriser les backends sandboxés sans isolation OS », écran 19, filtre seccomp. Les backends `trusted` restent en Worker (confiance totale explicite à l'écran 30).
 
 ### Points à arbitrer par Adam (option A appliquée par défaut, l'équipe ne s'arrête pas)
 
 | # | Sujet | Option A (par défaut) | Option B |
 |---|---|---|---|
 | E1 | Entités déclarées `acme.bug` : la feuille de route les met en phase 4, la spec de phase §14 les exclut | suivre la spec (hors périmètre, à placer après v1.0) ; la feuille de route est corrigée au jalon | ajouter une tâche « entités déclarées » (schéma namespacé, `reads: ["acme.bug"]`, stockage dans le doc projet) après la tâche 30 |
-| E2 | Import dynamique construit (`new Function("return import('node:fs')")`) dans le runtime restreint : si le spike 1-C montre qu'on ne peut pas le bloquer | documenter la limite, garder le durcissement OS en phase 7 (spec H §8), le test de sortie reste vert car il porte sur les appels au démon | avancer en phase 4 le profil `sandbox-exec` (macOS) et `bwrap` (Linux) pour `ProcessHost` |
+| E2 | **Tranché le 2026-09-26 : option B étendue** (décision 24, tâche 11b). Import dynamique construit (`new Function("return import('node:fs')")`) dans le runtime restreint : le spike 1-C montre qu'on ne peut pas le bloquer | écartée : l'analyse statique se contourne par `(() => 0).constructor`, le runtime par un Worker `blob:` ; « Sandboxé » n'isolerait rien jusqu'en phase 7, alors que la phase 6 fait écrire des composants par des agents | **retenue** : `sandbox-exec` (macOS) et `bwrap` (Linux) pour `ProcessHost` et pour les tests de la validation, échec fermé `SANDBOX_UNAVAILABLE` ; macros et attributs d'import refusés (tâches 4 et 6) |
 | E3 | Bouton « Hiérarchique » de l'écran 10 | indicateur de la seule mise en page disponible (bouton pressé, désactivé, infobulle) | bascule qui ajoute les arêtes parent → sous-ticket |
 | E4 | Tickets sans arête `blocks` : spec « couche 0 séparée en bas » ; écran 10 : KIB-9 en bas mais KIB-14 et KIB-18 à droite | suivre la spec (tous en bas) ; le chef aligne la maquette | suivre la maquette (colonne à droite pour les tickets assignés à un agent) |
 
@@ -2659,6 +2660,17 @@ test("dynamic loading and escape hatches are refused", () => {
   expect(codes("ui.tsx", "console.log(import.meta.url);")).toContain("banned-identifier:import.meta");
   expect(codes("ui.tsx", "const o = { process: 1, eval: 2 }; o.process;")).toEqual([]);
 });
+
+test("macros, import attributes and worker escapes are refused", () => {
+  expect(codes("ui.tsx", 'import { m } from "./m" with { type: "macro" };')).toEqual(["banned-identifier:import attributes"]);
+  expect(codes("ui.tsx", 'export { m } from "./m" with { type: "macro" };')).toEqual(["banned-identifier:import attributes"]);
+  expect(codes("ui.tsx", 'const m = await import("./m", { with: { type: "macro" } });')).toEqual([
+    "banned-identifier:import attributes",
+  ]);
+  expect(codes("server.ts", "new Worker(url);")).toContain("banned-identifier:Worker");
+  expect(codes("server.ts", "global.fetch;")).toContain("banned-identifier:global");
+  expect(codes("server.ts", "self.postMessage(1);")).toContain("banned-identifier:self");
+});
 ```
 
 `packages/devkit/src/scaffold.test.ts` :
@@ -2770,7 +2782,19 @@ import type * as TS from "typescript";
 import { issueAt, type SourceIssue } from "./issues";
 import type { TypeScript } from "./typescript";
 
-const BANNED = new Set(["require", "eval", "Function", "process", "Bun", "globalThis", "module"]);
+const BANNED = new Set([
+  "require",
+  "eval",
+  "Function",
+  "process",
+  "Bun",
+  "globalThis",
+  "global",
+  "self",
+  "module",
+  "Worker",
+  "SharedWorker",
+]);
 const isTest = (path: string) => /\.test\.tsx?$/.test(path);
 
 function allowedFor(path: string): Set<string> {
@@ -2809,10 +2833,12 @@ export function checkImports(ts: TypeScript, files: { path: string; text: string
     };
     const visit = (node: TS.Node): void => {
       if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
-        if (ts.isStringLiteral(node.moduleSpecifier)) check(node.moduleSpecifier.text, node);
+        if (node.attributes) issues.push(issueAt(file.path, lineOf(node), "banned-identifier", "import attributes"));
+        else if (ts.isStringLiteral(node.moduleSpecifier)) check(node.moduleSpecifier.text, node);
       } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-        const [arg] = node.arguments;
-        if (arg && ts.isStringLiteralLike(arg)) check(arg.text, node);
+        const [arg, attributes] = node.arguments;
+        if (attributes) issues.push(issueAt(file.path, lineOf(node), "banned-identifier", "import attributes"));
+        else if (arg && ts.isStringLiteralLike(arg)) check(arg.text, node);
         else issues.push(issueAt(file.path, lineOf(node), "non-literal-import", node.getText(source)));
       } else if (ts.isImportEqualsDeclaration(node)) {
         issues.push(issueAt(file.path, lineOf(node), "banned-identifier", "import ="));
@@ -2828,7 +2854,7 @@ export function checkImports(ts: TypeScript, files: { path: string; text: string
   return issues;
 }
 ```
-Les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis` et `module` sont refusés en position de valeur (défense en profondeur contre l'import construit, point E2) ; comme clé d'objet ou nom de propriété, ils restent permis.
+Les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis`, `global`, `self`, `module`, `Worker` et `SharedWorker` sont refusés en position de valeur ; comme clé d'objet ou nom de propriété, ils restent permis. Tout attribut d'import (`with { … }`, statique ou dynamique) est refusé : `Bun.build` exécute les macros (`type: "macro"`) dans le processus qui construit, sans passer par `onResolve` (constaté à la relecture de la tâche 1). Cette analyse est une **défense en profondeur, pas une barrière** : `(() => 0).constructor("return import('node:fs')")()` la contourne ; la barrière est le bac à sable OS (décision 24, tâche 11b).
 
 - [ ] **Step 5: Implémenter `scaffold.ts`**
 
@@ -3260,7 +3286,20 @@ test("a forbidden import fails the build", async () => {
   const bad = component({ "kibo.component.json": manifest, "ui.tsx": `import fs from "node:fs";\nexport const Component = () => String(fs);\n` });
   await expect(buildComponent(bad, toolchain)).rejects.toThrow("VALIDATION_FAILED");
 }, 60_000);
+
+test("a macro never runs at build time", async () => {
+  const marker = join(mkdtempSync(join(tmpdir(), "kibo-macro-")), "ran");
+  roots.push(dirname(marker));
+  const dir = component({
+    "kibo.component.json": manifest,
+    "m.ts": `import { writeFileSync } from "node:fs";\nexport function pwn() { writeFileSync(${JSON.stringify(marker)}, "x"); return 1; }\n`,
+    "ui.tsx": `import { pwn } from "./m.ts" with { type: "macro" };\nexport const Component = () => <p>{pwn()}</p>;\n`,
+  });
+  await expect(buildComponent(dir, toolchain)).rejects.toThrow("VALIDATION_FAILED");
+  expect(existsSync(marker)).toBe(false);
+}, 60_000);
 ```
+Ajouter `dirname` à l'import de `node:path` et `existsSync` à celui de `node:fs` dans ce test.
 Tant que la tâche 13 n'a pas livré `packages/sdk/src/sandbox.tsx`, le premier test échoue à la résolution de `@kibo/sdk/sandbox`. Pour rester indépendante, cette tâche crée `packages/sdk/src/sandbox.tsx` **uniquement s'il n'existe pas encore**, avec le contenu minimal :
 ```tsx
 import type { ComponentType } from "react";
@@ -3343,15 +3382,19 @@ function resolver(opts: { srcDir: string; entryDir: string; toolchain: Toolchain
 }
 
 async function bundle(entry: string, mode: Mode, opts: { srcDir: string; entryDir: string; toolchain: Toolchain }) {
-  const result = await Bun.build({
+  const target: Target = mode === "server" ? "bun" : "browser";
+  const format: "cjs" | "esm" = mode === "server" ? "cjs" : "esm";
+  const config = {
     entrypoints: [entry],
-    target: mode === "server" ? "bun" : "browser",
-    format: mode === "server" ? "cjs" : "esm",
+    target,
+    format,
     minify: true,
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     plugins: [resolver({ ...opts, mode })],
     throw: false,
-  });
+    macros: false,
+  };
+  const result = await Bun.build(config);
   const [output] = result.outputs;
   if (!result.success || !output) {
     const message = result.logs.map((l) => l.message).join("\n");
@@ -3406,6 +3449,7 @@ export async function buildComponent(srcDir: string, toolchain: Toolchain): Prom
   }
 }
 ```
+Import de type en tête : `import type { BunPlugin, Target } from "bun";`. `macros: false` n'est pas déclaré dans les types de `bun` 1.4.2 mais est honoré par `Bun.build` (constaté : « Macros are disabled ») ; passer par la variable `config` (et non un littéral) évite le contrôle des propriétés en trop sans `as` (vérifié avec `tsc` strict). Le test « a macro never runs » en est la preuve ; le refus des attributs d'import (tâche 4) est la seconde barrière.
 Points à respecter : le plugin ne s'occupe que des imports venant du composant (les fichiers de la toolchain se résolvent normalement) ; en mode `trusted` les modules partagés (sauf `lucide-react`, embarqué) deviennent des lectures de `globalThis.__kiboShared` ; `@tailwindcss/node` résout les `@import` depuis `toolchain.root`, d'où le chemin `./node_modules/@kibo/sdk/src/theme.css`. Si `Bun.build` n'accepte pas `throw: false` en 1.4.2, entourer l'appel d'un `try` qui transforme l'`AggregateError` en `KiboError("VALIDATION_FAILED", …)` (erreur transformée, pas avalée).
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./build";`.
@@ -5373,6 +5417,364 @@ Expected: PASS.
 ```bash
 git add packages/daemon/package.json packages/daemon/tsconfig.json bun.lock packages/daemon/src/component-runtime.ts packages/daemon/src/components
 git commit -m "feat(daemon): runtime et hôtes de backend"
+```
+
+---
+
+### Task 11b: Bac à sable OS du `ProcessHost` et de la validation (point E2)
+
+Applique la décision 24 : sans barrière OS, le runtime restreint ne protège de rien (spike 1-C et contournements mesurés à la relecture de la tâche 1). Profil `sandbox-exec` validé à la main sur macOS arm64, Bun 1.4.2 : canal IPC Bun et descripteur 3 intacts ; lecture d'un fichier hors politique, `readdir` de `$HOME`, écriture hors du `cwd`, `execSync`, `fetch` et `net.connect` bloqués (`EPERM`, `ENOTFOUND`, `ECONNREFUSED`) ; écriture dans le `cwd` permise. Sans `(literal "/")` en lecture, Bun meurt au démarrage (`SIGABRT`).
+
+**Files:**
+- Create: `packages/devkit/src/os-sandbox.ts`, `packages/devkit/src/os-sandbox.test.ts`, `packages/daemon/src/components/process-host-sandbox.test.ts`
+- Modify: `packages/schema/src/errors.ts` (code `SANDBOX_UNAVAILABLE`), `packages/devkit/src/index.ts`, `packages/daemon/src/components/process-host.ts`, `.github/workflows/ci.yml`, `docs/superpowers/specs/2026-09-26-kibo-composants.md` (§4.4, §10, §15, E2), `docs/superpowers/specs/2026-09-26-kibo-marketplace.md` (§8)
+
+**Interfaces:**
+- Consumes: `bunCommand` (tâche 1) ; `KiboError` (tâche 2) ; `createProcessHost`, `runtimeCommand`, `HostOptions`, `TEST_MANIFEST` (tâche 11).
+- Produces:
+  - `type SandboxPolicy = { read: string[]; write: string[]; exec: string[]; cwd: string }` ; `type OsSandbox = { ready(): Promise<void>; wrap(argv: string[], policy: SandboxPolicy): string[] }`.
+  - `macosProfile(policy): string` ; `bwrapArgv(bwrap: string, policy, argv): string[]` ; `createOsSandbox(opts?: { platform?: NodeJS.Platform; which?: (bin: string) => string | null }): OsSandbox` ; `osSandbox(): OsSandbox` (instance partagée).
+  - `createProcessHost(opts: HostOptions & { command?: string[]; sandbox?: OsSandbox })` ; `runtimePolicy(command: string[], cwd: string): SandboxPolicy`.
+  - Code d'erreur `SANDBOX_UNAVAILABLE` : aucun bac à sable utilisable ⇒ le backend sandboxé ne démarre pas, les tests d'une validation ne sont pas lancés. Jamais de repli sans isolation.
+  - Consommé par la tâche 20 (`ValidateOptions.sandbox`, tests du composant dans le bac à sable) et, sans changement d'interface, par les tâches 17, 30 et 32 (le `ProcessHost` réel est isolé).
+
+- [ ] **Step 1: Écrire la spec avant le code**
+
+`docs/superpowers/specs/2026-09-26-kibo-composants.md` :
+- §4.4, remplacer la puce « **Limite assumée** … » par : « **Bac à sable OS** (décision 24) : le runtime est lancé sous `sandbox-exec` (macOS) ou `bwrap` (Linux) : lecture du binaire (en dev : du dépôt) et des bibliothèques système, écriture dans son `cwd` temporaire seulement, aucun réseau, aucun autre exécutable. Sans bac à sable utilisable : `SANDBOX_UNAVAILABLE`, le backend ne démarre pas (l'UI sandboxée fonctionne). Le retrait des capacités et le refus des imports restent en défense en profondeur. Les tests d'un composant lancés par la validation (§7.4) tournent dans le même bac à sable (lecture de la toolchain et de la copie, écriture dans la copie). »
+- §10 : même idée en une ligne ; §15 : ajouter la décision 24 de ce plan (texte identique) et le code `SANDBOX_UNAVAILABLE` ; tableau des points à arbitrer : ligne E2 identique à celle de ce plan.
+
+`docs/superpowers/specs/2026-09-26-kibo-marketplace.md` §8, en tête : « Livré dès la phase 4 (spec B, décision 24) pour `ProcessHost` et les tests de la validation. Restent en phase 7 : le réglage « Autoriser les backends sandboxés sans isolation OS », l'écran 19, le filtre seccomp, et l'exécution des tests d'installation du marketplace dans ce bac à sable. » ; dans le tableau §8.3, colonne « Phase 4 », remplacer chaque cellule par « bloqué par l'OS (décision 24) ».
+
+- [ ] **Step 2: Ajouter le code d'erreur**
+
+`packages/schema/src/errors.ts` : ajouter `"SANDBOX_UNAVAILABLE",` après `"QUOTA_EXCEEDED",`.
+
+- [ ] **Step 3: Écrire les tests du bac à sable**
+
+`packages/devkit/src/os-sandbox.test.ts` :
+```ts
+import { afterAll, describe, expect, test } from "bun:test";
+import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { bwrapArgv, createOsSandbox, macosProfile } from "./os-sandbox";
+
+const made: string[] = [];
+afterAll(() => {
+  for (const d of made) rmSync(d, { recursive: true, force: true });
+});
+const temp = (prefix: string) => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), prefix)));
+  made.push(dir);
+  return dir;
+};
+
+const policy = {
+  read: ["/opt/kibo/toolchain"],
+  write: ["/tmp/kibo-work"],
+  exec: ["/opt/kibo/bin/kibo-daemon"],
+  cwd: "/tmp/kibo-work",
+};
+
+describe("profiles", () => {
+  test("macOS denies by default, denies the network and only writes the work folder", () => {
+    const profile = macosProfile(policy);
+    expect(profile).toContain("(deny default)");
+    expect(profile).toContain("(deny network*)");
+    expect(profile).toContain('(allow process-exec (literal "/opt/kibo/bin/kibo-daemon"))');
+    expect(profile).toContain('(subpath "/opt/kibo/toolchain")');
+    expect(profile).toContain('(allow file-write* (literal "/dev/null") (subpath "/tmp/kibo-work"))');
+    expect(profile).not.toContain(process.env.HOME ?? "/nonexistent-home");
+  });
+  test("a quote in a path is refused rather than escaped", () => {
+    expect(() => macosProfile({ ...policy, read: ['/tmp/a"b'] })).toThrow("INTERNAL");
+  });
+  test("bubblewrap unshares everything and binds only the policy", () => {
+    const argv = bwrapArgv("/usr/bin/bwrap", policy, ["/opt/kibo/bin/kibo-daemon", "component-runtime"]);
+    expect(argv.slice(0, 2)).toEqual(["/usr/bin/bwrap", "--unshare-all"]);
+    expect(argv).toContain("--die-with-parent");
+    expect(argv.join(" ")).toContain("--ro-bind /opt/kibo/toolchain /opt/kibo/toolchain");
+    expect(argv.join(" ")).toContain("--bind /tmp/kibo-work /tmp/kibo-work");
+    expect(argv.slice(-3)).toEqual(["--", "/opt/kibo/bin/kibo-daemon", "component-runtime"]);
+  });
+  test("no sandbox on the platform means SANDBOX_UNAVAILABLE, never an unsandboxed command", () => {
+    expect(() => createOsSandbox({ platform: "linux", which: () => null }).wrap(["/bin/true"], policy)).toThrow(
+      "SANDBOX_UNAVAILABLE",
+    );
+    expect(() => createOsSandbox({ platform: "win32" }).wrap(["/bin/true"], policy)).toThrow("SANDBOX_UNAVAILABLE");
+  });
+});
+
+test("on this machine the sandbox blocks reads, writes, processes and the network outside the policy", async () => {
+  const sandbox = createOsSandbox();
+  await sandbox.ready();
+  const secret = temp("kibo-secret-");
+  writeFileSync(join(secret, "token"), "s3cret");
+  const work = temp("kibo-work-");
+  const listener = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("open") });
+  const script = `
+const load = (() => 0).constructor("s", "return import(s)");
+const out = {};
+const attempt = async (name, fn) => { try { await fn(); out[name] = "open"; } catch (e) { out[name] = "blocked"; } };
+const fs = await load("node:fs");
+await attempt("read", () => fs.readFileSync(${JSON.stringify(join(secret, "token"))}, "utf8"));
+await attempt("write", () => fs.writeFileSync(${JSON.stringify(join(secret, "pwned"))}, "x"));
+await attempt("spawn", async () => (await load("node:child_process")).execFileSync("/bin/echo", ["x"]));
+await attempt("connect", () => fetch("http://127.0.0.1:${listener.port}/"));
+await attempt("inside", () => fs.writeFileSync("inside", "x"));
+console.log(JSON.stringify(out));
+`;
+  try {
+    const argv = sandbox.wrap([process.execPath, "-e", script], { read: [], write: [work], exec: [process.execPath], cwd: work });
+    const proc = Bun.spawn(argv, { cwd: work, env: {}, stdout: "pipe", stderr: "pipe" });
+    const out: unknown = JSON.parse((await new Response(proc.stdout).text()).trim());
+    expect(out).toEqual({ read: "blocked", write: "blocked", spawn: "blocked", connect: "blocked", inside: "open" });
+    expect(existsSync(join(secret, "pwned"))).toBe(false);
+  } finally {
+    listener.stop(true);
+  }
+}, 30_000);
+```
+Le script est une chaîne exécutée dans le processus isolé (pas du code du dépôt) : il simule un composant hostile qui a passé l'analyse statique.
+
+`packages/daemon/src/components/process-host-sandbox.test.ts` :
+```ts
+import { afterAll, expect, test } from "bun:test";
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { KiboError } from "@kibo/schema";
+import { TEST_MANIFEST } from "./backend-code.test-helper";
+import { createProcessHost } from "./process-host";
+
+const ESCAPE_JS = `
+module.exports.server = {
+  actions: {
+    escape: async (_ctx, input) => {
+      const load = (() => 0).constructor("s", "return import(s)");
+      const out = {};
+      const attempt = async (name, fn) => { try { await fn(); out[name] = "open"; } catch (e) { out[name] = "blocked"; } };
+      const fs = await load("node:fs");
+      await attempt("read", () => fs.readFileSync(input.secret, "utf8"));
+      await attempt("spawn", async () => (await load("node:child_process")).execFileSync("/bin/echo", ["x"]));
+      const net = await load("node:net");
+      await attempt("connect", () => new Promise((ok, ko) => {
+        const s = net.connect(input.port, "127.0.0.1");
+        s.on("connect", ok);
+        s.on("error", ko);
+        setTimeout(() => ko(new Error("timeout")), 3000);
+      }));
+      return out;
+    },
+  },
+};
+`;
+
+const dirs: string[] = [];
+afterAll(() => {
+  for (const d of dirs) rmSync(d, { recursive: true, force: true });
+});
+const escape = (input: unknown) => ({ projectId: "p1", instanceId: "i1", config: {}, target: { action: "escape" }, input });
+
+test("a sandboxed backend cannot escape through a constructed import", async () => {
+  const secret = realpathSync(mkdtempSync(join(tmpdir(), "kibo-secret-")));
+  dirs.push(secret);
+  writeFileSync(join(secret, "token"), "s3cret");
+  const listener = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("open") });
+  const host = createProcessHost({ ref: "escape@0.1.0", manifest: TEST_MANIFEST, code: { server: ESCAPE_JS }, onCall: async () => null });
+  try {
+    const out = await host.invoke(escape({ secret: join(secret, "token"), port: listener.port }));
+    expect(out).toEqual({ read: "blocked", spawn: "blocked", connect: "blocked" });
+  } finally {
+    host.stop();
+    listener.stop(true);
+  }
+}, 30_000);
+
+test("without an OS sandbox the backend does not start", async () => {
+  const unavailable = {
+    ready: async () => {
+      throw new KiboError("SANDBOX_UNAVAILABLE", "bwrap is not installed");
+    },
+    wrap: () => [],
+  };
+  const host = createProcessHost({
+    ref: "escape@0.1.0",
+    manifest: TEST_MANIFEST,
+    code: { server: ESCAPE_JS },
+    onCall: async () => null,
+    sandbox: unavailable,
+  });
+  await expect(host.invoke(escape(null))).rejects.toThrow("SANDBOX_UNAVAILABLE");
+  expect(host.running).toBe(false);
+});
+```
+Si `BackendCode` exige `migrations`, passer `migrations: ""` (ou la forme réelle du schéma de la tâche 2).
+
+Run: `bun test packages/devkit/src/os-sandbox.test.ts packages/daemon/src/components/process-host-sandbox.test.ts`
+Expected: FAIL (`./os-sandbox` manquant).
+
+- [ ] **Step 4: Implémenter `os-sandbox.ts`**
+
+```ts
+import { existsSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { KiboError } from "@kibo/schema";
+import { bunCommand } from "./bun-command";
+
+export type SandboxPolicy = { read: string[]; write: string[]; exec: string[]; cwd: string };
+export type OsSandbox = { ready(): Promise<void>; wrap(argv: string[], policy: SandboxPolicy): string[] };
+
+const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
+const MACOS_SYSTEM = [
+  "/usr/lib",
+  "/usr/share/zoneinfo",
+  "/System/Library",
+  "/private/var/db/dyld",
+  "/private/var/db/timezone",
+];
+const MACOS_LITERALS = ["/", "/dev/null", "/dev/random", "/dev/urandom", "/private/etc/localtime"];
+const LINUX_SYSTEM = ["/usr", "/lib", "/lib64", "/etc/localtime"];
+
+const real = (path: string): string => (existsSync(path) ? realpathSync(path) : path);
+const unique = (paths: string[]): string[] => [...new Set(paths)];
+const execDirs = (policy: SandboxPolicy): string[] => policy.exec.map((p) => dirname(real(p)));
+
+function sbpl(path: string): string {
+  if (/["\\\n]/.test(path)) throw new KiboError("INTERNAL", `path not allowed in a sandbox profile: ${path}`);
+  return `"${path}"`;
+}
+
+export function macosProfile(policy: SandboxPolicy): string {
+  const literal = (paths: string[]) => paths.map((p) => `(literal ${sbpl(p)})`).join(" ");
+  const subpath = (paths: string[]) => unique(paths.map(real)).map((p) => `(subpath ${sbpl(p)})`).join(" ");
+  const exec = unique(policy.exec.flatMap((p) => [p, real(p)]));
+  return [
+    "(version 1)",
+    "(deny default)",
+    `(allow process-exec ${literal(exec)})`,
+    `(allow file-read* ${literal(MACOS_LITERALS)} ${subpath([...MACOS_SYSTEM, ...execDirs(policy), ...policy.read, ...policy.write])})`,
+    "(allow file-read-metadata)",
+    `(allow file-write* (literal "/dev/null") ${subpath(policy.write)})`,
+    "(allow sysctl-read)",
+    "(deny network*)",
+  ].join("\n");
+}
+
+export function bwrapArgv(bwrap: string, policy: SandboxPolicy, argv: string[]): string[] {
+  const bind = (flag: string, paths: string[]) => unique(paths).flatMap((p) => [flag, p, p]);
+  return [
+    bwrap,
+    "--unshare-all",
+    "--die-with-parent",
+    "--new-session",
+    "--cap-drop",
+    "ALL",
+    ...bind("--ro-bind-try", LINUX_SYSTEM),
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+    "--tmpfs",
+    "/tmp",
+    ...bind("--ro-bind", [...execDirs(policy), ...policy.read].map(real)),
+    ...bind("--bind", policy.write.map(real)),
+    "--chdir",
+    real(policy.cwd),
+    "--",
+    ...argv,
+  ];
+}
+
+export function createOsSandbox(
+  opts: { platform?: NodeJS.Platform; which?: (bin: string) => string | null } = {},
+): OsSandbox {
+  const platform = opts.platform ?? process.platform;
+  const which = opts.which ?? Bun.which;
+  let probe: Promise<void> | null = null;
+
+  const wrap = (argv: string[], policy: SandboxPolicy): string[] => {
+    const [head, ...rest] = argv;
+    if (!head) throw new KiboError("INTERNAL", "empty sandboxed command");
+    const command = [real(head), ...rest];
+    if (platform === "darwin" && existsSync(SANDBOX_EXEC)) return [SANDBOX_EXEC, "-p", macosProfile(policy), ...command];
+    const bwrap = platform === "linux" ? which("bwrap") : null;
+    if (bwrap) return bwrapArgv(bwrap, policy, command);
+    throw new KiboError("SANDBOX_UNAVAILABLE", `no OS sandbox on ${platform}`);
+  };
+
+  const check = async (): Promise<void> => {
+    const bun = bunCommand();
+    const cwd = realpathSync(mkdtempSync(join(tmpdir(), "kibo-sandbox-probe-")));
+    try {
+      const argv = wrap([...bun.argv, "--version"], { read: [], write: [cwd], exec: bun.argv.slice(0, 1), cwd });
+      const proc = Bun.spawn(argv, { cwd, env: bun.env, stdout: "ignore", stderr: "pipe" });
+      const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+      if (code !== 0) throw new KiboError("SANDBOX_UNAVAILABLE", `sandbox probe exited with ${code}: ${stderr.slice(0, 500)}`);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  };
+
+  return {
+    wrap,
+    ready() {
+      probe ??= check().catch((e: unknown) => {
+        probe = null;
+        throw e;
+      });
+      return probe;
+    },
+  };
+}
+
+let shared: OsSandbox | null = null;
+
+export function osSandbox(): OsSandbox {
+  shared ??= createOsSandbox();
+  return shared;
+}
+```
+Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/private/tmp` sous macOS, et le profil compare des chemins réels) ; les chemins système Linux ne le sont **pas** (`/lib` et `/lib64` sont des liens vers `/usr/lib*` sur Ubuntu : les résoudre ferait disparaître `/lib64/ld-linux-x86-64.so.2`, l'interpréteur ELF de Bun) ; un guillemet, une barre oblique inverse ou un saut de ligne dans un chemin est refusé (jamais d'échappement dans le profil SBPL) ; l'environnement n'est pas vidé par le bac à sable (`--clearenv` absent) car `Bun.spawn` fournit déjà un `env` minimal et Bun y ajoute la variable du canal IPC, indispensable au runtime. La sonde (`ready`) lance `bun --version` (ou le binaire avec `BUN_BE_BUN=1`) dans le bac à sable une fois par processus ; un échec est oublié pour qu'une installation ultérieure de `bwrap` soit prise en compte. Toute lecture système ajoutée plus tard (`MACOS_SYSTEM`, `LINUX_SYSTEM`) est justifiée dans ce plan par le test qui l'exige.
+
+`packages/devkit/src/index.ts` : ajouter `export * from "./os-sandbox";`.
+
+- [ ] **Step 5: Isoler le `ProcessHost`**
+
+`packages/daemon/src/components/process-host.ts` :
+- imports : `realpathSync` en plus depuis `node:fs`, `resolve` en plus depuis `node:path`, `import { isCompiled, type OsSandbox, osSandbox, type SandboxPolicy } from "@kibo/devkit";` ;
+- ajouter :
+```ts
+const DEV_ROOT = resolve(import.meta.dir, "../../../..");
+
+export function runtimePolicy(command: string[], cwd: string): SandboxPolicy {
+  return { read: isCompiled() ? [] : [DEV_ROOT], write: [cwd], exec: command.slice(0, 1), cwd };
+}
+```
+- `createProcessHost(opts: HostOptions & { command?: string[]; sandbox?: OsSandbox })` : `const sandbox = opts.sandbox ?? osSandbox();` ; passer à `createHost` `{ ...opts, log, beforeStart: async () => { await sandbox.ready(); await opts.beforeStart?.(); } }` (la sonde passe avant la création de la promesse `ready` du démarrage : un échec ne laisse ni minuterie ni rejet orphelin, et ne compte pas comme un crash) ;
+- dans la fabrique de canal : `const cwd = realpathSync(mkdtempSync(join(tmpdir(), "kibo-backend-")));`, puis `const command = opts.command ?? runtimeCommand();` et `Bun.spawn(sandbox.wrap(command, runtimePolicy(command, cwd)), { … })` (options inchangées).
+
+En dev, le runtime lit le dépôt (`component-runtime.ts` et `node_modules`) ; dans le binaire compilé, il ne lit que le binaire. Les tests existants de la tâche 11 (`process-host.test.ts`) passent désormais par le bac à sable réel : ils doivent rester verts sans modification (c'est la preuve que l'IPC, le descripteur 3, les délais et les redémarrages fonctionnent isolés).
+
+- [ ] **Step 6: CI Linux**
+
+`.github/workflows/ci.yml`, jobs `test` et `e2e`, juste après `oven-sh/setup-bun` :
+```yaml
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+```
+Ubuntu 24.04 interdit par défaut les espaces de noms utilisateur non privilégiés (AppArmor) : sans le `sysctl`, `bwrap` échoue et la sonde lève `SANDBOX_UNAVAILABLE`. macOS : `sandbox-exec` est présent sur les runners, rien à installer.
+
+- [ ] **Step 7: Vérifier et committer**
+
+Run: `bun test packages/devkit packages/daemon/src/components && bun run typecheck && bun run check`
+Expected: PASS (sur macOS en local ; Linux vérifié par la CI de la branche).
+
+```bash
+git add packages/schema/src/errors.ts packages/devkit/src/os-sandbox.ts packages/devkit/src/os-sandbox.test.ts packages/devkit/src/index.ts packages/daemon/src/components/process-host.ts packages/daemon/src/components/process-host-sandbox.test.ts .github/workflows/ci.yml docs/superpowers/specs/2026-09-26-kibo-composants.md docs/superpowers/specs/2026-09-26-kibo-marketplace.md
+git commit -m "feat(daemon): bac à sable OS des backends"
 ```
 
 ---
@@ -9009,9 +9411,9 @@ git commit -m "feat(ui): catalogue, confiance et création"
 - Modify: `packages/devkit/src/index.ts`
 
 **Interfaces:**
-- Consumes: `Toolchain`, `loadTypeScript`, `bunCommand`, `BunCommand`, `SourceIssue` (tâche 1) ; `listSourceFiles`, `readSources`, `checkImports` (tâche 4) ; `inferPermissions` (tâche 5) ; `ComponentManifest`, `ValidationReport`, `grantedOf`, `permissionList`, `diffPermissions`, `isBuiltinId`, `USED_MARKER`, `KiboError` (tâche 2) ; `copyFixture` (test-kit).
+- Consumes: `Toolchain`, `loadTypeScript`, `bunCommand`, `BunCommand`, `SourceIssue` (tâche 1) ; `listSourceFiles`, `readSources`, `checkImports` (tâche 4) ; `inferPermissions` (tâche 5) ; `OsSandbox`, `osSandbox` (tâche 11b) ; `ComponentManifest`, `ValidationReport`, `grantedOf`, `permissionList`, `diffPermissions`, `isBuiltinId`, `USED_MARKER`, `KiboError` (tâche 2) ; `copyFixture` (test-kit).
 - Produces:
-  - `type ValidateOptions = { toolchain: Toolchain; bun?: BunCommand; timeoutMs?: number; now?: () => number }`.
+  - `type ValidateOptions = { toolchain: Toolchain; bun?: BunCommand; sandbox?: OsSandbox; timeoutMs?: number; now?: () => number }` (`sandbox` : bac à sable OS de la tâche 11b, `osSandbox()` par défaut ; les tests du composant ne tournent jamais hors bac à sable).
   - `validateComponent(dir: string, opts: ValidateOptions): Promise<ValidationReport>` : valide une **copie** du dossier (décision 9), écrit le tampon `<dir>/.kibo/validation.json`, ne lève jamais pour un défaut du composant (tout est dans le rapport).
   - `type ValidationStamp = { hash: string; version: string; ok: boolean; at: number }` ; `readValidationStamp(dir): Promise<ValidationStamp | null>`.
   - `formatIssue(i: SourceIssue): string` et `FR_DEVKIT` (textes français de la validation, affichés par la CLI et l'écran 6).
@@ -9091,6 +9493,7 @@ test("issues are explained in French with their location", () => {
 import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { KiboError } from "@kibo/schema";
 import { copyFixture, DEV_TOOLCHAIN } from "./test-kit";
 import { readValidationStamp, validateComponent } from "./validate";
 
@@ -9153,6 +9556,18 @@ describe("validateComponent", () => {
     expect(second.hash).toBe(first.hash);
     expect(existsSync(join(dir, ".kibo", "validation.json"))).toBe(true);
   }, 240_000);
+  test("without an OS sandbox the component tests are not run", async () => {
+    const unavailable = {
+      ready: async () => {
+        throw new KiboError("SANDBOX_UNAVAILABLE", "bwrap is not installed");
+      },
+      wrap: () => [],
+    };
+    const report = await validateComponent(fixture("hello"), { ...opts, sandbox: unavailable });
+    expect(report.ok).toBe(false);
+    expect(report.tests).toMatchObject({ ok: false, passed: 0, failed: 0 });
+    expect(report.tests.output).toContain("bac à sable du système indisponible");
+  }, 120_000);
 });
 ```
 
@@ -9185,6 +9600,8 @@ export const FR_DEVKIT = {
   missing: (p: string) => `permission utilisée mais non déclarée : ${p}`,
   unused: (p: string) => `permission déclarée mais jamais utilisée : ${p}`,
   timeout: (s: number) => `les tests ont dépassé ${s} s`,
+  sandboxUnavailable: (detail: string) =>
+    `tests non lancés : bac à sable du système indisponible (${detail}). Sous Linux, installe bubblewrap (sudo apt install bubblewrap) puis relance.`,
 };
 ```
 
@@ -9209,10 +9626,17 @@ import { FR_DEVKIT, formatIssue } from "./fr";
 import { listSourceFiles, readSources } from "./hash";
 import { checkImports } from "./imports";
 import { inferPermissions } from "./infer-permissions";
+import { type OsSandbox, osSandbox } from "./os-sandbox";
 import type { Toolchain } from "./toolchain";
 import { loadTypeScript, type TypeScript } from "./typescript";
 
-export type ValidateOptions = { toolchain: Toolchain; bun?: BunCommand; timeoutMs?: number; now?: () => number };
+export type ValidateOptions = {
+  toolchain: Toolchain;
+  bun?: BunCommand;
+  sandbox?: OsSandbox;
+  timeoutMs?: number;
+  now?: () => number;
+};
 export type ValidationStamp = { hash: string; version: string; ok: boolean; at: number };
 
 const STAMP = join(".kibo", "validation.json");
@@ -9274,12 +9698,24 @@ function typecheck(ts: TypeScript, copy: string, files: string[], toolchain: Too
 
 async function runTests(copy: string, opts: ValidateOptions): Promise<{ report: ValidationReport["tests"]; used: string[] | null }> {
   const bun = opts.bun ?? bunCommand();
-  const junit = join(dirname(copy), "junit.xml");
+  const sandbox = opts.sandbox ?? osSandbox();
+  const base = dirname(copy);
+  const junit = join(base, "junit.xml");
   const preload = (name: string) => Bun.resolveSync(`@kibo/devkit/preload/${name}`, opts.toolchain.root);
-  const proc = Bun.spawn(
-    [...bun.argv, "test", "--preload", preload("happydom"), "--preload", preload("restrict"), "--reporter=junit", `--reporter-outfile=${junit}`],
-    { cwd: copy, env: { ...bun.env, PATH: process.env.PATH ?? "", HOME: dirname(copy), NO_COLOR: "1" }, stdout: "pipe", stderr: "pipe" },
-  );
+  try {
+    await sandbox.ready();
+  } catch (e) {
+    if (!(e instanceof KiboError) || e.code !== "SANDBOX_UNAVAILABLE") throw e;
+    return { report: { ok: false, passed: 0, failed: 0, output: FR_DEVKIT.sandboxUnavailable(e.detail) }, used: null };
+  }
+  const argv = [...bun.argv, "test", "--preload", preload("happydom"), "--preload", preload("restrict"), "--reporter=junit", `--reporter-outfile=${junit}`];
+  const policy = { read: [opts.toolchain.root, base], write: [base], exec: bun.argv.slice(0, 1), cwd: copy };
+  const proc = Bun.spawn(sandbox.wrap(argv, policy), {
+    cwd: copy,
+    env: { ...bun.env, PATH: process.env.PATH ?? "", HOME: base, TMPDIR: base, NO_COLOR: "1" },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const timeoutMs = opts.timeoutMs ?? 120_000;
   const timer = setTimeout(() => proc.kill(), timeoutMs);
   const [stdout, stderr, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
@@ -9385,7 +9821,7 @@ export async function validateComponent(dir: string, opts: ValidateOptions): Pro
   }
 }
 ```
-Points notables : le processus de test reçoit un environnement minimal (`PATH`, `HOME` temporaire) ; la sortie est tronquée à 8 000 caractères (fin conservée, où sont les échecs) ; le compteur « unused » est informatif (non bloquant, spec §7.4). Une erreur d'infrastructure (toolchain absente, disque) lève `INTERNAL` : ce n'est pas un défaut du composant.
+Points notables : les tests du composant sont du code **non approuvé** : ils tournent dans le bac à sable OS (tâche 11b, décision 24 : lecture de la toolchain et du dossier de copie, écriture dans ce dossier seulement, aucun réseau) ; sans bac à sable, ils ne sont pas lancés et le rapport l'explique (`FR_DEVKIT.sandboxUnavailable`) ; si `bun test` exige d'autres lectures système sous `sandbox-exec` (constaté par le test « hello passes »), les ajouter à `MACOS_SYSTEM` (tâche 11b) avec leur raison dans ce plan ; le processus de test reçoit un environnement minimal (`PATH`, `HOME` et `TMPDIR` temporaires) ; la sortie est tronquée à 8 000 caractères (fin conservée, où sont les échecs) ; le compteur « unused » est informatif (non bloquant, spec §7.4). Une erreur d'infrastructure (toolchain absente, disque) lève `INTERNAL` : ce n'est pas un défaut du composant.
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./validate";` et `export * from "./fr";`.
 
@@ -16049,7 +16485,7 @@ git commit -m "test(e2e): parcours des composants"
 
 **Files:**
 - Create: `apps/desktop/sidecar/entry.ts`, `apps/desktop/scripts/build-toolchain.ts`, `apps/desktop/scripts/cli-smoke.ts`, `packages/daemon/src/components/install-cli.ts`, `packages/daemon/src/components/install-cli.test.ts`, `packages/ui/src/settings/CliInstallCard.tsx`, `packages/ui/src/settings/cli-install.test.tsx`
-- Modify: `apps/desktop/scripts/build-sidecar.ts` (entrée `entry.ts`, Worker, option `--out`), `apps/desktop/src-tauri/tauri.conf.json` (ressource `toolchain/`), `apps/desktop/src-tauri/src/main.rs` (`--toolchain`), `apps/desktop/package.json` (scripts), `packages/daemon/src/main.ts` (`installCli`), `.github/workflows/ci.yml` (étape « CLI compilée »), `.gitignore` (`apps/desktop/src-tauri/toolchain/`), l'écran Paramètres › Général (ou la page Composants, voir étape 5)
+- Modify: `apps/desktop/scripts/build-sidecar.ts` (entrée `entry.ts`, Worker, option `--out`), `apps/desktop/src-tauri/tauri.conf.json` (ressource `toolchain/` ; `bundle.linux.deb.depends` et `bundle.linux.rpm.depends` : `["bubblewrap"]`, décision 24), `apps/desktop/src-tauri/src/main.rs` (`--toolchain`), `apps/desktop/package.json` (scripts), `packages/daemon/src/main.ts` (`installCli`), `.github/workflows/ci.yml` (étape « CLI compilée »), `.gitignore` (`apps/desktop/src-tauri/toolchain/`), l'écran Paramètres › Général (ou la page Composants, voir étape 5)
 
 **Interfaces:**
 - Consumes: `runCli`, `cliIo` (tâche 31) ; `startComponentRuntime` (tâche 11) ; `startDaemon` (tâche 30) ; `isCompiled` (tâche 1) ; RPC `installCli` ; `fr.cli` (tâche 2).
@@ -16353,7 +16789,7 @@ Une vague démarre quand toutes les tâches de la vague précédente sont intég
 |---|---|---|---|
 | V1 | 1 Spikes · 2 Interfaces figées | `packages/devkit/` (création) · `packages/schema/`, `packages/sdk/{package.json,types,sdk}`, `packages/ui/src/i18n/fr.ts`, spec §15 | — |
 | V2 | 3 Core · 4 Empreinte/imports/squelette · 7 SDK v1 · 8 Proxy `fetch` · 9 Analyse des notes · 10 Graphe pur · 11 Runtime et hôtes | `packages/core/src/{instance-data,registry,instances,commands}` · `packages/devkit/src/{hash,imports,scaffold,test-kit}`, `fixtures/hello` · `packages/sdk/src/{types,sdk,client,server,migrations}`, `packages/ui/src/{pages/PageView,shell/Host,shell/Shell}` · `packages/daemon/src/components/net-proxy` · `packages/core/src/note-parse` · `components/graph/` · `packages/daemon/src/{component-runtime,components/{runtime-core,host-core,process-host,worker-host,component-worker}}` | V1 |
-| V3 | 5 Inférence · 6 Build · 12 SDK simulé et conformité · 13 Runtime iframe · 15 Porte · 16 Mise à jour · 18 Notes démon · 19 Confiance/catalogue/création | `devkit/src/infer-permissions` · `devkit/src/build`, `sdk/src/theme.css`, `ui/src/index.css` · `sdk/src/{mock,conformance,fixtures}` · `sdk/src/sandbox` · `daemon/src/components/{gate,quotas,events}` · `daemon/src/components/update` · `daemon/src/notes/` · `ui/src/{dialogs,state/use-components,lib/permission-lines}` | V2 |
+| V3 | 5 Inférence · 6 Build · 11b Bac à sable OS · 12 SDK simulé et conformité · 13 Runtime iframe · 15 Porte · 16 Mise à jour · 18 Notes démon · 19 Confiance/catalogue/création | `devkit/src/infer-permissions` · `devkit/src/build`, `sdk/src/theme.css`, `ui/src/index.css` · `devkit/src/os-sandbox`, `daemon/src/components/process-host`, `schema/src/errors.ts`, `ci.yml`, specs · `sdk/src/{mock,conformance,fixtures}` · `sdk/src/sandbox` · `daemon/src/components/{gate,quotas,events}` · `daemon/src/components/update` · `daemon/src/notes/` · `ui/src/{dialogs,state/use-components,lib/permission-lines}` | V2 |
 | V4 | 14 Magasin · 17 Backends et jobs · 20 Validation · 23 Pont iframe et trusted · 24 Page Composants · 25 Graphe UI · 26 Notes | `daemon/src/components/store` · `daemon/src/components/{backends,jobs}` · `devkit/src/{validate,fr}`, fixtures · `ui/src/shell/{frame-bridge,SandboxFrame,trusted-loader,shared-modules}`, `ui/src/theme.ts`, `main.tsx` · `ui/src/components-page/`, `sdk/src/ui/table.tsx`, `route.ts`, `AppSidebar.tsx` · `components/graph/src/` · `components/notes/`, `sdk/src/status.tsx` | V3 |
 | V5 | 21 Registre et confiance · 28 Cadres d'instance · 29 Graphe et Notes au catalogue | `daemon/src/components/{registry-service,fake-store.test-helper}` · `ui/src/pages/`, `ui/src/dialogs/{NotesDirDialog,OpenViewDialog}`, `shell/{page-actions,Shell}` · `ui/src/registry.ts`, `ui/package.json`, `rows.test.ts` | V4 |
 | V6 | 22 Serveurs et CSP · 27 Publication et brouillons | `daemon/src/components/{sandbox-server,daemon-info}`, `daemon/src/{server,main}.ts` · `daemon/src/components/{publish,drafts}`, `fake-store.test-helper` (`put`) | V5 |
@@ -16361,7 +16797,7 @@ Une vague démarre quand toutes les tâches de la vague précédente sont intég
 | V8 | 31 CLI · 32 Test de sortie · 33 Playwright | `packages/cli/`, `sdk/src/dev*.tsx`, `CLAUDE.md` · `devkit/fixtures/evil`, `daemon/src/components/exit.test.ts` · `e2e/` | V7 |
 | V9 | 34 Binaire, toolchain, installation de `kibo`, CI | `apps/desktop/`, `daemon/src/components/install-cli`, `ui/src/settings/`, `.github/workflows/ci.yml` | V8 |
 
-Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-reviewer`) : 1, 11, 15, 22, 23, 30, 32, 34.
+Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-reviewer`) : 1, 11, 11b, 15, 22, 23, 30, 32, 34.
 
 ## Jalon v0.4
 
@@ -16374,4 +16810,4 @@ Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-review
 7. **Rapport** `docs/superpowers/rapports/2026-xx-xx-v0.4.md` : livré (par tâche), écarts (liste du point 3, résultats des spikes A–G, ancrages phases 2/3 réellement rencontrés), risques ouverts (voir ci-dessous), décisions E1–E4 en attente d'Adam.
 8. **Pas d'attente** : la phase 5 démarre aussitôt (décision d'Adam) ; E1–E4 restent en option A jusqu'à son arbitrage.
 
-Risques à suivre dans le rapport : contournement du runtime restreint par import dynamique construit (E2, spike C) ; TOCTOU DNS du proxy (résolution puis connexion : atténué par la connexion à l'adresse résolue, tâche 8) ; appels d'un backend rattachés à une invocation en cours (limite résiduelle de la décision 15) ; chargement natif de Tailwind et de TypeScript depuis la toolchain dans le binaire (spikes D, E) ; `BUN_BE_BUN` (spike A) ; descripteur 3 (spike G) ; Worker dans le binaire compilé (spike F) ; taille de la toolchain packagée ; ancrages non vérifiés sur les phases 2 et 3.
+Risques à suivre dans le rapport : contournement du runtime restreint par import dynamique construit (E2, spike C : neutralisé par le bac à sable OS de la tâche 11b ; restent la dépréciation de `sandbox-exec`, les espaces de noms utilisateur désactivés sur certaines distributions Linux, et l'absence de seccomp) ; TOCTOU DNS du proxy (résolution puis connexion : atténué par la connexion à l'adresse résolue, tâche 8) ; appels d'un backend rattachés à une invocation en cours (limite résiduelle de la décision 15) ; chargement natif de Tailwind et de TypeScript depuis la toolchain dans le binaire (spikes D, E) ; `BUN_BE_BUN` (spike A) ; descripteur 3 (spike G) ; Worker dans le binaire compilé (spike F) ; taille de la toolchain packagée ; ancrages non vérifiés sur les phases 2 et 3.
