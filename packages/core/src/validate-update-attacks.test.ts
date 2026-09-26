@@ -160,11 +160,11 @@ describe("deeply nested containers", () => {
     expect(listTickets(createProjectDoc(meta))).toEqual([]);
   });
 
-  test("under a free ticket field are never read", () => {
+  test("under a free ticket field are refused without reading them", () => {
     const verdict = verdictFor(sharedServer(), (c) => {
       nest(firstNode(c).data.setContainer("extra", new LoroMap()), 5000);
     });
-    expect(verdict).toEqual({ ok: true });
+    expect(verdict).toEqual({ ok: false, reason: expect.stringContaining("nested") });
     expect(createTicket(createProjectDoc(meta), { title: "Sain" }).title).toBe("Sain");
   });
 });

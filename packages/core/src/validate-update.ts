@@ -1,5 +1,6 @@
 import { ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, LoroMap, type LoroTree } from "loro-crdt";
+import { depthViolation } from "./update-depth";
 
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
 
@@ -89,6 +90,7 @@ export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVe
     frozenViolation(metaBefore, metaAfter) ??
     membersViolation(metaBefore, metaAfter) ??
     editableViolation(metaBefore, metaAfter) ??
+    depthViolation(before, after) ??
     keyViolation(before, after);
   return reason === null ? { ok: true } : { ok: false, reason };
 }

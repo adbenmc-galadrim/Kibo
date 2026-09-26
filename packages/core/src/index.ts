@@ -13,5 +13,6 @@ export * from "./share-migration";
 export * from "./sync-plan";
 export * from "./tickets";
 export * from "./tree";
+export { MAX_CONTAINER_DEPTH, MAX_TREE_DEPTH } from "./update-depth";
 export * from "./validate-update";
 export * from "./workspace";
