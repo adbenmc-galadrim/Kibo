@@ -148,3 +148,29 @@ test("waiting for a free slot is bounded by timeoutMs", async () => {
   expect(await host.invoke(ping)).toBe("done");
   host.stop();
 });
+
+test("a stop during a suspended beforeStart never opens the backend", async () => {
+  const { opened, open } = fakeBackend((fake, msg) => {
+    if (msg.type === "load") fake.handlers.message(ready);
+  });
+  const gate = Promise.withResolvers<void>();
+  const host = createHost(
+    {
+      ref: "probe@0.1.0",
+      manifest: TEST_MANIFEST,
+      code: { server: null, migrations: null },
+      onCall: async () => null,
+      beforeStart: () => gate.promise,
+      log: () => undefined,
+    },
+    open,
+    false,
+  );
+  const pending = host.invoke(ping);
+  await Promise.resolve();
+  host.stop();
+  gate.resolve();
+  await expect(pending).rejects.toThrow("COMPONENT_CRASHED");
+  expect(opened).toHaveLength(0);
+  expect(host.running).toBe(false);
+});

@@ -183,7 +183,9 @@ export function createHost(opts: HostOptions, open: ChannelFactory, codeInLoad: 
 
   const start = async (): Promise<BackendDescription> => {
     if (now() < retryAt) throw new KiboError("COMPONENT_CRASHED", `${opts.ref} is restarting`);
+    const before = generation;
     await opts.beforeStart?.();
+    if (generation !== before) throw new KiboError("COMPONENT_CRASHED", `${opts.ref} stopped while starting`);
     generation += 1;
     const gen = generation;
     const booted = Promise.withResolvers<Boot>();
