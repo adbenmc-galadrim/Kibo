@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { ComponentManifest } from "@kibo/schema";
 import { storedVersion } from "./fake-store.test-helper";
 import { type AssetLookup, startSandboxServer } from "./sandbox-server";
@@ -33,8 +33,13 @@ afterEach(() => {
   lookups = [];
   answer = stored;
 });
-function start() {
-  const s = startSandboxServer({ port: 0, uiPort: 4317, assets });
+function start(lookup: AssetLookup = assets, extraAncestors?: string[]) {
+  const s = startSandboxServer({
+    port: 0,
+    uiPort: 4317,
+    assets: lookup,
+    ...(extraAncestors && { extraAncestors }),
+  });
   servers.push(s);
   return s;
 }
@@ -117,5 +122,34 @@ describe("sandbox server", () => {
     expect((await get(s, `/c/pr-queue/0.3.0/${H}/ui.sandbox.js`)).status).toBe(404);
     answer = { ...stored, version: "0.4.0" };
     expect((await get(s, `/c/pr-queue/0.3.0/${H}/ui.sandbox.js`)).status).toBe(404);
+  });
+
+  test("in dev, the Vite origin may frame the sandbox too", async () => {
+    const s = start(assets, ["http://localhost:5173"]);
+    const html = await get(s, `/c/pr-queue/0.3.0/${H}/index.html`);
+    expect(html.headers.get("content-security-policy")).toEndWith(
+      "frame-ancestors http://127.0.0.1:4317 http://localhost:4317 http://localhost:5173; base-uri 'none'; form-action 'none'",
+    );
+  });
+
+  test("a failing request is answered without logging its headers", async () => {
+    const logged: unknown[][] = [];
+    const spies = (["error", "warn", "log", "info", "debug"] as const).map((level) =>
+      spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        logged.push(args);
+      }),
+    );
+    try {
+      const s = start(() => {
+        throw new Error("lookup failed");
+      });
+      const res = await get(s, `/c/pr-queue/0.3.0/${H}/index.html`, { cookie: "kibo_session=secret-cookie" });
+      expect(res.status).toBe(500);
+      expect(res.headers.get("content-security-policy")).toBe(CSP);
+      expect(logged.length).toBeGreaterThan(0);
+      expect(JSON.stringify(logged.map((args) => args.map(String)))).not.toContain("secret-cookie");
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
   });
 });

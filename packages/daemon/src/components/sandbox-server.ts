@@ -14,11 +14,15 @@ const TYPES: Record<SandboxFile, string> = {
   "ui.css": "text/css; charset=utf-8",
 };
 
-export function sandboxHeaders(uiPort: number): Record<string, string> {
+export function sandboxHeaders(
+  uiPort: number,
+  extraAncestors: readonly string[] = [],
+): Record<string, string> {
+  const ancestors = [`http://127.0.0.1:${uiPort}`, `http://localhost:${uiPort}`, ...extraAncestors].join(" ");
   return {
     "content-security-policy":
       "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
-      `connect-src 'none'; frame-ancestors http://127.0.0.1:${uiPort} http://localhost:${uiPort}; base-uri 'none'; form-action 'none'`,
+      `connect-src 'none'; frame-ancestors ${ancestors}; base-uri 'none'; form-action 'none'`,
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
     "cross-origin-resource-policy": "same-site",
@@ -26,12 +30,17 @@ export function sandboxHeaders(uiPort: number): Record<string, string> {
   };
 }
 
-export function startSandboxServer(opts: { port: number; uiPort: number; assets: AssetLookup }): {
-  url: string;
+export type SandboxServerOptions = {
   port: number;
-  stop(): void;
-} {
-  const headers = sandboxHeaders(opts.uiPort);
+  uiPort: number;
+  assets: AssetLookup;
+  extraAncestors?: readonly string[];
+};
+
+const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+export function startSandboxServer(opts: SandboxServerOptions): { url: string; port: number; stop(): void } {
+  const headers = sandboxHeaders(opts.uiPort, opts.extraAncestors);
   const plain = (body: string, status: number) => new Response(body, { status, headers });
   const serve = (req: Request, port: number): Response => {
     if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.get("host") ?? "")) {
@@ -53,6 +62,10 @@ export function startSandboxServer(opts: { port: number; uiPort: number; assets:
     port: opts.port,
     maxRequestBodySize: 0,
     fetch: (req, srv): Response => serve(req, srv.port ?? opts.port),
+    error: (e): Response => {
+      console.error(`[kibo-daemon] sandbox request failed: ${reason(e)}`);
+      return plain("internal error", 500);
+    },
   });
   const port = server.port ?? opts.port;
   return { url: `http://127.0.0.1:${port}`, port, stop: () => server.stop(true) };
