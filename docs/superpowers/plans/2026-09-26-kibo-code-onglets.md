@@ -8793,7 +8793,7 @@ git commit -m "feat(ui): onglets et palette dans le shell"
 - Consumes: tout `packages/daemon/src/code/*` (tâches 3, 4, 7, 8, 15, 17, 18, 19) ; `call`, `Service` (tâche 6) ; `commitDefaults` (tâche 5) ; `CodeRequest`, `CodeEvent` (tâche 1).
 - Produces : `type CodeService = { handle(req: CodeRequest): Promise<unknown>; onChange(listener: (e: CodeEvent) => void): () => void; stop(): void }` ; `createCodeService(service: Service, opts?: { env?: Env; prPollMs?: number; idleMs?: number; platform?: NodeJS.Platform }): CodeService` ; `ServerOptions.code?: CodeService` ; route `POST /api/code` ; événements `{ type: "code", projectId, worktree }` publiés sur le sujet WebSocket `changes`.
 
-- [ ] **Step 1: Tests du service**
+- [x] **Step 1: Tests du service**
 
 `packages/daemon/src/code/code-service.test.ts` :
 ```ts
@@ -8901,7 +8901,7 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
 Run: `bun test packages/daemon/src/code/code-service.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter le service**
+- [x] **Step 2: Implémenter le service**
 
 `packages/daemon/src/code/code-service.ts` :
 ```ts
@@ -9089,7 +9089,7 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
 ```
 Le suivi des PR est une tâche de fond : un échec est journalisé et la PR suivante est tentée (la dernière erreur reste visible dans le journal du démon), sans bloquer les autres projets.
 
-- [ ] **Step 3: Tests de la route**
+- [x] **Step 3: Tests de la route**
 
 Ajouter à `packages/daemon/src/server.test.ts` un bloc autonome :
 ```ts
@@ -9177,7 +9177,7 @@ describe("/api/code", () => {
 Run: `bun test packages/daemon/src/server.test.ts`
 Expected: FAIL (`/api/code` renvoie 404).
 
-- [ ] **Step 4: Brancher la route et le démarrage**
+- [x] **Step 4: Brancher la route et le démarrage**
 
 `packages/daemon/src/server.ts` :
 - importer `CodeRequest` depuis `@kibo/schema` et `type CodeService` depuis `./code/code-service` ;
@@ -9239,12 +9239,12 @@ créer `const service = createService(store, { user: userInfo().username });` pu
 
 Si la phase 2 a déjà changé la forme des messages WebSocket ou la gestion d'erreur de `/api/rpc`, garder sa version et n'ajouter que la route `/api/code`, les statuts et la publication des événements `code`.
 
-- [ ] **Step 5: Lancer les tests**
+- [x] **Step 5: Lancer les tests**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/daemon/src/code/code-service.ts packages/daemon/src/code/code-service.test.ts packages/daemon/src/server.ts packages/daemon/src/server.test.ts packages/daemon/src/main.ts
