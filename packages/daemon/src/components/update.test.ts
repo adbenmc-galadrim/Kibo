@@ -138,4 +138,11 @@ describe("updateInstance", () => {
     await expect(updateInstance(deps, "p", inst.id, "0.2.0")).rejects.toThrow("CONFLICT");
     expect(readInstanceData(doc, inst.id)).toEqual({ count: 2 });
   });
+  test("the active version: the instance is returned as is, nothing is persisted", async () => {
+    const { inst, deps, migrations, persisted } = setup();
+    const next = await updateInstance(deps, "p", inst.id, "0.1.0");
+    expect(next).toEqual(inst);
+    expect(migrations).toEqual([]);
+    expect(persisted).toEqual([]);
+  });
 });
