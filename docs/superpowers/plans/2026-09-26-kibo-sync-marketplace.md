@@ -5463,7 +5463,7 @@ Chaîne de vérification de la marketplace (spec H §3.1, §3.2, §4, §7), dans
 
 Règles d'un chemin de fichier de paquet : relatif POSIX, segments `[A-Za-z0-9._-]+`, aucun segment commençant par `.` (couvre `..` et les fichiers cachés), pas de `/` initial, pas de doublon (y compris après `toLowerCase()`), aucun chemin qui soit aussi un dossier d'un autre (`a.ts` et `a.ts/b.ts`), et `isHashedSource(path)` vrai ; tous les chemins sont contrôlés avant tout décodage ; au plus `KPKG_MAX_FILES` (200) fichiers, comme `MAX_SOURCE_FILES` du devkit. `packKpkg` applique les mêmes règles (chemins, taille, manifeste) pour échouer côté éditeur. Le manifeste porté par le paquet doit être identique à `kibo.component.json` du paquet : sinon les permissions affichées pourraient différer du code installé.
 
-- [ ] **Step 1: Écrire les tests du paquet**
+- [x] **Step 1: Écrire les tests du paquet**
 
 `packages/trust/src/kpkg.test.ts` :
 ```ts
@@ -5596,12 +5596,12 @@ describe("encoding", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/trust/src/kpkg.test.ts`
 Expected: FAIL — `Cannot find module './kpkg'`.
 
-- [ ] **Step 3: Implémenter le paquet et les fixtures**
+- [x] **Step 3: Implémenter le paquet et les fixtures**
 
 `packages/trust/src/kpkg.ts` :
 ```ts
@@ -5829,12 +5829,12 @@ export { generateKeyPair };
 
 `packages/trust/package.json` : ajouter à `exports` `"./testing": "./src/testing/fixtures.ts"`.
 
-- [ ] **Step 4: Vérifier le succès**
+- [x] **Step 4: Vérifier le succès**
 
 Run: `bun test packages/trust/src/kpkg.test.ts`
 Expected: FAIL — `Cannot find module '../market-index'` (importé par les fixtures). C'est l'échec attendu de l'étape suivante : les tests du paquet passent à l'étape 8, une fois l'index écrit.
 
-- [ ] **Step 5: Écrire les tests de l'index**
+- [x] **Step 5: Écrire les tests de l'index**
 
 `packages/trust/src/market-index.test.ts` :
 ```ts
@@ -5910,12 +5910,12 @@ describe("verifyIndex", () => {
 });
 ```
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `bun test packages/trust/src/market-index.test.ts`
 Expected: FAIL — `Cannot find module './market-index'`.
 
-- [ ] **Step 7: Implémenter l'index**
+- [x] **Step 7: Implémenter l'index**
 
 `packages/trust/src/market-index.ts` :
 ```ts
@@ -5956,12 +5956,12 @@ export async function verifyIndex(input: {
 }
 ```
 
-- [ ] **Step 8: Vérifier le succès**
+- [x] **Step 8: Vérifier le succès**
 
 Run: `bun test packages/trust/src/market-index.test.ts packages/trust/src/kpkg.test.ts`
 Expected: PASS.
 
-- [ ] **Step 9: Écrire les tests de la chaîne complète**
+- [x] **Step 9: Écrire les tests de la chaîne complète**
 
 `packages/trust/src/verify-package.test.ts` :
 ```ts
@@ -6049,12 +6049,12 @@ describe("verifyMarketPackage", () => {
 });
 ```
 
-- [ ] **Step 10: Vérifier l'échec**
+- [x] **Step 10: Vérifier l'échec**
 
 Run: `bun test packages/trust/src/verify-package.test.ts`
 Expected: FAIL — `Cannot find module './verify-package'`.
 
-- [ ] **Step 11: Implémenter la chaîne**
+- [x] **Step 11: Implémenter la chaîne**
 
 `packages/trust/src/verify-package.ts` :
 ```ts
@@ -6094,12 +6094,12 @@ export * from "./market-index";
 export * from "./verify-package";
 ```
 
-- [ ] **Step 12: Vérifier le succès, lint et types**
+- [x] **Step 12: Vérifier le succès, lint et types**
 
 Run: `bun test packages/trust && bun run check && bun run typecheck`
 Expected: PASS, Biome et `tsc` sans erreur.
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
 
 ```bash
 git add packages/trust/src/kpkg.ts packages/trust/src/market-index.ts packages/trust/src/verify-package.ts packages/trust/src/testing/fixtures.ts packages/trust/src/index.ts packages/trust/package.json packages/trust/src/kpkg.test.ts packages/trust/src/market-index.test.ts packages/trust/src/verify-package.test.ts
