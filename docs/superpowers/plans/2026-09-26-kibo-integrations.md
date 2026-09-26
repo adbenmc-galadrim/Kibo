@@ -4373,7 +4373,7 @@ Tâche à risque (réseau et secrets) : relecture `kibo-lead` en plus de `kibo-r
   - `type RateLimitGate = { observe(headers: Headers): void; blockedUntil(): number | null }` ; `createRateLimitGate(now): RateLimitGate` ; `GITHUB_RATE_FLOOR = 100`
   - `IntegrationKit.net: { fetch: IntegrationFetch; gate: RateLimitGate; aliases: Map<string, URL> }`
 
-- [ ] **Step 1: Tests (échouent)**
+- [x] **Step 1: Tests (échouent)**
 
 `packages/daemon/src/integrations/rate-limit.test.ts` :
 
@@ -4606,7 +4606,7 @@ test("the granted secrets reach the fetch handler of a sandboxed component only"
 
 Run: `bun test packages/daemon/src/integrations/net.test.ts packages/daemon/src/integrations/rate-limit.test.ts packages/daemon/src/components/net-proxy-secrets.test.ts packages/daemon/src/components/gate.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `rate-limit.ts`**
+- [x] **Step 2: Implémenter `rate-limit.ts`**
 
 ```ts
 export type RateLimitGate = { observe(headers: Headers): void; blockedUntil(): number | null };
@@ -4637,7 +4637,7 @@ export function createRateLimitGate(now: () => number): RateLimitGate {
 }
 ```
 
-- [ ] **Step 3: Exposer les briques du proxy de la phase 4**
+- [x] **Step 3: Exposer les briques du proxy de la phase 4**
 
 Sans changer leur comportement (les tests de `net-proxy.test.ts` et `net-proxy-direct.test.ts` restent verts tels quels) :
 
@@ -4664,7 +4664,7 @@ export function scrubSecret(bytes: Uint8Array, secret: string): Uint8Array {
 
 et `readProxiedBody(res, maxBytes, secret: string | null = null)` applique `scrubSecret` aux octets lus avant décodage (texte ou base64) quand `secret` n'est pas `null`. Le caviardage se fait sur les octets : un corps binaire n'est pas corrompu, et la troncature (`x-kibo-truncated`) reste celle de la lecture.
 
-- [ ] **Step 4: Implémenter `integrations/net.ts`**
+- [x] **Step 4: Implémenter `integrations/net.ts`**
 
 ```ts
 import { type ComponentManifest, KiboError } from "@kibo/schema";
@@ -4792,7 +4792,7 @@ export function createIntegrationFetch(deps: {
 
 Seule une origine de test (`aliased`, possible uniquement avec `--test-origins`, N9) part par `fetch` en HTTP sur la boucle locale sans épinglage ; tout le reste passe par la connexion épinglée de la phase 4 (même garantie contre le TOCTOU DNS que le proxy des composants).
 
-- [ ] **Step 5: Proxy des composants (phase 4)**
+- [x] **Step 5: Proxy des composants (phase 4)**
 
 `packages/schema/src/permissions.ts` : `GrantedPermissions` gagne `secrets: z.array(z.object({ name: SecretNameSchema, hosts: z.array(z.string()).min(1) })).default([])` (même forme que `ComponentManifest.secrets`, Task 1 ; une version approuvée avant la phase 5 se relit avec `[]`) ; `grantedOf` recopie `m.secrets` ; `permissionList` ajoute `...g.secrets.flatMap((s) => s.hosts.map((h) => \`secret:${s.name}@${h}\`))` (N41 : `addedPermissions` signale un secret nouveau **ou un hôte nouveau d'un secret** à l'écran 30 et à la publication ; test : une version qui ajoute `uploads.github.com` aux hôtes de `github`, déjà couvert par `net`, rend `["secret:github@uploads.github.com"]`) ; `NO_PERMISSIONS.secrets = []`.
 
@@ -4822,7 +4822,7 @@ Un intégré (`grant === null`) ne reçoit jamais de secret : l'adaptateur GitHu
 
 `packages/daemon/src/components/service.ts` : `ComponentsDeps.integrations?: () => ComponentIntegrationHooks | null`, transmis à `createGateHandlers`. `packages/daemon/src/daemon.ts` : `createComponentsService({ …, integrations: () => integrations?.hooks ?? null })`, où `integrations` est l'`IntegrationRpc` créé par `startDaemon` (Task 2, N26) ; la fonction est lue à chaque appel, l'ordre de création n'importe donc pas.
 
-- [ ] **Step 6: Amorçage**
+- [x] **Step 6: Amorçage**
 
 `packages/daemon/src/integrations/bootstrap.ts` : ajouter `net` à `IntegrationKit` et, avant la création du `kit` :
 
@@ -4837,7 +4837,7 @@ Un intégré (`grant === null`) ne reçoit jamais de secret : l'adaptateur GitHu
 
 puis `net` dans le `kit`, et `hooks: { aliases, observe, secret: (name) => secrets.get(name), mcp: null, ciRuns: null }`.
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Run: `bun test packages && bun run check && bun run typecheck` — Expected: PASS (dont `net-proxy.test.ts`, `net-proxy-direct.test.ts`, `gate.test.ts` et `exit.test.ts` de la phase 4, inchangés hormis le gestionnaire `fetch` du harnais).
 
