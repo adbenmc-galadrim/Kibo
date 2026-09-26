@@ -37,31 +37,54 @@
 
 ## Points d'ancrage des phases 2 à 4
 
-Les plans des phases 2 à 4 n'existent pas encore à l'écriture de ce plan ; leurs specs fixent les noms. **Tout le code de cette phase consomme ces ancrages à travers `IntegrationHost` (Task 2) et trois fichiers de la phase 4 modifiés à des endroits précis.** La Task 2 vérifie chaque ligne dans le code livré ; si un nom diffère, elle n'adapte que `packages/daemon/src/integrations/host.ts` et note l'écart dans le tableau ci-dessous (colonne « Réel »), sans toucher aux autres tâches.
+Ce plan a été écrit avant les phases 2 à 4 ; la tâche T0 (2026-09-26, `main` à `d8e4823`) a vérifié chaque ancrage dans le code livré et corrigé les tâches en conséquence. La colonne « Réel » fait foi ; les tâches citent les noms réels. Un dev qui trouve encore un écart utilise le nom réel sans changer le comportement et le signale dans son rapport.
 
-| Ancrage | Attendu (spec) | Utilisé par | Réel |
+| Ancrage | Attendu (spec) | Utilisé par | Réel (`main`, `d8e4823`) |
 |---|---|---|---|
-| Réf. PR (phase 3) | `GithubPrRef` et `ExternalRef` dans `packages/schema/src/external-ref.ts` ; `Ticket.externalRefs: ExternalRef[]` ; commande réservée `upsertExternalRef { ticketId, ref }` ; core `upsertExternalRef(doc, ticketId, ref)` dans `packages/core/src/external-refs.ts`, stockage JSON sous la clé `externalRefs` du nœud | Task 4 | — |
-| `gh` (phase 3) | binaire surchargé par `KIBO_GH`, lancé par `Bun.spawn` en tableau | Task 2 (`GhRunner`) | — |
-| Remote git (phase 3) | exécution `git` dans le dossier du projet (`KIBO_GIT`) | Task 2 (`githubRepo`) | — |
-| Notifications M1 (phase 2) | fonction de notification système du démon | Task 2 (`notify`) | — |
-| Moteur de règles (phase 2) | événements typés, règles par défaut déclaratives | Task 2 (`ruleEvent`), Task 16 | — |
-| `brief.md` (phase 2) | générateur du brief d'un run | Task 20 | — |
-| Réglages (phase 2) | page Paramètres (écran 14/15) avec navigation latérale | Task 10 | — |
-| WebSocket typé (phase 3) | messages `{ type, … }` diffusés à l'UI ; abonnement générique côté client | Task 2, Task 10 | — |
-| Manifeste v1 (phase 4) | `ComponentManifest` avec `net`, `data`, `configVersion`, `changes`, `sdk` ; `BuiltinEntityType` ; `BUILTIN_IDS` dans `schema` ; `WRITES` (méthode → entité, `null` = réservé) | Tasks 1, 4, 9 | — |
-| `componentCall` (phase 4) | union `ComponentCall`, contrôles §6.4 de la spec B, dispatch côté démon | Tasks 9, 15, 19 | — |
-| Proxy `fetch` (phase 4) | contrôle `net`, anti-SSRF, en-têtes retirés, redirections, délai 15 s, 5 Mio | Task 8 | — |
-| Backends (phase 4) | `WorkerHost` (`{ type: "load", manifest, code }`, `invoke` d'une action) ; `defineServer` de `@kibo/sdk/server` ; `devkit.buildComponent` | Tasks 1, 13, 19 | — |
-| Écran 30 (phase 4) | liste des permissions en langage clair ; `GrantedPermissions` ; diff « nouvelles permissions » | Task 9 | — |
-| Entité hors snapshot (phase 4) | `list("note")` servie par le démon hors du doc Loro | Task 9 (`ci_run`) | — |
-| Messages `call` des backends (phase 4) | traitement des `{ type: "call" }` du `ComponentBackendHost`, rattachés à l'`instanceId` de l'invocation | Task 19 (`binding:`) | — |
-| `devkit` (phase 4) | construction de la cible serveur d'un composant (`buildComponent`) | Task 19 | — |
-| Suite de conformité (phase 4) | `runConformance(component, seed, options?)` | Task 22 | — |
+| Réf. PR (phase 3) | `GithubPrRef` et `ExternalRef` dans `packages/schema/src/external-ref.ts` ; `Ticket.externalRefs: ExternalRef[]` ; commande réservée `upsertExternalRef { ticketId, ref }` ; core `upsertExternalRef(doc, ticketId, ref)` dans `packages/core/src/external-refs.ts`, stockage JSON sous la clé `externalRefs` du nœud | Task 4 | `ExternalRef` = `z.discriminatedUnion("kind", [github_pr { url: z.string().url(), number, state: PrState }])` dans `external-ref.ts`, **sans export `GithubPrRef`** (la Task 4 l'extrait). `Ticket.externalRefs` conforme. `upsertExternalRef` est une commande de `ProjectCommand` (`schema/src/command.ts`) **non réservée** (`COMMAND_WRITES.upsertExternalRef = "ticket"` : tout composant qui écrit `ticket` peut l'appeler ; la Task 4 la réserve). Core : `upsertExternalRef(doc, id, ref)` dans **`packages/core/src/tickets.ts`** (pas de `external-refs.ts`), dédoublonnage par `url` seulement, tableau JSON sous `externalRefs`, relu sans validation (`readTicket`). |
+| `gh` (phase 3) | binaire surchargé par `KIBO_GH`, lancé par `Bun.spawn` en tableau | Tasks 2, 12 | `runGh(args, { cwd, env, stdin? }): Promise<RunResult>` dans `packages/daemon/src/code/run.ts` (`env.KIBO_GH ?? process.env.KIBO_GH ?? "gh"`, `cwd` obligatoire, délai 120 s, échec de lancement ⇒ `GH_UNAVAILABLE`, `RunResult { code, stdout, bytes, stderr }`) ; `ghStatus`, `prState`, `createPr` dans `code/remote-ops.ts`. Faux binaire `packages/daemon/src/code/testing/fake-gh.ts` (`auth status`, `pr create`, `pr view` ; état `FAKE_GH_STATE`) : `auth token` à ajouter (Task 12). |
+| Remote git (phase 3) | exécution `git` dans le dossier du projet (`KIBO_GIT`) | Task 2 (`gitRemoteUrl`) | `createGit(root, env): Git` dans `code/run.ts` (`KIBO_GIT`, `git.run(args)` ⇒ `RunResult`) ; `openRepo(folder, env)` dans `code/repo.ts`. |
+| Notifications M1 (phase 2) | fonction de notification système du démon | Tasks 2, 16 | Double : natif par `DaemonOptions.notify?: (notice: Notice) => void`, `Notice = { title, body }` (`agents/notifier.ts`, `stdoutNotifier` ⇒ ligne `KIBO_NOTIFY` lue par Tauri si `KIBO_NATIVE_NOTIFY=1`) ; navigateur par l'UI (`packages/ui/src/agents/use-run-notifications.ts`, API `Notification`, `Session.notifications`). Voir N25. |
+| Moteur de règles (phase 2) | événements typés, règles par défaut déclaratives | Tasks 2, 16 | Règles de **changement de statut seulement** : `Rule { id, enabled, when: run_started \| run_done \| pr_opened \| pr_merged \| children_done, from, to }` et `DEFAULT_RULES` (`schema/src/rule.ts`), `evaluateRules`/`readRules`/`RuleTrigger` (`core/src/rules.ts`), `applyRules(doc, trigger)` (`daemon/src/agents/data-port.ts`), `Service.triggerRules` (suivi des PR). Aucune règle de notification ni d'événement externe : pas de `ruleEvent` (N25). |
+| `brief.md` (phase 2) | générateur du brief d'un run | Task 20 | `buildBrief({ project, ticket, domain, note })` et `buildRunContext` dans `packages/core/src/context.ts` (pur) ; appelés par `prepareTicketRun` de `daemon/src/agents/run-launch.ts`, qui écrit `CLAUDE.md` et `brief.md`. |
+| Réglages (phase 2) | page Paramètres (écran 14/15) avec navigation latérale | Task 10 | Seul l'écran `domains` existe (`packages/ui/src/settings/DomainsPage.tsx`) ; `settings/SettingsNav.tsx` liste Général, Apparence, Domaines, **Intégrations (`Plug`)**, Sécurité, Raccourcis, toutes désactivées sauf l'entrée active ; `Screen = agents \| queue \| domains \| components \| mine` (`schema/src/tabs.ts`). Voir N30. |
+| WebSocket typé (phase 3) | messages `{ type, … }` diffusés à l'UI ; abonnement générique côté client | Tasks 2, 10 | Un canal `changes` : `ChangeMessage = { projectId } \| { topic } \| RunChanged \| CodeEvent` (`schema/src/rpc.ts`), publié par `server.ts` depuis `Service.onChange`. `createClient` (`packages/sdk/src/client.ts`) : `subscribe`, `subscribeTopic`, `onRunChanged`, `subscribeCode` ; **aucun abonnement générique** (un message inconnu part vers les écouteurs de projet). Voir N24. |
+| Démon, service, démarrage (phases 1 à 4) | `createService(store, opts)` construit par `main.ts` | Task 2 et tous les modules | `createService(store, { user, notifications? })` ⇒ `Service { handle, onChange, docs: Docs, agentData, attachAgents, attachComponents, triggerRules }` ; `Docs = { workspace, project, projectIds, save, emit }` (`docs.ts`) ; `Store.db` existe déjà (pas de `transaction`). **`startDaemon(opts: DaemonOptions)` (`daemon.ts`) assemble tout** (décision 23 de la phase 4) ; `main.ts` ne lit que les drapeaux. Commandes exécutées **hors du service** : `components/gate-handlers.ts` (`componentCall run`), `agents/data-port.ts` (assignation, règles des runs), `Service.triggerRules`. Voir N22 et N26. |
+| Origines de test (`--test-origins`) | drapeau du démon | Tasks 2, 8, 23 | N'existe pas. Équivalents de test livrés : `DaemonOptions.net?: NetProxyOptions` (résolveur, transport, `allowAddress` injectés), faux `gh` (`KIBO_GH`), `--host-load` (E2E). `--test-origins` et `--memory-secrets` sont créés par la Task 2 (N9, N26). |
+| `KiboError` (phases 1 à 4) | union de codes | Task 1 | Tableau `KIBO_ERROR_CODES` `as const` (`schema/src/errors.ts`), `KiboError(code, detail)` ; `RATE_LIMITED`, `TIMEOUT`, `CONFLICT`, `TOO_LARGE`, `GH_UNAVAILABLE` existent. Statuts HTTP dans `STATUS` de `daemon/src/server.ts` (`INTERNAL`, `STORE_CORRUPT` masqués). Codes renvoyés par un backend filtrés par `BACKEND_ERROR_CODES` (`components/host-core.ts`, décision 25 de la phase 4 ; voir N23). |
+| Textes UI (phases 1 à 4) | `packages/ui/src/i18n/fr.ts` | Tasks 1, 10, 11, 17, 18, 21 | `fr` étale `frCode` (`fr-code.ts`) et `frComponents` (`fr-components.ts`) ; `fr.settings.integrations = "Intégrations"` existe. `fr-integrations.ts` suit ce modèle (clé `fr.integrations`). |
+| SDK UI (phases 1 à 4) | primitives shadcn dans `packages/sdk/src/ui` | Tasks 10, 11, 17, 18, 22 | Présentes : alert-dialog, alert, badge, button, card, **checkbox**, command, context-menu, dialog, dropdown-menu, input, label, progress, radio-group, select, separator, sheet, sidebar, skeleton, sonner, table, tabs, textarea, toggle, toggle-group, tooltip. Absente : `switch` (Task 10). Partageables par un composant tiers : `SDK_UI_PRIMITIVES` (`schema/src/component.ts`). Aucun `Toaster` monté (décision 19 de la phase 4 : `lib/use-flash.ts`) ; voir N29. |
+| Manifeste v1 (phase 4) | `ComponentManifest` avec `net`, `data`, `configVersion`, `changes`, `sdk` ; `BuiltinEntityType` ; `BUILTIN_IDS` dans `schema` ; `WRITES` (méthode → entité, `null` = réservé) | Tasks 1, 4, 9, 13, 22 | Conforme (`schema/src/manifest.ts`, `kind: widget \| view \| both`) ; `BUILTIN_IDS = ["kanban", "tickets", "graph", "notes"]` et `isBuiltinId` dans `schema/src/component.ts` ; la table s'appelle **`COMMAND_WRITES`** (`schema/src/command.ts`, avec `isReservedCommand`). |
+| `componentCall` (phase 4) | union `ComponentCall`, contrôles §6.4 de la spec B, dispatch côté démon | Tasks 9, 15, 19 | `ComponentCall` dans `schema/src/call.ts` ; permissions dans `schema/src/permissions.ts` (`permissionOfCall`, `covers`, `grantedOf`, `permissionList`, `addedPermissions`) ; porte `createGate` (`daemon/src/components/gate.ts` : instance, commandes réservées, `missingPermission` — les intégrés ne sont pas contrôlés —, quotas `createQuotas` (`quotas.ts`, 200 appels/s, 20 `fetch`/min par instance), journal borné `component_events` (`events.ts`)) ; exécution `createGateHandlers` (`gate-handlers.ts`). |
+| Proxy `fetch` (phase 4) | contrôle `net`, anti-SSRF, en-têtes retirés, redirections, délai 15 s, 5 Mio | Tasks 8, 15 | `proxyFetch(rules, url, init, opts: NetProxyOptions)` (`components/net-proxy.ts`) ; `isPublicAddress` (`net-proxy-address.ts`) ; `readProxiedBody` (`net-proxy-body.ts`) ; `Transport`, `directTransport`, `createDirectTransport({ ca })` (`net-proxy-transport.ts`) ; connexion épinglée à l'adresse vérifiée, SNI d'origine ; `authorization` et `cookie` retirés ; 3 redirections revérifiées. Voir N27. |
+| Backends (phase 4) | `WorkerHost` (`{ type: "load", manifest, code }`, `invoke` d'une action) ; `defineServer` de `@kibo/sdk/server` ; `devkit.buildComponent` | Tasks 1, 13, 19 | `createWorkerHost(opts: HostOptions)` (`components/worker-host.ts`) ⇒ `BackendHost { invoke(req: InvokeRequest), describe(), stop(), running }` (`host-core.ts`) ; `HostOptions { ref, manifest, code: BackendCode, onCall, beforeStart?, timeoutMs… }` ; protocole `DaemonToBackend`/`BackendToDaemon` (`schema/src/protocol.ts`) ; `createBackends` ne sert que les versions approuvées du registre (aucun intégré). `defineServer` et `ServerContext { instanceId, config, list, run, data, fetch }` (`packages/sdk/src/server.ts`). `buildComponent(srcDir, toolchain): Promise<BuildOutput>` (fichiers en mémoire, décision 14 de la phase 4). |
+| Écran 30 (phase 4) | liste des permissions en langage clair ; `GrantedPermissions` ; diff « nouvelles permissions » | Task 9 | `packages/ui/src/dialogs/TrustDialog.tsx` + `packages/ui/src/lib/permission-lines.ts` (`permissionLines(g: GrantedPermissions): PermissionLine[]`) ; diff : `addedPermissions` (`schema/src/permissions.ts`). |
+| Entité hors snapshot (phase 4) | `list("note")` servie par le démon hors du doc Loro | Task 9 (`ci_run`) | `list note` ⇒ `handlers.notes`, `list run` ⇒ `handlers.list` ⇒ `ComponentsDeps.runs(projectId)` (`gate.ts`, `gate-handlers.ts`) ; côté SDK `EntityMap` (`packages/sdk/src/types.ts`). |
+| Messages `call` des backends (phase 4) | traitement des `{ type: "call" }` du `ComponentBackendHost`, rattachés à l'`instanceId` de l'invocation | Task 19 (`binding:`) | Pas de `ComponentBackendHost` : `host-core.ts` rattache chaque `call` à son invocation (`invocation`, décision 15 de la phase 4) et appelle `HostOptions.onCall(projectId, instanceId, call)`. Une liaison fournit son propre `onCall` (`binding-calls.ts`), sans toucher à `host-core.ts`. |
+| `devkit` (phase 4) | construction de la cible serveur d'un composant (`buildComponent`) | Task 19 | `buildComponent` et `resolveToolchain` exportés par `@kibo/devkit` ; binaire unique construit par `apps/desktop/scripts/build-sidecar.ts` (tâche 34 de la phase 4 en cours). |
+| Suite de conformité (phase 4) | `runConformance(component, seed, options?)` | Task 22 | `runConformance(mod: { manifest, Component }, seed?, opts?)` (`packages/sdk/src/conformance.tsx`). |
+| Tâches de phase 4 en cours | — | vagues | 30b (arrêt drainé : `components/service.ts`, `publish.ts`, `daemon.ts`, devkit `validate`) et 34 (binaire, toolchain, CI : `apps/desktop/`, `.github/workflows/ci.yml`, `ui/src/settings/`, `daemon/src/components/install-cli`). Les tâches de phase 5 qui touchent ces fichiers les attendent (tableau des vagues). |
+
+## Réutilisé de la phase 4 (pas de réécriture)
+
+| Besoin de la phase 5 | Livré par la phase 4 | Tâche |
+|---|---|---|
+| Anti-SSRF, résolution DNS, connexion épinglée avec SNI, lecture plafonnée, en-têtes retirés, redirections revérifiées | `components/net-proxy*.ts` (`isPublicAddress`, `systemResolver`, `Transport`/`directTransport`, `readProxiedBody`) | 8 (N27), 15 |
+| Proxy `fetch` des composants | `proxyFetch` étendu (alias de test, secret injecté, observation, écho caviardé), pas de second proxy | 8, 19 |
+| Contrôle d'un appel de composant, journal des refus | `createGate`, `missingPermission`, `permissionOfCall`, `component_events` | 9, 15 |
+| Quotas d'appels et de `fetch` | `createQuotas` (120 `fetch`/min pour une liaison, N8) | 19 (N28) |
+| Exécution d'un backend | `createWorkerHost`, `HostOptions.onCall`, `BACKEND_ERROR_CODES` (étendue, N23) | 19 |
+| Construction d'un backend | `buildComponent` de `@kibo/devkit` | 19 |
+| Lancement de `gh` et `git` | `runGh`, `createGit`, `ghStatus` (`code/`) | 2, 12 |
+| Suivi des PR | `code/pr-poller.ts` (états de PR) ; le sondeur CI ne relit que les runs | 16 |
+| Brief d'un run | `buildBrief` (`core/context.ts`) | 20 |
+| Notifications | `DaemonOptions.notify` et `use-run-notifications.ts` | 2, 21 (N25) |
+| Permissions en clair (écran 30) | `permissionLines` | 9 |
+| Primitives UI | `packages/sdk/src/ui/*` (dont `checkbox`, `sonner`, `alert-dialog`, `progress`) | 10, 11, 17, 18 |
 
 ## Décisions nouvelles
 
-Chacune est reportée dans la spec F (nouvelle section « §14 Décisions du plan ») par la Task 1, avant tout code, comme l'exige `CLAUDE.md`.
+Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N34 viennent de la réconciliation T0 avec le code livré des phases 2 à 4.
 
 - **N1 · Scope d'une liaison avec Project** : avec un Project v2 configuré, la liaison porte sur les issues **du dépôt présentes dans le Project** ; le pull lit les éléments du Project en GraphQL (balayage complet, 100 par page) et retient ceux dont `max(item.updatedAt, issue.updatedAt) ≥ since`. Sans Project : REST `since`. Raison : le statut d'un élément de Project ne modifie pas `updated_at` de l'issue ; seul le balayage le voit.
 - **N2 · `config.project.nodeId`** : l'identifiant GraphQL du Project est stocké dans la liaison (mutations sans requête préalable).
@@ -84,6 +107,21 @@ Chacune est reportée dans la spec F (nouvelle section « §14 Décisions du pla
 - **N19 · Transport MCP stdio** : écrit sur `Bun.spawn` avec un environnement exact (`PATH`, `HOME`, `LANG` + variables secrètes), le transport stdio du SDK ajoutant `LOGNAME`, `SHELL`, `TERM`, `USER` ; un serveur MCP HTTP non loopback passe le contrôle anti-SSRF ; les identifiants réservés (`figma`) sont refusés aux composants.
 - **N20 · Notification CI** : `ci.failed` n'est émis qu'une fois par run, et seulement pour un run vu en cours ou terminé depuis moins de 15 min (pas de rafale à la première connexion).
 - **N21 · Figma injoignable** : lier un nœud exige le serveur Figma (le nom vient de `get_metadata`) ; l'aperçu, lui, retombe sur le cache (même périmé) avec le badge « Figma non joignable ».
+- **N22 · Chemin unique des commandes** : toute commande de projet exécutée par le démon passe par `docs.run(projectId, command, meta)` (nouvelle méthode de `Docs`, implémentée par `service.ts`) : interception, exécution, règles de statut dérivées (après `setStatus`), persistance et observateurs dans une seule transaction SQLite (`Store.transaction`), rechargement du doc depuis SQLite si un observateur ou une commande dérivée échoue, diffusion ; `host.transaction(fn)` (= `Service.transaction`) recharge de même tout projet modifié pendant `fn` si `fn` échoue. L'utilisent : la RPC `command` (avec `instanceId?`), `gate-handlers.ts` (`componentCall run`, meta `{ origin: "user", instanceId }`), `agents/data-port.ts` (`assignTicket`, règles `run_started`/`run_done`, par `docs.trigger`), `Service.triggerRules` (suivi des PR). Les commandes dérivées d'une règle passent par les mêmes observateurs, dans la même transaction, sans redéclencher les règles, avec `origin: "user"` même si le déclencheur vient de la sync. Raison : en phase 4 la porte, les agents et les règles exécutaient `executeProjectCommand` directement ; une modification faite par un agent, une règle (PR fusionnée ⇒ `done`) ou un backend échapperait sinon à la boîte d'envoi.
+- **N23 · Codes distants transmis par un backend** : `BACKEND_ERROR_CODES` (`components/host-core.ts`) gagne `REMOTE_UNAVAILABLE`, `REMOTE_REJECTED`, `REMOTE_NOT_FOUND`, `REMOTE_CONFLICT`, `NOT_CONNECTED` (`RATE_LIMITED` y est déjà). Sinon les 409/404/422 de l'adaptateur exécuté dans le Worker deviendraient `INTERNAL` et N4/N17 seraient inapplicables. Ces codes ne donnent aucun pouvoir à un backend (décision 25 de la phase 4 respectée).
+- **N24 · Événements d'intégration sur le canal existant** : `ChangeMessage` gagne `IntegrationEvent` ; `host.broadcast(e)` = `docs.emit(e)` ; `createClient` gagne `subscribeIntegrations(listener)` et reconnaît un `IntegrationEvent` (parse Zod) avant le repli « projet ». Pas de `Service.onIntegrationEvent` ni de publication séparée dans `server.ts`.
+- **N25 · Notification système réelle** : `host.notify({ title, body })` appelle `DaemonOptions.notify` (mode natif) et diffuse `IntegrationEvent { type: "notice", title, body }`, que l'UI affiche par l'API `Notification` en mode navigateur (comme `use-run-notifications.ts`). La phase 2 n'a pas de règle déclarative sur un événement externe (ses règles ne font que changer un statut) : `ci.failed` n'est pas une règle ; le sondeur CI appelle `host.notify` (« CI cassée sur KIB-n ») ; `IntegrationHost.ruleEvent` et `RuleEvent` sont retirés. Aucune règle de statut par défaut (spec F §7). Même comportement que la spec, formulation « Règle (moteur de la phase 2) » de la spec F §7 corrigée.
+- **N26 · Démarrage dans `startDaemon`** : l'hôte et les modules d'intégration sont créés dans `startDaemon` (`daemon.ts`, décision 23 de la phase 4), pas dans `main.ts` ; `main.ts` lit `--test-origins` et `--memory-secrets`, installe le caviardage de la console et passe `DaemonOptions.integrations?: IntegrationFlags` et `DaemonOptions.redactor?` (défaut : aucune origine de test, trousseau système) ; les intégrations sont créées avant `createComponentsService` (qui reçoit leurs `hooks`) et s'arrêtent dans un closer `back`, avant `store.close()`.
+- **N27 · Réseau réutilisé** : `createIntegrationFetch` s'appuie sur les briques du proxy de la phase 4 (`isPublicAddress`, `systemResolver`, `checkedAddress`, `pinnedRequest`, `Transport`/`directTransport` épinglé avec SNI, `readCapped`), déplacées dans `components/net-proxy-address.ts` et `net-proxy-body.ts` et réexportées par `net-proxy.ts` ; `integrations/net.ts` n'importe que ces sous-modules (pas de cycle avec `net-proxy.ts`, qui importe `transportUrl` et `secretFor`). `isBlockedAddress` et le `systemResolver` dupliqués disparaissent. Seule une origine de test (`--test-origins`, HTTP en boucle locale) part par `fetch` sans épinglage. `proxyFetch` gagne, par `NetProxyOptions` (`hooks`, `secrets`, `aliasFetch`), les alias de test, l'injection du secret, l'observation des en-têtes et le caviardage de l'écho ; la porte transmet `FetchGrant { net, secrets }`. Un serveur MCP HTTP non loopback passe par le même `fetch` épinglé (`mcp/http-fetch.ts`, Task 15).
+- **N28 · Quotas et journaux réutilisés** : un appel de liaison (`binding:<id>`) passe par `createQuotas({ fetchPerMinute: 120 })` de la phase 4 (dépassement : `RATE_LIMITED`) et ses refus vont dans `component_events` ; `integration_events` reste le journal des intégrations (caviardé), `mcp_calls` celui des appels MCP. Le journal des intégrations garde son fichier `integrations/events.ts` ; un module qui importe aussi `components/events.ts` renomme à l'import.
+- **N29 · Toasts** : aucun `Toaster` n'est monté en phase 4 ; la phase 5 monte le `Toaster` de `sonner` (déjà dépendance du SDK, ajouté à `packages/ui` sans résolution nouvelle) dans `shell/IntegrationNotices.tsx`, chargé à la demande par `lazyPanel` hors du chargement initial (budget, décision 29 de la phase 4), avec le thème de l'UI ; il affiche les toasts de conflit (N25 : et les `notice` en mode navigateur). Un message lié à une action (connexion réussie, test de connexion) reste un `useFlash` de l'écran 16.
+- **N30 · Écran 16 dans les Paramètres** : `Screen` (`schema/src/tabs.ts`) gagne `integrations` (hash `#/settings/integrations`, titre d'onglet, palette, écran différé par `lazyPanel`) ; `SettingsNav` rend `domains` et `integrations` navigables (les autres entrées restent désactivées). La phase 2 n'a livré que « Domaines & guidelines ».
+- **N31 · Trousseau lu à la demande** : aucun accès au trousseau système au démarrage du démon ; sa disponibilité est vérifiée par la sonde GitHub et par tout handler qui lit un secret. Raison : `startDaemon` sert aux tests et à l'E2E, qui ne doivent jamais toucher le trousseau réel (invite macOS, erreur libsecret en CI).
+- **N32 · Backends intégrés sans UI** (précise N6 et N7) : un intégré sans UI est listé dans `BUILTIN_ADAPTER_IDS` (`schema/src/component.ts`), hors de `BUILTIN_IDS` (qui reste la liste des intégrés affichés : `BUILTIN_COMPONENTS` de l'UI, écran 6) ; `isBuiltinId` couvre les deux. Il est construit par `buildBuiltinBackend` (`packages/devkit/src/build-builtin.ts` : `Bun.build` en CommonJS, `macros: false`, sans le résolveur restreint des composants tiers), parce que `buildComponent` exige une UI et n'autorise que `@kibo/sdk/server` et `@kibo/sdk/migrations`, alors que le code d'un intégré vient du monorepo avec la confiance totale (spec B). Dans le paquet, `apps/desktop/scripts/build-sidecar.ts` le préconstruit dans `builtin/<id>/`, trouvé par `KIBO_BUILTIN_DIR` (remplace `scripts/build-builtin.ts`). L'adaptateur importe `@kibo/sdk/adapter` (nouveau sous-chemin, sans React). `BINDING_PREFIX` et `bindingIdOf` vivent dans `schema` (le démon ne dépend pas du SDK).
+- **N33 · Config plate de la Source MCP** : le `configSchema` de la phase 4 n'accepte que des valeurs scalaires (décision 2 de la phase 4) : la config d'instance de `mcp-source` stocke `args` en texte JSON et la correspondance en cinq pointeurs (`itemsPointer`, `idPointer`, `titlePointer`, `subtitlePointer`, `urlPointer`) ; `McpSourceConfig` (Zod) relit cette forme et rend la forme structurée de la spec F §8.3. Comportement inchangé, format de config de la phase 4 non étendu.
+- **N34 · `source` hors `configSchema`** : `config.source = { bindingId }` (spec F §3.2) n'est pas déclaré dans le `configSchema` de Kanban et Tickets (valeurs scalaires seulement) ; c'est une clé posée par le shell à l'écran 3 et lue par `readSource`. `validateConfig` ne s'applique qu'à la mise à jour d'une version publiée, jamais à un intégré.
+- **N35 · Commandes réservées** : `upsertExternalRef`, `removeExternalRef`, `importExternalTicket`, `addBinding`, `removeBinding` valent `null` dans `COMMAND_WRITES` (réservées au shell et au démon, spec F §3.1). En phase 3 et 4, `upsertExternalRef` était ouverte à tout composant qui écrit `ticket` : un composant tiers pourrait forger une réf. `github_issue` et faire pousser des issues avec le compte de l'utilisateur. `assertShellCommand` ne change pas (le shell garde ces commandes). Dans le périmètre de la spec (application de §3.1).
+- **N36 · Permissions `secret:` et `mcp:`** : `GrantedPermissions` gagne `secrets` et `mcp` (défaut `[]` pour les versions déjà approuvées) ; `secret:<name>` apparaît comme permission « non utilisée » dans le rapport de validation (aucune inférence statique ne la détecte), sans effet sur le verdict (seules les permissions manquantes font échouer).
 
 ## Écrans à dessiner dans Penpot (avant les tâches UI)
 
@@ -97,7 +135,7 @@ Le chef d'équipe les dessine en sombre et en clair (page `04 · Workspace & par
 | P4 | Serveurs MCP | dialogue liste (Configurer sur « Serveurs MCP ») : une ligne par serveur (nom, `id`, type, « n outils », interrupteur Activé, pastille d'état, « Retirer ») ; état vide ; bouton « Ajouter un serveur » | 11 |
 | P5 | Ajouter un serveur MCP | étape 1 : Nom, Identifiant, Type (cartes « Commande locale (stdio) » / « Adresse HTTP »), Commande, Arguments (un par ligne), Variables secrètes (paires nom / valeur masquée, « Ajouter une variable ») ou Adresse + Jeton ; étape 2 « Confirmer la commande » : bloc monospace avec la commande exacte, texte d'environnement réduit, Retour / « Ajouter et lancer » | 11 |
 | P6 | Écran 3, source synchronisée | sous le catalogue, bloc « Source » : cartes « Locale » / « Synchronisée · GitHub Issues » ; si GitHub non connecté : texte + lien « Ouvrir les intégrations » ; formulaire : Dépôt (liste filtrable), Project (select, « Aucun Project »), table « Correspondance des statuts » (statut Kibo avec pastille → select d'options, « Non envoyé »), « Filtrer par libellés », case « Importer aussi les issues fermées » ; bouton « Ajouter et synchroniser » ; état progression « Synchronisation… 12 issues importées » ; erreur de première sync | 17 |
-| P7 | Sheet ticket, GitHub | chips dans l'en-tête : `#42` (issue, icône cercle ouvert / fermé) et `#12` (PR) ; ligne d'état « Synchronisation en attente » (icône horloge) ; bandeau d'échec (message, Réessayer / Abandonner) ; badge « Lien GitHub rompu » + aide | 18 |
+| P7 | Sheet ticket, GitHub | chips dans l'en-tête : `#42` (issue, icône cercle ouvert / fermé) et `#12` (PR) ; ligne d'état « Synchronisation en attente » (icône horloge) ; bandeau d'échec (message, Réessayer / Abandonner) ; badge « Lien GitHub rompu » + aide | 18 (implémentation : chips d'issue sur la ligne « Issue » des propriétés, à côté des chips de PR de la phase 3 ; écart d'emplacement assumé, voir Task 18) |
 | P8 | Sheet ticket, CI | section « CI » sous Dépendances : une ligne par workflow (pastille réussite / échec / en cours, nom, durée, « Voir les logs ») ; état vide ; Sheet de logs (titre « Logs · build », champ de recherche, bascule « Erreurs seulement », lignes numérotées monospace, lignes d'erreur surlignées en rouge atténué, mention « Log tronqué à 20 Mio. ») | 18 |
 | P9 | Sheet ticket, Maquettes | propriété « Maquette » (nom du premier nœud, lien) ; section « Maquettes » : vignettes 16:10 avec nom, badge « Figma non joignable » ou « Aperçu indisponible », « Retirer » ; champ « Colle l'URL d'un nœud Figma… » + « Lier un nœud Figma » ; erreur URL invalide | 18 |
 | P10 | Widget Source MCP | carte de widget : titre de l'instance, liste d'éléments (titre, sous-titre, lien externe, bouton « Créer un ticket » ou puce « KIB-31 » si déjà importé), pied « Mis à jour il y a 3 min · Rafraîchir » ; états vide, erreur (« Serveur MCP injoignable »), chargement ; étape de config à l'écran 3 (serveur, mode Outil / Ressource, outil, arguments JSON, correspondance des champs `items`, `id`, `title`, `subtitle`, `url`, rafraîchissement en minutes) | 22 |
@@ -107,69 +145,100 @@ Le chef d'équipe les dessine en sombre et en clair (page `04 · Workspace & par
 
 ```
 packages/schema/src/
-  integrations.ts          RepoSlug, WebUrl, SecretName, refs GitHub/Figma/MCP, Binding, SyncedFields, PushOp, MappedRemote, PullPage, IntegrationId/Status, CI, MCP, SyncState, IntegrationEvent
+  integrations.ts          RepoSlug, WebUrl, SecretName, refs GitHub/Figma/MCP, Binding, SyncedFields, PushOp, MappedRemote, PullPage, IntegrationId/Status, CI, MCP, SyncState, IntegrationEvent (dont notice), BINDING_PREFIX, bindingIdOf
   integrations-rpc.ts      INTEGRATION_RPC (Zod) + IntegrationRpcResult
   status-projection.ts     remoteStatusId, projectStatus (N3)
   github-graphql.ts        requêtes GraphQL partagées (adaptateur, compte, faux GitHub)
+  github-errors.ts         githubError
   mcp-rules.ts             mcpCovered, secretHostsCovered
-  external-ref.ts          (phase 3) union étendue + externalRefKey
-  errors.ts manifest.ts rpc.ts index.ts   (modifiés)
+  external-ref.ts          (phase 3) GithubPrRef extrait, union étendue, externalRefKey
+  errors.ts manifest.ts call.ts permissions.ts command.ts component.ts rpc.ts tabs.ts index.ts   (modifiés)
 packages/core/src/
   bindings.ts              addBinding, removeBinding, listBindings, getBinding
-  external-refs.ts         (phase 3) clés par type, removeExternalRef, importExternalTicket
+  external-refs.ts         (nouveau) upsertExternalRef déplacé de tickets.ts, clés par type, removeExternalRef, findTicketByRef, importExternalTicket
   sync-plan.ts             projectLocal, planSync, settleAfterPush, canApplyRemote, canonicalFields
+  tickets.ts commands.ts context.ts index.ts   (modifiés : readExternalRefs validé, nouvelles commandes, section Maquettes du brief)
+packages/devkit/src/       build-builtin.ts (N32) ; infer-permissions.ts validate.ts fr.ts (modifiés)
 packages/daemon/src/
-  integrations/            types.ts host.ts db.ts redact.ts events.ts settings.ts registry.ts bootstrap.ts
+  store.ts docs.ts service.ts daemon.ts main.ts server.ts agents/data-port.ts   (modifiés, N22, N24 à N26)
+  components/              gate.ts gate-handlers.ts service.ts host-core.ts net-proxy.ts net-proxy-address.ts net-proxy-body.ts (modifiés, N23, N27)
+  integrations/            types.ts host.ts db.ts redact.ts events.ts settings.ts registry.ts methods.ts bootstrap.ts
                            memory-secret-store.ts bun-secret-store.ts github-remote.ts probes.ts
                            net.ts rate-limit.ts testing/fake-host.ts
   github/                  auth.ts api.ts handlers.ts
   sync/                    hash.ts sync-store.ts outbox.ts apply.ts engine.ts scheduler.ts module.ts
                            worker-runner.ts binding-calls.ts builtin-adapter.ts testing/memory-runner.ts
-  ci/                      ci-store.ts poller.ts logs.ts module.ts
-  mcp/                     config-store.ts command-line.ts stdio-transport.ts result.ts connection.ts hub.ts component-gate.ts module.ts
-  figma/                   figma-url.ts figma.ts brief.ts module.ts
+  ci/                      ci-store.ts poller.ts logs.ts module.ts fr.ts
+  mcp/                     config-store.ts command-line.ts stdio-transport.ts http-fetch.ts result.ts connection.ts hub.ts component-gate.ts module.ts
+  figma/                   figma-url.ts figma.ts module.ts
   testing/                 fake-github.ts fake-github-graphql.ts fake-mcp.ts fake-mcp-stdio.ts
-packages/sdk/src/          adapter.ts source.ts ui/switch.tsx ui/checkbox.tsx (+ types.ts sdk.ts mock.ts conformance.tsx modifiés)
+  code/testing/fake-gh.ts  (modifié : auth token)
+packages/sdk/src/          adapter.ts (sous-chemin @kibo/sdk/adapter) source.ts ui/switch.tsx (+ types.ts sdk.ts mock.ts client.ts conformance.tsx index.ts modifiés)
 packages/ui/src/
   i18n/fr-integrations.ts
-  settings/                IntegrationsPage.tsx IntegrationRow.tsx integration-rows.ts DisconnectDialog.tsx
-  dialogs/integrations/    GithubConnectDialog.tsx FigmaConnectDialog.tsx McpServersDialog.tsx McpServerDialog.tsx
+  settings/                IntegrationsPage.tsx IntegrationRow.tsx integration-rows.ts integration-dialogs.ts DisconnectDialog.tsx (+ SettingsNav.tsx modifié)
+  dialogs/integrations/    GithubConnectDialog.tsx FigmaConnectDialog.tsx McpServersDialog.tsx McpServerDialog.tsx mcp-form.ts
   dialogs/sync/            SourcePicker.tsx SyncSourceForm.tsx status-map.ts use-sync-progress.ts
+  dialogs/mcp-source/      McpSourceStep.tsx (étape de config à l'écran 3)
   shell/sheet/             GithubRefs.tsx SyncStatus.tsx CiSection.tsx CiLogSheet.tsx FigmaSection.tsx log-lines.ts ci-format.ts
-  shell/                   use-conflict-toasts.ts
-  pages/                   SourceHeader.tsx
+  shell/                   IntegrationNotices.tsx (Toaster, conflits, notice : N25, N29) ; TicketDetail.tsx lazy-screens.ts ScreenView.tsx Shell.tsx AppSidebar.tsx (modifiés)
+  pages/                   SourceHeader.tsx (+ PageView.tsx modifié)
   state/                   use-integrations.ts use-sync-state.ts
-components/github-issues/  kibo.component.json src/{remote.ts,map.ts,cursor.ts,rest.ts,project.ts,adapter.ts,server.ts,index.ts}
-components/mcp-source/     kibo.component.json src/{McpSource.tsx,SourceItemRow.tsx,config.ts,extract.ts,index.ts,fr.ts}
-packages/ui/src/dialogs/mcp-source/  McpSourceStep.tsx (étape de config à l'écran 3)
-e2e/                       integrations.spec.ts (+ serve.ts, token.ts modifiés)
-scripts/build-builtin.ts   backends intégrés préconstruits pour le paquet desktop (N7)
+  lib/permission-lines.ts  (modifié : lignes secret et MCP de l'écran 30)
+components/github-issues/  kibo.component.json package.json tsconfig.json src/{remote.ts,map.ts,cursor.ts,rest.ts,project.ts,adapter.ts,server.ts,index.ts}
+components/mcp-source/     kibo.component.json package.json tsconfig.json src/{McpSource.tsx,SourceItemRow.tsx,config.ts,extract.ts,index.ts,fr.ts}
+apps/desktop/              scripts/build-sidecar.ts (préconstruit builtin/<id>/, N32) src-tauri/{tauri.conf.json,src/main.rs} (KIBO_BUILTIN_DIR)
+e2e/                       integrations.spec.ts (+ serve.ts, token.ts, playwright.config.ts modifiés)
 ```
 
 ## Vagues d'exécution
 
-Une tâche démarre quand toutes les tâches de sa colonne « Dépend de » sont intégrées dans `main`. Les tâches d'une même vague touchent des fichiers disjoints, à l'exception de lignes d'enregistrement dans `packages/daemon/src/integrations/bootstrap.ts` (une ligne par module ; conflit trivial résolu au rebase par le chef d'équipe).
+Une vague démarre quand les tâches dont elle dépend sont intégrées dans `main` (une tâche peut partir plus tôt si sa colonne « Dépend de » est satisfaite). Chaque vague compte au plus quatre tâches confiées en parallèle (un `kibo-dev` par tâche, worktree `.claude/worktrees/p5-t<n>`, branche `feat/p5-t<n>`). Dans une vague, les fichiers touchés sont disjoints, sauf les lignes d'enregistrement listées en bas du tableau.
 
-| Vague | Tâches (parallèles) | Dépend de | Prérequis Penpot |
-|---|---|---|---|
-| 0 | 1 Contrats | — | — |
-| 0 bis | 2 Socle démon | 1 | — |
-| 1 | 3 Trousseau · 4 Réfs et liaisons · 5 Fusion à trois · 6 Faux GitHub · 7 Faux MCP · 8 Réseau · 9 SDK et permissions · 10 Écran 16 | 2 | P1 (10) |
-| 2 | 11 Dialogues de connexion · 12 Compte GitHub · 13 Adaptateur GitHub Issues · 14 Moteur de sync · 15 Hub MCP · 17 Source synchronisée · 18 Sheet | 11 : 10 · 12 : 6, 8 · 13 : 4, 6, 9 · 14 : 4, 5, 8 · 15 : 7, 8, 9 · 17 : 10 · 18 : 4, 10 | P2 à P5 (11), P6 (17), P7 à P9 (18) |
-| 3 | 16 GitHub Actions · 19 Adaptateur dans le Worker · 20 Figma · 21 Kanban et Tickets synchronisés · 22 Source MCP | 16 : 6, 8, 12 · 19 : 12, 13, 14 · 20 : 15 · 21 : 4, 9, 10 · 22 : 9, 15, 17 | P10 (22), P11 (21) |
-| 4 | 23 Test de fuite et E2E | toutes | — |
-| Jalon | v0.5 | 23 | — |
+| Vague | Tâche | Fichiers touchés (périmètre) | Dépend de | Penpot |
+|---|---|---|---|---|
+| V0 | 1 Contrats | `schema/src/{integrations,integrations-rpc,status-projection,github-graphql,github-errors,mcp-rules,errors,manifest,rpc,index}`, `sdk/src/{adapter,index,conformance}`, `sdk/package.json`, `ui/src/i18n/{fr-integrations,fr}`, `ui/src/dialogs/catalog-choices.ts`, deux tests à manifeste littéral, `CLAUDE.md` | T0 | — |
+| V0 | 7 Faux MCP | `daemon/package.json`, `bun.lock`, `daemon/src/testing/fake-mcp*` | T0 | — |
+| V1 | 2 Socle démon | `daemon/src/{store,docs,service,server,daemon,main}.ts`, `components/{gate,gate-handlers}.ts`, `agents/data-port.ts`, `integrations/*`, `schema/src/rpc.ts` (`command.instanceId`), `sdk/src/client.ts` | 1 ; **30b** (phase 4) | — |
+| V1 | 4 Réfs et liaisons | `schema/src/{external-ref,command,rpc,component.test}`, `core/src/{external-refs,bindings,tickets,commands,index}`, 11 tests à `ProjectSnapshot` littéral (ui, `agents/orchestrator.test.ts`) | 1 | — |
+| V1 | 5 Fusion à trois | `core/src/{sync-plan,index}` | 1 | — |
+| V1 | 6 Faux GitHub | `daemon/src/testing/fake-github*` | 1 | — |
+| V2 | 3 Trousseau | `integrations/{bun-secret-store,bootstrap}` | 2 | — |
+| V2 | 8 Réseau | `components/{net-proxy,net-proxy-address,net-proxy-body,gate,gate-handlers,service}.ts`, `daemon.ts`, `integrations/{net,rate-limit,bootstrap}`, `schema/src/permissions.ts`, `core/src/registry.test.ts`, `ui/src/lib/permission-lines.test.ts` | 2, 6 ; **30b** | — |
+| V2 | 13 Adaptateur GitHub Issues | `components/github-issues/**`, `package.json` (typecheck), `bun.lock`, `schema/src/component.ts` (`BUILTIN_ADAPTER_IDS`), `sdk/package.json` (sous-chemin) | 1, 6 | — |
+| V2 | 10 Écran 16 | `ui/src/settings/*`, `ui/src/state/{use-integrations,use-sync-state}`, `sdk/src/ui/switch.tsx`, `schema/src/tabs.ts`, `ui/src/tabs/{target-hash,screens}`, `ui/src/palette/*`, `ui/src/shell/{lazy-screens,ScreenView,AppSidebar}` | 1, 2 ; **34** (phase 4, `settings/`) | P1 |
+| V3 | 9 SDK et permissions | `schema/src/{manifest,call,permissions,schema.test}`, `sdk/src/{types,sdk,mock,conformance,index,source}`, `components/{gate,gate-handlers,gate.test}`, `devkit/src/{infer-permissions,validate,fr}`, `ui/src/lib/permission-lines*`, `core/src/registry.test.ts` | 1, 2, 4, 8 | — |
+| V3 | 12 Compte GitHub | `daemon/src/github/*`, `integrations/bootstrap`, `code/testing/{fake-gh,fixture.test}` | 2, 6, 8 | — |
+| V3 | 14 Moteur de sync | `daemon/src/sync/{hash,sync-store,outbox,apply,engine,scheduler,module}`, `sync/testing/memory-runner`, `integrations/bootstrap` | 2, 4, 5, 8 | — |
+| V3 | 11 Dialogues de connexion | `ui/src/dialogs/integrations/*`, `ui/src/settings/integration-dialogs.ts` | 10 | P2 à P5 |
+| V4 | 15 Hub MCP | `daemon/src/mcp/*`, `integrations/bootstrap` | 1, 2, 4, 7, 8, 9 | — |
+| V4 | 16 GitHub Actions | `daemon/src/ci/*`, `integrations/bootstrap` | 2, 6, 8, 12 | — |
+| V4 | 17 Source synchronisée | `ui/src/dialogs/sync/*`, `ui/src/dialogs/{AddComponentDialog,component-dialogs.test}`, `ui/src/pages/PageView.tsx`, `ui/src/i18n/fr-components.ts` | 1, 2, 10 | P6 |
+| V4 | 18 Sheet ticket | `ui/src/shell/sheet/*`, `ui/src/shell/TicketDetail.tsx`, `fr-integrations.ts` (`sheet`) | 1, 2, 4, 10 | P7 à P9 |
+| V5 | 19 Adaptateur dans le Worker | `daemon/src/sync/{worker-runner,binding-calls,builtin-adapter,roundtrip.test}`, `components/host-core*`, `devkit/src/{build-builtin,index}`, `integrations/bootstrap`, `apps/desktop/{scripts/build-sidecar.ts,package.json,tsconfig.json,src-tauri/tauri.conf.json,src-tauri/src/main.rs}`, `.gitignore`, `bun.lock` | 1, 2, 4, 6, 8, 12, 13, 14 ; **34** | — |
+| V5 | 20 Figma | `daemon/src/figma/*`, `testing/fake-mcp.ts` (`omit`), `integrations/bootstrap`, `core/src/context*` | 1, 2, 4, 7, 15 | — |
+| V5 | 21 Kanban et Tickets synchronisés | `sdk/src/{source,types,sdk,client}*`, `components/{kanban,tickets}/*`, `ui/src/pages/{SourceHeader,PageView}`, `ui/src/shell/{IntegrationNotices,lazy-screens,Shell}`, tests du shell, `ui/src/dialogs/{NewTicketDialog,dialogs.test}`, `ui/package.json`, `bun.lock`, `fr-integrations.ts` (`instance`) | 1, 2, 4, 9, 10, 14 | P11 |
+| V5 | 22 Source MCP | `components/mcp-source/**`, `package.json` (typecheck), `bun.lock`, `schema/src/component.ts` (`BUILTIN_IDS`), `sdk/src/conformance.tsx`, `ui/{package.json,tsconfig.json,src/registry.ts}`, `ui/src/dialogs/{AddComponentDialog,mcp-source/*}`, `fr-integrations.ts` (`mcpSource`) | 1, 9, 13, 15, 17 | P10 |
+| V6 | 23 Test de fuite et E2E | `daemon/src/integrations/leak.test.ts`, `e2e/{integrations.spec,serve,token,playwright.config}`, `testing/{fake-github,fake-mcp}.ts` (`port`) | toutes ; 34 | — |
+| Jalon | v0.5 | — | 23 | — |
 
-Conflits attendus et triviaux (résolus au rebase par le chef d'équipe, une ligne ou un bloc chacun) : `packages/daemon/src/integrations/bootstrap.ts` (un module par tâche : 12, 15, 16, 19, 20), `packages/ui/src/i18n/fr-integrations.ts` (blocs `instance` en 21 et `mcpSource` en 22), `package.json` racine (script `typecheck` : 13 et 22).
+Conflits attendus et triviaux dans une même vague (une ligne ou un bloc chacun, résolus au rebase par le chef d'équipe) : `packages/daemon/src/integrations/bootstrap.ts` (un module par tâche : 3 et 8 en V2 ; 12 et 14 en V3 ; 15 et 16 en V4 ; 19 et 20 en V5), `bun.lock` et `package.json` racine (script `typecheck` : 13 en V2 ; 21 et 22 en V5 : `bun install` puis concaténation), `packages/ui/src/i18n/fr-integrations.ts` (blocs `instance` en 21 et `mcpSource` en 22), `packages/ui/src/pages/PageView.tsx` (17 en V4, puis 21 en V5), `packages/ui/src/dialogs/AddComponentDialog.tsx` (17 en V4, puis 22 en V5), `packages/sdk/src/conformance.tsx` (1, 9, 22 : vagues distinctes), `packages/schema/src/component.ts` (13 puis 22). Les couples qui modifient les mêmes fonctions sont sérialisés par leurs dépendances : 8 puis 9 (`permissions.ts`, `gate.ts`, `gate-handlers.ts`), 2 puis 21 (`sdk/src/client.ts`), 2 puis 8 (`daemon.ts`, `gate-handlers.ts`), 10 puis 21 (`lazy-screens.ts`).
 
----|---|---|---|
-| 0 | 1 Contrats | — | — |
-| 0 bis | 2 Socle démon | 1 | — |
-| 1 | 3 Trousseau · 4 Réfs et liaisons · 5 Fusion à trois · 6 Faux GitHub · 7 Faux MCP · 8 Réseau · 9 SDK et permissions · 10 Écran 16 | 2 | P1 (10) |
-| 2 | 11 Dialogues de connexion · 12 Compte GitHub · 13 Adaptateur GitHub Issues · 14 Moteur de sync · 15 Hub MCP · 17 Source synchronisée · 18 Sheet | 11 : 10 · 12 : 6, 8 · 13 : 4, 6, 9 · 14 : 4, 5, 8 · 15 : 7, 8, 9 · 17 : 10 · 18 : 4 | P2 à P5 (11), P6 (17), P7 à P9 (18) |
-| 3 | 16 GitHub Actions · 19 Adaptateur dans le Worker · 20 Figma · 21 Kanban et Tickets synchronisés · 22 Source MCP | 16 : 6, 8, 12 · 19 : 12, 13, 14 · 20 : 15 · 21 : 4, 9 · 22 : 9, 15 | P10 (22), P11 (21) |
-| 4 | 23 Test de fuite et E2E | toutes | — |
-| Jalon | v0.5 | 23 | — |
+Chemin critique : 1 → 2 (après 30b) → 8 → 14 → 19 (après 34) → 23. Si 30b tarde, V1 lance quand même 4, 5 et 6, et V2 la tâche 13 ; si 34 tarde, 10 et 19 attendent seules (11, 17, 18 et 21 suivent 10).
+
+Tâches à risque, relues aussi par `kibo-lead` (en plus de `kibo-reviewer`) :
+
+| Tâche | Motif |
+|---|---|
+| 2 | persistance transactionnelle et restauration (N22), caviardage de la console et des erreurs RPC, chemin des commandes des backends |
+| 3 | secrets (trousseau système, aucun repli en clair, N31) |
+| 4 | fermeture de `upsertExternalRef` et des nouvelles commandes aux composants (N35) |
+| 8 | réseau (anti-SSRF, épinglage, redirections) et injection du secret dans le proxy des composants (N27) |
+| 9 | porte `componentCall` (permissions `mcp`, `secrets`, `ci_run`) |
+| 12 | secrets (jeton personnel, jeton de `gh`) |
+| 15 | MCP : lancement de processus (stdio, env réduit, groupe de processus), réseau (HTTP épinglé), secrets |
+| 19 | chemin `fetch` qui porte le jeton GitHub, Worker hors registre, construction sans le résolveur restreint (N32) |
+| 23 | test de fuite de secret, drapeaux `--memory-secrets` et `--test-origins` en E2E |
 
 ---
 
@@ -179,10 +248,12 @@ Fige tous les types échangés entre tâches. Aucune logique métier ; tout est 
 
 **Files:**
 - Create: `packages/schema/src/integrations.ts`, `packages/schema/src/integrations-rpc.ts`, `packages/schema/src/status-projection.ts`, `packages/schema/src/github-graphql.ts`, `packages/schema/src/github-errors.ts`, `packages/schema/src/mcp-rules.ts`, `packages/schema/src/integrations.test.ts`
-- Modify: `packages/schema/src/errors.ts`, `packages/schema/src/manifest.ts`, `packages/schema/src/rpc.ts`, `packages/schema/src/index.ts`
-- Create: `packages/sdk/src/adapter.ts`, `packages/sdk/src/adapter.test.ts` ; Modify: `packages/sdk/src/index.ts`, `packages/sdk/package.json` (`"zod": "3.25.76"`, déjà verrouillé par `schema` : aucune version nouvelle)
-- Create: `packages/ui/src/i18n/fr-integrations.ts` ; Modify: `packages/ui/src/i18n/fr.ts`
-- Modify: `CLAUDE.md` (monorepo : `components/github-issues/`, `components/mcp-source/`), `docs/superpowers/specs/2026-09-26-kibo-integrations.md` (§14 « Décisions du plan » : N1 à N21 recopiées de ce plan)
+- Modify: `packages/schema/src/errors.ts` (tableau `KIBO_ERROR_CODES`), `packages/schema/src/manifest.ts`, `packages/schema/src/rpc.ts` (`RpcRequest`, `RpcResult`, `ChangeMessage`), `packages/schema/src/index.ts`
+- Create: `packages/sdk/src/adapter.ts`, `packages/sdk/src/adapter.test.ts` ; Modify: `packages/sdk/src/index.ts`, `packages/sdk/package.json` (`"zod": "3.25.76"`, déjà verrouillé par `schema` : aucune version nouvelle), `packages/sdk/src/conformance.tsx` (un `kind: "adapter"` n'a aucune surface de rendu)
+- Create: `packages/ui/src/i18n/fr-integrations.ts` ; Modify: `packages/ui/src/i18n/fr.ts`, `packages/ui/src/dialogs/catalog-choices.ts` (`mineChoices` écarte `kind: "adapter"`, N6)
+- Modify (manifestes littéraux typés `ComponentManifest`, qui gagnent `secrets: []` et `mcp: []`) : `packages/ui/src/dialogs/component-dialogs.test.tsx`, `packages/ui/src/pages/instance.test.tsx`
+- Modify: `CLAUDE.md` (monorepo : `components/github-issues/`, `components/mcp-source/`)
+- Vérifier (sans modifier) : `docs/superpowers/specs/2026-09-26-kibo-integrations.md` §14 « Décisions du plan », déjà écrite par la tâche T0 (N1 à N36)
 
 **Interfaces:**
 - Consumes: `StatusId`, `NodeId`, `KiboErrorCode`, `ComponentManifest` (phase 4, avec `net`), `defineServer` (`@kibo/sdk/server`, phase 4), `KiboSdk["fetch"]` (phase 4).
@@ -195,20 +266,22 @@ Fige tous les types échangés entre tâches. Aucune logique métier ; tout est 
   - `CiJobSummary`, `CiRun`, `CiLog`
   - `McpServerInput`, `McpServerView`, `McpToolInfo`, `McpContent`, `McpCallResult`, `McpImportItem`
   - `FigmaPreview`, `GithubRepo`, `GithubProject`, `GithubConnectOptions`
-  - `BindingState`, `OutboxError`, `SyncState`, `SyncReport`, `IntegrationEvent`
+  - `BindingState`, `OutboxError`, `SyncState`, `SyncReport`, `IntegrationEvent` (dont `{ type: "notice", title, body }`, N25)
+  - `ChangeMessage` (phase 1, `rpc.ts`) gagne `IntegrationEvent` (N24)
   - `INTEGRATION_RPC`, `IntegrationRpcRequest`, `IntegrationRpcResult`
   - `remoteStatusId(closed, optionId, map)`, `projectStatus(statusId, map, fallback)`
   - `GITHUB_GRAPHQL: { projectItems, addItem, setStatus, issueItems, listProjects }`
   - `githubError(status: number, header: (name: string) => string | null, body: string): KiboError` (partagé par le démon et l'adaptateur)
   - `mcpCovered(rules, server, tool, config | null)`, `secretHostsCovered(manifest): string[]`
   - `ComponentManifest` : `kind` accepte `"adapter"` ; `secrets: { name: SecretName; hosts: string[] }[]` ; `mcp: string[]`
-  - codes `KiboError` : `SECRET_STORE_UNAVAILABLE`, `NOT_CONNECTED`, `RATE_LIMITED`, `REMOTE_UNAVAILABLE`, `REMOTE_REJECTED`, `REMOTE_NOT_FOUND`, `REMOTE_CONFLICT`, `MCP_UNAVAILABLE`, `MCP_FAILED` (+ `TIMEOUT` s'il manque)
-- Produces (sdk) : `Adapter<R, C>`, `AdapterContext<C>`, `defineAdapter`, `mapRemote`, `adapterActions`, `BINDING_PREFIX = "binding:"`, `bindingIdOf(instanceId)`
+  - codes `KiboError` ajoutés à `KIBO_ERROR_CODES` : `SECRET_STORE_UNAVAILABLE`, `NOT_CONNECTED`, `REMOTE_UNAVAILABLE`, `REMOTE_REJECTED`, `REMOTE_NOT_FOUND`, `REMOTE_CONFLICT`, `MCP_UNAVAILABLE`, `MCP_FAILED` (`RATE_LIMITED` et `TIMEOUT` existent depuis la phase 4)
+- Produces (sdk) : `Adapter<R, C>`, `AdapterContext<C>`, `defineAdapter`, `mapRemote`, `adapterActions` ; réexporte `BINDING_PREFIX` et `bindingIdOf` de `schema`
+- Produces (schema, `integrations.ts`) : `BINDING_PREFIX = "binding:"`, `bindingIdOf(instanceId)` (le démon ne dépend pas du SDK : Task 19)
 - Produces (ui) : `frIntegrations` (tous les textes de la phase), exposé en `fr.integrations`.
 
-- [ ] **Step 1: Reporter les décisions dans la spec**
+- [ ] **Step 1: Vérifier les décisions dans la spec, mettre à jour le monorepo**
 
-Ajouter à la fin de `docs/superpowers/specs/2026-09-26-kibo-integrations.md` une section `## 14. Décisions du plan` qui recopie mot pour mot les puces N1 à N21 de ce plan. Mettre à jour la liste du monorepo de `CLAUDE.md` :
+La section `## 14. Décisions du plan` de `docs/superpowers/specs/2026-09-26-kibo-integrations.md` a été écrite par la tâche T0 ; vérifier qu'elle recopie mot pour mot les puces N1 à N36 de ce plan (une différence ⇒ corriger la spec d'abord, conformément à `CLAUDE.md`). Mettre à jour la liste du monorepo de `CLAUDE.md` :
 
 ```
 components/<id>/     composants intégrés (kanban, tickets, github-issues sans UI, mcp-source…) écrits avec le SDK public
@@ -362,6 +435,8 @@ describe("integration contracts", () => {
     expect(RpcRequest.safeParse({ method: "connectGithub", auth: { mode: "token", token: "ghp_x" } }).success).toBe(true);
     expect(RpcRequest.safeParse({ method: "connectGithub", auth: { mode: "oauth" } }).success).toBe(false);
     expect(IntegrationEvent.safeParse({ type: "sync.conflict", projectId: "p", ticketKey: "KIB-1", field: "title" }).success).toBe(true);
+    expect(IntegrationEvent.safeParse({ type: "notice", title: "CI cassée sur KIB-7", body: "ci a échoué sur la PR #12." }).success).toBe(true);
+    expect(IntegrationEvent.safeParse({ projectId: "p" }).success).toBe(false);
   });
 });
 ```
@@ -375,7 +450,7 @@ Expected: FAIL (`Cannot find module` / exports manquants).
 
 ```ts
 import { z } from "zod";
-import type { KiboErrorCode } from "./errors";
+import { KiboError, type KiboErrorCode } from "./errors";
 import { NodeId } from "./ids";
 import { StatusId } from "./status";
 
@@ -429,6 +504,15 @@ export type McpItemRef = z.infer<typeof McpItemRef>;
 export function githubIssueState(ref: GithubIssueRef): "pending" | "linked" | "broken" {
   if (ref.number === null) return "pending";
   return ref.url === null ? "broken" : "linked";
+}
+
+export const BINDING_PREFIX = "binding:";
+
+export function bindingIdOf(instanceId: string): string {
+  if (!instanceId.startsWith(BINDING_PREFIX)) {
+    throw new KiboError("INVALID_INPUT", "adapter actions run for a binding only");
+  }
+  return instanceId.slice(BINDING_PREFIX.length);
 }
 
 export const StatusMap = z.record(StatusId, z.string().min(1));
@@ -627,6 +711,7 @@ export const IntegrationEvent = z.discriminatedUnion("type", [
     field: z.enum(["title", "description", "statusId"]),
   }),
   z.object({ type: z.literal("ci"), projectId: z.string() }),
+  z.object({ type: z.literal("notice"), title: z.string().min(1).max(200), body: z.string().max(1000) }),
 ]);
 export type IntegrationEvent = z.infer<typeof IntegrationEvent>;
 ```
@@ -794,21 +879,18 @@ export function githubError(status: number, header: (name: string) => string | n
 
 (`import { SecretNameSchema } from "./integrations";`). L'objet reste un `ZodObject` : la couverture `secrets × net` est vérifiée par `secretHostsCovered` (conformité, Task 9 ; proxy, Task 8).
 
-`packages/schema/src/errors.ts` : ajouter à l'union `KiboErrorCode` :
+`packages/schema/src/errors.ts` : ajouter à la fin du tableau `KIBO_ERROR_CODES` (le type `KiboErrorCode` en découle ; `RATE_LIMITED` et `TIMEOUT` y sont déjà) :
 
 ```ts
-  | "SECRET_STORE_UNAVAILABLE"
-  | "NOT_CONNECTED"
-  | "RATE_LIMITED"
-  | "REMOTE_UNAVAILABLE"
-  | "REMOTE_REJECTED"
-  | "REMOTE_NOT_FOUND"
-  | "REMOTE_CONFLICT"
-  | "MCP_UNAVAILABLE"
-  | "MCP_FAILED"
+  "SECRET_STORE_UNAVAILABLE",
+  "NOT_CONNECTED",
+  "REMOTE_UNAVAILABLE",
+  "REMOTE_REJECTED",
+  "REMOTE_NOT_FOUND",
+  "REMOTE_CONFLICT",
+  "MCP_UNAVAILABLE",
+  "MCP_FAILED",
 ```
-
-(et `| "TIMEOUT"` s'il n'a pas été ajouté en phase 4).
 
 `packages/schema/src/integrations-rpc.ts` :
 
@@ -913,7 +995,27 @@ export type IntegrationRpcResult = {
 };
 ```
 
-`packages/schema/src/rpc.ts` : ajouter `...INTEGRATION_RPC` à la fin du tableau de `RpcRequest` (`z.discriminatedUnion("method", [ …, ...INTEGRATION_RPC ])`) et `& IntegrationRpcResult` au type `RpcResult` (`export type RpcResult = { … } & IntegrationRpcResult;`).
+`packages/schema/src/rpc.ts` : ajouter `...INTEGRATION_RPC` à la fin du tableau de `RpcRequest` (`z.discriminatedUnion("method", [ …, z.object({ method: z.literal("reportComponentRefusal"), … }), ...INTEGRATION_RPC ])`), `& IntegrationRpcResult` au type `RpcResult` (`export type RpcResult = { … } & IntegrationRpcResult;`) et `IntegrationEvent` à `ChangeMessage` (N24) :
+
+```ts
+export type ChangeMessage =
+  | { projectId: string | null }
+  | { topic: Topic }
+  | RunChanged
+  | CodeEvent
+  | IntegrationEvent;
+```
+
+(`import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";` et `import type { IntegrationEvent } from "./integrations";`). Tant que la Task 2 n'a pas routé ces méthodes, `service.handle` les rejette en `INTERNAL` (`handleAgents`, branche `default`) : aucune UI ne les appelle avant.
+
+`packages/sdk/src/conformance.tsx` : un adaptateur n'a pas d'UI ; la liste des surfaces devient
+
+```ts
+    const surfaces: Surface[] =
+      manifest.kind === "both" ? ["widget", "view"] : manifest.kind === "adapter" ? [] : [manifest.kind];
+```
+
+`packages/ui/src/dialogs/catalog-choices.ts` : dans `mineChoices`, écarter une version dont `v.manifest.kind === "adapter"` (N6 : un adaptateur n'apparaît pas au catalogue ; `builtinChoices` ne lit que les modules UI de `registry.ts`, où l'adaptateur n'est jamais enregistré). Les manifestes littéraux typés `ComponentManifest` des tests `packages/ui/src/dialogs/component-dialogs.test.tsx` et `packages/ui/src/pages/instance.test.tsx` gagnent `secrets: []` et `mcp: []` (le type de sortie de Zod rend ces champs obligatoires). Les autres consommateurs de `manifest.kind` restent corrects : `sdk/src/mock.ts` et `sdk/src/dev.tsx` retombent sur `"widget"`, `devkit/src/scaffold.ts` et `cli/src/index.ts` n'engendrent que `widget | view | both`.
 
 `packages/schema/src/index.ts` : ajouter
 
@@ -1025,8 +1127,8 @@ Run: `bun test packages/sdk/src/adapter.test.ts` — Expected: FAIL (module abse
 
 ```ts
 import {
+  bindingIdOf,
   type GithubIssueRef,
-  KiboError,
   type MappedRemote,
   PullInput,
   PushOp,
@@ -1034,6 +1136,8 @@ import {
 } from "@kibo/schema";
 import type { ZodType, ZodTypeDef } from "zod";
 import type { KiboSdk } from "./types";
+
+export { BINDING_PREFIX, bindingIdOf } from "@kibo/schema";
 
 export type AdapterContext<C> = { config: C; fetch: KiboSdk["fetch"]; signal: AbortSignal };
 
@@ -1054,18 +1158,10 @@ export type Adapter<R, C> = {
 
 export type AdapterActionContext = { instanceId: string; config: unknown; fetch: KiboSdk["fetch"] };
 
-export const BINDING_PREFIX = "binding:";
 const ADAPTER_TIMEOUT_MS = 120_000;
 
 export function defineAdapter<R, C>(adapter: Adapter<R, C>): Adapter<R, C> {
   return adapter;
-}
-
-export function bindingIdOf(instanceId: string): string {
-  if (!instanceId.startsWith(BINDING_PREFIX)) {
-    throw new KiboError("INVALID_INPUT", "adapter actions run for a binding only");
-  }
-  return instanceId.slice(BINDING_PREFIX.length);
 }
 
 export function mapRemote<R, C>(adapter: Adapter<R, C>, raw: unknown, config: C, bindingId: string): MappedRemote {
@@ -1311,7 +1407,7 @@ export const frIntegrations = {
 };
 ```
 
-`packages/ui/src/i18n/fr.ts` : `import { frIntegrations } from "./fr-integrations";` et ajouter la clé `integrations: frIntegrations,` à l'objet `fr`.
+`packages/ui/src/i18n/fr.ts` : `import { frIntegrations } from "./fr-integrations";` et ajouter la clé `integrations: frIntegrations,` à l'objet `fr` (`as const`), juste avant `...frCode,` (aucune collision : `fr.settings.integrations` est une chaîne sous `settings`).
 
 - [ ] **Step 11: Vérifier et commiter**
 
@@ -1319,7 +1415,7 @@ Run: `bun test packages components && bun run check && bun run typecheck`
 Expected: PASS.
 
 ```bash
-git add CLAUDE.md docs/superpowers/specs/2026-09-26-kibo-integrations.md packages/schema/src packages/sdk/src/adapter.ts packages/sdk/src/adapter.test.ts packages/sdk/src/index.ts packages/sdk/package.json bun.lock packages/ui/src/i18n
+git add CLAUDE.md packages/schema/src packages/sdk/src/adapter.ts packages/sdk/src/adapter.test.ts packages/sdk/src/index.ts packages/sdk/src/conformance.tsx packages/sdk/package.json bun.lock packages/ui/src/i18n packages/ui/src/dialogs/catalog-choices.ts packages/ui/src/dialogs/component-dialogs.test.tsx packages/ui/src/pages/instance.test.tsx
 git commit -m "feat(schema): contrats des intégrations"
 ```
 
@@ -1327,17 +1423,16 @@ git commit -m "feat(schema): contrats des intégrations"
 
 ### Task 2: Socle démon des intégrations
 
-Isole les ancrages des phases 2 à 4 derrière `IntegrationHost`, crée les tables, le caviardage, le journal, les réglages, le registre RPC et les sondes. Après cette tâche, chaque module d'intégration se branche en une ligne dans `bootstrap.ts`.
+Isole les ancrages des phases 2 à 4 derrière `IntegrationHost`, crée les tables, le caviardage, le journal, les réglages, le registre RPC et les sondes, et fait passer **toute** commande de projet du démon par un chemin unique observable (N22). Après cette tâche, chaque module d'intégration se branche en une ligne dans `bootstrap.ts`. Tâche à risque (persistance transactionnelle, caviardage) : relecture `kibo-lead`. Démarre après l'intégration de la tâche 30b de la phase 4 (`daemon.ts`, `components/service.ts`).
 
 **Files:**
-- Create: `packages/daemon/src/integrations/{types.ts,host.ts,db.ts,redact.ts,events.ts,settings.ts,registry.ts,bootstrap.ts,memory-secret-store.ts,github-remote.ts,probes.ts}`
+- Create: `packages/daemon/src/integrations/{types.ts,host.ts,db.ts,redact.ts,events.ts,settings.ts,registry.ts,methods.ts,bootstrap.ts,memory-secret-store.ts,github-remote.ts,probes.ts}`
 - Create: `packages/daemon/src/integrations/testing/fake-host.ts`
 - Test: `packages/daemon/src/integrations/{redact,events,registry,github-remote,bootstrap,host}.test.ts`
-- Modify: `packages/daemon/src/store.ts` (`db`, `transaction`), `packages/daemon/src/service.ts` (commande avec origine, observateurs dans la transaction, restauration sur échec, dispatch des RPC d'intégration, événements), `packages/daemon/src/server.ts` (codes HTTP, caviardage des erreurs, diffusion des `IntegrationEvent`), `packages/daemon/src/main.ts` (drapeaux, caviardage de la console), `packages/schema/src/rpc.ts` (`command` accepte `instanceId?`)
-- Modify (si un ancrage diffère) : ce plan, tableau « Points d'ancrage », colonne « Réel »
+- Modify: `packages/daemon/src/store.ts` (`transaction` ; `db` existe déjà), `packages/daemon/src/docs.ts` (`Docs.run`, `Docs.trigger`), `packages/daemon/src/service.ts` (chemin unique des commandes, intercepteurs et observateurs dans la transaction, restauration sur échec, `command` avec `instanceId`, dispatch des RPC d'intégration, `attachIntegrations`, `commands`), `packages/daemon/src/components/gate.ts` et `gate-handlers.ts` (`run` par `docs.run`, avec l'`instanceId`), `packages/daemon/src/agents/data-port.ts` (`assignTicket`, `runStarted`, `runDone` par `docs.run`/`docs.trigger`), `packages/daemon/src/server.ts` et `server.test.ts` (codes HTTP, caviardage de `e.detail`), `packages/daemon/src/daemon.ts` (hôte et intégrations créés dans `startDaemon`, closer, `redact`), `packages/daemon/src/main.ts` (drapeaux, caviardage de la console), `packages/schema/src/rpc.ts` (`command` accepte `instanceId?`), `packages/sdk/src/client.ts` (`subscribeIntegrations`, N24), `packages/sdk/src/client.test.ts`
 
 **Interfaces:**
-- Consumes: Task 1 (schema) ; ancrages du tableau (phase 2 : notification, règles ; phase 3 : `git`, `gh`, WebSocket typé ; phase 4 : `componentCall { kind: "run" }`).
+- Consumes: Task 1 (schema, dont `ChangeMessage` étendu) ; ancrages réels : `Notice` et `DaemonOptions.notify` (`agents/notifier.ts`, `daemon.ts`), `evaluateRules`/`readRules`/`RuleTrigger` (`@kibo/core/rules`), `createGit`/`runGh` (`code/run.ts`), `ChangeMessage` et le canal WebSocket `changes` (`server.ts`, `sdk/src/client.ts`), `createGateHandlers` (`components/gate-handlers.ts`), `createDataPort` (`agents/data-port.ts`), `startDaemon`/`DaemonOptions` (`daemon.ts`).
 - Produces (`packages/daemon/src/integrations/types.ts`) :
 
 ```ts
@@ -1362,12 +1457,11 @@ import type {
   SecretName,
   Ticket,
 } from "@kibo/schema";
+import type { Notice } from "../agents/notifier";
+import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 
-export type CommandOrigin = "user" | "sync";
-export type CommandMeta = { origin: CommandOrigin; instanceId: string | null };
-export type CommandEvent = { projectId: string; command: ProjectCommand; result: unknown; meta: CommandMeta };
-export type SystemNotification = { title: string; body: string; projectId: string; ticketId: string | null };
-export type RuleEvent = { type: "ci.failed"; projectId: string; ticketId: string; runId: number; prNumber: number };
+export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";
+export type SystemNotification = Notice;
 export type GhRunner = (args: string[]) => Promise<{ code: number; stdout: string; stderr: string }>;
 
 export type IntegrationHost = {
@@ -1382,13 +1476,11 @@ export type IntegrationHost = {
   intercept(interceptor: CommandInterceptor): () => void;
   broadcast(event: IntegrationEvent): void;
   notify(n: SystemNotification): void;
-  ruleEvent(e: RuleEvent): void;
   gitRemoteUrl(projectId: string): Promise<string | null>;
   gitAvailable(): Promise<boolean>;
   gh: GhRunner;
   now(): number;
 };
-export type CommandInterceptor = (projectId: string, cmd: ProjectCommand, meta: CommandMeta) => ProjectCommand;
 
 export type SecretStore = {
   availability(): Promise<{ ok: true } | { ok: false; reason: string }>;
@@ -1455,15 +1547,22 @@ export type ComponentIntegrationHooks = {
   - `createEventLog(db, redactor, now): EventLog` avec `EventLog = { log(integration: IntegrationId, level: "info" | "warn" | "error", message: string): void; recent(integration: IntegrationId, limit?: number): { at: number; level: string; message: string }[] }`
   - `createSettings(db): Settings` avec `Settings = { get(key: SettingKey): string | null; set(key: SettingKey, value: string): void; delete(key: SettingKey): void }`, `SettingKey = "github.mode" | "github.login" | "figma.url"`
   - `createMemorySecretStore(redactor, initial?: Record<string, string>): SecretStore & { dump(): Map<string, string> }` ; `unavailableSecretStore(reason: string): SecretStore`
-  - `createIntegrationRpc(parts: { handlers: IntegrationHandlers[]; probes: IntegrationProbe[]; stops: (() => void)[]; hooks: ComponentIntegrationHooks }): IntegrationRpc` avec `IntegrationRpc = { handles(method: string): boolean; handle(req: IntegrationRpcRequest): Promise<unknown>; stop(): void; hooks: ComponentIntegrationHooks }` (les `hooks` sont lus par le `componentCall` et le proxy `fetch` de la phase 4 ; les tâches 8, 12, 15 et 16 remplissent leurs champs)
+  - `createIntegrationRpc(parts: { handlers: IntegrationHandlers[]; probes: IntegrationProbe[]; stops: (() => void)[]; hooks: ComponentIntegrationHooks }): IntegrationRpc` avec `IntegrationRpc = { handles(method: string): boolean; handle(req: IntegrationRpcRequest): Promise<unknown>; stop(): void; hooks: ComponentIntegrationHooks }` (les `hooks` sont lus par la porte `componentCall` et le proxy `fetch` de la phase 4, `components/gate-handlers.ts` et `net-proxy.ts` ; les tâches 8, 12, 15 et 16 remplissent leurs champs) ; `NEUTRAL_HOOKS: ComponentIntegrationHooks` (aucun alias, aucun secret, `mcp` et `ciRuns` à `null`)
+  - `INTEGRATION_METHODS` et `isIntegrationRequest(req: RpcRequest): req is IntegrationRpcRequest` (`integrations/methods.ts`, sur le modèle de `components/methods.ts`)
+  - `createIntegrationHost(parts: HostParts): IntegrationHost` (`integrations/host.ts`)
   - `parseGithubRemote(url: string | null): RepoSlug | null` ; `githubRepoOf(host, projectId): Promise<RepoSlug | null>`
   - `parseIntegrationFlags(values): IntegrationFlags` (`{ testOrigins: string[]; memorySecrets: boolean }`) ; `IntegrationKit` ; `startIntegrations(host, flags, redactor): IntegrationRpc`
   - `createFakeHost(opts?): FakeHost` (tests de toutes les tâches du démon)
-  - `Store` gagne `db: Database` et `transaction<T>(fn: () => T): T` ; `Service` gagne `onIntegrationEvent(listener)` et `close()` ; la RPC `command` accepte `instanceId?: string`
+  - `Store` gagne `transaction<T>(fn: () => T): T` (`db` existe déjà)
+  - `docs.ts` : `CommandOrigin = "user" | "sync"`, `CommandMeta = { origin: CommandOrigin; instanceId: string | null }`, `CommandEvent = { projectId: string; command: ProjectCommand; result: unknown; meta: CommandMeta }`, `CommandInterceptor = (projectId: string, cmd: ProjectCommand, meta: CommandMeta) => ProjectCommand`, `USER_COMMAND: CommandMeta = { origin: "user", instanceId: null }` ; `Docs` gagne `run(projectId: string, command: ProjectCommand, meta?: CommandMeta): unknown` et `trigger(projectId: string, trigger: RuleTrigger, meta?: CommandMeta): number` (N22)
+  - `Service` gagne `transaction<T>(fn: () => T): T` (restaure les docs touchés si `fn` échoue), `commands: { onCommand(listener: (e: CommandEvent) => void): () => void; intercept(i: CommandInterceptor): () => void }` et `attachIntegrations(rpc: IntegrationRpc): () => void` ; les événements d'intégration passent par `docs.emit` et `service.onChange` (N24 : pas de `onIntegrationEvent`) ; la RPC `command` accepte `instanceId?: string`
+  - `DaemonOptions` gagne `integrations?: IntegrationFlags` et `redactor?: Redactor` (N26)
+  - `KiboClient.subscribeIntegrations(listener: (e: IntegrationEvent) => void): () => void` (N24)
+  - `GateHandlers.run(projectId: string, instanceId: string, command: ProjectCommand)` (l'`instanceId` de l'appelant est transmis à `docs.run`)
 
 - [ ] **Step 1: Vérifier les ancrages**
 
-Lire le code livré des phases 2 à 4 pour chaque ligne du tableau « Points d'ancrage ». Pour chaque écart, noter le nom réel dans la colonne « Réel » (Modify ce plan) et l'utiliser dans `host.ts` et `service.ts` seulement.
+Le tableau « Points d'ancrage » a été rempli par la tâche T0 (colonne « Réel »). Relire chaque ligne contre `main` au moment de démarrer ; un écart apparu depuis (par exemple après la tâche 30b) est noté dans ce tableau et n'est absorbé que dans `host.ts`, `service.ts` et `daemon.ts`.
 
 - [ ] **Step 2: Tests du caviardage, du journal et des remotes (échouent)**
 
@@ -1674,6 +1773,8 @@ export function createEventLog(db: Database, redactor: Redactor, now: () => numb
   };
 }
 ```
+
+Ce journal est distinct du journal des refus des composants (`components/events.ts`, table `component_events`, mêmes noms `createEventLog`/`EventLog`) : un module qui importe les deux renomme à l'import (N28).
 
 `packages/daemon/src/integrations/settings.ts` :
 
@@ -1897,15 +1998,28 @@ export function createIntegrationRpc(parts: {
     stop() {
       for (const s of parts.stops) s();
     },
-    hooks: parts.hooks ?? {
-      aliases: new Map(),
-      observe: () => undefined,
-      secret: async () => null,
-      mcp: null,
-      ciRuns: null,
-    },
+    hooks: parts.hooks ?? NEUTRAL_HOOKS,
   };
 }
+
+export const NEUTRAL_HOOKS: ComponentIntegrationHooks = {
+  aliases: new Map(),
+  observe: () => undefined,
+  secret: async () => null,
+  mcp: null,
+  ciRuns: null,
+};
+```
+
+`packages/daemon/src/integrations/methods.ts` (même modèle que `components/methods.ts`) :
+
+```ts
+import { INTEGRATION_RPC, type IntegrationRpcRequest, type RpcRequest } from "@kibo/schema";
+
+export const INTEGRATION_METHODS: ReadonlySet<string> = new Set(INTEGRATION_RPC.map((s) => s.shape.method.value));
+
+export const isIntegrationRequest = (req: RpcRequest): req is IntegrationRpcRequest =>
+  INTEGRATION_METHODS.has(req.method);
 ```
 
 Le `as AnyHandler` est le seul transtypage : `IntegrationHandlers` associe à chaque méthode un handler de sa propre requête, et la table n'est lue qu'avec la méthode de la requête reçue.
@@ -1995,7 +2109,7 @@ import { createEventLog, type EventLog } from "./events";
 import { createMemorySecretStore, unavailableSecretStore } from "./memory-secret-store";
 import { builtinProbes } from "./probes";
 import type { Redactor } from "./redact";
-import { createIntegrationRpc, type IntegrationRpc } from "./registry";
+import { createIntegrationRpc, type IntegrationRpc, NEUTRAL_HOOKS } from "./registry";
 import { createSettings, type Settings } from "./settings";
 import type {
   ComponentIntegrationHooks,
@@ -2046,7 +2160,7 @@ export function startIntegrations(host: IntegrationHost, flags: IntegrationFlags
     events: createEventLog(host.db, redactor, host.now),
     settings: createSettings(host.db),
     secrets,
-    hooks: { aliases: new Map(), observe: () => undefined, secret: (name) => secrets.get(name), mcp: null, ciRuns: null },
+    hooks: { ...NEUTRAL_HOOKS, secret: (name) => secrets.get(name) },
   };
   const modules: IntegrationModule[] = [{ probes: builtinProbes(kit.host) }];
   return createIntegrationRpc({
@@ -2060,218 +2174,337 @@ export function startIntegrations(host: IntegrationHost, flags: IntegrationFlags
 
 Run: `bun test packages/daemon/src/integrations` — Expected: PASS.
 
-- [ ] **Step 6: Test de l'hôte réel (échoue)**
+- [ ] **Step 6: Tests du chemin unique et de l'hôte réel (échouent)**
 
-`packages/daemon/src/integrations/host.test.ts` (sur le vrai service) :
+`packages/daemon/src/integrations/host.test.ts` (sur le vrai store et le vrai service ; `call` est l'aide typée de `service.ts`) :
 
 ```ts
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProjectMeta } from "@kibo/schema";
-import { createService, type Service } from "../service";
+import type { ChangeMessage, ProjectMeta, Ticket } from "@kibo/schema";
+import type { Notice } from "../agents/notifier";
+import type { CommandEvent } from "../docs";
+import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
-import type { CommandEvent, IntegrationHost } from "./types";
+import { createIntegrationHost } from "./host";
+import type { IntegrationHost } from "./types";
 
 let home: string;
 let store: Store;
 let service: Service;
 let host: IntegrationHost;
 let project: ProjectMeta;
+let notices: Notice[];
 
-beforeEach(async () => {
+beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "kibo-host-"));
   store = openStore(home);
-  service = createService(store, {
-    user: "adam",
-    integrations: (h) => {
-      host = h;
-      return null;
-    },
-  });
-  project = (await service.handle({
-    method: "createProject",
-    name: "Kibo",
-    key: "KIB",
-    folder: null,
-    color: "#71717A",
-  })) as ProjectMeta;
+  service = createService(store, { user: "adam" });
+  notices = [];
+  host = createIntegrationHost({ user: "adam", home, store, service, notify: (n) => notices.push(n) });
+  project = call(service, { method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#71717A" });
 });
 afterEach(() => {
-  service.close();
   store.close();
   rmSync(home, { recursive: true, force: true });
 });
+
+const createTicket = (title: string) =>
+  host.command(project.id, { method: "createTicket", title }, { origin: "user", instanceId: null });
 
 test("commands carry their origin and observers run inside the persistence transaction", () => {
   const seen: CommandEvent[] = [];
   host.onCommand((e) => {
     seen.push(e);
-    host.db.query("SELECT 1").get();
+    expect(store.db.inTransaction).toBe(true);
   });
   host.command(project.id, { method: "createTicket", title: "A" }, { origin: "sync", instanceId: null });
   expect(seen[0]?.meta).toEqual({ origin: "sync", instanceId: null });
   expect(seen[0]?.command.method).toBe("createTicket");
 });
 
-test("a failing observer rolls back persistence and restores the in-memory doc", async () => {
-  host.command(project.id, { method: "createTicket", title: "Kept" }, { origin: "user", instanceId: null });
+test("a failing observer rolls back persistence and restores the in-memory doc", () => {
+  createTicket("Kept");
   const off = host.onCommand(() => {
     throw new Error("observer boom");
   });
-  expect(() =>
-    host.command(project.id, { method: "createTicket", title: "Lost" }, { origin: "user", instanceId: null }),
-  ).toThrow("observer boom");
+  expect(() => createTicket("Lost")).toThrow("observer boom");
   off();
   expect(host.snapshot(project.id).tickets.map((t) => t.title)).toEqual(["Kept"]);
-  service.close();
-  const again = createService(store, { user: "adam", integrations: () => null });
-  await expect(again.handle({ method: "getProject", projectId: project.id })).resolves.toMatchObject({
-    tickets: [{ title: "Kept" }],
-  });
-  again.close();
+  const again = createService(store, { user: "adam" });
+  expect(call(again, { method: "getProject", projectId: project.id }).tickets.map((t) => t.title)).toEqual(["Kept"]);
 });
 
 test("interceptors rewrite a command before observers see it", () => {
   const seen: string[] = [];
   host.intercept((_p, cmd) => (cmd.method === "createTicket" ? { ...cmd, title: `${cmd.title}!` } : cmd));
   host.onCommand((e) => seen.push(e.command.method === "createTicket" ? e.command.title : ""));
-  host.command(project.id, { method: "createTicket", title: "A" }, { origin: "user", instanceId: null });
+  createTicket("A");
   expect(seen).toEqual(["A!"]);
   expect(host.snapshot(project.id).tickets[0]?.title).toBe("A!");
 });
 
-test("integration events reach service listeners", () => {
-  const events: unknown[] = [];
-  service.onIntegrationEvent((e) => events.push(e));
+test("the command rpc checks its instance and passes it to observers", () => {
+  const seen: CommandEvent[] = [];
+  host.onCommand((e) => seen.push(e));
+  expect(() =>
+    call(service, { method: "command", projectId: project.id, instanceId: "nope", command: { method: "createTicket", title: "X" } }),
+  ).toThrow("NOT_FOUND");
+  call(service, { method: "command", projectId: project.id, command: { method: "createTicket", title: "Y" } });
+  expect(seen.map((e) => e.meta)).toEqual([{ origin: "user", instanceId: null }]);
+});
+
+test("agents, rules and derived statuses reach the same observers", () => {
+  const parent = createTicket("Parent");
+  const child = host.command(
+    project.id,
+    { method: "createTicket", title: "Enfant", parentId: parent.id },
+    { origin: "user", instanceId: null },
+  );
+  const seen: string[] = [];
+  host.onCommand((e) => seen.push(`${e.command.method}:${"ticketId" in e.command ? e.command.ticketId : ""}`));
+  service.agentData.assignTicket(project.id, child.id, "dev");
+  service.triggerRules(project.id, { kind: "pr_merged", ticketId: child.id });
+  expect(seen).toEqual([`updateTicket:${child.id}`, `setStatus:${child.id}`, `setStatus:${parent.id}`]);
+  const tickets: Ticket[] = host.snapshot(project.id).tickets;
+  expect(tickets.map((t) => t.statusId)).toEqual(["done", "done"]);
+});
+
+test("broadcasts and notices go through the change channel", () => {
+  const messages: ChangeMessage[] = [];
+  service.onChange((m) => messages.push(m));
   host.broadcast({ type: "integrations" });
-  expect(events).toEqual([{ type: "integrations" }]);
+  host.notify({ title: "CI cassée sur KIB-1", body: "ci a échoué sur la PR #12." });
+  expect(messages).toEqual([
+    { type: "integrations" },
+    { type: "notice", title: "CI cassée sur KIB-1", body: "ci a échoué sur la PR #12." },
+  ]);
+  expect(notices).toEqual([{ title: "CI cassée sur KIB-1", body: "ci a échoué sur la PR #12." }]);
 });
 ```
 
-Run: `bun test packages/daemon/src/integrations/host.test.ts` — Expected: FAIL.
+`packages/sdk/src/client.test.ts`, nouveau test sur le modèle de « topic, run and project messages reach their own listeners » : le serveur envoie `{ type: "integrations" }` puis `{ type: "sync", projectId: "p1", bindingId: "b1", imported: 2, running: true }` puis `{ projectId: "p1" }` ; attendu `seen` = `["integrations", "sync:p1", "project:p1"]` (un événement d'intégration n'atteint jamais les écouteurs de projet).
 
-- [ ] **Step 7: Brancher le store, le service, le serveur et `main.ts`**
+Run: `bun test packages/daemon/src/integrations/host.test.ts packages/sdk/src/client.test.ts` — Expected: FAIL.
 
-`packages/daemon/src/store.ts` : ajouter au type `Store` `db: Database;` et `transaction<T>(fn: () => T): T;`, et au retour d'`openStore` :
+- [ ] **Step 7: Chemin unique des commandes, store, service, porte, agents (N22)**
+
+`packages/daemon/src/store.ts` : ajouter au type `Store` `transaction<T>(fn: () => T): T;` et au retour d'`openStore` :
 
 ```ts
-    db,
     transaction: <T>(fn: () => T): T => db.transaction(fn)(),
 ```
+
+`packages/daemon/src/docs.ts` :
+
+```ts
+import type { RuleTrigger } from "@kibo/core/rules";
+import type { ChangeMessage, ProjectCommand } from "@kibo/schema";
+import type { LoroDoc } from "loro-crdt";
+
+export type CommandOrigin = "user" | "sync";
+export type CommandMeta = { origin: CommandOrigin; instanceId: string | null };
+export type CommandEvent = { projectId: string; command: ProjectCommand; result: unknown; meta: CommandMeta };
+export type CommandInterceptor = (projectId: string, cmd: ProjectCommand, meta: CommandMeta) => ProjectCommand;
+export const USER_COMMAND: CommandMeta = { origin: "user", instanceId: null };
+
+export type Docs = {
+  workspace: LoroDoc;
+  project(id: string): LoroDoc;
+  projectIds(): string[];
+  save(projectId: string | null): void;
+  emit(message: ChangeMessage): void;
+  run(projectId: string, command: ProjectCommand, meta?: CommandMeta): unknown;
+  trigger(projectId: string, trigger: RuleTrigger, meta?: CommandMeta): number;
+};
+```
+
+`packages/daemon/src/service.ts` : `runProjectCommand` disparaît au profit de `docs.run` et `docs.trigger`, définis dans l'objet `docs` de `createService` (seul constructeur de `Docs`) :
+
+```ts
+  const commandListeners = new Set<(e: CommandEvent) => void>();
+  const interceptors = new Set<CommandInterceptor>();
+  let integrations: IntegrationRpc | null = null;
+
+  const execute = (doc: LoroDoc, projectId: string, requested: ProjectCommand, meta: CommandMeta, done: CommandEvent[]) => {
+    let command = requested;
+    for (const i of interceptors) command = i(projectId, command, meta);
+    const result = executeProjectCommand(doc, command);
+    done.push({ projectId, command, result, meta });
+    return { command, result };
+  };
+  const derive = (doc: LoroDoc, projectId: string, trigger: RuleTrigger, meta: CommandMeta, done: CommandEvent[]) => {
+    for (const command of evaluateRules(readRules(doc), trigger, listTickets(doc))) execute(doc, projectId, command, meta, done);
+  };
+  const restore = (projectId: string) => {
+    const restored = loadDoc(store, projectDocId(projectId));
+    if (!restored) throw new KiboError("STORE_CORRUPT", `project ${projectId} lost its snapshot`);
+    projects.set(projectId, restored);
+  };
+  const commit = (projectId: string, done: CommandEvent[]) => {
+    store.transaction(() => {
+      docs.save(projectId);
+      for (const e of done) for (const l of commandListeners) l(e);
+    });
+    docs.emit({ projectId });
+    if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
+    components?.afterCommand(projectId);
+  };
+  const guarded = <T>(projectId: string, work: (doc: LoroDoc, done: CommandEvent[]) => T): T => {
+    const done: CommandEvent[] = [];
+    try {
+      const out = work(docs.project(projectId), done);
+      if (done.length > 0) commit(projectId, done);
+      return out;
+    } catch (e) {
+      if (done.length > 0) restore(projectId);
+      throw e;
+    }
+  };
+```
+
+et, dans `docs` :
+
+```ts
+    run(projectId, requested, meta = USER_COMMAND) {
+      return guarded(projectId, (doc, done) => {
+        const { command, result } = execute(doc, projectId, requested, meta, done);
+        if (command.method === "setStatus") derive(doc, projectId, { kind: "status_changed", ticketId: command.ticketId }, meta, done);
+        return result;
+      });
+    },
+    trigger(projectId, trigger, meta = USER_COMMAND) {
+      return guarded(projectId, (doc, done) => {
+        derive(doc, projectId, trigger, meta, done);
+        return done.length;
+      });
+    },
+```
+
+Les commandes dérivées des règles passent par les intercepteurs et les observateurs, dans la même transaction, sans redéclencher les règles. `emit` est typé `ChangeMessage`, qui inclut `IntegrationEvent` depuis la Task 1 (N24) : le serveur publie déjà tout `service.onChange` sur le canal `changes`, `server.ts` n'a rien de plus à diffuser. Le reste de `service.ts` :
+- `transaction<T>(fn: () => T): T` (utilisé par `host.transaction`, Tasks 14, 15, 16) : `store.transaction(fn)` qui note les projets modifiés par `docs.run`/`docs.trigger` pendant `fn` (ensemble `touched`, rempli par `guarded` quand `done.length > 0`) ; si `fn` échoue, chaque projet noté est rechargé depuis SQLite (`restore`) puis `docs.emit({ projectId })`, et l'erreur est relancée. Imbriqué, il se contente de `store.transaction(fn)` (point de sauvegarde). Raison : une écriture SQLite du moteur de sync qui échoue après une commande annulerait le snapshot persisté mais laisserait le ticket dans le doc en mémoire (import en double à la sauvegarde suivante). Test dans `host.test.ts` : « a failing host transaction restores the docs it touched » (commande dans `host.transaction`, puis `throw` ; le ticket n'est ni en mémoire ni en base) ;
+- `triggerRules(projectId, trigger)` devient `docs.trigger(projectId, trigger)` (le suivi des PR, `code/pr-poller.ts`, n'est pas modifié) ;
+- `case "command"` : `assertShellCommand(req.command)` ; si `req.instanceId` est fourni et absent de `listInstances(docs.project(req.projectId))` ⇒ `KiboError("NOT_FOUND", \`instance ${req.instanceId} not found\`)` ; puis `docs.run(req.projectId, req.command, { origin: "user", instanceId: req.instanceId ?? null })` ;
+- `handle` : `if (isIntegrationRequest(req)) return integrationsReady().handle(req);` à côté de `isComponentRequest` (`integrationsReady` rejette en `INTERNAL`, « integrations are not ready », comme `componentsReady`) ;
+- le service expose `commands: { onCommand(l) { commandListeners.add(l); return () => commandListeners.delete(l); }, intercept(i) { interceptors.add(i); return () => interceptors.delete(i); } }` et `attachIntegrations(rpc) { integrations = rpc; return () => { integrations = null; }; }` ;
+- imports : `evaluateRules`, `readRules` (`@kibo/core/rules`), `listInstances`, `listTickets` (`@kibo/core`), `isIntegrationRequest` (`./integrations/methods`), types `IntegrationRpc` (`./integrations/registry`), `CommandEvent`, `CommandInterceptor`, `CommandMeta`, `USER_COMMAND` (`./docs`). `applyRules` n'est plus importé.
+
+`packages/schema/src/rpc.ts` : la requête `command` gagne `instanceId: z.string().min(1).optional()`.
+
+`packages/daemon/src/components/gate.ts` : `GateHandlers.run(projectId: string, instanceId: string, command: ProjectCommand)` ; `dispatch` appelle `h.run(projectId, inst.id, call.command)`. `packages/daemon/src/components/gate-handlers.ts` : `run: async (projectId, instanceId, command) => docs.run(projectId, command, { origin: "user", instanceId })` (plus d'`executeProjectCommand` ni de `changed` pour `run` ; `data` garde `changed`). Le harnais de `gate.test.ts` (`handler("run")`) n'a rien à changer.
+
+`packages/daemon/src/agents/data-port.ts` : `assignTicket` ⇒ `docs.run(projectId, { method: "updateTicket", ticketId, assignee: { kind: "agent", ref: profileName } })` ; `runStarted` ⇒ `docs.trigger(projectId, { kind: "run_started", ticketId })` ; `runDone` ⇒ `docs.trigger(projectId, { kind: "run_done", ticketId })` ; l'aide `changed` disparaît. `applyRules` reste exportée pour `data-port.test.ts` (fonction pure sur un doc, plus appelée par le démon).
+
+Run: `bun test packages/daemon packages/sdk/src/client.test.ts` — Expected: les tests existants du service, de la porte, des agents et du suivi des PR passent ; seuls ceux de l'hôte échouent encore.
+
+- [ ] **Step 8: Hôte, démarrage, serveur, client (N24, N25, N26)**
 
 `packages/daemon/src/integrations/host.ts` :
 
 ```ts
-import type { CommandResult, IntegrationEvent, ProjectCommand, ProjectMeta, ProjectSnapshot } from "@kibo/schema";
+import { getProjectMeta, listProjects, readProject } from "@kibo/core";
+import { type CommandResult, KiboError, type ProjectCommand } from "@kibo/schema";
+import type { Notice } from "../agents/notifier";
+import { createGit, runGh } from "../code/run";
+import type { Service } from "../service";
 import type { Store } from "../store";
-import type {
-  CommandEvent,
-  CommandInterceptor,
-  CommandMeta,
-  GhRunner,
-  IntegrationHost,
-  RuleEvent,
-  SystemNotification,
-} from "./types";
+import type { IntegrationHost } from "./types";
 
 export type HostParts = {
   user: string;
   home: string;
   store: Store;
-  projects(): ProjectMeta[];
-  snapshot(projectId: string): ProjectSnapshot;
-  runCommand(projectId: string, cmd: ProjectCommand, meta: CommandMeta): unknown;
-  onCommand(listener: (e: CommandEvent) => void): () => void;
-  intercept(interceptor: CommandInterceptor): () => void;
-  broadcast(event: IntegrationEvent): void;
-  notify(n: SystemNotification): void;
-  ruleEvent(e: RuleEvent): void;
-  git(projectId: string, args: string[]): Promise<{ code: number; stdout: string }>;
-  gitAvailable(): Promise<boolean>;
-  gh: GhRunner;
+  service: Service;
+  notify(notice: Notice): void;
   now?: () => number;
 };
 
 export function createIntegrationHost(parts: HostParts): IntegrationHost {
+  const { docs, commands } = parts.service;
   return {
     user: parts.user,
     home: parts.home,
     db: parts.store.db,
-    transaction: (fn) => parts.store.transaction(fn),
-    projects: parts.projects,
-    snapshot: parts.snapshot,
+    transaction: (fn) => parts.service.transaction(fn),
+    projects: () => listProjects(docs.workspace),
+    snapshot: (projectId) => readProject(docs.project(projectId)),
     command<C extends ProjectCommand>(projectId: string, cmd: C, meta: CommandMeta): CommandResult[C["method"]] {
-      return parts.runCommand(projectId, cmd, meta) as CommandResult[C["method"]];
+      return docs.run(projectId, cmd, meta) as CommandResult[C["method"]];
     },
-    onCommand: parts.onCommand,
-    intercept: parts.intercept,
-    broadcast: parts.broadcast,
-    notify: parts.notify,
-    ruleEvent: parts.ruleEvent,
+    onCommand: commands.onCommand,
+    intercept: commands.intercept,
+    broadcast: (event) => docs.emit(event),
+    notify(notice) {
+      parts.notify(notice);
+      docs.emit({ type: "notice", title: notice.title, body: notice.body });
+    },
     async gitRemoteUrl(projectId) {
-      const meta = parts.projects().find((p) => p.id === projectId);
-      if (!meta?.folder) return null;
-      const r = await parts.git(projectId, ["remote", "get-url", "origin"]);
+      const folder = getProjectMeta(docs.project(projectId)).folder;
+      if (!folder) return null;
+      const r = await createGit(folder).run(["remote", "get-url", "origin"]);
       return r.code === 0 && r.stdout.trim() ? r.stdout.trim() : null;
     },
-    gitAvailable: parts.gitAvailable,
-    gh: parts.gh,
+    async gitAvailable() {
+      try {
+        return (await createGit(parts.home).run(["--version"])).code === 0;
+      } catch (e) {
+        if (e instanceof KiboError && e.code === "GIT_FAILED") return false;
+        throw e;
+      }
+    },
+    gh: (args) => runGh(args, { cwd: parts.home, env: {} }),
     now: parts.now ?? Date.now,
   };
 }
 ```
 
-(`as CommandResult[…]` : `executeProjectCommand` renvoie `unknown` par conception, comme le SDK depuis la v0.1.)
+(`import type { CommandMeta } from "../docs";` ; `as CommandResult[…]` : `docs.run` renvoie `unknown` par conception, comme `executeProjectCommand` et le SDK depuis la v0.1.) `git` et `gh` sont ceux de la phase 3 (`code/run.ts`) : `KIBO_GIT` et `KIBO_GH` restent les points de substitution des tests ; un échec de lancement de `gh` rejette en `GH_UNAVAILABLE`.
 
-`packages/daemon/src/service.ts` : `createService(store, opts)` accepte `opts.integrations?: (host: IntegrationHost) => IntegrationRpc | null` et `opts.integrationDeps?: Pick<HostParts, "notify" | "ruleEvent" | "git" | "gitAvailable" | "gh">` (fournis par `main.ts` depuis les services des phases 2 et 3 ; à défaut, `notify` et `ruleEvent` journalisent, `git`/`gh` lancent `KIBO_GIT`/`KIBO_GH`). Toute exécution de commande passe par :
+`packages/daemon/src/integrations/bootstrap.ts` : exporter `NO_INTEGRATION_FLAGS: IntegrationFlags = { testOrigins: [], memorySecrets: false }`.
+
+`packages/daemon/src/daemon.ts` (N26) : `DaemonOptions` gagne `integrations?: IntegrationFlags` et `redactor?: Redactor`. Dans `assemble`, juste après `createService` :
 
 ```ts
-  const commandListeners = new Set<(e: CommandEvent) => void>();
-  const integrationListeners = new Set<(e: IntegrationEvent) => void>();
-  const interceptors = new Set<CommandInterceptor>();
-  const runCommand = (projectId: string, requested: ProjectCommand, meta: CommandMeta): unknown => {
-    const doc = project(projectId);
-    let command = requested;
-    for (const i of interceptors) command = i(projectId, command, meta);
-    const result = executeProjectCommand(doc, command);
-    try {
-      store.transaction(() => {
-        persist(projectDocId(projectId), doc);
-        for (const l of commandListeners) l({ projectId, command, result, meta });
-      });
-    } catch (e) {
-      const restored = loadDoc(store, projectDocId(projectId));
-      if (!restored) throw new KiboError("STORE_CORRUPT", `project ${projectId} lost its snapshot`);
-      projects.set(projectId, restored);
-      throw e;
-    }
-    emit(projectId);
-    return result;
-  };
+  const redactor = opts.redactor ?? createRedactor();
+  const integrations = startIntegrations(
+    createIntegrationHost({ user: opts.user, home: opts.home, store, service, notify: opts.notify ?? (() => {}) }),
+    opts.integrations ?? NO_INTEGRATION_FLAGS,
+    redactor,
+  );
+  closers.push(service.attachIntegrations(integrations));
+  closers.push(() => integrations.stop());
 ```
 
-Les intercepteurs (`host.intercept`) réécrivent une commande avant son exécution (la Task 14 transforme une création depuis une instance synchronisée en import avec référence en attente) ; les observateurs voient la commande réécrite. La RPC `command` appelle `runCommand(req.projectId, req.command, { origin: "user", instanceId: req.instanceId ?? null })` après avoir vérifié que `req.instanceId`, s'il est fourni, désigne une instance du projet (`NOT_FOUND` sinon) ; le traitement `componentCall { kind: "run" }` de la phase 4 passe `{ origin: "user", instanceId }`. `packages/schema/src/rpc.ts` : la requête `command` gagne `instanceId: z.string().min(1).optional()`. Le service construit l'hôte avec `createIntegrationHost({ … runCommand, onCommand: (l) => { commandListeners.add(l); return () => commandListeners.delete(l); }, broadcast: (e) => { for (const l of integrationListeners) l(e); } … })`, appelle `opts.integrations?.(host)` et, dans `handle`, délègue toute méthode pour laquelle `integrations.handles(req.method)` est vrai (`await`). `Service` expose `onIntegrationEvent(listener): () => void` et `close()` (appelle `integrations.stop()`). Le service garde `integrations.hooks` et le passe au traitement `componentCall` et au proxy `fetch` de la phase 4 (utilisé à partir des Tasks 8 et 9 ; sans intégrations, des hooks neutres : aucun alias, aucun secret, `mcp` et `ciRuns` à `null`).
+(`closers` est la liste `back`, fermée en ordre inverse : les intégrations s'arrêtent après les composants et avant `runs.close()` et `store.close()`.) `startServer({ …, redact: redactor.redact })`. `opts.notify` est la notification système de la phase 2 (`stdoutNotifier` en mode natif, no-op sinon) ; en mode navigateur, l'événement `notice` diffusé par `host.notify` est affiché par l'UI (Task 21).
 
-`packages/daemon/src/server.ts` : `STATUS` gagne `SECRET_STORE_UNAVAILABLE: 503, NOT_CONNECTED: 409, RATE_LIMITED: 429, REMOTE_UNAVAILABLE: 502, REMOTE_REJECTED: 502, REMOTE_NOT_FOUND: 404, REMOTE_CONFLICT: 409, MCP_UNAVAILABLE: 502, MCP_FAILED: 502` ; `ServerOptions` gagne `redact: (text: string) => string`, appliqué à `e.detail` dans la réponse d'erreur ; `opts.service.onIntegrationEvent((e) => server.publish("changes", JSON.stringify(e)))`.
-
-`packages/daemon/src/main.ts` : options `"test-origins": { type: "string" }` et `"memory-secrets": { type: "boolean", default: false }` ; au démarrage :
+`packages/daemon/src/main.ts` : options `"test-origins": { type: "string" }` et `"memory-secrets": { type: "boolean", default: false }` ; avant `startDaemon` :
 
 ```ts
 const redactor = createRedactor();
 installConsoleRedaction(redactor);
-const flags = parseIntegrationFlags(values);
-const service = createService(store, {
-  user: userInfo().username,
-  integrationDeps,
-  integrations: (host) => startIntegrations(host, flags, redactor),
-});
 ```
 
-et `startServer({ …, redact: redactor.redact })`. `integrationDeps` relie la notification (phase 2), le moteur de règles (phase 2), `git` et `gh` (phase 3).
+et, dans la chaîne `Promise.resolve().then(() => startDaemon({ …, integrations: parseIntegrationFlags(values), redactor }))` (une erreur de drapeau passe par `failStart`).
 
-- [ ] **Step 8: Hôte factice pour les tests des autres tâches**
+`packages/daemon/src/server.ts` : `STATUS` gagne `SECRET_STORE_UNAVAILABLE: 503, NOT_CONNECTED: 409, REMOTE_UNAVAILABLE: 502, REMOTE_REJECTED: 502, REMOTE_NOT_FOUND: 404, REMOTE_CONFLICT: 409, MCP_UNAVAILABLE: 502, MCP_FAILED: 502` (`RATE_LIMITED: 429` existe) ; `ServerOptions` gagne `redact?: (text: string) => string` ; `respond(work, redact)` renvoie `fail(e.code, redact(e.detail), …)` et les deux appels (`/api/rpc`, `/api/code`) passent `opts.redact ?? ((t) => t)`. Test ajouté à `server.test.ts` : une RPC qui rejette `KiboError("REMOTE_REJECTED", "github 401: Bearer ghp_TESTSECRET0123456789abcdefghijklmn")` avec `redact` qui remplace ce secret ⇒ statut 502, message `github 401: Bearer ***`.
+
+`packages/sdk/src/client.ts` (N24) : `KiboClient` gagne `subscribeIntegrations(listener: (e: IntegrationEvent) => void): () => void` ; dans `socket.onmessage`, après le test de `CodeEvent` :
+
+```ts
+      const integration = IntegrationEvent.safeParse(data);
+      if (integration.success) {
+        for (const l of integrationListeners) l(integration.data);
+        return;
+      }
+```
+
+`active()` compte aussi `integrationListeners.size` ; `subscribeIntegrations` suit le modèle de `subscribeCode`.
+
+Run: `bun test packages/daemon packages/sdk` — Expected: PASS.
+
+- [ ] **Step 9: Hôte factice pour les tests des autres tâches**
 
 `packages/daemon/src/integrations/testing/fake-host.ts` :
 
@@ -2288,20 +2521,13 @@ import {
   type ProjectCommand,
   type ProjectMeta,
 } from "@kibo/schema";
+import type { CommandEvent, CommandInterceptor, CommandMeta } from "../../docs";
 import { migrateIntegrations } from "../db";
-import type {
-  CommandEvent,
-  CommandInterceptor,
-  CommandMeta,
-  IntegrationHost,
-  RuleEvent,
-  SystemNotification,
-} from "../types";
+import type { IntegrationHost, SystemNotification } from "../types";
 
 export type FakeHost = IntegrationHost & {
   projectId: string;
   notifications: SystemNotification[];
-  ruleEvents: RuleEvent[];
   events: IntegrationEvent[];
   remoteUrl: string | null;
   clock: { now: number };
@@ -2324,7 +2550,6 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     db,
     projectId: meta.id,
     notifications: [],
-    ruleEvents: [],
     events: [],
     remoteUrl: "git@github.com:adam/kibo.git",
     clock: { now: Date.parse("2026-09-26T10:00:00Z") },
@@ -2355,8 +2580,10 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
       return () => interceptors.delete(i);
     },
     broadcast: (e) => host.events.push(e),
-    notify: (n) => host.notifications.push(n),
-    ruleEvent: (e) => host.ruleEvents.push(e),
+    notify: (n) => {
+      host.notifications.push(n);
+      host.events.push({ type: "notice", title: n.title, body: n.body });
+    },
     gitRemoteUrl: async () => host.remoteUrl,
     gitAvailable: async () => true,
     gh: async (args) => {
@@ -2373,15 +2600,17 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
 }
 ```
 
-(Adapter `ProjectMeta` aux champs réels si les phases 2 à 4 en ont ajouté.)
+(L'hôte factice n'applique pas les règles de statut dérivées : les tâches qui en dépendent testent sur le vrai service, comme `host.test.ts`.)
 
-- [ ] **Step 9: Vérifier et commiter**
+- [ ] **Step 10: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck`
-Expected: PASS (y compris les tests existants du service et du serveur).
+Expected: PASS (y compris les tests existants du service, du serveur, de la porte, des agents, du suivi des PR et du client).
 
 ```bash
-git add packages/daemon/src packages/schema/src/rpc.ts docs/superpowers/plans/2026-09-26-kibo-integrations.md
+git add packages/daemon/src/store.ts packages/daemon/src/docs.ts packages/daemon/src/service.ts packages/daemon/src/components/gate.ts packages/daemon/src/components/gate-handlers.ts packages/daemon/src/agents/data-port.ts packages/schema/src/rpc.ts
+git commit -m "refactor(daemon): chemin unique des commandes"
+git add packages/daemon/src/integrations packages/daemon/src/daemon.ts packages/daemon/src/main.ts packages/daemon/src/server.ts packages/daemon/src/server.test.ts packages/sdk/src/client.ts packages/sdk/src/client.test.ts
 git commit -m "feat(daemon): socle des intégrations"
 ```
 
@@ -2394,7 +2623,7 @@ git commit -m "feat(daemon): socle des intégrations"
 - Modify: `packages/daemon/src/integrations/bootstrap.ts` (`secretStoreFor`)
 
 **Interfaces:**
-- Consumes: `SecretStore`, `Redactor` (Task 2), `SecretNameSchema` (Task 1).
+- Consumes: `SecretStore`, `Redactor`, `secretStoreFor`, `IntegrationKit` (Task 2), `SecretNameSchema` (Task 1), `Bun.secrets` (Bun 1.4.2).
 - Produces: `KEYCHAIN_SERVICE = "dev.kibo"` ; `type KeychainBackend` ; `createBunSecretStore(redactor: Redactor, backend?: KeychainBackend): SecretStore`.
 
 - [ ] **Step 1: Test (échoue)**
@@ -2540,7 +2769,7 @@ export function createBunSecretStore(redactor: Redactor, backend: KeychainBacken
 }
 ```
 
-Si le type de `Bun.secrets` de Bun 1.4.2 n'est pas structurellement compatible avec `KeychainBackend`, l'envelopper dans un objet de trois fonctions qui l'appellent (jamais de `as`).
+`Bun.secrets` (Bun 1.4.2, `bun-types` : `get({ service, name }): Promise<string | null>`, `set({ service, name, value, allowUnrestrictedAccess? }): Promise<void>`, `delete({ service, name }): Promise<boolean>`) est structurellement compatible avec `KeychainBackend` : aucune enveloppe ni transtypage. `allowUnrestrictedAccess` reste à `false` (défaut) : sous macOS, le trousseau peut demander l'accord de l'utilisateur au premier accès du binaire, ce qui est voulu. Le test « real keychain round-trip » ne tourne qu'avec `KIBO_TEST_KEYCHAIN=1` (jamais en CI, jamais par les devs sans accord) ; les autres tests n'appellent jamais `Bun.secrets`.
 
 - [ ] **Step 3: Brancher dans l'amorçage**
 
@@ -2553,13 +2782,7 @@ function secretStoreFor(flags: IntegrationFlags, redactor: Redactor): SecretStor
 }
 ```
 
-et, après la création du `kit`, journaliser l'indisponibilité au démarrage :
-
-```ts
-  void kit.secrets.availability().then((a) => {
-    if (!a.ok) kit.events.log("github", "warn", `keychain unavailable: ${a.reason}`);
-  });
-```
+Aucun appel au trousseau au démarrage : `startDaemon` est lancé par des dizaines de tests et par l'E2E, qui ne doivent jamais toucher le trousseau réel (ni invite macOS, ni erreur libsecret en CI). La disponibilité n'est lue qu'à la demande, par la sonde GitHub et les handlers qui lisent un secret (Tasks 10 et 12) ; une indisponibilité y devient `SECRET_STORE_UNAVAILABLE` et le bandeau de l'écran 16, et elle est journalisée dans `integration_events` par le handler qui la rencontre.
 
 (`unavailableSecretStore` reste exporté pour les tests.)
 
@@ -2576,19 +2799,22 @@ git commit -m "feat(daemon): secrets dans le trousseau système"
 
 ### Task 4: Références externes et liaisons
 
+État réel (phase 3) : `ExternalRef` (`packages/schema/src/external-ref.ts`) est une union à une seule branche écrite en ligne (`github_pr { url: z.string().url(), number, state: PrState }`), sans export `GithubPrRef` ; `upsertExternalRef` vit dans `packages/core/src/tickets.ts`, dédoublonne par `url` seulement, et `readTicket` relit le tableau JSON `externalRefs` du nœud sans le valider ; `COMMAND_WRITES.upsertExternalRef = "ticket"` (`packages/schema/src/command.ts`) : la commande est aujourd'hui ouverte à tout composant qui écrit `ticket`. Cette tâche extrait `GithubPrRef`, déplace `upsertExternalRef` dans un nouveau `packages/core/src/external-refs.ts` (clé par type), valide les réfs à la relecture, et rend réservées (`null`) les commandes de références et de liaisons (spec F §3.1 ; sinon un composant tiers pourrait forger une réf. `github_issue` et faire pousser des issues avec le compte de l'utilisateur). Le shell garde ces commandes (`assertShellCommand` inchangé) : `code/code-service.ts` et `code/pr-poller.ts` passent par la RPC `command`.
+
 **Files:**
-- Modify: `packages/schema/src/external-ref.ts` (phase 3), `packages/schema/src/rpc.ts` (commandes, `CommandResult`, `ProjectSnapshot.bindings`), emplacement de `WRITES` (phase 4 ; entrées réservées)
-- Modify: `packages/core/src/external-refs.ts` (phase 3), `packages/core/src/commands.ts`, `packages/core/src/index.ts`
-- Create: `packages/core/src/bindings.ts`, `packages/core/src/bindings.test.ts`, `packages/core/src/external-refs-kinds.test.ts`
+- Modify: `packages/schema/src/external-ref.ts`, `packages/schema/src/command.ts` (`ProjectCommand`, `COMMAND_WRITES`, `CommandResult`), `packages/schema/src/rpc.ts` (`ProjectSnapshot.bindings`), `packages/schema/src/component.test.ts` (test « reserved commands » : `upsertExternalRef` devient réservée)
+- Create: `packages/core/src/external-refs.ts`, `packages/core/src/bindings.ts`, `packages/core/src/bindings.test.ts`, `packages/core/src/external-refs-kinds.test.ts`
+- Modify: `packages/core/src/tickets.ts` (retire `upsertExternalRef`, ajoute `readExternalRefs`), `packages/core/src/commands.ts`, `packages/core/src/index.ts`
+- Modify (littéraux `ProjectSnapshot` des tests et fixtures, `bindings: []` ajouté) : `packages/ui/src/agents/fixtures.ts`, `packages/ui/src/tabs/TabBar.test.tsx`, `packages/ui/src/shell/shell.test.tsx`, `packages/ui/src/shell/screens.test.tsx`, `packages/ui/src/code/agent-slots.test.tsx`, `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/state/use-projects.test.tsx`, `packages/ui/src/state/use-snapshots.test.tsx`, `packages/ui/src/dialogs/dialogs.test.tsx`, `packages/ui/src/palette/palette.test.tsx`, `packages/daemon/src/agents/orchestrator.test.ts` (liste relevée par `grep -rln "nextTicketKey:" packages components` ; la compléter si `typecheck` en signale d'autres)
 
 **Interfaces:**
-- Consumes: `GithubIssueRef`, `FigmaNodeRef`, `McpItemRef`, `Binding` (Task 1) ; `GithubPrRef`, stockage `externalRefs` (phase 3).
+- Consumes: `GithubIssueRef`, `FigmaNodeRef`, `McpItemRef`, `Binding` (Task 1) ; `PrState`, stockage JSON `externalRefs` du nœud de ticket (phase 3, `core/src/tickets.ts`).
 - Produces (schema) :
-  - `ExternalRef = z.discriminatedUnion("kind", [GithubPrRef, GithubIssueRef, FigmaNodeRef, McpItemRef])`, `ExternalRefKind`, `externalRefKey(ref): string` (`url` · `bindingId` · `fileKey:nodeId` · `server:itemId`), `externalRefTarget(ref): string | null` (objet distant ; `null` pour une issue en attente)
-  - `ProjectCommand` gagne (réservées, `WRITES[…] = null`) : `{ method: "removeExternalRef"; ticketId; kind: ExternalRefKind; key: string }`, `{ method: "addBinding"; binding: Binding }`, `{ method: "removeBinding"; bindingId: string }`, `{ method: "importExternalTicket"; title: string; description?: string; statusId?: StatusId; assignee?: Assignee | null; ref: ExternalRef }`
+  - `GithubPrRef` (extrait tel quel de l'union de la phase 3), `ExternalRef = z.discriminatedUnion("kind", [GithubPrRef, GithubIssueRef, FigmaNodeRef, McpItemRef])`, `ExternalRefKind`, `externalRefKey(ref): string` (`url` · `bindingId` · `fileKey:nodeId` · `server:itemId`), `externalRefTarget(ref): string | null` (objet distant ; `null` pour une issue en attente)
+  - `ProjectCommand` (`command.ts`) gagne (réservées, `COMMAND_WRITES[…] = null`) : `{ method: "removeExternalRef"; ticketId; kind: ExternalRefKind; key: string }`, `{ method: "addBinding"; binding: Binding }`, `{ method: "removeBinding"; bindingId: string }`, `{ method: "importExternalTicket"; title: string; description?: string; statusId?: StatusId; assignee?: Assignee | null; ref: ExternalRef }` ; `COMMAND_WRITES.upsertExternalRef` passe de `"ticket"` à `null`
   - `CommandResult` : `removeExternalRef: Ticket`, `addBinding: Binding`, `removeBinding: null`, `importExternalTicket: Ticket`
-  - `ProjectSnapshot.bindings: Binding[]`
-- Produces (core) : `upsertExternalRef(doc, ticketId, ref): Ticket` (dédoublonné par `kind` + `externalRefKey`, position conservée) ; `removeExternalRef(doc, { ticketId, kind, key }): Ticket` ; `findTicketByRef(doc, ref): Ticket | null` (par `externalRefTarget`) ; `importExternalTicket(doc, input): Ticket` (idempotent par cible) ; `addBinding`, `removeBinding`, `getBinding(doc, id): Binding`, `listBindings(doc): Binding[]`.
+  - `ProjectSnapshot.bindings: Binding[]` (`rpc.ts`)
+- Produces (core) : `readExternalRefs(node): ExternalRef[]` (`tickets.ts`, validée, `STORE_CORRUPT` sinon) ; dans `external-refs.ts` : `upsertExternalRef(doc, ticketId, ref): Ticket` (dédoublonné par `kind` + `externalRefKey`, position conservée ; même nom et même signature qu'en phase 3) ; `removeExternalRef(doc, { ticketId, kind, key }): Ticket` ; `findTicketByRef(doc, ref): Ticket | null` (par `externalRefTarget`) ; `importExternalTicket(doc, input): Ticket` (idempotent par cible) ; dans `bindings.ts` : `addBinding`, `removeBinding`, `getBinding(doc, id): Binding`, `listBindings(doc): Binding[]`.
 
 - [ ] **Step 1: Tests (échouent)**
 
@@ -2710,10 +2936,22 @@ Run: `bun test packages/core` — Expected: FAIL.
 
 - [ ] **Step 2: Schéma**
 
-`packages/schema/src/external-ref.ts` (garder `GithubPrRef` de la phase 3 tel quel) :
+`packages/schema/src/external-ref.ts` (la branche `github_pr` de la phase 3 devient `GithubPrRef`, sans changement de forme) :
 
 ```ts
+import { z } from "zod";
 import { FigmaNodeRef, GithubIssueRef, McpItemRef } from "./integrations";
+
+export const PrState = z.enum(["open", "draft", "merged", "closed"]);
+export type PrState = z.infer<typeof PrState>;
+
+export const GithubPrRef = z.object({
+  kind: z.literal("github_pr"),
+  url: z.string().url(),
+  number: z.number().int().positive(),
+  state: PrState,
+});
+export type GithubPrRef = z.infer<typeof GithubPrRef>;
 
 export const ExternalRef = z.discriminatedUnion("kind", [GithubPrRef, GithubIssueRef, FigmaNodeRef, McpItemRef]);
 export type ExternalRef = z.infer<typeof ExternalRef>;
@@ -2741,7 +2979,7 @@ export function externalRefTarget(ref: ExternalRef): string | null {
 
 `externalRefKey` dédoublonne les réfs **d'un ticket** (une issue par liaison et par ticket, spec F §3.1) ; `externalRefTarget` identifie l'objet distant **entre tickets** (import idempotent) ; une issue en attente de création (`number: null`) n'a pas de cible et n'est jamais confondue avec une autre.
 
-`packages/schema/src/rpc.ts` : ajouter à `ProjectCommand`
+`packages/schema/src/command.ts` (`import { Binding } from "./integrations";` ; `ExternalRef`, `ExternalRefKind`, `NodeId`, `StatusId`, `Assignee` y sont déjà importés ou s'ajoutent à l'import de `./external-ref`) : ajouter à l'union `ProjectCommand`
 
 ```ts
   z.object({ method: z.literal("removeExternalRef"), ticketId: NodeId, kind: ExternalRefKind, key: z.string().min(1) }),
@@ -2757,11 +2995,29 @@ export function externalRefTarget(ref: ExternalRef): string | null {
   }),
 ```
 
-à `CommandResult` : `removeExternalRef: Ticket; addBinding: Binding; removeBinding: null; importExternalTicket: Ticket;` et à `ProjectSnapshot` : `bindings: Binding[];`. Dans `WRITES` (phase 4) : `removeExternalRef: null, addBinding: null, removeBinding: null, importExternalTicket: null` (commandes réservées au shell et au démon).
+à `CommandResult` (même fichier) : `removeExternalRef: Ticket; addBinding: Binding; removeBinding: null; importExternalTicket: Ticket;`. Dans `COMMAND_WRITES` (même fichier) : `upsertExternalRef: null` (au lieu de `"ticket"`), `removeExternalRef: null, addBinding: null, removeBinding: null, importExternalTicket: null` (commandes réservées au shell et au démon : la porte `createGate` les refuse à tout composant par `isReservedCommand`, le shell les garde par la RPC `command`). `packages/schema/src/component.test.ts`, test « reserved commands write nothing a component can declare » : remplacer `expect(COMMAND_WRITES.upsertExternalRef).toBe("ticket")` par `toBeNull()` et ajouter les quatre nouvelles commandes.
+
+`packages/schema/src/rpc.ts` : `ProjectSnapshot` gagne `bindings: Binding[];` (`import type { Binding } from "./integrations";`). Les littéraux `ProjectSnapshot` des tests et fixtures listés dans **Files** gagnent `bindings: []`.
 
 - [ ] **Step 3: Core**
 
-`packages/core/src/external-refs.ts` (remplace la version par URL de la phase 3 ; si la phase 3 stocke les réfs autrement que sous la clé JSON `externalRefs` du nœud, garder son stockage et ne changer que la clé de dédoublonnage) :
+`packages/core/src/tickets.ts` : retirer `upsertExternalRef` (déplacée ci-dessous, même nom et même signature, réexportée par `index.ts` : `tickets.test.ts`, qui l'importe de `./index`, reste inchangé) et remplacer la lecture non validée de `readTicket` (`externalRefs: (d.get("externalRefs") as ExternalRef[] | undefined) ?? []`) par `externalRefs: readExternalRefs(n)` :
+
+```ts
+const RefList = ExternalRef.array();
+
+export function readExternalRefs(node: LoroTreeNode): ExternalRef[] {
+  const raw = node.data.get("externalRefs");
+  if (raw === undefined || raw === null) return [];
+  const parsed = RefList.safeParse(raw);
+  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid external refs on ${node.id}`);
+  return parsed.data;
+}
+```
+
+(`ExternalRef` passe d'un import de type à un import de valeur.) Le stockage de la phase 3 (tableau JSON sous la clé `externalRefs` du nœud) est conservé ; seule la clé de dédoublonnage change. `external-refs.ts` importe `tickets.ts`, jamais l'inverse (pas de cycle).
+
+`packages/core/src/external-refs.ts` :
 
 ```ts
 import {
@@ -2774,20 +3030,11 @@ import {
   type StatusId,
   type Ticket,
 } from "@kibo/schema";
-import type { LoroDoc, LoroTreeNode } from "loro-crdt";
-import { createTicket, getTicket, listTickets } from "./tickets";
+import type { LoroDoc } from "loro-crdt";
+import { createTicket, getTicket, listTickets, readExternalRefs as readRefs } from "./tickets";
 import { getNode } from "./tree";
 
-const RefList = ExternalRef.array();
 const tree = (doc: LoroDoc) => doc.getTree("tickets");
-
-function readRefs(node: LoroTreeNode): ExternalRef[] {
-  const raw = node.data.get("externalRefs");
-  if (raw === undefined || raw === null) return [];
-  const parsed = RefList.safeParse(raw);
-  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid external refs on ${node.id}`);
-  return parsed.data;
-}
 
 const sameRef = (a: ExternalRef, b: ExternalRef) => a.kind === b.kind && externalRefKey(a) === externalRefKey(b);
 
@@ -2864,18 +3111,19 @@ export function getBinding(doc: LoroDoc, id: string): Binding {
 }
 ```
 
-`packages/core/src/commands.ts` : cas `removeExternalRef` (`removeExternalRef(doc, { ticketId, kind, key })`), `addBinding`, `removeBinding` (renvoie `null`), `importExternalTicket` (`const { method: _method, ...input } = cmd; return importExternalTicket(doc, input);`) ; `readProject` ajoute `bindings: listBindings(doc)`. `packages/core/src/index.ts` : `export * from "./bindings";`.
+`packages/core/src/commands.ts` : `upsertExternalRef` est importée de `./external-refs` (plus de `./tickets`) ; cas `removeExternalRef` (`return removeExternalRef(doc, { ticketId: cmd.ticketId, kind: cmd.kind, key: cmd.key });`), `addBinding` (`return addBinding(doc, cmd.binding);`), `removeBinding` (`removeBinding(doc, cmd.bindingId); return null;`), `importExternalTicket` (`const { method: _method, ...input } = cmd; return importExternalTicket(doc, input);`) dans le `switch` exhaustif d'`executeProjectCommand` ; `readProject` ajoute `bindings: listBindings(doc)`. `packages/core/src/index.ts` : `export * from "./bindings";` et `export * from "./external-refs";`.
 
 - [ ] **Step 4: Vérifier et commiter**
 
-Run: `bun test packages components && bun run check && bun run typecheck` — Expected: PASS (tests de la phase 3 sur `github_pr` compris).
+Run: `bun test packages components && bun run check && bun run typecheck` — Expected: PASS (tests de la phase 3 sur `github_pr` compris : `core/src/tickets.test.ts`, `daemon/src/code/code-service.test.ts`, suivi des PR).
 
 ```bash
-git add packages/schema/src packages/core/src packages/sdk/src/sdk.ts
+git add packages/schema/src/external-ref.ts packages/schema/src/command.ts packages/schema/src/rpc.ts packages/schema/src/component.test.ts packages/core/src/external-refs.ts packages/core/src/external-refs-kinds.test.ts packages/core/src/bindings.ts packages/core/src/bindings.test.ts packages/core/src/tickets.ts packages/core/src/commands.ts packages/core/src/index.ts \
+  packages/ui/src/agents/fixtures.ts packages/ui/src/tabs/TabBar.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/shell/screens.test.tsx packages/ui/src/code/agent-slots.test.tsx packages/ui/src/code/changes.test.tsx packages/ui/src/state/use-projects.test.tsx packages/ui/src/state/use-snapshots.test.tsx packages/ui/src/dialogs/dialogs.test.tsx packages/ui/src/palette/palette.test.tsx packages/daemon/src/agents/orchestrator.test.ts
 git commit -m "feat(core): références externes et liaisons"
 ```
 
-(`packages/sdk/src/sdk.ts` seulement si `WRITES` y vit encore.)
+(Un seul commit : `typecheck` ne passe qu'avec les littéraux `ProjectSnapshot` complétés.)
 
 ---
 
@@ -3190,6 +3438,8 @@ git commit -m "feat(core): fusion à trois de la sync"
 ### Task 6: Faux serveur GitHub
 
 Serveur `Bun.serve` en mémoire qui imite les routes utilisées par Kibo, avec leurs formes exactes. Les requêtes GraphQL sont reconnues **octet pour octet** depuis `GITHUB_GRAPHQL` (Task 1) : une requête modifiée côté client sans le faux échoue en test.
+
+Dossier nouveau `packages/daemon/src/testing/` (faux de la phase 5) ; le faux binaire `gh` de la phase 3 (`packages/daemon/src/code/testing/fake-gh.ts`, commandes `gh`) reste en place et n'est pas remplacé : ce serveur imite l'API HTTP, lui la CLI.
 
 **Files:**
 - Create: `packages/daemon/src/testing/fake-github.ts`, `packages/daemon/src/testing/fake-github-graphql.ts`, `packages/daemon/src/testing/fake-github.test.ts`
@@ -3795,8 +4045,12 @@ git commit -m "test(daemon): faux serveur GitHub"
 
 - [ ] **Step 1: Ajouter la dépendance**
 
+`@modelcontextprotocol/sdk@1.30.1` est déjà résolu dans `bun.lock` (dépendance de `shadcn` 4.21.0, avec ses dépendances `express`, `hono`, `ajv`, `zod` → le `zod@3.25.76` du dépôt) : l'ajout direct au démon ne crée aucune résolution nouvelle, seulement la ligne du paquet `@kibo/daemon` dans `bun.lock`.
+
 Run: `cd packages/daemon && bun add --exact @modelcontextprotocol/sdk@1.30.1`
-Puis : `bun pm untrusted` — Expected: aucune dépendance listée (aucun script de cycle de vie exécuté). Justification du commit : client MCP officiel, transports stdio et Streamable HTTP ; décision du chef d'équipe.
+Puis : `git diff bun.lock` — Expected: seule l'entrée `"@modelcontextprotocol/sdk": "1.30.1"` du paquet `packages/daemon` change ; et `bun pm untrusted` — Expected: même sortie qu'avant l'ajout (aujourd'hui seulement `@tailwindcss/oxide`, script `postinstall` bloqué ; aucune entrée venant de l'arbre du SDK MCP, qui ne déclare aucun script de cycle de vie). Justification du commit : client MCP officiel, transports stdio et Streamable HTTP ; décision du chef d'équipe.
+
+Imports (vérifiés sur le paquet installé, `node_modules/.bun/@modelcontextprotocol+sdk@1.30.1/.../dist/esm`) : l'export générique `"./*"` du paquet sert les chemins en `.js` : `@modelcontextprotocol/sdk/server/mcp.js` (`McpServer`, `registerTool(name, { description, inputSchema }, cb)`, `registerResource(name, uri, metadata, readCallback)`), `@modelcontextprotocol/sdk/server/stdio.js` (`StdioServerTransport`), `@modelcontextprotocol/sdk/server/streamableHttp.js` (`StreamableHTTPServerTransport({ sessionIdGenerator })`, `handleRequest(req, res, parsedBody?)` sur `IncomingMessage`/`ServerResponse` de `node:http`), `@modelcontextprotocol/sdk/client/index.js` (`Client`), `@modelcontextprotocol/sdk/client/stdio.js` (`StdioClientTransport({ command, args, env, cwd, stderr })`), `@modelcontextprotocol/sdk/client/streamableHttp.js` (`StreamableHTTPClientTransport(url, { requestInit })`). Les schémas d'entrée acceptent Zod 3 et Zod 4 (`ZodRawShapeCompat = Record<string, z3.ZodTypeAny | z4.$ZodType>`) et le SDK MCP résout le même `zod@3.25.76` que le démon : les formes `z.string()` du dépôt passent telles quelles.
 
 - [ ] **Step 2: Test (échoue)**
 
@@ -3933,7 +4187,7 @@ import { buildFakeMcpServer } from "./fake-mcp";
 await buildFakeMcpServer().connect(new StdioServerTransport());
 ```
 
-Si `registerTool`/`registerResource` de la 1.30.1 refusent les formes Zod 3 (`zod` 3.25.76 du dépôt), utiliser `import { z } from "zod/v4"` dans ce seul fichier (sous-chemin fourni par `zod` 3.25) et le noter dans le commit.
+Le dossier `packages/daemon/src/testing/` est nouveau (les faux de la phase 3 vivent dans `packages/daemon/src/code/testing/`, dont `fake-gh.ts`) : il regroupe les faux de la phase 5 (GitHub, MCP).
 
 - [ ] **Step 4: Vérifier et commiter**
 
@@ -3948,23 +4202,27 @@ git commit -m "build(daemon): SDK MCP et faux serveur MCP"
 
 ### Task 8: Réseau des intégrations
 
-Un seul chemin sortant pour le démon et les composants : HTTPS, anti-SSRF, redirections contrôlées saut par saut, secret injecté **seulement** vers les hôtes autorisés, origines de test, observation des limites de débit GitHub.
+Un seul chemin sortant pour le démon et les composants : HTTPS, anti-SSRF, redirections contrôlées saut par saut, secret injecté **seulement** vers les hôtes autorisés, origines de test, observation des limites de débit GitHub. **Réutilise le proxy de la phase 4** (N27) : `isPublicAddress`, la résolution, la connexion épinglée à l'adresse vérifiée (SNI) et la lecture plafonnée de `packages/daemon/src/components/net-proxy*.ts` ; aucune seconde implémentation de l'anti-SSRF.
+
+Tâche à risque (réseau et secrets) : relecture `kibo-lead` en plus de `kibo-reviewer`. Démarre après l'intégration de la tâche 30b de la phase 4 (elle modifie `components/service.ts`).
 
 **Files:**
-- Create: `packages/daemon/src/integrations/net.ts`, `packages/daemon/src/integrations/net.test.ts`, `packages/daemon/src/integrations/rate-limit.ts`, `packages/daemon/src/integrations/rate-limit.test.ts`
-- Modify: proxy `fetch` de la phase 4 (spec B §6.4 point 4 ; fichier noté au tableau des ancrages) et son test ; `packages/daemon/src/integrations/bootstrap.ts`
+- Create: `packages/daemon/src/integrations/net.ts`, `packages/daemon/src/integrations/net.test.ts`, `packages/daemon/src/integrations/rate-limit.ts`, `packages/daemon/src/integrations/rate-limit.test.ts`, `packages/daemon/src/components/net-proxy-secrets.test.ts`
+- Modify (phase 4) : `packages/daemon/src/components/net-proxy-address.ts` (exporte `Resolver`, `systemResolver`, `bareHost`, `checkedAddress`, `pinnedRequest`, déplacés depuis `net-proxy.ts`), `packages/daemon/src/components/net-proxy-body.ts` (exporte `readCapped`, ajoute `scrubSecret`, `readProxiedBody(res, maxBytes, secret)`), `packages/daemon/src/components/net-proxy.ts` (`NetProxyOptions.hooks`, `.secrets`, `.aliasFetch` ; réexporte ce qui a été déplacé), `packages/daemon/src/components/gate.ts` (`FetchGrant` : `net` et `secrets` accordés), `packages/daemon/src/components/gate-handlers.ts` (`integrations`), `packages/daemon/src/components/service.ts` (`ComponentsDeps.integrations`), `packages/daemon/src/components/gate.test.ts` (gestionnaire `fetch` du harnais), `packages/daemon/src/daemon.ts` (passe les hooks des intégrations au service des composants)
+- Modify: `packages/schema/src/permissions.ts` (`GrantedPermissions.secrets`, `grantedOf`, `permissionList` → `secret:<name>`, `NO_PERMISSIONS`) et les littéraux `GrantedPermissions` des tests existants : `packages/core/src/registry.test.ts`, `packages/daemon/src/components/gate.test.ts`, `packages/ui/src/lib/permission-lines.test.ts` (les autres tests passent par `NO_PERMISSIONS` ou un étalement) (ajouter `secrets: []`)
+- Modify: `packages/daemon/src/integrations/bootstrap.ts`
 
 **Interfaces:**
-- Consumes: `IntegrationFetch`, `InternalRule`, `SecretResolver`, `ComponentIntegrationHooks` (Task 2) ; `ComponentManifest.secrets` (Task 1) ; `FakeGithub` (Task 6, tests).
+- Consumes: `IntegrationFetch`, `IntegrationFetchInit`, `IntegrationResponse`, `InternalRule`, `SecretResolver`, `ComponentIntegrationHooks`, `IntegrationKit`, `IntegrationRpc.hooks` (Task 2) ; `ComponentManifest.secrets` (Task 1) ; `FakeGithub`, `ECHO_AUTH`, `LOGS_HOST` (Task 6, tests) ; phase 4 : `proxyFetch`, `NetProxyOptions`, `isPublicAddress`, `Transport`, `directTransport`, `readProxiedBody`, `createGate`, `createGateHandlers`, `ActiveVersion`.
 - Produces:
-  - `type Resolver = (host: string) => Promise<string[]>` ; `systemResolver`
-  - `parseTestOrigins(values: string[]): Map<string, URL>` (clé : hôte logique ; valeur : origine `http://127.0.0.1|localhost:<port>/`)
-  - `isBlockedAddress(ip: string): boolean` ; `assertPublicHost(host, resolve): Promise<void>` (`PERMISSION_DENIED`)
-  - `hostMatches(rule: InternalRule, host: string): boolean` ; `transportUrl(url: URL, aliases): { target: URL; aliased: boolean }`
-  - `secretFor(url: URL, secrets: ComponentManifest["secrets"], covered: (url: URL) => boolean, resolve: SecretResolver): Promise<string | null>`
-  - `createIntegrationFetch(deps: { aliases: Map<string, URL>; resolve?: Resolver; fetchImpl?: typeof fetch; observe?: (host: string, headers: Headers) => void }): IntegrationFetch`
+  - `components/net-proxy-address.ts` : `type Resolver`, `systemResolver`, `bareHost(u: URL): string`, `checkedAddress(u, resolve, allow, signal): Promise<string>`, `pinnedRequest(u, address): { url; host; tls }` (réexportés par `net-proxy.ts`)
+  - `components/net-proxy-body.ts` : `readCapped(res, maxBytes): Promise<{ bytes: Uint8Array; truncated: boolean }>`, `scrubSecret(bytes: Uint8Array, secret: string): Uint8Array` (toute occurrence du secret injecté devient `***`, octet à octet)
+  - `NetProxyOptions` gagne `hooks?: ProxyHooks` (`Pick<ComponentIntegrationHooks, "aliases" | "observe" | "secret">`), `secrets?: ComponentManifest["secrets"]`, `aliasFetch?: typeof fetch`
+  - `GrantedPermissions.secrets: ComponentManifest["secrets"]` (défaut `[]` pour les versions déjà approuvées) ; « nouvelles permissions » : `secret:<name>`
+  - `FetchGrant = { net: readonly string[]; secrets: ComponentManifest["secrets"] }` ; `GateHandlers.fetch(grant: FetchGrant | null, url, init)` (`null` = intégré, comme `rules === null` en phase 4)
+  - `ComponentsDeps.integrations?: () => ComponentIntegrationHooks | null` et `GateHandlersDeps.integrations?` (lus à chaque appel)
+  - `integrations/net.ts` : `parseTestOrigins(values: string[]): Map<string, URL>` (clé : hôte logique ; valeur : origine `http://127.0.0.1|localhost:<port>/`), `hostMatches(rule: InternalRule, host: string): boolean`, `transportUrl(url: URL, aliases): { target: URL; aliased: boolean }`, `secretFor(url: URL, secrets: ComponentManifest["secrets"], covered: (url: URL) => boolean, resolve: SecretResolver): Promise<string | null>`, `createIntegrationFetch(deps: { aliases: Map<string, URL>; resolve?: Resolver; transport?: Transport; aliasFetch?: typeof fetch; observe?: (host: string, headers: Headers) => void }): IntegrationFetch`
   - `GITHUB_API = "api.github.com"`, `GITHUB_RULES: InternalRule[]` (API avec auth), `GITHUB_LOG_RULES: InternalRule[]` (API avec auth + suffixe `actions.githubusercontent.com` sans auth)
-  - `scrubSecret(bytes: Uint8Array, secret: string): Uint8Array` (toute occurrence du secret injecté dans un corps de réponse devient `***`)
   - `type RateLimitGate = { observe(headers: Headers): void; blockedUntil(): number | null }` ; `createRateLimitGate(now): RateLimitGate` ; `GITHUB_RATE_FLOOR = 100`
   - `IntegrationKit.net: { fetch: IntegrationFetch; gate: RateLimitGate; aliases: Map<string, URL> }`
 
@@ -3990,20 +4248,12 @@ test("pauses under the floor until reset, and on retry-after", () => {
 });
 ```
 
-`packages/daemon/src/integrations/net.test.ts` :
+`packages/daemon/src/integrations/net.test.ts` (les adresses privées, de boucle locale, link-local et multicast sont déjà couvertes par `components/net-proxy.test.ts` sur `isPublicAddress` ; on ne teste ici que le chemin des intégrations) :
 
 ```ts
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { ECHO_AUTH, type FakeGithub, LOGS_HOST, startFakeGithub } from "../testing/fake-github";
-import {
-  assertPublicHost,
-  createIntegrationFetch,
-  GITHUB_LOG_RULES,
-  GITHUB_RULES,
-  isBlockedAddress,
-  parseTestOrigins,
-  secretFor,
-} from "./net";
+import { createIntegrationFetch, GITHUB_LOG_RULES, GITHUB_RULES, parseTestOrigins, secretFor } from "./net";
 
 let gh: FakeGithub;
 beforeEach(() => {
@@ -4014,16 +4264,18 @@ afterEach(() => gh.stop());
 
 const aliases = () => parseTestOrigins([`api.github.com=${gh.url}`, `${LOGS_HOST}=${gh.url}`]);
 
-describe("addresses", () => {
-  test("private, loopback, link-local and multicast are blocked", () => {
-    for (const ip of ["127.0.0.1", "10.0.0.1", "172.16.4.2", "192.168.1.1", "169.254.169.254", "100.64.0.1", "0.0.0.0", "224.0.0.1", "::1", "fd00::1", "fe80::1", "::ffff:10.0.0.1"]) {
-      expect(isBlockedAddress(ip)).toBe(true);
-    }
-    for (const ip of ["140.82.112.5", "2606:50c0:8000::154"]) expect(isBlockedAddress(ip)).toBe(false);
-  });
-  test("a public name resolving to a private address is refused", async () => {
-    await expect(assertPublicHost("api.github.com", async () => ["10.1.2.3"])).rejects.toThrow("PERMISSION_DENIED");
-    await expect(assertPublicHost("api.github.com", async () => ["140.82.112.5"])).resolves.toBeUndefined();
+describe("addresses and test origins", () => {
+  test("a public name resolving to a private address is refused, a public one reaches the pinned transport", async () => {
+    const sent: string[] = [];
+    const transport = async (url: string) => {
+      sent.push(url);
+      return new Response("{}", { status: 200 });
+    };
+    const privateNet = createIntegrationFetch({ aliases: new Map(), resolve: async () => ["10.1.2.3"], transport });
+    await expect(privateNet("https://api.github.com/user", {}, GITHUB_RULES)).rejects.toThrow("PERMISSION_DENIED");
+    const publicNet = createIntegrationFetch({ aliases: new Map(), resolve: async () => ["140.82.112.5"], transport });
+    expect((await publicNet("https://api.github.com/user", {}, GITHUB_RULES)).status).toBe(200);
+    expect(sent).toEqual(["https://140.82.112.5/user"]);
   });
   test("test origins must be loopback http origins", () => {
     expect(parseTestOrigins(["api.github.com=http://127.0.0.1:4391"]).get("api.github.com")?.port).toBe("4391");
@@ -4091,7 +4343,103 @@ test("a secret is resolved only for listed hosts covered by net", async () => {
 });
 ```
 
-Run: `bun test packages/daemon/src/integrations/net.test.ts packages/daemon/src/integrations/rate-limit.test.ts` — Expected: FAIL.
+`packages/daemon/src/components/net-proxy-secrets.test.ts` (proxy des composants de la phase 4 ; nouveau fichier car `net-proxy.test.ts` approche des 300 lignes) :
+
+```ts
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { parseTestOrigins } from "../integrations/net";
+import { ECHO_AUTH, type FakeGithub, startFakeGithub } from "../testing/fake-github";
+import { proxyFetch } from "./net-proxy";
+
+let gh: FakeGithub;
+beforeEach(() => {
+  gh = startFakeGithub();
+});
+afterEach(() => gh.stop());
+
+const GET = { method: "GET" as const, headers: { authorization: "Bearer forged" } };
+const SECRETS = [{ name: "github" as const, hosts: ["api.github.com"] }];
+const hooks = (observed: string[] = []) => ({
+  aliases: parseTestOrigins([`api.github.com=${gh.url}`]),
+  observe: (host: string) => observed.push(host),
+  secret: async () => gh.token,
+});
+
+test("a granted secret is injected for its host, never exposed to the component", async () => {
+  const observed: string[] = [];
+  const out = await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, { hooks: hooks(observed), secrets: SECRETS });
+  expect(out.status).toBe(200);
+  expect(gh.requests.at(-1)?.auth).toBe(`Bearer ${gh.token}`);
+  expect(JSON.stringify(out)).not.toContain(gh.token);
+  expect(observed).toEqual(["api.github.com"]);
+});
+
+test("without the secrets grant, no credential is sent", async () => {
+  const out = await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, { hooks: hooks(), secrets: [] });
+  expect(out.status).toBe(401);
+  expect(gh.requests.at(-1)?.auth).toBeNull();
+});
+
+test("a secret echoed in the response body is scrubbed", async () => {
+  gh.failNext("GET", /^\/user$/, 500, ECHO_AUTH);
+  const out = await proxyFetch(["api.github.com"], "https://api.github.com/user", GET, { hooks: hooks(), secrets: SECRETS });
+  expect(out.body).toContain("Bearer ***");
+  expect(out.body).not.toContain(gh.token);
+});
+
+test("an alias exists only through the test hooks", async () => {
+  await expect(
+    proxyFetch(["api.github.com"], "https://api.github.com/user", GET, { resolve: async () => ["127.0.0.1"] }),
+  ).rejects.toThrow("PERMISSION_DENIED");
+});
+```
+
+Dans `packages/daemon/src/components/gate.test.ts`, le gestionnaire `fetch` du harnais `gate()` reçoit désormais la permission accordée :
+
+```ts
+        fetch: async (grant) => {
+          handled.push(`fetch:${grant === null ? "any" : grant.net.join(",")}`);
+          return { status: 200, headers: {}, body: "" };
+        },
+```
+
+et la constante `granted` gagne `secrets: []` (les attentes `fetch:any` / `fetch:api.github.com/graphql` restent inchangées). Ajouter :
+
+```ts
+test("the granted secrets reach the fetch handler of a sandboxed component only", async () => {
+  const seen: unknown[] = [];
+  const secrets = [{ name: "github" as const, hosts: ["api.github.com"] }];
+  const eventsDb = new Database(":memory:");
+  ensureEventsTable(eventsDb);
+  const g = createGate({
+    instance: (_p, id) => {
+      const i = instances[id];
+      if (!i) throw new KiboError("NOT_FOUND", `instance ${id}`);
+      return i;
+    },
+    active: (ref) => ({ ref, trust: "sandboxed", granted: { ...granted, secrets } }),
+    handlers: {
+      list: async () => [],
+      run: async () => null,
+      data: async () => null,
+      fetch: async (grant) => {
+        seen.push(grant);
+        return { status: 200, headers: {}, body: "" };
+      },
+      action: async () => null,
+      notes: async () => null,
+    },
+    quotas: createQuotas(),
+    events: createEventLog(eventsDb, () => 42),
+  });
+  const call: ComponentCall = { kind: "fetch", url: "https://api.github.com/graphql", init: { method: "GET", headers: {} } };
+  await g.call("p", "thirdparty", call);
+  await g.call("p", "builtin", call);
+  expect(seen).toEqual([{ net: ["api.github.com/graphql"], secrets }, null]);
+});
+```
+
+Run: `bun test packages/daemon/src/integrations/net.test.ts packages/daemon/src/integrations/rate-limit.test.ts packages/daemon/src/components/net-proxy-secrets.test.ts packages/daemon/src/components/gate.test.ts` — Expected: FAIL.
 
 - [ ] **Step 2: Implémenter `rate-limit.ts`**
 
@@ -4119,17 +4467,48 @@ export function createRateLimitGate(now: () => number): RateLimitGate {
 }
 ```
 
-- [ ] **Step 3: Implémenter `net.ts`**
+- [ ] **Step 3: Exposer les briques du proxy de la phase 4**
+
+Sans changer leur comportement (les tests de `net-proxy.test.ts` et `net-proxy-direct.test.ts` restent verts tels quels) :
+
+1. `packages/daemon/src/components/net-proxy-address.ts` : y déplacer depuis `net-proxy.ts` `type Resolver`, `systemResolver`, `bareHost`, `untilAborted`, `checkedAddress` (renommé export, même corps) et `pinnedRequest`, tous exportés. `net-proxy.ts` les importe et garde `export { isPublicAddress, type Resolver, systemResolver } from "./net-proxy-address";` pour ses importeurs actuels (`gate-handlers.ts`, `service.ts`, `net-proxy-direct-child.ts`, tests).
+2. `packages/daemon/src/components/net-proxy-body.ts` : exporter `readCapped` ; ajouter
 
 ```ts
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
-import { type ComponentManifest, KiboError } from "@kibo/schema";
-import type { IntegrationFetch, InternalRule, SecretResolver } from "./types";
+const MASK = new TextEncoder().encode("***");
 
-export type Resolver = (host: string) => Promise<string[]>;
-export const systemResolver: Resolver = async (host) =>
-  (await lookup(host, { all: true, verbatim: true })).map((a) => a.address);
+export function scrubSecret(bytes: Uint8Array, secret: string): Uint8Array {
+  const needle = Buffer.from(secret);
+  const source = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const parts: Uint8Array[] = [];
+  let from = 0;
+  for (let at = source.indexOf(needle, from); at >= 0; at = source.indexOf(needle, from)) {
+    parts.push(source.subarray(from, at), MASK);
+    from = at + needle.length;
+  }
+  if (from === 0) return bytes;
+  parts.push(source.subarray(from));
+  return Buffer.concat(parts);
+}
+```
+
+et `readProxiedBody(res, maxBytes, secret: string | null = null)` applique `scrubSecret` aux octets lus avant décodage (texte ou base64) quand `secret` n'est pas `null`. Le caviardage se fait sur les octets : un corps binaire n'est pas corrompu, et la troncature (`x-kibo-truncated`) reste celle de la lecture.
+
+- [ ] **Step 4: Implémenter `integrations/net.ts`**
+
+```ts
+import { type ComponentManifest, KiboError } from "@kibo/schema";
+import {
+  bareHost,
+  checkedAddress,
+  isPublicAddress,
+  pinnedRequest,
+  type Resolver,
+  systemResolver,
+} from "../components/net-proxy-address";
+import { readCapped, scrubSecret } from "../components/net-proxy-body";
+import { directTransport, type Transport } from "../components/net-proxy-transport";
+import type { IntegrationFetch, InternalRule, SecretResolver } from "./types";
 
 export const GITHUB_API = "api.github.com";
 export const GITHUB_RULES: InternalRule[] = [{ host: GITHUB_API, suffix: false, auth: true }];
@@ -4140,14 +4519,18 @@ export const GITHUB_LOG_RULES: InternalRule[] = [
 
 const HOST = /^[a-z0-9.-]+\.[a-z]{2,}$/;
 const REDIRECTS = new Set([301, 302, 303, 307, 308]);
-const STRIPPED = ["cookie", "authorization", "host", "proxy-authorization", "proxy-connection"];
+const STRIPPED = new Set(["cookie", "authorization", "host", "proxy-authorization", "proxy-connection"]);
 const MAX_HOPS = 3;
+const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 
 export function parseTestOrigins(values: string[]): Map<string, URL> {
   const out = new Map<string, URL>();
   for (const v of values) {
     const [host, origin, extra] = v.split("=");
-    if (!host || !origin || extra !== undefined || !HOST.test(host)) throw new KiboError("INVALID_INPUT", `bad test origin ${v}`);
+    if (!host || !origin || extra !== undefined || !HOST.test(host) || !URL.canParse(origin)) {
+      throw new KiboError("INVALID_INPUT", `bad test origin ${v}`);
+    }
     const u = new URL(origin);
     if (u.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(u.hostname) || u.pathname !== "/" || u.search) {
       throw new KiboError("INVALID_INPUT", `test origin must be a loopback http origin: ${v}`);
@@ -4155,39 +4538,6 @@ export function parseTestOrigins(values: string[]): Map<string, URL> {
     out.set(host, u);
   }
   return out;
-}
-
-function v4Blocked(ip: string): boolean {
-  const parts = ip.split(".").map(Number);
-  const a = parts[0] ?? 0;
-  const b = parts[1] ?? 0;
-  return (
-    a === 0 ||
-    a === 10 ||
-    a === 127 ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && (b === 168 || b === 0)) ||
-    (a === 198 && (b === 18 || b === 19)) ||
-    a >= 224
-  );
-}
-
-export function isBlockedAddress(ip: string): boolean {
-  if (isIP(ip) === 4) return v4Blocked(ip);
-  const lower = ip.toLowerCase();
-  if (lower === "::" || lower === "::1") return true;
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(lower);
-  if (mapped?.[1]) return v4Blocked(mapped[1]);
-  return /^f[cd]/.test(lower) || /^fe[89ab]/.test(lower) || /^ff/.test(lower);
-}
-
-export async function assertPublicHost(host: string, resolve: Resolver): Promise<void> {
-  const ips = isIP(host) ? [host] : await resolve(host);
-  if (ips.length === 0 || ips.some(isBlockedAddress)) {
-    throw new KiboError("PERMISSION_DENIED", `address of ${host} is not public`);
-  }
 }
 
 export function hostMatches(rule: InternalRule, host: string): boolean {
@@ -4210,111 +4560,96 @@ export async function secretFor(
   return resolve(entry.name);
 }
 
-async function readCapped(res: Response, max: number): Promise<{ bytes: Uint8Array; truncated: boolean }> {
-  const reader = res.body?.getReader();
-  if (!reader) return { bytes: new Uint8Array(), truncated: false };
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  while (size < max) {
-    const { done, value } = await reader.read();
-    if (done) return { bytes: Buffer.concat(chunks), truncated: false };
-    chunks.push(value);
-    size += value.length;
+function outgoing(init: Record<string, string> | undefined, bearer: string | null): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const [name, value] of Object.entries(init ?? {})) {
+    if (!STRIPPED.has(name.toLowerCase())) headers[name.toLowerCase()] = value;
   }
-  await reader.cancel();
-  return { bytes: Buffer.concat(chunks).subarray(0, max), truncated: true };
-}
-
-export function scrubSecret(bytes: Uint8Array, secret: string): Uint8Array {
-  const text = new TextDecoder().decode(bytes);
-  return text.includes(secret) ? new TextEncoder().encode(text.split(secret).join("***")) : bytes;
+  headers["user-agent"] = "kibo";
+  if (bearer) headers.authorization = `Bearer ${bearer}`;
+  return headers;
 }
 
 export function createIntegrationFetch(deps: {
   aliases: Map<string, URL>;
   resolve?: Resolver;
-  fetchImpl?: typeof fetch;
+  transport?: Transport;
+  aliasFetch?: typeof fetch;
   observe?: (host: string, headers: Headers) => void;
 }): IntegrationFetch {
   const resolve = deps.resolve ?? systemResolver;
-  const doFetch = deps.fetchImpl ?? fetch;
+  const transport = deps.transport ?? directTransport;
+  const aliasFetch = deps.aliasFetch ?? fetch;
   return async (url, init, rules) => {
     let current = new URL(url);
-    const deadline = AbortSignal.timeout(init.timeoutMs ?? 15_000);
+    const deadline = AbortSignal.timeout(init.timeoutMs ?? DEFAULT_TIMEOUT_MS);
     const signal = init.signal ? AbortSignal.any([init.signal, deadline]) : deadline;
     for (let hop = 0; hop <= MAX_HOPS; hop++) {
       if (current.protocol !== "https:") throw new KiboError("PERMISSION_DENIED", `https only: ${current.origin}`);
       const rule = rules.find((r) => hostMatches(r, current.hostname));
       if (!rule) throw new KiboError("PERMISSION_DENIED", `host not allowed: ${current.hostname}`);
+      const bearer = rule.auth ? (init.bearer ?? null) : null;
+      const headers = outgoing(init.headers, bearer);
+      const method = hop === 0 ? (init.method ?? "GET") : "GET";
+      const body = hop === 0 ? init.body : undefined;
       const { target, aliased } = transportUrl(current, deps.aliases);
-      if (!aliased) await assertPublicHost(current.hostname, resolve);
-      const headers = new Headers(init.headers);
-      for (const h of STRIPPED) headers.delete(h);
-      if (rule.auth && init.bearer) headers.set("authorization", `Bearer ${init.bearer}`);
-      headers.set("user-agent", "kibo");
-      const res = await doFetch(target, {
-        method: hop === 0 ? (init.method ?? "GET") : "GET",
-        headers,
-        body: hop === 0 ? init.body : undefined,
-        redirect: "manual",
-        signal,
-      });
-      deps.observe?.(current.hostname, res.headers);
+      let res: Response;
+      if (aliased) {
+        res = await aliasFetch(target, { method, headers, body, redirect: "manual", signal });
+      } else {
+        const address = await checkedAddress(current, resolve, isPublicAddress, signal);
+        const pinned = pinnedRequest(current, address);
+        res = await transport(pinned.url, { method, headers: { ...headers, host: pinned.host }, body, redirect: "manual", signal, tls: pinned.tls });
+      }
+      deps.observe?.(bareHost(current), res.headers);
       if (REDIRECTS.has(res.status)) {
         const location = res.headers.get("location");
         await res.body?.cancel();
-        if (!location) throw new KiboError("REMOTE_REJECTED", "redirect without location");
+        if (!location || !URL.canParse(location, current.href)) throw new KiboError("REMOTE_REJECTED", "redirect without a valid location");
         current = new URL(location, current);
         continue;
       }
-      const { bytes, truncated } = await readCapped(res, init.maxBytes ?? 5 * 1024 * 1024);
-      const body = rule.auth && init.bearer ? scrubSecret(bytes, init.bearer) : bytes;
-      return { status: res.status, headers: res.headers, body, truncated, url: current.toString() };
+      const { bytes, truncated } = await readCapped(res, init.maxBytes ?? DEFAULT_MAX_BYTES);
+      return { status: res.status, headers: res.headers, body: bearer ? scrubSecret(bytes, bearer) : bytes, truncated, url: current.toString() };
     }
     throw new KiboError("REMOTE_REJECTED", "too many redirects");
   };
 }
 ```
 
-- [ ] **Step 4: Proxy des composants (phase 4)**
+Seule une origine de test (`aliased`, possible uniquement avec `--test-origins`, N9) part par `fetch` en HTTP sur la boucle locale sans épinglage ; tout le reste passe par la connexion épinglée de la phase 4 (même garantie contre le TOCTOU DNS que le proxy des composants).
 
-Dans le proxy `fetch` de la phase 4, sans changer ses contrôles existants :
-1. les options du proxy reçoivent `hooks: ComponentIntegrationHooks` et les permissions accordées gagnent `secrets` ;
-2. avant chaque saut, `const { target, aliased } = transportUrl(url, hooks.aliases)` : les contrôles `net` et l'appartenance aux règles portent sur l'URL logique ; la requête part vers `target` ; le contrôle anti-SSRF est sauté **seulement** si `aliased` (possible uniquement avec `--test-origins`) ;
-3. après le retrait des en-têtes interdits : `const bearer = await secretFor(url, granted.secrets, (u) => netCovers(granted.net, u), hooks.secret); if (bearer) headers.set("authorization", \`Bearer ${bearer}\`)` (recalculé à chaque saut : une redirection vers un autre hôte ne porte jamais le secret) ;
-4. `hooks.observe(url.hostname, res.headers)` après chaque réponse ;
-5. si un secret a été injecté, le corps rendu au composant passe par `scrubSecret(body, bearer)` : un service qui renvoie l'en-tête `Authorization` dans son corps (Review Focus 4) ne livre jamais la valeur au composant.
+- [ ] **Step 5: Proxy des composants (phase 4)**
 
-Ajouter au test du proxy de la phase 4 (même fichier, même harnais), avec le faux GitHub et `aliases = parseTestOrigins([\`api.github.com=${gh.url}\`])` :
+`packages/schema/src/permissions.ts` : `GrantedPermissions` gagne `secrets: z.array(z.object({ name: SecretNameSchema, hosts: z.array(z.string()).min(1) })).default([])` (même forme que `ComponentManifest.secrets`, Task 1 ; une version approuvée avant la phase 5 se relit avec `[]`) ; `grantedOf` recopie `m.secrets` ; `permissionList` ajoute `...g.secrets.map((s) => \`secret:${s.name}\`)` (donc `addedPermissions` signale un secret nouveau à l'écran 30 et à la publication) ; `NO_PERMISSIONS.secrets = []`.
+
+`packages/daemon/src/components/net-proxy.ts`, dans `proxyFetch`, sans changer ses contrôles existants :
+1. `NetProxyOptions` gagne `hooks?: ProxyHooks` (`type ProxyHooks = Pick<ComponentIntegrationHooks, "aliases" | "observe" | "secret">`, importé de `../integrations/types`), `secrets?: ComponentManifest["secrets"]` et `aliasFetch?: typeof fetch` ;
+2. à chaque saut, après `checkedUrl` : `const { target, aliased } = transportUrl(current, opts.hooks?.aliases ?? new Map())` ; les contrôles `net` (`rules`), `https:` et identifiants portent sur l'URL logique ; si `aliased`, la requête part par `aliasFetch` vers `target` sans `checkedAddress` ni épinglage, sinon le chemin de la phase 4 est inchangé ;
+3. après `outgoingHeaders` (qui retire déjà `authorization`) : `const bearer = opts.hooks ? await secretFor(current, opts.secrets ?? [], (u) => rules === null || rules.some((r) => ruleCovers(r, u.href)), opts.hooks.secret) : null` puis `authorization: Bearer <bearer>` si non nul ; recalculé à chaque saut (une redirection vers un hôte non listé ne porte jamais le secret, et les en-têtes du composant sont déjà vidés hors origine) ;
+4. `opts.hooks?.observe(bareHost(current), res.headers)` après chaque réponse ;
+5. `readProxiedBody(res, maxBytes, bearer)` : un service qui renvoie l'en-tête `Authorization` dans son corps (Review Focus 4) ne livre jamais la valeur au composant (N18).
+
+`packages/daemon/src/components/gate.ts` : `netRules` devient `fetchGrant(deps, ref, call): FetchGrant | null` (`null` pour un intégré, sinon `{ net: active.granted.net, secrets: active.granted.secrets }`, après le même contrôle `missingPermission`) ; `GateHandlers.fetch(grant, url, init)` ; `dispatch` transmet `grant`.
+
+`packages/daemon/src/components/gate-handlers.ts` : `GateHandlersDeps.integrations?: () => ComponentIntegrationHooks | null` ;
 
 ```ts
-test("a granted secret is injected for its host, never exposed to the component", async () => {
-  const out = await callProxy({
-    url: "https://api.github.com/user",
-    init: { headers: { authorization: "Bearer forged" } },
-    granted: { net: ["api.github.com"], secrets: [{ name: "github", hosts: ["api.github.com"] }] },
-    hooks: { ...hooks, secret: async () => gh.token },
-  });
-  expect(out.status).toBe(200);
-  expect(gh.requests.at(-1)?.auth).toBe(`Bearer ${gh.token}`);
-  expect(JSON.stringify(out)).not.toContain(gh.token);
-});
-
-test("without the secrets grant, no credential is sent", async () => {
-  const out = await callProxy({
-    url: "https://api.github.com/user",
-    init: {},
-    granted: { net: ["api.github.com"], secrets: [] },
-    hooks: { ...hooks, secret: async () => gh.token },
-  });
-  expect(out.status).toBe(401);
-  expect(gh.requests.at(-1)?.auth).toBeNull();
-});
+    fetch: (grant, url, init) => {
+      const hooks = deps.integrations?.() ?? null;
+      return proxyFetch(grant?.net ?? null, url, init, {
+        ...deps.net,
+        ...(hooks && { hooks }),
+        ...(grant && { secrets: grant.secrets }),
+      });
+    },
 ```
 
-(`callProxy` : l'aide d'appel existante du test de la phase 4 ; lui ajouter les champs `granted.secrets` et `hooks`.)
+Un intégré (`grant === null`) ne reçoit jamais de secret : l'adaptateur GitHub Issues passe par le chemin des liaisons (Task 19), pas par la porte.
 
-- [ ] **Step 5: Amorçage**
+`packages/daemon/src/components/service.ts` : `ComponentsDeps.integrations?: () => ComponentIntegrationHooks | null`, transmis à `createGateHandlers`. `packages/daemon/src/daemon.ts` : `createComponentsService({ …, integrations: () => integrations?.hooks ?? null })`, où `integrations` est l'`IntegrationRpc` créé par `startDaemon` (Task 2, N26) ; la fonction est lue à chaque appel, l'ordre de création n'importe donc pas.
+
+- [ ] **Step 6: Amorçage**
 
 `packages/daemon/src/integrations/bootstrap.ts` : ajouter `net` à `IntegrationKit` et, avant la création du `kit` :
 
@@ -4329,37 +4664,49 @@ test("without the secrets grant, no credential is sent", async () => {
 
 puis `net` dans le `kit`, et `hooks: { aliases, observe, secret: (name) => secrets.get(name), mcp: null, ciRuns: null }`.
 
-- [ ] **Step 6: Vérifier et commiter**
+- [ ] **Step 7: Vérifier et commiter**
 
-Run: `bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
+Run: `bun test packages && bun run check && bun run typecheck` — Expected: PASS (dont `net-proxy.test.ts`, `net-proxy-direct.test.ts`, `gate.test.ts` et `exit.test.ts` de la phase 4, inchangés hormis le gestionnaire `fetch` du harnais).
 
 ```bash
-git add packages/daemon/src/integrations/net.ts packages/daemon/src/integrations/net.test.ts packages/daemon/src/integrations/rate-limit.ts packages/daemon/src/integrations/rate-limit.test.ts packages/daemon/src/integrations/bootstrap.ts packages/daemon/src/components
+git add packages/daemon/src/components/net-proxy-address.ts packages/daemon/src/components/net-proxy-body.ts packages/daemon/src/components/net-proxy.ts
+git commit -m "refactor(daemon): briques du proxy exportées"
+git add packages/daemon/src/integrations/net.ts packages/daemon/src/integrations/net.test.ts packages/daemon/src/integrations/rate-limit.ts packages/daemon/src/integrations/rate-limit.test.ts packages/daemon/src/integrations/bootstrap.ts
 git commit -m "feat(daemon): réseau sortant des intégrations"
+git add packages/daemon/src/components/net-proxy.ts packages/daemon/src/components/net-proxy-secrets.test.ts packages/schema/src/permissions.ts packages/core/src/registry.test.ts packages/daemon/src/components/gate.ts packages/daemon/src/components/gate.test.ts packages/daemon/src/components/gate-handlers.ts packages/daemon/src/components/service.ts packages/daemon/src/daemon.ts packages/ui/src/lib/permission-lines.test.ts
+git commit -m "feat(daemon): secrets injectés par le proxy"
 ```
 
-(`packages/daemon/src/components` : dossier réel du proxy de la phase 4, à ajuster.)
+Ordre des étapes pour que chaque commit passe `bun test` : étape 3 (déplacements, premier commit), étapes 2, 4 et 6 (deuxième), étape 5 (troisième).
 
 ---
 
 ### Task 9: SDK, `componentCall` et permissions
 
+Appels MCP et entité `ci_run` pour les composants, contrôlés par la **porte de la phase 4** (`createGate`, `missingPermission`, `permissionOfCall`, quotas, journal `component_events`) : aucune seconde porte. Les intégrés restent hors contrôle de permissions côté démon (phase 4) ; le SDK les contrôle contre leur manifeste, placeholder `{config.server}` compris.
+
+Démarre après la Task 8 (mêmes fichiers `permissions.ts`, `gate.ts`, `gate-handlers.ts`, `components/service.ts`) et la Task 4 (`importExternalTicket` pour le SDK simulé), donc après 30b.
+
 **Files:**
-- Modify: `packages/schema/src/manifest.ts` (`BuiltinEntityType` gagne `"ci_run"`), union `ComponentCall` (phase 4, `schema`), `GrantedPermissions` (phase 4)
+- Modify: `packages/schema/src/manifest.ts` (`BuiltinEntityType` gagne `"ci_run"`), `packages/schema/src/call.ts` (`ComponentCall`), `packages/schema/src/permissions.ts` (`GrantedPermissions.mcp`, `grantedOf`, `permissionList`, `NO_PERMISSIONS`, `permissionOfCall`, `covers`, `diffPermissions`), `packages/schema/src/schema.test.ts` (ou `component.test.ts` : cas `covers` MCP)
+- Modify: littéraux `GrantedPermissions` des tests existants (`mcp: []`) : `packages/core/src/registry.test.ts`, `packages/daemon/src/components/gate.test.ts`, `packages/ui/src/lib/permission-lines.test.ts` (les autres tests passent par `NO_PERMISSIONS` ou un étalement)
 - Modify: `packages/sdk/src/types.ts`, `packages/sdk/src/sdk.ts`, `packages/sdk/src/mock.ts`, `packages/sdk/src/conformance.tsx`, `packages/sdk/src/index.ts`
 - Create: `packages/sdk/src/source.ts`, `packages/sdk/src/mcp.test.ts`, `packages/sdk/src/source.test.ts`
-- Modify: traitement `componentCall` du démon (phase 4) et son test ; `validateComponent` de `packages/devkit` (phase 4) : refuse `"{config.server}"` hors intégré
-- Create: `packages/ui/src/lib/integration-permissions.ts`, `packages/ui/src/lib/integration-permissions.test.ts` ; Modify : liste des permissions de l'écran 30 (phase 4)
+- Modify: `packages/daemon/src/components/gate.ts`, `packages/daemon/src/components/gate-handlers.ts`, `packages/daemon/src/components/gate.test.ts`
+- Modify: `packages/devkit/src/infer-permissions.ts`, `packages/devkit/src/infer-permissions.test.ts`, `packages/devkit/src/validate.ts`, `packages/devkit/src/validate.test.ts`, `packages/devkit/src/fr.ts`
+- Modify: `packages/ui/src/lib/permission-lines.ts`, `packages/ui/src/lib/permission-lines.test.ts` (écran 30, rendu par `packages/ui/src/dialogs/TrustDialog.tsx`, inchangé)
 
 **Interfaces:**
-- Consumes: `mcpCovered`, `secretHostsCovered`, `McpCallResult`, `McpImportItem`, `CiRun`, `InstanceSource` (Task 1) ; `ComponentIntegrationHooks`, `McpComponentGate` (Task 2) ; `ProjectBackend.call` (phase 4).
+- Consumes: `mcpCovered`, `CONFIG_SERVER_RULE`, `secretHostsCovered`, `McpServerId`, `McpCallResult`, `McpImportItem`, `CiRun`, `InstanceSource` (Task 1) ; `ComponentIntegrationHooks`, `McpComponentGate` (Task 2) ; `GateHandlersDeps.integrations`, `FetchGrant`, `GrantedPermissions.secrets` (Task 8) ; commande `importExternalTicket` (Task 4) ; phase 4 : `createGate`, `GateHandlers`, `missingPermission`, `createGateHandlers`, `ProjectBackend.call`, `createSdk`, `createMockSdk`, `runConformance`, `inferFromSources`, `validateComponent`, `permissionLines`, `fr.trust`.
 - Produces:
-  - `ComponentCall` gagne `{ kind: "mcp.call"; server: string; tool: string; args: Record<string, unknown> }`, `{ kind: "mcp.read"; server: string; uri: string }`, `{ kind: "mcp.import"; server: string; item: McpImportItem }` ; `list` accepte `entity: "ci_run"`
-  - `KiboSdk.mcp: { call(server: string, tool: string, args?: Record<string, unknown>): Promise<McpCallResult>; read(server: string, uri: string): Promise<McpCallResult>; importItem(server: string, item: McpImportItem): Promise<Ticket> }` ; `EntityMap.ci_run = CiRun`
-  - `createMockSdk(manifest, { …, mcp?: Record<string, McpCallResult>, ciRuns?: CiRun[] })` ; `MockSdk.used.mcp: string[]` ; clés de `mcp` : `"server/tool"` ou `"server@uri"`
+  - `ComponentCall` gagne `{ kind: "mcp.call"; server; tool; args: Record<string, unknown> }`, `{ kind: "mcp.read"; server; uri }`, `{ kind: "mcp.import"; server; item: McpImportItem }` ; `list` accepte `entity: "ci_run"`
+  - `permissionOfCall` : `mcp.call` ⇒ `mcp:<server>/<tool>`, `mcp.read` et `mcp.import` ⇒ `mcp:<server>` ; `covers(declared, used, config = null)` et `diffPermissions(declared, used, config = null)` résolvent une permission `mcp:` par `mcpCovered` (placeholder `{config.server}` compris si `config` est fourni)
+  - `GrantedPermissions.mcp: string[]` (défaut `[]`) ; `permissionList` ⇒ `mcp:<règle>` (« nouvelles permissions » à l'écran 30 et à la publication, par `addedPermissions`)
+  - `GateHandlers.mcp(projectId, instanceId, call: McpCall): Promise<unknown>` ; `GateHandlers.list` accepte `ci_run` ; `type McpCall = Extract<ComponentCall, { kind: \`mcp.${string}\` }>`
+  - `KiboSdk.mcp: { call(server, tool, args?): Promise<McpCallResult>; read(server, uri): Promise<McpCallResult>; importItem(server, item: McpImportItem): Promise<Ticket> }` ; `EntityMap.ci_run = CiRun`
+  - `MockSdkOptions` gagne `mcp?: Record<string, McpCallResult>` (clés `"server/tool"` ou `"server@uri"`) et `ciRuns?: CiRun[]` ; `MockSdk.used` (liste de permissions de la phase 4) reçoit `mcp:<server>/<tool>` ou `mcp:<server>` ; les refus vont dans `violations` sous `mcp <server>/<tool>` ou `mcp <server>`
   - `readSource(config: Record<string, unknown>): InstanceSource | null` ; `matchesSource(ticket: TicketView, source: InstanceSource | null): boolean`
-  - `GrantedPermissions` gagne `secrets` et `mcp` ; « nouvelles permissions » : `secret:<name>` et `mcp:<règle>`
-  - `integrationPermissionLines(m: Pick<ComponentManifest, "secrets" | "mcp">): string[]`
+  - `permissionLines(g)` (écran 30) ajoute une ligne par secret (`KeyRound`) et par règle MCP (`Plug`)
 
 - [ ] **Step 1: Tests SDK (échouent)**
 
@@ -4367,22 +4714,16 @@ git commit -m "feat(daemon): réseau sortant des intégrations"
 
 ```ts
 import { describe, expect, test } from "bun:test";
-import type { ComponentManifest } from "@kibo/schema";
+import type { ComponentManifestInput } from "@kibo/schema";
 import { createMockSdk } from "./mock";
 
-const manifest: ComponentManifest = {
+const manifest: ComponentManifestInput = {
   id: "probe",
   version: "1.0.0",
   kind: "widget",
   title: "Probe",
   reads: ["ticket", "ci_run"],
   writes: ["ticket"],
-  data: false,
-  net: [],
-  configVersion: 0,
-  changes: [],
-  sdk: 1,
-  secrets: [],
   mcp: ["ctx"],
 };
 const ok = { content: [{ type: "text" as const, text: "hi" }], isError: false, truncated: false };
@@ -4391,7 +4732,7 @@ describe("sdk.mcp", () => {
   test("calls declared servers and records the usage", async () => {
     const m = createMockSdk(manifest, { mcp: { "ctx/echo": ok } });
     expect(await m.sdk.mcp.call("ctx", "echo", { text: "hi" })).toEqual(ok);
-    expect(m.used.mcp).toEqual(["ctx/echo"]);
+    expect(m.used).toContain("mcp:ctx/echo");
   });
 
   test("undeclared servers are denied and recorded", async () => {
@@ -4469,13 +4810,13 @@ test("a synced instance only shows tickets of its binding", () => {
 });
 ```
 
-(Adapter l'objet `TicketView` aux champs réels si les phases 2 à 4 en ont ajouté.)
-
 Run: `bun test packages/sdk` — Expected: FAIL.
 
 - [ ] **Step 2: Schéma**
 
-`BuiltinEntityType` : ajouter `"ci_run"`. Union `ComponentCall` : ajouter
+`packages/schema/src/manifest.ts` : `BuiltinEntityType` gagne `"ci_run"` (lecture seule de fait : aucune commande n'écrit `ci_run`, `COMMAND_WRITES` ne la cite pas).
+
+`packages/schema/src/call.ts`, union `ComponentCall` (import de `McpImportItem`, `McpServerId` depuis `./integrations`) :
 
 ```ts
   z.object({ kind: z.literal("mcp.call"), server: McpServerId, tool: z.string().min(1).max(128), args: z.record(z.string(), z.unknown()) }),
@@ -4483,7 +4824,41 @@ Run: `bun test packages/sdk` — Expected: FAIL.
   z.object({ kind: z.literal("mcp.import"), server: McpServerId, item: McpImportItem }),
 ```
 
-`GrantedPermissions` : ajouter `secrets: ComponentManifest["secrets"]` et `mcp: string[]` (défaut `[]` pour les versions déjà approuvées) ; la fonction de diff des permissions de la phase 4 produit en plus `secret:<name>` pour chaque secret et `mcp:<règle>` pour chaque règle absents de la version précédente.
+`packages/schema/src/permissions.ts` (`secrets` y a été ajouté par la Task 8) :
+- `GrantedPermissions` gagne `mcp: z.array(z.string()).default([])` ; `grantedOf` recopie `unique(m.mcp)` ; `permissionList` ajoute `...g.mcp.map((r) => \`mcp:${r}\`)` ; `NO_PERMISSIONS.mcp = []` ;
+- `permissionOfCall` (le `switch` est exhaustif, sans `default`) :
+
+```ts
+    case "mcp.call":
+      return `mcp:${call.server}/${call.tool}`;
+    case "mcp.read":
+    case "mcp.import":
+      return `mcp:${call.server}`;
+```
+
+- `covers` et `diffPermissions` gagnent un dernier paramètre `config: Record<string, unknown> | null = null` :
+
+```ts
+function mcpUsed(used: string): { server: string; tool: string | null } {
+  const [server = "", tool] = used.slice(4).split("/");
+  return { server, tool: tool ?? null };
+}
+
+export function covers(declared: string[], used: string, config: Record<string, unknown> | null = null): boolean {
+  if (used.startsWith("mcp:")) {
+    const rules = declared.filter((d) => d.startsWith("mcp:")).map((d) => d.slice(4));
+    const { server, tool } = mcpUsed(used);
+    return mcpCovered(rules, server, tool, config);
+  }
+  if (!used.startsWith("net:")) return declared.includes(used);
+  const url = used.slice(4);
+  return declared.some((d) => d.startsWith("net:") && ruleCovers(d.slice(4), url));
+}
+```
+
+et `diffPermissions(declared, used, config = null)` passe `config` à ses deux appels de `covers`. Test ajouté à `packages/schema/src/schema.test.ts` : `covers(["mcp:ctx"], "mcp:ctx/echo")` vrai, `covers(["mcp:ctx/resolve"], "mcp:ctx/echo")` faux, `covers(["mcp:{config.server}"], "mcp:fs/read")` faux, `covers(["mcp:{config.server}"], "mcp:fs/read", { server: "fs" })` vrai, et `addedPermissions` d'une version qui gagne `mcp: ["ctx"]` et `secrets: [{ name: "github", … }]` rend `["secret:github", "mcp:ctx"]`.
+
+Ajouter `mcp: []` aux littéraux `GrantedPermissions` listés dans **Files**.
 
 - [ ] **Step 3: SDK**
 
@@ -4513,138 +4888,209 @@ export function matchesSource(ticket: TicketView, source: InstanceSource | null)
   };
 ```
 
-`packages/sdk/src/sdk.ts` (dans `createSdk`, à côté de `list`/`run`) :
+`packages/sdk/src/sdk.ts`, dans `createSdk` : `fromSnapshot` gagne `ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" })` (entité hors snapshot, comme `note`) ; une fonction `mcpApi(manifest, guard, call, ctx.config)` à côté de `notesApi` :
+
+```ts
+function mcpApi(manifest: ComponentManifest, guard: Guard, call: Call, config: Record<string, unknown>): KiboSdk["mcp"] {
+  const need = (server: string, tool: string | null) => {
+    if (!mcpCovered(manifest.mcp, server, tool, config)) guard.deny(`mcp ${tool === null ? server : `${server}/${tool}`}`);
+  };
+  return {
+    async call(server, tool, args = {}) {
+      need(server, tool);
+      return call<McpCallResult>({ kind: "mcp.call", server, tool, args });
+    },
+    async read(server, uri) {
+      need(server, null);
+      return call<McpCallResult>({ kind: "mcp.read", server, uri });
+    },
+    async importItem(server, item) {
+      guard.needWrite("ticket");
+      need(server, null);
+      return call<Ticket>({ kind: "mcp.import", server, item });
+    },
+  };
+}
+```
+
+et `mcp: mcpApi(manifest, guard, call, ctx.config)` dans l'objet rendu. En mode `builtin` comme `gated`, ces appels passent par `backend.call` (RPC `componentCall`), seul chemin vers le démon.
+
+`packages/sdk/src/mock.ts` :
+- `MockSdkOptions` gagne `mcp?: Record<string, McpCallResult>` et `ciRuns?: CiRun[]` ;
+- `listEntity` gagne `ci_run: () => opts.ciRuns ?? []` ;
+- `handle` gagne `case "list"` inchangé (passe par `listEntity`), et :
+
+```ts
+      case "mcp.call":
+      case "mcp.read": {
+        const key = c.kind === "mcp.call" ? `${c.server}/${c.tool}` : `${c.server}@${c.uri}`;
+        const reply = opts.mcp?.[key];
+        if (!reply) throw new KiboError("MCP_FAILED", `no programmed response for ${key}`);
+        return reply;
+      }
+      case "mcp.import":
+        return run({
+          method: "importExternalTicket",
+          title: c.item.title,
+          ref: { kind: "mcp_item", server: c.server, itemId: c.item.itemId, url: c.item.url, title: c.item.title },
+        });
+```
+
+- l'objet `sdk` enveloppe `mcp` comme les autres appels :
 
 ```ts
     mcp: {
-      async call(server, tool, args = {}) {
-        if (!mcpCovered(manifest.mcp, server, tool, ctx.config)) {
-          throw new KiboError("PERMISSION_DENIED", `${manifest.id} does not declare mcp ${server}/${tool}`);
-        }
-        return (await backend.call({ kind: "mcp.call", server, tool, args })) as McpCallResult;
-      },
-      async read(server, uri) {
-        if (!mcpCovered(manifest.mcp, server, null, ctx.config)) {
-          throw new KiboError("PERMISSION_DENIED", `${manifest.id} does not declare mcp ${server}`);
-        }
-        return (await backend.call({ kind: "mcp.read", server, uri })) as McpCallResult;
-      },
-      async importItem(server, item) {
-        if (!manifest.writes.includes("ticket") || !mcpCovered(manifest.mcp, server, null, ctx.config)) {
-          throw new KiboError("PERMISSION_DENIED", `${manifest.id} cannot import from mcp ${server}`);
-        }
-        return (await backend.call({ kind: "mcp.import", server, item })) as Ticket;
-      },
+      call: (server, tool, args) =>
+        record(`mcp:${server}/${tool}`, `mcp ${server}/${tool}`, () => inner.mcp.call(server, tool, args)),
+      read: (server, uri) => record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.read(server, uri)),
+      importItem: (server, item) =>
+        record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.importItem(server, item)),
     },
 ```
 
-(Transtypages : `backend.call` renvoie `unknown`, comme `run` depuis la v0.1 ; le démon a validé.) `list("ci_run")` suit le chemin de `list("note")` (phase 4) : contrôle `reads`, puis `backend.call({ kind: "list", entity: "ci_run" })`.
+(`importItem` exige aussi `write:ticket`, contrôlé par le SDK ; le refus porte alors le libellé `mcp <server>` : le test de conformité le voit dans `violations`.)
 
-`packages/sdk/src/mock.ts` : options `mcp?: Record<string, McpCallResult>` et `ciRuns?: CiRun[]` ; `used.mcp: string[]` ; le backend simulé répond à `mcp.call` par `opts.mcp[\`${server}/${tool}\`]`, à `mcp.read` par `opts.mcp[\`${server}@${uri}\`]` (absent ⇒ `KiboError("MCP_FAILED", "no programmed response")`), à `mcp.import` par `executeProjectCommand(doc, { method: "importExternalTicket", title: item.title, ref: { kind: "mcp_item", server, itemId: item.itemId, url: item.url, title: item.title } })`, à `list ci_run` par `opts.ciRuns ?? []`. Les refus sont enregistrés `mcp <server>/<tool>` (ou `mcp <server>`) dans `violations`, les usages `<server>/<tool>` (ou `<server>`) dans `used.mcp`.
-
-`packages/sdk/src/conformance.tsx` : deux vérifications de plus dans le `describe` existant :
+`packages/sdk/src/conformance.tsx`, dans le `describe` existant :
 
 ```ts
     test("secrets are only requested for hosts covered by net", () => {
-      expect(secretHostsCovered(ComponentManifest.parse(mod.manifest))).toEqual([]);
+      expect(secretHostsCovered(manifest)).toEqual([]);
     });
 ```
 
-et, dans le test de rendu, `for (const u of m.used.mcp) expect(mcpCovered(mod.manifest.mcp, u.split("/")[0] ?? "", u.split("/")[1] ?? null, m.sdk.config)).toBe(true);`.
+et, dans le test de rendu, `diffPermissions(declared, m.used, mockOpts.config ?? null)` au lieu de `diffPermissions(declared, m.used)` (une règle `{config.server}` d'un intégré couvre le serveur de sa config de test).
 
 `packages/sdk/src/index.ts` : `export * from "./source";`.
 
 Run: `bun test packages/sdk` — Expected: PASS.
 
-- [ ] **Step 4: Démon (`componentCall`)**
+- [ ] **Step 4: Démon (porte `componentCall` de la phase 4)**
 
-Dans le traitement `componentCall` de la phase 4 (spec B §6.4), après les contrôles 1 et 2 :
-- contrôle 3 : `mcp.call` ⇒ `mcpCovered(rules, call.server, call.tool, config)`, `mcp.read` ⇒ `mcpCovered(rules, call.server, null, config)`, `mcp.import` ⇒ idem **et** `writes` contient `ticket` ; `rules` = `granted.mcp` et `config = null` pour un non-intégré, `manifest.mcp` et la config de l'instance pour un intégré ; `list ci_run` ⇒ `reads` contient `ci_run` ;
-- exécution : `mcp.*` ⇒ `hooks.mcp` (`null` ⇒ `KiboError("MCP_UNAVAILABLE", "mcp hub not started")`) avec `{ projectId, instanceId }` ; `list ci_run` ⇒ `hooks.ciRuns` (`null` ⇒ `KiboError("NOT_CONNECTED", "ci not started")`).
+`packages/daemon/src/components/gate.ts` :
+- `missingPermission` : après le calcul générique (qui couvre `mcp.*` par `covers`, sans config pour un non-intégré : `{config.server}` ne couvre rien), `if (call.kind === "mcp.import" && !covers(permissionList(granted), "write:ticket")) return "write:ticket";` ;
+- `GateHandlers` gagne `mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>` ; `list` accepte `ci_run` (type `Exclude<BuiltinEntityType, "note">` inchangé) ;
+- `dispatch` : `case "mcp.call": case "mcp.read": case "mcp.import": return h.mcp(projectId, inst.id, call);` avant le `default` des notes.
 
-Ajouter au test du `componentCall` de la phase 4 :
+`packages/daemon/src/components/gate-handlers.ts` (les hooks viennent de `deps.integrations`, Task 8) :
 
 ```ts
-test("mcp calls follow the granted mcp rules of a sandboxed component", async () => {
-  const calls: string[] = [];
-  const hooks = {
-    ...neutralHooks,
-    mcp: {
-      call: async (ctx: { instanceId: string }, server: string, tool: string) => {
-        calls.push(`${ctx.instanceId} ${server}/${tool}`);
-        return { content: [], isError: false, truncated: false };
-      },
-      read: async () => ({ content: [], isError: false, truncated: false }),
-      importItem: async () => {
-        throw new Error("unexpected");
-      },
+    async list(projectId, entity) {
+      if (entity === "run") return deps.runs(projectId);
+      if (entity === "ci_run") {
+        const ciRuns = deps.integrations?.()?.ciRuns ?? null;
+        if (!ciRuns) throw new KiboError("NOT_CONNECTED", "ci not started");
+        return ciRuns(projectId);
+      }
+      const snap = readProject(docs.project(projectId));
+      const lists = { ticket: snap.tickets, status: snap.workflow, link: snap.links, page: snap.pages };
+      return lists[entity];
     },
+    async mcp(projectId, instanceId, call) {
+      const gate = deps.integrations?.()?.mcp ?? null;
+      if (!gate) throw new KiboError("MCP_UNAVAILABLE", "mcp hub not started");
+      const ctx = { projectId, instanceId };
+      if (call.kind === "mcp.call") return gate.call(ctx, call.server, call.tool, call.args);
+      if (call.kind === "mcp.read") return gate.read(ctx, call.server, call.uri);
+      return gate.importItem(ctx, call.server, call.item);
+    },
+```
+
+Les refus (`PERMISSION_DENIED`, `RATE_LIMITED`) sont journalisés dans `component_events` par la porte, comme tout appel ; un appel MCP compte dans le quota `call` de l'instance.
+
+`packages/daemon/src/components/gate.test.ts` : le harnais `gate()` gagne `mcp: handler("mcp")` dans `handlers` et `mcp: []` dans `granted`. Ajouter :
+
+```ts
+describe("mcp calls", () => {
+  const mcpCall: ComponentCall = { kind: "mcp.call", server: "ctx", tool: "echo", args: {} };
+  const withGranted = (mcp: string[]) => {
+    const eventsDb = new Database(":memory:");
+    ensureEventsTable(eventsDb);
+    return createGate({
+      instance: (_p, id) => {
+        const i = instances[id];
+        if (!i) throw new KiboError("NOT_FOUND", `instance ${id}`);
+        return i;
+      },
+      active: (ref) => ({ ref, trust: "sandboxed", granted: { ...granted, mcp } }),
+      handlers: {
+        list: async () => [],
+        run: async () => null,
+        data: async () => null,
+        fetch: async () => ({ status: 200, headers: {}, body: "" }),
+        action: async () => null,
+        notes: async () => null,
+        mcp: async (_p, instanceId, call) => {
+          handled.push(`mcp:${instanceId}:${call.kind}`);
+          return null;
+        },
+      },
+      quotas: createQuotas(),
+      events: createEventLog(eventsDb, () => 42),
+    });
   };
-  const denied = await componentCall(sandboxed({ mcp: [] }), { kind: "mcp.call", server: "ctx", tool: "echo", args: {} }, hooks);
-  expect(denied).toMatchObject({ ok: false, error: { code: "PERMISSION_DENIED" } });
-  const granted = await componentCall(sandboxed({ mcp: ["ctx/echo"] }), { kind: "mcp.call", server: "ctx", tool: "echo", args: {} }, hooks);
-  expect(granted.ok).toBe(true);
-  expect(calls).toEqual([`${SANDBOXED_INSTANCE} ctx/echo`]);
-  const placeholder = await componentCall(sandboxed({ mcp: ["{config.server}"] }, { server: "ctx" }), { kind: "mcp.read", server: "ctx", uri: "x" }, hooks);
-  expect(placeholder).toMatchObject({ ok: false, error: { code: "PERMISSION_DENIED" } });
+
+  test("follow the granted mcp rules of a sandboxed component", async () => {
+    await expect(withGranted([]).call("p", "thirdparty", mcpCall)).rejects.toThrow("PERMISSION_DENIED");
+    await withGranted(["ctx/echo"]).call("p", "thirdparty", mcpCall);
+    expect(handled).toEqual(["mcp:thirdparty:mcp.call"]);
+    await expect(
+      withGranted(["{config.server}"]).call("p", "thirdparty", { kind: "mcp.read", server: "ctx", uri: "x" }),
+    ).rejects.toThrow("PERMISSION_DENIED");
+  });
+
+  test("an import also needs write:ticket", async () => {
+    const item = { itemId: "a1", title: "A", url: null };
+    await expect(withGranted(["ctx"]).call("p", "thirdparty", { kind: "mcp.import", server: "ctx", item })).rejects.toThrow(
+      "write:ticket",
+    );
+  });
 });
 ```
 
-(`componentCall`, `sandboxed(granted, config?)`, `SANDBOXED_INSTANCE`, `neutralHooks` : aides du harnais de test de la phase 4, à compléter avec `mcp` dans les permissions accordées et `hooks` en paramètre.)
+et, dans le `describe` du journal, un refus MCP produit une ligne `component_events` de `kind: "mcp.call"` (même forme que le cas `fetch` existant).
 
-`validateComponent` (devkit, phase 4) : un manifeste non intégré qui contient `"{config.server}"` échoue (`VALIDATION_FAILED`, « {config.server} est réservé aux composants intégrés »), avec son test de fixture.
+- [ ] **Step 5: Devkit**
 
-- [ ] **Step 5: Écran 30**
+`packages/devkit/src/infer-permissions.ts`, dans `sdkCall` : `sdk.mcp.call("<server>", "<tool>", …)` ⇒ `mcp:<server>/<tool>` ; `sdk.mcp.read("<server>", …)` ⇒ `mcp:<server>` ; `sdk.mcp.importItem("<server>", …)` ⇒ `mcp:<server>` et `write:ticket` ; un serveur ou un outil non littéral ⇒ `non-literal-argument` (comme `fetch`). Test ajouté à `infer-permissions.test.ts` sur `inferFromSources`.
 
-`packages/ui/src/lib/integration-permissions.test.ts` :
+`packages/devkit/src/validate.ts`, `readManifest` : après le contrôle `reservedId`, `if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];` (tout composant validé est non intégré) ; `packages/devkit/src/fr.ts` : `configServerReserved: "{config.server} est réservé aux composants intégrés"`. Test ajouté au cas « an invalid or reserved manifest stops before the tests » de `validate.test.ts` : manifeste `hello` avec `mcp: ["{config.server}"]` ⇒ `report.manifest = { ok: false, errors: ["{config.server} est réservé aux composants intégrés"] }`.
+
+- [ ] **Step 6: Écran 30**
+
+`packages/ui/src/lib/permission-lines.test.ts` : ajouter
 
 ```ts
-import { expect, test } from "bun:test";
-import { integrationPermissionLines } from "./integration-permissions";
-
 test("secrets and mcp rules read in plain French", () => {
   expect(
-    integrationPermissionLines({
+    titles({
+      ...NO_PERMISSIONS,
+      net: ["api.github.com"],
       secrets: [{ name: "github", hosts: ["api.github.com"] }],
       mcp: ["context7", "context7/get-library-docs", "{config.server}"],
-    }),
+    }).slice(1),
   ).toEqual([
-    "Utiliser ton compte GitHub (api.github.com)",
-    "Appeler le serveur MCP context7",
-    "Appeler l'outil get-library-docs du serveur MCP context7",
-    "Appeler le serveur MCP choisi à l'ajout",
+    ["Utiliser ton compte GitHub (api.github.com)", null],
+    ["Appeler le serveur MCP context7", null],
+    ["Appeler l'outil get-library-docs du serveur MCP context7", null],
+    ["Appeler le serveur MCP choisi à l'ajout", null],
   ]);
 });
 ```
 
-`packages/ui/src/lib/integration-permissions.ts` :
+`packages/ui/src/lib/permission-lines.ts` : après la ligne réseau, une ligne `{ icon: KeyRound, title: p.secret(s.name, s.hosts) }` par secret et `{ icon: Plug, title: rule === CONFIG_SERVER_RULE ? p.mcpFromConfig : p.mcp(rule) }` par règle MCP (`p = fr.integrations.permissions`, Task 1) ; `closingLine` ne rend plus « Aucun accès réseau… » quand `mcp` n'est pas vide (un serveur MCP peut accéder au réseau). `TrustDialog.tsx` n'est pas modifié : il rend `permissionLines(grantedOf(manifest))`.
 
-```ts
-import type { ComponentManifest } from "@kibo/schema";
-import { CONFIG_SERVER_RULE } from "@kibo/schema";
-import { fr } from "../i18n/fr";
-
-export function integrationPermissionLines(m: Pick<ComponentManifest, "secrets" | "mcp">): string[] {
-  const p = fr.integrations.permissions;
-  return [
-    ...m.secrets.map((s) => p.secret(s.name, s.hosts)),
-    ...m.mcp.map((rule) => (rule === CONFIG_SERVER_RULE ? p.mcpFromConfig : p.mcp(rule))),
-  ];
-}
-```
-
-La liste des permissions de l'écran 30 (phase 4) ajoute ces lignes après les siennes, avec l'icône `KeyRound` pour un secret et `Plug` pour MCP ; « Aucun accès réseau, aucun fichier local » ne s'affiche plus si `secrets` ou `mcp` est non vide.
-
-- [ ] **Step 6: Vérifier et commiter**
+- [ ] **Step 7: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck` — Expected: PASS.
 
 ```bash
-git add packages/schema/src packages/sdk/src packages/daemon/src packages/devkit/src packages/ui/src/lib/integration-permissions.ts packages/ui/src/lib/integration-permissions.test.ts packages/ui/src/components
+git add packages/schema/src/manifest.ts packages/schema/src/call.ts packages/schema/src/permissions.ts packages/schema/src/schema.test.ts packages/core/src/registry.test.ts packages/sdk/src packages/daemon/src/components/gate.ts packages/daemon/src/components/gate-handlers.ts packages/daemon/src/components/gate.test.ts
 git commit -m "feat(sdk): appels MCP et entité ci_run"
+git add packages/devkit/src/infer-permissions.ts packages/devkit/src/infer-permissions.test.ts packages/devkit/src/validate.ts packages/devkit/src/validate.test.ts packages/devkit/src/fr.ts packages/ui/src/lib/permission-lines.ts packages/ui/src/lib/permission-lines.test.ts
+git commit -m "feat(devkit): permissions MCP et écran 30"
 ```
 
-(Ajuster le dernier chemin au fichier réel de l'écran 30.)
+(Schéma, SDK et porte vont ensemble : `gate.ts` et `sdk.ts` ne compilent qu'avec les nouveaux cas de `ComponentCall`.)
 
 ---
 
@@ -4654,19 +5100,22 @@ Référence : page PDF 26 (sombre et clair) et maquette P1 (états). Une ligne p
 
 **Files:**
 - Create: `packages/ui/src/state/use-integrations.ts`, `packages/ui/src/state/use-sync-state.ts`, `packages/sdk/src/ui/switch.tsx`, `packages/ui/src/settings/integration-rows.ts`, `packages/ui/src/settings/integration-rows.test.ts`, `packages/ui/src/settings/IntegrationRow.tsx`, `packages/ui/src/settings/IntegrationsPage.tsx`, `packages/ui/src/settings/IntegrationsPage.test.tsx`, `packages/ui/src/settings/DisconnectDialog.tsx`, `packages/ui/src/settings/integration-dialogs.ts`
-- Modify: navigation des Paramètres (phase 2) : entrée « Intégrations » (icône `Plug`) après « Domaines & guidelines » ; `packages/sdk/src/client.ts` si l'abonnement générique aux événements n'existe pas encore
+- Modify (N30, écran de premier niveau) : `packages/schema/src/tabs.ts` (`Screen` gagne `integrations`), `packages/ui/src/tabs/target-hash.ts` (`#/settings/integrations`), `packages/ui/src/tabs/screens.ts` (titre, icône `Plug`, fil d'Ariane), `packages/ui/src/palette/CommandPalette.tsx` (icône de l'écran), `packages/ui/src/palette/screen-items.test.ts`, `packages/ui/src/shell/lazy-screens.ts` (`IntegrationsPage` par `lazyPanel`), `packages/ui/src/shell/ScreenView.tsx`, `packages/ui/src/shell/AppSidebar.tsx` (« Paramètres » actif aussi sur `integrations`), `packages/ui/src/settings/SettingsNav.tsx` (entrées `domains` et `integrations` navigables), `packages/ui/src/settings/domains-page.test.tsx`
 
 **Interfaces:**
-- Consumes: `IntegrationStatus`, `IntegrationEvent`, RPC `listIntegrations`, `testIntegration`, `disconnectIntegration`, `getGithubConnectOptions` (Task 1) ; `frIntegrations` (Task 1).
+- Consumes: `IntegrationStatus`, `IntegrationEvent`, RPC `listIntegrations`, `testIntegration`, `disconnectIntegration`, `getGithubConnectOptions`, `getSyncState` (Task 1) ; `frIntegrations` (Task 1) ; `client.subscribeIntegrations(listener: (e: IntegrationEvent) => void): () => void` (Task 2, N24 : aucun changement de `client.ts` ici) ; `navigateTo` (`packages/ui/src/route.ts`), `lazyPanel` (SDK, décision 29 de la phase 4), `useFlash` (`packages/ui/src/lib/use-flash.ts`, décision 19 de la phase 4).
 - Produces:
+  - `Screen` : valeur `integrations` (onglet, hash `#/settings/integrations`, palette, fil d'Ariane « Paramètres › Intégrations »)
+  - `SettingsNav({ active }: { active: "domains" | "integrations" })` : les deux entrées livrées naviguent (`navigateTo({ kind: "screen", screen })`), les autres restent désactivées « Bientôt »
   - `useIntegrations(): { statuses: IntegrationStatus[]; error: KiboError | null; loading: boolean; reload(): Promise<void> }`
   - `type RowView = { id: IntegrationId; icon: LucideIcon; title: string; description: string; badge: { tone: "ok" | "warn" | "error"; label: string } | null; action: "connect" | "retry" | null; menu: RowMenuItem[]; error: string | null }`, `type RowMenuItem = "configure" | "test" | "disconnect"`
   - `integrationRow(s: IntegrationStatus, opts: { hasDialog(id: IntegrationId): boolean; time(ms: number): string }): RowView`
-  - `type IntegrationDialogId = "github" | "figma" | "mcp"` ; `type IntegrationDialogProps = { open: boolean; onOpenChange(open: boolean): void; onDone(): void }` ; `INTEGRATION_DIALOGS: Partial<Record<IntegrationDialogId, ComponentType<IntegrationDialogProps>>>` (rempli par la Task 11) ; `dialogOf(id: IntegrationId): IntegrationDialogId | null`
-  - `client.onEvent(listener: (event: unknown) => void): () => void` (si absent)
+  - `type IntegrationDialogId = "github" | "figma" | "mcp"` ; `type IntegrationDialogProps = { open: boolean; onOpenChange(open: boolean): void; onDone(message?: string): void }` (le message éventuel, par exemple « Connecté en tant que adam », est affiché par l'écran 16) ; `INTEGRATION_DIALOGS: Partial<Record<IntegrationDialogId, ComponentType<IntegrationDialogProps>>>` (rempli par la Task 11) ; `dialogOf(id: IntegrationId): IntegrationDialogId | null`
   - `IntegrationsPage()`
   - `useSyncState(projectId: string): { state: SyncState | null; error: string | null; reload(): Promise<void> }` (utilisé par les Tasks 18 et 21)
   - `Switch` (`@kibo/sdk/ui/switch`, utilisé par les Tasks 11 et 18)
+
+Pas de `Toaster` ici (N29 : il est monté par la Task 21) : les messages de l'écran 16 (test de connexion, connexion réussie, échec) sont des `useFlash` affichés sous l'en-tête (`role="status"` ou `role="alert"`), comme les messages d'action de la phase 4.
 
 - [ ] **Step 1: Test du modèle de ligne (échoue)**
 
@@ -4728,7 +5177,7 @@ import type { IntegrationId } from "@kibo/schema";
 import type { ComponentType } from "react";
 
 export type IntegrationDialogId = "github" | "figma" | "mcp";
-export type IntegrationDialogProps = { open: boolean; onOpenChange(open: boolean): void; onDone(): void };
+export type IntegrationDialogProps = { open: boolean; onOpenChange(open: boolean): void; onDone(message?: string): void };
 export const INTEGRATION_DIALOGS: Partial<Record<IntegrationDialogId, ComponentType<IntegrationDialogProps>>> = {};
 
 export function dialogOf(id: IntegrationId): IntegrationDialogId | null {
@@ -4859,7 +5308,7 @@ mock.module("../api", () => ({
       if (req.method === "testIntegration") return status(req.id, "connected");
       return null;
     },
-    onEvent: () => () => undefined,
+    subscribeIntegrations: () => () => undefined,
   },
 }));
 
@@ -4879,6 +5328,9 @@ test("renders one row per integration with the screen 16 texts", async () => {
   render(<IntegrationsPage />);
   expect(await screen.findByText("PR, reviews, statuts CI · compte adam")).toBeDefined();
   expect(screen.getByRole("heading", { name: "Intégrations" })).toBeDefined();
+  const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
+  expect(nav.getByRole("button", { name: "Intégrations" }).getAttribute("aria-current")).toBe("page");
+  expect(nav.getByRole("button", { name: "Domaines & guidelines" }).hasAttribute("disabled")).toBe(false);
   expect(screen.getByText("Les secrets sont stockés dans le trousseau système, jamais dans les données du projet.")).toBeDefined();
   expect(screen.getByText("Connecteur générique · 2 serveurs (context7, filesystem)")).toBeDefined();
   expect(screen.getAllByText("Connecté")).toHaveLength(2);
@@ -4891,6 +5343,7 @@ test("tests and disconnects through the row menu, after confirmation", async () 
   await user.click(await screen.findByRole("button", { name: "Actions pour GitHub" }));
   await user.click(await screen.findByRole("menuitem", { name: "Tester la connexion" }));
   expect(calls).toContainEqual({ method: "testIntegration", id: "github" });
+  expect((await screen.findByRole("status")).textContent).toBe("Connexion vérifiée");
   await user.click(screen.getByRole("button", { name: "Actions pour GitHub" }));
   await user.click(await screen.findByRole("menuitem", { name: "Déconnecter" }));
   const dialog = await screen.findByRole("dialog", { name: "Déconnecter GitHub ?" });
@@ -4912,7 +5365,7 @@ Run: `bun test packages/ui/src/settings/IntegrationsPage.test.tsx` — Expected:
 `packages/ui/src/state/use-integrations.ts` :
 
 ```ts
-import { IntegrationEvent, type IntegrationStatus, KiboError } from "@kibo/schema";
+import { type IntegrationStatus, KiboError } from "@kibo/schema";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 
@@ -4932,16 +5385,15 @@ export function useIntegrations() {
   }, []);
   useEffect(() => {
     void reload();
-    return client.onEvent((raw) => {
-      const e = IntegrationEvent.safeParse(raw);
-      if (e.success && e.data.type === "integrations") void reload();
+    return client.subscribeIntegrations((e) => {
+      if (e.type === "integrations") void reload();
     });
   }, [reload]);
   return { statuses, error, loading, reload };
 }
 ```
 
-Si `client.onEvent` n'existe pas encore (phase 3), l'ajouter à `packages/sdk/src/client.ts` : un second ensemble d'écouteurs qui reçoit chaque message WebSocket après `JSON.parse`, avec reconnexion partagée ; son test dans `client.test.ts` (un faux `WebSocket` global qui émet `{"type":"integrations"}` ⇒ l'écouteur le reçoit).
+`client.subscribeIntegrations` (Task 2, N24) ne livre que des `IntegrationEvent` déjà validés : aucun `safeParse` ici.
 
 `packages/ui/src/settings/IntegrationRow.tsx` :
 
@@ -5065,19 +5517,20 @@ export const disconnectable = (s: IntegrationStatus): s is IntegrationStatus & {
   s.id === "github" || s.id === "figma";
 ```
 
-`packages/ui/src/settings/IntegrationsPage.tsx` :
+`packages/ui/src/settings/IntegrationsPage.tsx` (même gabarit que `DomainsPage` : `SettingsNav` à gauche) :
 
 ```tsx
 import { type IntegrationId, KiboError } from "@kibo/schema";
-import { toast } from "sonner";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { useFlash } from "../lib/use-flash";
 import { useIntegrations } from "../state/use-integrations";
 import { DisconnectDialog, type DisconnectTarget, disconnectable } from "./DisconnectDialog";
 import { dialogOf, INTEGRATION_DIALOGS, type IntegrationDialogId } from "./integration-dialogs";
 import { IntegrationRow } from "./IntegrationRow";
 import { integrationRow, type RowMenuItem } from "./integration-rows";
+import { SettingsNav } from "./SettingsNav";
 
 const time = (ms: number) => new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const hasDialog = (id: IntegrationId) => {
@@ -5089,6 +5542,7 @@ const message = (e: unknown) => (e instanceof KiboError ? e.detail : String(e));
 export function IntegrationsPage() {
   const t = fr.integrations;
   const { statuses, error, reload } = useIntegrations();
+  const flash = useFlash();
   const [dialog, setDialog] = useState<IntegrationDialogId | null>(null);
   const [disconnect, setDisconnect] = useState<DisconnectTarget | null>(null);
   const keychainDown =
@@ -5097,10 +5551,10 @@ export function IntegrationsPage() {
   const test = async (id: IntegrationId) => {
     try {
       const s = await client.rpc({ method: "testIntegration", id });
-      if (s.state === "error") toast.error(s.error?.message ?? t.state.error);
-      else toast.success(t.menu.tested);
+      if (s.state === "error") flash.flash(s.error?.message ?? t.state.error, "error");
+      else flash.flash(t.menu.tested);
     } catch (e) {
-      toast.error(message(e));
+      flash.flash(message(e), "error");
     }
     await reload();
   };
@@ -5113,7 +5567,7 @@ export function IntegrationsPage() {
       const opts = s.id === "github" ? await client.rpc({ method: "getGithubConnectOptions" }) : null;
       setDisconnect({ id: s.id, title: t.rows[s.id].title, mode: opts?.mode === "gh" ? "gh" : "token" });
     } catch (e) {
-      toast.error(message(e));
+      flash.flash(message(e), "error");
     }
   };
   const confirmDisconnect = async (id: "github" | "figma") => {
@@ -5121,61 +5575,81 @@ export function IntegrationsPage() {
     try {
       await client.rpc({ method: "disconnectIntegration", id });
     } catch (e) {
-      toast.error(message(e));
+      flash.flash(message(e), "error");
     }
     await reload();
   };
   const Dialog = dialog ? INTEGRATION_DIALOGS[dialog] : undefined;
 
   return (
-    <section className="grid max-w-3xl gap-6 p-8">
-      <header className="grid gap-1">
-        <h1 className="text-xl font-semibold">{t.title}</h1>
-        <p className="text-sm text-muted-foreground">{t.subtitle}</p>
-      </header>
-      {keychainDown && (
-        <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
-          {t.keychainUnavailable}
-        </p>
-      )}
-      <ul className="grid gap-2">
-        {statuses.map((s) => (
-          <IntegrationRow
-            key={s.id}
-            row={integrationRow(s, { hasDialog, time })}
-            onAction={(action) => (action === "retry" ? void test(s.id) : setDialog(dialogOf(s.id)))}
-            onMenu={(item) => void onMenu(s.id, item)}
+    <div className="grid min-h-full grid-cols-[14rem_1fr]">
+      <SettingsNav active="integrations" />
+      <section className="grid max-w-3xl content-start gap-6 p-8">
+        <header className="grid gap-1">
+          <h1 className="text-xl font-semibold">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+        </header>
+        {keychainDown && (
+          <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+            {t.keychainUnavailable}
+          </p>
+        )}
+        {flash.message && (
+          <p
+            role={flash.tone === "error" ? "alert" : "status"}
+            className={`text-sm ${flash.tone === "error" ? "text-destructive" : "text-muted-foreground"}`}
+          >
+            {flash.message}
+          </p>
+        )}
+        <ul className="grid gap-2">
+          {statuses.map((s) => (
+            <IntegrationRow
+              key={s.id}
+              row={integrationRow(s, { hasDialog, time })}
+              onAction={(action) => (action === "retry" ? void test(s.id) : setDialog(dialogOf(s.id)))}
+              onMenu={(item) => void onMenu(s.id, item)}
+            />
+          ))}
+        </ul>
+        {Dialog && (
+          <Dialog
+            open
+            onOpenChange={(o) => !o && setDialog(null)}
+            onDone={(done) => {
+              setDialog(null);
+              if (done) flash.flash(done);
+              void reload();
+            }}
           />
-        ))}
-      </ul>
-      {Dialog && (
-        <Dialog
-          open
-          onOpenChange={(o) => !o && setDialog(null)}
-          onDone={() => {
-            setDialog(null);
-            void reload();
-          }}
-        />
-      )}
-      <DisconnectDialog target={disconnect} onCancel={() => setDisconnect(null)} onConfirm={(id) => void confirmDisconnect(id)} />
-    </section>
+        )}
+        <DisconnectDialog target={disconnect} onCancel={() => setDisconnect(null)} onConfirm={(id) => void confirmDisconnect(id)} />
+      </section>
+    </div>
   );
 }
 ```
 
 Le texte de déconnexion de GitHub dépend du mode (`getGithubConnectOptions().mode`, lu à l'ouverture de la confirmation) : en mode `gh`, aucun jeton n'est dans le trousseau.
 
-Ajouter l'entrée « Intégrations » à la navigation des Paramètres de la phase 2, qui rend `IntegrationsPage`, et le `<Toaster />` de `@kibo/sdk/ui/sonner` s'il n'est pas déjà monté dans le shell.
+**Écran de premier niveau (N30).** La phase 2 n'a livré que « Domaines & guidelines » (`Screen = agents | queue | domains | components | mine`) :
+- `packages/schema/src/tabs.ts` : `Screen = z.enum(["agents", "queue", "domains", "components", "mine", "integrations"])` (un onglet enregistré reste lisible, la valeur est ajoutée en fin).
+- `packages/ui/src/tabs/target-hash.ts` : `integrations: "#/settings/integrations"` dans `SCREEN_HASHES`.
+- `packages/ui/src/tabs/screens.ts` : `integrations: { title: fr.settings.integrations, icon: Plug, crumbs: [fr.nav.settings, fr.settings.integrations] }`.
+- `packages/ui/src/palette/CommandPalette.tsx` : `integrations: SCREENS.integrations.icon` dans la table des icônes ; `screen-items.test.ts` gagne `expect(searchItems(buildItems(context), "intégrations", "pages")[0]?.items[0]?.label).toBe("Intégrations")`.
+- `packages/ui/src/shell/lazy-screens.ts` : `export const IntegrationsPage = lazyPanel(() => import("../settings/IntegrationsPage").then((m) => m.IntegrationsPage), fr.lazy);` (hors du chargement initial, décision 29 de la phase 4).
+- `packages/ui/src/shell/ScreenView.tsx` : `if (screen === "integrations") return <IntegrationsPage />;` juste après la ligne `components` (l'écran ne dépend ni de `config` ni de `agents`).
+- `packages/ui/src/shell/AppSidebar.tsx` : le bouton « Paramètres » est actif pour `screen === "domains" || screen === "integrations"` (il ouvre toujours `domains`).
+- `packages/ui/src/settings/SettingsNav.tsx` : `active: "domains" | "integrations"` ; les entrées `domains` et `integrations` sont activées et appellent `navigateTo({ kind: "screen", screen: id })` (`packages/ui/src/route.ts` : le changement de hash ouvre l'écran dans l'onglet courant par `useHashSync`) ; les autres restent `disabled` avec `title={fr.settings.soon}`. `domains-page.test.tsx` : « Intégrations » n'est plus désactivé, « Général » l'est toujours.
 
 - [ ] **Step 5: `Switch` shadcn et `useSyncState`**
 
-`packages/sdk/src/ui/switch.tsx` : composant `Switch` de shadcn/ui (variante new-york, `import { Switch as SwitchPrimitive } from "radix-ui"`), tel que généré par `bunx shadcn@latest add switch`, avec le même import `cn` que les fichiers voisins (`import { cn } from "cn"`). Aucune dépendance nouvelle. Livré ici pour que les Tasks 11 et 18 (vague 2) le consomment sans dépendre l'une de l'autre.
+`packages/sdk/src/ui/switch.tsx` : généré par `bunx shadcn@4.21.0 add switch` lancé depuis `packages/ui` (son `components.json` pointe vers `packages/sdk/src/ui`, règle de la phase 4), `import { Switch as SwitchPrimitive } from "radix-ui"` et `import { cn } from "cn"` comme `checkbox.tsx`. Aucune dépendance nouvelle (`radix-ui` 1.6.7 est déjà une dépendance du SDK). `switch` n'est pas ajouté à `SDK_UI_PRIMITIVES` (primitive de l'application, pas encore offerte aux composants tiers). Livré ici pour que les Tasks 11 et 18 (vague 2) le consomment sans dépendre l'une de l'autre.
 
 `packages/ui/src/state/use-sync-state.ts` (état de sync d'un projet, rechargé sur les événements `sync` et `integrations`) :
 
 ```ts
-import { IntegrationEvent, type SyncState } from "@kibo/schema";
+import type { SyncState } from "@kibo/schema";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 
@@ -5192,9 +5666,8 @@ export function useSyncState(projectId: string) {
   }, [projectId]);
   useEffect(() => {
     void reload();
-    return client.onEvent((raw) => {
-      const e = IntegrationEvent.safeParse(raw);
-      if (e.success && (e.data.type === "integrations" || (e.data.type === "sync" && e.data.projectId === projectId))) void reload();
+    return client.subscribeIntegrations((e) => {
+      if (e.type === "integrations" || (e.type === "sync" && e.projectId === projectId)) void reload();
     });
   }, [projectId, reload]);
   return { state, error, reload };
@@ -5203,12 +5676,14 @@ export function useSyncState(projectId: string) {
 
 - [ ] **Step 6: Vérifier et commiter**
 
-Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel : `bun run --cwd e2e test` n'est pas encore concerné ; ouvrir Paramètres › Intégrations avec le démon de dev en sombre puis en clair et comparer à la page PDF 26 (espacements, pastilles, bouton « Connecter » de Figma).
+Run: `bun test packages/schema packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget` — Expected: PASS (budget du chargement initial ≤ 230 kB gzip inchangé : l'écran est différé). Contrôle visuel : ouvrir Paramètres › Intégrations avec le démon de dev en sombre puis en clair et comparer à la page PDF 26 (espacements, pastilles, bouton « Connecter » de Figma).
 
 ```bash
-git add packages/ui/src/state/use-integrations.ts packages/ui/src/state/use-sync-state.ts packages/sdk/src/ui/switch.tsx packages/ui/src/settings packages/sdk/src/client.ts packages/sdk/src/client.test.ts
+git add packages/schema/src/tabs.ts packages/ui/src/tabs packages/ui/src/palette packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/settings packages/ui/src/state/use-integrations.ts packages/ui/src/state/use-sync-state.ts packages/sdk/src/ui/switch.tsx
 git commit -m "feat(ui): écran des intégrations"
 ```
+
+Dépendances : Task 2 (`subscribeIntegrations`) et tâche 34 de la phase 4 intégrée (elle ajoute la carte « Commande kibo » dans `packages/ui/src/settings/` et touche la navigation des Paramètres).
 
 ---
 
@@ -5220,8 +5695,10 @@ Référence : maquettes P2 (GitHub), P3 (Figma), P4 (liste des serveurs MCP), P5
 - Create: `packages/ui/src/dialogs/integrations/{GithubConnectDialog.tsx,FigmaConnectDialog.tsx,McpServersDialog.tsx,McpServerDialog.tsx,mcp-form.ts,mcp-form.test.ts,integration-dialogs.test.tsx}`
 - Modify: `packages/ui/src/settings/integration-dialogs.ts` (enregistre les trois dialogues)
 
+Aucune dépendance nouvelle : `sonner` n'est pas une dépendance de `packages/ui`, et le `Toaster` n'est monté qu'à la Task 21 (N29). Le message de succès « Connecté en tant que adam » est rendu par l'écran 16 : le dialogue se ferme par `onDone(message)` et `IntegrationsPage` l'affiche (`useFlash`, `role="status"`, Task 10).
+
 **Interfaces:**
-- Consumes: `IntegrationDialogProps`, `INTEGRATION_DIALOGS` (Task 10) ; RPC `getGithubConnectOptions`, `connectGithub`, `configureFigma`, `listMcpServers`, `previewMcpServer`, `addMcpServer`, `removeMcpServer`, `setMcpServerEnabled` (Task 1) ; `ChoiceCard` (v0.1).
+- Consumes: `IntegrationDialogProps` (avec `onDone(message?: string)`), `INTEGRATION_DIALOGS` (Task 10) ; RPC `getGithubConnectOptions`, `connectGithub`, `configureFigma`, `listMcpServers`, `previewMcpServer`, `addMcpServer`, `removeMcpServer`, `setMcpServerEnabled` (Task 1) ; `ChoiceCard` (`packages/ui/src/dialogs/ChoiceCard.tsx` : `value`, `icon`, `title`, `description?`, `disabled?`, `badge?`, `aside?`, `stacked?` ; le radio porte `aria-label={title}`) ; primitives `@kibo/sdk/ui/{badge,button,dialog,input,label,radio-group,textarea,alert-dialog}` et `Switch` (Task 10) ; `fr.common.cancel` (`packages/ui/src/i18n/fr.ts`).
 - Produces: `GithubConnectDialog`, `FigmaConnectDialog`, `McpServersDialog` (props `IntegrationDialogProps`) ; `McpServerDialog({ open, onOpenChange, onAdded, takenIds })` ; `type McpForm` et `toServerInput(form: McpForm): { server: McpServerInput; secrets: Record<string, string> } | { error: string }` ; `slugId(name: string): string`. Consomme `Switch` (Task 10).
 
 - [ ] **Step 1: Test du formulaire MCP (échoue)**
@@ -5282,7 +5759,7 @@ export type McpForm = {
 export function slugId(name: string): string {
   return name
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{M}/gu, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -5368,13 +5845,13 @@ test("github: gh is preselected when connected", async () => {
     if (req.method === "getGithubConnectOptions") return { ghAvailable: true, ghLogin: "adam", mode: null };
     return { login: "adam" };
   };
-  const onDone = mock(() => {});
+  const onDone = mock((_message?: string) => {});
   const user = userEvent.setup();
   render(<GithubConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
-  expect(await screen.findByText("gh est connecté (adam).")).toBeDefined();
+  expect(await screen.findByText("Kibo lit le jeton de gh à la demande, sans le stocker. gh est connecté (adam).")).toBeDefined();
   await user.click(screen.getByRole("button", { name: "Connecter" }));
   expect(calls).toContainEqual({ method: "connectGithub", auth: { mode: "gh" } });
-  expect(onDone).toHaveBeenCalled();
+  expect(onDone).toHaveBeenCalledWith("Connecté en tant que adam");
 });
 
 test("mcp: the exact command is shown and confirmed before adding", async () => {
@@ -5418,7 +5895,6 @@ import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { KeyRound, Loader2, Terminal } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { toast } from "sonner";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
 import type { IntegrationDialogProps } from "../../settings/integration-dialogs";
@@ -5452,8 +5928,7 @@ export function GithubConnectDialog({ open, onOpenChange, onDone }: IntegrationD
         method: "connectGithub",
         auth: mode === "gh" ? { mode: "gh" } : { mode: "token", token },
       });
-      toast.success(t.connected(login));
-      onDone();
+      onDone(t.connected(login));
     } catch (e) {
       if (e instanceof KiboError && e.code === "REMOTE_REJECTED") setError(t.refused);
       else if (e instanceof KiboError && e.code === "SECRET_STORE_UNAVAILABLE") setError(fr.integrations.keychainUnavailable);
@@ -5750,11 +6225,11 @@ export function McpServerDialog({ open, onOpenChange, onAdded, takenIds }: Props
 
 (Les lignes de variables utilisent l'index comme clé : la liste n'est jamais réordonnée, seulement étendue ou réduite par un bouton de la ligne.)
 
-`packages/ui/src/dialogs/integrations/McpServersDialog.tsx` : `Dialog` (titre `mcpServers.title`, description `mcpServers.subtitle`) qui charge `listMcpServers` à l'ouverture ; une ligne par serveur : nom, `id` en monospace, badge `stdio`/`HTTP`, `tools(n)`, pastille d'état (vert `connected`, gris `idle`, rouge `error` + message), `Switch` « Activé » (`setMcpServerEnabled`, `aria-label` = `${enabled} ${name}`), bouton « Retirer » qui ouvre une confirmation (`removeConfirm(name)`, Annuler / Retirer destructif) puis `removeMcpServer` ; état vide `mcpServers.empty` ; bouton « Ajouter un serveur » qui ouvre `McpServerDialog` (`takenIds` = ids listés) et recharge la liste à `onAdded`. Toute erreur RPC s'affiche dans un `role="alert"` de la ligne concernée. `onDone` est appelé à la fermeture pour rafraîchir l'écran 16.
+`packages/ui/src/dialogs/integrations/McpServersDialog.tsx` (props `IntegrationDialogProps`) : `Dialog` (titre `mcpServers.title`, description `mcpServers.subtitle`) qui charge `listMcpServers` à l'ouverture ; une ligne par serveur : nom, `id` en monospace, badge `stdio`/`HTTP`, `tools(n)`, pastille d'état (vert `connected`, gris `idle`, rouge `error` + message), `Switch` « Activé » (`setMcpServerEnabled`, `aria-label` = `${enabled} ${name}`), bouton « Retirer » qui ouvre une confirmation (`AlertDialog` de `@kibo/sdk/ui/alert-dialog`, texte `removeConfirm(name)`, Annuler / Retirer destructif) puis `removeMcpServer` ; état vide `mcpServers.empty` ; bouton « Ajouter un serveur » qui ouvre `McpServerDialog` (`takenIds` = ids listés) et recharge la liste à `onAdded`. Toute erreur RPC s'affiche dans un `role="alert"` de la ligne concernée. `onDone` est appelé à la fermeture pour rafraîchir l'écran 16.
 
 - [ ] **Step 7: Enregistrer les dialogues**
 
-`packages/ui/src/settings/integration-dialogs.ts` :
+`packages/ui/src/settings/integration-dialogs.ts` (remplace l'objet vide de la Task 10 ; les dialogues n'importent de ce fichier que des types, sans cycle à l'exécution) :
 
 ```ts
 import { FigmaConnectDialog } from "../dialogs/integrations/FigmaConnectDialog";
@@ -5781,12 +6256,15 @@ git commit -m "feat(ui): dialogues de connexion"
 
 ### Task 12: Compte GitHub
 
+Tâche à risque (secrets : jeton personnel, jeton de `gh`) : relecture `kibo-lead` en plus de `kibo-reviewer`.
+
 **Files:**
-- Create: `packages/daemon/src/github/api.ts`, `packages/daemon/src/github/auth.ts`, `packages/daemon/src/github/handlers.ts`, `packages/daemon/src/github/github.test.ts`
-- Modify: `packages/daemon/package.json` (`"zod": "3.25.76"`, version déjà verrouillée), `packages/daemon/src/integrations/bootstrap.ts`
+- Create: `packages/daemon/src/github/api.ts`, `packages/daemon/src/github/auth.ts`, `packages/daemon/src/github/handlers.ts`, `packages/daemon/src/github/github.test.ts`, `packages/daemon/src/github/handlers.test.ts`
+- Modify: `packages/daemon/src/integrations/bootstrap.ts`, `packages/daemon/src/code/testing/fake-gh.ts` (sous-commande `auth token`), `packages/daemon/src/code/testing/fixture.test.ts`
+- (`zod` 3.25.76 est déjà une dépendance directe du démon : `package.json` inchangé.)
 
 **Interfaces:**
-- Consumes: `IntegrationKit` (`settings`, `secrets`, `redactor`, `net`, `host.gh`), `IntegrationProbe`, `githubRepoOf` (Tasks 2, 8) ; `GITHUB_GRAPHQL`, `GithubConnectOptions`, `GithubRepo`, `GithubProject` (Task 1) ; faux GitHub (Task 6).
+- Consumes: `IntegrationKit` (`settings`, `secrets`, `redactor`, `net`, `host.gh`), `IntegrationProbe`, `GhRunner`, `githubRepoOf` (Tasks 2, 8 ; `host.gh` est construit par la Task 2 sur `runGh(args, { cwd: home, env })` de `packages/daemon/src/code/run.ts`, qui lève `GH_UNAVAILABLE` si `gh` ne peut pas être lancé) ; `GITHUB_GRAPHQL`, `GithubConnectOptions`, `GithubRepo`, `GithubProject` (Task 1) ; faux GitHub (Task 6).
 - Produces:
   - `type GithubApi = { rest<T>(method: "GET" | "POST" | "PATCH", path: string, schema: ZodType<T, ZodTypeDef, unknown>, body?: unknown): Promise<T>; raw(path: string, rules: InternalRule[], maxBytes: number): Promise<IntegrationResponse>; graphql<T>(query: string, variables: Record<string, unknown>, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T>; paginate<T>(path: string, schema: ZodType<T, ZodTypeDef, unknown>, maxPages: number): Promise<T[]> }`
   - `createGithubApi(deps: { fetch: IntegrationFetch; token(): Promise<string | null>; gate: RateLimitGate }): GithubApi`
@@ -6091,6 +6569,15 @@ export type GithubAccount = GithubCredentials & {
 const GH_TTL_MS = 10 * 60_000;
 const User = z.object({ login: z.string().min(1) });
 
+async function runGhToken(gh: GhRunner): Promise<{ code: number; stdout: string } | null> {
+  try {
+    return await gh(["auth", "token"]);
+  } catch (e) {
+    if (e instanceof KiboError && e.code === "GH_UNAVAILABLE") return null;
+    throw e;
+  }
+}
+
 export function createGithubAccount(deps: {
   settings: Settings;
   secrets: SecretStore;
@@ -6102,8 +6589,8 @@ export function createGithubAccount(deps: {
   let ghCache: { token: string; at: number } | null = null;
   const ghToken = async (): Promise<string | null> => {
     if (ghCache && deps.now() - ghCache.at < GH_TTL_MS) return ghCache.token;
-    const r = await deps.gh(["auth", "token"]);
-    const token = r.code === 0 ? r.stdout.trim() : "";
+    const r = await runGhToken(deps.gh);
+    const token = r !== null && r.code === 0 ? r.stdout.trim() : "";
     if (!token) {
       ghCache = null;
       return null;
@@ -6270,7 +6757,27 @@ export function githubModule(kit: IntegrationKit, github: { account: GithubAccou
 }
 ```
 
-- [ ] **Step 5: Amorçage**
+`gh` absent (échec de lancement, `GH_UNAVAILABLE` de `runGh`) équivaut à « gh non connecté » (`ghAvailable: false`), comme `ghStatus` de `code/remote-ops.ts` ; toute autre erreur remonte.
+
+- [ ] **Step 5: Faux `gh` : `auth token`**
+
+`packages/daemon/src/code/testing/fake-gh.ts` (faux binaire de la phase 3, utilisé par `KIBO_GH` en E2E) : avant le cas `auth status`,
+
+```ts
+if (args[0] === "auth" && args[1] === "token") {
+  const token = process.env.FAKE_GH_TOKEN;
+  if (!token) {
+    process.stderr.write("no oauth token found for github.com\n");
+    process.exit(1);
+  }
+  process.stdout.write(`${token}\n`);
+  process.exit(0);
+}
+```
+
+Test ajouté à `packages/daemon/src/code/testing/fixture.test.ts` (harnais réel : `installFakeGh(fx.dir)` rend l'env `KIBO_GH`, `FAKE_GH_STATE`, `FAKE_GH_LOG`) : `runGh(["auth", "token"], { cwd: fx.dir, env: { ...installFakeGh(fx.dir), FAKE_GH_TOKEN: "ghp_TESTSECRET0123456789abcdefghijklmn" } })` rend `code 0` et le jeton suivi d'un saut de ligne ; sans `FAKE_GH_TOKEN`, `code 1`. Le parcours E2E (Task 23) s'en sert pour le mode « Utiliser gh ».
+
+- [ ] **Step 6: Amorçage**
 
 `packages/daemon/src/integrations/bootstrap.ts` : `IntegrationKit` gagne `github: { account: GithubAccount; api: GithubApi }`. Les dépendances sont créées en variables locales **avant** le `kit` (aucun champ optionnel, aucune affectation après coup) :
 
@@ -6283,12 +6790,14 @@ export function githubModule(kit: IntegrationKit, github: { account: GithubAccou
 
 puis `settings`, `github` et `hooks: { aliases: net.aliases, observe, secret, mcp: null, ciRuns: null }` dans le `kit`, et `githubModule(kit, kit.github)` dans `modules`.
 
-- [ ] **Step 6: Vérifier et commiter**
+- [ ] **Step 7: Vérifier et commiter**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
 ```bash
-git add packages/daemon/package.json bun.lock packages/daemon/src/github packages/daemon/src/integrations/bootstrap.ts
+git add packages/daemon/src/code/testing/fake-gh.ts packages/daemon/src/code/testing/fixture.test.ts
+git commit -m "test(daemon): faux gh, auth token"
+git add packages/daemon/src/github packages/daemon/src/integrations/bootstrap.ts
 git commit -m "feat(daemon): compte GitHub"
 ```
 
@@ -6298,16 +6807,20 @@ git commit -m "feat(daemon): compte GitHub"
 
 Composant sans UI (`kind: "adapter"`), écrit avec le SDK public : il traduit, il ne lit ni n'écrit aucun ticket. Tout objet distant est validé par Zod avant usage.
 
+État réel (phase 4) : un composant intégré est un paquet `components/<id>/` (`package.json` `@kibo/component-<id>`, `tsconfig.json` qui étend `../../tsconfig.base.json` avec des `references` vers `schema` et `sdk`, `kibo.component.json`, `src/index.ts` qui exporte `manifest = ComponentManifest.parse(manifestJson)`), enregistré côté UI dans `BUILTIN_COMPONENTS` (`packages/ui/src/registry.ts`). `BUILTIN_IDS = ["kanban", "tickets", "graph", "notes"]` (`packages/schema/src/component.ts`) est la liste des intégrés **avec UI** : `registry-listing.ts` en tire les lignes « Intégré » de l'écran 6, et `packages/ui/src/registry.test.ts` exige `BUILTIN_COMPONENTS` = `BUILTIN_IDS`. Un adaptateur sans UI n'y entre donc pas : cette tâche ajoute `BUILTIN_ADAPTER_IDS = ["github-issues"]` et étend `isBuiltinId` aux deux listes (identifiant réservé : `scaffold`, `validateComponent` et l'approbation du registre refusent `github-issues` à un composant tiers), sans rien ajouter au catalogue (écran 3) ni à la page Composants (écran 6). Le runtime de backend de la phase 4 (`components/runtime-core.ts`) lit l'export CommonJS nommé `server` de `server.js` (`evaluateCjs(code.server, "server")`) et appelle chaque action avec `(ctx: ServerContext, input)` ; `ctx.fetch` renvoie un `FetchResponse` dont les noms d'en-têtes sont en minuscules (`readProxiedBody`, `components/net-proxy-body.ts`). Le SDK est importé par le sous-chemin `@kibo/sdk/adapter` (ajouté ici à `packages/sdk/package.json`) : l'index `@kibo/sdk` tire React et les composants d'interface, inutiles dans le Worker.
+
 **Files:**
 - Create: `components/github-issues/kibo.component.json`, `components/github-issues/package.json`, `components/github-issues/tsconfig.json`
 - Create: `components/github-issues/src/{remote.ts,map.ts,cursor.ts,rest.ts,project.ts,adapter.ts,server.ts,index.ts}`, `components/github-issues/src/{map.test.ts,adapter.test.ts}`
-- Modify: `package.json` racine (script `typecheck` : `components/github-issues`), `BUILTIN_IDS` (phase 4, `schema`) : ajouter `"github-issues"`
+- Modify: `package.json` racine (script `typecheck` : `components/github-issues`), `packages/schema/src/component.ts` (`BUILTIN_ADAPTER_IDS`, `isBuiltinId`), `packages/sdk/package.json` (export `"./adapter": "./src/adapter.ts"`), `bun.lock` (paquet de l'espace de travail)
 
 **Interfaces:**
-- Consumes: `defineAdapter`, `adapterActions`, `AdapterContext` (Task 1) ; `defineServer` (`@kibo/sdk/server`, phase 4) ; `GITHUB_GRAPHQL`, `githubError`, `remoteStatusId`, `BindingConfig`, `GithubIssueRef`, `PushOp` (Task 1).
+- Consumes: `defineAdapter`, `adapterActions`, `AdapterContext` (Task 1, `packages/sdk/src/adapter.ts`) ; `defineServer` (`packages/sdk/src/server.ts`, phase 4) ; `isBuiltinId`, `BUILTIN_IDS` (`packages/schema/src/component.ts`, phase 4) ; `GITHUB_GRAPHQL`, `githubError`, `remoteStatusId`, `BindingConfig`, `GithubIssueRef`, `PushOp` (Task 1).
 - Produces:
   - `GhIssue` (Zod) = `{ nodeId; number; title; body; closed; updatedAt; url (https); repo; labels: string[]; optionId: string | null }`
-  - `githubIssuesAdapter: Adapter<GhIssue, BindingConfig>` ; `server = defineServer({ actions: adapterActions(githubIssuesAdapter) })` (actions `adapter.pull`, `adapter.push`)
+  - `githubIssuesAdapter: Adapter<GhIssue, BindingConfig>` ; `server = defineServer({ actions: adapterActions(githubIssuesAdapter) })` (export nommé `server` lu par le runtime de la phase 4 ; actions `adapter.pull`, `adapter.push`)
+  - `BUILTIN_ADAPTER_IDS = ["github-issues"] as const` ; `isBuiltinId(id)` vrai pour `BUILTIN_IDS` et `BUILTIN_ADAPTER_IDS` (`BUILTIN_IDS` inchangé)
+  - sous-chemin `@kibo/sdk/adapter`
   - curseur opaque : `{"mode":"rest","since":…,"page":n}` ou `{"mode":"project","since":…,"after":…,"max":…}`
   - issues créées : titre, corps, **libellés du filtre de la liaison** (pour rester dans son périmètre), puis fermeture si `closed`, puis ajout au Project et statut si la correspondance existe
 
@@ -6342,7 +6855,27 @@ Composant sans UI (`kind: "adapter"`), écrit avec le SDK public : il traduit, i
 }
 ```
 
-`components/github-issues/tsconfig.json` : comme `components/kanban/tsconfig.json`, avec `"lib": ["ES2022"]` (pas de DOM), `include: ["src", "kibo.component.json"]`.
+`components/github-issues/tsconfig.json` (celui de `components/kanban`, sans DOM ni `paths` d'interface) :
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "outDir": "dist", "rootDir": ".", "lib": ["ES2022"] },
+  "include": ["src", "kibo.component.json"],
+  "references": [{ "path": "../../packages/schema" }, { "path": "../../packages/sdk" }]
+}
+```
+
+`packages/sdk/package.json`, `exports` : ajouter `"./adapter": "./src/adapter.ts"` (à côté de `"./server"`).
+
+`packages/schema/src/component.ts` :
+
+```ts
+export const BUILTIN_IDS = ["kanban", "tickets", "graph", "notes"] as const;
+export const BUILTIN_ADAPTER_IDS = ["github-issues"] as const;
+const BUILTIN_ANY: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];
+export const isBuiltinId = (id: string): boolean => BUILTIN_ANY.includes(id);
+```
 
 - [ ] **Step 2: Test du mapping (échoue)**
 
@@ -6604,9 +7137,10 @@ Run: `bun test components/github-issues/src/map.test.ts` — Expected: PASS.
 
 ```ts
 import { describe, expect, test } from "bun:test";
-import { type BindingConfig, GITHUB_GRAPHQL } from "@kibo/schema";
-import { adapterActions } from "@kibo/sdk";
+import { BUILTIN_IDS, type BindingConfig, GITHUB_GRAPHQL, isBuiltinId } from "@kibo/schema";
+import { adapterActions } from "@kibo/sdk/adapter";
 import { githubIssuesAdapter } from "./adapter";
+import { manifest } from "./index";
 
 type Reply = { status: number; body: unknown; headers?: Record<string, string> };
 type Handler = (url: URL, body: unknown) => Reply;
@@ -6649,6 +7183,12 @@ const withProject: BindingConfig = {
 };
 const actions = adapterActions(githubIssuesAdapter);
 const ctx = (config: BindingConfig, fetch: ReturnType<typeof fakeFetch>["fetch"]) => ({ instanceId: "binding:b1", config, fetch });
+
+test("the manifest is a builtin adapter, absent from the UI built-ins", () => {
+  expect(manifest.kind).toBe("adapter");
+  expect(isBuiltinId(manifest.id)).toBe(true);
+  expect(BUILTIN_IDS).not.toContain(manifest.id);
+});
 
 describe("pull (rest)", () => {
   test("skips pull requests and walks same-second pages without losing issues", async () => {
@@ -6782,9 +7322,8 @@ Run: `bun test components/github-issues` — Expected: FAIL (`./adapter` absent)
 
 ```ts
 import { type BindingConfig, githubError, KiboError } from "@kibo/schema";
-import type { AdapterContext } from "@kibo/sdk";
-import type { ZodType, ZodTypeDef } from "zod";
-import { z } from "zod";
+import type { AdapterContext } from "@kibo/sdk/adapter";
+import { type ZodType, type ZodTypeDef, z } from "zod";
 
 export type Ctx = AdapterContext<BindingConfig>;
 type Method = "GET" | "POST" | "PATCH";
@@ -6824,7 +7363,7 @@ export async function graphql<T>(ctx: Ctx, query: string, variables: Record<stri
 }
 ```
 
-(Les en-têtes renvoyés par `sdk.fetch` ont des noms en minuscules, comme le proxy de la phase 4 les produit ; sinon, normaliser ici.)
+(Les en-têtes renvoyés par `ctx.fetch` ont des noms en minuscules : `readProxiedBody` les recopie depuis un `Headers`, qui les normalise.)
 
 `components/github-issues/src/project.ts` :
 
@@ -6866,7 +7405,7 @@ export async function currentItem(ctx: Ctx, project: Project, number: number): P
 
 ```ts
 import { BindingConfig, GITHUB_GRAPHQL, KiboError, type PushOp, type SyncedFields } from "@kibo/schema";
-import { defineAdapter } from "@kibo/sdk";
+import { defineAdapter } from "@kibo/sdk/adapter";
 import { z } from "zod";
 import { readProjectCursor, readRestCursor } from "./cursor";
 import { fromItem, fromRest, later, toFields, toRef } from "./map";
@@ -6985,14 +7524,14 @@ export const githubIssuesAdapter = defineAdapter<GhIssue, BindingConfig>({
 `components/github-issues/src/server.ts` :
 
 ```ts
-import { adapterActions } from "@kibo/sdk";
+import { adapterActions } from "@kibo/sdk/adapter";
 import { defineServer } from "@kibo/sdk/server";
 import { githubIssuesAdapter } from "./adapter";
 
 export const server = defineServer({ actions: adapterActions(githubIssuesAdapter) });
 ```
 
-(Suivre la convention d'export du `server.ts` fixée par la phase 4 si elle diffère de l'export nommé `server`.)
+(Export nommé `server` : c'est celui que `evaluateCjs(code.server, "server")` lit dans `components/runtime-core.ts`.)
 
 `components/github-issues/src/index.ts` :
 
@@ -7006,12 +7545,12 @@ export { githubIssuesAdapter } from "./adapter";
 
 - [ ] **Step 7: Vérifier et commiter**
 
-Ajouter `components/github-issues` au script `typecheck` racine et `"github-issues"` à `BUILTIN_IDS`.
+Ajouter `components/github-issues` au script `typecheck` racine (après `components/notes`).
 
 Run: `bun install && bun test components/github-issues && bun run check && bun run typecheck` — Expected: PASS.
 
 ```bash
-git add components/github-issues package.json bun.lock packages/schema/src
+git add components/github-issues package.json bun.lock packages/schema/src/component.ts packages/sdk/package.json
 git commit -m "feat(components): adaptateur GitHub Issues"
 ```
 
@@ -7021,12 +7560,16 @@ git commit -m "feat(components): adaptateur GitHub Issues"
 
 Boîte d'envoi transactionnelle, pull paginé, fusion à trois, anti-écho, reprises. Le moteur ne connaît l'adaptateur qu'à travers `AdapterRunner` : ses tests utilisent un distant en mémoire ; l'aller-retour réel contre le faux GitHub est la Task 19.
 
+Chemin des commandes (N22) : l'observateur de la boîte d'envoi voit **toute** commande de projet exécutée par le démon, parce que la Task 2 fait passer par `docs.run` (donc par `host.command` et ses observateurs) la RPC `command`, `componentCall run` (`components/gate-handlers.ts`), les agents (`agents/data-port.ts` : `assignTicket`, règles `run_started` / `run_done`) et le suivi des PR (`service.triggerRules`, `code/pr-poller.ts`). En phase 4, ces trois derniers chemins appelaient `executeProjectCommand` directement : sans N22, une PR fusionnée (règle `pr_merged` ⇒ `done`) ou un run d'agent (`run_started` ⇒ `in_progress`) ne fermerait jamais l'issue. Les commandes dérivées d'une règle arrivent aux observateurs avec `origin: "user"`, même quand la commande qui les déclenche vient de la sync (sous-tickets fermés sur GitHub ⇒ parent `done` par `children_done`) : c'est une décision locale, poussée comme telle. `createFakeHost` (Task 2) n'applique pas les règles : ce comportement est testé par la Task 2 (`host.test.ts`) ; ici, l'observateur est testé commande par commande.
+
 **Files:**
 - Create: `packages/daemon/src/sync/{hash.ts,sync-store.ts,outbox.ts,apply.ts,engine.ts,scheduler.ts,module.ts}`
-- Test: `packages/daemon/src/sync/{sync-store.test.ts,engine.test.ts}`, `packages/daemon/src/sync/testing/memory-runner.ts`
+- Create: `packages/daemon/src/sync/testing/memory-runner.ts`
+- Test: `packages/daemon/src/sync/{sync-store.test.ts,engine.test.ts}`
 
 **Interfaces:**
-- Consumes: `IntegrationHost` (`command`, `onCommand`, `intercept`, `transaction`, `snapshot`, `broadcast`), `AdapterRunner`, `EventLog`, `RateLimitGate`, `IntegrationKit.net.gate` (Tasks 2, 8) ; `projectLocal`, `planSync`, `settleAfterPush`, `canonicalFields`, `normalizeText` (Task 5) ; commandes `importExternalTicket`, `upsertExternalRef`, `addBinding`, `removeBinding`, `ProjectSnapshot.bindings` (Task 4) ; `InstanceSource`, `SyncState`, `SyncReport`, `MappedRemote` (Task 1).
+- Consumes: `IntegrationHost` (`command`, `onCommand`, `intercept`, `transaction`, `snapshot`, `broadcast` = `docs.emit` d'un `IntegrationEvent` par N24, `projects`, `user`, `now`), `CommandEvent`, `CommandMeta`, `CommandInterceptor`, `AdapterRunner`, `createFakeHost` (Task 2, `packages/daemon/src/integrations/{types.ts,testing/fake-host.ts}`), `EventLog` du journal des intégrations (`packages/daemon/src/integrations/events.ts`, à ne pas confondre avec `EventLog` de `components/events.ts`), `RateLimitGate` (`integrations/rate-limit.ts`), `IntegrationKit.net.gate` (Tasks 2, 8) ; `projectLocal`, `planSync`, `settleAfterPush`, `canonicalFields`, `normalizeText` (Task 5) ; commandes `importExternalTicket`, `upsertExternalRef`, `addBinding`, `removeBinding`, `ProjectSnapshot.bindings` (Task 4) ; `InstanceSource`, `SyncState`, `SyncReport`, `MappedRemote` (Task 1).
+- Transactions : `host.transaction(fn)` est `Service.transaction` (Task 2, N22) : si `fn` échoue, tout projet modifié pendant `fn` est rechargé depuis SQLite ; une écriture de `sync_items` ou de `sync_outbox` qui échoue après une commande ne laisse donc pas de ticket orphelin en mémoire.
 - Produces:
   - `fieldsHash(f: SyncedFields): string`
   - `type SyncItem = { bindingId: string; remoteId: string; ticketId: string; base: SyncedFields; remoteUpdatedAt: string; lastPushedHash: string | null }`
@@ -8059,21 +8602,26 @@ git commit -m "feat(daemon): moteur de sync et boîte d'envoi"
 
 ### Task 15: Hub MCP
 
-Un client MCP par serveur configuré, ouvert à la demande et fermé après 10 min d'inactivité. La configuration vit dans SQLite (`mcp_servers`), jamais dans le CRDT ; les secrets dans le trousseau. Le transport stdio est écrit sur `Bun.spawn` : celui du SDK ajoute `LOGNAME`, `SHELL`, `TERM` et `USER` à l'environnement, ce que la spec F §8.1 interdit.
+Un client MCP par serveur configuré, ouvert à la demande et fermé après 10 min d'inactivité. La configuration vit dans SQLite (`mcp_servers`), jamais dans le CRDT ; les secrets dans le trousseau. Le transport stdio est écrit sur `Bun.spawn` : celui du SDK (`@modelcontextprotocol/sdk/client/stdio.js`) fusionne `getDefaultEnvironment()` (`HOME`, `LOGNAME`, `PATH`, `SHELL`, `TERM`, `USER`) à l'environnement, ce que la spec F §8.1 interdit (N19). Un serveur HTTP non loopback est joint par le transport épinglé du proxy de la phase 4 (N27) : `StreamableHTTPClientTransport` accepte une option `fetch` (`FetchLike`), à laquelle on passe un `fetch` qui résout le nom, refuse toute adresse non publique (`isPublicAddress`) et se connecte à l'adresse vérifiée avec SNI (`directTransport`), sans seconde implémentation de l'anti-SSRF.
+
+Tâche à risque (lancement de processus, réseau, secrets) : relecture `kibo-lead` en plus de `kibo-reviewer`.
+
+Sans recouvrement avec `packages/daemon/src/agents/ask-mcp.ts` : ce dernier est un petit **serveur** MCP stdio écrit à la main (outil `ask_user` offert aux runs d'agent) ; le hub est un **client** MCP du démon. Aucun code partagé.
 
 **Files:**
-- Create: `packages/daemon/src/mcp/{config-store.ts,command-line.ts,stdio-transport.ts,result.ts,connection.ts,hub.ts,component-gate.ts,module.ts}`
-- Test: `packages/daemon/src/mcp/{command-line.test.ts,result.test.ts,hub.test.ts,component-gate.test.ts}`
+- Create: `packages/daemon/src/mcp/{config-store.ts,command-line.ts,stdio-transport.ts,http-fetch.ts,result.ts,connection.ts,hub.ts,component-gate.ts,module.ts}`
+- Test: `packages/daemon/src/mcp/{command-line.test.ts,result.test.ts,http-fetch.test.ts,hub.test.ts,component-gate.test.ts}`
 - Modify: `packages/daemon/src/integrations/bootstrap.ts` (hub créé avant le `kit`, `hooks.mcp`, module)
 
 **Interfaces:**
-- Consumes: `McpServerInput`, `McpServerView`, `McpToolInfo`, `McpCallResult`, `McpImportItem`, `RESERVED_MCP_IDS`, RPC `listMcpServers`, `previewMcpServer`, `addMcpServer`, `removeMcpServer`, `setMcpServerEnabled`, `testMcpServer` (Task 1) ; `IntegrationHost`, `SecretStore`, `EventLog`, `McpComponentGate`, `IntegrationKit`, `baseStatus` (Task 2) ; `assertPublicHost`, `systemResolver` (Task 8) ; faux MCP (Task 7).
+- Consumes: `McpServerInput`, `McpServerView`, `McpToolInfo`, `McpCallResult`, `McpImportItem`, `RESERVED_MCP_IDS`, RPC `listMcpServers`, `previewMcpServer`, `addMcpServer`, `removeMcpServer`, `setMcpServerEnabled`, `testMcpServer` (Task 1) ; `IntegrationHost` (`command`, `transaction`, `home`, `db`, `now`, `broadcast`), `SecretStore`, `EventLog` (`integrations/events.ts`), `McpComponentGate`, `IntegrationKit`, `IntegrationModule`, `baseStatus` (Task 2) ; commande réservée `importExternalTicket` (Task 4) ; faux MCP `FAKE_MCP_STDIO`, `startFakeMcpHttp` (Task 7) ; phase 4 : `isPublicAddress`, `systemResolver`, `type Resolver`, `checkedAddress`, `pinnedRequest` (`components/net-proxy-address.ts`, exportés par la Task 8), `directTransport`, `type Transport` (`components/net-proxy-transport.ts`), `signalGroup` (`process-group.ts`) ; SDK MCP 1.30.1 : `Client` (`@modelcontextprotocol/sdk/client/index.js`), `StreamableHTTPClientTransport` (`…/client/streamableHttp.js`, option `fetch`), `ReadBuffer`, `serializeMessage` (`…/shared/stdio.js`), `Transport`, `FetchLike` (`…/shared/transport.js`), `JSONRPCMessage`, `McpError`, `ErrorCode` (`…/types.js`).
 - Produces:
   - `commandLineOf(s: McpServerInput): string` ; `shellQuote(arg: string): string`
   - `toCallResult(raw: unknown, maxBytes?: number): McpCallResult` ; `toReadResult(raw: unknown, maxBytes?: number): McpCallResult` ; `MCP_MAX_RESULT_BYTES = 1_048_576`
   - `type McpHub = { views(): Promise<McpServerView[]>; add(input: McpServerInput, confirmedCommandLine: string, secrets: Record<string, string>): Promise<McpServerView>; remove(id: string): Promise<void>; setEnabled(id: string, enabled: boolean): Promise<McpServerView>; test(id: string): Promise<McpServerView>; tools(id: string): Promise<McpToolInfo[]>; call(id: string, tool: string, args: Record<string, unknown>, instanceId: string | null): Promise<McpCallResult>; read(id: string, uri: string, instanceId: string | null): Promise<McpCallResult>; setReserved(id: "figma", url: string | null): Promise<void>; stop(): Promise<void> }`
+  - `createPinnedFetch(deps: { resolve: Resolver; transport?: Transport; allowAddress?: (ip: string) => boolean }): FetchLike` (https seul, adresse publique vérifiée, connexion épinglée avec SNI, aucune redirection suivie)
   - `createMcpHub(deps: { host: IntegrationHost; secrets: SecretStore; events: EventLog; redact(text: string): string; idleMs?: number; callTimeoutMs?: number; resolve?: Resolver }): McpHub` (les messages d'erreur rendus dans `McpServerView.error` sont caviardés)
-  - `createMcpGate(hub: McpHub, host: IntegrationHost): McpComponentGate` (serveurs réservés refusés)
+  - `createMcpGate(hub: McpHub, host: IntegrationHost): McpComponentGate` (serveurs réservés refusés), branché dans `hooks.mcp` ; la porte de la phase 4 (`createGate`, étendue par la Task 9) contrôle les permissions `mcp` avant d'appeler ce `McpComponentGate`
   - `mcpModule(kit: IntegrationKit, hub: McpHub): IntegrationModule` (handlers MCP, sonde `mcp`)
   - secrets : `mcp:<id>:<VAR>` (stdio), `mcp:<id>` (jeton HTTP) ; clé `"bearer"` dans `addMcpServer.secrets` pour le jeton HTTP
 
@@ -8145,9 +8693,75 @@ test("resources become text or image content", () => {
 });
 ```
 
+`packages/daemon/src/mcp/http-fetch.test.ts` :
+
+```ts
+import { expect, test } from "bun:test";
+import type { Transport } from "../components/net-proxy";
+import { createPinnedFetch } from "./http-fetch";
+
+test("a remote mcp server is reached at its checked public address only", async () => {
+  const sent: { url: string; host: string | undefined; serverName: string | undefined }[] = [];
+  const transport: Transport = async (url, init) => {
+    sent.push({ url, host: init.headers.host, serverName: init.tls?.serverName });
+    return new Response("{}", { status: 200 });
+  };
+  const pinned = createPinnedFetch({ resolve: async () => ["203.0.113.10"], transport });
+  await pinned("https://mcp.example.com/mcp", { method: "POST", body: "{}", headers: { "content-type": "application/json" } });
+  expect(sent).toEqual([{ url: "https://203.0.113.10/mcp", host: "mcp.example.com", serverName: "mcp.example.com" }]);
+  const rebound = createPinnedFetch({ resolve: async () => ["203.0.113.10", "10.0.0.2"], transport });
+  await expect(rebound("https://mcp.example.com/mcp", {})).rejects.toThrow("PERMISSION_DENIED");
+  await expect(pinned("http://mcp.example.com/mcp", {})).rejects.toThrow("PERMISSION_DENIED");
+  expect(sent).toHaveLength(1);
+});
+```
+
 Run: `bun test packages/daemon/src/mcp` — Expected: FAIL (modules absents).
 
-- [ ] **Step 2: `command-line.ts` et `result.ts`**
+- [ ] **Step 2: `command-line.ts`, `result.ts` et `http-fetch.ts`**
+
+`checkedAddress` et `pinnedRequest` sont exportés par `components/net-proxy-address.ts` depuis la Task 8 (N27) : aucune modification de la phase 4 ici.
+
+`packages/daemon/src/mcp/http-fetch.ts` :
+
+```ts
+import { KiboError } from "@kibo/schema";
+import type { FetchLike } from "@modelcontextprotocol/sdk/shared/transport.js";
+import {
+  checkedAddress,
+  isPublicAddress,
+  pinnedRequest,
+  type Resolver,
+} from "../components/net-proxy-address";
+import { directTransport, type Transport } from "../components/net-proxy-transport";
+
+export type PinnedFetchDeps = { resolve: Resolver; transport?: Transport; allowAddress?: (ip: string) => boolean };
+
+export function createPinnedFetch(deps: PinnedFetchDeps): FetchLike {
+  const transport = deps.transport ?? directTransport;
+  const allow = deps.allowAddress ?? isPublicAddress;
+  return async (input, init = {}) => {
+    const url = new URL(String(input));
+    if (url.protocol !== "https:") throw new KiboError("PERMISSION_DENIED", "a remote mcp server must use https");
+    if (init.body != null && typeof init.body !== "string") {
+      throw new KiboError("INVALID_INPUT", "mcp request body must be text");
+    }
+    const signal = init.signal ?? new AbortController().signal;
+    const address = await checkedAddress(url, deps.resolve, allow, signal);
+    const pinned = pinnedRequest(url, address);
+    return transport(pinned.url, {
+      method: init.method ?? "GET",
+      headers: { ...Object.fromEntries(new Headers(init.headers)), host: pinned.host },
+      body: typeof init.body === "string" ? init.body : undefined,
+      redirect: "manual",
+      signal,
+      tls: pinned.tls,
+    });
+  };
+}
+```
+
+Une redirection n'est jamais suivie (`redirect: "manual"`, réponse 3xx rendue telle quelle au SDK, qui échoue) ; aucun délai global n'est posé ici (le flux SSE d'une connexion Streamable HTTP dure) : les délais sont ceux du client MCP (`timeout` de chaque requête).
 
 `packages/daemon/src/mcp/command-line.ts` :
 
@@ -8236,7 +8850,7 @@ export function toReadResult(raw: unknown, maxBytes = MCP_MAX_RESULT_BYTES): Mcp
 }
 ```
 
-Run: `bun test packages/daemon/src/mcp/command-line.test.ts packages/daemon/src/mcp/result.test.ts` — Expected: PASS.
+Run: `bun test packages/daemon/src/mcp/command-line.test.ts packages/daemon/src/mcp/result.test.ts packages/daemon/src/mcp/http-fetch.test.ts` — Expected: PASS.
 
 - [ ] **Step 3: Test du hub (échoue)**
 
@@ -8498,11 +9112,23 @@ import { KiboError } from "@kibo/schema";
 import { ReadBuffer, serializeMessage } from "@modelcontextprotocol/sdk/shared/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import { signalGroup } from "../process-group";
 
-type Options = { cmd: string[]; env: Record<string, string>; cwd: string };
+type Options = { id: string; cmd: string[]; env: Record<string, string>; cwd: string };
+const MAX_STDERR_LINE = 500;
 const spawnServer = (o: Options) =>
-  Bun.spawn(o.cmd, { env: o.env, cwd: o.cwd, stdin: "pipe", stdout: "pipe", stderr: "inherit" });
+  Bun.spawn(o.cmd, { env: o.env, cwd: o.cwd, stdin: "pipe", stdout: "pipe", stderr: "pipe", detached: true });
 const asError = (e: unknown) => (e instanceof Error ? e : new Error(String(e)));
+
+async function relayStderr(id: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  const decoder = new TextDecoder();
+  let pending = "";
+  for await (const chunk of stream) {
+    const lines = (pending + decoder.decode(chunk, { stream: true })).split("\n");
+    pending = lines.pop() ?? "";
+    for (const line of lines) if (line) console.error(`[kibo-mcp ${id}] ${line.slice(0, MAX_STDERR_LINE)}`);
+  }
+}
 
 export class BunStdioTransport implements Transport {
   onmessage?: (message: JSONRPCMessage) => void;
@@ -8517,6 +9143,7 @@ export class BunStdioTransport implements Transport {
     const proc = spawnServer(this.options);
     this.proc = proc;
     this.pump(proc.stdout).catch((e) => this.onerror?.(asError(e)));
+    relayStderr(this.options.id, proc.stderr).catch((e) => this.onerror?.(asError(e)));
     proc.exited.then(
       () => this.onclose?.(),
       (e) => this.onerror?.(asError(e)),
@@ -8547,11 +9174,14 @@ export class BunStdioTransport implements Transport {
   }
 
   async close(): Promise<void> {
-    this.proc?.kill();
+    const proc = this.proc;
     this.proc = null;
+    if (proc) signalGroup(proc.pid, "SIGTERM");
   }
 }
 ```
+
+Le serveur est lancé dans son propre groupe (`detached: true`) et `close` signale tout le groupe (`signalGroup` de `process-group.ts`, comme `code/run.ts`) : un `npx …` laisserait sinon son processus `node` orphelin. `stderr` n'est pas hérité : chaque ligne passe par `console.error`, caviardé au démarrage du démon (N14), pour qu'un serveur qui affiche sa variable secrète ne l'écrive pas en clair dans les journaux.
 
 - [ ] **Step 5: `connection.ts`**
 
@@ -8563,8 +9193,9 @@ import { KiboError, type McpServerInput, type McpToolInfo, type SecretName } fro
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
-import { assertPublicHost, type Resolver } from "../integrations/net";
+import type { Resolver } from "../components/net-proxy";
 import type { SecretResolver } from "../integrations/types";
+import { createPinnedFetch } from "./http-fetch";
 import { BunStdioTransport } from "./stdio-transport";
 
 export type McpConnection = {
@@ -8591,14 +9222,14 @@ async function stdioTransport(s: Extract<McpServerInput, { transport: "stdio" }>
     LANG: process.env.LANG ?? "C.UTF-8",
   };
   for (const name of s.envNames) env[name] = await secretOrFail(deps, `mcp:${s.id}:${name}`);
-  return new BunStdioTransport({ cmd: [s.command, ...s.args], env, cwd });
+  return new BunStdioTransport({ id: s.id, cmd: [s.command, ...s.args], env, cwd });
 }
 
 async function httpTransport(s: Extract<McpServerInput, { transport: "http" }>, deps: Deps): Promise<Transport> {
   const url = new URL(s.url);
-  if (!LOOPBACK.has(url.hostname)) await assertPublicHost(url.hostname, deps.resolve);
   const headers: Record<string, string> = s.bearer ? { authorization: `Bearer ${await secretOrFail(deps, `mcp:${s.id}`)}` } : {};
-  return new StreamableHTTPClientTransport(url, { requestInit: { headers } });
+  if (LOOPBACK.has(url.hostname)) return new StreamableHTTPClientTransport(url, { requestInit: { headers } });
+  return new StreamableHTTPClientTransport(url, { requestInit: { headers }, fetch: createPinnedFetch({ resolve: deps.resolve }) });
 }
 
 export async function openMcpConnection(s: McpServerInput, deps: Deps): Promise<McpConnection> {
@@ -8623,7 +9254,7 @@ export async function openMcpConnection(s: McpServerInput, deps: Deps): Promise<
 }
 ```
 
-(`mcp:${s.id}:${name}` satisfait le type gabarit `SecretName`. `initialize`, `tools/list` et `resources/list` sont faits une fois par connexion et gardés tant qu'elle vit (spec F §8.1).)
+(`mcp:${s.id}:${name}` satisfait le type gabarit `SecretName`. Seule une adresse loopback part par le `fetch` global (serveur Dev Mode de Figma, faux MCP des tests) : `McpServerInput` refuse déjà tout `http:` non loopback (Task 1). `initialize`, `tools/list` et `resources/list` sont faits une fois par connexion et gardés tant qu'elle vit (spec F §8.1).)
 
 - [ ] **Step 6: `hub.ts`**
 
@@ -8631,9 +9262,9 @@ export async function openMcpConnection(s: McpServerInput, deps: Deps): Promise<
 import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError, type McpCallResult, type McpServerInput, type McpServerView, type McpToolInfo } from "@kibo/schema";
-import { McpError } from "@modelcontextprotocol/sdk/types.js";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { type Resolver, systemResolver } from "../components/net-proxy";
 import type { EventLog } from "../integrations/events";
-import { type Resolver, systemResolver } from "../integrations/net";
 import type { IntegrationHost, SecretStore } from "../integrations/types";
 import { commandLineOf } from "./command-line";
 import { createMcpConfigStore } from "./config-store";
@@ -8655,7 +9286,6 @@ export type McpHub = {
 type Deps = { host: IntegrationHost; secrets: SecretStore; events: EventLog; redact(text: string): string; idleMs?: number; callTimeoutMs?: number; resolve?: Resolver };
 type Live = { conn: Promise<McpConnection>; timer: ReturnType<typeof setTimeout> | null };
 
-const REQUEST_TIMEOUT = -32001;
 const CONNECT_TIMEOUT_MS = 30_000;
 const secretNames = (s: McpServerInput) => (s.transport === "stdio" ? s.envNames.map((n) => `mcp:${s.id}:${n}` as const) : s.bearer ? [`mcp:${s.id}` as const] : []);
 
@@ -8742,7 +9372,7 @@ export function createMcpHub(deps: Deps): McpHub {
       success = ok(r);
       return r;
     } catch (e) {
-      if (e instanceof McpError && e.code === REQUEST_TIMEOUT) throw new KiboError("TIMEOUT", `${id}/${tool} timed out`);
+      if (e instanceof McpError && e.code === ErrorCode.RequestTimeout) throw new KiboError("TIMEOUT", `${id}/${tool} timed out`);
       if (e instanceof KiboError) throw e;
       throw new KiboError("MCP_FAILED", `${id}/${tool}: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -8807,7 +9437,7 @@ Précisions pour l'implémenteur :
 - `secretNames(…)` et `wanted` sont alignés par position (même ordre) ; `add` écrit donc chaque valeur sous son nom de trousseau.
 - `close` : `l.conn.catch(() => null)` n'avale rien : l'échec d'ouverture a déjà été journalisé et enregistré dans `errors` par `connect`.
 - `tryConnect` convertit un échec de connexion en vue « error » (état affiché à l'écran) ; toute autre exception remonte.
-- `McpError` et le code `-32001` (`ErrorCode.RequestTimeout`) viennent du SDK ; importer `ErrorCode` et écrire `ErrorCode.RequestTimeout` si l'énumération est exportée dans la 1.30.1, au lieu de la constante.
+- `McpError` et `ErrorCode.RequestTimeout` (`-32001`) sont exportés par `@modelcontextprotocol/sdk/types.js` en 1.30.1.
 
 - [ ] **Step 7: `component-gate.ts` et `module.ts`**
 
@@ -8924,15 +9554,18 @@ git commit -m "feat(daemon): hub MCP"
 
 ### Task 16: GitHub Actions (C1)
 
-Sondeur des runs des PR liées aux tickets, logs téléchargés à la demande, entité SDK `ci_run`, événement `ci.failed` une seule fois par run.
+Sondeur des runs des PR liées aux tickets, logs téléchargés à la demande, entité SDK `ci_run`, notification « CI cassée » une seule fois par run (N20, N25).
+
+Complète le suivi des PR de la phase 3 sans le dupliquer : `packages/daemon/src/code/pr-poller.ts` suit l'**état** des réf. `github_pr` ouvertes par `gh pr view` (et déclenche les règles `pr_opened`/`pr_merged`) ; ce sondeur ne touche jamais la réf. ni le statut du ticket, il lit par l'API REST (compte GitHub de la Task 12, mode `gh` ou jeton) la tête de chaque PR liée (`gh pr view` de la phase 3 ne demande pas `headRefOid`) puis ses runs.
 
 **Files:**
 - Create: `packages/daemon/src/ci/{ci-store.ts,poller.ts,logs.ts,module.ts}`
 - Test: `packages/daemon/src/ci/{poller.test.ts,logs.test.ts}`
-- Modify: `packages/daemon/src/integrations/bootstrap.ts` (sondeur créé avant le `kit`, `hooks.ciRuns`, module) ; règles par défaut de la phase 2 (fichier des règles déclaratives, voir « Points d'ancrage ») : règle `ci.failed ⇒ notification « CI cassée sur KIB-n »`
+- Create: `packages/daemon/src/ci/fr.ts` (textes de la notification)
+- Modify: `packages/daemon/src/integrations/bootstrap.ts` (sondeur créé avant le `kit`, `hooks.ciRuns`, module). Aucune règle de la phase 2 n'est modifiée : les règles (`packages/schema/src/rule.ts`) ne font que changer un statut et n'ont pas d'événement externe ; `ci.failed` est une notification directe (N25).
 
 **Interfaces:**
-- Consumes: `CiRun`, `CiJobSummary`, `CiLog`, `githubError`, `RepoSlug`, RPC `listCiRuns`, `getCiLog` (Task 1) ; `IntegrationHost` (`ruleEvent`, `broadcast`, `home`), `EventLog`, `githubRepoOf`, `IntegrationKit` (Task 2) ; `GITHUB_LOG_RULES` (Task 8) ; `GithubApi` (Task 12) ; faux GitHub (Task 6) ; réf. `github_pr` `{ kind, url, number, state }` (phase 3).
+- Consumes: `CiRun`, `CiJobSummary`, `CiLog`, `githubError`, `RepoSlug`, RPC `listCiRuns`, `getCiLog` (Task 1) ; `IntegrationHost` (`notify`, `broadcast`, `home`, `snapshot`, `projects`, `now`), `EventLog` (`integrations/events.ts`), `githubRepoOf`, `IntegrationKit` (Task 2) ; `GITHUB_LOG_RULES` (Task 8) ; `GithubApi` (Task 12) ; faux GitHub (Task 6) ; réf. `github_pr` `{ kind: "github_pr", url, number, state: "open" | "draft" | "merged" | "closed" }` (`packages/schema/src/external-ref.ts`, phase 3) ; `TicketView` (`packages/schema/src/rpc.ts`).
 - Produces:
   - `createCiStore(db): CiStore` ; `type CiStore = { upsertRun(r: StoredRun): "new" | "changed" | "same"; upsertJobs(runId: number, jobs: CiJobSummary[]): void; runsOf(projectId: string, prNumbers: number[] | null): StoredRun[]; jobsOf(runId: number): CiJobSummary[]; markNotified(repo: string, runId: number): void; job(projectId: string, runId: number, jobId: number): { repo: RepoSlug; completed: boolean; logPath: string | null } | null; setLog(jobId: number, path: string | null, at: number | null): void; staleLogs(before: number): { jobId: number; path: string }[] }`
   - `type StoredRun = Omit<CiRun, "ticketKey" | "jobs"> & { projectId: string; notified: boolean }`
@@ -8941,6 +9574,7 @@ Sondeur des runs des PR liées aux tickets, logs téléchargés à la demande, e
   - `readCiLog(deps: { host; api; store }, projectId, runId, jobId): Promise<CiLog>` ; `purgeCiLogs(deps, now): void`
   - `ciModule(kit: IntegrationKit, poller: CiPoller, store: CiStore): IntegrationModule` (handlers `listCiRuns`, `getCiLog`)
   - `IntegrationEvent` `{ type: "ci", projectId }` diffusé quand un run change
+  - `frCi = { failedTitle(key: string): string; failedBody(workflow: string, pr: number): string }` (`ci/fr.ts` : « CI cassée sur KIB-1 », « CI a échoué sur la PR #12. »)
 
 - [ ] **Step 1: Tests (échouent)**
 
@@ -9008,7 +9642,7 @@ test("reads the runs of the head of each linked PR, with the ticket key", async 
 test("a failure raises ci.failed exactly once", async () => {
   const run = gh.addRun("adam/kibo", { id: 900, headSha: "abc123", headBranch: "b", name: "CI", status: "in_progress", conclusion: null, jobs: [job(70, null)] });
   await poller.tick();
-  expect(host.ruleEvents).toEqual([]);
+  expect(host.notifications).toEqual([]);
   run.status = "completed";
   run.conclusion = "failure";
   run.updatedAt = gh.tick(30);
@@ -9017,15 +9651,16 @@ test("a failure raises ci.failed exactly once", async () => {
   await poller.tick();
   host.clock.now += 60_000;
   await poller.tick();
-  const ticket = host.snapshot(host.projectId).tickets[0];
-  expect(host.ruleEvents).toEqual([{ type: "ci.failed", projectId: host.projectId, ticketId: ticket?.id, runId: 900, prNumber: 12 }]);
+  expect(host.notifications.map(({ title, body }) => ({ title, body }))).toEqual([
+    { title: "CI cassée sur KIB-1", body: "CI a échoué sur la PR #12." },
+  ]);
 });
 
 test("an old failure seen for the first time does not notify", async () => {
   gh.addRun("adam/kibo", { id: 900, headSha: "abc123", headBranch: "b", name: "CI", status: "completed", conclusion: "failure", jobs: [job(70, "failure")] });
   host.clock.now += 60 * 60_000;
   await poller.tick();
-  expect(host.ruleEvents).toEqual([]);
+  expect(host.notifications).toEqual([]);
 });
 
 test("polls every 60 s with an open ticket, every 15 min once all are done", async () => {
@@ -9264,6 +9899,7 @@ import type { EventLog } from "../integrations/events";
 import { githubRepoOf } from "../integrations/github-remote";
 import type { IntegrationHost } from "../integrations/types";
 import type { CiStore, StoredRun } from "./ci-store";
+import { frCi } from "./fr";
 
 export type CiPoller = { tick(): Promise<void>; runs(projectId: string, ticketId: string | null): Promise<CiRun[]>; start(): () => void };
 type Deps = { host: IntegrationHost; api: GithubApi; store: CiStore; events: EventLog; connected(): boolean };
@@ -9341,7 +9977,7 @@ export function createCiPoller(deps: Deps): CiPoller {
       const failed = r.status === "completed" && r.conclusion === "failure";
       const fresh = seen === "changed" || host.now() - Date.parse(r.updated_at) < FRESH_MS;
       if (failed && fresh && !store.runsOf(projectId, [pr.number]).find((x) => x.runId === r.id)?.notified) {
-        host.ruleEvent({ type: "ci.failed", projectId, ticketId: pr.ticket.id, runId: r.id, prNumber: pr.number });
+        host.notify({ title: frCi.failedTitle(pr.ticket.key), body: frCi.failedBody(r.name, pr.number) });
       }
       if (failed) store.markNotified(repo, r.id);
     }
@@ -9399,6 +10035,17 @@ export function createCiPoller(deps: Deps): CiPoller {
 Précisions :
 - `tick` journalise l'échec d'un projet (converti en `KiboError`) et passe au suivant : un dépôt inaccessible ne bloque pas les autres ; l'erreur est visible dans le journal de l'intégration.
 - Un run « déjà terminé en échec » vu pour la première fois il y a plus de 15 min est marqué notifié sans événement (pas de rafale à la première connexion).
+
+`packages/daemon/src/ci/fr.ts` (textes affichés en français, comme `agents/fr.ts`) :
+
+```ts
+export const frCi = {
+  failedTitle: (key: string) => `CI cassée sur ${key}`,
+  failedBody: (workflow: string, pr: number) => `${workflow} a échoué sur la PR #${pr}.`,
+};
+```
+
+`host.notify` (Task 2, N25) envoie la notification native (`DaemonOptions.notify`, Tauri) et la diffuse à l'UI (`IntegrationEvent` `notice`, API `Notification` en mode navigateur).
 
 - [ ] **Step 4: `logs.ts`**
 
@@ -9486,7 +10133,7 @@ export function ciModule(kit: IntegrationKit, poller: CiPoller, store: CiStore):
 
 puis `hooks.ciRuns: (projectId) => ciPoller.runs(projectId, null)` et `ciModule(kit, ciPoller, ciStore)` dans `modules`.
 
-Règle par défaut (phase 2) : dans le fichier des règles déclaratives livré par la phase 2, ajouter la règle `{ id: "ci-failed-notify", on: "ci.failed", do: { notify: { title: "CI cassée sur {ticketKey}", body: "{workflow} a échoué sur la PR #{prNumber}." } } }` (syntaxe réelle de la phase 2 ; texte français exact « CI cassée sur KIB-n »). Aucune règle de statut par défaut (spec F §7). Si la phase 2 n'offre pas de règle déclarative sur un événement externe, `host.ruleEvent` appelle `host.notify` directement dans `host.ts` (colonne « Réel » du tableau d'ancrage).
+Aucune règle de statut par défaut (spec F §7) et aucune règle ajoutée à `DEFAULT_RULES` (N25).
 
 - [ ] **Step 6: Vérifier et commiter**
 
@@ -9497,8 +10144,6 @@ git add packages/daemon/src/ci packages/daemon/src/integrations/bootstrap.ts
 git commit -m "feat(daemon): runs et logs GitHub Actions"
 ```
 
-(Ajouter au `git add` le fichier des règles par défaut de la phase 2 modifié.)
-
 ---
 
 ### Task 17: Écran 3 · Source synchronisée
@@ -9506,19 +10151,20 @@ git commit -m "feat(daemon): runs et logs GitHub Actions"
 Référence : maquette P6, sombre et clair. Le choix de source n'apparaît que pour les composants qui affichent des tickets (`kanban`, `tickets`).
 
 **Files:**
-- Create: `packages/sdk/src/ui/checkbox.tsx`
 - Create: `packages/ui/src/dialogs/sync/{status-map.ts,status-map.test.ts,SourcePicker.tsx,SyncSourceForm.tsx,use-sync-progress.ts,SyncSource.test.tsx}`
-- Modify: `packages/ui/src/dialogs/AddComponentDialog.tsx`
+- Modify: `packages/ui/src/dialogs/AddComponentDialog.tsx` (le bloc « Source des tickets » de `Details`, aujourd'hui un `Segment` désactivé « Disponible avec les intégrations », devient le vrai choix de source), `packages/ui/src/pages/PageView.tsx` (passe `workflow={project.workflow}`), `packages/ui/src/i18n/fr-components.ts` (retire `addComponent.source`, `sourceLocal`, `sourceSynced`, `sourceSoon`, remplacés par `fr.integrations.source`), `packages/ui/src/dialogs/component-dialogs.test.tsx` (le radio désactivé « Synchronisé · GitHub Issues » n'existe plus ; le faux client répond à `getGithubConnectOptions` et expose `subscribeIntegrations`)
+
+`Checkbox` existe déjà (`packages/sdk/src/ui/checkbox.tsx`, phase 1) : pas de création.
 
 **Interfaces:**
-- Consumes: RPC `getGithubConnectOptions`, `listGithubRepos`, `listGithubProjects`, `createBinding`, `getSyncState`, `command` (Task 1) ; `IntegrationEvent`, `BindingConfig`, `GithubProject`, `StatusMap`, `Status` (Task 1, v0.1) ; `client.onEvent` (Task 10) ; `fr.integrations.source` (Task 1) ; `ChoiceCard` (v0.1) ; navigation vers Paramètres › Intégrations (phase 2).
+- Consumes: RPC `getGithubConnectOptions`, `listGithubRepos`, `listGithubProjects`, `createBinding`, `getSyncState`, `command` (Task 1) ; `BindingConfig`, `GithubProject`, `StatusMap` (Task 1), `Status`, `DEFAULT_WORKFLOW` (`packages/schema/src/status.ts`) ; `client.subscribeIntegrations` (Task 2, N24) ; `fr.integrations.source` (Task 1) ; `ChoiceCard` (`packages/ui/src/dialogs/ChoiceCard.tsx`) ; `StatusDot` (`@kibo/sdk`, `packages/sdk/src/status.tsx`) ; `Checkbox` (`@kibo/sdk/ui/checkbox`, existant) ; `navigateTo` (`packages/ui/src/route.ts`) et l'écran `integrations` (Task 10, N30).
 - Produces:
   - `prefillStatusMap(workflow: Status[], options: { id: string; name: string }[]): StatusMap` ; `parseLabels(text: string): string[]`
   - `type SyncForm = { repo: RepoSlug | null; project: GithubProject | null; statusMap: StatusMap; labels: string; importClosed: boolean }` ; `EMPTY_SYNC_FORM` ; `toBindingConfig(f: SyncForm): BindingConfig | null`
   - `useSyncProgress(bindingId: string | null): { imported: number; running: boolean } | null`
   - `SourcePicker({ value, onValueChange, connected, onOpenSettings })`, `SyncSourceForm({ workflow, value, onChange })`
   - `SYNCABLE_COMPONENTS = ["kanban", "tickets"]`
-  - `Checkbox` (`@kibo/sdk/ui/checkbox`)
+  - `AddComponentDialog` gagne la prop facultative `workflow?: Status[]` (défaut `DEFAULT_WORKFLOW`)
 
 - [ ] **Step 1: Tests purs (échouent)**
 
@@ -9611,12 +10257,12 @@ Run: `bun test packages/ui/src/dialogs/sync/status-map.test.ts` — Expected: PA
 
 ```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { RpcRequest } from "@kibo/schema";
+import type { IntegrationEvent, RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
-let listener: ((e: unknown) => void) | null = null;
+let listener: ((e: IntegrationEvent) => void) | null = null;
 let connected = true;
 const binding = {
   id: "b1",
@@ -9634,6 +10280,8 @@ const replies: Record<string, () => unknown> = {
   listGithubProjects: () => [],
   createBinding: () => binding,
   command: () => ({ id: "i1" }),
+  listComponents: () => [],
+  listDrafts: () => [],
   getSyncState: () => ({
     bindings: [{ bindingId: "b1", repo: "adam/kibo", runner: "adam", running: false, lastPullAt: 1, lastError: null, imported: 12, resumeAt: null }],
     pending: [],
@@ -9647,7 +10295,8 @@ mock.module("../../api", () => ({
       calls.push(req);
       return replies[req.method]?.() ?? null;
     },
-    onEvent: (l: (e: unknown) => void) => {
+    subscribe: () => () => undefined,
+    subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
       listener = l;
       return () => {
         listener = null;
@@ -9703,22 +10352,19 @@ test("without a GitHub account the synced source explains how to connect", async
 test("components that do not show tickets have no source choice", async () => {
   render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
   const user = userEvent.setup();
-  const other = screen.getAllByRole("radio").find((r) => !["Kanban", "Tickets"].includes(r.getAttribute("aria-label") ?? ""));
-  if (other) await user.click(other);
+  await user.click(screen.getByRole("radio", { name: "Graphe de dépendances" }));
   expect(screen.queryByText("Source")).toBeNull();
+  expect(calls.some((c) => c.method === "getGithubConnectOptions")).toBe(false);
 });
 ```
 
 Run: `bun test packages/ui/src/dialogs/sync` — Expected: FAIL.
 
-- [ ] **Step 4: `Checkbox` shadcn et `use-sync-progress.ts`**
-
-`packages/sdk/src/ui/checkbox.tsx` : composant `Checkbox` de shadcn/ui (new-york, `import { Checkbox as CheckboxPrimitive } from "radix-ui"`, icône `CheckIcon`), tel que généré par `bunx shadcn@latest add checkbox`, avec l'import `cn` des fichiers voisins. Aucune dépendance nouvelle.
+- [ ] **Step 4: `use-sync-progress.ts`**
 
 `packages/ui/src/dialogs/sync/use-sync-progress.ts` :
 
 ```ts
-import { IntegrationEvent } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { client } from "../../api";
 
@@ -9727,18 +10373,15 @@ export function useSyncProgress(bindingId: string | null): { imported: number; r
   useEffect(() => {
     setProgress(null);
     if (bindingId === null) return;
-    return client.onEvent((raw) => {
-      const e = IntegrationEvent.safeParse(raw);
-      if (e.success && e.data.type === "sync" && e.data.bindingId === bindingId) {
-        setProgress({ imported: e.data.imported, running: e.data.running });
-      }
+    return client.subscribeIntegrations((e) => {
+      if (e.type === "sync" && e.bindingId === bindingId) setProgress({ imported: e.imported, running: e.running });
     });
   }, [bindingId]);
   return progress;
 }
 ```
 
-(Un message WebSocket d'un autre type n'est pas une erreur : `safeParse` l'écarte.)
+(`subscribeIntegrations` ne livre que des `IntegrationEvent` validés par le client, Task 2.)
 
 - [ ] **Step 5: `SourcePicker.tsx`**
 
@@ -9778,12 +10421,13 @@ export function SourcePicker({ value, onValueChange, connected, onOpenSettings }
 }
 ```
 
-(Icônes : `ListTodo`, celle de la ligne « GitHub Issues & Projects » de l'écran 16, et `HardDrive` pour Locale ; Lucide 1.x n'a plus d'icônes de marque, N15.)
+(Icônes : `ListTodo`, celle de la ligne « GitHub Issues & Projects » de l'écran 16, et `HardDrive` pour Locale ; Lucide 1.x n'a plus d'icônes de marque, N15. Le radio porte `aria-label={title}` par `ChoiceCard`.)
 
 - [ ] **Step 6: `SyncSourceForm.tsx`**
 
 ```tsx
 import type { GithubProject, GithubRepo, Status, StatusId } from "@kibo/schema";
+import { StatusDot } from "@kibo/sdk";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
@@ -9916,7 +10560,7 @@ function StatusRow({ status, options, value, onChange }: { status: Status; optio
   return (
     <>
       <Label htmlFor={id} className="flex items-center gap-2 font-normal">
-        <span aria-hidden className="size-2 rounded-full" style={{ background: `var(--status-${status.id})` }} />
+        <StatusDot statusId={status.id} />
         {status.label}
       </Label>
       <Select value={value} onValueChange={onChange}>
@@ -9937,22 +10581,27 @@ function StatusRow({ status, options, value, onChange }: { status: Status; optio
 }
 ```
 
-Précisions : la pastille de statut reprend la variable CSS ou la classe utilisée par les colonnes du Kanban v0.1 (même couleur que le reste de l'application) ; `onError` est stable (`useCallback` dans le parent) pour ne pas relancer les requêtes. `RepoList` est dans ce fichier (< 300 lignes au total) ; s'il dépasse, le sortir en `RepoList.tsx`.
+Précisions : la pastille de statut est le `StatusDot` du SDK (mêmes couleurs que les colonnes du Kanban) ; `onError` est stable (`useCallback` dans le parent) pour ne pas relancer les requêtes. `RepoList` est dans ce fichier (< 300 lignes au total) ; s'il dépasse, le sortir en `RepoList.tsx`.
 
 - [ ] **Step 7: Brancher dans `AddComponentDialog.tsx`**
 
-Ajouts (le reste du fichier inchangé) :
+Le fichier réel (241 lignes) a un panneau `Details({ choice, page })` qui affiche, pour tout composant qui lit `ticket`, un bloc « Source des tickets » en `Segment` avec « Synchronisé · GitHub Issues » désactivé (« Disponible avec les intégrations »). La sélection est un `Choice` (`catalog-choices.ts` : `ref`, `id`, `title`, `reads`, `pending`…) et l'ajout passe par `addInstance(component)` (directement, ou après `TrustDialog` pour une version à autoriser). Le choix de source remplace ce bloc ; au-delà de ~300 lignes, sortir `Details` dans `dialogs/ComponentDetails.tsx`.
+
+Imports ajoutés :
 
 ```tsx
-import { type Binding, DEFAULT_WORKFLOW } from "@kibo/schema";
+import { type Binding, DEFAULT_WORKFLOW, type Status } from "@kibo/schema";
 import { useCallback, useEffect } from "react";
-import { SourcePicker, type SourceKind } from "./sync/SourcePicker";
+import { navigateTo } from "../route";
+import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
 import { SyncSourceForm } from "./sync/SyncSourceForm";
 import { EMPTY_SYNC_FORM, SYNCABLE_COMPONENTS, type SyncForm, toBindingConfig } from "./sync/status-map";
 import { useSyncProgress } from "./sync/use-sync-progress";
 ```
 
-Dans le composant :
+`Props` gagne `workflow?: Status[]` ; `PageView.tsx` passe `workflow={project.workflow}` (les libellés comparés sont ceux du projet).
+
+`Details` perd son bloc « Source » (`choice.reads.includes("ticket")` et le `Segment`) et reçoit un nœud `source?: ReactNode` rendu à la même place. Dans `AddComponentDialog` :
 
 ```tsx
   const [source, setSource] = useState<SourceKind>("local");
@@ -9961,9 +10610,13 @@ Dans le composant :
   const [binding, setBinding] = useState<Binding | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const progress = useSyncProgress(binding?.id ?? null);
-  const syncable = selected !== undefined && SYNCABLE_COMPONENTS.includes(selected.manifest.id);
+  const syncable = selected !== null && SYNCABLE_COMPONENTS.includes(selected.id);
   const synced = syncable && source === "synced";
   const onFormError = useCallback((m: string) => setSyncError(m), []);
+  const openIntegrationSettings = () => {
+    onOpenChange(false);
+    navigateTo({ kind: "screen", screen: "integrations" });
+  };
 
   useEffect(() => {
     if (!open || !syncable) return;
@@ -9986,11 +10639,10 @@ Dans le composant :
   }, [binding, progress, projectId, onOpenChange]);
 ```
 
-`add` devient :
+`addInstance` devient (le `console.error(e)` existant est gardé : l'erreur n'est pas avalée, elle est journalisée et affichée) :
 
 ```tsx
-  const add = async () => {
-    if (!ref) return;
+  const addInstance = async (component: string) => {
     setFailed(false);
     setSyncError(null);
     try {
@@ -10002,73 +10654,83 @@ Dans le composant :
         command: {
           method: "addInstance",
           pageId: page.id,
-          component: ref,
+          component,
           ...(page.kind === "dashboard" && { layout: nextLayout(taken) }),
           ...(created && { config: { source: { bindingId: created.id } } }),
         },
       });
-      if (created) return setBinding(created);
-    } catch {
+      if (created) {
+        setBinding(created);
+        return;
+      }
+      onOpenChange(false);
+    } catch (e) {
+      console.error(e);
       setFailed(true);
-      return;
     }
-    onOpenChange(false);
   };
 ```
 
-Sous la grille du catalogue, si `syncable` :
+Rendu : `Details` reçoit
 
 ```tsx
-        {syncable && (
-          <div className="grid gap-4 border-t pt-4">
-            <SourcePicker value={source} onValueChange={setSource} connected={connected} onOpenSettings={openIntegrationSettings} />
-            {synced && <SyncSourceForm workflow={DEFAULT_WORKFLOW} value={form} onChange={setForm} onError={onFormError} />}
-          </div>
-        )}
-        {progress && (
-          <p role="status" className="text-sm text-muted-foreground">
-            {progress.running ? fr.integrations.source.progress(progress.imported) : fr.integrations.source.done(progress.imported)}
-          </p>
-        )}
-        {syncError && (
-          <p role="alert" className="text-sm text-destructive">
-            {syncError}
-          </p>
-        )}
+          source={
+            syncable ? (
+              <div className="grid gap-4">
+                <SourcePicker value={source} onValueChange={setSource} connected={connected} onOpenSettings={openIntegrationSettings} />
+                {synced && <SyncSourceForm workflow={workflow ?? DEFAULT_WORKFLOW} value={form} onChange={setForm} onError={onFormError} />}
+              </div>
+            ) : null
+          }
 ```
 
-et le bouton principal : libellé `synced ? fr.integrations.source.submit : fr.addComponent.submit`, désactivé si `!ref || (synced && toBindingConfig(form) === null) || binding !== null`.
+et, sous la grille, à côté de l'alerte `failed` existante :
 
-- `openIntegrationSettings` : fonction de navigation vers Paramètres › Intégrations de la phase 2 (ancrage « Réglages ») ; elle ferme d'abord le dialogue (`onOpenChange(false)`).
-- `DEFAULT_WORKFLOW` : remplacer par le workflow du projet si le dialogue le reçoit déjà (prop `workflow` ajoutée par la phase 2 ou 4) ; la correspondance porte sur les libellés affichés.
-- Le `catch { setFailed(true) }` existant (v0.1) affiche l'erreur générique ; il reste inchangé.
+```tsx
+          {progress && (
+            <p role="status" className="text-sm text-muted-foreground">
+              {progress.running ? fr.integrations.source.progress(progress.imported) : fr.integrations.source.done(progress.imported)}
+            </p>
+          )}
+          {syncError && (
+            <p role="alert" className="text-sm text-destructive">
+              {syncError}
+            </p>
+          )}
+```
+
+Bouton principal : libellé `synced ? fr.integrations.source.submit : a.submit`, désactivé si `!selected || (synced && toBindingConfig(form) === null) || binding !== null`. Le flux `TrustDialog` (version à autoriser) est inchangé ; il ne concerne jamais Kanban et Tickets (intégrés).
+
+`fr-components.ts` : retirer `source`, `sourceLocal`, `sourceSynced`, `sourceSoon` de `addComponent` (plus aucun usage). `component-dialogs.test.tsx` : l'assertion sur le radio désactivé « Synchronisé · GitHub Issues » devient `expect(screen.getByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy()` ; le faux `client` gagne `subscribeIntegrations: () => () => undefined` et répond `{ ghAvailable: false, ghLogin: null, mode: null }` à `getGithubConnectOptions`.
 
 - [ ] **Step 8: Vérifier et commiter**
 
 Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel : écran 3 avec Kanban choisi, source synchronisée ouverte, en sombre puis en clair, comparé à P6.
 
 ```bash
-git add packages/sdk/src/ui/checkbox.tsx packages/ui/src/dialogs/sync packages/ui/src/dialogs/AddComponentDialog.tsx
+git add packages/ui/src/dialogs/sync packages/ui/src/dialogs/AddComponentDialog.tsx packages/ui/src/dialogs/component-dialogs.test.tsx packages/ui/src/pages/PageView.tsx packages/ui/src/i18n/fr-components.ts
 git commit -m "feat(ui): source synchronisée à l'ajout"
 ```
+
+Dépendances : Tasks 1, 2 (`subscribeIntegrations`), 10 (écran `integrations` pour le lien « Ouvrir les intégrations ») ; les RPC `listGithubRepos`/`createBinding` ne sont appelées qu'au travers du faux client dans les tests.
 
 ---
 
 ### Task 18: Sheet ticket · GitHub, CI, Maquettes
 
-Références : maquettes P7, P8, P9 (sombre et clair) et page PDF 4 (Sheet ticket). Les sections s'insèrent dans le Sheet tel que livré par les phases 2 à 4 ; les emplacements sont donnés par rapport aux sections existantes.
+Références : maquettes P7, P8, P9 (sombre et clair) et page PDF 4 (Sheet ticket). Le contenu du Sheet est `packages/ui/src/shell/TicketDetail.tsx` (partagé par `TicketSheet.tsx` et l'onglet ticket `pages/TicketTab.tsx`) : les sections s'y insèrent, donc apparaissent aussi dans l'onglet. État réel : une liste `dl` (Statut, Domaine, Motif de blocage, En attente de, **PR** : chips `#12` des réfs `github_pr` livrés par la phase 3), puis Description (texte brut par `LinkifiedText`, jamais de HTML), puis Sous-tickets. Il n'y a pas de section « Dépendances ».
 
 **Files:**
 - Create: `packages/ui/src/shell/sheet/{GithubRefs.tsx,SyncStatus.tsx,CiSection.tsx,CiLogSheet.tsx,FigmaSection.tsx,log-lines.ts,ci-format.ts}`
 - Test: `packages/ui/src/shell/sheet/{log-lines.test.ts,ci-format.test.ts,sheet-integrations.test.tsx}`
-- Modify: `packages/ui/src/shell/TicketSheet.tsx`
+- Modify: `packages/ui/src/shell/TicketDetail.tsx`, `packages/ui/src/i18n/fr-integrations.ts` (clé `sheet.issueProperty`)
 
 **Interfaces:**
-- Consumes: RPC `getSyncState`, `resolveOutbox`, `listCiRuns`, `getCiLog`, `linkFigmaNode`, `getFigmaPreview`, `command` (`removeExternalRef`) (Task 1, Task 4) ; `githubIssueState`, `GithubIssueRef`, `FigmaNodeRef`, `CiRun`, `SyncState`, `IntegrationEvent` (Task 1) ; `externalRefKey` (Task 4) ; `client.onEvent`, `useSyncState`, `Switch` (Task 10) ; `fr.integrations.sheet`.
+- Consumes: RPC `getSyncState`, `resolveOutbox`, `listCiRuns`, `getCiLog`, `linkFigmaNode`, `getFigmaPreview`, `command` (`removeExternalRef`, réservée mais permise au shell : `assertShellCommand` ne refuse que `setInstanceComponent`/`setInstanceData`) (Task 1, Task 4) ; `githubIssueState`, `GithubIssueRef`, `FigmaNodeRef`, `CiRun`, `SyncState` (Task 1) ; `externalRefKey` (Task 4) ; `client.subscribeIntegrations` (Task 2, N24) ; `useSyncState`, `Switch` (Task 10) ; `fr.integrations.sheet`.
 - Produces:
   - `visibleLines(log: CiLog, query: string, errorsOnly: boolean): { n: number; text: string; error: boolean }[]`
   - `formatDuration(ms: number): string` ; `runTone(run: Pick<CiRun, "status" | "conclusion">): "ok" | "error" | "running" | "neutral"` ; `latestPerWorkflow(runs: CiRun[]): CiRun[]` ; `conclusionLabel(run): string`
-  - `GithubRefs({ ticket })`, `SyncStatus({ projectId, ticket })`, `CiSection({ projectId, ticketId })`, `CiLogSheet({ projectId, run, job, onClose })`, `FigmaSection({ projectId, ticket })`, `FigmaProperty({ ticket })`
+  - `GithubRefs({ ticket })` (chips d'issue seulement : les chips de PR restent ceux de la phase 3), `SyncStatus({ projectId, ticket })`, `CiSection({ projectId, ticketId })`, `CiLogSheet({ projectId, run, job, onClose })`, `FigmaSection({ projectId, ticket })`, `FigmaProperty({ ticket })`
 
 - [ ] **Step 1: Tests purs (échouent)**
 
@@ -10237,11 +10899,11 @@ mock.module("../../api", () => ({
       calls.push(req);
       return replies[req.method]?.(req) ?? null;
     },
-    onEvent: () => () => undefined,
+    subscribeIntegrations: () => () => undefined,
   },
 }));
 
-const { TicketSheet } = await import("../TicketSheet");
+const { TicketDetail } = await import("../TicketDetail");
 
 const project: ProjectSnapshot = {
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
@@ -10249,6 +10911,7 @@ const project: ProjectSnapshot = {
   pages: [],
   links: [],
   instances: [],
+  rules: [],
   bindings: [],
   nextTicketKey: "KIB-2",
   tickets: [
@@ -10260,6 +10923,7 @@ const project: ProjectSnapshot = {
       statusId: "in_progress",
       parentId: null,
       assignee: null,
+      domainId: null,
       blockedReason: null,
       externalRefs: [
         { kind: "github_issue", bindingId: "b1", repo: "adam/kibo", number: 42, nodeId: "I_42", url: "https://github.com/adam/kibo/issues/42" },
@@ -10271,19 +10935,22 @@ const project: ProjectSnapshot = {
     },
   ],
 } as unknown as ProjectSnapshot;
+const [ticket] = project.tickets;
+if (!ticket) throw new Error("fixture has a ticket");
+const show = () => render(<TicketDetail project={project} ticket={ticket} onOpenFile={() => {}} />);
 
 beforeEach(() => {
   calls.length = 0;
 });
 
 test("GitHub chips link to the issue and the PR", () => {
-  render(<TicketSheet project={project} ticketId="t1" onClose={() => {}} />);
+  show();
   expect(screen.getByRole("link", { name: "#42" }).getAttribute("href")).toBe("https://github.com/adam/kibo/issues/42");
   expect(screen.getByRole("link", { name: "#12" }).getAttribute("href")).toBe("https://github.com/adam/kibo/pull/12");
 });
 
 test("a sync failure can be retried", async () => {
-  render(<TicketSheet project={project} ticketId="t1" onClose={() => {}} />);
+  show();
   const alert = await screen.findByRole("alert");
   expect(alert.textContent).toContain("github 422: Validation Failed");
   await userEvent.setup().click(within(alert).getByRole("button", { name: "Réessayer" }));
@@ -10291,7 +10958,7 @@ test("a sync failure can be retried", async () => {
 });
 
 test("the CI section opens the logs, filterable to errors", async () => {
-  render(<TicketSheet project={project} ticketId="t1" onClose={() => {}} />);
+  show();
   expect(await screen.findByText("3 min 12 s")).toBeDefined();
   expect(screen.getByText("Échec")).toBeDefined();
   const user = userEvent.setup();
@@ -10304,7 +10971,7 @@ test("the CI section opens the logs, filterable to errors", async () => {
 });
 
 test("Figma: unreachable badge and invalid URL message", async () => {
-  render(<TicketSheet project={project} ticketId="t1" onClose={() => {}} />);
+  show();
   expect(await screen.findByText("Figma non joignable")).toBeDefined();
   expect(screen.getAllByText("Tickets / Arbre").length).toBeGreaterThan(0);
   const user = userEvent.setup();
@@ -10314,12 +10981,12 @@ test("Figma: unreachable badge and invalid URL message", async () => {
 });
 
 test("an issue body is never rendered as HTML", () => {
-  const { container } = render(<TicketSheet project={project} ticketId="t1" onClose={() => {}} />);
+  const { container } = show();
   expect(container.ownerDocument.querySelector("img[src='x']")).toBeNull();
 });
 ```
 
-(`as unknown as ProjectSnapshot` : les champs ajoutés par les phases 2 à 4 au ticket sont complétés par l'implémenteur ; le cast reste limité à ce fixture.)
+(`as unknown as ProjectSnapshot` : les réfs `github_issue` et `figma_node` n'existent dans `ExternalRef` qu'après la Task 4, et `bindings` dans `ProjectSnapshot` aussi ; le fixture est complet pour les champs réels (`rules`, `domainId`…). Le lien `#12` est le chip de PR existant de `TicketDetail` (phase 3) : le test vérifie qu'il cohabite avec le chip d'issue.)
 
 Run: `bun test packages/ui/src/shell/sheet/sheet-integrations.test.tsx` — Expected: FAIL.
 
@@ -10330,23 +10997,13 @@ Run: `bun test packages/ui/src/shell/sheet/sheet-integrations.test.tsx` — Expe
 ```tsx
 import { githubIssueState, type TicketView } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { CircleCheck, CircleDot, GitPullRequestArrow, Unlink } from "lucide-react";
+import { CircleCheck, CircleDot, Unlink } from "lucide-react";
 import { fr } from "../../i18n/fr";
 
 const t = fr.integrations.sheet;
 
 export function GithubRefs({ ticket }: { ticket: TicketView }) {
   const chips = ticket.externalRefs.flatMap((ref) => {
-    if (ref.kind === "github_pr") {
-      return [
-        <a key={ref.url} href={ref.url} target="_blank" rel="noreferrer noopener" title={t.openOnGithub}>
-          <Badge variant="outline" className="gap-1 font-mono">
-            <GitPullRequestArrow aria-hidden className="size-3" />
-            {t.issue(ref.number)}
-          </Badge>
-        </a>,
-      ];
-    }
     if (ref.kind !== "github_issue" || ref.number === null) return [];
     if (githubIssueState(ref) === "broken") {
       return [
@@ -10366,9 +11023,17 @@ export function GithubRefs({ ticket }: { ticket: TicketView }) {
       </a>,
     ];
   });
-  return chips.length > 0 ? <div className="flex flex-wrap gap-1">{chips}</div> : null;
+  if (chips.length === 0) return null;
+  return (
+    <>
+      <dt className="text-muted-foreground">{t.issueProperty}</dt>
+      <dd className="flex flex-wrap gap-1">{chips}</dd>
+    </>
+  );
 }
 ```
+
+`fr-integrations.ts`, bloc `sheet` : ajouter `issueProperty: "Issue",` (ligne de la liste de propriétés, au-dessus de la ligne « PR » de la phase 3).
 
 Le nom accessible du lien est le texte du chip (`#42`) ; l'icône est `aria-hidden`. `ref.url` a été validé `https:` par `WebUrl` (Task 1) à l'écriture et à la lecture du doc.
 
@@ -10435,7 +11100,7 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
 `packages/ui/src/shell/sheet/CiSection.tsx` :
 
 ```tsx
-import { type CiJobSummary, type CiRun, IntegrationEvent } from "@kibo/schema";
+import type { CiJobSummary, CiRun } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../../api";
@@ -10466,9 +11131,8 @@ export function CiSection({ projectId, ticketId }: { projectId: string; ticketId
   }, [projectId, ticketId]);
   useEffect(() => {
     void load();
-    return client.onEvent((raw) => {
-      const e = IntegrationEvent.safeParse(raw);
-      if (e.success && e.data.type === "ci" && e.data.projectId === projectId) void load();
+    return client.subscribeIntegrations((e) => {
+      if (e.type === "ci" && e.projectId === projectId) void load();
     });
   }, [projectId, load]);
   const hasPr = runs !== null;
@@ -10693,22 +11357,24 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
 
 `linkFigmaNode` est validé `z.string().url()` par le RPC : une chaîne qui n'est pas une URL est refusée `INVALID_INPUT` avant le démon Figma. Le PNG vient du cache du démon (base64 validé côté démon, Task 20), rendu en `data:` : aucune requête du navigateur vers Figma.
 
-- [ ] **Step 7: Brancher dans `TicketSheet.tsx`**
+- [ ] **Step 7: Brancher dans `TicketDetail.tsx`**
 
-- En-tête : `<GithubRefs ticket={t} />` sous `SheetTitle` (à côté des chips de l'en-tête s'il y en a déjà, phase 3).
-- Sous l'en-tête : `<SyncStatus projectId={project.meta.id} ticket={t} />`.
-- Liste de propriétés (`dl`) : `<FigmaProperty ticket={t} />` après « Statut » (et après les propriétés ajoutées par les phases 2 à 4).
-- Description : rendue par le moteur Markdown du produit (phase 4, `Notes`) **avec le HTML brut désactivé** (option `html: false` / pas de `rehype-raw`) ; tant qu'aucun moteur n'existe, texte brut `whitespace-pre-wrap` comme en v0.1. Le test « never rendered as HTML » couvre les deux cas.
-- Après la section « Dépendances » (phase 2/3), ou à défaut après « Sous-tickets » : `<CiSection projectId={project.meta.id} ticketId={t.id} />` puis `<FigmaSection projectId={project.meta.id} ticket={t} />`.
-- `CiSection` ne s'affiche que si le ticket porte au moins une réf. `github_pr` : entourer de `{t.externalRefs.some((r) => r.kind === "github_pr") && …}`.
+- Liste de propriétés (`dl`) : `<FigmaProperty ticket={t} />` juste après « Statut » ; `<GithubRefs ticket={t} />` juste avant la ligne « PR » existante (qui reste inchangée).
+- Juste avant la `dl` : `<SyncStatus projectId={project.meta.id} ticket={t} />`.
+- Description : inchangée (texte brut par `LinkifiedText`, `whitespace-pre-wrap`) ; le test « never rendered as HTML » la couvre.
+- Après la section « Sous-tickets » (dernière section) : `{prs.length > 0 && <CiSection projectId={project.meta.id} ticketId={t.id} />}` (réutilise la constante `prs` du fichier) puis `<FigmaSection projectId={project.meta.id} ticket={t} />`.
 - `FigmaSection` s'affiche toujours (champ d'ajout) ; si Figma n'est pas configuré, le message `figmaNotConnected` apparaît à la première tentative ; si l'application Figma est fermée, `figma.unreachable`.
+- `TicketDetail.tsx` reste sous ~300 lignes (les sections sont dans `shell/sheet/`).
+- Écart de maquette assumé (à noter au jalon) : P7 place `#42` et `#12` dans l'en-tête ; la phase 3 a livré le chip de PR dans la liste de propriétés, l'issue y rejoint la PR plutôt que de dupliquer l'un des deux.
 
 - [ ] **Step 8: Vérifier et commiter**
 
-Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel du Sheet (sombre puis clair) contre P7, P8, P9.
+Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel du Sheet et de l'onglet ticket (sombre puis clair) contre P7, P8, P9.
+
+Dépendances : Tasks 1, 2 (`subscribeIntegrations`), 4 (`removeExternalRef`, union étendue), 10 (`useSyncState`, `Switch`).
 
 ```bash
-git add packages/ui/src/shell/sheet packages/ui/src/shell/TicketSheet.tsx
+git add packages/ui/src/shell/sheet packages/ui/src/shell/TicketDetail.tsx packages/ui/src/i18n/fr-integrations.ts
 git commit -m "feat(ui): GitHub, CI et maquettes dans le Sheet"
 ```
 
@@ -10716,23 +11382,36 @@ git commit -m "feat(ui): GitHub, CI et maquettes dans le Sheet"
 
 ### Task 19: Adaptateur dans le Worker et aller-retour complet
 
-Branche le moteur (Task 14) sur l'adaptateur réel (Task 13) exécuté dans le `WorkerHost` de la phase 4, et vérifie le critère de sortie de la phase : aller-retour ticket ↔ issue contre le faux GitHub.
+Branche le moteur (Task 14) sur l'adaptateur réel (Task 13) exécuté dans un Worker de la phase 4, et vérifie le critère de sortie de la phase : aller-retour ticket ↔ issue contre le faux GitHub.
+
+État réel (phase 4) et conséquences :
+- Il n'y a pas de `ComponentBackendHost` à modifier : `createWorkerHost(opts: HostOptions)` (`packages/daemon/src/components/worker-host.ts`) renvoie un `BackendHost { invoke(req: InvokeRequest), describe(), stop(), running }`, et chaque message `call` d'un backend est rattaché à son invocation par `host-core.ts` puis confié à `HostOptions.onCall(projectId, instanceId, call)` (décision 15 de la phase 4). La liaison fournit donc son propre `onCall` (`binding-calls.ts`) ; le traitement des messages `call` de la phase 4 n'est pas touché, et la porte `createGate` n'est pas utilisée (l'instance `binding:<id>` n'existe pas dans le doc).
+- `createBackends` (`components/backends.ts`) ne sert que les versions approuvées du registre : un intégré n'y figure pas. Le Worker de l'adaptateur est créé directement par `createWorkerHost`, avec `timeoutMs: 120_000` (une création peut enchaîner adoption, `POST`, `PATCH` et deux mutations GraphQL, chacune bornée à 15 s par le proxy ; le défaut de 30 s de `HOST_DEFAULTS` couperait le Worker).
+- `buildComponent(srcDir, toolchain)` (`packages/devkit/src/build.ts`) ne convient pas à un intégré sans UI : il construit toujours `ui.tsx` (cibles `sandbox` et `trusted`), attend les sources à la racine du dossier, et son résolveur `server` n'autorise que `@kibo/sdk/server` et `@kibo/sdk/migrations` (ni `@kibo/sdk/adapter`, ni `@kibo/schema`, ni `zod`). Ces règles protègent contre un composant tiers ; un intégré est du code du monorepo, en confiance totale (spec B). D'où `buildBuiltinBackend` (devkit) : `Bun.build` de `src/server.ts` en CommonJS (`target: "browser"`, `macros: false`, comme la cible serveur de la phase 4), sans le résolveur des composants tiers ; le runtime du Worker lit l'export `server` (`evaluateCjs(code.server, "server")`).
+- Le démon ne dépend pas du SDK (`schema ← core ← daemon`, `schema ← devkit ← daemon`) : `BINDING_PREFIX` et `bindingIdOf` sont importés de `@kibo/schema` (Task 1, `integrations.ts` ; le SDK les réexporte).
+- Paquet desktop (décision 22 de la phase 4, un seul script de build) : les backends intégrés sont préconstruits par `apps/desktop/scripts/build-sidecar.ts` (déjà appelé par `build:debug` et `dev`) dans `apps/desktop/src-tauri/builtin/<id>/`, embarqués comme ressource Tauri à côté de `ui/`, et trouvés par le démon via `KIBO_BUILTIN_DIR`, posée par `apps/desktop/src-tauri/src/main.rs` au lancement du sidecar (comme `KIBO_NATIVE_NOTIFY`). Pas de script racine ni de `scripts/` hors paquet (hors `typecheck`).
+- N26 : pas d'`integrationDeps` ni d'`IntegrationHost.invokeAdapter` ; l'invocateur est créé dans `bootstrap.ts` à partir du `kit`.
+
+Dépend de : Tasks 12, 13, 14 ; Task 8 (`proxyFetch` avec `hooks` et `secrets`) ; tâche 34 de la phase 4 (elle réécrit `apps/desktop/scripts/build-sidecar.ts`, `tauri.conf.json` et `main.rs`).
 
 **Files:**
+- Create: `packages/devkit/src/build-builtin.ts`, `packages/devkit/src/build-builtin.test.ts` ; Modify: `packages/devkit/src/index.ts`
 - Create: `packages/daemon/src/sync/{worker-runner.ts,binding-calls.ts,builtin-adapter.ts}`
 - Test: `packages/daemon/src/sync/{worker-runner.test.ts,binding-calls.test.ts,roundtrip.test.ts}`
-- Create: `scripts/build-builtin.ts` (préconstruction des backends intégrés pour le paquet)
-- Modify: `packages/daemon/src/integrations/{types.ts,host.ts,bootstrap.ts,testing/fake-host.ts}`, `packages/daemon/src/service.ts` (`integrationDeps`), traitement des messages `call` des backends (phase 4, fichier du `ComponentBackendHost`), `apps/desktop/src-tauri/tauri.conf.json` (`bundle.resources`), lancement du sidecar (`apps/desktop/src-tauri/src/…`, variable `KIBO_BUILTIN_DIR`), `package.json` racine (script `build:builtin`, appelé par le build desktop)
+- Modify: `packages/daemon/src/components/host-core.ts` (`BACKEND_ERROR_CODES`, N23), `packages/daemon/src/components/host-core.test.ts`
+- Modify: `packages/daemon/src/integrations/bootstrap.ts` (invocateur, `syncModule`)
+- Modify: `apps/desktop/scripts/build-sidecar.ts`, `apps/desktop/package.json` (`@kibo/devkit`, `@kibo/schema` en `workspace:*`), `apps/desktop/tsconfig.json` (`references` vers `packages/schema` et `packages/devkit`), `apps/desktop/src-tauri/tauri.conf.json` (`bundle.resources`), `apps/desktop/src-tauri/src/main.rs` (`KIBO_BUILTIN_DIR`), `.gitignore`, `bun.lock`
 
 **Interfaces:**
-- Consumes: `AdapterRunner` (Task 2) ; `syncModule` (Task 14) ; `githubIssuesAdapter`, `server` (Task 13, par chemin) ; `BINDING_PREFIX`, `bindingIdOf`, `PullPage`, `MappedRemote`, `BindingConfig` (Task 1) ; `ComponentCall`, `ComponentBackendHost`, `devkit.buildComponent`, proxy `fetch` (phase 4, modifié Task 8) ; `IntegrationKit.github.account` (Task 12) ; faux GitHub (Task 6).
+- Consumes: `AdapterRunner`, `IntegrationKit`, `IntegrationModule`, `startIntegrations`, `parseIntegrationFlags`, `createRedactor` (Task 2) ; `ProjectSnapshot.bindings` (Task 4) ; `syncModule` (Task 14) ; `proxyFetch(rules, url, init, { hooks, secrets })` (Task 8) ; `kit.github.account.mode()` (Task 12) ; `components/github-issues` (Task 13, construit par chemin) ; `BINDING_PREFIX`, `bindingIdOf`, `PullPage`, `MappedRemote`, `Binding`, `BindingConfig`, `BUILTIN_ADAPTER_IDS` (Tasks 1, 13) ; phase 4 : `createWorkerHost`, `HostOptions`, `CallHandler`, `BackendHost`, `backendError`, `BACKEND_ERROR_CODES` (`components/host-core.ts`, `worker-host.ts`), `createQuotas` (`components/quotas.ts`), `createEventLog`, `ensureEventsTable` (`components/events.ts`, journal des refus), `ComponentCall`, `FetchInit`, `FetchResponse` (`schema/src/call.ts`) ; faux GitHub (Task 6).
 - Produces:
-  - `type AdapterInvoker = (req: { projectId: string; bindingId: string; adapter: Binding["adapter"]; config: BindingConfig; action: "adapter.pull" | "adapter.push"; input: unknown }) => Promise<unknown>`
-  - `IntegrationHost.invokeAdapter: AdapterInvoker` ; `HostParts.invokeAdapter` ; `integrationDeps` accepte `invokeAdapter` et `now`
+  - devkit : `type BuiltinBackend = { manifest: ComponentManifest; server: string }` ; `buildBuiltinBackend(componentDir: string): Promise<BuiltinBackend>` ; `readBuiltinBackend(dir: string): Promise<BuiltinBackend>` ; `writeBuiltinBackend(b: BuiltinBackend, dir: string): Promise<void>`
+  - `type AdapterInvoker = (req: { projectId: string; bindingId: string; adapter: Binding["adapter"]; config: BindingConfig; action: "adapter.pull" | "adapter.push"; input: unknown }) => Promise<unknown>` (`sync/builtin-adapter.ts`)
   - `createWorkerRunner(invoke: AdapterInvoker): AdapterRunner`
-  - `BINDING_FETCH_PER_MINUTE = 120` ; `createMinuteQuota(limit: number, now: () => number): { take(key: string): void }` (`PERMISSION_DENIED` au-delà) ; `assertBindingCall(call: ComponentCall): void` (seul `fetch` est permis)
-  - `builtinDir(id: string): string` ; `createAdapterInvoker(deps: { backends: ComponentBackendHost; build: (srcDir: string) => Promise<{ manifest: ComponentManifest; code: string }> }): AdapterInvoker`
-  - variable d'environnement `KIBO_BUILTIN_DIR` (paquet : backends préconstruits `builtin/<id>/{kibo.component.json,server.js}`)
+  - `BINDING_FETCH_PER_MINUTE = 120` ; `createBindingCalls(deps): CallHandler` (seul `fetch`, liaison du projet, quotas et journal des refus de la phase 4)
+  - `ADAPTER_TIMEOUT_MS = 120_000` ; `loadBuiltinAdapter(id, env?): Promise<BuiltinBackend>` ; `createAdapterHosts(deps): { invoke: AdapterInvoker; stop(): void }`
+  - `BACKEND_ERROR_CODES` gagne `REMOTE_UNAVAILABLE`, `REMOTE_REJECTED`, `REMOTE_NOT_FOUND`, `REMOTE_CONFLICT`, `NOT_CONNECTED` (N23)
+  - variable d'environnement `KIBO_BUILTIN_DIR` (paquet : `builtin/<id>/{kibo.component.json,server.js}`)
 
 - [ ] **Step 1: Tests unitaires (échouent)**
 
@@ -10741,7 +11420,7 @@ Branche le moteur (Task 14) sur l'adaptateur réel (Task 13) exécuté dans le `
 ```ts
 import { expect, test } from "bun:test";
 import type { Binding } from "@kibo/schema";
-import type { AdapterInvoker } from "../integrations/types";
+import type { AdapterInvoker } from "./builtin-adapter";
 import { createWorkerRunner } from "./worker-runner";
 
 const binding: Binding = {
@@ -10784,59 +11463,110 @@ test("an adapter output is validated before the engine sees it", async () => {
 });
 ```
 
-`packages/daemon/src/sync/binding-calls.test.ts` :
+`packages/daemon/src/sync/binding-calls.test.ts` (quotas et journal réels de la phase 4 : N8, N28) :
 
 ```ts
+import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
-import { assertBindingCall, BINDING_FETCH_PER_MINUTE, createMinuteQuota } from "./binding-calls";
+import { type Binding, ComponentManifest } from "@kibo/schema";
+import { createEventLog, ensureEventsTable } from "../components/events";
+import { createQuotas } from "../components/quotas";
+import { BINDING_FETCH_PER_MINUTE, createBindingCalls } from "./binding-calls";
 
-test("an adapter may only fetch", () => {
-  expect(() => assertBindingCall({ kind: "fetch", url: "https://api.github.com/user", init: {} })).not.toThrow();
-  expect(() => assertBindingCall({ kind: "list", entity: "ticket" })).toThrow("PERMISSION_DENIED");
-  expect(() => assertBindingCall({ kind: "run", command: { method: "createTicket", title: "x" } })).toThrow("PERMISSION_DENIED");
+const manifest = ComponentManifest.parse({
+  id: "github-issues",
+  version: "1.0.0",
+  kind: "adapter",
+  title: "GitHub Issues",
+  reads: ["ticket", "status"],
+  writes: [],
+  net: ["api.github.com"],
+  secrets: [{ name: "github", hosts: ["api.github.com"] }],
+});
+const binding = (id: string): Binding => ({
+  id,
+  adapter: "github-issues",
+  config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+  createdBy: "adam",
+  runner: "adam",
+});
+const FETCH = { kind: "fetch" as const, url: "https://api.github.com/user", init: { method: "GET" as const, headers: {} } };
+
+function setup() {
+  const clock = { now: 0 };
+  const db = new Database(":memory:", { strict: true });
+  ensureEventsTable(db);
+  const refusals = createEventLog(db, () => clock.now);
+  const fetched: string[] = [];
+  const calls = createBindingCalls({
+    bindings: (projectId) => (projectId === "p1" ? [binding("b1"), binding("b2")] : []),
+    manifest,
+    quotas: createQuotas({ now: () => clock.now, fetchPerMinute: BINDING_FETCH_PER_MINUTE }),
+    refusals,
+    fetch: async (_manifest, url) => {
+      fetched.push(url);
+      return { status: 200, headers: {}, body: "" };
+    },
+  });
+  return { calls, fetched, refusals, clock };
+}
+
+test("an adapter may only fetch, for a binding of the project, and refusals are journaled", async () => {
+  const { calls, fetched, refusals } = setup();
+  await calls("p1", "binding:b1", FETCH);
+  expect(fetched).toEqual(["https://api.github.com/user"]);
+  await expect(calls("p1", "binding:b1", { kind: "list", entity: "ticket" })).rejects.toThrow("PERMISSION_DENIED");
+  await expect(calls("p1", "binding:b1", { kind: "run", command: { method: "createTicket", title: "x" } })).rejects.toThrow(
+    "PERMISSION_DENIED",
+  );
+  await expect(calls("p1", "binding:inconnu", FETCH)).rejects.toThrow("NOT_FOUND");
+  refusals.flush();
+  expect(refusals.list().map((e) => [e.instanceId, e.kind, e.code])).toEqual([
+    ["binding:b1", "list", "PERMISSION_DENIED"],
+    ["binding:b1", "run", "PERMISSION_DENIED"],
+    ["binding:inconnu", "fetch", "NOT_FOUND"],
+  ]);
 });
 
-test("120 fetches per minute per binding", () => {
-  const clock = { now: 0 };
-  const quota = createMinuteQuota(BINDING_FETCH_PER_MINUTE, () => clock.now);
-  for (let i = 0; i < 120; i++) quota.take("binding:b1");
-  expect(() => quota.take("binding:b1")).toThrow("PERMISSION_DENIED");
-  expect(() => quota.take("binding:b2")).not.toThrow();
+test("120 fetches per minute per binding", async () => {
+  const { calls, clock } = setup();
+  for (let i = 0; i < BINDING_FETCH_PER_MINUTE; i++) await calls("p1", "binding:b1", FETCH);
+  await expect(calls("p1", "binding:b1", FETCH)).rejects.toThrow("RATE_LIMITED");
+  await expect(calls("p1", "binding:b2", FETCH)).resolves.toBeDefined();
   clock.now += 60_000;
-  expect(() => quota.take("binding:b1")).not.toThrow();
+  await expect(calls("p1", "binding:b1", FETCH)).resolves.toBeDefined();
 });
 ```
 
-(Les formes exactes de `fetch`, `list` et `run` dans `ComponentCall` sont celles de la phase 4 ; ajuster les littéraux du test à ces formes, pas l'inverse.)
-
-Run: `bun test packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.test.ts` — Expected: FAIL.
-
-- [ ] **Step 2: `worker-runner.ts` et `binding-calls.ts`**
-
-`packages/daemon/src/integrations/types.ts` : ajouter
+Dans `packages/daemon/src/components/host-core.test.ts`, ajouter (N23) :
 
 ```ts
-export type AdapterInvoker = (req: {
-  projectId: string;
-  bindingId: string;
-  adapter: Binding["adapter"];
-  config: BindingConfig;
-  action: "adapter.pull" | "adapter.push";
-  input: unknown;
-}) => Promise<unknown>;
+test("remote error codes cross the backend boundary, trust codes do not", () => {
+  for (const code of ["REMOTE_UNAVAILABLE", "REMOTE_REJECTED", "REMOTE_NOT_FOUND", "REMOTE_CONFLICT", "NOT_CONNECTED", "RATE_LIMITED"]) {
+    expect(backendError({ code, message: "github" }).code).toBe(code);
+  }
+  expect(backendError({ code: "TRUST_REQUIRED", message: "x" }).code).toBe("INTERNAL");
+});
 ```
 
-et `invokeAdapter: AdapterInvoker;` à `IntegrationHost`. `host.ts` : `HostParts.invokeAdapter` recopié tel quel. `testing/fake-host.ts` : champ `invokeAdapter` qui lève `KiboError("COMPONENT_CRASHED", "no adapter in fake host")`, remplaçable par le test (`host.invokeAdapter = …`).
+(`backendError` importé de `./host-core`.)
+
+Run: `bun test packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.test.ts packages/daemon/src/components/host-core.test.ts` — Expected: FAIL.
+
+- [ ] **Step 2: `host-core.ts`, `worker-runner.ts` et `binding-calls.ts`**
+
+`packages/daemon/src/components/host-core.ts` : ajouter à `BACKEND_ERROR_CODES` `"REMOTE_UNAVAILABLE"`, `"REMOTE_REJECTED"`, `"REMOTE_NOT_FOUND"`, `"REMOTE_CONFLICT"`, `"NOT_CONNECTED"` (codes créés par la Task 1 ; `RATE_LIMITED` y est déjà). Aucun ne permet à un backend de réclamer une confiance ou un réappairage (décision 25 de la phase 4).
 
 `packages/daemon/src/sync/worker-runner.ts` :
 
 ```ts
 import { type Binding, KiboError, MappedRemote, PullPage } from "@kibo/schema";
 import type { ZodType, ZodTypeDef } from "zod";
-import type { AdapterInvoker, AdapterRunner } from "../integrations/types";
+import type { AdapterRunner } from "../integrations/types";
+import type { AdapterInvoker } from "./builtin-adapter";
 
 function checked<T extends { ref: { bindingId: string } }>(binding: Binding, value: T): T {
-  if (value.ref.bindingId !== binding.id) throw new KiboError("INTERNAL", `adapter returned a ref for another binding`);
+  if (value.ref.bindingId !== binding.id) throw new KiboError("INTERNAL", "adapter returned a ref for another binding");
   return value;
 }
 
@@ -10867,132 +11597,267 @@ export function createWorkerRunner(invoke: AdapterInvoker): AdapterRunner {
 `packages/daemon/src/sync/binding-calls.ts` :
 
 ```ts
-import { type ComponentCall, KiboError } from "@kibo/schema";
+import {
+  type Binding,
+  bindingIdOf,
+  type ComponentCall,
+  type ComponentManifest,
+  type FetchInit,
+  type FetchResponse,
+  KiboError,
+  type KiboErrorCode,
+} from "@kibo/schema";
+import type { EventLog as RefusalLog } from "../components/events";
+import type { CallHandler } from "../components/host-core";
+import type { Quotas } from "../components/quotas";
 
 export const BINDING_FETCH_PER_MINUTE = 120;
+const REFUSALS = new Set<KiboErrorCode>(["NOT_FOUND", "PERMISSION_DENIED", "RATE_LIMITED"]);
 
-export function assertBindingCall(call: ComponentCall): void {
-  if (call.kind !== "fetch") throw new KiboError("PERMISSION_DENIED", `adapters may only fetch, not ${call.kind}`);
+export type BindingCallsDeps = {
+  bindings(projectId: string): Binding[];
+  manifest: ComponentManifest;
+  quotas: Quotas;
+  refusals: RefusalLog;
+  fetch(manifest: ComponentManifest, url: string, init: FetchInit): Promise<FetchResponse>;
+};
+
+export function createBindingCalls(deps: BindingCallsDeps): CallHandler {
+  const ref = `${deps.manifest.id}@${deps.manifest.version}`;
+  const guarded = async (projectId: string, instanceId: string, call: ComponentCall): Promise<FetchResponse> => {
+    const bindingId = bindingIdOf(instanceId);
+    if (!deps.bindings(projectId).some((b) => b.id === bindingId)) {
+      throw new KiboError("NOT_FOUND", `binding ${bindingId} not found`);
+    }
+    if (call.kind !== "fetch") throw new KiboError("PERMISSION_DENIED", `adapters may only fetch, not ${call.kind}`);
+    if (!deps.quotas.take(instanceId, "call") || !deps.quotas.take(instanceId, "fetch")) {
+      throw new KiboError("RATE_LIMITED", `${instanceId} fetches too often`);
+    }
+    return deps.fetch(deps.manifest, call.url, call.init);
+  };
+  return async (projectId, instanceId, call) => {
+    try {
+      return await guarded(projectId, instanceId, call);
+    } catch (e) {
+      if (e instanceof KiboError && REFUSALS.has(e.code)) {
+        deps.refusals.record({ projectId, instanceId, ref, kind: call.kind, code: e.code });
+      }
+      throw e;
+    }
+  };
+}
+```
+
+- Quotas (N8, N28) : `createQuotas({ fetchPerMinute: BINDING_FETCH_PER_MINUTE })` de la phase 4, clé `binding:<id>` ; au-delà, `RATE_LIMITED` comme pour un composant (transitoire pour le moteur : nouvel essai après attente).
+- Journal (N28) : les refus vont dans `component_events` par `EventLog.record` de `components/events.ts` (borné, décision 26 de la phase 4), avec `instanceId = binding:<id>` et `ref = github-issues@1.0.0`.
+- Les autres contrôles §6.4 de la spec B s'appliquent dans `deps.fetch` = `proxyFetch` (Task 8) : règles `net` et `secrets` du manifeste intégré, https, anti-SSRF, en-têtes, redirections, taille, délai.
+
+Run: `bun test packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.test.ts packages/daemon/src/components/host-core.test.ts` — Expected: PASS.
+
+- [ ] **Step 3: Construction d'un backend intégré (devkit)**
+
+`packages/devkit/src/build-builtin.test.ts` :
+
+```ts
+import { afterEach, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildBuiltinBackend, readBuiltinBackend, writeBuiltinBackend } from "./build-builtin";
+
+const dirs: string[] = [];
+afterEach(() => {
+  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+
+test("a builtin adapter builds to a CommonJS server and round-trips on disk", async () => {
+  const built = await buildBuiltinBackend(join(import.meta.dir, "..", "..", "..", "components", "github-issues"));
+  expect(built.manifest).toMatchObject({ id: "github-issues", kind: "adapter" });
+  const mod: { exports: Record<string, unknown> } = { exports: {} };
+  new Function("module", "exports", built.server)(mod, mod.exports);
+  const server = mod.exports.server as { actions: Record<string, unknown> };
+  expect(Object.keys(server.actions).sort()).toEqual(["adapter.pull", "adapter.push"]);
+  const dir = mkdtempSync(join(tmpdir(), "kibo-builtin-"));
+  dirs.push(dir);
+  await writeBuiltinBackend(built, join(dir, "github-issues"));
+  expect(await readBuiltinBackend(join(dir, "github-issues"))).toEqual(built);
+});
+
+test("a missing prebuilt backend is a clear error", async () => {
+  await expect(readBuiltinBackend(join(tmpdir(), "kibo-nope-builtin"))).rejects.toThrow();
+});
+```
+
+(`as { actions … }` : lecture du module évalué dans le test, comme `evaluateCjs` du démon.)
+
+`packages/devkit/src/build-builtin.ts` :
+
+```ts
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { ComponentManifest, KiboError } from "@kibo/schema";
+
+export type BuiltinBackend = { manifest: ComponentManifest; server: string };
+
+const MANIFEST = "kibo.component.json";
+const SERVER = "server.js";
+
+async function readManifest(dir: string): Promise<ComponentManifest> {
+  const parsed = ComponentManifest.safeParse(JSON.parse(await readFile(join(dir, MANIFEST), "utf8")));
+  if (!parsed.success) throw new KiboError("VALIDATION_FAILED", `${dir}: ${parsed.error.message}`);
+  return parsed.data;
 }
 
-export function createMinuteQuota(limit: number, now: () => number) {
-  const windows = new Map<string, { start: number; count: number }>();
+export async function buildBuiltinBackend(componentDir: string): Promise<BuiltinBackend> {
+  const manifest = await readManifest(componentDir);
+  const result = await Bun.build({
+    entrypoints: [join(componentDir, "src", "server.ts")],
+    target: "browser",
+    format: "cjs",
+    minify: true,
+    macros: false,
+    throw: false,
+  });
+  const [output] = result.outputs;
+  if (!result.success || !output) {
+    const message = result.logs.map((l) => l.message).join("\n");
+    throw new KiboError("VALIDATION_FAILED", message || `build failed for ${componentDir}`);
+  }
+  return { manifest, server: await output.text() };
+}
+
+export async function readBuiltinBackend(dir: string): Promise<BuiltinBackend> {
+  return { manifest: await readManifest(dir), server: await readFile(join(dir, SERVER), "utf8") };
+}
+
+export async function writeBuiltinBackend(b: BuiltinBackend, dir: string): Promise<void> {
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, MANIFEST), JSON.stringify(b.manifest));
+  await writeFile(join(dir, SERVER), b.server);
+}
+```
+
+`packages/devkit/src/index.ts` : `export * from "./build-builtin";`.
+
+Run: `bun test packages/devkit/src/build-builtin.test.ts` — Expected: PASS.
+
+- [ ] **Step 4: `builtin-adapter.ts` et amorçage**
+
+`packages/daemon/src/sync/builtin-adapter.ts` :
+
+```ts
+import { join } from "node:path";
+import { type BuiltinBackend, buildBuiltinBackend, readBuiltinBackend } from "@kibo/devkit";
+import { BINDING_PREFIX, type Binding, type BindingConfig, type ComponentManifest, KiboError } from "@kibo/schema";
+import type { BackendHost, CallHandler } from "../components/host-core";
+import { createWorkerHost } from "../components/worker-host";
+
+export type AdapterInvoker = (req: {
+  projectId: string;
+  bindingId: string;
+  adapter: Binding["adapter"];
+  config: BindingConfig;
+  action: "adapter.pull" | "adapter.push";
+  input: unknown;
+}) => Promise<unknown>;
+export type AdapterHostsDeps = {
+  load(id: Binding["adapter"]): Promise<BuiltinBackend>;
+  calls(manifest: ComponentManifest): CallHandler;
+  timeoutMs?: number;
+};
+
+export const ADAPTER_TIMEOUT_MS = 120_000;
+const REPO_COMPONENTS = join(import.meta.dir, "..", "..", "..", "..", "components");
+
+export function loadBuiltinAdapter(id: string, env: Record<string, string | undefined> = process.env): Promise<BuiltinBackend> {
+  const packaged = env.KIBO_BUILTIN_DIR;
+  return packaged ? readBuiltinBackend(join(packaged, id)) : buildBuiltinBackend(join(REPO_COMPONENTS, id));
+}
+
+export function createAdapterHosts(deps: AdapterHostsDeps): { invoke: AdapterInvoker; stop(): void } {
+  const hosts = new Map<string, Promise<BackendHost>>();
+  const start = async (id: Binding["adapter"]): Promise<BackendHost> => {
+    const b = await deps.load(id);
+    if (b.manifest.kind !== "adapter" || b.manifest.id !== id) throw new KiboError("INTERNAL", `${id} is not a builtin adapter`);
+    return createWorkerHost({
+      ref: `${b.manifest.id}@${b.manifest.version}`,
+      manifest: b.manifest,
+      code: { server: b.server, migrations: null },
+      onCall: deps.calls(b.manifest),
+      timeoutMs: deps.timeoutMs ?? ADAPTER_TIMEOUT_MS,
+    });
+  };
+  const hostOf = (id: Binding["adapter"]): Promise<BackendHost> => {
+    const known = hosts.get(id);
+    if (known) return known;
+    const next = start(id);
+    hosts.set(id, next);
+    next.catch(() => hosts.delete(id));
+    return next;
+  };
   return {
-    take(key: string): void {
-      const t = now();
-      const w = windows.get(key);
-      if (!w || t - w.start >= 60_000) {
-        windows.set(key, { start: t, count: 1 });
-        return;
-      }
-      if (w.count >= limit) throw new KiboError("PERMISSION_DENIED", `quota exceeded: ${limit} fetch per minute for ${key}`);
-      w.count += 1;
+    invoke: async (req) =>
+      (await hostOf(req.adapter)).invoke({
+        projectId: req.projectId,
+        instanceId: `${BINDING_PREFIX}${req.bindingId}`,
+        config: req.config,
+        target: { action: req.action },
+        input: req.input,
+      }),
+    stop() {
+      for (const host of hosts.values()) host.then((h) => h.stop(), () => undefined);
+      hosts.clear();
     },
   };
 }
 ```
 
-Run: `bun test packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.test.ts` — Expected: PASS.
+- `next.catch(() => hosts.delete(id))` et le second argument de `then` dans `stop` n'avalent rien : l'échec de chargement est rendu à l'appelant par `await hostOf(…)` (erreur du moteur, visible à l'écran 16) ; ils permettent seulement un nouvel essai au cycle suivant, et un arrêt sans erreur non gérée.
+- En dev, `KIBO_BUILTIN_DIR` est absent : construction depuis `components/<id>/` au premier appel (quelques centaines de millisecondes, une fois par démarrage). Dans le paquet, le backend est préconstruit (étape 6) : aucune construction à l'exécution, aucun `node_modules` embarqué (N7).
 
-- [ ] **Step 3: Invocations `binding:` dans le backend de la phase 4**
-
-Dans le traitement des messages `{ type: "call", id, call }` du `ComponentBackendHost` (phase 4), avant la résolution de l'instance :
-
-```ts
-if (invocation.instanceId.startsWith(BINDING_PREFIX)) {
-  const bindingId = bindingIdOf(invocation.instanceId);
-  const binding = service.snapshot(invocation.projectId).bindings.find((b) => b.id === bindingId);
-  if (!binding) throw new KiboError("NOT_FOUND", `binding ${bindingId} not found`);
-  assertBindingCall(msg.call);
-  bindingQuota.take(invocation.instanceId);
-  return proxyFetch(msg.call, { manifest: builtinManifest(binding.adapter), config: binding.config, hooks: integrations.hooks });
-}
-```
-
-- `bindingQuota = createMinuteQuota(BINDING_FETCH_PER_MINUTE, Date.now)` (N8) remplace le quota de 20 / min pour ces invocations ; les autres contrôles §6.4 s'appliquent (règles `net` et `secrets` du manifeste intégré, anti-SSRF, en-têtes, redirections, taille, délai).
-- `builtinManifest(id)` : manifeste validé du composant intégré, lu au chargement (étape 4).
-- `proxyFetch` : la fonction du proxy de la phase 4 telle que modifiée par la Task 8 (hooks d'alias, de secrets et d'observation des limites).
-- Test (dans le fichier de test du backend de la phase 4) : une invocation `binding:b1` qui demande `list` est refusée `PERMISSION_DENIED` ; une invocation `binding:inconnu` est refusée `NOT_FOUND`.
-
-- [ ] **Step 4: `builtin-adapter.ts`**
+`packages/daemon/src/integrations/bootstrap.ts` : après la création du `kit` et du module GitHub (Task 12) :
 
 ```ts
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { type ComponentManifest, ComponentManifest as ManifestSchema, KiboError } from "@kibo/schema";
-import type { AdapterInvoker } from "../integrations/types";
-
-type Built = { manifest: ComponentManifest; code: string };
-type BackendHost = {
-  load(ref: string, manifest: ComponentManifest, code: string): Promise<void>;
-  invoke(ref: string, req: { projectId: string; instanceId: string; config: unknown; target: { action: string }; input: unknown }): Promise<unknown>;
-};
-
-const REPO_COMPONENTS = join(import.meta.dir, "..", "..", "..", "..", "components");
-
-export function builtinDir(id: string): string {
-  const packaged = process.env.KIBO_BUILTIN_DIR;
-  return packaged ? join(packaged, id) : join(REPO_COMPONENTS, id);
-}
-
-function readPrebuilt(dir: string): Built | null {
-  const code = join(dir, "server.js");
-  if (!existsSync(code)) return null;
-  return { manifest: ManifestSchema.parse(JSON.parse(readFileSync(join(dir, "kibo.component.json"), "utf8"))), code: readFileSync(code, "utf8") };
-}
-
-export function createAdapterInvoker(deps: { backends: BackendHost; build(srcDir: string): Promise<Built> }): AdapterInvoker {
-  const loaded = new Map<string, Promise<string>>();
-  const load = (id: string): Promise<string> => {
-    let ref = loaded.get(id);
-    if (!ref) {
-      ref = (async () => {
-        const dir = builtinDir(id);
-        const built = readPrebuilt(dir) ?? (await deps.build(dir));
-        if (built.manifest.kind !== "adapter") throw new KiboError("INTERNAL", `${id} is not an adapter`);
-        const r = `${built.manifest.id}@${built.manifest.version}`;
-        await deps.backends.load(r, built.manifest, built.code);
-        return r;
-      })();
-      loaded.set(id, ref);
-      ref.catch(() => loaded.delete(id));
-    }
-    return ref;
-  };
-  return async (req) => {
-    const ref = await load(req.adapter);
-    return deps.backends.invoke(ref, {
-      projectId: req.projectId,
-      instanceId: `binding:${req.bindingId}`,
-      config: req.config,
-      target: { action: req.action },
-      input: req.input,
-    });
-  };
-}
+  ensureEventsTable(host.db);
+  const refusals = createRefusalLog(host.db);
+  const adapters = createAdapterHosts({
+    load: (id) => loadBuiltinAdapter(id),
+    calls: (manifest) =>
+      createBindingCalls({
+        bindings: (projectId) => host.snapshot(projectId).bindings,
+        manifest,
+        quotas: createQuotas({ fetchPerMinute: BINDING_FETCH_PER_MINUTE }),
+        refusals,
+        fetch: (m, url, init) => proxyFetch(m.net, url, init, { hooks: kit.hooks, secrets: m.secrets }),
+      }),
+  });
 ```
 
-- `BackendHost` décrit le `ComponentBackendHost` de la phase 4 (`WorkerHost` pour un intégré) ; si ses méthodes portent d'autres noms, écrire l'adaptation dans ce seul fichier et la noter dans la colonne « Réel » des ancrages.
-- `ref.catch(() => loaded.delete(id))` n'avale pas l'échec : il est renvoyé à l'appelant par `await load(…)` ; la suppression permet seulement un nouvel essai au cycle suivant.
-- `deps.build` = `devkit.buildComponent` réduit à la cible serveur (sortie en mémoire : `{ manifest, code }`).
-- En dev, `KIBO_BUILTIN_DIR` est absent : construction depuis `components/<id>/`. Dans le paquet, les backends sont **préconstruits** (étape 7), la construction à l'exécution n'est jamais nécessaire (pas de `node_modules` dans le paquet). (N7.)
+puis, dans `modules`, `syncModule(kit, createWorkerRunner(adapters.invoke), () => kit.github.account.mode() !== null)` et `{ stop: () => { adapters.stop(); refusals.flush(); } }`. Imports : `createEventLog as createRefusalLog` et `ensureEventsTable` de `../components/events` (renommés : `integrations/events.ts` exporte déjà `createEventLog`, N28), `createQuotas` de `../components/quotas`, `proxyFetch` de `../components/net-proxy`.
 
-Service et amorçage :
-- `packages/daemon/src/service.ts` : `integrationDeps` accepte `invokeAdapter` et `now` ; à défaut, `invokeAdapter = createAdapterInvoker({ backends: <WorkerHost du service>, build: buildServer })` et `now = Date.now`.
-- `packages/daemon/src/integrations/bootstrap.ts` : ajouter à `modules` `syncModule(kit, createWorkerRunner(host.invokeAdapter), () => account.mode() !== null)`.
+- [ ] **Step 5: Test d'aller-retour (échoue tant que les étapes 2 à 4 ne sont pas faites)**
 
-- [ ] **Step 5: Test d'aller-retour (échoue tant que les étapes 3 et 4 ne sont pas faites)**
-
-`packages/daemon/src/sync/roundtrip.test.ts` :
+`packages/daemon/src/sync/roundtrip.test.ts` (sur le vrai service, câblé comme dans `startDaemon` (Task 2, N26) : `createService(store, { user })`, hôte `createIntegrationHost({ user, home, store, service, notify, now })` dont `now` est l'horloge du test, `startIntegrations(host, flags, redactor)` puis `service.attachIntegrations(rpc)` ; le Worker réel exécute l'adaptateur construit depuis `components/github-issues`) :
 
 ```ts
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Binding, Instance, IntegrationEvent, Page, ProjectMeta, RpcRequest, RpcResult, TicketView } from "@kibo/schema";
+import {
+  type Binding,
+  type Instance,
+  IntegrationEvent,
+  type Page,
+  type ProjectMeta,
+  type RpcRequest,
+  type RpcResult,
+  type TicketView,
+} from "@kibo/schema";
 import { parseIntegrationFlags, startIntegrations } from "../integrations/bootstrap";
+import { createIntegrationHost } from "../integrations/host";
 import { createRedactor } from "../integrations/redact";
+import type { IntegrationRpc } from "../integrations/registry";
 import { createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
 import { type FakeGithub, startFakeGithub } from "../testing/fake-github";
@@ -11001,13 +11866,15 @@ let gh: FakeGithub;
 let home: string;
 let store: Store;
 let service: Service;
+let integrations: IntegrationRpc | null;
 let project: ProjectMeta;
 let binding: Binding;
 let instance: Instance;
 const clock = { now: Date.parse("2026-09-26T10:00:00Z") };
 const events: IntegrationEvent[] = [];
 
-const rpc = <R extends RpcRequest>(req: R) => service.handle(req) as Promise<RpcResult[R["method"]]>;
+const rpc = async <R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]> =>
+  (await service.handle(req)) as RpcResult[R["method"]];
 const sync = () => rpc({ method: "syncBinding", projectId: project.id, bindingId: binding.id });
 const tickets = async (): Promise<TicketView[]> => (await rpc({ method: "getProject", projectId: project.id })).tickets;
 const byTitle = async (title: string) => (await tickets()).find((t) => t.title === title);
@@ -11020,13 +11887,19 @@ beforeEach(async () => {
   home = mkdtempSync(join(tmpdir(), "kibo-roundtrip-"));
   store = openStore(home);
   events.length = 0;
-  service = createService(store, {
-    user: "adam",
-    integrationDeps: { now: () => clock.now },
-    integrations: (host) =>
-      startIntegrations(host, parseIntegrationFlags({ "test-origins": `api.github.com=${gh.url}`, "memory-secrets": true }), createRedactor()),
+  integrations = null;
+  service = createService(store, { user: "adam" });
+  const host = createIntegrationHost({ user: "adam", home, store, service, notify: () => {}, now: () => clock.now });
+  integrations = startIntegrations(
+    host,
+    parseIntegrationFlags({ "test-origins": `api.github.com=${gh.url}`, "memory-secrets": true }),
+    createRedactor(),
+  );
+  service.attachIntegrations(integrations);
+  service.onChange((m) => {
+    const e = IntegrationEvent.safeParse(m);
+    if (e.success) events.push(e.data);
   });
-  service.onIntegrationEvent((e) => events.push(e));
   project = await rpc({ method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#71717A" });
   await rpc({ method: "connectGithub", auth: { mode: "token", token: gh.token } });
   binding = await rpc({
@@ -11035,10 +11908,15 @@ beforeEach(async () => {
     config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
   });
   const page = (await run({ method: "addPage", title: "Kanban", kind: "view" })) as Page;
-  instance = (await run({ method: "addInstance", pageId: page.id, component: "kanban@1.0.0", config: { source: { bindingId: binding.id } } })) as Instance;
+  instance = (await run({
+    method: "addInstance",
+    pageId: page.id,
+    component: "kanban@1.0.0",
+    config: { source: { bindingId: binding.id } },
+  })) as Instance;
 });
 afterEach(() => {
-  service.close();
+  integrations?.stop();
   store.close();
   gh.stop();
   rmSync(home, { recursive: true, force: true });
@@ -11104,67 +11982,64 @@ test("a 403 rate limit suspends the binding until the reset", async () => {
 });
 ```
 
-(`as Promise<RpcResult[…]>`, `as Page`, `as Instance` : `service.handle` renvoie `unknown` par conception ; les formes sont celles du contrat RPC typé.)
+(`as RpcResult[…]`, `as Page`, `as Instance` : `service.handle` renvoie `unknown` par conception ; les formes sont celles du contrat RPC typé. Le 403 passe la frontière du Worker avec son code grâce à N23.)
 
 Run: `bun test packages/daemon/src/sync/roundtrip.test.ts`
-Expected: PASS une fois les étapes 3 et 4 faites. En cas d'échec, le message `gh.requests` (méthode, chemin) situe l'écart : adaptateur (Task 13), proxy (Task 8) ou moteur (Task 14).
+Expected: PASS une fois les étapes 2 à 4 faites. En cas d'échec, `gh.requests` (méthode, chemin) situe l'écart : adaptateur (Task 13), proxy (Task 8), frontière du Worker (N23) ou moteur (Task 14).
 
 - [ ] **Step 6: Paquet desktop**
 
-`scripts/build-builtin.ts` :
+`apps/desktop/scripts/build-sidecar.ts` (tel que livré par la tâche 34 de la phase 4), après la construction des binaires :
 
 ```ts
-import { cpSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { buildServer } from "@kibo/devkit";
+import { buildBuiltinBackend, writeBuiltinBackend } from "@kibo/devkit";
+import { BUILTIN_ADAPTER_IDS } from "@kibo/schema";
 
-const ADAPTERS = ["github-issues"];
-const out = join(import.meta.dir, "..", "apps", "desktop", "src-tauri", "builtin");
-
-for (const id of ADAPTERS) {
-  const src = join(import.meta.dir, "..", "components", id);
-  const built = await buildServer(src);
-  mkdirSync(join(out, id), { recursive: true });
-  cpSync(join(src, "kibo.component.json"), join(out, id, "kibo.component.json"));
-  writeFileSync(join(out, id, "server.js"), built.code);
+const builtinOut = join(root, "apps/desktop/src-tauri/builtin");
+for (const id of BUILTIN_ADAPTER_IDS) {
+  await writeBuiltinBackend(await buildBuiltinBackend(join(root, "components", id)), join(builtinOut, id));
+  console.log(`builtin: ${join(builtinOut, id)}`);
 }
 ```
 
-- `buildServer` : l'export de `@kibo/devkit` (phase 4) qui construit la cible serveur en mémoire (même fonction que `deps.build`) ; si la phase 4 ne l'exporte que sous `buildComponent(srcDir, outDir)`, construire dans un dossier temporaire et lire `server.js`.
-- `package.json` racine : `"build:builtin": "bun scripts/build-builtin.ts"`, appelé avant `tauri build` par le script de build desktop existant ; `apps/desktop/src-tauri/builtin/` ajouté au `.gitignore`.
-- `tauri.conf.json` : `"bundle": { "resources": { "builtin/": "builtin/" } }`.
-- Lancement du sidecar (Rust, quelques lignes) : `.env("KIBO_BUILTIN_DIR", app.path().resource_dir()?.join("builtin"))`.
-- Le smoke test Tauri de la v0.1 vérifie en plus que `builtin/github-issues/server.js` est présent dans le bundle.
+(les deux `import` rejoignent ceux du haut du fichier).
+- `apps/desktop/package.json` : `devDependencies` `"@kibo/devkit": "workspace:*"`, `"@kibo/schema": "workspace:*"` ; `apps/desktop/tsconfig.json` : `"references": [{ "path": "../../packages/schema" }, { "path": "../../packages/devkit" }]`.
+- `apps/desktop/src-tauri/tauri.conf.json`, `bundle.resources` : `{ "../../../packages/ui/dist/": "ui/", "builtin/": "builtin/" }`.
+- `apps/desktop/src-tauri/src/main.rs`, dans `setup`, à côté de `ui_dir` : `let builtin_dir = app.path().resource_dir()?.join("builtin");` et `.env("KIBO_BUILTIN_DIR", builtin_dir.to_string_lossy().to_string())` après `.env("KIBO_NATIVE_NOTIFY", "1")`.
+- `.gitignore` : `apps/desktop/src-tauri/builtin/`.
+- Contrôle local (la CI GitHub est hors service ; `desktop-smoke` de `.github/workflows/ci.yml` exécute déjà `build:debug`, donc `sidecar`) : après `bun run --cwd apps/desktop build:debug`, `test -f apps/desktop/src-tauri/builtin/github-issues/server.js` réussit.
 
 - [ ] **Step 7: Vérifier et commiter**
 
-Run: `bun test packages/daemon && bun test components && bun run check && bun run typecheck` — Expected: PASS (dont `roundtrip.test.ts`).
+Run: `bun test packages/daemon && bun test packages/devkit && bun test components && bun run check && bun run typecheck` — Expected: PASS (dont `roundtrip.test.ts`).
 
 ```bash
-git add packages/daemon/src/sync packages/daemon/src/integrations packages/daemon/src/service.ts scripts/build-builtin.ts package.json .gitignore apps/desktop/src-tauri
+git add packages/devkit/src/build-builtin.ts packages/devkit/src/build-builtin.test.ts packages/devkit/src/index.ts packages/daemon/src/components/host-core.ts packages/daemon/src/components/host-core.test.ts
+git commit -m "feat(devkit): backends intégrés, codes distants"
+git add packages/daemon/src/sync/worker-runner.ts packages/daemon/src/sync/worker-runner.test.ts packages/daemon/src/sync/binding-calls.ts packages/daemon/src/sync/binding-calls.test.ts packages/daemon/src/sync/builtin-adapter.ts packages/daemon/src/sync/roundtrip.test.ts packages/daemon/src/integrations/bootstrap.ts
 git commit -m "feat(daemon): adaptateur GitHub dans le Worker"
+git add apps/desktop/scripts/build-sidecar.ts apps/desktop/package.json apps/desktop/tsconfig.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/src/main.rs .gitignore bun.lock
+git commit -m "build(desktop): backends intégrés préconstruits"
 ```
-
-(Ajouter au `git add` le fichier du backend de la phase 4 modifié à l'étape 3.)
 
 ---
 
 ### Task 20: Figma par MCP (D1)
 
-Serveur MCP Dev Mode de l'application Figma, ouvert par le hub sous l'identifiant réservé `figma` (N13) ; aucun secret. Lier un nœud, aperçu en cache, URL des maquettes dans `brief.md`.
+Serveur MCP Dev Mode de l'application Figma, ouvert par le hub sous l'identifiant réservé `figma` (N13) ; aucun secret. Lier un nœud, aperçu en cache, URL des maquettes dans `brief.md` (par `buildBrief` de `core`, déjà pur et déjà nourri du ticket et de ses réfs.).
 
 **Files:**
-- Create: `packages/daemon/src/figma/{figma-url.ts,figma.ts,brief.ts,module.ts}`
+- Create: `packages/daemon/src/figma/{figma-url.ts,figma.ts,module.ts}`
 - Test: `packages/daemon/src/figma/{figma-url.test.ts,figma.test.ts}`
-- Modify: `packages/daemon/src/testing/fake-mcp.ts` (option `omit`), `packages/daemon/src/integrations/bootstrap.ts` (module), générateur de `brief.md` (phase 2, voir ancrages)
+- Modify: `packages/daemon/src/testing/fake-mcp.ts` (option `omit`), `packages/daemon/src/integrations/bootstrap.ts` (module), `packages/core/src/context.ts` (`buildBrief` : section « Maquettes ») et `packages/core/src/context.test.ts`
 
 **Interfaces:**
-- Consumes: `McpHub` (`setReserved`, `tools`, `call`) (Task 15) ; `Settings` (`figma.url`), `IntegrationKit`, `baseStatus`, `EventLog` (Task 2) ; `FigmaNodeRef`, `FigmaPreview`, RPC `configureFigma`, `linkFigmaNode`, `getFigmaPreview`, `disconnectIntegration` (Task 1) ; `upsertExternalRef` (phase 3 / Task 4) ; faux MCP (Task 7).
+- Consumes: `McpHub` (`setReserved`, `tools`, `call`) (Task 15) ; `Settings` (`figma.url`), `IntegrationKit`, `IntegrationModule`, `baseStatus`, `EventLog` (`integrations/events.ts`), `IntegrationHost.command` (N22 : passe par `docs.run`) (Task 2) ; `FigmaNodeRef`, `FigmaPreview`, RPC `configureFigma`, `linkFigmaNode`, `getFigmaPreview`, `disconnectIntegration` (Task 1) ; commande `upsertExternalRef` réservée au démon, dédoublonnée par `fileKey + nodeId` pour `figma_node` (Task 4) ; faux MCP `startFakeMcpHttp`, `FAKE_PNG_BASE64` (Task 7) ; `buildBrief` (`packages/core/src/context.ts`, phase 2, pur ; reçoit déjà le `TicketView` avec ses `externalRefs`, appelé par `packages/daemon/src/agents/run-launch.ts` via `buildRunContext`).
 - Produces:
   - `parseFigmaUrl(raw: string): { fileKey: string; nodeId: string; url: string } | null` ; `nameFromMetadata(text: string): string | null`
   - `FIGMA_TOOLS = ["get_metadata", "get_screenshot"]` ; `PREVIEW_TTL_MS = 7 jours` ; `MAX_PREVIEW_BYTES = 2 Mio`
   - `createFigma(deps: { host: IntegrationHost; hub: McpHub; settings: Settings; events: EventLog }): Figma` avec `Figma = { start(): Promise<void>; configure(url: string): Promise<IntegrationStatus>; status(): IntegrationStatus; test(): Promise<IntegrationStatus>; link(projectId: string, ticketId: string, url: string): Promise<FigmaNodeRef>; preview(fileKey: string, nodeId: string): Promise<FigmaPreview>; disconnect(): Promise<void> }`
-  - `figmaBriefSection(ticket: Pick<Ticket, "externalRefs">): string | null`
+  - `buildBrief` (core) : section `## Maquettes` (une ligne `- <nom> : <url>` par réf. `figma_node`), après « Dépendances » et avant « Consignes », absente sans maquette
   - `figmaModule(kit: IntegrationKit, hub: McpHub): IntegrationModule` (handlers `configureFigma`, `linkFigmaNode`, `getFigmaPreview` ; sonde `figma` avec `test` et `disconnect`)
   - `buildFakeMcpServer(opts?: { omit?: string[] })`, `startFakeMcpHttp(opts?: { bearer?: string; omit?: string[] })`
 
@@ -11174,7 +12049,6 @@ Serveur MCP Dev Mode de l'application Figma, ouvert par le hub sous l'identifian
 
 ```ts
 import { expect, test } from "bun:test";
-import { figmaBriefSection } from "./brief";
 import { nameFromMetadata, parseFigmaUrl } from "./figma-url";
 
 test("node URLs are parsed, everything else is refused", () => {
@@ -11201,17 +12075,26 @@ test("the node name comes from the metadata tool", () => {
   expect(nameFromMetadata('<frame id="12:34" name="Kibo › Tickets &amp; Arbre" x="0" />')).toBe("Kibo › Tickets & Arbre");
   expect(nameFromMetadata("no attributes here")).toBeNull();
 });
+```
 
-test("brief.md lists the linked mockups", () => {
-  const ticket = {
-    externalRefs: [
-      { kind: "figma_node" as const, fileKey: "AbC123xyz", nodeId: "12:34", url: "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34", name: "Arbre" },
-    ],
+`packages/core/src/context.test.ts` : ajouter, avec l'aide existante `kibo()` du fichier (qui rend `{ project, ticket }`) :
+
+```ts
+test("the brief lists the linked mockups, only their URL", () => {
+  const { project, ticket } = kibo();
+  const figma = {
+    kind: "figma_node" as const,
+    fileKey: "AbC123xyz",
+    nodeId: "12:34",
+    url: "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34",
+    name: "Arbre",
   };
-  expect(figmaBriefSection(ticket)).toBe("## Maquettes\n\n- Arbre : https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34\n");
-  expect(figmaBriefSection({ externalRefs: [] })).toBeNull();
+  const withMockup = buildBrief({ project, ticket: { ...ticket, externalRefs: [figma] }, domain: null, note: "" });
+  expect(withMockup).toContain("## Maquettes\n\n- Arbre : https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34\n");
+  expect(buildBrief({ project, ticket, domain: null, note: "" })).not.toContain("## Maquettes");
 });
 ```
+
 
 `packages/daemon/src/figma/figma.test.ts` :
 
@@ -11313,7 +12196,7 @@ Run: `bun test packages/daemon/src/figma` — Expected: FAIL.
 
 `packages/daemon/src/testing/fake-mcp.ts` : `buildFakeMcpServer(opts: { omit?: string[] } = {})` n'enregistre pas les outils dont le nom figure dans `opts.omit` (garde `if (!omit.includes(name))` autour de chaque `registerTool`, via une fonction locale `tool(name, config, handler)`) ; `startFakeMcpHttp(opts: { bearer?: string; omit?: string[] } = {})` passe `omit` à `buildFakeMcpServer`.
 
-- [ ] **Step 3: `figma-url.ts` et `brief.ts`**
+- [ ] **Step 3: `figma-url.ts` et section « Maquettes » du brief**
 
 `packages/daemon/src/figma/figma-url.ts` :
 
@@ -11340,19 +12223,16 @@ export function nameFromMetadata(text: string): string | null {
 }
 ```
 
-`packages/daemon/src/figma/brief.ts` :
+`packages/core/src/context.ts`, dans `buildBrief`, après le bloc « Dépendances » et avant « Consignes » :
 
 ```ts
-import type { FigmaNodeRef, Ticket } from "@kibo/schema";
-
-export function figmaBriefSection(ticket: Pick<Ticket, "externalRefs">): string | null {
-  const nodes = ticket.externalRefs.filter((r): r is FigmaNodeRef => r.kind === "figma_node");
-  if (nodes.length === 0) return null;
-  return `## Maquettes\n\n${nodes.map((n) => `- ${n.name} : ${n.url}`).join("\n")}\n`;
-}
+  const mockups = ticket.externalRefs.filter((r) => r.kind === "figma_node");
+  if (mockups.length > 0) {
+    lines.push("", "## Maquettes", "", ...mockups.map((m) => `- ${m.name} : ${m.url}`));
+  }
 ```
 
-Générateur de `brief.md` (phase 2) : ajouter `figmaBriefSection(ticket)` à la liste des sections, après la description ; `null` ⇒ section absente. Aucun secret ni aperçu dans le brief (URL seulement).
+(`ticket.externalRefs` est l'union `ExternalRef` étendue par la Task 4 ; le filtre sur `kind` la resserre à `figma_node`.) Le brief est pur et déjà écrit dans `brief.md` par `buildRunContext` (`run-launch.ts`) : aucun code démon de plus. Aucun secret ni aperçu dans le brief (URL seulement).
 
 - [ ] **Step 4: `figma.ts`**
 
@@ -11487,6 +12367,8 @@ export function createFigma(deps: Deps) {
 ```
 
 - `KiboError["code"]` est le type `KiboErrorCode`.
+- `hub.setReserved("figma", url)` construit l'entrée `McpServerInput` sans la parser (l'identifiant `figma` est refusé par le schéma aux serveurs de l'utilisateur, pas au démon) ; une adresse `https` non loopback passe par le `fetch` épinglé de la Task 15 (N27).
+- `host.command(… upsertExternalRef …)` est un appel du démon (N22, `docs.run`) : la commande, réservée (Task 4), n'est jamais ouverte aux composants.
 - `preview` : Figma fermé ou lent ⇒ aperçu en cache (même périmé) et badge « Figma non joignable » (journalisé en avertissement) ; toute autre erreur remonte.
 - Un PNG invalide ou de plus de 2 Mio n'est jamais écrit.
 
@@ -11526,14 +12408,12 @@ export function figmaModule(kit: IntegrationKit, hub: McpHub): IntegrationModule
 
 - [ ] **Step 6: Vérifier et commiter**
 
-Run: `bun test packages/daemon/src/figma packages/daemon/src/testing && bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
+Run: `bun test packages/daemon/src/figma packages/daemon/src/testing packages/core/src/context.test.ts && bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
 ```bash
-git add packages/daemon/src/figma packages/daemon/src/testing/fake-mcp.ts packages/daemon/src/integrations/bootstrap.ts
+git add packages/daemon/src/figma packages/daemon/src/testing/fake-mcp.ts packages/daemon/src/integrations/bootstrap.ts packages/core/src/context.ts packages/core/src/context.test.ts
 git commit -m "feat(daemon): nœuds Figma liés et aperçus"
 ```
-
-(Ajouter au `git add` le générateur de `brief.md` de la phase 2 modifié.)
 
 ---
 
@@ -11542,17 +12422,18 @@ git commit -m "feat(daemon): nœuds Figma liés et aperçus"
 Référence : maquette P11 (sombre et clair), pages PDF 8 et 14 (cartes Kanban avec chips). Une instance dont la config porte `source: { bindingId }` n'affiche que les tickets de la liaison (et leurs sous-tickets locaux) ; le shell ajoute l'en-tête de source ; la création depuis l'instance porte son `instanceId` pour que le démon crée l'issue (Task 14).
 
 **Files:**
-- Modify: `packages/sdk/src/source.ts` (+ `filterBySource`), `packages/sdk/src/source.test.ts`, `packages/sdk/src/types.ts` (`NewTicketDefaults.instanceId`), `packages/sdk/src/sdk.ts` (`openNewTicket` ajoute `instanceId`)
-- Modify: `components/kanban/{kibo.component.json,src/Kanban.tsx,src/KanbanCard.tsx,src/fr.ts,src/kanban.test.tsx}`, `components/tickets/{kibo.component.json,src/TicketsTree.tsx,src/tickets.test.tsx}`
-- Create: `packages/ui/src/pages/SourceHeader.tsx`, `packages/ui/src/pages/SourceHeader.test.tsx`, `packages/ui/src/shell/use-conflict-toasts.ts`
-- Modify: `packages/ui/src/pages/PageView.tsx`, `packages/ui/src/dialogs/NewTicketDialog.tsx` (+ son test dans `dialogs.test.tsx`), `packages/ui/src/shell/Shell.tsx`, `packages/ui/src/i18n/fr-integrations.ts` (bloc `instance`)
+- Modify: `packages/sdk/src/source.ts` (+ `filterBySource`), `packages/sdk/src/source.test.ts`, `packages/sdk/src/types.ts` (`NewTicketDefaults.instanceId`), `packages/sdk/src/sdk.ts` (`openNewTicket` ajoute `instanceId`), `packages/sdk/src/client.ts` (`projectBackend.run` passe `instanceId` à la RPC `command`, N16), `packages/sdk/src/client.test.ts`, `packages/sdk/src/sdk.test.ts` (attendu de `newTicketRequests`)
+- Modify: `components/kanban/{kibo.component.json,src/Kanban.tsx,src/KanbanCard.tsx,src/fr.ts,src/kanban.test.tsx}`, `components/tickets/{src/TicketsTree.tsx,src/tickets.test.tsx}`
+- Create: `packages/ui/src/pages/SourceHeader.tsx`, `packages/ui/src/pages/SourceHeader.test.tsx`, `packages/ui/src/shell/IntegrationNotices.tsx`, `packages/ui/src/shell/integration-notices.test.tsx`
+- Modify: `packages/ui/src/pages/PageView.tsx`, `packages/ui/src/dialogs/NewTicketDialog.tsx` (+ son test dans `dialogs.test.tsx`), `packages/ui/src/shell/lazy-screens.ts`, `packages/ui/src/shell/Shell.tsx`, `packages/ui/package.json` (`"sonner": "2.0.8"`, version déjà verrouillée par le SDK : aucune résolution nouvelle dans `bun.lock`), `packages/ui/src/i18n/fr-integrations.ts` (bloc `instance`)
 
 **Interfaces:**
-- Consumes: `readSource`, `matchesSource`, `EntityMap.ci_run`, `createMockSdk({ ciRuns })` (Task 9) ; `ProjectSnapshot.bindings` (Task 4) ; RPC `syncBinding`, `getSyncState`, `command` avec `instanceId` (Tasks 1, 2) ; `IntegrationEvent` (Task 1) ; `useSyncState` (Task 10) ; tons CI identiques à `runTone` (Task 18), recopiés en 6 lignes dans le composant : un composant n'importe jamais `ui`.
+- Consumes: `readSource`, `matchesSource`, `EntityMap.ci_run`, `createMockSdk({ ciRuns })` (Task 9) ; `ProjectSnapshot.bindings` (Task 4) ; RPC `syncBinding`, `getSyncState`, `command` avec `instanceId` (Tasks 1, 2) ; `IntegrationEvent` avec `sync.conflict` et `notice` (Task 1, N25) ; `client.subscribeIntegrations` (Task 2, N24) ; `useSyncState` (Task 10) ; `Toaster` (`@kibo/sdk/ui/sonner`, phase 1, jamais monté jusqu'ici) ; `useTheme` (`packages/ui/src/theme.ts`) ; `lazyPanel` (décision 29 de la phase 4) ; tons CI identiques à `runTone` (Task 18), recopiés en 6 lignes dans le composant : un composant n'importe jamais `ui`.
 - Produces:
   - `filterBySource(tickets: TicketView[], source: InstanceSource | null): TicketView[]` (tickets de la liaison + descendants)
   - `NewTicketDefaults = { statusId?; parentId?; instanceId?: string }` ; `sdk.openNewTicket(d)` complète `instanceId`
-  - `SourceHeader({ project, instance })` ; `useConflictToasts(): void`
+  - `SourceHeader({ project, instance })` ; `IntegrationNotices({ notifications })` (N25, N29 : `Toaster` monté une fois, toasts de conflit, notification système en mode navigateur), chargé par `lazyPanel` hors du chargement initial
+  - `projectBackend(client, projectId, instanceId).run` envoie `{ method: "command", projectId, command, instanceId }` : une création faite directement par une instance synchronisée (mode `builtin`) est réécrite par le démon (N16)
   - `fr.integrations.instance = { header(repo); sync; syncing; lastSync(time); never; bindingRemoved; bindingRemovedHelp }`
   - N16 : une instance synchronisée ouvre le Kanban sur le filtre « Tous »
 
@@ -11578,7 +12459,9 @@ test("new tickets opened from an instance carry its id", () => {
 });
 ```
 
-(`as unknown as TicketView` : fixture réduite aux champs lus. `manifest` et `createMockSdk` sont ceux déjà importés par le fichier de test de la Task 9 ; `newTicketRequests` est exposé par `MockSdk` depuis la v0.1, sinon l'ajouter.)
+(`as unknown as TicketView` : fixture réduite aux champs lus. `manifest` et `createMockSdk` sont ceux déjà importés par le fichier de test de la Task 9 ; `MockSdk.newTicketRequests` existe (`packages/sdk/src/mock.ts`) et l'instance simulée s'appelle `"mock-instance"`.)
+
+Ajouter à `packages/sdk/src/client.test.ts` : `projectBackend(client, "p1", "i1").run({ method: "createTicket", title: "A" })` ⇒ la requête RPC envoyée vaut `{ method: "command", projectId: "p1", command: { method: "createTicket", title: "A" }, instanceId: "i1" }` (même faux `fetch` que les tests existants du fichier).
 
 Run: `bun test packages/sdk/src/source.test.ts` — Expected: FAIL.
 
@@ -11607,9 +12490,10 @@ export function filterBySource(tickets: TicketView[], source: InstanceSource | n
 (`memo.set(t.id, false)` avant la récursion : un cycle impossible par construction de l'arbre ne boucle jamais.)
 
 `packages/sdk/src/types.ts` : `export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null; instanceId?: string };`
-`packages/sdk/src/sdk.ts`, dans `createSdk` : après `...ctx`, `openNewTicket: (d) => ctx.openNewTicket({ ...d, instanceId: ctx.instanceId }),`.
+`packages/sdk/src/sdk.ts`, dans l'objet renvoyé par `createSdk` : juste après `...ctx,`, `openNewTicket: (d) => ctx.openNewTicket({ ...d, instanceId: ctx.instanceId }),`.
+`packages/sdk/src/client.ts`, `projectBackend` : `run: (command: ProjectCommand) => client.rpc({ method: "command", projectId, command, instanceId }),` (la requête `command` accepte `instanceId?` depuis la Task 2).
 
-Run: `bun test packages/sdk` — Expected: PASS (les tests v0.1 qui comparent `newTicketRequests` gagnent `instanceId: "mock-instance"` : mettre à jour leurs attendus).
+Run: `bun test packages/sdk components` — Expected: PASS après mise à jour des attendus existants qui comparent `newTicketRequests` : `packages/sdk/src/sdk.test.ts` (`[{ statusId: "todo", instanceId: "mock-instance" }]`) et `components/kanban/src/kanban.test.tsx` (`[{ statusId: "in_progress", instanceId: "mock-instance" }]`) ; `tickets.test.tsx` ne lit que `parentId`.
 
 - [ ] **Step 3: Tests Kanban (échouent)**
 
@@ -11665,13 +12549,13 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
 });
 ```
 
-(Les commandes réservées `importExternalTicket` et `upsertExternalRef` passent par `run` du seed, qui appelle `executeProjectCommand` directement, sans contrôle `writes` : c'est la voie du seed depuis la v0.1.)
+(Les commandes réservées `importExternalTicket` et `upsertExternalRef` passent par `run` du seed, qui appelle `executeProjectCommand` directement, sans contrôle `writes` : c'est le `run` interne de `createMockSdk`, `packages/sdk/src/mock.ts`.)
 
 Run: `bun test components/kanban` — Expected: FAIL.
 
 - [ ] **Step 4: Kanban**
 
-`components/kanban/kibo.component.json` : `"reads": ["ticket", "status", "ci_run"]` ; `configSchema` gagne l'entrée `source` au format de la phase 4 (objet `{ bindingId: string }`, défaut `null`, non éditable dans le panneau de config : posée par l'écran 3).
+`components/kanban/kibo.component.json` : `"reads": ["ticket", "status", "run", "ci_run"]` (`run` reste : pastilles d'agent). `configSchema` est **inchangé** : le format de la phase 4 (décision 2) n'accepte que des valeurs scalaires, `source` (objet `{ bindingId }`, spec F §3.2) ne peut pas y être déclaré. `source` est une clé posée par le shell à l'écran 3 et lue par `readSource` ; `validateConfig` n'est appelé que par la mise à jour d'une version publiée (`daemon/src/components/update.ts`), jamais pour un intégré, donc aucune instance synchronisée n'est refusée (voir la décision N34).
 
 `components/kanban/src/fr.ts`, ajouter :
 
@@ -11687,29 +12571,32 @@ import { type CiRun, KiboError } from "@kibo/schema";
 import { filterBySource, readSource } from "@kibo/sdk";
 ```
 
+(`useEntities`, `useSdk`, `StatusDot` sont déjà importés de `@kibo/sdk` : fusionner dans le même import.)
+
 ```tsx
   const source = readSource(sdk.config);
-  const { data: runs, error: ciError } = useEntities("ci_run");
+  const { data: ciRuns, error: ciError } = useEntities("ci_run");
   const [filter, setFilter] = useState<KanbanFilter>(
     source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
   );
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
   const ciOf = (t: TicketView): CiRun | undefined =>
-    runs.filter((r) => r.ticketKey === t.key).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    ciRuns.filter((r) => r.ticketKey === t.key).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const ciProblem = ciError && !(ciError instanceof KiboError && ciError.code === "NOT_CONNECTED") ? ciError.message : null;
 ```
 
-- Le compteur devient `fr.counter(shown.length, scoped.length)`.
+- Le fichier a déjà `const { data: runs } = useEntities("run")` (runs d'agents) : le nom `ciRuns` évite le conflit. L'état `filter` existant (`useState<KanbanFilter>(sdk.config.filter === "all" ? "all" : "mine-and-agents")`) est remplacé par la version ci-dessus.
+- Le compteur (`fr.counter(shown.length, tickets.length)` aujourd'hui) devient `fr.counter(shown.length, scoped.length)`.
 - `KanbanCard` reçoit `ci={ciOf(t)}`.
 - Dans l'en-tête, à côté de l'alerte existante : `{ciProblem && <p role="alert" className="text-destructive">{fr.ciUnavailable(ciProblem)}</p>}` (GitHub non connecté n'est pas une erreur : aucun chip, aucun message).
-- `useEntities` (v0.1, `packages/sdk/src/react.tsx`) expose déjà `error: KiboError | null`.
+- `useEntities` (`packages/sdk/src/react.tsx`) expose déjà `error: KiboError | null`. En mode `builtin`, `list("ci_run")` passe par `componentCall` (Task 9) ; sans sondeur CI, le démon répond `NOT_CONNECTED`, qui n'est pas affiché.
 
-`components/kanban/src/KanbanCard.tsx` : prop `ci?: CiRun`, et dans la rangée de badges, avant la progression :
+`components/kanban/src/KanbanCard.tsx` : prop `ci?: CiRun`, et dans la rangée de badges (`AgentBadge`, badges `waitingOn`), avant la progression `ml-auto` ; densité 13 px de la phase 4 (`text-3xs` comme les badges voisins) :
 
 ```tsx
         {ci && (
-          <span aria-label={fr.ci[ciTone(ci)]} title={fr.ci[ciTone(ci)]} className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-xs">
+          <span aria-label={fr.ci[ciTone(ci)]} title={fr.ci[ciTone(ci)]} className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-3xs">
             <span aria-hidden className={`size-2 rounded-full ${CI_DOT[ciTone(ci)]}`} />
             {ci.prNumber !== null && `#${ci.prNumber}`}
           </span>
@@ -11726,11 +12613,11 @@ function ciTone(run: Pick<CiRun, "status" | "conclusion">): keyof typeof CI_DOT 
 }
 ```
 
-Si la phase 3 affiche déjà un chip `#12` de PR sur la carte, y placer la pastille (un seul chip `#12`, pastille à gauche du numéro) au lieu d'en ajouter un second. Couleurs identiques à celles de la section CI du Sheet (Task 18) ; aucun orange.
+`KanbanCard` (props réelles : `ticket`, `run`, `statuses`, `onOpen`, `onMove`) n'affiche aujourd'hui aucun chip de PR : ce chip `#12` à pastille est le seul. Couleurs identiques à celles de la section CI du Sheet (Task 18) ; aucun orange.
 
 - [ ] **Step 5: Tickets**
 
-`components/tickets/kibo.component.json` : `configSchema` gagne `source` (même entrée). `components/tickets/src/TicketsTree.tsx` : `const tickets = filterBySource(all, readSource(sdk.config));` avant `buildTree`. Test ajouté à `tickets.test.tsx` : avec `config: { source: { bindingId: "b1" } }` et le même `syncedSeed` (recopié), l'arbre montre « Issue synchronisée » et « Sous-tâche locale », pas « Ticket local ».
+`components/tickets/kibo.component.json` : inchangé (même raison que le Kanban). `components/tickets/src/TicketsTree.tsx` : `const { data: all, loading } = useEntities("ticket");` puis `const tickets = filterBySource(all, readSource(sdk.config));` avant `buildTree(tickets)`. Test ajouté à `tickets.test.tsx` : avec `config: { source: { bindingId: "b1" } }` et le même `syncedSeed` (recopié), l'arbre montre « Issue synchronisée » et « Sous-tâche locale », pas « Ticket local ».
 
 Run: `bun test components` — Expected: PASS (conformité comprise : `ci_run` est déclaré dans `reads`).
 
@@ -11766,7 +12653,7 @@ mock.module("../api", () => ({
       if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
       return { pulled: 0, created: 0, updated: 0, pushed: 0, conflicts: 0 };
     },
-    onEvent: () => () => undefined,
+    subscribeIntegrations: () => () => undefined,
   },
 }));
 const { SourceHeader } = await import("./SourceHeader");
@@ -11867,39 +12754,56 @@ export function SourceHeader({ project, instance }: { project: ProjectSnapshot; 
 }
 ```
 
-`packages/ui/src/pages/PageView.tsx` : dans `InstanceFrame`, rendre `<SourceHeader project={project} instance={instance} />` au-dessus de `<mod.Component />` (passer `project` à `InstanceFrame`) ; `openNewTicket` du `SdkContext` reste `host.openNewTicket` (le SDK complète `instanceId`).
+`packages/ui/src/pages/PageView.tsx` (qui a le `project` ; `InstanceFrame.tsx` n'est pas modifié) : page Vue, `<SourceHeader project={project} instance={first} />` entre `ViewActions` et `InstanceFrame` ; widget, `<SourceHeader project={project} instance={i} />` entre `WidgetHeader` et le conteneur de l'`InstanceFrame`. `openNewTicket` du `SdkContext` (`InstanceFrame.tsx`, `Mounted`) reste `host.openNewTicket` : le SDK complète `instanceId`.
 
-`packages/ui/src/dialogs/NewTicketDialog.tsx` : la requête devient `{ method: "command", projectId, command: { … }, ...(defaults.instanceId && { instanceId: defaults.instanceId }) }`. Test ajouté à `dialogs.test.tsx` : `defaults={{ statusId: "todo", instanceId: "i1" }}` ⇒ l'appel enregistré contient `instanceId: "i1"`.
+`packages/ui/src/dialogs/NewTicketDialog.tsx` (props réelles : `project`, `viewer`, `defaults`, `onClose`) : la requête devient `{ method: "command", projectId: project.meta.id, command: { … }, ...(defaults.instanceId && { instanceId: defaults.instanceId }) }`. Test ajouté à `dialogs.test.tsx` : `defaults={{ statusId: "todo", instanceId: "i1" }}` ⇒ l'appel enregistré contient `instanceId: "i1"`.
 
-`packages/ui/src/shell/use-conflict-toasts.ts` :
+**Toasts et notifications (N25, N29).** Aucun `Toaster` n'est monté aujourd'hui (décision 19 de la phase 4). `sonner` et `next-themes` ne doivent pas entrer dans le chargement initial (budget de 230 kB gzip, décision 29 de la phase 4) : tout passe par un composant différé.
 
-```ts
-import { IntegrationEvent } from "@kibo/schema";
-import { toast } from "@kibo/sdk/ui/sonner";
+Le démon envoie `title` et `body` déjà en français (N25) : aucun texte de notification côté UI.
+
+`packages/ui/src/shell/IntegrationNotices.tsx` :
+
+```tsx
+import type { Session } from "@kibo/schema";
+import { Toaster } from "@kibo/sdk/ui/sonner";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { useTheme } from "../theme";
 
-export function useConflictToasts(): void {
+export function IntegrationNotices({ notifications }: { notifications: Session["notifications"] }) {
+  const theme = useTheme();
   useEffect(
     () =>
-      client.onEvent((raw) => {
-        const e = IntegrationEvent.safeParse(raw);
-        if (e.success && e.data.type === "sync.conflict") toast(fr.integrations.conflict(e.data.ticketKey, e.data.field));
+      client.subscribeIntegrations((e) => {
+        if (e.type === "sync.conflict") toast(fr.integrations.conflict(e.ticketKey, e.field));
+        if (e.type !== "notice" || notifications !== "browser") return;
+        if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+        const shown = new Notification(e.title, { body: e.body });
+        shown.onclick = () => window.focus();
       }),
-    [],
+    [notifications],
   );
+  return <Toaster theme={theme} position="bottom-right" />;
 }
 ```
 
-`Shell.tsx` : appeler `useConflictToasts()` une fois. (`toast` : réexporté par `@kibo/sdk/ui/sonner` ; sinon l'importer depuis `sonner`, déjà dépendance de `sdk`.)
+En mode natif (`notifications === "native"`), le démon a déjà notifié par `DaemonOptions.notify` (N25) : l'UI ne double pas la notification. Sans permission accordée, rien (même règle que `agents/use-run-notifications.ts`, bouton `NotifyButton` existant).
+
+`packages/ui/src/shell/lazy-screens.ts` : `export const IntegrationNotices = lazyPanel(() => import("./IntegrationNotices").then((m) => m.IntegrationNotices), fr.lazy, { fallback: "sr-only" });`
+
+`packages/ui/src/shell/Shell.tsx` : dans `Shell` (qui reçoit déjà `notifications` et appelle `useRunNotifications`), rendre une fois `<IntegrationNotices notifications={notifications} />` à côté de `Workspace`. Les faux `client` des tests du shell qui montent `Shell` (`shell/shell.test.tsx`, `shell/agents-shell.test.tsx`, `shell/screens.test.tsx`, `shell/workspace-switcher.test.tsx` selon ceux qui le rendent) gagnent `subscribeIntegrations: () => () => undefined`.
+
+`packages/ui/src/shell/integration-notices.test.tsx` : faux `client.subscribeIntegrations` qui garde l'écouteur ; émettre `{ type: "sync.conflict", projectId: "p1", ticketKey: "KIB-7", field: "title" }` ⇒ `await screen.findByText("Conflit résolu sur KIB-7 : titre repris de GitHub")` ; avec `notifications="browser"`, un `Notification` global factice (permission `"granted"`) reçoit `("CI cassée sur KIB-7", …)` pour `{ type: "notice", title: "CI cassée sur KIB-7", body: "CI a échoué sur la PR #12." }` ; avec `"native"`, il n'est pas appelé.
 
 - [ ] **Step 7: Vérifier et commiter**
 
-Run: `bun test packages/sdk packages/ui components && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel : Kanban synchronisé (en-tête, chip CI rouge, état « Liaison supprimée ») en sombre puis en clair, contre P11.
+Run: `bun install && bun test packages/sdk packages/ui components && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget` — Expected: PASS (budget inchangé : `IntegrationNotices` et `sonner` sont hors du chargement initial). Contrôle visuel : Kanban synchronisé (en-tête, chip CI rouge, état « Liaison supprimée ») en sombre puis en clair, contre P11.
 
 ```bash
-git add packages/sdk/src components/kanban components/tickets packages/ui/src/pages packages/ui/src/dialogs/NewTicketDialog.tsx packages/ui/src/dialogs/dialogs.test.tsx packages/ui/src/shell packages/ui/src/i18n/fr-integrations.ts
+git add packages/sdk/src components/kanban components/tickets packages/ui/src/pages packages/ui/src/dialogs/NewTicketDialog.tsx packages/ui/src/dialogs/dialogs.test.tsx packages/ui/src/shell packages/ui/src/i18n/fr-integrations.ts packages/ui/package.json bun.lock
 git commit -m "feat(components): Kanban et Tickets synchronisés"
 ```
 
@@ -11909,17 +12813,20 @@ git commit -m "feat(components): Kanban et Tickets synchronisés"
 
 Référence : maquette P10 (widget et étape de config), sombre et clair. Composant intégré écrit avec le SDK public : il appelle un outil ou lit une ressource d'un serveur MCP, extrait une liste par pointeurs JSON, et crée un ticket par élément sur demande. Aucune synchronisation automatique.
 
+La config d'instance est **plate et scalaire** (N33) : le `configSchema` de la phase 4 (`packages/schema/src/config.ts`) n'accepte que `string`, `number` et `boolean`, et `validateConfig` (appelé à chaque mise à jour d'instance, `components/update.ts`) refuse toute valeur objet. Les arguments de l'outil sont donc stockés en texte JSON (`args`) et la correspondance en cinq pointeurs (`itemsPointer`, `idPointer`, `titlePointer`, `subtitlePointer`, `urlPointer`) ; `McpSourceConfig` (Zod) relit cette forme plate et rend la forme structurée de la spec F §8.3 (`args` objet, `mapping`).
+
 **Files:**
 - Create: `components/mcp-source/{kibo.component.json,package.json,tsconfig.json}`, `components/mcp-source/src/{config.ts,extract.ts,extract.test.ts,McpSource.tsx,SourceItemRow.tsx,mcp-source.test.tsx,fr.ts,index.ts}`
 - Create: `packages/ui/src/dialogs/mcp-source/{McpSourceStep.tsx,mcp-source-step.test.tsx}`
-- Modify: `package.json` racine (script `typecheck`), `CLAUDE.md` (liste du monorepo : `components/mcp-source` ; fait en Task 1 si déjà listé), `BUILTIN_IDS` (phase 4, `schema`) : `"mcp-source"`, `packages/ui/src/registry.ts` (composant intégré), `packages/ui/src/dialogs/AddComponentDialog.tsx` (étape de config)
+- Modify: `package.json` racine (script `typecheck` : `components/mcp-source`), `bun.lock` (lien d'espace de travail, aucune version nouvelle), `packages/schema/src/component.ts` (`BUILTIN_IDS` gagne `"mcp-source"`), `packages/sdk/src/conformance.tsx` (`ConformanceOptions` : `"mcp"` ajouté au `Pick` de `MockSdkOptions`, si la Task 9 ne l'a pas déjà fait), `packages/ui/package.json` (`"@kibo/component-mcp-source": "workspace:*"`), `packages/ui/tsconfig.json` (référence `../../components/mcp-source`), `packages/ui/src/registry.ts` (`BUILTIN_COMPONENTS`, icône `Plug` dans `BUILTIN_ICONS`), `packages/ui/src/dialogs/AddComponentDialog.tsx` (étape de config), `packages/ui/src/i18n/fr-integrations.ts` (bloc `mcpSource`). `CLAUDE.md` est déjà à jour (Task 1).
 
 **Interfaces:**
-- Consumes: `sdk.mcp.call`, `sdk.mcp.read`, `sdk.mcp.importItem`, `createMockSdk({ mcp })` (Task 9) ; `CONFIG_SERVER_RULE`, `McpServerId`, `WebUrl`, `McpCallResult`, `McpImportItem` (Task 1) ; RPC `listMcpServers` (Task 1) ; `useEntities`, `useSdk`, `sdk.data` (v0.1, phase 4).
+- Consumes: `sdk.mcp.call`, `sdk.mcp.read`, `sdk.mcp.importItem`, `createMockSdk(manifest, { config, mcp })`, `MockSdk.used.mcp` (Task 9) ; `McpServerId`, `WebUrl`, `McpCallResult`, `McpServerView` (Task 1) ; RPC `listMcpServers` (Task 1, Task 15) ; phase 4 : `useEntities`, `useSdk`, `SdkProvider` (`packages/sdk/src/react.tsx`), `sdk.data`, `runConformance(mod, seed?, opts?)` (`@kibo/sdk/conformance`), `createMockSdk(manifest, opts)` (`@kibo/sdk/mock`), `ComponentManifest`, primitives `@kibo/sdk/ui/{badge,button,skeleton,select,radio-group,textarea,input,label}` ; UI : `client` (`packages/ui/src/api.ts`), `BUILTIN_COMPONENTS`/`BUILTIN_ICONS` (`packages/ui/src/registry.ts`), `builtinChoices` (`dialogs/catalog-choices.ts`), `AddComponentDialog` (source Locale/Synchronisée de la Task 17, réservée à Kanban et Tickets).
 - Produces:
-  - `McpSourceConfig` (Zod) = `{ server; mode: "tool" | "resource"; tool?; args: Record<string, unknown>; uri?; refreshMinutes (5 à 1440, défaut 15); mapping: { items; id; title; subtitle?; url? } }` (pointeurs JSON RFC 6901)
-  - `resolvePointer(doc: unknown, pointer: string): unknown` ; `extractItems(result: McpCallResult, mapping): { items: SourceItem[]; error: string | null }` ; `type SourceItem = { id: string; title: string; subtitle: string | null; url: string | null }` ; `MAX_ITEMS = 200`
-  - `McpSourceStep({ value, onChange })` (écran 3) ; `defaultMcpSourceConfig(server: string): McpSourceConfig`
+  - `McpSourceStoredConfig` = `{ server; mode: "tool" | "resource"; tool?; uri?; args: string (JSON, défaut "{}"); refreshMinutes (5 à 1440, défaut 15); itemsPointer; idPointer; titlePointer; subtitlePointer?; urlPointer? }` (config d'instance, scalaire) ; `McpSourceConfig` (Zod : entrée plate, sortie `{ server; mode; tool?; uri?; args: Record<string, unknown>; refreshMinutes; mapping: { items; id; title; subtitle?; url? } }`, pointeurs JSON RFC 6901)
+  - `resolvePointer(doc: unknown, pointer: string): unknown` ; `extractItems(result: McpCallResult, mapping): { items: SourceItem[]; error: ExtractError | null }` ; `type SourceItem = { id: string; title: string; subtitle: string | null; url: string | null }` ; `MAX_ITEMS = 200`
+  - `defaultMcpSourceConfig(server: string): McpSourceStoredConfig`, exportés par `components/mcp-source/src/index.ts` avec `McpSourceConfig` (l'UI dépend déjà des composants intégrés : `schema ← sdk ← components ← ui`)
+  - `McpSourceStep({ value, onChange })` (écran 3)
 
 - [ ] **Step 1: Paquet**
 
@@ -11940,17 +12847,21 @@ Référence : maquette P10 (widget et étape de config), sombre et clair. Compos
     "server": { "type": "string" },
     "mode": { "enum": ["tool", "resource"], "default": "tool" },
     "tool": { "type": "string" },
-    "args": { "type": "object", "default": {} },
     "uri": { "type": "string" },
+    "args": { "type": "string", "default": "{}" },
     "refreshMinutes": { "type": "number", "default": 15 },
-    "mapping": { "type": "object" }
+    "itemsPointer": { "type": "string", "default": "/items" },
+    "idPointer": { "type": "string", "default": "/id" },
+    "titlePointer": { "type": "string", "default": "/name" },
+    "subtitlePointer": { "type": "string" },
+    "urlPointer": { "type": "string" }
   }
 }
 ```
 
-(Format de `configSchema` : celui de la phase 4 ; recopier la syntaxe exacte des manifestes Graphe et Notes.)
+(Format `ConfigSchema` de la phase 4 : `type` ∈ `string | number | boolean`, `enum`, `nullable`, `default` ; aucune valeur objet, voir N33. `"{config.server}"` n'est accepté que pour un intégré, Tasks 1 et 9.)
 
-`components/mcp-source/package.json` et `tsconfig.json` : calqués sur `components/kanban` (nom `@kibo/component-mcp-source`, dépendances `@kibo/schema`, `@kibo/sdk`, `react`, `lucide-react`, `zod` aux versions du dépôt). Ajouter `components/mcp-source` au script `typecheck` racine.
+`components/mcp-source/package.json` et `tsconfig.json` : calqués sur `components/kanban` (`package.json` : nom `@kibo/component-mcp-source`, `exports: { ".": "./src/index.ts" }`, dépendances `@kibo/schema` et `@kibo/sdk` en `workspace:*`, `lucide-react` 1.48.0, `zod` 3.25.76, `react` 19.1.1 en `peerDependencies`, `devDependencies` identiques à Kanban ; `tsconfig.json` identique à celui de Kanban). Ajouter `components/mcp-source` au script `typecheck` racine, `"@kibo/component-mcp-source": "workspace:*"` aux dépendances de `packages/ui/package.json`, `{ "path": "../../components/mcp-source" }` aux `references` de `packages/ui/tsconfig.json`, puis `bun install` (lien d'espace de travail seulement). `packages/schema/src/component.ts` : `BUILTIN_IDS = ["kanban", "tickets", "graph", "notes", "mcp-source"]` (la porte de la phase 4 traite alors l'instance comme intégrée : pas de contrôle de permission côté démon, le SDK contrôle `mcp` avec la config de l'instance).
 
 - [ ] **Step 2: Tests d'extraction (échouent)**
 
@@ -11958,7 +12869,7 @@ Référence : maquette P10 (widget et étape de config), sombre et clair. Compos
 
 ```ts
 import { expect, test } from "bun:test";
-import { McpSourceConfig } from "./config";
+import { defaultMcpSourceConfig, McpSourceConfig } from "./config";
 import { extractItems, resolvePointer } from "./extract";
 
 const mapping = { items: "/items", id: "/id", title: "/name", subtitle: "/detail", url: "/link" };
@@ -12002,11 +12913,19 @@ test("non-JSON or non-list results are reported, not thrown", () => {
 });
 
 test("config needs a tool in tool mode and a uri in resource mode, refresh at least 5 min", () => {
-  const base = { server: "ctx", args: {}, mapping: { items: "/items", id: "/id", title: "/name" } };
+  const base = { server: "ctx", itemsPointer: "/items", idPointer: "/id", titlePointer: "/name" };
   expect(McpSourceConfig.safeParse({ ...base, mode: "tool", tool: "list_items" }).success).toBe(true);
   expect(McpSourceConfig.safeParse({ ...base, mode: "tool" }).success).toBe(false);
   expect(McpSourceConfig.safeParse({ ...base, mode: "resource", uri: "fake://items" }).success).toBe(true);
   expect(McpSourceConfig.safeParse({ ...base, mode: "tool", tool: "x", refreshMinutes: 1 }).success).toBe(false);
+});
+
+test("the flat stored config becomes arguments and a mapping", () => {
+  const parsed = McpSourceConfig.parse({ ...defaultMcpSourceConfig("ctx"), args: '{"limit":5}' });
+  expect(parsed.args).toEqual({ limit: 5 });
+  expect(parsed.mapping).toEqual({ items: "/items", id: "/id", title: "/name", subtitle: "/detail", url: "/link" });
+  expect(McpSourceConfig.safeParse({ ...defaultMcpSourceConfig("ctx"), args: "[1]" }).success).toBe(false);
+  expect(McpSourceConfig.safeParse({ ...defaultMcpSourceConfig("ctx"), args: "{pas du json" }).success).toBe(false);
 });
 ```
 
@@ -12021,35 +12940,75 @@ import { McpServerId } from "@kibo/schema";
 import { z } from "zod";
 
 const JsonPointer = z.string().max(256).regex(/^(\/[^/]*)*$/);
+const JsonObject = z.record(z.string(), z.unknown());
 
-export const McpSourceConfig = z
+const Stored = z
   .object({
     server: McpServerId,
     mode: z.enum(["tool", "resource"]),
     tool: z.string().min(1).max(128).optional(),
-    args: z.record(z.string(), z.unknown()).default({}),
     uri: z.string().min(1).max(2048).optional(),
+    args: z.string().max(8192).default("{}"),
     refreshMinutes: z.number().int().min(5).max(1440).default(15),
-    mapping: z.object({
-      items: JsonPointer,
-      id: JsonPointer,
-      title: JsonPointer,
-      subtitle: JsonPointer.optional(),
-      url: JsonPointer.optional(),
-    }),
+    itemsPointer: JsonPointer,
+    idPointer: JsonPointer,
+    titlePointer: JsonPointer,
+    subtitlePointer: JsonPointer.optional(),
+    urlPointer: JsonPointer.optional(),
   })
   .refine((c) => (c.mode === "tool" ? c.tool !== undefined : c.uri !== undefined), "tool or uri required by mode");
-export type McpSourceConfig = z.infer<typeof McpSourceConfig>;
+export type McpSourceStoredConfig = z.input<typeof Stored>;
 
-export function defaultMcpSourceConfig(server: string): McpSourceConfig {
-  return McpSourceConfig.parse({
+export function parseArgs(text: string): Record<string, unknown> | null {
+  try {
+    const parsed = JsonObject.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export const McpSourceConfig = Stored.transform((c, ctx) => {
+  const args = parseArgs(c.args);
+  if (args === null) {
+    ctx.addIssue({ code: "custom", path: ["args"], message: "args must be a JSON object" });
+    return z.NEVER;
+  }
+  return {
+    server: c.server,
+    mode: c.mode,
+    tool: c.tool,
+    uri: c.uri,
+    args,
+    refreshMinutes: c.refreshMinutes,
+    mapping: {
+      items: c.itemsPointer,
+      id: c.idPointer,
+      title: c.titlePointer,
+      subtitle: c.subtitlePointer,
+      url: c.urlPointer,
+    },
+  };
+});
+export type McpSourceConfig = z.output<typeof McpSourceConfig>;
+
+export function defaultMcpSourceConfig(server: string): McpSourceStoredConfig {
+  return {
     server,
     mode: "tool",
     tool: "list_items",
-    mapping: { items: "/items", id: "/id", title: "/name", subtitle: "/detail", url: "/link" },
-  });
+    args: "{}",
+    refreshMinutes: 15,
+    itemsPointer: "/items",
+    idPointer: "/id",
+    titlePointer: "/name",
+    subtitlePointer: "/detail",
+    urlPointer: "/link",
+  };
 }
 ```
+
+`parseArgs` : un texte qui n'est pas un objet JSON n'est pas une exception mais une config invalide (état affiché : « Configure la source… » dans le widget, « Arguments : JSON invalide. » à l'écran 3) ; rien n'est avalé.
 
 `components/mcp-source/src/extract.ts` :
 
@@ -12179,7 +13138,7 @@ test("a missing configuration asks to configure", async () => {
 });
 ```
 
-(`runConformance(…, { config, mcp })` : troisième argument d'options de la suite de conformité de la phase 4 ; si la suite ne l'accepte pas encore, l'ajouter dans ce commit : il transmet `config` et `mcp` à `createMockSdk`.)
+(`runConformance(mod, seed, { config, mcp })` : `ConformanceOptions` (`packages/sdk/src/conformance.tsx`) est un `Pick` de `MockSdkOptions` (`"fetch" | "server" | "notes" | "config" | "noteAges"`) ; y ajouter `"mcp"` (option créée par la Task 9) si la Task 9 ne l'a pas fait, la suite transmettant déjà ses options à `createMockSdk`.)
 
 Run: `bun test components/mcp-source` — Expected: FAIL.
 
@@ -12382,7 +13341,17 @@ Précisions :
 - Les dates `fetchedAt` viennent de l'horloge locale (affichage seulement).
 - Le MCP renvoyé par le serveur (texte, liens) est rendu comme texte React ; un lien n'est rendu que s'il a passé `WebUrl` (Review Focus 3).
 
-`components/mcp-source/src/index.ts` : `export { McpSource as Component } from "./McpSource";` et `export const manifest = ComponentManifest.parse(raw)` depuis `kibo.component.json`, comme `components/kanban/src/index.ts`.
+`components/mcp-source/src/index.ts` (même forme que `components/kanban/src/index.ts`, plus les aides de config utilisées par l'écran 3) :
+
+```ts
+import { ComponentManifest } from "@kibo/schema";
+import manifestJson from "../kibo.component.json";
+import { McpSource } from "./McpSource";
+
+export const manifest = ComponentManifest.parse(manifestJson);
+export const Component = McpSource;
+export { defaultMcpSourceConfig, McpSourceConfig, type McpSourceStoredConfig, parseArgs } from "./config";
+```
 
 - [ ] **Step 6: Étape de config à l'écran 3**
 
@@ -12400,7 +13369,6 @@ mock.module("../../api", () => ({
       req.method === "listMcpServers"
         ? [{ transport: "stdio", id: "ctx", name: "Context7", command: "npx", args: [], envNames: [], enabled: true, state: "connected", error: null, tools: [{ name: "list_items", description: null, inputSchema: {} }], secretsSet: [] }]
         : null,
-    onEvent: () => () => undefined,
   },
 }));
 const { McpSourceStep } = await import("./McpSourceStep");
@@ -12447,23 +13415,21 @@ test("server and tool come from the configured MCP servers; bad JSON args are re
 `packages/ui/src/dialogs/mcp-source/McpSourceStep.tsx` : formulaire contrôlé (P10, étape de config) :
 - charge `listMcpServers` (serveurs `enabled` seulement), `Select` « Serveur MCP » avec `serverLabel(name, id)`, premier serveur choisi par défaut ; aucun serveur ⇒ texte `noServer` et `onChange(null)` ;
 - `RadioGroup` « Mode » (Outil / Ressource) ; mode outil : `Select` « Outil » alimenté par `tools` du serveur ; mode ressource : `Input` « URI de la ressource » ;
-- `Textarea` « Arguments (JSON) » (défaut `{}`) : `JSON.parse` dans une fonction `parseArgs(text): Record<string, unknown> | null` (objet seulement) ; invalide ⇒ `argsInvalid` et `onChange(null)` ;
-- cinq `Input` de pointeurs (valeurs par défaut de `defaultMcpSourceConfig`, recopiées ici : `ui` n'importe pas un composant), aide `pointerHelp` ;
+- `Textarea` « Arguments (JSON) » (défaut `{}`) : validé par `parseArgs` importé de `@kibo/component-mcp-source` (objet seulement) ; invalide ⇒ `argsInvalid` et `onChange(null)` ;
+- cinq `Input` de pointeurs, préremplis par `defaultMcpSourceConfig(server)` importé de `@kibo/component-mcp-source`, aide `pointerHelp` ;
 - `Input type="number"` « Rafraîchissement » (min 5, défaut 15) ;
-- à chaque changement valide, `onChange({ server, mode, tool | uri, args, refreshMinutes, mapping })` ; chaque couple label / champ par `useId()`.
+- à chaque changement, `McpSourceConfig.safeParse(stored)` : valide ⇒ `onChange(stored)` (config plate `McpSourceStoredConfig`, telle qu'elle sera écrite dans l'instance), sinon `onChange(null)` ; chaque couple label / champ par `useId()`. Primitives : `Select`, `RadioGroup`, `Textarea`, `Input`, `Label` de `@kibo/sdk/ui/*`.
 
-`packages/ui/src/registry.ts` : ajouter le composant intégré `mcp-source` (import de `components/mcp-source`, comme Kanban). `AddComponentDialog.tsx` : si le composant choisi est `mcp-source`, afficher `<McpSourceStep value={mcpConfig} onChange={setMcpConfig} />` sous le catalogue, désactiver « Ajouter à la page » tant que `mcpConfig === null`, et passer `config: mcpConfig` à `addInstance`. L'écran 30 (phase 4) affiche la permission « Appeler le serveur MCP choisi à l'ajout » (`fr.integrations.permissions.mcpFromConfig`, Task 9).
+`packages/ui/src/registry.ts` : `import * as mcpSource from "@kibo/component-mcp-source";`, ajouter `mcpSource` à `BUILTIN_COMPONENTS` (le catalogue `builtinChoices` le liste alors dans « Intégrés ») et `"mcp-source": Plug` à `BUILTIN_ICONS`. `AddComponentDialog.tsx` : état `mcpConfig: McpSourceStoredConfig | null` ; si le composant choisi a l'id `mcp-source`, afficher `<McpSourceStep value={mcpConfig} onChange={setMcpConfig} />` dans `Details`, désactiver « Ajouter à la page » tant que `mcpConfig === null`, et ajouter `config: mcpConfig` à la commande `addInstance` (champ `config` déjà accepté par `ProjectCommand`). Le bloc « Source » Locale / Synchronisée (Task 17) ne s'affiche pas pour `mcp-source`, bien qu'il lise `ticket` (spec F §9 : Kanban et Tickets seulement). Un widget ne s'ajoute qu'à une page tableau de bord (`kind: "widget"`, comportement de la phase 4). L'écran 30 n'est pas montré pour un intégré ; la ligne « Appeler le serveur MCP choisi à l'ajout » (`fr.integrations.permissions.mcpFromConfig`, Task 9) sert au catalogue et à la page Composants. Budget du chargement initial (`bun run budget`, 230 kB gzip, décision 29 de la phase 4) : `registry.ts` importe les intégrés statiquement ; le widget est petit (zod est déjà dans l'entrée) et le budget est vérifié à l'étape 7.
 
 - [ ] **Step 7: Vérifier et commiter**
 
-Run: `bun test components packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel : widget (liste, vide, erreur, chargement) et étape de config, en sombre puis en clair, contre P10.
+Run: `bun test components packages/ui packages/sdk && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget` — Expected: PASS. Contrôle visuel : widget (liste, vide, erreur, chargement) et étape de config, en sombre puis en clair, contre P10.
 
 ```bash
-git add components/mcp-source package.json packages/ui/src/dialogs/mcp-source packages/ui/src/dialogs/AddComponentDialog.tsx packages/ui/src/registry.ts packages/ui/src/i18n/fr-integrations.ts
+git add components/mcp-source package.json bun.lock packages/schema/src/component.ts packages/sdk/src/conformance.tsx packages/ui/package.json packages/ui/tsconfig.json packages/ui/src/dialogs/mcp-source packages/ui/src/dialogs/AddComponentDialog.tsx packages/ui/src/registry.ts packages/ui/src/i18n/fr-integrations.ts
 git commit -m "feat(components): Source MCP"
 ```
-
-(Ajouter au `git add` `CLAUDE.md`, le fichier de `BUILTIN_IDS` et la suite de conformité s'ils ont changé.)
 
 ---
 
@@ -12474,46 +13440,48 @@ Critères de sortie de la spec F (§10, §12) : zéro occurrence d'un secret par
 **Files:**
 - Create: `packages/daemon/src/integrations/leak.test.ts`
 - Create: `e2e/integrations.spec.ts`
-- Modify: `e2e/serve.ts`, `e2e/token.ts`, `packages/daemon/src/testing/fake-github.ts` (option `port`), `packages/daemon/src/testing/fake-mcp.ts` (option `port`)
+- Modify: `e2e/serve.ts`, `e2e/token.ts`, `e2e/playwright.config.ts` (deux démons `integrations-dark` / `integrations-light`), `packages/daemon/src/testing/fake-github.ts` (option `port`), `packages/daemon/src/testing/fake-mcp.ts` (option `port`)
 
 **Interfaces:**
-- Consumes: tout ce qui précède ; `startServer` (v0.1, `redact` ajouté en Task 2) ; `installConsoleRedaction`, `createRedactor` (Task 2) ; `ECHO_AUTH`, `LOGS_HOST` (Task 6) ; `startFakeMcpHttp`, `FAKE_MCP_STDIO` (Task 7).
-- Produces: `startFakeGithub(opts?: { login?; token?; port?: number })`, `startFakeMcpHttp(opts?: { bearer?; omit?; port?: number })` ; constantes E2E `E2E_GH_TOKEN`, `FAKE_GH_PORT = 4391`, `FAKE_MCP_PORT = 4392`.
+- Consumes: tout ce qui précède ; `startDaemon`, `DaemonOptions` (`packages/daemon/src/daemon.ts`, décision 23 de la phase 4) avec `integrations: IntegrationFlags` et le caviardeur partagé (Task 2, N26) ; `installConsoleRedaction`, `createRedactor`, `parseIntegrationFlags` (Task 2) ; `DEV_TOOLCHAIN` (`@kibo/devkit/test-kit`) ; `ECHO_AUTH`, `LOGS_HOST` (Task 6) ; `startFakeMcpHttp`, `FAKE_MCP_STDIO` (Task 7) ; aides E2E réelles `pairAndCreateProject`, `createPage` (`e2e/helpers.ts`), `E2E_TOKEN` (`e2e/token.ts`).
+- Produces: `startFakeGithub(opts?: { login?; token?; port?: number })`, `startFakeMcpHttp(opts?: { bearer?; omit?; port?: number })` ; dans `e2e/token.ts` : `E2E_GH_TOKEN`, `fakeGithubPort(daemonPort: number): number` (= port du démon + 100), `fakeMcpPort(daemonPort: number): number` (= + 200).
 
-- [ ] **Step 1: Ports fixes des faux serveurs**
+Réalité E2E : `e2e/playwright.config.ts` lance **un démon par spec et par thème** (`bun serve.ts <port> <scénario> [brouillons]`, ports 4390 à 4401), et `serve.ts` pose déjà `KIBO_GH` sur le faux binaire `gh` de la phase 3 (`packages/daemon/src/code/testing/fake-gh.ts`, requis par `code.spec.ts`). Des ports fixes 4391/4392 pour les faux serveurs entreraient en collision avec les démons `light` et `agents-dark` : les faux serveurs prennent le port du démon + 100 / + 200, et ne sont lancés que pour les deux démons de cette spec. `KIBO_GH` n'est pas remplacé : le parcours choisit explicitement « Jeton personnel ».
+
+- [ ] **Step 1: Ports des faux serveurs**
 
 `fake-github.ts` : `Bun.serve({ port: opts.port ?? 0, hostname: "127.0.0.1", … })`. `fake-mcp.ts` : `http.listen(opts.port ?? 0, "127.0.0.1", …)`. Aucun autre changement.
 
 - [ ] **Step 2: Test de fuite (échoue tant qu'une fuite existe)**
 
+Le test lance le vrai démon par `startDaemon` (comme `packages/daemon/src/daemon.test.ts`) : c'est là que l'hôte et les modules d'intégration sont assemblés (N26). Pas de `build` factice : l'adaptateur GitHub Issues est construit depuis `components/github-issues` avec la toolchain de dev (N7, Task 19).
+
 `packages/daemon/src/integrations/leak.test.ts` :
 
 ```ts
+import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { startServer } from "../server";
-import { createService, type Service } from "../service";
-import { openStore, type Store } from "../store";
+import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { type Daemon, startDaemon } from "../daemon";
 import { ECHO_AUTH, type FakeGithub, LOGS_HOST, startFakeGithub } from "../testing/fake-github";
 import { FAKE_MCP_STDIO, startFakeMcpHttp } from "../testing/fake-mcp";
-import { parseIntegrationFlags, startIntegrations } from "./bootstrap";
+import { parseIntegrationFlags } from "./bootstrap";
 import { createRedactor, installConsoleRedaction } from "./redact";
 
 const SECRET = "ghp_TESTSECRET0123456789abcdefghijklmn";
 const MCP_ENV = "mcp-env-secret-0123456789";
 const MCP_BEARER = "mcp-bearer-secret-0123456789";
 const SECRETS = [SECRET, MCP_ENV, MCP_BEARER];
-const TOKEN = "c".repeat(64);
 const METHODS = ["log", "info", "warn", "error", "debug"] as const;
 
 let gh: FakeGithub;
 let mcpHttp: Awaited<ReturnType<typeof startFakeMcpHttp>>;
 let home: string;
-let store: Store;
-let service: Service;
-let server: ReturnType<typeof startServer>;
+let daemon: Daemon;
+let stopped = false;
 let cookie = "";
 const logs: string[] = [];
 const responses: string[] = [];
@@ -12521,9 +13489,9 @@ const originals = METHODS.map((m) => console[m]);
 let uninstall: () => void = () => undefined;
 
 async function rpc(body: unknown): Promise<unknown> {
-  const res = await fetch(`${server.url}/api/rpc`, {
+  const res = await fetch(`${daemon.url}/api/rpc`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: server.url, cookie },
+    headers: { "content-type": "application/json", origin: daemon.url, cookie },
     body: JSON.stringify(body),
   });
   const text = await res.text();
@@ -12549,29 +13517,30 @@ beforeAll(async () => {
   const redactor = createRedactor();
   uninstall = installConsoleRedaction(redactor);
   home = mkdtempSync(join(tmpdir(), "kibo-leak-"));
-  store = openStore(home);
-  service = createService(store, {
+  daemon = await startDaemon({
+    home,
+    port: 0,
+    sandboxPort: 0,
+    uiDir: null,
+    dev: false,
+    toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    integrations: (host) =>
-      startIntegrations(
-        host,
-        parseIntegrationFlags({ "test-origins": `api.github.com=${gh.url},${LOGS_HOST}=${gh.url}`, "memory-secrets": true }),
-        redactor,
-      ),
+    redactor,
+    integrations: parseIntegrationFlags({
+      "test-origins": `api.github.com=${gh.url},${LOGS_HOST}=${gh.url}`,
+      "memory-secrets": true,
+    }),
   });
-  server = startServer({ service, token: TOKEN, port: 0, uiDir: null, redact: redactor.redact });
-  const pair = await fetch(`${server.url}/api/pair`, {
+  const pair = await fetch(`${daemon.url}/api/pair`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: server.url },
-    body: JSON.stringify({ token: TOKEN }),
+    headers: { "content-type": "application/json", origin: daemon.url },
+    body: JSON.stringify({ token: daemon.token }),
   });
   cookie = (pair.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
 });
 
 afterAll(async () => {
-  server.stop();
-  service.close();
-  store.close();
+  if (!stopped) await daemon.stop();
   uninstall();
   METHODS.forEach((m, i) => {
     const original = originals[i];
@@ -12637,9 +13606,11 @@ test("after a full scenario, no secret appears anywhere", async () => {
   expect(responses.some((r) => r.includes("***"))).toBe(true);
   expect(JSON.stringify(snapshot)).toContain("Depuis Kibo");
 
-  service.close();
-  const db = store.db;
+  await daemon.stop();
+  stopped = true;
+  const db = new Database(join(home, "kibo.db"), { readonly: true });
   const events = JSON.stringify(db.query("SELECT * FROM integration_events").all());
+  db.close();
   const places: [string, string][] = [
     ["rpc responses", responses.join("\n")],
     ["console", logs.join("\n")],
@@ -12655,69 +13626,73 @@ test("after a full scenario, no secret appears anywhere", async () => {
 });
 ```
 
-- `result<T>(r)` : `as { result: T }` sur une réponse du contrat RPC v0.1 (`{ result }` ou `{ error }`) ; les formes sont celles de `RpcResult`.
-- `filesUnder(home)` couvre `kibo.db`, `kibo.db-wal`, `kibo.db-shm`, le cache des logs CI, les dossiers `mcp/<id>` et tout fichier écrit par le démon ; `latin1` lit les octets tels quels (un secret ASCII y apparaît à l'identique).
+- `redactor` et `integrations` sont les deux options que la Task 2 ajoute à `DaemonOptions` (N26) : `main.ts` fait exactement la même chose avec `--test-origins` et `--memory-secrets`. Si la Task 2 a nommé autrement l'option du caviardeur, utiliser son nom (même rôle : un seul `Redactor` partagé par la console, le serveur et les intégrations).
+- `result<T>(r)` : `as { result: T }` sur une réponse du contrat RPC (`{ ok, result }` ou `{ ok, error }`) ; les formes sont celles de `RpcResult`.
+- `filesUnder(home)` couvre `kibo.db`, `kibo.db-wal`, `kibo.db-shm`, `runs.db`, `token`, le cache des logs CI, les dossiers `mcp/<id>` et tout fichier écrit par le démon ; `latin1` lit les octets tels quels (un secret ASCII y apparaît à l'identique). La base est relue en lecture seule **après** `daemon.stop()` (le démon ferme `kibo.db` à l'arrêt).
 - Le contrôle positif (`***` dans une réponse) prouve que l'écho de l'en-tête `Authorization` a bien eu lieu et a été caviardé.
 - Si le snapshot Loro est stocké compressé, la recherche dans `kibo.db` ne suffit pas : c'est pourquoi `getProject` (état complet du doc) est aussi fouillé.
 
 Run: `bun test packages/daemon/src/integrations/leak.test.ts`
 Expected: PASS. Un échec nomme l'endroit (`secret leaked in …`) : corriger à la source (caviardage à l'écriture, `scrubSecret`, jamais en retirant l'étape du test).
 
-- [ ] **Step 3: Serveur E2E avec faux GitHub et faux MCP**
+- [ ] **Step 3: Démons E2E avec faux GitHub et faux MCP**
 
 `e2e/token.ts`, ajouter :
 
 ```ts
 export const E2E_GH_TOKEN = "ghp_E2ETOKEN0123456789abcdefghijklmnopq";
-export const FAKE_GH_PORT = 4391;
-export const FAKE_MCP_PORT = 4392;
+export const fakeGithubPort = (daemonPort: number): number => daemonPort + 100;
+export const fakeMcpPort = (daemonPort: number): number => daemonPort + 200;
 ```
 
-`e2e/serve.ts` : avant le `Bun.spawn` :
+`e2e/playwright.config.ts` : deux entrées de plus dans `daemons`, `{ name: "integrations-dark", scheme: "dark", port: 4402, spec: /integrations\.spec\.ts/, scenario: "question", integrations: true }` et `{ name: "integrations-light", scheme: "light", port: 4403, … }` ; la commande du `webServer` ajoute l'argument `--integrations` quand `"integrations" in d` (placé avant les brouillons, lus comme les autres arguments positionnels).
+
+`e2e/serve.ts` : lire `--integrations` dans `process.argv` (le retirer avant de lire `[port, scenario, ...drafts]`) ; s'il est présent, avant le `Bun.spawn` :
 
 ```ts
 import { LOGS_HOST, startFakeGithub } from "../packages/daemon/src/testing/fake-github";
 import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
-import { E2E_GH_TOKEN, E2E_TOKEN, FAKE_GH_PORT, FAKE_MCP_PORT } from "./token";
+import { E2E_GH_TOKEN, E2E_TOKEN, fakeGithubPort, fakeMcpPort } from "./token";
 
-const gh = startFakeGithub({ token: E2E_GH_TOKEN, port: FAKE_GH_PORT });
+const gh = startFakeGithub({ token: E2E_GH_TOKEN, port: fakeGithubPort(Number(port)) });
 gh.addRepo("adam/kibo");
-const mcp = await startFakeMcpHttp({ port: FAKE_MCP_PORT });
+const mcp = await startFakeMcpHttp({ port: fakeMcpPort(Number(port)) });
 ```
 
-les arguments du démon gagnent `"--test-origins", \`api.github.com=${gh.url},${LOGS_HOST}=${gh.url}\`, "--memory-secrets"`, l'environnement `KIBO_GH: join(home, "no-gh")` (aucun `gh` réel, même sur un runner CI qui en a un) ; après `await proc.exited` : `gh.stop(); await mcp.stop();`.
+les arguments du démon gagnent alors `"--test-origins", \`api.github.com=${gh.url},${LOGS_HOST}=${gh.url}\`, "--memory-secrets"` (lus par `main.ts`, N26) ; après `await proc.exited` : `gh.stop(); await mcp.stop();`. Les autres démons E2E sont inchangés (aucune origine de test, trousseau système non sollicité). `KIBO_GH` reste le faux `gh` de la phase 3.
 
 - [ ] **Step 4: Parcours Playwright**
 
 `e2e/integrations.spec.ts` :
 
 ```ts
-import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { E2E_GH_TOKEN, E2E_TOKEN, FAKE_GH_PORT } from "./token";
+import { expect, type Page, test } from "@playwright/test";
+import { createPage, pairAndCreateProject } from "./helpers";
+import { E2E_GH_TOKEN, fakeGithubPort } from "./token";
 
-const GH = `http://127.0.0.1:${FAKE_GH_PORT}`;
 const auth = { authorization: `Bearer ${E2E_GH_TOKEN}`, "content-type": "application/json" };
-const suffix = (info: TestInfo) => (info.project.name === "light" ? "L" : "D");
+const githubOf = (baseURL: string | undefined) => `http://127.0.0.1:${fakeGithubPort(Number(new URL(baseURL ?? "").port))}`;
 
-async function ghIssues(): Promise<{ number: number; title: string }[]> {
-  const res = await fetch(`${GH}/repos/adam/kibo/issues?state=all&per_page=100`, { headers: auth });
+async function ghIssues(gh: string): Promise<{ number: number; title: string }[]> {
+  const res = await fetch(`${gh}/repos/adam/kibo/issues?state=all&per_page=100`, { headers: auth });
   return (await res.json()) as { number: number; title: string }[];
 }
-async function ghCreate(title: string): Promise<number> {
-  const res = await fetch(`${GH}/repos/adam/kibo/issues`, { method: "POST", headers: auth, body: JSON.stringify({ title }) });
+async function ghCreate(gh: string, title: string): Promise<number> {
+  const res = await fetch(`${gh}/repos/adam/kibo/issues`, { method: "POST", headers: auth, body: JSON.stringify({ title }) });
   return ((await res.json()) as { number: number }).number;
 }
-async function ghRename(n: number, title: string): Promise<void> {
-  await fetch(`${GH}/repos/adam/kibo/issues/${n}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title }) });
+async function ghRename(gh: string, n: number, title: string): Promise<void> {
+  await fetch(`${gh}/repos/adam/kibo/issues/${n}`, { method: "PATCH", headers: auth, body: JSON.stringify({ title }) });
 }
 
 async function openIntegrations(page: Page) {
-  await page.getByRole("link", { name: "Paramètres" }).click();
-  await page.getByRole("link", { name: "Intégrations" }).click();
+  await page.getByRole("button", { name: "Paramètres", exact: true }).click();
+  await page.getByRole("navigation", { name: "Paramètres" }).getByRole("button", { name: "Intégrations" }).click();
   await expect(page.getByRole("heading", { name: "Intégrations" })).toBeVisible();
 }
 
-test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ page }, info) => {
+test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ page, baseURL }, info) => {
+  const gh = githubOf(baseURL);
   const leaked: string[] = [];
   page.on("response", async (res) => {
     if (res.url().includes("/api/")) {
@@ -12725,35 +13700,27 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
       if (body.includes(E2E_GH_TOKEN)) leaked.push(res.url());
     }
   });
-  const s = suffix(info);
-  await page.goto(`/#pair=${E2E_TOKEN}`);
+  const key = info.project.name.endsWith("dark") ? "SYD" : "SYL";
+  await pairAndCreateProject(page, info, key);
   await openIntegrations(page);
-  const row = (title: string) => page.getByRole("listitem").filter({ hasText: title });
+  const row = (title: string) => page.getByRole("main").getByRole("listitem").filter({ hasText: title });
   await expect(row("Git local").getByText("Actif")).toBeVisible();
   await expect(row("Figma (MCP)").getByRole("button", { name: "Connecter" })).toBeVisible();
 
   const github = row("PR, reviews, statuts CI");
-  if (await github.getByRole("button", { name: "Connecter" }).isVisible()) {
-    await github.getByRole("button", { name: "Connecter" }).click();
-    await expect(page.getByRole("radio", { name: "Utiliser gh" })).toBeDisabled();
-    await page.getByRole("radio", { name: "Jeton personnel" }).click();
-    await page.getByLabel("Jeton").fill(E2E_GH_TOKEN);
-    await page.getByRole("button", { name: "Connecter", exact: true }).last().click();
-    await expect(page.getByText("Connecté en tant que adam")).toBeVisible();
-  }
+  await github.getByRole("button", { name: "Connecter" }).click();
+  const dialog = page.getByRole("dialog", { name: "Connecter GitHub" });
+  await dialog.getByRole("radio", { name: "Jeton personnel" }).click();
+  await dialog.getByLabel("Jeton").fill(E2E_GH_TOKEN);
+  await dialog.getByRole("button", { name: "Connecter" }).click();
+  await expect(page.getByText("Connecté en tant que adam")).toBeVisible();
   await expect(github.getByText("compte adam")).toBeVisible();
 
-  const imported = `Issue e2e ${s}`;
-  const n = await ghCreate(imported);
+  const imported = "Issue e2e";
+  const n = await ghCreate(gh, imported);
 
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
-  await page.getByLabel("Nom").fill(`Sync ${s}`);
-  await page.getByLabel("Clé").fill(`SY${s}`);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
-  await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await page.getByLabel("Nom").fill("Kanban GitHub");
-  await page.getByRole("radio", { name: "Vue", exact: true }).click();
-  await page.getByRole("button", { name: "Créer la page" }).click();
+  await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
+  await createPage(page, "Kanban GitHub", "Vue");
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   await page.getByRole("radio", { name: "Kanban", exact: true }).click();
   await page.getByRole("radio", { name: "Synchronisée · GitHub Issues" }).click();
@@ -12764,16 +13731,16 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
   await expect(page.getByText("GitHub · adam/kibo")).toBeVisible();
   await expect(page.getByText(imported)).toBeVisible();
 
-  const local = `Ticket e2e ${s}`;
+  const local = "Ticket e2e";
   await page.getByRole("button", { name: "Nouveau ticket dans À faire", exact: true }).click();
   await page.getByLabel("Titre").fill(local);
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByText(local)).toBeVisible();
   await page.getByRole("button", { name: "Synchroniser" }).click();
-  await expect.poll(async () => (await ghIssues()).some((i) => i.title === local)).toBe(true);
+  await expect.poll(async () => (await ghIssues(gh)).some((i) => i.title === local)).toBe(true);
 
-  const renamed = `Renommée e2e ${s}`;
-  await ghRename(n, renamed);
+  const renamed = "Renommée e2e";
+  await ghRename(gh, n, renamed);
   await page.getByRole("button", { name: "Synchroniser" }).click();
   await expect(page.getByText(renamed)).toBeVisible();
 
@@ -12784,20 +13751,20 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
 });
 ```
 
-- Libellés : ceux de `fr-integrations.ts` (Task 1) et de la v0.1 ; la navigation « Paramètres › Intégrations » suit la phase 2 (si le lien porte un autre nom, l'utiliser tel qu'il est livré).
-- Chaque projet Playwright (sombre, clair) crée son propre projet et ses propres issues (suffixe `D` / `L`) : les deux exécutions partagent le démon et le faux GitHub.
-- La connexion GitHub est faite par la première exécution et constatée par la seconde.
+- Libellés : ceux de `fr-integrations.ts` (Task 1), du Kanban (`components/kanban/src/fr.ts` : « Nouveau ticket dans À faire ») et de l'UI (`fr.newTicket` : « Titre », « Créer le ticket »). « Paramètres » est un bouton de la barre latérale (`AppSidebar.tsx`, il ouvre l'écran `domains`) ; « Intégrations » est un bouton de `SettingsNav` (Task 10, N30).
+- `pairAndCreateProject` vérifie aussi le thème (`dark`/`light`) : chaque thème a son propre démon et son propre faux GitHub, les deux exécutions ne partagent rien.
+- Le faux `gh` de la phase 3 répond « connecté » à `gh auth status` : le dialogue peut proposer « Utiliser gh » ; le parcours choisit explicitement « Jeton personnel ».
 - La lecture d'un corps de réponse qui échoue est enregistrée comme texte (`unreadable: …`), jamais ignorée.
 
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test`
-Expected: PASS en `dark` et `light` (et le parcours v0.1 `mvp.spec.ts` toujours vert).
+Expected: PASS en `integrations-dark` et `integrations-light` (et toutes les autres specs toujours vertes).
 
 - [ ] **Step 5: Vérifier et commiter**
 
-Run: `bun test packages components && bun run check && bun run typecheck && bun run --cwd e2e test` — Expected: PASS.
+Run: `bun test packages components && bun run check && bun run typecheck && bun run --cwd e2e test` — Expected: PASS. La CI GitHub étant hors service, cette liste est le contrôle local d'intégration ; `.github/workflows/ci.yml` n'est pas modifié (il lance déjà `bun run --cwd e2e test`, la tâche 34 de la phase 4 le réécrit).
 
 ```bash
-git add packages/daemon/src/integrations/leak.test.ts packages/daemon/src/testing/fake-github.ts packages/daemon/src/testing/fake-mcp.ts e2e/serve.ts e2e/token.ts e2e/integrations.spec.ts
+git add packages/daemon/src/integrations/leak.test.ts packages/daemon/src/testing/fake-github.ts packages/daemon/src/testing/fake-mcp.ts e2e/serve.ts e2e/token.ts e2e/playwright.config.ts e2e/integrations.spec.ts
 git commit -m "test: fuite de secret et parcours E2E"
 ```
 
@@ -12807,11 +13774,11 @@ git commit -m "test: fuite de secret et parcours E2E"
 
 Aucun code. Le chef d'équipe, quand la Task 23 est intégrée :
 
-- [ ] **Conformité** : CI verte sur `main` en macOS **et** Linux (`bun run check`, `bun run typecheck`, `bun test packages components`, E2E `dark` et `light`, smoke test Tauri avec `builtin/github-issues/server.js` présent).
+- [ ] **Conformité** : CI verte sur `main` en macOS **et** Linux (`bun run check`, `bun run typecheck`, `bun test packages components`, `bun run budget`, E2E `dark` et `light`, smoke test Tauri avec `builtin/github-issues/server.js` présent). CI GitHub hors service : même liste en contrôle local avant chaque intégration et au jalon (workflows maintenus à jour).
 - [ ] **Critères de sortie de la spec F §12** : aller-retour ticket ↔ issue (création, titre, description, statut, fermeture) vert en CI (`roundtrip.test.ts`, `integrations.spec.ts`) ; test de fuite vert (`leak.test.ts`) ; écran 16 conforme en sombre et en clair (page PDF 26 + état P1) ; dialogues conformes à P2 à P5.
 - [ ] **Contrôle visuel** des écrans 16, 3 (source synchronisée, P6), 4 (Sheet : P7, P8, P9), P10, P11, en sombre et en clair, contre `design/pdf/kibo-design-{sombre,clair}.pdf` ; écarts notés dans le rapport.
-- [ ] **Spec** : `docs/superpowers/specs/2026-09-26-kibo-integrations.md` §14 contient N1 à N21 ; tableau « Points d'ancrage » de ce plan à jour (colonne « Réel »).
+- [ ] **Spec** : `docs/superpowers/specs/2026-09-26-kibo-integrations.md` §14 contient N1 à N36 ; tableau « Points d'ancrage » de ce plan à jour (colonne « Réel »).
 - [ ] **Tag** : `git tag v0.5 && git push origin v0.5`.
-- [ ] **Rapport** : `docs/superpowers/rapports/2026-09-26-jalon-v0.5.md` (livré, écarts de maquette, décisions N1 à N21, risques ouverts : formes réelles de l'API GitHub non vérifiées en CI, dépendance `@modelcontextprotocol/sdk`, `Bun.secrets` sous Linux, TOCTOU DNS), commit `docs: rapport du jalon v0.5`.
+- [ ] **Rapport** : `docs/superpowers/rapports/2026-09-26-jalon-v0.5.md` (livré, écarts de maquette, décisions N1 à N36, risques ouverts : écarts de la réconciliation T0 réellement rencontrés, formes réelles de l'API GitHub non vérifiées en CI, dépendance `@modelcontextprotocol/sdk`, `Bun.secrets` sous Linux, TOCTOU DNS), commit `docs: rapport du jalon v0.5`.
 - [ ] **Contrôle manuel optionnel** (non bloquant, spec F « Comptes et secrets réels ») : Adam, sur un dépôt de test avec un Project v2 et un jeton (`repo`, `project`), puis Figma desktop avec le serveur Dev Mode ; retours consignés dans le rapport.
 - [ ] **Suite** : sur décision d'Adam, les phases s'enchaînent jusqu'à la 7 sans attente ; le chef d'équipe passe directement au plan de la phase 6.
