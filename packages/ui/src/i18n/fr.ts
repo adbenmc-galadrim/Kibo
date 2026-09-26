@@ -149,6 +149,7 @@ export const fr = {
       loaded: (n: number) => `brief.md + ${n} guideline${n > 1 ? "s" : ""} chargé${n > 1 ? "s" : ""}`,
       resumed: "reprise de la session (--resume)",
       denied: (tools: string) => `actions refusées : ${tools}`,
+      exitCode: (code: number) => `code de sortie ${code}`,
     },
     states: {
       queued: "En file",

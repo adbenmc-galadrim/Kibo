@@ -1,11 +1,12 @@
-import type { RunEvent, RunLogEntry } from "@kibo/schema";
+import type { HookEventName, HookPayload, RunEvent, RunLogEntry } from "@kibo/schema";
 import { RUN_TEXT } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { fr } from "../i18n/fr";
 import { errorText, formatClock } from "./format";
 
 type Tone = "blue" | "amber" | "green" | "red" | "muted";
-export type JournalLine = { name: string; text: string; tone: Tone };
+export type JournalLine = { id: number; at: number; name: string; text: string; tone: Tone };
+type Line = Omit<JournalLine, "id" | "at">;
 
 const TONE: Record<Tone, string> = {
   blue: RUN_TEXT.running,
@@ -15,9 +16,34 @@ const TONE: Record<Tone, string> = {
   muted: RUN_TEXT.cancelled,
 };
 
+const HOOK_TONE: Partial<Record<HookEventName, Tone>> = {
+  Stop: "green",
+  StopFailure: "red",
+  SessionEnd: "muted",
+};
+
 const PATH = /^[\w.~-]*\/[\w./~-]+$/;
 
-export function journalLine(event: RunEvent): JournalLine | null {
+function hookLine(p: HookPayload): Line | null {
+  if (p.question) return { name: "Notification", text: p.question, tone: "amber" };
+  if (p.event === "PreToolUse" || p.event === "SessionStart") return null;
+  return {
+    name: p.event,
+    text: [p.tool, p.detail].filter(Boolean).join(" "),
+    tone: HOOK_TONE[p.event] ?? "blue",
+  };
+}
+
+function exitLine(event: Extract<RunEvent, { type: "exited" }>): Line | null {
+  const e = fr.agents.events;
+  const denied = event.denied.length > 0 ? e.denied(event.denied.join(", ")) : null;
+  if (event.isError || event.code !== 0) {
+    return { name: event.type, text: event.result ?? denied ?? e.exitCode(event.code), tone: "red" };
+  }
+  return denied ? { name: event.type, text: denied, tone: "amber" } : null;
+}
+
+function eventLine(event: RunEvent): Line | null {
   const e = fr.agents.events;
   switch (event.type) {
     case "spawned":
@@ -26,22 +52,10 @@ export function journalLine(event: RunEvent): JournalLine | null {
         text: event.resume ? e.resumed : e.loaded(event.guidelines),
         tone: "blue",
       };
-    case "hook": {
-      const p = event.payload;
-      if (p.question) return { name: "Notification", text: p.question, tone: "amber" };
-      if (p.event === "PreToolUse") return null;
-      return { name: p.event, text: [p.tool, p.detail].filter(Boolean).join(" "), tone: "blue" };
-    }
+    case "hook":
+      return hookLine(event.payload);
     case "exited":
-      return {
-        name: "Stop",
-        text: event.denied.length > 0 ? e.denied(event.denied.join(", ")) : (event.result ?? ""),
-        tone: event.isError ? "red" : "green",
-      };
-    case "enqueued":
-      return { name: event.type, text: "", tone: "muted" };
-    case "admitted":
-      return { name: event.type, text: String(event.lane), tone: "muted" };
+      return exitLine(event);
     case "answered":
       return { name: event.type, text: event.text, tone: "muted" };
     case "cancelled":
@@ -50,9 +64,18 @@ export function journalLine(event: RunEvent): JournalLine | null {
       return { name: event.type, text: errorText(event.error), tone: "red" };
     case "prioritized":
       return event.priority ? { name: event.type, text: "", tone: "muted" } : null;
+    case "enqueued":
+    case "admitted":
     case "reranked":
       return null;
   }
+}
+
+export function journalLines(log: RunLogEntry[]): JournalLine[] {
+  return log.flatMap((entry) => {
+    const line = eventLine(entry.event);
+    return line ? [{ ...line, id: entry.id, at: entry.at }] : [];
+  });
 }
 
 function JournalText({ text }: { text: string }) {
@@ -72,10 +95,7 @@ function JournalText({ text }: { text: string }) {
 }
 
 export function RunJournal({ label, log }: { label: string; log: RunLogEntry[] }) {
-  const lines = log.flatMap((entry) => {
-    const line = journalLine(entry.event);
-    return line ? [{ ...line, id: entry.id, at: entry.at }] : [];
-  });
+  const lines = journalLines(log);
   return (
     <ol
       aria-label={fr.agents.journal(label)}

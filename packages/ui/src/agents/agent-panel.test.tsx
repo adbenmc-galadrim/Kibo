@@ -36,10 +36,17 @@ const hook = (event: HookEventName, p: Partial<HookPayload>): HookPayload => ({
 });
 
 const LOG: RunLogEntry[] = [
+  { id: 10, at: NOW - 8 * MIN, event: { type: "enqueued", rank: 1 } },
+  { id: 11, at: NOW - 7 * MIN, event: { type: "admitted", lane: 2 } },
   {
     id: 1,
     at: NOW - 7 * MIN,
     event: { type: "spawned", pid: 42, resume: false, workspace: "worktree:kib-14", guidelines: 3 },
+  },
+  {
+    id: 12,
+    at: NOW - 7 * MIN,
+    event: { type: "hook", payload: hook("SessionStart", { detail: "startup" }) },
   },
   {
     id: 2,
@@ -69,6 +76,13 @@ const LOG: RunLogEntry[] = [
     },
   },
   { id: 5, at: NOW, event: { type: "reranked", rank: 3 } },
+  { id: 6, at: NOW, event: { type: "hook", payload: hook("Stop", { detail: "J'attends ta réponse." }) } },
+  { id: 7, at: NOW, event: { type: "hook", payload: hook("SessionEnd", { detail: "other" }) } },
+  {
+    id: 8,
+    at: NOW,
+    event: { type: "exited", code: 0, isError: false, result: "ok", tokens: 1, costUsd: 0, denied: [] },
+  },
 ];
 
 mock.module("../state/use-agents", () => ({
@@ -83,7 +97,7 @@ const { AgentBar } = await import("./AgentBar");
 const { AgentDrawer } = await import("./AgentDrawer");
 const { AgentPanel } = await import("./AgentPanel");
 const { ReplyBox } = await import("./ReplyBox");
-const { journalLine, RunJournal } = await import("./RunJournal");
+const { journalLines, RunJournal } = await import("./RunJournal");
 
 beforeEach(() => {
   calls.length = 0;
@@ -190,16 +204,29 @@ test("a finished run has no stop button", () => {
   expect(screen.queryByRole("button", { name: "Arrêter" })).toBeNull();
 });
 
-test("the journal shows raw event names, hides PreToolUse and reranks, and the question in amber", () => {
+test("the journal keeps one SessionStart and one Stop, hides internal events, colours by event", () => {
   render(<RunJournal label="opus-dev-2" log={LOG} />);
   const journal = screen.getByRole("list", { name: "Journal de opus-dev-2" });
   const lines = within(journal).getAllByRole("listitem");
-  expect(lines.map((l) => l.textContent)).toEqual([
-    expect.stringContaining("SessionStartbrief.md + 3 guidelines chargés"),
-    expect.stringContaining("PostToolUseWrite apps/daemon/src/hooks/receiver.ts"),
-    expect.stringContaining("NotificationQuel port pour le récepteur ?"),
+  expect(lines.map((l) => [l.textContent?.slice(5), l.getAttribute("data-tone")])).toEqual([
+    ["SessionStartbrief.md + 3 guidelines chargés", "blue"],
+    ["PostToolUseWrite apps/daemon/src/hooks/receiver.ts", "blue"],
+    ["NotificationQuel port pour le récepteur ? 4747 (défaut) ou dynamique ?", "amber"],
+    ["StopJ'attends ta réponse.", "green"],
+    ["SessionEndother", "muted"],
   ]);
-  expect(lines[2]?.getAttribute("data-tone")).toBe("amber");
+});
+
+test("a failed exit adds a red line, even after a clean Stop", () => {
+  const failed: RunLogEntry[] = [
+    ...LOG.slice(0, -1),
+    {
+      id: 9,
+      at: NOW,
+      event: { type: "exited", code: 1, isError: true, result: "boom", tokens: 1, costUsd: 0, denied: [] },
+    },
+  ];
+  expect(journalLines(failed).at(-1)).toMatchObject({ name: "exited", text: "boom", tone: "red" });
 });
 
 test("file paths in the journal are styled as links", () => {
@@ -211,11 +238,13 @@ test("file paths in the journal are styled as links", () => {
 });
 
 test("daemon events keep their raw type as name", () => {
+  const exited = { type: "exited", code: 0, isError: false, result: null, tokens: 0, costUsd: 0 } as const;
   const cases: [RunEvent, string | null][] = [
-    [{ type: "enqueued", rank: 1 }, "enqueued"],
-    [{ type: "admitted", lane: 2 }, "admitted"],
+    [{ type: "enqueued", rank: 1 }, null],
+    [{ type: "admitted", lane: 2 }, null],
     [{ type: "spawned", pid: 1, resume: true, workspace: "repo", guidelines: 0 }, "SessionStart"],
-    [{ type: "exited", code: 0, isError: false, result: null, tokens: 0, costUsd: 0, denied: [] }, "Stop"],
+    [{ ...exited, denied: [] }, null],
+    [{ ...exited, denied: ["Bash"] }, "exited"],
     [{ type: "answered", text: "oui", rank: 0 }, "answered"],
     [{ type: "cancelled" }, "cancelled"],
     [{ type: "failed", error: "exit code 1" }, "failed"],
@@ -223,7 +252,9 @@ test("daemon events keep their raw type as name", () => {
     [{ type: "prioritized", priority: false }, null],
     [{ type: "reranked", rank: 2 }, null],
   ];
-  for (const [event, name] of cases) expect(journalLine(event)?.name ?? null).toBe(name);
+  for (const [event, name] of cases) {
+    expect(journalLines([{ id: 1, at: NOW, event }]).at(0)?.name ?? null).toBe(name);
+  }
 });
 
 test("the reply box sends a trimmed answer, and keeps the text when it fails", async () => {
