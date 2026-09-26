@@ -107,6 +107,12 @@ test("the developer preset is shown at once, without AI", async () => {
   render(<Harness />);
   expect(await screen.findByLabelText("Inclure Tableau de bord")).toBeTruthy();
   expect(screen.getByText("Kanban · Mes tickets · Graphe")).toBeTruthy();
+  expect(screen.getAllByText("Vue").map((b) => b.dataset.variant)).toEqual([
+    "secondary",
+    "secondary",
+    "secondary",
+    "secondary",
+  ]);
   expect(screen.queryByRole("button", { name: "Proposer avec Claude" })).toBeNull();
   expect(calls.filter((c) => c.method === "suggestStarter")).toEqual([]);
 });

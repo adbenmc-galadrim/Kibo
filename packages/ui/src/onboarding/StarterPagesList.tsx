@@ -39,7 +39,7 @@ export function StarterPagesList({ selection, titles, onChange }: Props) {
             onChange={(e) => update(p.key, { title: e.target.value })}
             className="h-8"
           />
-          <Badge variant="outline">{fr.onboarding.kind[p.kind]}</Badge>
+          <Badge variant="secondary">{fr.onboarding.kind[p.kind]}</Badge>
           <span className="truncate text-xs text-muted-foreground">
             {p.components.map((c) => label(c, titles)).join(" · ")}
           </span>
