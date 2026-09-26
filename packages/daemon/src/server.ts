@@ -49,6 +49,13 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   RATE_LIMITED: 429,
   TIMEOUT: 504,
   COMPONENT_CRASHED: 502,
+  HASH_MISMATCH: 409,
+  VERSION_EXISTS: 409,
+  CONFLICT: 409,
+  VALIDATION_FAILED: 422,
+  MIGRATION_FAILED: 422,
+  QUOTA_EXCEEDED: 413,
+  SANDBOX_UNAVAILABLE: 503,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
@@ -73,11 +80,11 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
   const sessions = new Set<string>();
   let port = opts.port;
   const hosts = () => [`127.0.0.1:${port}`, `localhost:${port}`];
-  const origins = () => [
-    `http://127.0.0.1:${port}`,
-    `http://localhost:${port}`,
-    ...(opts.extraOrigins ?? []),
-  ];
+  const origins = () => {
+    const sandbox = opts.sandboxOrigin?.() ?? null;
+    const extra = (opts.extraOrigins ?? []).filter((o) => o !== sandbox);
+    return [`http://127.0.0.1:${port}`, `http://localhost:${port}`, ...extra];
+  };
   const hasSession = (req: Request) => {
     const id = readCookie(req.headers.get("cookie"), COOKIE);
     return id !== null && sessions.has(id);

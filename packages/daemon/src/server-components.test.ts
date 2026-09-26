@@ -170,6 +170,13 @@ describe("component error statuses", () => {
       ["RATE_LIMITED", 429],
       ["TIMEOUT", 504],
       ["COMPONENT_CRASHED", 502],
+      ["HASH_MISMATCH", 409],
+      ["VERSION_EXISTS", 409],
+      ["CONFLICT", 409],
+      ["VALIDATION_FAILED", 422],
+      ["MIGRATION_FAILED", 422],
+      ["QUOTA_EXCEEDED", 413],
+      ["SANDBOX_UNAVAILABLE", 503],
     ];
     for (const [code, status] of cases) {
       const failing: Service = {
@@ -184,8 +191,23 @@ describe("component error statuses", () => {
         headers: { "content-type": "application/json", origin: base, cookie },
         body: JSON.stringify({ method: "listProjects" }),
       });
-      expect(res.status).toBe(status);
-      expect(await res.json()).toMatchObject({ ok: false, error: { code } });
+      expect([code, res.status]).toEqual([code, status]);
+      expect(await res.json()).toMatchObject({ ok: false, error: { code, message: "refused" } });
     }
+  });
+});
+
+describe("api origins", () => {
+  test("the sandbox origin never reaches the api, even listed as an extra origin", async () => {
+    const { base, cookie } = await startPaired({ sandboxOrigin: () => SANDBOX, extraOrigins: [SANDBOX] });
+    const rpc = (origin: string) =>
+      fetch(`${base}/api/rpc`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, cookie },
+        body: JSON.stringify({ method: "listProjects" }),
+      });
+    expect((await rpc(SANDBOX)).status).toBe(403);
+    expect((await rpc("null")).status).toBe(403);
+    expect((await rpc(base)).status).toBe(200);
   });
 });
