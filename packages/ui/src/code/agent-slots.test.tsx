@@ -42,7 +42,7 @@ const status = (worktree: string): RepoStatus => ({
 const responses: Partial<Record<CodeRequest["method"], (req: CodeRequest) => unknown>> = {
   worktrees: () => [
     { path: "/repo", branch: "main", head: "b".repeat(40), isMain: true },
-    { path: "/wt/kib-12", branch: "kib-12", head: "a".repeat(40), isMain: false },
+    { path: "/repo/.kibo/worktrees/kib-12", branch: "kib-12", head: "a".repeat(40), isMain: false },
   ],
   status: (req) => status(req.method === "worktrees" ? "" : req.worktree),
   commitDefaults: () => ({
@@ -84,15 +84,8 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
   rules,
   nextTicketKey: "KIB-13",
 });
-const working = (state: RunView["state"]) =>
-  runFixture({
-    id: "r12",
-    projectId: "p1",
-    label: "opus-dev-1",
-    state,
-    workspace: "worktree:kib-12",
-    cwd: "/wt/kib-12",
-  });
+const working = (state: RunView["state"], cwd = "/repo/.kibo/worktrees/kib-12") =>
+  runFixture({ id: "r12", projectId: "p1", label: "opus-dev-1", state, workspace: "worktree:kib-12", cwd });
 
 beforeEach(() => {
   runs = [];
@@ -120,13 +113,13 @@ const loaded = () => screen.findByRole("button", { name: "Pousser et créer la P
 
 test("an agent working in the shown worktree puts a warning above the commit form", async () => {
   runs = [working("running")];
-  renderChanges("/wt/kib-12");
+  renderChanges("/repo/.kibo/worktrees/kib-12");
   expect(await screen.findByText(WORKING)).toBeTruthy();
 });
 
 test("a waiting agent still counts as working there", async () => {
   runs = [working("waiting_input")];
-  renderChanges("/wt/kib-12");
+  renderChanges("/repo/.kibo/worktrees/kib-12");
   expect(await screen.findByText(WORKING)).toBeTruthy();
 });
 
@@ -140,7 +133,20 @@ test("no warning for another worktree or a finished run", async () => {
   expect(screen.queryByText(WORKING)).toBeNull();
   unmount();
   runs = [working("done")];
-  renderChanges("/wt/kib-12");
+  renderChanges("/repo/.kibo/worktrees/kib-12");
+  await loaded();
+  await waitFor(() =>
+    expect(screen.getByLabelText("Message")).toHaveProperty("value", "feat: schéma (KIB-12)"),
+  );
+  expect(screen.queryByText(WORKING)).toBeNull();
+});
+
+test("an agent working in a subfolder of the main worktree is shown there, not in the others", async () => {
+  runs = [working("running", "/repo/packages/app")];
+  const { unmount } = renderChanges("/repo");
+  expect(await screen.findByText(WORKING)).toBeTruthy();
+  unmount();
+  renderChanges("/repo/.kibo/worktrees/kib-12");
   await loaded();
   await waitFor(() =>
     expect(screen.getByLabelText("Message")).toHaveProperty("value", "feat: schéma (KIB-12)"),
@@ -149,11 +155,14 @@ test("no warning for another worktree or a finished run", async () => {
 });
 
 test("the PR dialog tells which rule will move the ticket, only while it is enabled", async () => {
-  const { unmount } = renderChanges("/wt/kib-12");
+  const { unmount } = renderChanges("/repo/.kibo/worktrees/kib-12");
   await userEvent.click(await loaded());
   expect(await within(await screen.findByRole("dialog")).findByText(RULE)).toBeTruthy();
   unmount();
-  renderChanges("/wt/kib-12", project(DEFAULT_RULES.map((r) => ({ ...r, enabled: r.when !== "pr_opened" }))));
+  renderChanges(
+    "/repo/.kibo/worktrees/kib-12",
+    project(DEFAULT_RULES.map((r) => ({ ...r, enabled: r.when !== "pr_opened" }))),
+  );
   await userEvent.click(await loaded());
   const dialog = await screen.findByRole("dialog");
   await within(dialog).findByText("Lier la PR à KIB-12");

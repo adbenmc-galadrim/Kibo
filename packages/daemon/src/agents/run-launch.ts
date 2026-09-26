@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
@@ -129,11 +130,12 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const flag = permissionFlag(profile.permissionMode, await capsOf(claudeBin));
       const current = registry.get(runId);
       if (deps.stopping() || current.state !== "starting") return;
+      const cwd = realpathSync(prepared.cwd);
       const { token, hash } = mint(runId);
       opts.store.saveTokenHash(runId, hash, now());
       const proc = launch({
         claudeBin,
-        cwd: prepared.cwd,
+        cwd,
         model: profile.model,
         permissionFlag: flag,
         extraArgs: task?.extraArgs ?? [],
@@ -153,7 +155,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         pid: proc.pid,
         resume,
         workspace: prepared.label,
-        cwd: prepared.cwd,
+        cwd,
         guidelines: prepared.guidelines,
       });
       if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);

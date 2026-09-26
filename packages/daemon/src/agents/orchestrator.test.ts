@@ -224,7 +224,7 @@ test("a question suspends the run, the answer resumes it, and the ticket moves o
     question: "Quel port pour le récepteur ?",
     label: "opus-dev-1",
     workspace: "isolated",
-    cwd: join(h.home, "runs", first.id, "workspace"),
+    cwd: realpathSync(join(h.home, "runs", first.id, "workspace")),
   });
   expect(h.orch.state().host.used).toBe(0);
   await waitUntil(() => h.notices.length > 0);

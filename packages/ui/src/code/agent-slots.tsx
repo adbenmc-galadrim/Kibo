@@ -1,4 +1,4 @@
-import type { ProjectSnapshot, RunState, RunView } from "@kibo/schema";
+import type { ProjectSnapshot, RunState, RunView, Worktree } from "@kibo/schema";
 import { TriangleAlert } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { useAgents } from "../state/use-agents";
@@ -6,10 +6,23 @@ import type { ChangesSlots } from "./changes-slots";
 
 const WORKING: readonly RunState[] = ["running", "waiting_input"];
 
-export function agentInWorktree(runs: RunView[], projectId: string, worktree: string): RunView | null {
-  return (
-    runs.find((r) => r.projectId === projectId && r.cwd === worktree && WORKING.includes(r.state)) ?? null
-  );
+const isInside = (root: string, path: string): boolean =>
+  path === root || path.startsWith(root.endsWith("/") ? root : `${root}/`);
+
+export function owningWorktree(worktrees: string[], path: string): string | null {
+  return worktrees
+    .filter((w) => isInside(w, path))
+    .reduce<string | null>((best, w) => (best === null || w.length > best.length ? w : best), null);
+}
+
+export function agentInWorktree(
+  runs: RunView[],
+  projectId: string,
+  worktree: string,
+  worktrees: string[],
+): RunView | null {
+  const owns = (cwd: string | null) => cwd !== null && owningWorktree(worktrees, cwd) === worktree;
+  return runs.find((r) => r.projectId === projectId && WORKING.includes(r.state) && owns(r.cwd)) ?? null;
 }
 
 function AgentWorkingBanner({ agent }: { agent: string }) {
@@ -25,9 +38,11 @@ export function useChangesSlots(
   project: ProjectSnapshot,
   worktree: string | null,
   ticketKey: string | null,
+  worktrees: Worktree[],
 ): ChangesSlots {
   const agents = useAgents();
-  const agent = worktree ? agentInWorktree(agents?.runs ?? [], project.meta.id, worktree) : null;
+  const paths = worktrees.map((w) => w.path);
+  const agent = worktree ? agentInWorktree(agents?.runs ?? [], project.meta.id, worktree, paths) : null;
   const ruleActive = project.rules.some((r) => r.enabled && r.when === "pr_opened");
   return {
     commitBanner: agent ? <AgentWorkingBanner agent={agent.label} /> : null,

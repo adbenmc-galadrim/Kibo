@@ -97,7 +97,7 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
     onPushed: remote.refresh,
     onSettled: reload,
   });
-  const slots = useSlots(project, current.path, defaults?.ticketKey ?? null);
+  const slots = useSlots(project, current.path, defaults?.ticketKey ?? null, worktrees);
   const baseBranch = base ?? remote.remote?.defaultBase ?? null;
   const head = status?.commits[0];
   const canAmend = head !== undefined && !head.pushed;
