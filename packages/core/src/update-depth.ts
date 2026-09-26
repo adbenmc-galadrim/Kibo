@@ -2,7 +2,7 @@ import {
   type Container,
   type ContainerID,
   isContainer,
-  type LoroDoc,
+  LoroDoc,
   LoroList,
   LoroMap,
   LoroMovableList,
@@ -78,4 +78,8 @@ export function depthViolation(before: LoroDoc, after: LoroDoc): string | null {
     }
   }
   return null;
+}
+
+export function projectDepthViolation(doc: LoroDoc): string | null {
+  return depthViolation(new LoroDoc(), doc);
 }
