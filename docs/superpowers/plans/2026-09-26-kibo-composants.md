@@ -11001,7 +11001,7 @@ git commit -m "feat(daemon): port sandbox et modules trusted"
   - `SHARED_MODULES: Record<string, unknown>` ; `exposeSharedModules(): void`.
   - `useRuntimeInfo(): RuntimeInfo | null` ; `currentTheme(): Theme` ; `useTheme(): Theme`.
 
-- [ ] **Step 1: Écrire les tests du pont**
+- [x] **Step 1: Écrire les tests du pont**
 
 `packages/ui/src/shell/frame-bridge.test.ts` :
 ```ts
@@ -11127,7 +11127,7 @@ Les casts `as unknown as Window` et `as MessageEventSource` sont limités au tes
 Run: `bun test packages/ui/src/shell/frame-bridge.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `frame-bridge.ts`**
+- [x] **Step 2: Implémenter `frame-bridge.ts`**
 
 ```ts
 import {
@@ -11249,7 +11249,7 @@ export function dispatchCombo(combo: KeyCombo, target: EventTarget = window): vo
 ```
 L'hôte n'envoie qu'à `iframe.contentWindow` avec `targetOrigin "*"` (origine opaque, spec §6.2) et ne filtre aucun appel : c'est le démon qui décide.
 
-- [ ] **Step 3: Tests et code du chargement trusted, des modules partagés et du thème**
+- [x] **Step 3: Tests et code du chargement trusted, des modules partagés et du thème**
 
 `packages/ui/src/shell/shared-modules.test.ts` :
 ```ts
@@ -11443,7 +11443,7 @@ export function useRuntimeInfo(): { info: RuntimeInfo | null; error: boolean } {
 
 `packages/ui/src/main.tsx` : `import { exposeSharedModules } from "./shell/shared-modules";` puis `exposeSharedModules();` juste après `followSystemTheme();`.
 
-- [ ] **Step 4: Implémenter `SandboxFrame.tsx`**
+- [x] **Step 4: Implémenter `SandboxFrame.tsx`**
 
 ```tsx
 import type { Surface } from "@kibo/schema";
@@ -11522,7 +11522,7 @@ export function SandboxFrame({ projectId, instanceId, config, viewer, surface, s
 ```
 Pas de `allow-same-origin` : le document a une origine opaque. Changement de config : `SandboxFrame` est rendu avec `key={instance.component + JSON.stringify(instance.config)}` par la tâche 28, ce qui recrée l'iframe et renvoie `init`.
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun test packages/ui && bun run typecheck && bun run check`
 Expected: PASS.
