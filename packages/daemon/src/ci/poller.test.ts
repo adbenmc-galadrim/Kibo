@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { createGithubApi } from "../github/api";
+import { createGithubApi, type GithubApi } from "../github/api";
 import { createEventLog } from "../integrations/events";
 import { createIntegrationFetch, parseTestOrigins } from "../integrations/net";
 import { createRateLimitGate } from "../integrations/rate-limit";
@@ -189,4 +189,40 @@ test("a failing repository is logged, not thrown", async () => {
   const events = createEventLog(host.db, createRedactor(), host.now);
   await poller.tick();
   expect(events.recent("github-actions").map((e) => e.level)).toEqual(["error"]);
+});
+
+test("a tick during a pass joins it instead of starting another", async () => {
+  const api = createGithubApi({
+    fetch: createIntegrationFetch({ aliases: parseTestOrigins([`api.github.com=${gh.url}`]) }),
+    token: async () => gh.token,
+    gate: createRateLimitGate(host.now),
+  });
+  const heads: string[] = [];
+  const release = Promise.withResolvers<void>();
+  const inFlight = Promise.withResolvers<void>();
+  const gated: GithubApi = {
+    ...api,
+    async rest(method, path, schema, body) {
+      if (path.endsWith("/pulls/12")) {
+        heads.push(path);
+        inFlight.resolve();
+        await release.promise;
+      }
+      return api.rest(method, path, schema, body);
+    },
+  };
+  const slow = createCiPoller({
+    host,
+    api: gated,
+    store: createCiStore(host.db),
+    events: createEventLog(host.db, createRedactor(), host.now),
+    connected: () => true,
+  });
+  const first = slow.tick();
+  await inFlight.promise;
+  host.clock.now += 61_000;
+  const second = slow.tick();
+  release.resolve();
+  await Promise.all([first, second]);
+  expect(heads).toHaveLength(1);
 });
