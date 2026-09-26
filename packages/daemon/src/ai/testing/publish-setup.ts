@@ -16,7 +16,7 @@ import {
 } from "@kibo/schema";
 import { draftPaths, prepareDraft, readDraftManifest, writeDraftManifest } from "../draft-files";
 import { createDraftPublisher } from "../draft-publish";
-import { openDraftStore } from "../draft-store";
+import { type DraftStore, openDraftStore } from "../draft-store";
 import type { ComponentCatalog, PublishedComponent } from "../ports";
 import { createFakeClock, createRecordingEvents } from "./fake-ports";
 
@@ -61,6 +61,19 @@ const stored = (version: string, hash: string, trust: RegistryVersion["trust"]):
   publishedAt: 1,
   autoUpdate: false,
 });
+
+function mergedStores(current: DraftStore, legacy: DraftStore): DraftStore {
+  const owner = (id: string) => (legacy.list().some((d) => d.id === id) ? legacy : current);
+  return {
+    insert: (d) => current.insert(d),
+    save: (d) => owner(d.id).save(d),
+    saveReport: (id, report) => owner(id).saveReport(id, report),
+    get: (id) => owner(id).get(id),
+    report: (id) => owner(id).report(id),
+    list: () => [...current.list(), ...legacy.list()],
+    active: () => [...current.active(), ...legacy.active()],
+  };
+}
 
 type SetupOptions = {
   mode?: "create" | "modify";
@@ -116,16 +129,20 @@ export async function setup(opts: SetupOptions = {}) {
     writeFileSync(join(srcRoot, "burndown", "ui.tsx"), "old");
   }
   const paths = await prepareDraftDir(home, ID, "new");
-  const store = openDraftStore(new Database(":memory:", { strict: true }));
-  store.insert(draftOf(ID, mode, opts.status ?? "review"));
-  store.saveReport(ID, green);
-  const addDraft = async (id: string, ui: string, version: string) => {
+  const current = openDraftStore(new Database(":memory:", { strict: true }));
+  const legacy = openDraftStore(new Database(":memory:", { strict: true }));
+  const store = mergedStores(current, legacy);
+  current.insert(draftOf(ID, mode, opts.status ?? "review"));
+  current.saveReport(ID, green);
+  const draftInto = (target: DraftStore) => async (id: string, ui: string, version: string) => {
     const p = await prepareDraftDir(home, id, ui);
     writeDraftManifest(p.dir, { ...readDraftManifest(p.dir), version });
-    store.insert(draftOf(id, mode, "permissions"));
-    store.saveReport(id, green);
+    target.insert(draftOf(id, mode, "permissions"));
+    target.saveReport(id, green);
     return p;
   };
+  const addDraft = draftInto(current);
+  const addLegacyDraft = draftInto(legacy);
   const registry = new Map<string, string>(
     opts.published ? [[opts.published.version, opts.published.hash]] : [],
   );
@@ -197,7 +214,20 @@ export async function setup(opts: SetupOptions = {}) {
     clock: createFakeClock(),
     home,
   });
-  return { home, srcRoot, paths, store, publisher, published, sources, approved, instances, diffs, addDraft };
+  return {
+    home,
+    srcRoot,
+    paths,
+    store,
+    publisher,
+    published,
+    sources,
+    approved,
+    instances,
+    diffs,
+    addDraft,
+    addLegacyDraft,
+  };
 }
 
 export const publishedAi: PublishedComponent = {

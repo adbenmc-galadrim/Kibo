@@ -16,6 +16,12 @@ const finalizeOf = (draftId: string, version: string, dir: string) => ({
 });
 
 describe("two drafts of the same component", () => {
+  test("a second active draft in the same store is refused", async () => {
+    const s = await setup({ mode: "modify", status: "permissions" });
+    await expect(s.addDraft(OTHER, "other", "0.1.1")).rejects.toThrow("CONFLICT");
+    expect(s.store.active().map((d) => d.id)).toEqual([ID]);
+  });
+
   for (const mode of ["create", "modify"] as const) {
     test(`${mode}: finalized together, one publishes and the other is CONFLICT`, async () => {
       const s = await setup({
@@ -24,7 +30,7 @@ describe("two drafts of the same component", () => {
         published: mode === "modify" ? { ...published, version: "0.0.9" } : null,
         publishDelayMs: 20,
       });
-      const other = await s.addDraft(OTHER, "other", "0.1.1");
+      const other = await s.addLegacyDraft(OTHER, "other", "0.1.1");
       const results = await Promise.allSettled([
         s.publisher.finalize(finalizeOf(ID, "0.1.0", s.paths.dir)),
         s.publisher.finalize(finalizeOf(OTHER, "0.1.1", other.dir)),
@@ -47,7 +53,7 @@ describe("two drafts of the same component", () => {
       status: "permissions",
       published: { ...published, version: "0.0.9" },
     });
-    const other = await s.addDraft(OTHER, "other", "0.1.1");
+    const other = await s.addLegacyDraft(OTHER, "other", "0.1.1");
     await expect(s.publisher.finalize(finalizeOf(ID, "0.2.0", s.paths.dir))).rejects.toThrow("INVALID_INPUT");
     await s.publisher.finalize(finalizeOf(OTHER, "0.1.1", other.dir));
     expect(s.sources).toEqual(["other"]);
@@ -60,7 +66,7 @@ describe("two drafts of the same component", () => {
       status: "permissions",
       published: { ...published, version: "0.0.9" },
     });
-    const other = await s.addDraft(OTHER, "other", "0.1.1");
+    const other = await s.addLegacyDraft(OTHER, "other", "0.1.1");
     await s.publisher.finalize(finalizeOf(ID, "0.1.0", s.paths.dir));
     await expect(s.publisher.finalize(finalizeOf(OTHER, "0.1.1", other.dir))).rejects.toThrow("CONFLICT");
     expect(s.published).toHaveLength(1);
