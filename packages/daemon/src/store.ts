@@ -8,6 +8,8 @@ export type Store = {
   load(id: string): Uint8Array | null;
   save(id: string, snapshot: Uint8Array): void;
   ids(): string[];
+  getLocal(key: string): string | null;
+  setLocal(key: string, value: string): void;
   close(): void;
 };
 
@@ -23,6 +25,9 @@ export function openStore(home: string): Store {
     db.exec(
       "CREATE TABLE IF NOT EXISTS docs (id TEXT PRIMARY KEY, snapshot BLOB NOT NULL, updated_at INTEGER NOT NULL)",
     );
+    db.exec(
+      "CREATE TABLE IF NOT EXISTS local_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL)",
+    );
     const check = db.query("PRAGMA integrity_check").get() as { integrity_check: string } | null;
     if (check?.integrity_check !== "ok") throw new Error(check?.integrity_check ?? "integrity_check failed");
   } catch (e) {
@@ -35,6 +40,11 @@ export function openStore(home: string): Store {
       "ON CONFLICT(id) DO UPDATE SET snapshot = excluded.snapshot, updated_at = excluded.updated_at",
   );
   const select = db.query("SELECT snapshot FROM docs WHERE id = $id");
+  const upsertLocal = db.query(
+    "INSERT INTO local_state (key, value, updated_at) VALUES ($key, $value, $at) " +
+      "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+  );
+  const selectLocal = db.query("SELECT value FROM local_state WHERE key = $key");
   return {
     load: (id) => {
       const row = select.get({ id }) as { snapshot: Uint8Array } | null;
@@ -44,6 +54,10 @@ export function openStore(home: string): Store {
       upsert.run({ id, snapshot, at: Date.now() });
     },
     ids: () => (db.query("SELECT id FROM docs ORDER BY id").all() as { id: string }[]).map((r) => r.id),
+    getLocal: (key) => (selectLocal.get({ key }) as { value: string } | null)?.value ?? null,
+    setLocal: (key, value) => {
+      upsertLocal.run({ key, value, at: Date.now() });
+    },
     close: () => db.close(),
   };
 }

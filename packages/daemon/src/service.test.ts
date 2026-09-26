@@ -1,17 +1,20 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type {
-  Domain,
-  ProjectCommand,
-  ProjectMeta,
-  ProjectSnapshot,
-  ProjectSummary,
-  Ticket,
-  WorkspaceConfig,
+import {
+  type Domain,
+  EMPTY_TABS,
+  MAX_RECENTS,
+  MAX_TABS,
+  type ProjectCommand,
+  type ProjectMeta,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type Ticket,
+  type WorkspaceConfig,
 } from "@kibo/schema";
-import { createService } from "./service";
+import { call, createService } from "./service";
 import { openStore } from "./store";
 
 const dirs: string[] = [];
@@ -188,6 +191,59 @@ describe("service", () => {
     run({ method: "setStatus", ticketId: child.id, statusId: "done" });
     const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
     expect(snap.tickets.find((x) => x.id === parent.id)?.statusId).toBe("done");
+    store.close();
+  });
+});
+
+describe("tabs", () => {
+  const target = { kind: "project" as const, projectId: "p1" };
+  const state = {
+    tabs: [{ id: "t1", target, pinned: true }],
+    activeId: "t1",
+    recents: [target],
+  };
+  const tooManyTabs = {
+    tabs: Array.from({ length: MAX_TABS + 1 }, (_, i) => ({ id: `t${i}`, target, pinned: false })),
+    activeId: null,
+    recents: [],
+  };
+
+  test("getTabs defaults to the empty state, saveTabs persists across services", () => {
+    const store = openStore(tmp());
+    expect(call(createService(store, { user: "adam" }), { method: "getTabs" })).toEqual(EMPTY_TABS);
+    expect(call(createService(store, { user: "adam" }), { method: "saveTabs", state })).toBeNull();
+    expect(call(createService(store, { user: "adam" }), { method: "getTabs" })).toEqual(state);
+    store.close();
+  });
+
+  test("an unreadable stored state is reported and replaced by the empty state", () => {
+    const store = openStore(tmp());
+    store.setLocal("tabs:workspace", "{not json");
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    expect(call(createService(store, { user: "adam" }), { method: "getTabs" })).toEqual(EMPTY_TABS);
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
+    store.close();
+  });
+
+  test("a stored state beyond the bounds is reported and replaced by the empty state", () => {
+    const store = openStore(tmp());
+    store.setLocal("tabs:workspace", JSON.stringify(tooManyTabs));
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    expect(call(createService(store, { user: "adam" }), { method: "getTabs" })).toEqual(EMPTY_TABS);
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
+    store.close();
+  });
+
+  test("saveTabs refuses a state beyond the bounds and keeps the previous one", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    call(s, { method: "saveTabs", state });
+    const tooManyRecents = { ...state, recents: Array.from({ length: MAX_RECENTS + 1 }, () => target) };
+    expect(() => s.handle({ method: "saveTabs", state: tooManyTabs })).toThrow("INVALID_INPUT");
+    expect(() => s.handle({ method: "saveTabs", state: tooManyRecents })).toThrow("INVALID_INPUT");
+    expect(call(s, { method: "getTabs" })).toEqual(state);
     store.close();
   });
 });

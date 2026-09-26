@@ -51,6 +51,19 @@ describe("store", () => {
     store.close();
   });
 
+  test("local state survives a reopen and never touches the docs table", () => {
+    const home = tmp();
+    const first = openStore(home);
+    first.setLocal("tabs:workspace", '{"a":1}');
+    first.setLocal("tabs:workspace", '{"a":2}');
+    first.close();
+    const again = openStore(home);
+    expect(again.getLocal("tabs:workspace")).toBe('{"a":2}');
+    expect(again.getLocal("missing")).toBeNull();
+    expect(again.ids()).toEqual([]);
+    again.close();
+  });
+
   test("KIBO_HOME overrides the default home", () => {
     expect(kiboHome({ KIBO_HOME: "/tmp/k" })).toBe("/tmp/k");
     expect(kiboHome({})).toEndWith(".kibo");

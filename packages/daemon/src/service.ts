@@ -9,11 +9,14 @@ import {
 } from "@kibo/core";
 import {
   type ChangeMessage,
+  EMPTY_TABS,
   KiboError,
   type ProjectCommand,
   type ProjectMeta,
   type RpcRequest,
+  type RpcResult,
   type Session,
+  TabsState,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { applyRules, createDataPort } from "./agents/data-port";
@@ -48,9 +51,34 @@ export type Service = {
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
 
 const WORKSPACE = "workspace";
+const TABS_KEY = "tabs:workspace";
 const projectDocId = (id: string) => `project:${id}`;
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
+
+export function call<R extends RpcRequest>(service: Service, req: R): RpcResult[R["method"]] {
+  return service.handle(req) as RpcResult[R["method"]];
+}
+
+function readTabs(store: Store): TabsState {
+  const raw = store.getLocal(TABS_KEY);
+  if (raw === null) return EMPTY_TABS;
+  try {
+    const parsed = TabsState.safeParse(JSON.parse(raw));
+    if (parsed.success) return parsed.data;
+    console.error("[kibo-daemon] stored tabs are invalid, starting empty", parsed.error.message);
+  } catch (e) {
+    console.error("[kibo-daemon] stored tabs are unreadable, starting empty", e);
+  }
+  return EMPTY_TABS;
+}
+
+function saveTabs(store: Store, state: unknown): null {
+  const parsed = TabsState.safeParse(state);
+  if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
+  store.setLocal(TABS_KEY, JSON.stringify(parsed.data));
+  return null;
+}
 
 export function createService(store: Store, opts: ServiceOptions): Service {
   const workspace = loadDoc(store, WORKSPACE) ?? createWorkspaceDoc();
@@ -174,6 +202,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
           return readConfig(docs);
         case "config":
           return runConfigCommand(docs, req.command, (profileId) => agents?.activeRuns(profileId) ?? 0);
+        case "getTabs":
+          return readTabs(store);
+        case "saveTabs":
+          return saveTabs(store, req.state);
         default:
           return handleAgents(req);
       }
