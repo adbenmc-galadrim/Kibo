@@ -13,6 +13,6 @@ export function bunCommand(
   if (!compiled) return { argv: [execPath], env: {} };
   if (BUN_BE_BUN_SUPPORTED) return { argv: [execPath], env: { BUN_BE_BUN: "1" } };
   const found = (opts.which ?? Bun.which)("bun");
-  if (!found) throw new KiboError("NOT_FOUND", "bun is not installed or not in PATH");
+  if (!found) throw new KiboError("VALIDATION_FAILED", "bun is not installed or not in PATH");
   return { argv: [found], env: {} };
 }
