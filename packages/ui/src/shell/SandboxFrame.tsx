@@ -47,6 +47,9 @@ export function SandboxFrame({
           `[kibo-ui] component instance ${instanceId} navigated away from ${src} (${reason}), frame destroyed`,
         );
         setEscaped(true);
+        client
+          .rpc({ method: "reportComponentRefusal", projectId, instanceId, kind: "navigate" })
+          .catch((e: unknown) => console.error(`[kibo-ui] refusal of ${instanceId} not recorded`, e));
       },
       setTimer: (fn, ms) => window.setTimeout(fn, ms),
       clearTimer: (id) => window.clearTimeout(id),
@@ -56,7 +59,7 @@ export function SandboxFrame({
       g.dispose();
       guard.current = null;
     };
-  }, [src, instanceId, readyTimeoutMs, escaped]);
+  }, [src, projectId, instanceId, readyTimeoutMs, escaped]);
 
   useEffect(() => {
     if (escaped) return;

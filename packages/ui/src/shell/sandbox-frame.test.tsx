@@ -5,12 +5,14 @@ import type { Host } from "./Host";
 
 const DEADLINE = 30;
 const requests: RpcRequest[] = [];
+let refusalFailure: Error | null = null;
 const listeners = new Set<(projectId: string | null) => void>();
 
 mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       requests.push(req);
+      if (req.method === "reportComponentRefusal" && refusalFailure) return Promise.reject(refusalFailure);
       return Promise.resolve(["t1"]);
     },
     subscribe: (listener: (projectId: string | null) => void) => {
@@ -241,6 +243,64 @@ test("unmounting while waiting for ready leaves no timer behind", async () => {
     await pastDeadline();
     expect(capture.errors).toHaveLength(0);
   } finally {
+    capture.restore();
+  }
+});
+
+const refusals = () => requests.filter((r) => r.method === "reportComponentRefusal");
+const settle = () =>
+  act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+
+test("a destroyed frame is reported to the daemon as a navigation refusal", async () => {
+  const capture = captureErrors();
+  requests.length = 0;
+  try {
+    const { view, fromFrame, loaded, navigate } = mount();
+    fromFrame(ready);
+    await loaded();
+    navigate();
+    await settle();
+    expect(refusals()).toEqual([
+      { method: "reportComponentRefusal", projectId: "p1", instanceId: "inst-1", kind: "navigate" },
+    ]);
+    expect(capture.errors).toHaveLength(1);
+    view.unmount();
+  } finally {
+    capture.restore();
+  }
+});
+
+test("a navigation caught by the missing ready is reported too", async () => {
+  const capture = captureErrors();
+  requests.length = 0;
+  try {
+    const { view, loaded } = mount();
+    await loaded();
+    await pastDeadline();
+    await settle();
+    expect(refusals()).toHaveLength(1);
+    view.unmount();
+  } finally {
+    capture.restore();
+  }
+});
+
+test("a refusal the daemon cannot record is logged, never swallowed", async () => {
+  const capture = captureErrors();
+  refusalFailure = new Error("daemon down");
+  try {
+    const { view, fromFrame, loaded, navigate } = mount();
+    fromFrame(ready);
+    await loaded();
+    navigate();
+    await settle();
+    expect(capture.errors).toHaveLength(2);
+    expect(capture.errors[1]).toContain(refusalFailure);
+    view.unmount();
+  } finally {
+    refusalFailure = null;
     capture.restore();
   }
 });
