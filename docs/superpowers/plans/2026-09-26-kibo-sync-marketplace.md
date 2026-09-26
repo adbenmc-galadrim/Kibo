@@ -4847,7 +4847,7 @@ Vague 2 (dépend de T4 : `SessionInfo`, RPC `listSessions` / `revokeSession`, `C
 - Vérifié en T0 : `Service.handle(req: RpcRequest): unknown` (`packages/daemon/src/service.ts`) a un seul paramètre et renvoie une valeur ou une promesse (`isComponentRequest`, `isIntegrationRequest`, `isAiRequest` y délèguent) ; `Service` n'est pas modifié : `dispatchRpc` fait `await service.handle(req)` et le contexte ne sert qu'aux extensions et gestionnaires.
 - Vérifié en T0 : `server.ts` garde les sessions dans un `Set<string>` en mémoire (`newSessionId()` de `auth.ts`, cookie `kibo_session; HttpOnly; SameSite=Strict; Path=/`), `POST /api/pair { token }` répond 204 ; `/api/rpc` passe par `respond(work, redact)` (masquage des secrets, codes `HIDDEN`, table `STATUS`) et refuse une requête invalide avec `rpcRefusal(parsed.error)` ; `/api/code`, `/hooks/<runId>` et `/components/` (`serveTrusted`, qui reçoit `hasSession`) existent aussi. Les événements : `startServer` s'abonne à `opts.service.onChange` et `opts.code?.onChange` et fait `server.publish("changes", redact(JSON.stringify(message)))` ; aucune fonction `publish` n'est exposée. L'assemblage du démon est dans `packages/daemon/src/daemon.ts` (`assemble`), pas dans `main.ts` (qui ne lit que les arguments).
 
-- [ ] **Step 1: Écrire le test du magasin de sessions**
+- [x] **Step 1: Écrire le test du magasin de sessions**
 
 `packages/daemon/src/sessions/session-store.test.ts` :
 ```ts
@@ -4930,12 +4930,12 @@ describe("session store", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test pour le voir échouer**
+- [x] **Step 2: Lancer le test pour le voir échouer**
 
 Run: `bun test packages/daemon/src/sessions/session-store.test.ts`
 Expected: FAIL avec « Cannot find module './session-store' ».
 
-- [ ] **Step 3: Implémenter le magasin**
+- [x] **Step 3: Implémenter le magasin**
 
 Le hachage est synchrone (`node:crypto`) : `validate` est appelé à chaque requête et doit rester synchrone.
 
@@ -5026,12 +5026,12 @@ export function openSessionStore(db: Database): SessionStore {
 }
 ```
 
-- [ ] **Step 4: Lancer le test**
+- [x] **Step 4: Lancer le test**
 
 Run: `bun test packages/daemon/src/sessions/session-store.test.ts`
 Expected: PASS (7 tests).
 
-- [ ] **Step 5: Écrire le test du nom d'appareil**
+- [x] **Step 5: Écrire le test du nom d'appareil**
 
 `packages/daemon/src/sessions/device-name.test.ts` :
 ```ts
@@ -5052,7 +5052,7 @@ test.each([
 });
 ```
 
-- [ ] **Step 6: Lancer le test pour le voir échouer, puis implémenter**
+- [x] **Step 6: Lancer le test pour le voir échouer, puis implémenter**
 
 Run: `bun test packages/daemon/src/sessions/device-name.test.ts`
 Expected: FAIL avec « Cannot find module './device-name' ».
@@ -5091,7 +5091,7 @@ Expected: PASS (8 cas).
 
 `Bun/…` est l'agent utilisateur de `fetch` sous Bun : c'est ainsi qu'appairent la CLI (`connectDaemon`) et les tests d'intégration.
 
-- [ ] **Step 7: Écrire le test HTTP (redémarrage, expiration, révocation, `current`)**
+- [x] **Step 7: Écrire le test HTTP (redémarrage, expiration, révocation, `current`)**
 
 `packages/daemon/src/sessions/sessions-http.test.ts` :
 ```ts
@@ -5208,12 +5208,12 @@ test("the database never holds a raw session id", async () => {
 });
 ```
 
-- [ ] **Step 8: Lancer le test pour le voir échouer**
+- [x] **Step 8: Lancer le test pour le voir échouer**
 
 Run: `bun test packages/daemon/src/sessions/sessions-http.test.ts`
 Expected: FAIL (`startServer` n'accepte pas `sessions`, `listSessions` inconnu ⇒ 400 ; la session ne survit pas au redémarrage).
 
-- [ ] **Step 9: Extensions RPC et RPC des sessions**
+- [x] **Step 9: Extensions RPC et RPC des sessions**
 
 `packages/daemon/src/rpc-extensions.ts` :
 ```ts
@@ -5309,7 +5309,7 @@ test("the service answers when nothing handles the request", async () => {
 ```
 Le `as unknown as Service` du test est justifié : seul `handle` est appelé.
 
-- [ ] **Step 10: Brancher le serveur**
+- [x] **Step 10: Brancher le serveur**
 
 Dans `packages/daemon/src/server.ts` (les routes `/hooks/<runId>`, `/components/`, `/api/code` et le service de l'UI restent telles quelles) :
 
@@ -5414,12 +5414,12 @@ type WsData = { sessionHash: string };
 
 8. Dans `packages/daemon/src/daemon.ts` (`assemble`) : `import { openSessionStore } from "./sessions/session-store";` et `sessions: openSessionStore(store.db)` dans l'appel à `startServer`. Ajouter à `packages/daemon/src/daemon.test.ts` un cas : appairer, arrêter puis redémarrer `startDaemon` sur le même `home`, la même session répond 200 à `listProjects`.
 
-- [ ] **Step 11: Lancer les tests du démon**
+- [x] **Step 11: Lancer les tests du démon**
 
 Run: `bun test packages/daemon`
 Expected: PASS, y compris les fichiers `server*.test.ts`, `exit.test.ts` et `agents.integration.test.ts` inchangés, et les 7 tests de `sessions-http.test.ts`.
 
-- [ ] **Step 12: Vérifier le lint et les types, commiter**
+- [x] **Step 12: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
