@@ -4,7 +4,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 
 const requests: RpcRequest[] = [];
 const listeners = new Set<(e: IntegrationEvent) => void>();
-const empty: SyncState = { bindings: [], pending: [], errors: [] };
+const empty: SyncState = { connected: true, bindings: [], pending: [], errors: [] };
 
 mock.module("../api", () => ({
   client: {

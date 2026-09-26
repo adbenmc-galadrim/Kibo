@@ -4,11 +4,12 @@ import { asKibo, createFlusher, type EngineDeps, iso } from "./push";
 import type { CursorRow } from "./sync-store";
 
 export { backoffMs, type PauseGate } from "./push";
+export type EngineState = Omit<SyncState, "connected">;
 
 export type SyncEngine = {
   cycle(projectId: string, bindingId: string): Promise<SyncReport>;
   flush(projectId: string, bindingId: string): Promise<void>;
-  state(projectId: string): SyncState;
+  state(projectId: string): EngineState;
   resolveOutbox(projectId: string, outboxId: number, action: "retry" | "drop"): void;
   deleteBinding(projectId: string, bindingId: string): Promise<void>;
   runnable(): { projectId: string; bindingId: string }[];
@@ -21,6 +22,12 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
   const { host, store, runner, gate, events, redact } = deps;
   const flushBinding = createFlusher(deps);
   const running = new Map<string, Promise<unknown>>();
+  const cycling = new Map<string, number>();
+  const countCycle = (bindingId: string, delta: 1 | -1) => {
+    const n = (cycling.get(bindingId) ?? 0) + delta;
+    if (n > 0) cycling.set(bindingId, n);
+    else cycling.delete(bindingId);
+  };
   const waitingCycles = new Map<string, Promise<SyncReport>>();
   const waitingFlushes = new Map<string, Promise<void>>();
   const bindingOf = (projectId: string, bindingId: string): Binding => {
@@ -109,17 +116,29 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
       recordCycleError(projectId, bindingId, b, k);
       throw k;
     } finally {
+      countCycle(bindingId, -1);
       const imported = store.cursor(bindingId)?.imported ?? 0;
       host.broadcast({ type: "sync", projectId, bindingId, imported, running: false });
     }
   };
 
+  const runFlush = async (projectId: string, bindingId: string) => {
+    try {
+      await flushBinding(projectId, bindingOf(projectId, bindingId), emptyReport());
+    } finally {
+      host.broadcast({ type: "sync.outbox", projectId, bindingId });
+    }
+  };
+
   return {
-    cycle: (projectId, bindingId) => coalesce(waitingCycles, bindingId, () => runCycle(projectId, bindingId)),
+    cycle(projectId, bindingId) {
+      const queued = waitingCycles.get(bindingId);
+      if (queued) return queued;
+      countCycle(bindingId, 1);
+      return coalesce(waitingCycles, bindingId, () => runCycle(projectId, bindingId));
+    },
     flush: (projectId, bindingId) =>
-      coalesce(waitingFlushes, bindingId, () =>
-        flushBinding(projectId, bindingOf(projectId, bindingId), emptyReport()),
-      ),
+      coalesce(waitingFlushes, bindingId, () => runFlush(projectId, bindingId)),
     state(projectId) {
       const snap = host.snapshot(projectId);
       return {
@@ -129,7 +148,7 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
             bindingId: b.id,
             repo: b.config.repo,
             runner: b.runner,
-            running: running.has(b.id),
+            running: cycling.has(b.id),
             lastPullAt: c?.lastPullAt ?? null,
             lastError: c?.lastError ?? null,
             imported: c?.imported ?? 0,

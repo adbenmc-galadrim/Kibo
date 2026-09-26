@@ -261,7 +261,12 @@ export type BindingState = {
   resumeAt: number | null;
 };
 export type OutboxError = { outboxId: number; ticketId: string; code: KiboErrorCode; message: string };
-export type SyncState = { bindings: BindingState[]; pending: string[]; errors: OutboxError[] };
+export type SyncState = {
+  connected: boolean;
+  bindings: BindingState[];
+  pending: string[];
+  errors: OutboxError[];
+};
 export type SyncReport = {
   pulled: number;
   created: number;
@@ -279,6 +284,7 @@ export const IntegrationEvent = z.discriminatedUnion("type", [
     imported: z.number().int().nonnegative(),
     running: z.boolean(),
   }),
+  z.object({ type: z.literal("sync.outbox"), projectId: z.string(), bindingId: z.string() }),
   z.object({
     type: z.literal("sync.conflict"),
     projectId: z.string(),

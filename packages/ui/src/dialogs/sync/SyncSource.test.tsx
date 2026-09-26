@@ -33,6 +33,7 @@ const replies: Record<string, () => unknown> = {
 };
 
 const syncState = () => ({
+  connected: true,
   bindings: [
     {
       bindingId: "b1",

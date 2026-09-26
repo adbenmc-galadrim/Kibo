@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
-let syncState: SyncState = { bindings: [], pending: [], errors: [] };
+let syncState: SyncState = { connected: true, bindings: [], pending: [], errors: [] };
 let syncFailure: Error | null = null;
 mock.module("../api", () => ({
   client: {
@@ -31,7 +31,7 @@ const instance = { id: "i1", config: { source: { bindingId: "b1" } } } as unknow
 
 beforeEach(() => {
   calls.length = 0;
-  syncState = { bindings: [], pending: [], errors: [] };
+  syncState = { connected: true, bindings: [], pending: [], errors: [] };
   syncFailure = null;
 });
 
@@ -45,6 +45,7 @@ test("a synced instance shows its repo and syncs on demand", async () => {
 
 test("the last sync time and a failed sync are shown", async () => {
   syncState = {
+    connected: true,
     bindings: [
       {
         bindingId: "b1",

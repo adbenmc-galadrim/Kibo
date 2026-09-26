@@ -28,6 +28,9 @@ export function syncModule(
     handlers: {
       async createBinding(req) {
         if (!connected()) throw new KiboError("NOT_CONNECTED", "connect github first");
+        const repo = req.config.repo.toLowerCase();
+        if (host.snapshot(req.projectId).bindings.some((b) => b.config.repo.toLowerCase() === repo))
+          throw new KiboError("CONFLICT", `${req.config.repo} is already bound in this project`);
         const binding = {
           id: crypto.randomUUID(),
           adapter: "github-issues" as const,
@@ -44,11 +47,11 @@ export function syncModule(
         return null;
       },
       syncBinding: (req) => engine.cycle(req.projectId, req.bindingId),
-      getSyncState: async (req) => engine.state(req.projectId),
+      getSyncState: async (req) => ({ ...engine.state(req.projectId), connected: connected() }),
       async resolveOutbox(req) {
         const row = store.row(req.outboxId);
         engine.resolveOutbox(req.projectId, req.outboxId, req.action);
-        if (row && req.action === "retry") scheduler.kick(req.projectId, row.bindingId);
+        if (row) scheduler.kick(req.projectId, row.bindingId);
         return null;
       },
     },
