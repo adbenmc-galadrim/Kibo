@@ -8,8 +8,17 @@ import { LoroDoc, VersionVector } from "loro-crdt";
 import { InMemoryNetwork, type NetClient } from "./testing/in-memory-network";
 
 const NOW = 1_790_000_000_000;
-const RUNS = Math.max(200, Number(process.env.KIBO_PROPERTY_RUNS ?? 0));
-const SEED = Number(process.env.KIBO_PROPERTY_SEED ?? 20260927);
+function integerFromEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw new Error(`${name} must be a non-negative integer, got "${raw}"`);
+  return value;
+}
+
+const RUNS = Math.max(200, integerFromEnv("KIBO_PROPERTY_RUNS", 0));
+const SEED = integerFromEnv("KIBO_PROPERTY_SEED", 20260927);
 const INITIAL_KEYS = ["KIB-1", "KIB-2"];
 const TOLERATED = new Set<KiboErrorCode>(["TREE_CYCLE", "LINK_CYCLE", "INVALID_INPUT", "NOT_FOUND"]);
 const STATUSES: StatusId[] = ["backlog", "todo", "in_progress", "in_review", "blocked", "done"];
@@ -188,6 +197,11 @@ test("N clients with random edits and partitions converge, with unique and conti
       const ever = [...INITIAL_KEYS, ...net.allocated.map((a) => a.key)];
       expect(ever).toHaveLength(ticketSeq);
       expect(new Set(ever)).toEqual(new Set(Array.from({ length: ticketSeq }, (_, i) => `KIB-${i + 1}`)));
+      const everSet = new Set(ever);
+      expect(live.filter((k) => k === null || !everSet.has(k))).toEqual([]);
+      const keyById = new Map(listTickets(server).map((t) => [t.id, t.key]));
+      const written = net.allocated.filter((a) => keyById.has(a.ticketId));
+      expect(written.map((a) => keyById.get(a.ticketId))).toEqual(written.map((a) => a.key));
     }),
     { numRuns: RUNS, seed: SEED, includeErrorInReport: true },
   );
