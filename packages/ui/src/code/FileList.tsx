@@ -7,6 +7,12 @@ import { fr } from "../i18n/fr";
 
 export type FileSelection = { path: string; area: ChangeArea };
 
+export const pickSelected = (files: FileChange[], selection: FileSelection | null): FileChange | null =>
+  files.find((f) => f.path === selection?.path && f.area === selection.area) ??
+  files.find((f) => f.area === "staged") ??
+  files[0] ??
+  null;
+
 type Props = {
   files: FileChange[];
   selected: FileSelection | null;

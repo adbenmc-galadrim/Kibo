@@ -1,31 +1,32 @@
 import type { CommitInfo, FileChange, FileRef, ProjectSnapshot, Worktree } from "@kibo/schema";
-import { type ReactNode, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
 import { CommitPanel } from "./CommitPanel";
+import { type ChangesSlotsHook, useNoSlots } from "./changes-slots";
 import { DiffColumn } from "./DiffColumn";
 import type { DiffMode } from "./DiffView";
-import { FileList, type FileSelection } from "./FileList";
-import { OperationBanner } from "./OperationBanner";
+import { FileList, type FileSelection, pickSelected } from "./FileList";
+import { ChangesAlerts } from "./OperationBanner";
 import { PushActions } from "./PushActions";
 import { PushPrDialog, type PushPrInput } from "./PushPrDialog";
 import { UnpushedCommits } from "./UnpushedCommits";
 import { useCodeStatus, useCommitDefaults, useCompare, useFileDiff, useRemoteInfo } from "./use-code";
 import { useCommitDraft } from "./use-commit-draft";
+import { usePush } from "./use-push";
 import { resolveWorktree, useWorktrees } from "./use-worktrees";
 import { WorktreePicker } from "./WorktreePicker";
 
-export type ChangesSlots = { commitBanner?: ReactNode; prOptions?: ReactNode; prRuleNote?: string | null };
 type Props = {
   project: ProjectSnapshot;
   worktree: string | null;
   onWorktreeChange(path: string): void;
   onOpenFile(ref: FileRef): void;
-  slots?: ChangesSlots;
+  useSlots?: ChangesSlotsHook;
 };
 
-export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, slots }: Props) {
+export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, useSlots }: Props) {
   const { worktrees, error } = useWorktrees(project.meta.id);
   const current = resolveWorktree(worktrees, worktree) ?? resolveWorktree(worktrees, null);
   if (error?.code === "NOT_A_REPO")
@@ -45,27 +46,18 @@ export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, s
       current={current}
       onWorktreeChange={onWorktreeChange}
       onOpenFile={onOpenFile}
-      slots={slots ?? {}}
+      useSlots={useSlots ?? useNoSlots}
     />
   );
 }
 
-type BodyProps = {
-  project: ProjectSnapshot;
+type BodyProps = Omit<Props, "worktree" | "useSlots"> & {
   worktrees: Worktree[];
   current: Worktree;
-  onWorktreeChange(path: string): void;
-  onOpenFile(ref: FileRef): void;
-  slots: ChangesSlots;
+  useSlots: ChangesSlotsHook;
 };
 
-const pickSelected = (files: FileChange[], selection: FileSelection | null) =>
-  files.find((f) => f.path === selection?.path && f.area === selection.area) ??
-  files.find((f) => f.area === "staged") ??
-  files[0] ??
-  null;
-
-function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile, slots }: BodyProps) {
+function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile, useSlots }: BodyProps) {
   const projectId = project.meta.id;
   const w = { projectId, worktree: current.path };
   const { status, error: statusError, reload } = useCodeStatus(projectId, current.path);
@@ -75,8 +67,6 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [prOpen, setPrOpen] = useState(false);
-  const [pushing, setPushing] = useState(false);
-  const [pushError, setPushError] = useState<string | null>(null);
   const [base, setBase] = useState<string | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const focusMessageOnClose = useRef(false);
@@ -102,6 +92,12 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
   );
   const branch = status?.branch ?? null;
   const remote = useRemoteInfo(projectId, current.path, branch);
+  const { pushing, pushError, push } = usePush(projectId, current.path, {
+    onStart: () => setNotice(null),
+    onPushed: remote.refresh,
+    onSettled: reload,
+  });
+  const slots = useSlots(project, current.path, defaults?.ticketKey ?? null);
   const baseBranch = base ?? remote.remote?.defaultBase ?? null;
   const head = status?.commits[0];
   const canAmend = head !== undefined && !head.pushed;
@@ -154,18 +150,6 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
     await client.code({ method: "undoCommit", ...w, sha: c.sha });
     reload();
   };
-  const push = () => {
-    setPushing(true);
-    setPushError(null);
-    setNotice(null);
-    client
-      .code({ method: "push", ...w })
-      .then(remote.refresh, (e: unknown) => setPushError(errorMessage(e)))
-      .finally(() => {
-        setPushing(false);
-        reload();
-      });
-  };
   const createPr = async (input: PushPrInput) => {
     const pr = await client.code({
       method: "createPr",
@@ -196,19 +180,13 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {status?.operation && (
-        <OperationBanner
-          operation={status.operation}
-          busy={busy}
-          onAbort={() => void run(() => client.code({ method: "abortOperation", ...w }))}
-        />
-      )}
-      {shownError && (
-        <p role="alert" className="border-b px-4 py-2 text-sm text-destructive">
-          {shownError}
-        </p>
-      )}
-      {notice && <output className="block border-b px-4 py-2 text-sm">{notice}</output>}
+      <ChangesAlerts
+        operation={status?.operation ?? null}
+        busy={busy}
+        onAbort={() => void run(() => client.code({ method: "abortOperation", ...w }))}
+        error={shownError}
+        notice={notice}
+      />
       <div className="grid min-h-0 flex-1 grid-cols-[272px_minmax(0,1fr)_340px] grid-rows-1">
         <aside className="flex min-h-0 flex-col gap-3 overflow-auto border-r p-3">
           <WorktreePicker

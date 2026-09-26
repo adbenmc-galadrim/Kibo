@@ -1,5 +1,6 @@
 import type { Domain, FileRef, ProjectSnapshot, ProjectSummary, TabTarget } from "@kibo/schema";
 import { lazy, Suspense } from "react";
+import { useChangesSlots } from "../code/agent-slots";
 import { fr } from "../i18n/fr";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
@@ -46,6 +47,7 @@ export function ContentView(p: Props) {
             worktree={t.worktree}
             onWorktreeChange={(worktree) => p.onOpen({ ...t, worktree })}
             onOpenFile={p.onOpenFile}
+            useSlots={useChangesSlots}
           />
         </Suspense>
       );

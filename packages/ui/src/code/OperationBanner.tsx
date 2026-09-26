@@ -14,3 +14,25 @@ export function OperationBanner({ operation, busy, onAbort }: Props) {
     </div>
   );
 }
+
+type AlertsProps = {
+  operation: GitOperation | null;
+  busy: boolean;
+  onAbort(): void;
+  error: string | null;
+  notice: string | null;
+};
+
+export function ChangesAlerts({ operation, busy, onAbort, error, notice }: AlertsProps) {
+  return (
+    <>
+      {operation && <OperationBanner operation={operation} busy={busy} onAbort={onAbort} />}
+      {error && (
+        <p role="alert" className="border-b px-4 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      {notice && <output className="block border-b px-4 py-2 text-sm">{notice}</output>}
+    </>
+  );
+}
