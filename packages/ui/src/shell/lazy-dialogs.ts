@@ -1,0 +1,40 @@
+import { lazyPanel } from "@kibo/sdk";
+import { fr } from "../i18n/fr";
+
+const hidden = { fallback: "sr-only" } as const;
+
+export const NewProjectDialog = lazyPanel(
+  () => import("../dialogs/NewProjectDialog").then((m) => m.NewProjectDialog),
+  fr.lazy,
+  hidden,
+);
+export const NewPageDialog = lazyPanel(
+  () => import("../dialogs/NewPageDialog").then((m) => m.NewPageDialog),
+  fr.lazy,
+  hidden,
+);
+export const NewTicketDialog = lazyPanel(
+  () => import("../dialogs/NewTicketDialog").then((m) => m.NewTicketDialog),
+  fr.lazy,
+  hidden,
+);
+export const AssignDialog = lazyPanel(
+  () => import("../agents/AssignDialog").then((m) => m.AssignDialog),
+  fr.lazy,
+  hidden,
+);
+export const ProfileSheet = lazyPanel(
+  () => import("../agents/ProfileSheet").then((m) => m.ProfileSheet),
+  fr.lazy,
+  hidden,
+);
+export const TicketSheet = lazyPanel(
+  () => import("./TicketSheet").then((m) => m.TicketSheet),
+  fr.lazy,
+  hidden,
+);
+export const CommandPalette = lazyPanel(
+  () => import("../palette/CommandPalette").then((m) => m.CommandPalette),
+  fr.lazy,
+  hidden,
+);

@@ -1,12 +1,15 @@
 import type { AgentsState, FileRef, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
-import { AssignDialog } from "../agents/AssignDialog";
-import { ProfileSheet } from "../agents/ProfileSheet";
-import { NewPageDialog } from "../dialogs/NewPageDialog";
-import { NewProjectDialog } from "../dialogs/NewProjectDialog";
-import { NewTicketDialog } from "../dialogs/NewTicketDialog";
+import {
+  AssignDialog,
+  NewPageDialog,
+  NewProjectDialog,
+  NewTicketDialog,
+  ProfileSheet,
+  TicketSheet,
+} from "./lazy-dialogs";
 import { FilePreviewSheet } from "./lazy-screens";
-import { TicketSheet } from "./TicketSheet";
+import { useOpened } from "./use-opened";
 
 export type SheetTicket = { projectId: string; ticketId: string };
 
@@ -60,13 +63,16 @@ export function ShellDialogs({
 }: Props) {
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
+  const newProjectOpened = useOpened(state.newProject);
   return (
     <>
-      <NewProjectDialog
-        open={state.newProject}
-        onOpenChange={(o) => set({ newProject: o })}
-        count={projectsCount}
-      />
+      {newProjectOpened && (
+        <NewProjectDialog
+          open={state.newProject}
+          onOpenChange={(o) => set({ newProject: o })}
+          count={projectsCount}
+        />
+      )}
       {project && state.newPageParent !== undefined && (
         <NewPageDialog
           projectId={project.meta.id}

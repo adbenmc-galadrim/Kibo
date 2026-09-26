@@ -10,7 +10,6 @@ import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
 import { countMine, myTickets } from "../mine/my-tickets";
-import { CommandPalette } from "../palette/CommandPalette";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
@@ -28,6 +27,7 @@ import { AppSidebar } from "./AppSidebar";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
+import { CommandPalette } from "./lazy-dialogs";
 import { NotifyButton } from "./NotifyButton";
 import { PageActionsProvider, PageActionsSlot } from "./page-actions";
 import { ScreenActions } from "./ScreenActions";
@@ -35,6 +35,7 @@ import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { UserAvatar } from "./UserAvatar";
 import { useOpenView } from "./use-open-view";
+import { useOpened } from "./use-opened";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
@@ -83,6 +84,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const now = useNow();
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
   const [palette, setPalette] = useState<{ newTab: boolean } | null>(null);
+  const paletteOpened = useOpened(palette !== null);
   const [dialogs, setDialogs] = useState<DialogsState>(NO_DIALOG);
   const [focusRun, setFocusRun] = useState<string | null>(null);
   const editRequests = useRef(new Set<string>());
@@ -292,15 +294,17 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               onOpenFileTab={openFileTab}
             />
             {views.dialog}
-            <CommandPalette
-              open={palette !== null}
-              onOpenChange={(o) => !o && setPalette(null)}
-              newTab={palette?.newTab ?? false}
-              context={paletteContext}
-              onOpenTarget={go}
-              onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
-              onAction={onAction}
-            />
+            {paletteOpened && (
+              <CommandPalette
+                open={palette !== null}
+                onOpenChange={(o) => !o && setPalette(null)}
+                newTab={palette?.newTab ?? false}
+                context={paletteContext}
+                onOpenTarget={go}
+                onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+                onAction={onAction}
+              />
+            )}
           </SidebarProvider>
         </div>
       </PageActionsProvider>
