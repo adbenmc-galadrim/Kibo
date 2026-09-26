@@ -43,6 +43,7 @@ export const frAi = {
     optional: "Facultatif",
     usagePlaceholder: "Ex. : je suis freelance et je suis trois clients en parallèle",
     suggest: "Proposer avec Claude",
+    viaSubscription: "Via ton abonnement · passe par la file d'attente",
     suggesting: "Claude prépare une proposition…",
     queued: "En file d'attente",
     cancelSuggestion: "Annuler",

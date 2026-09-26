@@ -80,30 +80,32 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          {text.trim().length > 0 &&
-            (block ? (
-              <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  type="button"
-                  variant="agent"
-                  size="sm"
-                  disabled={waiting}
-                  onClick={() => suggest(role, text.trim())}
-                >
-                  <Sparkles aria-hidden /> {waiting ? fr.onboarding.suggesting : fr.onboarding.suggest}
+          {text.trim().length > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="agent"
+                size="sm"
+                disabled={waiting || block !== null}
+                onClick={() => suggest(role, text.trim())}
+              >
+                <Sparkles aria-hidden /> {waiting ? fr.onboarding.suggesting : fr.onboarding.suggest}
+              </Button>
+              {!waiting && (
+                <span className="text-xs text-muted-foreground">
+                  {block ? fr.ai.blocked[block] : fr.onboarding.viaSubscription}
+                </span>
+              )}
+              {waiting && state.queued && (
+                <span className="text-xs text-muted-foreground">{fr.onboarding.queued}</span>
+              )}
+              {waiting && (
+                <Button type="button" variant="ghost" size="sm" onClick={cancel}>
+                  {fr.onboarding.cancelSuggestion}
                 </Button>
-                {waiting && state.queued && (
-                  <span className="text-xs text-muted-foreground">{fr.onboarding.queued}</span>
-                )}
-                {waiting && (
-                  <Button type="button" variant="ghost" size="sm" onClick={cancel}>
-                    {fr.onboarding.cancelSuggestion}
-                  </Button>
-                )}
-              </div>
-            ))}
+              )}
+            </div>
+          )}
         </div>
       )}
       <div className="grid gap-2">

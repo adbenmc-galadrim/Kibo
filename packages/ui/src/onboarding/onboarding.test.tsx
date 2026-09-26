@@ -231,14 +231,27 @@ test("a refused suggestion means unavailable", async () => {
   expect(await screen.findByText("Suggestion indisponible, voici le point de départ standard")).toBeTruthy();
 });
 
-test("offline: no Claude button, the reason instead", async () => {
+test("offline: the Claude button is disabled with the reason", async () => {
   Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
   render(<Harness />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("radio", { name: "Autre" }));
   await user.type(screen.getByLabelText("Décris ton usage en une phrase"), "x");
-  expect(screen.queryByRole("button", { name: "Proposer avec Claude" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Proposer avec Claude" }).hasAttribute("disabled")).toBe(true);
   expect(screen.getByText("Hors ligne")).toBeTruthy();
+  expect(screen.queryByText("Via ton abonnement · passe par la file d'attente")).toBeNull();
+});
+
+test("the Claude button says it runs on the subscription, through the queue", async () => {
+  answer = (req) => (req.method === "suggestStarter" ? { runId: "run-9" } : null);
+  render(<Harness />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Autre" }));
+  await user.type(screen.getByLabelText("Décris ton usage en une phrase"), "x");
+  expect(await screen.findByText("Via ton abonnement · passe par la file d'attente")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Proposer avec Claude" }));
+  await screen.findByRole("button", { name: "Annuler" });
+  expect(screen.queryByText("Via ton abonnement · passe par la file d'attente")).toBeNull();
 });
 
 test("NewProjectDialog creates the project then the checked pages", async () => {
