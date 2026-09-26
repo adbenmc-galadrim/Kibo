@@ -74,7 +74,7 @@ const basePreview: PublishPreview = {
   status: "update",
   usages: [{ ...dashboard, version: "0.3.0" }],
   changes: ["Filtre par auteur de la PR"],
-  newPermissions: ["net:api.github.com/graphql"],
+  newPermissions: ["net:api.github.com/graphql", "secret:github@api.github.com", "mcp:ctx"],
   migration: { from: 0, to: 1 },
   validation: {
     manifest: { ok: true, errors: [] },
@@ -135,6 +135,8 @@ test("publishing: usages, changes, strategy, then the report", async () => {
   expect(screen.getByText("Utilisé dans 1 projet")).toBeTruthy();
   expect(screen.getByText("Filtre par auteur de la PR")).toBeTruthy();
   expect(screen.getByText("Permission net:api.github.com/graphql")).toBeTruthy();
+  expect(screen.getByText("Utiliser ton compte GitHub (api.github.com)")).toBeTruthy();
+  expect(screen.getByText("Appeler le serveur MCP ctx")).toBeTruthy();
   expect(screen.getByText("Migration de config v0 → v1 (automatique)")).toBeTruthy();
   expect(screen.getByRole("radio", { name: /Mettre à jour partout/ }).getAttribute("data-state")).toBe(
     "checked",

@@ -3,6 +3,7 @@ import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { ChevronRight } from "lucide-react";
 import { useId } from "react";
 import { fr } from "../i18n/fr";
+import { permissionLabel } from "../lib/permission-lines";
 
 export type Strategy = "update-all" | "new-version";
 
@@ -83,7 +84,12 @@ export function ChangesList({ preview }: { preview: PublishPreview }) {
           <Change key={c} mark="+" tone="text-green-600 dark:text-green-400" text={c} />
         ))}
         {preview.newPermissions.map((perm) => (
-          <Change key={perm} mark="+" tone="text-orange-600 dark:text-orange-400" text={p.permission(perm)} />
+          <Change
+            key={perm}
+            mark="+"
+            tone="text-orange-600 dark:text-orange-400"
+            text={permissionLabel(perm)}
+          />
         ))}
         {migration && (
           <Change

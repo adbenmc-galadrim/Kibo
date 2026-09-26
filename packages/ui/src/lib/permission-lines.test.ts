@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { NO_PERMISSIONS } from "@kibo/schema";
-import { permissionLines } from "./permission-lines";
+import { permissionLabel, permissionLines } from "./permission-lines";
 
 const titles = (g: Parameters<typeof permissionLines>[0]) =>
   permissionLines(g).map((l) => [l.title, l.detail ?? null]);
@@ -34,4 +34,60 @@ test("writes, notes and network are spelled out", () => {
     null,
   ]);
   expect(titles({ ...NO_PERMISSIONS, reads: ["note"] }).at(-1)).toEqual(["Aucun accès réseau", null]);
+});
+
+test("secrets and mcp rules read in plain French", () => {
+  expect(
+    titles({
+      ...NO_PERMISSIONS,
+      net: ["api.github.com"],
+      secrets: [{ name: "github", hosts: ["api.github.com"] }],
+      mcp: ["context7", "context7/get-library-docs", "{config.server}"],
+    }).slice(1, -1),
+  ).toEqual([
+    ["Utiliser ton compte GitHub (api.github.com)", null],
+    ["Appeler le serveur MCP context7", null],
+    ["Appeler l'outil get-library-docs du serveur MCP context7", null],
+    ["Appeler le serveur MCP choisi à l'ajout", null],
+  ]);
+});
+
+test("an mcp server may reach the network, so network absence is never claimed", () => {
+  expect(titles({ ...NO_PERMISSIONS, mcp: ["ctx"] })).toEqual([
+    ["Appeler le serveur MCP ctx", null],
+    ["Aucun fichier local", null],
+  ]);
+  expect(titles({ ...NO_PERMISSIONS, reads: ["note"], mcp: ["ctx"] }).at(-1)).toEqual([
+    "Appeler le serveur MCP ctx",
+    null,
+  ]);
+});
+
+test("each secret lists every host it is sent to", () => {
+  expect(
+    titles({
+      ...NO_PERMISSIONS,
+      net: ["api.github.com", "uploads.github.com", "api.linear.app"],
+      secrets: [
+        { name: "github", hosts: ["api.github.com", "uploads.github.com"] },
+        { name: "mcp:linear:API_KEY", hosts: ["api.linear.app"] },
+      ],
+    }).slice(1, 3),
+  ).toEqual([
+    ["Utiliser ton compte GitHub (api.github.com, uploads.github.com)", null],
+    ["Utiliser le secret mcp:linear:API_KEY (api.linear.app)", null],
+  ]);
+});
+
+test("new permission entries of a version read in plain French", () => {
+  expect(permissionLabel("secret:github@api.github.com")).toBe("Utiliser ton compte GitHub (api.github.com)");
+  expect(permissionLabel("secret:mcp:linear:API_KEY@api.linear.app")).toBe(
+    "Utiliser le secret mcp:linear:API_KEY (api.linear.app)",
+  );
+  expect(permissionLabel("mcp:ctx")).toBe("Appeler le serveur MCP ctx");
+  expect(permissionLabel("mcp:ctx/echo")).toBe("Appeler l'outil echo du serveur MCP ctx");
+  expect(permissionLabel("mcp:{config.server}")).toBe("Appeler le serveur MCP choisi à l'ajout");
+  expect(permissionLabel("net:api.github.com/graphql")).toBe("Permission net:api.github.com/graphql");
+  expect(permissionLabel("secret:broken")).toBe("Permission secret:broken");
+  expect(permissionLabel("secret:github@")).toBe("Permission secret:github@");
 });

@@ -134,6 +134,22 @@ describe("validateComponent", () => {
       errors: ["identifiant réservé à un composant intégré : kanban"],
     });
     expect(report.tests.passed + report.tests.failed).toBe(0);
+    writeFileSync(
+      join(dir, "kibo.component.json"),
+      JSON.stringify({
+        id: "hello",
+        version: "0.1.0",
+        kind: "widget",
+        title: "H",
+        reads: [],
+        writes: [],
+        mcp: ["{config.server}"],
+      }),
+    );
+    expect((await validateComponent(dir, opts)).manifest).toEqual({
+      ok: false,
+      errors: ["{config.server} est réservé aux composants intégrés"],
+    });
     writeFileSync(join(dir, "kibo.component.json"), "{");
     expect((await validateComponent(dir, opts)).manifest.ok).toBe(false);
   }, 120_000);

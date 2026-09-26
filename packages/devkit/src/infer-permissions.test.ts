@@ -64,6 +64,37 @@ test("a non literal argument is an issue, not a guess", () => {
   ]);
 });
 
+test("mcp calls and ci runs give their permissions", () => {
+  const { used, issues } = infer(`
+    const sdk = useSdk();
+    await sdk.mcp.call("context7", "get-library-docs", { id: "react" });
+    await sdk.mcp.read("fs", "file:///a");
+    await useSdk().mcp.importItem("tracker", { itemId: "1", title: "A", url: null });
+    await sdk.list("ci_run");
+    sdk.mcp.unknown("x");
+  `);
+  expect(issues).toEqual([]);
+  expect(used.sort()).toEqual(
+    ["mcp:context7/get-library-docs", "mcp:fs", "mcp:tracker", "write:ticket", "read:ci_run"].sort(),
+  );
+});
+
+test("a non literal mcp server or tool is an issue", () => {
+  const { used, issues } = infer(`
+    await sdk.mcp.call(server, "echo");
+    await sdk.mcp.call("ctx", tool);
+    await sdk.mcp.read(server, "x");
+    await sdk.mcp.importItem(server, item);
+  `);
+  expect(used).toEqual(["write:ticket"]);
+  expect(issues.map((i) => [i.code, i.line])).toEqual([
+    ["non-literal-argument", 2],
+    ["non-literal-argument", 3],
+    ["non-literal-argument", 4],
+    ["non-literal-argument", 5],
+  ]);
+});
+
 test("reserved commands and unknown entities are issues", () => {
   const { issues } = infer(`
     await sdk.run({ method: "addInstance", pageId: "p", component: "x@1.0.0" });

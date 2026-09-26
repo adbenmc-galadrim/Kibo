@@ -2,6 +2,7 @@ import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
+  CONFIG_SERVER_RULE,
   ComponentManifest,
   diffPermissions,
   grantedOf,
@@ -72,6 +73,7 @@ async function readManifest(dir: string): Promise<ComponentManifest | string[]> 
   const parsed = ComponentManifest.safeParse(raw);
   if (!parsed.success) return parsed.error.issues.map((i) => `${i.path.join(".")} : ${i.message}`);
   if (isBuiltinId(parsed.data.id)) return [FR_DEVKIT.reservedId(parsed.data.id)];
+  if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];
   return parsed.data;
 }
 

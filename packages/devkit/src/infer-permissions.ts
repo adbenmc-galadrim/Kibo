@@ -14,6 +14,7 @@ type SourceText = { path: string; text: string };
 const RECEIVERS = new Set(["sdk", "ctx"]);
 const NOTE_READS = new Set(["read", "search", "info"]);
 const NOTE_WRITES = new Set(["write", "rename", "remove"]);
+const MCP_METHODS = new Set(["call", "read", "importItem"]);
 const isTest = (path: string) => /\.test\.tsx?$/.test(path);
 const isCommandMethod = (method: string): method is ProjectCommand["method"] =>
   Object.hasOwn(COMMAND_WRITES, method);
@@ -68,6 +69,16 @@ function inferFile(ts: TypeScript, file: SourceText, used: Set<string>, issues: 
     if (url === null) return nonLiteral(call);
     used.add(`net:${url}`);
   };
+  const mcp = (call: TS.CallExpression, method: string | undefined) => {
+    if (!method || !MCP_METHODS.has(method)) return;
+    if (method === "importItem") used.add("write:ticket");
+    const server = literal(ts, call.arguments[0]);
+    if (server === null) return nonLiteral(call);
+    if (method !== "call") return void used.add(`mcp:${server}`);
+    const tool = literal(ts, call.arguments[1]);
+    if (tool === null) return nonLiteral(call);
+    used.add(`mcp:${server}/${tool}`);
+  };
   const sdkCall = (call: TS.CallExpression, path: string[]) => {
     const [, first, second] = path;
     if (path.length === 2 && first === "list") entity(call, "read");
@@ -78,6 +89,7 @@ function inferFile(ts: TypeScript, file: SourceText, used: Set<string>, issues: 
       used.add("read:note");
     else if (path.length === 3 && first === "notes" && second && NOTE_WRITES.has(second))
       used.add("write:note");
+    else if (path.length === 3 && first === "mcp") mcp(call, second);
   };
   const visit = (node: TS.Node): void => {
     if (ts.isCallExpression(node)) {
