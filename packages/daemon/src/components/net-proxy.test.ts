@@ -16,25 +16,32 @@ const server = Bun.serve({
     if (url.pathname === "/see-other") return Response.redirect("https://api.kibo.dev/echo", 303);
     if (url.pathname.startsWith("/v1/loop")) return Response.redirect("https://api.kibo.dev/v1/loop", 302);
     if (url.pathname === "/v1/echo") return Response.json({ ok: true });
+    if (url.pathname === "/redirect-http") return Response.redirect("http://api.kibo.dev/echo", 302);
+    if (url.pathname === "/redirect-file") {
+      return new Response(null, { status: 302, headers: { location: "file:///etc/passwd" } });
+    }
     if (url.pathname === "/big") return new Response("x".repeat(2_000));
+    if (url.pathname === "/accents")
+      return new Response("é".repeat(100), { headers: { "content-type": "text/plain" } });
     if (url.pathname === "/bin")
       return new Response(new Uint8Array([0, 1, 2]), { headers: { "content-type": "image/png" } });
     if (url.pathname === "/cookie")
-      return new Response("ok", { headers: { "set-cookie": "s=1", "x-ok": "1" } });
+      return new Response("ok", { headers: { "set-cookie": "s=1", "x-ok": "1", "x-kibo-base64": "1" } });
     if (url.pathname === "/slow") return new Promise(() => undefined);
     return new Response("nope", { status: 404 });
   },
 });
 afterAll(() => server.stop(true));
 
-type Sent = { url: string; host: string | null; serverName: unknown };
+type Sent = { url: string; host: string | null; serverName: unknown; headers: Headers };
 const sent: Sent[] = [];
 const transport = ((
   input: string | URL | Request,
   init?: RequestInit & { tls?: { serverName?: string } },
 ) => {
   const u = new URL(String(input));
-  sent.push({ url: u.href, host: new Headers(init?.headers).get("host"), serverName: init?.tls?.serverName });
+  const headers = new Headers(init?.headers);
+  sent.push({ url: u.href, host: headers.get("host"), serverName: init?.tls?.serverName, headers });
   return fetch(`http://127.0.0.1:${server.port}${u.pathname}${u.search}`, init);
 }) as typeof fetch;
 const opts = { resolve: async () => ["203.0.113.10"], transport };
@@ -66,7 +73,7 @@ describe("proxyFetch", () => {
       ...opts,
       resolve: async () => ["2606:4700::1"],
     });
-    expect(sent).toEqual([
+    expect(sent.map(({ headers, ...rest }) => rest)).toEqual([
       { url: "https://203.0.113.10/echo?q=1", host: "api.kibo.dev", serverName: "api.kibo.dev" },
       { url: "https://[2606:4700::1]/echo", host: "api.kibo.dev", serverName: "api.kibo.dev" },
     ]);
@@ -127,6 +134,41 @@ describe("proxyFetch", () => {
       proxyFetch(["api.kibo.dev"], "https://api.kibo.dev/redirect-in", GET, flipping),
     ).rejects.toThrow("PERMISSION_DENIED");
   });
+  test("hop-by-hop and framing headers are removed", async () => {
+    const hopByHop = {
+      connection: "x-ok",
+      "keep-alive": "timeout=5",
+      te: "trailers",
+      trailer: "x-t",
+      "transfer-encoding": "chunked",
+      upgrade: "websocket",
+      "content-length": "999",
+      expect: "100-continue",
+      "x-ok": "1",
+    };
+    sent.length = 0;
+    const res = await proxyFetch(
+      null,
+      "https://api.kibo.dev/echo",
+      { method: "GET", headers: hopByHop },
+      opts,
+    );
+    const received: Record<string, string> = JSON.parse(res.body).headers;
+    expect(received["x-ok"]).toBe("1");
+    const forwarded = [...(sent[0]?.headers.keys() ?? [])];
+    expect(forwarded.sort()).toEqual(["host", "x-ok"]);
+    for (const [name, value] of Object.entries(hopByHop).filter(([n]) => n !== "x-ok")) {
+      expect({ name, value: received[name] }).not.toEqual({ name, value });
+    }
+  });
+  test("redirects to http: or file: are refused", async () => {
+    await expect(proxyFetch(null, "https://api.kibo.dev/redirect-http", GET, opts)).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    await expect(proxyFetch(null, "https://api.kibo.dev/redirect-file", GET, opts)).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+  });
   test("request headers follow a redirect only on the same origin", async () => {
     const init = { method: "GET" as const, headers: { "x-api-key": "k" } };
     const same = JSON.parse((await proxyFetch(null, "https://api.kibo.dev/redirect-same", init, opts)).body);
@@ -139,16 +181,25 @@ describe("proxyFetch", () => {
     const seeOther = JSON.parse((await proxyFetch(null, "https://api.kibo.dev/see-other", post, opts)).body);
     expect(seeOther.method).toBe("GET");
   });
-  test("large bodies are truncated, binary bodies are base64, cookies are dropped", async () => {
+  test("large bodies are truncated and flagged, binary bodies are base64, cookies are dropped", async () => {
     expect(
       (await proxyFetch(null, "https://api.kibo.dev/big", GET, { ...opts, maxBytes: 100 })).body,
     ).toHaveLength(100);
+    const truncated = await proxyFetch(null, "https://api.kibo.dev/big", GET, { ...opts, maxBytes: 100 });
+    expect(truncated.headers["x-kibo-truncated"]).toBe("1");
+    const exact = await proxyFetch(null, "https://api.kibo.dev/big", GET, { ...opts, maxBytes: 2_000 });
+    expect(exact.body).toHaveLength(2_000);
+    expect(exact.headers["x-kibo-truncated"]).toBeUndefined();
+    const accents = await proxyFetch(null, "https://api.kibo.dev/accents", GET, { ...opts, maxBytes: 101 });
+    expect(accents.body).toBe("é".repeat(50));
+    expect(accents.headers["x-kibo-truncated"]).toBe("1");
     const bin = await proxyFetch(null, "https://api.kibo.dev/bin", GET, opts);
     expect(bin.headers["x-kibo-base64"]).toBe("1");
     expect(bin.body).toBe("AAEC");
     const cookie = await proxyFetch(null, "https://api.kibo.dev/cookie", GET, opts);
     expect(cookie.headers["set-cookie"]).toBeUndefined();
     expect(cookie.headers["x-ok"]).toBe("1");
+    expect(cookie.headers["x-kibo-base64"]).toBeUndefined();
   });
   test("a slow server or a slow resolver times out", async () => {
     await expect(
