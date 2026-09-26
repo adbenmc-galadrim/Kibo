@@ -1,5 +1,6 @@
 import type { TabTarget } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
+import { cn } from "@kibo/sdk/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -9,10 +10,12 @@ import {
   CommandList,
 } from "@kibo/sdk/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@kibo/sdk/ui/dialog";
-import { FileText, FolderKanban, GitCommitHorizontal, Plus, SunMoon, Ticket } from "lucide-react";
+import { Bell, Bot, FileText, FolderKanban, GitCommitHorizontal, Plus, SunMoon, Ticket } from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { agentItems } from "./agent-items";
 import {
+  activeTicket,
   buildItems,
   FILTERS,
   type PaletteAction,
@@ -39,6 +42,11 @@ const ICONS = {
   changes: GitCommitHorizontal,
   new: Plus,
   theme: SunMoon,
+  reply: Bell,
+  assign: Bot,
+};
+const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
+  reply: "text-orange-600 dark:text-orange-400",
 };
 const FILTER_LABEL: Record<PaletteFilter, string> = {
   all: fr.palette.all,
@@ -46,6 +54,7 @@ const FILTER_LABEL: Record<PaletteFilter, string> = {
   pages: fr.palette.pages,
   projects: fr.palette.projects,
   actions: fr.palette.actions,
+  agents: fr.palette.agents,
 };
 
 function Kbd({ children }: { children: string }) {
@@ -65,7 +74,7 @@ function Row({ item }: { item: PaletteItem }) {
       ) : item.color ? (
         <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: item.color }} />
       ) : (
-        <Icon aria-hidden className="size-4" />
+        <Icon aria-hidden className={cn("size-4", ICON_CLASS[item.icon])} />
       )}
       <span className="truncate">{item.label}</span>
       {item.detail && <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>}
@@ -85,7 +94,10 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PaletteFilter>("all");
   const [value, setValue] = useState("");
-  const items = useMemo(() => buildItems(context), [context]);
+  const items = useMemo(
+    () => [...buildItems(context), ...agentItems(context.agents?.runs ?? [], activeTicket(context))],
+    [context],
+  );
   const sections = useMemo(() => searchItems(items, query, filter), [items, query, filter]);
   const byId = useMemo(() => new Map(sections.flatMap((s) => s.items).map((i) => [i.id, i])), [sections]);
 

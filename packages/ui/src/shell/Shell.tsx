@@ -122,6 +122,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const onAction = (a: PaletteAction) => {
     if (a.kind === "newProject") return set({ newProject: true });
     if (a.kind === "toggleTheme") return void cycleTheme();
+    if (a.kind === "reply") return setFocusRun(a.runId);
+    if (a.kind === "assign") return set({ assign: { ticketId: a.ticketId } });
     if (a.projectId !== activeProjectId) go({ kind: "project", projectId: a.projectId });
     if (a.kind === "newPage") set({ newPageParent: null });
     if (a.kind === "newTicket") set({ newTicket: { parentId: a.parentId } });
@@ -156,8 +158,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const recents = tabs.state.recents;
   const activeTicketId = active?.kind === "ticket" ? active.ticketId : (dialogs.sheet?.ticketId ?? null);
   const paletteContext = useMemo<PaletteContext>(
-    () => ({ projects, snapshots, recents, activeProjectId, activeTicketId }),
-    [projects, snapshots, recents, activeProjectId, activeTicketId],
+    () => ({ projects, snapshots, recents, activeProjectId, activeTicketId, agents }),
+    [projects, snapshots, recents, activeProjectId, activeTicketId, agents],
   );
 
   return (

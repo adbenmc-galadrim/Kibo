@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { EMPTY_TABS, type RpcRequest } from "@kibo/schema";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   agentsFixture,
@@ -127,6 +127,17 @@ test("answering from the queue opens the drawer on that run", async () => {
   await go("#/agents/queue");
   const waiting = within(await screen.findByRole("region", { name: "En attente de réponse" }));
   await userEvent.setup().click(waiting.getByRole("button", { name: "Répondre à opus-dev-2" }));
+  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+});
+
+test("answering from the palette opens the drawer on that run", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/p/kibo/");
+  const user = userEvent.setup();
+  fireEvent.keyDown(window, { key: "k", metaKey: true });
+  fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+  const palette = await screen.findByRole("dialog", { name: "Palette de commandes" });
+  await user.click(within(palette).getByRole("option", { name: "Répondre à opus-dev-2 (KIB-14)" }));
   expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
 });
 

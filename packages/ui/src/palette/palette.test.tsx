@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProjectSnapshot, type ProjectSummary, type TicketView } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { agentsFixture, runFixture } from "../agents/fixtures";
 import { CommandPalette } from "./CommandPalette";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 
@@ -51,6 +52,28 @@ const context: PaletteContext = {
   recents: [{ kind: "page", projectId: "p1", pageId: "1@9" }],
   activeProjectId: "p1",
   activeTicketId: "12@1",
+  agents: {
+    ...agentsFixture(),
+    runs: [
+      runFixture({
+        id: "r14",
+        projectId: "p1",
+        ticketId: "14@1",
+        ticketKey: "KIB-14",
+        label: "opus-dev-2",
+        state: "waiting_input",
+      }),
+      runFixture({
+        id: "r18",
+        projectId: "p1",
+        ticketId: "18@1",
+        ticketKey: "KIB-18",
+        label: "opus-dev",
+        state: "queued",
+      }),
+    ],
+    queue: [{ runId: "r18", position: 2, reason: null }],
+  },
 };
 
 test("tickets are capped at four with a summary of the others", () => {
@@ -63,6 +86,8 @@ test("tickets are capped at four with a summary of the others", () => {
     "KIB-18 · Adaptateur GitHub Issues",
   ]);
   expect(tickets?.more).toEqual(["KIB-10", "KIB-11"]);
+  expect(tickets?.items[3]?.detail).toBe("En file #2");
+  expect(tickets?.items[0]?.detail).toBe("En cours");
 });
 
 test("search ignores accents, the filter narrows groups and lifts the cap", () => {
@@ -77,9 +102,9 @@ test("search ignores accents, the filter narrows groups and lifts the cap", () =
 
 test("an empty query shows recents, projects and contextual actions", () => {
   const sections = searchItems(buildItems(context), "", "all");
-  expect(sections.map((s) => s.group)).toEqual(["recents", "projects", "actions"]);
+  expect(sections.map((s) => s.group)).toEqual(["recents", "actions", "projects"]);
   expect(sections[0]?.items[0]?.label).toBe("Kibo · Kanban");
-  expect(sections[2]?.items.map((i) => i.label)).toEqual([
+  expect(sections[1]?.items.map((i) => i.label)).toEqual([
     "Nouveau ticket",
     "Créer un sous-ticket de KIB-12",
     "Nouvelle page",
@@ -114,4 +139,36 @@ test("Enter opens a target, ⌘Enter opens the ticket sheet, Tab cycles the filt
   await userEvent.clear(input);
   await userEvent.keyboard("{Tab}");
   expect(within(dialog).getByText("Tickets", { selector: "[data-filter]" })).toBeTruthy();
+});
+
+test("the agents group answers a waiting run and assigns the active ticket, Tab reaches it", async () => {
+  const actions: unknown[] = [];
+  render(
+    <CommandPalette
+      open
+      onOpenChange={() => {}}
+      newTab={false}
+      context={context}
+      onOpenTarget={() => {}}
+      onOpenTicketSheet={() => {}}
+      onAction={(a) => actions.push(a)}
+    />,
+  );
+  const dialog = screen.getByRole("dialog", { name: "Palette de commandes" });
+  const agents = within(dialog).getByRole("group", { name: "Agents" });
+  expect(
+    within(agents)
+      .getAllByRole("option")
+      .map((o) => o.textContent),
+  ).toEqual(["Répondre à opus-dev-2 (KIB-14)", "Assigner KIB-12 à un agent…"]);
+  await userEvent.click(within(agents).getByRole("option", { name: "Répondre à opus-dev-2 (KIB-14)" }));
+  await userEvent.click(within(agents).getByRole("option", { name: "Assigner KIB-12 à un agent…" }));
+  expect(actions).toEqual([
+    { kind: "reply", runId: "r14" },
+    { kind: "assign", projectId: "p1", ticketId: "12@1" },
+  ]);
+  const input = within(dialog).getByRole("combobox");
+  await userEvent.click(input);
+  for (let i = 0; i < 5; i++) await userEvent.keyboard("{Tab}");
+  expect(within(dialog).getByText("Agents", { selector: "[data-filter]" })).toBeTruthy();
 });

@@ -1,15 +1,17 @@
-import type { ProjectSnapshot, ProjectSummary, StatusId, TabTarget } from "@kibo/schema";
+import type { AgentsState, ProjectSnapshot, ProjectSummary, StatusId, TabTarget } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 
-export type PaletteGroup = "recents" | "tickets" | "pages" | "projects" | "actions";
-export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions";
-export const FILTERS: PaletteFilter[] = ["all", "tickets", "pages", "projects", "actions"];
+export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
+export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions" | "agents";
+export const FILTERS: PaletteFilter[] = ["all", "tickets", "pages", "projects", "actions", "agents"];
 
 export type PaletteAction =
   | { kind: "newTicket"; projectId: string; parentId: string | null }
   | { kind: "newPage"; projectId: string }
   | { kind: "newProject" }
-  | { kind: "toggleTheme" };
+  | { kind: "toggleTheme" }
+  | { kind: "reply"; runId: string }
+  | { kind: "assign"; projectId: string; ticketId: string };
 
 export type PaletteItem = {
   id: string;
@@ -19,7 +21,7 @@ export type PaletteItem = {
   detail: string | null;
   statusId: StatusId | null;
   color: string | null;
-  icon: "ticket" | "page" | "project" | "changes" | "new" | "theme";
+  icon: "ticket" | "page" | "project" | "changes" | "new" | "theme" | "reply" | "assign";
   run: { kind: "target"; target: TabTarget } | { kind: "action"; action: PaletteAction };
   ticket: { projectId: string; ticketId: string; key: string } | null;
 };
@@ -30,6 +32,7 @@ export type PaletteContext = {
   recents: TabTarget[];
   activeProjectId: string | null;
   activeTicketId: string | null;
+  agents: AgentsState | null;
 };
 
 const TICKET_CAP = 4;
@@ -43,8 +46,26 @@ export const normalize = (s: string): string =>
 
 const base = { detail: null, statusId: null, color: null, ticket: null };
 
+function queuePositions(agents: AgentsState | null): Map<string, number> {
+  const runs = new Map((agents?.runs ?? []).map((r) => [r.id, r]));
+  const positions = new Map<string, number>();
+  for (const entry of agents?.queue ?? []) {
+    const run = runs.get(entry.runId);
+    const key = run?.ticketId ? `${run.projectId}:${run.ticketId}` : null;
+    if (key && !positions.has(key)) positions.set(key, entry.position);
+  }
+  return positions;
+}
+
+export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
+  if (!ctx.activeProjectId || !ctx.activeTicketId) return null;
+  const t = ctx.snapshots.get(ctx.activeProjectId)?.tickets.find((x) => x.id === ctx.activeTicketId);
+  return t ? { projectId: ctx.activeProjectId, ticketId: t.id, key: t.key } : null;
+}
+
 function targets(ctx: PaletteContext): PaletteItem[] {
   const out: PaletteItem[] = [];
+  const queued = queuePositions(ctx.agents);
   for (const project of ctx.projects) {
     const snapshot = ctx.snapshots.get(project.id);
     out.push({
@@ -69,13 +90,17 @@ function targets(ctx: PaletteContext): PaletteItem[] {
       });
     }
     for (const t of snapshot?.tickets ?? []) {
+      const position = queued.get(`${project.id}:${t.id}`);
       out.push({
         ...base,
         id: `ticket:${project.id}:${t.id}`,
         group: "tickets",
         label: `${t.key} · ${t.title}`,
         keywords: normalize(`${t.key} ${t.title} ${project.name}`),
-        detail: snapshot?.workflow.find((s) => s.id === t.statusId)?.label ?? null,
+        detail:
+          position !== undefined
+            ? fr.agents.position(position)
+            : (snapshot?.workflow.find((s) => s.id === t.statusId)?.label ?? null),
         statusId: t.statusId,
         icon: "ticket",
         run: { kind: "target", target: { kind: "ticket", projectId: project.id, ticketId: t.id } },
@@ -155,7 +180,7 @@ export function buildItems(ctx: PaletteContext): PaletteItem[] {
   return [...recents, ...all];
 }
 
-const ORDER: PaletteGroup[] = ["recents", "tickets", "pages", "projects", "actions"];
+const ORDER: PaletteGroup[] = ["recents", "tickets", "actions", "agents", "pages", "projects"];
 
 export function searchItems(items: PaletteItem[], query: string, filter: PaletteFilter): PaletteSection[] {
   const tokens = normalize(query).split(/\s+/).filter(Boolean);
