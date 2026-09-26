@@ -17009,7 +17009,7 @@ Vérifié en T0 :
   ```
 - Conflits de fichiers : T26 et T28 ajoutent aussi des écrans de Paramètres (`tabs.ts`, `screens.ts`, `target-hash.ts`, `lazy-screens.ts`, `ScreenView.tsx`, `SettingsNav.tsx`, `AppSidebar.tsx`) : ajouts d'une ligne par liste, conflits triviaux au rebase ; `useRpcQuery` est créé ici et réutilisé par T26 à T28.
 
-- [ ] **Step 1: Textes de l'interface**
+- [x] **Step 1: Textes de l'interface**
 
 `packages/ui/src/i18n/fr-security.ts` :
 ```ts
@@ -17107,7 +17107,7 @@ Dans `packages/ui/src/i18n/fr.ts` : `import { frSecurity } from "./fr-security";
 ```
 (La clé `pairing.token` disparaît : `bun run typecheck` signale tout autre usage, il n'y en a pas en v0.6.)
 
-- [ ] **Step 2: Écrire les tests des helpers et de l'écran 31**
+- [x] **Step 2: Écrire les tests des helpers et de l'écran 31**
 
 `packages/ui/src/lib/pairing-code.test.ts` :
 ```ts
@@ -17187,7 +17187,7 @@ test("the submit button waits for six characters", async () => {
 Run: `bun test packages/ui/src/lib/pairing-code.test.ts packages/ui/src/shell/pairing-screen.test.tsx`
 Expected: FAIL (`./pairing-code` introuvable ; l'écran n'a qu'un champ).
 
-- [ ] **Step 3: Implémenter les helpers et l'écran 31**
+- [x] **Step 3: Implémenter les helpers et l'écran 31**
 
 `packages/ui/src/lib/pairing-code.ts` :
 ```ts
@@ -17315,12 +17315,12 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
 ```
 `userEvent.type` sur la première case dispatche chaque caractère dans l'élément focalisé : `fill` déplace le focus, donc la saisie continue dans la case suivante (c'est ce que vérifie le premier test).
 
-- [ ] **Step 4: Lancer les tests**
+- [x] **Step 4: Lancer les tests**
 
 Run: `bun test packages/ui/src/lib/pairing-code.test.ts packages/ui/src/shell/pairing-screen.test.tsx`
 Expected: PASS (6 tests).
 
-- [ ] **Step 5: Aligner l'attente de l'écran 31 existante**
+- [x] **Step 5: Aligner l'attente de l'écran 31 existante**
 
 Dans `packages/ui/src/shell/screens.test.tsx`, le test de `PairingScreen` attend l'ancien pied (`/n'est jamais envoyé ailleurs/`, l. 98) ; la maquette 31 en a un nouveau. Remplacer seulement cette ligne par :
 ```ts
@@ -17331,7 +17331,7 @@ Dans `packages/ui/src/shell/screens.test.tsx`, le test de `PairingScreen` attend
 Run: `bun test packages/ui/src/shell/screens.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 6: Requête RPC réactive**
+- [x] **Step 6: Requête RPC réactive**
 
 `packages/ui/src/state/use-rpc-query.ts` :
 ```ts
@@ -17369,7 +17369,7 @@ export function useRpcQuery<R extends RpcRequest>(req: R, refreshOn: readonly Ch
 ```
 `key` n'est lu que comme dépendance : une requête de même contenu ne relance pas le chargement à chaque rendu.
 
-- [ ] **Step 7: Écrire le test de Paramètres › Sécurité**
+- [x] **Step 7: Écrire le test de Paramètres › Sécurité**
 
 `packages/ui/src/settings/security-page.test.tsx` :
 ```tsx
@@ -17551,7 +17551,7 @@ test("the components banner only shows when backends are stopped", async () => {
 Run: `bun test packages/ui/src/settings/security-page.test.tsx`
 Expected: FAIL avec « Cannot find module './SecurityPage' ».
 
-- [ ] **Step 8: Implémenter le dialogue d'activation (maquette 72)**
+- [x] **Step 8: Implémenter le dialogue d'activation (maquette 72)**
 
 `packages/ui/src/settings/EnableRemoteAccessDialog.tsx` :
 ```tsx
@@ -17702,7 +17702,7 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
 ```
 Le `Select` ne propose que les interfaces non loopback (spec G §7 : jamais `0.0.0.0` par défaut, et `127.0.0.1` est déjà l'écoute locale).
 
-- [ ] **Step 9: Implémenter la page Sécurité (maquette 71)**
+- [x] **Step 9: Implémenter la page Sécurité (maquette 71)**
 
 `packages/ui/src/settings/SecurityPage.tsx` (gabarit des autres pages de Paramètres : `SettingsNav` à gauche, blocs `Card`) :
 ```tsx
@@ -17946,7 +17946,7 @@ export function SecurityPage() {
 ```
 Les couleurs d'état suivent les tokens de statut (vert / ambre / rouge), jamais l'orange réservé aux agents. L'état « accès distant » n'a pas d'événement : la page se recharge après chaque action.
 
-- [ ] **Step 10: Code d'appairage et page Apparence (maquette 15)**
+- [x] **Step 10: Code d'appairage et page Apparence (maquette 15)**
 
 `packages/ui/src/settings/PairingCodeDialog.tsx` :
 ```tsx
@@ -18058,7 +18058,7 @@ export function AppearancePage() {
 }
 ```
 
-- [ ] **Step 11: Bannière M7 et ligne de l'écran 19**
+- [x] **Step 11: Bannière M7 et ligne de l'écran 19**
 
 `packages/ui/src/components-page/SandboxBanner.tsx` :
 ```tsx
@@ -18113,7 +18113,7 @@ test("warns when the OS isolation is unavailable, with the command to run", asyn
 });
 ```
 
-- [ ] **Step 12: Écrans navigables**
+- [x] **Step 12: Écrans navigables**
 
 - `packages/schema/src/tabs.ts` : `Screen = z.enum(["agents", "queue", "general", "domains", "components", "mine", "integrations", "appearance", "security"])`.
 - `packages/ui/src/tabs/target-hash.ts` : `appearance: "#/settings/appearance"`, `security: "#/settings/security"` ; ajouter à `tabs/tabs.test.ts` un aller-retour `targetToHash` / `hashToTarget` pour ces deux écrans.
@@ -18126,17 +18126,17 @@ test("warns when the OS isolation is unavailable, with the command to run", asyn
 Run: `bun test packages/ui packages/schema`
 Expected: PASS.
 
-- [ ] **Step 13: Lancer tous les tests de l'UI**
+- [x] **Step 13: Lancer tous les tests de l'UI**
 
 Run: `bun test packages/ui/src/settings/security-page.test.tsx packages/ui/src/shell packages/ui/src/components-page packages/ui/src/tabs && bun run budget`
 Expected: PASS ; budget sous 230 kB gzip.
 
-- [ ] **Step 14: Contrôle visuel**
+- [x] **Step 14: Contrôle visuel**
 
 Run: `bun run start` puis ouvrir Paramètres › Sécurité (accès distant désactivé puis activé), le dialogue d'activation, Paramètres › Apparence (« Générer un code »), l'écran 19 (projet vide), la page Composants et l'écran d'appairage (navigateur non appairé) en sombre et en clair.
 Expected: conformes aux exports Penpot 71, 72, 15 (bloc « Accès web »), 19, 31 et à la bannière M7 ; écarts corrigés avant le commit ou listés pour le jalon.
 
-- [ ] **Step 15: Vérifier le lint et les types, commiter**
+- [x] **Step 15: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
