@@ -16718,19 +16718,19 @@ Défaut relevé à la relecture de la tâche 30b, antérieur à elle (tâche des
 
 **Interfaces:** inchangées (`JobScheduler`).
 
-- [ ] **Step 1: Tests qui échouent**
+- [x] **Step 1: Tests qui échouent**
 
 `jobs.test.ts`, faux minuteurs : un job planifié pour `hello@0.1.0` ; `targets()` renvoie ensuite la même instance en `hello@0.2.0` (même nom de job) puis `refresh()` ⇒ l'ancien minuteur est annulé, un nouveau est créé, et le tick appelle `run` avec `ref: "hello@0.2.0"`. Idem pour une `config` changée (le tick reçoit la nouvelle config) et pour un `everyMinutes` changé (nouvel intervalle). Une cible inchangée garde son minuteur (pas d'annulation inutile).
 
-- [ ] **Step 2: Implémentation**
+- [x] **Step 2: Implémentation**
 
 Dans `refresh()`, garder à côté de chaque minuteur la signature de ce qu'il vise (`ref`, `JSON.stringify(config)`, `minutes`) ; une clé présente dont la signature diffère est annulée puis recréée. Le verrou `running` reste par clé (un run de l'ancienne version encore en cours bloque le premier tick de la nouvelle, ce qui est voulu).
 
-- [ ] **Step 3: Réécrire le test de drainage de la tâche 30b**
+- [x] **Step 3: Réécrire le test de drainage de la tâche 30b**
 
 Le test « stopping waits for a store check started by a job » (`service-backends.test.ts`) s'appuie sur ce défaut : il passe l'instance en 0.2.0 pour que l'hôte 0.1.0 soit arrêté, puis déclenche l'ancien minuteur qui relance 0.1.0 (et donc sa vérification d'empreinte). Après la correction, ce tick vise 0.2.0 : réécrire le test pour que le tick démarre un hôte arrêté de la version courante et passe par `beforeStart` (par exemple : empreinte de la version courante altérée après l'arrêt de son hôte, obtenu sans changer de version), et vérifier qu'il échoue toujours si `verify` n'est plus suivi dans `service.ts` (retirer `inflight.track` le temps de le constater, puis remettre).
 
-- [ ] **Step 4: Vérifier et committer**
+- [x] **Step 4: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components`, `bun run check`, `bun run typecheck` — Expected: PASS.
 
