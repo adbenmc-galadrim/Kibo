@@ -25,7 +25,7 @@ export { MAX_FILE_BYTES, readFile, sha1 } from "./read-file";
 export const MAX_DIFF_SIDE_BYTES = 10_000_000;
 const MAX_UNPUSHED = 50;
 const NO_COUNTS: LineCounts = { additions: null, deletions: null };
-const DIFF_FLAGS = ["--no-color", "--no-ext-diff", "--no-textconv", "-U3"];
+export const DIFF_FLAGS = ["--no-color", "--no-ext-diff", "--no-textconv", "-U3"];
 const REMOTE_NAME = /^[A-Za-z0-9._][A-Za-z0-9._-]*$/;
 
 export async function hasHead(h: WorktreeHandle): Promise<boolean> {

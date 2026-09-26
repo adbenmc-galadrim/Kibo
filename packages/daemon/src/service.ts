@@ -24,6 +24,7 @@ import {
 import type { LoroDoc } from "loro-crdt";
 import { createDataPort } from "./agents/data-port";
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
+import { type AiPort, isAiRequest } from "./ai/methods";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
@@ -61,6 +62,7 @@ export type Service = {
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
   attachIntegrations(rpc: IntegrationRpc): () => void;
+  attachAi(port: AiPort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
@@ -116,6 +118,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   let agents: AgentsPort | null = null;
   let components: ComponentsPort | null = null;
   let integrations: IntegrationRpc | null = null;
+  let ai: AiPort | null = null;
   const path = createCommandPath({
     store,
     project: (id) => docs.project(id),
@@ -157,6 +160,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const integrationsReady = (): IntegrationRpc => {
     if (!integrations) throw new KiboError("INTERNAL", "integrations are not ready");
     return integrations;
+  };
+  const aiReady = (): AiPort => {
+    if (!ai) throw new KiboError("AI_UNAVAILABLE", "the AI is not started");
+    return ai;
   };
   const agentsReady = (): AgentsPort => {
     if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
@@ -223,6 +230,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         integrations = null;
       };
     },
+    attachAi(port) {
+      ai = port;
+      return () => {
+        ai = null;
+      };
+    },
     triggerRules(projectId, trigger) {
       docs.trigger(projectId, trigger);
     },
@@ -231,6 +244,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     handle(req) {
       if (isComponentRequest(req)) return componentsReady().handle(req);
       if (isIntegrationRequest(req)) return integrationsReady().handle(req);
+      if (isAiRequest(req)) return aiReady().handle(req);
       switch (req.method) {
         case "getSession":
           return { user: opts.user, notifications: opts.notifications ?? "browser" };

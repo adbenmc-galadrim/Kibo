@@ -5,6 +5,7 @@ import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
+import { startAi } from "./ai/bootstrap";
 import { loadOrCreateToken } from "./auth";
 import { createCodeService } from "./code/code-service";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
@@ -14,7 +15,7 @@ import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { startServer } from "./server";
-import { createService } from "./service";
+import { call, createService } from "./service";
 import { openStore } from "./store";
 
 export type DaemonOptions = {
@@ -31,6 +32,8 @@ export type DaemonOptions = {
   sampler?: () => HostLoad;
   integrations?: IntegrationFlags;
   redactor?: Redactor;
+  agentEnv?: Record<string, string | undefined>;
+  assistantTimeoutMs?: number;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -143,10 +146,27 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     sampler: opts.sampler ?? createLoadSampler(),
     hostInfo: readHostInfo(),
     notify: opts.notify ?? (() => {}),
+    ...(opts.agentEnv && { env: opts.agentEnv }),
   });
   closers.push(() => orchestrator.stop());
   agents = orchestrator;
   closers.push(service.attachAgents(orchestrator));
+  const ai = await startAi({
+    home: opts.home,
+    toolchain: opts.toolchain,
+    db: store.db,
+    docs: service.docs,
+    orchestrator,
+    components,
+    validate: opts.validate ?? null,
+    claudeBin: opts.claudeBin ?? null,
+    agentEnv: opts.agentEnv ?? process.env,
+    address: `127.0.0.1:${server.port}`,
+    listIntegrations: async () => call(service, { method: "listIntegrations" }),
+    ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
+  });
+  closers.push(service.attachAi(ai.port));
+  closers.push(() => ai.stop());
   writeDaemonInfo(opts.home, { port: server.port, sandboxPort: sandbox.port, pid: process.pid });
   front.push(() => removeDaemonInfo(opts.home));
   return {
