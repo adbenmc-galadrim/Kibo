@@ -19,6 +19,7 @@ test("the screens are pages of the palette and open as targets", () => {
     "Domaines & guidelines",
   );
   expect(searchItems(buildItems(context), "composants", "pages")[0]?.items[0]?.label).toBe("Composants");
+  expect(searchItems(buildItems(context), "mes tickets", "pages")[0]?.items[0]?.label).toBe("Mes tickets");
 });
 
 test("an opened screen comes back among the recents", () => {

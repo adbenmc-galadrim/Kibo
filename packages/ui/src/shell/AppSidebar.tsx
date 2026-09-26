@@ -20,6 +20,7 @@ import {
   Bot,
   GitCommitHorizontal,
   LayoutGrid,
+  List,
   ListOrdered,
   Plus,
   Puzzle,
@@ -39,6 +40,7 @@ type Props = {
   screen: Screen | null;
   agents: AgentsState | null;
   changesCount: number | null;
+  mineCount: number | null;
   onOpen(target: TabTarget | null, newTab: boolean): void;
   onSearch(): void;
   onNewProject(): void;
@@ -170,6 +172,13 @@ export function AppSidebar(p: Props) {
                 <LayoutGrid />
                 <span>{fr.nav.overview}</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={screen === "mine"} {...link(screenTarget("mine"))}>
+                <List />
+                <span>{fr.nav.mine}</span>
+              </SidebarMenuButton>
+              {p.mineCount !== null && p.mineCount > 0 && <SidebarMenuBadge>{p.mineCount}</SidebarMenuBadge>}
             </SidebarMenuItem>
             <AgentsEntry screen={screen} agents={p.agents} link={link} />
           </SidebarMenu>

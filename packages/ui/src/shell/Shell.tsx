@@ -8,6 +8,7 @@ import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
+import { countMine, myTickets } from "../mine/my-tickets";
 import { CommandPalette } from "../palette/CommandPalette";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
@@ -69,6 +70,10 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;
   const snapshots = useSnapshots(projects.map((p) => p.id));
+  const mineCount = useMemo(
+    () => countMine(myTickets(projects, snapshots, viewer, "assigned")),
+    [projects, snapshots, viewer],
+  );
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
@@ -88,7 +93,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
 
   const set = useCallback((patch: Partial<DialogsState>) => setDialogs((d) => ({ ...d, ...patch })), []);
   const clearFocus = useCallback(() => setFocusRun(null), []);
-  const launch = useCallback(() => set({ assign: { ticketId: null } }), [set]);
+  const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
   const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
   const currentProject = useCallback(() => projectRef.current, []);
   const views = useOpenView(currentProject, go);
@@ -99,7 +104,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
         if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
       },
       openNewTicket: (d) => set({ newTicket: d }),
-      openAssign: (ticketId) => set({ assign: { ticketId } }),
+      openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),
       openTarget: (target, opts) => go(target, opts?.newTab),
       openView: views.openView,
@@ -122,7 +127,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
     if (a.kind === "newProject") return set({ newProject: true });
     if (a.kind === "toggleTheme") return void cycleTheme();
     if (a.kind === "reply") return setFocusRun(a.runId);
-    if (a.kind === "assign") return set({ assign: { ticketId: a.ticketId } });
+    if (a.kind === "assign") return set({ assign: { projectId: null, ticketId: a.ticketId } });
     if (a.projectId !== activeProjectId) go({ kind: "project", projectId: a.projectId });
     if (a.kind === "newPage") set({ newPageParent: null });
     if (a.kind === "newTicket") set({ newTicket: { parentId: a.parentId } });
@@ -183,6 +188,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               screen={screen}
               agents={agents}
               changesCount={git.worktrees ? git.changesCount : null}
+              mineCount={mineCount}
               onOpen={go}
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}
@@ -193,7 +199,9 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 <SidebarTrigger />
                 <Breadcrumb
                   crumbs={crumbsFor(active, { project, branch })}
-                  heading={screen === "agents" || screen === "queue" || screen === "components"}
+                  heading={
+                    screen === "agents" || screen === "queue" || screen === "components" || screen === "mine"
+                  }
                 />
                 <PageActionsSlot />
                 <span className="flex-1" />
@@ -229,11 +237,15 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 {screen ? (
                   <ScreenView
                     screen={screen}
+                    viewer={viewer}
                     projects={projects}
+                    snapshots={snapshots}
                     agents={agents}
                     config={config}
                     now={now}
                     onAnswer={setFocusRun}
+                    onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+                    onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
                   />
                 ) : (
                   <ContentView
@@ -247,7 +259,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onNewPage={() => set({ newPageParent: null })}
                     onOpen={(t) => go(t)}
                     onOpenFile={(ref) => set({ preview: ref })}
-                    onAssign={(ticketId) => set({ assign: { ticketId } })}
+                    onAssign={(ticketId) => set({ assign: { projectId: null, ticketId } })}
                   />
                 )}
               </div>
@@ -266,6 +278,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               project={project}
               ticketProject={ticketProject}
               sheetProject={sheetProject}
+              snapshots={snapshots}
               agents={agents}
               config={config}
               onOpenTarget={go}

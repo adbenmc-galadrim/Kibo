@@ -11,6 +11,10 @@ export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,
 );
+export const MyTicketsPage = lazyPanel(
+  () => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage),
+  fr.lazy,
+);
 export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
 export const FileTabView = lazyPanel(
   () => import("../files/FileTabView").then((m) => m.FileTabView),

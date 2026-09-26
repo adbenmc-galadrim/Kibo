@@ -37,6 +37,7 @@ describe("hash codec", () => {
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
     expect(hashToTarget("#/agents")).toEqual({ kind: "screen", screen: "agents" });
     expect(targetToHash({ kind: "screen", screen: "components" })).toBe("#/components");
+    expect(hashToTarget("#/mine")).toEqual({ kind: "screen", screen: "mine" });
     expect(hashToTarget("#/elsewhere")).toBeNull();
   });
 });

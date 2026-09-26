@@ -15,7 +15,7 @@ export type DialogsState = {
   newPageParent: string | null | undefined;
   sheet: SheetTicket | null;
   newTicket: NewTicketDefaults | null;
-  assign: { ticketId: string | null } | null;
+  assign: { projectId: string | null; ticketId: string | null } | null;
   newProfile: boolean;
   preview: FileRef | null;
 };
@@ -38,6 +38,7 @@ type Props = {
   project: ProjectSnapshot | null;
   ticketProject: ProjectSnapshot | null;
   sheetProject: ProjectSnapshot | null;
+  snapshots: ReadonlyMap<string, ProjectSnapshot>;
   agents: AgentsState | null;
   config: WorkspaceConfig | null;
   onOpenTarget(target: TabTarget, newTab: boolean): void;
@@ -52,6 +53,7 @@ export function ShellDialogs({
   project,
   ticketProject,
   sheetProject,
+  snapshots,
   agents,
   config,
   ...p
@@ -80,7 +82,9 @@ export function ShellDialogs({
           ticketId={sheet.ticketId}
           domains={config?.domains ?? []}
           onClose={() => set({ sheet: null })}
-          onAssign={() => set({ sheet: null, assign: { ticketId: sheet.ticketId } })}
+          onAssign={() =>
+            set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
+          }
           onOpenInTab={() => {
             set({ sheet: null });
             p.onOpenTarget({ kind: "ticket", projectId: sheet.projectId, ticketId: sheet.ticketId }, true);
@@ -98,7 +102,7 @@ export function ShellDialogs({
       )}
       {state.assign && (
         <AssignDialog
-          project={project}
+          project={state.assign.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project}
           ticketId={state.assign.ticketId}
           config={config}
           onClose={() => set({ assign: null })}

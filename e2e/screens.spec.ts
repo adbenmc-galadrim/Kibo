@@ -293,6 +293,19 @@ test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
   await capture(info, "23");
 });
 
+test("12 · Mes tickets", async () => {
+  const info = test.info();
+  await page.goto("/#/");
+  await page.reload();
+  const entry = sideButton("Mes tickets");
+  const count = Number(await entry.locator("..").getByText(/^\d+$/).textContent());
+  expect(count).toBeGreaterThan(0);
+  await entry.click();
+  await expect(page.getByRole("radio", { name: "Assignés à moi" })).toBeVisible();
+  await expect(page.getByText(new RegExp(`^${count} tickets? · \\d+ projets?$`))).toBeVisible();
+  await capture(info, "12");
+});
+
 test("densité 13 px des maquettes", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);

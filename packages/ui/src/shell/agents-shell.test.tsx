@@ -1,5 +1,12 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
+import {
+  EMPTY_TABS,
+  type ProjectSnapshot,
+  type RpcRequest,
+  type Screen,
+  type StatusId,
+  type TicketView,
+} from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -12,13 +19,42 @@ import {
 } from "../agents/fixtures";
 import type { Route } from "../route";
 
+const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
+  id,
+  key,
+  title,
+  description: "",
+  statusId,
+  blockedReason: null,
+  domainId: "facturation",
+  assignee: { kind: "human", ref: "adam" },
+  parentId: null,
+  externalRefs: [],
+  progress: { done: 0, total: 0 },
+  waitingOn: [],
+});
+
+function snapshotOf(projectId: string): ProjectSnapshot {
+  const kibo = kiboProject();
+  if (projectId !== "fac")
+    return {
+      ...kibo,
+      tickets: [...kibo.tickets, mineTicket("t9", "KIB-9", "Setup Tauri + sidecar Bun", "todo")],
+    };
+  return {
+    ...kibo,
+    meta: { id: "fac", key: "FAC", name: "API Facturation", folder: null, color: "#22C55E" },
+    tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
+  };
+}
+
 const calls: RpcRequest[] = [];
 mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
       if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-      if (req.method === "getProject") return Promise.resolve(kiboProject());
+      if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
       return Promise.resolve(
         req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
       );
@@ -115,6 +151,26 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   await user.click(screen.getByRole("button", { name: "Paramètres" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Domaines & guidelines" })).toBeTruthy();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+});
+
+test("my tickets: sidebar count, rows of every project, sheet and assign in the right project", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/");
+  const entry = await screen.findByRole("button", { name: "Mes tickets" });
+  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Mes tickets2"));
+  const user = userEvent.setup();
+  await user.click(entry);
+  expect(location.hash).toBe("#/mine");
+  expect(await screen.findByRole("heading", { level: 1, name: "Mes tickets" })).toBeTruthy();
+  expect(await screen.findByText("2 tickets · 2 projets")).toBeTruthy();
+  const facturation = screen.getByRole("region", { name: "API Facturation" });
+  await user.click(within(facturation).getByRole("button", { name: /^FAC-31/ }));
+  expect(within(await screen.findByRole("dialog")).getByText("Export PDF des factures")).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  const kibo = screen.getByRole("region", { name: "Kibo" });
+  await user.click(within(kibo).getByRole("button", { name: "Assigner" }));
+  expect(within(await screen.findByRole("dialog")).getByText("Assigner KIB-9 à un agent")).toBeTruthy();
 });
 
 test("the header carries the actions of the agent screens", async () => {

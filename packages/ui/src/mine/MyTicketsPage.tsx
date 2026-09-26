@@ -1,4 +1,4 @@
-import type { ProjectSnapshot, WorkspaceConfig } from "@kibo/schema";
+import type { ProjectMeta, ProjectSnapshot, WorkspaceConfig } from "@kibo/schema";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { useId, useMemo, useState } from "react";
@@ -8,7 +8,7 @@ import { countMine, type MineGroup, type MineTab, myTickets } from "./my-tickets
 
 type Props = {
   viewer: string;
-  projects: MineGroup["project"][];
+  projects: ProjectMeta[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
   config: WorkspaceConfig | null;
   onOpenTicket(projectId: string, ticketId: string): void;
