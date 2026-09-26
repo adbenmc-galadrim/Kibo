@@ -29,6 +29,8 @@ import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
 import type { Status, StatusId } from "./status";
+import type { Phase7Event } from "./sync";
+import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import { TabsState } from "./tabs";
 import type { Ticket } from "./ticket";
 
@@ -53,7 +55,8 @@ export type ChangeMessage =
   | RunChanged
   | CodeEvent
   | IntegrationEvent
-  | AiEvent;
+  | AiEvent
+  | Phase7Event;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("getSession") }),
@@ -148,6 +151,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...INTEGRATION_RPC,
   ...AI_RPC,
   ...MARKET_RPC_REQUESTS,
+  ...SYNC_RPC_REQUESTS,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -188,7 +192,8 @@ export type RpcResult = {
   reportComponentRefusal: null;
 } & IntegrationRpcResult &
   AiRpcResult &
-  MarketRpcResult;
+  MarketRpcResult &
+  SyncRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

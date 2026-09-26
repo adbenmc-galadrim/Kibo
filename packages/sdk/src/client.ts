@@ -6,6 +6,7 @@ import {
   type ComponentCall,
   IntegrationEvent,
   KiboError,
+  Phase7Event,
   type ProjectCommand,
   type RpcRequest,
   type RpcResponse,
@@ -28,6 +29,7 @@ export type KiboClient = {
   subscribeCode(listener: (event: CodeEvent) => void): () => void;
   subscribeIntegrations(listener: (event: IntegrationEvent) => void): () => void;
   subscribeAi(listener: (event: AiEvent) => void): () => void;
+  subscribeEvents(listener: (event: Phase7Event) => void): () => void;
   online(): boolean;
   onConnection(listener: () => void): () => void;
 };
@@ -64,6 +66,7 @@ export function createClient(opts: ClientOptions): KiboClient {
   const codeListeners = new Set<(event: CodeEvent) => void>();
   const integrationListeners = new Set<(event: IntegrationEvent) => void>();
   const aiListeners = new Set<(event: AiEvent) => void>();
+  const eventListeners = new Set<(event: Phase7Event) => void>();
   const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
   let open = false;
@@ -78,6 +81,7 @@ export function createClient(opts: ClientOptions): KiboClient {
     codeListeners.size +
     integrationListeners.size +
     aiListeners.size +
+    eventListeners.size +
     [...topics.values()].reduce((n, set) => n + set.size, 0);
 
   const connect = () => {
@@ -100,6 +104,11 @@ export function createClient(opts: ClientOptions): KiboClient {
       const ai = AiEvent.safeParse(data);
       if (ai.success) {
         for (const l of aiListeners) l(ai.data);
+        return;
+      }
+      const phase7 = Phase7Event.safeParse(data);
+      if (phase7.success) {
+        for (const l of eventListeners) l(phase7.data);
         return;
       }
       const msg = data as {
@@ -187,6 +196,14 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         aiListeners.delete(listener);
+        release();
+      };
+    },
+    subscribeEvents(listener) {
+      eventListeners.add(listener);
+      if (!socket) connect();
+      return () => {
+        eventListeners.delete(listener);
         release();
       };
     },

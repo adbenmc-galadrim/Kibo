@@ -243,3 +243,32 @@ test("ai events reach ai listeners only", async () => {
   offAi();
   server.stop(true);
 });
+
+test("phase 7 events reach subscribeEvents and never reload a project", async () => {
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ type: "presence.changed", projectId: "p1" }));
+        ws.send(JSON.stringify({ type: "sessions.changed" }));
+        ws.send(JSON.stringify({ projectId: "p2" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offProject = client.subscribe((id) => {
+    seen.push(`project:${id}`);
+    done.resolve();
+  });
+  const offEvents = client.subscribeEvents((e) => seen.push(e.type));
+  await done.promise;
+  expect(seen).toEqual(["presence.changed", "sessions.changed", "project:p2"]);
+  offProject();
+  offEvents();
+  server.stop(true);
+});
