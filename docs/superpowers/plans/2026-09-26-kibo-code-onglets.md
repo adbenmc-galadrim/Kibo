@@ -9548,13 +9548,13 @@ git commit -m "feat: raccords agents du code et de la palette"
 - Consumes: l'application complète.
 - Produces : captures `e2e/test-results/screens/{18,20,21,22,23}-{dark,light}.png` (non versionnées) et corrections.
 
-- [ ] **Step 1: Captures reproductibles**
+- [x] **Step 1: Captures reproductibles**
 
 `e2e/screens.spec.ts` : un test par écran, qui prépare l'état de la maquette avec `createE2eRepo` (fichiers `packages/core/ticket.ts`, `tree.ts`, `index.ts`, `legacy-tree.ts` comme sur la page 34 ; deux commits non poussés, un poussé), fixe la fenêtre à 1440 × 940 (`page.setViewportSize`) et enregistre `page.screenshot({ path: info.outputPath("<n>-<thème>.png") })` : 18 palette ouverte sur « kib-1 » ; 20 menu contextuel d'un onglet ouvert, un onglet épinglé ; 21 Changements avec un fichier indexé sélectionné ; 22 dialogue PR avec fichiers indexés non commités ; 23 aperçu de `ticket.ts` ligne 43 ouvert depuis un ticket.
 
 Run: `bun run --cwd e2e test screens.spec.ts`
 
-- [ ] **Step 2: Comparer aux maquettes et corriger**
+- [x] **Step 2: Comparer aux maquettes et corriger**
 
 Comparer chaque capture à `design/pdf/kibo-design-sombre.pdf` et `kibo-design-clair.pdf` (pages 28, 33, 34, 35, 36). Points à vérifier au minimum :
 - **20** : Accueil (logo) à gauche ; onglets épinglés compacts avec pastille de la couleur du projet ; trait séparateur ; onglet actif sur fond `background` ; croix visible ; `+` ; menu : Épingler l'onglet `⌘⇧P`, Dupliquer, Ouvrir dans une nouvelle fenêtre, séparateur, Fermer `⌘W`, Fermer les autres onglets, Fermer les onglets à droite ;
@@ -9566,7 +9566,7 @@ Comparer chaque capture à `design/pdf/kibo-design-sombre.pdf` et `kibo-design-c
 
 Corriger chaque écart dans le composant concerné, relancer les tests unitaires et l'E2E. Un écart qui dépend d'un écran encore à dessiner (`design/revue-flows.md` §7 : conflit, push en échec, PR existante) est noté dans le rapport du jalon, pas inventé.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add e2e/screens.spec.ts <fichiers corrigés, un par un>
