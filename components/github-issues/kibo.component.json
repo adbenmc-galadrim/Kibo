@@ -1,0 +1,11 @@
+{
+  "id": "github-issues",
+  "version": "1.0.0",
+  "kind": "adapter",
+  "title": "GitHub Issues",
+  "description": "Synchronise les tickets avec les issues et un Project GitHub",
+  "reads": ["ticket", "status"],
+  "writes": [],
+  "net": ["api.github.com"],
+  "secrets": [{ "name": "github", "hosts": ["api.github.com"] }]
+}

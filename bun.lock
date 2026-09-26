@@ -32,6 +32,15 @@
         "@tauri-apps/cli": "2.11.5",
       },
     },
+    "components/github-issues": {
+      "name": "@kibo/component-github-issues",
+      "version": "1.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "zod": "3.25.76",
+      },
+    },
     "components/graph": {
       "name": "@kibo/component-graph",
       "version": "1.0.0",
@@ -493,6 +502,8 @@
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
     "@kibo/cli": ["@kibo/cli@workspace:packages/cli"],
+
+    "@kibo/component-github-issues": ["@kibo/component-github-issues@workspace:components/github-issues"],
 
     "@kibo/component-graph": ["@kibo/component-graph@workspace:components/graph"],
 

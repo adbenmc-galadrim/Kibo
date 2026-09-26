@@ -1,0 +1,15 @@
+{
+  "name": "@kibo/component-github-issues",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "@kibo/sdk": "workspace:*",
+    "zod": "3.25.76"
+  }
+}

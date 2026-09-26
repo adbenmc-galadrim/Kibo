@@ -10,6 +10,7 @@
     "./fixtures": "./src/fixtures.ts",
     "./sandbox": "./src/sandbox.tsx",
     "./server": "./src/server.ts",
+    "./adapter": "./src/adapter.ts",
     "./migrations": "./src/migrations.ts",
     "./dev": "./src/dev.tsx",
     "./theme.css": "./src/theme.css",
