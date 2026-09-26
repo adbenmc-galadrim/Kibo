@@ -1855,7 +1855,7 @@ git commit -m "feat(core): profils, domaines et guidelines"
 
 Une règle ne s'applique que si le statut courant est dans `from` : un ticket Bloqué ou déjà Terminé n'est jamais touché.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/core/src/rules.test.ts` :
 ```ts
@@ -1931,12 +1931,12 @@ describe("storage", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/core/src/rules.test.ts`
 Expected: FAIL (`Cannot find module "./rules"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/core/src/rules.ts` :
 ```ts
@@ -1988,12 +1988,12 @@ export function evaluateRules(rules: Rule[], trigger: RuleTrigger, tickets: Rule
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/core/src/rules.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/rules.ts packages/core/src/rules.test.ts
