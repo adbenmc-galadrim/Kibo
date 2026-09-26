@@ -45,20 +45,27 @@ async function launch(opts: Partial<DaemonOptions> = {}) {
   return { d, home, stop };
 }
 
-async function pair({ url, token }: { url: string; token: string }) {
+async function pairCookie({ url, token }: { url: string; token: string }): Promise<string> {
   const res = await fetch(`${url}/api/pair`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: url },
     body: JSON.stringify({ token }),
   });
   expect(res.status).toBe(204);
-  const cookie = res.headers.get("set-cookie")?.split(";")[0] ?? "";
-  return (req: RpcRequest, origin = url) =>
+  return res.headers.get("set-cookie")?.split(";")[0] ?? "";
+}
+
+const rpcWith =
+  (url: string, cookie: string) =>
+  (req: RpcRequest, origin = url) =>
     fetch(`${url}/api/rpc`, {
       method: "POST",
       headers: { "content-type": "application/json", origin, cookie },
       body: JSON.stringify(req),
     });
+
+async function pair(daemon: { url: string; token: string }) {
+  return rpcWith(daemon.url, await pairCookie(daemon));
 }
 
 describe("startDaemon", () => {
@@ -118,6 +125,14 @@ describe("startDaemon", () => {
     await stop();
     expect(await survivors(pids)).toEqual([]);
   }, 15_000);
+
+  test("a pairing session survives a daemon restart on the same home", async () => {
+    const { d, home, stop } = await launch();
+    const cookie = await pairCookie(d);
+    await stop();
+    const next = await launch({ home });
+    expect((await rpcWith(next.d.url, cookie)({ method: "listProjects" })).status).toBe(200);
+  });
 
   test("a corrupt daemon.json never prevents the start", async () => {
     const home = mkdtempSync(join(tmpdir(), "kibo-start-"));

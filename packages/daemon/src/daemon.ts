@@ -16,6 +16,7 @@ import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { startServer } from "./server";
 import { call, createService } from "./service";
+import { openSessionStore } from "./sessions/session-store";
 import { openStore } from "./store";
 
 export type DaemonOptions = {
@@ -116,6 +117,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     service,
     code,
     token,
+    sessions: openSessionStore(store.db),
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,

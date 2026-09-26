@@ -20,10 +20,6 @@ export function sameSecret(a: string, b: string): boolean {
   return x.length === y.length && timingSafeEqual(x, y);
 }
 
-export function newSessionId(): string {
-  return randomBytes(32).toString("hex");
-}
-
 export function readCookie(header: string | null, name: string): string | null {
   for (const part of header?.split(";") ?? []) {
     const [k, ...v] = part.trim().split("=");

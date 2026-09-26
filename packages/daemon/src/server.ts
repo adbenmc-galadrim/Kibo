@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import { statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import {
@@ -8,14 +9,18 @@ import {
   RpcRequest,
   type RpcResponse,
 } from "@kibo/schema";
-import type { Server } from "bun";
+import type { Server, ServerWebSocket } from "bun";
 import { type HookSink, handleHook } from "./agents/hook-route";
-import { newSessionId, readCookie, sameSecret } from "./auth";
+import { readCookie, sameSecret } from "./auth";
 import type { CodeService } from "./code/code-service";
 import type { AssetLookup } from "./components/sandbox-server";
 import { serveTrusted } from "./components/trusted-route";
+import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
 import { rpcRefusal } from "./rpc-refusal";
 import type { Service } from "./service";
+import { deviceNameFromUserAgent } from "./sessions/device-name";
+import { sessionRpc } from "./sessions/rpc";
+import { openSessionStore, type SessionStore } from "./sessions/session-store";
 
 export type ServerOptions = {
   service: Service;
@@ -28,7 +33,12 @@ export type ServerOptions = {
   assets?: AssetLookup;
   sandboxOrigin?: () => string | null;
   redact?: (text: string) => string;
+  sessions?: SessionStore;
+  extensions?: RpcExtension[];
+  handlers?: RpcHandler[];
+  now?: () => number;
 };
+type WsData = { sessionHash: string };
 
 const COOKIE = "kibo_session";
 const MAX_BODY_BYTES = 1_048_576;
@@ -103,8 +113,16 @@ const respond = async (work: () => unknown, redact: (text: string) => string): P
   }
 };
 
+function sessionStoreOf(given: SessionStore | undefined): { sessions: SessionStore; close(): void } {
+  if (given) return { sessions: given, close: () => {} };
+  const db = new Database(":memory:", { strict: true });
+  return { sessions: openSessionStore(db), close: () => db.close() };
+}
+
 export function startServer(opts: ServerOptions): { url: string; port: number; stop(): void } {
-  const sessions = new Set<string>();
+  const now = opts.now ?? Date.now;
+  const { sessions, close: closeSessions } = sessionStoreOf(opts.sessions);
+  const sockets = new Map<string, Set<ServerWebSocket<WsData>>>();
   const redact = opts.redact ?? unredacted;
   let port = opts.port;
   const hosts = () => [`127.0.0.1:${port}`, `localhost:${port}`];
@@ -113,12 +131,22 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     const extra = (opts.extraOrigins ?? []).filter((o) => !sandbox.includes(o));
     return [`http://127.0.0.1:${port}`, `http://localhost:${port}`, ...extra];
   };
-  const hasSession = (req: Request) => {
+  const sessionOf = (req: Request): { hash: string; remote: boolean } | null => {
     const id = readCookie(req.headers.get("cookie"), COOKIE);
-    return id !== null && sessions.has(id);
+    return id === null ? null : sessions.validate(id, now());
   };
+  const hasSession = (req: Request) => sessionOf(req) !== null;
+  const offRevoke = sessions.onRevoke((hash) => {
+    for (const ws of sockets.get(hash) ?? []) ws.close(4401, "session revoked");
+    sockets.delete(hash);
+  });
+  const extensions: RpcExtension[] = [
+    sessionRpc(sessions, (m) => opts.service.docs.emit(m), now),
+    ...(opts.extensions ?? []),
+  ];
+  const handlers = opts.handlers ?? [];
 
-  const handleApi = async (req: Request, url: URL, srv: Server<undefined>): Promise<Response | undefined> => {
+  const handleApi = async (req: Request, url: URL, srv: Server<WsData>): Promise<Response | undefined> => {
     if (!origins().includes(req.headers.get("origin") ?? ""))
       return fail("FORBIDDEN", "origin not allowed", 403);
 
@@ -127,25 +155,30 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
       if (typeof body?.token !== "string" || !sameSecret(body.token, opts.token)) {
         return fail("UNAUTHORIZED", "invalid pairing token", 401);
       }
-      const id = newSessionId();
-      sessions.add(id);
+      const { id } = sessions.create(
+        { deviceName: deviceNameFromUserAgent(req.headers.get("user-agent")), remote: false },
+        now(),
+      );
       return new Response(null, {
         status: 204,
         headers: { "set-cookie": `${COOKIE}=${id}; HttpOnly; SameSite=Strict; Path=/` },
       });
     }
 
-    if (!hasSession(req)) return fail("UNAUTHORIZED", "pair this browser first", 401);
+    const session = sessionOf(req);
+    if (!session) return fail("UNAUTHORIZED", "pair this browser first", 401);
+    const ctx: RpcContext = { sessionHash: session.hash, remote: session.remote };
 
     if (url.pathname === "/api/events") {
-      return srv.upgrade(req, { data: undefined })
+      return srv.upgrade(req, { data: { sessionHash: session.hash } })
         ? undefined
         : new Response("upgrade failed", { status: 400 });
     }
     if (url.pathname === "/api/rpc" && req.method === "POST") {
       const parsed = RpcRequest.safeParse(await req.json().catch(() => null));
       if (!parsed.success) return fail("INVALID_INPUT", rpcRefusal(parsed.error), 400);
-      return respond(() => opts.service.handle(parsed.data), redact);
+      const rpc = parsed.data;
+      return respond(() => dispatchRpc(opts.service, extensions, rpc, ctx, handlers), redact);
     }
     if (url.pathname === "/api/code" && req.method === "POST" && opts.code) {
       const code = opts.code;
@@ -156,7 +189,7 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     return new Response("not found", { status: 404 });
   };
 
-  const server = Bun.serve({
+  const server = Bun.serve<WsData>({
     hostname: "127.0.0.1",
     port: opts.port,
     maxRequestBodySize: MAX_BODY_BYTES,
@@ -185,6 +218,12 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     websocket: {
       open(ws) {
         ws.subscribe("changes");
+        const set = sockets.get(ws.data.sessionHash) ?? new Set();
+        set.add(ws);
+        sockets.set(ws.data.sessionHash, set);
+      },
+      close(ws) {
+        sockets.get(ws.data.sessionHash)?.delete(ws);
       },
       message() {},
     },
@@ -201,7 +240,9 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     stop: () => {
       off();
       offCode?.();
+      offRevoke();
       server.stop(true);
+      closeSessions();
     },
   };
 }
