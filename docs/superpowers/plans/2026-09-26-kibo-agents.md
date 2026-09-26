@@ -3972,7 +3972,7 @@ git commit -m "feat(daemon): charge CPU et RAM de l'hôte"
 
 Worktree : `<racine du dépôt>/.kibo/worktrees/<clé en minuscules>`, branche `<clé en minuscules>` créée depuis `HEAD` ou réutilisée, `.kibo/` ajouté une fois à `.git/info/exclude` (local, jamais commité). Dossier isolé : `<runDir>/workspace`.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/workspace-prep.test.ts` :
 ```ts
@@ -4059,12 +4059,12 @@ test("the run context is written privately and never outside the run folder", ()
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/workspace-prep.test.ts`
 Expected: FAIL (`Cannot find module "./workspace-prep"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/agents/workspace-prep.ts` :
 ```ts
@@ -4166,12 +4166,12 @@ export function writeRunContext(
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/workspace-prep.test.ts && bun run check`
 Expected: PASS (sur macOS, `tmpdir()` passe par `/private/var` : les comparaisons utilisent le chemin rendu par `git rev-parse`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/agents/workspace-prep.ts packages/daemon/src/agents/workspace-prep.test.ts
