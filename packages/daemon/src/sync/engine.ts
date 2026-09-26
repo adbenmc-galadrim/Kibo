@@ -15,7 +15,6 @@ export type SyncEngine = {
 };
 
 const MAX_PAGES = 50;
-export const alreadyLoggedByCycle = (_error: unknown): void => undefined;
 const emptyReport = (): SyncReport => ({ pulled: 0, created: 0, updated: 0, pushed: 0, conflicts: 0 });
 
 export function createSyncEngine(deps: EngineDeps): SyncEngine {

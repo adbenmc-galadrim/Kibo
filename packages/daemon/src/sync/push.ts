@@ -17,19 +17,27 @@ export type EngineDeps = {
 };
 
 const TRANSIENT = new Set(["REMOTE_UNAVAILABLE", "TIMEOUT", "RATE_LIMITED", "COMPONENT_CRASHED"]);
+const UNKNOWN_OUTCOME = new Set(["REMOTE_UNAVAILABLE", "TIMEOUT", "COMPONENT_CRASHED", "INTERNAL"]);
 export const backoffMs = (attempts: number) => Math.min(5_000 * 2 ** Math.max(0, attempts - 1), 30 * 60_000);
 export const iso = (ms: number) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
 export const asKibo = (e: unknown) =>
   e instanceof KiboError ? e : new KiboError("INTERNAL", e instanceof Error ? e.message : String(e));
 
-type Target = { projectId: string; b: Binding; row: OutboxRow; ticket: TicketView; report: SyncReport };
+type Target = {
+  projectId: string;
+  b: Binding;
+  row: OutboxRow;
+  wasUncertain: boolean;
+  ticket: TicketView;
+  report: SyncReport;
+};
 
 export function createFlusher(deps: EngineDeps) {
   const { host, store, runner, gate, events, redact } = deps;
   const ticketOf = (projectId: string, id: string): TicketView | undefined =>
     host.snapshot(projectId).tickets.find((t) => t.id === id);
 
-  const pushCreate = async ({ projectId, b, row, ticket, report }: Target) => {
+  const pushCreate = async ({ projectId, b, row, wasUncertain, ticket, report }: Target) => {
     const m = await runner.push(projectId, b, {
       kind: "create",
       ticketId: ticket.id,
@@ -39,7 +47,7 @@ export function createFlusher(deps: EngineDeps) {
         statusId: ticket.statusId,
         closed: ticket.statusId === "done",
       },
-      since: row.attempts > 1 ? row.firstAttemptAt : null,
+      since: wasUncertain ? row.firstAttemptAt : null,
     });
     host.transaction(() => {
       const fresh = ticketOf(projectId, ticket.id);
@@ -110,7 +118,7 @@ export function createFlusher(deps: EngineDeps) {
   };
 
   const onPushError = (t: Target, e: KiboError): "stop" | "next" => {
-    const { row } = t;
+    const row = { ...t.row, uncertain: UNKNOWN_OUTCOME.has(e.code) ? t.row.uncertain : t.wasUncertain };
     if (TRANSIENT.has(e.code)) {
       store.attempt(row.id, { ...row, nextAttemptAt: host.now() + backoffMs(row.attempts), lastError: null });
       return "stop";
@@ -142,16 +150,17 @@ export function createFlusher(deps: EngineDeps) {
         store.deleteOutbox(head.id);
         continue;
       }
+      const creates = head.op === "create" && store.itemByTicket(b.id, ticket.id) === null;
       const row = {
         ...head,
         attempts: head.attempts + 1,
         firstAttemptAt: head.firstAttemptAt ?? iso(host.now()),
+        uncertain: head.uncertain || creates,
       };
       store.attempt(row.id, row);
-      const target = { projectId, b, row, ticket, report };
+      const target = { projectId, b, row, wasUncertain: head.uncertain, ticket, report };
       try {
-        const known = store.itemByTicket(b.id, ticket.id) !== null;
-        if (row.op === "create" && !known) await pushCreate(target);
+        if (creates) await pushCreate(target);
         else await pushUpdate(target);
       } catch (e) {
         if (onPushError(target, asKibo(e)) === "stop") return;

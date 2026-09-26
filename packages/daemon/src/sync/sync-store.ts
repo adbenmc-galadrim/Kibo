@@ -22,6 +22,7 @@ export type OutboxRow = {
   nextAttemptAt: number | null;
   firstAttemptAt: string | null;
   lastError: ErrorInfo | null;
+  uncertain: boolean;
 };
 export type CursorRow = {
   bindingId: string;
@@ -53,6 +54,7 @@ type OutRow = {
   attempts: number;
   next_attempt_at: number | null;
   first_attempt_at: string | null;
+  uncertain: number;
   last_error: string | null;
 };
 type CurRow = {
@@ -82,6 +84,7 @@ const toOut = (r: OutRow): OutboxRow => ({
   nextAttemptAt: r.next_attempt_at,
   firstAttemptAt: r.first_attempt_at,
   lastError: readError(r.last_error),
+  uncertain: r.uncertain === 1,
 });
 
 export function createSyncStore(db: Database) {
@@ -102,7 +105,7 @@ export function createSyncStore(db: Database) {
       "SELECT * FROM sync_outbox WHERE binding_id = $b ORDER BY id LIMIT 1",
     ),
     uncertainCreate: db.query<{ found: number }, { b: string }>(
-      "SELECT EXISTS (SELECT 1 FROM sync_outbox WHERE binding_id = $b AND op = 'create' AND attempts > 0) AS found",
+      "SELECT EXISTS (SELECT 1 FROM sync_outbox WHERE binding_id = $b AND op = 'create' AND uncertain = 1) AS found",
     ),
     row: db.query<OutRow, { id: number }>("SELECT * FROM sync_outbox WHERE id = $id"),
     outboxOfTicket: db.query<OutRow, { b: string; t: string }>(
@@ -112,7 +115,7 @@ export function createSyncStore(db: Database) {
       "INSERT INTO sync_outbox (binding_id, project_id, ticket_id, op, payload_json, created_at) VALUES ($b, $p, $t, $op, $payload, $at)",
     ),
     attempt: db.query(
-      "UPDATE sync_outbox SET attempts = $attempts, next_attempt_at = $next, first_attempt_at = $first, last_error = $error WHERE id = $id",
+      "UPDATE sync_outbox SET attempts = $attempts, next_attempt_at = $next, first_attempt_at = $first, last_error = $error, uncertain = $uncertain WHERE id = $id",
     ),
     deleteOutbox: db.query("DELETE FROM sync_outbox WHERE id = $id"),
     deleteOutboxOfTicket: db.query("DELETE FROM sync_outbox WHERE ticket_id = $t"),
@@ -185,7 +188,7 @@ export function createSyncStore(db: Database) {
     uncertainCreate: (b: string) => q.uncertainCreate.get({ b })?.found === 1,
     attempt(
       id: number,
-      patch: Pick<OutboxRow, "attempts" | "nextAttemptAt" | "firstAttemptAt" | "lastError">,
+      patch: Pick<OutboxRow, "attempts" | "nextAttemptAt" | "firstAttemptAt" | "lastError" | "uncertain">,
     ) {
       q.attempt.run({
         id,
@@ -193,6 +196,7 @@ export function createSyncStore(db: Database) {
         next: patch.nextAttemptAt,
         first: patch.firstAttemptAt,
         error: json(patch.lastError),
+        uncertain: patch.uncertain ? 1 : 0,
       });
     },
     row(id: number): OutboxRow | null {

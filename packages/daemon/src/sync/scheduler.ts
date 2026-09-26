@@ -1,13 +1,15 @@
 import type { EventLog } from "../integrations/events";
-import { alreadyLoggedByCycle, type SyncEngine } from "./engine";
+import type { SyncEngine } from "./engine";
 
 export function startSyncScheduler(engine: SyncEngine, events: EventLog, intervalMs = 60_000) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const report = (e: unknown) =>
     events.log("github-issues", "error", e instanceof Error ? e.message : String(e));
   const tick = () => {
-    for (const { projectId, bindingId } of engine.runnable())
-      engine.cycle(projectId, bindingId).catch(alreadyLoggedByCycle);
+    for (const { projectId, bindingId } of engine.runnable()) {
+      const cycleLogsItsOwnFailure = engine.cycle(projectId, bindingId);
+      void cycleLogsItsOwnFailure.catch(() => undefined);
+    }
   };
   const interval = setInterval(tick, intervalMs);
   return {

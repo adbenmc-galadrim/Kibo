@@ -1,7 +1,7 @@
 import { KiboError } from "@kibo/schema";
 import type { IntegrationKit, IntegrationModule } from "../integrations/bootstrap";
 import type { AdapterRunner } from "../integrations/types";
-import { alreadyLoggedByCycle, createSyncEngine, type PauseGate } from "./engine";
+import { createSyncEngine, type PauseGate } from "./engine";
 import { outboxObserver, syncInterceptor } from "./outbox";
 import { startSyncScheduler } from "./scheduler";
 import { createSyncStore } from "./sync-store";
@@ -36,7 +36,8 @@ export function syncModule(
           runner: host.user,
         };
         host.command(req.projectId, { method: "addBinding", binding }, { origin: "user", instanceId: null });
-        engine.cycle(req.projectId, binding.id).catch(alreadyLoggedByCycle);
+        const firstCycleLogsItsOwnFailure = engine.cycle(req.projectId, binding.id);
+        void firstCycleLogsItsOwnFailure.catch(() => undefined);
         return binding;
       },
       async deleteBinding(req) {
