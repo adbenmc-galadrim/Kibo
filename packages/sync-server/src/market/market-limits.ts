@@ -1,3 +1,4 @@
+import { KiboError } from "@kibo/schema";
 import { FailureLimiter, RateWindow } from "../limits";
 
 export const MARKET_LIMITS = {
@@ -24,4 +25,13 @@ export function createMarketLimits(now: () => number): MarketLimits {
       now,
     }),
   };
+}
+
+export class RateLimited extends KiboError {
+  constructor(
+    detail: string,
+    readonly retryAfterMs: number,
+  ) {
+    super("RATE_LIMITED", detail);
+  }
 }

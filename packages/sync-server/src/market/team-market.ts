@@ -14,31 +14,32 @@ import { z } from "zod";
 import { audit } from "../audit";
 import type { ServerDb } from "../db";
 import { validate } from "../validate";
+import { CleanText } from "./clean-text";
 import { buildMarketIndex, type IndexedPackage } from "./index-builder";
 import { type MarketRole, MarketStore, type RevokedRow } from "./market-store";
+import { assertPublisher, publisherNameKey } from "./publisher-rules";
 
 export const MARKET_SOURCE_FILE = "market-source.json";
 
 const SourceIdentity = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/),
-  name: z.string().trim().min(1).max(64),
+  name: CleanText(64),
 });
 const SourceFile = SourceIdentity.extend({ publicKey: z.string().min(1), privateKey: z.string().min(1) });
 type SourceKeys = z.infer<typeof SourceFile>;
 
 const Grant = z.object({ userId: SyncId, role: z.enum(["owner", "publisher"]) });
-const Actor = z.object({ userId: SyncId });
-export const RevokeInput = z.object({ hash: Sha256, reason: z.string().trim().min(1).max(500) });
+const Actor = z.object({ userId: SyncId, publisherClaim: z.string().optional() });
+type Actor = z.infer<typeof Actor>;
+type SignedIndex = { serial: number; bytes: Uint8Array<ArrayBuffer>; sig: string };
+export const RevokeInput = z.object({ hash: Sha256, reason: CleanText(500) });
 export type RevokeInput = z.infer<typeof RevokeInput>;
-
-const CONTROL = /\p{Cc}/u;
 
 type PendingChange = {
   added?: IndexedPackage;
   publisher?: { publicKey: string; name: string };
   revoked?: RevokedRow;
 };
-const nameKeyOf = (name: string): string => name.normalize("NFKC").trim().toLowerCase();
 
 export async function initMarketSource(
   dataDir: string,
@@ -68,6 +69,7 @@ function readSourceFile(file: string): SourceKeys {
 
 export class TeamMarket {
   private queue: Promise<unknown> = Promise.resolve();
+  private cached: SignedIndex | null = null;
 
   private constructor(
     private readonly sdb: ServerDb,
@@ -97,8 +99,8 @@ export class TeamMarket {
     this.store.setRole(validate(SyncId, userId), null);
   }
 
-  publish(kpkg: Uint8Array, actor: { userId: string }, now: number): Promise<{ serial: number }> {
-    return this.exclusive(() => this.publishNow(kpkg, validate(Actor, actor).userId, now));
+  publish(kpkg: Uint8Array, actor: Actor, now: number): Promise<{ serial: number }> {
+    return this.exclusive(() => this.publishNow(kpkg, validate(Actor, actor), now));
   }
 
   revoke(input: RevokeInput, actor: { userId: string }, now: number): Promise<{ serial: number }> {
@@ -107,17 +109,21 @@ export class TeamMarket {
     );
   }
 
-  index(): { bytes: Uint8Array<ArrayBuffer>; sig: string } {
+  index(): SignedIndex {
+    const serial = this.store.serial();
+    if (this.cached?.serial === serial) return this.cached;
     const row = this.store.signedIndex();
     if (!row) throw new KiboError("STORE_CORRUPT", "market index is missing");
-    return { bytes: new TextEncoder().encode(row.indexJson), sig: row.sig };
+    this.cached = { serial, bytes: new TextEncoder().encode(row.indexJson), sig: row.sig };
+    return this.cached;
   }
 
   packageBytes(id: string, version: string): Uint8Array<ArrayBuffer> | null {
     return this.store.packageBytes(id, version);
   }
 
-  private async publishNow(bytes: Uint8Array, userId: string, now: number): Promise<{ serial: number }> {
+  private async publishNow(bytes: Uint8Array, actor: Actor, now: number): Promise<{ serial: number }> {
+    const { userId } = actor;
     if (this.store.role(userId) === null) {
       throw new KiboError("FORBIDDEN", "publishing needs the publisher or owner role");
     }
@@ -125,54 +131,22 @@ export class TeamMarket {
     parsePublicKey(pkg.publisher.publicKey);
     await verifyKpkgSignature(pkg);
     await kpkgSourceFiles(pkg);
-    this.assertPublishable(pkg, userId);
-    const row = { ...indexedRow(pkg, bytes.byteLength), userId, bytes };
-    const publisher = {
-      publicKey: pkg.publisher.publicKey,
+    const { known } = await assertPublisher(this.store, {
+      pkg,
       userId,
-      name: pkg.publisher.name,
-      nameKey: nameKeyOf(pkg.publisher.name),
-    };
-    const known = this.store.publisher(publisher.publicKey) !== null;
+      sourceId: this.keys.id,
+      claim: actor.publisherClaim,
+    });
+    const row = { ...indexedRow(pkg, bytes.byteLength), userId, bytes };
+    const { name, publicKey } = pkg.publisher;
+    const publisher = { publicKey, userId, name, nameKey: publisherNameKey(name) };
     const serial = await this.commit(now, { added: row, publisher: known ? undefined : publisher }, () => {
       if (!known) this.store.insertPublisher(publisher);
       this.store.insertPackage(row);
-      audit(this.sdb, {
-        at: now,
-        kind: "market-published",
-        userId,
-        detail: `${pkg.manifest.id}@${pkg.manifest.version} ${pkg.hash}`,
-      });
+      const detail = `${pkg.manifest.id}@${pkg.manifest.version} ${pkg.hash}`;
+      audit(this.sdb, { at: now, kind: "market-published", userId, detail });
     });
     return { serial };
-  }
-
-  private assertPublishable(pkg: Kpkg, userId: string): void {
-    const { id, version } = pkg.manifest;
-    const { name, publicKey } = pkg.publisher;
-    if (this.store.isRevoked(pkg.hash)) throw new KiboError("REVOKED", `${id}@${version} has a revoked hash`);
-    if (this.store.hasVersion(id, version)) {
-      throw new KiboError("VERSION_EXISTS", `${id}@${version} is already published`);
-    }
-    if (this.store.publisherKeysOf(id).some((k) => k !== publicKey)) {
-      throw new KiboError("PUBLISHER_CHANGED", `${id} is published by another key`);
-    }
-    const registered = this.store.publisher(publicKey);
-    if (registered && registered.userId !== userId) {
-      throw new KiboError("FORBIDDEN", "this publisher key belongs to another user");
-    }
-    if (registered && registered.name !== name) {
-      throw new KiboError(
-        "INVALID_INPUT",
-        `publisher name is frozen as ${JSON.stringify(registered.name)} for this key`,
-      );
-    }
-    if (CONTROL.test(name) || name.trim() !== name) {
-      throw new KiboError("INVALID_INPUT", "publisher name is not clean text");
-    }
-    if (this.store.nameTakenByOther(nameKeyOf(name), userId)) {
-      throw new KiboError("INVALID_INPUT", "publisher name is already used by another user");
-    }
   }
 
   private async revokeNow(input: RevokeInput, userId: string, now: number): Promise<{ serial: number }> {

@@ -7,6 +7,8 @@ import {
   generateKeyPair,
   type KeyPair,
   owned,
+  PUBLISHER_CLAIM_HEADER,
+  signPublisherClaim,
   signRequest,
   verifyIndex,
   verifyMarketPackage,
@@ -24,7 +26,7 @@ let sdb: ServerDb;
 let server: ReturnType<typeof Bun.serve>;
 let base: string;
 let sourceKey: string;
-let device: { deviceId: string; keys: KeyPair };
+let device: { userId: string; deviceId: string; keys: KeyPair };
 
 beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), "kibo-market-http-"));
@@ -40,9 +42,9 @@ beforeAll(async () => {
     Date.now(),
   );
   market.grant(joined.userId, "publisher");
-  device = { deviceId: joined.deviceId, keys };
+  device = { userId: joined.userId, deviceId: joined.deviceId, keys };
   const now = () => Date.now();
-  const nonces = new NonceCache({ ttlMs: NONCE_TTL_MS, now });
+  const nonces = new NonceCache({ sdb, ttlMs: NONCE_TTL_MS, now });
   const limits = createMarketLimits(now);
   server = Bun.serve({
     hostname: "127.0.0.1",
@@ -62,7 +64,8 @@ afterAll(async () => {
 });
 
 test("a package published over HTTP verifies like a daemon source would", async () => {
-  const { bytes } = await makeTestPackage({ publisherName: "Léa" });
+  const made = await makeTestPackage({ publisherName: "Léa" });
+  const { bytes } = made;
   const auth = await signRequest({
     deviceId: device.deviceId,
     privateKey: device.keys.privateKey,
@@ -71,9 +74,14 @@ test("a package published over HTTP verifies like a daemon source would", async 
     body: bytes,
     now: Date.now(),
   });
+  const claim = await signPublisherClaim({
+    sourceId: "equipe",
+    userId: device.userId,
+    privateKey: made.keys.privateKey,
+  });
   const published = await fetch(`${base}/v1/market/packages`, {
     method: "POST",
-    headers: auth,
+    headers: { ...auth, [PUBLISHER_CLAIM_HEADER]: claim },
     body: owned(bytes),
   });
   expect(await published.json()).toEqual({ ok: true, result: { serial: 2 } });

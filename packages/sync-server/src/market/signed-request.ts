@@ -17,29 +17,36 @@ const SignatureHeaders = z.object({
 });
 type SignatureHeaders = z.infer<typeof SignatureHeaders>;
 
+const NONCE_TABLE =
+  "CREATE TABLE IF NOT EXISTS market_nonces (nonce TEXT PRIMARY KEY, expiresAt INTEGER NOT NULL)";
+
 export class NonceCache {
-  private readonly expiresAt = new Map<string, number>();
   private lastSweep = Number.NEGATIVE_INFINITY;
 
-  constructor(private readonly opts: { ttlMs: number; now: () => number }) {}
-
-  get size(): number {
-    return this.expiresAt.size;
+  constructor(private readonly opts: { sdb: ServerDb; ttlMs: number; now: () => number }) {
+    opts.sdb.db.exec(NONCE_TABLE);
   }
 
   seen(nonce: string): boolean {
     const now = this.opts.now();
     this.sweep(now);
-    const until = this.expiresAt.get(nonce);
-    if (until !== undefined && until >= now) return true;
-    this.expiresAt.set(nonce, now + this.opts.ttlMs);
+    const db = this.opts.sdb.db;
+    const row = db
+      .query<{ expiresAt: number }, { nonce: string }>(
+        "SELECT expiresAt FROM market_nonces WHERE nonce = $nonce",
+      )
+      .get({ nonce });
+    if (row && row.expiresAt >= now) return true;
+    db.query(
+      "INSERT INTO market_nonces (nonce, expiresAt) VALUES ($nonce, $expiresAt) ON CONFLICT(nonce) DO UPDATE SET expiresAt = excluded.expiresAt",
+    ).run({ nonce, expiresAt: now + this.opts.ttlMs });
     return false;
   }
 
   private sweep(now: number): void {
     if (now - this.lastSweep < Math.min(NONCE_SWEEP_MS, this.opts.ttlMs)) return;
     this.lastSweep = now;
-    for (const [nonce, until] of this.expiresAt) if (until < now) this.expiresAt.delete(nonce);
+    this.opts.sdb.db.query("DELETE FROM market_nonces WHERE expiresAt < $now").run({ now });
   }
 }
 
