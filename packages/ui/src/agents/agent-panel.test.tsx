@@ -4,6 +4,7 @@ import {
   type HookPayload,
   KiboError,
   type RpcRequest,
+  type RunEvent,
   type RunLogEntry,
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -81,7 +82,7 @@ const { AgentBar } = await import("./AgentBar");
 const { AgentDrawer } = await import("./AgentDrawer");
 const { AgentPanel } = await import("./AgentPanel");
 const { ReplyBox } = await import("./ReplyBox");
-const { RunJournal } = await import("./RunJournal");
+const { journalLine, RunJournal } = await import("./RunJournal");
 
 beforeEach(() => {
   calls.length = 0;
@@ -179,16 +180,40 @@ test("a finished run has no stop button", () => {
   expect(screen.queryByRole("button", { name: "Arrêter" })).toBeNull();
 });
 
-test("the journal hides PreToolUse and reranks, and shows the question in amber", () => {
+test("the journal shows raw event names, hides PreToolUse and reranks, and the question in amber", () => {
   render(<RunJournal label="opus-dev-2" log={LOG} />);
   const journal = screen.getByRole("list", { name: "Journal de opus-dev-2" });
   const lines = within(journal).getAllByRole("listitem");
   expect(lines.map((l) => l.textContent)).toEqual([
-    expect.stringContaining("brief.md + 3 guidelines chargés"),
+    expect.stringContaining("SessionStartbrief.md + 3 guidelines chargés"),
     expect.stringContaining("PostToolUseWrite apps/daemon/src/hooks/receiver.ts"),
-    expect.stringContaining("Quel port pour le récepteur ?"),
+    expect.stringContaining("NotificationQuel port pour le récepteur ?"),
   ]);
   expect(lines[2]?.getAttribute("data-tone")).toBe("amber");
+});
+
+test("file paths in the journal are styled as links", () => {
+  render(<RunJournal label="opus-dev-2" log={LOG} />);
+  const path = screen.getByText("apps/daemon/src/hooks/receiver.ts");
+  expect(path.getAttribute("data-path")).toBe("");
+  expect(path.className).toContain("underline");
+  expect(screen.getByText("Write").getAttribute("data-path")).toBeNull();
+});
+
+test("daemon events keep their raw type as name", () => {
+  const cases: [RunEvent, string | null][] = [
+    [{ type: "enqueued", rank: 1 }, "enqueued"],
+    [{ type: "admitted", lane: 2 }, "admitted"],
+    [{ type: "spawned", pid: 1, resume: true, workspace: "repo", guidelines: 0 }, "SessionStart"],
+    [{ type: "exited", code: 0, isError: false, result: null, tokens: 0, costUsd: 0, denied: [] }, "Stop"],
+    [{ type: "answered", text: "oui", rank: 0 }, "answered"],
+    [{ type: "cancelled" }, "cancelled"],
+    [{ type: "failed", error: "exit code 1" }, "failed"],
+    [{ type: "prioritized", priority: true }, "prioritized"],
+    [{ type: "prioritized", priority: false }, null],
+    [{ type: "reranked", rank: 2 }, null],
+  ];
+  for (const [event, name] of cases) expect(journalLine(event)?.name ?? null).toBe(name);
 });
 
 test("the reply box sends a trimmed answer, and keeps the text when it fails", async () => {

@@ -137,17 +137,8 @@ export const fr = {
     stop: "Arrêter",
     stopFailed: "Impossible d'arrêter le run.",
     events: {
-      enqueued: "En file",
-      admitted: "Créneau",
-      spawned: "Lancement",
       loaded: (n: number) => `brief.md + ${n} guideline${n > 1 ? "s" : ""} chargé${n > 1 ? "s" : ""}`,
       resumed: "reprise de la session (--resume)",
-      question: "Question",
-      exited: "Fin du tour",
-      answered: "Réponse",
-      cancelled: "Arrêté",
-      failed: "Échec",
-      prioritized: "Prioritaire",
       denied: (tools: string) => `actions refusées : ${tools}`,
     },
     states: {
