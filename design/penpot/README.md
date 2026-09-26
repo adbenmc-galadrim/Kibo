@@ -29,7 +29,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 09 · Composants | 43–49 (phase 4) |
 | 10 · Intégrations | 50–57, 57b–57n (phase 5 : source synchronisée, Sheet ticket GitHub / CI / Maquettes, Source MCP, vues synchronisées) |
 | 11 · IA | 58–64 (phase 6) |
-| 12 · Sync & marketplace | 65–75 (phase 7) |
+| 12 · Sync & marketplace | 65–97 (phase 7) |
 | 13 · Compléments | 76–78 (revue §7) |
 
 Règles :

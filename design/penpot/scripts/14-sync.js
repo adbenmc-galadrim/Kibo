@@ -1,14 +1,14 @@
-// Page « 12 · Sync & marketplace » : écrans 65 à 75 (phase 7, plan kibo-sync-marketplace S1–S9, M1–M2).
-// Bases : copies des écrans 8, 16 et 6. Collègue fictive : Léa (LM), serveur wss://sync.kibo.test.
+// Page « 12 · Sync & marketplace » : écrans 65 à 97 (phase 7, plan kibo-sync-marketplace S1–S9, M1–M8).
+// Bases : copies des écrans 6, 8, 16, 19 et 30. Collègue fictive : Léa (LM), serveur wss://sync.kibo.test.
 const S = storage, C = S.C;
 S.draw = S.draw || {};
 const PAGE = "12 · Sync & marketplace";
 const find = (f, n) => penpotUtils.findShape(s => s.name === n, f);
 const clear = (b) => [...b.children].forEach(k => k.remove());
 const LEA = "#0EA5E9";
-const fromBase = async (base, name, row) => { await S.page(PAGE); const root = penpot.currentPage.root; const old = root.children.find(c => c.name === name); if (old) old.remove();
+const fromBase = async (base, name, row, keep) => { await S.page(PAGE); const root = penpot.currentPage.root; const old = root.children.find(c => c.name === name); if (old) old.remove();
   const f = root.children.find(c => c.name === "base · " + base).clone(); f.name = name; f.x = 0; f.y = row * 1040;
-  f.children.filter(c => /^Dialog|^Overlay/.test(c.name)).forEach(c => c.remove()); return f; };
+  if (!keep) f.children.filter(c => /^Dialog|^Overlay/.test(c.name)).forEach(c => c.remove()); return f; };
 const shareBtn = (f) => S.topAction(f, "Partager", "outline", "share");
 const syncState = (f, label, col) => { const bar = find(f, "AgentStatusBar"); const t = bar.children.find(c => c.type === "text" && /Démon local/.test(c.characters)); bar.flex.columnGap = 10; if (t) { S.setText(t, "● Démon local · " + label); t.fills = [{ fillColor: col, fillOpacity: 1 }]; } };
 const inviteCode = "K7QD 9XMP 2RTA HW4C 8NEV B3YF QZ";
@@ -73,6 +73,7 @@ S.draw[68] = async () => { const f = await fromBase(8, "68 · Projet en lecture 
 const settings = async (name, row, active) => { const f = await fromBase(16, name, row);
   const nav = find(f, "SettingsNav"); const integ = nav.children.find(c => c.name === "SidebarItem / Intégrations");
   const sync = S.navItem(null, "cloud", "Sync", {}); nav.insertChild(nav.children.findIndex(c => c.id === integ.id) + 1, sync); S.fillX(sync);
+  if (active === "Composants") { const secu = nav.children.find(c => c.name === "SidebarItem / Sécurité"); const comp = S.navItem(null, "puzzle", "Composants", {}); nav.insertChild(nav.children.findIndex(c => c.id === secu.id) + 1, comp); S.fillX(comp); }
   nav.children.filter(c => /^SidebarItem/.test(c.name)).forEach(it => { const on = it.name === "SidebarItem / " + active; it.fills = on ? [{ fillColor: C.accent, fillOpacity: 1 }] : [];
     const t = it.children.find(c => c.type === "text"); t.fills = [{ fillColor: on ? C.fg : C.mfg, fillOpacity: 1 }]; });
   const cr = find(f, "Breadcrumb"); const last = penpotUtils.findShapes(s => s.type === "text", cr).pop(); S.setText(last, active);
@@ -175,4 +176,148 @@ S.draw[75] = async () => { const f = await buildMarket("75 · Paquet refusé (si
   S.sub(d, "Si Léa a changé de clé, fais-lui confirmer la nouvelle empreinte avant de débloquer.");
   const ft = S.row(d, { gap: 8, justify: "end" }); S.button(ft, "Débloquer…", "ghost"); S.button(ft, "Fermer", "default");
   S.center(f, d); S.frontAbs(f); return f.id; };
+
+// ---------- Écrans 79 à 97 (tâche 33 : S3, S6 « Accès retiré », S7, M3 à M8) ----------
+Object.assign(S.ICONS, { logIn: '<path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>' });
+const ROW = (n) => n - 68;
+const inp = (p, v, o = {}) => { const i = S.box(p, { name: "Input", fill: C.bg, stroke: o.error ? C.red : C.border, radius: 6, dir: "row", gap: 8, pad: [8, 10], vs: "auto", align: "center", w: o.w });
+  if (!o.w) S.fillX(i); if (o.icon) S.icon(i, o.icon, 14, C.dim); S.fillX(S.txt(i, v, { size: 13, mono: !!o.mono, color: o.placeholder ? C.dim : C.fg })); if (o.right) S.icon(i, o.right, 14, C.dim); return i; };
+const fieldX = (p, label, v, o = {}) => { const c = S.col(p, { gap: 6 }); S.txt(c, label, { size: 12, weight: 500 }); inp(c, v, o);
+  if (o.error) { const r = S.row(c, { gap: 6 }); S.icon(r, "circleX", 13, C.red); S.txt(r, o.error, { size: 12, color: C.red }); } else if (o.help) S.txt(c, o.help, { size: 11, color: C.dim }); return c; };
+const redText = (b) => penpotUtils.findShapes(s => s.type === "text", b).forEach(t => t.fills = [{ fillColor: C.red, fillOpacity: 1 }]);
+
+// S3 · Rejoindre un projet (bouton sous « Nouveau projet » dans la sidebar)
+const joinSidebar = (f) => { const sb = find(f, "Sidebar"); const api = sb.children.find(c => c.name === "SidebarItem / API Facturation"); let i = sb.children.findIndex(c => c.id === api.id) + 1;
+  for (const [ic, l] of [["plus", "Nouveau projet"], ["logIn", "Rejoindre un projet"]]) { const it = S.navItem(null, ic, l, {}); sb.insertChild(i++, it); S.fillX(it); } };
+const buildJoin = async (n, name, o = {}) => { const f = await fromBase(8, n + " · " + name, ROW(n)); joinSidebar(f); syncState(f, "synchronisé", C.green);
+  const d = S.modal(f, 480, "Rejoindre un projet", "Colle le code d'invitation reçu d'un membre du projet.");
+  fieldX(d, "Code d'invitation", inviteCode, { mono: true, error: o.codeError });
+  fieldX(d, "Dossier local (facultatif)", "Choisir un dossier…", { placeholder: true, icon: "folder", help: "Le dossier reste sur ta machine" });
+  if (o.keyError) S.alert(d, o.keyError, "red", { icon: "circleX" });
+  S.footer(d, "Annuler", "Rejoindre"); S.center(f, d); S.frontAbs(f); return f.id; };
+S.draw[79] = () => buildJoin(79, "Rejoindre un projet");
+S.draw[80] = () => buildJoin(80, "Rejoindre un projet (code invalide)", { codeError: "Code invalide ou expiré" });
+S.draw[81] = () => buildJoin(81, "Rejoindre un projet (clé déjà utilisée)", { keyError: "Un projet local utilise déjà la clé KIB" });
+
+// S6 · variante « Accès retiré »
+S.draw[82] = async () => { const f = await fromBase(8, "82 · Projet « Accès retiré »", ROW(82)); syncState(f, "synchronisé", C.green);
+  const main = find(f, "Main"); const content = find(f, "Content");
+  const ban = S.box(null, { name: "AccessRevokedBanner", fill: "#2A0F0F", dir: "row", gap: 10, pad: [9, 20], vs: "auto", align: "center" }); main.insertChild(main.children.findIndex(c => c.id === content.id), ban); S.fillX(ban);
+  S.icon(ban, "eye", 15, C.red); S.fillX(S.txt(ban, "Accès retiré — ta copie locale reste lisible mais n'est plus synchronisée.", { size: 13, color: C.red }));
+  const tk = find(f, "Topbar").children.find(c => /Button/.test(c.name)); if (tk) tk.remove();
+  penpotUtils.findShapes(s => s.name === "add", f).forEach(a => a.remove()); const ap = find(f, "SidebarItem / Ajouter une page"); if (ap) ap.remove();
+  return f.id; };
+
+// S7 · Composant absent ; M7 et M4 · instances bloquées (tableau de bord)
+const widgetBox = (p, title, icon) => { const w = S.panel(p, { name: "Widget", pad: 0, gap: 0, radius: 10 }); S.child(w, { v: "fill" });
+  const h = S.row(w, { gap: 8, pad: [10, 14] }); h.strokes = [{ strokeColor: C.border, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1 }];
+  S.icon(h, icon || "puzzle", 14, C.mfg); S.fillX(S.txt(h, title, { size: 13, weight: 500 })); S.icon(h, "more", 16, C.mfg);
+  const b = S.col(w, { gap: 10, pad: 20, align: "center" }); S.child(b, { v: "fill" }); b.flex.justifyContent = "center"; return { w, b }; };
+const missing = (p, id, fillBody) => { const w = S.box(p, { name: "MissingComponent", radius: 10, dir: "column", gap: 10, pad: 20, align: "center", justify: "center" }); S.child(w, { h: "fill", v: "fill" });
+  w.strokes = [{ strokeColor: C.mfg, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1, strokeStyle: "dashed" }];
+  S.icon(w, "package", 22, C.mfg); S.txt(w, "Composant absent : " + id, { size: 14, weight: 600 }); fillBody(w); return w; };
+S.draw[83] = async () => { await S.page(PAGE);
+  const r = S.screenX("83 · Tableau de bord : composants absents et bloqués", 0, ROW(83), "Tableau de bord", ["Kibo", "Tableau de bord"], ["dashboard", "Kibo · Tableau de bord"]);
+  const f = r.frame; syncState(f, "synchronisé", C.green);
+  const c = r.content; c.flex.rowGap = 16; const top = S.row(c, { gap: 16, align: "stretch" }); S.child(top, { v: "fill" }); const bot = S.row(c, { gap: 16, align: "stretch" }); S.child(bot, { v: "fill" });
+  missing(top, "burndown@0.3.0", w => { S.txt(w, "Disponible sur la marketplace Équipe, avec la même empreinte.", { size: 12, color: C.mfg }); S.button(w, "Installer", "outline", { sm: true, icon: "download" }); });
+  missing(top, "velocite@0.2.0", w => { S.txt(w, "Demande à Léa de le publier sur la marketplace d'équipe", { size: 12, color: C.mfg }); });
+  const a = widgetBox(bot, "PR en attente"); S.icon(a.b, "shieldOff", 22, C.amber); S.txt(a.b, "Backend arrêté — isolation OS indisponible", { size: 13, weight: 500, color: C.amber });
+  S.txt(a.b, "L'interface reste utilisable. Les commandes d'installation sont sur la page Composants.", { size: 12, color: C.mfg });
+  const b = widgetBox(bot, "Calendrier des jalons"); S.icon(b.b, "lock", 22, C.red); S.txt(b.b, "Autorisation requise — Révoqué : calcul des échéances faux", { size: 13, weight: 500, color: C.red });
+  S.button(b.b, "Choisir une autre version", "outline", { sm: true });
+  return f.id; };
+
+// M3 · Paramètres › Composants › Sources
+const buildSources = async (name, row, o = {}) => { const { f, body } = await settings(name, row, "Composants");
+  const cr = find(f, "Breadcrumb"); const last = penpotUtils.findShapes(s => s.type === "text", cr).pop(); S.setText(last, "Composants › Sources");
+  const hr = S.row(body, { gap: 12, align: "start" }); head(hr, "Sources", "Les marketplaces d'où tu installes des composants. Chaque index est signé par la clé de sa source."); S.button(hr, "Ajouter une source", "outline", { sm: true, icon: "plus" });
+  const t = tableRows(body, [["Nom", 90], ["Adresse", 0], ["Empreinte de la clé", 110, "mono"], ["Index n°", 50, "mono"], ["Mis à jour", 80], ["État", 200], ["", 24]], [
+    [c => { S.icon(c, "store", 14, C.mfg); S.txt(c, "Équipe", { size: 12, weight: 500 }); }, c => S.txt(c, "https://sync.kibo.test/market/", { size: 12, mono: true }), "7b2e 91c4 …", "42", "il y a 5 min", c => { S.dot(c, C.green, 7); S.txt(c, "À jour", { size: 12, color: C.mfg }); }, c => S.icon(c, "more", 16, C.mfg)],
+    [c => { S.icon(c, "store", 14, C.mfg); S.txt(c, "Kibo", { size: 12, weight: 500 }); }, c => S.txt(c, "https://market.kibo.test/", { size: 12, mono: true }), "c0d5 38aa …", "17", "hier", c => { S.dot(c, C.red, 7); S.fillX(S.txt(c, "Index refusé : numéro inférieur au dernier vu", { size: 12, color: C.red, lh: 1.35 })); }, c => S.icon(c, "more", 16, C.fg)]]);
+  S.txt(body, "Aucune source n'est ajoutée par défaut. Compare l'empreinte de la clé avec celle communiquée par l'éditeur avant d'ajouter une source.", { size: 11, color: C.dim });
+  syncState(f, "synchronisé", C.green); return { f, t }; };
+S.draw[84] = async () => { const { f } = await buildSources("84 · Paramètres › Composants › Sources", ROW(84));
+  const m = S.menu(f, 1440 - 32 - 200, 292, [["Rafraîchir", "refresh"], "-", ["Retirer", "trash", { danger: true }]], 200); m.name = "Menu"; S.frontAbs(f); return f.id; };
+S.draw[85] = async () => { const { f } = await buildSources("85 · Ajouter une source (adresse)", ROW(85));
+  const d = S.modal(f, 520, "Ajouter une source", "Une source est un index de composants signé, servi en HTTPS."); S.stepper(d, ["Adresse", "Empreinte"], 0);
+  fieldX(d, "Adresse", "https://market.kibo.test/", { mono: true, help: "HTTPS uniquement." });
+  S.footer(d, "Annuler", "Suivant"); S.center(f, d); S.frontAbs(f); return f.id; };
+S.draw[86] = async () => { const { f } = await buildSources("86 · Ajouter une source (empreinte)", ROW(86));
+  const d = S.modal(f, 520, "Ajouter une source", "https://market.kibo.test/ · index n° 17 · 6 paquets"); S.stepper(d, ["Adresse", "Empreinte"], 1);
+  fieldX(d, "Nom de la source", "Kibo");
+  const fp = S.col(d, { gap: 6 }); S.txt(fp, "Empreinte de la clé", { size: 12, weight: 500 }); S.code(fp, [["c0d5 38aa 7f12 e94b 06c3 d218 5ab7 f940", C.fg], ["2e6d 81b5 c7a0 3f19 d42e 9b06 71c8 e3a5", C.fg]], { fill: C.muted });
+  S.alert(d, "Compare cette empreinte avec celle communiquée par l'éditeur de la source", "muted", { icon: "fingerprint" });
+  const ft = S.row(d, { gap: 8 }); S.button(ft, "Retour", "ghost", { icon: "arrowLeft" }); S.spacer(ft); S.button(ft, "Ajouter", "default");
+  S.center(f, d); S.frontAbs(f); return f.id; };
+
+// M4 · Composants › Installés (mise à jour disponible, révoqué) ; M7 · bannière
+const sandboxed = c => S.txt(c, "Sandboxé", { size: 12, color: C.amber });
+const nameCell = (t, sub, col) => c => { const v = S.col(c, { gap: 2 }); S.txt(v, t, { size: 13, weight: 500 }); if (sub) S.txt(v, sub, { size: 11, color: col || C.dim }); };
+const buildInstalled = async (name, row, o = {}) => { const f = await fromBase(6, name, row); syncState(f, "synchronisé", C.green);
+  const content = find(f, "Content"); clear(content); content.flex.rowGap = 16;
+  const tabs = S.row(content, { gap: 4 }); [["Installés", true], ["Marketplace", false]].forEach(([t, on]) => { const b = S.box(tabs, { name: "tab", fill: on ? C.accent : null, radius: 6, dir: "row", pad: [6, 12], hs: "auto", vs: "auto" }); S.txt(b, t, { size: 13, weight: on ? 500 : 400, color: on ? C.fg : C.mfg }); });
+  if (o.banner) { const a = S.alert(content, "Les backends sandboxés sont arrêtés : isolation OS indisponible.", "amber", { icon: "shieldOff", desc: "bubblewrap est absent ou les espaces de noms utilisateur sont interdits. L'interface des composants sandboxés reste utilisable." });
+    const col = a.children.find(c => c.name === "col"); S.code(col, [["sudo apt install bubblewrap", C.fg], ["sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0", C.fg]]); }
+  S.table(content, [["Composant"], ["Version", 190], ["Confiance", 110], ["Origine", 170], ["Utilisé dans", 250], ["", 24]], [
+    [nameCell("Kanban"), c => S.txt(c, "1.0.0", { size: 12, mono: true }), "Intégré", "Kibo", "5 pages · 3 projets", c => S.icon(c, "more", 16, C.mfg)],
+    [nameCell("Tickets"), c => S.txt(c, "1.0.0", { size: 12, mono: true }), "Intégré", "Kibo", "4 pages · 3 projets", c => S.icon(c, "more", 16, C.mfg)],
+    [nameCell("Burndown"), c => { S.txt(c, "0.3.0", { size: 12, mono: true }); S.badge(c, "0.4.0 disponible", C.blue, { stroke: "#1E3A8A" }); }, sandboxed, "Marketplace · Équipe", c => { S.txt(c, "1 page · 1 projet", { size: 12 }); S.spacer(c); S.button(c, "Mettre à jour", "outline", { sm: true, icon: "arrowUpCircle" }); }, c => S.icon(c, "more", 16, C.mfg)],
+    [nameCell("Calendrier des jalons", "Révoqué : calcul des échéances faux", C.red), c => { S.txt(c, "1.0.3", { size: 12, mono: true, color: C.dim }); S.badge(c, "Révoqué", C.red, { stroke: "#7F1D1D" }); }, sandboxed, "Marketplace · Équipe", "1 page · 1 projet", c => S.icon(c, "more", 16, C.mfg)],
+    [nameCell("PR en attente", o.banner ? "Backend arrêté — isolation OS indisponible" : null, C.amber), c => S.txt(c, "0.3.0", { size: 12, mono: true }), sandboxed, "IA", "3 pages · 3 projets", c => S.icon(c, "more", 16, o.menu ? C.fg : C.mfg)]]);
+  return f; };
+S.draw[87] = async () => { const f = await buildInstalled("87 · Composants › Installés (mise à jour, révoqué)", ROW(87), { menu: true });
+  S.menu(f, 1440 - 32 - 240, 398, [["Voir le code", "code"], ["Publier sur la marketplace", "upload"], "-", ["Désinstaller", "trash", { danger: true }]], 240); S.frontAbs(f); return f.id; };
+
+// M5 · écran 30, variantes marketplace
+const buildTrust = async (n, name, title, sub, verified, newPublisher) => { const f = await fromBase(30, n + " · " + name, ROW(n), true); syncState(f, "synchronisé", C.green);
+  const d = f.children.find(c => /^Dialog/.test(c.name)); d.name = "Dialog-" + title; const tv = find(d, "header").children.find(c => c.name === "t");
+  const ts = tv.children.filter(c => c.type === "text"); S.setText(ts[0], title); ts[1].remove();
+  const r = S.row(tv, { gap: 6 }); S.icon(r, verified ? "badgeCheck" : "alert", 13, verified ? C.green : C.amber); S.txt(r, sub, { size: 13, color: verified ? C.mfg : C.amber });
+  if (newPublisher) S.badge(r, "Nouvel éditeur", C.blue, { stroke: "#1E3A8A" });
+  const tot = find(d, "Trust-Confiance totale"); const tc = tot.children.find(c => c.name === "t"); const w = S.row(tc, { gap: 6 }); S.icon(w, "alert", 13, C.amber); S.txt(w, "Ce code vient d'une marketplace.", { size: 12, weight: 500, color: C.amber });
+  S.frontAbs(f); return f.id; };
+S.draw[88] = () => buildTrust(88, "Autoriser : éditeur vérifié, nouvel éditeur", "Autoriser « Calendrier des jalons » 1.2.0 ?", "Publié par Léa · vérifié par Équipe", true, true);
+S.draw[89] = () => buildTrust(89, "Autoriser : éditeur non vérifié", "Autoriser « Revue de sprint » 0.1.2 ?", "Publié par Léa · éditeur non vérifié", false, false);
+
+// M6 · clé d'éditeur changée
+S.draw[90] = async () => { const f = await buildMarket("90 · La clé de l'éditeur a changé", ROW(90));
+  const d = S.modal(f, 500, "La clé de l'éditeur a changé", "« Revue de sprint » · lea/sprint-review · source Équipe");
+  S.code(d, [["ancienne  ed25519:7b2e…c41a (Léa)", C.mfg], ["nouvelle  ed25519:0f93…22d8", C.red]]);
+  S.alert(d, "Ne débloque que si l'éditeur t'a confirmé ce changement", "red", { icon: "shieldAlert", desc: "La nouvelle clé sera épinglée pour ce composant sur cette source." });
+  S.footer(d, "Annuler", "Débloquer", "destructive"); S.center(f, d); S.frontAbs(f); return f.id; };
+
+// M7 · bannière de la page Composants et ligne de l'écran 19
+S.draw[91] = async () => { const f = await buildInstalled("91 · Composants : backends sandboxés arrêtés", ROW(91), { banner: true }); return f.id; };
+S.draw[92] = async () => { const f = await fromBase(19, "92 · Premier lancement : isolation OS indisponible", ROW(92));
+  const checks = find(f, "Checks"); const git = find(f, "Check-Git"); const cap = find(f, "Check-Capacité machine");
+  const iso = git.clone(); iso.name = "Check-Isolation des composants"; checks.insertChild(checks.children.findIndex(c => c.id === cap.id) + 1, iso);
+  const st = iso.children.find(c => c.name === "state"); st.fills = [{ fillColor: C.amber, fillOpacity: 0.15 }]; clear(st); S.icon(st, "alert", 13, C.amber);
+  const ts = iso.children.find(c => c.name === "t").children.filter(c => c.type === "text"); S.setText(ts[0], "Isolation des composants"); S.setText(ts[1], "⚠ bubblewrap introuvable · les backends sandboxés ne démarreront pas"); ts[1].fills = [{ fillColor: C.amber, fillOpacity: 1 }];
+  const help = S.col(null, { gap: 8, pad: [10, 14, 12, 50] }); checks.insertChild(checks.children.findIndex(c => c.id === iso.id) + 1, help); S.fillX(help);
+  S.txt(help, "Installe bubblewrap, ou autorise les espaces de noms utilisateur :", { size: 12, color: C.mfg }); S.code(help, [["sudo apt install bubblewrap", C.fg], ["sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0", C.fg]]);
+  const title = find(f, "title"); const tt = title.children.filter(c => c.type === "text"); S.setText(tt[1], "Une vérification demande ton attention. Tu peux continuer : seuls les backends sandboxés sont arrêtés.");
+  return f.id; };
+
+// M8 · Publier sur la marketplace
+const buildPublish = async (n, name, o = {}) => { const f = await buildInstalled(n + " · " + name, ROW(n));
+  const d = S.modal(f, 540, "Publier sur la marketplace", "« PR en attente » 0.4.0 · composant utilisateur");
+  const sc = S.col(d, { gap: 6 }); S.txt(sc, "Source", { size: 12, weight: 500 }); inp(sc, "Équipe · https://sync.kibo.test/market/", { mono: true, right: "chevDown" }); S.txt(sc, "Seules les sources d'équipe acceptent une publication.", { size: 11, color: C.dim });
+  fieldX(d, "Nom d'éditeur", "Adam", { help: "Ce nom accompagne tes composants publiés" });
+  const rc = S.panel(d, { gap: 8, pad: 14, fill: C.muted }); S.txt(rc, "Récapitulatif", { size: 12, weight: 600 });
+  [["Version", "0.4.0", true], ["Empreinte", "sha256 3f9a…c21e", true]].forEach(([k, v, m]) => { const r = S.row(rc, { gap: 8 }); const kk = S.box(r, { name: "k", w: 90, dir: "row", vs: "auto" }); S.txt(kk, k, { size: 12, color: C.dim }); S.txt(r, v, { size: 12, mono: m }); });
+  const pr = S.row(rc, { gap: 8, align: "start" }); const kp = S.box(pr, { name: "k", w: 90, dir: "row", vs: "auto" }); S.txt(kp, "Permissions", { size: 12, color: C.dim });
+  const pl = S.col(pr, { gap: 4 }); ["Lire les tickets du projet", "Stocker ses propres données", "Réseau : api.github.com/graphql"].forEach(t => S.txt(pl, t, { size: 12 }));
+  if (o.error) S.alert(d, o.error, "red", { icon: "circleX", desc: o.desc });
+  const ft = S.row(d, { gap: 8, justify: "end" }); S.button(ft, "Annuler", "outline");
+  if (o.busy) { const b = S.button(ft, null, "default", { disabled: true }); S.spinner(b, C.pfg, 14); S.txt(b, "Publication…", { size: 13, weight: 500, color: C.pfg }); }
+  else S.button(ft, "Publier", "default", { icon: "upload" });
+  S.center(f, d); S.frontAbs(f); return f.id; };
+S.draw[93] = () => buildPublish(93, "Publier sur la marketplace");
+S.draw[94] = () => buildPublish(94, "Publication en cours", { busy: true });
+S.draw[95] = () => buildPublish(95, "Publication refusée (version déjà publiée)", { error: "Version déjà publiée", desc: "0.4.0 existe déjà sur Équipe. Publie une nouvelle version." });
+S.draw[96] = () => buildPublish(96, "Publication refusée (droit manquant)", { error: "Tu n'as pas le droit de publier sur cette source" });
+S.draw[97] = async () => { const f = await buildInstalled("97 · Publié sur la marketplace", ROW(97));
+  const t = S.toast(f, "Publié : index n° 42"); penpotUtils.setParentXY(t, 1440 - 16 - 172, 940 - 40 - 40 - 16); S.frontAbs(f); return f.id; };
+S.T33 = [79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97];
 return "sync ok";
