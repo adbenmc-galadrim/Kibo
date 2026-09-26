@@ -97,7 +97,13 @@ describe("trusted component modules", () => {
     expect((await fetch(url(base), { headers: { cookie, origin: SANDBOX } })).status).toBe(403);
     expect((await fetch(url(base), { headers: { cookie, origin: "null" } })).status).toBe(403);
     expect((await fetch(url(base), { headers: { cookie, host: "evil.test" } })).status).toBe(403);
+    for (const site of ["same-site", "cross-site", "none"]) {
+      expect((await fetch(url(base), { headers: { cookie, "sec-fetch-site": site } })).status).toBe(403);
+    }
     expect(lookups).toBe(0);
+    expect((await fetch(url(base), { headers: { cookie, "sec-fetch-site": "same-origin" } })).status).toBe(
+      200,
+    );
   });
 
   test("only a trusted version with the URL hash is served", async () => {

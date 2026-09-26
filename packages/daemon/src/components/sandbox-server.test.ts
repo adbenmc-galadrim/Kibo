@@ -88,7 +88,7 @@ describe("sandbox server", () => {
       `/c/pr-queue/0.3.0/${H}/index.html/extra`,
       "/api/rpc",
       "/api/pair",
-      "/components/pr-queue/0.3.0/" + `${H}/ui.trusted.js`,
+      `/components/pr-queue/0.3.0/${H}/ui.trusted.js`,
       "/",
     ]) {
       const res = await get(s, path, { cookie: "kibo_session=x" });

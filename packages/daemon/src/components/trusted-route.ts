@@ -23,6 +23,8 @@ const plain = (body: string, status: number) => new Response(body, { status, hea
 export function serveTrusted(req: Request, url: URL, deps: TrustedRouteDeps): Response {
   const origin = req.headers.get("origin");
   if (origin !== null && !deps.origins().includes(origin)) return plain("forbidden origin", 403);
+  const site = req.headers.get("sec-fetch-site");
+  if (site !== null && site !== "same-origin") return plain("forbidden site", 403);
   if (!deps.hasSession(req)) return plain("unauthorized", 401);
   const asset = parseAssetPath(url.pathname, "components", TRUSTED_FILES);
   if (req.method !== "GET" || !asset || !deps.assets) return plain("not found", 404);
