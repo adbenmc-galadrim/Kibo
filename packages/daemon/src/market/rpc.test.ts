@@ -16,7 +16,7 @@ beforeEach(async () => {
   fake = await startFakeMarket();
   const market = new MarketService({
     db: openMarketDb(new Database(":memory:")),
-    get: createHttpGet({ allowLoopbackHttp: true }),
+    get: createHttpGet({ allowLoopbackHttp: true, log: () => {} }),
     registry: createMemoryRegistry().port,
     now: () => 1,
     notify: mock(() => {}),
@@ -27,7 +27,9 @@ beforeEach(async () => {
 });
 afterEach(() => fake.stop());
 
-test("addMarketSource and unpinPublisher are refused from a remote session", async () => {
+test("source changes and unpinPublisher are refused from a remote session", async () => {
+  await expect(rpc({ method: "probeMarketSource", url: fake.url }, remote)).rejects.toThrow("FORBIDDEN");
+  await expect(rpc({ method: "removeMarketSource", id: "equipe" }, remote)).rejects.toThrow("FORBIDDEN");
   await expect(
     rpc({ method: "addMarketSource", url: fake.url, publicKey: fake.publicKey }, remote),
   ).rejects.toThrow("FORBIDDEN");

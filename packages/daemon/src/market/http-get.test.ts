@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import type { Server } from "bun";
 import { createHttpGet } from "./http-get";
 
@@ -55,7 +55,7 @@ beforeAll(() => {
 });
 afterAll(() => server.stop(true));
 
-const get = createHttpGet({ allowLoopbackHttp: true });
+const get = createHttpGet({ allowLoopbackHttp: true, log: () => {} });
 const opts = { timeoutMs: 1000, maxBytes: 1024 };
 const text = (b: Uint8Array) => new TextDecoder().decode(b);
 
@@ -69,7 +69,7 @@ describe("createHttpGet", () => {
   });
 
   test("refuses loopback http when not allowed", async () => {
-    const strict = createHttpGet({ allowLoopbackHttp: false });
+    const strict = createHttpGet({ allowLoopbackHttp: false, log: () => {} });
     await expect(strict(`${base}/ok`, opts)).rejects.toThrow("TLS_REQUIRED");
   });
 
@@ -109,5 +109,30 @@ describe("createHttpGet", () => {
 
   test("maps a 404 to NOT_FOUND", async () => {
     await expect(get(`${base}/nope`, opts)).rejects.toThrow("NOT_FOUND");
+  });
+
+  test("errors name no host nor port and the detail goes to the log", async () => {
+    const log = mock((_m: string, _e: unknown) => {});
+    const quiet = createHttpGet({ allowLoopbackHttp: true, log });
+    const closed = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") });
+    const deadPort = closed.port;
+    closed.stop(true);
+    const failures = await Promise.all(
+      [`${base}/nope`, `${base}/other`, `http://127.0.0.1:${deadPort}/`, "http://example.com/"].map((url) =>
+        quiet(url, opts).then(
+          () => "",
+          (e: unknown) => String(e),
+        ),
+      ),
+    );
+    for (const failure of failures) {
+      expect(failure).not.toBe("");
+      expect(failure).not.toContain("127.0.0.1");
+      expect(failure).not.toContain(String(server.port));
+      expect(failure).not.toContain(String(deadPort));
+      expect(failure).not.toContain("example.com");
+    }
+    expect(log).toHaveBeenCalledTimes(4);
+    expect(log.mock.calls.map(([message]) => message)).toContain(`market: GET ${base}/nope failed`);
   });
 });

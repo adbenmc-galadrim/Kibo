@@ -2,7 +2,6 @@ import {
   type ComponentKind,
   KiboError,
   type Kpkg,
-  MARKET_FETCH_TIMEOUT_MS,
   type MarketHit,
   type MarketIndex,
   type MarketPackageDetail,
@@ -11,8 +10,6 @@ import {
   type RegistryVersion,
 } from "@kibo/schema";
 import {
-  decodeKpkg,
-  KPKG_MAX_RAW_BYTES,
   keyFingerprint,
   type MarketPublisher,
   parsePublicKey,
@@ -23,7 +20,9 @@ import {
 } from "@kibo/trust";
 import type { Notice } from "../agents/notifier";
 import type { HttpGet } from "./http-get";
+import { createKeyedQueue } from "./keyed-queue";
 import type { MarketDb, MarketSourceRow } from "./market-db";
+import { downloadKpkg, fetchIndex, sourceBase, verifySourceIndex } from "./market-fetch";
 import {
   announcedSource,
   assertSourceId,
@@ -61,28 +60,19 @@ export type FetchedPackage = {
   publisher: MarketPublisher;
 };
 
-export const INDEX_MAX_BYTES = 8 * 1024 * 1024;
-export const SIG_MAX_BYTES = 4096;
-
-const withSlash = (url: string) => (url.endsWith("/") ? url : `${url}/`);
-
 export class MarketService {
   private readonly indexes = new Map<string, MarketIndex>();
+  private readonly exclusive = createKeyedQueue();
 
   constructor(private readonly deps: MarketServiceDeps) {}
 
   async load(): Promise<void> {
-    for (const row of this.deps.db.sources()) {
-      const cached = this.deps.db.cachedIndex(row.id);
-      if (!cached) continue;
+    for (const { id } of this.deps.db.sources()) {
       try {
-        this.indexes.set(
-          row.id,
-          await verifyIndex({ ...cached, expectedKey: row.publicKey, lastSerial: row.lastSerial }),
-        );
+        await this.exclusive(id, () => this.loadOne(id));
       } catch (e) {
-        this.deps.db.setError(row.id, errorMessage(e));
-        this.deps.log(`market: cached index of ${row.id} rejected`, e);
+        this.deps.db.setError(id, errorMessage(e));
+        this.deps.log(`market: cached index of ${id} rejected`, e);
       }
     }
   }
@@ -92,7 +82,7 @@ export class MarketService {
   }
 
   async probe(url: string): Promise<MarketProbe> {
-    const fetched = await this.fetchIndex(url);
+    const fetched = await fetchIndex(this.deps.get, sourceBase(url));
     const announced = announcedSource(fetched.bytes, url);
     parsePublicKey(announced.publicKey);
     const index = await verifyIndex({ ...fetched, expectedKey: announced.publicKey, lastSerial: null });
@@ -108,15 +98,15 @@ export class MarketService {
   }
 
   async addSource(input: { url: string; publicKey: string }): Promise<MarketSourceInfo> {
+    const url = sourceBase(input.url);
     const fingerprint = await keyFingerprint(input.publicKey);
-    const fetched = await this.fetchIndex(input.url);
+    const fetched = await fetchIndex(this.deps.get, url);
     const index = await verifyIndex({ ...fetched, expectedKey: input.publicKey, lastSerial: null });
     const id = index.source.id;
     assertSourceId(id);
-    if (this.deps.db.source(id)) throw new KiboError("INVALID_INPUT", `market source ${id} already exists`);
-    this.deps.db.addSource({
+    const added = this.deps.db.addSource({
       id,
-      url: withSlash(input.url),
+      url,
       name: index.source.name,
       publicKey: input.publicKey,
       fingerprint,
@@ -125,8 +115,10 @@ export class MarketService {
       enabled: true,
       lastError: null,
     });
-    this.deps.db.setFetched(id, { serial: index.serial, ...fetched, at: this.deps.now() });
-    this.indexes.set(id, index);
+    if (!added) throw new KiboError("INVALID_INPUT", `market source ${id} already exists`);
+    if (this.deps.db.setFetched(id, { serial: index.serial, ...fetched, at: this.deps.now() })) {
+      this.indexes.set(id, index);
+    }
     const row = this.deps.db.source(id);
     if (!row) throw new KiboError("INTERNAL", `market source ${id} was not stored`);
     this.deps.emit();
@@ -147,7 +139,7 @@ export class MarketService {
       throw new KiboError("NOT_FOUND", `market source ${sourceId}`);
     for (const row of rows) {
       try {
-        await this.refreshOne(row);
+        await this.exclusive(row.id, () => this.refreshOne(row.id));
       } catch (e) {
         this.deps.db.setError(row.id, errorMessage(e));
         this.deps.log(`market: refresh of ${row.id} failed`, e);
@@ -253,10 +245,22 @@ export class MarketService {
     }
   }
 
-  private async refreshOne(row: MarketSourceRow): Promise<void> {
-    const fetched = await this.fetchIndex(row.url);
-    const index = await verifyIndex({ ...fetched, expectedKey: row.publicKey, lastSerial: row.lastSerial });
-    this.deps.db.setFetched(row.id, { serial: index.serial, ...fetched, at: this.deps.now() });
+  private async loadOne(id: string): Promise<void> {
+    const row = this.deps.db.source(id);
+    const cached = this.deps.db.cachedIndex(id);
+    if (!row || !cached) return;
+    this.indexes.set(id, await verifySourceIndex(row, cached));
+  }
+
+  private async refreshOne(id: string): Promise<void> {
+    const row = this.deps.db.source(id);
+    if (!row?.enabled) return;
+    const fetched = await fetchIndex(this.deps.get, row.url);
+    const index = await verifySourceIndex(row, fetched);
+    if (!this.deps.db.setFetched(row.id, { serial: index.serial, ...fetched, at: this.deps.now() })) {
+      if (!this.deps.db.source(row.id)) return;
+      throw new KiboError("INDEX_ROLLBACK", `a newer index of ${row.id} is already stored`);
+    }
     this.indexes.set(row.id, index);
     const revoked = new Map(index.revoked.map((r) => [r.hash, r.reason]));
     for (const item of this.deps.registry.installed()) {
@@ -265,14 +269,6 @@ export class MarketService {
       this.deps.registry.revoke(item.id, item.version, reason, this.deps.now());
       this.deps.notify({ title: `Composant révoqué : ${item.title}`, body: reason });
     }
-  }
-
-  private async fetchIndex(url: string): Promise<{ bytes: Uint8Array; sig: string }> {
-    const base = withSlash(url);
-    const limits = (maxBytes: number) => ({ timeoutMs: MARKET_FETCH_TIMEOUT_MS, maxBytes });
-    const bytes = await this.deps.get(new URL("index.json", base).href, limits(INDEX_MAX_BYTES));
-    const sig = await this.deps.get(new URL("index.json.sig", base).href, limits(SIG_MAX_BYTES));
-    return { bytes, sig: new TextDecoder().decode(sig).trim() };
   }
 
   private source(sourceId: string): { row: MarketSourceRow; index: MarketIndex } {
@@ -290,10 +286,6 @@ export class MarketService {
   ): Promise<Kpkg> {
     const entry = index.packages.find((p) => p.id === id)?.versions.find((v) => v.version === version);
     if (!entry) throw new KiboError("NOT_FOUND", `${id}@${version} is not in ${row.id}`);
-    const bytes = await this.deps.get(new URL(entry.url, row.url).href, {
-      timeoutMs: MARKET_FETCH_TIMEOUT_MS,
-      maxBytes: KPKG_MAX_RAW_BYTES,
-    });
-    return decodeKpkg(bytes);
+    return downloadKpkg(this.deps.get, row.url, entry.url);
   }
 }

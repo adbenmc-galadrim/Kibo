@@ -15,9 +15,9 @@ export type MarketSourceRow = {
 export type MarketDb = {
   sources(): MarketSourceRow[];
   source(id: string): MarketSourceRow | null;
-  addSource(row: MarketSourceRow): void;
+  addSource(row: MarketSourceRow): boolean;
   removeSource(id: string): void;
-  setFetched(id: string, input: { serial: number; bytes: Uint8Array; sig: string; at: number }): void;
+  setFetched(id: string, input: { serial: number; bytes: Uint8Array; sig: string; at: number }): boolean;
   setError(id: string, message: string | null): void;
   cachedIndex(id: string): { bytes: Uint8Array; sig: string } | null;
   pin(sourceId: string, componentId: string): string | null;
@@ -49,36 +49,43 @@ export function openMarketDb(db: Database): MarketDb {
       return r ? toRow(r) : null;
     },
     addSource: (row) => {
-      db.query(
-        "INSERT INTO market_sources (id, url, name, publicKey, fingerprint, lastSerial, lastFetchedAt, enabled, lastError) " +
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      ).run(
-        row.id,
-        row.url,
-        row.name,
-        row.publicKey,
-        row.fingerprint,
-        row.lastSerial,
-        row.lastFetchedAt,
-        row.enabled ? 1 : 0,
-        row.lastError,
-      );
+      const inserted = db
+        .query(
+          "INSERT INTO market_sources (id, url, name, publicKey, fingerprint, lastSerial, lastFetchedAt, enabled, lastError) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING",
+        )
+        .run(
+          row.id,
+          row.url,
+          row.name,
+          row.publicKey,
+          row.fingerprint,
+          row.lastSerial,
+          row.lastFetchedAt,
+          row.enabled ? 1 : 0,
+          row.lastError,
+        );
+      return inserted.changes === 1;
     },
     removeSource: (id) => {
       db.query("DELETE FROM market_sources WHERE id = ?").run(id);
       db.query("DELETE FROM market_index_cache WHERE sourceId = ?").run(id);
     },
-    setFetched: (id, { serial, bytes, sig, at }) => {
+    setFetched: (id, { serial, bytes, sig, at }) =>
       db.transaction(() => {
-        db.query(
-          "UPDATE market_sources SET lastSerial = ?, lastFetchedAt = ?, lastError = NULL WHERE id = ?",
-        ).run(serial, at, id);
+        const touched = db
+          .query(
+            "UPDATE market_sources SET lastSerial = ?1, lastFetchedAt = ?2, lastError = NULL " +
+              "WHERE id = ?3 AND (lastSerial IS NULL OR lastSerial <= ?1)",
+          )
+          .run(serial, at, id);
+        if (touched.changes !== 1) return false;
         db.query(
           "INSERT INTO market_index_cache (sourceId, bytes, sig, fetchedAt) VALUES (?, ?, ?, ?) " +
             "ON CONFLICT(sourceId) DO UPDATE SET bytes = excluded.bytes, sig = excluded.sig, fetchedAt = excluded.fetchedAt",
         ).run(id, bytes, sig, at);
-      })();
-    },
+        return true;
+      })(),
     setError: (id, message) => {
       db.query("UPDATE market_sources SET lastError = ? WHERE id = ?").run(message, id);
     },

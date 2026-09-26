@@ -35,7 +35,7 @@ beforeEach(async () => {
   now = 1_000;
   service = new MarketService({
     db: openMarketDb(db),
-    get: createHttpGet({ allowLoopbackHttp: true }),
+    get: createHttpGet({ allowLoopbackHttp: true, log: () => {} }),
     registry: registry.port,
     now: () => now,
     notify,
@@ -73,7 +73,7 @@ describe("sources", () => {
   });
 
   test("adding a source with a malformed key is refused before any download", async () => {
-    const get = mock(createHttpGet({ allowLoopbackHttp: true }));
+    const get = mock(createHttpGet({ allowLoopbackHttp: true, log: () => {} }));
     const strict = new MarketService({
       db: openMarketDb(db),
       get,
@@ -281,7 +281,7 @@ describe("search and packages", () => {
   test("the cache survives a restart of the service", async () => {
     const again = new MarketService({
       db: openMarketDb(db),
-      get: createHttpGet({ allowLoopbackHttp: true }),
+      get: createHttpGet({ allowLoopbackHttp: true, log: () => {} }),
       registry: registry.port,
       now: () => now,
       notify,

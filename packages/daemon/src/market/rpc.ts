@@ -8,11 +8,13 @@ export function createMarketRpc(market: MarketService): RpcHandler {
       case "listMarketSources":
         return done(market.listSources());
       case "probeMarketSource":
+        requireLocal(ctx);
         return done(await market.probe(req.url));
       case "addMarketSource":
         requireLocal(ctx);
         return done(await market.addSource({ url: req.url, publicKey: req.publicKey }));
       case "removeMarketSource":
+        requireLocal(ctx);
         market.removeSource(req.id);
         return done(null);
       case "refreshMarket":

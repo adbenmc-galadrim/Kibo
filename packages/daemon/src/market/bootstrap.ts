@@ -23,7 +23,7 @@ export function startMarket(deps: {
 }): { market: MarketService; handler: RpcHandler; stop(): void } {
   const market = new MarketService({
     db: openMarketDb(deps.db),
-    get: createHttpGet({ allowLoopbackHttp: deps.allowLoopbackHttp }),
+    get: createHttpGet({ allowLoopbackHttp: deps.allowLoopbackHttp, log }),
     registry: createRegistryPort({ docs: deps.docs, components: deps.components }),
     now: deps.now ?? Date.now,
     notify: deps.notify,
