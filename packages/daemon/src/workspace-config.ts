@@ -1,5 +1,6 @@
 import { listTickets } from "@kibo/core";
 import {
+  assertDeletableProfile,
   configTarget,
   ensureSystemProfiles as ensureSystemProfilesIn,
   executeConfigCommand,
@@ -39,8 +40,11 @@ export function runConfigCommand(
   cmd: ConfigCommand,
   activeRuns: (profileId: string) => number,
 ): unknown {
-  if (cmd.method === "deleteProfile" && activeRuns(cmd.profileId) > 0) {
-    throw new KiboError("PROFILE_IN_USE", `profile ${cmd.profileId} has active runs`);
+  if (cmd.method === "deleteProfile") {
+    assertDeletableProfile(docs.workspace, cmd.profileId);
+    if (activeRuns(cmd.profileId) > 0) {
+      throw new KiboError("PROFILE_IN_USE", `profile ${cmd.profileId} has active runs`);
+    }
   }
   if (cmd.method === "deleteDomain") {
     const used = domainUsage(docs)[cmd.domainId] ?? 0;
