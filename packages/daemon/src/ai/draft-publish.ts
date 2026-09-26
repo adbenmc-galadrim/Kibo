@@ -164,6 +164,8 @@ export function createDraftPublisher(deps: PublishDeps) {
         strategy: input.strategy,
         origin: "ai",
       });
+      if (publish.version.hash !== input.hash)
+        throw new KiboError("HASH_MISMATCH", "the published sources differ from the reviewed draft");
       install.commit();
       return publish;
     } catch (e) {
@@ -186,16 +188,15 @@ export function createDraftPublisher(deps: PublishDeps) {
         throw new KiboError("NOT_FOUND", "target page not found");
       await checkSource(d, p, deps.catalog.sourceDir(d.componentId), input.hash);
       const publish = await publishInstalled(d, p, input);
-      if (publish.version.hash !== input.hash)
-        throw new KiboError("HASH_MISMATCH", "the published sources differ from the reviewed draft");
-      const version = publish.needsApproval
-        ? await deps.catalog.approve({
-            id: d.componentId,
-            version: publish.version.version,
-            hash: publish.version.hash,
-            trust: input.trust,
-          })
-        : publish.version;
+      const version =
+        publish.needsApproval || publish.version.trust !== input.trust
+          ? await deps.catalog.approve({
+              id: d.componentId,
+              version: publish.version.version,
+              hash: publish.version.hash,
+              trust: input.trust,
+            })
+          : publish.version;
       const instance = input.target
         ? await deps.projects.addInstance(
             input.target.projectId,
@@ -208,5 +209,7 @@ export function createDraftPublisher(deps: PublishDeps) {
       return { publish, version, instanceId: instance?.id ?? null };
     });
 
-  return { details, review, finalize };
+  const isProcessing = (draftId: string) => busy.has(draftId);
+
+  return { details, review, finalize, isProcessing };
 }
