@@ -6046,7 +6046,7 @@ git commit -m "feat(daemon): bac à sable OS des backends"
   - `runConformance(mod: { manifest: unknown; Component: ComponentType }, seed?, opts?: ConformanceOptions)` : manifeste valide ; pour chaque surface (`widget`, `view` selon `kind`) × thème (`dark`, `light`) × projet (vide, peuplé) : rendu non vide, `violations` vide, `used ⊆ declared` ; imprime `USED_MARKER + JSON(used)` sur la sortie standard.
   - `@kibo/sdk/fixtures` : `seedDemo(run, viewer = "adam"): Record<string, string>` (clé → id, tickets et liens de `design/donnees-fictives.md`) ; `DEMO_NOTES: Record<string, string>` ; `DEMO_NOTE_AGES: Record<string, number>` (âge en jours).
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/sdk/src/mock-v1.test.ts` :
 ```ts
@@ -6130,7 +6130,7 @@ test("the demo data matches design/donnees-fictives.md", async () => {
 Run: `bun test packages/sdk/src/mock-v1.test.ts packages/sdk/src/fixtures.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Réécrire `mock.ts`**
+- [x] **Step 2: Réécrire `mock.ts`**
 
 ```ts
 import { createProjectDoc, executeProjectCommand, readProject } from "@kibo/core";
@@ -6360,7 +6360,7 @@ export function createMockSdk(manifestInput: ComponentManifest | ComponentManife
 ```
 Les libellés de `violations` gardent le format v0.1 (`read link`, `write addPage`) : le test existant de `sdk.test.ts` passe sans changement. `data.get` typé générique : `get: <T>(key: string) => record("data", "data", () => inner.data.get<T>(key))`.
 
-- [ ] **Step 3: Réécrire `conformance.tsx`**
+- [x] **Step 3: Réécrire `conformance.tsx`**
 
 ```tsx
 import { describe, expect, test } from "bun:test";
@@ -6429,7 +6429,7 @@ export function runConformance(
 }
 ```
 
-- [ ] **Step 4: Écrire `fixtures.ts`**
+- [x] **Step 4: Écrire `fixtures.ts`**
 
 ```ts
 import type { Assignee, ProjectCommand, StatusId, Ticket } from "@kibo/schema";
