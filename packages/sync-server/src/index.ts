@@ -4,6 +4,8 @@ export * from "./auth";
 export * from "./db";
 export * from "./limits";
 export * from "./members";
+export * from "./room";
+export * from "./rooms";
 
 export const SYNC_PROTOCOL_VERSION = 1;
 export * from "./market/market-limits";
