@@ -69,8 +69,8 @@ async function addAmendCommit(h: WorktreeHandle, target: string, message: string
 }
 
 async function rollbackReword(h: WorktreeHandle, index: string, cause: string): Promise<never> {
-  const abort = await h.git.run(["rebase", "--abort"]);
-  if (abort.code !== 0)
+  const abort = (await currentOperation(h)) === "rebase" ? await h.git.run(["rebase", "--abort"]) : null;
+  if (abort && abort.code !== 0)
     throw new KiboError("GIT_FAILED", `git rebase: ${cause}; abort failed: ${firstLine(abort.stderr)}`);
   await h.git.ok(["reset", "--soft", "HEAD~1"]);
   await h.git.ok(["read-tree", index]);

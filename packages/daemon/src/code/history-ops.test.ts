@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { abortOperation, commit, reword, undoCommit } from "./history-ops";
 import { openRepo, type WorktreeHandle } from "./repo";
 import { createGitFixture, type GitFixture } from "./testing/git-fixture";
@@ -110,6 +110,25 @@ describe("reword", () => {
     await reword(sh, root, "chore: départ");
     expect(solo.git("log", "--format=%s").trim().split("\n")).toEqual(["feat: un", "chore: départ"]);
     solo.cleanup();
+  });
+
+  test("a rebase that fails leaves branch, index, worktree and stash intact", async () => {
+    const hook = join(h.gitDir, "hooks", "pre-rebase");
+    mkdirSync(dirname(hook), { recursive: true });
+    writeFileSync(hook, "#!/bin/sh\necho refusé >&2\nexit 1\n");
+    chmodSync(hook, 0o755);
+    fx.write("a.txt", "staged\n");
+    fx.git("add", "a.txt");
+    fx.write("b.txt", "unstaged\n");
+    fx.write("new.txt", "untracked\n");
+    const before = { ...snapshot(), head: fx.git("rev-parse", "HEAD") };
+    await expect(reword(h, fx.git("rev-parse", "HEAD~1").trim(), "feat: interdit")).rejects.toMatchObject({
+      code: "GIT_FAILED",
+    });
+    expect({ ...snapshot(), head: fx.git("rev-parse", "HEAD") }).toEqual(before);
+    expect(subjects()).toEqual(["feat: deux", "feat: un", "chore: init"]);
+    expect(fx.git("stash", "list")).toBe("");
+    expect(existsSync(join(h.gitDir, "rebase-merge"))).toBe(false);
   });
 
   test("an unknown sha is reported", async () => {
