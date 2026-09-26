@@ -35,9 +35,11 @@ export type PublisherDeps = {
   update(projectId: string, instanceId: string, to: string): Promise<unknown>;
   now?: () => number;
 };
+export type PublishOrigin = "user" | "ai";
+export type PublishOptions = { origin: PublishOrigin };
 export type Publisher = {
   preview(id: string): Promise<PublishPreview>;
-  publish(id: string, strategy: "update-all" | "new-version"): Promise<PublishResult>;
+  publish(id: string, strategy: "update-all" | "new-version", opts?: PublishOptions): Promise<PublishResult>;
   applyUpdateAll(id: string, version: string): Promise<PublishResult["failed"]>;
 };
 type Failure = PublishResult["failed"][number];
@@ -150,12 +152,18 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     return failed;
   };
 
-  const inheritedTrust = (prev: RegistryVersion | null, p: PublishPreview) => {
+  const inheritedTrust = (origin: PublishOrigin, prev: RegistryVersion | null, p: PublishPreview) => {
+    if (origin === "ai") return null;
     if (!prev || !isActive(prev) || p.newPermissions.length > 0) return null;
     return prev.trust === "trusted" || prev.trust === "sandboxed" ? prev.trust : null;
   };
 
-  const publish = async (id: string, strategy: "update-all" | "new-version"): Promise<PublishResult> => {
+  const publish = async (
+    id: string,
+    strategy: "update-all" | "new-version",
+    opts?: PublishOptions,
+  ): Promise<PublishResult> => {
+    const origin = opts?.origin ?? "user";
     const p = await preview(id);
     const hash = passedHash(p.validation);
     if (hash === null) throw new KiboError("VALIDATION_FAILED", `${id}: ${reportErrors(p.validation)}`);
@@ -166,12 +174,12 @@ export function createPublisher(deps: PublisherDeps): Publisher {
     }
     const { dir, manifest } = await context(id);
     const stored = await deps.store.put(dir, hash);
-    const trust = inheritedTrust(p.from ? getRegistryVersion(ws, id, p.from) : null, p);
+    const trust = inheritedTrust(origin, p.from ? getRegistryVersion(ws, id, p.from) : null, p);
     const usages = deps.registry.usages(id);
     const version: RegistryVersion = {
       version: stored.version,
       hash: stored.hash,
-      origin: "user",
+      origin,
       trust,
       approvedHash: trust ? stored.hash : null,
       granted: trust ? grantedOf(manifest) : NO_PERMISSIONS,

@@ -271,4 +271,27 @@ describe("publish", () => {
     expect(r.updated).toEqual([]);
     expect(updates).toEqual([]);
   });
+  test("an ai version never inherits trust, even without new permissions", async () => {
+    await publishApproved("0.3.0");
+    place(1);
+    writeDraft("0.4.0");
+    const r = await publisher.publish("pr-queue", "update-all", { origin: "ai" });
+    expect(r.needsApproval).toBe(true);
+    expect(r.version).toMatchObject({ version: "0.4.0", origin: "ai", trust: null, approvedHash: null });
+    expect(r.updated).toEqual([]);
+    expect(updates).toEqual([]);
+  });
+  test("a user version keeps inheriting trust (default origin)", async () => {
+    await publishApproved("0.3.0");
+    writeDraft("0.4.0");
+    const r = await publisher.publish("pr-queue", "update-all");
+    expect(r.version).toMatchObject({ origin: "user", trust: "sandboxed" });
+    expect(r.needsApproval).toBe(false);
+  });
+  test("republishing an unchanged version keeps its origin", async () => {
+    writeDraft("0.3.0");
+    await publisher.publish("pr-queue", "new-version", { origin: "ai" });
+    const r = await publisher.publish("pr-queue", "new-version");
+    expect(r.version.origin).toBe("ai");
+  });
 });
