@@ -1663,7 +1663,7 @@ git commit -m "feat(daemon): exécuteur git et chemins sûrs"
   - `LOG_FORMAT: string`, `parseLog(raw: string, isPushed: (sha: string) => boolean): CommitInfo[]` ;
   - `hunkPatch(diff: FileDiff, index: number): string`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/parse.test.ts` :
 ```ts
@@ -1813,7 +1813,7 @@ test("parseLog reads the NUL separated format", () => {
 Run: `bun test packages/daemon/src/code/parse.test.ts`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 2: Implémenter les parseurs**
+- [x] **Step 2: Implémenter les parseurs**
 
 `packages/daemon/src/code/parse-status.ts` :
 ```ts
@@ -2005,12 +2005,12 @@ export function hunkPatch(diff: FileDiff, index: number): string {
 }
 ```
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/parse.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/code/parse-status.ts packages/daemon/src/code/parse-diff.ts packages/daemon/src/code/parse-log.ts packages/daemon/src/code/patch.ts packages/daemon/src/code/parse.test.ts
