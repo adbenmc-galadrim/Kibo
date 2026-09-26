@@ -12,13 +12,20 @@ export const frComponents = {
     display: "Affichage",
     widget: "Widget dans la grille",
     view: "Vue plein écran",
-    permissions: "Permissions",
-    reads: "Lit",
-    writes: "Modifie",
-    local: "Source : locale",
-    builtinTrust: (reads: string, writes: string) =>
-      `Intégré · confiance totale · lit : ${reads || "rien"}${writes ? ` · écrit : ${writes}` : ""}`,
-    mineLine: (origin: string, trust: string) => `${origin} · ${trust}`,
+    builtinTrust: (reads: readonly string[], writes: readonly string[]) => {
+      const same = reads.length > 0 && reads.join() === writes.join();
+      if (same) return `Intégré · confiance totale · lit et écrit : ${reads.join(", ")}`;
+      return `Intégré · confiance totale · lit : ${reads.join(", ") || "rien"}${
+        writes.length ? ` · écrit : ${writes.join(", ")}` : ""
+      }`;
+    },
+    mineLine: (origin: string, trust: string, hosts: readonly string[]) =>
+      [origin, trust, ...hosts].join(" · "),
+    source: "Source des tickets",
+    sourceLocal: "Local (Kibo)",
+    sourceSynced: "Synchronisé · GitHub Issues",
+    sourceSoon: "Disponible avec les intégrations",
+    pendingTrust: "Autorisation requise",
     submit: "Ajouter à la page",
     failed: "Impossible d'ajouter le composant.",
     loadFailed: "Impossible de charger tes composants.",
@@ -115,9 +122,10 @@ export const frComponents = {
     level: "Niveau de confiance",
     sandboxed: "Sandboxé (recommandé)",
     sandboxedHelp:
-      "iframe isolée et processus séparé. Les permissions ci-dessus sont appliquées par le démon.",
+      "Interface dans une iframe isolée, backend dans un processus séparé confiné par l'OS : ni réseau direct, ni accès à tes fichiers. Le démon vérifie chaque appel contre les permissions ci-dessus.",
     trusted: "Confiance totale",
-    trustedHelp: "Même accès que les composants intégrés. À réserver au code que tu as écrit et relu.",
+    trustedHelp:
+      "Chargé dans l'app et exécuté dans le démon, comme les intégrés : rien ne l'empêche de dépasser les permissions ci-dessus. À réserver au code que tu as écrit et relu.",
     footer: "Si le code du composant change, l'empreinte change : Kibo redemande ton accord.",
     refuse: "Refuser",
     approve: "Autoriser",

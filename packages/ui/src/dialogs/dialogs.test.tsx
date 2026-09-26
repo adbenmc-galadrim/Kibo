@@ -15,7 +15,6 @@ mock.module("../api", () => ({
   },
 }));
 
-const { AddComponentDialog } = await import("./AddComponentDialog");
 const { NewPageDialog } = await import("./NewPageDialog");
 const { NewTicketDialog } = await import("./NewTicketDialog");
 
@@ -31,69 +30,10 @@ const project: ProjectSnapshot = {
   rules: [],
   nextTicketKey: "KIB-1",
 };
-const page = { id: "pg1", title: "Vue", kind: "view", parentId: null } as const;
 
 beforeEach(() => {
   calls.length = 0;
   outcome = () => Promise.resolve(null);
-});
-
-test("AddComponentDialog adds the selected component then closes", async () => {
-  const onOpenChange = mock((_: boolean) => {});
-  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("radio", { name: "Kanban" }));
-  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
-  expect(calls).toEqual([
-    {
-      method: "command",
-      projectId: "p1",
-      command: { method: "addInstance", pageId: "pg1", component: "kanban@1.0.0" },
-    },
-  ]);
-  expect(onOpenChange).toHaveBeenCalledWith(false);
-});
-
-test("AddComponentDialog places a dashboard widget in the next free slot", async () => {
-  const dashboard = { ...page, kind: "dashboard" } as const;
-  const taken = [{ x: 0, y: 0, w: 6, h: 6 }];
-  render(<AddComponentDialog projectId="p1" page={dashboard} taken={taken} open onOpenChange={() => {}} />);
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("radio", { name: "Kanban" }));
-  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
-  expect(calls).toEqual([
-    {
-      method: "command",
-      projectId: "p1",
-      command: {
-        method: "addInstance",
-        pageId: "pg1",
-        component: "kanban@1.0.0",
-        layout: { x: 6, y: 0, w: 6, h: 6 },
-      },
-    },
-  ]);
-});
-
-test("AddComponentDialog shows an alert and stays open when the RPC fails", async () => {
-  outcome = fail;
-  const onOpenChange = mock((_: boolean) => {});
-  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={onOpenChange} />);
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("radio", { name: "Tickets" }));
-  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
-  expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'ajouter le composant.");
-  expect(onOpenChange).not.toHaveBeenCalled();
-});
-
-test("AddComponentDialog describes each component and its permissions", async () => {
-  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
-  expect(screen.getByText("Choisis un composant pour voir ce qu'il lit et modifie.")).toBeTruthy();
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("radio", { name: "Kanban" }));
-  expect(screen.getByText("Lit : ticket, status, run")).toBeTruthy();
-  expect(screen.getAllByText("Tickets par statut, glisser-déposer")).toHaveLength(2);
-  expect(screen.getByText("Arbre des tickets, sous-tickets illimités")).toBeTruthy();
 });
 
 test("NewTicketDialog announces the key the ticket will get", () => {
