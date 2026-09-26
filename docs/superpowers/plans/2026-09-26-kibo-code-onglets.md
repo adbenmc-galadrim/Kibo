@@ -3414,7 +3414,7 @@ git commit -m "feat(ui): barre d'onglets et persistance"
   - `CommandPalette(props: { open: boolean; onOpenChange(open: boolean): void; newTab: boolean; context: PaletteContext; onOpenTarget(target: TabTarget, newTab: boolean): void; onOpenTicketSheet(projectId: string, ticketId: string): void; onAction(action: PaletteAction): void })` ;
   - `theme.ts` : `type ThemePreference = "system" | "light" | "dark"`, `nextTheme(p): ThemePreference`, `readThemePreference(): ThemePreference`, `cycleTheme(): ThemePreference`, `followSystemTheme(): void` (existant, respecte désormais la préférence).
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/ui/src/palette/palette.test.tsx` :
 ```tsx
@@ -3557,7 +3557,7 @@ test("the theme cycles system → light → dark and is remembered", () => {
 Run: `bun test packages/ui/src/palette packages/ui/src/theme.test.ts`
 Expected: FAIL, modules et fonctions introuvables.
 
-- [ ] **Step 2: Implémenter le thème**
+- [x] **Step 2: Implémenter le thème**
 
 `packages/ui/src/theme.ts` :
 ```ts
@@ -3593,7 +3593,7 @@ export function followSystemTheme(): void {
 }
 ```
 
-- [ ] **Step 3: Implémenter les éléments de la palette**
+- [x] **Step 3: Implémenter les éléments de la palette**
 
 `packages/ui/src/palette/palette-items.ts` :
 ```ts
@@ -3747,7 +3747,7 @@ export function searchItems(items: PaletteItem[], query: string, filter: Palette
 }
 ```
 
-- [ ] **Step 4: Implémenter le composant**
+- [x] **Step 4: Implémenter le composant**
 
 `packages/ui/src/palette/CommandPalette.tsx` :
 ```tsx
@@ -3886,12 +3886,12 @@ export function CommandPalette({ open, onOpenChange, newTab, context, onOpenTarg
 ```
 Si `CommandInput` de shadcn n'accepte pas `className` sur la racine attendue, envelopper l'input dans le `div` fourni et laisser la classe par défaut ; la hauteur visée est 48 px (maquette).
 
-- [ ] **Step 5: Lancer les tests**
+- [x] **Step 5: Lancer les tests**
 
 Run: `bun test packages/ui/src/palette packages/ui/src/theme.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ui/src/palette packages/ui/src/theme.ts packages/ui/src/theme.test.ts
