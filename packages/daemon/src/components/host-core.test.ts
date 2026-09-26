@@ -1,7 +1,13 @@
 import { expect, test } from "bun:test";
 import type { DaemonToBackend } from "@kibo/schema";
 import { TEST_MANIFEST } from "./backend-code.test-helper";
-import { type ChannelHandlers, createHost, type HostOptions, type InvokeRequest } from "./host-core";
+import {
+  backendError,
+  type ChannelHandlers,
+  createHost,
+  type HostOptions,
+  type InvokeRequest,
+} from "./host-core";
 
 type Fake = { handlers: ChannelHandlers; sent: DaemonToBackend[] };
 
@@ -173,4 +179,18 @@ test("a stop during a suspended beforeStart never opens the backend", async () =
   await expect(pending).rejects.toThrow("COMPONENT_CRASHED");
   expect(opened).toHaveLength(0);
   expect(host.running).toBe(false);
+});
+
+test("remote error codes cross the backend boundary, trust codes do not", () => {
+  for (const code of [
+    "REMOTE_UNAVAILABLE",
+    "REMOTE_REJECTED",
+    "REMOTE_NOT_FOUND",
+    "REMOTE_CONFLICT",
+    "NOT_CONNECTED",
+    "RATE_LIMITED",
+  ] as const) {
+    expect(backendError({ code, message: "github" }).code).toBe(code);
+  }
+  expect(backendError({ code: "TRUST_REQUIRED", message: "x" }).code).toBe("INTERNAL");
 });

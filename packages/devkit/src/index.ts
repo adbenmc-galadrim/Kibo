@@ -1,4 +1,5 @@
 export * from "./build";
+export * from "./build-builtin";
 export * from "./bun-command";
 export * from "./fr";
 export * from "./hash";

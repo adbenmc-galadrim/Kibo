@@ -70,6 +70,11 @@ export const BACKEND_ERROR_CODES = [
   "LINK_CYCLE",
   "FILE_CHANGED",
   "PATH_OUTSIDE_PROJECT",
+  "REMOTE_UNAVAILABLE",
+  "REMOTE_REJECTED",
+  "REMOTE_NOT_FOUND",
+  "REMOTE_CONFLICT",
+  "NOT_CONNECTED",
 ] as const satisfies readonly KiboErrorCode[];
 
 type BackendErrorCode = (typeof BACKEND_ERROR_CODES)[number];
