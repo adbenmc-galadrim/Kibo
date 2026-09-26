@@ -10662,7 +10662,7 @@ git commit -m "feat(daemon): registre et confiance"
   - `writeDaemonInfo(home, info: DaemonInfo): void` ; `readDaemonInfo(home): DaemonInfo | null` ; `removeDaemonInfo(home): void` ; `type DaemonInfo = { port: number; sandboxPort: number; pid: number }`.
   - `main.ts` : options `--sandbox-port` (défaut : `0` si `--port 0`, sinon port + 1) et `--toolchain` ; `daemon.json` écrit au démarrage et supprimé à l'arrêt.
 
-- [ ] **Step 1: Écrire les tests du serveur sandbox**
+- [x] **Step 1: Écrire les tests du serveur sandbox**
 
 `packages/daemon/src/components/sandbox-server.test.ts` :
 ```ts
@@ -10759,7 +10759,7 @@ test("daemon.json is private, readable back and removed on stop", () => {
 Run: `bun test packages/daemon/src/components/sandbox-server.test.ts packages/daemon/src/components/daemon-info.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `sandbox-server.ts` et `daemon-info.ts`**
+- [x] **Step 2: Implémenter `sandbox-server.ts` et `daemon-info.ts`**
 
 `packages/daemon/src/components/sandbox-server.ts` :
 ```ts
@@ -10857,7 +10857,7 @@ export function removeDaemonInfo(home: string): void {
 }
 ```
 
-- [ ] **Step 3: Tests des routes trusted et du CSP de l'UI**
+- [x] **Step 3: Tests des routes trusted et du CSP de l'UI**
 
 Ajouter à `packages/daemon/src/server.test.ts` (réutiliser l'aide qui démarre le serveur et appaire une session, déjà présente dans ce fichier ; la paramétrer par `assets` et `sandboxOrigin`) :
 ```ts
@@ -10899,7 +10899,7 @@ describe("trusted component modules", () => {
 Run: `bun test packages/daemon/src/server.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 4: Modifier `server.ts`**
+- [x] **Step 4: Modifier `server.ts`**
 
 Ajouts à `ServerOptions` :
 ```ts
@@ -10949,7 +10949,7 @@ et `withUiHeaders(res, opts.sandboxOrigin?.() ?? null)` applique `uiHeaders(...)
 
 `STATUS` gagne les codes de la phase : `TRUST_REQUIRED: 403, PERMISSION_DENIED: 403, RATE_LIMITED: 429, TIMEOUT: 504, COMPONENT_CRASHED: 502, PATH_OUTSIDE_PROJECT: 403` (les autres restent en 400, `INTERNAL` en 500).
 
-- [ ] **Step 5: Options de `main.ts`**
+- [x] **Step 5: Options de `main.ts`**
 
 Ajouter à `packages/daemon/src/components/daemon-info.ts` une fonction pure, et son test à `daemon-info.test.ts` :
 ```ts
@@ -10977,7 +10977,7 @@ const { values } = parseArgs({
 ```
 Le calcul `sandboxPortFor(Number(values.port), values["sandbox-port"])` et la lecture de `values.toolchain` sont écrits par la tâche 30, qui les consomme ; ici, seules les options sont déclarées (une option inconnue ferait échouer `parseArgs` en mode strict).
 
-- [ ] **Step 6: Vérifier et committer**
+- [x] **Step 6: Vérifier et committer**
 
 Run: `bun test packages/daemon && bun run typecheck && bun run check`
 Expected: PASS.
@@ -10986,6 +10986,8 @@ Expected: PASS.
 git add packages/daemon/src/components/sandbox-server.ts packages/daemon/src/components/sandbox-server.test.ts packages/daemon/src/components/daemon-info.ts packages/daemon/src/components/daemon-info.test.ts packages/daemon/src/server.ts packages/daemon/src/server.test.ts packages/daemon/src/main.ts
 git commit -m "feat(daemon): port sandbox et modules trusted"
 ```
+
+Écarts livrés : `readDaemonInfo` lève `STORE_CORRUPT` sur un JSON illisible ou de forme invalide (absent ⇒ `null`) et `writeDaemonInfo` refait un `chmod 0600` ; la route trusted refuse aussi `sec-fetch-site` présent et différent de `same-origin` (403, avant la session) et pose `cross-origin-resource-policy: same-origin` ; analyse des chemins partagée dans `asset-path.ts`, route trusted dans `trusted-route.ts`.
 
 ---
 
