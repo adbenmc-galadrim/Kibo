@@ -35,7 +35,6 @@ function toProject(n: z.infer<typeof ProjectNode> | null): GithubProject[] {
 }
 
 function probes(kit: IntegrationKit, { account }: Github): IntegrationProbe[] {
-  const connected = () => account.mode() !== null;
   const live = (id: IntegrationStatus["id"]): IntegrationStatus => ({
     ...baseStatus(id, "connected"),
     resumeAt: kit.net.gate.blockedUntil(),
@@ -59,6 +58,15 @@ function probes(kit: IntegrationKit, { account }: Github): IntegrationProbe[] {
     }
     return { ...live("github"), account: account.login() };
   };
+  const followGithub = async (
+    id: IntegrationStatus["id"],
+    ready: () => Promise<boolean>,
+  ): Promise<IntegrationStatus> => {
+    const github = await githubStatus();
+    if (github.state === "error") return { ...github, id, account: null };
+    if (github.state !== "connected" || !(await ready())) return baseStatus(id, "disconnected");
+    return live(id);
+  };
   return [
     {
       id: "github",
@@ -72,7 +80,7 @@ function probes(kit: IntegrationKit, { account }: Github): IntegrationProbe[] {
     },
     {
       id: "github-issues",
-      status: async () => (connected() ? live("github-issues") : baseStatus("github-issues", "disconnected")),
+      status: () => followGithub("github-issues", async () => true),
       test: async () => {
         await account.verify();
         return live("github-issues");
@@ -80,10 +88,7 @@ function probes(kit: IntegrationKit, { account }: Github): IntegrationProbe[] {
     },
     {
       id: "github-actions",
-      status: async () =>
-        connected() && (await anyRepo())
-          ? live("github-actions")
-          : baseStatus("github-actions", "disconnected"),
+      status: () => followGithub("github-actions", anyRepo),
     },
   ];
 }

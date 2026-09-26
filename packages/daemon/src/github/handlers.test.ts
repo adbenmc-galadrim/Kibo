@@ -142,3 +142,27 @@ test("in token mode, an unavailable keychain turns the github row into an error 
     error: { code: "SECRET_STORE_UNAVAILABLE", message: "keychain busy" },
   });
 });
+
+test("issues and actions rows follow an erroneous github row", async () => {
+  let locked = false;
+  const r = rpc((s) => ({
+    ...s,
+    availability: async () => (locked ? { ok: false, reason: "keychain busy" } : s.availability()),
+  }));
+  await r.handle({ method: "connectGithub", auth: { mode: "token", token: gh.token } });
+  locked = true;
+  const rows = (await r.handle({ method: "listIntegrations" })) as (Row & { error: unknown })[];
+  for (const id of ["github-issues", "github-actions"]) {
+    expect(rows.find((s) => s.id === id)).toMatchObject({
+      state: "error",
+      error: { code: "SECRET_STORE_UNAVAILABLE", message: "keychain busy" },
+    });
+  }
+  locked = false;
+  const healed = (await r.handle({ method: "listIntegrations" })) as Row[];
+  expect(healed.map((s) => [s.id, s.state])).toEqual([
+    ["github", "connected"],
+    ["github-issues", "connected"],
+    ["github-actions", "connected"],
+  ]);
+});
