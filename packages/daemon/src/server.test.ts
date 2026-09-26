@@ -173,6 +173,43 @@ describe("unexpected failures", () => {
   });
 });
 
+describe("integration errors", () => {
+  test("a remote error keeps its status and loses its secret", async () => {
+    const secret = "ghp_TESTSECRET0123456789abcdefghijklmn";
+    const failing: Service = {
+      ...createService(store, { user: "adam" }),
+      handle: () => {
+        throw new KiboError("REMOTE_REJECTED", `github 401: Bearer ${secret}`);
+      },
+    };
+    const redacting = startServer({
+      service: failing,
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      redact: (text) => text.split(secret).join("***"),
+    });
+    const headers = { "content-type": "application/json", origin: redacting.url };
+    const paired = await fetch(`${redacting.url}/api/pair`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ token: TOKEN }),
+    });
+    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const res = await fetch(`${redacting.url}/api/rpc`, {
+      method: "POST",
+      headers: { ...headers, cookie },
+      body: JSON.stringify({ method: "listIntegrations" }),
+    });
+    redacting.stop();
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({
+      ok: false,
+      error: { code: "REMOTE_REJECTED", message: "github 401: Bearer ***" },
+    });
+  });
+});
+
 describe("agents routes", () => {
   const RUN = crypto.randomUUID();
   const hookTo = (url: string, runId: string, headers: Record<string, string>) =>

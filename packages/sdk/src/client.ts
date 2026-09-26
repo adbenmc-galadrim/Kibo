@@ -3,6 +3,7 @@ import {
   type CodeRequest,
   type CodeResult,
   type ComponentCall,
+  IntegrationEvent,
   KiboError,
   type ProjectCommand,
   type RpcRequest,
@@ -24,6 +25,7 @@ export type KiboClient = {
   subscribeTopic(topic: Topic, listener: () => void): () => void;
   onRunChanged(listener: (e: RunChanged) => void): () => void;
   subscribeCode(listener: (event: CodeEvent) => void): () => void;
+  subscribeIntegrations(listener: (event: IntegrationEvent) => void): () => void;
   online(): boolean;
   onConnection(listener: () => void): () => void;
 };
@@ -58,6 +60,7 @@ export function createClient(opts: ClientOptions): KiboClient {
   const topics = new Map<Topic, Set<() => void>>();
   const runListeners = new Set<(e: RunChanged) => void>();
   const codeListeners = new Set<(event: CodeEvent) => void>();
+  const integrationListeners = new Set<(event: IntegrationEvent) => void>();
   const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
   let open = false;
@@ -70,6 +73,7 @@ export function createClient(opts: ClientOptions): KiboClient {
     listeners.size +
     runListeners.size +
     codeListeners.size +
+    integrationListeners.size +
     [...topics.values()].reduce((n, set) => n + set.size, 0);
 
   const connect = () => {
@@ -82,6 +86,11 @@ export function createClient(opts: ClientOptions): KiboClient {
       const code = CodeEvent.safeParse(data);
       if (code.success) {
         for (const l of codeListeners) l(code.data);
+        return;
+      }
+      const integration = IntegrationEvent.safeParse(data);
+      if (integration.success) {
+        for (const l of integrationListeners) l(integration.data);
         return;
       }
       const msg = data as {
@@ -153,6 +162,14 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         codeListeners.delete(listener);
+        release();
+      };
+    },
+    subscribeIntegrations(listener) {
+      integrationListeners.add(listener);
+      if (!socket) connect();
+      return () => {
+        integrationListeners.delete(listener);
         release();
       };
     },

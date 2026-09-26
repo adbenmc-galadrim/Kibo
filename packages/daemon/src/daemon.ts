@@ -10,6 +10,9 @@ import { createCodeService } from "./code/code-service";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
+import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
+import { createIntegrationHost } from "./integrations/host";
+import { createRedactor, type Redactor } from "./integrations/redact";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore } from "./store";
@@ -26,6 +29,8 @@ export type DaemonOptions = {
   notify?: (notice: Notice) => void;
   claudeBin?: string | null;
   sampler?: () => HostLoad;
+  integrations?: IntegrationFlags;
+  redactor?: Redactor;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -68,6 +73,20 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
   });
+  const redactor = opts.redactor ?? createRedactor();
+  const integrations = startIntegrations(
+    createIntegrationHost({
+      user: opts.user,
+      home: opts.home,
+      store,
+      service,
+      notify: opts.notify ?? (() => {}),
+    }),
+    opts.integrations ?? NO_INTEGRATION_FLAGS,
+    redactor,
+  );
+  closers.push(service.attachIntegrations(integrations));
+  closers.push(() => integrations.stop());
   let agents: Orchestrator | null = null;
   let sandboxOrigin = "";
   const components = createComponentsService({
@@ -102,6 +121,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     },
     assets: components.assets,
     sandboxOrigin: () => sandboxOrigin || null,
+    redact: redactor.redact,
   });
   front.push(() => server.stop());
   const sandbox = startSandboxServer({

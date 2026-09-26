@@ -26,6 +26,7 @@ export type ServerOptions = {
   code?: CodeService;
   assets?: AssetLookup;
   sandboxOrigin?: () => string | null;
+  redact?: (text: string) => string;
 };
 
 const COOKIE = "kibo_session";
@@ -56,6 +57,14 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   MIGRATION_FAILED: 422,
   QUOTA_EXCEEDED: 413,
   SANDBOX_UNAVAILABLE: 503,
+  SECRET_STORE_UNAVAILABLE: 503,
+  NOT_CONNECTED: 409,
+  REMOTE_UNAVAILABLE: 502,
+  REMOTE_REJECTED: 502,
+  REMOTE_NOT_FOUND: 404,
+  REMOTE_CONFLICT: 409,
+  MCP_UNAVAILABLE: 502,
+  MCP_FAILED: 502,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
@@ -72,17 +81,19 @@ const internal = (e: unknown) => {
   console.error("[kibo-daemon] request failed", e);
   return fail("INTERNAL", "internal error", 500);
 };
-const respond = async (work: () => unknown): Promise<Response> => {
+const unredacted = (text: string) => text;
+const respond = async (work: () => unknown, redact: (text: string) => string): Promise<Response> => {
   try {
     return json({ ok: true, result: (await work()) ?? null });
   } catch (e) {
     if (!(e instanceof KiboError) || HIDDEN.has(e.code)) return internal(e);
-    return fail(e.code, e.detail, STATUS[e.code] ?? 400);
+    return fail(e.code, redact(e.detail), STATUS[e.code] ?? 400);
   }
 };
 
 export function startServer(opts: ServerOptions): { url: string; port: number; stop(): void } {
   const sessions = new Set<string>();
+  const redact = opts.redact ?? unredacted;
   let port = opts.port;
   const hosts = () => [`127.0.0.1:${port}`, `localhost:${port}`];
   const origins = () => {
@@ -122,13 +133,13 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
     if (url.pathname === "/api/rpc" && req.method === "POST") {
       const parsed = RpcRequest.safeParse(await req.json().catch(() => null));
       if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
-      return respond(() => opts.service.handle(parsed.data));
+      return respond(() => opts.service.handle(parsed.data), redact);
     }
     if (url.pathname === "/api/code" && req.method === "POST" && opts.code) {
       const code = opts.code;
       const parsed = CodeRequest.safeParse(await req.json().catch(() => null));
       if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
-      return respond(() => code.handle(parsed.data));
+      return respond(() => code.handle(parsed.data), redact);
     }
     return new Response("not found", { status: 404 });
   };

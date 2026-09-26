@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -72,6 +73,21 @@ describe("startDaemon", () => {
     );
     await stop();
     expect(readDaemonInfo(home)).toBeNull();
+  });
+
+  test("integrations are served by the rpc and their tables exist", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const res = await rpc({ method: "listIntegrations" });
+    const body = z.object({ result: z.array(z.object({ id: z.string() })) }).parse(await res.json());
+    expect(body.result.map((s) => s.id)).toEqual(["git", "notifications", "markdown"]);
+    expect((await rpc({ method: "listGithubRepos", query: "" })).status).toBe(404);
+    const db = new Database(join(home, "kibo.db"), { readonly: true });
+    const tables = db
+      .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all();
+    db.close();
+    expect(tables.map((t) => t.name)).toContain("integration_events");
   });
 
   test("a corrupt daemon.json never prevents the start", async () => {

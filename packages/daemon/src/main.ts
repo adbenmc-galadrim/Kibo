@@ -6,6 +6,8 @@ import { stdoutNotifier } from "./agents/notifier";
 import { sandboxPortFor } from "./components/daemon-info";
 import { cliStatus, installCli } from "./components/install-cli";
 import { startDaemon } from "./daemon";
+import { parseIntegrationFlags } from "./integrations/bootstrap";
+import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { kiboHome } from "./paths";
 
 const parentPid = process.ppid;
@@ -18,6 +20,8 @@ const { values } = parseArgs({
     dev: { type: "boolean", default: false },
     "claude-bin": { type: "string" },
     "host-load": { type: "string" },
+    "test-origins": { type: "string" },
+    "memory-secrets": { type: "boolean", default: false },
   },
 });
 const port = Number(values.port);
@@ -26,6 +30,8 @@ const failStart = (e: unknown): never => {
   process.stderr.write(`[kibo-daemon] cannot start: ${e instanceof Error ? e.message : String(e)}\n`);
   process.exit(1);
 };
+const redactor = createRedactor();
+installConsoleRedaction(redactor);
 const daemon = await Promise.resolve()
   .then(() =>
     startDaemon({
@@ -43,6 +49,8 @@ const daemon = await Promise.resolve()
         values["host-load"] === undefined ? createLoadSampler() : fixedLoadSampler(values["host-load"]),
       installCli: () => installCli(),
       cliStatus: () => cliStatus(),
+      integrations: parseIntegrationFlags(values),
+      redactor,
     }),
   )
   .catch(failStart);

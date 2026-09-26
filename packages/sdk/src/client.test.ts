@@ -81,6 +81,39 @@ test("topic, run and project messages reach their own listeners", async () => {
   server.stop(true);
 });
 
+test("integration events never reach project listeners", async () => {
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ type: "integrations" }));
+        ws.send(
+          JSON.stringify({ type: "sync", projectId: "p1", bindingId: "b1", imported: 2, running: true }),
+        );
+        ws.send(JSON.stringify({ projectId: "p1" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offProject = client.subscribe((id) => {
+    seen.push(`project:${id}`);
+    done.resolve();
+  });
+  const offIntegrations = client.subscribeIntegrations((e) =>
+    seen.push(e.type === "sync" ? `sync:${e.projectId}` : e.type),
+  );
+  await done.promise;
+  expect(seen).toEqual(["integrations", "sync:p1", "project:p1"]);
+  offProject();
+  offIntegrations();
+  server.stop(true);
+});
+
 test("the connection status follows the event socket", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",

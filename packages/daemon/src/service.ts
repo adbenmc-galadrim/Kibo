@@ -27,6 +27,8 @@ import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
+import { isIntegrationRequest } from "./integrations/methods";
+import type { IntegrationRpc } from "./integrations/registry";
 import { loadDoc, type Store } from "./store";
 import { readConfig, runConfigCommand } from "./workspace-config";
 
@@ -58,6 +60,7 @@ export type Service = {
   agentData: AgentDataPort;
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
+  attachIntegrations(rpc: IntegrationRpc): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
@@ -112,6 +115,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
   let components: ComponentsPort | null = null;
+  let integrations: IntegrationRpc | null = null;
   const path = createCommandPath({
     store,
     project: (id) => docs.project(id),
@@ -149,6 +153,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const componentsReady = (): ComponentsPort => {
     if (!components) throw new KiboError("INTERNAL", "components are not ready");
     return components;
+  };
+  const integrationsReady = (): IntegrationRpc => {
+    if (!integrations) throw new KiboError("INTERNAL", "integrations are not ready");
+    return integrations;
   };
   const agentsReady = (): AgentsPort => {
     if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
@@ -209,6 +217,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         components = null;
       };
     },
+    attachIntegrations(rpc) {
+      integrations = rpc;
+      return () => {
+        integrations = null;
+      };
+    },
     triggerRules(projectId, trigger) {
       docs.trigger(projectId, trigger);
     },
@@ -216,6 +230,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     commands: path.commands,
     handle(req) {
       if (isComponentRequest(req)) return componentsReady().handle(req);
+      if (isIntegrationRequest(req)) return integrationsReady().handle(req);
       switch (req.method) {
         case "getSession":
           return { user: opts.user, notifications: opts.notifications ?? "browser" };
