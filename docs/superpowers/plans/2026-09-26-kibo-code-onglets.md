@@ -1193,7 +1193,7 @@ git commit -m "build: primitives shadcn et dépendances code"
   - `isInside(root: string, target: string): boolean`, `resolveInWorktree(root: string, relPath: string): string`, `assertNotSymlink(abs: string): void` ;
   - fixtures : `createGitFixture(opts?: { remote?: boolean }): GitFixture` avec `GitFixture = { dir; repo; remote; env: Env; git(...args: string[]): string; write(path: string, content: string): void; commit(message: string, files: Record<string, string>): string; cleanup(): void }`, `installFakeGh(dir: string): Env` (clés `KIBO_GH`, `FAKE_GH_STATE`, `FAKE_GH_LOG`), `readFakeGhLog(env: Env): { args: string[]; stdin: string }[]`, `installFakeBin(dir: string, name: string): { path: string; log: string }`, `readFakeBinLog(log: string): string[][]`.
 
-- [ ] **Step 1: Tests de l'exécuteur**
+- [x] **Step 1: Tests de l'exécuteur**
 
 `packages/daemon/src/code/run.test.ts` :
 ```ts
@@ -1328,12 +1328,12 @@ test("a fake binary logs its arguments", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `bun test packages/daemon/src/code`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 3: Implémenter l'exécuteur**
+- [x] **Step 3: Implémenter l'exécuteur**
 
 `packages/daemon/src/code/run.ts` :
 ```ts
@@ -1475,7 +1475,7 @@ export function assertNotSymlink(abs: string): void {
 }
 ```
 
-- [ ] **Step 4: Implémenter les fixtures**
+- [x] **Step 4: Implémenter les fixtures**
 
 `packages/daemon/src/code/testing/git-fixture.ts` :
 ```ts
@@ -1634,12 +1634,12 @@ process.stderr.write(`unsupported: ${args.join(" ")}\n`);
 process.exit(1);
 ```
 
-- [ ] **Step 5: Lancer les tests**
+- [x] **Step 5: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code`
 Expected: PASS (sur macOS, `realpathSync` de `mkdtemp` résout `/var` → `/private/var` : les fixtures l'appliquent déjà).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/daemon/src/code/run.ts packages/daemon/src/code/run.test.ts packages/daemon/src/code/safe-path.ts packages/daemon/src/code/safe-path.test.ts packages/daemon/src/code/testing
