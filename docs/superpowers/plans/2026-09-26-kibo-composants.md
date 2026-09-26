@@ -6845,7 +6845,7 @@ git commit -m "feat(sdk): runtime de l'iframe sandboxée"
   - `backendCodeOf(v: StoredVersion): BackendCode`.
   - Disposition : `<home>/components/store/<id>/<version>/<hash>/{source/…, build/…, build.json, tsconfig.json}`, dossiers `0700`, fichiers `0400`.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/components/store.test.ts` :
 ```ts
@@ -6932,7 +6932,7 @@ describe("component store", () => {
 Run: `bun test packages/daemon/src/components/store.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `store.ts`**
+- [x] **Step 2: Implémenter `store.ts`**
 
 ```ts
 import { existsSync } from "node:fs";
@@ -7064,7 +7064,7 @@ export function createComponentStore(deps: StoreDeps): ComponentStore {
 ```
 `verify` ne transforme en `false` que les deux codes qui signifient « contenu absent ou modifié » ; toute autre erreur (disque plein, permission) est relancée. `readSources` sur un dossier source modifié (fichier ajouté, lien symbolique) lève `VALIDATION_FAILED`, traité comme une altération. Le `tsconfig.json` est posé **à côté** de `source/` (Bun le trouve en remontant) : `source/` reste la copie exacte des fichiers hachés.
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components/store.test.ts && bun run typecheck && bun run check`
 Expected: PASS.
