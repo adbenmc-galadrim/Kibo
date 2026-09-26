@@ -5680,7 +5680,7 @@ git commit -m "feat(ui): panneau de commit et amend"
   - `type PushPrInput = { title: string; body: string; base: string; draft: boolean; reviewers: string[]; link: boolean }` ;
   - `PushPrDialog(props: { open: boolean; onOpenChange(o: boolean): void; branch: string; remote: string; bases: string[]; base: string; onBaseChange(base: string): void; unpushedCount: number; fileCount: number; stagedCount: number; ticketKey: string | null; defaultTitle: string; defaultBody: string; onCommitFirst(): void; onSubmit(input: PushPrInput): Promise<void>; extraOptions?: ReactNode; ruleNote?: string | null })`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/ui/src/code/pr.test.tsx` :
 ```tsx
@@ -5776,7 +5776,7 @@ test("without a ticket the link option is hidden", () => {
 Run: `bun test packages/ui/src/code/pr.test.tsx`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/ui/src/code/pr-command.ts` :
 ```ts
@@ -5963,12 +5963,12 @@ export function PushPrDialog(p: Props) {
 }
 ```
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/ui/src/code/pr.test.tsx && bun run check`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/ui/src/code/pr-command.ts packages/ui/src/code/PushPrDialog.tsx packages/ui/src/code/pr.test.tsx
