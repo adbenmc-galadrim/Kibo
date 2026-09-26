@@ -195,6 +195,26 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
   expect(screen.queryByLabelText("CI réussie")).toBeNull();
 });
 
+test("the CI chip follows the tones of the ticket sheet", async () => {
+  const m = createMockSdk(manifest, {
+    seed: syncedSeed,
+    config: { source: { bindingId: "b1" } },
+    ciRuns: [
+      ciRun({ ticketKey: "KIB-1", prNumber: 3, status: "in_progress", conclusion: null }),
+      ciRun({ ticketKey: "KIB-2", prNumber: 4, conclusion: "success" }),
+      ciRun({ ticketKey: "KIB-4", prNumber: null, conclusion: "cancelled" }),
+    ],
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect((await screen.findByLabelText("CI en cours")).parentElement?.textContent).toBe("#3");
+  expect(screen.getByLabelText("CI réussie").parentElement?.textContent).toBe("#4");
+  expect(screen.getByLabelText("CI sans verdict").parentElement?.textContent).toBe("");
+});
+
 test("an unavailable CI is stated, a missing GitHub account is not", async () => {
   renderSynced((m) => ({
     ...m.sdk,

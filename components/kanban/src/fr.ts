@@ -7,7 +7,7 @@ export const fr = {
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
   waitingOn: (key: string) => `attend ${key}`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
-  ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours" },
+  ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans verdict" },
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
   run: {
     queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),

@@ -13,13 +13,19 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { fr } from "./fr";
 
-const CI_DOT = { ok: "bg-emerald-500", error: "bg-red-500", running: "bg-amber-500" } as const;
+const CI_DOT = {
+  ok: "bg-emerald-500",
+  error: "bg-red-500",
+  running: "bg-amber-500",
+  neutral: "bg-zinc-400",
+} as const;
 
 function ciTone(run: Pick<CiRun, "status" | "conclusion">): keyof typeof CI_DOT {
   if (run.status !== "completed") return "running";
-  return run.conclusion === "success" || run.conclusion === "skipped" || run.conclusion === "neutral"
-    ? "ok"
-    : "error";
+  if (run.conclusion === "success") return "ok";
+  if (run.conclusion === "failure" || run.conclusion === "timed_out" || run.conclusion === "startup_failure")
+    return "error";
+  return "neutral";
 }
 
 type Props = {
