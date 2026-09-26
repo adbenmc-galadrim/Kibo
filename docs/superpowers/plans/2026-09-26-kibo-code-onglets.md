@@ -6416,7 +6416,7 @@ git commit -m "feat(daemon): lecture de l'état git"
   - `type ChangesSlots = { commitBanner?: ReactNode; prOptions?: ReactNode; prRuleNote?: string | null }` ;
   - `ChangesView(props: { project: ProjectSnapshot; worktree: string | null; onWorktreeChange(path: string): void; onOpenFile(ref: FileRef): void; slots?: ChangesSlots })`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/ui/src/code/changes.test.tsx` :
 ```tsx
@@ -6614,7 +6614,7 @@ test("an operation in progress shows a banner with an abort action", async () =>
 Run: `bun test packages/ui/src/code/changes.test.tsx`
 Expected: FAIL, `./ChangesView` introuvable.
 
-- [ ] **Step 2: Implémenter les hooks**
+- [x] **Step 2: Implémenter les hooks**
 
 `packages/ui/src/code/use-code.ts` :
 ```ts
@@ -6730,7 +6730,7 @@ export function useRemoteInfo(projectId: string, worktree: string, branch: strin
 ```
 Chaque hook expose son erreur ; la vue affiche la première dans son alerte. `gh` indisponible n'est pas une erreur : c'est un état (`available: false`) expliqué en infobulle du bouton.
 
-- [ ] **Step 3: Implémenter le sélecteur et l'éditeur de diff**
+- [x] **Step 3: Implémenter le sélecteur et l'éditeur de diff**
 
 `packages/ui/src/code/WorktreePicker.tsx` :
 ```tsx
@@ -6866,7 +6866,7 @@ export function DiffEditorPane({ projectId, worktree, path, layout, onSaved }: P
 }
 ```
 
-- [ ] **Step 4: Implémenter la vue**
+- [x] **Step 4: Implémenter la vue**
 
 `packages/ui/src/code/ChangesView.tsx` :
 ```tsx
@@ -7193,12 +7193,12 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
 ```
 Si le fichier dépasse 300 lignes après formatage, extraire la barre d'actions du bas (Pousser, PR) dans `code/PushActions.tsx`, sans changer le rendu ni les noms accessibles.
 
-- [ ] **Step 5: Lancer les tests**
+- [x] **Step 5: Lancer les tests**
 
 Run: `bun test packages/ui/src/code && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ui/src/code/use-code.ts packages/ui/src/code/WorktreePicker.tsx packages/ui/src/code/DiffEditorPane.tsx packages/ui/src/code/ChangesView.tsx packages/ui/src/code/changes.test.tsx
