@@ -1,3 +1,4 @@
+import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
 import { frIntegrations } from "./fr-integrations";
@@ -418,5 +419,6 @@ export const fr = {
   integrations: frIntegrations,
   ...frCode,
   ...frComponents,
+  ...frAi,
   common: { cancel: "Annuler", close: "Fermer", error: "Une erreur est survenue." },
 } as const;

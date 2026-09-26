@@ -208,3 +208,38 @@ test("code events reach code listeners only, on the shared socket", async () => 
   offProject();
   server.stop(true);
 });
+
+test("ai events reach ai listeners only", async () => {
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ type: "starter.ready", runId: "r1", plan: null }));
+        ws.send(
+          JSON.stringify({
+            type: "draft.changed",
+            draftId: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
+            status: "review",
+          }),
+        );
+        ws.send(JSON.stringify({ projectId: "p1" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offProject = client.subscribe((id) => {
+    seen.push(`project:${id}`);
+    done.resolve();
+  });
+  const offAi = client.subscribeAi((e) => seen.push(e.type));
+  await done.promise;
+  expect(seen).toEqual(["starter.ready", "draft.changed", "project:p1"]);
+  offProject();
+  offAi();
+  server.stop(true);
+});

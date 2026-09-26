@@ -1,4 +1,6 @@
 export * from "./agent";
+export * from "./ai";
+export * from "./ai-rpc";
 export * from "./call";
 export * from "./code";
 export * from "./command";

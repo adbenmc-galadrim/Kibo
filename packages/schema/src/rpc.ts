@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./agent";
+import type { AiEvent } from "./ai";
+import { AI_RPC, type AiRpcResult } from "./ai-rpc";
 import { ComponentCall } from "./call";
 import type { CodeEvent } from "./code";
 import { ProjectCommand } from "./command";
@@ -51,7 +53,8 @@ export type ChangeMessage =
   | { topic: Topic }
   | RunChanged
   | CodeEvent
-  | IntegrationEvent;
+  | IntegrationEvent
+  | AiEvent;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("getSession") }),
@@ -144,6 +147,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
     kind: z.literal("navigate"),
   }),
   ...INTEGRATION_RPC,
+  ...AI_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -182,7 +186,8 @@ export type RpcResult = {
   installCli: { path: string };
   cliStatus: { path: string; installed: boolean };
   reportComponentRefusal: null;
-} & IntegrationRpcResult;
+} & IntegrationRpcResult &
+  AiRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

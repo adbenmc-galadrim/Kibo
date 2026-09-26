@@ -43,6 +43,7 @@ export const KIBO_ERROR_CODES = [
   "REMOTE_CONFLICT",
   "MCP_UNAVAILABLE",
   "MCP_FAILED",
+  "AI_UNAVAILABLE",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

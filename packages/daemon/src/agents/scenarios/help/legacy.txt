@@ -1,0 +1,8 @@
+Usage: claude [options] [command] [prompt]
+
+Options:
+  --allowedTools <tools...>             Comma or space-separated list of tool names to allow
+  --disallowedTools <tools...>          Comma or space-separated list of tool names to deny
+  --output-format <format>              Output format (only works with --print): "text" (default), "json" (single result), or "stream-json" (realtime streaming) (choices: "text", "json", "stream-json")
+  --permission-mode <mode>              Permission mode to use for the session (choices: "acceptEdits", "bypassPermissions", "default", "plan")
+  -p, --print                           Print response and exit
