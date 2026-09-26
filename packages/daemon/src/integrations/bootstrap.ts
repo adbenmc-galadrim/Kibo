@@ -9,6 +9,7 @@ import { githubModule } from "../github/handlers";
 import { createMcpGate } from "../mcp/component-gate";
 import { createMcpHub } from "../mcp/hub";
 import { mcpModule } from "../mcp/module";
+import { githubIssuesModule } from "../sync/adapter-module";
 import { createBunSecretStore } from "./bun-secret-store";
 import { migrateIntegrations } from "./db";
 import { createEventLog, type EventLog } from "./events";
@@ -141,6 +142,7 @@ export function startIntegrations(
     ciModule(kit, ciPoller, ciStore),
     mcpModule(kit, mcpHub),
     figmaModule(kit, mcpHub),
+    githubIssuesModule(kit),
   ];
   return createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),
