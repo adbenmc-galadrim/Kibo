@@ -16,6 +16,8 @@ const parentPid = process.ppid;
 const { values } = parseArgs({
   options: {
     port: { type: "string", default: "4317" },
+    "sandbox-port": { type: "string" },
+    toolchain: { type: "string" },
     ui: { type: "string" },
     dev: { type: "boolean", default: false },
     "claude-bin": { type: "string" },

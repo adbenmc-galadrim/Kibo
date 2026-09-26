@@ -12,6 +12,8 @@ import type { Server } from "bun";
 import { type HookSink, handleHook } from "./agents/hook-route";
 import { newSessionId, readCookie, sameSecret } from "./auth";
 import type { CodeService } from "./code/code-service";
+import type { AssetLookup } from "./components/sandbox-server";
+import { serveTrusted } from "./components/trusted-route";
 import type { Service } from "./service";
 
 export type ServerOptions = {
@@ -22,6 +24,8 @@ export type ServerOptions = {
   extraOrigins?: string[];
   hooks?: HookSink;
   code?: CodeService;
+  assets?: AssetLookup;
+  sandboxOrigin?: () => string | null;
 };
 
 const COOKIE = "kibo_session";
@@ -40,6 +44,11 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   TOO_LARGE: 413,
   GH_UNAVAILABLE: 502,
   GH_FAILED: 502,
+  TRUST_REQUIRED: 403,
+  PERMISSION_DENIED: 403,
+  RATE_LIMITED: 429,
+  TIMEOUT: 504,
+  COMPONENT_CRASHED: 502,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
@@ -128,7 +137,12 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
         res.headers.set("cache-control", "no-store");
         return res;
       }
-      if (!url.pathname.startsWith("/api/")) return withUiHeaders(serveUi(opts.uiDir, url.pathname));
+      if (url.pathname.startsWith("/components/")) {
+        return serveTrusted(req, url, { assets: opts.assets, origins, hasSession });
+      }
+      if (!url.pathname.startsWith("/api/")) {
+        return withUiHeaders(serveUi(opts.uiDir, url.pathname), opts.sandboxOrigin?.() ?? null);
+      }
       const res = await handleApi(req, url, srv);
       res?.headers.set("cache-control", "no-store");
       return res;
@@ -157,16 +171,17 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
   };
 }
 
-const UI_HEADERS = {
+const uiHeaders = (sandboxOrigin: string | null) => ({
   "content-security-policy":
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-    "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+    `font-src 'self' data:; connect-src 'self'; ${sandboxOrigin ? `frame-src ${sandboxOrigin}; ` : ""}frame-ancestors 'none'; ` +
+    "base-uri 'none'; form-action 'self'",
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
-};
+});
 
-function withUiHeaders(res: Response): Response {
-  for (const [name, value] of Object.entries(UI_HEADERS)) res.headers.set(name, value);
+function withUiHeaders(res: Response, sandboxOrigin: string | null): Response {
+  for (const [name, value] of Object.entries(uiHeaders(sandboxOrigin))) res.headers.set(name, value);
   return res;
 }
 

@@ -100,3 +100,25 @@ test("tells the ui to leave notifications to the desktop shell", async () => {
   expect(session).toMatchObject({ ok: true, result: { notifications: "native" } });
   expect(code).toBe(0);
 });
+
+test("accepts the sandbox port and toolchain options", async () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
+  const args = ["--port", "0", "--sandbox-port", "0", "--toolchain", home];
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), ...args], {
+    env: { ...process.env, KIBO_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const reader = proc.stdout.getReader();
+  let out = "";
+  while (!out.includes("\n")) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    out += new TextDecoder().decode(value);
+  }
+  proc.kill("SIGTERM");
+  const code = await proc.exited;
+  rmSync(home, { recursive: true, force: true });
+  expect(out).toStartWith("KIBO_READY http://127.0.0.1:");
+  expect(code).toBe(0);
+});
