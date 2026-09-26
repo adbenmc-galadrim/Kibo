@@ -5854,7 +5854,7 @@ git commit -m "feat(daemon): runner claude headless"
 
 `apply` calcule d'abord la transition (`reduceRun` peut lever `INVALID_TRANSITION`), puis écrit l'événement : une transition refusée n'écrit rien. À l'ouverture, les vues sont rejouées depuis `runs.db` ; un run `starting` ou `running` reçoit `failed` (`INTERRUPTED: …`).
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/run-registry.test.ts` :
 ```ts
@@ -5973,12 +5973,12 @@ test("counts the tokens of the day", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/run-registry.test.ts`
 Expected: FAIL (`Cannot find module "./run-registry"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/agents/run-registry.ts` :
 ```ts
@@ -6079,12 +6079,12 @@ export function openRunRegistry(store: RunStore, now: () => number = Date.now): 
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/run-registry.test.ts && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/agents/run-registry.ts packages/daemon/src/agents/run-registry.test.ts
