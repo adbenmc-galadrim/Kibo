@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import type { AgentProfile, ConfigCommand, Domain, Guideline, ProfileInput } from "@kibo/schema";
+import {
+  type AgentProfile,
+  ConfigCommand,
+  type Domain,
+  type Guideline,
+  type ProfileInput,
+} from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import {
   configTarget,
@@ -8,6 +14,7 @@ import {
   listDomains,
   listGuidelines,
   listProfiles,
+  workspaceName,
 } from "./agent-config";
 import { createProjectDoc } from "./project";
 import { createWorkspaceDoc } from "./workspace";
@@ -180,5 +187,22 @@ describe("guidelines", () => {
       configTarget({ method: "removeGuideline", owner: { scope: "workspace" }, guidelineId: "g" }),
     ).toBeNull();
     expect(configTarget({ method: "deleteDomain", domainId: "d" })).toBeNull();
+  });
+});
+
+describe("workspace name", () => {
+  test("the workspace name is stored in the workspace doc and trimmed", () => {
+    const ws = createWorkspaceDoc();
+    expect(workspaceName(ws)).toBeNull();
+    expect(
+      executeConfigCommand(ws, ConfigCommand.parse({ method: "renameWorkspace", name: "  Maison  " })),
+    ).toEqual({ name: "Maison" });
+    expect(workspaceName(ws)).toBe("Maison");
+    expect(configTarget({ method: "renameWorkspace", name: "Maison" })).toBeNull();
+  });
+
+  test("an empty or too long workspace name is refused by the schema", () => {
+    expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "   " }).success).toBe(false);
+    expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "x".repeat(41) }).success).toBe(false);
   });
 });

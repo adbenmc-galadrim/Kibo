@@ -70,6 +70,8 @@ export type Guideline = z.infer<typeof Guideline>;
 
 const Id = z.string().min(1);
 
+export const WorkspaceName = z.string().trim().min(1).max(40);
+
 export const ConfigCommand = z.discriminatedUnion("method", [
   z.object({ method: z.literal("createProfile"), profile: ProfileInput }),
   z.object({ method: z.literal("updateProfile"), profileId: Id, patch: ProfileInput.partial() }),
@@ -91,6 +93,7 @@ export const ConfigCommand = z.discriminatedUnion("method", [
     content: GuidelineContent.optional(),
   }),
   z.object({ method: z.literal("removeGuideline"), owner: GuidelineOwner, guidelineId: Id }),
+  z.object({ method: z.literal("renameWorkspace"), name: WorkspaceName }),
 ]);
 export type ConfigCommand = z.infer<typeof ConfigCommand>;
 
@@ -104,6 +107,7 @@ export type ConfigResult = {
   addGuideline: Guideline;
   updateGuideline: Guideline;
   removeGuideline: null;
+  renameWorkspace: { name: string };
 };
 
 export type WorkspaceConfig = {
@@ -111,6 +115,7 @@ export type WorkspaceConfig = {
   domains: Domain[];
   guidelines: Guideline[];
   domainUsage: Record<string, number>;
+  workspaceName: string | null;
 };
 
 export const HostSettings = z.object({

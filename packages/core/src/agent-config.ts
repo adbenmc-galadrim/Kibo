@@ -5,6 +5,7 @@ import {
   Guideline,
   type GuidelineOwner,
   KiboError,
+  WorkspaceName,
 } from "@kibo/schema";
 import type { LoroDoc, LoroMap } from "loro-crdt";
 
@@ -13,6 +14,7 @@ type Parsed<T> = { success: true; data: T } | { success: false; error: { message
 const profilesMap = (doc: LoroDoc) => doc.getMap("profiles");
 const domainsMap = (doc: LoroDoc) => doc.getMap("domains");
 const guidelinesMap = (doc: LoroDoc) => doc.getMap("guidelines");
+const settingsMap = (doc: LoroDoc) => doc.getMap("settings");
 const projectIdOf = (doc: LoroDoc) => doc.getMap("meta").get("id") as string | undefined;
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
 
@@ -34,6 +36,11 @@ function requireWorkspace(doc: LoroDoc): void {
   if (projectIdOf(doc) !== undefined) {
     throw new KiboError("INVALID_INPUT", "profiles, domains and shared guidelines live in the workspace");
   }
+}
+
+export function workspaceName(ws: LoroDoc): string | null {
+  const name = settingsMap(ws).get("name");
+  return typeof name === "string" ? name : null;
 }
 
 export function listProfiles(ws: LoroDoc): AgentProfile[] {
@@ -217,6 +224,13 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
       guidelinesMap(doc).delete(cmd.guidelineId);
       doc.commit();
       return null;
+    }
+    case "renameWorkspace": {
+      requireWorkspace(doc);
+      const name = valid(WorkspaceName.safeParse(cmd.name));
+      settingsMap(doc).set("name", name);
+      doc.commit();
+      return { name };
     }
   }
 }

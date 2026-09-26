@@ -175,11 +175,14 @@ describe("service", () => {
         content: "#",
       },
     });
+    expect((s1.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceName).toBeNull();
+    s1.handle({ method: "config", command: { method: "renameWorkspace", name: "Maison" } });
     store1.close();
     const store2 = openStore(home);
     const config = createService(store2, { user: "adam" }).handle({ method: "getConfig" }) as WorkspaceConfig;
     expect(config.domains.map((d) => d.name)).toEqual(["Core"]);
     expect(config.guidelines.map((g) => g.path)).toEqual(["k.md"]);
+    expect(config.workspaceName).toBe("Maison");
     store2.close();
   });
 

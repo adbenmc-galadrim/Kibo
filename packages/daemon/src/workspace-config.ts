@@ -5,6 +5,7 @@ import {
   listDomains,
   listGuidelines,
   listProfiles,
+  workspaceName,
 } from "@kibo/core/agent-config";
 import { type ConfigCommand, KiboError, type WorkspaceConfig } from "@kibo/schema";
 import type { Docs } from "./docs";
@@ -28,6 +29,7 @@ export function readConfig(docs: Docs): WorkspaceConfig {
       ...docs.projectIds().flatMap((id) => listGuidelines(docs.project(id))),
     ],
     domainUsage: domainUsage(docs),
+    workspaceName: workspaceName(docs.workspace),
   };
 }
 
