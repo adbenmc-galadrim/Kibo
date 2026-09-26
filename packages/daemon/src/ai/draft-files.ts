@@ -1,7 +1,6 @@
 import {
   chmodSync,
   cpSync,
-  existsSync,
   lstatSync,
   mkdirSync,
   readdirSync,
@@ -16,14 +15,14 @@ import { ComponentManifest, type DraftIncident, type GrantedPermissions, KiboErr
 
 export type DraftPaths = { dir: string; baseDir: string };
 
-type EntryKind = "file" | "link";
+type EntryKind = "file" | "unsafe";
 
 const MANIFEST = "kibo.component.json";
 const CONFORMANCE_TEST = "component.test.tsx";
 const CONFORMANCE_CALL = /\brunConformance\s*\(/;
 const AGENT_TEST = /^[A-Za-z0-9_-]+\.test\.tsx$/;
 const IGNORED_DIRS = new Set(["node_modules", "dist", ".kibo"]);
-const KIBO_ONLY = new Set(["CLAUDE.md", ".claude"]);
+const KIBO_ONLY = new Set(["claude.md", ".claude"]);
 
 export const draftPaths = (home: string, draftId: string): DraftPaths => ({
   dir: join(home, "components", "drafts", draftId),
@@ -37,6 +36,12 @@ const ignored = (name: string) => IGNORED_DIRS.has(name) || name.endsWith(".tsbu
 const posix = (p: string) => p.split(sep).join("/");
 const present = (p: string) => lstatSync(p, { throwIfNoEntry: false }) !== undefined;
 const isLink = (p: string) => lstatSync(p).isSymbolicLink();
+const isRealFile = (p: string) => lstatSync(p, { throwIfNoEntry: false })?.isFile() === true;
+const isRealDir = (p: string) => lstatSync(p, { throwIfNoEntry: false })?.isDirectory() === true;
+
+function assertRealDir(dir: string) {
+  if (!isRealDir(dir)) throw new KiboError("STORE_CORRUPT", `draft folder ${dir} is not a directory`);
+}
 
 function listEntries(root: string): Map<string, EntryKind> {
   const out = new Map<string, EntryKind>();
@@ -45,9 +50,8 @@ function listEntries(root: string): Map<string, EntryKind> {
       if (ignored(name)) continue;
       const abs = join(dir, name);
       const st = lstatSync(abs);
-      if (st.isSymbolicLink()) out.set(posix(relative(root, abs)), "link");
-      else if (st.isDirectory()) walk(abs);
-      else if (st.isFile()) out.set(posix(relative(root, abs)), "file");
+      if (st.isDirectory()) walk(abs);
+      else out.set(posix(relative(root, abs)), st.isFile() ? "file" : "unsafe");
     }
   };
   walk(root);
@@ -103,19 +107,37 @@ export function copySource(src: string, dir: string): void {
 function restoreConformance(paths: DraftPaths, base: Map<string, EntryKind>, incidents: DraftIncident[]) {
   if (base.get(CONFORMANCE_TEST) !== "file") return;
   const test = join(paths.dir, CONFORMANCE_TEST);
-  if (existsSync(test) && CONFORMANCE_CALL.test(readFileSync(test, "utf8"))) return;
+  if (isRealFile(test) && CONFORMANCE_CALL.test(readFileSync(test, "utf8"))) return;
   restore(paths, CONFORMANCE_TEST);
   if (!incidents.some((i) => i.path === CONFORMANCE_TEST))
     incidents.push({ kind: "restored", path: CONFORMANCE_TEST });
 }
 
+function removeAgentFolders(
+  paths: DraftPaths,
+  base: Map<string, EntryKind>,
+  allowServer: boolean,
+  incidents: DraftIncident[],
+) {
+  for (const name of readdirSync(paths.dir)) {
+    if (!isAgentFile(name, allowServer) || !isRealDir(join(paths.dir, name))) continue;
+    rmSync(join(paths.dir, name), { recursive: true, force: true });
+    const inBase = base.get(name) === "file";
+    if (inBase) restore(paths, name);
+    incidents.push({ kind: inBase ? "restored" : "removed", path: name });
+  }
+}
+
 export function verifyAndRestore(paths: DraftPaths, allowServer: boolean): DraftIncident[] {
+  assertRealDir(paths.dir);
+  assertRealDir(paths.baseDir);
   const incidents: DraftIncident[] = [];
   const base = listEntries(paths.baseDir);
+  removeAgentFolders(paths, base, allowServer, incidents);
   const current = listEntries(paths.dir);
   for (const [rel, kind] of current) {
     const inBase = base.get(rel) === "file";
-    if (kind === "link") {
+    if (kind === "unsafe") {
       unlinkSync(join(paths.dir, rel));
       if (inBase) restore(paths, rel);
       incidents.push({ kind: inBase ? "restored" : "removed", path: rel });
@@ -140,6 +162,8 @@ export function verifyAndRestore(paths: DraftPaths, allowServer: boolean): Draft
 }
 
 export function agentFiles(paths: DraftPaths, allowServer: boolean): string[] {
+  assertRealDir(paths.dir);
+  assertRealDir(paths.baseDir);
   const names = new Set<string>();
   for (const root of [paths.baseDir, paths.dir])
     for (const [rel, kind] of listEntries(root))
@@ -169,31 +193,45 @@ export function writePermissions(dir: string, p: GrantedPermissions): void {
 const installable = (dir: string) => (s: string) => {
   if (s === dir) return true;
   const top = posix(relative(dir, s)).split("/")[0] ?? "";
-  return !KIBO_ONLY.has(top) && !ignored(basename(s)) && !isLink(s);
+  return !KIBO_ONLY.has(top.toLowerCase()) && !ignored(basename(s)) && !isLink(s);
 };
 
+const backupOf = (srcDir: string) => join(dirname(srcDir), `.${basename(srcDir)}.kibo-backup`);
+
+function recoverBackup(srcDir: string, backup: string) {
+  if (!present(backup)) return;
+  rmSync(srcDir, { recursive: true, force: true });
+  renameSync(backup, srcDir);
+}
+
 export function installDraft(dir: string, srcDir: string): { commit(): void; rollback(): void } {
-  const backup = present(srcDir) ? join(dirname(srcDir), `.${basename(srcDir)}.kibo-backup`) : null;
-  if (backup) {
-    rmSync(backup, { recursive: true, force: true });
-    renameSync(srcDir, backup);
-  }
-  const rollback = () => {
+  assertRealDir(dir);
+  const backup = backupOf(srcDir);
+  recoverBackup(srcDir, backup);
+  const hadSource = present(srcDir);
+  if (hadSource) renameSync(srcDir, backup);
+  const undo = () => {
     rmSync(srcDir, { recursive: true, force: true });
-    if (backup) renameSync(backup, srcDir);
+    if (hadSource) renameSync(backup, srcDir);
   };
   try {
     mkdirSync(srcDir, { recursive: true, mode: 0o700 });
     cpSync(dir, srcDir, { recursive: true, filter: installable(dir) });
   } catch (e) {
-    rollback();
+    undo();
     throw e;
   }
+  let settled = false;
+  const once = (action: () => void) => () => {
+    if (settled) return;
+    settled = true;
+    action();
+  };
   return {
-    commit: () => {
-      if (backup) rmSync(backup, { recursive: true, force: true });
-    },
-    rollback,
+    commit: once(() => {
+      if (hadSource) rmSync(backup, { recursive: true, force: true });
+    }),
+    rollback: once(undo),
   };
 }
 
