@@ -10,6 +10,8 @@ const native = {
   Blob: globalThis.Blob,
   AbortController: globalThis.AbortController,
   AbortSignal: globalThis.AbortSignal,
+  TransformStream: globalThis.TransformStream,
+  WritableStream: globalThis.WritableStream,
 };
 
 GlobalRegistrator.register();
