@@ -12649,7 +12649,7 @@ Référence : maquette P11 (sombre et clair), pages PDF 8 et 14 (cartes Kanban a
   - `fr.integrations.instance = { header(repo); sync; syncing; lastSync(time); never; bindingRemoved; bindingRemovedHelp }`
   - N16 : une instance synchronisée ouvre le Kanban sur le filtre « Tous »
 
-- [ ] **Step 1: Tests SDK (échouent)**
+- [x] **Step 1: Tests SDK (échouent)**
 
 Ajouter à `packages/sdk/src/source.test.ts` :
 
@@ -12677,7 +12677,7 @@ Ajouter à `packages/sdk/src/client.test.ts` : `projectBackend(client, "p1", "i1
 
 Run: `bun test packages/sdk/src/source.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: `filterBySource` et `openNewTicket`**
+- [x] **Step 2: `filterBySource` et `openNewTicket`**
 
 `packages/sdk/src/source.ts`, ajouter :
 
@@ -12707,7 +12707,7 @@ export function filterBySource(tickets: TicketView[], source: InstanceSource | n
 
 Run: `bun test packages/sdk components` — Expected: PASS après mise à jour des attendus existants qui comparent `newTicketRequests` : `packages/sdk/src/sdk.test.ts` (`[{ statusId: "todo", instanceId: "mock-instance" }]`) et `components/kanban/src/kanban.test.tsx` (`[{ statusId: "in_progress", instanceId: "mock-instance" }]`) ; `tickets.test.tsx` ne lit que `parentId`.
 
-- [ ] **Step 3: Tests Kanban (échouent)**
+- [x] **Step 3: Tests Kanban (échouent)**
 
 Ajouter à `components/kanban/src/kanban.test.tsx` :
 
@@ -12765,7 +12765,7 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
 
 Run: `bun test components/kanban` — Expected: FAIL.
 
-- [ ] **Step 4: Kanban**
+- [x] **Step 4: Kanban**
 
 `components/kanban/kibo.component.json` : `"reads": ["ticket", "status", "run", "ci_run"]` (`run` reste : pastilles d'agent). `configSchema` est **inchangé** : le format de la phase 4 (décision 2) n'accepte que des valeurs scalaires, `source` (objet `{ bindingId }`, spec F §3.2) ne peut pas y être déclaré. `source` est une clé posée par le shell à l'écran 3 et lue par `readSource` ; `validateConfig` n'est appelé que par la mise à jour d'une version publiée (`daemon/src/components/update.ts`), jamais pour un intégré, donc aucune instance synchronisée n'est refusée (voir la décision N34).
 
@@ -12827,13 +12827,13 @@ function ciTone(run: Pick<CiRun, "status" | "conclusion">): keyof typeof CI_DOT 
 
 `KanbanCard` (props réelles : `ticket`, `run`, `statuses`, `onOpen`, `onMove`) n'affiche aujourd'hui aucun chip de PR : ce chip `#12` à pastille est le seul. Couleurs identiques à celles de la section CI du Sheet (Task 18) ; aucun orange.
 
-- [ ] **Step 5: Tickets**
+- [x] **Step 5: Tickets**
 
 `components/tickets/kibo.component.json` : inchangé (même raison que le Kanban). `components/tickets/src/TicketsTree.tsx` : `const { data: all, loading } = useEntities("ticket");` puis `const tickets = filterBySource(all, readSource(sdk.config));` avant `buildTree(tickets)`. Test ajouté à `tickets.test.tsx` : avec `config: { source: { bindingId: "b1" } }` et le même `syncedSeed` (recopié), l'arbre montre « Issue synchronisée » et « Sous-tâche locale », pas « Ticket local ».
 
 Run: `bun test components` — Expected: PASS (conformité comprise : `ci_run` est déclaré dans `reads`).
 
-- [ ] **Step 6: En-tête de source et création depuis l'instance**
+- [x] **Step 6: En-tête de source et création depuis l'instance**
 
 `packages/ui/src/i18n/fr-integrations.ts`, ajouter :
 
@@ -13010,7 +13010,7 @@ En mode natif (`notifications === "native"`), le démon a déjà notifié par `D
 
 `packages/ui/src/shell/integration-notices.test.tsx` : faux `client.subscribeIntegrations` qui garde l'écouteur ; émettre `{ type: "sync.conflict", projectId: "p1", ticketKey: "KIB-7", field: "title" }` ⇒ `await screen.findByText("Conflit résolu sur KIB-7 : titre repris de GitHub")` ; avec `notifications="browser"`, un `Notification` global factice (permission `"granted"`) reçoit `("CI cassée sur KIB-7", …)` pour `{ type: "notice", title: "CI cassée sur KIB-7", body: "CI a échoué sur la PR #12." }` ; avec `"native"`, il n'est pas appelé.
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Run: `bun install && bun test packages/sdk packages/ui components && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget` — Expected: PASS (budget inchangé : `IntegrationNotices` et `sonner` sont hors du chargement initial). Contrôle visuel : Kanban synchronisé (en-tête, chip CI rouge, état « Liaison supprimée ») en sombre puis en clair, contre P11.
 
