@@ -12,37 +12,47 @@
 
 ## Prérequis (v0.6) et recalage
 
-Ce plan suppose les phases 2 à 6 livrées. Leurs plans n'existaient pas quand il a été écrit : les noms ci-dessous viennent des specs de phase. **La tâche 0 les confronte au code de `main` au tag `v0.6`** et corrige le plan (noms, chemins, signatures) avant la vague 1.
+Ce plan suppose les phases 2 à 6 livrées. Il a été écrit avant leurs plans ; **la tâche 0 l'a confronté au code de `main` (commit `0486248`, état v0.6)** et corrigé noms, chemins et signatures. Colonne « Réel » : ce qui fait foi pour toutes les tâches.
 
-| Besoin | Nom supposé | Origine |
-|---|---|---|
-| RPC asynchrone | `Service.handle(req: RpcRequest, ctx: RpcContext): Promise<unknown>` (le `ctx` est ajouté par la tâche 9) | phases 2 à 5 |
-| Base SQLite du démon | `Store.db: Database` (ajouté par la tâche 1 s'il manque) | phase 1 |
-| Réglages locaux par projet | table `project_settings(projectId, key, value)` | spec B §8.2 |
-| Secrets | `SecretStore`, `MemorySecretStore`, `SecretName` dans `packages/daemon/src/secrets/` | spec F §3.4 |
-| Domaines | `listDomains(ws: LoroDoc): Domain[]`, `Domain = { id, name, color, guidelines }` | phase 2 |
-| Runs actifs | `runs.active(): { ticketId: string; ticketKey: string; profile: string; state: RunState }[]` | phase 2 |
-| Notifications système | `notify({ title, body }): Promise<void>` | phase 2 (M1) |
-| Liaisons de sync | `bindings: LoroMap` du doc projet, `Binding.runner`, `Binding.createdBy` | spec F §3.2 |
-| Magasin de composants | `ComponentStore.put(input: { id; version; files: SourceFile[] }): Promise<{ hash: string; dir: string }>`, `ComponentStore.remove(id, version, hash)`, `ComponentStore.readSources(id, version, hash): Promise<SourceFile[]>` | spec B §3.3 |
-| Registre | `Registry.get(id, version)`, `Registry.put(id, title, v: RegistryVersion)`, `Registry.setTrust(id, version, trust)`, `Registry.all()` | spec B §3.4 |
-| Aperçu de confiance (écran 30) | `TrustPreview` et `previewTrust(id, version): TrustPreview` | spec B §7.5 |
-| Validation | `validateComponent(dir: string, opts?: ValidateOptions): Promise<ValidationReport>`, `hashSources(dir)`, `buildComponent(srcDir, outDir)` dans `packages/devkit` | spec B §7.4, §9.1 |
-| Backend sandboxé | `ProcessHost` (`packages/daemon/src/components/backend/process-host.ts`) avec un point d'extension `spawnCommand` | spec B §4.4 |
-| Journal des refus | `component_events` et `logComponentEvent(e)` | spec B §6.4 |
-| UI | `SettingsPage` et `SETTINGS_SECTIONS` (`packages/ui/src/pages/settings/`), `ComponentsPage` (écran 6), `TrustDialog` (écran 30), `PublishDialog` (écran 6), `FirstRunPage` (écran 19), `StatusBar`, `TabBar`, `PairingScreen` (écran 31), `TicketSheet` | phases 1 à 6 |
-| CLI | `packages/cli` avec `kibo component new|test|dev|publish` | spec B §9.2 |
-| Événements WebSocket | union `DaemonEvent` (schéma) diffusée sur `/api/events` | phases 1 à 5 |
+| ✓ | Besoin | Supposé à l'écriture | Réel (v0.6, vérifié en T0) |
+|---|---|---|---|
+| [x] | RPC | `Service.handle(req, ctx): Promise<unknown>` | `Service.handle(req: RpcRequest): unknown` (`packages/daemon/src/service.ts`, 300 lignes : ne grossit plus) ; `server.ts` appelle `opts.service.handle(parsed.data)` dans `respond`. Groupes RPC sur le modèle `AI_RPC` / `INTEGRATION_RPC` (tableau Zod étalé dans `RpcRequest`, `XxxRpcResult` intersecté dans `RpcResult`, `isXxxRequest`). Le contexte local/distant est ajouté par `dispatchRpc` (T9), pas par `Service.handle`. |
+| [x] | Assemblage du démon | `main.ts` | `main.ts` lit les options ; le branchement est dans `packages/daemon/src/daemon.ts` (`assemble`, `DaemonOptions`). Chaque sous-système a son `xxx/bootstrap.ts` (modèle `ai/bootstrap.ts`) ; `daemon.ts` ne gagne que quelques lignes. |
+| [x] | Base SQLite | `Store.db` | existe (`Store = { db, load, save, ids, getLocal, setLocal, transaction, close }`, table `local_state`). |
+| [x] | Réglages locaux | `project_settings(projectId, key, value)` | existe : `createProjectSettings(db)` (`packages/daemon/src/notes/settings.ts`), `{ get(projectId, key): string \| null; set(projectId, key, value) }`, seul `notesDir` y vit. **`folder` n'est pas local** : `meta.folder` du doc projet et liste `projects` du workspace (migré au partage, T7/T23). Réglages hors projet : `Store.getLocal/setLocal` (T1 : `openLocalSettings` au-dessus, JSON validé). |
+| [x] | Secrets | `SecretStore`, `MemorySecretStore`, `SecretName` dans `daemon/src/secrets/` | `SecretName`, regex `SECRET_NAME`, `SecretNameSchema` dans `packages/schema/src/integrations.ts` (préfixes `github`, `figma`, `mcp`) ; `SecretStore` dans `packages/daemon/src/integrations/types.ts` ; `createMemorySecretStore(redactor, initial?)`, `createBunSecretStore(redactor)`, `createRedactor()` (`packages/daemon/src/integrations/`). |
+| [x] | Domaines | `Domain = { id, name, color, guidelines }` | `Domain = { id, name, color }` (`packages/schema/src/agent.ts`), `listDomains(ws)` (`packages/core/src/agent-config.ts`) ; guidelines dans la map `guidelines` (`core/src/config-store.ts`). |
+| [x] | Runs actifs | `runs.active()` | `orchestrator.state().runs: RunView[]` (`projectId`, `ticketKey`, `profileId`, `profileName`, `state`), `onChange`, `onRunState` (`packages/daemon/src/agents/orchestrator-types.ts`) ; `ticketRuns(state, projectId)` (schéma). |
+| [x] | Notifications | `notify({ title, body }): Promise<void>` | `notify?: (notice: Notice) => void`, synchrone, `Notice = { title, body }` (`agents/notifier.ts`), option de `DaemonOptions`. |
+| [x] | Liaisons | `bindings: LoroMap`, `runner`, `createdBy` | valeur JSON simple dans la map `bindings` (`core/src/bindings.ts`) ; `runner` et `createdBy` = nom d'utilisateur OS (`host.user`) ; `daemon/src/sync/engine.ts` filtre `b.runner === host.user`. Pas de `localIdentity`. |
+| [x] | Clés de ticket | — | `node.data.key` de l'arbre `tickets` ; `meta.ticketSeq` (registre) ; `nextTicketSeq`, `peekTicketKey`, `getProjectMeta` (`core/src/project.ts`) ; `createTicket(doc, NewTicket)` (`core/src/tickets.ts`) ; `readProject` (`core/src/commands.ts`) ; `formatTicketKey` (schéma `ids.ts`). |
+| [x] | Magasin | `ComponentStore.put({ id, version, files })`, `readSources`, `remove(id, version, hash)` | `ComponentStore = { root, put(srcDir, expectedHash?) → StoredVersion, load, verify, get, remove(id, version) }` (`packages/daemon/src/components/store.ts`) ; sources lues par `readSources(join(store.root, id, version, hash, "source"))` (`@kibo/devkit`). |
+| [x] | Registre | `Registry.get/put/setTrust/all` | `core/src/registry.ts` (`readRegistry`, `getRegistryVersion`, `putRegistryVersion`, `updateRegistryVersion`, `removeRegistryVersion`, `highestVersion`) ; `RegistryService` (`components/registry-service.ts` : `approve`, `revoke`, `rehash`, `uninstall`, `verify`, `list`…), exposé par `ComponentsService.registry`. `RegistryVersion` a déjà `origin` (dont `"marketplace"`) et `autoUpdate`. |
+| [x] | Aperçu de confiance | `TrustPreview`, `previewTrust(id, version)` | n'existe pas : l'UI construit `TrustTarget { id, title, version, hash, origin, permissions }` par `trustTargetOf` (`packages/ui/src/dialogs/TrustDialog.tsx`). T5 crée `TrustPreview` dans le schéma (sur-ensemble avec `market`). |
+| [x] | Validation | `validateComponent(dir, opts?)`, `hashSources(dir)`, `buildComponent(srcDir, outDir)` | `validateComponent(dir, { toolchain, bun?, sandbox?, timeoutMs?, now?, signal? })` (tests déjà exécutés dans le bac à sable OS), `hashSources`, `hashFiles` (synchrone), `readSources`, `isHashed`, `buildComponent(srcDir, toolchain) → BuildOutput` (`packages/devkit/src/`). |
+| [x] | Backend sandboxé | `components/backend/process-host.ts`, `spawnCommand` | `createProcessHost(opts: ProcessHostOptions)` (`packages/daemon/src/components/process-host.ts`), **déjà sous `sandbox-exec` / `bwrap`** par `osSandbox()` de `packages/devkit/src/os-sandbox.ts`, canal JSON par lignes sur fd 3/4 (`components/line-channel.ts`) ; test d'évasion `components/exit.test.ts` (fixture `packages/devkit/fixtures/evil`). |
+| [x] | Journal des refus | `component_events`, `logComponentEvent(e)` | table `component_events`, `createEventLog(db) → EventLog { record(e: Refusal), list, flush }` (`components/events.ts`). |
+| [x] | Verrou de publication | — | `components.publishLock` (`components/publish-lock.ts`), créé par `createComponentsService` et partagé avec l'IA : toute publication ou installation marketplace d'un id le tient. |
+| [x] | UI | `SettingsPage`, `SETTINGS_SECTIONS`, `ComponentsPage`, `TrustDialog`, `PublishDialog`, `FirstRunPage`, `StatusBar`, `TabBar`, `PairingScreen`, `TicketSheet` | `packages/ui/src/settings/` : tableau `ITEMS` de `SettingsNav.tsx`, une section navigable = une valeur de l'enum `Screen` (`packages/schema/src/tabs.ts`) + `ScreenView.tsx` + `lazy-screens.ts` ; « Sécurité » existe désactivée. `packages/ui/src/components-page/ComponentsPage.tsx` (tableau local `ComponentsTable`, `rows.ts`, `ComponentRowMenu.tsx`, `PublishDialog { id, open, onOpenChange, onPublished? }`). Pas de `FirstRunPage` : `shell/Welcome.tsx`. Pas de `StatusBar` : pastille « Démon local » dans `agents/AgentBar.tsx`. `tabs/TabBar.tsx`, `shell/PairingScreen.tsx`, `shell/TicketSheet.tsx`, `pages/InstanceMenu.tsx`, `pages/InstanceFrame.tsx`. Navigation : `navigateTo(target)` (`route.ts`). |
+| [x] | CLI | `kibo component new\|test\|dev\|publish` | `packages/cli/src/index.ts` (`runCli(argv, io)`), commandes dans `cli/src/commands/`, `daemon-client.ts` (`connectDaemon(home)`). |
+| [x] | Événements WebSocket | union `DaemonEvent` | `ChangeMessage` (`packages/schema/src/rpc.ts`), émis par `service.docs.emit`, publié sur `changes`. Le type `sync` est pris par `IntegrationEvent` : les nouveaux sont `collab.changed`, `presence.changed`, `market.changed`, `sessions.changed`, `sandbox.changed` (T4). Client : pas de `onEvent`, des `subscribe*` (T13 ajoute `subscribeEvents`). |
+| [x] | Noms déjà pris | `Role`, `SyncState`, dossier `daemon/src/sync/` | `Role` (onboarding IA), `SyncState` (sync d'intégrations) et `packages/daemon/src/sync/` (sync d'intégrations) existent : ce plan utilise `MemberRole`, `SyncConnectionState` et `packages/daemon/src/collab/`. |
+| [x] | Codes d'erreur | 13 codes nouveaux | `RATE_LIMITED`, `QUOTA_EXCEEDED`, `SANDBOX_UNAVAILABLE` existent (429, 413, 503) ; T1 n'ajoute que les 10 autres. `AI_UNAVAILABLE` (503) existe. |
+| [x] | Plateforme | Bun 1.4.2, loro-crdt 1.16.3, fast-check 4.3.0 | confirmé ; fast-check seulement en devDependency de `core` (T19 l'ajoute au démon). CI Linux installe déjà bubblewrap et lève la restriction AppArmor. |
+| [x] | E2E | — | ports Playwright 4390–4405 pris ; ce plan prend 4406–4414 ; faux serveurs à `port + 1000` et `port + 2000` (`e2e/token.ts`) ; ports 4461–4499 réservés aux démos. Fixtures de code suffixées `.fixture`. |
 
 ## Global Constraints
 
 - Bun **1.4.2** partout (CI `oven-sh/setup-bun` avec `bun-version: 1.4.2`), dépendances figées par `bun.lock`, aucun `postinstall`, **aucune nouvelle dépendance npm** dans cette phase.
 - **Aucun commentaire dans le code** (rédhibitoire en review) : les justifications vont dans le plan, les messages de commit ou des données nommées (ex. `reason` dans le profil macOS).
-- Code, identifiants et messages d'erreur internes en anglais ; textes d'interface en français dans `packages/ui/src/i18n/fr.ts`, **tutoiement**.
+- Code, identifiants et messages d'erreur internes en anglais ; textes d'interface en français, **tutoiement** : un fichier par domaine monté dans `packages/ui/src/i18n/fr.ts` (`fr-security.ts`, `fr-market.ts`, `fr-collab.ts`, sur le modèle de `fr-integrations.ts`), pour limiter les conflits entre tâches parallèles.
 - shadcn/ui depuis `@kibo/sdk/ui/*` (`packages/sdk/src/ui`) ; un composant manquant y est ajouté par le CLI shadcn, jamais écrit à la main dans `packages/ui`. Identifiants de formulaire par `useId()`.
 - **Aucune erreur avalée** : tout `catch` rejette, journalise avec contexte ou convertit en `KiboError` typée ; pas de `catch {}` vide, pas de `.catch(() => null)` sans traitement.
 - Nouveaux paquets (`packages/trust`, `packages/sync-server`) ajoutés au script `typecheck` racine, à `bun test packages components` et aux dépendances autorisées de `CLAUDE.md` : `schema ← trust ← {devkit, daemon, sync-server, cli}`, `schema ← core ← sync-server`.
-- CI verte sur **macOS et Linux** ; E2E en **sombre et en clair** (projets Playwright `dark` et `light`).
+- CI verte sur **macOS et Linux** ; E2E en **sombre et en clair** (un projet Playwright par thème). GitHub Actions étant hors service, le chef d'équipe passe le gate local (`bun run check`, `bun run typecheck`, `bun test packages components`, E2E concernés) avant chaque intégration ; `ci.yml` reste tenu à jour.
+- E2E : ports 4390–4405 déjà pris ; ce plan utilise 4406–4411 (T31) et 4412–4414 (T32) ; faux serveurs à `port + 1000` et `port + 2000` (`e2e/token.ts`) ; ports 4461–4499 réservés aux démos, jamais utilisés par les tests. Fixture de code hors lint et typecheck : suffixe `.fixture` (retiré par `copyFixture` de `@kibo/devkit/test-kit`).
+- Publication et installation marketplace tiennent le verrou partagé `components.publishLock` (même verrou que l'IA et `publishComponent`) sur l'id du composant.
+- Nouveaux événements : variantes de `ChangeMessage` émises par `service.docs.emit` ; nouvelles RPC : groupes Zod sur le modèle `AI_RPC` ; `service.ts` et `daemon.ts` ne reçoivent que du branchement.
 - Transport : `wss://` obligatoire ; `ws://` seulement vers `127.0.0.1` / `localhost` (`TLS_REQUIRED` sinon). Trames JSON validées par Zod, 8 Mio max.
 - Limites de sync (spec G) : envoi groupé 50 ms ; 50 Mio par projet ; 100 mises à jour / s par appareil ; 20 connexions par utilisateur ; 5 échecs d'authentification / min / IP ⇒ 429 pendant 5 min ; compactage toutes les 500 mises à jour ; déchargement d'un projet après 10 min sans client ; reconnexion 1 s → 60 s avec gigue ; présence expirée à 30 s, rafraîchie toutes les 10 s.
 - Codes : invitation de compte 128 bits base32, 48 h ; code d'appareil 15 min ; invitation de projet 48 h ; tous stockés hachés (SHA-256), affichés une seule fois, usage unique. Code d'appairage : 6 caractères, 5 min, 5 essais.
@@ -55,7 +65,7 @@ Ce plan suppose les phases 2 à 6 livrées. Leurs plans n'existaient pas quand i
 
 ## Review Focus
 
-1. **Membre retiré pendant qu'il est hors ligne** : à la reconnexion, `welcome` ne liste plus le projet ; le démon doit le marquer « Accès retiré », en lecture seule, sans rien pousser, au lieu de boucler sur des `reject` (Task 21, test « removed while offline »).
+1. **Paquet `packages/trust`** (WebCrypto et Zod, sans I/O) : Ed25519, codes, empreinte canonique des sources (spec B §3.2), X.509, `.kpkg`, index signés, signature des requêtes HTTP. L'empreinte y est reprise **à l'identique** de `hashFiles` du devkit (synchrone, `${path}\0${byteLength}\0` + octets, fichiers triés) et `packages/devkit/src/hash.ts` y délègue `isHashed`, `hashFiles` et `SourceFile` : une seule implémentation, API du devkit inchangée (lecture disque, limites et refus des liens symboliques restent au devkit). Arêtes : `schema ← trust ← {devkit, daemon, sync-server, cli}` et `schema ← core ← sync-server`.
 2. **Accusé perdu puis même lot renvoyé, ou serveur redémarré entre deux lots** : l'import est idempotent, aucune clé n'est attribuée deux fois, la séquence reprend après la dernière clé (Task 14, tests « duplicate push » et « reload after restart »).
 3. **`bwrap` présent mais espaces de noms utilisateur interdits** (Ubuntu 24.04 par défaut) : la détection exécute une sonde réelle, pas seulement `which` ; résultat `SANDBOX_UNAVAILABLE` avec la commande `sysctl` à proposer (Task 8, test avec un faux `bwrap` qui échoue).
 4. **Connexion coupée au milieu d'un partage** : relancer « Partager » est idempotent côté serveur (même propriétaire ⇒ `shared`), le projet local n'est ni dupliqué ni laissé verrouillé (Task 23, test « share retried after drop »).
@@ -63,7 +73,7 @@ Ce plan suppose les phases 2 à 6 livrées. Leurs plans n'existaient pas quand i
 
 ## Décisions nouvelles (à reporter dans les specs G et H par le chef d'équipe)
 
-Aucune ne contredit les specs ; elles comblent leurs silences (la 14 précise une garantie de la spec H §8.3). Le chef d'équipe les reporte dans la spec concernée avant la vague 1 (règle de `CLAUDE.md`).
+Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T0** : spec G §13 et spec H §13 (« Décisions d'implémentation (plan de phase 7) »), numérotées à l'identique ; les décisions 14 et 23 y figurent comme sans objet (livrées en phase 4). Les points qui relèvent d'Adam sont listés à part (fin de la tâche 0).
 
 1. **Paquet `packages/trust`** (WebCrypto et Zod, sans I/O) : Ed25519, codes, empreinte canonique des sources (spec B §3.2), X.509, `.kpkg`, index signés, signature des requêtes HTTP. `packages/devkit` y délègue `hashSources` pour qu'il n'existe qu'une implémentation de l'empreinte. Arêtes : `schema ← trust ← {devkit, daemon, sync-server, cli}` et `schema ← core ← sync-server`.
 2. **Certificats générés par un encodeur X.509 minimal** (ECDSA P-256, WebCrypto) plutôt qu'une fixture versionnée (spec G §9) ou le binaire `openssl` : aucune clé dans le dépôt, aucune dépendance, et le même code sert au certificat auto-signé de l'accès distant (spec G §7).
@@ -78,23 +88,34 @@ Aucune ne contredit les specs ; elles comblent leurs silences (la 14 précise un
 11. **`Instance.componentHash`** (optionnel, `null` pour les intégrés) : écrit par le démon à l'ajout ou à la mise à jour d'une instance non intégrée ; c'est « la même empreinte » exigée par spec H §5.5 pour installer un composant absent.
 12. **`RegistryVersion.source` et `RegistryVersion.revoked`** (`{ reason, at } | null`) pour afficher le motif de révocation (spec H §4).
 13. **Ajout d'une source en deux temps** : `probeMarketSource { url }` lit l'index, vérifie sa signature avec la clé qu'il annonce et renvoie nom et empreinte ; l'utilisateur compare hors bande puis confirme `addMarketSource { url, publicKey }`.
-14. **bubblewrap à liaison minimale** : au lieu de `--ro-bind /usr /usr`, seules les bibliothèques listées par `ldd <runtime>`, le chargeur dynamique et `/etc/ld.so.cache` sont montés, sinon `/usr/bin` resterait exécutable et « lancement d'un processus bloqué par l'OS » (spec H §8.3) serait faux. Repli validé par la tâche 8 si le runtime ne démarre pas ainsi : `--ro-bind /usr /usr`, et la ligne « processus » du test `escape` passe alors par le retrait des API de la phase 4 (écart noté au jalon). Le filtre seccomp additionnel (spec H §8.1, « à valider ») est **reporté après v1.0** : générer le programme BPF sans dépendance sort du budget de la phase ; bubblewrap couvre déjà réseau, disque et processus.
+14. **Isolation Linux** : sans objet en phase 7, livrée en phase 4 (spec B décision 24) avec des montages déjà minimaux (`/usr/lib`, `/lib`… jamais tout `/usr`) et le lancement de processus déjà bloqué (test `exit.test.ts`). T8 n'ajoute que le diagnostic (`diagnose()` : type, raison, commande de correction). Le filtre seccomp (spec H §8.1, « à valider ») est **reporté après v1.0**.
 15. **Profil macOS sans commentaires dans le code** : chaque règle ajoutée est une donnée `{ rule, reason }` ; le générateur émet `reason` en ligne `;` dans le SBPL produit.
-16. **Validation sandboxée à l'installation** : `validateComponent(dir, { conformanceOnly: true, wrap })`, où `wrap` enveloppe chaque sous-processus (`tsc`, `bun test`, build) dans le bac à sable OS ; les tests de l'éditeur ne sont ni fournis ni exécutés.
+16. **Validation à l'installation** : `validateComponent` exécute déjà les tests dans le bac à sable OS (phase 4) ; T20 ajoute seulement `conformanceOnly` (la suite générique de Kibo remplace les tests de l'éditeur, ni fournis ni exécutés). Une installation marketplace **n'utilise jamais** le réglage « sans isolation OS » : sans bac à sable utilisable, elle échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
 17. **RPC sensibles réservées aux sessions locales** (`127.0.0.1`) : `enableRemoteAccess`, `disableRemoteAccess`, `createPairingCode`, `setAllowUnsandboxed`, `connectSyncServer`, `disconnectSyncServer`, `addMarketSource`, `unpinPublisher` ⇒ `FORBIDDEN` depuis une session distante. L'appairage distant se fait par code à 6 caractères seulement (jamais par le jeton).
-18. **Clé privée TLS de l'accès distant** dans `SecretStore` (`remote:tls`), certificat en `<KIBO_HOME>/remote/cert.pem` (`0600`). `SecretName` accepte les préfixes `sync`, `market` et `remote`.
+18. **Clé privée TLS de l'accès distant** dans `SecretStore` (`remote:tls`), certificat en `<KIBO_HOME>/remote/cert.pem` (`0600`). `SecretName` accepte **trois noms système exacts** (`sync:device`, `market:publisher`, `remote:tls`) en plus des noms d'intégration ; un composant ne peut déclarer qu'un secret d'intégration (`IntegrationSecretNameSchema` dans le manifeste), jamais un secret système.
 19. **Présence exposée aux composants** : `sdk.presence.list()` (appel `presence.list`, soumis à `reads: ticket`) et `members` dans l'instantané, pour que le Kanban affiche « opus-dev-1 · Adam » et le nom d'un assigné identifié par `userId`.
-20. **Paramètres** : nouvelles sections « Sync » (après Intégrations) et « Composants » (sous-page Sources), en plus de « Sécurité ».
+20. **Paramètres** : nouvelles sections « Sync » (après Intégrations), « Sécurité » (entrée existante, activée) et « Composants › Sources », chacune une valeur de l'enum `Screen` (`sync`, `security`, `sources`) ; l'entrée « Apparence » est activée avec le seul bloc « Accès web » de l'écran 15 (`appearance`).
 21. **`kibo-sync`** est compilé par `bun build --compile` (`packages/sync-server/scripts/build.ts`), hors bundle Tauri. La source d'équipe est servie sous `<serveur>/market/` (`index.json`, `index.json.sig`, `packages/<id>/<version>.kpkg`).
 22. **Clé de projet en double** : rejoindre un projet dont la clé existe déjà localement échoue en `INVALID_INPUT` avec un message explicite (« Un projet local utilise déjà la clé KIB ») ; le renommage de clé est hors périmètre v1.0.
-23. **Canal du backend sandboxé en JSON par lignes sur stdin/stdout** (spec H §8.1) au lieu du canal `ipc` de Bun : `bwrap --clearenv` efface la variable qui porte ce canal. Les messages de spec B §6.3 ne changent pas ; `process-host.ts` et `component-runtime.ts` de la phase 4 sont adaptés (T12).
+23. **Canal du backend par lignes JSON** : sans objet, livré en phase 4 (spec B décision 25, descripteurs 3 et 4).
 24. **Un paquet de marketplace demande toujours l'approbation de son empreinte** (écran 30 à chaque installation et mise à jour) : l'héritage de confiance de spec B §7.2 point 4 ne vaut que pour les composants de l'utilisateur. Raison : le code vient d'un tiers et son empreinte change à chaque version (T20).
 25. **`TicketView.keyLabel`** calculé par `readProject` (« KIB-12 » ou « KIB-… ») : l'affichage ne recompose jamais une clé (T6).
 26. **Tests d'intégration du démon contre le vrai serveur** : `@kibo/sync-server` est une `devDependency` du démon, importée seulement par les fichiers `*.test.ts` et `testing/` ; aucun code de production du démon ne l'importe (contrôlé par un test qui parcourt les imports de `packages/daemon/src` hors tests).
 
+27. **Noms déjà pris** : `Role` (onboarding IA), `SyncState` (sync d'intégrations) et le dossier `packages/daemon/src/sync/` (sync d'intégrations) existent ; la phase 7 utilise `MemberRole`, `SyncConnectionState` et `packages/daemon/src/collab/`. Les tables client gardent les noms de la spec G (`sync_config`, `sync_projects`), sans collision.
+28. **Événements de la phase 7** : variantes de `ChangeMessage` émises par `service.docs.emit`, nommées `collab.changed`, `presence.changed`, `market.changed`, `sessions.changed`, `sandbox.changed` (le type `sync` est pris) ; le client les reçoit par `KiboClient.subscribeEvents`, aiguillés avant les écouteurs de projet pour ne jamais recharger la liste des projets.
+29. **Branchement du démon** : `service.ts` (300 lignes) ne reçoit plus de méthodes RPC ; chaque sous-système (`sandbox`, `remote`, `market`, `collab`) a son `bootstrap.ts` et se branche dans `assemble` (`daemon.ts`) par une extension ou un gestionnaire RPC (T9). `main.ts` ne lit que des options (`KIBO_MARKET_ALLOW_LOOPBACK`).
+30. **Garde d'écriture par projet** (T21) : `docs.assertWritable(projectId)` est appelé par le chemin des commandes (`guarded` de `command-path.ts`) **et** par les deux écritures qui le contournent (`writeInstanceData` des composants, `updateInstance`) : la lecture seule (décision 9) et le verrou de partage (décision 7) couvrent toutes les écritures.
+31. **Identité locale d'un projet partagé** (T23) : `docs.identity(projectId)` vaut l'`userId` du compte de sync pour un projet partagé, le nom d'utilisateur OS sinon ; elle sert au `runner` et au `createdBy` des liaisons (spec G §6.2), à l'assigné humain et au `viewer` des composants (filtre « Moi + agents », « Mes tickets »).
+32. **Dossier local d'un projet partagé** (T23) : `meta.folder` quitte le doc au partage et vit dans `project_settings(projectId, "folder")` ; `docs.projectMeta` le réinjecte pour `getProject`, le contexte des agents (worktrees), les notes et le code.
+33. **Erreurs de la sync côté démon** : `SyncStatus.lastError` et `SyncProjectStatus.lastError` portent un code stable (`UNAUTHORIZED`, `DEVICE_REVOKED`, `ACCESS_REVOKED`, `SYNC_OFFLINE`, `TLS_REQUIRED`…), traduit par l'UI dans `fr-collab.ts` ; aucun texte français dans le démon (règle de `CLAUDE.md`).
+34. **Version révoquée** : ne peut pas être réapprouvée (`approveComponent` refuse une version dont `revoked` n'est pas `null`, T20) ; on installe une autre version.
+35. **Source d'équipe** : une source de marketplace est « d'équipe » (publication possible, écran M8) quand son URL est `<origine HTTPS du serveur de sync>/market/` (décision 21) ; aucune autre source n'accepte de publication depuis l'UI.
+36. **Sessions de la CLI** : chaque commande `kibo` qui appaire par le jeton crée une session persistée « Commande kibo » (30 jours glissants, révocable) ; la réutilisation d'un cookie par la CLI est hors périmètre v1.0.
+
 ## Écrans à dessiner (Penpot, avant les tâches UI)
 
-Aucun de ces écrans n'existe. Le chef d'équipe les dessine dans Penpot (page `07 · Sync et marketplace`), **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
+Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Restent à dessiner : **S3**, **S7**, **M3**, **M4**, **M5**, **M6**, **M7** (bannière et ligne de l'écran 19), **M8**, et la variante « Accès retiré » de S6. Le chef d'équipe les ajoute à la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
 
 **S1 · Paramètres › Sync** (nouvelle section du menu Paramètres, entre Intégrations et Sécurité). Sous-titre « Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ». »
 - *Non configuré* : encart vide (icône nuage barré), texte « Aucun serveur de sync configuré. », bouton « Se connecter à un serveur ».
@@ -147,18 +168,20 @@ packages/trust/                        NOUVEAU — crypto et formats signés, We
   src/bytes.ts                         base64, utf8, sha256Hex, égalité constante
   src/ed25519.ts                       paires de clés, signature, vérification, empreinte de clé
   src/codes.ts                         codes d'invitation (base32 128 bits), code d'appairage, normalisation, hachage
-  src/source-hash.ts                   empreinte canonique des sources (spec B §3.2)
+  src/source-hash.ts                   empreinte canonique des sources (spec B §3.2), reprise de devkit/hash.ts
   src/der.ts  src/x509.ts              encodeur DER, certificat auto-signé ECDSA P-256, empreinte SHA-256
   src/http-signing.ts                  charge signée des requêtes HTTP (décision 5)
   src/kpkg.ts                          paquet .kpkg : construction, signature, décodage, contrôles
   src/market-index.ts                  index signé : signature, vérification, anti-retour
   src/verify-package.ts                chaîne complète paquet × index × épinglage
 packages/schema/src/
-  errors.ts                            nouveaux codes (T1)
-  sync.ts                              rôles, trames, présence, statuts (T4)
+  errors.ts  ids.ts  sharing.ts        10 codes, Base64, types de partage (T1) ; integrations.ts : noms de secrets système (T1)
+  sync.ts  sync-rpc.ts                 trames, présence, statuts, Phase7Event, RPC de sync (T4)
   security.ts                          sessions, accès distant, isolation (T4)
-  market.ts                            Kpkg, MarketIndex, types RPC marketplace (T5)
-  ticket.ts  rpc.ts  instance.ts       clé nullable + pendingSeq (T6), RPC (T4, T5), componentHash (T5)
+  market.ts  market-rpc.ts             Kpkg, MarketIndex, types RPC marketplace (T5)
+  manifest.ts  component.ts            ComponentId, ComponentKind, TrustPreview, RegistryVersion.source/revoked (T5)
+  ticket.ts  rpc.ts  instance.ts       clé nullable + pendingSeq (T6), ChangeMessage et RPC (T4, T5), componentHash (T5)
+  tabs.ts  call.ts  command.ts         Screen (T25, T26, T28), presence.list/sharing.get (T30), componentHash (T20)
 packages/core/src/
   keys.ts                              allocateur, clé provisoire, ordre Lamport, membres (T6, T7)
   validate-update.ts                   validateProjectUpdate (T7)
@@ -169,34 +192,41 @@ packages/sync-server/                  NOUVEAU — kibo-sync
   src/hub.ts  src/server.ts  src/cli.ts  scripts/build.ts   (T17)
   src/market/team-market.ts  src/market/routes.ts  src/market/signed-request.ts   (T16)
   src/testing/start-test-server.ts     serveur de test TLS en processus (T17)
+packages/devkit/src/
+  os-sandbox.ts                        diagnostic de l'isolation OS (T8) ; l'isolation existe depuis la phase 4
+  hash.ts                              délègue isHashed, hashFiles, SourceFile à trust (T2)
+  validate.ts  scaffold.ts             option conformanceOnly, CONFORMANCE_TEST (T20)
 packages/daemon/src/
-  settings.ts                          réglages locaux clé/valeur (T1)
-  sessions/session-store.ts            sessions persistées hachées (T9)
-  remote/pairing-codes.ts  remote/remote-access.ts  remote/interfaces.ts   (T13)
-  sandbox/detect.ts  sandbox/bwrap.ts  sandbox/macos.sb.ts  sandbox/os-sandbox.ts   (T8)
-  sandbox/escape.test.ts  testing/fixtures/escape/   (T12)
-  sync/transport.ts  sync/project-sync.ts   (T18)
-  sync/convergence.property.test.ts  sync/testing/in-memory-network.ts   (T19)
-  sync/sync-db.ts  sync/device-keys.ts  sync/sync-client.ts  sync/rpc.ts   (T21)
-  sync/share.ts   (T23)      sync/presence.ts   (T24)
-  market/market-db.ts  market/http-get.ts  market/market-service.ts  market/rpc.ts   (T15)
-  market/install.ts   (T20)  market/publish.ts   (T22)
-  testing/fake-market.ts   (T15)   testing/sync-harness.ts   (T21)
-packages/devkit/src/                   hashSources délègue à trust (T2) ; validateComponent({ conformanceOnly, wrap }) (T20)
-packages/cli/src/market.ts             kibo market keygen|pack|index ; publish --to (T22)
-packages/sdk/src/                      presence, members, TicketKeyLabel (T30)
+  settings.ts                          réglages locaux sur local_state (T1)
+  rpc-extensions.ts  sessions/         dispatch local/distant, sessions persistées hachées (T9)
+  remote/pairing-codes.ts  remote/remote-access.ts  remote/interfaces.ts  remote/rpc.ts   (T13)
+  sandbox/sandbox-service.ts  sandbox/rpc.ts   réglage « sans isolation OS » (T12)
+  collab/                              client de sync d'équipe (src/sync/ reste la sync d'intégrations)
+    transport.ts  project-sync.ts  testing/memory-host.ts   (T18)
+    convergence.property.test.ts  testing/in-memory-network.ts   (T19)
+    types.ts  project-hosts.ts  sync-db.ts  device-keys.ts  sync-client.ts  project-info.ts  rpc.ts  bootstrap.ts   (T21)
+    share.ts   (T23)      presence.ts   (T24)
+  tabs-store.ts                        readTabs/saveTabs sortis de service.ts (T21)
+  project-folder.ts                    dossier local d'un projet partagé (T23)
+  market/market-db.ts  http-get.ts  market-service.ts  registry-port.ts  refresh-schedule.ts  rpc.ts  bootstrap.ts   (T15)
+  market/install.ts  components/component-hash.ts   (T20)   market/publisher-keys.ts  market/publish.ts   (T22)   market/summary.ts   (T27)
+  testing/fake-market.ts  testing/memory-registry.ts   (T15)   testing/sync-harness.ts   (T21)
+packages/cli/src/commands/market.ts    kibo market keygen|pack|index ; publish --to (T22) ; market-index-builder.ts
+packages/sdk/src/                      subscribeEvents (T4), pairWithCode (T13) ; presence, members, ticket-key, fr.ts (T30)
 packages/ui/src/
-  pages/settings/SecuritySettings.tsx  dialogs/EnableRemoteAccessDialog.tsx   (T25)
-  pages/components/MarketplaceTab.tsx  pages/components/MarketPackageSheet.tsx
-  pages/settings/ComponentSourcesSettings.tsx  dialogs/AddSourceDialog.tsx   (T26)
-  dialogs/PublishToMarketDialog.tsx  dialogs/PublisherChangedDialog.tsx  shell/MissingComponent.tsx   (T27)
-  pages/settings/SyncSettings.tsx  dialogs/ConnectServerDialog.tsx  dialogs/AddDeviceDialog.tsx  shell/SyncIndicator.tsx   (T28)
-  dialogs/ShareProjectDialog.tsx  dialogs/JoinProjectDialog.tsx  shell/ProjectAccessBanner.tsx   (T29)
-  shell/PresenceAvatars.tsx   (T30)
-  i18n/fr.ts                           sections security, market, sync, share, presence
+  settings/SecurityPage.tsx  AppearancePage.tsx  EnableRemoteAccessDialog.tsx  PairingCodeDialog.tsx   (T25)
+  components-page/SandboxBanner.tsx  state/use-rpc-query.ts  lib/pairing-code.ts   (T25)
+  components-page/MarketplaceTab.tsx  MarketCard.tsx  MarketPackageSheet.tsx  SourceCode.tsx   (T26)
+  settings/ComponentSourcesPage.tsx  dialogs/AddSourceDialog.tsx  lib/market-errors.ts  lib/fingerprint.ts   (T26)
+  components-page/MarketUpdateDialog.tsx  VersionCell.tsx  PublishToMarketDialog.tsx   (T27)
+  dialogs/PublisherChangedDialog.tsx  pages/MissingComponent.tsx  state/use-market-status.ts   (T27)
+  settings/SyncSettingsPage.tsx  dialogs/ConnectServerDialog.tsx  dialogs/AddDeviceDialog.tsx  shell/SyncIndicator.tsx  state/use-sync-server.ts   (T28)
+  dialogs/ShareProjectDialog.tsx  dialogs/JoinProjectDialog.tsx  shell/ProjectAccessBanner.tsx  state/access.ts   (T29)
+  shell/PresenceAvatars.tsx  shell/KeyRequired.tsx  state/use-presence.ts   (T30)
+  i18n/fr-security.ts  fr-market.ts  fr-collab.ts  fr-share.ts  fr-presence.ts   montés dans fr.ts
 e2e/
-  serve-sync.ts  sync.spec.ts   (T31)       serve-market.ts  market.spec.ts   (T32)
-.github/workflows/ci.yml               bubblewrap + sysctl AppArmor (T8), build kibo-sync (T17), E2E (T31, T32)
+  serve-sync.ts  sync.spec.ts  sync-fixture.ts   (T31)       serve-market.ts  market.spec.ts  market-fixture.ts   (T32)
+.github/workflows/ci.yml               build kibo-sync (T17) ; bubblewrap et sysctl déjà présents (phase 4)
 CLAUDE.md                              monorepo et arêtes (T1)
 ```
 
@@ -207,16 +237,19 @@ Chaque tâche ne voit que sa propre section : ces signatures font foi entre tâc
 ### Schéma (`@kibo/schema`)
 
 ```ts
-// errors.ts (T1) — ajouts à KiboErrorCode
-| "UPDATE_REJECTED" | "ACCESS_REVOKED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INVITE_INVALID" | "DEVICE_REVOKED"
-| "TLS_REQUIRED" | "SYNC_OFFLINE" | "SANDBOX_UNAVAILABLE" | "SIGNATURE_INVALID" | "PUBLISHER_CHANGED" | "REVOKED"
-| "INDEX_ROLLBACK"
+// errors.ts (T1) — ajoutés au tableau KIBO_ERROR_CODES (RATE_LIMITED, QUOTA_EXCEEDED, SANDBOX_UNAVAILABLE existent déjà)
+"UPDATE_REJECTED" | "ACCESS_REVOKED" | "INVITE_INVALID" | "DEVICE_REVOKED" | "TLS_REQUIRED" | "SYNC_OFFLINE"
+| "SIGNATURE_INVALID" | "PUBLISHER_CHANGED" | "REVOKED" | "INDEX_ROLLBACK"      // STATUS de server.ts, exporté par T1
+// ids.ts (T1) : Base64 ; Sha256 et shortHash existent déjà dans component.ts
+// sharing.ts (T1) : MemberRole, KeyAllocator, MemberInfo, ProjectAccess, ProjectSyncInfo (ci-dessous)
+// integrations.ts (T1) : SYSTEM_SECRET_NAMES = ["sync:device", "market:publisher", "remote:tls"], SystemSecretName,
+//   SECRET_SYNC_DEVICE, SECRET_MARKET_PUBLISHER, SECRET_REMOTE_TLS ; SecretName = IntegrationSecretName | SystemSecretName ;
+//   IntegrationSecretNameSchema (github|figma|mcp) valide ComponentManifest.secrets : un composant ne déclare jamais un secret système
 
 // sync.ts (T4)
-export const Role = z.enum(["owner", "editor", "viewer"]);
+export const MemberRole = z.enum(["owner", "editor", "viewer"]);
 export const KeyAllocator = z.enum(["local", "server"]);
-export const Base64 = z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/);
-export const MemberInfo = z.object({ userId: z.string().min(1), name: z.string().min(1), role: Role });
+export const MemberInfo = z.object({ userId: z.string().min(1), name: z.string().min(1), role: MemberRole });
 export const PresenceRun = z.object({ ticketKey: z.string().nullable(), profile: z.string(), state: z.string() });
 export const PresenceState = z.object({ userId: z.string(), name: z.string(), pageId: z.string().nullable(),
   ticketId: z.string().nullable(), runs: z.array(PresenceRun).max(50) });
@@ -236,14 +269,17 @@ export const SYNC_LIMITS: { batchMs: 50; projectBytes: 52428800; updatesPerSecon
   backoffMaxMs: 60000; presenceTimeoutMs: 30000; presenceRefreshMs: 10000; accountInviteMs: 172800000;
   deviceInviteMs: 900000; projectInviteMs: 172800000 };
 export const CLOSE_CODES: { authFailed: 4401; deviceRevoked: 4403; accessRevoked: 4404; tooManyConnections: 4429 };
-export type SyncState = "unconfigured" | "connecting" | "online" | "offline";
-export type SyncProjectStatus = { projectId: string; name: string; role: Role; lastSyncAt: number | null;
+export type SyncConnectionState = "unconfigured" | "connecting" | "online" | "offline";
+export type SyncProjectStatus = { projectId: string; name: string; role: MemberRole; lastSyncAt: number | null;
   lastError: string | null; accessRevoked: boolean };
-export type SyncStatus = { state: SyncState; serverUrl: string | null; user: { id: string; name: string } | null;
+export type SyncStatus = { state: SyncConnectionState; serverUrl: string | null; user: { id: string; name: string } | null;
   deviceId: string | null; retryAt: number | null; lastError: string | null; projects: SyncProjectStatus[] };
 export type PresencePeer = PresenceState & { deviceId: string; self: boolean };
 export type ProjectAccess = "write" | "read-only" | "revoked";
-export type ProjectSyncInfo = { shared: boolean; keyAllocator: KeyAllocator; role: Role | null; access: ProjectAccess;
+export const Phase7Event = z.discriminatedUnion("type", [ /* collab.changed, presence.changed { projectId }, market.changed,
+  sessions.changed, sandbox.changed */ ]);   // ajouté à l'union ChangeMessage de rpc.ts ; KiboClient.subscribeEvents (T4)
+export const SYNC_RPC_REQUESTS; export type SyncRpcRequest; export const SYNC_RPC_METHODS; export type SyncRpcResult;
+export type ProjectSyncInfo = { shared: boolean; keyAllocator: KeyAllocator; role: MemberRole | null; access: ProjectAccess;
   members: MemberInfo[] };
 
 // security.ts (T4)
@@ -259,13 +295,13 @@ export type PairingCode = { code: string; expiresAt: number };
 export type SandboxStatus = { kind: "bwrap" | "sandbox-exec" | null; available: boolean; reason: string | null;
   fix: string | null; allowUnsandboxed: boolean };
 
-// ticket.ts (T6)
+// ticket.ts (T6) — Ticket garde externalRefs
 key: TicketKey.nullable(), pendingSeq: z.number().int().positive().nullable()   // refine : key !== null || pendingSeq !== null
 export function ticketKeyLabel(t: { key: string | null }, projectKey: string): string;   // "KIB-12" ou "KIB-…"
-// rpc.ts (T6) : ProjectSnapshot.nextTicketKey: string | null ; ProjectSnapshot.sync: ProjectSyncInfo
+// rpc.ts (T6) : TicketView.keyLabel ; ProjectSnapshot garde rules et bindings, nextTicketKey: string | null, sync: ProjectSyncInfo
 
 // market.ts (T5)
-export const Sha256 = z.string().regex(/^[0-9a-f]{64}$/);
+// Sha256 : existant (component.ts) ; ComponentId, ComponentKind = z.enum(["widget","view","both","adapter"]) exportés par manifest.ts (T5)
 export const KpkgFile = z.object({ path: z.string().min(1), sha256: Sha256, content: Base64 });
 export const Kpkg = z.object({ format: z.literal(1), manifest: ComponentManifest, files: z.array(KpkgFile).min(1),
   hash: Sha256, publisher: z.object({ name: z.string().min(1).max(64), publicKey: Base64 }),
@@ -284,10 +320,15 @@ export type MarketVersionInfo = { version: string; hash: string; size: number; p
 export type MarketPackageDetail = MarketHit & { version: string; hash: string; size: number;
   permissions: GrantedPermissions; versions: MarketVersionInfo[]; pinnedPublisher: string | null;
   newPublisher: boolean; publisherChanged: boolean; files: { path: string; content: string }[] };
-export type MarketInstallResult = { id: string; version: string; hash: string; preview: TrustPreview };
-// registry (T5) : RegistryVersion.source: { sourceId: string; publisherKey: string } | null (défaut null)
-//                 RegistryVersion.revoked: { reason: string; at: number } | null (défaut null)
-// instance.ts (T5) : Instance.componentHash: Sha256 | null (défaut null)
+// component.ts (T5) : MarketTrustInfo = { publisherName; verified; sourceName; newPublisher } ;
+//   TrustPreview = { id; title; version; hash; origin: ComponentOrigin; permissions: GrantedPermissions; market: MarketTrustInfo | null }
+//   (sur-ensemble du TrustTarget de l'UI) ; RegistryVersion.source: { sourceId; publisherKey } | null et
+//   RegistryVersion.revoked: { reason; at } | null (défauts null, comme autoUpdate)
+export type MarketInstallResult = Omit<TrustPreview, "origin" | "market"> & { market: MarketTrustInfo };
+// instance.ts (T5) : Instance.componentHash: Sha256 | null (défaut null) ; listInstances passe par Instance.parse
+// command.ts (T20) : addInstance et setInstanceComponent gagnent componentHash?: Sha256 | null
+// tabs.ts : Screen gagne "appearance", "security" (T25), "sources" (T26), "sync" (T28)
+// call.ts (T30) : ComponentCall gagne { kind: "presence.list" } et { kind: "sharing.get" } (read:ticket)
 ```
 
 ### Trust (`@kibo/trust`)
@@ -306,7 +347,7 @@ export function signBytes(privateKey: string, data: Uint8Array): Promise<string>
 export function verifyBytes(publicKey: string, data: Uint8Array, signature: string): Promise<boolean>;  // false si mal formé, ne lève jamais
 export function keyFingerprint(publicKey: string): Promise<string>;   // sha256 hex des octets SPKI
 export function formatFingerprint(hex: string): string;              // groupes de 4 séparés par des espaces
-export function shortHash(hex: string): string;                      // "3f9a…c21e"
+export { shortHash } from "@kibo/schema";                           // réexport, "3f9a…c21e"
 // codes.ts (T2)
 export function newInviteCode(): string;          // 26 caractères base32 RFC 4648 sans remplissage
 export function newPairingCode(): string;         // 6 caractères dans ABCDEFGHJKLMNPQRSTUVWXYZ23456789
@@ -315,8 +356,8 @@ export function formatPairingCode(code: string): string; // "K7Q-4M2"
 export function hashCode(code: string): Promise<string>; // sha256Hex(normalizeCode(code))
 // source-hash.ts (T2)
 export type SourceFile = { path: string; bytes: Uint8Array };
-export function isHashedSource(path: string): boolean;
-export function sourceHash(files: SourceFile[]): Promise<string>;
+export function isHashedSource(path: string): boolean;               // = isHashed du devkit (délégué)
+export function sourceHash(files: SourceFile[]): string;            // synchrone, identique octet pour octet à hashFiles du devkit (qui y délègue)
 // x509.ts (T3)
 export type SelfSigned = { certPem: string; keyPem: string; fingerprint256: string };   // "AB:CD:…" majuscules
 export function generateSelfSignedCert(opts: { commonName: string; dns: string[]; ips: string[]; days: number; now?: Date }): Promise<SelfSigned>;
@@ -331,7 +372,7 @@ export function packKpkg(input: { manifest: ComponentManifest; files: SourceFile
 export function encodeKpkg(pkg: Kpkg): Uint8Array;
 export function decodeKpkg(bytes: Uint8Array): Kpkg;                  // taille, JSON, Zod ⇒ INVALID_INPUT
 export function verifyKpkgSignature(pkg: Kpkg): Promise<void>;         // SIGNATURE_INVALID
-export function kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]>;     // sha256 par fichier, chemins sûrs, 2 Mio, empreinte ⇒ HASH_MISMATCH
+export function kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]>;     // sha256 par fichier, chemins sûrs, KPKG_MAX_BYTES (= MAX_SOURCE_BYTES), KPKG_MAX_FILES (200), empreinte ⇒ HASH_MISMATCH
 // market-index.ts (T10)
 export function signIndex(index: MarketIndex, privateKey: string): Promise<{ bytes: Uint8Array; sig: string }>;
 export function verifyIndex(input: { bytes: Uint8Array; sig: string; expectedKey: string; lastSerial: number | null }): Promise<MarketIndex>;
@@ -357,7 +398,8 @@ export function readMembers(doc: LoroDoc): { userId: string; name: string }[];
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
 export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVerdict;
 // share-migration.ts (T7)
-export type ShareMigrationInput = { localUser: string; userId: string; domains: { id: string; name: string; color: string; guidelines: string }[] };
+export type ShareMigrationInput = { localUser: string; userId: string;
+  domains: { domain: Domain; guidelines: { path: string; content: string }[] }[] };   // projectDomains : domainId → { name, color, guidelines }
 export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null };
 ```
 
@@ -372,15 +414,15 @@ export type InviteInput = { kind: "account"; name: string; createdBy: string }
   | { kind: "project"; projectId: string; role: "editor" | "viewer"; createdBy: string };
 export function createInvite(sdb: ServerDb, input: InviteInput, now: number): Promise<{ code: string; expiresAt: number }>;
 export function redeemDeviceInvite(sdb: ServerDb, req: JoinRequest, now: number): Promise<JoinResponse>;   // INVITE_INVALID
-export function redeemProjectInvite(sdb: ServerDb, input: { code: string; userId: string }, now: number): Promise<{ projectId: string; role: Role }>;
+export function redeemProjectInvite(sdb: ServerDb, input: { code: string; userId: string }, now: number): Promise<{ projectId: string; role: MemberRole }>;
 export function deviceRecord(sdb: ServerDb, deviceId: string): { userId: string; name: string; publicKey: string; revoked: boolean; userDisabled: boolean } | null;
 export function listDevices(sdb: ServerDb, userId: string): DeviceInfo[];
 export function revokeDevice(sdb: ServerDb, input: { deviceId: string; by: string }, now: number): void;
 export function disableUser(sdb: ServerDb, userId: string, now: number): void;
-export function roleOf(sdb: ServerDb, projectId: string, userId: string): Role | null;
+export function roleOf(sdb: ServerDb, projectId: string, userId: string): MemberRole | null;
 export function listMembers(sdb: ServerDb, projectId: string): MemberInfo[];
-export function setRole(sdb: ServerDb, input: { projectId: string; userId: string; role: Role | null }, now: number): void;
-export function projectsOf(sdb: ServerDb, userId: string): { id: string; name: string; role: Role }[];
+export function setRole(sdb: ServerDb, input: { projectId: string; userId: string; role: MemberRole | null }, now: number): void;
+export function projectsOf(sdb: ServerDb, userId: string): { id: string; name: string; role: MemberRole }[];
 export type AuditKind = "connect" | "auth-failed" | "invite-created" | "invite-redeemed" | "role-changed" | "member-removed"
   | "device-revoked" | "user-disabled" | "update-rejected" | "project-shared" | "project-deleted" | "market-published" | "market-revoked";
 export function audit(sdb: ServerDb, e: { at: number; kind: AuditKind; userId?: string | null; deviceId?: string | null; projectId?: string | null; detail?: string }): void;
@@ -389,7 +431,7 @@ export function verifyChallenge(sdb: ServerDb, input: { deviceId: string; signat
 export class FailureLimiter { constructor(opts: { max: number; windowMs: number; blockMs: number; now: () => number }); blocked(key: string): boolean; fail(key: string): void }
 export class RateWindow { constructor(opts: { limit: number; windowMs: number; now: () => number }); take(key: string): boolean }
 // room.ts, rooms.ts (T14)
-export type Actor = { userId: string; deviceId: string; role: Role };
+export type Actor = { userId: string; deviceId: string; role: MemberRole };
 export type PushResult = { bytes: Uint8Array | null; serverSeq: number; version: Uint8Array; allocated: { ticketId: string; key: string }[] };
 export type RoomLimits = { projectBytes: number; compactEvery: number };
 export class RoomReject extends Error { constructor(readonly code: RejectCode, message: string, readonly version: Uint8Array | null) }
@@ -439,9 +481,18 @@ export function verifySignedRequest(sdb: ServerDb, req: Request, body: Uint8Arra
 ### Démon (`@kibo/daemon`)
 
 ```ts
-// settings.ts (T1)
+// settings.ts (T1) — au-dessus de Store.getLocal/setLocal (table local_state, préfixe "setting:")
 export type LocalSettings = { get<T>(key: string, schema: z.ZodType<T>, fallback: T): T; set(key: string, value: unknown): void };
-export function openLocalSettings(db: Database): LocalSettings;
+export function openLocalSettings(store: Pick<Store, "getLocal" | "setLocal">): LocalSettings;
+// rpc-extensions.ts (T9) — Service.handle(req) reste inchangé (un paramètre)
+export type RpcContext = { sessionHash: string; remote: boolean };
+export type RpcExtension = { methods: readonly RpcRequest["method"][]; handle(req: RpcRequest, ctx: RpcContext): Promise<unknown> };
+export type RpcOutcome = { handled: true; result: unknown } | { handled: false };
+export type RpcHandler = (req: RpcRequest, ctx: RpcContext) => Promise<RpcOutcome>;
+export function dispatchRpc(service: Service, extensions: readonly RpcExtension[], req: RpcRequest, ctx: RpcContext, handlers?: readonly RpcHandler[]): Promise<unknown>;
+export function requireLocal(ctx: RpcContext): void;                   // FORBIDDEN depuis une session distante (décision 17)
+// server.ts : ServerOptions gagne sessions?: SessionStore (défaut en mémoire), extensions?, handlers?, now? (T9), pairingCodes? (T13) ;
+//   startServer renvoie { url, port, stop, listenRemote } (T13) ; /api/rpc passe par respond(() => dispatchRpc(...), redact)
 // sessions/session-store.ts (T9)
 export const SESSION_TTL_MS = 30 * 24 * 3600_000;
 export type SessionStore = {
@@ -452,22 +503,25 @@ export type SessionStore = {
   onRevoke(listener: (hash: string) => void): () => void;
 };
 export function openSessionStore(db: Database): SessionStore;
-export type RpcContext = { sessionHash: string; remote: boolean };
-// remote/ (T13)
+export function sessionRpc(store: SessionStore, emit: (m: ChangeMessage) => void, now: () => number): RpcExtension;
+// remote/ (T13) ; IntegrationRpc gagne secrets: SecretStore (le trousseau unique du démon, relu par T21 et T22)
 export class PairingCodes { constructor(now: () => number); create(): PairingCode; redeem(input: string): boolean }
 export type ListenInfo = { hostname: string; port: number; secure: boolean; remote: boolean };
 export type RemoteAccess = { status(): RemoteAccessStatus; enable(cfg: RemoteAccessConfig): Promise<RemoteAccessStatus>;
   disable(): Promise<void>; resume(): Promise<void>; stop(): void };
-// sandbox/ (T8)
-export type SandboxPolicy = { runtime: string; args: string[]; readOnly: { host: string; guest: string }[]; tmpDir: string; env: Record<string, string> };
-export type DetectDeps = { platform: NodeJS.Platform; which(name: string): string | null; run(argv: string[]): Promise<{ code: number; stdout: string; stderr: string }> };
-export type SandboxProbe = { kind: "bwrap" | "sandbox-exec" | null; available: boolean; reason: string | null; fix: string | null; bwrapPath: string | null; libs: string[] };
-export function detectSandbox(deps: DetectDeps, runtime: string): Promise<SandboxProbe>;
-export function bwrapArgv(bwrapPath: string, policy: SandboxPolicy, libs: string[]): string[];
-export function macosProfile(policy: SandboxPolicy): string;
-export function sandboxExecArgv(policy: SandboxPolicy): string[];
-export function wrapCommand(probe: SandboxProbe, policy: SandboxPolicy, allowUnsandboxed: boolean): { argv: string[]; env: Record<string, string>; isolated: boolean };  // SANDBOX_UNAVAILABLE
-// sync/ (T18, T21, T23, T24)
+// @kibo/devkit os-sandbox.ts (T8) — l'isolation elle-même est livrée depuis la phase 4
+export type SandboxKind = "bwrap" | "sandbox-exec";
+export type SandboxDiagnosis = { kind: SandboxKind | null; available: boolean; reason: string | null; fix: string | null };
+export const BWRAP_FIX_INSTALL = "sudo apt install bubblewrap";
+export const BWRAP_FIX_USERNS = "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0";
+export type OsSandbox = { ready(): Promise<void>; diagnose(): Promise<SandboxDiagnosis>; wrap(argv: string[], policy: SandboxPolicy): string[] };
+// sandbox/ (T12)
+export const ALLOW_UNSANDBOXED_KEY = "sandbox.allowUnsandboxed";
+export type SandboxService = { status(): Promise<SandboxStatus>; allowUnsandboxed(): boolean; setAllowUnsandboxed(allow: boolean): Promise<SandboxStatus> };
+export function createSandboxService(deps: { sandbox: Pick<OsSandbox, "diagnose">; settings: LocalSettings; emit(m: ChangeMessage): void }): SandboxService;
+export function sandboxRpc(service: SandboxService): RpcExtension;
+// ProcessHostOptions, BackendsDeps, ComponentsDeps gagnent allowUnsandboxed?: () => boolean
+// collab/ (T18, T21, T23, T24) — client de sync d'équipe ; src/sync/ reste la sync d'intégrations
 export type SyncHost = { doc(): LoroDoc; applyRemote(bytes: Uint8Array): void; replaceDoc(doc: LoroDoc): void };
 export type ProjectSyncOptions = { projectId: string; host: SyncHost; send(frame: ClientFrame): void;
   serverVersion: Uint8Array | null; saveServerVersion(version: Uint8Array | null): void; newBatchId(): string;
@@ -483,28 +537,37 @@ export type SyncSocket = { send(text: string): void; close(code?: number): void;
 export type SyncTransport = { open(url: string, opts: { ca: string | null }): SyncSocket };
 export function assertSyncUrl(url: string): URL;                         // TLS_REQUIRED
 export function createWebSocketTransport(): SyncTransport;
+// collab/types.ts, collab/project-hosts.ts (T21) — hors du service
 export type ProjectHostRegistry = { host(projectId: string): SyncHost; projectIds(): string[];
   setAccess(projectId: string, access: ProjectAccess): void; setLocked(projectId: string, locked: boolean): void;
   onLocalChange(listener: (projectId: string) => void): () => void;
-  addJoinedProject(doc: LoroDoc, folder: string | null): ProjectMeta; localUser(): string };
+  addJoinedProject(doc: LoroDoc, folder: string | null): ProjectMeta; localUser(): string; mutate(/* T21 */): void };
+export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistry;
+// Docs gagne replaceProject, addProject, imported, onProjectDoc, assertWritable, setWriteGuard (T21) ; projectMeta, identity, setIdentity (T23)
+// Service gagne attachCollab(port: { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo }) (T21) ; service.ts perd readTabs/saveTabs (tabs-store.ts)
 export class SyncClient {
-  constructor(deps: SyncClientDeps);   // défini en T21
+  constructor(deps: SyncClientDeps);   // défini en T21, emit(message: ChangeMessage)
   start(): Promise<void>; stop(): void; status(): SyncStatus;
   connect(input: { serverUrl: string; code: string; deviceName: string; caFile: string | null }): Promise<SyncStatus>;
   disconnect(): Promise<void>;
   request<T extends ServerFrame["type"]>(frame: ClientFrame, expect: T, timeoutMs?: number): Promise<Extract<ServerFrame, { type: T }>>;
-  attachProject(projectId: string, role: Role): void; detachProject(projectId: string): void;
+  attachProject(projectId: string, role: MemberRole): void; detachProject(projectId: string): void;
   onFrame(listener: (frame: ServerFrame) => void): () => void;
 }
+export function startCollab(deps: { store: Store; service: Service; user: string; secrets: SecretStore; log?(message: string, error?: unknown): void }):
+  Promise<{ client: SyncClient; hosts: ProjectHostRegistry; handler: RpcHandler; presence: PresenceHub; attachRuns(o: Orchestrator): void; stop(): void }>;
+// project-folder.ts (T23) : withLocalFolder(meta, settings), LOCAL_FOLDER_KEY = "folder" (project_settings) ; IntegrationHost.identity(projectId)
 export class PresenceHub { /* T24 */ set(projectId: string, where: { pageId: string | null; ticketId: string | null }): void;
   receive(projectId: string, bytes: Uint8Array): void; peers(projectId: string): PresencePeer[]; tick(): void }
+export function presenceRuns(runs: RunView[], projectId: string): PresenceRun[];
 // market/ (T15, T20, T22)
 export type HttpGet = (url: string, opts: { timeoutMs: number; maxBytes: number }) => Promise<Uint8Array>;
 export function createHttpGet(opts: { allowLoopbackHttp: boolean; fetchImpl?: typeof fetch }): HttpGet;
 export type RegistryPort = { get(id: string, version: string): RegistryVersion | null; put(id: string, title: string, v: RegistryVersion): void;
-  installed(): { id: string; title: string; version: string; v: RegistryVersion }[]; revoke(id: string, version: string, reason: string, at: number): Promise<void> };
+  installed(): { id: string; title: string; version: string; v: RegistryVersion }[]; revoke(id: string, version: string, reason: string, at: number): void };
+export function createRegistryPort(deps: { docs: Docs; components: ComponentsService }): RegistryPort;   // revoke ⇒ registry.revoke (arrête le backend) ; put émet un changement du workspace
 export class MarketService {
-  constructor(deps: { db: MarketDb; get: HttpGet; registry: RegistryPort; now: () => number; notify(msg: { title: string; body: string }): Promise<void> });
+  constructor(deps: { db: MarketDb; get: HttpGet; registry: RegistryPort; now: () => number; notify(notice: Notice): void; emit(): void; log(...): void });
   listSources(): MarketSourceInfo[]; probe(url: string): Promise<MarketProbe>;
   addSource(input: { url: string; publicKey: string }): Promise<MarketSourceInfo>; removeSource(id: string): void;
   refresh(sourceId?: string): Promise<void>; search(input: { query: string; sourceId?: string; kind?: ComponentKind }): MarketHit[];
@@ -514,7 +577,12 @@ export class MarketService {
   unpinPublisher(input: { sourceId: string; componentId: string }): void;
   findSourceFor(input: { id: string; version: string; hash: string | null }): { sourceId: string } | null;
 }
+export function startMarket(deps: { db: Database; docs: Docs; components: ComponentsService; notify(notice: Notice): void; allowLoopbackHttp: boolean; now?: () => number }):
+  { market: MarketService; handler: RpcHandler; stop(): void };   // DaemonOptions.marketAllowLoopback ← KIBO_MARKET_ALLOW_LOOPBACK=1 (main.ts)
+export type InstallDeps = { market: Pick<MarketService, "fetchVerified" | "pinPublisher" | "search">; store: Pick<ComponentStore, "put" | "remove">;
+  registry: RegistryPort; validate(dir: string): Promise<ValidationReport>; sandbox: Pick<OsSandbox, "ready">; lock: PublishLock; tmpRoot: string };
 export function installFromMarket(deps: InstallDeps, input: { sourceId: string; id: string; version: string }): Promise<MarketInstallResult>;
+// T20 : ValidateOptions.conformanceOnly (devkit) ; ComponentsService.store ; ComponentsDeps.commands ; stampComponentHash(workspace): CommandInterceptor
 export function exportKpkg(deps: PublishDeps, input: { id: string; version: string; publisherName?: string }): Promise<Kpkg>;
 export function publishToMarket(deps: PublishDeps, input: { id: string; version: string; sourceId: string; publisherName?: string }): Promise<{ serial: number }>;
 ```
@@ -549,28 +617,48 @@ export function publishToMarket(deps: PublishDeps, input: { id: string; version:
 | `setPresence` | `{ projectId, pageId, ticketId }` | `null` | T24 | oui |
 | `getPresence` | `{ projectId }` | `PresencePeer[]` | T24 | oui |
 
-`DaemonEvent` gagne `{ type: "sync" }`, `{ type: "presence"; projectId: string }`, `{ type: "market" }`, `{ type: "sessions" }`, `{ type: "sandbox" }`.
+| `listMarketStatus` | — | `MarketComponentStatus[]` | T27 | oui |
+| `getMarketPublisher` | — | `{ name, fingerprint } \| null` | T27 | oui |
+
+`ChangeMessage` (`packages/schema/src/rpc.ts`) gagne les `Phase7Event` : `{ type: "collab.changed" }`, `{ type: "presence.changed"; projectId: string }`, `{ type: "market.changed" }`, `{ type: "sessions.changed" }`, `{ type: "sandbox.changed" }` (le type `sync` est pris par `IntegrationEvent`). Le client les reçoit par `KiboClient.subscribeEvents` (T4), aiguillés avant les écouteurs de projet.
 
 ### Compléments de contrats (fixés à l'écriture des tâches)
 
 Chaque tâche détaille ces ajouts sous « Produces » ; ils font foi au même titre que ci-dessus.
 
-- **Schéma** : `Base64` et `Sha256` vivent dans `ids.ts` ; `Role`, `KeyAllocator`, `MemberInfo`, `ProjectAccess`, `ProjectSyncInfo` dans `sharing.ts` (T1), importés par `sync.ts` (T4) et `core` (T6). T4 ajoute `parseClientFrame`, `parseServerFrame`, `encodeFrame`, `SYNC_RPC_REQUESTS` ; T5 ajoute `MARKET_RPC_REQUESTS` ; `RpcResult` devient l'intersection des résultats de base, de sync et de marketplace. T6 ajoute `TicketView.keyLabel`, `localSyncInfo(doc)`, `peekTicketKey(doc): string | null`.
-- **RPC du démon** (T9, `packages/daemon/src/rpc-extensions.ts`) : `RpcContext`, `requireLocal(ctx)` ; une **extension** (`RpcExtension`, méthodes déclarées) sert T9, T12, T13 ; un **gestionnaire** (`RpcHandler = (req, ctx) => Promise<RpcOutcome>`, `{ handled: false }` pour les autres méthodes) sert T15, T20, T21, T22, T23, T24, T27 et se branche par l'option `handlers` de `startServer`. `service.ts` ne grossit pas.
-- **Trust** : T2 `owned(bytes)` ; T3 primitives DER ; T10 `assertPackagePath`, et `@kibo/trust/testing` : `makeTestPackage(input?) → { pkg, bytes, keys, files, publisher }` (composant par défaut valide pour la conformité générique) et `makeTestIndex(...) → { index, bytes, sig }`. `kpkgSourceFiles` refuse un `manifest` différent de `kibo.component.json`.
+- **Schéma** : `Base64` dans `ids.ts` (T1), `Sha256` existant dans `component.ts` ; `MemberRole`, `KeyAllocator`, `MemberInfo`, `ProjectAccess`, `ProjectSyncInfo` dans `sharing.ts` (T1), importés par `sync.ts` (T4) et `core` (T6). T4 ajoute `parseClientFrame`, `parseServerFrame`, `encodeFrame`, `SYNC_RPC_REQUESTS`, `SyncRpcRequest`, `SYNC_RPC_METHODS`, `Phase7Event` ; T5 ajoute `MARKET_RPC_REQUESTS`, `MarketRpcRequest`, `ComponentId`, `ComponentKind`, `TrustPreview`, `MarketTrustInfo` ; `RpcResult` devient l'intersection des résultats de base, d'intégrations, d'IA, de sync et de marketplace. T6 ajoute `TicketView.keyLabel`, `localSyncInfo(doc)`, `peekTicketKey(doc): string | null`. T27 ajoute `ComponentVersionSummary.revoked`, `MarketComponentStatus`.
+- **RPC du démon** (T9, `packages/daemon/src/rpc-extensions.ts`) : une **extension** (`RpcExtension`, méthodes déclarées) sert T9, T12, T13 ; un **gestionnaire** (`RpcHandler`, `{ handled: false }` pour les autres méthodes) sert T15, T20, T21, T22, T23, T24, T27 et se branche par l'option `handlers` de `startServer`. `service.ts` ne grossit pas ; chaque sous-système a son `bootstrap.ts` appelé depuis `assemble` (`daemon.ts`).
+- **Trust** : T2 `owned(bytes)` ; T3 primitives DER ; T10 `assertPackagePath`, `KPKG_MAX_FILES`, et `@kibo/trust/testing` : `makeTestPackage(input?) → { pkg, bytes, keys, files, publisher }` (composant par défaut valide pour la conformité générique) et `makeTestIndex(...) → { index, bytes, sig }`. `kpkgSourceFiles` refuse un `manifest` différent de `kibo.component.json`.
 - **Serveur** : T11 `insertProject`, `touchDevice`, `readAudit`, `AuditEntry`, `deviceRecord().deviceName` ; T14 `RoomRegistry` accepte `limits`, fixtures `@kibo/sync-server/testing/fixtures` (`seedUser`, `addMember`, `ownerSnapshot`), l'audit `update-rejected` est écrit par la salle seulement ; T16 `handleMarketRoute`, `TeamMarket.source()`, `NONCE_TTL_MS`, `SIGNED_REQUEST_SKEW_MS` ; T17 `SyncHub.failures`, `SyncHub.checkRevocations()`, `runCli`, `TestSyncServerOptions { now, dataDir, port, cert, market }`, retour `{ url, httpsUrl, origin, caPem, cert, dataDir, server, inviteAccount, stop({ keepData }) }`, `@kibo/sync-server/testing/ws-client`.
-- **Démon, isolation** : T8 `parseLdd`, `realDetectDeps`, `EXTRA_RULES` ; T12 `SandboxService`, `createSandboxService`, `LineChannel`, `createLineChannel`, `currentRuntime()`.
-- **Démon, sessions et accès distant** : T9 `hashSessionId`, `deviceNameFromUserAgent`, `startServer().publish(event)` ; T13 `listInterfaces`, `createRemoteAccess(deps)`, `remoteRpc`, `startServer().listenRemote`, `KiboClient.pairWithCode(code)` (SDK).
-- **Démon, sync** : T18 `createMemoryHost(doc)` (tests) ; T19 `InMemoryNetwork` (tests, `fast-check` en devDependency du démon) ; T21 `SyncClientDeps` (dont `backoff` injectable et `backoffDelay`), `SyncDb`, `SyncProjectRow`, `openSyncDb`, `SyncConfig`, `createDeviceKeys` / `loadDeviceKeys` / `clearDeviceKeys`, `projectSyncInfo`, `handleSyncRpc`, `ProjectHostRegistry.mutate`, `SyncClient.send` / `membersOf` / `addDevice` / `listDevices` / `revokeDevice`, harnais `startSyncHarness` ; T23 `ShareDeps`, `restoreLocalAllocation(doc)` (core) ; T24 `PresenceDeps`, `PresenceHub` complet (`set`, `receive`, `peers`, `refreshRuns`, `tick`, `forget`, `dispose`), `FakeRuns`.
-- **Démon, marketplace** : T15 `openMarketDb`, `createHttpGet({ ca })`, `MarketService.load()` / `sourceUrl()` et `deps.log`, `startMarketRefresh`, `createMarketRpc`, `startFakeMarket`, `createMemoryRegistry` ; T20 `TrustPreview.market`, `ValidateOptions { conformanceOnly, wrap }` (devkit), `createSandboxedValidator`, `InstallDeps`, `createMemoryComponentStore`, `setInstanceHash` (core) ; T22 `MarketService.hasVersion`, `loadPublisherKeys`, `buildStaticIndex`, `runMarketCommand` ; T27 RPC `getMarketPublisher` → `{ name, fingerprint } | null`, `ComponentVersionSummary.market` et `.revoked`.
-- **SDK et UI** : T25 `useRpcQuery`, `formatPairingCode` (UI) ; T26 `marketErrorText`, `groupFingerprint`, props de `TrustDialog` (`publisherLine`, `newPublisher`, `fromMarketplace`) ; T28 `useSyncStatus`, `relativeTime` ; T29 `canEdit` ; T30 `sdk.presence.list()`, `sdk.sharing()`, `sdk.projectKey()`, hooks `usePresence`, `useSharing`, `useMembers`, `useReadOnly`, `useProjectKey`, `assigneeLabel`, `remoteRuns`, `TicketKeyLabel` (textes dans `packages/sdk/src/fr.ts`, comme les `fr.ts` des composants), appel `presence.list`, `PresenceAvatars`, `usePresenceReporter`, `KeyRequired`.
+- **Démon, isolation** : T8 `diagnose()`, `SandboxDiagnosis`, dépendances injectables `exists` et `run` de `createOsSandbox` (devkit) ; T12 `SandboxService`, `createSandboxService`, `sandboxRpc`, `allowUnsandboxed` (canal par lignes et runtime : déjà livrés en phase 4).
+- **Démon, sessions et accès distant** : T9 `hashSessionId`, `deviceNameFromUserAgent`, `sessionRpc` ; T13 `listInterfaces`, `createRemoteAccess(deps)`, `remoteRpc`, `startServer().listenRemote`, `IntegrationRpc.secrets`, `KiboClient.pairWithCode(code)` (SDK).
+- **Démon, collab** : T18 `createMemoryHost(doc)` (tests), références `../trust` et `../sync-server` dans `packages/daemon/tsconfig.json` ; T19 `InMemoryNetwork` (tests, `fast-check` en devDependency du démon) ; T21 `SyncClientDeps` (dont `backoff` injectable et `backoffDelay`), `SyncDb`, `SyncProjectRow`, `openSyncDb`, `SyncConfig`, `createDeviceKeys` / `loadDeviceKeys` / `clearDeviceKeys`, `projectSyncInfo`, `handleSyncRpc`, `createProjectHosts`, `tabs-store.ts`, `SyncClient.send` / `membersOf` / `addDevice` / `listDevices` / `revokeDevice`, harnais `startSyncHarness` ; T23 `ShareDeps`, `withLocalFolder`, `docs.identity`, `restoreLocalAllocation(doc)` (core) ; T24 `PresenceDeps`, `PresenceHub` complet (`set`, `receive`, `peers`, `refreshRuns`, `tick`, `forget`, `dispose`), `presenceRuns`.
+- **Démon, marketplace** : T15 `openMarketDb`, `createHttpGet({ ca })`, `MarketService.load()` / `sourceUrl()`, `startMarketRefresh`, `createMarketRpc`, `createRegistryPort`, `startMarket`, `startFakeMarket`, `createMemoryRegistry` ; T20 `ValidateOptions.conformanceOnly` (devkit), `CONFORMANCE_TEST` (scaffold), `InstallDeps`, `ComponentsService.store`, `stampComponentHash`, `approvedHashOf` ; T22 `MarketService.hasVersion`, `loadPublisherKeys`, `buildStaticIndex`, `runMarketCommand`, `marketPublishCommand` (CLI `commands/market.ts`) ; T27 RPC `listMarketStatus`, `getMarketPublisher`.
+- **SDK et UI** : T25 `useRpcQuery` (`packages/ui/src/state/use-rpc-query.ts`, rafraîchi par types de `Phase7Event`), `formatPairingCode` (UI), `SecurityPage`, `AppearancePage` (bloc « Accès web ») ; T26 `marketErrorText`, `groupFingerprint`, `TrustTarget.market`, `trustTargetOfInstall`, `ComponentSourcesPage` ; T28 `useSyncServerStatus` (distinct de `useSyncState` des intégrations), `SyncSettingsPage`, `SyncIndicator` greffé sur `AgentBar` ; T29 `canEdit` (`state/access.ts`), menu `⋯` par projet de la sidebar ; T30 `sdk.presence`, `sdk.sharing()`, hooks `usePresence`, `useSharing`, `useMembers`, `useReadOnly`, `assigneeLabel`, `remoteRuns`, `TicketKeyLabel({ ticket })` (textes dans le nouveau `packages/sdk/src/fr.ts`), appels `presence.list` et `sharing.get`, `PresenceAvatars`, `usePresenceReporter`, `KeyRequired`, `TabBar.trailing`.
 
 ## Vagues d'exécution
 
-Une vague démarre quand toutes les tâches dont elle dépend sont intégrées dans `main`. Dans une vague, chaque tâche a son worktree `.claude/worktrees/p7-t<n>` et sa branche `feat/p7-t<n>` ; le chef d'équipe lance tous les `kibo-dev` de la vague en parallèle. Les tâches UI attendent en plus leurs écrans dessinés (colonne « Écrans »), que le chef d'équipe dessine pendant les vagues 1 à 4.
+Une vague démarre quand toutes les tâches dont elle dépend sont intégrées dans `main`. Dans une vague, chaque tâche a son worktree `.claude/worktrees/p7-t<n>` et sa branche `feat/p7-t<n>` ; le chef d'équipe lance tous les `kibo-dev` de la vague en parallèle et intègre ensuite **dans l'ordre du tableau**, en rebasant chaque branche sur la précédente (les conflits listés sont des ajouts de quelques lignes). Les tâches UI attendent en plus leurs écrans (colonne « Écrans »). Dépendances recalées en T0 à partir des fichiers et symboles réellement consommés.
 
-| Vague | Tâches en parallèle | Dépend de | Écrans |
-|---|---|---|---|
+| Vague | Tâches en parallèle | Dépendances (tâche ← tâches) | Fichiers partagés dans la vague | Écrans |
+|---|---|---|---|---|
+| 0 | T0 (kibo-lead), puis T1 et T8 | T1 ← v0.6 · T8 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`) | — |
+| 1 | T2, T4, T5, T6 | T2, T4, T5, T6 ← T1 | `schema/src/rpc.ts`, `schema/src/index.ts` (T4, T5, T6) ; fixtures `ProjectSnapshot` (T5, T6) | — |
+| 2 | T3, T7, T9, T10, T11 | T3 ← T2 · T7 ← T6 · T9 ← T1, T4 · T10 ← T2, T5 · T11 ← T2, T4 | `trust/src/index.ts` (T3, T10) | — |
+| 3 | T12, T13, T14, T15, T16 | T12 ← T8, T9 · T13 ← T3, T9 · T14 ← T7, T11 · T15 ← T9, T10 · T16 ← T10, T11 | `daemon/src/daemon.ts` (T12, T13, T15) ; `daemon/src/server.ts` (T13) ; `sync-server/src/index.ts`, `package.json` (T14, T16) ; `daemon/package.json` (T15) | — |
+| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7, écran 19 (78) |
+| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3, M5 |
+| 6 | T22, T23, T28 | T22 ← T16, T20, T21 · T23 ← T7, T21 · T28 ← T21, T25 | `daemon.ts` (T22, T23) ; `collab/rpc.ts`, `collab/bootstrap.ts` (T23 seul) | T28 : S1 (69, 70), S9 |
+| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26 · T29 ← T23, T28 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4, M6, M8, S7 · T29 : S2 (65, 66), S3, S6 (68) |
+| 8 | T30, T32 | T30 ← T6, T21, T24, T29 · T32 ← T15, T26, T27 | `e2e/playwright.config.ts`, `e2e/package.json` (T32 seul) | T30 : S4, S5 (67) |
+| 9 | T31 | T31 ← T17, T28, T29, T30 | `e2e/playwright.config.ts`, `e2e/package.json` (après T32) | — |
+| Jalon | conformité, tag `v1.0`, rapport final | tout | — | toutes |
+
+Séquences imposées par des fichiers communs (et non par des symboles) : T3 après T2 (même `trust/src/index.ts`, `bytes.ts` consommé) ; T13 après T9 (`server.ts`, `daemon.ts`) ; T24 après T23 (`collab/rpc.ts`, `collab/bootstrap.ts`, harnais) ; T26 après T25 et T28 après T25 (`Screen`, `SettingsNav`, `ScreenView`, `lazy-screens`, `target-hash`, `screens.ts`) ; T30 après T29 (`Shell.tsx`, `PageView.tsx`, `fr.ts`). T8 est indépendant de tout et peut tourner dès la vague 0.
+
+Chemin critique (10 vagues après T0) : T1 → T2 → T11 → T14 → T17 → T21 → T23 → T24 → T30 → T31 (et T6 → T7 → T14). Tâches à risque relues aussi par `kibo-lead` : T7, T12, T14, T17, T19, T21 ; T6 touche de nombreux fichiers d'UI et de composants (affichage de `keyLabel`) : l'intégrer en premier de sa vague.
+
+---|---|---|---|
 | 0 | T0 (kibo-lead), puis T1 | v0.6 | — |
 | 1 | T2, T3, T4, T5, T6, T8, T9 | T1 | — |
 | 2 | T7, T10, T11, T12, T13 | T7 ← T6 · T10 ← T2, T5 · T11 ← T2, T4 · T12 ← T8 · T13 ← T3, T9 | — |
@@ -588,7 +676,7 @@ Chemin critique : T1 → T6 → T7 → T14 → T17 → T21 → T23 → T29 → T
 
 ### Task 0: Recalage du plan sur v0.6
 
-Tâche de `kibo-lead`, sans code de production. Elle se fait sur `main` au tag `v0.6`, dans le worktree `.claude/worktrees/p7-t0`, branche `docs/p7-t0`. Sortie : ce plan corrigé, une ligne cochée par hypothèse.
+Tâche de `kibo-lead`, sans code de production. Faite sur `main` (commit `0486248`, état v0.6 ; le tag suivra le contrôle visuel des écrans IA), dans le worktree `.claude/worktrees/p7-t0`, branche `docs/p7-t0`. Sortie : ce plan corrigé, une ligne cochée par hypothèse.
 
 **Files:**
 - Modify: `docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md` (tableau « Prérequis (v0.6) et recalage », Contrats partagés, sections des tâches concernées)
@@ -598,12 +686,12 @@ Tâche de `kibo-lead`, sans code de production. Elle se fait sur `main` au tag `
 - Consumes: le code de `main` au tag `v0.6`, les plans des phases 2 à 6.
 - Produces: un plan dont chaque nom supposé (tableau Prérequis et lignes « Hypothèse v0.6 (vérifiée en T0) » des tâches) correspond au code réel.
 
-- [ ] **Step 1: Lister les hypothèses du plan**
+- [x] **Step 1: Lister les hypothèses du plan**
 
 Run: `grep -n "Hypothèse v0.6" docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md` et relire le tableau « Prérequis ».
 Expected: une liste d'hypothèses numérotées, recopiée dans le compte rendu de la tâche.
 
-- [ ] **Step 1b: Traiter d'abord les écarts déjà repérés**
+- [x] **Step 1b: Traiter d'abord les écarts déjà repérés**
 
 Les plans des phases 4 (`2026-09-26-kibo-composants.md`) et 5 (`2026-09-26-kibo-integrations.md`) ont paru pendant l'écriture de ce plan. Écarts connus, à corriger dans les tâches citées avant tout le reste :
 
@@ -618,7 +706,7 @@ Les plans des phases 4 (`2026-09-26-kibo-composants.md`) et 5 (`2026-09-26-kibo-
 | réglages locaux | `integration_settings(key, value)` (phase 5) | T1 garde `local_settings` (réglages hors intégrations) : pas de mélange des domaines |
 | tables `sync_config`, `sync_projects` | tables de phase 5 `sync_items`, `sync_cursors`, `sync_outbox` (sync d'intégrations) | aucun conflit de nom ; T21 garde ses noms, T0 le note pour les lecteurs |
 
-- [ ] **Step 2: Confronter chaque hypothèse au code**
+- [x] **Step 2: Confronter chaque hypothèse au code**
 
 Pour chaque ligne, retrouver le symbole réel :
 ```bash
@@ -634,7 +722,7 @@ grep -rn "listDomains\|runs.active\|notify(" packages/daemon/src packages/core/s
 ```
 Expected: un symbole réel par hypothèse. Si le symbole existe sous un autre nom ou une autre signature, remplacer le nom supposé **partout dans le plan** (Contrats, Interfaces, code des étapes). Si le besoin n'existe pas du tout, ajouter l'étape qui le crée à la tâche consommatrice, avec test, et le noter dans le tableau.
 
-- [ ] **Step 3: Vérifier les invariants de plateforme connus**
+- [x] **Step 3: Vérifier les invariants de plateforme connus**
 
 ```bash
 bun --version
@@ -643,77 +731,80 @@ grep -n "ipc\|NODE_CHANNEL_FD" packages/daemon/src/components/backend/*.ts
 ```
 Expected: Bun 1.4.2, loro-crdt 1.16.3. Noter si le canal du `ProcessHost` repose sur l'IPC de Bun (variables d'environnement à transmettre dans la politique d'isolation de T12) ou sur stdin/stdout.
 
-- [ ] **Step 4: Faire valider et reporter les décisions nouvelles**
+- [x] **Step 4: Faire valider et reporter les décisions nouvelles**
 
 Soumettre au chef d'équipe la liste « Décisions nouvelles » ; après accord, les reporter dans les specs G et H (sections concernées) et `CLAUDE.md` n'est modifié que par T1. Une décision refusée ⇒ proposer 2 options au chef d'équipe, qui escalade à Adam (règle de `CLAUDE.md`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md docs/superpowers/specs/2026-09-26-kibo-sync.md docs/superpowers/specs/2026-09-26-kibo-marketplace.md
 git commit -m "docs: recalage du plan de la phase 7"
 ```
 
+**Compte rendu de T0**
+
+- Hypothèses : 22 lignes « Hypothèse v0.6 » et 19 lignes du tableau Prérequis, toutes confrontées au code et remplacées par « Vérifié en T0 : » (tâches) ou par la colonne « Réel » (tableau). Écarts majeurs : isolation OS, canal par lignes, validation sandboxée et test d'évasion déjà livrés en phase 4 (T8 et T12 réécrites) ; événements `ChangeMessage` au lieu de `DaemonEvent` ; RPC par groupes Zod et branchement dans `daemon.ts` ; collisions `Role`, `SyncState`, `src/sync/` ; secrets, magasin, registre, aperçu de confiance, UI (Paramètres par `Screen`, pas de `StatusBar` ni de `FirstRunPage`) ; `folder` dans le doc projet ; liaisons et assignés au nom d'utilisateur OS.
+- Écarts de l'étape 1b : tous appliqués (T1, T2, T5, T12, T13, T15, T20, T21, T22, T23, T24, T27).
+- Plateforme (étape 3) : Bun 1.4.2, loro-crdt 1.16.3, fast-check 4.3.0 (core seulement) ; canal du `ProcessHost` : tubes sur les descripteurs 3 et 4, sans variable d'environnement à transmettre.
+- Décisions nouvelles 1 à 36 reportées dans les specs G et H (§13).
+- Points à faire trancher par Adam : voir le rapport de T0 (accès distant et widgets sandboxés, écran 15 réduit au bloc « Accès web »).
+
+
 ---
 
 ### Task 1: Socle de la phase 7
 
-Petite tâche série qui débloque tout le reste : codes d'erreur, noms de secrets, réglages locaux, squelettes des deux nouveaux paquets, `typecheck` et `CLAUDE.md`. Aucune logique métier.
+Petite tâche série qui débloque tout le reste : codes d'erreur, encodage `Base64`, types de partage, noms de secrets système, réglages locaux, squelettes des deux nouveaux paquets, `typecheck` et `CLAUDE.md`. Aucune logique métier.
 
 **Files:**
-- Modify: `packages/schema/src/errors.ts`
-- Modify: `packages/schema/src/ids.ts` (`Base64`, et `Sha256` seulement s'il n'est pas déjà exporté par le schéma de la phase 4 — voir T0, étape 1b)
+- Modify: `packages/schema/src/errors.ts` (tableau `KIBO_ERROR_CODES`)
+- Modify: `packages/schema/src/ids.ts` (`Base64` ; `Sha256` existe déjà dans `packages/schema/src/component.ts`)
 - Modify: `packages/schema/src/schema.test.ts`
 - Create: `packages/schema/src/sharing.ts`, `packages/schema/src/sharing.test.ts` (types de partage lus à la fois par T4 et T6, parallèles en vague 1)
+- Modify: `packages/schema/src/integrations.ts` (noms de secrets système), `packages/schema/src/integrations.test.ts`
+- Modify: `packages/schema/src/manifest.ts` (un composant ne peut déclarer qu'un secret d'intégration)
 - Modify: `packages/schema/src/index.ts`
-- Modify: `packages/daemon/package.json` (dépendance `zod` 3.25.76, importée par `settings.ts`)
 - Modify: `packages/daemon/src/server.ts` (table `STATUS`, exportée)
-- Create: `packages/daemon/src/status.test.ts`
-- Modify: `packages/daemon/src/secrets/secret-store.ts` (type `SecretName`, constantes)
-- Modify: `packages/daemon/src/secrets/secret-store.test.ts`
-- Modify: `packages/daemon/src/store.ts` (expose `db` si absent)
-- Create: `packages/daemon/src/settings.ts`
-- Create: `packages/daemon/src/settings.test.ts`
+- Create: `packages/daemon/src/server-status.test.ts`
+- Create: `packages/daemon/src/settings.ts`, `packages/daemon/src/settings.test.ts`
 - Create: `packages/trust/package.json`, `packages/trust/tsconfig.json`, `packages/trust/src/index.ts`, `packages/trust/src/sanity.test.ts`
 - Create: `packages/sync-server/package.json`, `packages/sync-server/tsconfig.json`, `packages/sync-server/src/index.ts`, `packages/sync-server/src/sanity.test.ts`
-- Modify: `package.json` (script `typecheck`)
+- Modify: `package.json` (script `typecheck`), `bun.lock`
 - Modify: `CLAUDE.md` (monorepo, dépendances autorisées)
 
 **Interfaces:**
-- Consumes: `KiboError`, `KiboErrorCode` (`@kibo/schema`) ; `Store` (`packages/daemon/src/store.ts`) ; `SecretName` (phase 5).
+- Consumes: `KiboError`, `KIBO_ERROR_CODES` (`packages/schema/src/errors.ts`) ; `SecretName`, `SecretNameSchema` (`packages/schema/src/integrations.ts`, phase 5) ; `Store.getLocal` / `Store.setLocal` (`packages/daemon/src/store.ts`, table `local_state`).
 - Produces:
-  - `KiboErrorCode` gagne `"UPDATE_REJECTED" | "ACCESS_REVOKED" | "RATE_LIMITED" | "QUOTA_EXCEEDED" | "INVITE_INVALID" | "DEVICE_REVOKED" | "TLS_REQUIRED" | "SYNC_OFFLINE" | "SANDBOX_UNAVAILABLE" | "SIGNATURE_INVALID" | "PUBLISHER_CHANGED" | "REVOKED" | "INDEX_ROLLBACK"`.
-  - `Base64` (chaîne base64 standard, longueur multiple de 4) et `Sha256` (hex minuscule, 64 caractères) dans `packages/schema/src/ids.ts`.
-  - `Role`, `KeyAllocator`, `MemberInfo`, `ProjectAccess`, `ProjectSyncInfo` dans `packages/schema/src/sharing.ts` (Contrats partagés ; T4 les importe au lieu de les définir).
+  - `KIBO_ERROR_CODES` gagne `"UPDATE_REJECTED"`, `"ACCESS_REVOKED"`, `"INVITE_INVALID"`, `"DEVICE_REVOKED"`, `"TLS_REQUIRED"`, `"SYNC_OFFLINE"`, `"SIGNATURE_INVALID"`, `"PUBLISHER_CHANGED"`, `"REVOKED"`, `"INDEX_ROLLBACK"` (`RATE_LIMITED`, `QUOTA_EXCEEDED`, `SANDBOX_UNAVAILABLE` existent déjà depuis la phase 4).
+  - `Base64` (chaîne base64 standard, longueur multiple de 4) dans `packages/schema/src/ids.ts`.
+  - `MemberRole`, `KeyAllocator`, `MemberInfo`, `ProjectAccess`, `ProjectSyncInfo` dans `packages/schema/src/sharing.ts` (T4 et T6 les importent). `MemberRole` et non `Role` : `Role` (métier de l'utilisateur) est déjà exporté par `packages/schema/src/ai.ts`.
+  - `SecretName` accepte en plus les trois noms système `SYSTEM_SECRET_NAMES = ["sync:device", "market:publisher", "remote:tls"]` ; constantes `SECRET_SYNC_DEVICE`, `SECRET_MARKET_PUBLISHER`, `SECRET_REMOTE_TLS` ; `IntegrationSecretNameSchema` (l'ancienne règle `github|figma|mcp`) reste la seule acceptée par `ComponentManifest.secrets[].name`.
   - `export const STATUS: Partial<Record<KiboErrorCode, number>>` dans `packages/daemon/src/server.ts`.
-  - `SecretName = \`${"github" | "mcp" | "figma" | "sync" | "market" | "remote"}${"" | \`:${string}\`}\`` ; `SECRET_SYNC_DEVICE = "sync:device"`, `SECRET_MARKET_PUBLISHER = "market:publisher"`, `SECRET_REMOTE_TLS = "remote:tls"`.
-  - `Store.db: Database`.
-  - `LocalSettings`, `openLocalSettings(db: Database): LocalSettings` (Contrats partagés).
+  - `LocalSettings`, `openLocalSettings(store: Pick<Store, "getLocal" | "setLocal">): LocalSettings` (`packages/daemon/src/settings.ts`), clés rangées sous le préfixe `setting:` de `local_state`.
   - Paquets `@kibo/trust` et `@kibo/sync-server` (vides, testés, typés).
-- Hypothèse v0.6 (vérifiée en T0) : `SecretName` et `MemorySecretStore` vivent dans `packages/daemon/src/secrets/secret-store.ts` avec un test voisin ; `STATUS` est encore une constante locale de `server.ts` (sinon, modifier le fichier qui la porte).
+- Vérifié en T0 : `SecretName` (type gabarit), la regex privée `SECRET_NAME` et `SecretNameSchema` vivent dans `packages/schema/src/integrations.ts` ; `SecretNameSchema` sert aussi à `ComponentManifest.secrets` (`packages/schema/src/manifest.ts`) et à `createMemorySecretStore` (`packages/daemon/src/integrations/memory-secret-store.ts`) ; il n'existe ni dossier `packages/daemon/src/secrets/` ni `MemorySecretStore` classe. `STATUS` est une constante non exportée de `packages/daemon/src/server.ts` ; `Store` expose déjà `db`, `getLocal`, `setLocal`. `@kibo/daemon` dépend déjà de `zod` 3.25.76.
 
-- [ ] **Step 1: Écrire les tests des codes d'erreur**
+- [ ] **Step 1: Écrire les tests des codes d'erreur et de `Base64`**
 
-Ajouter à la fin de `packages/schema/src/schema.test.ts` :
+Ajouter `Base64` et `Sha256` à l'import `./index` en tête de `packages/schema/src/schema.test.ts`, puis à la fin :
 ```ts
 describe("phase 7 error codes", () => {
   test("new codes are accepted by KiboError", () => {
     const codes = [
       "UPDATE_REJECTED",
       "ACCESS_REVOKED",
-      "RATE_LIMITED",
-      "QUOTA_EXCEEDED",
       "INVITE_INVALID",
       "DEVICE_REVOKED",
       "TLS_REQUIRED",
       "SYNC_OFFLINE",
-      "SANDBOX_UNAVAILABLE",
       "SIGNATURE_INVALID",
       "PUBLISHER_CHANGED",
       "REVOKED",
       "INDEX_ROLLBACK",
     ] as const;
     for (const code of codes) {
+      expect(isKiboErrorCode(code)).toBe(true);
       const err = new KiboError(code, "detail");
       expect(err.code).toBe(code);
       expect(err.message).toBe(`${code}: detail`);
@@ -731,14 +822,12 @@ describe("shared encodings", () => {
   test("Sha256 is 64 lowercase hex characters", () => {
     expect(Sha256.safeParse("a".repeat(64)).success).toBe(true);
     expect(Sha256.safeParse("A".repeat(64)).success).toBe(false);
-    expect(Sha256.safeParse("a".repeat(63)).success).toBe(false);
   });
 });
 ```
+Ajouter aussi `isKiboErrorCode` à l'import.
 
-Ajouter `Base64` et `Sha256` à l'import `./index` en tête du fichier.
-
-`packages/daemon/src/status.test.ts` :
+`packages/daemon/src/server-status.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
 import { STATUS } from "./server";
@@ -747,13 +836,10 @@ test("phase 7 codes map to HTTP statuses", () => {
   expect(STATUS).toMatchObject({
     UPDATE_REJECTED: 409,
     ACCESS_REVOKED: 403,
-    RATE_LIMITED: 429,
-    QUOTA_EXCEEDED: 413,
     INVITE_INVALID: 400,
     DEVICE_REVOKED: 401,
     TLS_REQUIRED: 400,
     SYNC_OFFLINE: 503,
-    SANDBOX_UNAVAILABLE: 503,
     SIGNATURE_INVALID: 422,
     PUBLISHER_CHANGED: 409,
     REVOKED: 410,
@@ -762,18 +848,24 @@ test("phase 7 codes map to HTTP statuses", () => {
 });
 
 test("existing mappings are unchanged", () => {
-  expect(STATUS.NOT_FOUND).toBe(404);
-  expect(STATUS.UNAUTHORIZED).toBe(401);
-  expect(STATUS.FORBIDDEN).toBe(403);
+  expect(STATUS).toMatchObject({
+    NOT_FOUND: 404,
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+    RATE_LIMITED: 429,
+    QUOTA_EXCEEDED: 413,
+    SANDBOX_UNAVAILABLE: 503,
+    AI_UNAVAILABLE: 503,
+  });
 });
 ```
 
 - [ ] **Step 2: Vérifier l'échec**
 
-Run: `bun test packages/schema/src/schema.test.ts packages/daemon/src/status.test.ts`
-Expected: FAIL — `bun run typecheck` refuse les nouveaux littéraux et `STATUS` n'est pas exporté (`SyntaxError: Export named 'STATUS' not found`).
+Run: `bun test packages/schema/src/schema.test.ts packages/daemon/src/server-status.test.ts`
+Expected: FAIL — `Base64` introuvable et `SyntaxError: Export named 'STATUS' not found in module`.
 
-- [ ] **Step 3: Ajouter les codes, les encodages et la table**
+- [ ] **Step 3: Ajouter les codes, `Base64` et la table**
 
 Dans `packages/schema/src/ids.ts` :
 ```ts
@@ -781,111 +873,114 @@ export const Base64 = z
   .string()
   .regex(/^[A-Za-z0-9+/]*={0,2}$/)
   .refine((s) => s.length % 4 === 0, "base64 length must be a multiple of 4");
-export const Sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 ```
 
-Dans `packages/schema/src/errors.ts`, compléter l'union (garder les codes des phases 2 à 6 déjà présents) :
+Dans `packages/schema/src/errors.ts`, ajouter à la fin du tableau `KIBO_ERROR_CODES` (après `"AI_UNAVAILABLE"`) :
 ```ts
-  | "UPDATE_REJECTED"
-  | "ACCESS_REVOKED"
-  | "RATE_LIMITED"
-  | "QUOTA_EXCEEDED"
-  | "INVITE_INVALID"
-  | "DEVICE_REVOKED"
-  | "TLS_REQUIRED"
-  | "SYNC_OFFLINE"
-  | "SANDBOX_UNAVAILABLE"
-  | "SIGNATURE_INVALID"
-  | "PUBLISHER_CHANGED"
-  | "REVOKED"
-  | "INDEX_ROLLBACK"
+  "UPDATE_REJECTED",
+  "ACCESS_REVOKED",
+  "INVITE_INVALID",
+  "DEVICE_REVOKED",
+  "TLS_REQUIRED",
+  "SYNC_OFFLINE",
+  "SIGNATURE_INVALID",
+  "PUBLISHER_CHANGED",
+  "REVOKED",
+  "INDEX_ROLLBACK",
 ```
 
-Dans `packages/daemon/src/server.ts`, exporter la table et ajouter les entrées (les entrées existantes restent) :
+Dans `packages/daemon/src/server.ts`, remplacer `const STATUS` par `export const STATUS` et ajouter à la fin de l'objet (entrées existantes inchangées) :
 ```ts
-export const STATUS: Partial<Record<KiboErrorCode, number>> = {
-  NOT_FOUND: 404,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
   UPDATE_REJECTED: 409,
   ACCESS_REVOKED: 403,
-  RATE_LIMITED: 429,
-  QUOTA_EXCEEDED: 413,
   INVITE_INVALID: 400,
   DEVICE_REVOKED: 401,
   TLS_REQUIRED: 400,
   SYNC_OFFLINE: 503,
-  SANDBOX_UNAVAILABLE: 503,
   SIGNATURE_INVALID: 422,
   PUBLISHER_CHANGED: 409,
   REVOKED: 410,
   INDEX_ROLLBACK: 409,
-};
 ```
 
-- [ ] **Step 4: Vérifier le passage**
-
-Run: `bun test packages/schema/src/schema.test.ts packages/daemon/src/status.test.ts`
+Run: `bun test packages/schema/src/schema.test.ts packages/daemon/src/server-status.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Tests des noms de secrets**
+- [ ] **Step 4: Tests des noms de secrets système**
 
-Ajouter à `packages/daemon/src/secrets/secret-store.test.ts` :
+Dans `packages/schema/src/integrations.test.ts`, ajouter `ComponentManifest`, `IntegrationSecretNameSchema`, `SECRET_MARKET_PUBLISHER`, `SECRET_REMOTE_TLS`, `SECRET_SYNC_DEVICE` à l'import `./index`, puis dans le `describe` existant :
 ```ts
-import { expect, test } from "bun:test";
-import {
-  MemorySecretStore,
-  SECRET_MARKET_PUBLISHER,
-  SECRET_REMOTE_TLS,
-  SECRET_SYNC_DEVICE,
-} from "./secret-store";
+  test("system secret names are exact and stable", () => {
+    expect([SECRET_SYNC_DEVICE, SECRET_MARKET_PUBLISHER, SECRET_REMOTE_TLS]).toEqual([
+      "sync:device",
+      "market:publisher",
+      "remote:tls",
+    ]);
+    for (const ok of ["sync:device", "market:publisher", "remote:tls"]) {
+      expect(SecretNameSchema.safeParse(ok).success).toBe(true);
+      expect(IntegrationSecretNameSchema.safeParse(ok).success).toBe(false);
+    }
+    for (const ko of ["sync", "sync:other", "market", "remote:tls:X"]) {
+      expect(SecretNameSchema.safeParse(ko).success).toBe(false);
+    }
+  });
 
-test("phase 7 secret names are stable", () => {
-  expect(SECRET_SYNC_DEVICE).toBe("sync:device");
-  expect(SECRET_MARKET_PUBLISHER).toBe("market:publisher");
-  expect(SECRET_REMOTE_TLS).toBe("remote:tls");
-});
-
-test("phase 7 secrets round-trip through the memory store", async () => {
-  const secrets = new MemorySecretStore();
-  await secrets.set(SECRET_SYNC_DEVICE, "k1");
-  await secrets.set(SECRET_MARKET_PUBLISHER, "k2");
-  await secrets.set(SECRET_REMOTE_TLS, "k3");
-  expect(await secrets.get(SECRET_SYNC_DEVICE)).toBe("k1");
-  expect(await secrets.has(SECRET_MARKET_PUBLISHER)).toBe(true);
-  await secrets.delete(SECRET_REMOTE_TLS);
-  expect(await secrets.get(SECRET_REMOTE_TLS)).toBeNull();
-});
+  test("a component cannot declare a system secret", () => {
+    const manifest = (name: string) => ({
+      id: "burndown",
+      version: "0.1.0",
+      kind: "widget",
+      title: "Burndown",
+      reads: [],
+      writes: [],
+      secrets: [{ name, hosts: ["api.example.com"] }],
+    });
+    expect(ComponentManifest.safeParse(manifest("mcp:ctx:API_KEY")).success).toBe(true);
+    expect(ComponentManifest.safeParse(manifest("sync:device")).success).toBe(false);
+  });
 ```
 
-Run: `bun test packages/daemon/src/secrets/secret-store.test.ts`
+Run: `bun test packages/schema/src/integrations.test.ts`
 Expected: FAIL — `SECRET_SYNC_DEVICE` introuvable.
 
-- [ ] **Step 6: Étendre `SecretName`**
+- [ ] **Step 5: Étendre `SecretName`**
 
-Dans `packages/daemon/src/secrets/secret-store.ts` :
+Dans `packages/schema/src/integrations.ts`, remplacer le bloc `SECRET_NAME` / `SecretName` / `SecretNameSchema` par :
 ```ts
-export type SecretName = `${"github" | "mcp" | "figma" | "sync" | "market" | "remote"}${"" | `:${string}`}`;
-
-export const SECRET_SYNC_DEVICE: SecretName = "sync:device";
-export const SECRET_MARKET_PUBLISHER: SecretName = "market:publisher";
-export const SECRET_REMOTE_TLS: SecretName = "remote:tls";
+const INTEGRATION_SECRET = /^(github|figma|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
+export const SYSTEM_SECRET_NAMES = ["sync:device", "market:publisher", "remote:tls"] as const;
+export type SystemSecretName = (typeof SYSTEM_SECRET_NAMES)[number];
+export type IntegrationSecretName = `${"github" | "mcp" | "figma"}${"" | `:${string}`}`;
+export type SecretName = IntegrationSecretName | SystemSecretName;
+export const SECRET_SYNC_DEVICE: SystemSecretName = "sync:device";
+export const SECRET_MARKET_PUBLISHER: SystemSecretName = "market:publisher";
+export const SECRET_REMOTE_TLS: SystemSecretName = "remote:tls";
+const isSystemSecret = (v: string): v is SystemSecretName => (SYSTEM_SECRET_NAMES as readonly string[]).includes(v);
+export const IntegrationSecretNameSchema = z.custom<IntegrationSecretName>(
+  (v) => typeof v === "string" && INTEGRATION_SECRET.test(v),
+  "invalid secret name",
+);
+export const SecretNameSchema = z.custom<SecretName>(
+  (v) => typeof v === "string" && (INTEGRATION_SECRET.test(v) || isSystemSecret(v)),
+  "invalid secret name",
+);
 ```
+Dans `packages/schema/src/manifest.ts`, remplacer `name: SecretNameSchema` par `name: IntegrationSecretNameSchema` (import ajusté).
 
-Run: `bun test packages/daemon/src/secrets/secret-store.test.ts`
-Expected: PASS.
+Run: `bun test packages/schema && bun test packages/daemon/src/integrations packages/daemon/src/mcp`
+Expected: PASS (les tests de la phase 5 inchangés).
 
-- [ ] **Step 6b: Types de partage**
+- [ ] **Step 6: Types de partage**
 
 `packages/schema/src/sharing.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
-import { KeyAllocator, MemberInfo, Role } from "./sharing";
+import { KeyAllocator, MemberInfo, MemberRole } from "./sharing";
 
 test("roles and allocators are closed sets", () => {
-  expect(Role.options).toEqual(["owner", "editor", "viewer"]);
+  expect(MemberRole.options).toEqual(["owner", "editor", "viewer"]);
   expect(KeyAllocator.options).toEqual(["local", "server"]);
-  expect(Role.safeParse("admin").success).toBe(false);
+  expect(MemberRole.safeParse("admin").success).toBe(false);
 });
 
 test("a member needs an id, a name and a role", () => {
@@ -901,85 +996,85 @@ Expected: FAIL — `Cannot find module './sharing'`.
 ```ts
 import { z } from "zod";
 
-export const Role = z.enum(["owner", "editor", "viewer"]);
-export type Role = z.infer<typeof Role>;
+export const MemberRole = z.enum(["owner", "editor", "viewer"]);
+export type MemberRole = z.infer<typeof MemberRole>;
 export const KeyAllocator = z.enum(["local", "server"]);
 export type KeyAllocator = z.infer<typeof KeyAllocator>;
-export const MemberInfo = z.object({ userId: z.string().min(1), name: z.string().min(1), role: Role });
+export const MemberInfo = z.object({ userId: z.string().min(1), name: z.string().min(1), role: MemberRole });
 export type MemberInfo = z.infer<typeof MemberInfo>;
 export type ProjectAccess = "write" | "read-only" | "revoked";
 export type ProjectSyncInfo = {
   shared: boolean;
   keyAllocator: KeyAllocator;
-  role: Role | null;
+  role: MemberRole | null;
   access: ProjectAccess;
   members: MemberInfo[];
 };
 ```
-Ajouter `export * from "./sharing";` à `packages/schema/src/index.ts`.
+Ajouter `export * from "./sharing";` à `packages/schema/src/index.ts` (ordre alphabétique, après `./semver`).
 
 Run: `bun test packages/schema/src/sharing.test.ts`
 Expected: PASS.
-
-Ajouter `"zod": "3.25.76"` aux `dependencies` de `packages/daemon/package.json` (même version que `@kibo/schema`, aucun nouveau paquet dans `bun.lock`).
 
 - [ ] **Step 7: Tests des réglages locaux**
 
 `packages/daemon/src/settings.test.ts` :
 ```ts
-import { Database } from "bun:sqlite";
-import { beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
 import { openLocalSettings } from "./settings";
+import { openStore, type Store } from "./store";
 
-let db: Database;
+let home: string;
+let store: Store;
 beforeEach(() => {
-  db = new Database(":memory:", { strict: true });
+  home = mkdtempSync(join(tmpdir(), "kibo-settings-"));
+  store = openStore(home);
+});
+afterEach(() => {
+  store.close();
+  rmSync(home, { recursive: true, force: true });
 });
 
 const Remote = z.object({ enabled: z.boolean(), port: z.number().int() });
 
 test("returns the fallback when the key is absent", () => {
-  const settings = openLocalSettings(db);
-  expect(settings.get("remoteAccess", Remote, { enabled: false, port: 47832 })).toEqual({
+  expect(openLocalSettings(store).get("remoteAccess", Remote, { enabled: false, port: 47832 })).toEqual({
     enabled: false,
     port: 47832,
   });
 });
 
-test("stores JSON values and reads them back", () => {
-  const settings = openLocalSettings(db);
+test("stores JSON values, overwrites them and survives a reopen", () => {
+  const settings = openLocalSettings(store);
   settings.set("remoteAccess", { enabled: true, port: 50000 });
   settings.set("sandbox.allowUnsandboxed", true);
-  expect(settings.get("remoteAccess", Remote, { enabled: false, port: 1 })).toEqual({
-    enabled: true,
-    port: 50000,
-  });
-  expect(settings.get("sandbox.allowUnsandboxed", z.boolean(), false)).toBe(true);
-});
-
-test("overwrites an existing value", () => {
-  const settings = openLocalSettings(db);
-  settings.set("sandbox.allowUnsandboxed", true);
   settings.set("sandbox.allowUnsandboxed", false);
-  expect(settings.get("sandbox.allowUnsandboxed", z.boolean(), true)).toBe(false);
+  store.close();
+  store = openStore(home);
+  const again = openLocalSettings(store);
+  expect(again.get("remoteAccess", Remote, { enabled: false, port: 1 })).toEqual({ enabled: true, port: 50000 });
+  expect(again.get("sandbox.allowUnsandboxed", z.boolean(), true)).toBe(false);
 });
 
-test("survives a reopen on the same database", () => {
-  openLocalSettings(db).set("k", 42);
-  expect(openLocalSettings(db).get("k", z.number(), 0)).toBe(42);
+test("settings never collide with other local_state keys", () => {
+  store.setLocal("tabs:workspace", "{}");
+  openLocalSettings(store).set("tabs:workspace", 1);
+  expect(store.getLocal("tabs:workspace")).toBe("{}");
 });
 
 test("a value that does not match its schema is reported, not replaced", () => {
-  const settings = openLocalSettings(db);
+  const settings = openLocalSettings(store);
   settings.set("remoteAccess", { enabled: "yes" });
   expect(() => settings.get("remoteAccess", Remote, { enabled: false, port: 1 })).toThrow("STORE_CORRUPT");
 });
 
 test("unparsable JSON is reported", () => {
-  openLocalSettings(db);
-  db.query("INSERT INTO local_settings (key, value) VALUES ('broken', '{')").run();
-  expect(() => openLocalSettings(db).get("broken", z.number(), 0)).toThrow("STORE_CORRUPT");
+  store.setLocal("setting:broken", "{");
+  expect(() => openLocalSettings(store).get("broken", z.number(), 0)).toThrow("STORE_CORRUPT");
 });
 ```
 
@@ -990,51 +1085,53 @@ Expected: FAIL — `Cannot find module './settings'`.
 
 `packages/daemon/src/settings.ts` :
 ```ts
-import type { Database } from "bun:sqlite";
 import { KiboError } from "@kibo/schema";
 import type { z } from "zod";
+import type { Store } from "./store";
 
 export type LocalSettings = {
   get<T>(key: string, schema: z.ZodType<T>, fallback: T): T;
   set(key: string, value: unknown): void;
 };
 
-export function openLocalSettings(db: Database): LocalSettings {
-  db.exec("CREATE TABLE IF NOT EXISTS local_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
-  const select = db.query("SELECT value FROM local_settings WHERE key = $key");
-  const upsert = db.query(
-    "INSERT INTO local_settings (key, value) VALUES ($key, $value) " +
-      "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-  );
+const PREFIX = "setting:";
+
+export function openLocalSettings(store: Pick<Store, "getLocal" | "setLocal">): LocalSettings {
   return {
     get(key, schema, fallback) {
-      const row = select.get({ key }) as { value: string } | null;
-      if (!row) return fallback;
-      let raw: unknown;
+      const raw = store.getLocal(PREFIX + key);
+      if (raw === null) return fallback;
+      let json: unknown;
       try {
-        raw = JSON.parse(row.value);
+        json = JSON.parse(raw);
       } catch (e) {
         throw new KiboError("STORE_CORRUPT", `setting ${key} is not valid JSON: ${String(e)}`);
       }
-      const parsed = schema.safeParse(raw);
-      if (!parsed.success) {
-        throw new KiboError("STORE_CORRUPT", `setting ${key} is invalid: ${parsed.error.message}`);
-      }
+      const parsed = schema.safeParse(json);
+      if (!parsed.success) throw new KiboError("STORE_CORRUPT", `setting ${key} is invalid: ${parsed.error.message}`);
       return parsed.data;
     },
     set(key, value) {
-      upsert.run({ key, value: JSON.stringify(value) });
+      store.setLocal(PREFIX + key, JSON.stringify(value));
     },
   };
 }
 ```
 
-Si `Store` n'expose pas encore sa base, ajouter dans `packages/daemon/src/store.ts` le champ `db: Database` au type `Store` et `db,` dans l'objet retourné par `openStore` (aucune autre modification).
-
 Run: `bun test packages/daemon/src/settings.test.ts`
-Expected: PASS (6 tests).
+Expected: PASS (5 tests).
 
-- [ ] **Step 9: Squelette `packages/trust`**
+- [ ] **Step 9: Commit du socle**
+
+Run: `bun run check && bun run typecheck && bun test packages/schema packages/daemon/src/settings.test.ts packages/daemon/src/server-status.test.ts`
+Expected: sans erreur.
+
+```bash
+git add packages/schema/src/errors.ts packages/schema/src/ids.ts packages/schema/src/schema.test.ts packages/schema/src/sharing.ts packages/schema/src/sharing.test.ts packages/schema/src/integrations.ts packages/schema/src/integrations.test.ts packages/schema/src/manifest.ts packages/schema/src/index.ts packages/daemon/src/server.ts packages/daemon/src/server-status.test.ts packages/daemon/src/settings.ts packages/daemon/src/settings.test.ts
+git commit -m "feat: codes, secrets et réglages de phase 7"
+```
+
+- [ ] **Step 10: Squelette `packages/trust`**
 
 `packages/trust/package.json` :
 ```json
@@ -1052,7 +1149,7 @@ Expected: PASS (6 tests).
   }
 }
 ```
-`packages/trust/tsconfig.json` :
+`packages/trust/tsconfig.json` (modèle de `packages/core/tsconfig.json`) :
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -1075,7 +1172,7 @@ test("trust package is wired", () => {
 });
 ```
 
-- [ ] **Step 10: Squelette `packages/sync-server`**
+- [ ] **Step 11: Squelette `packages/sync-server`**
 
 `packages/sync-server/package.json` :
 ```json
@@ -1091,7 +1188,8 @@ test("trust package is wired", () => {
     "@kibo/core": "workspace:*",
     "@kibo/schema": "workspace:*",
     "@kibo/trust": "workspace:*",
-    "loro-crdt": "1.16.3"
+    "loro-crdt": "1.16.3",
+    "zod": "3.25.76"
   }
 }
 ```
@@ -1118,40 +1216,31 @@ test("sync-server package is wired", () => {
 });
 ```
 
-Dans `package.json` racine, insérer `packages/trust packages/sync-server` juste après `packages/core` dans le script `typecheck` :
+Dans le script `typecheck` du `package.json` racine, insérer `packages/trust` après `packages/schema` et `packages/sync-server` après `packages/core` (le reste de la liste est inchangé) :
 ```json
-"typecheck": "tsc -b packages/schema packages/core packages/trust packages/sync-server packages/daemon packages/sdk packages/ui components/tickets components/kanban e2e apps/desktop"
+"typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/tickets components/kanban components/graph components/notes components/github-issues components/mcp-source e2e apps/desktop"
 ```
-(Conserver les paquets ajoutés par les phases 2 à 6 : `packages/devkit`, `packages/cli`, `components/graph`, `components/notes`… ; seule l'insertion est à faire.)
 
-Si le `tsconfig.json` des autres paquets n'utilise pas `references`, retirer la clé `references` des deux nouveaux fichiers pour suivre le modèle existant.
-
-- [ ] **Step 11: Installer et vérifier**
+- [ ] **Step 12: Installer et vérifier**
 
 Run: `bun install && bun test packages/trust packages/sync-server && bun run check && bun run typecheck`
-Expected: 2 tests PASS, Biome et tsc sans erreur ; `bun.lock` gagne les deux espaces de travail.
+Expected: 2 tests PASS, Biome et tsc sans erreur ; `bun.lock` gagne les deux espaces de travail, aucun paquet npm nouveau.
 
-- [ ] **Step 12: Mettre à jour `CLAUDE.md`**
+- [ ] **Step 13: Mettre à jour `CLAUDE.md`**
 
-Dans le bloc « Monorepo », ajouter après la ligne `packages/core/` :
+Dans le bloc « Monorepo », ajouter après la ligne `packages/devkit/` :
 ```
-packages/trust/      signatures Ed25519, codes, empreinte, X.509, paquets et index signés — WebCrypto, sans I/O
+packages/trust/      signatures Ed25519, codes, empreinte, X.509, paquets et index signés — sans I/O
 packages/sync-server/ serveur de sync kibo-sync (Bun, SQLite) et marketplace d'équipe
 ```
 Remplacer la phrase des dépendances autorisées par :
 ```
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components`, `sdk ← ui`, `schema ← core ← sync-server`, `schema ← trust ← {devkit, daemon, sync-server, cli}`. `sync-server` n'est qu'une `devDependency` du démon, pour ses tests.
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon`, `devkit ← cli`, `schema ← trust ← {devkit, daemon, sync-server, cli}`, `schema ← core ← sync-server` ; `core ← sdk/mock` (SDK simulé uniquement). `sync-server` n'est qu'une `devDependency` du démon et d'`e2e`, pour leurs tests.
 ```
-(Garder les arêtes ajoutées par les phases 4 à 6, par exemple `schema ← devkit ← daemon`, `devkit ← cli`.)
 
-Run: `bun run check`
-Expected: sans erreur (Biome ignore le Markdown).
-
-- [ ] **Step 13: Commits**
+- [ ] **Step 14: Commit des paquets**
 
 ```bash
-git add packages/schema/src/errors.ts packages/schema/src/ids.ts packages/schema/src/schema.test.ts packages/schema/src/sharing.ts packages/schema/src/sharing.test.ts packages/schema/src/index.ts packages/daemon/package.json bun.lock packages/daemon/src/server.ts packages/daemon/src/status.test.ts packages/daemon/src/secrets/secret-store.ts packages/daemon/src/secrets/secret-store.test.ts packages/daemon/src/store.ts packages/daemon/src/settings.ts packages/daemon/src/settings.test.ts
-git commit -m "feat: codes, secrets et réglages de la phase 7"
 git add packages/trust packages/sync-server package.json bun.lock CLAUDE.md
 git commit -m "build: paquets trust et sync-server"
 ```
@@ -1160,7 +1249,7 @@ git commit -m "build: paquets trust et sync-server"
 
 ### Task 2: Paquet trust : signatures, codes et empreinte
 
-Les primitives de confiance partagées par le démon, le serveur de sync, le devkit et la CLI : octets et base64, Ed25519 (WebCrypto), codes à usage unique, empreinte canonique des sources (spec B §3.2) et charge signée des requêtes HTTP (décision 5). Aucune I/O dans `packages/trust` ; `packages/devkit` lit le disque et délègue le calcul.
+Les primitives de confiance partagées par le démon, le serveur de sync, le devkit et la CLI : octets et base64, Ed25519 (WebCrypto), codes à usage unique, empreinte canonique des sources (spec B §3.2) et charge signée des requêtes HTTP (décision 5). Aucune I/O dans `packages/trust` ; `packages/devkit` garde la lecture du disque (`listSourceFiles`, `readSources`, limites, refus des liens symboliques) et délègue le filtre et le calcul de l'empreinte, qui restent **synchrones** comme `hashFiles` de la phase 4 (même encodage, mêmes empreintes).
 
 **Files:**
 - Create: `packages/trust/src/bytes.ts`, `packages/trust/src/bytes.test.ts`
@@ -1170,13 +1259,13 @@ Les primitives de confiance partagées par le démon, le serveur de sync, le dev
 - Create: `packages/trust/src/source-hash.ts`, `packages/trust/src/source-hash.test.ts`
 - Create: `packages/trust/src/http-signing.ts`, `packages/trust/src/http-signing.test.ts`
 - Modify: `packages/trust/src/index.ts`
-- Modify: `packages/devkit/package.json` (dépendance `@kibo/trust`), `packages/devkit/src/hash.ts` (`hashSources`)
+- Modify: `packages/devkit/package.json` (dépendance `@kibo/trust`), `packages/devkit/tsconfig.json` (référence `../trust`), `packages/devkit/src/hash.ts` (`isHashed`, `hashFiles`, `SourceFile` délégués), `bun.lock`
 - Test: `packages/devkit/src/hash-delegation.test.ts`
 
 **Interfaces:**
-- Consumes: `KiboError` (`@kibo/schema`).
-- Produces (Contrats partagés, `@kibo/trust`) : `toBase64`, `fromBase64`, `utf8`, `sha256Hex`, `constantTimeEqual` ; `KeyPair`, `generateKeyPair`, `signBytes`, `verifyBytes`, `keyFingerprint`, `formatFingerprint`, `shortHash` ; `newInviteCode`, `newPairingCode`, `normalizeCode`, `formatPairingCode`, `hashCode` ; `SourceFile`, `isHashedSource`, `sourceHash` ; `HTTP_SIGNATURE_HEADERS`, `httpSigningPayload`, `signRequest`.
-- Hypothèse v0.6 (vérifiée en T0) : `hashSources(dir: string): Promise<string>` est défini dans `packages/devkit/src/hash.ts`.
+- Consumes: `KiboError`, `shortHash` (`@kibo/schema`, `packages/schema/src/component.ts`) ; paquet `@kibo/trust` (T1).
+- Produces (Contrats partagés, `@kibo/trust`) : `toBase64`, `fromBase64`, `utf8`, `owned`, `sha256Hex`, `constantTimeEqual` ; `KeyPair`, `generateKeyPair`, `signBytes`, `verifyBytes`, `keyFingerprint`, `formatFingerprint`, `shortHash` (réexport du schéma) ; `newInviteCode`, `newPairingCode`, `normalizeCode`, `formatPairingCode`, `hashCode` ; `SourceFile`, `isHashedSource`, `sourceHash(files: SourceFile[]): string` (**synchrone**) ; `HTTP_SIGNATURE_HEADERS`, `httpSigningPayload`, `signRequest`.
+- Vérifié en T0 : `packages/devkit/src/hash.ts` exporte `SourceFile`, `MAX_SOURCE_FILES` (200), `MAX_SOURCE_BYTES` (2 Mio), `isHashed(path): boolean`, `listSourceFiles(dir)`, `hashFiles(files: SourceFile[]): string` (synchrone, `Bun.CryptoHasher`, fichiers triés par unité de code, `${path}\0${byteLength}\0` puis les octets), `readSources(dir): Promise<{ hash; files }>` (filtre `isHashed`, exige `kibo.component.json`, limites, lien symbolique ⇒ `VALIDATION_FAILED`) et `hashSources(dir): Promise<string>`. `isHashed` exclut tout segment commençant par `.` ou égal à `node_modules` ou `dist` (à n'importe quelle profondeur), garde `kibo.component.json` et `*.ts|*.tsx|*.css` hors `*.test.ts(x)`. Appelants : `packages/daemon/src/components/store.ts`, `drafts.ts`, `ai/live-ports.ts`, `devkit/src/build.ts`, `validate.ts`. `shortHash` existe déjà dans le schéma.
 
 - [ ] **Step 1: Test de plateforme et tests des octets**
 
@@ -1323,6 +1412,8 @@ Expected: FAIL — `Cannot find module './ed25519'`.
 import { KiboError } from "@kibo/schema";
 import { fromBase64, owned, sha256Hex, toBase64 } from "./bytes";
 
+export { shortHash } from "@kibo/schema";
+
 export type KeyPair = { publicKey: string; privateKey: string };
 
 const ALG = { name: "Ed25519" } as const;
@@ -1361,10 +1452,6 @@ export async function keyFingerprint(publicKey: string): Promise<string> {
 
 export function formatFingerprint(hex: string): string {
   return (hex.match(/.{1,4}/g) ?? []).join(" ");
-}
-
-export function shortHash(hex: string): string {
-  return `${hex.slice(0, 4)}…${hex.slice(-4)}`;
 }
 ```
 
@@ -1497,29 +1584,34 @@ test("only manifest and ts, tsx, css sources are hashed", () => {
   expect(isHashedSource("lib/data.json")).toBe(false);
 });
 
-test("hash is independent of file order", async () => {
-  const a = await sourceHash(files());
-  const b = await sourceHash(files().reverse());
+test("excluded directories are excluded at any depth", () => {
+  expect(isHashedSource("lib/dist/a.ts")).toBe(false);
+  expect(isHashedSource("lib/node_modules/a.ts")).toBe(false);
+});
+
+test("hash is independent of file order", () => {
+  const a = sourceHash(files());
+  const b = sourceHash(files().reverse());
   expect(a).toMatch(/^[0-9a-f]{64}$/);
   expect(b).toBe(a);
 });
 
-test("one changed byte changes the hash", async () => {
-  const base = await sourceHash(files());
+test("one changed byte changes the hash", () => {
+  const base = sourceHash(files());
   const changed = files();
   changed[1] = { path: "ui.tsx", bytes: utf8("export const A = 2;") };
-  expect(await sourceHash(changed)).not.toBe(base);
+  expect(sourceHash(changed)).not.toBe(base);
 });
 
-test("renaming a file changes the hash", async () => {
-  const base = await sourceHash(files());
+test("renaming a file changes the hash", () => {
+  const base = sourceHash(files());
   const renamed = files();
   renamed[2] = { path: "lib/graph.ts", bytes: utf8("export const B = 2;") };
-  expect(await sourceHash(renamed)).not.toBe(base);
+  expect(sourceHash(renamed)).not.toBe(base);
 });
 
-test("ignored files do not affect the hash", async () => {
-  const base = await sourceHash(files());
+test("ignored files do not affect the hash", () => {
+  const base = sourceHash(files());
   const extra = [
     ...files(),
     { path: "component.test.tsx", bytes: utf8("test") },
@@ -1527,7 +1619,7 @@ test("ignored files do not affect the hash", async () => {
     { path: "dist/ui.js", bytes: utf8("y") },
     { path: ".cache.ts", bytes: utf8("z") },
   ];
-  expect(await sourceHash(extra)).toBe(base);
+  expect(sourceHash(extra)).toBe(base);
 });
 
 test("encoding is path NUL size NUL bytes, sorted by path", async () => {
@@ -1535,7 +1627,7 @@ test("encoding is path NUL size NUL bytes, sorted by path", async () => {
   const expected = new Uint8Array([...utf8("a.ts"), 0, ...utf8("1"), 0, ...utf8("x")]);
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", expected));
   const hex = Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
-  expect(await sourceHash(one)).toBe(hex);
+  expect(sourceHash(one)).toBe(hex);
 });
 ```
 
@@ -1545,36 +1637,34 @@ Expected: FAIL — `Cannot find module './source-hash'`.
 - [ ] **Step 8: Implémenter `source-hash.ts`**
 
 ```ts
-import { sha256Hex, utf8 } from "./bytes";
+import { utf8 } from "./bytes";
 
 export type SourceFile = { path: string; bytes: Uint8Array };
 
 const MANIFEST = "kibo.component.json";
+const SKIPPED = new Set(["node_modules", "dist"]);
+const HASHED = /\.(ts|tsx|css)$/;
+const TEST = /\.test\.tsx?$/;
+
+const comparePaths = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 export function isHashedSource(path: string): boolean {
-  const segments = path.split("/");
-  if (segments.some((s) => s.startsWith(".") || s === "node_modules")) return false;
-  if (segments[0] === "dist") return false;
-  if (/\.test\.tsx?$/.test(path)) return false;
-  return path === MANIFEST || /\.(ts|tsx|css)$/.test(path);
+  if (path.split("/").some((p) => p.startsWith(".") || SKIPPED.has(p))) return false;
+  return path === MANIFEST || (HASHED.test(path) && !TEST.test(path));
 }
 
-export function sourceHash(files: SourceFile[]): Promise<string> {
-  const kept = files.filter((f) => isHashedSource(f.path)).sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
-  const parts: Uint8Array[] = [];
-  for (const f of kept) parts.push(utf8(f.path), new Uint8Array([0]), utf8(String(f.bytes.length)), new Uint8Array([0]), f.bytes);
-  const total = parts.reduce((n, p) => n + p.length, 0);
-  const out = new Uint8Array(total);
-  let offset = 0;
-  for (const p of parts) {
-    out.set(p, offset);
-    offset += p.length;
+export function sourceHash(files: SourceFile[]): string {
+  const hasher = new Bun.CryptoHasher("sha256");
+  const kept = files.filter((f) => isHashedSource(f.path)).sort((a, b) => comparePaths(a.path, b.path));
+  for (const f of kept) {
+    hasher.update(utf8(`${f.path}\0${f.bytes.byteLength}\0`));
+    hasher.update(f.bytes);
   }
-  return sha256Hex(out);
+  return hasher.digest("hex");
 }
 ```
 
-Le tri compare les chaînes par unité de code (pas `localeCompare`), identique sur toutes les machines.
+Reprise exacte de `isHashed` et `hashFiles` de `packages/devkit/src/hash.ts` (phase 4) : même filtre, même tri par unité de code, même encodage, et synchrone (`Bun.CryptoHasher`, pas d'I/O) pour que `hashFiles` garde sa signature.
 
 Run: `bun test packages/trust/src/source-hash.test.ts`
 Expected: PASS.
@@ -1696,18 +1786,19 @@ git commit -m "feat(trust): signatures, codes et empreinte"
 
 - [ ] **Step 12: Figer l'empreinte actuelle du devkit avant délégation**
 
-Créer la fixture et le test `packages/devkit/src/hash-delegation.test.ts` ; la constante `PINNED` est la sortie de l'implémentation de la phase 4, capturée **avant** la modification :
+Capturer la sortie de l'implémentation de la phase 4 **avant** toute modification de `packages/devkit` :
 
 Run: `bun -e 'import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs"; import { join } from "node:path"; import { tmpdir } from "node:os"; import { hashSources } from "./packages/devkit/src/hash"; const d = mkdtempSync(join(tmpdir(), "h-")); mkdirSync(join(d, "lib")); writeFileSync(join(d, "kibo.component.json"), "{\"id\":\"burndown\"}"); writeFileSync(join(d, "ui.tsx"), "export const A = 1;\n"); writeFileSync(join(d, "lib/chart.ts"), "export const B = 2;\n"); writeFileSync(join(d, "ui.css"), ".a{}\n"); writeFileSync(join(d, "component.test.tsx"), "x"); console.log(await hashSources(d));'`
 Expected: une empreinte hexadécimale de 64 caractères, à coller dans `PINNED`.
 
+`packages/devkit/src/hash-delegation.test.ts` :
 ```ts
 import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { sourceHash, utf8 } from "@kibo/trust";
-import { hashSources } from "./hash";
+import { isHashedSource, sourceHash, utf8 } from "@kibo/trust";
+import { hashFiles, hashSources, isHashed } from "./hash";
 
 const PINNED = "<sortie de la commande ci-dessus>";
 
@@ -1727,13 +1818,15 @@ test("hashSources is unchanged by the delegation", async () => {
   expect(await hashSources(dir)).toBe(PINNED);
 });
 
-test("hashSources equals the trust implementation on the same files", async () => {
+test("devkit and trust are one implementation", () => {
   const files = Object.entries(content).map(([path, text]) => ({ path, bytes: utf8(text) }));
-  expect(await hashSources(dir)).toBe(await sourceHash(files));
+  expect(isHashed).toBe(isHashedSource);
+  expect(hashFiles(files.filter((f) => isHashed(f.path)))).toBe(sourceHash(files));
+  expect(sourceHash(files)).toBe(PINNED);
 });
 ```
 
-Si la valeur capturée diffère de `sourceHash` (second test en échec après la délégation), l'implémentation de la phase 4 s'écartait de la spec B §3.2 : arrêter et signaler au chef d'équipe, car toutes les empreintes approuvées changeraient.
+Si `sourceHash(files)` diffère de `PINNED`, la reprise de l'étape 8 s'écarte de la phase 4 : corriger `source-hash.ts`, jamais `PINNED` (toutes les empreintes approuvées changeraient).
 
 - [ ] **Step 13: Vérifier l'échec**
 
@@ -1742,30 +1835,18 @@ Expected: FAIL — `Cannot find module '@kibo/trust'` (dépendance absente).
 
 - [ ] **Step 14: Déléguer**
 
-Dans `packages/devkit/package.json`, ajouter `"@kibo/trust": "workspace:*"` aux dépendances. Remplacer le corps de `hashSources` dans `packages/devkit/src/hash.ts` :
+Dans `packages/devkit/package.json`, ajouter `"@kibo/trust": "workspace:*"` aux `dependencies` ; dans `packages/devkit/tsconfig.json`, ajouter `{ "path": "../trust" }` aux `references`. Dans `packages/devkit/src/hash.ts`, supprimer `SKIPPED`, `HASHED`, `TEST`, le corps de `isHashed` et de `hashFiles` et le type local `SourceFile`, et les remplacer par :
 ```ts
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { isHashedSource, type SourceFile, sourceHash } from "@kibo/trust";
 
-export async function readSourceFiles(dir: string): Promise<SourceFile[]> {
-  const files: SourceFile[] = [];
-  for await (const path of new Bun.Glob("**/*").scan({ cwd: dir, dot: true, onlyFiles: true })) {
-    const posix = path.split("\\").join("/");
-    if (!isHashedSource(posix)) continue;
-    files.push({ path: posix, bytes: new Uint8Array(await readFile(join(dir, path))) });
-  }
-  return files;
-}
-
-export async function hashSources(dir: string): Promise<string> {
-  return sourceHash(await readSourceFiles(dir));
-}
+export type { SourceFile };
+export const isHashed = isHashedSource;
+export const hashFiles = (files: SourceFile[]): string => sourceHash(files);
 ```
-Supprimer l'ancien encodage local devenu inutilisé ; garder les autres exports de `hash.ts`.
+`walk`, `listSourceFiles`, `readSources`, `hashSources`, `MAX_SOURCE_FILES`, `MAX_SOURCE_BYTES` et `comparePaths` (utilisé par `listSourceFiles`) restent tels quels : la lecture du disque, les limites et le refus des liens symboliques restent au devkit.
 
-Run: `bun install && bun test packages/devkit`
-Expected: PASS, y compris les tests d'empreinte de la phase 4.
+Run: `bun install && bun test packages/devkit packages/daemon/src/components`
+Expected: PASS, y compris `packages/devkit/src/hash.test.ts` et les tests du magasin de la phase 4.
 
 - [ ] **Step 15: Vérifications et commit**
 
@@ -1773,7 +1854,7 @@ Run: `bun run check && bun run typecheck`
 Expected: sans erreur.
 
 ```bash
-git add packages/devkit/package.json packages/devkit/src/hash.ts packages/devkit/src/hash-delegation.test.ts bun.lock
+git add packages/devkit/package.json packages/devkit/tsconfig.json packages/devkit/src/hash.ts packages/devkit/src/hash-delegation.test.ts bun.lock
 git commit -m "refactor(devkit): empreinte déléguée à trust"
 ```
 
@@ -1791,6 +1872,7 @@ Encodeur DER minimal et certificat X.509 v3 auto-signé (ECDSA P-256, WebCrypto)
 
 **Interfaces:**
 - Consumes: `toBase64`, `owned`, `sha256Hex`, `utf8` (`packages/trust/src/bytes.ts`, T2) ; `KiboError` (`@kibo/schema`).
+- Dépendance réelle : **T2** (importe `packages/trust/src/bytes.ts` et modifie le même `packages/trust/src/index.ts`) ; T3 ne peut donc pas tourner en parallèle de T2. Vérifié en T0 : aucun code de `main` ne génère de certificat (aucune dépendance X.509), `tsconfig.base.json` charge les types `bun` (WebCrypto, `X509Certificate` de `node:crypto`), Bun 1.4.2.
 - Produces : `SelfSigned = { certPem: string; keyPem: string; fingerprint256: string }`, `generateSelfSignedCert(opts: { commonName: string; dns: string[]; ips: string[]; days: number; now?: Date }): Promise<SelfSigned>`, `certFingerprint(certPem: string): Promise<string>` (format `AB:CD:…`, majuscules). Internes exportés pour les tests : `sequence`, `set`, `integer`, `oid`, `utf8String`, `ia5`, `booleanTrue`, `time`, `bitString`, `octetString`, `explicit`, `tlv`, `concat`, `ipBytes`.
 
 - [ ] **Step 1: Tests de l'encodeur DER**
@@ -2176,16 +2258,16 @@ Toutes les formes échangées entre le démon et `kibo-sync` (spec G §6, décis
 - Create: `packages/schema/src/sync.ts`, `packages/schema/src/sync.test.ts`
 - Create: `packages/schema/src/security.ts`, `packages/schema/src/security.test.ts`
 - Create: `packages/schema/src/sync-rpc.ts`, `packages/schema/src/sync-rpc.test.ts`
-- Modify: `packages/schema/src/rpc.ts` (décomposition de `SYNC_RPC_REQUESTS` dans `RpcRequest`, `SyncRpcResult` dans `RpcResult`)
-- Modify: `packages/schema/src/events.ts` (union `DaemonEvent`)
+- Modify: `packages/schema/src/rpc.ts` (`...SYNC_RPC_REQUESTS` dans `RpcRequest`, `SyncRpcResult` dans `RpcResult`, `Phase7Event` dans l'union `ChangeMessage`)
 - Modify: `packages/schema/src/index.ts`
+- Modify: `packages/sdk/src/client.ts` (`subscribeEvents`, aiguillage des `Phase7Event`), `packages/sdk/src/client.test.ts`
 
 **Interfaces:**
 - Consumes: `KiboError` ; `ProjectMeta` ; `ProjectKey`.
-- Consumes aussi : `Base64` (`packages/schema/src/ids.ts`, T1) ; `Role`, `KeyAllocator`, `MemberInfo`, `ProjectAccess`, `ProjectSyncInfo` (`packages/schema/src/sharing.ts`, T1, importés et non redéfinis).
-- Produces (Contrats partagés) : `PresenceRun`, `PresenceState`, `DeviceInfo`, `RejectCode`, `ClientFrame`, `ServerFrame`, `JoinRequest`, `JoinResponse`, `MAX_FRAME_BYTES`, `challengePayload`, `SYNC_LIMITS`, `CLOSE_CODES`, `SyncState`, `SyncProjectStatus`, `SyncStatus`, `PresencePeer` ; `SessionInfo`, `RemoteTls`, `RemoteAccessConfig`, `RemoteAccessStatus`, `PairingCode`, `SandboxStatus`.
-- Produces (nouveau, signalé) : `parseClientFrame(raw: string): ClientFrame`, `parseServerFrame(raw: string): ServerFrame` (taille > `MAX_FRAME_BYTES`, JSON invalide ou Zod ⇒ `KiboError("INVALID_INPUT")`), `encodeFrame(frame: ClientFrame | ServerFrame): string` ; `SYNC_RPC_REQUESTS` (tuple Zod), `SyncRpcResult` ; `Phase7Event` ajouté à `DaemonEvent`.
-- Hypothèse v0.6 (vérifiée en T0) : `DaemonEvent` est une union TypeScript exportée par `packages/schema/src/events.ts` ; `RpcRequest` reste un `z.discriminatedUnion("method", [...])` et `RpcResult` un type objet indexé par méthode.
+- Consumes aussi : `Base64` (`packages/schema/src/ids.ts`, T1) ; `MemberRole`, `KeyAllocator`, `MemberInfo`, `ProjectAccess`, `ProjectSyncInfo` (`packages/schema/src/sharing.ts`, T1, importés et non redéfinis).
+- Produces (Contrats partagés) : `PresenceRun`, `PresenceState`, `DeviceInfo`, `RejectCode`, `ClientFrame`, `ServerFrame`, `JoinRequest`, `JoinResponse`, `MAX_FRAME_BYTES`, `challengePayload`, `SYNC_LIMITS`, `CLOSE_CODES`, `SyncConnectionState` (et non `SyncState`, déjà exporté par `packages/schema/src/integrations.ts` pour la sync d'intégrations), `SyncProjectStatus`, `SyncStatus`, `PresencePeer` ; `SessionInfo`, `RemoteTls`, `RemoteAccessConfig`, `RemoteAccessStatus`, `PairingCode`, `SandboxStatus`.
+- Produces (nouveau, signalé) : `parseClientFrame(raw: string): ClientFrame`, `parseServerFrame(raw: string): ServerFrame` (taille > `MAX_FRAME_BYTES`, JSON invalide ou Zod ⇒ `KiboError("INVALID_INPUT")`), `encodeFrame(frame: ClientFrame | ServerFrame): string` ; `SYNC_RPC_REQUESTS` (tuple Zod), `SyncRpcRequest`, `SyncRpcResult`, `SYNC_RPC_METHODS` ; `Phase7Event` (schéma Zod : `collab.changed`, `presence.changed` avec `projectId`, `market.changed`, `sessions.changed`, `sandbox.changed`) ajouté à `ChangeMessage` ; `KiboClient.subscribeEvents(listener: (e: Phase7Event) => void): () => void` (SDK).
+- Vérifié en T0 : il n'existe ni `DaemonEvent` ni `packages/schema/src/events.ts`. La diffusion WebSocket est typée par l'union `ChangeMessage` de `packages/schema/src/rpc.ts` (`{ projectId }`, `{ topic }`, `RunChanged`, `CodeEvent`, `IntegrationEvent`, `AiEvent`), émise par `service.docs.emit(message)` et publiée par `server.ts` sur le canal `"changes"`. Le type `"sync"` est déjà pris par `IntegrationEvent`. Côté client (`packages/sdk/src/client.ts`), chaque famille est reconnue par `safeParse` et un message inconnu tombe dans `subscribe` (rechargement du projet ou de la liste) : un événement de phase 7 doit donc être reconnu avant ce repli. `RpcRequest` est un `z.discriminatedUnion("method", [...])` qui étale `...INTEGRATION_RPC, ...AI_RPC` ; `RpcResult` est un type objet intersecté avec `IntegrationRpcResult & AiRpcResult`. Aucune méthode `listSessions`, `listDevices`, `getSyncStatus`… n'existe (seule `getSyncState`, intégrations). `Service.handle` n'a pas de `switch` exhaustif : une méthode non branchée tombe dans le `default` de `handleAgents` (`INTERNAL`).
 
 - [ ] **Step 1: Tests des trames**
 
@@ -2200,6 +2282,7 @@ import {
   JoinRequest,
   MAX_FRAME_BYTES,
   parseClientFrame,
+  Phase7Event,
   parseServerFrame,
   SYNC_LIMITS,
   ServerFrame,
@@ -2277,6 +2360,14 @@ describe("parsing helpers", () => {
   });
 });
 
+describe("daemon events", () => {
+  test("phase 7 events do not reuse integration event types", () => {
+    expect(Phase7Event.safeParse({ type: "presence.changed", projectId: "p1" }).success).toBe(true);
+    expect(Phase7Event.safeParse({ type: "collab.changed" }).success).toBe(true);
+    expect(Phase7Event.safeParse({ type: "sync" }).success).toBe(false);
+  });
+});
+
 describe("constants", () => {
   test("challenge payload is deterministic and bound to the origin", () => {
     const a = challengePayload("bm9uY2U=", "wss://sync.kibo.test");
@@ -2322,7 +2413,7 @@ Expected: FAIL — `Cannot find module './sync'`.
 import { z } from "zod";
 import { KiboError } from "./errors";
 import { Base64 } from "./ids";
-import { MemberInfo, Role } from "./sharing";
+import { MemberInfo, MemberRole } from "./sharing";
 
 export const PresenceRun = z.object({ ticketKey: z.string().nullable(), profile: z.string(), state: z.string() });
 export type PresenceRun = z.infer<typeof PresenceRun>;
@@ -2358,7 +2449,7 @@ export const ClientFrame = z.discriminatedUnion("type", [
   z.object({ type: z.literal("share"), projectId, requestId, name: z.string().trim().min(1).max(200), snapshot: Base64 }),
   z.object({ type: z.literal("invite"), projectId, requestId, role: z.enum(["editor", "viewer"]) }),
   z.object({ type: z.literal("redeem"), requestId, code: z.string().min(1).max(64) }),
-  z.object({ type: z.literal("set-role"), projectId, requestId, userId: z.string().min(1), role: Role.nullable() }),
+  z.object({ type: z.literal("set-role"), projectId, requestId, userId: z.string().min(1), role: MemberRole.nullable() }),
   z.object({ type: z.literal("unshare"), projectId, requestId }),
   z.object({ type: z.literal("device-invite"), requestId }),
   z.object({ type: z.literal("list-devices"), requestId }),
@@ -2373,7 +2464,7 @@ export const ServerFrame = z.discriminatedUnion("type", [
     userId: z.string(),
     name: z.string(),
     deviceId: z.string(),
-    projects: z.array(z.object({ id: projectId, name: z.string(), role: Role })),
+    projects: z.array(z.object({ id: projectId, name: z.string(), role: MemberRole })),
   }),
   z.object({ type: z.literal("update"), projectId, bytes: Base64, serverSeq: seq, version: Base64 }),
   z.object({ type: z.literal("ack"), projectId, clientBatchId: requestId, serverSeq: seq, version: Base64 }),
@@ -2389,7 +2480,7 @@ export const ServerFrame = z.discriminatedUnion("type", [
   z.object({ type: z.literal("members"), projectId, members: z.array(MemberInfo) }),
   z.object({ type: z.literal("invite-code"), requestId, code: z.string(), expiresAt: z.number() }),
   z.object({ type: z.literal("shared"), requestId, projectId }),
-  z.object({ type: z.literal("joined"), requestId, projectId, name: z.string(), role: Role }),
+  z.object({ type: z.literal("joined"), requestId, projectId, name: z.string(), role: MemberRole }),
   z.object({ type: z.literal("revoked"), projectId, reason: z.enum(["removed", "deleted"]) }),
   z.object({ type: z.literal("devices"), requestId, devices: z.array(DeviceInfo) }),
   z.object({ type: z.literal("done"), requestId }),
@@ -2450,17 +2541,17 @@ export const SYNC_LIMITS = {
 
 export const CLOSE_CODES = { authFailed: 4401, deviceRevoked: 4403, accessRevoked: 4404, tooManyConnections: 4429 } as const;
 
-export type SyncState = "unconfigured" | "connecting" | "online" | "offline";
+export type SyncConnectionState = "unconfigured" | "connecting" | "online" | "offline";
 export type SyncProjectStatus = {
   projectId: string;
   name: string;
-  role: Role;
+  role: MemberRole;
   lastSyncAt: number | null;
   lastError: string | null;
   accessRevoked: boolean;
 };
 export type SyncStatus = {
-  state: SyncState;
+  state: SyncConnectionState;
   serverUrl: string | null;
   user: { id: string; name: string } | null;
   deviceId: string | null;
@@ -2470,12 +2561,14 @@ export type SyncStatus = {
 };
 export type PresencePeer = PresenceState & { deviceId: string; self: boolean };
 
-export type Phase7Event =
-  | { type: "sync" }
-  | { type: "presence"; projectId: string }
-  | { type: "market" }
-  | { type: "sessions" }
-  | { type: "sandbox" };
+export const Phase7Event = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("collab.changed") }),
+  z.object({ type: z.literal("presence.changed"), projectId }),
+  z.object({ type: z.literal("market.changed") }),
+  z.object({ type: z.literal("sessions.changed") }),
+  z.object({ type: z.literal("sandbox.changed") }),
+]);
+export type Phase7Event = z.infer<typeof Phase7Event>;
 ```
 
 `parseWith` mesure `raw.length` (unités UTF-16) : une trame JSON de base64 est ASCII, la longueur en octets est donc identique.
@@ -2623,7 +2716,7 @@ Expected: FAIL — les méthodes ne sont pas dans `RpcRequest`.
 import { z } from "zod";
 import type { ProjectMeta } from "./project";
 import { type PairingCode, RemoteAccessConfig, type RemoteAccessStatus, type SandboxStatus, type SessionInfo } from "./security";
-import { type MemberInfo, type ProjectSyncInfo, Role } from "./sharing";
+import { type MemberInfo, MemberRole, type ProjectSyncInfo } from "./sharing";
 import type { DeviceInfo, PresencePeer, SyncStatus } from "./sync";
 
 const id = z.string().min(1).max(128);
@@ -2652,12 +2745,15 @@ export const SYNC_RPC_REQUESTS = [
   z.object({ method: z.literal("shareProject"), projectId: id }),
   z.object({ method: z.literal("createProjectInvite"), projectId: id, role: z.enum(["editor", "viewer"]) }),
   z.object({ method: z.literal("joinProject"), code: z.string().min(1).max(64), folder: z.string().min(1).nullable() }),
-  z.object({ method: z.literal("setMemberRole"), projectId: id, userId: id, role: Role.nullable() }),
+  z.object({ method: z.literal("setMemberRole"), projectId: id, userId: id, role: MemberRole.nullable() }),
   z.object({ method: z.literal("unshareProject"), projectId: id }),
   z.object({ method: z.literal("setBindingRunner"), projectId: id, bindingId: id }),
   z.object({ method: z.literal("setPresence"), projectId: id, pageId: id.nullable(), ticketId: id.nullable() }),
   z.object({ method: z.literal("getPresence"), projectId: id }),
 ] as const;
+
+export type SyncRpcRequest = z.infer<(typeof SYNC_RPC_REQUESTS)[number]>;
+export const SYNC_RPC_METHODS: ReadonlySet<string> = new Set(SYNC_RPC_REQUESTS.map((s) => s.shape.method.value));
 
 export type SyncRpcResult = {
   listSessions: SessionInfo[];
@@ -2685,20 +2781,21 @@ export type SyncRpcResult = {
 };
 ```
 
-Dans `packages/schema/src/rpc.ts`, ajouter `...SYNC_RPC_REQUESTS` à la fin du tableau de `RpcRequest` (après les entrées des phases 1 à 6) et étendre le type de résultat :
+Dans `packages/schema/src/rpc.ts` (modèle de `AI_RPC`) :
 ```ts
+import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 
-export const RpcRequest = z.discriminatedUnion("method", [
-  ...EXISTING_REQUESTS,
-  ...SYNC_RPC_REQUESTS,
-]);
-
-export type RpcResult = CoreRpcResult & SyncRpcResult;
+export type ChangeMessage =
+  | { projectId: string | null }
+  | { topic: Topic }
+  | RunChanged
+  | CodeEvent
+  | IntegrationEvent
+  | AiEvent
+  | Phase7Event;
 ```
-où `EXISTING_REQUESTS` désigne le tableau actuel sorti tel quel dans une constante `as const`, et `CoreRpcResult` l'ancien type `RpcResult` renommé ; si `rpc.ts` compose déjà plusieurs tableaux (phases 4 à 6), ajouter simplement `...SYNC_RPC_REQUESTS` à la liste.
-
-Dans `packages/schema/src/events.ts`, ajouter `| Phase7Event` à l'union `DaemonEvent` (import de type depuis `./sync`).
+puis ajouter `...SYNC_RPC_REQUESTS,` après `...AI_RPC,` dans le tableau de `RpcRequest`, et `& SyncRpcResult` après `AiRpcResult` dans `RpcResult`. `RemoteAccessConfig.extend(...)` reste un `ZodObject` : `z.discriminatedUnion` l'accepte.
 
 Ajouter à `packages/schema/src/index.ts` :
 ```ts
@@ -2710,46 +2807,117 @@ export * from "./sync-rpc";
 Run: `bun test packages/schema`
 Expected: PASS (tous les tests du paquet, anciens compris).
 
+- [ ] **Step 6b: Aiguiller les événements de phase 7 dans le client**
+
+Ajouter à la fin de `packages/sdk/src/client.test.ts` (modèle du test `subscribeAi` existant) :
+```ts
+test("phase 7 events reach subscribeEvents and never reload a project", async () => {
+  const server = Bun.serve({
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ type: "presence.changed", projectId: "p1" }));
+        ws.send(JSON.stringify({ type: "sessions.changed" }));
+        ws.send(JSON.stringify({ projectId: "p2" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offProject = client.subscribe((id) => {
+    seen.push(`project:${id}`);
+    done.resolve();
+  });
+  const offEvents = client.subscribeEvents((e) => seen.push(e.type));
+  await done.promise;
+  expect(seen).toEqual(["presence.changed", "sessions.changed", "project:p2"]);
+  offProject();
+  offEvents();
+  server.stop(true);
+});
+```
+
+Run: `bun test packages/sdk/src/client.test.ts`
+Expected: FAIL — `client.subscribeEvents is not a function`.
+
+Dans `packages/sdk/src/client.ts` : ajouter `subscribeEvents(listener: (event: Phase7Event) => void): () => void;` au type `KiboClient` ; un ensemble `eventListeners` compté dans `active()` ; dans `onmessage`, après le bloc `AiEvent` :
+```ts
+      const phase7 = Phase7Event.safeParse(data);
+      if (phase7.success) {
+        for (const l of eventListeners) l(phase7.data);
+        return;
+      }
+```
+et la méthode `subscribeEvents` sur le modèle exact de `subscribeAi` (import de `Phase7Event` depuis `@kibo/schema`).
+
+Run: `bun test packages/sdk/src/client.test.ts`
+Expected: PASS.
+
 - [ ] **Step 7: Vérifications**
 
 Run: `bun run check && bun run typecheck`
-Expected: sans erreur. Le démon compile encore : ses `switch` sur `req.method` ne sont pas exhaustifs par `never` pour les nouvelles méthodes ; si l'un l'est, ajouter une branche qui lève `new KiboError("INTERNAL", `${req.method} is not wired yet`)`, remplacée par les tâches 9, 12, 13, 21, 23 et 24.
+Expected: sans erreur. Aucun `switch` du démon n'est exhaustif par `never` : une nouvelle méthode non encore branchée tombe dans le `default` de `handleAgents` (`service.ts`) et répond `INTERNAL`, jusqu'aux tâches 9, 12, 13, 21, 23 et 24. Aucune modification du démon dans cette tâche.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/schema/src/sync.ts packages/schema/src/sync.test.ts packages/schema/src/security.ts packages/schema/src/security.test.ts packages/schema/src/sync-rpc.ts packages/schema/src/sync-rpc.test.ts packages/schema/src/rpc.ts packages/schema/src/events.ts packages/schema/src/index.ts
+git add packages/schema/src/sync.ts packages/schema/src/sync.test.ts packages/schema/src/security.ts packages/schema/src/security.test.ts packages/schema/src/sync-rpc.ts packages/schema/src/sync-rpc.test.ts packages/schema/src/rpc.ts packages/schema/src/index.ts packages/sdk/src/client.ts packages/sdk/src/client.test.ts
 git commit -m "feat(schema): protocole de sync"
 ```
-Ajouter à `git add` le fichier du démon modifié à l'étape 7 s'il y en a un.
 
 ---
 
 ### Task 5: Schémas de la marketplace
 
-Formats signés de la spec H §3 (`.kpkg`, index de source), types des RPC marketplace de la spec H §6, extensions rétrocompatibles du registre (décision 12) et de l'instance (décision 11). Schéma seulement.
+Formats signés de la spec H §3 (`.kpkg`, index de source), types des RPC marketplace de la spec H §6, aperçu de confiance partagé (écran 30), extensions rétrocompatibles du registre (décision 12) et de l'instance (décision 11). Schéma, plus deux retouches de `core` (lecture des instances, patch du registre).
 
 **Files:**
 - Create: `packages/schema/src/market.ts`, `packages/schema/src/market.test.ts`
 - Create: `packages/schema/src/market-rpc.ts`, `packages/schema/src/market-rpc.test.ts`
-- Modify: `packages/schema/src/registry.ts` (`RegistryVersion.source`, `RegistryVersion.revoked`)
+- Modify: `packages/schema/src/manifest.ts` (exporter `ComponentId` et `ComponentKind`, utilisés par `ComponentManifest`)
+- Modify: `packages/schema/src/rpc.ts` (la constante locale `ComponentId` est remplacée par l'import depuis `./manifest` ; décomposition de `MARKET_RPC_REQUESTS` et `MarketRpcResult`)
+- Modify: `packages/schema/src/component.ts` (`RegistryVersion.source`, `RegistryVersion.revoked`, type `TrustPreview`)
 - Modify: `packages/schema/src/instance.ts` (`Instance.componentHash`)
 - Create: `packages/schema/src/compat.test.ts`
-- Modify: `packages/core/src/instances.ts` (lecture de `componentHash`)
-- Modify: `packages/schema/src/rpc.ts`, `packages/schema/src/index.ts`
+- Create: `packages/core/src/instances.test.ts`
+- Modify: `packages/core/src/instances.ts` (`listInstances` passe chaque valeur par `Instance.parse` pour appliquer les défauts)
+- Modify: `packages/core/src/registry.ts` (`VersionPatch` accepte `revoked`), `packages/core/src/registry.test.ts`
+- Modify: `packages/schema/src/index.ts`
+- Modify (littéraux typés seulement, attentes inchangées) : `packages/daemon/src/components/publish.ts`, `packages/daemon/src/components/registry-service.ts`, `packages/daemon/src/ai/testing/publish-setup.ts`, et les tests signalés par `bun run typecheck` (`packages/core/src/registry.test.ts`, `packages/daemon/src/components/registry-service.test.ts`, `publish.test.ts`, `backends-revoke.test.ts`, `drafts.test.ts`, `packages/daemon/src/ai/live-ports.test.ts`, `packages/ui/src/dialogs/component-dialogs.test.tsx`)
 
 **Interfaces:**
-- Consumes: `Base64`, `Sha256` (`packages/schema/src/ids.ts`, T1) ; `ComponentManifest`, `ComponentId`, `ComponentKind`, `SemVer`, `GrantedPermissions` (`manifest.ts`, phase 4) ; `RegistryVersion`, `TrustPreview` (`registry.ts`, phase 4).
+- Consumes: `Base64` (`packages/schema/src/ids.ts`, T1) ; `Sha256`, `RegistryVersion`, `ComponentOrigin`, `TrustLevel` (`packages/schema/src/component.ts`, phase 4) ; `ComponentManifest` (`manifest.ts`) ; `SemVer` (`semver.ts`) ; `GrantedPermissions` (`permissions.ts`).
 - Produces (Contrats partagés) : `KpkgFile`, `Kpkg`, `MarketIndex`, `KPKG_MAX_BYTES`, `MARKET_FETCH_TIMEOUT_MS`, `MARKET_REFRESH_MS`, `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketVersionInfo`, `MarketPackageDetail`, `MarketInstallResult` ; `RegistryVersion.source: { sourceId: string; publisherKey: string } | null` ; `RegistryVersion.revoked: { reason: string; at: number } | null` ; `Instance.componentHash: string | null`.
-- Produces (nouveau, signalé) : `MARKET_RPC_REQUESTS` (tuple Zod), `MarketRpcResult`.
-- Hypothèse v0.6 (vérifiée en T0) : `ComponentId`, `ComponentKind`, `SemVer`, `GrantedPermissions` sont exportés par `packages/schema/src/manifest.ts` ; `RegistryVersion` et `TrustPreview` par `packages/schema/src/registry.ts` ; `core/src/instances.ts` a une fonction de lecture `readInstance` utilisée par `listInstances`.
+- Produces (nouveau, signalé) :
+  - `ComponentId` (schéma Zod de l'id, même regex que `ComponentManifest.id`) et `ComponentKind = z.enum(["widget", "view", "both", "adapter"])` dans `manifest.ts`.
+  - `TrustPreview` dans `component.ts` :
+    ```ts
+    export type MarketTrustInfo = { publisherName: string; verified: boolean; sourceName: string; newPublisher: boolean };
+    export type TrustPreview = { id: string; title: string; version: string; hash: string; origin: ComponentOrigin;
+      permissions: GrantedPermissions; market: MarketTrustInfo | null };
+    ```
+    C'est le `TrustTarget` de l'UI (`packages/ui/src/dialogs/TrustDialog.tsx`, phase 4) plus `market` : l'UI peut passer un `TrustPreview` là où elle attend un `TrustTarget` (sous-type structurel). `MarketInstallResult = Omit<TrustPreview, "origin" | "market"> & { market: MarketTrustInfo }` : ce que renvoie `installFromMarket` (T20) et que `trustTargetOfInstall` (T26) convertit en `TrustTarget`.
+  - `MARKET_RPC_REQUESTS` (tuple Zod), `MarketRpcRequest`, `MarketRpcResult`.
+  - `updateRegistryVersion(ws, id, version, patch)` accepte `revoked` dans `patch` (`core/src/registry.ts`).
+- Vérifié en T0 : `SemVer` vient de `packages/schema/src/semver.ts`, `GrantedPermissions` de `packages/schema/src/permissions.ts` (champs `reads`, `writes`, `data`, `net`, `secrets` et `mcp`, ces deux derniers avec défaut `[]`), `ComponentManifest` de `manifest.ts` (où `kind` est un `z.enum` en ligne, `["widget", "view", "both", "adapter"]`, et `id` une regex en ligne) ; `ComponentId` n'est qu'une constante locale non exportée de `rpc.ts` ; `ComponentKind` n'existe que comme type local de `packages/cli/src/commands/new.ts`. `RegistryVersion` (avec `autoUpdate: z.boolean().default(false)`), `Sha256`, `ComponentOrigin` (`"kibo" | "user" | "ai" | "marketplace"`, `marketplace` déjà présent) et `TrustLevel` vivent dans `packages/schema/src/component.ts` (il n'y a pas de `registry.ts` dans le schéma). `TrustPreview`, `previewTrust` et `buildTrustPreview` n'existent pas : l'écran 30 construit sa cible dans l'UI (`trustTargetOf`). `core/src/instances.ts` n'a pas de `readInstance` : `getInstance` fait `Instance.parse`, mais `listInstances` renvoie le JSON brut de la map `instances` (valeurs JSON simples, pas de `LoroMap` par instance). `core/src/registry.ts` lit par `RegistryEntry.safeParse` (défauts appliqués) et son `VersionPatch` (non exporté) couvre `trust`, `approvedHash`, `granted`, `autoUpdate`.
 
 - [ ] **Step 1: Tests des formats signés**
 
 `packages/schema/src/market.test.ts` :
 ```ts
 import { describe, expect, test } from "bun:test";
-import { KPKG_MAX_BYTES, Kpkg, MARKET_FETCH_TIMEOUT_MS, MARKET_REFRESH_MS, MarketIndex, Sha256 } from "./index";
+import {
+  ComponentId,
+  ComponentKind,
+  KPKG_MAX_BYTES,
+  Kpkg,
+  MARKET_FETCH_TIMEOUT_MS,
+  MARKET_REFRESH_MS,
+  MarketIndex,
+} from "./index";
 
 const H = "a".repeat(64);
 const manifest = {
@@ -2797,11 +2965,12 @@ const index = {
   revoked: [{ hash: "b".repeat(64), reason: "fuite de données" }],
 };
 
-describe("Sha256", () => {
-  test("is lowercase hex of 64 characters", () => {
-    expect(Sha256.safeParse(H).success).toBe(true);
-    expect(Sha256.safeParse("A".repeat(64)).success).toBe(false);
-    expect(Sha256.safeParse("a".repeat(63)).success).toBe(false);
+describe("component id and kind", () => {
+  test("are exported with the manifest rules", () => {
+    expect(ComponentId.safeParse("burndown").success).toBe(true);
+    expect(ComponentId.safeParse("acme.burndown").success).toBe(true);
+    expect(ComponentId.safeParse("Burndown").success).toBe(false);
+    expect(ComponentKind.options).toEqual(["widget", "view", "both", "adapter"]);
   });
 });
 
@@ -2809,6 +2978,7 @@ describe("Kpkg", () => {
   test("accepts a well-formed package and applies manifest defaults", () => {
     const parsed = Kpkg.parse(kpkg);
     expect(parsed.manifest.id).toBe("burndown");
+    expect(parsed.manifest.net).toEqual([]);
   });
   test("refuses another format, a non-hex hash, an invalid date or no file", () => {
     expect(Kpkg.safeParse({ ...kpkg, format: 2 }).success).toBe(false);
@@ -2821,8 +2991,10 @@ describe("Kpkg", () => {
 });
 
 describe("MarketIndex", () => {
-  test("accepts spec H §3.2", () => {
-    expect(MarketIndex.parse(index).serial).toBe(42);
+  test("accepts spec H §3.2 and fills permission defaults", () => {
+    const parsed = MarketIndex.parse(index);
+    expect(parsed.serial).toBe(42);
+    expect(parsed.packages[0]?.versions[0]?.permissions.mcp).toEqual([]);
   });
   test("refuses serial 0, another format and malformed versions", () => {
     expect(MarketIndex.safeParse({ ...index, serial: 0 }).success).toBe(false);
@@ -2842,16 +3014,27 @@ test("limits", () => {
 ```
 
 Run: `bun test packages/schema/src/market.test.ts`
-Expected: FAIL — `Kpkg` n'est pas exporté.
+Expected: FAIL — `ComponentId` et `Kpkg` ne sont pas exportés.
 
-- [ ] **Step 2: Implémenter `market.ts`**
+- [ ] **Step 2: Exporter `ComponentId` et `ComponentKind`, implémenter `market.ts`**
+
+Dans `packages/schema/src/manifest.ts`, avant `ComponentManifest` :
+```ts
+export const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
+export type ComponentId = z.infer<typeof ComponentId>;
+export const ComponentKind = z.enum(["widget", "view", "both", "adapter"]);
+export type ComponentKind = z.infer<typeof ComponentKind>;
+```
+et, dans `ComponentManifest`, `id: ComponentId,` et `kind: ComponentKind,` (mêmes règles qu'avant). Dans `packages/schema/src/rpc.ts`, supprimer la constante locale `const ComponentId = …` et l'importer depuis `./manifest`.
 
 `packages/schema/src/market.ts` :
 ```ts
 import { z } from "zod";
-import { Base64, Sha256 } from "./ids";
-import { ComponentId, ComponentKind, ComponentManifest, GrantedPermissions, SemVer } from "./manifest";
-import type { TrustPreview } from "./registry";
+import { type MarketTrustInfo, Sha256, type TrustPreview } from "./component";
+import { Base64 } from "./ids";
+import { ComponentId, ComponentKind, ComponentManifest } from "./manifest";
+import { GrantedPermissions } from "./permissions";
+import { SemVer } from "./semver";
 
 export const KpkgFile = z.object({ path: z.string().min(1), sha256: Sha256, content: Base64 });
 export type KpkgFile = z.infer<typeof KpkgFile>;
@@ -2950,22 +3133,22 @@ export type MarketPackageDetail = MarketHit & {
   publisherChanged: boolean;
   files: { path: string; content: string }[];
 };
-export type MarketInstallResult = { id: string; version: string; hash: string; preview: TrustPreview };
+export type MarketInstallResult = Omit<TrustPreview, "origin" | "market"> & { market: MarketTrustInfo };
 ```
 
-`ComponentKind` et `GrantedPermissions` sont à la fois des schémas et des types (`z.infer`) dans `manifest.ts` ; si l'un n'est exporté que comme schéma, utiliser `z.infer<typeof …>` localement.
+`KPKG_MAX_BYTES` vaut exactement `MAX_SOURCE_BYTES` de `packages/devkit/src/hash.ts` (2 097 152) : un paquet ne peut pas porter plus de sources qu'un composant local n'en accepte.
 
 Ajouter à `packages/schema/src/index.ts` : `export * from "./market";`
 
 Run: `bun test packages/schema/src/market.test.ts`
-Expected: PASS.
+Expected: FAIL tant que `TrustPreview` n'existe pas (étape 4) ; après l'étape 4, PASS.
 
 - [ ] **Step 3: Tests de rétrocompatibilité**
 
 `packages/schema/src/compat.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
-import { Instance, RegistryVersion } from "./index";
+import { Instance, RegistryVersion, type TrustPreview } from "./index";
 
 test("a v0.6 registry entry parses with source and revoked set to null", () => {
   const v06 = {
@@ -2978,6 +3161,7 @@ test("a v0.6 registry entry parses with source and revoked set to null", () => {
     publishedAt: 1,
   };
   const parsed = RegistryVersion.parse(v06);
+  expect(parsed.autoUpdate).toBe(false);
   expect(parsed.source).toBeNull();
   expect(parsed.revoked).toBeNull();
 });
@@ -2991,6 +3175,7 @@ test("a marketplace entry keeps its source and revocation", () => {
     approvedHash: null,
     granted: { reads: [], writes: [], data: false, net: [] },
     publishedAt: 1,
+    autoUpdate: false,
     source: { sourceId: "team", publisherKey: "AAAA" },
     revoked: { reason: "fuite de données", at: 5 },
   });
@@ -3014,22 +3199,93 @@ test("componentHash must be a sha256 when present", () => {
   expect(Instance.safeParse({ ...base, componentHash: "d".repeat(64) }).success).toBe(true);
   expect(Instance.safeParse({ ...base, componentHash: "nope" }).success).toBe(false);
 });
+
+test("a trust preview is a trust target plus market details", () => {
+  const preview: TrustPreview = {
+    id: "burndown",
+    title: "Burndown",
+    version: "0.3.0",
+    hash: "c".repeat(64),
+    origin: "marketplace",
+    permissions: { reads: ["ticket"], writes: [], data: false, net: [], secrets: [], mcp: [] },
+    market: { publisherName: "Léa", verified: true, sourceName: "Équipe", newPublisher: true },
+  };
+  expect(preview.market?.newPublisher).toBe(true);
+});
 ```
 
-Run: `bun test packages/schema/src/compat.test.ts`
-Expected: FAIL — `parsed.source` est `undefined` (champ inconnu retiré par Zod).
+Ajouter à `packages/core/src/registry.test.ts` :
+```ts
+test("a revocation is written through updateRegistryVersion", () => {
+  const ws = new LoroDoc();
+  putRegistryVersion(ws, "burndown", "Burndown", {
+    version: "0.3.0",
+    hash: "c".repeat(64),
+    origin: "marketplace",
+    trust: "sandboxed",
+    approvedHash: "c".repeat(64),
+    granted: NO_PERMISSIONS,
+    publishedAt: 1,
+    autoUpdate: false,
+    source: { sourceId: "team", publisherKey: "AAAA" },
+    revoked: null,
+  });
+  const next = updateRegistryVersion(ws, "burndown", "0.3.0", {
+    trust: null,
+    approvedHash: null,
+    revoked: { reason: "fuite de données", at: 5 },
+  });
+  expect(next.revoked).toEqual({ reason: "fuite de données", at: 5 });
+  expect(getRegistryVersion(ws, "burndown", "0.3.0")?.revoked?.reason).toBe("fuite de données");
+});
+```
+(compléter les imports du fichier : `LoroDoc` de `loro-crdt`, `NO_PERMISSIONS` de `@kibo/schema`, `getRegistryVersion`, `putRegistryVersion`, `updateRegistryVersion` de `./registry`, s'ils n'y sont pas déjà.)
 
-- [ ] **Step 4: Étendre le registre et l'instance**
+Et `packages/core/src/instances.test.ts` (nouveau fichier) :
+```ts
+import { expect, test } from "bun:test";
+import { createProjectDoc, listInstances } from "./index";
 
-Dans `packages/schema/src/registry.ts`, ajouter à l'objet `RegistryVersion` :
+test("instances stored before v1.0 are listed with componentHash null", () => {
+  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#3B82F6" });
+  doc.getMap("instances").set("i1", {
+    id: "i1",
+    pageId: "pg1",
+    component: "burndown@0.3.0",
+    layout: { x: 0, y: 0, w: 6, h: 4 },
+    config: {},
+  });
+  expect(listInstances(doc)[0]?.componentHash).toBeNull();
+});
+```
+
+Run: `bun test packages/schema/src/compat.test.ts packages/core/src/registry.test.ts packages/core/src/instances.test.ts`
+Expected: FAIL — `parsed.source` vaut `undefined` (champ inconnu retiré par Zod), `TrustPreview` introuvable, `revoked` refusé par le type du patch, `componentHash` absent de `listInstances`.
+
+- [ ] **Step 4: Étendre le registre, l'aperçu de confiance et l'instance**
+
+Dans `packages/schema/src/component.ts`, ajouter à l'objet `RegistryVersion` (après `autoUpdate`) :
 ```ts
   source: z.object({ sourceId: z.string().min(1), publisherKey: z.string().min(1) }).nullable().default(null),
   revoked: z.object({ reason: z.string(), at: z.number().int() }).nullable().default(null),
 ```
+et, après `RegistryEntry` :
+```ts
+export type MarketTrustInfo = { publisherName: string; verified: boolean; sourceName: string; newPublisher: boolean };
+export type TrustPreview = {
+  id: string;
+  title: string;
+  version: string;
+  hash: string;
+  origin: ComponentOrigin;
+  permissions: GrantedPermissions;
+  market: MarketTrustInfo | null;
+};
+```
 
 Dans `packages/schema/src/instance.ts` :
 ```ts
-import { NodeId, Sha256 } from "./ids";
+import { Sha256 } from "./component";
 
 export const Instance = z.object({
   id: z.string(),
@@ -3040,21 +3296,28 @@ export const Instance = z.object({
   componentHash: Sha256.nullable().default(null),
 });
 ```
-(garder les champs ajoutés par les phases 4 à 6, par exemple `data`.)
 
-Dans `packages/core/src/instances.ts`, la lecture d'une instance renvoie le champ :
+Dans `packages/core/src/instances.ts`, `listInstances` applique les défauts :
 ```ts
-componentHash: (m.get("componentHash") as string | null | undefined) ?? null,
+export function listInstances(doc: LoroDoc, pageId?: string): Instance[] {
+  const all = Object.values(instances(doc).toJSON() as Record<string, unknown>).map((raw) => Instance.parse(raw));
+  return pageId === undefined ? all : all.filter((i) => i.pageId === pageId);
+}
 ```
-à côté des autres champs lus depuis la `LoroMap` de l'instance.
+(`getInstance`, `addInstance`, `setInstanceComponent` et `setInstanceConfig` passent déjà par `Instance.parse` / `safeParse` et écrivent donc `componentHash: null` par défaut.)
 
-Run: `bun test packages/schema/src/compat.test.ts packages/core`
+Dans `packages/core/src/registry.ts` :
+```ts
+type VersionPatch = Partial<Pick<RegistryVersion, "trust" | "approvedHash" | "granted" | "autoUpdate" | "revoked">>;
+```
+
+Run: `bun test packages/schema/src/compat.test.ts packages/schema/src/market.test.ts packages/core`
 Expected: PASS.
 
 - [ ] **Step 5: Réparer les littéraux typés**
 
 Run: `bun run typecheck`
-Expected: des erreurs `Property 'componentHash' is missing` et `Property 'source' is missing` uniquement dans des littéraux de test ou des constructions d'objets `Instance` / `RegistryVersion`. Ajouter `componentHash: null` et `source: null, revoked: null` à chacun (les fonctions du démon qui créent un `RegistryVersion` pour un composant utilisateur ou IA écrivent `source: null, revoked: null`). Aucune attente de test existante ne change.
+Expected: des erreurs `Property 'componentHash' is missing` (type `Instance`, sortie de `z.infer` avec défaut) et `Property 'source' is missing` / `'revoked'` (type `RegistryVersion`) uniquement dans des littéraux : `packages/daemon/src/components/publish.ts` et `registry-service.ts` (construction d'une `RegistryVersion` à la publication et à la réécriture), `packages/daemon/src/ai/testing/publish-setup.ts`, et les tests `packages/core/src/registry.test.ts`, `packages/daemon/src/components/{registry-service,publish,backends-revoke,drafts}.test.ts`, `packages/daemon/src/ai/live-ports.test.ts`, `packages/ui/src/dialogs/component-dialogs.test.tsx`, plus les fixtures d'instances des composants et de l'UI si `tsc` en signale. Ajouter `componentHash: null` et `source: null, revoked: null` à chacun (les fonctions du démon qui créent un `RegistryVersion` pour un composant utilisateur ou IA écrivent `source: null, revoked: null`). Aucune attente de test existante ne change.
 
 Run: `bun run typecheck && bun test packages components`
 Expected: sans erreur, PASS.
@@ -3099,12 +3362,13 @@ Expected: FAIL — méthodes absentes de `RpcRequest`.
 
 - [ ] **Step 7: Implémenter `market-rpc.ts` et brancher**
 
-`packages/schema/src/market-rpc.ts` :
+`packages/schema/src/market-rpc.ts` (même forme que `ai-rpc.ts` et `integrations-rpc.ts`) :
 ```ts
 import { z } from "zod";
-import { Sha256 } from "./ids";
+import { Sha256 } from "./component";
+import { ComponentId, ComponentKind } from "./manifest";
 import type { Kpkg, MarketHit, MarketInstallResult, MarketPackageDetail, MarketProbe, MarketSourceInfo } from "./market";
-import { ComponentId, ComponentKind, SemVer } from "./manifest";
+import { SemVer } from "./semver";
 
 const sourceId = z.string().min(1).max(64);
 const url = z.string().min(1).max(2048);
@@ -3136,6 +3400,8 @@ export const MARKET_RPC_REQUESTS = [
   z.object({ method: z.literal("exportKpkg"), id: ComponentId, version: SemVer, publisherName: publisherName.optional() }),
 ] as const;
 
+export type MarketRpcRequest = z.infer<(typeof MARKET_RPC_REQUESTS)[number]>;
+
 export type MarketRpcResult = {
   listMarketSources: MarketSourceInfo[];
   probeMarketSource: MarketProbe;
@@ -3152,7 +3418,7 @@ export type MarketRpcResult = {
 };
 ```
 
-Dans `packages/schema/src/rpc.ts`, ajouter `...MARKET_RPC_REQUESTS` au tableau de `RpcRequest` et `& MarketRpcResult` au type `RpcResult` (même procédé que T4 ; l'ordre de décomposition est indifférent). Ajouter à `index.ts` : `export * from "./market-rpc";`.
+Dans `packages/schema/src/rpc.ts`, ajouter `...MARKET_RPC_REQUESTS` au tableau de `RpcRequest` (après `...AI_RPC`, comme T4 pour la sync) et `& MarketRpcResult` au type `RpcResult`. Ajouter à `index.ts` : `export * from "./market-rpc";`.
 
 Run: `bun test packages/schema`
 Expected: PASS.
@@ -3160,18 +3426,17 @@ Expected: PASS.
 - [ ] **Step 8: Vérifications**
 
 Run: `bun run check && bun run typecheck`
-Expected: sans erreur (même règle que T4 pour un `switch` exhaustif du démon : branche `INTERNAL` provisoire, remplacée par T15, T20 et T22).
+Expected: sans erreur. `Service.handle` (`packages/daemon/src/service.ts`) n'a pas de `switch` exhaustif : une méthode marketplace non encore routée tombe dans `handleAgents`, qui lève `INTERNAL` (« … is not an agents method ») jusqu'au branchement de T15, T20 et T22 ; aucune branche provisoire n'est à ajouter.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add packages/schema/src/market.ts packages/schema/src/market.test.ts packages/schema/src/market-rpc.ts packages/schema/src/market-rpc.test.ts packages/schema/src/registry.ts packages/schema/src/instance.ts packages/schema/src/compat.test.ts packages/schema/src/rpc.ts packages/schema/src/index.ts packages/core/src/instances.ts
-git commit -m "feat(schema): marketplace"
+git add packages/schema/src/market.ts packages/schema/src/market.test.ts packages/schema/src/market-rpc.ts packages/schema/src/market-rpc.test.ts packages/schema/src/manifest.ts packages/schema/src/component.ts packages/schema/src/instance.ts packages/schema/src/compat.test.ts packages/schema/src/rpc.ts packages/schema/src/index.ts packages/core/src/instances.ts packages/core/src/instances.test.ts packages/core/src/registry.ts packages/core/src/registry.test.ts
+git commit -m "feat(schema): formats de la marketplace"
 ```
-Ajouter à `git add` chaque fichier de test ou du démon réparé à l'étape 5 (littéraux `componentHash`, `source`, `revoked`).
+Ajouter à ce `git add` chaque fichier réparé à l'étape 5 (littéraux `componentHash`, `source`, `revoked`), nommément.
 
 ---
-
 ### Task 6: Clé provisoire des tickets
 
 Dans un projet partagé, seul le serveur attribue les clés (spec G §5, décision 6). Cette tâche rend la clé nullable, ajoute le compteur provisoire `pendingSeq` et l'étiquette `KIB-…`, sans rien changer pour un projet local : l'allocateur par défaut reste `local` et `createTicket` s'y comporte exactement comme en v0.6.
@@ -3187,11 +3452,14 @@ Pour éviter que chaque composant doive connaître la clé du projet, `TicketVie
 - Modify: `packages/core/src/project.ts` (`peekTicketKey`)
 - Modify: `packages/core/src/links.ts` (`waitingOn` renvoie des étiquettes)
 - Modify: `packages/core/src/commands.ts` (`readProject` : `keyLabel`, `sync`)
+- Modify: `packages/core/src/commit-message.ts` (`MessageTicket.key` nullable ⇒ étiquette dans les textes)
+- Modify: `packages/core/src/context.ts` (brief du run : étiquettes)
 - Modify: `packages/core/src/index.ts`
 - Create: `packages/core/src/keys.test.ts`
-- Modify: `components/kanban/src/KanbanCard.tsx`, `components/kanban/src/Kanban.tsx`, `components/tickets/src/TicketsTree.tsx`, `packages/ui/src/shell/TicketSheet.tsx`, `packages/ui/src/dialogs/NewTicketDialog.tsx`, `packages/ui/src/i18n/fr.ts`
-- Modify (fixtures de test seulement, attentes inchangées) : `components/kanban/src/filter.test.ts`, `components/tickets/src/build-tree.test.ts`, `packages/ui/src/dialogs/dialogs.test.tsx`, `packages/ui/src/shell/shell.test.tsx`, `packages/ui/src/shell/screens.test.tsx`, `packages/ui/src/state/use-projects.test.tsx`
-- Modify : tout autre usage signalé par `bun run typecheck` (phases 2 à 6 : lancement d'agent, nom de branche, message de commit, mention dans une note)
+- Modify: `packages/daemon/src/agents/orchestrator.ts` (`assign` et `preview` refusent un ticket sans clé), `packages/daemon/src/agents/orchestrator.test.ts` (un cas ajouté)
+- Modify: `packages/daemon/src/ci/poller.ts`, `packages/daemon/src/sync/apply.ts`, `packages/daemon/src/sync/push.ts` (journaux et notifications : étiquette)
+- Modify (affichage ⇒ `keyLabel`) : `components/kanban/src/KanbanCard.tsx`, `components/kanban/src/Kanban.tsx`, `components/tickets/src/TicketsTree.tsx`, `components/graph/src/GraphWidget.tsx`, `components/graph/src/GraphCanvas.tsx`, `components/graph/src/critical-path.ts`, `components/notes/src/NoteLinks.tsx`, `components/notes/src/NotesView.tsx`, `components/mcp-source/src/McpSource.tsx`, `packages/ui/src/shell/TicketSheet.tsx`, `packages/ui/src/shell/TicketDetail.tsx`, `packages/ui/src/shell/Breadcrumb.tsx`, `packages/ui/src/pages/TicketTab.tsx`, `packages/ui/src/tabs/tab-title.ts`, `packages/ui/src/mine/MyTicketRow.tsx`, `packages/ui/src/palette/palette-items.ts`, `packages/ui/src/palette/agent-items.ts`, `packages/ui/src/agents/AssignDialog.tsx`, `packages/ui/src/code/PrCard.tsx`, `packages/ui/src/dialogs/NewTicketDialog.tsx`, `packages/ui/src/i18n/fr.ts`
+- Modify (fixtures de test seulement, attentes inchangées) : chaque fixture `ProjectSnapshot` / `TicketView` / `Ticket` signalée par `bun run typecheck`. Vérifié en T0, fixtures `ProjectSnapshot` écrites à la main : `packages/ui/src/dialogs/dialogs.test.tsx`, `packages/ui/src/shell/shell.test.tsx`, `packages/ui/src/shell/screens.test.tsx`, `packages/ui/src/shell/sheet/sheet-integrations.test.tsx`, `packages/ui/src/state/use-projects.test.tsx`, `packages/ui/src/state/use-snapshots.test.tsx`, `packages/ui/src/tabs/TabBar.test.tsx`, `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/code/agent-slots.test.tsx`, `packages/ui/src/palette/palette.test.tsx`, `packages/ui/src/agents/fixtures.ts`, `packages/core/src/project.test.ts`, `packages/daemon/src/agents/orchestrator.test.ts` ; fixtures `TicketView` : `components/kanban/src/filter.test.ts`, `components/tickets/src/build-tree.test.ts` (et celles que signale le typecheck). Le SDK simulé (`packages/sdk/src/mock.ts`) passe par `readProject` et n'a rien à changer.
 
 **Interfaces:**
 - Consumes : `KeyAllocator`, `ProjectSyncInfo`, `MemberInfo` de `@kibo/schema` (`sharing.ts`, T1).
@@ -3201,6 +3469,14 @@ Pour éviter que chaque composant doive connaître la clé du projet, `TicketVie
   - `TicketView = Ticket & { progress; waitingOn: string[]; keyLabel: string }` (**ajout** aux Contrats partagés) ; `waitingOn` contient des étiquettes.
   - `ProjectSnapshot.nextTicketKey: string | null` ; `ProjectSnapshot.sync: ProjectSyncInfo`.
   - `getKeyAllocator(doc: LoroDoc): KeyAllocator` ; `nextPendingSeq(doc: LoroDoc): number` ; `localSyncInfo(doc: LoroDoc): ProjectSyncInfo` (**ajout**).
+  - `peekTicketKey(doc: LoroDoc): string | null` (était `string`).
+- Vérifié en T0 :
+  - `packages/schema/src/ticket.ts` : `Ticket` porte aussi `externalRefs: ExternalRef[]` (phase 5) ; `TicketKey` et `formatTicketKey(projectKey, seq)` sont dans `ids.ts`.
+  - Doc projet : les tickets sont les nœuds de l'arbre Loro `tickets` ; `node.data` porte `key`, `title`, `statusId`, `blockedReason`, `domainId`, `assignee` (JSON), `externalRefs` (JSON) et `description` (`LoroText` enfant). Le compteur est le registre `meta.ticketSeq` (map `meta`), avancé par `nextTicketSeq(doc)` et lu par `peekTicketKey(doc)` (`packages/core/src/project.ts`).
+  - `createTicket(doc: LoroDoc, input: NewTicket): Ticket` (`packages/core/src/tickets.ts`), aussi appelé par `importExternalTicket` (`external-refs.ts`, sync GitHub) : dans un projet partagé, un ticket importé reçoit lui aussi une clé provisoire.
+  - `readProject(doc): ProjectSnapshot` vit dans `packages/core/src/commands.ts` et renvoie aussi `rules` et `bindings` ; `TicketView` et `ProjectSnapshot` sont dans `packages/schema/src/rpc.ts`.
+  - `walkDepthFirst(tree)` est exporté par `packages/core/src/tree.ts` ; les `TreeID` Loro sont de la forme `<counter>@<peer>`.
+  - Actions dérivées de la clé (spec G §5 point 6) : lancement d'un agent par `Orchestrator.assign(input)` et `Orchestrator.preview(input)` (`packages/daemon/src/agents/orchestrator.ts`), qui copient `ticket.key` dans `RunRecord.ticketKey` (déjà `string | null`) ; nom de branche par `branchFor(ticketKey)` (fonction interne de `packages/daemon/src/agents/workspace-prep.ts`, appelée via `prepareWorkspace` depuis `run-launch.ts`, donc atteinte seulement par un run accepté par `assign`) ; message de commit par `commitDefaults(snapshot, branch, subjects)` (`packages/core/src/commit-message.ts`), qui retrouve le ticket par la clé lue dans le nom de branche : un ticket sans clé n'a pas de branche, rien à garder. « Créer la branche » n'existe pas dans l'UI de v0.6 et « Générer avec Claude » (`CommitPanel.tsx`) est désactivé : aucun garde UI à ajouter ici (l'infobulle S5 est traitée par T30). Les notes mentionnent un ticket par sa clé (`NotesView`, index `note_tickets`) : un ticket sans clé ne peut pas être mentionné, il est simplement absent de la table des clés.
 
 **Note de dépendance.** `KeyAllocator` et `ProjectSyncInfo` viennent de T1 (`sharing.ts`) : T6 ne dépend pas de T4.
 
@@ -3222,6 +3498,7 @@ const base = {
   domainId: null,
   assignee: null,
   parentId: null,
+  externalRefs: [],
 };
 
 describe("ticket key", () => {
@@ -3253,9 +3530,10 @@ Expected: FAIL (`ticketKeyLabel` n'est pas exporté, `key: null` refusé).
 
 - [ ] **Step 3: Rendre la clé nullable**
 
-`packages/schema/src/ticket.ts` :
+`packages/schema/src/ticket.ts` (seuls `key`, `pendingSeq`, la troisième règle du `superRefine` et `ticketKeyLabel` changent) :
 ```ts
 import { z } from "zod";
+import { ExternalRef } from "./external-ref";
 import { NodeId, TicketKey } from "./ids";
 import { StatusId } from "./status";
 
@@ -3274,6 +3552,7 @@ export const Ticket = z
     domainId: z.string().nullable(),
     assignee: Assignee.nullable(),
     parentId: NodeId.nullable(),
+    externalRefs: z.array(ExternalRef),
   })
   .superRefine((t, ctx) => {
     const hasReason = t.blockedReason !== null && t.blockedReason.trim().length > 0;
@@ -3294,7 +3573,7 @@ export function ticketKeyLabel(t: { key: string | null }, projectKey: string): s
 }
 ```
 
-Dans `packages/schema/src/rpc.ts`, remplacer les deux types :
+Dans `packages/schema/src/rpc.ts`, remplacer les deux types (les champs `rules` et `bindings` de la phase 5 restent) :
 ```ts
 export type TicketView = Ticket & {
   progress: { done: number; total: number };
@@ -3308,11 +3587,13 @@ export type ProjectSnapshot = {
   tickets: TicketView[];
   links: Link[];
   instances: Instance[];
+  rules: Rule[];
+  bindings: Binding[];
   nextTicketKey: string | null;
   sync: ProjectSyncInfo;
 };
 ```
-et ajouter `ProjectSyncInfo` à l'import depuis `./sharing`.
+et ajouter `import type { ProjectSyncInfo } from "./sharing";`.
 
 - [ ] **Step 4: Relancer le test de schéma**
 
@@ -3326,6 +3607,7 @@ Expected: PASS (4 tests).
 import { describe, expect, test } from "bun:test";
 import { LoroDoc } from "loro-crdt";
 import {
+  addLink,
   createProjectDoc,
   createTicket,
   getKeyAllocator,
@@ -3418,11 +3700,18 @@ describe("server allocator", () => {
   test("a dependency on a pending ticket is shown with its label", () => {
     const doc = peerCopy(serverAllocated(), 41);
     const [existing] = listTickets(doc);
+    if (!existing) throw new Error("fixture has no ticket");
     const pending = createTicket(doc, { title: "Nouveau" });
-    doc.getMap("links").set("l1", { id: "l1", from: pending.id, to: existing?.id ?? "", type: "blocks" });
-    doc.commit();
-    const view = readProject(doc).tickets.find((t) => t.id === existing?.id);
+    addLink(doc, { from: pending.id, to: existing.id, type: "blocks" });
+    const view = readProject(doc).tickets.find((t) => t.id === existing.id);
     expect(view?.waitingOn).toEqual(["KIB-…"]);
+  });
+
+  test("an imported external ticket also waits for its key", () => {
+    const doc = peerCopy(serverAllocated(), 51);
+    const imported = createTicket(doc, { title: "Issue #12" });
+    expect(imported.key).toBeNull();
+    expect(imported.externalRefs).toEqual([]);
   });
 });
 ```
@@ -3461,7 +3750,7 @@ export function localSyncInfo(doc: LoroDoc): ProjectSyncInfo {
 }
 ```
 
-Dans `packages/core/src/tickets.ts`, remplacer `readTicket` et `createTicket` :
+Dans `packages/core/src/tickets.ts`, `readTicket` lit la clé nullable et `pendingSeq`, `createTicket` choisit selon l'allocateur (le reste du fichier ne change pas) :
 ```ts
 function readTicket(n: LoroTreeNode): Ticket {
   const d = n.data;
@@ -3477,6 +3766,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     domainId: (d.get("domainId") as string | null | undefined) ?? null,
     assignee: (d.get("assignee") as Assignee | null | undefined) ?? null,
     parentId: n.parent()?.id ?? null,
+    externalRefs: readExternalRefs(n),
   };
 }
 
@@ -3497,6 +3787,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("blockedReason", null);
   node.data.set("domainId", input.domainId ?? null);
   node.data.set("assignee", input.assignee ?? null);
+  node.data.set("externalRefs", []);
   writeDescription(node, input.description ?? "");
   doc.commit();
   return readTicket(node);
@@ -3543,6 +3834,8 @@ export function readProject(doc: LoroDoc): ProjectSnapshot {
     })),
     links: listLinks(doc),
     instances: listInstances(doc),
+    rules: readRules(doc),
+    bindings: listBindings(doc),
     nextTicketKey: peekTicketKey(doc),
     sync: localSyncInfo(doc),
   };
@@ -3550,14 +3843,16 @@ export function readProject(doc: LoroDoc): ProjectSnapshot {
 ```
 et `export * from "./keys";` dans `packages/core/src/index.ts`.
 
+Dans `packages/core/src/commit-message.ts` et `packages/core/src/context.ts`, les textes affichent une étiquette : `MessageTicket = { key: string | null; title: string }` et chaque `${ticket.key}` / `${c.key}` / `${b.key}` des textes devient `${ticket.key ?? "…"}` pour `commitSubject` (inatteignable en pratique : `commitDefaults` ne trouve un ticket que par une clé réelle) et `keyLabel` pour `context.ts` (qui reçoit des `TicketView`, vérifier le type réel de `buildRunContext` et passer par `ticketKeyLabel(t, meta.key)` s'il reçoit des `Ticket`).
+
 - [ ] **Step 8: Relancer les tests de `core`**
 
 Run: `bun test packages/core`
-Expected: PASS, y compris `tickets.test.ts`, `project.test.ts` et `commands.test.ts` inchangés.
+Expected: PASS, y compris `tickets.test.ts`, `project.test.ts`, `commands.test.ts`, `commit-message.test.ts` et `context.test.ts` sans attente modifiée (seules les fixtures gagnent `pendingSeq`, `keyLabel`, `sync`).
 
 - [ ] **Step 9: Écrire le test UI qui échoue (sous-titre de Nouveau ticket)**
 
-Ajouter à `packages/ui/src/dialogs/dialogs.test.tsx`, après le test existant qui vérifie `KIB-30` :
+Ajouter à `packages/ui/src/dialogs/dialogs.test.tsx`, après le test existant « NewTicketDialog announces the key the ticket will get » (qui vérifie « Kibo · la clé KIB-30 sera attribuée à la création. ») :
 ```ts
 test("NewTicketDialog explains that the key comes with the next sync", () => {
   render(
@@ -3566,14 +3861,14 @@ test("NewTicketDialog explains that the key comes with the next sync", () => {
   expect(screen.getByText("Kibo · la clé sera attribuée à la prochaine synchronisation.")).toBeTruthy();
 });
 ```
-Dans le même fichier, compléter la fixture `project` avec `sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] }` ; faire de même dans `shell.test.tsx`, `screens.test.tsx` et `use-projects.test.tsx`.
+Dans le même fichier, compléter la fixture `project` avec `sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] }` ; faire de même dans chaque fixture `ProjectSnapshot` de la liste **Files**.
 
 Run: `bun test packages/ui/src/dialogs/dialogs.test.tsx`
 Expected: FAIL (`fr.newTicket.keyPending` n'existe pas).
 
 - [ ] **Step 10: Propager `keyLabel` et le sous-titre**
 
-`packages/ui/src/i18n/fr.ts`, dans `newTicket` :
+`packages/ui/src/i18n/fr.ts`, dans `newTicket` (à côté de `subtitle: (project, key) => …`) :
 ```ts
     keyPending: (project: string) => `${project} · la clé sera attribuée à la prochaine synchronisation.`,
 ```
@@ -3587,59 +3882,65 @@ Expected: FAIL (`fr.newTicket.keyPending` n'existe pas).
 ```
 et `{parent.key}` devient `{parent.keyLabel}`.
 
-`packages/ui/src/shell/TicketSheet.tsx` : `{t.key}` ⇒ `{t.keyLabel}` et `{c.key}` ⇒ `{c.keyLabel}`.
-
-`components/kanban/src/KanbanCard.tsx` : `{t.key}` ⇒ `{t.keyLabel}` et `fr.actions(t.key)` ⇒ `fr.actions(t.keyLabel)`. `components/kanban/src/Kanban.tsx` : `fr.moveFailed(t.key)` ⇒ `fr.moveFailed(t.keyLabel)` et `ticketKey={blocking.key}` ⇒ `ticketKey={blocking.keyLabel}`.
-
-`components/tickets/src/TicketsTree.tsx` : les quatre usages `t.key` (`fr.collapse`, `fr.expand`, l'affichage, `fr.newSubTicket`) ⇒ `t.keyLabel`.
+Remplacer chaque affichage de `t.key` d'un `TicketView` par `t.keyLabel` (vérifié en T0 par `grep -rn "\.key\b"`) :
+- `packages/ui/src/shell/TicketSheet.tsx` (`SheetDescription`), `packages/ui/src/shell/TicketDetail.tsx` (sous-tickets ; `origin: t.key` de `onOpenFile` ⇒ `t.keyLabel`), `packages/ui/src/shell/Breadcrumb.tsx`, `packages/ui/src/pages/TicketTab.tsx`, `packages/ui/src/tabs/tab-title.ts`, `packages/ui/src/mine/MyTicketRow.tsx`, `packages/ui/src/code/PrCard.tsx`, `packages/ui/src/agents/AssignDialog.tsx` (titre, liste ; `ticket.key.toLowerCase()` de la branche de worktree ⇒ `ticket.keyLabel.toLowerCase()`, le dialogue ne s'ouvre plus pour un ticket sans clé en T30) ;
+- `packages/ui/src/palette/palette-items.ts` (libellés, mots-clés, `ticket.key` de l'item ⇒ étiquette) et `packages/ui/src/palette/agent-items.ts` ;
+- `components/kanban/src/KanbanCard.tsx` (`{t.key}`, `fr.actions(t.key)`), `components/kanban/src/Kanban.tsx` (`fr.moveFailed(t.key)`, `ticketKey={blocking.key}` ; `ciOf` compare `r.ticketKey === t.key` : garder `t.key`, un ticket sans clé n'a pas de CI) ;
+- `components/tickets/src/TicketsTree.tsx` (les quatre usages : `fr.collapse`, `fr.expand`, l'affichage, `fr.newSubTicket`) ;
+- `components/graph/src/GraphWidget.tsx`, `components/graph/src/GraphCanvas.tsx`, `components/graph/src/critical-path.ts` ;
+- `components/notes/src/NoteLinks.tsx` (affichage ⇒ `keyLabel`, `key={t.id}` pour React) ; `components/notes/src/NotesView.tsx` (table des mentions par clé : ignorer les tickets `key === null`) ;
+- `components/mcp-source/src/McpSource.tsx` (recherche par clé : `t.key` inchangé, comparaison à une clé réelle).
 
 Fixtures : dans `components/kanban/src/filter.test.ts` et `components/tickets/src/build-tree.test.ts`, la fabrique `t(...)` ajoute `pendingSeq: null` et `keyLabel: <même valeur que key>` ; les attentes ne changent pas.
 
 - [ ] **Step 11: Garde des actions dérivées de la clé côté démon**
 
-Lancer `bun run typecheck` et corriger chaque usage restant de `ticket.key` selon la règle :
-- **affichage** (UI, composants, textes, `brief.md`) ⇒ `keyLabel` ou `ticketKeyLabel(t, projectKey)` ;
-- **action dérivée de la clé** côté démon (nom de branche de run, message de commit pré-rempli, lancement d'un agent, mention de clé dans une note) ⇒ garde en tête de la fonction :
+Ajouter à `packages/daemon/src/agents/orchestrator.test.ts`, à côté des tests existants de `assign` (réutiliser la fabrique d'orchestrateur et le `data` de test du fichier ; le `ticketContext` renvoie un ticket dont `key` vaut `null` et `pendingSeq` `1`) :
+```ts
+test("refuses to assign or preview a ticket that has no key yet", () => {
+  const input = { projectId: "p1", ticketId: pendingTicket.id, profileId: "opus-dev" };
+  expect(() => orchestrator.preview(input)).toThrow("INVALID_INPUT");
+  expect(() => orchestrator.assign({ ...input, brief: "" })).toThrow("INVALID_INPUT");
+  expect(orchestrator.state().runs).toEqual([]);
+});
+```
+
+Run: `bun test packages/daemon/src/agents/orchestrator.test.ts`
+Expected: FAIL (le run est créé).
+
+Dans `packages/daemon/src/agents/orchestrator.ts`, en tête de `assign` et de `preview`, après la lecture du contexte :
 ```ts
 if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
 ```
-Hypothèse v0.6 (vérifiée en T0) : ces actions passent par `startRun(ticket)` (phase 2), `defaultCommitMessage(ticket)` et `branchNameFor(ticket)` (phase 3) ; la tâche 0 donne les noms réels. Pour chacune, ajouter à côté de ses tests existants un test du modèle suivant (adapter l'appel) :
-```ts
-test("refuses a ticket that has no key yet", async () => {
-  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
-  doc.getMap("meta").set("keyAllocator", "server");
-  doc.commit();
-  const ticket = createTicket(doc, { title: "Sans clé" });
-  expect(() => branchNameFor(ticket)).toThrow("INVALID_INPUT");
-});
-```
-(`await expect(startRun(...)).rejects.toThrow("INVALID_INPUT")` pour une fonction asynchrone).
+(`ctx.ticket` dans `preview`). `prepareWorkspace` (`run-launch.ts`) reçoit alors toujours une clé ; comme `RunRecord.ticketKey` est `string | null`, passer `ctx.ticket.key ?? ""` n'est pas acceptable : ajouter dans `prepareTicketRun` le même garde avant `prepareWorkspace` (un run créé avant un changement d'allocateur, cas théorique).
 
-Run: `bun run typecheck`
-Expected: aucune erreur.
+Journaux et notifications du démon (affichage) : `packages/daemon/src/ci/poller.ts` (`pr.ticket.key`), `packages/daemon/src/sync/apply.ts` (`ticketKey` du conflit), `packages/daemon/src/sync/push.ts` (deux journaux) ⇒ `ticket.key ?? ticket.id` (ces chemins ne voient que des tickets liés à une PR ou à une issue, en pratique déjà clés).
+
+Run: `bun test packages/daemon/src/agents/orchestrator.test.ts && bun run typecheck`
+Expected: PASS, aucune erreur de typage.
 
 - [ ] **Step 12: Suite complète**
 
-Run: `bun test packages components && bun run check && bun run typecheck`
-Expected: PASS, aucune attente de test existante modifiée (seules les fixtures `TicketView` et `ProjectSnapshot` gagnent `pendingSeq`, `keyLabel` et `sync`).
+Run: `bun test packages components && bun run check && bun run typecheck && bun run budget`
+Expected: PASS, aucune attente de test existante modifiée (seules les fixtures `Ticket`, `TicketView` et `ProjectSnapshot` gagnent `pendingSeq`, `keyLabel` et `sync`) ; budget du chargement initial ≤ 230 kB.
 
 - [ ] **Step 13: Commit**
 
 ```bash
 git add packages/schema/src/ticket.ts packages/schema/src/rpc.ts packages/schema/src/ticket-key.test.ts \
   packages/core/src/keys.ts packages/core/src/keys.test.ts packages/core/src/tickets.ts packages/core/src/project.ts \
-  packages/core/src/links.ts packages/core/src/commands.ts packages/core/src/index.ts \
-  components/kanban/src/KanbanCard.tsx components/kanban/src/Kanban.tsx components/kanban/src/filter.test.ts \
-  components/tickets/src/TicketsTree.tsx components/tickets/src/build-tree.test.ts \
-  packages/ui/src/shell/TicketSheet.tsx packages/ui/src/dialogs/NewTicketDialog.tsx packages/ui/src/i18n/fr.ts \
-  packages/ui/src/dialogs/dialogs.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/shell/screens.test.tsx \
-  packages/ui/src/state/use-projects.test.tsx
+  packages/core/src/links.ts packages/core/src/commands.ts packages/core/src/commit-message.ts \
+  packages/core/src/context.ts packages/core/src/index.ts \
+  packages/daemon/src/agents/orchestrator.ts packages/daemon/src/agents/orchestrator.test.ts \
+  packages/daemon/src/agents/run-launch.ts packages/daemon/src/ci/poller.ts \
+  packages/daemon/src/sync/apply.ts packages/daemon/src/sync/push.ts
 git commit -m "feat(core): clé provisoire des tickets"
+git add <chaque fichier components/… et packages/ui/… de la liste Files, un par un>
+git commit -m "feat(ui): étiquette de clé provisoire"
 ```
-Ajouter à `git add` chaque fichier des phases 2 à 6 modifié à l'étape 11 (liste donnée par `git status`, fichier par fichier).
+Le second `git add` nomme les fichiers un par un (liste **Files**, recoupée avec `git status`) ; aucun dossier entier.
 
 ---
-
 ### Task 7: Attribution serveur et validation des mises à jour
 
 Fonctions pures de `core` que seul le serveur appelle (spec G §5, points 2, 4 et 5) : attribuer les clés des tickets en attente dans un ordre déterministe, refuser toute mise à jour cliente qui touche un champ réservé au serveur, et préparer un doc local à son premier partage (spec G §3.3). Tâche à risque : relue aussi par `kibo-lead`.
@@ -3656,7 +3957,7 @@ Fonctions pures de `core` que seul le serveur appelle (spec G §5, points 2, 4 e
 - Create: `packages/core/src/server-keys.test.ts`, `packages/core/src/validate-update.test.ts`, `packages/core/src/share-migration.test.ts`
 
 **Interfaces:**
-- Consumes (T6) : `getKeyAllocator(doc)`, `nextPendingSeq(doc)`, `Ticket.key: string | null` ; (v0.1) `createProjectDoc`, `createTicket`, `updateTicket`, `setStatus`, `moveTicket`, `deleteTicket`, `addLink`, `addPage`, `listTickets`, `getTicket`, `walkDepthFirst`, `getNode`.
+- Consumes (T6) : `getKeyAllocator(doc)`, `nextPendingSeq(doc)`, `Ticket.key: string | null` ; (v0.6) `createProjectDoc`, `createTicket`, `updateTicket`, `setStatus`, `moveTicket`, `deleteTicket`, `addLink`, `addPage`, `listTickets`, `getTicket`, `getProjectMeta`, `walkDepthFirst`, `getNode` (`packages/core/src`), `addBinding`, `listBindings` (phase 5), `Domain`, `Binding`, `Assignee` (`@kibo/schema`).
 - Produces (Contrats partagés) :
   - `ticketCreationLamport(doc: LoroDoc, ticketId: string): number`
   - `pendingTicketOrder(doc: LoroDoc): string[]`
@@ -3665,9 +3966,16 @@ Fonctions pures de `core` que seul le serveur appelle (spec G §5, points 2, 4 e
   - `writeMembers(doc: LoroDoc, members: { userId: string; name: string }[]): void`
   - `readMembers(doc: LoroDoc): { userId: string; name: string }[]` (trié par `userId`)
   - `type UpdateVerdict = { ok: true } | { ok: false; reason: string }` ; `validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVerdict`
-  - `type ShareMigrationInput` ; `migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null }`
+  - `type ShareMigrationInput = { localUser: string; userId: string; domains: { domain: Domain; guidelines: { path: string; content: string }[] }[] }` (**changé** par T0 : les guidelines d'un domaine sont des fichiers, pas un champ) ; `migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null }` ; la map `projectDomains` du doc projet reçoit `domainId → { name, color, guidelines: { path, content }[] }` pour les seuls domaines utilisés par un ticket.
 
-Hypothèse v0.6 (vérifiée en T0) : une liaison (spec F §3.2) est stockée comme valeur JSON simple dans la map `bindings` du doc projet (`bindings.set(id, binding)`), pas comme conteneur `LoroMap`. Si c'est un conteneur, `migrateForSharing` écrit `runner` et `createdBy` dans le conteneur au lieu de remplacer la valeur.
+Vérifié en T0 :
+- Liaisons : `Binding = { id, adapter: "github-issues", config: BindingConfig, createdBy, runner }` (`packages/schema/src/integrations.ts`), stockée en **valeur JSON simple** dans la map `bindings` du doc projet (`addBinding`, `listBindings`, `getBinding`, `removeBinding` dans `packages/core/src/bindings.ts`). `createdBy` et `runner` valent le nom d'utilisateur OS (`host.user`, soit `userInfo().username` passé en `user` à `startDaemon`) ; le démon n'exécute que les liaisons `runner === host.user` (`packages/daemon/src/sync/engine.ts`, `runnable()`). `migrateForSharing` remplace donc la valeur JSON.
+- `meta.folder` vit dans la map `meta` du doc projet (écrit par `createProjectDoc`, lu par `getProjectMeta` avec `?? null`) **et** dans la copie `ProjectMeta` de la liste `projects` du doc workspace (`packages/core/src/workspace.ts`) ; seule la première est synchronisée, `migrateForSharing` la retire. La copie workspace et le réglage local (`project_settings`, `createProjectSettings(db)` de `packages/daemon/src/notes/settings.ts`) sont l'affaire de T23 ; `run-launch.ts` lit `ctx.project.meta.folder` pour les worktrees des agents, T23 doit donc réinjecter le dossier local dans `meta` renvoyé par `getProject` et par `ticketContext`.
+- Domaines : `Domain = { id, name, color }` (`packages/schema/src/agent.ts`), dans la map `domains` du **doc workspace** (`listDomains(ws)`, `packages/core/src/agent-config.ts`). Les guidelines d'un domaine ne sont pas un champ du domaine : ce sont des `Guideline = { id, owner: { scope: "domain", domainId }, path, content }` de la map `guidelines` du workspace (`listGuidelines(ws)`). La migration reçoit donc, pour chaque domaine, ses guidelines `{ path, content }` et ne copie que les domaines référencés par un `domainId` de ticket (spec G §3.3 « domaines utilisés par les tickets du projet »).
+- Assignés : `Assignee = { kind: "human" | "agent", ref }` ; un humain est référencé par le nom d'utilisateur OS (`opts.user`).
+- Autres conteneurs du doc projet, hors champs réservés et donc hors du contrôle de `validateProjectUpdate` : `workflow` (map, `statuses` en JSON), `pages` (arbre), `links`, `instances`, `bindings` (maps de valeurs JSON), `instanceData` (map de **conteneurs** `LoroMap` par instance), `rules` (map, clé `list`), `guidelines` (map de guidelines de portée projet). Un éditeur peut les modifier librement (spec G §6).
+- API Loro 1.16.3 présentes : `idStrToId`, `LoroDoc.getChangeAt`, `LoroDoc.fork`, `LoroTree.getNodes({ withDeleted })`, `commit({ origin })`, `peerIdStr`.
+- `addPage(doc, { title, kind, parentId? })` (`packages/core/src/pages.ts`) ; `addLink(doc, { from, to, type })`, `setStatus(doc, id, statusId, reason?)`, `moveTicket(doc, id, parentId, index?)`, `deleteTicket(doc, id)`.
 
 - [ ] **Step 1: Écrire les tests d'attribution qui échouent**
 
@@ -4108,22 +4416,49 @@ git commit -m "feat(core): attribution serveur des clés"
 `packages/core/src/share-migration.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
-import { createProjectDoc, createTicket, getProjectMeta, getTicket, migrateForSharing } from "./index";
+import type { Binding } from "@kibo/schema";
+import {
+  addBinding,
+  createProjectDoc,
+  createTicket,
+  getProjectMeta,
+  getTicket,
+  listBindings,
+  migrateForSharing,
+  type ShareMigrationInput,
+} from "./index";
 
-const input = {
+const input: ShareMigrationInput = {
   localUser: "adam",
   userId: "u-adam",
-  domains: [{ id: "core", name: "Core", color: "#0EA5E9", guidelines: "core.md" }],
+  domains: [
+    {
+      domain: { id: "core", name: "Core", color: "#0EA5E9" },
+      guidelines: [{ path: "core.md", content: "# Core\nTests d'abord." }],
+    },
+    { domain: { id: "design", name: "Design", color: "#A855F7" }, guidelines: [] },
+  ],
 };
+
+const binding = (id: string, user: string): Binding => ({
+  id,
+  adapter: "github-issues",
+  config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+  createdBy: user,
+  runner: user,
+});
 
 function localProject() {
   const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: "/Users/adam/kibo", color: "#F97316" });
-  const mine = createTicket(doc, { title: "Mien", assignee: { kind: "human", ref: "adam" } });
+  const mine = createTicket(doc, {
+    title: "Mien",
+    assignee: { kind: "human", ref: "adam" },
+    domainId: "core",
+  });
   const lea = createTicket(doc, { title: "Léa", assignee: { kind: "human", ref: "lea" } });
   const agent = createTicket(doc, { title: "Agent", assignee: { kind: "agent", ref: "adam" } });
-  doc.getMap("bindings").set("b1", { id: "b1", adapter: "github-issues", createdBy: "adam", runner: "adam" });
-  doc.getMap("bindings").set("b2", { id: "b2", adapter: "github-issues", createdBy: "lea", runner: "lea" });
-  doc.commit();
+  addBinding(doc, binding("b1", "adam"));
+  addBinding(doc, binding("b2", "lea"));
   return { doc, mine, lea, agent };
 }
 
@@ -4142,21 +4477,21 @@ test("rewrites only the local user's human assignments", () => {
   expect(getTicket(doc, agent.id).assignee).toEqual({ kind: "agent", ref: "adam" });
 });
 
-test("copies the domains into the project", () => {
+test("copies only the domains used by a ticket, with their guidelines", () => {
   const { doc } = localProject();
   migrateForSharing(doc, input);
   expect(doc.getMap("projectDomains").toJSON()).toEqual({
-    core: { name: "Core", color: "#0EA5E9", guidelines: "core.md" },
+    core: { name: "Core", color: "#0EA5E9", guidelines: [{ path: "core.md", content: "# Core\nTests d'abord." }] },
   });
 });
 
 test("moves the local user's bindings to the account id", () => {
   const { doc } = localProject();
   migrateForSharing(doc, input);
-  expect(doc.getMap("bindings").toJSON()).toEqual({
-    b1: { id: "b1", adapter: "github-issues", createdBy: "u-adam", runner: "u-adam" },
-    b2: { id: "b2", adapter: "github-issues", createdBy: "lea", runner: "lea" },
-  });
+  expect(listBindings(doc)).toEqual([
+    { ...binding("b1", "adam"), createdBy: "u-adam", runner: "u-adam" },
+    binding("b2", "lea"),
+  ]);
 });
 ```
 
@@ -4169,15 +4504,25 @@ Expected: FAIL (`migrateForSharing` introuvable).
 
 `packages/core/src/share-migration.ts` :
 ```ts
-import type { Assignee } from "@kibo/schema";
+import type { Assignee, Domain } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { listBindings } from "./bindings";
 import { walkDepthFirst } from "./tree";
 
 export type ShareMigrationInput = {
   localUser: string;
   userId: string;
-  domains: { id: string; name: string; color: string; guidelines: string }[];
+  domains: { domain: Domain; guidelines: { path: string; content: string }[] }[];
 };
+
+function usedDomainIds(doc: LoroDoc): Set<string> {
+  const ids = new Set<string>();
+  for (const node of walkDepthFirst(doc.getTree("tickets"))) {
+    const domainId = node.data.get("domainId");
+    if (typeof domainId === "string") ids.add(domainId);
+  }
+  return ids;
+}
 
 export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null } {
   const meta = doc.getMap("meta");
@@ -4189,14 +4534,18 @@ export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { f
       node.data.set("assignee", { kind: "human", ref: input.userId });
     }
   }
+  const used = usedDomainIds(doc);
   const domains = doc.getMap("projectDomains");
-  for (const d of input.domains) domains.set(d.id, { name: d.name, color: d.color, guidelines: d.guidelines });
+  for (const { domain, guidelines } of input.domains) {
+    if (used.has(domain.id)) domains.set(domain.id, { name: domain.name, color: domain.color, guidelines });
+  }
   const bindings = doc.getMap("bindings");
-  for (const [id, binding] of Object.entries(bindings.toJSON() as Record<string, Record<string, unknown>>)) {
-    const runner = binding.runner === input.localUser ? input.userId : binding.runner;
-    const createdBy = binding.createdBy === input.localUser ? input.userId : binding.createdBy;
+  const mine = (user: string) => (user === input.localUser ? input.userId : user);
+  for (const binding of listBindings(doc)) {
+    const runner = mine(binding.runner);
+    const createdBy = mine(binding.createdBy);
     if (runner !== binding.runner || createdBy !== binding.createdBy) {
-      bindings.set(id, { ...binding, runner, createdBy });
+      bindings.set(binding.id, { ...binding, runner, createdBy });
     }
   }
   doc.commit();
@@ -4219,720 +4568,260 @@ git commit -m "feat(core): migrations du premier partage"
 
 ---
 
-### Task 8: Isolation OS : détection et arguments
+### Task 8: Diagnostic de l'isolation OS
 
-Vague 1, tâche à risque (relue aussi par `kibo-lead`). Spec H §8.1, §8.2 ; décisions 14 et 15. Cette tâche ne touche pas encore au `ProcessHost` (tâche 12) : elle livre des fonctions pures (arguments `bwrap`, profil SBPL) et une détection à dépendances injectées, plus l'installation de bubblewrap en CI Linux.
+Vague 0, tâche à risque (relue aussi par `kibo-lead`). Spec H §8.1, §8.2 ; spec B §4.4 (décision 24 du plan de phase 4).
+
+Vérifié en T0 : l'isolation OS du backend sandboxé et des tests de validation est **déjà livrée par la phase 4** dans `packages/devkit/src/os-sandbox.ts` : `createOsSandbox`, `osSandbox()` (singleton), `macosProfile(policy)`, `bwrapArgv(bwrap, policy, argv)`, `SandboxPolicy = { read: string[]; write: string[]; exec: string[]; cwd: string }`, `OsSandbox = { ready(): Promise<void>; wrap(argv, policy): string[] }`. `ready()` exécute une **sonde réelle** (`bun --version` dans le bac à sable) et lève `KiboError("SANDBOX_UNAVAILABLE", …)` en cas d'échec ; `wrap` lève `SANDBOX_UNAVAILABLE` sans bac à sable. Sous Linux, `bwrapArgv` ne monte que `/usr/lib`, `/usr/lib64`, `/lib`, `/lib64`, les fuseaux horaires et la politique (jamais `/usr` entier, testé par `os-sandbox.test.ts`) ; sous macOS le profil SBPL refuse tout exécutable hors `policy.exec`. Le canal démon ↔ runtime passe déjà par deux tubes JSON par lignes (descripteurs 3 et 4, `components/line-channel.ts`, spec B décision 25), et la CI installe déjà `bubblewrap` et lève la restriction AppArmor (`.github/workflows/ci.yml`, jobs `test` et `e2e`). Le test réel (`os-sandbox.test.ts`, « on this machine the sandbox blocks… ») n'est jamais sauté.
+
+Il ne manque que le **diagnostic** lisible par l'UI : quel mécanisme, pourquoi il est indisponible, et quelle commande propose l'écran (Paramètres › Sécurité, écran 19, bannière M7). Cette tâche l'ajoute à `OsSandbox`, sans rien changer à `wrap` ni à `ready` pour les appelants existants (`process-host.ts`, `validate-tests.ts`).
+
+Les anciennes décisions 14 (bubblewrap à liaison minimale) et 23 (canal par lignes) sont **sans objet** : livrées en phase 4. Le filtre seccomp reste reporté après v1.0 (spec H §8.1, « à valider »).
 
 **Files:**
-- Create: `packages/daemon/src/sandbox/detect.ts`, `packages/daemon/src/sandbox/bwrap.ts`, `packages/daemon/src/sandbox/macos.sb.ts`, `packages/daemon/src/sandbox/os-sandbox.ts`, `packages/daemon/src/sandbox/types.ts`
-- Test: `packages/daemon/src/sandbox/bwrap.test.ts`, `packages/daemon/src/sandbox/macos.sb.test.ts`, `packages/daemon/src/sandbox/detect.test.ts`, `packages/daemon/src/sandbox/os-sandbox.test.ts`, `packages/daemon/src/sandbox/real-sandbox.test.ts`
-- Modify: `.github/workflows/ci.yml` (jobs `test` et `e2e`)
+- Modify: `packages/devkit/src/os-sandbox.ts` (diagnostic, dépendances injectables, messages de refus précis)
+- Test: `packages/devkit/src/os-sandbox.test.ts` (cas ajoutés, cas existants inchangés)
 
 **Interfaces:**
-- Consumes: `KiboError` et le code `SANDBOX_UNAVAILABLE` (T1).
-- Produces (Contrats partagés, à l'identique) :
+- Consumes: `KiboError`, code `SANDBOX_UNAVAILABLE` (déjà présents, `packages/schema/src/errors.ts`) ; `bunCommand()` (`packages/devkit/src/bun-command.ts`).
+- Produces (`@kibo/devkit`, réexporté par `packages/devkit/src/index.ts` qui fait déjà `export * from "./os-sandbox"`) :
   ```ts
-  export type SandboxPolicy = { runtime: string; args: string[]; readOnly: { host: string; guest: string }[]; tmpDir: string; env: Record<string, string> };
-  export type DetectDeps = { platform: NodeJS.Platform; which(name: string): string | null; run(argv: string[]): Promise<{ code: number; stdout: string; stderr: string }> };
-  export type SandboxProbe = { kind: "bwrap" | "sandbox-exec" | null; available: boolean; reason: string | null; fix: string | null; bwrapPath: string | null; libs: string[] };
-  export function detectSandbox(deps: DetectDeps, runtime: string): Promise<SandboxProbe>;
-  export function bwrapArgv(bwrapPath: string, policy: SandboxPolicy, libs: string[]): string[];
-  export function macosProfile(policy: SandboxPolicy): string;
-  export function sandboxExecArgv(policy: SandboxPolicy): string[];
-  export function wrapCommand(probe: SandboxProbe, policy: SandboxPolicy, allowUnsandboxed: boolean): { argv: string[]; env: Record<string, string>; isolated: boolean };
+  export type SandboxKind = "bwrap" | "sandbox-exec";
+  export type SandboxDiagnosis = { kind: SandboxKind | null; available: boolean; reason: string | null; fix: string | null };
+  export const BWRAP_FIX_INSTALL = "sudo apt install bubblewrap";
+  export const BWRAP_FIX_USERNS = "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0";
+  export type SandboxProbeRun = (argv: string[], opts: { cwd: string; env: Record<string, string> }) => Promise<{ code: number; stderr: string }>;
+  export type OsSandbox = { ready(): Promise<void>; diagnose(): Promise<SandboxDiagnosis>; wrap(argv: string[], policy: SandboxPolicy): string[] };
+  export function createOsSandbox(opts?: {
+    platform?: NodeJS.Platform;
+    which?: (bin: string) => string | null;
+    exists?: (path: string) => boolean;
+    run?: SandboxProbeRun;
+  }): OsSandbox;
   ```
-- Produces (nouveau, signalé) : `export function parseLdd(stdout: string): string[]` (`detect.ts`), `export function realDetectDeps(): DetectDeps` (`detect.ts`), `export const SANDBOX_EXEC = "/usr/bin/sandbox-exec"`, `export const BWRAP_FIX_INSTALL`, `export const BWRAP_FIX_USERNS` (`detect.ts`), `export const EXTRA_RULES: { rule: string; reason: string }[]` (`macos.sb.ts`).
+- `SandboxStatus` (T4, `packages/schema/src/security.ts`) vaut `SandboxDiagnosis & { allowUnsandboxed: boolean }` : même forme, champ par champ.
+- Aucun contrat existant ne change : `ready()` et `wrap()` gardent leur comportement ; seuls les messages de `SANDBOX_UNAVAILABLE` deviennent précis (`bubblewrap (bwrap) is not installed`, `sandbox-exec is missing`, `no OS sandbox on <platform>`). Le texte d'aide de `FR_DEVKIT.sandboxUnavailable` (validation) est inchangé.
 
-Choix : dans le bac à sable Linux, le runtime est monté en `/kibo/runtime` et les dossiers `readOnly` à leur `guest` ; les bibliothèques de `ldd` sont montées **à leur propre chemin** (le chargeur dynamique les cherche là), rien d'autre de `/usr` (décision 14). Sous macOS, `sandbox-exec` ne remappe pas les chemins : `guest` est ignoré, on autorise `host`.
+- [ ] **Step 1: Écrire les tests du diagnostic**
 
-- [ ] **Step 1: Écrire les types et le test des arguments bubblewrap**
-
-`packages/daemon/src/sandbox/types.ts` :
+Ajouter à la fin de `packages/devkit/src/os-sandbox.test.ts` (les imports existants s'enrichissent de `BWRAP_FIX_INSTALL`, `BWRAP_FIX_USERNS`, `type SandboxProbeRun`) :
 ```ts
-export type SandboxPolicy = {
-  runtime: string;
-  args: string[];
-  readOnly: { host: string; guest: string }[];
-  tmpDir: string;
-  env: Record<string, string>;
+const ok: SandboxProbeRun = async () => ({ code: 0, stderr: "" });
+const failing =
+  (stderr: string): SandboxProbeRun =>
+  async () => ({ code: 1, stderr });
+const never: SandboxProbeRun = async () => {
+  throw new Error("the probe must not run");
 };
 
-export type DetectDeps = {
-  platform: NodeJS.Platform;
-  which(name: string): string | null;
-  run(argv: string[]): Promise<{ code: number; stdout: string; stderr: string }>;
-};
-
-export type SandboxProbe = {
-  kind: "bwrap" | "sandbox-exec" | null;
-  available: boolean;
-  reason: string | null;
-  fix: string | null;
-  bwrapPath: string | null;
-  libs: string[];
-};
-```
-
-`packages/daemon/src/sandbox/bwrap.test.ts` :
-```ts
-import { describe, expect, test } from "bun:test";
-import { bwrapArgv } from "./bwrap";
-import type { SandboxPolicy } from "./types";
-
-const policy: SandboxPolicy = {
-  runtime: "/opt/kibo/kibo-daemon",
-  args: ["component-runtime"],
-  readOnly: [{ host: "/home/adam/.kibo/components/store/burndown/0.3.0/3f9a/build", guest: "/kibo/component" }],
-  tmpDir: "/tmp/kibo-rt-1",
-  env: { KIBO_COMPONENT: "burndown@0.3.0", NODE_CHANNEL_FD: "3" },
-};
-const libs = ["/lib/x86_64-linux-gnu/libc.so.6", "/lib64/ld-linux-x86-64.so.2"];
-
-describe("bwrapArgv", () => {
-  test("builds the exact minimal-binding command line", () => {
-    expect(bwrapArgv("/usr/bin/bwrap", policy, libs)).toEqual([
-      "/usr/bin/bwrap",
-      "--unshare-all",
-      "--die-with-parent",
-      "--new-session",
-      "--cap-drop",
-      "ALL",
-      "--ro-bind",
-      "/opt/kibo/kibo-daemon",
-      "/kibo/runtime",
-      "--ro-bind",
-      "/home/adam/.kibo/components/store/burndown/0.3.0/3f9a/build",
-      "/kibo/component",
-      "--ro-bind",
-      "/lib/x86_64-linux-gnu/libc.so.6",
-      "/lib/x86_64-linux-gnu/libc.so.6",
-      "--ro-bind",
-      "/lib64/ld-linux-x86-64.so.2",
-      "/lib64/ld-linux-x86-64.so.2",
-      "--ro-bind-try",
-      "/etc/ld.so.cache",
-      "/etc/ld.so.cache",
-      "--proc",
-      "/proc",
-      "--dev",
-      "/dev",
-      "--tmpfs",
-      "/tmp",
-      "--chdir",
-      "/tmp",
-      "--clearenv",
-      "--setenv",
-      "KIBO_COMPONENT",
-      "burndown@0.3.0",
-      "--setenv",
-      "NODE_CHANNEL_FD",
-      "3",
-      "--",
-      "/kibo/runtime",
-      "component-runtime",
-    ]);
-  });
-
-  test("never binds /usr, /home or the root", () => {
-    const argv = bwrapArgv("/usr/bin/bwrap", policy, libs);
-    const binds = argv.flatMap((a, i) => (a === "--ro-bind" || a === "--bind" ? [argv[i + 1]] : []));
-    expect(binds).not.toContain("/usr");
-    expect(binds).not.toContain("/");
-    expect(binds.some((b) => b === "/home" || b === "/home/adam")).toBe(false);
-    expect(argv).not.toContain("--bind");
-    expect(argv).not.toContain("--share-net");
-  });
-
-  test("deduplicates libraries and refuses relative paths", () => {
-    const argv = bwrapArgv("/usr/bin/bwrap", policy, [...libs, libs[0] ?? ""]);
-    expect(argv.filter((a) => a === "/lib/x86_64-linux-gnu/libc.so.6")).toHaveLength(2);
-    expect(() => bwrapArgv("/usr/bin/bwrap", { ...policy, tmpDir: "tmp" }, libs)).toThrow("INVALID_INPUT");
-    expect(() => bwrapArgv("/usr/bin/bwrap", policy, ["libc.so.6"])).toThrow("INVALID_INPUT");
-  });
-});
-```
-
-- [ ] **Step 2: Lancer le test pour le voir échouer**
-
-Run: `bun test packages/daemon/src/sandbox/bwrap.test.ts`
-Expected: FAIL avec « Cannot find module './bwrap' ».
-
-- [ ] **Step 3: Implémenter `bwrapArgv`**
-
-`packages/daemon/src/sandbox/bwrap.ts` :
-```ts
-import { isAbsolute } from "node:path";
-import { KiboError } from "@kibo/schema";
-import type { SandboxPolicy } from "./types";
-
-export const RUNTIME_GUEST = "/kibo/runtime";
-
-const absolute = (path: string, what: string): string => {
-  if (!isAbsolute(path)) throw new KiboError("INVALID_INPUT", `${what} must be an absolute path: ${path}`);
-  return path;
-};
-
-export function bwrapArgv(bwrapPath: string, policy: SandboxPolicy, libs: string[]): string[] {
-  absolute(policy.runtime, "runtime");
-  absolute(policy.tmpDir, "tmpDir");
-  const argv = [
-    absolute(bwrapPath, "bwrap"),
-    "--unshare-all",
-    "--die-with-parent",
-    "--new-session",
-    "--cap-drop",
-    "ALL",
-    "--ro-bind",
-    policy.runtime,
-    RUNTIME_GUEST,
-  ];
-  for (const { host, guest } of policy.readOnly) {
-    argv.push("--ro-bind", absolute(host, "readOnly host"), absolute(guest, "readOnly guest"));
-  }
-  for (const lib of [...new Set(libs)]) argv.push("--ro-bind", absolute(lib, "library"), lib);
-  argv.push("--ro-bind-try", "/etc/ld.so.cache", "/etc/ld.so.cache");
-  argv.push("--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--chdir", "/tmp", "--clearenv");
-  for (const [name, value] of Object.entries(policy.env)) argv.push("--setenv", name, value);
-  argv.push("--", RUNTIME_GUEST, ...policy.args);
-  return argv;
-}
-```
-
-- [ ] **Step 4: Lancer le test**
-
-Run: `bun test packages/daemon/src/sandbox/bwrap.test.ts`
-Expected: PASS (3 tests).
-
-- [ ] **Step 5: Écrire le test du profil macOS**
-
-`packages/daemon/src/sandbox/macos.sb.test.ts` :
-```ts
-import { describe, expect, test } from "bun:test";
-import { EXTRA_RULES, macosProfile, sandboxExecArgv } from "./macos.sb";
-import type { SandboxPolicy } from "./types";
-
-const policy: SandboxPolicy = {
-  runtime: "/Applications/Kibo.app/Contents/MacOS/kibo-daemon",
-  args: ["component-runtime"],
-  readOnly: [{ host: "/Users/adam/.kibo/components/store/burndown/0.3.0/3f9a/build", guest: "/kibo/component" }],
-  tmpDir: "/private/var/folders/xy/kibo-rt-1",
-  env: { KIBO_COMPONENT: "burndown@0.3.0" },
-};
-
-describe("macosProfile", () => {
-  const profile = macosProfile(policy);
-
-  test("denies everything by default, network included", () => {
-    expect(profile.startsWith("(version 1)\n(deny default)\n")).toBe(true);
-    expect(profile).toContain("(deny network*)");
-    expect(profile).not.toContain("(allow network");
-    expect(profile).not.toContain("(allow default)");
-  });
-
-  test("allows exec of the runtime only", () => {
-    expect(profile).toContain(`(allow process-exec (literal "${policy.runtime}"))`);
-    expect(profile.match(/process-exec/g)).toHaveLength(1);
-    expect(profile).not.toContain("process-fork");
-  });
-
-  test("reads only the runtime, the component build and system libraries", () => {
-    expect(profile).toContain(`(literal "${policy.runtime}")`);
-    expect(profile).toContain(`(subpath "${policy.readOnly[0]?.host}")`);
-    for (const p of ["/usr/lib", "/System/Library", "/private/var/db/dyld", "/System/Volumes/Preboot/Cryptexes"]) {
-      expect(profile).toContain(`(subpath "${p}")`);
-    }
-    expect(profile).toContain('(literal "/dev/urandom")');
-    expect(profile).not.toContain('(subpath "/Users")');
-    expect(profile).not.toContain(`(subpath "/Users/adam")`);
-  });
-
-  test("writes only in the process temp dir", () => {
-    expect(profile).toContain(`(allow file-write* (subpath "${policy.tmpDir}"))`);
-    expect(profile.match(/file-write/g)).toHaveLength(1);
-  });
-
-  test("emits every extra rule with its reason as a comment line", () => {
-    for (const { rule, reason } of EXTRA_RULES) {
-      expect(profile).toContain(`; ${reason}\n${rule}`);
-    }
-  });
-
-  test("refuses paths that could break out of an SBPL string", () => {
-    expect(() => macosProfile({ ...policy, tmpDir: '/tmp/a"b' })).toThrow("INVALID_INPUT");
-    expect(() => macosProfile({ ...policy, runtime: "/tmp/a\\b" })).toThrow("INVALID_INPUT");
-    expect(() => macosProfile({ ...policy, readOnly: [{ host: "relative", guest: "/x" }] })).toThrow("INVALID_INPUT");
-  });
-
-  test("sandboxExecArgv runs the runtime under the generated profile", () => {
-    expect(sandboxExecArgv(policy)).toEqual([
-      "/usr/bin/sandbox-exec",
-      "-p",
-      profile,
-      policy.runtime,
-      "component-runtime",
-    ]);
-  });
-});
-```
-
-- [ ] **Step 6: Lancer le test pour le voir échouer**
-
-Run: `bun test packages/daemon/src/sandbox/macos.sb.test.ts`
-Expected: FAIL avec « Cannot find module './macos.sb' ».
-
-- [ ] **Step 7: Implémenter le profil**
-
-`EXTRA_RULES` démarre avec les deux besoins connus de Bun (fuseaux horaires, configuration système) ; la tâche 12 y ajoute ce que le test `escape` révèle, toujours avec un `reason`.
-
-`packages/daemon/src/sandbox/macos.sb.ts` :
-```ts
-import { isAbsolute } from "node:path";
-import { KiboError } from "@kibo/schema";
-import type { SandboxPolicy } from "./types";
-
-export const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
-
-export const EXTRA_RULES: { rule: string; reason: string }[] = [
-  {
-    rule: '(allow file-read* (subpath "/usr/share/zoneinfo") (subpath "/private/var/db/timezone"))',
-    reason: "Bun resolves the local time zone at startup",
-  },
-  {
-    rule: '(allow file-read* (literal "/private/etc/localtime") (subpath "/private/etc/ssl"))',
-    reason: "Bun reads the system clock zone and the certificate store while initialising",
-  },
-];
-
-const SYSTEM_READS = [
-  "/usr/lib",
-  "/System/Library",
-  "/private/var/db/dyld",
-  "/System/Volumes/Preboot/Cryptexes",
-];
-
-const sbplPath = (path: string, what: string): string => {
-  if (!isAbsolute(path)) throw new KiboError("INVALID_INPUT", `${what} must be an absolute path: ${path}`);
-  if (path.includes('"') || path.includes("\\")) {
-    throw new KiboError("INVALID_INPUT", `${what} contains a forbidden character: ${path}`);
-  }
-  return path;
-};
-
-export function macosProfile(policy: SandboxPolicy): string {
-  const runtime = sbplPath(policy.runtime, "runtime");
-  const tmp = sbplPath(policy.tmpDir, "tmpDir");
-  const reads = [
-    `(literal "${runtime}")`,
-    ...policy.readOnly.map((r) => `(subpath "${sbplPath(r.host, "readOnly host")}")`),
-    ...SYSTEM_READS.map((p) => `(subpath "${p}")`),
-    '(literal "/dev/urandom")',
-  ];
-  const lines = [
-    "(version 1)",
-    "(deny default)",
-    `(allow process-exec (literal "${runtime}"))`,
-    `(allow file-read* ${reads.join(" ")})`,
-    "(allow file-read-metadata)",
-    `(allow file-write* (subpath "${tmp}"))`,
-    "(allow sysctl-read)",
-    '(allow mach-lookup (global-name "com.apple.system.logger"))',
-    ...EXTRA_RULES.flatMap(({ rule, reason }) => [`; ${reason}`, rule]),
-    "(deny network*)",
-  ];
-  return `${lines.join("\n")}\n`;
-}
-
-export function sandboxExecArgv(policy: SandboxPolicy): string[] {
-  return [SANDBOX_EXEC, "-p", macosProfile(policy), policy.runtime, ...policy.args];
-}
-```
-
-- [ ] **Step 8: Lancer le test**
-
-Run: `bun test packages/daemon/src/sandbox/macos.sb.test.ts`
-Expected: PASS (7 tests).
-
-- [ ] **Step 9: Écrire le test de la détection**
-
-`packages/daemon/src/sandbox/detect.test.ts` :
-```ts
-import { describe, expect, test } from "bun:test";
-import { BWRAP_FIX_INSTALL, BWRAP_FIX_USERNS, detectSandbox, parseLdd } from "./detect";
-import type { DetectDeps } from "./types";
-
-const LDD_UBUNTU = [
-  "\tlinux-vdso.so.1 (0x00007ffd4b1f2000)",
-  "\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f1c2a200000)",
-  "\tlibpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007f1c2a1f0000)",
-  "\tlibdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007f1c2a1e0000)",
-  "\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f1c2a0f0000)",
-  "\t/lib64/ld-linux-x86-64.so.2 (0x00007f1c2a4a0000)",
-  "",
-].join("\n");
-
-type Call = string[];
-const fakeDeps = (over: Partial<DetectDeps> & { answers?: Record<string, { code: number; stdout?: string; stderr?: string }> }) => {
-  const calls: Call[] = [];
-  const deps: DetectDeps = {
-    platform: over.platform ?? "linux",
-    which: over.which ?? ((name) => (name === "bwrap" ? "/usr/bin/bwrap" : null)),
-    run: async (argv) => {
-      calls.push(argv);
-      const answer = over.answers?.[argv[0] ?? ""] ?? { code: 0 };
-      return { code: answer.code, stdout: answer.stdout ?? "", stderr: answer.stderr ?? "" };
-    },
-  };
-  return { deps, calls };
-};
-
-describe("parseLdd", () => {
-  test("keeps absolute library paths and the loader, drops the vdso", () => {
-    expect(parseLdd(LDD_UBUNTU)).toEqual([
-      "/lib/x86_64-linux-gnu/libc.so.6",
-      "/lib/x86_64-linux-gnu/libpthread.so.0",
-      "/lib/x86_64-linux-gnu/libdl.so.2",
-      "/lib/x86_64-linux-gnu/libm.so.6",
-      "/lib64/ld-linux-x86-64.so.2",
-    ]);
-  });
-  test("recognises the aarch64 loader", () => {
-    expect(parseLdd("\t/lib/ld-linux-aarch64.so.1 (0x0000ffff9a1b0000)\n")).toEqual(["/lib/ld-linux-aarch64.so.1"]);
-  });
-  test("a missing library is an error, never silently skipped", () => {
-    expect(() => parseLdd("\tlibfoo.so.1 => not found\n")).toThrow("INVALID_INPUT");
-  });
-});
-
-describe("detectSandbox on Linux", () => {
-  test("bwrap missing: unavailable with the install command", async () => {
-    const { deps } = fakeDeps({ which: () => null });
-    expect(await detectSandbox(deps, "/opt/kibo/kibo-daemon")).toEqual({
+describe("diagnosis", () => {
+  test("Linux without bubblewrap says so and proposes the install command, without probing", async () => {
+    const sandbox = createOsSandbox({ platform: "linux", which: () => null, run: never });
+    expect(await sandbox.diagnose()).toEqual({
       kind: "bwrap",
       available: false,
       reason: "bubblewrap (bwrap) is not installed",
       fix: BWRAP_FIX_INSTALL,
-      bwrapPath: null,
-      libs: [],
     });
   });
-
-  test("bwrap present but user namespaces forbidden: real probe fails, sysctl fix", async () => {
-    const { deps, calls } = fakeDeps({
-      answers: { "/usr/bin/bwrap": { code: 1, stderr: "bwrap: setting up uid map: Permission denied" } },
+  test("Linux with bubblewrap but no user namespaces proposes the sysctl command", async () => {
+    const sandbox = createOsSandbox({
+      platform: "linux",
+      which: () => "/usr/bin/bwrap",
+      run: failing("bwrap: setting up uid map: Permission denied"),
     });
-    const probe = await detectSandbox(deps, "/opt/kibo/kibo-daemon");
-    expect(calls[0]).toEqual(["/usr/bin/bwrap", "--unshare-all", "--die-with-parent", "--ro-bind", "/", "/", "true"]);
-    expect(probe.available).toBe(false);
-    expect(probe.fix).toBe(BWRAP_FIX_USERNS);
-    expect(probe.reason).toContain("setting up uid map");
+    const diagnosis = await sandbox.diagnose();
+    expect(diagnosis).toMatchObject({ kind: "bwrap", available: false, fix: BWRAP_FIX_USERNS });
+    expect(diagnosis.reason).toContain("setting up uid map: Permission denied");
   });
-
-  test("any other probe failure is reported without a guessed fix", async () => {
-    const { deps } = fakeDeps({ answers: { "/usr/bin/bwrap": { code: 1, stderr: "bwrap: unknown option" } } });
-    const probe = await detectSandbox(deps, "/opt/kibo/kibo-daemon");
-    expect(probe).toMatchObject({ available: false, fix: null, reason: "bwrap probe failed: bwrap: unknown option" });
+  test("Linux with a working bubblewrap is available", async () => {
+    const sandbox = createOsSandbox({ platform: "linux", which: () => "/usr/bin/bwrap", run: ok });
+    expect(await sandbox.diagnose()).toEqual({ kind: "bwrap", available: true, reason: null, fix: null });
   });
-
-  test("probe ok: available with the runtime libraries from ldd", async () => {
-    const { deps, calls } = fakeDeps({ answers: { ldd: { code: 0, stdout: LDD_UBUNTU } } });
-    const probe = await detectSandbox(deps, "/opt/kibo/kibo-daemon");
-    expect(calls[1]).toEqual(["ldd", "/opt/kibo/kibo-daemon"]);
-    expect(probe).toMatchObject({ kind: "bwrap", available: true, bwrapPath: "/usr/bin/bwrap", reason: null });
-    expect(probe.libs).toContain("/lib64/ld-linux-x86-64.so.2");
+  test("macOS with sandbox-exec is available", async () => {
+    const sandbox = createOsSandbox({ platform: "darwin", exists: () => true, run: ok });
+    expect(await sandbox.diagnose()).toEqual({ kind: "sandbox-exec", available: true, reason: null, fix: null });
   });
-
-  test("ldd failure makes the sandbox unavailable", async () => {
-    const { deps } = fakeDeps({ answers: { ldd: { code: 1, stderr: "not a dynamic executable" } } });
-    expect(await detectSandbox(deps, "/opt/kibo/kibo-daemon")).toMatchObject({
+  test("macOS where sandbox-exec refuses to start has a reason but no command to propose", async () => {
+    const sandbox = createOsSandbox({
+      platform: "darwin",
+      exists: () => true,
+      run: failing("sandbox-exec: sandbox_apply: Operation not permitted"),
+    });
+    const diagnosis = await sandbox.diagnose();
+    expect(diagnosis).toMatchObject({ kind: "sandbox-exec", available: false, fix: null });
+    expect(diagnosis.reason).toContain("Operation not permitted");
+  });
+  test("macOS without sandbox-exec is reported", async () => {
+    const sandbox = createOsSandbox({ platform: "darwin", exists: () => false, run: never });
+    expect(await sandbox.diagnose()).toEqual({
+      kind: "sandbox-exec",
       available: false,
-      reason: "ldd failed on /opt/kibo/kibo-daemon: not a dynamic executable",
+      reason: "sandbox-exec is missing",
+      fix: null,
     });
+  });
+  test("another platform has no mechanism", async () => {
+    expect(await createOsSandbox({ platform: "win32", run: never }).diagnose()).toEqual({
+      kind: null,
+      available: false,
+      reason: "no OS sandbox on win32",
+      fix: null,
+    });
+  });
+  test("an unexpected probe failure is not turned into a diagnosis", async () => {
+    const run: SandboxProbeRun = async () => {
+      throw new Error("spawn exploded");
+    };
+    const sandbox = createOsSandbox({ platform: "linux", which: () => "/usr/bin/bwrap", run });
+    await expect(sandbox.diagnose()).rejects.toThrow("spawn exploded");
   });
 });
 
-describe("detectSandbox on macOS and elsewhere", () => {
-  test("sandbox-exec probe ok", async () => {
-    const { deps, calls } = fakeDeps({ platform: "darwin" });
-    const probe = await detectSandbox(deps, "/Applications/Kibo.app/Contents/MacOS/kibo-daemon");
-    expect(calls[0]).toEqual(["/usr/bin/sandbox-exec", "-p", "(version 1)(allow default)", "/usr/bin/true"]);
-    expect(probe).toEqual({ kind: "sandbox-exec", available: true, reason: null, fix: null, bwrapPath: null, libs: [] });
-  });
-  test("sandbox-exec failing is unavailable", async () => {
-    const { deps } = fakeDeps({ platform: "darwin", answers: { "/usr/bin/sandbox-exec": { code: 71, stderr: "sandbox_apply: Operation not permitted" } } });
-    expect(await detectSandbox(deps, "/x")).toMatchObject({ kind: "sandbox-exec", available: false });
-  });
-  test("other platforms are unavailable", async () => {
-    const { deps } = fakeDeps({ platform: "win32" });
-    expect(await detectSandbox(deps, "/x")).toMatchObject({ kind: null, available: false, reason: "unsupported platform win32" });
-  });
+test("on this machine the diagnosis matches the platform and is available", async () => {
+  const expected = process.platform === "darwin" ? "sandbox-exec" : "bwrap";
+  expect(await createOsSandbox().diagnose()).toEqual({ kind: expected, available: true, reason: null, fix: null });
 });
 ```
+Le dernier test tourne sur la vraie machine, comme le test réel existant : il n'est jamais sauté (la CI Linux a déjà `bubblewrap`).
 
-- [ ] **Step 10: Lancer le test pour le voir échouer**
+- [ ] **Step 2: Lancer les tests pour les voir échouer**
 
-Run: `bun test packages/daemon/src/sandbox/detect.test.ts`
-Expected: FAIL avec « Cannot find module './detect' ».
+Run: `bun test packages/devkit/src/os-sandbox.test.ts`
+Expected: FAIL — `BWRAP_FIX_INSTALL` introuvable, `sandbox.diagnose is not a function`.
 
-- [ ] **Step 11: Implémenter la détection**
+- [ ] **Step 3: Implémenter le diagnostic**
 
-`packages/daemon/src/sandbox/detect.ts` :
+Dans `packages/devkit/src/os-sandbox.ts`, remplacer le type `OsSandbox` et `createOsSandbox` (le reste du fichier — `macosProfile`, `bwrapArgv`, `osSandbox()` — est inchangé) :
 ```ts
-import { KiboError } from "@kibo/schema";
-import { SANDBOX_EXEC } from "./macos.sb";
-import type { DetectDeps, SandboxProbe } from "./types";
+export type SandboxKind = "bwrap" | "sandbox-exec";
+export type SandboxDiagnosis = { kind: SandboxKind | null; available: boolean; reason: string | null; fix: string | null };
+export type SandboxProbeRun = (
+  argv: string[],
+  opts: { cwd: string; env: Record<string, string> },
+) => Promise<{ code: number; stderr: string }>;
+export type OsSandbox = {
+  ready(): Promise<void>;
+  diagnose(): Promise<SandboxDiagnosis>;
+  wrap(argv: string[], policy: SandboxPolicy): string[];
+};
+export type OsSandboxOptions = {
+  platform?: NodeJS.Platform;
+  which?: (bin: string) => string | null;
+  exists?: (path: string) => boolean;
+  run?: SandboxProbeRun;
+};
 
 export const BWRAP_FIX_INSTALL = "sudo apt install bubblewrap";
 export const BWRAP_FIX_USERNS = "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0";
-const USERNS_MARKERS = ["uid map", "Operation not permitted", "Permission denied"];
+const USERNS_REFUSED = /namespace|uid map|Operation not permitted|Permission denied/i;
 
-export { SANDBOX_EXEC };
+const spawnProbe: SandboxProbeRun = async (argv, { cwd, env }) => {
+  const proc = Bun.spawn(argv, { cwd, env, stdout: "ignore", stderr: "pipe" });
+  const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+  return { code, stderr };
+};
 
-export function parseLdd(stdout: string): string[] {
-  const libs: string[] = [];
-  for (const raw of stdout.split("\n")) {
-    const line = raw.trim();
-    if (!line) continue;
-    if (line.includes("=> not found")) throw new KiboError("INVALID_INPUT", `missing library: ${line}`);
-    const arrow = line.match(/=>\s+(\/\S+)/);
-    const bare = line.match(/^(\/\S+)/);
-    const path = arrow?.[1] ?? bare?.[1];
-    if (path) libs.push(path);
-  }
-  return libs;
+const kindOf = (platform: NodeJS.Platform): SandboxKind | null =>
+  platform === "darwin" ? "sandbox-exec" : platform === "linux" ? "bwrap" : null;
+
+function fixFor(kind: SandboxKind, reason: string): string | null {
+  if (kind !== "bwrap") return null;
+  if (reason.includes("not installed")) return BWRAP_FIX_INSTALL;
+  return USERNS_REFUSED.test(reason) ? BWRAP_FIX_USERNS : null;
 }
 
-const unavailable = (kind: SandboxProbe["kind"], reason: string, fix: string | null, bwrapPath: string | null = null): SandboxProbe => ({
-  kind,
-  available: false,
-  reason,
-  fix,
-  bwrapPath,
-  libs: [],
-});
-
-async function detectLinux(deps: DetectDeps, runtime: string): Promise<SandboxProbe> {
-  const bwrap = deps.which("bwrap");
-  if (!bwrap) return unavailable("bwrap", "bubblewrap (bwrap) is not installed", BWRAP_FIX_INSTALL);
-  const probe = await deps.run([bwrap, "--unshare-all", "--die-with-parent", "--ro-bind", "/", "/", "true"]);
-  if (probe.code !== 0) {
-    const stderr = probe.stderr.trim();
-    const userns = USERNS_MARKERS.some((m) => stderr.includes(m));
-    return unavailable("bwrap", userns ? stderr : `bwrap probe failed: ${stderr}`, userns ? BWRAP_FIX_USERNS : null, bwrap);
-  }
-  const ldd = await deps.run(["ldd", runtime]);
-  if (ldd.code !== 0) return unavailable("bwrap", `ldd failed on ${runtime}: ${ldd.stderr.trim()}`, null, bwrap);
-  return { kind: "bwrap", available: true, reason: null, fix: null, bwrapPath: bwrap, libs: parseLdd(ldd.stdout) };
+function missingReason(platform: NodeJS.Platform): string {
+  if (platform === "darwin") return "sandbox-exec is missing";
+  if (platform === "linux") return "bubblewrap (bwrap) is not installed";
+  return `no OS sandbox on ${platform}`;
 }
 
-async function detectMac(deps: DetectDeps): Promise<SandboxProbe> {
-  const probe = await deps.run([SANDBOX_EXEC, "-p", "(version 1)(allow default)", "/usr/bin/true"]);
-  if (probe.code !== 0) return unavailable("sandbox-exec", `sandbox-exec probe failed: ${probe.stderr.trim()}`, null);
-  return { kind: "sandbox-exec", available: true, reason: null, fix: null, bwrapPath: null, libs: [] };
-}
+export function createOsSandbox(opts: OsSandboxOptions = {}): OsSandbox {
+  const platform = opts.platform ?? process.platform;
+  const which = opts.which ?? Bun.which;
+  const exists = opts.exists ?? existsSync;
+  const run = opts.run ?? spawnProbe;
+  let probe: Promise<void> | null = null;
 
-export async function detectSandbox(deps: DetectDeps, runtime: string): Promise<SandboxProbe> {
-  if (deps.platform === "linux") return detectLinux(deps, runtime);
-  if (deps.platform === "darwin") return detectMac(deps);
-  return unavailable(null, `unsupported platform ${deps.platform}`, null);
-}
-
-export function realDetectDeps(): DetectDeps {
-  return {
-    platform: process.platform,
-    which: (name) => Bun.which(name),
-    run: async (argv) => {
-      const proc = Bun.spawn(argv, { stdout: "pipe", stderr: "pipe", stdin: "ignore" });
-      const [stdout, stderr, code] = await Promise.all([
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-        proc.exited,
-      ]);
-      return { code, stdout, stderr };
-    },
+  const wrap = (argv: string[], policy: SandboxPolicy): string[] => {
+    const [head, ...rest] = argv;
+    if (!head) throw new KiboError("INTERNAL", "empty sandboxed command");
+    const command = [real(head), ...rest];
+    if (platform === "darwin" && exists(SANDBOX_EXEC))
+      return [SANDBOX_EXEC, "-p", macosProfile(policy), ...command];
+    const bwrap = platform === "linux" ? which("bwrap") : null;
+    if (bwrap) return bwrapArgv(bwrap, policy, command);
+    throw new KiboError("SANDBOX_UNAVAILABLE", missingReason(platform));
   };
-}
-```
 
-`Bun.spawn` d'un binaire absent lève une exception : elle remonte telle quelle (`ENOENT` avec le chemin), ce qui est voulu (aucune erreur avalée). Seul `bwrap` est pré-testé par `which`.
+  const check = async (): Promise<void> => {
+    const bun = bunCommand();
+    const cwd = realpathSync(mkdtempSync(join(tmpdir(), "kibo-sandbox-probe-")));
+    try {
+      const argv = wrap([...bun.argv, "--version"], { read: [], write: [cwd], exec: bun.argv.slice(0, 1), cwd });
+      const { code, stderr } = await run(argv, { cwd, env: bun.env });
+      if (code !== 0)
+        throw new KiboError("SANDBOX_UNAVAILABLE", `sandbox probe exited with ${code}: ${stderr.slice(0, 500)}`);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  };
 
-- [ ] **Step 12: Lancer le test**
-
-Run: `bun test packages/daemon/src/sandbox/detect.test.ts`
-Expected: PASS (11 tests).
-
-- [ ] **Step 13: Écrire le test de `wrapCommand` et le test réel**
-
-`packages/daemon/src/sandbox/os-sandbox.test.ts` :
-```ts
-import { describe, expect, test } from "bun:test";
-import { wrapCommand } from "./os-sandbox";
-import type { SandboxPolicy, SandboxProbe } from "./types";
-
-const policy: SandboxPolicy = {
-  runtime: "/opt/kibo/kibo-daemon",
-  args: ["component-runtime"],
-  readOnly: [],
-  tmpDir: "/tmp/kibo-rt-1",
-  env: { KIBO_COMPONENT: "burndown@0.3.0" },
-};
-const off: SandboxProbe = {
-  kind: "bwrap",
-  available: false,
-  reason: "bubblewrap (bwrap) is not installed",
-  fix: "sudo apt install bubblewrap",
-  bwrapPath: null,
-  libs: [],
-};
-
-describe("wrapCommand", () => {
-  test("refuses to run without isolation by default, with reason and fix", () => {
-    expect(() => wrapCommand(off, policy, false)).toThrow(
-      "SANDBOX_UNAVAILABLE: bubblewrap (bwrap) is not installed (fix: sudo apt install bubblewrap)",
-    );
-  });
-  test("the explicit setting runs the plain command, marked not isolated", () => {
-    expect(wrapCommand(off, policy, true)).toEqual({
-      argv: ["/opt/kibo/kibo-daemon", "component-runtime"],
-      env: { KIBO_COMPONENT: "burndown@0.3.0" },
-      isolated: false,
+  const ready = (): Promise<void> => {
+    probe ??= check().catch((e: unknown) => {
+      probe = null;
+      throw e;
     });
-  });
-  test("bwrap: environment passes through --setenv only", () => {
-    const probe: SandboxProbe = { ...off, available: true, reason: null, fix: null, bwrapPath: "/usr/bin/bwrap", libs: [] };
-    const wrapped = wrapCommand(probe, policy, false);
-    expect(wrapped.isolated).toBe(true);
-    expect(wrapped.argv[0]).toBe("/usr/bin/bwrap");
-    expect(wrapped.env).toEqual({});
-  });
-  test("sandbox-exec: environment is the policy env only", () => {
-    const probe: SandboxProbe = { kind: "sandbox-exec", available: true, reason: null, fix: null, bwrapPath: null, libs: [] };
-    const wrapped = wrapCommand(probe, policy, false);
-    expect(wrapped.argv.slice(0, 2)).toEqual(["/usr/bin/sandbox-exec", "-p"]);
-    expect(wrapped.env).toEqual({ KIBO_COMPONENT: "burndown@0.3.0" });
-  });
-});
-```
+    return probe;
+  };
 
-`packages/daemon/src/sandbox/real-sandbox.test.ts` (exécute un vrai binaire dans le vrai bac à sable ; sur la CI Linux et macOS il ne peut pas être sauté, `KIBO_REQUIRE_OS_SANDBOX=1`) :
-```ts
-import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { detectSandbox, realDetectDeps } from "./detect";
-import { wrapCommand } from "./os-sandbox";
+  const diagnose = async (): Promise<SandboxDiagnosis> => {
+    const kind = kindOf(platform);
+    if (kind === null) return { kind, available: false, reason: missingReason(platform), fix: null };
+    try {
+      await ready();
+      return { kind, available: true, reason: null, fix: null };
+    } catch (e) {
+      if (!(e instanceof KiboError) || e.code !== "SANDBOX_UNAVAILABLE") throw e;
+      return { kind, available: false, reason: e.detail, fix: fixFor(kind, e.detail) };
+    }
+  };
 
-const deps = realDetectDeps();
-const supported = deps.platform === "linux" || deps.platform === "darwin";
-const probe = supported ? await detectSandbox(deps, "/usr/bin/true") : null;
-const skip = !probe?.available && process.env.KIBO_REQUIRE_OS_SANDBOX !== "1";
-
-test.skipIf(skip)("a wrapped /usr/bin/true runs inside the OS sandbox", async () => {
-  if (!probe) throw new Error("unsupported platform");
-  expect(probe.available).toBe(true);
-  const tmp = mkdtempSync(join(tmpdir(), "kibo-sbx-"));
-  const { argv, env } = wrapCommand(probe, { runtime: "/usr/bin/true", args: [], readOnly: [], tmpDir: tmp, env: {} }, false);
-  const proc = Bun.spawn(argv, { env, stdout: "pipe", stderr: "pipe" });
-  const code = await proc.exited;
-  const stderr = await new Response(proc.stderr).text();
-  rmSync(tmp, { recursive: true, force: true });
-  expect({ code, stderr }).toEqual({ code: 0, stderr: "" });
-});
-```
-
-- [ ] **Step 14: Lancer les tests pour les voir échouer**
-
-Run: `bun test packages/daemon/src/sandbox/os-sandbox.test.ts packages/daemon/src/sandbox/real-sandbox.test.ts`
-Expected: FAIL avec « Cannot find module './os-sandbox' ».
-
-- [ ] **Step 15: Implémenter `wrapCommand`**
-
-`packages/daemon/src/sandbox/os-sandbox.ts` :
-```ts
-import { KiboError } from "@kibo/schema";
-import { bwrapArgv } from "./bwrap";
-import { sandboxExecArgv } from "./macos.sb";
-import type { SandboxPolicy, SandboxProbe } from "./types";
-
-export type { DetectDeps, SandboxPolicy, SandboxProbe } from "./types";
-export { detectSandbox, parseLdd, realDetectDeps } from "./detect";
-export { bwrapArgv } from "./bwrap";
-export { macosProfile, sandboxExecArgv } from "./macos.sb";
-
-export function wrapCommand(
-  probe: SandboxProbe,
-  policy: SandboxPolicy,
-  allowUnsandboxed: boolean,
-): { argv: string[]; env: Record<string, string>; isolated: boolean } {
-  if (probe.available && probe.kind === "bwrap" && probe.bwrapPath) {
-    return { argv: bwrapArgv(probe.bwrapPath, policy, probe.libs), env: {}, isolated: true };
-  }
-  if (probe.available && probe.kind === "sandbox-exec") {
-    return { argv: sandboxExecArgv(policy), env: { ...policy.env }, isolated: true };
-  }
-  if (allowUnsandboxed) return { argv: [policy.runtime, ...policy.args], env: { ...policy.env }, isolated: false };
-  const fix = probe.fix ? ` (fix: ${probe.fix})` : "";
-  throw new KiboError("SANDBOX_UNAVAILABLE", `${probe.reason ?? "no OS sandbox"}${fix}`);
+  return { wrap, ready, diagnose };
 }
 ```
+`diagnose` ne relance la sonde que si la précédente a échoué (`ready` garde le succès en cache et oublie l'échec, comportement de la phase 4) : installer `bwrap` puis rouvrir Paramètres › Sécurité suffit, sans redémarrer le démon.
 
-- [ ] **Step 16: Lancer les tests**
+- [ ] **Step 4: Lancer les tests**
 
-Run: `bun test packages/daemon/src/sandbox`
-Expected: PASS ; sur macOS et sur une Linux avec bubblewrap utilisable, le test réel s'exécute et passe ; ailleurs il est sauté (en local seulement).
+Run: `bun test packages/devkit/src/os-sandbox.test.ts packages/devkit/src/validate-isolation.test.ts packages/daemon/src/components/process-host-sandbox.test.ts`
+Expected: PASS (les 8 cas du diagnostic, le test réel, et les tests existants de la validation et du backend sans changement d'attente).
 
-Si le test réel échoue sous Linux parce que `/usr/bin/true` lié par `ldd` ne démarre pas (bibliothèque chargée par `dlopen` absente de `ldd`), **ne pas élargir en `/usr`** : ajouter la bibliothèque manquante à `libs` dans `detectLinux` à partir du message d'erreur, et le noter pour le chef d'équipe (décision 14, repli).
+- [ ] **Step 5: Vérifier le lint et les types, commiter**
 
-- [ ] **Step 17: Vérifier le lint et les types, commiter**
-
-Run: `bun run check && bun run typecheck`
-Expected: aucun diagnostic.
-
-```bash
-git add packages/daemon/src/sandbox/types.ts packages/daemon/src/sandbox/detect.ts packages/daemon/src/sandbox/bwrap.ts packages/daemon/src/sandbox/macos.sb.ts packages/daemon/src/sandbox/os-sandbox.ts packages/daemon/src/sandbox/bwrap.test.ts packages/daemon/src/sandbox/macos.sb.test.ts packages/daemon/src/sandbox/detect.test.ts packages/daemon/src/sandbox/os-sandbox.test.ts packages/daemon/src/sandbox/real-sandbox.test.ts
-git commit -m "feat(daemon): détection de l'isolation OS"
-```
-
-- [ ] **Step 18: CI Linux avec bubblewrap**
-
-Dans `.github/workflows/ci.yml`, job `test` : ajouter au niveau du job
-```yaml
-    env:
-      KIBO_REQUIRE_OS_SANDBOX: "1"
-```
-et, juste après `bun install --frozen-lockfile`, dans **les jobs `test` et `e2e`** :
-```yaml
-      - if: runner.os == 'Linux'
-        name: bubblewrap
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bubblewrap
-          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null)" = "1" ]; then sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0; fi
-          bwrap --unshare-all --die-with-parent --ro-bind / / true
-```
-La dernière ligne fait échouer la CI tout de suite si le runner change de politique, au lieu d'un échec obscur dans les tests.
-
-Run: pousser la branche et vérifier le job `test` Linux (étape « bubblewrap » verte, `real-sandbox.test.ts` exécuté, pas sauté).
-Expected: CI verte sur macOS et Linux.
+Run: `bun run check && bun run typecheck && bun test packages/devkit`
+Expected: aucun diagnostic, tests verts.
 
 ```bash
-git add .github/workflows/ci.yml
-git commit -m "build(ci): bubblewrap sous Linux"
+git add packages/devkit/src/os-sandbox.ts packages/devkit/src/os-sandbox.test.ts
+git commit -m "feat(devkit): diagnostic de l'isolation OS"
 ```
 
 ---
 
 ### Task 9: Sessions d'appairage persistées
 
-Vague 1. Spec G §7 (décision §12 de la spec générale : sessions persistées hachées, 30 jours glissants, révocables, locales comme distantes) ; lève le risque « sessions d'appairage en mémoire » du rapport v0.1. Le cookie contient l'id brut (32 octets hex) ; la base ne contient que son SHA-256.
+Vague 2 (dépend de T4 : `SessionInfo`, RPC `listSessions` / `revokeSession`, `ChangeMessage` `sessions.changed` ; ne touche pas au schéma). Spec G §7 (décision §12 de la spec générale : sessions persistées hachées, 30 jours glissants, révocables, locales comme distantes) ; lève le risque « sessions d'appairage en mémoire » du rapport v0.1. Le cookie `kibo_session` contient l'id brut (32 octets hex) ; la base ne contient que son SHA-256.
 
 **Files:**
 - Create: `packages/daemon/src/sessions/session-store.ts`, `packages/daemon/src/sessions/device-name.ts`, `packages/daemon/src/sessions/rpc.ts`, `packages/daemon/src/rpc-extensions.ts`
-- Modify: `packages/daemon/src/server.ts` (sessions, contexte RPC, WebSocket), `packages/daemon/src/main.ts`, `packages/daemon/src/server.test.ts` (seulement la mise en place `beforeEach` et les `startServer` des autres blocs : ajout de `sessions`), `packages/schema/src/rpc.ts` (si T4 n'a pas encore ajouté `listSessions` / `revokeSession`, les ajouter ici à l'identique de T4)
-- Test: `packages/daemon/src/sessions/session-store.test.ts`, `packages/daemon/src/sessions/device-name.test.ts`, `packages/daemon/src/sessions/sessions-http.test.ts`
+- Modify: `packages/daemon/src/server.ts` (sessions, contexte RPC, WebSocket), `packages/daemon/src/auth.ts` (retrait de `newSessionId`), `packages/daemon/src/daemon.ts` (magasin de sessions persistant passé à `startServer`)
+- Test: `packages/daemon/src/sessions/session-store.test.ts`, `packages/daemon/src/sessions/device-name.test.ts`, `packages/daemon/src/sessions/sessions-http.test.ts`, `packages/daemon/src/rpc-extensions.test.ts`
+- Inchangés (doivent rester verts sans modification) : `server.test.ts`, `server-code.test.ts`, `server-components.test.ts`, `server-errors.test.ts`, `server-hooks.test.ts`, `server-ui.test.ts`, `agents.integration.test.ts` (ils appellent `startServer` sans `sessions` : l'option est facultative, voir Step 10), `components/exit.test.ts` (`pair` de `exit.test-helper.ts`), la CLI (`connectDaemon` de `packages/cli/src/daemon-client.ts`), qui appairent tous par `POST /api/pair { token }`.
 
 **Interfaces:**
-- Consumes: `Store.db: Database` (T1) ; `SessionInfo`, `RpcRequest` avec `listSessions` / `revokeSession`, `DaemonEvent` `{ type: "sessions" }` (T4).
+- Consumes: `Store.db: Database` (existe déjà, `packages/daemon/src/store.ts`) ; `SessionInfo`, `RpcRequest` avec `listSessions` / `revokeSession`, `ChangeMessage` `{ type: "sessions.changed" }` (T4).
 - Produces (Contrats partagés) : `SESSION_TTL_MS`, `SessionStore`, `openSessionStore(db)`, `RpcContext = { sessionHash: string; remote: boolean }`.
 - Produces (nouveau, signalé ; réutilisé par T12, T13, T15, T21, T23, T24) :
   ```ts
@@ -4946,13 +4835,13 @@ Vague 1. Spec G §7 (décision §12 de la spec générale : sessions persistées
   // packages/daemon/src/sessions/device-name.ts
   export function deviceNameFromUserAgent(ua: string | null): string;
   // packages/daemon/src/sessions/rpc.ts
-  export function sessionRpc(store: SessionStore, publish: (e: DaemonEvent) => void, now: () => number): RpcExtension;
-  // server.ts : ServerOptions gagne sessions: SessionStore, extensions?: RpcExtension[], handlers?: RpcHandler[], now?: () => number ;
+  export function sessionRpc(store: SessionStore, emit: (m: ChangeMessage) => void, now: () => number): RpcExtension;
+  // server.ts : ServerOptions gagne sessions?: SessionStore (défaut : magasin en mémoire, pour les tests existants), extensions?: RpcExtension[], handlers?: RpcHandler[], now?: () => number ;
   // règle pour les tâches suivantes : une extension déclare ses méthodes (T12, T13) ; un gestionnaire RpcHandler (T15, T20, T21, T22, T23, T24, T27) répond { handled: false } pour les autres
-  //             startServer renvoie en plus publish(event: DaemonEvent): void
+  // startServer renvoie toujours { url, port, stop } : les événements passent par service.docs.emit (ChangeMessage), déjà diffusé sur le canal "changes" par service.onChange
   ```
-- Hypothèse v0.6 (vérifiée en T0) : `Service.handle(req)` est asynchrone ou synchrone ; `dispatchRpc` fait `await service.handle(req, ctx)` dans les deux cas, et `Service.handle` accepte désormais un second paramètre `ctx: RpcContext` (ignoré par les services existants).
-- Hypothèse v0.6 (vérifiée en T0) : le serveur diffuse les événements par `server.publish("changes", JSON.stringify(event))` ; `publish` de cette tâche réutilise ce canal.
+- Vérifié en T0 : `Service.handle(req: RpcRequest): unknown` (`packages/daemon/src/service.ts`) a un seul paramètre et renvoie une valeur ou une promesse (`isComponentRequest`, `isIntegrationRequest`, `isAiRequest` y délèguent) ; `Service` n'est pas modifié : `dispatchRpc` fait `await service.handle(req)` et le contexte ne sert qu'aux extensions et gestionnaires.
+- Vérifié en T0 : `server.ts` garde les sessions dans un `Set<string>` en mémoire (`newSessionId()` de `auth.ts`, cookie `kibo_session; HttpOnly; SameSite=Strict; Path=/`), `POST /api/pair { token }` répond 204 ; `/api/rpc` passe par `respond(work, redact)` (masquage des secrets, codes `HIDDEN`, table `STATUS`) et refuse une requête invalide avec `rpcRefusal(parsed.error)` ; `/api/code`, `/hooks/<runId>` et `/components/` (`serveTrusted`, qui reçoit `hasSession`) existent aussi. Les événements : `startServer` s'abonne à `opts.service.onChange` et `opts.code?.onChange` et fait `server.publish("changes", redact(JSON.stringify(message)))` ; aucune fonction `publish` n'est exposée. L'assemblage du démon est dans `packages/daemon/src/daemon.ts` (`assemble`), pas dans `main.ts` (qui ne lit que les arguments).
 
 - [ ] **Step 1: Écrire le test du magasin de sessions**
 
@@ -5151,6 +5040,7 @@ test.each([
   ["Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15", "Safari · macOS"],
   ["Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 (KHTML, like Gecko) Tauri/2.0", "Application Kibo"],
   ["Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 Version/17.6 Mobile Safari/604.1", "Safari · iOS"],
+  ["Bun/1.4.2", "Commande kibo"],
   ["curl/8.7.1", "Navigateur"],
   [null, "Navigateur"],
 ])("%s ⇒ %s", (ua, name) => {
@@ -5184,6 +5074,7 @@ const SYSTEMS: [RegExp, string][] = [
 export function deviceNameFromUserAgent(ua: string | null): string {
   if (!ua) return "Navigateur";
   if (ua.includes("Tauri")) return "Application Kibo";
+  if (ua.startsWith("Bun/")) return "Commande kibo";
   const browser = BROWSERS.find(([re]) => re.test(ua))?.[1];
   if (!browser) return "Navigateur";
   const system = SYSTEMS.find(([re]) => re.test(ua))?.[1];
@@ -5192,7 +5083,9 @@ export function deviceNameFromUserAgent(ua: string | null): string {
 ```
 
 Run: `bun test packages/daemon/src/sessions/device-name.test.ts`
-Expected: PASS (7 cas).
+Expected: PASS (8 cas).
+
+`Bun/…` est l'agent utilisateur de `fetch` sous Bun : c'est ainsi qu'appairent la CLI (`connectDaemon`) et les tests d'intégration.
 
 - [ ] **Step 7: Écrire le test HTTP (redémarrage, expiration, révocation, `current`)**
 
@@ -5345,7 +5238,7 @@ export async function dispatchRpc(
     const outcome = await handler(req, ctx);
     if (outcome.handled) return outcome.result;
   }
-  return service.handle(req, ctx);
+  return service.handle(req);
 }
 
 export function requireLocal(ctx: RpcContext): void {
@@ -5355,11 +5248,11 @@ export function requireLocal(ctx: RpcContext): void {
 
 `packages/daemon/src/sessions/rpc.ts` :
 ```ts
-import { type DaemonEvent, KiboError, type RpcRequest, type SessionInfo } from "@kibo/schema";
+import { type ChangeMessage, KiboError, type RpcRequest, type SessionInfo } from "@kibo/schema";
 import type { RpcContext, RpcExtension } from "../rpc-extensions";
 import type { SessionStore } from "./session-store";
 
-export function sessionRpc(store: SessionStore, publish: (e: DaemonEvent) => void, now: () => number): RpcExtension {
+export function sessionRpc(store: SessionStore, emit: (m: ChangeMessage) => void, now: () => number): RpcExtension {
   return {
     methods: ["listSessions", "revokeSession"],
     async handle(req: RpcRequest, ctx: RpcContext): Promise<unknown> {
@@ -5368,7 +5261,7 @@ export function sessionRpc(store: SessionStore, publish: (e: DaemonEvent) => voi
       }
       if (req.method === "revokeSession") {
         store.revoke(req.id, now());
-        publish({ type: "sessions" });
+        emit({ type: "sessions.changed" });
         return null;
       }
       throw new KiboError("INTERNAL", `sessionRpc cannot handle ${req.method}`);
@@ -5414,52 +5307,68 @@ Le `as unknown as Service` du test est justifié : seul `handle` est appelé.
 
 - [ ] **Step 10: Brancher le serveur**
 
-Dans `packages/daemon/src/server.ts` (les autres routes ajoutées par les phases 2 à 6 restent telles quelles) :
+Dans `packages/daemon/src/server.ts` (les routes `/hooks/<runId>`, `/components/`, `/api/code` et le service de l'UI restent telles quelles) :
 
 1. Options et types :
 ```ts
-import type { ServerWebSocket } from "bun";
-import type { DaemonEvent } from "@kibo/schema";
+import { Database } from "bun:sqlite";
+import type { Server, ServerWebSocket } from "bun";
 import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
 import { deviceNameFromUserAgent } from "./sessions/device-name";
 import { sessionRpc } from "./sessions/rpc";
-import type { SessionStore } from "./sessions/session-store";
+import { openSessionStore, type SessionStore } from "./sessions/session-store";
 
 export type ServerOptions = {
   service: Service;
-  sessions: SessionStore;
   token: string;
   port: number;
   uiDir: string | null;
   extraOrigins?: string[];
+  hooks?: HookSink;
+  code?: CodeService;
+  assets?: AssetLookup;
+  sandboxOrigin?: () => string | null;
+  redact?: (text: string) => string;
+  sessions?: SessionStore;
   extensions?: RpcExtension[];
   handlers?: RpcHandler[];
   now?: () => number;
 };
 type WsData = { sessionHash: string };
 ```
+`sessions` est facultatif : sans lui, `startServer` ouvre `openSessionStore(new Database(":memory:", { strict: true }))`, ce qui garde verts sans modification les sept fichiers de test qui appellent `startServer` ; le démon réel passe toujours le magasin persistant (point 8).
+
 2. Remplacer `const sessions = new Set<string>()` et `hasSession` par :
 ```ts
   const now = opts.now ?? Date.now;
+  const sessions = opts.sessions ?? openSessionStore(new Database(":memory:", { strict: true }));
   const sockets = new Map<string, Set<ServerWebSocket<WsData>>>();
   const sessionOf = (req: Request): { hash: string; remote: boolean } | null => {
     const id = readCookie(req.headers.get("cookie"), COOKIE);
-    return id === null ? null : opts.sessions.validate(id, now());
+    return id === null ? null : sessions.validate(id, now());
   };
-  const offRevoke = opts.sessions.onRevoke((hash) => {
+  const hasSession = (req: Request) => sessionOf(req) !== null;
+  const offRevoke = sessions.onRevoke((hash) => {
     for (const ws of sockets.get(hash) ?? []) ws.close(4401, "session revoked");
     sockets.delete(hash);
   });
+  const extensions: RpcExtension[] = [
+    sessionRpc(sessions, (m) => opts.service.docs.emit(m), now),
+    ...(opts.extensions ?? []),
+  ];
 ```
+`hasSession` reste passé à `serveTrusted` comme aujourd'hui.
+
 3. Dans `/api/pair`, remplacer `newSessionId()` / `sessions.add(id)` par :
 ```ts
-      const { id } = opts.sessions.create(
+      const { id } = sessions.create(
         { deviceName: deviceNameFromUserAgent(req.headers.get("user-agent")), remote: false },
         now(),
       );
 ```
-(`newSessionId` n'est plus utilisé : le retirer de `auth.ts` et de l'import.)
-4. Après la vérification d'origine :
+`newSessionId` n'est plus utilisé : le retirer de `auth.ts` et de l'import.
+
+4. `handleApi` prend `srv: Server<WsData>`. Après la vérification d'origine et `/api/pair` :
 ```ts
     const session = sessionOf(req);
     if (!session) return fail("UNAUTHORIZED", "pair this browser first", 401);
@@ -5472,24 +5381,14 @@ type WsData = { sessionHash: string };
     }
     if (url.pathname === "/api/rpc" && req.method === "POST") {
       const parsed = RpcRequest.safeParse(await req.json().catch(() => null));
-      if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
-      try {
-        return json({ ok: true, result: (await dispatchRpc(opts.service, extensions, parsed.data, ctx, opts.handlers ?? [])) ?? null });
-      } catch (e) {
-        if (e instanceof KiboError) return fail(e.code, e.detail, STATUS[e.code] ?? 400);
-        console.error("[kibo-daemon] rpc failed", e);
-        return fail("INTERNAL", "internal error", 500);
-      }
+      if (!parsed.success) return fail("INVALID_INPUT", rpcRefusal(parsed.error), 400);
+      const rpc = parsed.data;
+      return respond(() => dispatchRpc(opts.service, extensions, rpc, ctx, opts.handlers ?? []), redact);
     }
 ```
-Le `.catch(() => null)` sur `req.json()` existe déjà en v0.1 : il ne cache rien, un corps illisible devient une requête invalide (400) juste en dessous.
-5. `extensions` et `publish` :
-```ts
-  const publish = (event: DaemonEvent) => server.publish("changes", JSON.stringify(event));
-  const extensions: RpcExtension[] = [sessionRpc(opts.sessions, (e) => publish(e), now), ...(opts.extensions ?? [])];
-```
-(`extensions` est déclaré avant `Bun.serve` ; `publish` référence `server` au moment de l'appel seulement.)
-6. `Bun.serve<WsData>` et WebSocket :
+`respond` garde le masquage (`redact`), les codes cachés (`HIDDEN`) et la table `STATUS` ; le `.catch(() => null)` sur `req.json()` existe déjà : un corps illisible devient une requête invalide (400).
+
+5. `Bun.serve<WsData>` et WebSocket :
 ```ts
     websocket: {
       open(ws) {
@@ -5504,16 +5403,17 @@ Le `.catch(() => null)` sur `req.json()` existe déjà en v0.1 : il ne cache rie
       message() {},
     },
 ```
-7. `stop` appelle aussi `offRevoke()` ; `startServer` renvoie `{ url, port, stop, publish }`.
 
-Dans `packages/daemon/src/main.ts` : `import { openSessionStore } from "./sessions/session-store";` et `sessions: openSessionStore(store.db)` dans `startServer`.
+6. `stop` appelle aussi `offRevoke()` avant `server.stop(true)`. Le retour reste `{ url, port, stop }` : l'événement `sessions.changed` passe par `service.docs.emit`, que `startServer` diffuse déjà (`opts.service.onChange(publish)`).
 
-Dans `packages/daemon/src/server.test.ts` : ajouter `sessions: openSessionStore(store.db)` à chaque `startServer({...})` (mise en place seulement, aucune attente modifiée) ; le service factice du bloc « unexpected failures » garde sa forme.
+7. Ajouter à `sessions-http.test.ts` le cas « without a session store the server still pairs in memory » (`startServer` sans `sessions`, appairage puis `listProjects` ⇒ 200) et, dans le test de révocation, la réception de `{ type: "sessions.changed" }` sur la WebSocket de la session qui révoque.
+
+8. Dans `packages/daemon/src/daemon.ts` (`assemble`) : `import { openSessionStore } from "./sessions/session-store";` et `sessions: openSessionStore(store.db)` dans l'appel à `startServer`. Ajouter à `packages/daemon/src/daemon.test.ts` un cas : appairer, arrêter puis redémarrer `startDaemon` sur le même `home`, la même session répond 200 à `listProjects`.
 
 - [ ] **Step 11: Lancer les tests du démon**
 
 Run: `bun test packages/daemon`
-Expected: PASS, y compris `server.test.ts` inchangé dans ses attentes et les 6 tests de `sessions-http.test.ts`.
+Expected: PASS, y compris les fichiers `server*.test.ts`, `exit.test.ts` et `agents.integration.test.ts` inchangés, et les 7 tests de `sessions-http.test.ts`.
 
 - [ ] **Step 12: Vérifier le lint et les types, commiter**
 
@@ -5521,7 +5421,7 @@ Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
 
 ```bash
-git add packages/daemon/src/sessions packages/daemon/src/rpc-extensions.ts packages/daemon/src/rpc-extensions.test.ts packages/daemon/src/server.ts packages/daemon/src/auth.ts packages/daemon/src/main.ts packages/daemon/src/server.test.ts packages/schema/src/rpc.ts
+git add packages/daemon/src/sessions packages/daemon/src/rpc-extensions.ts packages/daemon/src/rpc-extensions.test.ts packages/daemon/src/server.ts packages/daemon/src/auth.ts packages/daemon/src/daemon.ts packages/daemon/src/daemon.test.ts
 git commit -m "feat(daemon): sessions d'appairage persistées"
 ```
 
@@ -5544,6 +5444,7 @@ Chaîne de vérification de la marketplace (spec H §3.1, §3.2, §4, §7), dans
   - `encodeKpkg(pkg: Kpkg): Uint8Array` ; `decodeKpkg(bytes: Uint8Array): Kpkg` (`INVALID_INPUT`)
   - `verifyKpkgSignature(pkg: Kpkg): Promise<void>` (`SIGNATURE_INVALID`)
   - `kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]>` (`INVALID_INPUT`, `HASH_MISMATCH`)
+  - **Nouveau** : `KPKG_MAX_FILES = 200`, `assertPackagePath(path: string): void` (`INVALID_INPUT`)
   - `signIndex(index: MarketIndex, privateKey: string): Promise<{ bytes: Uint8Array; sig: string }>`
   - `verifyIndex(input: { bytes: Uint8Array; sig: string; expectedKey: string; lastSerial: number | null }): Promise<MarketIndex>` (`SIGNATURE_INVALID`, `INDEX_ROLLBACK`, `INVALID_INPUT`)
   - `verifyMarketPackage(input: { pkg: Kpkg; index: MarketIndex; pinnedKey: string | null }): Promise<{ files: SourceFile[]; newPublisher: boolean }>`
@@ -5553,7 +5454,9 @@ Chaîne de vérification de la marketplace (spec H §3.1, §3.2, §4, §7), dans
     - `makeTestIndex(input: { source: { id: string; name: string; keys: KeyPair }; serial: number; packages: { pkg: Kpkg; verified?: boolean }[]; revoked?: { hash: string; reason: string }[]; now?: Date }): Promise<{ index: MarketIndex; bytes: Uint8Array; sig: string }>`
     - `ComponentManifestInput = z.input<typeof ComponentManifest>`
 
-Règles d'un chemin de fichier de paquet : relatif POSIX, segments `[A-Za-z0-9._-]+`, aucun segment commençant par `.` (couvre `..` et les fichiers cachés), pas de `/` initial, pas de doublon, et `isHashedSource(path)` vrai. Le manifeste porté par le paquet doit être identique à `kibo.component.json` du paquet : sinon les permissions affichées pourraient différer du code installé.
+- Vérifié en T0 : l'empreinte de référence est celle de `packages/devkit/src/hash.ts` (`hashFiles`, `isHashed`, `readSources`, `MAX_SOURCE_FILES = 200`, `MAX_SOURCE_BYTES = 2_097_152`) ; T2 rend `sourceHash` / `isHashedSource` de `@kibo/trust` identiques octet pour octet (même règle d'inclusion : `kibo.component.json` et `*.ts|*.tsx|*.css` hors `*.test.ts(x)`, aucun segment commençant par `.`, ni `node_modules`, ni `dist`) et `hashSources` du devkit y délègue. `trust` ne dépend pas du devkit : les deux limites sont reprises ici (`KPKG_MAX_BYTES` du schéma vaut `MAX_SOURCE_BYTES`, `KPKG_MAX_FILES = 200` est exporté par `kpkg.ts`). `GrantedPermissions` (`packages/schema/src/permissions.ts`) a six champs (`reads`, `writes`, `data`, `net`, `secrets`, `mcp`) et se calcule depuis un manifeste par `grantedOf(manifest)` (pas de `grantedPermissions`). `ComponentManifest.description` est optionnel (`z.string().min(1).optional()`) alors que `MarketIndex.packages[].description` est requis : l'index écrit `""` à défaut. Le `ui.tsx` généré par `scaffoldComponent` (`packages/devkit/src/scaffold.ts`) exporte `Component`, comme celui des fixtures.
+
+Règles d'un chemin de fichier de paquet : relatif POSIX, segments `[A-Za-z0-9._-]+`, aucun segment commençant par `.` (couvre `..` et les fichiers cachés), pas de `/` initial, pas de doublon, et `isHashedSource(path)` vrai ; au plus `KPKG_MAX_FILES` (200) fichiers, comme `MAX_SOURCE_FILES` du devkit. Le manifeste porté par le paquet doit être identique à `kibo.component.json` du paquet : sinon les permissions affichées pourraient différer du code installé.
 
 - [ ] **Step 1: Écrire les tests du paquet**
 
@@ -5659,6 +5562,11 @@ describe("content", () => {
     const signature = await signBytes(keys.privateKey, signingPayload({ ...pkg, manifest }));
     await rejectsWith(kpkgSourceFiles({ ...pkg, manifest, signature }), "INVALID_INPUT");
   });
+  test("refuses more than 200 files", async () => {
+    const many = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`f${i}.ts`, "export const x = 1;\n"]));
+    const { pkg } = await makeTestPackage({ files: many });
+    await rejectsWith(kpkgSourceFiles(pkg), "INVALID_INPUT");
+  });
   test("refuses more than 2 MiB of decoded sources", async () => {
     const big = "x".repeat(KPKG_MAX_BYTES);
     const { pkg } = await makeTestPackage({ files: { "big.ts": `export const s = "${big}";\n` } });
@@ -5700,6 +5608,7 @@ import { isHashedSource, type SourceFile, sourceHash } from "./source-hash";
 const SEGMENT = /^[A-Za-z0-9._-]+$/;
 const MANIFEST_FILE = "kibo.component.json";
 const RAW_LIMIT = Math.ceil((KPKG_MAX_BYTES * 4) / 3) + 256 * 1024;
+export const KPKG_MAX_FILES = 200;
 
 export function signingPayload(pkg: Pick<Kpkg, "manifest" | "hash" | "publisher" | "publishedAt">): Uint8Array {
   return utf8(
@@ -5763,6 +5672,9 @@ export async function verifyKpkgSignature(pkg: Kpkg): Promise<void> {
 }
 
 export async function kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]> {
+  if (pkg.files.length > KPKG_MAX_FILES) {
+    throw new KiboError("INVALID_INPUT", `package has more than ${KPKG_MAX_FILES} files`);
+  }
   const seen = new Set<string>();
   let total = 0;
   const files: SourceFile[] = [];
@@ -5798,7 +5710,7 @@ export async function kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]> {
 
 `packages/trust/src/testing/fixtures.ts` :
 ```ts
-import { ComponentManifest, type Kpkg, type MarketIndex } from "@kibo/schema";
+import { ComponentManifest, grantedOf, type Kpkg, type MarketIndex } from "@kibo/schema";
 import type { z } from "zod";
 import { utf8 } from "../bytes";
 import { generateKeyPair, type KeyPair } from "../ed25519";
@@ -5888,14 +5800,14 @@ export async function makeTestIndex(input: {
       return {
         id,
         title: latest.manifest.title,
-        description: latest.manifest.description,
+        description: latest.manifest.description ?? "",
         kind: latest.manifest.kind,
         versions: pkgs.map((p) => ({
           version: p.manifest.version,
           hash: p.hash,
           publisherKey: p.publisher.publicKey,
           size: encodeKpkg(p).byteLength,
-          permissions: { reads: p.manifest.reads, writes: p.manifest.writes, data: p.manifest.data, net: p.manifest.net },
+          permissions: grantedOf(p.manifest),
           publishedAt: p.publishedAt,
           url: `packages/${id}/${p.manifest.version}.kpkg`,
         })),
@@ -5909,8 +5821,6 @@ export async function makeTestIndex(input: {
 
 export { generateKeyPair };
 ```
-
-Si `GrantedPermissions` (phase 4, étendu en phase 5 par `secrets` et `mcp`) exige d'autres champs, les ajouter ici depuis le manifeste avec leurs défauts ; T0 le vérifie.
 
 `packages/trust/package.json` : ajouter à `exports` `"./testing": "./src/testing/fixtures.ts"`.
 
@@ -6203,7 +6113,7 @@ Base SQLite de `kibo-sync` (spec G §3.1) et tout ce qui touche à l'identité :
 - Test: `packages/sync-server/src/db.test.ts`, `packages/sync-server/src/accounts.test.ts`, `packages/sync-server/src/auth.test.ts`, `packages/sync-server/src/limits.test.ts`
 
 **Interfaces:**
-- Consumes (T2) : `hashCode`, `newInviteCode`, `normalizeCode`, `fromBase64`, `toBase64`, `verifyBytes`, `generateKeyPair`, `signBytes`. (T4) : `JoinRequest`, `JoinResponse`, `DeviceInfo`, `MemberInfo`, `Role`, `SYNC_LIMITS`, `challengePayload`. (T1) : codes `INVITE_INVALID`, `DEVICE_REVOKED`.
+- Consumes (T2) : `hashCode`, `newInviteCode`, `normalizeCode`, `fromBase64`, `toBase64`, `verifyBytes`, `generateKeyPair`, `signBytes`. (T4) : `JoinRequest`, `JoinResponse`, `DeviceInfo`, `MemberInfo`, `MemberRole`, `SYNC_LIMITS`, `challengePayload`. (T1) : codes `INVITE_INVALID`, `DEVICE_REVOKED`.
 - Produces : toutes les signatures `db.ts`, `accounts.ts`, `members.ts`, `audit.ts`, `auth.ts`, `limits.ts` des Contrats partagés, avec ces précisions **nouvelles** :
   - `deviceRecord(...)` renvoie `{ userId: string; name: string; deviceName: string; publicKey: string; revoked: boolean; userDisabled: boolean } | null` (`name` = nom de l'utilisateur, `deviceName` ajouté).
   - `type AuditEntry = { id: number; at: number; kind: AuditKind; userId: string | null; deviceId: string | null; projectId: string | null; detail: string | null }` et `readAudit(sdb: ServerDb, limit: number): AuditEntry[]` (plus récent d'abord), utilisés par la CLI (T17).
@@ -6514,7 +6424,7 @@ export function readAudit(sdb: ServerDb, limit: number): AuditEntry[] {
 
 `packages/sync-server/src/accounts.ts` :
 ```ts
-import { type DeviceInfo, JoinRequest, type JoinResponse, KiboError, type Role, SYNC_LIMITS } from "@kibo/schema";
+import { type DeviceInfo, JoinRequest, type JoinResponse, KiboError, type MemberRole, SYNC_LIMITS } from "@kibo/schema";
 import { fromBase64, hashCode, newInviteCode } from "@kibo/trust";
 import { audit } from "./audit";
 import type { ServerDb } from "./db";
@@ -6530,7 +6440,7 @@ type InviteRow = {
   name: string | null;
   userId: string | null;
   projectId: string | null;
-  role: Role | null;
+  role: MemberRole | null;
   expiresAt: number;
   usedAt: number | null;
 };
@@ -6640,7 +6550,7 @@ export async function redeemProjectInvite(
   sdb: ServerDb,
   input: { code: string; userId: string },
   now: number,
-): Promise<{ projectId: string; role: Role }> {
+): Promise<{ projectId: string; role: MemberRole }> {
   const codeHash = await hashCode(input.code);
   return sdb.db.transaction(() => {
     const invite = takeInvite(sdb, codeHash, ["project"], now);
@@ -6718,7 +6628,7 @@ export function disableUser(sdb: ServerDb, userId: string, now: number): void {
 
 `packages/sync-server/src/members.ts` :
 ```ts
-import { KiboError, type MemberInfo, type Role } from "@kibo/schema";
+import { KiboError, type MemberInfo, type MemberRole } from "@kibo/schema";
 import { audit } from "./audit";
 import type { ServerDb } from "./db";
 
@@ -6737,9 +6647,9 @@ export function insertProject(
   })();
 }
 
-export function roleOf(sdb: ServerDb, projectId: string, userId: string): Role | null {
+export function roleOf(sdb: ServerDb, projectId: string, userId: string): MemberRole | null {
   const row = sdb.db.query("SELECT role FROM members WHERE projectId = $p AND userId = $u").get({ p: projectId, u: userId }) as
-    | { role: Role }
+    | { role: MemberRole }
     | null;
   return row?.role ?? null;
 }
@@ -6753,7 +6663,7 @@ export function listMembers(sdb: ServerDb, projectId: string): MemberInfo[] {
     .all({ p: projectId }) as MemberInfo[];
 }
 
-export function setRole(sdb: ServerDb, input: { projectId: string; userId: string; role: Role | null }, now: number): void {
+export function setRole(sdb: ServerDb, input: { projectId: string; userId: string; role: MemberRole | null }, now: number): void {
   sdb.db.transaction(() => {
     const current = roleOf(sdb, input.projectId, input.userId);
     if (current === "owner" && input.role !== "owner") {
@@ -6778,13 +6688,13 @@ export function setRole(sdb: ServerDb, input: { projectId: string; userId: strin
   })();
 }
 
-export function projectsOf(sdb: ServerDb, userId: string): { id: string; name: string; role: Role }[] {
+export function projectsOf(sdb: ServerDb, userId: string): { id: string; name: string; role: MemberRole }[] {
   return sdb.db
     .query(
       "SELECT p.id AS id, p.name AS name, m.role AS role FROM members m JOIN projects p ON p.id = m.projectId " +
         "WHERE m.userId = $u ORDER BY p.createdAt, p.id",
     )
-    .all({ u: userId }) as { id: string; name: string; role: Role }[];
+    .all({ u: userId }) as { id: string; name: string; role: MemberRole }[];
 }
 ```
 
@@ -7023,228 +6933,222 @@ git commit -m "feat(sync-server): comptes et invitations"
 
 ---
 
-### Task 12: Isolation OS du backend sandboxé
+### Task 12: Backends sandboxés sans isolation OS (réglage) et état de l'isolation
 
-Vague 2, tâche à risque (relue aussi par `kibo-lead`). Spec H §8 (critère de sortie : le test `escape` passe sur macOS et Linux en CI avec le durcissement actif), spec B §4.4. Dépend de T8 (`wrapCommand`, `detectSandbox`) et de T1 (`LocalSettings`, `SANDBOX_UNAVAILABLE`), T9 (`RpcExtension`, `requireLocal`).
+Vague 3, tâche à risque (relue aussi par `kibo-lead`). Spec H §8 (« Restent en phase 7 : le réglage « Autoriser les backends sandboxés sans isolation OS », l'écran 19… ») et §8.3, spec B §4.4. Dépend de T1 (`LocalSettings`), T4 (`SandboxStatus`, RPC `getSandboxStatus` / `setAllowUnsandboxed`, message `{ type: "sandbox.changed" }`), T8 (`OsSandbox.diagnose`) et T9 (`RpcExtension`, `requireLocal`, option `extensions` de `startServer`).
 
-Trois changements dans le backend de la phase 4 :
-1. Le `ProcessHost` ne lance plus le runtime directement : il demande à un `SandboxService` la commande enveloppée (`bwrap` ou `sandbox-exec`), ou échoue en `SANDBOX_UNAVAILABLE`.
-2. **Canal IPC** : `bwrap --clearenv` efface la variable par laquelle Bun transmet son canal `ipc` au fils (le fils direct est `bwrap`, pas le runtime). Le canal passe donc en **JSON par lignes sur stdin/stdout** (spec H §8.1 : « IPC par stdin/stdout »), stderr restant le journal. Les messages (spec B §6.3) ne changent pas.
-3. Le runtime lit `server.js` dans `KIBO_COMPONENT_DIR` (chemin **vu du bac à sable** : `/kibo/component` sous Linux, le chemin réel sous macOS, où `sandbox-exec` ne remappe rien).
+Vérifié en T0 :
+- Le backend sandboxé est `createProcessHost(opts: ProcessHostOptions): BackendHost` dans `packages/daemon/src/components/process-host.ts` (pas de dossier `components/backend/`), avec `ProcessHostOptions = HostOptions & { command?: string[]; sandbox?: OsSandbox }` et `HostOptions` de `components/host-core.ts` (`ref`, `manifest`, `code`, `onCall`, `beforeStart?`, `log?`…). Il lance déjà le runtime par `Bun.spawn(sandbox.wrap(command, runtimePolicy(command, cwd)))`, `env { KIBO_COMPONENT: ref }`, et son `beforeStart` appelle `sandbox.ready()` : sans bac à sable, `SANDBOX_UNAVAILABLE` et le backend ne démarre pas (test `process-host-sandbox.test.ts`).
+- Le canal est déjà en JSON par lignes sur les descripteurs 3 et 4 (`components/line-channel.ts`, `readLines`, `BACKEND_MESSAGE_LIMIT`) et le runtime lit le code dans le premier message (`component-runtime.ts`) : ni `KIBO_COMPONENT_DIR`, ni nouveau canal, ni montage `/kibo/component` ne sont nécessaires.
+- `createBackends(deps: BackendsDeps)` (`components/backends.ts`) crée les hôtes : `createProcessHost({ ...opts, ...(deps.processCommand && { command: deps.processCommand }) })` pour `sandboxed`, `createWorkerHost` pour `trusted`. `createComponentsService(deps: ComponentsDeps)` (`components/service.ts`) appelle `createBackends` ; le démon est assemblé dans `packages/daemon/src/daemon.ts` (`assemble`), pas dans `main.ts` (qui ne lit que les options de ligne de commande).
+- Le test d'évasion existe déjà : `packages/daemon/src/components/exit.test.ts` (vrai démon, fixture `packages/devkit/fixtures/evil`, copiée par `copyFixture("evil")` de `@kibo/devkit/test-kit`, action `escape` : lecture du jeton, écriture, `spawn`, fils, signal, connexion, descripteurs, Worker — tout `blocked` avec l'isolation OS) et `process-host-sandbox.test.ts` (import construit, absence de bac à sable). Il n'existe ni `testing/install-fixture.ts` ni `testing/fixtures/` dans le démon : aucune nouvelle fixture n'est créée.
+- `SANDBOX_UNAVAILABLE` → HTTP 503 existe déjà dans `STATUS` (`server.ts`).
 
-- Hypothèse v0.6 (vérifiée en T0) : `ProcessHost` (`packages/daemon/src/components/backend/process-host.ts`) reçoit `ProcessHostOptions = { storeDir: string; spawnCommand: SpawnCommand; logEvent(e: ComponentEvent): void }` et expose `invoke(input: BackendInvoke): Promise<unknown>` avec `BackendInvoke = { ref: { id: string; version: string; hash: string }; instanceId: string; config: Record<string, unknown>; target: { action: string } | { job: string }; input: unknown }`.
-- Hypothèse v0.6 (vérifiée en T0) : `packages/daemon/src/testing/install-fixture.ts` (utilisé par le test de sortie `evil` de la phase 4) exporte `installFixtureComponent(input: { home: string; srcDir: string; trust: "trusted" | "sandboxed" }): Promise<{ ref: { id: string; version: string; hash: string }; buildDir: string; storeDir: string }>`.
-- Hypothèse v0.6 (vérifiée en T0) : `defineServer` de `@kibo/sdk/server` s'exporte par `export const server = defineServer({ actions })` dans `server.ts` ; le dossier `packages/daemon/src/testing/fixtures/` est exclu du `tsconfig` du démon (comme la fixture `evil`).
+Cette tâche ajoute donc seulement : le réglage persistant, le service qui expose l'état (diagnostic de T8 + réglage) et ses deux RPC, le lancement **sans enveloppe** d'un backend sandboxé quand l'isolation manque **et** que le réglage l'autorise, et le cas « sans durcissement » du test d'évasion. Le réglage ne touche pas la validation (tests d'un composant) : elle reste refusée sans bac à sable (`FR_DEVKIT.sandboxUnavailable`), spec H §7.
 
 **Files:**
-- Create: `packages/daemon/src/sandbox/sandbox-service.ts`, `packages/daemon/src/sandbox/rpc.ts`, `packages/daemon/src/components/backend/line-channel.ts`, `packages/daemon/src/testing/fixtures/escape/kibo.component.json`, `packages/daemon/src/testing/fixtures/escape/ui.tsx`, `packages/daemon/src/testing/fixtures/escape/server.ts`
-- Modify: `packages/daemon/src/components/backend/process-host.ts` (lancement via `SandboxService`, canal par lignes), `packages/daemon/src/component-runtime.ts` (canal par lignes, `KIBO_COMPONENT_DIR`), `packages/daemon/src/main.ts` (sonde au démarrage, extension RPC)
-- Test: `packages/daemon/src/sandbox/sandbox-service.test.ts`, `packages/daemon/src/components/backend/line-channel.test.ts`, `packages/daemon/src/sandbox/escape.test.ts`
+- Create: `packages/daemon/src/sandbox/sandbox-service.ts`, `packages/daemon/src/sandbox/rpc.ts`
+- Modify: `packages/daemon/src/components/process-host.ts` (option `allowUnsandboxed`), `packages/daemon/src/components/backends.ts` (transmission), `packages/daemon/src/components/service.ts` (`ComponentsDeps.allowUnsandboxed`), `packages/daemon/src/daemon.ts` (réglages, service, extension RPC)
+- Test: `packages/daemon/src/sandbox/sandbox-service.test.ts`, `packages/daemon/src/sandbox/sandbox-daemon.test.ts`, `packages/daemon/src/components/process-host-sandbox.test.ts` (cas ajoutés, cas existants inchangés)
 
 **Interfaces:**
-- Consumes: `detectSandbox`, `realDetectDeps`, `wrapCommand`, `SandboxPolicy`, `SandboxProbe` (T8) ; `LocalSettings` (T1) ; `SandboxStatus`, RPC `getSandboxStatus` / `setAllowUnsandboxed`, `DaemonEvent` `{ type: "sandbox" }` (T4) ; `RpcExtension`, `requireLocal` (T9).
+- Consumes: `OsSandbox`, `osSandbox()` (`@kibo/devkit`, `diagnose` ajouté par T8) ; `LocalSettings`, `openLocalSettings(store)` (T1, `packages/daemon/src/settings.ts`) ; `SandboxStatus`, `ChangeMessage` avec `{ type: "sandbox.changed" }`, RPC `getSandboxStatus` et `setAllowUnsandboxed { allow }` (T4) ; `RpcExtension`, `RpcContext`, `requireLocal` (T9, `packages/daemon/src/rpc-extensions.ts`) ; `pair` (`packages/daemon/src/components/exit.test-helper.ts`), `okReport` (`components/service.test-helper.ts`), `DEV_TOOLCHAIN` (`@kibo/devkit/test-kit`) pour le test.
 - Produces (nouveau, signalé) :
   ```ts
-  // sandbox/sandbox-service.ts
-  export type RuntimeCommand = { command: string; args: string[]; extraReadOnly: string[] };
-  export type SandboxService = {
-    status(): SandboxStatus;
-    setAllowUnsandboxed(allow: boolean): SandboxStatus;
-    launch(input: { componentRef: string; buildDir: string; tmpDir: string }): { argv: string[]; env: Record<string, string>; componentDir: string; isolated: boolean };
-  };
-  export function currentRuntime(): RuntimeCommand;
-  export function createSandboxService(deps: { probe: SandboxProbe; settings: LocalSettings; runtime: RuntimeCommand; publish(e: DaemonEvent): void }): SandboxService;
+  // packages/daemon/src/sandbox/sandbox-service.ts
   export const ALLOW_UNSANDBOXED_KEY = "sandbox.allowUnsandboxed";
-  // sandbox/rpc.ts
+  export type SandboxService = {
+    status(): Promise<SandboxStatus>;
+    allowUnsandboxed(): boolean;
+    setAllowUnsandboxed(allow: boolean): Promise<SandboxStatus>;
+  };
+  export function createSandboxService(deps: {
+    sandbox: Pick<OsSandbox, "diagnose">;
+    settings: LocalSettings;
+    emit(message: ChangeMessage): void;
+  }): SandboxService;
+  // packages/daemon/src/sandbox/rpc.ts
   export function sandboxRpc(service: SandboxService): RpcExtension;
-  // components/backend/line-channel.ts
-  export type LineChannel = { send(message: unknown): void; onMessage(fn: (message: unknown) => void): void; close(): void };
-  export function createLineChannel(input: ReadableStream<Uint8Array>, write: (text: string) => void, onError: (e: Error) => void): LineChannel;
+  // packages/daemon/src/components/process-host.ts
+  export type ProcessHostOptions = HostOptions & { command?: string[]; sandbox?: OsSandbox; allowUnsandboxed?: () => boolean };
+  // packages/daemon/src/components/backends.ts : BackendsDeps.allowUnsandboxed?: () => boolean
+  // packages/daemon/src/components/service.ts : ComponentsDeps.allowUnsandboxed?: () => boolean
   ```
 
-- [ ] **Step 1: Écrire le test du canal par lignes**
+- [ ] **Step 1: Écrire le test du lancement sans isolation**
 
-`packages/daemon/src/components/backend/line-channel.test.ts` :
+Ajouter à `packages/daemon/src/components/process-host-sandbox.test.ts` (imports enrichis de `SERVER_JS` depuis `./backend-code.test-helper`) :
 ```ts
-import { expect, test } from "bun:test";
-import { createLineChannel } from "./line-channel";
+const missing = {
+  ready: async () => {
+    throw new KiboError("SANDBOX_UNAVAILABLE", "bubblewrap (bwrap) is not installed");
+  },
+  diagnose: async () => ({
+    kind: "bwrap" as const,
+    available: false,
+    reason: "bubblewrap (bwrap) is not installed",
+    fix: "sudo apt install bubblewrap",
+  }),
+  wrap: () => {
+    throw new Error("an unsandboxed launch must not be wrapped");
+  },
+};
+const capsCall = { projectId: "p1", instanceId: "i1", config: {}, target: { action: "caps" }, input: null };
 
-const streamOf = (chunks: string[]) =>
-  new ReadableStream<Uint8Array>({
-    start(c) {
-      for (const chunk of chunks) c.enqueue(new TextEncoder().encode(chunk));
-      c.close();
-    },
+test("the explicit setting starts the backend without OS isolation, the phase 4 protections stay", async () => {
+  const lines: string[] = [];
+  const host = createProcessHost({
+    ref: "probe@0.1.0",
+    manifest: TEST_MANIFEST,
+    code: { server: SERVER_JS, migrations: null },
+    onCall: async () => null,
+    sandbox: missing,
+    allowUnsandboxed: () => true,
+    log: (l) => lines.push(l),
   });
+  try {
+    expect(await host.invoke(capsCall)).toBe("undefined,undefined,undefined,undefined");
+    expect(host.running).toBe(true);
+    expect(lines.some((l) => l.includes("without OS isolation"))).toBe(true);
+  } finally {
+    host.stop();
+  }
+}, 30_000);
 
-test("messages split across chunks are reassembled line by line", async () => {
-  const received: unknown[] = [];
-  const done = new Promise<void>((r) => setTimeout(r, 20));
-  const channel = createLineChannel(streamOf(['{"type":"res', 'ult","id":1}\n{"type":"call"', ',"id":2}\n']), () => {}, (e) => {
-    throw e;
+test("the setting is read at each start: once withdrawn, the backend no longer starts", async () => {
+  let allowed = true;
+  const host = createProcessHost({
+    ref: "probe@0.1.0",
+    manifest: TEST_MANIFEST,
+    code: { server: SERVER_JS, migrations: null },
+    onCall: async () => null,
+    sandbox: missing,
+    allowUnsandboxed: () => allowed,
   });
-  channel.onMessage((m) => received.push(m));
-  await done;
-  expect(received).toEqual([{ type: "result", id: 1 }, { type: "call", id: 2 }]);
-});
-
-test("send writes one JSON document per line", () => {
-  const out: string[] = [];
-  const channel = createLineChannel(streamOf([]), (t) => out.push(t), (e) => {
-    throw e;
-  });
-  channel.send({ type: "invoke", id: 3, input: "a\nb" });
-  expect(out).toEqual(['{"type":"invoke","id":3,"input":"a\\nb"}\n']);
-});
-
-test("an invalid line is reported, never dropped silently", async () => {
-  const errors: string[] = [];
-  const channel = createLineChannel(streamOf(["not json\n"]), () => {}, (e) => errors.push(e.message));
-  channel.onMessage(() => {});
-  await new Promise((r) => setTimeout(r, 20));
-  expect(errors).toEqual(["invalid IPC line: not json"]);
-});
+  try {
+    expect(await host.invoke(capsCall)).toBe("undefined,undefined,undefined,undefined");
+    host.stop();
+    allowed = false;
+    await expect(host.invoke(capsCall)).rejects.toThrow("SANDBOX_UNAVAILABLE");
+    expect(host.running).toBe(false);
+  } finally {
+    host.stop();
+  }
+}, 30_000);
 ```
+Le test existant « without an OS sandbox the backend does not start » reste tel quel : sans `allowUnsandboxed`, le défaut est de refuser. Son faux `unavailable` gagne seulement `diagnose` si `typecheck` l'exige (`OsSandbox` a désormais trois méthodes, T8).
 
-Run: `bun test packages/daemon/src/components/backend/line-channel.test.ts`
-Expected: FAIL avec « Cannot find module './line-channel' ».
+Run: `bun test packages/daemon/src/components/process-host-sandbox.test.ts`
+Expected: FAIL — l'option `allowUnsandboxed` n'existe pas, `SANDBOX_UNAVAILABLE` au premier cas.
 
-- [ ] **Step 2: Implémenter le canal**
+- [ ] **Step 2: Lancer sans enveloppe quand le réglage l'autorise**
 
-`packages/daemon/src/components/backend/line-channel.ts` :
+Dans `packages/daemon/src/components/process-host.ts` :
 ```ts
-export type LineChannel = {
-  send(message: unknown): void;
-  onMessage(fn: (message: unknown) => void): void;
-  close(): void;
+export type ProcessHostOptions = HostOptions & {
+  command?: string[];
+  sandbox?: OsSandbox;
+  allowUnsandboxed?: () => boolean;
 };
 
-export function createLineChannel(
-  input: ReadableStream<Uint8Array>,
-  write: (text: string) => void,
-  onError: (e: Error) => void,
-): LineChannel {
-  const listeners = new Set<(message: unknown) => void>();
-  const reader = input.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let open = true;
-
-  const deliver = (line: string) => {
-    if (!line.trim()) return;
-    let message: unknown;
-    try {
-      message = JSON.parse(line);
-    } catch {
-      onError(new Error(`invalid IPC line: ${line.slice(0, 200)}`));
-      return;
-    }
-    for (const l of listeners) l(message);
-  };
-
-  const pump = async () => {
-    while (open) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let nl = buffer.indexOf("\n");
-      while (nl >= 0) {
-        deliver(buffer.slice(0, nl));
-        buffer = buffer.slice(nl + 1);
-        nl = buffer.indexOf("\n");
-      }
-    }
-  };
-  pump().catch((e: unknown) => onError(e instanceof Error ? e : new Error(String(e))));
-
-  return {
-    send: (message) => write(`${JSON.stringify(message)}\n`),
-    onMessage: (fn) => {
-      listeners.add(fn);
-    },
-    close: () => {
-      open = false;
-      reader.cancel().catch((e: unknown) => onError(e instanceof Error ? e : new Error(String(e))));
-    },
-  };
+async function isolation(sandbox: OsSandbox, allowed: () => boolean, log: (line: string) => void): Promise<boolean> {
+  try {
+    await sandbox.ready();
+    return true;
+  } catch (e) {
+    if (!(e instanceof KiboError) || e.code !== "SANDBOX_UNAVAILABLE" || !allowed()) throw e;
+    log(`starting without OS isolation (allowed by the user): ${e.detail}`);
+    return false;
+  }
 }
 ```
-Le `catch` de `JSON.parse` convertit l'erreur en signalement (`onError`), il ne l'avale pas.
+`spawnRuntime` reçoit un booléen `isolated` et lance `isolated ? sandbox.wrap(command, runtimePolicy(command, dir.cwd)) : command` (le reste — `cwd` temporaire `0700`, `env { KIBO_COMPONENT }`, tubes 3 et 4, groupe de processus — est inchangé). Dans `createProcessHost` :
+```ts
+  let isolated = true;
+  const beforeStart = async () => {
+    isolated = await isolation(sandbox, opts.allowUnsandboxed ?? (() => false), log);
+    await opts.beforeStart?.();
+  };
+```
+et `open` appelle `spawnRuntime(opts, sandbox, isolated, handlers, log)`. `createHost` appelle `beforeStart` avant chaque `open` (`host-core.ts`) : le réglage est relu à chaque démarrage.
 
-Run: `bun test packages/daemon/src/components/backend/line-channel.test.ts`
-Expected: PASS (3 tests).
+Dans `packages/daemon/src/components/backends.ts`, `BackendsDeps` gagne `allowUnsandboxed?: () => boolean`, transmis à `createProcessHost({ ...opts, ...(deps.processCommand && { command: deps.processCommand }), ...(deps.allowUnsandboxed && { allowUnsandboxed: deps.allowUnsandboxed }) })`. Dans `packages/daemon/src/components/service.ts`, `ComponentsDeps` gagne `allowUnsandboxed?: () => boolean`, passé à `createBackends` de la même façon.
+
+Run: `bun test packages/daemon/src/components/process-host-sandbox.test.ts packages/daemon/src/components/process-host.test.ts packages/daemon/src/components/backends.test.ts`
+Expected: PASS.
 
 - [ ] **Step 3: Écrire le test du service d'isolation**
 
 `packages/daemon/src/sandbox/sandbox-service.test.ts` :
 ```ts
-import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
-import type { DaemonEvent } from "@kibo/schema";
+import type { SandboxDiagnosis } from "@kibo/devkit";
+import type { ChangeMessage } from "@kibo/schema";
 import { z } from "zod";
 import { openLocalSettings } from "../settings";
 import { sandboxRpc } from "./rpc";
-import { createSandboxService } from "./sandbox-service";
-import type { SandboxProbe } from "./types";
+import { ALLOW_UNSANDBOXED_KEY, createSandboxService } from "./sandbox-service";
 
-const runtime = { command: "/opt/kibo/kibo-daemon", args: ["component-runtime"], extraReadOnly: [] };
-const bwrapOk: SandboxProbe = { kind: "bwrap", available: true, reason: null, fix: null, bwrapPath: "/usr/bin/bwrap", libs: ["/lib64/ld-linux-x86-64.so.2"] };
-const macOk: SandboxProbe = { kind: "sandbox-exec", available: true, reason: null, fix: null, bwrapPath: null, libs: [] };
-const off: SandboxProbe = { kind: "bwrap", available: false, reason: "bubblewrap (bwrap) is not installed", fix: "sudo apt install bubblewrap", bwrapPath: null, libs: [] };
-
-const make = (probe: SandboxProbe) => {
-  const events: DaemonEvent[] = [];
-  const settings = openLocalSettings(new Database(":memory:", { strict: true }));
-  return { service: createSandboxService({ probe, settings, runtime, publish: (e) => events.push(e) }), events, settings };
+const off: SandboxDiagnosis = {
+  kind: "bwrap",
+  available: false,
+  reason: "bubblewrap (bwrap) is not installed",
+  fix: "sudo apt install bubblewrap",
 };
-const launchInput = { componentRef: "escape@0.1.0", buildDir: "/store/escape/0.1.0/ab12/build", tmpDir: "/tmp/kibo-rt-9" };
+const memoryLocal = () => {
+  const values = new Map<string, string>();
+  return {
+    getLocal: (key: string) => values.get(key) ?? null,
+    setLocal: (key: string, value: string) => {
+      values.set(key, value);
+    },
+  };
+};
+const make = (diagnosis: SandboxDiagnosis = off) => {
+  const emitted: ChangeMessage[] = [];
+  const settings = openLocalSettings(memoryLocal());
+  const service = createSandboxService({
+    sandbox: { diagnose: async () => diagnosis },
+    settings,
+    emit: (m) => emitted.push(m),
+  });
+  return { service, emitted, settings };
+};
 
 describe("sandbox service", () => {
-  test("status reflects the probe and the setting, off by default", () => {
-    expect(make(off).service.status()).toEqual({
-      kind: "bwrap",
-      available: false,
-      reason: "bubblewrap (bwrap) is not installed",
-      fix: "sudo apt install bubblewrap",
-      allowUnsandboxed: false,
-    });
+  test("status is the diagnosis plus the setting, off by default", async () => {
+    expect(await make().service.status()).toEqual({ ...off, allowUnsandboxed: false });
+    expect(make().service.allowUnsandboxed()).toBe(false);
   });
 
-  test("bwrap: the build is mounted at /kibo/component and the runtime reads it there", () => {
-    const launch = make(bwrapOk).service.launch(launchInput);
-    expect(launch.isolated).toBe(true);
-    expect(launch.componentDir).toBe("/kibo/component");
-    expect(launch.argv).toContain("--clearenv");
-    const i = launch.argv.indexOf("/store/escape/0.1.0/ab12/build");
-    expect(launch.argv.slice(i - 1, i + 2)).toEqual(["--ro-bind", "/store/escape/0.1.0/ab12/build", "/kibo/component"]);
-    expect(launch.argv).toContain("KIBO_COMPONENT_DIR");
-    expect(launch.argv.slice(-2)).toEqual(["/kibo/runtime", "component-runtime"]);
+  test("allowing is persisted and announced", async () => {
+    const { service, emitted, settings } = make();
+    expect((await service.setAllowUnsandboxed(true)).allowUnsandboxed).toBe(true);
+    expect(service.allowUnsandboxed()).toBe(true);
+    expect(settings.get(ALLOW_UNSANDBOXED_KEY, z.boolean(), false)).toBe(true);
+    expect(emitted).toEqual([{ type: "sandbox.changed" }]);
   });
 
-  test("sandbox-exec: the runtime reads the real build path", () => {
-    const launch = make(macOk).service.launch(launchInput);
-    expect(launch.componentDir).toBe("/store/escape/0.1.0/ab12/build");
-    expect(launch.env).toEqual({ KIBO_COMPONENT: "escape@0.1.0", KIBO_COMPONENT_DIR: "/store/escape/0.1.0/ab12/build" });
+  test("an available sandbox is reported as such", async () => {
+    const ok: SandboxDiagnosis = { kind: "sandbox-exec", available: true, reason: null, fix: null };
+    expect(await make(ok).service.status()).toEqual({ ...ok, allowUnsandboxed: false });
   });
+});
 
-  test("no isolation: refuses to launch unless explicitly allowed, and publishes the change", () => {
-    const { service, events, settings } = make(off);
-    expect(() => service.launch(launchInput)).toThrow("SANDBOX_UNAVAILABLE");
-    expect(service.setAllowUnsandboxed(true).allowUnsandboxed).toBe(true);
-    expect(events).toEqual([{ type: "sandbox" }]);
-    expect(settings.get("sandbox.allowUnsandboxed", z.boolean(), false)).toBe(true);
-    const launch = service.launch(launchInput);
-    expect(launch.isolated).toBe(false);
-    expect(launch.argv).toEqual(["/opt/kibo/kibo-daemon", "component-runtime"]);
-  });
-
-  test("setAllowUnsandboxed is refused from a remote session", async () => {
-    const rpc = sandboxRpc(make(off).service);
-    await expect(rpc.handle({ method: "setAllowUnsandboxed", allow: true }, { sessionHash: "h", remote: true })).rejects.toThrow("FORBIDDEN");
-    expect(await rpc.handle({ method: "getSandboxStatus" }, { sessionHash: "h", remote: true })).toMatchObject({ available: false });
+describe("sandbox RPC", () => {
+  test("anyone paired reads the status, only a local session changes the setting", async () => {
+    const rpc = sandboxRpc(make().service);
+    const remote = { sessionHash: "h", remote: true };
+    expect(rpc.methods).toEqual(["getSandboxStatus", "setAllowUnsandboxed"]);
+    expect(await rpc.handle({ method: "getSandboxStatus" }, remote)).toMatchObject({ available: false });
+    await expect(rpc.handle({ method: "setAllowUnsandboxed", allow: true }, remote)).rejects.toThrow("FORBIDDEN");
+    expect(
+      await rpc.handle({ method: "setAllowUnsandboxed", allow: true }, { sessionHash: "h", remote: false }),
+    ).toMatchObject({ allowUnsandboxed: true });
   });
 });
 ```
+
 Run: `bun test packages/daemon/src/sandbox/sandbox-service.test.ts`
 Expected: FAIL avec « Cannot find module './sandbox-service' ».
 
@@ -7252,80 +7156,45 @@ Expected: FAIL avec « Cannot find module './sandbox-service' ».
 
 `packages/daemon/src/sandbox/sandbox-service.ts` :
 ```ts
-import { dirname, resolve } from "node:path";
-import type { DaemonEvent, SandboxStatus } from "@kibo/schema";
+import type { OsSandbox } from "@kibo/devkit";
+import type { ChangeMessage, SandboxStatus } from "@kibo/schema";
 import { z } from "zod";
 import type { LocalSettings } from "../settings";
-import { wrapCommand } from "./os-sandbox";
-import type { SandboxPolicy, SandboxProbe } from "./types";
 
 export const ALLOW_UNSANDBOXED_KEY = "sandbox.allowUnsandboxed";
-const COMPONENT_GUEST = "/kibo/component";
 
-export type RuntimeCommand = { command: string; args: string[]; extraReadOnly: string[] };
 export type SandboxService = {
-  status(): SandboxStatus;
-  setAllowUnsandboxed(allow: boolean): SandboxStatus;
-  launch(input: { componentRef: string; buildDir: string; tmpDir: string }): {
-    argv: string[];
-    env: Record<string, string>;
-    componentDir: string;
-    isolated: boolean;
-  };
+  status(): Promise<SandboxStatus>;
+  allowUnsandboxed(): boolean;
+  setAllowUnsandboxed(allow: boolean): Promise<SandboxStatus>;
 };
 
-export function currentRuntime(): RuntimeCommand {
-  if (Bun.main.startsWith("/$bunfs/")) return { command: process.execPath, args: ["component-runtime"], extraReadOnly: [] };
-  const script = resolve(import.meta.dir, "../component-runtime.ts");
-  const repo = resolve(import.meta.dir, "../../../..");
-  return { command: process.execPath, args: [script], extraReadOnly: [repo, dirname(process.execPath)] };
-}
-
 export function createSandboxService(deps: {
-  probe: SandboxProbe;
+  sandbox: Pick<OsSandbox, "diagnose">;
   settings: LocalSettings;
-  runtime: RuntimeCommand;
-  publish(e: DaemonEvent): void;
+  emit(message: ChangeMessage): void;
 }): SandboxService {
-  const allowed = () => deps.settings.get(ALLOW_UNSANDBOXED_KEY, z.boolean(), false);
-  const status = (): SandboxStatus => ({
-    kind: deps.probe.kind,
-    available: deps.probe.available,
-    reason: deps.probe.reason,
-    fix: deps.probe.fix,
-    allowUnsandboxed: allowed(),
+  const allowUnsandboxed = () => deps.settings.get(ALLOW_UNSANDBOXED_KEY, z.boolean(), false);
+  const status = async (): Promise<SandboxStatus> => ({
+    ...(await deps.sandbox.diagnose()),
+    allowUnsandboxed: allowUnsandboxed(),
   });
   return {
     status,
-    setAllowUnsandboxed(allow) {
+    allowUnsandboxed,
+    async setAllowUnsandboxed(allow) {
       deps.settings.set(ALLOW_UNSANDBOXED_KEY, allow);
-      deps.publish({ type: "sandbox" });
+      deps.emit({ type: "sandbox.changed" });
       return status();
-    },
-    launch({ componentRef, buildDir, tmpDir }) {
-      const remapped = deps.probe.available && deps.probe.kind === "bwrap";
-      const componentDir = remapped ? COMPONENT_GUEST : buildDir;
-      const policy: SandboxPolicy = {
-        runtime: deps.runtime.command,
-        args: deps.runtime.args,
-        readOnly: [
-          { host: buildDir, guest: componentDir },
-          ...deps.runtime.extraReadOnly.map((p) => ({ host: p, guest: p })),
-        ],
-        tmpDir,
-        env: { KIBO_COMPONENT: componentRef, KIBO_COMPONENT_DIR: componentDir },
-      };
-      return { ...wrapCommand(deps.probe, policy, allowed()), componentDir };
     },
   };
 }
 ```
-En développement (`bun src/main.ts`), le runtime est le script TypeScript : le dépôt et le dossier de `bun` sont montés en lecture ; le binaire compilé (production, test `escape`) n'en a pas besoin.
 
 `packages/daemon/src/sandbox/rpc.ts` :
 ```ts
 import { KiboError, type RpcRequest } from "@kibo/schema";
-import { requireLocal, type RpcContext, type RpcExtension } from "../rpc-extensions";
+import { type RpcContext, type RpcExtension, requireLocal } from "../rpc-extensions";
 import type { SandboxService } from "./sandbox-service";
 
 export function sandboxRpc(service: SandboxService): RpcExtension {
@@ -7344,308 +7213,98 @@ export function sandboxRpc(service: SandboxService): RpcExtension {
 ```
 
 Run: `bun test packages/daemon/src/sandbox/sandbox-service.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (4 tests).
 
-- [ ] **Step 5: Brancher le `ProcessHost` et le runtime**
+- [ ] **Step 5: Test du démon assemblé**
 
-Dans `process-host.ts`, la fonction de lancement devient (le reste de la phase 4 — délais, 4 appels simultanés, arrêt après 5 min, backoff de redémarrage, `COMPONENT_CRASHED` — est inchangé) :
+`packages/daemon/src/sandbox/sandbox-daemon.test.ts` :
 ```ts
+import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { KiboError } from "@kibo/schema";
-import type { SandboxService } from "../../sandbox/sandbox-service";
-import { createLineChannel, type LineChannel } from "./line-channel";
+import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { pair } from "../components/exit.test-helper";
+import { okReport } from "../components/service.test-helper";
+import { startDaemon } from "../daemon";
 
-type Launched = { proc: ReturnType<typeof Bun.spawn>; channel: LineChannel; tmpDir: string; isolated: boolean };
+const home = mkdtempSync(join(tmpdir(), "kibo-sandbox-daemon-"));
+afterAll(() => rmSync(home, { recursive: true, force: true }));
+const boot = () =>
+  startDaemon({
+    home,
+    port: 0,
+    sandboxPort: 0,
+    uiDir: null,
+    dev: false,
+    toolchain: DEV_TOOLCHAIN,
+    user: "adam",
+    validate: okReport,
+  });
 
-function launchRuntime(
-  sandbox: SandboxService,
-  ref: { id: string; version: string },
-  buildDir: string,
-  onError: (e: Error) => void,
-): Launched {
-  const tmpDir = mkdtempSync(join(tmpdir(), "kibo-rt-"));
-  let launch: ReturnType<SandboxService["launch"]>;
+test("the daemon reports its isolation and keeps the setting across restarts", async () => {
+  const first = await boot();
   try {
-    launch = sandbox.launch({ componentRef: `${ref.id}@${ref.version}`, buildDir, tmpDir });
-  } catch (e) {
-    rmSync(tmpDir, { recursive: true, force: true });
-    throw e;
+    const client = await pair(first);
+    expect(await client.ok({ method: "getSandboxStatus" })).toMatchObject({
+      kind: process.platform === "darwin" ? "sandbox-exec" : "bwrap",
+      available: true,
+      allowUnsandboxed: false,
+    });
+    await client.ok({ method: "setAllowUnsandboxed", allow: true });
+  } finally {
+    await first.stop();
   }
-  const proc = Bun.spawn(launch.argv, {
-    cwd: tmpDir,
-    env: launch.env,
-    stdin: "pipe",
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const channel = createLineChannel(proc.stdout, (text) => {
-    proc.stdin.write(text);
-    proc.stdin.flush();
-  }, onError);
-  return { proc, channel, tmpDir, isolated: launch.isolated };
-}
-```
-`ProcessHostOptions` remplace `spawnCommand` par `sandbox: SandboxService`. À l'échec de `launchRuntime` par `KiboError("SANDBOX_UNAVAILABLE")`, `invoke` rejette avec cette erreur et appelle `logEvent({ at, projectId, instanceId, ref: \`${id}@${version}\`, kind: "action", code: "SANDBOX_UNAVAILABLE" })` ; le backoff de redémarrage ne s'applique pas (rien n'a planté). Le message `load` ne porte plus de descripteur : le runtime lit `server.js` dans `KIBO_COMPONENT_DIR`. `tmpDir` est supprimé à l'arrêt du processus (`proc.exited.then(...)`, erreur journalisée si la suppression échoue). Chaque message envoyé passe par `channel.send`, chaque réponse par `channel.onMessage` ; `stderr` reste journalisé et tronqué à 64 Kio.
-
-Dans `component-runtime.ts`, remplacer l'écoute `process.on("message")` / `process.send` par :
-```ts
-import { join } from "node:path";
-import { createLineChannel } from "./components/backend/line-channel";
-
-const channel = createLineChannel(
-  Bun.stdin.stream(),
-  (text) => {
-    process.stdout.write(text);
-  },
-  (e) => {
-    process.stderr.write(`[component-runtime] ${e.message}\n`);
-  },
-);
-const componentDir = process.env.KIBO_COMPONENT_DIR;
-if (!componentDir) throw new Error("KIBO_COMPONENT_DIR is not set");
-const serverPath = join(componentDir, "server.js");
-```
-puis `channel.onMessage(handle)` et `channel.send(reply)` à la place des appels IPC ; le chargement lit `serverPath` **avant** le retrait des capacités (spec B §4.4 : `Bun.file` est retiré ensuite), puis évalue le code comme en phase 4. Toute écriture de journal du runtime va sur `stderr` (stdout est réservé au canal).
-
-Dans `main.ts` :
-```ts
-import { detectSandbox, realDetectDeps } from "./sandbox/detect";
-import { sandboxRpc } from "./sandbox/rpc";
-import { createSandboxService, currentRuntime } from "./sandbox/sandbox-service";
-
-const runtime = currentRuntime();
-const sandboxProbe = await detectSandbox(realDetectDeps(), runtime.command);
-if (!sandboxProbe.available) console.warn(`[kibo-daemon] OS sandbox unavailable: ${sandboxProbe.reason}`);
-const sandbox = createSandboxService({ probe: sandboxProbe, settings, runtime, publish: (e) => server.publish(e) });
-```
-et `sandboxRpc(sandbox)` dans `extensions` ; le `ProcessHost` reçoit `sandbox`. (`server` est déclaré après : `publish` est appelé plus tard, à la première modification du réglage.)
-
-Run: `bun test packages/daemon`
-Expected: PASS, dont les tests de la phase 4 sur le `ProcessHost` (sous Linux sans bubblewrap et en local seulement, ils passent par `allowUnsandboxed` : leur mise en place règle `sandbox.allowUnsandboxed = true`, sans changer leurs attentes).
-
-- [ ] **Step 6: Écrire le composant fixture `escape`**
-
-`packages/daemon/src/testing/fixtures/escape/kibo.component.json` :
-```json
-{
-  "id": "escape",
-  "version": "0.1.0",
-  "kind": "widget",
-  "title": "Escape",
-  "description": "Fixture de test : tente de sortir du bac à sable.",
-  "reads": [],
-  "writes": [],
-  "data": false,
-  "net": []
-}
-```
-
-`packages/daemon/src/testing/fixtures/escape/ui.tsx` :
-```tsx
-export function EscapeWidget() {
-  return <p>escape</p>;
-}
-```
-
-`packages/daemon/src/testing/fixtures/escape/server.ts` :
-```ts
-import { defineServer } from "@kibo/sdk/server";
-
-type Outcome = { ok: boolean; error: string | null };
-type Socket = { once(event: string, fn: (arg?: unknown) => void): void; end(): void };
-type NetModule = { connect(port: number, host: string): Socket };
-type FsModule = { readFileSync(path: string, enc: string): string; writeFileSync(path: string, data: string): void };
-type SpawnResult = { error?: Error; status: number | null };
-type ChildModule = { spawnSync(cmd: string, args: string[]): SpawnResult };
-
-const builtin = (name: string): Promise<unknown> => import(["node", name].join(":"));
-
-const attempt = async (fn: () => Promise<unknown>): Promise<Outcome> => {
+  const second = await boot();
   try {
-    await fn();
-    return { ok: true, error: null };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    const client = await pair(second);
+    expect(await client.ok({ method: "getSandboxStatus" })).toMatchObject({ allowUnsandboxed: true });
+  } finally {
+    await second.stop();
   }
-};
-
-const field = (input: unknown, key: string): string => {
-  const value = typeof input === "object" && input !== null ? (input as Record<string, unknown>)[key] : undefined;
-  if (typeof value !== "string" && typeof value !== "number") throw new Error(`missing ${key}`);
-  return String(value);
-};
-
-export const server = defineServer({
-  actions: {
-    tryFetch: (_ctx, input) => attempt(() => fetch(field(input, "url"))),
-    tryTcp: (_ctx, input) =>
-      attempt(async () => {
-        const net = (await builtin("net")) as NetModule;
-        await new Promise((resolve, reject) => {
-          const socket = net.connect(Number(field(input, "port")), "127.0.0.1");
-          socket.once("connect", () => {
-            socket.end();
-            resolve(null);
-          });
-          socket.once("error", reject);
-        });
-      }),
-    readToken: (_ctx, input) =>
-      attempt(async () => {
-        const fs = (await builtin("fs")) as FsModule;
-        fs.readFileSync(field(input, "path"), "utf8");
-      }),
-    writeHome: (_ctx, input) =>
-      attempt(async () => {
-        const fs = (await builtin("fs")) as FsModule;
-        fs.writeFileSync(field(input, "path"), "escaped");
-      }),
-    trySpawn: () =>
-      attempt(async () => {
-        const child = (await builtin("child_process")) as ChildModule;
-        const result = child.spawnSync("/bin/sh", ["-c", "true"]);
-        if (result.error) throw result.error;
-        if (result.status !== 0) throw new Error(`exit ${String(result.status)}`);
-      }),
-  },
-});
+}, 60_000);
 ```
-Les `as` sont justifiés : le spécificateur calculé empêche tout typage statique du module, c'est précisément ce que la fixture teste.
 
-- [ ] **Step 7: Écrire le test `escape`**
+Run: `bun test packages/daemon/src/sandbox/sandbox-daemon.test.ts`
+Expected: FAIL — `INVALID_INPUT` ou `INTERNAL` sur `getSandboxStatus` (méthode non branchée).
 
-`packages/daemon/src/sandbox/escape.test.ts` :
+- [ ] **Step 6: Brancher dans le démon**
+
+Dans `packages/daemon/src/daemon.ts` (`assemble`), après `createService` :
 ```ts
-import { Database } from "bun:sqlite";
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { ProcessHost } from "../components/backend/process-host";
-import { openLocalSettings } from "../settings";
-import { installFixtureComponent } from "../testing/install-fixture";
-import { detectSandbox, realDetectDeps } from "./detect";
-import { createSandboxService } from "./sandbox-service";
-import type { SandboxProbe } from "./types";
-
-const required = process.env.KIBO_REQUIRE_OS_SANDBOX === "1";
-const preProbe = await detectSandbox(realDetectDeps(), process.execPath);
-const skipWithoutSandbox = !required && !preProbe.available;
-const work = mkdtempSync(join(tmpdir(), "kibo-escape-"));
-const runtimeBin = join(work, "kibo-daemon");
-const fakeHome = join(work, "home");
-const tokenPath = join(fakeHome, ".kibo", "token");
-const events: { code: string }[] = [];
-let probe: SandboxProbe;
-let installed: Awaited<ReturnType<typeof installFixtureComponent>>;
-let listener: ReturnType<typeof Bun.listen>;
-
-beforeAll(async () => {
-  const build = Bun.spawnSync([
-    "bun",
-    "build",
-    "--compile",
-    resolve(import.meta.dir, "../main.ts"),
-    "--outfile",
-    runtimeBin,
-  ]);
-  if (build.exitCode !== 0) throw new Error(`daemon build failed: ${build.stderr.toString()}`);
-  probe = await detectSandbox(realDetectDeps(), runtimeBin);
-  mkdirSync(join(fakeHome, ".kibo"), { recursive: true });
-  writeFileSync(tokenPath, "e2e-secret-token\n", { mode: 0o600 });
-  installed = await installFixtureComponent({
-    home: join(work, "kibo-home"),
-    srcDir: resolve(import.meta.dir, "../testing/fixtures/escape"),
-    trust: "sandboxed",
-  });
-  listener = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
-}, 120_000);
-
-afterAll(() => {
-  listener?.stop(true);
-  rmSync(work, { recursive: true, force: true });
-});
-
-const hostWith = (allowUnsandboxed: boolean, useProbe: SandboxProbe) => {
-  const settings = openLocalSettings(new Database(":memory:", { strict: true }));
-  settings.set("sandbox.allowUnsandboxed", allowUnsandboxed);
-  const sandbox = createSandboxService({
-    probe: useProbe,
-    settings,
-    runtime: { command: runtimeBin, args: ["component-runtime"], extraReadOnly: [] },
-    publish: () => {},
-  });
-  return new ProcessHost({ storeDir: installed.storeDir, sandbox, logEvent: (e) => events.push(e) });
-};
-const call = (host: ProcessHost, action: string, input: unknown) =>
-  host.invoke({ ref: installed.ref, instanceId: "i-escape", config: {}, target: { action }, input }) as Promise<{
-    ok: boolean;
-    error: string | null;
-  }>;
-
-describe("sandboxed backend escape attempts", () => {
-  test.skipIf(skipWithoutSandbox)("every attempt is blocked by the OS", async () => {
-    expect(probe.available).toBe(true);
-    const host = hostWith(false, probe);
-    const target = join(fakeHome, "escaped.txt");
-    const results = {
-      fetch: await call(host, "tryFetch", { url: "https://example.com" }),
-      tcp: await call(host, "tryTcp", { port: listener.port }),
-      token: await call(host, "readToken", { path: tokenPath }),
-      write: await call(host, "writeHome", { path: target }),
-      spawn: await call(host, "trySpawn", {}),
-    };
-    for (const [name, r] of Object.entries(results)) expect({ name, ok: r.ok }).toEqual({ name, ok: false });
-    expect(existsSync(target)).toBe(false);
-  }, 60_000);
-
-  test.skipIf(skipWithoutSandbox)("without OS isolation, phase 4 still removes fetch", async () => {
-    const off: SandboxProbe = { kind: null, available: false, reason: "test", fix: null, bwrapPath: null, libs: [] };
-    const host = hostWith(true, off);
-    expect((await call(host, "tryFetch", { url: "https://example.com" })).ok).toBe(false);
-  }, 60_000);
-
-  test("no isolation and no permission: the call fails and is logged", async () => {
-    const off: SandboxProbe = { kind: null, available: false, reason: "test", fix: null, bwrapPath: null, libs: [] };
-    const host = hostWith(false, off);
-    await expect(call(host, "tryFetch", { url: "https://example.com" })).rejects.toThrow("SANDBOX_UNAVAILABLE");
-    expect(events.map((e) => e.code)).toContain("SANDBOX_UNAVAILABLE");
-  }, 60_000);
-});
+  const settings = openLocalSettings(store);
+  const sandbox = createSandboxService({ sandbox: osSandbox(), settings, emit: (m) => service.docs.emit(m) });
 ```
+puis passer `allowUnsandboxed: () => sandbox.allowUnsandboxed()` à `createComponentsService`, et ajouter `sandboxRpc(sandbox)` à la liste `extensions` de `startServer` (option ajoutée par T9). Imports : `osSandbox` depuis `@kibo/devkit`, `openLocalSettings` depuis `./settings`, `createSandboxService` depuis `./sandbox/sandbox-service`, `sandboxRpc` depuis `./sandbox/rpc`. Rien d'autre ne change dans `daemon.ts` : le démon démarre même sans bac à sable (le diagnostic est paresseux, lu à la demande par l'UI).
 
-`skipWithoutSandbox` est calculé au chargement du fichier par une sonde sur `process.execPath` (Bun évalue `skipIf` à la déclaration) ; `beforeAll` refait la sonde exacte sur le binaire compilé pour obtenir ses bibliothèques.
+Run: `bun test packages/daemon/src/sandbox packages/daemon/src/components`
+Expected: PASS, y compris `exit.test.ts` inchangé (isolation OS active : action `escape` tout `blocked`).
 
-- [ ] **Step 8: Lancer le test `escape` et ajuster le profil macOS**
-
-Run: `KIBO_REQUIRE_OS_SANDBOX=1 bun test packages/daemon/src/sandbox/escape.test.ts`
-Expected: PASS sur macOS et sur Linux avec bubblewrap. Si le runtime ne démarre pas sous `sandbox-exec` (stderr du processus journalisé : `deny(1) file-read-data /chemin`), ajouter **une entrée par cause** à `EXTRA_RULES` de `macos.sb.ts` (`{ rule, reason }`, jamais un `(allow default)` ni un `subpath` de `/Users` ou `/private/var/folders`), relancer, et ajouter l'entrée au test « emits every extra rule » (T8). Sous Linux, une bibliothèque chargée par `dlopen` absente de `ldd` s'ajoute de la même façon (décision 14).
-
-- [ ] **Step 9: Vérifier le lint et les types, commiter**
+- [ ] **Step 7: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck && bun test packages/daemon`
-Expected: aucun diagnostic, tous les tests verts.
+Expected: aucun diagnostic, tests verts.
 
 ```bash
-git add packages/daemon/src/sandbox/sandbox-service.ts packages/daemon/src/sandbox/rpc.ts packages/daemon/src/sandbox/sandbox-service.test.ts packages/daemon/src/sandbox/escape.test.ts packages/daemon/src/sandbox/macos.sb.ts packages/daemon/src/components/backend/line-channel.ts packages/daemon/src/components/backend/line-channel.test.ts packages/daemon/src/components/backend/process-host.ts packages/daemon/src/component-runtime.ts packages/daemon/src/main.ts packages/daemon/src/testing/fixtures/escape
-git commit -m "feat(daemon): isolation OS des backends"
+git add packages/daemon/src/components/process-host.ts packages/daemon/src/components/process-host-sandbox.test.ts packages/daemon/src/components/backends.ts packages/daemon/src/components/service.ts
+git commit -m "feat(daemon): backend sans isolation sur réglage"
+git add packages/daemon/src/sandbox/sandbox-service.ts packages/daemon/src/sandbox/rpc.ts packages/daemon/src/sandbox/sandbox-service.test.ts packages/daemon/src/sandbox/sandbox-daemon.test.ts packages/daemon/src/daemon.ts
+git commit -m "feat(daemon): état de l'isolation OS"
 ```
 
 ---
 
 ### Task 13: Accès distant au démon (TLS, code à 6 caractères)
 
-Vague 2. Spec G §7 et §8 ; décisions 17 et 18 ; maquette 31 (« Code valable 5 minutes · usage unique ») et écran 15 (« Générer un code »). Désactivé par défaut. L'accès distant ouvre un **second** `Bun.serve`, chiffré, sur une adresse d'interface choisie ; le démon continue d'écouter sur `127.0.0.1`. Le même gestionnaire HTTP sert les deux écouteurs, avec des contrôles `Host` / `Origin` propres à chacun. L'appairage distant se fait **uniquement** par code à 6 caractères ; le jeton local reste réservé à `127.0.0.1`.
+Vague 3 (dépend de T1, T2, T3, T4, T9 ; mêmes fichiers `server.ts` et `daemon.ts` que T9, donc après lui). Spec G §7 et §8 ; décisions 17 et 18 ; maquette 31 (« Code valable 5 minutes · usage unique ») et écran 15 (« Générer un code »). Désactivé par défaut. L'accès distant ouvre un **second** `Bun.serve`, chiffré, sur une adresse d'interface choisie ; le démon continue d'écouter sur `127.0.0.1`. Le même gestionnaire HTTP sert les deux écouteurs, avec des contrôles `Host` / `Origin` propres à chacun. L'appairage distant se fait **uniquement** par code à 6 caractères ; le jeton local reste réservé à `127.0.0.1`.
 
 **Files:**
 - Create: `packages/daemon/src/remote/pairing-codes.ts`, `packages/daemon/src/remote/interfaces.ts`, `packages/daemon/src/remote/remote-access.ts`, `packages/daemon/src/remote/rpc.ts`
-- Modify: `packages/daemon/src/server.ts` (gestionnaire partagé, `/api/pair-code`, `listenRemote`), `packages/daemon/src/main.ts`, `packages/sdk/src/client.ts` (`pairWithCode`)
+- Modify: `packages/daemon/src/server.ts` (gestionnaire partagé, `/api/pair-code`, `listenRemote`), `packages/daemon/src/daemon.ts` (`assemble` : codes, accès distant, extension RPC, arrêt), `packages/daemon/src/integrations/registry.ts` et `packages/daemon/src/integrations/bootstrap.ts` (`IntegrationRpc.secrets`), `packages/sdk/src/client.ts` (`pairWithCode`, `subscribeEvents`)
 - Test: `packages/daemon/src/remote/pairing-codes.test.ts`, `packages/daemon/src/remote/interfaces.test.ts`, `packages/daemon/src/remote/remote-access.test.ts`, `packages/sdk/src/client.test.ts` (un cas ajouté)
 
 **Interfaces:**
-- Consumes: `generateSelfSignedCert`, `certFingerprint` (T3) ; `newPairingCode`, `normalizeCode` (T2) ; `RemoteAccessConfig`, `RemoteAccessStatus`, `PairingCode`, RPC `getRemoteAccess` / `enableRemoteAccess` / `disableRemoteAccess` / `createPairingCode` (T4) ; `LocalSettings` (T1) ; `SessionStore`, `RpcExtension`, `requireLocal` (T9) ; `SecretStore` avec le nom `remote:tls` (T1).
+- Consumes: `generateSelfSignedCert`, `certFingerprint` (T3) ; `newPairingCode`, `normalizeCode` (T2) ; `RemoteAccessConfig`, `RemoteAccessStatus`, `PairingCode`, RPC `getRemoteAccess` / `enableRemoteAccess` / `disableRemoteAccess` / `createPairingCode`, schéma `Phase7Event` des événements `ChangeMessage` de la phase 7 (T4) ; `LocalSettings`, `openLocalSettings` (T1) ; `SessionStore`, `RpcExtension`, `requireLocal` (T9) ; `SecretStore` (`packages/daemon/src/integrations/types.ts`) avec le nom `remote:tls` accepté par `SecretNameSchema` (T1) ; `createMemorySecretStore` (`packages/daemon/src/integrations/memory-secret-store.ts`) et `createRedactor` (`packages/daemon/src/integrations/redact.ts`) en test.
 - Produces (Contrats partagés) : `PairingCodes`, `ListenInfo`, `RemoteAccess`.
 - Produces (nouveau, signalé) :
   ```ts
@@ -7657,13 +7316,16 @@ Vague 2. Spec G §7 et §8 ; décisions 17 et 18 ; maquette 31 (« Code valable 
   export type RemoteListen = (input: { hostname: string; port: number; tls: { cert: string; key: string } }) => { port: number; stop(): void };
   export type RemoteAccessDeps = { home: string; settings: LocalSettings; secrets: SecretStore; interfaces(): { name: string; address: string }[]; listen: RemoteListen; log(message: string): void };
   export function createRemoteAccess(deps: RemoteAccessDeps): RemoteAccess;
-  export const REMOTE_SETTING_KEY = "remoteAccess"; export const REMOTE_TLS_SECRET = "remote:tls";
+  export const REMOTE_SETTING_KEY = "remoteAccess"; export const REMOTE_TLS_SECRET: SecretName = "remote:tls";
   // remote/rpc.ts
   export function remoteRpc(remote: RemoteAccess, codes: PairingCodes): RpcExtension;
-  // server.ts : ServerOptions gagne pairingCodes: PairingCodes ; startServer renvoie en plus listenRemote: RemoteListen
+  // server.ts : ServerOptions gagne pairingCodes?: PairingCodes (défaut : new PairingCodes(now)) ; startServer renvoie { url, port, stop, listenRemote: RemoteListen }
   // sdk client.ts : KiboClient.pairWithCode(code: string): Promise<void>
   ```
-- Hypothèse v0.6 (vérifiée en T0) : `MemorySecretStore` est exporté par `packages/daemon/src/secrets/secret-store.ts` avec un constructeur sans argument.
+- Vérifié en T0 : il n'y a pas de `packages/daemon/src/secrets/` ; le magasin de test est `createMemorySecretStore(redactor: Redactor, initial?: Record<string, string>): MemorySecretStore` (`packages/daemon/src/integrations/memory-secret-store.ts`), le type `SecretStore` est dans `packages/daemon/src/integrations/types.ts` et le magasin réel du démon est créé par `startIntegrations` (`IntegrationKit.secrets`, trousseau par `createBunSecretStore`, mémoire avec `--memory-secrets`).
+- Vérifié en T0 : `KiboClient.pair(token)` (`packages/sdk/src/client.ts`) poste `/api/pair` par le `post` interne (`credentials: "include"`) et lève `KiboError("UNAUTHORIZED", "invalid pairing token")` si le statut n'est pas 204 ; `onmessage` distribue `CodeEvent`, `IntegrationEvent`, `AiEvent`, `run.changed`, `topic`, et passe **tout le reste** aux écouteurs de projet (`listeners(msg.projectId ?? null)`) : un événement de la phase 7 non intercepté provoquerait un rechargement de la liste des projets.
+- Vérifié en T0 : `server.ts` a aussi `hosts()` / `origins()` (avec les origines du bac à sable `sandboxOrigins(opts.sandboxOrigin?.())`), `/hooks/<runId>` (hooks des agents locaux), `/components/` (`serveTrusted`), `/api/code`, et `withUiHeaders(res, sandboxOrigin)` dont le CSP autorise `frame-src` vers le serveur de bac à sable (`startSandboxServer`, `127.0.0.1` seulement). L'écran 15 (« Accès web · Générer un code ») n'existe pas dans l'UI : l'entrée « Apparence » de `SettingsNav` est désactivée (« Bientôt ») ; son UI est livrée par T25.
+- Limite connue (voir rapport T0) : depuis l'écouteur distant, l'UI et les composants intégrés et `trusted` (`/components/`) fonctionnent ; les iframes des composants **sandboxés** pointent vers le serveur de bac à sable en `127.0.0.1` et ne se chargent pas à distance. T13 ne l'étend pas : décision à faire valider (rapport de T0).
 
 - [ ] **Step 1: Écrire le test des codes d'appairage**
 
@@ -7824,7 +7486,8 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SessionInfo } from "@kibo/schema";
-import { MemorySecretStore } from "../secrets/secret-store";
+import { createMemorySecretStore, type MemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor } from "../integrations/redact";
 import { startServer } from "../server";
 import { createService } from "../service";
 import { openSessionStore } from "../sessions/session-store";
@@ -7853,7 +7516,7 @@ const freePort = () => {
 const makeRemote = () =>
   createRemoteAccess({
     home,
-    settings: openLocalSettings(store.db),
+    settings: openLocalSettings(store),
     secrets,
     interfaces: () => [{ name: "lo0", address: "127.0.0.1" }],
     listen: (input) => server.listenRemote(input),
@@ -7864,7 +7527,7 @@ beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "kibo-remote-"));
   store = openStore(home);
   codes = new PairingCodes(Date.now);
-  secrets = new MemorySecretStore();
+  secrets = createMemorySecretStore(createRedactor());
   let current: RemoteAccess | null = null;
   server = startServer({
     service: createService(store, { user: "adam" }),
@@ -7963,6 +7626,12 @@ describe("remote access", () => {
     expect((await rpost("/api/pair", { token: TOKEN })).status).toBe(403);
   });
 
+  test("agent hooks are refused on the remote listener", async () => {
+    await enable();
+    const res = await rpost(`/hooks/${crypto.randomUUID()}`, {});
+    expect(res.status).toBe(404);
+  });
+
   test("sensitive RPCs are refused from a remote session", async () => {
     await enable();
     const cookie = (await remotePair()).split(";")[0] ?? "";
@@ -8016,7 +7685,7 @@ describe("remote access", () => {
   });
 });
 ```
-Dans `beforeEach`, l'extension enveloppe `remoteRpc` parce que `remote` dépend de `server.listenRemote`, créé par `startServer` : c'est aussi l'ordre d'initialisation de `main.ts` (Step 7).
+Dans `beforeEach`, l'extension enveloppe `remoteRpc` parce que `remote` dépend de `server.listenRemote`, créé par `startServer` : c'est aussi l'ordre d'initialisation de `daemon.ts` (Step 7).
 
 Run: `bun test packages/daemon/src/remote/remote-access.test.ts`
 Expected: FAIL (`./remote-access` introuvable, `/api/pair-code` inconnu).
@@ -8027,10 +7696,10 @@ Expected: FAIL (`./remote-access` introuvable, `/api/pair-code` inconnu).
 ```ts
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { KiboError, RemoteAccessConfig, type RemoteAccessStatus, RemoteTls } from "@kibo/schema";
+import { KiboError, RemoteAccessConfig, type RemoteAccessStatus, RemoteTls, type SecretName } from "@kibo/schema";
 import { certFingerprint, generateSelfSignedCert } from "@kibo/trust";
 import { z } from "zod";
-import type { SecretStore } from "../secrets/secret-store";
+import type { SecretStore } from "../integrations/types";
 import type { LocalSettings } from "../settings";
 
 export const REMOTE_SETTING_KEY = "remoteAccess";
@@ -8202,21 +7871,17 @@ export function remoteRpc(remote: RemoteAccess, codes: PairingCodes): RpcExtensi
 
 - [ ] **Step 6: Gestionnaire HTTP partagé par les deux écouteurs**
 
-Dans `packages/daemon/src/server.ts` (base : la version de T9 ; les routes ajoutées par les phases 2 à 6 restent dans `handleApi` et `fetch` telles quelles, elles reçoivent simplement `listen`) :
+Dans `packages/daemon/src/server.ts` (base : la version de T9). Tout ce qui existe reste en place ; seul le contexte d'écoute (`ListenInfo`) est ajouté et passé aux contrôles :
 ```ts
 export type ListenInfo = { hostname: string; port: number; secure: boolean; remote: boolean };
 
 const hostPart = (hostname: string, port: number) =>
   `${hostname.includes(":") ? `[${hostname}]` : hostname}:${port}`;
 
-  const allowedHosts = (l: ListenInfo) =>
-    l.remote ? [hostPart(l.hostname, l.port)] : [`127.0.0.1:${l.port}`, `localhost:${l.port}`];
-  const allowedOrigins = (l: ListenInfo) =>
-    l.remote
-      ? [`https://${hostPart(l.hostname, l.port)}`]
-      : [`http://127.0.0.1:${l.port}`, `http://localhost:${l.port}`, ...(opts.extraOrigins ?? [])];
+  const allowedHosts = (l: ListenInfo) => (l.remote ? [hostPart(l.hostname, l.port)] : hosts());
+  const allowedOrigins = (l: ListenInfo) => (l.remote ? [`https://${hostPart(l.hostname, l.port)}`] : origins());
   const paired = (req: Request, l: ListenInfo) => {
-    const { id } = opts.sessions.create(
+    const { id } = sessions.create(
       { deviceName: deviceNameFromUserAgent(req.headers.get("user-agent")), remote: l.remote },
       now(),
     );
@@ -8227,7 +7892,9 @@ const hostPart = (hostname: string, port: number) =>
     });
   };
 ```
-Dans `handleApi(req, url, srv, l)`, après le contrôle d'origine :
+`hosts()` et `origins()` sont ceux de la v0.6 (loopback, origines de développement, origines du bac à sable exclues). `pairingCodes` vaut `opts.pairingCodes ?? new PairingCodes(now)`.
+
+`handleApi(req, url, srv, l)` : le contrôle d'origine utilise `allowedOrigins(l)` ; puis :
 ```ts
     if (url.pathname === "/api/pair" && req.method === "POST") {
       if (l.remote) return fail("FORBIDDEN", "token pairing is only allowed on 127.0.0.1", 403);
@@ -8239,34 +7906,50 @@ Dans `handleApi(req, url, srv, l)`, après le contrôle d'origine :
     }
     if (url.pathname === "/api/pair-code" && req.method === "POST") {
       const body = (await req.json().catch(() => null)) as { code?: unknown } | null;
-      if (typeof body?.code !== "string" || !opts.pairingCodes.redeem(body.code)) {
+      if (typeof body?.code !== "string" || !pairingCodes.redeem(body.code)) {
         return fail("UNAUTHORIZED", "invalid or expired code", 401);
       }
       return paired(req, l);
     }
 ```
-Le gestionnaire devient une fabrique :
+Le reste de `handleApi` (session, `/api/events`, `/api/rpc` par `respond(() => dispatchRpc(…), redact)`, `/api/code`) est celui de T9.
+
+Le gestionnaire `fetch` de la v0.6 devient une fabrique ; il garde son ordre de contrôles :
 ```ts
-  const makeHandler = (listen: () => ListenInfo) =>
+  const makeFetch = (listen: () => ListenInfo) =>
     async (req: Request, srv: Server<WsData>): Promise<Response | undefined> => {
       const l = listen();
       const url = new URL(req.url);
-      if (!allowedHosts(l).includes(req.headers.get("host") ?? "")) return new Response("forbidden host", { status: 403 });
-      if (!url.pathname.startsWith("/api/")) return withUiHeaders(serveUi(opts.uiDir, url.pathname));
+      if (!allowedHosts(l).includes(req.headers.get("host") ?? ""))
+        return new Response("forbidden host", { status: 403 });
+      const hookRun = HOOK_PATH.exec(url.pathname)?.[1];
+      if (hookRun) {
+        const res =
+          opts.hooks && !l.remote ? await handleHook(req, hookRun, opts.hooks) : new Response("not found", { status: 404 });
+        res.headers.set("cache-control", "no-store");
+        return res;
+      }
+      if (url.pathname.startsWith("/components/")) {
+        return serveTrusted(req, url, { assets: opts.assets, origins: () => allowedOrigins(l), hasSession });
+      }
+      if (!url.pathname.startsWith("/api/")) {
+        return withUiHeaders(serveUi(opts.uiDir, url.pathname), opts.sandboxOrigin?.() ?? null);
+      }
       const res = await handleApi(req, url, srv, l);
       res?.headers.set("cache-control", "no-store");
       return res;
     };
   const servers = new Set<Server<WsData>>();
-  const publish = (event: DaemonEvent) => {
-    for (const s of servers) s.publish("changes", JSON.stringify(event));
+  const publish = (message: ChangeMessage) => {
+    const text = redact(JSON.stringify(message));
+    for (const s of servers) s.publish("changes", text);
   };
   let port = opts.port;
   const local = Bun.serve<WsData>({
     hostname: "127.0.0.1",
     port: opts.port,
     maxRequestBodySize: MAX_BODY_BYTES,
-    fetch: makeHandler(() => ({ hostname: "127.0.0.1", port, secure: false, remote: false })),
+    fetch: makeFetch(() => ({ hostname: "127.0.0.1", port, secure: false, remote: false })),
     websocket,
   });
   port = local.port ?? opts.port;
@@ -8278,7 +7961,7 @@ Le gestionnaire devient une fabrique :
       port: remotePort,
       tls,
       maxRequestBodySize: MAX_BODY_BYTES,
-      fetch: makeHandler(() => info),
+      fetch: makeFetch(() => info),
       websocket,
     });
     servers.add(remote);
@@ -8292,42 +7975,51 @@ Le gestionnaire devient une fabrique :
     };
   };
 ```
-(`websocket` est l'objet `open` / `close` / `message` de T9, extrait dans une constante ; la diffusion des changements de projet de la v0.1 passe par `publish`.) `ServerOptions` gagne `pairingCodes: PairingCodes` ; `startServer` renvoie `{ url, port, stop, publish, listenRemote }`, et `stop` ferme aussi les écouteurs distants restants. Le CSP de l'UI est identique sur les deux écouteurs (`withUiHeaders`), `connect-src 'self'` couvrant `wss:` de la même origine.
+`websocket` est l'objet `open` / `close` / `message` de T9, extrait dans une constante. `publish` remplace le `server.publish("changes", …)` de la v0.6 et reste branché sur `opts.service.onChange` et `opts.code?.onChange` : les deux écouteurs reçoivent les mêmes événements, masqués par `redact`. `ServerOptions` gagne `pairingCodes?: PairingCodes` ; `startServer` renvoie `{ url, port, stop, listenRemote }`, et `stop` ferme aussi les écouteurs distants restants. Le CSP de l'UI est identique sur les deux écouteurs (`withUiHeaders`), `connect-src 'self'` couvrant `wss:` de la même origine. Les hooks des agents (`/hooks/<runId>`) ne répondent que sur `127.0.0.1` (test « agent hooks are refused on the remote listener »).
 
-- [ ] **Step 7: Brancher `main.ts` et le client du SDK**
+- [ ] **Step 7: Brancher `daemon.ts` et le client du SDK**
 
-`main.ts` :
+Dans `packages/daemon/src/daemon.ts` (`assemble`), avant `startServer` :
 ```ts
-import { PairingCodes } from "./remote/pairing-codes";
+import { KiboError } from "@kibo/schema";
 import { listInterfaces } from "./remote/interfaces";
+import { PairingCodes } from "./remote/pairing-codes";
 import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
+import type { RpcExtension } from "./rpc-extensions";
+import { openLocalSettings } from "./settings";
 
-const pairingCodes = new PairingCodes(Date.now);
-let remote: RemoteAccess | null = null;
-const remoteExtension: RpcExtension = {
-  methods: ["getRemoteAccess", "enableRemoteAccess", "disableRemoteAccess", "createPairingCode"],
-  handle: (req, ctx) => {
-    if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
-    return remoteRpc(remote, pairingCodes).handle(req, ctx);
-  },
-};
+  const pairingCodes = new PairingCodes(Date.now);
+  let remote: RemoteAccess | null = null;
+  const remoteExtension: RpcExtension = {
+    methods: ["getRemoteAccess", "enableRemoteAccess", "disableRemoteAccess", "createPairingCode"],
+    handle: (req, ctx) => {
+      if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
+      return remoteRpc(remote, pairingCodes).handle(req, ctx);
+    },
+  };
 ```
-`startServer({ …, pairingCodes, extensions: [remoteExtension, …] })`, puis :
+`startServer({ …, pairingCodes, extensions: [remoteExtension] })` (les extensions d'autres tâches s'ajoutent au même tableau), puis, après `startServer` :
 ```ts
-remote = createRemoteAccess({
-  home,
-  settings,
-  secrets,
-  interfaces: () => listInterfaces(),
-  listen: (input) => server.listenRemote(input),
-  log: (m) => console.warn(`[kibo-daemon] ${m}`),
-});
-await remote.resume();
+  const remoteAccess = createRemoteAccess({
+    home: opts.home,
+    settings: openLocalSettings(store),
+    secrets: integrations.secrets,
+    interfaces: () => listInterfaces(),
+    listen: (input) => server.listenRemote(input),
+    log: (m) => console.warn(`[kibo-daemon] ${m}`),
+  });
+  remote = remoteAccess;
+  front.push(() => remoteAccess.stop());
+  await remoteAccess.resume();
 ```
-et `remote.stop()` dans `shutdown`.
+Vérifié en T0 : `startIntegrations` (`packages/daemon/src/integrations/bootstrap.ts`) renvoie `IntegrationRpc = { handles, handle, stop, hooks }` (`integrations/registry.ts`) sans le magasin de secrets, qui ne vit que dans `IntegrationKit.secrets`. Cette tâche ajoute `secrets: SecretStore` à `IntegrationRpc` (passé par `createIntegrationRpc({ …, secrets: kit.secrets })`) : c'est l'unique `SecretStore` du démon (trousseau, ou mémoire avec `--memory-secrets`), réutilisé ensuite par T21 et T22. Test ajouté à `packages/daemon/src/integrations/bootstrap.test.ts` : en mode `--memory-secrets`, un secret écrit par `startIntegrations(…).secrets.set` est relu par la même valeur `secrets`. `front.push` place l'arrêt de l'écouteur distant avec celui du serveur local, avant la fermeture de la base.
 
-`packages/sdk/src/client.ts` : ajouter à `KiboClient` `pairWithCode(code: string): Promise<void>`, implémenté comme `pair` sur `/api/pair-code` avec `{ code }` (204 ⇒ résolu, sinon `KiboError("UNAUTHORIZED", "invalid or expired code")`). Test ajouté à `packages/sdk/src/client.test.ts` :
+`packages/sdk/src/client.ts` :
+1. `pairWithCode(code: string): Promise<void>`, sur le modèle de `pair` : `post("/api/pair-code", { code })`, 204 ⇒ résolu, sinon `KiboError("UNAUTHORIZED", "invalid or expired code")`.
+2. `subscribeEvents` n'est pas ajouté ici : T4 l'a livré (aiguillage des `Phase7Event` avant les écouteurs de projet).
+
+Tests ajoutés à `packages/sdk/src/client.test.ts` :
 ```ts
 test("pairWithCode posts the code and fails on 401", async () => {
   const seen: { url: string; body: string }[] = [];
@@ -8344,11 +8036,14 @@ test("pairWithCode posts the code and fails on 401", async () => {
   expect(seen[0]).toEqual({ url: "http://127.0.0.1:1/api/pair-code", body: '{"code":"K7Q4M2"}' });
 });
 ```
+`as typeof fetch` : `typeof fetch` de Bun porte aussi `preconnect`, inutile à ce faux.
+
+Le test d'aiguillage des `Phase7Event` est celui de T4 ; ici, seul `pairWithCode` est testé.
 
 - [ ] **Step 8: Lancer les tests**
 
 Run: `bun test packages/daemon packages/sdk`
-Expected: PASS (dont les 12 tests de `remote-access.test.ts`), `server.test.ts` inchangé dans ses attentes (sa mise en place gagne `pairingCodes: new PairingCodes(Date.now)`).
+Expected: PASS (dont les 13 tests de `remote-access.test.ts`) ; les fichiers `server*.test.ts`, `exit.test.ts` et `agents.integration.test.ts` passent **sans modification** (`sessions` et `pairingCodes` sont facultatifs).
 
 - [ ] **Step 9: Vérifier le lint et les types, commiter**
 
@@ -8356,7 +8051,7 @@ Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
 
 ```bash
-git add packages/daemon/src/remote packages/daemon/src/server.ts packages/daemon/src/server.test.ts packages/daemon/src/main.ts packages/sdk/src/client.ts packages/sdk/src/client.test.ts
+git add packages/daemon/src/remote packages/daemon/src/server.ts packages/daemon/src/daemon.ts packages/daemon/src/integrations/registry.ts packages/daemon/src/integrations/bootstrap.ts packages/daemon/src/integrations/bootstrap.test.ts packages/sdk/src/client.ts packages/sdk/src/client.test.ts
 git commit -m "feat(daemon): accès distant TLS"
 ```
 
@@ -8374,7 +8069,7 @@ updates(projectId TEXT, seq INTEGER, bytes BLOB, userId TEXT, deviceId TEXT, at 
 snapshots(projectId TEXT, bytes BLOB, versionJson TEXT, uptoSeq INTEGER, at INTEGER)
 audit(at INTEGER, kind TEXT, userId TEXT, deviceId TEXT, projectId TEXT, detail TEXT)
 ```
-Hypothèse (vérifiée à l'intégration de T11) : noms de colonnes exactement ceux de la spec G §3.1, table d'audit `audit`. Les requêtes utilisent des paramètres positionnels `?1`, compatibles avec `strict: true`.
+Dépendance (et non hypothèse v0.6) : ces tables sont créées par T11 (nouveau paquet, rien n'existe en v0.6) avec les noms de colonnes exacts de la spec G §3.1 et la table d'audit `audit` ; le chef d'équipe le vérifie à l'intégration de T11. Vérifié en T0 dans loro-crdt 1.16.3 : `EphemeralStore(timeout?)` (minuterie interne, d'où `presence.destroy()` au `drop`), `LoroDoc.importBatch`, `LoroDoc.fork`, `oplogVersion().encode()` / `toJSON(): Map<PeerID, number>`, `VersionVector.decode`. Les requêtes utilisent des paramètres positionnels `?1`, compatibles avec `strict: true`.
 
 Les lignes écrites par le serveur lui-même (attribution de clés dans un lot client, annuaire des membres) portent `userId = deviceId = "kibo-server"` quand aucun client n'en est l'auteur.
 
@@ -8387,7 +8082,7 @@ Les lignes écrites par le serveur lui-même (attribution de clés dans un lot c
 - Test: `packages/sync-server/src/room.test.ts`, `packages/sync-server/src/rooms.test.ts`
 
 **Interfaces:**
-- Consumes (T7) : `enableServerAllocation`, `allocateTicketKeys`, `validateProjectUpdate`, `writeMembers`, `listTickets` de `@kibo/core` ; (T4) `RejectCode`, `Role`, `SYNC_LIMITS` de `@kibo/schema` ; (T11) `ServerDb`, `openServerDb`, `audit`, `listMembers`, `insertProject`, `createInvite`, `redeemDeviceInvite`, `redeemProjectInvite` ; (T2) `generateKeyPair` de `@kibo/trust`.
+- Consumes (T7) : `enableServerAllocation`, `allocateTicketKeys`, `validateProjectUpdate`, `writeMembers`, `listTickets` de `@kibo/core` ; (T4) `RejectCode`, `MemberRole` (renommé par T0 : `Role` existe déjà dans `packages/schema/src/ai.ts`), `SYNC_LIMITS` de `@kibo/schema` ; (T11) `ServerDb`, `openServerDb`, `audit`, `listMembers`, `insertProject`, `createInvite`, `redeemDeviceInvite`, `redeemProjectInvite` ; (T2) `generateKeyPair` de `@kibo/trust`.
 - Produces (Contrats partagés) : `Actor`, `PushResult` (avec `allocated`), `RoomLimits`, `RoomReject`, `ProjectRoom` (`create`, `load`, `projectId`, `presence`, `version`, `serverSeq`, `sizeBytes`, `diffSince`, `push`, `syncMembers`, `snapshotBytes`), `RoomRegistry` (`get`, `create`, `attach`, `detach`, `drop`, `sweep`, `loaded`).
 - Produces (**ajout**) : le constructeur de `RoomRegistry` accepte `limits?: Partial<RoomLimits>` dans ses options ; `@kibo/sync-server/testing/fixtures` exporte `seedUser(sdb, name, now): Promise<SeededUser>`, `addMember(sdb, input, now)` et `ownerSnapshot(): Uint8Array` pour T17, T18 et T19.
 
@@ -8706,13 +8401,13 @@ import {
   validateProjectUpdate,
   writeMembers,
 } from "@kibo/core";
-import { KiboError, type RejectCode, type Role, SYNC_LIMITS } from "@kibo/schema";
+import { KiboError, type MemberRole, type RejectCode, SYNC_LIMITS } from "@kibo/schema";
 import { EphemeralStore, LoroDoc, VersionVector } from "loro-crdt";
 import { audit } from "./audit";
 import type { ServerDb } from "./db";
 import { insertProject, listMembers } from "./members";
 
-export type Actor = { userId: string; deviceId: string; role: Role };
+export type Actor = { userId: string; deviceId: string; role: MemberRole };
 export type PushResult = {
   bytes: Uint8Array | null;
   serverSeq: number;
@@ -9094,20 +8789,28 @@ git commit -m "feat(sync-server): salle de projet"
 Côté démon de la chaîne de vérification (spec H §3.3, §4, §5.2, §6) : sources déclarées et épinglées par leur clé, index signé à numéro croissant, cache, épinglage des éditeurs, recherche locale, détail d'un paquet avec ses sources vérifiées (« Voir le code »), révocation au rafraîchissement. L'installation elle-même est la tâche 20.
 
 **Files:**
-- Create: `packages/daemon/src/market/market-db.ts`, `packages/daemon/src/market/http-get.ts`, `packages/daemon/src/market/market-service.ts`, `packages/daemon/src/market/refresh-schedule.ts`, `packages/daemon/src/market/rpc.ts`, `packages/daemon/src/testing/fake-market.ts`, `packages/daemon/src/testing/memory-registry.ts`
-- Modify: `packages/daemon/src/service.ts` (branchement des RPC marketplace), `packages/daemon/src/main.ts` (planification du rafraîchissement), `packages/daemon/package.json` (dépendance `@kibo/trust`)
-- Test: `packages/daemon/src/market/http-get.test.ts`, `packages/daemon/src/market/market-service.test.ts`, `packages/daemon/src/market/rpc.test.ts`
+- Create: `packages/daemon/src/market/market-db.ts`, `packages/daemon/src/market/http-get.ts`, `packages/daemon/src/market/market-service.ts`, `packages/daemon/src/market/registry-port.ts`, `packages/daemon/src/market/refresh-schedule.ts`, `packages/daemon/src/market/rpc.ts`, `packages/daemon/src/market/bootstrap.ts`, `packages/daemon/src/testing/fake-market.ts`, `packages/daemon/src/testing/memory-registry.ts`
+- Modify: `packages/daemon/src/daemon.ts` (une ligne dans `assemble` : `startMarket`, son gestionnaire RPC passé à `startServer`, son arrêt dans `closers`), `packages/daemon/src/main.ts` (lecture de `KIBO_MARKET_ALLOW_LOOPBACK`), `packages/daemon/package.json` (dépendance `@kibo/trust`)
+- Test: `packages/daemon/src/market/http-get.test.ts`, `packages/daemon/src/market/market-service.test.ts`, `packages/daemon/src/market/registry-port.test.ts`, `packages/daemon/src/market/rpc.test.ts`
 
 **Interfaces:**
-- Consumes: `verifyIndex`, `verifyMarketPackage`, `decodeKpkg`, `keyFingerprint`, `utf8`, `type SourceFile` (`@kibo/trust`, T2 et T10) ; `makeTestPackage` (`@kibo/trust/testing`, T10) ; `MarketIndex`, `Kpkg`, `KPKG_MAX_BYTES`, `MARKET_FETCH_TIMEOUT_MS`, `MARKET_REFRESH_MS`, `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `RegistryVersion`, `ComponentKind`, `KiboError` (`@kibo/schema`, T1 et T5) ; `RpcContext` (T9) ; `LocalSettings` n'est pas utilisé.
-- Hypothèse v0.6 (vérifiée en T0) : `compareSemver(a: string, b: string): number` exporté par `@kibo/schema` (phase 4, versioning) ; `grantedPermissions(manifest: ComponentManifest): GrantedPermissions` exporté par `@kibo/schema` (phase 4, écran 30).
-- Consumes aussi : `RpcContext`, `RpcOutcome`, `RpcHandler` et l'option `handlers` de `startServer` (`packages/daemon/src/rpc-extensions.ts`, T9).
+- Consumes: `verifyIndex`, `verifyMarketPackage`, `decodeKpkg`, `keyFingerprint`, `signIndex`, `generateKeyPair`, `utf8`, `type KeyPair`, `type SourceFile` (`@kibo/trust`, T2 et T10) ; `makeTestPackage` (`@kibo/trust/testing`, T10) ; `MarketIndex`, `Kpkg`, `KPKG_MAX_BYTES`, `MARKET_FETCH_TIMEOUT_MS`, `MARKET_REFRESH_MS`, `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `RegistryVersion` (avec `source`, `revoked`), `ComponentKind`, `KiboError` (`@kibo/schema`, T1 et T5) ; le message `{ type: "market.changed" }` de `ChangeMessage` (T4) ; `RpcContext`, `RpcOutcome`, `RpcHandler`, `requireLocal` et l'option `handlers` de `startServer` (`packages/daemon/src/rpc-extensions.ts`, T9) ; `LocalSettings` n'est pas utilisé.
+- Vérifié en T0 :
+  - `compareSemver(a: string, b: string): -1 | 0 | 1` est exporté par `@kibo/schema` (`packages/schema/src/semver.ts`) ; il n'existe pas de `grantedPermissions` : c'est `grantedOf(manifest): GrantedPermissions` (`packages/schema/src/permissions.ts`), et `NO_PERMISSIONS` sert de valeur vide (six champs : `reads`, `writes`, `data`, `net`, `secrets`, `mcp`).
+  - `RegistryVersion` (`packages/schema/src/component.ts`) exige aussi `autoUpdate` (sortie de `.default(false)`) : tout littéral l'écrit.
+  - Le registre est la map `componentRegistry` du doc workspace, lue et écrite par `readRegistry`, `getRegistryVersion`, `putRegistryVersion`, `updateRegistryVersion` (`packages/core/src/registry.ts`) ; le démon l'expose par `ComponentsService.registry: RegistryService` (`packages/daemon/src/components/registry-service.ts`), dont `revoke(id, version): RegistryVersion` (synchrone) met `trust` et `approvedHash` à `null`, arrête le backend de la version (`stopBackend` ⇒ `usage.stop(ref)` ⇒ `Backends.stop(ref): void`), persiste le workspace (`docs.save(null)`) et émet `{ projectId: null }`. Il n'existe ni `Registry.setTrust` ni `backendHost.stop(ref): Promise<void>`. `ComponentsService.usageChanged()` rafraîchit l'état des instances après une révocation (comme la RPC `revokeComponent`).
+  - La notification système n'est pas une fonction exportée : c'est l'option `notify: (notice: Notice) => void` (synchrone, `Notice = { title: string; body: string }`, `packages/daemon/src/agents/notifier.ts`) de `startDaemon`, déjà passée à l'orchestrateur.
+  - Le câblage du démon se fait dans `assemble` de `packages/daemon/src/daemon.ts` (`main.ts` ne fait que lire les options et l'environnement, comme `KIBO_NATIVE_NOTIFY`) ; `service.ts` fait exactement 300 lignes et n'est pas touché.
+  - La diffusion WebSocket passe par `service.docs.emit(message: ChangeMessage)` (`packages/daemon/src/docs.ts`, canal `changes` de `server.ts`) ; il n'y a pas de `DaemonEvent`.
+  - Harnais de test des composants : `boot(home)`, `publishAndApprove(h)` (composant `hello`, origine `user`) dans `packages/daemon/src/components/service.test-helper.ts`, qui exposent `h.service.docs` et `h.components`.
 - Produces :
   - `MarketDb`, `MarketSourceRow`, `openMarketDb(db: Database): MarketDb`.
   - `HttpGet`, `createHttpGet(opts: { allowLoopbackHttp: boolean; ca?: string | null; fetchImpl?: typeof fetch }): HttpGet` (Contrats, **option `ca` ajoutée** : autorité supplémentaire pour une source d'équipe auto-hébergée, reprise du `caFile` de la sync).
-  - `MarketService` des Contrats, avec **`deps.log(message: string, error: unknown): void` en plus** (signature élargie, signalée au chef d'équipe).
+  - `MarketService` des Contrats, avec **`deps.log(message: string, error: unknown): void` et `deps.emit(): void` en plus**, et `deps.notify(notice: Notice): void` synchrone (signatures signalées au chef d'équipe).
+  - `RegistryPort` des Contrats avec **`revoke(id, version, reason, at): void` synchrone** ; `createRegistryPort(input: { docs: Docs; components: Pick<ComponentsService, "registry" | "usageChanged"> }): RegistryPort` (`registry-port.ts`).
+  - `startMarket(deps: { db: Database; docs: Docs; components: ComponentsService; notify(notice: Notice): void; allowLoopbackHttp: boolean; now?: () => number }): { market: MarketService; handler: RpcHandler; stop(): void }` (`bootstrap.ts`).
   - `startMarketRefresh(service: MarketService, opts: { intervalMs: number; log(message: string, error: unknown): void }): () => void`.
-  - `createMarketRpc(market: MarketService): (req: RpcRequest, ctx: RpcContext) => Promise<RpcOutcome>`.
+  - `createMarketRpc(market: MarketService): RpcHandler`.
   - `startFakeMarket(opts?: { id?: string; name?: string; verified?: boolean }): Promise<FakeMarket>` avec `FakeMarket = { url: string; publicKey: string; publish(pkg: Uint8Array): Promise<void>; revoke(hash: string, reason: string): Promise<void>; setSerial(serial: number): Promise<void>; resignWith(keys: KeyPair): Promise<void>; tamper(path: string, bytes: Uint8Array): void; serial(): number; stop(): void }`.
   - `createMemoryRegistry(): { port: RegistryPort; revoked: { id: string; version: string; reason: string }[] }` (réutilisé par T20 et T22).
 
@@ -9297,7 +9000,7 @@ Expected: PASS (9 tests).
 `packages/daemon/src/testing/fake-market.ts` :
 ```ts
 import { decodeKpkg, generateKeyPair, type KeyPair, signIndex, utf8 } from "@kibo/trust";
-import { grantedPermissions, type Kpkg, type MarketIndex } from "@kibo/schema";
+import { grantedOf, type Kpkg, type MarketIndex } from "@kibo/schema";
 
 export type FakeMarket = {
   url: string;
@@ -9347,7 +9050,7 @@ export async function startFakeMarket(
             hash: pkg.hash,
             publisherKey: pkg.publisher.publicKey,
             size: bytes.byteLength,
-            permissions: grantedPermissions(pkg.manifest),
+            permissions: grantedOf(pkg.manifest),
             publishedAt: pkg.publishedAt,
             url: `packages/${pid}/${pkg.manifest.version}.kpkg`,
           })),
@@ -9424,10 +9127,13 @@ export function createMemoryRegistry(): {
       rows.set(`${id}@${v.version}`, { id, title, version: v.version, v });
     },
     installed: () => [...rows.values()],
-    revoke: async (id, version, reason, at) => {
+    revoke: (id, version, reason, at) => {
       const row = rows.get(`${id}@${version}`);
       if (!row) return;
-      rows.set(`${id}@${version}`, { ...row, v: { ...row.v, trust: null, revoked: { reason, at } } });
+      rows.set(`${id}@${version}`, {
+        ...row,
+        v: { ...row.v, trust: null, approvedHash: null, revoked: { reason, at } },
+      });
       revoked.push({ id, version, reason });
     },
   };
@@ -9441,6 +9147,7 @@ export function createMemoryRegistry(): {
 ```ts
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { NO_PERMISSIONS } from "@kibo/schema";
 import { generateKeyPair, keyFingerprint } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
 import { type FakeMarket, startFakeMarket } from "../testing/fake-market";
@@ -9454,6 +9161,7 @@ let db: Database;
 let registry: ReturnType<typeof createMemoryRegistry>;
 let notify: ReturnType<typeof mock>;
 let log: ReturnType<typeof mock>;
+let emitted = 0;
 let service: MarketService;
 let now = 1_000;
 
@@ -9468,8 +9176,9 @@ beforeEach(async () => {
   fake = await startFakeMarket();
   db = new Database(":memory:");
   registry = createMemoryRegistry();
-  notify = mock(async (_: { title: string; body: string }) => {});
+  notify = mock((_: { title: string; body: string }) => {});
   log = mock((_m: string, _e: unknown) => {});
+  emitted = 0;
   now = 1_000;
   service = new MarketService({
     db: openMarketDb(db),
@@ -9478,6 +9187,9 @@ beforeEach(async () => {
     now: () => now,
     notify,
     log,
+    emit: () => {
+      emitted += 1;
+    },
   });
 });
 afterEach(() => {
@@ -9511,6 +9223,9 @@ describe("sources", () => {
     expect(info.fingerprint).toBe(await keyFingerprint(fake.publicKey));
     expect(info.lastSerial).toBe(1);
     expect(service.listSources()).toHaveLength(1);
+    expect(emitted).toBe(1);
+    service.removeSource("equipe");
+    expect(emitted).toBe(2);
   });
 
   test("an index with a lower serial is refused and the cache kept", async () => {
@@ -9535,6 +9250,11 @@ describe("sources", () => {
     await expect(service.refresh("equipe")).rejects.toThrow("INDEX_ROLLBACK");
   });
 
+  test("a probe of something that is not JSON is INVALID_INPUT", async () => {
+    fake.tamper("index.json", new TextEncoder().encode("<html>"));
+    await expect(service.probe(fake.url)).rejects.toThrow("INVALID_INPUT");
+  });
+
   test("a source whose key changed is refused", async () => {
     await service.addSource({ url: fake.url, publicKey: fake.publicKey });
     await fake.resignWith(await generateKeyPair());
@@ -9554,8 +9274,9 @@ describe("revocation", () => {
       origin: "marketplace",
       trust: "sandboxed",
       approvedHash: pkg.pkg.hash,
-      granted: { reads: [], writes: [], data: false, net: [] },
+      granted: NO_PERMISSIONS,
       publishedAt: 0,
+      autoUpdate: false,
       source: { sourceId: "equipe", publisherKey: pkg.publisher.keys.publicKey },
       revoked: null,
     });
@@ -9604,8 +9325,9 @@ describe("search and packages", () => {
       origin: "marketplace",
       trust: "sandboxed",
       approvedHash: "0".repeat(64),
-      granted: { reads: [], writes: [], data: false, net: [] },
+      granted: NO_PERMISSIONS,
       publishedAt: 0,
+      autoUpdate: false,
       source: { sourceId: "equipe", publisherKey: installed?.publisher.publicKey ?? "" },
       revoked: null,
     });
@@ -9662,6 +9384,7 @@ describe("search and packages", () => {
       now: () => now,
       notify,
       log,
+      emit: () => {},
     });
     fake.stop();
     await again.load();
@@ -9798,6 +9521,7 @@ import {
 } from "@kibo/schema";
 import { decodeKpkg, keyFingerprint, type SourceFile, verifyIndex, verifyMarketPackage } from "@kibo/trust";
 import { z } from "zod";
+import type { Notice } from "../agents/notifier";
 import type { HttpGet } from "./http-get";
 import type { MarketDb, MarketSourceRow } from "./market-db";
 
@@ -9805,7 +9529,7 @@ export type RegistryPort = {
   get(id: string, version: string): RegistryVersion | null;
   put(id: string, title: string, v: RegistryVersion): void;
   installed(): { id: string; title: string; version: string; v: RegistryVersion }[];
-  revoke(id: string, version: string, reason: string, at: number): Promise<void>;
+  revoke(id: string, version: string, reason: string, at: number): void;
 };
 
 export type MarketServiceDeps = {
@@ -9813,8 +9537,9 @@ export type MarketServiceDeps = {
   get: HttpGet;
   registry: RegistryPort;
   now: () => number;
-  notify(msg: { title: string; body: string }): Promise<void>;
+  notify(notice: Notice): void;
   log(message: string, error: unknown): void;
+  emit(): void;
 };
 
 const INDEX_MAX_BYTES = 8 * 1024 * 1024;
@@ -9825,6 +9550,18 @@ const Announced = z.object({ source: z.object({ id: z.string(), name: z.string()
 const withSlash = (url: string) => (url.endsWith("/") ? url : `${url}/`);
 const fold = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 const message = (e: unknown) => (e instanceof KiboError ? e.message : String(e));
+
+function announcedSource(bytes: Uint8Array, url: string): { id: string; name: string; publicKey: string } {
+  let json: unknown;
+  try {
+    json = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch (e) {
+    throw new KiboError("INVALID_INPUT", `not a Kibo market index: ${url}: ${String(e)}`);
+  }
+  const announced = Announced.safeParse(json);
+  if (!announced.success) throw new KiboError("INVALID_INPUT", `not a Kibo market index: ${url}`);
+  return announced.data.source;
+}
 
 export class MarketService {
   private readonly indexes = new Map<string, MarketIndex>();
@@ -9860,9 +9597,8 @@ export class MarketService {
 
   async probe(url: string): Promise<MarketProbe> {
     const fetched = await this.fetchIndex(url);
-    const announced = Announced.safeParse(JSON.parse(new TextDecoder().decode(fetched.bytes)));
-    if (!announced.success) throw new KiboError("INVALID_INPUT", `not a Kibo market index: ${url}`);
-    const index = await verifyIndex({ ...fetched, expectedKey: announced.data.source.publicKey, lastSerial: null });
+    const announced = announcedSource(fetched.bytes, url);
+    const index = await verifyIndex({ ...fetched, expectedKey: announced.publicKey, lastSerial: null });
     return {
       sourceId: index.source.id,
       name: index.source.name,
@@ -9894,12 +9630,14 @@ export class MarketService {
     this.indexes.set(index.source.id, index);
     const info = this.listSources().find((s) => s.id === index.source.id);
     if (!info) throw new KiboError("INTERNAL", `market source ${index.source.id} was not stored`);
+    this.deps.emit();
     return info;
   }
 
   removeSource(id: string): void {
     this.deps.db.removeSource(id);
     this.indexes.delete(id);
+    this.deps.emit();
   }
 
   async refresh(sourceId?: string): Promise<void> {
@@ -9912,6 +9650,8 @@ export class MarketService {
         this.deps.db.setError(row.id, message(e));
         this.deps.log(`market: refresh of ${row.id} failed`, e);
         if (sourceId !== undefined) throw e;
+      } finally {
+        this.deps.emit();
       }
     }
   }
@@ -10018,8 +9758,8 @@ export class MarketService {
     for (const item of this.deps.registry.installed()) {
       const reason = revoked.get(item.v.hash);
       if (reason === undefined || item.v.source?.sourceId !== row.id || item.v.revoked !== null) continue;
-      await this.deps.registry.revoke(item.id, item.version, reason, this.deps.now());
-      await this.deps.notify({ title: `Composant révoqué : ${item.title}`, body: reason });
+      this.deps.registry.revoke(item.id, item.version, reason, this.deps.now());
+      this.deps.notify({ title: `Composant révoqué : ${item.title}`, body: reason });
     }
   }
 
@@ -10090,7 +9830,7 @@ export class MarketService {
 - [ ] **Step 10: Relancer**
 
 Run: `bun test packages/daemon/src/market/market-service.test.ts`
-Expected: PASS (15 tests).
+Expected: PASS (16 tests).
 
 - [ ] **Step 11: Test des RPC**
 
@@ -10098,7 +9838,7 @@ Expected: PASS (15 tests).
 ```ts
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
-import { startFakeMarket, type FakeMarket } from "../testing/fake-market";
+import { type FakeMarket, startFakeMarket } from "../testing/fake-market";
 import { createMemoryRegistry } from "../testing/memory-registry";
 import { createHttpGet } from "./http-get";
 import { openMarketDb } from "./market-db";
@@ -10117,8 +9857,9 @@ beforeEach(async () => {
     get: createHttpGet({ allowLoopbackHttp: true }),
     registry: createMemoryRegistry().port,
     now: () => 1,
-    notify: mock(async () => {}),
+    notify: mock(() => {}),
     log: mock(() => {}),
+    emit: () => {},
   });
   rpc = createMarketRpc(market);
 });
@@ -10143,6 +9884,10 @@ test("other methods are left to the next handler", async () => {
   expect(await rpc({ method: "listProjects" }, local)).toEqual({ handled: false });
 });
 
+test("refreshMarket answers null", async () => {
+  expect(await rpc({ method: "refreshMarket" }, local)).toEqual({ handled: true, result: null });
+});
+
 test("findMarketSource answers null when nothing matches", async () => {
   expect(await rpc({ method: "findMarketSource", id: "x", version: "1.0.0", hash: null }, local)).toEqual({
     handled: true,
@@ -10158,15 +9903,10 @@ Expected: FAIL avec « Cannot find module './rpc' ».
 
 `packages/daemon/src/market/rpc.ts` :
 ```ts
-import { KiboError, type RpcRequest } from "@kibo/schema";
-import type { RpcContext, RpcOutcome } from "../rpc-extensions";
+import { requireLocal, type RpcHandler, type RpcOutcome } from "../rpc-extensions";
 import type { MarketService } from "./market-service";
 
-const localOnly = (ctx: RpcContext, method: string): void => {
-  if (ctx.remote) throw new KiboError("FORBIDDEN", `${method} requires a local session`);
-};
-
-export function createMarketRpc(market: MarketService): (req: RpcRequest, ctx: RpcContext) => Promise<RpcOutcome> {
+export function createMarketRpc(market: MarketService): RpcHandler {
   const done = (result: unknown): RpcOutcome => ({ handled: true, result });
   return async (req, ctx) => {
     switch (req.method) {
@@ -10175,20 +9915,20 @@ export function createMarketRpc(market: MarketService): (req: RpcRequest, ctx: R
       case "probeMarketSource":
         return done(await market.probe(req.url));
       case "addMarketSource":
-        localOnly(ctx, req.method);
+        requireLocal(ctx);
         return done(await market.addSource({ url: req.url, publicKey: req.publicKey }));
       case "removeMarketSource":
         market.removeSource(req.id);
         return done(null);
       case "refreshMarket":
         await market.refresh();
-        return done(market.listSources());
+        return done(null);
       case "searchMarket":
         return done(market.search({ query: req.query, sourceId: req.sourceId, kind: req.kind }));
       case "getMarketPackage":
         return done(await market.getPackage({ sourceId: req.sourceId, id: req.id, version: req.version }));
       case "unpinPublisher":
-        localOnly(ctx, req.method);
+        requireLocal(ctx);
         market.unpinPublisher({ sourceId: req.sourceId, componentId: req.componentId });
         return done(null);
       case "findMarketSource":
@@ -10218,24 +9958,150 @@ export function startMarketRefresh(
 }
 ```
 
-Dans `main.ts`, passer `createMarketRpc(market)` dans l'option `handlers` de `startServer` (mécanisme de T9 ; `service.ts` n'est pas modifié) :
+- [ ] **Step 12b: Adaptateur du registre réel**
+
+`packages/daemon/src/market/registry-port.test.ts` :
 ```ts
-const market = new MarketService({
-  db: openMarketDb(store.db),
-  get: createHttpGet({ allowLoopbackHttp: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1" }),
-  registry: registryPort,
-  now: Date.now,
-  notify,
-  log: (m, e) => console.error(`[kibo-daemon] ${m}`, e),
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { getRegistryVersion } from "@kibo/core/registry";
+import { boot, type Harness, publishAndApprove } from "../components/service.test-helper";
+import { createRegistryPort } from "./registry-port";
+
+let home: string;
+let h: Harness;
+
+beforeEach(async () => {
+  home = mkdtempSync(join(tmpdir(), "kibo-market-port-"));
+  h = await boot(home);
 });
-const stopMarket = startMarketRefresh(market, {
-  intervalMs: MARKET_REFRESH_MS,
-  log: (m, e) => console.error(`[kibo-daemon] ${m}`, e),
+afterEach(async () => {
+  await h.stop();
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("lists installed versions from the workspace registry", async () => {
+  const { hash } = await publishAndApprove(h);
+  const port = createRegistryPort({ docs: h.service.docs, components: h.components });
+  const hello = port.installed().find((i) => i.id === "hello");
+  expect(hello?.v.hash).toBe(hash);
+  expect(hello?.v.source).toBeNull();
+  expect(port.get("hello", hello?.version ?? "")?.trust).toBe("sandboxed");
+});
+
+test("a revocation removes trust, records the reason and keeps the entry", async () => {
+  await publishAndApprove(h);
+  const port = createRegistryPort({ docs: h.service.docs, components: h.components });
+  const version = port.installed().find((i) => i.id === "hello")?.version ?? "";
+  port.revoke("hello", version, "Faille de sécurité", 42);
+  const v = getRegistryVersion(h.service.docs.workspace, "hello", version);
+  expect(v?.trust).toBeNull();
+  expect(v?.approvedHash).toBeNull();
+  expect(v?.revoked).toEqual({ reason: "Faille de sécurité", at: 42 });
 });
 ```
-et appeler `stopMarket()` dans `shutdown`. `registryPort` adapte le `Registry` de la phase 4 (`get`, `put`, `all`) et `revoke` appelle `Registry.setTrust(id, version, null)`, écrit `revoked`, arrête le backend de la version (`backendHost.stop(ref)`) et journalise `component_events` ; `notify` est la notification système de la phase 2. `KIBO_MARKET_ALLOW_LOOPBACK=1` n'est posé que par les E2E (T32).
 
-Hypothèse v0.6 (vérifiée en T0) : `backendHost.stop(ref: string): Promise<void>` existe sur l'hôte des backends de la phase 4.
+Run: `bun test packages/daemon/src/market/registry-port.test.ts`
+Expected: FAIL avec « Cannot find module './registry-port' ».
+
+`packages/daemon/src/market/registry-port.ts` :
+```ts
+import { getRegistryVersion, putRegistryVersion, readRegistry, updateRegistryVersion } from "@kibo/core/registry";
+import type { ComponentsService } from "../components/service";
+import type { Docs } from "../docs";
+import type { RegistryPort } from "./market-service";
+
+export function createRegistryPort(input: {
+  docs: Docs;
+  components: Pick<ComponentsService, "registry" | "usageChanged">;
+}): RegistryPort {
+  const ws = input.docs.workspace;
+  const persist = () => {
+    input.docs.save(null);
+    input.docs.emit({ projectId: null });
+  };
+  return {
+    get: (id, version) => getRegistryVersion(ws, id, version),
+    put: (id, title, v) => {
+      putRegistryVersion(ws, id, title, v);
+      persist();
+    },
+    installed: () =>
+      Object.entries(readRegistry(ws)).flatMap(([id, entry]) =>
+        Object.values(entry.versions).map((v) => ({ id, title: entry.title, version: v.version, v })),
+      ),
+    revoke: (id, version, reason, at) => {
+      updateRegistryVersion(ws, id, version, { revoked: { reason, at } });
+      input.components.registry.revoke(id, version);
+      input.components.usageChanged();
+    },
+  };
+}
+```
+(`registry.revoke` persiste le workspace et émet `{ projectId: null }` ; l'écriture de `revoked` qui la précède part donc dans la même sauvegarde.)
+
+Run: `bun test packages/daemon/src/market/registry-port.test.ts`
+Expected: PASS.
+
+- [ ] **Step 12c: Branchement dans le démon**
+
+`packages/daemon/src/market/bootstrap.ts` :
+```ts
+import type { Database } from "bun:sqlite";
+import { MARKET_REFRESH_MS } from "@kibo/schema";
+import type { Notice } from "../agents/notifier";
+import type { ComponentsService } from "../components/service";
+import type { Docs } from "../docs";
+import type { RpcHandler } from "../rpc-extensions";
+import { createHttpGet } from "./http-get";
+import { openMarketDb } from "./market-db";
+import { MarketService } from "./market-service";
+import { startMarketRefresh } from "./refresh-schedule";
+import { createRegistryPort } from "./registry-port";
+import { createMarketRpc } from "./rpc";
+
+const log = (m: string, e: unknown) => console.error(`[kibo-daemon] ${m}`, e);
+
+export function startMarket(deps: {
+  db: Database;
+  docs: Docs;
+  components: ComponentsService;
+  notify(notice: Notice): void;
+  allowLoopbackHttp: boolean;
+  now?: () => number;
+}): { market: MarketService; handler: RpcHandler; stop(): void } {
+  const market = new MarketService({
+    db: openMarketDb(deps.db),
+    get: createHttpGet({ allowLoopbackHttp: deps.allowLoopbackHttp }),
+    registry: createRegistryPort({ docs: deps.docs, components: deps.components }),
+    now: deps.now ?? Date.now,
+    notify: deps.notify,
+    log,
+    emit: () => deps.docs.emit({ type: "market.changed" }),
+  });
+  const stop = startMarketRefresh(market, { intervalMs: MARKET_REFRESH_MS, log });
+  return { market, handler: createMarketRpc(market), stop };
+}
+```
+
+Dans `packages/daemon/src/daemon.ts` :
+- `DaemonOptions` gagne `marketAllowLoopback?: boolean` ;
+- dans `assemble`, juste après `await components.start();` :
+  ```ts
+  const market = startMarket({
+    db: store.db,
+    docs: service.docs,
+    components,
+    notify: opts.notify ?? (() => {}),
+    allowLoopbackHttp: opts.marketAllowLoopback ?? false,
+  });
+  closers.push(() => market.stop());
+  ```
+- le gestionnaire est ajouté à l'option `handlers` de `startServer` (mécanisme de T9) : `handlers: [market.handler]` (ou ajouté au tableau existant si une autre tâche l'a déjà créé).
+
+Dans `packages/daemon/src/main.ts`, passer `marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1"` à `startDaemon` (même procédé que `KIBO_NATIVE_NOTIFY`). Seuls les E2E (T32) posent cette variable.
 
 - [ ] **Step 13: Relancer tout le dossier**
 
@@ -10250,7 +10116,7 @@ Expected: aucune erreur.
 - [ ] **Step 15: Commit**
 
 ```bash
-git add packages/daemon/package.json packages/daemon/src/market packages/daemon/src/testing/fake-market.ts packages/daemon/src/testing/memory-registry.ts packages/daemon/src/main.ts bun.lock
+git add packages/daemon/package.json packages/daemon/src/market packages/daemon/src/testing/fake-market.ts packages/daemon/src/testing/memory-registry.ts packages/daemon/src/daemon.ts packages/daemon/src/main.ts bun.lock
 git commit -m "feat(daemon): sources de marketplace"
 ```
 
@@ -10267,13 +10133,14 @@ Source de marketplace servie par `kibo-sync` (spec H §5.1 point 4, §6, décisi
 
 **Interfaces:**
 - Consumes (T10) : `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `encodeKpkg`, `signIndex`, `verifyIndex` ; `makeTestPackage` (`@kibo/trust/testing`). (T2) : `generateKeyPair`, `keyFingerprint`, `sha256Hex`, `httpSigningPayload`, `HTTP_SIGNATURE_HEADERS`, `signRequest`, `verifyBytes`. (T11) : `ServerDb`, `openServerDb`, `deviceRecord`, `createInvite`, `redeemDeviceInvite`, `audit`. (T5) : `MarketIndex`, `Sha256`, `KPKG_MAX_BYTES`.
+- Vérifié en T0 : `compareSemver(a, b): -1 | 0 | 1` et `grantedOf(manifest): GrantedPermissions` (six champs : `reads`, `writes`, `data`, `net`, `secrets`, `mcp`) sont exportés par `@kibo/schema` (`semver.ts`, `permissions.ts`) : aucune copie locale ; `ComponentManifest.description` est optionnel, l'index écrit `""` à défaut ; le code `TOO_LARGE` existe (phase 3, 413 dans le `STATUS` du démon) et sert au corps trop gros ; `zod` est une dépendance de `@kibo/sync-server` depuis T1.
 - Produces : `initMarketSource`, `TeamMarket`, `NonceCache`, `verifySignedRequest` (Contrats), et **nouveau** :
   - `type MarketRouteDeps = { sdb: ServerDb; market: TeamMarket; nonces: NonceCache; now: () => number }`
   - `handleMarketRoute(req: Request, url: URL, deps: MarketRouteDeps): Promise<Response | null>` (`null` = route non marketplace)
   - `TeamMarket.source(): { id: string; name: string; publicKey: string }`
   - `MARKET_SOURCE_FILE = "market-source.json"`, `SIGNED_REQUEST_SKEW_MS = 300_000`, `NONCE_TTL_MS = 600_000`
 
-Réponses HTTP : succès `{ ok: true, result }`, erreur `{ ok: false, error: { code, message } }` comme le démon. Statuts : `UNAUTHORIZED` et `DEVICE_REVOKED` 401, `FORBIDDEN` 403, `NOT_FOUND` 404, `VERSION_EXISTS` et `PUBLISHER_CHANGED` 409, `REVOKED` 410, `SIGNATURE_INVALID` et `HASH_MISMATCH` 422, `INVALID_INPUT` 400, corps trop gros 413, autre erreur 500 journalisée.
+Réponses HTTP : succès `{ ok: true, result }`, erreur `{ ok: false, error: { code, message } }` comme le démon. Statuts : `UNAUTHORIZED` et `DEVICE_REVOKED` 401, `FORBIDDEN` 403, `NOT_FOUND` 404, `VERSION_EXISTS` et `PUBLISHER_CHANGED` 409, `REVOKED` 410, `SIGNATURE_INVALID` et `HASH_MISMATCH` 422, `INVALID_INPUT` 400, corps trop gros `TOO_LARGE` 413, autre erreur 500 journalisée.
 
 - [ ] **Step 1: Écrire les tests de la source d'équipe**
 
@@ -10430,7 +10297,7 @@ Expected: FAIL — `Cannot find module './team-market'`.
 ```ts
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ComponentManifest, KiboError, type MarketIndex } from "@kibo/schema";
+import { ComponentManifest, compareSemver, grantedOf, KiboError, type MarketIndex } from "@kibo/schema";
 import {
   decodeKpkg,
   generateKeyPair,
@@ -10472,17 +10339,6 @@ type PackageRow = {
   size: number;
   publishedAt: string;
 };
-
-const semverParts = (v: string) => v.split(/[.+-]/).slice(0, 3).map((n) => Number.parseInt(n, 10));
-function compareSemver(a: string, b: string): number {
-  const x = semverParts(a);
-  const y = semverParts(b);
-  for (let i = 0; i < 3; i++) {
-    const d = (x[i] ?? 0) - (y[i] ?? 0);
-    if (d !== 0) return d;
-  }
-  return 0;
-}
 
 export async function initMarketSource(
   dataDir: string,
@@ -10661,7 +10517,7 @@ export class TeamMarket {
           return {
             id,
             title: latest.title,
-            description: latest.description,
+            description: latest.description ?? "",
             kind: latest.kind,
             versions: sorted.map((v, i) => {
               const m = manifests[i] ?? latest;
@@ -10670,7 +10526,7 @@ export class TeamMarket {
                 hash: v.hash,
                 publisherKey: v.publisherKey,
                 size: v.size,
-                permissions: { reads: m.reads, writes: m.writes, data: m.data, net: m.net },
+                permissions: grantedOf(m),
                 publishedAt: v.publishedAt,
                 url: `packages/${id}/${v.version}.kpkg`,
               };
@@ -10690,8 +10546,6 @@ export class TeamMarket {
   }
 }
 ```
-
-Si `GrantedPermissions` comporte d'autres champs à v0.6 (phase 5 : `secrets`, `mcp`), les recopier ici du manifeste, comme dans `makeTestIndex` (T10).
 
 - [ ] **Step 4: Vérifier le succès**
 
@@ -10908,6 +10762,7 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   SIGNATURE_INVALID: 422,
   HASH_MISMATCH: 422,
   INVALID_INPUT: 400,
+  TOO_LARGE: 413,
 };
 const PACKAGE_PATH = /^\/market\/packages\/([a-z0-9][a-z0-9-]{0,63})\/(\d+\.\d+\.\d+)\.kpkg$/;
 const RevokeBody = z.object({ hash: Sha256, reason: z.string().trim().min(1).max(500) });
@@ -10921,9 +10776,9 @@ const bytes = (body: Uint8Array | string, type: string) =>
 
 async function readBody(req: Request): Promise<Uint8Array | Response> {
   const declared = Number(req.headers.get("content-length") ?? "0");
-  if (declared > MAX_POST_BYTES) return fail("INVALID_INPUT", "body too large", 413);
+  if (declared > MAX_POST_BYTES) return fail("TOO_LARGE", "body too large", 413);
   const body = new Uint8Array(await req.arrayBuffer());
-  if (body.byteLength > MAX_POST_BYTES) return fail("INVALID_INPUT", "body too large", 413);
+  if (body.byteLength > MAX_POST_BYTES) return fail("TOO_LARGE", "body too large", 413);
   return body;
 }
 
@@ -11005,7 +10860,7 @@ Tâche à risque : relue aussi par `kibo-lead`.
   - (T14) `ProjectRoom` (`diffSince`, `version`, `serverSeq`, `push`, `syncMembers`, `presence`), `RoomReject`, `RoomRegistry` (`get` lève `NOT_FOUND` pour un projet inconnu, `create` insère `projects` et le membre `owner` via `insertProject`, `attach`, `detach`, `drop`, `sweep`).
   - (T16) `TeamMarket.open`, `initMarketSource`, `NonceCache`, `NONCE_TTL_MS`, `handleMarketRoute`.
   - (T3) `generateSelfSignedCert` ; (T2) `toBase64`, `fromBase64`, `signBytes`, `generateKeyPair`, `formatFingerprint`.
-  - (T6, T7) `createProjectDoc`, `createTicket`, `listTickets` (tests).
+  - (v0.6, `@kibo/core`) `createProjectDoc(meta: ProjectMeta): LoroDoc`, `createTicket(doc: LoroDoc, input: NewTicket): Ticket`, `listTickets(doc)` (tests ; vérifié en T0 : signatures réelles de `packages/core/src/project.ts` et `tickets.ts`, `ProjectMeta = { id, key, name, folder, color }`), avec la clé nullable de T6 et l'attribution serveur de T7.
 - Produces : `HubConnection`, `SyncHub`, `SyncServerOptions`, `startSyncServer`, `startTestSyncServer` (Contrats) et **nouveau** :
   - `SyncHub.failures: FailureLimiter` (lu par le serveur HTTP avant l'upgrade et `POST /v1/join`) et `SyncHub.checkRevocations(): void` (ferme en 4403 les connexions d'un appareil révoqué ou d'un utilisateur désactivé ; appelé toutes les 5 s, pour qu'une révocation par la CLI coupe les sockets).
   - `SyncServerOptions.origin` : chaîne vide ⇒ origine dérivée `wss://<hostname>:<port>` (tests) ; en production l'administrateur passe `--origin`.
@@ -11592,8 +11447,8 @@ import {
   ClientFrame,
   CLOSE_CODES,
   KiboError,
+  type MemberRole,
   PresenceState,
-  type Role,
   type ServerFrame,
   SYNC_LIMITS,
 } from "@kibo/schema";
@@ -11734,7 +11589,7 @@ export class SyncHub {
     state.conn.send({ type: "welcome", userId: who.userId, name: who.name, deviceId: who.deviceId, projects: projectsOf(sdb, who.userId) });
   }
 
-  private requireRole(projectId: string, userId: string, allowed: Role[]): Role {
+  private requireRole(projectId: string, userId: string, allowed: MemberRole[]): MemberRole {
     const role = roleOf(this.opts.sdb, projectId, userId);
     if (!role || !allowed.includes(role)) throw new KiboError("FORBIDDEN", `${allowed.join(" or ")} role required on ${projectId}`);
     return role;
@@ -12263,7 +12118,7 @@ mkdirSync(outDir, { recursive: true });
 const outfile = join(outDir, "kibo-sync");
 const result = await Bun.build({
   entrypoints: [join(root, "src/cli.ts")],
-  compile: { outfile },
+  compile: { outfile, autoloadPackageJson: false, autoloadBunfig: false, autoloadDotenv: false },
   plugins: [
     {
       name: "loro-bundler-build",
@@ -12295,7 +12150,9 @@ export * from "./hub";
 export * from "./server";
 ```
 
-`.github/workflows/ci.yml`, job `test`, après `bun run typecheck` :
+Le greffon `loro-bundler-build` et les options `autoload*` reprennent ceux de `apps/desktop/scripts/build-sidecar.ts` (vérifié en T0 : c'est ainsi que le démon compilé embarque le WASM de `loro-crdt`). `dist/` est déjà ignoré par `.gitignore`.
+
+`.github/workflows/ci.yml`, job `test`, après `bun run typecheck` (GitHub Actions est hors service pour ce dépôt : la porte réelle est locale, Step 7 ; l'ajout au workflow reste minimal pour le jour où il revient) :
 ```yaml
       - run: bun run --cwd packages/sync-server build
       - name: kibo-sync smoke
@@ -12334,24 +12191,27 @@ Règles :
 - `reject OUT_OF_DATE` : adopter `version` et renvoyer depuis elle. Autres codes (`FORBIDDEN`, `QUOTA_EXCEEDED`, `RATE_LIMITED`) : `onRejected`, lot libéré, pas de renvoi automatique (T21 décide).
 
 **Files:**
-- Create: `packages/daemon/src/sync/transport.ts`
-- Create: `packages/daemon/src/sync/project-sync.ts`
-- Create: `packages/daemon/src/sync/testing/memory-host.ts`
-- Modify: `packages/daemon/package.json` (`@kibo/trust` en dépendance, `@kibo/sync-server` en `devDependencies`, décision 26)
-- Test: `packages/daemon/src/sync/transport.test.ts`, `packages/daemon/src/sync/project-sync.test.ts`, `packages/daemon/src/sync/imports.test.ts`
+- Create: `packages/daemon/src/collab/transport.ts`
+- Create: `packages/daemon/src/collab/project-sync.ts`
+- Create: `packages/daemon/src/collab/testing/memory-host.ts`
+- Modify: `packages/daemon/package.json` (`@kibo/trust` en dépendance, `@kibo/sync-server` en `devDependencies`, décision 26), `packages/daemon/tsconfig.json` (`references` vers `../trust` et `../sync-server`)
+- Test: `packages/daemon/src/collab/transport.test.ts`, `packages/daemon/src/collab/project-sync.test.ts`, `packages/daemon/src/collab/imports.test.ts`
+
+Dossier : `packages/daemon/src/collab/` et non `sync/`, qui porte depuis la phase 5 la sync des intégrations (`sync/engine.ts`, `sync/module.ts`, `sync/testing/`…) ; les deux domaines ne se mélangent pas.
 
 **Interfaces:**
+- Vérifié en T0 : `createTicket(doc, input: NewTicket): Ticket`, `listTickets(doc)`, `updateTicket(doc, id, patch: TicketPatch)` sont exportés par `@kibo/core` (`packages/core/src/tickets.ts`, réexporté par `index.ts`) ; les tickets sont les nœuds de l'arbre Loro `tickets`, la clé vit dans `node.data` sous `key` ; `packages/daemon/package.json` n'a pas encore de `devDependencies` et `packages/daemon/tsconfig.json` référence seulement `../schema`, `../core`, `../devkit` (les tests du démon sont typés avec la source : `include: ["src"]`).
 - Consumes (T4) : `ClientFrame`, `ServerFrame`, `RejectCode`, `SYNC_LIMITS` ; (T2) `toBase64`, `fromBase64` ; (T14, tests seulement) `ProjectRoom`, `RoomReject`, `openServerDb`, `seedUser`, `ownerSnapshot` ; (T6) `createTicket`, `listTickets`, `updateTicket`.
 - Produces (Contrats partagés) : `SyncHost`, `ProjectSyncOptions`, `ProjectSync` (`connected`, `disconnected`, `localChange`, `resync`, `flush`, `receive`, `inFlight`, `resyncing`), `SyncSocket`, `SyncTransport`, `assertSyncUrl`, `createWebSocketTransport`.
-- Produces (**ajout**, pour T19 et T21) : `createMemoryHost(doc: LoroDoc): SyncHost & { replaced: number; current(): LoroDoc }` dans `sync/testing/memory-host.ts`.
+- Produces (**ajout**, pour T19 et T21) : `createMemoryHost(doc: LoroDoc): SyncHost & { replaced: number; current(): LoroDoc }` dans `collab/testing/memory-host.ts`.
 
 - [ ] **Step 1: Dépendances du paquet**
 
-Dans `packages/daemon/package.json`, ajouter `"@kibo/trust": "workspace:*"` à `dependencies` et `"@kibo/sync-server": "workspace:*"` à `devDependencies`, puis `bun install`. `bun.lock` change (arêtes internes seulement, aucune dépendance npm).
+Dans `packages/daemon/package.json`, ajouter `"@kibo/trust": "workspace:*"` à `dependencies` (si T15 ne l'a pas déjà fait) et créer `"devDependencies": { "@kibo/sync-server": "workspace:*" }`, puis `bun install`. Dans `packages/daemon/tsconfig.json`, ajouter `{ "path": "../trust" }` et `{ "path": "../sync-server" }` à `references` (les tests du démon importent `@kibo/sync-server` et sont compilés par `tsc -b`). `bun.lock` change (arêtes internes seulement, aucune dépendance npm).
 
 - [ ] **Step 2: Écrire les tests du transport qui échouent**
 
-`packages/daemon/src/sync/transport.test.ts` :
+`packages/daemon/src/collab/transport.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
 import { assertSyncUrl } from "./transport";
@@ -12375,12 +12235,12 @@ test("other schemes and garbage are invalid", () => {
 
 - [ ] **Step 3: Lancer le test**
 
-Run: `bun test packages/daemon/src/sync/transport.test.ts`
+Run: `bun test packages/daemon/src/collab/transport.test.ts`
 Expected: FAIL (`./transport` introuvable).
 
 - [ ] **Step 4: Implémenter `transport.ts`**
 
-`packages/daemon/src/sync/transport.ts` :
+`packages/daemon/src/collab/transport.ts` :
 ```ts
 import { KiboError } from "@kibo/schema";
 
@@ -12439,12 +12299,12 @@ L'option `tls.ca` du constructeur `WebSocket` de Bun est validée par le test de
 
 - [ ] **Step 5: Relancer le test**
 
-Run: `bun test packages/daemon/src/sync/transport.test.ts`
+Run: `bun test packages/daemon/src/collab/transport.test.ts`
 Expected: PASS (3 tests).
 
 - [ ] **Step 6: Écrire l'hôte en mémoire**
 
-`packages/daemon/src/sync/testing/memory-host.ts` :
+`packages/daemon/src/collab/testing/memory-host.ts` :
 ```ts
 import type { LoroDoc } from "loro-crdt";
 import type { SyncHost } from "../project-sync";
@@ -12471,7 +12331,7 @@ export function createMemoryHost(initial: LoroDoc): MemoryHost {
 
 - [ ] **Step 7: Écrire les tests du moteur qui échouent**
 
-`packages/daemon/src/sync/project-sync.test.ts` :
+`packages/daemon/src/collab/project-sync.test.ts` :
 ```ts
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createTicket, listTickets, updateTicket } from "@kibo/core";
@@ -12719,12 +12579,12 @@ Dans le test `OUT_OF_DATE`, le moteur croit que le serveur a déjà la création
 
 - [ ] **Step 8: Lancer le test**
 
-Run: `bun test packages/daemon/src/sync/project-sync.test.ts`
+Run: `bun test packages/daemon/src/collab/project-sync.test.ts`
 Expected: FAIL (`./project-sync` introuvable).
 
 - [ ] **Step 9: Implémenter `project-sync.ts`**
 
-`packages/daemon/src/sync/project-sync.ts` :
+`packages/daemon/src/collab/project-sync.ts` :
 ```ts
 import { type ClientFrame, type RejectCode, type ServerFrame, SYNC_LIMITS } from "@kibo/schema";
 import { fromBase64, toBase64 } from "@kibo/trust";
@@ -12853,12 +12713,12 @@ Un `ack` ou un `reject` dont le `clientBatchId` n'est pas le lot en vol est sans
 
 - [ ] **Step 10: Relancer le test**
 
-Run: `bun test packages/daemon/src/sync/project-sync.test.ts`
+Run: `bun test packages/daemon/src/collab/project-sync.test.ts`
 Expected: PASS (10 tests).
 
 - [ ] **Step 11: Test d'imports (décision 26)**
 
-`packages/daemon/src/sync/imports.test.ts` :
+`packages/daemon/src/collab/imports.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -12882,7 +12742,7 @@ test("production code of the daemon never imports the sync server", () => {
 });
 ```
 
-Run: `bun test packages/daemon/src/sync/imports.test.ts`
+Run: `bun test packages/daemon/src/collab/imports.test.ts`
 Expected: PASS (le test protège contre une régression ; le vérifier une fois en ajoutant temporairement `import "@kibo/sync-server";` à `transport.ts` ⇒ FAIL, puis retirer la ligne).
 
 - [ ] **Step 12: Suite, lint, types**
@@ -12893,11 +12753,11 @@ Expected: PASS.
 - [ ] **Step 13: Commit**
 
 ```bash
-git add packages/daemon/package.json bun.lock packages/daemon/src/sync/transport.ts \
-  packages/daemon/src/sync/project-sync.ts packages/daemon/src/sync/testing/memory-host.ts \
-  packages/daemon/src/sync/transport.test.ts packages/daemon/src/sync/project-sync.test.ts \
-  packages/daemon/src/sync/imports.test.ts
-git commit -m "feat(daemon): moteur de sync par projet"
+git add packages/daemon/package.json packages/daemon/tsconfig.json bun.lock packages/daemon/src/collab/transport.ts \
+  packages/daemon/src/collab/project-sync.ts packages/daemon/src/collab/testing/memory-host.ts \
+  packages/daemon/src/collab/transport.test.ts packages/daemon/src/collab/project-sync.test.ts \
+  packages/daemon/src/collab/imports.test.ts
+git commit -m "feat(daemon): moteur de sync d'équipe"
 ```
 
 ---
@@ -12920,12 +12780,14 @@ Invariants vérifiés après reconnexion de tous et vidage des files :
 `numRuns` vaut au moins 200 (critère de sortie) ; `KIBO_PROPERTY_RUNS` ne peut que l'augmenter. En cas d'échec, fast-check affiche la graine et le contre-exemple réduit (comportement par défaut) : les recopier dans le rapport de la tâche.
 
 **Files:**
-- Create: `packages/daemon/src/sync/testing/in-memory-network.ts`
-- Create: `packages/daemon/src/sync/convergence.property.test.ts`
+- Create: `packages/daemon/src/collab/testing/in-memory-network.ts`
+- Create: `packages/daemon/src/collab/convergence.property.test.ts`
 - Modify: `packages/daemon/package.json` (`fast-check` `4.3.0` en `devDependencies`, même version que `core`)
 
+Vérifié en T0 : `packages/daemon/src/sync/` héberge déjà la sync des intégrations (phase 5 : `engine.ts`, `module.ts`, `testing/sync-fixture.ts`…) ; le client de sync Loro vit donc dans `packages/daemon/src/collab/` (décision de recalage), y compris `collab/testing/`. `fast-check` 4.3.0 n'est en `devDependencies` que de `@kibo/core` (et `components/graph`) ; il est déjà dans `bun.lock`, s'importe par `import fc from "fast-check"` (comme `packages/core/src/sync-plan.test.ts`). Le démon n'a aucune `devDependencies` en v0.6 : T18 crée la section (`@kibo/sync-server`, décision 26), cette tâche y ajoute `fast-check`. Commandes utilisées, vérifiées contre `ProjectCommand` (`packages/schema/src/command.ts`) : `createTicket { title, parentId? }`, `updateTicket { ticketId, title? }`, `setStatus { ticketId, statusId, reason? }`, `moveTicket { ticketId, parentId, index? }`, `deleteTicket { ticketId }`, `addPage { title, kind: "dashboard" | "view", parentId? }`, `movePage { pageId, parentId, index? }`, `addLink { from, to, type }` ; `executeProjectCommand(doc, cmd): unknown` (`packages/core/src/commands.ts`).
+
 **Interfaces:**
-- Consumes (T18) : `ProjectSync`, `createMemoryHost`, `MemoryHost` ; (T14) `ProjectRoom`, `RoomReject`, `Actor`, `openServerDb`, `seedUser`, `ownerSnapshot` ; (T7) `executeProjectCommand`, `listTickets`, `listPages` ; (T4) `ClientFrame`, `ServerFrame`, `RejectCode` ; (T2) `toBase64`, `fromBase64`.
+- Consumes (T18) : `ProjectSync`, `createMemoryHost`, `MemoryHost` ; (T14) `ProjectRoom`, `RoomReject`, `Actor`, `openServerDb`, `seedUser`, `ownerSnapshot` ; (v0.6, `@kibo/core`) `executeProjectCommand`, `listTickets`, `listPages` ; (T4) `ClientFrame`, `ServerFrame`, `RejectCode` ; (T2) `toBase64`, `fromBase64`.
 - Produces (**ajout**, test seulement) : `class InMemoryNetwork { constructor(room: ProjectRoom, actor: Actor, now: () => number); clients: NetClient[]; allocated: { ticketId: string; key: string }[]; addClient(doc: LoroDoc): NetClient; connect(c: NetClient): void; disconnect(c: NetClient): void; stepUp(c: NetClient): boolean; stepDown(c: NetClient): boolean; runTimers(c: NetClient): boolean; drain(): void }`.
 
 - [ ] **Step 1: Ajouter fast-check au démon**
@@ -12934,7 +12796,7 @@ Dans `packages/daemon/package.json`, `devDependencies` : `"fast-check": "4.3.0"`
 
 - [ ] **Step 2: Écrire le réseau en mémoire**
 
-`packages/daemon/src/sync/testing/in-memory-network.ts` :
+`packages/daemon/src/collab/testing/in-memory-network.ts` :
 ```ts
 import type { ClientFrame, RejectCode, ServerFrame } from "@kibo/schema";
 import { type Actor, type ProjectRoom, RoomReject } from "@kibo/sync-server";
@@ -13100,7 +12962,7 @@ export class InMemoryNetwork {
 
 - [ ] **Step 3: Écrire la propriété**
 
-`packages/daemon/src/sync/convergence.property.test.ts` :
+`packages/daemon/src/collab/convergence.property.test.ts` :
 ```ts
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { executeProjectCommand, listPages, listTickets } from "@kibo/core";
@@ -13271,13 +13133,13 @@ test(
 
 - [ ] **Step 4: Lancer la propriété**
 
-Run: `bun test packages/daemon/src/sync/convergence.property.test.ts`
+Run: `bun test packages/daemon/src/collab/convergence.property.test.ts`
 Expected: PASS (200 exécutions, moins d'une minute en local). Si elle échoue : le contre-exemple réduit désigne soit `ProjectSync` (T18), soit la salle (T14), soit `validateProjectUpdate` (T7) ; corriger la cause dans le bon fichier, ajouter le contre-exemple comme test unitaire dans la tâche concernée, jamais affaiblir la propriété.
 
 - [ ] **Step 5: Vérifier que la propriété détecte une régression**
 
 Remplacer temporairement, dans `project-sync.ts`, la condition `if (order === 0 || order === -1) return;` par `if (order !== 1) return;` (les lots concurrents ne partent plus).
-Run: `bun test packages/daemon/src/sync/convergence.property.test.ts`
+Run: `bun test packages/daemon/src/collab/convergence.property.test.ts`
 Expected: FAIL (docs non convergents). Rétablir la ligne, relancer : PASS.
 
 - [ ] **Step 6: Suite, lint, types**
@@ -13288,8 +13150,8 @@ Expected: PASS. La CI exécute la propriété sur macOS et Linux dans `bun test 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/daemon/package.json bun.lock packages/daemon/src/sync/testing/in-memory-network.ts \
-  packages/daemon/src/sync/convergence.property.test.ts
+git add packages/daemon/package.json bun.lock packages/daemon/src/collab/testing/in-memory-network.ts \
+  packages/daemon/src/collab/convergence.property.test.ts
 git commit -m "test(daemon): convergence multi-client"
 ```
 
@@ -13297,291 +13159,243 @@ git commit -m "test(daemon): convergence multi-client"
 
 ### Task 20: Installation depuis la marketplace
 
-Installer un paquet vérifié (spec H §5.2 point 3, §7) : sources écrites dans un dossier temporaire privé, validation générique de Kibo **dans le bac à sable OS** (décision 16), copie au magasin, entrée au registre sans confiance, épinglage de l'éditeur, aperçu pour l'écran 30. Tout échec laisse magasin et registre intacts (spec H §5.2 point 4). La même tâche écrit `Instance.componentHash` (décision 11).
+Installer un paquet vérifié (spec H §5.2 point 3, §7) : sources écrites dans un dossier temporaire privé, validation générique de Kibo (typecheck et suite de conformité **dans le bac à sable OS**, décision 16), copie au magasin, entrée au registre sans confiance, épinglage de l'éditeur, cible de l'écran 30. Tout échec laisse magasin et registre intacts (spec H §5.2 point 4). La même tâche écrit `Instance.componentHash` (décision 11).
 
 **Files:**
-- Create: `packages/daemon/src/market/install.ts`, `packages/daemon/src/market/sandboxed-validator.ts`, `packages/daemon/src/testing/memory-component-store.ts`, `packages/devkit/src/run-step.ts`, `packages/devkit/src/conformance-entry.ts`
-- Modify: `packages/devkit/src/validate.ts` (options `conformanceOnly` et `wrap`), `packages/core/src/instances.ts` (`setInstanceHash`), `packages/daemon/src/service.ts` (écriture de `componentHash` après `addInstance` / `setInstanceComponent`, RPC `installFromMarket`), `packages/daemon/src/market/rpc.ts`
-- Test: `packages/devkit/src/validate-options.test.ts`, `packages/core/src/instances.test.ts`, `packages/daemon/src/market/install.test.ts`, `packages/daemon/src/service-component-hash.test.ts`
+- Create: `packages/daemon/src/market/install.ts`, `packages/daemon/src/components/component-hash.ts`
+- Modify: `packages/devkit/src/validate.ts` (option `conformanceOnly`), `packages/devkit/src/scaffold.ts` (export du gabarit `CONFORMANCE_TEST`), `packages/schema/src/command.ts` (`componentHash` facultatif sur `addInstance` et `setInstanceComponent`), `packages/core/src/instances.ts` (écriture de `componentHash`), `packages/daemon/src/components/service.ts` (expose `store` ; option `commands` ; intercepteur `componentHash`), `packages/daemon/src/components/update.ts` (`approvedHash` dans `UpdateDeps`), `packages/daemon/src/components/service.test-helper.ts` (passe `commands` à `boot`), `packages/daemon/src/daemon.ts` (passe `commands: service.commands`), `packages/daemon/src/market/rpc.ts` (RPC `installFromMarket`)
+- Test: `packages/devkit/src/validate-conformance-only.test.ts`, `packages/core/src/instances-hash.test.ts`, `packages/daemon/src/market/install.test.ts`, `packages/daemon/src/components/component-hash.test.ts`, `packages/daemon/src/components/registry-service.test.ts` (refus d'une version révoquée)
+- Modify (décision 34) : `packages/daemon/src/components/registry-service.ts`
 
 **Interfaces:**
-- Consumes: `MarketService.fetchVerified`, `MarketService.pinPublisher`, `RegistryPort`, `startFakeMarket`, `createMemoryRegistry` (T15) ; `detectSandbox`, `wrapCommand`, `type SandboxProbe`, `type SandboxPolicy` (T8) ; `sourceHash`, `type SourceFile` (T2) ; `makeTestPackage` (T10) ; `MarketInstallResult`, `RegistryVersion`, `Instance`, `KiboError` (T5, T1) ; `ComponentStore`, `validateComponent`, `ValidationReport`, `BUILTIN_IDS` (phase 4).
-- Hypothèse v0.6 (vérifiée en T0) : `buildTrustPreview(input: { id: string; version: string; hash: string; manifest: ComponentManifest; origin: ComponentOrigin }): TrustPreview` (fonction pure de l'écran 30, `packages/daemon/src/components/trust-preview.ts`) ; `validateComponent` lance ses sous-processus par `Bun.spawn(argv, { cwd })` dans `packages/devkit/src/validate.ts` ; la toolchain est `toolchainDir()` exporté par `packages/devkit/src/toolchain.ts` ; `runConformance(mod: ComponentModule)` et un `ui.tsx` utilisateur exportent `Component` (générateur de la phase 4).
+- Consumes: `MarketService.fetchVerified`, `MarketService.pinPublisher`, `MarketService.search`, `RegistryPort`, `startFakeMarket`, `createMemoryRegistry` (T15) ; `makeTestPackage` (T10) ; `MarketInstallResult`, `MarketTrustInfo`, `Instance.componentHash`, `RegistryVersion.source` / `.revoked` (T5) ; `ComponentStore`, `createComponentStore`, `validateComponent`, `ValidateOptions`, `osSandbox`, `OsSandbox`, `PublishLock`, `fakeBuild`, `boot`, `createProject` (phase 4).
+- Vérifié en T0 :
+  - Il n'existe ni `buildTrustPreview` ni `TrustPreview` : l'écran 30 (`packages/ui/src/dialogs/TrustDialog.tsx`) reçoit un `TrustTarget = { id; title; version; hash; origin: ComponentOrigin; permissions: GrantedPermissions }` qu'il construit par `trustTargetOf(id, title, v: ComponentVersionSummary)`. `MarketInstallResult` (T5) porte donc directement les champs de `TrustTarget` plus `market: MarketTrustInfo`.
+  - `validateComponent(dir: string, opts: ValidateOptions): Promise<ValidationReport>` (`packages/devkit/src/validate.ts`), `ValidateOptions = { toolchain: Toolchain; bun?: BunCommand; sandbox?: OsSandbox; timeoutMs?: number; now?: () => number; signal?: AbortSignal }`. La validation copie les sources dans un dossier temporaire `kibo-validate-*` ; typecheck, imports et inférence des permissions tournent en processus ; **les tests tournent déjà dans le bac à sable OS** (`runComponentTests`, `packages/devkit/src/validate-tests.ts`, `sandbox.wrap(argv, policy)` avec `osSandbox()` par défaut ; sans bac à sable : tests en échec, sortie `FR_DEVKIT.sandboxUnavailable`). Il n'y a donc ni `wrap` ni `run-step.ts` à ajouter : seule l'option `conformanceOnly` manque.
+  - La toolchain est `Toolchain = { root: string }` (`resolveToolchain`, `packages/devkit/src/toolchain.ts`), en test `DEV_TOOLCHAIN` (`@kibo/devkit/test-kit`) ; il n'y a pas de `toolchainDir()`.
+  - `runConformance(mod: ConformanceModule, seed?, opts?)` (`@kibo/sdk/conformance`) ; le gabarit de test généré par `scaffold` (`packages/devkit/src/scaffold.ts`, constante locale `TEST`) importe `./kibo.component.json` et `{ Component } from "./ui"`.
+  - Le magasin réel est `ComponentStore.put(srcDir: string, expectedHash?: string): Promise<StoredVersion>` (build au passage, `HASH_MISMATCH` si l'empreinte diffère), `remove(id, version)` ; il n'est pas exposé par `ComponentsService` (créé en interne dans `packages/daemon/src/components/service.ts`). Pas de magasin en mémoire : les tests utilisent `createComponentStore({ home, toolchain: DEV_TOOLCHAIN, build: fakeBuild })`.
+  - `Instance` est une valeur JSON dans la map `instances` du doc projet ; `addInstance` et `setInstanceComponent` (`packages/core/src/instances.ts`) la réécrivent entière. `addInstance` est une commande réservée au shell (`COMMAND_WRITES.addInstance = null`) qui passe par le chemin de commandes (`createCommandPath`, intercepteurs `CommandInterceptor` exécutés avant `executeProjectCommand`) ; la mise à jour d'instance (`updateInstance`, `packages/daemon/src/components/update.ts`) appelle `setInstanceComponent` de `core` directement. `componentHash` est donc un champ facultatif de ces deux commandes, **toujours réécrit** par un intercepteur du démon (valeur du registre), et passé explicitement par `updateInstance`.
+  - `isBuiltinId(id)` (`@kibo/schema`) remplace `BUILTIN_IDS`.
+  - Le verrou de publication partagé (`PublishLock`, `ComponentsService.publishLock`, utilisé par `publishComponent` et par la finalisation des brouillons IA) protège aussi l'installation d'un id : une installation et une publication du même composant ne se croisent jamais (`CONFLICT`).
 - Produces :
-  - `TrustPreview.market: { publisherName: string; verified: boolean; sourceName: string; newPublisher: boolean } | null` (**champ ajouté**, lu par T26 pour les variantes M5).
-  - `ValidateOptions = { conformanceOnly?: boolean; wrap?: WrapStep }`, `WrapStep = (step: { argv: string[]; cwd: string; writable: string[] }) => { argv: string[]; env: Record<string, string> }` (`packages/devkit`).
-  - `type SandboxedValidator = (dir: string) => Promise<ValidationReport>` ; `createSandboxedValidator(deps: { probe(): SandboxProbe; allowUnsandboxed(): boolean; toolchainDir: string; workRoot: string }): SandboxedValidator`.
-  - `type InstallDeps = { market: MarketService; store: ComponentStore; registry: RegistryPort; validate: SandboxedValidator; tmpRoot: string; now: () => number }` ; `installFromMarket(deps: InstallDeps, input: { sourceId: string; id: string; version: string }): Promise<MarketInstallResult>`.
-  - `setInstanceHash(doc: LoroDoc, instanceId: string, hash: string | null): void` (`@kibo/core`).
-  - `createMemoryComponentStore(): ComponentStore & { puts: number }` (tests).
+  - `ValidateOptions.conformanceOnly?: boolean` (`packages/devkit`) ; `CONFORMANCE_TEST: string` exporté par `scaffold.ts`.
+  - `InstallDeps = { market: Pick<MarketService, "fetchVerified" | "pinPublisher" | "search">; store: Pick<ComponentStore, "put" | "remove">; registry: RegistryPort; validate(dir: string): Promise<ValidationReport>; sandbox: Pick<OsSandbox, "ready">; lock: PublishLock; tmpRoot: string }` ; `installFromMarket(deps: InstallDeps, input: { sourceId: string; id: string; version: string }): Promise<MarketInstallResult>`.
+  - `ComponentsService.store: ComponentStore` ; `ComponentsDeps.commands: Pick<CommandHub, "intercept">` ; `stampComponentHash(workspace: LoroDoc): CommandInterceptor`, `approvedHashOf(workspace: LoroDoc, ref: string): string | null` (`packages/daemon/src/components/component-hash.ts`) ; `UpdateDeps.approvedHash(ref: string): string | null`.
+  - Commandes `addInstance` et `setInstanceComponent` : `componentHash: Sha256.nullable().optional()` ; `core` écrit `componentHash: input.componentHash ?? null`.
+  - Décision 16 précisée : une installation marketplace **n'utilise jamais** le réglage « Autoriser les backends sandboxés sans isolation OS » ; sans bac à sable OS utilisable, `installFromMarket` échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
 
-- [ ] **Step 1: Test de `setInstanceHash`**
+- [ ] **Step 1: Test de `componentHash` dans `core`**
 
-Ajouter à `packages/core/src/instances.test.ts` :
+`packages/core/src/instances-hash.test.ts` :
 ```ts
 import { describe, expect, test } from "bun:test";
-import { addInstance, addPage, createProjectDoc, listInstances, setInstanceHash } from "./index";
+import { addInstance, addPage, createProjectDoc, getInstance, setInstanceComponent } from "./index";
 
 const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const HASH = "a".repeat(64);
 
-describe("setInstanceHash", () => {
-  test("records the approved hash of a non builtin instance", () => {
+describe("componentHash", () => {
+  test("addInstance records the given hash, null by default", () => {
     const doc = createProjectDoc(meta);
     const page = addPage(doc, { title: "Tableau", kind: "dashboard", parentId: null });
-    const inst = addInstance(doc, { pageId: page.id, component: "burndown@0.1.0" });
-    expect(listInstances(doc)[0]?.componentHash).toBeNull();
-    setInstanceHash(doc, inst.id, "a".repeat(64));
-    expect(listInstances(doc)[0]?.componentHash).toBe("a".repeat(64));
+    const custom = addInstance(doc, { pageId: page.id, component: "burndown@0.1.0", componentHash: HASH });
+    const builtin = addInstance(doc, { pageId: page.id, component: "kanban@1.0.0" });
+    expect(getInstance(doc, custom.id).componentHash).toBe(HASH);
+    expect(getInstance(doc, builtin.id).componentHash).toBeNull();
   });
 
-  test("refuses an unknown instance and a malformed hash", () => {
+  test("setInstanceComponent replaces the hash with the new version's", () => {
     const doc = createProjectDoc(meta);
-    expect(() => setInstanceHash(doc, "nope", "a".repeat(64))).toThrow("NOT_FOUND");
     const page = addPage(doc, { title: "Tableau", kind: "dashboard", parentId: null });
-    const inst = addInstance(doc, { pageId: page.id, component: "burndown@0.1.0" });
-    expect(() => setInstanceHash(doc, inst.id, "xyz")).toThrow("INVALID_INPUT");
+    const inst = addInstance(doc, { pageId: page.id, component: "burndown@0.1.0", componentHash: HASH });
+    setInstanceComponent(doc, { instanceId: inst.id, component: "burndown@0.2.0", config: {}, data: null });
+    expect(getInstance(doc, inst.id).componentHash).toBeNull();
+    setInstanceComponent(doc, {
+      instanceId: inst.id,
+      component: "burndown@0.3.0",
+      config: {},
+      data: null,
+      componentHash: "b".repeat(64),
+    });
+    expect(getInstance(doc, inst.id).componentHash).toBe("b".repeat(64));
+  });
+
+  test("a malformed hash is refused", () => {
+    const doc = createProjectDoc(meta);
+    const page = addPage(doc, { title: "Tableau", kind: "dashboard", parentId: null });
+    expect(() => addInstance(doc, { pageId: page.id, component: "burndown@0.1.0", componentHash: "xyz" })).toThrow(
+      "INVALID_INPUT",
+    );
   });
 });
 ```
+`addPage(doc, { title, kind, parentId? })` (`packages/core/src/pages.ts`).
 
-Run: `bun test packages/core/src/instances.test.ts`
-Expected: FAIL avec « setInstanceHash is not exported ».
+Run: `bun test packages/core/src/instances-hash.test.ts`
+Expected: FAIL (erreur de type : `componentHash` inconnu dans l'entrée de `addInstance`).
 
-- [ ] **Step 2: Implémenter `setInstanceHash`**
+- [ ] **Step 2: Écrire `componentHash` dans `core` et les commandes**
 
-Ajouter à `packages/core/src/instances.ts` :
+Dans `packages/schema/src/command.ts`, ajouter `componentHash: Sha256.nullable().optional()` (import de `Sha256` depuis `./component`) aux objets `addInstance` et `setInstanceComponent`.
+
+Dans `packages/core/src/instances.ts` :
+- entrée de `addInstance` : `componentHash?: string | null` ; l'objet passé à `Instance.safeParse` gagne `componentHash: input.componentHash ?? null` ;
+- entrée de `setInstanceComponent` : `componentHash?: string | null` ; l'objet passé à `Instance.safeParse` devient `{ ...current, component: input.component, config: input.config, componentHash: input.componentHash ?? null }`.
+
+`executeProjectCommand` (`packages/core/src/commands.ts`) passe la commande entière, sans `method`, à ces deux fonctions : aucun changement.
+
+Run: `bun test packages/core/src/instances-hash.test.ts packages/core packages/schema`
+Expected: PASS ; les tests existants passent sans changement de leurs attentes.
+
+- [ ] **Step 3: Test de l'option `conformanceOnly`**
+
+`packages/devkit/src/validate-conformance-only.test.ts` :
 ```ts
-export function setInstanceHash(doc: LoroDoc, id: string, hash: string | null): void {
-  const current = instances(doc).get(id);
-  if (current === undefined) throw new KiboError("NOT_FOUND", `instance ${id} not found`);
-  const parsed = Instance.safeParse({ ...Instance.parse(current), componentHash: hash });
-  if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
-  instances(doc).set(id, parsed.data);
-  doc.commit();
-}
-```
-Si la phase 4 stocke une instance comme `LoroMap` (données d'instance, spec B §3.5), écrire le champ par `instanceMap(doc, id).set("componentHash", hash)` avec la même validation.
-
-Run: `bun test packages/core/src/instances.test.ts`
-Expected: PASS.
-
-- [ ] **Step 3: Test des options de `validateComponent`**
-
-`packages/devkit/src/validate-options.test.ts` :
-```ts
-import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { afterAll, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { scaffold } from "./scaffold";
+import { KiboError } from "@kibo/schema";
+import { osSandbox } from "./os-sandbox";
+import { copyFixture, DEV_TOOLCHAIN } from "./test-kit";
 import { validateComponent } from "./validate";
 
-let root: string;
-let dir: string;
+const disposers: (() => void)[] = [];
+afterAll(() => {
+  for (const d of disposers) d();
+});
+const fixture = (name: string) => {
+  const f = copyFixture(name);
+  disposers.push(f.dispose);
+  return f.dir;
+};
+const sandboxAvailable = await osSandbox()
+  .ready()
+  .then(
+    () => true,
+    (e: unknown) => {
+      if (e instanceof KiboError && e.code === "SANDBOX_UNAVAILABLE") return false;
+      throw e;
+    },
+  );
+const opts = { toolchain: DEV_TOOLCHAIN, now: () => 1_000 };
 
-beforeEach(async () => {
-  root = mkdtempSync(join(tmpdir(), "kibo-devkit-"));
-  dir = join(root, "burndown");
-  await scaffold({ dir, id: "burndown", kind: "widget", server: false });
+test.if(sandboxAvailable)("conformanceOnly ignores the publisher tests and runs the generic suite", async () => {
+  const dir = fixture("hello");
   writeFileSync(
     join(dir, "component.test.tsx"),
     'import { expect, test } from "bun:test";\ntest("publisher test", () => expect(1).toBe(2));\n',
   );
-});
-afterEach(() => rmSync(root, { recursive: true, force: true }));
-
-test("conformanceOnly ignores the publisher tests and runs the generic suite", async () => {
-  const report = await validateComponent(dir, { conformanceOnly: true });
+  const report = await validateComponent(dir, { ...opts, conformanceOnly: true });
   expect(report.tests.ok).toBe(true);
   expect(report.conformance.ok).toBe(true);
   expect(report.ok).toBe(true);
 });
 
-test("without conformanceOnly the publisher tests run", async () => {
-  const report = await validateComponent(dir);
+test.if(sandboxAvailable)("conformanceOnly works without any test file in the package", async () => {
+  const dir = fixture("hello");
+  const { rmSync } = await import("node:fs");
+  rmSync(join(dir, "component.test.tsx"));
+  const report = await validateComponent(dir, { ...opts, conformanceOnly: true });
+  expect(report.ok).toBe(true);
+});
+
+test.if(sandboxAvailable)("without conformanceOnly the publisher tests still run", async () => {
+  const dir = fixture("hello");
+  writeFileSync(
+    join(dir, "component.test.tsx"),
+    'import { expect, test } from "bun:test";\ntest("publisher test", () => expect(1).toBe(2));\n',
+  );
+  const report = await validateComponent(dir, opts);
   expect(report.ok).toBe(false);
 });
-
-test("wrap is applied to every subprocess with a writable work dir", async () => {
-  const steps: { argv: string[]; cwd: string; writable: string[] }[] = [];
-  const report = await validateComponent(dir, {
-    conformanceOnly: true,
-    wrap: (step) => {
-      steps.push(step);
-      return { argv: step.argv, env: { PATH: process.env.PATH ?? "" } };
-    },
-  });
-  expect(report.ok).toBe(true);
-  expect(steps.length).toBeGreaterThanOrEqual(2);
-  for (const s of steps) expect(s.writable.length).toBe(1);
-});
 ```
 
-Run: `bun test packages/devkit/src/validate-options.test.ts`
-Expected: FAIL (le test de l'éditeur fait échouer le rapport, `wrap` n'est jamais appelé).
+Run: `bun test packages/devkit/src/validate-conformance-only.test.ts`
+Expected: FAIL (le test de l'éditeur fait échouer le rapport ; sans fichier de test, `conformance` porte `FR_DEVKIT.noConformance`). Sur un poste sans bac à sable OS, les trois tests sont ignorés ; la CI Linux et macOS les exécute (bubblewrap installé depuis la phase 4).
 
-- [ ] **Step 4: Implémenter les options**
+- [ ] **Step 4: Implémenter `conformanceOnly`**
 
-`packages/devkit/src/run-step.ts` :
-```ts
-export type WrapStep = (step: { argv: string[]; cwd: string; writable: string[] }) => {
-  argv: string[];
-  env: Record<string, string>;
-};
-
-export type StepResult = { code: number; stdout: string; stderr: string };
-
-export async function runStep(
-  step: { argv: string[]; cwd: string; writable: string[] },
-  wrap: WrapStep | undefined,
-): Promise<StepResult> {
-  const inherited = Object.fromEntries(
-    Object.entries(process.env).filter((e): e is [string, string] => e[1] !== undefined),
-  );
-  const wrapped = wrap ? wrap(step) : { argv: step.argv, env: inherited };
-  const proc = Bun.spawn(wrapped.argv, { cwd: step.cwd, env: wrapped.env, stdout: "pipe", stderr: "pipe" });
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  return { code, stdout, stderr };
-}
-```
-
-`packages/devkit/src/conformance-entry.ts` :
-```ts
-import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-
-export function writeConformanceEntry(input: { componentDir: string; workDir: string; toolchainDir: string }): string {
-  mkdirSync(input.workDir, { recursive: true, mode: 0o700 });
-  symlinkSync(join(input.toolchainDir, "node_modules"), join(input.workDir, "node_modules"), "dir");
-  const file = join(input.workDir, "conformance.test.tsx");
-  const manifest = JSON.stringify(join(input.componentDir, "kibo.component.json"));
-  const ui = JSON.stringify(join(input.componentDir, "ui.tsx"));
-  writeFileSync(
-    file,
-    [
-      'import { ComponentManifest } from "@kibo/schema";',
-      'import { runConformance } from "@kibo/sdk/conformance";',
-      `import manifestJson from ${manifest} with { type: "json" };`,
-      `import { Component } from ${ui};`,
-      "runConformance({ manifest: ComponentManifest.parse(manifestJson), Component });",
-      "",
-    ].join("\n"),
-    { mode: 0o600 },
-  );
-  return file;
-}
-```
+Dans `packages/devkit/src/scaffold.ts`, renommer la constante locale `TEST` en `export const CONFORMANCE_TEST` (même contenu), et l'utiliser dans `scaffold`.
 
 Dans `packages/devkit/src/validate.ts` :
-- signature `validateComponent(dir: string, opts: ValidateOptions = {}): Promise<ValidationReport>` avec `export type ValidateOptions = { conformanceOnly?: boolean; wrap?: WrapStep }` ;
-- au début, `const workDir = mkdtempSync(join(tmpdir(), "kibo-validate-"))` supprimé dans un `finally` ;
-- chaque `Bun.spawn(argv, { cwd })` existant (typecheck `tsc --noEmit`, build, `bun test --preload restrict.ts`) devient `runStep({ argv, cwd, writable: [workDir] }, opts.wrap)`, et le build écrit sa sortie dans `workDir` ;
-- l'étape de tests devient, quand `opts.conformanceOnly` est vrai :
+- `ValidateOptions` gagne `conformanceOnly?: boolean` ;
+- dans `checkCopy`, avant `runComponentTests(copy, opts)`, quand `opts.conformanceOnly` est vrai, appeler :
 ```ts
-const entry = writeConformanceEntry({ componentDir: dir, workDir: join(workDir, "conformance"), toolchainDir: toolchainDir() });
-const result = await runStep(
-  { argv: [bunBinary(), "test", "--preload", restrictPreload(), entry], cwd: join(workDir, "conformance"), writable: [workDir] },
-  opts.wrap,
-);
-```
-les tests de l'éditeur (`*.test.ts(x)` du dossier) ne sont alors jamais passés à `bun test` ; `report.tests` et `report.conformance` reprennent le résultat de cette exécution.
-
-Run: `bun test packages/devkit/src/validate-options.test.ts`
-Expected: PASS (3 tests).
-
-- [ ] **Step 5: Tests de l'installation**
-
-`packages/daemon/src/testing/memory-component-store.ts` :
-```ts
-import { KiboError } from "@kibo/schema";
-import { type SourceFile, sourceHash } from "@kibo/trust";
-import type { ComponentStore } from "../components/component-store";
-
-export function createMemoryComponentStore(): ComponentStore & { puts: number; entries(): string[] } {
-  const entries = new Map<string, SourceFile[]>();
-  const store = {
-    puts: 0,
-    async put(input: { id: string; version: string; files: SourceFile[] }) {
-      store.puts += 1;
-      const hash = await sourceHash(input.files);
-      entries.set(`${input.id}@${input.version}#${hash}`, input.files);
-      return { hash, dir: `/memory/${input.id}/${input.version}/${hash}` };
-    },
-    async remove(id: string, version: string, hash: string) {
-      entries.delete(`${id}@${version}#${hash}`);
-    },
-    async readSources(id: string, version: string, hash: string) {
-      const files = entries.get(`${id}@${version}#${hash}`);
-      if (!files) throw new KiboError("NOT_FOUND", `${id}@${version}`);
-      return files;
-    },
-    entries: () => [...entries.keys()],
-  };
-  return store;
+async function useGenericSuite(copy: string, files: string[]): Promise<void> {
+  for (const f of files.filter((p) => /\.test\.tsx?$/.test(p))) await rm(join(copy, f), { force: true });
+  await writeFile(join(copy, "kibo-conformance.test.tsx"), CONFORMANCE_TEST);
 }
 ```
+(import de `CONFORMANCE_TEST` depuis `./scaffold`). Les tests de l'éditeur ne sont jamais copiés dans le bac à sable de test ; seule la suite générique s'exécute, avec la même politique d'isolation et le même rapport (`tests`, `conformance`, `permissions.used`). L'empreinte (`report.hash`) est calculée avant ce remplacement et ne change pas (les tests sont hors empreinte, spec B §3.2).
+
+Run: `bun test packages/devkit`
+Expected: PASS ; les tests existants de `devkit` passent sans changement de leurs attentes.
+
+- [ ] **Step 5: Tests de l'installation**
 
 `packages/daemon/src/market/install.test.ts` :
 ```ts
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { toolchainDir } from "@kibo/devkit/toolchain";
+import { osSandbox, validateComponent } from "@kibo/devkit";
+import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { KiboError, type ValidationReport } from "@kibo/schema";
 import { sha256Hex, toBase64, utf8 } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
-import { detectSandbox, realDetectDeps } from "../sandbox/detect";
+import { createPublishLock } from "../components/publish-lock";
+import { fakeBuild, okReport } from "../components/service.test-helper";
+import { type ComponentStore, createComponentStore } from "../components/store";
 import { type FakeMarket, startFakeMarket } from "../testing/fake-market";
-import { createMemoryComponentStore } from "../testing/memory-component-store";
 import { createMemoryRegistry } from "../testing/memory-registry";
 import { createHttpGet } from "./http-get";
-import { installFromMarket } from "./install";
+import { type InstallDeps, installFromMarket } from "./install";
 import { openMarketDb } from "./market-db";
 import { MarketService } from "./market-service";
-import { createSandboxedValidator } from "./sandboxed-validator";
 
-const probe = await detectSandbox(realDetectDeps(), process.execPath);
-if (process.env.KIBO_REQUIRE_OS_SANDBOX === "1") expect(probe.available).toBe(true);
+const sandboxAvailable = await osSandbox()
+  .ready()
+  .then(
+    () => true,
+    (e: unknown) => {
+      if (e instanceof KiboError && e.code === "SANDBOX_UNAVAILABLE") return false;
+      throw e;
+    },
+  );
 
 let fake: FakeMarket;
 let home: string;
 let market: MarketService;
 let registry: ReturnType<typeof createMemoryRegistry>;
-let store: ReturnType<typeof createMemoryComponentStore>;
+let store: ComponentStore;
+const ready = { ready: async () => {} };
+const REF = { sourceId: "equipe", id: "burndown", version: "0.1.0" };
 
-const validator = (available = true) =>
-  createSandboxedValidator({
-    probe: () => (available ? probe : { ...probe, available: false, reason: "test" }),
-    allowUnsandboxed: () => available && !probe.available,
-    toolchainDir: toolchainDir(),
-    workRoot: join(home, "tmp"),
-  });
-
-const deps = (available = true) => ({
+const deps = (over: Partial<InstallDeps> = {}): InstallDeps => ({
   market,
   store,
   registry: registry.port,
-  validate: validator(available),
+  validate: okReport,
+  sandbox: ready,
+  lock: createPublishLock(),
   tmpRoot: join(home, "tmp"),
-  now: () => 42,
+  ...over,
 });
 
 beforeEach(async () => {
   home = mkdtempSync(join(tmpdir(), "kibo-install-"));
   fake = await startFakeMarket();
   registry = createMemoryRegistry();
-  store = createMemoryComponentStore();
+  store = createComponentStore({ home, toolchain: DEV_TOOLCHAIN, build: fakeBuild });
   market = new MarketService({
     db: openMarketDb(new Database(":memory:")),
     get: createHttpGet({ allowLoopbackHttp: true }),
     registry: registry.port,
     now: () => 42,
-    notify: mock(async () => {}),
+    notify: mock(() => {}),
     log: mock(() => {}),
   });
 });
@@ -13597,35 +13411,52 @@ async function publish(files?: Record<string, string>) {
   return made;
 }
 
+const storeDir = () => join(home, "components", "store", "burndown");
 const nothingWritten = () => {
-  expect(store.puts).toBe(0);
+  expect(existsSync(storeDir())).toBe(false);
   expect(registry.port.installed()).toEqual([]);
-  expect(readdirSync(join(home, "tmp"), { withFileTypes: true }).length).toBe(0);
+  expect(existsSync(join(home, "tmp")) ? readdirSync(join(home, "tmp")) : []).toEqual([]);
 };
 
 describe("installFromMarket", () => {
-  test("installs a verified package without trust and pins its publisher", async () => {
+  test("installs a verified package without trust, pins its publisher and returns the screen 30 target", async () => {
     const made = await publish();
-    const result = await installFromMarket(deps(), { sourceId: "equipe", id: "burndown", version: "0.1.0" });
-    expect(result.hash).toBe(made.pkg.hash);
-    expect(result.preview.market).toEqual({
+    const result = await installFromMarket(deps(), REF);
+    expect(result).toMatchObject({ id: "burndown", title: "Burndown", version: "0.1.0", hash: made.pkg.hash });
+    expect(result.market).toEqual({
       publisherName: made.publisher.name,
       verified: true,
       sourceName: "Équipe",
       newPublisher: true,
     });
-    const v = registry.port.get("burndown", "0.1.0");
-    expect(v).toMatchObject({
+    expect(registry.port.get("burndown", "0.1.0")).toMatchObject({
       origin: "marketplace",
       trust: null,
       approvedHash: null,
+      autoUpdate: false,
       hash: made.pkg.hash,
       source: { sourceId: "equipe", publisherKey: made.publisher.keys.publicKey },
       revoked: null,
     });
-    expect(store.entries()).toEqual([`burndown@0.1.0#${made.pkg.hash}`]);
-    expect((await market.getPackage({ sourceId: "equipe", id: "burndown", version: "0.1.0" })).newPublisher).toBe(false);
-    expect(readdirSync(join(home, "tmp")).length).toBe(0);
+    expect(readdirSync(storeDir())).toEqual(["0.1.0"]);
+    expect((await market.getPackage(REF)).newPublisher).toBe(false);
+    expect(readdirSync(join(home, "tmp"))).toEqual([]);
+  });
+
+  test("the generic validation runs on the written sources with conformanceOnly", async () => {
+    await publish();
+    const seen: string[] = [];
+    await installFromMarket(
+      deps({
+        validate: async (dir) => {
+          seen.push(...readdirSync(dir));
+          return okReport(dir);
+        },
+      }),
+      REF,
+    );
+    expect(seen).toContain("kibo.component.json");
+    expect(seen.some((f) => f.endsWith(".test.tsx"))).toBe(false);
   });
 
   test("a tampered file is refused and nothing is written", async () => {
@@ -13638,315 +13469,395 @@ describe("installFromMarket", () => {
       files: [{ ...first, content: toBase64(content), sha256: await sha256Hex(content) }, ...made.pkg.files.slice(1)],
     };
     fake.tamper("packages/burndown/0.1.0.kpkg", utf8(JSON.stringify(altered)));
-    await expect(installFromMarket(deps(), { sourceId: "equipe", id: "burndown", version: "0.1.0" })).rejects.toThrow(
-      "HASH_MISMATCH",
-    );
+    await expect(installFromMarket(deps(), REF)).rejects.toThrow("HASH_MISMATCH");
     nothingWritten();
   });
 
-  test("a component that does not typecheck is refused and nothing is written", async () => {
-    await publish({ "ui.tsx": 'export const Component = () => { const n: number = "x"; return <div>{n}</div>; };\n' });
-    await expect(installFromMarket(deps(), { sourceId: "equipe", id: "burndown", version: "0.1.0" })).rejects.toThrow(
-      "VALIDATION_FAILED",
-    );
-    nothingWritten();
-  });
-
-  test("without OS isolation and without the override nothing is written", async () => {
+  test("a failed validation is refused and nothing is written", async () => {
     await publish();
-    await expect(
-      installFromMarket(deps(false), { sourceId: "equipe", id: "burndown", version: "0.1.0" }),
-    ).rejects.toThrow("SANDBOX_UNAVAILABLE");
+    const failing = async (dir: string): Promise<ValidationReport> => ({
+      ...(await okReport(dir)),
+      typecheck: { ok: false, errors: ["ui.tsx:1 : Type 'string' is not assignable to type 'number'."] },
+      ok: false,
+    });
+    await expect(installFromMarket(deps({ validate: failing }), REF)).rejects.toThrow("VALIDATION_FAILED");
+    nothingWritten();
+  });
+
+  test("without OS isolation nothing is validated nor written", async () => {
+    await publish();
+    const validate = mock(okReport);
+    const unavailable = {
+      ready: async () => {
+        throw new KiboError("SANDBOX_UNAVAILABLE", "no OS sandbox on test");
+      },
+    };
+    await expect(installFromMarket(deps({ validate, sandbox: unavailable }), REF)).rejects.toThrow(
+      "SANDBOX_UNAVAILABLE",
+    );
+    expect(validate).not.toHaveBeenCalled();
     nothingWritten();
   });
 
   test("a registry failure removes the stored copy", async () => {
     await publish();
     const failing = {
-      ...deps(),
-      registry: {
-        ...registry.port,
-        put: () => {
-          throw new Error("disk full");
-        },
+      ...registry.port,
+      put: () => {
+        throw new Error("disk full");
       },
     };
-    await expect(installFromMarket(failing, { sourceId: "equipe", id: "burndown", version: "0.1.0" })).rejects.toThrow(
-      "disk full",
-    );
-    expect(store.entries()).toEqual([]);
+    await expect(installFromMarket(deps({ registry: failing }), REF)).rejects.toThrow("disk full");
+    expect(existsSync(join(storeDir(), "0.1.0"))).toBe(false);
+  });
+
+  test("an install and a publish of the same id never overlap", async () => {
+    await publish();
+    const lock = createPublishLock();
+    let release: () => void = () => {};
+    const held = lock.hold("burndown", () => new Promise<void>((r) => (release = r)));
+    await expect(installFromMarket(deps({ lock }), REF)).rejects.toThrow("CONFLICT");
+    release();
+    await held;
+    nothingWritten();
   });
 
   test("the pin survives an uninstall", async () => {
     const made = await publish();
-    await installFromMarket(deps(), { sourceId: "equipe", id: "burndown", version: "0.1.0" });
-    await store.remove("burndown", "0.1.0", made.pkg.hash);
-    const detail = await market.getPackage({ sourceId: "equipe", id: "burndown", version: "0.1.0" });
-    expect(detail.pinnedPublisher).toBe(made.publisher.keys.publicKey);
+    await installFromMarket(deps(), REF);
+    await store.remove("burndown", "0.1.0");
+    expect((await market.getPackage(REF)).pinnedPublisher).toBe(made.publisher.keys.publicKey);
+  });
+
+  test.if(sandboxAvailable)("the real generic validation accepts the default test package", async () => {
+    await publish();
+    const validate = (dir: string) => validateComponent(dir, { toolchain: DEV_TOOLCHAIN, conformanceOnly: true });
+    const result = await installFromMarket(deps({ validate, sandbox: osSandbox() }), REF);
+    expect(result.version).toBe("0.1.0");
   });
 });
 ```
-La désinstallation réelle (`uninstallComponent`, phase 4) ne touche ni `market_pins` ni le cache : le dernier test le vérifie au niveau du service ; `uninstallComponent` n'est pas modifié.
-
-Hypothèse v0.6 (vérifiée en T0) : `packages/devkit` exporte `./toolchain` ; `packages/daemon/src/sandbox/detect.ts` (T8) exporte `realDetectDeps(): DetectDeps` (dépendances réelles : `process.platform`, `Bun.which`, `Bun.spawn`).
+`makeTestPackage`, `startFakeMarket`, `createMemoryRegistry`, `MarketService`, `openMarketDb`, `createHttpGet` suivent les contrats de T10 et T15 (noms et options exacts : les reprendre de leur section si l'intégration les a ajustés). La désinstallation réelle (`uninstallComponent`, `RegistryService.uninstall`) ne touche ni `market_pins` ni le cache d'index : elle n'est pas modifiée.
 
 Run: `bun test packages/daemon/src/market/install.test.ts`
 Expected: FAIL avec « Cannot find module './install' ».
 
-- [ ] **Step 6: Implémenter le validateur et l'installation**
-
-`packages/daemon/src/market/sandboxed-validator.ts` :
-```ts
-import type { ValidationReport } from "@kibo/devkit";
-import { validateComponent } from "@kibo/devkit";
-import type { SandboxProbe } from "../sandbox/detect";
-import { wrapCommand } from "../sandbox/os-sandbox";
-
-export type SandboxedValidator = (dir: string) => Promise<ValidationReport>;
-
-export function createSandboxedValidator(deps: {
-  probe(): SandboxProbe;
-  allowUnsandboxed(): boolean;
-  toolchainDir: string;
-  workRoot: string;
-}): SandboxedValidator {
-  return async (dir) => {
-    const probe = deps.probe();
-    const allow = deps.allowUnsandboxed();
-    wrapCommand(probe, { runtime: process.execPath, args: [], readOnly: [], tmpDir: deps.workRoot, env: {} }, allow);
-    return validateComponent(dir, {
-      conformanceOnly: true,
-      wrap: (step) => {
-        const [runtime, ...args] = step.argv;
-        if (runtime === undefined) throw new Error("empty validation command");
-        const tmpDir = step.writable[0] ?? deps.workRoot;
-        return wrapCommand(
-          probe,
-          {
-            runtime,
-            args,
-            readOnly: [
-              { host: deps.toolchainDir, guest: deps.toolchainDir },
-              { host: dir, guest: dir },
-            ],
-            tmpDir,
-            env: { HOME: tmpDir, PATH: "/usr/bin:/bin", NO_COLOR: "1" },
-          },
-          allow,
-        );
-      },
-    });
-  };
-}
-```
-Le premier appel à `wrapCommand` lève `SANDBOX_UNAVAILABLE` **avant** toute écriture quand l'isolation manque et n'est pas autorisée.
+- [ ] **Step 6: Implémenter l'installation**
 
 `packages/daemon/src/market/install.ts` :
 ```ts
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { KiboError, type MarketInstallResult } from "@kibo/schema";
+import type { OsSandbox } from "@kibo/devkit";
+import {
+  grantedOf,
+  KiboError,
+  type MarketInstallResult,
+  NO_PERMISSIONS,
+  type ValidationReport,
+} from "@kibo/schema";
 import type { SourceFile } from "@kibo/trust";
-import type { ComponentStore } from "../components/component-store";
-import { buildTrustPreview } from "../components/trust-preview";
+import type { PublishLock } from "../components/publish-lock";
+import type { ComponentStore } from "../components/store";
 import type { MarketService, RegistryPort } from "./market-service";
-import type { SandboxedValidator } from "./sandboxed-validator";
 
 export type InstallDeps = {
-  market: MarketService;
-  store: ComponentStore;
+  market: Pick<MarketService, "fetchVerified" | "pinPublisher" | "search">;
+  store: Pick<ComponentStore, "put" | "remove">;
   registry: RegistryPort;
-  validate: SandboxedValidator;
+  validate(dir: string): Promise<ValidationReport>;
+  sandbox: Pick<OsSandbox, "ready">;
+  lock: PublishLock;
   tmpRoot: string;
-  now: () => number;
 };
+type Input = { sourceId: string; id: string; version: string };
 
-function writeSources(dir: string, files: SourceFile[]): void {
+async function writeSources(dir: string, files: SourceFile[]): Promise<void> {
   for (const f of files) {
     const target = join(dir, f.path);
-    mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
-    writeFileSync(target, f.bytes, { mode: 0o600 });
+    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+    await writeFile(target, f.bytes, { mode: 0o600 });
   }
 }
 
-const failures = (report: Awaited<ReturnType<SandboxedValidator>>): string =>
-  [
-    report.typecheck.ok ? null : "typecheck",
-    report.tests.ok ? null : "tests",
-    report.conformance.ok ? null : "conformance",
-    report.permissions.missing.length ? `missing permissions: ${report.permissions.missing.join(", ")}` : null,
-  ]
-    .filter((x) => x !== null)
-    .join("; ");
+function failures(report: ValidationReport): string {
+  const errors = [
+    ...report.manifest.errors,
+    ...report.imports.errors,
+    ...report.typecheck.errors,
+    ...report.conformance.errors,
+    ...report.permissions.errors,
+    ...report.permissions.missing.map((p) => `missing permission ${p}`),
+    ...(report.tests.ok ? [] : ["generic conformance suite failed"]),
+  ];
+  return errors.length > 0 ? errors.join("; ") : "validation is not green";
+}
 
-export async function installFromMarket(
-  deps: InstallDeps,
-  input: { sourceId: string; id: string; version: string },
-): Promise<MarketInstallResult> {
-  const { pkg, files, newPublisher } = await deps.market.fetchVerified(input);
-  const existing = deps.registry.get(input.id, input.version);
-  if (existing && existing.hash !== pkg.hash) {
-    throw new KiboError("VERSION_EXISTS", `${input.id}@${input.version} is installed with another hash`);
-  }
-  const hit = deps.market.search({ query: input.id, sourceId: input.sourceId }).find((h) => h.id === input.id);
-  const preview = () =>
-    ({
-      ...buildTrustPreview({ id: input.id, version: input.version, hash: pkg.hash, manifest: pkg.manifest, origin: "marketplace" }),
-      market: {
-        publisherName: pkg.publisher.name,
-        verified: hit?.publisher.publicKey === pkg.publisher.publicKey ? hit.publisher.verified : false,
-        sourceName: hit?.sourceName ?? input.sourceId,
-        newPublisher,
-      },
-    });
-  if (existing) return { id: input.id, version: input.version, hash: pkg.hash, preview: preview() };
-
-  mkdirSync(deps.tmpRoot, { recursive: true, mode: 0o700 });
+async function storeValidated(deps: InstallDeps, files: SourceFile[], hash: string, input: Input) {
+  await mkdir(deps.tmpRoot, { recursive: true, mode: 0o700 });
   const dir = join(deps.tmpRoot, crypto.randomUUID());
-  mkdirSync(dir, { mode: 0o700 });
+  await mkdir(dir, { mode: 0o700 });
   try {
-    writeSources(dir, files);
+    await writeSources(dir, files);
     const report = await deps.validate(dir);
     if (!report.ok) throw new KiboError("VALIDATION_FAILED", `${input.id}@${input.version}: ${failures(report)}`);
-    const stored = await deps.store.put({ id: input.id, version: input.version, files });
-    if (stored.hash !== pkg.hash) {
-      await deps.store.remove(input.id, input.version, stored.hash);
-      throw new KiboError("HASH_MISMATCH", `stored hash ${stored.hash} differs from ${pkg.hash}`);
-    }
-    try {
-      deps.registry.put(input.id, pkg.manifest.title, {
-        version: input.version,
-        hash: pkg.hash,
-        origin: "marketplace",
-        trust: null,
-        approvedHash: null,
-        granted: { reads: [], writes: [], data: false, net: [] },
-        publishedAt: Date.parse(pkg.publishedAt),
-        source: { sourceId: input.sourceId, publisherKey: pkg.publisher.publicKey },
-        revoked: null,
-      });
-    } catch (e) {
-      await deps.store.remove(input.id, input.version, stored.hash);
-      throw e;
-    }
-    if (newPublisher) deps.market.pinPublisher(input.sourceId, input.id, pkg.publisher.publicKey);
-    return { id: input.id, version: input.version, hash: pkg.hash, preview: preview() };
+    return await deps.store.put(dir, hash);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    await rm(dir, { recursive: true, force: true });
   }
 }
+
+async function install(deps: InstallDeps, input: Input): Promise<MarketInstallResult> {
+  const { pkg, files, newPublisher } = await deps.market.fetchVerified(input);
+  const hit = deps.market.search({ query: input.id, sourceId: input.sourceId }).find((h) => h.id === input.id);
+  const result: MarketInstallResult = {
+    id: input.id,
+    title: pkg.manifest.title,
+    version: input.version,
+    hash: pkg.hash,
+    permissions: grantedOf(pkg.manifest),
+    market: {
+      publisherName: pkg.publisher.name,
+      verified: hit?.publisher.publicKey === pkg.publisher.publicKey ? hit.publisher.verified : false,
+      sourceName: hit?.sourceName ?? input.sourceId,
+      newPublisher,
+    },
+  };
+  const existing = deps.registry.get(input.id, input.version);
+  if (existing && existing.hash !== pkg.hash)
+    throw new KiboError("VERSION_EXISTS", `${input.id}@${input.version} is installed with another hash`);
+  if (existing) return result;
+  await deps.sandbox.ready();
+  await storeValidated(deps, files, pkg.hash, input);
+  try {
+    deps.registry.put(input.id, pkg.manifest.title, {
+      version: input.version,
+      hash: pkg.hash,
+      origin: "marketplace",
+      trust: null,
+      approvedHash: null,
+      granted: NO_PERMISSIONS,
+      publishedAt: Date.parse(pkg.publishedAt),
+      autoUpdate: false,
+      source: { sourceId: input.sourceId, publisherKey: pkg.publisher.publicKey },
+      revoked: null,
+    });
+  } catch (e) {
+    await deps.store.remove(input.id, input.version);
+    throw e;
+  }
+  if (newPublisher) deps.market.pinPublisher(input.sourceId, input.id, pkg.publisher.publicKey);
+  return result;
+}
+
+export function installFromMarket(deps: InstallDeps, input: Input): Promise<MarketInstallResult> {
+  return deps.lock.hold(input.id, () => install(deps, input));
+}
 ```
-`granted` reste vide jusqu'à `approveComponent` (écran 30), qui écrit les permissions approuvées comme pour un composant local (spec B §7.5). Si la phase 4 ajoute des champs à `GrantedPermissions` (`secrets`, `mcp` en phase 5), les initialiser vides ici.
+`granted` reste `NO_PERMISSIONS` jusqu'à `approveComponent` (écran 30), qui écrit `grantedOf(manifest)` comme pour un composant local (`RegistryService.approve`). La décision 24 tient sans code supplémentaire : l'installation écrit toujours `trust: null` (aucun héritage de confiance, contrairement à `createPublisher` pour l'origine `user`), et `autoUpdate: false`.
 
 Run: `bun test packages/daemon/src/market/install.test.ts`
-Expected: PASS (6 tests). Sur un poste de dev dont la sonde échoue, et seulement dans ce fichier de test, le validateur est autorisé à tourner sans isolation (`allowUnsandboxed` = sonde indisponible) ; en CI `KIBO_REQUIRE_OS_SANDBOX=1` impose la sonde. En production, `allowUnsandboxed` est le réglage de Paramètres › Sécurité (T12), désactivé par défaut.
+Expected: PASS (le dernier test est ignoré sans bac à sable OS ; exécuté en CI).
 
-- [ ] **Step 7: `componentHash` écrit par le démon et RPC**
+- [ ] **Step 7: `componentHash` écrit par le démon**
 
-`packages/daemon/src/service-component-hash.test.ts` :
+`packages/daemon/src/components/component-hash.test.ts` :
 ```ts
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Instance, ProjectMeta, ProjectSnapshot } from "@kibo/schema";
-import { createTestService, type TestService } from "./testing/test-service";
+import type { ProjectSnapshot } from "@kibo/schema";
+import { addInstance, boot, createProject, type Harness, publishAndApprove, writeDraft } from "./service.test-helper";
 
 let home: string;
-let svc: TestService;
-const ctx = { sessionHash: "a".repeat(64), remote: false };
+let h: Harness;
 
 beforeEach(async () => {
   home = mkdtempSync(join(tmpdir(), "kibo-hash-"));
-  svc = await createTestService(home);
-  svc.registry.put("burndown", "Burndown", {
-    version: "0.1.0",
-    hash: "b".repeat(64),
-    origin: "marketplace",
-    trust: "sandboxed",
-    approvedHash: "b".repeat(64),
-    granted: { reads: [], writes: [], data: false, net: [] },
-    publishedAt: 0,
-    source: null,
-    revoked: null,
-  });
+  writeDraft(home, "0.1.0");
+  h = await boot(home);
 });
-afterEach(() => {
-  svc.close();
+afterEach(async () => {
+  await h.stop();
   rmSync(home, { recursive: true, force: true });
 });
 
+const snapshot = (projectId: string) => h.rpc({ method: "getProject", projectId }) as Promise<ProjectSnapshot>;
+
 test("adding a non builtin instance records its approved hash, builtins stay null", async () => {
-  const meta = (await svc.handle({ method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#F97316" }, ctx)) as ProjectMeta;
-  const page = (await svc.handle(
-    { method: "command", projectId: meta.id, command: { method: "addPage", title: "T", kind: "dashboard" } },
-    ctx,
-  )) as { id: string };
-  const custom = (await svc.handle(
-    { method: "command", projectId: meta.id, command: { method: "addInstance", pageId: page.id, component: "burndown@0.1.0" } },
-    ctx,
-  )) as Instance;
-  await svc.handle(
-    { method: "command", projectId: meta.id, command: { method: "addInstance", pageId: page.id, component: "kanban@1.0.0" } },
-    ctx,
-  );
-  const snap = (await svc.handle({ method: "getProject", projectId: meta.id }, ctx)) as ProjectSnapshot;
-  expect(snap.instances.find((i) => i.id === custom.id)?.componentHash).toBe("b".repeat(64));
-  expect(snap.instances.find((i) => i.component.startsWith("kanban@"))?.componentHash).toBeNull();
+  const { hash } = await publishAndApprove(h);
+  const { projectId, pageId } = await createProject(h);
+  const custom = await addInstance(h, projectId, pageId, "hello@0.1.0");
+  const builtin = await addInstance(h, projectId, pageId, "kanban@1.0.0");
+  const snap = await snapshot(projectId);
+  expect(snap.instances.find((i) => i.id === custom.id)?.componentHash).toBe(hash);
+  expect(snap.instances.find((i) => i.id === builtin.id)?.componentHash).toBeNull();
+});
+
+test("a hash sent by the caller is overwritten by the registry's", async () => {
+  const { hash } = await publishAndApprove(h);
+  const { projectId, pageId } = await createProject(h);
+  const inst = await h.rpc({
+    method: "command",
+    projectId,
+    command: { method: "addInstance", pageId, component: "hello@0.1.0", componentHash: "f".repeat(64) },
+  });
+  const snap = await snapshot(projectId);
+  expect(snap.instances.find((i) => i.id === (inst as { id: string }).id)?.componentHash).toBe(hash);
+});
+
+test("updating an instance records the hash of the target version", async () => {
+  await publishAndApprove(h);
+  const { projectId, pageId } = await createProject(h);
+  const inst = await addInstance(h, projectId, pageId, "hello@0.1.0");
+  writeDraft(home, "0.2.0");
+  const next = await publishAndApprove(h);
+  await h.rpc({ method: "updateInstance", projectId, instanceId: inst.id, to: "0.2.0" });
+  expect((await snapshot(projectId)).instances[0]?.componentHash).toBe(next.hash);
 });
 ```
-Hypothèse v0.6 (vérifiée en T0) : `testing/test-service.ts` (phase 4) crée un service complet sur un `KIBO_HOME` temporaire et expose `registry` et `handle`.
+`writeDraft(home, version)` écrit le brouillon `hello` ; `kanban@1.0.0` est la référence de l'intégré utilisée par `service.test.ts`.
 
-Dans `service.ts`, après `executeProjectCommand` pour `addInstance` et `setInstanceComponent` :
+Run: `bun test packages/daemon/src/components/component-hash.test.ts`
+Expected: FAIL (`componentHash` vaut `null` pour l'instance non intégrée).
+
+`packages/daemon/src/components/component-hash.ts` :
 ```ts
-const ref = command.component;
-const [componentId, componentVersion] = ref.split("@");
-if (componentId && componentVersion && !BUILTIN_IDS.includes(componentId)) {
-  const instanceId = command.method === "addInstance" ? (result as Instance).id : command.instanceId;
-  setInstanceHash(doc, instanceId, registry.get(componentId, componentVersion)?.approvedHash ?? null);
+import { getRegistryVersion } from "@kibo/core";
+import { isBuiltinId, type ProjectCommand, splitRef } from "@kibo/schema";
+import type { LoroDoc } from "loro-crdt";
+import type { CommandInterceptor } from "../docs";
+
+export function approvedHashOf(workspace: LoroDoc, ref: string): string | null {
+  const { id, version } = splitRef(ref);
+  if (isBuiltinId(id)) return null;
+  return getRegistryVersion(workspace, id, version)?.approvedHash ?? null;
+}
+
+export function stampComponentHash(workspace: LoroDoc): CommandInterceptor {
+  return (_projectId, cmd): ProjectCommand => {
+    if (cmd.method !== "addInstance" && cmd.method !== "setInstanceComponent") return cmd;
+    return { ...cmd, componentHash: approvedHashOf(workspace, cmd.component) };
+  };
 }
 ```
-avant la persistance du doc. Dans `market/rpc.ts`, `createMarketRpc(market, install)` reçoit en second argument `(input) => installFromMarket(installDeps, input)` et traite `installFromMarket`.
+`ActiveVersion` (`gate.ts`) ne porte pas `approvedHash` et `RegistryService.active` lève pour une version inactive : on lit donc le registre du doc workspace (`getRegistryVersion`, `@kibo/core`).
 
-Run: `bun test packages/daemon/src/service-component-hash.test.ts packages/daemon/src/market`
+Dans `packages/daemon/src/components/service.ts` :
+- `ComponentsDeps` gagne `commands: Pick<CommandHub, "intercept">` (import de type depuis `../command-path`) ;
+- dans `start()`, `offStamp = deps.commands.intercept(stampComponentHash(docs.workspace))` ; dans `stopAll`, `offStamp?.()` en premier ;
+- `ComponentsService` gagne `store` (le magasin créé en interne) ;
+- l'objet `UpdateDeps` passé à `updateInstance` gagne `approvedHash: (ref) => approvedHashOf(docs.workspace, ref)`.
+
+Dans `packages/daemon/src/components/update.ts`, `UpdateDeps` gagne `approvedHash(ref: string): string | null` et l'appel devient `setInstanceComponent(doc, { instanceId, component: target, config, data, componentHash: deps.approvedHash(target) })`.
+
+Dans `packages/daemon/src/daemon.ts`, l'appel à `createComponentsService` gagne `commands: service.commands` ; dans `service.test-helper.ts`, `boot` fait de même. `packages/daemon/src/service.ts` n'est pas modifié.
+
+Run: `bun test packages/daemon/src/components`
+Expected: PASS ; les tests existants passent sans changement de leurs attentes.
+
+- [ ] **Step 8: RPC `installFromMarket`**
+
+Dans `packages/daemon/src/market/rpc.ts` (gestionnaire `RpcHandler` de T15), traiter `installFromMarket` par `installFromMarket(installDeps, { sourceId, id, version })`, avec, au branchement (`packages/daemon/src/market/bootstrap.ts` de T15, appelé par `daemon.ts`) :
+```ts
+const installDeps: InstallDeps = {
+  market,
+  store: components.store,
+  registry,
+  validate: (dir) =>
+    validateComponent(dir, { toolchain: opts.toolchain, conformanceOnly: true, signal: shutdown.signal }),
+  sandbox: osSandbox(),
+  lock: components.publishLock,
+  tmpRoot: join(opts.home, "tmp", "market"),
+};
+```
+Si le démon reçoit une validation injectée (`DaemonOptions.validate`, utilisée par les E2E), la passer à la place de `validateComponent` ; `sandbox` reste `osSandbox()`. Un test de `market/rpc.test.ts` (T15) vérifie que `installFromMarket` renvoie `{ id, title, version, hash, permissions, market }` avec la fausse source et que `listComponents` montre ensuite la version `marketplace` sans confiance.
+
+Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 8: Vérifications**
+- [ ] **Step 8b: Une version révoquée ne se réapprouve pas (décision 34)**
+
+Ajouter au `describe("approval")` de `packages/daemon/src/components/registry-service.test.ts` :
+```ts
+  test("a revoked version cannot be approved again", async () => {
+    putRegistryVersion(
+      ws,
+      "pr-queue",
+      "PR en attente",
+      entry("0.3.0", H1, { origin: "marketplace", revoked: { reason: "clé compromise", at: 5 } }),
+    );
+    await expect(svc.approve("pr-queue", "0.3.0", H1, "sandboxed")).rejects.toThrow("REVOKED");
+    expect(getRegistryVersion(ws, "pr-queue", "0.3.0")?.trust).toBeNull();
+    expect(stopped).toEqual([]);
+  });
+```
+
+Run: `bun test packages/daemon/src/components/registry-service.test.ts`
+Expected: FAIL — la version est approuvée.
+
+Dans `approve` de `packages/daemon/src/components/registry-service.ts`, juste après `const v = versionOf(id, version);` :
+```ts
+      if (v.revoked) throw new KiboError("REVOKED", `${ref} was revoked: ${v.revoked.reason}`);
+```
+
+Run: `bun test packages/daemon/src/components/registry-service.test.ts`
+Expected: PASS ; les autres tests du fichier sont inchangés.
+
+- [ ] **Step 9: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages components`
-Expected: aucune erreur ; les tests existants de `devkit` passent sans changement de leurs attentes.
+Expected: aucune erreur ; les tests existants de `devkit`, `core` et du démon passent sans changement de leurs attentes.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commits**
 
 ```bash
-git add packages/core/src/instances.ts packages/core/src/instances.test.ts packages/devkit/src/run-step.ts packages/devkit/src/conformance-entry.ts packages/devkit/src/validate.ts packages/devkit/src/validate-options.test.ts packages/daemon/src/market/install.ts packages/daemon/src/market/install.test.ts packages/daemon/src/market/sandboxed-validator.ts packages/daemon/src/market/rpc.ts packages/daemon/src/testing/memory-component-store.ts packages/daemon/src/service.ts packages/daemon/src/service-component-hash.test.ts
-git commit -m "feat(daemon): installation depuis la marketplace"
+git add packages/schema/src/command.ts packages/core/src/instances.ts packages/core/src/instances-hash.test.ts packages/devkit/src/scaffold.ts packages/devkit/src/validate.ts packages/devkit/src/validate-conformance-only.test.ts
+git commit -m "feat(devkit): suite générique seule"
+git add packages/daemon/src/components/component-hash.ts packages/daemon/src/components/component-hash.test.ts packages/daemon/src/components/service.ts packages/daemon/src/components/update.ts packages/daemon/src/components/service.test-helper.ts packages/daemon/src/daemon.ts
+git commit -m "feat(daemon): empreinte des instances"
+git add packages/daemon/src/market/install.ts packages/daemon/src/market/install.test.ts packages/daemon/src/market/rpc.ts packages/daemon/src/market/bootstrap.ts packages/daemon/src/components/registry-service.ts packages/daemon/src/components/registry-service.test.ts
+git commit -m "feat(daemon): installation marketplace"
 ```
 
 ---
-
 ### Task 21: Client de sync du démon
 
 Vague 5, tâche à risque (relue aussi par `kibo-lead`). Spec G §3.2, §4, §6, §8 ; décisions 3, 4, 8, 9, 17. Review Focus 1.
 
 **Files:**
-- Create: `packages/daemon/src/sync/sync-db.ts`, `packages/daemon/src/sync/sync-db.test.ts`
-- Create: `packages/daemon/src/sync/device-keys.ts`
-- Create: `packages/daemon/src/sync/sync-client.ts`
-- Create: `packages/daemon/src/sync/project-info.ts`
-- Create: `packages/daemon/src/sync/rpc.ts`
+- Create: `packages/daemon/src/collab/sync-db.ts`, `packages/daemon/src/collab/sync-db.test.ts`
+- Create: `packages/daemon/src/collab/device-keys.ts`
+- Create: `packages/daemon/src/collab/sync-client.ts`
+- Create: `packages/daemon/src/collab/project-info.ts`
+- Create: `packages/daemon/src/collab/rpc.ts`
 - Create: `packages/daemon/src/testing/sync-harness.ts`
-- Create: `packages/daemon/src/sync/sync-client.test.ts`
-- Modify: `packages/daemon/src/service.ts` (registre `ProjectHostRegistry`, accès, verrou, `ProjectSnapshot.sync`)
-- Modify: `packages/daemon/src/main.ts` (création et démarrage du `SyncClient`)
-- Modify: `packages/daemon/package.json` (`devDependencies` : `"@kibo/sync-server": "workspace:*"`, décision 26)
+- Create: `packages/daemon/src/collab/sync-client.test.ts`
+- Create: `packages/daemon/src/collab/types.ts` (`ProjectHostRegistry`), `packages/daemon/src/collab/project-hosts.ts`, `packages/daemon/src/collab/project-hosts.test.ts`
+- Create: `packages/daemon/src/collab/rpc.ts`, `packages/daemon/src/collab/rpc.test.ts`, `packages/daemon/src/collab/bootstrap.ts` (assemblage, sur le modèle de `ai/bootstrap.ts`)
+- Create: `packages/daemon/src/tabs-store.ts` (extraction de `readTabs` / `saveTabs` hors de `service.ts`, qui fait déjà 300 lignes)
+- Modify: `packages/daemon/src/docs.ts` (type `Docs` : `replaceProject`, `addProject`, `imported`, `onProjectDoc`, `assertWritable`, `setWriteGuard`)
+- Modify: `packages/daemon/src/service.ts` (implémentation des ajouts de `Docs`, `attachCollab`, `getProject` enrichi)
+- Modify: `packages/daemon/src/command-path.ts` (garde d'écriture avant toute commande et tout déclenchement de règle)
+- Modify: `packages/daemon/src/components/gate-handlers.ts` (garde avant `writeInstanceData`), `packages/daemon/src/components/service.ts` (garde avant `updateInstance`)
+- Consumes (sans modification) : `IntegrationRpc.secrets` (le trousseau unique du démon, exposé par T13)
+- Modify: `packages/daemon/src/daemon.ts` (création, `start` et arrêt du `SyncClient` dans `assemble`, gestionnaire RPC passé à `startServer`) ; `main.ts` n'est pas modifié
+- `packages/daemon/package.json` : rien à faire, `@kibo/sync-server` est déjà en `devDependencies` depuis T18 (décision 26)
 
 **Interfaces:**
-- Consumes: `ProjectSync`, `ProjectSyncOptions`, `SyncTransport`, `SyncSocket`, `assertSyncUrl`, `createWebSocketTransport` (T18) ; `ClientFrame`, `ServerFrame`, `JoinRequest`, `JoinResponse`, `challengePayload`, `SYNC_LIMITS`, `CLOSE_CODES`, `SyncStatus`, `SyncProjectStatus`, `ProjectSyncInfo`, `ProjectAccess`, `MemberInfo`, `Role`, `RejectCode` (T4) ; `generateKeyPair`, `signBytes`, `toBase64`, `fromBase64`, `KeyPair` (T2) ; `readMembers`, `getKeyAllocator` (T6, T7) ; `startTestSyncServer` (T17) ; `SecretStore`, `MemorySecretStore`, `SecretName` (phase 5) ; `openLocalSettings` (T1) ; `RpcContext` (T9).
+- Vérifié en T0 :
+  - `createService(store: Store, opts: { user: string; notifications?: Session["notifications"] }): Service` (`packages/daemon/src/service.ts`, 300 lignes, limite atteinte) ; `Service = { handle(req: RpcRequest): unknown; onChange(listener: (message: ChangeMessage) => void): () => void; docs: Docs; agentData; attachAgents; attachComponents; attachIntegrations; attachAi; triggerRules; transaction; commands: CommandHub }` ; les docs projet sont une `Map<string, LoroDoc>` privée ; chaque écriture persistée passe par `docs.save(projectId)` et chaque diffusion par `docs.emit({ projectId })` (`ChangeMessage`, `packages/schema/src/rpc.ts`) ; il n'y a ni `DaemonEvent` ni `persist`/`emit` locaux.
+  - Toutes les `ProjectCommand` passent par `createCommandPath` (`packages/daemon/src/command-path.ts`, fonction `guarded(projectId, work)` pour `run` et `trigger`) ; **trois écritures la contournent** : `data.set` / `data.delete` d'un composant (`components/gate-handlers.ts`, `writeInstanceData` puis `docs.save`), la mise à jour d'instance (`components/service.ts` → `update.ts`, `persist: (id) => docs.save(id)`), et `applyRules` de `agents/data-port.ts` (exporté, sans appelant de production : les règles passent par `docs.trigger`). La lecture seule locale (décision 9) se branche donc sur un garde unique `docs.assertWritable(projectId)` appelé par `guarded` et par les deux contournements.
+  - `table project_settings (project_id, key, value)` existe (`packages/daemon/src/notes/settings.ts` : `ensureSettingsTable(db)`, `createProjectSettings(db): { get(projectId, key): string | null; set(projectId, key, value): void }`) ; seul `notesDir` y vit ; `meta.folder` est dans le doc Loro du projet (utilisé en T23).
+  - Secrets : `SecretStore` est dans `packages/daemon/src/integrations/types.ts` ; le trousseau est créé à l'intérieur de `startIntegrations` (`bun-secret-store.ts`, ou `createMemorySecretStore(redactor)` avec `--memory-secrets`) et T13 l'expose en `IntegrationRpc.secrets` (un seul trousseau par démon) : T21 le lit là. `MemorySecretStore = SecretStore & { dump() }`, créé par `createMemorySecretStore(redactor: Redactor, initial?)` (`integrations/memory-secret-store.ts`, `createRedactor()` dans `integrations/redact.ts`).
+  - L'assemblage du démon est `assemble()` dans `packages/daemon/src/daemon.ts` (`main.ts` ne fait que lire les options) ; les arrêts s'enregistrent dans `closers`.
+  - loro-crdt 1.16.3 : `LoroDoc.subscribeLocalUpdates(f: (bytes: Uint8Array) => void): () => void` existe ; un `import()` distant ne le déclenche pas. Il sert à `onLocalChange`, ce qui couvre toutes les écritures locales, y compris les contournements ci-dessus.
+- Consumes: `ProjectSync`, `ProjectSyncOptions`, `SyncTransport`, `SyncSocket`, `assertSyncUrl`, `createWebSocketTransport` (T18) ; `ClientFrame`, `ServerFrame`, `JoinRequest`, `JoinResponse`, `challengePayload`, `SYNC_LIMITS`, `CLOSE_CODES`, `SyncStatus`, `SyncProjectStatus`, `ProjectSyncInfo`, `ProjectAccess`, `MemberInfo`, `MemberRole`, `RejectCode` (T4) ; `generateKeyPair`, `signBytes`, `toBase64`, `fromBase64`, `KeyPair` (T2) ; `readMembers`, `getKeyAllocator` (T6, T7) ; `startTestSyncServer` (T17) ; `SecretStore` (`packages/daemon/src/integrations/types.ts`), `createMemorySecretStore`, `MemorySecretStore` (`integrations/memory-secret-store.ts`), `createRedactor`, `SECRET_SYNC_DEVICE` (T1, `@kibo/schema`) ; `RpcContext`, `RpcHandler` (T9, `packages/daemon/src/rpc-extensions.ts`).
 - Produces :
 ```ts
 export type SyncConfig = { serverUrl: string; caFile: string | null; userId: string; deviceId: string; displayName: string };
-export type SyncProjectRow = { projectId: string; enabled: boolean; role: Role; lastServerVersion: Uint8Array | null;
+export type SyncProjectRow = { projectId: string; enabled: boolean; role: MemberRole; lastServerVersion: Uint8Array | null;
   lastSyncAt: number | null; lastError: string | null; accessRevoked: boolean };
 export type SyncDb = { config(): SyncConfig | null; setConfig(config: SyncConfig | null): void;
   project(projectId: string): SyncProjectRow | null; upsertProject(row: SyncProjectRow): void;
@@ -13957,17 +13868,25 @@ export function loadDeviceKeys(secrets: SecretStore): Promise<KeyPair>;         
 export function clearDeviceKeys(secrets: SecretStore): Promise<void>;
 export type SyncClientDeps = { db: SyncDb; secrets: SecretStore; hosts: ProjectHostRegistry; transport: SyncTransport;
   fetchImpl: typeof fetch; readFile(path: string): Promise<string>; now(): number; random(): number;
-  setTimer(fn: () => void, ms: number): () => void; emit(event: DaemonEvent): void;
+  setTimer(fn: () => void, ms: number): () => void; emit(message: ChangeMessage): void;
   log(message: string, error?: unknown): void; backoff?: { minMs: number; maxMs: number } };
 export function backoffDelay(attempt: number, random: number, limits: { minMs: number; maxMs: number }): number;
 export class SyncClient { /* contrat « Démon » + */ membersOf(projectId: string): MemberInfo[];
   addDevice(): Promise<{ code: string; expiresAt: number }>; listDevices(): Promise<DeviceInfo[]>;
   revokeDevice(deviceId: string): Promise<void> }
 export type ProjectHostRegistry = { /* contrat « Démon » + */ mutate(projectId: string, fn: (doc: LoroDoc) => void): void };
+export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistry;   // collab/project-hosts.ts
+// docs.ts (ajouts au type Docs, implémentés dans service.ts)
+replaceProject(projectId: string, doc: LoroDoc): void; addProject(meta: ProjectMeta, doc: LoroDoc): void;
+imported(projectId: string): void; onProjectDoc(listener: (projectId: string, doc: LoroDoc) => void): () => void;
+assertWritable(projectId: string): void; setWriteGuard(guard: (projectId: string) => void): () => void;
+// service.ts
+attachCollab(port: { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo }): () => void;
+export function startCollab(deps: CollabDeps): Promise<{ client: SyncClient; hosts: ProjectHostRegistry; handler: RpcHandler; stop(): void }>;   // collab/bootstrap.ts
 export function projectSyncInfo(input: { row: SyncProjectRow | null; doc: LoroDoc; members: MemberInfo[] }): ProjectSyncInfo;
 export function handleSyncRpc(client: SyncClient, req: RpcRequest, ctx: RpcContext): Promise<{ handled: true; result: unknown } | { handled: false }>;
-export type HarnessDaemon = { home: string; service: Service; client: SyncClient; secrets: MemorySecretStore; syncDb: SyncDb;
-  opens(): number; stop(): void };
+export type HarnessDaemon = { home: string; service: Service; hosts: ProjectHostRegistry; client: SyncClient;
+  secrets: MemorySecretStore; syncDb: SyncDb; opens(): number; stop(): void };
 export function startSyncHarness(opts: { daemons: number }): Promise<SyncHarness>;
 export type SyncHarness = { server: TestSyncServer; caFile: string; daemons: HarnessDaemon[];
   connect(i: number, name: string): Promise<void>; shareRaw(i: number, projectId: string): Promise<void>;
@@ -13976,11 +13895,10 @@ export type SyncHarness = { server: TestSyncServer; caFile: string; daemons: Har
   waitUntil(predicate: () => boolean, timeoutMs?: number): Promise<void>; stop(): Promise<void> };
 ```
 - Changement de contrat signalé : `ProjectHostRegistry.mutate` (écriture interne qui persiste, émet et déclenche l'envoi, refusée si l'accès n'est pas `write`) ; `startTestSyncServer(opts?: TestSyncServerOptions)` (T17) accepte `dataDir`, `port`, `cert` et renvoie `cert`, et `stop({ keepData: true })` garde le dossier, pour relancer le serveur sur le même port, le même dossier et le même certificat.
-- Hypothèse v0.6 (vérifiée en T0) : `createService(store, opts)` renvoie un objet dont on peut étendre le type `Service` ; la table `project_settings` est accessible par `projectSettings.get(projectId, key)`.
 
 - [ ] **Step 1: Écrire les tests de `SyncDb`**
 
-`packages/daemon/src/sync/sync-db.test.ts` :
+`packages/daemon/src/collab/sync-db.test.ts` :
 ```ts
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
@@ -14019,21 +13937,21 @@ test("round-trips project rows with their server version", () => {
 
 - [ ] **Step 2: Vérifier l'échec**
 
-Run: `bun test packages/daemon/src/sync/sync-db.test.ts`
+Run: `bun test packages/daemon/src/collab/sync-db.test.ts`
 Expected: FAIL « Cannot find module './sync-db' ».
 
 - [ ] **Step 3: Implémenter `sync-db.ts` et `device-keys.ts`**
 
-`packages/daemon/src/sync/sync-db.ts` :
+`packages/daemon/src/collab/sync-db.ts` :
 ```ts
 import type { Database } from "bun:sqlite";
-import { Role } from "@kibo/schema";
+import { MemberRole } from "@kibo/schema";
 
 export type SyncConfig = { serverUrl: string; caFile: string | null; userId: string; deviceId: string; displayName: string };
 export type SyncProjectRow = {
   projectId: string;
   enabled: boolean;
-  role: Role;
+  role: MemberRole;
   lastServerVersion: Uint8Array | null;
   lastSyncAt: number | null;
   lastError: string | null;
@@ -14061,7 +13979,7 @@ type ProjectRecord = {
 const toRow = (r: ProjectRecord): SyncProjectRow => ({
   projectId: r.projectId,
   enabled: r.enabled === 1,
-  role: Role.parse(r.role),
+  role: MemberRole.parse(r.role),
   lastServerVersion: r.lastServerVersion ? new Uint8Array(r.lastServerVersion) : null,
   lastSyncAt: r.lastSyncAt,
   lastError: r.lastError,
@@ -14112,14 +14030,14 @@ export function openSyncDb(db: Database): SyncDb {
 ```
 La base est ouverte sur `Store.db` (T1), fichier `kibo.db` déjà en `0600`.
 
-`packages/daemon/src/sync/device-keys.ts` :
+`packages/daemon/src/collab/device-keys.ts` :
 ```ts
-import { KiboError } from "@kibo/schema";
+import { KiboError, SECRET_SYNC_DEVICE } from "@kibo/schema";
 import { generateKeyPair, type KeyPair } from "@kibo/trust";
 import { z } from "zod";
-import type { SecretStore } from "../secrets/secret-store";
+import type { SecretStore } from "../integrations/types";
 
-const NAME = "sync:device";
+const NAME = SECRET_SYNC_DEVICE;
 const Stored = z.object({ publicKey: z.string().min(1), privateKey: z.string().min(1) });
 
 export async function createDeviceKeys(secrets: SecretStore): Promise<KeyPair> {
@@ -14143,83 +14061,183 @@ export async function clearDeviceKeys(secrets: SecretStore): Promise<void> {
 
 - [ ] **Step 4: Vérifier**
 
-Run: `bun test packages/daemon/src/sync/sync-db.test.ts`
+Run: `bun test packages/daemon/src/collab/sync-db.test.ts`
 Expected: PASS (2 tests).
 
-- [ ] **Step 5: Registre de projets dans le service**
+- [ ] **Step 5: Registre de projets et garde d'écriture**
 
-Dans `packages/daemon/src/service.ts`, le service expose `hosts: ProjectHostRegistry` et applique l'accès avant toute commande. Ajouts (le reste du service est inchangé) :
+5a. Faire de la place dans `service.ts` (300 lignes) : déplacer `readTabs`, `saveTabs` et `TABS_KEY` tels quels dans `packages/daemon/src/tabs-store.ts` (exports nommés `readTabs(store)`, `saveTabs(store, state)`), importés par `service.ts`. Run: `bun test packages/daemon/src/service.test.ts` ⇒ PASS, sans autre changement.
+
+5b. Test du garde et du registre, `packages/daemon/src/collab/project-hosts.test.ts` :
 ```ts
-export type Service = {
-  handle(req: RpcRequest, ctx: RpcContext): Promise<unknown>;
-  onChange(listener: (projectId: string | null) => void): () => void;
-  hosts: ProjectHostRegistry;
-};
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { listTickets } from "@kibo/core";
+import type { ProjectMeta } from "@kibo/schema";
+import { LoroDoc } from "loro-crdt";
+import { createService, type Service } from "../service";
+import { openStore, type Store } from "../store";
+import { createProjectHosts } from "./project-hosts";
+import type { ProjectHostRegistry } from "./types";
 
+let home: string;
+let store: Store;
+let service: Service;
+let hosts: ProjectHostRegistry;
+let projectId: string;
+
+beforeEach(async () => {
+  home = mkdtempSync(join(tmpdir(), "kibo-hosts-"));
+  store = openStore(home);
+  service = createService(store, { user: "adam" });
+  hosts = createProjectHosts(service.docs, "adam");
+  const meta = (await service.handle({
+    method: "createProject",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+  })) as ProjectMeta;
+  projectId = meta.id;
+});
+afterEach(() => {
+  store.close();
+  rmSync(home, { recursive: true, force: true });
+});
+
+const create = async (title: string) =>
+  service.handle({ method: "command", projectId, command: { method: "createTicket", title } });
+
+test("a read-only project refuses commands and rule triggers", async () => {
+  hosts.setAccess(projectId, "read-only");
+  await expect(create("Non")).rejects.toMatchObject({ code: "FORBIDDEN" });
+  expect(() => service.triggerRules(projectId, { kind: "run_done", ticketId: "x" })).toThrow("FORBIDDEN");
+  hosts.setAccess(projectId, "write");
+  await create("Oui");
+  expect(listTickets(hosts.host(projectId).doc()).map((t) => t.title)).toEqual(["Oui"]);
+});
+
+test("a project being shared refuses commands with CONFLICT", async () => {
+  hosts.setLocked(projectId, true);
+  await expect(create("Non")).rejects.toMatchObject({ code: "CONFLICT" });
+  hosts.setLocked(projectId, false);
+  await create("Oui");
+});
+
+test("local writes are reported, remote imports are not", async () => {
+  const seen: string[] = [];
+  hosts.onLocalChange((id) => seen.push(id));
+  await create("Local");
+  expect(seen).toEqual([projectId]);
+  const remote = LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" }));
+  remote.getMap("probe").set("k", 1);
+  remote.commit();
+  hosts.host(projectId).applyRemote(remote.export({ mode: "update", from: hosts.host(projectId).doc().oplogVersion() }));
+  expect(seen).toEqual([projectId]);
+});
+
+test("a replaced document is persisted and still watched", async () => {
+  const copy = LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" }));
+  hosts.host(projectId).replaceDoc(copy);
+  expect(hosts.host(projectId).doc()).toBe(copy);
+  const seen: string[] = [];
+  hosts.onLocalChange((id) => seen.push(id));
+  await create("Après");
+  expect(seen).toEqual([projectId]);
+  store.close();
+  store = openStore(home);
+  expect(listTickets(createService(store, { user: "adam" }).docs.project(projectId)).map((t) => t.title)).toEqual(["Après"]);
+});
+```
+Run: `bun test packages/daemon/src/collab/project-hosts.test.ts` ⇒ FAIL (`./project-hosts` introuvable).
+
+5c. `packages/daemon/src/docs.ts` : ajouter au type `Docs`
+```ts
+  replaceProject(projectId: string, doc: LoroDoc): void;
+  addProject(meta: ProjectMeta, doc: LoroDoc): void;
+  imported(projectId: string): void;
+  onProjectDoc(listener: (projectId: string, doc: LoroDoc) => void): () => void;
+  assertWritable(projectId: string): void;
+  setWriteGuard(guard: (projectId: string) => void): () => void;
+```
+Dans `service.ts` (objet `docs`) : `replaceProject` vérifie que le projet existe (`docs.project(id)`), remplace l'entrée de la `Map`, `docs.save(id)`, notifie `onProjectDoc`, puis `docs.imported(id)` ; `addProject` fait `registerProject(workspace, meta)`, ajoute le doc, `docs.save(meta.id)`, `docs.save(null)`, notifie `onProjectDoc` et émet `{ projectId: null }` ; `imported(id)` fait `docs.save(id)`, `docs.emit({ projectId: id })` et `components?.afterCommand(id)` (mêmes effets qu'une commande publiée, sans règles ni `onCommand`) ; `restore` (chemin de commande) et `createProject` notifient aussi `onProjectDoc` ; `assertWritable` appelle le garde courant (aucun par défaut) ; `setWriteGuard` le remplace et renvoie la fonction qui le retire. `attachCollab(port)` suit le modèle d'`attachAi` ; le cas `getProject` devient `{ ...readProject(doc), sync: collab?.syncInfo(req.projectId, doc) ?? readProject(doc).sync }` (T6 remplit `sync` avec `localSyncInfo(doc)`). `service.ts` reste sous 300 lignes grâce à 5a.
+
+`command-path.ts` : nouvelle dépendance `assertWritable(projectId: string): void` dans `CommandPathDeps`, appelée en tête de `guarded` (avant `work`), branchée sur `docs.assertWritable`. `components/gate-handlers.ts` : `docs.assertWritable(projectId)` avant `writeInstanceData` ; `components/service.ts` : `docs.assertWritable(req.projectId)` avant `updateInstance(...)`.
+
+5d. `packages/daemon/src/collab/types.ts` porte `SyncHost` (réexporté depuis `./project-sync`) et `ProjectHostRegistry` (contrat « Démon » plus `mutate`). `packages/daemon/src/collab/project-hosts.ts` :
+```ts
+import { getProjectMeta } from "@kibo/core";
+import { KiboError, type ProjectAccess, type ProjectMeta } from "@kibo/schema";
+import type { LoroDoc } from "loro-crdt";
+import type { Docs } from "../docs";
+import type { ProjectHostRegistry } from "./types";
+
+export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistry {
   const access = new Map<string, ProjectAccess>();
   const locked = new Set<string>();
-  const localListeners = new Set<(projectId: string) => void>();
-  const touchedLocally = (projectId: string) => {
-    for (const l of localListeners) l(projectId);
+  const listeners = new Set<(projectId: string) => void>();
+  const watching = new Map<string, () => void>();
+  const watch = (projectId: string, doc: LoroDoc) => {
+    watching.get(projectId)?.();
+    watching.set(
+      projectId,
+      doc.subscribeLocalUpdates(() => {
+        for (const l of listeners) l(projectId);
+      }),
+    );
   };
-  const assertWritable = (projectId: string) => {
+  for (const id of docs.projectIds()) watch(id, docs.project(id));
+  docs.onProjectDoc(watch);
+  docs.setWriteGuard((projectId) => {
     if (locked.has(projectId)) throw new KiboError("CONFLICT", `project ${projectId} is being shared`);
     const a = access.get(projectId) ?? "write";
     if (a !== "write") throw new KiboError("FORBIDDEN", `project ${projectId} is ${a}`);
-  };
-  const hosts: ProjectHostRegistry = {
+  });
+  return {
     host: (projectId) => ({
-      doc: () => project(projectId),
+      doc: () => docs.project(projectId),
       applyRemote: (bytes) => {
-        const doc = project(projectId);
-        doc.import(bytes);
-        persist(projectDocId(projectId), doc);
-        emit(projectId);
+        docs.project(projectId).import(bytes);
+        docs.imported(projectId);
       },
-      replaceDoc: (doc) => {
-        project(projectId);
-        projects.set(projectId, doc);
-        persist(projectDocId(projectId), doc);
-        emit(projectId);
-      },
+      replaceDoc: (doc) => docs.replaceProject(projectId, doc),
     }),
-    projectIds: () => [...projects.keys()],
+    projectIds: () => docs.projectIds(),
     setAccess: (projectId, a) => {
       access.set(projectId, a);
-      emit(projectId);
+      docs.emit({ projectId });
     },
     setLocked: (projectId, isLocked) => {
       if (isLocked) locked.add(projectId);
       else locked.delete(projectId);
     },
     onLocalChange: (listener) => {
-      localListeners.add(listener);
-      return () => localListeners.delete(listener);
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     mutate: (projectId, fn) => {
-      const a = access.get(projectId) ?? "write";
-      if (a !== "write") throw new KiboError("FORBIDDEN", `project ${projectId} is ${a}`);
-      const doc = project(projectId);
+      docs.assertWritable(projectId);
+      const doc = docs.project(projectId);
       fn(doc);
-      persist(projectDocId(projectId), doc);
-      emit(projectId);
-      touchedLocally(projectId);
+      doc.commit();
+      docs.imported(projectId);
     },
-    addJoinedProject: (doc, folder) => {
+    addJoinedProject: (doc, folder): ProjectMeta => {
       const meta = { ...getProjectMeta(doc), folder };
-      registerProject(workspace, meta);
-      projects.set(meta.id, doc);
-      persist(projectDocId(meta.id), doc);
-      persist(WORKSPACE, workspace);
-      emit(null);
+      docs.addProject(meta, doc);
       return meta;
     },
-    localUser: () => opts.user,
+    localUser: () => user,
   };
+}
 ```
-Dans le cas `command` : `assertWritable(req.projectId)` avant `executeProjectCommand`, puis `touchedLocally(req.projectId)` après `persist`. Dans le cas `getProject` : `{ ...readProject(doc), sync: opts.syncInfo?.(req.projectId, doc) ?? readProject(doc).sync }`, où `opts.syncInfo?: (projectId: string, doc: LoroDoc) => ProjectSyncInfo` est une nouvelle option de `createService`.
+`mutate` n'a pas à signaler le changement : `subscribeLocalUpdates` le fait au `commit`. `addJoinedProject` : le dossier local n'entre pas dans le doc partagé (T23 le range dans `project_settings`) ; `getProjectMeta(doc).folder` vaut `null` après la migration de partage (T7).
 
-`packages/daemon/src/sync/project-info.ts` :
+Run: `bun test packages/daemon/src/collab/project-hosts.test.ts packages/daemon/src/service.test.ts packages/daemon/src/components` ⇒ PASS (aucune attente existante modifiée).
+
+`packages/daemon/src/collab/project-info.ts` :
 ```ts
 import { getKeyAllocator, readMembers } from "@kibo/core";
 import type { MemberInfo, ProjectSyncInfo } from "@kibo/schema";
@@ -14247,18 +14265,22 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { toBase64 } from "@kibo/trust";
 import { startTestSyncServer } from "@kibo/sync-server/testing";
-import { MemorySecretStore } from "../secrets/secret-store";
+import { createProjectHosts } from "../collab/project-hosts";
+import { projectSyncInfo } from "../collab/project-info";
+import { SyncClient } from "../collab/sync-client";
+import { openSyncDb, type SyncDb } from "../collab/sync-db";
+import { createWebSocketTransport } from "../collab/transport";
+import type { ProjectHostRegistry } from "../collab/types";
+import { createMemorySecretStore, type MemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor } from "../integrations/redact";
 import { createService, type Service } from "../service";
 import { openStore } from "../store";
-import { createWebSocketTransport } from "../sync/transport";
-import { projectSyncInfo } from "../sync/project-info";
-import { SyncClient } from "../sync/sync-client";
-import { openSyncDb, type SyncDb } from "../sync/sync-db";
 
 type TestSyncServer = Awaited<ReturnType<typeof startTestSyncServer>>;
 export type HarnessDaemon = {
   home: string;
   service: Service;
+  hosts: ProjectHostRegistry;
   client: SyncClient;
   secrets: MemorySecretStore;
   syncDb: SyncDb;
@@ -14291,20 +14313,16 @@ function startDaemon(user: string): HarnessDaemon {
   const home = mkdtempSync(join(tmpdir(), `kibo-sync-${user}-`));
   const store = openStore(home);
   const syncDb = openSyncDb(store.db);
-  const secrets = new MemorySecretStore();
+  const secrets = createMemorySecretStore(createRedactor());
   const transport = createWebSocketTransport();
   let opened = 0;
   const counting = { open: (url: string, o: { ca: string | null }) => (opened++, transport.open(url, o)) };
-  let client: SyncClient | null = null;
-  const service = createService(store, {
-    user,
-    syncInfo: (projectId, doc) =>
-      projectSyncInfo({ row: syncDb.project(projectId), doc, members: client?.membersOf(projectId) ?? [] }),
-  });
-  client = new SyncClient({
+  const service = createService(store, { user });
+  const hosts = createProjectHosts(service.docs, user);
+  const client = new SyncClient({
     db: syncDb,
     secrets,
-    hosts: service.hosts,
+    hosts,
     transport: counting,
     fetchImpl: fetch,
     readFile: (path) => Bun.file(path).text(),
@@ -14318,10 +14336,15 @@ function startDaemon(user: string): HarnessDaemon {
     log: (message, error) => console.error(`[harness:${user}] ${message}`, error ?? ""),
     backoff: { minMs: 20, maxMs: 200 },
   });
+  service.attachCollab({
+    syncInfo: (projectId, doc) =>
+      projectSyncInfo({ row: syncDb.project(projectId), doc, members: client.membersOf(projectId) }),
+  });
   const c = client;
   return {
     home,
     service,
+    hosts,
     client: c,
     secrets,
     syncDb,
@@ -14359,7 +14382,7 @@ export async function startSyncHarness(opts: { daemons: number }): Promise<SyncH
     },
     shareRaw: async (i, projectId) => {
       const d = at(i);
-      const doc = d.service.hosts.host(projectId).doc();
+      const doc = d.hosts.host(projectId).doc();
       await d.client.request(
         { type: "share", projectId, requestId: crypto.randomUUID(), name: projectId,
           snapshot: toBase64(doc.export({ mode: "snapshot" })) },
@@ -14389,7 +14412,7 @@ export async function startSyncHarness(opts: { daemons: number }): Promise<SyncH
       d.client.send({ type: "subscribe", projectId: joined.projectId, version: null });
       await got;
       d.client.send({ type: "unsubscribe", projectId: joined.projectId });
-      d.service.hosts.addJoinedProject(doc, null);
+      d.hosts.addJoinedProject(doc, null);
       d.client.attachProject(joined.projectId, joined.role);
       return joined.projectId;
     },
@@ -14408,7 +14431,7 @@ export async function startSyncHarness(opts: { daemons: number }): Promise<SyncH
 
 - [ ] **Step 7: Écrire les tests d'intégration du client**
 
-`packages/daemon/src/sync/sync-client.test.ts` :
+`packages/daemon/src/collab/sync-client.test.ts` :
 ```ts
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -14427,8 +14450,7 @@ afterEach(async () => {
   await h.stop();
 });
 
-const ctx = { sessionHash: "t", remote: false };
-const rpc = (i: number, req: RpcRequest) => d(i).service.handle(req, ctx);
+const rpc = async (i: number, req: RpcRequest) => d(i).service.handle(req);
 async function newProject(i: number, key = "KIB"): Promise<string> {
   const meta = (await rpc(i, { method: "createProject", name: "Kibo", key, folder: null, color: "#14B8A6" })) as ProjectMeta;
   return meta.id;
@@ -14439,7 +14461,7 @@ const d = (i: number) => {
   return x;
 };
 const titles = (i: number, projectId: string) =>
-  listTickets(d(i).service.hosts.host(projectId).doc()).map((t) => t.title);
+  listTickets(d(i).hosts.host(projectId).doc()).map((t) => t.title);
 
 describe("device authentication", () => {
   test("connects with an account code and stores the key only in the secret store", async () => {
@@ -14460,7 +14482,7 @@ describe("device authentication", () => {
     await d(0).client.start();
     await h.waitUntil(() => d(0).client.status().lastError !== null);
     expect(d(0).client.status().state).toBe("offline");
-    expect(d(0).client.status().lastError).toBe("Authentification refusée");
+    expect(d(0).client.status().lastError).toBe("UNAUTHORIZED");
   });
 
   test("refuses an unencrypted server outside loopback", async () => {
@@ -14474,7 +14496,7 @@ describe("device authentication", () => {
     const deviceId = d(0).client.status().deviceId ?? "";
     revokeDevice(h.server.server.sdb, { deviceId, by: "admin" }, Date.now());
     h.server.server.hub.kickDevice(deviceId, 4403);
-    await h.waitUntil(() => d(0).client.status().lastError === "Appareil révoqué");
+    await h.waitUntil(() => d(0).client.status().lastError === "DEVICE_REVOKED");
     await Bun.sleep(1500);
     expect(d(0).opens()).toBe(1);
     expect(d(0).client.status().retryAt).toBeNull();
@@ -14500,17 +14522,17 @@ describe("replication", () => {
     const p = await newProject(0);
     await rpc(0, { method: "command", projectId: p, command: { method: "createTicket", title: "Original" } });
     await h.shareRaw(0, p);
-    const doc = d(0).service.hosts.host(p).doc();
+    const doc = d(0).hosts.host(p).doc();
     const ticket = listTickets(doc)[0];
     if (!ticket) throw new Error("no ticket");
     doc.getTree("tickets").getNodeByID(ticket.id as `${number}@${number}`)?.data.set("key", "KIB-999");
     doc.commit();
     await rpc(0, { method: "command", projectId: p, command: { method: "updateTicket", ticketId: ticket.id, title: "Perdu" } });
     await h.waitUntil(() => {
-      const t = getTicket(d(0).service.hosts.host(p).doc(), ticket.id);
+      const t = getTicket(d(0).hosts.host(p).doc(), ticket.id);
       return t.key === "KIB-1" && t.title === "Original";
     }, 10_000);
-    expect(d(0).client.status().projects.find((x) => x.projectId === p)?.lastError).toContain("UPDATE_REJECTED");
+    expect(d(0).client.status().projects.find((x) => x.projectId === p)?.lastError).toBe("UPDATE_REJECTED");
   });
 });
 
@@ -14552,31 +14574,33 @@ describe("roles", () => {
 
 - [ ] **Step 8: Vérifier l'échec**
 
-Run: `bun test packages/daemon/src/sync/sync-client.test.ts`
-Expected: FAIL « Cannot find module '../sync/sync-client' ».
+Run: `bun test packages/daemon/src/collab/sync-client.test.ts`
+Expected: FAIL « Cannot find module '../collab/sync-client' ».
 
 - [ ] **Step 9: Implémenter `SyncClient`**
 
-`packages/daemon/src/sync/sync-client.ts` :
+`packages/daemon/src/collab/sync-client.ts` :
 ```ts
 import {
   CLOSE_CODES,
   type ClientFrame,
   challengePayload,
-  type DaemonEvent,
+  type ChangeMessage,
   type DeviceInfo,
   JoinResponse,
   KiboError,
   type KiboErrorCode,
   type MemberInfo,
-  type Role,
+  type MemberRole,
   SYNC_LIMITS,
+  SECRET_SYNC_DEVICE,
   ServerFrame,
-  type SyncState,
+  type SyncConnectionState,
   type SyncStatus,
 } from "@kibo/schema";
+import { getProjectMeta } from "@kibo/core";
 import { generateKeyPair, signBytes } from "@kibo/trust";
-import type { SecretStore } from "../secrets/secret-store";
+import type { SecretStore } from "../integrations/types";
 import { clearDeviceKeys, loadDeviceKeys } from "./device-keys";
 import { ProjectSync } from "./project-sync";
 import type { SyncDb, SyncProjectRow } from "./sync-db";
@@ -14593,7 +14617,7 @@ export type SyncClientDeps = {
   now(): number;
   random(): number;
   setTimer(fn: () => void, ms: number): () => void;
-  emit(event: DaemonEvent): void;
+  emit(message: ChangeMessage): void;
   log(message: string, error?: unknown): void;
   backoff?: { minMs: number; maxMs: number };
 };
@@ -14605,11 +14629,11 @@ export function backoffDelay(attempt: number, random: number, limits: { minMs: n
 
 type Waiter = { expect: ServerFrame["type"]; resolve(f: ServerFrame): void; reject(e: KiboError): void; cancel(): void };
 const REQUEST_TIMEOUT_MS = 10_000;
-const REVOKED_MESSAGE = { removed: "Accès retiré", deleted: "Projet supprimé du serveur", disconnected: "Déconnecté du serveur" };
+const REVOKED_MESSAGE = { removed: "ACCESS_REVOKED", deleted: "NOT_FOUND", disconnected: "NOT_CONNECTED" } as const satisfies Record<string, KiboErrorCode>;
 
 export class SyncClient {
   private socket: SyncSocket | null = null;
-  private state: SyncState = "unconfigured";
+  private state: SyncConnectionState = "unconfigured";
   private user: { id: string; name: string } | null = null;
   private attempt = 0;
   private retryAt: number | null = null;
@@ -14687,7 +14711,7 @@ export class SyncClient {
       throw new KiboError(error?.code ?? "INVITE_INVALID", error?.message ?? `join failed with ${res.status}`);
     }
     const joined = JoinResponse.parse(body);
-    await this.deps.secrets.set("sync:device", JSON.stringify(keys));
+    await this.deps.secrets.set(SECRET_SYNC_DEVICE, JSON.stringify(keys));
     this.deps.db.setConfig({
       serverUrl: url.toString().replace(/\/$/, ""),
       caFile: input.caFile,
@@ -14711,7 +14735,7 @@ export class SyncClient {
     this.state = "unconfigured";
     this.user = null;
     this.lastError = null;
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   send(frame: ClientFrame): void {
@@ -14752,7 +14776,7 @@ export class SyncClient {
     return () => this.listeners.delete(listener);
   }
 
-  attachProject(projectId: string, role: Role): void {
+  attachProject(projectId: string, role: MemberRole): void {
     const row = this.deps.db.project(projectId);
     this.deps.db.upsertProject({
       projectId,
@@ -14765,7 +14789,7 @@ export class SyncClient {
     });
     this.applyAccess({ ...(this.deps.db.project(projectId) as SyncProjectRow) });
     if (this.state === "online") this.startProject(projectId).connected();
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   detachProject(projectId: string): void {
@@ -14773,7 +14797,7 @@ export class SyncClient {
     this.syncs.delete(projectId);
     this.deps.db.removeProject(projectId);
     this.deps.hosts.setAccess(projectId, "write");
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   async addDevice(): Promise<{ code: string; expiresAt: number }> {
@@ -14791,7 +14815,7 @@ export class SyncClient {
 
   private projectName(projectId: string): string {
     try {
-      return this.deps.hosts.host(projectId).doc().getMap("meta").get("name") as string;
+      return getProjectMeta(this.deps.hosts.host(projectId).doc()).name;
     } catch (e) {
       if (e instanceof KiboError && e.code === "NOT_FOUND") return projectId;
       throw e;
@@ -14810,7 +14834,7 @@ export class SyncClient {
     const ca = config.caFile ? await this.deps.readFile(config.caFile) : null;
     this.state = "connecting";
     this.retryAt = null;
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
     const socket = this.deps.transport.open(`${config.serverUrl}/v1/sync`, { ca });
     this.socket = socket;
     socket.onMessage((text) => {
@@ -14882,7 +14906,7 @@ export class SyncClient {
     }
     for (const w of this.welcomeWaiters) w.resolve();
     this.welcomeWaiters.clear();
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   private startProject(projectId: string): ProjectSync {
@@ -14902,7 +14926,8 @@ export class SyncClient {
         this.deps.setTimer(fn, ms);
       },
       onRejected: (code, message) => {
-        this.touch(projectId, `${code}: ${message}`);
+        this.deps.log(`sync push rejected for ${projectId}: ${code} ${message}`);
+        this.touch(projectId, code);
         if (code === "FORBIDDEN") this.deps.hosts.setAccess(projectId, "read-only");
       },
     });
@@ -14914,7 +14939,7 @@ export class SyncClient {
     const row = this.deps.db.project(projectId);
     if (!row) return;
     this.deps.db.upsertProject({ ...row, lastSyncAt: error ? row.lastSyncAt : this.deps.now(), lastError: error });
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   private updateRole(projectId: string, members: MemberInfo[]): void {
@@ -14923,7 +14948,7 @@ export class SyncClient {
     if (!me || !row || row.role === me.role) return;
     this.deps.db.upsertProject({ ...row, role: me.role });
     this.applyAccess({ ...row, role: me.role });
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   private markRevoked(projectId: string, reason: keyof typeof REVOKED_MESSAGE): void {
@@ -14934,7 +14959,7 @@ export class SyncClient {
       this.deps.db.upsertProject({ ...row, enabled: false, accessRevoked: true, lastError: REVOKED_MESSAGE[reason] });
       this.applyAccess({ ...row, accessRevoked: true });
     }
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 
   private settle(f: ServerFrame): void {
@@ -14962,8 +14987,8 @@ export class SyncClient {
     this.state = "offline";
     if (code === CLOSE_CODES.deviceRevoked || code === CLOSE_CODES.authFailed) {
       this.halted = true;
-      this.lastError = code === CLOSE_CODES.deviceRevoked ? "Appareil révoqué" : "Authentification refusée";
-      for (const w of this.welcomeWaiters) w.reject(new KiboError("UNAUTHORIZED", this.lastError));
+      this.lastError = code === CLOSE_CODES.deviceRevoked ? "DEVICE_REVOKED" : "UNAUTHORIZED";
+      for (const w of this.welcomeWaiters) w.reject(new KiboError("UNAUTHORIZED", `sync authentication failed: ${this.lastError}`));
       this.welcomeWaiters.clear();
     } else if (!this.stopped) {
       const delay = backoffDelay(
@@ -14976,20 +15001,20 @@ export class SyncClient {
       this.cancelRetry = this.deps.setTimer(() => {
         this.cancelRetry = null;
         void this.open().catch((e: unknown) => {
-          this.lastError = e instanceof Error ? e.message : String(e);
+          this.lastError = e instanceof KiboError ? e.code : "SYNC_OFFLINE";
           this.deps.log("sync reconnection failed", e);
         });
       }, delay);
     }
-    this.deps.emit({ type: "sync" });
+    this.deps.emit({ type: "collab.changed" });
   }
 }
 ```
-`ProjectHostRegistry` est déplacé dans `packages/daemon/src/sync/types.ts` (type du contrat plus `mutate`), importé par le service et le client.
+`ProjectHostRegistry` vit dans `packages/daemon/src/collab/types.ts` (type du contrat plus `mutate`, étape 5d), importé par `project-hosts.ts` et le client ; le service ne l'importe pas.
 
 - [ ] **Step 10: RPC et démarrage**
 
-`packages/daemon/src/sync/rpc.ts` :
+`packages/daemon/src/collab/rpc.ts` :
 ```ts
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import type { RpcContext } from "../rpc-extensions";
@@ -15023,7 +15048,7 @@ export async function handleSyncRpc(
   }
 }
 ```
-Branchement par l'option `handlers` de `startServer` (T9) : `handlers: [(req, ctx) => handleSyncRpc(sync, req, ctx), …]` ; `server.ts` n'est pas modifié pour la RPC. Dans `main.ts` : `const syncDb = openSyncDb(store.db)`, `SyncClient` avec `createWebSocketTransport()`, `fetch`, `Bun.file(p).text()`, `Date.now`, `Math.random`, `setTimeout`/`clearTimeout`, `emit` vers le hub d'événements, `log` vers `console.error` préfixé `[kibo-daemon]`, puis `await sync.start()` avant `KIBO_READY`, et `sync.stop()` dans `shutdown`. Test ajouté à `rpc.test.ts` (même dossier) :
+Assemblage dans `packages/daemon/src/collab/bootstrap.ts` : `startCollab(deps: CollabDeps)` avec `CollabDeps = { store: Store; service: Service; user: string; secrets: SecretStore; log?(message: string, error?: unknown): void }` crée `openSyncDb(store.db)`, `createProjectHosts(service.docs, user)`, le `SyncClient` (`createWebSocketTransport()`, `fetch`, `Bun.file(p).text()`, `Date.now`, `Math.random`, `setTimeout`/`clearTimeout`, `emit: (m) => service.docs.emit(m)`, `log` vers `console.error` préfixé `[kibo-daemon]`), appelle `service.attachCollab({ syncInfo })`, puis `await client.start()` ; il renvoie `{ client, hosts, handler: (req, ctx) => handleSyncRpc(client, req, ctx), stop }`. Dans `daemon.ts` (`assemble`), après `startIntegrations` : `const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets })`, `closers.push(() => collab.stop())`, et `collab.handler` ajouté à l'option `handlers` de `startServer` (T9) ; `server.ts` et `main.ts` ne changent pas. `KIBO_READY` est écrit par `main.ts` après `startDaemon`, donc après `client.start()`. Un échec de `start` (trousseau indisponible, serveur injoignable) ne bloque pas le démarrage : `start` n'ouvre la connexion qu'en tâche de fond et journalise, la reconnexion suit le backoff. Test ajouté à `rpc.test.ts` (même dossier) :
 ```ts
 import { expect, test } from "bun:test";
 import { handleSyncRpc } from "./rpc";
@@ -15039,8 +15064,8 @@ test("connectSyncServer is refused from a remote session", async () => {
 
 - [ ] **Step 11: Vérifier**
 
-Run: `bun test packages/daemon/src/sync`
-Expected: PASS (tests de T18 inchangés, plus 13 nouveaux). Le harnais réduit le backoff à 20 → 200 ms : le test « hors ligne puis rattrapage » dure quelques secondes.
+Run: `bun test packages/daemon/src/collab`
+Expected: PASS (tests de T18 inchangés, plus les nouveaux de `sync-db`, `project-hosts`, `sync-client` et `rpc`). Le harnais réduit le backoff à 20 → 200 ms : le test « hors ligne puis rattrapage » dure quelques secondes.
 
 Test ajouté à `sync-client.test.ts` pour les valeurs de production :
 ```ts
@@ -15056,17 +15081,20 @@ test("backoff grows from 1 s to 60 s with jitter", () => {
 (importer `backoffDelay` depuis `./sync-client` et `SYNC_LIMITS` depuis `@kibo/schema`).
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
-Expected: PASS ; aucun test existant du démon modifié.
+Expected: PASS ; aucun test existant du démon modifié (seul `service.ts` a perdu `readTabs`/`saveTabs`, déplacés à l'identique).
 
 - [ ] **Step 12: Commit**
 
 ```bash
-git add packages/daemon/src/sync/sync-db.ts packages/daemon/src/sync/sync-db.test.ts packages/daemon/src/sync/device-keys.ts \
-  packages/daemon/src/sync/sync-client.ts packages/daemon/src/sync/sync-client.test.ts packages/daemon/src/sync/types.ts \
-  packages/daemon/src/sync/project-info.ts packages/daemon/src/sync/rpc.ts packages/daemon/src/sync/rpc.test.ts \
-  packages/daemon/src/testing/sync-harness.ts packages/daemon/src/service.ts \
-  packages/daemon/src/main.ts packages/daemon/package.json bun.lock
-git commit -m "feat(daemon): client de sync"
+git add packages/daemon/src/tabs-store.ts packages/daemon/src/docs.ts packages/daemon/src/service.ts \
+  packages/daemon/src/command-path.ts packages/daemon/src/components/gate-handlers.ts packages/daemon/src/components/service.ts \
+  packages/daemon/src/collab/types.ts packages/daemon/src/collab/project-hosts.ts packages/daemon/src/collab/project-hosts.test.ts
+git commit -m "feat(daemon): garde d'écriture par projet"
+git add packages/daemon/src/collab/sync-db.ts packages/daemon/src/collab/sync-db.test.ts packages/daemon/src/collab/device-keys.ts \
+  packages/daemon/src/collab/sync-client.ts packages/daemon/src/collab/sync-client.test.ts \
+  packages/daemon/src/collab/project-info.ts packages/daemon/src/collab/rpc.ts packages/daemon/src/collab/rpc.test.ts \
+  packages/daemon/src/collab/bootstrap.ts packages/daemon/src/testing/sync-harness.ts packages/daemon/src/daemon.ts
+git commit -m "feat(daemon): client de sync d'équipe"
 ```
 
 ---
@@ -15076,56 +15104,79 @@ git commit -m "feat(daemon): client de sync"
 Publier un composant utilisateur sur la source d'équipe servie par `kibo-sync` (spec H §5.1 points 1 à 4), produire un `.kpkg` et un index statique signé pour un hébergement quelconque (§5.1 point 5), et prouver le critère de sortie « publication sur la source d'équipe puis installation sur un second démon, avec vérification complète » (§10).
 
 **Files:**
-- Create: `packages/daemon/src/market/publisher-keys.ts`, `packages/daemon/src/market/publish.ts`, `packages/cli/src/market.ts`, `packages/cli/src/market-index-builder.ts`
-- Modify: `packages/daemon/src/market/market-service.ts` (`hasVersion`), `packages/daemon/src/market/rpc.ts` (`publishToMarket`, `exportKpkg`), `packages/daemon/src/main.ts` (branchement, `ca` de la sync pour `createHttpGet`), `packages/cli/src/main.ts` (sous-commande `market`), `packages/cli/src/component.ts` (`publish --to`), `packages/cli/package.json` (`@kibo/trust`)
-- Test: `packages/daemon/src/market/publish.test.ts`, `packages/daemon/src/market/team-publish.integration.test.ts`, `packages/cli/src/market-index-builder.test.ts`, `packages/cli/src/market.test.ts`
+- Create: `packages/daemon/src/market/publisher-keys.ts`, `packages/daemon/src/market/publish.ts`, `packages/cli/src/commands/market.ts`, `packages/cli/src/market-index-builder.ts`
+- Modify: `packages/daemon/src/market/market-service.ts` (`hasVersion`), `packages/daemon/src/market/rpc.ts` (`publishToMarket`, `exportKpkg`), `packages/daemon/src/market/bootstrap.ts` (branchement, `ca` de la sync pour `createHttpGet`), `packages/daemon/src/market/install.ts` (export de `writeSources`), `packages/cli/src/index.ts` (portée `market`, `publish --to`), `packages/cli/src/args.ts` (options à valeur `to`, `publisher`, `out`, `dir`, `key`, `id`, `name`, `verify`), `packages/cli/src/commands/publish.ts` (`--to`), `packages/cli/src/fr.ts` (textes), `packages/cli/package.json` (`@kibo/trust`)
+- Test: `packages/daemon/src/market/publish.test.ts`, `packages/daemon/src/market/team-publish.integration.test.ts`, `packages/cli/src/market-index-builder.test.ts`, `packages/cli/src/commands/market.test.ts`
 
 **Interfaces:**
-- Consumes: `packKpkg`, `encodeKpkg`, `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `signIndex`, `verifyIndex`, `generateKeyPair`, `signRequest`, `type KeyPair` (`@kibo/trust`, T2, T10) ; `startTestSyncServer`, `TeamMarket` (T16, T17) ; `MarketService`, `createHttpGet`, `openMarketDb`, `createMemoryRegistry` (T15) ; `installFromMarket`, `createSandboxedValidator`, `createMemoryComponentStore` (T20) ; `SyncConfig`, `SyncDb` (T21) ; `SecretStore`, `MemorySecretStore` (phase 5) ; `ComponentStore`, `RegistryPort`.
-- Consumes aussi : `loadDeviceKeys(secrets): Promise<KeyPair>` (T21, `UNAUTHORIZED` si l'appareil n'a pas de clé), clé stockée en JSON `KeyPair` sous `SECRET_SYNC_DEVICE` (T1).
-- `startTestSyncServer({ market: { id, name } })` (T17) initialise la source d'équipe avant le démarrage ; hypothèse à vérifier dans T16 : `POST /v1/market/packages` répond `200 { serial }` ou `{ ok: false, error: { code, message } }` avec le statut HTTP du code.
+- Consumes: `packKpkg`, `encodeKpkg`, `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `signIndex`, `verifyIndex`, `generateKeyPair`, `signRequest`, `keyFingerprint`, `formatFingerprint`, `type KeyPair` (`@kibo/trust`, T2, T10) ; `startTestSyncServer`, `TeamMarket` (T16, T17) ; `MarketService`, `createHttpGet`, `openMarketDb`, `createMemoryRegistry`, `startFakeMarket` (T15) ; `installFromMarket`, `writeSources`, `ValidateOptions.conformanceOnly` (T20) ; `SyncConfig` (T21, `packages/daemon/src/collab/sync-db.ts`), `loadDeviceKeys(secrets): Promise<KeyPair>` (T21, `packages/daemon/src/collab/device-keys.ts`, `UNAUTHORIZED` si l'appareil n'a pas de clé) ; `SECRET_SYNC_DEVICE`, `SECRET_MARKET_PUBLISHER` (T1, `@kibo/schema`) ; `ComponentStore`, `createComponentStore`, `fakeBuild`, `okReport`, `createPublishLock`, `PublishLock` (phase 4).
+- Vérifié en T0 :
+  - Les secrets vivent dans `packages/daemon/src/integrations/` : `SecretStore` (`types.ts`), `createMemorySecretStore(redactor: Redactor, initial?)` (`memory-secret-store.ts`), `createRedactor()` (`redact.ts`) ; il n'y a ni `secrets/secret-store.ts` ni `MemorySecretStore` constructible. `SecretName` et `SecretNameSchema` sont dans `packages/schema/src/integrations.ts` (préfixes `sync`, `market`, `remote` ajoutés par T1).
+  - Le magasin n'a pas de `readSources` : les sources d'une version sont lues par `readSources(join(store.root, id, version, hash, "source"))` (`@kibo/devkit`, renvoie `{ hash, files }`), et `store.put(srcDir, expectedHash?)` prend un dossier.
+  - `isKiboErrorCode(v: unknown): v is KiboErrorCode` existe déjà dans `packages/schema/src/errors.ts` : `errors.ts` n'est pas modifié.
+  - `grantedOf(manifest)` (`@kibo/schema`) remplace `grantedPermissions` ; `ComponentManifest.description` est facultatif ; `ComponentManifest.kind` vaut `"widget" | "view" | "both" | "adapter"` (un adaptateur sans UI est publiable ; `MarketIndex.packages[].kind` doit l'accepter, T5).
+  - Les origines de `RegistryVersion` sont `"kibo" | "user" | "ai" | "marketplace"` ; seuls `user` et `ai` sont publiables.
+  - La CLI : `runCli(argv, io: CliIo)` (`packages/cli/src/index.ts`) n'accepte que la portée `component` ; `CliIo = { home; toolchain; out(line); err(line) }` (une ligne par appel, sans `\n`) ; les arguments passent par `parseArgs` de `packages/cli/src/args.ts` (options à valeur listées dans `VALUED`) ; le démon est joint par `connectDaemon(home): Promise<DaemonClient>` (`packages/cli/src/daemon-client.ts`) ; les textes sont dans `packages/cli/src/fr.ts` ; `publishCommand(id, strategy, io)` est dans `packages/cli/src/commands/publish.ts` ; `componentDir(target, io)` dans `commands/test.ts`. Il n'y a ni `main.ts` ni `component.ts`.
+  - Le branchement du démon se fait dans `daemon.ts` (fonction `assemble`), pas dans `main.ts` (qui ne lit que les options) : la marketplace a son module `packages/daemon/src/market/bootstrap.ts` (T15).
+  - `startTestSyncServer({ market: { id, name } })` (T17) initialise la source d'équipe avant le démarrage ; `POST /v1/market/packages` répond `200 { serial }` ou `{ ok: false, error: { code, message } }` avec le statut HTTP du code (contrat de T16, à reprendre de sa section intégrée).
 - Produces :
   - `MarketService.hasVersion(sourceId: string, id: string, version: string): boolean` (**méthode ajoutée**).
   - `type PublisherKeys = KeyPair & { name: string }` ; `loadPublisherKeys(secrets: SecretStore, name?: string): Promise<PublisherKeys>` (`INVALID_INPUT` si absente et sans nom).
-  - `type PublishDeps = { store: ComponentStore; registry: RegistryPort; market: MarketService; secrets: SecretStore; syncConfig(): SyncConfig | null; caPem(): string | null; validate(id: string, version: string): Promise<{ ok: boolean; summary: string }>; now: () => number }`.
+  - `type PublishDeps = { store: Pick<ComponentStore, "root">; registry: RegistryPort; market: MarketService; secrets: SecretStore; syncConfig(): SyncConfig | null; caPem(): string | null; validate(dir: string): Promise<ValidationReport>; lock: PublishLock; tmpRoot: string; now: () => number }`.
   - `exportKpkg(deps: PublishDeps, input: { id: string; version: string; publisherName?: string }): Promise<Kpkg>` ; `publishToMarket(deps: PublishDeps, input: { id: string; version: string; sourceId: string; publisherName?: string }): Promise<{ serial: number }>`.
   - `buildStaticIndex(input: { dir: string; keys: KeyPair; id: string; name: string; verified: string[]; now: Date }): Promise<{ serial: number; packages: number }>` (`packages/cli`).
-  - `runMarketCommand(argv: string[], deps: { rpc(req: RpcRequest): Promise<unknown>; out(text: string): void; now(): Date }): Promise<number>`.
+  - `type MarketCliDeps = { rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>; out(line: string): void; err(line: string): void; now(): Date }` ; `runMarketCommand(argv: string[], flags: Parsed["flags"], deps: MarketCliDeps): Promise<number>` (`packages/cli/src/commands/market.ts`).
+  - La validation avant publication est la **suite générique** (`validateComponent(copie, { conformanceOnly: true })`) sur une copie des sources du magasin : c'est exactement ce que le destinataire exécutera à l'installation (T20) ; les tests de l'éditeur ont déjà tourné à la publication locale (`publishComponent`).
 
 - [ ] **Step 1: Tests unitaires de la publication**
 
 `packages/daemon/src/market/publish.test.ts` :
 ```ts
 import { Database } from "bun:sqlite";
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { NO_PERMISSIONS, SECRET_MARKET_PUBLISHER, type ValidationReport } from "@kibo/schema";
 import { kpkgSourceFiles, verifyKpkgSignature } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
-import { MemorySecretStore } from "../secrets/secret-store";
-import { createMemoryComponentStore } from "../testing/memory-component-store";
+import { createPublishLock } from "../components/publish-lock";
+import { fakeBuild, okReport } from "../components/service.test-helper";
+import { createComponentStore } from "../components/store";
+import { createMemorySecretStore, type MemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor } from "../integrations/redact";
 import { createMemoryRegistry } from "../testing/memory-registry";
 import { createHttpGet } from "./http-get";
+import { writeSources } from "./install";
 import { openMarketDb } from "./market-db";
 import { MarketService } from "./market-service";
 import { exportKpkg, type PublishDeps, publishToMarket } from "./publish";
 
+let home: string;
 let deps: PublishDeps;
 let secrets: MemorySecretStore;
+const SYNC = { serverUrl: "wss://127.0.0.1:1", caFile: null, userId: "u", deviceId: "d", displayName: "M" };
+const INPUT = { id: "burndown", version: "0.1.0", sourceId: "equipe", publisherName: "Adam" };
 
 beforeEach(async () => {
-  secrets = new MemorySecretStore();
-  const store = createMemoryComponentStore();
+  home = mkdtempSync(join(tmpdir(), "kibo-publish-"));
+  secrets = createMemorySecretStore(createRedactor());
+  const store = createComponentStore({ home, toolchain: DEV_TOOLCHAIN, build: fakeBuild });
   const registry = createMemoryRegistry();
   const made = await makeTestPackage({ id: "burndown", version: "0.1.0", manifest: { title: "Burndown" } });
-  const files = await kpkgSourceFiles(made.pkg);
-  const { hash } = await store.put({ id: "burndown", version: "0.1.0", files });
+  const src = join(home, "src");
+  await writeSources(src, await kpkgSourceFiles(made.pkg));
+  const stored = await store.put(src);
   registry.port.put("burndown", "Burndown", {
     version: "0.1.0",
-    hash,
+    hash: stored.hash,
     origin: "user",
     trust: "trusted",
-    approvedHash: hash,
-    granted: { reads: [], writes: [], data: false, net: [] },
+    approvedHash: stored.hash,
+    granted: NO_PERMISSIONS,
     publishedAt: 0,
+    autoUpdate: false,
     source: null,
     revoked: null,
   });
@@ -15134,7 +15185,7 @@ beforeEach(async () => {
     get: createHttpGet({ allowLoopbackHttp: true }),
     registry: registry.port,
     now: () => 1,
-    notify: mock(async () => {}),
+    notify: mock(() => {}),
     log: mock(() => {}),
   });
   deps = {
@@ -15144,10 +15195,13 @@ beforeEach(async () => {
     secrets,
     syncConfig: () => null,
     caPem: () => null,
-    validate: async () => ({ ok: true, summary: "" }),
+    validate: okReport,
+    lock: createPublishLock(),
+    tmpRoot: join(home, "tmp"),
     now: () => Date.parse("2026-09-26T10:00:00Z"),
   };
 });
+afterEach(() => rmSync(home, { recursive: true, force: true }));
 
 describe("exportKpkg", () => {
   test("requires a publisher name the first time", async () => {
@@ -15161,7 +15215,7 @@ describe("exportKpkg", () => {
     expect(pkg.publishedAt).toBe("2026-09-26T10:00:00.000Z");
     const again = await exportKpkg(deps, { id: "burndown", version: "0.1.0" });
     expect(again.publisher.publicKey).toBe(pkg.publisher.publicKey);
-    expect(await secrets.has("market:publisher")).toBe(true);
+    expect(await secrets.has(SECRET_MARKET_PUBLISHER)).toBe(true);
   });
 
   test("refuses a component that is not the user's own", async () => {
@@ -15176,20 +15230,26 @@ describe("exportKpkg", () => {
 
 describe("publishToMarket", () => {
   test("needs a configured sync server", async () => {
-    await expect(
-      publishToMarket(deps, { id: "burndown", version: "0.1.0", sourceId: "equipe", publisherName: "Adam" }),
-    ).rejects.toThrow("SYNC_OFFLINE");
+    await expect(publishToMarket(deps, INPUT)).rejects.toThrow("SYNC_OFFLINE");
   });
 
-  test("a failing validation stops the publication", async () => {
-    deps = {
-      ...deps,
-      syncConfig: () => ({ serverUrl: "wss://127.0.0.1:1", caFile: null, userId: "u", deviceId: "d", displayName: "M" }),
-      validate: async () => ({ ok: false, summary: "typecheck" }),
-    };
-    await expect(
-      publishToMarket(deps, { id: "burndown", version: "0.1.0", sourceId: "equipe", publisherName: "Adam" }),
-    ).rejects.toThrow("VALIDATION_FAILED");
+  test("a failing generic validation stops the publication", async () => {
+    const failing = async (dir: string): Promise<ValidationReport> => ({
+      ...(await okReport(dir)),
+      conformance: { ok: false, errors: ["render failed"] },
+      ok: false,
+    });
+    deps = { ...deps, syncConfig: () => SYNC, validate: failing };
+    await expect(publishToMarket(deps, INPUT)).rejects.toThrow("VALIDATION_FAILED");
+  });
+
+  test("a publication of an id being published locally is refused", async () => {
+    deps = { ...deps, syncConfig: () => SYNC };
+    let release: () => void = () => {};
+    const held = deps.lock.hold("burndown", () => new Promise<void>((r) => (release = r)));
+    await expect(publishToMarket(deps, INPUT)).rejects.toThrow("CONFLICT");
+    release();
+    await held;
   });
 });
 ```
@@ -15201,65 +15261,83 @@ Expected: FAIL avec « Cannot find module './publish' ».
 
 `packages/daemon/src/market/publisher-keys.ts` :
 ```ts
-import { KiboError } from "@kibo/schema";
+import { KiboError, SECRET_MARKET_PUBLISHER } from "@kibo/schema";
 import { generateKeyPair, type KeyPair } from "@kibo/trust";
 import { z } from "zod";
-import type { SecretStore } from "../secrets/secret-store";
+import type { SecretStore } from "../integrations/types";
 
 export type PublisherKeys = KeyPair & { name: string };
 const Stored = z.object({ name: z.string().min(1).max(64), publicKey: z.string(), privateKey: z.string() });
 
-export async function loadPublisherKeys(secrets: SecretStore, name?: string): Promise<PublisherKeys> {
-  const raw = await secrets.get("market:publisher");
-  if (raw !== null) {
-    const parsed = Stored.safeParse(JSON.parse(raw));
-    if (!parsed.success) throw new KiboError("INTERNAL", "stored publisher key is unreadable");
-    return parsed.data;
+function parseStored(raw: string): PublisherKeys {
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    throw new KiboError("INTERNAL", `stored publisher key is not JSON: ${String(e)}`);
   }
+  const parsed = Stored.safeParse(json);
+  if (!parsed.success) throw new KiboError("INTERNAL", "stored publisher key is unreadable");
+  return parsed.data;
+}
+
+export async function loadPublisherKeys(secrets: SecretStore, name?: string): Promise<PublisherKeys> {
+  const raw = await secrets.get(SECRET_MARKET_PUBLISHER);
+  if (raw !== null) return parseStored(raw);
   const trimmed = name?.trim() ?? "";
   if (!trimmed) throw new KiboError("INVALID_INPUT", "a publisher name is required the first time");
   const created: PublisherKeys = { name: trimmed.slice(0, 64), ...(await generateKeyPair()) };
-  await secrets.set("market:publisher", JSON.stringify(created));
+  await secrets.set(SECRET_MARKET_PUBLISHER, JSON.stringify(created));
   return created;
 }
 ```
 
 `packages/daemon/src/market/publish.ts` :
 ```ts
-import { ComponentManifest, KiboError, type Kpkg } from "@kibo/schema";
+import { mkdir, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { readSources } from "@kibo/devkit";
+import { ComponentManifest, isKiboErrorCode, KiboError, type Kpkg, type ValidationReport } from "@kibo/schema";
 import { encodeKpkg, packKpkg, signRequest } from "@kibo/trust";
-import type { ComponentStore } from "../components/component-store";
-import type { SecretStore } from "../secrets/secret-store";
-import { loadDeviceKeys } from "../sync/device-keys";
-import type { SyncConfig } from "../sync/sync-db";
+import { loadDeviceKeys } from "../collab/device-keys";
+import type { SyncConfig } from "../collab/sync-db";
+import type { PublishLock } from "../components/publish-lock";
+import type { ComponentStore } from "../components/store";
+import type { SecretStore } from "../integrations/types";
+import { writeSources } from "./install";
 import type { MarketService, RegistryPort } from "./market-service";
 import { loadPublisherKeys } from "./publisher-keys";
 
 export type PublishDeps = {
-  store: ComponentStore;
+  store: Pick<ComponentStore, "root">;
   registry: RegistryPort;
   market: MarketService;
   secrets: SecretStore;
   syncConfig(): SyncConfig | null;
   caPem(): string | null;
-  validate(id: string, version: string): Promise<{ ok: boolean; summary: string }>;
+  validate(dir: string): Promise<ValidationReport>;
+  lock: PublishLock;
+  tmpRoot: string;
   now: () => number;
 };
+type Ref = { id: string; version: string };
 
 const PUBLISH_PATH = "/v1/market/packages";
 const OWN_ORIGINS = new Set(["user", "ai"]);
 
-export async function exportKpkg(
-  deps: PublishDeps,
-  input: { id: string; version: string; publisherName?: string },
-): Promise<Kpkg> {
+async function ownSources(deps: PublishDeps, input: Ref) {
   const v = deps.registry.get(input.id, input.version);
   if (!v) throw new KiboError("NOT_FOUND", `${input.id}@${input.version} is not published locally`);
-  if (!OWN_ORIGINS.has(v.origin)) {
+  if (!OWN_ORIGINS.has(v.origin))
     throw new KiboError("INVALID_INPUT", `${input.id} is not one of your components (origin ${v.origin})`);
-  }
+  const { hash, files } = await readSources(join(deps.store.root, input.id, input.version, v.hash, "source"));
+  if (hash !== v.hash) throw new KiboError("HASH_MISMATCH", `${input.id}@${input.version} changed in the store`);
+  return files;
+}
+
+export async function exportKpkg(deps: PublishDeps, input: Ref & { publisherName?: string }): Promise<Kpkg> {
+  const files = await ownSources(deps, input);
   const keys = await loadPublisherKeys(deps.secrets, input.publisherName);
-  const files = await deps.store.readSources(input.id, input.version, v.hash);
   const manifestFile = files.find((f) => f.path === "kibo.component.json");
   if (!manifestFile) throw new KiboError("INVALID_INPUT", `${input.id} has no manifest`);
   const manifest = ComponentManifest.parse(JSON.parse(new TextDecoder().decode(manifestFile.bytes)));
@@ -15270,6 +15348,19 @@ export async function exportKpkg(
     keys: { publicKey: keys.publicKey, privateKey: keys.privateKey },
     publishedAt: new Date(deps.now()),
   });
+}
+
+async function validateGeneric(deps: PublishDeps, input: Ref): Promise<void> {
+  const files = await ownSources(deps, input);
+  await mkdir(deps.tmpRoot, { recursive: true, mode: 0o700 });
+  const dir = join(deps.tmpRoot, crypto.randomUUID());
+  try {
+    await writeSources(dir, files);
+    const report = await deps.validate(dir);
+    if (!report.ok) throw new KiboError("VALIDATION_FAILED", `${input.id}@${input.version} fails the generic suite`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 const httpOrigin = (serverUrl: string): string => {
@@ -15286,24 +15377,8 @@ const readErrorBody = (value: unknown): { code: string; message: string } | null
     : null;
 };
 
-export async function publishToMarket(
-  deps: PublishDeps,
-  input: { id: string; version: string; sourceId: string; publisherName?: string },
-): Promise<{ serial: number }> {
-  const config = deps.syncConfig();
-  if (!config) throw new KiboError("SYNC_OFFLINE", "connect to a sync server before publishing");
-  const sourceUrl = deps.market.sourceUrl(input.sourceId);
-  if (new URL(sourceUrl).host !== new URL(config.serverUrl).host) {
-    throw new KiboError("INVALID_INPUT", "static source: use kibo market pack and kibo market index");
-  }
-  const report = await deps.validate(input.id, input.version);
-  if (!report.ok) throw new KiboError("VALIDATION_FAILED", `${input.id}@${input.version}: ${report.summary}`);
-  await deps.market.refresh(input.sourceId);
-  if (deps.market.hasVersion(input.sourceId, input.id, input.version)) {
-    throw new KiboError("VERSION_EXISTS", `${input.id}@${input.version} is already on ${input.sourceId}`);
-  }
+async function send(deps: PublishDeps, config: SyncConfig, body: Uint8Array): Promise<number> {
   const device = await loadDeviceKeys(deps.secrets);
-  const body = encodeKpkg(await exportKpkg(deps, input));
   const headers = await signRequest({
     deviceId: config.deviceId,
     privateKey: device.privateKey,
@@ -15323,17 +15398,40 @@ export async function publishToMarket(
   if (!res.ok) {
     const error = readErrorBody(payload);
     throw new KiboError(
-      error && isKiboCode(error.code) ? error.code : "INTERNAL",
+      error && isKiboErrorCode(error.code) ? error.code : "INTERNAL",
       error?.message ?? `publish failed with HTTP ${res.status}`,
     );
   }
   const serial = typeof payload === "object" && payload !== null && "serial" in payload ? payload.serial : null;
   if (typeof serial !== "number") throw new KiboError("INTERNAL", "publish answer has no serial");
+  return serial;
+}
+
+async function publish(deps: PublishDeps, input: Ref & { sourceId: string; publisherName?: string }) {
+  const config = deps.syncConfig();
+  if (!config) throw new KiboError("SYNC_OFFLINE", "connect to a sync server before publishing");
+  const sourceUrl = deps.market.sourceUrl(input.sourceId);
+  if (new URL(sourceUrl).host !== new URL(config.serverUrl).host)
+    throw new KiboError("INVALID_INPUT", "static source: use kibo market pack and kibo market index");
+  await validateGeneric(deps, input);
+  await deps.market.refresh(input.sourceId);
+  if (deps.market.hasVersion(input.sourceId, input.id, input.version))
+    throw new KiboError("VERSION_EXISTS", `${input.id}@${input.version} is already on ${input.sourceId}`);
+  const serial = await send(deps, config, encodeKpkg(await exportKpkg(deps, input)));
   await deps.market.refresh(input.sourceId);
   return { serial };
 }
+
+export function publishToMarket(
+  deps: PublishDeps,
+  input: Ref & { sourceId: string; publisherName?: string },
+): Promise<{ serial: number }> {
+  return deps.lock.hold(input.id, () => publish(deps, input));
+}
 ```
-`isKiboCode(code: string): code is KiboErrorCode` est ajouté à `packages/schema/src/errors.ts` (liste figée `KIBO_ERROR_CODES`, déjà nécessaire au client SDK pour relayer les codes) ; s'il existe déjà en v0.6, le réutiliser.
+Le test « needs a configured sync server » passe avant tout accès à la source : `syncConfig()` est lu en premier. Le test du verrou fait échouer `hold` avant `syncConfig`.
+
+Dans `packages/daemon/src/market/install.ts` (T20), exporter `writeSources` (déjà écrit pour l'installation) au lieu de le garder local.
 
 Ajouter à `MarketService` :
 ```ts
@@ -15341,9 +15439,10 @@ Ajouter à `MarketService` :
     return this.indexes.get(sourceId)?.packages.find((p) => p.id === id)?.versions.some((v) => v.version === version) ?? false;
   }
 ```
+(adapter au nom réel du cache d'index de `MarketService` livré par T15).
 
 Run: `bun test packages/daemon/src/market/publish.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (6 tests).
 
 - [ ] **Step 3: Test d'intégration équipe → second démon**
 
@@ -15354,23 +15453,36 @@ import { afterAll, beforeAll, expect, mock, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { toolchainDir } from "@kibo/devkit/toolchain";
-import { JoinResponse } from "@kibo/schema";
+import { osSandbox, validateComponent } from "@kibo/devkit";
+import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { JoinResponse, KiboError, NO_PERMISSIONS, SECRET_SYNC_DEVICE } from "@kibo/schema";
 import { TeamMarket } from "@kibo/sync-server";
 import { startTestSyncServer } from "@kibo/sync-server/testing";
 import { generateKeyPair, kpkgSourceFiles } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
-import { detectSandbox, realDetectDeps } from "../sandbox/detect";
-import { MemorySecretStore } from "../secrets/secret-store";
-import { SECRET_SYNC_DEVICE } from "../secrets/secret-store";
-import { createMemoryComponentStore } from "../testing/memory-component-store";
+import { createPublishLock } from "../components/publish-lock";
+import { fakeBuild, okReport } from "../components/service.test-helper";
+import { createComponentStore } from "../components/store";
+import { createMemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor } from "../integrations/redact";
 import { createMemoryRegistry } from "../testing/memory-registry";
 import { createHttpGet } from "./http-get";
-import { installFromMarket } from "./install";
+import { installFromMarket, writeSources } from "./install";
 import { openMarketDb } from "./market-db";
 import { MarketService } from "./market-service";
 import { publishToMarket } from "./publish";
-import { createSandboxedValidator } from "./sandboxed-validator";
+
+const sandboxAvailable = await osSandbox()
+  .ready()
+  .then(
+    () => true,
+    (e: unknown) => {
+      if (e instanceof KiboError && e.code === "SANDBOX_UNAVAILABLE") return false;
+      throw e;
+    },
+  );
+const genericSuite = (dir: string) =>
+  sandboxAvailable ? validateComponent(dir, { toolchain: DEV_TOOLCHAIN, conformanceOnly: true }) : okReport(dir);
 
 let server: Awaited<ReturnType<typeof startTestSyncServer>>;
 let home: string;
@@ -15398,21 +15510,28 @@ async function joinDevice(name: string) {
 }
 
 function daemon(name: string) {
+  const dir = join(home, name);
   const registry = createMemoryRegistry();
   const market = new MarketService({
     db: openMarketDb(new Database(":memory:")),
     get: createHttpGet({ allowLoopbackHttp: false, ca: server.caPem }),
     registry: registry.port,
     now: Date.now,
-    notify: mock(async () => {}),
+    notify: mock(() => {}),
     log: mock(() => {}),
   });
-  return { name, registry, market, store: createMemoryComponentStore(), secrets: new MemorySecretStore() };
+  return {
+    dir,
+    registry,
+    market,
+    store: createComponentStore({ home: dir, toolchain: DEV_TOOLCHAIN, build: fakeBuild }),
+    secrets: createMemorySecretStore(createRedactor()),
+  };
 }
 
 test("a component published by A on the team source installs on B with full verification", async () => {
-  const a = daemon("A");
-  const b = daemon("B");
+  const a = daemon("a");
+  const b = daemon("b");
   const { keys, joined } = await joinDevice("Adam");
   const team = await TeamMarket.open(server.sdb, server.dataDir);
   if (!team) throw new Error("team market not initialised");
@@ -15420,15 +15539,17 @@ test("a component published by A on the team source installs on B with full veri
   await a.secrets.set(SECRET_SYNC_DEVICE, JSON.stringify(keys));
 
   const made = await makeTestPackage({ id: "burndown", version: "0.1.0", manifest: { title: "Burndown" } });
-  const stored = await a.store.put({ id: "burndown", version: "0.1.0", files: await kpkgSourceFiles(made.pkg) });
+  await writeSources(join(a.dir, "src"), await kpkgSourceFiles(made.pkg));
+  const stored = await a.store.put(join(a.dir, "src"));
   a.registry.port.put("burndown", "Burndown", {
     version: "0.1.0",
     hash: stored.hash,
     origin: "user",
     trust: "trusted",
     approvedHash: stored.hash,
-    granted: { reads: [], writes: [], data: false, net: [] },
+    granted: NO_PERMISSIONS,
     publishedAt: 0,
+    autoUpdate: false,
     source: null,
     revoked: null,
   });
@@ -15450,7 +15571,9 @@ test("a component published by A on the team source installs on B with full veri
         displayName: "Adam",
       }),
       caPem: () => server.caPem,
-      validate: async () => ({ ok: true, summary: "" }),
+      validate: genericSuite,
+      lock: createPublishLock(),
+      tmpRoot: join(a.dir, "tmp"),
       now: Date.now,
     },
     { id: "burndown", version: "0.1.0", sourceId: probe.sourceId, publisherName: "Adam" },
@@ -15460,43 +15583,38 @@ test("a component published by A on the team source installs on B with full veri
   await b.market.addSource({ url: sourceUrl, publicKey: probe.publicKey });
   const hit = b.market.search({ query: "burndown" })[0];
   expect(hit?.publisher).toMatchObject({ name: "Adam", verified: true });
-  const probeSandbox = await detectSandbox(realDetectDeps(), process.execPath);
   const result = await installFromMarket(
     {
       market: b.market,
       store: b.store,
       registry: b.registry.port,
-      validate: createSandboxedValidator({
-        probe: () => probeSandbox,
-        allowUnsandboxed: () => process.env.KIBO_REQUIRE_OS_SANDBOX !== "1" && !probeSandbox.available,
-        toolchainDir: toolchainDir(),
-        workRoot: join(home, "tmp"),
-      }),
-      tmpRoot: join(home, "tmp"),
-      now: Date.now,
+      validate: genericSuite,
+      sandbox: sandboxAvailable ? osSandbox() : { ready: async () => {} },
+      lock: createPublishLock(),
+      tmpRoot: join(b.dir, "tmp"),
     },
     { sourceId: probe.sourceId, id: "burndown", version: "0.1.0" },
   );
   expect(result.hash).toBe(stored.hash);
+  expect(result.market.newPublisher).toBe(true);
   expect(b.registry.port.get("burndown", "0.1.0")).toMatchObject({ origin: "marketplace", trust: null });
-  expect(result.preview.market?.newPublisher).toBe(true);
 });
 ```
-Le test tourne en CI sur macOS et Linux (serveur TLS en processus, aucun réseau réel).
+Le test tourne en CI sur macOS et Linux (serveur TLS en processus, aucun réseau réel) ; la CI a un bac à sable OS, la suite générique réelle y tourne des deux côtés.
 
 Run: `bun test packages/daemon/src/market/team-publish.integration.test.ts`
-Expected: PASS une fois T16 et T17 intégrés (FAIL « Cannot find module '@kibo/sync-server/testing' » tant qu'ils ne le sont pas, ce qui n'arrive pas en vague 6).
+Expected: PASS une fois T16, T17 et T21 intégrés (dépendances de la vague).
 
 - [ ] **Step 4: RPC et branchement**
 
-Dans `market/rpc.ts`, `createMarketRpc(market, install, publish)` traite :
+Dans `packages/daemon/src/market/rpc.ts` (gestionnaire de T15), traiter :
 ```ts
       case "publishToMarket":
         return done(await publish.publish({ id: req.id, version: req.version, sourceId: req.sourceId, publisherName: req.publisherName }));
       case "exportKpkg":
         return done(await publish.exportKpkg({ id: req.id, version: req.version, publisherName: req.publisherName }));
 ```
-avec `publish = { publish: (i) => publishToMarket(publishDeps, i), exportKpkg: (i) => exportKpkg(publishDeps, i) }` construit dans `main.ts` : `syncConfig: () => syncDb.config()`, `caPem: () => syncCaPem()` (lecture du `caFile` de la config, `null` sinon), `validate` : `validateComponent(storeSourceDir(id, version))` de la phase 4 ramené à `{ ok: report.ok, summary }`. `createHttpGet` reçoit aussi `ca: syncCaPem()` pour lire la source d'équipe auto-hébergée.
+avec `publish = { publish: (i) => publishToMarket(publishDeps, i), exportKpkg: (i) => exportKpkg(publishDeps, i) }` construit dans `packages/daemon/src/market/bootstrap.ts` : `store: components.store`, `lock: components.publishLock`, `secrets` (le `SecretStore` du démon, déjà créé par `startIntegrations`), `syncConfig: () => syncDb.config()`, `caPem: () => syncCaPem()` (lecture du `caFile` de la config de sync, `null` sinon), `validate: (dir) => validateComponent(dir, { toolchain, conformanceOnly: true, signal })` (ou la validation injectée `DaemonOptions.validate`), `tmpRoot: join(home, "tmp", "market")`. `createHttpGet` reçoit aussi `ca: syncCaPem()` pour lire la source d'équipe auto-hébergée. `exportKpkg` est une RPC ouverte aux sessions distantes (Contrats partagés) ; `publishToMarket` aussi.
 
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
@@ -15504,7 +15622,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit du démon**
 
 ```bash
-git add packages/schema/src/errors.ts packages/daemon/src/market/publisher-keys.ts packages/daemon/src/market/publish.ts packages/daemon/src/market/publish.test.ts packages/daemon/src/market/team-publish.integration.test.ts packages/daemon/src/market/market-service.ts packages/daemon/src/market/rpc.ts packages/daemon/src/main.ts
+git add packages/daemon/src/market/publisher-keys.ts packages/daemon/src/market/publish.ts packages/daemon/src/market/publish.test.ts packages/daemon/src/market/team-publish.integration.test.ts packages/daemon/src/market/market-service.ts packages/daemon/src/market/install.ts packages/daemon/src/market/rpc.ts packages/daemon/src/market/bootstrap.ts
 git commit -m "feat(daemon): publication marketplace"
 ```
 
@@ -15599,7 +15717,7 @@ Expected: FAIL avec « Cannot find module './market-index-builder' ».
 ```ts
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { compareSemver, grantedPermissions, KiboError, type Kpkg, type MarketIndex, Sha256 } from "@kibo/schema";
+import { compareSemver, grantedOf, KiboError, type Kpkg, type MarketIndex, Sha256 } from "@kibo/schema";
 import { decodeKpkg, type KeyPair, kpkgSourceFiles, signIndex, verifyKpkgSignature } from "@kibo/trust";
 import { z } from "zod";
 
@@ -15665,7 +15783,7 @@ export async function buildStaticIndex(input: {
           hash: l.pkg.hash,
           publisherKey: l.pkg.publisher.publicKey,
           size: l.size,
-          permissions: grantedPermissions(l.pkg.manifest),
+          permissions: grantedOf(l.pkg.manifest),
           publishedAt: l.pkg.publishedAt,
           url: l.url,
         })),
@@ -15686,138 +15804,205 @@ Expected: PASS (4 tests).
 
 - [ ] **Step 8: Tests de la commande `kibo market`**
 
-`packages/cli/src/market.test.ts` :
+`packages/cli/src/commands/market.test.ts` :
 ```ts
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { RpcRequest } from "@kibo/schema";
 import { decodeKpkg } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
-import { runMarketCommand } from "./market";
+import { type MarketCliDeps, runMarketCommand } from "./market";
 
 let dir: string;
 const out: string[] = [];
-const now = () => new Date("2026-09-26T10:00:00Z");
+const err: string[] = [];
+const deps = (rpc: MarketCliDeps["rpc"] = mock(async () => null) as MarketCliDeps["rpc"]): MarketCliDeps => ({
+  rpc,
+  out: (l) => out.push(l),
+  err: (l) => err.push(l),
+  now: () => new Date("2026-09-26T10:00:00Z"),
+});
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "kibo-cli-"));
   out.length = 0;
+  err.length = 0;
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 test("keygen writes a private key file readable by its owner only", async () => {
   const file = join(dir, "source.key");
-  expect(await runMarketCommand(["keygen", "--out", file], { rpc: mock(async () => null), out: (t) => out.push(t), now })).toBe(0);
+  expect(await runMarketCommand(["keygen"], { out: file }, deps())).toBe(0);
   expect(statSync(file).mode & 0o777).toBe(0o600);
-  expect(out.join("")).toContain("SHA256");
+  expect(out.join("\n")).toContain("SHA256");
 });
 
 test("pack asks the daemon for a signed package and writes it", async () => {
   const made = await makeTestPackage({ id: "burndown", version: "0.1.0" });
-  const rpc = mock(async (_: RpcRequest) => made.pkg);
+  const rpc = mock(async () => made.pkg);
   const file = join(dir, "burndown-0.1.0.kpkg");
-  expect(await runMarketCommand(["pack", "burndown@0.1.0", "--out", file], { rpc, out: (t) => out.push(t), now })).toBe(0);
+  expect(await runMarketCommand(["pack", "burndown@0.1.0"], { out: file }, deps(rpc as MarketCliDeps["rpc"]))).toBe(0);
   expect(rpc).toHaveBeenCalledWith({ method: "exportKpkg", id: "burndown", version: "0.1.0" });
   expect(decodeKpkg(new Uint8Array(readFileSync(file))).hash).toBe(made.pkg.hash);
 });
 
 test("an unknown sub-command prints the usage and fails", async () => {
-  expect(await runMarketCommand(["nope"], { rpc: mock(async () => null), out: (t) => out.push(t), now })).toBe(1);
-  expect(out.join("")).toContain("kibo market keygen");
+  expect(await runMarketCommand(["nope"], {}, deps())).toBe(2);
+  expect(err.join("\n")).toContain("kibo market keygen");
 });
 ```
 
-Run: `bun test packages/cli/src/market.test.ts`
+Run: `bun test packages/cli/src/commands/market.test.ts`
 Expected: FAIL avec « Cannot find module './market' ».
 
-- [ ] **Step 9: Implémenter `kibo market`**
+- [ ] **Step 9: Implémenter `kibo market` et `publish --to`**
 
-`packages/cli/src/market.ts` :
+Dans `packages/cli/src/args.ts`, `VALUED` gagne `"to"`, `"publisher"`, `"out"`, `"dir"`, `"key"`, `"id"`, `"name"`, `"verify"` ; `--verify` se répète : `parseArgs` garde la dernière valeur, on accepte donc une liste séparée par des virgules (`--verify <clé1>,<clé2>`).
+
+Dans `packages/cli/src/fr.ts`, ajouter à `usage` les lignes :
+```
+  kibo component publish <id> --to <source> [--publisher <nom>]
+  kibo market keygen --out <fichier>
+  kibo market pack <id>@<version> [--out <fichier>]
+  kibo market index --dir <dossier> --key <fichier> --id <source> --name <nom> [--verify <clés>]
+```
+et les textes :
 ```ts
-import { readFileSync, writeFileSync } from "node:fs";
-import { parseArgs } from "node:util";
-import { KiboError, Kpkg, type RpcRequest } from "@kibo/schema";
-import { encodeKpkg, formatFingerprint, generateKeyPair, keyFingerprint } from "@kibo/trust";
-import { z } from "zod";
-import { buildStaticIndex } from "./market-index-builder";
-
-type Deps = { rpc(req: RpcRequest): Promise<unknown>; out(text: string): void; now(): Date };
-
-const KeyFile = z.object({ publicKey: z.string(), privateKey: z.string() });
-const USAGE = [
-  "kibo market keygen --out <fichier>",
-  "kibo market pack <id>@<version> [--out <fichier>]",
-  "kibo market index --dir <dossier> --key <fichier> --id <source> --name <nom> [--verify <clé>]…",
-  "",
-].join("\n");
-
-const splitRef = (ref: string | undefined): { id: string; version: string } => {
-  const match = ref?.match(/^([a-z][a-z0-9.-]*)@(\d+\.\d+\.\d+)$/);
-  if (!match?.[1] || !match[2]) throw new KiboError("INVALID_INPUT", `expected <id>@<version>, got ${ref ?? "nothing"}`);
-  return { id: match[1], version: match[2] };
-};
-
-export async function runMarketCommand(argv: string[], deps: Deps): Promise<number> {
-  const [command, ...rest] = argv;
-  try {
-    if (command === "keygen") {
-      const { values } = parseArgs({ args: rest, options: { out: { type: "string" } } });
-      if (!values.out) throw new KiboError("INVALID_INPUT", "--out is required");
-      const keys = await generateKeyPair();
-      writeFileSync(values.out, `${JSON.stringify(keys)}\n`, { mode: 0o600, flag: "wx" });
-      deps.out(`Clé de source écrite dans ${values.out}\nEmpreinte : SHA256 ${formatFingerprint(await keyFingerprint(keys.publicKey))}\n`);
-      return 0;
-    }
-    if (command === "pack") {
-      const { values, positionals } = parseArgs({ args: rest, allowPositionals: true, options: { out: { type: "string" } } });
-      const ref = splitRef(positionals[0]);
-      const pkg = Kpkg.parse(await deps.rpc({ method: "exportKpkg", ...ref }));
-      const file = values.out ?? `${ref.id}-${ref.version}.kpkg`;
-      writeFileSync(file, encodeKpkg(pkg), { mode: 0o644 });
-      deps.out(`Paquet écrit dans ${file}\n`);
-      return 0;
-    }
-    if (command === "index") {
-      const { values } = parseArgs({
-        args: rest,
-        options: {
-          dir: { type: "string" },
-          key: { type: "string" },
-          id: { type: "string" },
-          name: { type: "string" },
-          verify: { type: "string", multiple: true },
-        },
-      });
-      if (!values.dir || !values.key || !values.id || !values.name) {
-        throw new KiboError("INVALID_INPUT", "--dir, --key, --id and --name are required");
-      }
-      const keys = KeyFile.parse(JSON.parse(readFileSync(values.key, "utf8")));
-      const result = await buildStaticIndex({
-        dir: values.dir,
-        keys,
-        id: values.id,
-        name: values.name,
-        verified: values.verify ?? [],
-        now: deps.now(),
-      });
-      deps.out(`Index n° ${result.serial} signé (${result.packages} paquets)\n`);
-      return 0;
-    }
-    deps.out(USAGE);
-    return 1;
-  } catch (e) {
-    deps.out(`${e instanceof KiboError ? e.message : String(e)}\n`);
-    return 1;
-  }
-}
+  marketUsage: [
+    "Usage :",
+    "  kibo market keygen --out <fichier>",
+    "  kibo market pack <id>@<version> [--out <fichier>]",
+    "  kibo market index --dir <dossier> --key <fichier> --id <source> --name <nom> [--verify <clés>]",
+  ].join("\n"),
+  keyWritten: (file: string, fingerprint: string) => `Clé de source écrite dans ${file} · empreinte SHA256 ${fingerprint}`,
+  packWritten: (file: string) => `Paquet écrit dans ${file}`,
+  indexSigned: (serial: number, packages: number) => `Index n° ${serial} signé (${packages} paquets)`,
+  marketPublished: (source: string, serial: number) => `Publié sur ${source} : index n° ${serial}`,
 ```
 
-Dans `packages/cli/src/main.ts`, router `market` vers `runMarketCommand(argv.slice(1), { rpc, out: (t) => process.stdout.write(t), now: () => new Date() })` et sortir avec son code. Dans `packages/cli/src/component.ts`, `publish` accepte `--to <sourceId>` et `--publisher <nom>` : il lit la version du manifeste de `components/src/<id>` et appelle `rpc({ method: "publishToMarket", id, version, sourceId, publisherName })`, puis affiche « Publié sur <sourceId> : index n° <serial> ».
+`packages/cli/src/commands/market.ts` :
+```ts
+import { readFileSync, writeFileSync } from "node:fs";
+import { KiboError, Kpkg, type RpcRequest, type RpcResult, splitRef } from "@kibo/schema";
+import { encodeKpkg, formatFingerprint, generateKeyPair, keyFingerprint } from "@kibo/trust";
+import { z } from "zod";
+import type { Parsed } from "../args";
+import { fr } from "../fr";
+import { buildStaticIndex } from "../market-index-builder";
 
-Run: `bun test packages/cli`
-Expected: PASS.
+export type MarketCliDeps = {
+  rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
+  out(line: string): void;
+  err(line: string): void;
+  now(): Date;
+};
+type Flags = Parsed["flags"];
+
+const KeyFile = z.object({ publicKey: z.string(), privateKey: z.string() });
+const text = (flags: Flags, name: string): string | null => {
+  const v = flags[name];
+  return typeof v === "string" ? v : null;
+};
+const required = (flags: Flags, name: string): string => {
+  const v = text(flags, name);
+  if (v === null) throw new KiboError("INVALID_INPUT", `--${name} is required`);
+  return v;
+};
+
+async function keygen(flags: Flags, deps: MarketCliDeps): Promise<number> {
+  const file = required(flags, "out");
+  const keys = await generateKeyPair();
+  writeFileSync(file, `${JSON.stringify(keys)}\n`, { mode: 0o600, flag: "wx" });
+  deps.out(fr.keyWritten(file, formatFingerprint(await keyFingerprint(keys.publicKey))));
+  return 0;
+}
+
+async function pack(ref: string | undefined, flags: Flags, deps: MarketCliDeps): Promise<number> {
+  if (!ref) throw new KiboError("INVALID_INPUT", "expected <id>@<version>");
+  const { id, version } = splitRef(ref);
+  const pkg = Kpkg.parse(await deps.rpc({ method: "exportKpkg", id, version }));
+  const file = text(flags, "out") ?? `${id}-${version}.kpkg`;
+  writeFileSync(file, encodeKpkg(pkg), { mode: 0o644 });
+  deps.out(fr.packWritten(file));
+  return 0;
+}
+
+async function index(flags: Flags, deps: MarketCliDeps): Promise<number> {
+  const keys = KeyFile.parse(JSON.parse(readFileSync(required(flags, "key"), "utf8")));
+  const verify = text(flags, "verify");
+  const result = await buildStaticIndex({
+    dir: required(flags, "dir"),
+    keys,
+    id: required(flags, "id"),
+    name: required(flags, "name"),
+    verified: verify ? verify.split(",").filter((k) => k.length > 0) : [],
+    now: deps.now(),
+  });
+  deps.out(fr.indexSigned(result.serial, result.packages));
+  return 0;
+}
+
+export async function runMarketCommand(argv: string[], flags: Flags, deps: MarketCliDeps): Promise<number> {
+  const [command, target] = argv;
+  if (command === "keygen") return keygen(flags, deps);
+  if (command === "pack") return pack(target, flags, deps);
+  if (command === "index") return index(flags, deps);
+  deps.err(fr.marketUsage);
+  return 2;
+}
+```
+Les `KiboError` remontent à `runCli`, qui les affiche déjà (`fr.error(code, detail)`) et sort avec 1.
+
+Dans `packages/cli/src/index.ts`, `runCli` route la portée `market` avant le contrôle de `component` :
+```ts
+  if (scope === "market") {
+    try {
+      return await runMarketCommand(positional.slice(1), flags, {
+        rpc: async (req) => (await connectDaemon(io.home)).rpc(req),
+        out: io.out,
+        err: io.err,
+        now: () => new Date(),
+      });
+    } catch (e) {
+      if (!(e instanceof KiboError)) throw e;
+      io.err(fr.error(e.code, e.detail));
+      return 1;
+    }
+  }
+```
+(ajuster le typage de `rpc` sur la signature réelle de `DaemonClient.rpc`, générique par méthode). Dans `dispatch`, `publish` appelle `marketPublishCommand(target, to, text(flags, "publisher"), io)` quand `--to` est présent, sinon `publishCommand` inchangé.
+
+Dans `packages/cli/src/commands/publish.ts`, ajouter :
+```ts
+export async function marketPublishCommand(
+  id: string,
+  sourceId: string,
+  publisherName: string | null,
+  io: CliIo,
+): Promise<number> {
+  const client = await connect(io);
+  if (!client) return 1;
+  const manifest = ComponentManifest.parse(
+    JSON.parse(await Bun.file(join(componentDir(id, io), "kibo.component.json")).text()),
+  );
+  const r = await client.rpc({
+    method: "publishToMarket",
+    id,
+    version: manifest.version,
+    sourceId,
+    ...(publisherName ? { publisherName } : {}),
+  });
+  io.out(fr.marketPublished(sourceId, r.serial));
+  return 0;
+}
+```
+La version publiée est celle du manifeste du dossier du composant ; elle doit déjà exister dans le registre local (sinon `NOT_FOUND` du démon : publier d'abord avec `kibo component publish <id>`).
+
+Ajouter `"@kibo/trust": "workspace:*"` aux `dependencies` de `packages/cli/package.json`.
+
+Run: `bun install && bun test packages/cli`
+Expected: PASS ; les tests existants de la CLI passent sans changement de leurs attentes (hors ajout des lignes d'usage si un test compare `fr.usage` : l'adapter en ajout).
 
 - [ ] **Step 10: Vérifications et commit de la CLI**
 
@@ -15825,43 +16010,57 @@ Run: `bun run check && bun run typecheck`
 Expected: aucune erreur.
 
 ```bash
-git add packages/cli/package.json packages/cli/src/market.ts packages/cli/src/market.test.ts packages/cli/src/market-index-builder.ts packages/cli/src/market-index-builder.test.ts packages/cli/src/main.ts packages/cli/src/component.ts bun.lock
+git add packages/cli/package.json packages/cli/src/args.ts packages/cli/src/fr.ts packages/cli/src/index.ts packages/cli/src/commands/market.ts packages/cli/src/commands/market.test.ts packages/cli/src/commands/publish.ts packages/cli/src/market-index-builder.ts packages/cli/src/market-index-builder.test.ts bun.lock
 git commit -m "feat(cli): commandes kibo market"
 ```
 
 ---
-
 ### Task 23: Partager et rejoindre un projet
 
 Vague 6. Spec G §3.3, §3.4, §5 (point 2), §6 (rôles, retrait), §6.2, §8 (opt-in, test des secrets) ; décisions 7, 9, 22. Review Focus 4.
 
 **Files:**
-- Create: `packages/daemon/src/sync/share.ts`
-- Create: `packages/daemon/src/sync/share.test.ts`
-- Modify: `packages/daemon/src/sync/rpc.ts` (RPC de partage)
-- Modify: `packages/daemon/src/service.ts` (`meta.folder` lu depuis `project_settings` pour un projet partagé)
+- Create: `packages/daemon/src/collab/share.ts`
+- Create: `packages/daemon/src/collab/share.test.ts`
+- Modify: `packages/daemon/src/collab/rpc.ts` (RPC de partage), `packages/daemon/src/collab/bootstrap.ts` (`ShareDeps` passé à `handleSyncRpc`, identité locale), `packages/daemon/src/testing/sync-harness.ts` (`share` par démon)
+- Create: `packages/daemon/src/project-folder.ts`, `packages/daemon/src/project-folder.test.ts` (dossier local d'un projet partagé)
+- Modify: `packages/daemon/src/docs.ts`, `packages/daemon/src/service.ts` (`docs.projectMeta`, `docs.identity` / `setIdentity`, `getProject` et `listProjects` avec le dossier local)
+- Modify: `packages/daemon/src/agents/data-port.ts` (`ticketContext`), `packages/daemon/src/components/service.ts` (projet des notes), `packages/daemon/src/integrations/host.ts` (`gitRemoteUrl`, `identity`), `packages/daemon/src/integrations/types.ts` (`IntegrationHost.identity`), `packages/daemon/src/sync/engine.ts` (`runnable`), `packages/daemon/src/sync/module.ts` (`createBinding`) : lecteurs du dossier et de l'identité locale
 - Modify: `packages/core/src/keys.ts`, `packages/core/src/keys.test.ts` (`restoreLocalAllocation`)
-- Modify: `packages/daemon/src/main.ts` (dépendances de partage passées à `handleSyncRpc`)
 
 **Interfaces:**
-- Consumes: `SyncClient` (`request`, `send`, `onFrame`, `attachProject`, `detachProject`, `status`, `membersOf`), `SyncDb`, `ProjectHostRegistry` (`host`, `setLocked`, `mutate`, `addJoinedProject`, `localUser`), `startSyncHarness` (T21) ; `migrateForSharing`, `allocateTicketKeys`, `getKeyAllocator`, `listTickets` (T6, T7) ; `toBase64`, `fromBase64`, `generateKeyPair` (T2) ; `MemberInfo`, `ProjectSyncInfo`, `Role` (T4) ; `listDomains(ws)` (phase 2) ; `project_settings` (phase 4).
+- Consumes: `SyncClient` (`request`, `send`, `onFrame`, `attachProject`, `detachProject`, `status`, `membersOf`), `SyncDb`, `ProjectHostRegistry` (`host`, `setLocked`, `mutate`, `addJoinedProject`, `localUser`), `startSyncHarness` (T21) ; `migrateForSharing`, `allocateTicketKeys`, `getKeyAllocator`, `listTickets` (T6, T7) ; `toBase64`, `fromBase64`, `generateKeyPair` (T2) ; `MemberInfo`, `ProjectSyncInfo`, `MemberRole` (T4) ; `listDomains(ws)`, `listGuidelines(ws)` (`@kibo/core/agent-config`) ; `createProjectSettings(db): ProjectSettings` (`packages/daemon/src/notes/settings.ts`) ; `getBinding(doc, id)` (`@kibo/core`) ; `ShareMigrationInput` (T7, domaines avec leurs guidelines).
 - Produces :
 ```ts
 export type ShareDeps = { client: SyncClient; db: SyncDb; hosts: ProjectHostRegistry;
-  domains(): { id: string; name: string; color: string; guidelines: string }[];
-  settings: { get(projectId: string, key: string): string | null; set(projectId: string, key: string, value: string | null): void };
+  domains(): ShareMigrationInput["domains"];
+  settings: ProjectSettings;
   syncInfo(projectId: string): ProjectSyncInfo };
+// project-folder.ts
+export const LOCAL_FOLDER_KEY = "folder";
+export function withLocalFolder(meta: ProjectMeta, settings: ProjectSettings): ProjectMeta;
+// docs.ts (ajouts)
+projectMeta(projectId: string): ProjectMeta;            // meta du doc projet, dossier local superposé
+identity(projectId: string): string; setIdentity(fn: (projectId: string) => string): () => void;
+// integrations/types.ts
+IntegrationHost.identity(projectId: string): string;
 export function shareProject(deps: ShareDeps, projectId: string): Promise<ProjectSyncInfo>;
 export function createProjectInvite(deps: ShareDeps, input: { projectId: string; role: "editor" | "viewer" }): Promise<{ code: string; expiresAt: number }>;
 export function joinProject(deps: ShareDeps, input: { code: string; folder: string | null }): Promise<ProjectMeta>;
-export function setMemberRole(deps: ShareDeps, input: { projectId: string; userId: string; role: Role | null }): Promise<MemberInfo[]>;
+export function setMemberRole(deps: ShareDeps, input: { projectId: string; userId: string; role: MemberRole | null }): Promise<MemberInfo[]>;
 export function unshareProject(deps: ShareDeps, projectId: string): Promise<void>;
 export function setBindingRunner(deps: ShareDeps, input: { projectId: string; bindingId: string }): void;
 // core/keys.ts
 export function restoreLocalAllocation(doc: LoroDoc): { ticketId: string; key: string }[];   // attribue les clés en attente puis keyAllocator = "local"
 ```
 - `handleSyncRpc(client, req, ctx, share?: ShareDeps)` : quatrième paramètre ajouté.
-- Hypothèse v0.6 (vérifiée en T0) : une liaison est lue par `doc.getMap("bindings").get(id)` sous forme d'objet `{ createdBy, runner, … }` ; la phase 5 compare `binding.runner` à l'identité locale via une fonction `localIdentity()` qui renverra désormais l'`userId` pour un projet partagé.
+- Vérifié en T0 :
+  - Liaisons : `Binding = { id, adapter: "github-issues", config: BindingConfig, createdBy, runner }` en valeur JSON dans la map `bindings` (`getBinding`, `listBindings`, `addBinding` de `packages/core/src/bindings.ts`, validées par Zod à la lecture). **Il n'existe pas de `localIdentity()`** : la sync d'intégrations compare directement `b.runner === host.user` (`packages/daemon/src/sync/engine.ts`, `runnable()`), et `createBinding` écrit `createdBy: host.user, runner: host.user` (`packages/daemon/src/sync/module.ts`) ; `host.user` est le nom d'utilisateur OS. Après `migrateForSharing` (T7), `runner` et `createdBy` valent l'`userId` du compte : sans correctif, **plus aucune liaison d'un projet partagé ne s'exécuterait**. Cette tâche introduit donc `docs.identity(projectId)` (l'`userId` du compte pour un projet partagé, `opts.user` sinon), exposé en `IntegrationHost.identity(projectId)` et utilisé par `runnable()` et `createBinding`.
+  - Dossier : `meta.folder` est lu directement sur le doc projet par `getProject` (`readProject`), `ticketContext` (`agents/data-port.ts`, qui alimente `run-launch.ts` et donc les worktrees), le service de notes (`components/service.ts`, `readProject(...).meta`) et `gitRemoteUrl` (`integrations/host.ts`, `getProjectMeta`) ; `code/code-service.ts` passe par `getProject` ; `pr-poller.ts` lit `listProjects` (copie du doc workspace, locale, jamais migrée). Après le partage, le doc projet n'a plus de dossier (T7) : tous ces lecteurs passent par `docs.projectMeta(projectId)`, qui superpose `project_settings(projectId, "folder")`.
+  - `project_settings` existe (`createProjectSettings(db): ProjectSettings = { get(projectId, key): string | null; set(projectId, key, value: string): void }`, `packages/daemon/src/notes/settings.ts`, table créée par `ensureSettingsTable`) ; pas de suppression, `set` n'accepte pas `null`.
+  - `registerProject(ws, meta)` (`packages/core/src/workspace.ts`) refuse une clé **ou** un id déjà présents avec `INVALID_INPUT` « project KIB already exists » : `joinProject` vérifie la clé lui-même avant d'appeler `addJoinedProject`, pour distinguer « clé en double » de « projet déjà présent ».
+  - Domaines : `listDomains(ws): Domain[]` avec `Domain = { id, name, color }` ; les guidelines d'un domaine sont les `Guideline` de `listGuidelines(ws)` dont `owner.scope === "domain"` (voir T7).
+  - `Mes tickets` (`packages/ui/src/mine/my-tickets.ts`, `isMine`) et `getSession.user` comparent l'assigné humain au nom d'utilisateur OS : pour un projet partagé, l'assigné devient l'`userId` (T7) ; l'affichage est l'affaire de T29/T30, noté au chef d'équipe.
 
 - [ ] **Step 1: Test de `restoreLocalAllocation`**
 
@@ -15898,12 +16097,12 @@ Expected: PASS.
 
 - [ ] **Step 3: Écrire les tests du partage**
 
-`packages/daemon/src/sync/share.test.ts` :
+`packages/daemon/src/collab/share.test.ts` :
 ```ts
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { listTickets } from "@kibo/core";
+import { addBinding, getBinding, listTickets } from "@kibo/core";
 import type { ProjectMeta, RpcRequest } from "@kibo/schema";
 import { ProjectRoom } from "@kibo/sync-server";
 import { generateKeyPair } from "@kibo/trust";
@@ -15912,13 +16111,12 @@ import { startSyncHarness, type SyncHarness } from "../testing/sync-harness";
 import { createProjectInvite, joinProject, type ShareDeps, setBindingRunner, setMemberRole, shareProject } from "./share";
 
 let h: SyncHarness;
-const ctx = { sessionHash: "t", remote: false };
 const d = (i: number) => {
   const x = h.daemons[i];
   if (!x) throw new Error("no daemon");
   return x;
 };
-const rpc = (i: number, req: RpcRequest) => d(i).service.handle(req, ctx);
+const rpc = async (i: number, req: RpcRequest) => d(i).service.handle(req);
 const deps = (i: number): ShareDeps => d(i).share;
 
 beforeEach(async () => {
@@ -15969,7 +16167,7 @@ test("no fake secret ever reaches the server", async () => {
   const code = await createProjectInvite(deps(0), { projectId: p, role: "editor" });
   await joinProject(deps(1), { code: code.code, folder: null });
   await rpc(1, { method: "command", projectId: p, command: { method: "createTicket", title: "Depuis Léa" } });
-  await h.waitUntil(() => listTickets(d(0).service.hosts.host(p).doc()).length === 2);
+  await h.waitUntil(() => listTickets(d(0).hosts.host(p).doc()).length === 2);
   const device = JSON.parse((await d(0).secrets.get("sync:device")) ?? "{}") as { privateKey: string };
   const bytes = serverBytes();
   expect(bytes.includes(Buffer.from("ghp_TESTSECRET000"))).toBe(false);
@@ -16005,7 +16203,7 @@ test("an editor joins and sees the tickets; the owner can remove her", async () 
   const { code } = await createProjectInvite(deps(0), { projectId: p, role: "editor" });
   const meta = await joinProject(deps(1), { code: `  ${code.toLowerCase()} `, folder: "/Users/lea/Kibo" });
   expect(meta.key).toBe("KIB");
-  expect(listTickets(d(1).service.hosts.host(p).doc()).map((t) => t.title)).toEqual(["Schéma"]);
+  expect(listTickets(d(1).hosts.host(p).doc()).map((t) => t.title)).toEqual(["Schéma"]);
   const leaId = d(1).client.status().user?.id ?? "";
   const members = await setMemberRole(deps(0), { projectId: p, userId: leaId, role: null });
   expect(members.map((m) => m.userId)).not.toContain(leaId);
@@ -16037,41 +16235,64 @@ test("joining a project whose key is already used locally fails clearly", async 
 
 test("an editor who does not own a binding cannot take its runner", async () => {
   const p = await sharedProject();
-  d(0).service.hosts.mutate(p, (doc) => {
-    doc.getMap("bindings").set("b1", { id: "b1", createdBy: d(0).client.status().user?.id, runner: d(0).client.status().user?.id });
-    doc.commit();
+  const adamId = d(0).client.status().user?.id ?? "";
+  d(0).hosts.mutate(p, (doc) => {
+    addBinding(doc, {
+      id: "b1",
+      adapter: "github-issues",
+      config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+      createdBy: adamId,
+      runner: adamId,
+    });
   });
   const { code } = await createProjectInvite(deps(0), { projectId: p, role: "editor" });
   await joinProject(deps(1), { code, folder: null });
-  await h.waitUntil(() => d(1).service.hosts.host(p).doc().getMap("bindings").get("b1") !== undefined);
+  await h.waitUntil(() => d(1).hosts.host(p).doc().getMap("bindings").get("b1") !== undefined);
   expect(() => setBindingRunner(deps(1), { projectId: p, bindingId: "b1" })).toThrow("FORBIDDEN");
   setBindingRunner(deps(0), { projectId: p, bindingId: "b1" });
+  expect(getBinding(d(0).hosts.host(p).doc(), "b1").runner).toBe(adamId);
+});
+
+test("the local identity of a shared project is the account, not the OS user", async () => {
+  const p = await sharedProject();
+  const unshared = (await rpc(0, { method: "createProject", name: "Perso", key: "PER", folder: null, color: "#14B8A6" })) as ProjectMeta;
+  expect(d(0).service.docs.identity(p)).toBe(d(0).client.status().user?.id ?? "");
+  expect(d(0).service.docs.identity(unshared.id)).toBe("adam");
 });
 ```
-Le harnais (T21) gagne `share: ShareDeps` sur chaque `HarnessDaemon`, construit comme dans `main.ts` (étape 6), avec des domaines vides et une table `project_settings` réelle.
+Le harnais (T21) gagne `share: ShareDeps` sur chaque `HarnessDaemon`, construit comme dans `collab/bootstrap.ts` (étape 6), avec des domaines vides et `createProjectSettings(store.db)` ; il installe aussi `service.docs.setIdentity` comme `startCollab`. Le nom d'utilisateur OS du démon 0 du harnais est `adam` (T21).
 
 Le test des secrets cherche le jeton GitHub en clair et chaque clé privée en base64 comme décodée, dans le fichier `sync.db` et ses fichiers WAL (qui contiennent snapshots et mises à jour).
 
 - [ ] **Step 4: Vérifier l'échec**
 
-Run: `bun test packages/daemon/src/sync/share.test.ts`
+Run: `bun test packages/daemon/src/collab/share.test.ts`
 Expected: FAIL « Cannot find module './share' ».
 
 - [ ] **Step 5: Implémenter `share.ts`**
 
-`packages/daemon/src/sync/share.ts` :
+`packages/daemon/src/collab/share.ts` :
 ```ts
-import { getProjectMeta, listTickets, migrateForSharing, restoreLocalAllocation } from "@kibo/core";
+import {
+  getBinding,
+  getProjectMeta,
+  listTickets,
+  migrateForSharing,
+  restoreLocalAllocation,
+  type ShareMigrationInput,
+} from "@kibo/core";
 import {
   KiboError,
   type MemberInfo,
+  type MemberRole,
   type ProjectMeta,
   type ProjectSyncInfo,
-  type Role,
   type ServerFrame,
 } from "@kibo/schema";
 import { fromBase64, toBase64 } from "@kibo/trust";
 import { LoroDoc } from "loro-crdt";
+import type { ProjectSettings } from "../notes/settings";
+import { LOCAL_FOLDER_KEY } from "../project-folder";
 import type { SyncClient } from "./sync-client";
 import type { SyncDb } from "./sync-db";
 import type { ProjectHostRegistry } from "./types";
@@ -16080,8 +16301,8 @@ export type ShareDeps = {
   client: SyncClient;
   db: SyncDb;
   hosts: ProjectHostRegistry;
-  domains(): { id: string; name: string; color: string; guidelines: string }[];
-  settings: { get(projectId: string, key: string): string | null; set(projectId: string, key: string, value: string | null): void };
+  domains(): ShareMigrationInput["domains"];
+  settings: ProjectSettings;
   syncInfo(projectId: string): ProjectSyncInfo;
 };
 
@@ -16110,12 +16331,12 @@ export async function shareProject(deps: ShareDeps, projectId: string): Promise<
   try {
     const doc = host.doc();
     const used = new Set(listTickets(doc).map((t) => t.domainId));
-    const domains = deps.domains().filter((dm) => used.has(dm.id));
+    const domains = deps.domains().filter((dm) => used.has(dm.domain.id));
     const moved = { folder: null as string | null };
     deps.hosts.mutate(projectId, (d) => {
       moved.folder = migrateForSharing(d, { localUser: deps.hosts.localUser(), userId, domains }).folder;
     });
-    if (moved.folder !== null) deps.settings.set(projectId, "folder", moved.folder);
+    if (moved.folder !== null) deps.settings.set(projectId, LOCAL_FOLDER_KEY, moved.folder);
     await deps.client.request(
       {
         type: "share",
@@ -16170,16 +16391,10 @@ export async function joinProject(deps: ShareDeps, input: { code: string; folder
   const doc = new LoroDoc();
   doc.import(fromBase64(update.bytes));
   const key = getProjectMeta(doc).key;
-  let meta: ProjectMeta;
-  try {
-    meta = deps.hosts.addJoinedProject(doc, input.folder);
-  } catch (e) {
-    if (e instanceof KiboError && e.code === "INVALID_INPUT") {
-      throw new KiboError("INVALID_INPUT", `duplicate project key ${key}`);
-    }
-    throw e;
-  }
-  if (input.folder !== null) deps.settings.set(meta.id, "folder", input.folder);
+  const keys = deps.hosts.projectIds().map((id) => getProjectMeta(deps.hosts.host(id).doc()).key);
+  if (keys.includes(key)) throw new KiboError("INVALID_INPUT", `duplicate project key ${key}`);
+  const meta = deps.hosts.addJoinedProject(doc, input.folder);
+  if (input.folder !== null) deps.settings.set(meta.id, LOCAL_FOLDER_KEY, input.folder);
   deps.db.upsertProject({
     projectId: meta.id,
     enabled: true,
@@ -16206,7 +16421,7 @@ function nextMembers(deps: ShareDeps, projectId: string): Promise<MemberInfo[]> 
 
 export async function setMemberRole(
   deps: ShareDeps,
-  input: { projectId: string; userId: string; role: Role | null },
+  input: { projectId: string; userId: string; role: MemberRole | null },
 ): Promise<MemberInfo[]> {
   requireOnline(deps);
   requireOwner(deps, input.projectId);
@@ -16229,15 +16444,12 @@ export function setBindingRunner(deps: ShareDeps, input: { projectId: string; bi
   const config = deps.db.config();
   if (!config) throw new KiboError("INVALID_INPUT", "no sync server is configured");
   const row = deps.db.project(input.projectId);
-  const doc = deps.hosts.host(input.projectId).doc();
-  const binding = doc.getMap("bindings").get(input.bindingId) as { createdBy?: string } | undefined;
-  if (!binding) throw new KiboError("NOT_FOUND", `binding ${input.bindingId} not found`);
+  const binding = getBinding(deps.hosts.host(input.projectId).doc(), input.bindingId);
   if (row?.role !== "owner" && binding.createdBy !== config.userId) {
     throw new KiboError("FORBIDDEN", "only the binding owner or a project owner can change its runner");
   }
   deps.hosts.mutate(input.projectId, (d) => {
     d.getMap("bindings").set(input.bindingId, { ...binding, runner: config.userId });
-    d.commit();
   });
 }
 ```
@@ -16267,14 +16479,49 @@ const need = (share: ShareDeps | undefined): ShareDeps => {
 };
 ```
 
-- [ ] **Step 6: Dossier local et câblage**
+- [ ] **Step 6: Dossier local, identité locale et câblage**
 
-Dans `service.ts`, `getProject` et `listProjects` remplacent `meta.folder` par `opts.localFolder?.(projectId) ?? meta.folder`, où l'option `localFolder` lit `project_settings(projectId, "folder")`. Un projet jamais partagé n'a pas cette clé : comportement v0.6 inchangé. Dans `main.ts` et dans `startSyncHarness`, `ShareDeps` est construit avec `client`, `syncDb`, `service.hosts`, `domains: () => listDomains(workspace)` (phase 2), `settings` (accès `project_settings`) et `syncInfo: (id) => projectSyncInfo({ row: syncDb.project(id), doc: service.hosts.host(id).doc(), members: client.membersOf(id) })`.
+6a. Test `packages/daemon/src/project-folder.test.ts` :
+```ts
+import { Database } from "bun:sqlite";
+import { expect, test } from "bun:test";
+import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
+import { LOCAL_FOLDER_KEY, withLocalFolder } from "./project-folder";
+
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6" };
+
+test("a shared project gets its folder back from the local settings", () => {
+  const db = new Database(":memory:");
+  ensureSettingsTable(db);
+  const settings = createProjectSettings(db);
+  expect(withLocalFolder(meta, settings).folder).toBeNull();
+  settings.set("p1", LOCAL_FOLDER_KEY, "/Users/adam/goinfre/Kibo");
+  expect(withLocalFolder(meta, settings).folder).toBe("/Users/adam/goinfre/Kibo");
+  expect(withLocalFolder({ ...meta, folder: "/ailleurs" }, settings).folder).toBe("/Users/adam/goinfre/Kibo");
+});
+```
+Run ⇒ FAIL (`./project-folder` introuvable). `packages/daemon/src/project-folder.ts` :
+```ts
+import type { ProjectMeta } from "@kibo/schema";
+import type { ProjectSettings } from "./notes/settings";
+
+export const LOCAL_FOLDER_KEY = "folder";
+
+export function withLocalFolder(meta: ProjectMeta, settings: ProjectSettings): ProjectMeta {
+  const folder = settings.get(meta.id, LOCAL_FOLDER_KEY);
+  return folder === null ? meta : { ...meta, folder };
+}
+```
+Run ⇒ PASS. Un projet jamais partagé n'a pas cette clé : comportement v0.6 inchangé.
+
+6b. `Docs` gagne `projectMeta(projectId)` (`withLocalFolder(getProjectMeta(doc), settings)`, avec `ensureSettingsTable(store.db)` puis `createProjectSettings(store.db)` créés dans `createService`), `identity(projectId)` (par défaut `opts.user`) et `setIdentity(fn)` (remplace la fonction, renvoie la restauration). Lecteurs à brancher sur `docs.projectMeta` : `getProject` (`{ ...readProject(doc), meta: docs.projectMeta(id), … }`), `ticketContext` de `agents/data-port.ts` (`project.meta`), le `project` du service de notes dans `components/service.ts`, `gitRemoteUrl` dans `integrations/host.ts`. `IntegrationHost` gagne `identity(projectId): string` (délègue à `docs.identity`) ; `runnable()` de `sync/engine.ts` filtre `b.runner === host.identity(p.id)` et `createBinding` de `sync/module.ts` écrit `createdBy` et `runner` à `host.identity(req.projectId)`. Les tests existants de `sync/` et `integrations/` passent sans changer leurs attentes : leur faux hôte (`integrations/testing/fake-host.ts`) implémente `identity: () => user`. `service.ts` doit rester sous ~300 lignes (règle de `CLAUDE.md`) : si ces ajouts la dépassent, sortir la construction de l'objet `docs` dans `packages/daemon/src/project-docs.ts` (`createProjectDocs(store, opts)`), sans autre changement.
+
+6c. `collab/bootstrap.ts` (T21) construit `ShareDeps` : `client`, `db: syncDb`, `hosts`, `domains: () => listDomains(service.docs.workspace).map((domain) => ({ domain, guidelines: listGuidelines(service.docs.workspace).filter((g) => g.owner.scope === "domain" && g.owner.domainId === domain.id).map((g) => ({ path: g.path, content: g.content })) }))`, `settings: createProjectSettings(store.db)`, `syncInfo: (id) => projectSyncInfo({ row: syncDb.project(id), doc: hosts.host(id).doc(), members: client.membersOf(id) })` ; il passe `share` à `handleSyncRpc` et installe `service.docs.setIdentity((id) => { const row = syncDb.project(id); const config = syncDb.config(); return row && config ? config.userId : opts.user; })`. `startSyncHarness` fait de même.
 
 - [ ] **Step 7: Vérifier**
 
-Run: `bun test packages/daemon/src/sync/share.test.ts packages/core/src/keys.test.ts`
-Expected: PASS (8 tests de partage, 1 de `core`).
+Run: `bun test packages/daemon/src/collab/share.test.ts packages/daemon/src/project-folder.test.ts packages/core/src/keys.test.ts packages/daemon/src/sync packages/daemon/src/integrations`
+Expected: PASS (9 tests de partage, 1 de dossier local, 1 de `core`, sync d'intégrations inchangée).
 
 Run: `bun test packages components && bun run check && bun run typecheck`
 Expected: PASS.
@@ -16282,8 +16529,13 @@ Expected: PASS.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/daemon/src/sync/share.ts packages/daemon/src/sync/share.test.ts packages/daemon/src/sync/rpc.ts \
-  packages/daemon/src/service.ts packages/daemon/src/main.ts packages/daemon/src/testing/sync-harness.ts \
+git add packages/daemon/src/project-folder.ts packages/daemon/src/project-folder.test.ts packages/daemon/src/docs.ts \
+  packages/daemon/src/service.ts packages/daemon/src/agents/data-port.ts packages/daemon/src/components/service.ts \
+  packages/daemon/src/integrations/host.ts packages/daemon/src/integrations/types.ts \
+  packages/daemon/src/integrations/testing/fake-host.ts packages/daemon/src/sync/engine.ts packages/daemon/src/sync/module.ts
+git commit -m "feat(daemon): dossier et identité locaux"
+git add packages/daemon/src/collab/share.ts packages/daemon/src/collab/share.test.ts packages/daemon/src/collab/rpc.ts \
+  packages/daemon/src/collab/bootstrap.ts packages/daemon/src/testing/sync-harness.ts \
   packages/core/src/keys.ts packages/core/src/keys.test.ts
 git commit -m "feat(daemon): partager et rejoindre un projet"
 ```
@@ -16292,17 +16544,17 @@ git commit -m "feat(daemon): partager et rejoindre un projet"
 
 ### Task 24: Présence
 
-Vague 6. Spec G §6.1 ; décision 10 (côté serveur, livrée en T17) ; décision 19 (exposition aux composants, T30).
+Vague 7. Spec G §6.1 ; décision 10 (côté serveur, livrée en T17) ; décision 19 (exposition aux composants, T30).
 
 **Files:**
-- Create: `packages/daemon/src/sync/presence.ts`
-- Create: `packages/daemon/src/sync/presence.test.ts`
-- Modify: `packages/daemon/src/sync/rpc.ts` (`setPresence`, `getPresence`)
-- Modify: `packages/daemon/src/main.ts` (création du hub, minuterie de 10 s, branchement des runs)
+- Create: `packages/daemon/src/collab/presence.ts`
+- Create: `packages/daemon/src/collab/presence.test.ts`
+- Modify: `packages/daemon/src/collab/rpc.ts` (`setPresence`, `getPresence`)
+- Modify: `packages/daemon/src/collab/bootstrap.ts` (création du hub, minuterie de 10 s, trames `presence`), `packages/daemon/src/daemon.ts` (branchement des runs de l'orchestrateur, créé après `startCollab`)
 - Modify: `packages/daemon/src/testing/sync-harness.ts` (hub et faux runs par démon)
 
 **Interfaces:**
-- Consumes: `SyncClient.onFrame`, `SyncClient.send`, `SyncClient.status`, `SyncDb`, `startSyncHarness` (T21) ; `PresenceState`, `PresenceRun`, `PresencePeer`, `SYNC_LIMITS`, `ClientFrame`, `DaemonEvent` (T4) ; `toBase64`, `fromBase64` (T2) ; `EphemeralStore` (`loro-crdt`) ; runs actifs (phase 2).
+- Consumes: `SyncClient.onFrame`, `SyncClient.send`, `SyncClient.status`, `SyncDb`, `startSyncHarness` (T21) ; `PresenceState`, `PresenceRun`, `PresencePeer`, `SYNC_LIMITS`, `ClientFrame` (T4), `ChangeMessage` avec `{ type: "presence.changed"; projectId }` (T4) ; `toBase64`, `fromBase64` (T2) ; `EphemeralStore` (`loro-crdt`) ; `Orchestrator.state(): AgentsState`, `Orchestrator.onRunState(listener: (run: RunView) => void): () => void`, `isTerminal(state)` (`@kibo/schema`, phase 2) ; `RpcHandler`, `RpcContext` (T9).
 - Produces :
 ```ts
 export type PresenceDeps = {
@@ -16311,10 +16563,11 @@ export type PresenceDeps = {
   runs(projectId: string): PresenceRun[];
   shared(projectId: string): boolean;
   online(): boolean;
-  emit(event: DaemonEvent): void;
+  emit(message: ChangeMessage): void;
   log(message: string, error?: unknown): void;
   timeoutMs: number;
 };
+export function presenceRuns(runs: Pick<RunView, "projectId" | "ticketKey" | "profileName" | "state">[], projectId: string): PresenceRun[];
 export class PresenceHub {
   constructor(deps: PresenceDeps);
   set(projectId: string, where: { pageId: string | null; ticketId: string | null }): void;
@@ -16328,18 +16581,20 @@ export class PresenceHub {
 export type FakeRuns = { active(): (PresenceRun & { projectId: string; ticketId: string })[];
   set(runs: (PresenceRun & { projectId: string; ticketId: string })[]): void; onChange(listener: () => void): () => void };
 ```
-- `HarnessDaemon` gagne `presence: PresenceHub` et `runs: FakeRuns` ; `startSyncHarness(opts: { daemons: number; presenceTimeoutMs?: number })`.
-- Hypothèse v0.6 (vérifiée en T0) : chaque élément de `runs.active()` porte `projectId`, et `runs.onChange(listener)` notifie tout changement d'état d'un run.
+- `HarnessDaemon` gagne `presence: PresenceHub`, `runs: FakeRuns` et `handler: RpcHandler` (le même gestionnaire que `startCollab`, pour appeler `setPresence` / `getPresence` comme l'UI) ; `startSyncHarness(opts: { daemons: number; presenceTimeoutMs?: number })`.
+- `startCollab` (T21) renvoie en plus `presence: PresenceHub` et `attachRuns(source: { state(): AgentsState; onRunState(listener: (run: RunView) => void): () => void }): () => void`.
+- Vérifié en T0 : il n'existe pas de `runs.active()` ni de `runs.onChange`. Les runs sont ceux de l'orchestrateur (`packages/daemon/src/agents/orchestrator-types.ts`) : `state().runs: RunView[]`, chaque `RunView` porte `projectId: string | null`, `ticketKey: string | null`, `profileId`, `profileName` (le nom affiché, « opus-dev-1 », celui de `AgentBadge`) et `state: RunState` ; les runs terminés y restent (`isTerminal(state)` les distingue) ; `onRunState(listener)` notifie chaque changement d'état, `onChange` tout changement de l'état global. Dans `daemon.ts`, l'orchestrateur est créé **après** le serveur, donc après `startCollab` : la source des runs se branche ensuite par `collab.attachRuns(orchestrator)`, et vaut « aucun run » d'ici là.
 
 - [ ] **Step 1: Écrire les tests**
 
-`packages/daemon/src/sync/presence.test.ts` :
+`packages/daemon/src/collab/presence.test.ts` :
 ```ts
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ProjectMeta, RpcRequest } from "@kibo/schema";
 import { startSyncHarness, type SyncHarness } from "../testing/sync-harness";
+import { presenceRuns } from "./presence";
 import { createProjectInvite, joinProject, shareProject } from "./share";
 
 let h: SyncHarness;
@@ -16350,7 +16605,10 @@ const d = (i: number) => {
   if (!x) throw new Error("no daemon");
   return x;
 };
-const rpc = (i: number, req: RpcRequest) => d(i).service.handle(req, ctx);
+const rpc = async (i: number, req: RpcRequest) => {
+  const out = await d(i).handler(req, ctx);
+  return out.handled ? out.result : d(i).service.handle(req);
+};
 
 beforeEach(async () => {
   h = await startSyncHarness({ daemons: 2, presenceTimeoutMs: 400 });
@@ -16405,6 +16663,13 @@ test("presence is never written to disk", async () => {
   }
 });
 
+test("only live runs of the project are shown, by profile name", () => {
+  const run = { projectId: "p1", ticketKey: "KIB-12", profileName: "opus-dev-1", state: "running" as const };
+  expect(
+    presenceRuns([run, { ...run, state: "done" }, { ...run, projectId: "p2" }, { ...run, projectId: null }], "p1"),
+  ).toEqual([{ ticketKey: "KIB-12", profile: "opus-dev-1", state: "running" }]);
+});
+
 test("presence is ignored for a project that is not shared", async () => {
   const meta = (await rpc(0, { method: "createProject", name: "Solo", key: "SOL", folder: null, color: "#14B8A6" })) as ProjectMeta;
   await rpc(0, { method: "setPresence", projectId: meta.id, pageId: "pg1", ticketId: null });
@@ -16414,19 +16679,21 @@ test("presence is ignored for a project that is not shared", async () => {
 
 - [ ] **Step 2: Vérifier l'échec**
 
-Run: `bun test packages/daemon/src/sync/presence.test.ts`
+Run: `bun test packages/daemon/src/collab/presence.test.ts`
 Expected: FAIL « Cannot find module './presence' » (ou `presence` absent du harnais).
 
 - [ ] **Step 3: Implémenter `presence.ts`**
 
-`packages/daemon/src/sync/presence.ts` :
+`packages/daemon/src/collab/presence.ts` :
 ```ts
 import {
+  type ChangeMessage,
   type ClientFrame,
-  type DaemonEvent,
+  isTerminal,
   type PresencePeer,
   type PresenceRun,
   PresenceState,
+  type RunView,
 } from "@kibo/schema";
 import { toBase64 } from "@kibo/trust";
 import { EphemeralStore } from "loro-crdt";
@@ -16437,10 +16704,19 @@ export type PresenceDeps = {
   runs(projectId: string): PresenceRun[];
   shared(projectId: string): boolean;
   online(): boolean;
-  emit(event: DaemonEvent): void;
+  emit(message: ChangeMessage): void;
   log(message: string, error?: unknown): void;
   timeoutMs: number;
 };
+
+export function presenceRuns(
+  runs: Pick<RunView, "projectId" | "ticketKey" | "profileName" | "state">[],
+  projectId: string,
+): PresenceRun[] {
+  return runs
+    .filter((r) => r.projectId === projectId && !isTerminal(r.state))
+    .map((r) => ({ ticketKey: r.ticketKey, profile: r.profileName, state: r.state }));
+}
 
 type Where = { pageId: string | null; ticketId: string | null };
 type Entry = { store: EphemeralStore; off: () => void; where: Where };
@@ -16485,7 +16761,7 @@ export class PresenceHub {
   tick(): void {
     for (const [projectId, entry] of this.projects) {
       this.publish(projectId, entry);
-      this.deps.emit({ type: "presence", projectId });
+      this.deps.emit({ type: "presence.changed", projectId });
     }
   }
 
@@ -16505,7 +16781,7 @@ export class PresenceHub {
     const existing = this.projects.get(projectId);
     if (existing) return existing;
     const store = new EphemeralStore(this.deps.timeoutMs);
-    const off = store.subscribe(() => this.deps.emit({ type: "presence", projectId }));
+    const off = store.subscribe(() => this.deps.emit({ type: "presence.changed", projectId }));
     const entry: Entry = { store, off, where: { pageId: null, ticketId: null } };
     this.projects.set(projectId, entry);
     return entry;
@@ -16538,32 +16814,38 @@ Dans `rpc.ts`, `handleSyncRpc` reçoit aussi `presence?: PresenceHub` (cinquièm
     case "getPresence":
       return { handled: true, result: needPresence(presence).peers(req.projectId) };
 ```
-avec `needPresence` sur le modèle de `need` (T23). Dans `main.ts` :
+avec `needPresence` sur le modèle de `need` (T23). Dans `collab/bootstrap.ts` (`startCollab`, T21) :
 ```ts
+let runSource: { state(): AgentsState } | null = null;
 const presence = new PresenceHub({
-  send: (frame) => sync.send(frame),
+  send: (frame) => client.send(frame),
   identity: () => {
-    const s = sync.status();
+    const s = client.status();
     return s.user && s.deviceId ? { userId: s.user.id, name: s.user.name, deviceId: s.deviceId } : null;
   },
-  runs: (projectId) =>
-    runs.active().filter((r) => r.projectId === projectId)
-      .map((r) => ({ ticketKey: r.ticketKey, profile: r.profile, state: r.state })),
+  runs: (projectId) => (runSource ? presenceRuns(runSource.state().runs, projectId) : []),
   shared: (projectId) => syncDb.project(projectId)?.enabled === true,
-  online: () => sync.status().state === "online",
-  emit: events.publish,
+  online: () => client.status().state === "online",
+  emit: (message) => deps.service.docs.emit(message),
   log: (message, error) => console.error(`[kibo-daemon] ${message}`, error ?? ""),
   timeoutMs: SYNC_LIMITS.presenceTimeoutMs,
 });
-sync.onFrame((f) => {
+const offFrames = client.onFrame((f) => {
   if (f.type === "presence") presence.receive(f.projectId, fromBase64(f.bytes));
   if (f.type === "welcome") presence.tick();
   if (f.type === "revoked") presence.forget(f.projectId);
 });
-runs.onChange(() => presence.refreshRuns());
 const presenceTimer = setInterval(() => presence.tick(), SYNC_LIMITS.presenceRefreshMs);
+const attachRuns = (source: { state(): AgentsState; onRunState(l: (run: RunView) => void): () => void }) => {
+  runSource = source;
+  const off = source.onRunState(() => presence.refreshRuns());
+  return () => {
+    off();
+    runSource = null;
+  };
+};
 ```
-et `clearInterval(presenceTimer); presence.dispose();` dans `shutdown`. `startSyncHarness` construit le même hub par démon avec `presenceTimeoutMs` (défaut `SYNC_LIMITS.presenceTimeoutMs`) et un `FakeRuns` :
+`stop()` de `startCollab` fait `clearInterval(presenceTimer); offFrames(); presence.dispose();` avant `client.stop()` ; le gestionnaire RPC passe `presence` à `handleSyncRpc`. Dans `daemon.ts`, juste après `createOrchestrator` : `closers.push(collab.attachRuns(orchestrator))`. `startSyncHarness` construit le même hub par démon avec `presenceTimeoutMs` (défaut `SYNC_LIMITS.presenceTimeoutMs`) et un `FakeRuns` :
 ```ts
 function fakeRuns(): FakeRuns {
   let current: ReturnType<FakeRuns["active"]> = [];
@@ -16581,12 +16863,12 @@ function fakeRuns(): FakeRuns {
   };
 }
 ```
-Le harnais branche `runs.onChange(() => presence.refreshRuns())` et les trames `presence` comme `main.ts`, mais n'installe pas la minuterie de 10 s : les tests appellent `tick()` quand ils en ont besoin.
+Le harnais passe `runs: (projectId) => fake.active().filter((r) => r.projectId === projectId).map(({ ticketKey, profile, state }) => ({ ticketKey, profile, state }))`, branche `fake.onChange(() => presence.refreshRuns())` et les trames `presence` comme `startCollab`, expose `handler: (req, ctx) => handleSyncRpc(client, req, ctx, share, presence)`, mais n'installe pas la minuterie de 10 s : les tests appellent `tick()` quand ils en ont besoin.
 
 - [ ] **Step 5: Vérifier**
 
-Run: `bun test packages/daemon/src/sync/presence.test.ts`
-Expected: PASS (5 tests).
+Run: `bun test packages/daemon/src/collab/presence.test.ts`
+Expected: PASS (6 tests).
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS.
@@ -16594,103 +16876,136 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/daemon/src/sync/presence.ts packages/daemon/src/sync/presence.test.ts packages/daemon/src/sync/rpc.ts \
-  packages/daemon/src/main.ts packages/daemon/src/testing/sync-harness.ts
-git commit -m "feat(daemon): présence"
+git add packages/daemon/src/collab/presence.ts packages/daemon/src/collab/presence.test.ts packages/daemon/src/collab/rpc.ts \
+  packages/daemon/src/collab/bootstrap.ts packages/daemon/src/daemon.ts packages/daemon/src/testing/sync-harness.ts
+git commit -m "feat(daemon): présence des membres"
 ```
 
 ---
 
 ### Task 25: UI Paramètres › Sécurité et appairage par code
 
-Vague 3. Écrans à dessiner **S8** (Paramètres › Sécurité) et **M7** (bannière et ligne de l'écran 19), maquettes existantes **15** (« Accès web · Générer un code »), **19** (premier lancement) et **31** (appairage par code à 6 caractères). Prérequis : S8 et M7 dessinés dans Penpot, en sombre et en clair ; T9, T12, T13 intégrés. Tous les textes viennent des descriptions S8 / M7 du plan et de la maquette 31, mot pour mot, dans `fr.ts` (section `security`), au tutoiement.
+Vague 4. Maquettes Penpot **déjà dessinées** : **71** « Paramètres › Sécurité (accès distant activé) » et **72** « Activer l'accès distant (dialogue) » (script `design/penpot/scripts/14-sync.js`, écran S8), **15** (Paramètres › Apparence, bloc « Accès web · Générer un code »), **19** (premier lancement) et **78** (échec d'une vérification, modèle de la ligne M7), **31** (appairage par code à 6 caractères). La bannière M7 de la page Composants reste à dessiner (chef d'équipe). Prérequis : T4, T9, T12, T13 intégrés. Textes mot pour mot des maquettes, au tutoiement, dans un nouveau fichier `packages/ui/src/i18n/fr-security.ts`.
+
+Vérifié en T0 :
+- Il n'y a ni `SETTINGS_SECTIONS` ni `pages/settings/` : les Paramètres sont des **écrans** (`Screen` de `packages/schema/src/tabs.ts` : `"agents" | "queue" | "general" | "domains" | "components" | "mine" | "integrations"`), chacun rendu par une page de `packages/ui/src/settings/` qui affiche elle-même `SettingsNav` (`<div className="grid min-h-full grid-cols-[14rem_1fr]"><SettingsNav active="…" />…`). `SettingsNav` (`settings/SettingsNav.tsx`) a un tableau local `ITEMS` ; les entrées « Apparence » (`appearance`) et « Sécurité » (`security`) existent déjà, **désactivées** (pas de `screen`, titre « Bientôt »). Ajouter un écran demande : `Screen` (schéma), `SCREENS` (`tabs/screens.ts`), `SCREEN_HASHES` (`tabs/target-hash.ts`), `lazy-screens.ts`, `ScreenView.tsx`, le type `SettingsScreen` et `ITEMS` de `SettingsNav`, l'état actif du bouton Paramètres de `AppSidebar.tsx`. La palette suit `Screen.options` sans modification.
+- Il n'y a pas d'écran 15 « Apparence & général » dans le code : `GeneralPage` (écran 76) ne porte que « Application » et « Commande kibo ». Le bloc « Accès web » de la maquette 15 est créé ici dans une page `AppearancePage` réduite à ce bloc (le thème et l'état du démon de la maquette 15 restent hors périmètre, écart noté au jalon).
+- Il n'y a pas de `FirstRunPage` : l'écran 19 est `packages/ui/src/shell/Welcome.tsx`, avec un `CheckRow({ state: "ok" | "warn" | "optional", title, detail, action? })` **local** et des vérifications lues par `client.rpc({ method: "getEnvironment" })`.
+- Il n'y a pas de `client.onEvent` ni de `useRpcQuery` : chaque hook de `packages/ui/src/state/` fait `useState` + `reload` + un `client.subscribe*`. Le client générique des messages (`client.subscribeEvents(listener: (event: Phase7Event) => void): () => void`) est ajouté au SDK par T4 ; cette tâche crée `useRpcQuery` sur lui.
+- `PairingScreen` (`packages/ui/src/shell/PairingScreen.tsx`) appelle `client.pair(token)` avec un champ unique ; ses textes sont `fr.pairing` dans `fr.ts` (l. 44-52). L'appairage par jeton dans l'URL (`#pair=…`, Tauri, E2E `helpers.ts`) ne passe pas par cet écran et reste inchangé. `client.pairWithCode(code)` vient de T13.
+- La page Composants est `packages/ui/src/components-page/ComponentsPage.tsx` (pas de `pages/components/`). Les composants shadcn `switch`, `table`, `alert`, `alert-dialog`, `checkbox`, `radio-group`, `select`, `badge`, `dialog` existent déjà dans `packages/sdk/src/ui` : rien à ajouter.
+- Il n'y a pas de composant `CodeBlock` ; `lib/relative-time.ts` existe (`relativeTime(then, now?)`, libellés `fr.time`).
 
 **Files:**
-- Create: `packages/ui/src/pages/settings/SecuritySettings.tsx`, `packages/ui/src/dialogs/EnableRemoteAccessDialog.tsx`, `packages/ui/src/dialogs/PairingCodeDialog.tsx`, `packages/ui/src/pages/components/SandboxBanner.tsx`, `packages/ui/src/lib/pairing-code.ts`, `packages/ui/src/state/use-rpc-query.ts` (si absent en v0.6)
-- Modify: `packages/ui/src/i18n/fr.ts` (section `security`, `pairing`), `packages/ui/src/shell/PairingScreen.tsx`, `packages/ui/src/shell/screens.test.tsx` (attente du texte de pied de l'écran 31, voir Step 5), `packages/ui/src/pages/settings/sections.ts` (`SETTINGS_SECTIONS`), la section « Accès web » de l'écran 15 (`packages/ui/src/pages/settings/AppearanceSettings.tsx`), `packages/ui/src/pages/FirstRunPage.tsx`, `packages/ui/src/pages/components/ComponentsPage.tsx`
-- Add (shadcn, si absents de `packages/sdk/src/ui`) : `switch`, `table`, `alert`, `alert-dialog`, `checkbox` par `cd packages/sdk && bunx --bun shadcn@latest add switch table alert alert-dialog checkbox` (aucune nouvelle dépendance npm : ils reposent sur `radix-ui`, déjà présent ; vérifier `bun.lock` inchangé hors `packages/sdk/src/ui`)
-- Test: `packages/ui/src/pages/settings/security-settings.test.tsx`, `packages/ui/src/shell/pairing-screen.test.tsx`, `packages/ui/src/lib/pairing-code.test.ts`
+- Create: `packages/ui/src/settings/SecurityPage.tsx`, `packages/ui/src/settings/AppearancePage.tsx`, `packages/ui/src/settings/EnableRemoteAccessDialog.tsx`, `packages/ui/src/settings/PairingCodeDialog.tsx`, `packages/ui/src/components-page/SandboxBanner.tsx`, `packages/ui/src/lib/pairing-code.ts`, `packages/ui/src/state/use-rpc-query.ts`, `packages/ui/src/i18n/fr-security.ts`
+- Modify: `packages/schema/src/tabs.ts` (`Screen` gagne `"appearance"` et `"security"`), `packages/ui/src/tabs/screens.ts`, `packages/ui/src/tabs/target-hash.ts`, `packages/ui/src/shell/lazy-screens.ts`, `packages/ui/src/shell/ScreenView.tsx`, `packages/ui/src/settings/SettingsNav.tsx`, `packages/ui/src/shell/AppSidebar.tsx` (état actif de Paramètres), `packages/ui/src/i18n/fr.ts` (import de `frSecurity`, section `pairing` remplacée), `packages/ui/src/shell/PairingScreen.tsx`, `packages/ui/src/shell/Welcome.tsx`, `packages/ui/src/components-page/ComponentsPage.tsx`
+- Modify (tests existants, mocks complétés, attentes inchangées sauf une) : `packages/ui/src/shell/screens.test.tsx` (pied de l'écran 31, voir Step 5), `packages/ui/src/shell/welcome.test.tsx` (mock par méthode), `packages/ui/src/components-page/components-page.test.tsx` (mock `getSandboxStatus` et `subscribeEvents`)
+- Test: `packages/ui/src/settings/security-page.test.tsx`, `packages/ui/src/shell/pairing-screen.test.tsx`, `packages/ui/src/lib/pairing-code.test.ts`, `packages/ui/src/tabs/tabs.test.ts` (aller-retour des hash des deux nouveaux écrans)
 
 **Interfaces:**
-- Consumes: RPC `getRemoteAccess`, `enableRemoteAccess`, `disableRemoteAccess`, `createPairingCode`, `listSessions`, `revokeSession`, `getSandboxStatus`, `setAllowUnsandboxed` ; types `RemoteAccessStatus`, `SessionInfo`, `SandboxStatus`, `PairingCode` (T4) ; `client.pairWithCode(code)` (T13) ; événements `sessions` et `sandbox`.
+- Consumes: RPC `getRemoteAccess`, `enableRemoteAccess`, `disableRemoteAccess`, `createPairingCode` (T13), `listSessions`, `revokeSession` (T9), `getSandboxStatus`, `setAllowUnsandboxed` (T12) ; types `RemoteAccessStatus`, `SessionInfo`, `SandboxStatus`, `PairingCode`, `ChangeMessage` avec `{ type: "sessions.changed" }` et `{ type: "sandbox.changed" }` (T4) ; `client.pairWithCode(code)` (T13) et `client.subscribeEvents(listener)` (T4), `packages/sdk/src/client.ts`.
 - Produces (nouveau, signalé) :
   ```ts
   // packages/ui/src/lib/pairing-code.ts
   export function formatPairingCode(code: string): string;          // "K7Q4M2" ⇒ "K7Q-4M2"
   export function remaining(expiresAt: number, now: number): string; // "4:59", "0:00"
   // packages/ui/src/state/use-rpc-query.ts
-  export function useRpcQuery<R extends RpcRequest>(req: R, refreshOn: DaemonEvent["type"][]): { data: RpcResult[R["method"]] | null; error: KiboError | null; reload(): void };
+  export type ChangeType = Extract<ChangeMessage, { type: string }>["type"];
+  export function useRpcQuery<R extends RpcRequest>(req: R, refreshOn: readonly ChangeType[]): {
+    data: RpcResult[R["method"]] | null; error: KiboError | null; reload(): void };
   // composants
-  export function SecuritySettings(): JSX.Element;
+  export function SecurityPage(): JSX.Element;
+  export function AppearancePage(): JSX.Element;
   export function EnableRemoteAccessDialog(props: { status: RemoteAccessStatus; open: boolean; onOpenChange(o: boolean): void; onEnabled(s: RemoteAccessStatus): void }): JSX.Element;
   export function PairingCodeDialog(props: { open: boolean; onOpenChange(o: boolean): void; now?: () => number }): JSX.Element;
   export function SandboxBanner(): JSX.Element | null;
+  // schéma : Screen gagne "appearance" et "security" (hash "#/settings/appearance", "#/settings/security")
   ```
-- Hypothèse v0.6 (vérifiée en T0) : le client expose `client.onEvent(listener: (e: DaemonEvent) => void): () => void` ; `SETTINGS_SECTIONS: { id: string; label: string; element: () => JSX.Element }[]` ; `FirstRunPage` affiche ses vérifications par un composant `CheckRow({ title, detail, state: "ok" | "warn" | "error", action? })`.
+- Conflits de fichiers : T26 et T28 ajoutent aussi des écrans de Paramètres (`tabs.ts`, `screens.ts`, `target-hash.ts`, `lazy-screens.ts`, `ScreenView.tsx`, `SettingsNav.tsx`, `AppSidebar.tsx`) : ajouts d'une ligne par liste, conflits triviaux au rebase ; `useRpcQuery` est créé ici et réutilisé par T26 à T28.
 
 - [ ] **Step 1: Textes de l'interface**
 
-Ajouter à `packages/ui/src/i18n/fr.ts` :
+`packages/ui/src/i18n/fr-security.ts` :
 ```ts
-  security: {
-    title: "Sécurité",
-    remote: {
-      title: "Accès distant",
-      help: "Le démon n'écoute que sur 127.0.0.1. L'accès distant ouvre un second port, chiffré, sur une interface que tu choisis.",
-      toggle: "Activer l'accès distant",
-      dialogTitle: "Activer l'accès distant",
-      iface: "Interface",
-      port: "Port",
-      certificate: "Certificat",
-      selfSigned: "Auto-signé",
-      provided: "Fourni",
-      certFile: "Certificat (.pem)",
-      keyFile: "Clé privée (.pem)",
-      warning: "Cet appareil sera joignable depuis le réseau par toute personne qui obtient un code d'appairage.",
-      consent: "Je comprends que cet appareil sera joignable depuis le réseau",
-      enable: "Activer",
-      enabling: "Activation…",
-      url: "Adresse",
-      fingerprint: "Empreinte SHA-256",
-      verify: "Vérifie cette empreinte dans ton navigateur à la première connexion.",
-      disable: "Désactiver",
-      disableTitle: "Désactiver l'accès distant ?",
-      disableHelp: "Les navigateurs distants perdront l'accès immédiatement.",
-      failed: "Impossible d'activer l'accès distant.",
-      resumeFailed: (why: string) => `L'accès distant n'a pas pu reprendre : ${why}`,
-    },
-    sessions: {
-      title: "Sessions",
-      help: "Une session expire après 30 jours sans activité.",
-      device: "Appareil",
-      type: "Type",
-      created: "Créée",
-      lastSeen: "Dernière activité",
-      expires: "Expire",
-      local: "Local",
-      remote: "Distant",
-      current: "Cette session",
-      revoke: "Révoquer",
-      empty: "Aucune session active.",
-    },
-    isolation: {
-      title: "Isolation des composants",
-      bwrap: "bubblewrap actif",
-      sandboxExec: "sandbox-exec actif",
-      unavailable: (reason: string) => `Indisponible : ${reason}`,
-      fix: "Pour l'activer :",
-      allow: "Autoriser les backends sandboxés sans isolation OS",
-      allowTitle: "Autoriser sans isolation OS ?",
-      allowWarning:
-        "Un composant sandboxé pourra accéder au réseau et à tes fichiers si le runtime a une faille. Ne l'active que si tu fais confiance à tous tes composants.",
-      allowConfirm: "Autoriser quand même",
-      banner: "Les backends sandboxés sont arrêtés : isolation OS indisponible.",
-      firstRun: "Isolation des composants",
-      firstRunOk: (kind: string) => `${kind} détecté`,
-    },
+export const frSecurity = {
+  title: "Sécurité",
+  subtitle: "Accès au démon, sessions et isolation des composants.",
+  remote: {
+    title: "Accès distant",
+    help: "Le démon n'écoute que sur 127.0.0.1. L'accès distant ouvre un second port, chiffré, sur une interface que tu choisis.",
+    toggle: "Activer l'accès distant",
+    dialogTitle: "Activer l'accès distant",
+    dialogHelp: "Un second port chiffré (TLS), en plus de 127.0.0.1.",
+    iface: "Interface",
+    port: "Port",
+    certificate: "Certificat",
+    selfSigned: "Auto-signé",
+    provided: "Fourni (certificat et clé)",
+    certFile: "Certificat (.pem)",
+    keyFile: "Clé privée (.pem)",
+    warningTitle: "Cet appareil sera joignable depuis le réseau",
+    warning: "Chaque navigateur devra être appairé. N'active pas l'accès distant sur un réseau public.",
+    consent: "Je comprends que cet appareil sera joignable depuis le réseau",
+    enable: "Activer",
+    enabling: "Activation…",
+    copy: "Copier",
+    fingerprint: "SHA-256",
+    verify: "Vérifie cette empreinte dans ton navigateur à la première connexion.",
+    disable: "Désactiver",
+    disableTitle: "Désactiver l'accès distant ?",
+    disableHelp: "Les navigateurs distants perdront l'accès immédiatement.",
+    failed: "Impossible d'activer l'accès distant.",
+    resumeFailed: (why: string) => `L'accès distant n'a pas pu reprendre : ${why}`,
   },
+  sessions: {
+    title: "Sessions",
+    help: "Une session expire après 30 jours sans activité.",
+    device: "Appareil",
+    type: "Type",
+    created: "Créée",
+    lastSeen: "Dernière activité",
+    expires: "Expire",
+    local: "Local",
+    remote: "Distant",
+    current: "Cette session",
+    revoke: "Révoquer",
+    empty: "Aucune session active.",
+  },
+  isolation: {
+    title: "Isolation des composants",
+    bwrap: "bubblewrap actif",
+    sandboxExec: "sandbox-exec actif",
+    activeDetail: "· backends sandboxés isolés par le système",
+    unavailable: (reason: string) => `Indisponible : ${reason}`,
+    fix: "Pour l'activer :",
+    allow: "Autoriser les backends sandboxés sans isolation OS",
+    allowTitle: "Autoriser sans isolation OS ?",
+    allowWarning:
+      "Un composant sandboxé pourra accéder au réseau et à tes fichiers si le runtime a une faille. Ne l'active que si tu fais confiance à tous tes composants.",
+    allowConfirm: "Autoriser quand même",
+    banner: "Les backends sandboxés sont arrêtés : isolation OS indisponible.",
+  },
+  appearance: {
+    title: "Apparence",
+    subtitle: "Kibo suit le thème de ton système par défaut.",
+    web: "Accès web",
+    webPair: "Appairer un navigateur (jeton local)",
+    generate: "Générer un code",
+  },
+  pairingCode: {
+    title: "Code d'appairage",
+    help: "Saisis ce code dans le navigateur à appairer.",
+    expiresIn: (left: string) => `Expire dans ${left}`,
+    expired: "Code expiré.",
+    regenerate: "Générer un nouveau code",
+    copy: "Copier",
+  },
+  welcome: {
+    title: "Isolation des composants",
+  },
+} as const;
 ```
-Et remplacer la section `pairing` par :
+Dans `packages/ui/src/i18n/fr.ts` : `import { frSecurity } from "./fr-security";`, ajouter `security: frSecurity,` à côté de `integrations: frIntegrations,` (`fr.settings.security`, libellé du menu, reste inchangé), et remplacer la section `pairing` par les textes de la maquette 31 :
 ```ts
   pairing: {
     title: "Appairer ce navigateur",
@@ -16702,15 +17017,9 @@ Et remplacer la section `pairing` par :
     invalid: "Code invalide ou expiré.",
     security:
       "Le démon n'écoute que sur 127.0.0.1. Le code est échangé contre un cookie HttpOnly, révocable dans Paramètres › Sécurité.",
-    generate: "Générer un code",
-    generateTitle: "Code d'appairage",
-    generateHelp: "Saisis ce code dans le navigateur à appairer.",
-    expiresIn: (left: string) => `Expire dans ${left}`,
-    expired: "Code expiré.",
-    regenerate: "Générer un nouveau code",
-    copy: "Copier",
   },
 ```
+(La clé `pairing.token` disparaît : `bun run typecheck` signale tout autre usage, il n'y en a pas en v0.6.)
 
 - [ ] **Step 2: Écrire les tests des helpers et de l'écran 31**
 
@@ -16806,7 +17115,7 @@ export function remaining(expiresAt: number, now: number): string {
 }
 ```
 
-`packages/ui/src/shell/PairingScreen.tsx` :
+`packages/ui/src/shell/PairingScreen.tsx` (mêmes logo, carte et pied qu'en v0.6 ; seul le formulaire change) :
 ```tsx
 import { KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
@@ -16818,6 +17127,7 @@ import { fr } from "../i18n/fr";
 import { KiboLogo } from "./KiboLogo";
 
 const ALLOWED = /[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/;
+const SLOTS = [0, 1, 2, 3, 4, 5] as const;
 const clean = (text: string) =>
   text
     .toUpperCase()
@@ -16881,15 +17191,15 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
                 <legend id={groupId} className="sr-only">
                   {fr.pairing.code}
                 </legend>
-                {chars.map((c, i) => (
-                  <span key={`slot-${i.toString()}`} className="flex items-center gap-2">
+                {SLOTS.map((i) => (
+                  <span key={i} className="flex items-center gap-2">
                     {i === 3 && <span className="text-muted-foreground">–</span>}
                     <Input
                       ref={(el) => {
                         refs.current[i] = el;
                       }}
                       aria-label={fr.pairing.digit(i + 1)}
-                      value={c}
+                      value={chars[i]}
                       onChange={(e) => fill(i, clean(e.target.value).slice(-1))}
                       onKeyDown={onKeyDown(i)}
                       onPaste={onPaste(i)}
@@ -16926,18 +17236,56 @@ Expected: PASS (6 tests).
 
 - [ ] **Step 5: Aligner l'attente de l'écran 31 existante**
 
-Dans `packages/ui/src/shell/screens.test.tsx`, le test « PairingScreen shows the logo, a centred title and the security notice » attend l'ancien pied de page ; la maquette 31 en a un nouveau. Remplacer seulement la ligne :
+Dans `packages/ui/src/shell/screens.test.tsx`, le test de `PairingScreen` attend l'ancien pied (`/n'est jamais envoyé ailleurs/`, l. 98) ; la maquette 31 en a un nouveau. Remplacer seulement cette ligne par :
 ```ts
   expect(screen.getByText(/révocable dans Paramètres › Sécurité/)).toBeTruthy();
 ```
-(c'est la seule attente existante modifiée par la phase ; elle suit la maquette 31, le chef d'équipe la signale au jalon.) L'appairage par jeton dans l'URL (`#pair=…`, `App.tsx`, utilisé par Tauri et l'E2E) est inchangé.
+(c'est la seule attente existante modifiée par la phase ; elle suit la maquette 31, le chef d'équipe la signale au jalon.) Le mock du client de ce fichier gagne `pairWithCode: () => Promise.resolve()` à côté de `pair`.
 
 Run: `bun test packages/ui/src/shell/screens.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 6: Écrire le test de Paramètres › Sécurité**
+- [ ] **Step 6: Requête RPC réactive**
 
-`packages/ui/src/pages/settings/security-settings.test.tsx` :
+`packages/ui/src/state/use-rpc-query.ts` :
+```ts
+import { type ChangeMessage, KiboError, type RpcRequest, type RpcResult } from "@kibo/schema";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { client } from "../api";
+
+export type ChangeType = Extract<ChangeMessage, { type: string }>["type"];
+
+export function useRpcQuery<R extends RpcRequest>(req: R, refreshOn: readonly ChangeType[]) {
+  const [data, setData] = useState<RpcResult[R["method"]] | null>(null);
+  const [error, setError] = useState<KiboError | null>(null);
+  const request = useRef(req);
+  request.current = req;
+  const key = JSON.stringify(req);
+  const events = refreshOn.join(",");
+  const reload = useCallback(() => {
+    client.rpc(request.current).then(
+      (result) => {
+        setData(result);
+        setError(null);
+      },
+      (e: unknown) => setError(e instanceof KiboError ? e : new KiboError("INTERNAL", String(e))),
+    );
+  }, [key]);
+  useEffect(() => {
+    reload();
+    const types = new Set(events.split(","));
+    return client.subscribeEvents((m) => {
+      if ("type" in m && types.has(m.type)) reload();
+    });
+  }, [reload, events]);
+  return { data, error, reload };
+}
+```
+`key` n'est lu que comme dépendance : une requête de même contenu ne relance pas le chargement à chaque rendu.
+
+- [ ] **Step 7: Écrire le test de Paramètres › Sécurité**
+
+`packages/ui/src/settings/security-page.test.tsx` :
 ```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import type { RemoteAccessStatus, RpcRequest, SandboxStatus, SessionInfo } from "@kibo/schema";
@@ -16968,14 +17316,15 @@ const on: RemoteAccessStatus = {
   address: "192.168.1.20",
   port: 47832,
   url: "https://192.168.1.20:47832",
-  fingerprint: "3F:9A:8B:21:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:01:23:45:67:89:AB:CD:EF:C2:1E:0A:0B",
+  fingerprint: "3F:A9:1C:7E:52:D0:8B:44:E6:19:C2:7A:0F:B3:95:6D",
   tls: "self-signed",
 };
 const DAY = 24 * 3600_000;
 
-mock.module("../../api", () => ({
+mock.module("../api", () => ({
   client: {
-    onEvent: () => () => {},
+    subscribe: () => () => {},
+    subscribeEvents: () => () => {},
     rpc: async (req: RpcRequest) => {
       calls.push(req);
       switch (req.method) {
@@ -16997,32 +17346,36 @@ mock.module("../../api", () => ({
         case "setAllowUnsandboxed":
           sandbox = { ...sandbox, allowUnsandboxed: req.allow };
           return sandbox;
+        case "createPairingCode":
+          return { code: "K7Q4M2", expiresAt: 300_000 };
         default:
           throw new Error(`unexpected ${req.method}`);
       }
     },
   },
 }));
-const { SecuritySettings } = await import("./SecuritySettings");
+const { SecurityPage } = await import("./SecurityPage");
 
 beforeEach(() => {
   calls.length = 0;
   remote = off;
   sandbox = { kind: "bwrap", available: true, reason: null, fix: null, allowUnsandboxed: false };
   sessions = [
-    { id: "a".repeat(64), deviceName: "Chrome · macOS", remote: false, createdAt: 0, lastSeenAt: 0, expiresAt: 30 * DAY, current: true },
-    { id: "b".repeat(64), deviceName: "Firefox · Linux", remote: true, createdAt: 0, lastSeenAt: 0, expiresAt: 30 * DAY, current: false },
+    { id: "a".repeat(64), deviceName: "Tauri · MacBook d'Adam", remote: false, createdAt: 0, lastSeenAt: 0, expiresAt: 30 * DAY, current: true },
+    { id: "b".repeat(64), deviceName: "Safari · iPad", remote: true, createdAt: 0, lastSeenAt: 0, expiresAt: 30 * DAY, current: false },
   ];
 });
 
-test("remote access is off by default and explains why", async () => {
-  render(<SecuritySettings />);
+test("the page follows screen 71: title, subtitle, remote access off by default", async () => {
+  render(<SecurityPage />);
+  expect(screen.getByRole("heading", { level: 1, name: "Sécurité" })).toBeTruthy();
+  expect(screen.getByText("Accès au démon, sessions et isolation des composants.")).toBeTruthy();
   expect(await screen.findByText(/L'accès distant ouvre un second port, chiffré/)).toBeTruthy();
-  expect((screen.getByRole("switch", { name: "Activer l'accès distant" }) as HTMLButtonElement).getAttribute("aria-checked")).toBe("false");
+  expect(screen.getByRole("switch", { name: "Activer l'accès distant" }).getAttribute("aria-checked")).toBe("false");
 });
 
 test("enabling needs an interface and the explicit consent", async () => {
-  render(<SecuritySettings />);
+  render(<SecurityPage />);
   await userEvent.click(await screen.findByRole("switch", { name: "Activer l'accès distant" }));
   const dialog = await screen.findByRole("dialog");
   const submit = within(dialog).getByRole("button", { name: "Activer" }) as HTMLButtonElement;
@@ -17038,8 +17391,8 @@ test("enabling needs an interface and the explicit consent", async () => {
 });
 
 test("sessions list marks the current one and can revoke another", async () => {
-  render(<SecuritySettings />);
-  const row = (await screen.findByText("Firefox · Linux")).closest("tr") as HTMLElement;
+  render(<SecurityPage />);
+  const row = (await screen.findByText("Safari · iPad")).closest("tr") as HTMLElement;
   expect(within(row).getByText("Distant")).toBeTruthy();
   expect(screen.getByText("Cette session")).toBeTruthy();
   await userEvent.click(within(row).getByRole("button", { name: "Révoquer" }));
@@ -17048,7 +17401,7 @@ test("sessions list marks the current one and can revoke another", async () => {
 });
 
 test("isolation available shows the active mechanism", async () => {
-  render(<SecuritySettings />);
+  render(<SecurityPage />);
   expect(await screen.findByText("bubblewrap actif")).toBeTruthy();
 });
 
@@ -17060,7 +17413,7 @@ test("isolation unavailable shows the reason, the fix, and asks before allowing"
     fix: "sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0",
     allowUnsandboxed: false,
   };
-  render(<SecuritySettings />);
+  render(<SecurityPage />);
   expect(await screen.findByText("Indisponible : bwrap: setting up uid map: Permission denied")).toBeTruthy();
   expect(screen.getByText("sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0")).toBeTruthy();
   await userEvent.click(screen.getByRole("switch", { name: "Autoriser les backends sandboxés sans isolation OS" }));
@@ -17073,63 +17426,61 @@ test("isolation unavailable shows the reason, the fix, and asks before allowing"
 
 test("disabling asks for confirmation", async () => {
   remote = on;
-  render(<SecuritySettings />);
-  await userEvent.click(await screen.findByRole("switch", { name: "Activer l'accès distant" }));
+  render(<SecurityPage />);
+  await userEvent.click(await screen.findByRole("button", { name: "Désactiver" }));
   const confirm = await screen.findByRole("alertdialog");
   await userEvent.click(within(confirm).getByRole("button", { name: "Désactiver" }));
   expect(calls).toContainEqual({ method: "disableRemoteAccess" });
 });
+
+test("the pairing code dialog shows the code and its countdown", async () => {
+  const { PairingCodeDialog } = await import("./PairingCodeDialog");
+  render(<PairingCodeDialog open onOpenChange={() => {}} now={() => 1_000} />);
+  expect(await screen.findByText("K7Q-4M2")).toBeTruthy();
+  expect(screen.getByText("Expire dans 4:59")).toBeTruthy();
+});
+
+test("the appearance page offers to generate a pairing code (screen 15)", async () => {
+  const { AppearancePage } = await import("./AppearancePage");
+  render(<AppearancePage />);
+  expect(screen.getByText("Accès web")).toBeTruthy();
+  await userEvent.click(screen.getByRole("button", { name: "Générer un code" }));
+  expect(await screen.findByText("K7Q-4M2")).toBeTruthy();
+});
+
+test("the components banner only shows when backends are stopped", async () => {
+  const { SandboxBanner } = await import("../components-page/SandboxBanner");
+  sandbox = { kind: "bwrap", available: false, reason: "bubblewrap (bwrap) is not installed", fix: "sudo apt install bubblewrap", allowUnsandboxed: false };
+  const { unmount } = render(<SandboxBanner />);
+  expect(await screen.findByText("Les backends sandboxés sont arrêtés : isolation OS indisponible.")).toBeTruthy();
+  expect(screen.getByText("sudo apt install bubblewrap")).toBeTruthy();
+  unmount();
+  sandbox = { ...sandbox, allowUnsandboxed: true };
+  render(<SandboxBanner />);
+  await new Promise((r) => setTimeout(r, 10));
+  expect(screen.queryByText(/backends sandboxés sont arrêtés/)).toBeNull();
+});
 ```
 
-Run: `bun test packages/ui/src/pages/settings/security-settings.test.tsx`
-Expected: FAIL avec « Cannot find module './SecuritySettings' ».
+Run: `bun test packages/ui/src/settings/security-page.test.tsx`
+Expected: FAIL avec « Cannot find module './SecurityPage' ».
 
-- [ ] **Step 7: Requête RPC réactive (si absente en v0.6)**
+- [ ] **Step 8: Implémenter le dialogue d'activation (maquette 72)**
 
-`packages/ui/src/state/use-rpc-query.ts` :
-```ts
-import { type DaemonEvent, KiboError, type RpcRequest, type RpcResult } from "@kibo/schema";
-import { useCallback, useEffect, useState } from "react";
-import { client } from "../api";
-
-export function useRpcQuery<R extends RpcRequest>(req: R, refreshOn: DaemonEvent["type"][]) {
-  const [data, setData] = useState<RpcResult[R["method"]] | null>(null);
-  const [error, setError] = useState<KiboError | null>(null);
-  const key = JSON.stringify(req);
-  const events = refreshOn.join(",");
-  const reload = useCallback(() => {
-    client.rpc(JSON.parse(key) as R).then(
-      (r) => {
-        setData(r);
-        setError(null);
-      },
-      (e: unknown) => {
-        if (!(e instanceof KiboError)) throw e;
-        setError(e);
-      },
-    );
-  }, [key]);
-  useEffect(() => {
-    reload();
-    const types = new Set(events.split(","));
-    return client.onEvent((e) => {
-      if (types.has(e.type)) reload();
-    });
-  }, [reload, events]);
-  return { data, error, reload };
-}
-```
-`JSON.parse(key) as R` : `key` est la sérialisation de `req` lui-même, la forme est donc exactement `R`.
-
-- [ ] **Step 8: Implémenter le dialogue d'activation**
-
-`packages/ui/src/dialogs/EnableRemoteAccessDialog.tsx` :
+`packages/ui/src/settings/EnableRemoteAccessDialog.tsx` :
 ```tsx
 import { KiboError, type RemoteAccessStatus } from "@kibo/schema";
-import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
@@ -17147,6 +17498,7 @@ type Props = {
 };
 const t = fr.security.remote;
 const DEFAULT_PORT = 47832;
+const LOOPBACK = new Set(["127.0.0.1", "::1"]);
 
 export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled }: Props) {
   const ifaceId = useId();
@@ -17154,8 +17506,8 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
   const certId = useId();
   const keyId = useId();
   const consentId = useId();
-  const candidates = status.interfaces.filter((i) => i.address !== "127.0.0.1" && i.address !== "::1");
-  const [address, setAddress] = useState(candidates[0]?.address ?? status.interfaces[0]?.address ?? "");
+  const candidates = status.interfaces.filter((i) => !LOOPBACK.has(i.address));
+  const [address, setAddress] = useState(candidates[0]?.address ?? "");
   const [port, setPort] = useState(String(DEFAULT_PORT));
   const [kind, setKind] = useState<"self-signed" | "provided">("self-signed");
   const [certFile, setCertFile] = useState("");
@@ -17163,7 +17515,8 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ready = consent && address !== "" && Number(port) >= 1024 && (kind === "self-signed" || (certFile && keyFile));
+  const ready =
+    consent && address !== "" && Number(port) >= 1024 && (kind === "self-signed" || (certFile !== "" && keyFile !== ""));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -17186,30 +17539,37 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t.dialogTitle}</DialogTitle>
+          <DialogDescription>{t.dialogHelp}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor={ifaceId}>{t.iface}</Label>
-            <Select value={address} onValueChange={setAddress}>
-              <SelectTrigger id={ifaceId}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {status.interfaces.map((i) => (
-                  <SelectItem key={`${i.name}-${i.address}`} value={i.address}>
-                    {`${i.name} · ${i.address}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={portId}>{t.port}</Label>
-            <Input id={portId} inputMode="numeric" value={port} onChange={(e) => setPort(e.target.value)} />
+          <div className="grid grid-cols-[1fr_8rem] gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor={ifaceId}>{t.iface}</Label>
+              <Select value={address} onValueChange={setAddress}>
+                <SelectTrigger id={ifaceId}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidates.map((i) => (
+                    <SelectItem key={`${i.name}-${i.address}`} value={i.address}>
+                      {`${i.name} · ${i.address}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={portId}>{t.port}</Label>
+              <Input id={portId} inputMode="numeric" value={port} onChange={(e) => setPort(e.target.value)} className="font-mono" />
+            </div>
           </div>
           <div className="grid gap-2">
             <Label>{t.certificate}</Label>
-            <RadioGroup value={kind} onValueChange={(v) => setKind(v === "provided" ? "provided" : "self-signed")}>
+            <RadioGroup
+              value={kind}
+              onValueChange={(v) => setKind(v === "provided" ? "provided" : "self-signed")}
+              className="flex gap-4"
+            >
               <Label className="flex items-center gap-2 font-normal">
                 <RadioGroupItem value="self-signed" />
                 {t.selfSigned}
@@ -17230,6 +17590,7 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
           </div>
           <Alert className="border-amber-500/50 text-amber-700 dark:text-amber-400">
             <TriangleAlert />
+            <AlertTitle>{t.warningTitle}</AlertTitle>
             <AlertDescription>{t.warning}</AlertDescription>
           </Alert>
           <div className="flex items-start gap-2">
@@ -17253,10 +17614,11 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
   );
 }
 ```
+Le `Select` ne propose que les interfaces non loopback (spec G §7 : jamais `0.0.0.0` par défaut, et `127.0.0.1` est déjà l'écoute locale).
 
-- [ ] **Step 9: Implémenter la page Sécurité**
+- [ ] **Step 9: Implémenter la page Sécurité (maquette 71)**
 
-`packages/ui/src/pages/settings/SecuritySettings.tsx` :
+`packages/ui/src/settings/SecurityPage.tsx` (gabarit des autres pages de Paramètres : `SettingsNav` à gauche, blocs `Card`) :
 ```tsx
 import type { RemoteAccessStatus } from "@kibo/schema";
 import {
@@ -17271,22 +17633,24 @@ import {
 } from "@kibo/sdk/ui/alert-dialog";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { Label } from "@kibo/sdk/ui/label";
 import { Switch } from "@kibo/sdk/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
-import { CircleCheck, TriangleAlert } from "lucide-react";
+import { Copy, Fingerprint, Globe, TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
-import { client } from "../../api";
-import { EnableRemoteAccessDialog } from "../../dialogs/EnableRemoteAccessDialog";
-import { fr } from "../../i18n/fr";
-import { useRpcQuery } from "../../state/use-rpc-query";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+import { relativeTime } from "../lib/relative-time";
+import { useRpcQuery } from "../state/use-rpc-query";
+import { EnableRemoteAccessDialog } from "./EnableRemoteAccessDialog";
+import { SettingsNav } from "./SettingsNav";
 
 const t = fr.security;
-const dateFmt = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
-const fmt = (ms: number) => dateFmt.format(new Date(ms));
+const day = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const date = (ms: number) => day.format(new Date(ms));
 
-function RemoteSection() {
-  const switchId = useId();
+function RemoteCard() {
   const { data: status, reload } = useRpcQuery({ method: "getRemoteAccess" }, []);
   const [dialog, setDialog] = useState(false);
   const [confirmOff, setConfirmOff] = useState(false);
@@ -17297,21 +17661,22 @@ function RemoteSection() {
     reload();
   };
   return (
-    <section className="grid gap-3">
-      <div className="flex items-start justify-between gap-6">
-        <div className="grid gap-1">
-          <h2 className="text-base font-semibold">{t.remote.title}</h2>
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>{t.remote.title}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <div className="flex items-start justify-between gap-6">
           <p className="text-sm text-muted-foreground">{t.remote.help}</p>
+          <Switch
+            aria-label={t.remote.toggle}
+            checked={status.enabled}
+            onCheckedChange={(checked) => (checked ? setDialog(true) : setConfirmOff(true))}
+          />
         </div>
-        <Switch
-          id={switchId}
-          aria-label={t.remote.toggle}
-          checked={status.enabled}
-          onCheckedChange={(on) => (on ? setDialog(true) : setConfirmOff(true))}
-        />
-      </div>
-      {status.lastError && <p className="text-sm text-destructive">{t.remote.resumeFailed(status.lastError)}</p>}
-      {status.enabled && <RemoteDetails status={status} />}
+        {status.lastError && <p className="text-sm text-destructive">{t.remote.resumeFailed(status.lastError)}</p>}
+        {status.enabled && <RemoteDetails status={status} onDisable={() => setConfirmOff(true)} />}
+      </CardContent>
       <EnableRemoteAccessDialog status={status} open={dialog} onOpenChange={setDialog} onEnabled={() => reload()} />
       <AlertDialog open={confirmOff} onOpenChange={setConfirmOff}>
         <AlertDialogContent>
@@ -17325,81 +17690,97 @@ function RemoteSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </Card>
   );
 }
 
-function RemoteDetails({ status }: { status: RemoteAccessStatus }) {
+function RemoteDetails({ status, onDisable }: { status: RemoteAccessStatus; onDisable(): void }) {
+  const url = status.url ?? "";
   return (
-    <dl className="grid grid-cols-[10rem_1fr] gap-x-4 gap-y-2 rounded-md border p-4 text-sm">
-      <dt className="text-muted-foreground">{t.remote.url}</dt>
-      <dd className="font-mono">{status.url}</dd>
-      <dt className="text-muted-foreground">{t.remote.fingerprint}</dt>
-      <dd className="break-all font-mono text-xs">{status.fingerprint}</dd>
-      <dd className="col-span-2 text-xs text-muted-foreground">{t.remote.verify}</dd>
-    </dl>
+    <div className="grid gap-2 text-sm">
+      <div className="flex items-center gap-2">
+        <Globe aria-hidden className="size-4 text-muted-foreground" />
+        <span className="font-mono">{url}</span>
+        <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(url)}>
+          <Copy aria-hidden />
+          {t.remote.copy}
+        </Button>
+        <span className="flex-1" />
+        <Button variant="outline" size="sm" onClick={onDisable}>
+          {t.remote.disable}
+        </Button>
+      </div>
+      <p className="flex items-center gap-2 rounded-md bg-muted px-2.5 py-2 font-mono text-xs">
+        <Fingerprint aria-hidden className="size-4 text-muted-foreground" />
+        <span>{t.remote.fingerprint}</span>
+        <span className="break-all">{status.fingerprint}</span>
+      </p>
+      <p className="text-xs text-muted-foreground">{t.remote.verify}</p>
+    </div>
   );
 }
 
-function SessionsSection() {
-  const { data: sessions, reload } = useRpcQuery({ method: "listSessions" }, ["sessions"]);
+function SessionsCard() {
+  const { data: sessions, reload } = useRpcQuery({ method: "listSessions" }, ["sessions.changed"]);
   if (!sessions) return null;
   const revoke = async (id: string) => {
     await client.rpc({ method: "revokeSession", id });
     reload();
   };
   return (
-    <section className="grid gap-3">
-      <div className="grid gap-1">
-        <h2 className="text-base font-semibold">{t.sessions.title}</h2>
-        <p className="text-sm text-muted-foreground">{t.sessions.help}</p>
-      </div>
-      {sessions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t.sessions.empty}</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t.sessions.device}</TableHead>
-              <TableHead>{t.sessions.type}</TableHead>
-              <TableHead>{t.sessions.created}</TableHead>
-              <TableHead>{t.sessions.lastSeen}</TableHead>
-              <TableHead>{t.sessions.expires}</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sessions.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium">
-                  <span className="flex items-center gap-2">
-                    {s.deviceName}
-                    {s.current && <Badge variant="secondary">{t.sessions.current}</Badge>}
-                  </span>
-                </TableCell>
-                <TableCell>{s.remote ? t.sessions.remote : t.sessions.local}</TableCell>
-                <TableCell>{fmt(s.createdAt)}</TableCell>
-                <TableCell>{fmt(s.lastSeenAt)}</TableCell>
-                <TableCell>{fmt(s.expiresAt)}</TableCell>
-                <TableCell className="text-right">
-                  {!s.current && (
-                    <Button variant="ghost" size="sm" onClick={() => revoke(s.id)}>
-                      {t.sessions.revoke}
-                    </Button>
-                  )}
-                </TableCell>
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>{t.sessions.title}</CardTitle>
+        <CardDescription>{t.sessions.help}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t.sessions.empty}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.sessions.device}</TableHead>
+                <TableHead>{t.sessions.type}</TableHead>
+                <TableHead>{t.sessions.created}</TableHead>
+                <TableHead>{t.sessions.lastSeen}</TableHead>
+                <TableHead>{t.sessions.expires}</TableHead>
+                <TableHead />
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </section>
+            </TableHeader>
+            <TableBody>
+              {sessions.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell>
+                    <span className="flex items-center gap-2">
+                      {s.deviceName}
+                      {s.current && <Badge variant="secondary">{t.sessions.current}</Badge>}
+                    </span>
+                  </TableCell>
+                  <TableCell>{s.remote ? t.sessions.remote : t.sessions.local}</TableCell>
+                  <TableCell>{date(s.createdAt)}</TableCell>
+                  <TableCell>{relativeTime(s.lastSeenAt)}</TableCell>
+                  <TableCell>{date(s.expiresAt)}</TableCell>
+                  <TableCell className="text-right">
+                    {!s.current && (
+                      <Button variant="ghost" size="sm" onClick={() => revoke(s.id)}>
+                        {t.sessions.revoke}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-function IsolationSection() {
+function IsolationCard() {
   const allowId = useId();
-  const { data: status, reload } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox"]);
+  const { data: status, reload } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"]);
   const [confirm, setConfirm] = useState(false);
   if (!status) return null;
   const setAllow = async (allow: boolean) => {
@@ -17409,37 +17790,41 @@ function IsolationSection() {
   };
   const active = status.kind === "sandbox-exec" ? t.isolation.sandboxExec : t.isolation.bwrap;
   return (
-    <section className="grid gap-3">
-      <h2 className="text-base font-semibold">{t.isolation.title}</h2>
-      {status.available ? (
-        <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CircleCheck className="size-4" />
-          {active}
-        </p>
-      ) : (
-        <div className="grid gap-2 text-sm">
-          <p className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-            <TriangleAlert className="size-4" />
-            {t.isolation.unavailable(status.reason ?? "")}
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>{t.isolation.title}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        {status.available ? (
+          <p className="flex items-center gap-2 text-sm">
+            <span aria-hidden className="size-2 rounded-full bg-emerald-500" />
+            <span className="text-emerald-700 dark:text-emerald-400">{active}</span>
+            <span className="text-muted-foreground">{t.isolation.activeDetail}</span>
           </p>
-          {status.fix && (
-            <p className="text-muted-foreground">
-              {t.isolation.fix} <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{status.fix}</code>
+        ) : (
+          <div className="grid gap-2 text-sm">
+            <p className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <TriangleAlert aria-hidden className="size-4" />
+              {t.isolation.unavailable(status.reason ?? "")}
             </p>
-          )}
+            {status.fix && (
+              <p className="text-muted-foreground">
+                {t.isolation.fix} <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{status.fix}</code>
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-6">
+          <Label htmlFor={allowId} className="font-normal">
+            {t.isolation.allow}
+          </Label>
+          <Switch
+            id={allowId}
+            checked={status.allowUnsandboxed}
+            onCheckedChange={(checked) => (checked ? setConfirm(true) : setAllow(false))}
+          />
         </div>
-      )}
-      <div className="flex items-center justify-between gap-6">
-        <Label htmlFor={allowId} className="font-normal">
-          {t.isolation.allow}
-        </Label>
-        <Switch
-          id={allowId}
-          aria-label={t.isolation.allow}
-          checked={status.allowUnsandboxed}
-          onCheckedChange={(on) => (on ? setConfirm(true) : setAllow(false))}
-        />
-      </div>
+      </CardContent>
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -17452,50 +17837,59 @@ function IsolationSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </Card>
   );
 }
 
-export function SecuritySettings() {
+export function SecurityPage() {
   return (
-    <div className="grid max-w-3xl gap-10">
-      <h1 className="text-xl font-semibold">{t.title}</h1>
-      <RemoteSection />
-      <SessionsSection />
-      <IsolationSection />
+    <div className="grid min-h-full grid-cols-[14rem_1fr]">
+      <SettingsNav active="security" />
+      <div className="flex flex-col gap-4 p-8">
+        <div>
+          <h1 className="text-xl font-semibold">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+        </div>
+        <RemoteCard />
+        <SessionsCard />
+        <IsolationCard />
+      </div>
     </div>
   );
 }
 ```
-Les couleurs d'état suivent les tokens de statut (vert / ambre / rouge), jamais l'orange réservé aux agents.
+Les couleurs d'état suivent les tokens de statut (vert / ambre / rouge), jamais l'orange réservé aux agents. L'état « accès distant » n'a pas d'événement : la page se recharge après chaque action.
 
-- [ ] **Step 10: Lancer le test**
+- [ ] **Step 10: Code d'appairage et page Apparence (maquette 15)**
 
-Run: `bun test packages/ui/src/pages/settings/security-settings.test.tsx`
-Expected: PASS (6 tests).
-
-- [ ] **Step 11: Code d'appairage (écran 15), écran 19 et bannière M7**
-
-`packages/ui/src/dialogs/PairingCodeDialog.tsx` :
+`packages/ui/src/settings/PairingCodeDialog.tsx` :
 ```tsx
 import { KiboError, type PairingCode } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@kibo/sdk/ui/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { formatPairingCode, remaining } from "../lib/pairing-code";
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void; now?: () => number };
+const t = fr.security.pairingCode;
 
 export function PairingCodeDialog({ open, onOpenChange, now = Date.now }: Props) {
   const [code, setCode] = useState<PairingCode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(now());
   const generate = useCallback(() => {
+    setError(null);
     client.rpc({ method: "createPairingCode" }).then(setCode, (e: unknown) => {
-      if (!(e instanceof KiboError)) throw e;
-      setError(e.detail);
+      setError(e instanceof KiboError ? e.detail : fr.common.error);
     });
   }, []);
   useEffect(() => {
@@ -17509,27 +17903,27 @@ export function PairingCodeDialog({ open, onOpenChange, now = Date.now }: Props)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{fr.pairing.generateTitle}</DialogTitle>
-          <DialogDescription>{fr.pairing.generateHelp}</DialogDescription>
+          <DialogTitle>{t.title}</DialogTitle>
+          <DialogDescription>{t.help}</DialogDescription>
         </DialogHeader>
         {code && !expired && (
           <div className="grid justify-items-center gap-2 py-4">
             <p className="font-mono text-3xl tracking-[0.3em]">{formatPairingCode(code.code)}</p>
-            <p className="text-sm text-muted-foreground">{fr.pairing.expiresIn(remaining(code.expiresAt, tick))}</p>
+            <p className="text-sm text-muted-foreground">{t.expiresIn(remaining(code.expiresAt, tick))}</p>
           </div>
         )}
-        {expired && <p className="py-4 text-center text-sm text-muted-foreground">{fr.pairing.expired}</p>}
+        {expired && <p className="py-4 text-center text-sm text-muted-foreground">{t.expired}</p>}
         {error && <p className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           {expired ? (
-            <Button onClick={generate}>{fr.pairing.regenerate}</Button>
+            <Button onClick={generate}>{t.regenerate}</Button>
           ) : (
             <Button
               variant="outline"
               disabled={!code}
               onClick={() => code && navigator.clipboard.writeText(formatPairingCode(code.code))}
             >
-              {fr.pairing.copy}
+              {t.copy}
             </Button>
           )}
         </DialogFooter>
@@ -17538,26 +17932,57 @@ export function PairingCodeDialog({ open, onOpenChange, now = Date.now }: Props)
   );
 }
 ```
-Dans la section « Accès web » de l'écran 15, le bouton « Générer un code » ouvre ce dialogue (`useState` local). Ajouter au test de Paramètres › Sécurité un cas pour le dialogue :
-```tsx
-test("the pairing code dialog shows the code and its countdown", async () => {
-  const { PairingCodeDialog } = await import("../../dialogs/PairingCodeDialog");
-  render(<PairingCodeDialog open onOpenChange={() => {}} now={() => 1_000} />);
-  expect(await screen.findByText("K7Q-4M2")).toBeTruthy();
-  expect(screen.getByText("Expire dans 4:59")).toBeTruthy();
-});
-```
-et, dans le `switch` du `mock.module`, `case "createPairingCode": return { code: "K7Q4M2", expiresAt: 300_000 };`.
 
-`packages/ui/src/pages/components/SandboxBanner.tsx` :
+`packages/ui/src/settings/AppearancePage.tsx` (seul le bloc « Accès web » de la maquette 15 ; thème et état du démon hors périmètre) :
+```tsx
+import { Button } from "@kibo/sdk/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
+import { useState } from "react";
+import { fr } from "../i18n/fr";
+import { PairingCodeDialog } from "./PairingCodeDialog";
+import { SettingsNav } from "./SettingsNav";
+
+const t = fr.security.appearance;
+
+export function AppearancePage() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="grid min-h-full grid-cols-[14rem_1fr]">
+      <SettingsNav active="appearance" />
+      <div className="flex flex-col gap-4 p-8">
+        <div>
+          <h1 className="text-xl font-semibold">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+        </div>
+        <Card className="gap-4">
+          <CardHeader>
+            <CardTitle>{t.web}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-4">
+            <span className="text-sm">{t.webPair}</span>
+            <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+              {t.generate}
+            </Button>
+          </CardContent>
+        </Card>
+        <PairingCodeDialog open={open} onOpenChange={setOpen} />
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 11: Bannière M7 et ligne de l'écran 19**
+
+`packages/ui/src/components-page/SandboxBanner.tsx` :
 ```tsx
 import { Alert, AlertDescription, AlertTitle } from "@kibo/sdk/ui/alert";
 import { TriangleAlert } from "lucide-react";
-import { fr } from "../../i18n/fr";
-import { useRpcQuery } from "../../state/use-rpc-query";
+import { fr } from "../i18n/fr";
+import { useRpcQuery } from "../state/use-rpc-query";
 
 export function SandboxBanner() {
-  const { data } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox"]);
+  const { data } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"]);
   if (!data || data.available || data.allowUnsandboxed) return null;
   return (
     <Alert className="border-amber-500/50 text-amber-700 dark:text-amber-400">
@@ -17572,52 +17997,68 @@ export function SandboxBanner() {
   );
 }
 ```
-`ComponentsPage` rend `<SandboxBanner />` au-dessus du tableau. `FirstRunPage` ajoute la ligne :
-```tsx
-const { data: sandbox } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox"]);
-{sandbox && (
-  <CheckRow
-    title={fr.security.isolation.firstRun}
-    detail={sandbox.available ? fr.security.isolation.firstRunOk(sandbox.kind === "sandbox-exec" ? "sandbox-exec" : "bubblewrap") : `${fr.security.isolation.unavailable(sandbox.reason ?? "")} ${sandbox.fix ?? ""}`}
-    state={sandbox.available ? "ok" : "warn"}
-  />
-)}
-```
-Et `SETTINGS_SECTIONS` gagne `{ id: "security", label: fr.security.title, element: SecuritySettings }` entre Intégrations et Raccourcis s'il n'existe pas encore.
+`ComponentsPage` rend `<SandboxBanner />` en tête de sa grille (`<div className="grid content-start gap-6 p-6">`), au-dessus du tableau. Dans `components-page.test.tsx`, le mock du client gagne `subscribeEvents: () => () => undefined` et, dans son `rpc`, `getSandboxStatus` ⇒ `{ kind: "bwrap", available: true, reason: null, fix: null, allowUnsandboxed: false }` (aucune attente modifiée).
 
-Tests ajoutés à `security-settings.test.tsx` pour la bannière (indisponible ⇒ texte M7 et commande ; disponible ⇒ rien ; autorisée sans isolation ⇒ rien) :
+Dans `packages/ui/src/shell/Welcome.tsx`, `EnvironmentChecks` reçoit `sandbox: SandboxStatus | null` (lu dans `Welcome` par `useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"])`) et ajoute, après la ligne de capacité :
 ```tsx
-test("the components banner only shows when backends are stopped", async () => {
-  const { SandboxBanner } = await import("../components/SandboxBanner");
+      {sandbox && (
+        <CheckRow
+          state={sandbox.available ? "ok" : "warn"}
+          title={fr.security.welcome.title}
+          detail={
+            sandbox.available
+              ? sandbox.kind === "sandbox-exec"
+                ? fr.security.isolation.sandboxExec
+                : fr.security.isolation.bwrap
+              : [fr.security.isolation.unavailable(sandbox.reason ?? ""), sandbox.fix].filter(Boolean).join(" · ")
+          }
+        />
+      )}
+```
+Dans `welcome.test.tsx`, le mock devient `rpc: async (req: RpcRequest) => (req.method === "getSandboxStatus" ? sandbox : env)` avec `subscribeEvents: () => () => {}` et un `sandbox` disponible par défaut (le test « five checks » garde ses attentes) ; ajouter :
+```tsx
+test("warns when the OS isolation is unavailable, with the command to run", async () => {
+  env = base;
   sandbox = { kind: "bwrap", available: false, reason: "bubblewrap (bwrap) is not installed", fix: "sudo apt install bubblewrap", allowUnsandboxed: false };
-  const { unmount } = render(<SandboxBanner />);
-  expect(await screen.findByText("Les backends sandboxés sont arrêtés : isolation OS indisponible.")).toBeTruthy();
-  expect(screen.getByText("sudo apt install bubblewrap")).toBeTruthy();
-  unmount();
-  sandbox = { ...sandbox, allowUnsandboxed: true };
-  render(<SandboxBanner />);
-  await new Promise((r) => setTimeout(r, 10));
-  expect(screen.queryByText(/backends sandboxés sont arrêtés/)).toBeNull();
+  render(<Welcome onCreate={() => {}} onImport={() => {}} onConnectGithub={() => {}} />);
+  expect(
+    await screen.findByText("Indisponible : bubblewrap (bwrap) is not installed · sudo apt install bubblewrap"),
+  ).toBeTruthy();
 });
 ```
 
-- [ ] **Step 12: Lancer les tests de l'UI**
+- [ ] **Step 12: Écrans navigables**
 
-Run: `bun test packages/ui`
+- `packages/schema/src/tabs.ts` : `Screen = z.enum(["agents", "queue", "general", "domains", "components", "mine", "integrations", "appearance", "security"])`.
+- `packages/ui/src/tabs/target-hash.ts` : `appearance: "#/settings/appearance"`, `security: "#/settings/security"` ; ajouter à `tabs/tabs.test.ts` un aller-retour `targetToHash` / `hashToTarget` pour ces deux écrans.
+- `packages/ui/src/tabs/screens.ts` : `appearance: { title: fr.settings.appearance, icon: Palette, crumbs: [fr.nav.settings, fr.settings.appearance] }`, `security: { title: fr.settings.security, icon: Shield, crumbs: [fr.nav.settings, fr.settings.security] }`.
+- `packages/ui/src/shell/lazy-screens.ts` : `AppearancePage` et `SecurityPage` par `lazyPanel(() => import("../settings/…").then((m) => m.…), fr.lazy)` (budget du chargement initial inchangé : `bun run budget`).
+- `packages/ui/src/shell/ScreenView.tsx` : `if (screen === "appearance") return <AppearancePage />;` et `if (screen === "security") return <SecurityPage />;` avant le test `!config`.
+- `packages/ui/src/settings/SettingsNav.tsx` : `SettingsScreen` gagne `"appearance" | "security"` ; les entrées `appearance` et `security` de `ITEMS` reçoivent `screen: "appearance"` et `screen: "security"`.
+- `packages/ui/src/shell/AppSidebar.tsx` : le bouton Paramètres est actif aussi pour `appearance` et `security`.
+
+Run: `bun test packages/ui packages/schema`
 Expected: PASS.
 
-- [ ] **Step 13: Contrôle visuel**
+- [ ] **Step 13: Lancer tous les tests de l'UI**
 
-Run: `bun run --cwd packages/ui build && bun packages/daemon/src/main.ts --ui packages/ui/dist` puis ouvrir Paramètres › Sécurité, l'écran 15, l'écran 19, la page Composants et `/pair` (appairage par code) en sombre et en clair.
-Expected: conformes aux exports Penpot S8, M7, 15, 19 et 31 ; écarts corrigés avant le commit.
+Run: `bun test packages/ui/src/settings/security-page.test.tsx packages/ui/src/shell packages/ui/src/components-page packages/ui/src/tabs && bun run budget`
+Expected: PASS ; budget sous 230 kB gzip.
 
-- [ ] **Step 14: Vérifier le lint et les types, commiter**
+- [ ] **Step 14: Contrôle visuel**
+
+Run: `bun run start` puis ouvrir Paramètres › Sécurité (accès distant désactivé puis activé), le dialogue d'activation, Paramètres › Apparence (« Générer un code »), l'écran 19 (projet vide), la page Composants et l'écran d'appairage (navigateur non appairé) en sombre et en clair.
+Expected: conformes aux exports Penpot 71, 72, 15 (bloc « Accès web »), 19, 31 et à la bannière M7 ; écarts corrigés avant le commit ou listés pour le jalon.
+
+- [ ] **Step 15: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
 
 ```bash
-git add packages/ui/src/pages/settings/SecuritySettings.tsx packages/ui/src/pages/settings/security-settings.test.tsx packages/ui/src/pages/settings/sections.ts packages/ui/src/pages/settings/AppearanceSettings.tsx packages/ui/src/dialogs/EnableRemoteAccessDialog.tsx packages/ui/src/dialogs/PairingCodeDialog.tsx packages/ui/src/pages/components/SandboxBanner.tsx packages/ui/src/pages/components/ComponentsPage.tsx packages/ui/src/pages/FirstRunPage.tsx packages/ui/src/lib/pairing-code.ts packages/ui/src/lib/pairing-code.test.ts packages/ui/src/state/use-rpc-query.ts packages/ui/src/shell/PairingScreen.tsx packages/ui/src/shell/pairing-screen.test.tsx packages/ui/src/shell/screens.test.tsx packages/ui/src/i18n/fr.ts packages/sdk/src/ui
+git add packages/ui/src/lib/pairing-code.ts packages/ui/src/lib/pairing-code.test.ts packages/ui/src/shell/PairingScreen.tsx packages/ui/src/shell/pairing-screen.test.tsx packages/ui/src/shell/screens.test.tsx packages/ui/src/i18n/fr.ts packages/ui/src/i18n/fr-security.ts packages/ui/src/state/use-rpc-query.ts
+git commit -m "feat(ui): appairage par code à 6 caractères"
+git add packages/schema/src/tabs.ts packages/ui/src/tabs packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/settings packages/ui/src/components-page packages/ui/src/shell/Welcome.tsx packages/ui/src/shell/welcome.test.tsx
 git commit -m "feat(ui): paramètres de sécurité"
 ```
 
@@ -17630,30 +18071,42 @@ git commit -m "feat(ui): paramètres de sécurité"
 **Prérequis :** écrans M1, M2, M3 et M5 dessinés et exportés par le chef d'équipe.
 
 **Files:**
-- Create: `packages/ui/src/pages/components/MarketplaceTab.tsx`, `packages/ui/src/pages/components/MarketCard.tsx`, `packages/ui/src/pages/components/MarketPackageSheet.tsx`, `packages/ui/src/pages/components/SourceCode.tsx`, `packages/ui/src/pages/settings/ComponentSourcesSettings.tsx`, `packages/ui/src/dialogs/AddSourceDialog.tsx`, `packages/ui/src/lib/market-errors.ts`
-- Modify: `packages/ui/src/pages/components/ComponentsPage.tsx` (onglets Installés / Marketplace), `packages/ui/src/dialogs/TrustDialog.tsx` (variantes M5), `packages/ui/src/pages/settings/sections.ts` (section « Composants »), `packages/ui/src/i18n/fr.ts` (section `market`), `packages/sdk/src/ui/tabs.tsx` (ajouté par `bunx shadcn@latest add tabs` s'il manque)
-- Test: `packages/ui/src/pages/components/marketplace.test.tsx`, `packages/ui/src/pages/settings/sources.test.tsx`, `packages/ui/src/dialogs/trust-market.test.tsx`, `packages/ui/src/lib/market-errors.test.ts`
+- Create: `packages/ui/src/components-page/MarketplaceTab.tsx`, `packages/ui/src/components-page/MarketCard.tsx`, `packages/ui/src/components-page/MarketPackageSheet.tsx`, `packages/ui/src/components-page/SourceCode.tsx`, `packages/ui/src/settings/ComponentSourcesPage.tsx`, `packages/ui/src/dialogs/AddSourceDialog.tsx`, `packages/ui/src/lib/market-errors.ts`, `packages/ui/src/lib/fingerprint.ts`, `packages/ui/src/i18n/fr-market.ts`
+- Modify: `packages/ui/src/components-page/ComponentsPage.tsx` (onglets Installés / Marketplace), `packages/ui/src/dialogs/TrustDialog.tsx` (variantes M5, export de `PermissionList`), `packages/ui/src/i18n/fr.ts` (étalement de `frMarket`, `settings.components`), `packages/schema/src/tabs.ts` (écran `sources`), `packages/ui/src/tabs/screens.ts`, `packages/ui/src/tabs/target-hash.ts` (`#/settings/components`), `packages/ui/src/settings/SettingsNav.tsx` (entrée « Composants »), `packages/ui/src/shell/lazy-screens.ts`, `packages/ui/src/shell/ScreenView.tsx`, `packages/ui/src/shell/AppSidebar.tsx` (Paramètres actif sur `sources`)
+- Test: `packages/ui/src/components-page/marketplace.test.tsx`, `packages/ui/src/settings/sources.test.tsx`, `packages/ui/src/dialogs/trust-market.test.tsx`, `packages/ui/src/lib/market-errors.test.ts`
 
 **Interfaces:**
-- Consumes: RPC `listMarketSources`, `probeMarketSource`, `addMarketSource`, `removeMarketSource`, `refreshMarket`, `searchMarket`, `getMarketPackage` (T15), `installFromMarket` (T20) ; types `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `MarketInstallResult`, `TrustPreview.market` (T5, T20) ; `formatFingerprint`, `shortHash` sont dans `@kibo/trust`, que l'UI n'importe pas : ils sont réécrits dans `packages/ui/src/lib/fingerprint.ts` (deux fonctions pures, testées, sans dépendance).
-- Hypothèse v0.6 (vérifiée en T0) : `permissionLines(granted: GrantedPermissions): string[]` (`packages/ui/src/lib/permission-lines.ts`, textes de l'écran 30) ; `CodeBlock({ code, path }: { code: string; path: string })` (aperçu Shiki de la phase 3, `packages/ui/src/files/CodeBlock.tsx`) ; `TrustDialog({ preview, open, onApproved, onRefused })` (phase 4) ; `SETTINGS_SECTIONS: { id: string; label: string; render: () => JSX.Element }[]` ; `ComponentsPage` rend le tableau « Installés » dans `InstalledTable`.
+- Consumes: RPC `listMarketSources`, `probeMarketSource`, `addMarketSource`, `removeMarketSource`, `refreshMarket`, `searchMarket`, `getMarketPackage` (T15), `installFromMarket` (T20) ; types `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `MarketInstallResult`, `MarketTrustInfo`, `ComponentKind` (T5). `formatFingerprint` et `shortHash` de `@kibo/trust` ne sont pas importés par l'UI : `shortHash` vient de `@kibo/schema` (déjà exporté par `component.ts`), le regroupement par 4 est réécrit dans `packages/ui/src/lib/fingerprint.ts` (fonction pure, testée).
+- Vérifié en T0 :
+  - `permissionLines(g: GrantedPermissions): PermissionLine[]` avec `PermissionLine = { icon: LucideIcon; title: string; detail?: string }` (`packages/ui/src/lib/permission-lines.ts`) ; l'écran 30 les rend par une fonction locale `PermissionList` de `TrustDialog.tsx`, exportée ici pour le détail M2.
+  - Il n'y a pas de `CodeBlock` : l'aperçu en lecture passe par `highlightLines(code, lang): Promise<Token[][]>` (`packages/ui/src/files/highlight.ts`, Shiki chargé à la demande), `languageOf(path): { id; label }` (`files/language.ts`) et `CodeLines({ tokens, highlightLine, label })` (`files/CodeLines.tsx`).
+  - `TrustDialog({ target, mode, open, onOpenChange, onApproved, approve? })` avec `target: TrustTarget = { id; title; version; hash; origin: ComponentOrigin; permissions: GrantedPermissions }` (`packages/ui/src/dialogs/TrustDialog.tsx`) ; sous-titre `fr.trust.subtitle(fr.trust.origin[origin], shortHash(hash))` ; niveau par défaut `sandboxed`. Il n'y a ni `TrustPreview` ni fixture d'aperçu : les tests construisent un `TrustTarget` littéral.
+  - Il n'y a pas de `SETTINGS_SECTIONS` ni de `sections.ts` : chaque page de Paramètres (`packages/ui/src/settings/*Page.tsx`) rend `<div className="grid min-h-full grid-cols-[14rem_1fr]"><SettingsNav active="…" />…</div>` ; les entrées sont le tableau `ITEMS` de `SettingsNav.tsx` (`{ id, label, icon, screen? }`, sans `screen` = « Bientôt ») ; une entrée navigable est un `Screen` (`packages/schema/src/tabs.ts`), avec son titre dans `SCREENS` (`tabs/screens.ts`), son adresse dans `SCREEN_HASHES` (`tabs/target-hash.ts`), son chargement dans `lazy-screens.ts` (`lazyPanel`) et son rendu dans `ScreenView.tsx`.
+  - La page Composants est `packages/ui/src/components-page/ComponentsPage.tsx` (tableau local `ComponentsTable`, lignes de `rows.ts`, menu `ComponentRowMenu`, état `trust: TrustTarget | null` qui ouvre `TrustDialog`) ; elle n'a pas d'onglets. `@kibo/sdk/ui/tabs` existe déjà.
+  - `client.rpc` est typé par méthode (`rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>`) : aucun `as` sur les résultats. Les tests mockent `../api` (`mock.module`, `client.rpc` et `client.subscribe`), comme `components-page/components-page.test.tsx`.
+  - Les textes vivent dans `packages/ui/src/i18n/fr.ts` et ses fichiers `fr-*.ts` étalés (`...frComponents`) ; `fr.common.error` vaut « Une erreur est survenue. ». La clé de haut niveau `source` existe déjà : les textes des sources vont sous `marketSources`.
+  - Budget du chargement initial : 230 kB gzip (`bun run budget`, dernière mesure 225,3 kB) ; tout le code de cette tâche est dans des écrans chargés à la demande (`ComponentsPage`, `ComponentSourcesPage`).
 - Produces :
   - `MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInstallResult): void })`.
   - `MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: { target: { sourceId: string; id: string; version: string } | null; onClose(): void; onInstalled(result: MarketInstallResult): void; onUnlock?(detail: MarketPackageDetail): void })` (réutilisé par T27).
   - `marketErrorText(error: unknown): string`, `marketErrorCodeText(code: string): string` (`lib/market-errors.ts`).
-  - `TrustDialog` gagne `publisherLine?: string`, `newPublisher?: boolean`, `fromMarketplace?: boolean` ; `marketTrustProps(market: TrustPreview["market"]): { publisherLine?: string; newPublisher?: boolean; fromMarketplace?: boolean }`.
-  - `groupFingerprint(hex: string): string`, `shortFingerprint(hex: string): string` (`lib/fingerprint.ts`).
+  - `TrustTarget.market?: MarketTrustInfo | null` ; `trustTargetOfInstall(result: MarketInstallResult): TrustTarget` ; `PermissionList({ permissions })` exporté (`dialogs/TrustDialog.tsx`).
+  - `groupFingerprint(hex: string): string` (`lib/fingerprint.ts`).
+  - Écran `sources` (`Screen`), adresse `#/settings/components`, page `ComponentSourcesPage`.
 
-- [ ] **Step 1: Textes `fr.ts`**
+- [ ] **Step 1: Textes**
 
-Ajouter à `fr` :
+`packages/ui/src/i18n/fr-market.ts` :
 ```ts
+export const frMarket = {
   market: {
     tabInstalled: "Installés",
     tabMarket: "Marketplace",
     search: "Rechercher un composant",
     allSources: "Toutes les sources",
-    kind: { all: "Tous", widget: "Widget", view: "Vue", both: "Les deux" },
+    sourceFilter: "Source",
+    kindFilter: "Type",
+    kind: { all: "Tous", widget: "Widget", view: "Vue", both: "Les deux", adapter: "Adaptateur" },
     noSource: "Aucune source de marketplace. Ajoute-en une dans Paramètres › Composants.",
     noResult: "Aucun composant ne correspond à ta recherche.",
     verified: "vérifié",
@@ -17690,9 +18143,10 @@ Ajouter à `fr` :
       NOT_FOUND: "Paquet introuvable sur la source.",
       TLS_REQUIRED: "Adresse non chiffrée : utilise https://.",
       VERSION_EXISTS: "Cette version est déjà installée avec un autre contenu.",
+      CONFLICT: "Ce composant est en cours de publication : réessaie dans un instant.",
     },
   },
-  sources: {
+  marketSources: {
     title: "Sources",
     subtitle: "Les marketplaces où Kibo cherche des composants. Chaque source est vérifiée par sa clé.",
     name: "Nom",
@@ -17716,8 +18170,9 @@ Ajouter à `fr` :
     confirm: "Ajouter",
     empty: "Aucune source pour l'instant.",
   },
+} as const;
 ```
-Ajouter `components: "Composants"` à la section `settings` existante (libellé de la nouvelle entrée du menu).
+Dans `packages/ui/src/i18n/fr.ts`, importer `frMarket` et l'étaler (`...frMarket`) à côté de `...frComponents` ; ajouter `components: "Composants"` à `settings`.
 
 - [ ] **Step 2: Tests des utilitaires**
 
@@ -17725,12 +18180,12 @@ Ajouter `components: "Composants"` à la section `settings` existante (libellé 
 ```ts
 import { expect, test } from "bun:test";
 import { KiboError } from "@kibo/schema";
-import { groupFingerprint, shortFingerprint } from "./fingerprint";
-import { marketErrorText } from "./market-errors";
+import { groupFingerprint } from "./fingerprint";
+import { marketErrorCodeText, marketErrorText } from "./market-errors";
 
 test("known codes get their French message", () => {
   expect(marketErrorText(new KiboError("SIGNATURE_INVALID", "bad"))).toBe("Signature invalide.");
-  expect(marketErrorText(new KiboError("INDEX_ROLLBACK", "x"))).toBe("Index refusé : numéro inférieur au dernier vu.");
+  expect(marketErrorCodeText("INDEX_ROLLBACK")).toBe("Index refusé : numéro inférieur au dernier vu.");
 });
 
 test("unknown errors fall back to the generic message", () => {
@@ -17738,11 +18193,10 @@ test("unknown errors fall back to the generic message", () => {
   expect(marketErrorText(new KiboError("INTERNAL", "x"))).toBe("Une erreur est survenue.");
 });
 
-test("fingerprints are grouped by four and shortened", () => {
+test("fingerprints are grouped by four", () => {
   const hex = "3f9a8b21".repeat(8);
   expect(groupFingerprint(hex).split(" ")).toHaveLength(16);
   expect(groupFingerprint(hex).startsWith("3f9a 8b21")).toBe(true);
-  expect(shortFingerprint(hex)).toBe("3f9a…8b21");
 });
 ```
 
@@ -17754,10 +18208,6 @@ Expected: FAIL avec « Cannot find module './fingerprint' ».
 export function groupFingerprint(hex: string): string {
   return (hex.match(/.{1,4}/g) ?? []).join(" ");
 }
-
-export function shortFingerprint(hex: string): string {
-  return `${hex.slice(0, 4)}…${hex.slice(-4)}`;
-}
 ```
 
 `packages/ui/src/lib/market-errors.ts` :
@@ -17765,13 +18215,14 @@ export function shortFingerprint(hex: string): string {
 import { KiboError } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 
-const messages: Record<string, string> = fr.market.errors;
+const messages: Readonly<Record<string, string>> = fr.market.errors;
 
 export function marketErrorCodeText(code: string): string {
   return messages[code] ?? fr.common.error;
 }
 
 export function marketErrorText(error: unknown): string {
+  if (!(error instanceof KiboError)) console.error(error);
   return error instanceof KiboError ? marketErrorCodeText(error.code) : fr.common.error;
 }
 ```
@@ -17781,14 +18232,16 @@ Expected: PASS.
 
 - [ ] **Step 3: Tests du catalogue et du détail**
 
-`packages/ui/src/pages/components/marketplace.test.tsx` :
-```ts
+`packages/ui/src/components-page/marketplace.test.tsx` :
+```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   KiboError,
   type MarketHit,
+  type MarketInstallResult,
   type MarketPackageDetail,
   type MarketSourceInfo,
+  NO_PERMISSIONS,
   type RpcRequest,
 } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -17797,13 +18250,14 @@ import userEvent from "@testing-library/user-event";
 const calls: RpcRequest[] = [];
 let answers: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
 
-mock.module("../../api", () => ({
+mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
       const answer = answers[req.method];
-      return answer ? answer() : Promise.resolve(null);
+      return answer ? answer() : Promise.resolve([]);
     },
+    subscribe: () => () => undefined,
   },
 }));
 
@@ -17833,16 +18287,17 @@ const hit: MarketHit = {
   installed: null,
   updateAvailable: null,
 };
+const reads = { ...NO_PERMISSIONS, reads: ["ticket" as const] };
 const detail: MarketPackageDetail = {
   ...hit,
   publisher: { name: "Léa", publicKey: "LEA", verified: true },
   version: "0.3.0",
   hash: "c21e".repeat(16),
   size: 4096,
-  permissions: { reads: ["ticket", "status"], writes: [], data: false, net: [] },
+  permissions: { ...NO_PERMISSIONS, reads: ["ticket", "status"] },
   versions: [
-    { version: "0.3.0", hash: "c21e".repeat(16), size: 4096, permissions: { reads: ["ticket"], writes: [], data: false, net: [] }, publishedAt: "2026-09-20T10:00:00Z", revoked: null },
-    { version: "0.2.0", hash: "aaaa".repeat(16), size: 4000, permissions: { reads: ["ticket"], writes: [], data: false, net: [] }, publishedAt: "2026-09-10T10:00:00Z", revoked: "Faille" },
+    { version: "0.3.0", hash: "c21e".repeat(16), size: 4096, permissions: reads, publishedAt: "2026-09-20T10:00:00Z", revoked: null },
+    { version: "0.2.0", hash: "aaaa".repeat(16), size: 4000, permissions: reads, publishedAt: "2026-09-10T10:00:00Z", revoked: "Faille" },
   ],
   pinnedPublisher: null,
   newPublisher: true,
@@ -17852,6 +18307,7 @@ const detail: MarketPackageDetail = {
     { path: "ui.tsx", content: "export const Component = () => <div>Burndown</div>;" },
   ],
 };
+const TARGET = { sourceId: "equipe", id: "burndown", version: "0.3.0" };
 
 beforeEach(() => {
   calls.length = 0;
@@ -17893,7 +18349,7 @@ test("an empty search result says so", async () => {
 
 test("the detail shows the verified publisher, revoked versions and the code", async () => {
   answers.getMarketPackage = () => Promise.resolve(detail);
-  render(<MarketPackageSheet target={{ sourceId: "equipe", id: "burndown", version: "0.3.0" }} onClose={() => {}} onInstalled={() => {}} />);
+  render(<MarketPackageSheet target={TARGET} onClose={() => {}} onInstalled={() => {}} />);
   expect(await screen.findByText("Publié par Léa · vérifié par Équipe")).toBeTruthy();
   expect(screen.getByText("Nouvel éditeur")).toBeTruthy();
   expect(screen.getByText("Révoquée : Faille")).toBeTruthy();
@@ -17902,25 +18358,32 @@ test("the detail shows the verified publisher, revoked versions and the code", a
   await user.click(screen.getByRole("button", { name: "Voir le code" }));
   expect(screen.getByText("Code vérifié : signature et empreinte correspondent")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "ui.tsx" }));
-  expect(screen.getByText(/<div>Burndown<\/div>/)).toBeTruthy();
+  expect(await screen.findByText(/Burndown<\/div>/)).toBeTruthy();
 });
 
-test("installing calls the daemon then hands the preview over", async () => {
+test("installing calls the daemon then hands the result over", async () => {
   answers.getMarketPackage = () => Promise.resolve(detail);
-  const result = { id: "burndown", version: "0.3.0", hash: detail.hash, preview: { market: null } };
+  const result: MarketInstallResult = {
+    id: "burndown",
+    title: "Burndown",
+    version: "0.3.0",
+    hash: detail.hash,
+    permissions: detail.permissions,
+    market: { publisherName: "Léa", verified: true, sourceName: "Équipe", newPublisher: true },
+  };
   answers.installFromMarket = () => Promise.resolve(result);
-  const onInstalled = mock((_: unknown) => {});
-  render(<MarketPackageSheet target={{ sourceId: "equipe", id: "burndown", version: "0.3.0" }} onClose={() => {}} onInstalled={onInstalled} />);
+  const onInstalled = mock((_: MarketInstallResult) => {});
+  render(<MarketPackageSheet target={TARGET} onClose={() => {}} onInstalled={onInstalled} />);
   await userEvent.setup().click(await screen.findByRole("button", { name: "Installer" }));
   await waitFor(() => expect(onInstalled).toHaveBeenCalledWith(result));
-  expect(calls.at(-1)).toEqual({ method: "installFromMarket", sourceId: "equipe", id: "burndown", version: "0.3.0" });
+  expect(calls.at(-1)).toEqual({ method: "installFromMarket", ...TARGET });
 });
 
 test("a failed check is explained and nothing is handed over", async () => {
   answers.getMarketPackage = () => Promise.resolve(detail);
   answers.installFromMarket = () => Promise.reject(new KiboError("HASH_MISMATCH", "x"));
-  const onInstalled = mock((_: unknown) => {});
-  render(<MarketPackageSheet target={{ sourceId: "equipe", id: "burndown", version: "0.3.0" }} onClose={() => {}} onInstalled={onInstalled} />);
+  const onInstalled = mock((_: MarketInstallResult) => {});
+  render(<MarketPackageSheet target={TARGET} onClose={() => {}} onInstalled={onInstalled} />);
   await userEvent.setup().click(await screen.findByRole("button", { name: "Installer" }));
   expect((await screen.findByRole("alert")).textContent).toBe("L'empreinte ne correspond pas.");
   expect(onInstalled).not.toHaveBeenCalled();
@@ -17928,42 +18391,47 @@ test("a failed check is explained and nothing is handed over", async () => {
 
 test("a changed publisher key disables install and offers to unlock", async () => {
   answers.getMarketPackage = () => Promise.resolve({ ...detail, publisherChanged: true, newPublisher: false });
-  const onUnlock = mock((_: unknown) => {});
-  render(<MarketPackageSheet target={{ sourceId: "equipe", id: "burndown", version: "0.3.0" }} onClose={() => {}} onInstalled={() => {}} onUnlock={onUnlock} />);
+  const onUnlock = mock((_: MarketPackageDetail) => {});
+  render(<MarketPackageSheet target={TARGET} onClose={() => {}} onInstalled={() => {}} onUnlock={onUnlock} />);
   expect(await screen.findByText("La clé de l'éditeur a changé.")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Installer" }).hasAttribute("disabled")).toBe(true);
   await userEvent.setup().click(screen.getByRole("button", { name: "Débloquer…" }));
   expect(onUnlock).toHaveBeenCalled();
 });
 ```
-L'aperçu renvoyé par le démon est typé `TrustPreview` ; dans ce test, seul `market` est lu par le composant, le reste de l'objet transite tel quel vers `onInstalled`.
 
-Run: `bun test packages/ui/src/pages/components/marketplace.test.tsx`
+Run: `bun test packages/ui/src/components-page/marketplace.test.tsx`
 Expected: FAIL avec « Cannot find module './MarketplaceTab' ».
 
 - [ ] **Step 4: Implémenter le catalogue**
 
-`packages/ui/src/pages/components/MarketCard.tsx` :
+`packages/ui/src/components-page/MarketCard.tsx` :
 ```tsx
 import type { MarketHit } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { BadgeCheck, CircleAlert } from "lucide-react";
-import { fr } from "../../i18n/fr";
+import { fr } from "../i18n/fr";
+
+function InstallBadge({ hit }: { hit: MarketHit }) {
+  if (hit.updateAvailable) return <Badge variant="secondary">{fr.market.available(hit.updateAvailable)}</Badge>;
+  if (hit.installed) return <Badge variant="outline">{fr.market.installed(hit.installed)}</Badge>;
+  return null;
+}
 
 export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) {
+  const Icon = hit.publisher.verified ? BadgeCheck : CircleAlert;
+  const tone = hit.publisher.verified
+    ? "text-emerald-600 dark:text-emerald-400"
+    : "text-amber-600 dark:text-amber-400";
   return (
-    <Card className="cursor-pointer transition-colors hover:bg-muted/50" onClick={onOpen}>
+    <Card className="transition-colors hover:bg-muted/50">
       <CardHeader className="gap-1">
         <CardTitle className="flex items-center justify-between gap-2 text-sm">
           <button type="button" className="text-left hover:underline" onClick={onOpen}>
             {hit.title}
           </button>
-          {hit.updateAvailable ? (
-            <Badge variant="secondary">{fr.market.available(hit.updateAvailable)}</Badge>
-          ) : hit.installed ? (
-            <Badge variant="outline">{fr.market.installed(hit.installed)}</Badge>
-          ) : null}
+          <InstallBadge hit={hit} />
         </CardTitle>
         <span className="font-mono text-xs text-muted-foreground">{hit.id}</span>
       </CardHeader>
@@ -17972,11 +18440,7 @@ export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) 
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
           <Badge variant="outline">{fr.market.kind[hit.kind]}</Badge>
           <span className="inline-flex items-center gap-1">
-            {hit.publisher.verified ? (
-              <BadgeCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
-            ) : (
-              <CircleAlert className="size-3.5 text-amber-600 dark:text-amber-400" aria-hidden />
-            )}
+            <Icon className={`size-3.5 ${tone}`} aria-hidden />
             {hit.publisher.name} · {hit.publisher.verified ? fr.market.verified : fr.market.unverified}
           </span>
           <span>{fr.market.latest(hit.latest)}</span>
@@ -17988,20 +18452,29 @@ export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) 
 }
 ```
 
-`packages/ui/src/pages/components/MarketplaceTab.tsx` :
+`packages/ui/src/components-page/MarketplaceTab.tsx` :
 ```tsx
 import type { ComponentKind, MarketHit, MarketInstallResult, MarketSourceInfo } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { useEffect, useId, useState } from "react";
-import { client } from "../../api";
-import { fr } from "../../i18n/fr";
-import { marketErrorText } from "../../lib/market-errors";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+import { marketErrorText } from "../lib/market-errors";
 import { MarketCard } from "./MarketCard";
 import { MarketPackageSheet } from "./MarketPackageSheet";
 
 const KINDS: (ComponentKind | null)[] = [null, "widget", "view", "both"];
+type Target = { sourceId: string; id: string; version: string };
+
+function Choice({ pressed, label, onPress }: { pressed: boolean; label: string; onPress(): void }) {
+  return (
+    <Button size="sm" variant={pressed ? "secondary" : "ghost"} aria-pressed={pressed} onClick={onPress}>
+      {label}
+    </Button>
+  );
+}
 
 export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInstallResult): void }) {
   const searchId = useId();
@@ -18011,34 +18484,28 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [hits, setHits] = useState<MarketHit[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [target, setTarget] = useState<{ sourceId: string; id: string; version: string } | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
 
   useEffect(() => {
     client
       .rpc({ method: "listMarketSources" })
-      .then((s) => setSources(s as MarketSourceInfo[]))
+      .then(setSources)
       .catch((e: unknown) => setError(marketErrorText(e)));
   }, []);
 
   useEffect(() => {
     if (!sources?.length) return;
     client
-      .rpc({
-        method: "searchMarket",
-        query,
-        ...(sourceId ? { sourceId } : {}),
-        ...(kind ? { kind } : {}),
-      })
+      .rpc({ method: "searchMarket", query, ...(sourceId ? { sourceId } : {}), ...(kind ? { kind } : {}) })
       .then((h) => {
-        setHits(h as MarketHit[]);
+        setHits(h);
         setError(null);
       })
       .catch((e: unknown) => setError(marketErrorText(e)));
   }, [sources, query, kind, sourceId]);
 
-  if (sources !== null && sources.length === 0) {
+  if (sources !== null && sources.length === 0)
     return <p className="p-8 text-center text-sm text-muted-foreground">{fr.market.noSource}</p>;
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -18047,35 +18514,33 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
           <Label htmlFor={searchId}>{fr.market.search}</Label>
           <Input id={searchId} value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div className="flex gap-1" role="group" aria-label={fr.market.source}>
-          <Button size="sm" variant={sourceId === null ? "secondary" : "ghost"} aria-pressed={sourceId === null} onClick={() => setSourceId(null)}>
-            {fr.market.allSources}
-          </Button>
+        <div className="flex gap-1" role="group" aria-label={fr.market.sourceFilter}>
+          <Choice pressed={sourceId === null} label={fr.market.allSources} onPress={() => setSourceId(null)} />
           {(sources ?? []).map((s) => (
-            <Button key={s.id} size="sm" variant={sourceId === s.id ? "secondary" : "ghost"} aria-pressed={sourceId === s.id} onClick={() => setSourceId(s.id)}>
-              {s.name}
-            </Button>
+            <Choice key={s.id} pressed={sourceId === s.id} label={s.name} onPress={() => setSourceId(s.id)} />
           ))}
         </div>
-        <div className="flex gap-1" role="group">
+        <div className="flex gap-1" role="group" aria-label={fr.market.kindFilter}>
           {KINDS.map((k) => (
-            <Button key={k ?? "all"} size="sm" variant={kind === k ? "secondary" : "ghost"} aria-pressed={kind === k} onClick={() => setKind(k)}>
-              {fr.market.kind[k ?? "all"]}
-            </Button>
+            <Choice key={k ?? "all"} pressed={kind === k} label={fr.market.kind[k ?? "all"]} onPress={() => setKind(k)} />
           ))}
         </div>
       </div>
-      {error ? (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
-      ) : null}
+      )}
       {hits !== null && hits.length === 0 ? (
         <p className="p-8 text-center text-sm text-muted-foreground">{fr.market.noResult}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {(hits ?? []).map((h) => (
-            <MarketCard key={`${h.sourceId}/${h.id}`} hit={h} onOpen={() => setTarget({ sourceId: h.sourceId, id: h.id, version: h.latest })} />
+            <MarketCard
+              key={`${h.sourceId}/${h.id}`}
+              hit={h}
+              onOpen={() => setTarget({ sourceId: h.sourceId, id: h.id, version: h.latest })}
+            />
           ))}
         </div>
       )}
@@ -18084,54 +18549,82 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
   );
 }
 ```
-La requête `searchMarket` n'envoie `sourceId` et `kind` que lorsqu'ils sont choisis : le premier test attend `{ method: "searchMarket", query: "burn" }` exactement.
+La requête `searchMarket` n'envoie `sourceId` et `kind` que lorsqu'ils sont choisis : le test attend `{ method: "searchMarket", query: "burn" }` exactement. Un composant `adapter` apparaît sous « Tous » (sans filtre dédié : il n'a pas d'UI à placer sur une page).
 
 - [ ] **Step 5: Implémenter le détail et « Voir le code »**
 
-`packages/ui/src/pages/components/SourceCode.tsx` :
+Dans `packages/ui/src/dialogs/TrustDialog.tsx`, exporter la fonction `PermissionList` (aucun autre changement à cette étape).
+
+`packages/ui/src/components-page/SourceCode.tsx` :
 ```tsx
 import { Button } from "@kibo/sdk/ui/button";
 import { ShieldCheck } from "lucide-react";
-import { useState } from "react";
-import { CodeBlock } from "../../files/CodeBlock";
-import { fr } from "../../i18n/fr";
+import { useEffect, useState } from "react";
+import { CodeLines } from "../files/CodeLines";
+import { highlightLines, languageOf, plainTokens, type Token } from "../files/highlight";
+import { fr } from "../i18n/fr";
 
-export function SourceCode({ files }: { files: { path: string; content: string }[] }) {
+type File = { path: string; content: string };
+
+function useTokens(file: File | undefined): Token[][] {
+  const [tokens, setTokens] = useState<Token[][]>([]);
+  useEffect(() => {
+    if (!file) return setTokens([]);
+    setTokens(plainTokens(file.content));
+    let live = true;
+    highlightLines(file.content, languageOf(file.path).id)
+      .then((t) => live && setTokens(t))
+      .catch((e: unknown) => console.error("[kibo-ui] highlight failed", e));
+    return () => {
+      live = false;
+    };
+  }, [file]);
+  return tokens;
+}
+
+export function SourceCode({ files }: { files: File[] }) {
   const [path, setPath] = useState(files.find((f) => f.path === "ui.tsx")?.path ?? files[0]?.path ?? "");
   const current = files.find((f) => f.path === path);
+  const tokens = useTokens(current);
   return (
     <div className="flex flex-col gap-2">
       <p className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
         <ShieldCheck className="size-3.5" aria-hidden />
         {fr.market.codeVerified}
       </p>
-      <div className="grid grid-cols-[10rem_1fr] gap-2 rounded-md border">
-        <nav className="flex flex-col border-r p-1">
+      <div className="grid max-h-96 grid-cols-[10rem_1fr] rounded-md border">
+        <nav className="flex flex-col overflow-auto border-r p-1">
           {files.map((f) => (
-            <Button key={f.path} size="sm" variant={f.path === path ? "secondary" : "ghost"} className="justify-start font-mono text-xs" onClick={() => setPath(f.path)}>
+            <Button
+              key={f.path}
+              size="sm"
+              variant={f.path === path ? "secondary" : "ghost"}
+              className="justify-start font-mono text-xs"
+              onClick={() => setPath(f.path)}
+            >
               {f.path}
             </Button>
           ))}
         </nav>
-        <div className="max-h-96 overflow-auto p-2">{current ? <CodeBlock code={current.content} path={current.path} /> : null}</div>
+        {current && <CodeLines tokens={tokens} highlightLine={null} label={current.path} />}
       </div>
     </div>
   );
 }
 ```
+Vérifier que `plainTokens` et `languageOf` sont bien exportés par `files/highlight.ts` (`languageOf` y est réexporté depuis `./language`) ; `useEffect` qui renvoie `setTokens([])` doit renvoyer `undefined` : écrire `if (!file) { setTokens([]); return; }` si Biome le signale.
 
-`packages/ui/src/pages/components/MarketPackageSheet.tsx` :
+`packages/ui/src/components-page/MarketPackageSheet.tsx` :
 ```tsx
-import type { MarketInstallResult, MarketPackageDetail } from "@kibo/schema";
+import { type MarketInstallResult, type MarketPackageDetail, shortHash } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { useEffect, useState } from "react";
-import { client } from "../../api";
-import { fr } from "../../i18n/fr";
-import { shortFingerprint } from "../../lib/fingerprint";
-import { marketErrorText } from "../../lib/market-errors";
-import { permissionLines } from "../../lib/permission-lines";
+import { client } from "../api";
+import { PermissionList } from "../dialogs/TrustDialog";
+import { fr } from "../i18n/fr";
+import { marketErrorText } from "../lib/market-errors";
 import { SourceCode } from "./SourceCode";
 
 type Target = { sourceId: string; id: string; version: string };
@@ -18141,6 +18634,33 @@ type Props = {
   onInstalled(result: MarketInstallResult): void;
   onUnlock?(detail: MarketPackageDetail): void;
 };
+
+function Versions({ detail }: { detail: MarketPackageDetail }) {
+  return (
+    <ul className="flex flex-col gap-1 text-xs">
+      {detail.versions.map((v) => (
+        <li key={v.version} className="flex gap-2">
+          <span className={v.revoked ? "font-mono line-through" : "font-mono"}>{v.version}</span>
+          <span className="text-muted-foreground">{new Date(v.publishedAt).toLocaleDateString("fr-FR")}</span>
+          {v.revoked && <span className="text-destructive">{fr.market.revoked(v.revoked)}</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Facts({ detail }: { detail: MarketPackageDetail }) {
+  return (
+    <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-xs">
+      <dt className="text-muted-foreground">{fr.market.source}</dt>
+      <dd>{detail.sourceName}</dd>
+      <dt className="text-muted-foreground">{fr.market.size}</dt>
+      <dd>{fr.market.kib(detail.size)}</dd>
+      <dt className="text-muted-foreground">{fr.market.hash}</dt>
+      <dd className="font-mono">{shortHash(detail.hash)}</dd>
+    </dl>
+  );
+}
 
 export function MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: Props) {
   const [detail, setDetail] = useState<MarketPackageDetail | null>(null);
@@ -18155,7 +18675,7 @@ export function MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: P
     if (!target) return;
     client
       .rpc({ method: "getMarketPackage", ...target })
-      .then((d) => setDetail(d as MarketPackageDetail))
+      .then(setDetail)
       .catch((e: unknown) => setError(marketErrorText(e)));
   }, [target]);
 
@@ -18164,7 +18684,7 @@ export function MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: P
     setBusy(true);
     setError(null);
     try {
-      onInstalled((await client.rpc({ method: "installFromMarket", ...target })) as MarketInstallResult);
+      onInstalled(await client.rpc({ method: "installFromMarket", ...target }));
     } catch (e) {
       setError(marketErrorText(e));
     } finally {
@@ -18173,162 +18693,140 @@ export function MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: P
   };
 
   return (
-    <Sheet open={target !== null} onOpenChange={(o) => (o ? undefined : onClose())}>
+    <Sheet open={target !== null} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="flex w-full flex-col gap-4 overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>{detail?.title ?? target?.id}</SheetTitle>
           <SheetDescription className="font-mono text-xs">{target?.id}</SheetDescription>
         </SheetHeader>
-        {detail ? (
+        {detail && (
           <div className="flex flex-col gap-4 px-4 text-sm">
             <p>{detail.description}</p>
             <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
               <span>{fr.market.publishedBy(detail.publisher.name, detail.sourceName, detail.publisher.verified)}</span>
-              {detail.newPublisher ? <Badge variant="secondary">{fr.market.newPublisher}</Badge> : null}
+              {detail.newPublisher && <Badge variant="secondary">{fr.market.newPublisher}</Badge>}
             </div>
-            <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-xs">
-              <dt className="text-muted-foreground">{fr.market.source}</dt>
-              <dd>{detail.sourceName}</dd>
-              <dt className="text-muted-foreground">{fr.market.size}</dt>
-              <dd>{fr.market.kib(detail.size)}</dd>
-              <dt className="text-muted-foreground">{fr.market.hash}</dt>
-              <dd className="font-mono">{shortFingerprint(detail.hash)}</dd>
-            </dl>
+            <Facts detail={detail} />
             <section className="flex flex-col gap-1">
               <h3 className="text-xs font-medium uppercase text-muted-foreground">{fr.market.permissions}</h3>
-              <ul className="list-disc pl-5">
-                {permissionLines(detail.permissions).map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
+              <PermissionList permissions={detail.permissions} />
             </section>
             <section className="flex flex-col gap-1">
               <h3 className="text-xs font-medium uppercase text-muted-foreground">{fr.market.versions}</h3>
-              <ul className="flex flex-col gap-1 text-xs">
-                {detail.versions.map((v) => (
-                  <li key={v.version} className="flex gap-2">
-                    <span className={v.revoked ? "font-mono line-through" : "font-mono"}>{v.version}</span>
-                    <span className="text-muted-foreground">{new Date(v.publishedAt).toLocaleDateString("fr-FR")}</span>
-                    {v.revoked ? <span className="text-red-600 dark:text-red-400">{fr.market.revoked(v.revoked)}</span> : null}
-                  </li>
-                ))}
-              </ul>
+              <Versions detail={detail} />
             </section>
-            {detail.publisherChanged ? (
-              <div className="flex items-center justify-between gap-2 rounded-md border border-red-500/40 p-2">
-                <span className="text-red-600 dark:text-red-400">{fr.market.errors.PUBLISHER_CHANGED}</span>
-                {onUnlock ? (
+            {detail.publisherChanged && (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/40 p-2">
+                <span className="text-destructive">{fr.market.errors.PUBLISHER_CHANGED}</span>
+                {onUnlock && (
                   <Button size="sm" variant="outline" onClick={() => onUnlock(detail)}>
                     {fr.market.unlock}
                   </Button>
-                ) : null}
+                )}
               </div>
-            ) : null}
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowCode((s) => !s)}>
                 {showCode ? fr.market.hideCode : fr.market.viewCode}
               </Button>
-              <Button onClick={install} disabled={busy || detail.publisherChanged}>
+              <Button onClick={() => void install()} disabled={busy || detail.publisherChanged}>
                 {busy ? fr.market.installing : fr.market.install}
               </Button>
             </div>
-            {showCode ? <SourceCode files={detail.files} /> : null}
+            {showCode && <SourceCode files={detail.files} />}
           </div>
-        ) : null}
-        {error ? (
-          <p role="alert" className="px-4 text-sm text-red-600 dark:text-red-400">
+        )}
+        {error && (
+          <p role="alert" className="px-4 text-sm text-destructive">
             {error}
           </p>
-        ) : null}
+        )}
       </SheetContent>
     </Sheet>
   );
 }
 ```
-Les `as` sur les résultats de `client.rpc` suivent la convention existante de l'UI (le client renvoie `unknown`, le type vient du tableau RPC) ; si la phase 4 a introduit un `rpc<M>` typé, l'utiliser à la place.
+`shortHash` (`@kibo/schema`) donne `c21e…c21e`, comme l'écran 30.
 
-Run: `bun test packages/ui/src/pages/components/marketplace.test.tsx`
+Run: `bun test packages/ui/src/components-page/marketplace.test.tsx`
 Expected: PASS (8 tests).
 
 - [ ] **Step 6: Variantes M5 de l'écran 30**
 
 `packages/ui/src/dialogs/trust-market.test.tsx` :
 ```tsx
-import { expect, test } from "bun:test";
+import { expect, mock, test } from "bun:test";
+import { NO_PERMISSIONS, type RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
-import { trustPreviewFixture } from "../testing/trust-preview-fixture";
-import { marketTrustProps, TrustDialog } from "./TrustDialog";
+
+mock.module("../api", () => ({ client: { rpc: (_: RpcRequest) => Promise.resolve(null) } }));
+const { TrustDialog, trustTargetOfInstall } = await import("./TrustDialog");
+
+const result = (verified: boolean, newPublisher: boolean) => ({
+  id: "burndown",
+  title: "Burndown",
+  version: "0.3.0",
+  hash: "c21e".repeat(16),
+  permissions: NO_PERMISSIONS,
+  market: { publisherName: "Léa", verified, sourceName: "Équipe", newPublisher },
+});
+const open = (target: ReturnType<typeof trustTargetOfInstall>) =>
+  render(<TrustDialog target={target} mode="approve" open onOpenChange={() => {}} onApproved={() => {}} />);
 
 test("a verified marketplace component names its publisher and source", () => {
-  const props = marketTrustProps({ publisherName: "Léa", verified: true, sourceName: "Équipe", newPublisher: true });
-  render(<TrustDialog preview={trustPreviewFixture} open onApproved={() => {}} onRefused={() => {}} {...props} />);
+  open(trustTargetOfInstall(result(true, true)));
   expect(screen.getByText("Publié par Léa · vérifié par Équipe")).toBeTruthy();
   expect(screen.getByText("Nouvel éditeur")).toBeTruthy();
   expect(screen.getByText("Ce code vient d'une marketplace.")).toBeTruthy();
 });
 
 test("an unverified publisher is announced as such", () => {
-  const props = marketTrustProps({ publisherName: "Léa", verified: false, sourceName: "Équipe", newPublisher: false });
-  render(<TrustDialog preview={trustPreviewFixture} open onApproved={() => {}} onRefused={() => {}} {...props} />);
+  open(trustTargetOfInstall(result(false, false)));
   expect(screen.getByText("Publié par Léa · éditeur non vérifié")).toBeTruthy();
   expect(screen.queryByText("Nouvel éditeur")).toBeNull();
 });
 
 test("a local component keeps the phase 4 dialog", () => {
-  render(<TrustDialog preview={trustPreviewFixture} open onApproved={() => {}} onRefused={() => {}} {...marketTrustProps(null)} />);
+  open({ id: "hello", title: "Hello", version: "0.1.0", hash: "a".repeat(64), origin: "user", permissions: NO_PERMISSIONS });
   expect(screen.queryByText("Ce code vient d'une marketplace.")).toBeNull();
+  expect(screen.getByText(/Composant écrit par toi/)).toBeTruthy();
 });
 ```
-Hypothèse v0.6 (vérifiée en T0) : `packages/ui/src/testing/trust-preview-fixture.ts` (phase 4) exporte un `TrustPreview` de test ; sinon, le créer dans cette tâche avec les champs de `TrustPreview` et `market: null`.
 
 Run: `bun test packages/ui/src/dialogs/trust-market.test.tsx`
-Expected: FAIL avec « marketTrustProps is not exported ».
+Expected: FAIL avec « trustTargetOfInstall is not exported ».
 
-Dans `TrustDialog.tsx` : ajouter les props optionnelles `publisherLine?: string`, `newPublisher?: boolean`, `fromMarketplace?: boolean` ; rendre `publisherLine` comme sous-titre sous le titre (à la place de la ligne d'origine quand il est fourni), `newPublisher` en `<Badge variant="secondary">{fr.market.newPublisher}</Badge>` à côté, et sous l'option « Confiance totale », quand `fromMarketplace` est vrai, `<p className="text-xs text-amber-700 dark:text-amber-400">{fr.market.fromMarketplace}</p>` en plus de l'avertissement de la phase 4. Exporter :
+Dans `TrustDialog.tsx` :
+- `TrustTarget` gagne `market?: MarketTrustInfo | null` (import de type depuis `@kibo/schema`) ;
+- exporter :
 ```tsx
-export function marketTrustProps(market: TrustPreview["market"]): {
-  publisherLine?: string;
-  newPublisher?: boolean;
-  fromMarketplace?: boolean;
-} {
-  if (!market) return {};
-  return {
-    publisherLine: fr.market.publishedBy(market.publisherName, market.sourceName, market.verified),
-    newPublisher: market.newPublisher,
-    fromMarketplace: true,
-  };
+export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
+  return { id: r.id, title: r.title, version: r.version, hash: r.hash, origin: "marketplace", permissions: r.permissions, market: r.market };
 }
 ```
-`ComponentsPage` et l'écran 3 passent `{...marketTrustProps(preview.market)}` partout où ils ouvrent `TrustDialog`.
+- `DialogDescription` : quand `target.market` est présent, `fr.market.publishedBy(market.publisherName, market.sourceName, market.verified)` suivi de `· empreinte sha256 ${shortHash(hash)}` (même phrase que `t.subtitle`, dont on remplace seulement l'origine), et à côté `{target.market.newPublisher && <Badge variant="secondary">{fr.market.newPublisher}</Badge>}` ;
+- sous la carte « Confiance totale », quand `target.market` est présent : `<p className="text-xs text-amber-700 dark:text-amber-400">{fr.market.fromMarketplace}</p>`.
 
-Run: `bun test packages/ui/src/dialogs/trust-market.test.tsx`
-Expected: PASS (3 tests).
+Run: `bun test packages/ui/src/dialogs/trust-market.test.tsx packages/ui/src/dialogs`
+Expected: PASS ; les tests existants de l'écran 30 passent sans changement de leurs attentes.
 
 - [ ] **Step 7: Onglets de la page Composants**
 
-Dans `ComponentsPage.tsx`, envelopper le tableau existant :
+Dans `ComponentsPage.tsx`, placer la page sous deux onglets (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` de `@kibo/sdk/ui/tabs`) : `<Tabs defaultValue="installed">` avec les déclencheurs `fr.market.tabInstalled` (valeur `installed`) et `fr.market.tabMarket` (valeur `market`) ; le contenu `installed` (classe `grid content-start gap-6`) reçoit, inchangés, le bloc du tableau (`<div className="overflow-hidden rounded-lg border bg-card">…`), le texte vide, les messages et `DraftsSection` ; le contenu `market` reçoit :
 ```tsx
-<Tabs defaultValue="installed">
-  <TabsList>
-    <TabsTrigger value="installed">{fr.market.tabInstalled}</TabsTrigger>
-    <TabsTrigger value="market">{fr.market.tabMarket}</TabsTrigger>
-  </TabsList>
-  <TabsContent value="installed">
-    <InstalledTable />
-  </TabsContent>
-  <TabsContent value="market">
-    <MarketplaceTab onInstalled={(result) => setTrust(result.preview)} />
-  </TabsContent>
-</Tabs>
+<MarketplaceTab
+  onInstalled={(r) => {
+    setTrust(trustTargetOfInstall(r));
+    reload();
+  }}
+/>
 ```
-où `setTrust` est l'état qui ouvre déjà `TrustDialog` (écran 30) pour un composant local ; `onApproved` appelle `approveComponent` (phase 4) avec `result.hash`.
+`setTrust` est l'état qui ouvre déjà `TrustDialog` ; `onApproved` recharge la liste comme aujourd'hui. Les dialogues (`PublishDialog`, `ModifyWithAiDialog`, `TrustDialog`) restent hors des onglets.
 
-Ajouter à `marketplace.test.tsx` :
+Ajouter à `packages/ui/src/components-page/components-page.test.tsx` (même mock `../api`, qui renvoie `[]` pour `listMarketSources` via la branche `action`) :
 ```tsx
 test("the components page offers the Installed and Marketplace tabs", async () => {
-  answers.listComponents = () => Promise.resolve([]);
-  answers.listMarketSources = () => Promise.resolve([]);
-  const { ComponentsPage } = await import("./ComponentsPage");
+  action = async () => [];
   render(<ComponentsPage />);
   expect(screen.getByRole("tab", { name: "Installés" })).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("tab", { name: "Marketplace" }));
@@ -18336,12 +18834,12 @@ test("the components page offers the Installed and Marketplace tabs", async () =
 });
 ```
 
-Run: `bun test packages/ui/src/pages/components`
-Expected: PASS.
+Run: `bun test packages/ui/src/components-page`
+Expected: PASS ; les tests existants de la page passent sans changement de leurs attentes (l'onglet « Installés » est affiché par défaut).
 
 - [ ] **Step 8: Tests des sources (M3)**
 
-`packages/ui/src/pages/settings/sources.test.tsx` :
+`packages/ui/src/settings/sources.test.tsx` :
 ```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type MarketSourceInfo, type RpcRequest } from "@kibo/schema";
@@ -18351,18 +18849,19 @@ import userEvent from "@testing-library/user-event";
 const calls: RpcRequest[] = [];
 let answers: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
 
-mock.module("../../api", () => ({
+mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
       const answer = answers[req.method];
       return answer ? answer() : Promise.resolve(null);
     },
+    subscribe: () => () => undefined,
   },
 }));
 
-const { ComponentSourcesSettings } = await import("./ComponentSourcesSettings");
-const { AddSourceDialog } = await import("../../dialogs/AddSourceDialog");
+const { ComponentSourcesPage } = await import("./ComponentSourcesPage");
+const { AddSourceDialog } = await import("../dialogs/AddSourceDialog");
 
 const source: MarketSourceInfo = {
   id: "equipe",
@@ -18375,6 +18874,7 @@ const source: MarketSourceInfo = {
   lastError: null,
   enabled: true,
 };
+const probe = { sourceId: "equipe", name: "Équipe", publicKey: "PK", fingerprint: "3f9a".repeat(16), serial: 42, packages: 3 };
 
 beforeEach(() => {
   calls.length = 0;
@@ -18382,8 +18882,9 @@ beforeEach(() => {
 });
 
 test("the table lists each source with its short key and serial", async () => {
-  answers.listMarketSources = () => Promise.resolve([source, { ...source, id: "vieille", name: "Vieille", lastError: "INDEX_ROLLBACK: serial 3 < 4" }]);
-  render(<ComponentSourcesSettings />);
+  answers.listMarketSources = () =>
+    Promise.resolve([source, { ...source, id: "vieille", name: "Vieille", lastError: "INDEX_ROLLBACK: serial 3 < 4" }]);
+  render(<ComponentSourcesPage />);
   expect(await screen.findByText("Équipe")).toBeTruthy();
   expect(screen.getAllByText("3f9a…3f9a")).toHaveLength(2);
   expect(screen.getAllByText("42")).toHaveLength(2);
@@ -18391,8 +18892,7 @@ test("the table lists each source with its short key and serial", async () => {
 });
 
 test("adding a source shows the full fingerprint before confirming", async () => {
-  answers.probeMarketSource = () =>
-    Promise.resolve({ sourceId: "equipe", name: "Équipe", publicKey: "PK", fingerprint: "3f9a".repeat(16), serial: 42, packages: 3 });
+  answers.probeMarketSource = () => Promise.resolve(probe);
   answers.addMarketSource = () => Promise.resolve(source);
   const onAdded = mock(() => {});
   render(<AddSourceDialog open onOpenChange={() => {}} onAdded={onAdded} />);
@@ -18400,15 +18900,14 @@ test("adding a source shows the full fingerprint before confirming", async () =>
   await user.type(screen.getByLabelText("Adresse HTTPS de la source"), "https://sync.kibo.test/market/");
   await user.click(screen.getByRole("button", { name: "Continuer" }));
   expect(await screen.findByText("Compare cette empreinte avec celle communiquée par l'éditeur de la source.")).toBeTruthy();
-  expect(screen.getByText("3f9a ".repeat(15) + "3f9a")).toBeTruthy();
+  expect(screen.getByText(`${"3f9a ".repeat(15)}3f9a`)).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Ajouter" }));
   await waitFor(() => expect(onAdded).toHaveBeenCalled());
   expect(calls.at(-1)).toEqual({ method: "addMarketSource", url: "https://sync.kibo.test/market/", publicKey: "PK" });
 });
 
 test("going back returns to the address step without adding anything", async () => {
-  answers.probeMarketSource = () =>
-    Promise.resolve({ sourceId: "equipe", name: "Équipe", publicKey: "PK", fingerprint: "3f9a".repeat(16), serial: 42, packages: 3 });
+  answers.probeMarketSource = () => Promise.resolve(probe);
   render(<AddSourceDialog open onOpenChange={() => {}} onAdded={() => {}} />);
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Adresse HTTPS de la source"), "https://sync.kibo.test/market/");
@@ -18428,10 +18927,10 @@ test("a probe failure is explained on the first step", async () => {
 });
 ```
 
-Run: `bun test packages/ui/src/pages/settings/sources.test.tsx`
-Expected: FAIL avec « Cannot find module './ComponentSourcesSettings' ».
+Run: `bun test packages/ui/src/settings/sources.test.tsx`
+Expected: FAIL avec « Cannot find module './ComponentSourcesPage' ».
 
-- [ ] **Step 9: Implémenter les sources**
+- [ ] **Step 9: Implémenter les sources et l'écran `sources`**
 
 `packages/ui/src/dialogs/AddSourceDialog.tsx` :
 ```tsx
@@ -18449,6 +18948,7 @@ import { marketErrorText } from "../lib/market-errors";
 type Props = { open: boolean; onOpenChange(open: boolean): void; onAdded(): void };
 
 export function AddSourceDialog({ open, onOpenChange, onAdded }: Props) {
+  const t = fr.marketSources;
   const urlId = useId();
   const [url, setUrl] = useState("");
   const [probe, setProbe] = useState<MarketProbe | null>(null);
@@ -18466,15 +18966,13 @@ export function AddSourceDialog({ open, onOpenChange, onAdded }: Props) {
       setBusy(false);
     }
   };
-
   const next = (e: FormEvent) => {
     e.preventDefault();
-    void run(async () => setProbe((await client.rpc({ method: "probeMarketSource", url: url.trim() })) as MarketProbe));
+    void run(async () => setProbe(await client.rpc({ method: "probeMarketSource", url: url.trim() })));
   };
-  const confirm = () =>
+  const confirm = (found: MarketProbe) =>
     run(async () => {
-      if (!probe) return;
-      await client.rpc({ method: "addMarketSource", url: url.trim(), publicKey: probe.publicKey });
+      await client.rpc({ method: "addMarketSource", url: url.trim(), publicKey: found.publicKey });
       onAdded();
       onOpenChange(false);
     });
@@ -18483,64 +18981,95 @@ export function AddSourceDialog({ open, onOpenChange, onAdded }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{fr.sources.addTitle}</DialogTitle>
-          <DialogDescription>{probe ? fr.sources.step2 : fr.sources.subtitle}</DialogDescription>
+          <DialogTitle>{t.addTitle}</DialogTitle>
+          <DialogDescription>{probe ? t.step2 : t.subtitle}</DialogDescription>
         </DialogHeader>
         {probe ? (
           <div className="flex flex-col gap-2 text-sm">
             <p className="font-medium">{probe.name}</p>
-            <p className="text-xs text-muted-foreground">{fr.sources.fingerprint}</p>
+            <p className="text-xs text-muted-foreground">{t.fingerprint}</p>
             <p className="break-all rounded-md bg-muted p-2 font-mono text-xs">{groupFingerprint(probe.fingerprint)}</p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setProbe(null)}>
-                {fr.sources.back}
+                {t.back}
               </Button>
-              <Button onClick={confirm} disabled={busy}>
-                {fr.sources.confirm}
+              <Button onClick={() => void confirm(probe)} disabled={busy}>
+                {t.confirm}
               </Button>
             </DialogFooter>
           </div>
         ) : (
           <form onSubmit={next} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={urlId}>{fr.sources.step1}</Label>
+              <Label htmlFor={urlId}>{t.step1}</Label>
               <Input id={urlId} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
             </div>
             <DialogFooter>
               <Button type="submit" disabled={busy || !url.trim()}>
-                {fr.sources.next}
+                {t.next}
               </Button>
             </DialogFooter>
           </form>
         )}
-        {error ? (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
-        ) : null}
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 ```
 
-`packages/ui/src/pages/settings/ComponentSourcesSettings.tsx` :
+`packages/ui/src/settings/ComponentSourcesPage.tsx` :
 ```tsx
-import type { MarketSourceInfo } from "@kibo/schema";
+import { type MarketSourceInfo, type RpcRequest, shortHash } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { MoreHorizontal } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { client } from "../../api";
-import { AddSourceDialog } from "../../dialogs/AddSourceDialog";
-import { fr } from "../../i18n/fr";
-import { shortFingerprint } from "../../lib/fingerprint";
-import { marketErrorCodeText, marketErrorText } from "../../lib/market-errors";
+import { client } from "../api";
+import { AddSourceDialog } from "../dialogs/AddSourceDialog";
+import { fr } from "../i18n/fr";
+import { marketErrorCodeText, marketErrorText } from "../lib/market-errors";
+import { SettingsNav } from "./SettingsNav";
 
 const stateText = (s: MarketSourceInfo): string =>
-  s.lastError ? marketErrorCodeText(s.lastError.split(":")[0] ?? "") : fr.sources.ok;
+  s.lastError ? marketErrorCodeText(s.lastError.split(":")[0] ?? "") : fr.marketSources.ok;
 
-export function ComponentSourcesSettings() {
+function SourceRow({ s, act }: { s: MarketSourceInfo; act(req: RpcRequest): void }) {
+  const t = fr.marketSources;
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{s.name}</TableCell>
+      <TableCell className="max-w-64 truncate font-mono text-xs">{s.url}</TableCell>
+      <TableCell className="font-mono text-xs">{shortHash(s.fingerprint)}</TableCell>
+      <TableCell>{s.lastSerial ?? "—"}</TableCell>
+      <TableCell className="text-xs">
+        {s.lastFetchedAt ? new Date(s.lastFetchedAt).toLocaleString("fr-FR") : t.never}
+      </TableCell>
+      <TableCell className={s.lastError ? "text-destructive" : "text-muted-foreground"}>{stateText(s)}</TableCell>
+      <TableCell className="text-right">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" aria-label={t.actions(s.name)}>
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => act({ method: "refreshMarket" })}>{t.refresh}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => act({ method: "removeMarketSource", id: s.id })}>{t.remove}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+export function ComponentSourcesPage() {
+  const t = fr.marketSources;
   const [sources, setSources] = useState<MarketSourceInfo[]>([]);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18548,99 +19077,92 @@ export function ComponentSourcesSettings() {
   const load = useCallback(() => {
     client
       .rpc({ method: "listMarketSources" })
-      .then((s) => setSources(s as MarketSourceInfo[]))
+      .then(setSources)
       .catch((e: unknown) => setError(marketErrorText(e)));
   }, []);
   useEffect(load, [load]);
-
-  const act = (req: Parameters<typeof client.rpc>[0]) =>
+  const act = (req: RpcRequest) => {
     client
       .rpc(req)
       .then(load)
       .catch((e: unknown) => setError(marketErrorText(e)));
+  };
 
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">{fr.sources.title}</h2>
-          <p className="text-sm text-muted-foreground">{fr.sources.subtitle}</p>
-        </div>
-        <Button onClick={() => setAdding(true)}>{fr.sources.add}</Button>
-      </header>
-      {sources.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{fr.sources.empty}</p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs text-muted-foreground">
-            <tr>
-              <th className="py-2">{fr.sources.name}</th>
-              <th>{fr.sources.url}</th>
-              <th>{fr.sources.key}</th>
-              <th>{fr.sources.serial}</th>
-              <th>{fr.sources.updated}</th>
-              <th>{fr.sources.state}</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {sources.map((s) => (
-              <tr key={s.id} className="border-t">
-                <td className="py-2 font-medium">{s.name}</td>
-                <td className="truncate font-mono text-xs">{s.url}</td>
-                <td className="font-mono text-xs">{shortFingerprint(s.fingerprint)}</td>
-                <td>{s.lastSerial ?? "—"}</td>
-                <td className="text-xs">{s.lastFetchedAt ? new Date(s.lastFetchedAt).toLocaleString("fr-FR") : fr.sources.never}</td>
-                <td className={s.lastError ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>{stateText(s)}</td>
-                <td>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" aria-label={fr.sources.actions(s.name)}>
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => act({ method: "refreshMarket" })}>{fr.sources.refresh}</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => act({ method: "removeMarketSource", id: s.id })}>{fr.sources.remove}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {error ? (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      ) : null}
-      <AddSourceDialog open={adding} onOpenChange={setAdding} onAdded={load} />
-    </section>
+    <div className="grid min-h-full grid-cols-[14rem_1fr]">
+      <SettingsNav active="sources" />
+      <section className="flex flex-col gap-4 p-8">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">{t.title}</h1>
+            <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+          </div>
+          <Button onClick={() => setAdding(true)}>{t.add}</Button>
+        </header>
+        {sources.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t.empty}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.name}</TableHead>
+                <TableHead>{t.url}</TableHead>
+                <TableHead>{t.key}</TableHead>
+                <TableHead>{t.serial}</TableHead>
+                <TableHead>{t.updated}</TableHead>
+                <TableHead>{t.state}</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sources.map((s) => (
+                <SourceRow key={s.id} s={s} act={act} />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        <AddSourceDialog open={adding} onOpenChange={setAdding} onAdded={load} />
+      </section>
+    </div>
   );
 }
 ```
-Le `lastError` stocké par le démon commence par le code (`KiboError.message` = `CODE: détail`), d'où la lecture du préfixe.
+Le `lastError` stocké par le démon commence par le code (`KiboError.message` = `CODE: détail`), d'où la lecture du préfixe. `shortHash` de `@kibo/schema` donne `3f9a…3f9a`.
 
-Dans `sections.ts`, ajouter `{ id: "components", label: fr.settings.components, render: () => <ComponentSourcesSettings /> }` après « Intégrations ».
+Écran `sources` :
+- `packages/schema/src/tabs.ts` : `Screen` gagne `"sources"` (à la fin de l'énumération) ;
+- `packages/ui/src/tabs/screens.ts` : `sources: { title: fr.settings.components, icon: Package, crumbs: [fr.nav.settings, fr.settings.components] }` (icône `Package` de `lucide-react`) ;
+- `packages/ui/src/tabs/target-hash.ts` : `sources: "#/settings/components"` ;
+- `packages/ui/src/settings/SettingsNav.tsx` : `SettingsScreen` inclut `"sources"` ; entrée `{ id: "components", label: fr.settings.components, icon: Package, screen: "sources" }` insérée après « Intégrations » ;
+- `packages/ui/src/shell/lazy-screens.ts` : `ComponentSourcesPage = lazyPanel(() => import("../settings/ComponentSourcesPage").then((m) => m.ComponentSourcesPage), fr.lazy)` ;
+- `packages/ui/src/shell/ScreenView.tsx` : `if (screen === "sources") return <ComponentSourcesPage />;` ;
+- `packages/ui/src/shell/AppSidebar.tsx` : le bouton Paramètres est aussi actif pour `screen === "sources"`.
 
-Run: `bun test packages/ui/src/pages/settings/sources.test.tsx`
-Expected: PASS (4 tests).
+Les tests existants qui énumèrent les écrans (`palette/screen-items.test.ts`, tests de `target-hash`) passent sans changement de leurs attentes ; si l'un compare la liste complète des écrans, l'étendre par ajout.
+
+Run: `bun test packages/ui/src/settings/sources.test.tsx packages/ui/src/tabs packages/ui/src/palette`
+Expected: PASS.
 
 - [ ] **Step 10: Vérifications**
 
-Run: `bun run check && bun run typecheck && bun test packages/ui && bun run --cwd packages/ui build`
-Expected: aucune erreur. Contrôle visuel en sombre et en clair (`bun run --cwd packages/ui dev` avec un démon et `startFakeMarket`) face aux exports M1, M2, M3, M5 ; écarts corrigés avant la review.
+Run: `bun run check && bun run typecheck && bun test packages/ui packages/schema && bun run --cwd packages/ui build && bun run budget`
+Expected: aucune erreur ; budget du chargement initial ≤ 230 kB gzip (le code de la tâche est dans les écrans chargés à la demande). Contrôle visuel en sombre et en clair (`bun run --cwd packages/ui dev` avec un démon et `startFakeMarket`) face aux exports M1, M2, M3, M5 ; écarts corrigés avant la review.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 11: Commits**
 
 ```bash
-git add packages/ui/src/pages/components packages/ui/src/pages/settings/ComponentSourcesSettings.tsx packages/ui/src/pages/settings/sources.test.tsx packages/ui/src/pages/settings/sections.ts packages/ui/src/dialogs/AddSourceDialog.tsx packages/ui/src/dialogs/TrustDialog.tsx packages/ui/src/dialogs/trust-market.test.tsx packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/i18n/fr.ts packages/sdk/src/ui/tabs.tsx
-git commit -m "feat(ui): marketplace"
+git add packages/ui/src/i18n/fr-market.ts packages/ui/src/i18n/fr.ts packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/components-page/MarketplaceTab.tsx packages/ui/src/components-page/MarketCard.tsx packages/ui/src/components-page/MarketPackageSheet.tsx packages/ui/src/components-page/SourceCode.tsx packages/ui/src/components-page/ComponentsPage.tsx packages/ui/src/components-page/marketplace.test.tsx packages/ui/src/components-page/components-page.test.tsx packages/ui/src/dialogs/TrustDialog.tsx packages/ui/src/dialogs/trust-market.test.tsx
+git commit -m "feat(ui): onglet Marketplace"
+git add packages/ui/src/dialogs/AddSourceDialog.tsx packages/ui/src/settings/ComponentSourcesPage.tsx packages/ui/src/settings/sources.test.tsx packages/ui/src/settings/SettingsNav.tsx packages/schema/src/tabs.ts packages/ui/src/tabs/screens.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/AppSidebar.tsx
+git commit -m "feat(ui): sources de marketplace"
 ```
 
 ---
-
 ### Task 27: UI Marketplace : mises à jour, révocation, composant absent, publication
 
 Écrans **M4** (onglet Installés : mise à jour disponible, révoqué), **M6** (clé d'éditeur changée), **M8** (publier sur la marketplace) et **S7** (composant absent), en sombre et en clair. Spec H §4 (révocation), §5.1, §5.3, §5.5.
@@ -18648,34 +19170,73 @@ git commit -m "feat(ui): marketplace"
 **Prérequis :** écrans M4, M6, M8 et S7 dessinés et exportés.
 
 **Files:**
-- Create: `packages/ui/src/pages/components/MarketUpdateFlow.tsx`, `packages/ui/src/dialogs/PublisherChangedDialog.tsx`, `packages/ui/src/dialogs/PublishToMarketDialog.tsx`, `packages/ui/src/shell/MissingComponent.tsx`, `packages/ui/src/lib/market-update.ts`
-- Modify: `packages/ui/src/pages/components/InstalledTable.tsx` (colonne Origine, badges, menu `⋯`), `packages/ui/src/pages/PageView.tsx` (composant absent), `packages/ui/src/shell/AuthorizationRequired.tsx` (motif de révocation), `packages/ui/src/lib/fingerprint.ts` (`keyFingerprintHex`), `packages/ui/src/i18n/fr.ts`, `packages/daemon/src/components/rpc.ts` (`listComponents` enrichi), `packages/daemon/src/market/rpc.ts` (`getMarketPublisher`), `packages/schema/src/rpc.ts` et `packages/schema/src/market.ts`
-- Test: `packages/ui/src/pages/components/market-update.test.tsx`, `packages/ui/src/dialogs/market-dialogs.test.tsx`, `packages/ui/src/shell/missing-component.test.tsx`, `packages/ui/src/lib/market-update.test.ts`, `packages/daemon/src/market/summary.test.ts`
+- Create: `packages/daemon/src/market/summary.ts`, `packages/ui/src/components-page/MarketUpdateDialog.tsx`, `packages/ui/src/components-page/VersionCell.tsx`, `packages/ui/src/components-page/PublishToMarketDialog.tsx`, `packages/ui/src/dialogs/PublisherChangedDialog.tsx`, `packages/ui/src/pages/MissingComponent.tsx`, `packages/ui/src/lib/market-update.ts`, `packages/ui/src/state/use-market-status.ts`
+- Modify: `packages/schema/src/component.ts` (`ComponentVersionSummary.revoked`), `packages/schema/src/market.ts` (`MarketComponentStatus`), `packages/schema/src/market-rpc.ts` (RPC `listMarketStatus`, `getMarketPublisher`), `packages/daemon/src/components/registry-listing.ts` (`revoked`), `packages/daemon/src/market/rpc.ts`, `packages/ui/src/components-page/ComponentsPage.tsx` (colonne Origine, cellule Version, dialogues), `packages/ui/src/components-page/rows.ts` (`revoked`, `market`), `packages/ui/src/components-page/ComponentRowMenu.tsx` (entrée « Publier sur la marketplace »), `packages/ui/src/components-page/PublishSections.tsx` (props élargies à `UpdateSummary`), `packages/ui/src/pages/InstanceFrame.tsx` (composant absent), `packages/ui/src/pages/PendingTrust.tsx` (motif de révocation), `packages/ui/src/lib/fingerprint.ts` (`keyFingerprintHex`), `packages/ui/src/i18n/fr-market.ts`
+- Test: `packages/daemon/src/market/summary.test.ts`, `packages/daemon/src/components/registry-listing-revoked.test.ts`, `packages/ui/src/components-page/market-update.test.tsx`, `packages/ui/src/components-page/market-dialogs.test.tsx`, `packages/ui/src/pages/missing-component.test.tsx`, `packages/ui/src/lib/market-update.test.ts`
 
 **Interfaces:**
-- Consumes: RPC `getMarketPackage`, `installFromMarket`, `unpinPublisher`, `findMarketSource`, `publishToMarket`, `listMarketSources` (T15, T20, T22), `getSyncStatus` (T21) ; `approveComponent`, `updateInstance`, `listComponents` (phase 4) ; `MarketPackageSheet`, `marketErrorText`, `marketTrustProps`, `shortFingerprint` (T26) ; `ProjectSnapshot.sync.members` (T6, T23) ; `MarketService.search`, `loadPublisherKeys` (T15, T22).
-- Hypothèse v0.6 (vérifiée en T0) : `ComponentSummary = { id: string; title: string; origin: ComponentOrigin; versions: ComponentVersionSummary[] }` avec `ComponentVersionSummary = { version: string; hash: string; trust: TrustLevel | null; usages: { projectId: string; projectName: string; pageId: string; pageTitle: string; instanceId: string }[]; granted: GrantedPermissions }` ; `PublishDialog({ data, open, onConfirm, onCancel }: { data: PublishDialogData; open: boolean; onConfirm(strategy: "update-all" | "new-version"): void; onCancel(): void })` avec `PublishDialogData = Omit<PublishPreview, "validation">` ; `AuthorizationRequired({ reason }: { reason: string | null })` ; `PageView` affiche `fr.page.unknownComponent` quand `resolveComponent(ref)` rend `null`.
+- Consumes: RPC `getMarketPackage`, `installFromMarket`, `unpinPublisher`, `findMarketSource`, `publishToMarket`, `listMarketSources` (T15, T20, T22), `getSyncStatus` (T21) ; `approveComponent`, `updateInstance`, `listComponents` (phase 4) ; `MarketPackageSheet`, `marketErrorText`, `groupFingerprint`, `trustTargetOfInstall`, `PermissionList`, `fr.market` (T26) ; `ProjectSnapshot.sync.members` (T6, T23) ; `MarketService.search`, `MarketService.listSources`, `RegistryPort.installed` (T15) ; `loadPublisherKeys` (T22) ; `RegistryVersion.revoked` (T5).
+- Vérifié en T0 :
+  - `ComponentSummary = { id; title; builtin: boolean; versions: ComponentVersionSummary[] }` et `ComponentVersionSummary = { version; hash: string | null; trust: TrustLevel | null; origin: ComponentOrigin; active: boolean; tampered: boolean; manifest: ComponentManifest | null; usages: ComponentUsage[] }` (`packages/schema/src/component.ts`), construits par `listComponents(ws, ctx)` de `packages/daemon/src/components/registry-listing.ts` (le service de composants ne connaît pas la marketplace) ; il n'y a pas de `packages/daemon/src/components/rpc.ts`. L'état marketplace d'une version (source, mise à jour) passe donc par une RPC de la marketplace, `listMarketStatus`, et seule la révocation (donnée du registre) entre dans `ComponentVersionSummary`.
+  - `PublishDialog({ id, open, onOpenChange, onPublished? })` (`packages/ui/src/components-page/PublishDialog.tsx`) est lié à `previewPublish` d'un brouillon local : il n'est pas réutilisable pour une mise à jour marketplace. Ses sections (`UsagesBox`, `ChangesList`, `StrategyChoice` de `PublishSections.tsx`) ne lisent que `from`, `to`, `usages`, `changes`, `newPermissions`, `migration` de `PublishPreview` : leurs props sont élargies à `UpdateSummary = Pick<PublishPreview, "from" | "to" | "usages" | "changes" | "newPermissions" | "migration">` et réutilisées. Libellés réels : « Mettre à jour partout », « Créer une nouvelle version » (`fr.publish`), « Sandboxé (recommandé) », « Autoriser » (`fr.trust`).
+  - Il n'y a pas d'`InstalledTable` : le tableau est la fonction locale `ComponentsTable` de `ComponentsPage.tsx`, alimentée par `componentRows(components)` (`rows.ts`) ; le menu `⋯` est `ComponentRowMenu({ row, onDone, onModifyWithAi })`.
+  - Il n'y a pas d'`AuthorizationRequired` : une instance d'une version inactive affiche `PendingTrust({ id, title, version, summary, tampered, compact })` (`packages/ui/src/pages/PendingTrust.tsx`).
+  - Il n'y a pas de `PageView` qui résout la référence : `InstanceFrame` (`packages/ui/src/pages/InstanceFrame.tsx`) rend `Unknown` (« Composant introuvable : ref ») quand l'id intégré est inconnu, et, dans `ThirdParty`, quand la version tierce est absente du registre (`!summary || !v`) : c'est ce second cas qui devient « Composant absent ».
+  - `addedPermissions(prev: GrantedPermissions | null, next: GrantedPermissions): string[]` et `grantedOf(manifest)` (`@kibo/schema`) donnent les nouvelles permissions dans la notation de l'écran 6.
+  - `useProject(projectId): ProjectSnapshot | null` (`packages/ui/src/state/use-projects.ts`) ; `useComponents()` recharge sur tout changement du workspace (`client.subscribe(id => id === null)`), donc après une installation ou une approbation.
+  - Les secrets : `SecretStore` (`packages/daemon/src/integrations/types.ts`), `createMemorySecretStore(createRedactor())` en test ; `SECRET_MARKET_PUBLISHER` (`@kibo/schema`, T1).
 - Produces :
-  - `ComponentVersionSummary.market: { sourceId: string; sourceName: string; updateAvailable: string | null } | null` et `ComponentVersionSummary.revoked: { reason: string; at: number } | null` (**champs ajoutés**, remplis par `listComponents`).
-  - RPC `getMarketPublisher` → `{ name: string; fingerprint: string } | null` (**méthode ajoutée**, lecture seule de la clé `market:publisher`).
-  - `buildUpdateData(input: { summary: ComponentSummary; from: string; detail: MarketPackageDetail }): PublishDialogData` (`lib/market-update.ts`).
-  - `MarketUpdateFlow({ summary, from, to, sourceId, onDone })`, `PublisherChangedDialog({ detail, open, onOpenChange, onUnlocked })`, `PublishToMarketDialog({ component, open, onOpenChange })`, `MissingComponent({ projectId, instance, members })`.
+  - `ComponentVersionSummary.revoked: { reason: string; at: number } | null` (**champ ajouté**, `null` pour un intégré).
+  - `MarketComponentStatus = { id: string; version: string; sourceId: string; sourceName: string; updateAvailable: string | null }` ; RPC `listMarketStatus` → `MarketComponentStatus[]` et `getMarketPublisher` → `{ name: string; fingerprint: string } | null` (**méthodes ajoutées**, session distante : oui).
+  - `marketStatuses(market: Pick<MarketService, "listSources" | "search">, installed: RegistryPort["installed"]): MarketComponentStatus[]`, `marketPublisherInfo(secrets: SecretStore)` (`packages/daemon/src/market/summary.ts`).
+  - `type UpdateSummary` et `buildUpdateSummary(input: { summary: ComponentVersionSummary; detail: Pick<MarketPackageDetail, "version" | "permissions" | "files"> }): UpdateSummary` (`lib/market-update.ts`).
+  - `MarketUpdateDialog({ title, summary, sourceId, id, to, onDone })`, `PublisherChangedDialog({ detail, open, onOpenChange, onUnlocked })`, `PublishToMarketDialog({ target, open, onOpenChange })`, `MissingComponent({ projectId, componentRef, compact })`, `useMarketStatus()`.
   - `keyFingerprintHex(publicKey: string): Promise<string>` (`lib/fingerprint.ts`, WebCrypto du navigateur).
 
-- [ ] **Step 1: Côté démon, test du résumé enrichi et de l'éditeur**
+- [ ] **Step 1: Côté démon, tests de la révocation listée et de l'état marketplace**
+
+`packages/daemon/src/components/registry-listing-revoked.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { createWorkspaceDoc, putRegistryVersion } from "@kibo/core";
+import { NO_PERMISSIONS } from "@kibo/schema";
+import { listComponents } from "./registry-listing";
+
+test("a revoked version carries its reason, builtins stay null", () => {
+  const ws = createWorkspaceDoc();
+  putRegistryVersion(ws, "burndown", "Burndown", {
+    version: "0.1.0",
+    hash: "a".repeat(64),
+    origin: "marketplace",
+    trust: null,
+    approvedHash: null,
+    granted: NO_PERMISSIONS,
+    publishedAt: 0,
+    autoUpdate: false,
+    source: { sourceId: "equipe", publisherKey: "K" },
+    revoked: { reason: "Faille", at: 5 },
+  });
+  const all = listComponents(ws, { projects: [], store: { get: () => undefined }, isTampered: () => false });
+  expect(all.find((c) => c.id === "burndown")?.versions[0]?.revoked).toEqual({ reason: "Faille", at: 5 });
+  expect(all.filter((c) => c.builtin).every((c) => c.versions.every((v) => v.revoked === null))).toBe(true);
+});
+```
+`createWorkspaceDoc` est exporté par `@kibo/core` (`workspace.ts`) ; si la signature de `listComponents` exige d'autres champs de contexte, reprendre ceux de `registry-service.ts`.
 
 `packages/daemon/src/market/summary.test.ts` :
 ```ts
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
+import { NO_PERMISSIONS, SECRET_MARKET_PUBLISHER } from "@kibo/schema";
 import { makeTestPackage } from "@kibo/trust/testing";
-import { MemorySecretStore } from "../secrets/secret-store";
+import { createMemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor } from "../integrations/redact";
 import { type FakeMarket, startFakeMarket } from "../testing/fake-market";
 import { createMemoryRegistry } from "../testing/memory-registry";
 import { createHttpGet } from "./http-get";
 import { openMarketDb } from "./market-db";
 import { MarketService } from "./market-service";
-import { marketPublisherInfo, marketVersionInfo } from "./summary";
+import { marketPublisherInfo, marketStatuses } from "./summary";
 
 let fake: FakeMarket;
 let market: MarketService;
@@ -18689,90 +19250,115 @@ beforeEach(async () => {
     get: createHttpGet({ allowLoopbackHttp: true }),
     registry: registry.port,
     now: () => 1,
-    notify: mock(async () => {}),
+    notify: mock(() => {}),
     log: mock(() => {}),
   });
 });
 afterEach(() => fake.stop());
 
-test("a marketplace version reports its source and the newer version", async () => {
+test("an installed marketplace version reports its source and the newer version", async () => {
   const v1 = await makeTestPackage({ id: "burndown", version: "0.1.0", manifest: { title: "Burndown" } });
+  const v2 = await makeTestPackage({ id: "burndown", version: "0.2.0", publisher: v1.publisher, manifest: { title: "Burndown" } });
   await fake.publish(v1.bytes);
-  await fake.publish((await makeTestPackage({ id: "burndown", version: "0.2.0", publisher: v1.publisher, manifest: { title: "Burndown" } })).bytes);
+  await fake.publish(v2.bytes);
   await market.addSource({ url: fake.url, publicKey: fake.publicKey });
-  const v = {
-    version: "0.1.0",
-    hash: v1.pkg.hash,
-    origin: "marketplace" as const,
+  const base = {
     trust: "sandboxed" as const,
-    approvedHash: v1.pkg.hash,
-    granted: { reads: [], writes: [], data: false, net: [] },
+    granted: NO_PERMISSIONS,
     publishedAt: 0,
-    source: { sourceId: "equipe", publisherKey: v1.publisher.keys.publicKey },
+    autoUpdate: false,
     revoked: null,
   };
-  registry.port.put("burndown", "Burndown", v);
-  expect(marketVersionInfo(market, "burndown", v)).toEqual({ sourceId: "equipe", sourceName: "Équipe", updateAvailable: "0.2.0" });
-  expect(marketVersionInfo(market, "burndown", { ...v, source: null })).toBeNull();
+  registry.port.put("burndown", "Burndown", {
+    ...base,
+    version: "0.1.0",
+    hash: v1.pkg.hash,
+    origin: "marketplace",
+    approvedHash: v1.pkg.hash,
+    source: { sourceId: "equipe", publisherKey: v1.publisher.keys.publicKey },
+  });
+  registry.port.put("hello", "Hello", { ...base, version: "0.1.0", hash: "a".repeat(64), origin: "user", approvedHash: "a".repeat(64), source: null });
+  expect(marketStatuses(market, registry.port.installed)).toEqual([
+    { id: "burndown", version: "0.1.0", sourceId: "equipe", sourceName: "Équipe", updateAvailable: "0.2.0" },
+  ]);
 });
 
 test("the publisher identity is readable without exposing the private key", async () => {
-  const secrets = new MemorySecretStore();
+  const secrets = createMemorySecretStore(createRedactor());
   expect(await marketPublisherInfo(secrets)).toBeNull();
-  await secrets.set("market:publisher", JSON.stringify({ name: "Adam", publicKey: "MCowBQYDK2VwAyEA", privateKey: "SECRET" }));
+  await secrets.set(
+    SECRET_MARKET_PUBLISHER,
+    JSON.stringify({ name: "Adam", publicKey: "MCowBQYDK2VwAyEA", privateKey: "SECRET" }),
+  );
   const info = await marketPublisherInfo(secrets);
   expect(info?.name).toBe("Adam");
   expect(JSON.stringify(info)).not.toContain("SECRET");
 });
 ```
+Le nom de la fausse source (« Équipe ») et l'option `publisher` de `makeTestPackage` suivent T10 et T15 ; reprendre leurs noms exacts de leurs sections intégrées.
 
-Run: `bun test packages/daemon/src/market/summary.test.ts`
-Expected: FAIL avec « Cannot find module './summary' ».
+Run: `bun test packages/daemon/src/components/registry-listing-revoked.test.ts packages/daemon/src/market/summary.test.ts`
+Expected: FAIL (`revoked` absent du résumé ; « Cannot find module './summary' »).
 
-- [ ] **Step 2: Implémenter `summary.ts` et les RPC**
+- [ ] **Step 2: Implémenter la révocation listée, `summary.ts` et les RPC**
+
+Dans `packages/schema/src/component.ts`, `ComponentVersionSummary` gagne `revoked: { reason: string; at: number } | null`. Dans `packages/daemon/src/components/registry-listing.ts`, `installedSummary` ajoute `revoked: v.revoked ?? null` et le résumé d'un intégré `revoked: null`. Les fixtures de tests UI qui construisent un `ComponentVersionSummary` (`components-page.test.tsx`, `rows.test.ts`, tests de `PendingTrust`) gagnent `revoked: null` ; leurs attentes ne changent pas.
+
+Dans `packages/schema/src/market.ts` :
+```ts
+export type MarketComponentStatus = {
+  id: string;
+  version: string;
+  sourceId: string;
+  sourceName: string;
+  updateAvailable: string | null;
+};
+```
+Dans `packages/schema/src/market-rpc.ts` (T5), ajouter `z.object({ method: z.literal("listMarketStatus") })` et `z.object({ method: z.literal("getMarketPublisher") })` au tableau des requêtes, et `listMarketStatus: MarketComponentStatus[]`, `getMarketPublisher: { name: string; fingerprint: string } | null` au type des résultats.
 
 `packages/daemon/src/market/summary.ts` :
 ```ts
-import type { RegistryVersion } from "@kibo/schema";
+import { type MarketComponentStatus, SECRET_MARKET_PUBLISHER } from "@kibo/schema";
 import { keyFingerprint } from "@kibo/trust";
-import type { SecretStore } from "../secrets/secret-store";
-import type { MarketService } from "./market-service";
+import type { SecretStore } from "../integrations/types";
+import type { MarketService, RegistryPort } from "./market-service";
 import { loadPublisherKeys } from "./publisher-keys";
 
-export function marketVersionInfo(
-  market: MarketService,
-  id: string,
-  v: RegistryVersion,
-): { sourceId: string; sourceName: string; updateAvailable: string | null } | null {
-  if (!v.source) return null;
-  const source = market.listSources().find((s) => s.id === v.source?.sourceId);
-  const hit = market.search({ query: id, sourceId: v.source.sourceId }).find((h) => h.id === id);
-  return {
-    sourceId: v.source.sourceId,
-    sourceName: source?.name ?? v.source.sourceId,
-    updateAvailable: hit?.updateAvailable ?? null,
-  };
+export function marketStatuses(
+  market: Pick<MarketService, "listSources" | "search">,
+  installed: RegistryPort["installed"],
+): MarketComponentStatus[] {
+  const names = new Map(market.listSources().map((s) => [s.id, s.name]));
+  return installed().flatMap(({ id, version, v }) => {
+    if (!v.source) return [];
+    const sourceId = v.source.sourceId;
+    const hit = market.search({ query: id, sourceId }).find((h) => h.id === id);
+    return [{ id, version, sourceId, sourceName: names.get(sourceId) ?? sourceId, updateAvailable: hit?.updateAvailable ?? null }];
+  });
 }
 
-export async function marketPublisherInfo(secrets: SecretStore): Promise<{ name: string; fingerprint: string } | null> {
-  if (!(await secrets.has("market:publisher"))) return null;
+export async function marketPublisherInfo(
+  secrets: SecretStore,
+): Promise<{ name: string; fingerprint: string } | null> {
+  if (!(await secrets.has(SECRET_MARKET_PUBLISHER))) return null;
   const keys = await loadPublisherKeys(secrets);
   return { name: keys.name, fingerprint: await keyFingerprint(keys.publicKey) };
 }
 ```
-`marketVersionInfo` compare à la version la plus haute installée depuis la même source, ce que `search` calcule déjà (`updateAvailable`).
+`updateAvailable` est la version la plus haute de la source au-dessus de la plus haute installée, ce que `search` calcule déjà (T15).
 
-Dans `packages/daemon/src/components/rpc.ts`, `listComponents` ajoute à chaque version `market: marketVersionInfo(market, id, v)` et `revoked: v.revoked`. Dans `market/rpc.ts`, `case "getMarketPublisher": return done(await marketPublisherInfo(secrets));`. Dans `packages/schema/src/rpc.ts`, ajouter `z.object({ method: z.literal("getMarketPublisher") })` à `RpcRequest` et `getMarketPublisher: { name: string; fingerprint: string } | null` à `RpcResult` ; dans `ComponentVersionSummary`, ajouter les deux champs.
+Dans `packages/daemon/src/market/rpc.ts`, traiter `listMarketStatus` par `marketStatuses(market, registry.installed)` et `getMarketPublisher` par `marketPublisherInfo(secrets)` (les dépendances `registry` et `secrets` sont celles déjà passées au gestionnaire par `market/bootstrap.ts`).
 
-Run: `bun test packages/daemon/src/market/summary.test.ts`
-Expected: PASS (2 tests).
+Run: `bun test packages/daemon/src/components packages/daemon/src/market packages/schema`
+Expected: PASS.
 
-- [ ] **Step 3: Textes `fr.ts`**
+- [ ] **Step 3: Textes**
 
-Ajouter à `fr.market` :
+Ajouter à `market` dans `packages/ui/src/i18n/fr-market.ts` :
 ```ts
     originMarket: (source: string) => `Marketplace · ${source}`,
     update: "Mettre à jour",
+    updateTitle: (title: string, from: string, to: string) => `Mettre à jour « ${title} » ${from} → ${to}`,
     revokedBadge: "Révoqué",
     authRevoked: (reason: string) => `Révoqué : ${reason}`,
     missing: (ref: string) => `Composant absent : ${ref}`,
@@ -18801,143 +19387,170 @@ Ajouter à `fr.market` :
 `packages/ui/src/lib/market-update.test.ts` :
 ```ts
 import { expect, test } from "bun:test";
-import type { MarketPackageDetail } from "@kibo/schema";
-import { buildUpdateData } from "./market-update";
+import { type ComponentVersionSummary, NO_PERMISSIONS } from "@kibo/schema";
+import { buildUpdateSummary } from "./market-update";
 
-const summary = {
-  id: "burndown",
-  title: "Burndown",
-  origin: "marketplace" as const,
-  versions: [
-    {
-      version: "0.1.0",
-      hash: "a".repeat(64),
-      trust: "sandboxed" as const,
-      granted: { reads: ["ticket" as const], writes: [], data: false, net: [] },
-      usages: [
-        { projectId: "p1", projectName: "Kibo", pageId: "pg1", pageTitle: "Tableau de bord", instanceId: "i1" },
-        { projectId: "p2", projectName: "Portfolio", pageId: "pg2", pageTitle: "Suivi", instanceId: "i2" },
-      ],
-      market: { sourceId: "equipe", sourceName: "Équipe", updateAvailable: "0.2.0" },
-      revoked: null,
-    },
-  ],
+const usage = (n: number) => ({
+  projectId: `p${n}`,
+  projectName: n === 1 ? "Kibo" : "Portfolio",
+  pageId: `pg${n}`,
+  pageTitle: "Tableau de bord",
+  instanceId: `i${n}`,
+});
+const current: ComponentVersionSummary = {
+  version: "0.1.0",
+  hash: "a".repeat(64),
+  trust: "sandboxed",
+  origin: "marketplace",
+  active: true,
+  tampered: false,
+  manifest: {
+    id: "burndown",
+    version: "0.1.0",
+    kind: "widget",
+    title: "Burndown",
+    reads: ["ticket"],
+    writes: [],
+    data: false,
+    net: [],
+    secrets: [],
+    mcp: [],
+    configVersion: 0,
+    changes: [],
+  },
+  usages: [usage(1), usage(2)],
+  revoked: null,
 };
-
 const detail = {
   version: "0.2.0",
-  hash: "b".repeat(64),
-  title: "Burndown",
-  permissions: { reads: ["ticket" as const, "status" as const], writes: [], data: true, net: [] },
+  permissions: { ...NO_PERMISSIONS, reads: ["ticket" as const, "status" as const], data: true },
   files: [{ path: "kibo.component.json", content: JSON.stringify({ changes: ["Ligne idéale", "Export CSV"] }) }],
-} satisfies Partial<MarketPackageDetail>;
+};
 
-test("the update dialog lists usages, the publisher changes and the new permissions", () => {
-  const data = buildUpdateData({ summary, from: "0.1.0", detail });
-  expect(data).toMatchObject({ id: "burndown", title: "Burndown", from: "0.1.0", to: "0.2.0", hash: "b".repeat(64), migration: null });
-  expect(data.usages.map((u) => u.projectName)).toEqual(["Kibo", "Portfolio"]);
-  expect(data.changes).toEqual(["Ligne idéale", "Export CSV"]);
-  expect(data.newPermissions).toEqual(["reads:status", "data"]);
+test("the update summary lists usages, the publisher changes and the new permissions", () => {
+  const s = buildUpdateSummary({ summary: current, detail });
+  expect(s).toMatchObject({ from: "0.1.0", to: "0.2.0", migration: null, changes: ["Ligne idéale", "Export CSV"] });
+  expect(s.usages.map((u) => [u.projectName, u.version])).toEqual([
+    ["Kibo", "0.1.0"],
+    ["Portfolio", "0.1.0"],
+  ]);
+  expect(s.newPermissions.length).toBe(2);
 });
 
 test("a manifest without changes gives an empty list", () => {
-  const data = buildUpdateData({ summary, from: "0.1.0", detail: { ...detail, files: [] } });
-  expect(data.changes).toEqual([]);
+  expect(buildUpdateSummary({ summary: current, detail: { ...detail, files: [] } }).changes).toEqual([]);
 });
 ```
+Compléter le manifeste littéral avec les champs obligatoires réels de `ComponentManifest` (`z.output`) si le typecheck en réclame d'autres.
 
 Run: `bun test packages/ui/src/lib/market-update.test.ts`
 Expected: FAIL avec « Cannot find module './market-update' ».
 
 `packages/ui/src/lib/market-update.ts` :
 ```ts
-import type { ComponentSummary, GrantedPermissions, MarketPackageDetail, PublishDialogData } from "@kibo/schema";
+import {
+  addedPermissions,
+  type ComponentVersionSummary,
+  grantedOf,
+  type MarketPackageDetail,
+  type PublishPreview,
+} from "@kibo/schema";
 import { z } from "zod";
+
+export type UpdateSummary = Pick<PublishPreview, "from" | "to" | "usages" | "changes" | "newPermissions" | "migration">;
 
 const Changes = z.object({ changes: z.array(z.string()).default([]) });
 
-const permissionKeys = (g: GrantedPermissions): string[] => [
-  ...g.reads.map((r) => `reads:${r}`),
-  ...g.writes.map((w) => `writes:${w}`),
-  ...(g.data ? ["data"] : []),
-  ...g.net.map((n) => `net:${n}`),
-];
+function changesOf(files: { path: string; content: string }[]): string[] {
+  const manifest = files.find((f) => f.path === "kibo.component.json");
+  if (!manifest) return [];
+  try {
+    const parsed = Changes.safeParse(JSON.parse(manifest.content));
+    return parsed.success ? parsed.data.changes : [];
+  } catch (e) {
+    if (e instanceof SyntaxError) return [];
+    throw e;
+  }
+}
 
-export function buildUpdateData(input: {
-  summary: ComponentSummary;
-  from: string;
-  detail: Pick<MarketPackageDetail, "version" | "hash" | "title" | "permissions" | "files">;
-}): PublishDialogData {
-  const current = input.summary.versions.find((v) => v.version === input.from);
-  const manifest = input.detail.files.find((f) => f.path === "kibo.component.json");
-  const parsed = manifest ? Changes.safeParse(JSON.parse(manifest.content)) : null;
-  const before = new Set(current ? permissionKeys(current.granted) : []);
+export function buildUpdateSummary(input: {
+  summary: ComponentVersionSummary;
+  detail: Pick<MarketPackageDetail, "version" | "permissions" | "files">;
+}): UpdateSummary {
+  const { summary, detail } = input;
   return {
-    id: input.summary.id,
-    title: input.detail.title,
-    from: input.from,
-    to: input.detail.version,
-    hash: input.detail.hash,
-    usages: (current?.usages ?? []).map(({ projectId, projectName, pageId, pageTitle }) => ({
-      projectId,
-      projectName,
-      pageId,
-      pageTitle,
-      version: input.from,
-    })),
-    changes: parsed?.success ? parsed.data.changes : [],
-    newPermissions: permissionKeys(input.detail.permissions).filter((p) => !before.has(p)),
+    from: summary.version,
+    to: detail.version,
+    usages: summary.usages.map((u) => ({ ...u, version: summary.version })),
+    changes: changesOf(detail.files),
+    newPermissions: addedPermissions(summary.manifest ? grantedOf(summary.manifest) : null, detail.permissions),
     migration: null,
   };
 }
 ```
-`newPermissions` suit la notation de l'écran 6 (`net:api.github.com/graphql`, spec B §3.1) ; la migration de configuration n'est connue qu'au moment de `updateInstance`, qui l'exécute dans le backend de la version cible (spec B §7.3), d'où `migration: null` dans l'aperçu. Si `PublishDialogData` ou `ComponentSummary` ne sont pas exportés par `@kibo/schema` en v0.6, les importer depuis leur module de la phase 4.
+La migration de configuration n'est connue qu'au moment de `updateInstance`, qui l'exécute dans le backend de la version cible (spec B §7.3), d'où `migration: null` dans l'aperçu.
 
-Run: `bun test packages/ui/src/lib/market-update.test.ts`
-Expected: PASS.
+Dans `PublishSections.tsx`, remplacer le type `PublishPreview` des props de `UsagesBox`, `ChangesList`, `hasChanges` et `StrategyChoice` par `UpdateSummary` (import depuis `../lib/market-update`) ; `PublishDialog` continue de leur passer son `PublishPreview`, qui satisfait ce type.
+
+Run: `bun test packages/ui/src/lib/market-update.test.ts packages/ui/src/components-page`
+Expected: PASS ; les tests existants de l'écran 6 passent sans changement de leurs attentes.
 
 - [ ] **Step 5: Tests du flux de mise à jour et de l'onglet Installés**
 
-`packages/ui/src/pages/components/market-update.test.tsx` :
+`packages/ui/src/components-page/market-update.test.tsx` :
 ```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { RpcRequest } from "@kibo/schema";
+import {
+  type ComponentSummary,
+  type ComponentVersionSummary,
+  type MarketComponentStatus,
+  NO_PERMISSIONS,
+  type RpcRequest,
+} from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
 let answers: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
-mock.module("../../api", () => ({
+mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
       const a = answers[req.method];
-      return a ? a() : Promise.resolve(null);
+      return a ? a() : Promise.resolve([]);
     },
+    subscribe: () => () => undefined,
   },
 }));
 
-const { InstalledTable } = await import("./InstalledTable");
-const { MarketUpdateFlow } = await import("./MarketUpdateFlow");
-const { trustPreviewFixture } = await import("../../testing/trust-preview-fixture");
+const { ComponentsPage } = await import("./ComponentsPage");
+const { MarketUpdateDialog } = await import("./MarketUpdateDialog");
 
+const H = "a".repeat(64);
 const usage = (n: number) => ({ projectId: `p${n}`, projectName: `Projet ${n}`, pageId: `pg${n}`, pageTitle: "Page", instanceId: `i${n}` });
-const summary = {
-  id: "burndown",
-  title: "Burndown",
-  origin: "marketplace" as const,
-  versions: [
-    {
-      version: "0.1.0",
-      hash: "a".repeat(64),
-      trust: "sandboxed" as const,
-      granted: { reads: ["ticket" as const], writes: [], data: false, net: [] },
-      usages: [usage(1), usage(2)],
-      market: { sourceId: "equipe", sourceName: "Équipe", updateAvailable: "0.2.0" },
-      revoked: null,
-    },
-  ],
+const version = (over: Partial<ComponentVersionSummary> = {}): ComponentVersionSummary => ({
+  version: "0.1.0",
+  hash: H,
+  trust: "sandboxed",
+  origin: "marketplace",
+  active: true,
+  tampered: false,
+  manifest: null,
+  usages: [usage(1), usage(2)],
+  revoked: null,
+  ...over,
+});
+const burndown: ComponentSummary = { id: "burndown", title: "Burndown", builtin: false, versions: [version()] };
+const roadmap: ComponentSummary = {
+  id: "roadmap",
+  title: "Feuille de route",
+  builtin: false,
+  versions: [version({ trust: null, active: false, revoked: { reason: "Faille", at: 1 } })],
 };
+const statuses: MarketComponentStatus[] = [
+  { id: "burndown", version: "0.1.0", sourceId: "equipe", sourceName: "Équipe", updateAvailable: "0.2.0" },
+  { id: "roadmap", version: "0.1.0", sourceId: "equipe", sourceName: "Équipe", updateAvailable: null },
+];
 const detail = {
   sourceId: "equipe",
   sourceName: "Équipe",
@@ -18952,31 +19565,32 @@ const detail = {
   version: "0.2.0",
   hash: "b".repeat(64),
   size: 10,
-  permissions: { reads: ["ticket"], writes: [], data: false, net: [] },
+  permissions: NO_PERMISSIONS,
   versions: [],
   pinnedPublisher: "LEA",
   newPublisher: false,
   publisherChanged: false,
   files: [{ path: "kibo.component.json", content: '{"changes":["Ligne idéale"]}' }],
 };
+const installed = {
+  id: "burndown",
+  title: "Burndown",
+  version: "0.2.0",
+  hash: "b".repeat(64),
+  permissions: NO_PERMISSIONS,
+  market: { publisherName: "Léa", verified: true, sourceName: "Équipe", newPublisher: false },
+};
+const registryVersion = { version: "0.2.0", hash: "b".repeat(64), origin: "marketplace", trust: "sandboxed" };
 
 beforeEach(() => {
   calls.length = 0;
   answers = {};
 });
 
-test("the installed table shows the marketplace origin, the update and a revoked version", async () => {
-  answers.listComponents = () =>
-    Promise.resolve([
-      summary,
-      {
-        ...summary,
-        id: "roadmap",
-        title: "Feuille de route",
-        versions: [{ ...summary.versions[0], market: { sourceId: "equipe", sourceName: "Équipe", updateAvailable: null }, revoked: { reason: "Faille", at: 1 } }],
-      },
-    ]);
-  render(<InstalledTable />);
+test("the installed tab shows the marketplace origin, the update and a revoked version", async () => {
+  answers.listComponents = () => Promise.resolve([burndown, roadmap]);
+  answers.listMarketStatus = () => Promise.resolve(statuses);
+  render(<ComponentsPage />);
   expect((await screen.findAllByText("Marketplace · Équipe")).length).toBe(2);
   expect(screen.getByText("0.2.0 disponible")).toBeTruthy();
   expect(screen.getByText("Révoqué")).toBeTruthy();
@@ -18985,14 +19599,14 @@ test("the installed table shows the marketplace origin, the update and a revoked
 
 test("updating everywhere installs, asks for trust, approves then updates each usage", async () => {
   answers.getMarketPackage = () => Promise.resolve(detail);
-  answers.installFromMarket = () =>
-    Promise.resolve({ id: "burndown", version: "0.2.0", hash: "b".repeat(64), preview: { ...trustPreviewFixture, market: null } });
+  answers.installFromMarket = () => Promise.resolve(installed);
+  answers.approveComponent = () => Promise.resolve(registryVersion);
   const onDone = mock(() => {});
-  render(<MarketUpdateFlow summary={summary} from="0.1.0" to="0.2.0" sourceId="equipe" onDone={onDone} />);
+  render(<MarketUpdateDialog title="Burndown" summary={version()} sourceId="equipe" id="burndown" to="0.2.0" onDone={onDone} />);
   const user = userEvent.setup();
   expect(await screen.findByText("Ligne idéale")).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "Mettre à jour partout" }));
-  await user.click(await screen.findByRole("radio", { name: /Sandboxé/ }));
+  await user.click(screen.getByRole("button", { name: "Mettre à jour" }));
+  await user.click(await screen.findByRole("radio", { name: "Sandboxé (recommandé)" }));
   await user.click(screen.getByRole("button", { name: "Autoriser" }));
   await waitFor(() => expect(onDone).toHaveBeenCalled());
   expect(calls.map((c) => c.method)).toEqual([
@@ -19010,12 +19624,13 @@ test("updating everywhere installs, asks for trust, approves then updates each u
 
 test("creating a new version leaves the instances alone", async () => {
   answers.getMarketPackage = () => Promise.resolve(detail);
-  answers.installFromMarket = () =>
-    Promise.resolve({ id: "burndown", version: "0.2.0", hash: "b".repeat(64), preview: { ...trustPreviewFixture, market: null } });
-  render(<MarketUpdateFlow summary={summary} from="0.1.0" to="0.2.0" sourceId="equipe" onDone={() => {}} />);
+  answers.installFromMarket = () => Promise.resolve(installed);
+  answers.approveComponent = () => Promise.resolve(registryVersion);
+  render(<MarketUpdateDialog title="Burndown" summary={version()} sourceId="equipe" id="burndown" to="0.2.0" onDone={() => {}} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Créer une nouvelle version" }));
-  await user.click(await screen.findByRole("radio", { name: /Sandboxé/ }));
+  await user.click(await screen.findByRole("radio", { name: "Créer une nouvelle version" }));
+  await user.click(screen.getByRole("button", { name: "Mettre à jour" }));
+  await user.click(await screen.findByRole("radio", { name: "Sandboxé (recommandé)" }));
   await user.click(screen.getByRole("button", { name: "Autoriser" }));
   await waitFor(() => expect(calls.some((c) => c.method === "approveComponent")).toBe(true));
   expect(calls.some((c) => c.method === "updateInstance")).toBe(false);
@@ -19023,114 +19638,203 @@ test("creating a new version leaves the instances alone", async () => {
 
 test("a changed publisher opens the unlock dialog instead of the update", async () => {
   answers.getMarketPackage = () => Promise.resolve({ ...detail, publisherChanged: true, pinnedPublisher: "OLD" });
-  render(<MarketUpdateFlow summary={summary} from="0.1.0" to="0.2.0" sourceId="equipe" onDone={() => {}} />);
+  render(<MarketUpdateDialog title="Burndown" summary={version()} sourceId="equipe" id="burndown" to="0.2.0" onDone={() => {}} />);
   expect(await screen.findByText("La clé de l'éditeur a changé")).toBeTruthy();
   expect(calls.some((c) => c.method === "installFromMarket")).toBe(false);
 });
 ```
-Les libellés « Mettre à jour partout », « Créer une nouvelle version », « Sandboxé » et « Autoriser » sont ceux des dialogues des écrans 6 et 30 de la phase 4 ; T0 confirme leur texte exact.
+Les libellés des radios de `StrategyChoice` sont leurs titres (`aria-label` de `StrategyCard`) ; vérifier en lisant `PublishSections.tsx` et ajuster le sélecteur (`getByRole("radio", { name })` ou `getByLabelText`) sur celui qu'utilisent les tests existants de `PublishDialog`.
 
-Run: `bun test packages/ui/src/pages/components/market-update.test.tsx`
-Expected: FAIL avec « Cannot find module './MarketUpdateFlow' ».
+Run: `bun test packages/ui/src/components-page/market-update.test.tsx`
+Expected: FAIL avec « Cannot find module './MarketUpdateDialog' ».
 
 - [ ] **Step 6: Implémenter le flux et l'onglet Installés**
 
-`packages/ui/src/pages/components/MarketUpdateFlow.tsx` :
+`packages/ui/src/components-page/MarketUpdateDialog.tsx` :
 ```tsx
-import type { ComponentSummary, MarketInstallResult, MarketPackageDetail } from "@kibo/schema";
+import type { ComponentVersionSummary, MarketInstallResult, MarketPackageDetail } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { useEffect, useState } from "react";
-import { client } from "../../api";
-import { PublishDialog } from "../../dialogs/PublishDialog";
-import { PublisherChangedDialog } from "../../dialogs/PublisherChangedDialog";
-import { marketTrustProps, TrustDialog } from "../../dialogs/TrustDialog";
-import { marketErrorText } from "../../lib/market-errors";
-import { buildUpdateData } from "../../lib/market-update";
+import { client } from "../api";
+import { PublisherChangedDialog } from "../dialogs/PublisherChangedDialog";
+import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
+import { fr } from "../i18n/fr";
+import { buildUpdateSummary } from "../lib/market-update";
+import { marketErrorText } from "../lib/market-errors";
+import { useProjects } from "../state/use-projects";
+import { ChangesList, NEUTRAL_DOT, type Strategy, StrategyChoice, UsagesBox } from "./PublishSections";
 
-type Props = { summary: ComponentSummary; from: string; to: string; sourceId: string; onDone(): void };
-type Strategy = "update-all" | "new-version";
+type Props = {
+  title: string;
+  summary: ComponentVersionSummary;
+  sourceId: string;
+  id: string;
+  to: string;
+  onDone(): void;
+};
 
-export function MarketUpdateFlow({ summary, from, to, sourceId, onDone }: Props) {
+export function MarketUpdateDialog({ title, summary, sourceId, id, to, onDone }: Props) {
+  const projects = useProjects() ?? [];
   const [detail, setDetail] = useState<MarketPackageDetail | null>(null);
-  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [strategy, setStrategy] = useState<Strategy>("update-all");
   const [installed, setInstalled] = useState<MarketInstallResult | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const colorOf = (projectId: string) => projects.find((p) => p.id === projectId)?.color ?? NEUTRAL_DOT;
 
   useEffect(() => {
     client
-      .rpc({ method: "getMarketPackage", sourceId, id: summary.id, version: to })
-      .then((d) => setDetail(d as MarketPackageDetail))
+      .rpc({ method: "getMarketPackage", sourceId, id, version: to })
+      .then(setDetail)
       .catch((e: unknown) => setError(marketErrorText(e)));
-  }, [sourceId, summary.id, to]);
+  }, [sourceId, id, to]);
 
-  const confirm = async (chosen: Strategy) => {
-    setStrategy(chosen);
+  const install = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      setInstalled((await client.rpc({ method: "installFromMarket", sourceId, id: summary.id, version: to })) as MarketInstallResult);
+      setInstalled(await client.rpc({ method: "installFromMarket", sourceId, id, version: to }));
     } catch (e) {
       setError(marketErrorText(e));
+    } finally {
+      setBusy(false);
     }
   };
-
-  const approve = async (trust: "trusted" | "sandboxed") => {
-    if (!installed) return;
+  const applied = async () => {
     try {
-      await client.rpc({ method: "approveComponent", id: summary.id, version: to, hash: installed.hash, trust });
-      if (strategy === "update-all") {
-        const usages = summary.versions.find((v) => v.version === from)?.usages ?? [];
-        for (const u of usages) {
+      if (strategy === "update-all")
+        for (const u of summary.usages)
           await client.rpc({ method: "updateInstance", projectId: u.projectId, instanceId: u.instanceId, to });
-        }
-      }
       onDone();
     } catch (e) {
       setError(marketErrorText(e));
     }
   };
 
-  if (detail?.publisherChanged) {
-    return <PublisherChangedDialog detail={detail} open onOpenChange={(o) => (o ? undefined : onDone())} onUnlocked={onDone} />;
-  }
+  if (detail?.publisherChanged)
+    return <PublisherChangedDialog detail={detail} open onOpenChange={(o) => !o && onDone()} onUnlocked={onDone} />;
+  if (installed)
+    return (
+      <TrustDialog
+        target={trustTargetOfInstall(installed)}
+        mode="approve"
+        open
+        onOpenChange={(o) => !o && onDone()}
+        onApproved={() => void applied()}
+      />
+    );
+  const update = detail ? buildUpdateSummary({ summary, detail }) : null;
   return (
-    <>
-      {detail && !installed ? (
-        <PublishDialog
-          data={buildUpdateData({ summary, from, detail })}
-          open
-          onConfirm={(s) => void confirm(s)}
-          onCancel={onDone}
-        />
-      ) : null}
-      {installed ? (
-        <TrustDialog
-          preview={installed.preview}
-          open
-          onApproved={(trust) => void approve(trust)}
-          onRefused={onDone}
-          {...marketTrustProps(installed.preview.market)}
-        />
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      ) : null}
-    </>
+    <Dialog open onOpenChange={(o) => !o && onDone()}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{fr.market.updateTitle(title, summary.version, to)}</DialogTitle>
+        </DialogHeader>
+        {update && (
+          <>
+            {update.usages.length > 0 && <UsagesBox preview={update} strategy={strategy} colorOf={colorOf} />}
+            <ChangesList preview={update} />
+            {update.usages.length > 0 && <StrategyChoice preview={update} value={strategy} onChange={setStrategy} />}
+          </>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onDone}>
+            {fr.common.cancel}
+          </Button>
+          <Button disabled={busy || !update} onClick={() => void install()}>
+            {fr.market.update}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
-Dans `InstalledTable.tsx` : la colonne Origine affiche `fr.market.originMarket(v.market.sourceName)` quand `v.market` n'est pas nul ; à côté de la version, `v.market?.updateAvailable` rend `<Badge variant="secondary">{fr.market.available(...)}</Badge>` et un bouton `fr.market.update` qui monte `<MarketUpdateFlow summary={c} from={v.version} to={v.market.updateAvailable} sourceId={v.market.sourceId} onDone={reload} />` ; `v.revoked` rend `<Badge variant="destructive">{fr.market.revokedBadge}</Badge>` et, en sous-texte, `fr.market.authRevoked(v.revoked.reason)`. Pour un composant d'origine `user` ou `ai`, le menu `⋯` gagne l'entrée `fr.market.publish` qui ouvre `PublishToMarketDialog`.
+L'erreur d'une installation refusée (empreinte, signature, révocation) reste dans ce dialogue, rien n'est écrit (T20). `TrustDialog` appelle lui-même `approveComponent` avec l'empreinte installée.
 
-Dans `AuthorizationRequired.tsx`, quand `reason` est fourni, afficher `fr.market.authRevoked(reason)` sous le titre « Autorisation requise » ; l'hôte d'instance passe `version.revoked?.reason ?? null`.
+`packages/ui/src/state/use-market-status.ts` :
+```ts
+import type { MarketComponentStatus } from "@kibo/schema";
+import { useCallback, useEffect, useState } from "react";
+import { client } from "../api";
 
-Run: `bun test packages/ui/src/pages/components/market-update.test.tsx`
-Expected: PASS (4 tests).
+export function useMarketStatus(): { statuses: MarketComponentStatus[]; reload(): void } {
+  const [statuses, setStatuses] = useState<MarketComponentStatus[]>([]);
+  const reload = useCallback(() => {
+    client
+      .rpc({ method: "listMarketStatus" })
+      .then(setStatuses)
+      .catch((e: unknown) => console.error("[kibo-ui] market status failed", e));
+  }, []);
+  useEffect(() => {
+    reload();
+    return client.subscribe((projectId) => {
+      if (projectId === null) reload();
+    });
+  }, [reload]);
+  return { statuses, reload };
+}
+```
+Une erreur de ce statut n'empêche pas la page de s'afficher (colonne Origine sans source) ; elle est journalisée, pas avalée.
+
+Dans `rows.ts` : `ComponentRow` gagne `revoked: { reason: string; at: number } | null` (de `summary.revoked`) et `market: MarketComponentStatus | null` ; `componentRows(components, statuses: MarketComponentStatus[] = [])` associe par `id` et `version`. Ajouter à `rows.test.ts` un cas qui vérifie cette association.
+
+`packages/ui/src/components-page/VersionCell.tsx` :
+```tsx
+import { Badge } from "@kibo/sdk/ui/badge";
+import { Button } from "@kibo/sdk/ui/button";
+import { fr } from "../i18n/fr";
+import type { ComponentRow } from "./rows";
+
+export function VersionCell({ row, onUpdate }: { row: ComponentRow; onUpdate(to: string): void }) {
+  const next = row.market?.updateAvailable ?? null;
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <span className="font-mono text-xs text-muted-foreground">{row.version}</span>
+      {next && (
+        <>
+          <Badge variant="secondary">{fr.market.available(next)}</Badge>
+          <Button size="sm" variant="outline" className="h-7" onClick={() => onUpdate(next)}>
+            {fr.market.update}
+          </Button>
+        </>
+      )}
+      {row.revoked && (
+        <span className="grid gap-0.5">
+          <Badge variant="destructive">{fr.market.revokedBadge}</Badge>
+          <span className="text-xs text-destructive">{fr.market.authRevoked(row.revoked.reason)}</span>
+        </span>
+      )}
+    </span>
+  );
+}
+```
+
+Dans `ComponentsPage.tsx` :
+- `const { statuses, reload: reloadMarket } = useMarketStatus();` et `componentRows(components, statuses)` ;
+- `ComponentsTable` : la cellule Version devient `<VersionCell row={row} onUpdate={(to) => onUpdate(row, to)} />` ; la cellule Origine affiche `row.market ? fr.market.originMarket(row.market.sourceName) : c.origin[row.origin]` ;
+- état `updating: { row: ComponentRow; to: string } | null` qui monte `<MarketUpdateDialog title={row.title} summary={row.summary} sourceId={row.market.sourceId} id={row.id} to={to} onDone={() => { setUpdating(null); reload(); reloadMarket(); }} />` quand `row.summary` et `row.market` sont présents ;
+- état `publishingToMarket: ComponentRow | null` qui monte `PublishToMarketDialog` (étape 8), passé à `ComponentRowMenu` par une nouvelle prop `onPublishToMarket(row)`.
+
+Si `ComponentsPage.tsx` dépasse ~300 lignes, sortir `ComponentsTable` dans `components-page/ComponentsTable.tsx`.
+
+Dans `PendingTrust.tsx`, quand `summary?.revoked` n'est pas nul, afficher `<p className="text-sm text-destructive">{fr.market.authRevoked(summary.revoked.reason)}</p>` sous `i.pendingHelp(...)` et désactiver « Examiner » (une version révoquée ne se ré-approuve pas : il faut installer une autre version).
+
+Run: `bun test packages/ui/src/components-page packages/ui/src/pages`
+Expected: PASS (dont les 4 tests de `market-update.test.tsx`).
 
 - [ ] **Step 7: Tests des dialogues M6 et M8**
 
-`packages/ui/src/dialogs/market-dialogs.test.tsx` :
+`packages/ui/src/components-page/market-dialogs.test.tsx` :
 ```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
-import { KiboError, type RpcRequest } from "@kibo/schema";
+import { KiboError, NO_PERMISSIONS, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -19143,27 +19847,52 @@ mock.module("../api", () => ({
       const a = answers[req.method];
       return a ? a() : Promise.resolve(null);
     },
+    subscribe: () => () => undefined,
   },
 }));
 
-const { PublisherChangedDialog } = await import("./PublisherChangedDialog");
+const { PublisherChangedDialog } = await import("../dialogs/PublisherChangedDialog");
 const { PublishToMarketDialog } = await import("./PublishToMarketDialog");
 
-const team = { id: "equipe", name: "Équipe", url: "https://sync.kibo.test/market/", publicKey: "PK", fingerprint: "f".repeat(64), lastSerial: 41, lastFetchedAt: 1, lastError: null, enabled: true };
+const team = {
+  id: "equipe",
+  name: "Équipe",
+  url: "https://sync.kibo.test/market/",
+  publicKey: "PK",
+  fingerprint: "f".repeat(64),
+  lastSerial: 41,
+  lastFetchedAt: 1,
+  lastError: null,
+  enabled: true,
+};
 const statik = { ...team, id: "perso", name: "Perso", url: "https://kibo.example.org/" };
-const component = { id: "burndown", title: "Burndown", version: "0.3.0", hash: "c21e".repeat(16), permissions: { reads: ["ticket" as const], writes: [], data: false, net: [] } };
+const target = { id: "burndown", title: "Burndown", version: "0.3.0", hash: "c21e".repeat(16), permissions: NO_PERMISSIONS };
+const online = {
+  state: "online",
+  serverUrl: "wss://sync.kibo.test",
+  user: null,
+  deviceId: null,
+  retryAt: null,
+  lastError: null,
+  projects: [],
+};
 
 beforeEach(() => {
   calls.length = 0;
   answers = {
     listMarketSources: () => Promise.resolve([team, statik]),
-    getSyncStatus: () => Promise.resolve({ state: "online", serverUrl: "wss://sync.kibo.test", user: null, deviceId: null, retryAt: null, lastError: null, projects: [] }),
+    getSyncStatus: () => Promise.resolve(online),
   };
 });
 
 test("unlocking a changed publisher key unpins it after confirmation", async () => {
   const onUnlocked = mock(() => {});
-  const detail = { sourceId: "equipe", id: "burndown", pinnedPublisher: "MCowBQYDK2VwAyEAb2xk", publisher: { name: "Léa", publicKey: "MCowBQYDK2VwAyEAbmV3", verified: true } };
+  const detail = {
+    sourceId: "equipe",
+    id: "burndown",
+    pinnedPublisher: "MCowBQYDK2VwAyEAb2xk",
+    publisher: { name: "Léa", publicKey: "MCowBQYDK2VwAyEAbmV3", verified: true },
+  };
   render(<PublisherChangedDialog detail={detail} open onOpenChange={() => {}} onUnlocked={onUnlocked} />);
   expect(screen.getByText("Ne débloque que si l'éditeur t'a confirmé ce changement.")).toBeTruthy();
   expect(await screen.findByText("Ancienne clé")).toBeTruthy();
@@ -19175,7 +19904,7 @@ test("unlocking a changed publisher key unpins it after confirmation", async () 
 test("the first publication asks for a publisher name and only offers team sources", async () => {
   answers.getMarketPublisher = () => Promise.resolve(null);
   answers.publishToMarket = () => Promise.resolve({ serial: 42 });
-  render(<PublishToMarketDialog component={component} open onOpenChange={() => {}} />);
+  render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
   const user = userEvent.setup();
   expect(await screen.findByText("Ce nom accompagne tes composants publiés.")).toBeTruthy();
   expect(screen.getByRole("radio", { name: "Équipe" })).toBeTruthy();
@@ -19183,23 +19912,31 @@ test("the first publication asks for a publisher name and only offers team sourc
   await user.type(screen.getByLabelText("Nom d'éditeur"), "Adam");
   await user.click(screen.getByRole("button", { name: "Publier sur la marketplace" }));
   expect(await screen.findByText("Publié : index n° 42")).toBeTruthy();
-  expect(calls.at(-1)).toEqual({ method: "publishToMarket", id: "burndown", version: "0.3.0", sourceId: "equipe", publisherName: "Adam" });
+  expect(calls.at(-1)).toEqual({
+    method: "publishToMarket",
+    id: "burndown",
+    version: "0.3.0",
+    sourceId: "equipe",
+    publisherName: "Adam",
+  });
 });
 
 test("a known publisher publishes without the name field", async () => {
   answers.getMarketPublisher = () => Promise.resolve({ name: "Adam", fingerprint: "a".repeat(64) });
   answers.publishToMarket = () => Promise.resolve({ serial: 43 });
-  render(<PublishToMarketDialog component={component} open onOpenChange={() => {}} />);
+  render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
   await screen.findByRole("radio", { name: "Équipe" });
   expect(screen.queryByLabelText("Nom d'éditeur")).toBeNull();
   await userEvent.setup().click(screen.getByRole("button", { name: "Publier sur la marketplace" }));
-  await waitFor(() => expect(calls.at(-1)).toEqual({ method: "publishToMarket", id: "burndown", version: "0.3.0", sourceId: "equipe" }));
+  await waitFor(() =>
+    expect(calls.at(-1)).toEqual({ method: "publishToMarket", id: "burndown", version: "0.3.0", sourceId: "equipe" }),
+  );
 });
 
 test("publication errors are explained", async () => {
   answers.getMarketPublisher = () => Promise.resolve({ name: "Adam", fingerprint: "a".repeat(64) });
   answers.publishToMarket = () => Promise.reject(new KiboError("FORBIDDEN", "x"));
-  render(<PublishToMarketDialog component={component} open onOpenChange={() => {}} />);
+  render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
   await screen.findByRole("radio", { name: "Équipe" });
   await userEvent.setup().click(screen.getByRole("button", { name: "Publier sur la marketplace" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Tu n'as pas le droit de publier sur cette source.");
@@ -19208,13 +19945,16 @@ test("publication errors are explained", async () => {
 test("without a team source the dialog says how to get one", async () => {
   answers.listMarketSources = () => Promise.resolve([statik]);
   answers.getMarketPublisher = () => Promise.resolve(null);
-  render(<PublishToMarketDialog component={component} open onOpenChange={() => {}} />);
-  expect(await screen.findByText("Aucune source d'équipe : connecte-toi à un serveur de sync et ajoute sa marketplace.")).toBeTruthy();
+  render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
+  expect(
+    await screen.findByText("Aucune source d'équipe : connecte-toi à un serveur de sync et ajoute sa marketplace."),
+  ).toBeTruthy();
 });
 ```
+Le statut de sync suit `SyncStatus` de T4 (nom exact des champs repris de sa section intégrée).
 
-Run: `bun test packages/ui/src/dialogs/market-dialogs.test.tsx`
-Expected: FAIL avec « Cannot find module './PublisherChangedDialog' ».
+Run: `bun test packages/ui/src/components-page/market-dialogs.test.tsx`
+Expected: FAIL avec « Cannot find module '../dialogs/PublisherChangedDialog' ».
 
 - [ ] **Step 8: Implémenter M6 et M8**
 
@@ -19277,24 +20017,24 @@ export function PublisherChangedDialog({ detail, open, onOpenChange, onUnlocked 
           <DialogTitle>{fr.market.changedTitle}</DialogTitle>
           <DialogDescription>{fr.market.changedHelp}</DialogDescription>
         </DialogHeader>
-        {prints ? (
+        {prints && (
           <dl className="grid gap-2 text-xs">
             <dt className="text-muted-foreground">{fr.market.oldKey}</dt>
             <dd className="break-all font-mono">{groupFingerprint(prints.old)}</dd>
             <dt className="text-muted-foreground">{fr.market.newKey}</dt>
             <dd className="break-all font-mono">{groupFingerprint(prints.next)}</dd>
           </dl>
-        ) : null}
-        {error ? (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
-        ) : null}
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {fr.common.cancel}
           </Button>
-          <Button variant="destructive" onClick={unlock}>
+          <Button variant="destructive" onClick={() => void unlock()}>
             {fr.market.unlockConfirm}
           </Button>
         </DialogFooter>
@@ -19304,9 +20044,9 @@ export function PublisherChangedDialog({ detail, open, onOpenChange, onUnlocked 
 }
 ```
 
-`packages/ui/src/dialogs/PublishToMarketDialog.tsx` :
+`packages/ui/src/components-page/PublishToMarketDialog.tsx` :
 ```tsx
-import { KiboError, type GrantedPermissions, type MarketSourceInfo, type SyncStatus } from "@kibo/schema";
+import { type GrantedPermissions, KiboError, type MarketSourceInfo, shortHash } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
@@ -19314,51 +20054,61 @@ import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
+import { PermissionList } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
-import { shortFingerprint } from "../lib/fingerprint";
 import { marketErrorText } from "../lib/market-errors";
-import { permissionLines } from "../lib/permission-lines";
 
-type Component = { id: string; title: string; version: string; hash: string; permissions: GrantedPermissions };
-type Props = { component: Component; open: boolean; onOpenChange(open: boolean): void };
-const publishErrors: Record<string, string> = fr.market.publishErrors;
+export type PublishTarget = { id: string; title: string; version: string; hash: string; permissions: GrantedPermissions };
+type Props = { target: PublishTarget; open: boolean; onOpenChange(open: boolean): void };
+type State = { kind: "idle" } | { kind: "busy" } | { kind: "done"; serial: number } | { kind: "error"; text: string };
+const publishErrors: Readonly<Record<string, string>> = fr.market.publishErrors;
 
-export function PublishToMarketDialog({ component, open, onOpenChange }: Props) {
-  const nameId = useId();
+const hostOf = (url: string | null) => (url ? new URL(url).host : null);
+const errorText = (e: unknown) =>
+  e instanceof KiboError ? (publishErrors[e.code] ?? marketErrorText(e)) : marketErrorText(e);
+
+function useTeamSources(open: boolean, fail: (text: string) => void) {
   const [sources, setSources] = useState<MarketSourceInfo[] | null>(null);
-  const [sourceId, setSourceId] = useState<string>("");
   const [needsName, setNeedsName] = useState(false);
-  const [name, setName] = useState("");
-  const [state, setState] = useState<{ kind: "idle" } | { kind: "busy" } | { kind: "done"; serial: number } | { kind: "error"; text: string }>({ kind: "idle" });
-
   useEffect(() => {
     if (!open) return;
-    Promise.all([client.rpc({ method: "listMarketSources" }), client.rpc({ method: "getSyncStatus" }), client.rpc({ method: "getMarketPublisher" })])
+    Promise.all([
+      client.rpc({ method: "listMarketSources" }),
+      client.rpc({ method: "getSyncStatus" }),
+      client.rpc({ method: "getMarketPublisher" }),
+    ])
       .then(([all, status, publisher]) => {
-        const serverUrl = (status as SyncStatus).serverUrl;
-        const host = serverUrl ? new URL(serverUrl).host : null;
-        const team = (all as MarketSourceInfo[]).filter((s) => host !== null && new URL(s.url).host === host);
-        setSources(team);
-        setSourceId(team[0]?.id ?? "");
+        const host = hostOf(status.serverUrl);
+        setSources(all.filter((s) => host !== null && hostOf(s.url) === host));
         setNeedsName(publisher === null);
       })
-      .catch((e: unknown) => setState({ kind: "error", text: marketErrorText(e) }));
-  }, [open]);
+      .catch((e: unknown) => fail(marketErrorText(e)));
+  }, [open, fail]);
+  return { sources, needsName };
+}
+
+export function PublishToMarketDialog({ target, open, onOpenChange }: Props) {
+  const nameId = useId();
+  const [state, setState] = useState<State>({ kind: "idle" });
+  const [fail] = useState(() => (text: string) => setState({ kind: "error", text }));
+  const { sources, needsName } = useTeamSources(open, fail);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const sourceId = chosen ?? sources?.[0]?.id ?? "";
 
   const publish = async () => {
     setState({ kind: "busy" });
     try {
-      const result = (await client.rpc({
+      const { serial } = await client.rpc({
         method: "publishToMarket",
-        id: component.id,
-        version: component.version,
+        id: target.id,
+        version: target.version,
         sourceId,
         ...(needsName ? { publisherName: name.trim() } : {}),
-      })) as { serial: number };
-      setState({ kind: "done", serial: result.serial });
+      });
+      setState({ kind: "done", serial });
     } catch (e) {
-      const text = e instanceof KiboError ? (publishErrors[e.code] ?? marketErrorText(e)) : marketErrorText(e);
-      setState({ kind: "error", text });
+      setState({ kind: "error", text: errorText(e) });
     }
   };
 
@@ -19366,8 +20116,8 @@ export function PublishToMarketDialog({ component, open, onOpenChange }: Props) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{fr.market.publishTitle(component.title, component.version)}</DialogTitle>
-          <DialogDescription className="font-mono text-xs">{shortFingerprint(component.hash)}</DialogDescription>
+          <DialogTitle>{fr.market.publishTitle(target.title, target.version)}</DialogTitle>
+          <DialogDescription className="font-mono text-xs">{shortHash(target.hash)}</DialogDescription>
         </DialogHeader>
         {sources !== null && sources.length === 0 ? (
           <p className="text-sm text-muted-foreground">{fr.market.publishNoSource}</p>
@@ -19375,7 +20125,7 @@ export function PublishToMarketDialog({ component, open, onOpenChange }: Props) 
           <div className="flex flex-col gap-3 text-sm">
             <fieldset className="flex flex-col gap-1.5">
               <legend className="text-xs text-muted-foreground">{fr.market.publishSource}</legend>
-              <RadioGroup value={sourceId} onValueChange={setSourceId}>
+              <RadioGroup value={sourceId} onValueChange={setChosen}>
                 {(sources ?? []).map((s) => (
                   <Label key={s.id} className="flex items-center gap-2 font-normal">
                     <RadioGroupItem value={s.id} aria-label={s.name} />
@@ -19384,29 +20134,27 @@ export function PublishToMarketDialog({ component, open, onOpenChange }: Props) 
                 ))}
               </RadioGroup>
             </fieldset>
-            {needsName ? (
+            {needsName && (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={nameId}>{fr.market.publisherName}</Label>
                 <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} maxLength={64} />
                 <p className="text-xs text-muted-foreground">{fr.market.publisherNameHelp}</p>
               </div>
-            ) : null}
-            <ul className="list-disc pl-5 text-xs">
-              {permissionLines(component.permissions).map((l) => (
-                <li key={l}>{l}</li>
-              ))}
-            </ul>
+            )}
+            <PermissionList permissions={target.permissions} />
           </div>
         )}
-        {state.kind === "done" ? <p className="text-sm text-emerald-700 dark:text-emerald-400">{fr.market.published(state.serial)}</p> : null}
-        {state.kind === "error" ? (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        {state.kind === "done" && (
+          <p className="text-sm text-emerald-700 dark:text-emerald-400">{fr.market.published(state.serial)}</p>
+        )}
+        {state.kind === "error" && (
+          <p role="alert" className="text-sm text-destructive">
             {state.text}
           </p>
-        ) : null}
+        )}
         <DialogFooter>
           <Button
-            onClick={publish}
+            onClick={() => void publish()}
             disabled={state.kind === "busy" || state.kind === "done" || !sourceId || (needsName && !name.trim())}
           >
             {state.kind === "busy" ? fr.market.publishing : fr.market.publish}
@@ -19417,13 +20165,14 @@ export function PublishToMarketDialog({ component, open, onOpenChange }: Props) 
   );
 }
 ```
+Une source d'équipe est une source dont l'hôte est celui du serveur de sync configuré (décision 21 : `<serveur>/market/`). Dans `ComponentsPage.tsx`, la cible vient de la ligne : `{ id: row.id, title: row.title, version: row.version, hash: row.summary.hash, permissions: grantedOf(row.summary.manifest) }` (entrée de menu masquée si `row.summary?.hash` ou `row.summary?.manifest` manque). Dans `ComponentRowMenu.tsx`, l'entrée `fr.market.publish` (icône `Upload`) n'apparaît que pour `modifiable(row.origin)` et une version active.
 
-Run: `bun test packages/ui/src/dialogs/market-dialogs.test.tsx`
-Expected: PASS (5 tests).
+Run: `bun test packages/ui/src/components-page/market-dialogs.test.tsx packages/ui/src/lib/market-errors.test.ts`
+Expected: PASS.
 
 - [ ] **Step 9: Test et implémentation du composant absent (S7)**
 
-`packages/ui/src/shell/missing-component.test.tsx` :
+`packages/ui/src/pages/missing-component.test.tsx` :
 ```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
@@ -19439,23 +20188,20 @@ mock.module("../api", () => ({
       const a = answers[req.method];
       return a ? a() : Promise.resolve(null);
     },
+    subscribe: () => () => undefined,
   },
 }));
-
-const { MissingComponent } = await import("./MissingComponent");
-
-const instance = {
-  id: "i1",
-  pageId: "pg1",
-  component: "burndown@0.3.0",
-  layout: { x: 0, y: 0, w: 6, h: 6 },
-  config: {},
-  componentHash: "c".repeat(64),
-};
 const members = [
   { userId: "u-lea", name: "Léa", role: "owner" as const },
   { userId: "u-adam", name: "Adam", role: "editor" as const },
 ];
+mock.module("../state/use-projects", () => ({
+  useProject: () => ({ sync: { members } }),
+  useProjects: () => [],
+}));
+
+const { MissingComponent } = await import("./MissingComponent");
+const HASH = "c".repeat(64);
 
 beforeEach(() => {
   calls.length = 0;
@@ -19464,123 +20210,153 @@ beforeEach(() => {
 
 test("a component offered by a known source can be installed with the same hash", async () => {
   answers.findMarketSource = () => Promise.resolve({ sourceId: "equipe" });
-  render(<MissingComponent projectId="p1" instance={instance} members={members} />);
+  render(<MissingComponent projectId="p1" componentRef="burndown@0.3.0" hash={HASH} compact={false} />);
   expect(screen.getByText("Composant absent : burndown@0.3.0")).toBeTruthy();
   expect(await screen.findByRole("button", { name: "Installer" })).toBeTruthy();
-  expect(calls[0]).toEqual({ method: "findMarketSource", id: "burndown", version: "0.3.0", hash: "c".repeat(64) });
+  expect(calls[0]).toEqual({ method: "findMarketSource", id: "burndown", version: "0.3.0", hash: HASH });
   await userEvent.setup().click(screen.getByRole("button", { name: "Installer" }));
   expect(calls.at(-1)).toEqual({ method: "getMarketPackage", sourceId: "equipe", id: "burndown", version: "0.3.0" });
 });
 
 test("otherwise the owner is asked to publish it", async () => {
   answers.findMarketSource = () => Promise.resolve(null);
-  render(<MissingComponent projectId="p1" instance={instance} members={members} />);
+  render(<MissingComponent projectId="p1" componentRef="burndown@0.3.0" hash={HASH} compact={false} />);
   expect(await screen.findByText("Demande à Léa de le publier sur la marketplace d'équipe.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Installer" })).toBeNull();
 });
 ```
+`mock.module("../state/use-projects")` remplace le hook par un instantané minimal ; si Biome ou le typecheck refusent l'objet partiel, construire un `ProjectSnapshot` complet avec la fixture de projet existante des tests UI.
 
-Run: `bun test packages/ui/src/shell/missing-component.test.tsx`
+Run: `bun test packages/ui/src/pages/missing-component.test.tsx`
 Expected: FAIL avec « Cannot find module './MissingComponent' ».
 
-`packages/ui/src/shell/MissingComponent.tsx` :
+`packages/ui/src/pages/MissingComponent.tsx` :
 ```tsx
-import type { Instance, MemberInfo } from "@kibo/schema";
+import { type MarketInstallResult, splitRef } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { client } from "../api";
+import { MarketPackageSheet } from "../components-page/MarketPackageSheet";
+import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { marketErrorText } from "../lib/market-errors";
-import { MarketPackageSheet } from "../pages/components/MarketPackageSheet";
+import { useProject } from "../state/use-projects";
 
-type Props = { projectId: string; instance: Instance; members: MemberInfo[] };
+type Props = { projectId: string; componentRef: string; hash: string | null; compact: boolean };
 
-export function MissingComponent({ instance, members }: Props) {
-  const [id = "", version = ""] = instance.component.split("@");
+export function MissingComponent({ projectId, componentRef, hash, compact }: Props) {
+  const { id, version } = splitRef(componentRef);
+  const owner = useProject(projectId)?.sync.members.find((m) => m.role === "owner") ?? null;
   const [source, setSource] = useState<{ sourceId: string } | null | undefined>(undefined);
   const [open, setOpen] = useState(false);
+  const [installed, setInstalled] = useState<MarketInstallResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const owner = members.find((m) => m.role === "owner");
 
   useEffect(() => {
     client
-      .rpc({ method: "findMarketSource", id, version, hash: instance.componentHash ?? null })
-      .then((s) => setSource(s as { sourceId: string } | null))
+      .rpc({ method: "findMarketSource", id, version, hash })
+      .then(setSource)
       .catch((e: unknown) => setError(marketErrorText(e)));
-  }, [id, version, instance.componentHash]);
+  }, [id, version, hash]);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 rounded-md border border-dashed p-4 text-center text-sm">
+    <div
+      className={`flex h-full flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center text-sm ${compact ? "p-4" : "p-10"}`}
+    >
       <Package className="size-5 text-muted-foreground" aria-hidden />
-      <p className="font-medium">{fr.market.missing(instance.component)}</p>
-      {source ? (
+      <p className="font-medium">{fr.market.missing(componentRef)}</p>
+      {source && (
         <Button size="sm" onClick={() => setOpen(true)}>
           {fr.market.install}
         </Button>
-      ) : source === null && owner ? (
-        <p className="text-muted-foreground">{fr.market.askOwner(owner.name)}</p>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+      )}
+      {source === null && owner && <p className="text-muted-foreground">{fr.market.askOwner(owner.name)}</p>}
+      {error && (
+        <p role="alert" className="text-destructive">
           {error}
         </p>
-      ) : null}
+      )}
       <MarketPackageSheet
         target={open && source ? { sourceId: source.sourceId, id, version } : null}
         onClose={() => setOpen(false)}
-        onInstalled={() => setOpen(false)}
+        onInstalled={(r) => {
+          setOpen(false);
+          setInstalled(r);
+        }}
       />
+      {installed && (
+        <TrustDialog
+          target={trustTargetOfInstall(installed)}
+          mode="approve"
+          open
+          onOpenChange={(o) => !o && setInstalled(null)}
+          onApproved={() => setInstalled(null)}
+        />
+      )}
     </div>
   );
 }
 ```
-Après l'installation, l'écran 30 s'ouvre par le même chemin que dans la page Composants : `PageView` écoute l'événement `market` du démon et recharge le registre ; l'instance passe d'« absent » à « Autorisation requise » puis s'affiche une fois approuvée.
+Après installation puis approbation, le registre change : `useComponents` recharge (événement de workspace) et `InstanceFrame` affiche le composant. Un projet non partagé n'a pas de membres (`sync.members` vide, T6) : seul le bouton « Installer » peut apparaître.
 
-Dans `PageView.tsx`, remplacer le texte `fr.page.unknownComponent(ref)` par `<MissingComponent projectId={project.meta.id} instance={instance} members={project.sync.members} />` quand la référence n'est ni intégrée ni présente au registre.
+Dans `InstanceFrame.tsx` (`ThirdParty`), remplacer `if (!summary || !v) return <Unknown componentRef={instance.component} />;` par `if (!summary || !v) return <MissingComponent projectId={props.projectId} componentRef={instance.component} hash={instance.componentHash} compact={surface === "widget"} />;` ; `Unknown` reste pour un id intégré inconnu.
 
-Run: `bun test packages/ui/src/shell/missing-component.test.tsx`
-Expected: PASS (2 tests).
+Run: `bun test packages/ui/src/pages`
+Expected: PASS.
 
 - [ ] **Step 10: Vérifications**
 
-Run: `bun run check && bun run typecheck && bun test packages/ui packages/daemon/src/market && bun run --cwd packages/ui build`
-Expected: aucune erreur. Contrôle visuel en sombre et en clair face aux exports M4, M6, M8 et S7.
+Run: `bun run check && bun run typecheck && bun test packages/ui packages/daemon/src/market packages/daemon/src/components && bun run --cwd packages/ui build && bun run budget`
+Expected: aucune erreur ; budget ≤ 230 kB gzip (`MissingComponent` est rendu par `InstanceFrame`, lui-même dans le chunk de la page : vérifier que `MarketPackageSheet` et Shiki n'entrent pas dans le chargement initial, sinon charger `MissingComponent` par `lazyPanel`). Contrôle visuel en sombre et en clair face aux exports M4, M6, M8 et S7.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 11: Commits**
 
 ```bash
-git add packages/schema/src/rpc.ts packages/schema/src/market.ts packages/daemon/src/market/summary.ts packages/daemon/src/market/summary.test.ts packages/daemon/src/market/rpc.ts packages/daemon/src/components/rpc.ts packages/ui/src/pages/components/MarketUpdateFlow.tsx packages/ui/src/pages/components/InstalledTable.tsx packages/ui/src/pages/components/market-update.test.tsx packages/ui/src/dialogs/PublisherChangedDialog.tsx packages/ui/src/dialogs/PublishToMarketDialog.tsx packages/ui/src/dialogs/market-dialogs.test.tsx packages/ui/src/shell/MissingComponent.tsx packages/ui/src/shell/missing-component.test.tsx packages/ui/src/shell/AuthorizationRequired.tsx packages/ui/src/pages/PageView.tsx packages/ui/src/lib/market-update.ts packages/ui/src/lib/market-update.test.ts packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/i18n/fr.ts
-git commit -m "feat(ui): mises à jour et composant absent"
+git add packages/schema/src/component.ts packages/schema/src/market.ts packages/schema/src/market-rpc.ts packages/daemon/src/components/registry-listing.ts packages/daemon/src/components/registry-listing-revoked.test.ts packages/daemon/src/market/summary.ts packages/daemon/src/market/summary.test.ts packages/daemon/src/market/rpc.ts
+git commit -m "feat(daemon): état marketplace des composants"
+git add packages/ui/src/i18n/fr-market.ts packages/ui/src/lib/market-update.ts packages/ui/src/lib/market-update.test.ts packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/state/use-market-status.ts packages/ui/src/components-page packages/ui/src/dialogs/PublisherChangedDialog.tsx packages/ui/src/pages/PendingTrust.tsx
+git commit -m "feat(ui): mises à jour marketplace"
+git add packages/ui/src/pages/MissingComponent.tsx packages/ui/src/pages/missing-component.test.tsx packages/ui/src/pages/InstanceFrame.tsx
+git commit -m "feat(ui): composant absent"
 ```
 
 ---
-
 ### Task 28: UI Paramètres › Sync et indicateur
 
-Vague 6. Écrans à dessiner **S1** (Paramètres › Sync, dialogues « Se connecter à un serveur » et « Ajouter un appareil ») et **S9** (indicateur de la barre d'état), en sombre et en clair. Spec G §4, §8 ; décisions 17, 20.
+Vague 6. Écrans à dessiner **S1** (Paramètres › Sync, dialogues « Se connecter à un serveur » et « Ajouter un appareil ») et **S9** (indicateur à droite de la barre des agents), en sombre et en clair. Spec G §4, §8 ; décisions 17, 20.
 
 **Files:**
-- Create: `packages/ui/src/state/use-sync-status.ts`
-- Create: `packages/ui/src/lib/relative-time.ts`, `packages/ui/src/lib/relative-time.test.ts`
-- Create: `packages/ui/src/pages/settings/SyncSettings.tsx`
+- Create: `packages/ui/src/i18n/fr-collab.ts` (clé `sync`)
+- Create: `packages/ui/src/state/use-sync-server.ts`
+- Create: `packages/ui/src/settings/SyncSettingsPage.tsx`
 - Create: `packages/ui/src/dialogs/ConnectServerDialog.tsx`
 - Create: `packages/ui/src/dialogs/AddDeviceDialog.tsx`
 - Create: `packages/ui/src/shell/SyncIndicator.tsx`
-- Create: `packages/ui/src/pages/settings/sync-settings.test.tsx`
-- Modify: `packages/ui/src/pages/settings/sections.ts` (section « Sync » après « Intégrations »)
-- Modify: `packages/ui/src/shell/StatusBar.tsx` (remplace le libellé fixe « ● Démon local » par `SyncIndicator`)
-- Modify: `packages/ui/src/i18n/fr.ts` (section `sync`)
+- Create: `packages/ui/src/settings/sync-settings.test.tsx`
+- Modify: `packages/schema/src/tabs.ts` (`Screen` gagne `"sync"`)
+- Modify: `packages/ui/src/tabs/target-hash.ts` (`sync: "#/settings/sync"`), `packages/ui/src/tabs/screens.ts` (entrée `sync`), `packages/ui/src/tabs/tabs.test.ts` (un cas ajouté)
+- Modify: `packages/ui/src/settings/SettingsNav.tsx` (entrée « Sync » entre Intégrations et Sécurité), `packages/ui/src/shell/lazy-screens.ts`, `packages/ui/src/shell/ScreenView.tsx`, `packages/ui/src/shell/AppSidebar.tsx` (« Paramètres » actif aussi sur `sync`)
+- Modify: `packages/ui/src/agents/AgentBar.tsx` (prop `indicator`), `packages/ui/src/agents/AgentPanel.tsx` (passe `<SyncIndicator online={online} />`), `packages/ui/src/agents/agent-panel.test.tsx` et `packages/ui/src/shell/agents-shell.test.tsx` (mise en place seulement : `subscribeEvents` ajouté au faux client, attentes inchangées ; écart à citer au jalon)
+- Modify: `packages/ui/src/i18n/fr.ts` (import et `...frCollab`)
 
 **Interfaces:**
-- Consumes: RPC `getSyncStatus`, `connectSyncServer`, `disconnectSyncServer`, `listDevices`, `addDevice`, `revokeDevice` (T21) ; `SyncStatus`, `DeviceInfo`, `KiboError` (T4, T1) ; événement `{ type: "sync" }`.
-- Produces : `useSyncStatus(): SyncStatus | null` ; `relativeTime(at: number, now: number): string` ; composants `SyncSettings`, `ConnectServerDialog({ open, onOpenChange, viewer })`, `AddDeviceDialog({ open, onOpenChange })`, `SyncIndicator()`.
-- Hypothèse v0.6 (vérifiée en T0) : `client.onEvent(listener: (e: DaemonEvent) => void): () => void` ; `SETTINGS_SECTIONS: { id: string; label: string; Component: ComponentType<{ viewer: string }> }[]` ; la barre d'état est `packages/ui/src/shell/StatusBar.tsx`. Si `lib/relative-time.ts` existe déjà (phase 2), il est réutilisé et seuls les libellés manquants sont ajoutés.
+- Consumes: RPC `getSyncStatus`, `connectSyncServer`, `disconnectSyncServer`, `listDevices`, `addDevice`, `revokeDevice` (T21) ; `SyncStatus`, `DeviceInfo`, `KiboError` (T4, T1) ; message `{ type: "collab.changed" }` de `ChangeMessage` (T4) ; `client.subscribeEvents(listener: (event: Phase7Event) => void): () => void` (SDK, T4).
+- Produces : `useSyncServerStatus(): { status: SyncStatus | null; error: KiboError | null; reload(): Promise<void> }` ; composants `SyncSettingsPage({ viewer })`, `ConnectServerDialog({ open, onOpenChange, viewer })`, `AddDeviceDialog({ open, onOpenChange })`, `SyncIndicator({ online })` ; `groupByFour(code)` ; écran `Screen` `"sync"` (hash `#/settings/sync`) ; `fr.sync` (fichier `fr-collab.ts`, `frCollab` étalé dans `fr`).
+- Vérifié en T0 :
+  - Pas de `client.onEvent` : le SDK expose `subscribe`, `subscribeTopic`, `onRunChanged`, `subscribeCode`, `subscribeIntegrations`, `subscribeAi`, `onConnection` ; T4 ajoute `subscribeEvents` (les `Phase7Event`), utilisé ici. L'événement `{ type: "sync" }` est déjà pris par la sync des intégrations (`IntegrationEvent`) : la sync d'équipe émet `{ type: "collab.changed" }`.
+  - Pas de `SETTINGS_SECTIONS` : chaque page de Paramètres rend elle-même `<SettingsNav active="…" />` dans `grid min-h-full grid-cols-[14rem_1fr]` (`packages/ui/src/settings/GeneralPage.tsx`, `IntegrationsPage.tsx`) ; une section navigable est un `Screen` (`packages/schema/src/tabs.ts`) avec son hash (`tabs/target-hash.ts`), son entrée `SCREENS` (`tabs/screens.ts`, la palette s'en sert), son entrée `ITEMS` de `SettingsNav` et son rendu dans `ScreenView` via `lazy-screens.ts`.
+  - Pas de `navigate.settings` : `navigateTo({ kind: "screen", screen })` (`packages/ui/src/route.ts`).
+  - Pas de `StatusBar` : la pastille « Démon local » / « Démon injoignable » est dans `packages/ui/src/agents/AgentBar.tsx` (prop `online`, lue par `AgentPanel` via `useDaemonOnline()`). S9 s'y greffe.
+  - `relativeTime(then: number, now = Date.now()): string` existe (`packages/ui/src/lib/relative-time.ts`, textes `fr.time` de `fr-code.ts`) : réutilisé tel quel, aucun libellé à ajouter.
+  - `packages/ui/src/state/use-sync-state.ts` (`useSyncState`) est l'état de la sync des intégrations : le hook de la sync d'équipe s'appelle `useSyncServerStatus` (`use-sync-server.ts`) pour éviter la confusion.
+  - Les tests d'UI remplacent `../api` par `mock.module` (modèle `packages/ui/src/settings/IntegrationsPage.test.tsx`).
 
 - [ ] **Step 1: Textes**
 
-Ajout à `packages/ui/src/i18n/fr.ts` :
+`packages/ui/src/i18n/fr-collab.ts` :
 ```ts
+export const frCollab = {
   sync: {
     section: "Sync",
     title: "Sync",
@@ -19602,8 +20378,15 @@ Ajout à `packages/ui/src/i18n/fr.ts` :
       TLS_REQUIRED: "Adresse non chiffrée : utilise wss://",
       INVITE_INVALID: "Code invalide ou expiré",
       SYNC_OFFLINE: "Serveur injoignable",
+      UNAUTHORIZED: "Authentification refusée",
+      DEVICE_REVOKED: "Appareil révoqué",
+      ACCESS_REVOKED: "Accès retiré",
+      NOT_FOUND: "Projet supprimé du serveur",
+      NOT_CONNECTED: "Déconnecté du serveur",
+      UPDATE_REJECTED: "Modification refusée par le serveur, projet resynchronisé",
     } as Record<string, string>,
     unreachable: "Serveur injoignable",
+    loadFailed: "Impossible de lire l'état de la sync.",
     server: "Serveur",
     online: "Connecté",
     retrying: (seconds: number) => `Reconnexion dans ${seconds} s`,
@@ -19632,60 +20415,41 @@ Ajout à `packages/ui/src/i18n/fr.ts` :
     upToDate: "À jour",
     never: "Jamais",
     indicator: {
-      local: "Démon local",
       synced: "synchronisé",
       syncing: "synchronisation…",
       offline: "hors ligne",
       error: "erreur de sync",
     },
   },
-  time: {
-    now: "à l'instant",
-    minutes: (n: number) => `il y a ${n} min`,
-    hours: (n: number) => `il y a ${n} h`,
-    days: (n: number) => `il y a ${n} j`,
-  },
+};
 ```
 
-- [ ] **Step 2: Test de `relativeTime`**
+Dans `packages/ui/src/i18n/fr.ts` : `import { frCollab } from "./fr-collab";` et `...frCollab,` après `...frAi,`. Le libellé « Démon local » reste `fr.agents.daemon` (aucun doublon).
 
-`packages/ui/src/lib/relative-time.test.ts` :
+- [ ] **Step 2: Écran `sync` dans les onglets**
+
+Ajouter à `packages/ui/src/tabs/tabs.test.ts`, à côté des cas `#/settings/integrations` :
 ```ts
-import { expect, test } from "bun:test";
-import { relativeTime } from "./relative-time";
-
-test("formats elapsed time in French", () => {
-  const now = 1_000_000_000;
-  expect(relativeTime(now - 5_000, now)).toBe("à l'instant");
-  expect(relativeTime(now - 3 * 60_000, now)).toBe("il y a 3 min");
-  expect(relativeTime(now - 2 * 3_600_000, now)).toBe("il y a 2 h");
-  expect(relativeTime(now - 3 * 86_400_000, now)).toBe("il y a 3 j");
-});
+    expect(hashToTarget("#/settings/sync")).toEqual({ kind: "screen", screen: "sync" });
+    expect(targetToHash({ kind: "screen", screen: "sync" })).toBe("#/settings/sync");
 ```
+(ajouter `targetToHash` à l'import du fichier s'il n'y est pas).
 
-Run: `bun test packages/ui/src/lib/relative-time.test.ts`
-Expected: FAIL « Cannot find module './relative-time' ».
+Run: `bun test packages/ui/src/tabs/tabs.test.ts`
+Expected: FAIL (`"sync"` n'est pas un `Screen`).
 
-`packages/ui/src/lib/relative-time.ts` :
+Dans `packages/schema/src/tabs.ts`, ajouter `"sync"` à la fin de `Screen`. Dans `packages/ui/src/tabs/target-hash.ts`, `sync: "#/settings/sync",` dans `SCREEN_HASHES`. Dans `packages/ui/src/tabs/screens.ts`, importer `Cloud` de `lucide-react` et ajouter :
 ```ts
-import { fr } from "../i18n/fr";
-
-export function relativeTime(at: number, now: number): string {
-  const s = Math.max(0, Math.floor((now - at) / 1000));
-  if (s < 60) return fr.time.now;
-  if (s < 3600) return fr.time.minutes(Math.floor(s / 60));
-  if (s < 86_400) return fr.time.hours(Math.floor(s / 3600));
-  return fr.time.days(Math.floor(s / 86_400));
-}
+  sync: { title: fr.sync.title, icon: Cloud, crumbs: [fr.nav.settings, fr.sync.title] },
 ```
 
-Run: `bun test packages/ui/src/lib/relative-time.test.ts`
+Run: `bun test packages/ui/src/tabs/tabs.test.ts`
 Expected: PASS.
 
 - [ ] **Step 3: Écrire les tests des écrans**
 
-`packages/ui/src/pages/settings/sync-settings.test.tsx` :
-```ts
+`packages/ui/src/settings/sync-settings.test.tsx` :
+```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest, type SyncStatus } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -19694,18 +20458,18 @@ import userEvent from "@testing-library/user-event";
 const calls: RpcRequest[] = [];
 let results: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
 
-mock.module("../../api", () => ({
+mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
       return (results[req.method] ?? (() => Promise.resolve(null)))();
     },
-    onEvent: () => () => {},
+    subscribeEvents: () => () => undefined,
   },
 }));
 
-const { SyncSettings } = await import("./SyncSettings");
-const { SyncIndicator } = await import("../../shell/SyncIndicator");
+const { SyncSettingsPage } = await import("./SyncSettingsPage");
+const { SyncIndicator } = await import("../shell/SyncIndicator");
 
 const NOW = Date.now();
 const unconfigured: SyncStatus = {
@@ -19721,7 +20485,7 @@ const online: SyncStatus = {
   projects: [
     { projectId: "p1", name: "Kibo", role: "owner", lastSyncAt: NOW - 2_000, lastError: null, accessRevoked: false },
     { projectId: "p2", name: "Portfolio", role: "editor", lastSyncAt: NOW - 60_000, lastError: null, accessRevoked: false },
-    { projectId: "p3", name: "API Facturation", role: "viewer", lastSyncAt: null, lastError: "Accès retiré", accessRevoked: true },
+    { projectId: "p3", name: "API Facturation", role: "viewer", lastSyncAt: null, lastError: "ACCESS_REVOKED", accessRevoked: true },
   ],
 };
 const devices = [
@@ -19736,15 +20500,16 @@ beforeEach(() => {
 
 test("unconfigured shows the empty state and the connect button", async () => {
   results.getSyncStatus = () => Promise.resolve(unconfigured);
-  render(<SyncSettings viewer="adam" />);
+  render(<SyncSettingsPage viewer="adam" />);
   expect(await screen.findByText("Aucun serveur de sync configuré.")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Se connecter à un serveur" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Sync" }).getAttribute("aria-current")).toBe("page");
 });
 
 test("the connect dialog sends the form and maps server errors", async () => {
   results.getSyncStatus = () => Promise.resolve(unconfigured);
   results.connectSyncServer = () => Promise.reject(new KiboError("INVITE_INVALID", "bad code"));
-  render(<SyncSettings viewer="Adam" />);
+  render(<SyncSettingsPage viewer="Adam" />);
   await userEvent.click(await screen.findByRole("button", { name: "Se connecter à un serveur" }));
   const dialog = screen.getByRole("dialog");
   expect((within(dialog).getByLabelText("Nom de cet appareil") as HTMLInputElement).value).toBe("Ordinateur de Adam");
@@ -19760,7 +20525,7 @@ test("the connect dialog sends the form and maps server errors", async () => {
 test("an unencrypted address is explained", async () => {
   results.getSyncStatus = () => Promise.resolve(unconfigured);
   results.connectSyncServer = () => Promise.reject(new KiboError("TLS_REQUIRED", "ws"));
-  render(<SyncSettings viewer="Adam" />);
+  render(<SyncSettingsPage viewer="Adam" />);
   await userEvent.click(await screen.findByRole("button", { name: "Se connecter à un serveur" }));
   const dialog = screen.getByRole("dialog");
   await userEvent.type(within(dialog).getByLabelText("Adresse du serveur"), "ws://10.0.0.2");
@@ -19770,7 +20535,7 @@ test("an unencrypted address is explained", async () => {
 });
 
 test("connected shows server, account, devices and shared projects", async () => {
-  render(<SyncSettings viewer="Adam" />);
+  render(<SyncSettingsPage viewer="Adam" />);
   expect(await screen.findByText("wss://sync.kibo.test")).toBeTruthy();
   expect(screen.getByText("Connecté")).toBeTruthy();
   const table = await screen.findByRole("table", { name: "Appareils" });
@@ -19781,8 +20546,14 @@ test("connected shows server, account, devices and shared projects", async () =>
   expect(within(projects).getByText("Accès retiré")).toBeTruthy();
 });
 
+test("a status that cannot be read is reported", async () => {
+  results.getSyncStatus = () => Promise.reject(new KiboError("INTERNAL", "boom"));
+  render(<SyncSettingsPage viewer="Adam" />);
+  expect((await screen.findByRole("alert")).textContent).toContain("Impossible de lire l'état de la sync.");
+});
+
 test("revoking another device calls the daemon", async () => {
-  render(<SyncSettings viewer="Adam" />);
+  render(<SyncSettingsPage viewer="Adam" />);
   const table = await screen.findByRole("table", { name: "Appareils" });
   const row = within(table).getByText("iMac bureau").closest("tr");
   if (!row) throw new Error("no row");
@@ -19792,23 +20563,24 @@ test("revoking another device calls the daemon", async () => {
 
 test("adding a device shows the code once, grouped by four", async () => {
   results.addDevice = () => Promise.resolve({ code: "ABCDEFGHJKMNPQRS", expiresAt: NOW + 900_000 });
-  render(<SyncSettings viewer="Adam" />);
+  render(<SyncSettingsPage viewer="Adam" />);
   await userEvent.click(await screen.findByRole("button", { name: "Ajouter un appareil" }));
   expect(await screen.findByText("ABCD EFGH JKMN PQRS")).toBeTruthy();
   expect(screen.getByText("Valable 15 minutes. Saisis-le sur l'autre appareil dans Paramètres › Sync.")).toBeTruthy();
 });
 
-test("the status bar indicator follows the connection", async () => {
-  const cases: [SyncStatus, string][] = [
-    [unconfigured, "Démon local"],
-    [online, "Démon local · synchronisé"],
-    [{ ...online, state: "connecting" }, "Démon local · synchronisation…"],
-    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, "Démon local · hors ligne"],
-    [{ ...online, state: "offline", lastError: "Appareil révoqué" }, "Démon local · erreur de sync"],
+test("the agent bar indicator follows the daemon and the connection", async () => {
+  const cases: [SyncStatus, boolean, string][] = [
+    [unconfigured, true, "Démon local"],
+    [unconfigured, false, "Démon injoignable"],
+    [online, true, "Démon local · synchronisé"],
+    [{ ...online, state: "connecting" }, true, "Démon local · synchronisation…"],
+    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Démon local · hors ligne"],
+    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Démon local · erreur de sync"],
   ];
-  for (const [status, label] of cases) {
+  for (const [status, daemonOnline, label] of cases) {
     results.getSyncStatus = () => Promise.resolve(status);
-    const { unmount } = render(<SyncIndicator />);
+    const { unmount } = render(<SyncIndicator online={daemonOnline} />);
     expect(await screen.findByText(label)).toBeTruthy();
     unmount();
   }
@@ -19816,90 +20588,110 @@ test("the status bar indicator follows the connection", async () => {
 
 test("a reconnection countdown is shown in settings", async () => {
   results.getSyncStatus = () => Promise.resolve({ ...online, state: "offline", retryAt: Date.now() + 12_400 });
-  render(<SyncSettings viewer="Adam" />);
+  render(<SyncSettingsPage viewer="Adam" />);
   expect(await screen.findByText(/Reconnexion dans 1[23] s/)).toBeTruthy();
 });
 ```
 
 - [ ] **Step 4: Vérifier l'échec**
 
-Run: `bun test packages/ui/src/pages/settings/sync-settings.test.tsx`
-Expected: FAIL « Cannot find module './SyncSettings' ».
+Run: `bun test packages/ui/src/settings/sync-settings.test.tsx`
+Expected: FAIL « Cannot find module './SyncSettingsPage' ».
 
 - [ ] **Step 5: Implémenter le hook et l'indicateur**
 
-`packages/ui/src/state/use-sync-status.ts` :
+`packages/ui/src/state/use-sync-server.ts` :
 ```ts
 import { KiboError, type SyncStatus } from "@kibo/schema";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 
-export function useSyncStatus(): SyncStatus | null {
+export type SyncServerState = { status: SyncStatus | null; error: KiboError | null; reload(): Promise<void> };
+
+export function useSyncServerStatus(): SyncServerState {
   const [status, setStatus] = useState<SyncStatus | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      client.rpc({ method: "getSyncStatus" }).then(
-        (s) => alive && setStatus(s),
-        (e: unknown) => {
-          if (!(e instanceof KiboError && e.code === "UNAUTHORIZED")) throw e;
-        },
-      );
-    void load();
-    const off = client.onEvent((e) => {
-      if (e.type === "sync") void load();
-    });
-    return () => {
-      alive = false;
-      off();
-    };
+  const [error, setError] = useState<KiboError | null>(null);
+  const reload = useCallback(async () => {
+    try {
+      setStatus(await client.rpc({ method: "getSyncStatus" }));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof KiboError ? e : new KiboError("INTERNAL", String(e)));
+    }
   }, []);
-  return status;
+  useEffect(() => {
+    void reload();
+    return client.subscribeEvents((m) => {
+      if ("type" in m && m.type === "collab.changed") void reload();
+    });
+  }, [reload]);
+  return { status, error, reload };
 }
 ```
 
 `packages/ui/src/shell/SyncIndicator.tsx` :
 ```tsx
+import type { SyncStatus } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { fr } from "../i18n/fr";
-import { navigate } from "../route";
-import { useSyncStatus } from "../state/use-sync-status";
+import { navigateTo } from "../route";
+import { useSyncServerStatus } from "../state/use-sync-server";
 
-const DOT = {
-  local: "bg-emerald-500",
-  synced: "bg-emerald-500",
+type Kind = "local" | "down" | "synced" | "syncing" | "offline" | "error";
+
+const DOT: Record<Kind, string> = {
+  local: "bg-green-500",
+  down: "bg-red-500",
+  synced: "bg-green-500",
   syncing: "bg-amber-500 animate-pulse",
   offline: "bg-zinc-400 dark:bg-zinc-500",
   error: "bg-red-600 dark:bg-red-500",
-} as const;
+};
 
-export function SyncIndicator() {
-  const status = useSyncStatus();
-  const kind =
-    !status || status.state === "unconfigured"
-      ? "local"
-      : status.lastError !== null && status.state !== "online"
-        ? "error"
-        : status.state === "online"
-          ? "synced"
-          : status.state === "connecting"
-            ? "syncing"
-            : "offline";
-  const label = kind === "local" ? fr.sync.indicator.local : `${fr.sync.indicator.local} · ${fr.sync.indicator[kind]}`;
+function kindOf(online: boolean, status: SyncStatus | null): Kind {
+  if (!online) return "down";
+  if (!status || status.state === "unconfigured") return "local";
+  if (status.state === "online") return "synced";
+  if (status.lastError !== null) return "error";
+  return status.state === "connecting" ? "syncing" : "offline";
+}
+
+export function SyncIndicator({ online }: { online: boolean }) {
+  const { status } = useSyncServerStatus();
+  const kind = kindOf(online, status);
+  const base = online ? fr.agents.daemon : fr.agents.daemonOffline;
+  const label = kind === "local" || kind === "down" ? base : `${base} · ${fr.sync.indicator[kind]}`;
+  const dot = <span aria-hidden className={cn("size-1.5 rounded-full", DOT[kind])} />;
+  if (kind === "local" || kind === "down")
+    return (
+      <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+        {dot}
+        {label}
+      </span>
+    );
   return (
     <button
       type="button"
-      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-      onClick={() => navigate.settings("sync")}
-      disabled={kind === "local"}
+      className="flex shrink-0 items-center gap-1.5 text-muted-foreground hover:text-foreground"
+      onClick={() => navigateTo({ kind: "screen", screen: "sync" })}
     >
-      <span aria-hidden className={cn("size-2 rounded-full", DOT[kind])} />
-      <span>{label}</span>
+      {dot}
+      {label}
     </button>
   );
 }
 ```
-Hypothèse v0.6 (vérifiée en T0) : `navigate.settings(sectionId)` ouvre Paramètres sur une section.
+
+Dans `packages/ui/src/agents/AgentBar.tsx`, ajouter la prop facultative `indicator?: ReactNode` à `Props` ; le `<span>` actuel de la pastille démon devient la valeur par défaut :
+```tsx
+      {indicator ?? (
+        <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+          <span aria-hidden className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
+          {online ? fr.agents.daemon : fr.agents.daemonOffline}
+        </span>
+      )}
+```
+Dans `packages/ui/src/agents/AgentPanel.tsx`, passer `indicator={<SyncIndicator online={online} />}` à `AgentBar`. Dans `packages/ui/src/agents/agent-panel.test.tsx` et `packages/ui/src/shell/agents-shell.test.tsx` (qui rend `AgentPanel` avec des runs), ajouter `subscribeEvents: () => () => undefined,` au faux `client` (mise en place seulement ; `getSyncStatus` y renvoie `null`, d'où « Démon local » et « Démon injoignable » inchangés).
 
 - [ ] **Step 6: Implémenter les dialogues**
 
@@ -19917,7 +20709,7 @@ import { fr } from "../i18n/fr";
 type Props = { open: boolean; onOpenChange: (open: boolean) => void; viewer: string };
 
 export function ConnectServerDialog({ open, onOpenChange, viewer }: Props) {
-  const ids = { url: useId(), code: useId(), device: useId(), ca: useId() };
+  const ids = { url: useId(), code: useId(), device: useId(), ca: useId(), codeHelp: useId(), caHelp: useId() };
   const [serverUrl, setServerUrl] = useState("");
   const [code, setCode] = useState("");
   const [deviceName, setDeviceName] = useState(fr.sync.defaultDevice(viewer));
@@ -19939,8 +20731,7 @@ export function ConnectServerDialog({ open, onOpenChange, viewer }: Props) {
       });
       onOpenChange(false);
     } catch (err) {
-      if (!(err instanceof KiboError)) throw err;
-      setError(fr.sync.errors[err.code] ?? fr.sync.unreachable);
+      setError(err instanceof KiboError ? (fr.sync.errors[err.code] ?? err.detail) : fr.sync.unreachable);
     } finally {
       setBusy(false);
     }
@@ -19962,8 +20753,8 @@ export function ConnectServerDialog({ open, onOpenChange, viewer }: Props) {
           <div className="grid gap-2">
             <Label htmlFor={ids.code}>{fr.sync.code}</Label>
             <Input id={ids.code} value={code} onChange={(e) => setCode(e.target.value)} className="font-mono"
-              aria-describedby={`${ids.code}-help`} required />
-            <p id={`${ids.code}-help`} className="text-xs text-muted-foreground">{fr.sync.codeHelp}</p>
+              aria-describedby={ids.codeHelp} required />
+            <p id={ids.codeHelp} className="text-xs text-muted-foreground">{fr.sync.codeHelp}</p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor={ids.device}>{fr.sync.deviceName}</Label>
@@ -19972,12 +20763,12 @@ export function ConnectServerDialog({ open, onOpenChange, viewer }: Props) {
           <div className="grid gap-2">
             <Label htmlFor={ids.ca}>{fr.sync.caFile}</Label>
             <Input id={ids.ca} value={caFile} onChange={(e) => setCaFile(e.target.value)} className="font-mono"
-              aria-describedby={`${ids.ca}-help`} />
-            <p id={`${ids.ca}-help`} className="text-xs text-muted-foreground">{fr.sync.caFileHelp}</p>
+              aria-describedby={ids.caHelp} />
+            <p id={ids.caHelp} className="text-xs text-muted-foreground">{fr.sync.caFileHelp}</p>
           </div>
-          {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{fr.common.cancel}</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{fr.common.cancel}</Button>
             <Button type="submit" disabled={busy}>{busy ? fr.sync.submitting : fr.sync.submit}</Button>
           </DialogFooter>
         </form>
@@ -19986,9 +20777,11 @@ export function ConnectServerDialog({ open, onOpenChange, viewer }: Props) {
   );
 }
 ```
+La valeur d'un `KiboError` hors de la table (`err.detail`) est déjà expurgée par le démon (`redact` de `server.ts`).
 
 `packages/ui/src/dialogs/AddDeviceDialog.tsx` :
 ```tsx
+import { KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { useEffect, useState } from "react";
@@ -19999,15 +20792,18 @@ export const groupByFour = (code: string): string => code.match(/.{1,4}/g)?.join
 
 export function AddDeviceDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const [code, setCode] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => {
-    if (!open) {
-      setCode(null);
-      setCopied(false);
-      return;
-    }
+    setCode(null);
+    setError(null);
+    setCopied(false);
+    if (!open) return;
     let alive = true;
-    void client.rpc({ method: "addDevice" }).then((r) => alive && setCode(r.code));
+    client.rpc({ method: "addDevice" }).then(
+      (r) => alive && setCode(r.code),
+      (e: unknown) => alive && setError(e instanceof KiboError ? e.detail : fr.common.error),
+    );
     return () => {
       alive = false;
     };
@@ -20024,45 +20820,52 @@ export function AddDeviceDialog({ open, onOpenChange }: { open: boolean; onOpenC
           <DialogTitle>{fr.sync.addDeviceTitle}</DialogTitle>
           <DialogDescription>{fr.sync.addDeviceHelp}</DialogDescription>
         </DialogHeader>
-        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 p-3">
-          <span className="font-mono text-lg tracking-wider">{code ? groupByFour(code) : "…"}</span>
-          <Button variant="outline" size="sm" onClick={() => void copy()} disabled={!code}>
-            {copied ? fr.sync.copied : fr.sync.copy}
-          </Button>
-        </div>
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">{error}</p>
+        ) : (
+          <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 p-3">
+            <span className="font-mono text-lg tracking-wider">{code ? groupByFour(code) : "…"}</span>
+            <Button variant="outline" size="sm" onClick={() => void copy()} disabled={!code}>
+              {copied ? fr.sync.copied : fr.sync.copy}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 ```
-Un échec de `addDevice` remonte à la frontière d'erreur de l'UI (pas de `catch` muet).
 
-- [ ] **Step 7: Implémenter `SyncSettings`**
+- [ ] **Step 7: Implémenter `SyncSettingsPage`**
 
-`packages/ui/src/pages/settings/SyncSettings.tsx` :
+`packages/ui/src/settings/SyncSettingsPage.tsx` (gabarit des pages de Paramètres, `SettingsNav active="sync"`, tableaux shadcn) :
 ```tsx
-import type { DeviceInfo, SyncStatus } from "@kibo/schema";
+import { type DeviceInfo, KiboError, type SyncStatus } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { CloudOff } from "lucide-react";
-import { useEffect, useState } from "react";
-import { client } from "../../api";
-import { AddDeviceDialog } from "../../dialogs/AddDeviceDialog";
-import { ConnectServerDialog } from "../../dialogs/ConnectServerDialog";
-import { fr } from "../../i18n/fr";
-import { relativeTime } from "../../lib/relative-time";
-import { useSyncStatus } from "../../state/use-sync-status";
+import { useCallback, useEffect, useState } from "react";
+import { client } from "../api";
+import { AddDeviceDialog } from "../dialogs/AddDeviceDialog";
+import { ConnectServerDialog } from "../dialogs/ConnectServerDialog";
+import { fr } from "../i18n/fr";
+import { relativeTime } from "../lib/relative-time";
+import { useSyncServerStatus } from "../state/use-sync-server";
+import { SettingsNav } from "./SettingsNav";
+
+const errorText = (e: unknown) => (e instanceof KiboError ? e.detail : fr.common.error);
 
 function StateDot({ status }: { status: SyncStatus }) {
   const retryIn = status.retryAt ? Math.max(0, Math.round((status.retryAt - Date.now()) / 1000)) : null;
   const [color, label] =
     status.state === "online"
-      ? ["bg-emerald-500", fr.sync.online]
+      ? ["bg-green-500", fr.sync.online]
       : retryIn !== null
         ? ["bg-amber-500", fr.sync.retrying(retryIn)]
-        : ["bg-zinc-400", fr.sync.offline];
+        : ["bg-zinc-400 dark:bg-zinc-500", fr.sync.offline];
   return (
     <span className="flex items-center gap-1.5 text-sm">
       <span aria-hidden className={`size-2 rounded-full ${color}`} />
@@ -20073,19 +20876,27 @@ function StateDot({ status }: { status: SyncStatus }) {
 
 function Devices({ status }: { status: SyncStatus }) {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const online = status.state === "online";
+  const load = useCallback(async () => {
+    try {
+      setDevices(await client.rpc({ method: "listDevices" }));
+      setError(null);
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }, []);
   useEffect(() => {
-    if (!online) return;
-    let alive = true;
-    void client.rpc({ method: "listDevices" }).then((d) => alive && setDevices(d));
-    return () => {
-      alive = false;
-    };
-  }, [online]);
+    if (online) void load();
+  }, [online, load]);
   const revoke = async (deviceId: string) => {
-    await client.rpc({ method: "revokeDevice", deviceId });
-    setDevices(await client.rpc({ method: "listDevices" }));
+    try {
+      await client.rpc({ method: "revokeDevice", deviceId });
+    } catch (e) {
+      setError(errorText(e));
+    }
+    await load();
   };
   const now = Date.now();
   return (
@@ -20097,28 +20908,34 @@ function Devices({ status }: { status: SyncStatus }) {
         </Button>
       </CardHeader>
       <CardContent>
-        <table aria-label={fr.sync.devices} className="w-full text-sm">
-          <thead className="text-left text-muted-foreground">
-            <tr><th>{fr.sync.device}</th><th>{fr.sync.added}</th><th>{fr.sync.seen}</th><th /></tr>
-          </thead>
-          <tbody>
+        {error && <p role="alert" className="pb-2 text-sm text-destructive">{error}</p>}
+        <Table aria-label={fr.sync.devices}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{fr.sync.device}</TableHead>
+              <TableHead>{fr.sync.added}</TableHead>
+              <TableHead>{fr.sync.seen}</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {devices.filter((d) => d.revokedAt === null).map((d) => (
-              <tr key={d.deviceId} className="border-t">
-                <td className="py-2">
+              <TableRow key={d.deviceId}>
+                <TableCell>
                   {d.name}{" "}
                   {d.deviceId === status.deviceId && <Badge variant="secondary">{fr.sync.thisDevice}</Badge>}
-                </td>
-                <td>{relativeTime(d.createdAt, now)}</td>
-                <td>{d.lastSeenAt ? relativeTime(d.lastSeenAt, now) : fr.sync.never}</td>
-                <td className="text-right">
+                </TableCell>
+                <TableCell>{relativeTime(d.createdAt, now)}</TableCell>
+                <TableCell>{d.lastSeenAt ? relativeTime(d.lastSeenAt, now) : fr.sync.never}</TableCell>
+                <TableCell className="text-right">
                   {d.deviceId !== status.deviceId && (
                     <Button variant="ghost" size="sm" onClick={() => void revoke(d.deviceId)}>{fr.sync.revoke}</Button>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </CardContent>
       <AddDeviceDialog open={adding} onOpenChange={setAdding} />
     </Card>
@@ -20131,160 +20948,211 @@ function Projects({ status }: { status: SyncStatus }) {
     <Card>
       <CardHeader><CardTitle>{fr.sync.projects}</CardTitle></CardHeader>
       <CardContent>
-        <table aria-label={fr.sync.projects} className="w-full text-sm">
-          <thead className="text-left text-muted-foreground">
-            <tr><th>{fr.sync.project}</th><th>{fr.sync.role}</th><th>{fr.sync.lastSync}</th><th>{fr.sync.state}</th></tr>
-          </thead>
-          <tbody>
+        <Table aria-label={fr.sync.projects}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{fr.sync.project}</TableHead>
+              <TableHead>{fr.sync.role}</TableHead>
+              <TableHead>{fr.sync.lastSync}</TableHead>
+              <TableHead>{fr.sync.state}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {status.projects.map((p) => (
-              <tr key={p.projectId} className="border-t">
-                <td className="py-2">{p.name}</td>
-                <td>{fr.sync.roles[p.role]}</td>
-                <td>{p.lastSyncAt ? relativeTime(p.lastSyncAt, now) : fr.sync.never}</td>
-                <td className={p.accessRevoked || p.lastError ? "text-red-600 dark:text-red-400" : undefined}>
-                  {p.accessRevoked ? fr.sync.accessRevoked : (p.lastError ?? fr.sync.upToDate)}
-                </td>
-              </tr>
+              <TableRow key={p.projectId}>
+                <TableCell>{p.name}</TableCell>
+                <TableCell>{fr.sync.roles[p.role]}</TableCell>
+                <TableCell>{p.lastSyncAt ? relativeTime(p.lastSyncAt, now) : fr.sync.never}</TableCell>
+                <TableCell className={p.accessRevoked || p.lastError ? "text-red-600 dark:text-red-400" : undefined}>
+                  {p.accessRevoked ? fr.sync.accessRevoked : p.lastError ? (fr.sync.errors[p.lastError] ?? p.lastError) : fr.sync.upToDate}
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
 }
 
-export function SyncSettings({ viewer }: { viewer: string }) {
-  const status = useSyncStatus();
+function Connected({ status, onDisconnect }: { status: SyncStatus; onDisconnect(): void }) {
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle>{fr.sync.server}</CardTitle>
+          <Button variant="outline" size="sm" onClick={onDisconnect}>{fr.sync.disconnect}</Button>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <span className="font-mono text-sm">{status.serverUrl}</span>
+          <StateDot status={status} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle>{fr.sync.account}</CardTitle></CardHeader>
+        <CardContent className="text-sm">
+          {status.user?.name} <span className="font-mono text-muted-foreground">{status.user?.id.slice(0, 8)}</span>
+        </CardContent>
+      </Card>
+      <Devices status={status} />
+      <Projects status={status} />
+    </>
+  );
+}
+
+export function SyncSettingsPage({ viewer }: { viewer: string }) {
+  const { status, error } = useSyncServerStatus();
   const [connecting, setConnecting] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const disconnect = async () => {
-    await client.rpc({ method: "disconnectSyncServer" });
     setConfirming(false);
+    try {
+      await client.rpc({ method: "disconnectSyncServer" });
+    } catch (e) {
+      setActionError(errorText(e));
+    }
   };
-  if (!status) return null;
   return (
-    <section className="grid max-w-3xl gap-4">
-      <header>
-        <h1 className="text-lg font-semibold">{fr.sync.title}</h1>
-        <p className="text-sm text-muted-foreground">{fr.sync.subtitle}</p>
-      </header>
-      {status.state === "unconfigured" ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-            <CloudOff className="size-6 text-muted-foreground" aria-hidden />
-            <p className="text-sm">{fr.sync.empty}</p>
-            <Button onClick={() => setConnecting(true)}>{fr.sync.connect}</Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
+    <div className="grid min-h-full grid-cols-[14rem_1fr]">
+      <SettingsNav active="sync" />
+      <section className="flex max-w-3xl flex-col gap-4 p-8">
+        <header>
+          <h1 className="text-xl font-semibold">{fr.sync.title}</h1>
+          <p className="text-sm text-muted-foreground">{fr.sync.subtitle}</p>
+        </header>
+        {error && <p role="alert" className="text-sm text-destructive">{`${fr.sync.loadFailed} ${error.detail}`}</p>}
+        {actionError && <p role="alert" className="text-sm text-destructive">{actionError}</p>}
+        {status?.state === "unconfigured" && (
           <Card>
-            <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>{fr.sync.server}</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => setConfirming(true)}>
-                {fr.sync.disconnect}
-              </Button>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <span className="font-mono text-sm">{status.serverUrl}</span>
-              <StateDot status={status} />
+            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+              <CloudOff className="size-6 text-muted-foreground" aria-hidden />
+              <p className="text-sm">{fr.sync.empty}</p>
+              <Button onClick={() => setConnecting(true)}>{fr.sync.connect}</Button>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle>{fr.sync.account}</CardTitle></CardHeader>
-            <CardContent className="text-sm">
-              {status.user?.name} <span className="font-mono text-muted-foreground">{status.user?.id.slice(0, 8)}</span>
-            </CardContent>
-          </Card>
-          <Devices status={status} />
-          <Projects status={status} />
-        </>
-      )}
-      <ConnectServerDialog open={connecting} onOpenChange={setConnecting} viewer={viewer} />
-      <Dialog open={confirming} onOpenChange={setConfirming}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{fr.sync.disconnect}</DialogTitle>
-            <DialogDescription>{fr.sync.disconnectConfirm}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirming(false)}>{fr.common.cancel}</Button>
-            <Button variant="destructive" onClick={() => void disconnect()}>{fr.sync.disconnect}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </section>
+        )}
+        {status && status.state !== "unconfigured" && (
+          <Connected status={status} onDisconnect={() => setConfirming(true)} />
+        )}
+        <ConnectServerDialog open={connecting} onOpenChange={setConnecting} viewer={viewer} />
+        <Dialog open={confirming} onOpenChange={setConfirming}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{fr.sync.disconnect}</DialogTitle>
+              <DialogDescription>{fr.sync.disconnectConfirm}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setConfirming(false)}>{fr.common.cancel}</Button>
+              <Button variant="destructive" onClick={() => void disconnect()}>{fr.sync.disconnect}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
+    </div>
   );
 }
 ```
-La confirmation de déconnexion est un `Dialog` shadcn avec bouton destructif (même motif que les confirmations existantes).
+La confirmation de déconnexion suit le motif de `packages/ui/src/settings/DisconnectDialog.tsx` (Dialog, bouton `destructive`).
 
-- [ ] **Step 8: Section et barre d'état**
+- [ ] **Step 8: Brancher l'écran**
 
-Dans `sections.ts`, insérer `{ id: "sync", label: fr.sync.section, Component: SyncSettings }` après la section `integrations`. Dans `StatusBar.tsx`, remplacer l'élément « ● Démon local » par `<SyncIndicator />`.
+- `packages/ui/src/settings/SettingsNav.tsx` : `SettingsScreen = Extract<Screen, "general" | "domains" | "integrations" | "sync">` ; importer `Cloud` ; insérer `{ id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" }` entre `integrations` et `security` (si T25 a déjà remplacé l'entrée `security` par un écran, garder son entrée telle quelle).
+- `packages/ui/src/shell/lazy-screens.ts` : `export const SyncSettingsPage = lazyPanel(() => import("../settings/SyncSettingsPage").then((m) => m.SyncSettingsPage), fr.lazy);`
+- `packages/ui/src/shell/ScreenView.tsx` : `if (screen === "sync") return <SyncSettingsPage viewer={p.viewer} />;` à côté de `integrations` (`viewer` est déjà dans les props de `ScreenView`).
+- `packages/ui/src/shell/AppSidebar.tsx` : `isActive` du bouton « Paramètres » vaut aussi pour `screen === "sync"`.
+
+Run: `bun test packages/ui/src/settings/sync-settings.test.tsx packages/ui/src/tabs/tabs.test.ts packages/ui/src/agents/agent-panel.test.tsx packages/ui/src/shell/agents-shell.test.tsx`
+Expected: PASS.
 
 - [ ] **Step 9: Vérifier**
 
-Run: `bun test packages/ui/src/pages/settings/sync-settings.test.tsx packages/ui/src/lib/relative-time.test.ts`
-Expected: PASS (9 tests).
+Run: `bun test packages/ui packages/schema && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget`
+Expected: PASS ; budget ≤ 230 kB gzip (la page est chargée à la demande, seul `SyncIndicator` et son hook entrent dans le chunk d'entrée).
 
-Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build`
-Expected: PASS.
-
-Contrôle visuel : Paramètres › Sync (non configuré, dialogue, connecté) et la barre d'état face aux exports S1 et S9, en sombre et en clair.
+Contrôle visuel : Paramètres › Sync (non configuré, dialogue, connecté) et la barre des agents face aux exports S1 et S9, en sombre et en clair.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add packages/ui/src/state/use-sync-status.ts packages/ui/src/lib/relative-time.ts packages/ui/src/lib/relative-time.test.ts \
-  packages/ui/src/pages/settings/SyncSettings.tsx packages/ui/src/pages/settings/sync-settings.test.tsx \
-  packages/ui/src/pages/settings/sections.ts packages/ui/src/dialogs/ConnectServerDialog.tsx \
-  packages/ui/src/dialogs/AddDeviceDialog.tsx packages/ui/src/shell/SyncIndicator.tsx packages/ui/src/shell/StatusBar.tsx \
-  packages/ui/src/i18n/fr.ts
+git add packages/schema/src/tabs.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/tabs/screens.ts \
+  packages/ui/src/tabs/tabs.test.ts packages/ui/src/i18n/fr-collab.ts packages/ui/src/i18n/fr.ts \
+  packages/ui/src/state/use-sync-server.ts packages/ui/src/settings/SyncSettingsPage.tsx \
+  packages/ui/src/settings/sync-settings.test.tsx packages/ui/src/settings/SettingsNav.tsx \
+  packages/ui/src/dialogs/ConnectServerDialog.tsx packages/ui/src/dialogs/AddDeviceDialog.tsx \
+  packages/ui/src/shell/SyncIndicator.tsx packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ScreenView.tsx \
+  packages/ui/src/shell/AppSidebar.tsx packages/ui/src/agents/AgentBar.tsx packages/ui/src/agents/AgentPanel.tsx \
+  packages/ui/src/agents/agent-panel.test.tsx packages/ui/src/shell/agents-shell.test.tsx
 git commit -m "feat(ui): paramètres de sync"
 ```
 
 ---
-
 ### Task 29: UI Partage, rejoindre, lecture seule
 
 Vague 7. Écrans à dessiner **S2** (Partager le projet), **S3** (Rejoindre un projet), **S6** (lecture seule, « Accès retiré »), en sombre et en clair. Spec G §3.4, §6 (rôles, retrait), §6.2, §8 (opt-in) ; décisions 9, 22. Le glisser-déposer du Kanban en lecture seule est traité par T30 (accès exposé par le SDK).
 
 **Files:**
+- Create: `packages/ui/src/i18n/fr-share.ts` (clé `share`)
 - Create: `packages/ui/src/dialogs/ShareProjectDialog.tsx`
 - Create: `packages/ui/src/dialogs/JoinProjectDialog.tsx`
 - Create: `packages/ui/src/shell/ProjectAccessBanner.tsx`
+- Create: `packages/ui/src/state/access.ts`
 - Create: `packages/ui/src/dialogs/share.test.tsx`
-- Modify: `packages/ui/src/shell/AppSidebar.tsx` (menu `⋯` d'un projet avec « Partager », bouton « Rejoindre un projet », « Ajouter une page » masqué en lecture seule)
-- Modify: `packages/ui/src/shell/Shell.tsx` (dialogues, bandeau, bouton « Partager » de l'en-tête, `openNewTicket` inactif en lecture seule)
+- Modify: `packages/ui/src/shell/AppSidebar.tsx` (menu `⋯` d'un projet avec « Partager », bouton « Rejoindre un projet », « Nouvelle page » masqué en lecture seule)
+- Modify: `packages/ui/src/shell/ShellHeader.tsx` (bouton « Partager », bouton « Ticket » masqué en lecture seule)
+- Modify: `packages/ui/src/shell/ShellDialogs.tsx`, `packages/ui/src/shell/lazy-dialogs.ts` (dialogues `share` et `join`)
+- Modify: `packages/ui/src/shell/Shell.tsx` (bandeau, props, `openNewTicket` inactif en lecture seule)
 - Modify: `packages/ui/src/pages/PageView.tsx` (« Ajouter un composant » masqué en lecture seule)
-- Modify: `packages/ui/src/pages/components/InstanceMenu.tsx` (entrée « Exécuter la sync sur cette machine »)
-- Modify: `packages/ui/src/i18n/fr.ts` (section `share`)
+- Modify: `packages/ui/src/pages/SourceHeader.tsx` (bouton « Exécuter la sync sur cette machine »), `packages/ui/src/pages/SourceHeader.test.tsx` (un cas ajouté ; la fixture `project` gagne `sync`)
+- Modify: `packages/ui/src/shell/shell.test.tsx` (deux cas ajoutés ; mise en place : `subscribeEvents` au faux client, `getSyncStatus` servi)
+- Modify: `packages/ui/src/i18n/fr.ts` (import et `...frShare`)
 
 **Interfaces:**
-- Consumes: RPC `shareProject`, `createProjectInvite`, `joinProject`, `setMemberRole`, `unshareProject`, `setBindingRunner` (T23) ; `useSyncStatus` (T28) ; `ProjectSnapshot.sync: ProjectSyncInfo`, `MemberInfo`, `Role`, `KiboError` (T4, T6).
-- Produces : `ShareProjectDialog({ project, open, onOpenChange })`, `JoinProjectDialog({ open, onOpenChange })`, `ProjectAccessBanner({ access })`, `canEdit(project: ProjectSnapshot): boolean` (dans `packages/ui/src/state/access.ts`).
-- Hypothèse v0.6 (vérifiée en T0) : `ProjectSnapshot.bindings: { id: string; createdBy: string; runner: string }[]` (phase 5) ; le menu `⋯` d'une instance est `packages/ui/src/pages/components/InstanceMenu.tsx` avec les props `{ project, instance }` (phase 4) ; `navigate.settings(sectionId)` (T28).
+- Consumes: RPC `shareProject`, `createProjectInvite`, `joinProject`, `setMemberRole`, `unshareProject`, `setBindingRunner` (T23) ; `useSyncServerStatus` (T28) ; `ProjectSnapshot.sync: ProjectSyncInfo`, `MemberInfo`, `MemberRole`, `ProjectAccess`, `KiboError` (T1, T4, T6) ; `fr.sync.roles` (T28) ; message d'erreur de T23 `INVALID_INPUT` « duplicate project key <KEY> » (décision 22).
+- Produces : `ShareProjectDialog({ project, open, onOpenChange })`, `JoinProjectDialog({ open, onOpenChange })`, `ProjectAccessBanner({ access })`, `canEdit(project: ProjectSnapshot): boolean` (`packages/ui/src/state/access.ts`) ; `DialogsState` gagne `share: string | null` (id du projet) et `join: boolean` ; `ShellHeader` gagne `onShare(): void` ; `AppSidebar` gagne `onShare(projectId: string): void` et `onJoin(): void`.
+- Vérifié en T0 :
+  - `ProjectSnapshot.bindings: Binding[]` avec `Binding = { id, adapter: "github-issues", config: BindingConfig, createdBy: string, runner: string }` (`packages/schema/src/integrations.ts`) ; la liaison d'une instance se lit par `InstanceSource` (`instance.config.source.bindingId`, `readSource` du SDK) et son en-tête est `SyncedHeader` de `packages/ui/src/pages/SourceHeader.tsx` : l'action « Exécuter la sync sur cette machine » y est ajoutée (et non dans le menu d'instance).
+  - `InstanceMenu` est `packages/ui/src/pages/InstanceMenu.tsx`, props `{ projectId: string; instance: Instance; title: string }` : non modifié.
+  - Pas de `navigate.settings` : `navigateTo({ kind: "screen", screen: "sync" })` (écran de T28) ; ouvrir un projet : `navigate(projectId, null)` (`packages/ui/src/route.ts`).
+  - Pas de menu `⋯` par projet dans `AppSidebar.tsx` : seul le projet courant a un `SidebarMenuAction` « Nouvelle page » (`fr.nav.newPage`) ; « Nouveau projet » est un `SidebarGroupAction`. Le menu `⋯` est créé ici (`DropdownMenu` du SDK).
+  - `Shell.tsx` fait déjà 288 lignes : les dialogues passent par `ShellDialogs.tsx` (état `DialogsState`, chargement par `lazy-dialogs.ts`) et le bouton « Partager » par `ShellHeader.tsx` ; `Shell.tsx` ne gagne que le bandeau et le câblage.
+  - Le bouton « Ticket » (`fr.header.newTicket`) est dans `ShellHeader.tsx` ; `host.openNewTicket` est défini dans `Shell.tsx` (`useMemo<Host>`).
+  - `KiboError` porte le message du démon dans `detail` (`new KiboError(code, detail)`).
 
 - [ ] **Step 1: Textes**
 
-Ajout à `packages/ui/src/i18n/fr.ts` :
+`packages/ui/src/i18n/fr-share.ts` :
 ```ts
+export const frShare = {
   share: {
     action: "Partager",
+    menu: (name: string) => `Actions de ${name}`,
     title: (name: string) => `Partager « ${name} »`,
     sent: "Envoyé au serveur",
-    sentItems: ["Tickets et sous-tickets", "Pages et leur mise en page", "Liens entre tickets", "Workflow",
-      "Domaines du projet", "Configuration des composants"],
+    sentItems: [
+      "Tickets et sous-tickets",
+      "Pages et leur mise en page",
+      "Liens entre tickets",
+      "Workflow",
+      "Domaines du projet",
+      "Configuration des composants",
+    ],
     kept: "Reste sur ta machine",
-    keptItems: ["Dossier local", "Notes .md", "Runs et journaux des agents", "Secrets et serveurs MCP",
-      "Code des composants", "Confiance accordée aux composants"],
+    keptItems: [
+      "Dossier local",
+      "Notes .md",
+      "Runs et journaux des agents",
+      "Secrets et serveurs MCP",
+      "Code des composants",
+      "Confiance accordée aux composants",
+    ],
     plaintext: "Le serveur voit les données en clair.",
     noServer: "Configure un serveur dans Paramètres › Sync",
     submit: "Partager",
     sharing: "Partage en cours…",
     offline: "Serveur injoignable, réessaie quand tu es en ligne",
     members: "Membres",
+    roleOf: (name: string) => `Rôle de ${name}`,
     remove: "Retirer",
     invite: "Inviter",
     inviteRole: "Rôle de l'invité",
@@ -20306,13 +21174,14 @@ Ajout à `packages/ui/src/i18n/fr.ts` :
     revoked: "Accès retiré — ta copie locale reste lisible mais n'est plus synchronisée.",
     runHere: "Exécuter la sync sur cette machine",
   },
+};
 ```
-Les rôles réutilisent `fr.sync.roles` (T28).
+Dans `packages/ui/src/i18n/fr.ts` : `import { frShare } from "./fr-share";` et `...frShare,` après `...frCollab,`. Les rôles réutilisent `fr.sync.roles` (T28).
 
 - [ ] **Step 2: Écrire les tests**
 
 `packages/ui/src/dialogs/share.test.tsx` :
-```ts
+```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   DEFAULT_WORKFLOW,
@@ -20333,7 +21202,7 @@ mock.module("../api", () => ({
       calls.push(req);
       return (results[req.method] ?? (() => Promise.resolve(null)))();
     },
-    onEvent: () => () => {},
+    subscribeEvents: () => () => undefined,
   },
 }));
 
@@ -20343,7 +21212,10 @@ const { ProjectAccessBanner } = await import("../shell/ProjectAccessBanner");
 
 const local: ProjectSyncInfo = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
 const owned: ProjectSyncInfo = {
-  shared: true, keyAllocator: "server", role: "owner", access: "write",
+  shared: true,
+  keyAllocator: "server",
+  role: "owner",
+  access: "write",
   members: [
     { userId: "u-adam", name: "Adam", role: "owner" },
     { userId: "u-lea", name: "Léa", role: "editor" },
@@ -20351,10 +21223,25 @@ const owned: ProjectSyncInfo = {
 };
 const project = (sync: ProjectSyncInfo): ProjectSnapshot => ({
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
-  workflow: DEFAULT_WORKFLOW, pages: [], tickets: [], links: [], instances: [], nextTicketKey: null, sync,
+  workflow: DEFAULT_WORKFLOW,
+  pages: [],
+  tickets: [],
+  links: [],
+  instances: [],
+  rules: [],
+  bindings: [],
+  nextTicketKey: null,
+  sync,
 });
-const online = { state: "online", serverUrl: "wss://sync.kibo.test", user: { id: "u-adam", name: "Adam" },
-  deviceId: "d1", retryAt: null, lastError: null, projects: [] } as SyncStatus;
+const online: SyncStatus = {
+  state: "online",
+  serverUrl: "wss://sync.kibo.test",
+  user: { id: "u-adam", name: "Adam" },
+  deviceId: "d1",
+  retryAt: null,
+  lastError: null,
+  projects: [],
+};
 
 beforeEach(() => {
   calls.length = 0;
@@ -20374,7 +21261,7 @@ test("before sharing, the dialog lists what leaves and what stays", async () => 
 });
 
 test("without a server the share button is disabled", async () => {
-  results.getSyncStatus = () => Promise.resolve({ ...online, state: "unconfigured", serverUrl: null } as SyncStatus);
+  results.getSyncStatus = () => Promise.resolve({ ...online, state: "unconfigured", serverUrl: null });
   render(<ShareProjectDialog project={project(local)} open onOpenChange={() => {}} />);
   expect(await screen.findByText("Configure un serveur dans Paramètres › Sync")).toBeTruthy();
   expect((screen.getByRole("button", { name: "Partager" }) as HTMLButtonElement).disabled).toBe(true);
@@ -20383,7 +21270,9 @@ test("without a server the share button is disabled", async () => {
 test("sharing offline explains the failure", async () => {
   results.shareProject = () => Promise.reject(new KiboError("SYNC_OFFLINE", "down"));
   render(<ShareProjectDialog project={project(local)} open onOpenChange={() => {}} />);
-  await userEvent.click(await screen.findByRole("button", { name: "Partager" }));
+  const button = screen.getByRole("button", { name: "Partager" }) as HTMLButtonElement;
+  await waitFor(() => expect(button.disabled).toBe(false));
+  await userEvent.click(button);
   expect(await screen.findByText("Serveur injoignable, réessaie quand tu es en ligne")).toBeTruthy();
   expect(calls.some((c) => c.method === "shareProject" && c.projectId === "p1")).toBe(true);
 });
@@ -20393,14 +21282,16 @@ test("an owner sees members, changes roles, removes and invites", async () => {
   results.createProjectInvite = () => Promise.resolve({ code: "ABCDEFGHJKMNPQRSTUVWXYZ234", expiresAt: Date.now() });
   render(<ShareProjectDialog project={project(owned)} open onOpenChange={() => {}} />);
   const members = screen.getByRole("list", { name: "Membres" });
-  expect(within(members).getByText("Léa")).toBeTruthy();
   const lea = within(members).getByText("Léa").closest("li");
   if (!lea) throw new Error("no member row");
   await userEvent.click(within(lea).getByRole("combobox", { name: "Rôle de Léa" }));
   await userEvent.click(await screen.findByRole("option", { name: "Lecteur" }));
   await waitFor(() =>
     expect(calls.find((c) => c.method === "setMemberRole")).toEqual({
-      method: "setMemberRole", projectId: "p1", userId: "u-lea", role: "viewer",
+      method: "setMemberRole",
+      projectId: "p1",
+      userId: "u-lea",
+      role: "viewer",
     }),
   );
   await userEvent.click(within(lea).getByRole("button", { name: "Retirer" }));
@@ -20409,6 +21300,15 @@ test("an owner sees members, changes roles, removes and invites", async () => {
   expect(await screen.findByText("ABCDEFGHJKMNPQRSTUVWXYZ234")).toBeTruthy();
   expect(screen.getByText("Valable 48 h, usage unique")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Arrêter le partage" })).toBeTruthy();
+});
+
+test("a failed role change is reported", async () => {
+  results.setMemberRole = () => Promise.reject(new KiboError("FORBIDDEN", "not an owner"));
+  render(<ShareProjectDialog project={project(owned)} open onOpenChange={() => {}} />);
+  const lea = within(screen.getByRole("list", { name: "Membres" })).getByText("Léa").closest("li");
+  if (!lea) throw new Error("no member row");
+  await userEvent.click(within(lea).getByRole("button", { name: "Retirer" }));
+  expect((await screen.findByRole("alert")).textContent).toContain("not an owner");
 });
 
 test("an editor sees roles as text and no owner actions", () => {
@@ -20441,29 +21341,47 @@ test("the banner explains read-only and revoked access", () => {
   );
 });
 ```
-Ajout à `packages/ui/src/shell/shell.test.tsx` (tests existants inchangés) :
-```ts
-test("a read-only project hides page creation and shows the banner", async () => {
-  renderShellWith({ ...snapshot, sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] } });
-  expect(await screen.findByRole("status")).toBeTruthy();
+
+Dans `packages/ui/src/shell/shell.test.tsx` (tests existants inchangés) : ajouter `subscribeEvents: () => () => undefined,` au faux `client` ; dans son `rpc`, répondre `syncStatus` à `getSyncStatus` (variable `let syncStatus: SyncStatus` du fichier, `state: "unconfigured"` par défaut, remise à zéro dans `beforeEach`) ; ajouter un projet `p3` en lecture seule aux `snapshots` et à `useProjects` ; puis :
+```tsx
+test("a read-only project hides page and ticket creation and shows the banner", async () => {
+  renderShell();
+  await go("#/p/p3/");
+  expect((await screen.findByRole("status")).textContent).toBe("Lecture seule — tu es lecteur de ce projet.");
   expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Ticket/ })).toBeNull();
 });
 
 test("Rejoindre un projet appears only once a server is configured", async () => {
-  syncStatus = { ...syncStatus, state: "unconfigured" };
-  const { unmount } = renderShellWith(snapshot);
+  const { unmount } = renderShell();
+  await go("#/p/p1/");
   expect(screen.queryByRole("button", { name: "Rejoindre un projet" })).toBeNull();
   unmount();
-  syncStatus = { ...syncStatus, state: "online" };
-  renderShellWith(snapshot);
+  syncStatus = { ...syncStatus, state: "online", serverUrl: "wss://sync.kibo.test" };
+  renderShell();
   expect(await screen.findByRole("button", { name: "Rejoindre un projet" })).toBeTruthy();
 });
 ```
-`renderShellWith` et `syncStatus` s'ajoutent aux utilitaires de `shell.test.tsx` : le module `../api` simulé renvoie `snapshot` pour `getProject`, `[snapshot.meta]` pour `listProjects` et `syncStatus` pour `getSyncStatus`.
+avec `p3 = { ...project, meta: { ...project.meta, id: "p3", name: "Lecture", key: "LEC" }, sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] } }`.
+
+Dans `packages/ui/src/pages/SourceHeader.test.tsx`, la fixture `project` gagne `sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] }` (mise en place) ; ajouter au faux client `subscribeEvents: () => () => undefined` et, pour `getSyncStatus`, `{ state: "online", user: { id: "u-adam", name: "Adam" }, … }` ; puis :
+```tsx
+test("a shared binding run by someone else can be taken over", async () => {
+  const shared = {
+    ...project,
+    sync: { shared: true, keyAllocator: "server", role: "owner", access: "write", members: [] },
+    bindings: [{ ...binding, runner: "u-lea" }],
+  } as unknown as ProjectSnapshot;
+  render(<SourceHeader project={shared} instance={instance} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Exécuter la sync sur cette machine" }));
+  expect(calls).toContainEqual({ method: "setBindingRunner", projectId: "p1", bindingId: "b1" });
+});
+```
+(`instance` : l'instance déjà définie dans le fichier.)
 
 - [ ] **Step 3: Vérifier l'échec**
 
-Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx`
+Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/SourceHeader.test.tsx`
 Expected: FAIL « Cannot find module './ShareProjectDialog' ».
 
 - [ ] **Step 4: Implémenter le bandeau et l'accès**
@@ -20505,7 +21423,7 @@ export function ProjectAccessBanner({ access }: { access: ProjectAccess }) {
 
 `packages/ui/src/dialogs/ShareProjectDialog.tsx` :
 ```tsx
-import { KiboError, type MemberInfo, type ProjectSnapshot, type Role } from "@kibo/schema";
+import { KiboError, type MemberInfo, MemberRole, type ProjectSnapshot } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
@@ -20513,11 +21431,20 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { navigate } from "../route";
-import { useSyncStatus } from "../state/use-sync-status";
+import { navigateTo } from "../route";
+import { useSyncServerStatus } from "../state/use-sync-server";
 
 type Props = { project: ProjectSnapshot; open: boolean; onOpenChange: (open: boolean) => void };
-const initials = (name: string) => name.split(/\s+/).map((w) => w[0]?.toUpperCase() ?? "").join("").slice(0, 2);
+type InviteRole = "editor" | "viewer";
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 2);
+const errorText = (e: unknown) => (e instanceof KiboError ? e.detail : fr.common.error);
+const inviteRole = (value: string): InviteRole => (value === "viewer" ? "viewer" : "editor");
 
 function WhatLeaves() {
   const sentId = useId();
@@ -20540,13 +21467,17 @@ function WhatLeaves() {
   );
 }
 
-function Members({ project, members, setMembers }: {
-  project: ProjectSnapshot; members: MemberInfo[]; setMembers: (m: MemberInfo[]) => void;
-}) {
+type MembersProps = { project: ProjectSnapshot; members: MemberInfo[]; onChange(members: MemberInfo[]): void; onError(message: string): void };
+
+function Members({ project, members, onChange, onError }: MembersProps) {
   const listId = useId();
   const owner = project.sync.role === "owner";
-  const change = async (userId: string, role: Role | null) => {
-    setMembers(await client.rpc({ method: "setMemberRole", projectId: project.meta.id, userId, role }));
+  const change = async (userId: string, role: MemberRole | null) => {
+    try {
+      onChange(await client.rpc({ method: "setMemberRole", projectId: project.meta.id, userId, role }));
+    } catch (e) {
+      onError(errorText(e));
+    }
   };
   return (
     <section className="grid gap-2">
@@ -20554,19 +21485,25 @@ function Members({ project, members, setMembers }: {
       <ul aria-labelledby={listId} className="grid gap-2">
         {members.map((m) => (
           <li key={m.userId} className="flex items-center gap-2 text-sm">
-            <span aria-hidden className="grid size-6 place-items-center rounded-full bg-muted text-xs">{initials(m.name)}</span>
+            <span aria-hidden className="grid size-6 place-items-center rounded-full bg-muted text-xs">
+              {initials(m.name)}
+            </span>
             <span className="flex-1">{m.name}</span>
             {owner && m.role !== "owner" ? (
               <>
-                <Select value={m.role} onValueChange={(r) => void change(m.userId, r as Role)}>
-                  <SelectTrigger className="h-8 w-32" aria-label={`${fr.sync.role} de ${m.name}`}><SelectValue /></SelectTrigger>
+                <Select value={m.role} onValueChange={(r) => void change(m.userId, MemberRole.parse(r))}>
+                  <SelectTrigger className="h-8 w-32" aria-label={fr.share.roleOf(m.name)}>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(["owner", "editor", "viewer"] as const).map((r) => (
+                    {MemberRole.options.map((r) => (
                       <SelectItem key={r} value={r}>{fr.sync.roles[r]}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" size="sm" onClick={() => void change(m.userId, null)}>{fr.share.remove}</Button>
+                <Button variant="ghost" size="sm" onClick={() => void change(m.userId, null)}>
+                  {fr.share.remove}
+                </Button>
               </>
             ) : (
               <span className="text-muted-foreground">{fr.sync.roles[m.role]}</span>
@@ -20578,19 +21515,24 @@ function Members({ project, members, setMembers }: {
   );
 }
 
-function Invite({ projectId }: { projectId: string }) {
-  const roleId = useId();
-  const [role, setRole] = useState<"editor" | "viewer">("editor");
+function Invite({ projectId, onError }: { projectId: string; onError(message: string): void }) {
+  const [role, setRole] = useState<InviteRole>("editor");
   const [code, setCode] = useState<string | null>(null);
   const generate = async () => {
-    setCode((await client.rpc({ method: "createProjectInvite", projectId, role })).code);
+    try {
+      setCode((await client.rpc({ method: "createProjectInvite", projectId, role })).code);
+    } catch (e) {
+      onError(errorText(e));
+    }
   };
   return (
     <section className="grid gap-2 border-t pt-3">
       <h3 className="text-sm font-medium">{fr.share.invite}</h3>
       <div className="flex items-center gap-2">
-        <Select value={role} onValueChange={(r) => setRole(r as "editor" | "viewer")}>
-          <SelectTrigger id={roleId} className="h-8 w-36" aria-label={fr.share.inviteRole}><SelectValue /></SelectTrigger>
+        <Select value={role} onValueChange={(r) => setRole(inviteRole(r))}>
+          <SelectTrigger className="h-8 w-36" aria-label={fr.share.inviteRole}>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="editor">{fr.sync.roles.editor}</SelectItem>
             <SelectItem value="viewer">{fr.sync.roles.viewer}</SelectItem>
@@ -20602,7 +21544,9 @@ function Invite({ projectId }: { projectId: string }) {
         <div className="grid gap-1 rounded-md border bg-muted/40 p-3">
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-sm">{code}</span>
-            <Button size="sm" variant="ghost" onClick={() => void navigator.clipboard.writeText(code)}>{fr.share.copy}</Button>
+            <Button size="sm" variant="ghost" onClick={() => void navigator.clipboard.writeText(code)}>
+              {fr.share.copy}
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">{fr.share.codeHelp}</p>
         </div>
@@ -20611,14 +21555,41 @@ function Invite({ projectId }: { projectId: string }) {
   );
 }
 
+function StopSharing({ projectId, onStopped, onError }: { projectId: string; onStopped(): void; onError(m: string): void }) {
+  const [confirm, setConfirm] = useState(false);
+  const stop = async () => {
+    try {
+      await client.rpc({ method: "unshareProject", projectId });
+      onStopped();
+    } catch (e) {
+      onError(errorText(e));
+    }
+  };
+  return (
+    <DialogFooter className="border-t pt-3">
+      {confirm ? (
+        <div className="grid gap-2">
+          <p className="text-sm text-muted-foreground">{fr.share.stopConfirm}</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConfirm(false)}>{fr.common.cancel}</Button>
+            <Button variant="destructive" onClick={() => void stop()}>{fr.share.stop}</Button>
+          </div>
+        </div>
+      ) : (
+        <Button variant="destructive" onClick={() => setConfirm(true)}>{fr.share.stop}</Button>
+      )}
+    </DialogFooter>
+  );
+}
+
 export function ShareProjectDialog({ project, open, onOpenChange }: Props) {
-  const status = useSyncStatus();
+  const { status } = useSyncServerStatus();
   const [members, setMembers] = useState<MemberInfo[]>(project.sync.members);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmStop, setConfirmStop] = useState(false);
   useEffect(() => setMembers(project.sync.members), [project.sync.members]);
   const configured = status !== null && status.state !== "unconfigured";
+  const owner = project.sync.role === "owner";
 
   const share = async () => {
     setBusy(true);
@@ -20626,15 +21597,10 @@ export function ShareProjectDialog({ project, open, onOpenChange }: Props) {
     try {
       await client.rpc({ method: "shareProject", projectId: project.meta.id });
     } catch (e) {
-      if (!(e instanceof KiboError)) throw e;
-      setError(e.code === "SYNC_OFFLINE" ? fr.share.offline : fr.common.error);
+      setError(e instanceof KiboError && e.code === "SYNC_OFFLINE" ? fr.share.offline : errorText(e));
     } finally {
       setBusy(false);
     }
-  };
-  const stop = async () => {
-    await client.rpc({ method: "unshareProject", projectId: project.meta.id });
-    onOpenChange(false);
   };
 
   return (
@@ -20644,15 +21610,19 @@ export function ShareProjectDialog({ project, open, onOpenChange }: Props) {
           <DialogTitle>{fr.share.title(project.meta.name)}</DialogTitle>
           <DialogDescription>{fr.share.plaintext}</DialogDescription>
         </DialogHeader>
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {!project.sync.shared ? (
           <>
             <WhatLeaves />
-            {!configured && (
-              <button type="button" className="text-left text-sm underline" onClick={() => navigate.settings("sync")}>
+            {status !== null && !configured && (
+              <Button
+                variant="link"
+                className="h-auto justify-start p-0 text-sm underline"
+                onClick={() => navigateTo({ kind: "screen", screen: "sync" })}
+              >
                 {fr.share.noServer}
-              </button>
+              </Button>
             )}
-            {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <DialogFooter>
               <Button onClick={() => void share()} disabled={!configured || busy}>
                 {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
@@ -20662,22 +21632,10 @@ export function ShareProjectDialog({ project, open, onOpenChange }: Props) {
           </>
         ) : (
           <>
-            <Members project={project} members={members} setMembers={setMembers} />
-            {project.sync.role === "owner" && <Invite projectId={project.meta.id} />}
-            {project.sync.role === "owner" && (
-              <DialogFooter className="border-t pt-3">
-                {confirmStop ? (
-                  <div className="grid gap-2">
-                    <p className="text-sm text-muted-foreground">{fr.share.stopConfirm}</p>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setConfirmStop(false)}>{fr.common.cancel}</Button>
-                      <Button variant="destructive" onClick={() => void stop()}>{fr.share.stop}</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button variant="destructive" onClick={() => setConfirmStop(true)}>{fr.share.stop}</Button>
-                )}
-              </DialogFooter>
+            <Members project={project} members={members} onChange={setMembers} onError={setError} />
+            {owner && <Invite projectId={project.meta.id} onError={setError} />}
+            {owner && (
+              <StopSharing projectId={project.meta.id} onStopped={() => onOpenChange(false)} onError={setError} />
             )}
           </>
         )}
@@ -20703,9 +21661,18 @@ import { navigate } from "../route";
 
 const DUPLICATE = /^duplicate project key ([A-Z]{2,6})$/;
 
+export function joinErrorText(e: unknown): string {
+  if (!(e instanceof KiboError)) return fr.common.error;
+  if (e.code === "INVITE_INVALID") return fr.share.invalidCode;
+  if (e.code === "SYNC_OFFLINE") return fr.share.offline;
+  const duplicate = DUPLICATE.exec(e.detail)?.[1];
+  return duplicate ? fr.share.duplicateKey(duplicate) : e.detail;
+}
+
 export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const codeId = useId();
   const folderId = useId();
+  const folderHelpId = useId();
   const [code, setCode] = useState("");
   const [folder, setFolder] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20719,17 +21686,7 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
       onOpenChange(false);
       navigate(meta.id, null);
     } catch (err) {
-      if (!(err instanceof KiboError)) throw err;
-      const dup = DUPLICATE.exec(err.detail);
-      setError(
-        err.code === "INVITE_INVALID"
-          ? fr.share.invalidCode
-          : dup?.[1]
-            ? fr.share.duplicateKey(dup[1])
-            : err.code === "SYNC_OFFLINE"
-              ? fr.share.offline
-              : fr.common.error,
-      );
+      setError(joinErrorText(err));
     } finally {
       setBusy(false);
     }
@@ -20748,12 +21705,12 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
           </div>
           <div className="grid gap-2">
             <Label htmlFor={folderId}>{fr.share.folder}</Label>
-            <Input id={folderId} value={folder} onChange={(e) => setFolder(e.target.value)} aria-describedby={`${folderId}-help`} />
-            <p id={`${folderId}-help`} className="text-xs text-muted-foreground">{fr.share.folderHelp}</p>
+            <Input id={folderId} value={folder} onChange={(e) => setFolder(e.target.value)} aria-describedby={folderHelpId} />
+            <p id={folderHelpId} className="text-xs text-muted-foreground">{fr.share.folderHelp}</p>
           </div>
-          {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{fr.common.cancel}</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{fr.common.cancel}</Button>
             <Button type="submit" disabled={busy}>{fr.share.joinSubmit}</Button>
           </DialogFooter>
         </form>
@@ -20762,78 +21719,117 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
   );
 }
 ```
-`KiboError.detail` porte le message brut du démon (`client.rpc` construit `new KiboError(code, message)`).
 
 - [ ] **Step 7: Brancher le shell**
 
-- `Shell.tsx` : états `share: boolean`, `join: boolean` ; sous l'en-tête, `{project && <ProjectAccessBanner access={project.sync.access} />}` ; à droite de l'en-tête, `{project && <Button variant="outline" size="sm" onClick={() => setShare(true)}>{fr.share.action}</Button>}` ; `host.openNewTicket` n'ouvre le dialogue que si `project && canEdit(project)` ; rendu de `ShareProjectDialog` et `JoinProjectDialog`.
-- `AppSidebar.tsx` : nouvelles props `canEdit: boolean`, `syncConfigured: boolean`, `onShare(projectId)`, `onJoin()` ; `SidebarMenuAction` `⋯` sur chaque projet ouvrant un `DropdownMenu` avec l'entrée « Partager » ; bouton « Rejoindre un projet » sous « Nouveau projet » si `syncConfigured` ; `SidebarGroupAction` « Nouvelle page » et « Ajouter une page » rendus seulement si `canEdit`.
-- `PageView.tsx` : bouton « Ajouter un composant » et mode édition seulement si `canEdit(project)`.
-- `InstanceMenu.tsx` : si `instance.config.source` contient `bindingId` et que la liaison correspondante a un `runner` différent de l'utilisateur de la session, entrée `fr.share.runHere` qui appelle `client.rpc({ method: "setBindingRunner", projectId, bindingId })`.
+- `lazy-dialogs.ts` : `ShareProjectDialog` et `JoinProjectDialog` par `lazyPanel(…, fr.lazy, hidden)` (même motif que `NewTicketDialog`).
+- `ShellDialogs.tsx` : `DialogsState` gagne `share: string | null` et `join: boolean` (`NO_DIALOG` : `share: null`, `join: false`) ; le projet à partager est cherché dans `snapshots` (déjà en props) ; rendu :
+  ```tsx
+  {shareProject && (
+    <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
+  )}
+  {state.join && <JoinProjectDialog open onOpenChange={(o) => !o && set({ join: false })} />}
+  ```
+  avec `const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;`.
+- `ShellHeader.tsx` : prop `onShare(): void` ; si `project` (projet actif, pas un écran), bouton `<Button size="sm" variant="outline" className="h-7" onClick={onShare}><Share2 />{fr.share.action}</Button>` avant le bouton « Ticket » ; le bouton « Ticket » n'est rendu que si `ticketProject && canEdit(ticketProject)`.
+- `Shell.tsx` : `onShare={() => project && set({ share: project.meta.id })}` sur `ShellHeader` ; sur `AppSidebar`, `onShare={(projectId) => set({ share: projectId })}` et `onJoin={() => set({ join: true })}` ; sous `<ShellHeader … />`, `{project && <ProjectAccessBanner access={project.sync.access} />}` ; dans `host`, `openNewTicket: (d) => { if (!projectRef.current || canEdit(projectRef.current)) set({ newTicket: d }); }`. Le fichier reste sous 300 lignes (bandeau et câblage seulement).
+- `AppSidebar.tsx` : props `onShare(projectId: string): void` et `onJoin(): void` ; `const { status } = useSyncServerStatus()` ; `const editable = active !== null && canEdit(active)` ; le `SidebarMenuAction` « Nouvelle page » du projet courant n'est rendu que si `editable` ; chaque projet reçoit un `DropdownMenu` déclenché par `<SidebarMenuAction showOnHover={!current} className={current && editable ? "right-7" : undefined} aria-label={fr.share.menu(project.name)}><Ellipsis /></SidebarMenuAction>` (`asChild` sur le déclencheur) avec l'entrée `<DropdownMenuItem onSelect={() => p.onShare(project.id)}><Share2 />{fr.share.action}</DropdownMenuItem>` ; après la liste des projets, si `status !== null && status.state !== "unconfigured"`, un `SidebarMenuItem` `<SidebarMenuButton onClick={p.onJoin}><LogIn /><span>{fr.share.join}</span></SidebarMenuButton>` ; « Paramètres » actif aussi pour `screen === "sync"` (déjà fait par T28).
+- `PageView.tsx` : `const addButton = canAdd && canEdit(project) && (…)`.
+- `SourceHeader.tsx` : dans `SourceHeader`, passer `project` à `SyncedHeader` ; nouveau composant `RunHere({ projectId, binding })` rendu par `SyncedHeader` seulement si `project.sync.shared` :
+  ```tsx
+  function RunHere({ projectId, binding, onError }: { projectId: string; binding: Binding; onError(f: SyncFailure): void }) {
+    const { status } = useSyncServerStatus();
+    const me = status?.user?.id ?? null;
+    if (me === null || binding.runner === me) return null;
+    const take = async () => {
+      try {
+        await client.rpc({ method: "setBindingRunner", projectId, bindingId: binding.id });
+      } catch (e) {
+        onError(failureOf(e));
+      }
+    };
+    return (
+      <Button size="sm" variant="ghost" onClick={() => void take()}>
+        {fr.share.runHere}
+      </Button>
+    );
+  }
+  ```
+  placé avant le bouton de sync, `onError={setError}` (erreur affichée par le `role="alert"` existant).
 
 - [ ] **Step 8: Vérifier**
 
-Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx`
+Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/SourceHeader.test.tsx`
 Expected: PASS.
 
-Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build`
-Expected: PASS.
+Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget`
+Expected: PASS ; budget ≤ 230 kB gzip (dialogues chargés à la demande ; seuls le bandeau, `canEdit` et le menu `⋯` entrent dans le chunk d'entrée).
 
 Contrôle visuel face aux exports S2, S3, S6, en sombre et en clair.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add packages/ui/src/dialogs/ShareProjectDialog.tsx packages/ui/src/dialogs/JoinProjectDialog.tsx \
-  packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/ProjectAccessBanner.tsx packages/ui/src/state/access.ts \
-  packages/ui/src/shell/AppSidebar.tsx packages/ui/src/shell/Shell.tsx packages/ui/src/shell/shell.test.tsx \
-  packages/ui/src/pages/PageView.tsx packages/ui/src/pages/components/InstanceMenu.tsx packages/ui/src/i18n/fr.ts
+git add packages/ui/src/i18n/fr-share.ts packages/ui/src/i18n/fr.ts packages/ui/src/dialogs/ShareProjectDialog.tsx \
+  packages/ui/src/dialogs/JoinProjectDialog.tsx packages/ui/src/dialogs/share.test.tsx \
+  packages/ui/src/shell/ProjectAccessBanner.tsx packages/ui/src/state/access.ts packages/ui/src/shell/AppSidebar.tsx \
+  packages/ui/src/shell/ShellHeader.tsx packages/ui/src/shell/ShellDialogs.tsx packages/ui/src/shell/lazy-dialogs.ts \
+  packages/ui/src/shell/Shell.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/PageView.tsx \
+  packages/ui/src/pages/SourceHeader.tsx packages/ui/src/pages/SourceHeader.test.tsx
 git commit -m "feat(ui): partage de projet"
 ```
 
 ---
-
 ### Task 30: UI présence et clé provisoire
 
-Vague 7. Écrans à dessiner **S4** (présence) et **S5** (ticket à clé provisoire), en sombre et en clair. Spec G §5 (point 6), §6.1, §3.3 (assignés par `userId`) ; décision 19. Deux commits : le SDK d'abord (les composants intégrés en dépendent), puis l'UI.
+Vague 8. Écrans à dessiner **S4** (présence) et **S5** (ticket à clé provisoire), en sombre et en clair. Spec G §5 (point 6), §6.1, §3.3 (assignés par `userId`) ; décision 19. Deux commits : le SDK et le démon d'abord (les composants intégrés en dépendent), puis les composants et l'UI.
 
 **Files:**
-- Modify: `packages/schema/src/rpc.ts` (`ComponentCall` gagne `{ kind: "presence.list" }`)
-- Modify: `packages/sdk/src/types.ts`, `packages/sdk/src/sdk.ts`, `packages/sdk/src/client.ts`, `packages/sdk/src/react.tsx`, `packages/sdk/src/mock.ts`, `packages/sdk/src/conformance.tsx`, `packages/sdk/src/index.ts`
-- Modify: `packages/sdk/src/sandbox/runtime.ts` (appel `presence.list` relayé par l'iframe, phase 4)
+- Modify: `packages/schema/src/call.ts` (`ComponentCall` gagne `{ kind: "presence.list" }` et `{ kind: "sharing.get" }`), `packages/schema/src/permissions.ts` (`permissionOfCall` : les deux ⇒ `read:ticket`)
+- Modify: `packages/sdk/src/types.ts`, `packages/sdk/src/sdk.ts`, `packages/sdk/src/client.ts` (`projectBackend`), `packages/sdk/src/sandbox.tsx` (`createFrameSdk`), `packages/sdk/src/react.tsx`, `packages/sdk/src/mock.ts`, `packages/sdk/src/conformance.tsx`, `packages/sdk/src/index.ts`
 - Create: `packages/sdk/src/members.ts`, `packages/sdk/src/ticket-key.tsx`, `packages/sdk/src/fr.ts`, `packages/sdk/src/presence.test.tsx`
-- Modify: `packages/daemon/src/components/component-call.ts` (contrôle `presence.list`, `reads: ticket`)
-- Modify: `components/kanban/src/KanbanCard.tsx`, `components/kanban/src/Kanban.tsx`, `components/kanban/src/fr.ts`, `components/kanban/src/kanban.test.tsx`
+- Modify: `packages/daemon/src/components/gate.ts` (`GateHandlers.presence`, `GateHandlers.sharing`, deux cas de `dispatch`), `packages/daemon/src/components/gate-handlers.ts`, `packages/daemon/src/components/service.ts` (`ComponentsDeps.presence?`, `ComponentsDeps.sharing?`), `packages/daemon/src/components/gate-test-kit.ts` (mise en place : `idleHandlers` complété), `packages/daemon/src/components/gate-permissions.test.ts` (deux cas ajoutés), `packages/daemon/src/daemon.ts` (branchement du hub de présence de T24 et de l'accès de T21)
+- Modify: `components/kanban/src/KanbanCard.tsx`, `components/kanban/src/Kanban.tsx`, `components/kanban/src/kanban.test.tsx`
 - Modify: `components/tickets/src/TicketsTree.tsx`, `components/tickets/src/tickets.test.tsx`
-- Create: `packages/ui/src/shell/PresenceAvatars.tsx`, `packages/ui/src/shell/KeyRequired.tsx`, `packages/ui/src/state/use-presence.ts`, `packages/ui/src/shell/presence.test.tsx`
-- Modify: `packages/ui/src/shell/TicketSheet.tsx`, `packages/ui/src/shell/TabBar.tsx`, `packages/ui/src/pages/PageView.tsx`, `packages/ui/src/shell/Shell.tsx`, `packages/ui/src/i18n/fr.ts`
+- Create: `packages/ui/src/i18n/fr-presence.ts` (clé `presence`), `packages/ui/src/shell/PresenceAvatars.tsx`, `packages/ui/src/shell/KeyRequired.tsx`, `packages/ui/src/state/use-presence.ts`, `packages/ui/src/shell/presence.test.tsx`
+- Modify: `packages/ui/src/shell/TicketSheet.tsx`, `packages/ui/src/pages/TicketTab.tsx`, `packages/ui/src/agents/AssignDialog.tsx`, `packages/ui/src/tabs/TabBar.tsx` (prop `trailing`), `packages/ui/src/pages/PageView.tsx`, `packages/ui/src/shell/Shell.tsx`, `packages/ui/src/shell/SandboxFrame.tsx` (relais de la présence vers l'iframe), `packages/ui/src/i18n/fr.ts`
 
 **Interfaces:**
-- Consumes: RPC `getPresence`, `setPresence` (T24) ; événement `{ type: "presence"; projectId }` ; `PresencePeer`, `ProjectSyncInfo`, `MemberInfo`, `Assignee`, `ticketKeyLabel` (T4, T6) ; `enableServerAllocation` (T7) ; `ProjectSnapshot.sync` (T21).
+- Consumes: RPC `getPresence`, `setPresence` (T24) ; `PresenceHub.peers(projectId)` (T24) ; `projectSyncInfo` (T21) ; message `{ type: "presence.changed"; projectId: string }` de `ChangeMessage` (T4) ; `client.subscribeEvents` (SDK, T4) ; `PresencePeer`, `ProjectSyncInfo`, `MemberInfo`, `ProjectAccess`, `Assignee` (T1, T4) ; `TicketView.keyLabel`, `localSyncInfo(doc)` (T6) ; `enableServerAllocation` (T7, SDK simulé seulement : arête `core ← sdk/mock`).
+- Produces (`@kibo/schema`) : `ComponentCall` gagne `{ kind: "presence.list" }` (→ `PresencePeer[]`) et `{ kind: "sharing.get" }` (→ `ProjectSyncInfo`), tous deux soumis à `read:ticket`.
 - Produces (`@kibo/sdk`) :
 ```ts
-export type KiboSdk = { /* existant */ presence: { list(): Promise<PresencePeer[]> }; sharing(): Promise<ProjectSyncInfo>;
-  projectKey(): Promise<string> };
-export function useProjectKey(): string;                     // "" tant que non chargé
-export type ProjectBackend = { /* existant */ presence(): Promise<PresencePeer[]>; onPresence(listener: () => void): () => void };
+export type KiboSdk = { /* existant */ presence: { list(): Promise<PresencePeer[]>; subscribe(listener: () => void): () => void };
+  sharing(): Promise<ProjectSyncInfo> };
+export type ProjectBackend = { /* existant */ subscribePresence?(listener: () => void): () => void };
 export function usePresence(): PresencePeer[];
 export function useSharing(): ProjectSyncInfo;
 export function useMembers(): MemberInfo[];
 export function useReadOnly(): boolean;
 export function assigneeLabel(assignee: Assignee, members: MemberInfo[]): string;
 export function remoteRuns(peers: PresencePeer[], ticketKey: string | null): { label: string; state: string }[];
-export function TicketKeyLabel(props: { ticketKey: string | null; projectKey: string; className?: string }): JSX.Element;
+export function TicketKeyLabel(props: { ticket: Pick<TicketView, "key" | "keyLabel">; className?: string }): JSX.Element;
 export type MockSdkOptions = { /* existant */ presence?: PresencePeer[]; shared?: boolean; members?: MemberInfo[] };
+export type MockSdk = { /* existant */ setAccess(access: ProjectAccess): void; setPresence(peers: PresencePeer[]): void };
 ```
-- Produces (UI) : `PresenceAvatars({ project: { id: string; name: string }; pages: { id: string; title: string }[]; pageId?: string | null })`, `KeyRequired({ ticket, children })`, `usePresencePeers(projectId: string | null): PresencePeer[]`, `usePresenceReporter(input: { projectId: string | null; pageId: string | null; ticketId: string | null; shared: boolean })`.
-- Hypothèse v0.6 (vérifiée en T0) : `ComponentCall` est défini dans `packages/schema/src/rpc.ts` ; le contrôle du démon vit dans `packages/daemon/src/components/component-call.ts` avec `checkCall(granted, call)` ; le runtime iframe est `packages/sdk/src/sandbox/runtime.ts` ; `TicketSheet` porte les boutons « Assigner à un agent » (phase 2) et « Créer la branche » (phase 3), et la vue Changements le bouton « Générer le message de commit » alimenté par le ticket de la branche ; `TabBar.tsx` (phase 3) ; `client.onEvent` (T28).
+- Produces (démon) : `GateHandlers.presence(projectId): Promise<PresencePeer[]>`, `GateHandlers.sharing(projectId): Promise<ProjectSyncInfo>` ; `GateHandlersDeps` et `ComponentsDeps` gagnent `presence?: (projectId: string) => PresencePeer[]` (défaut `[]`) et `sharing?: (projectId: string) => ProjectSyncInfo` (défaut `localSyncInfo(docs.project(projectId))`).
+- Produces (UI) : `PresenceAvatars({ project: { id: string; name: string }; pages: { id: string; title: string }[]; pageId?: string | null })`, `KeyRequired({ ticket, children })`, `usePresencePeers(projectId: string | null): PresencePeer[]`, `usePresenceReporter(input: { projectId: string | null; pageId: string | null; ticketId: string | null; shared: boolean })`, prop `TabBar.trailing?: ReactNode`, `fr.presence` (`fr-presence.ts`).
+- Vérifié en T0 :
+  - `ComponentCall` est dans `packages/schema/src/call.ts` ; la permission d'un appel est `permissionOfCall(call)` (`packages/schema/src/permissions.ts`, `switch` exhaustif) et le démon la contrôle par `missingPermission(granted, call)` puis `dispatch` (`packages/daemon/src/components/gate.ts`, `default` ⇒ notes : les nouveaux `kind` y ont un `case` explicite) ; les gestionnaires sont `createGateHandlers` (`gate-handlers.ts`) ; tests : `gate-permissions.test.ts` avec `gate-test-kit.ts` (`granted.reads = ["ticket"]`, `idleHandlers`, `testGate`, `refused`). Pas de `component-call.ts` ni de `checkCall`.
+  - Le runtime de l'iframe est `createFrameSdk` de `packages/sdk/src/sandbox.tsx` : un composant sandboxé (`mode "gated"`) ne lit rien par `snapshot()` (rejeté), tout passe par `ComponentCall`. D'où `sharing.get` : `sdk.sharing()` et `sdk.presence.list()` passent par `call` dans les deux modes (un composant intégré passe par `componentCall` du démon, qui ne contrôle pas les permissions des intégrés). L'hôte relaie `{ kind: "changed" }` à l'iframe depuis `SandboxFrame.tsx` (`b.changed()`).
+  - `ProjectBackend` est construit littéralement par `packages/sdk/src/mcp.test.ts` et `sdk-v1.test.ts` : `subscribePresence` est facultatif pour ne pas toucher ces tests.
+  - Pas de `packages/sdk/src/fr.ts` (seul `dev-fr.ts`) : créé.
+  - L'affichage de la clé passe déjà par `TicketView.keyLabel` depuis T6 (Kanban, arbre, Sheet, onglet, etc.) : T30 n'ajoute que le style « provisoire » (`TicketKeyLabel`), sans clé de projet ni `useProjectKey`.
+  - Actions qui exigent une clé (spec G §5 point 6) : « Assigner à un agent » dans `packages/ui/src/shell/TicketSheet.tsx` et `packages/ui/src/pages/TicketTab.tsx`, et la liste des tickets de `packages/ui/src/agents/AssignDialog.tsx` (palette, barre des agents). « Créer la branche » n'existe pas (la branche naît du lancement d'un run, `branchFor(ticketKey)` du démon) ; « Générer avec Claude » (`packages/ui/src/code/CommitPanel.tsx`) est déjà toujours désactivé et `commitDefaults` ne reconnaît qu'une clé réelle : rien à envelopper.
+  - `TabBar` (`packages/ui/src/tabs/TabBar.tsx`) n'a pas de zone droite hors `error` : prop `trailing` ajoutée. L'en-tête d'une page expose `PageActions` (portail vers `ShellHeader`, `packages/ui/src/shell/page-actions.tsx`) : la pile réduite d'une page y est rendue.
+  - Pas de `client.onEvent` : `client.subscribeEvents` (T4).
 
-- [ ] **Step 1: Tests du SDK**
+- [ ] **Step 1: Tests du SDK et du démon**
 
 `packages/sdk/src/presence.test.tsx` :
-```ts
+```tsx
 import { expect, test } from "bun:test";
-import { ComponentManifest, type PresencePeer } from "@kibo/schema";
+import { ComponentManifest, type PresencePeer, type TicketView } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import { assigneeLabel, remoteRuns } from "./members";
 import { createMockSdk } from "./mock";
@@ -20842,16 +21838,23 @@ import { TicketKeyLabel } from "./ticket-key";
 const manifest = (reads: ("ticket" | "status")[]) =>
   ComponentManifest.parse({ id: "probe", version: "1.0.0", kind: "widget", title: "Sonde", reads, writes: [] });
 const lea: PresencePeer = {
-  deviceId: "d2", self: false, userId: "u-lea", name: "Léa", pageId: "pg1", ticketId: "t1",
+  deviceId: "d2",
+  self: false,
+  userId: "u-lea",
+  name: "Léa",
+  pageId: "pg1",
+  ticketId: "t1",
   runs: [{ ticketKey: "KIB-12", profile: "opus-dev-1", state: "running" }],
 };
 
-test("presence.list needs the ticket read permission", async () => {
+test("presence and sharing need the ticket read permission", async () => {
   const denied = createMockSdk(manifest(["status"]), { presence: [lea] });
   await expect(denied.sdk.presence.list()).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
-  expect(denied.violations).toEqual(["read presence"]);
+  await expect(denied.sdk.sharing()).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
+  expect(denied.violations).toEqual(["read presence", "read sharing"]);
   const allowed = createMockSdk(manifest(["ticket"]), { presence: [lea] });
   expect(await allowed.sdk.presence.list()).toEqual([lea]);
+  expect(allowed.used).toContain("read:ticket");
 });
 
 test("a shared mock project creates tickets with a provisional key", async () => {
@@ -20862,7 +21865,10 @@ test("a shared mock project creates tickets with a provisional key", async () =>
   });
   const [ticket] = await m.sdk.list("ticket");
   expect(ticket?.key).toBeNull();
+  expect(ticket?.keyLabel).toBe("KIB-…");
   expect((await m.sdk.sharing()).members).toEqual([{ userId: "u-lea", name: "Léa", role: "editor" }]);
+  m.setAccess("read-only");
+  expect((await m.sdk.sharing()).access).toBe("read-only");
 });
 
 test("assignee names come from members, agents keep their profile", () => {
@@ -20880,23 +21886,74 @@ test("remote runs are labelled with the colleague's name", () => {
 });
 
 test("a provisional key is shown in italics with an explanation", () => {
-  render(<TicketKeyLabel ticketKey={null} projectKey="KIB" />);
+  const pending: Pick<TicketView, "key" | "keyLabel"> = { key: null, keyLabel: "KIB-…" };
+  render(<TicketKeyLabel ticket={pending} />);
   const label = screen.getByText("KIB-…");
   expect(label.className).toContain("italic");
   expect(label.getAttribute("title")).toBe("Clé attribuée à la prochaine synchronisation");
-  render(<TicketKeyLabel ticketKey="KIB-12" projectKey="KIB" />);
+  render(<TicketKeyLabel ticket={{ key: "KIB-12", keyLabel: "KIB-12" }} />);
   expect(screen.getByText("KIB-12").className).not.toContain("italic");
 });
 ```
 
+Ajouts à `packages/daemon/src/components/gate-permissions.test.ts` :
+```ts
+test("presence and sharing need read:ticket", () => {
+  const statusOnly = { ...granted, reads: ["status" as const] };
+  expect(missingPermission(statusOnly, { kind: "presence.list" })).toBe("read:ticket");
+  expect(missingPermission(statusOnly, { kind: "sharing.get" })).toBe("read:ticket");
+  expect(missingPermission(granted, { kind: "presence.list" })).toBeNull();
+});
+
+test("presence.list reaches the presence handler", async () => {
+  const peers = [{ deviceId: "d2", self: false, userId: "u-lea", name: "Léa", pageId: null, ticketId: null, runs: [] }];
+  const gate = createGate({
+    instance: findInstance,
+    active: () => ({ ref: "evil@0.1.0", trust: "sandboxed", granted }),
+    quotas: createQuotas(),
+    events: createEventLog(eventsDb()),
+    handlers: { ...idleHandlers, presence: async () => peers },
+  });
+  expect(await gate.call("p1", "thirdparty", { kind: "presence.list" })).toEqual(peers);
+});
+```
+(`findInstance`, `idleHandlers`, `eventsDb`, `granted` : `gate-test-kit.ts` ; l'instance `thirdparty` y existe. Adapter l'appel de `createGate` au modèle exact des autres tests du fichier si sa forme diffère.)
+
 - [ ] **Step 2: Vérifier l'échec**
 
-Run: `bun test packages/sdk/src/presence.test.tsx`
-Expected: FAIL « Cannot find module './members' ».
+Run: `bun test packages/sdk/src/presence.test.tsx packages/daemon/src/components/gate-permissions.test.ts`
+Expected: FAIL « Cannot find module './members' » et `"presence.list"` refusé par Zod / `bun run typecheck`.
 
-- [ ] **Step 3: Implémenter le SDK**
+- [ ] **Step 3: Schéma et démon**
 
-`packages/sdk/src/fr.ts` (textes propres au SDK, sur le modèle des `fr.ts` des composants) :
+`packages/schema/src/call.ts`, dans `ComponentCall` :
+```ts
+  z.object({ kind: z.literal("presence.list") }),
+  z.object({ kind: z.literal("sharing.get") }),
+```
+`packages/schema/src/permissions.ts`, dans `permissionOfCall` :
+```ts
+    case "presence.list":
+    case "sharing.get":
+      return "read:ticket";
+```
+`packages/daemon/src/components/gate.ts` : `GateHandlers` gagne `presence(projectId: string): Promise<PresencePeer[]>` et `sharing(projectId: string): Promise<ProjectSyncInfo>` ; dans `dispatch`, avant `default` :
+```ts
+    case "presence.list":
+      return h.presence(projectId);
+    case "sharing.get":
+      return h.sharing(projectId);
+```
+`packages/daemon/src/components/gate-handlers.ts` : `GateHandlersDeps` gagne `presence?: (projectId: string) => PresencePeer[]` et `sharing?: (projectId: string) => ProjectSyncInfo` ; dans l'objet renvoyé :
+```ts
+    presence: async (projectId) => deps.presence?.(projectId) ?? [],
+    sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
+```
+`packages/daemon/src/components/service.ts` : `ComponentsDeps` gagne les mêmes champs facultatifs, passés à `createGateHandlers` (`...(deps.presence && { presence: deps.presence })`, idem `sharing`). `packages/daemon/src/daemon.ts` : `presence: (projectId) => presenceHub?.peers(projectId) ?? []` et `sharing: (projectId) => …` branchés sur le hub de T24 et la fonction qui remplit `ProjectSnapshot.sync` en T21 (fermetures paresseuses : le hub et le client de sync sont créés après les composants). `packages/daemon/src/components/gate-test-kit.ts` : `idleHandlers` gagne `presence: async () => []` et `sharing: async () => { throw new KiboError("INTERNAL", "unexpected") }` (même motif que ses autres entrées).
+
+- [ ] **Step 4: Implémenter le SDK**
+
+`packages/sdk/src/fr.ts` :
 ```ts
 export const fr = {
   pendingKey: "Clé attribuée à la prochaine synchronisation",
@@ -20916,72 +21973,63 @@ export function remoteRuns(peers: PresencePeer[], ticketKey: string | null): { l
   if (ticketKey === null) return [];
   return peers
     .filter((p) => !p.self)
-    .flatMap((p) => p.runs.filter((r) => r.ticketKey === ticketKey).map((r) => ({ label: `${r.profile} · ${p.name}`, state: r.state })));
+    .flatMap((p) =>
+      p.runs.filter((r) => r.ticketKey === ticketKey).map((r) => ({ label: `${r.profile} · ${p.name}`, state: r.state })),
+    );
 }
 ```
 
 `packages/sdk/src/ticket-key.tsx` :
 ```tsx
-import { ticketKeyLabel } from "@kibo/schema";
+import type { TicketView } from "@kibo/schema";
 import { fr } from "./fr";
 import { cn } from "./lib/utils";
 
-export function TicketKeyLabel({ ticketKey, projectKey, className }: { ticketKey: string | null; projectKey: string; className?: string }) {
-  const pending = ticketKey === null;
+type Props = { ticket: Pick<TicketView, "key" | "keyLabel">; className?: string };
+
+export function TicketKeyLabel({ ticket, className }: Props) {
+  const pending = ticket.key === null;
   return (
-    <span
-      className={cn("font-mono text-xs text-muted-foreground", pending && "italic opacity-70", className)}
-      title={pending ? fr.pendingKey : undefined}
-    >
-      {ticketKeyLabel({ key: ticketKey }, projectKey)}
+    <span className={cn(pending && "italic opacity-70", className)} title={pending ? fr.pendingKey : undefined}>
+      {ticket.keyLabel}
     </span>
   );
 }
 ```
-L'infobulle native (`title`) suffit ici : le composant vit dans les cartes Kanban et l'arbre, où une infobulle Radix par ligne coûterait cher ; l'UI du shell (T30, `KeyRequired`) utilise le `Tooltip` shadcn.
+L'infobulle native (`title`) suffit : le composant vit dans les cartes Kanban et l'arbre, où une infobulle Radix par ligne coûterait cher ; le shell (`KeyRequired`) utilise la même phrase.
 
-`packages/sdk/src/types.ts` : `KiboSdk` gagne `presence: { list(): Promise<PresencePeer[]> }` et `sharing(): Promise<ProjectSyncInfo>` ; `ProjectBackend` gagne `presence(): Promise<PresencePeer[]>` et `onPresence(listener: () => void): () => void`.
+`packages/sdk/src/types.ts` : `KiboSdk` gagne `presence: { list(): Promise<PresencePeer[]>; subscribe(listener: () => void): () => void }` et `sharing(): Promise<ProjectSyncInfo>` ; `ProjectBackend` gagne `subscribePresence?(listener: () => void): () => void`.
 
 `packages/sdk/src/sdk.ts`, dans l'objet renvoyé par `createSdk` :
 ```ts
     presence: {
       async list() {
-        if (!manifest.reads.includes("ticket")) {
-          throw new KiboError("PERMISSION_DENIED", `${manifest.id} does not declare read ticket (presence)`);
-        }
-        return backend.presence();
+        guard.needRead("ticket");
+        return call<PresencePeer[]>({ kind: "presence.list" });
       },
+      subscribe: (listener) => backend.subscribePresence?.(listener) ?? (() => undefined),
     },
     async sharing() {
-      return (await backend.snapshot()).sync;
-    },
-    async projectKey() {
-      return (await backend.snapshot()).meta.key;
-    },
-    subscribe: (listener) => {
-      const offProject = backend.subscribe(listener);
-      const offPresence = backend.onPresence(listener);
-      return () => {
-        offProject();
-        offPresence();
-      };
+      guard.needRead("ticket");
+      return call<ProjectSyncInfo>({ kind: "sharing.get" });
     },
 ```
+Le refus nomme « read ticket » (message de `guardFor`, inchangé).
 
 `packages/sdk/src/client.ts`, dans `projectBackend` :
 ```ts
-    presence: () => client.rpc({ method: "getPresence", projectId }),
-    onPresence: (listener) =>
-      client.onEvent((e) => {
-        if (e.type === "presence" && e.projectId === projectId) listener();
+    subscribePresence: (listener) =>
+      client.subscribeEvents((m) => {
+        if ("type" in m && m.type === "presence.changed" && m.projectId === projectId) listener();
       }),
 ```
+`packages/sdk/src/sandbox.tsx`, dans le `ProjectBackend` de `createFrameSdk` : `subscribePresence: subscribe` (l'hôte envoie `changed`, voir Step 9). `packages/ui/src/shell/SandboxFrame.tsx` : à côté de `client.subscribe(…)`, `client.subscribeEvents((m) => { if ("type" in m && m.type === "presence.changed" && m.projectId === projectId) b.changed(); })`, désabonné au nettoyage.
 
 `packages/sdk/src/react.tsx` :
 ```tsx
 const EMPTY_SHARING: ProjectSyncInfo = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
 
-function useSdkValue<T>(read: (sdk: KiboSdk) => Promise<T>, initial: T): T {
+function useSdkValue<T>(read: (sdk: KiboSdk) => Promise<T>, subscribe: (sdk: KiboSdk, l: () => void) => () => void, initial: T): T {
   const sdk = useSdk();
   const [value, setValue] = useState<T>(initial);
   useEffect(() => {
@@ -20989,28 +22037,28 @@ function useSdkValue<T>(read: (sdk: KiboSdk) => Promise<T>, initial: T): T {
     const load = () =>
       read(sdk).then(
         (v) => alive && setValue(v),
-        (e: unknown) => {
-          if (!(e instanceof KiboError && e.code === "PERMISSION_DENIED")) throw e;
-        },
+        (e: unknown) => console.error(`[kibo-sdk] ${sdk.instanceId}: cannot read sharing or presence`, e),
       );
     void load();
-    const off = sdk.subscribe(() => void load());
+    const off = subscribe(sdk, () => void load());
     return () => {
       alive = false;
       off();
     };
-  }, [sdk, read]);
+  }, [sdk, read, subscribe]);
   return value;
 }
 
 const readPresence = (sdk: KiboSdk) => sdk.presence.list();
+const onPresence = (sdk: KiboSdk, l: () => void) => sdk.presence.subscribe(l);
 const readSharing = (sdk: KiboSdk) => sdk.sharing();
+const onProject = (sdk: KiboSdk, l: () => void) => sdk.subscribe(l);
 
 export function usePresence(): PresencePeer[] {
-  return useSdkValue(readPresence, []);
+  return useSdkValue(readPresence, onPresence, []);
 }
 export function useSharing(): ProjectSyncInfo {
-  return useSdkValue(readSharing, EMPTY_SHARING);
+  return useSdkValue(readSharing, onProject, EMPTY_SHARING);
 }
 export function useMembers(): MemberInfo[] {
   return useSharing().members;
@@ -21018,71 +22066,87 @@ export function useMembers(): MemberInfo[] {
 export function useReadOnly(): boolean {
   return useSharing().access !== "write";
 }
-const readProjectKey = (sdk: KiboSdk) => sdk.projectKey();
-export function useProjectKey(): string {
-  return useSdkValue(readProjectKey, "");
-}
 ```
-Un composant sans `reads: ticket` qui appelle `usePresence` reçoit une liste vide (le refus reste compté comme violation par le SDK simulé, donc visible en conformité).
+Un composant sans `reads: ticket` qui appelle ces hooks garde la valeur initiale ; le refus est journalisé et compté comme violation par le SDK simulé (donc visible en conformité).
 
-`packages/sdk/src/mock.ts` : options `presence`, `shared`, `members`. Si `shared`, `enableServerAllocation(doc)` avant `seed` ; le `ProjectBackend` simulé renvoie `presence: async () => opts.presence ?? []`, `onPresence: () => () => {}`, et `snapshot` fixe `sync` à `{ shared: true, keyAllocator: "server", role: "editor", access: "write", members: opts.members ?? [] }` quand `shared`. `record` enregistre `read presence` pour un refus de `presence.list`. `packages/sdk/src/index.ts` exporte `members`, `ticket-key`.
-
-`packages/sdk/src/conformance.tsx` : la boucle des cas gagne `["shared project with provisional keys", seed, { shared: true, presence: [COLLEAGUE] }]`, où `COLLEAGUE` est un `PresencePeer` fictif (Léa, un run `opus-dev-1`) ; le test vérifie comme les autres le rendu et l'absence de violation, ce qui garantit qu'aucun composant conforme ne plante sur `key: null`.
-
-Démon (`component-call.ts`) : `presence.list` exige `granted.reads` contenant `ticket` (sinon `PERMISSION_DENIED` journalisé dans `component_events`) et renvoie `presence.peers(projectId)` ; le runtime iframe relaie `sdk.presence.list()` en `{ kind: "presence.list" }`. Test ajouté au fichier de tests existant de `component-call` :
+`packages/sdk/src/mock.ts` : options `presence`, `shared`, `members` ; si `shared`, `enableServerAllocation(doc)` (`@kibo/core`) avant `seed` ; état local `access: ProjectAccess = "write"` et `peers = opts.presence ?? []` ; `handle` gagne :
 ```ts
-test("presence.list is refused without reads ticket", async () => {
-  const call = await callAs({ reads: ["status"], writes: [], data: false, net: [] }, { kind: "presence.list" });
-  expect(call).toMatchObject({ ok: false, code: "PERMISSION_DENIED" });
-});
+      case "presence.list":
+        return peers;
+      case "sharing.get":
+        return opts.shared
+          ? { shared: true, keyAllocator: "server", role: "editor", access, members: opts.members ?? [] }
+          : { ...localSyncInfo(doc), access };
 ```
-(`callAs` est l'utilitaire de test de ce fichier en phase 4 ; hypothèse vérifiée en T0.)
+le backend simulé gagne `subscribePresence: presenceChanges.subscribe` (nouveau `notifier()`) ; `sdk` enveloppe `presence.list` par `record("read:ticket", "read presence", …)` et `sharing` par `record("read:ticket", "read sharing", …)` ; `MockSdk` gagne `setAccess(a)` (met à jour `access`, `changes.emit()`) et `setPresence(p)` (met à jour `peers`, `presenceChanges.emit()`). `packages/sdk/src/index.ts` exporte `./members` et `./ticket-key`.
 
-- [ ] **Step 4: Vérifier le SDK**
+`packages/sdk/src/conformance.tsx` : le tableau `projects` devient `[string, ConformanceSeed | undefined, Partial<MockSdkOptions>][]` avec `["empty project", undefined, {}]`, `["seeded project", seed, {}]` et `["shared project with provisional keys", seed, { shared: true, presence: [COLLEAGUE] }]` ; ces options sont étalées dans `createMockSdk` ; `COLLEAGUE` est un `PresencePeer` fictif (Léa, un run `opus-dev-1` en cours). Le cas vérifie comme les autres le rendu et l'absence de violation, ce qui garantit qu'aucun composant conforme ne plante sur `key: null`.
 
-Run: `bun test packages/sdk components packages/daemon/src/components`
-Expected: PASS, y compris la conformité de Kanban et Tickets avec le nouveau cas (le Kanban et l'arbre affichent `ticket.key` directement : ils rendent « null » mais ne plantent pas ; l'étape suivante corrige l'affichage).
+- [ ] **Step 5: Vérifier le SDK et le démon**
 
-- [ ] **Step 5: Commit du SDK**
+Run: `bun test packages/sdk packages/schema packages/daemon/src/components components`
+Expected: PASS, y compris la conformité de Kanban et Tickets avec le nouveau cas (l'affichage de la clé passe par `keyLabel` depuis T6).
+
+- [ ] **Step 6: Commit du SDK**
 
 ```bash
-git add packages/schema/src/rpc.ts packages/sdk/src packages/daemon/src/components/component-call.ts \
-  packages/daemon/src/components/component-call.test.ts
+git add packages/schema/src/call.ts packages/schema/src/permissions.ts packages/sdk/src \
+  packages/daemon/src/components/gate.ts packages/daemon/src/components/gate-handlers.ts \
+  packages/daemon/src/components/gate-test-kit.ts packages/daemon/src/components/gate-permissions.test.ts \
+  packages/daemon/src/components/service.ts packages/daemon/src/daemon.ts packages/ui/src/shell/SandboxFrame.tsx
 git commit -m "feat(sdk): présence et membres"
 ```
 
-- [ ] **Step 6: Tests des composants et du shell**
+- [ ] **Step 7: Tests des composants et du shell**
 
 Ajouts à `components/kanban/src/kanban.test.tsx` :
-```ts
-test("shows a colleague's run, member names and provisional keys", async () => {
+```tsx
+test("shows member names and provisional keys", async () => {
   const m = createMockSdk(manifest, {
+    viewer: "adam",
+    config: { filter: "all" },
     shared: true,
     members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
-    presence: [{
-      deviceId: "d2", self: false, userId: "u-lea", name: "Léa", pageId: null, ticketId: null,
-      runs: [{ ticketKey: null, profile: "opus-dev-1", state: "running" }],
-    }],
     seed: (run) => run({ method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "u-lea" } }),
   });
   render(<SdkProvider sdk={m.sdk}><Kanban /></SdkProvider>);
-  expect(await screen.findByText("KIB-…")).toBeTruthy();
+  expect((await screen.findByText("KIB-…")).className).toContain("italic");
   expect(screen.getByText("Léa")).toBeTruthy();
 });
 
-test("cards cannot be dragged in a read-only project", async () => {
-  const m = createMockSdk(manifest, { shared: true, seed: (run) => run({ method: "createTicket", title: "Lecture" }) });
+test("shows a colleague's run on the card", async () => {
+  const m = createMockSdk(manifest, {
+    viewer: "adam",
+    presence: [
+      {
+        deviceId: "d2", self: false, userId: "u-lea", name: "Léa", pageId: null, ticketId: null,
+        runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
+      },
+    ],
+    seed: (run) => run({ method: "createTicket", title: "Schéma", assignee: { kind: "agent", ref: "opus-dev-1" } }),
+  });
+  render(<SdkProvider sdk={m.sdk}><Kanban /></SdkProvider>);
+  expect(await screen.findByText("opus-dev-1 · Léa")).toBeTruthy();
+});
+
+test("cards cannot be moved in a read-only project", async () => {
+  const m = createMockSdk(manifest, {
+    viewer: "adam",
+    config: { filter: "all" },
+    shared: true,
+    seed: (run) => run({ method: "createTicket", title: "Lecture" }),
+  });
   m.setAccess("read-only");
   render(<SdkProvider sdk={m.sdk}><Kanban /></SdkProvider>);
-  const key = await screen.findByText("KIB-…");
-  expect(key.closest("[aria-roledescription='draggable']")).toBeNull();
+  await screen.findByText("KIB-…");
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
   expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
 });
 ```
-`MockSdk.setAccess(access: ProjectAccess)` s'ajoute au SDK simulé (modifie `sync.access` et notifie les abonnés). Un test gémeau pour le run distant utilise un ticket à clé définitive (projet non partagé, `presence` avec `ticketKey: "KIB-1"`) et attend « opus-dev-1 · Léa ».
+(le filtre par défaut « Moi + agents » compare l'assigné à `viewer` ; `config: { filter: "all" }` montre tout, comme `Kanban.tsx` le lit dans `sdk.config`.)
 
 Ajout à `components/tickets/src/tickets.test.tsx` :
-```ts
+```tsx
 test("the tree shows provisional keys and member names", async () => {
   const m = createMockSdk(manifest, {
     shared: true,
@@ -21090,13 +22154,14 @@ test("the tree shows provisional keys and member names", async () => {
     seed: (run) => run({ method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "u-lea" } }),
   });
   render(<SdkProvider sdk={m.sdk}><TicketsTree /></SdkProvider>);
-  expect(await screen.findByText("KIB-…")).toBeTruthy();
+  expect((await screen.findByText("KIB-…")).className).toContain("italic");
   expect(screen.getByText("Léa")).toBeTruthy();
 });
 ```
+(nom du composant exporté : celui que le fichier de test importe déjà.)
 
 `packages/ui/src/shell/presence.test.tsx` :
-```ts
+```tsx
 import { beforeEach, expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type PresencePeer, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -21109,7 +22174,7 @@ mock.module("../api", () => ({
       calls.push(req);
       return Promise.resolve(req.method === "getPresence" ? peers : null);
     },
-    onEvent: () => () => {},
+    subscribeEvents: () => () => undefined,
   },
 }));
 
@@ -21125,13 +22190,21 @@ const project: ProjectSnapshot = {
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
   workflow: DEFAULT_WORKFLOW,
   pages: [{ id: "pg1", title: "Kanban", kind: "view", parentId: null }],
-  tickets: [{
-    id: "t1", key: null, pendingSeq: 1, title: "Schéma", description: "", statusId: "todo", blockedReason: null,
-    domainId: null, assignee: null, parentId: null, progress: { done: 0, total: 0 }, waitingOn: [],
-  }],
-  links: [], instances: [], nextTicketKey: null,
+  tickets: [
+    {
+      id: "t1", key: null, pendingSeq: 1, keyLabel: "KIB-…", title: "Schéma", description: "", statusId: "todo",
+      blockedReason: null, domainId: null, assignee: null, parentId: null, externalRefs: [],
+      progress: { done: 0, total: 0 }, waitingOn: [],
+    },
+  ],
+  links: [],
+  instances: [],
+  rules: [],
+  bindings: [],
+  nextTicketKey: null,
   sync: { shared: true, keyAllocator: "server", role: "editor", access: "write", members: [] },
 };
+const noop = () => {};
 
 beforeEach(() => {
   calls.length = 0;
@@ -21152,11 +22225,14 @@ test("a page header only shows the colleagues on that page", async () => {
   expect(screen.queryByRole("img", { name: "Sam" })).toBeNull();
 });
 
-test("the sheet says who is looking at the ticket and shows the provisional key", async () => {
+test("the sheet says who is looking at the ticket and disables the agent", async () => {
   peers = [peer("Léa", 1, { ticketId: "t1" })];
-  render(<TicketSheet project={project} ticketId="t1" onClose={() => {}} />);
+  render(
+    <TicketSheet project={project} ticketId="t1" domains={[]} onClose={noop} onAssign={noop} onOpenInTab={noop} onOpenFile={noop} />,
+  );
   expect(await screen.findByText("Léa regarde ce ticket")).toBeTruthy();
   expect(screen.getByText("KIB-…")).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Assigner à un agent" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
 test("actions that need a key are disabled with an explanation", () => {
@@ -21185,24 +22261,37 @@ test("navigation reports presence only for shared projects", async () => {
 });
 ```
 
-- [ ] **Step 7: Vérifier l'échec**
+- [ ] **Step 8: Vérifier l'échec**
 
 Run: `bun test components packages/ui/src/shell/presence.test.tsx`
-Expected: FAIL (« KIB-… » introuvable dans le Kanban, `./PresenceAvatars` introuvable).
+Expected: FAIL (clé sans italique dans le Kanban, `./PresenceAvatars` introuvable).
 
-- [ ] **Step 8: Implémenter les composants intégrés**
+- [ ] **Step 9: Implémenter les composants intégrés**
 
-`KanbanCard.tsx` : nouvelles props `projectKey: string`, `members: MemberInfo[]`, `runs: { label: string; state: string }[]`, `readOnly: boolean` ; `useDraggable({ id: t.id, disabled: readOnly })` ; `{t.key}` devient `<TicketKeyLabel ticketKey={t.key} projectKey={projectKey} />` ; `fr.actions(t.key)` devient `fr.actions(ticketKeyLabel(t, projectKey))` ; le menu « Déplacer vers » est masqué si `readOnly` ; badge d'assigné humain `assigneeLabel(t.assignee, members)` ; pour chaque entrée de `runs` :
+`KanbanCard.tsx` : nouvelles props `members: MemberInfo[]`, `remote: { label: string; state: string }[]`, `readOnly: boolean` ; `useDraggable({ id: t.id, disabled: readOnly })` ; l'étiquette `{t.keyLabel}` (T6) devient `<TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />` (les `listeners` / `attributes` du glisser restent sur son `<span>` parent) ; le menu « Actions » (`Déplacer vers`) n'est pas rendu si `readOnly` ; un assigné humain affiche `assigneeLabel(t.assignee, members)` dans un `Badge variant="outline"` ; pour chaque entrée de `remote` :
 ```tsx
 <Badge key={r.label} variant="outline" className="gap-1 border-brand/40 text-brand-strong dark:text-brand">
   <Bot className="size-3" /> {r.label}
 </Badge>
 ```
-`Kanban.tsx` : `const peers = usePresence(); const members = useMembers(); const readOnly = useReadOnly(); const projectKey = useProjectKey();` ; `onAdd` des colonnes et `DndContext.onDragEnd` inactifs si `readOnly`. Chaque carte reçoit `runs={remoteRuns(peers, t.key)}`.
+`Kanban.tsx` : `const peers = usePresence(); const members = useMembers(); const readOnly = useReadOnly();` ; `onAdd` des colonnes vaut `undefined` et `onDragEnd` ne fait rien si `readOnly` ; chaque carte reçoit `members`, `readOnly` et `remote={remoteRuns(peers, t.key)}`.
 
-`TicketsTree.tsx` : la clé passe par `TicketKeyLabel`, `AssigneeCell` affiche `assigneeLabel(assignee, members)` et les initiales de ce libellé.
+`TicketsTree.tsx` : l'étiquette `{t.keyLabel}` passe par `TicketKeyLabel` (mêmes classes) ; `AssigneeCell` reçoit `members` (`useMembers()`) et affiche `assigneeLabel(assignee, members)` et les initiales de ce libellé.
 
-- [ ] **Step 9: Implémenter l'UI du shell**
+- [ ] **Step 10: Implémenter l'UI du shell**
+
+`packages/ui/src/i18n/fr-presence.ts` :
+```ts
+export const frPresence = {
+  presence: {
+    label: "Personnes présentes",
+    where: (name: string, place: string | null) => (place ? `${name} · ${place}` : name),
+    watching: (name: string) => `${name} regarde ce ticket`,
+    pendingKey: "Clé attribuée à la prochaine synchronisation",
+  },
+};
+```
+Dans `fr.ts` : import et `...frPresence,` après `...frShare,`.
 
 `packages/ui/src/state/use-presence.ts` :
 ```ts
@@ -21219,13 +22308,11 @@ export function usePresencePeers(projectId: string | null): PresencePeer[] {
     const load = () =>
       client.rpc({ method: "getPresence", projectId }).then(
         (p) => alive && setPeers(p),
-        (e: unknown) => {
-          if (!(e instanceof KiboError && e.code === "UNAUTHORIZED")) throw e;
-        },
+        (e: unknown) => console.error("[kibo-ui] cannot read presence", e instanceof KiboError ? e.code : e),
       );
     void load();
-    const off = client.onEvent((e) => {
-      if (e.type === "presence" && e.projectId === projectId) void load();
+    const off = client.subscribeEvents((m) => {
+      if ("type" in m && m.type === "presence.changed" && m.projectId === projectId) void load();
     });
     return () => {
       alive = false;
@@ -21244,7 +22331,9 @@ export function usePresenceReporter(input: {
   const { projectId, pageId, ticketId, shared } = input;
   useEffect(() => {
     if (!projectId || !shared) return;
-    void client.rpc({ method: "setPresence", projectId, pageId, ticketId });
+    client
+      .rpc({ method: "setPresence", projectId, pageId, ticketId })
+      .catch((e: unknown) => console.error("[kibo-ui] cannot report presence", e));
   }, [projectId, pageId, ticketId, shared]);
 }
 ```
@@ -21256,7 +22345,12 @@ import { fr } from "../i18n/fr";
 import { usePresencePeers } from "../state/use-presence";
 
 const MAX = 3;
-const initials = (name: string) => name.split(/\s+/).map((w) => w[0]?.toUpperCase() ?? "").join("").slice(0, 2);
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 2);
 
 type Props = { project: { id: string; name: string }; pages: { id: string; title: string }[]; pageId?: string | null };
 
@@ -21269,16 +22363,15 @@ export function PresenceAvatars({ project, pages, pageId }: Props) {
     .filter((p) => !p.self && (pageId === undefined || p.pageId === pageId))
     .sort((a, b) => a.name.localeCompare(b.name));
   if (peers.length === 0) return null;
-  const shown = peers.slice(0, MAX);
   return (
     <div className="flex items-center -space-x-1.5" aria-label={fr.presence.label}>
-      {shown.map((p) => (
+      {peers.slice(0, MAX).map((p) => (
         <Tooltip key={p.deviceId}>
           <TooltipTrigger asChild>
             <span
               role="img"
               aria-label={p.name}
-              className="grid size-6 place-items-center rounded-full border-2 border-background bg-muted text-[10px] font-semibold"
+              className="grid size-6 place-items-center rounded-full border-2 border-background bg-muted text-3xs font-semibold"
             >
               {initials(p.name)}
             </span>
@@ -21287,7 +22380,7 @@ export function PresenceAvatars({ project, pages, pageId }: Props) {
         </Tooltip>
       ))}
       {peers.length > MAX && (
-        <span className="grid size-6 place-items-center rounded-full border-2 border-background bg-muted text-[10px]">
+        <span className="grid size-6 place-items-center rounded-full border-2 border-background bg-muted text-3xs">
           {`+${peers.length - MAX}`}
         </span>
       )}
@@ -21295,7 +22388,6 @@ export function PresenceAvatars({ project, pages, pageId }: Props) {
   );
 }
 ```
-L'infobulle affiche « Léa · Kibo › Kanban », ou seulement « Léa » si la page n'existe pas (ou plus) dans le projet.
 
 `packages/ui/src/shell/KeyRequired.tsx` :
 ```tsx
@@ -21303,7 +22395,9 @@ import type { Ticket } from "@kibo/schema";
 import { Children, cloneElement, isValidElement, type ReactElement } from "react";
 import { fr } from "../i18n/fr";
 
-export function KeyRequired({ ticket, children }: { ticket: Pick<Ticket, "key">; children: ReactElement<{ disabled?: boolean }> }) {
+type Props = { ticket: Pick<Ticket, "key">; children: ReactElement<{ disabled?: boolean }> };
+
+export function KeyRequired({ ticket, children }: Props) {
   if (ticket.key !== null) return children;
   const child = Children.only(children);
   return (
@@ -21314,58 +22408,57 @@ export function KeyRequired({ ticket, children }: { ticket: Pick<Ticket, "key">;
 }
 ```
 
-`fr.ts` :
-```ts
-  presence: {
-    label: "Personnes présentes",
-    where: (name: string, place: string | null) => (place ? `${name} · ${place}` : name),
-    watching: (name: string) => `${name} regarde ce ticket`,
-    pendingKey: "Clé attribuée à la prochaine synchronisation",
-  },
-```
+- `TicketSheet.tsx` : `const peers = usePresencePeers(project.meta.id).filter((p) => !p.self && p.ticketId === ticketId);` ; au-dessus de l'en-tête, pour chaque pair, `<p className="rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">{fr.presence.watching(p.name)}</p>` ; `SheetDescription` affiche `<TicketKeyLabel ticket={t} />` ; le bouton « Assigner à un agent » est enveloppé dans `<KeyRequired ticket={t}>`.
+- `TicketTab.tsx` : même enveloppe autour de son bouton « Assigner à un agent ».
+- `AssignDialog.tsx` : les tickets `key === null` ne sont pas proposés (liste filtrée) ; ouvert sur un tel ticket, le bouton d'envoi est désactivé avec `fr.presence.pendingKey` (le démon refuse de toute façon : `branchFor` valide `TicketKey`).
+- `TabBar.tsx` : prop `trailing?: ReactNode`, rendue `{trailing && <div className="flex shrink-0 items-center px-2">{trailing}</div>}` juste avant `error`.
+- `Shell.tsx` : `trailing={project && <PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} />}` sur `TabBar` ; `usePresenceReporter({ projectId: activeProjectId, pageId: active?.kind === "page" ? active.pageId : null, ticketId: activeTicketId, shared: project?.sync.shared ?? false })`. Si le fichier dépasse 300 lignes avec T29, extraire ce câblage dans `packages/ui/src/shell/use-collab-shell.ts`.
+- `PageView.tsx` : `<PageActions><PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} pageId={page.id} /></PageActions>` (portail vers l'en-tête, déjà utilisé par `ViewActions`).
 
-`TicketSheet.tsx` : `const peers = usePresencePeers(project.meta.id).filter((p) => !p.self && p.ticketId === ticketId);` ; au-dessus de l'en-tête, pour chaque pair, `<p className="rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">{fr.presence.watching(p.name)}</p>` ; `SheetDescription` contient `<TicketKeyLabel ticketKey={t.key} projectKey={project.meta.key} />` ; les sous-tickets aussi ; les boutons « Assigner à un agent » et « Créer la branche » sont enveloppés dans `KeyRequired`. Dans la vue Changements, « Générer le message de commit » est enveloppé dans `KeyRequired` avec le ticket reconnu dans la branche.
-
-`TabBar.tsx` : `{project && <PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} />}` à droite des onglets (projet de l'onglet actif). `PageView.tsx` : `<PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} pageId={page.id} />` à droite du titre. `Shell.tsx` : `usePresenceReporter({ projectId: route.projectId, pageId: route.pageId, ticketId, shared: project?.sync.shared ?? false })`.
-
-- [ ] **Step 10: Vérifier**
+- [ ] **Step 11: Vérifier**
 
 Run: `bun test packages components`
-Expected: PASS, conformité de Kanban et Tickets verte sur les quatre cas.
+Expected: PASS, conformité de Kanban et Tickets verte sur les trois cas.
 
-Run: `bun run check && bun run typecheck && bun run --cwd packages/ui build`
-Expected: PASS.
+Run: `bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget`
+Expected: PASS ; budget ≤ 230 kB gzip.
 
 Contrôle visuel face aux exports S4 et S5, en sombre et en clair.
 
-- [ ] **Step 11: Commit de l'UI**
+- [ ] **Step 12: Commit de l'UI**
 
 ```bash
-git add components/kanban/src components/tickets/src packages/sdk/src/mock.ts packages/ui/src/shell/PresenceAvatars.tsx \
-  packages/ui/src/shell/KeyRequired.tsx packages/ui/src/state/use-presence.ts packages/ui/src/shell/presence.test.tsx \
-  packages/ui/src/shell/TicketSheet.tsx packages/ui/src/shell/TabBar.tsx packages/ui/src/pages/PageView.tsx \
-  packages/ui/src/shell/Shell.tsx packages/ui/src/pages/changes packages/ui/src/i18n/fr.ts
+git add components/kanban/src components/tickets/src packages/ui/src/i18n/fr-presence.ts packages/ui/src/i18n/fr.ts \
+  packages/ui/src/shell/PresenceAvatars.tsx packages/ui/src/shell/KeyRequired.tsx packages/ui/src/state/use-presence.ts \
+  packages/ui/src/shell/presence.test.tsx packages/ui/src/shell/TicketSheet.tsx packages/ui/src/pages/TicketTab.tsx \
+  packages/ui/src/agents/AssignDialog.tsx packages/ui/src/tabs/TabBar.tsx packages/ui/src/pages/PageView.tsx \
+  packages/ui/src/shell/Shell.tsx
 git commit -m "feat(ui): présence et clé provisoire"
 ```
 
 ---
-
 ### Task 31: E2E sync à deux utilisateurs
 
-Vague 8. Spec G §9 (ligne e2e) et §10 (scénario à deux utilisateurs vert sur macOS et Linux). Aucun compte réel : serveur de sync TLS et démons démarrés par le test sur des ports loopback.
+Vague 9. Spec G §9 (ligne e2e) et §10 (scénario à deux utilisateurs vert sur macOS et Linux). Aucun compte réel : serveur de sync TLS et démons démarrés par le test sur des ports loopback.
 
 **Files:**
 - Create: `e2e/serve-sync.ts`
 - Create: `e2e/sync.spec.ts`
 - Create: `e2e/sync-fixture.ts`
-- Modify: `e2e/playwright.config.ts` (second `webServer`, projets inchangés)
-- Modify: `e2e/package.json` (`dependencies` : `"@kibo/sync-server": "workspace:*"`, `"@kibo/trust": "workspace:*"`)
+- Modify: `e2e/playwright.config.ts` (projets `sync-dark` et `sync-light`, un `webServer` de plus ; entrées existantes inchangées)
+- Modify: `e2e/package.json` (`devDependencies` : `"@kibo/sync-server": "workspace:*"`), `e2e/tsconfig.json` (référence `../packages/sync-server`), `bun.lock`
 
 **Interfaces:**
-- Consumes: `startTestSyncServer({ port, dataDir, cert })`, `stop({ keepData })` et `inviteAccount(name)` (T17) ; écrans S1 (T28), S2, S3 (T29), S4, S5 (T30) ; `E2E_TOKEN` (`e2e/token.ts`).
-- Produces : `e2e/sync-fixture.ts` exporte `SYNC_PORTS = { server: 4393, control: 4396, dark: { a: 4391, b: 4392 }, light: { a: 4394, b: 4395 } }`, `SYNC_STATE_FILE` (chemin du JSON d'état) et `readSyncState(): SyncE2eState` avec `SyncE2eState = { caFile: string; serverUrl: string; codes: Record<"darkA" | "darkB" | "lightA" | "lightB", string> }`.
+- Consumes: `startTestSyncServer({ port, dataDir, cert })` → `{ url, caPem, cert, inviteAccount(name), stop({ keepData }) }` (`@kibo/sync-server/testing`, T17) ; écrans S1 (T28), S2, S3 (T29), S4, S5 (T30) ; `e2e/serve.ts <port> <scénario>` (lanceur existant d'un démon) ; `E2E_TOKEN` (`e2e/token.ts`) ; `pairAndCreateProject`, `createPage`, `addComponent` (`e2e/helpers.ts`).
+- Produces : `e2e/sync-fixture.ts` exporte `SYNC_PORTS`, `SYNC_STATE_FILE` et `readSyncState(): SyncE2eState` avec `SyncE2eState = { caFile: string; serverUrl: string; codes: Record<"darkA" | "darkB" | "lightA" | "lightB", string> }`.
+- Vérifié en T0 :
+  - `e2e/playwright.config.ts` décrit un tableau `daemons` (`name`, `scheme`, `port`, `spec`, `scenario`) qui produit à la fois les projets Playwright (`testMatch` par spec) et un `webServer` `bun serve.ts <port> <scénario>` par démon ; les projets `dark` / `light` sont ceux du parcours MVP. Les ports **4390 à 4405** sont pris (MVP, agents, code, onglets, écrans, catalogue, intégrations, IA) ; les faux serveurs des intégrations prennent `port + 1000` (GitHub) et `port + 2000` (MCP), soit 5390–5405 et 6390–6405 ; les ports **4461 à 4499** sont réservés aux démos. Cette tâche prend **4406 à 4411** : serveur de sync 4406, démons `sync-dark` A 4407 et B 4408, `sync-light` A 4409 et B 4410, serveur de contrôle 4411 (aucun faux serveur `+1000`/`+2000`).
+  - `e2e/serve.ts <port> <scénario>` crée `KIBO_HOME = e2eHome(port)` (`e2e/e2e-home.ts`) avec le jeton `E2E_TOKEN`, lance `main.ts --port <port> --sandbox-port 0 --ui packages/ui/dist --claude-bin fake-claude.ts --host-load 62,70` et nettoie à l'arrêt (`SIGTERM` relayé) : réutilisé tel quel pour les quatre démons.
+  - Créer un projet passe par l'étape de rôle (« Passer », `skipRoleStep`) : `pairAndCreateProject(page, info, key)` le fait et vérifie le thème (`info.project.name` finit par `dark` ou non).
+  - « Paramètres » est un bouton de la barre latérale ; l'écran Sync (T28) a le hash `#/settings/sync`.
+  - Colonnes du Kanban : `<section aria-label={status.label}>`, bouton « Nouveau ticket dans <statut> » ; dialogue de ticket : champ « Titre », bouton « Créer le ticket ».
 
-Deux paires de démons (une par projet Playwright `dark` et `light`) évitent qu'un démon déjà connecté par le premier projet fausse le second. Un petit serveur de contrôle (`:4396`) arrête et relance le serveur de sync pour observer la clé provisoire, qui sinon ne dure que quelques millisecondes.
+Deux paires de démons (une par projet Playwright `sync-dark` et `sync-light`) évitent qu'un démon déjà connecté par le premier projet fausse le second. Le serveur de contrôle (4411) arrête et relance le serveur de sync pour observer la clé provisoire, qui sinon ne dure que quelques millisecondes.
 
 - [ ] **Step 1: Fixture partagée**
 
@@ -21375,7 +22468,12 @@ import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-export const SYNC_PORTS = { server: 4393, control: 4396, dark: { a: 4391, b: 4392 }, light: { a: 4394, b: 4395 } } as const;
+export const SYNC_PORTS = {
+  server: 4406,
+  dark: { a: 4407, b: 4408 },
+  light: { a: 4409, b: 4410 },
+  control: 4411,
+} as const;
 export const SYNC_STATE_FILE = join(tmpdir(), "kibo-e2e-sync-state.json");
 export type SyncE2eState = {
   caFile: string;
@@ -21387,19 +22485,18 @@ export function readSyncState(): SyncE2eState {
   return JSON.parse(readFileSync(SYNC_STATE_FILE, "utf8")) as SyncE2eState;
 }
 ```
+(`as SyncE2eState` : fichier écrit par `serve-sync.ts` juste avant, dans le même dépôt ; pas de schéma Zod pour un fichier de test.)
 
 - [ ] **Step 2: Lanceur**
 
 `e2e/serve-sync.ts` :
 ```ts
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { startTestSyncServer } from "@kibo/sync-server/testing";
 import { SYNC_PORTS, SYNC_STATE_FILE } from "./sync-fixture";
-import { E2E_TOKEN } from "./token";
 
-const root = resolve(import.meta.dir, "..");
 const base = mkdtempSync(join(tmpdir(), "kibo-e2e-sync-"));
 const dataDir = join(base, "server");
 let server = await startTestSyncServer({ dataDir, port: SYNC_PORTS.server });
@@ -21421,15 +22518,13 @@ writeFileSync(
 );
 
 const ports = [SYNC_PORTS.dark.a, SYNC_PORTS.dark.b, SYNC_PORTS.light.a, SYNC_PORTS.light.b];
-const daemons = ports.map((port) => {
-  const kiboHome = join(base, `home-${port}`);
-  mkdirSync(kiboHome, { recursive: true, mode: 0o700 });
-  writeFileSync(join(kiboHome, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
-  return Bun.spawn(
-    ["bun", join(root, "packages/daemon/src/main.ts"), "--port", String(port), "--ui", join(root, "packages/ui/dist")],
-    { env: { ...process.env, KIBO_HOME: kiboHome }, stdout: "inherit", stderr: "inherit" },
-  );
-});
+const daemons = ports.map((port) =>
+  Bun.spawn(["bun", "serve.ts", String(port), "question"], {
+    cwd: import.meta.dir,
+    stdout: "inherit",
+    stderr: "inherit",
+  }),
+);
 
 const control = Bun.serve({
   hostname: "127.0.0.1",
@@ -21449,7 +22544,10 @@ const control = Bun.serve({
   },
 });
 
+let stopping = false;
 const shutdown = async () => {
+  if (stopping) return;
+  stopping = true;
   for (const d of daemons) d.kill("SIGTERM");
   await Promise.all(daemons.map((d) => d.exited));
   control.stop(true);
@@ -21464,55 +22562,46 @@ process.on("SIGINT", () => void shutdown());
 
 - [ ] **Step 3: Configuration Playwright**
 
-`e2e/playwright.config.ts`, `webServer` devient un tableau (le serveur MVP existant reste le premier) :
+`e2e/playwright.config.ts` : importer `SYNC_PORTS` de `./sync-fixture` ; ajouter après le tableau `daemons` :
 ```ts
-  webServer: [
-    {
-      command: "bun serve.ts",
-      url: "http://127.0.0.1:4390/",
-      reuseExistingServer: false,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-    },
-    {
-      command: "bun serve-sync.ts",
-      url: "http://127.0.0.1:4396/",
-      reuseExistingServer: false,
-      timeout: 60_000,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
-    },
-  ],
+const syncProjects = [
+  { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a },
+  { name: "sync-light", scheme: "light", port: SYNC_PORTS.light.a },
+] as const;
 ```
-L'URL de contrôle ne répond qu'une fois les codes écrits ; les démons, lancés juste avant, sont attendus par le test (`waitForDaemon`).
+`projects` devient `[...daemons.map(/* inchangé */), ...syncProjects.map((p) => ({ name: p.name, testMatch: /sync\.spec\.ts/, use: { browserName: "chromium", colorScheme: p.scheme, baseURL: `http://127.0.0.1:${p.port}` } }))]` et `webServer` devient `[...daemons.map(/* inchangé */), { command: "bun serve-sync.ts", url: `http://127.0.0.1:${SYNC_PORTS.control}/`, reuseExistingServer: false, timeout: 120_000, gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 } }]`. L'URL de contrôle ne répond qu'une fois les codes écrits ; les démons, lancés juste avant, sont attendus par le test (`waitForDaemon`).
 
 - [ ] **Step 4: Écrire le scénario**
 
 `e2e/sync.spec.ts` :
 ```ts
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { type Browser, expect, type Page, type TestInfo, test } from "@playwright/test";
+import { addComponent, createPage, pairAndCreateProject } from "./helpers";
 import { readSyncState, SYNC_PORTS } from "./sync-fixture";
 import { E2E_TOKEN } from "./token";
 
 test.describe.configure({ mode: "serial" });
 
 async function waitForDaemon(port: number) {
-  await expect.poll(async () => (await fetch(`http://127.0.0.1:${port}/`).catch(() => null))?.status ?? 0, {
-    timeout: 20_000,
-  }).toBe(200);
+  await expect
+    .poll(async () => (await fetch(`http://127.0.0.1:${port}/`).catch(() => null))?.status ?? 0, { timeout: 30_000 })
+    .toBe(200);
 }
 
 async function openAs(browser: Browser, port: number, colorScheme: "dark" | "light"): Promise<Page> {
   await waitForDaemon(port);
   const context = await browser.newContext({ baseURL: `http://127.0.0.1:${port}`, colorScheme });
-  const page = await context.newPage();
+  return context.newPage();
+}
+
+async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Nouveau projet" }).first()).toBeVisible();
-  return page;
 }
 
 async function connect(page: Page, code: string, device: string) {
   const { caFile, serverUrl } = readSyncState();
-  await page.getByRole("link", { name: "Paramètres" }).click();
-  await page.getByRole("link", { name: "Sync" }).click();
+  await page.goto("/#/settings/sync");
   await page.getByRole("button", { name: "Se connecter à un serveur" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Adresse du serveur").fill(serverUrl);
@@ -21521,34 +22610,28 @@ async function connect(page: Page, code: string, device: string) {
   await dialog.getByLabel("Certificat racine (optionnel)").fill(caFile);
   await dialog.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.getByText("Connecté")).toBeVisible();
-  await expect(page.getByText("Démon local · synchronisé")).toBeVisible();
 }
 
-test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ browser }, info) => {
+test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ browser }, info: TestInfo) => {
   test.setTimeout(180_000);
-  const theme = info.project.name === "light" ? "light" : "dark";
+  const theme = info.project.name === "sync-light" ? "light" : "dark";
   const ports = SYNC_PORTS[theme];
   const { codes } = readSyncState();
   const key = theme === "light" ? "SYL" : "SYD";
   const adam = await openAs(browser, ports.a, theme);
   const lea = await openAs(browser, ports.b, theme);
 
+  await pairAndCreateProject(adam, info, key);
+  await pair(lea);
   await connect(adam, theme === "light" ? codes.lightA : codes.darkA, "MacBook d'Adam");
   await connect(lea, theme === "light" ? codes.lightB : codes.darkB, "MacBook de Léa");
 
-  await adam.getByRole("button", { name: "Nouveau projet" }).first().click();
-  await adam.getByLabel("Nom").fill(`Partagé ${key}`);
-  await adam.getByLabel("Clé").fill(key);
-  await adam.getByRole("button", { name: "Créer le projet" }).click();
-  await adam.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await adam.getByLabel("Nom").fill("Kanban");
-  await adam.getByRole("radio", { name: "Vue", exact: true }).click();
-  await adam.getByRole("button", { name: "Créer la page" }).click();
-  await adam.getByRole("button", { name: "Ajouter un composant" }).click();
-  await adam.getByRole("radio", { name: "Kanban", exact: true }).click();
-  await adam.getByRole("button", { name: "Ajouter à la page" }).click();
+  await adam.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
+  await createPage(adam, "Kanban", "Vue");
+  await addComponent(adam, "Kanban");
+  await adam.getByRole("button", { name: "Tous", exact: true }).click();
 
-  await adam.getByRole("button", { name: "Partager" }).click();
+  await adam.getByRole("banner").getByRole("button", { name: "Partager" }).click();
   const share = adam.getByRole("dialog");
   await expect(share.getByRole("list", { name: "Reste sur ta machine" })).toContainText("Dossier local");
   await share.getByRole("button", { name: "Partager" }).click();
@@ -21557,12 +22640,14 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   const code = (await share.locator(".font-mono").first().textContent())?.trim() ?? "";
   expect(code).toMatch(/^[A-Z2-7]{26}$/);
   await adam.keyboard.press("Escape");
+  await expect(adam.getByText("Démon local · synchronisé")).toBeVisible();
 
   await lea.getByRole("button", { name: "Rejoindre un projet" }).click();
   await lea.getByLabel("Code d'invitation").fill(code);
   await lea.getByRole("button", { name: "Rejoindre" }).click();
   await lea.getByRole("button", { name: "Kanban" }).click();
   await expect(lea.getByRole("region", { name: "À faire" })).toBeVisible();
+  await lea.getByRole("button", { name: "Tous", exact: true }).click();
 
   await expect(adam.getByRole("img", { name: "Léa" })).toBeVisible({ timeout: 5_000 });
   await expect(lea.getByRole("img", { name: "Adam" })).toBeVisible({ timeout: 5_000 });
@@ -21594,39 +22679,46 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await lea.context().close();
 });
 ```
-Le délai de 70 s après la relance couvre le pire backoff (60 s plus gigue) ; en pratique la reconnexion a lieu en quelques secondes.
+Le délai de 70 s après la relance couvre le pire backoff (60 s plus gigue) ; en pratique la reconnexion a lieu en quelques secondes. Le Kanban filtre par défaut « Moi + agents » (`components/kanban/src/filter.ts` : un ticket sans assigné est masqué) : chaque utilisateur passe sur « Tous » avant les attentes.
 
 - [ ] **Step 5: Vérifier**
 
-Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- sync.spec.ts`
-Expected: PASS dans les projets `dark` et `light` ; le parcours MVP (`mvp.spec.ts`) et ceux des phases 2 à 6 restent verts : `bun run --cwd e2e test`.
+Run: `bun install && bun run --cwd packages/ui build && bun run --cwd e2e test -- --project sync-dark --project sync-light`
+Expected: PASS dans `sync-dark` et `sync-light` ; les autres parcours restent verts : `bun run --cwd e2e test`.
 
-La CI (job `e2e`, macOS et Linux) exécute le nouveau fichier sans changement de workflow ; en cas d'échec, l'artefact `playwright-<os>` contient les traces des deux contextes.
+Porte d'intégration locale (GitHub Actions hors service) : le chef d'équipe lance `bun run --cwd e2e test` complet sur macOS avant d'intégrer ; le job `e2e` du workflow (macOS et Linux) exécute le nouveau fichier sans changement de workflow quand la CI revient.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add e2e/serve-sync.ts e2e/sync.spec.ts e2e/sync-fixture.ts e2e/playwright.config.ts e2e/package.json bun.lock
+git add e2e/serve-sync.ts e2e/sync.spec.ts e2e/sync-fixture.ts e2e/playwright.config.ts e2e/package.json e2e/tsconfig.json bun.lock
 git commit -m "test(e2e): sync à deux utilisateurs"
 ```
 
 ---
-
 ### Task 32: E2E marketplace
 
 Parcours Playwright de la spec H §9 (ligne e2e) et §10 : ajout d'une source en deux étapes, recherche, détail, « Voir le code », installation jusqu'à l'écran 30, ajout à une page, puis mise à jour via l'écran 6, en **sombre et en clair**, sur macOS et Linux, sans réseau réel.
 
 **Files:**
 - Create: `e2e/serve-market.ts`, `e2e/market.spec.ts`, `e2e/market-fixture.ts`
-- Modify: `e2e/playwright.config.ts` (second `webServer`), `e2e/package.json` (dépendances de workspace `@kibo/trust`, `@kibo/daemon`), `.github/workflows/ci.yml` (le job `e2e` Linux a déjà bubblewrap et le `sysctl` depuis T8 ; vérifier qu'il précède `bun run --cwd e2e test`)
+- Modify: `e2e/playwright.config.ts` (projets `market-dark` et `market-light`, un `webServer` de plus ; entrées existantes inchangées), `e2e/package.json` (`devDependencies` : `"@kibo/trust": "workspace:*"`), `e2e/tsconfig.json` (référence `../packages/trust`), `bun.lock`
 - Test: `e2e/market.spec.ts`
 
 **Interfaces:**
-- Consumes: `startFakeMarket` (`@kibo/daemon/testing/fake-market`, T15) ; `makeTestPackage` (`@kibo/trust/testing`, T10) ; `keyFingerprint` (T2) ; écrans M1, M2, M3, M4, M5 (T26, T27) et 30, 6 (phase 4) ; `E2E_TOKEN` (`e2e/token.ts`).
-- Hypothèse v0.6 (vérifiée en T0) : `@kibo/daemon` exporte `./testing/*` ; le démon lu par `KIBO_MARKET_ALLOW_LOOPBACK=1` accepte une source `http://127.0.0.1` (T15, `main.ts`) ; les fichiers par défaut de `makeTestPackage` forment un composant valide qui passe la suite de conformité générique et affiche son titre (`<div>{title}</div>`) ; la sidebar mène à Paramètres par le bouton « Paramètres » et à la page Composants par « Composants ».
-- Produces : `e2e/market-fixture.ts` exporte `MARKET_STATE_FILE` et `type MarketE2eState = Record<"dark" | "light", { daemon: string; market: string; fingerprint: string; control: string }>`.
+- Consumes: `startFakeMarket(opts?: { id?; name?; verified? })` → `{ url, publicKey, publish(bytes), stop() }` (`packages/daemon/src/testing/fake-market.ts`, T15) ; `makeTestPackage(input?: TestPackageInput)` → `{ pkg, bytes, keys, files, publisher: { name, keys } }` (`@kibo/trust/testing`, T10) ; `keyFingerprint` (`@kibo/trust`, T2) ; variable `KIBO_MARKET_ALLOW_LOOPBACK=1` lue par `packages/daemon/src/main.ts` (T15) ; écrans M1, M2, M3, M4, M5 (T26, T27), 30 et 6 (phase 4) ; `e2e/serve.ts`, `pairAndCreateProject`, `createPage`, `addComponent` (`e2e/helpers.ts`), `E2E_TOKEN`.
+- Produces : `e2e/market-fixture.ts` exporte `MARKET_PORTS`, `MARKET_STATE_FILE` et `type MarketE2eState = Record<"dark" | "light", { market: string; fingerprint: string }>`.
+- Vérifié en T0 :
+  - `@kibo/daemon` n'exporte que `.` (`src/server.ts`) et `./daemon` (`packages/daemon/package.json`) : pas de `./testing/*`. Les e2e importent les faux serveurs du démon par chemin relatif, comme `e2e/serve.ts` le fait pour `../packages/daemon/src/testing/fake-github` ; `fake-market.ts` suit ce modèle. `@kibo/trust` exporte `./testing` (T10) : dépendance de workspace.
+  - Ports : 4390–4405 pris par les suites existantes, 4406–4411 par T31, 4461–4499 réservés aux démos. Cette tâche prend **4412** (démon `market-dark`), **4413** (démon `market-light`) et **4414** (serveur de contrôle). Les fausses sources écoutent sur un port libre choisi par le système (`startFakeMarket` n'a pas de port fixe) et leur URL passe par le fichier d'état : aucun conflit avec la convention `port + 1000` / `port + 2000` des faux serveurs d'intégrations.
+  - `e2e/serve.ts <port> <scénario>` lance un démon complet (`--sandbox-port 0`, faux `claude`) et lui transmet `process.env` : lancé avec `KIBO_MARKET_ALLOW_LOOPBACK=1`, le démon accepte la fausse source en `http://127.0.0.1`.
+  - Créer un projet passe par l'étape de rôle : `pairAndCreateProject` (vérifie aussi le thème, nom de projet Playwright finissant par `dark`).
+  - Le bac à sable OS est requis pour l'installation (validation sandboxée, phase 4) : la CI installe déjà bubblewrap et règle `kernel.apparmor_restrict_unprivileged_userns=0` dans les jobs `test` et `e2e` (`.github/workflows/ci.yml`, depuis la phase 4) ; aucun changement de workflow.
+  - L'iframe d'un composant sandboxé porte `sandbox="allow-scripts"` (`packages/ui/src/shell/SandboxFrame.tsx`).
+  - `ComponentManifest.changes: string[]` existe (`packages/schema/src/manifest.ts`) : il alimente la liste des changements de l'écran 6.
+  - Noms de l'écran Sources (section Paramètres « Composants », bouton « Ajouter une source », menu « Actions Équipe ») et de l'onglet Marketplace : ceux de T26 et T27 ; à réaligner ici si ces tâches les ont changés.
 
-Chaque projet Playwright (`dark`, `light`) a **son démon et sa fausse source** : le parcours installe et met à jour, il ne peut pas partager l'état d'un autre thème.
+Chaque projet Playwright (`market-dark`, `market-light`) a **son démon et sa fausse source** : le parcours installe et met à jour, il ne peut pas partager l'état d'un autre thème.
 
 - [ ] **Step 1: Écrire le parcours**
 
@@ -21635,8 +22727,9 @@ Chaque projet Playwright (`dark`, `light`) a **son démon et sa fausse source** 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+export const MARKET_PORTS = { dark: 4412, light: 4413, control: 4414 } as const;
 export const MARKET_STATE_FILE = join(tmpdir(), "kibo-e2e-market.json");
-export type MarketE2eTheme = { daemon: string; market: string; fingerprint: string; control: string };
+export type MarketE2eTheme = { market: string; fingerprint: string };
 export type MarketE2eState = Record<"dark" | "light", MarketE2eTheme>;
 ```
 
@@ -21644,12 +22737,13 @@ export type MarketE2eState = Record<"dark" | "light", MarketE2eTheme>;
 ```ts
 import { readFileSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { MARKET_STATE_FILE, type MarketE2eState } from "./market-fixture";
-import { E2E_TOKEN } from "./token";
+import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { MARKET_PORTS, MARKET_STATE_FILE, type MarketE2eState } from "./market-fixture";
 
+const themeOf = (info: TestInfo) => (info.project.name === "market-light" ? "light" : "dark");
 const state = (info: TestInfo) => {
-  const all: MarketE2eState = JSON.parse(readFileSync(MARKET_STATE_FILE, "utf8"));
-  return info.project.name === "light" ? all.light : all.dark;
+  const all = JSON.parse(readFileSync(MARKET_STATE_FILE, "utf8")) as MarketE2eState;
+  return all[themeOf(info)];
 };
 const grouped = (hex: string) => (hex.match(/.{1,4}/g) ?? []).join(" ");
 
@@ -21671,10 +22765,9 @@ async function approveSandboxed(page: Page) {
 test("source, catalogue, installation puis mise à jour partout", async ({ page, request }, info) => {
   test.setTimeout(120_000);
   const s = state(info);
-  await page.goto(`${s.daemon}/#pair=${E2E_TOKEN}`);
-  const html = page.locator("html");
-  if (info.project.name === "dark") await expect(html).toHaveClass(/dark/);
-  else await expect(html).not.toHaveClass(/dark/);
+  const theme = themeOf(info);
+  const key = theme === "light" ? "MKL" : "MKD";
+  await pairAndCreateProject(page, info, key);
 
   await openSettingsSources(page);
   await page.getByRole("button", { name: "Ajouter une source" }).click();
@@ -21702,22 +22795,13 @@ test("source, catalogue, installation puis mise à jour partout", async ({ page,
   await expect(row.getByText("Marketplace · Équipe")).toBeVisible();
   await expect(row.getByText("0.1.0")).toBeVisible();
 
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
-  const key = info.project.name === "light" ? "MKL" : "MKD";
-  await page.getByLabel("Nom").fill(`Market ${key}`);
-  await page.getByLabel("Clé").fill(key);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
-  await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await page.getByLabel("Nom").fill("Suivi");
-  await page.getByRole("radio", { name: "Tableau de bord", exact: true }).click();
-  await page.getByRole("button", { name: "Créer la page" }).click();
-  await page.getByRole("button", { name: "Ajouter un composant" }).click();
-  await page.getByRole("radio", { name: "Burndown", exact: true }).click();
-  await page.getByRole("button", { name: "Ajouter à la page" }).click();
+  await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
+  await createPage(page, "Suivi", "Tableau de bord");
+  await addComponent(page, "Burndown");
   const frame = page.frameLocator("iframe[sandbox='allow-scripts']");
   await expect(frame.getByText("Burndown")).toBeVisible();
 
-  const published = await request.post(`${s.control}/__control/publish-next`);
+  const published = await request.post(`http://127.0.0.1:${MARKET_PORTS.control}/${theme}/publish-next`);
   expect(published.ok()).toBe(true);
   await openSettingsSources(page);
   await page.getByRole("button", { name: "Actions Équipe" }).click();
@@ -21734,152 +22818,120 @@ test("source, catalogue, installation puis mise à jour partout", async ({ page,
   await expect(row.getByText("0.2.0", { exact: true })).toBeVisible();
   await expect(row.getByText("0.2.0 disponible")).toHaveCount(0);
 
-  await page.getByRole("button", { name: `Market ${key}` }).click();
+  await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
   await page.getByRole("button", { name: "Suivi" }).click();
   await expect(frame.getByText("Burndown")).toBeVisible();
-  await expect(page.getByText("burndown@0.2.0")).toHaveCount(0);
+  await expect(page.getByText(/Composant (absent|introuvable)/)).toHaveCount(0);
 });
 ```
-La dernière assertion vérifie qu'aucune instance n'est restée « Composant absent » ni « Autorisation requise » après la mise à jour ; la version 0.2.0 de l'instance est lue dans l'onglet Installés (colonne « Utilisé dans » de la ligne 0.2.0, écran 6).
+La dernière assertion vérifie qu'aucune instance n'est restée « Composant absent » (T27) ni « Composant introuvable » (texte actuel de `InstanceFrame`) après la mise à jour. Le fichier d'état est lu avec `as MarketE2eState` : écrit par `serve-market.ts` juste avant, dans le même dépôt.
 
 - [ ] **Step 2: Lancer pour le voir échouer**
 
-Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- market.spec.ts`
-Expected: FAIL (`ENOENT … kibo-e2e-market.json` : le serveur de marketplace n'existe pas encore).
+Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- --project market-dark`
+Expected: FAIL (aucun projet `market-dark` : la configuration n'existe pas encore).
 
 - [ ] **Step 3: Serveur de test**
 
 `e2e/serve-market.ts` :
 ```ts
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { startFakeMarket } from "@kibo/daemon/testing/fake-market";
+import { rmSync, writeFileSync } from "node:fs";
 import { keyFingerprint } from "@kibo/trust";
 import { makeTestPackage } from "@kibo/trust/testing";
-import { MARKET_STATE_FILE, type MarketE2eState } from "./market-fixture";
-import { E2E_TOKEN } from "./token";
+import { type FakeMarket, startFakeMarket } from "../packages/daemon/src/testing/fake-market";
+import { MARKET_PORTS, MARKET_STATE_FILE, type MarketE2eState } from "./market-fixture";
 
-const root = resolve(import.meta.dir, "..");
-const CONTROL_PORT = 4395;
-const THEMES = [
-  { theme: "dark", port: 4394 },
-  { theme: "light", port: 4396 },
-] as const;
+const THEMES = ["dark", "light"] as const;
 
-const lea = await makeTestPackage({ id: "burndown", version: "0.1.0", manifest: { title: "Burndown", kind: "widget" } });
-const publisher = { name: "Léa", keys: lea.publisher.keys };
+const first = await makeTestPackage({ id: "burndown", version: "0.1.0", title: "Burndown", manifest: { kind: "widget" } });
 const next = await makeTestPackage({
   id: "burndown",
   version: "0.2.0",
-  publisher,
-  manifest: { title: "Burndown", kind: "widget", changes: ["Ligne idéale"] },
+  title: "Burndown",
+  publisher: first.publisher,
+  manifest: { kind: "widget", changes: ["Ligne idéale"] },
 });
 
-const homes: string[] = [];
-const procs: ReturnType<typeof Bun.spawn>[] = [];
-const markets = new Map<string, Awaited<ReturnType<typeof startFakeMarket>>>();
+const markets = new Map<(typeof THEMES)[number], FakeMarket>();
 const state: Partial<MarketE2eState> = {};
-
-for (const { theme, port } of THEMES) {
+for (const theme of THEMES) {
   const market = await startFakeMarket({ id: "equipe", name: "Équipe", verified: true });
-  await market.publish(lea.bytes);
+  await market.publish(first.bytes);
   markets.set(theme, market);
-  const home = mkdtempSync(join(tmpdir(), `kibo-e2e-market-${theme}-`));
-  homes.push(home);
-  writeFileSync(join(home, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
-  procs.push(
-    Bun.spawn(["bun", join(root, "packages/daemon/src/main.ts"), "--port", String(port), "--ui", join(root, "packages/ui/dist")], {
-      env: { ...process.env, KIBO_HOME: home, KIBO_MARKET_ALLOW_LOOPBACK: "1" },
-      stdout: "inherit",
-      stderr: "inherit",
-    }),
-  );
-  state[theme] = {
-    daemon: `http://127.0.0.1:${port}`,
-    market: market.url,
-    fingerprint: await keyFingerprint(market.publicKey),
-    control: `http://127.0.0.1:${CONTROL_PORT}/${theme}`,
-  };
+  state[theme] = { market: market.url, fingerprint: await keyFingerprint(market.publicKey) };
 }
 writeFileSync(MARKET_STATE_FILE, JSON.stringify(state));
 
+const daemons = THEMES.map((theme) =>
+  Bun.spawn(["bun", "serve.ts", String(MARKET_PORTS[theme]), "question"], {
+    cwd: import.meta.dir,
+    env: { ...process.env, KIBO_MARKET_ALLOW_LOOPBACK: "1" },
+    stdout: "inherit",
+    stderr: "inherit",
+  }),
+);
+
 const control = Bun.serve({
   hostname: "127.0.0.1",
-  port: CONTROL_PORT,
+  port: MARKET_PORTS.control,
   async fetch(req) {
     const url = new URL(req.url);
     if (req.method === "GET" && url.pathname === "/") return new Response("ok");
-    const match = url.pathname.match(/^\/(dark|light)\/__control\/publish-next$/);
-    const market = match?.[1] ? markets.get(match[1]) : undefined;
+    const theme = THEMES.find((t) => url.pathname === `/${t}/publish-next`);
+    const market = theme ? markets.get(theme) : undefined;
     if (req.method !== "POST" || !market) return new Response("not found", { status: 404 });
     await market.publish(next.bytes);
     return new Response(null, { status: 204 });
   },
 });
 
-const shutdown = () => {
+let stopping = false;
+const shutdown = async () => {
+  if (stopping) return;
+  stopping = true;
+  for (const d of daemons) d.kill("SIGTERM");
+  await Promise.all(daemons.map((d) => d.exited));
   control.stop(true);
   for (const m of markets.values()) m.stop();
-  for (const p of procs) p.kill("SIGTERM");
+  rmSync(MARKET_STATE_FILE, { force: true });
+  process.exit(0);
 };
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
-await Promise.all(procs.map((p) => p.exited));
-for (const h of homes) rmSync(h, { recursive: true, force: true });
-rmSync(MARKET_STATE_FILE, { force: true });
-process.exit(0);
+process.on("SIGTERM", () => void shutdown());
+process.on("SIGINT", () => void shutdown());
 ```
-`POST /<thème>/__control/publish-next` publie 0.2.0 sur la source du thème ; `GET /` sert à Playwright pour attendre le démarrage.
+`POST /<thème>/publish-next` publie 0.2.0 sur la source du thème ; `GET /` sert à Playwright pour attendre le démarrage (le fichier d'état est écrit avant l'ouverture du port de contrôle).
 
-Dans `e2e/playwright.config.ts`, `webServer` devient un tableau :
-```ts
-  webServer: [
-    {
-      command: "bun serve.ts",
-      url: "http://127.0.0.1:4390/",
-      reuseExistingServer: false,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-    },
-    {
-      command: "bun serve-market.ts",
-      url: "http://127.0.0.1:4395/",
-      reuseExistingServer: false,
-      timeout: 60_000,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-    },
-  ],
-```
-Le démarrage des deux démons précède l'écoute du port de contrôle : quand `http://127.0.0.1:4395/` répond, le fichier d'état est écrit. `market.spec.ts` attend en plus la page d'appairage de son démon (`page.goto` échoue sinon, Playwright réessaie dans `expect`).
+Dans `e2e/playwright.config.ts` : importer `MARKET_PORTS` de `./market-fixture` ; ajouter les projets `{ name: "market-dark", testMatch: /market\.spec\.ts/, use: { browserName: "chromium", colorScheme: "dark", baseURL: "http://127.0.0.1:4412" } }` et `market-light` (`light`, 4413), construits depuis `MARKET_PORTS` comme les projets `sync-*` de T31 ; ajouter au tableau `webServer` `{ command: "bun serve-market.ts", url: `http://127.0.0.1:${MARKET_PORTS.control}/`, reuseExistingServer: false, timeout: 120_000, gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 } }`. `pairAndCreateProject` attend le démon par son `page.goto` ; si le démon démarre après le port de contrôle, ajouter l'attente `waitForDaemon` de T31 en tête du test.
 
 - [ ] **Step 4: Relancer**
 
-Run: `bun run --cwd packages/ui build && bun run --cwd e2e test`
-Expected: PASS pour `mvp.spec.ts` et `market.spec.ts` dans les projets `dark` et `light`. Sous Linux sans bubblewrap utilisable, le test échoue à l'installation (`SANDBOX_UNAVAILABLE`) : c'est voulu, la CI installe bubblewrap (T8).
+Run: `bun install && bun run --cwd packages/ui build && bun run --cwd e2e test -- --project market-dark --project market-light`
+Expected: PASS. Sous Linux sans bubblewrap utilisable, le test échoue à l'installation (`SANDBOX_UNAVAILABLE`) : c'est voulu, la CI installe bubblewrap.
+
+Puis `bun run --cwd e2e test` complet : tous les parcours verts (porte d'intégration locale, GitHub Actions étant hors service).
 
 - [ ] **Step 5: Vérifications**
 
 Run: `bun run check && bun run typecheck`
-Expected: aucune erreur (le paquet `e2e` est déjà dans le `typecheck` racine).
+Expected: aucune erreur (le paquet `e2e` est déjà dans le `typecheck` racine ; `e2e/tsconfig.json` référence `../packages/daemon`).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add e2e/serve-market.ts e2e/market.spec.ts e2e/market-fixture.ts e2e/playwright.config.ts e2e/package.json bun.lock
+git add e2e/serve-market.ts e2e/market.spec.ts e2e/market-fixture.ts e2e/playwright.config.ts e2e/package.json e2e/tsconfig.json bun.lock
 git commit -m "test(e2e): parcours marketplace"
 ```
 
 ---
-
 ## Jalon v1.0
 
-- [ ] `main` verte en CI sur macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont la propriété de convergence à 200 exécutions, le test `escape` avec isolation OS active, `KIBO_REQUIRE_OS_SANDBOX=1`), E2E sombre et clair (`mvp`, phases 2 à 6, `sync`, `market`), smoke Tauri, build `kibo-sync`.
-- [ ] Critères de sortie de la spec G §10 : propriété verte ; scénario à deux utilisateurs vert sur les deux OS ; projets non partagés inchangés (aucune attente de test existante modifiée, vérifié par `git diff v0.6 -- '*.test.ts' '*.test.tsx' '*.spec.ts'` : seuls des ajouts, plus les fixtures complétées par les nouveaux champs `pendingSeq`, `keyLabel`, `sync` (T6) et le texte de pied de l'écran 31 aligné sur sa maquette (T25), deux écarts à citer au rapport) ; écrans S1 à S9 conformes en sombre et en clair.
-- [ ] Critères de sortie de la spec H §10 : `escape` vert sur les deux OS ; publication sur la source d'équipe puis installation sur un second démon (T22) ; tous les refus du §4 couverts (T10, T15, T20) ; écrans M1 à M8 conformes en sombre et en clair.
+- [ ] `main` verte en CI sur macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont la propriété de convergence à 200 exécutions, le test d'évasion `components/exit.test.ts` avec isolation OS active), E2E sombre et clair (`mvp`, phases 2 à 6, `sync`, `market`), smoke Tauri, build `kibo-sync`.
+- [ ] Critères de sortie de la spec G §10 : propriété verte ; scénario à deux utilisateurs vert sur les deux OS ; projets non partagés inchangés (aucune attente de test existante modifiée, vérifié par `git diff v0.6 -- '*.test.ts' '*.test.tsx' '*.spec.ts'` : seuls des ajouts, plus les fixtures `ProjectSnapshot` complétées par `pendingSeq`, `keyLabel`, `sync` (T6), les faux clients complétés par `subscribeEvents` (T25, T28, T29, T30) et le texte de pied de l'écran 31 aligné sur sa maquette (T25), écarts à citer au rapport) ; écrans S1 à S9 conformes en sombre et en clair.
+- [ ] Critères de sortie de la spec H §10 : le test d'évasion vert sur les deux OS, y compris le cas « sans durcissement » (T12) ; publication sur la source d'équipe puis installation sur un second démon (T22) ; tous les refus du §4 couverts (T10, T15, T20) ; écrans M1 à M8 conformes en sombre et en clair.
 - [ ] Contrôle visuel du chef d'équipe : chaque écran S et M face à son export Penpot, plus les écrans 3, 6, 15, 19, 30 et 31 modifiés ; écarts listés dans le rapport.
-- [ ] Contrôle manuel de sécurité (liste dans le rapport) : aucune clé privée dans `kibo.db` ni dans `sync.db` (recherche des préfixes PKCS8 `MC4CAQAw`), fichiers `0600`, démon toujours sur `127.0.0.1` sans accès distant activé, `ws://` vers une IP non loopback refusé.
-- [ ] Les décisions nouvelles 1 à 26 sont reportées dans les specs G et H ; `CLAUDE.md` à jour (monorepo, arêtes).
-- [ ] Tag `v1.0`, rapport final `docs/superpowers/rapports/<date>-jalon-v1.0.md` : livré par sous-système (G, H, durcissement), écarts (dont la décision 14 si le repli a servi, seccomp reporté), risques (ci-dessous), comptes nécessaires à un usage réel (spec G et H « Comptes et secrets réels »), puis **arrêt** jusqu'à la validation d'Adam.
+- [ ] Contrôle manuel de sécurité (liste dans le rapport) : aucune clé privée dans `kibo.db` ni dans les données de `kibo-sync` (recherche des préfixes PKCS8 `MC4CAQAw`), fichiers `0600`, démon toujours sur `127.0.0.1` sans accès distant activé, `ws://` vers une IP non loopback refusé.
+- [ ] Les décisions nouvelles 1 à 36 sont dans les specs G et H (§13, reportées en T0) et à jour ; `CLAUDE.md` à jour (monorepo, arêtes).
+- [ ] Tag `v1.0`, rapport final `docs/superpowers/rapports/<date>-jalon-v1.0.md` : livré par sous-système (G, H, durcissement), écarts (seccomp reporté, bloc « Accès web » seul pour l'écran 15), risques (ci-dessous), comptes nécessaires à un usage réel (spec G et H « Comptes et secrets réels »), puis **arrêt** jusqu'à la validation d'Adam.
 
 **Risques à suivre dans le rapport** : `sandbox-exec` déprécié par Apple ; espaces de noms utilisateur restreints sur certaines distributions ; profil macOS sensible aux versions de Bun et de macOS ; option `tls.ca` du client WebSocket de Bun (T3) ; coût de `LoroDoc.fork()` par lot pour les gros projets (T14) ; le serveur lit les données en clair (pas de chiffrement de bout en bout) ; seccomp non livré.
 
@@ -21888,7 +22940,7 @@ git commit -m "test(e2e): parcours marketplace"
 | Exigence | Tâches |
 |---|---|
 | G §3.1 modèle serveur, `0600` | T11, T14 |
-| G §3.2 modèle client | T1 (réglages), T9 (`remote_sessions`), T21 (`sync_config`, `sync_projects`) |
+| G §3.2 modèle client | T1 (réglages), T9 (`remote_sessions`), T21 (`sync_config`, `sync_projects`), T23 (`project_settings.folder`) |
 | G §3.3 doc projet (clé nullable, `keyAllocator`, `members`, assignés, domaines) | T6, T7, T23 |
 | G §3.4 ce qui ne se synchronise pas | T7 (`folder`), T23 (dialogue, test des secrets), T27 (composant absent) |
 | G §4 authentification, appareils, révocation | T2, T11, T17, T21, T28 |
@@ -21908,5 +22960,5 @@ git commit -m "test(e2e): parcours marketplace"
 | H §5.5 composant absent | T5, T27 |
 | H §6 API | T15, T16, T20, T22 |
 | H §7 sécurité (validation sandboxée, HTTPS) | T15, T20 |
-| H §8 durcissement OS | T8, T12, T25 |
+| H §8 durcissement OS | phase 4 (isolation), T8 (diagnostic), T12 (réglage), T25 (UI) |
 | H §9 tests (dont e2e) | T10, T12, T15, T16, T20, T32 |
