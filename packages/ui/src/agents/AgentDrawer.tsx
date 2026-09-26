@@ -1,0 +1,183 @@
+import { type AgentsState, isTerminal, type RunLogEntry, type RunView, runSubject } from "@kibo/schema";
+import { RUN_TEXT, RunDot } from "@kibo/sdk";
+import { cn } from "@kibo/sdk/lib/utils";
+import { Button } from "@kibo/sdk/ui/button";
+import { Bot, ChevronDown, Plus, Square } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+import { elapsed, formatDuration, reasonText, runResultText, workspaceText } from "./format";
+import { ReplyBox } from "./ReplyBox";
+import { RunJournal } from "./RunJournal";
+
+type Props = {
+  state: AgentsState;
+  now: number;
+  selected: RunView | null;
+  log: RunLogEntry[] | null;
+  onSelect: (runId: string) => void;
+  onCollapse: () => void;
+  onLaunch: () => void;
+};
+
+type Row = { run: RunView; detail: string; aside: ReactNode };
+
+function Group({
+  title,
+  rows,
+  selected,
+  onSelect,
+}: {
+  title: string;
+  rows: Row[];
+  selected: string | null;
+  onSelect: (id: string) => void;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="grid gap-1">
+      <h3 className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{title}</h3>
+      <ul aria-label={title} className="grid gap-0.5">
+        {rows.map(({ run, detail, aside }) => (
+          <li key={run.id}>
+            <button
+              type="button"
+              aria-pressed={selected === run.id}
+              onClick={() => onSelect(run.id)}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent",
+                selected === run.id && "bg-accent",
+                run.state === "waiting_input" && "ring-1 ring-brand",
+              )}
+            >
+              <RunDot state={run.state} />
+              <span className="shrink-0 font-mono text-[13px]">{run.label}</span>
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">{detail}</span>
+              <span className="shrink-0 font-mono text-muted-foreground">{aside}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function RunDetail({ run, now, log }: { run: RunView; now: number; log: RunLogEntry[] | null }) {
+  const [failed, setFailed] = useState(false);
+  const stop = async () => {
+    setFailed(false);
+    try {
+      await client.rpc({ method: "cancelRun", runId: run.id });
+    } catch {
+      setFailed(true);
+    }
+  };
+  const where = [workspaceText(run.workspace), formatDuration(elapsed(run, now))].filter(Boolean).join(" · ");
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex items-center gap-2 text-sm">
+        <Bot aria-hidden className="size-4 text-brand" />
+        <span className="font-mono font-semibold">{run.label}</span>
+        <span className="min-w-0 truncate text-muted-foreground">{runSubject(run)}</span>
+        <span className="flex-1" />
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">{where}</span>
+        {!isTerminal(run.state) && (
+          <Button size="sm" variant="ghost" className="h-7" onClick={stop}>
+            <Square className="size-3" />
+            {fr.agents.stop}
+          </Button>
+        )}
+      </div>
+      {failed && (
+        <p role="alert" className="text-xs text-destructive">
+          {fr.agents.stopFailed}
+        </p>
+      )}
+      <RunJournal label={run.label} log={log ?? []} />
+      {run.state === "waiting_input" && <ReplyBox run={run} />}
+    </div>
+  );
+}
+
+export function AgentDrawer({ state, now, selected, log, onSelect, onCollapse, onLaunch }: Props) {
+  const byId = new Map(state.runs.map((r) => [r.id, r]));
+  const waitingRuns = state.runs.filter((r) => r.state === "waiting_input");
+  const age = (r: RunView) => formatDuration(elapsed(r, now));
+  const running: Row[] = state.runs
+    .filter((r) => r.state === "running" || r.state === "starting")
+    .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0))
+    .map((run) => ({ run, detail: runSubject(run, run.ticketTitle), aside: age(run) }));
+  const waiting: Row[] = waitingRuns.map((run) => ({
+    run,
+    detail: runSubject(run, run.ticketTitle),
+    aside: age(run),
+  }));
+  const queued: Row[] = state.queue.flatMap((entry) => {
+    const run = byId.get(entry.runId);
+    if (!run) return [];
+    const detail = runSubject(run, run.priority ? fr.queue.priority : reasonText(entry.reason));
+    return [{ run, detail, aside: <span className={RUN_TEXT.queued}>{`#${entry.position}`}</span> }];
+  });
+  const finished: Row[] = state.runs
+    .filter((r) => isTerminal(r.state))
+    .sort((a, b) => (b.endedAt ?? 0) - (a.endedAt ?? 0))
+    .slice(0, 5)
+    .map((run) => ({
+      run,
+      detail: runSubject(run, runResultText(run, null)),
+      aside: formatDuration(now - (run.endedAt ?? now)),
+    }));
+  const g = fr.agents.groups;
+  return (
+    <div className="grid">
+      <div className="flex h-11 items-center gap-3 px-3">
+        <Bot aria-hidden className="size-4" />
+        <span className="text-sm font-medium">{fr.agents.bar}</span>
+        <span className="text-xs text-muted-foreground">
+          {fr.agents.summary(state.host.used, state.host.hostSlots, state.queue.length, waitingRuns.length)}
+        </span>
+        <span className="flex-1" />
+        <Button size="sm" variant="outline" onClick={onLaunch}>
+          <Plus />
+          {fr.agents.launch}
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label={fr.agents.collapse}
+          aria-expanded
+          onClick={onCollapse}
+        >
+          <ChevronDown />
+        </Button>
+      </div>
+      <div className="grid h-[22rem] grid-cols-[minmax(18rem,24rem)_1fr] border-t">
+        <nav aria-label={fr.agents.runs} className="grid content-start gap-3 overflow-y-auto border-r p-2">
+          {state.runs.length === 0 && <p className="p-2 text-xs text-muted-foreground">{fr.agents.empty}</p>}
+          <Group
+            title={g.running(state.host.used, state.host.hostSlots)}
+            rows={running}
+            selected={selected?.id ?? null}
+            onSelect={onSelect}
+          />
+          <Group title={g.waiting} rows={waiting} selected={selected?.id ?? null} onSelect={onSelect} />
+          <Group
+            title={g.queued(queued.length)}
+            rows={queued}
+            selected={selected?.id ?? null}
+            onSelect={onSelect}
+          />
+          <Group title={g.finished} rows={finished} selected={selected?.id ?? null} onSelect={onSelect} />
+        </nav>
+        <div className="flex min-h-0 flex-col p-3">
+          {selected ? (
+            <RunDetail key={selected.id} run={selected} now={now} log={log} />
+          ) : (
+            <p className="text-sm text-muted-foreground">{fr.agents.pick}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

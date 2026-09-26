@@ -1,0 +1,233 @@
+import { beforeEach, expect, mock, test } from "bun:test";
+import {
+  type HookEventName,
+  type HookPayload,
+  KiboError,
+  type RpcRequest,
+  type RunLogEntry,
+} from "@kibo/schema";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { agentsFixture, NOW } from "./fixtures";
+
+const MIN = 60_000;
+const calls: RpcRequest[] = [];
+let outcome: () => Promise<unknown> = () => Promise.resolve(null);
+
+mock.module("../api", () => ({
+  client: {
+    rpc: (req: RpcRequest) => {
+      calls.push(req);
+      return outcome();
+    },
+  },
+}));
+
+const hook = (event: HookEventName, p: Partial<HookPayload>): HookPayload => ({
+  event,
+  sessionId: "s-r41",
+  transcriptPath: null,
+  tool: null,
+  detail: null,
+  question: null,
+  agentId: null,
+  ...p,
+});
+
+const LOG: RunLogEntry[] = [
+  {
+    id: 1,
+    at: NOW - 7 * MIN,
+    event: { type: "spawned", pid: 42, resume: false, workspace: "worktree:kib-14", guidelines: 3 },
+  },
+  {
+    id: 2,
+    at: NOW - 5 * MIN,
+    event: {
+      type: "hook",
+      payload: hook("PreToolUse", { tool: "Write", detail: "apps/daemon/src/hooks/receiver.ts" }),
+    },
+  },
+  {
+    id: 3,
+    at: NOW - 5 * MIN,
+    event: {
+      type: "hook",
+      payload: hook("PostToolUse", { tool: "Write", detail: "apps/daemon/src/hooks/receiver.ts" }),
+    },
+  },
+  {
+    id: 4,
+    at: NOW - MIN,
+    event: {
+      type: "hook",
+      payload: hook("PostToolUse", {
+        tool: "mcp__kibo__ask_user",
+        question: "Quel port pour le récepteur ? 4747 (défaut) ou dynamique ?",
+      }),
+    },
+  },
+  { id: 5, at: NOW, event: { type: "reranked", rank: 3 } },
+];
+
+mock.module("../state/use-agents", () => ({
+  useAgents: () => agentsFixture(),
+  useConfig: () => null,
+  useNow: () => NOW,
+  useRunLog: (runId: string | null) => (runId === "r41" ? LOG : runId ? [] : null),
+}));
+
+const { AgentBar } = await import("./AgentBar");
+const { AgentDrawer } = await import("./AgentDrawer");
+const { AgentPanel } = await import("./AgentPanel");
+const { ReplyBox } = await import("./ReplyBox");
+const { RunJournal } = await import("./RunJournal");
+
+beforeEach(() => {
+  calls.length = 0;
+  outcome = () => Promise.resolve(null);
+});
+
+const run = (id: string) => {
+  const found = agentsFixture().runs.find((r) => r.id === id);
+  if (!found) throw new Error(`fixture ${id} missing`);
+  return found;
+};
+
+test("the bar sums up slots, queue, running runs and the run waiting for an answer", async () => {
+  const onSelect = mock((_: string) => {});
+  const onExpand = mock(() => {});
+  render(<AgentBar state={agentsFixture()} now={NOW} onExpand={onExpand} onSelect={onSelect} />);
+  expect(screen.getByText("3/3")).toBeTruthy();
+  expect(screen.getByText("3 en file")).toBeTruthy();
+  for (const label of ["opus-dev-1", "opus-dev-3", "sonnet-review-1"]) {
+    expect(screen.getByText(label)).toBeTruthy();
+  }
+  expect(screen.getByText("KIB-12 · 12m")).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Répondre à opus-dev-2" }));
+  expect(onSelect).toHaveBeenCalledWith("r41");
+  await user.click(screen.getByRole("button", { name: "Déplier les agents" }));
+  expect(onExpand).toHaveBeenCalled();
+});
+
+test("the drawer groups runs like the mockup and numbers the queue", async () => {
+  const onSelect = mock((_: string) => {});
+  render(
+    <AgentDrawer
+      state={agentsFixture()}
+      now={NOW}
+      selected={null}
+      log={null}
+      onSelect={onSelect}
+      onCollapse={() => {}}
+      onLaunch={() => {}}
+    />,
+  );
+  expect(screen.getByText("3/3 créneaux · 3 en file · 1 attend une réponse")).toBeTruthy();
+  const running = within(screen.getByRole("list", { name: "En cours · 3/3 créneaux" }));
+  expect(running.getAllByRole("button").map((b) => b.textContent?.split("KIB")[0])).toEqual([
+    "opus-dev-1",
+    "opus-dev-3",
+    "sonnet-review-1",
+  ]);
+  const queued = within(screen.getByRole("list", { name: "En file · 3" }));
+  expect(queued.getByText("#1")).toBeTruthy();
+  expect(queued.getByText("KIB-10 · Prioritaire")).toBeTruthy();
+  expect(queued.getByText("KIB-29 · attend un créneau hôte (3/3)")).toBeTruthy();
+  const finished = within(screen.getByRole("list", { name: "Terminé" }));
+  expect(finished.getByText("KIB-11 · Terminé")).toBeTruthy();
+  expect(finished.getByText("KIB-7 · Échec : exit code 1")).toBeTruthy();
+  expect(screen.getByText("Choisis un run pour voir son journal.")).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(
+    within(screen.getByRole("list", { name: "Attend une réponse · créneau libéré" })).getByRole("button"),
+  );
+  expect(onSelect).toHaveBeenCalledWith("r41");
+});
+
+test("stopping a run cancels it, and a refusal is shown", async () => {
+  const props = {
+    state: agentsFixture(),
+    now: NOW,
+    log: [],
+    onSelect: () => {},
+    onCollapse: () => {},
+    onLaunch: () => {},
+  };
+  render(<AgentDrawer {...props} selected={run("r42")} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Arrêter" }));
+  expect(calls).toEqual([{ method: "cancelRun", runId: "r42" }]);
+  outcome = () => Promise.reject(new KiboError("INVALID_TRANSITION", "run r42 is done"));
+  await user.click(screen.getByRole("button", { name: "Arrêter" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'arrêter le run.");
+});
+
+test("a finished run has no stop button", () => {
+  render(
+    <AgentDrawer
+      state={agentsFixture()}
+      now={NOW}
+      selected={run("r40")}
+      log={[]}
+      onSelect={() => {}}
+      onCollapse={() => {}}
+      onLaunch={() => {}}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: "Arrêter" })).toBeNull();
+});
+
+test("the journal hides PreToolUse and reranks, and shows the question in amber", () => {
+  render(<RunJournal label="opus-dev-2" log={LOG} />);
+  const journal = screen.getByRole("list", { name: "Journal de opus-dev-2" });
+  const lines = within(journal).getAllByRole("listitem");
+  expect(lines.map((l) => l.textContent)).toEqual([
+    expect.stringContaining("brief.md + 3 guidelines chargés"),
+    expect.stringContaining("PostToolUseWrite apps/daemon/src/hooks/receiver.ts"),
+    expect.stringContaining("Quel port pour le récepteur ?"),
+  ]);
+  expect(lines[2]?.getAttribute("data-tone")).toBe("amber");
+});
+
+test("the reply box sends a trimmed answer, and keeps the text when it fails", async () => {
+  render(<ReplyBox run={run("r41")} />);
+  const user = userEvent.setup();
+  const field = screen.getByLabelText<HTMLInputElement>("Réponse à opus-dev-2");
+  await user.type(field, "  Port dynamique, écrit dans ~/.kibo/daemon.json ");
+  await user.click(screen.getByRole("button", { name: "Envoyer" }));
+  expect(calls).toEqual([
+    { method: "answerRun", runId: "r41", text: "Port dynamique, écrit dans ~/.kibo/daemon.json" },
+  ]);
+  await waitFor(() => expect(field.value).toBe(""));
+  outcome = () => Promise.reject(new KiboError("INVALID_TRANSITION", "not waiting"));
+  await user.type(field, "4747");
+  await user.click(screen.getByRole("button", { name: "Envoyer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'envoyer la réponse.");
+  expect(field.value).toBe("4747");
+});
+
+test("the panel opens on the waiting run, shows its journal and folds back", async () => {
+  render(<AgentPanel onLaunch={() => {}} focusRunId={null} onFocused={() => {}} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Répondre à opus-dev-2" }));
+  expect(screen.getByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+  expect(screen.getByLabelText("Réponse à opus-dev-2")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Replier les agents" }));
+  expect(screen.getByRole("button", { name: "Déplier les agents" })).toBeTruthy();
+});
+
+test("a focus request opens the drawer on that run", () => {
+  const onFocused = mock(() => {});
+  render(<AgentPanel onLaunch={() => {}} focusRunId="r42" onFocused={onFocused} />);
+  expect(screen.getByRole("list", { name: "Journal de opus-dev-1" })).toBeTruthy();
+  expect(onFocused).toHaveBeenCalledTimes(1);
+});
+
+test("the launch button asks the shell to open the assign dialog", async () => {
+  const onLaunch = mock(() => {});
+  render(<AgentPanel onLaunch={onLaunch} focusRunId="r41" onFocused={() => {}} />);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Lancer un agent" }));
+  expect(onLaunch).toHaveBeenCalled();
+});
