@@ -10945,7 +10945,7 @@ Références : maquettes P7, P8, P9 (sombre et clair) et page PDF 4 (Sheet ticke
   - `formatDuration(ms: number): string` ; `runTone(run: Pick<CiRun, "status" | "conclusion">): "ok" | "error" | "running" | "neutral"` ; `latestPerWorkflow(runs: CiRun[]): CiRun[]` ; `conclusionLabel(run): string`
   - `GithubRefs({ ticket })` (chips d'issue seulement : les chips de PR restent ceux de la phase 3), `SyncStatus({ projectId, ticket })`, `CiSection({ projectId, ticketId })`, `CiLogSheet({ projectId, run, job, onClose })`, `FigmaSection({ projectId, ticket })`, `FigmaProperty({ ticket })`
 
-- [ ] **Step 1: Tests purs (échouent)**
+- [x] **Step 1: Tests purs (échouent)**
 
 `packages/ui/src/shell/sheet/log-lines.test.ts` :
 
@@ -11005,7 +11005,7 @@ test("keeps the latest run of each workflow", () => {
 
 Run: `bun test packages/ui/src/shell/sheet` — Expected: FAIL.
 
-- [ ] **Step 2: `log-lines.ts` et `ci-format.ts`**
+- [x] **Step 2: `log-lines.ts` et `ci-format.ts`**
 
 `packages/ui/src/shell/sheet/log-lines.ts` :
 
@@ -11067,7 +11067,7 @@ export function latestPerWorkflow(runs: CiRun[]): CiRun[] {
 
 Run: `bun test packages/ui/src/shell/sheet/log-lines.test.ts packages/ui/src/shell/sheet/ci-format.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Test du Sheet (échoue)**
+- [x] **Step 3: Test du Sheet (échoue)**
 
 `packages/ui/src/shell/sheet/sheet-integrations.test.tsx` :
 
@@ -11203,7 +11203,7 @@ test("an issue body is never rendered as HTML", () => {
 
 Run: `bun test packages/ui/src/shell/sheet/sheet-integrations.test.tsx` — Expected: FAIL.
 
-- [ ] **Step 4: `GithubRefs.tsx` et `SyncStatus.tsx`**
+- [x] **Step 4: `GithubRefs.tsx` et `SyncStatus.tsx`**
 
 `packages/ui/src/shell/sheet/GithubRefs.tsx` :
 
@@ -11308,7 +11308,7 @@ export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: T
 }
 ```
 
-- [ ] **Step 5: `CiSection.tsx` et `CiLogSheet.tsx`**
+- [x] **Step 5: `CiSection.tsx` et `CiLogSheet.tsx`**
 
 `packages/ui/src/shell/sheet/CiSection.tsx` :
 
@@ -11449,7 +11449,7 @@ export function CiLogSheet({ projectId, run, job, onClose }: Props) {
 
 Le texte du log est rendu comme texte React (jamais `dangerouslySetInnerHTML`) ; les séquences ANSI éventuelles restent visibles telles quelles.
 
-- [ ] **Step 6: `FigmaSection.tsx`**
+- [x] **Step 6: `FigmaSection.tsx`**
 
 ```tsx
 import { type FigmaNodeRef, type FigmaPreview, KiboError, type TicketView } from "@kibo/schema";
@@ -11570,7 +11570,7 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
 
 `linkFigmaNode` est validé `z.string().url()` par le RPC : une chaîne qui n'est pas une URL est refusée `INVALID_INPUT` avant le démon Figma. Le PNG vient du cache du démon (base64 validé côté démon, Task 20), rendu en `data:` : aucune requête du navigateur vers Figma.
 
-- [ ] **Step 7: Brancher dans `TicketDetail.tsx`**
+- [x] **Step 7: Brancher dans `TicketDetail.tsx`**
 
 - Liste de propriétés (`dl`) : `<FigmaProperty ticket={t} />` juste après « Statut » ; `<GithubRefs ticket={t} />` juste avant la ligne « PR » existante (qui reste inchangée).
 - Juste avant la `dl` : `<SyncStatus projectId={project.meta.id} ticket={t} />`.
@@ -11580,7 +11580,7 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
 - `TicketDetail.tsx` reste sous ~300 lignes (les sections sont dans `shell/sheet/`).
 - Écart de maquette assumé (à noter au jalon) : P7 place `#42` et `#12` dans l'en-tête ; la phase 3 a livré le chip de PR dans la liste de propriétés, l'issue y rejoint la PR plutôt que de dupliquer l'un des deux.
 
-- [ ] **Step 8: Vérifier et commiter**
+- [x] **Step 8: Vérifier et commiter**
 
 Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Contrôle visuel du Sheet et de l'onglet ticket (sombre puis clair) contre P7, P8, P9.
 
