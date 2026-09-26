@@ -103,6 +103,19 @@ describe("allocateTicketKeys", () => {
   });
 });
 
+describe("corrupt sequence", () => {
+  test("a non-numeric ticketSeq stops the allocation instead of restarting at 0", () => {
+    const server = sharedServer();
+    const client = replica(server, 41);
+    createTicket(client, { title: "A" });
+    server.import(client.export({ mode: "update" }));
+    server.getMap("meta").set("ticketSeq", "1");
+    server.commit();
+    expect(() => allocateTicketKeys(server)).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
+    expect(listTickets(server).map((t) => t.key)).toEqual(["KIB-1", null]);
+  });
+});
+
 describe("members", () => {
   test("writes, updates and removes the display directory", () => {
     const doc = sharedServer();

@@ -1,4 +1,4 @@
-import { formatTicketKey, type KeyAllocator, type ProjectSyncInfo } from "@kibo/schema";
+import { formatTicketKey, type KeyAllocator, KiboError, type ProjectSyncInfo } from "@kibo/schema";
 import { idStrToId, type LoroDoc, LoroMap, type LoroTreeNode, type TreeID } from "loro-crdt";
 import { getProjectMeta } from "./project";
 import { getNode, walkDepthFirst } from "./tree";
@@ -27,10 +27,11 @@ export function localSyncInfo(doc: LoroDoc): ProjectSyncInfo {
   return { shared: keyAllocator === "server", keyAllocator, role: null, access: "write", members: [] };
 }
 
-const currentTicketSeq = (doc: LoroDoc): number => {
+function currentTicketSeq(doc: LoroDoc): number {
   const seq = doc.getMap("meta").get("ticketSeq");
-  return typeof seq === "number" ? seq : 0;
-};
+  if (typeof seq === "number" && Number.isInteger(seq) && seq >= 0) return seq;
+  throw new KiboError("STORE_CORRUPT", "meta.ticketSeq is not a sequence number");
+}
 
 const isPending = (node: LoroTreeNode): boolean => (node.data.get("key") ?? null) === null;
 
@@ -69,9 +70,10 @@ export function allocateTicketKeys(doc: LoroDoc): { ticketId: string; key: strin
 }
 
 export function enableServerAllocation(doc: LoroDoc): number {
+  const seq = currentTicketSeq(doc);
   doc.getMap("meta").set("keyAllocator", "server");
   doc.commit({ origin: SERVER_ORIGIN });
-  return currentTicketSeq(doc);
+  return seq;
 }
 
 const nameOf = (entry: unknown): string | null =>
