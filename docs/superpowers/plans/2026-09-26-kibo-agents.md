@@ -115,7 +115,7 @@ Tâche courte qui fige toutes les interfaces partagées : aucune tâche suivante
 - Produces (depuis `@kibo/sdk`) : `KiboClient.subscribeTopic(topic: Topic, listener: () => void): () => void`, `KiboClient.onRunChanged(listener: (e: RunChanged) => void): () => void`.
 - Produces : exports `@kibo/core/<module>` (`"./*": "./src/*.ts"`) ; dépendance `zod` du démon.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/schema/src/agent.test.ts` :
 ```ts
@@ -278,12 +278,12 @@ test("topic, run and project messages reach their own listeners", async () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/schema packages/sdk/src/client.test.ts`
 Expected: FAIL (`Cannot find module "./agent"`… ou exports manquants, `subscribeTopic is not a function`).
 
-- [ ] **Step 3: Écrire les schémas**
+- [x] **Step 3: Écrire les schémas**
 
 `packages/schema/src/agent.ts` :
 ```ts
@@ -666,7 +666,7 @@ et à `RpcResult` :
 
 `packages/schema/src/index.ts` : ajouter `export * from "./agent";`, `export * from "./rule";`, `export * from "./run";` (ordre alphabétique conservé).
 
-- [ ] **Step 4: Client : sujets WebSocket**
+- [x] **Step 4: Client : sujets WebSocket**
 
 `packages/sdk/src/client.ts` : importer `type RunChanged`, `type RunState` et `type Topic` depuis `@kibo/schema`, ajouter à `KiboClient`
 ```ts
@@ -743,17 +743,17 @@ et remplacer la gestion des abonnés par :
     },
 ```
 
-- [ ] **Step 5: Sous-chemins de `core` et `zod` pour le démon**
+- [x] **Step 5: Sous-chemins de `core` et `zod` pour le démon**
 
 `packages/core/package.json` : `"exports": { ".": "./src/index.ts", "./*": "./src/*.ts" }`.
 `packages/daemon/package.json` : ajouter `"zod": "3.25.76"` aux `dependencies` (même version que `schema` ; utilisé par le serveur MCP, le faux `claude` et le runner). Puis `bun install`.
 
-- [ ] **Step 6: Vérifier**
+- [x] **Step 6: Vérifier**
 
 Run: `bun test packages/schema packages/sdk && bun run check && bun run typecheck`
 Expected: PASS ; typecheck vert (le service ne traite pas encore les nouvelles méthodes : elles sont branchées en Task 23).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/schema/src packages/sdk/src/client.ts packages/sdk/src/client.test.ts packages/core/package.json packages/daemon/package.json bun.lock
