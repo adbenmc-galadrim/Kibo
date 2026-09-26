@@ -7378,7 +7378,7 @@ Maquettes : page 23 (écran 13 : quatre compteurs, cartes de profil, historique 
   - `AgentsPage({ state: AgentsState; config: WorkspaceConfig; now: number })`
   - `ProfileSheet({ profile: AgentProfile | null; config: WorkspaceConfig; hostSlots: number; onClose: () => void })`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ui/src/agents/agents-page.test.tsx` :
 ```tsx
@@ -7584,12 +7584,12 @@ test("in edit mode a guideline is added to the profile at once", async () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/agents/agents-page.test.tsx`
 Expected: FAIL (`Cannot find module "./AgentsPage"`).
 
-- [ ] **Step 3: Fiche de profil**
+- [x] **Step 3: Fiche de profil**
 
 `packages/ui/src/agents/ProfileSheet.tsx` :
 ```tsx
@@ -7952,7 +7952,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
 }
 ```
 
-- [ ] **Step 4: Page Agents**
+- [x] **Step 4: Page Agents**
 
 `packages/ui/src/agents/AgentsPage.tsx` :
 ```tsx
@@ -8124,12 +8124,12 @@ export function AgentsPage({ state, config, now }: Props) {
 }
 ```
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/ui/src/agents && bun run format && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ui/src/agents/AgentsPage.tsx packages/ui/src/agents/ProfileSheet.tsx packages/ui/src/agents/agents-page.test.tsx
