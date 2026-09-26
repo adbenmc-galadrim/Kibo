@@ -6,6 +6,7 @@ import {
   EMPTY_TABS,
   type ProjectSnapshot,
   type RpcRequest,
+  type TabTarget,
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -102,6 +103,8 @@ mock.module("../api", () => ({
       if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
       if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
       saved.push(req);
+      if (req.method === "command" && req.command.method === "addPage")
+        return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
       return Promise.resolve(null);
     },
     code: (req: CodeRequest) => {
@@ -277,4 +280,49 @@ test("initials come from the first two words, or the first two letters", async (
   expect(initials("Adam Benmchichi")).toBe("AB");
   expect(initials("adam")).toBe("AD");
   expect(initials("jean-luc.picard")).toBe("JL");
+});
+
+test("openView goes to the view page showing the component, or offers to create it", async () => {
+  const { useOpenView } = await import("./use-open-view");
+  const opened: TabTarget[] = [];
+  const kanban = {
+    id: "k1",
+    pageId: "1@1",
+    component: "kanban@1.0.0",
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: {},
+  };
+  let current: ProjectSnapshot = { ...project, instances: [kanban] };
+  const get = () => current;
+  const go = (t: TabTarget) => opened.push(t);
+  function Harness() {
+    const { openView, dialog } = useOpenView(get, go);
+    return (
+      <>
+        <button type="button" onClick={() => openView("kanban")}>
+          open
+        </button>
+        {dialog}
+      </>
+    );
+  }
+  render(<Harness />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "open" }));
+  expect(opened).toEqual([{ kind: "page", projectId: "p1", pageId: "1@1" }]);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  current = project;
+  await user.click(screen.getByRole("button", { name: "open" }));
+  expect(await screen.findByRole("dialog", { name: "Créer une page Kanban ?" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Créer la page" }));
+  await waitFor(() => expect(opened.at(-1)).toEqual({ kind: "page", projectId: "p1", pageId: "9@1" }));
+  expect(saved.filter((r) => r.method === "command")).toEqual([
+    { method: "command", projectId: "p1", command: { method: "addPage", title: "Kanban", kind: "view" } },
+    {
+      method: "command",
+      projectId: "p1",
+      command: { method: "addInstance", pageId: "9@1", component: "kanban@1.0.0" },
+    },
+  ]);
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });

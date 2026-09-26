@@ -8,7 +8,6 @@ import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
-import { viewPageFor } from "../pages/view-page";
 import { CommandPalette } from "../palette/CommandPalette";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
@@ -28,10 +27,12 @@ import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { NotifyButton } from "./NotifyButton";
+import { PageActionsProvider, PageActionsSlot } from "./page-actions";
 import { ScreenActions } from "./ScreenActions";
 import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { UserAvatar } from "./UserAvatar";
+import { useOpenView } from "./use-open-view";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
@@ -89,6 +90,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const clearFocus = useCallback(() => setFocusRun(null), []);
   const launch = useCallback(() => set({ assign: { ticketId: null } }), [set]);
   const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
+  const currentProject = useCallback(() => projectRef.current, []);
+  const views = useOpenView(currentProject, go);
 
   const host = useMemo<Host>(
     () => ({
@@ -99,13 +102,9 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
       openAssign: (ticketId) => set({ assign: { ticketId } }),
       openFile: (ref) => set({ preview: ref }),
       openTarget: (target, opts) => go(target, opts?.newTab),
-      openView: (componentId) => {
-        const current = projectRef.current;
-        const page = current && viewPageFor(current, componentId);
-        if (current && page) go({ kind: "page", projectId: current.meta.id, pageId: page.id });
-      },
+      openView: views.openView,
     }),
-    [activeProjectId, set, go],
+    [activeProjectId, set, go, views.openView],
   );
 
   useTabShortcuts((s) => {
@@ -164,119 +163,127 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
 
   return (
     <HostProvider host={host}>
-      <div className="flex h-svh flex-col [--tabbar-h:2.5rem]">
-        <TabBar
-          state={tabs.state}
-          describe={(t) => describeTarget(t, { projects, snapshots })}
-          isDirty={isDirty}
-          dispatch={tabs.dispatch}
-          onNewTab={() => setPalette({ newTab: true })}
-          onOpenWindow={inTauri() ? null : openWindow}
-          error={tabs.error}
-        />
-        <SidebarProvider className="min-h-0 flex-1">
-          <AppSidebar
-            className="top-(--tabbar-h) h-[calc(100svh-var(--tabbar-h))]!"
-            projects={projects}
-            active={project}
-            activeTarget={active}
-            screen={screen}
-            agents={agents}
-            changesCount={git.worktrees ? git.changesCount : null}
-            onOpen={go}
-            onSearch={() => setPalette({ newTab: false })}
-            onNewProject={() => set({ newProject: true })}
-            onNewPage={(parentId) => set({ newPageParent: parentId })}
+      <PageActionsProvider>
+        <div className="flex h-svh flex-col [--tabbar-h:2.5rem]">
+          <TabBar
+            state={tabs.state}
+            describe={(t) => describeTarget(t, { projects, snapshots })}
+            isDirty={isDirty}
+            dispatch={tabs.dispatch}
+            onNewTab={() => setPalette({ newTab: true })}
+            onOpenWindow={inTauri() ? null : openWindow}
+            error={tabs.error}
           />
-          <SidebarInset className="min-h-0 min-w-0">
-            <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
-              <SidebarTrigger />
-              <Breadcrumb
-                crumbs={crumbsFor(active, { project, branch })}
-                heading={screen === "agents" || screen === "queue" || screen === "components"}
-              />
-              <span className="flex-1" />
-              {git.error && (
-                <p role="alert" className="truncate text-xs text-destructive">
-                  {git.error}
-                </p>
-              )}
-              <ScreenActions screen={screen} agents={agents} onNewProfile={() => set({ newProfile: true })} />
-              {ticketProject && (
-                <Button
-                  size="sm"
-                  className="h-7"
-                  title={fr.header.newTicketIn(ticketProject.meta.name)}
-                  onClick={() => set({ newTicket: {} })}
-                >
-                  <Plus />
-                  {fr.header.newTicket}
-                </Button>
-              )}
-              {notifications === "browser" ? (
-                <NotifyButton />
-              ) : (
-                <Bell aria-hidden className="size-4 text-muted-foreground" />
-              )}
-              <UserAvatar user={viewer} />
-            </header>
-            <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
-              {screen ? (
-                <ScreenView
-                  screen={screen}
-                  projects={projects}
-                  agents={agents}
-                  config={config}
-                  now={now}
-                  onAnswer={setFocusRun}
-                />
-              ) : (
-                <ContentView
-                  target={active}
-                  viewer={viewer}
-                  projects={projects}
-                  project={project}
-                  domains={config?.domains}
-                  startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
-                  onNewProject={() => set({ newProject: true })}
-                  onNewPage={() => set({ newPageParent: null })}
-                  onOpen={(t) => go(t)}
-                  onOpenFile={(ref) => set({ preview: ref })}
-                  onAssign={(ticketId) => set({ assign: { ticketId } })}
-                />
-              )}
-            </div>
-            <AgentPanel
-              onLaunch={launch}
-              focusRunId={focusRun}
-              onFocused={clearFocus}
-              onOpenFile={(ref) => set({ preview: ref })}
+          <SidebarProvider className="min-h-0 flex-1">
+            <AppSidebar
+              className="top-(--tabbar-h) h-[calc(100svh-var(--tabbar-h))]!"
+              projects={projects}
+              active={project}
+              activeTarget={active}
+              screen={screen}
+              agents={agents}
+              changesCount={git.worktrees ? git.changesCount : null}
+              onOpen={go}
+              onSearch={() => setPalette({ newTab: false })}
+              onNewProject={() => set({ newProject: true })}
+              onNewPage={(parentId) => set({ newPageParent: parentId })}
             />
-          </SidebarInset>
-          <ShellDialogs
-            state={dialogs}
-            set={set}
-            viewer={viewer}
-            projectsCount={projects.length}
-            project={project}
-            ticketProject={ticketProject}
-            sheetProject={sheetProject}
-            agents={agents}
-            config={config}
-            onOpenTarget={go}
-            onOpenFileTab={openFileTab}
-          />
-          <CommandPalette
-            open={palette !== null}
-            onOpenChange={(o) => !o && setPalette(null)}
-            newTab={palette?.newTab ?? false}
-            context={paletteContext}
-            onOpenTarget={go}
-            onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
-            onAction={onAction}
-          />
-        </SidebarProvider>
-      </div>
+            <SidebarInset className="min-h-0 min-w-0">
+              <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+                <SidebarTrigger />
+                <Breadcrumb
+                  crumbs={crumbsFor(active, { project, branch })}
+                  heading={screen === "agents" || screen === "queue" || screen === "components"}
+                />
+                <PageActionsSlot />
+                <span className="flex-1" />
+                {git.error && (
+                  <p role="alert" className="truncate text-xs text-destructive">
+                    {git.error}
+                  </p>
+                )}
+                <ScreenActions
+                  screen={screen}
+                  agents={agents}
+                  onNewProfile={() => set({ newProfile: true })}
+                />
+                {ticketProject && (
+                  <Button
+                    size="sm"
+                    className="h-7"
+                    title={fr.header.newTicketIn(ticketProject.meta.name)}
+                    onClick={() => set({ newTicket: {} })}
+                  >
+                    <Plus />
+                    {fr.header.newTicket}
+                  </Button>
+                )}
+                {notifications === "browser" ? (
+                  <NotifyButton />
+                ) : (
+                  <Bell aria-hidden className="size-4 text-muted-foreground" />
+                )}
+                <UserAvatar user={viewer} />
+              </header>
+              <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
+                {screen ? (
+                  <ScreenView
+                    screen={screen}
+                    projects={projects}
+                    agents={agents}
+                    config={config}
+                    now={now}
+                    onAnswer={setFocusRun}
+                  />
+                ) : (
+                  <ContentView
+                    target={active}
+                    viewer={viewer}
+                    projects={projects}
+                    project={project}
+                    domains={config?.domains}
+                    startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
+                    onNewProject={() => set({ newProject: true })}
+                    onNewPage={() => set({ newPageParent: null })}
+                    onOpen={(t) => go(t)}
+                    onOpenFile={(ref) => set({ preview: ref })}
+                    onAssign={(ticketId) => set({ assign: { ticketId } })}
+                  />
+                )}
+              </div>
+              <AgentPanel
+                onLaunch={launch}
+                focusRunId={focusRun}
+                onFocused={clearFocus}
+                onOpenFile={(ref) => set({ preview: ref })}
+              />
+            </SidebarInset>
+            <ShellDialogs
+              state={dialogs}
+              set={set}
+              viewer={viewer}
+              projectsCount={projects.length}
+              project={project}
+              ticketProject={ticketProject}
+              sheetProject={sheetProject}
+              agents={agents}
+              config={config}
+              onOpenTarget={go}
+              onOpenFileTab={openFileTab}
+            />
+            {views.dialog}
+            <CommandPalette
+              open={palette !== null}
+              onOpenChange={(o) => !o && setPalette(null)}
+              newTab={palette?.newTab ?? false}
+              context={paletteContext}
+              onOpenTarget={go}
+              onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+              onAction={onAction}
+            />
+          </SidebarProvider>
+        </div>
+      </PageActionsProvider>
     </HostProvider>
   );
 }

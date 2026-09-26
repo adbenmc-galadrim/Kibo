@@ -1,48 +1,36 @@
-import type { Instance, Page, ProjectSnapshot, Surface } from "@kibo/schema";
-import { createSdk, projectBackend, SdkProvider } from "@kibo/sdk";
+import { type Instance, isBuiltinId, type Page, type ProjectSnapshot, splitRef } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
-import { client } from "../api";
+import { useState } from "react";
+import { PublishDialog } from "../components-page/PublishDialog";
 import { AddComponentDialog } from "../dialogs/AddComponentDialog";
 import { fr } from "../i18n/fr";
-import { findComponent } from "../registry";
-import { useHost } from "../shell/Host";
+import { componentIcon } from "../registry";
+import { PageActions } from "../shell/page-actions";
+import { InstanceFrame } from "./InstanceFrame";
+import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
 
-type FrameProps = { projectId: string; instance: Instance; viewer: string; surface: Surface };
-
-function InstanceFrame({ projectId, instance, viewer, surface }: FrameProps) {
-  const host = useHost();
-  const mod = findComponent(instance.component);
-  const sdk = useMemo(
-    () =>
-      mod &&
-      createSdk(projectBackend(client, projectId, instance.id), mod.manifest, {
-        instanceId: instance.id,
-        config: instance.config,
-        viewer,
-        surface,
-        openTicket: host.openTicket,
-        openNewTicket: host.openNewTicket,
-        openFile: (r) =>
-          host.openFile({
-            projectId,
-            worktree: null,
-            path: r.path,
-            line: r.line ?? null,
-            origin: r.origin ?? null,
-          }),
-        openView: host.openView,
-      }),
-    [mod, projectId, instance.id, instance.config, viewer, surface, host],
-  );
-  if (!mod || !sdk) {
-    return <p className="p-6 text-sm text-destructive">{fr.page.unknownComponent(instance.component)}</p>;
-  }
+function WidgetHeader({ projectId, instance }: { projectId: string; instance: Instance }) {
+  const Icon = componentIcon(instance.component);
+  const title = useInstanceTitle(instance.component);
+  const { id, version } = splitRef(instance.component);
   return (
-    <SdkProvider sdk={sdk}>
-      <mod.Component />
-    </SdkProvider>
+    <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
+      <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+        {isBuiltinId(id) ? title : `${title} · ${version}`}
+      </span>
+      <InstanceMenu projectId={projectId} instance={instance} title={title} />
+    </div>
+  );
+}
+
+function ViewActions({ projectId, instance }: { projectId: string; instance: Instance }) {
+  const title = useInstanceTitle(instance.component);
+  return (
+    <PageActions>
+      <InstanceMenu projectId={projectId} instance={instance} title={title} />
+    </PageActions>
   );
 }
 
@@ -50,6 +38,8 @@ type Props = { project: ProjectSnapshot; page: Page; viewer: string };
 
 export function PageView({ project, page, viewer }: Props) {
   const [adding, setAdding] = useState(false);
+  const [publishing, setPublishing] = useState<string | null>(null);
+  const projectId = project.meta.id;
   const instances = project.instances.filter((i) => i.pageId === page.id);
   const [first] = instances;
   const canAdd = page.kind === "dashboard" || !first;
@@ -68,19 +58,25 @@ export function PageView({ project, page, viewer }: Props) {
           </div>
         </div>
       ) : page.kind === "view" ? (
-        <InstanceFrame projectId={project.meta.id} instance={first} viewer={viewer} surface="view" />
+        <>
+          <ViewActions projectId={projectId} instance={first} />
+          <InstanceFrame projectId={projectId} instance={first} viewer={viewer} surface="view" />
+        </>
       ) : (
         <div className="grid flex-1 auto-rows-[80px] grid-cols-12 gap-4 overflow-auto p-4">
           {instances.map((i) => (
             <div
               key={i.id}
-              className="overflow-hidden rounded-lg border bg-card"
+              className="flex flex-col overflow-hidden rounded-lg border bg-card"
               style={{
                 gridColumn: `${i.layout.x + 1} / span ${i.layout.w}`,
                 gridRow: `${i.layout.y + 1} / span ${i.layout.h}`,
               }}
             >
-              <InstanceFrame projectId={project.meta.id} instance={i} viewer={viewer} surface="widget" />
+              <WidgetHeader projectId={projectId} instance={i} />
+              <div className="min-h-0 flex-1 overflow-auto">
+                <InstanceFrame projectId={projectId} instance={i} viewer={viewer} surface="widget" />
+              </div>
             </div>
           ))}
           <div className="col-span-12">{addButton}</div>
@@ -88,13 +84,15 @@ export function PageView({ project, page, viewer }: Props) {
       )}
       {adding && (
         <AddComponentDialog
-          projectId={project.meta.id}
+          projectId={projectId}
           page={page}
           taken={instances.map((i) => i.layout)}
           open
           onOpenChange={setAdding}
+          onPublishDraft={(id) => setPublishing(id)}
         />
       )}
+      {publishing && <PublishDialog id={publishing} open onOpenChange={(o) => !o && setPublishing(null)} />}
     </div>
   );
 }

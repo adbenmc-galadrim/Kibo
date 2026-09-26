@@ -30,6 +30,10 @@ export function findComponent(ref: string): ComponentModule | undefined {
   return BUILTIN_COMPONENTS.find((c) => componentRef(c.manifest) === ref);
 }
 
+export function findBuiltin(id: string): ComponentModule | undefined {
+  return BUILTIN_COMPONENTS.find((c) => c.manifest.id === id);
+}
+
 export function componentIcon(ref: string): LucideIcon {
   const id = findComponent(ref)?.manifest.id;
   return (id && BUILTIN_ICONS[id]) || Blocks;
