@@ -177,12 +177,21 @@ export type CiRun = {
 export type CiLog = { text: string; truncated: boolean; errorLines: number[] };
 
 const loopbackHosts = ["127.0.0.1", "localhost", "[::1]"];
-const mcpUrlAllowed = (raw: string): boolean => {
+export const mcpUrlAllowed = (raw: string): boolean => {
   if (!URL.canParse(raw)) return false;
   const u = new URL(raw);
   if (u.protocol === "https:") return true;
   return u.protocol === "http:" && loopbackHosts.includes(u.hostname);
 };
+
+const UNSAFE_TEXT = /[\p{Cc}\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/u;
+const SafeText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .refine((v) => !UNSAFE_TEXT.test(v), "control or bidi character");
+const MINIMAL_ENV: readonly string[] = ["PATH", "HOME", "LANG"];
+const McpEnvName = EnvName.refine((n) => !MINIMAL_ENV.includes(n), "reserved environment variable");
 
 export const McpServerInput = z
   .discriminatedUnion("transport", [
@@ -190,9 +199,9 @@ export const McpServerInput = z
       transport: z.literal("stdio"),
       id: McpServerId,
       name: z.string().trim().min(1).max(60),
-      command: z.string().trim().min(1).max(1024),
-      args: z.array(z.string().max(4096)).max(64).default([]),
-      envNames: z.array(EnvName).max(32).default([]),
+      command: SafeText(1024).pipe(z.string().trim().min(1)),
+      args: z.array(SafeText(4096)).max(64).default([]),
+      envNames: z.array(McpEnvName).max(32).default([]),
     }),
     z.object({
       transport: z.literal("http"),

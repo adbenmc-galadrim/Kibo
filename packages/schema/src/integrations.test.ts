@@ -137,6 +137,19 @@ describe("integration contracts", () => {
     expect(McpServerInput.safeParse({ ...http, url: "https://mcp.example.com/mcp" }).success).toBe(true);
   });
 
+  test("a stdio mcp server refuses control or bidi characters and minimal env names (N48)", () => {
+    const stdio = { transport: "stdio", id: "ctx", name: "Context7", command: "npx", args: ["-y"] };
+    const ok = (patch: Record<string, unknown>) => McpServerInput.safeParse({ ...stdio, ...patch }).success;
+    expect(ok({ args: ["a b", "it's", "é"] })).toBe(true);
+    expect(ok({ args: ["a\nb"] })).toBe(false);
+    expect(ok({ args: ["a\u0000b"] })).toBe(false);
+    expect(ok({ args: ["a\u202Eb"] })).toBe(false);
+    expect(ok({ args: ["a\u2066b"] })).toBe(false);
+    expect(ok({ command: "np\u200Fx" })).toBe(false);
+    expect(ok({ envNames: ["TOKEN"] })).toBe(true);
+    for (const name of ["PATH", "HOME", "LANG"]) expect(ok({ envNames: [name] })).toBe(false);
+  });
+
   test("status projection is consistent on both sides", () => {
     const map = { todo: "O1", in_progress: "O2", in_review: "O2", done: "O3" };
     expect(remoteStatusId(true, "O1", map)).toBe("done");
