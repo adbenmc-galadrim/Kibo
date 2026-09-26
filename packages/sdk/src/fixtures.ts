@@ -1,4 +1,4 @@
-import { type Assignee, type ProjectCommand, type StatusId, Ticket } from "@kibo/schema";
+import { type Assignee, KiboError, type ProjectCommand, type StatusId, Ticket } from "@kibo/schema";
 
 type Row = [number, string, number | null, StatusId, string | null];
 
@@ -63,6 +63,7 @@ export function seedDemo(run: (cmd: ProjectCommand) => unknown, viewer = "adam")
       }),
     );
     if (!row) fillers.push(ticket.id);
+    else if (ticket.key === null) throw new KiboError("INTERNAL", "demo tickets need local keys");
     else ids[ticket.key] = ticket.id;
     if (row && status === "blocked") {
       run({ method: "setStatus", ticketId: ticket.id, statusId: "blocked", reason: BLOCKED_REASON });

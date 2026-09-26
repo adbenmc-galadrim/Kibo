@@ -22,9 +22,9 @@ test("the demo data matches design/donnees-fictives.md", async () => {
     },
   );
   const tickets = await m.sdk.list("ticket");
-  const byKey = Object.fromEntries(tickets.map((t) => [t.key, t]));
+  const byKey = Object.fromEntries(tickets.map((t) => [t.keyLabel, t]));
   expect(tickets).toHaveLength(22);
-  expect(Object.keys(ids).sort()).toEqual(tickets.map((t) => t.key).sort());
+  expect(Object.keys(ids).sort()).toEqual(tickets.map((t) => t.keyLabel).sort());
   expect(ids["KIB-12"]).toBe(byKey["KIB-12"]?.id);
   expect(byKey["KIB-21"]?.statusId).toBe("blocked");
   expect(byKey["KIB-21"]?.blockedReason).toBe("Audit sécurité externe en attente");

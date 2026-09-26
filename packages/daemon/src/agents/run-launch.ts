@@ -54,6 +54,8 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
   async function prepareTicketRun(run: RunView, profile: AgentProfile, runDir: string): Promise<Prepared> {
     if (!run.projectId || !run.ticketId) throw new KiboError("INVALID_INPUT", `run ${run.id} has no ticket`);
     const ctx = opts.data.ticketContext(run.projectId, run.ticketId);
+    if (ctx.ticket.key === null)
+      throw new KiboError("INVALID_INPUT", `ticket ${ctx.ticket.id} has no key yet`);
     const workspace = await prepareWorkspace({
       strategy: profile.workspace,
       projectFolder: ctx.project.meta.folder,

@@ -31,7 +31,8 @@ export function getWorkflow(doc: LoroDoc): Status[] {
 const upcomingSeq = (doc: LoroDoc): number =>
   ((doc.getMap("meta").get("ticketSeq") as number | undefined) ?? 0) + 1;
 
-export function peekTicketKey(doc: LoroDoc): string {
+export function peekTicketKey(doc: LoroDoc): string | null {
+  if (doc.getMap("meta").get("keyAllocator") === "server") return null;
   return formatTicketKey(getProjectMeta(doc).key, upcomingSeq(doc));
 }
 

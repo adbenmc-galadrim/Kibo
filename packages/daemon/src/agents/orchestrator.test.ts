@@ -34,10 +34,12 @@ import { openRunRegistry } from "./run-registry";
 import { openRunStore, type RunStore } from "./run-store";
 import { newRunToken } from "./run-token";
 
-const ticket = (id: string, key: string): TicketView => ({
+const ticket = (id: string, key: string | null): TicketView => ({
   id,
   key,
-  title: `Ticket ${key}`,
+  pendingSeq: key === null ? 1 : null,
+  keyLabel: key ?? "KIB-…",
+  title: `Ticket ${key ?? id}`,
   description: "",
   statusId: "todo",
   blockedReason: null,
@@ -53,12 +55,13 @@ const project: ProjectSnapshot = {
   meta: { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
-  tickets: [1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)),
+  tickets: [...[1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)), ticket("pending", null)],
   links: [],
   instances: [],
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-5",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 const profile = (p: Partial<AgentProfile> = {}): AgentProfile => ({
@@ -464,6 +467,15 @@ test("a system profile cannot take a ticket but runs tasks without ticket", asyn
   expect(r).toMatchObject({ ticketId: null, profileName: "assistant" });
   await waitUntil(() => run(h, r.id).state === "done");
 }, 30_000);
+
+test("refuses to assign or preview a ticket that has no key yet", () => {
+  const h = setup({ scenario: "done" });
+  const input = { projectId: "p1", ticketId: "pending", profileId: "opus" };
+  expect(() => h.orch.preview(input)).toThrow("INVALID_INPUT");
+  expect(() => h.orch.assign({ ...input, brief: "" })).toThrow("INVALID_INPUT");
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.assigned).toEqual([]);
+});
 
 test("each state change is announced, run by run", async () => {
   const h = setup({ scenario: "done" });

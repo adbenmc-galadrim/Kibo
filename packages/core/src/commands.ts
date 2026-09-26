@@ -1,4 +1,10 @@
-import { KiboError, type ProjectCommand, type ProjectSnapshot, type StatusId } from "@kibo/schema";
+import {
+  KiboError,
+  type ProjectCommand,
+  type ProjectSnapshot,
+  type StatusId,
+  ticketKeyLabel,
+} from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { addBinding, listBindings, removeBinding } from "./bindings";
 import { importExternalTicket, removeExternalRef, upsertExternalRef } from "./external-refs";
@@ -10,6 +16,7 @@ import {
   setInstanceComponent,
   setInstanceConfig,
 } from "./instances";
+import { localSyncInfo } from "./keys";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
@@ -100,20 +107,23 @@ export function assertShellCommand(cmd: ProjectCommand): void {
 }
 
 export function readProject(doc: LoroDoc): ProjectSnapshot {
+  const meta = getProjectMeta(doc);
   return {
-    meta: getProjectMeta(doc),
+    meta,
     workflow: getWorkflow(doc),
     pages: listPages(doc),
     tickets: listTickets(doc).map((t) => ({
       ...t,
       progress: childProgress(doc, t.id),
       waitingOn: waitingOn(doc, t.id),
+      keyLabel: ticketKeyLabel(t, meta.key),
     })),
     links: listLinks(doc),
     instances: listInstances(doc),
     rules: readRules(doc),
     bindings: listBindings(doc),
     nextTicketKey: peekTicketKey(doc),
+    sync: localSyncInfo(doc),
   };
 }
 

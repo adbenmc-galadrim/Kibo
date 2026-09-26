@@ -5,6 +5,8 @@ import { filterBySource, matchesSource, readSource } from "./source";
 const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
   id: "1@1",
   key: "KIB-1",
+  pendingSeq: null,
+  keyLabel: "KIB-1",
   title: "A",
   description: "",
   statusId: "todo",

@@ -96,7 +96,7 @@ export function createCiPoller(deps: Deps): CiPoller {
     const fresh = seen === "changed" || host.now() - Date.parse(r.updated_at) < FRESH_MS;
     const notified = store.runsOf(projectId, [pr.number]).find((x) => x.runId === r.id)?.notified;
     if (fresh && !notified) {
-      host.notify({ title: frCi.failedTitle(pr.ticket.key), body: frCi.failedBody(r.name, pr.number) });
+      host.notify({ title: frCi.failedTitle(pr.ticket.keyLabel), body: frCi.failedBody(r.name, pr.number) });
     }
     store.markNotified(repo, r.id);
   };

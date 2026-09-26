@@ -63,7 +63,7 @@ export function buildBrief({ project, ticket, domain, note }: BriefInput): strin
     .map((l) => project.tickets.find((t) => t.id === l.from))
     .filter((t): t is TicketView => t !== undefined);
   const lines = [
-    `# ${ticket.key} · ${ticket.title}`,
+    `# ${ticket.keyLabel} · ${ticket.title}`,
     "",
     `- Projet : ${project.meta.name}`,
     `- Domaine : ${domain?.name ?? "aucun"}`,
@@ -78,7 +78,7 @@ export function buildBrief({ project, ticket, domain, note }: BriefInput): strin
       "",
       "## Sous-tickets",
       "",
-      ...children.map((c) => `- ${c.key} · ${c.title} (${label(c.statusId)})`),
+      ...children.map((c) => `- ${c.keyLabel} · ${c.title} (${label(c.statusId)})`),
     );
   }
   if (blockers.length > 0) {
@@ -86,7 +86,7 @@ export function buildBrief({ project, ticket, domain, note }: BriefInput): strin
       "",
       "## Dépendances",
       "",
-      ...blockers.map((b) => `- Attend ${b.key} · ${b.title} (${label(b.statusId)})`),
+      ...blockers.map((b) => `- Attend ${b.keyLabel} · ${b.title} (${label(b.statusId)})`),
     );
   }
   const mockups = ticket.externalRefs.filter((r) => r.kind === "figma_node");

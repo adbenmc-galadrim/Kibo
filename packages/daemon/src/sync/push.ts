@@ -112,7 +112,7 @@ export function createFlusher(deps: EngineDeps) {
       if (item) store.upsertItem({ ...item, ticketId: IGNORED });
       store.deleteOutbox(row.id);
     });
-    events.log("github-issues", "warn", `${ticket.key}: issue deleted or transferred, link broken`);
+    events.log("github-issues", "warn", `${ticket.keyLabel}: issue deleted or transferred, link broken`);
   };
 
   const onPushError = (t: Target, e: KiboError): "stop" | "next" => {
@@ -134,7 +134,7 @@ export function createFlusher(deps: EngineDeps) {
       nextAttemptAt: null,
       lastError: { code: e.code, message: redact(e.detail) },
     });
-    events.log("github-issues", "error", `${t.ticket.key}: ${e.detail}`);
+    events.log("github-issues", "error", `${t.ticket.keyLabel}: ${e.detail}`);
     return "stop";
   };
 

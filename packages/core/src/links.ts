@@ -1,4 +1,4 @@
-import { KiboError, type Link } from "@kibo/schema";
+import { KiboError, type Link, ticketKeyLabel } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { getNode } from "./tree";
 
@@ -54,9 +54,12 @@ export function pruneLinks(doc: LoroDoc, ticketIds: string[]): void {
 
 export function waitingOn(doc: LoroDoc, ticketId: string): string[] {
   const tickets = doc.getTree("tickets");
+  const projectKey = doc.getMap("meta").get("key") as string;
   return listLinks(doc)
     .filter((l) => l.type === "blocks" && l.to === ticketId)
     .map((l) => getNode(tickets, l.from).data)
     .filter((data) => data.get("statusId") !== "done")
-    .map((data) => data.get("key") as string);
+    .map((data) =>
+      ticketKeyLabel({ key: (data.get("key") as string | null | undefined) ?? null }, projectKey),
+    );
 }

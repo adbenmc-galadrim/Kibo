@@ -1,6 +1,6 @@
 import type { CommitDefaults, ProjectSnapshot } from "@kibo/schema";
 
-export type MessageTicket = { key: string; title: string };
+export type MessageTicket = { key: string | null; title: string };
 
 const TRAILING_PAREN = /\s*\([^()]*\)\s*$/;
 
@@ -24,7 +24,7 @@ function bulletList(items: string[]): string {
 export function commitSubject(ticket: MessageTicket, scope: string | null): string {
   const stripped = ticket.title.replace(TRAILING_PAREN, "").trim();
   const title = lowerFirst(stripped || ticket.title.trim());
-  return `feat${scope ? `(${scope})` : ""}: ${title} (${ticket.key})`;
+  return `feat${scope ? `(${scope})` : ""}: ${title} (${ticket.key ?? "…"})`;
 }
 
 export function commitMessage(input: {
@@ -45,7 +45,7 @@ export function prBody(input: {
   mockupUrl: string | null;
 }): string {
   const sections: string[] = [];
-  if (input.ticket) sections.push(`## Ticket\n${input.ticket.key} · ${input.ticket.title}`);
+  if (input.ticket) sections.push(`## Ticket\n${input.ticket.key ?? "…"} · ${input.ticket.title}`);
   if (input.commitSubjects.length > 0) sections.push(`## Changements\n${bulletList(input.commitSubjects)}`);
   if (input.children.length > 0)
     sections.push(
@@ -75,7 +75,7 @@ export function commitDefaults(
     prBody: prBody({
       ticket,
       commitSubjects,
-      children: children.map((c) => ({ key: c.key, done: c.statusId === "done" })),
+      children: children.map((c) => ({ key: c.keyLabel, done: c.statusId === "done" })),
       mockupUrl: null,
     }),
   };

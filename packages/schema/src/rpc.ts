@@ -28,13 +28,18 @@ import type { ProjectMeta } from "./project";
 import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
+import type { ProjectSyncInfo } from "./sharing";
 import type { Status, StatusId } from "./status";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import { TabsState } from "./tabs";
 import type { Ticket } from "./ticket";
 
-export type TicketView = Ticket & { progress: { done: number; total: number }; waitingOn: string[] };
+export type TicketView = Ticket & {
+  progress: { done: number; total: number };
+  waitingOn: string[];
+  keyLabel: string;
+};
 export type ProjectSnapshot = {
   meta: ProjectMeta;
   workflow: Status[];
@@ -44,7 +49,8 @@ export type ProjectSnapshot = {
   instances: Instance[];
   rules: Rule[];
   bindings: Binding[];
-  nextTicketKey: string;
+  nextTicketKey: string | null;
+  sync: ProjectSyncInfo;
 };
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
 export type Session = { user: string; notifications: "native" | "browser" };

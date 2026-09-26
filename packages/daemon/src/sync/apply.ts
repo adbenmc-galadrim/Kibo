@@ -52,7 +52,7 @@ function syncRef(deps: Deps, projectId: string, ticket: TicketView, m: MappedRem
 }
 
 function conflictsOf(plan: SyncPlan, ticket: TicketView, local: SyncedFields): ApplyResult["conflicts"] {
-  return plan.conflicts.map((field) => ({ ticketKey: ticket.key, field, local: String(local[field]) }));
+  return plan.conflicts.map((field) => ({ ticketKey: ticket.keyLabel, field, local: String(local[field]) }));
 }
 
 function passes(m: MappedRemote, b: Binding): boolean {

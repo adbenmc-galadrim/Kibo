@@ -7,6 +7,7 @@ import {
   type Ticket,
 } from "@kibo/schema";
 import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crdt";
+import { getKeyAllocator, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
@@ -49,7 +50,8 @@ function readTicket(n: LoroTreeNode): Ticket {
   const text = d.get("description");
   return {
     id: n.id,
-    key: d.get("key") as string,
+    key: (d.get("key") as string | null | undefined) ?? null,
+    pendingSeq: (d.get("pendingSeq") as number | null | undefined) ?? null,
     title: d.get("title") as string,
     description: text instanceof LoroText ? text.toString() : "",
     statusId: d.get("statusId") as StatusId,
@@ -73,9 +75,12 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   }
   const title = cleanTitle(input.title);
   const parent = input.parentId ? getNode(tree(doc), input.parentId) : undefined;
-  const key = formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
+  const serverKeys = getKeyAllocator(doc) === "server";
+  const pendingSeq = serverKeys ? nextPendingSeq(doc) : null;
+  const key = serverKeys ? null : formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
   const node = parent ? parent.createNode() : tree(doc).createNode();
   node.data.set("key", key);
+  node.data.set("pendingSeq", pendingSeq);
   node.data.set("title", title);
   node.data.set("statusId", input.statusId ?? "todo");
   node.data.set("blockedReason", null);
