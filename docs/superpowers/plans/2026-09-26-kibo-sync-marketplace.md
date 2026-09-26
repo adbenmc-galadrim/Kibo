@@ -8103,7 +8103,7 @@ Les lignes écrites par le serveur lui-même (attribution de clés dans un lot c
 - Produces (Contrats partagés) : `Actor`, `PushResult` (avec `allocated`), `RoomLimits`, `RoomReject`, `ProjectRoom` (`create`, `load`, `projectId`, `presence`, `version`, `serverSeq`, `sizeBytes`, `diffSince`, `push`, `syncMembers`, `snapshotBytes`), `RoomRegistry` (`get`, `create`, `attach`, `detach`, `drop`, `sweep`, `loaded`).
 - Produces (**ajout**) : le constructeur de `RoomRegistry` accepte `limits?: Partial<RoomLimits>` dans ses options ; `@kibo/sync-server/testing/fixtures` exporte `seedUser(sdb, name, now): Promise<SeededUser>`, `addMember(sdb, input, now)` et `ownerSnapshot(): Uint8Array` pour T17, T18 et T19.
 
-- [ ] **Step 1: Écrire les fixtures de test**
+- [x] **Step 1: Écrire les fixtures de test**
 
 `packages/sync-server/src/testing/fixtures.ts` :
 ```ts
@@ -8146,7 +8146,7 @@ export function ownerSnapshot(): Uint8Array {
 }
 ```
 
-- [ ] **Step 2: Écrire les tests de la salle qui échouent**
+- [x] **Step 2: Écrire les tests de la salle qui échouent**
 
 `packages/sync-server/src/room.test.ts` :
 ```ts
@@ -8402,12 +8402,12 @@ describe("restart", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer le test**
+- [x] **Step 3: Lancer le test**
 
 Run: `bun test packages/sync-server/src/room.test.ts`
 Expected: FAIL (`./room` introuvable).
 
-- [ ] **Step 4: Implémenter `room.ts`**
+- [x] **Step 4: Implémenter `room.ts`**
 
 `packages/sync-server/src/room.ts` :
 ```ts
@@ -8635,12 +8635,12 @@ Notes pour le relecteur :
 - Écart (T14) : un lot de plus de `MAX_FRAME_BYTES` est refusé en `UPDATE_REJECTED` avant tout import (aucun code de `RejectCode` plus précis) ; `diffSince` sur une version illisible lève `INVALID_INPUT`.
 - Écart (T14) : l'attribution des clés se fait sur le candidat, adopté comme doc de la salle seulement après l'écriture SQLite réussie ; les versions se comparent par `VersionVector.compare`, jamais octet par octet.
 
-- [ ] **Step 5: Relancer le test**
+- [x] **Step 5: Relancer le test**
 
 Run: `bun test packages/sync-server/src/room.test.ts`
 Expected: PASS (14 tests).
 
-- [ ] **Step 6: Écrire les tests du registre qui échouent**
+- [x] **Step 6: Écrire les tests du registre qui échouent**
 
 `packages/sync-server/src/rooms.test.ts` :
 ```ts
@@ -8701,12 +8701,12 @@ test("a reloaded room has the same state", () => {
 });
 ```
 
-- [ ] **Step 7: Lancer le test**
+- [x] **Step 7: Lancer le test**
 
 Run: `bun test packages/sync-server/src/rooms.test.ts`
 Expected: FAIL (`./rooms` introuvable).
 
-- [ ] **Step 8: Implémenter `rooms.ts`**
+- [x] **Step 8: Implémenter `rooms.ts`**
 
 `packages/sync-server/src/rooms.ts` :
 ```ts
@@ -8788,12 +8788,12 @@ export * from "./room";
 export * from "./rooms";
 ```
 
-- [ ] **Step 9: Suite du paquet, lint, types**
+- [x] **Step 9: Suite du paquet, lint, types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add packages/sync-server/package.json packages/sync-server/src/room.ts packages/sync-server/src/rooms.ts packages/sync-server/src/index.ts \
