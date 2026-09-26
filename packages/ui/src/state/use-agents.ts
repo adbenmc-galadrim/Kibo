@@ -1,5 +1,5 @@
 import { type AgentsState, KiboError, type RunLogEntry, type WorkspaceConfig } from "@kibo/schema";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { client } from "../api";
 
 function unlessUnauthorized(e: unknown): void {
@@ -63,4 +63,8 @@ export function useNow(intervalMs = 15_000): number {
     return () => clearInterval(id);
   }, [intervalMs]);
   return now;
+}
+
+export function useDaemonOnline(): boolean {
+  return useSyncExternalStore(client.onConnection, client.online);
 }

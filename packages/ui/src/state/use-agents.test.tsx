@@ -5,6 +5,7 @@ import { agentsFixture, configFixture } from "../agents/fixtures";
 
 const calls: string[] = [];
 const topics = new Map<Topic, Set<() => void>>();
+const status = { online: false, listeners: new Set<() => void>() };
 
 mock.module("../api", () => ({
   client: {
@@ -20,11 +21,18 @@ mock.module("../api", () => ({
       topics.set(topic, set);
       return () => set.delete(listener);
     },
+    online: () => status.online,
+    onConnection: (listener: () => void) => {
+      status.listeners.add(listener);
+      return () => status.listeners.delete(listener);
+    },
   },
 }));
 
 const unmockedModule = "./use-agents?unmocked";
-const { useAgents, useConfig, useRunLog }: typeof import("./use-agents") = await import(unmockedModule);
+const { useAgents, useConfig, useDaemonOnline, useRunLog }: typeof import("./use-agents") = await import(
+  unmockedModule
+);
 
 beforeEach(() => {
   calls.length = 0;
@@ -62,4 +70,20 @@ test("no run selected means no log request", async () => {
   render(<Probe runId={null} />);
   await flush();
   expect(calls).not.toContain("getRunLog");
+});
+
+function Online() {
+  return <p>{useDaemonOnline() ? "on" : "off"}</p>;
+}
+
+test("the daemon status follows the client connection", async () => {
+  const view = render(<Online />);
+  expect(view.container.textContent).toBe("off");
+  await act(async () => {
+    status.online = true;
+    for (const listener of status.listeners) listener();
+  });
+  expect(view.container.textContent).toBe("on");
+  view.unmount();
+  expect(status.listeners.size).toBe(0);
 });

@@ -1,14 +1,21 @@
 import { type AgentsState, runSubject } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot, ChevronUp } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { elapsed, formatDuration } from "./format";
 import { SlotMeter } from "./SlotMeter";
 
-type Props = { state: AgentsState; now: number; onExpand: () => void; onSelect: (runId: string) => void };
+type Props = {
+  state: AgentsState;
+  now: number;
+  online: boolean;
+  onExpand: () => void;
+  onSelect: (runId: string) => void;
+};
 
-export function AgentBar({ state, now, onExpand, onSelect }: Props) {
+export function AgentBar({ state, now, online, onExpand, onSelect }: Props) {
   const running = state.runs
     .filter((r) => r.state === "running" || r.state === "starting")
     .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
@@ -55,8 +62,8 @@ export function AgentBar({ state, now, onExpand, onSelect }: Props) {
       ))}
       <span className="flex-1" />
       <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
-        <span aria-hidden className="size-1.5 rounded-full bg-green-500" />
-        {fr.agents.daemon}
+        <span aria-hidden className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
+        {online ? fr.agents.daemon : fr.agents.daemonOffline}
       </span>
       <Button
         size="icon"

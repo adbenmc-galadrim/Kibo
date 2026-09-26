@@ -76,6 +76,7 @@ mock.module("../state/use-agents", () => ({
   useConfig: () => null,
   useNow: () => NOW,
   useRunLog: (runId: string | null) => (runId === "r41" ? LOG : runId ? [] : null),
+  useDaemonOnline: () => true,
 }));
 
 const { AgentBar } = await import("./AgentBar");
@@ -98,8 +99,9 @@ const run = (id: string) => {
 test("the bar sums up slots, queue, running runs and the run waiting for an answer", async () => {
   const onSelect = mock((_: string) => {});
   const onExpand = mock(() => {});
-  render(<AgentBar state={agentsFixture()} now={NOW} onExpand={onExpand} onSelect={onSelect} />);
+  render(<AgentBar state={agentsFixture()} now={NOW} online onExpand={onExpand} onSelect={onSelect} />);
   expect(screen.getByText("3/3")).toBeTruthy();
+  expect(screen.getByText("Démon local")).toBeTruthy();
   expect(screen.getByText("3 en file")).toBeTruthy();
   for (const label of ["opus-dev-1", "opus-dev-3", "sonnet-review-1"]) {
     expect(screen.getByText(label)).toBeTruthy();
@@ -110,6 +112,14 @@ test("the bar sums up slots, queue, running runs and the run waiting for an answ
   expect(onSelect).toHaveBeenCalledWith("r41");
   await user.click(screen.getByRole("button", { name: "Déplier les agents" }));
   expect(onExpand).toHaveBeenCalled();
+});
+
+test("the bar says when the daemon is out of reach", () => {
+  render(
+    <AgentBar state={agentsFixture()} now={NOW} online={false} onExpand={() => {}} onSelect={() => {}} />,
+  );
+  expect(screen.getByText("Démon injoignable")).toBeTruthy();
+  expect(screen.queryByText("Démon local")).toBeNull();
 });
 
 test("the drawer groups runs like the mockup and numbers the queue", async () => {

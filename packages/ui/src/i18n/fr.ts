@@ -115,6 +115,7 @@ export const fr = {
     answer: "Répondre",
     answerTo: (label: string) => `Répondre à ${label}`,
     daemon: "Démon local",
+    daemonOffline: "Démon injoignable",
     expand: "Déplier les agents",
     collapse: "Replier les agents",
     launch: "Lancer un agent",

@@ -1,7 +1,7 @@
 import type { AgentsState, RunView } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
-import { useAgents, useNow, useRunLog } from "../state/use-agents";
+import { useAgents, useDaemonOnline, useNow, useRunLog } from "../state/use-agents";
 import { AgentBar } from "./AgentBar";
 import { AgentDrawer } from "./AgentDrawer";
 
@@ -19,6 +19,7 @@ export function pickRun(state: AgentsState, picked: string | null): RunView | nu
 export function AgentPanel({ onLaunch, focusRunId, onFocused }: Props) {
   const state = useAgents();
   const now = useNow();
+  const online = useDaemonOnline();
   const [expanded, setExpanded] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => {
@@ -47,7 +48,13 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused }: Props) {
           onLaunch={onLaunch}
         />
       ) : (
-        <AgentBar state={state} now={now} onExpand={() => setExpanded(true)} onSelect={open} />
+        <AgentBar
+          state={state}
+          now={now}
+          online={online}
+          onExpand={() => setExpanded(true)}
+          onSelect={open}
+        />
       )}
     </section>
   );
