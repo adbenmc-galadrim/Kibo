@@ -2,6 +2,7 @@ import type { AgentsState, ProjectSnapshot, ProjectSummary, Screen, WorkspaceCon
 import {
   AgentsPage,
   AppearancePage,
+  ComponentSourcesPage,
   ComponentsPage,
   DomainsPage,
   GeneralPage,
@@ -30,6 +31,7 @@ export function ScreenView({ screen, projects, agents, config, now, onAnswer, ..
   if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "appearance") return <AppearancePage />;
   if (screen === "security") return <SecurityPage />;
+  if (screen === "sources") return <ComponentSourcesPage />;
   if (screen === "mine") return <MyTicketsPage projects={projects} config={config} {...p} />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;

@@ -62,6 +62,7 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "domains",
   "integrations",
   "security",
+  "sources",
 ]);
 
 type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };

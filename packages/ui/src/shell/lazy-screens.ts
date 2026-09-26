@@ -23,6 +23,10 @@ export const SecurityPage = lazyPanel(
   () => import("../settings/SecurityPage").then((m) => m.SecurityPage),
   fr.lazy,
 );
+export const ComponentSourcesPage = lazyPanel(
+  () => import("../settings/ComponentSourcesPage").then((m) => m.ComponentSourcesPage),
+  fr.lazy,
+);
 export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,

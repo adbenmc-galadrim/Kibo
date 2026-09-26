@@ -4,6 +4,7 @@ import {
   List,
   ListOrdered,
   type LucideIcon,
+  Package,
   Palette,
   Plug,
   Puzzle,
@@ -33,4 +34,9 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     crumbs: [fr.nav.settings, fr.settings.appearance],
   },
   security: { title: fr.settings.security, icon: Shield, crumbs: [fr.nav.settings, fr.settings.security] },
+  sources: {
+    title: fr.marketSources.title,
+    icon: Package,
+    crumbs: [fr.nav.settings, fr.marketSources.crumb],
+  },
 };
