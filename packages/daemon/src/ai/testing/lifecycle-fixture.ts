@@ -39,6 +39,7 @@ export function setupLifecycle(
     status?: Partial<AiStatus>;
     published?: PublishedComponent | null;
     reports?: ValidationReport[];
+    withoutSdk?: boolean;
   } = {},
 ) {
   const home = mkdtempSync(join(tmpdir(), "kibo-life-"));
@@ -99,7 +100,12 @@ export function setupLifecycle(
     profiles: { assistant: true, generateur: true },
     ...opts.status,
   };
-  const ai: AiAvailability = { status: () => status, capabilities: () => null, refresh: async () => status };
+  const ai: AiAvailability = {
+    status: () => status,
+    capabilities: () => null,
+    refresh: async () => status,
+    settled: async () => status,
+  };
   const opened: string[] = [];
   let n = 0;
   const life = createDraftLifecycle({
@@ -112,7 +118,7 @@ export function setupLifecycle(
     clock,
     editor: { openFolder: async (dir) => void opened.push(dir) },
     home,
-    sdkDir,
+    sdkDir: opts.withoutSdk ? null : sdkDir,
     args: () => ["--tools", "Read,Edit,Write,Glob,Grep,Bash"],
     env: () => ({ PATH: "/kibo/bin" }),
     newId: () => `0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a1${n++}`,

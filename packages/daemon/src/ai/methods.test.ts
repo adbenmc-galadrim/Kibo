@@ -11,7 +11,12 @@ function setup(processing: ReadonlySet<string> = new Set()) {
     return null as never;
   };
   const port = createAiRpc({
-    ai: { status: () => mark("status"), capabilities: () => null, refresh: async () => mark("refresh") },
+    ai: {
+      status: () => mark("status"),
+      capabilities: () => null,
+      refresh: async () => mark("refresh"),
+      settled: async () => mark("settled"),
+    },
     environment: async () => mark("environment"),
     starter: { suggest: () => mark("suggest") },
     lifecycle: {
@@ -73,9 +78,11 @@ test("routes every AI method to its module", async () => {
   ];
   for (const r of requests) if (isAiRequest(r)) await port.handle(r);
   expect(seen).toEqual([
-    "status",
+    "settled",
     "environment",
+    "settled",
     "suggest",
+    "settled",
     "start",
     "revalidate",
     "details",
@@ -88,8 +95,9 @@ test("routes every AI method to its module", async () => {
 });
 
 test("a synchronous KiboError becomes a rejection", async () => {
-  const { port } = setup();
+  const { port, seen } = setup();
   await expect(port.handle({ method: "retryComponentDraft", draftId })).rejects.toThrow("INVALID_INPUT");
+  expect(seen).toEqual(["settled"]);
 });
 
 test("a draft being reviewed or published cannot be abandoned", async () => {

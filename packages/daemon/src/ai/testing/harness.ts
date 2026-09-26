@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Toolchain } from "@kibo/devkit";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type {
   ChangeMessage,
@@ -28,6 +29,7 @@ export type AiHarness = {
 export type AiHarnessOptions = {
   scenario: string;
   claudeBin?: string;
+  toolchain?: Toolchain;
   assistantTimeoutMs?: number;
   validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
 };
@@ -70,7 +72,7 @@ export async function startAiHarness(opts: AiHarnessOptions): Promise<AiHarness>
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
+    toolchain: opts.toolchain ?? DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: opts.claudeBin ?? FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),

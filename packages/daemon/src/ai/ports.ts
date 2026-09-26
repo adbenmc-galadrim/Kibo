@@ -56,6 +56,7 @@ export type AiAvailability = {
   status(): AiStatus;
   capabilities(): ClaudeCapabilities | null;
   refresh(): Promise<AiStatus>;
+  settled(): Promise<AiStatus>;
 };
 
 export type ScaffoldOptions = {

@@ -93,7 +93,12 @@ describe("createStarterService", () => {
     const runs = createFakeRuns();
     const clock = createFakeClock();
     const events = createRecordingEvents();
-    const ai: AiAvailability = { status: () => s, capabilities: () => null, refresh: async () => s };
+    const ai: AiAvailability = {
+      status: () => s,
+      capabilities: () => null,
+      refresh: async () => s,
+      settled: async () => s,
+    };
     const service = createStarterService({
       runs,
       ai,

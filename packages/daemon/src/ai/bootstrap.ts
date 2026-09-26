@@ -67,6 +67,15 @@ function claudeBinOrNull(configured: string | null, env: Record<string, string |
   }
 }
 
+function toolchainSdk(toolchain: Toolchain): string | null {
+  try {
+    return realpathSync(join(toolchainModules(toolchain), "@kibo", "sdk"));
+  } catch (e) {
+    if (e instanceof Error && "code" in e && e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+
 export function createAiStop(shutdown: AbortController, work: { idle(): Promise<void> }[]) {
   return async () => {
     shutdown.abort();
@@ -104,7 +113,7 @@ export async function startAi(deps: AiBootstrapDeps): Promise<{ port: AiPort; st
   ensureSystemProfiles(docs);
   const exec = createExecPort(agentEnv);
   const ai = availability(deps, exec);
-  await ai.refresh();
+  ai.refresh().catch((e: unknown) => console.error("[kibo-daemon] claude detection failed", e));
   const events: AiEvents = { publish: (e) => docs.emit(e) };
   const runs = runsFromOrchestrator(deps.orchestrator);
   const devkit = devkitPort({ home, toolchain, validate: deps.validate, signal: shutdown.signal });
@@ -124,7 +133,7 @@ export async function startAi(deps: AiBootstrapDeps): Promise<{ port: AiPort; st
       openFolder: async (dir) => openInEditor(editorCommand(dir, null, process.env, process.platform)),
     },
     home,
-    sdkDir: realpathSync(join(toolchainModules(toolchain), "@kibo", "sdk")),
+    sdkDir: toolchainSdk(toolchain),
     args: () => generatorArgs(caps()),
     env: () => ({ PATH: `${binDir}${delimiter}${agentEnv.PATH ?? ""}`, KIBO_TOOLCHAIN: toolchain.root }),
     newId: () => crypto.randomUUID(),

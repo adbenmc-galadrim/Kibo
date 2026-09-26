@@ -31,17 +31,20 @@ export function createAiRpc(deps: AiRpcDeps): AiPort {
     return deps.lifecycle.abandon(draftId);
   };
 
-  const route = (req: AiRpcRequest): unknown => {
+  const route = async (req: AiRpcRequest): Promise<unknown> => {
     switch (req.method) {
       case "getAiStatus":
-        return deps.ai.status();
+        return deps.ai.settled();
       case "getEnvironment":
         return deps.environment();
       case "suggestStarter":
+        await deps.ai.settled();
         return deps.starter.suggest({ role: req.role, text: req.text });
       case "startComponentDraft":
+        await deps.ai.settled();
         return deps.lifecycle.start(req.draft);
       case "retryComponentDraft":
+        await deps.ai.settled();
         return deps.lifecycle.retry(req.draftId);
       case "revalidateComponentDraft":
         return deps.lifecycle.revalidate(req.draftId);
@@ -66,5 +69,5 @@ export function createAiRpc(deps: AiRpcDeps): AiPort {
         return deps.lifecycle.openFolder(req.draftId);
     }
   };
-  return { handle: async (req) => route(req) };
+  return { handle: route };
 }

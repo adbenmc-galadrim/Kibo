@@ -29,6 +29,13 @@ describe("start", () => {
     await expect(life.start(create)).rejects.toThrow("CONFLICT");
   });
 
+  test("refuses to start or retry when the toolchain has no @kibo/sdk", async () => {
+    const { store, life } = setupLifecycle({ withoutSdk: true });
+    await expect(life.start(create)).rejects.toMatchObject({ code: "AI_UNAVAILABLE" });
+    await expect(life.start(create)).rejects.toThrow("@kibo/sdk");
+    expect(store.list()).toEqual([]);
+  });
+
   test("two simultaneous starts reserve the id once", async () => {
     const { store, life } = setupLifecycle();
     const results = await Promise.allSettled([life.start(create), life.start(create)]);

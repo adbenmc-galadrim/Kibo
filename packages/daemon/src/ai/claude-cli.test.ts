@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   assistantArgs,
   CLAUDE_BUILTIN_TOOLS,
+  type ClaudeProbe,
   createAiAvailability,
   generatorArgs,
   parseAuthStatus,
@@ -174,5 +175,34 @@ describe("createAiAvailability", () => {
       profileEnabled: () => true,
     });
     expect(await unknown.refresh()).toMatchObject({ available: true, loggedIn: null });
+  });
+  test("settled waits for the detection in progress, then answers at once", async () => {
+    let answer = (_: ClaudeProbe) => {};
+    const ai = createAiAvailability({
+      probe: () =>
+        new Promise<ClaudeProbe>((resolve) => {
+          answer = resolve;
+        }),
+      profileEnabled: () => true,
+    });
+    const detection = ai.refresh();
+    const settled = ai.settled();
+    expect(ai.status()).toMatchObject({ available: false });
+    answer(found);
+    expect(await settled).toMatchObject({ available: true, version: "2.1.283" });
+    await detection;
+    expect(await ai.settled()).toMatchObject({ available: true });
+  });
+  test("a failed detection is reported by settled, then forgotten", async () => {
+    const ai = createAiAvailability({
+      probe: async () => {
+        throw new Error("probe crashed");
+      },
+      profileEnabled: () => true,
+    });
+    const detection = ai.refresh();
+    await expect(ai.settled()).rejects.toThrow("probe crashed");
+    await expect(detection).rejects.toThrow("probe crashed");
+    expect(await ai.settled()).toMatchObject({ available: false, reason: "missing" });
   });
 });

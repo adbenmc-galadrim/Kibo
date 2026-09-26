@@ -43,7 +43,7 @@ export type LifecycleDeps = {
   clock: Clock;
   editor: Editor;
   home: string;
-  sdkDir: string;
+  sdkDir: string | null;
   args: () => string[];
   env: () => Record<string, string>;
   newId: () => string;
@@ -97,10 +97,12 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     if (d.runId && LIVE_RUN.has(deps.runs.state(d.runId) ?? "")) deps.runs.cancel(d.runId);
   };
 
-  const requireGenerator = () => {
+  const requireGenerator = (): string => {
     const s = deps.ai.status();
     if (!s.available) throw new KiboError("AI_UNAVAILABLE", `claude unavailable: ${s.reason ?? "unknown"}`);
     if (!s.profiles.generateur) throw new KiboError("AI_UNAVAILABLE", "generator profile is disabled");
+    if (deps.sdkDir === null) throw new KiboError("AI_UNAVAILABLE", "the toolchain has no @kibo/sdk");
+    return deps.sdkDir;
   };
 
   const validate = createDraftValidation({ store: deps.store, devkit: deps.devkit, apply, paths });
@@ -140,7 +142,12 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
     else recovery.noteFailure(ended, restored.detail);
   };
 
-  const launch = (d: ComponentDraft, prompt: string, resumeSessionId: string | null): ComponentDraft => {
+  const launch = (
+    d: ComponentDraft,
+    sdkDir: string,
+    prompt: string,
+    resumeSessionId: string | null,
+  ): ComponentDraft => {
     applyDraftEvent(d, { type: "enqueued", runId: "check" }, deps.clock.now());
     const p = paths(d);
     markUnrestored(p);
@@ -152,7 +159,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       args: deps.args(),
       env: deps.env(),
       resumeSessionId,
-      guard: createDraftGuard({ draftDir: p.dir, readRoots: [deps.sdkDir], allowServer: d.withServer }),
+      guard: createDraftGuard({ draftDir: p.dir, readRoots: [sdkDir], allowServer: d.withServer }),
     });
     const next = apply(d, { type: "enqueued", runId });
     deps.runs.onEnd(runId, (end) => track(onRunEnd(next.id, runId, end)));
@@ -194,7 +201,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
 
   return {
     async start(input) {
-      requireGenerator();
+      const sdkDir = requireGenerator();
       const draft = newDraft(input, {
         store: deps.store,
         catalog: deps.catalog,
@@ -214,11 +221,11 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
         removeDraft(paths(current));
         return current;
       }
-      return launch(current, generatorPrompt(brief(current)), null);
+      return launch(current, sdkDir, generatorPrompt(brief(current)), null);
     },
 
     retry(draftId) {
-      requireGenerator();
+      const sdkDir = requireGenerator();
       const d = deps.store.get(draftId);
       if (!canRetry(d)) throw new KiboError("INVALID_INPUT", "this draft cannot be retried");
       const restored = isUnrestored(paths(d)) ? restoreAfterRun(d) : { incidents: [] };
@@ -228,7 +235,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       }
       const report = deps.store.report(draftId);
       const prompt = report && !report.ok ? fixPrompt(report) : generatorPrompt(brief(d));
-      return launch(d, prompt, d.sessionId);
+      return launch(d, sdkDir, prompt, d.sessionId);
     },
 
     async revalidate(draftId) {

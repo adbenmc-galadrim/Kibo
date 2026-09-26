@@ -122,12 +122,23 @@ export function createAiAvailability(deps: {
       return { available: false, reason: "logged_out", version: probe.version, loggedIn: false, profiles };
     return { available: true, reason: null, version: probe.version, loggedIn: probe.loggedIn, profiles };
   };
+  let detecting: Promise<AiStatus> | null = null;
+  const refresh = () => {
+    const detection = deps.probe().then((found) => {
+      probe = found;
+      return status();
+    });
+    const forget = () => {
+      if (detecting === detection) detecting = null;
+    };
+    detecting = detection;
+    detection.then(forget, forget);
+    return detection;
+  };
   return {
     status,
     capabilities: () => probe.capabilities,
-    async refresh() {
-      probe = await deps.probe();
-      return status();
-    },
+    refresh,
+    settled: () => detecting ?? Promise.resolve(status()),
   };
 }
