@@ -112,6 +112,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     toolchain: opts.toolchain,
     db: store.db,
     docs: service.docs,
+    commands: service.commands,
     sandboxOrigin: () => sandboxOrigin,
     runs: (projectId) => (agents ? ticketRuns(agents.state(), projectId) : []),
     ...(opts.build && { build: opts.build }),

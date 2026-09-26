@@ -64,6 +64,7 @@ function setup(
           data: { ...req.data, migrated: true },
         };
       }),
+    approvedHash: () => null,
   };
   return { doc, inst, deps, persisted, migrations };
 }

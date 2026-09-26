@@ -23,6 +23,7 @@ export type UpdateDeps = {
   persist(projectId: string): void;
   manifestOf(ref: string): Promise<ComponentManifest>;
   migrate(targetRef: string, req: MigrateRequest): Promise<{ config: Json; data: Json }>;
+  approvedHash(ref: string): string | null;
 };
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -85,7 +86,13 @@ export async function updateInstance(
   if (changedSince(doc, before, data === null ? null : beforeData)) {
     throw new KiboError("CONFLICT", `instance ${instanceId} changed during the update`);
   }
-  const updated = setInstanceComponent(doc, { instanceId, component: target, config, data });
+  const updated = setInstanceComponent(doc, {
+    instanceId,
+    component: target,
+    config,
+    data,
+    componentHash: deps.approvedHash(target),
+  });
   deps.persist(projectId);
   return updated;
 }

@@ -121,6 +121,7 @@ export async function boot(home: string, opts: HarnessOptions = {}): Promise<Har
     toolchain: DEV_TOOLCHAIN,
     db: store.db,
     docs: service.docs,
+    commands: service.commands,
     sandboxOrigin: () => SANDBOX_ORIGIN,
     runs: opts.runs ?? (() => []),
     build: fakeBuild,

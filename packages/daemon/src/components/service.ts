@@ -2,12 +2,14 @@ import type { Database } from "bun:sqlite";
 import { listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
 import { type Instance, KiboError, type TicketRun, type ValidationReport } from "@kibo/schema";
+import type { CommandHub } from "../command-path";
 import type { Docs } from "../docs";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
 import { createBackends } from "./backends";
+import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
 import { createEventLog, type EventLog, ensureEventsTable } from "./events";
 import { createGate } from "./gate";
@@ -21,7 +23,7 @@ import { createPublishLock, type PublishLock } from "./publish-lock";
 import { createQuotas } from "./quotas";
 import { createRegistryService, type RegistryService } from "./registry-service";
 import type { AssetLookup } from "./sandbox-server";
-import { createComponentStore } from "./store";
+import { type ComponentStore, createComponentStore } from "./store";
 import { updateInstance } from "./update";
 import { createUsageTracker, jobTargets } from "./usage";
 
@@ -30,6 +32,7 @@ export type ComponentsDeps = {
   toolchain: Toolchain;
   db: Database;
   docs: Docs;
+  commands: Pick<CommandHub, "intercept">;
   sandboxOrigin(): string;
   runs(projectId: string): TicketRun[];
   build?: (srcDir: string, t: Toolchain) => Promise<BuildOutput>;
@@ -47,6 +50,7 @@ export type ComponentsService = {
   handle(req: ComponentRequest): Promise<unknown>;
   assets: AssetLookup;
   registry: RegistryService;
+  store: ComponentStore;
   publisher: Publisher;
   publishLock: PublishLock;
   events: EventLog;
@@ -65,6 +69,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   const inflight = createInflight();
   const publishLock = createPublishLock();
   let stopped: Promise<void> | null = null;
+  let offStamp: (() => void) | null = null;
   ensureEventsTable(deps.db);
   ensureSettingsTable(deps.db);
   ensureNotesTables(deps.db);
@@ -150,6 +155,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
         persist: (id) => docs.save(id),
         manifestOf: (ref) => registry.manifestOf(ref),
         migrate: (ref, req) => backends.migrate(ref, req),
+        approvedHash: (ref) => approvedHashOf(docs.workspace, ref),
       },
       projectId,
       instanceId,
@@ -242,6 +248,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   };
 
   const stopAll = async () => {
+    offStamp?.();
     jobs.stop();
     backends.stopAll();
     shutdown.abort();
@@ -254,12 +261,14 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     handle,
     assets,
     registry,
+    store,
     publisher,
     publishLock,
     events,
     usageChanged,
     afterCommand: () => usageChanged(),
     async start() {
+      offStamp = deps.commands.intercept(stampComponentHash(docs.workspace));
       await registry.verifyAll();
       for (const id of docs.projectIds()) await notes.refresh(id).catch(log(`notes scan failed for ${id}`));
       usageChanged();
