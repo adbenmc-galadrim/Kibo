@@ -196,6 +196,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@kibo/schema": "workspace:*",
+        "@kibo/trust": "workspace:*",
         "zod": "3.25.76",
       },
       "devDependencies": {

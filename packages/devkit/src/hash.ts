@@ -1,22 +1,18 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { KiboError } from "@kibo/schema";
+import { isHashedSource, type SourceFile, sourceHash } from "@kibo/trust";
 
-export type SourceFile = { path: string; bytes: Uint8Array };
+export type { SourceFile };
 
 export const MAX_SOURCE_FILES = 200;
 export const MAX_SOURCE_BYTES = 2_097_152;
 
 const SKIPPED = new Set(["node_modules", "dist"]);
-const HASHED = /\.(ts|tsx|css)$/;
-const TEST = /\.test\.tsx?$/;
 
 const comparePaths = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-export function isHashed(path: string): boolean {
-  if (path.split("/").some((p) => p.startsWith(".") || SKIPPED.has(p))) return false;
-  return path === "kibo.component.json" || (HASHED.test(path) && !TEST.test(path));
-}
+export const isHashed = isHashedSource;
 
 async function walk(root: string, dir: string, out: string[]): Promise<void> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -35,15 +31,7 @@ export async function listSourceFiles(dir: string): Promise<string[]> {
   return out.sort(comparePaths);
 }
 
-export function hashFiles(files: SourceFile[]): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  const encoder = new TextEncoder();
-  for (const f of [...files].sort((a, b) => comparePaths(a.path, b.path))) {
-    hasher.update(encoder.encode(`${f.path}\0${f.bytes.byteLength}\0`));
-    hasher.update(f.bytes);
-  }
-  return hasher.digest("hex");
-}
+export const hashFiles = (files: SourceFile[]): string => sourceHash(files);
 
 export async function readSources(dir: string): Promise<{ hash: string; files: SourceFile[] }> {
   const paths = (await listSourceFiles(dir)).filter(isHashed);
