@@ -102,7 +102,8 @@ describe("publisher name", () => {
     expect((await k.index()).publishers.map((p) => p.name)).toEqual(["Léa"]);
   });
   const spoofs = ["Léa​", "​Léa", "Léa⁠", "‮aéL", "Léa­", "Léa", " léa ", "LÉA"];
-  for (const spoof of spoofs) {
+  const unicodeSpoofs = ["Léa\u2800", "Léa\ue000", "Léa\ud800", "Léa\u0378", "L\u0435a", "Adm\u03b9n"];
+  for (const spoof of [...spoofs, ...unicodeSpoofs]) {
     test(`refuses the impostor name ${JSON.stringify(spoof)}`, async () => {
       await k.publishAs(await makeTestPackage({ publisherName: "Léa" }), lea);
       const impostor = await makeTestPackage({ id: "velocity", publisherName: spoof });
@@ -117,6 +118,11 @@ describe("publisher name", () => {
       );
     });
   }
+  test("accepts a visible combining mark", async () => {
+    expect(await k.publishAs(await makeTestPackage({ publisherName: "Léa\u0338" }), lea)).toEqual({
+      serial: 2,
+    });
+  });
   test("accepts a clean name with single spaces", async () => {
     expect(await k.publishAs(await makeTestPackage({ publisherName: "Léa Martin" }), lea)).toEqual({
       serial: 2,

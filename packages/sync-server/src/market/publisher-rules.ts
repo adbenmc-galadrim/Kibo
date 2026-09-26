@@ -2,7 +2,7 @@ import { Base64, KiboError, type Kpkg } from "@kibo/schema";
 import { verifyPublisherClaim } from "@kibo/trust";
 import { z } from "zod";
 import { validate } from "../validate";
-import { isCleanText } from "./clean-text";
+import { isCleanName } from "./clean-text";
 import type { MarketStore } from "./market-store";
 
 export const PublisherClaim = z.string().min(1).max(128).pipe(Base64);
@@ -21,7 +21,7 @@ function assertPackageSlot(store: MarketStore, pkg: Kpkg): void {
 }
 
 function assertNewPublisherName(store: MarketStore, name: string, userId: string): void {
-  if (!isCleanText(name)) throw new KiboError("INVALID_INPUT", "publisher name is not clean text");
+  if (!isCleanName(name)) throw new KiboError("INVALID_INPUT", "publisher name is not clean text");
   if (store.nameTakenByOther(publisherNameKey(name), userId)) {
     throw new KiboError("INVALID_INPUT", "publisher name is already used by another user");
   }
