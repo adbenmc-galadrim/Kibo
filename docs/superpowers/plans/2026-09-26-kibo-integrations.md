@@ -9788,7 +9788,7 @@ Complète le suivi des PR de la phase 3 sans le dupliquer : `packages/daemon/src
   - `IntegrationEvent` `{ type: "ci", projectId }` diffusé quand un run change
   - `frCi = { failedTitle(key: string): string; failedBody(workflow: string, pr: number): string }` (`ci/fr.ts` : « CI cassée sur KIB-1 », « CI a échoué sur la PR #12. »)
 
-- [ ] **Step 1: Tests (échouent)**
+- [x] **Step 1: Tests (échouent)**
 
 `packages/daemon/src/ci/poller.test.ts` :
 
@@ -9988,7 +9988,7 @@ test("logs older than 14 days are purged", async () => {
 
 Run: `bun test packages/daemon/src/ci` — Expected: FAIL (modules absents).
 
-- [ ] **Step 2: `ci-store.ts`**
+- [x] **Step 2: `ci-store.ts`**
 
 ```ts
 import type { Database } from "bun:sqlite";
@@ -10101,7 +10101,7 @@ export type CiStore = ReturnType<typeof createCiStore>;
 
 (`as RunRow`, `as JobRow` : formes fixées par la migration de la Task 2 ; les valeurs textuelles contraintes sont revalidées par `RepoSlug.parse`.)
 
-- [ ] **Step 3: `poller.ts`**
+- [x] **Step 3: `poller.ts`**
 
 ```ts
 import { type CiRun, KiboError, type RepoSlug, type TicketView } from "@kibo/schema";
@@ -10259,7 +10259,7 @@ export const frCi = {
 
 `host.notify` (Task 2, N25) envoie la notification native (`DaemonOptions.notify`, Tauri) et la diffuse à l'UI (`IntegrationEvent` `notice`, API `Notification` en mode navigateur).
 
-- [ ] **Step 4: `logs.ts`**
+- [x] **Step 4: `logs.ts`**
 
 ```ts
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -10310,7 +10310,7 @@ export function purgeCiLogs(deps: Pick<Deps, "store">, now: number): void {
 
 (`chmodSync` après l'écriture : `mode` n'est appliqué qu'à la création du fichier, et l'umask peut le réduire.)
 
-- [ ] **Step 5: `module.ts` et amorçage**
+- [x] **Step 5: `module.ts` et amorçage**
 
 ```ts
 import type { IntegrationKit, IntegrationModule } from "../integrations/bootstrap";
@@ -10347,7 +10347,7 @@ puis `hooks.ciRuns: (projectId) => ciPoller.runs(projectId, null)` et `ciModule(
 
 Aucune règle de statut par défaut (spec F §7) et aucune règle ajoutée à `DEFAULT_RULES` (N25).
 
-- [ ] **Step 6: Vérifier et commiter**
+- [x] **Step 6: Vérifier et commiter**
 
 Run: `bun test packages/daemon/src/ci && bun test packages/daemon && bun run check && bun run typecheck` — Expected: PASS.
 
