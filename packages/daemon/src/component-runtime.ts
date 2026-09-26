@@ -1,28 +1,47 @@
 import { restrictGlobals } from "@kibo/devkit";
-import { BackendCode, DaemonToBackend } from "@kibo/schema";
+import { BackendCode, type BackendToDaemon, DaemonToBackend, KiboError } from "@kibo/schema";
+import type { FileSink } from "bun";
+import { BACKEND_MESSAGE_LIMIT, readLines } from "./components/line-channel";
 import { createRuntime } from "./components/runtime-core";
 
-const CODE_FD = 3;
+const INPUT_FD = 3;
+const OUTPUT_FD = 4;
 
-async function readCode(): Promise<BackendCode> {
-  return BackendCode.parse(JSON.parse(await Bun.file(CODE_FD).text()));
+function lineWriter(sink: FileSink): (m: BackendToDaemon) => void {
+  const encoder = new TextEncoder();
+  const tooLarge = (what: string) => `${what} larger than ${BACKEND_MESSAGE_LIMIT} bytes`;
+  const send = (m: BackendToDaemon): void => {
+    const line = JSON.stringify(m);
+    if (encoder.encode(line).byteLength <= BACKEND_MESSAGE_LIMIT) {
+      sink.write(`${line}\n`);
+      sink.flush();
+      return;
+    }
+    if (m.type !== "result") throw new KiboError("TOO_LARGE", tooLarge(m.type));
+    send({ type: "result", id: m.id, ok: false, error: { code: "TOO_LARGE", message: tooLarge("result") } });
+  };
+  return send;
 }
 
 export async function startComponentRuntime(): Promise<void> {
-  const code = await readCode();
-  const send = process.send?.bind(process);
-  if (!send) throw new Error("component runtime needs an IPC channel");
+  const input = Bun.file(INPUT_FD).stream();
+  const send = lineWriter(Bun.file(OUTPUT_FD).writer());
   restrictGlobals({ freeze: true });
-  const runtime = createRuntime((m) => send(m), code);
-  process.on("message", (raw) => {
-    const parsed = DaemonToBackend.safeParse(raw);
-    if (!parsed.success) {
-      console.error(`[kibo-runtime] invalid message: ${parsed.error.message}`);
-      return;
-    }
-    runtime.handle(parsed.data);
+  let runtime: { handle(m: DaemonToBackend): void } | null = null;
+  await readLines(input, Number.POSITIVE_INFINITY, {
+    line(text) {
+      const raw: unknown = JSON.parse(text);
+      if (!runtime) {
+        runtime = createRuntime(send, BackendCode.parse(raw));
+        return;
+      }
+      const parsed = DaemonToBackend.safeParse(raw);
+      if (!parsed.success) return console.error(`[kibo-runtime] invalid message: ${parsed.error.message}`);
+      runtime.handle(parsed.data);
+    },
+    overflow: () => undefined,
   });
-  process.on("disconnect", () => process.exit(0));
+  process.exit(0);
 }
 
 if (import.meta.main) await startComponentRuntime();

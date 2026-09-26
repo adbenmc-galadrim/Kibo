@@ -34,6 +34,7 @@ export const KIBO_ERROR_CODES = [
   "CONFLICT",
   "RATE_LIMITED",
   "QUOTA_EXCEEDED",
+  "SANDBOX_UNAVAILABLE",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

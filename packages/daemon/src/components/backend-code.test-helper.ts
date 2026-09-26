@@ -25,7 +25,7 @@ module.exports.server = {
     crash: async () => { process.exit(3); },
     fail: async () => { const e = new Error("nope"); e.code = "CONFLICT"; e.detail = "nope"; throw e; },
     trust: async () => { const e = new Error("approve me"); e.code = "TRUST_REQUIRED"; throw e; },
-    pid: async () => process.pid,
+    self: async () => ({ pid: process.pid, cwd: process.cwd() }),
     wait: async (_ctx, ms) => {
       running += 1;
       peak = Math.max(peak, running);

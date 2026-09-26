@@ -119,6 +119,8 @@ Une instance d'un composant absent localement affiche « Composant absent : id@x
 
 ## 8. Durcissement OS du backend sandboxé
 
+Livré dès la phase 4 (spec B, décision 24) pour `ProcessHost` et les tests de la validation. Restent en phase 7 : le réglage « Autoriser les backends sandboxés sans isolation OS », l'écran 19, le filtre seccomp, et l'exécution des tests d'installation du marketplace dans ce bac à sable.
+
 Le `ProcessHost` (spec B §4.4) lance désormais le runtime dans un bac à sable de l'OS. Les protections de la phase 4 (retrait des capacités, imports refusés) restent en place.
 
 ### 8.1 Linux : bubblewrap
@@ -161,10 +163,10 @@ Profil SBPL généré par le démon (`packages/daemon/src/sandbox/macos.sb.ts`) 
 
 | Tentative depuis `server.js` | Phase 4 | Phase 7 |
 |---|---|---|
-| Connexion réseau | API retirées, contournable par un bug du runtime | bloquée par l'OS |
-| Lecture de `~/.kibo/token`, `~/.ssh` | API retirées | bloquée par l'OS |
-| Écriture hors `/tmp` du processus | API retirées | bloquée par l'OS |
-| Lancement d'un processus | API retirées | bloqué par l'OS |
+| Connexion réseau | bloqué par l'OS (décision 24) | bloquée par l'OS |
+| Lecture de `~/.kibo/token`, `~/.ssh` | bloqué par l'OS (décision 24) | bloquée par l'OS |
+| Écriture hors `/tmp` du processus | bloqué par l'OS (décision 24) | bloquée par l'OS |
+| Lancement d'un processus | bloqué par l'OS (décision 24) | bloqué par l'OS |
 
 ## 9. Tests
 

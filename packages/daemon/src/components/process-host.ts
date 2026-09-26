@@ -1,7 +1,7 @@
-import { chmodSync, closeSync, mkdtempSync, rmSync } from "node:fs";
+import { chmodSync, closeSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { isCompiled } from "@kibo/devkit";
+import { join, resolve } from "node:path";
+import { isCompiled, type OsSandbox, osSandbox, type SandboxPolicy } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
 import { signalGroup } from "../process-group";
 import {
@@ -11,10 +11,16 @@ import {
   createHost,
   type HostOptions,
 } from "./host-core";
+import { BACKEND_MESSAGE_LIMIT, readLines } from "./line-channel";
 
 const LOG_LIMIT = 65_536;
+const DEV_ROOT = resolve(import.meta.dir, "../../../..");
 
-export type ProcessHostOptions = HostOptions & { command?: string[] };
+export type ProcessHostOptions = HostOptions & { command?: string[]; sandbox?: OsSandbox };
+
+export function runtimePolicy(command: string[], cwd: string): SandboxPolicy {
+  return { read: isCompiled() ? [] : [DEV_ROOT], write: [cwd], exec: command.slice(0, 1), cwd };
+}
 
 export function runtimeCommand(): string[] {
   return isCompiled()
@@ -33,13 +39,19 @@ async function pipeLog(stream: ReadableStream<Uint8Array>, log: (line: string) =
   }
 }
 
-async function writeCode(fd: number, payload: string): Promise<void> {
+function closeQuietly(fd: number, log: (line: string) => void): void {
   try {
-    const sink = Bun.file(fd).writer();
-    sink.write(payload);
-    await sink.end();
-  } finally {
     closeSync(fd);
+  } catch (e) {
+    log(`cannot close descriptor ${fd}: ${String(e)}`);
+  }
+}
+
+function parseLine(text: string): { ok: true; value: unknown } | { ok: false } {
+  try {
+    return { ok: true, value: JSON.parse(text) };
+  } catch {
+    return { ok: false };
   }
 }
 
@@ -52,7 +64,7 @@ function killGroup(pid: number, log: (line: string) => void): void {
 }
 
 function workDir(): { cwd: string; remove(log: (line: string) => void): void } {
-  const cwd = mkdtempSync(join(tmpdir(), "kibo-backend-"));
+  const cwd = realpathSync(mkdtempSync(join(tmpdir(), "kibo-backend-")));
   chmodSync(cwd, 0o700);
   return {
     cwd,
@@ -66,16 +78,20 @@ function workDir(): { cwd: string; remove(log: (line: string) => void): void } {
   };
 }
 
-function spawnRuntime(opts: ProcessHostOptions, handlers: ChannelHandlers, log: (line: string) => void) {
+function spawnRuntime(
+  opts: ProcessHostOptions,
+  sandbox: OsSandbox,
+  handlers: ChannelHandlers,
+  log: (line: string) => void,
+) {
   const dir = workDir();
   try {
-    return Bun.spawn(opts.command ?? runtimeCommand(), {
+    const command = opts.command ?? runtimeCommand();
+    return Bun.spawn(sandbox.wrap(command, runtimePolicy(command, dir.cwd)), {
       cwd: dir.cwd,
       env: { KIBO_COMPONENT: opts.ref },
-      stdio: ["ignore", "ignore", "pipe", "pipe"],
+      stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
       detached: true,
-      serialization: "json",
-      ipc: (message) => handlers.message(message),
       onExit: (_p, code, signal) => {
         dir.remove(log);
         handlers.exit(`code ${code ?? "none"}, signal ${signal ?? "none"}`);
@@ -89,19 +105,40 @@ function spawnRuntime(opts: ProcessHostOptions, handlers: ChannelHandlers, log: 
 
 export function createProcessHost(opts: ProcessHostOptions): BackendHost {
   const log = opts.log ?? ((line: string) => console.error(`[kibo-daemon] ${opts.ref}: ${line}`));
+  const sandbox = opts.sandbox ?? osSandbox();
   const open = async (handlers: ChannelHandlers): Promise<Channel> => {
-    const proc = spawnRuntime(opts, handlers, log);
+    const proc = spawnRuntime(opts, sandbox, handlers, log);
     const close = () => killGroup(proc.pid, log);
     pipeLog(proc.stderr, log).catch((e: unknown) => log(`stderr closed: ${String(e)}`));
-    const fd = proc.stdio[3];
-    try {
-      if (typeof fd !== "number") throw new Error("descriptor 3 is not a pipe");
-      await writeCode(fd, JSON.stringify(opts.code));
-    } catch (e) {
+    const input = proc.stdio[3];
+    const output = proc.stdio[4];
+    if (typeof input !== "number" || typeof output !== "number") {
       close();
-      throw new KiboError("COMPONENT_CRASHED", `cannot send the code to the runtime: ${String(e)}`);
+      throw new KiboError("COMPONENT_CRASHED", "the runtime pipes are missing");
     }
-    return { send: (m) => proc.send(m), close };
+    const reading = readLines(Bun.file(output).stream(), BACKEND_MESSAGE_LIMIT, {
+      line: (text) => {
+        const parsed = parseLine(text);
+        if (parsed.ok) handlers.message(parsed.value);
+        else handlers.exit("invalid JSON from the runtime");
+      },
+      overflow: () => handlers.exit(`message larger than ${BACKEND_MESSAGE_LIMIT} bytes`),
+    }).catch((e: unknown) => log(`runtime output closed: ${String(e)}`));
+    Promise.all([proc.exited, reading]).then(() => {
+      closeQuietly(input, log);
+      closeQuietly(output, log);
+    });
+    const sink = Bun.file(input).writer();
+    const write = (m: unknown) => {
+      sink.write(`${JSON.stringify(m)}\n`);
+      sink.flush();
+    };
+    write(opts.code);
+    return { send: write, close };
   };
-  return createHost({ ...opts, log }, open, false);
+  const beforeStart = async () => {
+    await sandbox.ready();
+    await opts.beforeStart?.();
+  };
+  return createHost({ ...opts, log, beforeStart }, open, false);
 }

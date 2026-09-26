@@ -115,8 +115,9 @@ function contextFactory(send: (m: BackendToDaemon) => void) {
       if (!parsed.success) return Promise.reject(new KiboError("INVALID_INPUT", parsed.error.message));
       return new Promise<unknown>((resolve, reject) => {
         seq += 1;
-        pending.set(seq, { resolve, reject });
-        send({ type: "call", id: seq, invocation, call: parsed.data });
+        const id = seq;
+        send({ type: "call", id, invocation, call: parsed.data });
+        pending.set(id, { resolve, reject });
       });
     };
     return {

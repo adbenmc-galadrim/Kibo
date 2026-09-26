@@ -3,6 +3,7 @@ import { type ComponentCall, KiboError } from "@kibo/schema";
 import { MIGRATIONS_JS, SERVER_JS, TEST_MANIFEST } from "./backend-code.test-helper";
 import type { BackendHost, HostOptions, InvokeRequest } from "./host-core";
 import { createProcessHost } from "./process-host";
+import { runtimeGone, runtimeSelf } from "./runtime-liveness.test-helper";
 
 const hosts: BackendHost[] = [];
 afterEach(() => {
@@ -35,23 +36,6 @@ const action = (name: string, instanceId = "i1", input: unknown = null): InvokeR
   input,
 });
 
-const alive = (pid: number) => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (e) {
-    if (e instanceof Error && "code" in e && e.code === "ESRCH") return false;
-    throw e;
-  }
-};
-async function gone(pid: number): Promise<boolean> {
-  for (let i = 0; i < 100; i += 1) {
-    if (!alive(pid)) return true;
-    await Bun.sleep(20);
-  }
-  return false;
-}
-
 describe("process host", () => {
   test("runs an action and describes the backend", async () => {
     const h = host();
@@ -67,7 +51,7 @@ describe("process host", () => {
         "crash",
         "fail",
         "trust",
-        "pid",
+        "self",
         "wait",
         "bigint",
         "badCall",
@@ -161,20 +145,20 @@ describe("process host", () => {
   });
   test("stopping, going idle or timing out kills the runtime process", async () => {
     const stopped = host();
-    const first = Number(await stopped.invoke(action("pid")));
+    const first = runtimeSelf(await stopped.invoke(action("self")));
     stopped.stop();
     expect(stopped.running).toBe(false);
-    expect(await gone(first)).toBe(true);
+    expect(await runtimeGone(first)).toBe(true);
 
     const idle = host({ idleMs: 50 });
-    const second = Number(await idle.invoke(action("pid")));
-    expect(await gone(second)).toBe(true);
+    const second = runtimeSelf(await idle.invoke(action("self")));
+    expect(await runtimeGone(second)).toBe(true);
     expect(idle.running).toBe(false);
 
     const slow = host({ timeoutMs: 200 });
-    const third = Number(await slow.invoke(action("pid")));
+    const third = runtimeSelf(await slow.invoke(action("self")));
     await expect(slow.invoke(action("hang"))).rejects.toThrow("TIMEOUT");
-    expect(await gone(third)).toBe(true);
+    expect(await runtimeGone(third)).toBe(true);
   });
   test("a refused start check never spawns the process", async () => {
     const h = host({
