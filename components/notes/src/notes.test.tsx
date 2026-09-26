@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
+import { EditorView } from "@codemirror/view";
 import type { ProjectCommand } from "@kibo/schema";
-import { SdkProvider } from "@kibo/sdk";
+import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
@@ -115,4 +116,53 @@ test("screen 7 widget: the most recent note, title and first lines", async () =>
 test("D9: empty widget", async () => {
   setup("widget", {});
   expect(await screen.findByText("Aucune note pour l'instant.")).toBeTruthy();
+});
+
+const editorView = async () => {
+  const content = await screen.findByRole("textbox", { name: "Contenu de la note" });
+  const view = EditorView.findFromDOM(content);
+  if (!view) throw new Error("editor not mounted");
+  return view;
+};
+
+test("the editor does not report a change it received from its value", async () => {
+  const { MarkdownEditor } = await import("./MarkdownEditor");
+  const changes: string[] = [];
+  const { rerender } = render(<MarkdownEditor value="# Un" onChange={(md) => changes.push(md)} />);
+  const view = await editorView();
+  rerender(<MarkdownEditor value="# Deux" onChange={(md) => changes.push(md)} />);
+  expect(view.state.doc.toString()).toBe("# Deux");
+  expect(changes).toEqual([]);
+  view.dispatch({ changes: { from: view.state.doc.length, insert: "!" }, userEvent: "input.type" });
+  expect(changes).toEqual(["# Deux!"]);
+});
+
+test("a local unsaved edit survives an external change and shows the D4 banner", async () => {
+  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
+  const tree = (sdk: KiboSdk) => (
+    <SdkProvider sdk={sdk}>
+      <Component />
+    </SdkProvider>
+  );
+  const { rerender } = render(tree(m.sdk));
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.dispatch({
+    changes: { from: view.state.doc.length, insert: "\nMa frappe locale" },
+    userEvent: "input.type",
+  });
+  const local = view.state.doc.toString();
+  expect(await screen.findByText("Non enregistré")).toBeTruthy();
+  const external = "# Décisions d'architecture\n\nRéécrit ailleurs.\n";
+  m.touchNote("decisions-architecture.md", external);
+  rerender(tree({ ...m.sdk }));
+  expect((await screen.findByRole("alert", {}, { timeout: 3000 })).textContent).toContain(
+    "Modifié hors de Kibo",
+  );
+  await new Promise((r) => setTimeout(r, 1000));
+  expect(view.state.doc.toString()).toBe(local);
+  expect(screen.getByRole("alert").textContent).toContain("Modifié hors de Kibo");
+  expect(m.notes.get("decisions-architecture.md")?.markdown).toBe(external);
 });

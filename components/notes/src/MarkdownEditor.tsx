@@ -1,11 +1,13 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
-import { EditorState } from "@codemirror/state";
+import { Annotation, EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import { fr } from "./fr";
 
 type Props = { value: string; onChange(markdown: string): void };
+
+const fromValue = Annotation.define<boolean>();
 
 const editorTheme = EditorView.theme({
   "&": { fontSize: "14px" },
@@ -33,7 +35,9 @@ export function MarkdownEditor({ value, onChange }: Props) {
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ "aria-label": fr.editor, "aria-multiline": "true" }),
           EditorView.updateListener.of((u) => {
-            if (u.docChanged) change.current(u.state.doc.toString());
+            if (u.docChanged && !u.transactions.some((t) => t.annotation(fromValue))) {
+              change.current(u.state.doc.toString());
+            }
           }),
           editorTheme,
         ],
@@ -49,7 +53,10 @@ export function MarkdownEditor({ value, onChange }: Props) {
   useEffect(() => {
     const v = view.current;
     if (v && v.state.doc.toString() !== value) {
-      v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: value } });
+      v.dispatch({
+        changes: { from: 0, to: v.state.doc.length, insert: value },
+        annotations: fromValue.of(true),
+      });
     }
   }, [value]);
 

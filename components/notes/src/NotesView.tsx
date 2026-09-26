@@ -80,6 +80,8 @@ export function NotesView() {
   const [state, setState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
   const autosave = useRef<Autosave | null>(null);
+  const notesApi = useRef(sdk.notes);
+  notesApi.current = sdk.notes;
 
   const fail = useCallback((message: string) => {
     return (e: unknown) => {
@@ -108,7 +110,7 @@ export function NotesView() {
   const load = useCallback(
     async (path: string) => {
       try {
-        const content = await sdk.notes.read(path);
+        const content = await notesApi.current.read(path);
         setNote(content);
         setDraft(content.markdown);
         setState("saved");
@@ -117,14 +119,14 @@ export function NotesView() {
         fail(fr.loadFailed)(e);
       }
     },
-    [sdk, fail],
+    [fail],
   );
 
   useEffect(() => {
     if (selected === null) return;
     const a = createAutosave({
       delayMs: 800,
-      save: (md, mtime) => sdk.notes.write(selected, md, mtime),
+      save: (md, mtime) => notesApi.current.write(selected, md, mtime),
       onState: setState,
       onSaved: (meta) => setNote((n) => (n && n.path === meta.path ? { ...n, ...meta } : n)),
     });
@@ -134,7 +136,7 @@ export function NotesView() {
       autosave.current = null;
       void a.flush().finally(() => a.dispose());
     };
-  }, [sdk, selected, load]);
+  }, [selected, load]);
 
   useEffect(() => {
     const current = listed.data.find((n) => n.path === selected);

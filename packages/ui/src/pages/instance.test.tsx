@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { type ComponentSummary, type Instance, KiboError, type RpcRequest } from "@kibo/schema";
+import { type KiboSdk, useSdk } from "@kibo/sdk";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -33,6 +34,16 @@ const { HostProvider } = await import("../shell/Host");
 await loadTrusted("mine", "1.0.0", H, async () => ({
   manifest: { id: "mine", version: "1.0.0", kind: "widget", title: "Mine", reads: [], writes: [] },
   Component: () => <p>trusted content</p>,
+}));
+
+const seenSdks: KiboSdk[] = [];
+function Probe() {
+  seenSdks.push(useSdk());
+  return <p>probe</p>;
+}
+await loadTrusted("probe", "1.0.0", H, async () => ({
+  manifest: { id: "probe", version: "1.0.0", kind: "view", title: "Probe", reads: [], writes: [] },
+  Component: Probe,
 }));
 
 const host = {
@@ -129,6 +140,30 @@ test("a trusted version is loaded as a module", async () => {
   ];
   wrap(<InstanceFrame projectId="p1" instance={inst("mine@1.0.0")} viewer="adam" surface="widget" />);
   expect(await screen.findByText("trusted content")).toBeTruthy();
+});
+
+test("the sdk keeps its identity when the project snapshot changes but the instance config does not", async () => {
+  components = [
+    { id: "probe", title: "Probe", builtin: false, versions: [version("1.0.0", { trust: "trusted" })] },
+  ];
+  const frame = (config: Record<string, unknown>) => (
+    <HostProvider host={host}>
+      <InstanceFrame
+        projectId="p1"
+        instance={{ ...inst("probe@1.0.0"), config }}
+        viewer="adam"
+        surface="view"
+      />
+    </HostProvider>
+  );
+  const { rerender } = render(frame({ folder: "notes" }));
+  await screen.findByText("probe");
+  rerender(frame({ folder: "notes" }));
+  rerender(frame({ folder: "notes" }));
+  expect(new Set(seenSdks).size).toBe(1);
+  rerender(frame({ folder: "docs" }));
+  expect(new Set(seenSdks).size).toBe(2);
+  expect(seenSdks.at(-1)?.config).toEqual({ folder: "docs" });
 });
 
 test("D2: an unapproved or tampered version asks for trust", async () => {

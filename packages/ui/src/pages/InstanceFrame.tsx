@@ -1,6 +1,6 @@
 import { type Instance, isBuiltinId, type Surface, sandboxPath, splitRef } from "@kibo/schema";
 import { createSdk, projectBackend, SdkProvider } from "@kibo/sdk";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { findComponent } from "../registry";
@@ -15,8 +15,15 @@ type Props = { projectId: string; instance: Instance; viewer: string; surface: S
 type MountedProps = Props & { mod: TrustedModule; mode: "builtin" | "gated" };
 type TrustedProps = Props & { id: string; version: string; hash: string };
 
+function useSameContent<T>(value: T): T {
+  const kept = useRef(value);
+  if (JSON.stringify(kept.current) !== JSON.stringify(value)) kept.current = value;
+  return kept.current;
+}
+
 function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedProps) {
   const host = useHost();
+  const config = useSameContent(instance.config);
   const sdk = useMemo(
     () =>
       createSdk(
@@ -24,7 +31,7 @@ function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedPro
         mod.manifest,
         {
           instanceId: instance.id,
-          config: instance.config,
+          config,
           viewer,
           surface,
           openTicket: host.openTicket,
@@ -41,7 +48,7 @@ function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedPro
         },
         mode,
       ),
-    [mod, mode, projectId, instance.id, instance.config, viewer, surface, host],
+    [mod, mode, projectId, instance.id, config, viewer, surface, host],
   );
   return (
     <SdkProvider sdk={sdk}>
