@@ -121,6 +121,22 @@ describe("editable meta fields keep their type", () => {
     expect(verdict).toEqual({ ok: false, reason: expect.stringContaining("meta.owner") });
   });
 
+  test("an unknown meta field already shared does not block later updates", () => {
+    const server = sharedServer();
+    server.getMap("meta").set("legacy", "kept");
+    server.commit();
+    const verdict = verdictFor(server, (c) => c.getMap("meta").set("name", "Kibo 2"));
+    expect(verdict).toEqual({ ok: true });
+  });
+
+  test("an unknown meta field already shared cannot be modified", () => {
+    const server = sharedServer();
+    server.getMap("meta").set("legacy", "kept");
+    server.commit();
+    const verdict = verdictFor(server, (c) => c.getMap("meta").set("legacy", "changed"));
+    expect(verdict).toEqual({ ok: false, reason: expect.stringContaining("meta.legacy") });
+  });
+
   test("a rename keeps being accepted", () => {
     const verdict = verdictFor(sharedServer(), (c) => {
       c.getMap("meta").set("name", "Kibo 2");

@@ -33,7 +33,8 @@ function editableViolation(before: LoroMap, after: LoroMap): string | null {
     if (isContainer(value) || !schema.safeParse(value).success) return `meta.${field} has an invalid value`;
   }
   for (const field of after.keys()) {
-    if (!KNOWN_META_FIELDS.has(field)) return `meta.${field} is not a project field`;
+    if (KNOWN_META_FIELDS.has(field) || sameSurface(before.get(field), after.get(field))) continue;
+    return `meta.${field} is not a project field`;
   }
   return null;
 }
