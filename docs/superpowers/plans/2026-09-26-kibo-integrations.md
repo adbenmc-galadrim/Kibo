@@ -5874,7 +5874,7 @@ Aucune dépendance nouvelle : `sonner` n'est pas une dépendance de `packages/ui
 - Consumes: `IntegrationDialogProps` (avec `onDone(message?: string)`), `INTEGRATION_DIALOGS` (Task 10) ; RPC `getGithubConnectOptions`, `connectGithub`, `configureFigma`, `listMcpServers`, `previewMcpServer`, `addMcpServer`, `removeMcpServer`, `setMcpServerEnabled` (Task 1) ; `ChoiceCard` (`packages/ui/src/dialogs/ChoiceCard.tsx` : `value`, `icon`, `title`, `description?`, `disabled?`, `badge?`, `aside?`, `stacked?` ; le radio porte `aria-label={title}`) ; primitives `@kibo/sdk/ui/{badge,button,dialog,input,label,radio-group,textarea,alert-dialog}` et `Switch` (Task 10) ; `fr.common.cancel` (`packages/ui/src/i18n/fr.ts`).
 - Produces: `GithubConnectDialog`, `FigmaConnectDialog`, `McpServersDialog` (props `IntegrationDialogProps`) ; `McpServerDialog({ open, onOpenChange, onAdded, takenIds })` ; `type McpForm` et `toServerInput(form: McpForm): { server: McpServerInput; secrets: Record<string, string> } | { error: string }` ; `slugId(name: string): string`. Consomme `Switch` (Task 10).
 
-- [ ] **Step 1: Test du formulaire MCP (échoue)**
+- [x] **Step 1: Test du formulaire MCP (échoue)**
 
 `packages/ui/src/dialogs/integrations/mcp-form.test.ts` :
 
@@ -5913,7 +5913,7 @@ test("an http form with a token asks for the bearer secret", () => {
 
 Run: `bun test packages/ui/src/dialogs/integrations/mcp-form.test.ts` — Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `mcp-form.ts`**
+- [x] **Step 2: Implémenter `mcp-form.ts`**
 
 ```ts
 import { McpServerInput } from "@kibo/schema";
@@ -5968,7 +5968,7 @@ export function toServerInput(
 
 Run: `bun test packages/ui/src/dialogs/integrations/mcp-form.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Test des dialogues (échoue)**
+- [x] **Step 3: Test des dialogues (échoue)**
 
 `packages/ui/src/dialogs/integrations/integration-dialogs.test.tsx` :
 
@@ -6054,7 +6054,7 @@ test("mcp: the exact command is shown and confirmed before adding", async () => 
 
 Run: `bun test packages/ui/src/dialogs/integrations` — Expected: FAIL.
 
-- [ ] **Step 4: Dialogue GitHub**
+- [x] **Step 4: Dialogue GitHub**
 
 `packages/ui/src/dialogs/integrations/GithubConnectDialog.tsx` :
 
@@ -6166,7 +6166,7 @@ export function GithubConnectDialog({ open, onOpenChange, onDone }: IntegrationD
 
 Le jeton ne quitte le composant que par la RPC `connectGithub` ; il n'est ni journalisé ni gardé après fermeture (état local démonté).
 
-- [ ] **Step 5: Dialogue Figma**
+- [x] **Step 5: Dialogue Figma**
 
 `packages/ui/src/dialogs/integrations/FigmaConnectDialog.tsx` :
 
@@ -6231,7 +6231,7 @@ export function FigmaConnectDialog({ open, onOpenChange, onDone }: IntegrationDi
 }
 ```
 
-- [ ] **Step 6: Dialogues MCP**
+- [x] **Step 6: Dialogues MCP**
 
 `packages/ui/src/dialogs/integrations/McpServerDialog.tsx` : deux étapes dans un même `Dialog`.
 
@@ -6400,7 +6400,7 @@ export function McpServerDialog({ open, onOpenChange, onAdded, takenIds }: Props
 
 `packages/ui/src/dialogs/integrations/McpServersDialog.tsx` (props `IntegrationDialogProps`) : `Dialog` (titre `mcpServers.title`, description `mcpServers.subtitle`) qui charge `listMcpServers` à l'ouverture ; une ligne par serveur : nom, `id` en monospace, badge `stdio`/`HTTP`, `tools(n)`, pastille d'état (vert `connected`, gris `idle`, rouge `error` + message), `Switch` « Activé » (`setMcpServerEnabled`, `aria-label` = `${enabled} ${name}`), bouton « Retirer » qui ouvre une confirmation (`AlertDialog` de `@kibo/sdk/ui/alert-dialog`, texte `removeConfirm(name)`, Annuler / Retirer destructif) puis `removeMcpServer` ; état vide `mcpServers.empty` ; bouton « Ajouter un serveur » qui ouvre `McpServerDialog` (`takenIds` = ids listés) et recharge la liste à `onAdded`. Toute erreur RPC s'affiche dans un `role="alert"` de la ligne concernée. `onDone` est appelé à la fermeture pour rafraîchir l'écran 16.
 
-- [ ] **Step 7: Enregistrer les dialogues**
+- [x] **Step 7: Enregistrer les dialogues**
 
 `packages/ui/src/settings/integration-dialogs.ts` (remplace l'objet vide de la Task 10 ; les dialogues n'importent de ce fichier que des types, sans cycle à l'exécution) :
 
@@ -6416,7 +6416,7 @@ export const INTEGRATION_DIALOGS: Partial<Record<IntegrationDialogId, ComponentT
 };
 ```
 
-- [ ] **Step 8: Vérifier et commiter**
+- [x] **Step 8: Vérifier et commiter**
 
 Run: `bun test packages/ui && bun run check && bun run typecheck && bun run --cwd packages/ui build` — Expected: PASS. Comparer chaque dialogue à P2 à P5 en sombre et en clair.
 
