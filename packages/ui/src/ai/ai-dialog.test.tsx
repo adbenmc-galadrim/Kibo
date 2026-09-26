@@ -94,11 +94,10 @@ test("step 3 failure: report, incidents, retry; exhausted: code fallback only", 
   answer = () =>
     details({ status: "failed", attempts: 3, failure: { kind: "validation", detail: null }, report });
   render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
-  expect(
-    (await screen.findByRole("button", { name: "Corriger avec l'agent" })).hasAttribute("disabled"),
-  ).toBe(true);
+  expect(await screen.findByRole("button", { name: "Revalider" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Ouvrir le dossier dans l'éditeur" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Revalider" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Corriger avec l'agent" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Abandonner" }).dataset.variant).toBe("ghost");
 });
 
 test("review (create) then permissions then finalize on the current page", async () => {
@@ -118,6 +117,7 @@ test("review (create) then permissions then finalize on the current page", async
   render(<AiDraftPanel draftId={DRAFT_ID} target={{ projectId: "p1", pageId: "pg1" }} onDone={onDone} />);
   const user = userEvent.setup();
   expect(await screen.findByText("export function Burndown() {}")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Abandonner" }).dataset.variant).toBe("ghost");
   await user.click(screen.getByRole("button", { name: "J'ai relu, continuer" }));
   expect(calls.find((c) => c.method === "reviewComponentDraft")).toEqual({
     method: "reviewComponentDraft",

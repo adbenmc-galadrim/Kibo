@@ -23,7 +23,11 @@ export function DraftFooter({ details, actions, busy, reviewing, onAct, onReview
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
       {actions.canAbandon && (
-        <Button variant="outline" disabled={busy} onClick={onAbandon}>
+        <Button
+          variant={reviewing || actions.codeFallback ? "ghost" : "outline"}
+          disabled={busy}
+          onClick={onAbandon}
+        >
           {fr.ai.abandon}
         </Button>
       )}
@@ -42,10 +46,10 @@ export function DraftFooter({ details, actions, busy, reviewing, onAct, onReview
       {failed && !actions.codeFallback && (
         <span className="text-xs text-muted-foreground">{fr.ai.attempt(details.attempts + 1)}</span>
       )}
-      {failed && block && (
+      {failed && !actions.codeFallback && block && (
         <span className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</span>
       )}
-      {failed && (
+      {failed && !actions.codeFallback && (
         <Button
           variant="agent"
           disabled={busy || !actions.canRetry || !ready || block !== null}
