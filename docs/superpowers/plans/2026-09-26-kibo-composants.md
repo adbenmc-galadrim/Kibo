@@ -7653,7 +7653,7 @@ git commit -m "feat(daemon): mise à jour et migration d'instance"
   - `type Backends = { action(ref, req: { projectId; instanceId; config; name; input }): Promise<unknown>; migrate(ref, req: MigrateRequest): Promise<{ config; data }>; runJob(ref, req: { projectId; instanceId; config; job }): Promise<void>; describe(ref): Promise<BackendDescription>; stop(ref): void; stopAll(): void }` ; `createBackends(deps): Backends`. Sans source (version non active) ⇒ `TRUST_REQUIRED` ; sans `server.js` ni `migrations.js` ⇒ `PERMISSION_DENIED` pour une action, migration identité (`applyMigrations` avec aucun pas) pour `migrate`.
   - `type JobTarget = { projectId: string; instanceId: string; ref: string; config: Record<string, unknown> }` ; `createJobScheduler(deps: { targets(): JobTarget[]; describe(ref): Promise<BackendDescription>; run(target, job): Promise<void>; setInterval?; clearInterval?; log?: (line: string) => void }): { refresh(): Promise<void>; stop(): void; scheduled(): string[] }` (clé `instanceId:job`).
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/components/backends.test.ts` :
 ```ts
@@ -7793,7 +7793,7 @@ test("a job is not started again while its previous run is still going", async (
 Run: `bun test packages/daemon/src/components/backends.test.ts packages/daemon/src/components/jobs.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `backends.ts`**
+- [x] **Step 2: Implémenter `backends.ts`**
 
 ```ts
 import {
@@ -7900,7 +7900,7 @@ export function createBackends(deps: BackendsDeps): Backends {
 }
 ```
 
-- [ ] **Step 3: Implémenter `jobs.ts`**
+- [x] **Step 3: Implémenter `jobs.ts`**
 
 ```ts
 import type { BackendDescription } from "@kibo/schema";
@@ -7973,7 +7973,7 @@ export function createJobScheduler(deps: JobSchedulerDeps): { refresh(): Promise
 ```
 Le cast de `clear` est la frontière avec le type opaque des minuteries injectées (le défaut est un vrai `setInterval`). Un job dont l'exécution précédente n'est pas finie n'est pas relancé (décision 25 c) : sans cela, un job lent empilerait des invocations dans la file du backend. Une instance dont la version n'est pas active est journalisée et ignorée ; elle sera planifiée au `refresh` qui suit son approbation (tâche 30).
 
-- [ ] **Step 4: Vérifier et committer**
+- [x] **Step 4: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components && bun run typecheck && bun run check`
 Expected: PASS.
