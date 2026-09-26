@@ -1,6 +1,6 @@
-import { EventEmitter } from "node:events";
 import { watch as fsWatch } from "node:fs";
-import { isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
+import { isInside } from "./safe-path";
 
 export type WatchTarget = { path: string; recursive: boolean };
 export type WatchHandle = { mode(): "watch" | "poll"; close(): void };
@@ -34,11 +34,6 @@ function segments(path: string): string[] {
   return path.split(/[\\/]+/).filter((s) => s !== "" && s !== ".");
 }
 
-function contains(root: string, target: string): boolean {
-  const rel = relative(resolve(root), resolve(target));
-  return segments(rel)[0] !== ".." && !isAbsolute(rel);
-}
-
 function isGitStateChange(inside: string[]): boolean {
   const own = inside[0] === "worktrees" ? inside.slice(2) : inside;
   const [entry] = own;
@@ -63,18 +58,13 @@ export function isRelevantChange(targetPath: string, filename: string | null): b
 export function dedupeTargets(targets: WatchTarget[]): WatchTarget[] {
   const covers = (o: WatchTarget, t: WatchTarget, earlier: boolean) => {
     if (resolve(o.path) === resolve(t.path)) return o.recursive === t.recursive ? earlier : o.recursive;
-    return o.recursive && contains(o.path, t.path);
+    return o.recursive && isInside(resolve(o.path), resolve(t.path));
   };
   return targets.filter((t, i) => !targets.some((o, j) => j !== i && covers(o, t, j < i)));
 }
 
 const defaultWatch: WatchFn = (path, options, onEvent, onError) => {
   const watcher = fsWatch(path, options, (_event, filename) => onEvent(filename));
-  // Two merged @types/node versions (20 and 26) hide the EventEmitter methods of FSWatcher.
-  if (!(watcher instanceof EventEmitter)) {
-    watcher.close();
-    throw new Error("fs.watch returned a watcher without error events");
-  }
   watcher.on("error", onError);
   return watcher;
 };
