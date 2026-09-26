@@ -16,6 +16,8 @@ export type KiboClient = {
   subscribe(listener: (projectId: string | null) => void): () => void;
   subscribeTopic(topic: Topic, listener: () => void): () => void;
   onRunChanged(listener: (e: RunChanged) => void): () => void;
+  online(): boolean;
+  onConnection(listener: () => void): () => void;
 };
 
 export type ClientOptions = {
@@ -37,7 +39,14 @@ export function createClient(opts: ClientOptions): KiboClient {
   const listeners = new Set<(projectId: string | null) => void>();
   const topics = new Map<Topic, Set<() => void>>();
   const runListeners = new Set<(e: RunChanged) => void>();
+  const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
+  let open = false;
+  const setOpen = (value: boolean) => {
+    if (open === value) return;
+    open = value;
+    for (const l of statusListeners) l();
+  };
   const active = () =>
     listeners.size + runListeners.size + [...topics.values()].reduce((n, set) => n + set.size, 0);
 
@@ -45,6 +54,7 @@ export function createClient(opts: ClientOptions): KiboClient {
     const url = new URL("/api/events", opts.baseUrl || globalThis.location.href);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(url);
+    socket.onopen = () => setOpen(true);
     socket.onmessage = (e) => {
       const msg = JSON.parse(String(e.data)) as {
         projectId?: string | null;
@@ -65,6 +75,7 @@ export function createClient(opts: ClientOptions): KiboClient {
     };
     socket.onclose = () => {
       socket = null;
+      setOpen(false);
       if (active() > 0) setTimeout(connect, 1000);
     };
   };
@@ -111,6 +122,13 @@ export function createClient(opts: ClientOptions): KiboClient {
       return () => {
         runListeners.delete(listener);
         release();
+      };
+    },
+    online: () => open,
+    onConnection(listener) {
+      statusListeners.add(listener);
+      return () => {
+        statusListeners.delete(listener);
       };
     },
   };

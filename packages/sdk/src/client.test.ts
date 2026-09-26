@@ -66,3 +66,28 @@ test("topic, run and project messages reach their own listeners", async () => {
   offRuns();
   server.stop(true);
 });
+
+test("the connection status follows the event socket", async () => {
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: { message() {} },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: boolean[] = [];
+  const opened = Promise.withResolvers<void>();
+  const closed = Promise.withResolvers<void>();
+  const offStatus = client.onConnection(() => {
+    seen.push(client.online());
+    (client.online() ? opened : closed).resolve();
+  });
+  expect(client.online()).toBe(false);
+  const offAgents = client.subscribeTopic("agents", () => {});
+  await opened.promise;
+  server.stop(true);
+  await closed.promise;
+  expect(seen).toEqual([true, false]);
+  offAgents();
+  offStatus();
+});
