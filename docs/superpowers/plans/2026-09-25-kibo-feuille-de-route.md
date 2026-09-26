@@ -59,8 +59,9 @@ Voir, modifier et livrer le code d'un worktree sans quitter Kibo.
 - Versioning semver avec « mettre à jour partout / nouvelle version » et migrations ; sandbox (iframe + processus séparé) avec permissions vérifiées par le démon ; empreinte qui redemande la confiance.
 - `kibo component new` ; composants Graphe de dépendances (chemin critique) et Notes (Markdown, Obsidian).
 - Entités déclarées par un composant (`acme.bug`, spec §5) : reportées après v1.0 (spec composants §14).
+- Transverse (écarts de v0.3, tâches 35 à 39) : UI chargée à la demande avec un budget du chargement initial (≤ 230 kB gzip), densité 13 px des maquettes, écran 12 « Mes tickets » dans la barre latérale, en-tête de workspace (monogramme, nom, renommage).
 
-**Sortie** : un composant tiers sandboxé qui tente une action non déclarée est bloqué (test de conformité) ; écrans 6, 10, 11, 29, 30.
+**Sortie** : un composant tiers sandboxé qui tente une action non déclarée est bloqué (test de conformité) ; écrans 6, 10, 11, 12, 29, 30 ; `bun run budget` vert.
 
 ## Phase 5 · Intégrations (v0.5)
 
@@ -75,4 +76,5 @@ Assistant d'onboarding (rôle → composants conseillés) et génération de com
 ## Phase 7 · Sync et marketplace (v1.0)
 
 Serveur de sync Loro, permissions par projet, multi-utilisateur temps réel (spec G) ; marketplace de composants (spec H) ;
-durcissement OS du sandbox (Landlock ou bubblewrap, profil sandbox macOS).
+durcissement OS du sandbox (Landlock ou bubblewrap, profil sandbox macOS) ;
+plusieurs workspaces : création et bascule depuis l'en-tête de la barre latérale (point E6 du plan de phase 4, en attente d'Adam).

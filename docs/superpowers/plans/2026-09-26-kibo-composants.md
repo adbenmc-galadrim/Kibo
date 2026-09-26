@@ -21,6 +21,14 @@
 | 11 | Notes (vue) | 17 |
 | 29 | Créer un composant (colonnes IA / Depuis le code) | 11 |
 | 30 | Autoriser « … » x.y.z ? (permissions et confiance) | 12 |
+| 1 | Vue d'ensemble (densité, en-tête de workspace) | 5 |
+| 8 | Kanban (vue) | 8 |
+| 9 | Tickets (vue) | 15 |
+| 12 | Mes tickets | 22 |
+| 13 | Agents | 23 |
+| 14 | Domaines & guidelines | 24 |
+| 17 | Files d'attente | 27 |
+| 21 | Changements | 34 |
 
 ## Global Constraints
 
@@ -68,7 +76,7 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 2. **Format de `configSchema`** : `Record<clé, { type?: "string"|"number"|"boolean", enum?: (string|number|boolean)[], nullable?: boolean, default?: unknown }>` (compatible avec le manifeste Kanban v0.1). Sans `configSchema`, seule la config `{}` est valide ; toute clé inconnue est refusée.
 3. **Appels ajoutés à `ComponentCall`** : `notes.search { query }` (recherche plein texte côté démon, spec §8.2) et `notes.info` (dossier, libellé Obsidian) ; `sdk.notes.search()` et `sdk.notes.info()` exigent `reads: note`.
 4. **Contexte SDK** : `surface: "widget" | "view"` (widget et vue d'un composant `both` diffèrent pour Graphe et Notes) et `openView(componentId)` (lien « Ouvrir le graphe → ») ; message iframe `{ type: "openView", componentId }` pour garder une API identique en sandbox.
-5. **Codes d'erreur ajoutés** en plus de la spec : `RATE_LIMITED` (quotas d'appels et de `fetch`), `QUOTA_EXCEEDED` (256 Kio de données).
+5. **Codes d'erreur ajoutés** en plus de la spec : `RATE_LIMITED` (quotas d'appels et de `fetch`), `QUOTA_EXCEEDED` (256 Kio de données), `SANDBOX_UNAVAILABLE` (aucun bac à sable OS utilisable, décision 24).
 6. **RPC ajoutées** : `rehashComponent` (menu « Revérifier l'empreinte »), `listDrafts` (« Mes composants » non publiés), `getNotesDir` / `setNotesDir`, `getRuntimeInfo` (origine du port sandbox pour l'UI), `installCli` (Paramètres › Général).
 7. **Mise à jour différée** : `RegistryVersion.autoUpdate: boolean` (défaut `false`). « Mettre à jour partout » sur une version qui demande une nouvelle permission ne lance aucune migration (ce serait exécuter du code non approuvé) : la version est publiée avec `trust = null` et `autoUpdate = true`, et `approveComponent` applique alors la mise à jour à toutes les instances.
 8. **Découverte du démon par la CLI** : le démon écrit `<KIBO_HOME>/daemon.json` (`{ port, sandboxPort, pid }`, `0600`) au démarrage et le supprime à l'arrêt.
@@ -90,6 +98,12 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 24. **Bac à sable OS dès la phase 4 (point E2 tranché)** : le spike 1-C montre que le runtime restreint ne bloque pas l'import construit, et la relecture en a mesuré d'autres (même Bun 1.4.2) : `(() => 0).constructor("return import('node:fs')")()` passe l'analyse statique (propriété `constructor`) et le runtime ; `new Worker(URL.createObjectURL(new Blob([…])))` démarre un Worker dont `Bun.spawn` et `fetch` sont intacts ; `import("bun:ffi")` reste chargeable ; `Bun.build` exécute les macros (`import … with { type: "macro" }`) dans le processus qui construit, sans passer par `onResolve`. Sans barrière OS, un backend « sandboxé » lit `~/.ssh` et `~/.kibo`, lance des processus et ouvre le réseau. Donc : le `ProcessHost` **et** les tests exécutés par la validation (code non encore approuvé) tournent sous `sandbox-exec` (macOS) ou `bwrap` (Linux) dès la phase 4 (tâche 11b, profil de la spec H §8 adapté), en échec fermé (`SANDBOX_UNAVAILABLE`, aucun repli sans isolation) ; la tâche 4 refuse les attributs d'import et `Worker`, `global`, `self` ; la tâche 6 construit avec `macros: false`. Restent en phase 7 : réglage « Autoriser les backends sandboxés sans isolation OS », écran 19, filtre seccomp. Les backends `trusted` restent en Worker (confiance totale explicite à l'écran 30). Lancement de processus (relecture de la tâche 11b) : sous macOS, le profil n'autorise que l'exécution du binaire du runtime (`process-exec` littéral, `fork` refusé) ; sous Linux, `bwrap` n'a pas de liste d'exécutables (le runtime, interprète complet, peut exécuter tout fichier visible), donc on réduit ce qui est visible (bibliothèques système et binaire du runtime, pas `/usr/bin`) et tout processus lancé hérite du même bac à sable (espaces de noms, aucun réseau, aucune capacité, `no_new_privs`, mêmes montages, arrêté avec le runtime) ; interdire `execve` relève du filtre seccomp (phase 7). Un autre exécutable n'ajoute aucun accès à ce que le runtime a déjà.
 25. **Frontière démon ↔ backend durcie** (relecture de la tâche 11) : (a) les codes d'erreur renvoyés par un backend passent par une liste blanche (`BACKEND_ERROR_CODES`, tâche 11) ; tout autre code (`TRUST_REQUIRED`, `UNAUTHORIZED`, `COMPONENT_CRASHED`…) devient `INTERNAL`, le code d'origine restant dans le message : un backend ne peut pas faire croire à l'UI qu'il faut accorder la confiance ou se réappairer ; (b) tout message invalide d'un backend (schéma, `ready` inattendu, JSON illisible, ligne trop longue) est une violation de protocole : arrêt du backend, compté comme un crash (attente croissante), au lieu d'une ligne de journal qu'un backend répéterait sans fin ; (c) l'attente d'un créneau est bornée par `timeoutMs` (`TIMEOUT`, tâche 11) et un job n'est pas relancé tant que son exécution précédente n'est pas finie (tâche 17) ; (d) le `ProcessHost` n'utilise plus le canal IPC de Bun, dont le tampon de lecture est sans limite : deux tubes JSON par ligne (descripteur 3 démon → runtime, descripteur 4 runtime → démon) ; une ligne reçue de plus de `BACKEND_MESSAGE_LIMIT` (4 Mio) arrête le backend, et le runtime honnête renvoie `TOO_LARGE` au lieu d'un résultat trop gros (tâche 11b). Reste pour la phase 7 (avec le filtre seccomp) : plafond mémoire et CPU du processus backend lui-même.
 26. **Journal des refus borné** (relecture de la tâche 15) : l'ordre de la spec §6.4 (permissions avant quotas) laisse un composant enchaîner des refus sans limite ; prendre un quota avant les permissions ne suffirait pas (les refus `RATE_LIMITED` sont eux aussi journalisés). C'est donc le journal qui est borné (spec §6.4, point 6) : colonne `count`, par clé (`instanceId`, `call.kind`, `code`) et fenêtre de 60 s, 10 lignes puis une ligne de synthèse `count = n` sans écriture SQLite par refus ; rétention 1 000 lignes par instance et 10 000 au total. Le premier refus de chaque clé est toujours écrit immédiatement, avec son horodatage : un flot de refus d'un autre type ne le remplace pas avant la rétention, et le compteur montre l'ampleur du flot.
+27. **Notes : balayage de secours** (relecture de la tâche 18, spec §8.2) : la surveillance du dossier est ouverte avant sa lecture, et un balayage des signatures des `.md` (chemin, `mtime`, taille) toutes les 3 s (`pollMs`) rattrape un événement FSEvents perdu juste après l'ouverture du flux ; même cause que le `worktree-watch` de la tâche de stabilisation. Le débounce de 200 ms reste le chemin normal.
+28. **Le graphe lit `run`** (tâche 25, spec §8.1) : manifeste `reads [ticket, status, link, run]` ; pastille d'état du run d'agent sur le nœud, comme la carte Kanban ; lecture seule.
+29. **UI chargée à la demande, budget du chargement initial** (tâche 35, écart de v0.3) : vues Notes et Graphe (CodeMirror, Lezer, markdown-it), écrans Agents, Files d'attente, Domaines, Composants, Changements, onglet et aperçu de fichier (Shiki, CodeMirror) chargés par `import()` au travers de `lazyPanel` du SDK public : repli `role="status"` pendant le chargement, échec affiché (`role="alert"`, « Réessayer » relance l'import), cause journalisée ; une erreur de rendu du module chargé n'est pas déguisée en échec de chargement. Budget : JS du chargement initial (chunk d'entrée et ses imports statiques, gzip niveau 9) ≤ **230 kB**, et aucun de ces modules dans l'entrée ; vérifié par `bun run budget` (build Vite réel en mémoire), par chaque tâche UI suivante et au jalon. Mesure de départ : 485 kB gzip (1,47 Mo brut) ; estimation après découpage : ~218 kB. On ne relève pas le seuil pour faire passer une tâche : toute hausse est justifiée dans le plan.
+30. **Densité 13 px** (tâche 36, écart de v0.3) : les PDF sont à 0,75 pt par pixel ; échelle relevée : 10, 11, 12, 13, 14, 20, 22 px. Tokens Tailwind redéfinis dans `packages/sdk/src/theme.css` (partagé par l'UI, les intégrés et les composants construits par le devkit) : `text-sm` 13 px, `text-2xs` 11 px (nouveau), `text-3xs` 10 px (nouveau), `text-md` 14 px (nouveau), `text-2xl` 22 px ; `body` en 13 px ; `text-xs`, `text-base`, `text-lg`, `text-xl` inchangés. Hauteurs de ligne de `text-sm` gardées à 20 px. Contrôlé par un test Playwright (tailles calculées, sombre et clair).
+31. **« Mes tickets » en phase 4** (tâche 37, écart de v0.3) : écran 12 comme écran de premier niveau (`Screen` gagne `mine` : onglet, palette, fil d'Ariane), calculé dans l'UI depuis les instantanés que le shell charge déjà (aucune RPC). « Assignés à moi » : non terminés, assigné humain = utilisateur (c'est le compteur de la barre latérale) ; « Mes agents » : non terminés, assignés à un agent ; « Créés par moi » : point E5. Groupes par projet dans l'ordre de la barre latérale ; tri Bloqué, En cours, À faire, En review, Backlog, puis ticket en attente d'un bloquant d'abord, puis ordre naturel des clés (reproduit la page 22). « Assigner » complet si le projet a un dossier, sinon bouton icône désactivé : un run exige un dossier (`workspace-prep.ts`), ce qui explique les boutons réduits de FAC et POR sur la maquette.
+32. **En-tête de workspace** (tâche 38, écart de v0.3) : monogramme de la maquette (glyphe à cinq barres dans une tuile bordée, aussi sur l'onglet Accueil), nom du workspace et « Workspace local » ; nom stocké dans le doc workspace (`settings.name`, affiché « Perso » par défaut), changé par la commande de configuration `renameWorkspace` (1 à 40 caractères) ; menu : workspace courant coché, « Renommer le workspace… », « Paramètres du workspace ». Création et bascule entre plusieurs workspaces : point E6.
 
 ### Points à arbitrer par Adam (option A appliquée par défaut, l'équipe ne s'arrête pas)
 
@@ -99,6 +113,8 @@ La spec de phase laisse ces points ouverts ; chaque choix est le plus simple et 
 | E2 | **Tranché le 2026-09-26 : option B étendue** (décision 24, tâche 11b). Import dynamique construit (`new Function("return import('node:fs')")`) dans le runtime restreint : le spike 1-C montre qu'on ne peut pas le bloquer | écartée : l'analyse statique se contourne par `(() => 0).constructor`, le runtime par un Worker `blob:` ; « Sandboxé » n'isolerait rien jusqu'en phase 7, alors que la phase 6 fait écrire des composants par des agents | **retenue** : `sandbox-exec` (macOS) et `bwrap` (Linux) pour `ProcessHost` et pour les tests de la validation, échec fermé `SANDBOX_UNAVAILABLE` ; macros et attributs d'import refusés (tâches 4 et 6) |
 | E3 | Bouton « Hiérarchique » de l'écran 10 | indicateur de la seule mise en page disponible (bouton pressé, désactivé, infobulle) | bascule qui ajoute les arêtes parent → sous-ticket |
 | E4 | Tickets sans arête `blocks` : spec « couche 0 séparée en bas » ; écran 10 : KIB-9 en bas mais KIB-14 et KIB-18 à droite | suivre la spec (tous en bas) ; le chef aligne la maquette | suivre la maquette (colonne à droite pour les tickets assignés à un agent) |
+| E5 | Onglet « Créés par moi » de l'écran 12 : un ticket n'enregistre pas son auteur | onglet affiché mais désactivé, infobulle « Kibo n'enregistre pas encore l'auteur d'un ticket. » (tâche 37) | champ `createdBy: string \| null` ajouté au ticket, rempli par `createTicket` (tickets existants à `null`), onglet actif |
+| E6 | Plusieurs workspaces (création, bascule) : la spec générale §8 cite un « sélecteur de workspace », aucune spec ne le décrit (un démon = un `KIBO_HOME` = un doc workspace ; l'écran 15 montre `~/.kibo/workspaces/perso`) | phase 7, avec la sync (spec G à compléter : un dossier par workspace, bascule = redémarrage du démon sur l'autre dossier) ; la phase 4 livre l'en-tête et le renommage (tâche 38) | après v1.0 |
 
 ## Écrans à dessiner (Penpot, sombre et clair, avant les tâches UI concernées)
 
@@ -116,6 +132,8 @@ Le chef d'équipe les ajoute dans Penpot ; les tâches UI les implémentent tels
 | D8 | Paramètres › Général : commande `kibo` | Carte « Commande kibo » : texte « Installe la commande kibo dans ~/.local/bin pour créer, tester et publier tes composants. », bouton « Installer la commande kibo », état « Installée : ~/.local/bin/kibo », alerte en cas d'échec. | 34 |
 | D9 | États vides Graphe et Notes | Graphe vue : « Aucune dépendance entre les tickets affichés. » ; widget : « Aucun chemin critique : aucun ticket bloquant. » Notes vue : colonne gauche « Aucune note dans ce dossier. » + « Nouvelle note » ; centre « Choisis une note ou crées-en une. » ; widget : « Aucune note pour l'instant. » | 25, 26 |
 | D10 | Rapport de publication partielle | Sous le dialogue de l'écran 6 après publication : alerte « 1 instance n'a pas pu être migrée et reste sur l'ancienne version. » + liste « Projet › Page — motif ». | 24 |
+| D11 | Menu du workspace et « Renommer le workspace » | Déclencheur de l'en-tête (tuile, « Perso », « Workspace local », chevron) ouvert : libellé « Workspaces », ligne du workspace courant (tuile, nom, sous-titre, coche), séparateur, « Renommer le workspace… » (`Pencil`), « Paramètres du workspace » (`Settings`). Dialogue : titre « Renommer le workspace », champ « Nom » prérempli, « Annuler » / « Enregistrer », alerte « Impossible de renommer le workspace. » | 38 |
+| D12 | États de l'écran 12 | Onglet « Mes agents » (ligne : action remplacée par `Bot` + nom du profil) ; états vides « Aucun ticket ouvert ne t'est assigné. » et « Aucun ticket ouvert n'est confié à un agent. » ; « Créés par moi » désactivé avec son infobulle (point E5). | 37 |
 
 ## File Structure
 
@@ -146,6 +164,10 @@ packages/ui/src/
   dialogs/{TrustDialog,CreateComponentDialog,AddComponentDialog,NotesDirDialog,OpenViewDialog}.tsx
   components-page/{ComponentsPage,ComponentRowMenu,PublishDialog,DraftsSection}.tsx
   pages/{PageView,InstanceFrame,InstanceMenu,PendingTrust}.tsx  settings/CliInstallCard.tsx
+  shell/{lazy-screens.ts,WorkspaceMark.tsx,WorkspaceSwitcher.tsx}  dialogs/RenameWorkspaceDialog.tsx
+  mine/{my-tickets.ts,MyTicketsPage.tsx,MyTicketRow.tsx}
+packages/ui/scripts/                 (nouveau) bundle-report.ts bundle-budget.ts tsconfig.json
+packages/sdk/src/                    lazy.tsx (tâche 35)  theme.css (tokens de densité, tâche 36)
 components/graph/   kibo.component.json src/{layout,critical-path,filter,GraphView,GraphCanvas,GraphWidget,fr,index}.ts(x)
 components/notes/   kibo.component.json src/{markdown,dates,NotesView,NoteList,NoteDocument,MarkdownEditor,NotesWidget,fr,index}.ts(x)
 apps/desktop/       sidecar/entry.ts  scripts/{build-sidecar,build-toolchain,cli-smoke}.ts  src-tauri/{tauri.conf.json,src/main.rs}
@@ -17097,6 +17119,1068 @@ git commit -m "build(desktop): binaire, toolchain et CLI"
 
 ---
 
+### Task 35: UI chargée à la demande et budget du bundle d'entrée
+
+Écart de v0.3 : le chunk d'entrée de l'UI fait 1,47 Mo (485 kB gzip, mesuré le 2026-09-26 sur `main` après la tâche 29). En cause, surtout : CodeMirror, Lezer et markdown-it tirés statiquement par la vue Notes (`registry.ts` → `@kibo/component-notes` → `NotesView` → `NoteDocument` → `MarkdownEditor` et `markdown.ts`), puis les écrans secondaires. Mesure faite en excluant ces modules : ~218 kB gzip. Décision 29.
+
+**Files:**
+- Create: `packages/sdk/src/lazy.tsx`, `packages/sdk/src/lazy.test.tsx`, `packages/ui/src/shell/lazy-screens.ts`, `packages/ui/scripts/bundle-report.ts`, `packages/ui/scripts/bundle-report.test.ts`, `packages/ui/scripts/bundle-budget.ts`, `packages/ui/scripts/tsconfig.json`
+- Modify: `packages/sdk/src/index.ts`, `packages/sdk/src/conformance.tsx` (attendre la fin du repli), `packages/ui/src/shell/ContentView.tsx`, `packages/ui/src/shell/ScreenView.tsx`, `packages/ui/src/shell/ShellDialogs.tsx`, `packages/ui/src/i18n/fr.ts` (`lazy`), `components/notes/src/index.ts`, `components/notes/src/fr.ts`, `components/graph/src/index.ts`, `components/graph/src/fr.ts`, `package.json` (scripts `budget` et `typecheck`), tests existants qui rendent un écran devenu différé (`packages/ui/src/shell/screens.test.tsx`, `agents-shell.test.tsx`, `shell.test.tsx`, `components/notes/src/notes.test.tsx`, `components/graph/src/graph.test.tsx` : `getBy*` → `await findBy*`, comportement inchangé)
+
+**Interfaces:**
+- Consumes: `Button` (`packages/sdk/src/ui/button.tsx`) ; build Vite de `packages/ui` (`vite.config.ts` inchangé) ; `runConformance` (tâche 12).
+- Produces:
+  - `type LazyLabels = { loading: string; failed: string; retry: string }` ; `LAZY_FALLBACK_SELECTOR = "[data-kibo-loading]"`.
+  - `lazyPanel<P extends object>(load: () => Promise<ComponentType<P>>, labels: LazyLabels, opts?: { fallback?: "visible" | "sr-only" }): ComponentType<P>` : repli `role="status"` (attribut `data-kibo-loading`) pendant le chargement ; échec du chargement ⇒ `role="alert"` avec `labels.failed` et un bouton `labels.retry` qui relance `load` ; l'erreur d'origine est journalisée (`console.error`) ; une erreur de **rendu** du module chargé n'est pas prise pour un échec de chargement : elle remonte à la frontière d'erreur parente.
+  - `packages/ui/src/shell/lazy-screens.ts` : `AgentsPage`, `QueuePage`, `DomainsPage`, `ComponentsPage`, `ChangesView`, `FileTabView`, `FilePreviewSheet` (mêmes props que les modules d'origine).
+  - `type BuiltChunk = { fileName: string; isEntry: boolean; imports: string[]; code: string; moduleIds: string[] }` ; `type EntryReport = { files: string[]; gzipBytes: number; budget: number; forbidden: { file: string; module: string }[]; ok: boolean }` ; `initialChunks(chunks): BuiltChunk[]` ; `reportEntry(chunks, opts?: { budget: number; forbidden: readonly RegExp[]; gzip(bytes: Uint8Array): number }): EntryReport` ; `ENTRY_GZIP_BUDGET = 230_000` ; `FORBIDDEN_IN_ENTRY: readonly RegExp[]` ; `gzipLevel9(bytes): number`.
+  - Script racine `bun run budget` : build Vite réel en mémoire, affiche les fichiers initiaux et leur taille gzip, code de sortie 1 si le budget est dépassé ou si un module interdit est dans l'entrée.
+
+- [ ] **Step 1: Tests du panneau différé**
+
+`packages/sdk/src/lazy.test.tsx` :
+```tsx
+import { describe, expect, test } from "bun:test";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { Component, type ReactNode } from "react";
+import { LAZY_FALLBACK_SELECTOR, lazyPanel } from "./lazy";
+
+const labels = { loading: "Chargement…", failed: "Impossible de charger cet écran.", retry: "Réessayer" };
+const Hello = ({ name }: { name: string }) => <p>Bonjour {name}</p>;
+
+function silenced<T>(run: (errors: unknown[]) => Promise<T>): Promise<T> {
+  const errors: unknown[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => {
+    errors.push(args[0]);
+  };
+  return run(errors).finally(() => {
+    console.error = original;
+  });
+}
+
+class Outer extends Component<{ children: ReactNode }, { error: string | null }> {
+  state: { error: string | null } = { error: null };
+  static getDerivedStateFromError(e: Error) {
+    return { error: e.message };
+  }
+  render() {
+    return this.state.error ? <p>outer: {this.state.error}</p> : this.props.children;
+  }
+}
+
+describe("lazyPanel", () => {
+  test("shows the fallback, then the loaded component with its props", async () => {
+    let resolve: (c: typeof Hello) => void = () => {};
+    const Panel = lazyPanel(() => new Promise<typeof Hello>((r) => { resolve = r; }), labels);
+    const { container } = render(<Panel name="Adam" />);
+    expect(screen.getByRole("status").textContent).toBe("Chargement…");
+    expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).not.toBeNull();
+    await act(async () => resolve(Hello));
+    expect(await screen.findByText("Bonjour Adam")).toBeTruthy();
+    expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull();
+  });
+
+  test("a failed load shows an alert, logs the cause, and retry loads again", () =>
+    silenced(async (errors) => {
+      let calls = 0;
+      const Panel = lazyPanel(async () => {
+        calls += 1;
+        if (calls === 1) throw new Error("chunk missing");
+        return Hello;
+      }, labels);
+      render(<Panel name="Adam" />);
+      expect((await screen.findByRole("alert")).textContent).toContain("Impossible de charger cet écran.");
+      expect(errors.some((e) => e instanceof Error && e.message === "chunk missing")).toBe(true);
+      fireEvent.click(screen.getByRole("button", { name: "Réessayer" }));
+      expect(await screen.findByText("Bonjour Adam")).toBeTruthy();
+      expect(calls).toBe(2);
+    }));
+
+  test("a render error of the loaded module reaches the parent boundary", () =>
+    silenced(async () => {
+      const Broken = (): ReactNode => {
+        throw new Error("boom");
+      };
+      const Panel = lazyPanel(async () => Broken, labels);
+      render(
+        <Outer>
+          <Panel />
+        </Outer>,
+      );
+      expect(await screen.findByText("outer: boom")).toBeTruthy();
+      expect(screen.queryByRole("alert")).toBeNull();
+    }));
+
+  test("the sr-only fallback stays out of the layout", () => {
+    const Panel = lazyPanel(() => new Promise<typeof Hello>(() => {}), labels, { fallback: "sr-only" });
+    render(<Panel name="Adam" />);
+    expect(screen.getByRole("status").className).toContain("sr-only");
+  });
+});
+```
+
+Run: `bun test packages/sdk/src/lazy.test.tsx`
+Expected: FAIL (`./lazy` absent).
+
+- [ ] **Step 2: Implémenter `lazyPanel`**
+
+`packages/sdk/src/lazy.tsx` :
+```tsx
+import { Component, type ComponentType, lazy, type ReactNode, Suspense, useState } from "react";
+import { cn } from "./lib/utils";
+import { Button } from "./ui/button";
+
+export type LazyLabels = { loading: string; failed: string; retry: string };
+export type LazyOptions = { fallback?: "visible" | "sr-only" };
+
+export const LAZY_FALLBACK_SELECTOR = "[data-kibo-loading]";
+
+class LazyLoadError extends Error {
+  constructor(readonly original: unknown) {
+    super("lazy module failed to load");
+  }
+}
+
+type BoundaryProps = { labels: LazyLabels; onRetry(): void; children: ReactNode };
+
+class LoadBoundary extends Component<BoundaryProps, { error: unknown }> {
+  state: { error: unknown } = { error: null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error };
+  }
+
+  componentDidCatch(error: unknown) {
+    if (error instanceof LazyLoadError) console.error(error.original);
+  }
+
+  render() {
+    const { error } = this.state;
+    if (error === null) return this.props.children;
+    if (!(error instanceof LazyLoadError)) throw error;
+    return (
+      <div role="alert" className="flex items-center gap-3 p-4 text-sm text-destructive">
+        <span>{this.props.labels.failed}</span>
+        <Button variant="outline" size="sm" onClick={this.props.onRetry}>
+          {this.props.labels.retry}
+        </Button>
+      </div>
+    );
+  }
+}
+
+function Loading({ label, srOnly }: { label: string; srOnly: boolean }) {
+  return (
+    <div role="status" data-kibo-loading="" className={cn("p-4 text-sm text-muted-foreground", srOnly && "sr-only")}>
+      {label}
+    </div>
+  );
+}
+
+export function lazyPanel<P extends object>(
+  load: () => Promise<ComponentType<P>>,
+  labels: LazyLabels,
+  opts: LazyOptions = {},
+): ComponentType<P> {
+  const create = () =>
+    lazy(() =>
+      load().then(
+        (Loaded) => ({ default: Loaded }),
+        (e: unknown) => {
+          throw new LazyLoadError(e);
+        },
+      ),
+    );
+  let Loaded = create();
+  function LazyPanel(props: P) {
+    const [attempt, setAttempt] = useState(0);
+    const retry = () => {
+      Loaded = create();
+      setAttempt((n) => n + 1);
+    };
+    return (
+      <LoadBoundary key={attempt} labels={labels} onRetry={retry}>
+        <Suspense fallback={<Loading label={labels.loading} srOnly={opts.fallback === "sr-only"} />}>
+          <Loaded {...props} />
+        </Suspense>
+      </LoadBoundary>
+    );
+  }
+  return LazyPanel;
+}
+```
+Si le compilateur refuse `<Loaded {...props} />` pour un `P` générique (`IntrinsicAttributes`), écrire `createElement(Loaded, props)` ; aucun `as`. Le `throw error` du rendu est voulu : une erreur de rendu du module n'est pas un échec de chargement et doit atteindre la frontière parente (test 3).
+
+`packages/sdk/src/index.ts` : ajouter `export * from "./lazy";`.
+
+Run: `bun test packages/sdk/src/lazy.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 3: Tests du rapport de budget**
+
+`packages/ui/scripts/bundle-report.test.ts` :
+```ts
+import { describe, expect, test } from "bun:test";
+import { type BuiltChunk, FORBIDDEN_IN_ENTRY, initialChunks, reportEntry } from "./bundle-report";
+
+const chunk = (fileName: string, over: Partial<BuiltChunk> = {}): BuiltChunk => ({
+  fileName,
+  isEntry: false,
+  imports: [],
+  code: "x",
+  moduleIds: [],
+  ...over,
+});
+const rawSize = (bytes: Uint8Array) => bytes.length;
+const pkg = (name: string, file: string) => `/r/node_modules/.bun/${name.replace("/", "+")}@1.0.0/node_modules/${name}/${file}`;
+
+describe("bundle report", () => {
+  test("initial chunks are the entry and its static imports, transitively, never dynamic ones", () => {
+    const chunks = [
+      chunk("index.js", { isEntry: true, imports: ["react.js"] }),
+      chunk("react.js", { imports: ["scheduler.js", "index.js"] }),
+      chunk("scheduler.js"),
+      chunk("NotesView.js"),
+    ];
+    expect(initialChunks(chunks).map((c) => c.fileName)).toEqual(["index.js", "react.js", "scheduler.js"]);
+  });
+
+  test("sums the gzip size of initial chunks against the budget", () => {
+    const chunks = [
+      chunk("index.js", { isEntry: true, imports: ["a.js"], code: "1234" }),
+      chunk("a.js", { code: "56" }),
+      chunk("lazy.js", { code: "7".repeat(100) }),
+    ];
+    expect(reportEntry(chunks, { budget: 6, forbidden: [], gzip: rawSize })).toMatchObject({ gzipBytes: 6, ok: true });
+    expect(reportEntry(chunks, { budget: 5, forbidden: [], gzip: rawSize }).ok).toBe(false);
+  });
+
+  test("a forbidden module in an initial chunk fails, even under budget", () => {
+    const md = pkg("markdown-it", "index.mjs");
+    const chunks = [
+      chunk("index.js", { isEntry: true, moduleIds: [md] }),
+      chunk("lazy.js", { moduleIds: [pkg("@codemirror/view", "dist/index.js")] }),
+    ];
+    const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
+    expect(report.ok).toBe(false);
+    expect(report.forbidden).toEqual([{ file: "index.js", module: md }]);
+  });
+
+  test("default rules forbid heavy editors and secondary screens, not widgets", () => {
+    const forbidden = [
+      pkg("@codemirror/view", "dist/index.js"),
+      pkg("@lezer/markdown", "dist/index.js"),
+      pkg("codemirror", "dist/index.js"),
+      pkg("markdown-it", "index.mjs"),
+      pkg("shiki", "dist/index.mjs"),
+      pkg("@shikijs/langs", "dist/tsx.mjs"),
+      "/Kibo/packages/ui/src/agents/AgentsPage.tsx",
+      "/Kibo/packages/ui/src/agents/QueuePage.tsx",
+      "/Kibo/packages/ui/src/settings/DomainsPage.tsx",
+      "/Kibo/packages/ui/src/components-page/ComponentsPage.tsx",
+      "/Kibo/packages/ui/src/code/ChangesView.tsx",
+      "/Kibo/packages/ui/src/files/FileTabView.tsx",
+      "/Kibo/packages/ui/src/files/FilePreviewSheet.tsx",
+      "/Kibo/components/graph/src/GraphView.tsx",
+      "/Kibo/components/notes/src/NotesView.tsx",
+    ];
+    for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
+    for (const id of ["/Kibo/components/notes/src/NotesWidget.tsx", "/Kibo/components/graph/src/GraphWidget.tsx", "/Kibo/packages/ui/src/agents/AgentPanel.tsx"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(false);
+  });
+});
+```
+
+Run: `bun test packages/ui/scripts/bundle-report.test.ts`
+Expected: FAIL (`./bundle-report` absent).
+
+- [ ] **Step 4: Implémenter le rapport et le script**
+
+`packages/ui/scripts/bundle-report.ts` :
+```ts
+export type BuiltChunk = { fileName: string; isEntry: boolean; imports: string[]; code: string; moduleIds: string[] };
+export type EntryReport = {
+  files: string[];
+  gzipBytes: number;
+  budget: number;
+  forbidden: { file: string; module: string }[];
+  ok: boolean;
+};
+export type ReportOptions = { budget: number; forbidden: readonly RegExp[]; gzip(bytes: Uint8Array): number };
+
+export const ENTRY_GZIP_BUDGET = 230_000;
+
+export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
+  /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
+  /\/node_modules\/(codemirror|markdown-it|shiki)\//,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet))\.tsx$/,
+  /\/components\/(graph\/src\/GraphView|notes\/src\/NotesView)\.tsx$/,
+];
+
+export const gzipLevel9 = (bytes: Uint8Array): number => Bun.gzipSync(bytes, { level: 9 }).length;
+
+export function initialChunks(chunks: readonly BuiltChunk[]): BuiltChunk[] {
+  const byName = new Map(chunks.map((c) => [c.fileName, c]));
+  const seen = new Map<string, BuiltChunk>();
+  const visit = (c: BuiltChunk) => {
+    if (seen.has(c.fileName)) return;
+    seen.set(c.fileName, c);
+    for (const name of c.imports) {
+      const next = byName.get(name);
+      if (!next) throw new Error(`unknown chunk ${name}`);
+      visit(next);
+    }
+  };
+  for (const c of chunks) if (c.isEntry) visit(c);
+  return [...seen.values()];
+}
+
+const DEFAULTS: ReportOptions = { budget: ENTRY_GZIP_BUDGET, forbidden: FORBIDDEN_IN_ENTRY, gzip: gzipLevel9 };
+
+export function reportEntry(chunks: readonly BuiltChunk[], opts: ReportOptions = DEFAULTS): EntryReport {
+  const initial = initialChunks(chunks);
+  const encoder = new TextEncoder();
+  const gzipBytes = initial.reduce((n, c) => n + opts.gzip(encoder.encode(c.code)), 0);
+  const forbidden = initial.flatMap((c) =>
+    c.moduleIds.filter((id) => opts.forbidden.some((r) => r.test(id))).map((module) => ({ file: c.fileName, module })),
+  );
+  return {
+    files: initial.map((c) => c.fileName),
+    gzipBytes,
+    budget: opts.budget,
+    forbidden,
+    ok: gzipBytes <= opts.budget && forbidden.length === 0,
+  };
+}
+```
+
+`packages/ui/scripts/bundle-budget.ts` :
+```ts
+import { resolve } from "node:path";
+import { build, type Rollup } from "vite";
+import { type BuiltChunk, reportEntry } from "./bundle-report";
+
+const root = resolve(import.meta.dir, "..");
+const result = await build({ root, configFile: resolve(root, "vite.config.ts"), logLevel: "warn", build: { write: false } });
+const outputs: Rollup.RollupOutput[] = Array.isArray(result) ? result : "output" in result ? [result] : [];
+if (outputs.length === 0) throw new Error("vite build returned a watcher");
+const chunks: BuiltChunk[] = outputs.flatMap((o) =>
+  o.output.flatMap((c) =>
+    c.type === "chunk"
+      ? [{ fileName: c.fileName, isEntry: c.isEntry, imports: c.imports, code: c.code, moduleIds: Object.keys(c.modules) }]
+      : [],
+  ),
+);
+const report = reportEntry(chunks);
+const kb = (n: number) => `${(n / 1000).toFixed(1)} kB`;
+console.log(`Chargement initial : ${report.files.join(", ")}`);
+console.log(`gzip : ${kb(report.gzipBytes)} (budget ${kb(report.budget)})`);
+for (const f of report.forbidden) console.error(`Module interdit au chargement initial : ${f.module} (${f.file})`);
+if (!report.ok) process.exit(1);
+```
+L'API `build` de Vite tourne sous Bun (sonde du 2026-09-26 : 1,7 s, mêmes chunks que `vite build`). Les messages du script sont en français (sortie affichée).
+
+`packages/ui/scripts/tsconfig.json` :
+```json
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "outDir": "../dist-types/scripts", "rootDir": ".", "lib": ["ES2022"] },
+  "include": ["."]
+}
+```
+`package.json` racine : `"budget": "bun packages/ui/scripts/bundle-budget.ts"` ; ajouter `packages/ui/scripts` au script `typecheck` (après `packages/ui`).
+
+Run: `bun test packages/ui/scripts && bun run budget`
+Expected: tests PASS ; `bun run budget` **FAIL** (≈ 485 kB et modules interdits listés : `@codemirror/*`, `@lezer/*`, `markdown-it`, `NotesView`, `GraphView`, `AgentsPage`…). C'est l'état de départ.
+
+- [ ] **Step 5: Différer les écrans de l'UI**
+
+`packages/ui/src/i18n/fr.ts` : `lazy: { loading: "Chargement…", failed: "Impossible de charger cet écran.", retry: "Réessayer" }`.
+
+`packages/ui/src/shell/lazy-screens.ts` :
+```ts
+import { lazyPanel } from "@kibo/sdk";
+import { fr } from "../i18n/fr";
+
+export const AgentsPage = lazyPanel(() => import("../agents/AgentsPage").then((m) => m.AgentsPage), fr.lazy);
+export const QueuePage = lazyPanel(() => import("../agents/QueuePage").then((m) => m.QueuePage), fr.lazy);
+export const DomainsPage = lazyPanel(() => import("../settings/DomainsPage").then((m) => m.DomainsPage), fr.lazy);
+export const ComponentsPage = lazyPanel(
+  () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
+  fr.lazy,
+);
+export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
+export const FileTabView = lazyPanel(() => import("../files/FileTabView").then((m) => m.FileTabView), fr.lazy);
+export const FilePreviewSheet = lazyPanel(
+  () => import("../files/FilePreviewSheet").then((m) => m.FilePreviewSheet),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
+```
+- `ScreenView.tsx` : importer `AgentsPage`, `QueuePage`, `ComponentsPage`, `DomainsPage` depuis `./lazy-screens` (aucun autre changement).
+- `ContentView.tsx` : retirer `lazy`, `Suspense` et les deux `lazy(...)` locaux ; importer `ChangesView` et `FileTabView` depuis `./lazy-screens` ; supprimer les `<Suspense fallback={null}>` qui les entourent.
+- `ShellDialogs.tsx` : même chose pour `FilePreviewSheet` (le repli `sr-only` ne décale pas la mise en page pendant l'ouverture de l'aperçu).
+- Vérifier par `grep -rn 'from "\.\./agents/AgentsPage"\|from "\.\./agents/QueuePage"\|from "\.\./settings/DomainsPage"\|from "\.\./components-page/ComponentsPage"\|from "\.\./code/ChangesView"\|from "\.\./files/FileTabView"\|from "\.\./files/FilePreviewSheet"' packages/ui/src` qu'aucun fichier hors tests n'importe plus ces modules statiquement (le script de l'étape 7 le vérifie aussi).
+
+Les tests de l'UI qui rendent ces écrans passent de `getBy*` à `await findBy*` (le premier rendu montre le repli) ; aucun autre changement.
+
+- [ ] **Step 6: Différer les vues Notes et Graphe**
+
+`components/notes/src/fr.ts` : `lazy: { loading: "Chargement des notes…", failed: "Impossible de charger les notes.", retry: "Réessayer" }` ; `components/graph/src/fr.ts` : `lazy: { loading: "Chargement du graphe…", failed: "Impossible de charger le graphe.", retry: "Réessayer" }`.
+
+`components/notes/src/index.ts` :
+```ts
+import { ComponentManifest } from "@kibo/schema";
+import { lazyPanel, useSdk } from "@kibo/sdk";
+import { createElement } from "react";
+import manifestJson from "../kibo.component.json";
+import { fr } from "./fr";
+import { NotesWidget } from "./NotesWidget";
+
+export const manifest = ComponentManifest.parse(manifestJson);
+
+const NotesView = lazyPanel(() => import("./NotesView").then((m) => m.NotesView), fr.lazy);
+
+export function Component() {
+  const sdk = useSdk();
+  return createElement(sdk.surface === "view" ? NotesView : NotesWidget);
+}
+```
+`components/graph/src/index.ts` : même forme avec `GraphView` (`import("./GraphView")`) et `GraphWidget` statique. Le widget du graphe (`critical-path`, `filter`) et celui des notes restent dans l'entrée : ils sont légers et s'affichent sur le tableau de bord.
+
+`lazyPanel` vient du SDK public (règle de dogfooding : aucun accès privilégié).
+
+`packages/sdk/src/conformance.tsx`, dans le test de rendu, après l'attente `container.childElementCount > 0` :
+```ts
+await waitFor(() => expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull());
+```
+(import de `LAZY_FALLBACK_SELECTOR` depuis `./lazy`) : sans cela, la conformité d'une vue différée ne vérifierait que le repli.
+
+Run: `bun test packages components`
+Expected: PASS (tests d'écrans adaptés en `findBy*`).
+
+- [ ] **Step 7: Mesurer et vérifier le budget**
+
+Run: `bun run budget`
+Expected: PASS ; chargement initial ≤ 230 kB gzip (estimation ~218 kB), aucun module interdit. Reporter la valeur mesurée dans la décision 29 (« mesure après la tâche 35 : n kB »). Si le budget n'est pas tenu alors que tous les modules listés sont différés, **ne pas relever le seuil** : chercher la dépendance restante (`bun run budget` liste les fichiers initiaux ; un `console.log` temporaire des `moduleIds` du plus gros chunk suffit) et, faute de piste, remonter au `kibo-lead`.
+
+Vérifier aussi à la main, dans l'app (`bun run start`), sombre puis clair : ouvrir Agents, Files d'attente, Paramètres, Composants, Changements, un aperçu de fichier, la vue Notes et la vue Graphe ; le repli « Chargement… » est bref et chaque écran s'affiche. Couper le démon puis ouvrir un écran jamais chargé : l'alerte « Impossible de charger cet écran. » et « Réessayer » apparaissent ; relancer le démon, « Réessayer » affiche l'écran.
+
+- [ ] **Step 8: Vérifier et committer**
+
+Run: `bun test packages components && bun run typecheck && bun run check && bun run budget && bun run --cwd packages/ui build`
+Expected: PASS ; Vite n'affiche plus l'avertissement « Some chunks are larger than 500 kB ».
+
+```bash
+git add packages/sdk/src/lazy.tsx packages/sdk/src/lazy.test.tsx packages/sdk/src/index.ts packages/sdk/src/conformance.tsx
+git commit -m "feat(sdk): panneau chargé à la demande"
+git add packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ContentView.tsx packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/ShellDialogs.tsx packages/ui/src/i18n/fr.ts components/notes/src/index.ts components/notes/src/fr.ts components/graph/src/index.ts components/graph/src/fr.ts
+git add <tests d'écrans adaptés, listés un par un>
+git commit -m "feat(ui): écrans chargés à la demande"
+git add packages/ui/scripts package.json
+git commit -m "build(ui): budget du chargement initial"
+```
+
+---
+
+### Task 36: Densité 13 px (UI et composants intégrés)
+
+Écart de v0.3 : le texte courant est en 14 px, les maquettes en 13 px. Les PDF sont exportés à 0,75 pt par pixel : 9,75 pt = 13 px. Échelle relevée sur toutes les pages (sombre, histogramme des tailles) : 10 px (1 018 occurrences : libellés de section « PROJETS », badges de domaine, méta des cartes), 11 px (2 712 : clés de ticket, compteurs, « Workspace local », avatar), 12 px (2 135 : onglets, barres d'outils, « Rechercher… », en-têtes de colonne), 13 px (2 285 : texte courant, navigation, titres de ligne), 14 px (109 : titres de panneau), 16, 17, 18, 20 px (titres des Paramètres), 22 px (« Bonjour Adam », chiffres des statistiques), 26 px (titre d'une note), 28 px (premier lancement). Décision 30.
+
+**Files:**
+- Create: `packages/sdk/src/theme.test.ts`
+- Modify: `packages/sdk/src/theme.css` (tokens, `body`), `packages/sdk/src/ui/sidebar.tsx` (`SidebarGroupLabel` 10 px, `SidebarMenuBadge` 11 px), puis les fichiers dont une taille diverge de la maquette après le changement de tokens, repérés à l'étape 3 dans `packages/ui/src/**`, `packages/sdk/src/{ui,*.tsx}`, `components/{kanban,tickets,graph,notes}/src/*.tsx` (classes seulement), `e2e/screens.spec.ts` (test de densité)
+
+**Interfaces:**
+- Consumes: `theme.css` du SDK, importé par `packages/ui/src/index.css` et par le build des composants (tâche 6) : un seul endroit pour l'UI, les intégrés et les composants tiers.
+- Produces: tokens Tailwind `text-sm` = 13 px / 20 px, `text-2xs` = 11 px / 16 px, `text-3xs` = 10 px / 14 px, `text-md` = 14 px / 20 px, `text-2xl` = 22 px / 28 px ; `body` en 13 px ; `text-xs` (12), `text-base` (16), `text-lg` (18), `text-xl` (20) inchangés.
+
+Correspondance maquette → classe (à appliquer pendant la revue écran par écran) :
+
+| Maquette | Classe | Exemples |
+|---|---|---|
+| 10 px | `text-3xs` | libellés de section en capitales (« PROJETS », « INDEXÉS », « NIVEAUX »), badges de domaine, méta sous une carte (`opus-dev · En file #2`) |
+| 11 px | `text-2xs` | clés `KIB-12` (mono), compteurs de la barre latérale, `3/5`, « Workspace local », horodatages, avatar |
+| 12 px | `text-xs` | libellés d'onglet, boutons de barre d'outils, en-têtes de colonne Kanban, champ « Rechercher… » |
+| 13 px | `text-sm` | navigation, titres de ligne et de carte, boutons, champs, texte courant |
+| 14 px | `text-md` | titres de panneau (barre Agents, cartes de la Vue d'ensemble) |
+| 20 px | `text-xl` | titres des Paramètres |
+| 22 px | `text-2xl` | « Bonjour Adam », chiffres des statistiques (écran 13) |
+
+- [ ] **Step 1: Test des tokens**
+
+`packages/sdk/src/theme.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+
+const css = await Bun.file(new URL("./theme.css", import.meta.url)).text();
+
+test("density tokens follow the 13 px mockups", () => {
+  const expected: [string, string][] = [
+    ["--text-sm", "0.8125rem"],
+    ["--text-sm--line-height", "1.25rem"],
+    ["--text-2xs", "0.6875rem"],
+    ["--text-2xs--line-height", "1rem"],
+    ["--text-3xs", "0.625rem"],
+    ["--text-3xs--line-height", "0.875rem"],
+    ["--text-md", "0.875rem"],
+    ["--text-md--line-height", "1.25rem"],
+    ["--text-2xl", "1.375rem"],
+    ["--text-2xl--line-height", "1.75rem"],
+  ];
+  for (const [token, value] of expected) expect(css).toContain(`${token}: ${value};`);
+});
+```
+
+Run: `bun test packages/sdk/src/theme.test.ts`
+Expected: FAIL.
+
+- [ ] **Step 2: Tokens**
+
+`packages/sdk/src/theme.css`, nouveau bloc après le premier `@theme inline` :
+```css
+@theme {
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 0.875rem;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-md: 0.875rem;
+  --text-md--line-height: 1.25rem;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.75rem;
+}
+```
+et dans `@layer base`, `body { @apply bg-background text-foreground text-sm; }`. Les hauteurs de ligne gardent 20 px pour `text-sm` : les hauteurs de ligne des listes (`h-8`) ne bougent pas, seul le corps du texte change ; l'étape 3 ajuste ce qui diverge.
+
+Vérifier que Tailwind prend bien la valeur redéfinie (le `@theme` du SDK est lu après `@import "tailwindcss"`) : `bun run --cwd packages/ui build` puis `grep -o "\.text-sm{[^}]*}" packages/ui/dist/assets/*.css` ⇒ `font-size:var(--text-sm)` et `--text-sm:.8125rem` dans `:root`.
+
+Run: `bun test packages/sdk/src/theme.test.ts`
+Expected: PASS.
+
+- [ ] **Step 3: Revue écran par écran (sombre puis clair)**
+
+Lancer l'app avec le jeu fictif (`bun run start`, projet de démonstration comme au jalon) à 1440 × 940, et comparer côte à côte avec les deux PDF, **sombre puis clair** : écran 1 (page 5), 7 (13), 8 (8), 9 (15), 10 (16), 11 (17), 13 (23), 14 (24), 17 (27), 21 (34), 3 (7), 6 (10), 30 (12). Pour chaque texte qui diverge, appliquer la classe du tableau ci-dessus. Primitives d'abord (`packages/sdk/src/ui/sidebar.tsx` : `SidebarGroupLabel` → `text-3xs font-medium uppercase tracking-wide`, `SidebarMenuBadge` → `text-2xs` ; `badge.tsx` inchangé, les badges de domaine passent `className="text-3xs"`), puis écrans. Inventaire de départ : `grep -rn "text-\(xs\|sm\|base\|lg\|xl\|2xl\)\|text-\[" packages/ui/src packages/sdk/src components/*/src --include=*.tsx` (≈ 182 `text-sm`, 142 `text-xs`, 12 autres).
+
+Kanban et Tickets : seules des classes changent (aucune logique), pour que le critère du jalon « conformité v1 sans modification du code métier » reste vrai ; le rapport du jalon liste ces fichiers comme changements de présentation.
+
+- [ ] **Step 4: Test Playwright de densité**
+
+`e2e/screens.spec.ts` (tourne en `screens-dark` et `screens-light`), à la fin :
+```ts
+test("densité 13 px des maquettes", async () => {
+  const info = test.info();
+  await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
+  const doing = page.getByRole("region", { name: "En cours" });
+  await expect(doing).toBeVisible();
+  const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
+  expect(await size(page.locator("body"))).toBe("13px");
+  expect(await size(sideButton("Vue d'ensemble"))).toBe("13px");
+  expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("10px");
+  expect(await size(doing.getByText("KIB-12", { exact: true }))).toBe("11px");
+  expect(await size(bar().getByRole("tab").first())).toBe("12px");
+  await capture(info, "densite-kanban");
+});
+```
+(ajouter `type Locator` à l'import de `@playwright/test`). Si un sélecteur ne trouve pas l'élément (libellé réel différent), prendre le libellé réel sans changer la taille attendue.
+
+Run: `bun run --cwd e2e test --project screens-dark --project screens-light`
+Expected: PASS.
+
+- [ ] **Step 5: Vérifier et committer**
+
+Run: `bun test packages components && bun run typecheck && bun run check && bun run budget && bun run --cwd e2e test`
+Expected: PASS ; `bun run budget` toujours sous 230 kB (si la tâche 35 est intégrée).
+
+```bash
+git add packages/sdk/src/theme.css packages/sdk/src/theme.test.ts
+git commit -m "feat(sdk): tokens de densité 13 px"
+git add packages/sdk/src/ui/sidebar.tsx <fichiers de l'étape 3, listés un par un>
+git commit -m "feat(ui): densité 13 px des maquettes"
+git add e2e/screens.spec.ts
+git commit -m "test(e2e): tailles de texte des maquettes"
+```
+
+---
+
+### Task 37: « Mes tickets » (écran 12) et son entrée dans la barre latérale
+
+Écart de v0.3 (absent de la barre latérale). Écran 12, page 22 des PDF. Décision 31, point E5.
+
+**Files:**
+- Create: `packages/ui/src/mine/my-tickets.ts`, `packages/ui/src/mine/my-tickets.test.ts`, `packages/ui/src/mine/MyTicketsPage.tsx`, `packages/ui/src/mine/MyTicketRow.tsx`, `packages/ui/src/mine/my-tickets-page.test.tsx`
+- Modify: `packages/schema/src/tabs.ts` (`Screen` gagne `mine`) et son test s'il énumère les écrans, `packages/ui/src/tabs/screens.ts` (`SCREENS.mine`), `packages/ui/src/tabs/target-hash.ts` et son test (si le hachage des écrans n'est pas générique), `packages/ui/src/shell/lazy-screens.ts` (`MyTicketsPage`), `packages/ui/src/shell/ScreenView.tsx`, `packages/ui/src/shell/Shell.tsx`, `packages/ui/src/shell/ShellDialogs.tsx` (assignation d'un ticket d'un autre projet), `packages/ui/src/shell/AppSidebar.tsx`, `packages/ui/src/shell/Breadcrumb.tsx` (titre de l'écran), `packages/ui/src/i18n/fr.ts` (`nav.mine`, `mine`), `packages/ui/src/palette/screen-items.test.ts` (nouvel écran), `packages/ui/scripts/bundle-report.ts` et son test (`mine/MyTicketsPage` interdit dans l'entrée), `e2e/screens.spec.ts`
+
+**Interfaces:**
+- Consumes: `useSnapshots` (instantanés de tous les projets, déjà chargés par `Shell`), `ProjectSnapshot`, `TicketView` (`waitingOn`), `WorkspaceConfig.domains` et `profiles`, `StatusDot`, `Badge`, `Button`, `Tooltip` (SDK), `lazyPanel` (tâche 35), `AssignDialog` (phase 2).
+- Produces:
+  - `type MineTab = "assigned" | "agents" | "created"` ; `type MineGroup = { project: ProjectMeta; tickets: TicketView[] }` ; `MINE_STATUS_ORDER: readonly StatusId[]` ; `isMine(t, viewer, tab): boolean` ; `compareMine(a, b): number` ; `myTickets(projects: readonly ProjectMeta[], snapshots: ReadonlyMap<string, ProjectSnapshot>, viewer: string, tab: MineTab): MineGroup[]` ; `countMine(groups): number`.
+  - `MyTicketsPage(props: { viewer: string; projects: ProjectMeta[]; snapshots: ReadonlyMap<string, ProjectSnapshot>; config: WorkspaceConfig | null; onOpenTicket(projectId: string, ticketId: string): void; onAssign(projectId: string, ticketId: string): void })`.
+  - `Screen` = `agents | queue | domains | components | mine` ; hachage `#/mine` (ou la forme générique existante).
+  - `DialogsState.assign: { projectId: string | null; ticketId: string | null } | null` (projet `null` = projet actif, comportement actuel).
+  - `AppSidebar` gagne `mineCount: number | null`.
+
+Règles (décision 31) : « Assignés à moi » = non terminés, assigné humain égal à l'utilisateur (compteur de la barre latérale) ; « Mes agents » = non terminés, assignés à un agent ; « Créés par moi » = onglet désactivé (point E5, option A). Groupes par projet dans l'ordre de la barre latérale, projets vides masqués ; tri : Bloqué, En cours, À faire, En review, Backlog, puis ticket en attente d'un bloquant d'abord, puis ordre naturel des clés. Ligne : pastille de statut, clé (mono, 11 px), titre, badge de domaine (carré de couleur + nom, 10 px), libellé du statut (workflow du projet), puis « Assigner » (icône `Bot` + texte) si le projet a un dossier, sinon bouton icône `Bot` désactivé avec infobulle (un run exige un dossier : `workspace-prep.ts`, « the project has no local folder ») ; dans « Mes agents », la colonne d'action montre `Bot` + nom du profil. Clic sur la ligne ⇒ sheet du ticket. En-tête : segmenté « Assignés à moi · Mes agents · Créés par moi » à gauche, « 9 tickets · 3 projets » à droite.
+
+- [ ] **Step 1: Tests du calcul**
+
+`packages/ui/src/mine/my-tickets.test.ts` (jeu fictif, `design/donnees-fictives.md` § Mes tickets) :
+```ts
+import { describe, expect, test } from "bun:test";
+import type { Assignee, ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
+import { kiboProject } from "../agents/fixtures";
+import { countMine, myTickets } from "./my-tickets";
+
+let seq = 0;
+function ticket(key: string, statusId: StatusId, assignee: Assignee | null, waitingOn: string[] = []): TicketView {
+  seq += 1;
+  return {
+    id: `${seq}@1`,
+    key,
+    title: key,
+    description: "",
+    statusId,
+    blockedReason: statusId === "blocked" ? "Audit sécurité externe en attente" : null,
+    domainId: null,
+    assignee,
+    parentId: null,
+    externalRefs: [],
+    progress: { done: 0, total: 0 },
+    waitingOn,
+  };
+}
+const adam: Assignee = { kind: "human", ref: "adam" };
+const agent: Assignee = { kind: "agent", ref: "opus-dev" };
+const base = kiboProject();
+const meta = (id: string, name: string, key: string): ProjectMeta => ({ ...base.meta, id, name, key });
+const snapshot = (m: ProjectMeta, tickets: TicketView[]): ProjectSnapshot => ({ ...base, meta: m, tickets });
+
+const kib = meta("kib", "Kibo", "KIB");
+const fac = meta("fac", "API Facturation", "FAC");
+const por = meta("por", "Portfolio", "POR");
+const snapshots = new Map([
+  [kib.id, snapshot(kib, [
+    ticket("KIB-9", "todo", adam),
+    ticket("KIB-22", "backlog", adam),
+    ticket("KIB-11", "in_review", adam),
+    ticket("KIB-15", "todo", adam, ["KIB-12"]),
+    ticket("KIB-7", "in_review", adam),
+    ticket("KIB-21", "blocked", adam),
+    ticket("KIB-5", "done", adam),
+    ticket("KIB-12", "in_progress", agent),
+    ticket("KIB-3", "in_progress", null),
+  ])],
+  [fac.id, snapshot(fac, [ticket("FAC-34", "todo", adam), ticket("FAC-31", "in_progress", adam)])],
+  [por.id, snapshot(por, [ticket("POR-9", "todo", adam)])],
+]);
+const keys = (tab: "assigned" | "agents" | "created") =>
+  myTickets([kib, por, fac], snapshots, "adam", tab).map((g) => [g.project.key, g.tickets.map((t) => t.key)]);
+
+describe("my tickets", () => {
+  test("assigned to me: open tickets, grouped in sidebar order, mockup order within a project", () => {
+    expect(keys("assigned")).toEqual([
+      ["KIB", ["KIB-21", "KIB-15", "KIB-9", "KIB-7", "KIB-11", "KIB-22"]],
+      ["POR", ["POR-9"]],
+      ["FAC", ["FAC-31", "FAC-34"]],
+    ]);
+    expect(countMine(myTickets([kib, por, fac], snapshots, "adam", "assigned"))).toBe(9);
+  });
+  test("my agents: open tickets assigned to any agent", () => {
+    expect(keys("agents")).toEqual([["KIB", ["KIB-12"]]]);
+  });
+  test("created by me is empty until tickets record their author (E5)", () => {
+    expect(keys("created")).toEqual([]);
+  });
+  test("a project without snapshot yet is skipped", () => {
+    expect(myTickets([meta("x", "X", "X")], snapshots, "adam", "assigned")).toEqual([]);
+  });
+});
+```
+
+Run: `bun test packages/ui/src/mine/my-tickets.test.ts`
+Expected: FAIL.
+
+- [ ] **Step 2: Implémenter le calcul**
+
+`packages/ui/src/mine/my-tickets.ts` :
+```ts
+import type { ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
+
+export type MineTab = "assigned" | "agents" | "created";
+export type MineGroup = { project: ProjectMeta; tickets: TicketView[] };
+
+export const MINE_STATUS_ORDER: readonly StatusId[] = ["blocked", "in_progress", "todo", "in_review", "backlog"];
+
+const rank = (s: StatusId) => MINE_STATUS_ORDER.indexOf(s);
+const keyNumber = (key: string) => Number(key.slice(key.lastIndexOf("-") + 1));
+const waits = (t: TicketView) => (t.waitingOn.length > 0 ? 0 : 1);
+
+export function isMine(t: TicketView, viewer: string, tab: MineTab): boolean {
+  if (t.statusId === "done") return false;
+  if (tab === "assigned") return t.assignee?.kind === "human" && t.assignee.ref === viewer;
+  if (tab === "agents") return t.assignee?.kind === "agent";
+  return false;
+}
+
+export function compareMine(a: TicketView, b: TicketView): number {
+  return rank(a.statusId) - rank(b.statusId) || waits(a) - waits(b) || keyNumber(a.key) - keyNumber(b.key);
+}
+
+export function myTickets(
+  projects: readonly ProjectMeta[],
+  snapshots: ReadonlyMap<string, ProjectSnapshot>,
+  viewer: string,
+  tab: MineTab,
+): MineGroup[] {
+  return projects.flatMap((project) => {
+    const tickets = (snapshots.get(project.id)?.tickets ?? []).filter((t) => isMine(t, viewer, tab)).sort(compareMine);
+    return tickets.length > 0 ? [{ project, tickets }] : [];
+  });
+}
+
+export const countMine = (groups: readonly MineGroup[]): number => groups.reduce((n, g) => n + g.tickets.length, 0);
+```
+
+Run: `bun test packages/ui/src/mine/my-tickets.test.ts`
+Expected: PASS.
+
+- [ ] **Step 3: Tests de la page**
+
+`packages/ui/src/i18n/fr.ts` : `nav.mine: "Mes tickets"` et
+```ts
+  mine: {
+    assigned: "Assignés à moi",
+    agents: "Mes agents",
+    created: "Créés par moi",
+    createdLater: "Kibo n'enregistre pas encore l'auteur d'un ticket.",
+    summary: (tickets: number, projects: number) =>
+      `${tickets} ticket${tickets > 1 ? "s" : ""} · ${projects} projet${projects > 1 ? "s" : ""}`,
+    assign: "Assigner",
+    noFolder: "Ajoute un dossier au projet pour lancer un agent.",
+    empty: { assigned: "Aucun ticket ouvert ne t'est assigné.", agents: "Aucun ticket ouvert n'est confié à un agent." },
+  },
+```
+
+`packages/ui/src/mine/my-tickets-page.test.tsx` : reprendre le jeu de l'étape 1 (extraire `ticket`, `meta`, `snapshot` et le jeu dans `packages/ui/src/mine/fixtures.ts` si les deux tests le partagent ; `fac.folder = null`, `kib.folder = "/tmp/kibo"`), `config = configFixture()` :
+```tsx
+test("groups my tickets by project with the mockup summary", async () => {
+  render(<MyTicketsPage viewer="adam" projects={[kib, por, fac]} snapshots={snapshots} config={configFixture()} onOpenTicket={() => {}} onAssign={() => {}} />);
+  expect(screen.getByText("9 tickets · 3 projets")).toBeTruthy();
+  const kibo = screen.getByRole("region", { name: "Kibo" });
+  expect(within(kibo).getAllByRole("button", { name: /^KIB-\d+/ }).map((b) => b.getAttribute("aria-label")?.split(" ")[0])).toEqual([
+    "KIB-21", "KIB-15", "KIB-9", "KIB-7", "KIB-11", "KIB-22",
+  ]);
+});
+test("opening a row and assigning report the project", async () => {
+  const opened: string[][] = [];
+  const assigned: string[][] = [];
+  render(<MyTicketsPage viewer="adam" projects={[kib, por, fac]} snapshots={snapshots} config={configFixture()}
+    onOpenTicket={(p, t) => opened.push([p, t])} onAssign={(p, t) => assigned.push([p, t])} />);
+  const kibo = screen.getByRole("region", { name: "Kibo" });
+  fireEvent.click(within(kibo).getByRole("button", { name: /^KIB-21/ }));
+  fireEvent.click(within(kibo).getAllByRole("button", { name: "Assigner" })[0]);
+  expect(opened[0]?.[0]).toBe("kib");
+  expect(assigned[0]?.[0]).toBe("kib");
+  const facturation = screen.getByRole("region", { name: "API Facturation" });
+  expect(within(facturation).getAllByRole("button", { name: "Assigner" })[0]?.hasAttribute("disabled")).toBe(true);
+});
+test("my agents tab and the disabled created tab", async () => {
+  render(<MyTicketsPage viewer="adam" projects={[kib, por, fac]} snapshots={snapshots} config={configFixture()} onOpenTicket={() => {}} onAssign={() => {}} />);
+  expect(screen.getByRole("radio", { name: "Créés par moi" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
+  expect(screen.getByText("1 ticket · 1 projet")).toBeTruthy();
+  expect(screen.getByRole("button", { name: /^KIB-12/ })).toBeTruthy();
+});
+```
+(le segmenté réutilise le `ToggleGroup` du SDK en mode `single`, d'où le rôle `radio` ; si la primitive expose un autre rôle, prendre le rôle réel.)
+
+Run: `bun test packages/ui/src/mine`
+Expected: FAIL.
+
+- [ ] **Step 4: Implémenter la page et la ligne**
+
+`MyTicketsPage.tsx` : état local `tab` (défaut `assigned`) ; `groups = myTickets(...)` mémorisé ; en-tête `flex items-center justify-between border-b px-6 py-3` avec le `ToggleGroup` (fond `bg-muted`, élément actif `bg-background shadow-sm`, `text-xs`) et le résumé `text-xs text-muted-foreground` ; « Créés par moi » désactivé, enveloppé d'un `Tooltip` `fr.mine.createdLater` ; corps `grid gap-6 p-6` ; un `section` par groupe `aria-labelledby` sur le titre (pastille carrée de la couleur du projet, nom `text-sm font-semibold`, nombre `text-2xs text-muted-foreground`) puis une liste de `MyTicketRow` ; état vide `text-sm text-muted-foreground` (`fr.mine.empty[tab]`).
+
+`MyTicketRow.tsx` : `div` `flex h-12 items-center gap-3 rounded-lg border bg-card px-4` ; bouton principal (toute la zone gauche, `aria-label` = `"<clé> <titre>"`) : `StatusDot`, clé `font-mono text-2xs text-muted-foreground`, titre `truncate text-sm` ; à droite : badge de domaine (`Badge variant="outline" className="gap-1 text-3xs"` avec carré `size-1.5` de la couleur du domaine), libellé du statut `w-24 text-sm text-muted-foreground` ; action : onglet `agents` ⇒ `Bot` + nom du profil (`config.profiles`, sinon `assignee.ref`) ; sinon `Button variant="ghost" size="sm"` `Bot` + « Assigner » si `project.folder`, ou `Button size="icon"` désactivé `aria-label={fr.mine.assign}` avec `Tooltip` `fr.mine.noFolder`. Tailles selon la table de la tâche 36 (si elle n'est pas encore intégrée, les mêmes classes s'appliqueront telles quelles : `text-2xs`/`text-3xs` n'ont d'effet qu'une fois les tokens présents).
+
+Run: `bun test packages/ui/src/mine`
+Expected: PASS.
+
+- [ ] **Step 5: Brancher l'écran**
+
+- `packages/schema/src/tabs.ts` : `Screen = z.enum(["agents", "queue", "domains", "components", "mine"])`. Un onglet persisté reste valide (ajout seulement).
+- `SCREENS.mine = { title: fr.nav.mine, icon: List, crumbs: [fr.nav.mine] }` ; `Breadcrumb` : `heading` vrai pour `mine`.
+- `lazy-screens.ts` : `export const MyTicketsPage = lazyPanel(() => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage), fr.lazy);` ; `FORBIDDEN_IN_ENTRY` : ajouter `mine\/MyTicketsPage` à l'alternative des écrans de `packages/ui/src` (et l'identifiant au test des règles par défaut).
+- `ScreenView` : nouvelles props `viewer`, `snapshots`, `onOpenTicket`, `onAssign` ; `if (screen === "mine") return <MyTicketsPage viewer={viewer} projects={projects} snapshots={snapshots} config={config} onOpenTicket={onOpenTicket} onAssign={onAssign} />` (avant le `if (!config)` : la page accepte `config` nul, badges de domaine et noms de profil absents).
+- `Shell.tsx` : `mine = useMemo(() => countMine(myTickets(projects, snapshots, viewer, "assigned")), [projects, snapshots, viewer])` passé en `mineCount` ; `onOpenTicket = (projectId, ticketId) => set({ sheet: { projectId, ticketId } })` ; `onAssign = (projectId, ticketId) => set({ assign: { projectId, ticketId } })`. Les appels existants passent `{ projectId: null, ticketId }`.
+- `ShellDialogs.tsx` : `AssignDialog` reçoit `state.assign.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project` (nouvelle prop `snapshots`).
+- `AppSidebar.tsx`, entre « Vue d'ensemble » et `AgentsEntry` :
+```tsx
+<SidebarMenuItem>
+  <SidebarMenuButton isActive={screen === "mine"} {...link(screenTarget("mine"))}>
+    <List />
+    <span>{fr.nav.mine}</span>
+  </SidebarMenuButton>
+  {p.mineCount !== null && p.mineCount > 0 && <SidebarMenuBadge>{p.mineCount}</SidebarMenuBadge>}
+</SidebarMenuItem>
+```
+- La palette liste l'écran automatiquement (`Screen.options`) : mettre à jour `screen-items.test.ts`.
+
+`e2e/screens.spec.ts` :
+```ts
+test("12 · Mes tickets", async () => {
+  const info = test.info();
+  await sideButton("Mes tickets").click();
+  const count = Number(await page.getByRole("button", { name: "Mes tickets" }).locator("..").getByText(/^\d+$/).textContent());
+  await expect(page.getByRole("radio", { name: "Assignés à moi" })).toBeVisible();
+  await expect(page.getByText(new RegExp(`^${count} tickets? · \\d+ projets?$`))).toBeVisible();
+  await capture(info, "12");
+});
+```
+(adapter la lecture du badge à la structure réelle ; l'assertion à garder : le compteur de la barre latérale égale le nombre de tickets du résumé.)
+
+Run: `bun test packages components && bun run --cwd e2e test --project screens-dark --project screens-light`
+Expected: PASS.
+
+- [ ] **Step 6: Contrôle visuel, vérifier et committer**
+
+Comparer l'écran 12 à la page 22 des deux PDF (sombre puis clair) avec le jeu fictif : groupes, ordre, badges, « Assigner », résumé, entrée de la barre latérale et son compteur.
+
+Run: `bun test packages components && bun run typecheck && bun run check && bun run budget`
+Expected: PASS.
+
+```bash
+git add packages/ui/src/mine
+git commit -m "feat(ui): calcul et page Mes tickets"
+git add packages/schema/src/tabs.ts packages/ui/src/tabs packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/Shell.tsx packages/ui/src/shell/ShellDialogs.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/shell/Breadcrumb.tsx packages/ui/src/i18n/fr.ts packages/ui/src/palette/screen-items.test.ts packages/ui/scripts e2e/screens.spec.ts
+git commit -m "feat(ui): Mes tickets dans la barre latérale"
+```
+
+---
+
+### Task 38: En-tête de workspace (monogramme, nom, menu)
+
+Écart de v0.3 : « Kibo » et le logo orange à la place du sélecteur de workspace ; onglet Accueil avec le logo orange au lieu du monogramme. Toutes les pages des PDF (en-tête de la barre latérale, onglet Accueil). Décision 32, point E6, écran D11.
+
+Monogramme relevé dans le PDF (page 22, vecteurs) : tuile carrée bordée de 23 px (`bg-card`, `border`), glyphe de 5 barres de 3,84 px de large sur une grille de 0,48 px : colonne 1 hauteurs 11 et 8 (écart 3), colonne 2 hauteurs 8 et 15 (écart 3, la seconde en orange `#F97316`), colonne 3 hauteur 6 ; barres en couleur du texte, la colonne 1 basse et la colonne 3 à 45 % d'opacité (rendu des PDF).
+
+**Files:**
+- Create: `packages/ui/src/shell/WorkspaceMark.tsx`, `packages/ui/src/shell/WorkspaceSwitcher.tsx`, `packages/ui/src/dialogs/RenameWorkspaceDialog.tsx`, `packages/ui/src/shell/workspace-switcher.test.tsx`
+- Modify: `packages/schema/src/agent.ts` (`WorkspaceName`, `ConfigCommand` `renameWorkspace`, `ConfigResult`, `WorkspaceConfig.workspaceName`), `packages/core/src/agent-config.ts` et son test, `packages/daemon/src/workspace-config.ts`, `packages/ui/src/agents/fixtures.ts` (`workspaceName: "Perso"`), `packages/ui/src/shell/AppSidebar.tsx` (en-tête), `packages/ui/src/shell/Shell.tsx` (nom et renommage), `packages/ui/src/tabs/TabBar.tsx` (onglet Accueil), `packages/ui/src/i18n/fr.ts` (`workspace`), `e2e/screens.spec.ts`
+
+**Interfaces:**
+- Consumes: `executeConfigCommand`, `configTarget` (core, phase 2), `readConfig` (démon), `useConfig` (UI), `DropdownMenu`, `Dialog`, `Input`, `Label`, `Button` (SDK).
+- Produces:
+  - `WorkspaceName = z.string().trim().min(1).max(40)` ; `ConfigCommand` gagne `{ method: "renameWorkspace"; name: WorkspaceName }` ; `ConfigResult.renameWorkspace = { name: string }` ; `WorkspaceConfig.workspaceName: string | null`.
+  - `workspaceName(ws: LoroDoc): string | null` (core, `ws.getMap("settings").get("name")`).
+  - `WorkspaceMark({ className? })` (SVG `viewBox="0 0 28 26"`) ; `WorkspaceTile({ size: "sm" | "md" })` (tuile bordée : `md` = `size-6` pour la barre latérale, `sm` = `size-5` pour l'onglet Accueil).
+  - `WorkspaceSwitcher(props: { name: string; onRename(name: string): Promise<void>; onSettings(): void })`.
+  - `AppSidebar` gagne `workspaceName: string | null` et `onRenameWorkspace(name): Promise<void>`.
+
+Menu (D11) : déclencheur pleine largeur (tuile, nom `text-sm font-semibold`, « Workspace local » `text-2xs text-muted-foreground`, `ChevronDown` à droite) ; contenu aligné au début, largeur du déclencheur : libellé « Workspaces », workspace courant (tuile, nom, sous-titre, `Check`), séparateur, « Renommer le workspace… » (`Pencil`), « Paramètres du workspace » (`Settings`, écran Domaines & guidelines, comme l'entrée Paramètres). Dialogue « Renommer le workspace » : champ « Nom » prérempli, « Annuler » / « Enregistrer », alerte « Impossible de renommer le workspace. » (message de `KiboError` via `errorMessage` s'il existe). Création et bascule entre workspaces : point E6, pas d'entrée désactivée dans le menu.
+
+- [ ] **Step 1: Tests du core**
+
+`packages/core/src/agent-config.test.ts`, ajouter :
+```ts
+test("the workspace name is stored in the workspace doc and trimmed", () => {
+  const ws = createWorkspaceDoc();
+  expect(workspaceName(ws)).toBeNull();
+  expect(executeConfigCommand(ws, ConfigCommand.parse({ method: "renameWorkspace", name: "  Maison  " }))).toEqual({ name: "Maison" });
+  expect(workspaceName(ws)).toBe("Maison");
+  expect(configTarget({ method: "renameWorkspace", name: "Maison" })).toBeNull();
+});
+test("an empty or too long workspace name is refused by the schema", () => {
+  expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "   " }).success).toBe(false);
+  expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "x".repeat(41) }).success).toBe(false);
+});
+```
+
+Run: `bun test packages/core/src/agent-config.test.ts`
+Expected: FAIL.
+
+- [ ] **Step 2: Schéma, core, démon**
+
+`packages/schema/src/agent.ts` : `export const WorkspaceName = z.string().trim().min(1).max(40);` ; dans `ConfigCommand`, `z.object({ method: z.literal("renameWorkspace"), name: WorkspaceName })` ; `ConfigResult` : `renameWorkspace: { name: string }` ; `WorkspaceConfig` : `workspaceName: string | null`.
+
+`packages/core/src/agent-config.ts` :
+```ts
+const settingsMap = (ws: LoroDoc) => ws.getMap("settings");
+
+export function workspaceName(ws: LoroDoc): string | null {
+  const name = settingsMap(ws).get("name");
+  return typeof name === "string" ? name : null;
+}
+```
+et, dans `executeConfigCommand`, le cas `renameWorkspace` : `settingsMap(doc).set("name", cmd.name)` puis le `commit` comme les autres cas ; retour `{ name: cmd.name }`. `configTarget` renvoie `null` pour ce cas (doc workspace), comme pour les profils.
+
+`packages/daemon/src/workspace-config.ts`, `readConfig` : `workspaceName: workspaceName(docs.workspace)`. `runConfigCommand` émet déjà `{ topic: "config" }` : l'UI se met à jour sans autre code. Aucun changement de `service.ts` (pas de conflit avec la tâche 30).
+
+`packages/ui/src/agents/fixtures.ts`, `configFixture()` : `workspaceName: "Perso"`.
+
+Run: `bun test packages/core packages/daemon/src && bun run typecheck`
+Expected: PASS.
+
+- [ ] **Step 3: Tests de l'en-tête**
+
+`packages/ui/src/i18n/fr.ts` :
+```ts
+  workspace: {
+    defaultName: "Perso",
+    local: "Workspace local",
+    menu: "Workspaces",
+    rename: "Renommer le workspace…",
+    settings: "Paramètres du workspace",
+    renameTitle: "Renommer le workspace",
+    name: "Nom",
+    cancel: "Annuler",
+    save: "Enregistrer",
+    renameFailed: "Impossible de renommer le workspace.",
+  },
+```
+
+`packages/ui/src/shell/workspace-switcher.test.tsx` :
+```tsx
+import { describe, expect, test } from "bun:test";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+
+describe("workspace switcher", () => {
+  test("shows the name and the local subtitle", () => {
+    render(<WorkspaceSwitcher name="Perso" onRename={async () => {}} onSettings={() => {}} />);
+    expect(screen.getByRole("button", { name: /Perso/ }).textContent).toContain("Workspace local");
+  });
+  test("renames from the menu", async () => {
+    const names: string[] = [];
+    render(<WorkspaceSwitcher name="Perso" onRename={async (n) => { names.push(n); }} onSettings={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: /Perso/ }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Renommer le workspace…" }));
+    const field = await screen.findByLabelText("Nom");
+    await userEvent.clear(field);
+    await userEvent.type(field, "Maison");
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(names).toEqual(["Maison"]);
+  });
+  test("a failed rename is shown, the dialog stays open", async () => {
+    render(<WorkspaceSwitcher name="Perso" onRename={async () => { throw new Error("nope"); }} onSettings={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: /Perso/ }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Renommer le workspace…" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Enregistrer" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Impossible de renommer le workspace.");
+    expect(screen.getByRole("dialog", { name: "Renommer le workspace" })).toBeTruthy();
+  });
+  test("settings entry opens the workspace settings", async () => {
+    let opened = 0;
+    render(<WorkspaceSwitcher name="Perso" onRename={async () => {}} onSettings={() => { opened += 1; }} />);
+    await userEvent.click(screen.getByRole("button", { name: /Perso/ }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Paramètres du workspace" }));
+    expect(opened).toBe(1);
+  });
+});
+```
+(si l'ouverture des menus Radix sous happy-dom demande `pointerDown` dans les tests existants, reprendre la méthode de `packages/ui/src/pages/instance.test.tsx`.)
+
+Run: `bun test packages/ui/src/shell/workspace-switcher.test.tsx`
+Expected: FAIL.
+
+- [ ] **Step 4: Implémenter**
+
+`WorkspaceMark.tsx` :
+```tsx
+export function WorkspaceMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 26" className={className} aria-hidden="true">
+      <rect x="0" y="0" width="8" height="11" rx="1.5" fill="currentColor" />
+      <rect x="0" y="14" width="8" height="8" rx="1.5" fill="currentColor" opacity="0.45" />
+      <rect x="10" y="0" width="8" height="8" rx="1.5" fill="currentColor" />
+      <rect x="10" y="11" width="8" height="15" rx="1.5" fill="#F97316" />
+      <rect x="20" y="0" width="8" height="6" rx="1.5" fill="currentColor" opacity="0.45" />
+    </svg>
+  );
+}
+
+export function WorkspaceTile({ size }: { size: "sm" | "md" }) {
+  return (
+    <span className={size === "md" ? "grid size-6 shrink-0 place-items-center rounded-md border bg-card" : "grid size-5 shrink-0 place-items-center rounded-[5px] border bg-card"}>
+      <WorkspaceMark className={size === "md" ? "size-3.5" : "size-3"} />
+    </span>
+  );
+}
+```
+(l'orange du glyphe est la marque, autorisée par `CLAUDE.md` à côté des agents.)
+
+`WorkspaceSwitcher.tsx` : `DropdownMenu` (SDK) avec le déclencheur et le contenu décrits plus haut ; état local `renaming: boolean` ; `RenameWorkspaceDialog({ name, onSubmit, onClose })` : formulaire, `useId()` pour le champ, erreur attrapée ⇒ `role="alert"` `fr.workspace.renameFailed` et le dialogue reste ouvert (aucune erreur avalée : elle est affichée), succès ⇒ fermeture.
+
+`AppSidebar.tsx`, `SidebarHeader` : remplacer le `span` « Kibo » par `<WorkspaceSwitcher name={p.workspaceName ?? fr.workspace.defaultName} onRename={p.onRenameWorkspace} onSettings={() => onOpen(screenTarget("domains"), false)} />` ; le bouton de recherche reste dessous.
+
+`Shell.tsx` : `workspaceName={config?.workspaceName ?? null}` ; `onRenameWorkspace={async (name) => { await client.rpc({ method: "config", command: { method: "renameWorkspace", name } }); }}`.
+
+`TabBar.tsx`, onglet Accueil : `<WorkspaceTile size="sm" />` au lieu de `<KiboLogo className="size-4" decorative />` (`KiboLogo` reste utilisé par l'écran d'appairage).
+
+`e2e/screens.spec.ts`, dans le test de densité de la tâche 36 s'il est intégré, sinon dans un test « en-tête de workspace » :
+```ts
+const header = page.getByRole("button", { name: /Perso/ }).first();
+await expect(header).toContainText("Workspace local");
+```
+
+Run: `bun test packages components && bun run --cwd e2e test --project screens-dark --project screens-light`
+Expected: PASS.
+
+- [ ] **Step 5: Contrôle visuel, vérifier et committer**
+
+Comparer l'en-tête et l'onglet Accueil avec la page 22 (et n'importe quelle autre page) des deux PDF, sombre puis clair : tuile, glyphe, graisse du nom, sous-titre, chevron ; ouvrir le menu et le dialogue (écran D11).
+
+Run: `bun test packages components && bun run typecheck && bun run check && bun run budget`
+Expected: PASS.
+
+```bash
+git add packages/schema/src/agent.ts packages/core/src/agent-config.ts packages/core/src/agent-config.test.ts packages/daemon/src/workspace-config.ts packages/ui/src/agents/fixtures.ts
+git commit -m "feat(core): nom du workspace"
+git add packages/ui/src/shell/WorkspaceMark.tsx packages/ui/src/shell/WorkspaceSwitcher.tsx packages/ui/src/dialogs/RenameWorkspaceDialog.tsx packages/ui/src/shell/workspace-switcher.test.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/shell/Shell.tsx packages/ui/src/tabs/TabBar.tsx packages/ui/src/i18n/fr.ts e2e/screens.spec.ts
+git commit -m "feat(ui): en-tête et menu du workspace"
+```
+
+---
+
+### Task 39: Resynchroniser la spec §15 avec les décisions du plan
+
+Documentation seulement (tâche du chef ou d'un `kibo-runner`). Écarts constatés le 2026-09-26 entre « Décisions techniques de ce plan » et `docs/superpowers/specs/2026-09-26-kibo-composants.md` §15 :
+- décisions 1 à 4, 6 à 15, 17 à 25 : identiques (la 17 révisée par la relecture de la tâche 22, CORS de `ui.css`, et les 24 et 25 sont déjà reportées) ;
+- décision 5 : la spec est en avance (`SANDBOX_UNAVAILABLE`) ; le plan est aligné sur elle (fait avec l'ajout des tâches 35 à 39) ;
+- décision 16 : la spec a l'ancienne liste (sans `global`, `self`, `Worker`, `SharedWorker`, ni les attributs d'import) ;
+- décision 26 (journal des refus borné) : absente de §15 (elle est décrite en §6.4, point 6, mais pas listée) ;
+- décisions 27 (balayage de secours des notes) et 28 (le graphe lit `run`) : écrites en §8.1 et §8.2 (commits `docs: notes, balayage de secours`, `docs: le graphe lit l'état des runs`) mais absentes de §15 ;
+- décisions 29 à 32 (tâches 35 à 38) et points E5, E6 : nouvelles.
+
+**Files:**
+- Modify: `docs/superpowers/specs/2026-09-26-kibo-composants.md` (§15), `docs/superpowers/specs/2026-09-25-kibo-design.md` (§8, ligne « Sidebar »)
+
+- [ ] **Step 1: §15**
+
+Dans §15 de la spec de phase :
+1. remplacer le texte de la décision 16 par celui du plan (décision 16 ci-dessus, mot pour mot) ;
+2. ajouter, après la décision 25, les décisions 26 à 32 du plan, mot pour mot ;
+3. ajouter les lignes E5 et E6 au tableau « Points à arbitrer par Adam » de la spec, mot pour mot.
+
+- [ ] **Step 2: Spec générale**
+
+`docs/superpowers/specs/2026-09-25-kibo-design.md` §8, ligne « **Sidebar** » : après « sélecteur de workspace », ajouter « (en-tête et renommage en phase 4 ; création et bascule entre workspaces : point E6 du plan de phase 4) ».
+
+- [ ] **Step 3: Vérifier et committer**
+
+Run: `diff <(sed -n '/^## Décisions techniques/,/^### Points à arbitrer/p' docs/superpowers/plans/2026-09-26-kibo-composants.md | grep -E '^[0-9]+\. ') <(sed -n '/^## 15\./,/^Ancrages/p' docs/superpowers/specs/2026-09-26-kibo-composants.md | grep -E '^[0-9]+\. ')`
+Expected: aucune différence.
+
+```bash
+git add docs/superpowers/specs/2026-09-26-kibo-composants.md docs/superpowers/specs/2026-09-25-kibo-design.md
+git commit -m "docs: spec §15, décisions 16 et 26 à 32"
+```
+
+---
+
 ## Tâche de stabilisation (décision du chef d'équipe)
 
 - [x] **Tests intermittents sous charge** (branche `feat/p4-stab`) : chaque cause corrigée, preuve par passages répétés pendant une charge CPU et une suite complète en parallèle.
@@ -17120,17 +18204,26 @@ Une vague démarre quand toutes les tâches de la vague précédente sont intég
 | V8 | 31 CLI · 32 Test de sortie · 33 Playwright | `packages/cli/`, `sdk/src/dev*.tsx`, `CLAUDE.md` · `devkit/fixtures/evil`, `daemon/src/components/exit.test.ts` · `e2e/` | V7 |
 | V9 | 34 Binaire, toolchain, installation de `kibo`, CI | `apps/desktop/`, `daemon/src/components/install-cli`, `ui/src/settings/`, `.github/workflows/ci.yml` | V8 |
 
-Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-reviewer`) : 1, 11, 11b, 15, 22, 23, 30, 32, 34.
+**Piste transverse (écarts de v0.3, tâches 35 à 39).** Elle court en parallèle des vagues V7 à V9 : ni la tâche 30 ni les vagues suivantes ne l'attendent, et elle n'attend pas la tâche 30 (aucune ne touche `daemon/src/{service,store,daemon,main}.ts` ni `components/service.ts`). Seul le jalon v0.4 attend toute la piste. Worktrees `.claude/worktrees/p4-t<n>`, branches `feat/p4-t<n>`.
+
+| Étape | Tâches en parallèle | Fichiers (périmètre) | Attend |
+|---|---|---|---|
+| X1 | 35 Chargement à la demande et budget · 36 Densité 13 px · 39 Spec §15 | `sdk/src/{lazy,index,conformance}`, `ui/src/shell/{lazy-screens,ContentView,ScreenView,ShellDialogs}`, `components/{notes,graph}/src/{index,fr}.ts`, `ui/scripts/`, `package.json` · `sdk/src/theme.css`, `sdk/src/ui/sidebar.tsx`, classes de `ui/src/**` et `components/*/src/*.tsx`, `e2e/screens.spec.ts` · `docs/superpowers/specs/` | V5 (intégrée) : peut démarrer tout de suite, à côté de la relecture de 22 et de 28b |
+| X2 | 37 Mes tickets · 38 En-tête de workspace | `ui/src/mine/`, `schema/src/tabs.ts`, `ui/src/{tabs,palette}`, `ui/src/shell/{Shell,ShellDialogs,ScreenView,AppSidebar,Breadcrumb,lazy-screens}`, `ui/scripts/bundle-report*` · `schema/src/agent.ts`, `core/src/agent-config*`, `daemon/src/workspace-config.ts`, `ui/src/shell/{WorkspaceMark,WorkspaceSwitcher,AppSidebar,Shell}`, `ui/src/tabs/TabBar.tsx`, `ui/src/dialogs/RenameWorkspaceDialog.tsx` | 35 et 36 (37 s'appuie sur `lazyPanel`, le budget et les tokens ; 38 sur les tokens), 39 (décisions écrites en spec avant le code) |
+
+Fichiers partagés dans la piste et avec V7 à V9 : `package.json` (scripts, tâches 31 et 35), `packages/ui/src/i18n/fr.ts` (ajouts en fin d'objet), `AppSidebar.tsx` et `Shell.tsx` (37 et 38 : blocs distincts), `e2e/screens.spec.ts` (36, 37, 38 : tests ajoutés en fin de fichier ; la tâche 33 crée `e2e/components.spec.ts`, sans conflit) : conflits triviaux, résolus au rebase. La tâche 28b (`ui/src/shell/SandboxFrame.tsx`) et la tâche 35 ne touchent pas les mêmes fichiers.
+
+Tâches à risque à faire relire aussi par `kibo-lead` (en plus de `kibo-reviewer`) : 1, 11, 11b, 15, 22, 23, 30, 32, 34, 35 (chemin de démarrage de l'UI et conformité des vues différées).
 
 ## Jalon v0.4
 
-1. **CI verte** sur `main`, macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont le test de sortie de la tâche 32), fumée CLI compilée (tâche 34), Playwright `dark` et `light` (tâche 33), fumée desktop.
-2. **Critères de sortie de la spec (§13)** cochés un par un dans le rapport, avec le test qui les prouve : composant tiers sandboxé bloqué (tâche 32) ; `new → test → publish` hors monorepo en dev (tâche 31) et compilé (tâche 34) ; écrans conformes (point 3) ; Kanban et Tickets passent la conformité v1 sans modification de leur code métier (tâche 12, étape 5 : `git diff v0.3..HEAD -- components/kanban/src components/tickets/src` ne touche aucun fichier métier).
-3. **Conformité visuelle** : le chef lance l'app (`bun run --cwd apps/desktop dev` ou démon + UI), charge le jeu fictif (`seedDemo` et `DEMO_NOTES` via un projet de démonstration) et compare côte à côte, **en sombre puis en clair**, avec les PDF : écran 3 (page 7), 6 (page 10), 7 (page 13, widgets Graphe et Notes), 10 (page 16), 11 (page 17), 29 (page 11), 30 (page 12), et les écrans dessinés D1 à D10. Chaque écart est corrigé (tâche de correction ajoutée au plan) ou consigné comme écart assumé : « lit et écrit » de l'écran 3 (tâche 19), placement des tickets isolés (E4), bouton « Hiérarchique » (E3), carte D8 hors Paramètres si l'écran n'existe pas (tâche 34).
+1. **CI verte** sur `main`, macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont le test de sortie de la tâche 32), `bun run budget` (chargement initial ≤ 230 kB gzip, tâche 35), fumée CLI compilée (tâche 34), Playwright `dark` et `light` (tâches 33, 36 à 38), fumée desktop. CI GitHub hors service : même liste en contrôle local.
+2. **Critères de sortie de la spec (§13)** cochés un par un dans le rapport, avec le test qui les prouve : composant tiers sandboxé bloqué (tâche 32) ; `new → test → publish` hors monorepo en dev (tâche 31) et compilé (tâche 34) ; écrans conformes (point 3) ; Kanban et Tickets passent la conformité v1 sans modification de leur code métier (tâche 12, étape 5 : `git diff v0.3..HEAD -- components/kanban/src components/tickets/src` ne touche aucun fichier métier ; les changements de classes de la tâche 36, s'il y en a dans ces dossiers, sont de la présentation et sont listés un par un dans le rapport).
+3. **Conformité visuelle** : le chef lance l'app (`bun run --cwd apps/desktop dev` ou démon + UI), charge le jeu fictif (`seedDemo` et `DEMO_NOTES` via un projet de démonstration) et compare côte à côte, **en sombre puis en clair**, avec les PDF : écran 3 (page 7), 6 (page 10), 7 (page 13, widgets Graphe et Notes), 10 (page 16), 11 (page 17), 29 (page 11), 30 (page 12), 12 (page 22, tâche 37), l'en-tête de workspace et l'onglet Accueil (toutes les pages, tâche 38), la densité 13 px sur les écrans 1, 8, 9, 13, 14, 17 et 21 (pages 5, 8, 15, 23, 24, 27, 34, tâche 36), et les écrans dessinés D1 à D12. Chaque écart est corrigé (tâche de correction ajoutée au plan) ou consigné comme écart assumé : « lit et écrit » de l'écran 3 (tâche 19), placement des tickets isolés (E4), bouton « Hiérarchique » (E3), carte D8 hors Paramètres si l'écran n'existe pas (tâche 34).
 4. **Maquettes** : si un écran a changé pendant la phase, réexporter `design/penpot/kibo.penpot.xz` et `design/pdf/` (règle `CLAUDE.md`).
 5. **Feuille de route** : corriger la ligne « phase 4 » pour les entités déclarées `acme.bug` selon l'option retenue pour E1 (par défaut : retirées de la phase 4, reportées après v1.0).
 6. **Tag** `v0.4` sur `main`, poussé.
-7. **Rapport** `docs/superpowers/rapports/2026-xx-xx-v0.4.md` : livré (par tâche), écarts (liste du point 3, résultats des spikes A–G, ancrages phases 2/3 réellement rencontrés), risques ouverts (voir ci-dessous), décisions E1–E4 en attente d'Adam.
-8. **Pas d'attente** : la phase 5 démarre aussitôt (décision d'Adam) ; E1–E4 restent en option A jusqu'à son arbitrage.
+7. **Rapport** `docs/superpowers/rapports/2026-xx-xx-v0.4.md` : livré (par tâche), écarts (liste du point 3, résultats des spikes A–G, ancrages phases 2/3 réellement rencontrés), risques ouverts (voir ci-dessous), décisions E1, E3 à E6 en attente d'Adam.
+8. **Pas d'attente** : la phase 5 démarre aussitôt (décision d'Adam) ; E1, E3 à E6 restent en option A jusqu'à son arbitrage.
 
 Risques à suivre dans le rapport : contournement du runtime restreint par import dynamique construit (E2, spike C : neutralisé par le bac à sable OS de la tâche 11b ; restent la dépréciation de `sandbox-exec`, les espaces de noms utilisateur désactivés sur certaines distributions Linux (Ubuntu ≥ 23.10 par AppArmor : échec fermé chez l'utilisateur, profil AppArmor du paquet `.deb` à étudier), l'absence de seccomp (sous Linux, un processus lancé dans le bac à sable y reste confiné mais n'est pas interdit), `file-read-metadata` global sous macOS (existence et taille des fichiers visibles), et le binaire compilé sous `bwrap` non vérifié hors CI) ; TOCTOU DNS du proxy (résolution puis connexion : atténué par la connexion à l'adresse résolue, tâche 8) ; appels d'un backend rattachés à une invocation en cours (limite résiduelle de la décision 15) ; chargement natif de Tailwind et de TypeScript depuis la toolchain dans le binaire (spikes D, E) ; `BUN_BE_BUN` (spike A) ; descripteur 3 (spike G) ; Worker dans le binaire compilé (spike F) ; taille de la toolchain packagée ; ancrages non vérifiés sur les phases 2 et 3.
