@@ -250,7 +250,7 @@ export function DomainsPage({ config, projects }: Props) {
                       aria-label={fr.domains.content(selected.path)}
                       value={content}
                       onChange={(e) => setDrafts((d) => ({ ...d, [selected.id]: e.target.value }))}
-                      className="min-h-[18rem] flex-1 font-mono text-xs"
+                      className="min-h-[18rem] flex-1 rounded-none border-none bg-transparent px-0 font-mono text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
                     />
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => void save()}>
