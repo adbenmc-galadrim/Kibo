@@ -15,7 +15,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
-import { agentFiles, installDraft, removeDraft, verifyAndRestore } from "./draft-files";
+import { agentFiles, removeDraft, verifyAndRestore } from "./draft-files";
+import { installDraft } from "./draft-source";
 import { cleanHomes, home, prepared } from "./testing/draft-fixture";
 
 cleanHomes();

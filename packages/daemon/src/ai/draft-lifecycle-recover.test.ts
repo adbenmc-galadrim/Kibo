@@ -2,8 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ComponentDraft } from "@kibo/schema";
-import { draftPaths, installDraft, readDraftManifest, writeDraftManifest } from "./draft-files";
+import { draftPaths, readDraftManifest, writeDraftManifest } from "./draft-files";
 import { applyDraftEvent } from "./draft-machine";
+import { installDraft } from "./draft-source";
 import type { DraftStore } from "./draft-store";
 import {
   burndownAt,

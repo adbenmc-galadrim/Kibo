@@ -12,7 +12,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { copySource, installDraft, removeDraft } from "./draft-files";
+import { copySource, removeDraft } from "./draft-files";
+import { installDraft } from "./draft-source";
 import { cleanHomes, home, prepared } from "./testing/draft-fixture";
 
 cleanHomes();

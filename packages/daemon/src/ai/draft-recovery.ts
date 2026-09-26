@@ -1,15 +1,9 @@
 import { basename, dirname, join } from "node:path";
 import type { ComponentDraft, DraftIncident } from "@kibo/schema";
-import {
-  type DraftPaths,
-  installDraft,
-  readDraftManifest,
-  releaseSource,
-  removeDraft,
-  type SourceFate,
-} from "./draft-files";
+import { type DraftPaths, readDraftManifest, removeDraft } from "./draft-files";
 import { present } from "./draft-fs";
 import type { DraftEvent } from "./draft-machine";
+import { installDraft, releaseSource, type SourceFate } from "./draft-source";
 import type { DraftStore } from "./draft-store";
 import type { AiEvents, Clock, ComponentCatalog } from "./ports";
 
