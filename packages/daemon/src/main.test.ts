@@ -162,3 +162,18 @@ test("refuses in-memory secrets outside test mode", async () => {
   expect(code).toBe(1);
   expect(err).toContain("--memory-secrets requires --test-origins");
 });
+
+test("refuses test origins without in-memory secrets", async () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
+  const args = ["--port", "0", "--test-origins", "api.github.com=http://127.0.0.1:4391"];
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), ...args], {
+    env: { ...process.env, KIBO_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const code = await proc.exited;
+  const err = await new Response(proc.stderr).text();
+  rmSync(home, { recursive: true, force: true });
+  expect(code).toBe(1);
+  expect(err).toContain("--test-origins requires --memory-secrets");
+});

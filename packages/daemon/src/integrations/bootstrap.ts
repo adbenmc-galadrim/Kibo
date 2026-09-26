@@ -51,6 +51,9 @@ export function parseIntegrationFlags(values: {
   if (memorySecrets && testOrigins.length === 0) {
     throw new KiboError("INVALID_INPUT", "--memory-secrets requires --test-origins");
   }
+  if (!memorySecrets && testOrigins.length > 0) {
+    throw new KiboError("INVALID_INPUT", "--test-origins requires --memory-secrets");
+  }
   return { testOrigins, memorySecrets };
 }
 
