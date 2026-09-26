@@ -44,11 +44,25 @@ function probes(kit: IntegrationKit, { account }: Github): IntegrationProbe[] {
     for (const p of kit.host.projects()) if (await githubRepoOf(kit.host, p.id)) return true;
     return false;
   };
+  const githubStatus = async (): Promise<IntegrationStatus> => {
+    const mode = account.mode();
+    if (mode === null) return baseStatus("github", "disconnected");
+    if (mode === "token") {
+      const keychain = await kit.secrets.availability();
+      if (!keychain.ok) {
+        const error: IntegrationStatus["error"] = {
+          code: "SECRET_STORE_UNAVAILABLE",
+          message: keychain.reason,
+        };
+        return { ...baseStatus("github", "error"), account: account.login(), error };
+      }
+    }
+    return { ...live("github"), account: account.login() };
+  };
   return [
     {
       id: "github",
-      status: async () =>
-        connected() ? { ...live("github"), account: account.login() } : baseStatus("github", "disconnected"),
+      status: githubStatus,
       test: async () => ({ ...live("github"), account: await account.verify() }),
       async disconnect() {
         await account.disconnect();
