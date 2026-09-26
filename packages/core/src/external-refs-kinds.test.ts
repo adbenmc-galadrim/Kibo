@@ -112,4 +112,15 @@ describe("external refs of every kind", () => {
     getNode(d.getTree("tickets"), t.id).data.set("externalRefs", [{ kind: "github_issue", url: 3 }]);
     expect(() => getTicket(d, t.id)).toThrow("STORE_CORRUPT");
   });
+
+  test("only http(s) urls are accepted, for every kind", () => {
+    const d = doc();
+    const t = createTicket(d, { title: "A" });
+    const pr: ExternalRef = { kind: "github_pr", url: "javascript:alert(1)", number: 1, state: "open" };
+    expect(() => upsertExternalRef(d, t.id, pr)).toThrow("INVALID_INPUT");
+    expect(() => upsertExternalRef(d, t.id, { ...figma, url: "javascript:alert(1)" })).toThrow(
+      "INVALID_INPUT",
+    );
+    expect(getTicket(d, t.id).externalRefs).toEqual([]);
+  });
 });

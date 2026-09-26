@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import {
+  type Binding,
   BuiltinEntityType,
   type ComponentCall,
   type ExternalRef,
@@ -155,6 +156,13 @@ describe("componentCall checks, in order", () => {
   });
   test("external refs and bindings are refused to every component", async () => {
     const { gate: g } = gate();
+    const binding: Binding = {
+      id: "b1",
+      adapter: "github-issues",
+      config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+      createdBy: "adam",
+      runner: "adam",
+    };
     const ref: ExternalRef = {
       kind: "github_issue",
       bindingId: "b1",
@@ -170,6 +178,7 @@ describe("componentCall checks, in order", () => {
     const commands: ComponentCall[] = [
       forged,
       { kind: "run", command: { method: "removeExternalRef", ticketId: "t1", kind: "github_pr", key: "x" } },
+      { kind: "run", command: { method: "addBinding", binding } },
       { kind: "run", command: { method: "removeBinding", bindingId: "b1" } },
       {
         kind: "run",

@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { FigmaNodeRef, GithubIssueRef, McpItemRef } from "./integrations";
+import { FigmaNodeRef, GithubIssueRef, McpItemRef, WebUrl } from "./integrations";
 
 export const PrState = z.enum(["open", "draft", "merged", "closed"]);
 export type PrState = z.infer<typeof PrState>;
 
 export const GithubPrRef = z.object({
   kind: z.literal("github_pr"),
-  url: z.string().url(),
+  url: WebUrl,
   number: z.number().int().positive(),
   state: PrState,
 });
