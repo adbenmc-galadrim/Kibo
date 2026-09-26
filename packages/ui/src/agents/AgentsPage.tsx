@@ -55,7 +55,7 @@ function ProfileCard({
             </button>
           </h3>
           <span className="text-xs text-muted-foreground">
-            {fr.agentsPage.modelLine(fr.models[profile.model])}
+            {fr.agentsPage.modelLine(fr.agents.modelNames[profile.model])}
           </span>
         </div>
         {active > 0 && (
@@ -157,7 +157,9 @@ export function AgentsPage({ state, config, now }: Props) {
                     <TableCell className="font-mono text-muted-foreground">{`#${r.seq}`}</TableCell>
                     <TableCell>{runSubject(r)}</TableCell>
                     <TableCell className="font-mono">{r.profileName}</TableCell>
-                    <TableCell>{r.startedAt === null ? "-" : formatDuration(elapsed(r, now))}</TableCell>
+                    <TableCell className="font-mono">
+                      {r.startedAt === null ? "-" : formatDuration(elapsed(r, now))}
+                    </TableCell>
                     <TableCell>{formatTokens(r.tokens)}</TableCell>
                     <TableCell>
                       <span className="flex items-center gap-2">

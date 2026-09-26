@@ -97,7 +97,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
               method: "addGuideline",
               owner: { scope: "profile", profileId: created.id },
               path: g.path,
-              content: g.content,
+              content: "",
             },
           });
         }
@@ -143,7 +143,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
                 <SelectContent>
                   {AgentModel.options.map((m) => (
                     <SelectItem key={m} value={m}>
-                      {fr.models[m]}
+                      {fr.agents.modelNames[m]}
                     </SelectItem>
                   ))}
                 </SelectContent>

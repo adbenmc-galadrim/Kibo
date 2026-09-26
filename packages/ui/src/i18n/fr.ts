@@ -106,6 +106,7 @@ export const fr = {
   },
   agents: {
     bar: "Agents",
+    modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },
     runs: "Runs",
     slots: (used: number, total: number) => `${used}/${total}`,
     queued: (n: number) => `${n} en file`,

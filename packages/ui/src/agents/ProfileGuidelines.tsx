@@ -2,13 +2,12 @@ import { type AgentProfile, GuidelinePath, type WorkspaceConfig } from "@kibo/sc
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { Textarea } from "@kibo/sdk/ui/textarea";
-import { FileText, X } from "lucide-react";
+import { FileText, Plus, X } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 
-export type GuidelineDraft = { id: string; path: string; content: string };
+export type GuidelineDraft = { id: string; path: string };
 
 type Props = {
   profile: AgentProfile | null;
@@ -22,7 +21,6 @@ type Props = {
 export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onError, onFailure }: Props) {
   const id = useId();
   const [path, setPath] = useState("");
-  const [content, setContent] = useState("");
   const listed: GuidelineDraft[] = profile
     ? config.guidelines.filter((g) => g.owner.scope === "profile" && g.owner.profileId === profile.id)
     : drafts;
@@ -35,7 +33,7 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
       return;
     }
     if (!profile) {
-      onDraftsChange((d) => [...d, { id: crypto.randomUUID(), path: parsed.data, content }]);
+      onDraftsChange((d) => [...d, { id: crypto.randomUUID(), path: parsed.data }]);
     } else {
       try {
         await client.rpc({
@@ -44,7 +42,7 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
             method: "addGuideline",
             owner: { scope: "profile", profileId: profile.id },
             path: parsed.data,
-            content,
+            content: "",
           },
         });
       } catch (e) {
@@ -53,7 +51,6 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
       }
     }
     setPath("");
-    setContent("");
   };
 
   const remove = async (guidelineId: string) => {
@@ -97,31 +94,33 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
           </li>
         ))}
       </ul>
-      <div className="grid gap-2 rounded-md border border-dashed p-2.5">
-        <Label htmlFor={`${id}-path`}>{fr.profile.guidelinePath}</Label>
+      <div className="flex items-center gap-2 rounded-md border px-2.5 py-1">
+        <FileText aria-hidden className="size-4 text-muted-foreground" />
+        <Label htmlFor={`${id}-path`} className="sr-only">
+          {fr.profile.guidelinePath}
+        </Label>
         <Input
           id={`${id}-path`}
           value={path}
           placeholder="guidelines/front.md"
+          className="h-7 flex-1 border-0 px-0 shadow-none focus-visible:ring-0 dark:bg-transparent"
           onChange={(e) => setPath(e.target.value)}
-        />
-        <Label htmlFor={`${id}-content`}>{fr.profile.guidelineContent}</Label>
-        <Textarea
-          id={`${id}-content`}
-          value={content}
-          rows={3}
-          className="font-mono text-xs"
-          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            void add();
+          }}
         />
         <Button
           type="button"
-          variant="outline"
-          size="sm"
-          className="w-fit"
+          size="icon"
+          variant="ghost"
+          className="size-6"
+          aria-label={fr.profile.addGuideline}
           disabled={!path.trim()}
           onClick={() => void add()}
         >
-          {fr.profile.addGuideline}
+          <Plus className="size-3.5" />
         </Button>
       </div>
     </div>

@@ -40,13 +40,14 @@ test("the page counts slots, queue, waiting runs and today's tokens", () => {
 test("profile cards describe each profile", () => {
   show();
   const opus = within(screen.getByRole("article", { name: "opus-dev" }));
-  expect(opus.getByText("Claude Opus · CLI headless")).toBeTruthy();
+  expect(opus.getByText("Claude Opus 5.5 · CLI headless")).toBeTruthy();
   expect(opus.getByText("2 actifs")).toBeTruthy();
   for (const text of ["worktree par ticket", "acceptEdits", "2 max", "Sonnet, Haiku"]) {
     expect(opus.getByText(text)).toBeTruthy();
   }
   const sonnet = within(screen.getByRole("article", { name: "sonnet-review" }));
   for (const text of ["dossier isolé", "plan", "3 max", "aucun"]) expect(sonnet.getByText(text)).toBeTruthy();
+  expect(sonnet.getByText("Claude Sonnet 5 · CLI headless")).toBeTruthy();
 });
 
 test("the history lists runs newest first with their result", () => {
@@ -67,6 +68,7 @@ test("the history lists runs newest first with their result", () => {
   expect(rows[6]?.textContent).toContain("Attend une réponse");
   expect(rows[8]?.textContent).toContain("Échec : exit code 1");
   expect(rows[7]?.textContent).toContain("41m");
+  expect(screen.getByText("41m").className).toContain("font-mono");
 });
 
 test("a new profile is created with its guidelines", async () => {
@@ -92,10 +94,11 @@ test("a new profile is created with its guidelines", async () => {
       "Les sous-agents utilisent le créneau de leur parent. La limite hôte (3) s'applique en plus.",
     ),
   ).toBeTruthy();
+  expect(sheet().getByRole("combobox", { name: "Modèle" }).textContent).toBe("Claude Opus 5.5");
   await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md");
-  await user.type(sheet().getByLabelText("Contenu"), "# Front");
   await user.click(sheet().getByRole("button", { name: "Ajouter" }));
   expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
+  expect(sheet().queryByLabelText("Contenu")).toBeNull();
   await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(calls).toEqual([
@@ -120,7 +123,7 @@ test("a new profile is created with its guidelines", async () => {
         method: "addGuideline",
         owner: { scope: "profile", profileId: "new-id" },
         path: "guidelines/front.md",
-        content: "# Front",
+        content: "",
       },
     },
   ]);
@@ -201,4 +204,14 @@ test("in edit mode a guideline is added to the profile at once", async () => {
       },
     },
   ]);
+});
+
+test("enter in the guideline field adds the file without submitting the profile", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Nouveau profil" }));
+  await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md{Enter}");
+  expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
+  expect(sheet().getByLabelText("Fichier")).toHaveProperty("value", "");
+  expect(calls).toEqual([]);
 });
