@@ -8,6 +8,7 @@ import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
+import { viewPageFor } from "../pages/view-page";
 import { CommandPalette } from "../palette/CommandPalette";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { navigateTo, useRoute } from "../route";
@@ -74,11 +75,15 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const [dialogs, setDialogs] = useState<DialogsState>(NO_DIALOG);
   const [focusRun, setFocusRun] = useState<string | null>(null);
   const editRequests = useRef(new Set<string>());
+  const projectRef = useRef(project);
   const { open } = tabs;
 
   useEffect(() => {
     if (activeProjectId) setLastProjectId(activeProjectId);
   }, [activeProjectId]);
+  useEffect(() => {
+    projectRef.current = project;
+  }, [project]);
 
   const set = useCallback((patch: Partial<DialogsState>) => setDialogs((d) => ({ ...d, ...patch })), []);
   const clearFocus = useCallback(() => setFocusRun(null), []);
@@ -104,6 +109,11 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
       openAssign: (ticketId) => set({ assign: { ticketId } }),
       openFile: (ref) => set({ preview: ref }),
       openTarget: (target, opts) => go(target, opts?.newTab),
+      openView: (componentId) => {
+        const current = projectRef.current;
+        const page = current && viewPageFor(current, componentId);
+        if (current && page) go({ kind: "page", projectId: current.meta.id, pageId: page.id });
+      },
     }),
     [activeProjectId, set, go],
   );

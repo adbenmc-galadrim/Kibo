@@ -1,4 +1,4 @@
-import type { Instance, Page, ProjectSnapshot } from "@kibo/schema";
+import type { Instance, Page, ProjectSnapshot, Surface } from "@kibo/schema";
 import { createSdk, projectBackend, SdkProvider } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -9,18 +9,19 @@ import { fr } from "../i18n/fr";
 import { findComponent } from "../registry";
 import { useHost } from "../shell/Host";
 
-type FrameProps = { projectId: string; instance: Instance; viewer: string };
+type FrameProps = { projectId: string; instance: Instance; viewer: string; surface: Surface };
 
-function InstanceFrame({ projectId, instance, viewer }: FrameProps) {
+function InstanceFrame({ projectId, instance, viewer, surface }: FrameProps) {
   const host = useHost();
   const mod = findComponent(instance.component);
   const sdk = useMemo(
     () =>
       mod &&
-      createSdk(projectBackend(client, projectId), mod.manifest, {
+      createSdk(projectBackend(client, projectId, instance.id), mod.manifest, {
         instanceId: instance.id,
         config: instance.config,
         viewer,
+        surface,
         openTicket: host.openTicket,
         openNewTicket: host.openNewTicket,
         openFile: (r) =>
@@ -31,8 +32,9 @@ function InstanceFrame({ projectId, instance, viewer }: FrameProps) {
             line: r.line ?? null,
             origin: r.origin ?? null,
           }),
+        openView: host.openView,
       }),
-    [mod, projectId, instance.id, instance.config, viewer, host],
+    [mod, projectId, instance.id, instance.config, viewer, surface, host],
   );
   if (!mod || !sdk) {
     return <p className="p-6 text-sm text-destructive">{fr.page.unknownComponent(instance.component)}</p>;
@@ -66,7 +68,7 @@ export function PageView({ project, page, viewer }: Props) {
           </div>
         </div>
       ) : page.kind === "view" ? (
-        <InstanceFrame projectId={project.meta.id} instance={first} viewer={viewer} />
+        <InstanceFrame projectId={project.meta.id} instance={first} viewer={viewer} surface="view" />
       ) : (
         <div className="grid flex-1 auto-rows-[80px] grid-cols-12 gap-4 overflow-auto p-4">
           {instances.map((i) => (
@@ -78,7 +80,7 @@ export function PageView({ project, page, viewer }: Props) {
                 gridRow: `${i.layout.y + 1} / span ${i.layout.h}`,
               }}
             >
-              <InstanceFrame projectId={project.meta.id} instance={i} viewer={viewer} />
+              <InstanceFrame projectId={project.meta.id} instance={i} viewer={viewer} surface="widget" />
             </div>
           ))}
           <div className="col-span-12">{addButton}</div>

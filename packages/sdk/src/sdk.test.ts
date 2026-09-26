@@ -50,10 +50,13 @@ describe("sdk permissions", () => {
   });
 });
 
-test("openFile is forwarded to the host and recorded by the mock", () => {
+test("openFile and openView are forwarded to the host and recorded by the mock", () => {
   const m = createMockSdk(manifest);
   m.sdk.openFile({ path: "packages/core/src/ticket.ts", line: 42 });
+  m.sdk.openView("graph");
   expect(m.openedFiles).toEqual([{ path: "packages/core/src/ticket.ts", line: 42 }]);
+  expect(m.openedViews).toEqual(["graph"]);
+  expect(m.sdk.surface).toBe("view");
 });
 
 test("runs are read only when declared, and their listeners hear run changes", async () => {

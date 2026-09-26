@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createClient } from "./client";
+import { createClient, projectBackend } from "./client";
 
 const stubFetch = (status: number, body: unknown) =>
   (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
@@ -14,6 +14,20 @@ test("rpc returns the result or throws a typed error", async () => {
   await expect(ko.rpc({ method: "getProject", projectId: "p" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   const anon = createClient({ baseUrl: "http://127.0.0.1:1", fetch: stubFetch(401, {}) });
   await expect(anon.rpc({ method: "listProjects" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+});
+
+test("the project backend sends component calls with its instance", async () => {
+  const bodies: unknown[] = [];
+  const recording = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return new Response(JSON.stringify({ ok: true, result: ["a"] }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: recording });
+  const backend = projectBackend(client, "p1", "i1");
+  expect(await backend.call({ kind: "data.keys" })).toEqual(["a"]);
+  expect(bodies).toEqual([
+    { method: "componentCall", projectId: "p1", instanceId: "i1", call: { kind: "data.keys" } },
+  ]);
 });
 
 test("a 401 on rpc notifies onUnauthorized before throwing", async () => {

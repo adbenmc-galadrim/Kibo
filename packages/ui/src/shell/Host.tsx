@@ -7,6 +7,7 @@ export type Host = {
   openNewTicket(d: NewTicketDefaults): void;
   openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;
+  openView(componentId: string): void;
   openTarget(target: TabTarget, opts?: { newTab?: boolean }): void;
 };
 const HostContext = createContext<Host | null>(null);

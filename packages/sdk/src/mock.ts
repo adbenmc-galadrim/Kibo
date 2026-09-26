@@ -4,6 +4,7 @@ import {
   KiboError,
   type ProjectCommand,
   type ProjectSnapshot,
+  type Surface,
   type TicketRun,
 } from "@kibo/schema";
 import { createSdk } from "./sdk";
@@ -15,6 +16,7 @@ export type MockSdk = {
   opened: string[];
   newTicketRequests: NewTicketDefaults[];
   openedFiles: FileOpenRequest[];
+  openedViews: string[];
   run(cmd: ProjectCommand): unknown;
   snapshot(): ProjectSnapshot;
   setRuns(runs: TicketRun[]): void;
@@ -24,6 +26,7 @@ export type MockSdkOptions = {
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
   viewer?: string;
   config?: Record<string, unknown>;
+  surface?: Surface;
   runs?: TicketRun[];
 };
 
@@ -42,10 +45,14 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
   const opened: string[] = [];
   const newTicketRequests: NewTicketDefaults[] = [];
   const openedFiles: FileOpenRequest[] = [];
+  const openedViews: string[] = [];
   const inner = createSdk(
     {
       snapshot: async () => readProject(doc),
       run: async (cmd) => run(cmd),
+      call: async (c) => {
+        throw new KiboError("NOT_FOUND", `mock sdk does not serve ${c.kind}`);
+      },
       subscribe: (l) => {
         listeners.add(l);
         return () => listeners.delete(l);
@@ -61,9 +68,11 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
       instanceId: "mock-instance",
       config: opts.config ?? {},
       viewer: opts.viewer ?? "adam",
+      surface: opts.surface ?? "view",
       openTicket: (id) => opened.push(id),
       openNewTicket: (d) => newTicketRequests.push(d),
       openFile: (r) => openedFiles.push(r),
+      openView: (id) => openedViews.push(id),
     },
   );
   const record = async <T>(label: string, p: Promise<T>): Promise<T> => {
@@ -89,6 +98,7 @@ export function createMockSdk(manifest: ComponentManifest, opts: MockSdkOptions 
     opened,
     newTicketRequests,
     openedFiles,
+    openedViews,
     run,
     snapshot: () => readProject(doc),
     setRuns,
