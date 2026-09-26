@@ -6109,7 +6109,7 @@ Maquette : page 9 (écran 5, tiroir déplié) et bas de page 23/27 (barre repli�
   - `AgentPanel({ onLaunch, focusRunId, onFocused })` : conteneur branché sur le démon, utilisé par le `Shell` (Task 24) ; `focusRunId` ouvre le tiroir sur ce run puis appelle `onFocused()`.
   - `pickRun(state: AgentsState, picked: string | null): RunView | null`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ui/src/agents/agent-panel.test.tsx` :
 ```tsx
@@ -6322,12 +6322,12 @@ test("the launch button asks the shell to open the assign dialog", async () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/agents/agent-panel.test.tsx`
 Expected: FAIL (`Cannot find module "./AgentBar"`).
 
-- [ ] **Step 3: Barre repliée**
+- [x] **Step 3: Barre repliée**
 
 `packages/ui/src/agents/AgentBar.tsx` :
 ```tsx
@@ -6406,7 +6406,7 @@ export function AgentBar({ state, now, onExpand, onSelect }: Props) {
 }
 ```
 
-- [ ] **Step 4: Journal et réponse**
+- [x] **Step 4: Journal et réponse**
 
 `packages/ui/src/agents/RunJournal.tsx` :
 ```tsx
@@ -6542,7 +6542,7 @@ export function ReplyBox({ run }: { run: RunView }) {
 }
 ```
 
-- [ ] **Step 5: Tiroir déplié**
+- [x] **Step 5: Tiroir déplié**
 
 `packages/ui/src/agents/AgentDrawer.tsx` :
 ```tsx
@@ -6703,7 +6703,7 @@ export function AgentDrawer({ state, now, selected, log, onSelect, onCollapse, o
 }
 ```
 
-- [ ] **Step 6: Conteneur**
+- [x] **Step 6: Conteneur**
 
 `packages/ui/src/agents/AgentPanel.tsx` :
 ```tsx
@@ -6763,12 +6763,12 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused }: Props) {
 }
 ```
 
-- [ ] **Step 7: Vérifier**
+- [x] **Step 7: Vérifier**
 
 Run: `bun test packages/ui/src/agents && bun run format && bun run check && bun run typecheck`
 Expected: PASS. Contrôle visuel facultatif : monter `AgentPanel` dans `bun run --cwd packages/ui dev` avec les fixtures et comparer à la page 9 en sombre et en clair (rendu final contrôlé au jalon).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/ui/src/agents/AgentBar.tsx packages/ui/src/agents/AgentDrawer.tsx packages/ui/src/agents/RunJournal.tsx packages/ui/src/agents/ReplyBox.tsx packages/ui/src/agents/AgentPanel.tsx packages/ui/src/agents/agent-panel.test.tsx
