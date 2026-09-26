@@ -33,7 +33,7 @@
 2. **Corps d'issue `null` ou en `\r\n`, titre avec espaces de fin** : aucune modification fantôme, aucun aller-retour infini de description (Task 13 « normalizes title, body and labels », Task 5 propriété de point fixe, Task 19 aller-retour `Corps\r\nligne 2`).
 3. **URL distante non http(s) (`javascript:`, `data:`) dans une issue, un nœud Figma ou un élément MCP** : refusée par Zod (`WebUrl`), jamais rendue en lien (Task 1 test `WebUrl`, Task 19 test « an adapter output is validated », Task 22 tests « items are mapped, unsafe links are dropped » et « lists the items »).
 4. **Secret renvoyé par le service distant dans un corps d'erreur** (serveur qui réécrit l'en-tête `Authorization`) : retiré du corps dès la réception (N18, Task 8 test « a secret echoed by the remote is scrubbed »), caviardé dans le journal, les erreurs RPC, `integration_events` et la console (Task 2 test du caviardage, Task 23 test de fuite avec `failNext(…, ECHO_AUTH)`).
-5. **Démon arrêté entre le `POST` de création d'une issue et l'écriture de la ligne de sync** : au redémarrage, la création est adoptée (même auteur, titre et corps depuis `since`) au lieu d'être dupliquée, et le pull n'importe pas l'issue en double tant qu'une création est incertaine (Task 13 « a retried create adopts the issue created by a previous attempt », Task 14 « an uncertain create blocks imports until it resolves »).
+5. **Démon arrêté entre le `POST` de création d'une issue et l'écriture de la ligne de sync** : au redémarrage, la création est adoptée (même auteur, titre et corps depuis `since`) au lieu d'être dupliquée, et le pull n'importe pas l'issue en double tant qu'une création est incertaine (Task 13 « a retried create adopts the issue created by a previous attempt », Task 14 « an uncertain create blocks imports until it resolves », qui vérifie aussi, par N39, qu'aucune issue sautée n'est perdue).
 
 ## Points d'ancrage des phases 2 à 4
 
@@ -84,7 +84,7 @@ Ce plan a été écrit avant les phases 2 à 4 ; la tâche T0 (2026-09-26, `main
 
 ## Décisions nouvelles
 
-Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N36 viennent de la réconciliation T0 avec le code livré des phases 2 à 4 ; N37 et N38, de la revue de la tâche 5 (fusion à trois).
+Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N36 viennent de la réconciliation T0 avec le code livré des phases 2 à 4 ; N37 et N38, de la revue de la tâche 5 (fusion à trois) ; N39, de la revue de la tâche 14 (moteur de sync).
 
 - **N1 · Scope d'une liaison avec Project** : avec un Project v2 configuré, la liaison porte sur les issues **du dépôt présentes dans le Project** ; le pull lit les éléments du Project en GraphQL (balayage complet, 100 par page) et retient ceux dont `max(item.updatedAt, issue.updatedAt) ≥ since`. Sans Project : REST `since`. Raison : le statut d'un élément de Project ne modifie pas `updated_at` de l'issue ; seul le balayage le voit.
 - **N2 · `config.project.nodeId`** : l'identifiant GraphQL du Project est stocké dans la liaison (mutations sans requête préalable).
@@ -124,6 +124,9 @@ Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions d
 - **N36 · Permissions `secret:` et `mcp:`** : `GrantedPermissions` gagne `secrets` et `mcp` (défaut `[]` pour les versions déjà approuvées) ; `secret:<name>` apparaît comme permission « non utilisée » dans le rapport de validation (aucune inférence statique ne la détecte), sans effet sur le verdict (seules les permissions manquantes font échouer).
 - **N37 · Statut distant refusé** (précise §5.4) : `closed` suit `statusId` dans la fusion ; un changement distant de `closed` n'est appliqué que s'il concorde avec le statut de la base suivante. Un statut distant refusé (`blocked`) n'est jamais appliqué ; s'il accompagne la réouverture d'une issue dont la base est `done`, le ticket passe à `todo` et la base aussi, comme à l'import (Task 14 `importRemote`) et comme une issue rouverte sans Project. Le Project garde son option `Blocked`, le ticket reste ouvert, rien n'est repoussé. Raison : appliquer `closed = false` sans le statut rendait la base incohérente (`done` et ouverte) et l'issue était refermée au cycle suivant ; ignorer la réouverture laissait un ticket `done` sur une issue ouverte.
 - **N38 · Statut local inchangé** (précise N3) : `projectLocal` garde le statut de la base quand le statut local lui est égal, sans le projeter. Raison : la base peut porter un statut non canonique (`todo` par défaut d'une issue sans option alors que `todo` partage son option avec `backlog`, ou base calculée avec une ancienne correspondance) ; le projeter produisait une modification fantôme poussée à chaque cycle.
+- **N39 · Curseur figé pendant une création incertaine** (précise N5) : tant qu'une création de la liaison est incertaine, le pull applique les issues déjà liées mais ne sauve pas son curseur ; au premier pull après la résolution (création adoptée ou abandonnée), il repart du dernier curseur sauvé et importe les issues nouvelles qu'il avait sautées. Raison : le curseur est opaque (Task 13) et avance au-delà des issues non importées ; le sauver les perdait jusqu'à leur prochaine modification sur GitHub.
+- **N40 · Observation de la limite GitHub** (précise spec F §5.5) : la porte de débit n'observe que les réponses d'`api.github.com` à une requête qui portait le jeton du démon (réseau des intégrations : `bearer` non nul ; proxy des composants : secret injecté) ; une réponse dont `x-ratelimit-resource` est présent et n'est ni `core` ni `graphql` est ignorée ; `retry-after` (secondes) ou un reste sous 100 ne font qu'allonger la pause (`until = max(until, …)`), jamais la raccourcir ni la lever. Raison : une requête anonyme (quota de 60/h, reste toujours sous 100) d'un composant tiers autorisé sur `api.github.com` suspendait toutes les liaisons GitHub jusqu'au reset ; une réponse ordinaire effaçait la pause d'une limite secondaire (`retry-after`).
+- **N41 · Consentement au secret par hôte** (précise N36) : `permissionList` rend une entrée par couple secret × hôte, `secret:<name>@<host>` (ex. `secret:github@api.github.com`) ; `addedPermissions` signale donc aussi un hôte ajouté à un secret déjà accordé. Raison : avec `secret:<name>` seul, une nouvelle version qui ajoutait à `github` un hôte déjà couvert par `net` recevait le jeton sans que l'écran 30 ni la publication ne l'annoncent.
 
 ## Écrans à dessiner dans Penpot (avant les tâches UI)
 
@@ -1677,7 +1680,8 @@ const TABLES = [
   "CREATE TABLE IF NOT EXISTS integration_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
   "CREATE TABLE IF NOT EXISTS integration_events (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, integration TEXT NOT NULL, level TEXT NOT NULL, message TEXT NOT NULL)",
   "CREATE TABLE IF NOT EXISTS sync_items (binding_id TEXT NOT NULL, remote_id TEXT NOT NULL, ticket_id TEXT NOT NULL, base_json TEXT NOT NULL, remote_updated_at TEXT NOT NULL, last_pushed_hash TEXT, PRIMARY KEY (binding_id, remote_id))",
-  "CREATE UNIQUE INDEX IF NOT EXISTS sync_items_ticket ON sync_items (binding_id, ticket_id)",
+  "DROP INDEX IF EXISTS sync_items_ticket",
+  "CREATE UNIQUE INDEX IF NOT EXISTS sync_items_linked_ticket ON sync_items (binding_id, ticket_id) WHERE ticket_id <> ''",
   "CREATE TABLE IF NOT EXISTS sync_cursors (binding_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, cursor TEXT, last_pull_at INTEGER, last_error TEXT, imported INTEGER NOT NULL DEFAULT 0)",
   "CREATE TABLE IF NOT EXISTS sync_outbox (id INTEGER PRIMARY KEY AUTOINCREMENT, binding_id TEXT NOT NULL, project_id TEXT NOT NULL, ticket_id TEXT NOT NULL, op TEXT NOT NULL, payload_json TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER, first_attempt_at TEXT, last_error TEXT, created_at INTEGER NOT NULL)",
   "CREATE INDEX IF NOT EXISTS sync_outbox_binding ON sync_outbox (binding_id, id)",
@@ -2638,6 +2642,19 @@ git commit -m "feat(daemon): socle des intégrations"
 ```
 
 ---
+
+### Task 2b: Commandes dérivées d'origine `user` (correction, relecture de la tâche 14)
+
+Constat de la relecture lead de la tâche 14 : `command-path.ts` transmet `meta` tel quel aux commandes dérivées d'une règle ; une règle déclenchée par une commande d'origine `sync` reste d'origine `sync` et l'observateur de la boîte d'envoi l'ignore (un parent passé à `done` par `children_done` n'est jamais poussé). N22 exige l'origine `user` pour les commandes dérivées.
+
+**Files:**
+- Modify: `packages/daemon/src/command-path.ts`
+- Test: `packages/daemon/src/integrations/host.test.ts`
+
+- [ ] **Step 1: Test d'abord** : « a rule derived from a sync command reaches observers as a user command » (commande `sync` qui termine le dernier enfant, observateur qui reçoit la dérivée `setStatus` du parent avec `meta.origin === "user"`).
+- [ ] **Step 2: Implémenter** : les commandes dérivées d'une règle portent `meta = { origin: "user" }` (sans `instanceId`), quelle que soit l'origine de la commande qui les déclenche.
+- [ ] **Step 3: Vérifier** : `bun test packages components`, `bun run check`, `bun run typecheck`.
+- [ ] **Step 4: Commit** : `fix(daemon): règles dérivées d'origine user`
 
 ### Task 3: Trousseau système (`Bun.secrets`)
 
@@ -7971,13 +7988,29 @@ describe("push", () => {
     remote.failNext(new KiboError("TIMEOUT", "no answer"));
     await cycle();
     remote.add({ title: "Venue d'ailleurs" });
+    remote.add({ title: "Venue ensuite" });
     await cycle();
     expect(tickets().map((t) => t.title)).toEqual(["Incertaine"]);
     host.clock.now += 5_000;
     await cycle();
     await cycle();
-    expect(tickets().map((t) => t.title).sort()).toEqual(["Incertaine", "Venue d'ailleurs"]);
+    expect(tickets().map((t) => t.title).sort()).toEqual(["Incertaine", "Venue d'ailleurs", "Venue ensuite"]);
     expect(remote.pushes.filter((p) => p.kind === "create").at(-1)).toMatchObject({ since: expect.any(String) });
+  });
+
+  test("a ticket deleted while its create is in flight is never imported back", async () => {
+    const created = host.command(host.projectId, { method: "createTicket", title: "Fantôme" }, { origin: "user", instanceId: instanceId() });
+    const push = remote.push;
+    remote.push = async (projectId, b, op) => {
+      const m = await push(projectId, b, op);
+      host.command(host.projectId, { method: "deleteTicket", ticketId: created.id }, USER);
+      return m;
+    };
+    await cycle();
+    remote.push = push;
+    await cycle();
+    expect(tickets()).toEqual([]);
+    expect(remote.issues.get(1)?.fields.closed).toBe(false);
   });
 });
 
@@ -8023,7 +8056,7 @@ describe("conflicts, limits and ownership", () => {
 });
 ```
 
-Supprimer un ticket lié ne touche jamais l'issue (spec F §5) ; la ligne `sync_items` reste avec `ticket_id = ""` (constante `IGNORED`) pour que le pull ne réimporte pas l'issue. Une issue rompue (404) suit la même règle.
+Supprimer un ticket lié ne touche jamais l'issue (spec F §5) ; la ligne `sync_items` reste avec `ticket_id = ""` (constante `IGNORED`) pour que le pull ne réimporte pas l'issue. Une issue rompue (404) suit la même règle, comme un ticket supprimé pendant que sa création est en vol : `pushCreate` écrit alors la ligne `IGNORED` au lieu de la réf. Plusieurs lignes `IGNORED` coexistent dans une liaison : l'unicité `(binding_id, ticket_id)` est un index partiel `WHERE ticket_id <> ''` (Task 2, `integrations/db.ts`), et `itemByTicket` répète ce prédicat pour que SQLite utilise l'index. Tant qu'une création est incertaine, le pull applique les issues déjà liées mais ne sauve pas le curseur (N39) : les issues nouvelles qu'il a sautées sont relues et importées au premier pull après la résolution.
 
 Run: `bun test packages/daemon/src/sync` — Expected: FAIL.
 
@@ -8111,7 +8144,7 @@ const toOut = (r: OutRow): OutboxRow => ({
 export function createSyncStore(db: Database) {
   const q = {
     item: db.query("SELECT * FROM sync_items WHERE binding_id = $b AND remote_id = $r"),
-    itemByTicket: db.query("SELECT * FROM sync_items WHERE binding_id = $b AND ticket_id = $t"),
+    itemByTicket: db.query("SELECT * FROM sync_items WHERE binding_id = $b AND ticket_id = $t AND ticket_id <> ''"),
     upsertItem: db.query(
       "INSERT INTO sync_items VALUES ($b, $r, $t, $base, $at, $hash) ON CONFLICT(binding_id, remote_id) DO UPDATE SET ticket_id = excluded.ticket_id, base_json = excluded.base_json, remote_updated_at = excluded.remote_updated_at, last_pushed_hash = excluded.last_pushed_hash",
     ),
@@ -8427,7 +8460,7 @@ import type { RateLimitGate } from "../integrations/rate-limit";
 import type { AdapterRunner, IntegrationHost } from "../integrations/types";
 import { applyPlan, applyRemote, SYNC, statusMapOf } from "./apply";
 import { fieldsHash } from "./hash";
-import type { OutboxRow, SyncStore } from "./sync-store";
+import { IGNORED, type OutboxRow, type SyncStore } from "./sync-store";
 
 export type SyncEngine = {
   cycle(projectId: string, bindingId: string): Promise<SyncReport>;
@@ -8474,11 +8507,13 @@ export function createSyncEngine(deps: Deps): SyncEngine {
       since: row.attempts > 1 ? row.firstAttemptAt : null,
     });
     host.transaction(() => {
-      host.command(projectId, { method: "upsertExternalRef", ticketId: ticket.id, ref: m.ref }, SYNC);
-      store.upsertItem({ bindingId: b.id, remoteId: m.remoteId, ticketId: ticket.id, base: m.fields, remoteUpdatedAt: m.updatedAt, lastPushedHash: fieldsHash(m.fields) });
-      store.deleteOutbox(row.id);
       const fresh = ticketOf(projectId, ticket.id);
-      if (fresh && JSON.stringify(projectLocal(fresh, m.fields, statusMapOf(b))) !== JSON.stringify(m.fields)) {
+      const item = { bindingId: b.id, remoteId: m.remoteId, ticketId: ticket.id, base: m.fields, remoteUpdatedAt: m.updatedAt, lastPushedHash: fieldsHash(m.fields) };
+      store.deleteOutbox(row.id);
+      if (!fresh) return store.upsertItem({ ...item, ticketId: IGNORED });
+      host.command(projectId, { method: "upsertExternalRef", ticketId: ticket.id, ref: m.ref }, SYNC);
+      store.upsertItem(item);
+      if (JSON.stringify(projectLocal(fresh, m.fields, statusMapOf(b))) !== JSON.stringify(m.fields)) {
         store.enqueue({ bindingId: b.id, projectId, ticketId: ticket.id, op: "update" }, host.now());
       }
     });
@@ -8569,11 +8604,11 @@ export function createSyncEngine(deps: Deps): SyncEngine {
         report.conflicts += r.conflicts.length;
       }
       cursor = res.cursor;
-      store.saveCursor({ ...prev, cursor, imported });
+      store.saveCursor({ ...prev, cursor: allowImport ? cursor : prev.cursor, imported });
       host.broadcast({ type: "sync", projectId, bindingId: b.id, imported, running: true });
       if (!res.more) break;
     }
-    store.saveCursor({ ...prev, cursor, imported, lastPullAt: host.now(), lastError: null });
+    store.saveCursor({ ...prev, cursor: allowImport ? cursor : prev.cursor, imported, lastPullAt: host.now(), lastError: null });
   };
 
   const recordPullError = (projectId: string, b: Binding, e: KiboError) => {
