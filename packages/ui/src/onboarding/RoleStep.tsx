@@ -1,4 +1,5 @@
 import type { Role } from "@kibo/schema";
+import { Alert, AlertTitle } from "@kibo/sdk/ui/alert";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Label } from "@kibo/sdk/ui/label";
@@ -108,6 +109,12 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
           )}
         </div>
       )}
+      {state.status === "unavailable" && (
+        <Alert className="bg-muted/40">
+          <Info aria-hidden />
+          <AlertTitle>{fr.onboarding.unavailable}</AlertTitle>
+        </Alert>
+      )}
       <div className="grid gap-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium">{fr.onboarding.pages}</h3>
@@ -117,11 +124,6 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
             </Badge>
           )}
         </div>
-        {state.status === "unavailable" && (
-          <p className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-            <Info aria-hidden className="size-3.5" /> {fr.onboarding.unavailable}
-          </p>
-        )}
         <StarterPagesList selection={selection} titles={titles} onChange={onSelection} />
         <p className="text-xs text-muted-foreground">{fr.onboarding.pagesHelp}</p>
       </div>

@@ -176,7 +176,10 @@ test("a null plan keeps the preset with the unavailable message", async () => {
   await askClaude("x");
   await screen.findByRole("button", { name: "Annuler" });
   emit({ type: "starter.ready", runId: "run-9", plan: null });
-  expect(await screen.findByText("Suggestion indisponible, voici le point de départ standard")).toBeTruthy();
+  const alert = await screen.findByRole("alert");
+  expect(alert.textContent).toBe("Suggestion indisponible, voici le point de départ standard");
+  const heading = screen.getByRole("heading", { name: "Pages proposées" });
+  expect(alert.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByLabelText("Inclure Tableau de bord")).toBeTruthy();
 });
 
