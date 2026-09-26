@@ -3200,7 +3200,7 @@ git commit -m "feat(devkit): inférence des permissions"
   - Contrat de `server.js` / `migrations.js` : CommonJS, `module.exports.server` (valeur de `defineServer`) et `module.exports.migrations` (valeur de `defineMigrations`).
   - `packages/sdk/src/theme.css` : tokens zinc sombre et clair, variante `dark`, `@theme inline`, couche `base` (partagés par l'UI et les composants).
 
-- [ ] **Step 1: Extraire les tokens dans `theme.css`**
+- [x] **Step 1: Extraire les tokens dans `theme.css`**
 
 Créer `packages/sdk/src/theme.css` avec, **déplacés depuis `packages/ui/src/index.css` sans modification**, les blocs `@custom-variant dark …`, les deux `@theme inline { … }`, `:root { … }` (les deux), `.dark { … }` et `@layer base { … }`. `packages/ui/src/index.css` devient :
 ```css
@@ -3215,7 +3215,7 @@ Créer `packages/sdk/src/theme.css` avec, **déplacés depuis `packages/ui/src/i
 Run: `bun run --cwd packages/ui build`
 Expected: build vert ; comparer à l'œil l'appli (sombre et clair) : rien ne change.
 
-- [ ] **Step 2: Écrire le test du build**
+- [x] **Step 2: Écrire le test du build**
 
 `packages/devkit/src/build.test.ts` :
 ```ts
@@ -3321,7 +3321,7 @@ La tâche 13 remplace ce fichier (conflit de rebase attendu et trivial : garder 
 Run: `bun test packages/devkit/src/build.test.ts`
 Expected: FAIL (`./build` manquant).
 
-- [ ] **Step 3: Implémenter `build.ts`**
+- [x] **Step 3: Implémenter `build.ts`**
 
 ```ts
 import { existsSync } from "node:fs";
@@ -3462,7 +3462,7 @@ Points à respecter : le plugin ne s'occupe que des imports venant du composant 
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./build";`.
 
-- [ ] **Step 4: Vérifier et committer**
+- [x] **Step 4: Vérifier et committer**
 
 Run: `bun test packages/devkit && bun run typecheck && bun run check && bun run --cwd packages/ui build`
 Expected: PASS.
@@ -3472,6 +3472,8 @@ git add packages/devkit/src packages/sdk/src/theme.css packages/ui/src/index.css
 git commit -m "feat(devkit): build des composants"
 ```
 (ajouter `packages/sdk/src/sandbox.tsx` au `git add` seulement si l'étape 2 l'a créé.)
+
+Écarts livrés : serveur et migrations construits en `target: "browser"` au format `cjs`, parce que `"bun"` enveloppe la sortie et que `new Function` n'y trouve aucun export. La construction part d'une copie de travail des seules sources hachées, dans un dossier temporaire dont le `node_modules` est lié à la toolchain (`build-resolve.ts`). Cela évite une seconde copie de React et contourne un bug de tree-shaking de Bun 1.4.2 avec un `onResolve` `/.*/`. En trusted, les modules partagés passent par `__kiboShared` quel que soit l'importeur, `lucide-react` compris. `lucide-react` et `shadcn` sont ajoutés à la racine pour le linker isolé.
 
 ---
 
