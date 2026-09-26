@@ -3,6 +3,7 @@ import type { Redactor } from "./redact";
 import type { SecretStore } from "./types";
 
 export const KEYCHAIN_SERVICE = "dev.kibo";
+export const KEYCHAIN_TIMEOUT_MS = 60_000;
 
 export type KeychainBackend = {
   get(o: { service: string; name: string }): Promise<string | null>;
@@ -12,10 +13,24 @@ export type KeychainBackend = {
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+async function bounded<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("keychain timed out")), timeoutMs);
+  });
+  try {
+    return await Promise.race([fn(), expired]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function createBunSecretStore(
   redactor: Redactor,
   backend: KeychainBackend = Bun.secrets,
+  opts: { timeoutMs?: number } = {},
 ): SecretStore {
+  const timeoutMs = opts.timeoutMs ?? KEYCHAIN_TIMEOUT_MS;
   const key = (name: SecretName) => {
     if (!SecretNameSchema.safeParse(name).success)
       throw new KiboError("INVALID_INPUT", "invalid secret name");
@@ -23,7 +38,7 @@ export function createBunSecretStore(
   };
   const call = async <T>(op: string, fn: () => Promise<T>): Promise<T> => {
     try {
-      return await fn();
+      return await bounded(fn, timeoutMs);
     } catch (e) {
       throw new KiboError("SECRET_STORE_UNAVAILABLE", redactor.redact(`${op}: ${message(e)}`));
     }
@@ -38,7 +53,7 @@ export function createBunSecretStore(
   return {
     async availability() {
       try {
-        await backend.get({ service: KEYCHAIN_SERVICE, name: "probe" });
+        await bounded(() => backend.get({ service: KEYCHAIN_SERVICE, name: "probe" }), timeoutMs);
         return { ok: true };
       } catch (e) {
         return { ok: false, reason: redactor.redact(message(e)) };

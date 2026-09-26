@@ -61,6 +61,17 @@ describe("keychain secret store", () => {
     expect(backend.calls).toEqual([]);
   });
 
+  test("a keychain that never answers times out instead of blocking the daemon", async () => {
+    const pending = new Promise<never>(() => undefined);
+    const stuck: KeychainBackend = { get: () => pending, set: () => pending, delete: () => pending };
+    const store = createBunSecretStore(createRedactor(), stuck, { timeoutMs: 10 });
+    expect(await store.availability()).toEqual({ ok: false, reason: "keychain timed out" });
+    await expect(store.get("github")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+    await expect(store.get("github")).rejects.toThrow("keychain timed out");
+    await expect(store.set("github", "ghp_value_123456")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+    await expect(store.delete("github")).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+  });
+
   test.if(process.env.KIBO_TEST_KEYCHAIN === "1")("real keychain round-trip", async () => {
     const store = createBunSecretStore(createRedactor());
     await store.set("mcp:kibo-test", "kibo-keychain-test-value");
