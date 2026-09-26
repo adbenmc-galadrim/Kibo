@@ -2487,7 +2487,7 @@ git commit -m "feat(core): données d'instance et registre"
   - `scaffold(opts: { root: string; id: string; kind: "widget" | "view" | "both"; server: boolean; toolchain: Toolchain }): Promise<string>` (renvoie le dossier créé).
   - Aide de test `@kibo/devkit/test-kit` : `REPO`, `DEV_TOOLCHAIN`, `copyFixture(name: string, opts?: { linkModules?: boolean; from?: string }): { dir: string; dispose(): void }` (copie `fixtures/<name>` — ou `<from>/<name>` — dans un dossier temporaire hors du monorepo, renomme `*.fixture`, lie `node_modules` à la toolchain de dev). Réutilisée par les tâches 14, 20, 27, 31 et 32.
 
-- [ ] **Step 1: Créer la fixture `hello`**
+- [x] **Step 1: Créer la fixture `hello`**
 
 `packages/devkit/fixtures/hello/kibo.component.json` :
 ```json
@@ -2532,7 +2532,7 @@ runConformance({ manifest, Component });
 ```
 Le suffixe `.fixture` empêche `bun test packages` d'exécuter ce test dans le monorepo ; `copyFixture` le retire.
 
-- [ ] **Step 2: Écrire l'aide de test et les tests**
+- [x] **Step 2: Écrire l'aide de test et les tests**
 
 `packages/devkit/src/test-kit.ts` :
 ```ts
@@ -2713,7 +2713,7 @@ test("new refuses an existing folder, a built-in id and an invalid id", async ()
 Run: `bun test packages/devkit/src/hash.test.ts packages/devkit/src/imports.test.ts packages/devkit/src/scaffold.test.ts`
 Expected: FAIL (modules manquants).
 
-- [ ] **Step 3: Implémenter `hash.ts`**
+- [x] **Step 3: Implémenter `hash.ts`**
 
 ```ts
 import { readdir, readFile } from "node:fs/promises";
@@ -2779,7 +2779,7 @@ export async function hashSources(dir: string): Promise<string> {
 ```
 Le tri se fait par unités de code (`<`), jamais par `localeCompare` (dépend de la locale).
 
-- [ ] **Step 4: Implémenter `imports.ts`**
+- [x] **Step 4: Implémenter `imports.ts`**
 
 ```ts
 import { dirname, normalize } from "node:path/posix";
@@ -2862,7 +2862,7 @@ export function checkImports(ts: TypeScript, files: { path: string; text: string
 ```
 Les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis`, `global`, `self`, `module`, `Worker` et `SharedWorker` sont refusés en position de valeur ; comme clé d'objet ou nom de propriété, ils restent permis. Tout attribut d'import (`with { … }`, statique ou dynamique) est refusé : `Bun.build` exécute les macros (`type: "macro"`) dans le processus qui construit, sans passer par `onResolve` (constaté à la relecture de la tâche 1). Cette analyse est une **défense en profondeur, pas une barrière** : `(() => 0).constructor("return import('node:fs')")()` la contourne ; la barrière est le bac à sable OS (décision 24, tâche 11b).
 
-- [ ] **Step 5: Implémenter `scaffold.ts`**
+- [x] **Step 5: Implémenter `scaffold.ts`**
 
 ```ts
 import { existsSync } from "node:fs";
@@ -2962,7 +2962,7 @@ Le lien `node_modules` (ignoré par l'empreinte) sert l'éditeur et un `bun test
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./hash";`, `export * from "./imports";`, `export * from "./scaffold";` (pas `test-kit`, réservé aux tests). `packages/devkit/package.json`, `exports` : ajouter `"./test-kit": "./src/test-kit.ts"`.
 
-- [ ] **Step 6: Vérifier et committer**
+- [x] **Step 6: Vérifier et committer**
 
 Run: `bun test packages/devkit && bun run typecheck && bun run check`
 Expected: PASS.
