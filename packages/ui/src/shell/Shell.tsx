@@ -1,14 +1,11 @@
 import type { AgentsState, FileRef, ProjectSummary, Session, TabTarget } from "@kibo/schema";
-import { Button } from "@kibo/sdk/ui/button";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
-import { Bell, Plus } from "lucide-react";
+import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
 import { client } from "../api";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
-import { fr } from "../i18n/fr";
 import { countMine, myTickets } from "../mine/my-tickets";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
@@ -24,17 +21,14 @@ import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import { type TabsApi, useTabs } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
 import { AppSidebar } from "./AppSidebar";
-import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
 import { IntegrationNotices } from "./lazy-screens";
-import { NotifyButton } from "./NotifyButton";
-import { PageActionsProvider, PageActionsSlot } from "./page-actions";
-import { ScreenActions } from "./ScreenActions";
+import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
-import { UserAvatar } from "./UserAvatar";
+import { ShellHeader } from "./ShellHeader";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
 
@@ -208,44 +202,19 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               onNewPage={(parentId) => set({ newPageParent: parentId })}
             />
             <SidebarInset className="min-h-0 min-w-0">
-              <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
-                <SidebarTrigger />
-                <Breadcrumb
-                  crumbs={crumbsFor(active, { project, branch })}
-                  heading={
-                    screen === "agents" || screen === "queue" || screen === "components" || screen === "mine"
-                  }
-                />
-                <PageActionsSlot />
-                <span className="flex-1" />
-                {git.error && (
-                  <p role="alert" className="truncate text-xs text-destructive">
-                    {git.error}
-                  </p>
-                )}
-                <ScreenActions
-                  screen={screen}
-                  agents={agents}
-                  onNewProfile={() => set({ newProfile: true })}
-                />
-                {ticketProject && (
-                  <Button
-                    size="sm"
-                    className="h-7"
-                    title={fr.header.newTicketIn(ticketProject.meta.name)}
-                    onClick={() => set({ newTicket: {} })}
-                  >
-                    <Plus />
-                    {fr.header.newTicket}
-                  </Button>
-                )}
-                {notifications === "browser" ? (
-                  <NotifyButton />
-                ) : (
-                  <Bell aria-hidden className="size-4 text-muted-foreground" />
-                )}
-                <UserAvatar user={viewer} />
-              </header>
+              <ShellHeader
+                active={active}
+                screen={screen}
+                project={project}
+                ticketProject={ticketProject}
+                branch={branch}
+                gitError={git.error}
+                agents={agents}
+                viewer={viewer}
+                notifications={notifications}
+                onNewProfile={() => set({ newProfile: true })}
+                onNewTicket={() => set({ newTicket: {} })}
+              />
               <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                 {screen ? (
                   <ScreenView
