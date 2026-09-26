@@ -4884,7 +4884,7 @@ Démarre après la Task 8 (mêmes fichiers `permissions.ts`, `gate.ts`, `gate-ha
   - `readSource(config: Record<string, unknown>): InstanceSource | null` ; `matchesSource(ticket: TicketView, source: InstanceSource | null): boolean`
   - `permissionLines(g)` (écran 30) ajoute une ligne par secret (`KeyRound`) et par règle MCP (`Plug`)
 
-- [ ] **Step 1: Tests SDK (échouent)**
+- [x] **Step 1: Tests SDK (échouent)**
 
 `packages/sdk/src/mcp.test.ts` :
 
@@ -4988,7 +4988,7 @@ test("a synced instance only shows tickets of its binding", () => {
 
 Run: `bun test packages/sdk` — Expected: FAIL.
 
-- [ ] **Step 2: Schéma**
+- [x] **Step 2: Schéma**
 
 `packages/schema/src/manifest.ts` : `BuiltinEntityType` gagne `"ci_run"` (lecture seule de fait : aucune commande n'écrit `ci_run`, `COMMAND_WRITES` ne la cite pas).
 
@@ -5036,7 +5036,7 @@ et `diffPermissions(declared, used, config = null)` passe `config` à ses deux a
 
 Ajouter `mcp: []` aux littéraux `GrantedPermissions` listés dans **Files**.
 
-- [ ] **Step 3: SDK**
+- [x] **Step 3: SDK**
 
 `packages/sdk/src/source.ts` :
 
@@ -5140,7 +5140,7 @@ et, dans le test de rendu, `diffPermissions(declared, m.used, mockOpts.config ??
 
 Run: `bun test packages/sdk` — Expected: PASS.
 
-- [ ] **Step 4: Démon (porte `componentCall` de la phase 4)**
+- [x] **Step 4: Démon (porte `componentCall` de la phase 4)**
 
 `packages/daemon/src/components/gate.ts` :
 - `missingPermission` : après le calcul générique (qui couvre `mcp.*` par `covers`, sans config pour un non-intégré : `{config.server}` ne couvre rien), `if (call.kind === "mcp.import" && !covers(permissionList(granted), "write:ticket")) return "write:ticket";` ;
@@ -5225,13 +5225,13 @@ describe("mcp calls", () => {
 
 et, dans le `describe` du journal, un refus MCP produit une ligne `component_events` de `kind: "mcp.call"` (même forme que le cas `fetch` existant).
 
-- [ ] **Step 5: Devkit**
+- [x] **Step 5: Devkit**
 
 `packages/devkit/src/infer-permissions.ts`, dans `sdkCall` : `sdk.mcp.call("<server>", "<tool>", …)` ⇒ `mcp:<server>/<tool>` ; `sdk.mcp.read("<server>", …)` ⇒ `mcp:<server>` ; `sdk.mcp.importItem("<server>", …)` ⇒ `mcp:<server>` et `write:ticket` ; un serveur ou un outil non littéral ⇒ `non-literal-argument` (comme `fetch`). Test ajouté à `infer-permissions.test.ts` sur `inferFromSources`.
 
 `packages/devkit/src/validate.ts`, `readManifest` : après le contrôle `reservedId`, `if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];` (tout composant validé est non intégré) ; `packages/devkit/src/fr.ts` : `configServerReserved: "{config.server} est réservé aux composants intégrés"`. Test ajouté au cas « an invalid or reserved manifest stops before the tests » de `validate.test.ts` : manifeste `hello` avec `mcp: ["{config.server}"]` ⇒ `report.manifest = { ok: false, errors: ["{config.server} est réservé aux composants intégrés"] }`.
 
-- [ ] **Step 6: Écran 30**
+- [x] **Step 6: Écran 30**
 
 `packages/ui/src/lib/permission-lines.test.ts` : ajouter
 
@@ -5255,7 +5255,7 @@ test("secrets and mcp rules read in plain French", () => {
 
 `packages/ui/src/lib/permission-lines.ts` : après la ligne réseau, une ligne `{ icon: KeyRound, title: p.secret(s.name, s.hosts) }` par secret et `{ icon: Plug, title: rule === CONFIG_SERVER_RULE ? p.mcpFromConfig : p.mcp(rule) }` par règle MCP (`p = fr.integrations.permissions`, Task 1) ; `closingLine` ne rend aucune ligne de fermeture quand `mcp` n'est pas vide : un serveur MCP peut accéder au réseau comme aux fichiers locaux. `TrustDialog.tsx` n'est pas modifié : il rend `permissionLines(grantedOf(manifest))`.
 
-- [ ] **Step 7: Vérifier et commiter**
+- [x] **Step 7: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck` — Expected: PASS.
 
