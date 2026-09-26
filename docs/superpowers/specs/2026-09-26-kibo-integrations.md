@@ -168,7 +168,7 @@ Raison : pour un ticket lié, GitHub est l'espace partagé de référence ; la v
 
 ### 5.5 Limites de débit
 
-Lecture de `x-ratelimit-remaining` / `x-ratelimit-reset` et de `retry-after` ; sous 100 requêtes restantes, les jobs de pull de toutes les liaisons GitHub sont suspendus jusqu'au reset ; l'écran 16 affiche « Limite GitHub atteinte, reprise à HH:MM ».
+Lecture de `x-ratelimit-remaining` / `x-ratelimit-reset` et de `retry-after` ; sous 100 requêtes restantes, les jobs de pull de toutes les liaisons GitHub sont suspendus jusqu'au reset (seules comptent les réponses à une requête portant le jeton, N40) ; l'écran 16 affiche « Limite GitHub atteinte, reprise à HH:MM ».
 
 ## 6. GitHub : authentification et configuration
 
@@ -260,7 +260,7 @@ Lecture de `x-ratelimit-remaining` / `x-ratelimit-reset` et de `retry-after` ; s
 
 ## 14. Décisions du plan
 
-Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.md` (« Décisions nouvelles »). N1 à N21 : écriture du plan ; N22 à N36 : réconciliation avec le code livré des phases 2 à 4 (tâche T0, 2026-09-26) ; N37 et N38 : revue de la tâche 5 (fusion à trois), 2026-09-26 ; N39 : revue de la tâche 14 (moteur de sync), 2026-09-26.
+Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.md` (« Décisions nouvelles »). N1 à N21 : écriture du plan ; N22 à N36 : réconciliation avec le code livré des phases 2 à 4 (tâche T0, 2026-09-26) ; N37 et N38 : revue de la tâche 5 (fusion à trois), 2026-09-26 ; N39 : revue de la tâche 14 (moteur de sync), 2026-09-26 ; N40 et N41 : revue de la tâche 8 (réseau), 2026-09-26.
 
 - **N1 · Scope d'une liaison avec Project** : avec un Project v2 configuré, la liaison porte sur les issues **du dépôt présentes dans le Project** ; le pull lit les éléments du Project en GraphQL (balayage complet, 100 par page) et retient ceux dont `max(item.updatedAt, issue.updatedAt) ≥ since`. Sans Project : REST `since`. Raison : le statut d'un élément de Project ne modifie pas `updated_at` de l'issue ; seul le balayage le voit.
 - **N2 · `config.project.nodeId`** : l'identifiant GraphQL du Project est stocké dans la liaison (mutations sans requête préalable).
@@ -303,6 +303,7 @@ Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.
 - **N39 · Curseur figé pendant une création incertaine** (précise N5) : tant qu'une création de la liaison est incertaine, le pull applique les issues déjà liées mais ne sauve pas son curseur ; au premier pull après la résolution (création adoptée ou abandonnée), il repart du dernier curseur sauvé et importe les issues nouvelles qu'il avait sautées. Raison : le curseur est opaque (Task 13) et avance au-delà des issues non importées ; le sauver les perdait jusqu'à leur prochaine modification sur GitHub.
 - **N40 · Observation de la limite GitHub** (précise spec F §5.5) : la porte de débit n'observe que les réponses d'`api.github.com` à une requête qui portait le jeton du démon (réseau des intégrations : `bearer` non nul ; proxy des composants : secret injecté) ; une réponse dont `x-ratelimit-resource` est présent et n'est ni `core` ni `graphql` est ignorée ; `retry-after` (secondes) ou un reste sous 100 ne font qu'allonger la pause (`until = max(until, …)`), jamais la raccourcir ni la lever. Raison : une requête anonyme (quota de 60/h, reste toujours sous 100) d'un composant tiers autorisé sur `api.github.com` suspendait toutes les liaisons GitHub jusqu'au reset ; une réponse ordinaire effaçait la pause d'une limite secondaire (`retry-after`).
 - **N41 · Consentement au secret par hôte** (précise N36) : `permissionList` rend une entrée par couple secret × hôte, `secret:<name>@<host>` (ex. `secret:github@api.github.com`) ; `addedPermissions` signale donc aussi un hôte ajouté à un secret déjà accordé. Raison : avec `secret:<name>` seul, une nouvelle version qui ajoutait à `github` un hôte déjà couvert par `net` recevait le jeton sans que l'écran 30 ni la publication ne l'annoncent.
+- **N42 · Drapeaux de test indissociables** (décision du chef d'équipe) : `--test-origins` et `--memory-secrets` vont ensemble ; l'un sans l'autre fait échouer le démarrage (`failStart`, code 1). Raison : un vrai jeton du trousseau ne doit jamais partir en HTTP vers une origine de test en boucle locale.
 
 ## Comptes et secrets réels
 

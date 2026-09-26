@@ -84,7 +84,7 @@ Ce plan a été écrit avant les phases 2 à 4 ; la tâche T0 (2026-09-26, `main
 
 ## Décisions nouvelles
 
-Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N36 viennent de la réconciliation T0 avec le code livré des phases 2 à 4 ; N37 et N38, de la revue de la tâche 5 (fusion à trois) ; N39, de la revue de la tâche 14 (moteur de sync).
+Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions du plan », par la tâche T0 (avant tout code, comme l'exige `CLAUDE.md`) ; la Task 1 vérifie seulement que §14 et cette liste coïncident. N1 à N21 datent de l'écriture du plan ; N22 à N36 viennent de la réconciliation T0 avec le code livré des phases 2 à 4 ; N37 et N38, de la revue de la tâche 5 (fusion à trois) ; N39, de la revue de la tâche 14 (moteur de sync) ; N40 et N41, de la revue de la tâche 8 (réseau).
 
 - **N1 · Scope d'une liaison avec Project** : avec un Project v2 configuré, la liaison porte sur les issues **du dépôt présentes dans le Project** ; le pull lit les éléments du Project en GraphQL (balayage complet, 100 par page) et retient ceux dont `max(item.updatedAt, issue.updatedAt) ≥ since`. Sans Project : REST `since`. Raison : le statut d'un élément de Project ne modifie pas `updated_at` de l'issue ; seul le balayage le voit.
 - **N2 · `config.project.nodeId`** : l'identifiant GraphQL du Project est stocké dans la liaison (mutations sans requête préalable).
@@ -127,6 +127,7 @@ Toutes sont reportées mot pour mot dans la spec F, section « §14 Décisions d
 - **N39 · Curseur figé pendant une création incertaine** (précise N5) : tant qu'une création de la liaison est incertaine, le pull applique les issues déjà liées mais ne sauve pas son curseur ; au premier pull après la résolution (création adoptée ou abandonnée), il repart du dernier curseur sauvé et importe les issues nouvelles qu'il avait sautées. Raison : le curseur est opaque (Task 13) et avance au-delà des issues non importées ; le sauver les perdait jusqu'à leur prochaine modification sur GitHub.
 - **N40 · Observation de la limite GitHub** (précise spec F §5.5) : la porte de débit n'observe que les réponses d'`api.github.com` à une requête qui portait le jeton du démon (réseau des intégrations : `bearer` non nul ; proxy des composants : secret injecté) ; une réponse dont `x-ratelimit-resource` est présent et n'est ni `core` ni `graphql` est ignorée ; `retry-after` (secondes) ou un reste sous 100 ne font qu'allonger la pause (`until = max(until, …)`), jamais la raccourcir ni la lever. Raison : une requête anonyme (quota de 60/h, reste toujours sous 100) d'un composant tiers autorisé sur `api.github.com` suspendait toutes les liaisons GitHub jusqu'au reset ; une réponse ordinaire effaçait la pause d'une limite secondaire (`retry-after`).
 - **N41 · Consentement au secret par hôte** (précise N36) : `permissionList` rend une entrée par couple secret × hôte, `secret:<name>@<host>` (ex. `secret:github@api.github.com`) ; `addedPermissions` signale donc aussi un hôte ajouté à un secret déjà accordé. Raison : avec `secret:<name>` seul, une nouvelle version qui ajoutait à `github` un hôte déjà couvert par `net` recevait le jeton sans que l'écran 30 ni la publication ne l'annoncent.
+- **N42 · Drapeaux de test indissociables** (décision du chef d'équipe) : `--test-origins` et `--memory-secrets` vont ensemble ; l'un sans l'autre fait échouer le démarrage (`failStart`, code 1). Raison : un vrai jeton du trousseau ne doit jamais partir en HTTP vers une origine de test en boucle locale.
 
 ## Écrans à dessiner dans Penpot (avant les tâches UI)
 
@@ -4353,7 +4354,7 @@ Tâche à risque (réseau et secrets) : relecture `kibo-lead` en plus de `kibo-r
 **Files:**
 - Create: `packages/daemon/src/integrations/net.ts`, `packages/daemon/src/integrations/net.test.ts`, `packages/daemon/src/integrations/rate-limit.ts`, `packages/daemon/src/integrations/rate-limit.test.ts`, `packages/daemon/src/components/net-proxy-secrets.test.ts`
 - Modify (phase 4) : `packages/daemon/src/components/net-proxy-address.ts` (exporte `Resolver`, `systemResolver`, `bareHost`, `checkedAddress`, `pinnedRequest`, déplacés depuis `net-proxy.ts`), `packages/daemon/src/components/net-proxy-body.ts` (exporte `readCapped`, ajoute `scrubSecret`, `readProxiedBody(res, maxBytes, secret)`), `packages/daemon/src/components/net-proxy.ts` (`NetProxyOptions.hooks`, `.secrets`, `.aliasFetch` ; réexporte ce qui a été déplacé), `packages/daemon/src/components/gate.ts` (`FetchGrant` : `net` et `secrets` accordés), `packages/daemon/src/components/gate-handlers.ts` (`integrations`), `packages/daemon/src/components/service.ts` (`ComponentsDeps.integrations`), `packages/daemon/src/components/gate.test.ts` (gestionnaire `fetch` du harnais), `packages/daemon/src/daemon.ts` (passe les hooks des intégrations au service des composants)
-- Modify: `packages/schema/src/permissions.ts` (`GrantedPermissions.secrets`, `grantedOf`, `permissionList` → `secret:<name>`, `NO_PERMISSIONS`) et les littéraux `GrantedPermissions` des tests existants : `packages/core/src/registry.test.ts`, `packages/daemon/src/components/gate.test.ts`, `packages/ui/src/lib/permission-lines.test.ts` (les autres tests passent par `NO_PERMISSIONS` ou un étalement) (ajouter `secrets: []`)
+- Modify: `packages/schema/src/permissions.ts` (`GrantedPermissions.secrets`, `grantedOf`, `permissionList` → `secret:<name>@<host>` (N41), `NO_PERMISSIONS`) et les littéraux `GrantedPermissions` des tests existants : `packages/core/src/registry.test.ts`, `packages/daemon/src/components/gate.test.ts`, `packages/ui/src/lib/permission-lines.test.ts` (les autres tests passent par `NO_PERMISSIONS` ou un étalement) (ajouter `secrets: []`)
 - Modify: `packages/daemon/src/integrations/bootstrap.ts`
 
 **Interfaces:**
@@ -4362,7 +4363,7 @@ Tâche à risque (réseau et secrets) : relecture `kibo-lead` en plus de `kibo-r
   - `components/net-proxy-address.ts` : `type Resolver`, `systemResolver`, `bareHost(u: URL): string`, `checkedAddress(u, resolve, allow, signal): Promise<string>`, `pinnedRequest(u, address): { url; host; tls }` (réexportés par `net-proxy.ts`)
   - `components/net-proxy-body.ts` : `readCapped(res, maxBytes): Promise<{ bytes: Uint8Array; truncated: boolean }>`, `scrubSecret(bytes: Uint8Array, secret: string): Uint8Array` (toute occurrence du secret injecté devient `***`, octet à octet)
   - `NetProxyOptions` gagne `hooks?: ProxyHooks` (`Pick<ComponentIntegrationHooks, "aliases" | "observe" | "secret">`), `secrets?: ComponentManifest["secrets"]`, `aliasFetch?: typeof fetch`
-  - `GrantedPermissions.secrets: ComponentManifest["secrets"]` (défaut `[]` pour les versions déjà approuvées) ; « nouvelles permissions » : `secret:<name>`
+  - `GrantedPermissions.secrets: ComponentManifest["secrets"]` (défaut `[]` pour les versions déjà approuvées) ; « nouvelles permissions » : une entrée `secret:<name>@<host>` par hôte (N41)
   - `FetchGrant = { net: readonly string[]; secrets: ComponentManifest["secrets"] }` ; `GateHandlers.fetch(grant: FetchGrant | null, url, init)` (`null` = intégré, comme `rules === null` en phase 4)
   - `ComponentsDeps.integrations?: () => ComponentIntegrationHooks | null` et `GateHandlersDeps.integrations?` (lus à chaque appel)
   - `integrations/net.ts` : `parseTestOrigins(values: string[]): Map<string, URL>` (clé : hôte logique ; valeur : origine `http://127.0.0.1|localhost:<port>/`), `hostMatches(rule: InternalRule, host: string): boolean`, `transportUrl(url: URL, aliases): { target: URL; aliased: boolean }`, `secretFor(url: URL, secrets: ComponentManifest["secrets"], covered: (url: URL) => boolean, resolve: SecretResolver): Promise<string | null>`, `createIntegrationFetch(deps: { aliases: Map<string, URL>; resolve?: Resolver; transport?: Transport; aliasFetch?: typeof fetch; observe?: (host: string, headers: Headers) => void }): IntegrationFetch`
@@ -4389,6 +4390,24 @@ test("pauses under the floor until reset, and on retry-after", () => {
   expect(gate.blockedUntil()).toBeNull();
   gate.observe(new Headers({ "retry-after": "60" }));
   expect(gate.blockedUntil()).toBe(2_060_001);
+});
+
+test("a later healthy response never lifts or shortens a pause (N40)", () => {
+  const now = 1_000_000;
+  const gate = createRateLimitGate(() => now);
+  gate.observe(new Headers({ "retry-after": "60", "x-ratelimit-remaining": "4000" }));
+  gate.observe(new Headers({ "x-ratelimit-remaining": "4999", "x-ratelimit-reset": "5000" }));
+  expect(gate.blockedUntil()).toBe(1_060_000);
+  gate.observe(new Headers({ "retry-after": "10" }));
+  expect(gate.blockedUntil()).toBe(1_060_000);
+});
+
+test("other rate-limit resources are ignored (N40)", () => {
+  const gate = createRateLimitGate(() => 1_000_000);
+  gate.observe(
+    new Headers({ "x-ratelimit-resource": "search", "x-ratelimit-remaining": "9", "x-ratelimit-reset": "2000" }),
+  );
+  expect(gate.blockedUntil()).toBeNull();
 });
 ```
 
@@ -4591,20 +4610,25 @@ Run: `bun test packages/daemon/src/integrations/net.test.ts packages/daemon/src/
 export type RateLimitGate = { observe(headers: Headers): void; blockedUntil(): number | null };
 export const GITHUB_RATE_FLOOR = 100;
 
+const WATCHED_RESOURCES = new Set(["core", "graphql"]);
+
+function pauseEnd(headers: Headers, now: number): number | null {
+  const resource = headers.get("x-ratelimit-resource");
+  if (resource !== null && !WATCHED_RESOURCES.has(resource)) return null;
+  const retryAfter = Number(headers.get("retry-after"));
+  if (headers.has("retry-after") && Number.isFinite(retryAfter)) return now + retryAfter * 1000;
+  const remaining = Number(headers.get("x-ratelimit-remaining"));
+  const reset = Number(headers.get("x-ratelimit-reset"));
+  if (!headers.has("x-ratelimit-remaining") || !Number.isFinite(remaining)) return null;
+  return remaining < GITHUB_RATE_FLOOR && Number.isFinite(reset) ? reset * 1000 : null;
+}
+
 export function createRateLimitGate(now: () => number): RateLimitGate {
   let until: number | null = null;
   return {
     observe(headers) {
-      const retryAfter = Number(headers.get("retry-after"));
-      if (headers.has("retry-after") && Number.isFinite(retryAfter)) {
-        until = now() + retryAfter * 1000;
-        return;
-      }
-      const remaining = Number(headers.get("x-ratelimit-remaining"));
-      const reset = Number(headers.get("x-ratelimit-reset"));
-      if (!headers.has("x-ratelimit-remaining") || !Number.isFinite(remaining)) return;
-      if (remaining < GITHUB_RATE_FLOOR && Number.isFinite(reset)) until = reset * 1000;
-      else if (remaining >= GITHUB_RATE_FLOOR) until = null;
+      const end = pauseEnd(headers, now());
+      if (end !== null) until = Math.max(until ?? end, end);
     },
     blockedUntil: () => (until !== null && until > now() ? until : null),
   };
@@ -4710,7 +4734,10 @@ function outgoing(init: Record<string, string> | undefined, bearer: string | nul
     if (!STRIPPED.has(name.toLowerCase())) headers[name.toLowerCase()] = value;
   }
   headers["user-agent"] = "kibo";
-  if (bearer) headers.authorization = `Bearer ${bearer}`;
+  if (bearer) {
+    headers.authorization = `Bearer ${bearer}`;
+    headers["accept-encoding"] = "identity";
+  }
   return headers;
 }
 
@@ -4745,7 +4772,7 @@ export function createIntegrationFetch(deps: {
         const pinned = pinnedRequest(current, address);
         res = await transport(pinned.url, { method, headers: { ...headers, host: pinned.host }, body, redirect: "manual", signal, tls: pinned.tls });
       }
-      deps.observe?.(bareHost(current), res.headers);
+      if (bearer) deps.observe?.(bareHost(current), res.headers);
       if (REDIRECTS.has(res.status)) {
         const location = res.headers.get("location");
         await res.body?.cancel();
@@ -4765,13 +4792,13 @@ Seule une origine de test (`aliased`, possible uniquement avec `--test-origins`,
 
 - [ ] **Step 5: Proxy des composants (phase 4)**
 
-`packages/schema/src/permissions.ts` : `GrantedPermissions` gagne `secrets: z.array(z.object({ name: SecretNameSchema, hosts: z.array(z.string()).min(1) })).default([])` (même forme que `ComponentManifest.secrets`, Task 1 ; une version approuvée avant la phase 5 se relit avec `[]`) ; `grantedOf` recopie `m.secrets` ; `permissionList` ajoute `...g.secrets.map((s) => \`secret:${s.name}\`)` (donc `addedPermissions` signale un secret nouveau à l'écran 30 et à la publication) ; `NO_PERMISSIONS.secrets = []`.
+`packages/schema/src/permissions.ts` : `GrantedPermissions` gagne `secrets: z.array(z.object({ name: SecretNameSchema, hosts: z.array(z.string()).min(1) })).default([])` (même forme que `ComponentManifest.secrets`, Task 1 ; une version approuvée avant la phase 5 se relit avec `[]`) ; `grantedOf` recopie `m.secrets` ; `permissionList` ajoute `...g.secrets.flatMap((s) => s.hosts.map((h) => \`secret:${s.name}@${h}\`))` (N41 : `addedPermissions` signale un secret nouveau **ou un hôte nouveau d'un secret** à l'écran 30 et à la publication ; test : une version qui ajoute `uploads.github.com` aux hôtes de `github`, déjà couvert par `net`, rend `["secret:github@uploads.github.com"]`) ; `NO_PERMISSIONS.secrets = []`.
 
 `packages/daemon/src/components/net-proxy.ts`, dans `proxyFetch`, sans changer ses contrôles existants :
 1. `NetProxyOptions` gagne `hooks?: ProxyHooks` (`type ProxyHooks = Pick<ComponentIntegrationHooks, "aliases" | "observe" | "secret">`, importé de `../integrations/types`), `secrets?: ComponentManifest["secrets"]` et `aliasFetch?: typeof fetch` ;
 2. à chaque saut, après `checkedUrl` : `const { target, aliased } = transportUrl(current, opts.hooks?.aliases ?? new Map())` ; les contrôles `net` (`rules`), `https:` et identifiants portent sur l'URL logique ; si `aliased`, la requête part par `aliasFetch` vers `target` sans `checkedAddress` ni épinglage, sinon le chemin de la phase 4 est inchangé ;
 3. après `outgoingHeaders` (qui retire déjà `authorization`) : `const bearer = opts.hooks ? await secretFor(current, opts.secrets ?? [], (u) => rules === null || rules.some((r) => ruleCovers(r, u.href)), opts.hooks.secret) : null` puis `authorization: Bearer <bearer>` si non nul ; recalculé à chaque saut (une redirection vers un hôte non listé ne porte jamais le secret, et les en-têtes du composant sont déjà vidés hors origine) ;
-4. `opts.hooks?.observe(bareHost(current), res.headers)` après chaque réponse ;
+4. `if (bearer !== null) opts.hooks?.observe(bareHost(current), res.headers)` après chaque réponse (N40 : une réponse anonyme ne compte jamais) ; quand `bearer` n'est pas nul, l'en-tête sortant `accept-encoding` est forcé à `identity` (le transport ne décompresse pas : un corps compressé échapperait au caviardage) ;
 5. `readProxiedBody(res, maxBytes, bearer)` : un service qui renvoie l'en-tête `Authorization` dans son corps (Review Focus 4) ne livre jamais la valeur au composant (N18).
 
 `packages/daemon/src/components/gate.ts` : `netRules` devient `fetchGrant(deps, ref, call): FetchGrant | null` (`null` pour un intégré, sinon `{ net: active.granted.net, secrets: active.granted.secrets }`, après le même contrôle `missingPermission`) ; `GateHandlers.fetch(grant, url, init)` ; `dispatch` transmet `grant`.
@@ -5000,7 +5027,7 @@ export function covers(declared: string[], used: string, config: Record<string, 
 }
 ```
 
-et `diffPermissions(declared, used, config = null)` passe `config` à ses deux appels de `covers`. Test ajouté à `packages/schema/src/schema.test.ts` : `covers(["mcp:ctx"], "mcp:ctx/echo")` vrai, `covers(["mcp:ctx/resolve"], "mcp:ctx/echo")` faux, `covers(["mcp:{config.server}"], "mcp:fs/read")` faux, `covers(["mcp:{config.server}"], "mcp:fs/read", { server: "fs" })` vrai, et `addedPermissions` d'une version qui gagne `mcp: ["ctx"]` et `secrets: [{ name: "github", … }]` rend `["secret:github", "mcp:ctx"]`.
+et `diffPermissions(declared, used, config = null)` passe `config` à ses deux appels de `covers`. Test ajouté à `packages/schema/src/schema.test.ts` : `covers(["mcp:ctx"], "mcp:ctx/echo")` vrai, `covers(["mcp:ctx/resolve"], "mcp:ctx/echo")` faux, `covers(["mcp:{config.server}"], "mcp:fs/read")` faux, `covers(["mcp:{config.server}"], "mcp:fs/read", { server: "fs" })` vrai, et `addedPermissions` d'une version qui gagne `mcp: ["ctx"]` et `secrets: [{ name: "github", … }]` rend `["secret:github@api.github.com", "mcp:ctx"]` (hôte `api.github.com`, N41).
 
 Ajouter `mcp: []` aux littéraux `GrantedPermissions` listés dans **Files**.
 
