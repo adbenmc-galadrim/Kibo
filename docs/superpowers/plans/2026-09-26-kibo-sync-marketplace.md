@@ -71,9 +71,9 @@ Ce plan suppose les phases 2 à 6 livrées. Il a été écrit avant leurs plans 
 4. **Connexion coupée au milieu d'un partage** : relancer « Partager » est idempotent côté serveur (même propriétaire ⇒ `shared`), le projet local n'est ni dupliqué ni laissé verrouillé (Task 23, test « share retried after drop »).
 5. **Code saisi avec espaces, tirets ou minuscules** (invitation, appareil, appairage à 6 caractères) : accepté après normalisation ; un code faux ne consomme jamais un code valide d'un autre utilisateur (Task 2 `normalizeCode`, Task 11, Task 13).
 
-## Décisions nouvelles (à reporter dans les specs G et H par le chef d'équipe)
+## Décisions nouvelles (reportées dans les specs G et H)
 
-Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T0** : spec G §13 et spec H §13 (« Décisions d'implémentation (plan de phase 7) »), numérotées à l'identique ; les décisions 14 et 23 y figurent comme sans objet (livrées en phase 4). Les points qui relèvent d'Adam sont listés à part (fin de la tâche 0).
+Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T0** : spec G §13 et spec H §13 (« Décisions d'implémentation (plan de phase 7) »), numérotées à l'identique (D1 à D38) ; les décisions 14 et 23 y figurent comme sans objet (livrées en phase 4). Les points qui relèvent d'Adam sont listés à part (fin de la tâche 0).
 
 1. **Paquet `packages/trust`** (WebCrypto et Zod, sans I/O) : Ed25519, codes, empreinte canonique des sources (spec B §3.2), X.509, `.kpkg`, index signés, signature des requêtes HTTP. `packages/devkit` y délègue `hashSources` pour qu'il n'existe qu'une implémentation de l'empreinte. Arêtes : `schema ← trust ← {devkit, daemon, sync-server, cli}` et `schema ← core ← sync-server`.
 2. **Certificats générés par un encodeur X.509 minimal** (ECDSA P-256, WebCrypto) plutôt qu'une fixture versionnée (spec G §9) ou le binaire `openssl` : aucune clé dans le dépôt, aucune dépendance, et le même code sert au certificat auto-signé de l'accès distant (spec G §7).
@@ -107,15 +107,17 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 29. **Branchement du démon** : `service.ts` (300 lignes) ne reçoit plus de méthodes RPC ; chaque sous-système (`sandbox`, `remote`, `market`, `collab`) a son `bootstrap.ts` et se branche dans `assemble` (`daemon.ts`) par une extension ou un gestionnaire RPC (T9). `main.ts` ne lit que des options (`KIBO_MARKET_ALLOW_LOOPBACK`).
 30. **Garde d'écriture par projet** (T21) : `docs.assertWritable(projectId)` est appelé par le chemin des commandes (`guarded` de `command-path.ts`) **et** par les deux écritures qui le contournent (`writeInstanceData` des composants, `updateInstance`) : la lecture seule (décision 9) et le verrou de partage (décision 7) couvrent toutes les écritures.
 31. **Identité locale d'un projet partagé** (T23) : `docs.identity(projectId)` vaut l'`userId` du compte de sync pour un projet partagé, le nom d'utilisateur OS sinon ; elle sert au `runner` et au `createdBy` des liaisons (spec G §6.2), à l'assigné humain et au `viewer` des composants (filtre « Moi + agents », « Mes tickets »).
-32. **Dossier local d'un projet partagé** (T23) : `meta.folder` quitte le doc au partage et vit dans `project_settings(projectId, "folder")` ; `docs.projectMeta` le réinjecte pour `getProject`, le contexte des agents (worktrees), les notes et le code.
+32. **Dossier local d'un projet partagé** (T23) : `meta.folder` quitte le doc au partage et vit dans `project_settings(projectId, "folder")` ; `docs.projectMeta` le réinjecte pour `getProject`, le contexte des agents (worktrees), les notes et le code. La copie du dossier dans la liste `projects` du workspace est conservée : elle est lue hors du doc projet (vue d'ensemble, « Mes tickets », palette) et le doc workspace ne quitte jamais la machine.
 33. **Erreurs de la sync côté démon** : `SyncStatus.lastError` et `SyncProjectStatus.lastError` portent un code stable (`UNAUTHORIZED`, `DEVICE_REVOKED`, `ACCESS_REVOKED`, `SYNC_OFFLINE`, `TLS_REQUIRED`…), traduit par l'UI dans `fr-collab.ts` ; aucun texte français dans le démon (règle de `CLAUDE.md`).
 34. **Version révoquée** : ne peut pas être réapprouvée (`approveComponent` refuse une version dont `revoked` n'est pas `null`, T20) ; on installe une autre version.
 35. **Source d'équipe** : une source de marketplace est « d'équipe » (publication possible, écran M8) quand son URL est `<origine HTTPS du serveur de sync>/market/` (décision 21) ; aucune autre source n'accepte de publication depuis l'UI.
 36. **Sessions de la CLI** : chaque commande `kibo` qui appaire par le jeton crée une session persistée « Commande kibo » (30 jours glissants, révocable) ; la réutilisation d'un cookie par la CLI est hors périmètre v1.0.
+37. **Accès distant et widgets sandboxés** (choix du chef d'équipe, délégué par Adam) : le serveur des iframes sandboxées reste sur `127.0.0.1` ; à distance, l'UI, les composants intégrés et les composants de confiance fonctionnent, les widgets sandboxés ne se chargent pas (message dans le cadre de l'instance). Limite documentée de la v1.0 (T13, T25, rapport du jalon).
+38. **Écran 15 réduit** (choix du chef d'équipe, délégué par Adam) : l'entrée « Apparence » des Paramètres est activée avec le seul bloc « Accès web » (générer un code d'appairage) ; le reste de l'écran 15 est un écart listé au jalon (T25).
 
 ## Écrans à dessiner (Penpot, avant les tâches UI)
 
-Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Restent à dessiner : **S3**, **S7**, **M3**, **M4**, **M5**, **M6**, **M7** (bannière et ligne de l'écran 19), **M8**, et la variante « Accès retiré » de S6. Le chef d'équipe les ajoute à la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
+Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Restent à dessiner, par la **tâche 33** (vague 0) : **S3**, **S7**, **M3**, **M4**, **M5**, **M6**, **M7** (bannière de la page Composants, ligne de l'écran 19, message « Backend arrêté — isolation OS indisponible » sur une instance), **M8**, et la variante « Accès retiré » de S6. Ils vont sur la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
 
 **S1 · Paramètres › Sync** (nouvelle section du menu Paramètres, entre Intégrations et Sécurité). Sous-titre « Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ». »
 - *Non configuré* : encart vide (icône nuage barré), texte « Aucun serveur de sync configuré. », bouton « Se connecter à un serveur ».
@@ -642,19 +644,19 @@ Une vague démarre quand toutes les tâches dont elle dépend sont intégrées d
 
 | Vague | Tâches en parallèle | Dépendances (tâche ← tâches) | Fichiers partagés dans la vague | Écrans |
 |---|---|---|---|---|
-| 0 | T0 (kibo-lead), puis T1 et T8 | T1 ← v0.6 · T8 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`) | — |
+| 0 | T0 (kibo-lead), puis T1, T8 et T33 | T1, T8, T33 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`, T33 que `design/`) | T33 dessine S3, S7, M3–M8, S6 « Accès retiré » |
 | 1 | T2, T4, T5, T6 | T2, T4, T5, T6 ← T1 | `schema/src/rpc.ts`, `schema/src/index.ts` (T4, T5, T6) ; fixtures `ProjectSnapshot` (T5, T6) | — |
 | 2 | T3, T7, T9, T10, T11 | T3 ← T2 · T7 ← T6 · T9 ← T1, T4 · T10 ← T2, T5 · T11 ← T2, T4 | `trust/src/index.ts` (T3, T10) | — |
 | 3 | T12, T13, T14, T15, T16 | T12 ← T8, T9 · T13 ← T3, T9 · T14 ← T7, T11 · T15 ← T9, T10 · T16 ← T10, T11 | `daemon/src/daemon.ts` (T12, T13, T15) ; `daemon/src/server.ts` (T13) ; `sync-server/src/index.ts`, `package.json` (T14, T16) ; `daemon/package.json` (T15) | — |
-| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7, écran 19 (78) |
-| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3, M5 |
+| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13, T33 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7, écran 19 (78) |
+| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25, T33 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3, M5 |
 | 6 | T22, T23, T28 | T22 ← T16, T20, T21 · T23 ← T7, T21 · T28 ← T21, T25 | `daemon.ts` (T22, T23) ; `collab/rpc.ts`, `collab/bootstrap.ts` (T23 seul) | T28 : S1 (69, 70), S9 |
-| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26 · T29 ← T23, T28 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4, M6, M8, S7 · T29 : S2 (65, 66), S3, S6 (68) |
+| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26, T33 · T29 ← T23, T28, T33 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4, M6, M8, S7 · T29 : S2 (65, 66), S3, S6 (68) |
 | 8 | T30, T32 | T30 ← T6, T21, T24, T29 · T32 ← T15, T26, T27 | `e2e/playwright.config.ts`, `e2e/package.json` (T32 seul) | T30 : S4, S5 (67) |
 | 9 | T31 | T31 ← T17, T28, T29, T30 | `e2e/playwright.config.ts`, `e2e/package.json` (après T32) | — |
 | Jalon | conformité, tag `v1.0`, rapport final | tout | — | toutes |
 
-Séquences imposées par des fichiers communs (et non par des symboles) : T3 après T2 (même `trust/src/index.ts`, `bytes.ts` consommé) ; T13 après T9 (`server.ts`, `daemon.ts`) ; T24 après T23 (`collab/rpc.ts`, `collab/bootstrap.ts`, harnais) ; T26 après T25 et T28 après T25 (`Screen`, `SettingsNav`, `ScreenView`, `lazy-screens`, `target-hash`, `screens.ts`) ; T30 après T29 (`Shell.tsx`, `PageView.tsx`, `fr.ts`). T8 est indépendant de tout et peut tourner dès la vague 0.
+Séquences imposées par des fichiers communs (et non par des symboles) : T3 après T2 (même `trust/src/index.ts`, `bytes.ts` consommé) ; T13 après T9 (`server.ts`, `daemon.ts`) ; T24 après T23 (`collab/rpc.ts`, `collab/bootstrap.ts`, harnais) ; T26 après T25 et T28 après T25 (`Screen`, `SettingsNav`, `ScreenView`, `lazy-screens`, `target-hash`, `screens.ts`) ; T30 après T29 (`Shell.tsx`, `PageView.tsx`, `fr.ts`). T8 est indépendant de tout et peut tourner dès la vague 0. T33 (maquettes, chef d'équipe) tourne en vague 0 ; en dépendent T25 (M7), T26 (M3, M5), T27 (M4, M6, M7 instance, M8, S7) et T29 (S3, S6 « Accès retiré »).
 
 Chemin critique (10 vagues après T0) : T1 → T2 → T11 → T14 → T17 → T21 → T23 → T24 → T30 → T31 (et T6 → T7 → T14). Tâches à risque relues aussi par `kibo-lead` : T7, T12, T14, T17, T19, T21 ; T6 touche de nombreux fichiers d'UI et de composants (affichage de `keyLabel`) : l'intégrer en premier de sa vague.
 
@@ -747,8 +749,8 @@ git commit -m "docs: recalage du plan de la phase 7"
 - Hypothèses : 22 lignes « Hypothèse v0.6 » et 19 lignes du tableau Prérequis, toutes confrontées au code et remplacées par « Vérifié en T0 : » (tâches) ou par la colonne « Réel » (tableau). Écarts majeurs : isolation OS, canal par lignes, validation sandboxée et test d'évasion déjà livrés en phase 4 (T8 et T12 réécrites) ; événements `ChangeMessage` au lieu de `DaemonEvent` ; RPC par groupes Zod et branchement dans `daemon.ts` ; collisions `Role`, `SyncState`, `src/sync/` ; secrets, magasin, registre, aperçu de confiance, UI (Paramètres par `Screen`, pas de `StatusBar` ni de `FirstRunPage`) ; `folder` dans le doc projet ; liaisons et assignés au nom d'utilisateur OS.
 - Écarts de l'étape 1b : tous appliqués (T1, T2, T5, T12, T13, T15, T20, T21, T22, T23, T24, T27).
 - Plateforme (étape 3) : Bun 1.4.2, loro-crdt 1.16.3, fast-check 4.3.0 (core seulement) ; canal du `ProcessHost` : tubes sur les descripteurs 3 et 4, sans variable d'environnement à transmettre.
-- Décisions nouvelles 1 à 36 reportées dans les specs G et H (§13).
-- Points à faire trancher par Adam : voir le rapport de T0 (accès distant et widgets sandboxés, écran 15 réduit au bloc « Accès web »).
+- Décisions nouvelles 1 à 38 reportées dans les specs G et H (§13) ; D37 (widgets sandboxés non chargés à distance) et D38 (écran 15 réduit au bloc « Accès web ») tranchées par le chef d'équipe sur délégation d'Adam.
+- Points ouverts intégrés : domaines via `projectDomains`, dossier conservé dans la liste du workspace et `viewer` = `userId` (T23, T30), journal de la révocation marketplace (T15), message M7 d'instance (T27), maquettes restantes (T33, vague 0).
 
 
 ---
@@ -8792,6 +8794,7 @@ Côté démon de la chaîne de vérification (spec H §3.3, §4, §5.2, §6) : s
 - Create: `packages/daemon/src/market/market-db.ts`, `packages/daemon/src/market/http-get.ts`, `packages/daemon/src/market/market-service.ts`, `packages/daemon/src/market/registry-port.ts`, `packages/daemon/src/market/refresh-schedule.ts`, `packages/daemon/src/market/rpc.ts`, `packages/daemon/src/market/bootstrap.ts`, `packages/daemon/src/testing/fake-market.ts`, `packages/daemon/src/testing/memory-registry.ts`
 - Modify: `packages/daemon/src/daemon.ts` (une ligne dans `assemble` : `startMarket`, son gestionnaire RPC passé à `startServer`, son arrêt dans `closers`), `packages/daemon/src/main.ts` (lecture de `KIBO_MARKET_ALLOW_LOOPBACK`), `packages/daemon/package.json` (dépendance `@kibo/trust`)
 - Test: `packages/daemon/src/market/http-get.test.ts`, `packages/daemon/src/market/market-service.test.ts`, `packages/daemon/src/market/registry-port.test.ts`, `packages/daemon/src/market/rpc.test.ts`
+- Modify: `packages/daemon/src/components/service.ts` (`ComponentsService.events` exposé, une ligne de journal par révocation marketplace)
 
 **Interfaces:**
 - Consumes: `verifyIndex`, `verifyMarketPackage`, `decodeKpkg`, `keyFingerprint`, `signIndex`, `generateKeyPair`, `utf8`, `type KeyPair`, `type SourceFile` (`@kibo/trust`, T2 et T10) ; `makeTestPackage` (`@kibo/trust/testing`, T10) ; `MarketIndex`, `Kpkg`, `KPKG_MAX_BYTES`, `MARKET_FETCH_TIMEOUT_MS`, `MARKET_REFRESH_MS`, `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `RegistryVersion` (avec `source`, `revoked`), `ComponentKind`, `KiboError` (`@kibo/schema`, T1 et T5) ; le message `{ type: "market.changed" }` de `ChangeMessage` (T4) ; `RpcContext`, `RpcOutcome`, `RpcHandler`, `requireLocal` et l'option `handlers` de `startServer` (`packages/daemon/src/rpc-extensions.ts`, T9) ; `LocalSettings` n'est pas utilisé.
@@ -8807,7 +8810,7 @@ Côté démon de la chaîne de vérification (spec H §3.3, §4, §5.2, §6) : s
   - `MarketDb`, `MarketSourceRow`, `openMarketDb(db: Database): MarketDb`.
   - `HttpGet`, `createHttpGet(opts: { allowLoopbackHttp: boolean; ca?: string | null; fetchImpl?: typeof fetch }): HttpGet` (Contrats, **option `ca` ajoutée** : autorité supplémentaire pour une source d'équipe auto-hébergée, reprise du `caFile` de la sync).
   - `MarketService` des Contrats, avec **`deps.log(message: string, error: unknown): void` et `deps.emit(): void` en plus**, et `deps.notify(notice: Notice): void` synchrone (signatures signalées au chef d'équipe).
-  - `RegistryPort` des Contrats avec **`revoke(id, version, reason, at): void` synchrone** ; `createRegistryPort(input: { docs: Docs; components: Pick<ComponentsService, "registry" | "usageChanged"> }): RegistryPort` (`registry-port.ts`).
+  - `RegistryPort` des Contrats avec **`revoke(id, version, reason, at): void` synchrone** ; `createRegistryPort(input: { docs: Docs; components: Pick<ComponentsService, "registry" | "usageChanged" | "events"> }): RegistryPort` (`registry-port.ts`) ; `ComponentsService.events: EventLog` (révocation marketplace journalisée `kind: "market-revoked"`, `code: "REVOKED"`).
   - `startMarket(deps: { db: Database; docs: Docs; components: ComponentsService; notify(notice: Notice): void; allowLoopbackHttp: boolean; now?: () => number }): { market: MarketService; handler: RpcHandler; stop(): void }` (`bootstrap.ts`).
   - `startMarketRefresh(service: MarketService, opts: { intervalMs: number; log(message: string, error: unknown): void }): () => void`.
   - `createMarketRpc(market: MarketService): RpcHandler`.
@@ -10000,6 +10003,12 @@ test("a revocation removes trust, records the reason and keeps the entry", async
   expect(v?.trust).toBeNull();
   expect(v?.approvedHash).toBeNull();
   expect(v?.revoked).toEqual({ reason: "Faille de sécurité", at: 42 });
+  h.components.events.flush();
+  expect(h.components.events.list().map((e) => [e.ref, e.kind, e.code])).toContainEqual([
+    `hello@${version}`,
+    "market-revoked",
+    "REVOKED",
+  ]);
 });
 ```
 
@@ -10015,7 +10024,7 @@ import type { RegistryPort } from "./market-service";
 
 export function createRegistryPort(input: {
   docs: Docs;
-  components: Pick<ComponentsService, "registry" | "usageChanged">;
+  components: Pick<ComponentsService, "registry" | "usageChanged" | "events">;
 }): RegistryPort {
   const ws = input.docs.workspace;
   const persist = () => {
@@ -10035,12 +10044,13 @@ export function createRegistryPort(input: {
     revoke: (id, version, reason, at) => {
       updateRegistryVersion(ws, id, version, { revoked: { reason, at } });
       input.components.registry.revoke(id, version);
+      input.components.events.record({ projectId: "-", instanceId: "-", ref: `${id}@${version}`, kind: "market-revoked", code: "REVOKED" });
       input.components.usageChanged();
     },
   };
 }
 ```
-(`registry.revoke` persiste le workspace et émet `{ projectId: null }` ; l'écriture de `revoked` qui la précède part donc dans la même sauvegarde.)
+(`registry.revoke` persiste le workspace et émet `{ projectId: null }` ; l'écriture de `revoked` qui la précède part donc dans la même sauvegarde.) La révocation laisse une ligne dans le journal `component_events` : `ComponentsService` expose son journal. Dans `packages/daemon/src/components/service.ts`, ajouter `events: EventLog` au type `ComponentsService` (import de type depuis `./events`) et `events,` à l'objet renvoyé par `createComponentsService` (le journal `const events = createEventLog(deps.db)` existe déjà) ; aucune autre modification.
 
 Run: `bun test packages/daemon/src/market/registry-port.test.ts`
 Expected: PASS.
@@ -10116,7 +10126,7 @@ Expected: aucune erreur.
 - [ ] **Step 15: Commit**
 
 ```bash
-git add packages/daemon/package.json packages/daemon/src/market packages/daemon/src/testing/fake-market.ts packages/daemon/src/testing/memory-registry.ts packages/daemon/src/daemon.ts packages/daemon/src/main.ts bun.lock
+git add packages/daemon/package.json packages/daemon/src/market packages/daemon/src/components/service.ts packages/daemon/src/testing/fake-market.ts packages/daemon/src/testing/memory-registry.ts packages/daemon/src/daemon.ts packages/daemon/src/main.ts bun.lock
 git commit -m "feat(daemon): sources de marketplace"
 ```
 
@@ -16027,6 +16037,8 @@ Vague 6. Spec G §3.3, §3.4, §5 (point 2), §6 (rôles, retrait), §6.2, §8 (
 - Modify: `packages/daemon/src/docs.ts`, `packages/daemon/src/service.ts` (`docs.projectMeta`, `docs.identity` / `setIdentity`, `getProject` et `listProjects` avec le dossier local)
 - Modify: `packages/daemon/src/agents/data-port.ts` (`ticketContext`), `packages/daemon/src/components/service.ts` (projet des notes), `packages/daemon/src/integrations/host.ts` (`gitRemoteUrl`, `identity`), `packages/daemon/src/integrations/types.ts` (`IntegrationHost.identity`), `packages/daemon/src/sync/engine.ts` (`runnable`), `packages/daemon/src/sync/module.ts` (`createBinding`) : lecteurs du dossier et de l'identité locale
 - Modify: `packages/core/src/keys.ts`, `packages/core/src/keys.test.ts` (`restoreLocalAllocation`)
+- Modify (étapes 6d à 6f) : `packages/core/src/share-migration.ts` (`listProjectDomains`), `packages/schema/src/rpc.ts` (`ProjectSnapshot.domains?`, `ProjectSnapshot.viewer?`), `packages/ui/src/shell/Shell.tsx`, `packages/ui/src/shell/ShellDialogs.tsx`, `packages/ui/src/shell/ContentView.tsx`, `packages/ui/src/agents/AssignDialog.tsx`, `packages/ui/src/mine/MyTicketsPage.tsx`
+- Create: `packages/ui/src/lib/project-domains.ts`, `packages/ui/src/lib/project-domains.test.ts`
 
 **Interfaces:**
 - Consumes: `SyncClient` (`request`, `send`, `onFrame`, `attachProject`, `detachProject`, `status`, `membersOf`), `SyncDb`, `ProjectHostRegistry` (`host`, `setLocked`, `mutate`, `addJoinedProject`, `localUser`), `startSyncHarness` (T21) ; `migrateForSharing`, `allocateTicketKeys`, `getKeyAllocator`, `listTickets` (T6, T7) ; `toBase64`, `fromBase64`, `generateKeyPair` (T2) ; `MemberInfo`, `ProjectSyncInfo`, `MemberRole` (T4) ; `listDomains(ws)`, `listGuidelines(ws)` (`@kibo/core/agent-config`) ; `createProjectSettings(db): ProjectSettings` (`packages/daemon/src/notes/settings.ts`) ; `getBinding(doc, id)` (`@kibo/core`) ; `ShareMigrationInput` (T7, domaines avec leurs guidelines).
@@ -16518,6 +16530,31 @@ Run ⇒ PASS. Un projet jamais partagé n'a pas cette clé : comportement v0.6 i
 
 6c. `collab/bootstrap.ts` (T21) construit `ShareDeps` : `client`, `db: syncDb`, `hosts`, `domains: () => listDomains(service.docs.workspace).map((domain) => ({ domain, guidelines: listGuidelines(service.docs.workspace).filter((g) => g.owner.scope === "domain" && g.owner.domainId === domain.id).map((g) => ({ path: g.path, content: g.content })) }))`, `settings: createProjectSettings(store.db)`, `syncInfo: (id) => projectSyncInfo({ row: syncDb.project(id), doc: hosts.host(id).doc(), members: client.membersOf(id) })` ; il passe `share` à `handleSyncRpc` et installe `service.docs.setIdentity((id) => { const row = syncDb.project(id); const config = syncDb.config(); return row && config ? config.userId : opts.user; })`. `startSyncHarness` fait de même.
 
+6d. **Domaines d'un projet partagé** (spec G §3.3). Test ajouté à `share.test.ts` :
+```ts
+test("a shared project shows and injects the domains copied into projectDomains", async () => {
+  const p = await sharedProject({ domain: { name: "Intégrations", color: "#8B5CF6" } });
+  const snapshot = (await rpc(1, { method: "getProject", projectId: p })) as ProjectSnapshot;
+  expect(snapshot.domains?.map((d) => d.name)).toEqual(["Intégrations"]);
+  const local = (await rpc(0, { method: "createProject", name: "Perso", key: "PER", folder: null, color: "#14B8A6" })) as ProjectMeta;
+  expect(((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).domains).toBeUndefined();
+});
+```
+(`sharedProject` gagne une option `domain` qui crée le domaine dans le workspace du démon 0 et l'affecte à un ticket avant le partage.) Implémentation : `listProjectDomains(doc: LoroDoc): Domain[]` dans `packages/core/src/share-migration.ts` (lecture de la map `projectDomains`, `id` = clé) ; `ProjectSnapshot.domains?: Domain[]` (`packages/schema/src/rpc.ts`, facultatif pour ne toucher aucune fixture) renseigné par `getProject` pour un projet partagé ; `ticketContext` (`agents/data-port.ts`) prend le domaine et ses guidelines dans `projectDomains` pour un projet partagé, dans le workspace sinon. Côté UI, les lecteurs de `config.domains` dans un contexte de projet (`Shell.tsx` → `TicketSheet`, `ShellDialogs.tsx`, `ContentView.tsx`, `AssignDialog.tsx`, `MyTicketsPage.tsx`) passent par `projectDomainsOf(project, config)` (`packages/ui/src/lib/project-domains.ts` : `project.domains ?? config.domains`), avec un test `project-domains.test.ts`. L'écran Domaines (Paramètres) reste celui du workspace.
+
+6e. **Dossier dans la liste `projects` du workspace** : conservé (tranché en T0). Il est lu hors du doc projet (`listProjects` ⇒ vue d'ensemble, « Mes tickets » `canRun`, palette, `components/service.ts`), et le doc workspace ne quitte jamais la machine (spec G §3.4) : c'est la copie locale de référence, `project_settings` n'en est que le miroir pour les lecteurs du doc projet. Test ajouté à `share.test.ts` : après `shareProject`, `listProjects` renvoie toujours le dossier du projet et `getProject(p).meta.folder` aussi, alors que `getProjectMeta(hosts.host(p).doc()).folder` vaut `null`.
+
+6f. **`viewer` = identité locale (décision 31)**. Test ajouté à `share.test.ts` :
+```ts
+test("the viewer of a shared project is the account, of a local one the OS user", async () => {
+  const p = await sharedProject();
+  const local = (await rpc(0, { method: "createProject", name: "Perso", key: "PER", folder: null, color: "#14B8A6" })) as ProjectMeta;
+  expect(((await rpc(0, { method: "getProject", projectId: p })) as ProjectSnapshot).viewer).toBe(d(0).client.status().user?.id);
+  expect(((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).viewer).toBe("adam");
+});
+```
+`ProjectSnapshot.viewer?: string` (`packages/schema/src/rpc.ts`, facultatif) vaut `docs.identity(projectId)`, renseigné par `getProject` ; l'UI l'utilise en T30.
+
 - [ ] **Step 7: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/share.test.ts packages/daemon/src/project-folder.test.ts packages/core/src/keys.test.ts packages/daemon/src/sync packages/daemon/src/integrations`
@@ -16538,6 +16575,11 @@ git add packages/daemon/src/collab/share.ts packages/daemon/src/collab/share.tes
   packages/daemon/src/collab/bootstrap.ts packages/daemon/src/testing/sync-harness.ts \
   packages/core/src/keys.ts packages/core/src/keys.test.ts
 git commit -m "feat(daemon): partager et rejoindre un projet"
+git add packages/core/src/share-migration.ts packages/schema/src/rpc.ts packages/daemon/src/service.ts \
+  packages/daemon/src/agents/data-port.ts packages/daemon/src/collab/share.test.ts packages/ui/src/lib/project-domains.ts \
+  packages/ui/src/lib/project-domains.test.ts packages/ui/src/shell/Shell.tsx packages/ui/src/shell/ShellDialogs.tsx \
+  packages/ui/src/shell/ContentView.tsx packages/ui/src/agents/AssignDialog.tsx packages/ui/src/mine/MyTicketsPage.tsx
+git commit -m "feat: domaines et viewer d'un projet partagé"
 ```
 
 ---
@@ -16886,6 +16928,8 @@ git commit -m "feat(daemon): présence des membres"
 ### Task 25: UI Paramètres › Sécurité et appairage par code
 
 Vague 4. Maquettes Penpot **déjà dessinées** : **71** « Paramètres › Sécurité (accès distant activé) » et **72** « Activer l'accès distant (dialogue) » (script `design/penpot/scripts/14-sync.js`, écran S8), **15** (Paramètres › Apparence, bloc « Accès web · Générer un code »), **19** (premier lancement) et **78** (échec d'une vérification, modèle de la ligne M7), **31** (appairage par code à 6 caractères). La bannière M7 de la page Composants reste à dessiner (chef d'équipe). Prérequis : T4, T9, T12, T13 intégrés. Textes mot pour mot des maquettes, au tutoiement, dans un nouveau fichier `packages/ui/src/i18n/fr-security.ts`.
+
+**Maquettes :** T33 intégrée (M7 dessiné et exporté en sombre et en clair).
 
 Vérifié en T0 :
 - Il n'y a ni `SETTINGS_SECTIONS` ni `pages/settings/` : les Paramètres sont des **écrans** (`Screen` de `packages/schema/src/tabs.ts` : `"agents" | "queue" | "general" | "domains" | "components" | "mine" | "integrations"`), chacun rendu par une page de `packages/ui/src/settings/` qui affiche elle-même `SettingsNav` (`<div className="grid min-h-full grid-cols-[14rem_1fr]"><SettingsNav active="…" />…`). `SettingsNav` (`settings/SettingsNav.tsx`) a un tableau local `ITEMS` ; les entrées « Apparence » (`appearance`) et « Sécurité » (`security`) existent déjà, **désactivées** (pas de `screen`, titre « Bientôt »). Ajouter un écran demande : `Screen` (schéma), `SCREENS` (`tabs/screens.ts`), `SCREEN_HASHES` (`tabs/target-hash.ts`), `lazy-screens.ts`, `ScreenView.tsx`, le type `SettingsScreen` et `ITEMS` de `SettingsNav`, l'état actif du bouton Paramètres de `AppSidebar.tsx`. La palette suit `Screen.options` sans modification.
@@ -18068,6 +18112,8 @@ git commit -m "feat(ui): paramètres de sécurité"
 
 Écrans **M1** (onglet Marketplace), **M2** (détail d'un paquet, « Voir le code »), **M3** (Paramètres › Composants › Sources) et **M5** (variantes marketplace de l'écran 30), en sombre et en clair, fidèles à leur dessin Penpot. Spec H §4 (écran 30), §5.2.
 
+**Maquettes :** T33 intégrée (M3 et M5 dessinés et exportés en sombre et en clair).
+
 **Prérequis :** écrans M1, M2, M3 et M5 dessinés et exportés par le chef d'équipe.
 
 **Files:**
@@ -19167,7 +19213,9 @@ git commit -m "feat(ui): sources de marketplace"
 
 Écrans **M4** (onglet Installés : mise à jour disponible, révoqué), **M6** (clé d'éditeur changée), **M8** (publier sur la marketplace) et **S7** (composant absent), en sombre et en clair. Spec H §4 (révocation), §5.1, §5.3, §5.5.
 
-**Prérequis :** écrans M4, M6, M8 et S7 dessinés et exportés.
+**Prérequis :** T33 intégrée (écrans M4, M6, M7, M8 et S7 dessinés et exportés).
+
+**Files (M7, étape 9b) :** Create `packages/ui/src/pages/BackendStopped.tsx`, `packages/ui/src/pages/backend-stopped.test.tsx` ; Modify `packages/ui/src/pages/InstanceFrame.tsx`, `packages/ui/src/i18n/fr-market.ts`.
 
 **Files:**
 - Create: `packages/daemon/src/market/summary.ts`, `packages/ui/src/components-page/MarketUpdateDialog.tsx`, `packages/ui/src/components-page/VersionCell.tsx`, `packages/ui/src/components-page/PublishToMarketDialog.tsx`, `packages/ui/src/dialogs/PublisherChangedDialog.tsx`, `packages/ui/src/pages/MissingComponent.tsx`, `packages/ui/src/lib/market-update.ts`, `packages/ui/src/state/use-market-status.ts`
@@ -20305,6 +20353,10 @@ Dans `InstanceFrame.tsx` (`ThirdParty`), remplacer `if (!summary || !v) return <
 Run: `bun test packages/ui/src/pages`
 Expected: PASS.
 
+- [ ] **Step 9b: Backend arrêté faute d'isolation OS (M7, instance)**
+
+`packages/ui/src/pages/backend-stopped.test.tsx` : avec un faux client dont `getSandboxStatus` renvoie `{ kind: null, available: false, reason: "bubblewrap (bwrap) is not installed", fix: "sudo apt install bubblewrap", allowUnsandboxed: false }`, `InstanceFrame` d'une version sandboxée **dont le manifeste déclare un backend** affiche au-dessus du cadre le bandeau ambre « Backend arrêté — isolation OS indisponible » (`role="status"`) et rend toujours l'UI du composant ; aucun bandeau quand `available` est vrai, quand `allowUnsandboxed` est vrai, pour une version `trusted` ou sans backend ; le bandeau disparaît sur `{ type: "sandbox.changed" }`. Run ⇒ FAIL. Implémentation : `packages/ui/src/pages/BackendStopped.tsx` lit l'état par `useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"])` (T25) et `InstanceFrame.tsx` le rend quand `summary.trust === "sandboxed"` et que le manifeste a un `server` ; texte `backendStopped: "Backend arrêté — isolation OS indisponible"` dans `fr-market.ts`. Run ⇒ PASS. Contrôle visuel face à l'export M7.
+
 - [ ] **Step 10: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui packages/daemon/src/market packages/daemon/src/components && bun run --cwd packages/ui build && bun run budget`
@@ -20317,7 +20369,8 @@ git add packages/schema/src/component.ts packages/schema/src/market.ts packages/
 git commit -m "feat(daemon): état marketplace des composants"
 git add packages/ui/src/i18n/fr-market.ts packages/ui/src/lib/market-update.ts packages/ui/src/lib/market-update.test.ts packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/state/use-market-status.ts packages/ui/src/components-page packages/ui/src/dialogs/PublisherChangedDialog.tsx packages/ui/src/pages/PendingTrust.tsx
 git commit -m "feat(ui): mises à jour marketplace"
-git add packages/ui/src/pages/MissingComponent.tsx packages/ui/src/pages/missing-component.test.tsx packages/ui/src/pages/InstanceFrame.tsx
+git add packages/ui/src/pages/MissingComponent.tsx packages/ui/src/pages/missing-component.test.tsx packages/ui/src/pages/InstanceFrame.tsx \
+  packages/ui/src/pages/BackendStopped.tsx packages/ui/src/pages/backend-stopped.test.tsx packages/ui/src/i18n/fr-market.ts
 git commit -m "feat(ui): composant absent"
 ```
 
@@ -21090,6 +21143,8 @@ git commit -m "feat(ui): paramètres de sync"
 ### Task 29: UI Partage, rejoindre, lecture seule
 
 Vague 7. Écrans à dessiner **S2** (Partager le projet), **S3** (Rejoindre un projet), **S6** (lecture seule, « Accès retiré »), en sombre et en clair. Spec G §3.4, §6 (rôles, retrait), §6.2, §8 (opt-in) ; décisions 9, 22. Le glisser-déposer du Kanban en lecture seule est traité par T30 (accès exposé par le SDK).
+
+**Maquettes :** T33 intégrée (S3 et la variante « Accès retiré » de S6 dessinés et exportés en sombre et en clair).
 
 **Files:**
 - Create: `packages/ui/src/i18n/fr-share.ts` (clé `share`)
@@ -22415,6 +22470,21 @@ export function KeyRequired({ ticket, children }: Props) {
 - `Shell.tsx` : `trailing={project && <PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} />}` sur `TabBar` ; `usePresenceReporter({ projectId: activeProjectId, pageId: active?.kind === "page" ? active.pageId : null, ticketId: activeTicketId, shared: project?.sync.shared ?? false })`. Si le fichier dépasse 300 lignes avec T29, extraire ce câblage dans `packages/ui/src/shell/use-collab-shell.ts`.
 - `PageView.tsx` : `<PageActions><PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} pageId={page.id} /></PageActions>` (portail vers l'en-tête, déjà utilisé par `ViewActions`).
 
+- [ ] **Step 10b: `viewer` d'un projet partagé (décision 31)**
+
+Test ajouté à `packages/ui/src/mine/my-tickets.test.ts` :
+```ts
+  test("in a shared project, my tickets follow the account id, not the OS user", () => {
+    const base = mineSnapshots.get(kib.id);
+    if (!base) throw new Error("fixture kib missing");
+    const shared = { ...base, viewer: "u-adam", tickets: base.tickets.map((t) => (t.key === "KIB-21" ? { ...t, assignee: { kind: "human" as const, ref: "u-adam" } } : t)) };
+    const groups = myTickets([kib], new Map([[kib.id, shared]]), "adam", "assigned");
+    expect(groups[0]?.tickets.map((t) => t.key)).toContain("KIB-21");
+    expect(groups[0]?.tickets.some((t) => t.assignee?.ref === "adam")).toBe(false);
+  });
+```
+Run: `bun test packages/ui/src/mine/my-tickets.test.ts` ⇒ FAIL (KIB-21 absent). Dans `myTickets`, filtrer par `isMine(t, snapshots.get(project.id)?.viewer ?? viewer, tab)`. Dans `Shell.tsx`, `PageView` et `InstanceFrame` reçoivent `project.viewer ?? viewer` (le `viewer` transmis à l'iframe et au SDK), ce qui aligne le filtre « Moi + agents » du Kanban et `assigneeLabel` sur l'`userId` d'un projet partagé (`ProjectSnapshot.viewer` vient de T23). Le cas du Kanban est couvert par un test ajouté à `components/kanban/src/kanban.test.tsx` : SDK simulé avec `viewer: "u-adam"` et un ticket assigné à `{ kind: "human", ref: "u-adam" }`, visible sous le filtre « Moi + agents ». Run ⇒ PASS.
+
 - [ ] **Step 11: Vérifier**
 
 Run: `bun test packages components`
@@ -22432,7 +22502,7 @@ git add components/kanban/src components/tickets/src packages/ui/src/i18n/fr-pre
   packages/ui/src/shell/PresenceAvatars.tsx packages/ui/src/shell/KeyRequired.tsx packages/ui/src/state/use-presence.ts \
   packages/ui/src/shell/presence.test.tsx packages/ui/src/shell/TicketSheet.tsx packages/ui/src/pages/TicketTab.tsx \
   packages/ui/src/agents/AssignDialog.tsx packages/ui/src/tabs/TabBar.tsx packages/ui/src/pages/PageView.tsx \
-  packages/ui/src/shell/Shell.tsx
+  packages/ui/src/shell/Shell.tsx packages/ui/src/mine/my-tickets.ts packages/ui/src/mine/my-tickets.test.ts
 git commit -m "feat(ui): présence et clé provisoire"
 ```
 
@@ -22923,6 +22993,43 @@ git commit -m "test(e2e): parcours marketplace"
 ```
 
 ---
+
+### Task 33: Maquettes Penpot S3, S7, M3 à M8 et variante « Accès retiré » de S6
+
+Vague 0, tâche du chef d'équipe (pas de code). Complète la page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, écrans 65 à 75 déjà dessinés) avec les écrans décrits dans « Écrans à dessiner » : **S3** (Rejoindre un projet), **S6** variante « Accès retiré », **S7** (composant absent, deux sous-textes), **M3** (Paramètres › Composants › Sources et dialogue d'ajout en deux étapes), **M4** (onglet Installés : mise à jour disponible, révoqué), **M5** (écran 30 : sous-titres « vérifié / non vérifié », badge « Nouvel éditeur », avertissement marketplace), **M6** (clé d'éditeur changée), **M7** (bannière de la page Composants, ligne de l'écran 19 sur le modèle de l'écran 78, message « Backend arrêté — isolation OS indisponible » sur une instance), **M8** (publier sur la marketplace). Données : `design/donnees-fictives.md` (Adam, Léa, `sync.kibo.test`).
+
+En dépendent : T25 (M7), T26 (M3, M5), T27 (M4, M6, M7 instance, M8, S7), T29 (S3, S6 « Accès retiré »).
+
+**Files:**
+- Modify: `design/penpot/scripts/14-sync.js` (écrans numérotés à la suite, 79 et plus), `design/penpot/kibo.penpot.xz`, `design/pdf/kibo-design-sombre.pdf`, `design/pdf/kibo-design-clair.pdf`
+- Modify: `design/penpot/README.md` (liste des écrans, si elle les énumère)
+
+- [ ] **Step 1: Dessiner chaque écran en sombre**
+
+Dans Penpot (onglet piloté par l'extension Chrome, procédure de `design/penpot/README.md`), à partir des bases existantes (écran 6 pour M3, M4, M8 ; écran 30 pour M5 ; écran 8 pour S3, S6, S7 ; écran 19 / 78 pour M7), avec shadcn, tokens zinc, orange réservé aux agents, textes au tutoiement repris mot pour mot des descriptions du plan.
+
+- [ ] **Step 2: Variante claire de chaque écran**
+
+Chaque écran existe **en sombre et en clair** (règle de `CLAUDE.md`), contrôlé visuellement côte à côte.
+
+- [ ] **Step 3: Réexporter**
+
+Run: `bash design/penpot/scripts/pack-penpot.sh && bash design/penpot/scripts/build-pdf.sh`
+Expected: `kibo.penpot.xz` et les deux PDF régénérés, les nouveaux écrans présents dans les deux PDF.
+
+- [ ] **Step 4: Reporter les numéros**
+
+Remplacer, dans « Écrans à dessiner » et dans la colonne « Écrans » des vagues, les identifiants S3, S7, M3–M8 et S6 « Accès retiré » par leurs numéros d'écran.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add design/penpot/scripts/14-sync.js design/penpot/kibo.penpot.xz design/pdf/kibo-design-sombre.pdf design/pdf/kibo-design-clair.pdf docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md
+git commit -m "docs: maquettes restantes de la phase 7"
+```
+
+---
+
 ## Jalon v1.0
 
 - [ ] `main` verte en CI sur macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont la propriété de convergence à 200 exécutions, le test d'évasion `components/exit.test.ts` avec isolation OS active), E2E sombre et clair (`mvp`, phases 2 à 6, `sync`, `market`), smoke Tauri, build `kibo-sync`.
@@ -22930,8 +23037,8 @@ git commit -m "test(e2e): parcours marketplace"
 - [ ] Critères de sortie de la spec H §10 : le test d'évasion vert sur les deux OS, y compris le cas « sans durcissement » (T12) ; publication sur la source d'équipe puis installation sur un second démon (T22) ; tous les refus du §4 couverts (T10, T15, T20) ; écrans M1 à M8 conformes en sombre et en clair.
 - [ ] Contrôle visuel du chef d'équipe : chaque écran S et M face à son export Penpot, plus les écrans 3, 6, 15, 19, 30 et 31 modifiés ; écarts listés dans le rapport.
 - [ ] Contrôle manuel de sécurité (liste dans le rapport) : aucune clé privée dans `kibo.db` ni dans les données de `kibo-sync` (recherche des préfixes PKCS8 `MC4CAQAw`), fichiers `0600`, démon toujours sur `127.0.0.1` sans accès distant activé, `ws://` vers une IP non loopback refusé.
-- [ ] Les décisions nouvelles 1 à 36 sont dans les specs G et H (§13, reportées en T0) et à jour ; `CLAUDE.md` à jour (monorepo, arêtes).
-- [ ] Tag `v1.0`, rapport final `docs/superpowers/rapports/<date>-jalon-v1.0.md` : livré par sous-système (G, H, durcissement), écarts (seccomp reporté, bloc « Accès web » seul pour l'écran 15), risques (ci-dessous), comptes nécessaires à un usage réel (spec G et H « Comptes et secrets réels »), puis **arrêt** jusqu'à la validation d'Adam.
+- [ ] Les décisions nouvelles 1 à 38 sont dans les specs G et H (§13, reportées en T0) et à jour ; `CLAUDE.md` à jour (monorepo, arêtes).
+- [ ] Tag `v1.0`, rapport final `docs/superpowers/rapports/<date>-jalon-v1.0.md` : livré par sous-système (G, H, durcissement), écarts (seccomp reporté, D38 : bloc « Accès web » seul pour l'écran 15, D37 : widgets sandboxés non chargés à distance), risques (ci-dessous), comptes nécessaires à un usage réel (spec G et H « Comptes et secrets réels »), puis **arrêt** jusqu'à la validation d'Adam.
 
 **Risques à suivre dans le rapport** : `sandbox-exec` déprécié par Apple ; espaces de noms utilisateur restreints sur certaines distributions ; profil macOS sensible aux versions de Bun et de macOS ; option `tls.ca` du client WebSocket de Bun (T3) ; coût de `LoroDoc.fork()` par lot pour les gros projets (T14) ; le serveur lit les données en clair (pas de chiffrement de bout en bout) ; seccomp non livré.
 
@@ -22948,7 +23055,7 @@ git commit -m "test(e2e): parcours marketplace"
 | G §6 protocole, rôles, retrait, reconnexion | T4, T17, T18, T21, T23 |
 | G §6.1 présence | T24, T30 |
 | G §6.2 intégrations (`runner`) | T7, T23, T29 |
-| G §7 accès distant, sessions persistées | T9, T13, T25 |
+| G §7 accès distant, sessions persistées | T9, T13, T25 (D37, D38) |
 | G §8 chiffrement, opt-in, quotas, audit | T3, T11, T14, T17, T21, T23 |
 | G §9 tests (dont e2e à deux) | T7, T11, T14, T17, T19, T21, T23, T24, T31 |
 | H §3 `.kpkg`, index, tables client, registre | T5, T10, T15 |
@@ -22958,6 +23065,7 @@ git commit -m "test(e2e): parcours marketplace"
 | H §5.3 mettre à jour | T15, T27 |
 | H §5.4 désinstaller (épinglage conservé) | T20 |
 | H §5.5 composant absent | T5, T27 |
+| G §11 et H §10 écrans à dessiner | T33 (S3, S7, M3–M8, S6 « Accès retiré ») ; existants 65–75 |
 | H §6 API | T15, T16, T20, T22 |
 | H §7 sécurité (validation sandboxée, HTTPS) | T15, T20 |
 | H §8 durcissement OS | phase 4 (isolation), T8 (diagnostic), T12 (réglage), T25 (UI) |
