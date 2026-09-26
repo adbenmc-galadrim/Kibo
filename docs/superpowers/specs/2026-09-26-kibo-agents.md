@@ -55,7 +55,7 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 
 - Ordre : rang croissant puis numéro de run (FIFO) ; réordonner calcule un rang entre les voisins ; « prioritaire » = marque + tête de file ; retirer la marque ne déplace pas.
 - Admission, dans l'ordre : pause manuelle, seuil CPU, seuil RAM (raison globale), puis profil supprimé, créneaux du profil, créneaux hôte ; un run bloqué n'empêche pas un run suivant d'un autre profil d'être admis.
-- Créneaux hôte par défaut : `max(1, min(8, ⌊cœurs/2⌋, ⌊Go/5⌋))` (3 pour 8 cœurs et 16 Go) ; réglages hôte (créneaux, seuils, pause) dans `host_settings`, locaux à la machine.
+- Créneaux hôte par défaut : `max(1, min(8, ⌊cœurs/2⌋, ⌊Go/5⌋))` (3 pour 8 cœurs et 16 Go) ; réglages hôte (créneaux, seuils, pause) dans `host_settings`, locaux à la machine. Affichage : « Créneaux hôte : 3 (auto : 8 cœurs, 16 Go) » tant que la valeur est automatique, « Créneaux hôte : 3 (fixé · auto : 5) » une fois fixée.
 - Mesure : CPU = part occupée entre deux échantillons (toutes les 2 s) ; RAM = `memory_pressure -Q` sur macOS (`os.freemem()` y compte le cache comme utilisé : 96 % mesurés), `MemAvailable` de `/proc/meminfo` sur Linux.
 - Étiquette d'un run : `<profil>-<créneau du profil>` (`opus-dev-2`) une fois admis, le nom du profil en file.
 

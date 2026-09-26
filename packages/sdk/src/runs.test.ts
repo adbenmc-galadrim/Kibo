@@ -40,6 +40,7 @@ const state = (runs: RunView[], queue: AgentsState["queue"] = []): AgentsState =
   queue,
   host: {
     hostSlots: 3,
+    slotsFixed: false,
     cpuThreshold: 85,
     ramThreshold: 90,
     paused: false,

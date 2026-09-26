@@ -200,6 +200,7 @@ export const fr = {
     ramUsage: (used: string, total: number) => `${used} / ${total} Go`,
     hostSlots: (n: number, cores: number, ramGb: number) =>
       `Créneaux hôte : ${n} (auto : ${cores} cœurs, ${ramGb} Go)`,
+    hostSlotsFixed: (n: number, auto: number) => `Créneaux hôte : ${n} (fixé · auto : ${auto})`,
     edit: "modifiable",
     slotsLabel: "Créneaux hôte",
     save: "Enregistrer",

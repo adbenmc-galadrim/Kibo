@@ -150,6 +150,7 @@ export type QueueEntry = { runId: string; position: number; reason: WaitReason |
 
 export type HostView = HostSettings & {
   autoSlots: number;
+  slotsFixed: boolean;
   cores: number;
   ramGb: number;
   used: number;

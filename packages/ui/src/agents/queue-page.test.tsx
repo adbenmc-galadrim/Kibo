@@ -42,6 +42,21 @@ test("capacity shows one card per host slot, the gauges and the slot rule", () =
   expect(capacity.getByText("Créneaux hôte : 3 (auto : 8 cœurs, 16 Go)")).toBeTruthy();
 });
 
+test("fixed host slots say so and still give the automatic value", () => {
+  const state = agentsFixture();
+  render(
+    <QueuePage
+      state={{ ...state, host: { ...state.host, autoSlots: 5, slotsFixed: true } }}
+      profiles={profilesFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const capacity = within(screen.getByRole("region", { name: "Capacité de la machine" }));
+  expect(capacity.getByText("Créneaux hôte : 3 (fixé · auto : 5)")).toBeTruthy();
+  expect(capacity.getByRole("button", { name: "modifiable" })).toBeTruthy();
+});
+
 test("each profile lists its running runs and its queue in order", () => {
   show();
   const opus = within(screen.getByRole("region", { name: "opus-dev" }));

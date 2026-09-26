@@ -133,6 +133,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const hostView = (): HostView => ({
     ...settings(),
     autoSlots: defaultHostSlots(opts.hostInfo),
+    slotsFixed: opts.store.hostSettings().hostSlots !== undefined,
     cores: opts.hostInfo.cores,
     ramGb: opts.hostInfo.ramGb,
     used: registry.all().filter(holdsSlot).length,

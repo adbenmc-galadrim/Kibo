@@ -191,6 +191,7 @@ export function agentsFixture(): AgentsState {
       ramThreshold: 90,
       paused: false,
       autoSlots: 3,
+      slotsFixed: false,
       cores: 8,
       ramGb: 16,
       used: 3,

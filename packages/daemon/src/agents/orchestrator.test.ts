@@ -257,7 +257,7 @@ test("four runs on three host slots leave one queued until a slot frees", async 
     return r;
   };
   const snapshot = h.orch.state();
-  expect(snapshot.host).toMatchObject({ hostSlots: 3, autoSlots: 3, used: 3 });
+  expect(snapshot.host).toMatchObject({ hostSlots: 3, autoSlots: 3, slotsFixed: false, used: 3 });
   expect(snapshot.queue).toEqual([
     { runId: at(3).id, position: 1, reason: { kind: "host", used: 3, total: 3 } },
   ]);
@@ -278,9 +278,10 @@ test("above the CPU threshold nothing starts until the threshold is raised", asy
   ]);
   await Bun.sleep(300);
   expect(run(h, r.id).state).toBe("queued");
-  expect(h.orch.setHost({ cpuThreshold: 100 }).cpuThreshold).toBe(100);
+  expect(h.orch.setHost({ cpuThreshold: 100 })).toMatchObject({ cpuThreshold: 100, slotsFixed: false });
   await waitUntil(() => run(h, r.id).state === "done");
   expect(h.store.hostSettings()).toEqual({ cpuThreshold: 100 });
+  expect(h.orch.setHost({ hostSlots: 3 })).toMatchObject({ hostSlots: 3, autoSlots: 3, slotsFixed: true });
 }, 30_000);
 
 test("hooks need the live token of their own run", async () => {

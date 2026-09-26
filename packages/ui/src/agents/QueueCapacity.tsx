@@ -60,7 +60,11 @@ function HostSlotsEditor({ host, onSave }: { host: HostView; onSave: (slots: num
   if (!editing) {
     return (
       <p className="text-xs text-muted-foreground">
-        <span>{fr.queue.hostSlots(host.hostSlots, host.cores, host.ramGb)}</span>
+        <span>
+          {host.slotsFixed
+            ? fr.queue.hostSlotsFixed(host.hostSlots, host.autoSlots)
+            : fr.queue.hostSlots(host.hostSlots, host.cores, host.ramGb)}
+        </span>
         {" · "}
         <button type="button" className="underline-offset-2 hover:underline" onClick={() => setEditing(true)}>
           {fr.queue.edit}
