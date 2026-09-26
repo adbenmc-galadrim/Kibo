@@ -826,7 +826,7 @@ git commit -m "build: script bun run start"
 
 Règles : un créneau est tenu par `starting` et `running` ; un numéro de voie (`lane`, pour le libellé `opus-dev-2`) est tenu par `starting`, `running` et `waiting_input`. Blocage global (pause, puis CPU, puis RAM) : personne n'entre. Sinon, dans l'ordre de la file : profil absent ⇒ `profile_missing` ; profil plein ⇒ `profile` ; hôte plein ⇒ `host` ; un run bloqué n'empêche pas un run d'un autre profil placé derrière lui. « Prioritaire » = placé en tête (rang le plus bas).
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/core/src/scheduler.test.ts` :
 ```ts
@@ -981,12 +981,12 @@ test("default host slots follow cores and memory", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/core/src/scheduler.test.ts`
 Expected: FAIL (`Cannot find module "./scheduler"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/core/src/scheduler.ts` :
 ```ts
@@ -1102,12 +1102,12 @@ export function planAdmissions(input: SchedulerInput): Plan {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/core/src/scheduler.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/scheduler.ts packages/core/src/scheduler.test.ts
