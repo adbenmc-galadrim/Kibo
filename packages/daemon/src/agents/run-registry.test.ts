@@ -1,0 +1,134 @@
+import { afterEach, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { ASK_TOOL, type RunEvent } from "@kibo/schema";
+import { openRunRegistry } from "./run-registry";
+import { type NewRun, openRunStore } from "./run-store";
+
+const dirs: string[] = [];
+const home = () => {
+  const d = mkdtempSync(join(tmpdir(), "kibo-registry-"));
+  dirs.push(d);
+  return d;
+};
+afterEach(() => {
+  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+
+const newRun = (id: string): NewRun => ({
+  id,
+  projectId: "p1",
+  ticketId: `t-${id}`,
+  ticketKey: "KIB-14",
+  ticketTitle: "Récepteur",
+  profileId: "opus",
+  profileName: "opus-dev",
+  sessionId: `s-${id}`,
+  brief: "",
+});
+const spawned: RunEvent = { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 };
+const question: RunEvent = {
+  type: "hook",
+  payload: {
+    event: "PostToolUse",
+    sessionId: "s",
+    transcriptPath: null,
+    tool: ASK_TOOL,
+    detail: null,
+    question: "?",
+    agentId: null,
+  },
+};
+const exit = (tokens: number): RunEvent => ({
+  type: "exited",
+  code: 0,
+  isError: false,
+  result: "ok",
+  tokens,
+  costUsd: 0,
+  denied: [],
+});
+let clock = 1000;
+const now = () => clock;
+
+test("creates and advances runs, telling listeners the previous state", () => {
+  const store = openRunStore(home());
+  const reg = openRunRegistry(store, now);
+  const seen: string[] = [];
+  reg.onChange((run, previous) => seen.push(`${previous ?? "-"}>${run.state}`));
+  expect(reg.create(newRun("r1"), 0)).toMatchObject({ id: "r1", seq: 1, state: "queued", createdAt: 1000 });
+  clock = 1100;
+  expect(reg.apply("r1", { type: "admitted", lane: 1 })).toMatchObject({
+    state: "starting",
+    label: "opus-dev-1",
+  });
+  expect(seen).toEqual(["->queued", "queued>starting"]);
+  expect(reg.log("r1").map((e) => e.event.type)).toEqual(["enqueued", "admitted"]);
+  expect(() => reg.get("nope")).toThrow("NOT_FOUND");
+  store.close();
+});
+
+test("a refused transition appends nothing", () => {
+  const store = openRunStore(home());
+  const reg = openRunRegistry(store, now);
+  reg.create(newRun("r1"), 0);
+  expect(() => reg.apply("r1", { type: "answered", text: "x", rank: 0 })).toThrow("INVALID_TRANSITION");
+  expect(() => reg.apply("r1", spawned)).toThrow("INVALID_TRANSITION");
+  expect(store.log("r1")).toHaveLength(1);
+  expect(reg.get("r1").state).toBe("queued");
+  store.close();
+});
+
+test("restart fails interrupted runs and keeps the others", () => {
+  const h = home();
+  const store = openRunStore(h);
+  const reg = openRunRegistry(store, now);
+  for (const id of ["running", "waiting", "queued", "done"]) reg.create(newRun(id), 0);
+  for (const id of ["running", "waiting", "done"]) {
+    reg.apply(id, { type: "admitted", lane: 1 });
+    reg.apply(id, spawned);
+  }
+  reg.apply("waiting", question);
+  reg.apply("waiting", exit(10));
+  reg.apply("done", exit(20));
+  const before = reg.all();
+  store.close();
+
+  clock = 5000;
+  const reopened = openRunStore(h);
+  const again = openRunRegistry(reopened, now);
+  const state = (id: string) => again.get(id).state;
+  expect([state("running"), state("waiting"), state("queued"), state("done")]).toEqual([
+    "failed",
+    "waiting_input",
+    "queued",
+    "done",
+  ]);
+  expect(again.get("running").error).toStartWith("INTERRUPTED");
+  expect(again.interrupted().map((r) => r.id)).toEqual(["running"]);
+  expect(before.find((r) => r.id === "waiting")).toEqual(again.get("waiting"));
+  expect(reopened.log("running").at(-1)?.event).toEqual({
+    type: "failed",
+    error: "INTERRUPTED: the daemon restarted during the run",
+  });
+  reopened.close();
+
+  const thirdStore = openRunStore(h);
+  const third = openRunRegistry(thirdStore, now);
+  expect(third.log("running").filter((e) => e.event.type === "failed")).toHaveLength(1);
+  thirdStore.close();
+});
+
+test("counts the tokens of the day", () => {
+  const store = openRunStore(home());
+  const reg = openRunRegistry(store, now);
+  clock = 1000;
+  reg.create(newRun("r1"), 0);
+  reg.apply("r1", { type: "admitted", lane: 1 });
+  reg.apply("r1", spawned);
+  reg.apply("r1", exit(300));
+  expect(reg.tokensSince(0)).toBe(300);
+  expect(reg.tokensSince(2000)).toBe(0);
+  store.close();
+});
