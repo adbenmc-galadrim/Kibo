@@ -51,7 +51,9 @@ describe("sandbox server", () => {
     const html = await get(s, `/c/pr-queue/0.3.0/${H}/index.html`);
     expect(html.status).toBe(200);
     expect(html.headers.get("content-type")).toContain("text/html");
-    expect(await html.text()).toContain('<script type="module" src="ui.sandbox.js"></script>');
+    const page = await html.text();
+    expect(page).toContain('<script type="module" src="ui.sandbox.js"></script>');
+    expect(page).toContain('<link rel="stylesheet" href="ui.css" crossorigin="anonymous">');
     expect(html.headers.get("content-security-policy")).toBe(CSP);
     expect(html.headers.get("x-content-type-options")).toBe("nosniff");
     expect(html.headers.get("referrer-policy")).toBe("no-referrer");
@@ -66,7 +68,8 @@ describe("sandbox server", () => {
     const css = await get(s, `/c/pr-queue/0.3.0/${H}/ui.css`);
     expect(css.status).toBe(200);
     expect(css.headers.get("content-type")).toContain("text/css");
-    expect(css.headers.get("access-control-allow-origin")).toBeNull();
+    expect(css.headers.get("access-control-allow-origin")).toBe("*");
+    expect(css.headers.get("cross-origin-resource-policy")).toBe("same-site");
   });
 
   test("anything else is a 404 without a cookie, even with a session cookie", async () => {

@@ -4,7 +4,7 @@ import { type AssetLookup, lookupAsset, parseAssetPath } from "./asset-path";
 export type { AssetLookup } from "./asset-path";
 
 export const SANDBOX_INDEX =
-  '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css"></head>' +
+  '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css" crossorigin="anonymous"></head>' +
   '<body><div id="root"></div><script type="module" src="ui.sandbox.js"></script></body></html>';
 
 const SANDBOX_FILES: readonly SandboxFile[] = ["index.html", "ui.sandbox.js", "ui.css"];
@@ -45,7 +45,7 @@ export function startSandboxServer(opts: { port: number; uiPort: number; assets:
     const body = asset.file === "index.html" ? SANDBOX_INDEX : found.stored.build[asset.file];
     if (body === undefined) return plain("not found", 404);
     const extra: Record<string, string> =
-      asset.file === "ui.sandbox.js" ? { "access-control-allow-origin": "*" } : {};
+      asset.file === "index.html" ? {} : { "access-control-allow-origin": "*" };
     return new Response(body, { headers: { ...headers, "content-type": TYPES[asset.file], ...extra } });
   };
   const server = Bun.serve({
