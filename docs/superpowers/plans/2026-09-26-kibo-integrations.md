@@ -1562,11 +1562,11 @@ export type ComponentIntegrationHooks = {
   - `KiboClient.subscribeIntegrations(listener: (e: IntegrationEvent) => void): () => void` (N24)
   - `GateHandlers.run(projectId: string, instanceId: string, command: ProjectCommand)` (l'`instanceId` de l'appelant est transmis à `docs.run`)
 
-- [ ] **Step 1: Vérifier les ancrages**
+- [x] **Step 1: Vérifier les ancrages**
 
 Le tableau « Points d'ancrage » a été rempli par la tâche T0 (colonne « Réel »). Relire chaque ligne contre `main` au moment de démarrer ; un écart apparu depuis (par exemple après la tâche 30b) est noté dans ce tableau et n'est absorbé que dans `host.ts`, `service.ts` et `daemon.ts`.
 
-- [ ] **Step 2: Tests du caviardage, du journal et des remotes (échouent)**
+- [x] **Step 2: Tests du caviardage, du journal et des remotes (échouent)**
 
 `packages/daemon/src/integrations/redact.test.ts` :
 
@@ -1666,7 +1666,7 @@ test("github remotes are recognised in every usual form", () => {
 
 Run: `bun test packages/daemon/src/integrations` — Expected: FAIL (modules absents).
 
-- [ ] **Step 3: Implémenter `db.ts`, `redact.ts`, `events.ts`, `settings.ts`, `github-remote.ts`**
+- [x] **Step 3: Implémenter `db.ts`, `redact.ts`, `events.ts`, `settings.ts`, `github-remote.ts`**
 
 `packages/daemon/src/integrations/db.ts` :
 
@@ -1836,7 +1836,7 @@ export async function githubRepoOf(host: IntegrationHost, projectId: string): Pr
 
 Run: `bun test packages/daemon/src/integrations` — Expected: les trois fichiers passent.
 
-- [ ] **Step 4: Test du registre et de l'amorçage (échoue)**
+- [x] **Step 4: Test du registre et de l'amorçage (échoue)**
 
 `packages/daemon/src/integrations/registry.test.ts` :
 
@@ -1935,7 +1935,7 @@ test("memory secrets require test origins", () => {
 
 Run: `bun test packages/daemon/src/integrations/registry.test.ts packages/daemon/src/integrations/bootstrap.test.ts` — Expected: FAIL.
 
-- [ ] **Step 5: Implémenter `registry.ts`, `memory-secret-store.ts`, `probes.ts`, `bootstrap.ts`**
+- [x] **Step 5: Implémenter `registry.ts`, `memory-secret-store.ts`, `probes.ts`, `bootstrap.ts`**
 
 `packages/daemon/src/integrations/registry.ts` :
 
@@ -2197,7 +2197,7 @@ export function startIntegrations(host: IntegrationHost, flags: IntegrationFlags
 
 Run: `bun test packages/daemon/src/integrations` — Expected: PASS.
 
-- [ ] **Step 6: Tests du chemin unique et de l'hôte réel (échouent)**
+- [x] **Step 6: Tests du chemin unique et de l'hôte réel (échouent)**
 
 `packages/daemon/src/integrations/host.test.ts` (sur le vrai store et le vrai service ; `call` est l'aide typée de `service.ts`) :
 
@@ -2312,7 +2312,7 @@ test("broadcasts and notices go through the change channel", () => {
 
 Run: `bun test packages/daemon/src/integrations/host.test.ts packages/sdk/src/client.test.ts` — Expected: FAIL.
 
-- [ ] **Step 7: Chemin unique des commandes, store, service, porte, agents (N22)**
+- [x] **Step 7: Chemin unique des commandes, store, service, porte, agents (N22)**
 
 `packages/daemon/src/store.ts` : ajouter au type `Store` `transaction<T>(fn: () => T): T;` et au retour d'`openStore` :
 
@@ -2422,7 +2422,7 @@ Les commandes dérivées des règles passent par les intercepteurs et les observ
 
 Run: `bun test packages/daemon packages/sdk/src/client.test.ts` — Expected: les tests existants du service, de la porte, des agents et du suivi des PR passent ; seuls ceux de l'hôte échouent encore.
 
-- [ ] **Step 8: Hôte, démarrage, serveur, client (N24, N25, N26)**
+- [x] **Step 8: Hôte, démarrage, serveur, client (N24, N25, N26)**
 
 `packages/daemon/src/integrations/host.ts` :
 
@@ -2527,7 +2527,7 @@ et, dans la chaîne `Promise.resolve().then(() => startDaemon({ …, integration
 
 Run: `bun test packages/daemon packages/sdk` — Expected: PASS.
 
-- [ ] **Step 9: Hôte factice pour les tests des autres tâches**
+- [x] **Step 9: Hôte factice pour les tests des autres tâches**
 
 `packages/daemon/src/integrations/testing/fake-host.ts` :
 
@@ -2625,7 +2625,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
 
 (L'hôte factice n'applique pas les règles de statut dérivées : les tâches qui en dépendent testent sur le vrai service, comme `host.test.ts`.)
 
-- [ ] **Step 10: Vérifier et commiter**
+- [x] **Step 10: Vérifier et commiter**
 
 Run: `bun test packages components && bun run check && bun run typecheck`
 Expected: PASS (y compris les tests existants du service, du serveur, de la porte, des agents, du suivi des PR et du client).
