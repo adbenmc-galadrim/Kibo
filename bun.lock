@@ -193,6 +193,7 @@
       },
       "devDependencies": {
         "@kibo/sync-server": "workspace:*",
+        "fast-check": "4.3.0",
       },
     },
     "packages/devkit": {
