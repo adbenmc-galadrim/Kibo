@@ -60,7 +60,9 @@ function Notice({ title, text, onClose }: { title: string; text: string; onClose
 }
 
 function waitingText(project: ProjectSnapshot, ticket: TicketView): string {
-  const deps = ticket.waitingOn.map((key) => project.tickets.find((t) => t.key === key) ?? key);
+  const deps = ticket.waitingOn.map(
+    (label) => project.tickets.find((t) => t.key !== null && t.key === label) ?? label,
+  );
   const labels = deps.map((dep) => {
     if (typeof dep === "string") return dep;
     const status = project.workflow.find((s) => s.id === dep.statusId)?.label.toLowerCase();

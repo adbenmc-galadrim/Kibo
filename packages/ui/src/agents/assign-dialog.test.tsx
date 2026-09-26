@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AssignPreview, KiboError, type RpcRequest } from "@kibo/schema";
+import { type AssignPreview, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture, kiboProject } from "./fixtures";
@@ -64,6 +64,41 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
       brief: "Garder l'ordre dans le LoroTree.",
     },
   ]);
+});
+
+test("a dependency still waiting for its key is shown by its label alone", () => {
+  const project = kiboProject();
+  const pending: TicketView = {
+    id: "p1",
+    key: null,
+    pendingSeq: 1,
+    keyLabel: "KIB-…",
+    title: "Nouveau récepteur",
+    description: "",
+    statusId: "blocked",
+    blockedReason: "Attente",
+    domainId: null,
+    assignee: null,
+    parentId: null,
+    externalRefs: [],
+    progress: { done: 0, total: 0 },
+    waitingOn: [],
+  };
+  const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
+  render(
+    <AssignDialog
+      project={{ ...project, tickets: [...tickets, pending] }}
+      ticketId="t15"
+      config={configFixture()}
+      onClose={() => {}}
+    />,
+  );
+  const status = screen.getByRole("status").textContent;
+  expect(status).toBe(
+    "KIB-15 attend KIB-12 (en cours), KIB-…. L'agent peut démarrer, mais son résultat dépendra de « Schéma Loro des tickets (LoroTree) », KIB-….",
+  );
+  expect(status).not.toContain("Nouveau récepteur");
+  expect(status).not.toContain("bloqué");
 });
 
 test("a free slot means the run starts at once", async () => {
