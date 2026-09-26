@@ -286,3 +286,36 @@ test("pairWithCode posts the code, fails on 401 and reports rate limiting", asyn
   await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "RATE_LIMITED" });
   expect(seen[0]).toEqual({ url: "http://127.0.0.1:1/api/pair-code", body: '{"code":"K7Q4M2"}' });
 });
+
+test("a revoked session (close 4401) stops the reconnection and reports it", async () => {
+  let upgrades = 0;
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => {
+      upgrades += 1;
+      return srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 });
+    },
+    websocket: {
+      open(ws) {
+        ws.close(4401, "session revoked");
+      },
+      message() {},
+    },
+  });
+  const unauthorized = Promise.withResolvers<void>();
+  let reports = 0;
+  const client = createClient({
+    baseUrl: `http://127.0.0.1:${server.port}`,
+    onUnauthorized: () => {
+      reports += 1;
+      unauthorized.resolve();
+    },
+  });
+  const off = client.subscribeEvents(() => {});
+  await unauthorized.promise;
+  await Bun.sleep(1200);
+  expect([upgrades, reports, client.online()]).toEqual([1, 1, false]);
+  off();
+  server.stop(true);
+});

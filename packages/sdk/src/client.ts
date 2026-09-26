@@ -1,5 +1,6 @@
 import {
   AiEvent,
+  CLOSE_CODES,
   CodeEvent,
   type CodeRequest,
   type CodeResult,
@@ -129,9 +130,13 @@ export function createClient(opts: ClientOptions): KiboClient {
       }
       for (const l of listeners) l(msg.projectId ?? null);
     };
-    socket.onclose = () => {
+    socket.onclose = (e) => {
       socket = null;
       setOpen(false);
+      if (e.code === CLOSE_CODES.authFailed) {
+        opts.onUnauthorized?.();
+        return;
+      }
       if (active() > 0) setTimeout(connect, 1000);
     };
   };
