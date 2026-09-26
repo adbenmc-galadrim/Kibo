@@ -45,6 +45,17 @@ const events = () =>
     .all();
 
 describe("components over RPC", () => {
+  test("a component run goes through the command path with its instance", async () => {
+    const { projectId, pageId } = await createProject(h);
+    const inst = await addInstance(h, projectId, pageId, "kanban@1.0.0");
+    const seen: { method: string; instanceId: string | null }[] = [];
+    h.service.commands.onCommand((e) =>
+      seen.push({ method: e.command.method, instanceId: e.meta.instanceId }),
+    );
+    await callOf(projectId, inst)({ kind: "run", command: { method: "createTicket", title: "B" } });
+    expect(seen).toEqual([{ method: "createTicket", instanceId: inst.id }]);
+  });
+
   test("publish, approve, add, then calls are checked against the grant", async () => {
     const { projectId, pageId } = await createProject(h);
     await h.rpc({ method: "command", projectId, command: { method: "createTicket", title: "A" } });
