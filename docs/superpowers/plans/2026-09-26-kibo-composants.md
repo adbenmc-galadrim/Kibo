@@ -18158,18 +18158,18 @@ Documentation seulement (tâche du chef ou d'un `kibo-runner`). Écarts constat�
 **Files:**
 - Modify: `docs/superpowers/specs/2026-09-26-kibo-composants.md` (§15), `docs/superpowers/specs/2026-09-25-kibo-design.md` (§8, ligne « Sidebar »)
 
-- [ ] **Step 1: §15**
+- [x] **Step 1: §15**
 
 Dans §15 de la spec de phase :
 1. remplacer le texte de la décision 16 par celui du plan (décision 16 ci-dessus, mot pour mot) ;
 2. ajouter, après la décision 25, les décisions 26 à 32 du plan, mot pour mot ;
 3. ajouter les lignes E5 et E6 au tableau « Points à arbitrer par Adam » de la spec, mot pour mot.
 
-- [ ] **Step 2: Spec générale**
+- [x] **Step 2: Spec générale**
 
 `docs/superpowers/specs/2026-09-25-kibo-design.md` §8, ligne « **Sidebar** » : après « sélecteur de workspace », ajouter « (en-tête et renommage en phase 4 ; création et bascule entre workspaces : point E6 du plan de phase 4) ».
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `diff <(sed -n '/^## Décisions techniques/,/^### Points à arbitrer/p' docs/superpowers/plans/2026-09-26-kibo-composants.md | grep -E '^[0-9]+\. ') <(sed -n '/^## 15\./,/^Ancrages/p' docs/superpowers/specs/2026-09-26-kibo-composants.md | grep -E '^[0-9]+\. ')`
 Expected: aucune différence.
