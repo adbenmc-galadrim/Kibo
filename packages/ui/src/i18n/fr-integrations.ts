@@ -170,7 +170,6 @@ export const frIntegrations = {
     failed: "La première synchronisation a échoué :",
   },
   sheet: {
-    issueProperty: "Issue",
     issue: (n: number) => `#${n}`,
     openOnGithub: "Ouvrir sur GitHub",
     pending: "Synchronisation en attente",

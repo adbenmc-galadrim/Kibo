@@ -59,7 +59,8 @@ mock.module("../../api", () => ({
   },
 }));
 
-const { TicketDetail } = await import("../TicketDetail");
+const { TicketSheet } = await import("../TicketSheet");
+const { TicketTab } = await import("../../pages/TicketTab");
 
 const ticket: TicketView = {
   id: "t1",
@@ -105,7 +106,15 @@ const project: ProjectSnapshot = {
 };
 const show = async (shown: TicketView = ticket) => {
   const view = render(
-    <TicketDetail project={{ ...project, tickets: [shown] }} ticket={shown} onOpenFile={() => {}} />,
+    <TicketSheet
+      project={{ ...project, tickets: [shown] }}
+      ticketId={shown.id}
+      domains={[]}
+      onClose={() => {}}
+      onAssign={() => {}}
+      onOpenInTab={() => {}}
+      onOpenFile={() => {}}
+    />,
   );
   await screen.findByRole("alert");
   if (shown.externalRefs.some((r) => r.kind === "github_pr")) await screen.findByText("3 min 12 s");
@@ -117,14 +126,26 @@ beforeEach(() => {
   calls.length = 0;
 });
 
-test("GitHub chips link to the issue and the PR", async () => {
+test("the issue chip sits in the header, the PR chip in the properties", async () => {
   await show();
+  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
+  if (!header) throw new Error("sheet has a header");
+  expect(within(header).getByRole("link", { name: "#42" })).toBeDefined();
+  expect(within(header).queryByRole("link", { name: "#12" })).toBeNull();
   expect(screen.getByRole("link", { name: "#42" }).getAttribute("href")).toBe(
     "https://github.com/adam/kibo/issues/42",
   );
   expect(screen.getByRole("link", { name: "#12" }).getAttribute("href")).toBe(
     "https://github.com/adam/kibo/pull/12",
   );
+});
+
+test("the ticket tab shows the issue chip in its header", async () => {
+  render(<TicketTab project={project} ticketId="t1" onOpenFile={() => {}} />);
+  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
+  if (!header) throw new Error("tab has a header");
+  expect(await within(header).findByRole("link", { name: "#42" })).toBeDefined();
+  await screen.findByText("Figma non joignable");
 });
 
 test("a broken issue link shows a badge instead of a link", async () => {

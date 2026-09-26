@@ -18,7 +18,7 @@ export function GithubRefs({ ticket }: { ticket: TicketView }) {
       ];
     }
     return [
-      <Badge key={ref.bindingId} variant="outline" asChild>
+      <Badge key={ref.bindingId} variant="outline" className="font-mono" asChild>
         <a href={ref.url} target="_blank" rel="noreferrer noopener" title={t.openOnGithub}>
           <Icon aria-hidden />
           <span>{t.issue(ref.number)}</span>
@@ -27,10 +27,5 @@ export function GithubRefs({ ticket }: { ticket: TicketView }) {
     ];
   });
   if (chips.length === 0) return null;
-  return (
-    <>
-      <dt className="text-muted-foreground">{t.issueProperty}</dt>
-      <dd className="flex flex-wrap gap-1">{chips}</dd>
-    </>
-  );
+  return <span className="flex flex-wrap gap-1">{chips}</span>;
 }

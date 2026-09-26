@@ -25,8 +25,18 @@ function linkError(e: unknown): string {
 
 function PreviewBadge({ preview }: { preview: FigmaPreview | null }) {
   if (!preview) return null;
-  if (!preview.reachable) return <Badge variant="secondary">{t.figmaUnreachable}</Badge>;
-  if (!preview.available) return <Badge variant="secondary">{t.previewUnavailable}</Badge>;
+  if (!preview.reachable)
+    return (
+      <Badge variant="outline" className="bg-background">
+        {t.figmaUnreachable}
+      </Badge>
+    );
+  if (!preview.available)
+    return (
+      <Badge variant="outline" className="bg-background">
+        {t.previewUnavailable}
+      </Badge>
+    );
   return null;
 }
 

@@ -6,7 +6,7 @@ import { GitPullRequest } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { CiSection, FigmaProperty, FigmaSection, GithubRefs, SyncStatus } from "./sheet/lazy-sections";
+import { CiSection, FigmaProperty, FigmaSection, SyncStatus } from "./sheet/lazy-sections";
 
 type Props = {
   project: ProjectSnapshot;
@@ -80,7 +80,6 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
       <dl className="grid grid-cols-[120px_1fr] items-center gap-y-2 px-4 text-xs">
         <dt className="text-muted-foreground">{fr.ticket.status}</dt>
         <dd>{status}</dd>
-        <FigmaProperty ticket={t} />
         {domains && (
           <>
             <dt className="text-muted-foreground">{fr.ticket.domain}</dt>
@@ -107,7 +106,7 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
             </dd>
           </>
         )}
-        <GithubRefs ticket={t} />
+        <FigmaProperty ticket={t} />
         {prs.length > 0 && (
           <>
             <dt className="text-muted-foreground">{fr.ticket.prs}</dt>

@@ -2,6 +2,7 @@ import type { Domain, FileRef, ProjectSnapshot } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { GithubRefs } from "../shell/sheet/lazy-sections";
 import { TicketDetail } from "../shell/TicketDetail";
 
 type Props = {
@@ -18,7 +19,10 @@ export function TicketTab({ project, ticketId, domains, onAssign, onOpenFile }: 
   return (
     <article className="mx-auto grid max-w-3xl gap-4 py-8">
       <header className="grid gap-1 px-4">
-        <p className="font-mono text-xs text-muted-foreground">{t.key}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-mono text-xs text-muted-foreground">{t.key}</p>
+          <GithubRefs ticket={t} />
+        </div>
         <h1 className="text-lg font-semibold">{t.title}</h1>
         {onAssign && (
           <Button
