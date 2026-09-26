@@ -2268,7 +2268,7 @@ git commit -m "feat(core): brief et chaîne de guidelines"
 
 `create` écrit la ligne du run **et** son premier événement `enqueued` dans la même transaction : un run n'existe jamais sans événement. Fichier `~/.kibo/runs.db`, séparé de `kibo.db` (volume, cycle de vie et sauvegarde différents). Tables `runs`, `run_events`, `run_tokens` protégées par des triggers `append-only` ; `host_settings` (clé → JSON) est un réglage local modifiable.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/run-store.test.ts` :
 ```ts
@@ -2396,12 +2396,12 @@ test("a corrupted file or event is reported, never ignored", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/run-store.test.ts`
 Expected: FAIL (`Cannot find module "./run-store"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/agents/run-store.ts` :
 ```ts
@@ -2577,12 +2577,12 @@ export function openRunStore(home: string): RunStore {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/agents/run-store.test.ts && bun run check`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/agents/run-store.ts packages/daemon/src/agents/run-store.test.ts
