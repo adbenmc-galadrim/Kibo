@@ -107,6 +107,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@kibo/core": "workspace:*",
+        "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
         "loro-crdt": "1.16.3",
         "zod": "3.25.76",
