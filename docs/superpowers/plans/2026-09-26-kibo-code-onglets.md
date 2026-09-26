@@ -2034,7 +2034,7 @@ git commit -m "feat(daemon): parseurs de sorties git"
   - `prBody(input: { ticket: { key: string; title: string } | null; commitSubjects: string[]; children: { key: string; done: boolean }[]; mockupUrl: string | null }): string` ;
   - `commitDefaults(snapshot: ProjectSnapshot, branch: string | null, commitSubjects: string[]): CommitDefaults`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/core/src/commit-message.test.ts` :
 ```ts
@@ -2089,7 +2089,7 @@ describe("messages", () => {
         mockupUrl: null,
       }),
     ).toBe(
-      "## Ticket\nKIB-12 · Schéma Loro des tickets\n\n## Changements\n- feat: opérations move\n- test: convergence\n\n## Sous-tickets\n- [x] KIB-24\n- [ ] KIB-27",
+      "## Ticket\nKIB-12 · Schéma Loro des tickets\n\n## Changements\n- feat: opérations move\n- test: convergence\n\n## Sous-tickets\n- [x] KIB-24\n- [x] KIB-27",
     );
   });
 });
@@ -2123,7 +2123,7 @@ test("commitDefaults reads the ticket named by the branch", () => {
 Run: `bun test packages/core/src/commit-message.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/core/src/commit-message.ts` :
 ```ts
@@ -2201,12 +2201,12 @@ Les titres de section de la description (« Ticket », « Changements »…) son
 
 `packages/core/src/index.ts` : ajouter `export * from "./commit-message";`.
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/core`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/core/src/commit-message.ts packages/core/src/commit-message.test.ts packages/core/src/index.ts
