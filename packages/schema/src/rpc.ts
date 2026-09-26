@@ -64,7 +64,12 @@ export const RpcRequest = z.discriminatedUnion("method", [
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   }),
   z.object({ method: z.literal("getProject"), projectId: z.string().min(1) }),
-  z.object({ method: z.literal("command"), projectId: z.string().min(1), command: ProjectCommand }),
+  z.object({
+    method: z.literal("command"),
+    projectId: z.string().min(1),
+    instanceId: z.string().min(1).optional(),
+    command: ProjectCommand,
+  }),
   z.object({ method: z.literal("getConfig") }),
   z.object({ method: z.literal("config"), command: ConfigCommand }),
   z.object({ method: z.literal("getAgents") }),

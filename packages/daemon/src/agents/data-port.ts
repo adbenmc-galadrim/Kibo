@@ -13,10 +13,6 @@ export function applyRules(doc: LoroDoc, trigger: RuleTrigger): ProjectCommand[]
 }
 
 export function createDataPort(docs: Docs): AgentDataPort {
-  const changed = (projectId: string) => {
-    docs.save(projectId);
-    docs.emit({ projectId });
-  };
   return {
     profiles: () => listProfiles(docs.workspace),
     ticketContext(projectId, ticketId) {
@@ -31,19 +27,17 @@ export function createDataPort(docs: Docs): AgentDataPort {
       ...listGuidelines(docs.project(projectId)),
     ],
     assignTicket(projectId, ticketId, profileName) {
-      executeProjectCommand(docs.project(projectId), {
+      docs.run(projectId, {
         method: "updateTicket",
         ticketId,
         assignee: { kind: "agent", ref: profileName },
       });
-      changed(projectId);
     },
     runStarted(projectId, ticketId) {
-      if (applyRules(docs.project(projectId), { kind: "run_started", ticketId }).length > 0)
-        changed(projectId);
+      docs.trigger(projectId, { kind: "run_started", ticketId });
     },
     runDone(projectId, ticketId) {
-      if (applyRules(docs.project(projectId), { kind: "run_done", ticketId }).length > 0) changed(projectId);
+      docs.trigger(projectId, { kind: "run_done", ticketId });
     },
   };
 }

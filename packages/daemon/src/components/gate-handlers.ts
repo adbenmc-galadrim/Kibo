@@ -1,4 +1,4 @@
-import { executeProjectCommand, readInstanceData, readProject, writeInstanceData } from "@kibo/core";
+import { readInstanceData, readProject, writeInstanceData } from "@kibo/core";
 import type { TicketRun } from "@kibo/schema";
 import type { Docs } from "../docs";
 import type { NotesService } from "../notes/service";
@@ -32,11 +32,8 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       const lists = { ticket: snap.tickets, status: snap.workflow, link: snap.links, page: snap.pages };
       return lists[entity];
     },
-    async run(projectId, command) {
-      const result = executeProjectCommand(docs.project(projectId), command);
-      changed(projectId);
-      return result;
-    },
+    run: async (projectId, instanceId, command) =>
+      docs.run(projectId, command, { origin: "user", instanceId }),
     async data(projectId, instanceId, call) {
       if (call.kind === "data.get" || call.kind === "data.keys")
         return readData(docs, projectId, instanceId, call);

@@ -29,7 +29,7 @@ export type NotesCall =
 
 export type GateHandlers = {
   list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
-  run(projectId: string, command: ProjectCommand): Promise<unknown>;
+  run(projectId: string, instanceId: string, command: ProjectCommand): Promise<unknown>;
   data(projectId: string, instanceId: string, call: DataCall): Promise<unknown>;
   fetch(rules: readonly string[] | null, url: string, init: FetchInit): Promise<FetchResponse>;
   action(
@@ -80,7 +80,7 @@ function dispatch(
         ? h.notes(projectId, { kind: "list", entity: "note" })
         : h.list(projectId, call.entity);
     case "run":
-      return h.run(projectId, call.command);
+      return h.run(projectId, inst.id, call.command);
     case "data.get":
     case "data.set":
     case "data.delete":

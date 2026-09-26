@@ -3,7 +3,7 @@ import {
   countTicketsByStatus,
   createProjectDoc,
   createWorkspaceDoc,
-  executeProjectCommand,
+  listInstances,
   listProjects,
   readProject,
   registerProject,
@@ -22,8 +22,9 @@ import {
   TabsState,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { applyRules, createDataPort } from "./agents/data-port";
+import { createDataPort } from "./agents/data-port";
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
+import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
 import { loadDoc, type Store } from "./store";
@@ -58,6 +59,8 @@ export type Service = {
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
+  transaction<T>(fn: () => T): T;
+  commands: CommandHub;
 };
 
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
@@ -109,6 +112,22 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
   let components: ComponentsPort | null = null;
+  const path = createCommandPath({
+    store,
+    project: (id) => docs.project(id),
+    save: (id) => docs.save(id),
+    restore(id) {
+      const restored = loadDoc(store, projectDocId(id));
+      if (!restored) throw new KiboError("STORE_CORRUPT", `project ${id} lost its snapshot`);
+      projects.set(id, restored);
+    },
+    emit: (message) => docs.emit(message),
+    published(projectId, done) {
+      docs.emit({ projectId });
+      if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
+      components?.afterCommand(projectId);
+    },
+  });
   const docs: Docs = {
     workspace,
     project(id) {
@@ -124,6 +143,8 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     emit(message) {
       for (const listener of listeners) listener(message);
     },
+    run: (projectId, command, meta) => path.run(projectId, command, meta),
+    trigger: (projectId, trigger, meta) => path.trigger(projectId, trigger, meta),
   };
   const componentsReady = (): ComponentsPort => {
     if (!components) throw new KiboError("INTERNAL", "components are not ready");
@@ -132,19 +153,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const agentsReady = (): AgentsPort => {
     if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
     return agents;
-  };
-
-  const runProjectCommand = (projectId: string, command: ProjectCommand): unknown => {
-    const doc = docs.project(projectId);
-    const result = executeProjectCommand(doc, command);
-    if (command.method === "setStatus") {
-      applyRules(doc, { kind: "status_changed", ticketId: command.ticketId });
-    }
-    docs.save(projectId);
-    docs.emit({ projectId });
-    if (changesDomainUsage(command)) docs.emit({ topic: "config" });
-    components?.afterCommand(projectId);
-    return result;
   };
 
   const handleAgents = (req: RpcRequest): unknown => {
@@ -202,10 +210,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       };
     },
     triggerRules(projectId, trigger) {
-      if (applyRules(docs.project(projectId), trigger).length === 0) return;
-      docs.save(projectId);
-      docs.emit({ projectId });
+      docs.trigger(projectId, trigger);
     },
+    transaction: (fn) => path.transaction(fn),
+    commands: path.commands,
     handle(req) {
       if (isComponentRequest(req)) return componentsReady().handle(req);
       switch (req.method) {
@@ -233,9 +241,16 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         }
         case "getProject":
           return readProject(docs.project(req.projectId));
-        case "command":
+        case "command": {
           assertShellCommand(req.command);
-          return runProjectCommand(req.projectId, req.command);
+          const instanceId = req.instanceId ?? null;
+          if (
+            instanceId !== null &&
+            !listInstances(docs.project(req.projectId)).some((i) => i.id === instanceId)
+          )
+            throw new KiboError("NOT_FOUND", `instance ${instanceId} not found`);
+          return docs.run(req.projectId, req.command, { origin: "user", instanceId });
+        }
         case "getConfig":
           return readConfig(docs);
         case "config":

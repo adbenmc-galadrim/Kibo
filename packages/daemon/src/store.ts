@@ -11,6 +11,7 @@ export type Store = {
   ids(): string[];
   getLocal(key: string): string | null;
   setLocal(key: string, value: string): void;
+  transaction<T>(fn: () => T): T;
   close(): void;
 };
 
@@ -60,6 +61,7 @@ export function openStore(home: string): Store {
     setLocal: (key, value) => {
       upsertLocal.run({ key, value, at: Date.now() });
     },
+    transaction: <T>(fn: () => T): T => db.transaction(fn)(),
     close: () => db.close(),
   };
 }
