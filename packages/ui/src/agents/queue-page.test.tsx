@@ -98,7 +98,7 @@ test("admission can be paused and host slots changed; a refusal is shown", async
   show();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Mettre en pause l'admission" }));
-  await user.click(screen.getByRole("button", { name: "modifier" }));
+  await user.click(screen.getByRole("button", { name: "modifiable" }));
   const slots = screen.getByLabelText("Créneaux hôte");
   await user.clear(slots);
   await user.type(slots, "4");
