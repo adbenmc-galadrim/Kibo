@@ -14,10 +14,27 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-async function repo(): Promise<string> {
+const commit = [
+  "-c",
+  "user.email=t@kibo.test",
+  "-c",
+  "user.name=t",
+  "-c",
+  "commit.gpgsign=false",
+  "commit",
+  "-q",
+];
+
+async function git(args: string[], cwd: string): Promise<string> {
+  const r = await runGit(args, cwd);
+  if (r.code !== 0) throw new Error(r.stderr);
+  return r.stdout.trim();
+}
+
+async function repo(initialBranch = "main"): Promise<string> {
   const d = tmp();
   for (const args of [
-    ["init", "-q", "-b", "main"],
+    ["init", "-q", "-b", initialBranch],
     [
       "-c",
       "user.email=t@kibo.test",
@@ -138,4 +155,31 @@ test("worktree refuses a plain folder squatting its path", async () => {
       runDir: join(tmp(), "run"),
     }),
   ).rejects.toThrow("WORKSPACE_FAILED");
+});
+
+test("a new worktree starts from main, whatever branch is checked out", async () => {
+  const folder = await repo();
+  const main = await git(["rev-parse", "main"], folder);
+  await git(["checkout", "-q", "-b", "feature"], folder);
+  await git([...commit, "--allow-empty", "-m", "feature"], folder);
+  const ws = await prepareWorkspace({
+    strategy: "worktree",
+    projectFolder: folder,
+    ticketKey: "KIB-3",
+    runDir: join(tmp(), "run"),
+  });
+  expect(await git(["rev-parse", "HEAD"], ws.cwd)).toBe(main);
+});
+
+test("without a main branch the new worktree starts from HEAD", async () => {
+  const folder = await repo("trunk");
+  await git([...commit, "--allow-empty", "-m", "second"], folder);
+  const head = await git(["rev-parse", "HEAD"], folder);
+  const ws = await prepareWorkspace({
+    strategy: "worktree",
+    projectFolder: folder,
+    ticketKey: "KIB-4",
+    runDir: join(tmp(), "run"),
+  });
+  expect(await git(["rev-parse", "HEAD"], ws.cwd)).toBe(head);
 });

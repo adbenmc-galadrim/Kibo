@@ -58,6 +58,11 @@ async function excludeKiboFolder(root: string, git: GitRunner): Promise<void> {
   appendFileSync(file, `${current.length > 0 && !current.endsWith("\n") ? "\n" : ""}.kibo/\n`);
 }
 
+async function defaultBase(root: string, git: GitRunner): Promise<string> {
+  const main = await git(["rev-parse", "--verify", "--quiet", "refs/heads/main"], root);
+  return main.code === 0 ? "main" : "HEAD";
+}
+
 async function prepareWorktree(input: PrepareInput, git: GitRunner): Promise<PreparedWorkspace> {
   const branch = branchFor(input.ticketKey);
   const folder = requireFolder(input.projectFolder);
@@ -74,7 +79,10 @@ async function prepareWorktree(input: PrepareInput, git: GitRunner): Promise<Pre
     return { cwd: path, label: `worktree:${branch}` };
   }
   const known = await git(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`], root);
-  const args = known.code === 0 ? ["worktree", "add", path, branch] : ["worktree", "add", "-b", branch, path];
+  const args =
+    known.code === 0
+      ? ["worktree", "add", path, branch]
+      : ["worktree", "add", "-b", branch, path, await defaultBase(root, git)];
   const added = await git(args, root);
   if (added.code !== 0) throw failed(`git worktree add failed: ${added.stderr.trim()}`);
   return { cwd: path, label: `worktree:${branch}` };
