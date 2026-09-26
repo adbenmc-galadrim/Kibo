@@ -37,3 +37,29 @@ export function createPinnedFetch(deps: PinnedFetchDeps): FetchLike {
     });
   };
 }
+
+const LOOPBACK_NAMES = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+export function isLoopbackAddress(ip: string): boolean {
+  const v4 = ip.startsWith("::ffff:") ? ip.slice(7) : ip;
+  return ip === "::1" || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(v4);
+}
+
+async function checkLoopback(url: URL, resolve: Resolver): Promise<void> {
+  if (!LOOPBACK_NAMES.has(url.hostname))
+    throw new KiboError("PERMISSION_DENIED", `${url.hostname} is not a loopback host`);
+  if (url.hostname !== "localhost") return;
+  const addresses = await resolve("localhost");
+  if (addresses.length === 0 || !addresses.every(isLoopbackAddress))
+    throw new KiboError("PERMISSION_DENIED", "localhost does not resolve to a loopback address");
+}
+
+export function createLoopbackFetch(deps: { resolve: Resolver }): FetchLike {
+  return async (input, init = {}) => {
+    const url = new URL(String(input));
+    if (url.protocol !== "http:" && url.protocol !== "https:")
+      throw new KiboError("PERMISSION_DENIED", "mcp server must use http or https");
+    await checkLoopback(url, deps.resolve);
+    return fetch(url, { ...init, redirect: "manual" });
+  };
+}

@@ -43,7 +43,7 @@ test("the github secret of components resolves through the account", async () =>
     expect(await rpc.hooks.secret("github")).toBe(gh.token);
     await rpc.handle({ method: "disconnectIntegration", id: "github" });
     expect(await rpc.hooks.secret("github")).toBeNull();
-    rpc.stop();
+    await rpc.stop();
   } finally {
     gh.stop();
     host.close();

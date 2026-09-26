@@ -7,7 +7,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { Resolver } from "../components/net-proxy-address";
 import type { SecretResolver } from "../integrations/types";
-import { createPinnedFetch } from "./http-fetch";
+import { createLoopbackFetch, createPinnedFetch } from "./http-fetch";
 import { BunStdioTransport } from "./stdio-transport";
 
 export type McpConnection = {
@@ -52,7 +52,11 @@ async function httpTransport(s: Http, deps: ConnectionDeps): Promise<Transport> 
   const headers: Record<string, string> = s.bearer
     ? { authorization: `Bearer ${await secretOrFail(deps, `mcp:${s.id}`)}` }
     : {};
-  if (LOOPBACK.has(url.hostname)) return new StreamableHTTPClientTransport(url, { requestInit: { headers } });
+  if (LOOPBACK.has(url.hostname))
+    return new StreamableHTTPClientTransport(url, {
+      requestInit: { headers },
+      fetch: createLoopbackFetch({ resolve: deps.resolve }),
+    });
   return new StreamableHTTPClientTransport(url, {
     requestInit: { headers },
     fetch: createPinnedFetch({ resolve: deps.resolve }),

@@ -3,20 +3,24 @@ import { realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { McpServerInput } from "@kibo/schema";
 import { createEventLog } from "../integrations/events";
-import { createMemorySecretStore } from "../integrations/memory-secret-store";
-import { createRedactor } from "../integrations/redact";
+import { createMemorySecretStore, type MemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor, type Redactor } from "../integrations/redact";
 import { createFakeHost, type FakeHost } from "../integrations/testing/fake-host";
 import { FAKE_MCP_STDIO, startFakeMcpHttp } from "../testing/fake-mcp";
 import { commandLineOf } from "./command-line";
 import { createMcpHub, type McpHub } from "./hub";
 
 const http = await startFakeMcpHttp({ bearer: "mcp-bearer-123456" });
-afterAll(() => http.stop());
+const open = await startFakeMcpHttp();
+afterAll(async () => {
+  await http.stop();
+  await open.stop();
+});
 
 let host: FakeHost;
 let hub: McpHub;
-const secrets = () => createMemorySecretStore(createRedactor());
-let store: ReturnType<typeof secrets>;
+let redactor: Redactor;
+let store: MemorySecretStore;
 const stdio: McpServerInput = {
   transport: "stdio",
   id: "fake",
@@ -29,8 +33,8 @@ const make = (opts: { idleMs?: number; callTimeoutMs?: number } = {}) =>
   createMcpHub({
     host,
     secrets: store,
-    events: createEventLog(host.db, createRedactor(), host.now),
-    redact: createRedactor().redact,
+    events: createEventLog(host.db, redactor, host.now),
+    redact: redactor.redact,
     ...opts,
   });
 const text = (r: { content: { type: string; text?: string }[] }) =>
@@ -38,7 +42,8 @@ const text = (r: { content: { type: string; text?: string }[] }) =>
 
 beforeEach(() => {
   host = createFakeHost();
-  store = secrets();
+  redactor = createRedactor();
+  store = createMemorySecretStore(redactor);
   hub = make();
 });
 afterEach(async () => {
@@ -106,6 +111,23 @@ describe("stdio", () => {
     expect((await hub.views())[0]?.state).toBe("idle");
   });
 
+  test("a message larger than the read buffer closes the connection", async () => {
+    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
+    await expect(hub.call("fake", "big", { bytes: 9 * 1_048_576 }, null)).rejects.toThrow("MCP_FAILED");
+    expect((await hub.views())[0]?.state).toBe("idle");
+    expect(text(await hub.call("fake", "echo", { text: "again" }, null))).toBe("again");
+  });
+
+  test("a server error returned to a caller is redacted", async () => {
+    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
+    const failure = await hub.read("fake", "fake://tok-123456789", "inst-1").then(
+      () => "resolved",
+      (e: unknown) => String(e),
+    );
+    expect(failure).toContain("MCP_FAILED");
+    expect(failure).not.toContain("tok-123456789");
+  });
+
   test("a disabled server cannot be called", async () => {
     await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
     await hub.setEnabled("fake", false);
@@ -124,7 +146,7 @@ describe("http", () => {
 
   test("sends the bearer from the keychain", async () => {
     const view = await hub.add(server(), commandLineOf(server()), { bearer: "mcp-bearer-123456" });
-    expect(view.state).toBe("connected");
+    expect(view).toMatchObject({ state: "connected", secretsSet: ["bearer"] });
     const res = await hub.read("remote", "fake://items", null);
     expect(text(res)).toContain("Premier");
   });
@@ -136,8 +158,49 @@ describe("http", () => {
   });
 
   test("reserved servers are hidden from the list but callable by the daemon", async () => {
-    await hub.setReserved("figma", http.url);
+    await hub.setReserved("figma", open.url);
     expect(await hub.views()).toEqual([]);
+    expect((await hub.tools("figma")).map((t) => t.name)).toContain("get_metadata");
+    await expect(hub.setReserved("figma", "http://10.0.0.2/mcp")).rejects.toThrow("INVALID_INPUT");
+    await hub.setReserved("figma", null);
+    await expect(hub.tools("figma")).rejects.toThrow("NOT_FOUND");
+  });
+
+  test("a reserved server never sends a bearer", async () => {
+    await hub.setReserved("figma", http.url);
     await expect(hub.tools("figma")).rejects.toThrow("MCP_UNAVAILABLE");
+  });
+
+  test("a loopback server cannot redirect the daemon elsewhere", async () => {
+    const hits: string[] = [];
+    const target = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: (req) => {
+        hits.push(req.headers.get("authorization") ?? "");
+        return new Response("nope", { status: 404 });
+      },
+    });
+    const redirector = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () =>
+        new Response(null, { status: 307, headers: { location: `http://localhost:${target.port}/mcp` } }),
+    });
+    try {
+      const loop: McpServerInput = {
+        transport: "http",
+        id: "loop",
+        name: "Loop",
+        url: `http://127.0.0.1:${redirector.port}/mcp`,
+        bearer: true,
+      };
+      const view = await hub.add(loop, commandLineOf(loop), { bearer: "loop-bearer-secret-123" });
+      expect(view.state).toBe("error");
+      expect(hits).toEqual([]);
+    } finally {
+      redirector.stop(true);
+      target.stop(true);
+    }
   });
 });

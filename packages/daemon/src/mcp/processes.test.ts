@@ -5,7 +5,7 @@ import { createRedactor } from "../integrations/redact";
 import { createFakeHost, type FakeHost } from "../integrations/testing/fake-host";
 import { commandLineOf } from "./command-line";
 import { createMcpHub, type McpHub } from "./hub";
-import { pidsMatching, stubbornServer, survivors } from "./processes.test-helper";
+import { crashyServer, groupMembers, pidsMatching, stubbornServer, survivors } from "./processes.test-helper";
 
 let host: FakeHost;
 let hub: McpHub;
@@ -43,4 +43,40 @@ test("stopping the hub kills every server and refuses new connections", async ()
   await hub.stop();
   expect(await survivors(pids)).toEqual([]);
   await expect(hub.tools("stubborn")).rejects.toThrow("MCP_UNAVAILABLE");
+}, 10_000);
+
+test("a server whose leader dies takes its whole group with it", async () => {
+  const marker = `kibo-mcp-crash-${crypto.randomUUID()}`;
+  const server = crashyServer("crashy", marker);
+  await hub.add(server, commandLineOf(server), {});
+  const [leader] = pidsMatching(marker);
+  if (leader === undefined) throw new Error("leader not found");
+  const members = groupMembers(leader);
+  expect(members).toHaveLength(2);
+  process.kill(leader, "SIGKILL");
+  expect(await survivors(members)).toEqual([]);
+  expect((await hub.views())[0]?.state).toBe("idle");
+}, 10_000);
+
+test("a call arriving while a server is being removed does not restart it", async () => {
+  const marker = `kibo-mcp-removing-${crypto.randomUUID()}`;
+  const server = stubbornServer("stubborn", marker);
+  await hub.add(server, commandLineOf(server), {});
+  const removing = hub.remove("stubborn");
+  await Bun.sleep(100);
+  await expect(hub.tools("stubborn")).rejects.toThrow("NOT_FOUND");
+  await removing;
+  expect(await survivors(pidsMatching(marker))).toEqual([]);
+}, 10_000);
+
+test("a group already killed from outside stops cleanly", async () => {
+  const marker = `kibo-mcp-outside-${crypto.randomUUID()}`;
+  const server = crashyServer("crashy", marker);
+  await hub.add(server, commandLineOf(server), {});
+  const [leader] = pidsMatching(marker);
+  if (leader === undefined) throw new Error("leader not found");
+  const members = groupMembers(leader);
+  process.kill(-leader, "SIGKILL");
+  await hub.stop();
+  expect(await survivors(members)).toEqual([]);
 }, 10_000);

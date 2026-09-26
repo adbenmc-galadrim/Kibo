@@ -6,6 +6,7 @@ import {
   type McpServerInput,
   type McpServerView,
   type McpToolInfo,
+  mcpUrlAllowed,
   type SecretName,
 } from "@kibo/schema";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
@@ -59,11 +60,11 @@ function secretsOf(s: McpServerInput): Secret[] {
   return s.bearer ? [{ key: "bearer", name: `mcp:${s.id}` }] : [];
 }
 
-function callError(id: string, tool: string, e: unknown): KiboError {
+function callError(id: string, tool: string, e: unknown, redact: (text: string) => string): KiboError {
   if (e instanceof McpError && e.code === ErrorCode.RequestTimeout)
     return new KiboError("TIMEOUT", `${id}/${tool} timed out`);
-  if (e instanceof KiboError) return e;
-  return new KiboError("MCP_FAILED", `${id}/${tool}: ${e instanceof Error ? e.message : String(e)}`);
+  if (e instanceof KiboError) return new KiboError(e.code, redact(e.detail));
+  return new KiboError("MCP_FAILED", redact(`${id}/${tool}: ${e instanceof Error ? e.message : String(e)}`));
 }
 
 export function createMcpHub(deps: McpHubDeps): McpHub {
@@ -114,8 +115,7 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
     if (!s) throw new KiboError("NOT_FOUND", `mcp server ${id} not found`);
     const conn = await pool.connection(id);
     const set: string[] = [];
-    for (const secret of s.server.transport === "stdio" ? secretsOf(s.server) : [])
-      if (await secrets.has(secret.name)) set.push(secret.key);
+    for (const secret of secretsOf(s.server)) if (await secrets.has(secret.name)) set.push(secret.key);
     const error = errors.get(id) ?? null;
     const state = error ? "error" : conn ? "connected" : "idle";
     return { ...s.server, enabled: s.enabled, state, error, tools: conn?.tools ?? [], secretsSet: set };
@@ -149,7 +149,7 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
         return r;
       });
     } catch (e) {
-      throw callError(id, tool, e);
+      throw callError(id, tool, e, deps.redact);
     } finally {
       if (reached) {
         const ms = Math.round(performance.now() - started);
@@ -180,10 +180,10 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
     async remove(id) {
       const s = store.get(id);
       if (!s) throw new KiboError("NOT_FOUND", `mcp server ${id} not found`);
-      await pool.close(id);
-      for (const secret of secretsOf(s.server)) await secrets.delete(secret.name);
       store.remove(id);
       errors.delete(id);
+      await pool.close(id);
+      for (const secret of secretsOf(s.server)) await secrets.delete(secret.name);
       rmSync(join(host.home, "mcp", id), { recursive: true, force: true });
       events.log("mcp", "info", `server ${id} removed`);
     },
@@ -220,10 +220,12 @@ export function createMcpHub(deps: McpHubDeps): McpHub {
         () => true,
       ),
     async setReserved(id, url) {
-      await pool.close(id);
-      errors.delete(id);
+      if (url !== null && !mcpUrlAllowed(url))
+        throw new KiboError("INVALID_INPUT", "reserved mcp server needs https or a loopback url");
       if (url === null) reserved.delete(id);
       else reserved.set(id, { transport: "http", id, name: "Figma", url, bearer: false });
+      errors.delete(id);
+      await pool.close(id);
     },
     stop: () => pool.stop(),
   };

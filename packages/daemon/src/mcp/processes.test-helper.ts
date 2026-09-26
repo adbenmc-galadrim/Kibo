@@ -12,12 +12,29 @@ export function stubbornServer(id: string, marker: string): McpServerInput {
   };
 }
 
-export function pidsMatching(marker: string): number[] {
-  const out = Bun.spawnSync(["pgrep", "-f", marker]).stdout.toString();
-  return out
+export function crashyServer(id: string, marker: string): McpServerInput {
+  return {
+    transport: "stdio",
+    id,
+    name: "Crashy",
+    command: "/bin/sh",
+    args: ["-c", `sleep 300 & exec "$0" "$1" ${marker}`, process.execPath, FAKE_MCP_STDIO],
+    envNames: [],
+  };
+}
+
+export function groupMembers(pgid: number): number[] {
+  return lines(Bun.spawnSync(["pgrep", "-g", String(pgid)]).stdout.toString());
+}
+
+const lines = (out: string) =>
+  out
     .split("\n")
     .filter((line) => line.trim() !== "")
     .map(Number);
+
+export function pidsMatching(marker: string): number[] {
+  return lines(Bun.spawnSync(["pgrep", "-f", marker]).stdout.toString());
 }
 
 export function alive(pid: number): boolean {
