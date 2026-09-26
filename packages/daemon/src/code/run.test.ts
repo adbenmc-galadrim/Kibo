@@ -68,14 +68,14 @@ test("the output limits are exported", () => {
 
 test("an endless stdout stops the whole process group", async () => {
   const pidFile = join(fx.dir, "stdout.pids");
-  const script = `yes & echo $$ $! > ${pidFile}; wait`;
+  const script = `echo $$ > ${pidFile}; sh -c 'echo $$ >> ${pidFile}; exec yes' & wait`;
   await expect(run(["sh", "-c", script], { cwd: fx.repo })).rejects.toMatchObject({ code: "TOO_LARGE" });
   await expectGone(pidFile);
 });
 
 test("an endless stderr stops the whole process group", async () => {
   const pidFile = join(fx.dir, "stderr.pids");
-  const script = `yes >&2 & echo $$ $! > ${pidFile}; wait`;
+  const script = `echo $$ > ${pidFile}; sh -c 'echo $$ >> ${pidFile}; exec yes >&2' & wait`;
   await expect(run(["sh", "-c", script], { cwd: fx.repo })).rejects.toMatchObject({ code: "TOO_LARGE" });
   await expectGone(pidFile);
 });
