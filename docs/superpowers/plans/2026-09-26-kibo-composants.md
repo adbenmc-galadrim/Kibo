@@ -15935,7 +15935,7 @@ git commit -m "feat(daemon): assemblage des composants"
   - `startDevServer(dir, toolchain, opts?: { port?: number }): Promise<{ url: string; stop(): void }>` (aperçu local, rechargement à chaque sauvegarde).
   - `@kibo/sdk/dev` : `mountDev(manifest: unknown, Component: ComponentType): void` (SDK simulé chargé du jeu fictif, bascules widget / vue et sombre / clair).
 
-- [ ] **Step 1: Créer le paquet et déclarer les dépendances**
+- [x] **Step 1: Créer le paquet et déclarer les dépendances**
 
 `packages/cli/package.json` :
 ```json
@@ -15991,7 +15991,7 @@ export const fr = {
 };
 ```
 
-- [ ] **Step 2: Écrire les tests**
+- [x] **Step 2: Écrire les tests**
 
 `packages/cli/src/cli.test.ts` :
 ```ts
@@ -16081,7 +16081,7 @@ describe("kibo component", () => {
 Run: `bun test packages/cli`
 Expected: FAIL.
 
-- [ ] **Step 3: Implémenter `args.ts`, `daemon-client.ts`, les commandes et `index.ts`**
+- [x] **Step 3: Implémenter `args.ts`, `daemon-client.ts`, les commandes et `index.ts`**
 
 `packages/cli/src/args.ts` :
 ```ts
@@ -16399,7 +16399,7 @@ import { cliIo, runCli } from "./index";
 process.exit(await runCli(process.argv.slice(2), cliIo()));
 ```
 
-- [ ] **Step 4: `@kibo/sdk/dev`**
+- [x] **Step 4: `@kibo/sdk/dev`**
 
 `packages/sdk/src/dev-fr.ts` :
 ```ts
@@ -16465,7 +16465,7 @@ export function mountDev(manifestInput: unknown, Component: ComponentType): void
 }
 ```
 
-- [ ] **Step 5: Vérifier et committer**
+- [x] **Step 5: Vérifier et committer**
 
 Run: `bun install && bun test packages/cli packages/sdk && bun run typecheck && bun run check`
 Expected: PASS.
