@@ -44,6 +44,19 @@ function required(value: string | undefined, flag: string): string {
   return value;
 }
 
+function argument(value: string | undefined, name: string): string {
+  if (!value) throw new KiboError("INVALID_INPUT", `missing <${name}>`);
+  return value;
+}
+
+function readPem(file: string, flag: string): string {
+  try {
+    return readFileSync(file, "utf8");
+  } catch {
+    throw new KiboError("INVALID_INPUT", `cannot read --${flag} ${file}`);
+  }
+}
+
 function positiveInt(value: string, flag: string, max: number): number {
   const n = Number(value);
   if (!/^\d+$/.test(value) || n < 1 || n > max)
@@ -70,7 +83,7 @@ const serve: Command = async (values, _positionals, io) => {
     hostname: values.host,
     port: positiveInt(values.port, "port", 65_535),
     origin: values.origin,
-    tls: cert && key ? { cert: readFileSync(cert, "utf8"), key: readFileSync(key, "utf8") } : null,
+    tls: cert && key ? { cert: readPem(cert, "tls-cert"), key: readPem(key, "tls-key") } : null,
     behindProxy: values["behind-proxy"],
   });
   io.out(`kibo-sync écoute sur ${server.url}`);
@@ -93,7 +106,7 @@ const inviteAccount: Command = async (values, _positionals, io) => {
 };
 
 const revokeDeviceCommand: Command = async (values, positionals, io) => {
-  const deviceId = required(positionals[2], "deviceId");
+  const deviceId = argument(positionals[2], "deviceId");
   await withDb(required(values.data, "data"), (sdb) =>
     revokeDevice(sdb, { deviceId, by: "admin" }, io.now()),
   );
@@ -102,7 +115,7 @@ const revokeDeviceCommand: Command = async (values, positionals, io) => {
 };
 
 const disableUserCommand: Command = async (values, positionals, io) => {
-  const userId = required(positionals[2], "userId");
+  const userId = argument(positionals[2], "userId");
   await withDb(required(values.data, "data"), (sdb) => disableUser(sdb, userId, io.now()));
   io.out(`Utilisateur ${userId} désactivé.`);
   return 0;
@@ -128,7 +141,7 @@ const marketInit: Command = async (values, _positionals, io) => {
 };
 
 const marketGrant: Command = async (values, positionals, io) => {
-  const userId = required(positionals[2], "userId");
+  const userId = argument(positionals[2], "userId");
   const role = positionals[3];
   if (role !== "owner" && role !== "publisher")
     throw new KiboError("INVALID_INPUT", "role must be owner or publisher");
@@ -177,7 +190,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   } catch (e) {
     if (!(e instanceof KiboError)) throw e;
     io.err(`kibo-sync : ${e.code} ${e.detail}`);
-    if (e.detail.startsWith("missing --")) usage(io);
+    if (e.detail.startsWith("missing ")) usage(io);
     return 1;
   }
 }

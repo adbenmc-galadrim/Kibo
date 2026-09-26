@@ -73,3 +73,26 @@ test("an unknown command prints the usage and fails", async () => {
   expect(await runCli(["audit", "--limit", "beaucoup", "--data", dir], bad.io)).toBe(1);
   expect(bad.err.join("\n")).toContain("INVALID_INPUT");
 });
+
+test("serve refuses a missing origin or unreadable TLS files with a clear error", async () => {
+  dir = mkdtempSync(join(tmpdir(), "kibo-sync-cli-"));
+  const proxy = io();
+  expect(await runCli(["serve", "--behind-proxy", "--port", "4396", "--data", dir], proxy.io)).toBe(1);
+  expect(proxy.err.join("\n")).toContain("INVALID_INPUT");
+  expect(proxy.err.join("\n")).toContain("--origin");
+  const tls = io();
+  const missing = join(dir, "absent.pem");
+  const args = ["serve", "--host", "192.0.2.10", "--origin", "wss://sync.kibo.test", "--data", dir];
+  expect(await runCli([...args, "--tls-cert", missing, "--tls-key", missing], tls.io)).toBe(1);
+  expect(tls.err.join("\n")).toContain("INVALID_INPUT");
+  expect(tls.err.join("\n")).toContain("--tls-cert");
+  expect(tls.err.join("\n")).not.toContain("ENOENT");
+});
+
+test("device revoke without its argument names the missing argument", async () => {
+  dir = mkdtempSync(join(tmpdir(), "kibo-sync-cli-"));
+  const run = io();
+  expect(await runCli(["device", "revoke", "--data", dir], run.io)).toBe(1);
+  expect(run.err.join("\n")).toContain("missing <deviceId>");
+  expect(run.err.join("\n")).not.toContain("--deviceId");
+});
