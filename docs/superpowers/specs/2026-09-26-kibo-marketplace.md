@@ -202,6 +202,23 @@ Profil SBPL généré par le démon (`packages/daemon/src/sandbox/macos.sb.ts`) 
 - Espaces de noms utilisateur restreints par défaut sur certaines distributions : les utilisateurs devront installer ou autoriser `bwrap`.
 - Profil macOS minimal difficile à stabiliser selon les versions de Bun et de macOS.
 
+## 13. Décisions d'implémentation (plan de phase 7)
+
+Reprises du plan `docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md` (« Décisions nouvelles »), recalées sur le code de v0.6 par la tâche 0 ; la numérotation (D1 à D36) est celle du plan, les décisions qui relèvent de la sync sont dans la spec G §13. Le filtre seccomp de §8.1 (« à valider ») est reporté après v1.0 (D14).
+
+- **D1** · **Paquet `packages/trust`** (WebCrypto et Zod, sans I/O) : Ed25519, codes, empreinte canonique des sources (spec B §3.2), X.509, `.kpkg`, index signés, signature des requêtes HTTP. `packages/devkit` y délègue `hashSources` pour qu'il n'existe qu'une implémentation de l'empreinte. Arêtes : `schema ← trust ← {devkit, daemon, sync-server, cli}` et `schema ← core ← sync-server`.
+- **D5** · **Requêtes HTTP de la marketplace d'équipe** (`POST /v1/market/*`) signées par la clé d'appareil : en-têtes `x-kibo-device`, `x-kibo-date`, `x-kibo-nonce`, `x-kibo-signature` sur `"kibo-http-v1\n" + méthode + "\n" + chemin + "\n" + date + "\n" + nonce + "\n" + sha256(corps)` ; écart d'horloge ≤ 5 min ; nonce refusé s'il a servi dans les 10 dernières minutes.
+- **D11** · **`Instance.componentHash`** (optionnel, `null` pour les intégrés) : écrit par le démon à l'ajout ou à la mise à jour d'une instance non intégrée ; c'est « la même empreinte » exigée par spec H §5.5 pour installer un composant absent.
+- **D12** · **`RegistryVersion.source` et `RegistryVersion.revoked`** (`{ reason, at } | null`) pour afficher le motif de révocation (spec H §4).
+- **D13** · **Ajout d'une source en deux temps** : `probeMarketSource { url }` lit l'index, vérifie sa signature avec la clé qu'il annonce et renvoie nom et empreinte ; l'utilisateur compare hors bande puis confirme `addMarketSource { url, publicKey }`.
+- **D14** · **Isolation Linux** : sans objet en phase 7, livrée en phase 4 (spec B décision 24) avec des montages déjà minimaux (`/usr/lib`, `/lib`… jamais tout `/usr`) et le lancement de processus déjà bloqué (test `exit.test.ts`). T8 n'ajoute que le diagnostic (`diagnose()` : type, raison, commande de correction). Le filtre seccomp (spec H §8.1, « à valider ») est **reporté après v1.0**.
+- **D15** · **Profil macOS sans commentaires dans le code** : chaque règle ajoutée est une donnée `{ rule, reason }` ; le générateur émet `reason` en ligne `;` dans le SBPL produit.
+- **D16** · **Validation à l'installation** : `validateComponent` exécute déjà les tests dans le bac à sable OS (phase 4) ; T20 ajoute seulement `conformanceOnly` (la suite générique de Kibo remplace les tests de l'éditeur, ni fournis ni exécutés). Une installation marketplace **n'utilise jamais** le réglage « sans isolation OS » : sans bac à sable utilisable, elle échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
+- **D23** · **Canal du backend par lignes JSON** : sans objet, livré en phase 4 (spec B décision 25, descripteurs 3 et 4).
+- **D24** · **Un paquet de marketplace demande toujours l'approbation de son empreinte** (écran 30 à chaque installation et mise à jour) : l'héritage de confiance de spec B §7.2 point 4 ne vaut que pour les composants de l'utilisateur. Raison : le code vient d'un tiers et son empreinte change à chaque version (T20).
+- **D34** · **Version révoquée** : ne peut pas être réapprouvée (`approveComponent` refuse une version dont `revoked` n'est pas `null`, T20) ; on installe une autre version.
+- **D35** · **Source d'équipe** : une source de marketplace est « d'équipe » (publication possible, écran M8) quand son URL est `<origine HTTPS du serveur de sync>/market/` (décision 21) ; aucune autre source n'accepte de publication depuis l'UI.
+
 ## Comptes et secrets réels
 
 Aucun pour la CI (fausse source, clés de test générées à la volée). Une marketplace réelle demande à Adam : un hébergement HTTPS (source statique ou serveur `kibo-sync`), et la garde de la clé privée de source.
