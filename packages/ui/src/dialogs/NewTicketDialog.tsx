@@ -45,6 +45,7 @@ export function NewTicketDialog({ project, viewer, defaults, onClose }: Props) {
           parentId: defaults.parentId ?? null,
           assignee: { kind: "human", ref: viewer },
         },
+        ...(defaults.instanceId && { instanceId: defaults.instanceId }),
       });
     } catch {
       setFailed(true);

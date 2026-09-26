@@ -28,6 +28,7 @@ import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
+import { IntegrationNotices } from "./lazy-screens";
 import { NotifyButton } from "./NotifyButton";
 import { PageActionsProvider, PageActionsSlot } from "./page-actions";
 import { ScreenActions } from "./ScreenActions";
@@ -46,13 +47,16 @@ export function Shell({ viewer, notifications }: Props) {
   useRunNotifications(agents, notifications === "browser");
   if (!projects || !tabs) return null;
   return (
-    <Workspace
-      viewer={viewer}
-      notifications={notifications}
-      projects={projects}
-      tabs={tabs}
-      agents={agents}
-    />
+    <>
+      <Workspace
+        viewer={viewer}
+        notifications={notifications}
+        projects={projects}
+        tabs={tabs}
+        agents={agents}
+      />
+      <IntegrationNotices notifications={notifications} />
+    </>
   );
 }
 

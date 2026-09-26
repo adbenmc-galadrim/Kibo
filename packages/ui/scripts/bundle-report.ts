@@ -22,8 +22,8 @@ export const ENTRY_GZIP_BUDGET = 230_000;
 
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
-  /\/node_modules\/(codemirror|markdown-it|shiki)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet))\.tsx$/,
+  /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/IntegrationNotices|pages\/SourceHeader)\.tsx$/,
   /\/components\/(graph\/src\/GraphView|notes\/src\/NotesView)\.tsx$/,
 ];
 

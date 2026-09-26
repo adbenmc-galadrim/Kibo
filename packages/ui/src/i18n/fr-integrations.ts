@@ -208,6 +208,16 @@ export const frIntegrations = {
     unlink: "Retirer",
     figmaNotConnected: "Connecte Figma dans Paramètres › Intégrations.",
   },
+  instance: {
+    header: (repo: string) => `GitHub · ${repo}`,
+    sync: "Synchroniser",
+    syncing: "Synchronisation…",
+    lastSync: (time: string) => `Synchronisé à ${time}`,
+    never: "Jamais synchronisé",
+    bindingRemoved: "Liaison supprimée",
+    bindingRemovedHelp:
+      "Ce composant n'est plus synchronisé avec GitHub ; ses tickets restent dans le projet.",
+  },
   conflict: (key: string, field: "title" | "description" | "statusId") =>
     `Conflit résolu sur ${key} : ${{ title: "titre", description: "description", statusId: "statut" }[field]} repris de GitHub`,
   permissions: {

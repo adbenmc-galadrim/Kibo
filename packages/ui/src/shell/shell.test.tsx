@@ -131,6 +131,7 @@ mock.module("../api", () => ({
       return Promise.resolve(null);
     },
     subscribe: () => () => {},
+    subscribeIntegrations: () => () => undefined,
     subscribeCode: (l: (e: CodeEvent) => void) => {
       codeListeners.add(l);
       return () => codeListeners.delete(l);

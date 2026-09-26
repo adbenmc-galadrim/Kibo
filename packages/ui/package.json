@@ -30,7 +30,8 @@
     "lucide-react": "1.48.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "shiki": "4.4.3"
+    "shiki": "4.4.3",
+    "sonner": "2.0.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.13",

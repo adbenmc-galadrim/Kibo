@@ -1,11 +1,12 @@
 import { type Instance, isBuiltinId, type Page, type ProjectSnapshot, splitRef } from "@kibo/schema";
-import { lazyPanel } from "@kibo/sdk";
+import { lazyPanel, readSource } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { PublishDialog } from "../components-page/PublishDialog";
 import { fr } from "../i18n/fr";
 import { componentIcon } from "../registry";
+import { SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
@@ -66,6 +67,7 @@ export function PageView({ project, page, viewer }: Props) {
       ) : page.kind === "view" ? (
         <>
           <ViewActions projectId={projectId} instance={first} />
+          {readSource(first.config) && <SourceHeader project={project} instance={first} />}
           <InstanceFrame projectId={projectId} instance={first} viewer={viewer} surface="view" />
         </>
       ) : (
@@ -80,6 +82,7 @@ export function PageView({ project, page, viewer }: Props) {
               }}
             >
               <WidgetHeader projectId={projectId} instance={i} />
+              {readSource(i.config) && <SourceHeader project={project} instance={i} />}
               <div className="min-h-0 flex-1 overflow-auto">
                 <InstanceFrame projectId={projectId} instance={i} viewer={viewer} surface="widget" />
               </div>

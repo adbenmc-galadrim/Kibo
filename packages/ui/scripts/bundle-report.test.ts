@@ -56,6 +56,8 @@ describe("bundle report", () => {
       pkg("markdown-it", "index.mjs"),
       pkg("shiki", "dist/index.mjs"),
       pkg("@shikijs/langs", "dist/tsx.mjs"),
+      pkg("sonner", "dist/index.mjs"),
+      pkg("next-themes", "dist/index.mjs"),
       "/Kibo/packages/ui/src/agents/AgentsPage.tsx",
       "/Kibo/packages/ui/src/agents/QueuePage.tsx",
       "/Kibo/packages/ui/src/settings/DomainsPage.tsx",
@@ -64,6 +66,8 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/code/ChangesView.tsx",
       "/Kibo/packages/ui/src/files/FileTabView.tsx",
       "/Kibo/packages/ui/src/files/FilePreviewSheet.tsx",
+      "/Kibo/packages/ui/src/shell/IntegrationNotices.tsx",
+      "/Kibo/packages/ui/src/pages/SourceHeader.tsx",
       "/Kibo/components/graph/src/GraphView.tsx",
       "/Kibo/components/notes/src/NotesView.tsx",
     ];

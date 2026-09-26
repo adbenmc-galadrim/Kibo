@@ -49,6 +49,22 @@ test("NewTicketDialog announces the key the ticket will get", () => {
   expect(screen.getByText("Kibo · la clé KIB-30 sera attribuée à la création.")).toBeTruthy();
 });
 
+test("NewTicketDialog opened from an instance sends its id with the command", async () => {
+  render(
+    <NewTicketDialog
+      project={project}
+      viewer="adam"
+      defaults={{ statusId: "todo", instanceId: "i1" }}
+      onClose={() => {}}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Titre"), "Depuis le Kanban");
+  await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
+  expect(calls).toHaveLength(1);
+  expect(calls[0]).toMatchObject({ method: "command", projectId: "p1", instanceId: "i1" });
+});
+
 test("NewPageDialog offers the page types as described cards", () => {
   render(<NewPageDialog projectId="p1" projectName="Kibo" parentId={null} open onOpenChange={() => {}} />);
   expect(screen.getByText("Dans le projet Kibo.")).toBeTruthy();
