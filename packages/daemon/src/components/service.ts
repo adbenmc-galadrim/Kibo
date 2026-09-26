@@ -149,6 +149,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   };
 
   const update = async (projectId: string, instanceId: string, to: string) => {
+    docs.assertWritable(projectId);
     const inst = await updateInstance(
       {
         doc: (id) => docs.project(id),

@@ -11,19 +11,18 @@ import {
 import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
-  EMPTY_TABS,
   KiboError,
   type ProjectCommand,
   type ProjectMeta,
+  type ProjectSyncInfo,
   type RpcRequest,
   type RpcResult,
   type Session,
-  salvageTabsState,
-  TabsState,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { createDataPort } from "./agents/data-port";
-import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
+import type { AgentDataPort } from "./agents/orchestrator";
+import { type AgentsPort, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
@@ -31,28 +30,15 @@ import type { Docs } from "./docs";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { loadDoc, type Store } from "./store";
+import { readTabs, saveTabs } from "./tabs-store";
 import { readConfig, runConfigCommand } from "./workspace-config";
-
-export type AgentsPort = Pick<
-  Orchestrator,
-  | "assign"
-  | "preview"
-  | "answer"
-  | "cancel"
-  | "move"
-  | "setPriority"
-  | "setHost"
-  | "state"
-  | "log"
-  | "activeRuns"
-  | "onChange"
-  | "onRunState"
->;
 
 export type ComponentsPort = {
   handle(req: ComponentRequest): Promise<unknown>;
   afterCommand(projectId: string): void;
 };
+
+export type { AgentsPort } from "./agents-rpc";
 
 export type Service = {
   handle(req: RpcRequest): unknown;
@@ -63,47 +49,23 @@ export type Service = {
   attachComponents(components: ComponentsPort): () => void;
   attachIntegrations(rpc: IntegrationRpc): () => void;
   attachAi(port: AiPort): () => void;
+  attachCollab(port: CollabPort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
 };
 
+export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
+
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
 
 const WORKSPACE = "workspace";
-const TABS_KEY = "tabs:workspace";
 const projectDocId = (id: string) => `project:${id}`;
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
 
 export function call<R extends ShellRequest>(service: Service, req: R): RpcResult[R["method"]] {
   return service.handle(req) as RpcResult[R["method"]];
-}
-
-function readTabs(store: Store): TabsState {
-  const raw = store.getLocal(TABS_KEY);
-  if (raw === null) return EMPTY_TABS;
-  try {
-    const json: unknown = JSON.parse(raw);
-    const parsed = TabsState.safeParse(json);
-    if (parsed.success) return parsed.data;
-    const salvaged = salvageTabsState(json);
-    if (salvaged) {
-      console.error("[kibo-daemon] stored tabs had invalid entries, dropped", parsed.error.message);
-      return salvaged;
-    }
-    console.error("[kibo-daemon] stored tabs are invalid, starting empty", parsed.error.message);
-  } catch (e) {
-    console.error("[kibo-daemon] stored tabs are unreadable, starting empty", e);
-  }
-  return EMPTY_TABS;
-}
-
-function saveTabs(store: Store, state: unknown): null {
-  const parsed = TabsState.safeParse(state);
-  if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
-  store.setLocal(TABS_KEY, JSON.stringify(parsed.data));
-  return null;
 }
 
 export function createService(store: Store, opts: ServiceOptions): Service {
@@ -119,14 +81,22 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   let components: ComponentsPort | null = null;
   let integrations: IntegrationRpc | null = null;
   let ai: AiPort | null = null;
+  let collab: CollabPort | null = null;
+  let writeGuard: ((projectId: string) => void) | null = null;
+  const docListeners = new Set<(projectId: string, doc: LoroDoc) => void>();
+  const adopt = (id: string, doc: LoroDoc) => {
+    projects.set(id, doc);
+    for (const listener of docListeners) listener(id, doc);
+  };
   const path = createCommandPath({
     store,
     project: (id) => docs.project(id),
+    assertWritable: (id) => docs.assertWritable(id),
     save: (id) => docs.save(id),
     restore(id) {
       const restored = loadDoc(store, projectDocId(id));
       if (!restored) throw new KiboError("STORE_CORRUPT", `project ${id} lost its snapshot`);
-      projects.set(id, restored);
+      adopt(id, restored);
     },
     emit: (message) => docs.emit(message),
     published(projectId, done) {
@@ -152,6 +122,34 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     run: (projectId, command, meta) => path.run(projectId, command, meta),
     trigger: (projectId, trigger) => path.trigger(projectId, trigger),
+    replaceProject(projectId, doc) {
+      docs.project(projectId);
+      adopt(projectId, doc);
+      docs.imported(projectId);
+    },
+    addProject(meta, doc) {
+      registerProject(workspace, meta);
+      adopt(meta.id, doc);
+      docs.save(meta.id);
+      docs.save(null);
+      docs.emit({ projectId: null });
+    },
+    imported(projectId) {
+      docs.save(projectId);
+      docs.emit({ projectId });
+      components?.afterCommand(projectId);
+    },
+    onProjectDoc(listener) {
+      docListeners.add(listener);
+      return () => docListeners.delete(listener);
+    },
+    assertWritable: (projectId) => writeGuard?.(projectId),
+    setWriteGuard(guard) {
+      writeGuard = guard;
+      return () => {
+        if (writeGuard === guard) writeGuard = null;
+      };
+    },
   };
   const componentsReady = (): ComponentsPort => {
     if (!components) throw new KiboError("INTERNAL", "components are not ready");
@@ -168,39 +166,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const agentsReady = (): AgentsPort => {
     if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
     return agents;
-  };
-
-  const handleAgents = (req: RpcRequest): unknown => {
-    const port = agentsReady();
-    switch (req.method) {
-      case "getAgents":
-        return port.state();
-      case "getRunLog":
-        return port.log(req.runId);
-      case "previewAssign":
-        return port.preview({ projectId: req.projectId, ticketId: req.ticketId, profileId: req.profileId });
-      case "assignAgent":
-        return port.assign({
-          projectId: req.projectId,
-          ticketId: req.ticketId,
-          profileId: req.profileId,
-          brief: req.brief,
-        });
-      case "answerRun":
-        return port.answer(req.runId, req.text);
-      case "cancelRun":
-        return port.cancel(req.runId);
-      case "moveRun":
-        port.move(req.runId, req.index);
-        return null;
-      case "setRunPriority":
-        port.setPriority(req.runId, req.priority);
-        return null;
-      case "setHost":
-        return port.setHost(req.patch);
-      default:
-        throw new KiboError("INTERNAL", `${req.method} is not an agents method`);
-    }
   };
 
   return {
@@ -236,6 +201,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         ai = null;
       };
     },
+    attachCollab(port) {
+      collab = port;
+      return () => {
+        collab = null;
+      };
+    },
     triggerRules(projectId, trigger) {
       docs.trigger(projectId, trigger);
     },
@@ -262,14 +233,17 @@ export function createService(store: Store, opts: ServiceOptions): Service {
             color: req.color,
           };
           registerProject(workspace, meta);
-          projects.set(meta.id, createProjectDoc(meta));
+          adopt(meta.id, createProjectDoc(meta));
           docs.save(meta.id);
           docs.save(null);
           docs.emit({ projectId: null });
           return meta;
         }
-        case "getProject":
-          return readProject(docs.project(req.projectId));
+        case "getProject": {
+          const doc = docs.project(req.projectId);
+          const snapshot = readProject(doc);
+          return collab ? { ...snapshot, sync: collab.syncInfo(req.projectId, doc) } : snapshot;
+        }
         case "command": {
           assertShellCommand(req.command);
           const instanceId = req.instanceId ?? null;
@@ -289,7 +263,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         case "saveTabs":
           return saveTabs(store, req.state);
         default:
-          return handleAgents(req);
+          return handleAgentRequest(agentsReady(), req);
       }
     },
     onChange(listener) {

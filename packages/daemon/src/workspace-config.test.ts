@@ -16,6 +16,12 @@ function docsWith(): Docs {
     emit: () => {},
     run: unused,
     trigger: unused,
+    replaceProject: unused,
+    addProject: unused,
+    imported: unused,
+    onProjectDoc: unused,
+    assertWritable: unused,
+    setWriteGuard: unused,
   };
 }
 

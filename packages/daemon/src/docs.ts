@@ -1,5 +1,5 @@
 import type { RuleTrigger } from "@kibo/core/rules";
-import type { ChangeMessage, ProjectCommand } from "@kibo/schema";
+import type { ChangeMessage, ProjectCommand, ProjectMeta } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 
 export type CommandOrigin = "user" | "sync";
@@ -20,4 +20,10 @@ export type Docs = {
   emit(message: ChangeMessage): void;
   run(projectId: string, command: ProjectCommand, meta?: CommandMeta): unknown;
   trigger(projectId: string, trigger: RuleTrigger): number;
+  replaceProject(projectId: string, doc: LoroDoc): void;
+  addProject(meta: ProjectMeta, doc: LoroDoc): void;
+  imported(projectId: string): void;
+  onProjectDoc(listener: (projectId: string, doc: LoroDoc) => void): () => void;
+  assertWritable(projectId: string): void;
+  setWriteGuard(guard: (projectId: string) => void): () => void;
 };

@@ -45,6 +45,7 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       if (call.kind === "data.get" || call.kind === "data.keys")
         return readData(docs, projectId, instanceId, call);
       const value = call.kind === "data.set" ? call.value : null;
+      docs.assertWritable(projectId);
       writeInstanceData(docs.project(projectId), instanceId, call.key, value);
       changed(projectId);
       return null;
