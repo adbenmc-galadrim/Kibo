@@ -25,7 +25,7 @@ packages/daemon/     serveur Bun : persistance SQLite, API HTTP/WS, appairage, s
 packages/sdk/        SDK des composants (client, SDK simulé, suite de conformité)
 packages/cli/        commande kibo (création, test, aperçu, publication de composants)
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
-components/<id>/     composants intégrés (kanban, tickets…) écrits avec le SDK public
+components/<id>/     composants intégrés (kanban, tickets, github-issues sans UI, mcp-source…) écrits avec le SDK public
 e2e/                 parcours Playwright
 design/  docs/       maquettes, spec, plans
 ```

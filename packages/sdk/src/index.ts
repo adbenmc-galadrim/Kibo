@@ -1,4 +1,5 @@
 export { ticketRuns } from "@kibo/schema";
+export * from "./adapter";
 export * from "./agent-badge";
 export * from "./client";
 export * from "./file-link";

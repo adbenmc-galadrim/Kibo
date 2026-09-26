@@ -1,5 +1,6 @@
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
+import { frIntegrations } from "./fr-integrations";
 
 export const fr = {
   app: { name: "Kibo" },
@@ -405,6 +406,7 @@ export const fr = {
     done: (label: string) => `${label} a terminé`,
     failed: (label: string) => `${label} a échoué`,
   },
+  integrations: frIntegrations,
   ...frCode,
   ...frComponents,
   common: { cancel: "Annuler", close: "Fermer", error: "Une erreur est survenue." },

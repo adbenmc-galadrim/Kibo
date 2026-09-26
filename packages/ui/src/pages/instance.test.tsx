@@ -68,6 +68,8 @@ const version = (v: string, patch: Partial<Version> = {}): Version => ({
     writes: [],
     data: false,
     net: [],
+    secrets: [],
+    mcp: [],
     configVersion: 0,
     changes: [],
     sdk: 1,

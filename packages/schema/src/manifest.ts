@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ConfigSchema } from "./config";
+import { SecretNameSchema } from "./integrations";
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
 
@@ -11,13 +12,24 @@ export type EntityType = BuiltinEntityType;
 export const ComponentManifest = z.object({
   id: z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/),
   version: SemVer,
-  kind: z.enum(["widget", "view", "both"]),
+  kind: z.enum(["widget", "view", "both", "adapter"]),
   title: z.string().min(1),
   description: z.string().min(1).optional(),
   reads: z.array(BuiltinEntityType),
   writes: z.array(BuiltinEntityType),
   data: z.boolean().default(false),
   net: z.array(NetRule).default([]),
+  secrets: z
+    .array(
+      z.object({
+        name: SecretNameSchema,
+        hosts: z.array(z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)).min(1),
+      }),
+    )
+    .default([]),
+  mcp: z
+    .array(z.union([z.string().regex(/^[a-z0-9-]+(\/[A-Za-z0-9_.-]+)?$/), z.literal("{config.server}")]))
+    .default([]),
   configSchema: ConfigSchema.optional(),
   configVersion: z.number().int().nonnegative().default(0),
   changes: z.array(z.string().min(1)).default([]),

@@ -84,7 +84,7 @@ describe("service", () => {
     const s = createService(store, { user: "adam" });
     const seen: (string | null)[] = [];
     const off = s.onChange((m) =>
-      seen.push("projectId" in m ? m.projectId : "topic" in m ? m.topic : m.runId),
+      seen.push("projectId" in m ? m.projectId : "topic" in m ? m.topic : "runId" in m ? m.runId : null),
     );
     const p = s.handle(newProject) as ProjectMeta;
     s.handle({

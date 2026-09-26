@@ -46,6 +46,8 @@ const manifest: ComponentManifest = {
   writes: [],
   data: true,
   net: [],
+  secrets: [],
+  mcp: [],
   configVersion: 0,
   changes: [],
   sdk: 1,

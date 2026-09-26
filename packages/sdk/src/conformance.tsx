@@ -43,7 +43,8 @@ export function runConformance(
     if (!parsed.success) return;
     const manifest = parsed.data;
     const declared = permissionList(grantedOf(manifest));
-    const surfaces: Surface[] = manifest.kind === "both" ? ["widget", "view"] : [manifest.kind];
+    const surfaces: Surface[] =
+      manifest.kind === "both" ? ["widget", "view"] : manifest.kind === "adapter" ? [] : [manifest.kind];
     const { runs, ...mockOpts } = opts;
     const projects: [string, ConformanceSeed | undefined][] = [
       ["empty project", undefined],

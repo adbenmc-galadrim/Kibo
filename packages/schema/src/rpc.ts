@@ -16,6 +16,8 @@ import {
 import type { KiboErrorCode } from "./errors";
 import { NodeId, ProjectKey } from "./ids";
 import type { Instance } from "./instance";
+import type { IntegrationEvent } from "./integrations";
+import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
 import type { NotesInfo } from "./note";
 import type { Page } from "./page";
@@ -43,7 +45,12 @@ export type ProjectSnapshot = {
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
 export type Session = { user: string; notifications: "native" | "browser" };
 export type Topic = "agents" | "config";
-export type ChangeMessage = { projectId: string | null } | { topic: Topic } | RunChanged | CodeEvent;
+export type ChangeMessage =
+  | { projectId: string | null }
+  | { topic: Topic }
+  | RunChanged
+  | CodeEvent
+  | IntegrationEvent;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("getSession") }),
@@ -129,6 +136,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
     instanceId: z.string().min(1),
     kind: z.literal("navigate"),
   }),
+  ...INTEGRATION_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -166,7 +174,7 @@ export type RpcResult = {
   getRuntimeInfo: RuntimeInfo;
   installCli: { path: string };
   reportComponentRefusal: null;
-};
+} & IntegrationRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

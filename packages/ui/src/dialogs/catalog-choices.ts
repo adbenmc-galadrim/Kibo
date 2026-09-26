@@ -47,7 +47,7 @@ export function mineChoices(components: ComponentSummary[]): Choice[] {
     .filter((c) => !c.builtin)
     .flatMap((c) => {
       const v = latestUsable(c);
-      if (!v?.manifest) return [];
+      if (!v?.manifest || v.manifest.kind === "adapter") return [];
       const trust = v.active && v.trust ? fr.components.trust[v.trust] : fr.addComponent.pendingTrust;
       const hosts = v.manifest.net.map(hostLabel);
       return [
