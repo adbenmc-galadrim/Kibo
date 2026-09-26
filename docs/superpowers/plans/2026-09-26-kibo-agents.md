@@ -10761,7 +10761,7 @@ Branche les écrans des Tasks 17 à 21 dans l'application : routes `#/agents`, `
   - `runNotices(previous: Map<string, RunState>, runs: RunView[]): { title: string; body: string }[]`, `useRunNotifications(state: AgentsState | null, enabled: boolean): void`
   - `NotifyButton()`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ui/src/agents/use-run-notifications.test.ts` :
 ```ts
@@ -10926,12 +10926,12 @@ mock.module("../state/use-agents", () => ({
 ```
 et remplacer les deux `render(<Shell viewer="adam" />)` par `render(<Shell viewer="adam" notifications="native" />)`.
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/shell packages/ui/src/agents/use-run-notifications.test.ts`
 Expected: FAIL (`parseRoute` et `NotifyButton` absents, `Shell` sans écrans agents).
 
-- [ ] **Step 3: Routes et hôte**
+- [x] **Step 3: Routes et hôte**
 
 Remplacer `packages/ui/src/route.ts` par :
 ```ts
@@ -10993,7 +10993,7 @@ export function Breadcrumb({ items }: { items: string[] }) {
 }
 ```
 
-- [ ] **Step 4: Notifications**
+- [x] **Step 4: Notifications**
 
 `packages/ui/src/agents/use-run-notifications.ts` :
 ```ts
@@ -11053,7 +11053,7 @@ export function NotifyButton() {
 }
 ```
 
-- [ ] **Step 5: Sidebar, fiche ticket, shell, application**
+- [x] **Step 5: Sidebar, fiche ticket, shell, application**
 
 `packages/ui/src/shell/AppSidebar.tsx` :
 - `Props` reçoit `agents: AgentsState | null` ;
@@ -11363,12 +11363,12 @@ export function Shell({ viewer, notifications }: Props) {
 
 `packages/ui/src/App.tsx` : `bootstrap` renvoie `Promise<Session | null>` (`return await client.rpc({ method: "getSession" })` dans le `try`), l'état devient `useState<Session | null | undefined>(undefined)`, et le rendu final `return <Shell viewer={session.user} notifications={session.notifications} />;` (importer `type Session` depuis `@kibo/schema`).
 
-- [ ] **Step 6: Vérifier**
+- [x] **Step 6: Vérifier**
 
 Run: `bun test packages/ui && bun run format && bun run check && bun run typecheck && bun run --cwd packages/ui build`
 Expected: PASS, build Vite sans erreur.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ui/src/route.ts packages/ui/src/shell packages/ui/src/App.tsx packages/ui/src/agents/use-run-notifications.ts packages/ui/src/agents/use-run-notifications.test.ts
