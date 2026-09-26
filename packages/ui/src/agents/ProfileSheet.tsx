@@ -17,7 +17,8 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { type GuidelineDraft, ProfileGuidelines } from "./ProfileGuidelines";
+import type { GuidelineDraft } from "./GuidelineRow";
+import { ProfileGuidelines } from "./ProfileGuidelines";
 
 type Props = {
   profile: AgentProfile | null;
@@ -97,7 +98,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
               method: "addGuideline",
               owner: { scope: "profile", profileId: created.id },
               path: g.path,
-              content: "",
+              content: g.content,
             },
           });
         }

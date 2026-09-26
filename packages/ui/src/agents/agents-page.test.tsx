@@ -48,6 +48,8 @@ test("profile cards describe each profile", () => {
   const sonnet = within(screen.getByRole("article", { name: "sonnet-review" }));
   for (const text of ["dossier isolé", "plan", "3 max", "aucun"]) expect(sonnet.getByText(text)).toBeTruthy();
   expect(sonnet.getByText("Claude Sonnet 5 · CLI headless")).toBeTruthy();
+  const haiku = within(screen.getByRole("article", { name: "haiku-tests" }));
+  expect(haiku.getByText("Claude Haiku 4.5 · CLI headless")).toBeTruthy();
 });
 
 test("the history lists runs newest first with their result", () => {
@@ -97,7 +99,10 @@ test("a new profile is created with its guidelines", async () => {
   expect(sheet().getByRole("combobox", { name: "Modèle" }).textContent).toBe("Claude Opus 5.5");
   await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md");
   await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
+  expect(sheet().queryByLabelText("Contenu")).toBeNull();
+  await user.click(sheet().getByRole("button", { name: "guidelines/front.md" }));
+  await user.type(sheet().getByLabelText("Contenu"), "# Front");
+  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/front.md" }));
   expect(sheet().queryByLabelText("Contenu")).toBeNull();
   await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -123,7 +128,7 @@ test("a new profile is created with its guidelines", async () => {
         method: "addGuideline",
         owner: { scope: "profile", profileId: "new-id" },
         path: "guidelines/front.md",
-        content: "",
+        content: "# Front",
       },
     },
   ]);
@@ -214,4 +219,43 @@ test("enter in the guideline field adds the file without submitting the profile"
   expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
   expect(sheet().getByLabelText("Fichier")).toHaveProperty("value", "");
   expect(calls).toEqual([]);
+});
+
+test("in edit mode a guideline's content is edited in place", async () => {
+  const config = configFixture();
+  config.guidelines.push({
+    id: "g1",
+    owner: { scope: "profile", profileId: "opus" },
+    path: "guidelines/review.md",
+    content: "# Review",
+  });
+  render(<AgentsPage state={agentsFixture()} config={config} now={NOW} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
+  const row = sheet().getByRole("button", { name: "guidelines/review.md" });
+  expect(row.getAttribute("aria-expanded")).toBe("false");
+  await user.click(row);
+  expect(row.getAttribute("aria-expanded")).toBe("true");
+  const editor = sheet().getByLabelText("Contenu");
+  expect(editor).toHaveProperty("value", "# Review");
+  await user.clear(editor);
+  await user.type(editor, "# Relecture");
+  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/review.md" }));
+  expect(calls).toEqual([
+    {
+      method: "config",
+      command: {
+        method: "updateGuideline",
+        owner: { scope: "profile", profileId: "opus" },
+        guidelineId: "g1",
+        content: "# Relecture",
+      },
+    },
+  ]);
+  await waitFor(() => expect(sheet().queryByLabelText("Contenu")).toBeNull());
+  respond = () => Promise.reject(new KiboError("NOT_FOUND", "guideline g1"));
+  await user.click(row);
+  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/review.md" }));
+  expect((await sheet().findByRole("alert")).textContent).toBe("Impossible d'enregistrer le profil.");
+  expect(sheet().getByLabelText("Contenu")).toBeTruthy();
 });

@@ -268,6 +268,7 @@ export const fr = {
     guidelineContent: "Contenu",
     addGuideline: "Ajouter",
     removeGuideline: (path: string) => `Retirer ${path}`,
+    saveGuideline: (path: string) => `Enregistrer ${path}`,
     create: "Créer le profil",
     save: "Enregistrer",
     delete: "Supprimer le profil",

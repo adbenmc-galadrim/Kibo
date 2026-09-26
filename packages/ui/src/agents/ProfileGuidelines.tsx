@@ -2,12 +2,11 @@ import { type AgentProfile, GuidelinePath, type WorkspaceConfig } from "@kibo/sc
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { FileText, Plus, X } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-
-export type GuidelineDraft = { id: string; path: string };
+import { type GuidelineDraft, GuidelineRow } from "./GuidelineRow";
 
 type Props = {
   profile: AgentProfile | null;
@@ -33,7 +32,7 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
       return;
     }
     if (!profile) {
-      onDraftsChange((d) => [...d, { id: crypto.randomUUID(), path: parsed.data }]);
+      onDraftsChange((d) => [...d, { id: crypto.randomUUID(), path: parsed.data, content: "" }]);
     } else {
       try {
         await client.rpc({
@@ -51,6 +50,29 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
       }
     }
     setPath("");
+  };
+
+  const save = async (guidelineId: string, content: string): Promise<boolean> => {
+    onError(null);
+    if (!profile) {
+      onDraftsChange((d) => d.map((g) => (g.id === guidelineId ? { ...g, content } : g)));
+      return true;
+    }
+    try {
+      await client.rpc({
+        method: "config",
+        command: {
+          method: "updateGuideline",
+          owner: { scope: "profile", profileId: profile.id },
+          guidelineId,
+          content,
+        },
+      });
+      return true;
+    } catch (e) {
+      onFailure(e);
+      return false;
+    }
   };
 
   const remove = async (guidelineId: string) => {
@@ -78,20 +100,12 @@ export function ProfileGuidelines({ profile, config, drafts, onDraftsChange, onE
       <p className="text-sm font-medium">{fr.profile.guidelines}</p>
       <ul className="grid gap-1.5">
         {listed.map((g) => (
-          <li key={g.id} className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm">
-            <FileText aria-hidden className="size-4 text-muted-foreground" />
-            <span className="flex-1 truncate">{g.path}</span>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="size-6"
-              aria-label={fr.profile.removeGuideline(g.path)}
-              onClick={() => void remove(g.id)}
-            >
-              <X className="size-3.5" />
-            </Button>
-          </li>
+          <GuidelineRow
+            key={g.id}
+            guideline={g}
+            onSave={(content) => save(g.id, content)}
+            onRemove={() => void remove(g.id)}
+          />
         ))}
       </ul>
       <div className="flex items-center gap-2 rounded-md border px-2.5 py-1">

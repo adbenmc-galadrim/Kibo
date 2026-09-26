@@ -72,6 +72,16 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 3,
     subagents: [],
   },
+  {
+    id: "haiku",
+    name: "haiku-tests",
+    model: "haiku",
+    execution: "cli",
+    permissionMode: "acceptEdits",
+    workspace: "worktree",
+    maxParallel: 1,
+    subagents: [],
+  },
 ];
 
 export function agentsFixture(): AgentsState {
