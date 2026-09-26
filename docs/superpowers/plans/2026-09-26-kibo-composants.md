@@ -16708,7 +16708,7 @@ git commit -m "test(daemon): évasions signal, env, descripteurs"
 - Consumes: tout le produit : écrans 3, 6, 7, 10, 11, 29, 30 et D1–D10 ; démon démarré par `serve.ts` avec la vraie validation, la vraie construction et le vrai port sandbox (`4391`).
 - Produces: `E2E_HOME` (`e2e/e2e-home.ts`) ; aides `pairAndCreateProject`, `createPage`, `addComponent` (`e2e/helpers.ts`, `addComponent` accepte tout titre).
 
-- [ ] **Step 1: Préparer le démon de test**
+- [x] **Step 1: Préparer le démon de test**
 
 `e2e/e2e-home.ts` :
 ```ts
@@ -16768,11 +16768,11 @@ for (const variant of ["dark", "light"]) {
 
 `e2e/playwright.config.ts` : `timeout` reste à 30 s ; `components.spec.ts` appelle `test.setTimeout(240_000)` (validation réelle : typecheck et `bun test`).
 
-- [ ] **Step 2: Extraire les aides**
+- [x] **Step 2: Extraire les aides**
 
 `e2e/helpers.ts` : y déplacer `projectKey`, `pairAndCreateProject`, `createPage` et `addComponent` de `mvp.spec.ts` (exportées, corps inchangés ; `addComponent(page, title: string)`), et `mvp.spec.ts` les importe. Si la phase 3 a déjà créé un module d'aides, y ajouter seulement ce qui manque.
 
-- [ ] **Step 3: Écrire le parcours**
+- [x] **Step 3: Écrire le parcours**
 
 `e2e/components.spec.ts` :
 ```ts
@@ -16871,7 +16871,7 @@ test("graphe et notes intégrés", async ({ page }, info) => {
 ```
 Le titre du bouton de projet (`Kibo ${key}`) et le bouton de page suivent la barre latérale v0.1 ; si la phase 3 a remplacé la navigation (onglets), adapter les deux sélecteurs aux aides partagées de la phase 3.
 
-- [ ] **Step 4: Lancer et committer**
+- [x] **Step 4: Lancer et committer**
 
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test`
 Expected: PASS dans les projets `dark` et `light`.
