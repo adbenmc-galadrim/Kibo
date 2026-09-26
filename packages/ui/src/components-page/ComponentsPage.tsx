@@ -5,7 +5,6 @@ import { useState } from "react";
 import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { type FlashTone, useFlash } from "../lib/use-flash";
-import { CliInstallCard } from "../settings/CliInstallCard";
 import { useComponents } from "../state/use-components";
 import { ComponentRowMenu } from "./ComponentRowMenu";
 import { DraftsSection } from "./DraftsSection";
@@ -113,7 +112,6 @@ export function ComponentsPage() {
           </p>
         )}
         <DraftsSection drafts={drafts ?? []} onPublish={setPublishing} />
-        <CliInstallCard />
         {publishing && (
           <PublishDialog
             id={publishing}

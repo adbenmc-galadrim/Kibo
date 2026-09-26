@@ -5,6 +5,7 @@ const enc = encodeURIComponent;
 const SCREEN_HASHES: Record<Screen, string> = {
   agents: "#/agents",
   queue: "#/agents/queue",
+  general: "#/settings/general",
   domains: "#/settings/domains",
   components: "#/components",
   mine: "#/mine",

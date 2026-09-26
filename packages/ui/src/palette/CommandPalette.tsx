@@ -47,6 +47,7 @@ const ICONS = {
   assign: Bot,
   agents: SCREENS.agents.icon,
   queue: SCREENS.queue.icon,
+  general: SCREENS.general.icon,
   domains: SCREENS.domains.icon,
   components: SCREENS.components.icon,
   mine: SCREENS.mine.icon,

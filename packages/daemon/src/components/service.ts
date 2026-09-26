@@ -35,6 +35,7 @@ export type ComponentsDeps = {
   processCommand?: string[];
   net?: NetProxyOptions;
   installCli?: () => Promise<{ path: string }>;
+  cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
   drainMs?: number;
 };
@@ -214,6 +215,10 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
         if (!deps.installCli)
           throw new KiboError("INVALID_INPUT", "the kibo command is installed by the desktop app");
         return deps.installCli();
+      case "cliStatus":
+        if (!deps.cliStatus)
+          throw new KiboError("INVALID_INPUT", "the kibo command is installed by the desktop app");
+        return deps.cliStatus();
       case "reportComponentRefusal":
         return reportRefusal(req.projectId, req.instanceId, req.kind);
     }

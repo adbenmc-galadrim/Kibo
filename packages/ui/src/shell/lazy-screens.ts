@@ -3,6 +3,10 @@ import { fr } from "../i18n/fr";
 
 export const AgentsPage = lazyPanel(() => import("../agents/AgentsPage").then((m) => m.AgentsPage), fr.lazy);
 export const QueuePage = lazyPanel(() => import("../agents/QueuePage").then((m) => m.QueuePage), fr.lazy);
+export const GeneralPage = lazyPanel(
+  () => import("../settings/GeneralPage").then((m) => m.GeneralPage),
+  fr.lazy,
+);
 export const DomainsPage = lazyPanel(
   () => import("../settings/DomainsPage").then((m) => m.DomainsPage),
   fr.lazy,

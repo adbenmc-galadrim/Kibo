@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  chmodSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -12,7 +13,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { installCli } from "./install-cli";
+import { cliStatus, installCli } from "./install-cli";
 
 test("links ~/.local/bin/kibo to the compiled binary, idempotently", async () => {
   const dir = mkdtempSync(join(tmpdir(), "kibo-bin-"));
@@ -73,5 +74,30 @@ test("refuses a binary running from macOS App Translocation", async () => {
   const execPath = "/private/var/folders/x/AppTranslocation/ABC/d/Kibo.app/Contents/MacOS/kibo-daemon";
   await expect(installCli({ execPath, binDir, compiled: true, env: {} })).rejects.toThrow("INVALID_INPUT");
   expect(existsSync(join(binDir, "kibo"))).toBe(false);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("reports whether the kibo command links to this binary", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "kibo-bin-"));
+  const exe = join(dir, "kibo-daemon");
+  const binDir = join(dir, "bin");
+  const path = join(binDir, "kibo");
+  expect(await cliStatus({ execPath: exe, binDir })).toEqual({ path, installed: false });
+  await installCli({ execPath: exe, binDir, compiled: true, env: {} });
+  expect(await cliStatus({ execPath: exe, binDir })).toEqual({ path, installed: true });
+  rmSync(path);
+  symlinkSync("/usr/bin/true", path);
+  expect(await cliStatus({ execPath: exe, binDir })).toEqual({ path, installed: false });
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("reports a read-only bin directory as a permission error", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "kibo-bin-"));
+  const binDir = join(dir, "bin");
+  mkdirSync(binDir);
+  chmodSync(binDir, 0o500);
+  const install = installCli({ execPath: join(dir, "kibo-daemon"), binDir, compiled: true, env: {} });
+  await expect(install).rejects.toThrow("PERMISSION_DENIED");
+  chmodSync(binDir, 0o700);
   rmSync(dir, { recursive: true, force: true });
 });

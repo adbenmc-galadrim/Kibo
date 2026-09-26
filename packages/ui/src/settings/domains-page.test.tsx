@@ -154,11 +154,10 @@ test("preview blocks follow the markdown lines", () => {
   ]);
 });
 
-test("settings navigation marks the current page and disables the others", () => {
+test("settings navigation marks the current page and disables the unbuilt ones", () => {
   render(<SettingsNav active="domains" />);
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
-  expect(nav.getByRole("button", { name: "Domaines & guidelines" }).getAttribute("aria-current")).toBe(
-    "page",
-  );
-  expect(nav.getByRole("button", { name: "Général" }).hasAttribute("disabled")).toBe(true);
+  expect(nav.getByRole("link", { name: "Domaines & guidelines" }).getAttribute("aria-current")).toBe("page");
+  expect(nav.getByRole("link", { name: "Général" }).getAttribute("href")).toBe("#/settings/general");
+  expect(nav.getByRole("button", { name: "Apparence" }).hasAttribute("disabled")).toBe(true);
 });

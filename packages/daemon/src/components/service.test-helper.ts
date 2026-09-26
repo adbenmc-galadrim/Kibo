@@ -110,6 +110,7 @@ export type HarnessOptions = {
   timers?: Timers;
   validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
   drainMs?: number;
+  cliStatus?: () => Promise<{ path: string; installed: boolean }>;
 };
 
 export async function boot(home: string, opts: HarnessOptions = {}): Promise<Harness> {
@@ -126,6 +127,7 @@ export async function boot(home: string, opts: HarnessOptions = {}): Promise<Har
     validate: opts.validate ?? okReport,
     ...(opts.timers && { jobTimers: opts.timers }),
     ...(opts.drainMs !== undefined && { drainMs: opts.drainMs }),
+    ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
   const detach = service.attachComponents(components);
   await components.start();

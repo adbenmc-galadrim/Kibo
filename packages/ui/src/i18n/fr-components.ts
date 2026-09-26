@@ -195,7 +195,15 @@ export const frComponents = {
     help: "Installe la commande kibo dans ~/.local/bin pour créer, tester et publier tes composants.",
     install: "Installer la commande kibo",
     installed: (path: string) => `Installée : ${path}`,
-    failed: "Impossible d'installer la commande.",
+    notInstalled: "Non installée",
+    failed: "Impossible d'installer la commande kibo",
+    cause: {
+      PERMISSION_DENIED:
+        "~/.local/bin n'est pas accessible en écriture. Crée le dossier ou corrige ses droits, puis réessaie.",
+      CONFLICT: "~/.local/bin/kibo existe déjà et n'appartient pas à Kibo. Supprime-le, puis réessaie.",
+      INVALID_INPUT: "La commande s'installe depuis l'application Kibo installée.",
+      other: "Réessaie ; si l'échec persiste, consulte le journal du démon.",
+    },
   },
   componentErrors: {
     HASH_MISMATCH: "Le code du composant a changé depuis son affichage : vérifie de nouveau son empreinte.",

@@ -15,6 +15,7 @@ export const COMPONENT_METHODS = [
   "setNotesDir",
   "getRuntimeInfo",
   "installCli",
+  "cliStatus",
   "reportComponentRefusal",
 ] as const satisfies readonly RpcRequest["method"][];
 

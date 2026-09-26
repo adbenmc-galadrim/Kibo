@@ -1,5 +1,12 @@
 import type { AgentsState, ProjectSnapshot, ProjectSummary, Screen, WorkspaceConfig } from "@kibo/schema";
-import { AgentsPage, ComponentsPage, DomainsPage, MyTicketsPage, QueuePage } from "./lazy-screens";
+import {
+  AgentsPage,
+  ComponentsPage,
+  DomainsPage,
+  GeneralPage,
+  MyTicketsPage,
+  QueuePage,
+} from "./lazy-screens";
 
 type Props = {
   screen: Screen;
@@ -16,6 +23,7 @@ type Props = {
 
 export function ScreenView({ screen, projects, agents, config, now, onAnswer, ...p }: Props) {
   if (screen === "components") return <ComponentsPage />;
+  if (screen === "general") return <GeneralPage />;
   if (screen === "mine") return <MyTicketsPage projects={projects} config={config} {...p} />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;

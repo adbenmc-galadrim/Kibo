@@ -121,9 +121,10 @@ test("screen 6: the table lists built-ins and installed versions", async () => {
   ).toBe(true);
 });
 
-test("D8: the kibo command card sits below the drafts", async () => {
+test("D8: the kibo command card lives in the settings, not here", async () => {
   render(<ComponentsPage />);
-  expect(await screen.findByRole("button", { name: "Installer la commande kibo" })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: "Publier" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Installer la commande kibo" })).toBeNull();
 });
 
 test("publishing: usages, changes, strategy, then the report", async () => {

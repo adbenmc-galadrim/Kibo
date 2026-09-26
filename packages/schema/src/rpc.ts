@@ -130,6 +130,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   }),
   z.object({ method: z.literal("getRuntimeInfo") }),
   z.object({ method: z.literal("installCli") }),
+  z.object({ method: z.literal("cliStatus") }),
   z.object({
     method: z.literal("reportComponentRefusal"),
     projectId: z.string().min(1),
@@ -173,6 +174,7 @@ export type RpcResult = {
   setNotesDir: NotesInfo;
   getRuntimeInfo: RuntimeInfo;
   installCli: { path: string };
+  cliStatus: { path: string; installed: boolean };
   reportComponentRefusal: null;
 } & IntegrationRpcResult;
 

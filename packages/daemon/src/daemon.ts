@@ -26,7 +26,9 @@ export type DaemonOptions = {
   notify?: (notice: Notice) => void;
   claudeBin?: string | null;
   sampler?: () => HostLoad;
-} & Partial<Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli">>;
+} & Partial<
+  Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
+>;
 
 export type Daemon = { url: string; port: number; sandboxPort: number; token: string; stop(): Promise<void> };
 
@@ -80,6 +82,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     ...(opts.processCommand && { processCommand: opts.processCommand }),
     ...(opts.net && { net: opts.net }),
     ...(opts.installCli && { installCli: opts.installCli }),
+    ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
   closers.push(service.attachComponents(components));
   closers.push(() => components.stop());

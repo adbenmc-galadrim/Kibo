@@ -231,7 +231,10 @@ export function AppSidebar(p: Props) {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton isActive={screen === "domains"} {...link(screenTarget("domains"))}>
+            <SidebarMenuButton
+              isActive={screen === "general" || screen === "domains"}
+              {...link(screenTarget("general"))}
+            >
               <Settings />
               <span>{fr.nav.settings}</span>
             </SidebarMenuButton>

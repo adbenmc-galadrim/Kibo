@@ -54,6 +54,8 @@ mock.module("../api", () => ({
     rpc: (req: RpcRequest) => {
       calls.push(req);
       if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+      if (req.method === "cliStatus")
+        return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
       if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
       return Promise.resolve(
         req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
@@ -121,6 +123,7 @@ test("routes name the agent screens", () => {
   expect(parseRoute("#/agents")).toEqual(screenRoute("agents"));
   expect(parseRoute("#/agents/queue")).toEqual(screenRoute("queue"));
   expect(parseRoute("#/settings/domains")).toEqual(screenRoute("domains"));
+  expect(parseRoute("#/settings/general")).toEqual(screenRoute("general"));
   expect(parseRoute("#/p/kibo/1%401")).toEqual({
     projectId: "kibo",
     pageId: "1@1",
@@ -149,8 +152,10 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   expect(crumbs.getByText("Agents")).toBeTruthy();
   expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");
   await user.click(screen.getByRole("button", { name: "Paramètres" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Domaines & guidelines" })).toBeTruthy();
+  expect(await screen.findByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  expect(crumbs.getByText("Paramètres")).toBeTruthy();
+  expect(crumbs.getByText("Général").getAttribute("aria-current")).toBe("page");
 });
 
 test("my tickets: sidebar count, rows of every project, sheet and assign in the right project", async () => {

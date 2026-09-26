@@ -155,6 +155,14 @@ describe("components over RPC", () => {
 
   test("installing the command line is left to the desktop app", async () => {
     await expect(h.rpc({ method: "installCli" })).rejects.toThrow("INVALID_INPUT");
+    await expect(h.rpc({ method: "cliStatus" })).rejects.toThrow("INVALID_INPUT");
+  });
+
+  test("the command line status comes from the desktop app", async () => {
+    await h.stop();
+    const status = { path: "/Users/adam/.local/bin/kibo", installed: true };
+    await start({ cliStatus: async () => status });
+    expect(await h.rpc({ method: "cliStatus" })).toEqual(status);
   });
 });
 
