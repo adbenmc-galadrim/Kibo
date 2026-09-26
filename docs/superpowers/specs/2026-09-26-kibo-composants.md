@@ -351,3 +351,49 @@ Aucun test ne dépend du réseau réel.
 - Durcissement OS du backend (phase 7), génération IA (phase 6), adaptateurs de sync et `secrets` / `mcp` (phase 5).
 - Création d'arêtes depuis le graphe ; synchronisation des notes entre utilisateurs (voir spec G §3.4).
 - Exposition de git dans le SDK (la spec de phase 3 §10 l'évoque pour faire de « Changements » un composant) : « Changements » reste une vue du shell en v0.4 ; aucune permission `git` n'est ajoutée. Raison : donner git à un composant tiers est un risque majeur sans besoin identifié.
+
+## 15. Décisions d'implémentation (plan de phase 4)
+
+Reprises du plan `docs/superpowers/plans/2026-09-26-kibo-composants.md` (« Décisions techniques de ce plan »).
+
+1. **Données d'instance** : `doc.getMap("instanceData")`, une `LoroMap` par `instanceId`. Les instances restent des valeurs JSON dans `instances` (format v0.1 inchangé, pas de migration de docs existants).
+2. **Format de `configSchema`** : `Record<clé, { type?: "string"|"number"|"boolean", enum?: (string|number|boolean)[], nullable?: boolean, default?: unknown }>` (compatible avec le manifeste Kanban v0.1). Sans `configSchema`, seule la config `{}` est valide ; toute clé inconnue est refusée.
+3. **Appels ajoutés à `ComponentCall`** : `notes.search { query }` (recherche plein texte côté démon, spec §8.2) et `notes.info` (dossier, libellé Obsidian) ; `sdk.notes.search()` et `sdk.notes.info()` exigent `reads: note`.
+4. **Contexte SDK** : `surface: "widget" | "view"` (widget et vue d'un composant `both` diffèrent pour Graphe et Notes) et `openView(componentId)` (lien « Ouvrir le graphe → ») ; message iframe `{ type: "openView", componentId }` pour garder une API identique en sandbox.
+5. **Codes d'erreur ajoutés** en plus de la spec : `RATE_LIMITED` (quotas d'appels et de `fetch`), `QUOTA_EXCEEDED` (256 Kio de données).
+6. **RPC ajoutées** : `rehashComponent` (menu « Revérifier l'empreinte »), `listDrafts` (« Mes composants » non publiés), `getNotesDir` / `setNotesDir`, `getRuntimeInfo` (origine du port sandbox pour l'UI), `installCli` (Paramètres › Général).
+7. **Mise à jour différée** : `RegistryVersion.autoUpdate: boolean` (défaut `false`). « Mettre à jour partout » sur une version qui demande une nouvelle permission ne lance aucune migration (ce serait exécuter du code non approuvé) : la version est publiée avec `trust = null` et `autoUpdate = true`, et `approveComponent` applique alors la mise à jour à toutes les instances.
+8. **Découverte du démon par la CLI** : le démon écrit `<KIBO_HOME>/daemon.json` (`{ port, sandboxPort, pid }`, `0600`) au démarrage et le supprime à l'arrêt.
+9. **Validation sur copie** : `validateComponent` copie les fichiers du composant dans un dossier temporaire (avec un lien `node_modules` vers la toolchain) et valide cette copie ; l'empreinte du rapport est celle de la copie (pas d'écart entre ce qui est validé et ce qui est publié). Tampon de dernière validation : `<dossier>/.kibo/validation.json` (caché, donc hors empreinte).
+10. **Empreinte** : octets bruts, sans normalisation des fins de ligne ; un lien symbolique dans les sources fait échouer la validation ; plafonds 200 fichiers hachés, 2 Mio.
+11. **Graphe** : couches par plus long chemin **vers un puits** (alignement à droite), ce qui reproduit l'écran 10 (KIB-16 en colonne 2) ; égalité du chemin critique départagée par ordre naturel des clés (`KIB-5` < `KIB-11`).
+12. **Notes** : `NoteMeta.links` contient une entrée par occurrence (le compteur « n mentions » en découle) ; recherche par `instr(lower(title || body), lower(q))` sur une colonne `body` de l'index (pas de FTS5, dont la présence varie selon la SQLite du système).
+13. **Chargement dynamique depuis la toolchain** : `typescript`, `@tailwindcss/node` et `@tailwindcss/oxide` sont chargés au runtime depuis la toolchain (et non embarqués dans le binaire), ce qui évite d'embarquer un module natif et règle le chemin des `lib.d.ts`.
+14. **`buildComponent(srcDir, toolchain)`** renvoie les fichiers en mémoire (`Record<nom, Uint8Array>`) au lieu d'écrire dans `outDir` : le démon les écrit lui-même dans le magasin.
+15. **Appels d'un backend rattachés à leur invocation** : le message `call` du backend porte `invocation` (l'`id` de l'`invoke` en cours) ; le démon en déduit projet et instance, et refuse (`PERMISSION_DENIED`) un appel dont l'invocation est terminée ou inconnue (un `ctx` conservé après la fin d'une action ne sert plus à rien). Limite résiduelle : pendant deux invocations simultanées du même `id@version`, le code peut choisir l'une ou l'autre ; les deux instances ont les mêmes permissions accordées.
+16. **Imports refusés en défense en profondeur** : en plus des modules, les identifiants `require`, `eval`, `Function`, `process`, `Bun`, `globalThis`, `module` et `import.meta` sont refusés en position de valeur dans les sources d'un composant non intégré.
+17. **`ui.sandbox.js` servi avec `access-control-allow-origin: *`** : le document sandboxé a une origine opaque et un script `type="module"` se charge en mode CORS ; le fichier ne porte ni secret ni cookie. Aucun autre fichier du port sandbox n'a cet en-tête.
+18. **`lucide-react` embarqué dans `ui.trusted.js`** (non partagé via `globalThis.__kiboShared`) : icônes sans état ; l'UI n'expose ainsi que React et le SDK, sans gonfler son bundle de toute la bibliothèque d'icônes.
+19. **Messages de statut plutôt que toasts** : l'UI v0.1 n'a pas de `Toaster` (celui de shadcn dépend de `next-themes`) ; `useFlash` affiche un `role="status"` 4 s près de l'action. Si une phase antérieure a monté un `Toaster`, les tâches 24 et 28 l'utilisent à la place.
+20. **Commandes réservées refusées sur la RPC `command`** : `setInstanceComponent` et `setInstanceData` ne sont émises que par le démon (mise à jour, `data.set`) ; `addInstance`, `removeInstance` et `setInstanceConfig` restent permises au shell.
+21. **Brouillons dans `<KIBO_HOME>/components/src/<id>/`** (hors monorepo, spec §3.2) ; `kibo component test` accepte aussi un chemin de dossier.
+22. **Point d'entrée unique du binaire** (`apps/desktop/sidecar/entry.ts`) : répartit entre démon, CLI (`component …` ou lien nommé `kibo`) et runtime sandboxé (`component-runtime`), sans créer d'arête `cli ← daemon`.
+23. **Démarrage factorisé** : `startDaemon` (tâche 30) sert à `main.ts`, aux tests d'intégration, à la CLI (tests) et à l'E2E.
+
+Ancrages réels constatés par la tâche 2 (phases 2 et 3 livrées après l'écriture du plan) :
+
+- `BuiltinEntityType` = `ticket`, `status`, `link`, `page`, `run`, `note` : `run` (phase 2, lecture seule) est conservé ; `permissionOfCall({ kind: "list", entity: "run" })` = `read:run`.
+- `ProjectCommand` garde `upsertExternalRef` (phase 2) avec `COMMAND_WRITES.upsertExternalRef = "ticket"`, comme la table du SDK v0.1 ; les méthodes RPC des phases 2 et 3 restent dans `RpcRequest` et `RpcResult`.
+- `KIBO_ERROR_CODES` conserve tous les codes des phases 2 et 3 (`PATH_OUTSIDE_PROJECT`, `GIT_*`, `GH_*`, `FILE_CHANGED`, `TOO_LARGE`…) et ajoute ceux de la phase 4.
+- Les textes UI de la phase 4 vivent dans `packages/ui/src/i18n/fr-components.ts` (`frComponents`, étalé dans `fr` comme `frCode`) pour garder `fr.ts` sous ~300 lignes ; l'accès reste `fr.addComponent`, `fr.components`, `fr.publish`…
+
+### Points à arbitrer par Adam
+
+Option A appliquée en attendant l'arbitrage d'Adam.
+
+| # | Sujet | Option A (par défaut) | Option B |
+|---|---|---|---|
+| E1 | Entités déclarées `acme.bug` : la feuille de route les met en phase 4, la spec de phase §14 les exclut | suivre la spec (hors périmètre, à placer après v1.0) ; la feuille de route est corrigée au jalon | ajouter une tâche « entités déclarées » (schéma namespacé, `reads: ["acme.bug"]`, stockage dans le doc projet) après la tâche 30 |
+| E2 | Import dynamique construit (`new Function("return import('node:fs')")`) dans le runtime restreint : si le spike 1-C montre qu'on ne peut pas le bloquer | documenter la limite, garder le durcissement OS en phase 7 (spec H §8), le test de sortie reste vert car il porte sur les appels au démon | avancer en phase 4 le profil `sandbox-exec` (macOS) et `bwrap` (Linux) pour `ProcessHost` |
+| E3 | Bouton « Hiérarchique » de l'écran 10 | indicateur de la seule mise en page disponible (bouton pressé, désactivé, infobulle) | bascule qui ajoute les arêtes parent → sous-ticket |
+| E4 | Tickets sans arête `blocks` : spec « couche 0 séparée en bas » ; écran 10 : KIB-9 en bas mais KIB-14 et KIB-18 à droite | suivre la spec (tous en bas) ; le chef aligne la maquette | suivre la maquette (colonne à droite pour les tickets assignés à un agent) |
