@@ -13236,7 +13236,7 @@ Installer un paquet vérifié (spec H §5.2 point 3, §7) : sources écrites dan
   - Commandes `addInstance` et `setInstanceComponent` : `componentHash: Sha256.nullable().optional()` ; `core` écrit `componentHash: input.componentHash ?? null`.
   - Décision 16 précisée : une installation marketplace **n'utilise jamais** le réglage « Autoriser les backends sandboxés sans isolation OS » ; sans bac à sable OS utilisable, `installFromMarket` échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
 
-- [ ] **Step 1: Test de `componentHash` dans `core`**
+- [x] **Step 1: Test de `componentHash` dans `core`**
 
 `packages/core/src/instances-hash.test.ts` :
 ```ts
@@ -13286,7 +13286,7 @@ describe("componentHash", () => {
 Run: `bun test packages/core/src/instances-hash.test.ts`
 Expected: FAIL (erreur de type : `componentHash` inconnu dans l'entrée de `addInstance`).
 
-- [ ] **Step 2: Écrire `componentHash` dans `core` et les commandes**
+- [x] **Step 2: Écrire `componentHash` dans `core` et les commandes**
 
 Dans `packages/schema/src/command.ts`, ajouter `componentHash: Sha256.nullable().optional()` (import de `Sha256` depuis `./component`) aux objets `addInstance` et `setInstanceComponent`.
 
@@ -13299,7 +13299,7 @@ Dans `packages/core/src/instances.ts` :
 Run: `bun test packages/core/src/instances-hash.test.ts packages/core packages/schema`
 Expected: PASS ; les tests existants passent sans changement de leurs attentes.
 
-- [ ] **Step 3: Test de l'option `conformanceOnly`**
+- [x] **Step 3: Test de l'option `conformanceOnly`**
 
 `packages/devkit/src/validate-conformance-only.test.ts` :
 ```ts
@@ -13365,7 +13365,7 @@ test.if(sandboxAvailable)("without conformanceOnly the publisher tests still run
 Run: `bun test packages/devkit/src/validate-conformance-only.test.ts`
 Expected: FAIL (le test de l'éditeur fait échouer le rapport ; sans fichier de test, `conformance` porte `FR_DEVKIT.noConformance`). Sur un poste sans bac à sable OS, les trois tests sont ignorés ; la CI Linux et macOS les exécute (bubblewrap installé depuis la phase 4).
 
-- [ ] **Step 4: Implémenter `conformanceOnly`**
+- [x] **Step 4: Implémenter `conformanceOnly`**
 
 Dans `packages/devkit/src/scaffold.ts`, renommer la constante locale `TEST` en `export const CONFORMANCE_TEST` (même contenu), et l'utiliser dans `scaffold`.
 
@@ -13383,7 +13383,7 @@ async function useGenericSuite(copy: string, files: string[]): Promise<void> {
 Run: `bun test packages/devkit`
 Expected: PASS ; les tests existants de `devkit` passent sans changement de leurs attentes.
 
-- [ ] **Step 5: Tests de l'installation**
+- [x] **Step 5: Tests de l'installation**
 
 `packages/daemon/src/market/install.test.ts` :
 ```ts
@@ -13593,7 +13593,7 @@ describe("installFromMarket", () => {
 Run: `bun test packages/daemon/src/market/install.test.ts`
 Expected: FAIL avec « Cannot find module './install' ».
 
-- [ ] **Step 6: Implémenter l'installation**
+- [x] **Step 6: Implémenter l'installation**
 
 `packages/daemon/src/market/install.ts` :
 ```ts
@@ -13710,7 +13710,7 @@ export function installFromMarket(deps: InstallDeps, input: Input): Promise<Mark
 Run: `bun test packages/daemon/src/market/install.test.ts`
 Expected: PASS (le dernier test est ignoré sans bac à sable OS ; exécuté en CI).
 
-- [ ] **Step 7: `componentHash` écrit par le démon**
+- [x] **Step 7: `componentHash` écrit par le démon**
 
 `packages/daemon/src/components/component-hash.test.ts` :
 ```ts
@@ -13808,7 +13808,7 @@ Dans `packages/daemon/src/daemon.ts`, l'appel à `createComponentsService` gagne
 Run: `bun test packages/daemon/src/components`
 Expected: PASS ; les tests existants passent sans changement de leurs attentes.
 
-- [ ] **Step 8: RPC `installFromMarket`**
+- [x] **Step 8: RPC `installFromMarket`**
 
 Dans `packages/daemon/src/market/rpc.ts` (gestionnaire `RpcHandler` de T15), traiter `installFromMarket` par `installFromMarket(installDeps, { sourceId, id, version })`, avec, au branchement (`packages/daemon/src/market/bootstrap.ts` de T15, appelé par `daemon.ts`) :
 ```ts
@@ -13828,7 +13828,7 @@ Si le démon reçoit une validation injectée (`DaemonOptions.validate`, utilis�
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 8b: Une version révoquée ne se réapprouve pas (décision 34)**
+- [x] **Step 8b: Une version révoquée ne se réapprouve pas (décision 34)**
 
 Ajouter au `describe("approval")` de `packages/daemon/src/components/registry-service.test.ts` :
 ```ts
@@ -13856,12 +13856,12 @@ Dans `approve` de `packages/daemon/src/components/registry-service.ts`, juste ap
 Run: `bun test packages/daemon/src/components/registry-service.test.ts`
 Expected: PASS ; les autres tests du fichier sont inchangés.
 
-- [ ] **Step 9: Vérifications**
+- [x] **Step 9: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages components`
 Expected: aucune erreur ; les tests existants de `devkit`, `core` et du démon passent sans changement de leurs attentes.
 
-- [ ] **Step 10: Commits**
+- [x] **Step 10: Commits**
 
 ```bash
 git add packages/schema/src/command.ts packages/core/src/instances.ts packages/core/src/instances-hash.test.ts packages/devkit/src/scaffold.ts packages/devkit/src/validate.ts packages/devkit/src/validate-conformance-only.test.ts
