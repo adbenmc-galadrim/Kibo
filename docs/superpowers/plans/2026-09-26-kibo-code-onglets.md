@@ -2224,7 +2224,7 @@ git commit -m "feat(core): message de commit déterministe"
 - Consumes: `TabsState`, `EMPTY_TABS`, requêtes `getTabs` / `saveTabs` (tâche 1).
 - Produces : `Store.getLocal(key: string): string | null`, `Store.setLocal(key: string, value: string): void` ; `Service.handle({ method: "getTabs" })` → `TabsState` ; `Service.handle({ method: "saveTabs", state })` → `null` ; `call<R extends RpcRequest>(service: Service, req: R): RpcResult[R["method"]]` (exporté par `service.ts`, utilisé par la tâche 21).
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 Ajouter à `packages/daemon/src/store.test.ts` :
 ```ts
@@ -2279,7 +2279,7 @@ describe("tabs", () => {
 Run: `bun test packages/daemon/src/store.test.ts packages/daemon/src/service.test.ts`
 Expected: FAIL (`setLocal` absent, `getTabs` renvoie `undefined`).
 
-- [ ] **Step 2: Implémenter**
+- [x] **Step 2: Implémenter**
 
 `packages/daemon/src/store.ts` :
 - ajouter à `Store` : `getLocal(key: string): string | null;` et `setLocal(key: string, value: string): void;` ;
@@ -2335,12 +2335,12 @@ export function call<R extends RpcRequest>(service: Service, req: R): RpcResult[
 
 Les onglets sont un confort local : un état illisible est journalisé et remplacé, sans bloquer le démarrage (au contraire des docs, protégés par `STORE_CORRUPT`).
 
-- [ ] **Step 3: Lancer les tests**
+- [x] **Step 3: Lancer les tests**
 
 Run: `bun test packages/daemon`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/daemon/src/store.ts packages/daemon/src/store.test.ts packages/daemon/src/service.ts packages/daemon/src/service.test.ts
