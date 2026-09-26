@@ -9613,12 +9613,12 @@ Chemin critique : T1 → T3/T4 → T15 → T17/T18/T19 → T21 → T22 → T24 (
 
 ## Jalon v0.3
 
-- [ ] `main` verte en CI sur macOS et Linux : `bun test`, `bun run check`, `bun run typecheck`, build UI, E2E `mvp`, `code`, `tabs` en sombre et en clair, smoke Tauri.
-- [ ] Sortie de la feuille de route : le parcours `e2e/code.spec.ts` (modifier → commit → amend → PR sur un dépôt de test et un faux `gh`) passe.
-- [ ] Contrôle de conformité : captures de `e2e/screens.spec.ts` comparées aux pages 28, 33 à 36 des deux PDF ; écarts corrigés (T24) ou listés.
-- [ ] Tag `v0.3` sur `main`, poussé.
-- [ ] Rapport `docs/superpowers/rapports/2026-09-26-jalon-v0.3.md` : livré, écarts (dont les états de `revue-flows.md` §7 non dessinés, « Générer avec Claude » reporté, barre de titre Tauri native, pastille Changements limitée au worktree principal du projet actif), risques (voir ci-dessous).
-- [ ] Mettre à jour la feuille de route (« Plan » de la phase 3) et enchaîner la phase 4 sans attendre (décision d'Adam, CLAUDE.md).
+- [x] `main` verte localement sur macOS (CI GitHub hors service, facturation du compte) : `bun test`, `bun run check`, `bun run typecheck`, build UI, E2E `mvp`, `agents`, `code`, `tabs`, `screens` en sombre et en clair ; Linux et smoke Tauri non rejoués.
+- [x] Sortie de la feuille de route : le parcours `e2e/code.spec.ts` (modifier → commit → amend → PR sur un dépôt de test et un faux `gh`) passe.
+- [x] Contrôle de conformité : captures de `e2e/screens.spec.ts` comparées aux pages 28, 33 à 36 des deux PDF ; écarts corrigés (T24) ou listés.
+- [x] Tag `v0.3` sur `main`, poussé.
+- [x] Rapport `docs/superpowers/rapports/2026-09-26-jalon-v0.3.md` : livré, écarts (dont les états de `revue-flows.md` §7 non dessinés, « Générer avec Claude » reporté, barre de titre Tauri native, pastille Changements limitée au worktree principal du projet actif), risques (voir ci-dessous).
+- [x] Mettre à jour la feuille de route (« Plan » de la phase 3) et enchaîner la phase 4 sans attendre (décision d'Adam, CLAUDE.md).
 
 **Risques à suivre dans le rapport :**
 - `fs.watch` récursif sous Linux (inotify, limites de descripteurs) : repli par sondage testé, à surveiller sur de gros dépôts.
