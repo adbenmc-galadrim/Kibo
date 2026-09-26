@@ -60,6 +60,11 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
 
+const sandboxOrigins = (origin: string | null): string[] => {
+  if (origin === null || !URL.canParse(origin)) return [];
+  const { port } = new URL(origin);
+  return [`http://127.0.0.1:${port}`, `http://localhost:${port}`];
+};
 const json = (body: RpcResponse, status = 200) => Response.json(body, { status });
 const fail = (code: KiboErrorCode, message: string, status: number) =>
   json({ ok: false, error: { code, message } }, status);
@@ -81,8 +86,8 @@ export function startServer(opts: ServerOptions): { url: string; port: number; s
   let port = opts.port;
   const hosts = () => [`127.0.0.1:${port}`, `localhost:${port}`];
   const origins = () => {
-    const sandbox = opts.sandboxOrigin?.() ?? null;
-    const extra = (opts.extraOrigins ?? []).filter((o) => o !== sandbox);
+    const sandbox = sandboxOrigins(opts.sandboxOrigin?.() ?? null);
+    const extra = (opts.extraOrigins ?? []).filter((o) => !sandbox.includes(o));
     return [`http://127.0.0.1:${port}`, `http://localhost:${port}`, ...extra];
   };
   const hasSession = (req: Request) => {

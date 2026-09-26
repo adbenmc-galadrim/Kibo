@@ -199,7 +199,11 @@ describe("component error statuses", () => {
 
 describe("api origins", () => {
   test("the sandbox origin never reaches the api, even listed as an extra origin", async () => {
-    const { base, cookie } = await startPaired({ sandboxOrigin: () => SANDBOX, extraOrigins: [SANDBOX] });
+    const localhost = SANDBOX.replace("127.0.0.1", "localhost");
+    const { base, cookie } = await startPaired({
+      sandboxOrigin: () => SANDBOX,
+      extraOrigins: [SANDBOX, localhost],
+    });
     const rpc = (origin: string) =>
       fetch(`${base}/api/rpc`, {
         method: "POST",
@@ -207,6 +211,7 @@ describe("api origins", () => {
         body: JSON.stringify({ method: "listProjects" }),
       });
     expect((await rpc(SANDBOX)).status).toBe(403);
+    expect((await rpc(localhost)).status).toBe(403);
     expect((await rpc("null")).status).toBe(403);
     expect((await rpc(base)).status).toBe(200);
   });
