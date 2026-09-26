@@ -4,6 +4,9 @@ import {
   type RpcRequest,
   type RpcResponse,
   type RpcResult,
+  type RunChanged,
+  type RunState,
+  type Topic,
 } from "@kibo/schema";
 import type { ProjectBackend } from "./types";
 
@@ -11,6 +14,8 @@ export type KiboClient = {
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
   pair(token: string): Promise<void>;
   subscribe(listener: (projectId: string | null) => void): () => void;
+  subscribeTopic(topic: Topic, listener: () => void): () => void;
+  onRunChanged(listener: (e: RunChanged) => void): () => void;
 };
 
 export type ClientOptions = {
@@ -21,9 +26,6 @@ export type ClientOptions = {
 
 export function createClient(opts: ClientOptions): KiboClient {
   const f = opts.fetch ?? fetch;
-  const listeners = new Set<(projectId: string | null) => void>();
-  let socket: WebSocket | null = null;
-
   const post = (path: string, body: unknown) =>
     f(`${opts.baseUrl}${path}`, {
       method: "POST",
@@ -32,18 +34,42 @@ export function createClient(opts: ClientOptions): KiboClient {
       body: JSON.stringify(body),
     });
 
+  const listeners = new Set<(projectId: string | null) => void>();
+  const topics = new Map<Topic, Set<() => void>>();
+  const runListeners = new Set<(e: RunChanged) => void>();
+  let socket: WebSocket | null = null;
+  const active = () =>
+    listeners.size + runListeners.size + [...topics.values()].reduce((n, set) => n + set.size, 0);
+
   const connect = () => {
     const url = new URL("/api/events", opts.baseUrl || globalThis.location.href);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(url);
     socket.onmessage = (e) => {
-      const { projectId } = JSON.parse(String(e.data)) as { projectId: string | null };
-      for (const l of listeners) l(projectId);
+      const msg = JSON.parse(String(e.data)) as {
+        projectId?: string | null;
+        topic?: Topic;
+        type?: string;
+        runId?: string;
+        state?: RunState;
+      };
+      if (msg.type === "run.changed" && msg.runId && msg.state) {
+        for (const l of runListeners) l({ type: "run.changed", runId: msg.runId, state: msg.state });
+        return;
+      }
+      if (msg.topic) {
+        for (const l of topics.get(msg.topic) ?? []) l();
+        return;
+      }
+      for (const l of listeners) l(msg.projectId ?? null);
     };
     socket.onclose = () => {
       socket = null;
-      if (listeners.size > 0) setTimeout(connect, 1000);
+      if (active() > 0) setTimeout(connect, 1000);
     };
+  };
+  const release = () => {
+    if (active() === 0) socket?.close();
   };
 
   return {
@@ -66,7 +92,25 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         listeners.delete(listener);
-        if (listeners.size === 0) socket?.close();
+        release();
+      };
+    },
+    subscribeTopic(topic, listener) {
+      const set = topics.get(topic) ?? new Set<() => void>();
+      set.add(listener);
+      topics.set(topic, set);
+      if (!socket) connect();
+      return () => {
+        set.delete(listener);
+        release();
+      };
+    },
+    onRunChanged(listener) {
+      runListeners.add(listener);
+      if (!socket) connect();
+      return () => {
+        runListeners.delete(listener);
+        release();
       };
     },
   };

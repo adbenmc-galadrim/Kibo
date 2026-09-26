@@ -8,6 +8,10 @@ export type KiboErrorCode =
   | "UNAUTHORIZED"
   | "FORBIDDEN"
   | "PERMISSION_DENIED"
+  | "INVALID_TRANSITION"
+  | "PROFILE_IN_USE"
+  | "WORKSPACE_FAILED"
+  | "AGENT_CLI_NOT_FOUND"
   | "INTERNAL";
 
 export class KiboError extends Error {

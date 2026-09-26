@@ -85,6 +85,7 @@
         "@kibo/core": "workspace:*",
         "@kibo/schema": "workspace:*",
         "loro-crdt": "1.16.3",
+        "zod": "3.25.76",
       },
     },
     "packages/schema": {

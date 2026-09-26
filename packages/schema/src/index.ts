@@ -1,3 +1,4 @@
+export * from "./agent";
 export * from "./errors";
 export * from "./ids";
 export * from "./instance";
@@ -6,5 +7,7 @@ export * from "./manifest";
 export * from "./page";
 export * from "./project";
 export * from "./rpc";
+export * from "./rule";
+export * from "./run";
 export * from "./status";
 export * from "./ticket";

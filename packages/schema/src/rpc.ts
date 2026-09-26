@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./agent";
 import type { KiboErrorCode } from "./errors";
 import { NodeId, ProjectKey } from "./ids";
 import { ComponentRef, type Instance, Layout } from "./instance";
 import type { Link } from "./link";
 import { type Page, PageKind } from "./page";
 import type { ProjectMeta } from "./project";
+import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { type Status, StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
 
@@ -84,7 +86,9 @@ export type ProjectSnapshot = {
   nextTicketKey: string;
 };
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
-export type Session = { user: string };
+export type Session = { user: string; notifications: "native" | "browser" };
+export type Topic = "agents" | "config";
+export type ChangeMessage = { projectId: string | null } | { topic: Topic } | RunChanged;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("getSession") }),
@@ -98,6 +102,32 @@ export const RpcRequest = z.discriminatedUnion("method", [
   }),
   z.object({ method: z.literal("getProject"), projectId: z.string().min(1) }),
   z.object({ method: z.literal("command"), projectId: z.string().min(1), command: ProjectCommand }),
+  z.object({ method: z.literal("getConfig") }),
+  z.object({ method: z.literal("config"), command: ConfigCommand }),
+  z.object({ method: z.literal("getAgents") }),
+  z.object({ method: z.literal("getRunLog"), runId: z.string().min(1) }),
+  z.object({
+    method: z.literal("previewAssign"),
+    projectId: z.string().min(1),
+    ticketId: NodeId,
+    profileId: z.string().min(1),
+  }),
+  z.object({
+    method: z.literal("assignAgent"),
+    projectId: z.string().min(1),
+    ticketId: NodeId,
+    profileId: z.string().min(1),
+    brief: z.string().max(10_000),
+  }),
+  z.object({
+    method: z.literal("answerRun"),
+    runId: z.string().min(1),
+    text: z.string().trim().min(1).max(10_000),
+  }),
+  z.object({ method: z.literal("cancelRun"), runId: z.string().min(1) }),
+  z.object({ method: z.literal("moveRun"), runId: z.string().min(1), index: z.number().int().nonnegative() }),
+  z.object({ method: z.literal("setRunPriority"), runId: z.string().min(1), priority: z.boolean() }),
+  z.object({ method: z.literal("setHost"), patch: HostSettings.partial() }),
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -107,6 +137,17 @@ export type RpcResult = {
   createProject: ProjectMeta;
   getProject: ProjectSnapshot;
   command: unknown;
+  getConfig: WorkspaceConfig;
+  config: unknown;
+  getAgents: AgentsState;
+  getRunLog: RunLogEntry[];
+  previewAssign: AssignPreview;
+  assignAgent: RunView;
+  answerRun: RunView;
+  cancelRun: RunView;
+  moveRun: null;
+  setRunPriority: null;
+  setHost: HostView;
 };
 
 export type RpcResponse =

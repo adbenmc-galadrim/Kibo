@@ -33,3 +33,36 @@ test("a 401 on rpc notifies onUnauthorized before throwing", async () => {
   await expect(other.rpc({ method: "listProjects" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   expect(events).toHaveLength(2);
 });
+
+test("topic, run and project messages reach their own listeners", async () => {
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ projectId: "p1" }));
+        ws.send(JSON.stringify({ topic: "agents" }));
+        ws.send(JSON.stringify({ type: "run.changed", runId: "r1", state: "running" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offProject = client.subscribe((id) => seen.push(`project:${id}`));
+  const offAgents = client.subscribeTopic("agents", () => seen.push("agents"));
+  const offConfig = client.subscribeTopic("config", () => seen.push("config"));
+  const offRuns = client.onRunChanged((e) => {
+    seen.push(`run:${e.runId}:${e.state}`);
+    done.resolve();
+  });
+  await done.promise;
+  expect(seen).toEqual(["project:p1", "agents", "run:r1:running"]);
+  offProject();
+  offAgents();
+  offConfig();
+  offRuns();
+  server.stop(true);
+});
