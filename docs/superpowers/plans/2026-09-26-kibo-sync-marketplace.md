@@ -6984,7 +6984,7 @@ Cette tâche ajoute donc seulement : le réglage persistant, le service qui expo
   // packages/daemon/src/components/service.ts : ComponentsDeps.allowUnsandboxed?: () => boolean
   ```
 
-- [ ] **Step 1: Écrire le test du lancement sans isolation**
+- [x] **Step 1: Écrire le test du lancement sans isolation**
 
 Ajouter à `packages/daemon/src/components/process-host-sandbox.test.ts` (imports enrichis de `SERVER_JS` depuis `./backend-code.test-helper`) :
 ```ts
@@ -7050,7 +7050,7 @@ Le test existant « without an OS sandbox the backend does not start » reste te
 Run: `bun test packages/daemon/src/components/process-host-sandbox.test.ts`
 Expected: FAIL — l'option `allowUnsandboxed` n'existe pas, `SANDBOX_UNAVAILABLE` au premier cas.
 
-- [ ] **Step 2: Lancer sans enveloppe quand le réglage l'autorise**
+- [x] **Step 2: Lancer sans enveloppe quand le réglage l'autorise**
 
 Dans `packages/daemon/src/components/process-host.ts` :
 ```ts
@@ -7086,7 +7086,7 @@ Dans `packages/daemon/src/components/backends.ts`, `BackendsDeps` gagne `allowUn
 Run: `bun test packages/daemon/src/components/process-host-sandbox.test.ts packages/daemon/src/components/process-host.test.ts packages/daemon/src/components/backends.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Écrire le test du service d'isolation**
+- [x] **Step 3: Écrire le test du service d'isolation**
 
 `packages/daemon/src/sandbox/sandbox-service.test.ts` :
 ```ts
@@ -7161,7 +7161,7 @@ describe("sandbox RPC", () => {
 Run: `bun test packages/daemon/src/sandbox/sandbox-service.test.ts`
 Expected: FAIL avec « Cannot find module './sandbox-service' ».
 
-- [ ] **Step 4: Implémenter le service et les RPC**
+- [x] **Step 4: Implémenter le service et les RPC**
 
 `packages/daemon/src/sandbox/sandbox-service.ts` :
 ```ts
@@ -7224,7 +7224,7 @@ export function sandboxRpc(service: SandboxService): RpcExtension {
 Run: `bun test packages/daemon/src/sandbox/sandbox-service.test.ts`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Test du démon assemblé**
+- [x] **Step 5: Test du démon assemblé**
 
 `packages/daemon/src/sandbox/sandbox-daemon.test.ts` :
 ```ts
@@ -7277,7 +7277,7 @@ test("the daemon reports its isolation and keeps the setting across restarts", a
 Run: `bun test packages/daemon/src/sandbox/sandbox-daemon.test.ts`
 Expected: FAIL — `INVALID_INPUT` ou `INTERNAL` sur `getSandboxStatus` (méthode non branchée).
 
-- [ ] **Step 6: Brancher dans le démon**
+- [x] **Step 6: Brancher dans le démon**
 
 Dans `packages/daemon/src/daemon.ts` (`assemble`), après `createService` :
 ```ts
@@ -7289,7 +7289,7 @@ puis passer `allowUnsandboxed: () => sandbox.allowUnsandboxed()` à `createCompo
 Run: `bun test packages/daemon/src/sandbox packages/daemon/src/components`
 Expected: PASS, y compris `exit.test.ts` inchangé (isolation OS active : action `escape` tout `blocked`).
 
-- [ ] **Step 7: Vérifier le lint et les types, commiter**
+- [x] **Step 7: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck && bun test packages/daemon`
 Expected: aucun diagnostic, tests verts.
