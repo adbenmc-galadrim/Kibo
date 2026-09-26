@@ -5446,7 +5446,7 @@ Applique la décision 24 : sans barrière OS, le runtime restreint ne protège d
   - Canal borné (décision 25) : `BACKEND_MESSAGE_LIMIT = 4 * 1024 * 1024` ; `type LineSink = { line(text: string): void; overflow(): void }` ; `readLines(stream: ReadableStream<Uint8Array>, limit: number, sink: LineSink): Promise<void>`. Protocole du runtime : descripteur 3 = une ligne `BackendCode` puis un `DaemonToBackend` par ligne (fin du flux ⇒ le runtime s'arrête) ; descripteur 4 = un `BackendToDaemon` par ligne. Plus de canal IPC Bun (`ipc`, `serialization`) dans le `ProcessHost` ; le `WorkerHost` (backends `trusted`) est inchangé.
   - Consommé par la tâche 20 (`ValidateOptions.sandbox`, tests du composant dans le bac à sable) et, sans changement d'interface, par les tâches 17, 30 et 32 (le `ProcessHost` réel est isolé).
 
-- [x] **Step 1: Écrire la spec avant le code**
+- [ ] **Step 1: Écrire la spec avant le code**
 
 `docs/superpowers/specs/2026-09-26-kibo-composants.md` :
 - §4.4, remplacer la puce « **Limite assumée** … » par : « **Bac à sable OS** (décision 24) : le runtime est lancé sous `sandbox-exec` (macOS) ou `bwrap` (Linux) : lecture du binaire (en dev : du dépôt) et des bibliothèques système, écriture dans son `cwd` temporaire seulement, aucun réseau, aucun autre exécutable. Sans bac à sable utilisable : `SANDBOX_UNAVAILABLE`, le backend ne démarre pas (l'UI sandboxée fonctionne). Le retrait des capacités et le refus des imports restent en défense en profondeur. Les tests d'un composant lancés par la validation (§7.4) tournent dans le même bac à sable (lecture de la toolchain et de la copie, écriture dans la copie). »
@@ -5454,11 +5454,11 @@ Applique la décision 24 : sans barrière OS, le runtime restreint ne protège d
 
 `docs/superpowers/specs/2026-09-26-kibo-marketplace.md` §8, en tête : « Livré dès la phase 4 (spec B, décision 24) pour `ProcessHost` et les tests de la validation. Restent en phase 7 : le réglage « Autoriser les backends sandboxés sans isolation OS », l'écran 19, le filtre seccomp, et l'exécution des tests d'installation du marketplace dans ce bac à sable. » ; dans le tableau §8.3, colonne « Phase 4 », remplacer chaque cellule par « bloqué par l'OS (décision 24) ».
 
-- [x] **Step 2: Ajouter le code d'erreur**
+- [ ] **Step 2: Ajouter le code d'erreur**
 
 `packages/schema/src/errors.ts` : ajouter `"SANDBOX_UNAVAILABLE",` après `"QUOTA_EXCEEDED",`.
 
-- [x] **Step 3: Écrire les tests du bac à sable**
+- [ ] **Step 3: Écrire les tests du bac à sable**
 
 `packages/devkit/src/os-sandbox.test.ts` :
 ```ts
@@ -5623,7 +5623,7 @@ Si `BackendCode` exige `migrations`, passer `migrations: ""` (ou la forme réell
 Run: `bun test packages/devkit/src/os-sandbox.test.ts packages/daemon/src/components/process-host-sandbox.test.ts`
 Expected: FAIL (`./os-sandbox` manquant).
 
-- [x] **Step 4: Implémenter `os-sandbox.ts`**
+- [ ] **Step 4: Implémenter `os-sandbox.ts`**
 
 ```ts
 import { existsSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
@@ -5749,7 +5749,7 @@ Règles : chemins de la politique toujours résolus (`realpath` : `/tmp` est `/p
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./os-sandbox";`.
 
-- [x] **Step 5: Isoler le `ProcessHost`**
+- [ ] **Step 5: Isoler le `ProcessHost`**
 
 `packages/daemon/src/components/process-host.ts` :
 - imports : `realpathSync` en plus depuis `node:fs`, `resolve` en plus depuis `node:path`, `import { isCompiled, type OsSandbox, osSandbox, type SandboxPolicy } from "@kibo/devkit";` ;
@@ -5766,7 +5766,7 @@ export function runtimePolicy(command: string[], cwd: string): SandboxPolicy {
 
 En dev, le runtime lit le dépôt (`component-runtime.ts` et `node_modules`) ; dans le binaire compilé, il ne lit que le binaire. Les tests existants de la tâche 11 (`process-host.test.ts`) passent désormais par le bac à sable réel : ils doivent rester verts sans modification (c'est la preuve que les tubes des descripteurs 3 et 4, les délais et les redémarrages fonctionnent isolés).
 
-- [x] **Step 5b: Canal borné entre le démon et le runtime (décision 25)**
+- [ ] **Step 5b: Canal borné entre le démon et le runtime (décision 25)**
 
 Le canal IPC de Bun accumule sans limite ce que le runtime écrit jusqu'au saut de ligne : un backend qui écrit 1 Gio sur son socket (import construit de `node:fs`, puis `writeSync` sur le descripteur déjà ouvert, que le bac à sable n'interdit pas) sature la mémoire du démon avant tout contrôle. Le démon lit donc lui-même la sortie du runtime, ligne par ligne, avec un plafond. Mesuré (Bun 1.4.2, macOS) : un tube supplémentaire (`stdio[4]: "pipe"`) se lit côté parent par `Bun.file(fd).stream()` et s'écrit côté enfant par `Bun.file(4).writer()` ; les écritures non attendues d'un `FileSink` sur un tube sont mises en tampon (6 Mo reçus intacts) ; `FileSink.end()` ne ferme pas un descripteur numérique (`closeSync` explicite pour signaler la fin) ; Bun ne ferme pas `stdio[3]` ni `stdio[4]` à la sortie de l'enfant (à fermer par le démon, sinon fuite de descripteurs).
 
@@ -6009,7 +6009,7 @@ Un JSON illisible ou une ligne trop longue passent par `handlers.exit` : même c
 Run: `bun test packages/daemon/src/components`
 Expected: PASS, tests existants de la tâche 11 compris (sans modification).
 
-- [x] **Step 6: CI Linux**
+- [ ] **Step 6: CI Linux**
 
 `.github/workflows/ci.yml`, jobs `test` et `e2e`, juste après `oven-sh/setup-bun` :
 ```yaml
@@ -6018,7 +6018,7 @@ Expected: PASS, tests existants de la tâche 11 compris (sans modification).
 ```
 Ubuntu 24.04 interdit par défaut les espaces de noms utilisateur non privilégiés (AppArmor) : sans le `sysctl`, `bwrap` échoue et la sonde lève `SANDBOX_UNAVAILABLE`. macOS : `sandbox-exec` est présent sur les runners, rien à installer.
 
-- [x] **Step 7: Vérifier et committer**
+- [ ] **Step 7: Vérifier et committer**
 
 Run: `bun test packages/devkit packages/daemon/src/components && bun run typecheck && bun run check`
 Expected: PASS (sur macOS en local ; Linux vérifié par la CI de la branche).
