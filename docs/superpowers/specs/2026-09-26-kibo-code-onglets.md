@@ -17,7 +17,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 
 - État = `git status --porcelain=v2 -z --branch --untracked-files=all` + `git diff --numstat -z` (indexé et non indexé) + commits.
 - Watcher `fs.watch` récursif sur le worktree, non récursif sur son `git-dir`, récursif sur le `git-common-dir` ; debounce 150 ms ; événement WebSocket `{ type: "code", projectId, worktree }`. Si `fs.watch` échoue (limite inotify, système sans récursif), repli sur un sondage toutes les 3 s, journalisé.
-- Un worktree est surveillé dès sa première lecture d'état, et libéré après 10 minutes sans lecture.
+- Un worktree est surveillé dès sa première lecture d'état, et libéré après 10 minutes sans lecture. Un worktree dont le dossier a disparu (événement, balayage périodique ou lecture) est libéré aussitôt, avec une seule ligne de journal ; il est de nouveau surveillé à la première lecture après sa réapparition.
 - **Suivi des PR** : toutes les 60 s, pour chaque ticket portant une référence `github_pr` ouverte ou en brouillon, `gh pr view` met à jour son état (`open`, `draft`, `merged`, `closed`). `gh` absent : aucune mise à jour, erreur journalisée.
 
 ## 3. Commits

@@ -1,4 +1,4 @@
-import { lstatSync } from "node:fs";
+import { existsSync, lstatSync } from "node:fs";
 import { join } from "node:path";
 import { parseStatus } from "./parse-status";
 import type { WorktreeHandle } from "./repo";
@@ -14,7 +14,13 @@ export type WorktreeWatchOptions = {
   onChange(projectId: string, worktree: string): void;
   log(what: string): (e: unknown) => void;
 };
-type Entry = { handle: WatchHandle; lastRead: number; signature: string };
+type Entry = {
+  projectId: string;
+  worktree: WorktreeHandle;
+  handle: WatchHandle;
+  lastRead: number;
+  signature: string;
+};
 
 const MAX_SWEEP_MS = 60_000;
 
@@ -37,9 +43,24 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
   let stopped = false;
   const keyOf = (projectId: string, h: WorktreeHandle) => `${projectId}\0${h.path}`;
 
+  const vanished = (projectId: string, h: WorktreeHandle): boolean => {
+    if (existsSync(h.path)) return false;
+    const key = keyOf(projectId, h);
+    const entry = entries.get(key);
+    if (entry) {
+      entry.handle.close();
+      entries.delete(key);
+      opts.log("worktree disappeared, watch released")(h.path);
+    }
+    return true;
+  };
+  const unlessVanished = (projectId: string, h: WorktreeHandle, what: string) => (e: unknown) => {
+    if (!vanished(projectId, h)) opts.log(what)(e);
+  };
+
   const refresh = async (projectId: string, h: WorktreeHandle) => {
     const entry = entries.get(keyOf(projectId, h));
-    if (!entry) return;
+    if (!entry || vanished(projectId, h)) return;
     const signature = await signatureOf(h);
     if (entries.get(keyOf(projectId, h)) !== entry || signature === entry.signature) return;
     entry.signature = signature;
@@ -53,14 +74,15 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
         { path: h.gitDir, recursive: false },
         { path: h.commonDir, recursive: true },
       ],
-      () => void refresh(projectId, h).catch(opts.log(`git refresh failed for ${h.path}`)),
-      { onError: opts.log(`watcher failed for ${h.path}`) },
+      () =>
+        void refresh(projectId, h).catch(unlessVanished(projectId, h, `git refresh failed for ${h.path}`)),
+      { onError: unlessVanished(projectId, h, `watcher failed for ${h.path}`) },
     );
 
   const sweep = setInterval(
     () => {
       for (const [key, entry] of entries) {
-        if (Date.now() - entry.lastRead < opts.idleMs) continue;
+        if (vanished(entry.projectId, entry.worktree) || Date.now() - entry.lastRead < opts.idleMs) continue;
         entry.handle.close();
         entries.delete(key);
       }
@@ -71,14 +93,20 @@ export function createWorktreeWatch(opts: WorktreeWatchOptions): WorktreeWatch {
   return {
     async touch(projectId, h) {
       const key = keyOf(projectId, h);
-      const current = entries.get(key);
+      const current = vanished(projectId, h) ? undefined : entries.get(key);
       if (current) {
         current.lastRead = Date.now();
         return;
       }
       const signature = await signatureOf(h);
       if (stopped || entries.has(key)) return;
-      entries.set(key, { handle: watch(projectId, h), lastRead: Date.now(), signature });
+      entries.set(key, {
+        projectId,
+        worktree: h,
+        handle: watch(projectId, h),
+        lastRead: Date.now(),
+        signature,
+      });
     },
     async settle(projectId, h) {
       const entry = entries.get(keyOf(projectId, h));
