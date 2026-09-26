@@ -16940,7 +16940,7 @@ git commit -m "test(e2e): parcours des composants"
   - Toolchain packagée `toolchain/node_modules/…` (fermeture des dépendances de : `typescript`, `@kibo/sdk`, `@kibo/schema`, `@kibo/core`, `@kibo/devkit`, `react`, `react-dom`, `lucide-react`, `@testing-library/react`, `@testing-library/dom`, `@happy-dom/global-registrator`, `@types/bun`, `@types/react`, `tailwindcss`, `@tailwindcss/node`, `@tailwindcss/oxide` et son binaire de plateforme, `tw-animate-css`, `shadcn`).
   - `CliInstallCard` (D8).
 
-- [ ] **Step 1: Point d'entrée unique**
+- [x] **Step 1: Point d'entrée unique**
 
 `apps/desktop/sidecar/entry.ts` :
 ```ts
@@ -16961,7 +16961,7 @@ if (args[0] === "component-runtime") {
 
 `apps/desktop/scripts/build-sidecar.ts` : `entrypoints: [join(root, "apps/desktop/sidecar/entry.ts"), join(root, "apps/desktop/sidecar/component-worker.ts")]` (le Worker est une entrée supplémentaire du binaire, spike F). Relecture du lead : Bun résout le chemin d'un Worker compilé depuis la racine commune des entrées ; avec `packages/daemon/src/components/component-worker.ts` comme entrée, cette racine devient la racine du dépôt et `new Worker("./component-worker.ts")` (`worker-host.ts`) ne trouve plus rien. `apps/desktop/sidecar/component-worker.ts` contient donc `import "../../../packages/daemon/src/components/component-worker";` (une ligne de commentaire autorisée : contrainte de Bun), et les deux entrées partagent le dossier `sidecar/`. La fumée prouve le Worker compilé (backend `trusted` : `pong`) ; option `--out <fichier>` (lue par `parseArgs`) qui remplace le chemin calculé depuis le triplet Rust (utilisée par la CI hors Tauri). Si le spike F a conclu au repli, retirer l'entrée Worker (les `trusted` passent par `ProcessHost` non restreint, décidé en tâche 1).
 
-- [ ] **Step 2: Toolchain packagée**
+- [x] **Step 2: Toolchain packagée**
 
 `apps/desktop/scripts/build-toolchain.ts` :
 ```ts
@@ -17033,7 +17033,7 @@ Les dépendances optionnelles couvrent le binaire natif de `@tailwindcss/oxide` 
 ```
 `apps/desktop/src-tauri/src/main.rs` : à côté de `ui_dir`, `let toolchain_dir = resource_dir.join("toolchain");` et `.args(["--port", "0", "--ui", &ui_dir.to_string_lossy(), "--toolchain", &toolchain_dir.to_string_lossy()])` ; le test Rust existant qui vérifie les arguments du sidecar (s'il existe) est mis à jour en conséquence.
 
-- [ ] **Step 3: `installCli`**
+- [x] **Step 3: `installCli`**
 
 `packages/daemon/src/components/install-cli.test.ts` :
 ```ts
@@ -17089,7 +17089,7 @@ export async function installCli(opts: { execPath?: string; binDir?: string; com
 ```
 Un lien symbolique existant vers un ancien binaire Kibo est remplacé ; un fichier réel n'est jamais écrasé. `packages/daemon/src/main.ts` passe `installCli: () => installCli()` à `startDaemon`.
 
-- [ ] **Step 4: Écran D8**
+- [x] **Step 4: Écran D8**
 
 `packages/ui/src/settings/cli-install.test.tsx` :
 ```tsx
@@ -17166,11 +17166,11 @@ export function CliInstallCard() {
 ```
 L'affichage remplace le dossier personnel par `~` (`abbreviateHome`, déjà utilisé par l'UI).
 
-- [ ] **Step 5: Placer la carte**
+- [x] **Step 5: Placer la carte**
 
 Si l'écran Paramètres › Général existe (phase 2 ou 3 : `grep -rn "Paramètres" packages/ui/src`), y ajouter `<CliInstallCard />` sous les réglages existants. Sinon, l'ajouter en bas de la page Composants (`ComponentsPage`, après les brouillons) et signaler l'écart au jalon (D8 prévoit Paramètres › Général).
 
-- [ ] **Step 6: CI et fumée de la CLI compilée**
+- [x] **Step 6: CI et fumée de la CLI compilée**
 
 `apps/desktop/scripts/cli-smoke.ts` :
 ```ts
@@ -17214,7 +17214,7 @@ try {
 ```
 La fumée prouve le critère de sortie « new → test → publish avec le binaire compilé » sur macOS et Linux (`BUN_BE_BUN`, préchargements, Tailwind et TypeScript chargés depuis la toolchain, `component-runtime`).
 
-- [ ] **Step 7: Vérifier et committer**
+- [x] **Step 7: Vérifier et committer**
 
 Run: `bun test packages components && bun run typecheck && bun run check && bun apps/desktop/scripts/cli-smoke.ts && bun run --cwd apps/desktop build:debug`
 Expected: PASS ; `cli smoke: ok`.
@@ -17224,7 +17224,7 @@ git add apps/desktop/sidecar apps/desktop/scripts apps/desktop/src-tauri/tauri.c
 git commit -m "build(desktop): binaire, toolchain et CLI"
 ```
 
-- [ ] **Step 8: Reprise après la relecture du lead (2026-09-26)**
+- [x] **Step 8: Reprise après la relecture du lead (2026-09-26)**
 
 Relecture de fond : fumée `cli smoke: ok` (Worker compilé, `trusted` et `sandboxed` : `pong`), `bun run typecheck` vert. Trois corrections exigées avant l'intégration :
 
