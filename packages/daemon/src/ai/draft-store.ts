@@ -1,4 +1,4 @@
-import type { Database } from "bun:sqlite";
+import { type Database, SQLiteError } from "bun:sqlite";
 import { ComponentDraft, KiboError, ValidationReport } from "@kibo/schema";
 import { isActive } from "./draft-machine";
 
@@ -95,6 +95,8 @@ export function openDraftStore(db: Database): DraftStore {
     withServer INTEGER NOT NULL, baseVersion TEXT, description TEXT NOT NULL, runId TEXT, sessionId TEXT,
     status TEXT NOT NULL, attempts INTEGER NOT NULL, failureJson TEXT, incidentsJson TEXT NOT NULL,
     reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)`);
+  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS component_drafts_one_active ON component_drafts (componentId)
+    WHERE status NOT IN ('done', 'abandoned')`);
   const insert = db.query<null, Params>(
     `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $createdAt, $updatedAt)`,
   );
@@ -124,7 +126,13 @@ export function openDraftStore(db: Database): DraftStore {
 
   return {
     insert: (d) => {
-      insert.run(toParams(d));
+      try {
+        insert.run(toParams(d));
+      } catch (e) {
+        if (e instanceof SQLiteError && e.code === "SQLITE_CONSTRAINT_UNIQUE")
+          throw new KiboError("CONFLICT", `a draft of ${d.componentId} is already open`);
+        throw e;
+      }
     },
     save: (d) => {
       get(d.id);

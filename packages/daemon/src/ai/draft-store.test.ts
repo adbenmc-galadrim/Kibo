@@ -71,3 +71,16 @@ test("unreadable JSON is STORE_CORRUPT", () => {
   expect(() => store.get(a)).toThrow("STORE_CORRUPT");
   expect(() => store.saveReport(b, null)).toThrow("NOT_FOUND");
 });
+
+test("a component has one active draft at most, whatever the writer (I43)", () => {
+  const store = openDraftStore(new Database(":memory:", { strict: true }));
+  const c = "2d7e3a5f-9c73-4f4c-9e3a-4b2f8b3d0c33";
+  store.insert(draft(a, "failed", 2));
+  expect(() => store.insert({ ...draft(b, "describing", 3), mode: "modify", baseVersion: "0.1.0" })).toThrow(
+    expect.objectContaining({ code: "CONFLICT" }),
+  );
+  store.insert(draft(b, "done", 3));
+  store.save(draft(a, "abandoned", 4));
+  store.insert(draft(c, "describing", 5));
+  expect(store.active().map((d) => d.id)).toEqual([c]);
+});
