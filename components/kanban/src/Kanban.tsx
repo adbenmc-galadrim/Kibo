@@ -1,5 +1,5 @@
 import { DndContext, type DragEndEvent, useDroppable } from "@dnd-kit/core";
-import type { CiRun, Status, StatusId, TicketView } from "@kibo/schema";
+import type { Status, StatusId, TicketView } from "@kibo/schema";
 import { filterBySource, readSource, StatusDot, useEntities, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
@@ -8,7 +8,7 @@ import { type ReactNode, useState } from "react";
 import { BlockDialog } from "./BlockDialog";
 import { filterTickets, type KanbanFilter } from "./filter";
 import { fr } from "./fr";
-import { KanbanCard } from "./KanbanCard";
+import { type CiChip, ciChipOf, KanbanCard } from "./KanbanCard";
 
 type ColumnProps = { status: Status; count: number; children: ReactNode; onAdd?: () => void };
 
@@ -62,8 +62,7 @@ export function Kanban() {
   const [error, setError] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
-  const ciOf = (t: TicketView): CiRun | undefined =>
-    ciRuns.filter((r) => r.ticketKey === t.key).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  const ciOf = (t: TicketView): CiChip | undefined => ciChipOf(ciRuns.filter((r) => r.ticketKey === t.key));
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
 

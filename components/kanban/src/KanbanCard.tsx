@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import type { CiRun, Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
-import { AgentBadge } from "@kibo/sdk";
+import { AgentBadge, type CiTone, worstCiTone } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -18,20 +18,21 @@ const CI_DOT = {
   error: "bg-red-500",
   running: "bg-amber-500",
   neutral: "bg-zinc-400",
-} as const;
+} as const satisfies Record<CiTone, string>;
 
-function ciTone(run: Pick<CiRun, "status" | "conclusion">): keyof typeof CI_DOT {
-  if (run.status !== "completed") return "running";
-  if (run.conclusion === "success") return "ok";
-  if (run.conclusion === "failure" || run.conclusion === "timed_out" || run.conclusion === "startup_failure")
-    return "error";
-  return "neutral";
+export type CiChip = { tone: CiTone; prNumber: number | null };
+
+export function ciChipOf(runs: CiRun[]): CiChip | undefined {
+  const tone = worstCiTone(runs);
+  if (tone === null) return undefined;
+  const latest = [...runs].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  return { tone, prNumber: latest?.prNumber ?? null };
 }
 
 type Props = {
   ticket: TicketView;
   run: TicketRun | null;
-  ci?: CiRun;
+  ci?: CiChip;
   statuses: Status[];
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
@@ -84,13 +85,13 @@ export function KanbanCard({ ticket: t, run, ci, statuses, onOpen, onMove }: Pro
         ))}
         {ci && (
           <span
-            title={fr.ci[ciTone(ci)]}
+            title={fr.ci[ci.tone]}
             className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-3xs"
           >
             <span
               role="img"
-              aria-label={fr.ci[ciTone(ci)]}
-              className={`size-2 rounded-full ${CI_DOT[ciTone(ci)]}`}
+              aria-label={fr.ci[ci.tone]}
+              className={`size-2 rounded-full ${CI_DOT[ci.tone]}`}
             />
             {ci.prNumber !== null && `#${ci.prNumber}`}
           </span>

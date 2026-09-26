@@ -1,13 +1,13 @@
-import type { CiJobSummary, CiRun } from "@kibo/schema";
+import { type CiJobSummary, type CiRun, type CiTone, ciTone, latestCiRunPerWorkflow } from "@kibo/schema";
 import { lazyPanel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
-import { conclusionLabel, latestPerWorkflow, type RunTone, runDuration, runTone } from "./ci-format";
+import { conclusionLabel, runDuration } from "./ci-format";
 
 const t = fr.integrations.sheet;
-const DOT: Record<RunTone, string> = {
+const DOT: Record<CiTone, string> = {
   ok: "bg-emerald-500",
   error: "bg-red-500",
   running: "bg-amber-500",
@@ -22,7 +22,7 @@ function RunRow({ run, onOpen }: { run: CiRun; onOpen(job: CiJobSummary): void }
   const duration = runDuration(run);
   return (
     <div className="flex items-center gap-2">
-      <span aria-hidden className={`size-2 shrink-0 rounded-full ${DOT[runTone(run)]}`} />
+      <span aria-hidden className={`size-2 shrink-0 rounded-full ${DOT[ciTone(run)]}`} />
       <span className="font-medium">{run.workflow}</span>
       <span className="text-muted-foreground">{conclusionLabel(run)}</span>
       {duration && <span className="text-muted-foreground">{duration}</span>}
@@ -59,7 +59,7 @@ export function CiSection({ projectId, ticketId }: { projectId: string; ticketId
       <h3 className="font-medium">{t.ci}</h3>
       {error && <p className="text-destructive">{error}</p>}
       {runs?.length === 0 && <p className="text-muted-foreground">{t.ciEmpty}</p>}
-      {latestPerWorkflow(runs ?? []).map((run) => (
+      {latestCiRunPerWorkflow(runs ?? []).map((run) => (
         <RunRow key={run.runId} run={run} onOpen={(job) => setOpen({ run, job })} />
       ))}
       {open && (

@@ -215,6 +215,31 @@ test("the CI chip follows the tones of the ticket sheet", async () => {
   expect(screen.getByLabelText("CI sans verdict").parentElement?.textContent).toBe("");
 });
 
+test("the CI chip shows the worst latest run of each workflow", async () => {
+  const m = createMockSdk(manifest, {
+    seed: syncedSeed,
+    config: { source: { bindingId: "b1" } },
+    ciRuns: [
+      ciRun({ runId: 1, workflow: "CI", conclusion: "failure", updatedAt: "2026-09-26T10:00:00Z" }),
+      ciRun({
+        runId: 2,
+        workflow: "E2E",
+        status: "in_progress",
+        conclusion: null,
+        updatedAt: "2026-09-26T10:01:00Z",
+      }),
+      ciRun({ runId: 3, workflow: "Lint", conclusion: "success", updatedAt: "2026-09-26T10:02:00Z" }),
+    ],
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect((await screen.findByLabelText("CI cassée")).parentElement?.textContent).toBe("#12");
+  expect(screen.queryByLabelText("CI réussie")).toBeNull();
+});
+
 test("an unavailable CI is stated, a missing GitHub account is not", async () => {
   renderSynced((m) => ({
     ...m.sdk,

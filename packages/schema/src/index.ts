@@ -2,6 +2,7 @@ export * from "./agent";
 export * from "./ai";
 export * from "./ai-rpc";
 export * from "./call";
+export * from "./ci-state";
 export * from "./code";
 export * from "./command";
 export * from "./component";
