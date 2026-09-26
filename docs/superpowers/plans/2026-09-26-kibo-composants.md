@@ -3918,7 +3918,7 @@ git commit -m "feat(sdk): API v1 asynchrone"
   - `type NetProxyOptions = { resolve?: Resolver; transport?: typeof fetch; allowAddress?: (ip: string) => boolean; timeoutMs?: number; maxBytes?: number; maxRedirects?: number }`.
   - `proxyFetch(rules: readonly string[] | null, url: string, init: FetchInit, opts?: NetProxyOptions): Promise<FetchResponse>` (`rules = null` : pas de contrôle de règle, seulement anti-SSRF ; utilisé pour les intégrés).
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/components/net-proxy.test.ts` :
 ```ts
@@ -4008,7 +4008,7 @@ Le faux serveur est joint par un `transport` injecté (la logique du proxy est i
 Run: `bun test packages/daemon/src/components/net-proxy.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `net-proxy.ts`**
+- [x] **Step 2: Implémenter `net-proxy.ts`**
 
 ```ts
 import { lookup } from "node:dns/promises";
@@ -4162,7 +4162,7 @@ export async function proxyFetch(
 ```
 Limite notée (risques du jalon) : la résolution DNS est vérifiée avant chaque saut mais la connexion refait sa propre résolution ; un rebinding à TTL nul reste théoriquement possible jusqu'au durcissement OS (phase 7).
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/daemon/src/components/net-proxy.test.ts && bun run typecheck && bun run check`
 Expected: PASS.
