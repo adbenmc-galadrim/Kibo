@@ -1,4 +1,4 @@
-import { type ComponentDraft, type DraftKind, KiboError } from "@kibo/schema";
+import { type ComponentDraft, DraftComponentId, type DraftKind, KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Input } from "@kibo/sdk/ui/input";
@@ -9,6 +9,7 @@ import { Bot, Sparkles } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { aiErrorMessage } from "./ai-error";
 import { slugify, suggestTitle } from "./slug";
 import { useAiAvailability } from "./use-ai-availability";
 
@@ -28,7 +29,8 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
   const effectiveTitle = title ?? suggestTitle(description);
   const effectiveId = componentId ?? slugify(effectiveTitle);
   const length = description.trim().length;
-  const valid = length >= MIN && length <= MAX && effectiveTitle.trim().length > 0 && effectiveId.length > 0;
+  const idValid = DraftComponentId.safeParse(effectiveId).success;
+  const valid = length >= MIN && length <= MAX && effectiveTitle.trim().length > 0 && idValid;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,11 +52,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
       );
     } catch (err) {
       setError(
-        err instanceof KiboError && err.code === "CONFLICT"
-          ? fr.ai.create.idTaken
-          : err instanceof Error
-            ? err.message
-            : fr.common.error,
+        err instanceof KiboError && err.code === "CONFLICT" ? fr.ai.create.idTaken : aiErrorMessage(err),
       );
     } finally {
       setBusy(false);
@@ -91,7 +89,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
-          <div className="grid gap-1">
+          <div className="col-span-2 grid gap-1">
             <Label htmlFor={`${id}-id`} className="text-xs">
               {fr.ai.create.idLabel}
             </Label>
@@ -99,9 +97,16 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
               id={`${id}-id`}
               className="font-mono"
               maxLength={40}
+              aria-invalid={!idValid}
+              aria-describedby={idValid ? undefined : `${id}-id-help`}
               value={effectiveId}
               onChange={(e) => setComponentId(e.target.value.toLowerCase())}
             />
+            {!idValid && (
+              <p id={`${id}-id-help`} className="text-xs text-destructive">
+                {fr.ai.create.idInvalid}
+              </p>
+            )}
           </div>
           <div className="grid gap-1">
             <Label htmlFor={`${id}-kind`} className="text-xs">
@@ -120,7 +125,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
               </SelectContent>
             </Select>
           </div>
-          <label htmlFor={`${id}-server`} className="col-span-2 flex items-center gap-2 text-xs">
+          <label htmlFor={`${id}-server`} className="flex h-9 items-center gap-2 text-xs">
             <Checkbox
               id={`${id}-server`}
               checked={withServer}
@@ -157,7 +162,7 @@ export function ResumeDraftBanner({ onResume }: { onResume: (draftId: string) =>
     let alive = true;
     client.rpc({ method: "listComponentDrafts" }).then(
       (list) => alive && setDraft(list.find((d) => d.status !== "done" && d.status !== "abandoned") ?? null),
-      (e: unknown) => alive && setError(e instanceof Error ? e.message : fr.common.error),
+      (e: unknown) => alive && setError(aiErrorMessage(e)),
     );
     return () => {
       alive = false;

@@ -1,67 +1,28 @@
-import { type ComponentDraftDetails, type FinalizeComponentDraftInput, grantedOf } from "@kibo/schema";
+import { type FinalizeComponentDraftInput, grantedOf } from "@kibo/schema";
 import { Alert, AlertTitle } from "@kibo/sdk/ui/alert";
 import { Skeleton } from "@kibo/sdk/ui/skeleton";
-import { Info, TriangleAlert } from "lucide-react";
+import { Info } from "lucide-react";
 import { useRef, useState } from "react";
 import { client } from "../api";
 import type { Strategy } from "../components-page/PublishSections";
 import { TrustDialog } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { aiErrorMessage } from "./ai-error";
 import { DraftDiffReview } from "./DraftDiffReview";
+import { DraftFailedStep } from "./DraftFailedStep";
 import { DraftFooter } from "./DraftFooter";
+import { DraftHeadline } from "./DraftHeadline";
 import { DraftPublishStep } from "./DraftPublishStep";
 import { DraftStepper } from "./DraftStepper";
 import { draftActions, draftStep } from "./draft-flow";
 import { GenerateStep } from "./GenerateStep";
 import { useComponentDraft } from "./use-component-draft";
-import { ValidationReportView } from "./ValidationReportView";
 
 type Props = {
   draftId: string;
   target: FinalizeComponentDraftInput["target"];
   onDone: () => void;
 };
-
-function Headline({ details, reviewed }: { details: ComponentDraftDetails; reviewed: boolean }) {
-  const text =
-    details.status === "generating"
-      ? fr.ai.generating(details.title)
-      : details.status === "validating"
-        ? fr.ai.validating
-        : details.status === "failed" && details.failure
-          ? fr.ai.failure[details.failure.kind]
-          : details.status === "review" && !reviewed
-            ? fr.ai.reviewHelp
-            : null;
-  if (!text) return null;
-  return <p className="text-sm text-muted-foreground">{text}</p>;
-}
-
-function FailedStep({ details, exhausted }: { details: ComponentDraftDetails; exhausted: boolean }) {
-  return (
-    <div className="grid gap-3">
-      {details.failure?.detail && (
-        <p className="font-mono text-xs text-muted-foreground">{details.failure.detail}</p>
-      )}
-      {details.report && <ValidationReportView report={details.report} />}
-      {details.incidents.map((i) => (
-        <Alert
-          key={`${i.kind}:${i.path}`}
-          className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-        >
-          <TriangleAlert aria-hidden />
-          <AlertTitle className="font-mono text-xs">{fr.ai.incident[i.kind](i.path)}</AlertTitle>
-        </Alert>
-      ))}
-      {exhausted && (
-        <Alert className="bg-muted/40">
-          <Info aria-hidden />
-          <AlertTitle>{fr.ai.exhausted}</AlertTitle>
-        </Alert>
-      )}
-    </div>
-  );
-}
 
 export function AiDraftPanel({ draftId, target, onDone }: Props) {
   const { details, error, reload } = useComponentDraft(draftId);
@@ -76,9 +37,9 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
     setActionError(null);
     try {
       await run();
-      reload();
+      if (!finished.current) reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : fr.common.error);
+      setActionError(aiErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -108,7 +69,7 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
 
   return (
     <div className="grid gap-4">
-      <Headline details={details} reviewed={reviewed} />
+      <DraftHeadline details={details} reviewed={reviewed} exhausted={actions.codeFallback} />
       {details.status === "generating" && <GenerateStep draft={details} />}
       {details.status === "validating" && (
         <div className="grid gap-2">
@@ -117,7 +78,7 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
           <Skeleton className="h-10" />
         </div>
       )}
-      {details.status === "failed" && <FailedStep details={details} exhausted={actions.codeFallback} />}
+      {details.status === "failed" && <DraftFailedStep details={details} exhausted={actions.codeFallback} />}
       {details.status === "review" && !reviewed && <DraftDiffReview diff={details.diff} />}
       {details.status === "review" && reviewed && (
         <DraftPublishStep
@@ -128,6 +89,12 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
             void review(version, changes);
           }}
         />
+      )}
+      {details.status === "permissions" && !(hash && details.manifest) && (
+        <Alert className="bg-muted/40">
+          <Info aria-hidden />
+          <AlertTitle>{fr.ai.permissionsUnavailable}</AlertTitle>
+        </Alert>
       )}
       {details.status === "permissions" && publish && hash && details.manifest && (
         <TrustDialog

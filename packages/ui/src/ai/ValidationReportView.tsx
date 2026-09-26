@@ -3,6 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/u
 import { CircleCheck, CircleX } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
+import { permissionsOk } from "./draft-flow";
 
 function Section({ name, ok, output }: { name: string; ok: boolean; output: string }) {
   const [open, setOpen] = useState(false);
@@ -70,11 +71,7 @@ export function ValidationReportView({ report }: { report: ValidationReport }) {
         ok={report.conformance.ok}
         output={report.conformance.errors.join("\n")}
       />
-      <Section
-        name={fr.ai.sections.permissions}
-        ok={p.missing.length === 0 && p.errors.length === 0}
-        output={permissionsOutput(p)}
-      />
+      <Section name={fr.ai.sections.permissions} ok={permissionsOk(p)} output={permissionsOutput(p)} />
     </ul>
   );
 }

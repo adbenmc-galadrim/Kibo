@@ -1,4 +1,4 @@
-import { type ComponentDraft, MAX_DRAFT_ATTEMPTS } from "@kibo/schema";
+import { type ComponentDraft, MAX_DRAFT_ATTEMPTS, type ValidationReport } from "@kibo/schema";
 
 export type DraftStep = 1 | 2 | 3 | 4 | 5;
 
@@ -31,4 +31,19 @@ export function draftActions(d: ComponentDraft): {
     codeFallback: failed && exhausted,
     canAbandon: d.status !== "done" && d.status !== "abandoned",
   };
+}
+
+export function permissionsOk(p: ValidationReport["permissions"]): boolean {
+  return p.missing.length === 0 && p.errors.length === 0;
+}
+
+export function problemCount(r: ValidationReport): number {
+  return [
+    r.manifest.ok,
+    r.imports.ok,
+    r.typecheck.ok,
+    r.tests.ok,
+    r.conformance.ok,
+    permissionsOk(r.permissions),
+  ].filter((ok) => !ok).length;
 }

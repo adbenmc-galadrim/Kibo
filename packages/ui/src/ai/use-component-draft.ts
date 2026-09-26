@@ -1,7 +1,7 @@
 import type { ComponentDraftDetails } from "@kibo/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { aiErrorMessage } from "./ai-error";
 
 export function useComponentDraft(draftId: string): {
   details: ComponentDraftDetails | null;
@@ -20,7 +20,7 @@ export function useComponentDraft(draftId: string): {
         setError(null);
       },
       (e: unknown) => {
-        if (request.current === current) setError(e instanceof Error ? e.message : fr.common.error);
+        if (request.current === current) setError(aiErrorMessage(e));
       },
     );
   }, [draftId]);

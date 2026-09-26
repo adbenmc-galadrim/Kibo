@@ -1,17 +1,19 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import {
-  type ComponentDraftDetails,
-  type ComponentManifest,
-  type FileDiff,
-  KiboError,
-  type PublishPreview,
-  type RpcRequest,
-} from "@kibo/schema";
+import { KiboError, type RpcRequest, type RunState } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {
+  DRAFT_ID,
+  draftFixture as details,
+  burndownManifest as manifest,
+  burndownPublish as publish,
+  failingReport as report,
+  uiDiff,
+} from "./draft-fixtures";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
+let runState: RunState = "running";
 mock.module("../api", () => ({
   client: {
     rpc: async (req: RpcRequest) => {
@@ -24,7 +26,7 @@ mock.module("../api", () => ({
   },
 }));
 mock.module("../state/use-agents", () => ({
-  useAgents: () => ({ runs: [{ id: "run-7", label: "generateur", profileName: "opus", state: "running" }] }),
+  useAgents: () => ({ runs: [{ id: "run-7", label: "generateur", profileName: "opus", state: runState }] }),
   useConfig: () => null,
   useNow: () => 0,
   useRunLog: () => [],
@@ -32,158 +34,23 @@ mock.module("../state/use-agents", () => ({
 }));
 mock.module("../state/use-projects", () => ({ useProjects: () => [], useProject: () => null }));
 
-const { DescribeCard } = await import("./DescribeCard");
 const { AiDraftPanel } = await import("./AiDraftPanel");
-
-const ok = {
-  available: true,
-  reason: null,
-  version: "2.1.283",
-  loggedIn: true,
-  profiles: { assistant: true, generateur: true },
-};
-const report = {
-  ok: false,
-  manifest: { ok: true, errors: [] },
-  imports: { ok: true, errors: [] },
-  typecheck: { ok: false, errors: ["ui.tsx(3,7): error TS2322"] },
-  tests: { ok: true, passed: 1, failed: 0, output: "1 pass" },
-  conformance: { ok: true, errors: [] },
-  permissions: { declared: [], used: [], missing: [], unused: [], errors: [] },
-  hash: null,
-};
-const details = (patch: Partial<ComponentDraftDetails>): ComponentDraftDetails => ({
-  id: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
-  componentId: "burndown",
-  mode: "create",
-  title: "Burndown",
-  kind: "widget",
-  withServer: false,
-  baseVersion: null,
-  description: "Burndown du sprint : tickets restants par jour.",
-  runId: "run-7",
-  sessionId: "s1",
-  status: "generating",
-  attempts: 1,
-  failure: null,
-  incidents: [],
-  createdAt: 1,
-  updatedAt: 1,
-  report: null,
-  diff: [],
-  manifest: null,
-  publish: null,
-  ...patch,
-});
-const uiDiff: FileDiff = {
-  path: "ui.tsx",
-  origPath: null,
-  binary: false,
-  hunkStaging: false,
-  additions: 1,
-  deletions: 0,
-  hunks: [
-    {
-      header: "@@ -0,0 +1 @@",
-      oldStart: 0,
-      oldLines: 0,
-      newStart: 1,
-      newLines: 1,
-      section: "",
-      lines: [{ kind: "add", text: "export function Burndown() {}", oldNo: null, newNo: 1, noEol: false }],
-    },
-  ],
-};
-const manifest: ComponentManifest = {
-  id: "burndown",
-  version: "0.1.0",
-  kind: "widget",
-  title: "Burndown",
-  reads: ["ticket"],
-  writes: [],
-  data: false,
-  net: [],
-  secrets: [],
-  mcp: [],
-  configVersion: 0,
-  changes: [],
-  sdk: 1,
-};
-const publish: PublishPreview = {
-  id: "burndown",
-  title: "Burndown",
-  from: null,
-  to: "0.1.0",
-  hash: null,
-  status: "new",
-  usages: [],
-  changes: [],
-  newPermissions: ["read:ticket"],
-  migration: null,
-  validation: { ...report, ok: true, typecheck: { ok: true, errors: [] } },
-};
 
 beforeEach(() => {
   calls.length = 0;
-  Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
-});
-
-test("DescribeCard proposes a title and an id, then starts the draft", async () => {
-  const onStarted = mock(() => {});
-  answer = (req) =>
-    req.method === "getAiStatus" ? ok : req.method === "startComponentDraft" ? details({}) : null;
-  render(<DescribeCard onStarted={onStarted} />);
-  const user = userEvent.setup();
-  const button = await screen.findByRole("button", { name: "Générer avec un agent" });
-  await user.type(screen.getByLabelText("Ce que doit faire le composant"), "Burndown du sprint : tickets");
-  expect(button.hasAttribute("disabled")).toBe(false);
-  expect((screen.getByLabelText("Identifiant") as HTMLInputElement).value).toBe("burndown-du-sprint");
-  await user.click(button);
-  expect(calls.at(-1)).toEqual({
-    method: "startComponentDraft",
-    draft: {
-      mode: "create",
-      id: "burndown-du-sprint",
-      title: "Burndown du sprint",
-      kind: "widget",
-      withServer: false,
-      description: "Burndown du sprint : tickets",
-    },
-  });
-  expect(onStarted).toHaveBeenCalledTimes(1);
-});
-
-test("DescribeCard shows a taken id and a blocked AI", async () => {
-  answer = (req) =>
-    req.method === "getAiStatus"
-      ? ok
-      : req.method === "startComponentDraft"
-        ? new KiboError("CONFLICT", "taken")
-        : null;
-  render(<DescribeCard onStarted={() => {}} />);
-  const user = userEvent.setup();
-  await user.type(
-    await screen.findByLabelText("Ce que doit faire le composant"),
-    "Burndown du sprint : tickets",
-  );
-  await user.click(screen.getByRole("button", { name: "Générer avec un agent" }));
-  expect(await screen.findByText("Identifiant déjà pris.")).toBeTruthy();
-});
-
-test("DescribeCard is disabled offline", async () => {
-  Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
-  answer = (req) => (req.method === "getAiStatus" ? ok : null);
-  render(<DescribeCard onStarted={() => {}} />);
-  expect(await screen.findByText("Hors ligne")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Générer avec un agent" }).hasAttribute("disabled")).toBe(true);
+  runState = "running";
 });
 
 test("step 2 shows the attempt and the run journal", async () => {
   answer = () => details({});
-  render(<AiDraftPanel draftId="0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11" target={null} onDone={() => {}} />);
-  expect(await screen.findByText("Tentative 1 sur 3")).toBeTruthy();
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  expect(await screen.findByText("Tentative 1 sur 3 · opus · En cours")).toBeTruthy();
   expect(screen.getByRole("list", { name: "Journal de generateur" })).toBeTruthy();
-  expect(screen.getByText("· opus")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "L'agent ne peut écrire que dans le dossier brouillon ; kibo.component.json est réservé à Kibo.",
+    ),
+  ).toBeTruthy();
 });
 
 test("step 3 failure: report, incidents, retry; exhausted: code fallback only", async () => {
@@ -194,20 +61,18 @@ test("step 3 failure: report, incidents, retry; exhausted: code fallback only", 
       report,
       incidents: [{ kind: "restored", path: "kibo.component.json" }],
     });
-  const { unmount } = render(
-    <AiDraftPanel draftId="0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11" target={null} onDone={() => {}} />,
-  );
+  const { unmount } = render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   expect(await screen.findByText("kibo.component.json restauré (fichier réservé à Kibo)")).toBeTruthy();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Corriger avec l'agent" }));
   expect(calls.find((c) => c.method === "retryComponentDraft")).toEqual({
     method: "retryComponentDraft",
-    draftId: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
+    draftId: DRAFT_ID,
   });
   unmount();
   answer = () =>
     details({ status: "failed", attempts: 3, failure: { kind: "validation", detail: null }, report });
-  render(<AiDraftPanel draftId="0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11" target={null} onDone={() => {}} />);
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   expect(
     (await screen.findByRole("button", { name: "Corriger avec l'agent" })).hasAttribute("disabled"),
   ).toBe(true);
@@ -229,19 +94,13 @@ test("review (create) then permissions then finalize on the current page", async
     });
   };
   const onDone = mock(() => {});
-  render(
-    <AiDraftPanel
-      draftId="0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11"
-      target={{ projectId: "p1", pageId: "pg1" }}
-      onDone={onDone}
-    />,
-  );
+  render(<AiDraftPanel draftId={DRAFT_ID} target={{ projectId: "p1", pageId: "pg1" }} onDone={onDone} />);
   const user = userEvent.setup();
   expect(await screen.findByText("export function Burndown() {}")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "J'ai relu, continuer" }));
   expect(calls.find((c) => c.method === "reviewComponentDraft")).toEqual({
     method: "reviewComponentDraft",
-    draftId: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
+    draftId: DRAFT_ID,
     version: "0.1.0",
     changes: [],
   });
@@ -249,7 +108,7 @@ test("review (create) then permissions then finalize on the current page", async
   await user.click(screen.getByRole("button", { name: "Autoriser et ajouter" }));
   expect(calls.find((c) => c.method === "finalizeComponentDraft")).toEqual({
     method: "finalizeComponentDraft",
-    draftId: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
+    draftId: DRAFT_ID,
     version: "0.1.0",
     hash: "3f9a".padEnd(64, "0"),
     trust: "sandboxed",
@@ -269,7 +128,7 @@ test("review (modify) goes through the publish step with an editable version", a
       manifest,
       publish: { ...publish, from: "0.1.0", to: "0.2.0", status: "update", changes: ["Ajoute un titre"] },
     });
-  render(<AiDraftPanel draftId="0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11" target={null} onDone={() => {}} />);
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "J'ai relu, continuer" }));
   const version = await screen.findByLabelText("Version");
@@ -278,8 +137,74 @@ test("review (modify) goes through the publish step with an editable version", a
   await user.click(screen.getByRole("button", { name: "Publier" }));
   expect(calls.find((c) => c.method === "reviewComponentDraft")).toEqual({
     method: "reviewComponentDraft",
-    draftId: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
+    draftId: DRAFT_ID,
     version: "0.1.1",
     changes: ["Ajoute un titre"],
   });
+});
+
+test("step 3 failure names the problem count and the finished attempt", async () => {
+  runState = "done";
+  answer = () => details({ status: "failed", failure: { kind: "validation", detail: null }, report });
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  expect(await screen.findByText("Burndown · la validation a trouvé 1 problème.")).toBeTruthy();
+  expect(screen.getByText("Tentative 1 sur 3 · opus · Terminé")).toBeTruthy();
+});
+
+test("exhausted attempts read as a failure of the agent", async () => {
+  runState = "done";
+  const twoProblems = { ...report, tests: { ok: false, passed: 5, failed: 1, output: "1 fail" } };
+  answer = () =>
+    details({
+      status: "failed",
+      attempts: 3,
+      failure: { kind: "validation", detail: null },
+      report: twoProblems,
+    });
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  expect(
+    await screen.findByText("Burndown · l'agent n'a pas réussi à faire passer la validation."),
+  ).toBeTruthy();
+  expect(screen.getByText("Tentative 3 sur 3 · opus · Échec")).toBeTruthy();
+});
+
+test("permissions without a hash explain the state instead of an empty step", async () => {
+  answer = () => details({ status: "permissions", manifest, publish });
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  expect(
+    await screen.findByText(
+      "Empreinte ou manifeste manquant : revalide le brouillon ou abandonne-le pour relancer la génération.",
+    ),
+  ).toBeTruthy();
+});
+
+test("abandoning does not reload a closed panel", async () => {
+  answer = () => details({});
+  let close = () => {};
+  const view = render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => close()} />);
+  close = view.unmount;
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Abandonner" }));
+  await waitFor(() => expect(calls.some((c) => c.method === "abandonComponentDraft")).toBe(true));
+  await new Promise((r) => setTimeout(r, 0));
+  const abandonAt = calls.findIndex((c) => c.method === "abandonComponentDraft");
+  expect(calls.slice(abandonAt + 1).some((c) => c.method === "getComponentDraft")).toBe(false);
+});
+
+test("an action failure is shown in French, never as the raw detail", async () => {
+  answer = (req) =>
+    req.method === "retryComponentDraft"
+      ? new KiboError("INTERNAL", "ENOSPC: no space left on device")
+      : details({ status: "failed", failure: { kind: "validation", detail: null }, report });
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Corriger avec l'agent" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Erreur interne du démon.");
+  expect(screen.queryByText(/ENOSPC/)).toBeNull();
+});
+
+test("a loading failure is shown in French", async () => {
+  answer = () => new KiboError("NOT_FOUND", "draft 0b5c missing");
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  expect((await screen.findByRole("alert")).textContent).toBe("Brouillon introuvable.");
 });
