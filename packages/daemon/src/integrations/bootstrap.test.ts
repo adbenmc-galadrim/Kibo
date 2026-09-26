@@ -49,3 +49,26 @@ test("the github secret of components resolves through the account", async () =>
     host.close();
   }
 });
+
+test("the ci runs are served to the UI and to components", async () => {
+  const gh = startFakeGithub();
+  const host = createFakeHost();
+  try {
+    const flags = parseIntegrationFlags({
+      "test-origins": `api.github.com=${gh.url}`,
+      "memory-secrets": true,
+    });
+    const rpc = startIntegrations(host, flags, createRedactor());
+    expect(rpc.handles("listCiRuns")).toBe(true);
+    expect(rpc.handles("getCiLog")).toBe(true);
+    expect(await rpc.handle({ method: "listCiRuns", projectId: host.projectId, ticketId: null })).toEqual([]);
+    expect(await rpc.hooks.ciRuns?.(host.projectId)).toEqual([]);
+    await expect(
+      rpc.handle({ method: "getCiLog", projectId: host.projectId, runId: 1, jobId: 2 }),
+    ).rejects.toThrow("NOT_FOUND");
+    rpc.stop();
+  } finally {
+    gh.stop();
+    host.close();
+  }
+});

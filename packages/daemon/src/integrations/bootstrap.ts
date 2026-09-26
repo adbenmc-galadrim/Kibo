@@ -1,4 +1,7 @@
 import { KiboError } from "@kibo/schema";
+import { createCiStore } from "../ci/ci-store";
+import { ciModule } from "../ci/module";
+import { createCiPoller } from "../ci/poller";
 import { createGithubApi, type GithubApi } from "../github/api";
 import { createGithubAccount, type GithubAccount } from "../github/auth";
 import { githubModule } from "../github/handlers";
@@ -99,19 +102,38 @@ export function startIntegrations(
     onUnauthorized: () => account.forgetGhToken(),
   });
   const github = { account, api };
+  const events = createEventLog(host.db, redactor, host.now);
+  const ciStore = createCiStore(host.db);
+  const ciPoller = createCiPoller({
+    host,
+    api,
+    store: ciStore,
+    events,
+    connected: () => account.mode() !== null,
+  });
   const secret: SecretResolver = (name) => (name === "github" ? account.token() : secrets.get(name));
   const kit: IntegrationKit = {
     host,
     flags,
     redactor,
-    events: createEventLog(host.db, redactor, host.now),
+    events,
     settings,
     secrets,
-    hooks: { ...NEUTRAL_HOOKS, aliases, observe, secret },
+    hooks: {
+      ...NEUTRAL_HOOKS,
+      aliases,
+      observe,
+      secret,
+      ciRuns: (projectId) => ciPoller.runs(projectId, null),
+    },
     net,
     github,
   };
-  const modules: IntegrationModule[] = [{ probes: builtinProbes(kit.host) }, githubModule(kit, kit.github)];
+  const modules: IntegrationModule[] = [
+    { probes: builtinProbes(kit.host) },
+    githubModule(kit, kit.github),
+    ciModule(kit, ciPoller, ciStore),
+  ];
   return createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),
     probes: modules.flatMap((m) => m.probes ?? []),

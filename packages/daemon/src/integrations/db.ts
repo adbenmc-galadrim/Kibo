@@ -16,15 +16,20 @@ const TABLES = [
   "CREATE TABLE IF NOT EXISTS figma_cache (file_key TEXT NOT NULL, node_id TEXT NOT NULL, png_path TEXT NOT NULL, fetched_at INTEGER NOT NULL, PRIMARY KEY (file_key, node_id))",
 ];
 
-function addOutboxUncertainColumn(db: Database): void {
-  const columns = db.query<{ name: string }, []>("PRAGMA table_info(sync_outbox)").all();
-  if (columns.some((c) => c.name === "uncertain")) return;
-  db.exec("ALTER TABLE sync_outbox ADD COLUMN uncertain INTEGER NOT NULL DEFAULT 0");
+const ADDED_COLUMNS = [
+  { table: "sync_outbox", column: "uncertain", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "ci_jobs", column: "log_truncated", definition: "INTEGER NOT NULL DEFAULT 0" },
+];
+
+function addColumn(db: Database, table: string, column: string, definition: string): void {
+  const columns = db.query<{ name: string }, []>(`PRAGMA table_info(${table})`).all();
+  if (columns.some((c) => c.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
 export function migrateIntegrations(db: Database): void {
   db.transaction(() => {
     for (const sql of TABLES) db.exec(sql);
-    addOutboxUncertainColumn(db);
+    for (const c of ADDED_COLUMNS) addColumn(db, c.table, c.column, c.definition);
   })();
 }
