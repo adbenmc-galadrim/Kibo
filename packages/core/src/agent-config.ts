@@ -1,0 +1,222 @@
+import {
+  AgentProfile,
+  type ConfigCommand,
+  Domain,
+  Guideline,
+  type GuidelineOwner,
+  KiboError,
+} from "@kibo/schema";
+import type { LoroDoc, LoroMap } from "loro-crdt";
+
+type Parsed<T> = { success: true; data: T } | { success: false; error: { message: string } };
+
+const profilesMap = (doc: LoroDoc) => doc.getMap("profiles");
+const domainsMap = (doc: LoroDoc) => doc.getMap("domains");
+const guidelinesMap = (doc: LoroDoc) => doc.getMap("guidelines");
+const projectIdOf = (doc: LoroDoc) => doc.getMap("meta").get("id") as string | undefined;
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
+
+function valid<T>(result: Parsed<T>): T {
+  if (!result.success) throw new KiboError("INVALID_INPUT", result.error.message);
+  return result.data;
+}
+
+function stored<T>(result: Parsed<T>, what: string): T {
+  if (!result.success) throw new KiboError("STORE_CORRUPT", `${what}: ${result.error.message}`);
+  return result.data;
+}
+
+function entries(map: LoroMap): unknown[] {
+  return Object.values(map.toJSON() as Record<string, unknown>);
+}
+
+function requireWorkspace(doc: LoroDoc): void {
+  if (projectIdOf(doc) !== undefined) {
+    throw new KiboError("INVALID_INPUT", "profiles, domains and shared guidelines live in the workspace");
+  }
+}
+
+export function listProfiles(ws: LoroDoc): AgentProfile[] {
+  return entries(profilesMap(ws))
+    .map((v) => stored(AgentProfile.safeParse(v), "profile"))
+    .sort(byName);
+}
+
+export function getProfile(ws: LoroDoc, id: string): AgentProfile {
+  const found = listProfiles(ws).find((p) => p.id === id);
+  if (!found) throw new KiboError("NOT_FOUND", `profile ${id} not found`);
+  return found;
+}
+
+export function listDomains(ws: LoroDoc): Domain[] {
+  return entries(domainsMap(ws))
+    .map((v) => stored(Domain.safeParse(v), "domain"))
+    .sort(byName);
+}
+
+function getDomain(ws: LoroDoc, id: string): Domain {
+  const found = listDomains(ws).find((d) => d.id === id);
+  if (!found) throw new KiboError("NOT_FOUND", `domain ${id} not found`);
+  return found;
+}
+
+export function listGuidelines(doc: LoroDoc): Guideline[] {
+  return entries(guidelinesMap(doc))
+    .map((v) => stored(Guideline.safeParse(v), "guideline"))
+    .sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function ownerKey(o: GuidelineOwner): string {
+  switch (o.scope) {
+    case "workspace":
+      return "workspace";
+    case "project":
+      return `project:${o.projectId}`;
+    case "domain":
+      return `domain:${o.domainId}`;
+    case "profile":
+      return `profile:${o.profileId}`;
+  }
+}
+
+function assertOwner(doc: LoroDoc, owner: GuidelineOwner): void {
+  if (owner.scope === "project") {
+    if (projectIdOf(doc) !== owner.projectId) {
+      throw new KiboError("INVALID_INPUT", "project guidelines live in their own project");
+    }
+    return;
+  }
+  requireWorkspace(doc);
+  if (owner.scope === "domain") getDomain(doc, owner.domainId);
+  if (owner.scope === "profile") getProfile(doc, owner.profileId);
+}
+
+function assertUniqueName(
+  existing: { id: string; name: string }[],
+  item: { id: string; name: string },
+): void {
+  const clash = existing.some((e) => e.id !== item.id && e.name.toLowerCase() === item.name.toLowerCase());
+  if (clash) throw new KiboError("INVALID_INPUT", `name ${item.name} is already used`);
+}
+
+function assertUniquePath(doc: LoroDoc, g: Guideline): void {
+  const clash = listGuidelines(doc).some(
+    (e) => e.id !== g.id && e.path === g.path && ownerKey(e.owner) === ownerKey(g.owner),
+  );
+  if (clash) throw new KiboError("INVALID_INPUT", `guideline ${g.path} already exists`);
+}
+
+function findGuideline(doc: LoroDoc, id: string, owner: GuidelineOwner): Guideline {
+  const found = listGuidelines(doc).find((g) => g.id === id && ownerKey(g.owner) === ownerKey(owner));
+  if (!found) throw new KiboError("NOT_FOUND", `guideline ${id} not found`);
+  return found;
+}
+
+function dropGuidelines(doc: LoroDoc, owner: GuidelineOwner): void {
+  for (const g of listGuidelines(doc)) {
+    if (ownerKey(g.owner) === ownerKey(owner)) guidelinesMap(doc).delete(g.id);
+  }
+}
+
+export function configTarget(cmd: ConfigCommand): string | null {
+  switch (cmd.method) {
+    case "addGuideline":
+    case "updateGuideline":
+    case "removeGuideline":
+      return cmd.owner.scope === "project" ? cmd.owner.projectId : null;
+    default:
+      return null;
+  }
+}
+
+export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown {
+  switch (cmd.method) {
+    case "createProfile": {
+      requireWorkspace(doc);
+      const profile = valid(AgentProfile.safeParse({ ...cmd.profile, id: crypto.randomUUID() }));
+      assertUniqueName(listProfiles(doc), profile);
+      profilesMap(doc).set(profile.id, profile);
+      doc.commit();
+      return profile;
+    }
+    case "updateProfile": {
+      requireWorkspace(doc);
+      const current = getProfile(doc, cmd.profileId);
+      const profile = valid(AgentProfile.safeParse({ ...current, ...cmd.patch, id: current.id }));
+      assertUniqueName(listProfiles(doc), profile);
+      profilesMap(doc).set(profile.id, profile);
+      doc.commit();
+      return profile;
+    }
+    case "deleteProfile": {
+      requireWorkspace(doc);
+      getProfile(doc, cmd.profileId);
+      profilesMap(doc).delete(cmd.profileId);
+      dropGuidelines(doc, { scope: "profile", profileId: cmd.profileId });
+      doc.commit();
+      return null;
+    }
+    case "createDomain": {
+      requireWorkspace(doc);
+      const domain = valid(Domain.safeParse({ ...cmd.domain, id: crypto.randomUUID() }));
+      assertUniqueName(listDomains(doc), domain);
+      domainsMap(doc).set(domain.id, domain);
+      doc.commit();
+      return domain;
+    }
+    case "updateDomain": {
+      requireWorkspace(doc);
+      const current = getDomain(doc, cmd.domainId);
+      const domain = valid(Domain.safeParse({ ...current, ...cmd.patch, id: current.id }));
+      assertUniqueName(listDomains(doc), domain);
+      domainsMap(doc).set(domain.id, domain);
+      doc.commit();
+      return domain;
+    }
+    case "deleteDomain": {
+      requireWorkspace(doc);
+      getDomain(doc, cmd.domainId);
+      domainsMap(doc).delete(cmd.domainId);
+      dropGuidelines(doc, { scope: "domain", domainId: cmd.domainId });
+      doc.commit();
+      return null;
+    }
+    case "addGuideline": {
+      assertOwner(doc, cmd.owner);
+      const g = valid(
+        Guideline.safeParse({
+          id: crypto.randomUUID(),
+          owner: cmd.owner,
+          path: cmd.path,
+          content: cmd.content,
+        }),
+      );
+      assertUniquePath(doc, g);
+      guidelinesMap(doc).set(g.id, g);
+      doc.commit();
+      return g;
+    }
+    case "updateGuideline": {
+      assertOwner(doc, cmd.owner);
+      const current = findGuideline(doc, cmd.guidelineId, cmd.owner);
+      const g = valid(
+        Guideline.safeParse({
+          ...current,
+          path: cmd.path ?? current.path,
+          content: cmd.content ?? current.content,
+        }),
+      );
+      assertUniquePath(doc, g);
+      guidelinesMap(doc).set(g.id, g);
+      doc.commit();
+      return g;
+    }
+    case "removeGuideline": {
+      assertOwner(doc, cmd.owner);
+      findGuideline(doc, cmd.guidelineId, cmd.owner);
+      guidelinesMap(doc).delete(cmd.guidelineId);
+      doc.commit();
+      return null;
+    }
+  }
+}
