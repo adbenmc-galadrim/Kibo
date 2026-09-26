@@ -4604,7 +4604,7 @@ Les anciennes décisions 14 (bubblewrap à liaison minimale) et 23 (canal par li
 - `SandboxStatus` (T4, `packages/schema/src/security.ts`) vaut `SandboxDiagnosis & { allowUnsandboxed: boolean }` : même forme, champ par champ.
 - Aucun contrat existant ne change : `ready()` et `wrap()` gardent leur comportement ; seuls les messages de `SANDBOX_UNAVAILABLE` deviennent précis (`bubblewrap (bwrap) is not installed`, `sandbox-exec is missing`, `no OS sandbox on <platform>`). Le texte d'aide de `FR_DEVKIT.sandboxUnavailable` (validation) est inchangé.
 
-- [ ] **Step 1: Écrire les tests du diagnostic**
+- [x] **Step 1: Écrire les tests du diagnostic**
 
 Ajouter à la fin de `packages/devkit/src/os-sandbox.test.ts` (les imports existants s'enrichissent de `BWRAP_FIX_INSTALL`, `BWRAP_FIX_USERNS`, `type SandboxProbeRun`) :
 ```ts
@@ -4687,12 +4687,12 @@ test("on this machine the diagnosis matches the platform and is available", asyn
 ```
 Le dernier test tourne sur la vraie machine, comme le test réel existant : il n'est jamais sauté (la CI Linux a déjà `bubblewrap`).
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `bun test packages/devkit/src/os-sandbox.test.ts`
 Expected: FAIL — `BWRAP_FIX_INSTALL` introuvable, `sandbox.diagnose is not a function`.
 
-- [ ] **Step 3: Implémenter le diagnostic**
+- [x] **Step 3: Implémenter le diagnostic**
 
 Dans `packages/devkit/src/os-sandbox.ts`, remplacer le type `OsSandbox` et `createOsSandbox` (le reste du fichier — `macosProfile`, `bwrapArgv`, `osSandbox()` — est inchangé) :
 ```ts
@@ -4795,12 +4795,12 @@ export function createOsSandbox(opts: OsSandboxOptions = {}): OsSandbox {
 ```
 `diagnose` ne relance la sonde que si la précédente a échoué (`ready` garde le succès en cache et oublie l'échec, comportement de la phase 4) : installer `bwrap` puis rouvrir Paramètres › Sécurité suffit, sans redémarrer le démon.
 
-- [ ] **Step 4: Lancer les tests**
+- [x] **Step 4: Lancer les tests**
 
 Run: `bun test packages/devkit/src/os-sandbox.test.ts packages/devkit/src/validate-isolation.test.ts packages/daemon/src/components/process-host-sandbox.test.ts`
 Expected: PASS (les 8 cas du diagnostic, le test réel, et les tests existants de la validation et du backend sans changement d'attente).
 
-- [ ] **Step 5: Vérifier le lint et les types, commiter**
+- [x] **Step 5: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck && bun test packages/devkit`
 Expected: aucun diagnostic, tests verts.
