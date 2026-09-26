@@ -12841,11 +12841,11 @@ Vérifié en T0 : `packages/daemon/src/sync/` héberge déjà la sync des intég
 - Consumes (T18) : `ProjectSync`, `createMemoryHost`, `MemoryHost` ; (T14) `ProjectRoom`, `RoomReject`, `Actor`, `openServerDb`, `seedUser`, `ownerSnapshot` ; (v0.6, `@kibo/core`) `executeProjectCommand`, `listTickets`, `listPages` ; (T4) `ClientFrame`, `ServerFrame`, `RejectCode` ; (T2) `toBase64`, `fromBase64`.
 - Produces (**ajout**, test seulement) : `class InMemoryNetwork { constructor(room: ProjectRoom, actor: Actor, now: () => number); clients: NetClient[]; allocated: { ticketId: string; key: string }[]; addClient(doc: LoroDoc): NetClient; connect(c: NetClient): void; disconnect(c: NetClient): void; stepUp(c: NetClient): boolean; stepDown(c: NetClient): boolean; runTimers(c: NetClient): boolean; drain(): void }`.
 
-- [ ] **Step 1: Ajouter fast-check au démon**
+- [x] **Step 1: Ajouter fast-check au démon**
 
 Dans `packages/daemon/package.json`, `devDependencies` : `"fast-check": "4.3.0"`, puis `bun install` (version déjà dans `bun.lock` via `core`).
 
-- [ ] **Step 2: Écrire le réseau en mémoire**
+- [x] **Step 2: Écrire le réseau en mémoire**
 
 `packages/daemon/src/collab/testing/in-memory-network.ts` :
 ```ts
@@ -13011,7 +13011,7 @@ export class InMemoryNetwork {
 }
 ```
 
-- [ ] **Step 3: Écrire la propriété**
+- [x] **Step 3: Écrire la propriété**
 
 `packages/daemon/src/collab/convergence.property.test.ts` :
 ```ts
@@ -13182,23 +13182,23 @@ test(
 );
 ```
 
-- [ ] **Step 4: Lancer la propriété**
+- [x] **Step 4: Lancer la propriété**
 
 Run: `bun test packages/daemon/src/collab/convergence.property.test.ts`
 Expected: PASS (200 exécutions, moins d'une minute en local). Si elle échoue : le contre-exemple réduit désigne soit `ProjectSync` (T18), soit la salle (T14), soit `validateProjectUpdate` (T7) ; corriger la cause dans le bon fichier, ajouter le contre-exemple comme test unitaire dans la tâche concernée, jamais affaiblir la propriété.
 
-- [ ] **Step 5: Vérifier que la propriété détecte une régression**
+- [x] **Step 5: Vérifier que la propriété détecte une régression**
 
 Remplacer temporairement, dans `project-sync.ts`, la condition `if (order === 0 || order === -1) return;` par `if (order !== 1) return;` (les lots concurrents ne partent plus).
 Run: `bun test packages/daemon/src/collab/convergence.property.test.ts`
 Expected: FAIL (docs non convergents). Rétablir la ligne, relancer : PASS.
 
-- [ ] **Step 6: Suite, lint, types**
+- [x] **Step 6: Suite, lint, types**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS. La CI exécute la propriété sur macOS et Linux dans `bun test packages components` (au moins 200 exécutions par OS).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/daemon/package.json bun.lock packages/daemon/src/collab/testing/in-memory-network.ts \
