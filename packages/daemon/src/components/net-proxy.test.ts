@@ -16,6 +16,7 @@ const server = Bun.serve({
     if (url.pathname === "/see-other") return Response.redirect("https://api.kibo.dev/echo", 303);
     if (url.pathname.startsWith("/v1/loop")) return Response.redirect("https://api.kibo.dev/v1/loop", 302);
     if (url.pathname === "/v1/echo") return Response.json({ ok: true });
+    if (url.pathname === "/redirect-creds") return Response.redirect("https://u:p@api.kibo.dev/echo", 302);
     if (url.pathname === "/redirect-http") return Response.redirect("http://api.kibo.dev/echo", 302);
     if (url.pathname === "/redirect-file") {
       return new Response(null, { status: 302, headers: { location: "file:///etc/passwd" } });
@@ -91,9 +92,6 @@ describe("proxyFetch", () => {
       "PERMISSION_DENIED",
     );
     await expect(proxyFetch(null, "https://0x7f.1/echo", GET, opts)).rejects.toThrow("PERMISSION_DENIED");
-    await expect(proxyFetch(null, "https://u:p@api.kibo.dev/echo", GET, opts)).rejects.toThrow(
-      "PERMISSION_DENIED",
-    );
     await expect(proxyFetch(null, "not a url", GET, opts)).rejects.toThrow("INVALID_INPUT");
     const rebinding = { ...opts, resolve: async () => ["203.0.113.10", "10.0.0.1"] };
     await expect(proxyFetch(null, "https://api.kibo.dev/echo", GET, rebinding)).rejects.toThrow(
@@ -107,6 +105,14 @@ describe("proxyFetch", () => {
     await expect(proxyFetch(null, "https://api.kibo.dev/echo", GET, empty)).rejects.toThrow(
       "PERMISSION_DENIED",
     );
+  });
+  test("a target carrying credentials is refused, first or after a redirect", async () => {
+    await expect(proxyFetch(null, "https://u:p@api.kibo.dev/echo", GET, opts)).rejects.toThrow(
+      "credentials in url are not allowed",
+    );
+    await expect(
+      proxyFetch(["api.kibo.dev"], "https://api.kibo.dev/redirect-creds", GET, opts),
+    ).rejects.toThrow("credentials in url are not allowed");
   });
   test("header names or values that could split the request are refused", async () => {
     const init = { method: "GET" as const, headers: { "x-a": "1\r\nhost: evil" } };

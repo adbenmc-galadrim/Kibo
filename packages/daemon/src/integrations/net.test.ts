@@ -157,6 +157,17 @@ describe("integration fetch", () => {
     );
   });
 
+  test("refuses a target carrying credentials, first or after a redirect", async () => {
+    const f = createIntegrationFetch({ aliases: aliases(), resolve: async () => ["140.82.112.5"] });
+    await expect(f("https://u:p@api.github.com/user", {}, GITHUB_RULES)).rejects.toThrow(
+      "credentials in url are not allowed",
+    );
+    gh.failNext("GET", /^\/user$/, 302, "", { location: "https://u:p@api.github.com/user" });
+    await expect(f("https://api.github.com/user", { bearer: gh.token }, GITHUB_RULES)).rejects.toThrow(
+      "credentials in url are not allowed",
+    );
+  });
+
   test("truncates large bodies and reports github rate headers", async () => {
     const seen: string[] = [];
     const f = createIntegrationFetch({ aliases: aliases(), observe: (host) => seen.push(host) });
