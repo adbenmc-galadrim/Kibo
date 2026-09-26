@@ -380,7 +380,9 @@ export function signIndex(index: MarketIndex, privateKey: string): Promise<{ byt
 export function verifyIndex(input: { bytes: Uint8Array; sig: string; expectedKey: string; lastSerial: number | null }): Promise<MarketIndex>;
 // verify-package.ts (T10)
 export function verifyMarketPackage(input: { pkg: Kpkg; index: MarketIndex; pinnedKey: string | null }):
-  Promise<{ files: SourceFile[]; newPublisher: boolean }>;   // ordre spec H §4 : SIGNATURE_INVALID, HASH_MISMATCH, NOT_FOUND | REVOKED, PUBLISHER_CHANGED
+  Promise<{ files: SourceFile[]; newPublisher: boolean; publisher: { name: string; verified: boolean } }>;
+  // ordre : SIGNATURE_INVALID, puis l'index (REVOKED, NOT_FOUND, éditeur absent de index.publishers ou nom différent ⇒ SIGNATURE_INVALID,
+  // PUBLISHER_CHANGED, permissions de l'index ≠ grantedOf(manifest) ⇒ INVALID_INPUT), enfin HASH_MISMATCH : rien n'est haché si l'index refuse
 ```
 
 ### Core (`@kibo/core`)
@@ -574,7 +576,7 @@ export class MarketService {
   addSource(input: { url: string; publicKey: string }): Promise<MarketSourceInfo>; removeSource(id: string): void;
   refresh(sourceId?: string): Promise<void>; search(input: { query: string; sourceId?: string; kind?: ComponentKind }): MarketHit[];
   getPackage(input: { sourceId: string; id: string; version: string }): Promise<MarketPackageDetail>;
-  fetchVerified(input: { sourceId: string; id: string; version: string }): Promise<{ pkg: Kpkg; files: SourceFile[]; newPublisher: boolean }>;
+  fetchVerified(input: { sourceId: string; id: string; version: string }): Promise<{ pkg: Kpkg; files: SourceFile[]; newPublisher: boolean; publisher: { name: string; verified: boolean } }>;
   pinPublisher(sourceId: string, componentId: string, publisherKey: string): void;
   unpinPublisher(input: { sourceId: string; componentId: string }): void;
   findSourceFor(input: { id: string; version: string; hash: string | null }): { sourceId: string } | null;
@@ -5448,8 +5450,9 @@ Chaîne de vérification de la marketplace (spec H §3.1, §3.2, §4, §7), dans
   - `kpkgSourceFiles(pkg: Kpkg): Promise<SourceFile[]>` (`INVALID_INPUT`, `HASH_MISMATCH`)
   - **Nouveau** : `KPKG_MAX_FILES = 200`, `assertPackagePath(path: string): void` (`INVALID_INPUT`)
   - `signIndex(index: MarketIndex, privateKey: string): Promise<{ bytes: Uint8Array; sig: string }>`
-  - `verifyIndex(input: { bytes: Uint8Array; sig: string; expectedKey: string; lastSerial: number | null }): Promise<MarketIndex>` (`SIGNATURE_INVALID`, `INDEX_ROLLBACK`, `INVALID_INPUT`)
-  - `verifyMarketPackage(input: { pkg: Kpkg; index: MarketIndex; pinnedKey: string | null }): Promise<{ files: SourceFile[]; newPublisher: boolean }>`
+  - `verifyIndex(input: { bytes: Uint8Array; sig: string; expectedKey: string; lastSerial: number | null }): Promise<MarketIndex>` (`SIGNATURE_INVALID`, `INDEX_ROLLBACK`, `INVALID_INPUT`, dont un `id` de paquet listé deux fois)
+  - `verifyMarketPackage(input: { pkg: Kpkg; index: MarketIndex; pinnedKey: string | null }): Promise<{ files: SourceFile[]; newPublisher: boolean; publisher: { name: string; verified: boolean } }>` : après la signature, contrôle l'index avant de hacher quoi que ce soit (`REVOKED` prime sur `HASH_MISMATCH`) ; `entry.publisherKey` doit figurer dans `index.publishers` (signé par la source) avec le même nom que `pkg.publisher.name`, sinon `SIGNATURE_INVALID` ; `entry.permissions` (parsé par Zod) doit égaler `grantedOf(pkg.manifest)`, sinon `INVALID_INPUT`. `publisher` vient de l'index : `pkg.publisher.name` n'est pas signé (spec H §3.1) et ne doit jamais être affiché.
+  - **Nouveau** : `KPKG_MAX_RAW_BYTES` (base64 d'un paquet de `KPKG_MAX_BYTES` plus 256 Kio de marge), borne de `decodeKpkg` et du téléchargement d'un `.kpkg` (T15)
   - **Nouveau** (`@kibo/trust/testing`) :
     - `type TestPackageInput = { id?: string; version?: string; title?: string; files?: Record<string, string>; manifest?: Partial<ComponentManifestInput>; publisherName?: string; keys?: KeyPair; publisher?: { name: string; keys: KeyPair }; publishedAt?: Date }`
     - `makeTestPackage(input?: TestPackageInput): Promise<TestPackage>` avec `TestPackage = { pkg, bytes, keys, files, publisher: { name, keys } }` ; `input.publisher` équivaut à `publisherName` + `keys` ; le `ui.tsx` par défaut exporte `Component` qui affiche le titre, pour passer la conformité générique (T20, T22)
@@ -5458,7 +5461,7 @@ Chaîne de vérification de la marketplace (spec H §3.1, §3.2, §4, §7), dans
 
 - Vérifié en T0 : l'empreinte de référence est celle de `packages/devkit/src/hash.ts` (`hashFiles`, `isHashed`, `readSources`, `MAX_SOURCE_FILES = 200`, `MAX_SOURCE_BYTES = 2_097_152`) ; T2 rend `sourceHash` / `isHashedSource` de `@kibo/trust` identiques octet pour octet (même règle d'inclusion : `kibo.component.json` et `*.ts|*.tsx|*.css` hors `*.test.ts(x)`, aucun segment commençant par `.`, ni `node_modules`, ni `dist`) et `hashSources` du devkit y délègue. `trust` ne dépend pas du devkit : les deux limites sont reprises ici (`KPKG_MAX_BYTES` du schéma vaut `MAX_SOURCE_BYTES`, `KPKG_MAX_FILES = 200` est exporté par `kpkg.ts`). `GrantedPermissions` (`packages/schema/src/permissions.ts`) a six champs (`reads`, `writes`, `data`, `net`, `secrets`, `mcp`) et se calcule depuis un manifeste par `grantedOf(manifest)` (pas de `grantedPermissions`). `ComponentManifest.description` est optionnel (`z.string().min(1).optional()`) alors que `MarketIndex.packages[].description` est requis : l'index écrit `""` à défaut. Le `ui.tsx` généré par `scaffoldComponent` (`packages/devkit/src/scaffold.ts`) exporte `Component`, comme celui des fixtures.
 
-Règles d'un chemin de fichier de paquet : relatif POSIX, segments `[A-Za-z0-9._-]+`, aucun segment commençant par `.` (couvre `..` et les fichiers cachés), pas de `/` initial, pas de doublon, et `isHashedSource(path)` vrai ; au plus `KPKG_MAX_FILES` (200) fichiers, comme `MAX_SOURCE_FILES` du devkit. Le manifeste porté par le paquet doit être identique à `kibo.component.json` du paquet : sinon les permissions affichées pourraient différer du code installé.
+Règles d'un chemin de fichier de paquet : relatif POSIX, segments `[A-Za-z0-9._-]+`, aucun segment commençant par `.` (couvre `..` et les fichiers cachés), pas de `/` initial, pas de doublon (y compris après `toLowerCase()`), aucun chemin qui soit aussi un dossier d'un autre (`a.ts` et `a.ts/b.ts`), et `isHashedSource(path)` vrai ; tous les chemins sont contrôlés avant tout décodage ; au plus `KPKG_MAX_FILES` (200) fichiers, comme `MAX_SOURCE_FILES` du devkit. `packKpkg` applique les mêmes règles (chemins, taille, manifeste) pour échouer côté éditeur. Le manifeste porté par le paquet doit être identique à `kibo.component.json` du paquet : sinon les permissions affichées pourraient différer du code installé.
 
 - [ ] **Step 1: Écrire les tests du paquet**
 
@@ -8790,6 +8793,8 @@ git commit -m "feat(sync-server): salle de projet"
 
 Côté démon de la chaîne de vérification (spec H §3.3, §4, §5.2, §6) : sources déclarées et épinglées par leur clé, index signé à numéro croissant, cache, épinglage des éditeurs, recherche locale, détail d'un paquet avec ses sources vérifiées (« Voir le code »), révocation au rafraîchissement. L'installation elle-même est la tâche 20.
 
+Bornes de téléchargement (entrée réseau hostile, lue en flux et coupée dès la borne atteinte) : un `.kpkg` est borné à `KPKG_MAX_RAW_BYTES` de `@kibo/trust` (le base64 d'un paquet de 2 Mio dépasse 2 Mio, d'où une borne supérieure à `KPKG_MAX_BYTES`), `index.json` à `INDEX_MAX_BYTES = 8 Mio` et `index.json.sig` à 4 Kio. `fetchVerified` et `getPackage` renvoient le `publisher` de `verifyMarketPackage` (nom et vérification tirés de l'index signé).
+
 **Files:**
 - Create: `packages/daemon/src/market/market-db.ts`, `packages/daemon/src/market/http-get.ts`, `packages/daemon/src/market/market-service.ts`, `packages/daemon/src/market/registry-port.ts`, `packages/daemon/src/market/refresh-schedule.ts`, `packages/daemon/src/market/rpc.ts`, `packages/daemon/src/market/bootstrap.ts`, `packages/daemon/src/testing/fake-market.ts`, `packages/daemon/src/testing/memory-registry.ts`
 - Modify: `packages/daemon/src/daemon.ts` (une ligne dans `assemble` : `startMarket`, son gestionnaire RPC passé à `startServer`, son arrêt dans `closers`), `packages/daemon/src/main.ts` (lecture de `KIBO_MARKET_ALLOW_LOOPBACK`), `packages/daemon/package.json` (dépendance `@kibo/trust`)
@@ -8797,7 +8802,7 @@ Côté démon de la chaîne de vérification (spec H §3.3, §4, §5.2, §6) : s
 - Modify: `packages/daemon/src/components/service.ts` (`ComponentsService.events` exposé, une ligne de journal par révocation marketplace)
 
 **Interfaces:**
-- Consumes: `verifyIndex`, `verifyMarketPackage`, `decodeKpkg`, `keyFingerprint`, `signIndex`, `generateKeyPair`, `utf8`, `type KeyPair`, `type SourceFile` (`@kibo/trust`, T2 et T10) ; `makeTestPackage` (`@kibo/trust/testing`, T10) ; `MarketIndex`, `Kpkg`, `KPKG_MAX_BYTES`, `MARKET_FETCH_TIMEOUT_MS`, `MARKET_REFRESH_MS`, `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `RegistryVersion` (avec `source`, `revoked`), `ComponentKind`, `KiboError` (`@kibo/schema`, T1 et T5) ; le message `{ type: "market.changed" }` de `ChangeMessage` (T4) ; `RpcContext`, `RpcOutcome`, `RpcHandler`, `requireLocal` et l'option `handlers` de `startServer` (`packages/daemon/src/rpc-extensions.ts`, T9) ; `LocalSettings` n'est pas utilisé.
+- Consumes: `verifyIndex`, `verifyMarketPackage`, `decodeKpkg`, `keyFingerprint`, `signIndex`, `generateKeyPair`, `utf8`, `type KeyPair`, `type SourceFile` (`@kibo/trust`, T2 et T10), `KPKG_MAX_RAW_BYTES` (T10) ; `makeTestPackage` (`@kibo/trust/testing`, T10) ; `MarketIndex`, `Kpkg`, `MARKET_FETCH_TIMEOUT_MS`, `MARKET_REFRESH_MS`, `MarketSourceInfo`, `MarketProbe`, `MarketHit`, `MarketPackageDetail`, `RegistryVersion` (avec `source`, `revoked`), `ComponentKind`, `KiboError` (`@kibo/schema`, T1 et T5) ; le message `{ type: "market.changed" }` de `ChangeMessage` (T4) ; `RpcContext`, `RpcOutcome`, `RpcHandler`, `requireLocal` et l'option `handlers` de `startServer` (`packages/daemon/src/rpc-extensions.ts`, T9) ; `LocalSettings` n'est pas utilisé.
 - Vérifié en T0 :
   - `compareSemver(a: string, b: string): -1 | 0 | 1` est exporté par `@kibo/schema` (`packages/schema/src/semver.ts`) ; il n'existe pas de `grantedPermissions` : c'est `grantedOf(manifest): GrantedPermissions` (`packages/schema/src/permissions.ts`), et `NO_PERMISSIONS` sert de valeur vide (six champs : `reads`, `writes`, `data`, `net`, `secrets`, `mcp`).
   - `RegistryVersion` (`packages/schema/src/component.ts`) exige aussi `autoUpdate` (sortie de `.default(false)`) : tout littéral l'écrit.
@@ -9513,7 +9518,6 @@ import {
   compareSemver,
   KiboError,
   type Kpkg,
-  KPKG_MAX_BYTES,
   MARKET_FETCH_TIMEOUT_MS,
   type MarketHit,
   MarketIndex,
@@ -9522,7 +9526,14 @@ import {
   type MarketSourceInfo,
   type RegistryVersion,
 } from "@kibo/schema";
-import { decodeKpkg, keyFingerprint, type SourceFile, verifyIndex, verifyMarketPackage } from "@kibo/trust";
+import {
+  decodeKpkg,
+  KPKG_MAX_RAW_BYTES,
+  keyFingerprint,
+  type SourceFile,
+  verifyIndex,
+  verifyMarketPackage,
+} from "@kibo/trust";
 import { z } from "zod";
 import type { Notice } from "../agents/notifier";
 import type { HttpGet } from "./http-get";
@@ -9547,7 +9558,7 @@ export type MarketServiceDeps = {
 
 const INDEX_MAX_BYTES = 8 * 1024 * 1024;
 const SIG_MAX_BYTES = 4096;
-const KPKG_DOWNLOAD_MAX = KPKG_MAX_BYTES * 2;
+const KPKG_DOWNLOAD_MAX = KPKG_MAX_RAW_BYTES;
 const Announced = z.object({ source: z.object({ id: z.string(), name: z.string(), publicKey: z.string() }) });
 
 const withSlash = (url: string) => (url.endsWith("/") ? url : `${url}/`);
@@ -9681,7 +9692,7 @@ export class MarketService {
     const pkg = await this.download(row, index, input.id, input.version);
     const pinned = this.deps.db.pin(input.sourceId, input.id);
     let publisherChanged = false;
-    let verified: { files: SourceFile[]; newPublisher: boolean };
+    let verified: Awaited<ReturnType<typeof verifyMarketPackage>>;
     try {
       verified = await verifyMarketPackage({ pkg, index, pinnedKey: pinned });
     } catch (e) {
@@ -9721,6 +9732,7 @@ export class MarketService {
     pkg: Kpkg;
     files: SourceFile[];
     newPublisher: boolean;
+    publisher: { name: string; verified: boolean };
   }> {
     const { row, index } = this.source(input.sourceId);
     const pkg = await this.download(row, index, input.id, input.version);
@@ -13190,7 +13202,7 @@ Installer un paquet vérifié (spec H §5.2 point 3, §7) : sources écrites dan
   - Le verrou de publication partagé (`PublishLock`, `ComponentsService.publishLock`, utilisé par `publishComponent` et par la finalisation des brouillons IA) protège aussi l'installation d'un id : une installation et une publication du même composant ne se croisent jamais (`CONFLICT`).
 - Produces :
   - `ValidateOptions.conformanceOnly?: boolean` (`packages/devkit`) ; `CONFORMANCE_TEST: string` exporté par `scaffold.ts`.
-  - `InstallDeps = { market: Pick<MarketService, "fetchVerified" | "pinPublisher" | "search">; store: Pick<ComponentStore, "put" | "remove">; registry: RegistryPort; validate(dir: string): Promise<ValidationReport>; sandbox: Pick<OsSandbox, "ready">; lock: PublishLock; tmpRoot: string }` ; `installFromMarket(deps: InstallDeps, input: { sourceId: string; id: string; version: string }): Promise<MarketInstallResult>`.
+  - `InstallDeps = { market: Pick<MarketService, "fetchVerified" | "pinPublisher" | "search">; store: Pick<ComponentStore, "put" | "remove">; registry: RegistryPort; validate(dir: string): Promise<ValidationReport>; sandbox: Pick<OsSandbox, "ready">; lock: PublishLock; tmpRoot: string }` ; `installFromMarket(deps: InstallDeps, input: { sourceId: string; id: string; version: string }): Promise<MarketInstallResult>`. Sur l'écran 30, `market.publisherName` et `market.verified` viennent du `publisher` renvoyé par `fetchVerified` (donc de l'index signé, via `verifyMarketPackage`), jamais de `pkg.publisher.name`, qui n'est pas couvert par la signature (spec H §3.1).
   - `ComponentsService.store: ComponentStore` ; `ComponentsDeps.commands: Pick<CommandHub, "intercept">` ; `stampComponentHash(workspace: LoroDoc): CommandInterceptor`, `approvedHashOf(workspace: LoroDoc, ref: string): string | null` (`packages/daemon/src/components/component-hash.ts`) ; `UpdateDeps.approvedHash(ref: string): string | null`.
   - Commandes `addInstance` et `setInstanceComponent` : `componentHash: Sha256.nullable().optional()` ; `core` écrit `componentHash: input.componentHash ?? null`.
   - Décision 16 précisée : une installation marketplace **n'utilise jamais** le réglage « Autoriser les backends sandboxés sans isolation OS » ; sans bac à sable OS utilisable, `installFromMarket` échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
@@ -13618,7 +13630,7 @@ async function storeValidated(deps: InstallDeps, files: SourceFile[], hash: stri
 }
 
 async function install(deps: InstallDeps, input: Input): Promise<MarketInstallResult> {
-  const { pkg, files, newPublisher } = await deps.market.fetchVerified(input);
+  const { pkg, files, newPublisher, publisher } = await deps.market.fetchVerified(input);
   const hit = deps.market.search({ query: input.id, sourceId: input.sourceId }).find((h) => h.id === input.id);
   const result: MarketInstallResult = {
     id: input.id,
@@ -13627,8 +13639,8 @@ async function install(deps: InstallDeps, input: Input): Promise<MarketInstallRe
     hash: pkg.hash,
     permissions: grantedOf(pkg.manifest),
     market: {
-      publisherName: pkg.publisher.name,
-      verified: hit?.publisher.publicKey === pkg.publisher.publicKey ? hit.publisher.verified : false,
+      publisherName: publisher.name,
+      verified: publisher.verified,
       sourceName: hit?.sourceName ?? input.sourceId,
       newPublisher,
     },
