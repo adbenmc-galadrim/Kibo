@@ -5990,7 +5990,7 @@ git commit -m "feat(ui): dialogue de création de PR"
   - `hasHead(h): Promise<boolean>`, `isPushed(h, sha: string): Promise<boolean>`, `currentOperation(h): Promise<GitOperation | null>`, `currentBranch(h): Promise<string | null>`, `pushRemote(h, branch: string | null): Promise<string | null>` ;
   - `readStatus(h): Promise<RepoStatus>`, `readDiff(h, path: string, origPath: string | null, area: ChangeArea): Promise<FileDiff>`, `readFile(h, path: string, revision: FileRevision): Promise<FileContent>`, `remoteBranches(h): Promise<RemoteBranches>`, `compare(h, base: string): Promise<CompareResult>`, `headCommit(h): Promise<CommitInfo>`.
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 `packages/daemon/src/code/read.test.ts` :
 ```ts
@@ -6153,7 +6153,7 @@ test("remote branches and comparison with a base", async () => {
 Run: `bun test packages/daemon/src/code/read.test.ts`
 Expected: FAIL, modules introuvables.
 
-- [ ] **Step 2: Implémenter le dépôt**
+- [x] **Step 2: Implémenter le dépôt**
 
 `packages/daemon/src/code/repo.ts` :
 ```ts
@@ -6191,7 +6191,7 @@ export async function openRepo(folder: string | null, env: Env = {}): Promise<Re
 }
 ```
 
-- [ ] **Step 3: Implémenter les lectures**
+- [x] **Step 3: Implémenter les lectures**
 
 `packages/daemon/src/code/read.ts` :
 ```ts
@@ -6383,12 +6383,12 @@ export async function compare(h: WorktreeHandle, base: string): Promise<CompareR
 }
 ```
 
-- [ ] **Step 4: Lancer les tests**
+- [x] **Step 4: Lancer les tests**
 
 Run: `bun test packages/daemon/src/code/read.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/code/repo.ts packages/daemon/src/code/read.ts packages/daemon/src/code/read.test.ts
