@@ -128,6 +128,9 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   closers.push(() => components.stop());
   await components.start();
   const market = startMarket({
+    home: opts.home,
+    toolchain: opts.toolchain,
+    ...(opts.validate && { validate: opts.validate }),
     db: store.db,
     docs: service.docs,
     components,

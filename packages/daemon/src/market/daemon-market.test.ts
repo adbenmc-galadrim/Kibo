@@ -2,12 +2,23 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { osSandbox } from "@kibo/devkit";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import type { RpcRequest } from "@kibo/schema";
+import { KiboError, type RpcRequest } from "@kibo/schema";
 import { makeTestPackage } from "@kibo/trust/testing";
 import { fakeBuild, okReport } from "../components/service.test-helper";
 import { type Daemon, startDaemon } from "../daemon";
 import { type FakeMarket, startFakeMarket } from "../testing/fake-market";
+
+const sandboxAvailable = await osSandbox()
+  .ready()
+  .then(
+    () => true,
+    (e: unknown) => {
+      if (e instanceof KiboError && e.code === "SANDBOX_UNAVAILABLE") return false;
+      throw e;
+    },
+  );
 
 let home: string;
 let daemon: Daemon;
@@ -57,5 +68,24 @@ test("the daemon answers the market RPCs through its handler", async () => {
   await rpc({ method: "addMarketSource", url: fake.url, publicKey: fake.publicKey });
   expect(await rpc({ method: "searchMarket", query: "burn" })).toMatchObject({
     result: [{ sourceId: "equipe", id: "burndown", latest: "0.1.0" }],
+  });
+});
+
+test.if(sandboxAvailable)("an installed market version is listed without trust", async () => {
+  const made = await makeTestPackage({ id: "burndown", version: "0.1.0" });
+  await fake.publish(made.bytes);
+  await rpc({ method: "addMarketSource", url: fake.url, publicKey: fake.publicKey });
+  expect(
+    await rpc({ method: "installFromMarket", sourceId: "equipe", id: "burndown", version: "0.1.0" }),
+  ).toMatchObject({ result: { id: "burndown", version: "0.1.0", hash: made.pkg.hash } });
+  expect(await rpc({ method: "listComponents" })).toMatchObject({
+    result: expect.arrayContaining([
+      expect.objectContaining({
+        id: "burndown",
+        versions: [
+          expect.objectContaining({ version: "0.1.0", origin: "marketplace", trust: null, active: false }),
+        ],
+      }),
+    ]),
   });
 });

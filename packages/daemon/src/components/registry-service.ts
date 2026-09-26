@@ -147,6 +147,7 @@ export function createRegistryService(deps: RegistryServiceDeps): RegistryServic
       checkApproval(hash, trust);
       if (isBuiltinId(id)) throw new KiboError("INVALID_INPUT", `${id} is a built-in component`);
       const v = versionOf(id, version);
+      if (v.revoked) throw new KiboError("REVOKED", `${ref} was revoked: ${v.revoked.reason}`);
       if (hash !== v.hash) throw new KiboError("HASH_MISMATCH", `${ref} hash is ${v.hash}`);
       const s = await loadForApproval(deps.store, id, version, hash);
       tampered.delete(ref);

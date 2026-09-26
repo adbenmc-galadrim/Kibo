@@ -207,6 +207,17 @@ export class MarketService {
     return { pkg, ...verified };
   }
 
+  assertListed(input: PackageRef, hash: string): void {
+    const { index } = this.source(input.sourceId);
+    const revoked = index.revoked.find((r) => r.hash === hash);
+    if (revoked) throw new KiboError("REVOKED", `${input.id}@${input.version} is revoked: ${revoked.reason}`);
+    const listed = index.packages
+      .find((p) => p.id === input.id)
+      ?.versions.some((v) => v.version === input.version && v.hash === hash);
+    if (!listed)
+      throw new KiboError("NOT_FOUND", `${input.id}@${input.version} is no longer in ${input.sourceId}`);
+  }
+
   pinPublisher(sourceId: string, componentId: string, publisherKey: string): void {
     this.deps.db.setPin(sourceId, componentId, publisherKey, this.deps.now());
   }
