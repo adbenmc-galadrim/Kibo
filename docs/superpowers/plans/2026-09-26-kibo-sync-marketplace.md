@@ -10925,7 +10925,7 @@ Règles du hub, dans l'ordre pour chaque trame :
 5. Les trames d'une connexion sont traitées dans l'ordre (file de promesses par connexion).
 6. Une `KiboError` devient `error { requestId, code, message }` ; toute autre erreur est journalisée avec le type de trame puis renvoyée en `INTERNAL`.
 
-- [ ] **Step 1: Écrire le client de test et le serveur de test**
+- [x] **Step 1: Écrire le client de test et le serveur de test**
 
 `packages/sync-server/src/testing/start-test-server.ts` :
 ```ts
@@ -11099,7 +11099,7 @@ export class TestClient {
 
 Le cast `as Extract<…>` dans `accepts` est la seule façon d'appeler le prédicat générique avant le raffinement ; il est borné par le test `f.type === type` qui le précède.
 
-- [ ] **Step 2: Écrire les tests du protocole**
+- [x] **Step 2: Écrire les tests du protocole**
 
 `packages/sync-server/src/hub.test.ts` :
 ```ts
@@ -11482,12 +11482,12 @@ test("an unknown command prints the usage and fails", async () => {
 });
 ```
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/hub.test.ts packages/sync-server/src/server.test.ts packages/sync-server/src/cli.test.ts`
 Expected: FAIL — `Cannot find module '../server'` (depuis `testing/start-test-server.ts`).
 
-- [ ] **Step 4: Implémenter le hub**
+- [x] **Step 4: Implémenter le hub**
 
 `packages/sync-server/src/hub.ts` :
 ```ts
@@ -11831,7 +11831,7 @@ export class SyncHub {
 
 Le `DELETE` construit ses noms de table depuis une liste figée du code (jamais depuis une trame) ; la valeur passe en paramètre. L'audit `update-rejected` d'une mise à jour refusée est écrit par `ProjectRoom.push` (T14), pas par le hub.
 
-- [ ] **Step 5: Implémenter le serveur**
+- [x] **Step 5: Implémenter le serveur**
 
 `packages/sync-server/src/server.ts` :
 ```ts
@@ -11999,7 +11999,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
 
 `data: {} as WsData` est la forme documentée par Bun pour typer `ws.data` ; aucune valeur n'est lue depuis cet objet.
 
-- [ ] **Step 6: Implémenter la CLI et le build**
+- [x] **Step 6: Implémenter la CLI et le build**
 
 `packages/sync-server/src/cli.ts` :
 ```ts
@@ -12211,12 +12211,12 @@ Le greffon `loro-bundler-build` et les options `autoload*` reprennent ceux de `a
         run: packages/sync-server/dist/kibo-sync invite account --name CI --data "$(mktemp -d)"
 ```
 
-- [ ] **Step 7: Vérifier le succès, lint et types**
+- [x] **Step 7: Vérifier le succès, lint et types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck && bun run --cwd packages/sync-server build && packages/sync-server/dist/kibo-sync invite account --name Test --data "$(mktemp -d)"`
 Expected: tous les tests PASS ; le binaire imprime un code de 26 caractères.
 
-- [ ] **Step 8: Commits**
+- [x] **Step 8: Commits**
 
 ```bash
 git add packages/sync-server/src/hub.ts packages/sync-server/src/server.ts packages/sync-server/src/testing packages/sync-server/src/hub.test.ts packages/sync-server/src/server.test.ts packages/sync-server/src/index.ts
