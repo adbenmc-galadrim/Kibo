@@ -31,7 +31,7 @@ const GENERATOR_TOOLS: readonly string[] = ["Read", "Edit", "Write", "Glob", "Gr
 const WEB_TOOLS = ["WebFetch", "WebSearch"];
 const PROBE_TIMEOUT_MS = 10_000;
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
+const escapeRegExp = (s: string) => s.replace(/[-.*+?^${}()|[\]\\]/g, "\\$&");
 
 function optionBlock(help: string, name: string): string | null {
   const start = new RegExp(`^ {2}(?:-\\w, )?(?:--[\\w-]+, )?${escapeRegExp(name)}(?=[\\s,]|$)`, "m").exec(
