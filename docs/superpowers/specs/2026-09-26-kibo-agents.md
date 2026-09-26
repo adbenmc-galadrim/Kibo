@@ -61,7 +61,7 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 
 ## 6. Espaces de travail
 
-- `worktree` (défaut) : `<racine du dépôt>/.kibo/worktrees/<clé en minuscules>`, branche `<clé en minuscules>` créée depuis `HEAD` ou réutilisée ; `.kibo/` ajouté une fois à `.git/info/exclude` (local, jamais commité). `repo` : le dossier du projet. `isolated` : `~/.kibo/runs/<runId>/workspace`. Projet sans dossier local ⇒ `WORKSPACE_FAILED` pour `worktree` et `repo`.
+- `worktree` (défaut) : `<racine du dépôt>/.kibo/worktrees/<clé en minuscules>`, branche `<clé en minuscules>` créée depuis `main` (sinon `HEAD`) ou réutilisée ; `.kibo/` ajouté une fois à `.git/info/exclude` (local, jamais commité). `repo` : le dossier du projet. `isolated` : `~/.kibo/runs/<runId>/workspace`. Projet sans dossier local ⇒ `WORKSPACE_FAILED` pour `worktree` et `repo`.
 - **Écart assumé à la maquette 28** : elle propose « Lecture seule » ; la spec §7 prévoit repo / worktree / dossier isolé. On garde la spec (« Dossier isolé » remplace « Lecture seule ») ; la lecture seule s'obtient avec le mode de permission `plan`.
 
 ## 7. Profils, domaines, guidelines, règles
