@@ -1,6 +1,7 @@
 export * from "./bun-command";
 export * from "./hash";
 export * from "./imports";
+export * from "./infer-permissions";
 export * from "./issues";
 export * from "./restrict";
 export * from "./scaffold";
