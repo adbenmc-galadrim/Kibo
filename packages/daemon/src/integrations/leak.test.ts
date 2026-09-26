@@ -6,7 +6,7 @@ import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest, RpcResult } from "@kibo/schema";
 import { z } from "zod";
 import { type Daemon, startDaemon } from "../daemon";
-import { ECHO_AUTH, type FakeGithub, LOGS_HOST, startFakeGithub } from "../testing/fake-github";
+import { ECHO_AUTH, type FakeGithub, LOGS_HOST } from "../testing/fake-github";
 import { FAKE_MCP_STDIO, startFakeMcpHttp } from "../testing/fake-mcp";
 import { parseIntegrationFlags } from "./bootstrap";
 import {
@@ -17,7 +17,9 @@ import {
   githubClone,
   type IntervalCapture,
   leaksIn,
+  type Place,
   rawFiles,
+  seedGithub,
   sqliteDumps,
   until,
   type WsCollector,
@@ -28,22 +30,27 @@ const MCP_ENV = "mcp-env-secret-0123456789";
 const MCP_BEARER = "mcp-bearer-secret-0123456789";
 const SECRETS = [SECRET, MCP_ENV, MCP_BEARER];
 const FIGMA_NODE = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
+const FOREIGN_ECHO = JSON.stringify({ message: `upstream said ${MCP_ENV}` });
 
 type McpHttp = Awaited<ReturnType<typeof startFakeMcpHttp>>;
+type Command = Extract<RpcRequest, { method: "command" }>["command"];
 const Envelope = z.object({ ok: z.boolean(), result: z.unknown().optional() });
+const Created = z.object({ id: z.string() });
+const McpText = z.object({ content: z.array(z.object({ type: z.literal("text"), text: z.string() })) });
 
 let gh: FakeGithub;
 let mcpHttp: McpHttp;
 let figmaMcp: McpHttp;
 let output: CapturedOutput;
-let home: string;
 let repo: string;
+let home: string;
 let ciPoller: IntervalCapture;
 let daemon: Daemon;
 let events: WsCollector;
 let stopped = false;
 let cookie = "";
 const responses: string[] = [];
+const cleanups: (() => void | Promise<void>)[] = [];
 
 async function call(req: RpcRequest): Promise<z.infer<typeof Envelope> & { text: string }> {
   const res = await fetch(`${daemon.url}/api/rpc`, {
@@ -62,33 +69,24 @@ async function ok<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>
   return body.result as RpcResult[R["method"]];
 }
 
+const run = (projectId: string, command: Command, instanceId?: string) =>
+  ok({ method: "command", projectId, command, ...(instanceId && { instanceId }) });
+
 beforeAll(async () => {
-  gh = startFakeGithub({ token: SECRET });
-  gh.addRepo("adam/kibo").pulls.set(12, { headSha: "abc123", headRef: "kib-1" });
-  gh.addRun("adam/kibo", {
-    id: 900,
-    headSha: "abc123",
-    headBranch: "kib-1",
-    name: "CI",
-    status: "completed",
-    conclusion: "failure",
-    jobs: [
-      {
-        id: 70,
-        name: "build",
-        status: "completed",
-        conclusion: "failure",
-        startedAt: null,
-        completedAt: null,
-        log: `##[error]boom\nAuthorization: Bearer ${SECRET}\n`,
-      },
-    ],
-  });
+  gh = seedGithub(SECRET);
+  cleanups.push(() => gh.stop());
   mcpHttp = await startFakeMcpHttp({ bearer: MCP_BEARER });
+  cleanups.push(() => mcpHttp.stop());
   figmaMcp = await startFakeMcpHttp();
+  cleanups.push(() => figmaMcp.stop());
   output = captureOutput();
+  cleanups.push(() => output.restore());
   home = mkdtempSync(join(tmpdir(), "kibo-leak-"));
   repo = githubClone(mkdtempSync(join(tmpdir(), "kibo-leak-repo-")));
+  cleanups.push(() => {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(repo, { recursive: true, force: true });
+  });
   ciPoller = captureIntervalsFrom(join("ci", "poller.ts"));
   daemon = await startDaemon({
     home,
@@ -103,8 +101,8 @@ beforeAll(async () => {
       "test-origins": `api.github.com=${gh.url},${LOGS_HOST}=${gh.url}`,
       "memory-secrets": true,
     }),
-  });
-  ciPoller.restore();
+  }).finally(() => ciPoller.restore());
+  cleanups.push(() => (stopped ? undefined : daemon.stop()));
   const pair = await fetch(`${daemon.url}/api/pair`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: daemon.url },
@@ -112,102 +110,14 @@ beforeAll(async () => {
   });
   cookie = (pair.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
   events = await collectEvents(daemon.url, cookie);
+  cleanups.push(() => events.close());
 });
 
 afterAll(async () => {
-  events.close();
-  if (!stopped) await daemon.stop();
-  output.restore();
-  gh.stop();
-  await mcpHttp.stop();
-  await figmaMcp.stop();
-  rmSync(home, { recursive: true, force: true });
-  rmSync(repo, { recursive: true, force: true });
+  for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
 });
 
-async function githubScenario(): Promise<string> {
-  await ok({ method: "connectGithub", auth: { mode: "token", token: SECRET } });
-  const project = await ok({
-    method: "createProject",
-    name: "Kibo",
-    key: "KIB",
-    folder: repo,
-    color: "#71717A",
-  });
-  const binding = await ok({
-    method: "createBinding",
-    projectId: project.id,
-    config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
-  });
-  const run = (command: Extract<RpcRequest, { method: "command" }>["command"], instanceId?: string) =>
-    ok({ method: "command", projectId: project.id, command, ...(instanceId && { instanceId }) });
-  const page = z.object({ id: z.string() }).parse(await run({ method: "addPage", title: "K", kind: "view" }));
-  const instance = z.object({ id: z.string() }).parse(
-    await run({
-      method: "addInstance",
-      pageId: page.id,
-      component: "kanban@1.0.0",
-      config: { source: { bindingId: binding.id } },
-    }),
-  );
-  gh.addIssue("adam/kibo", { title: "Depuis GitHub" });
-  const sync = () => call({ method: "syncBinding", projectId: project.id, bindingId: binding.id });
-  await sync();
-  const created = z
-    .object({ id: z.string() })
-    .parse(await run({ method: "createTicket", title: "Depuis Kibo" }, instance.id));
-  await sync();
-  expect(gh.repos.get("adam/kibo")?.issues.size).toBe(2);
-
-  await run({
-    method: "upsertExternalRef",
-    ticketId: created.id,
-    ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
-  });
-  ciPoller.fire();
-  const runs = () => ok({ method: "listCiRuns", projectId: project.id, ticketId: null });
-  await until(async () => (await runs()).some((r) => r.jobs.length > 0), "the CI run and its jobs");
-  const log = await ok({ method: "getCiLog", projectId: project.id, runId: 900, jobId: 70 });
-  expect(log.text).toContain("Bearer ***");
-
-  await ok({ method: "configureFigma", url: figmaMcp.url });
-  await ok({ method: "linkFigmaNode", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
-  await ok({ method: "getFigmaPreview", fileKey: "AbC123xyz", nodeId: "12:34" });
-
-  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 500, ECHO_AUTH);
-  await sync();
-  await ok({ method: "getSyncState", projectId: project.id });
-  gh.failNext("GET", /^\/user$/, 401, ECHO_AUTH);
-  await call({ method: "testIntegration", id: "github" });
-  return project.id;
-}
-
-const McpText = z.object({ content: z.array(z.object({ type: z.literal("text"), text: z.string() })) });
-
-async function mcpSourceScenario(projectId: string): Promise<void> {
-  const command = (c: Extract<RpcRequest, { method: "command" }>["command"]) =>
-    ok({ method: "command", projectId, command: c });
-  const page = z
-    .object({ id: z.string() })
-    .parse(await command({ method: "addPage", title: "M", kind: "view" }));
-  const instance = z.object({ id: z.string() }).parse(
-    await command({
-      method: "addInstance",
-      pageId: page.id,
-      component: "mcp-source@1.0.0",
-      config: { server: "fake", mode: "tool", tool: "env", args: "{}", itemsPointer: "/items" },
-    }),
-  );
-  const env = await ok({
-    method: "componentCall",
-    projectId,
-    instanceId: instance.id,
-    call: { kind: "mcp.call", server: "fake", tool: "env", args: {} },
-  });
-  expect(McpText.parse(env).content[0]?.text).toContain('"hasToken":true');
-}
-
-async function mcpScenario(projectId: string): Promise<void> {
+async function addMcpServers(): Promise<void> {
   const stdio = {
     transport: "stdio" as const,
     id: "fake",
@@ -233,29 +143,126 @@ async function mcpScenario(projectId: string): Promise<void> {
   });
   expect((await ok({ method: "testMcpServer", id: "remote" })).state).toBe("connected");
   await ok({ method: "listMcpServers" });
-  await mcpSourceScenario(projectId);
+}
+
+async function syncedKanban(projectId: string) {
+  const binding = await ok({
+    method: "createBinding",
+    projectId,
+    config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+  });
+  const page = Created.parse(await run(projectId, { method: "addPage", title: "K", kind: "view" }));
+  const instance = Created.parse(
+    await run(projectId, {
+      method: "addInstance",
+      pageId: page.id,
+      component: "kanban@1.0.0",
+      config: { source: { bindingId: binding.id } },
+    }),
+  );
+  const sync = () => call({ method: "syncBinding", projectId, bindingId: binding.id });
+  return { instanceId: instance.id, sync };
+}
+
+async function githubScenario(): Promise<string> {
+  await ok({ method: "connectGithub", auth: { mode: "token", token: SECRET } });
+  const project = await ok({
+    method: "createProject",
+    name: "Kibo",
+    key: "KIB",
+    folder: repo,
+    color: "#71717A",
+  });
+  const kanban = await syncedKanban(project.id);
+  gh.addIssue("adam/kibo", { title: "Depuis GitHub" });
+  gh.addIssue("adam/kibo", { title: `Echo ${SECRET}` });
+  await kanban.sync();
+  const created = Created.parse(
+    await run(project.id, { method: "createTicket", title: "Depuis Kibo" }, kanban.instanceId),
+  );
+  await kanban.sync();
+  expect(gh.repos.get("adam/kibo")?.issues.size).toBe(3);
+
+  await run(project.id, {
+    method: "upsertExternalRef",
+    ticketId: created.id,
+    ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+  });
+  ciPoller.fire();
+  const runs = () => ok({ method: "listCiRuns", projectId: project.id, ticketId: null });
+  await until(async () => (await runs()).some((r) => r.jobs.length > 0), "the CI run and its jobs");
+  const log = await ok({ method: "getCiLog", projectId: project.id, runId: 900, jobId: 70 });
+  expect(log.text).toContain("Bearer ***");
+
+  await ok({ method: "configureFigma", url: figmaMcp.url });
+  await ok({ method: "linkFigmaNode", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
+  await ok({ method: "getFigmaPreview", fileKey: "AbC123xyz", nodeId: "12:34" });
+
+  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 500, ECHO_AUTH);
+  await kanban.sync();
+  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 422, FOREIGN_ECHO);
+  await kanban.sync();
+  const state = JSON.stringify(await ok({ method: "getSyncState", projectId: project.id }));
+  expect(state).toContain("upstream said ***");
+  gh.failNext("GET", /^\/user$/, 401, ECHO_AUTH);
+  await call({ method: "testIntegration", id: "github" });
+  gh.failNext("GET", /^\/user$/, 401, FOREIGN_ECHO);
+  expect(JSON.stringify(await ok({ method: "testIntegration", id: "github" }))).toContain(
+    "upstream said ***",
+  );
+  return project.id;
+}
+
+async function mcpSourceScenario(projectId: string): Promise<void> {
+  const page = Created.parse(await run(projectId, { method: "addPage", title: "M", kind: "view" }));
+  const instance = Created.parse(
+    await run(projectId, {
+      method: "addInstance",
+      pageId: page.id,
+      component: "mcp-source@1.0.0",
+      config: { server: "fake", mode: "tool", tool: "env", args: "{}", itemsPointer: "/items" },
+    }),
+  );
+  const mcpCall = (tool: string) =>
+    ok({
+      method: "componentCall",
+      projectId,
+      instanceId: instance.id,
+      call: { kind: "mcp.call", server: "fake", tool, args: {} },
+    });
+  expect(McpText.parse(await mcpCall("env")).content[0]?.text).toContain('"hasToken":true');
+  expect(McpText.parse(await mcpCall("echo_env")).content[0]?.text).toBe("invalid token ***");
+  await mcpCall("log_env");
+  await until(async () => output.lines().some((l) => l.includes("token ***")), "the relayed stderr line");
+}
+
+function journalsWereWritten(tables: Place[]): void {
+  const table = (name: string) => tables.find(([where]) => where.startsWith(`table ${name} in `))?.[1] ?? "";
+  expect(table("mcp_calls")).toContain('"tool":"echo_env"');
+  expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
+  expect(table("integration_events")).toContain("upstream said ***");
+  expect(table("component_events")).not.toBe("");
+  expect(tables.some(([where]) => where.startsWith("loro doc "))).toBe(true);
 }
 
 test("after a full scenario, no secret appears anywhere", async () => {
+  await addMcpServers();
   const projectId = await githubScenario();
-  await mcpScenario(projectId);
+  await mcpSourceScenario(projectId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });
 
   expect(responses.some((r) => r.includes("Bad credentials: Bearer ***"))).toBe(true);
   expect(JSON.stringify(snapshot)).toContain("Depuis Kibo");
+  expect(JSON.stringify(snapshot)).toContain("Echo ***");
   expect(events.messages.length).toBeGreaterThan(0);
 
+  const whileRunning = rawFiles(home).map(([where, content]): Place => [`${where} (running)`, content]);
   events.close();
   await daemon.stop();
   stopped = true;
   const tables = sqliteDumps(home);
-  const table = (name: string) => tables.find(([where]) => where.startsWith(`table ${name} in `))?.[1] ?? "";
-  expect(table("mcp_calls")).toContain('"tool":"env"');
-  expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
-  expect(table("integration_events")).not.toBe("[]");
-  expect(table("component_events")).not.toBe("");
-  expect(tables.some(([where]) => where.startsWith("loro doc "))).toBe(true);
+  journalsWereWritten(tables);
   const leaks = leaksIn(
     [
       ["rpc responses", responses.join("\n")],
@@ -263,7 +270,9 @@ test("after a full scenario, no secret appears anywhere", async () => {
       ["websocket events", events.messages.join("\n")],
       ["project snapshot", JSON.stringify(snapshot)],
       ...tables,
+      ...whileRunning,
       ...rawFiles(home),
+      ...rawFiles(repo),
     ],
     SECRETS,
   );

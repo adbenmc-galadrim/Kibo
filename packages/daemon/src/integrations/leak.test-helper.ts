@@ -3,6 +3,7 @@ import { spyOn } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { LoroDoc } from "loro-crdt";
+import { type FakeGithub, startFakeGithub } from "../testing/fake-github";
 import { createRedactor, installConsoleRedaction, type Redactor } from "./redact";
 
 export type Place = [where: string, content: string];
@@ -148,4 +149,29 @@ export function leaksIn(places: Place[], secrets: string[]): string[] {
   return places.flatMap(([where, content]) =>
     secrets.filter((s) => content.includes(s)).map((s) => `${s.slice(0, 8)}… in ${where}`),
   );
+}
+
+export function seedGithub(token: string): FakeGithub {
+  const fake = startFakeGithub({ token });
+  fake.addRepo("adam/kibo").pulls.set(12, { headSha: "abc123", headRef: "kib-1" });
+  fake.addRun("adam/kibo", {
+    id: 900,
+    headSha: "abc123",
+    headBranch: "kib-1",
+    name: "CI",
+    status: "completed",
+    conclusion: "failure",
+    jobs: [
+      {
+        id: 70,
+        name: "build",
+        status: "completed",
+        conclusion: "failure",
+        startedAt: null,
+        completedAt: null,
+        log: `##[error]boom\nAuthorization: Bearer ${token}\n`,
+      },
+    ],
+  });
+  return fake;
 }
