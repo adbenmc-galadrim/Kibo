@@ -9109,7 +9109,7 @@ Assemble les briques des vagues 2 et 3 : à chaque passage, `planAdmissions` dé
 
 Règles : l'échantillon CPU/RAM est pris à l'ouverture puis à chaque passage périodique (`tickMs`, 2 s par défaut) ; les mutations relancent un passage sans rééchantillonner. `onChange` est regroupé (50 ms) pour ne pas inonder le WebSocket. `answer` remet le run en tête (`headRank`) ; `setPriority(true)` marque et place en tête, `setPriority(false)` retire la marque sans déplacer. `stop()` tue les groupes de processus en cours sans écrire leur fin : au démarrage suivant, le registre les marque `INTERRUPTED` (Review Focus 3) et l'orchestrateur tue le groupe d'un agent orphelin (démon tué brutalement) si sa ligne de commande porte encore l'id de session du run. Un run qui échoue ou qu'on annule voit aussi son groupe tué. Un hook n'est accepté que si le processus du run est vivant et que le SHA-256 du jeton présenté égale celui du lancement en cours (Review Focus 1). Le mode de permission passé au CLI vient de `claude --help`, lu une fois par binaire (`default` devient `manual` sur la 2.1.283). Un run sans ticket perdu par un redémarrage (sa description n'est qu'en mémoire) échoue avec `INTERRUPTED` au lieu de repartir sans son dossier ni son garde-fou.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/daemon/src/agents/orchestrator.test.ts` :
 ```ts
@@ -9540,12 +9540,12 @@ test("stopping the daemon kills agents; the next start marks them interrupted", 
 }, 30_000);
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/agents/orchestrator.test.ts`
 Expected: FAIL (`Cannot find module "./orchestrator"`).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/agents/orchestrator.ts` :
 ```ts
@@ -10036,12 +10036,12 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
 
 `headRank` place le run devant le premier de la file ; si le run prioritaire est déjà en tête, son rang baisse encore, sans effet sur l'ordre.
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/agents && bun run format && bun run check && bun run typecheck`
 Expected: PASS (les tests de l'orchestrateur prennent quelques secondes : chaque tour du faux `claude` lance un processus Bun et un `kibo-hook` par hook).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/daemon/src/agents/orchestrator.ts packages/daemon/src/agents/orchestrator.test.ts
