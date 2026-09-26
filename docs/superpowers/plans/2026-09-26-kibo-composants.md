@@ -2107,7 +2107,7 @@ git commit -m "feat(schema): contrats des composants v1"
   - `executeProjectCommand` gère `setInstanceComponent`, `setInstanceConfig`, `setInstanceData`.
   - `readRegistry(ws): Record<string, RegistryEntry>` ; `getRegistryVersion(ws, id, version): RegistryVersion | null` ; `putRegistryVersion(ws, id, title, v: RegistryVersion): void` ; `updateRegistryVersion(ws, id, version, patch): RegistryVersion` ; `removeRegistryVersion(ws, id, version): void` ; `highestVersion(entry): string | null`.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/core/src/instance-data.test.ts` :
 ```ts
@@ -2258,7 +2258,7 @@ test("trust is updated in place and unknown versions are refused", () => {
 Run: `bun test packages/core`
 Expected: FAIL (modules manquants).
 
-- [ ] **Step 2: Implémenter `instance-data.ts`**
+- [x] **Step 2: Implémenter `instance-data.ts`**
 
 ```ts
 import { DataKey, INSTANCE_DATA_LIMIT, KiboError } from "@kibo/schema";
@@ -2321,7 +2321,7 @@ export function dropInstanceData(doc: LoroDoc, instanceId: string): void {
 ```
 `assertInstanceData({ ...next, [key]: … })` valide aussi la clé supprimée (une clé invalide est refusée même pour une suppression). Si `LoroMap.getOrCreateContainer` n'existe pas dans loro-crdt 1.16.3, utiliser `root(doc).get(id) instanceof LoroMap ? … : root(doc).setContainer(id, new LoroMap())`.
 
-- [ ] **Step 3: Étendre `instances.ts`**
+- [x] **Step 3: Étendre `instances.ts`**
 
 Remplacer `removeInstance` et `removeInstancesOfPages`, ajouter `getInstance`, `setInstanceComponent`, `setInstanceConfig` :
 ```ts
@@ -2386,7 +2386,7 @@ export function setInstanceConfig(doc: LoroDoc, instanceId: string, config: Reco
 ```
 Toutes les validations précèdent la première écriture : un échec ne laisse aucune opération Loro non committée qui partirait avec le commit suivant.
 
-- [ ] **Step 4: Brancher les commandes et écrire `registry.ts`**
+- [x] **Step 4: Brancher les commandes et écrire `registry.ts`**
 
 `packages/core/src/commands.ts`, dans le `switch` de `executeProjectCommand` :
 ```ts
@@ -2459,12 +2459,12 @@ export function highestVersion(entry: RegistryEntry): string | null {
 ```
 `packages/core/src/index.ts` : ajouter `export * from "./instance-data";` et `export * from "./registry";`.
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/core && bun run typecheck && bun run check`
 Expected: PASS (les tests existants de `commands.test.ts` et la propriété de convergence restent verts).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/core/src
