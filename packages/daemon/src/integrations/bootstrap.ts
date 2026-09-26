@@ -5,6 +5,9 @@ import { createCiPoller } from "../ci/poller";
 import { createGithubApi, type GithubApi } from "../github/api";
 import { createGithubAccount, type GithubAccount } from "../github/auth";
 import { githubModule } from "../github/handlers";
+import { createMcpGate } from "../mcp/component-gate";
+import { createMcpHub } from "../mcp/hub";
+import { mcpModule } from "../mcp/module";
 import { createBunSecretStore } from "./bun-secret-store";
 import { migrateIntegrations } from "./db";
 import { createEventLog, type EventLog } from "./events";
@@ -41,7 +44,7 @@ export type IntegrationNet = { fetch: IntegrationFetch; gate: RateLimitGate; ali
 export type IntegrationModule = {
   handlers?: IntegrationHandlers;
   probes?: IntegrationProbe[];
-  stop?: () => void;
+  stop?: () => void | Promise<void>;
 };
 
 export const NO_INTEGRATION_FLAGS: IntegrationFlags = { testOrigins: [], memorySecrets: false };
@@ -112,6 +115,7 @@ export function startIntegrations(
     connected: () => account.mode() !== null,
   });
   const secret: SecretResolver = (name) => (name === "github" ? account.token() : secrets.get(name));
+  const mcpHub = createMcpHub({ host, secrets, events, redact: redactor.redact });
   const kit: IntegrationKit = {
     host,
     flags,
@@ -125,6 +129,7 @@ export function startIntegrations(
       observe,
       secret,
       ciRuns: (projectId) => ciPoller.runs(projectId, null),
+      mcp: createMcpGate(mcpHub, host),
     },
     net,
     github,
@@ -133,6 +138,7 @@ export function startIntegrations(
     { probes: builtinProbes(kit.host) },
     githubModule(kit, kit.github),
     ciModule(kit, ciPoller, ciStore),
+    mcpModule(kit, mcpHub),
   ];
   return createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),

@@ -9,6 +9,8 @@ import { z } from "zod";
 import { readDaemonInfo } from "./components/daemon-info";
 import { fakeBuild, okReport, writeDraft } from "./components/service.test-helper";
 import { type DaemonOptions, startDaemon } from "./daemon";
+import { commandLineOf } from "./mcp/command-line";
+import { pidsMatching, stubbornServer, survivors } from "./mcp/processes.test-helper";
 
 const VITE = "http://localhost:5173";
 const Published = z.object({ result: z.object({ version: z.object({ hash: z.string() }) }) });
@@ -87,6 +89,7 @@ describe("startDaemon", () => {
       "github-actions",
       "notifications",
       "markdown",
+      "mcp",
     ]);
     expect((await rpc({ method: "listGithubRepos", query: "" })).status).toBe(409);
     const db = new Database(join(home, "kibo.db"), { readonly: true });
@@ -96,6 +99,24 @@ describe("startDaemon", () => {
     db.close();
     expect(tables.map((t) => t.name)).toContain("integration_events");
   });
+
+  test("stopping the daemon kills every mcp server process", async () => {
+    const { d, stop } = await launch();
+    const rpc = await pair(d);
+    const marker = `kibo-mcp-daemon-${crypto.randomUUID()}`;
+    const server = stubbornServer("stubborn", marker);
+    const res = await rpc({
+      method: "addMcpServer",
+      server,
+      confirmedCommandLine: commandLineOf(server),
+      secrets: {},
+    });
+    expect(res.status).toBe(200);
+    const pids = pidsMatching(marker);
+    expect(pids).toHaveLength(2);
+    await stop();
+    expect(await survivors(pids)).toEqual([]);
+  }, 15_000);
 
   test("a corrupt daemon.json never prevents the start", async () => {
     const home = mkdtempSync(join(tmpdir(), "kibo-start-"));

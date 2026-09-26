@@ -4,7 +4,7 @@ import type { ComponentIntegrationHooks, IntegrationHandlers, IntegrationProbe }
 export type IntegrationRpc = {
   handles(method: string): boolean;
   handle(req: IntegrationRpcRequest): Promise<unknown>;
-  stop(): void;
+  stop(): Promise<void>;
   hooks: ComponentIntegrationHooks;
 };
 type AnyHandler = (req: IntegrationRpcRequest) => Promise<unknown>;
@@ -71,7 +71,7 @@ function handlerTable(groups: IntegrationHandlers[]): Map<string, AnyHandler> {
 export function createIntegrationRpc(parts: {
   handlers: IntegrationHandlers[];
   probes: IntegrationProbe[];
-  stops: (() => void)[];
+  stops: (() => void | Promise<void>)[];
   hooks?: ComponentIntegrationHooks;
   redact?: Redact;
 }): IntegrationRpc {
@@ -108,8 +108,8 @@ export function createIntegrationRpc(parts: {
       if (!fn) throw new KiboError("NOT_FOUND", `no handler for ${req.method}`);
       return fn(req);
     },
-    stop() {
-      for (const s of parts.stops) s();
+    async stop() {
+      await Promise.all(parts.stops.map((s) => s()));
     },
     hooks: parts.hooks ?? NEUTRAL_HOOKS,
   };
