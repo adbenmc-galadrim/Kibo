@@ -53,3 +53,16 @@ test.if(sandboxAvailable)("without conformanceOnly the publisher tests still run
   const report = await validateComponent(dir, opts);
   expect(report.ok).toBe(false);
 });
+
+const PUBLISHER_SPEC =
+  'declare const test: (n: string, f: () => void) => void;\ntest("publisher spec", () => {\n  throw new Error("publisher spec ran");\n});\nexport {};\n';
+
+test.if(sandboxAvailable)("conformanceOnly runs no publisher spec shipped as a source", async () => {
+  const dir = fixture("hello");
+  writeFileSync(join(dir, "lib.spec.ts"), PUBLISHER_SPEC);
+  writeFileSync(join(dir, "aa_test.ts"), PUBLISHER_SPEC);
+  const report = await validateComponent(dir, { ...opts, conformanceOnly: true });
+  expect(report.tests.output).not.toContain("publisher spec ran");
+  expect(report.tests.ok).toBe(true);
+  expect(report.ok).toBe(true);
+});

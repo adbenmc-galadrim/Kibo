@@ -107,9 +107,11 @@ async function sourcesOf(dir: string, copy: string, toolchain: Toolchain) {
   }
 }
 
+const GENERIC_SUITE = "kibo-conformance.test.tsx";
+
 async function useGenericSuite(copy: string, files: string[]): Promise<void> {
   for (const f of files.filter((p) => /\.test\.tsx?$/.test(p))) await rm(join(copy, f), { force: true });
-  await writeFile(join(copy, "kibo-conformance.test.tsx"), CONFORMANCE_TEST);
+  await writeFile(join(copy, GENERIC_SUITE), CONFORMANCE_TEST);
 }
 
 async function checkCopy(
@@ -127,7 +129,10 @@ async function checkCopy(
   report.imports = step(checkImports(ts, texts).map(formatIssue));
   report.typecheck = step(typecheckComponent(ts, copy, files, opts.toolchain));
   if (opts.conformanceOnly) await useGenericSuite(copy, files);
-  const tests = await runComponentTests(copy, opts);
+  const tests = await runComponentTests(
+    copy,
+    opts.conformanceOnly ? { ...opts, testFile: `./${GENERIC_SUITE}` } : opts,
+  );
   report.tests = tests.report;
 
   const inference = await inferPermissions(copy, opts.toolchain);
