@@ -10,6 +10,7 @@ import {
   permissionList,
   type ValidationReport,
 } from "@kibo/schema";
+import { z } from "zod";
 import type { BunCommand } from "./bun-command";
 import { FR_DEVKIT, formatIssue } from "./fr";
 import { listSourceFiles, readSources } from "./hash";
@@ -28,7 +29,8 @@ export type ValidateOptions = {
   timeoutMs?: number;
   now?: () => number;
 };
-export type ValidationStamp = { hash: string; version: string; ok: boolean; at: number };
+const ValidationStamp = z.object({ hash: z.string(), version: z.string(), ok: z.boolean(), at: z.number() });
+export type ValidationStamp = z.infer<typeof ValidationStamp>;
 
 const STAMP = join(".kibo", "validation.json");
 
@@ -48,17 +50,10 @@ function emptyReport(): ValidationReport {
   };
 }
 
-function stampOf(raw: unknown): ValidationStamp | null {
-  if (typeof raw !== "object" || raw === null) return null;
-  const [hash, version, ok, at] = ["hash", "version", "ok", "at"].map((k) => Reflect.get(raw, k));
-  if (typeof hash !== "string" || typeof version !== "string") return null;
-  if (typeof ok !== "boolean" || typeof at !== "number") return null;
-  return { hash, version, ok, at };
-}
-
 export async function readValidationStamp(dir: string): Promise<ValidationStamp | null> {
   try {
-    return stampOf(JSON.parse(await readFile(join(dir, STAMP), "utf8")));
+    const parsed = ValidationStamp.safeParse(JSON.parse(await readFile(join(dir, STAMP), "utf8")));
+    return parsed.success ? parsed.data : null;
   } catch (e) {
     if (isMissingFile(e) || e instanceof SyntaxError) return null;
     throw e;

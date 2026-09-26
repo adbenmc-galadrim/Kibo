@@ -10,7 +10,8 @@
     "./test-kit": "./src/test-kit.ts"
   },
   "dependencies": {
-    "@kibo/schema": "workspace:*"
+    "@kibo/schema": "workspace:*",
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "18.0.1",
