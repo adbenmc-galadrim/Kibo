@@ -2986,7 +2986,7 @@ git commit -m "feat(devkit): empreinte, imports et squelette"
 - Consumes: `TypeScript`, `loadTypeScript`, `SourceIssue`, `issueAt` (tâche 1) ; `BuiltinEntityType`, `COMMAND_WRITES`, `ProjectCommand` (tâche 2).
 - Produces: `type Inference = { used: string[]; issues: SourceIssue[] }` ; `inferFromSources(ts: TypeScript, files: { path: string; text: string }[]): Inference` (fichiers de test ignorés) ; `inferPermissions(dir: string, toolchain: Toolchain): Promise<Inference>`. Chaînes de `used` au format de `permissionList` : `read:<entité>`, `write:<entité>`, `write:<méthode réservée>`, `data`, `net:<url>`.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/devkit/src/infer-permissions.test.ts` :
 ```ts
@@ -3067,7 +3067,7 @@ test("unrelated receivers and test files are ignored", () => {
 Run: `bun test packages/devkit/src/infer-permissions.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `infer-permissions.ts`**
+- [x] **Step 2: Implémenter `infer-permissions.ts`**
 
 ```ts
 import { readFile } from "node:fs/promises";
@@ -3173,7 +3173,7 @@ export async function inferPermissions(dir: string, toolchain: Toolchain): Promi
 
 `packages/devkit/src/index.ts` : ajouter `export * from "./infer-permissions";`.
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/devkit && bun run typecheck && bun run check`
 Expected: PASS.
