@@ -3,6 +3,7 @@ import { createSdk, projectBackend, SdkProvider } from "@kibo/sdk";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { isRemoteView } from "../lib/remote-view";
 import { findComponent } from "../registry";
 import { useHost } from "../shell/Host";
 import { SandboxFrame } from "../shell/SandboxFrame";
@@ -65,6 +66,10 @@ function LoadFailed() {
   );
 }
 
+function RemoteSandboxed() {
+  return <output className="block p-4 text-sm text-muted-foreground">{fr.security.remoteFrame}</output>;
+}
+
 function Unknown({ componentRef }: { componentRef: string }) {
   return <p className="p-6 text-sm text-destructive">{fr.page.unknownComponent(componentRef)}</p>;
 }
@@ -114,6 +119,7 @@ function ThirdParty(props: Props) {
     );
   }
   if (v.trust === "trusted") return <Trusted {...props} id={id} version={version} hash={v.hash} />;
+  if (isRemoteView()) return <RemoteSandboxed />;
   if (runtime.error) return <LoadFailed />;
   if (!runtime.info) return null;
   return (

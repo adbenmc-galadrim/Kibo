@@ -136,6 +136,22 @@ test("a sandboxed version is rendered in an isolated iframe served by the sandbo
   }
 });
 
+test("D37: seen from a remote browser, a sandboxed widget says it only loads on the host", async () => {
+  components = prQueue(version("0.3.0"));
+  const happy = Reflect.get(window, "happyDOM");
+  const before = location.href;
+  Reflect.apply(Reflect.get(Object(happy), "setURL"), happy, ["https://192.168.1.20:47832/"]);
+  try {
+    wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+    expect((await screen.findByRole("status")).textContent).toBe(
+      "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",
+    );
+    expect(screen.queryByTitle("PR en attente")).toBeNull();
+  } finally {
+    Reflect.apply(Reflect.get(Object(happy), "setURL"), happy, [before]);
+  }
+});
+
 test("a trusted version is loaded as a module", async () => {
   components = [
     { id: "mine", title: "Mine", builtin: false, versions: [version("1.0.0", { trust: "trusted" })] },
