@@ -191,7 +191,7 @@ Valide les quatre points « à valider » de la spec (§7.4 et §9.2 : `BUN_BE_B
   - `type TypeScript = typeof import("typescript")` ; `loadTypeScript(t: Toolchain): Promise<TypeScript>`.
   - `type SourceIssueCode`, `type SourceIssue = { file: string; line: number; code: SourceIssueCode; detail: string }`, `issueAt(file, line, code, detail)`.
 
-- [ ] **Step 1: Créer le paquet**
+- [x] **Step 1: Créer le paquet**
 
 `packages/devkit/package.json` :
 ```json
@@ -245,7 +245,7 @@ Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema �
 Run: `bun install`
 Expected: `bun.lock` mis à jour, aucun script lancé.
 
-- [ ] **Step 2: Écrire le test de la résolution de toolchain**
+- [x] **Step 2: Écrire le test de la résolution de toolchain**
 
 `packages/devkit/src/toolchain.test.ts` :
 ```ts
@@ -291,7 +291,7 @@ test("bun is the current executable in dev and the binary itself once compiled",
 Run: `bun test packages/devkit/src/toolchain.test.ts`
 Expected: FAIL (`Cannot find module './toolchain'`).
 
-- [ ] **Step 3: Implémenter `toolchain.ts` et `bun-command.ts`**
+- [x] **Step 3: Implémenter `toolchain.ts` et `bun-command.ts`**
 
 `packages/devkit/src/toolchain.ts` :
 ```ts
@@ -401,7 +401,7 @@ export * from "./typescript";
 Run: `bun test packages/devkit/src/toolchain.test.ts`
 Expected: FAIL tant que `restrict.ts` et `tailwind.ts` n'existent pas (import de l'index non utilisé par ce test : il doit PASSER ; si Bun résout l'index, créer d'abord les deux fichiers des étapes 4 et 6).
 
-- [ ] **Step 4: Écrire `restrict.ts` et les préchargements**
+- [x] **Step 4: Écrire `restrict.ts` et les préchargements**
 
 `packages/devkit/src/restrict.ts` :
 ```ts
@@ -452,7 +452,7 @@ restrictGlobals({ freeze: false });
 ```
 Ordre obligatoire : `happydom` puis `restrict` (happy-dom installe son propre `fetch`, que `restrict` retire ensuite). Pas de gel de `globalThis` sous `bun test` : happy-dom et testing-library écrivent des globales pendant les tests.
 
-- [ ] **Step 5: Écrire les spikes A, B et C**
+- [x] **Step 5: Écrire les spikes A, B et C**
 
 `packages/devkit/src/spikes/spike-kit.ts` :
 ```ts
@@ -555,7 +555,7 @@ test("bun test runs a suite with happy-dom then restrict preloaded", () => {
 Run: `bun test packages/devkit/src/spikes/bun-be-bun.test.ts packages/devkit/src/spikes/restrict.test.ts`
 Expected: A PASS ; B PASS ; C (« a constructed dynamic import is refused ») probablement FAIL.
 
-- [ ] **Step 6: Tenter de bloquer l'import construit (spike C)**
+- [x] **Step 6: Tenter de bloquer l'import construit (spike C)**
 
 Ajouter à `restrict.ts` un plugin runtime qui refuse les modules intégrés (`bun:test` reste permis, il est déjà chargé par le runner) :
 ```ts
@@ -577,7 +577,7 @@ Relancer : `bun test packages/devkit/src/spikes/restrict.test.ts`.
 - Si C passe et que B passe toujours (happy-dom peut charger paresseusement des modules intégrés : le vérifier) : garder le plugin, consigner « bloqué par un plugin runtime » dans le tableau des résultats.
 - Si C échoue toujours (Bun ne fait pas passer les modules intégrés par `onResolve`) ou si le plugin casse B : retirer le plugin, renommer le test en `"KNOWN LIMIT E2: a constructed dynamic import is not blocked"` avec `await expect(load("node:fs")).resolves.toBeDefined()` (le compte reste « 3 pass »), consigner le résultat et **prévenir le chef d'équipe** (point E2).
 
-- [ ] **Step 7: Écrire `tailwind.ts` et le spike D**
+- [x] **Step 7: Écrire `tailwind.ts` et le spike D**
 
 `packages/devkit/src/tailwind.ts` :
 ```ts
@@ -635,7 +635,7 @@ test("tailwind compiles only the classes used by a folder outside the monorepo",
 Run: `bun test packages/devkit/src/spikes/tailwind.test.ts`
 Expected: PASS. Si l'API de `@tailwindcss/node` 4.1.13 diffère (signature de `compile`, `Scanner`), l'adapter en lisant `node_modules/@tailwindcss/node/dist/index.d.ts` et `node_modules/@tailwindcss/oxide/index.d.ts` ; si le chargement natif échoue, appliquer le repli du tableau (spike D).
 
-- [ ] **Step 8: Écrire les spikes D, E, F, G dans un binaire compilé**
+- [x] **Step 8: Écrire les spikes D, E, F, G dans un binaire compilé**
 
 `packages/devkit/src/spikes/compiled.test.ts` :
 ```ts
@@ -698,14 +698,14 @@ Le troisième test documente l'API réelle : si `Bun.spawn` n'expose pas d'écri
 Run: `bun test packages/devkit/src/spikes`
 Expected: PASS, ou échecs documentés et replis appliqués.
 
-- [ ] **Step 9: Consigner les résultats et vérifier**
+- [x] **Step 9: Consigner les résultats et vérifier**
 
 Remplir le tableau « Résultats des spikes » de ce plan (colonne Résultat : « OK » ou le message d'échec, colonne Décision : ce qui est appliqué). Mettre `BUN_BE_BUN_SUPPORTED` à `false` si le spike A a échoué.
 
 Run: `bun test packages/devkit && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add package.json bun.lock CLAUDE.md packages/devkit docs/superpowers/plans/2026-09-26-kibo-composants.md
