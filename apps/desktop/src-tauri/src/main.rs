@@ -1,7 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde::Deserialize;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::{
     process::{CommandChild, CommandEvent},
     ShellExt,
@@ -13,14 +15,26 @@ fn take_daemon(app: &AppHandle) -> Option<CommandChild> {
     app.state::<Daemon>().0.lock().expect("daemon lock").take()
 }
 
+#[derive(Deserialize, Debug, PartialEq)]
+struct Notice {
+    title: String,
+    body: String,
+}
+
+fn parse_notice(line: &str) -> Option<Result<Notice, serde_json::Error>> {
+    line.strip_prefix("KIBO_NOTIFY ").map(serde_json::from_str)
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let ui_dir = app.path().resource_dir()?.join("ui");
             let (mut events, child) = app
                 .shell()
                 .sidecar("kibo-daemon")?
+                .env("KIBO_NATIVE_NOTIFY", "1")
                 .args(["--port", "0", "--ui", &ui_dir.to_string_lossy()])
                 .spawn()?;
             app.manage(Daemon(Mutex::new(Some(child))));
@@ -30,6 +44,25 @@ fn main() {
                     match event {
                         CommandEvent::Stdout(line) => {
                             let line = String::from_utf8_lossy(&line).trim().to_string();
+                            if let Some(notice) = parse_notice(&line) {
+                                match notice {
+                                    Ok(n) => {
+                                        if let Err(e) = handle
+                                            .notification()
+                                            .builder()
+                                            .title(n.title)
+                                            .body(n.body)
+                                            .show()
+                                        {
+                                            eprintln!("[kibo] notification failed: {e}");
+                                        }
+                                    }
+                                    Err(e) => eprintln!(
+                                        "[kibo] invalid notification from the daemon: {e}"
+                                    ),
+                                }
+                                continue;
+                            }
                             let Some(url) = line.strip_prefix("KIBO_READY ") else {
                                 continue;
                             };
@@ -62,4 +95,33 @@ fn main() {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_a_notice_line() {
+        let notice = parse_notice(r#"KIBO_NOTIFY {"title":"a","body":"b"}"#)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            notice,
+            Notice {
+                title: "a".into(),
+                body: "b".into()
+            }
+        );
+    }
+
+    #[test]
+    fn ignores_other_lines() {
+        assert!(parse_notice("KIBO_READY http://127.0.0.1:4317/").is_none());
+    }
+
+    #[test]
+    fn reports_invalid_json() {
+        assert!(parse_notice("KIBO_NOTIFY {").unwrap().is_err());
+    }
 }

@@ -52,6 +52,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd packages/ui build
       - run: bun run --cwd apps/desktop build:debug
+      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
       - name: smoke
         shell: bash
         timeout-minutes: 2
