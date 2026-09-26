@@ -111,8 +111,16 @@ function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: Compo
 }
 
 export function createGate(deps: GateDeps): Gate {
-  const journal = (e: unknown, projectId: string, instanceId: string, ref: string, call: ComponentCall) => {
+  const journal = (
+    e: unknown,
+    located: boolean,
+    projectId: string,
+    instanceId: string,
+    ref: string,
+    call: ComponentCall,
+  ) => {
     if (!(e instanceof KiboError) || !REFUSALS.has(e.code)) return;
+    if (located && e.code === "NOT_FOUND") return;
     try {
       deps.events.record({ projectId, instanceId, ref, kind: call.kind, code: e.code });
     } catch (failure) {
@@ -123,8 +131,10 @@ export function createGate(deps: GateDeps): Gate {
   return {
     async call(projectId, instanceId, call) {
       let ref = "unknown";
+      let located = false;
       try {
         const inst = deps.instance(projectId, instanceId);
+        located = true;
         ref = inst.component;
         if (call.kind === "run" && isReservedCommand(call.command.method)) {
           throw new KiboError("PERMISSION_DENIED", `${call.command.method} is not available to components`);
@@ -133,7 +143,7 @@ export function createGate(deps: GateDeps): Gate {
         takeQuotas(deps.quotas, instanceId, ref, call);
         return await dispatch(deps.handlers, projectId, inst, rules, call);
       } catch (e) {
-        journal(e, projectId, instanceId, ref, call);
+        journal(e, located, projectId, instanceId, ref, call);
         throw e;
       }
     },

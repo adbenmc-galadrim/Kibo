@@ -126,6 +126,7 @@ describe("componentCall checks, in order", () => {
       ref: "evil@0.1.0",
       kind: "list",
       code: "PERMISSION_DENIED",
+      count: 1,
     });
   });
   test("reserved commands are refused for everyone, built-ins included", async () => {
@@ -237,4 +238,26 @@ test("a journal failure never hides the refusal", async () => {
   } finally {
     logged.mockRestore();
   }
+});
+
+test("NOT_FOUND is journaled only when the instance itself is missing", async () => {
+  const { events } = gate();
+  const missing = createGate({
+    instance: () => instances.thirdparty as Instance,
+    active: (ref) => ({ ref, trust: "sandboxed", granted }),
+    handlers: {
+      list: async () => {
+        throw new KiboError("NOT_FOUND", "ticket t");
+      },
+      run: async () => null,
+      data: async () => null,
+      fetch: async () => ({ status: 200, headers: {}, body: "" }),
+      action: async () => null,
+      notes: async () => null,
+    },
+    quotas: createQuotas(),
+    events,
+  });
+  await refused(missing.call("p1", "thirdparty", { kind: "list", entity: "ticket" }), "NOT_FOUND");
+  expect(events.list()).toEqual([]);
 });
