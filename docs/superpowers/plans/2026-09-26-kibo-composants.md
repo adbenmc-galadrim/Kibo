@@ -11550,11 +11550,11 @@ git commit -m "feat(ui): iframe sandboxée et modules trusted"
 
 Fidélité : écran 6 (page 10 du PDF). Tableau dans une carte arrondie, en-têtes en `text-xs text-muted-foreground`, colonnes Composant · Version (`font-mono`) · Confiance · Origine · Utilisé dans · `⋯` ; « Sandboxé » et « Autorisation requise » en `text-orange-600 dark:text-orange-400` (comme la maquette) ; dialogue « Publier « PR en attente » 0.4.0 » : encadré « Utilisé dans 3 projets » (pastille couleur du projet, `Projet › Page`, version en mono, état à droite), « Changements » (`+` vert pour le manifeste, `+` orange pour une permission, `~` bleu pour la migration), deux cartes radio, la carte choisie en `border-orange-600 bg-orange-50 dark:bg-orange-950/60`, pied « Annuler » / « Publier 0.4.0 ». États à dessiner D3, D5, D10.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr.ts` : `nav` gagne `components: "Composants"` ; `publish` gagne `keep: "Inchangée"` et `loading: "Validation en cours…"` ; `components` gagne `loading: "Chargement…"` ; `common` gagne `close: "Fermer"`.
 
-- [ ] **Step 2: Ajouter la primitive `table`**
+- [x] **Step 2: Ajouter la primitive `table`**
 
 `packages/sdk/src/ui/table.tsx` (composant shadcn `table`, sans modification ; ajouté par `bunx shadcn@4.21.0 add table` dans `packages/sdk` ou recopié tel quel) :
 ```tsx
@@ -11600,7 +11600,7 @@ export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow };
 ```
 `table` n'entre pas dans `SDK_UI_PRIMITIVES` (réservée à l'UI en v0.4 ; l'exposer aux composants tiers demanderait de figer une nouvelle interface).
 
-- [ ] **Step 3: Écrire les tests**
+- [x] **Step 3: Écrire les tests**
 
 `packages/ui/src/components-page/rows.test.ts` :
 ```ts
@@ -11834,7 +11834,7 @@ Les casts `as never` sur `version` sont limités au test (le champ n'est pas aff
 Run: `bun test packages/ui/src/components-page`
 Expected: FAIL.
 
-- [ ] **Step 4: Implémenter `use-flash.ts`, `rows.ts`, `ComponentRowMenu.tsx`, `DraftsSection.tsx`**
+- [x] **Step 4: Implémenter `use-flash.ts`, `rows.ts`, `ComponentRowMenu.tsx`, `DraftsSection.tsx`**
 
 `packages/ui/src/lib/use-flash.ts` :
 ```ts
@@ -12031,7 +12031,7 @@ export function DraftsSection({ drafts, onPublish }: { drafts: DraftSummary[]; o
 }
 ```
 
-- [ ] **Step 5: Implémenter `PublishDialog.tsx` et `ComponentsPage.tsx`**
+- [x] **Step 5: Implémenter `PublishDialog.tsx` et `ComponentsPage.tsx`**
 
 `packages/ui/src/components-page/PublishDialog.tsx` :
 ```tsx
@@ -12358,7 +12358,7 @@ export function ComponentsPage() {
 ```
 Une version altérée n'est pas « examinable » (bouton désactivé) : son code sur disque ne correspond plus à l'empreinte publiée, il faut republier (le menu propose « Revérifier l'empreinte »).
 
-- [ ] **Step 6: Navigation (route ou onglet) et entrée de la barre latérale**
+- [x] **Step 6: Navigation (route ou onglet) et entrée de la barre latérale**
 
 Vérifier d'abord : `grep -rn "openTarget\|kind: \"changes\"" packages/ui/src`.
 
@@ -12392,7 +12392,7 @@ test("the sidebar opens the Components screen", async () => {
 ```
 (`renderShell` : l'aide de rendu existante du fichier ; le faux client répond `[]` à `listComponents` et `listDrafts`.)
 
-- [ ] **Step 7: Vérifier et committer**
+- [x] **Step 7: Vérifier et committer**
 
 Run: `bun test packages/ui && bun run typecheck && bun run check`
 Expected: PASS.
