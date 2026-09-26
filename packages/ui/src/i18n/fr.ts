@@ -129,6 +129,7 @@ export const fr = {
     daemon: "Démon local",
     daemonOffline: "Démon injoignable",
     expand: "Déplier les agents",
+    moreRuns: (n: number) => `${n} autre${n > 1 ? "s" : ""} run${n > 1 ? "s" : ""} en cours`,
     collapse: "Replier les agents",
     launch: "Lancer un agent",
     groups: {

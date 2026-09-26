@@ -121,6 +121,7 @@ test("the bar sums up slots, queue, running runs and the run waiting for an answ
     expect(screen.getByText(label)).toBeTruthy();
   }
   expect(screen.getByText("KIB-12 · 12m")).toBeTruthy();
+  expect(screen.getByText("KIB-7 · 1m")).toBeTruthy();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Répondre à opus-dev-2" }));
   expect(onSelect).toHaveBeenCalledWith("r41");

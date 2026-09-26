@@ -41,30 +41,35 @@ export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: P
       data-queued="true"
       data-run={run.id}
       className={cn(
-        "flex items-center gap-2 rounded-md border border-dashed p-2 text-sm",
+        "flex min-w-0 items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-[11px]",
         drop.isOver && !drag.isDragging && "ring-2 ring-cyan-500/60",
       )}
     >
       <button
         type="button"
         aria-label={fr.queue.drag(run.ticketKey ?? run.ticketTitle)}
-        className="cursor-grab text-muted-foreground"
+        className="shrink-0 cursor-grab text-muted-foreground"
         {...drag.listeners}
         {...drag.attributes}
       >
         <GripVertical className="size-3.5" />
       </button>
-      <span className={cn("rounded bg-cyan-500/15 px-1 font-mono text-xs", RUN_TEXT.queued)}>
+      <span className={cn("shrink-0 rounded bg-cyan-500/15 px-1 font-mono text-[10px]", RUN_TEXT.queued)}>
         {`#${entry.position}`}
       </span>
-      <span className="grid min-w-0 flex-1">
-        <span className="break-words">{runSubject(run)}</span>
-        <span className="text-xs text-muted-foreground">
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="line-clamp-2 break-words" title={runSubject(run)}>
+          {runSubject(run)}
+        </span>
+        <span className="line-clamp-2 break-words text-[10px] text-muted-foreground">
           {run.pendingAnswer ? fr.queue.resumeHint : reasonText(entry.reason)}
         </span>
       </span>
       {run.priority && (
-        <Badge variant="outline" className="border-brand/40 text-brand-strong dark:text-brand">
+        <Badge
+          variant="outline"
+          className="shrink-0 px-1 text-[10px] border-brand/40 text-brand-strong dark:text-brand"
+        >
           {fr.queue.priority}
         </Badge>
       )}
@@ -73,7 +78,7 @@ export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: P
           <Button
             size="icon"
             variant="ghost"
-            className="size-6"
+            className="size-5 shrink-0"
             aria-label={fr.queue.actions(run.ticketKey ?? run.ticketTitle)}
           >
             <MoreHorizontal className="size-3.5" />
