@@ -6563,7 +6563,7 @@ git commit -m "feat(sdk): SDK simulé et conformité v1"
   - `comboOf(e: KeyboardEvent): KeyCombo | null`.
   - `mountSandboxed(manifest: unknown, Component: ComponentType, port?: FramePort): void` : envoie `ready`, attend `init`, applique le thème, monte le composant dans `#root`, relaie les raccourcis, signale la hauteur des widgets.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/sdk/src/sandbox.test.tsx` :
 ```tsx
@@ -6657,7 +6657,7 @@ Sous happy-dom, `window.parent === window` : le dernier message est accepté, le
 Run: `bun test packages/sdk/src/sandbox.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 2: Implémenter `sandbox.tsx`**
+- [x] **Step 2: Implémenter `sandbox.tsx`**
 
 ```tsx
 import {
@@ -6801,7 +6801,7 @@ export function mountSandboxed(manifestInput: unknown, Component: ComponentType,
 }
 ```
 
-- [ ] **Step 3: Vérifier et committer**
+- [x] **Step 3: Vérifier et committer**
 
 Run: `bun test packages/sdk && bun run typecheck && bun run check`
 Expected: PASS.
