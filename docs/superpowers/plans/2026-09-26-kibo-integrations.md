@@ -4043,7 +4043,7 @@ git commit -m "test(daemon): faux serveur GitHub"
 - Consumes: —
 - Produces: `buildFakeMcpServer(): McpServer` (outils `echo { text }`, `list_items {}`, `get_metadata { nodeId }`, `get_screenshot { nodeId }`, `slow { ms }`, `fail {}`, `big { bytes }`, `env {}` ; ressource `fake://items`) ; `FAKE_MCP_STDIO` (chemin absolu du script stdio) ; `startFakeMcpHttp(opts?: { bearer?: string }): Promise<{ url: string; stop(): Promise<void> }>` ; `FAKE_ITEMS` (données de `list_items`) ; `FAKE_PNG_BASE64`.
 
-- [ ] **Step 1: Ajouter la dépendance**
+- [x] **Step 1: Ajouter la dépendance**
 
 `@modelcontextprotocol/sdk@1.30.1` est déjà résolu dans `bun.lock` (dépendance de `shadcn` 4.21.0, avec ses dépendances `express`, `hono`, `ajv`, `zod` → le `zod@3.25.76` du dépôt) : l'ajout direct au démon ne crée aucune résolution nouvelle, seulement la ligne du paquet `@kibo/daemon` dans `bun.lock`.
 
@@ -4052,7 +4052,7 @@ Puis : `git diff bun.lock` — Expected: seule l'entrée `"@modelcontextprotocol
 
 Imports (vérifiés sur le paquet installé, `node_modules/.bun/@modelcontextprotocol+sdk@1.30.1/.../dist/esm`) : l'export générique `"./*"` du paquet sert les chemins en `.js` : `@modelcontextprotocol/sdk/server/mcp.js` (`McpServer`, `registerTool(name, { description, inputSchema }, cb)`, `registerResource(name, uri, metadata, readCallback)`), `@modelcontextprotocol/sdk/server/stdio.js` (`StdioServerTransport`), `@modelcontextprotocol/sdk/server/streamableHttp.js` (`StreamableHTTPServerTransport({ sessionIdGenerator })`, `handleRequest(req, res, parsedBody?)` sur `IncomingMessage`/`ServerResponse` de `node:http`), `@modelcontextprotocol/sdk/client/index.js` (`Client`), `@modelcontextprotocol/sdk/client/stdio.js` (`StdioClientTransport({ command, args, env, cwd, stderr })`), `@modelcontextprotocol/sdk/client/streamableHttp.js` (`StreamableHTTPClientTransport(url, { requestInit })`). Les schémas d'entrée acceptent Zod 3 et Zod 4 (`ZodRawShapeCompat = Record<string, z3.ZodTypeAny | z4.$ZodType>`) et le SDK MCP résout le même `zod@3.25.76` que le démon : les formes `z.string()` du dépôt passent telles quelles.
 
-- [ ] **Step 2: Test (échoue)**
+- [x] **Step 2: Test (échoue)**
 
 `packages/daemon/src/testing/fake-mcp.test.ts` :
 
@@ -4091,7 +4091,7 @@ test("http: bearer required, resources readable", async () => {
 
 Run: `bun test packages/daemon/src/testing/fake-mcp.test.ts` — Expected: FAIL (module absent).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `packages/daemon/src/testing/fake-mcp.ts` :
 
@@ -4189,7 +4189,7 @@ await buildFakeMcpServer().connect(new StdioServerTransport());
 
 Le dossier `packages/daemon/src/testing/` est nouveau (les faux de la phase 3 vivent dans `packages/daemon/src/code/testing/`, dont `fake-gh.ts`) : il regroupe les faux de la phase 5 (GitHub, MCP).
 
-- [ ] **Step 4: Vérifier et commiter**
+- [x] **Step 4: Vérifier et commiter**
 
 Run: `bun test packages/daemon/src/testing && bun run check && bun run typecheck` — Expected: PASS.
 
