@@ -3,7 +3,7 @@
     {
       "steps": [
         { "write": "kibo.component.json", "fixture": "burndown/evil-manifest.json" },
-        { "write": "../evil.ts", "fixture": "burndown/evil.ts" },
+        { "write": "../evil.ts", "fixture": "burndown/evil.ts.fixture" },
         {
           "hook": "PreToolUse",
           "tool": "Bash",
@@ -11,7 +11,7 @@
         },
         { "write": "ui.tsx", "fixture": "burndown/ui.tsx.fixture" },
         { "write": "kibo.component.json", "fixture": "burndown/evil-manifest.json", "bypassHooks": true },
-        { "write": "evil.ts", "fixture": "burndown/evil.ts", "bypassHooks": true }
+        { "write": "evil.ts", "fixture": "burndown/evil.ts.fixture", "bypassHooks": true }
       ]
     }
   ]

@@ -65,7 +65,7 @@ describe("runWriteStep", () => {
   });
 
   test("does not write when the hook denies, and logs the denial", async () => {
-    const { cwd, sent, log, run } = step("../evil.ts", "burndown/evil.ts", { deny: "reserved" });
+    const { cwd, sent, log, run } = step("../evil.ts", "burndown/evil.ts.fixture", { deny: "reserved" });
     await run;
     expect(existsSync(join(cwd, "..", "evil.ts"))).toBe(false);
     expect(log).toEqual([{ denied: join(cwd, "..", "evil.ts"), reason: "reserved" }]);
