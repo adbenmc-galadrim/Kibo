@@ -126,3 +126,13 @@ describe("fake github graphql", () => {
     expect(unknown.status).toBe(400);
   });
 });
+
+test("the fake github listens on the requested port", async () => {
+  const probe = startFakeGithub();
+  const port = Number(new URL(probe.url).port);
+  probe.stop();
+  const fixed = startFakeGithub({ port });
+  expect(fixed.url).toBe(`http://127.0.0.1:${port}`);
+  expect((await fetch(`${fixed.url}/user`)).status).toBe(401);
+  fixed.stop();
+});

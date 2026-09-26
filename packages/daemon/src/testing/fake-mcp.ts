@@ -77,7 +77,7 @@ function listeningPort(http: Server): number {
 }
 
 export async function startFakeMcpHttp(
-  opts: { bearer?: string; omit?: string[] } = {},
+  opts: { bearer?: string; omit?: string[]; port?: number } = {},
 ): Promise<{ url: string; stop(): Promise<void> }> {
   const http = createServer((req, res) => {
     if (opts.bearer && req.headers.authorization !== `Bearer ${opts.bearer}`) {
@@ -104,7 +104,7 @@ export async function startFakeMcpHttp(
     sockets.add(socket);
     socket.on("close", () => sockets.delete(socket));
   });
-  await new Promise<void>((resolve) => http.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => http.listen(opts.port ?? 0, "127.0.0.1", resolve));
   return {
     url: `http://127.0.0.1:${listeningPort(http)}/mcp`,
     stop: () =>

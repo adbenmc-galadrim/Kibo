@@ -41,3 +41,12 @@ test("http: bearer required, resources readable", async () => {
   expect(JSON.stringify(res.contents)).toContain("Premier");
   await client.close();
 });
+
+test("http: the fake MCP server listens on the requested port", async () => {
+  const probe = await startFakeMcpHttp();
+  const port = Number(new URL(probe.url).port);
+  await probe.stop();
+  const fixed = await startFakeMcpHttp({ port });
+  expect(fixed.url).toBe(`http://127.0.0.1:${port}/mcp`);
+  await fixed.stop();
+});

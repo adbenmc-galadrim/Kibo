@@ -86,7 +86,7 @@ export type FakeGithub = {
 
 export { ECHO_AUTH, LOGS_HOST, restIssue } from "./fake-github-rest";
 
-export function startFakeGithub(opts: { login?: string; token?: string } = {}): FakeGithub {
+export function startFakeGithub(opts: { login?: string; token?: string; port?: number } = {}): FakeGithub {
   let clock = Date.parse("2026-09-26T10:00:00Z");
   const failures: Failure[] = [];
   const iso = () => new Date(clock).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -167,7 +167,11 @@ export function startFakeGithub(opts: { login?: string; token?: string } = {}): 
     },
     stop: () => server.stop(true),
   };
-  const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (req) => route(gh, failures, req) });
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: opts.port ?? 0,
+    fetch: (req) => route(gh, failures, req),
+  });
   gh.url = `http://127.0.0.1:${server.port}`;
   return gh;
 }
