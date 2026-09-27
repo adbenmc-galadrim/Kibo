@@ -127,10 +127,13 @@ test("the sheet says who is looking at the ticket and disables the agent", async
       project={project}
       ticketId="t1"
       domains={[]}
+      viewer="adam"
       onClose={noop}
       onAssign={noop}
       onOpenInTab={noop}
       onOpenFile={noop}
+      onOpenTicket={noop}
+      onDeleted={noop}
     />,
   );
   expect(await screen.findByText("Léa regarde ce ticket")).toBeTruthy();
@@ -142,7 +145,16 @@ test("the sheet says who is looking at the ticket and disables the agent", async
 });
 
 test("the ticket tab shows the provisional key and keeps the agent away", () => {
-  render(<TicketTab project={project} ticketId="t1" onAssign={noop} onOpenFile={noop} />);
+  render(
+    <TicketTab
+      project={project}
+      ticketId="t1"
+      viewer="adam"
+      onAssign={noop}
+      onOpenFile={noop}
+      onOpenTicket={noop}
+    />,
+  );
   expect(screen.getByText("KIB-…").className).toContain("italic");
   expect((screen.getByRole("button", { name: "Assigner à un agent" }) as HTMLButtonElement).disabled).toBe(
     true,

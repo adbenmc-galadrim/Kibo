@@ -110,6 +110,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       onOpen={() => {}}
       onOpenFile={() => {}}
       onAssign={() => {}}
+      onOpenTicket={() => {}}
     />,
   );
 };

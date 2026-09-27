@@ -1,18 +1,28 @@
 import type { Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
-import { LinkifiedText } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frTicketEdit } from "../i18n/fr-ticket-edit";
+import { canEdit } from "../state/access";
+import { AssigneeSelect } from "../ticket/AssigneeSelect";
+import { DescriptionEditor } from "../ticket/DescriptionEditor";
+import { StatusSelect } from "../ticket/StatusSelect";
+import { useTicketCommand } from "../ticket/use-ticket-command";
 import { CiSection, FigmaProperty, FigmaSection, SyncStatus } from "./sheet/lazy-sections";
 
 type Props = {
   project: ProjectSnapshot;
   ticket: TicketView;
   domains?: Domain[];
+  viewer: string;
   onOpenFile(ref: FileRef): void;
+  onOpenTicket(ticketId: string): void;
 };
+
+export const descendantCount = (tickets: readonly TicketView[], id: string): number =>
+  tickets.filter((x) => x.parentId === id).reduce((n, c) => n + 1 + descendantCount(tickets, c.id), 0);
 
 const NO_DOMAIN = "none";
 
@@ -67,8 +77,9 @@ function DomainSelect({
   );
 }
 
-export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props) {
-  const status = project.workflow.find((s) => s.id === t.statusId)?.label ?? t.statusId;
+export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, onOpenTicket }: Props) {
+  const editable = canEdit(project);
+  const command = useTicketCommand(project.meta.id);
   const children = project.tickets.filter((x) => x.parentId === t.id);
   const hasPr = t.externalRefs.some((r) => r.kind === "github_pr");
   const open = (r: { path: string; line: number | null }) =>
@@ -84,7 +95,9 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
       <SyncStatus projectId={project.meta.id} ticket={t} />
       <dl className="grid grid-cols-[120px_1fr] items-center gap-y-2 px-4 text-xs">
         <dt className="text-muted-foreground">{fr.ticket.status}</dt>
-        <dd>{status}</dd>
+        <dd>
+          <StatusSelect ticket={t} workflow={project.workflow} editable={editable} command={command} />
+        </dd>
         {domains && (
           <>
             <dt className="text-muted-foreground">{fr.ticket.domain}</dt>
@@ -93,6 +106,16 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
             </dd>
           </>
         )}
+        <dt className="text-muted-foreground">{frTicketEdit.assignee}</dt>
+        <dd>
+          <AssigneeSelect
+            ticket={t}
+            viewer={viewer}
+            members={project.sync.members}
+            editable={editable}
+            command={command}
+          />
+        </dd>
         {t.blockedReason && (
           <>
             <dt className="text-muted-foreground">{fr.ticket.blockedReason}</dt>
@@ -113,21 +136,32 @@ export function TicketDetail({ project, ticket: t, domains, onOpenFile }: Props)
         )}
         <FigmaProperty ticket={t} />
       </dl>
-      <section className="grid gap-2 px-4 text-sm">
-        <h3 className="text-xs font-medium">{fr.ticket.description}</h3>
-        <p className="whitespace-pre-wrap text-muted-foreground">
-          {t.description ? <LinkifiedText text={t.description} onOpen={open} /> : "-"}
+      {command.error && (
+        <p role="alert" className="px-4 text-sm text-destructive">
+          {command.error}
         </p>
-      </section>
+      )}
+      <DescriptionEditor
+        ticketId={t.id}
+        description={t.description}
+        editable={editable}
+        command={command}
+        onOpenFile={open}
+      />
       {children.length > 0 && (
         <section className="grid gap-1 px-4 text-xs">
           <h3 className="font-medium">
             {fr.ticket.subtickets} {`${t.progress.done}/${t.progress.total}`}
           </h3>
           {children.map((c) => (
-            <p key={c.id}>
+            <button
+              key={c.id}
+              type="button"
+              className="text-left hover:underline"
+              onClick={() => onOpenTicket(c.id)}
+            >
               <span className="font-mono text-2xs text-muted-foreground">{c.keyLabel}</span> {c.title}
-            </p>
+            </button>
           ))}
         </section>
       )}

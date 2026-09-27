@@ -123,10 +123,13 @@ const show = async (shown: TicketView = ticket) => {
       project={{ ...project, tickets: [shown] }}
       ticketId={shown.id}
       domains={[]}
+      viewer="adam"
       onClose={() => {}}
       onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
+      onOpenTicket={() => {}}
+      onDeleted={() => {}}
     />,
   );
   await screen.findByRole("alert");
@@ -153,7 +156,9 @@ test("the issue and PR chips sit in the header, issue first", async () => {
 });
 
 test("the ticket tab shows the GitHub chips in its header", async () => {
-  render(<TicketTab project={project} ticketId="t1" onOpenFile={() => {}} />);
+  render(
+    <TicketTab project={project} ticketId="t1" viewer="adam" onOpenFile={() => {}} onOpenTicket={() => {}} />,
+  );
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("tab has a header");
   expect(await within(header).findByRole("link", { name: "#42" })).toBeDefined();
