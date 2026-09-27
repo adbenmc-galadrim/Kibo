@@ -77,7 +77,6 @@ export const frMarket = {
       VERSION_EXISTS: "Version déjà publiée.",
       FORBIDDEN: "Tu n'as pas le droit de publier sur cette source.",
     },
-    backendStopped: "Backend arrêté — isolation OS indisponible",
     fromMarketplace: "Ce code vient d'une marketplace.",
     refused: {
       title: "Installation refusée",

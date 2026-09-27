@@ -1,5 +1,5 @@
 import { type Instance, isBuiltinId, type Surface, sandboxPath, splitRef } from "@kibo/schema";
-import { createSdk, projectBackend, SdkProvider } from "@kibo/sdk";
+import { createSdk, lazyPanel, projectBackend, SdkProvider } from "@kibo/sdk";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
@@ -11,6 +11,14 @@ import { loadTrusted, type TrustedModule } from "../shell/trusted-loader";
 import { useComponents } from "../state/use-components";
 import { useRuntimeInfo } from "../state/use-runtime-info";
 import { PendingTrust } from "./PendingTrust";
+
+const MissingComponent = lazyPanel(
+  () => import("./MissingComponent").then((m) => m.MissingComponent),
+  fr.lazy,
+  {
+    fallback: "sr-only",
+  },
+);
 
 type Props = { projectId: string; instance: Instance; viewer: string; surface: Surface };
 type MountedProps = Props & { mod: TrustedModule; mode: "builtin" | "gated" };
@@ -105,7 +113,15 @@ function ThirdParty(props: Props) {
   if (!components) return null;
   const summary = components.find((c) => c.id === id && !c.builtin);
   const v = summary?.versions.find((x) => x.version === version);
-  if (!summary || !v) return <Unknown componentRef={instance.component} />;
+  if (!summary || !v)
+    return (
+      <MissingComponent
+        projectId={props.projectId}
+        componentRef={instance.component}
+        hash={instance.componentHash ?? null}
+        compact={surface === "widget"}
+      />
+    );
   if (!v.active || !v.hash || v.tampered) {
     return (
       <PendingTrust

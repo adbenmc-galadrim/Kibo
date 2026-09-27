@@ -212,6 +212,19 @@ test("a built-in is rendered from the UI bundle, an unknown ref says so", async 
   expect(await screen.findByText(/ghost@9\.9\.9/)).toBeTruthy();
 });
 
+test("S7: a third-party version absent from the registry is reported as missing", async () => {
+  wrap(<InstanceFrame projectId="p1" instance={inst("ghost-widget@9.9.9")} viewer="adam" surface="widget" />);
+  expect(await screen.findByText("Composant absent : ghost-widget@9.9.9")).toBeTruthy();
+  await waitFor(() =>
+    expect(calls).toContainEqual({
+      method: "findMarketSource",
+      id: "ghost-widget",
+      version: "9.9.9",
+      hash: null,
+    }),
+  );
+});
+
 test("D1: update to a higher version, remove from the page", async () => {
   components = prQueue(version("0.3.0"), version("0.4.0"), version("0.5.0"));
   answer = async (req) => (req.method === "updateInstance" ? inst(`pr-queue@${req.to}`) : null);
