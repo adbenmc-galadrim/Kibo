@@ -5,6 +5,6 @@
   "title": "Tickets",
   "description": "Arbre des tickets, sous-tickets illimités",
   "reads": ["ticket", "status", "run"],
-  "writes": [],
+  "writes": ["ticket"],
   "configSchema": { "filter": { "enum": ["all", "mine"], "default": "all" } }
 }

@@ -10,6 +10,30 @@ export const fr = {
   expand: (key: string) => `Déplier ${key}`,
   newSubTicket: (key: string) => `Nouveau sous-ticket de ${key}`,
   waitingOn: (keys: string[]) => `attend ${keys.join(", ")}`,
+  actions: (key: string) => `Actions ${key}`,
+  open: "Ouvrir",
+  status: "Statut",
+  newSub: "Nouveau sous-ticket",
+  moveToRoot: "Déplacer à la racine",
+  remove: "Supprimer…",
+  removeTitle: (key: string) => `Supprimer ${key} ?`,
+  removeHelp: (children: number) =>
+    children === 0
+      ? "Ses liens seront supprimés aussi. Cette action est irréversible."
+      : `Ses ${children} sous-ticket${children > 1 ? "s" : ""} et ses liens seront supprimés aussi. Cette action est irréversible.`,
+  removeConfirm: "Supprimer",
+  cancel: "Annuler",
+  statusFailed: (key: string) => `Impossible de changer le statut de ${key}.`,
+  moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
+  cycle: "Un ticket ne peut pas devenir le sous-ticket de l'un de ses sous-tickets.",
+  block: {
+    title: (key: string) => `Bloquer ${key}`,
+    description: "Un ticket bloqué attend une condition extérieure au projet.",
+    reason: "Motif",
+    placeholder: "Informations attendues du client",
+    cancel: "Annuler",
+    confirm: "Bloquer",
+  },
   run: {
     queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),
     waiting: "Attend",
