@@ -5,9 +5,10 @@ import { migrateForSharing } from "@kibo/core";
 import type { ChangeMessage } from "@kibo/schema";
 import { startTestSyncServer, type TestSyncServer } from "@kibo/sync-server/testing";
 import { fromBase64, toBase64 } from "@kibo/trust";
-import { LoroDoc } from "loro-crdt";
+import { wireSharing } from "../collab/bootstrap";
 import { createProjectHosts } from "../collab/project-hosts";
-import { projectSyncInfo } from "../collab/project-info";
+import type { ShareDeps } from "../collab/share";
+import { docFromServer } from "../collab/sync-blob";
 import { SyncClient } from "../collab/sync-client";
 import { openSyncDb, type SyncDb } from "../collab/sync-db";
 import { createWebSocketTransport, type SyncTransport } from "../collab/transport";
@@ -24,6 +25,7 @@ export type HarnessDaemon = {
   client: SyncClient;
   secrets: MemorySecretStore;
   syncDb: SyncDb;
+  share: ShareDeps;
   events: ChangeMessage[];
   opens(): number;
   stop(): void;
@@ -92,10 +94,7 @@ function startDaemon(user: string): HarnessDaemon {
     log: (message, error) => console.error(`[harness:${user}] ${message}`, error ?? ""),
     backoff: { minMs: 20, maxMs: 200 },
   });
-  service.attachCollab({
-    syncInfo: (projectId, doc) =>
-      projectSyncInfo({ row: syncDb.project(projectId), doc, members: client.membersOf(projectId) }),
-  });
+  const sharing = wireSharing({ service, store, db: syncDb, client, hosts, user });
   return {
     home,
     service,
@@ -103,10 +102,12 @@ function startDaemon(user: string): HarnessDaemon {
     client,
     secrets,
     syncDb,
+    share: sharing.share,
     events,
     opens: () => transport.opened,
     stop: () => {
       client.stop();
+      sharing.stop();
       store.close();
       rmSync(home, { recursive: true, force: true });
     },
@@ -161,19 +162,17 @@ export async function startSyncHarness(opts: { daemons: number }): Promise<SyncH
       const d = at(j);
       const requestId = crypto.randomUUID();
       const joined = await d.client.request({ type: "redeem", requestId, code }, "joined");
-      const doc = new LoroDoc();
-      const received = new Promise<void>((resolve) => {
+      const received = new Promise<Uint8Array>((resolve) => {
         const off = d.client.onFrame((f) => {
           if (f.type !== "update" || f.projectId !== joined.projectId) return;
-          doc.import(fromBase64(f.bytes));
           off();
-          resolve();
+          resolve(fromBase64(f.bytes));
         });
       });
       d.client.send({ type: "subscribe", projectId: joined.projectId, version: null });
-      await received;
+      const bytes = await received;
       d.client.send({ type: "unsubscribe", projectId: joined.projectId });
-      d.hosts.addJoinedProject(doc, null);
+      d.hosts.addJoinedProject(docFromServer(joined.projectId, bytes), null);
       d.client.attachProject(joined.projectId, joined.role);
       return joined.projectId;
     },

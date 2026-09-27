@@ -1,5 +1,14 @@
-import type { RpcRequest } from "@kibo/schema";
+import { KiboError, type RpcRequest } from "@kibo/schema";
 import { type RpcContext, type RpcOutcome, requireLocal } from "../rpc-extensions";
+import {
+  createProjectInvite,
+  joinProject,
+  type ShareDeps,
+  setBindingRunner,
+  setMemberRole,
+  shareProject,
+  unshareProject,
+} from "./share";
 import type { SyncClient } from "./sync-client";
 
 export type SyncRpcClient = Pick<
@@ -7,10 +16,16 @@ export type SyncRpcClient = Pick<
   "status" | "connect" | "disconnect" | "listDevices" | "addDevice" | "revokeDevice"
 >;
 
+const need = (share: ShareDeps | undefined): ShareDeps => {
+  if (!share) throw new KiboError("INTERNAL", "sharing is not wired");
+  return share;
+};
+
 export async function handleSyncRpc(
   client: SyncRpcClient,
   req: RpcRequest,
   ctx: RpcContext,
+  share?: ShareDeps,
 ): Promise<RpcOutcome> {
   switch (req.method) {
     case "getSyncStatus":
@@ -32,6 +47,20 @@ export async function handleSyncRpc(
     case "revokeDevice":
       requireLocal(ctx);
       await client.revokeDevice(req.deviceId);
+      return { handled: true, result: null };
+    case "shareProject":
+      return { handled: true, result: await shareProject(need(share), req.projectId) };
+    case "createProjectInvite":
+      return { handled: true, result: await createProjectInvite(need(share), req) };
+    case "joinProject":
+      return { handled: true, result: await joinProject(need(share), req) };
+    case "setMemberRole":
+      return { handled: true, result: await setMemberRole(need(share), req) };
+    case "unshareProject":
+      await unshareProject(need(share), req.projectId);
+      return { handled: true, result: null };
+    case "setBindingRunner":
+      setBindingRunner(need(share), req);
       return { handled: true, result: null };
     default:
       return { handled: false };

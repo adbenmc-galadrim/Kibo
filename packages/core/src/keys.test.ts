@@ -4,6 +4,7 @@ import {
   addLink,
   createProjectDoc,
   createTicket,
+  enableServerAllocation,
   getKeyAllocator,
   getTicket,
   importExternalTicket,
@@ -11,6 +12,7 @@ import {
   nextPendingSeq,
   peekTicketKey,
   readProject,
+  restoreLocalAllocation,
 } from "./index";
 
 const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
@@ -118,4 +120,14 @@ describe("server allocator", () => {
     expect(imported.key).toBeNull();
     expect(imported.pendingSeq).toBe(1);
   });
+});
+
+test("restoreLocalAllocation keys pending tickets and gives allocation back to the daemon", () => {
+  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6" });
+  enableServerAllocation(doc);
+  createTicket(doc, { title: "En attente" });
+  expect(listTickets(doc)[0]?.key).toBeNull();
+  expect(restoreLocalAllocation(doc)).toEqual([{ ticketId: listTickets(doc)[0]?.id ?? "", key: "KIB-1" }]);
+  expect(getKeyAllocator(doc)).toBe("local");
+  expect(createTicket(doc, { title: "Local" }).key).toBe("KIB-2");
 });

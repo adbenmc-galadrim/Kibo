@@ -76,6 +76,13 @@ export function enableServerAllocation(doc: LoroDoc): number {
   return seq;
 }
 
+export function restoreLocalAllocation(doc: LoroDoc): { ticketId: string; key: string }[] {
+  const allocated = allocateTicketKeys(doc);
+  doc.getMap("meta").set("keyAllocator", "local");
+  doc.commit();
+  return allocated;
+}
+
 const nameOf = (entry: unknown): string | null =>
   entry instanceof Object && "name" in entry && typeof entry.name === "string" ? entry.name : null;
 

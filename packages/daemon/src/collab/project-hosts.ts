@@ -2,19 +2,8 @@ import { depthViolation, getProjectMeta, projectDepthViolation } from "@kibo/cor
 import { KiboError, type ProjectAccess, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
-import { assertCompleteHistory, importUpdateBlob } from "./sync-blob";
+import { assertCompleteHistory, importComplete, refuseTooDeep } from "./sync-blob";
 import type { ProjectHostRegistry } from "./types";
-
-function refuseTooDeep(projectId: string, violation: string | null): void {
-  if (violation) throw new KiboError("TOO_LARGE", `sync data for ${projectId} refused: ${violation}`);
-}
-
-function importChecked(projectId: string, target: LoroDoc, bytes: Uint8Array): void {
-  const status = importUpdateBlob(projectId, target, bytes);
-  if (status.pending && status.pending.size > 0) {
-    throw new KiboError("TOO_LARGE", `sync data for ${projectId} refused: its dependencies are missing`);
-  }
-}
 
 function withoutPending(projectId: string, doc: LoroDoc): LoroDoc {
   assertCompleteHistory(projectId, doc);
@@ -49,7 +38,7 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
       applyRemote: (bytes) => {
         const doc = docs.project(projectId);
         const candidate = doc.fork();
-        importChecked(projectId, candidate, bytes);
+        importComplete(projectId, candidate, bytes);
         refuseTooDeep(projectId, depthViolation(doc, candidate));
         doc.import(bytes);
         docs.imported(projectId);
@@ -66,6 +55,7 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
       if (isLocked) locked.add(projectId);
       else locked.delete(projectId);
     },
+    assertWritable: (projectId) => docs.assertWritable(projectId),
     onLocalChange: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
