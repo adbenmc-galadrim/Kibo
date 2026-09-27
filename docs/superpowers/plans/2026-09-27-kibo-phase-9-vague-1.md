@@ -1076,11 +1076,659 @@ git commit -m "feat(daemon): actions git réservées à la machine"
 
 ### Task 4: Coque : menu macOS explicite, fenêtre, capacité IPC
 
-**À compléter** (arrêt sur limite d'usage). Cadre déjà fixé : spec §12.5, Contrats partagés › Coque, vague 0. Contenu attendu : `Cargo.toml` (+ `tauri-plugin-opener = "2"`, `tauri-plugin-window-state = "2"`, `Cargo.lock` régénéré) ; `main.rs` : `daemon_capability` (ex-`updater_capability`) + `core:window:allow-set-title` + `permission_scoped("opener:allow-open-url", vec![OpenUrlScope { url: "https://**" }], vec![])` avec `#[derive(Serialize)] struct OpenUrlScope { url: String }`, plugins enregistrés, `min_inner_size(960.0, 600.0)`, `restore_state(StateFlags::SIZE | POSITION | MAXIMIZED)` après `build()`, menu posé sur macOS seulement ; `menu.rs` : `MENU` en données (Kibo / Édition / Fenêtre, « Fermer la fenêtre » `CmdOrCtrl+Shift+W`, aucun `PredefinedMenuItem::close_window`), `build(app)`, `on_event`, test `menu_leaves_tab_shortcuts_to_the_webview` (aucun accélérateur de `MENU` dans `RESERVED_FOR_WEBVIEW`), test de l'origine conservé. Vérification locale : `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` après build de l'UI, du sidecar et de la toolchain ; CI `desktop-smoke`. Commits : `build(desktop): plugins opener et window-state`, `feat(desktop): menu macOS, fenêtre et capacité`.
+Vague 0. Spec §12.5 et spec I §3.7. La coque reste « Rust minimal » : un module `menu.rs` **en données** (testable sans fenêtre), deux plugins, trois lignes de plus dans la capacité accordée à l'origine du démon. Relue par `kibo-lead` (capacité IPC, menu natif). Le seul comportement observable à l'œil (menu, taille minimale, fenêtre mémorisée) se vérifie à la main sur macOS ; ce qui se teste par `cargo test` : les accélérateurs du menu ne volent aucun raccourci de la webview, la capacité ne porte que l'origine du démon.
+
+**Files:**
+- Modify: `apps/desktop/src-tauri/Cargo.toml` (+ `tauri-plugin-opener = "2"`, `tauri-plugin-window-state = "2"`), `apps/desktop/src-tauri/Cargo.lock` (régénéré, commité)
+- Create: `apps/desktop/src-tauri/src/menu.rs`
+- Modify: `apps/desktop/src-tauri/src/main.rs` (`daemon_capability`, `OpenUrlScope`, `MIN_WINDOW`, plugins, menu sur macOS, `restore_state`)
+
+**Interfaces:**
+- Consumes: `tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu, IsMenuItem}`, `tauri::ipc::CapabilityBuilder::permission_scoped`, `tauri_plugin_window_state::{StateFlags, WindowExt}`, `tauri_plugin_opener::init`.
+- Produces: Contrats partagés › Coque ; permissions `core:window:allow-set-title` et `opener:allow-open-url` (`https://**`) consommées par T13.
+
+- [ ] **Step 1: Dépendances Rust et verrou**
+
+`apps/desktop/src-tauri/Cargo.toml`, section `[dependencies]`, après `tauri-plugin-process = "2"` :
+```toml
+tauri-plugin-opener = "2"
+tauri-plugin-window-state = "2"
+```
+Régénérer le verrou sans compiler (le `build.rs` de `tauri-build` exigerait les binaires du sidecar) :
+
+Run: `~/.cargo/bin/cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null && git -C . diff --stat apps/desktop/src-tauri/Cargo.lock`
+Expected: `Cargo.lock` modifié (ajout de `tauri-plugin-opener`, `tauri-plugin-window-state` et de leurs dépendances, dont `open` et `glob`), aucune autre ligne supprimée.
+
+- [ ] **Step 2: Test du menu (rouge)**
+
+Créer `apps/desktop/src-tauri/src/menu.rs` avec le seul bloc de tests (le module n'existe pas encore : compilation rouge) :
+```rust
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn menu_leaves_tab_shortcuts_to_the_webview() {
+        for accelerator in accelerators(MENU) {
+            assert!(
+                !RESERVED_FOR_WEBVIEW.contains(&accelerator),
+                "{accelerator} belongs to the webview"
+            );
+        }
+    }
+
+    #[test]
+    fn closing_the_window_takes_shift() {
+        assert_eq!(accelerators(MENU), vec!["CmdOrCtrl+Shift+W"]);
+    }
+
+    #[test]
+    fn menu_has_the_three_macos_submenus() {
+        let titles: Vec<&str> = MENU.iter().map(|(title, _)| *title).collect();
+        assert_eq!(titles, vec!["Kibo", "Édition", "Fenêtre"]);
+    }
+}
+```
+Déclarer le module dans `main.rs`, sous les `use` : `mod menu;`.
+
+Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml menu` (pré-requis locaux : `bun run --cwd packages/ui build`, `bun apps/desktop/scripts/build-sidecar.ts`, `bun apps/desktop/scripts/build-toolchain.ts`, une seule fois)
+Expected: FAIL, `cannot find value MENU`.
+
+- [ ] **Step 3: Le menu en données, puis sa construction sur macOS**
+
+`apps/desktop/src-tauri/src/menu.rs`, au-dessus des tests :
+```rust
+pub const RESERVED_FOR_WEBVIEW: &[&str] = &[
+    "CmdOrCtrl+W",
+    "CmdOrCtrl+T",
+    "CmdOrCtrl+K",
+    "CmdOrCtrl+Shift+P",
+    "CmdOrCtrl+1",
+    "CmdOrCtrl+2",
+    "CmdOrCtrl+3",
+    "CmdOrCtrl+4",
+    "CmdOrCtrl+5",
+    "CmdOrCtrl+6",
+    "CmdOrCtrl+7",
+    "CmdOrCtrl+8",
+    "CmdOrCtrl+9",
+];
+
+pub const CLOSE_WINDOW: &str = "close-window";
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Predefined {
+    About,
+    Services,
+    Hide,
+    HideOthers,
+    ShowAll,
+    Quit,
+    Undo,
+    Redo,
+    Cut,
+    Copy,
+    Paste,
+    SelectAll,
+    Minimize,
+    Maximize,
+    Fullscreen,
+}
+
+impl Predefined {
+    pub fn label(self) -> &'static str {
+        match self {
+            Predefined::About => "À propos de Kibo",
+            Predefined::Services => "Services",
+            Predefined::Hide => "Masquer Kibo",
+            Predefined::HideOthers => "Masquer les autres",
+            Predefined::ShowAll => "Tout afficher",
+            Predefined::Quit => "Quitter Kibo",
+            Predefined::Undo => "Annuler",
+            Predefined::Redo => "Rétablir",
+            Predefined::Cut => "Couper",
+            Predefined::Copy => "Copier",
+            Predefined::Paste => "Coller",
+            Predefined::SelectAll => "Tout sélectionner",
+            Predefined::Minimize => "Réduire",
+            Predefined::Maximize => "Agrandir",
+            Predefined::Fullscreen => "Plein écran",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Entry {
+    Predefined(Predefined),
+    Custom {
+        id: &'static str,
+        text: &'static str,
+        accelerator: Option<&'static str>,
+    },
+    Separator,
+}
+
+pub const MENU: &[(&str, &[Entry])] = &[
+    (
+        "Kibo",
+        &[
+            Entry::Predefined(Predefined::About),
+            Entry::Separator,
+            Entry::Predefined(Predefined::Services),
+            Entry::Separator,
+            Entry::Predefined(Predefined::Hide),
+            Entry::Predefined(Predefined::HideOthers),
+            Entry::Predefined(Predefined::ShowAll),
+            Entry::Separator,
+            Entry::Predefined(Predefined::Quit),
+        ],
+    ),
+    (
+        "Édition",
+        &[
+            Entry::Predefined(Predefined::Undo),
+            Entry::Predefined(Predefined::Redo),
+            Entry::Separator,
+            Entry::Predefined(Predefined::Cut),
+            Entry::Predefined(Predefined::Copy),
+            Entry::Predefined(Predefined::Paste),
+            Entry::Predefined(Predefined::SelectAll),
+        ],
+    ),
+    (
+        "Fenêtre",
+        &[
+            Entry::Predefined(Predefined::Minimize),
+            Entry::Predefined(Predefined::Maximize),
+            Entry::Predefined(Predefined::Fullscreen),
+            Entry::Separator,
+            Entry::Custom {
+                id: CLOSE_WINDOW,
+                text: "Fermer la fenêtre",
+                accelerator: Some("CmdOrCtrl+Shift+W"),
+            },
+        ],
+    ),
+];
+
+pub fn accelerators(menu: &[(&str, &[Entry])]) -> Vec<&'static str> {
+    menu.iter()
+        .flat_map(|(_, entries)| entries.iter())
+        .filter_map(|entry| match entry {
+            Entry::Custom { accelerator, .. } => *accelerator,
+            _ => None,
+        })
+        .collect()
+}
+
+#[cfg(target_os = "macos")]
+mod native {
+    use super::{Entry, Predefined, CLOSE_WINDOW, MENU};
+    use tauri::menu::{IsMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
+    use tauri::{AppHandle, Manager, Wry};
+
+    fn predefined(app: &AppHandle, item: Predefined) -> tauri::Result<PredefinedMenuItem<Wry>> {
+        let text = Some(item.label());
+        match item {
+            Predefined::About => PredefinedMenuItem::about(app, text, None),
+            Predefined::Services => PredefinedMenuItem::services(app, text),
+            Predefined::Hide => PredefinedMenuItem::hide(app, text),
+            Predefined::HideOthers => PredefinedMenuItem::hide_others(app, text),
+            Predefined::ShowAll => PredefinedMenuItem::show_all(app, text),
+            Predefined::Quit => PredefinedMenuItem::quit(app, text),
+            Predefined::Undo => PredefinedMenuItem::undo(app, text),
+            Predefined::Redo => PredefinedMenuItem::redo(app, text),
+            Predefined::Cut => PredefinedMenuItem::cut(app, text),
+            Predefined::Copy => PredefinedMenuItem::copy(app, text),
+            Predefined::Paste => PredefinedMenuItem::paste(app, text),
+            Predefined::SelectAll => PredefinedMenuItem::select_all(app, text),
+            Predefined::Minimize => PredefinedMenuItem::minimize(app, text),
+            Predefined::Maximize => PredefinedMenuItem::maximize(app, text),
+            Predefined::Fullscreen => PredefinedMenuItem::fullscreen(app, text),
+        }
+    }
+
+    fn item(app: &AppHandle, entry: &Entry) -> tauri::Result<Box<dyn IsMenuItem<Wry>>> {
+        Ok(match entry {
+            Entry::Predefined(p) => Box::new(predefined(app, *p)?),
+            Entry::Separator => Box::new(PredefinedMenuItem::separator(app)?),
+            Entry::Custom { id, text, accelerator } => {
+                Box::new(MenuItem::with_id(app, *id, *text, true, *accelerator)?)
+            }
+        })
+    }
+
+    pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
+        let menu = Menu::new(app)?;
+        for (title, entries) in MENU {
+            let items = entries
+                .iter()
+                .map(|e| item(app, e))
+                .collect::<tauri::Result<Vec<_>>>()?;
+            let refs: Vec<&dyn IsMenuItem<Wry>> = items.iter().map(|i| i.as_ref()).collect();
+            menu.append(&Submenu::with_items(app, *title, true, &refs)?)?;
+        }
+        Ok(menu)
+    }
+
+    pub fn on_event(app: &AppHandle, id: &str) {
+        if id != CLOSE_WINDOW {
+            return;
+        }
+        let Some(window) = app.get_webview_window("main") else {
+            return;
+        };
+        if let Err(e) = window.close() {
+            eprintln!("[kibo] cannot close the main window: {e}");
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub use native::{build, on_event};
+```
+Aucun `Predefined::CloseWindow` : l'énumération ne le permet pas, c'est ce qui garantit que `⌘W` n'est jamais pris par le menu natif (spec §12.5). `Menu::new` puis `append` évite de construire un tableau de `&dyn` de taille variable pour la racine.
+
+Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml menu`
+Expected: PASS, 3 tests.
+
+- [ ] **Step 4: Capacité, plugins, fenêtre (test rouge puis vert)**
+
+`apps/desktop/src-tauri/src/main.rs`, remplacer le test `grants_the_updater_to_the_daemon_origin_only` par :
+```rust
+    #[test]
+    fn grants_the_daemon_origin_only() {
+        let url: Url = "http://127.0.0.1:4317/?token=abc#/settings".parse().unwrap();
+        assert_eq!(ipc_origin(&url), "http://127.0.0.1:4317");
+    }
+
+    #[test]
+    fn opener_scope_is_https_only() {
+        let scope = serde_json::to_value(OpenUrlScope::https()).unwrap();
+        assert_eq!(scope, serde_json::json!({ "url": "https://**" }));
+    }
+
+    #[test]
+    fn window_is_never_smaller_than_the_layout() {
+        assert_eq!(MIN_WINDOW, (960.0, 600.0));
+    }
+```
+Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: FAIL (`OpenUrlScope`, `MIN_WINDOW` introuvables).
+
+Puis, dans `main.rs` :
+- `use serde::{Deserialize, Serialize};` ; `use tauri_plugin_window_state::{StateFlags, WindowExt};`
+- remplacer `updater_capability` par :
+```rust
+const MIN_WINDOW: (f64, f64) = (960.0, 600.0);
+const WINDOW_STATE: StateFlags = StateFlags::SIZE.union(StateFlags::POSITION).union(StateFlags::MAXIMIZED);
+
+#[derive(Serialize)]
+struct OpenUrlScope {
+    url: String,
+}
+
+impl OpenUrlScope {
+    fn https() -> Self {
+        Self { url: "https://**".into() }
+    }
+}
+
+fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
+    CapabilityBuilder::new("daemon")
+        .window("main")
+        .local(false)
+        .remote(ipc_origin(daemon_url))
+        .permission("updater:default")
+        .permission("process:allow-restart")
+        .permission("core:app:allow-version")
+        .permission("core:window:allow-set-title")
+        .permission_scoped("opener:allow-open-url", vec![OpenUrlScope::https()], Vec::<OpenUrlScope>::new())
+}
+```
+- dans `main()`, la chaîne de plugins devient :
+```rust
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_window_state::Builder::new().with_state_flags(WINDOW_STATE).build());
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .menu(menu::build)
+        .on_menu_event(|app, event| menu::on_event(app, event.id().as_ref()));
+    let app = builder
+        .setup(|app| {
+```
+(le reste de `setup` inchangé jusqu'à la fenêtre)
+- la création de la fenêtre devient :
+```rust
+                            handle
+                                .add_capability(daemon_capability(&url))
+                                .expect("cannot grant the daemon origin its capability");
+                            let window = WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url))
+                                .title("Kibo")
+                                .inner_size(1440.0, 900.0)
+                                .min_inner_size(MIN_WINDOW.0, MIN_WINDOW.1)
+                                .build()
+                                .expect("cannot open the main window");
+                            if let Err(e) = window.restore_state(WINDOW_STATE) {
+                                eprintln!("[kibo] window state not restored: {e}");
+                            }
+```
+Le plugin restaure aussi l'état au `on_window_ready` et l'enregistre à la fermeture dans le dossier de configuration de l'app (`.window-state.json`) ; l'appel explicite est idempotent et garantit la restauration même si la fenêtre est créée après le démarrage, comme ici. Le fichier d'état ne touche pas au CRDT.
+
+Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
+Expected: PASS, 9 tests (6 dans `main.rs`, 3 dans `menu.rs`), aucun avertissement `dead_code`.
+
+- [ ] **Step 5: Vérification à la main (macOS) et smoke**
+
+Run: `bun run --cwd apps/desktop build:debug && KIBO_SMOKE=1 KIBO_HOME=$(mktemp -d) apps/desktop/src-tauri/target/debug/kibo; echo "exit=$?"`
+Expected: `exit=0`, aucun `kibo-daemon` restant (`pgrep -f kibo-daemon` vide).
+
+Puis sans `KIBO_SMOKE` : la barre de menu affiche Kibo / Édition / Fenêtre ; `⌘W` ferme l'onglet Kibo actif (pas la fenêtre), `⌘⇧W` ferme la fenêtre ; la fenêtre refuse de descendre sous 960 × 600 ; après redimensionnement, déplacement et relance, elle revient à la même place. Noter le résultat dans le rapport de la tâche.
+
+- [ ] **Step 6: Commits**
+
+```bash
+git add apps/desktop/src-tauri/Cargo.toml apps/desktop/src-tauri/Cargo.lock
+git commit -m "build(desktop): plugins opener et window-state"
+git add apps/desktop/src-tauri/src/main.rs apps/desktop/src-tauri/src/menu.rs
+git commit -m "feat(desktop): menu macOS, fenêtre et capacité"
+```
 
 ### Task 5: Logo piste 5, icône, favicon
 
-**À compléter.** Cadre : spec §12.5 et spec générale §8, Contrats partagés (UI › `kibo-mark.ts`), vague 0. Contenu attendu : `packages/ui/src/shell/kibo-mark.ts` (`kiboMarkSvg(mode: "dark" | "light" | "auto", size)` : port fidèle de `S.kanbanLogo` de `design/penpot/scripts/01-core.js`, `auto` = variante claire avec `<style>@media (prefers-color-scheme: dark)` pour le favicon), `KiboLogo.tsx` sur la même géométrie (tuile `bg-card`, cartes `currentColor`, carte orange `#F97316`), `packages/ui/scripts/app-icon.ts` (écrit `apps/desktop/app-icon.svg` en mode clair 1024 et `packages/ui/public/favicon.svg` en mode auto 64) et `app-icon.test.ts` (les deux fichiers égaux au générateur), `index.html` (`<link rel="icon" type="image/svg+xml" href="/favicon.svg">`), `bun run --cwd apps/desktop tauri icon app-icon.svg` (icônes régénérées et commitées), test `pairing-screen.test.tsx` inchangé. Commits : `feat(ui): logo piste 5 et favicon`, `build(desktop): icônes régénérées`.
+Vague 0. Spec §12.5 (logo) et spec générale §8 (système visuel). Une **seule géométrie** en TypeScript (`kibo-mark.ts`, port de `S.kanbanLogo` de `design/penpot/scripts/01-core.js:22-26`) nourrit `KiboLogo`, `apps/desktop/app-icon.svg` et `packages/ui/public/favicon.svg` ; un test refuse toute divergence entre les fichiers commités et le générateur. `WorkspaceMark.tsx` (tuile d'espace de travail, déjà en piste 5) ne change pas. La page Penpot `05 · Logo` ne change pas non plus : le logo dessiné est la source, le code s'y conforme.
+
+**Files:**
+- Create: `packages/ui/src/shell/kibo-mark.ts`, `packages/ui/src/shell/kibo-mark.test.ts`
+- Modify: `packages/ui/src/shell/KiboLogo.tsx` (même géométrie ; `pairing-screen.test.tsx` inchangé)
+- Create: `packages/ui/scripts/app-icon.ts`, `packages/ui/scripts/app-icon.test.ts` ; Modify: `packages/ui/scripts/tsconfig.json` (référence au projet `packages/ui`)
+- Create: `packages/ui/public/favicon.svg` ; Modify: `packages/ui/index.html`, `apps/desktop/app-icon.svg`, `apps/desktop/src-tauri/icons/*` (six fichiers régénérés)
+
+**Interfaces:**
+- Produces: `kiboMarkSvg(mode: "dark" | "light" | "auto", size: number): string` ; `KIBO_MARK` (géométrie : tuile et cinq cartes, unités sur 100) ; `KiboLogo` inchangé en props (`className`, `decorative`).
+- Consumes: rien de nouveau.
+
+- [ ] **Step 1: Test de la géométrie (rouge)**
+
+`packages/ui/src/shell/kibo-mark.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { KIBO_MARK, kiboMarkSvg } from "./kibo-mark";
+
+const PENPOT_DARK_100 =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">' +
+  '<rect x="2" y="2" width="96" height="96" rx="24" fill="#18181B" stroke="#27272A" stroke-width="2"/>' +
+  '<rect x="22" y="24" width="16" height="22" rx="4" fill="#FAFAFA" opacity="1"/>' +
+  '<rect x="22" y="52" width="16" height="16" rx="4" fill="#FAFAFA" opacity="0.45"/>' +
+  '<rect x="42" y="24" width="16" height="16" rx="4" fill="#FAFAFA" opacity="1"/>' +
+  '<rect x="42" y="46" width="16" height="30" rx="4" fill="#F97316" opacity="1"/>' +
+  '<rect x="62" y="24" width="16" height="12" rx="4" fill="#FAFAFA" opacity="0.45"/>' +
+  "</svg>";
+
+test("the dark mark at 100 is byte for byte the Penpot kanbanLogo", () => {
+  expect(kiboMarkSvg("dark", 100)).toBe(PENPOT_DARK_100);
+});
+
+test("the light mark swaps only the palette", () => {
+  const light = kiboMarkSvg("light", 100);
+  expect(light).toBe(
+    PENPOT_DARK_100.replaceAll("#18181B", "#FFFFFF").replaceAll("#27272A", "#E4E4E7").replaceAll("#FAFAFA", "#09090B"),
+  );
+});
+
+test("the mark scales with two decimals like the Penpot script", () => {
+  const svg = kiboMarkSvg("light", 1024);
+  expect(svg).toContain('width="1024" height="1024" viewBox="0 0 1024 1024"');
+  expect(svg).toContain('<rect x="20.48" y="20.48" width="983.04" height="983.04" rx="245.76"');
+  expect(svg).toContain('stroke-width="20.48"');
+  expect(svg).toContain('<rect x="430.08" y="471.04" width="163.84" height="307.2" rx="40.96" fill="#F97316"');
+});
+
+test("the auto mark is light by default and follows the dark scheme by CSS", () => {
+  const svg = kiboMarkSvg("auto", 64);
+  expect(svg).toContain('<rect class="tile" x="1.28" y="1.28" width="61.44" height="61.44" rx="15.36" fill="#FFFFFF" stroke="#E4E4E7"');
+  expect(svg).toContain('<rect class="ink" x="14.08" y="15.36"');
+  expect(svg).toContain("@media (prefers-color-scheme: dark)");
+  expect(svg).toContain(".tile{fill:#18181B;stroke:#27272A}");
+  expect(svg).toContain(".ink{fill:#FAFAFA}");
+  expect(svg.indexOf("<style>")).toBeLessThan(svg.indexOf("<rect"));
+});
+
+test("the geometry has one tile, four ink cards and one brand card", () => {
+  expect(KIBO_MARK.tile).toEqual({ x: 2, y: 2, size: 96, radius: 24, stroke: 2 });
+  expect(KIBO_MARK.cards).toHaveLength(5);
+  expect(KIBO_MARK.cards.filter((c) => c.fill === "brand")).toEqual([{ x: 42, y: 46, w: 16, h: 30, fill: "brand", opacity: 1 }]);
+});
+```
+(`Number((30 * 10.24).toFixed(2))` vaut `307.2`, sans zéro final : le port suit la même conversion que `n()` dans le script Penpot.)
+
+Run: `bun test packages/ui/src/shell/kibo-mark.test.ts`
+Expected: FAIL (module introuvable).
+
+- [ ] **Step 2: La géométrie et le générateur SVG**
+
+`packages/ui/src/shell/kibo-mark.ts` :
+```ts
+export type MarkMode = "dark" | "light" | "auto";
+export type MarkCard = { x: number; y: number; w: number; h: number; fill: "ink" | "brand"; opacity: number };
+
+export const BRAND = "#F97316";
+export const CARD_RADIUS = 4;
+
+const CARDS: readonly MarkCard[] = [
+  { x: 22, y: 24, w: 16, h: 22, fill: "ink", opacity: 1 },
+  { x: 22, y: 52, w: 16, h: 16, fill: "ink", opacity: 0.45 },
+  { x: 42, y: 24, w: 16, h: 16, fill: "ink", opacity: 1 },
+  { x: 42, y: 46, w: 16, h: 30, fill: "brand", opacity: 1 },
+  { x: 62, y: 24, w: 16, h: 12, fill: "ink", opacity: 0.45 },
+];
+
+export const KIBO_MARK = {
+  tile: { x: 2, y: 2, size: 96, radius: 24, stroke: 2 },
+  cards: CARDS,
+};
+
+type Palette = { ink: string; base: string; edge: string };
+const DARK: Palette = { ink: "#FAFAFA", base: "#18181B", edge: "#27272A" };
+const LIGHT: Palette = { ink: "#09090B", base: "#FFFFFF", edge: "#E4E4E7" };
+
+const DARK_SCHEME_STYLE = `<style>@media (prefers-color-scheme: dark){.tile{fill:${DARK.base};stroke:${DARK.edge}}.ink{fill:${DARK.ink}}}</style>`;
+
+export function kiboMarkSvg(mode: MarkMode, size: number): string {
+  const unit = size / 100;
+  const n = (v: number) => Number((v * unit).toFixed(2));
+  const palette = mode === "dark" ? DARK : LIGHT;
+  const classed = mode === "auto";
+  const cls = (name: string) => (classed ? `class="${name}" ` : "");
+  const { tile, cards } = KIBO_MARK;
+  const tileSvg =
+    `<rect ${cls("tile")}x="${n(tile.x)}" y="${n(tile.y)}" width="${n(tile.size)}" height="${n(tile.size)}" rx="${n(tile.radius)}" ` +
+    `fill="${palette.base}" stroke="${palette.edge}" stroke-width="${Math.max(1, n(tile.stroke))}"/>`;
+  const cardSvg = cards
+    .map((c) => {
+      const fill = c.fill === "brand" ? BRAND : palette.ink;
+      const klass = c.fill === "brand" ? "" : cls("ink");
+      return `<rect ${klass}x="${n(c.x)}" y="${n(c.y)}" width="${n(c.w)}" height="${n(c.h)}" rx="${n(CARD_RADIUS)}" fill="${fill}" opacity="${c.opacity}"/>`;
+    })
+    .join("");
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">` +
+    (classed ? DARK_SCHEME_STYLE : "") +
+    tileSvg +
+    cardSvg +
+    "</svg>"
+  );
+}
+```
+Attention à la sortie « mot pour mot » : en mode `dark` / `light`, `cls()` renvoie `""`, donc `<rect x=…` sans double espace ; le premier test l'impose.
+
+Run: `bun test packages/ui/src/shell/kibo-mark.test.ts`
+Expected: PASS, 5 tests.
+
+- [ ] **Step 3: `KiboLogo` sur la même géométrie (test rouge puis vert)**
+
+Créer `packages/ui/src/shell/kibo-logo.test.tsx` :
+```tsx
+import { expect, test } from "bun:test";
+import { render, screen } from "@testing-library/react";
+import { KiboLogo } from "./KiboLogo";
+import { KIBO_MARK } from "./kibo-mark";
+
+test("the logo draws the tile and the five cards of the mark", () => {
+  render(<KiboLogo className="size-14" />);
+  const svg = screen.getByRole("img", { name: "Kibo" });
+  expect(svg.getAttribute("viewBox")).toBe("0 0 100 100");
+  const rects = [...svg.querySelectorAll("rect")];
+  expect(rects).toHaveLength(1 + KIBO_MARK.cards.length);
+  expect(rects[0]?.getAttribute("class")).toContain("fill-card");
+  expect(rects.filter((r) => r.getAttribute("fill") === "#F97316")).toHaveLength(1);
+  expect(rects.filter((r) => r.getAttribute("fill") === "currentColor")).toHaveLength(4);
+});
+
+test("a decorative logo is hidden from assistive tech", () => {
+  render(<KiboLogo decorative />);
+  expect(document.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+});
+```
+Run: `bun test packages/ui/src/shell/kibo-logo.test.tsx` — Expected: FAIL (`viewBox` vaut `0 0 1024 1024`, 4 rects).
+
+`packages/ui/src/shell/KiboLogo.tsx` devient :
+```tsx
+import { fr } from "../i18n/fr";
+import { BRAND, CARD_RADIUS, KIBO_MARK } from "./kibo-mark";
+
+export function KiboLogo({ className, decorative = false }: { className?: string; decorative?: boolean }) {
+  const { tile, cards } = KIBO_MARK;
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      role="img"
+      aria-hidden={decorative}
+      aria-label={fr.app.name}
+      fill="none"
+    >
+      <title>{fr.app.name}</title>
+      <rect
+        x={tile.x}
+        y={tile.y}
+        width={tile.size}
+        height={tile.size}
+        rx={tile.radius}
+        strokeWidth={tile.stroke}
+        className="fill-card stroke-border text-foreground"
+      />
+      {cards.map((c) => (
+        <rect
+          key={`${c.x}-${c.y}`}
+          x={c.x}
+          y={c.y}
+          width={c.w}
+          height={c.h}
+          rx={CARD_RADIUS}
+          fill={c.fill === "brand" ? BRAND : "currentColor"}
+          opacity={c.opacity}
+          className="text-foreground"
+        />
+      ))}
+    </svg>
+  );
+}
+```
+`fill-card` et `stroke-border` sont des utilitaires Tailwind v4 issus des tokens shadcn (`--color-card`, `--color-border`) : la tuile suit le thème sombre ou clair sans couleur codée ; seule l'orange de marque est littérale.
+
+Run: `bun test packages/ui/src/shell/kibo-logo.test.tsx packages/ui/src/shell/pairing-screen.test.tsx`
+Expected: PASS (les 6 tests d'appairage inchangés).
+
+- [ ] **Step 4: Générateur des fichiers et test de non-divergence (rouge puis vert)**
+
+`packages/ui/scripts/tsconfig.json` : ajouter `"references": [{ "path": ".." }]` (le script importe `../src/shell/kibo-mark`, hors de son `rootDir` : la référence de projet fait résoudre l'import vers les déclarations de `packages/ui`, et `bun run typecheck` construit `packages/ui` avant `packages/ui/scripts`).
+
+`packages/ui/scripts/app-icon.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { kiboMarkSvg } from "../src/shell/kibo-mark";
+import { ICON_TARGETS } from "./app-icon";
+
+const repo = resolve(import.meta.dir, "../../..");
+
+test("the committed app icon and favicon are exactly what the generator writes", () => {
+  for (const target of ICON_TARGETS) {
+    expect(readFileSync(resolve(repo, target.path), "utf8")).toBe(`${kiboMarkSvg(target.mode, target.size)}\n`);
+  }
+});
+
+test("the app icon is light at 1024 and the favicon follows the system scheme at 64", () => {
+  expect(ICON_TARGETS).toEqual([
+    { path: "apps/desktop/app-icon.svg", mode: "light", size: 1024 },
+    { path: "packages/ui/public/favicon.svg", mode: "auto", size: 64 },
+  ]);
+});
+```
+Run: `bun test packages/ui/scripts/app-icon.test.ts` — Expected: FAIL (module `./app-icon` introuvable).
+
+`packages/ui/scripts/app-icon.ts` :
+```ts
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { kiboMarkSvg, type MarkMode } from "../src/shell/kibo-mark";
+
+export type IconTarget = { path: string; mode: MarkMode; size: number };
+
+export const ICON_TARGETS: readonly IconTarget[] = [
+  { path: "apps/desktop/app-icon.svg", mode: "light", size: 1024 },
+  { path: "packages/ui/public/favicon.svg", mode: "auto", size: 64 },
+];
+
+export function writeIcons(repoRoot: string): string[] {
+  return ICON_TARGETS.map((target) => {
+    const file = resolve(repoRoot, target.path);
+    writeFileSync(file, `${kiboMarkSvg(target.mode, target.size)}\n`);
+    return file;
+  });
+}
+
+if (import.meta.main) {
+  for (const file of writeIcons(resolve(import.meta.dir, "../../.."))) console.log(`written ${file}`);
+}
+```
+Run: `mkdir -p packages/ui/public && bun packages/ui/scripts/app-icon.ts && bun test packages/ui/scripts/app-icon.test.ts`
+Expected: deux lignes `written …`, puis PASS, 2 tests. `git status --short` montre `apps/desktop/app-icon.svg` modifié et `packages/ui/public/favicon.svg` nouveau.
+
+- [ ] **Step 5: Favicon dans la page et icônes de la coque**
+
+`packages/ui/index.html`, dans `<head>` après `<meta name="viewport" …>` :
+```html
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+```
+Vite copie `public/` à la racine de `dist/` ; le démon sert tout fichier existant de `dist/` (`serveUi`, `packages/daemon/src/ui-route.ts`), donc `/favicon.svg` répond en `image/svg+xml` avec la CSP (`img-src 'self'`).
+
+Icônes de la coque, régénérées depuis le SVG clair :
+
+Run: `bun run --cwd apps/desktop tauri icon app-icon.svg && rm -rf apps/desktop/src-tauri/icons/android apps/desktop/src-tauri/icons/ios apps/desktop/src-tauri/icons/Square*.png apps/desktop/src-tauri/icons/StoreLogo.png && git status --short apps/desktop/src-tauri/icons`
+Expected: exactement six fichiers modifiés (`32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico`, `icon.png`), aucun fichier nouveau (la CLI écrit aussi les formats Windows Store, Android et iOS, que `tauri.conf.json` ne référence pas : ils sont supprimés).
+
+Vérification visuelle : ouvrir `apps/desktop/src-tauri/icons/128x128@2x.png` (tuile blanche à bord gris, quatre cartes noires dont deux à 45 %, une carte orange) et `packages/ui/public/favicon.svg` dans un navigateur en thème sombre puis clair.
+
+- [ ] **Step 6: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui/src/shell packages/ui/scripts && bun run budget`
+Expected: PASS ; budget inchangé à ± 0,2 kB (la géométrie remplace quatre rectangles par six : `kibo-mark.ts` pèse moins de 1 kB gzip et reste dans l'entrée, comme `PairingScreen`).
+
+```bash
+git add packages/ui/src/shell/kibo-mark.ts packages/ui/src/shell/kibo-mark.test.ts packages/ui/src/shell/KiboLogo.tsx packages/ui/src/shell/kibo-logo.test.tsx packages/ui/scripts/app-icon.ts packages/ui/scripts/app-icon.test.ts packages/ui/scripts/tsconfig.json packages/ui/public/favicon.svg packages/ui/index.html apps/desktop/app-icon.svg
+git commit -m "feat(ui): logo piste 5 et favicon"
+git add apps/desktop/src-tauri/icons/32x32.png apps/desktop/src-tauri/icons/128x128.png apps/desktop/src-tauri/icons/128x128@2x.png apps/desktop/src-tauri/icons/icon.icns apps/desktop/src-tauri/icons/icon.ico apps/desktop/src-tauri/icons/icon.png
+git commit -m "build(desktop): icônes régénérées"
+```
 
 ### Task 6: Fiche ticket éditable
 
