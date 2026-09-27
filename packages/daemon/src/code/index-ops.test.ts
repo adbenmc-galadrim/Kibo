@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { chmodSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { stageFiles, stageHunk, unstageFiles, writeFile } from "./index-ops";
+import {
+  discardChanges,
+  stageAll,
+  stageFiles,
+  stageHunk,
+  unstageAll,
+  unstageFiles,
+  writeFile,
+} from "./index-ops";
 import { MAX_FILE_BYTES, readDiff, readFile, readStatus } from "./read";
 import { openRepo, type WorktreeHandle } from "./repo";
 import { createGitFixture, type GitFixture } from "./testing/git-fixture";
@@ -142,4 +150,124 @@ test("writeFile refuses content above the size limit and directories", async () 
   });
   await expect(writeFile(h, "src", "x", "0".repeat(40))).rejects.toMatchObject({ code: "NOT_FOUND" });
   expect(fx.git("status", "--porcelain", "--untracked-files=all")).toBe("");
+});
+
+test("discarding restores a modified, a deleted and a staged file to HEAD", async () => {
+  fx.write("src/ticket.ts", `${lines(40)}more\n`);
+  rmSync(join(fx.repo, "src/legacy.ts"));
+  fx.write("src/staged.ts", "s\n");
+  await stageFiles(h, ["src/staged.ts"]);
+  await discardChanges(h, ["src/ticket.ts", "src/legacy.ts", "src/staged.ts"]);
+  expect(await areas()).toEqual([]);
+  expect(readFileSync(join(fx.repo, "src/ticket.ts"), "utf8")).toBe(lines(40));
+  expect(readFileSync(join(fx.repo, "src/legacy.ts"), "utf8")).toBe("old\n");
+  expect(existsSync(join(fx.repo, "src/staged.ts"))).toBe(false);
+});
+
+test("discarding an untracked file deletes it and leaves the others alone", async () => {
+  fx.write("src/new.ts", "n\n");
+  fx.write("src/keep.ts", "k\n");
+  await discardChanges(h, ["src/new.ts"]);
+  expect(existsSync(join(fx.repo, "src/new.ts"))).toBe(false);
+  expect(await areas()).toEqual(["unstaged:untracked:src/keep.ts"]);
+});
+
+test("discarding untracked files inside a new folder deletes only them", async () => {
+  fx.write("docs/deep/a.md", "a\n");
+  fx.write("docs/b.md", "b\n");
+  fx.write("docs/deep/keep.md", "k\n");
+  await discardChanges(h, ["docs/deep/a.md", "docs/b.md"]);
+  expect(existsSync(join(fx.repo, "docs/deep/a.md"))).toBe(false);
+  expect(existsSync(join(fx.repo, "docs/b.md"))).toBe(false);
+  expect(await areas()).toEqual(["unstaged:untracked:docs/deep/keep.md"]);
+});
+
+test("discarding a staged rename restores the source and removes the target", async () => {
+  fx.git("mv", "src/legacy.ts", "src/renamed.ts");
+  expect(await areas()).toEqual(["staged:renamed:src/renamed.ts"]);
+  await discardChanges(h, ["src/renamed.ts", "src/legacy.ts"]);
+  expect(await areas()).toEqual([]);
+  expect(existsSync(join(fx.repo, "src/renamed.ts"))).toBe(false);
+  expect(readFileSync(join(fx.repo, "src/legacy.ts"), "utf8")).toBe("old\n");
+});
+
+test("discarding refuses paths outside the worktree before touching anything", async () => {
+  fx.write("src/new.ts", "n\n");
+  await expect(discardChanges(h, ["src/new.ts", "../outside.ts"])).rejects.toMatchObject({
+    code: "PATH_OUTSIDE_PROJECT",
+  });
+  await expect(discardChanges(h, ["src/new.ts", ".git/config"])).rejects.toMatchObject({
+    code: "PATH_OUTSIDE_PROJECT",
+  });
+  writeFileSync(join(fx.dir, "outside.ts"), "o\n");
+  symlinkSync(fx.dir, join(fx.repo, "escape"));
+  await expect(discardChanges(h, ["src/new.ts", "escape/outside.ts"])).rejects.toMatchObject({
+    code: "PATH_OUTSIDE_PROJECT",
+  });
+  expect(existsSync(join(fx.repo, "src/new.ts"))).toBe(true);
+  expect(readFileSync(join(fx.dir, "outside.ts"), "utf8")).toBe("o\n");
+});
+
+test("discarding an untracked symlink removes the link, never its target", async () => {
+  symlinkSync(join(fx.repo, "src/ticket.ts"), join(fx.repo, "link.ts"));
+  await discardChanges(h, ["link.ts"]);
+  expect(existsSync(join(fx.repo, "link.ts"))).toBe(false);
+  expect(readFileSync(join(fx.repo, "src/ticket.ts"), "utf8")).toBe(lines(40));
+});
+
+const conflictOnLegacy = () => {
+  fx.git("checkout", "-q", "-b", "other");
+  fx.commit("feat: other", { "src/legacy.ts": "theirs\n" });
+  fx.git("checkout", "-q", "main");
+  fx.commit("feat: main", { "src/legacy.ts": "ours\n" });
+  const merge = Bun.spawnSync(["git", "merge", "other"], {
+    cwd: fx.repo,
+    env: { ...process.env, ...fx.env },
+  });
+  expect(merge.exitCode).not.toBe(0);
+};
+
+test("discarding refuses during an operation and on a conflicted file", async () => {
+  conflictOnLegacy();
+  await expect(discardChanges(h, ["src/legacy.ts"])).rejects.toMatchObject({ code: "GIT_BUSY" });
+  expect(readFileSync(join(fx.repo, "src/legacy.ts"), "utf8")).toContain("<<<<<<<");
+});
+
+test("discarding a conflicted file left without an operation is refused", async () => {
+  conflictOnLegacy();
+  rmSync(join(fx.repo, ".git/MERGE_HEAD"));
+  await expect(discardChanges(h, ["src/legacy.ts"])).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  expect(readFileSync(join(fx.repo, "src/legacy.ts"), "utf8")).toContain("<<<<<<<");
+});
+
+test("stageAll indexes every change and unstageAll empties the index without touching files", async () => {
+  fx.write("src/new.ts", "n\n");
+  fx.write("src/ticket.ts", `${lines(40)}more\n`);
+  rmSync(join(fx.repo, "src/legacy.ts"));
+  await stageAll(h);
+  expect(await areas()).toEqual([
+    "staged:deleted:src/legacy.ts",
+    "staged:added:src/new.ts",
+    "staged:modified:src/ticket.ts",
+  ]);
+  await unstageAll(h);
+  expect(await areas()).toEqual([
+    "unstaged:deleted:src/legacy.ts",
+    "unstaged:untracked:src/new.ts",
+    "unstaged:modified:src/ticket.ts",
+  ]);
+  expect(readFileSync(join(fx.repo, "src/ticket.ts"), "utf8")).toBe(`${lines(40)}more\n`);
+});
+
+test("unstageAll works before the first commit", async () => {
+  const empty = createGitFixture({ remote: false });
+  try {
+    empty.write("a.txt", "a\n");
+    const eh = await (await openRepo(empty.repo, empty.env)).open(empty.repo);
+    await stageAll(eh);
+    await unstageAll(eh);
+    expect((await readStatus(eh)).files.map((f) => f.area)).toEqual(["unstaged"]);
+  } finally {
+    empty.cleanup();
+  }
 });
