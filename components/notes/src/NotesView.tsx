@@ -1,5 +1,6 @@
 import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
-import { useEntities, useSdk } from "@kibo/sdk";
+import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Autosave, createAutosave, type SaveState } from "./autosave";
 import { fr } from "./fr";
@@ -7,6 +8,8 @@ import type { TicketRef } from "./markdown";
 import { NoteDocument } from "./NoteDocument";
 import { type Backlink, type LinkedTicket, NoteLinks } from "./NoteLinks";
 import { NoteList } from "./NoteList";
+import { autoRenameTarget } from "./note-name";
+import { RenameNoteDialog } from "./RenameNoteDialog";
 
 function resolveTarget(target: string, notes: NoteMeta[]): string | null {
   const clean = target.replace(/^\.\//, "");
@@ -70,6 +73,7 @@ function useSearch(query: string, onError: (e: unknown) => void): NoteMeta[] | n
 export function NotesView() {
   const sdk = useSdk();
   const listed = useEntities("note");
+  const readOnly = useReadOnly();
   const ticketList = useEntities("ticket");
   const [info, setInfo] = useState<NotesInfo | null>(null);
   const [query, setQuery] = useState("");
@@ -79,7 +83,11 @@ export function NotesView() {
   const [editing, setEditing] = useState(false);
   const [state, setState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<NoteMeta | null>(null);
+  const [removing, setRemoving] = useState<NoteMeta | null>(null);
   const autosave = useRef<Autosave | null>(null);
+  const listedPaths = useRef<string[]>([]);
+  listedPaths.current = listed.data.map((n) => n.path);
   const notesApi = useRef(sdk.notes);
   notesApi.current = sdk.notes;
 
@@ -130,7 +138,15 @@ export function NotesView() {
       delayMs: 800,
       save: (md, mtime) => notesApi.current.write(selected, md, mtime),
       onState: setState,
-      onSaved: (meta) => setNote((n) => (n && n.path === meta.path ? { ...n, ...meta } : n)),
+      onSaved: (meta) => {
+        setNote((n) => (n && n.path === meta.path ? { ...n, ...meta } : n));
+        const target = autoRenameTarget(meta, listedPaths.current);
+        if (target !== null) {
+          notesApi.current
+            .rename(meta.path, target)
+            .then((renamed) => setSelected(renamed.path), fail(fr.renameFailed));
+        }
+      },
     });
     autosave.current = a;
     void load(selected);
@@ -138,7 +154,7 @@ export function NotesView() {
       autosave.current = null;
       void a.flush().finally(() => a.dispose());
     };
-  }, [selected, load]);
+  }, [selected, load, fail]);
 
   useEffect(() => {
     const current = listed.data.find((n) => n.path === selected);
@@ -159,6 +175,22 @@ export function NotesView() {
     }
   };
 
+  const nextAfter = (path: string): string | null => {
+    const paths = notes.map((n) => n.path);
+    const i = paths.indexOf(path);
+    return paths[i + 1] ?? paths[i - 1] ?? null;
+  };
+
+  const remove = async (meta: NoteMeta) => {
+    const next = nextAfter(meta.path);
+    await sdk.notes.remove(meta.path);
+    if (meta.path !== selected) return;
+    setNote(null);
+    setSelected(next);
+  };
+
+  const byPath = (path: string) => listed.data.find((n) => n.path === path) ?? null;
+
   const open = (path: string) => {
     setEditing(false);
     setSelected(path);
@@ -174,6 +206,9 @@ export function NotesView() {
         onQuery={setQuery}
         onSelect={open}
         onCreate={() => void create()}
+        readOnly={readOnly}
+        onRename={(path) => setRenaming(byPath(path))}
+        onRemove={(path) => setRemoving(byPath(path))}
       />
       <main className="min-w-0 flex-1 overflow-auto">
         {error && (
@@ -211,6 +246,28 @@ export function NotesView() {
         onTicket={(id) => sdk.openTicket(id)}
         onNote={open}
       />
+      {renaming && (
+        <RenameNoteDialog
+          note={renaming}
+          onRenamed={(path) => {
+            setRenaming(null);
+            setSelected(path);
+          }}
+          onClose={() => setRenaming(null)}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.title)}
+          description={fr.removeHelp(removing.path.slice(removing.path.lastIndexOf("/") + 1))}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={() => remove(removing)}
+          describeError={() => fr.removeFailed}
+        />
+      )}
     </div>
   );
 }
