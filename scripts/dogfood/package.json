@@ -1,0 +1,16 @@
+{
+  "name": "@kibo/dogfood",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed": "bun seed-kibo.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2"
+  }
+}

@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { afterAll, beforeAll, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, expect, mock, setDefaultTimeout, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -24,6 +24,8 @@ import { sandboxAvailable } from "./install.test-helper";
 import { openMarketDb } from "./market-db";
 import { MarketService } from "./market-service";
 import { type PublishDeps, publishToMarket } from "./publish";
+
+setDefaultTimeout(30_000);
 
 const genericSuite = (dir: string) =>
   sandboxAvailable

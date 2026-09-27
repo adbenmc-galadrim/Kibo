@@ -12,7 +12,7 @@ import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Component, manifest } from "./index";
+import { Component, kanbanPanel, manifest } from "./index";
 
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const mine = { kind: "human", ref: "adam" } as const;
@@ -37,9 +37,10 @@ const runs = (s: ProjectSnapshot): TicketRun[] => {
 
 test("the board is loaded on demand behind a neutral loading line", async () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  const Board = kanbanPanel();
   const { container } = render(
     <SdkProvider sdk={m.sdk}>
-      <Component />
+      <Board />
     </SdkProvider>,
   );
   const fallback = container.querySelector(LAZY_FALLBACK_SELECTOR);

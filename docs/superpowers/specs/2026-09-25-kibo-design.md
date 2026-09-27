@@ -55,7 +55,7 @@ Chaque sous-système hors MVP aura sa propre spec, puis son propre plan.
 └───────────────────────────────────────────────────────────────┘
 ```
 
-- **Le démon est l'unique porte d'entrée.** Il détient les données, lance les agents et sert l'UI. Tauri n'est qu'une fenêtre. La version web est l'UI servie par le même démon.
+- **Le démon est l'unique porte d'entrée.** Il détient les données, lance les agents et sert l'UI. Tauri n'est qu'une fenêtre. La version web est l'UI servie par le même démon. La fenêtre garde une seule fonction propre : se mettre à jour (spec I).
 - **Plateformes :** macOS et Linux dès le départ.
 
 ### Stack
@@ -328,6 +328,7 @@ Chaque intégration est un adaptateur activé par un composant synchronisé. Les
 - **Sync et multi-utilisateur temps réel** : spec G (serveur de sync Loro, permissions par projet).
 - **Marketplace de composants** : spec H.
 - **Durcissement OS du sandbox** : phase ultérieure (§10).
+- **Mises à jour de l'application de bureau** (updater Tauri, releases GitHub signées) : spec I, `2026-09-27-kibo-mises-a-jour.md`. Seule exception à « l'UI ne parle qu'au démon » : l'UI appelle l'IPC Tauri pour vérifier et installer une mise à jour, sur une capacité accordée à l'origine du démon.
 
 ## 13. Glossaire
 

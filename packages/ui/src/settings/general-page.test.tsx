@@ -16,6 +16,8 @@ test("the general settings hold the application and the kibo command", async () 
   expect(screen.getByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getByText("Langue, démarrage et outils en ligne de commande.")).toBeTruthy();
   expect(screen.getByText("Application")).toBeTruthy();
+  expect(screen.getByText("Mises à jour")).toBeTruthy();
+  expect(screen.getByText("Les mises à jour se gèrent depuis l'application de bureau.")).toBeTruthy();
   expect(screen.getByText("Commande kibo")).toBeTruthy();
   expect(await screen.findByText("Non installée")).toBeTruthy();
 });

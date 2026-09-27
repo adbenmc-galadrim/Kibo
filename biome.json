@@ -14,7 +14,11 @@
       "!apps/desktop/src-tauri/target",
       "!e2e/test-results",
       "!e2e/playwright-report",
-      "!apps/desktop/src-tauri/gen"
+      "!apps/desktop/src-tauri/gen",
+      "!apps/desktop/src-tauri/builtin",
+      "!apps/desktop/src-tauri/binaries",
+      "!apps/desktop/src-tauri/toolchain",
+      "!**/*.bun-build"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 110 },

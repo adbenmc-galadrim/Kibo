@@ -78,3 +78,8 @@ Assistant d'onboarding (rôle → composants conseillés) et génération de com
 Serveur de sync Loro, permissions par projet, multi-utilisateur temps réel (spec G) ; marketplace de composants (spec H) ;
 durcissement OS du sandbox (Landlock ou bubblewrap, profil sandbox macOS) ;
 plusieurs workspaces : création et bascule depuis l'en-tête de la barre latérale (point E6 du plan de phase 4, en attente d'Adam).
+
+## Après v1.0 · Phase 8 (v1.1)
+
+Mises à jour de l'application de bureau par l'updater Tauri et les releases GitHub signées (spec I, plan `2026-09-27-kibo-mises-a-jour.md`) ;
+import du projet Kibo dans Kibo (dogfooding).

@@ -1,11 +1,12 @@
 {
   "name": "@kibo/desktop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "sidecar": "bun scripts/build-sidecar.ts",
     "toolchain": "bun scripts/build-toolchain.ts",
+    "tauri": "tauri",
     "build": "bun run sidecar && bun run toolchain && tauri build",
     "build:debug": "bun run sidecar && bun run toolchain && tauri build --debug --no-bundle",
     "dev": "bun run sidecar && bun run toolchain && tauri dev"

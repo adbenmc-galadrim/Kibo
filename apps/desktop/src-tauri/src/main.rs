@@ -2,7 +2,8 @@
 
 use serde::Deserialize;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::ipc::CapabilityBuilder;
+use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::{
     process::{CommandChild, CommandEvent},
@@ -25,10 +26,26 @@ fn parse_notice(line: &str) -> Option<Result<Notice, serde_json::Error>> {
     line.strip_prefix("KIBO_NOTIFY ").map(serde_json::from_str)
 }
 
+fn ipc_origin(url: &Url) -> String {
+    url.origin().ascii_serialization()
+}
+
+fn updater_capability(daemon_url: &Url) -> CapabilityBuilder {
+    CapabilityBuilder::new("updater")
+        .window("main")
+        .local(false)
+        .remote(ipc_origin(daemon_url))
+        .permission("updater:default")
+        .permission("process:allow-restart")
+        .permission("core:app:allow-version")
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let resource_dir = app.path().resource_dir()?;
             let ui_dir = resource_dir.join("ui");
@@ -77,7 +94,10 @@ fn main() {
                             let Some(url) = line.strip_prefix("KIBO_READY ") else {
                                 continue;
                             };
-                            let url = url.parse().expect("daemon printed an invalid url");
+                            let url: Url = url.parse().expect("daemon printed an invalid url");
+                            handle
+                                .add_capability(updater_capability(&url))
+                                .expect("cannot grant the updater to the daemon origin");
                             WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url))
                                 .title("Kibo")
                                 .inner_size(1440.0, 900.0)
@@ -134,5 +154,11 @@ mod tests {
     #[test]
     fn reports_invalid_json() {
         assert!(parse_notice("KIBO_NOTIFY {").unwrap().is_err());
+    }
+
+    #[test]
+    fn grants_the_updater_to_the_daemon_origin_only() {
+        let url: Url = "http://127.0.0.1:4317/?token=abc#/settings".parse().unwrap();
+        assert_eq!(ipc_origin(&url), "http://127.0.0.1:4317");
     }
 }

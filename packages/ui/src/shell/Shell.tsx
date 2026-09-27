@@ -32,6 +32,7 @@ import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
+import { useUpdateSchedule } from "./use-update-schedule";
 import { inTauri, openWindow, renameWorkspace } from "./workspace-actions";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
@@ -41,6 +42,7 @@ export function Shell({ viewer, notifications }: Props) {
   const tabs = useTabs();
   const agents = useAgents();
   useRunNotifications(agents, notifications === "browser");
+  useUpdateSchedule();
   if (!projects || !tabs) return null;
   return (
     <>
