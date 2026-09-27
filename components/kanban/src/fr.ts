@@ -1,4 +1,5 @@
 export const fr = {
+  lazy: { loading: "Chargement du Kanban…", failed: "Impossible de charger le Kanban.", retry: "Réessayer" },
   filter: { mineAndAgents: "Moi + agents", all: "Tous" },
   counter: (shown: number, total: number) => `${shown} / ${total} tickets`,
   newTicketIn: (status: string) => `Nouveau ticket dans ${status}`,

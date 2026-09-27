@@ -19,6 +19,7 @@ export type BackendsDeps = {
   verify(ref: string): Promise<void>;
   onCall: CallHandler;
   processCommand?: string[];
+  allowUnsandboxed?: () => boolean;
   hostOptions?: Partial<HostOptions>;
 };
 export type ActionRequest = {
@@ -68,7 +69,11 @@ export function createBackends(deps: BackendsDeps): Backends {
     const host =
       source.trust === "trusted"
         ? createWorkerHost(opts)
-        : createProcessHost({ ...opts, ...(deps.processCommand && { command: deps.processCommand }) });
+        : createProcessHost({
+            ...opts,
+            ...(deps.processCommand && { command: deps.processCommand }),
+            ...(deps.allowUnsandboxed && { allowUnsandboxed: deps.allowUnsandboxed }),
+          });
     hosts.set(ref, { host, trust: source.trust });
     return host;
   };

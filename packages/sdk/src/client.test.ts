@@ -272,3 +272,50 @@ test("phase 7 events reach subscribeEvents and never reload a project", async ()
   offEvents();
   server.stop(true);
 });
+
+test("pairWithCode posts the code, fails on 401 and reports rate limiting", async () => {
+  const seen: { url: string; body: string }[] = [];
+  const statuses = [204, 401, 429];
+  const recording = (async (url: string, init: RequestInit) => {
+    seen.push({ url, body: String(init.body) });
+    return new Response(null, { status: statuses.shift() ?? 500 });
+  }) as unknown as typeof fetch;
+  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: recording });
+  await client.pairWithCode("K7Q4M2");
+  await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "RATE_LIMITED" });
+  expect(seen[0]).toEqual({ url: "http://127.0.0.1:1/api/pair-code", body: '{"code":"K7Q4M2"}' });
+});
+
+test("a revoked session (close 4401) stops the reconnection and reports it", async () => {
+  let upgrades = 0;
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => {
+      upgrades += 1;
+      return srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 });
+    },
+    websocket: {
+      open(ws) {
+        ws.close(4401, "session revoked");
+      },
+      message() {},
+    },
+  });
+  const unauthorized = Promise.withResolvers<void>();
+  let reports = 0;
+  const client = createClient({
+    baseUrl: `http://127.0.0.1:${server.port}`,
+    onUnauthorized: () => {
+      reports += 1;
+      unauthorized.resolve();
+    },
+  });
+  const off = client.subscribeEvents(() => {});
+  await unauthorized.promise;
+  await Bun.sleep(1200);
+  expect([upgrades, reports, client.online()]).toEqual([1, 1, false]);
+  off();
+  server.stop(true);
+});

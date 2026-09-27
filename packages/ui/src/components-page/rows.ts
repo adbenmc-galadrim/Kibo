@@ -3,6 +3,7 @@ import {
   type ComponentSummary,
   type ComponentVersionSummary,
   compareSemver,
+  type MarketComponentStatus,
 } from "@kibo/schema";
 import { BUILTIN_COMPONENTS } from "../registry";
 
@@ -21,6 +22,8 @@ export type ComponentRow = {
   projects: number;
   used: boolean;
   summary: ComponentVersionSummary | null;
+  revoked: ComponentVersionSummary["revoked"];
+  market: MarketComponentStatus | null;
 };
 
 const counts = (usages: ComponentVersionSummary["usages"]) => ({
@@ -47,11 +50,13 @@ function builtinRows(components: ComponentSummary[]): ComponentRow[] {
       origin: "kibo",
       ...counts(usages),
       summary: null,
+      revoked: null,
+      market: null,
     };
   });
 }
 
-function installedRows(components: ComponentSummary[]): ComponentRow[] {
+function installedRows(components: ComponentSummary[], statuses: MarketComponentStatus[]): ComponentRow[] {
   return components
     .filter((c) => !c.builtin)
     .flatMap((c) =>
@@ -66,12 +71,17 @@ function installedRows(components: ComponentSummary[]): ComponentRow[] {
         origin: v.origin,
         ...counts(v.usages),
         summary: v,
+        revoked: v.revoked,
+        market: statuses.find((s) => s.id === c.id && s.version === v.version) ?? null,
       })),
     );
 }
 
-export function componentRows(components: ComponentSummary[]): ComponentRow[] {
-  return [...builtinRows(components), ...installedRows(components)].sort(
+export function componentRows(
+  components: ComponentSummary[],
+  statuses: MarketComponentStatus[] = [],
+): ComponentRow[] {
+  return [...builtinRows(components), ...installedRows(components, statuses)].sort(
     (a, b) => a.title.localeCompare(b.title, "fr") || compareSemver(b.version, a.version),
   );
 }

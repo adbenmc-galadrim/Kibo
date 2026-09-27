@@ -10,7 +10,9 @@ import {
   isReservedCommand,
   KiboError,
   type KiboErrorCode,
+  type PresencePeer,
   type ProjectCommand,
+  type ProjectSyncInfo,
   permissionList,
   permissionOfCall,
   splitRef,
@@ -44,6 +46,8 @@ export type GateHandlers = {
   ): Promise<unknown>;
   notes(projectId: string, call: NotesCall): Promise<unknown>;
   mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
+  presence(projectId: string): Promise<PresencePeer[]>;
+  sharing(projectId: string): Promise<ProjectSyncInfo>;
 };
 export type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
@@ -99,6 +103,10 @@ function dispatch(
     case "mcp.read":
     case "mcp.import":
       return h.mcp(projectId, inst.id, call);
+    case "presence.list":
+      return h.presence(projectId);
+    case "sharing.get":
+      return h.sharing(projectId);
     default:
       return h.notes(projectId, call);
   }

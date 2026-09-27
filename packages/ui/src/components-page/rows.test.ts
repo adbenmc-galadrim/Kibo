@@ -26,6 +26,8 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           tampered: false,
           manifest: null,
           usages: [usage("p1", "a"), usage("p1", "b"), usage("p2", "c")],
+          revoked: null,
+          backend: false,
         },
       ],
     },
@@ -43,6 +45,8 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           tampered: false,
           manifest: null,
           usages: [usage("p1", "a")],
+          revoked: null,
+          backend: false,
         },
         {
           version: "0.4.0",
@@ -53,6 +57,8 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           tampered: false,
           manifest: null,
           usages: [],
+          revoked: null,
+          backend: false,
         },
       ],
     },
@@ -67,5 +73,40 @@ test("built-ins come from the UI registry, installed versions one row each, sort
     ["PR en attente", "0.3.0", "sandboxed", 1, 1, true],
     ["Source MCP", "1.0.0", "builtin", 0, 0, false],
     ["Tickets", "1.0.0", "builtin", 0, 0, false],
+  ]);
+});
+
+test("a marketplace version gets its status by id and version, and carries its revocation", () => {
+  const version = (v: string, revoked: { reason: string; at: number } | null) => ({
+    version: v,
+    hash: "c".repeat(64),
+    trust: null,
+    origin: "marketplace" as const,
+    active: false,
+    tampered: false,
+    manifest: null,
+    usages: [],
+    revoked,
+    backend: false,
+  });
+  const summaries: ComponentSummary[] = [
+    {
+      id: "burndown",
+      title: "Burndown",
+      builtin: false,
+      versions: [version("0.1.0", null), version("0.2.0", { reason: "Faille", at: 3 })],
+    },
+  ];
+  const status = {
+    id: "burndown",
+    version: "0.1.0",
+    sourceId: "equipe",
+    sourceName: "Équipe",
+    updateAvailable: "0.3.0",
+  };
+  const rows = componentRows(summaries, [status]).filter((r) => r.id === "burndown");
+  expect(rows.map((r) => [r.version, r.market, r.revoked])).toEqual([
+    ["0.2.0", null, { reason: "Faille", at: 3 }],
+    ["0.1.0", status, null],
   ]);
 });

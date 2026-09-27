@@ -3,8 +3,14 @@ import { resolveToolchain, type Toolchain } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
 import { type Parsed, parseArgs } from "./args";
 import { startDevServer } from "./commands/dev";
+import { type MarketCliDeps, runMarketCommand } from "./commands/market";
 import { type ComponentKind, newCommand } from "./commands/new";
-import { type PublishStrategy, publishCommand } from "./commands/publish";
+import {
+  connectOrExplain,
+  marketPublishCommand,
+  type PublishStrategy,
+  publishCommand,
+} from "./commands/publish";
 import { componentDir, testCommand } from "./commands/test";
 import { fr } from "./fr";
 
@@ -50,25 +56,50 @@ async function dispatch(command: string, target: string, flags: Parsed["flags"],
     case "dev":
       return devCommand(target, flags, io);
     case "publish":
-      return publishCommand(target, strategyOf(flags), io);
+      return typeof flags.to === "string"
+        ? marketPublishCommand(
+            target,
+            flags.to,
+            typeof flags.publisher === "string" ? flags.publisher : null,
+            io,
+          )
+        : publishCommand(target, strategyOf(flags), io);
     default:
       io.err(fr.usage);
       return 2;
   }
 }
 
-export async function runCli(argv: string[], io: CliIo): Promise<number> {
-  const { positional, flags } = parseArgs(argv);
-  const [scope, command, target] = positional;
-  if (scope !== "component" || !command || !target) {
-    io.err(fr.usage);
-    return 2;
-  }
+function marketDeps(io: CliIo): MarketCliDeps {
+  return {
+    daemon: async () => {
+      const client = await connectOrExplain(io);
+      return client && { exportKpkg: (input) => client.rpc({ method: "exportKpkg", ...input }) };
+    },
+    out: io.out,
+    err: io.err,
+    now: () => new Date(),
+  };
+}
+
+async function reportingErrors(io: CliIo, run: () => Promise<number>): Promise<number> {
   try {
-    return await dispatch(command, target, flags, io);
+    return await run();
   } catch (e) {
     if (!(e instanceof KiboError)) throw e;
     io.err(fr.error(e.code, e.detail));
     return 1;
   }
+}
+
+export async function runCli(argv: string[], io: CliIo): Promise<number> {
+  const { positional, flags } = parseArgs(argv);
+  const [scope, command, target] = positional;
+  if (scope === "market")
+    return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
+  if (scope !== "component" || !command || !target) {
+    io.err(fr.usage);
+    return 2;
+  }
+  return reportingErrors(io, () => dispatch(command, target, flags, io));
 }

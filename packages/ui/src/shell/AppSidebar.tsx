@@ -30,6 +30,8 @@ import {
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
+import { canEdit } from "../state/access";
+import { JoinProjectEntry, ProjectMenu } from "./lazy-screens";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type Props = {
@@ -47,6 +49,8 @@ type Props = {
   onSearch(): void;
   onNewProject(): void;
   onNewPage(parentId: string | null): void;
+  onShare(projectId: string): void;
+  onJoin(): void;
 };
 
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
@@ -56,6 +60,15 @@ type Link = (target: TabTarget | null) => {
   onAuxClick(e: MouseEvent): void;
 };
 const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen });
+const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
+  "general",
+  "appearance",
+  "domains",
+  "integrations",
+  "security",
+  "sources",
+  "sync",
+]);
 
 type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };
 
@@ -93,6 +106,7 @@ function AgentsEntry({ screen, agents, link }: AgentsEntryProps) {
 
 export function AppSidebar(p: Props) {
   const { active, activeTarget, screen, changesCount, onOpen } = p;
+  const editable = active !== null && canEdit(active);
   const onTarget = (kind: TabTarget["kind"], projectId: string) =>
     activeTarget !== null &&
     activeTarget.kind !== "screen" &&
@@ -203,11 +217,19 @@ export function AppSidebar(p: Props) {
                     <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
                     <span>{project.name}</span>
                   </SidebarMenuButton>
+                  <ProjectMenu
+                    name={project.name}
+                    current={current}
+                    shifted={current && editable}
+                    onShare={() => p.onShare(project.id)}
+                  />
                   {current && (
                     <>
-                      <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
-                        <Plus />
-                      </SidebarMenuAction>
+                      {editable && (
+                        <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
+                          <Plus />
+                        </SidebarMenuAction>
+                      )}
                       {(children(null).length > 0 || changesCount !== null) && (
                         <SidebarMenuSub>
                           {renderPages(project.id, null)}
@@ -219,6 +241,7 @@ export function AppSidebar(p: Props) {
                 </SidebarMenuItem>
               );
             })}
+            <JoinProjectEntry onJoin={p.onJoin} />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
@@ -232,7 +255,7 @@ export function AppSidebar(p: Props) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              isActive={screen === "general" || screen === "domains" || screen === "integrations"}
+              isActive={screen !== null && SETTINGS_SCREENS.has(screen)}
               {...link(screenTarget("general"))}
             >
               <Settings />

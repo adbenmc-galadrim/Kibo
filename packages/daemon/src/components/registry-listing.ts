@@ -57,6 +57,8 @@ function builtinSummary(projects: ProjectRef[], id: string): ComponentSummary {
         tampered: false,
         manifest: null,
         usages,
+        revoked: null,
+        backend: false,
       }),
     ),
   };
@@ -73,6 +75,7 @@ function installedSummary(ctx: InstalledContext, id: string, entry: RegistryEntr
     .sort((a, b) => compareSemver(a.version, b.version))
     .map((v): ComponentVersionSummary => {
       const tampered = ctx.isTampered(formatRef(id, v.version));
+      const stored = ctx.store.get(id, v.version);
       return {
         version: v.version,
         hash: v.hash,
@@ -80,8 +83,10 @@ function installedSummary(ctx: InstalledContext, id: string, entry: RegistryEntr
         origin: v.origin,
         active: isActive(v) && !tampered,
         tampered,
-        manifest: ctx.store.get(id, v.version)?.manifest ?? null,
+        manifest: stored?.manifest ?? null,
         usages: findUsages(ctx.projects, id, v.version).map(withoutVersion),
+        revoked: v.revoked ?? null,
+        backend: stored?.build["server.js"] !== undefined,
       };
     });
   return { id, title: entry.title, builtin: false, versions };

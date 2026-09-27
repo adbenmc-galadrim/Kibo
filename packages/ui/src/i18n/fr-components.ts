@@ -204,5 +204,6 @@ export const frComponents = {
     SANDBOX_UNAVAILABLE:
       "Aucun bac à sable système disponible : le backend de ce composant ne peut pas démarrer.",
     PERMISSION_DENIED: "Ce composant n'a pas la permission de faire cela.",
+    FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
   },
 };

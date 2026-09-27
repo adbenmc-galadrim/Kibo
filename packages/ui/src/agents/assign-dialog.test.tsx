@@ -187,3 +187,55 @@ test("system profiles are never offered for a ticket", () => {
   render(<AssignDialog project={kiboProject()} ticketId="t14" config={onlySystem} onClose={() => {}} />);
   expect(screen.getByText("Crée d'abord un profil d'agent dans la page Agents.")).toBeTruthy();
 });
+
+const provisional = (): TicketView => ({
+  id: "p9",
+  key: null,
+  pendingSeq: 1,
+  keyLabel: "KIB-…",
+  title: "Clé en attente",
+  description: "",
+  statusId: "todo",
+  blockedReason: null,
+  domainId: null,
+  assignee: null,
+  parentId: null,
+  externalRefs: [],
+  progress: { done: 0, total: 0 },
+  waitingOn: [],
+});
+
+test("a ticket without its key cannot be sent to an agent", async () => {
+  const project = kiboProject();
+  render(
+    <AssignDialog
+      project={{ ...project, tickets: [...project.tickets, provisional()] }}
+      ticketId="p9"
+      config={configFixture()}
+      onClose={() => {}}
+    />,
+  );
+  const submit = screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement;
+  expect(submit.disabled).toBe(true);
+  expect(submit.closest("[data-key-required]")?.getAttribute("title")).toBe(
+    "Clé attribuée à la prochaine synchronisation",
+  );
+  await Bun.sleep(10);
+  expect(calls.filter((c) => c.method === "previewAssign")).toEqual([]);
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("the launcher does not offer tickets waiting for their key", async () => {
+  const project = kiboProject();
+  render(
+    <AssignDialog
+      project={{ ...project, tickets: [provisional(), ...project.tickets] }}
+      ticketId={null}
+      config={configFixture()}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByRole("combobox", { name: "Ticket" }).textContent).not.toContain("Clé en attente");
+  await waitFor(() => expect(calls.some((c) => c.method === "previewAssign")).toBe(true));
+  expect(calls.some((c) => c.method === "previewAssign" && c.ticketId === "p9")).toBe(false);
+});

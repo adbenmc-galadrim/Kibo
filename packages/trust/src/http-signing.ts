@@ -37,7 +37,7 @@ export async function signRequest(input: {
   const date = String(input.now);
   const nonce = toBase64(crypto.getRandomValues(new Uint8Array(16)));
   const payload = httpSigningPayload({
-    method: input.method,
+    method: input.method.toUpperCase(),
     path: input.path,
     date,
     nonce,

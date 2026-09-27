@@ -181,7 +181,7 @@ export function createSyncEngine(deps: EngineDeps): SyncEngine {
       host.projects().flatMap((p) =>
         host
           .snapshot(p.id)
-          .bindings.filter((b) => b.runner === host.user)
+          .bindings.filter((b) => b.runner === host.identity(p.id))
           .map((b) => ({ projectId: p.id, bindingId: b.id })),
       ),
   };

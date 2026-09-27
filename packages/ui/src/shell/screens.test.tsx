@@ -17,13 +17,20 @@ const environment: Environment = {
   github: { connected: false },
 };
 
+const isolated = { kind: "sandbox-exec", available: true, reason: null, fix: null, allowUnsandboxed: false };
 const none = () => () => {};
 mock.module("../api", () => ({
   client: {
     pair: () => Promise.resolve(),
+    pairWithCode: () => Promise.resolve(),
     rpc: async (req: { method: string }) =>
-      req.method === "listComponents" || req.method === "listDrafts" ? [] : environment,
+      req.method === "listComponents" || req.method === "listDrafts"
+        ? []
+        : req.method === "getSandboxStatus"
+          ? isolated
+          : environment,
     subscribe: none,
+    subscribeEvents: none,
     subscribeAi: none,
     onRunChanged: none,
     onConnection: none,
@@ -96,7 +103,7 @@ test("PairingScreen shows the logo, a centred title and the security notice", ()
   render(<PairingScreen onPaired={() => {}} />);
   expect(screen.getByRole("img", { name: "Kibo" })).toBeTruthy();
   expect(screen.getByText("Appairer ce navigateur")).toBeTruthy();
-  expect(screen.getByText(/n'est jamais envoyé ailleurs/)).toBeTruthy();
+  expect(screen.getByText(/révocable dans Paramètres › Sécurité/)).toBeTruthy();
 });
 
 const contentProps = {

@@ -1,7 +1,9 @@
 import type { Domain, FileRef, ProjectSnapshot } from "@kibo/schema";
+import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { KeyRequired } from "../shell/KeyRequired";
 import { GithubLinkNote, GithubRefs } from "../shell/sheet/lazy-sections";
 import { TicketDetail } from "../shell/TicketDetail";
 
@@ -20,21 +22,23 @@ export function TicketTab({ project, ticketId, domains, onAssign, onOpenFile }: 
     <article className="mx-auto grid max-w-3xl gap-4 py-8">
       <header className="grid gap-1 px-4">
         <div className="flex items-center gap-2">
-          <p className="font-mono text-xs text-muted-foreground">{t.keyLabel}</p>
+          <TicketKeyLabel ticket={t} className="font-mono text-xs text-muted-foreground" />
           <GithubRefs ticket={t} />
         </div>
         <h1 className="text-lg font-semibold">{t.title}</h1>
         <GithubLinkNote ticket={t} />
         {onAssign && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2 w-fit border-brand/50 text-brand-strong dark:text-brand"
-            onClick={() => onAssign(t.id)}
-          >
-            <Bot />
-            {fr.ticket.assignAgent}
-          </Button>
+          <KeyRequired ticket={t}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 w-fit border-brand/50 text-brand-strong dark:text-brand"
+              onClick={() => onAssign(t.id)}
+            >
+              <Bot />
+              {fr.ticket.assignAgent}
+            </Button>
+          </KeyRequired>
         )}
       </header>
       <TicketDetail project={project} ticket={t} domains={domains} onOpenFile={onOpenFile} />

@@ -1,4 +1,10 @@
-import { type EntityType, KiboError } from "@kibo/schema";
+import {
+  type EntityType,
+  KiboError,
+  type MemberInfo,
+  type PresencePeer,
+  type ProjectSyncInfo,
+} from "@kibo/schema";
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import type { EntityMap, KiboSdk } from "./types";
 
@@ -41,4 +47,57 @@ export function useEntities<T extends EntityType>(type: T): EntitiesState<T> {
     };
   }, [sdk, type]);
   return state;
+}
+
+const EMPTY_SHARING: ProjectSyncInfo = {
+  shared: false,
+  keyAllocator: "local",
+  role: null,
+  access: "write",
+  members: [],
+};
+
+type Read<T> = (sdk: KiboSdk) => Promise<T>;
+type Watch = (sdk: KiboSdk, listener: () => void) => () => void;
+
+function useSdkValue<T>(read: Read<T>, watch: Watch, initial: T): T {
+  const sdk = useSdk();
+  const [value, setValue] = useState<T>(initial);
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      read(sdk).then(
+        (v) => alive && setValue(v),
+        (e: unknown) => console.error(`[kibo-sdk] ${sdk.instanceId}: cannot read sharing or presence`, e),
+      );
+    void load();
+    const off = watch(sdk, () => void load());
+    return () => {
+      alive = false;
+      off();
+    };
+  }, [sdk, read, watch]);
+  return value;
+}
+
+const readPresence: Read<PresencePeer[]> = (sdk) => sdk.presence.list();
+const watchPresence: Watch = (sdk, l) => sdk.presence.subscribe(l);
+const readSharing: Read<ProjectSyncInfo> = (sdk) => sdk.sharing();
+const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
+const NO_PEERS: PresencePeer[] = [];
+
+export function usePresence(): PresencePeer[] {
+  return useSdkValue(readPresence, watchPresence, NO_PEERS);
+}
+
+export function useSharing(): ProjectSyncInfo {
+  return useSdkValue(readSharing, watchProject, EMPTY_SHARING);
+}
+
+export function useMembers(): MemberInfo[] {
+  return useSharing().members;
+}
+
+export function useReadOnly(): boolean {
+  return useSharing().access !== "write";
 }

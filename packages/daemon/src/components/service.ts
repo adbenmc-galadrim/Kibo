@@ -1,15 +1,24 @@
 import type { Database } from "bun:sqlite";
 import { listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
-import { type Instance, KiboError, type TicketRun, type ValidationReport } from "@kibo/schema";
+import {
+  type Instance,
+  KiboError,
+  type PresencePeer,
+  type ProjectSyncInfo,
+  type TicketRun,
+  type ValidationReport,
+} from "@kibo/schema";
+import type { CommandHub } from "../command-path";
 import type { Docs } from "../docs";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
 import { createBackends } from "./backends";
+import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
-import { createEventLog, ensureEventsTable } from "./events";
+import { createEventLog, type EventLog, ensureEventsTable } from "./events";
 import { createGate } from "./gate";
 import { createGateHandlers } from "./gate-handlers";
 import { createInflight } from "./inflight";
@@ -21,7 +30,7 @@ import { createPublishLock, type PublishLock } from "./publish-lock";
 import { createQuotas } from "./quotas";
 import { createRegistryService, type RegistryService } from "./registry-service";
 import type { AssetLookup } from "./sandbox-server";
-import { createComponentStore } from "./store";
+import { type ComponentStore, createComponentStore } from "./store";
 import { updateInstance } from "./update";
 import { createUsageTracker, jobTargets } from "./usage";
 
@@ -30,13 +39,17 @@ export type ComponentsDeps = {
   toolchain: Toolchain;
   db: Database;
   docs: Docs;
+  commands: Pick<CommandHub, "intercept">;
   sandboxOrigin(): string;
   runs(projectId: string): TicketRun[];
   build?: (srcDir: string, t: Toolchain) => Promise<BuildOutput>;
   validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
   processCommand?: string[];
+  allowUnsandboxed?: () => boolean;
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
+  presence?: (projectId: string) => PresencePeer[];
+  sharing?: (projectId: string) => ProjectSyncInfo;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -46,8 +59,10 @@ export type ComponentsService = {
   handle(req: ComponentRequest): Promise<unknown>;
   assets: AssetLookup;
   registry: RegistryService;
+  store: ComponentStore;
   publisher: Publisher;
   publishLock: PublishLock;
+  events: EventLog;
   usageChanged(): void;
   start(): Promise<void>;
   stop(): Promise<void>;
@@ -63,6 +78,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   const inflight = createInflight();
   const publishLock = createPublishLock();
   let stopped: Promise<void> | null = null;
+  let offStamp: (() => void) | null = null;
   ensureEventsTable(deps.db);
   ensureSettingsTable(deps.db);
   ensureNotesTables(deps.db);
@@ -85,7 +101,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     db: deps.db,
     home: deps.home,
     project: (id) => {
-      const { meta } = readProject(docs.project(id));
+      const meta = docs.projectMeta(id);
       return { id: meta.id, key: meta.key, folder: meta.folder };
     },
     onChange: (id) => docs.emit({ projectId: id }),
@@ -116,6 +132,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       runs: deps.runs,
       ...(deps.net && { net: deps.net }),
       ...(deps.integrations && { integrations: deps.integrations }),
+      ...(deps.presence && { presence: deps.presence }),
+      ...(deps.sharing && { sharing: deps.sharing }),
     }),
   });
 
@@ -124,6 +142,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     verify: (ref) => inflight.track(registry.verify(ref)),
     onCall: (projectId, instanceId, call) => inflight.track(gate.call(projectId, instanceId, call)),
     ...(deps.processCommand && { processCommand: deps.processCommand }),
+    ...(deps.allowUnsandboxed && { allowUnsandboxed: deps.allowUnsandboxed }),
   });
 
   const usage = createUsageTracker({ projects, backends });
@@ -141,12 +160,15 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   };
 
   const update = async (projectId: string, instanceId: string, to: string) => {
+    docs.assertWritable(projectId);
     const inst = await updateInstance(
       {
         doc: (id) => docs.project(id),
+        assertWritable: (id) => docs.assertWritable(id),
         persist: (id) => docs.save(id),
         manifestOf: (ref) => registry.manifestOf(ref),
         migrate: (ref, req) => backends.migrate(ref, req),
+        approvedHash: (ref) => approvedHashOf(docs.workspace, ref),
       },
       projectId,
       instanceId,
@@ -239,6 +261,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   };
 
   const stopAll = async () => {
+    offStamp?.();
     jobs.stop();
     backends.stopAll();
     shutdown.abort();
@@ -251,11 +274,14 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     handle,
     assets,
     registry,
+    store,
     publisher,
     publishLock,
+    events,
     usageChanged,
     afterCommand: () => usageChanged(),
     async start() {
+      offStamp = deps.commands.intercept(stampComponentHash(docs.workspace));
       await registry.verifyAll();
       for (const id of docs.projectIds()) await notes.refresh(id).catch(log(`notes scan failed for ${id}`));
       usageChanged();

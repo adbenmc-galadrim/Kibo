@@ -44,3 +44,14 @@ test("the demo data matches design/donnees-fictives.md", async () => {
     1, 2,
   ]);
 });
+
+test("the demo data seeds a shared project whose keys are still provisional", async () => {
+  const m = createMockSdk(
+    { id: "probe", version: "0.1.0", kind: "view", title: "Probe", reads: ["ticket", "link"], writes: [] },
+    { shared: true, seed: (run) => void seedDemo(run) },
+  );
+  const tickets = await m.sdk.list("ticket");
+  expect(tickets).toHaveLength(22);
+  expect(tickets.every((t) => t.key === null)).toBe(true);
+  expect((await m.sdk.list("link")).filter((l) => l.type === "blocks")).toHaveLength(6);
+});

@@ -5,6 +5,8 @@ import {
   type GrantedPermissions,
   grantedOf,
   KiboError,
+  type MarketInstallResult,
+  type MarketTrustInfo,
   type RegistryVersion,
   shortHash,
 } from "@kibo/schema";
@@ -18,10 +20,13 @@ import {
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
+import { TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { permissionLines } from "../lib/permission-lines";
+import { isRemoteView } from "../lib/remote-view";
+import { MarketSubtitle } from "./MarketSubtitle";
 
 export type TrustTarget = {
   id: string;
@@ -30,7 +35,20 @@ export type TrustTarget = {
   hash: string;
   origin: ComponentOrigin;
   permissions: GrantedPermissions;
+  market?: MarketTrustInfo | null;
 };
+
+export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
+  return {
+    id: r.id,
+    title: r.title,
+    version: r.version,
+    hash: r.hash,
+    origin: "marketplace",
+    permissions: r.permissions,
+    market: r.market,
+  };
+}
 
 export function trustTargetOf(id: string, title: string, v: ComponentVersionSummary): TrustTarget | null {
   if (!v.hash || !v.manifest) return null;
@@ -52,9 +70,12 @@ type Props = {
   onApproved: (v: RegistryVersion) => void;
   approve?: (trust: ApprovableTrust) => Promise<RegistryVersion>;
   onCloseAutoFocus?: (event: Event) => void;
+  remote?: boolean;
 };
 
-function LevelCard({ value, title, help }: { value: ApprovableTrust; title: string; help: string }) {
+type LevelProps = { value: ApprovableTrust; title: string; help: string; warning?: string | null };
+
+function LevelCard({ value, title, help, warning }: LevelProps) {
   const id = useId();
   return (
     <label
@@ -65,14 +86,26 @@ function LevelCard({ value, title, help }: { value: ApprovableTrust; title: stri
       <span className="grid gap-1">
         <span className="text-sm font-medium leading-none">{title}</span>
         <span className="text-xs text-muted-foreground">{help}</span>
+        {warning && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
+            {warning}
+          </span>
+        )}
       </span>
     </label>
   );
 }
 
-function PermissionList({ permissions }: { permissions: GrantedPermissions }) {
+export function PermissionList({
+  permissions,
+  framed = true,
+}: {
+  permissions: GrantedPermissions;
+  framed?: boolean;
+}) {
   return (
-    <ul className="grid gap-3 rounded-lg border p-4">
+    <ul className={framed ? "grid gap-3 rounded-lg border p-4" : "grid gap-3"}>
       {permissionLines(permissions).map((line) => (
         <li key={line.title} className="flex items-start gap-3">
           <line.icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -86,6 +119,13 @@ function PermissionList({ permissions }: { permissions: GrantedPermissions }) {
   );
 }
 
+function failureOf(e: unknown): string {
+  if (!(e instanceof KiboError)) return fr.trust.failed;
+  if (e.code === "HASH_MISMATCH") return fr.trust.hashMismatch;
+  if (e.code === "FORBIDDEN") return fr.componentErrors.FORBIDDEN;
+  return fr.trust.failed;
+}
+
 export function TrustDialog({
   target,
   mode,
@@ -94,6 +134,7 @@ export function TrustDialog({
   onApproved,
   approve: delegate,
   onCloseAutoFocus,
+  remote = isRemoteView(),
 }: Props) {
   const t = fr.trust;
   const [level, setLevel] = useState<ApprovableTrust>("sandboxed");
@@ -116,7 +157,7 @@ export function TrustDialog({
       onOpenChange(false);
     } catch (e) {
       if (!(e instanceof KiboError)) console.error(e);
-      setError(e instanceof KiboError && e.code === "HASH_MISMATCH" ? t.hashMismatch : t.failed);
+      setError(failureOf(e));
     } finally {
       setBusy(false);
     }
@@ -126,7 +167,13 @@ export function TrustDialog({
       <DialogContent className="sm:max-w-xl" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{t.title(target.title, target.version)}</DialogTitle>
-          <DialogDescription>{t.subtitle(t.origin[target.origin], shortHash(target.hash))}</DialogDescription>
+          <DialogDescription asChild={Boolean(target.market)}>
+            {target.market ? (
+              <MarketSubtitle market={target.market} />
+            ) : (
+              t.subtitle(t.origin[target.origin], shortHash(target.hash))
+            )}
+          </DialogDescription>
         </DialogHeader>
         <p className="text-sm font-medium">{t.asks}</p>
         <PermissionList permissions={target.permissions} />
@@ -137,9 +184,15 @@ export function TrustDialog({
           className="grid gap-2"
         >
           <LevelCard value="sandboxed" title={t.sandboxed} help={t.sandboxedHelp} />
-          <LevelCard value="trusted" title={t.trusted} help={t.trustedHelp} />
+          <LevelCard
+            value="trusted"
+            title={t.trusted}
+            help={t.trustedHelp}
+            warning={target.market ? fr.market.fromMarketplace : null}
+          />
         </RadioGroup>
         <p className="text-xs text-muted-foreground">{t.footer}</p>
+        {remote && <p className="text-sm text-muted-foreground">{fr.componentErrors.FORBIDDEN}</p>}
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -149,7 +202,7 @@ export function TrustDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t.refuse}
           </Button>
-          <Button disabled={busy} onClick={() => void approve()}>
+          <Button disabled={busy || remote} onClick={() => void approve()}>
             {mode === "approveAndAdd" ? t.approveAndAdd : t.approve}
           </Button>
         </DialogFooter>

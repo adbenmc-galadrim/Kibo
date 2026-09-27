@@ -4,6 +4,7 @@ import { ShieldAlert, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { TrustDialog, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { OtherVersionMenu } from "./OtherVersionMenu";
 
 type Props = {
   id: string;
@@ -12,9 +13,12 @@ type Props = {
   summary: ComponentVersionSummary | null;
   tampered: boolean;
   compact: boolean;
+  projectId: string;
+  instanceId: string;
+  others: string[];
 };
 
-export function PendingTrust({ id, title, version, summary, tampered, compact }: Props) {
+export function PendingTrust({ id, title, version, summary, tampered, compact, ...change }: Props) {
   const i = fr.instance;
   const [open, setOpen] = useState(false);
   const target = summary ? trustTargetOf(id, title, summary) : null;
@@ -28,10 +32,23 @@ export function PendingTrust({ id, title, version, summary, tampered, compact }:
         <p className="font-medium">{i.pendingTitle}</p>
         <p className="text-sm text-muted-foreground">{i.pendingHelp(title, version)}</p>
         {tampered && <p className="text-sm text-muted-foreground">{i.pendingChanged}</p>}
-        <Button size="sm" variant="outline" disabled={tampered || !target} onClick={() => setOpen(true)}>
+        {summary?.revoked && (
+          <p className="text-sm text-destructive">{fr.market.authRevoked(summary.revoked.reason)}</p>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={tampered || !target || Boolean(summary?.revoked)}
+          onClick={() => setOpen(true)}
+        >
           <ShieldCheck aria-hidden />
           {i.review}
         </Button>
+        <OtherVersionMenu
+          projectId={change.projectId}
+          instanceId={change.instanceId}
+          versions={change.others}
+        />
       </div>
       {open && target && (
         <TrustDialog

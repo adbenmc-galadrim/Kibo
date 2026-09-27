@@ -1,6 +1,6 @@
 export type Parsed = { positional: string[]; flags: Record<string, string | true> };
 
-const VALUED = new Set(["kind", "port"]);
+const VALUED = new Set(["kind", "port", "to", "publisher", "out", "dir", "key", "id", "name", "verify"]);
 
 export function parseArgs(argv: string[]): Parsed {
   const positional: string[] = [];

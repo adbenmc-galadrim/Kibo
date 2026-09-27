@@ -13,6 +13,7 @@ import {
   ContextMenuTrigger,
 } from "@kibo/sdk/ui/context-menu";
 import { AppWindow, Copy, Pin, PinOff, Plus, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { WorkspaceTile } from "../shell/WorkspaceMark";
 import type { TabDescription } from "./tab-title";
@@ -26,6 +27,7 @@ type Props = {
   onNewTab(): void;
   onOpenWindow: ((target: TabTarget) => void) | null;
   error: string | null;
+  trailing?: ReactNode;
 };
 
 type ItemProps = {
@@ -155,7 +157,16 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
   );
 }
 
-export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWindow, error }: Props) {
+export function TabBar({
+  state,
+  describe,
+  isDirty,
+  dispatch,
+  onNewTab,
+  onOpenWindow,
+  error,
+  trailing,
+}: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const pinned = state.tabs.filter((t) => t.pinned);
   const open = state.tabs.filter((t) => !t.pinned);
@@ -220,6 +231,7 @@ export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWin
           <Plus />
         </Button>
       </div>
+      {trailing && <div className="flex shrink-0 items-center px-3 empty:hidden">{trailing}</div>}
       {error && (
         <p role="alert" className="flex shrink-0 items-center px-3 text-xs text-destructive">
           {error}

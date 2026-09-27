@@ -51,6 +51,7 @@ export function runConfigCommand(
     if (used > 0) throw new KiboError("INVALID_INPUT", `domain ${cmd.domainId} is used by ${used} tickets`);
   }
   const target = configTarget(cmd);
+  if (target !== null) docs.assertWritable(target);
   const result = executeConfigCommand(target ? docs.project(target) : docs.workspace, cmd);
   docs.save(target);
   docs.emit({ topic: "config" });

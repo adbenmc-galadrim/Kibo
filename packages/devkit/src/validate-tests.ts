@@ -11,6 +11,7 @@ export type TestRunOptions = {
   sandbox?: OsSandbox;
   timeoutMs?: number;
   signal?: AbortSignal;
+  testFile?: string;
 };
 export type TestRun = { report: ValidationReport["tests"]; used: string[] | null };
 
@@ -85,6 +86,7 @@ export async function runComponentTests(copy: string, opts: TestRunOptions): Pro
     preload("restrict"),
     "--reporter=junit",
     `--reporter-outfile=${junit}`,
+    ...(opts.testFile === undefined ? [] : [opts.testFile]),
   ];
   assertNotAborted(opts.signal);
   const policy = { read: [opts.toolchain.root, base], write: [base], exec: bun.argv.slice(0, 1), cwd: copy };

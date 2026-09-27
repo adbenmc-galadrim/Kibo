@@ -16,6 +16,8 @@ import {
   type Ticket,
   type WorkspaceConfig,
 } from "@kibo/schema";
+import { createProjectSettings } from "./notes/settings";
+import { LOCAL_FOLDER_KEY } from "./project-folder";
 import { call, createService } from "./service";
 import { openStore } from "./store";
 import { ensureSystemProfiles } from "./workspace-config";
@@ -314,6 +316,32 @@ describe("tabs", () => {
     expect(() => s.handle({ method: "saveTabs", state: tooManyTabs })).toThrow("INVALID_INPUT");
     expect(() => s.handle({ method: "saveTabs", state: tooManyRecents })).toThrow("INVALID_INPUT");
     expect(call(s, { method: "getTabs" })).toEqual(state);
+    store.close();
+  });
+});
+
+describe("local project data", () => {
+  test("the folder of a project comes from the local settings once set", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const meta = s.handle({ ...newProject, folder: "/Users/adam/Kibo" }) as ProjectMeta;
+    expect(s.docs.projectMeta(meta.id).folder).toBe("/Users/adam/Kibo");
+    s.docs.project(meta.id).getMap("meta").delete("folder");
+    createProjectSettings(store.db).set(meta.id, LOCAL_FOLDER_KEY, "/Users/adam/Ailleurs");
+    expect(s.docs.projectMeta(meta.id).folder).toBe("/Users/adam/Ailleurs");
+    const snapshot = s.handle({ method: "getProject", projectId: meta.id }) as ProjectSnapshot;
+    expect(snapshot.meta.folder).toBe("/Users/adam/Ailleurs");
+    store.close();
+  });
+
+  test("the local identity is the OS user until another one is installed", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    expect(s.docs.identity("p1")).toBe("adam");
+    const restore = s.docs.setIdentity((id) => `account-${id}`);
+    expect(s.docs.identity("p1")).toBe("account-p1");
+    restore();
+    expect(s.docs.identity("p1")).toBe("adam");
     store.close();
   });
 });

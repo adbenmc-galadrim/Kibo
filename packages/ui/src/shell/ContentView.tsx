@@ -3,9 +3,8 @@ import { useChangesSlots } from "../code/agent-slots";
 import { fr } from "../i18n/fr";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
-import { TicketTab } from "../pages/TicketTab";
 import { targetToHash } from "../tabs/target-hash";
-import { ChangesView, FileTabView, Welcome } from "./lazy-screens";
+import { ChangesView, FileTabView, TicketTab, Welcome } from "./lazy-screens";
 import { Overview } from "./Overview";
 
 type Props = {
@@ -50,7 +49,7 @@ export function ContentView(p: Props) {
     case "page": {
       const page = p.project.pages.find((x) => x.id === t.pageId);
       if (!page) return missing(fr.tabs.missingPage);
-      return <PageView key={page.id} project={p.project} page={page} viewer={p.viewer} />;
+      return <PageView key={page.id} project={p.project} page={page} viewer={p.project.viewer ?? p.viewer} />;
     }
     case "changes":
       return (

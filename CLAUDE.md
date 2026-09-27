@@ -27,7 +27,7 @@ packages/daemon/     serveur Bun : persistance SQLite, API HTTP/WS, appairage, s
 packages/sdk/        SDK des composants (client, SDK simulé, suite de conformité)
 packages/cli/        commande kibo (création, test, aperçu, publication de composants)
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
-components/<id>/     composants intégrés (kanban, tickets, github-issues sans UI, mcp-source…) écrits avec le SDK public
+components/<id>/     composants intégrés (kanban, tickets, notes, graph, github-issues sans UI, mcp-source) écrits avec le SDK public
 e2e/                 parcours Playwright
 design/  docs/       maquettes, spec, plans
 ```
@@ -56,7 +56,7 @@ Les tests ne consomment jamais de tokens : agents testés avec le faux binaire `
 | Rôle | Modèle | Responsabilité |
 |---|---|---|
 | Chef d'équipe | Fable (session principale) | Suit la feuille de route, choisit la tâche suivante, délègue, vérifie, intègre, tient le plan à jour |
-| Lead dev | Opus 5.5 (`kibo-lead`) | Écrit le plan de chaque phase, tranche les choix techniques, relit les tâches à risque |
+| Lead dev | Fable 5.1 (`kibo-lead`) | Écrit le plan de chaque phase, tranche les choix techniques, relit les tâches à risque |
 | Devs | Opus 5.5 (`kibo-dev`) | Implémentent une tâche du plan en TDD, dans leur worktree |
 | Reviewer | Sonnet (`kibo-reviewer`) | Relit chaque tâche : conformité au plan et à la spec, qualité, tests |
 | Exécutant | Haiku (`kibo-runner`) | Tâches mécaniques : lancer les tests, corriger le lint, chercher dans le code |

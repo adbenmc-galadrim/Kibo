@@ -1,5 +1,5 @@
-import type { Toolchain } from "@kibo/devkit";
-import { type HostLoad, type Session, ticketRuns } from "@kibo/schema";
+import { osSandbox, type Toolchain } from "@kibo/devkit";
+import { type HostLoad, KiboError, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
@@ -8,15 +8,25 @@ import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import { loadOrCreateToken } from "./auth";
 import { createCodeService } from "./code/code-service";
+import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
+import { componentTrustGuard } from "./components/trust-guard";
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { startMarket } from "./market/bootstrap";
+import { listInterfaces } from "./remote/interfaces";
+import { PairingCodes } from "./remote/pairing-codes";
+import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
+import { remoteRpc } from "./remote/rpc";
+import { sandboxRpc } from "./sandbox/rpc";
+import { createSandboxService } from "./sandbox/sandbox-service";
 import { startServer } from "./server";
 import { call, createService } from "./service";
 import { openSessionStore } from "./sessions/session-store";
+import { openLocalSettings } from "./settings";
 import { openStore } from "./store";
 
 export type DaemonOptions = {
@@ -35,6 +45,7 @@ export type DaemonOptions = {
   redactor?: Redactor;
   agentEnv?: Record<string, string | undefined>;
   assistantTimeoutMs?: number;
+  marketAllowLoopback?: boolean;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -77,6 +88,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
   });
+  const sandboxService = createSandboxService({
+    sandbox: osSandbox(),
+    settings: openLocalSettings(store),
+    emit: (message) => service.docs.emit(message),
+  });
   const redactor = opts.redactor ?? createRedactor();
   const integrations = startIntegrations(
     createIntegrationHost({
@@ -91,6 +107,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   );
   closers.push(service.attachIntegrations(integrations));
   closers.push(() => integrations.stop());
+  const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
+  closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
   let sandboxOrigin = "";
   const components = createComponentsService({
@@ -98,26 +116,50 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     toolchain: opts.toolchain,
     db: store.db,
     docs: service.docs,
+    commands: service.commands,
     sandboxOrigin: () => sandboxOrigin,
     runs: (projectId) => (agents ? ticketRuns(agents.state(), projectId) : []),
     ...(opts.build && { build: opts.build }),
     ...(opts.validate && { validate: opts.validate }),
     ...(opts.processCommand && { processCommand: opts.processCommand }),
+    allowUnsandboxed: () => sandboxService.allowUnsandboxed(),
     ...(opts.net && { net: opts.net }),
     integrations: () => integrations.hooks,
+    presence: (projectId) => collab.presence.peers(projectId),
+    sharing: (projectId) => collab.syncInfo(projectId),
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
   closers.push(service.attachComponents(components));
   closers.push(() => components.stop());
   await components.start();
+  const market = await startMarket({
+    home: opts.home,
+    toolchain: opts.toolchain,
+    ...(opts.validate && { validate: opts.validate }),
+    db: store.db,
+    docs: service.docs,
+    components,
+    secrets: integrations.secrets,
+    notify: opts.notify ?? (() => {}),
+    allowLoopbackHttp: opts.marketAllowLoopback ?? false,
+  });
+  closers.push(() => market.stop());
   const code = createCodeService(service);
   closers.push(() => code.stop());
+  const pairingCodes = new PairingCodes(Date.now);
+  let remote: RemoteAccess | null = null;
+  const remoteAccess = () => {
+    if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
+    return remote;
+  };
   const server = startServer({
     service,
     code,
     token,
     sessions: openSessionStore(store.db),
+    pairingCodes,
+    extensions: [remoteRpc(remoteAccess, pairingCodes), sandboxRpc(sandboxService)],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
@@ -128,8 +170,20 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     assets: components.assets,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
+    handlers: [componentTrustGuard, market.handler, collab.handler],
   });
   front.push(() => server.stop());
+  const started = createRemoteAccess({
+    home: opts.home,
+    settings: openLocalSettings(store),
+    secrets: integrations.secrets,
+    interfaces: () => listInterfaces(),
+    listen: (input) => server.listenRemote(input),
+    log: (message) => console.warn(`[kibo-daemon] ${message}`),
+  });
+  remote = started;
+  front.push(() => started.stop());
+  await started.resume();
   const sandbox = startSandboxServer({
     port: opts.sandboxPort,
     uiPort: server.port,
@@ -152,6 +206,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(() => orchestrator.stop());
   agents = orchestrator;
+  closers.push(collab.attachRuns(orchestrator));
   closers.push(service.attachAgents(orchestrator));
   const ai = await startAi({
     home: opts.home,

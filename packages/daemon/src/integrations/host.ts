@@ -1,4 +1,4 @@
-import { getProjectMeta, listProjects, readProject } from "@kibo/core";
+import { listProjects, readProject } from "@kibo/core";
 import { type CommandResult, KiboError, type ProjectCommand } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import { createGit, runGh } from "../code/run";
@@ -20,6 +20,7 @@ export function createIntegrationHost(parts: HostParts): IntegrationHost {
   const { docs, commands } = parts.service;
   return {
     user: parts.user,
+    identity: (projectId) => docs.identity(projectId),
     home: parts.home,
     db: parts.store.db,
     transaction: (fn) => parts.service.transaction(fn),
@@ -40,7 +41,7 @@ export function createIntegrationHost(parts: HostParts): IntegrationHost {
       docs.emit({ type: "notice", title: notice.title, body: notice.body });
     },
     async gitRemoteUrl(projectId) {
-      const folder = getProjectMeta(docs.project(projectId)).folder;
+      const folder = docs.projectMeta(projectId).folder;
       if (!folder) return null;
       const r = await createGit(folder).run(["remote", "get-url", "origin"]);
       return r.code === 0 && r.stdout.trim() ? r.stdout.trim() : null;

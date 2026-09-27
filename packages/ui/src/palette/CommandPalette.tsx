@@ -52,6 +52,10 @@ const ICONS = {
   components: SCREENS.components.icon,
   mine: SCREENS.mine.icon,
   integrations: SCREENS.integrations.icon,
+  appearance: SCREENS.appearance.icon,
+  security: SCREENS.security.icon,
+  sources: SCREENS.sources.icon,
+  sync: SCREENS.sync.icon,
 };
 const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
   reply: "text-orange-600 dark:text-orange-400",

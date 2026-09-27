@@ -22,6 +22,7 @@ let add: () => Promise<unknown> = () => Promise.resolve(null);
 mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
+      if (req.method === "listMarketSources") return Promise.resolve([]);
       calls.push(req);
       if (req.method === "listComponents") return components();
       if (req.method === "listDrafts") return Promise.resolve(drafts);
@@ -73,6 +74,8 @@ const pending: ComponentVersionSummary = {
   tampered: false,
   manifest,
   usages: [],
+  revoked: null,
+  backend: false,
 };
 const burndown: ComponentSummary = { id: "burndown", title: "Burndown", builtin: false, versions: [pending] };
 const approved: RegistryVersion = {
@@ -219,6 +222,13 @@ test("TrustDialog: full trust is a choice, a changed hash is explained", async (
     "Le code a changé depuis l'ouverture de cette fenêtre : vérifie la nouvelle empreinte.",
   );
   expect(calls.at(-1)).toMatchObject({ method: "approveComponent", trust: "trusted" });
+  approve = () => Promise.reject(new KiboError("FORBIDDEN", "remote"));
+  await user.click(screen.getByRole("button", { name: "Autoriser" }));
+  await waitFor(() =>
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
+    ),
+  );
   approve = () => Promise.resolve(approved);
   await user.click(screen.getByRole("button", { name: "Autoriser" }));
   await waitFor(() => expect(onApproved).toHaveBeenCalledWith(approved));

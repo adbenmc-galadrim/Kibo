@@ -6,7 +6,7 @@ import {
   type RpcRequest,
   type SyncState,
 } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
@@ -17,10 +17,13 @@ mock.module("../api", () => ({
     rpc: async (req: RpcRequest) => {
       calls.push(req);
       if (req.method === "getSyncState") return syncState;
+      if (req.method === "getSyncStatus")
+        return { state: "online", user: { id: "u-adam", name: "Adam" }, projects: [] };
       if (syncFailure) throw syncFailure;
       return { pulled: 0, created: 0, updated: 0, pushed: 0, conflicts: 0 };
     },
     subscribeIntegrations: () => () => undefined,
+    subscribeEvents: () => () => undefined,
   },
 }));
 const { SourceHeader } = await import("./SourceHeader");
@@ -32,7 +35,11 @@ const binding = {
   createdBy: "adam",
   runner: "adam",
 };
-const project = { meta: { id: "p1" }, bindings: [binding] } as unknown as ProjectSnapshot;
+const project = {
+  meta: { id: "p1" },
+  bindings: [binding],
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
+} as unknown as ProjectSnapshot;
 const instance = { id: "i1", config: { source: { bindingId: "b1" } } } as unknown as Instance;
 
 beforeEach(() => {
@@ -115,4 +122,27 @@ test("a removed binding is stated plainly", () => {
 test("a local instance has no header", () => {
   const { container } = render(<SourceHeader project={project} instance={{ ...instance, config: {} }} />);
   expect(container.textContent).toBe("");
+});
+
+test("a shared binding run by someone else can be taken over", async () => {
+  const shared = {
+    ...project,
+    sync: { shared: true, keyAllocator: "server", role: "owner", access: "write", members: [] },
+    bindings: [{ ...binding, runner: "u-lea" }],
+  } as unknown as ProjectSnapshot;
+  render(<SourceHeader project={shared} instance={instance} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Exécuter la sync sur cette machine" }));
+  expect(calls).toContainEqual({ method: "setBindingRunner", projectId: "p1", bindingId: "b1" });
+});
+
+test("a read-only project can neither sync nor take over the binding", async () => {
+  const readOnly = {
+    ...project,
+    sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] },
+    bindings: [{ ...binding, runner: "u-lea" }],
+  } as unknown as ProjectSnapshot;
+  render(<SourceHeader project={readOnly} instance={instance} />);
+  await waitFor(() => expect(calls.some((c) => c.method === "getSyncState")).toBe(true));
+  expect(screen.getByRole("button", { name: "Synchroniser" }).hasAttribute("disabled")).toBe(true);
+  expect(screen.queryByRole("button", { name: "Exécuter la sync sur cette machine" })).toBeNull();
 });

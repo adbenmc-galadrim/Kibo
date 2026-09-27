@@ -25,7 +25,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
   /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
-  /\/components\/(graph\/src\/GraphView|notes\/src\/NotesView|mcp-source\/src\/McpSource)\.tsx$/,
+  /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource)\.tsx$/,
+  /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
+  /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

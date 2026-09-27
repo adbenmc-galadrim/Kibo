@@ -3,6 +3,7 @@ import { Sha256 } from "./ids";
 import { ComponentId, ComponentKind } from "./manifest";
 import type {
   Kpkg,
+  MarketComponentStatus,
   MarketHit,
   MarketInstallResult,
   MarketPackageDetail,
@@ -49,6 +50,8 @@ export const MARKET_RPC_REQUESTS = [
     version: SemVer,
     publisherName: publisherName.optional(),
   }),
+  z.object({ method: z.literal("listMarketStatus") }),
+  z.object({ method: z.literal("getMarketPublisher") }),
 ] as const;
 
 export type MarketRpcRequest = z.infer<(typeof MARKET_RPC_REQUESTS)[number]>;
@@ -66,4 +69,6 @@ export type MarketRpcResult = {
   installFromMarket: MarketInstallResult;
   publishToMarket: { serial: number };
   exportKpkg: Kpkg;
+  listMarketStatus: MarketComponentStatus[];
+  getMarketPublisher: { name: string; fingerprint: string } | null;
 };

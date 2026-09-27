@@ -1,5 +1,6 @@
 import type { AgentsState, FileRef, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
+import { projectDomainsOf } from "../lib/project-domains";
 import {
   AssignDialog,
   NewPageDialog,
@@ -9,7 +10,7 @@ import {
   StarterDialog,
   TicketSheet,
 } from "./lazy-dialogs";
-import { FilePreviewSheet } from "./lazy-screens";
+import { FilePreviewSheet, JoinProjectDialog, ShareProjectDialog } from "./lazy-screens";
 import { useOpened } from "./use-opened";
 
 export type SheetTicket = { projectId: string; ticketId: string };
@@ -24,6 +25,8 @@ export type DialogsState = {
   assign: { projectId: string | null; ticketId: string | null } | null;
   newProfile: boolean;
   preview: FileRef | null;
+  share: string | null;
+  join: boolean;
 };
 
 export const NO_DIALOG: DialogsState = {
@@ -36,6 +39,8 @@ export const NO_DIALOG: DialogsState = {
   assign: null,
   newProfile: false,
   preview: null,
+  share: null,
+  join: false,
 };
 
 type Props = {
@@ -69,6 +74,7 @@ export function ShellDialogs({
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
+  const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
   return (
     <>
       {newProjectOpened && (
@@ -100,7 +106,7 @@ export function ShellDialogs({
         <TicketSheet
           project={sheetProject}
           ticketId={sheet.ticketId}
-          domains={config?.domains ?? []}
+          domains={projectDomainsOf(sheetProject, config) ?? []}
           onClose={() => set({ sheet: null })}
           onAssign={() =>
             set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
@@ -136,6 +142,10 @@ export function ShellDialogs({
           onClose={() => set({ newProfile: false })}
         />
       )}
+      {shareProject && (
+        <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
+      )}
+      {state.join && <JoinProjectDialog open onOpenChange={(o) => !o && set({ join: false })} />}
       {preview && (
         <FilePreviewSheet
           fileRef={preview}

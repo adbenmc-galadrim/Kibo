@@ -15,6 +15,7 @@ mock.module("../api", () => ({
       calls.push(req);
       return outcome();
     },
+    subscribeEvents: () => () => undefined,
   },
 }));
 

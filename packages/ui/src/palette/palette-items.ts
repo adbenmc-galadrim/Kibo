@@ -7,6 +7,7 @@ import {
   type TabTarget,
 } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
 
 export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
@@ -150,7 +151,8 @@ function actions(ctx: PaletteContext): PaletteItem[] {
     run,
   });
   const out: PaletteItem[] = [];
-  if (project) {
+  const snapshot = project ? ctx.snapshots.get(project.id) : undefined;
+  if (project && (!snapshot || canEdit(snapshot))) {
     out.push(
       action("newTicket", fr.palette.newTicket, "new", {
         kind: "action",
@@ -170,14 +172,14 @@ function actions(ctx: PaletteContext): PaletteItem[] {
         action: { kind: "newPage", projectId: project.id },
       }),
     );
-    if (project.folder)
-      out.push(
-        action("changes", fr.palette.openChanges(project.name), "changes", {
-          kind: "target",
-          target: { kind: "changes", projectId: project.id, worktree: null },
-        }),
-      );
   }
+  if (project?.folder)
+    out.push(
+      action("changes", fr.palette.openChanges(project.name), "changes", {
+        kind: "target",
+        target: { kind: "changes", projectId: project.id, worktree: null },
+      }),
+    );
   out.push(
     action("newProject", fr.palette.newProject, "new", { kind: "action", action: { kind: "newProject" } }),
   );

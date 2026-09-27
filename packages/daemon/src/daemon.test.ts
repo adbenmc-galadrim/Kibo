@@ -126,6 +126,40 @@ describe("startDaemon", () => {
     expect(await survivors(pids)).toEqual([]);
   }, 15_000);
 
+  test("the sync client is wired and unconfigured by default", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const status = await (await rpc({ method: "getSyncStatus" })).json();
+    expect(status).toMatchObject({
+      ok: true,
+      result: { state: "unconfigured", serverUrl: null, projects: [] },
+    });
+    const db = new Database(join(home, "kibo.db"), { readonly: true });
+    const tables = db
+      .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all();
+    db.close();
+    expect(tables.map((t) => t.name)).toEqual(expect.arrayContaining(["sync_config", "sync_projects"]));
+  });
+
+  test("remote access is off by default and pairing codes are single use", async () => {
+    const { d } = await launch();
+    const rpc = await pair(d);
+    const status = await (await rpc({ method: "getRemoteAccess" })).json();
+    expect(status).toMatchObject({ ok: true, result: { enabled: false, url: null } });
+    const created = z
+      .object({ result: z.object({ code: z.string() }) })
+      .parse(await (await rpc({ method: "createPairingCode" })).json());
+    const redeem = () =>
+      fetch(`${d.url}/api/pair-code`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: d.url },
+        body: JSON.stringify({ code: created.result.code }),
+      });
+    expect((await redeem()).status).toBe(204);
+    expect((await redeem()).status).toBe(401);
+  });
+
   test("a pairing session survives a daemon restart on the same home", async () => {
     const { d, home, stop } = await launch();
     const cookie = await pairCookie(d);

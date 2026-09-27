@@ -2,7 +2,7 @@ import { defineServer, type ServerContext } from "@kibo/sdk/server";
 
 type Escape = { secret: string; plant: string; port: number; daemonPid: number };
 type Stat = { dev: number; ino: number; isFile(): boolean; isSocket(): boolean };
-type Fs = { fstatSync(fd: number): Stat };
+type Fs = { fstatSync(fd: number): Stat; readlinkSync(path: string): string };
 type Attempt = () => unknown;
 type Socket = { on(event: string, listener: (e?: unknown) => void): void; destroy(): void };
 type Net = { connect(port: number, host: string): Socket };
@@ -89,13 +89,22 @@ function connect(net: Net, port: number): Promise<void> {
 
 const identity = (stat: Stat) => `${stat.dev}:${stat.ino}`;
 
+function ownProcEntry(fs: Fs, fd: number): boolean {
+  try {
+    return fs.readlinkSync(`/proc/self/fd/${fd}`).startsWith("/proc/");
+  } catch {
+    return false;
+  }
+}
+
 function inheritedDescriptors(fs: Fs): number[] {
   const channel = new Set([INPUT_FD, OUTPUT_FD].map((fd) => identity(fs.fstatSync(fd))));
   const open: number[] = [];
   for (let fd = FIRST_UNEXPECTED_FD; fd <= LAST_PROBED_FD; fd += 1) {
     try {
       const stat = fs.fstatSync(fd);
-      if ((stat.isFile() || stat.isSocket()) && !channel.has(identity(stat))) open.push(fd);
+      const foreign = (stat.isFile() || stat.isSocket()) && !channel.has(identity(stat));
+      if (foreign && !ownProcEntry(fs, fd)) open.push(fd);
     } catch (e) {
       if (codeOf(e) !== "EBADF") throw e;
     }

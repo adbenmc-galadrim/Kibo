@@ -5,7 +5,19 @@ import { NodeId } from "./ids";
 const ProjectId = z.string().min(1);
 const WorktreePath = z.string().min(1).nullable();
 
-export const Screen = z.enum(["agents", "queue", "general", "domains", "components", "mine", "integrations"]);
+export const Screen = z.enum([
+  "agents",
+  "queue",
+  "general",
+  "domains",
+  "components",
+  "mine",
+  "integrations",
+  "appearance",
+  "security",
+  "sources",
+  "sync",
+]);
 export type Screen = z.infer<typeof Screen>;
 
 export const TabTarget = z.discriminatedUnion("kind", [

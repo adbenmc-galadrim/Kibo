@@ -62,3 +62,24 @@ test("control characters in method or path are refused", () => {
   expect(() => httpSigningPayload({ ...input, method: "POST\nGET" })).toThrow("INVALID_INPUT");
   expect(() => httpSigningPayload({ ...input, method: "PO\0ST" })).toThrow("INVALID_INPUT");
 });
+
+test("signRequest signs the method in upper case", async () => {
+  const keys = await generateKeyPair();
+  const body = utf8("");
+  const headers = await signRequest({
+    deviceId: "d1",
+    privateKey: keys.privateKey,
+    method: "post",
+    path: "/p",
+    body,
+    now: 1,
+  });
+  const payload = httpSigningPayload({
+    method: "POST",
+    path: "/p",
+    date: headers["x-kibo-date"] ?? "",
+    nonce: headers["x-kibo-nonce"] ?? "",
+    bodySha256: await sha256Hex(body),
+  });
+  expect(await verifyBytes(keys.publicKey, payload, headers["x-kibo-signature"] ?? "")).toBe(true);
+});

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./agent";
+import { ConfigCommand, type Domain, HostSettings, type WorkspaceConfig } from "./agent";
 import type { AiEvent } from "./ai";
 import { AI_RPC, type AiRpcResult } from "./ai-rpc";
 import { ComponentCall } from "./call";
@@ -51,6 +51,8 @@ export type ProjectSnapshot = {
   bindings: Binding[];
   nextTicketKey: string | null;
   sync: ProjectSyncInfo;
+  domains?: Domain[];
+  viewer?: string;
 };
 export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
 export type Session = { user: string; notifications: "native" | "browser" };

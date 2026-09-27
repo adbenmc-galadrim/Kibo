@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { CiRun } from "@kibo/schema";
+import { type CiRun, KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
@@ -17,6 +17,15 @@ const docs: Docs = {
   emit: unused,
   run: unused,
   trigger: unused,
+  replaceProject: unused,
+  addProject: unused,
+  imported: unused,
+  onProjectDoc: unused,
+  assertWritable: unused,
+  setWriteGuard: unused,
+  projectMeta: unused,
+  identity: unused,
+  setIdentity: unused,
 };
 const notes: NotesService = { info: unused, setDir: unused, handle: unused, refresh: unused, close: unused };
 const ok = { content: [], isError: false, truncated: false };
@@ -103,4 +112,24 @@ test("ci runs are listed per project", async () => {
   const seen: unknown[] = [];
   expect(await handlersWith(hooks(seen)).list("p", "ci_run")).toEqual([ciRun]);
   expect(seen).toEqual([["ci", "p"]]);
+});
+
+test("instance data writes go through the project write guard", async () => {
+  const project = new LoroDoc();
+  const guarded = createGateHandlers({
+    docs: {
+      ...docs,
+      project: () => project,
+      assertWritable: (projectId) => {
+        throw new KiboError("FORBIDDEN", `project ${projectId} is read-only`);
+      },
+    },
+    notes,
+    backends: unused,
+    runs: unused,
+  });
+  await expect(guarded.data("p", "i1", { kind: "data.set", key: "k", value: 1 })).rejects.toThrow(
+    "FORBIDDEN",
+  );
+  expect(project.oplogVersion().length()).toBe(0);
 });

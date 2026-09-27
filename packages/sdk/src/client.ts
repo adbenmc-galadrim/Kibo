@@ -1,5 +1,6 @@
 import {
   AiEvent,
+  CLOSE_CODES,
   CodeEvent,
   type CodeRequest,
   type CodeResult,
@@ -23,6 +24,7 @@ export type KiboClient = {
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
   code<R extends CodeRequest>(req: R): Promise<CodeResult[R["method"]]>;
   pair(token: string): Promise<void>;
+  pairWithCode(code: string): Promise<void>;
   subscribe(listener: (projectId: string | null) => void): () => void;
   subscribeTopic(topic: Topic, listener: () => void): () => void;
   onRunChanged(listener: (e: RunChanged) => void): () => void;
@@ -128,9 +130,13 @@ export function createClient(opts: ClientOptions): KiboClient {
       }
       for (const l of listeners) l(msg.projectId ?? null);
     };
-    socket.onclose = () => {
+    socket.onclose = (e) => {
       socket = null;
       setOpen(false);
+      if (e.code === CLOSE_CODES.authFailed) {
+        opts.onUnauthorized?.();
+        return;
+      }
       if (active() > 0) setTimeout(connect, 1000);
     };
   };
@@ -148,6 +154,12 @@ export function createClient(opts: ClientOptions): KiboClient {
     async pair(token) {
       const res = await post("/api/pair", { token });
       if (res.status !== 204) throw new KiboError("UNAUTHORIZED", "invalid pairing token");
+    },
+    async pairWithCode(code) {
+      const res = await post("/api/pair-code", { code });
+      if (res.status === 204) return;
+      if (res.status === 429) throw new KiboError("RATE_LIMITED", "too many attempts");
+      throw new KiboError("UNAUTHORIZED", "invalid or expired code");
     },
     subscribe(listener) {
       listeners.add(listener);
@@ -228,5 +240,9 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
       }),
     runs: async (): Promise<TicketRun[]> => ticketRuns(await client.rpc({ method: "getAgents" }), projectId),
     subscribeRuns: (listener) => client.subscribeTopic("agents", listener),
+    subscribePresence: (listener) =>
+      client.subscribeEvents((m) => {
+        if (m.type === "presence.changed" && m.projectId === projectId) listener();
+      }),
   };
 }

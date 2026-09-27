@@ -94,6 +94,23 @@ test("changes inside .git internals and .kibo/worktrees are ignored, HEAD is not
   await waitFor(() => calls === 1);
 });
 
+test("removing the watched directory itself is a change, not a crash", async () => {
+  const changes: (string[] | null)[] = [];
+  const errors: unknown[] = [];
+  writeFileSync(join(dir, "src", "a.ts"), "x");
+  track(
+    watchPaths([{ path: join(dir, "src"), recursive: true }], (paths) => changes.push(paths), {
+      debounceMs: 50,
+      root: dir,
+      onError: (e) => errors.push(e),
+    }),
+  );
+  await wait(SETTLE_MS);
+  rmSync(join(dir, "src"), { recursive: true });
+  await waitFor(() => changes.length > 0);
+  expect(errors).toEqual([]);
+});
+
 test("an unwatchable path falls back to polling and reports the error", async () => {
   let calls = 0;
   const errors: unknown[] = [];

@@ -3,6 +3,7 @@ import {
   ComponentManifest,
   diffPermissions,
   grantedOf,
+  type PresencePeer,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionList,
@@ -28,6 +29,17 @@ export type ConformanceOptions = Pick<
 };
 
 const THEMES: Theme[] = ["dark", "light"];
+const COLLEAGUE: PresencePeer = {
+  deviceId: "conformance-device",
+  self: false,
+  userId: "u-lea",
+  name: "Léa",
+  pageId: null,
+  ticketId: null,
+  runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
+};
+const LAZY_LOAD_TIMEOUT_MS = 10_000;
+const RENDER_TEST_TIMEOUT_MS = 30_000;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 export function runConformance(
@@ -50,34 +62,47 @@ export function runConformance(
     const surfaces: Surface[] =
       manifest.kind === "both" ? ["widget", "view"] : manifest.kind === "adapter" ? [] : [manifest.kind];
     const { runs, ...mockOpts } = opts;
-    const projects: [string, ConformanceSeed | undefined][] = [
-      ["empty project", undefined],
-      ["seeded project", seed],
+    const projects: [string, ConformanceSeed | undefined, Partial<MockSdkOptions>][] = [
+      ["empty project", undefined, {}],
+      ["seeded project", seed, {}],
+      [
+        "shared project with provisional keys",
+        seed,
+        { shared: true, presence: [COLLEAGUE], members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
+      ],
     ];
     for (const surface of surfaces) {
       for (const theme of THEMES) {
-        for (const [label, s] of projects) {
-          test(`renders an ${label} as a ${surface} in ${theme} within its declared permissions`, async () => {
-            document.documentElement.classList.toggle("dark", theme === "dark");
-            const m = createMockSdk(manifest, { ...mockOpts, surface, ...(s && { seed: s }) });
-            if (s && runs) m.setRuns(runs(m.snapshot()));
-            const { container } = render(
-              <SdkProvider sdk={m.sdk}>
-                <mod.Component />
-              </SdkProvider>,
-            );
-            try {
-              await waitFor(() => expect(container.childElementCount).toBeGreaterThan(0));
-              await waitFor(() => expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull());
-              await settle();
-              console.log(`${USED_MARKER}${JSON.stringify(m.used)}`);
-              expect(m.violations).toEqual([]);
-              expect(diffPermissions(declared, m.used, mockOpts.config ?? null).missing).toEqual([]);
-            } finally {
-              cleanup();
-              document.documentElement.classList.remove("dark");
-            }
-          });
+        for (const [label, s, extra] of projects) {
+          test(
+            `renders an ${label} as a ${surface} in ${theme} within its declared permissions`,
+            async () => {
+              document.documentElement.classList.toggle("dark", theme === "dark");
+              const m = createMockSdk(manifest, { ...mockOpts, ...extra, surface, ...(s && { seed: s }) });
+              if (s && runs) m.setRuns(runs(m.snapshot()));
+              const { container } = render(
+                <SdkProvider sdk={m.sdk}>
+                  <mod.Component />
+                </SdkProvider>,
+              );
+              const loaded = { timeout: LAZY_LOAD_TIMEOUT_MS };
+              try {
+                await waitFor(() => expect(container.childElementCount).toBeGreaterThan(0), loaded);
+                await waitFor(
+                  () => expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull(),
+                  loaded,
+                );
+                await settle();
+                console.log(`${USED_MARKER}${JSON.stringify(m.used)}`);
+                expect(m.violations).toEqual([]);
+                expect(diffPermissions(declared, m.used, mockOpts.config ?? null).missing).toEqual([]);
+              } finally {
+                cleanup();
+                document.documentElement.classList.remove("dark");
+              }
+            },
+            RENDER_TEST_TIMEOUT_MS,
+          );
         }
       }
     }

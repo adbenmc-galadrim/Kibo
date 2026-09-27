@@ -6,8 +6,8 @@ import {
   readInstanceData,
   writeInstanceData,
 } from "@kibo/core";
-import { ComponentManifest, type Instance, type Page } from "@kibo/schema";
-import type { LoroDoc } from "loro-crdt";
+import { ComponentManifest, type Instance, KiboError, type Page } from "@kibo/schema";
+import { LoroDoc } from "loro-crdt";
 import { type MigrateRequest, updateInstance } from "./update";
 
 const manifest = (version: string, configVersion: number, configSchema?: Record<string, unknown>) =>
@@ -47,8 +47,12 @@ function setup(
   writeInstanceData(doc, inst.id, "count", 1);
   const persisted: string[] = [];
   const migrations: MigrateRequest[] = [];
+  const project = { doc, readOnly: false };
   const deps = {
-    doc: (): LoroDoc => doc,
+    doc: (): LoroDoc => project.doc,
+    assertWritable: (id: string) => {
+      if (project.readOnly) throw new KiboError("FORBIDDEN", `project ${id} is read-only`);
+    },
     persist: (id: string) => persisted.push(id),
     manifestOf: async (ref: string) => {
       const m = MANIFESTS[ref];
@@ -64,8 +68,9 @@ function setup(
           data: { ...req.data, migrated: true },
         };
       }),
+    approvedHash: () => null,
   };
-  return { doc, inst, deps, persisted, migrations };
+  return { doc, inst, deps, persisted, migrations, project };
 }
 
 describe("updateInstance", () => {
@@ -137,6 +142,28 @@ describe("updateInstance", () => {
     holder.id = inst.id;
     await expect(updateInstance(deps, "p", inst.id, "0.2.0")).rejects.toThrow("CONFLICT");
     expect(readInstanceData(doc, inst.id)).toEqual({ count: 2 });
+  });
+  test("a project that became read-only during the migration refuses the update", async () => {
+    const holder: { project?: { readOnly: boolean } } = {};
+    const { doc, inst, deps, persisted, project } = setup(async (_ref, req) => {
+      if (holder.project) holder.project.readOnly = true;
+      return { config: req.config, data: req.data };
+    });
+    holder.project = project;
+    await expect(updateInstance(deps, "p", inst.id, "0.2.0")).rejects.toThrow("FORBIDDEN");
+    expect(getInstance(doc, inst.id).component).toBe("hello@0.1.0");
+    expect(persisted).toEqual([]);
+  });
+  test("a project doc replaced during the migration is a conflict", async () => {
+    const holder: { project?: { doc: LoroDoc } } = {};
+    const { doc, inst, deps, persisted, project } = setup(async (_ref, req) => {
+      if (holder.project) holder.project.doc = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
+      return { config: req.config, data: req.data };
+    });
+    holder.project = project;
+    await expect(updateInstance(deps, "p", inst.id, "0.2.0")).rejects.toThrow("CONFLICT");
+    expect(getInstance(project.doc, inst.id).component).toBe("hello@0.1.0");
+    expect(persisted).toEqual([]);
   });
   test("the active version: the instance is returned as is, nothing is persisted", async () => {
     const { inst, deps, migrations, persisted } = setup();

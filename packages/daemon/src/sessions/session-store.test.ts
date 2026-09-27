@@ -24,7 +24,7 @@ describe("session store", () => {
 
   test("validates a known id and refuses an unknown one", () => {
     const { id, hash } = store.create({ deviceName: "Firefox · Linux", remote: true }, 1_000);
-    expect(store.validate(id, 2_000)).toEqual({ hash, remote: true });
+    expect(store.validate(id, 2_000)).toEqual({ hash, remote: true, renewed: false });
     expect(store.validate("f".repeat(64), 2_000)).toBeNull();
     expect(store.validate(hash, 2_000)).toBeNull();
   });
@@ -78,5 +78,33 @@ describe("session store", () => {
 
   test("revoking an unknown session is a NOT_FOUND error", () => {
     expect(() => store.revoke("0".repeat(64), 1)).toThrow("NOT_FOUND");
+  });
+
+  test("reports when a validation slides the expiry, so the cookie can be renewed", () => {
+    const { id } = store.create({ deviceName: "Chrome · macOS", remote: false }, 0);
+    expect(store.validate(id, 30_000)?.renewed).toBe(false);
+    expect(store.validate(id, 61_000)?.renewed).toBe(true);
+    expect(store.validate(id, 62_000)?.renewed).toBe(false);
+  });
+
+  test("tells whether a session hash is still active", () => {
+    const a = store.create({ deviceName: "Chrome · macOS", remote: false }, 0);
+    const b = store.create({ deviceName: "Chrome · macOS", remote: false }, 0);
+    expect(store.isActive(a.hash, 1)).toBe(true);
+    store.revoke(a.hash, 2);
+    expect(store.isActive(a.hash, 3)).toBe(false);
+    expect(store.isActive(b.hash, SESSION_TTL_MS)).toBe(false);
+    expect(store.isActive("0".repeat(64), 1)).toBe(false);
+  });
+
+  test("purge deletes expired and revoked sessions only", () => {
+    const expired = store.create({ deviceName: "Chrome · macOS", remote: false }, 0);
+    const revoked = store.create({ deviceName: "Chrome · macOS", remote: true }, 10 * DAY);
+    const alive = store.create({ deviceName: "Application Kibo", remote: false }, 10 * DAY);
+    store.revoke(revoked.hash, 11 * DAY);
+    store.purge(SESSION_TTL_MS + DAY);
+    const rows = db.query<{ idHash: string }, []>("SELECT idHash FROM remote_sessions").all();
+    expect(rows.map((r) => r.idHash)).toEqual([alive.hash]);
+    expect(expired.hash).not.toBe(alive.hash);
   });
 });

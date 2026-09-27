@@ -28,6 +28,7 @@ export type GhRunner = (args: string[]) => Promise<{ code: number; stdout: strin
 
 export type IntegrationHost = {
   user: string;
+  identity(projectId: string): string;
   home: string;
   db: Database;
   transaction<T>(fn: () => T): T;

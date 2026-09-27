@@ -23,6 +23,8 @@ import { Bot, TriangleAlert } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { projectDomainsOf } from "../lib/project-domains";
+import { KeyRequired } from "../shell/KeyRequired";
 import { reasonText } from "./format";
 
 type Props = {
@@ -81,9 +83,11 @@ type FormProps = {
   onClose: () => void;
 };
 
+const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
+
 function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose }: FormProps) {
   const id = useId();
-  const open = project.tickets.filter((t) => t.statusId !== "done");
+  const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
   const [profileId, setProfileId] = useState(profiles[0]?.id ?? "");
   const [brief, setBrief] = useState("");
@@ -94,9 +98,10 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
   const profile = profiles.find((p) => p.id === profileId) ?? null;
   const domain = domains.find((d) => d.id === ticket?.domainId)?.name ?? null;
   const projectId = project.meta.id;
+  const keyed = ticket?.key != null;
 
   useEffect(() => {
-    if (!chosenTicket || !profileId) return;
+    if (!chosenTicket || !profileId || !keyed) return;
     let alive = true;
     setPreview(null);
     setPreviewFailed(false);
@@ -107,7 +112,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
     return () => {
       alive = false;
     };
-  }, [projectId, chosenTicket, profileId]);
+  }, [projectId, chosenTicket, profileId, keyed]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -127,6 +132,16 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
     }
     onClose();
   };
+
+  const submitButton = (
+    <Button
+      type="submit"
+      disabled={!ticket || !profile}
+      className="bg-brand-strong text-white hover:bg-brand-strong/90"
+    >
+      {fr.assign.submit}
+    </Button>
+  );
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -227,13 +242,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
             <Button type="button" variant="outline" onClick={onClose}>
               {fr.common.cancel}
             </Button>
-            <Button
-              type="submit"
-              disabled={!ticket || !profile}
-              className="bg-brand-strong text-white hover:bg-brand-strong/90"
-            >
-              {fr.assign.submit}
-            </Button>
+            {ticket ? <KeyRequired ticket={ticket}>{submitButton}</KeyRequired> : submitButton}
           </DialogFooter>
         </form>
       </DialogContent>
@@ -242,7 +251,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
 }
 
 function hasOpenTicket(project: ProjectSnapshot): boolean {
-  return project.tickets.some((t) => t.statusId !== "done");
+  return project.tickets.some(assignable);
 }
 
 export function AssignDialog({
@@ -267,7 +276,7 @@ export function AssignDialog({
       ticketId={ticketId}
       baseBranch={baseBranch}
       profiles={assignable}
-      domains={config.domains}
+      domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}
     />
   );

@@ -1,14 +1,22 @@
-import type { Environment } from "@kibo/schema";
+import type { Environment, SandboxStatus } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Check, Folder, Plus, TriangleAlert } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { abbreviateHome } from "../lib/home-path";
+import { sandboxActive, sandboxProblem, sandboxStopped } from "../lib/sandbox-problem";
+import { useRpcQuery } from "../state/use-rpc-query";
 import { WorkspaceMark } from "./WorkspaceMark";
 
 type CheckState = "ok" | "warn" | "optional";
-type RowProps = { state: CheckState; title: string; detail: string; action?: ReactNode };
+type RowProps = {
+  state: CheckState;
+  title: string;
+  detail: string;
+  action?: ReactNode;
+  children?: ReactNode;
+};
 
 const DOT: Record<CheckState, { Icon: typeof Check; tone: string }> = {
   ok: { Icon: Check, tone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
@@ -16,19 +24,43 @@ const DOT: Record<CheckState, { Icon: typeof Check; tone: string }> = {
   optional: { Icon: Plus, tone: "bg-muted text-foreground" },
 };
 
-function CheckRow({ state, title, detail, action }: RowProps) {
+function CheckRow({ state, title, detail, action, children }: RowProps) {
   const { Icon, tone } = DOT[state];
+  const detailTone = state === "warn" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground";
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
-      <span aria-hidden className={`grid size-6 shrink-0 place-items-center rounded-full ${tone}`}>
-        <Icon className="size-3.5" strokeWidth={2.5} />
-      </span>
-      <div className="grid min-w-0 flex-1 gap-0.5">
-        <span className="text-sm font-medium">{title}</span>
-        <span className="truncate text-xs text-muted-foreground">{detail}</span>
+    <li className="grid">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span aria-hidden className={`grid size-6 shrink-0 place-items-center rounded-full ${tone}`}>
+          <Icon className="size-3.5" strokeWidth={2.5} />
+        </span>
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <span className="text-sm font-medium">{title}</span>
+          <span className={`truncate text-xs ${detailTone}`}>{detail}</span>
+        </div>
+        {action}
       </div>
-      {action}
+      {children}
     </li>
+  );
+}
+
+function IsolationRow({ sandbox }: { sandbox: SandboxStatus }) {
+  const t = fr.security;
+  if (sandbox.available)
+    return <CheckRow state="ok" title={t.welcome.title} detail={sandboxActive(sandbox)} />;
+  const problem = sandboxProblem(sandbox);
+  const detail = sandboxStopped(sandbox) ? t.welcome.stopped(problem) : t.isolation.unavailable(problem);
+  return (
+    <CheckRow state="warn" title={t.welcome.title} detail={detail}>
+      {sandbox.fix && (
+        <div className="grid gap-2 border-t px-4 py-3 pl-13 text-xs text-muted-foreground">
+          <p>{t.welcome.fixHelp}</p>
+          <pre className="overflow-x-auto rounded-md border bg-background px-3 py-2 font-mono text-foreground">
+            <code>{sandbox.fix}</code>
+          </pre>
+        </div>
+      )}
+    </CheckRow>
   );
 }
 
@@ -41,7 +73,9 @@ function claudeCheck(env: Environment): { state: CheckState; detail: string } {
   };
 }
 
-function EnvironmentChecks({ env, onConnectGithub }: { env: Environment; onConnectGithub: () => void }) {
+type ChecksProps = { env: Environment; sandbox: SandboxStatus | null; onConnectGithub: () => void };
+
+function EnvironmentChecks({ env, sandbox, onConnectGithub }: ChecksProps) {
   const claude = claudeCheck(env);
   const { cores, ramGb, hostSlots } = env.capacity;
   return (
@@ -62,6 +96,7 @@ function EnvironmentChecks({ env, onConnectGithub }: { env: Environment; onConne
         title={fr.welcome.capacity}
         detail={fr.welcome.capacityDetail(cores, ramGb, hostSlots)}
       />
+      {sandbox && <IsolationRow sandbox={sandbox} />}
       <CheckRow
         state={env.github.connected ? "ok" : "optional"}
         title={fr.welcome.github}
@@ -98,6 +133,8 @@ type Props = { onCreate: () => void; onImport: () => void; onConnectGithub: () =
 
 export function Welcome({ onCreate, onImport, onConnectGithub }: Props) {
   const { env, error } = useEnvironment();
+  const { data: sandbox } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"]);
+  const subtitle = sandbox && sandboxStopped(sandbox) ? fr.security.welcome.subtitle : fr.welcome.subtitle;
   return (
     <main className="grid min-h-full place-items-center bg-background p-6">
       <div className="grid w-full max-w-xl justify-items-center gap-6 text-center">
@@ -106,10 +143,10 @@ export function Welcome({ onCreate, onImport, onConnectGithub }: Props) {
         </span>
         <div className="grid gap-2">
           <h1 className="text-2xl font-semibold">{fr.welcome.title}</h1>
-          <p className="text-sm text-muted-foreground">{fr.welcome.subtitle}</p>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {env && <EnvironmentChecks env={env} onConnectGithub={onConnectGithub} />}
+        {env && <EnvironmentChecks env={env} sandbox={sandbox} onConnectGithub={onConnectGithub} />}
         <div className="flex flex-wrap justify-center gap-3">
           <Button variant="outline" onClick={onImport}>
             <Folder className="size-4" /> {fr.welcome.importFolder}

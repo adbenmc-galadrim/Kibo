@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startDaemon } from "@kibo/daemon/daemon";
 import { copyFixture, DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { decodeKpkg } from "@kibo/trust";
 import { startDevServer } from "./commands/dev";
 import { runCli } from "./index";
 
@@ -35,6 +36,17 @@ describe("kibo component", () => {
     expect(await runCli(["nope"], t.io)).toBe(2);
     expect(t.err.join("\n")).toContain("kibo component new <id>");
     expect(await runCli(["component", "explode", "x"], t.io)).toBe(2);
+    expect(t.err.join("\n")).toContain("kibo market pack <id>@<version>");
+  });
+
+  test("market prints its usage and explains a missing daemon", async () => {
+    const t = io();
+    expect(await runCli(["market"], t.io)).toBe(2);
+    expect(t.err.at(-1)).toContain("kibo market index --dir <dossier>");
+    expect(await runCli(["market", "pack", "hello@0.1.0"], t.io)).toBe(1);
+    expect(t.err.at(-1)).toBe("Le démon Kibo ne tourne pas : lance l'application Kibo, puis réessaie.");
+    expect(await runCli(["market", "keygen"], t.io)).toBe(1);
+    expect(t.err.at(-1)).toStartWith("Erreur INVALID_INPUT");
   });
 
   test("new scaffolds into KIBO_HOME/components/src", async () => {
@@ -91,6 +103,7 @@ describe("kibo component", () => {
       dev: false,
       toolchain: DEV_TOOLCHAIN,
       user: "adam",
+      integrations: { testOrigins: [], memorySecrets: true },
     });
     cleanups.push(() => daemon.stop());
     const f = copyFixture("hello", { linkModules: false });
@@ -101,6 +114,14 @@ describe("kibo component", () => {
     expect(t.out).toContain("Autorisation requise : ouvre Kibo (écran « Composants ») pour l'accorder.");
     expect(await runCli(["component", "publish", "hello"], t.io)).toBe(0);
     expect(t.out.at(-1)).toBe("Rien à publier : cette version est déjà publiée avec le même code.");
+    const kpkg = join(t.home, "hello.kpkg");
+    expect(await runCli(["market", "pack", "hello@0.1.0", "--out", kpkg, "--publisher", "Adam"], t.io)).toBe(
+      0,
+    );
+    expect(t.out.at(-1)).toBe(`Paquet écrit dans ${kpkg}`);
+    expect(decodeKpkg(new Uint8Array(readFileSync(kpkg))).publisher.name).toBe("Adam");
+    expect(await runCli(["component", "publish", "hello", "--to", "equipe"], t.io)).toBe(1);
+    expect(t.err.at(-1)).toStartWith("Erreur SYNC_OFFLINE");
   }, 240_000);
 
   test("dev refuses a missing folder", async () => {

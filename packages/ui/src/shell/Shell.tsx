@@ -3,12 +3,13 @@ import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
-import { client } from "../api";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
+import { projectDomainsOf } from "../lib/project-domains";
 import { countMine, myTickets } from "../mine/my-tickets";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
+import { canEdit } from "../state/access";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
 import { useProject, useProjects } from "../state/use-projects";
 import { useSnapshots } from "../state/use-snapshots";
@@ -24,13 +25,14 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
-import { IntegrationNotices } from "./lazy-screens";
+import { IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
+import { inTauri, openWindow, renameWorkspace } from "./workspace-actions";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
@@ -53,14 +55,6 @@ export function Shell({ viewer, notifications }: Props) {
     </>
   );
 }
-
-const renameWorkspace = async (name: string) => {
-  await client.rpc({ method: "config", command: { method: "renameWorkspace", name } });
-};
-
-const inTauri = () => "__TAURI_INTERNALS__" in window;
-const openWindow = (t: TabTarget) =>
-  window.open(`${location.pathname}${targetToHash(t)}`, "_blank", "noopener");
 
 type WorkspaceProps = Props & { projects: ProjectSummary[]; tabs: TabsApi; agents: AgentsState | null };
 
@@ -108,7 +102,9 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
       openTicket: (ticketId) => {
         if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
       },
-      openNewTicket: (d) => set({ newTicket: d }),
+      openNewTicket: (d) => {
+        if (!projectRef.current || canEdit(projectRef.current)) set({ newTicket: d });
+      },
       openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),
       openTarget: (target, opts) => go(target, opts?.newTab),
@@ -183,6 +179,11 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
             onNewTab={() => setPalette({ newTab: true })}
             onOpenWindow={inTauri() ? null : openWindow}
             error={tabs.error}
+            trailing={
+              project?.sync.shared && (
+                <ProjectPresence project={project} active={active} sheet={dialogs.sheet} />
+              )
+            }
           />
           <SidebarProvider className="min-h-0 flex-1">
             <AppSidebar
@@ -200,6 +201,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}
               onNewPage={(parentId) => set({ newPageParent: parentId })}
+              onShare={(projectId) => set({ share: projectId })}
+              onJoin={() => set({ join: true })}
             />
             <SidebarInset className="min-h-0 min-w-0">
               <ShellHeader
@@ -214,7 +217,11 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 notifications={notifications}
                 onNewProfile={() => set({ newProfile: true })}
                 onNewTicket={() => set({ newTicket: {} })}
+                onShare={() => project && set({ share: project.meta.id })}
               />
+              {project?.sync.shared && (
+                <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
+              )}
               <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                 {screen ? (
                   <ScreenView
@@ -235,7 +242,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     viewer={viewer}
                     projects={projects}
                     project={project}
-                    domains={config?.domains}
+                    domains={projectDomainsOf(project, config)}
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
                     onNewProject={() => set({ newProject: true })}
                     onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}

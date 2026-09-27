@@ -1,5 +1,14 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { KiboError } from "@kibo/schema";
@@ -30,14 +39,43 @@ const sandboxAvailable = await osSandbox()
     },
   );
 
-function isAlive(pid: number): boolean {
+const hasCode = (e: unknown, codes: string[]) =>
+  e instanceof Error && "code" in e && typeof e.code === "string" && codes.includes(e.code);
+
+function pidAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
   } catch (e) {
-    if (e instanceof Error && "code" in e && e.code === "ESRCH") return false;
+    if (hasCode(e, ["ESRCH"])) return false;
     throw e;
   }
+}
+
+function cwdOf(pid: string): string | null {
+  try {
+    return readlinkSync(`/proc/${pid}/cwd`);
+  } catch (e) {
+    if (hasCode(e, ["ENOENT", "ESRCH", "EACCES"])) return null;
+    throw e;
+  }
+}
+
+const anyProcessIn = (dir: string) =>
+  readdirSync("/proc")
+    .filter((entry) => /^\d+$/.test(entry))
+    .some((pid) => cwdOf(pid)?.startsWith(dir) ?? false);
+
+// inside bubblewrap the pid a test prints belongs to its own pid namespace
+const hangingTestAlive = (pid: number, cwd: string) =>
+  process.platform === "linux" ? anyProcessIn(cwd) : pidAlive(pid);
+
+async function hangingTestGone(pid: number, cwd: string): Promise<boolean> {
+  for (let i = 0; i < 100; i += 1) {
+    if (!hangingTestAlive(pid, cwd)) return true;
+    await Bun.sleep(20);
+  }
+  return false;
 }
 
 const HANGING_TEST = `import { test } from "bun:test";
@@ -236,7 +274,7 @@ test.skipIf(!sandboxAvailable)(
     const hang = report.tests.output.match(/KIBO_HANG (\d+) (\S+)/);
     expect(hang).not.toBeNull();
     const [, pid = "", cwd = ""] = hang ?? [];
-    expect(isAlive(Number(pid))).toBe(false);
+    expect(await hangingTestGone(Number(pid), cwd)).toBe(true);
     expect(basename(dirname(cwd))).toStartWith("kibo-validate-");
     expect(existsSync(dirname(cwd))).toBe(false);
   },

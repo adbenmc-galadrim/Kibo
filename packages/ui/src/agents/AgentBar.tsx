@@ -3,7 +3,7 @@ import { RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot, ChevronUp } from "lucide-react";
-import { useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import { fr } from "../i18n/fr";
 import { elapsed, formatDuration } from "./format";
 import { SlotMeter } from "./SlotMeter";
@@ -13,11 +13,12 @@ type Props = {
   state: AgentsState;
   now: number;
   online: boolean;
+  indicator?: ReactNode;
   onExpand: () => void;
   onSelect: (runId: string) => void;
 };
 
-export function AgentBar({ state, now, online, onExpand, onSelect }: Props) {
+export function AgentBar({ state, now, online, indicator, onExpand, onSelect }: Props) {
   const running = state.runs
     .filter((r) => r.state === "running" || r.state === "starting")
     .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
@@ -87,10 +88,12 @@ export function AgentBar({ state, now, online, onExpand, onSelect }: Props) {
         </span>
       ))}
       <span className="flex-1" />
-      <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
-        <span aria-hidden className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
-        {online ? fr.agents.daemon : fr.agents.daemonOffline}
-      </span>
+      {indicator ?? (
+        <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+          <span aria-hidden className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
+          {online ? fr.agents.daemon : fr.agents.daemonOffline}
+        </span>
+      )}
       <Button
         size="icon"
         variant="ghost"

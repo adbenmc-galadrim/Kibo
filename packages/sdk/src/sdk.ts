@@ -13,7 +13,9 @@ import {
   type NoteContent,
   type NoteMeta,
   type NotesInfo,
+  type PresencePeer,
   type ProjectCommand,
+  type ProjectSyncInfo,
   ruleCovers,
   type Ticket,
 } from "@kibo/schema";
@@ -186,5 +188,16 @@ export function createSdk(
     },
     notes: notesApi(guard, call),
     mcp: mcpApi(manifest, guard, call, ctx.config),
+    presence: {
+      async list() {
+        guard.needRead("ticket");
+        return call<PresencePeer[]>({ kind: "presence.list" });
+      },
+      subscribe: (listener) => backend.subscribePresence?.(listener) ?? (() => undefined),
+    },
+    async sharing() {
+      guard.needRead("ticket");
+      return call<ProjectSyncInfo>({ kind: "sharing.get" });
+    },
   };
 }

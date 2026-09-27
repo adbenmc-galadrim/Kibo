@@ -74,8 +74,11 @@ function changedPath(root: string | undefined, targetPath: string, filename: str
   return rel.length === 0 || rel.includes(".git") ? null : rel.join("/");
 }
 
+// Bun's fs.watch reports the watched directory's own removal with an undefined filename
 const defaultWatch: WatchFn = (path, options, onEvent, onError) => {
-  const watcher = fsWatch(path, options, (_event, filename) => onEvent(filename));
+  const watcher = fsWatch(path, options, (_event, filename: string | null | undefined) =>
+    onEvent(filename ?? null),
+  );
   watcher.on("error", onError);
   return watcher;
 };

@@ -35,8 +35,8 @@ export function syncModule(
           id: crypto.randomUUID(),
           adapter: "github-issues" as const,
           config: req.config,
-          createdBy: host.user,
-          runner: host.user,
+          createdBy: host.identity(req.projectId),
+          runner: host.identity(req.projectId),
         };
         host.command(req.projectId, { method: "addBinding", binding }, { origin: "user", instanceId: null });
         engine.cycle(req.projectId, binding.id).catch(() => undefined);

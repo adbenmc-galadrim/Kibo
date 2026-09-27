@@ -83,7 +83,7 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 6. **Clé provisoire** : `pendingSeq = 1 + max(pendingSeq des tickets créés par ce pair Loro)`, calculé dans le doc (pas d'I/O). Ordre d'attribution = (Lamport de l'opération de création du nœud, id), le Lamport étant `change.lamport + (id.counter − change.counter)`.
 7. **Partage atomique côté démon** : pendant `shareProject`, les commandes sur ce projet échouent en `CONFLICT` (« partage en cours ») ; les migrations (dossier, assignés, domaines, liaisons) sont appliquées au doc **avant** l'export du snapshot, pour que le dossier local ne parte jamais.
 8. **Resynchronisation après `UPDATE_REJECTED`** : le démon remplace le doc local par un doc neuf construit depuis le serveur (`subscribe` avec `version: null`) ; les modifications locales non acceptées sont perdues (spec G §5.5).
-9. **Lecture seule locale** pour un `viewer` et pour un projet « Accès retiré » : toute `ProjectCommand` échoue en `FORBIDDEN`, même hors ligne.
+9. **Lecture seule locale** pour un `viewer` et pour un projet « Accès retiré » : toute `ProjectCommand` et toute autre écriture du doc projet (données d'instance, mise à jour d'instance, consignes du projet) échouent en `FORBIDDEN`, même hors ligne ; un `push` refusé en `FORBIDDEN` enregistre le rôle `viewer` localement.
 10. **Présence authentifiée** : le serveur n'accepte une trame de présence que si elle ne touche que la clé de l'appareil émetteur et que `userId` y est celui de la session ; il renvoie l'état courant (`encodeAll`) à chaque nouvel abonné.
 11. **`Instance.componentHash`** (optionnel, `null` pour les intégrés) : écrit par le démon à l'ajout ou à la mise à jour d'une instance non intégrée ; c'est « la même empreinte » exigée par spec H §5.5 pour installer un composant absent.
 12. **`RegistryVersion.source` et `RegistryVersion.revoked`** (`{ reason, at } | null`) pour afficher le motif de révocation (spec H §4).
@@ -91,7 +91,7 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 14. **Isolation Linux** : sans objet en phase 7, livrée en phase 4 (spec B décision 24) avec des montages déjà minimaux (`/usr/lib`, `/lib`… jamais tout `/usr`) et le lancement de processus déjà bloqué (test `exit.test.ts`). T8 n'ajoute que le diagnostic (`diagnose()` : type, raison, commande de correction). Le filtre seccomp (spec H §8.1, « à valider ») est **reporté après v1.0**.
 15. **Profil macOS sans commentaires dans le code** : chaque règle ajoutée est une donnée `{ rule, reason }` ; le générateur émet `reason` en ligne `;` dans le SBPL produit.
 16. **Validation à l'installation** : `validateComponent` exécute déjà les tests dans le bac à sable OS (phase 4) ; T20 ajoute seulement `conformanceOnly` (la suite générique de Kibo remplace les tests de l'éditeur, ni fournis ni exécutés). Une installation marketplace **n'utilise jamais** le réglage « sans isolation OS » : sans bac à sable utilisable, elle échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
-17. **RPC sensibles réservées aux sessions locales** (`127.0.0.1`) : `enableRemoteAccess`, `disableRemoteAccess`, `createPairingCode`, `setAllowUnsandboxed`, `connectSyncServer`, `disconnectSyncServer`, `addMarketSource`, `unpinPublisher` ⇒ `FORBIDDEN` depuis une session distante. L'appairage distant se fait par code à 6 caractères seulement (jamais par le jeton).
+17. **RPC sensibles réservées aux sessions locales** (`127.0.0.1`) : `enableRemoteAccess`, `disableRemoteAccess`, `createPairingCode`, `setAllowUnsandboxed`, `connectSyncServer`, `disconnectSyncServer`, `addDevice`, `revokeDevice`, `addMarketSource`, `unpinPublisher` ⇒ `FORBIDDEN` depuis une session distante (`addDevice` et `revokeDevice` ajoutées en T21, choix du chef d'équipe : un code d'appareil donne un accès durable à tous les projets d'équipe, plus puissant qu'un code d'appairage ; `listDevices` reste accessible à distance). L'appairage distant se fait par code à 6 caractères seulement (jamais par le jeton).
 18. **Clé privée TLS de l'accès distant** dans `SecretStore` (`remote:tls`), certificat en `<KIBO_HOME>/remote/cert.pem` (`0600`). `SecretName` accepte **trois noms système exacts** (`sync:device`, `market:publisher`, `remote:tls`) en plus des noms d'intégration ; un composant ne peut déclarer qu'un secret d'intégration (`IntegrationSecretNameSchema` dans le manifeste), jamais un secret système.
 19. **Présence exposée aux composants** : `sdk.presence.list()` (appel `presence.list`, soumis à `reads: ticket`) et `members` dans l'instantané, pour que le Kanban affiche « opus-dev-1 · Adam » et le nom d'un assigné identifié par `userId`.
 20. **Paramètres** : nouvelles sections « Sync » (après Intégrations), « Sécurité » (entrée existante, activée) et « Composants › Sources », chacune une valeur de l'enum `Screen` (`sync`, `security`, `sources`) ; l'entrée « Apparence » est activée avec le seul bloc « Accès web » de l'écran 15 (`appearance`).
@@ -105,7 +105,7 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 27. **Noms déjà pris** : `Role` (onboarding IA), `SyncState` (sync d'intégrations) et le dossier `packages/daemon/src/sync/` (sync d'intégrations) existent ; la phase 7 utilise `MemberRole`, `SyncConnectionState` et `packages/daemon/src/collab/`. Les tables client gardent les noms de la spec G (`sync_config`, `sync_projects`), sans collision.
 28. **Événements de la phase 7** : variantes de `ChangeMessage` émises par `service.docs.emit`, nommées `collab.changed`, `presence.changed`, `market.changed`, `sessions.changed`, `sandbox.changed` (le type `sync` est pris) ; le client les reçoit par `KiboClient.subscribeEvents`, aiguillés avant les écouteurs de projet pour ne jamais recharger la liste des projets.
 29. **Branchement du démon** : `service.ts` (300 lignes) ne reçoit plus de méthodes RPC ; chaque sous-système (`sandbox`, `remote`, `market`, `collab`) a son `bootstrap.ts` et se branche dans `assemble` (`daemon.ts`) par une extension ou un gestionnaire RPC (T9). `main.ts` ne lit que des options (`KIBO_MARKET_ALLOW_LOOPBACK`).
-30. **Garde d'écriture par projet** (T21) : `docs.assertWritable(projectId)` est appelé par le chemin des commandes (`guarded` de `command-path.ts`) **et** par les deux écritures qui le contournent (`writeInstanceData` des composants, `updateInstance`) : la lecture seule (décision 9) et le verrou de partage (décision 7) couvrent toutes les écritures.
+30. **Garde d'écriture par projet** (T21) : `docs.assertWritable(projectId)` est appelé par le chemin des commandes (`guarded` de `command-path.ts`) **et** par les trois écritures qui le contournent (`writeInstanceData` des composants ; `updateInstance`, contrôlé de nouveau juste avant `setInstanceComponent` avec `CONFLICT` si le doc a été remplacé pendant la migration ; `runConfigCommand` pour les consignes d'un projet, `owner.scope = project`) : la lecture seule (décision 9) et le verrou de partage (décision 7) couvrent toutes les écritures.
 31. **Identité locale d'un projet partagé** (T23) : `docs.identity(projectId)` vaut l'`userId` du compte de sync pour un projet partagé, le nom d'utilisateur OS sinon ; elle sert au `runner` et au `createdBy` des liaisons (spec G §6.2), à l'assigné humain et au `viewer` des composants (filtre « Moi + agents », « Mes tickets »).
 32. **Dossier local d'un projet partagé** (T23) : `meta.folder` quitte le doc au partage et vit dans `project_settings(projectId, "folder")` ; `docs.projectMeta` le réinjecte pour `getProject`, le contexte des agents (worktrees), les notes et le code. La copie du dossier dans la liste `projects` du workspace est conservée : elle est lue hors du doc projet (vue d'ensemble, « Mes tickets », palette) et le doc workspace ne quitte jamais la machine.
 33. **Erreurs de la sync côté démon** : `SyncStatus.lastError` et `SyncProjectStatus.lastError` portent un code stable (`UNAUTHORIZED`, `DEVICE_REVOKED`, `ACCESS_REVOKED`, `SYNC_OFFLINE`, `TLS_REQUIRED`…), traduit par l'UI dans `fr-collab.ts` ; aucun texte français dans le démon (règle de `CLAUDE.md`).
@@ -114,10 +114,18 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 36. **Sessions de la CLI** : chaque commande `kibo` qui appaire par le jeton crée une session persistée « Commande kibo » (30 jours glissants, révocable) ; la réutilisation d'un cookie par la CLI est hors périmètre v1.0.
 37. **Accès distant et widgets sandboxés** (choix du chef d'équipe, délégué par Adam) : le serveur des iframes sandboxées reste sur `127.0.0.1` ; à distance, l'UI, les composants intégrés et les composants de confiance fonctionnent, les widgets sandboxés ne se chargent pas (message dans le cadre de l'instance). Limite documentée de la v1.0 (T13, T25, rapport du jalon).
 38. **Écran 15 réduit** (choix du chef d'équipe, délégué par Adam) : l'entrée « Apparence » des Paramètres est activée avec le seul bloc « Accès web » (générer un code d'appairage) ; le reste de l'écran 15 est un écart listé au jalon (T25).
+39. **Champs figés au partage** (choix du chef d'équipe) : une fois le projet partagé, `meta.id` et `meta.key` sont immuables (`validateProjectUpdate` refuse toute modification en `UPDATE_REJECTED`, même par l'`owner`) ; `meta.folder` est un chemin local qui ne vit pas dans le doc partagé : `migrateForSharing` le retire du doc (T23 le range dans `project_settings`) et `validateProjectUpdate` refuse sa réapparition, même à `null`. `migrateForSharing` refuse un doc déjà partagé (`keyAllocator = server`) en `INVALID_INPUT`. Raison : changer le préfixe casse toutes les clés et mentions existantes, changer l'id casse l'identité du projet, et un chemin local ne concerne qu'une machine. Ajoutée pendant T7, reportée en spec G §13. Précision (T7) : dans `meta`, un éditeur ne peut modifier que `name` et `color` (valeur conforme à `ProjectMeta`) ; tout autre champ de `meta` ne peut être ni ajouté ni modifié ; conteneur Loro toujours refusé. Précision (T14) : le serveur n'accepte à la création d'une salle qu'un snapshot complet (mode `snapshot`, aucune opération en attente, 8 Mio au plus) et le valide par `validateSharedSnapshot(doc, projectId)` de `@kibo/core` avant toute écriture, même pour l'`owner` : `meta.folder` absent, `keyAllocator` différent de `server` et `members` absent, aucun champ inconnu ni conteneur dans `meta`, `name`, `color` et `key` conformes à `ProjectMeta`, `meta.id` égal à l'id du projet partagé, `ticketSeq` entier positif ou nul, clés des tickets (supprimés compris) uniques et de la forme `<key>-n` avec 1 ≤ n ≤ `ticketSeq` ; tout manquement est refusé en `INVALID_INPUT`.
+40. **Garde-fous des sources de marketplace dans le démon** (choix du chef d'équipe, T15) : supprimer une source conserve ses épinglages d'éditeur (`market_pins`), si bien qu'un changement de clé d'éditeur reste détecté (`PUBLISHER_CHANGED`) quand la source revient ; `probeMarketSource` et `removeMarketSource` sont réservées aux sessions locales, comme `addMarketSource` et `unpinPublisher` ; les erreurs réseau renvoyées au client restent génériques (ni hôte ni port), le détail va au journal du démon ; une URL de source mal formée ou portant un identifiant ou un mot de passe est refusée en `INVALID_INPUT`, au sondage comme à l'ajout ; l'URL d'un paquet doit avoir la même origine que sa source (§6), sinon `INVALID_INPUT` avant tout téléchargement. Reportée en spec H §13 (D40).
+41. **Preuve de possession de la clé d'éditeur** (sécurité, choix du chef d'équipe) : sur une source d'équipe, le premier enregistrement d'une clé d'éditeur exige une signature de cette clé sur `"kibo-publisher-claim-v1\n" + sourceId + "\n" + userId` (userId du compte qui publie), envoyée dans l'en-tête `x-kibo-publisher-claim` de `POST /v1/market/packages` ; absente ou invalide ⇒ `SIGNATURE_INVALID`. Une clé déjà enregistrée n'en demande plus. Raison : sans elle, un membre `publisher` pourrait téléverser un `.kpkg` signé par la clé d'un autre (copié d'une autre source) et s'approprier cette clé et ce nom sur la source. `signPublisherClaim` et `verifyPublisherClaim` sont dans `@kibo/trust` (T16) ; le client (T22) envoie l'en-tête.
+42. **Profondeur bornée des docs projet** (choix du chef d'équipe, suivi T7b) : `validateProjectUpdate` refuse en `UPDATE_REJECTED` un lot qui porte un arbre Loro du doc projet (`tickets`, `pages` ou tout `LoroTree`, nœuds supprimés compris) au-delà de 64 niveaux (`MAX_TREE_DEPTH`), y compris par déplacement de nœud, ou qui imbrique des conteneurs au-delà de 32 niveaux (`MAX_CONTAINER_DEPTH`) ; contrôle en surface sur les seuls conteneurs du lot, à coût borné. Raison : un export snapshot ou un `toJSON` d'un doc trop profond plante le wasm chez le serveur et chaque pair. Le snapshot du premier partage est contrôlé de la même façon par `ProjectRoom.create` (refus en `INVALID_INPUT` avant tout export, via `projectDepthViolation`), car il n'est pas un lot validé par `validateProjectUpdate`. La profondeur cumulée d'arbres imbriqués dans des conteneurs reste bornée par construction (≤ 64 × 15 niveaux), sous le seuil de plantage mesuré. Reportée en spec G §13 (D42).
+43. **Installation marketplace réservée aux sessions locales** (choix du chef d'équipe, T20) : `installFromMarket` exige une session locale (`requireLocal`), une session distante reçoit `FORBIDDEN` ; installer du code tiers sur la machine est une action locale. L'épinglage de l'éditeur est écrit avant l'entrée au registre et retiré si celle-ci échoue. Reportée en spec H §13 (D43).
+44. **Accorder la confiance à un composant est une action locale** (choix du chef d'équipe, T20) : `approveComponent`, `publishComponent` (héritage de confiance) et `finalizeComponentDraft` (approbation du brouillon IA) exigent une session locale (`requireLocal`), une session distante reçoit `FORBIDDEN` (texte français dans l'UI) ; un test de bout en bout du démon vérifie le refus à travers le vrai dispatch. De même, `publishToMarket` et `exportKpkg` (T22) exigent une session locale (`exportKpkg` signe avec la clé d'éditeur). Reportée en spec H §13 (D44).
+45. **Profondeur contrôlée côté client** (choix du chef d'équipe, durcissement, T21) : le démon refuse toute donnée de sync qui imbrique le doc projet au-delà des bornes de la décision 42 : un doc complet (resync, jonction par `addJoinedProject`) est contrôlé par `projectDepthViolation`, puis adopté sous forme de copie propre (`LoroDoc.fromSnapshot`) qui abandonne ses opérations en attente, pour qu'aucune ne soit débloquée plus tard ; chaque `update` reçu est importé dans une copie (`fork`) et contrôlé par `depthViolation` avant d'être appliqué, et refusé s'il laisse des opérations en attente (`ImportStatus.pending` non vide : un serveur conforme envoie des lots causalement complets, un lot incomplet pourrait débloquer plus tard un arbre trop profond sans être contrôlé). Seuls des blobs Loro de mode `update` sont acceptés, à la resync et à la jonction comme au fil de l'eau (c'est tout ce que le serveur envoie : `diffSince` exporte en mode `update`) ; un blob `snapshot` ou `shallow-snapshot` est refusé avant tout import, et un doc à l'historique tronqué (`isShallow()`) est refusé avant adoption, car un snapshot superficiel porte un état sans les opérations qui l'ont produit et échappe au contrôle de profondeur. Refus ⇒ le projet n'est pas modifié, sa sync est suspendue (`enabled = false`, désabonnement) avec `lastError = "TOO_LARGE"` ; des octets indécodables, un blob d'un autre mode ou un doc tronqué suspendent de même avec `lastError = "INVALID_INPUT"`, et une panne du démon lui-même pendant l'application avec `lastError = "INTERNAL"` (journalisée) ; le démon ne plante jamais. Un projet suspendu reste modifiable localement (son accès ne change pas) ; l'état est porté par `lastError` et affiché par l'UI (T28). Coût : une copie du doc par mise à jour reçue. Reportée en spec G §13 (D45).
+46. **Liaisons d'un projet partagé opposables** (sécurité, suivi T7c, choix du chef d'équipe) : `validateProjectUpdate(before, after, author)` reçoit l'auteur du lot (`UpdateAuthor = { userId, role }`, l'acteur authentifié du `push`) et contrôle la map `bindings` du doc projet, par identifiant et en surface : toute valeur doit être une valeur simple (jamais un conteneur Loro), conforme à `Binding` et rangée sous son propre `id` ; une liaison nouvelle a `createdBy = runner = auteur` ; sur une liaison existante, `createdBy` et `adapter` sont figés, `runner` ne change que vers l'auteur lui-même, s'il est le créateur de la liaison ou un `owner` (spec G §6.2 « propriétaire de la liaison ou owner » : la prise en charge se fait toujours sur son propre compte, comme `setBindingRunner`), et `config` ne change que par le `runner` résultant, celui dont le jeton exécutera la liaison ; supprimer puis recréer une liaison sous le même id dans un lot est une réécriture (le contrôle compare deux états, pas des opérations) ; la suppression reste ouverte à tout éditeur (nuisance, sans exfiltration). Refus en `UPDATE_REJECTED`, audité. Le premier snapshot est contrôlé de même par `validateSharedSnapshot(doc, projectId, ownerId)` : liaisons valides, toutes créées et exécutées par le propriétaire (`INVALID_INPUT`). Raison : la garde de `setBindingRunner` n'est que locale ; sans contrôle serveur, un éditeur pose `runner = collègue` et un `config.repo` de son choix, et fait tourner la sync GitHub du collègue, avec son jeton, sur ce dépôt, ou rapatrie ses dépôts privés dans le projet partagé. Le démon ne change pas : il exécute les liaisons `runner === identité` en faisant confiance au serveur pour l'intégrité du doc, comme il le fait déjà pour `members` et les clés. Risque résiduel : un serveur compromis peut toujours attribuer une liaison ; le fermer demanderait une acceptation locale (liaisons acceptées par l'utilisateur sur cette machine, reconfirmation quand la config change), hors périmètre v1.0. Reportée en spec G §13 (D46).
 
 ## Écrans à dessiner (Penpot, avant les tâches UI)
 
-Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Restent à dessiner, par la **tâche 33** (vague 0) : **S3**, **S7**, **M3**, **M4**, **M5**, **M6**, **M7** (bannière de la page Composants, ligne de l'écran 19, message « Backend arrêté — isolation OS indisponible » sur une instance), **M8**, et la variante « Accès retiré » de S6. Ils vont sur la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
+Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketplace » (`design/penpot/scripts/14-sync.js`, exportée dans `design/pdf/kibo-design-*.pdf`), écrans **65–66** (S2), **67** (S4, S5 et l'indicateur S9 dans la barre), **68** (S6), **69–70** (S1), **71–72** (S8), **73** (M1), **74–75** (M2) ; l'écran **78** (`15-complements.js`) sert de modèle à la ligne de l'écran 19 (M7). Dessinés par la **tâche 33** (vague 0) : **79–81** (S3), **82** (S6 « Accès retiré »), **83** (S7, avec l'instance « Backend arrêté — isolation OS indisponible » de M7 et l'instance révoquée de M4), **84–86** (M3), **87** (M4, avec l'entrée « Publier sur la marketplace » du menu `⋯`), **88–89** (M5), **90** (M6), **91** (M7, bannière de la page Composants), **92** (M7, ligne de l'écran 19), **93–97** (M8). Ils sont sur la même page, **en sombre et en clair**, avec les données de `design/donnees-fictives.md` (utilisateur Adam, collègue fictive **Léa**, serveur `sync.kibo.test`), puis réexporte `kibo.penpot.xz` et les PDF. Chaque tâche UI cite les identifiants qu'elle implémente.
 
 **S1 · Paramètres › Sync** (nouvelle section du menu Paramètres, entre Intégrations et Sécurité). Sous-titre « Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ». »
 - *Non configuré* : encart vide (icône nuage barré), texte « Aucun serveur de sync configuré. », bouton « Se connecter à un serveur ».
@@ -130,15 +138,15 @@ Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketp
 - *Étape partagé* : liste des membres (avatar initiales, nom, rôle en `Select` Propriétaire / Éditeur / Lecteur pour un propriétaire, texte simple sinon, bouton « Retirer ») ; bloc Inviter (rôle Éditeur ou Lecteur, bouton « Générer un code ») ; code affiché une fois, bouton Copier, « Valable 48 h, usage unique » ; en bas « Arrêter le partage » (propriétaire, confirmation destructive).
 - *États* : « Partage en cours… » (spinner), erreur « Serveur injoignable, réessaie quand tu es en ligne ».
 
-**S3 · Dialogue « Rejoindre un projet »** (bouton dans la sidebar sous « Nouveau projet », visible si un serveur est configuré) : champ Code d'invitation, champ Dossier local (facultatif, aide « Le dossier reste sur ta machine »), bouton Rejoindre ; erreurs « Code invalide ou expiré », « Un projet local utilise déjà la clé KIB ».
+**S3 · Dialogue « Rejoindre un projet »** (écrans 79–81) (bouton dans la sidebar sous « Nouveau projet », visible si un serveur est configuré) : champ Code d'invitation, champ Dossier local (facultatif, aide « Le dossier reste sur ta machine »), bouton Rejoindre ; erreurs « Code invalide ou expiré », « Un projet local utilise déjà la clé KIB ».
 
 **S4 · Présence** : pile d'avatars (initiales, 24 px, bordure de la couleur du fond, 3 max puis « +2 ») à droite de la barre d'onglets pour le projet actif, infobulle « Léa · Kibo › Kanban » ; même pile réduite à droite du titre d'une page ; bandeau discret en haut du Sheet ticket « Léa regarde ce ticket » ; carte Kanban d'un ticket travaillé par l'agent d'un collègue : ligne agent « opus-dev-1 · Léa » (orange, sans barre d'état locale).
 
 **S5 · Ticket à clé provisoire** : `KIB-…` en italique, couleur atténuée, dans la carte Kanban, l'arbre Tickets et le Sheet, infobulle « Clé attribuée à la prochaine synchronisation » ; actions désactivées avec la même infobulle : « Assigner à un agent », « Créer la branche », « Générer le message de commit ».
 
-**S6 · Projet en lecture seule et « Accès retiré »** : bandeau pleine largeur sous la barre d'onglets, icône œil, « Lecture seule — tu es lecteur de ce projet. » ; variante rouge « Accès retiré — ta copie locale reste lisible mais n'est plus synchronisée. » ; boutons d'édition masqués (Nouveau ticket, Ajouter une page, glisser-déposer désactivé).
+**S6 · Projet en lecture seule et « Accès retiré »** (écrans 68 et 82) : bandeau pleine largeur sous la barre d'onglets, icône œil, « Lecture seule — tu es lecteur de ce projet. » ; variante rouge « Accès retiré — ta copie locale reste lisible mais n'est plus synchronisée. » ; boutons d'édition masqués (Nouveau ticket, Ajouter une page, glisser-déposer désactivé).
 
-**S7 · Composant absent** : cadre de l'instance en pointillés, icône paquet, « Composant absent : burndown@0.3.0 », sous-texte selon le cas : bouton « Installer » (source connue) ou « Demande à Léa de le publier sur la marketplace d'équipe ».
+**S7 · Composant absent** (écran 83) : cadre de l'instance en pointillés, icône paquet, « Composant absent : burndown@0.3.0 », sous-texte selon le cas : bouton « Installer » (source connue) ou « Demande à Léa de le publier sur la marketplace d'équipe ».
 
 **S8 · Paramètres › Sécurité**
 - *Accès distant* : interrupteur désactivé par défaut, texte « Le démon n'écoute que sur 127.0.0.1. L'accès distant ouvre un second port, chiffré, sur une interface que tu choisis. » ; dialogue d'activation : Interface (`Select` des adresses locales, ex. « en0 · 192.168.1.20 »), Port (défaut 47832), Certificat (Auto-signé / Fourni : chemins certificat et clé), avertissement ambre, case « Je comprends que cet appareil sera joignable depuis le réseau » requise ; état activé : URL `https://192.168.1.20:47832`, empreinte SHA-256 en mono groupée, « Vérifie cette empreinte dans ton navigateur à la première connexion. », bouton « Désactiver ».
@@ -151,17 +159,17 @@ Une partie existe déjà (vérifié en T0) : page Penpot « 12 · Sync & marketp
 
 **M2 · Détail d'un paquet** (Sheet à droite) : titre, id, description, éditeur (vérifié par <source> / non vérifié / nouvel éditeur), source, taille, empreinte courte, liste des versions (date, révoquée barrée avec motif), permissions en langage clair (mêmes phrases que l'écran 30), bouton « Voir le code » (liste des fichiers à gauche, aperçu en lecture à droite, bannière « Code vérifié : signature et empreinte correspondent »), bouton principal « Installer » (« Installation… », puis écran 30) ; erreurs de contrôle : « Signature invalide », « L'empreinte ne correspond pas », « Version révoquée : <motif> », « La clé de l'éditeur a changé » avec « Débloquer… ».
 
-**M3 · Paramètres › Composants › Sources** : tableau Nom · Adresse · Empreinte de la clé (courte) · Index n° · Mis à jour · État ; bouton « Ajouter une source » ⇒ dialogue en deux étapes (1 : adresse HTTPS ; 2 : nom de la source, empreinte complète groupée par 4, « Compare cette empreinte avec celle communiquée par l'éditeur de la source », boutons Retour / Ajouter) ; menu `⋯` Rafraîchir, Retirer ; erreur « Index refusé : numéro inférieur au dernier vu ».
+**M3 · Paramètres › Composants › Sources** (écrans 84–86) : tableau Nom · Adresse · Empreinte de la clé (courte) · Index n° · Mis à jour · État ; bouton « Ajouter une source » ⇒ dialogue en deux étapes (1 : adresse HTTPS ; 2 : nom de la source, empreinte complète groupée par 4, « Compare cette empreinte avec celle communiquée par l'éditeur de la source », boutons Retour / Ajouter) ; menu `⋯` Rafraîchir, Retirer ; erreur « Index refusé : numéro inférieur au dernier vu ».
 
-**M4 · Onglet Installés, états marketplace** : colonne Origine « Marketplace · Équipe » ; badge « 0.4.0 disponible » avec bouton « Mettre à jour » (ouvre l'écran 6) ; ligne révoquée : badge rouge « Révoqué », motif en sous-texte, instances en « Autorisation requise — Révoqué : <motif> ».
+**M4 · Onglet Installés, états marketplace** (écrans 87 et 83) : colonne Origine « Marketplace · Équipe » ; badge « 0.4.0 disponible » avec bouton « Mettre à jour » (ouvre l'écran 6) ; ligne révoquée : badge rouge « Révoqué », motif en sous-texte, instances en « Autorisation requise — Révoqué : <motif> ».
 
-**M5 · Écran 30, variantes marketplace** : sous-titre « Publié par Léa · vérifié par Équipe » ou « Publié par Léa · éditeur non vérifié » ; badge « Nouvel éditeur » au premier install ; avertissement supplémentaire sous « Confiance totale » : « Ce code vient d'une marketplace. ».
+**M5 · Écran 30, variantes marketplace** (écrans 88–89) : sous-titre « Publié par Léa · vérifié par Équipe » ou « Publié par Léa · éditeur non vérifié » ; badge « Nouvel éditeur » au premier install ; avertissement supplémentaire sous « Confiance totale » : « Ce code vient d'une marketplace. ».
 
-**M6 · Clé d'éditeur changée** : dialogue destructif « La clé de l'éditeur a changé » (ancienne et nouvelle empreintes, « Ne débloque que si l'éditeur t'a confirmé ce changement »), boutons Annuler / Débloquer.
+**M6 · Clé d'éditeur changée** (écran 90) : dialogue destructif « La clé de l'éditeur a changé » (ancienne et nouvelle empreintes, « Ne débloque que si l'éditeur t'a confirmé ce changement »), boutons Annuler / Débloquer.
 
-**M7 · Backend indisponible faute d'isolation OS** : bannière ambre en haut de la page Composants « Les backends sandboxés sont arrêtés : isolation OS indisponible. » + commande (`sudo apt install bubblewrap` ou `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`) ; instance concernée : « Backend arrêté — isolation OS indisponible » ; écran 19 : ligne « Isolation des composants » (✓ bubblewrap 0.9 / sandbox-exec, ou ⚠ avec la commande).
+**M7 · Backend indisponible faute d'isolation OS** (écrans 91, 92 et 83) : bannière ambre en haut de la page Composants « Les backends sandboxés sont arrêtés : isolation OS indisponible. » + commande (`sudo apt install bubblewrap` ou `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`) ; instance concernée : « Backend arrêté — isolation OS indisponible » ; écran 19 : ligne « Isolation des composants » (✓ bubblewrap 0.9 / sandbox-exec, ou ⚠ avec la commande).
 
-**M8 · Publier sur la marketplace** (menu `⋯` d'un composant utilisateur) : choix de la source (sources d'équipe seulement), nom d'éditeur au premier usage (« Ce nom accompagne tes composants publiés »), récapitulatif version, empreinte, permissions ; états « Publication… », succès « Publié : index n° 42 », erreurs « Version déjà publiée », « Tu n'as pas le droit de publier sur cette source ».
+**M8 · Publier sur la marketplace** (écrans 93–97 ; menu `⋯` d'un composant utilisateur) : choix de la source (sources d'équipe seulement), nom d'éditeur au premier usage (« Ce nom accompagne tes composants publiés »), récapitulatif version, empreinte, permissions ; états « Publication… », succès « Publié : index n° 42 », erreurs « Version déjà publiée », « Tu n'as pas le droit de publier sur cette source ».
 
 ## File Structure
 
@@ -400,7 +408,9 @@ export function writeMembers(doc: LoroDoc, members: { userId: string; name: stri
 export function readMembers(doc: LoroDoc): { userId: string; name: string }[];
 // validate-update.ts (T7)
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
-export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVerdict;
+export type UpdateAuthor = { userId: string; role: MemberRole };        // validate-bindings.ts (T7c)
+export function validateProjectUpdate(before: LoroDoc, after: LoroDoc, author: UpdateAuthor): UpdateVerdict;
+export function validateSharedSnapshot(doc: LoroDoc, projectId: string, ownerId: string): UpdateVerdict;   // validate-snapshot.ts (T14, T7c)
 // share-migration.ts (T7)
 export type ShareMigrationInput = { localUser: string; userId: string;
   domains: { domain: Domain; guidelines: { path: string; content: string }[] }[] };   // projectDomains : domainId → { name, color, guidelines }
@@ -478,7 +488,7 @@ export class TeamMarket {
   index(): { bytes: Uint8Array; sig: string };
   packageBytes(id: string, version: string): Uint8Array | null;
 }
-export class NonceCache { constructor(opts: { ttlMs: number; now: () => number }); seen(nonce: string): boolean }
+export class NonceCache { constructor(opts: { sdb: ServerDb; ttlMs: number; now: () => number }); seen(nonce: string): boolean }   // table market_nonces (T16)
 export function verifySignedRequest(sdb: ServerDb, req: Request, body: Uint8Array, nonces: NonceCache, now: number): Promise<{ userId: string; deviceId: string }>;
 ```
 
@@ -606,12 +616,13 @@ export function publishToMarket(deps: PublishDeps, input: { id: string; version:
 | `listMarketSources` / `probeMarketSource { url }` / `addMarketSource { url, publicKey }` / `removeMarketSource { id }` / `refreshMarket` / `searchMarket { query, sourceId?, kind? }` / `getMarketPackage { sourceId, id, version }` / `unpinPublisher { sourceId, componentId }` | | spec H §6 | T15 | `addMarketSource` et `unpinPublisher` **non** |
 | `findMarketSource` | `{ id, version, hash }` (`hash` nullable) | `{ sourceId } \| null` | T15 | oui |
 | `installFromMarket` | `{ sourceId, id, version }` | `MarketInstallResult` | T20 | oui |
-| `publishToMarket` | `{ id, version, sourceId, publisherName? }` | `{ serial }` | T22 | oui |
-| `exportKpkg` | `{ id, version, publisherName? }` | `Kpkg` | T22 | oui |
+| `publishToMarket` | `{ id, version, sourceId, publisherName? }` | `{ serial }` | T22 | **non** |
+| `exportKpkg` | `{ id, version, publisherName? }` | `Kpkg` | T22 | **non** |
 | `getSyncStatus` | — | `SyncStatus` | T21 | oui |
 | `connectSyncServer` | `{ serverUrl, code, deviceName, caFile }` | `SyncStatus` | T21 | **non** |
 | `disconnectSyncServer` | — | `null` | T21 | **non** |
-| `listDevices` / `addDevice` / `revokeDevice { deviceId }` | | `DeviceInfo[]` / `{ code, expiresAt }` / `null` | T21 | oui |
+| `listDevices` | — | `DeviceInfo[]` | T21 | oui |
+| `addDevice` / `revokeDevice { deviceId }` | | `{ code, expiresAt }` / `null` | T21 | **non** |
 | `shareProject` | `{ projectId }` | `ProjectSyncInfo` | T23 | oui |
 | `createProjectInvite` | `{ projectId, role }` | `{ code, expiresAt }` | T23 | oui |
 | `joinProject` | `{ code, folder }` | `ProjectMeta` | T23 | oui |
@@ -646,14 +657,14 @@ Une vague démarre quand toutes les tâches dont elle dépend sont intégrées d
 
 | Vague | Tâches en parallèle | Dépendances (tâche ← tâches) | Fichiers partagés dans la vague | Écrans |
 |---|---|---|---|---|
-| 0 | T0 (kibo-lead), puis T1, T8 et T33 | T1, T8, T33 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`, T33 que `design/`) | T33 dessine S3, S7, M3–M8, S6 « Accès retiré » |
+| 0 | T0 (kibo-lead), puis T1, T8 et T33 | T1, T8, T33 ← v0.6 | aucun (T8 ne touche que `devkit/src/os-sandbox.ts`, T33 que `design/`) | T33 dessine S3 (79–81), S6 « Accès retiré » (82), S7 (83), M3 (84–86), M4 (87), M5 (88, 89), M6 (90), M7 (91, 92, 83), M8 (93–97) |
 | 1 | T2, T4, T5, T6 | T2, T4, T5, T6 ← T1 | `schema/src/rpc.ts`, `schema/src/index.ts` (T4, T5, T6) ; fixtures `ProjectSnapshot` (T5, T6) | — |
 | 2 | T3, T7, T9, T10, T11 | T3 ← T2 · T7 ← T6 · T9 ← T1, T4 · T10 ← T2, T5 · T11 ← T2, T4 | `trust/src/index.ts` (T3, T10) | — |
 | 3 | T12, T13, T14, T15, T16 | T12 ← T8, T9 · T13 ← T3, T9 · T14 ← T7, T11 · T15 ← T9, T10 · T16 ← T10, T11 | `daemon/src/daemon.ts` (T12, T13, T15) ; `daemon/src/server.ts` (T13) ; `sync-server/src/index.ts`, `package.json` (T14, T16) ; `daemon/package.json` (T15) | — |
-| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13, T33 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7, écran 19 (78) |
-| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25, T33 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3, M5 |
+| 4 | T17, T18, T20, T25 | T17 ← T3, T14, T16 · T18 ← T14 · T20 ← T15 · T25 ← T12, T13, T33 | `daemon/package.json` (T18, T20) ; `components/service.ts` (T20) | T25 : S8 (écrans 71, 72), M7 (91, 92), écran 19 (78) |
+| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T13, T17, T18 · T26 ← T20, T25, T33 | `daemon/package.json` (T19, T21) ; UI sans conflit avec T21 | T26 : M1 (73), M2 (74, 75), M3 (84–86), M5 (88, 89) |
 | 6 | T22, T23, T28 | T22 ← T16, T20, T21 · T23 ← T7, T21 · T28 ← T21, T25 | `daemon.ts` (T22, T23) ; `collab/rpc.ts`, `collab/bootstrap.ts` (T23 seul) | T28 : S1 (69, 70), S9 |
-| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26, T33 · T29 ← T23, T28, T33 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4, M6, M8, S7 · T29 : S2 (65, 66), S3, S6 (68) |
+| 7 | T24, T27, T29 | T24 ← T23 · T27 ← T22, T26, T33 · T29 ← T23, T28, T33 | `i18n/fr.ts`, `components-page/ComponentsPage.tsx` (T27) ; `shell/AppSidebar.tsx` (T29) | T27 : M4 (87), M6 (90), M8 (93–97), S7 et M7 instance (83) · T29 : S2 (65, 66), S3 (79–81), S6 (68, 82) |
 | 8 | T30, T32 | T30 ← T6, T21, T24, T29 · T32 ← T15, T26, T27 | `e2e/playwright.config.ts`, `e2e/package.json` (T32 seul) | T30 : S4, S5 (67) |
 | 9 | T31 | T31 ← T17, T28, T29, T30 | `e2e/playwright.config.ts`, `e2e/package.json` (après T32) | — |
 | Jalon | conformité, tag `v1.0`, rapport final | tout | — | toutes |
@@ -666,11 +677,11 @@ Chemin critique (10 vagues après T0) : T1 → T2 → T11 → T14 → T17 → T2
 | 0 | T0 (kibo-lead), puis T1 | v0.6 | — |
 | 1 | T2, T3, T4, T5, T6, T8, T9 | T1 | — |
 | 2 | T7, T10, T11, T12, T13 | T7 ← T6 · T10 ← T2, T5 · T11 ← T2, T4 · T12 ← T8 · T13 ← T3, T9 | — |
-| 3 | T14, T15, T16, T25 | T14 ← T7, T11 · T15 ← T10 · T16 ← T10, T11 · T25 ← T12, T13 | T25 : S8, M7 |
+| 3 | T14, T15, T16, T25 | T14 ← T7, T11 · T15 ← T10 · T16 ← T10, T11 · T25 ← T12, T13 | T25 : S8, M7 (91, 92) |
 | 4 | T17, T18, T20 | T17 ← T14, T3 · T18 ← T14 · T20 ← T15, T8 | — |
-| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T17, T18 · T26 ← T20 | T26 : M1, M2, M3, M5 |
+| 5 | T19, T21, T26 | T19 ← T18 · T21 ← T17, T18 · T26 ← T20 | T26 : M1, M2, M3 (84–86), M5 (88, 89) |
 | 6 | T22, T23, T24, T28 | T22 ← T16, T20, T21 · T23 ← T21 · T24 ← T21 · T28 ← T21 | T28 : S1, S9 |
-| 7 | T27, T29, T30 | T27 ← T22, T26 · T29 ← T23 · T30 ← T24, T6 | T27 : M4, M6, M8, S7 · T29 : S2, S3, S6 · T30 : S4, S5 |
+| 7 | T27, T29, T30 | T27 ← T22, T26 · T29 ← T23 · T30 ← T24, T6 | T27 : M4 (87), M6 (90), M8 (93–97), S7 (83) · T29 : S2, S3 (79–81), S6 (68, 82) · T30 : S4, S5 |
 | 8 | T31, T32 | T31 ← T28, T29, T30 · T32 ← T27 | — |
 | Jalon | conformité, tag `v1.0`, rapport final | tout | toutes |
 
@@ -2251,6 +2262,10 @@ Expected: PASS, sans erreur.
 git add packages/trust/src/der.ts packages/trust/src/der.test.ts packages/trust/src/x509.ts packages/trust/src/x509.test.ts packages/trust/src/tls-platform.test.ts packages/trust/src/index.ts
 git commit -m "feat(trust): certificats auto-signés"
 ```
+
+**Écarts à la livraison :**
+- Extension `keyUsage` retirée du certificat (étape 4) : le TLS de Bun refuse une feuille auto-signée comme sa propre ancre si `keyUsage` n'autorise pas `keyCertSign`, et l'autoriser en ferait un certificat d'autorité. Le certificat garde `basicConstraints` (critique, `cA` absent), `extKeyUsage` `serverAuth` et `subjectAltName`.
+- Suivis de relecture (`fix(trust): durcit la génération des certificats`) : `days` entier de 1 à 825 (plafond Apple, utile à T13) ; au moins un nom (`dns` ou `ips` non vides, un SAN vide est interdit par la RFC 5280) ; `commonName` de 1 à 64 caractères ; noms DNS en étiquettes `^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$`, 253 caractères au plus, nom entièrement numérique refusé (une IPv4 va dans `ips`) ; `certFingerprint` vérifie que le DER est un certificat X.509 (`X509Certificate` de `node:crypto`) et refuse un PEM à plusieurs certificats ; `time()` n'emploie UTCTime que de 1950 à 2049. Tout refus lève `INVALID_INPUT`.
 
 ---
 
@@ -3951,7 +3966,7 @@ Fonctions pures de `core` que seul le serveur appelle (spec G §5, points 2, 4 e
 
 **Ordre d'attribution** (décision 6) : (Lamport de l'opération qui a créé le nœud, id du nœud). Le Lamport d'une opération se déduit du `Change` qui la contient : `change.lamport + (id.counter - change.counter)`. Deux répliques qui ont les mêmes opérations calculent donc le même ordre, quel que soit l'ordre d'import.
 
-**Validation** : on compare deux états, `before` (doc serveur) et `after` (fork du serveur où l'on a importé la mise à jour cliente). Un client ne peut ni changer `meta.ticketSeq`, `meta.keyAllocator`, `meta.members`, ni écrire une clé sur un ticket qui n'en avait pas, ni modifier ou effacer une clé attribuée. Le contrôle porte sur **tous** les nœuds, supprimés compris (`getNodes({ withDeleted: true })`) : un déplacement concurrent peut ressusciter un ticket supprimé, qui réapparaît alors avec sa clé déjà attribuée ; sans cela, ce déplacement légitime serait refusé comme une « clé écrite par un client ». Hypothèse (vérifiée par le test « resurrected ») : `node.data` reste lisible sur un nœud supprimé.
+**Validation** : on compare deux états, `before` (doc serveur) et `after` (fork du serveur où l'on a importé la mise à jour cliente). Un client ne peut ni changer `meta.ticketSeq`, `meta.keyAllocator`, `meta.members`, ni écrire une clé sur un ticket qui n'en avait pas, ni modifier ou effacer une clé attribuée. Décision 39 : il ne peut pas non plus changer `meta.id` ni `meta.key`, ni faire réapparaître `meta.folder` (même à `null`) ; les champs contrôlés sont lus **en surface** (`meta.get(champ)`, `node.data.get("key")`), jamais par `toJSON` du doc ou d'un nœud (5000 `LoroMap` imbriquées font lever « Out of bounds memory access » dans le wasm de Loro et corrompent le processus) ; un champ réservé ou figé doit rester la même valeur primitive (absence distincte de `null`), tout conteneur Loro y est refusé ; `meta.members` doit rester le même conteneur (même id) avec des entrées `{ name }` inchangées ; `meta.name` et `meta.color` modifiés doivent respecter `ProjectMeta` ; tout autre champ de `meta` est refusé. `allocateTicketKeys` et `enableServerAllocation` lèvent `STORE_CORRUPT` si `meta.ticketSeq` n'est pas un entier positif ou nul. Le contrôle porte sur **tous** les nœuds, supprimés compris (`getNodes({ withDeleted: true })`) : un déplacement concurrent peut ressusciter un ticket supprimé, qui réapparaît alors avec sa clé déjà attribuée ; sans cela, ce déplacement légitime serait refusé comme une « clé écrite par un client ». Hypothèse (vérifiée par le test « resurrected ») : `node.data` reste lisible sur un nœud supprimé.
 
 **Files:**
 - Modify: `packages/core/src/keys.ts` (partie serveur)
@@ -3970,7 +3985,7 @@ Fonctions pures de `core` que seul le serveur appelle (spec G §5, points 2, 4 e
   - `writeMembers(doc: LoroDoc, members: { userId: string; name: string }[]): void`
   - `readMembers(doc: LoroDoc): { userId: string; name: string }[]` (trié par `userId`)
   - `type UpdateVerdict = { ok: true } | { ok: false; reason: string }` ; `validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVerdict`
-  - `type ShareMigrationInput = { localUser: string; userId: string; domains: { domain: Domain; guidelines: { path: string; content: string }[] }[] }` (**changé** par T0 : les guidelines d'un domaine sont des fichiers, pas un champ) ; `migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null }` ; la map `projectDomains` du doc projet reçoit `domainId → { name, color, guidelines: { path, content }[] }` pour les seuls domaines utilisés par un ticket.
+  - `type ShareMigrationInput = { localUser: string; userId: string; domains: { domain: Domain; guidelines: { path: string; content: string }[] }[] }` (**changé** par T0 : les guidelines d'un domaine sont des fichiers, pas un champ) ; `migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { folder: string | null }` (refuse un doc déjà partagé en `INVALID_INPUT`, décision 39) ; la map `projectDomains` du doc projet reçoit `domainId → { name, color, guidelines: { path, content }[] }` pour les seuls domaines utilisés par un ticket.
 
 Vérifié en T0 :
 - Liaisons : `Binding = { id, adapter: "github-issues", config: BindingConfig, createdBy, runner }` (`packages/schema/src/integrations.ts`), stockée en **valeur JSON simple** dans la map `bindings` du doc projet (`addBinding`, `listBindings`, `getBinding`, `removeBinding` dans `packages/core/src/bindings.ts`). `createdBy` et `runner` valent le nom d'utilisateur OS (`host.user`, soit `userInfo().username` passé en `user` à `startDaemon`) ; le démon n'exécute que les liaisons `runner === host.user` (`packages/daemon/src/sync/engine.ts`, `runnable()`). `migrateForSharing` remplace donc la valeur JSON.
@@ -3981,7 +3996,7 @@ Vérifié en T0 :
 - API Loro 1.16.3 présentes : `idStrToId`, `LoroDoc.getChangeAt`, `LoroDoc.fork`, `LoroTree.getNodes({ withDeleted })`, `commit({ origin })`, `peerIdStr`.
 - `addPage(doc, { title, kind, parentId? })` (`packages/core/src/pages.ts`) ; `addLink(doc, { from, to, type })`, `setStatus(doc, id, statusId, reason?)`, `moveTicket(doc, id, parentId, index?)`, `deleteTicket(doc, id)`.
 
-- [ ] **Step 1: Écrire les tests d'attribution qui échouent**
+- [x] **Step 1: Écrire les tests d'attribution qui échouent**
 
 `packages/core/src/server-keys.test.ts` :
 ```ts
@@ -4111,12 +4126,12 @@ describe("members", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test**
+- [x] **Step 2: Lancer le test**
 
 Run: `bun test packages/core/src/server-keys.test.ts`
 Expected: FAIL (`allocateTicketKeys` introuvable).
 
-- [ ] **Step 3: Implémenter la partie serveur de `keys.ts`**
+- [x] **Step 3: Implémenter la partie serveur de `keys.ts`**
 
 Ajouter à `packages/core/src/keys.ts` (les imports existants de T6 sont complétés) :
 ```ts
@@ -4187,12 +4202,12 @@ export function readMembers(doc: LoroDoc): { userId: string; name: string }[] {
 ```
 Le cast `ticketId as TreeID` est justifié : les ids de ticket sont les `TreeID` Loro (`counter@peer`), produits par `createNode`.
 
-- [ ] **Step 4: Relancer le test**
+- [x] **Step 4: Relancer le test**
 
 Run: `bun test packages/core/src/server-keys.test.ts`
 Expected: PASS (8 tests).
 
-- [ ] **Step 5: Écrire les tests de validation qui échouent**
+- [x] **Step 5: Écrire les tests de validation qui échouent**
 
 `packages/core/src/validate-update.test.ts` :
 ```ts
@@ -4352,12 +4367,12 @@ describe("accepted updates", () => {
 });
 ```
 
-- [ ] **Step 6: Lancer le test**
+- [x] **Step 6: Lancer le test**
 
 Run: `bun test packages/core/src/validate-update.test.ts`
 Expected: FAIL (`validateProjectUpdate` introuvable).
 
-- [ ] **Step 7: Implémenter `validate-update.ts`**
+- [x] **Step 7: Implémenter `validate-update.ts`**
 
 `packages/core/src/validate-update.ts` :
 ```ts
@@ -4401,12 +4416,12 @@ export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVe
 }
 ```
 
-- [ ] **Step 8: Relancer le test**
+- [x] **Step 8: Relancer le test**
 
 Run: `bun test packages/core/src/validate-update.test.ts`
 Expected: PASS (10 tests).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/core/src/keys.ts packages/core/src/validate-update.ts packages/core/src/index.ts \
@@ -4415,7 +4430,7 @@ git commit -m "feat(core): attribution serveur des clés"
 ```
 `packages/core/src/index.ts` gagne `export * from "./validate-update";`.
 
-- [ ] **Step 10: Écrire les tests de migration qui échouent**
+- [x] **Step 10: Écrire les tests de migration qui échouent**
 
 `packages/core/src/share-migration.test.ts` :
 ```ts
@@ -4499,12 +4514,12 @@ test("moves the local user's bindings to the account id", () => {
 });
 ```
 
-- [ ] **Step 11: Lancer le test**
+- [x] **Step 11: Lancer le test**
 
 Run: `bun test packages/core/src/share-migration.test.ts`
 Expected: FAIL (`migrateForSharing` introuvable).
 
-- [ ] **Step 12: Implémenter `share-migration.ts`**
+- [x] **Step 12: Implémenter `share-migration.ts`**
 
 `packages/core/src/share-migration.ts` :
 ```ts
@@ -4558,17 +4573,39 @@ export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { f
 ```
 et `export * from "./share-migration";` dans `packages/core/src/index.ts`.
 
-- [ ] **Step 13: Suite complète**
+- [x] **Step 13: Suite complète**
 
 Run: `bun test packages/core && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 14: Commit**
+- [x] **Step 14: Commit**
 
 ```bash
 git add packages/core/src/share-migration.ts packages/core/src/share-migration.test.ts packages/core/src/index.ts
 git commit -m "feat(core): migrations du premier partage"
 ```
+
+- [x] **Suivi T7b** : profondeur bornée dans `validateProjectUpdate` (D42) : arbres ≤ 64 niveaux, conteneurs ≤ 32, refus en `UPDATE_REJECTED` sans conversion profonde (`packages/core/src/update-depth.ts`, `validate-update-depth.test.ts`).
+
+---
+
+### Task 7c: Liaisons d'un projet partagé opposables
+
+Suivi sécurité relevé à la relecture de T23 (décision 46). Les commandes brutes sur la map `bindings` (`addBinding`, réécriture par `LoroMap.set`) laissaient un éditeur poser `runner = userId d'un collègue` et un `config.repo` arbitraire : la garde de `setBindingRunner` est locale, et `validateProjectUpdate` ignorait `bindings`. La règle spec G §6.2 devient opposable côté serveur, le démon ne change pas.
+
+**Files:**
+- Create: `packages/core/src/validate-bindings.ts`, `packages/core/src/validate-update-bindings.test.ts`
+- Modify: `packages/core/src/validate-update.ts` (auteur), `packages/core/src/validate-snapshot.ts` (propriétaire), `packages/core/src/index.ts`, les tests existants de validation (auteur `owner`)
+- Modify: `packages/sync-server/src/room.ts` (`push` passe l'acteur, `create` passe `ownerId`), `packages/sync-server/src/room.test.ts`
+
+**Interfaces:**
+- `type UpdateAuthor = { userId: string; role: MemberRole }`
+- `validateProjectUpdate(before, after, author: UpdateAuthor): UpdateVerdict` et `validateSharedSnapshot(doc, projectId, ownerId): UpdateVerdict`
+- `bindingsUpdateViolation(before, after, author): string | null`, `bindingsSnapshotViolation(bindings: LoroMap, ownerId): string | null`
+
+- [x] **Step 1: Tests d'attaque qui échouent** : dans `core`, un éditeur crée une liaison `runner = autre membre` ou `createdBy = autre membre`, change `config.repo` d'une liaison d'autrui, prend le `runner` d'autrui, le cède à un tiers, change `createdBy`, écrit un conteneur ou une valeur invalide, supprime puis recrée sous le même id ; cas acceptés : création sur son compte, reprise par le créateur, reprise par un `owner` (avec ou sans reconfiguration), suppression, lot sans rapport. Dans la salle : un éditeur qui pose `runner = propriétaire` ou vise `adam/secret` est refusé en `UPDATE_REJECTED` (doc inchangé, audit `update-rejected` avec l'id de la liaison) ; un premier snapshot dont une liaison n'est pas exécutée par le propriétaire est refusé en `INVALID_INPUT`.
+- [x] **Step 2: Implémenter** `validate-bindings.ts` (lecture en surface, `Binding.safeParse`, comparaison canonique des états), brancher dans `validateProjectUpdate` et `validateSharedSnapshot`, passer l'acteur et le propriétaire depuis `ProjectRoom`.
+- [x] **Step 3: Décision 46** dans le plan et la spec G (§6.2, §13) ; `bun test packages components`, `bun run check`, `bun run typecheck` verts ; commits `feat(sync): liaisons partagées validées` et `docs: D46, liaisons partagées opposables`.
 
 ---
 
@@ -6980,7 +7017,7 @@ Cette tâche ajoute donc seulement : le réglage persistant, le service qui expo
   // packages/daemon/src/components/service.ts : ComponentsDeps.allowUnsandboxed?: () => boolean
   ```
 
-- [ ] **Step 1: Écrire le test du lancement sans isolation**
+- [x] **Step 1: Écrire le test du lancement sans isolation**
 
 Ajouter à `packages/daemon/src/components/process-host-sandbox.test.ts` (imports enrichis de `SERVER_JS` depuis `./backend-code.test-helper`) :
 ```ts
@@ -7046,7 +7083,7 @@ Le test existant « without an OS sandbox the backend does not start » reste te
 Run: `bun test packages/daemon/src/components/process-host-sandbox.test.ts`
 Expected: FAIL — l'option `allowUnsandboxed` n'existe pas, `SANDBOX_UNAVAILABLE` au premier cas.
 
-- [ ] **Step 2: Lancer sans enveloppe quand le réglage l'autorise**
+- [x] **Step 2: Lancer sans enveloppe quand le réglage l'autorise**
 
 Dans `packages/daemon/src/components/process-host.ts` :
 ```ts
@@ -7082,7 +7119,7 @@ Dans `packages/daemon/src/components/backends.ts`, `BackendsDeps` gagne `allowUn
 Run: `bun test packages/daemon/src/components/process-host-sandbox.test.ts packages/daemon/src/components/process-host.test.ts packages/daemon/src/components/backends.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Écrire le test du service d'isolation**
+- [x] **Step 3: Écrire le test du service d'isolation**
 
 `packages/daemon/src/sandbox/sandbox-service.test.ts` :
 ```ts
@@ -7157,7 +7194,7 @@ describe("sandbox RPC", () => {
 Run: `bun test packages/daemon/src/sandbox/sandbox-service.test.ts`
 Expected: FAIL avec « Cannot find module './sandbox-service' ».
 
-- [ ] **Step 4: Implémenter le service et les RPC**
+- [x] **Step 4: Implémenter le service et les RPC**
 
 `packages/daemon/src/sandbox/sandbox-service.ts` :
 ```ts
@@ -7220,7 +7257,7 @@ export function sandboxRpc(service: SandboxService): RpcExtension {
 Run: `bun test packages/daemon/src/sandbox/sandbox-service.test.ts`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Test du démon assemblé**
+- [x] **Step 5: Test du démon assemblé**
 
 `packages/daemon/src/sandbox/sandbox-daemon.test.ts` :
 ```ts
@@ -7273,7 +7310,7 @@ test("the daemon reports its isolation and keeps the setting across restarts", a
 Run: `bun test packages/daemon/src/sandbox/sandbox-daemon.test.ts`
 Expected: FAIL — `INVALID_INPUT` ou `INTERNAL` sur `getSandboxStatus` (méthode non branchée).
 
-- [ ] **Step 6: Brancher dans le démon**
+- [x] **Step 6: Brancher dans le démon**
 
 Dans `packages/daemon/src/daemon.ts` (`assemble`), après `createService` :
 ```ts
@@ -7285,7 +7322,7 @@ puis passer `allowUnsandboxed: () => sandbox.allowUnsandboxed()` à `createCompo
 Run: `bun test packages/daemon/src/sandbox packages/daemon/src/components`
 Expected: PASS, y compris `exit.test.ts` inchangé (isolation OS active : action `escape` tout `blocked`).
 
-- [ ] **Step 7: Vérifier le lint et les types, commiter**
+- [x] **Step 7: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck && bun test packages/daemon`
 Expected: aucun diagnostic, tests verts.
@@ -7332,7 +7369,7 @@ Vague 3 (dépend de T1, T2, T3, T4, T9 ; mêmes fichiers `server.ts` et `daemon.
 - Vérifié en T0 : `server.ts` a aussi `hosts()` / `origins()` (avec les origines du bac à sable `sandboxOrigins(opts.sandboxOrigin?.())`), `/hooks/<runId>` (hooks des agents locaux), `/components/` (`serveTrusted`), `/api/code`, et `withUiHeaders(res, sandboxOrigin)` dont le CSP autorise `frame-src` vers le serveur de bac à sable (`startSandboxServer`, `127.0.0.1` seulement). L'écran 15 (« Accès web · Générer un code ») n'existe pas dans l'UI : l'entrée « Apparence » de `SettingsNav` est désactivée (« Bientôt ») ; son UI est livrée par T25.
 - Limite connue (voir rapport T0) : depuis l'écouteur distant, l'UI et les composants intégrés et `trusted` (`/components/`) fonctionnent ; les iframes des composants **sandboxés** pointent vers le serveur de bac à sable en `127.0.0.1` et ne se chargent pas à distance. T13 ne l'étend pas : décision à faire valider (rapport de T0).
 
-- [ ] **Step 1: Écrire le test des codes d'appairage**
+- [x] **Step 1: Écrire le test des codes d'appairage**
 
 `packages/daemon/src/remote/pairing-codes.test.ts` :
 ```ts
@@ -7386,7 +7423,7 @@ Un succès ne remet pas le compteur d'échecs à zéro (seul `create` le fait) :
 Run: `bun test packages/daemon/src/remote/pairing-codes.test.ts`
 Expected: FAIL avec « Cannot find module './pairing-codes' ».
 
-- [ ] **Step 2: Implémenter les codes**
+- [x] **Step 2: Implémenter les codes**
 
 `packages/daemon/src/remote/pairing-codes.ts` :
 ```ts
@@ -7431,7 +7468,7 @@ export class PairingCodes {
 Run: `bun test packages/daemon/src/remote/pairing-codes.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 3: Interfaces réseau**
+- [x] **Step 3: Interfaces réseau**
 
 `packages/daemon/src/remote/interfaces.test.ts` :
 ```ts
@@ -7482,7 +7519,7 @@ export function listInterfaces(
 Run: `bun test packages/daemon/src/remote/interfaces.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Écrire le test d'intégration de l'accès distant**
+- [x] **Step 4: Écrire le test d'intégration de l'accès distant**
 
 `packages/daemon/src/remote/remote-access.test.ts` :
 ```ts
@@ -7695,7 +7732,7 @@ Dans `beforeEach`, l'extension enveloppe `remoteRpc` parce que `remote` dépend 
 Run: `bun test packages/daemon/src/remote/remote-access.test.ts`
 Expected: FAIL (`./remote-access` introuvable, `/api/pair-code` inconnu).
 
-- [ ] **Step 5: Implémenter l'accès distant et ses RPC**
+- [x] **Step 5: Implémenter l'accès distant et ses RPC**
 
 `packages/daemon/src/remote/remote-access.ts` :
 ```ts
@@ -7840,6 +7877,8 @@ export function createRemoteAccess(deps: RemoteAccessDeps): RemoteAccess {
   };
 }
 ```
+
+**`certFingerprint` refuse un `fullchain.pem`** (le PEM doit contenir un seul certificat X.509, suivi T3). Pour un certificat fourni (`tls.kind === "provided"`), `provided` extrait le premier bloc `-----BEGIN CERTIFICATE----- … -----END CERTIFICATE-----` du fichier (la feuille) et c'est lui que reçoit `certFingerprint` ; `material.cert` garde le contenu complet du fichier (chaîne entière) pour `listen`. Un test de `remote-access.test.ts` couvre un fichier à deux certificats : l'empreinte affichée est celle de la feuille.
 `resume` ne relance pas l'erreur : le démon doit démarrer même si l'interface a disparu ; l'erreur est journalisée et affichée (`lastError`, écran S8).
 
 `packages/daemon/src/remote/rpc.ts` :
@@ -7874,7 +7913,7 @@ export function remoteRpc(remote: RemoteAccess, codes: PairingCodes): RpcExtensi
 }
 ```
 
-- [ ] **Step 6: Gestionnaire HTTP partagé par les deux écouteurs**
+- [x] **Step 6: Gestionnaire HTTP partagé par les deux écouteurs**
 
 Dans `packages/daemon/src/server.ts` (base : la version de T9). Tout ce qui existe reste en place ; seul le contexte d'écoute (`ListenInfo`) est ajouté et passé aux contrôles :
 ```ts
@@ -7982,7 +8021,7 @@ Le gestionnaire `fetch` de la v0.6 devient une fabrique ; il garde son ordre de 
 ```
 `websocket` est l'objet `open` / `close` / `message` de T9, extrait dans une constante. `publish` remplace le `server.publish("changes", …)` de la v0.6 et reste branché sur `opts.service.onChange` et `opts.code?.onChange` : les deux écouteurs reçoivent les mêmes événements, masqués par `redact`. `ServerOptions` gagne `pairingCodes?: PairingCodes` ; `startServer` renvoie `{ url, port, stop, listenRemote }`, et `stop` ferme aussi les écouteurs distants restants. Le CSP de l'UI est identique sur les deux écouteurs (`withUiHeaders`), `connect-src 'self'` couvrant `wss:` de la même origine. Les hooks des agents (`/hooks/<runId>`) ne répondent que sur `127.0.0.1` (test « agent hooks are refused on the remote listener »).
 
-- [ ] **Step 7: Brancher `daemon.ts` et le client du SDK**
+- [x] **Step 7: Brancher `daemon.ts` et le client du SDK**
 
 Dans `packages/daemon/src/daemon.ts` (`assemble`), avant `startServer` :
 ```ts
@@ -8045,12 +8084,12 @@ test("pairWithCode posts the code and fails on 401", async () => {
 
 Le test d'aiguillage des `Phase7Event` est celui de T4 ; ici, seul `pairWithCode` est testé.
 
-- [ ] **Step 8: Lancer les tests**
+- [x] **Step 8: Lancer les tests**
 
 Run: `bun test packages/daemon packages/sdk`
 Expected: PASS (dont les 13 tests de `remote-access.test.ts`) ; les fichiers `server*.test.ts`, `exit.test.ts` et `agents.integration.test.ts` passent **sans modification** (`sessions` et `pairingCodes` sont facultatifs).
 
-- [ ] **Step 9: Vérifier le lint et les types, commiter**
+- [x] **Step 9: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
@@ -8091,7 +8130,7 @@ Les lignes écrites par le serveur lui-même (attribution de clés dans un lot c
 - Produces (Contrats partagés) : `Actor`, `PushResult` (avec `allocated`), `RoomLimits`, `RoomReject`, `ProjectRoom` (`create`, `load`, `projectId`, `presence`, `version`, `serverSeq`, `sizeBytes`, `diffSince`, `push`, `syncMembers`, `snapshotBytes`), `RoomRegistry` (`get`, `create`, `attach`, `detach`, `drop`, `sweep`, `loaded`).
 - Produces (**ajout**) : le constructeur de `RoomRegistry` accepte `limits?: Partial<RoomLimits>` dans ses options ; `@kibo/sync-server/testing/fixtures` exporte `seedUser(sdb, name, now): Promise<SeededUser>`, `addMember(sdb, input, now)` et `ownerSnapshot(): Uint8Array` pour T17, T18 et T19.
 
-- [ ] **Step 1: Écrire les fixtures de test**
+- [x] **Step 1: Écrire les fixtures de test**
 
 `packages/sync-server/src/testing/fixtures.ts` :
 ```ts
@@ -8134,7 +8173,7 @@ export function ownerSnapshot(): Uint8Array {
 }
 ```
 
-- [ ] **Step 2: Écrire les tests de la salle qui échouent**
+- [x] **Step 2: Écrire les tests de la salle qui échouent**
 
 `packages/sync-server/src/room.test.ts` :
 ```ts
@@ -8390,12 +8429,12 @@ describe("restart", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer le test**
+- [x] **Step 3: Lancer le test**
 
 Run: `bun test packages/sync-server/src/room.test.ts`
 Expected: FAIL (`./room` introuvable).
 
-- [ ] **Step 4: Implémenter `room.ts`**
+- [x] **Step 4: Implémenter `room.ts`**
 
 `packages/sync-server/src/room.ts` :
 ```ts
@@ -8620,13 +8659,15 @@ Notes pour le relecteur :
 - `fork()` coûte une copie du doc par lot : acceptable en v1.0 (projets de quelques Mio), risque noté au jalon.
 - Les lignes `updates` restent (append-only) après compactage ; seuls le chargement et le quota partent du dernier snapshot.
 - Le lot rejeté pour quota a déjà passé la validation : il ne touche jamais le doc principal.
+- Écart (T14) : un lot de plus de `MAX_FRAME_BYTES` est refusé en `UPDATE_REJECTED` avant tout import (aucun code de `RejectCode` plus précis) ; `diffSince` sur une version illisible lève `INVALID_INPUT`.
+- Écart (T14) : l'attribution des clés se fait sur le candidat, adopté comme doc de la salle seulement après l'écriture SQLite réussie ; les versions se comparent par `VersionVector.compare`, jamais octet par octet.
 
-- [ ] **Step 5: Relancer le test**
+- [x] **Step 5: Relancer le test**
 
 Run: `bun test packages/sync-server/src/room.test.ts`
 Expected: PASS (14 tests).
 
-- [ ] **Step 6: Écrire les tests du registre qui échouent**
+- [x] **Step 6: Écrire les tests du registre qui échouent**
 
 `packages/sync-server/src/rooms.test.ts` :
 ```ts
@@ -8687,12 +8728,12 @@ test("a reloaded room has the same state", () => {
 });
 ```
 
-- [ ] **Step 7: Lancer le test**
+- [x] **Step 7: Lancer le test**
 
 Run: `bun test packages/sync-server/src/rooms.test.ts`
 Expected: FAIL (`./rooms` introuvable).
 
-- [ ] **Step 8: Implémenter `rooms.ts`**
+- [x] **Step 8: Implémenter `rooms.ts`**
 
 `packages/sync-server/src/rooms.ts` :
 ```ts
@@ -8774,12 +8815,12 @@ export * from "./room";
 export * from "./rooms";
 ```
 
-- [ ] **Step 9: Suite du paquet, lint, types**
+- [x] **Step 9: Suite du paquet, lint, types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add packages/sync-server/package.json packages/sync-server/src/room.ts packages/sync-server/src/rooms.ts packages/sync-server/src/index.ts \
@@ -8822,7 +8863,7 @@ Bornes de téléchargement (entrée réseau hostile, lue en flux et coupée dès
   - `startFakeMarket(opts?: { id?: string; name?: string; verified?: boolean }): Promise<FakeMarket>` avec `FakeMarket = { url: string; publicKey: string; publish(pkg: Uint8Array): Promise<void>; revoke(hash: string, reason: string): Promise<void>; setSerial(serial: number): Promise<void>; resignWith(keys: KeyPair): Promise<void>; tamper(path: string, bytes: Uint8Array): void; serial(): number; stop(): void }`.
   - `createMemoryRegistry(): { port: RegistryPort; revoked: { id: string; version: string; reason: string }[] }` (réutilisé par T20 et T22).
 
-- [ ] **Step 1: Écrire les tests de `http-get`**
+- [x] **Step 1: Écrire les tests de `http-get`**
 
 `packages/daemon/src/market/http-get.test.ts` :
 ```ts
@@ -8901,12 +8942,12 @@ describe("createHttpGet", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `bun test packages/daemon/src/market/http-get.test.ts`
 Expected: FAIL avec « Cannot find module './http-get' ».
 
-- [ ] **Step 3: Implémenter `http-get.ts`**
+- [x] **Step 3: Implémenter `http-get.ts`**
 
 `packages/daemon/src/market/http-get.ts` :
 ```ts
@@ -8998,12 +9039,12 @@ async function readLimited(res: Response, maxBytes: number, href: string, signal
 }
 ```
 
-- [ ] **Step 4: Relancer**
+- [x] **Step 4: Relancer**
 
 Run: `bun test packages/daemon/src/market/http-get.test.ts`
 Expected: PASS (9 tests).
 
-- [ ] **Step 5: Écrire la fausse source et le registre en mémoire**
+- [x] **Step 5: Écrire la fausse source et le registre en mémoire**
 
 `packages/daemon/src/testing/fake-market.ts` :
 ```ts
@@ -9149,7 +9190,7 @@ export function createMemoryRegistry(): {
 }
 ```
 
-- [ ] **Step 6: Écrire les tests du service**
+- [x] **Step 6: Écrire les tests du service**
 
 `packages/daemon/src/market/market-service.test.ts` :
 ```ts
@@ -9401,12 +9442,12 @@ describe("search and packages", () => {
 });
 ```
 
-- [ ] **Step 7: Lancer pour voir échouer**
+- [x] **Step 7: Lancer pour voir échouer**
 
 Run: `bun test packages/daemon/src/market/market-service.test.ts`
 Expected: FAIL avec « Cannot find module './market-db' ».
 
-- [ ] **Step 8: Implémenter `market-db.ts`**
+- [x] **Step 8: Implémenter `market-db.ts`**
 
 `packages/daemon/src/market/market-db.ts` :
 ```ts
@@ -9509,7 +9550,7 @@ export function openMarketDb(db: Database): MarketDb {
 ```
 La suppression d'une source garde les épinglages : ils ne portent aucun secret et réinstaller depuis la même source doit retrouver la même exigence (spec H §5.4).
 
-- [ ] **Step 9: Implémenter `market-service.ts`**
+- [x] **Step 9: Implémenter `market-service.ts`**
 
 `packages/daemon/src/market/market-service.ts` :
 ```ts
@@ -9842,12 +9883,12 @@ export class MarketService {
 }
 ```
 
-- [ ] **Step 10: Relancer**
+- [x] **Step 10: Relancer**
 
 Run: `bun test packages/daemon/src/market/market-service.test.ts`
 Expected: PASS (16 tests).
 
-- [ ] **Step 11: Test des RPC**
+- [x] **Step 11: Test des RPC**
 
 `packages/daemon/src/market/rpc.test.ts` :
 ```ts
@@ -9914,7 +9955,7 @@ test("findMarketSource answers null when nothing matches", async () => {
 Run: `bun test packages/daemon/src/market/rpc.test.ts`
 Expected: FAIL avec « Cannot find module './rpc' ».
 
-- [ ] **Step 12: Implémenter `rpc.ts` et la planification**
+- [x] **Step 12: Implémenter `rpc.ts` et la planification**
 
 `packages/daemon/src/market/rpc.ts` :
 ```ts
@@ -9973,7 +10014,7 @@ export function startMarketRefresh(
 }
 ```
 
-- [ ] **Step 12b: Adaptateur du registre réel**
+- [x] **Step 12b: Adaptateur du registre réel**
 
 `packages/daemon/src/market/registry-port.test.ts` :
 ```ts
@@ -10067,7 +10108,7 @@ export function createRegistryPort(input: {
 Run: `bun test packages/daemon/src/market/registry-port.test.ts`
 Expected: PASS.
 
-- [ ] **Step 12c: Branchement dans le démon**
+- [x] **Step 12c: Branchement dans le démon**
 
 `packages/daemon/src/market/bootstrap.ts` :
 ```ts
@@ -10125,17 +10166,17 @@ Dans `packages/daemon/src/daemon.ts` :
 
 Dans `packages/daemon/src/main.ts`, passer `marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1"` à `startDaemon` (même procédé que `KIBO_NATIVE_NOTIFY`). Seuls les E2E (T32) posent cette variable.
 
-- [ ] **Step 13: Relancer tout le dossier**
+- [x] **Step 13: Relancer tout le dossier**
 
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 14: Vérifications**
+- [x] **Step 14: Vérifications**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucune erreur.
 
-- [ ] **Step 15: Commit**
+- [x] **Step 15: Commit**
 
 ```bash
 git add packages/daemon/package.json packages/daemon/src/market packages/daemon/src/components/service.ts packages/daemon/src/testing/fake-market.ts packages/daemon/src/testing/memory-registry.ts packages/daemon/src/daemon.ts packages/daemon/src/main.ts bun.lock
@@ -10157,14 +10198,23 @@ Source de marketplace servie par `kibo-sync` (spec H §5.1 point 4, §6, décisi
 - Consumes (T10) : `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `encodeKpkg`, `signIndex`, `verifyIndex` ; `makeTestPackage` (`@kibo/trust/testing`). (T2) : `generateKeyPair`, `keyFingerprint`, `sha256Hex`, `httpSigningPayload`, `HTTP_SIGNATURE_HEADERS`, `signRequest`, `verifyBytes`. (T11) : `ServerDb`, `openServerDb`, `deviceRecord`, `createInvite`, `redeemDeviceInvite`, `audit`. (T5) : `MarketIndex`, `Sha256`, `KPKG_MAX_BYTES`.
 - Vérifié en T0 : `compareSemver(a, b): -1 | 0 | 1` et `grantedOf(manifest): GrantedPermissions` (six champs : `reads`, `writes`, `data`, `net`, `secrets`, `mcp`) sont exportés par `@kibo/schema` (`semver.ts`, `permissions.ts`) : aucune copie locale ; `ComponentManifest.description` est optionnel, l'index écrit `""` à défaut ; le code `TOO_LARGE` existe (phase 3, 413 dans le `STATUS` du démon) et sert au corps trop gros ; `zod` est une dépendance de `@kibo/sync-server` depuis T1.
 - Produces : `initMarketSource`, `TeamMarket`, `NonceCache`, `verifySignedRequest` (Contrats), et **nouveau** :
-  - `type MarketRouteDeps = { sdb: ServerDb; market: TeamMarket; nonces: NonceCache; now: () => number }`
+  - `type MarketRouteDeps = { sdb: ServerDb; market: TeamMarket; nonces: NonceCache; now: () => number; limits: MarketLimits; ip: string }` (`createMarketLimits(now)`, recalage ci-dessous)
   - `handleMarketRoute(req: Request, url: URL, deps: MarketRouteDeps): Promise<Response | null>` (`null` = route non marketplace)
   - `TeamMarket.source(): { id: string; name: string; publicKey: string }`
   - `MARKET_SOURCE_FILE = "market-source.json"`, `SIGNED_REQUEST_SKEW_MS = 300_000`, `NONCE_TTL_MS = 600_000`
 
 Réponses HTTP : succès `{ ok: true, result }`, erreur `{ ok: false, error: { code, message } }` comme le démon. Statuts : `UNAUTHORIZED` et `DEVICE_REVOKED` 401, `FORBIDDEN` 403, `NOT_FOUND` 404, `VERSION_EXISTS` et `PUBLISHER_CHANGED` 409, `REVOKED` 410, `SIGNATURE_INVALID` et `HASH_MISMATCH` 422, `INVALID_INPUT` 400, corps trop gros `TOO_LARGE` 413, autre erreur 500 journalisée.
 
-- [ ] **Step 1: Écrire les tests de la source d'équipe**
+**Recalage à l'exécution (T16)** — le code livré prime sur les extraits ci-dessous :
+- **Chemin signé** : `pathname + search` de l'URL analysée (WHATWG), pourcentages conservés, jamais décodés ; **la chaîne de requête fait partie du chemin signé**, pour qu'aucun paramètre ne s'ajoute sans invalider la signature. Un client qui signe `/v1/market/packages` envoie donc sans `?`. Méthode signée en majuscules (`req.method.toUpperCase()`), chemin avec caractère de contrôle refusé. En-têtes validés par Zod (`date` en chiffres, nonce et signature base64 bornés à 128 caractères). Écart d'horloge ≤ 5 min ; nonce retenu 10 min **sur sa chaîne** (jamais sur la signature), expiré au sens strict (`until < now`) pour qu'un rejeu à la borne de l'écart reste refusé ; il n'est enregistré qu'après une signature valide.
+- **Bornes** : corps de `POST /v1/market/packages` ≤ `KPKG_MAX_RAW_BYTES`, de `POST /v1/market/revoke` ≤ 4 Kio ; `content-length` contrôlé puis lecture en flux coupée à la borne (`TOO_LARGE`) ; en-têtes et appareil contrôlés **avant** la lecture du corps.
+- **Débit** (`market-limits.ts`) : 10 échecs d'authentification par minute et par adresse bloquent l'adresse 5 min ; 30 écritures par minute et par utilisateur ; `RATE_LIMITED` 429. `MarketRouteDeps` gagne donc `limits: MarketLimits` (`createMarketLimits(now)`) et `ip: string` (T17 les fournit).
+- **Nom d'éditeur figé** : le nom (non signé, spec H §3.1) est enregistré avec la clé à la première publication et resservi tel quel dans `index.publishers` ; un paquet de la même clé sous un autre nom, un nom déjà pris par un autre utilisateur (comparaison NFKC, casse ignorée) ou un nom avec espaces de bord ou caractères de contrôle sont refusés en `INVALID_INPUT`. Clé d'éditeur contrôlée par `parsePublicKey`.
+- **Index jamais en retour arrière** : publication et révocation sérialisées (file d'attente) ; l'index suivant est construit et signé avant l'écriture, puis paquet, révocation, audit et index sont écrits dans une seule transaction qui refuse (`CONFLICT`) si le `serial` a bougé. Révoquer exige un rôle (`owner`, ou `publisher` auteur du paquet) ; `TeamMarket.ungrant(userId)` retire le rôle.
+- **Revue du lead (refus 1)** : noms et motifs de révocation passent par `isCleanText` / `CleanText` (`clean-text.ts`, partagé) : refus de `\p{Cc}`, `\p{Cf}`, `\p{Co}` (usage privé), `\p{Cn}` (non attribué), `\p{Cs}` (surrogat isolé), `\p{Zl}`, `\p{Zp}`, des blancs invisibles (`INVISIBLE_BLANKS` : U+00AD, U+034F, U+115F-1160, U+17B4-17B5, U+180B-180F, U+200B-200F, U+202A-202E, U+2060-206F, U+2800 blanc braille, U+3164, U+FE00-FE0F, U+FEFF, U+FFA0, U+E0000-E0FFF), de deux blancs consécutifs, des blancs de bord et d'un texte non NFC ; les marques combinantes visibles (U+0338…) restent admises. Le nom d'éditeur passe en plus par `isCleanName` : un nom qui contient une lettre latine ne contient que des caractères d'écriture latine, commune ou héritée (refus de « Lеa », « Admιn », « Tօm », « Ꭺdam », « ꓡéa »). Risque résiduel, noté au rapport de jalon : homoglyphes d'une seule écriture et squelette de confusion UTS #39 non traités. Preuve de possession de la clé d'éditeur (décision 41, `publisher-claim.ts` dans `@kibo/trust`, en-tête `x-kibo-publisher-claim`, vérifiée par `publisher-rules.ts`). Nonces persistés dans la table SQLite `market_nonces` (expiration, purge périodique) : un rejeu reste refusé après redémarrage ; `NonceCache` prend `sdb`. Tout échec d'authentification compte pour le blocage de l'adresse sauf `DEVICE_REVOKED` et `RATE_LIMITED` (corps trop gros, `content-length` mal formé compris). Index en cache mémoire pour le `serial` courant, `ETag: "<serial>"` sur `index.json` et `index.json.sig`, `304` sur `If-None-Match`. `Retry-After` (secondes) sur chaque 429. `signRequest` (`@kibo/trust`) signe la méthode en majuscules.
+- Fichiers ajoutés : `index-builder.ts` (construction pure de l'index), `market-store.ts` (SQL), `bounded-body.ts`, `market-limits.ts`, `routes-http.test.ts` (aller-retour réel sur `127.0.0.1`, vérifié par `verifyIndex` et `verifyMarketPackage` comme le démon), puis `clean-text.ts`, `publisher-rules.ts`, `packages/trust/src/publisher-claim.ts`, les aides de test `market-test-kit.ts` et `route-test-kit.ts`, et les tests `team-market-publishers.test.ts` et `signed-request.test.ts`. Seules les erreurs à statut connu renvoient leur détail ; les autres (`STORE_CORRUPT`…) répondent `INTERNAL` « internal error ».
+
+- [x] **Step 1: Écrire les tests de la source d'équipe**
 
 `packages/sync-server/src/market/team-market.test.ts` :
 ```ts
@@ -10308,12 +10358,12 @@ describe("revoke", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/market/team-market.test.ts`
 Expected: FAIL — `Cannot find module './team-market'`.
 
-- [ ] **Step 3: Implémenter la source d'équipe**
+- [x] **Step 3: Implémenter la source d'équipe**
 
 `packages/sync-server/src/market/team-market.ts` :
 ```ts
@@ -10569,12 +10619,12 @@ export class TeamMarket {
 }
 ```
 
-- [ ] **Step 4: Vérifier le succès**
+- [x] **Step 4: Vérifier le succès**
 
 Run: `bun test packages/sync-server/src/market/team-market.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Écrire les tests des requêtes signées et des routes**
+- [x] **Step 5: Écrire les tests des requêtes signées et des routes**
 
 `packages/sync-server/src/market/routes.test.ts` :
 ```ts
@@ -10699,12 +10749,12 @@ describe("routes", () => {
 });
 ```
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/market/routes.test.ts`
 Expected: FAIL — `Cannot find module './routes'`.
 
-- [ ] **Step 7: Implémenter les requêtes signées et les routes**
+- [x] **Step 7: Implémenter les requêtes signées et les routes**
 
 `packages/sync-server/src/market/signed-request.ts` :
 ```ts
@@ -10850,12 +10900,12 @@ export * from "./market/signed-request";
 export * from "./market/team-market";
 ```
 
-- [ ] **Step 8: Vérifier le succès, lint et types**
+- [x] **Step 8: Vérifier le succès, lint et types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck`
 Expected: PASS, Biome et `tsc` sans erreur.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/sync-server/src/market packages/sync-server/src/index.ts
@@ -10880,7 +10930,7 @@ Tâche à risque : relue aussi par `kibo-lead`.
   - (T4) `ClientFrame`, `ServerFrame`, `CLOSE_CODES`, `SYNC_LIMITS`, `MAX_FRAME_BYTES`, `JoinRequest`, `PresenceState`, `challengePayload`. Formes utilisées : `subscribe { projectId, version }`, `unsubscribe { projectId }`, `push { projectId, bytes, clientBatchId }`, `presence { projectId, bytes }`, `share { projectId, requestId, name, snapshot }`, `invite { projectId, requestId, role }`, `redeem { requestId, code }`, `set-role { projectId, requestId, userId, role }`, `unshare { projectId, requestId }`, `device-invite { requestId }`, `list-devices { requestId }`, `revoke-device { requestId, deviceId }` ; côté serveur `challenge { nonce }`, `welcome { userId, name, deviceId, projects }`, `update { projectId, bytes, serverSeq, version }`, `ack { projectId, clientBatchId, serverSeq, version }`, `reject { projectId, clientBatchId, code, message, version }`, `presence`, `members { projectId, members }`, `invite-code { requestId, code, expiresAt }`, `shared { requestId, projectId }`, `joined { requestId, projectId, name, role }`, `revoked { projectId, reason }`, `devices { requestId, devices }`, `done { requestId }`, `error { requestId, code, message }`.
   - (T11) `openServerDb`, `createInvite`, `redeemDeviceInvite`, `redeemProjectInvite`, `deviceRecord`, `listDevices`, `revokeDevice`, `disableUser`, `roleOf`, `listMembers`, `setRole`, `projectsOf`, `audit`, `readAudit`, `newNonce`, `verifyChallenge`, `FailureLimiter`, `RateWindow`.
   - (T14) `ProjectRoom` (`diffSince`, `version`, `serverSeq`, `push`, `syncMembers`, `presence`), `RoomReject`, `RoomRegistry` (`get` lève `NOT_FOUND` pour un projet inconnu, `create` insère `projects` et le membre `owner` via `insertProject`, `attach`, `detach`, `drop`, `sweep`).
-  - (T16) `TeamMarket.open`, `initMarketSource`, `NonceCache`, `NONCE_TTL_MS`, `handleMarketRoute`.
+  - (T16) `TeamMarket.open`, `initMarketSource`, `NonceCache` (construit avec `{ sdb, ttlMs, now }`), `NONCE_TTL_MS`, `handleMarketRoute` avec `MarketRouteDeps = { sdb, market, nonces, now, limits, ip }` (`limits` = `createMarketLimits(now)`, créé une fois au démarrage ; `ip` = `clientIp(req, srv)`), `KPKG_MAX_RAW_BYTES` (`@kibo/trust`). `maxRequestBodySize` de `Bun.serve` doit rester ≥ `KPKG_MAX_RAW_BYTES`, sinon une publication de paquet est coupée avant la route.
   - (T3) `generateSelfSignedCert` ; (T2) `toBase64`, `fromBase64`, `signBytes`, `generateKeyPair`, `formatFingerprint`.
   - (v0.6, `@kibo/core`) `createProjectDoc(meta: ProjectMeta): LoroDoc`, `createTicket(doc: LoroDoc, input: NewTicket): Ticket`, `listTickets(doc)` (tests ; vérifié en T0 : signatures réelles de `packages/core/src/project.ts` et `tickets.ts`, `ProjectMeta = { id, key, name, folder, color }`), avec la clé nullable de T6 et l'attribution serveur de T7.
 - Produces : `HubConnection`, `SyncHub`, `SyncServerOptions`, `startSyncServer`, `startTestSyncServer` (Contrats) et **nouveau** :
@@ -10890,6 +10940,7 @@ Tâche à risque : relue aussi par `kibo-lead`.
   - `type TestSyncServer = Awaited<ReturnType<typeof startTestSyncServer>>` ; `startTestSyncServer` renvoie `url` = `wss://127.0.0.1:<port>` (base, sans chemin), `httpsUrl` = `https://127.0.0.1:<port>` (**ajouté**).
   - `@kibo/sync-server/testing/ws-client` : `type TestDevice = { userId: string; deviceId: string; name: string; keys: KeyPair }`, `joinTestAccount(t: TestSyncServer, name: string): Promise<TestDevice>`, `addTestDevice(t: TestSyncServer, user: TestDevice, deviceName: string): Promise<TestDevice>`, `class TestClient { static open(t: TestSyncServer): Promise<TestClient>; auth(device: TestDevice, override?: { privateKey?: string; origin?: string }): Promise<void>; send(frame: ClientFrame): void; sendRaw(text: string): void; next<T extends ServerFrame["type"]>(type: T, match?: (f: Extract<ServerFrame, { type: T }>) => boolean, timeoutMs?: number): Promise<Extract<ServerFrame, { type: T }>>; received(type: ServerFrame["type"]): ServerFrame[]; readonly closed: Promise<number>; close(): void }`.
   - `runCli(argv: string[], io: { out(line: string): void; err(line: string): void; now(): number }): Promise<number>`.
+- Risques (reportés de la revue de T16) : aucun quota de stockage par éditeur sur la marketplace d'équipe (un membre `publisher` peut remplir le disque, borné seulement par 30 écritures par minute et `KPKG_MAX_RAW_BYTES` par paquet) ; les lectures publiques (`/market/index.json`, `.sig`, paquets) n'ont pas de limite de débit par IP (l'index est en cache mémoire avec `ETag`, les paquets sont lus dans SQLite à chaque requête).
 
 Règles du hub, dans l'ordre pour chaque trame :
 1. Trame non JSON ou refusée par Zod ⇒ `error { requestId: null, code: "INVALID_INPUT" }`, la connexion reste ouverte.
@@ -10899,7 +10950,7 @@ Règles du hub, dans l'ordre pour chaque trame :
 5. Les trames d'une connexion sont traitées dans l'ordre (file de promesses par connexion).
 6. Une `KiboError` devient `error { requestId, code, message }` ; toute autre erreur est journalisée avec le type de trame puis renvoyée en `INTERNAL`.
 
-- [ ] **Step 1: Écrire le client de test et le serveur de test**
+- [x] **Step 1: Écrire le client de test et le serveur de test**
 
 `packages/sync-server/src/testing/start-test-server.ts` :
 ```ts
@@ -11073,7 +11124,7 @@ export class TestClient {
 
 Le cast `as Extract<…>` dans `accepts` est la seule façon d'appeler le prédicat générique avant le raffinement ; il est borné par le test `f.type === type` qui le précède.
 
-- [ ] **Step 2: Écrire les tests du protocole**
+- [x] **Step 2: Écrire les tests du protocole**
 
 `packages/sync-server/src/hub.test.ts` :
 ```ts
@@ -11456,12 +11507,12 @@ test("an unknown command prints the usage and fails", async () => {
 });
 ```
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `bun test packages/sync-server/src/hub.test.ts packages/sync-server/src/server.test.ts packages/sync-server/src/cli.test.ts`
 Expected: FAIL — `Cannot find module '../server'` (depuis `testing/start-test-server.ts`).
 
-- [ ] **Step 4: Implémenter le hub**
+- [x] **Step 4: Implémenter le hub**
 
 `packages/sync-server/src/hub.ts` :
 ```ts
@@ -11805,17 +11856,19 @@ export class SyncHub {
 
 Le `DELETE` construit ses noms de table depuis une liste figée du code (jamais depuis une trame) ; la valeur passe en paramètre. L'audit `update-rejected` d'une mise à jour refusée est écrit par `ProjectRoom.push` (T14), pas par le hub.
 
-- [ ] **Step 5: Implémenter le serveur**
+- [x] **Step 5: Implémenter le serveur**
 
 `packages/sync-server/src/server.ts` :
 ```ts
 import { chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { JoinRequest, KiboError, type KiboErrorCode, MAX_FRAME_BYTES, SYNC_LIMITS } from "@kibo/schema";
+import { KPKG_MAX_RAW_BYTES } from "@kibo/trust";
 import type { Server } from "bun";
 import { redeemDeviceInvite } from "./accounts";
 import { openServerDb, type ServerDb } from "./db";
 import { type HubConnection, SyncHub } from "./hub";
+import { createMarketLimits } from "./market/market-limits";
 import { handleMarketRoute } from "./market/routes";
 import { NONCE_TTL_MS, NonceCache } from "./market/signed-request";
 import { TeamMarket } from "./market/team-market";
@@ -11855,7 +11908,8 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
   const sdb = openServerDb(join(opts.dataDir, "sync.db"));
   const rooms = new RoomRegistry(sdb, { now, unloadAfterMs: SYNC_LIMITS.unloadAfterMs });
   const market = await TeamMarket.open(sdb, opts.dataDir);
-  const nonces = new NonceCache({ ttlMs: NONCE_TTL_MS, now });
+  const nonces = new NonceCache({ sdb, ttlMs: NONCE_TTL_MS, now });
+  const marketLimits = createMarketLimits(now);
   const conns = new Map<string, HubConnection>();
   let hub: SyncHub | null = null;
   const requireHub = (): SyncHub => {
@@ -11896,7 +11950,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
     hostname: opts.hostname,
     port: opts.port,
     tls: opts.tls ? { cert: opts.tls.cert, key: opts.tls.key } : undefined,
-    maxRequestBodySize: MAX_FRAME_BYTES,
+    maxRequestBodySize: Math.max(MAX_FRAME_BYTES, KPKG_MAX_RAW_BYTES),
     async fetch(req, srv) {
       const url = new URL(req.url);
       const h = requireHub();
@@ -11909,7 +11963,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
       }
       if (url.pathname === "/v1/join" && req.method === "POST") return join(req, ip, h);
       if (market) {
-        const res = await handleMarketRoute(req, url, { sdb, market, nonces, now });
+        const res = await handleMarketRoute(req, url, { sdb, market, nonces, now, limits: marketLimits, ip });
         if (res) return res;
       }
       return new Response("not found", { status: 404 });
@@ -11970,7 +12024,7 @@ export async function startSyncServer(opts: SyncServerOptions): Promise<{
 
 `data: {} as WsData` est la forme documentée par Bun pour typer `ws.data` ; aucune valeur n'est lue depuis cet objet.
 
-- [ ] **Step 6: Implémenter la CLI et le build**
+- [x] **Step 6: Implémenter la CLI et le build**
 
 `packages/sync-server/src/cli.ts` :
 ```ts
@@ -12182,12 +12236,12 @@ Le greffon `loro-bundler-build` et les options `autoload*` reprennent ceux de `a
         run: packages/sync-server/dist/kibo-sync invite account --name CI --data "$(mktemp -d)"
 ```
 
-- [ ] **Step 7: Vérifier le succès, lint et types**
+- [x] **Step 7: Vérifier le succès, lint et types**
 
 Run: `bun test packages/sync-server && bun run check && bun run typecheck && bun run --cwd packages/sync-server build && packages/sync-server/dist/kibo-sync invite account --name Test --data "$(mktemp -d)"`
 Expected: tous les tests PASS ; le binaire imprime un code de 26 caractères.
 
-- [ ] **Step 8: Commits**
+- [x] **Step 8: Commits**
 
 ```bash
 git add packages/sync-server/src/hub.ts packages/sync-server/src/server.ts packages/sync-server/src/testing packages/sync-server/src/hub.test.ts packages/sync-server/src/server.test.ts packages/sync-server/src/index.ts
@@ -12227,11 +12281,11 @@ Dossier : `packages/daemon/src/collab/` et non `sync/`, qui porte depuis la phas
 - Produces (Contrats partagés) : `SyncHost`, `ProjectSyncOptions`, `ProjectSync` (`connected`, `disconnected`, `localChange`, `resync`, `flush`, `receive`, `inFlight`, `resyncing`), `SyncSocket`, `SyncTransport`, `assertSyncUrl`, `createWebSocketTransport`.
 - Produces (**ajout**, pour T19 et T21) : `createMemoryHost(doc: LoroDoc): SyncHost & { replaced: number; current(): LoroDoc }` dans `collab/testing/memory-host.ts`.
 
-- [ ] **Step 1: Dépendances du paquet**
+- [x] **Step 1: Dépendances du paquet**
 
 Dans `packages/daemon/package.json`, ajouter `"@kibo/trust": "workspace:*"` à `dependencies` (si T15 ne l'a pas déjà fait) et créer `"devDependencies": { "@kibo/sync-server": "workspace:*" }`, puis `bun install`. Dans `packages/daemon/tsconfig.json`, ajouter `{ "path": "../trust" }` et `{ "path": "../sync-server" }` à `references` (les tests du démon importent `@kibo/sync-server` et sont compilés par `tsc -b`). `bun.lock` change (arêtes internes seulement, aucune dépendance npm).
 
-- [ ] **Step 2: Écrire les tests du transport qui échouent**
+- [x] **Step 2: Écrire les tests du transport qui échouent**
 
 `packages/daemon/src/collab/transport.test.ts` :
 ```ts
@@ -12255,12 +12309,12 @@ test("other schemes and garbage are invalid", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer le test**
+- [x] **Step 3: Lancer le test**
 
 Run: `bun test packages/daemon/src/collab/transport.test.ts`
 Expected: FAIL (`./transport` introuvable).
 
-- [ ] **Step 4: Implémenter `transport.ts`**
+- [x] **Step 4: Implémenter `transport.ts`**
 
 `packages/daemon/src/collab/transport.ts` :
 ```ts
@@ -12319,12 +12373,12 @@ export function createWebSocketTransport(): SyncTransport {
 ```
 L'option `tls.ca` du constructeur `WebSocket` de Bun est validée par le test de plateforme de T3 ; si Bun 1.4.2 la refuse, T3 l'a signalé et le chef d'équipe a tranché avant cette tâche.
 
-- [ ] **Step 5: Relancer le test**
+- [x] **Step 5: Relancer le test**
 
 Run: `bun test packages/daemon/src/collab/transport.test.ts`
 Expected: PASS (3 tests).
 
-- [ ] **Step 6: Écrire l'hôte en mémoire**
+- [x] **Step 6: Écrire l'hôte en mémoire**
 
 `packages/daemon/src/collab/testing/memory-host.ts` :
 ```ts
@@ -12351,7 +12405,7 @@ export function createMemoryHost(initial: LoroDoc): MemoryHost {
 }
 ```
 
-- [ ] **Step 7: Écrire les tests du moteur qui échouent**
+- [x] **Step 7: Écrire les tests du moteur qui échouent**
 
 `packages/daemon/src/collab/project-sync.test.ts` :
 ```ts
@@ -12599,12 +12653,12 @@ describe("rejections", () => {
 ```
 Dans le test `OUT_OF_DATE`, le moteur croit que le serveur a déjà la création du ticket : le premier lot ne contient que le renommage, le serveur répond `OUT_OF_DATE` avec sa vraie version, le second lot contient les deux opérations.
 
-- [ ] **Step 8: Lancer le test**
+- [x] **Step 8: Lancer le test**
 
 Run: `bun test packages/daemon/src/collab/project-sync.test.ts`
 Expected: FAIL (`./project-sync` introuvable).
 
-- [ ] **Step 9: Implémenter `project-sync.ts`**
+- [x] **Step 9: Implémenter `project-sync.ts`**
 
 `packages/daemon/src/collab/project-sync.ts` :
 ```ts
@@ -12733,12 +12787,12 @@ export class ProjectSync {
 ```
 Un `ack` ou un `reject` dont le `clientBatchId` n'est pas le lot en vol est sans objet (lot d'une connexion précédente, déjà libéré par `disconnected`) : ce n'est pas une erreur et il n'y a rien à journaliser.
 
-- [ ] **Step 10: Relancer le test**
+- [x] **Step 10: Relancer le test**
 
 Run: `bun test packages/daemon/src/collab/project-sync.test.ts`
 Expected: PASS (10 tests).
 
-- [ ] **Step 11: Test d'imports (décision 26)**
+- [x] **Step 11: Test d'imports (décision 26)**
 
 `packages/daemon/src/collab/imports.test.ts` :
 ```ts
@@ -12767,12 +12821,12 @@ test("production code of the daemon never imports the sync server", () => {
 Run: `bun test packages/daemon/src/collab/imports.test.ts`
 Expected: PASS (le test protège contre une régression ; le vérifier une fois en ajoutant temporairement `import "@kibo/sync-server";` à `transport.ts` ⇒ FAIL, puis retirer la ligne).
 
-- [ ] **Step 12: Suite, lint, types**
+- [x] **Step 12: Suite, lint, types**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
 
 ```bash
 git add packages/daemon/package.json packages/daemon/tsconfig.json bun.lock packages/daemon/src/collab/transport.ts \
@@ -12812,11 +12866,11 @@ Vérifié en T0 : `packages/daemon/src/sync/` héberge déjà la sync des intég
 - Consumes (T18) : `ProjectSync`, `createMemoryHost`, `MemoryHost` ; (T14) `ProjectRoom`, `RoomReject`, `Actor`, `openServerDb`, `seedUser`, `ownerSnapshot` ; (v0.6, `@kibo/core`) `executeProjectCommand`, `listTickets`, `listPages` ; (T4) `ClientFrame`, `ServerFrame`, `RejectCode` ; (T2) `toBase64`, `fromBase64`.
 - Produces (**ajout**, test seulement) : `class InMemoryNetwork { constructor(room: ProjectRoom, actor: Actor, now: () => number); clients: NetClient[]; allocated: { ticketId: string; key: string }[]; addClient(doc: LoroDoc): NetClient; connect(c: NetClient): void; disconnect(c: NetClient): void; stepUp(c: NetClient): boolean; stepDown(c: NetClient): boolean; runTimers(c: NetClient): boolean; drain(): void }`.
 
-- [ ] **Step 1: Ajouter fast-check au démon**
+- [x] **Step 1: Ajouter fast-check au démon**
 
 Dans `packages/daemon/package.json`, `devDependencies` : `"fast-check": "4.3.0"`, puis `bun install` (version déjà dans `bun.lock` via `core`).
 
-- [ ] **Step 2: Écrire le réseau en mémoire**
+- [x] **Step 2: Écrire le réseau en mémoire**
 
 `packages/daemon/src/collab/testing/in-memory-network.ts` :
 ```ts
@@ -12982,7 +13036,7 @@ export class InMemoryNetwork {
 }
 ```
 
-- [ ] **Step 3: Écrire la propriété**
+- [x] **Step 3: Écrire la propriété**
 
 `packages/daemon/src/collab/convergence.property.test.ts` :
 ```ts
@@ -13153,23 +13207,23 @@ test(
 );
 ```
 
-- [ ] **Step 4: Lancer la propriété**
+- [x] **Step 4: Lancer la propriété**
 
 Run: `bun test packages/daemon/src/collab/convergence.property.test.ts`
 Expected: PASS (200 exécutions, moins d'une minute en local). Si elle échoue : le contre-exemple réduit désigne soit `ProjectSync` (T18), soit la salle (T14), soit `validateProjectUpdate` (T7) ; corriger la cause dans le bon fichier, ajouter le contre-exemple comme test unitaire dans la tâche concernée, jamais affaiblir la propriété.
 
-- [ ] **Step 5: Vérifier que la propriété détecte une régression**
+- [x] **Step 5: Vérifier que la propriété détecte une régression**
 
 Remplacer temporairement, dans `project-sync.ts`, la condition `if (order === 0 || order === -1) return;` par `if (order !== 1) return;` (les lots concurrents ne partent plus).
 Run: `bun test packages/daemon/src/collab/convergence.property.test.ts`
 Expected: FAIL (docs non convergents). Rétablir la ligne, relancer : PASS.
 
-- [ ] **Step 6: Suite, lint, types**
+- [x] **Step 6: Suite, lint, types**
 
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS. La CI exécute la propriété sur macOS et Linux dans `bun test packages components` (au moins 200 exécutions par OS).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/daemon/package.json bun.lock packages/daemon/src/collab/testing/in-memory-network.ts \
@@ -13207,7 +13261,7 @@ Installer un paquet vérifié (spec H §5.2 point 3, §7) : sources écrites dan
   - Commandes `addInstance` et `setInstanceComponent` : `componentHash: Sha256.nullable().optional()` ; `core` écrit `componentHash: input.componentHash ?? null`.
   - Décision 16 précisée : une installation marketplace **n'utilise jamais** le réglage « Autoriser les backends sandboxés sans isolation OS » ; sans bac à sable OS utilisable, `installFromMarket` échoue en `SANDBOX_UNAVAILABLE` avant toute écriture.
 
-- [ ] **Step 1: Test de `componentHash` dans `core`**
+- [x] **Step 1: Test de `componentHash` dans `core`**
 
 `packages/core/src/instances-hash.test.ts` :
 ```ts
@@ -13257,7 +13311,7 @@ describe("componentHash", () => {
 Run: `bun test packages/core/src/instances-hash.test.ts`
 Expected: FAIL (erreur de type : `componentHash` inconnu dans l'entrée de `addInstance`).
 
-- [ ] **Step 2: Écrire `componentHash` dans `core` et les commandes**
+- [x] **Step 2: Écrire `componentHash` dans `core` et les commandes**
 
 Dans `packages/schema/src/command.ts`, ajouter `componentHash: Sha256.nullable().optional()` (import de `Sha256` depuis `./component`) aux objets `addInstance` et `setInstanceComponent`.
 
@@ -13270,7 +13324,7 @@ Dans `packages/core/src/instances.ts` :
 Run: `bun test packages/core/src/instances-hash.test.ts packages/core packages/schema`
 Expected: PASS ; les tests existants passent sans changement de leurs attentes.
 
-- [ ] **Step 3: Test de l'option `conformanceOnly`**
+- [x] **Step 3: Test de l'option `conformanceOnly`**
 
 `packages/devkit/src/validate-conformance-only.test.ts` :
 ```ts
@@ -13336,7 +13390,7 @@ test.if(sandboxAvailable)("without conformanceOnly the publisher tests still run
 Run: `bun test packages/devkit/src/validate-conformance-only.test.ts`
 Expected: FAIL (le test de l'éditeur fait échouer le rapport ; sans fichier de test, `conformance` porte `FR_DEVKIT.noConformance`). Sur un poste sans bac à sable OS, les trois tests sont ignorés ; la CI Linux et macOS les exécute (bubblewrap installé depuis la phase 4).
 
-- [ ] **Step 4: Implémenter `conformanceOnly`**
+- [x] **Step 4: Implémenter `conformanceOnly`**
 
 Dans `packages/devkit/src/scaffold.ts`, renommer la constante locale `TEST` en `export const CONFORMANCE_TEST` (même contenu), et l'utiliser dans `scaffold`.
 
@@ -13354,7 +13408,7 @@ async function useGenericSuite(copy: string, files: string[]): Promise<void> {
 Run: `bun test packages/devkit`
 Expected: PASS ; les tests existants de `devkit` passent sans changement de leurs attentes.
 
-- [ ] **Step 5: Tests de l'installation**
+- [x] **Step 5: Tests de l'installation**
 
 `packages/daemon/src/market/install.test.ts` :
 ```ts
@@ -13564,7 +13618,7 @@ describe("installFromMarket", () => {
 Run: `bun test packages/daemon/src/market/install.test.ts`
 Expected: FAIL avec « Cannot find module './install' ».
 
-- [ ] **Step 6: Implémenter l'installation**
+- [x] **Step 6: Implémenter l'installation**
 
 `packages/daemon/src/market/install.ts` :
 ```ts
@@ -13681,7 +13735,7 @@ export function installFromMarket(deps: InstallDeps, input: Input): Promise<Mark
 Run: `bun test packages/daemon/src/market/install.test.ts`
 Expected: PASS (le dernier test est ignoré sans bac à sable OS ; exécuté en CI).
 
-- [ ] **Step 7: `componentHash` écrit par le démon**
+- [x] **Step 7: `componentHash` écrit par le démon**
 
 `packages/daemon/src/components/component-hash.test.ts` :
 ```ts
@@ -13779,7 +13833,7 @@ Dans `packages/daemon/src/daemon.ts`, l'appel à `createComponentsService` gagne
 Run: `bun test packages/daemon/src/components`
 Expected: PASS ; les tests existants passent sans changement de leurs attentes.
 
-- [ ] **Step 8: RPC `installFromMarket`**
+- [x] **Step 8: RPC `installFromMarket`**
 
 Dans `packages/daemon/src/market/rpc.ts` (gestionnaire `RpcHandler` de T15), traiter `installFromMarket` par `installFromMarket(installDeps, { sourceId, id, version })`, avec, au branchement (`packages/daemon/src/market/bootstrap.ts` de T15, appelé par `daemon.ts`) :
 ```ts
@@ -13799,7 +13853,7 @@ Si le démon reçoit une validation injectée (`DaemonOptions.validate`, utilis�
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 8b: Une version révoquée ne se réapprouve pas (décision 34)**
+- [x] **Step 8b: Une version révoquée ne se réapprouve pas (décision 34)**
 
 Ajouter au `describe("approval")` de `packages/daemon/src/components/registry-service.test.ts` :
 ```ts
@@ -13827,12 +13881,12 @@ Dans `approve` de `packages/daemon/src/components/registry-service.ts`, juste ap
 Run: `bun test packages/daemon/src/components/registry-service.test.ts`
 Expected: PASS ; les autres tests du fichier sont inchangés.
 
-- [ ] **Step 9: Vérifications**
+- [x] **Step 9: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages components`
 Expected: aucune erreur ; les tests existants de `devkit`, `core` et du démon passent sans changement de leurs attentes.
 
-- [ ] **Step 10: Commits**
+- [x] **Step 10: Commits**
 
 ```bash
 git add packages/schema/src/command.ts packages/core/src/instances.ts packages/core/src/instances-hash.test.ts packages/devkit/src/scaffold.ts packages/devkit/src/validate.ts packages/devkit/src/validate-conformance-only.test.ts
@@ -13870,7 +13924,7 @@ Vague 5, tâche à risque (relue aussi par `kibo-lead`). Spec G §3.2, §4, §6,
 **Interfaces:**
 - Vérifié en T0 :
   - `createService(store: Store, opts: { user: string; notifications?: Session["notifications"] }): Service` (`packages/daemon/src/service.ts`, 300 lignes, limite atteinte) ; `Service = { handle(req: RpcRequest): unknown; onChange(listener: (message: ChangeMessage) => void): () => void; docs: Docs; agentData; attachAgents; attachComponents; attachIntegrations; attachAi; triggerRules; transaction; commands: CommandHub }` ; les docs projet sont une `Map<string, LoroDoc>` privée ; chaque écriture persistée passe par `docs.save(projectId)` et chaque diffusion par `docs.emit({ projectId })` (`ChangeMessage`, `packages/schema/src/rpc.ts`) ; il n'y a ni `DaemonEvent` ni `persist`/`emit` locaux.
-  - Toutes les `ProjectCommand` passent par `createCommandPath` (`packages/daemon/src/command-path.ts`, fonction `guarded(projectId, work)` pour `run` et `trigger`) ; **trois écritures la contournent** : `data.set` / `data.delete` d'un composant (`components/gate-handlers.ts`, `writeInstanceData` puis `docs.save`), la mise à jour d'instance (`components/service.ts` → `update.ts`, `persist: (id) => docs.save(id)`), et `applyRules` de `agents/data-port.ts` (exporté, sans appelant de production : les règles passent par `docs.trigger`). La lecture seule locale (décision 9) se branche donc sur un garde unique `docs.assertWritable(projectId)` appelé par `guarded` et par les deux contournements.
+  - Toutes les `ProjectCommand` passent par `createCommandPath` (`packages/daemon/src/command-path.ts`, fonction `guarded(projectId, work)` pour `run` et `trigger`) ; **quatre écritures la contournent** : `data.set` / `data.delete` d'un composant (`components/gate-handlers.ts`, `writeInstanceData` puis `docs.save`), la mise à jour d'instance (`components/service.ts` → `update.ts`, `persist: (id) => docs.save(id)`), les consignes d'un projet (`workspace-config.ts`, `runConfigCommand` avec `owner.scope = project`, ajouté en relecture de T21), et `applyRules` de `agents/data-port.ts` (exporté, sans appelant de production : les règles passent par `docs.trigger`). La lecture seule locale (décision 9) se branche donc sur un garde unique `docs.assertWritable(projectId)` appelé par `guarded` et par les trois contournements.
   - `table project_settings (project_id, key, value)` existe (`packages/daemon/src/notes/settings.ts` : `ensureSettingsTable(db)`, `createProjectSettings(db): { get(projectId, key): string | null; set(projectId, key, value): void }`) ; seul `notesDir` y vit ; `meta.folder` est dans le doc Loro du projet (utilisé en T23).
   - Secrets : `SecretStore` est dans `packages/daemon/src/integrations/types.ts` ; le trousseau est créé à l'intérieur de `startIntegrations` (`bun-secret-store.ts`, ou `createMemorySecretStore(redactor)` avec `--memory-secrets`) et T13 l'expose en `IntegrationRpc.secrets` (un seul trousseau par démon) : T21 le lit là. `MemorySecretStore = SecretStore & { dump() }`, créé par `createMemorySecretStore(redactor: Redactor, initial?)` (`integrations/memory-secret-store.ts`, `createRedactor()` dans `integrations/redact.ts`).
   - L'assemblage du démon est `assemble()` dans `packages/daemon/src/daemon.ts` (`main.ts` ne fait que lire les options) ; les arrêts s'enregistrent dans `closers`.
@@ -13918,7 +13972,7 @@ export type SyncHarness = { server: TestSyncServer; caFile: string; daemons: Har
 ```
 - Changement de contrat signalé : `ProjectHostRegistry.mutate` (écriture interne qui persiste, émet et déclenche l'envoi, refusée si l'accès n'est pas `write`) ; `startTestSyncServer(opts?: TestSyncServerOptions)` (T17) accepte `dataDir`, `port`, `cert` et renvoie `cert`, et `stop({ keepData: true })` garde le dossier, pour relancer le serveur sur le même port, le même dossier et le même certificat.
 
-- [ ] **Step 1: Écrire les tests de `SyncDb`**
+- [x] **Step 1: Écrire les tests de `SyncDb`**
 
 `packages/daemon/src/collab/sync-db.test.ts` :
 ```ts
@@ -13957,12 +14011,12 @@ test("round-trips project rows with their server version", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/sync-db.test.ts`
 Expected: FAIL « Cannot find module './sync-db' ».
 
-- [ ] **Step 3: Implémenter `sync-db.ts` et `device-keys.ts`**
+- [x] **Step 3: Implémenter `sync-db.ts` et `device-keys.ts`**
 
 `packages/daemon/src/collab/sync-db.ts` :
 ```ts
@@ -14081,12 +14135,12 @@ export async function clearDeviceKeys(secrets: SecretStore): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/sync-db.test.ts`
 Expected: PASS (2 tests).
 
-- [ ] **Step 5: Registre de projets et garde d'écriture**
+- [x] **Step 5: Registre de projets et garde d'écriture**
 
 5a. Faire de la place dans `service.ts` (300 lignes) : déplacer `readTabs`, `saveTabs` et `TABS_KEY` tels quels dans `packages/daemon/src/tabs-store.ts` (exports nommés `readTabs(store)`, `saveTabs(store, state)`), importés par `service.ts`. Run: `bun test packages/daemon/src/service.test.ts` ⇒ PASS, sans autre changement.
 
@@ -14278,7 +14332,7 @@ export function projectSyncInfo(input: { row: SyncProjectRow | null; doc: LoroDo
 }
 ```
 
-- [ ] **Step 6: Écrire le harnais d'intégration**
+- [x] **Step 6: Écrire le harnais d'intégration**
 
 `packages/daemon/src/testing/sync-harness.ts` :
 ```ts
@@ -14451,7 +14505,7 @@ export async function startSyncHarness(opts: { daemons: number }): Promise<SyncH
 ```
 `SyncClient.send(frame)` est public (envoi brut, `SYNC_OFFLINE` hors ligne) ; il sert au harnais et à T23.
 
-- [ ] **Step 7: Écrire les tests d'intégration du client**
+- [x] **Step 7: Écrire les tests d'intégration du client**
 
 `packages/daemon/src/collab/sync-client.test.ts` :
 ```ts
@@ -14594,12 +14648,12 @@ describe("roles", () => {
 });
 ```
 
-- [ ] **Step 8: Vérifier l'échec**
+- [x] **Step 8: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/sync-client.test.ts`
 Expected: FAIL « Cannot find module '../collab/sync-client' ».
 
-- [ ] **Step 9: Implémenter `SyncClient`**
+- [x] **Step 9: Implémenter `SyncClient`**
 
 `packages/daemon/src/collab/sync-client.ts` :
 ```ts
@@ -15034,7 +15088,7 @@ export class SyncClient {
 ```
 `ProjectHostRegistry` vit dans `packages/daemon/src/collab/types.ts` (type du contrat plus `mutate`, étape 5d), importé par `project-hosts.ts` et le client ; le service ne l'importe pas.
 
-- [ ] **Step 10: RPC et démarrage**
+- [x] **Step 10: RPC et démarrage**
 
 `packages/daemon/src/collab/rpc.ts` :
 ```ts
@@ -15084,7 +15138,7 @@ test("connectSyncServer is refused from a remote session", async () => {
 });
 ```
 
-- [ ] **Step 11: Vérifier**
+- [x] **Step 11: Vérifier**
 
 Run: `bun test packages/daemon/src/collab`
 Expected: PASS (tests de T18 inchangés, plus les nouveaux de `sync-db`, `project-hosts`, `sync-client` et `rpc`). Le harnais réduit le backoff à 20 → 200 ms : le test « hors ligne puis rattrapage » dure quelques secondes.
@@ -15105,7 +15159,7 @@ test("backoff grows from 1 s to 60 s with jitter", () => {
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS ; aucun test existant du démon modifié (seul `service.ts` a perdu `readTabs`/`saveTabs`, déplacés à l'identique).
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add packages/daemon/src/tabs-store.ts packages/daemon/src/docs.ts packages/daemon/src/service.ts \
@@ -15125,13 +15179,15 @@ git commit -m "feat(daemon): client de sync d'équipe"
 
 Publier un composant utilisateur sur la source d'équipe servie par `kibo-sync` (spec H §5.1 points 1 à 4), produire un `.kpkg` et un index statique signé pour un hébergement quelconque (§5.1 point 5), et prouver le critère de sortie « publication sur la source d'équipe puis installation sur un second démon, avec vérification complète » (§10).
 
+**Preuve de possession (décision 41, ajoutée par T16)** : chaque `POST /v1/market/packages` envoie l'en-tête `x-kibo-publisher-claim` = `signPublisherClaim({ sourceId, userId, privateKey })` avec la clé d'éditeur (`market:publisher`), `sourceId` étant l'`id` de la source d'équipe (celui de son index signé) et `userId` celui du compte de sync ; le serveur l'exige au premier enregistrement de la clé et renvoie `SIGNATURE_INVALID` sinon. L'extrait de `send` ci-dessous suppose `config.userId`, `config.marketSourceId` et `loadPublisherKeys` : les recaler sur le code réel (T15, T21) à l'exécution. `signRequest` signe la méthode en majuscules.
+
 **Files:**
 - Create: `packages/daemon/src/market/publisher-keys.ts`, `packages/daemon/src/market/publish.ts`, `packages/cli/src/commands/market.ts`, `packages/cli/src/market-index-builder.ts`
 - Modify: `packages/daemon/src/market/market-service.ts` (`hasVersion`), `packages/daemon/src/market/rpc.ts` (`publishToMarket`, `exportKpkg`), `packages/daemon/src/market/bootstrap.ts` (branchement, `ca` de la sync pour `createHttpGet`), `packages/daemon/src/market/install.ts` (export de `writeSources`), `packages/cli/src/index.ts` (portée `market`, `publish --to`), `packages/cli/src/args.ts` (options à valeur `to`, `publisher`, `out`, `dir`, `key`, `id`, `name`, `verify`), `packages/cli/src/commands/publish.ts` (`--to`), `packages/cli/src/fr.ts` (textes), `packages/cli/package.json` (`@kibo/trust`)
 - Test: `packages/daemon/src/market/publish.test.ts`, `packages/daemon/src/market/team-publish.integration.test.ts`, `packages/cli/src/market-index-builder.test.ts`, `packages/cli/src/commands/market.test.ts`
 
 **Interfaces:**
-- Consumes: `packKpkg`, `encodeKpkg`, `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `signIndex`, `verifyIndex`, `generateKeyPair`, `signRequest`, `keyFingerprint`, `formatFingerprint`, `type KeyPair` (`@kibo/trust`, T2, T10) ; `startTestSyncServer`, `TeamMarket` (T16, T17) ; `MarketService`, `createHttpGet`, `openMarketDb`, `createMemoryRegistry`, `startFakeMarket` (T15) ; `installFromMarket`, `writeSources`, `ValidateOptions.conformanceOnly` (T20) ; `SyncConfig` (T21, `packages/daemon/src/collab/sync-db.ts`), `loadDeviceKeys(secrets): Promise<KeyPair>` (T21, `packages/daemon/src/collab/device-keys.ts`, `UNAUTHORIZED` si l'appareil n'a pas de clé) ; `SECRET_SYNC_DEVICE`, `SECRET_MARKET_PUBLISHER` (T1, `@kibo/schema`) ; `ComponentStore`, `createComponentStore`, `fakeBuild`, `okReport`, `createPublishLock`, `PublishLock` (phase 4).
+- Consumes: `packKpkg`, `encodeKpkg`, `decodeKpkg`, `verifyKpkgSignature`, `kpkgSourceFiles`, `signIndex`, `verifyIndex`, `generateKeyPair`, `signRequest`, `keyFingerprint`, `formatFingerprint`, `type KeyPair` (`@kibo/trust`, T2, T10), `signPublisherClaim`, `PUBLISHER_CLAIM_HEADER` (`@kibo/trust`, T16, décision 41) ; `startTestSyncServer`, `TeamMarket` (T16, T17) ; `MarketService`, `createHttpGet`, `openMarketDb`, `createMemoryRegistry`, `startFakeMarket` (T15) ; `installFromMarket`, `writeSources`, `ValidateOptions.conformanceOnly` (T20) ; `SyncConfig` (T21, `packages/daemon/src/collab/sync-db.ts`), `loadDeviceKeys(secrets): Promise<KeyPair>` (T21, `packages/daemon/src/collab/device-keys.ts`, `UNAUTHORIZED` si l'appareil n'a pas de clé) ; `SECRET_SYNC_DEVICE`, `SECRET_MARKET_PUBLISHER` (T1, `@kibo/schema`) ; `ComponentStore`, `createComponentStore`, `fakeBuild`, `okReport`, `createPublishLock`, `PublishLock` (phase 4).
 - Vérifié en T0 :
   - Les secrets vivent dans `packages/daemon/src/integrations/` : `SecretStore` (`types.ts`), `createMemorySecretStore(redactor: Redactor, initial?)` (`memory-secret-store.ts`), `createRedactor()` (`redact.ts`) ; il n'y a ni `secrets/secret-store.ts` ni `MemorySecretStore` constructible. `SecretName` et `SecretNameSchema` sont dans `packages/schema/src/integrations.ts` (préfixes `sync`, `market`, `remote` ajoutés par T1).
   - Le magasin n'a pas de `readSources` : les sources d'une version sont lues par `readSources(join(store.root, id, version, hash, "source"))` (`@kibo/devkit`, renvoie `{ hash, files }`), et `store.put(srcDir, expectedHash?)` prend un dossier.
@@ -15150,7 +15206,7 @@ Publier un composant utilisateur sur la source d'équipe servie par `kibo-sync` 
   - `type MarketCliDeps = { rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>; out(line: string): void; err(line: string): void; now(): Date }` ; `runMarketCommand(argv: string[], flags: Parsed["flags"], deps: MarketCliDeps): Promise<number>` (`packages/cli/src/commands/market.ts`).
   - La validation avant publication est la **suite générique** (`validateComponent(copie, { conformanceOnly: true })`) sur une copie des sources du magasin : c'est exactement ce que le destinataire exécutera à l'installation (T20) ; les tests de l'éditeur ont déjà tourné à la publication locale (`publishComponent`).
 
-- [ ] **Step 1: Tests unitaires de la publication**
+- [x] **Step 1: Tests unitaires de la publication**
 
 `packages/daemon/src/market/publish.test.ts` :
 ```ts
@@ -15279,7 +15335,7 @@ describe("publishToMarket", () => {
 Run: `bun test packages/daemon/src/market/publish.test.ts`
 Expected: FAIL avec « Cannot find module './publish' ».
 
-- [ ] **Step 2: Implémenter les clés d'éditeur et la publication**
+- [x] **Step 2: Implémenter les clés d'éditeur et la publication**
 
 `packages/daemon/src/market/publisher-keys.ts` :
 ```ts
@@ -15320,7 +15376,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { readSources } from "@kibo/devkit";
 import { ComponentManifest, isKiboErrorCode, KiboError, type Kpkg, type ValidationReport } from "@kibo/schema";
-import { encodeKpkg, packKpkg, signRequest } from "@kibo/trust";
+import { encodeKpkg, PUBLISHER_CLAIM_HEADER, packKpkg, signPublisherClaim, signRequest } from "@kibo/trust";
 import { loadDeviceKeys } from "../collab/device-keys";
 import type { SyncConfig } from "../collab/sync-db";
 import type { PublishLock } from "../components/publish-lock";
@@ -15409,10 +15465,16 @@ async function send(deps: PublishDeps, config: SyncConfig, body: Uint8Array): Pr
     body,
     now: deps.now(),
   });
+  const publisher = await loadPublisherKeys(deps.secrets);
+  const claim = await signPublisherClaim({
+    sourceId: config.marketSourceId,
+    userId: config.userId,
+    privateKey: publisher.privateKey,
+  });
   const ca = deps.caPem();
   const res = await fetch(`${httpOrigin(config.serverUrl)}${PUBLISH_PATH}`, {
     method: "POST",
-    headers: { ...headers, "content-type": "application/octet-stream" },
+    headers: { ...headers, [PUBLISHER_CLAIM_HEADER]: claim, "content-type": "application/octet-stream" },
     body,
     ...(ca ? { tls: { ca } } : {}),
   });
@@ -15466,7 +15528,7 @@ Ajouter à `MarketService` :
 Run: `bun test packages/daemon/src/market/publish.test.ts`
 Expected: PASS (6 tests).
 
-- [ ] **Step 3: Test d'intégration équipe → second démon**
+- [x] **Step 3: Test d'intégration équipe → second démon**
 
 `packages/daemon/src/market/team-publish.integration.test.ts` :
 ```ts
@@ -15627,7 +15689,7 @@ Le test tourne en CI sur macOS et Linux (serveur TLS en processus, aucun réseau
 Run: `bun test packages/daemon/src/market/team-publish.integration.test.ts`
 Expected: PASS une fois T16, T17 et T21 intégrés (dépendances de la vague).
 
-- [ ] **Step 4: RPC et branchement**
+- [x] **Step 4: RPC et branchement**
 
 Dans `packages/daemon/src/market/rpc.ts` (gestionnaire de T15), traiter :
 ```ts
@@ -15636,19 +15698,19 @@ Dans `packages/daemon/src/market/rpc.ts` (gestionnaire de T15), traiter :
       case "exportKpkg":
         return done(await publish.exportKpkg({ id: req.id, version: req.version, publisherName: req.publisherName }));
 ```
-avec `publish = { publish: (i) => publishToMarket(publishDeps, i), exportKpkg: (i) => exportKpkg(publishDeps, i) }` construit dans `packages/daemon/src/market/bootstrap.ts` : `store: components.store`, `lock: components.publishLock`, `secrets` (le `SecretStore` du démon, déjà créé par `startIntegrations`), `syncConfig: () => syncDb.config()`, `caPem: () => syncCaPem()` (lecture du `caFile` de la config de sync, `null` sinon), `validate: (dir) => validateComponent(dir, { toolchain, conformanceOnly: true, signal })` (ou la validation injectée `DaemonOptions.validate`), `tmpRoot: join(home, "tmp", "market")`. `createHttpGet` reçoit aussi `ca: syncCaPem()` pour lire la source d'équipe auto-hébergée. `exportKpkg` est une RPC ouverte aux sessions distantes (Contrats partagés) ; `publishToMarket` aussi.
+avec `publish = { publish: (i) => publishToMarket(publishDeps, i), exportKpkg: (i) => exportKpkg(publishDeps, i) }` construit dans `packages/daemon/src/market/bootstrap.ts` : `store: components.store`, `lock: components.publishLock`, `secrets` (le `SecretStore` du démon, déjà créé par `startIntegrations`), `syncConfig: () => syncDb.config()`, `caPem: () => syncCaPem()` (lecture du `caFile` de la config de sync, `null` sinon), `validate: (dir) => validateComponent(dir, { toolchain, conformanceOnly: true, signal })` (ou la validation injectée `DaemonOptions.validate`), `tmpRoot: join(home, "tmp", "market")`. `createHttpGet` reçoit aussi `ca: syncCaPem()` pour lire la source d'équipe auto-hébergée. `exportKpkg` et `publishToMarket` sont réservées aux sessions locales (`requireLocal`, décision 44).
 
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 5: Commit du démon**
+- [x] **Step 5: Commit du démon**
 
 ```bash
 git add packages/daemon/src/market/publisher-keys.ts packages/daemon/src/market/publish.ts packages/daemon/src/market/publish.test.ts packages/daemon/src/market/team-publish.integration.test.ts packages/daemon/src/market/market-service.ts packages/daemon/src/market/install.ts packages/daemon/src/market/rpc.ts packages/daemon/src/market/bootstrap.ts
 git commit -m "feat(daemon): publication marketplace"
 ```
 
-- [ ] **Step 6: Tests de l'index statique**
+- [x] **Step 6: Tests de l'index statique**
 
 `packages/cli/src/market-index-builder.test.ts` :
 ```ts
@@ -15733,7 +15795,7 @@ describe("buildStaticIndex", () => {
 Run: `bun test packages/cli/src/market-index-builder.test.ts`
 Expected: FAIL avec « Cannot find module './market-index-builder' ».
 
-- [ ] **Step 7: Implémenter le constructeur d'index**
+- [x] **Step 7: Implémenter le constructeur d'index**
 
 `packages/cli/src/market-index-builder.ts` :
 ```ts
@@ -15824,7 +15886,7 @@ Tout contrôle échoue avant la moindre écriture : l'index précédent reste en
 Run: `bun test packages/cli/src/market-index-builder.test.ts`
 Expected: PASS (4 tests).
 
-- [ ] **Step 8: Tests de la commande `kibo market`**
+- [x] **Step 8: Tests de la commande `kibo market`**
 
 `packages/cli/src/commands/market.test.ts` :
 ```ts
@@ -15878,7 +15940,7 @@ test("an unknown sub-command prints the usage and fails", async () => {
 Run: `bun test packages/cli/src/commands/market.test.ts`
 Expected: FAIL avec « Cannot find module './market' ».
 
-- [ ] **Step 9: Implémenter `kibo market` et `publish --to`**
+- [x] **Step 9: Implémenter `kibo market` et `publish --to`**
 
 Dans `packages/cli/src/args.ts`, `VALUED` gagne `"to"`, `"publisher"`, `"out"`, `"dir"`, `"key"`, `"id"`, `"name"`, `"verify"` ; `--verify` se répète : `parseArgs` garde la dernière valeur, on accepte donc une liste séparée par des virgules (`--verify <clé1>,<clé2>`).
 
@@ -16026,7 +16088,7 @@ Ajouter `"@kibo/trust": "workspace:*"` aux `dependencies` de `packages/cli/packa
 Run: `bun install && bun test packages/cli`
 Expected: PASS ; les tests existants de la CLI passent sans changement de leurs attentes (hors ajout des lignes d'usage si un test compare `fr.usage` : l'adapter en ajout).
 
-- [ ] **Step 10: Vérifications et commit de la CLI**
+- [x] **Step 10: Vérifications et commit de la CLI**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucune erreur.
@@ -16080,13 +16142,13 @@ export function restoreLocalAllocation(doc: LoroDoc): { ticketId: string; key: s
 - `handleSyncRpc(client, req, ctx, share?: ShareDeps)` : quatrième paramètre ajouté.
 - Vérifié en T0 :
   - Liaisons : `Binding = { id, adapter: "github-issues", config: BindingConfig, createdBy, runner }` en valeur JSON dans la map `bindings` (`getBinding`, `listBindings`, `addBinding` de `packages/core/src/bindings.ts`, validées par Zod à la lecture). **Il n'existe pas de `localIdentity()`** : la sync d'intégrations compare directement `b.runner === host.user` (`packages/daemon/src/sync/engine.ts`, `runnable()`), et `createBinding` écrit `createdBy: host.user, runner: host.user` (`packages/daemon/src/sync/module.ts`) ; `host.user` est le nom d'utilisateur OS. Après `migrateForSharing` (T7), `runner` et `createdBy` valent l'`userId` du compte : sans correctif, **plus aucune liaison d'un projet partagé ne s'exécuterait**. Cette tâche introduit donc `docs.identity(projectId)` (l'`userId` du compte pour un projet partagé, `opts.user` sinon), exposé en `IntegrationHost.identity(projectId)` et utilisé par `runnable()` et `createBinding`.
-  - Dossier : `meta.folder` est lu directement sur le doc projet par `getProject` (`readProject`), `ticketContext` (`agents/data-port.ts`, qui alimente `run-launch.ts` et donc les worktrees), le service de notes (`components/service.ts`, `readProject(...).meta`) et `gitRemoteUrl` (`integrations/host.ts`, `getProjectMeta`) ; `code/code-service.ts` passe par `getProject` ; `pr-poller.ts` lit `listProjects` (copie du doc workspace, locale, jamais migrée). Après le partage, le doc projet n'a plus de dossier (T7) : tous ces lecteurs passent par `docs.projectMeta(projectId)`, qui superpose `project_settings(projectId, "folder")`.
+  - Dossier : `meta.folder` est lu directement sur le doc projet par `getProject` (`readProject`), `ticketContext` (`agents/data-port.ts`, qui alimente `run-launch.ts` et donc les worktrees), le service de notes (`components/service.ts`, `readProject(...).meta`) et `gitRemoteUrl` (`integrations/host.ts`, `getProjectMeta`) ; `code/code-service.ts` passe par `getProject` ; `pr-poller.ts` lit `listProjects` (copie du doc workspace, locale, jamais migrée). Après le partage, le doc projet n'a plus de dossier (T7) : tous ces lecteurs passent par `docs.projectMeta(projectId)`, qui superpose `project_settings(projectId, "folder")`. Le démon ne réécrit jamais `meta.folder` dans un doc partagé : le serveur refuserait la mise à jour (décision 39).
   - `project_settings` existe (`createProjectSettings(db): ProjectSettings = { get(projectId, key): string | null; set(projectId, key, value: string): void }`, `packages/daemon/src/notes/settings.ts`, table créée par `ensureSettingsTable`) ; pas de suppression, `set` n'accepte pas `null`.
   - `registerProject(ws, meta)` (`packages/core/src/workspace.ts`) refuse une clé **ou** un id déjà présents avec `INVALID_INPUT` « project KIB already exists » : `joinProject` vérifie la clé lui-même avant d'appeler `addJoinedProject`, pour distinguer « clé en double » de « projet déjà présent ».
   - Domaines : `listDomains(ws): Domain[]` avec `Domain = { id, name, color }` ; les guidelines d'un domaine sont les `Guideline` de `listGuidelines(ws)` dont `owner.scope === "domain"` (voir T7).
   - `Mes tickets` (`packages/ui/src/mine/my-tickets.ts`, `isMine`) et `getSession.user` comparent l'assigné humain au nom d'utilisateur OS : pour un projet partagé, l'assigné devient l'`userId` (T7) ; l'affichage est l'affaire de T29/T30, noté au chef d'équipe.
 
-- [ ] **Step 1: Test de `restoreLocalAllocation`**
+- [x] **Step 1: Test de `restoreLocalAllocation`**
 
 Ajout à `packages/core/src/keys.test.ts` :
 ```ts
@@ -16101,7 +16163,7 @@ test("restoreLocalAllocation keys pending tickets and gives allocation back to t
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec puis implémenter**
+- [x] **Step 2: Vérifier l'échec puis implémenter**
 
 Run: `bun test packages/core/src/keys.test.ts`
 Expected: FAIL « restoreLocalAllocation is not a function ».
@@ -16119,7 +16181,7 @@ export function restoreLocalAllocation(doc: LoroDoc): { ticketId: string; key: s
 Run: `bun test packages/core/src/keys.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Écrire les tests du partage**
+- [x] **Step 3: Écrire les tests du partage**
 
 `packages/daemon/src/collab/share.test.ts` :
 ```ts
@@ -16288,12 +16350,12 @@ Le harnais (T21) gagne `share: ShareDeps` sur chaque `HarnessDaemon`, construit 
 
 Le test des secrets cherche le jeton GitHub en clair et chaque clé privée en base64 comme décodée, dans le fichier `sync.db` et ses fichiers WAL (qui contiennent snapshots et mises à jour).
 
-- [ ] **Step 4: Vérifier l'échec**
+- [x] **Step 4: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/share.test.ts`
 Expected: FAIL « Cannot find module './share' ».
 
-- [ ] **Step 5: Implémenter `share.ts`**
+- [x] **Step 5: Implémenter `share.ts`**
 
 `packages/daemon/src/collab/share.ts` :
 ```ts
@@ -16503,7 +16565,7 @@ const need = (share: ShareDeps | undefined): ShareDeps => {
 };
 ```
 
-- [ ] **Step 6: Dossier local, identité locale et câblage**
+- [x] **Step 6: Dossier local, identité locale et câblage**
 
 6a. Test `packages/daemon/src/project-folder.test.ts` :
 ```ts
@@ -16567,7 +16629,7 @@ test("the viewer of a shared project is the account, of a local one the OS user"
 ```
 `ProjectSnapshot.viewer?: string` (`packages/schema/src/rpc.ts`, facultatif) vaut `docs.identity(projectId)`, renseigné par `getProject` ; l'UI l'utilise en T30.
 
-- [ ] **Step 7: Vérifier**
+- [x] **Step 7: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/share.test.ts packages/daemon/src/project-folder.test.ts packages/core/src/keys.test.ts packages/daemon/src/sync packages/daemon/src/integrations`
 Expected: PASS (9 tests de partage, 1 de dossier local, 1 de `core`, sync d'intégrations inchangée).
@@ -16575,7 +16637,7 @@ Expected: PASS (9 tests de partage, 1 de dossier local, 1 de `core`, sync d'int�
 Run: `bun test packages components && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/daemon/src/project-folder.ts packages/daemon/src/project-folder.test.ts packages/daemon/src/docs.ts \
@@ -16639,7 +16701,7 @@ export type FakeRuns = { active(): (PresenceRun & { projectId: string; ticketId:
 - `startCollab` (T21) renvoie en plus `presence: PresenceHub` et `attachRuns(source: { state(): AgentsState; onRunState(listener: (run: RunView) => void): () => void }): () => void`.
 - Vérifié en T0 : il n'existe pas de `runs.active()` ni de `runs.onChange`. Les runs sont ceux de l'orchestrateur (`packages/daemon/src/agents/orchestrator-types.ts`) : `state().runs: RunView[]`, chaque `RunView` porte `projectId: string | null`, `ticketKey: string | null`, `profileId`, `profileName` (le nom affiché, « opus-dev-1 », celui de `AgentBadge`) et `state: RunState` ; les runs terminés y restent (`isTerminal(state)` les distingue) ; `onRunState(listener)` notifie chaque changement d'état, `onChange` tout changement de l'état global. Dans `daemon.ts`, l'orchestrateur est créé **après** le serveur, donc après `startCollab` : la source des runs se branche ensuite par `collab.attachRuns(orchestrator)`, et vaut « aucun run » d'ici là.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/collab/presence.test.ts` :
 ```ts
@@ -16731,12 +16793,12 @@ test("presence is ignored for a project that is not shared", async () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/presence.test.ts`
 Expected: FAIL « Cannot find module './presence' » (ou `presence` absent du harnais).
 
-- [ ] **Step 3: Implémenter `presence.ts`**
+- [x] **Step 3: Implémenter `presence.ts`**
 
 `packages/daemon/src/collab/presence.ts` :
 ```ts
@@ -16858,7 +16920,7 @@ export class PresenceHub {
 }
 ```
 
-- [ ] **Step 4: RPC et câblage**
+- [x] **Step 4: RPC et câblage**
 
 Dans `rpc.ts`, `handleSyncRpc` reçoit aussi `presence?: PresenceHub` (cinquième paramètre) :
 ```ts
@@ -16919,7 +16981,7 @@ function fakeRuns(): FakeRuns {
 ```
 Le harnais passe `runs: (projectId) => fake.active().filter((r) => r.projectId === projectId).map(({ ticketKey, profile, state }) => ({ ticketKey, profile, state }))`, branche `fake.onChange(() => presence.refreshRuns())` et les trames `presence` comme `startCollab`, expose `handler: (req, ctx) => handleSyncRpc(client, req, ctx, share, presence)`, mais n'installe pas la minuterie de 10 s : les tests appellent `tick()` quand ils en ont besoin.
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/presence.test.ts`
 Expected: PASS (6 tests).
@@ -16927,7 +16989,7 @@ Expected: PASS (6 tests).
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/daemon/src/collab/presence.ts packages/daemon/src/collab/presence.test.ts packages/daemon/src/collab/rpc.ts \
@@ -16979,7 +17041,7 @@ Vérifié en T0 :
   ```
 - Conflits de fichiers : T26 et T28 ajoutent aussi des écrans de Paramètres (`tabs.ts`, `screens.ts`, `target-hash.ts`, `lazy-screens.ts`, `ScreenView.tsx`, `SettingsNav.tsx`, `AppSidebar.tsx`) : ajouts d'une ligne par liste, conflits triviaux au rebase ; `useRpcQuery` est créé ici et réutilisé par T26 à T28.
 
-- [ ] **Step 1: Textes de l'interface**
+- [x] **Step 1: Textes de l'interface**
 
 `packages/ui/src/i18n/fr-security.ts` :
 ```ts
@@ -17077,7 +17139,7 @@ Dans `packages/ui/src/i18n/fr.ts` : `import { frSecurity } from "./fr-security";
 ```
 (La clé `pairing.token` disparaît : `bun run typecheck` signale tout autre usage, il n'y en a pas en v0.6.)
 
-- [ ] **Step 2: Écrire les tests des helpers et de l'écran 31**
+- [x] **Step 2: Écrire les tests des helpers et de l'écran 31**
 
 `packages/ui/src/lib/pairing-code.test.ts` :
 ```ts
@@ -17157,7 +17219,7 @@ test("the submit button waits for six characters", async () => {
 Run: `bun test packages/ui/src/lib/pairing-code.test.ts packages/ui/src/shell/pairing-screen.test.tsx`
 Expected: FAIL (`./pairing-code` introuvable ; l'écran n'a qu'un champ).
 
-- [ ] **Step 3: Implémenter les helpers et l'écran 31**
+- [x] **Step 3: Implémenter les helpers et l'écran 31**
 
 `packages/ui/src/lib/pairing-code.ts` :
 ```ts
@@ -17285,12 +17347,12 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
 ```
 `userEvent.type` sur la première case dispatche chaque caractère dans l'élément focalisé : `fill` déplace le focus, donc la saisie continue dans la case suivante (c'est ce que vérifie le premier test).
 
-- [ ] **Step 4: Lancer les tests**
+- [x] **Step 4: Lancer les tests**
 
 Run: `bun test packages/ui/src/lib/pairing-code.test.ts packages/ui/src/shell/pairing-screen.test.tsx`
 Expected: PASS (6 tests).
 
-- [ ] **Step 5: Aligner l'attente de l'écran 31 existante**
+- [x] **Step 5: Aligner l'attente de l'écran 31 existante**
 
 Dans `packages/ui/src/shell/screens.test.tsx`, le test de `PairingScreen` attend l'ancien pied (`/n'est jamais envoyé ailleurs/`, l. 98) ; la maquette 31 en a un nouveau. Remplacer seulement cette ligne par :
 ```ts
@@ -17301,7 +17363,7 @@ Dans `packages/ui/src/shell/screens.test.tsx`, le test de `PairingScreen` attend
 Run: `bun test packages/ui/src/shell/screens.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 6: Requête RPC réactive**
+- [x] **Step 6: Requête RPC réactive**
 
 `packages/ui/src/state/use-rpc-query.ts` :
 ```ts
@@ -17339,7 +17401,7 @@ export function useRpcQuery<R extends RpcRequest>(req: R, refreshOn: readonly Ch
 ```
 `key` n'est lu que comme dépendance : une requête de même contenu ne relance pas le chargement à chaque rendu.
 
-- [ ] **Step 7: Écrire le test de Paramètres › Sécurité**
+- [x] **Step 7: Écrire le test de Paramètres › Sécurité**
 
 `packages/ui/src/settings/security-page.test.tsx` :
 ```tsx
@@ -17521,7 +17583,7 @@ test("the components banner only shows when backends are stopped", async () => {
 Run: `bun test packages/ui/src/settings/security-page.test.tsx`
 Expected: FAIL avec « Cannot find module './SecurityPage' ».
 
-- [ ] **Step 8: Implémenter le dialogue d'activation (maquette 72)**
+- [x] **Step 8: Implémenter le dialogue d'activation (maquette 72)**
 
 `packages/ui/src/settings/EnableRemoteAccessDialog.tsx` :
 ```tsx
@@ -17672,7 +17734,7 @@ export function EnableRemoteAccessDialog({ status, open, onOpenChange, onEnabled
 ```
 Le `Select` ne propose que les interfaces non loopback (spec G §7 : jamais `0.0.0.0` par défaut, et `127.0.0.1` est déjà l'écoute locale).
 
-- [ ] **Step 9: Implémenter la page Sécurité (maquette 71)**
+- [x] **Step 9: Implémenter la page Sécurité (maquette 71)**
 
 `packages/ui/src/settings/SecurityPage.tsx` (gabarit des autres pages de Paramètres : `SettingsNav` à gauche, blocs `Card`) :
 ```tsx
@@ -17916,7 +17978,7 @@ export function SecurityPage() {
 ```
 Les couleurs d'état suivent les tokens de statut (vert / ambre / rouge), jamais l'orange réservé aux agents. L'état « accès distant » n'a pas d'événement : la page se recharge après chaque action.
 
-- [ ] **Step 10: Code d'appairage et page Apparence (maquette 15)**
+- [x] **Step 10: Code d'appairage et page Apparence (maquette 15)**
 
 `packages/ui/src/settings/PairingCodeDialog.tsx` :
 ```tsx
@@ -18028,7 +18090,7 @@ export function AppearancePage() {
 }
 ```
 
-- [ ] **Step 11: Bannière M7 et ligne de l'écran 19**
+- [x] **Step 11: Bannière M7 et ligne de l'écran 19**
 
 `packages/ui/src/components-page/SandboxBanner.tsx` :
 ```tsx
@@ -18083,7 +18145,7 @@ test("warns when the OS isolation is unavailable, with the command to run", asyn
 });
 ```
 
-- [ ] **Step 12: Écrans navigables**
+- [x] **Step 12: Écrans navigables**
 
 - `packages/schema/src/tabs.ts` : `Screen = z.enum(["agents", "queue", "general", "domains", "components", "mine", "integrations", "appearance", "security"])`.
 - `packages/ui/src/tabs/target-hash.ts` : `appearance: "#/settings/appearance"`, `security: "#/settings/security"` ; ajouter à `tabs/tabs.test.ts` un aller-retour `targetToHash` / `hashToTarget` pour ces deux écrans.
@@ -18096,17 +18158,17 @@ test("warns when the OS isolation is unavailable, with the command to run", asyn
 Run: `bun test packages/ui packages/schema`
 Expected: PASS.
 
-- [ ] **Step 13: Lancer tous les tests de l'UI**
+- [x] **Step 13: Lancer tous les tests de l'UI**
 
 Run: `bun test packages/ui/src/settings/security-page.test.tsx packages/ui/src/shell packages/ui/src/components-page packages/ui/src/tabs && bun run budget`
 Expected: PASS ; budget sous 230 kB gzip.
 
-- [ ] **Step 14: Contrôle visuel**
+- [x] **Step 14: Contrôle visuel**
 
 Run: `bun run start` puis ouvrir Paramètres › Sécurité (accès distant désactivé puis activé), le dialogue d'activation, Paramètres › Apparence (« Générer un code »), l'écran 19 (projet vide), la page Composants et l'écran d'appairage (navigateur non appairé) en sombre et en clair.
 Expected: conformes aux exports Penpot 71, 72, 15 (bloc « Accès web »), 19, 31 et à la bannière M7 ; écarts corrigés avant le commit ou listés pour le jalon.
 
-- [ ] **Step 15: Vérifier le lint et les types, commiter**
+- [x] **Step 15: Vérifier le lint et les types, commiter**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucun diagnostic.
@@ -18152,7 +18214,7 @@ git commit -m "feat(ui): paramètres de sécurité"
   - `groupFingerprint(hex: string): string` (`lib/fingerprint.ts`).
   - Écran `sources` (`Screen`), adresse `#/settings/components`, page `ComponentSourcesPage`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-market.ts` :
 ```ts
@@ -18232,7 +18294,7 @@ export const frMarket = {
 ```
 Dans `packages/ui/src/i18n/fr.ts`, importer `frMarket` et l'étaler (`...frMarket`) à côté de `...frComponents` ; ajouter `components: "Composants"` à `settings`.
 
-- [ ] **Step 2: Tests des utilitaires**
+- [x] **Step 2: Tests des utilitaires**
 
 `packages/ui/src/lib/market-errors.test.ts` :
 ```ts
@@ -18288,7 +18350,7 @@ export function marketErrorText(error: unknown): string {
 Run: `bun test packages/ui/src/lib/market-errors.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Tests du catalogue et du détail**
+- [x] **Step 3: Tests du catalogue et du détail**
 
 `packages/ui/src/components-page/marketplace.test.tsx` :
 ```tsx
@@ -18461,7 +18523,7 @@ test("a changed publisher key disables install and offers to unlock", async () =
 Run: `bun test packages/ui/src/components-page/marketplace.test.tsx`
 Expected: FAIL avec « Cannot find module './MarketplaceTab' ».
 
-- [ ] **Step 4: Implémenter le catalogue**
+- [x] **Step 4: Implémenter le catalogue**
 
 `packages/ui/src/components-page/MarketCard.tsx` :
 ```tsx
@@ -18609,7 +18671,7 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
 ```
 La requête `searchMarket` n'envoie `sourceId` et `kind` que lorsqu'ils sont choisis : le test attend `{ method: "searchMarket", query: "burn" }` exactement. Un composant `adapter` apparaît sous « Tous » (sans filtre dédié : il n'a pas d'UI à placer sur une page).
 
-- [ ] **Step 5: Implémenter le détail et « Voir le code »**
+- [x] **Step 5: Implémenter le détail et « Voir le code »**
 
 Dans `packages/ui/src/dialogs/TrustDialog.tsx`, exporter la fonction `PermissionList` (aucun autre changement à cette étape).
 
@@ -18809,7 +18871,7 @@ export function MarketPackageSheet({ target, onClose, onInstalled, onUnlock }: P
 Run: `bun test packages/ui/src/components-page/marketplace.test.tsx`
 Expected: PASS (8 tests).
 
-- [ ] **Step 6: Variantes M5 de l'écran 30**
+- [x] **Step 6: Variantes M5 de l'écran 30**
 
 `packages/ui/src/dialogs/trust-market.test.tsx` :
 ```tsx
@@ -18868,7 +18930,7 @@ export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
 Run: `bun test packages/ui/src/dialogs/trust-market.test.tsx packages/ui/src/dialogs`
 Expected: PASS ; les tests existants de l'écran 30 passent sans changement de leurs attentes.
 
-- [ ] **Step 7: Onglets de la page Composants**
+- [x] **Step 7: Onglets de la page Composants**
 
 Dans `ComponentsPage.tsx`, placer la page sous deux onglets (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` de `@kibo/sdk/ui/tabs`) : `<Tabs defaultValue="installed">` avec les déclencheurs `fr.market.tabInstalled` (valeur `installed`) et `fr.market.tabMarket` (valeur `market`) ; le contenu `installed` (classe `grid content-start gap-6`) reçoit, inchangés, le bloc du tableau (`<div className="overflow-hidden rounded-lg border bg-card">…`), le texte vide, les messages et `DraftsSection` ; le contenu `market` reçoit :
 ```tsx
@@ -18895,7 +18957,7 @@ test("the components page offers the Installed and Marketplace tabs", async () =
 Run: `bun test packages/ui/src/components-page`
 Expected: PASS ; les tests existants de la page passent sans changement de leurs attentes (l'onglet « Installés » est affiché par défaut).
 
-- [ ] **Step 8: Tests des sources (M3)**
+- [x] **Step 8: Tests des sources (M3)**
 
 `packages/ui/src/settings/sources.test.tsx` :
 ```tsx
@@ -18988,7 +19050,7 @@ test("a probe failure is explained on the first step", async () => {
 Run: `bun test packages/ui/src/settings/sources.test.tsx`
 Expected: FAIL avec « Cannot find module './ComponentSourcesPage' ».
 
-- [ ] **Step 9: Implémenter les sources et l'écran `sources`**
+- [x] **Step 9: Implémenter les sources et l'écran `sources`**
 
 `packages/ui/src/dialogs/AddSourceDialog.tsx` :
 ```tsx
@@ -19206,12 +19268,12 @@ Les tests existants qui énumèrent les écrans (`palette/screen-items.test.ts`,
 Run: `bun test packages/ui/src/settings/sources.test.tsx packages/ui/src/tabs packages/ui/src/palette`
 Expected: PASS.
 
-- [ ] **Step 10: Vérifications**
+- [x] **Step 10: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui packages/schema && bun run --cwd packages/ui build && bun run budget`
 Expected: aucune erreur ; budget du chargement initial ≤ 230 kB gzip (le code de la tâche est dans les écrans chargés à la demande). Contrôle visuel en sombre et en clair (`bun run --cwd packages/ui dev` avec un démon et `startFakeMarket`) face aux exports M1, M2, M3, M5 ; écarts corrigés avant la review.
 
-- [ ] **Step 11: Commits**
+- [x] **Step 11: Commits**
 
 ```bash
 git add packages/ui/src/i18n/fr-market.ts packages/ui/src/i18n/fr.ts packages/ui/src/lib/fingerprint.ts packages/ui/src/lib/market-errors.ts packages/ui/src/lib/market-errors.test.ts packages/ui/src/components-page/MarketplaceTab.tsx packages/ui/src/components-page/MarketCard.tsx packages/ui/src/components-page/MarketPackageSheet.tsx packages/ui/src/components-page/SourceCode.tsx packages/ui/src/components-page/ComponentsPage.tsx packages/ui/src/components-page/marketplace.test.tsx packages/ui/src/components-page/components-page.test.tsx packages/ui/src/dialogs/TrustDialog.tsx packages/ui/src/dialogs/trust-market.test.tsx
@@ -19253,7 +19315,7 @@ git commit -m "feat(ui): sources de marketplace"
   - `MarketUpdateDialog({ title, summary, sourceId, id, to, onDone })`, `PublisherChangedDialog({ detail, open, onOpenChange, onUnlocked })`, `PublishToMarketDialog({ target, open, onOpenChange })`, `MissingComponent({ projectId, componentRef, compact })`, `useMarketStatus()`.
   - `keyFingerprintHex(publicKey: string): Promise<string>` (`lib/fingerprint.ts`, WebCrypto du navigateur).
 
-- [ ] **Step 1: Côté démon, tests de la révocation listée et de l'état marketplace**
+- [x] **Step 1: Côté démon, tests de la révocation listée et de l'état marketplace**
 
 `packages/daemon/src/components/registry-listing-revoked.test.ts` :
 ```ts
@@ -19360,7 +19422,7 @@ Le nom de la fausse source (« Équipe ») et l'option `publisher` de `makeTestP
 Run: `bun test packages/daemon/src/components/registry-listing-revoked.test.ts packages/daemon/src/market/summary.test.ts`
 Expected: FAIL (`revoked` absent du résumé ; « Cannot find module './summary' »).
 
-- [ ] **Step 2: Implémenter la révocation listée, `summary.ts` et les RPC**
+- [x] **Step 2: Implémenter la révocation listée, `summary.ts` et les RPC**
 
 Dans `packages/schema/src/component.ts`, `ComponentVersionSummary` gagne `revoked: { reason: string; at: number } | null`. Dans `packages/daemon/src/components/registry-listing.ts`, `installedSummary` ajoute `revoked: v.revoked ?? null` et le résumé d'un intégré `revoked: null`. Les fixtures de tests UI qui construisent un `ComponentVersionSummary` (`components-page.test.tsx`, `rows.test.ts`, tests de `PendingTrust`) gagnent `revoked: null` ; leurs attentes ne changent pas.
 
@@ -19412,7 +19474,7 @@ Dans `packages/daemon/src/market/rpc.ts`, traiter `listMarketStatus` par `market
 Run: `bun test packages/daemon/src/components packages/daemon/src/market packages/schema`
 Expected: PASS.
 
-- [ ] **Step 3: Textes**
+- [x] **Step 3: Textes**
 
 Ajouter à `market` dans `packages/ui/src/i18n/fr-market.ts` :
 ```ts
@@ -19442,7 +19504,7 @@ Ajouter à `market` dans `packages/ui/src/i18n/fr-market.ts` :
     },
 ```
 
-- [ ] **Step 4: Test du calcul de mise à jour**
+- [x] **Step 4: Test du calcul de mise à jour**
 
 `packages/ui/src/lib/market-update.test.ts` :
 ```ts
@@ -19555,7 +19617,7 @@ Dans `PublishSections.tsx`, remplacer le type `PublishPreview` des props de `Usa
 Run: `bun test packages/ui/src/lib/market-update.test.ts packages/ui/src/components-page`
 Expected: PASS ; les tests existants de l'écran 6 passent sans changement de leurs attentes.
 
-- [ ] **Step 5: Tests du flux de mise à jour et de l'onglet Installés**
+- [x] **Step 5: Tests du flux de mise à jour et de l'onglet Installés**
 
 `packages/ui/src/components-page/market-update.test.tsx` :
 ```tsx
@@ -19708,7 +19770,7 @@ Les libellés des radios de `StrategyChoice` sont leurs titres (`aria-label` de 
 Run: `bun test packages/ui/src/components-page/market-update.test.tsx`
 Expected: FAIL avec « Cannot find module './MarketUpdateDialog' ».
 
-- [ ] **Step 6: Implémenter le flux et l'onglet Installés**
+- [x] **Step 6: Implémenter le flux et l'onglet Installés**
 
 `packages/ui/src/components-page/MarketUpdateDialog.tsx` :
 ```tsx
@@ -19889,7 +19951,7 @@ Dans `PendingTrust.tsx`, quand `summary?.revoked` n'est pas nul, afficher `<p cl
 Run: `bun test packages/ui/src/components-page packages/ui/src/pages`
 Expected: PASS (dont les 4 tests de `market-update.test.tsx`).
 
-- [ ] **Step 7: Tests des dialogues M6 et M8**
+- [x] **Step 7: Tests des dialogues M6 et M8**
 
 `packages/ui/src/components-page/market-dialogs.test.tsx` :
 ```tsx
@@ -20016,7 +20078,7 @@ Le statut de sync suit `SyncStatus` de T4 (nom exact des champs repris de sa sec
 Run: `bun test packages/ui/src/components-page/market-dialogs.test.tsx`
 Expected: FAIL avec « Cannot find module '../dialogs/PublisherChangedDialog' ».
 
-- [ ] **Step 8: Implémenter M6 et M8**
+- [x] **Step 8: Implémenter M6 et M8**
 
 Ajouter à `packages/ui/src/lib/fingerprint.ts` :
 ```ts
@@ -20230,7 +20292,7 @@ Une source d'équipe est une source dont l'hôte est celui du serveur de sync co
 Run: `bun test packages/ui/src/components-page/market-dialogs.test.tsx packages/ui/src/lib/market-errors.test.ts`
 Expected: PASS.
 
-- [ ] **Step 9: Test et implémentation du composant absent (S7)**
+- [x] **Step 9: Test et implémentation du composant absent (S7)**
 
 `packages/ui/src/pages/missing-component.test.tsx` :
 ```tsx
@@ -20365,16 +20427,16 @@ Dans `InstanceFrame.tsx` (`ThirdParty`), remplacer `if (!summary || !v) return <
 Run: `bun test packages/ui/src/pages`
 Expected: PASS.
 
-- [ ] **Step 9b: Backend arrêté faute d'isolation OS (M7, instance)**
+- [x] **Step 9b: Backend arrêté faute d'isolation OS (M7, instance)**
 
 `packages/ui/src/pages/backend-stopped.test.tsx` : avec un faux client dont `getSandboxStatus` renvoie `{ kind: null, available: false, reason: "bubblewrap (bwrap) is not installed", fix: "sudo apt install bubblewrap", allowUnsandboxed: false }`, `InstanceFrame` d'une version sandboxée **dont le manifeste déclare un backend** affiche au-dessus du cadre le bandeau ambre « Backend arrêté — isolation OS indisponible » (`role="status"`) et rend toujours l'UI du composant ; aucun bandeau quand `available` est vrai, quand `allowUnsandboxed` est vrai, pour une version `trusted` ou sans backend ; le bandeau disparaît sur `{ type: "sandbox.changed" }`. Run ⇒ FAIL. Implémentation : `packages/ui/src/pages/BackendStopped.tsx` lit l'état par `useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"])` (T25) et `InstanceFrame.tsx` le rend quand `summary.trust === "sandboxed"` et que le manifeste a un `server` ; texte `backendStopped: "Backend arrêté — isolation OS indisponible"` dans `fr-market.ts`. Run ⇒ PASS. Contrôle visuel face à l'export M7.
 
-- [ ] **Step 10: Vérifications**
+- [x] **Step 10: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui packages/daemon/src/market packages/daemon/src/components && bun run --cwd packages/ui build && bun run budget`
 Expected: aucune erreur ; budget ≤ 230 kB gzip (`MissingComponent` est rendu par `InstanceFrame`, lui-même dans le chunk de la page : vérifier que `MarketPackageSheet` et Shiki n'entrent pas dans le chargement initial, sinon charger `MissingComponent` par `lazyPanel`). Contrôle visuel en sombre et en clair face aux exports M4, M6, M8 et S7.
 
-- [ ] **Step 11: Commits**
+- [x] **Step 11: Commits**
 
 ```bash
 git add packages/schema/src/component.ts packages/schema/src/market.ts packages/schema/src/market-rpc.ts packages/daemon/src/components/registry-listing.ts packages/daemon/src/components/registry-listing-revoked.test.ts packages/daemon/src/market/summary.ts packages/daemon/src/market/summary.test.ts packages/daemon/src/market/rpc.ts
@@ -20417,7 +20479,7 @@ Vague 6. Écrans à dessiner **S1** (Paramètres › Sync, dialogues « Se conne
   - `packages/ui/src/state/use-sync-state.ts` (`useSyncState`) est l'état de la sync des intégrations : le hook de la sync d'équipe s'appelle `useSyncServerStatus` (`use-sync-server.ts`) pour éviter la confusion.
   - Les tests d'UI remplacent `../api` par `mock.module` (modèle `packages/ui/src/settings/IntegrationsPage.test.tsx`).
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-collab.ts` :
 ```ts
@@ -20491,7 +20553,7 @@ export const frCollab = {
 
 Dans `packages/ui/src/i18n/fr.ts` : `import { frCollab } from "./fr-collab";` et `...frCollab,` après `...frAi,`. Le libellé « Démon local » reste `fr.agents.daemon` (aucun doublon).
 
-- [ ] **Step 2: Écran `sync` dans les onglets**
+- [x] **Step 2: Écran `sync` dans les onglets**
 
 Ajouter à `packages/ui/src/tabs/tabs.test.ts`, à côté des cas `#/settings/integrations` :
 ```ts
@@ -20511,7 +20573,7 @@ Dans `packages/schema/src/tabs.ts`, ajouter `"sync"` à la fin de `Screen`. Dans
 Run: `bun test packages/ui/src/tabs/tabs.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Écrire les tests des écrans**
+- [x] **Step 3: Écrire les tests des écrans**
 
 `packages/ui/src/settings/sync-settings.test.tsx` :
 ```tsx
@@ -20658,12 +20720,12 @@ test("a reconnection countdown is shown in settings", async () => {
 });
 ```
 
-- [ ] **Step 4: Vérifier l'échec**
+- [x] **Step 4: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/settings/sync-settings.test.tsx`
 Expected: FAIL « Cannot find module './SyncSettingsPage' ».
 
-- [ ] **Step 5: Implémenter le hook et l'indicateur**
+- [x] **Step 5: Implémenter le hook et l'indicateur**
 
 `packages/ui/src/state/use-sync-server.ts` :
 ```ts
@@ -20758,7 +20820,7 @@ Dans `packages/ui/src/agents/AgentBar.tsx`, ajouter la prop facultative `indicat
 ```
 Dans `packages/ui/src/agents/AgentPanel.tsx`, passer `indicator={<SyncIndicator online={online} />}` à `AgentBar`. Dans `packages/ui/src/agents/agent-panel.test.tsx` et `packages/ui/src/shell/agents-shell.test.tsx` (qui rend `AgentPanel` avec des runs), ajouter `subscribeEvents: () => () => undefined,` au faux `client` (mise en place seulement ; `getSyncStatus` y renvoie `null`, d'où « Démon local » et « Démon injoignable » inchangés).
 
-- [ ] **Step 6: Implémenter les dialogues**
+- [x] **Step 6: Implémenter les dialogues**
 
 `packages/ui/src/dialogs/ConnectServerDialog.tsx` :
 ```tsx
@@ -20901,7 +20963,7 @@ export function AddDeviceDialog({ open, onOpenChange }: { open: boolean; onOpenC
 }
 ```
 
-- [ ] **Step 7: Implémenter `SyncSettingsPage`**
+- [x] **Step 7: Implémenter `SyncSettingsPage`**
 
 `packages/ui/src/settings/SyncSettingsPage.tsx` (gabarit des pages de Paramètres, `SettingsNav active="sync"`, tableaux shadcn) :
 ```tsx
@@ -21120,7 +21182,7 @@ export function SyncSettingsPage({ viewer }: { viewer: string }) {
 ```
 La confirmation de déconnexion suit le motif de `packages/ui/src/settings/DisconnectDialog.tsx` (Dialog, bouton `destructive`).
 
-- [ ] **Step 8: Brancher l'écran**
+- [x] **Step 8: Brancher l'écran**
 
 - `packages/ui/src/settings/SettingsNav.tsx` : `SettingsScreen = Extract<Screen, "general" | "domains" | "integrations" | "sync">` ; importer `Cloud` ; insérer `{ id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" }` entre `integrations` et `security` (si T25 a déjà remplacé l'entrée `security` par un écran, garder son entrée telle quelle).
 - `packages/ui/src/shell/lazy-screens.ts` : `export const SyncSettingsPage = lazyPanel(() => import("../settings/SyncSettingsPage").then((m) => m.SyncSettingsPage), fr.lazy);`
@@ -21130,14 +21192,14 @@ La confirmation de déconnexion suit le motif de `packages/ui/src/settings/Disco
 Run: `bun test packages/ui/src/settings/sync-settings.test.tsx packages/ui/src/tabs/tabs.test.ts packages/ui/src/agents/agent-panel.test.tsx packages/ui/src/shell/agents-shell.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 9: Vérifier**
+- [x] **Step 9: Vérifier**
 
 Run: `bun test packages/ui packages/schema && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget`
 Expected: PASS ; budget ≤ 230 kB gzip (la page est chargée à la demande, seul `SyncIndicator` et son hook entrent dans le chunk d'entrée).
 
 Contrôle visuel : Paramètres › Sync (non configuré, dialogue, connecté) et la barre des agents face aux exports S1 et S9, en sombre et en clair.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add packages/schema/src/tabs.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/tabs/screens.ts \
@@ -21186,7 +21248,7 @@ Vague 7. Écrans à dessiner **S2** (Partager le projet), **S3** (Rejoindre un p
   - Le bouton « Ticket » (`fr.header.newTicket`) est dans `ShellHeader.tsx` ; `host.openNewTicket` est défini dans `Shell.tsx` (`useMemo<Host>`).
   - `KiboError` porte le message du démon dans `detail` (`new KiboError(code, detail)`).
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-share.ts` :
 ```ts
@@ -21245,7 +21307,7 @@ export const frShare = {
 ```
 Dans `packages/ui/src/i18n/fr.ts` : `import { frShare } from "./fr-share";` et `...frShare,` après `...frCollab,`. Les rôles réutilisent `fr.sync.roles` (T28).
 
-- [ ] **Step 2: Écrire les tests**
+- [x] **Step 2: Écrire les tests**
 
 `packages/ui/src/dialogs/share.test.tsx` :
 ```tsx
@@ -21446,12 +21508,12 @@ test("a shared binding run by someone else can be taken over", async () => {
 ```
 (`instance` : l'instance déjà définie dans le fichier.)
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/SourceHeader.test.tsx`
 Expected: FAIL « Cannot find module './ShareProjectDialog' ».
 
-- [ ] **Step 4: Implémenter le bandeau et l'accès**
+- [x] **Step 4: Implémenter le bandeau et l'accès**
 
 `packages/ui/src/state/access.ts` :
 ```ts
@@ -21486,7 +21548,7 @@ export function ProjectAccessBanner({ access }: { access: ProjectAccess }) {
 }
 ```
 
-- [ ] **Step 5: Implémenter `ShareProjectDialog`**
+- [x] **Step 5: Implémenter `ShareProjectDialog`**
 
 `packages/ui/src/dialogs/ShareProjectDialog.tsx` :
 ```tsx
@@ -21712,7 +21774,7 @@ export function ShareProjectDialog({ project, open, onOpenChange }: Props) {
 }
 ```
 
-- [ ] **Step 6: Implémenter `JoinProjectDialog`**
+- [x] **Step 6: Implémenter `JoinProjectDialog`**
 
 `packages/ui/src/dialogs/JoinProjectDialog.tsx` :
 ```tsx
@@ -21787,7 +21849,7 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
 }
 ```
 
-- [ ] **Step 7: Brancher le shell**
+- [x] **Step 7: Brancher le shell**
 
 - `lazy-dialogs.ts` : `ShareProjectDialog` et `JoinProjectDialog` par `lazyPanel(…, fr.lazy, hidden)` (même motif que `NewTicketDialog`).
 - `ShellDialogs.tsx` : `DialogsState` gagne `share: string | null` et `join: boolean` (`NO_DIALOG` : `share: null`, `join: false`) ; le projet à partager est cherché dans `snapshots` (déjà en props) ; rendu :
@@ -21824,7 +21886,7 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
   ```
   placé avant le bouton de sync, `onError={setError}` (erreur affichée par le `role="alert"` existant).
 
-- [ ] **Step 8: Vérifier**
+- [x] **Step 8: Vérifier**
 
 Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/SourceHeader.test.tsx`
 Expected: PASS.
@@ -21834,7 +21896,7 @@ Expected: PASS ; budget ≤ 230 kB gzip (dialogues chargés à la demande ; seul
 
 Contrôle visuel face aux exports S2, S3, S6, en sombre et en clair.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/ui/src/i18n/fr-share.ts packages/ui/src/i18n/fr.ts packages/ui/src/dialogs/ShareProjectDialog.tsx \
@@ -21891,7 +21953,7 @@ export type MockSdk = { /* existant */ setAccess(access: ProjectAccess): void; s
   - `TabBar` (`packages/ui/src/tabs/TabBar.tsx`) n'a pas de zone droite hors `error` : prop `trailing` ajoutée. L'en-tête d'une page expose `PageActions` (portail vers `ShellHeader`, `packages/ui/src/shell/page-actions.tsx`) : la pile réduite d'une page y est rendue.
   - Pas de `client.onEvent` : `client.subscribeEvents` (T4).
 
-- [ ] **Step 1: Tests du SDK et du démon**
+- [x] **Step 1: Tests du SDK et du démon**
 
 `packages/sdk/src/presence.test.tsx` :
 ```tsx
@@ -21986,12 +22048,12 @@ test("presence.list reaches the presence handler", async () => {
 ```
 (`findInstance`, `idleHandlers`, `eventsDb`, `granted` : `gate-test-kit.ts` ; l'instance `thirdparty` y existe. Adapter l'appel de `createGate` au modèle exact des autres tests du fichier si sa forme diffère.)
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/sdk/src/presence.test.tsx packages/daemon/src/components/gate-permissions.test.ts`
 Expected: FAIL « Cannot find module './members' » et `"presence.list"` refusé par Zod / `bun run typecheck`.
 
-- [ ] **Step 3: Schéma et démon**
+- [x] **Step 3: Schéma et démon**
 
 `packages/schema/src/call.ts`, dans `ComponentCall` :
 ```ts
@@ -22018,7 +22080,7 @@ Expected: FAIL « Cannot find module './members' » et `"presence.list"` refusé
 ```
 `packages/daemon/src/components/service.ts` : `ComponentsDeps` gagne les mêmes champs facultatifs, passés à `createGateHandlers` (`...(deps.presence && { presence: deps.presence })`, idem `sharing`). `packages/daemon/src/daemon.ts` : `presence: (projectId) => presenceHub?.peers(projectId) ?? []` et `sharing: (projectId) => …` branchés sur le hub de T24 et la fonction qui remplit `ProjectSnapshot.sync` en T21 (fermetures paresseuses : le hub et le client de sync sont créés après les composants). `packages/daemon/src/components/gate-test-kit.ts` : `idleHandlers` gagne `presence: async () => []` et `sharing: async () => { throw new KiboError("INTERNAL", "unexpected") }` (même motif que ses autres entrées).
 
-- [ ] **Step 4: Implémenter le SDK**
+- [x] **Step 4: Implémenter le SDK**
 
 `packages/sdk/src/fr.ts` :
 ```ts
@@ -22149,12 +22211,12 @@ le backend simulé gagne `subscribePresence: presenceChanges.subscribe` (nouveau
 
 `packages/sdk/src/conformance.tsx` : le tableau `projects` devient `[string, ConformanceSeed | undefined, Partial<MockSdkOptions>][]` avec `["empty project", undefined, {}]`, `["seeded project", seed, {}]` et `["shared project with provisional keys", seed, { shared: true, presence: [COLLEAGUE] }]` ; ces options sont étalées dans `createMockSdk` ; `COLLEAGUE` est un `PresencePeer` fictif (Léa, un run `opus-dev-1` en cours). Le cas vérifie comme les autres le rendu et l'absence de violation, ce qui garantit qu'aucun composant conforme ne plante sur `key: null`.
 
-- [ ] **Step 5: Vérifier le SDK et le démon**
+- [x] **Step 5: Vérifier le SDK et le démon**
 
 Run: `bun test packages/sdk packages/schema packages/daemon/src/components components`
 Expected: PASS, y compris la conformité de Kanban et Tickets avec le nouveau cas (l'affichage de la clé passe par `keyLabel` depuis T6).
 
-- [ ] **Step 6: Commit du SDK**
+- [x] **Step 6: Commit du SDK**
 
 ```bash
 git add packages/schema/src/call.ts packages/schema/src/permissions.ts packages/sdk/src \
@@ -22164,7 +22226,7 @@ git add packages/schema/src/call.ts packages/schema/src/permissions.ts packages/
 git commit -m "feat(sdk): présence et membres"
 ```
 
-- [ ] **Step 7: Tests des composants et du shell**
+- [x] **Step 7: Tests des composants et du shell**
 
 Ajouts à `components/kanban/src/kanban.test.tsx` :
 ```tsx
@@ -22328,12 +22390,12 @@ test("navigation reports presence only for shared projects", async () => {
 });
 ```
 
-- [ ] **Step 8: Vérifier l'échec**
+- [x] **Step 8: Vérifier l'échec**
 
 Run: `bun test components packages/ui/src/shell/presence.test.tsx`
 Expected: FAIL (clé sans italique dans le Kanban, `./PresenceAvatars` introuvable).
 
-- [ ] **Step 9: Implémenter les composants intégrés**
+- [x] **Step 9: Implémenter les composants intégrés**
 
 `KanbanCard.tsx` : nouvelles props `members: MemberInfo[]`, `remote: { label: string; state: string }[]`, `readOnly: boolean` ; `useDraggable({ id: t.id, disabled: readOnly })` ; l'étiquette `{t.keyLabel}` (T6) devient `<TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />` (les `listeners` / `attributes` du glisser restent sur son `<span>` parent) ; le menu « Actions » (`Déplacer vers`) n'est pas rendu si `readOnly` ; un assigné humain affiche `assigneeLabel(t.assignee, members)` dans un `Badge variant="outline"` ; pour chaque entrée de `remote` :
 ```tsx
@@ -22345,7 +22407,7 @@ Expected: FAIL (clé sans italique dans le Kanban, `./PresenceAvatars` introuvab
 
 `TicketsTree.tsx` : l'étiquette `{t.keyLabel}` passe par `TicketKeyLabel` (mêmes classes) ; `AssigneeCell` reçoit `members` (`useMembers()`) et affiche `assigneeLabel(assignee, members)` et les initiales de ce libellé.
 
-- [ ] **Step 10: Implémenter l'UI du shell**
+- [x] **Step 10: Implémenter l'UI du shell**
 
 `packages/ui/src/i18n/fr-presence.ts` :
 ```ts
@@ -22482,7 +22544,7 @@ export function KeyRequired({ ticket, children }: Props) {
 - `Shell.tsx` : `trailing={project && <PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} />}` sur `TabBar` ; `usePresenceReporter({ projectId: activeProjectId, pageId: active?.kind === "page" ? active.pageId : null, ticketId: activeTicketId, shared: project?.sync.shared ?? false })`. Si le fichier dépasse 300 lignes avec T29, extraire ce câblage dans `packages/ui/src/shell/use-collab-shell.ts`.
 - `PageView.tsx` : `<PageActions><PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} pageId={page.id} /></PageActions>` (portail vers l'en-tête, déjà utilisé par `ViewActions`).
 
-- [ ] **Step 10b: `viewer` d'un projet partagé (décision 31)**
+- [x] **Step 10b: `viewer` d'un projet partagé (décision 31)**
 
 Test ajouté à `packages/ui/src/mine/my-tickets.test.ts` :
 ```ts
@@ -22497,7 +22559,7 @@ Test ajouté à `packages/ui/src/mine/my-tickets.test.ts` :
 ```
 Run: `bun test packages/ui/src/mine/my-tickets.test.ts` ⇒ FAIL (KIB-21 absent). Dans `myTickets`, filtrer par `isMine(t, snapshots.get(project.id)?.viewer ?? viewer, tab)`. Dans `Shell.tsx`, `PageView` et `InstanceFrame` reçoivent `project.viewer ?? viewer` (le `viewer` transmis à l'iframe et au SDK), ce qui aligne le filtre « Moi + agents » du Kanban et `assigneeLabel` sur l'`userId` d'un projet partagé (`ProjectSnapshot.viewer` vient de T23). Le cas du Kanban est couvert par un test ajouté à `components/kanban/src/kanban.test.tsx` : SDK simulé avec `viewer: "u-adam"` et un ticket assigné à `{ kind: "human", ref: "u-adam" }`, visible sous le filtre « Moi + agents ». Run ⇒ PASS.
 
-- [ ] **Step 11: Vérifier**
+- [x] **Step 11: Vérifier**
 
 Run: `bun test packages components`
 Expected: PASS, conformité de Kanban et Tickets verte sur les trois cas.
@@ -22507,7 +22569,7 @@ Expected: PASS ; budget ≤ 230 kB gzip.
 
 Contrôle visuel face aux exports S4 et S5, en sombre et en clair.
 
-- [ ] **Step 12: Commit de l'UI**
+- [x] **Step 12: Commit de l'UI**
 
 ```bash
 git add components/kanban/src components/tickets/src packages/ui/src/i18n/fr-presence.ts packages/ui/src/i18n/fr.ts \
@@ -22542,7 +22604,7 @@ Vague 9. Spec G §9 (ligne e2e) et §10 (scénario à deux utilisateurs vert sur
 
 Deux paires de démons (une par projet Playwright `sync-dark` et `sync-light`) évitent qu'un démon déjà connecté par le premier projet fausse le second. Le serveur de contrôle (4411) arrête et relance le serveur de sync pour observer la clé provisoire, qui sinon ne dure que quelques millisecondes.
 
-- [ ] **Step 1: Fixture partagée**
+- [x] **Step 1: Fixture partagée**
 
 `e2e/sync-fixture.ts` :
 ```ts
@@ -22569,7 +22631,7 @@ export function readSyncState(): SyncE2eState {
 ```
 (`as SyncE2eState` : fichier écrit par `serve-sync.ts` juste avant, dans le même dépôt ; pas de schéma Zod pour un fichier de test.)
 
-- [ ] **Step 2: Lanceur**
+- [x] **Step 2: Lanceur**
 
 `e2e/serve-sync.ts` :
 ```ts
@@ -22642,7 +22704,7 @@ process.on("SIGTERM", () => void shutdown());
 process.on("SIGINT", () => void shutdown());
 ```
 
-- [ ] **Step 3: Configuration Playwright**
+- [x] **Step 3: Configuration Playwright**
 
 `e2e/playwright.config.ts` : importer `SYNC_PORTS` de `./sync-fixture` ; ajouter après le tableau `daemons` :
 ```ts
@@ -22653,7 +22715,7 @@ const syncProjects = [
 ```
 `projects` devient `[...daemons.map(/* inchangé */), ...syncProjects.map((p) => ({ name: p.name, testMatch: /sync\.spec\.ts/, use: { browserName: "chromium", colorScheme: p.scheme, baseURL: `http://127.0.0.1:${p.port}` } }))]` et `webServer` devient `[...daemons.map(/* inchangé */), { command: "bun serve-sync.ts", url: `http://127.0.0.1:${SYNC_PORTS.control}/`, reuseExistingServer: false, timeout: 120_000, gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 } }]`. L'URL de contrôle ne répond qu'une fois les codes écrits ; les démons, lancés juste avant, sont attendus par le test (`waitForDaemon`).
 
-- [ ] **Step 4: Écrire le scénario**
+- [x] **Step 4: Écrire le scénario**
 
 `e2e/sync.spec.ts` :
 ```ts
@@ -22763,14 +22825,14 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
 ```
 Le délai de 70 s après la relance couvre le pire backoff (60 s plus gigue) ; en pratique la reconnexion a lieu en quelques secondes. Le Kanban filtre par défaut « Moi + agents » (`components/kanban/src/filter.ts` : un ticket sans assigné est masqué) : chaque utilisateur passe sur « Tous » avant les attentes.
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun install && bun run --cwd packages/ui build && bun run --cwd e2e test -- --project sync-dark --project sync-light`
 Expected: PASS dans `sync-dark` et `sync-light` ; les autres parcours restent verts : `bun run --cwd e2e test`.
 
 Porte d'intégration locale (GitHub Actions hors service) : le chef d'équipe lance `bun run --cwd e2e test` complet sur macOS avant d'intégrer ; le job `e2e` du workflow (macOS et Linux) exécute le nouveau fichier sans changement de workflow quand la CI revient.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add e2e/serve-sync.ts e2e/sync.spec.ts e2e/sync-fixture.ts e2e/playwright.config.ts e2e/package.json e2e/tsconfig.json bun.lock
@@ -22802,7 +22864,7 @@ Parcours Playwright de la spec H §9 (ligne e2e) et §10 : ajout d'une source en
 
 Chaque projet Playwright (`market-dark`, `market-light`) a **son démon et sa fausse source** : le parcours installe et met à jour, il ne peut pas partager l'état d'un autre thème.
 
-- [ ] **Step 1: Écrire le parcours**
+- [x] **Step 1: Écrire le parcours**
 
 `e2e/market-fixture.ts` :
 ```ts
@@ -22908,12 +22970,12 @@ test("source, catalogue, installation puis mise à jour partout", async ({ page,
 ```
 La dernière assertion vérifie qu'aucune instance n'est restée « Composant absent » (T27) ni « Composant introuvable » (texte actuel de `InstanceFrame`) après la mise à jour. Le fichier d'état est lu avec `as MarketE2eState` : écrit par `serve-market.ts` juste avant, dans le même dépôt.
 
-- [ ] **Step 2: Lancer pour le voir échouer**
+- [x] **Step 2: Lancer pour le voir échouer**
 
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- --project market-dark`
 Expected: FAIL (aucun projet `market-dark` : la configuration n'existe pas encore).
 
-- [ ] **Step 3: Serveur de test**
+- [x] **Step 3: Serveur de test**
 
 `e2e/serve-market.ts` :
 ```ts
@@ -22985,19 +23047,19 @@ process.on("SIGINT", () => void shutdown());
 
 Dans `e2e/playwright.config.ts` : importer `MARKET_PORTS` de `./market-fixture` ; ajouter les projets `{ name: "market-dark", testMatch: /market\.spec\.ts/, use: { browserName: "chromium", colorScheme: "dark", baseURL: "http://127.0.0.1:4412" } }` et `market-light` (`light`, 4413), construits depuis `MARKET_PORTS` comme les projets `sync-*` de T31 ; ajouter au tableau `webServer` `{ command: "bun serve-market.ts", url: `http://127.0.0.1:${MARKET_PORTS.control}/`, reuseExistingServer: false, timeout: 120_000, gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 } }`. `pairAndCreateProject` attend le démon par son `page.goto` ; si le démon démarre après le port de contrôle, ajouter l'attente `waitForDaemon` de T31 en tête du test.
 
-- [ ] **Step 4: Relancer**
+- [x] **Step 4: Relancer**
 
 Run: `bun install && bun run --cwd packages/ui build && bun run --cwd e2e test -- --project market-dark --project market-light`
 Expected: PASS. Sous Linux sans bubblewrap utilisable, le test échoue à l'installation (`SANDBOX_UNAVAILABLE`) : c'est voulu, la CI installe bubblewrap.
 
 Puis `bun run --cwd e2e test` complet : tous les parcours verts (porte d'intégration locale, GitHub Actions étant hors service).
 
-- [ ] **Step 5: Vérifications**
+- [x] **Step 5: Vérifications**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucune erreur (le paquet `e2e` est déjà dans le `typecheck` racine ; `e2e/tsconfig.json` référence `../packages/daemon`).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add e2e/serve-market.ts e2e/market.spec.ts e2e/market-fixture.ts e2e/playwright.config.ts e2e/package.json e2e/tsconfig.json bun.lock
@@ -23016,29 +23078,52 @@ En dépendent : T25 (M7), T26 (M3, M5), T27 (M4, M6, M7 instance, M8, S7), T29 (
 - Modify: `design/penpot/scripts/14-sync.js` (écrans numérotés à la suite, 79 et plus), `design/penpot/kibo.penpot.xz`, `design/pdf/kibo-design-sombre.pdf`, `design/pdf/kibo-design-clair.pdf`
 - Modify: `design/penpot/README.md` (liste des écrans, si elle les énumère)
 
-- [ ] **Step 1: Dessiner chaque écran en sombre**
+- [x] **Step 1: Dessiner chaque écran en sombre**
 
 Dans Penpot (onglet piloté par l'extension Chrome, procédure de `design/penpot/README.md`), à partir des bases existantes (écran 6 pour M3, M4, M8 ; écran 30 pour M5 ; écran 8 pour S3, S6, S7 ; écran 19 / 78 pour M7), avec shadcn, tokens zinc, orange réservé aux agents, textes au tutoiement repris mot pour mot des descriptions du plan.
 
-- [ ] **Step 2: Variante claire de chaque écran**
+- [x] **Step 2: Variante claire de chaque écran**
 
 Chaque écran existe **en sombre et en clair** (règle de `CLAUDE.md`), contrôlé visuellement côte à côte.
 
-- [ ] **Step 3: Réexporter**
+- [x] **Step 3: Réexporter**
 
 Run: `bash design/penpot/scripts/pack-penpot.sh && bash design/penpot/scripts/build-pdf.sh`
 Expected: `kibo.penpot.xz` et les deux PDF régénérés, les nouveaux écrans présents dans les deux PDF.
 
-- [ ] **Step 4: Reporter les numéros**
+- [x] **Step 4: Reporter les numéros**
 
 Remplacer, dans « Écrans à dessiner » et dans la colonne « Écrans » des vagues, les identifiants S3, S7, M3–M8 et S6 « Accès retiré » par leurs numéros d'écran.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add design/penpot/scripts/14-sync.js design/penpot/kibo.penpot.xz design/pdf/kibo-design-sombre.pdf design/pdf/kibo-design-clair.pdf docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md
 git commit -m "docs: maquettes restantes de la phase 7"
 ```
+
+### Task 34: Section Marketplace du catalogue (écran 3)
+
+Tâche de suivi du contrôle visuel du jalon v1.0 : la spec H §5.2 (points 1 et 3) demande une section « Marketplace » dans le catalogue de l'écran 3, absente jusqu'ici. Aucune maquette Penpot dédiée : style des sections « Intégrés » / « Mes composants » et données des cartes de l'onglet Marketplace. Aucune RPC nouvelle (`listMarketSources`, `searchMarket`, `getMarketPackage`, `installFromMarket` suffisent).
+
+**Files:**
+- Create: `packages/ui/src/components-page/use-market-hits.ts` (recherche extraite de `MarketplaceTab`)
+- Create: `packages/ui/src/components-page/MarketInstallFlow.tsx` (feuille de détail + déblocage de clé, partagés par l'onglet et le catalogue)
+- Create: `packages/ui/src/dialogs/MarketCatalogSection.tsx`, `packages/ui/src/dialogs/market-catalog.test.tsx`
+- Modify: `packages/ui/src/components-page/MarketplaceTab.tsx`, `packages/ui/src/components-page/MarketFilters.tsx` (variante `compact`), `packages/ui/src/dialogs/AddComponentDialog.tsx`, `packages/ui/src/i18n/fr-market.ts`
+- Modify: `packages/ui/src/dialogs/component-dialogs.test.tsx` (faux client complété : `listMarketSources` répond `[]`, aucune attente modifiée)
+
+**Interfaces:**
+- `useMarketHits(sources: MarketSourceInfo[] | null, q: { query: string; sourceId: string | null; kind: ComponentKind | null }): { hits: MarketHit[] | null; error: string | null }`
+- `MarketInstallFlow({ target, onTarget, onInstalled, remote? })` : `MarketPackageSheet` (contrôles §4, refus traduit par `InstallRefusedDialog`) et `PublisherChangedDialog`.
+- `MarketCatalogSection({ query, onCount, onInstalled, remote? })` : section « Marketplace » (filtres source et type, adaptateurs exclus), rien sans source configurée.
+
+- [x] **Step 1: Tests qui échouent** (`market-catalog.test.tsx`) : section et filtres sur l'index en cache ; « Installer » puis écran 30 puis `addInstance` sur la page courante ; refus `HASH_MISMATCH` : dialogue « Installation refusée », aucun `addInstance` ; session distante : bouton désactivé avec « Cette action n'est possible que depuis l'ordinateur où tourne Kibo. » ; aucune section sans source.
+- [x] **Step 2: Extraire `useMarketHits` et `MarketInstallFlow`**, `MarketplaceTab` inchangé à l'écran (`marketplace.test.tsx` vert).
+- [x] **Step 3: `MarketCatalogSection`** branchée dans `AddComponentDialog` : la requête de recherche du dialogue est partagée ; l'installation ouvre l'écran 30 en mode `approveAndAdd`, puis ajoute l'instance.
+- [x] **Step 4: Vérifier** `bun test packages components`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build && bun run budget` (dialogue chargé à la demande, budget 230 kB inchangé).
+- [x] **Step 5: Captures** de l'écran 3 avec la section, en sombre et en clair.
+- [x] **Step 6: Commit** `feat(ui): section Marketplace du catalogue`
 
 ---
 
@@ -23047,9 +23132,9 @@ git commit -m "docs: maquettes restantes de la phase 7"
 - [ ] `main` verte en CI sur macOS et Linux : `bun run check`, `bun run typecheck`, `bun test packages components` (dont la propriété de convergence à 200 exécutions, le test d'évasion `components/exit.test.ts` avec isolation OS active), E2E sombre et clair (`mvp`, phases 2 à 6, `sync`, `market`), smoke Tauri, build `kibo-sync`.
 - [ ] Critères de sortie de la spec G §10 : propriété verte ; scénario à deux utilisateurs vert sur les deux OS ; projets non partagés inchangés (aucune attente de test existante modifiée, vérifié par `git diff v0.6 -- '*.test.ts' '*.test.tsx' '*.spec.ts'` : seuls des ajouts, plus les fixtures `ProjectSnapshot` complétées par `pendingSeq`, `keyLabel`, `sync` (T6), les faux clients complétés par `subscribeEvents` (T25, T28, T29, T30) et le texte de pied de l'écran 31 aligné sur sa maquette (T25), écarts à citer au rapport) ; écrans S1 à S9 conformes en sombre et en clair.
 - [ ] Critères de sortie de la spec H §10 : le test d'évasion vert sur les deux OS, y compris le cas « sans durcissement » (T12) ; publication sur la source d'équipe puis installation sur un second démon (T22) ; tous les refus du §4 couverts (T10, T15, T20) ; écrans M1 à M8 conformes en sombre et en clair.
-- [ ] Contrôle visuel du chef d'équipe : chaque écran S et M face à son export Penpot, plus les écrans 3, 6, 15, 19, 30 et 31 modifiés ; écarts listés dans le rapport.
-- [ ] Contrôle manuel de sécurité (liste dans le rapport) : aucune clé privée dans `kibo.db` ni dans les données de `kibo-sync` (recherche des préfixes PKCS8 `MC4CAQAw`), fichiers `0600`, démon toujours sur `127.0.0.1` sans accès distant activé, `ws://` vers une IP non loopback refusé.
-- [ ] Les décisions nouvelles 1 à 38 sont dans les specs G et H (§13, reportées en T0) et à jour ; `CLAUDE.md` à jour (monorepo, arêtes).
+- [x] Contrôle visuel du chef d'équipe : chaque écran S et M face à son export Penpot, plus les écrans 3, 6, 15, 19, 30 et 31 modifiés ; écarts listés dans le rapport.
+- [x] Contrôle manuel de sécurité (liste dans le rapport) : aucune clé privée dans `kibo.db` ni dans les données de `kibo-sync` (recherche des préfixes PKCS8 `MC4CAQAw`), fichiers `0600`, démon toujours sur `127.0.0.1` sans accès distant activé, `ws://` vers une IP non loopback refusé.
+- [x] Les décisions nouvelles 1 à 38 sont dans les specs G et H (§13, reportées en T0) et à jour ; `CLAUDE.md` à jour (monorepo, arêtes).
 - [ ] Tag `v1.0`, rapport final `docs/superpowers/rapports/<date>-jalon-v1.0.md` : livré par sous-système (G, H, durcissement), écarts (seccomp reporté, D38 : bloc « Accès web » seul pour l'écran 15, D37 : widgets sandboxés non chargés à distance), risques (ci-dessous), comptes nécessaires à un usage réel (spec G et H « Comptes et secrets réels »), puis **arrêt** jusqu'à la validation d'Adam.
 
 **Risques à suivre dans le rapport** : `sandbox-exec` déprécié par Apple ; espaces de noms utilisateur restreints sur certaines distributions ; profil macOS sensible aux versions de Bun et de macOS ; option `tls.ca` du client WebSocket de Bun (T3) ; coût de `LoroDoc.fork()` par lot pour les gros projets (T14) ; le serveur lit les données en clair (pas de chiffrement de bout en bout) ; seccomp non livré.
@@ -23073,11 +23158,11 @@ git commit -m "docs: maquettes restantes de la phase 7"
 | H §3 `.kpkg`, index, tables client, registre | T5, T10, T15 |
 | H §4 confiance et révocation | T10, T15, T20, T26, T27 |
 | H §5.1 publier (équipe et statique) | T16, T22, T27 |
-| H §5.2 découvrir et installer | T15, T20, T26 |
+| H §5.2 découvrir et installer | T15, T20, T26, T34 |
 | H §5.3 mettre à jour | T15, T27 |
 | H §5.4 désinstaller (épinglage conservé) | T20 |
 | H §5.5 composant absent | T5, T27 |
-| G §11 et H §10 écrans à dessiner | T33 (S3, S7, M3–M8, S6 « Accès retiré ») ; existants 65–75 |
+| G §11 et H §10 écrans à dessiner | T33 : 79–97 (S3, S6 « Accès retiré », S7, M3–M8) ; existants 65–75 |
 | H §6 API | T15, T16, T20, T22 |
 | H §7 sécurité (validation sandboxée, HTTPS) | T15, T20 |
 | H §8 durcissement OS | phase 4 (isolation), T8 (diagnostic), T12 (réglage), T25 (UI) |

@@ -13,8 +13,10 @@ import type {
   NoteMeta,
   NotesInfo,
   Page,
+  PresencePeer,
   ProjectCommand,
   ProjectSnapshot,
+  ProjectSyncInfo,
   Status,
   StatusId,
   Surface,
@@ -76,6 +78,13 @@ export type KiboSdk = {
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
   notes: NotesApi;
   mcp: McpApi;
+  presence: PresenceApi;
+  sharing(): Promise<ProjectSyncInfo>;
+};
+
+export type PresenceApi = {
+  list(): Promise<PresencePeer[]>;
+  subscribe(listener: () => void): () => void;
 };
 
 export type ProjectBackend = {
@@ -85,6 +94,7 @@ export type ProjectBackend = {
   subscribe(listener: () => void): () => void;
   runs(): Promise<TicketRun[]>;
   subscribeRuns(listener: () => void): () => void;
+  subscribePresence?(listener: () => void): () => void;
 };
 
 export type SdkContext = Pick<

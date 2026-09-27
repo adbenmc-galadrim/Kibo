@@ -75,3 +75,37 @@ test("the granted secrets reach the fetch handler of a sandboxed component only"
   await g.call("p", "builtin", call);
   expect(seen).toEqual([{ net: ["api.github.com/graphql"], secrets }, null]);
 });
+
+test("presence and sharing need read:ticket", () => {
+  const statusOnly = { ...granted, reads: ["status" as const] };
+  expect(missingPermission(statusOnly, { kind: "presence.list" })).toBe("read:ticket");
+  expect(missingPermission(statusOnly, { kind: "sharing.get" })).toBe("read:ticket");
+  expect(missingPermission(granted, { kind: "presence.list" })).toBeNull();
+});
+
+test("presence.list and sharing.get reach their handlers for the caller's project", async () => {
+  const peers = [
+    { deviceId: "d2", self: false, userId: "u-lea", name: "Léa", pageId: null, ticketId: null, runs: [] },
+  ];
+  const asked: string[] = [];
+  const gate = createGate({
+    instance: findInstance,
+    active: (ref) => ({ ref, trust: "sandboxed", granted }),
+    quotas: createQuotas(),
+    events: createEventLog(eventsDb()),
+    handlers: {
+      ...idleHandlers,
+      presence: async (projectId) => {
+        asked.push(projectId);
+        return peers;
+      },
+      sharing: async (projectId) => {
+        asked.push(projectId);
+        return { shared: true, keyAllocator: "server", role: "editor", access: "write", members: [] };
+      },
+    },
+  });
+  expect(await gate.call("p1", "thirdparty", { kind: "presence.list" })).toEqual(peers);
+  expect(await gate.call("p2", "thirdparty", { kind: "sharing.get" })).toMatchObject({ shared: true });
+  expect(asked).toEqual(["p1", "p2"]);
+});

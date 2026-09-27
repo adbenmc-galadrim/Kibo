@@ -94,6 +94,17 @@ describe("approval", () => {
     expect(emitted).toBe(1);
     expect(approvedHooks).toEqual([]);
   });
+  test("a revoked version cannot be approved again", async () => {
+    putRegistryVersion(
+      ws,
+      "pr-queue",
+      "PR en attente",
+      entry("0.3.0", H1, { origin: "marketplace", revoked: { reason: "clé compromise", at: 5 } }),
+    );
+    await expect(svc.approve("pr-queue", "0.3.0", H1, "sandboxed")).rejects.toThrow("REVOKED");
+    expect(getRegistryVersion(ws, "pr-queue", "0.3.0")?.trust).toBeNull();
+    expect(stopped).toEqual([]);
+  });
   test("an old hash or a tampered store is a HASH_MISMATCH; built-ins cannot be approved", async () => {
     await expect(svc.approve("pr-queue", "0.3.0", H2, "trusted")).rejects.toThrow("HASH_MISMATCH");
     store.tamper("pr-queue", "0.3.0");

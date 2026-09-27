@@ -1,3 +1,9 @@
+const MARKET_USAGE = [
+  "  kibo market keygen --out <fichier>",
+  "  kibo market pack <id>@<version> [--out <fichier>] [--publisher <nom>]",
+  "  kibo market index --dir <dossier> --key <fichier> --id <source> --name <nom> [--verify <clés>]",
+];
+
 export const fr = {
   usage: [
     "Usage :",
@@ -5,7 +11,16 @@ export const fr = {
     "  kibo component test <id|dossier>",
     "  kibo component dev <id|dossier> [--port <n>]",
     "  kibo component publish <id> [--update-all|--new-version]",
+    "  kibo component publish <id> --to <source> [--publisher <nom>]",
+    ...MARKET_USAGE,
   ].join("\n"),
+  marketUsage: ["Usage :", ...MARKET_USAGE].join("\n"),
+  keyWritten: (file: string, fingerprint: string) =>
+    `Clé de source écrite dans ${file} · empreinte SHA256 ${fingerprint}`,
+  packWritten: (file: string) => `Paquet écrit dans ${file}`,
+  indexSigned: (serial: number, packages: number) =>
+    `Index n° ${serial} signé (${packages} paquet${packages > 1 ? "s" : ""})`,
+  marketPublished: (source: string, serial: number) => `Publié sur ${source} : index n° ${serial}`,
   created: (dir: string) => `Composant créé : ${dir}`,
   next: (id: string) => `Ensuite : kibo component dev ${id}, puis kibo component test ${id}`,
   step: (name: string, ok: boolean) => `${ok ? "✓" : "✗"} ${name}`,

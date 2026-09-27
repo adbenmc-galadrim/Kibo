@@ -17,6 +17,8 @@ test("marketplace RPCs parse", () => {
     { method: "publishToMarket", id: "burndown", version: "0.3.0", sourceId: "team" },
     { method: "publishToMarket", id: "burndown", version: "0.3.0", sourceId: "team", publisherName: "Léa" },
     { method: "exportKpkg", id: "burndown", version: "0.3.0" },
+    { method: "listMarketStatus" },
+    { method: "getMarketPublisher" },
   ];
   for (const r of requests) expect(RpcRequest.safeParse(r).success).toBe(true);
 });

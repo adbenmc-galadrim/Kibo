@@ -15,6 +15,22 @@ export const IntegrationsPage = lazyPanel(
   () => import("../settings/IntegrationsPage").then((m) => m.IntegrationsPage),
   fr.lazy,
 );
+export const AppearancePage = lazyPanel(
+  () => import("../settings/AppearancePage").then((m) => m.AppearancePage),
+  fr.lazy,
+);
+export const SecurityPage = lazyPanel(
+  () => import("../settings/SecurityPage").then((m) => m.SecurityPage),
+  fr.lazy,
+);
+export const SyncSettingsPage = lazyPanel(
+  () => import("../settings/SyncSettingsPage").then((m) => m.SyncSettingsPage),
+  fr.lazy,
+);
+export const ComponentSourcesPage = lazyPanel(
+  () => import("../settings/ComponentSourcesPage").then((m) => m.ComponentSourcesPage),
+  fr.lazy,
+);
 export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,
@@ -23,6 +39,7 @@ export const MyTicketsPage = lazyPanel(
   () => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage),
   fr.lazy,
 );
+export const TicketTab = lazyPanel(() => import("../pages/TicketTab").then((m) => m.TicketTab), fr.lazy);
 export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
 export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
 export const FileTabView = lazyPanel(
@@ -43,4 +60,41 @@ export const IntegrationNotices = lazyPanel(
   () => import("./IntegrationNotices").then((m) => m.IntegrationNotices),
   fr.lazy,
   { fallback: "sr-only" },
+);
+const shareEntry = () => import("./share-entry");
+const hidden = { fallback: "sr-only" } as const;
+
+export const ProjectStatusBanner = lazyPanel(
+  () => shareEntry().then((m) => m.ProjectStatusBanner),
+  fr.lazy,
+  hidden,
+);
+export const ShareButton = lazyPanel(() => shareEntry().then((m) => m.ShareButton), fr.lazy, hidden);
+export const ProjectMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectMenu), fr.lazy, hidden);
+export const JoinProjectEntry = lazyPanel(
+  () => shareEntry().then((m) => m.JoinProjectEntry),
+  fr.lazy,
+  hidden,
+);
+export const ShareProjectDialog = lazyPanel(
+  () => shareEntry().then((m) => m.ShareProjectDialog),
+  fr.lazy,
+  hidden,
+);
+export const JoinProjectDialog = lazyPanel(
+  () => shareEntry().then((m) => m.JoinProjectDialog),
+  fr.lazy,
+  hidden,
+);
+const presenceEntry = () => import("./presence-entry");
+
+export const ProjectPresence = lazyPanel(
+  () => presenceEntry().then((m) => m.ProjectPresence),
+  fr.lazy,
+  hidden,
+);
+export const PresenceAvatars = lazyPanel(
+  () => presenceEntry().then((m) => m.PresenceAvatars),
+  fr.lazy,
+  hidden,
 );
