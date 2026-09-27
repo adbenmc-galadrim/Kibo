@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { estimateTokens, KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture, projectsFixture } from "../agents/fixtures";
 import { formatTokens } from "../agents/format";
@@ -78,6 +78,8 @@ test("editing a file saves its new content, removing it asks the daemon", async 
   await user.type(editor, "\n- Nouveau.");
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   await user.click(screen.getByRole("button", { name: "Supprimer le fichier" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer guidelines/core.md ?" });
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
   const content = configFixture().guidelines.find((g) => g.id === "c1")?.content ?? "";
   expect(calls).toEqual([
     {
@@ -127,14 +129,47 @@ test("domains are created with the next palette color, and a used domain is neve
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Supprimer le domaine Core" }));
   expect(screen.getByRole("alert").textContent).toBe("Ce domaine est utilisé par des tickets.");
+  expect(screen.queryByRole("alertdialog")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Facturation" }));
   await user.click(screen.getByRole("button", { name: "Supprimer le domaine Facturation" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer le domaine Facturation ?" });
+  expect(confirm.textContent).toContain("Aucun fichier de guidelines n'est concerné.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   await user.click(screen.getByRole("button", { name: "Nouveau domaine" }));
   await user.type(screen.getByLabelText("Nom du domaine"), "Billing");
   await user.click(screen.getByRole("button", { name: "Créer" }));
   expect(calls).toEqual([
     { method: "config", command: { method: "deleteDomain", domainId: "facturation" } },
     { method: "config", command: { method: "createDomain", domain: { name: "Billing", color: "#14B8A6" } } },
+  ]);
+});
+
+test("renaming a domain sends updateDomain; a duplicate name is explained", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  const field = screen.getByRole("textbox", { name: "Nouveau nom" });
+  await user.clear(field);
+  await user.type(field, "Noyau{Enter}");
+  expect(calls).toEqual([
+    { method: "config", command: { method: "updateDomain", domainId: "core", patch: { name: "Noyau" } } },
+  ]);
+  outcome = () => Promise.reject(new KiboError("INVALID_INPUT", "domain name already used"));
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  await user.clear(screen.getByRole("textbox", { name: "Nouveau nom" }));
+  await user.type(screen.getByRole("textbox", { name: "Nouveau nom" }), "Agents{Enter}");
+  expect((await screen.findByRole("alert")).textContent).toBe("Un domaine porte déjà ce nom.");
+  expect(screen.getByRole("textbox", { name: "Nouveau nom" })).toBeTruthy();
+});
+
+test("picking a color sends updateDomain with the color", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Couleur du domaine Core" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Couleur #EC4899" }));
+  expect(calls).toEqual([
+    { method: "config", command: { method: "updateDomain", domainId: "core", patch: { color: "#EC4899" } } },
   ]);
 });
 
