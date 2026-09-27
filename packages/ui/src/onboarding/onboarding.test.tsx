@@ -39,9 +39,6 @@ mock.module("../api", () => ({
     online: () => online,
   },
 }));
-mock.module("../state/use-components", () => ({
-  useComponents: () => ({ components: [], drafts: [], error: false, reload: () => {} }),
-}));
 const emit = (e: AiEvent | RunChangedEvent) => {
   if (e.type === "run.changed") for (const l of runListeners) l(e);
   else for (const l of aiListeners) l(e);
