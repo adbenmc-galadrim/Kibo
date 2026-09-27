@@ -1,5 +1,7 @@
 # Passation : phase 7, jalon v1.0
 
+**Close** : CI verte, PR #1 fusionnée, tag `v1.0` posé sur `main` le 2026-09-27. Ce document reste comme historique.
+
 Arrêt demandé par Adam à 20 % d'usage hebdomadaire. Ce document permet de reprendre avec une réanalyse légère.
 
 ## État
