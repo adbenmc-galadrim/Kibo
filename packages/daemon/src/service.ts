@@ -159,7 +159,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         if (writeGuard === guard) writeGuard = null;
       };
     },
-    projectMeta: (projectId) => withLocalFolder(getProjectMeta(docs.project(projectId)), settings),
+    projectMeta: (projectId) => {
+      const doc = docs.project(projectId);
+      return withLocalFolder(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
+    },
     identity: (projectId) => identity(projectId),
     setIdentity(fn) {
       identity = fn;

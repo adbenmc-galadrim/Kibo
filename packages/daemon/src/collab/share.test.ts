@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { addBinding, getBinding, getKeyAllocator, getProjectMeta, listTickets } from "@kibo/core";
+import {
+  addBinding,
+  getBinding,
+  getKeyAllocator,
+  getProjectMeta,
+  listTickets,
+  migrateForSharing,
+} from "@kibo/core";
 import type { Domain, ProjectMeta, ProjectSnapshot, ProjectSummary, RpcRequest, Ticket } from "@kibo/schema";
 import { ProjectRoom } from "@kibo/sync-server";
-import { generateKeyPair } from "@kibo/trust";
+import { generateKeyPair, toBase64 } from "@kibo/trust";
 import { LoroDoc } from "loro-crdt";
 import { type SyncHarness, startSyncHarness } from "../testing/sync-harness";
 import {
@@ -195,7 +202,7 @@ test("joining a project whose key is already used locally fails clearly", async 
   const { code } = await createProjectInvite(deps(0), { projectId: p, role: "editor" });
   await expect(joinProject(deps(1), { code, folder: null })).rejects.toMatchObject({
     code: "INVALID_INPUT",
-    detail: "duplicate project key KIB",
+    detail: expect.stringMatching(/^duplicate project key KIB; .*owner must remove this member/),
   });
   expect(
     d(1)
@@ -247,6 +254,29 @@ test("an unshared project gets its keys back from the daemon and can be shared a
   expect(info.shared).toBe(true);
 });
 
+test("after unsharing, bindings still run here and my tickets are still mine", async () => {
+  const p = await sharedProject();
+  await h.waitUntil(() => getKeyAllocator(d(0).hosts.host(p).doc()) === "server");
+  const adamId = d(0).client.status().user?.id ?? "";
+  d(0).hosts.mutate(p, (doc) => {
+    addBinding(doc, {
+      id: "b1",
+      adapter: "github-issues",
+      config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+      createdBy: adamId,
+      runner: adamId,
+    });
+  });
+  await unshareProject(deps(0), p);
+  const snapshot = (await rpc(0, { method: "getProject", projectId: p })) as ProjectSnapshot;
+  const identity = d(0).service.docs.identity(p);
+  expect(identity).toBe("adam");
+  expect(snapshot.bindings.filter((b) => b.runner === identity).map((b) => b.id)).toEqual(["b1"]);
+  expect(snapshot.bindings[0]?.createdBy).toBe("adam");
+  expect(snapshot.viewer).toBe("adam");
+  expect(snapshot.tickets[0]?.assignee).toEqual({ kind: "human", ref: "adam" });
+});
+
 test("a shared project shows and injects the domains copied into projectDomains", async () => {
   const p = await sharedProject({ domain: { name: "Intégrations", color: "#8B5CF6" } });
   const { code } = await createProjectInvite(deps(0), { projectId: p, role: "editor" });
@@ -270,4 +300,43 @@ test("the viewer of a shared project is the account, of a local one the OS user"
   expect(((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).viewer).toBe(
     "adam",
   );
+});
+
+test("a share whose answer was lost is replayed without losing local writes", async () => {
+  const meta = (await rpc(0, localProject)) as ProjectMeta;
+  const userId = d(0).client.status().user?.id ?? "";
+  const lost = d(0).hosts.host(meta.id).doc().fork();
+  migrateForSharing(lost, { localUser: "adam", userId, domains: [] });
+  const snapshot = toBase64(lost.export({ mode: "snapshot" }));
+  await d(0).client.request(
+    { type: "share", projectId: meta.id, requestId: "lost", name: "Kibo", snapshot },
+    "shared",
+  );
+  await rpc(0, {
+    method: "command",
+    projectId: meta.id,
+    command: { method: "createTicket", title: "Entre-temps" },
+  });
+  await shareProject(deps(0), meta.id);
+  await h.waitUntil(() =>
+    d(0)
+      .client.status()
+      .projects.some((x) => x.lastSyncAt !== null),
+  );
+  await rpc(0, {
+    method: "command",
+    projectId: meta.id,
+    command: { method: "createTicket", title: "Après" },
+  });
+  await h.waitUntil(() => {
+    const room = ProjectRoom.load(h.server.server.sdb, meta.id);
+    return listTickets(LoroDoc.fromSnapshot(room.snapshotBytes())).some((t) => t.title === "Après");
+  });
+  const room = ProjectRoom.load(h.server.server.sdb, meta.id);
+  expect(listTickets(LoroDoc.fromSnapshot(room.snapshotBytes())).map((t) => t.title)).toEqual([
+    "Entre-temps",
+    "Après",
+  ]);
+  expect(d(0).client.status().projects[0]?.lastError).toBeNull();
+  expect(listTickets(d(0).hosts.host(meta.id).doc()).map((t) => t.title)).toEqual(["Entre-temps", "Après"]);
 });

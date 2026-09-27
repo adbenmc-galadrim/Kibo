@@ -2,6 +2,7 @@ import {
   getBinding,
   getProjectMeta,
   migrateForSharing,
+  migrateForUnsharing,
   restoreLocalAllocation,
   type ShareMigrationInput,
   validateSharedSnapshot,
@@ -73,10 +74,32 @@ function migratedCopy(
   return { doc, folder };
 }
 
+function shareRefusal(projectId: string, e: unknown): unknown {
+  if (!(e instanceof KiboError) || e.code !== "CONFLICT") return e;
+  return new KiboError(
+    "CONFLICT",
+    `project ${projectId} is already in use on the sync server, its first snapshot can no longer be replaced`,
+  );
+}
+
+function joinRefusal(e: unknown): unknown {
+  if (!(e instanceof KiboError)) return e;
+  return new KiboError(
+    e.code,
+    `${e.detail}; the invite is used: the project owner must remove this member, then invite again`,
+  );
+}
+
 export async function shareProject(deps: ShareDeps, projectId: string): Promise<ProjectSyncInfo> {
   const { userId } = requireOnline(deps);
   const row = deps.db.project(projectId);
-  if (row && !row.accessRevoked) return deps.syncInfo(projectId);
+  if (row?.enabled && !row.accessRevoked) return deps.syncInfo(projectId);
+  if (row && !row.accessRevoked) {
+    throw new KiboError(
+      "CONFLICT",
+      `project ${projectId} is already shared but its sync is suspended (${row.lastError ?? "unknown"})`,
+    );
+  }
   deps.hosts.assertWritable(projectId);
   const current = deps.hosts.host(projectId).doc();
   const { doc, folder } = migratedCopy(deps, projectId, userId);
@@ -85,11 +108,11 @@ export async function shareProject(deps: ShareDeps, projectId: string): Promise<
   try {
     const snapshot = toBase64(doc.export({ mode: "snapshot" }));
     const name = getProjectMeta(doc).name;
-    await deps.client.request(
-      { type: "share", projectId, requestId: rid(), name, snapshot },
-      "shared",
-      timeoutOf(deps),
-    );
+    await deps.client
+      .request({ type: "share", projectId, requestId: rid(), name, snapshot }, "shared", timeoutOf(deps))
+      .catch((e: unknown) => {
+        throw shareRefusal(projectId, e);
+      });
     if (folder !== null) deps.settings.set(projectId, LOCAL_FOLDER_KEY, folder);
     deps.hosts.setLocked(projectId, false);
     locked = false;
@@ -159,6 +182,18 @@ export async function joinProject(
   requireOnline(deps);
   const code = normalizeCode(input.code);
   const joined = await deps.client.request({ type: "redeem", requestId: rid(), code }, "joined");
+  try {
+    return await adoptJoined(deps, joined, input.folder);
+  } catch (e) {
+    throw joinRefusal(e);
+  }
+}
+
+async function adoptJoined(
+  deps: ShareDeps,
+  joined: Extract<ServerFrame, { type: "joined" }>,
+  folder: string | null,
+): Promise<ProjectMeta> {
   const received = nextFrame(deps, "update", joined.projectId);
   let update: Extract<ServerFrame, { type: "update" }>;
   try {
@@ -170,8 +205,8 @@ export async function joinProject(
   }
   const doc = docFromServer(joined.projectId, fromBase64(update.bytes));
   assertJoinable(deps, joined.projectId, doc);
-  const meta = deps.hosts.addJoinedProject(doc, input.folder);
-  if (input.folder !== null) deps.settings.set(meta.id, LOCAL_FOLDER_KEY, input.folder);
+  const meta = deps.hosts.addJoinedProject(doc, folder);
+  if (folder !== null) deps.settings.set(meta.id, LOCAL_FOLDER_KEY, folder);
   deps.db.upsertProject({
     projectId: meta.id,
     enabled: true,
@@ -202,12 +237,13 @@ export async function setMemberRole(
 }
 
 export async function unshareProject(deps: ShareDeps, projectId: string): Promise<void> {
-  requireOnline(deps);
+  const { userId } = requireOnline(deps);
   requireOwner(deps, projectId);
   await deps.client.request({ type: "unshare", projectId, requestId: rid() }, "done");
   deps.client.detachProject(projectId);
   deps.hosts.mutate(projectId, (doc) => {
     restoreLocalAllocation(doc);
+    migrateForUnsharing(doc, { localUser: deps.hosts.localUser(), userId });
     doc.getMap("meta").delete("members");
   });
 }

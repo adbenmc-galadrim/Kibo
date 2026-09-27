@@ -1,4 +1,4 @@
-import { projectDepthViolation } from "@kibo/core";
+import { getKeyAllocator, projectDepthViolation } from "@kibo/core";
 import { KiboError } from "@kibo/schema";
 import { decodeImportBlobMeta, type ImportStatus, LoroDoc } from "loro-crdt";
 
@@ -42,10 +42,23 @@ export function importComplete(projectId: string, target: LoroDoc, bytes: Uint8A
   }
 }
 
+export function assertSharedShape(projectId: string, doc: LoroDoc): void {
+  if (doc.getMap("meta").get("folder") !== undefined) {
+    throw new KiboError("INVALID_INPUT", `sync data for ${projectId} refused: it carries a local folder`);
+  }
+  if (getKeyAllocator(doc) !== "server") {
+    throw new KiboError(
+      "INVALID_INPUT",
+      `sync data for ${projectId} refused: its keys are not server allocated`,
+    );
+  }
+}
+
 export function docFromServer(projectId: string, bytes: Uint8Array): LoroDoc {
   const doc = new LoroDoc();
   importComplete(projectId, doc, bytes);
   assertCompleteHistory(projectId, doc);
+  assertSharedShape(projectId, doc);
   refuseTooDeep(projectId, projectDepthViolation(doc));
   return doc;
 }

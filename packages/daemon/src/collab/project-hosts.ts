@@ -2,7 +2,7 @@ import { depthViolation, getProjectMeta, projectDepthViolation } from "@kibo/cor
 import { KiboError, type ProjectAccess, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
-import { assertCompleteHistory, importComplete, refuseTooDeep } from "./sync-blob";
+import { assertCompleteHistory, assertSharedShape, importComplete, refuseTooDeep } from "./sync-blob";
 import type { ProjectHostRegistry } from "./types";
 
 function withoutPending(projectId: string, doc: LoroDoc): LoroDoc {
@@ -43,7 +43,11 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
         doc.import(bytes);
         docs.imported(projectId);
       },
-      replaceDoc: (doc) => docs.replaceProject(projectId, withoutPending(projectId, doc)),
+      replaceDoc: (doc) => {
+        const adopted = withoutPending(projectId, doc);
+        assertSharedShape(projectId, adopted);
+        docs.replaceProject(projectId, adopted);
+      },
     }),
     projectIds: () => docs.projectIds(),
     setAccess: (projectId, next) => {

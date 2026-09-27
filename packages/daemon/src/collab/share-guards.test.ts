@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   createProjectDoc,
+  enableServerAllocation,
   getProjectMeta,
   listTickets,
   MAX_TREE_DEPTH,
@@ -110,10 +111,16 @@ function serverSends(bytes: Uint8Array, projectId = "p-remote"): void {
   };
 }
 
-function remoteDoc(id = "p-remote"): LoroDoc {
+function localShapedDoc(id: string): LoroDoc {
   const doc = createProjectDoc({ id, key: "REM", name: "Remote", folder: null, color: "#14B8A6" });
   doc.getMap("meta").delete("folder");
   doc.commit();
+  return doc;
+}
+
+function remoteDoc(id = "p-remote"): LoroDoc {
+  const doc = localShapedDoc(id);
+  enableServerAllocation(doc);
   return doc;
 }
 
@@ -222,4 +229,83 @@ test("a project that would fail the server validation is never sent", async () =
     projectId: meta.id,
     command: { method: "createTicket", title: "Après" },
   });
+});
+
+test("a server doc that imposes a folder is refused at join", async () => {
+  const doc = remoteDoc();
+  doc.getMap("meta").set("folder", "/tmp/evil");
+  doc.commit();
+  serverSends(doc.export({ mode: "update" }));
+  expect(await codeOf(joinProject(deps, { code: "CODE", folder: null }))).toBe("INVALID_INPUT");
+  expect(deps.hosts.projectIds()).toEqual([]);
+});
+
+test("a server doc whose keys are not allocated by the server is refused at join", async () => {
+  serverSends(localShapedDoc("p-remote").export({ mode: "update" }));
+  expect(await codeOf(joinProject(deps, { code: "CODE", folder: null }))).toBe("INVALID_INPUT");
+  expect(deps.hosts.projectIds()).toEqual([]);
+});
+
+test("a resync doc that imposes a folder is refused", async () => {
+  serverSends(remoteDoc().export({ mode: "update" }));
+  await joinProject(deps, { code: "CODE", folder: null });
+  const evil = remoteDoc();
+  evil.getMap("meta").set("folder", "/tmp/evil");
+  evil.commit();
+  const host = deps.hosts.host("p-remote");
+  expect(() => host.replaceDoc(evil)).toThrow("INVALID_INPUT");
+  expect(() => host.replaceDoc(localShapedDoc("p-remote"))).toThrow("INVALID_INPUT");
+  expect(service.docs.projectMeta("p-remote").folder).toBeNull();
+});
+
+test("a folder slipped into a shared doc by an update is never used", async () => {
+  const doc = remoteDoc();
+  serverSends(doc.export({ mode: "update" }));
+  await joinProject(deps, { code: "CODE", folder: null });
+  const before = doc.oplogVersion();
+  doc.getMap("meta").set("folder", "/tmp/evil");
+  doc.commit();
+  deps.hosts.host("p-remote").applyRemote(doc.export({ mode: "update", from: before }));
+  expect(getProjectMeta(deps.hosts.host("p-remote").doc()).folder).toBe("/tmp/evil");
+  expect(service.docs.projectMeta("p-remote").folder).toBeNull();
+  const snapshot = call(service, { method: "getProject", projectId: "p-remote" });
+  expect(snapshot.meta.folder).toBeNull();
+});
+
+const detailOf = async (p: Promise<unknown>): Promise<string> =>
+  p.then(
+    () => "",
+    (e: unknown) => (e instanceof KiboError ? `${e.code} ${e.detail}` : "UNKNOWN"),
+  );
+
+test("a join refused here after the code was used tells the owner to invite again", async () => {
+  serverSends(remoteDoc().export({ mode: "snapshot" }));
+  const detail = await detailOf(joinProject(deps, { code: "CODE", folder: null }));
+  expect(detail).toStartWith("INVALID_INPUT");
+  expect(detail).toContain("the project owner must remove this member, then invite again");
+});
+
+test("a share refused because the project is already in use says so", async () => {
+  const meta = localProject();
+  reply = () => new KiboError("CONFLICT", "conflict");
+  const detail = await detailOf(shareProject(deps, meta.id));
+  expect(detail).toStartWith("CONFLICT");
+  expect(detail).toContain("already in use on the sync server");
+});
+
+test("sharing a project whose sync is suspended is refused, not reported as shared", async () => {
+  const meta = localProject();
+  db.upsertProject({
+    projectId: meta.id,
+    enabled: false,
+    role: "owner",
+    lastServerVersion: null,
+    lastSyncAt: null,
+    lastError: "TOO_LARGE",
+    accessRevoked: false,
+  });
+  const detail = await detailOf(shareProject(deps, meta.id));
+  expect(detail).toStartWith("CONFLICT");
+  expect(detail).toContain("sync is suspended");
+  expect(sent).toEqual([]);
 });

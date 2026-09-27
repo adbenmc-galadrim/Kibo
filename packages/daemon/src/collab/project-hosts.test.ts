@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { listTickets, projectDepthViolation } from "@kibo/core";
+import { enableServerAllocation, listTickets, projectDepthViolation } from "@kibo/core";
 import { listGuidelines } from "@kibo/core/agent-config";
 import { KiboError, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
@@ -38,6 +38,12 @@ afterEach(() => {
 
 const create = async (title: string) =>
   service.handle({ method: "command", projectId, command: { method: "createTicket", title } });
+function sharedShaped(doc: LoroDoc): LoroDoc {
+  doc.getMap("meta").delete("folder");
+  enableServerAllocation(doc);
+  return doc;
+}
+
 const codeOf = (fn: () => unknown): string | null => {
   try {
     fn();
@@ -114,7 +120,7 @@ test("local writes are reported, remote imports are not", async () => {
 });
 
 test("a replaced document is persisted and still watched", async () => {
-  const copy = LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" }));
+  const copy = sharedShaped(LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" })));
   hosts.host(projectId).replaceDoc(copy);
   expect(hosts.host(projectId).doc().toJSON()).toEqual(copy.toJSON());
   const seen: string[] = [];
@@ -177,7 +183,7 @@ test("an update whose dependencies are missing is refused, so it cannot unlock a
 test("pending operations of a replacement doc are dropped, never unlocked later", () => {
   const current = hosts.host(projectId).doc();
   const { first, deep } = outOfOrderDeepUpdates(current);
-  const fresh = LoroDoc.fromSnapshot(current.export({ mode: "snapshot" }));
+  const fresh = sharedShaped(LoroDoc.fromSnapshot(current.export({ mode: "snapshot" })));
   fresh.import(deep);
   hosts.host(projectId).replaceDoc(fresh);
   hosts.host(projectId).applyRemote(first);
