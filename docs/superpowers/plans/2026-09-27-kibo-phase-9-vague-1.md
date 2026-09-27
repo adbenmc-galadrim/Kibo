@@ -92,8 +92,9 @@ Coque de bureau (T4, T13) : pas d'écran Penpot (menu natif, titre de fenêtre) 
 packages/sdk/src/ui/
   confirm-dialog.tsx  reason-dialog.tsx  menu-entries.tsx         NOUVEAU (T2) : primitives partagées shell + composants
 packages/sdk/src/ui/menu-entries.test.tsx  confirm-dialog.test.tsx NOUVEAU (T2)
-packages/ui/scripts/bundle-report.ts                              FORBIDDEN_IN_ENTRY (T2, T5, T6, T7, T8, T13)
-packages/ui/scripts/app-icon.ts  app-icon.test.ts                 NOUVEAU (T5) : génère app-icon.svg et favicon.svg
+packages/ui/scripts/bundle-report.ts                              FORBIDDEN_IN_ENTRY (T2, T6, T7, T8, T13)
+packages/ui/scripts/app-icon.ts  app-icon.test.ts  tsconfig.json  NOUVEAU / modifié (T5) : génère app-icon.svg et favicon.svg
+packages/ui/src/shell/kibo-mark.test.ts  kibo-logo.test.tsx        NOUVEAU (T5)
 packages/ui/public/favicon.svg  packages/ui/index.html            NOUVEAU / modifié (T5)
 packages/ui/src/shell/kibo-mark.ts  KiboLogo.tsx                  géométrie unique du logo (T5)
 packages/ui/src/shell/lazy-dialogs.ts                             ConfirmDialog (T2), RenamePageDialog (T7), InstanceSettingsDialog (T8)
@@ -106,19 +107,19 @@ packages/ui/src/i18n/fr-ticket-edit.ts                            NOUVEAU (T6, c
 packages/ui/src/shell/TicketDetail.tsx  TicketSheet.tsx  ShellDialogs.tsx  ContentView.tsx  Shell.tsx   (T6 : onOpenTicket, onDeleted)
 packages/ui/src/pages/TicketTab.tsx                               (T6)
 packages/ui/src/shell/ProjectPages.tsx  page-menu.ts  page-menu.test.ts  project-pages.test.tsx   NOUVEAU (T7, extrait d'AppSidebar)
-packages/ui/src/dialogs/RenamePageDialog.tsx                      NOUVEAU (T7)
+packages/ui/src/dialogs/RenamePageDialog.tsx  rename-page-dialog.test.tsx   NOUVEAU (T7)
 packages/ui/src/shell/AppSidebar.tsx                              délègue les pages à ProjectPages (T7) ; select-none, libellé ⌘K (T13)
 packages/ui/src/i18n/fr.ts                                        nav (T7), domains (T9), common (T2)
 packages/ui/src/dialogs/InstanceSettingsDialog.tsx  packages/ui/src/lib/config-form.ts  config-form.test.ts  instance-settings.test.tsx   NOUVEAU (T8)
 packages/ui/src/i18n/fr-widgets.ts                                NOUVEAU (T8) ; fr-components.ts › instance (T8)
 packages/ui/src/settings/DomainHeader.tsx  domain-header.test.tsx NOUVEAU (T9) ; DomainsPage.tsx, GuidelineFiles.tsx (T9)
-components/tickets/src/TicketRowMenu.tsx  ticket-menu.ts  ticket-menu.test.ts  TicketsTree.tsx  fr.ts  kibo.component.json  package.json   (T10)
+components/tickets/src/TicketRowMenu.tsx  ticket-menu.ts  ticket-menu.test.ts  tree-drop.ts  tree-drop.test.ts  TicketsTree.tsx  fr.ts  kibo.component.json  package.json   (T10)
 components/kanban/src/BlockDialog.tsx (habillage ReasonDialog, T2)  KanbanCard.tsx  Kanban.tsx  card-menu.ts  fr.ts   (T11)
 components/notes/src/NoteMenu.tsx  RenameNoteDialog.tsx  note-name.ts  note-name.test.ts  NoteList.tsx  NotesView.tsx  fr.ts   (T12)
-packages/ui/src/desktop/external-links.ts  native-context-menu.ts  window-title.ts  install.ts  *.test.ts   NOUVEAU (T13)
+packages/ui/src/desktop/external-links.ts  native-context-menu.ts  window-title.ts  install.ts  use-window-title.ts  *.test.ts   NOUVEAU (T13)
 packages/ui/src/lib/shortcut-label.ts  shortcut-label.test.ts     NOUVEAU (T13) ; TabBar.tsx, AppSidebar.tsx, ShellHeader.tsx (T13)
 packages/ui/package.json                                          @tauri-apps/plugin-opener (T13)
-packages/ui/src/code/FileList.tsx  file-menu.ts  file-menu.test.ts  ChangesFiles.tsx  ChangesView.tsx  changes-files.test.tsx   (T15)
+packages/ui/src/code/FileList.tsx  file-menu.ts  file-menu.test.ts  ChangesFiles.tsx  ChangesView.tsx  changes-files.test.tsx  changes.test.tsx   (T15) ; ContentView.tsx, Shell.tsx (onOpen newTab)
 packages/ui/src/i18n/fr-code.ts                                   changes (T15)
 packages/schema/src/code.ts  code.test.ts                         discardChanges, stageAll, unstageAll (T3)
 packages/daemon/src/code/index-ops.ts  index-ops.test.ts  code-service.ts  code-service.test.ts   (T3)
@@ -198,19 +199,29 @@ export const InstanceSettingsDialog = lazyPanel(() => import("../dialogs/Instanc
 // shell/ShellDialogs.tsx (T6, T7) — DialogsState gagne :
 renamePage: Page | null;      // T7
 deletePage: Page | null;      // T7
-// et TicketSheet reçoit onDeleted() (= onClose) et onOpenTicket(ticketId) (= set({ sheet: { projectId: sheet.projectId, ticketId } }))  // T6
+// et TicketSheet reçoit viewer: string, onDeleted() (= set({ sheet: null })) et onOpenTicket(ticketId) (= set({ sheet: { projectId: sheet.projectId, ticketId } }))  // T6
 
-// shell/ContentView.tsx (T6) : Props gagne onOpenTicket(projectId: string, ticketId: string): void ; Shell passe (projectId, ticketId) => set({ sheet: { projectId, ticketId } })
-// shell/TicketDetail.tsx (T6) : Props gagne onOpenTicket(ticketId: string): void ; onDeleted(): void ; canEdit calculé dedans par canEdit(project)
-// pages/TicketTab.tsx (T6) : Props gagne onOpenTicket(ticketId: string): void
+// shell/ContentView.tsx (T6, T15) : Props gagne onOpenTicket(projectId: string, ticketId: string): void ; Shell passe (projectId, ticketId) => set({ sheet: { projectId, ticketId } }) ;
+//   onOpen devient onOpen(target: TabTarget, newTab?: boolean): void (T15) ; Shell passe (t, newTab) => go(t, newTab)
+// shell/TicketDetail.tsx (T6) : Props gagne viewer: string ; onOpenTicket(ticketId: string): void ; canEdit calculé dedans par canEdit(project) (pas d'onDeleted : le menu « ⋯ » vit dans l'en-tête du Sheet et de l'onglet)
+// pages/TicketTab.tsx (T6) : Props gagne viewer: string ; onOpenTicket(ticketId: string): void
+// (viewer : l'UI n'a pas de hook de session ; ShellDialogs et ContentView le tiennent déjà ; ContentView passe project.viewer ?? viewer)
 
 // ticket/use-ticket-command.ts (T6, réutilisé T14)
-export function useTicketCommand(projectId: string): {
+export function useTicketCommand(projectId: string, describe?: (error: unknown) => string): {   // describe : défaut describeTicketError (codes → fr-ticket-edit.errors)
   run(command: ProjectCommand): Promise<boolean>;   // false et error renseigné en cas d'échec
   error: string | null;
   busy: boolean;
   clearError(): void;
 };
+export const describeTicketError: (error: unknown) => string;
+
+// code/file-menu.ts (T15)
+export type FileMenuActions = { viewDiff(): void; openInTab(): void; openExternal(): void; copyPath(): void; toggleStage(): void; discard(): void };
+export function fileMenuEntries(input: { file: FileChange; texts: typeof frCode.changes; actions: FileMenuActions }): MenuEntry[];
+export function discardPaths(file: FileChange): string[];            // [path] ou [path, origPath]
+export function discardLines(file: FileChange, texts: typeof frCode.changes): string[];   // restauré / supprimé du disque / renommé
+// code/ChangesView.tsx (T15) : Props gagne onOpenInTab(ref: FileRef): void
 
 // ticket/links.ts (T14)
 export type TicketLinks = { blockedBy: { link: Link; ticket: TicketView }[]; blocks: { link: Link; ticket: TicketView }[]; related: { link: Link; ticket: TicketView }[] };
@@ -312,7 +323,7 @@ Une vague démarre quand toutes les tâches dont elle dépend sont intégrées d
 
 | Vague | Tâches en parallèle | Dépendances (tâche ← tâches) | Fichiers partagés dans la vague | Écrans |
 |---|---|---|---|---|
-| 0 | T1 (chef d'équipe), T2, T3, T4, T5 | aucune (spec §12 écrite) | aucun : T2 = `packages/sdk/src/ui`, shell (dialogues), `bundle-report.ts` ; T3 = schéma `code.ts`, `daemon/src/code`, `server.ts` ; T4 = `apps/desktop/src-tauri` ; T5 = `KiboLogo.tsx`, `kibo-mark.ts`, `index.html`, `public/`, `app-icon.svg`, `icons/`, `bundle-report.ts` (une ligne : intégrer T2 avant T5) | T1 dessine 98–106 |
+| 0 | T1 (chef d'équipe), T2, T3, T4, T5 | aucune (spec §12 écrite) | aucun : T2 = `packages/sdk/src/ui`, shell (dialogues), `bundle-report.ts` ; T3 = schéma `code.ts`, `daemon/src/code`, `server.ts` ; T4 = `apps/desktop/src-tauri` ; T5 = `KiboLogo.tsx`, `kibo-mark.ts`, `index.html`, `public/`, `scripts/app-icon.ts`, `scripts/tsconfig.json`, `app-icon.svg`, `icons/` | T1 dessine 98–106 |
 | 1 | T6, T7, T8, T9, T10, T11, T12, T13 | T6, T7, T8, T9 ← T2 · T10, T11 ← T2 (menu-entries, ConfirmDialog, ReasonDialog) · T12 ← T2 · T13 ← T2, T4 | `lazy-dialogs.ts` (T7, T8 : une ligne chacune) ; `bundle-report.ts` (T6, T7, T8, T13 : une regex chacune) ; `fr.ts` (T7 `nav`, T9 `domains`) ; `Shell.tsx` (T6 `onOpenTicket`, T13 `installDesktop`) ; `AppSidebar.tsx` (T7 extrait `ProjectPages`, T13 `select-none` et libellé ⌘K : **T13 après T7**) ; `TabBar.tsx` (T13 seul) | T6 : 98, 99 · T7 : 101 · T8 : 105 · T9 : 106 · T10 : 102, 99 · T11 : 99 · T12 : 103 |
 | 2 | T14, T15 | T14 ← T6 · T15 ← T2, T3 | aucun (T14 = `ticket/`, `TicketDetail.tsx`, `fr-ticket-edit.ts` ; T15 = `code/`, `fr-code.ts`) | T14 : 100 · T15 : 104 |
 | 3 | T16 | T16 ← T6, T7, T15 (et T3) | `e2e/playwright.config.ts` (T16 seul) | — |
@@ -2041,7 +2052,10 @@ export type TicketCommand = {
 export const describeTicketError = (e: unknown): string =>
   e instanceof KiboError ? (frTicketEdit.errors[e.code as keyof typeof frTicketEdit.errors] ?? frTicketEdit.fallback) : frTicketEdit.fallback;
 
-export function useTicketCommand(projectId: string): TicketCommand {
+export function useTicketCommand(
+  projectId: string,
+  describe: (error: unknown) => string = describeTicketError,
+): TicketCommand {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const run = useCallback(
@@ -2052,13 +2066,13 @@ export function useTicketCommand(projectId: string): TicketCommand {
         await client.rpc({ method: "command", projectId, command });
         return true;
       } catch (e) {
-        setError(describeTicketError(e));
+        setError(describe(e));
         return false;
       } finally {
         setBusy(false);
       }
     },
-    [projectId],
+    [projectId, describe],
   );
   const clearError = useCallback(() => setError(null), []);
   return { run, error, busy, clearError };
@@ -5308,15 +5322,839 @@ git commit -m "feat(ui): intégration bureau et raccourcis affichés"
 
 ### Task 14: Dépendances dans la fiche ticket
 
-**À compléter.** Cadre : décision 5, écran 100, Contrats partagés (UI › `ticket/links.ts`), vague 2 ← T6. Contenu attendu : `ticket/links.ts` + test (`linksOf` : bloqué par / bloque / lié à, `relates` symétrique ; `linkCandidates` exclut lui-même et déjà liés, 8 max), `DependenciesSection.tsx` (trois groupes, lignes cliquables `onOpenTicket`, croix ⇒ `removeLink`, terminés grisés), `AddLinkForm.tsx` (type + recherche ⇒ `addLink` ; `LINK_CYCLE` ⇒ « Impossible : cela créerait une boucle de dépendances. » ; `INVALID_INPUT` ⇒ « Ce lien existe déjà. »), `TicketDetail.tsx` (badges « attend » remplacés par la section), `fr-ticket-edit.ts` (+ `deps.*`), `dependencies.test.tsx`.
+Vague 2 ← T6. Décision 5, écran 100, spec générale §5 (liens `blocks` / `relates`). Les liens vivent dans `ProjectSnapshot.links` (pas dans `TicketView`) : la fiche les regroupe en « Bloqué par » (liens `blocks` dont `to` est le ticket), « Bloque » (`from` est le ticket) et « Lié à » (`relates`, symétrique). Chaque ligne ouvre l'autre ticket (`onOpenTicket`) et porte une croix « Retirer » (`removeLink { linkId }`) ; un formulaire « Ajouter une dépendance » (type + recherche par clé ou titre, 8 résultats au plus) envoie `addLink`. Le démon refuse l'auto-lien et le doublon (`INVALID_INPUT`) et un cycle de `blocks` (`LINK_CYCLE`) : les deux sont expliqués en français, rien n'est écrit. Les badges « attend » disparaissent de la fiche (le groupe « Bloqué par » les remplace, les tickets terminés y sont grisés) ; ils restent dans l'arbre et le Kanban.
+
+**Files:**
+- Create: `packages/ui/src/ticket/links.ts`, `links.test.ts`, `DependenciesSection.tsx`, `AddLinkForm.tsx`, `dependencies.test.tsx`
+- Modify: `packages/ui/src/shell/TicketDetail.tsx` (section remplaçant les badges « attend »), `packages/ui/src/i18n/fr-ticket-edit.ts` (`deps`, `errors.LINK_CYCLE`)
+
+**Interfaces:**
+- Consumes: `useTicketCommand(projectId, describe?)` (T6), `TicketDetail` props `{ project, ticket, viewer, onOpenFile, onOpenTicket }` (T6), `StatusDot` (`@kibo/sdk`), `Select`, `Input`, `Button`.
+- Produces: Contrats partagés › UI › `links.ts` ; `DependenciesSection` props `{ project: ProjectSnapshot; ticket: TicketView; editable: boolean; onOpenTicket(ticketId: string): void }`.
+
+- [ ] **Step 1: Textes**
+
+`packages/ui/src/i18n/fr-ticket-edit.ts`, ajouter dans `errors` : `LINK_CYCLE: "Impossible : cela créerait une boucle de dépendances."` ; et la section
+```ts
+  deps: {
+    title: "Dépendances",
+    blockedBy: "Bloqué par",
+    blocks: "Bloque",
+    related: "Lié à",
+    remove: (key: string) => `Retirer ${key}`,
+    add: "Ajouter une dépendance",
+    type: "Type",
+    search: "Ticket",
+    searchPlaceholder: "KIB-2…",
+    noResult: "Aucun ticket ne correspond.",
+    duplicate: "Ce lien existe déjà.",
+    failed: "Impossible d'ajouter la dépendance.",
+    close: "Fermer",
+  },
+```
+
+- [ ] **Step 2: Fonctions pures (test rouge puis vert)**
+
+`packages/ui/src/ticket/links.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { DEFAULT_WORKFLOW, type Link, type ProjectSnapshot, type TicketView } from "@kibo/schema";
+import { linkCandidates, linksOf } from "./links";
+
+const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"): TicketView => ({
+  id: `${n}@1`,
+  key: `KIB-${n}`,
+  pendingSeq: null,
+  keyLabel: `KIB-${n}`,
+  title,
+  description: "",
+  statusId,
+  blockedReason: null,
+  domainId: null,
+  assignee: null,
+  parentId: null,
+  externalRefs: [],
+  progress: { done: 0, total: 0 },
+  waitingOn: [],
+});
+const link = (id: string, from: number, to: number, type: Link["type"]): Link => ({ id, from: `${from}@1`, to: `${to}@1`, type });
+const project: ProjectSnapshot = {
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  workflow: DEFAULT_WORKFLOW,
+  pages: [],
+  tickets: [t(5, "Loro", "done"), t(12, "Schéma Loro des tickets"), t(13, "Sync", "done"), t(15, "Kanban"), t(16, "Notes"), t(20, "Schéma des pages"), t(21, "Graph")],
+  links: [link("l1", 5, 12, "blocks"), link("l2", 13, 12, "blocks"), link("l3", 12, 15, "blocks"), link("l4", 16, 12, "relates"), link("l5", 20, 21, "relates")],
+  instances: [],
+  rules: [],
+  bindings: [],
+  nextTicketKey: "KIB-22",
+  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
+};
+
+test("links are grouped from the ticket's point of view, relates being symmetric", () => {
+  const links = linksOf(project, "12@1");
+  expect(links.blockedBy.map((l) => [l.link.id, l.ticket.keyLabel])).toEqual([["l1", "KIB-5"], ["l2", "KIB-13"]]);
+  expect(links.blocks.map((l) => l.ticket.keyLabel)).toEqual(["KIB-15"]);
+  expect(links.related.map((l) => l.ticket.keyLabel)).toEqual(["KIB-16"]);
+  expect(linksOf(project, "16@1").related.map((l) => l.ticket.keyLabel)).toEqual(["KIB-12"]);
+  expect(linksOf(project, "21@1")).toEqual({ blockedBy: [], blocks: [], related: [{ link: link("l5", 20, 21, "relates"), ticket: t(20, "Schéma des pages") }] });
+});
+
+test("a link to a missing ticket is ignored", () => {
+  const broken = { ...project, links: [...project.links, link("l9", 12, 99, "blocks")] };
+  expect(linksOf(broken, "12@1").blocks.map((l) => l.ticket.keyLabel)).toEqual(["KIB-15"]);
+});
+
+test("candidates exclude the ticket and its linked tickets, match key or title, key first, 8 at most", () => {
+  expect(linkCandidates(project, "12@1", "").map((c) => c.keyLabel)).toEqual(["KIB-20", "KIB-21"]);
+  expect(linkCandidates(project, "12@1", "kib-2").map((c) => c.keyLabel)).toEqual(["KIB-20", "KIB-21"]);
+  expect(linkCandidates(project, "12@1", "schéma").map((c) => c.keyLabel)).toEqual(["KIB-20"]);
+  expect(linkCandidates(project, "21@1", "SCH").map((c) => c.keyLabel)).toEqual(["KIB-12"]);
+  const many = { ...project, tickets: Array.from({ length: 12 }, (_, i) => t(100 + i, `Ticket ${i}`)), links: [] };
+  expect(linkCandidates(many, "100@1", "ticket")).toHaveLength(8);
+});
+```
+(KIB-20 est exclu des candidats de KIB-21 car déjà lié ; « SCH » ne trouve donc que KIB-12.)
+
+Run: `bun test packages/ui/src/ticket/links.test.ts` — Expected: FAIL.
+
+`packages/ui/src/ticket/links.ts` :
+```ts
+import type { Link, ProjectSnapshot, TicketView } from "@kibo/schema";
+
+export type LinkedTicket = { link: Link; ticket: TicketView };
+export type TicketLinks = { blockedBy: LinkedTicket[]; blocks: LinkedTicket[]; related: LinkedTicket[] };
+
+const MAX_CANDIDATES = 8;
+
+export function linksOf(project: ProjectSnapshot, ticketId: string): TicketLinks {
+  const byId = new Map(project.tickets.map((t) => [t.id, t]));
+  const other = (link: Link) => byId.get(link.from === ticketId ? link.to : link.from);
+  const out: TicketLinks = { blockedBy: [], blocks: [], related: [] };
+  for (const link of project.links) {
+    if (link.from !== ticketId && link.to !== ticketId) continue;
+    const ticket = other(link);
+    if (!ticket) continue;
+    if (link.type === "relates") out.related.push({ link, ticket });
+    else if (link.to === ticketId) out.blockedBy.push({ link, ticket });
+    else out.blocks.push({ link, ticket });
+  }
+  return out;
+}
+
+export function linkCandidates(project: ProjectSnapshot, ticketId: string, query: string): TicketView[] {
+  const linked = new Set(project.links.flatMap((l) => (l.from === ticketId ? [l.to] : l.to === ticketId ? [l.from] : [])));
+  const q = query.trim().toLowerCase();
+  const byKey = (t: TicketView) => t.keyLabel.toLowerCase().includes(q);
+  const byTitle = (t: TicketView) => t.title.toLowerCase().includes(q);
+  return project.tickets
+    .filter((t) => t.id !== ticketId && !linked.has(t.id))
+    .filter((t) => q === "" || byKey(t) || byTitle(t))
+    .sort((a, b) => Number(byKey(b)) - Number(byKey(a)))
+    .slice(0, MAX_CANDIDATES);
+}
+```
+Run: `bun test packages/ui/src/ticket/links.test.ts` — Expected: PASS, 3 tests.
+
+- [ ] **Step 3: Tests de la section (rouges)**
+
+`packages/ui/src/ticket/dependencies.test.tsx` (même `mock.module("../api")`, `TicketSheet`, `ticket()`, `show()` que `ticket-edit.test.tsx` : extraire ces aides dans `packages/ui/src/ticket/test-sheet.tsx` ? Non : `mock.module` doit rester dans le fichier de test ; recopier l'en-tête de `ticket-edit.test.tsx` et n'en garder que le nécessaire) :
+```tsx
+const withLinks = (main: TicketView): ProjectSnapshot => {
+  const base = project(main);
+  const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo") =>
+    ticket({ id: `${n}@1`, key: `KIB-${n}`, keyLabel: `KIB-${n}`, title, statusId, progress: { done: 0, total: 0 } });
+  return {
+    ...base,
+    tickets: [main, t(5, "Loro", "done"), t(13, "Sync", "done"), t(15, "Kanban"), t(16, "Notes"), t(20, "Schéma des pages")],
+    links: [
+      { id: "l1", from: "5@1", to: main.id, type: "blocks" },
+      { id: "l2", from: "13@1", to: main.id, type: "blocks" },
+      { id: "l3", from: main.id, to: "15@1", type: "blocks" },
+      { id: "l4", from: "16@1", to: main.id, type: "relates" },
+    ],
+  };
+};
+
+test("the three groups list the linked tickets, done ones greyed, and open them", async () => {
+  const { user, onOpenTicket } = show(ticket(), "write", withLinks);
+  const section = screen.getByRole("region", { name: "Dépendances" });
+  const group = (name: string) => within(within(section).getByRole("group", { name }));
+  expect(group("Bloqué par").getAllByRole("button", { name: /^KIB-/ }).map((b) => b.textContent)).toEqual(["KIB-5 Loro", "KIB-13 Sync"]);
+  expect(group("Bloqué par").getByRole("button", { name: /^KIB-5/ }).className).toContain("text-muted-foreground");
+  expect(group("Bloque").getAllByRole("button", { name: /^KIB-/ }).map((b) => b.textContent)).toEqual(["KIB-15 Kanban"]);
+  expect(group("Lié à").getAllByRole("button", { name: /^KIB-/ }).map((b) => b.textContent)).toEqual(["KIB-16 Notes"]);
+  expect(screen.queryByText("Attend")).toBeNull();
+  await user.click(group("Bloque").getByRole("button", { name: /^KIB-15/ }));
+  expect(onOpenTicket).toHaveBeenCalledWith("15@1");
+});
+
+test("the cross removes the link", async () => {
+  const { user } = show(ticket(), "write", withLinks);
+  await user.click(screen.getByRole("button", { name: "Retirer KIB-13" }));
+  expect(command(calls.at(-1))).toEqual({ method: "removeLink", linkId: "l2" });
+});
+
+test("adding a dependency searches by key or title and sends addLink in the right direction", async () => {
+  const { user } = show(ticket(), "write", withLinks);
+  await user.click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
+  await user.type(screen.getByRole("textbox", { name: "Ticket" }), "KIB-2");
+  expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["KIB-20 Schéma des pages"]);
+  await user.click(screen.getByRole("option", { name: /KIB-20/ }));
+  expect(command(calls.at(-1))).toEqual({ method: "addLink", from: "20@1", to: "12@1", type: "blocks" });
+  await user.click(screen.getByRole("combobox", { name: "Type" }));
+  await user.click(await screen.findByRole("option", { name: "Bloque" }));
+  await user.clear(screen.getByRole("textbox", { name: "Ticket" }));
+  await user.type(screen.getByRole("textbox", { name: "Ticket" }), "pages");
+  await user.click(screen.getByRole("option", { name: /KIB-20/ }));
+  expect(command(calls.at(-1))).toEqual({ method: "addLink", from: "12@1", to: "20@1", type: "blocks" });
+  await user.click(screen.getByRole("combobox", { name: "Type" }));
+  await user.click(await screen.findByRole("option", { name: "Lié à" }));
+  await user.click(screen.getByRole("option", { name: /KIB-20/ }));
+  expect(command(calls.at(-1))).toEqual({ method: "addLink", from: "12@1", to: "20@1", type: "relates" });
+});
+
+test("a cycle and a duplicate are explained, nothing else changes", async () => {
+  answer = (req) => {
+    if (command(req)?.method !== "addLink") return null;
+    throw new KiboError("LINK_CYCLE", "cycle");
+  };
+  const { user } = show(ticket(), "write", withLinks);
+  await user.click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
+  await user.type(screen.getByRole("textbox", { name: "Ticket" }), "pages");
+  await user.click(screen.getByRole("option", { name: /KIB-20/ }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible : cela créerait une boucle de dépendances.");
+  answer = () => {
+    throw new KiboError("INVALID_INPUT", "duplicate link");
+  };
+  await user.click(screen.getByRole("option", { name: /KIB-20/ }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Ce lien existe déjà.");
+  expect(calls.filter((c) => command(c)?.method === "addLink")).toHaveLength(2);
+});
+
+test("a read-only project shows the groups without crosses or the add form", () => {
+  show(ticket(), "read-only", withLinks);
+  expect(screen.getByRole("group", { name: "Bloqué par" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /^Retirer / })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ajouter une dépendance" })).toBeNull();
+});
+```
+`show(main, access, build = project)` : la fonction `show` de ce fichier prend un troisième argument qui construit le snapshot (`withLinks`), sinon `project`. Écran 100 : les résultats de recherche « KIB-2… » sont rendus avec `role="listbox"` / `role="option"` (liste de boutons `role="option"` dans un `ul role="listbox"` avec `aria-label={deps.search}`).
+
+Run: `bun test packages/ui/src/ticket/dependencies.test.tsx` — Expected: FAIL (section absente).
+
+- [ ] **Step 4: Section et formulaire**
+
+`packages/ui/src/ticket/DependenciesSection.tsx` :
+```tsx
+import type { ProjectSnapshot, TicketView } from "@kibo/schema";
+import { StatusDot } from "@kibo/sdk";
+import { cn } from "@kibo/sdk/lib/utils";
+import { Button } from "@kibo/sdk/ui/button";
+import { X } from "lucide-react";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import { AddLinkForm } from "./AddLinkForm";
+import { type LinkedTicket, linksOf } from "./links";
+import { useTicketCommand } from "./use-ticket-command";
+
+type Props = { project: ProjectSnapshot; ticket: TicketView; editable: boolean; onOpenTicket(ticketId: string): void };
+
+function Group({ name, items, editable, onOpen, onRemove }: { name: string; items: LinkedTicket[]; editable: boolean; onOpen(id: string): void; onRemove(linkId: string): void }) {
+  if (items.length === 0) return null;
+  return (
+    <div role="group" aria-label={name} className="grid gap-1">
+      <h4 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">{name}</h4>
+      <ul className="grid gap-0.5">
+        {items.map(({ link, ticket }) => (
+          <li key={link.id} className="flex items-center gap-1">
+            <button
+              type="button"
+              className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-accent", ticket.statusId === "done" && "text-muted-foreground")}
+              onClick={() => onOpen(ticket.id)}
+            >
+              <StatusDot statusId={ticket.statusId} />
+              <span className="font-mono text-2xs">{ticket.keyLabel}</span>
+              <span className="truncate">{ticket.title}</span>
+            </button>
+            {editable && (
+              <Button size="icon" variant="ghost" className="size-6" aria-label={t.deps.remove(ticket.keyLabel)} onClick={() => onRemove(link.id)}>
+                <X className="size-3.5" />
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function DependenciesSection({ project, ticket, editable, onOpenTicket }: Props) {
+  const command = useTicketCommand(project.meta.id);
+  const links = linksOf(project, ticket.id);
+  const remove = (linkId: string) => void command.run({ method: "removeLink", linkId });
+  const empty = links.blockedBy.length + links.blocks.length + links.related.length === 0;
+  if (empty && !editable) return null;
+  return (
+    <section aria-label={t.deps.title} className="grid gap-3 px-4 text-xs">
+      <h3 className="font-medium">{t.deps.title}</h3>
+      <Group name={t.deps.blockedBy} items={links.blockedBy} editable={editable} onOpen={onOpenTicket} onRemove={remove} />
+      <Group name={t.deps.blocks} items={links.blocks} editable={editable} onOpen={onOpenTicket} onRemove={remove} />
+      <Group name={t.deps.related} items={links.related} editable={editable} onOpen={onOpenTicket} onRemove={remove} />
+      {command.error && (
+        <p role="alert" className="text-destructive">
+          {command.error}
+        </p>
+      )}
+      {editable && <AddLinkForm project={project} ticket={ticket} />}
+    </section>
+  );
+}
+```
+(Le texte du bouton d'une ligne est « KIB-5 Loro » : `StatusDot` est `aria-hidden` ou sans texte ; vérifier `packages/sdk/src/status.tsx`, sinon les attentes `textContent` s'adaptent.)
+
+`packages/ui/src/ticket/AddLinkForm.tsx` :
+```tsx
+import { KiboError, type ProjectSnapshot, type TicketView } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { Input } from "@kibo/sdk/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import { linkCandidates } from "./links";
+import { describeTicketError, useTicketCommand } from "./use-ticket-command";
+
+type Direction = "blockedBy" | "blocks" | "relates";
+const DIRECTIONS: Direction[] = ["blockedBy", "blocks", "relates"];
+const LABELS: Record<Direction, string> = { blockedBy: t.deps.blockedBy, blocks: t.deps.blocks, relates: t.deps.related };
+
+export const describeLinkError = (e: unknown): string =>
+  e instanceof KiboError && e.code === "INVALID_INPUT" ? t.deps.duplicate : e instanceof KiboError && e.code === "LINK_CYCLE" ? t.errors.LINK_CYCLE : describeTicketError(e);
+
+export function linkCommand(ticketId: string, otherId: string, direction: Direction) {
+  if (direction === "blockedBy") return { method: "addLink" as const, from: otherId, to: ticketId, type: "blocks" as const };
+  return { method: "addLink" as const, from: ticketId, to: otherId, type: direction === "blocks" ? ("blocks" as const) : ("relates" as const) };
+}
+
+export function AddLinkForm({ project, ticket }: { project: ProjectSnapshot; ticket: TicketView }) {
+  const command = useTicketCommand(project.meta.id, describeLinkError);
+  const [open, setOpen] = useState(false);
+  const [direction, setDirection] = useState<Direction>("blockedBy");
+  const [query, setQuery] = useState("");
+  if (!open)
+    return (
+      <Button size="sm" variant="outline" className="w-fit" onClick={() => setOpen(true)}>
+        <Plus aria-hidden />
+        {t.deps.add}
+      </Button>
+    );
+  const candidates = linkCandidates(project, ticket.id, query);
+  const add = async (otherId: string) => {
+    if (await command.run(linkCommand(ticket.id, otherId, direction))) setQuery("");
+  };
+  return (
+    <div className="grid gap-2 rounded-md border p-2">
+      <div className="flex items-center gap-2">
+        <Select value={direction} onValueChange={(v) => setDirection(v as Direction)}>
+          <SelectTrigger size="sm" aria-label={t.deps.type} className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DIRECTIONS.map((d) => (
+              <SelectItem key={d} value={d}>
+                {LABELS[d]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input aria-label={t.deps.search} placeholder={t.deps.searchPlaceholder} value={query} autoFocus className="h-8" onChange={(e) => setQuery(e.target.value)} />
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          {t.deps.close}
+        </Button>
+      </div>
+      {candidates.length === 0 ? (
+        <p className="text-muted-foreground">{t.deps.noResult}</p>
+      ) : (
+        <ul role="listbox" aria-label={t.deps.search} className="grid gap-0.5">
+          {candidates.map((c) => (
+            <li key={c.id}>
+              <button type="button" role="option" aria-selected={false} className="flex w-full items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-accent" disabled={command.busy} onClick={() => void add(c.id)}>
+                <span className="font-mono text-2xs">{c.keyLabel}</span>
+                <span className="truncate">{c.title}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {command.error && (
+        <p role="alert" className="text-destructive">
+          {command.error}
+        </p>
+      )}
+    </div>
+  );
+}
+```
+(`v as Direction` : justifié, `Select` ne renvoie que les valeurs de `DIRECTIONS`.) `useTicketCommand(projectId, describe?)` : second paramètre optionnel ajouté par T6 (Contrats partagés).
+
+`packages/ui/src/shell/TicketDetail.tsx` : supprimer le bloc `t.waitingOn.length > 0 && (…)` et l'import `Badge` s'il ne sert plus ; après la `dl` (et l'erreur de commande), insérer `<DependenciesSection project={project} ticket={t} editable={editable} onOpenTicket={onOpenTicket} />`. `fr.ticket.waiting` reste utilisé ailleurs ? Vérifier avec `grep -rn "ticket.waiting" packages/ui/src` ; s'il n'a plus d'usage, le retirer de `fr.ts`.
+
+Run: `bun test packages/ui/src/ticket packages/ui/src/shell/sheet` — Expected: PASS.
+
+- [ ] **Step 5: Gate, budget, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; budget inchangé (`ticket/` hors de l'entrée).
+
+```bash
+git add packages/ui/src/ticket/links.ts packages/ui/src/ticket/links.test.ts packages/ui/src/i18n/fr-ticket-edit.ts
+git commit -m "feat(ui): liens d'un ticket regroupés"
+git add packages/ui/src/ticket/DependenciesSection.tsx packages/ui/src/ticket/AddLinkForm.tsx packages/ui/src/ticket/dependencies.test.tsx packages/ui/src/shell/TicketDetail.tsx
+git commit -m "feat(ui): dépendances dans la fiche ticket"
+```
+(Ajouter `packages/ui/src/i18n/fr.ts` au second commit si `ticket.waiting` a été retiré.)
 
 ### Task 15: Menu des fichiers modifiés et (dés)indexer tout
 
-**À compléter.** Cadre : spec §12.1–12.4, écran 104, vague 2 ← T2, T3. Contenu attendu : `code/file-menu.ts` + test (`fileMenuEntries` : Voir le diff, Ouvrir dans un onglet, Ouvrir dans l'éditeur externe, Copier le chemin, Indexer/Désindexer, Annuler les changements… ; pas d'entrée « Annuler » sur un fichier en conflit), `FileList.tsx` (`ContextMenu` + « ⋯ » par ligne, boutons « Tout indexer » / « Tout désindexer » dans les en-têtes de section), `ChangesFiles.tsx` / `ChangesView.tsx` (`discard` ⇒ `ConfirmDialog` nommant les fichiers supprimés du disque ⇒ `client.code({ method: "discardChanges", ...w, paths })` avec `origPath` pour un renommage ; `stageAll` / `unstageAll` ; copie par `navigator.clipboard.writeText` avec erreur affichée), `fr-code.ts` › `changes` (+ `viewDiff`, `openInTab`, `copyPath`, `stageAll`, `unstageAll`, `discard`, `discardTitle(n)`, `discardRestored(name)`, `discardDeleted(name)`, `discardIrreversible`) et `errors.FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo."`, tests `file-menu.test.ts`, `changes-files.test.tsx`.
+Vague 2 ← T2, T3. Spec §12.1 à §12.4 (menu **fichier modifié**), écran 104. Chaque ligne de la vue Changements gagne un menu (clic droit et « ⋯ », même liste) : Voir le diff, Ouvrir dans un onglet, Ouvrir dans l'éditeur externe, Copier le chemin, Indexer / Désindexer, séparateur, Annuler les changements… ; un fichier **en conflit** n'a ni Indexer ni Annuler. Les en-têtes de section portent « Tout indexer » (Non indexés) et « Tout désindexer » (Indexés). « Annuler les changements… » confirme en disant, fichier par fichier, ce qui revient à sa dernière version commitée et ce qui est **supprimé du disque** (fichier nouveau), puis envoie `discardChanges { paths }` (T3 ; un renommage envoie `path` et `origPath`, comme `unstageFiles`). Une session distante reçoit `FORBIDDEN` : le texte l'explique.
+
+**Files:**
+- Create: `packages/ui/src/code/file-menu.ts`, `packages/ui/src/code/file-menu.test.ts`
+- Modify: `packages/ui/src/code/FileList.tsx`, `packages/ui/src/code/ChangesFiles.tsx`, `packages/ui/src/code/ChangesView.tsx`, `packages/ui/src/code/changes-files.test.tsx`, `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/i18n/fr-code.ts`, `packages/ui/src/shell/ContentView.tsx` (`onOpen(target, newTab?)`, `onOpenInTab` vers `ChangesView`), `packages/ui/src/shell/Shell.tsx` (`onOpen={(t, newTab) => go(t, newTab)}`)
+
+**Interfaces:**
+- Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`shell/lazy-dialogs`, T2), `client.code({ method: "discardChanges" | "stageAll" | "unstageAll", … })` (T3), `errorMessage` (`lib/error-message`), `FileChange` (`@kibo/schema`).
+- Produces: `fileMenuEntries`, `discardLines` (`code/file-menu.ts`) ; `FileList` props `+ onOpenInTab(file), onOpenExternal(file), onCopyPath(file), onDiscard(file), onStageAll(), onUnstageAll()` ; `ChangesFiles` idem ; `ChangesView` props `+ onOpenInTab(ref: FileRef): void` ; `ContentView.onOpen(target: TabTarget, newTab?: boolean)`.
+
+- [ ] **Step 1: Textes**
+
+`packages/ui/src/i18n/fr-code.ts` › `changes`, ajouter :
+```ts
+    fileActions: (path: string) => `Actions ${path}`,
+    viewDiff: "Voir le diff",
+    openInTab: "Ouvrir dans un onglet",
+    copyPath: "Copier le chemin",
+    copied: "Chemin copié",
+    copyFailed: "Impossible de copier le chemin.",
+    stage: "Indexer",
+    unstage: "Désindexer",
+    stageAll: "Tout indexer",
+    unstageAll: "Tout désindexer",
+    discard: "Annuler les changements…",
+    discardTitle: (names: string[]) =>
+      names.length === 1 ? `Annuler les changements de ${names[0]} ?` : `Annuler les changements de ${names.length} fichiers ?`,
+    discardRestored: (name: string) => `${name} reviendra à sa dernière version commitée.`,
+    discardDeleted: (name: string) => `${name} est nouveau : il sera supprimé du disque.`,
+    discardRenamed: (from: string, to: string) => `${to} disparaîtra et ${from} reviendra à sa dernière version commitée.`,
+    discardIrreversible: "Cette action est irréversible.",
+    discardConfirm: "Annuler les changements",
+```
+› `errors`, ajouter : `FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",`. (« Ouvrir dans l'éditeur externe » existe : `openExternal`.)
+
+- [ ] **Step 2: Menu et description en données (test rouge puis vert)**
+
+`packages/ui/src/code/file-menu.test.ts` :
+```ts
+import { expect, mock, test } from "bun:test";
+import type { FileChange } from "@kibo/schema";
+import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
+import { fr } from "../i18n/fr";
+import { discardLines, type FileMenuActions, fileMenuEntries } from "./file-menu";
+
+const file = (patch: Partial<FileChange>): FileChange => ({
+  path: "packages/core/ticket.ts",
+  origPath: null,
+  area: "unstaged",
+  kind: "modified",
+  additions: 1,
+  deletions: 1,
+  ...patch,
+});
+const actions = (): FileMenuActions => ({
+  viewDiff: mock(() => {}),
+  openInTab: mock(() => {}),
+  openExternal: mock(() => {}),
+  copyPath: mock(() => {}),
+  toggleStage: mock(() => {}),
+  discard: mock(() => {}),
+});
+const labels = (entries: ReturnType<typeof fileMenuEntries>) =>
+  entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
+
+test("an unstaged file offers Indexer and Annuler, a staged one Désindexer", () => {
+  const a = actions();
+  const entries = fileMenuEntries({ file: file({}), texts: fr.changes, actions: a });
+  expect(labels(entries)).toEqual([
+    "Voir le diff",
+    "Ouvrir dans un onglet",
+    "Ouvrir dans l'éditeur externe",
+    "Copier le chemin",
+    "—",
+    "Indexer",
+    "—",
+    "Annuler les changements…",
+  ]);
+  expect(labels(fileMenuEntries({ file: file({ area: "staged" }), texts: fr.changes, actions: a }))).toContain("Désindexer");
+  const discard = entries.at(-1);
+  expect(discard && !isSeparator(discard) && !isSubmenu(discard) && discard.destructive).toBe(true);
+});
+
+test("a conflicted file has neither Indexer nor Annuler", () => {
+  expect(labels(fileMenuEntries({ file: file({ kind: "conflicted" }), texts: fr.changes, actions: actions() }))).toEqual([
+    "Voir le diff",
+    "Ouvrir dans un onglet",
+    "Ouvrir dans l'éditeur externe",
+    "Copier le chemin",
+  ]);
+});
+
+test("discard lines say what is restored and what is deleted from disk", () => {
+  expect(discardLines(file({}), fr.changes)).toEqual(["ticket.ts reviendra à sa dernière version commitée."]);
+  expect(discardLines(file({ path: "docs/notes.md", kind: "untracked" }), fr.changes)).toEqual(["notes.md est nouveau : il sera supprimé du disque."]);
+  expect(discardLines(file({ path: "docs/notes.md", area: "staged", kind: "added" }), fr.changes)).toEqual(["notes.md est nouveau : il sera supprimé du disque."]);
+  expect(discardLines(file({ kind: "deleted" }), fr.changes)).toEqual(["ticket.ts reviendra à sa dernière version commitée."]);
+  expect(discardLines(file({ path: "src/renamed.ts", origPath: "src/legacy.ts", area: "staged", kind: "renamed" }), fr.changes)).toEqual([
+    "renamed.ts disparaîtra et legacy.ts reviendra à sa dernière version commitée.",
+  ]);
+});
+```
+Run: `bun test packages/ui/src/code/file-menu.test.ts` — Expected: FAIL.
+
+`packages/ui/src/code/file-menu.ts` :
+```ts
+import type { FileChange } from "@kibo/schema";
+import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { Copy, ExternalLink, FileDiff, Minus, Plus, SquareArrowOutUpRight, Undo2 } from "lucide-react";
+import type { frCode } from "../i18n/fr-code";
+
+export type FileMenuTexts = typeof frCode.changes;
+export type FileMenuActions = {
+  viewDiff(): void;
+  openInTab(): void;
+  openExternal(): void;
+  copyPath(): void;
+  toggleStage(): void;
+  discard(): void;
+};
+
+const basename = (path: string) => path.slice(path.lastIndexOf("/") + 1);
+const NEW_KINDS = new Set<FileChange["kind"]>(["untracked", "added"]);
+
+export function fileMenuEntries(input: { file: FileChange; texts: FileMenuTexts; actions: FileMenuActions }): MenuEntry[] {
+  const { file, texts, actions } = input;
+  const entries: MenuEntry[] = [
+    { label: texts.viewDiff, icon: FileDiff, onSelect: actions.viewDiff },
+    { label: texts.openInTab, icon: ExternalLink, onSelect: actions.openInTab },
+    { label: texts.openExternal, icon: SquareArrowOutUpRight, onSelect: actions.openExternal },
+    { label: texts.copyPath, icon: Copy, onSelect: actions.copyPath },
+  ];
+  if (file.kind === "conflicted") return entries;
+  const staged = file.area === "staged";
+  return [
+    ...entries,
+    { separator: true },
+    { label: staged ? texts.unstage : texts.stage, icon: staged ? Minus : Plus, onSelect: actions.toggleStage },
+    { separator: true },
+    { label: texts.discard, icon: Undo2, destructive: true, onSelect: actions.discard },
+  ];
+}
+
+export function discardPaths(file: FileChange): string[] {
+  return file.origPath ? [file.path, file.origPath] : [file.path];
+}
+
+export function discardLines(file: FileChange, texts: FileMenuTexts): string[] {
+  if (file.origPath) return [texts.discardRenamed(basename(file.origPath), basename(file.path))];
+  if (NEW_KINDS.has(file.kind)) return [texts.discardDeleted(basename(file.path))];
+  return [texts.discardRestored(basename(file.path))];
+}
+```
+Run: `bun test packages/ui/src/code/file-menu.test.ts` — Expected: PASS, 3 tests.
+
+- [ ] **Step 3: Tests de la liste et de la vue (rouges)**
+
+`packages/ui/src/code/changes-files.test.tsx` : `renderFiles` passe les nouveaux props (`mock`s) et les renvoie ; ajouter
+```tsx
+test("each row has a ⋯ menu and a context menu with the same entries; section headers stage or unstage everything", async () => {
+  const { onStageAll, onUnstageAll, onDiscard, onCopyPath } = renderFiles([file, { ...file, path: "README.md", area: "unstaged", kind: "untracked" }]);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Actions packages/core/ticket.ts" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Voir le diff",
+    "Ouvrir dans un onglet",
+    "Ouvrir dans l'éditeur externe",
+    "Copier le chemin",
+    "Désindexer",
+    "Annuler les changements…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Copier le chemin" }));
+  expect(onCopyPath).toHaveBeenCalledWith(file);
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: /README\.md/ }) });
+  await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
+  expect(onDiscard).toHaveBeenCalledWith(expect.objectContaining({ path: "README.md" }));
+  await user.click(screen.getByRole("button", { name: "Tout indexer" }));
+  expect(onStageAll).toHaveBeenCalledTimes(1);
+  await user.click(screen.getByRole("button", { name: "Tout désindexer" }));
+  expect(onUnstageAll).toHaveBeenCalledTimes(1);
+});
+
+test("empty sections have no bulk button", () => {
+  renderFiles([file]);
+  expect(screen.getByRole("button", { name: "Tout désindexer" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Tout indexer" })).toBeNull();
+});
+```
+`packages/ui/src/code/changes.test.tsx` : `renderView` passe `onOpenInTab={onOpenInTab}` (un `mock` partagé remis à zéro dans `beforeEach`) ; ajouter
+```tsx
+test("Annuler les changements asks, names the deleted file, then sends discardChanges with the rename source", async () => {
+  status = {
+    ...baseStatus,
+    files: [
+      { path: "src/renamed.ts", origPath: "src/legacy.ts", area: "staged", kind: "renamed", additions: 0, deletions: 0 },
+      { path: "docs/notes.md", origPath: null, area: "unstaged", kind: "untracked", additions: 3, deletions: 0 },
+    ],
+  };
+  renderView();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions docs/notes.md" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Annuler les changements de notes.md ?" });
+  expect(confirm.textContent).toContain("notes.md est nouveau : il sera supprimé du disque.");
+  expect(confirm.textContent).toContain("Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Annuler les changements" }));
+  await waitFor(() => expect(calls.find((c) => c.method === "discardChanges")).toEqual({ method: "discardChanges", projectId: "p1", worktree: "/repo", paths: ["docs/notes.md"] }));
+  await user.click(screen.getByRole("button", { name: "Actions src/renamed.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
+  const renamed = await screen.findByRole("alertdialog", { name: "Annuler les changements de renamed.ts ?" });
+  expect(renamed.textContent).toContain("renamed.ts disparaîtra et legacy.ts reviendra à sa dernière version commitée.");
+  await user.click(within(renamed).getByRole("button", { name: "Annuler les changements" }));
+  await waitFor(() => expect(calls.filter((c) => c.method === "discardChanges").at(-1)).toMatchObject({ paths: ["src/renamed.ts", "src/legacy.ts"] }));
+});
+
+test("Tout indexer and Tout désindexer call the daemon; a remote session is told why it is refused", async () => {
+  renderView();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Tout indexer" }));
+  await waitFor(() => expect(calls.find((c) => c.method === "stageAll")).toEqual({ method: "stageAll", projectId: "p1", worktree: "/repo" }));
+  overrides = { unstageAll: () => Promise.reject(new KiboError("FORBIDDEN", "local only")) };
+  await user.click(screen.getByRole("button", { name: "Tout désindexer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Cette action n'est possible que depuis l'ordinateur où tourne Kibo.");
+});
+
+test("Ouvrir dans un onglet and Copier le chemin", async () => {
+  const written: string[] = [];
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (t: string) => void written.push(t) } });
+  renderView();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions packages/core/index.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Ouvrir dans un onglet" }));
+  expect(onOpenInTab).toHaveBeenCalledWith({ projectId: "p1", worktree: "/repo", path: "packages/core/index.ts", line: null, origin: null });
+  await user.click(screen.getByRole("button", { name: "Actions packages/core/index.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Copier le chemin" }));
+  expect(written).toEqual(["packages/core/index.ts"]);
+  expect((await screen.findByRole("status")).textContent).toBe("Chemin copié");
+});
+```
+Run: `bun test packages/ui/src/code/changes-files.test.tsx packages/ui/src/code/changes.test.tsx` — Expected: FAIL (5 tests).
+
+- [ ] **Step 4: Liste, panneau, vue**
+
+`packages/ui/src/code/FileList.tsx` :
+- Props `+ onOpenInTab(file: FileChange): void; onOpenExternal(file: FileChange): void; onCopyPath(file: FileChange): void; onDiscard(file: FileChange): void; onStageAll(): void; onUnstageAll(): void` ;
+- `Row` construit `const entries = fileMenuEntries({ file, texts: fr.changes, actions: { viewDiff: () => onSelect(file), openInTab: () => onOpenInTab(file), openExternal: () => onOpenExternal(file), copyPath: () => onCopyPath(file), toggleStage: () => onToggle(file), discard: () => onDiscard(file) } });` ; le `<li>` est enveloppé dans `<ContextMenu><ContextMenuTrigger asChild>…</ContextMenuTrigger><ContextMenuContent><ContextMenuEntries entries={entries} /></ContextMenuContent></ContextMenu>` ; après les compteurs `+/−`, un `DropdownMenu` avec `Button size="icon" variant="ghost" className="size-6" aria-label={fr.changes.fileActions(file.path)}` (`Ellipsis`) et `<DropdownMenuEntries entries={entries} />` ;
+- `Section` reçoit `bulk: { label: string; onClick(): void } | null` et rend, après le compteur du titre, `{bulk && files.length > 0 && <Button size="sm" variant="ghost" className="h-6 px-2 text-2xs" disabled={busy} onClick={(e) => { e.stopPropagation(); bulk.onClick(); }}>{bulk.label}</Button>}` — le bouton est **hors** du `<button>` d'en-tête (un bouton dans un bouton est invalide) : transformer l'en-tête en `<div className="flex items-center">` contenant le bouton replier/déplier (`flex-1`) puis le bouton de lot ;
+- `FileList` passe `bulk={{ label: fr.changes.unstageAll, onClick: onUnstageAll }}` à la section `staged` et `bulk={{ label: fr.changes.stageAll, onClick: onStageAll }}` à la section `unstaged`.
+
+`packages/ui/src/code/ChangesFiles.tsx` : mêmes props ajoutés, passés à `FileList`.
+
+`packages/ui/src/code/ChangesView.tsx` :
+- Props `+ onOpenInTab(ref: FileRef): void` (transmis à `ChangesBody`) ;
+- état : `const [discarding, setDiscarding] = useState<FileChange | null>(null);` et `const { message: copyNotice, tone: copyTone, flash } = useFlash();` (`lib/use-flash`) ;
+- actions :
+```tsx
+  const copyPath = (f: FileChange) =>
+    navigator.clipboard.writeText(f.path).then(
+      () => flash(fr.changes.copied),
+      () => flash(fr.changes.copyFailed, "error"),
+    );
+  const discard = async (f: FileChange) => {
+    await client.code({ method: "discardChanges", ...w, paths: discardPaths(f) });
+    setSelection(null);
+    reload();
+  };
+```
+- `ChangesFiles` reçoit `onOpenInTab={(f) => onOpenInTab({ ...w, path: f.path, line: null, origin: null })}`, `onOpenExternal={(f) => void run(() => client.code({ method: "openInEditor", ...w, path: f.path, line: null }))}`, `onCopyPath={(f) => void copyPath(f)}`, `onDiscard={setDiscarding}`, `onStageAll={() => void run(() => client.code({ method: "stageAll", ...w }))}`, `onUnstageAll={() => void run(() => client.code({ method: "unstageAll", ...w }))}` ;
+- `copyNotice` s'affiche près des alertes : `{copyNotice && <p role={copyTone === "error" ? "alert" : "status"} className="px-4 py-1 text-xs text-muted-foreground">{copyNotice}</p>}` (dans `ChangesAlerts` si elle accepte un `notice` : elle en a un, `notice` ; sinon juste sous) ;
+- en fin de composant :
+```tsx
+      {discarding && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setDiscarding(null)}
+          title={fr.changes.discardTitle([basename(discarding.path)])}
+          description={
+            <span className="grid gap-1">
+              {discardLines(discarding, fr.changes).map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+              <span>{fr.changes.discardIrreversible}</span>
+            </span>
+          }
+          confirmLabel={fr.changes.discardConfirm}
+          cancelLabel={fr.common.cancel}
+          onConfirm={() => discard(discarding)}
+          describeError={errorMessage}
+        />
+      )}
+```
+(`ConfirmDialog` depuis `../shell/lazy-dialogs` ; `basename` local ou exporté de `file-menu.ts`.)
+
+`packages/ui/src/shell/ContentView.tsx` : `onOpen(target: TabTarget, newTab?: boolean): void` ; `ChangesView` reçoit `onOpenInTab={(ref) => p.onOpen({ kind: "file", projectId: ref.projectId, worktree: ref.worktree, path: ref.path, line: ref.line }, true)}`. `Shell.tsx` : `onOpen={(t, newTab) => go(t, newTab)}`.
+
+Run: `bun test packages/ui/src/code packages/ui/src/shell/shell.test.tsx` — Expected: PASS.
+
+- [ ] **Step 5: Gate, budget, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; budget inchangé (`code/` hors de l'entrée via `ChangesView`).
+
+```bash
+git add packages/ui/src/code/file-menu.ts packages/ui/src/code/file-menu.test.ts packages/ui/src/i18n/fr-code.ts
+git commit -m "feat(ui): menu d'un fichier modifié en données"
+git add packages/ui/src/code/FileList.tsx packages/ui/src/code/ChangesFiles.tsx packages/ui/src/code/ChangesView.tsx packages/ui/src/code/changes-files.test.tsx packages/ui/src/code/changes.test.tsx packages/ui/src/shell/ContentView.tsx packages/ui/src/shell/Shell.tsx
+git commit -m "feat(ui): annuler, tout indexer, menu des fichiers"
+```
 
 ### Task 16: E2E menus et fiche ticket
 
-**À compléter.** Cadre : vague 3 ← T6, T7, T15 ; ports **4415 / 4416** (`menus-dark` / `menus-light`, scénario `question`). Contenu attendu : `e2e/menus.spec.ts` (projet avec dépôt `createE2eRepo` ; page « Kanban » renommée « Tableau » par clic droit, titre d'onglet mis à jour ; ticket créé par `rpc(page, { method: "command", … createTicket })`, ouvert dans la fiche depuis la carte Kanban, titre édité et enregistré ; fichier modifié dans le dépôt, Changements, clic droit ⇒ « Annuler les changements… » ⇒ confirmation ⇒ le fichier disparaît de la liste ; page supprimée ⇒ onglet « Page introuvable » ; captures `ecran-98`, `ecran-101`, `ecran-104`), `e2e/playwright.config.ts` (deux entrées dans `daemons`).
+Vague 3 ← T6, T7, T15 (et T3). Un parcours Playwright par thème sur un vrai démon (scénario `question`, sans token consommé : faux `claude`), ports **4415 / 4416** (les faux GitHub et MCP dérivés, `+1000` / `+2000`, restent libres). Le parcours enchaîne les quatre menus livrés : page (renommer, supprimer), fiche ticket (titre en place, ouverture depuis la carte Kanban), fichier modifié (annuler les changements) ; il prend les captures `ecran-98`, `ecran-101`, `ecran-104` en sombre et en clair pour le contrôle visuel du jalon.
+
+**Files:**
+- Create: `e2e/menus.spec.ts`
+- Modify: `e2e/playwright.config.ts` (deux entrées dans `daemons`)
+
+**Interfaces:**
+- Consumes: `createE2eRepo`, `E2eRepo` (`e2e/git-repo.ts`), `createRepoProject`, `projectKey`, `shot` (`e2e/repo-project.ts`), `createPage`, `addComponent` (`e2e/helpers.ts`), `rpc`, `text` (`e2e/agents-seed.ts`), `E2E_TOKEN` (`e2e/token.ts`) ; textes des tâches T6, T7, T15 (mot pour mot).
+- Produces: rien (vérification).
+
+- [ ] **Step 1: Configuration**
+
+`e2e/playwright.config.ts`, dans `daemons`, après les entrées `ia-*` :
+```ts
+  { name: "menus-dark", scheme: "dark", port: 4415, spec: /menus\.spec\.ts/, scenario: "question" },
+  { name: "menus-light", scheme: "light", port: 4416, spec: /menus\.spec\.ts/, scenario: "question" },
+```
+
+- [ ] **Step 2: Le parcours (rouge tant que T6, T7, T15 ne sont pas intégrées)**
+
+`e2e/menus.spec.ts` :
+```ts
+import { expect, test } from "@playwright/test";
+import { rpc, text } from "./agents-seed";
+import { createE2eRepo, type E2eRepo } from "./git-repo";
+import { addComponent, createPage } from "./helpers";
+import { createRepoProject, projectKey, shot } from "./repo-project";
+import { E2E_TOKEN } from "./token";
+
+test.use({ viewport: { width: 1440, height: 900 } });
+
+let repo: E2eRepo | null = null;
+test.afterEach(async () => {
+  const created = repo;
+  repo = null;
+  if (created) await expect(() => created.remove()).toPass();
+});
+
+test("menus des pages, fiche ticket éditable, annulation d'un fichier", async ({ page }, info) => {
+  const key = projectKey("MNU", info);
+  const created = createE2eRepo(key);
+  repo = created;
+  const name = `Menus ${key}`;
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await createRepoProject(page, name, key, created.repo);
+
+  await createPage(page, "Kanban", "Vue");
+  await addComponent(page, "Kanban");
+  const bar = page.getByRole("tablist", { name: "Onglets" });
+  await expect(bar.getByRole("tab", { name: `${name} · Kanban` })).toHaveAttribute("aria-selected", "true");
+
+  const projects = await rpc(page, { method: "listProjects" });
+  const project = (projects as { name: string; id: string }[]).find((p) => p.name === name);
+  if (!project) throw new Error("project not listed");
+  const ticket = await rpc(page, {
+    method: "command",
+    projectId: project.id,
+    command: { method: "createTicket", title: "Schéma Loro des tickets", statusId: "todo" },
+  });
+  const ticketKey = text(ticket, "key");
+
+  const card = page.getByRole("button", { name: "Schéma Loro des tickets" });
+  await expect(card).toBeVisible();
+  await card.click();
+  const sheet = page.getByRole("dialog").filter({ hasText: ticketKey });
+  await sheet.getByRole("button", { name: "Modifier le titre" }).click();
+  const title = sheet.getByRole("textbox", { name: "Titre" });
+  await title.fill("Schéma Loro des tickets (LoroTree)");
+  await sheet.getByRole("button", { name: `Actions ${ticketKey}` }).click();
+  await expect(page.getByRole("menuitem", { name: "Supprimer…" })).toBeVisible();
+  await shot(page, info, "ecran-98");
+  await page.keyboard.press("Escape");
+  await title.press("Enter");
+  await expect(sheet.getByRole("button", { name: "Modifier le titre" })).toHaveText("Schéma Loro des tickets (LoroTree)");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await expect(page.getByRole("button", { name: "Schéma Loro des tickets (LoroTree)" })).toBeVisible();
+
+  const sidebarPage = page.getByRole("button", { name: "Kanban", exact: true });
+  await sidebarPage.click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Renommer…" })).toBeVisible();
+  await shot(page, info, "ecran-101");
+  await page.getByRole("menuitem", { name: "Renommer…" }).click();
+  const rename = page.getByRole("dialog", { name: "Renommer la page" });
+  await rename.getByLabel("Nom").fill("Tableau");
+  await rename.getByRole("button", { name: "Renommer" }).click();
+  await expect(rename).toBeHidden();
+  await expect(bar.getByRole("tab", { name: `${name} · Tableau` })).toHaveAttribute("aria-selected", "true");
+
+  created.write("README.md", "# test\nligne ajoutée\n");
+  created.write("docs/notes.md", "# notes\n");
+  await page.getByRole("button", { name: /^Changements/ }).click();
+  const unstaged = page.getByRole("group", { name: "Non indexés" });
+  await expect(unstaged.getByText("README.md")).toBeVisible();
+  await expect(unstaged.getByText("notes.md")).toBeVisible();
+  await unstaged.getByRole("button", { name: /notes\.md/ }).first().click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Annuler les changements…" })).toBeVisible();
+  await shot(page, info, "ecran-104");
+  await page.getByRole("menuitem", { name: "Annuler les changements…" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Annuler les changements de notes.md ?" });
+  await expect(confirm.getByText("notes.md est nouveau : il sera supprimé du disque.")).toBeVisible();
+  await confirm.getByRole("button", { name: "Annuler les changements" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(unstaged.getByText("notes.md")).toBeHidden();
+  await expect(unstaged.getByText("README.md")).toBeVisible();
+  expect(created.git("status", "--porcelain")).not.toContain("notes.md");
+
+  await page.getByRole("button", { name: "Tableau", exact: true }).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Supprimer…" }).click();
+  const remove = page.getByRole("alertdialog", { name: "Supprimer la page Tableau ?" });
+  await expect(remove.getByText(/1 widget/)).toBeVisible();
+  await remove.getByRole("button", { name: "Supprimer" }).click();
+  await expect(remove).toBeHidden();
+  await bar.getByRole("tab", { name: "Page introuvable" }).click();
+  await expect(page.getByRole("main").getByText("Page introuvable")).toBeVisible();
+});
+```
+Notes : `createPage` clique « Nouvelle page » dans `main` (page d'accueil du projet, affichée après la création) ; `addComponent` ajoute le Kanban à la vue. Le bouton de la carte Kanban porte le titre du ticket (`KanbanCard`, `<button>` du titre). Après `Escape` sur le menu « ⋯ », le champ du titre est toujours ouvert (`Escape` ferme le menu, pas le champ : Radix arrête l'événement) ; si le champ s'est fermé, rouvrir par « Modifier le titre » avant `Enter`. La liste « Non indexés » rend ses lignes comme `button` ; le clic droit sur la ligne ouvre le menu Kibo. Le texte de confirmation de la page dit « Ses 1 widget disparaîtront. Les tickets ne sont pas touchés. » (fonction `deletePageHelp(0, 1)` de T7 : vérifier l'accord et, si le libellé d'un widget seul est ajusté en T7, mettre l'expression à jour). Sur la page supprimée, l'onglet devient « Page introuvable » (`describeTarget`) et le contenu affiche `fr.tabs.missingPage`.
+
+Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- --project menus-dark --project menus-light`
+Expected: PASS sur les deux thèmes ; `e2e/test-results/**/ecran-98.png`, `ecran-101.png`, `ecran-104.png` présents pour chaque thème. Puis `bun run --cwd e2e test -- --project tabs-dark --project code-dark` : aucune régression sur les specs qui touchent les mêmes écrans.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add e2e/menus.spec.ts e2e/playwright.config.ts
+git commit -m "test(e2e): menus, fiche ticket et annulation"
+```
 
 ## Rapport de vague (chef d'équipe)
 
