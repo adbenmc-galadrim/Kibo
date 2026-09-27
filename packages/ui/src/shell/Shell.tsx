@@ -203,6 +203,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}
               onNewPage={(parentId) => set({ newPageParent: parentId })}
+              onRenamePage={(page) => set({ renamePage: page })}
+              onDeletePage={(page) => set({ deletePage: page })}
               onShare={(projectId) => set({ share: projectId })}
               onJoin={() => set({ join: true })}
             />

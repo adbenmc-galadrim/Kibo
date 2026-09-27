@@ -27,11 +27,11 @@ import {
   Search,
   Settings,
 } from "lucide-react";
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { fr } from "../i18n/fr";
-import { pageIcon } from "../registry";
 import { canEdit } from "../state/access";
 import { JoinProjectEntry, ProjectMenu } from "./lazy-screens";
+import { ProjectPages } from "./ProjectPages";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type Props = {
@@ -49,6 +49,8 @@ type Props = {
   onSearch(): void;
   onNewProject(): void;
   onNewPage(parentId: string | null): void;
+  onRenamePage(page: Page): void;
+  onDeletePage(page: Page): void;
   onShare(projectId: string): void;
   onJoin(): void;
 };
@@ -104,6 +106,52 @@ function AgentsEntry({ screen, agents, link }: AgentsEntryProps) {
   );
 }
 
+type ProjectEntryProps = {
+  project: ProjectMeta;
+  active: ProjectSnapshot | null;
+  activeTarget: TabTarget | null;
+  projectActive: boolean;
+  editable: boolean;
+  current: boolean;
+  trailing: ReactNode;
+  link: Link;
+  onOpen(target: TabTarget, newTab: boolean): void;
+  onNewPage(parentId: string | null): void;
+  onRenamePage(page: Page): void;
+  onDeletePage(page: Page): void;
+  onShare(): void;
+};
+
+function ProjectEntry({ project, active, current, editable, link, ...p }: ProjectEntryProps) {
+  const header = (
+    <>
+      <SidebarMenuButton isActive={p.projectActive} {...link({ kind: "project", projectId: project.id })}>
+        <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
+        <span>{project.name}</span>
+      </SidebarMenuButton>
+      <ProjectMenu name={project.name} current={current} shifted={editable} onShare={p.onShare} />
+      {editable && (
+        <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
+          <Plus />
+        </SidebarMenuAction>
+      )}
+    </>
+  );
+  if (!active) return header;
+  return (
+    <ProjectPages
+      project={active}
+      activeTarget={p.activeTarget}
+      header={header}
+      trailing={p.trailing}
+      onOpen={p.onOpen}
+      onNewPage={p.onNewPage}
+      onRenamePage={p.onRenamePage}
+      onDeletePage={p.onDeletePage}
+    />
+  );
+}
+
 export function AppSidebar(p: Props) {
   const { active, activeTarget, screen, changesCount, onOpen } = p;
   const editable = active !== null && canEdit(active);
@@ -120,28 +168,6 @@ export function AppSidebar(p: Props) {
       onOpen(target, true);
     },
   });
-  const children = (parentId: string | null): Page[] =>
-    active?.pages.filter((x) => x.parentId === parentId) ?? [];
-  const renderPages = (projectId: string, parentId: string | null) =>
-    children(parentId).map((page) => {
-      const Icon = pageIcon(page, active?.instances ?? []);
-      return (
-        <SidebarMenuSubItem key={page.id}>
-          <SidebarMenuSubButton
-            asChild
-            isActive={
-              onTarget("page", projectId) && activeTarget?.kind === "page" && activeTarget.pageId === page.id
-            }
-          >
-            <button type="button" {...link({ kind: "page", projectId, pageId: page.id })}>
-              <Icon />
-              <span>{page.title}</span>
-            </button>
-          </SidebarMenuSubButton>
-          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(projectId, page.id)}</SidebarMenuSub>}
-        </SidebarMenuSubItem>
-      );
-    });
   const changesEntry = (projectId: string) =>
     changesCount !== null && (
       <SidebarMenuSubItem>
@@ -210,34 +236,21 @@ export function AppSidebar(p: Props) {
               const current = active?.meta.id === project.id;
               return (
                 <SidebarMenuItem key={project.id}>
-                  <SidebarMenuButton
-                    isActive={onTarget("project", project.id)}
-                    {...link({ kind: "project", projectId: project.id })}
-                  >
-                    <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
-                    <span>{project.name}</span>
-                  </SidebarMenuButton>
-                  <ProjectMenu
-                    name={project.name}
+                  <ProjectEntry
+                    project={project}
+                    active={current ? active : null}
+                    activeTarget={activeTarget}
+                    projectActive={onTarget("project", project.id)}
+                    editable={current && editable}
                     current={current}
-                    shifted={current && editable}
+                    trailing={changesEntry(project.id) || null}
+                    link={link}
+                    onOpen={onOpen}
+                    onNewPage={p.onNewPage}
+                    onRenamePage={p.onRenamePage}
+                    onDeletePage={p.onDeletePage}
                     onShare={() => p.onShare(project.id)}
                   />
-                  {current && (
-                    <>
-                      {editable && (
-                        <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
-                          <Plus />
-                        </SidebarMenuAction>
-                      )}
-                      {(children(null).length > 0 || changesCount !== null) && (
-                        <SidebarMenuSub>
-                          {renderPages(project.id, null)}
-                          {changesEntry(project.id)}
-                        </SidebarMenuSub>
-                      )}
-                    </>
-                  )}
                 </SidebarMenuItem>
               );
             })}
