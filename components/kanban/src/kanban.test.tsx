@@ -77,7 +77,11 @@ test("moving a card changes its status", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
-  await user.click(await screen.findByRole("menuitem", { name: "En cours" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "En cours" }),
+  });
   expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("in_progress");
 });
 
@@ -85,7 +89,11 @@ test("blocking asks for a reason and refuses an empty one", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Bloqué" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "Bloqué…" }),
+  });
   const confirm = await screen.findByRole("button", { name: "Bloquer" });
   expect(confirm.hasAttribute("disabled")).toBe(true);
   await user.type(screen.getByLabelText("Motif"), "Attente client");
@@ -94,6 +102,36 @@ test("blocking asks for a reason and refuses an empty one", async () => {
   expect(t).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" });
   const blocked = screen.getByRole("region", { name: "Bloqué" });
   expect(await within(blocked).findByText("Motif : Attente client")).toBeTruthy();
+});
+
+test("right click opens the same menu as ⋯; delete asks then removes the card", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: await screen.findByRole("button", { name: "Arbre des pages" }),
+  });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir",
+    "Déplacer vers",
+    "Supprimer…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer KIB-1 ?" });
+  expect(confirm.textContent).toContain("Ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")).toBeUndefined());
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull());
+  expect(m.snapshot().links).toEqual([]);
+});
+
+test("Ouvrir from the menu opens the ticket in the host", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Ouvrir" }));
+  const id = m.snapshot().tickets.find((t) => t.key === "KIB-2")?.id ?? "missing";
+  expect(m.opened).toEqual([id]);
 });
 
 test("the column '+' asks the host for a new ticket in that status", async () => {
@@ -118,7 +156,11 @@ test("a failed move shows an alert and keeps the status", async () => {
   const m = setupFailing();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
-  await user.click(await screen.findByRole("menuitem", { name: "En cours" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "En cours" }),
+  });
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-1.");
   expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("todo");
 });
@@ -127,7 +169,11 @@ test("a failed block keeps the dialog open and shows an alert", async () => {
   setupFailing();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Bloqué" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "Bloqué…" }),
+  });
   await user.type(await screen.findByLabelText("Motif"), "Attente client");
   await user.click(screen.getByRole("button", { name: "Bloquer" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-2.");
@@ -331,6 +377,10 @@ test("cards cannot be moved in a read-only project", async () => {
   await screen.findByText("KIB-…");
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
   expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
+  await userEvent
+    .setup()
+    .pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Lecture" }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
 });
 
 test("in a shared project, 'Moi + agents' follows the account id", async () => {
