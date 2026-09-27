@@ -1,38 +1,45 @@
-# Passation : phase 9 (UI/UX) et release v1.0.0
+# Passation : phase 9 (UI/UX), vague 1 en cours
 
-Arrêt au seuil d'usage hebdomadaire (25 %). Ce document permet de reprendre sans contexte.
+Arrêt demandé par Adam. Aucun agent ni processus de test ne tourne. Ce document permet de reprendre sans réanalyse.
 
-## État
+## Où en est tout
 
-- `main` : v1.0 et phase 8 livrées (PR #1 et #2 fusionnées), CI verte. Dernier commit `58012da ci: AppImage sans strip`.
-- Plan d'action UI/UX : `docs/superpowers/plans/2026-09-27-kibo-plan-action-ui-ux.md` (8 lots, 3 vagues, jalon `v1.1.0`).
-- Repérage : `docs/superpowers/rapports/2026-09-27-reperage-ui-ux.md`.
+- `main` : v1.0 et phase 8 livrées. **Release v1.0.0 publiée** (macOS aarch64, Linux AppImage/deb/rpm) ; `latest.json` public contient `darwin-aarch64` et `linux-x86_64`. Correctif Linux : `build-toolchain.ts` n'embarque plus les variantes `-musl` des binaires natifs (`7dab5ee`).
+- `phase/9` (`b7aa668`, poussée) : plan de la vague 1 complet (T1 à T16, `docs/superpowers/plans/2026-09-27-kibo-phase-9-vague-1.md`), décisions de spec (`kibo-code-onglets` §12, `kibo-mises-a-jour` §3.7/§4, `kibo-design` §8), `bun.lock` en 1.0.0, et les tâches intégrées ci-dessous.
+- Budget UI après intégrations : 223,0 kB (plafond 230 kB).
 
-## Release v1.0.0
+## Tâches de la vague 1
 
-- Le premier run (tag `v1.0.0`) a échoué sur Linux : `failed to run linuxdeploy` à l'étape AppImage. Correctif : `NO_STRIP: "true"` et `--verbose` dans `release.yml`.
-- Relance par `workflow_dispatch` sur `main` (run 36319589374), qui réutilise le brouillon v1.0.0. Le tag `v1.0.0` pointe encore l'ancien commit (seul le workflow diffère).
-- À vérifier : run vert (macOS aarch64, Linux x86_64, publish), puis
-  `curl -sL https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json` contient `darwin-aarch64` et `linux-x86_64`.
-- Run 36319589374 : macOS vert, Linux encore rouge, publish sauté. Cause réelle (log verbeux) : `ERROR: Could not find dependency: libc.musl-x86_64.so.1` ; linuxdeploy analyse un binaire embarqué lié à musl (probablement une ressource produite par `build-toolchain.ts` ou le sidecar). `NO_STRIP` n'y change rien.
-- Correctif `7dab5ee` : `build-toolchain.ts` n'embarque plus les variantes `-musl` des binaires natifs (`@tailwindcss/oxide`, `lightningcss`) que Bun installe à côté des variantes glibc. Release relancée : run 36337886622, résultat non vérifié. S'il est vert, contrôler `latest.json` ; sinon relire `gh run view 36337886622 --log-failed`.
+| Tâche | État | Branche (poussée) | Reste à faire |
+|---|---|---|---|
+| T1 maquettes 98–106 | écart assumé partiel, script intégré | — | voir la note sous Task 1 dans le plan |
+| T2 socle SDK | intégrée | — | — |
+| T3 démon git | intégrée (1 refus corrigé : dossiers refusés) | — | — |
+| T4 coque Tauri | intégrée (reviewer + lead sécurité) | — | smoke manuel macOS (menu, ⌘⇧W, taille min, fenêtre mémorisée) |
+| T5 logo | intégrée | — | — |
+| T6 fiche ticket | **2e refus en cours de correction** | `feat/p9-t6` (3 commits) | modifs **non commitées** dans le worktree `p9-t6` (TicketTitle, TicketSheet, TicketTab, test) : le titre de la fiche doit rester un `heading` accessible ; l'E2E `mvp.spec.ts:83` échouait (`getByRole("heading", { name: "Préparer la démo" })`). Finir, lancer l'E2E, puis intégrer. Un 3e refus ⇒ `kibo-lead` reprend. |
+| T7 pages | acceptée (budget +2,6 kB accepté par le chef : sous-menu partagé) | `feat/p9-t7` | rebase + gate + intégration |
+| T8 réglages widget | acceptée après 1 refus (test page à un widget, titres raccourcis) | `feat/p9-t8` | rebase + gate + intégration |
+| T9 domaines | acceptée (titre du 2e commit raccourci) | `feat/p9-t9` | rebase + gate + intégration |
+| T10 arbre Tickets | en développement | `feat/p9-t10` (1 commit) | modifs **non commitées** dans `p9-t10` (TicketsTree, fr, index, tests ; budget mesuré 222,4 kB) : finir la tâche, gate complète, relecture |
+| T11 Kanban | acceptée | `feat/p9-t11` | rebase + gate + intégration |
+| T12 notes | livrée, relecture interrompue | `feat/p9-t12` | relire ; **point bloquant probable** : la frappe tapée entre l'autosauvegarde et le renommage automatique (ou un renommage manuel de la note ouverte) part vers l'ancien chemin, est refusée (CONFLICT) et perdue. Exiger : vider le tampon avant de renommer et rediriger les sauvegardes vers le nouveau chemin, avec un test. |
+| T13 UI de bureau | à lancer | — | dépend de T2, T4 (faits) et T7 |
+| T14, T15 | vague 2 | — | T14 ← T6 ; T15 ← T2, T3 |
+| T16 E2E | vague 3 | — | ← T6, T7, T15 |
 
-## Phase 9
+Ordre d'intégration conseillé : T7, T11, T9, T8, puis T6, T12, T10 ; ensuite T13, vague 2, vague 3, jalon partiel (budget, contrôle visuel 98–106 sombre et clair, rapport de vague).
 
-- Branche d'intégration `phase/9` (depuis `main`), aucune tâche intégrée. `feat/p9-plan` est rebasée sur `main` (`615e53b`) et la gate locale est verte : il reste à pousser la branche rebasée et à avancer `phase/9` dessus en fast-forward.
-- Plan détaillé de la vague 1 (lots 1 et 4) commité par `kibo-lead` sur `feat/p9-plan` (`7a5368b`, poussé, worktree `.claude/worktrees/p9-plan`) : `docs/superpowers/plans/2026-09-27-kibo-phase-9-vague-1.md` et décisions de spec (`kibo-code-onglets` §12, `kibo-mises-a-jour` §3.7/§4, `kibo-design` §8).
-- T1 (maquettes), T2 (socle SDK, chargement initial ≤ 224 kB) et T3 (démon : `discardChanges`, `stageAll`, `unstageAll`) sont rédigées en entier ; T4 à T16 cadrées mais marquées « À compléter » : `kibo-lead` doit écrire leurs étapes TDD avant de les confier.
-- Questions pour Adam : réserver toutes les mutations git de `/api/code` aux sessions locales ? renommage automatique des notes `sans-titre` à la première sauvegarde ? glisser-déposer limité au reparentage ?
+## Commandes
 
-## Reprise
+- Intégrer une tâche acceptée (rebase sur `phase/9`, gate complète avec E2E, fast-forward, push), une à la fois :
+  `/Users/galadrim/.claude/jobs/6b7663e6/tmp/integ9.sh t7`. Le script s'arrête sur un rebase en conflit ou une gate rouge ; journaux `gate-<tâche>.log`, `gate-unit-p9-<tâche>.log`, `gate-e2e-p9-<tâche>.log` dans le même dossier. Ce dossier appartient au job courant : s'il a disparu, la gate = `bun install --frozen-lockfile`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build`, `bun run budget`, `bun test packages components ./scripts` (0 fail), `bun run --cwd e2e test`.
+- Chaque dev reçoit son worktree `.claude/worktrees/p9-t<n>` et sa branche `feat/p9-t<n>` ; vérifier avant d'intégrer que chaque titre de commit fait moins de 50 caractères.
 
-1. Relire et intégrer `feat/p9-plan` sur `phase/9` (fast-forward après gate).
-2. Pour chaque tâche du plan de vague 1 : `kibo-dev` dans `.claude/worktrees/p9-<tâche>`, branche `feat/p9-<tâche>`, puis `kibo-reviewer`, gate locale, intégration sur `phase/9`.
-3. Vagues 2 et 3 : `kibo-lead` écrit leurs plans (décisions de spec des lots 2, 3 et 5 d'abord).
-4. Jalon : contrôle visuel sombre et clair, rapport, version `1.1.0` (`bun apps/desktop/scripts/version.ts set 1.1.0`), PR `phase/9` → `main`, CI verte sur tous les jobs, fusion, tag `v1.1.0`.
+## Points d'attention
 
-## Suivis ouverts
-
-- Test de debounce du watcher instable sur macOS ; job e2e sans `timeout-minutes` ; bruit du poller de PR en e2e.
-- Dépendances d'ordre entre tests ; `mock.ts` au-delà de 300 lignes ; `AddComponentDialog.tsx` à 306 lignes.
-- Clé d'appareil rangée dans le trousseau sous un nom fixe.
+- Tests instables sous charge (plusieurs agents en parallèle) : `packages/daemon/src/code/watcher.test.ts` (« removing the watched directory itself… », délai 5 s) et `presence-guards.test.ts` ; un échec E2E isolé est passé à la relance. À stabiliser dans une prochaine tâche.
+- Budget : T7 consomme +2,6 kB (sous-menu partagé) ; surveiller le cumul avec T6, T8, T10, T13 (plafond 230 kB jamais relevé).
+- Questions pour Adam (décisions actuelles appliquées) : mutations git de l'onglet Code réservées aux sessions locales ? renommage automatique des notes `sans-titre` ? glisser-déposer limité au changement de parent ?
+- Le tag `v1.0.0` pointe l'ancien commit (seul `release.yml` diffère) ; la release publiée est correcte.
+- Jalon de phase : version `1.1.0`, PR `phase/9` → `main`, CI verte sur tous les jobs, tag `v1.1.0`.
