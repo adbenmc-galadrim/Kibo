@@ -14,7 +14,8 @@ Arrêt au seuil d'usage hebdomadaire (25 %). Ce document permet de reprendre san
 - Relance par `workflow_dispatch` sur `main` (run 36319589374), qui réutilise le brouillon v1.0.0. Le tag `v1.0.0` pointe encore l'ancien commit (seul le workflow diffère).
 - À vérifier : run vert (macOS aarch64, Linux x86_64, publish), puis
   `curl -sL https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json` contient `darwin-aarch64` et `linux-x86_64`.
-- Si Linux échoue encore : lire le log verbeux de linuxdeploy ; piste suivante `APPIMAGE_EXTRACT_AND_RUN: 1`, ou exclure l'AppImage (`--bundles deb,rpm`) et garder l'updater sur macOS.
+- Run 36319589374 : macOS vert, Linux encore rouge, publish sauté. Cause réelle (log verbeux) : `ERROR: Could not find dependency: libc.musl-x86_64.so.1` ; linuxdeploy analyse un binaire embarqué lié à musl (probablement une ressource produite par `build-toolchain.ts` ou le sidecar). `NO_STRIP` n'y change rien.
+- Pistes : cibler la variante glibc de ce binaire pour Linux x86_64 dans `build-toolchain.ts`/`build-sidecar.ts`, ou bundler Linux en `deb,rpm` seulement (`--bundles deb,rpm`, l'updater Linux ne marche alors plus que via AppImage). Puis relancer `gh workflow run release.yml --ref main`.
 
 ## Phase 9
 
