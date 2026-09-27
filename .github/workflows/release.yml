@@ -1,0 +1,88 @@
+name: release
+on:
+  push: { tags: ["v*"] }
+  workflow_dispatch:
+    inputs:
+      intel:
+        description: "Construire aussi macOS Intel (minutes macOS ×10)"
+        type: boolean
+        default: false
+permissions: { contents: write }
+concurrency: { group: "release-${{ github.ref }}", cancel-in-progress: false }
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      notes: ${{ steps.notes.outputs.body }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.2 }
+      - run: bun install --frozen-lockfile
+      - id: tag
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then TAG="$GITHUB_REF_NAME"; else TAG="v$(bun apps/desktop/scripts/version.ts get)"; fi
+          bun apps/desktop/scripts/version.ts check "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - id: notes
+        shell: bash
+        env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ steps.tag.outputs.tag }}" }
+        run: |
+          {
+            echo 'body<<KIBO_NOTES'
+            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" --jq .body
+            echo 'KIBO_NOTES'
+          } >> "$GITHUB_OUTPUT"
+      - id: matrix
+        shell: bash
+        env: { INTEL: "${{ inputs.intel }}" }
+        run: |
+          MATRIX='{"os":"macos-latest","target":"aarch64-apple-darwin"},{"os":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu"}'
+          if [ "$INTEL" = "true" ]; then MATRIX="$MATRIX,"'{"os":"macos-15-intel","target":"x86_64-apple-darwin"}'; fi
+          echo "matrix={\"include\":[$MATRIX]}" >> "$GITHUB_OUTPUT"
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.version.outputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.2 }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: "${{ matrix.target }}" }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: apps/desktop/src-tauri }
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/ui build
+      - run: bun apps/desktop/scripts/build-sidecar.ts
+      - run: bun apps/desktop/scripts/build-toolchain.ts
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: bun run tauri
+          tagName: ${{ needs.version.outputs.tag }}
+          releaseName: Kibo ${{ needs.version.outputs.tag }}
+          releaseBody: ${{ needs.version.outputs.notes }}
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          args: --target ${{ matrix.target }}
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.version.outputs.tag }}" }
+        run: gh release edit "$TAG" --draft=false --latest
