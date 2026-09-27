@@ -80,6 +80,7 @@ function DomainSelect({
 export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, onOpenTicket }: Props) {
   const editable = canEdit(project);
   const command = useTicketCommand(project.meta.id);
+  const descriptionCommand = useTicketCommand(project.meta.id);
   const children = project.tickets.filter((x) => x.parentId === t.id);
   const hasPr = t.externalRefs.some((r) => r.kind === "github_pr");
   const open = (r: { path: string; line: number | null }) =>
@@ -145,7 +146,7 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
         ticketId={t.id}
         description={t.description}
         editable={editable}
-        command={command}
+        command={descriptionCommand}
         onOpenFile={open}
       />
       {children.length > 0 && (

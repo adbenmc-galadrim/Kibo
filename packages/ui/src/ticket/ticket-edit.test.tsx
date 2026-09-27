@@ -193,6 +193,18 @@ test("the description is edited in a textarea and saved", async () => {
   });
 });
 
+test("a description save error is shown once, inside the editor", async () => {
+  answer = () => {
+    throw new KiboError("NOT_FOUND", "ticket not found");
+  };
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  await screen.findByRole("alert");
+  expect(screen.getAllByRole("alert").map((a) => a.textContent)).toEqual(["Ce ticket n'existe plus."]);
+  expect(screen.getByRole("textbox", { name: "Description" })).toBeTruthy();
+});
+
 test("sub-tickets open in the sheet", async () => {
   const { user, onOpenTicket } = show();
   await user.click(screen.getByRole("button", { name: /KIB-20/ }));
