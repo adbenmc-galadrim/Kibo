@@ -378,7 +378,7 @@ Vague 0. Trois primitives dans le SDK (décision 1), leurs habillages à la dema
 - Produces: `ConfirmDialog`, `ReasonDialog`, `MenuEntry`, `ContextMenuEntries`, `DropdownMenuEntries`, `isSeparator`, `isSubmenu` (Contrats partagés › SDK) ; `fr.common.{confirm, delete, rename, save, copied}` ; `lazy-dialogs.ConfirmDialog`.
 - Consumes: `@kibo/sdk/ui/alert-dialog`, `dialog`, `textarea`, `label`, `button`, `context-menu`, `dropdown-menu` (existants).
 
-- [ ] **Step 1: Tests des primitives (rouges)**
+- [x] **Step 1: Tests des primitives (rouges)**
 
 `packages/sdk/src/ui/menu-entries.test.tsx` :
 ```tsx
@@ -494,7 +494,7 @@ test("cancel closes without calling the action", async () => {
 Run: `bun test packages/sdk/src/ui/menu-entries.test.tsx packages/sdk/src/ui/confirm-dialog.test.tsx`
 Expected: FAIL (modules introuvables).
 
-- [ ] **Step 2: Implémenter les primitives**
+- [x] **Step 2: Implémenter les primitives**
 
 `packages/sdk/src/ui/menu-entries.tsx` :
 ```tsx
@@ -759,7 +759,7 @@ export function BlockDialog({ ticketKey, error, onConfirm, onCancel }: Props) {
 Run: `bun test packages/sdk/src/ui components/kanban`
 Expected: PASS (les tests du Kanban gardent leurs attentes).
 
-- [ ] **Step 3: Réduire le chargement initial**
+- [x] **Step 3: Réduire le chargement initial**
 
 Mesure de départ : `bun run budget` (noter la valeur). Puis :
 - `packages/ui/src/shell/lazy-dialogs.ts` ajoute :
@@ -799,7 +799,7 @@ export const OpenViewDialog = lazyPanel(
 Run: `bun run budget`
 Expected: `gzip : ≤ 224.0 kB (budget 230.0 kB)`, aucun « Module interdit ». Si la cible n'est pas atteinte, sortir aussi `dialogs/ShareProjectDialog` déjà lazy ? non : chercher avec `bun packages/ui/scripts/bundle-budget.ts` les plus gros `moduleIds` de l'entrée (ajouter temporairement un `console.log` trié, retiré avant commit) et déplacer le suivant (candidats : `palette/*` déjà lazy ; `agents/AgentPanel` non ; `shell/Overview` ; `dialogs/integrations/*`).
 
-- [ ] **Step 4: Tests existants et gate**
+- [x] **Step 4: Tests existants et gate**
 
 Run: `bun test packages/ui/src/shell/workspace-switcher.test.tsx packages/ui/src/pages/instance.test.tsx packages/ui/src/shell/shell.test.tsx`
 Expected: PASS après passage à `findBy*` des attentes qui rendent un dialogue désormais chargé à la demande (attente inchangée sur le contenu).
@@ -807,7 +807,7 @@ Expected: PASS après passage à `findBy*` des attentes qui rendent un dialogue 
 Run: `bun run check && bun run typecheck && bun test packages components ./scripts`
 Expected: PASS.
 
-- [ ] **Step 5: Commits**
+- [x] **Step 5: Commits**
 
 ```bash
 git add packages/sdk/src/ui/menu-entries.tsx packages/sdk/src/ui/menu-entries.test.tsx packages/sdk/src/ui/confirm-dialog.tsx packages/sdk/src/ui/confirm-dialog.test.tsx packages/sdk/src/ui/reason-dialog.tsx components/kanban/src/BlockDialog.tsx
@@ -834,7 +834,7 @@ Vague 0. Spec §12.1 à §12.3. Trois requêtes sur `/api/code`, et le contexte 
 - Consumes: `resolveInWorktree`, `assertNotSymlink` (`code/safe-path.ts`), `readStatus`, `hasHead`, `currentOperation` (`code/read.ts`), `Git.ok` (`code/run.ts`), `requireLocal`, `RpcContext` (`rpc-extensions.ts`), `createGitFixture` (`code/testing/git-fixture.ts`).
 - Produces: Contrats partagés › Démon et schéma.
 
-- [ ] **Step 1: Schéma (test rouge puis vert)**
+- [x] **Step 1: Schéma (test rouge puis vert)**
 
 `packages/schema/src/code.test.ts`, ajouter :
 ```ts
@@ -861,7 +861,7 @@ export const LOCAL_ONLY_CODE_METHODS = ["discardChanges", "stageAll", "unstageAl
 
 Run: `bun test packages/schema/src/code.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Tests des opérations git (rouges)**
+- [x] **Step 2: Tests des opérations git (rouges)**
 
 `packages/daemon/src/code/index-ops.test.ts`, ajouter (mêmes `fx`, `h`, `areas`, `lines` que le fichier) :
 ```ts
@@ -944,7 +944,7 @@ test("unstageAll works before the first commit", async () => {
 
 Run: `bun test packages/daemon/src/code/index-ops.test.ts` — Expected: FAIL (`discardChanges` introuvable).
 
-- [ ] **Step 3: Implémenter les opérations**
+- [x] **Step 3: Implémenter les opérations**
 
 `packages/daemon/src/code/index-ops.ts`, ajouter (imports : `currentOperation`, `hasHead`, `readStatus` depuis `./read`) :
 ```ts
@@ -988,7 +988,7 @@ Note pour l'implémenteur : `git rm --cached` sur un chemin qui est un dossier d
 
 Run: `bun test packages/daemon/src/code/index-ops.test.ts` — Expected: PASS.
 
-- [ ] **Step 4: Service : contexte de session et branchement (tests rouges puis verts)**
+- [x] **Step 4: Service : contexte de session et branchement (tests rouges puis verts)**
 
 `packages/daemon/src/rpc-extensions.ts`, ajouter :
 ```ts
@@ -1057,7 +1057,7 @@ avec `const LOCAL_ONLY = new Set<string>(LOCAL_ONLY_CODE_METHODS);` et le type `
 
 Run: `bun test packages/daemon/src/code/code-service.test.ts packages/daemon/src/server-code.test.ts` — Expected: PASS (`server-code.test.ts` passe sans changement : ses sessions sont locales).
 
-- [ ] **Step 5: Test HTTP du refus distant**
+- [x] **Step 5: Test HTTP du refus distant**
 
 Regarder comment `packages/daemon/src/remote/*.test.ts` fabrique une session distante (`startServer` avec `remote` ou `ListenInfo.remote`) ; si un helper existe (`remoteServer`, `pairRemote`), ajouter dans `server-code.test.ts` :
 ```ts
@@ -1069,7 +1069,7 @@ test("openInEditor over the remote listener answers 403", async () => {
 ```
 S'il n'existe aucun helper, ne pas en construire : le test de service (Step 4) couvre le refus et `server.ts` n'a qu'un argument de plus (revue par `kibo-lead`).
 
-- [ ] **Step 6: Gate et commits**
+- [x] **Step 6: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/schema packages/daemon/src/code packages/daemon/src/server-code.test.ts`
 Expected: PASS.
