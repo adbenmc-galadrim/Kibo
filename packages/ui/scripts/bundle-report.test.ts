@@ -69,6 +69,7 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/shell/IntegrationNotices.tsx",
       "/Kibo/packages/ui/src/pages/SourceHeader.tsx",
       "/Kibo/components/graph/src/GraphView.tsx",
+      "/Kibo/components/kanban/src/Kanban.tsx",
       "/Kibo/components/notes/src/NotesView.tsx",
       "/Kibo/components/mcp-source/src/McpSource.tsx",
       "/Kibo/packages/ui/src/dialogs/mcp-source/McpSourceStep.tsx",

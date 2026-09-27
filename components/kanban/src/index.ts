@@ -1,6 +1,7 @@
 import { ComponentManifest } from "@kibo/schema";
+import { lazyPanel } from "@kibo/sdk";
 import manifestJson from "../kibo.component.json";
-import { Kanban } from "./Kanban";
+import { fr } from "./fr";
 
 export const manifest = ComponentManifest.parse(manifestJson);
-export const Component = Kanban;
+export const Component = lazyPanel(() => import("./Kanban").then((m) => m.Kanban), fr.lazy);

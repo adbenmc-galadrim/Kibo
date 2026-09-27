@@ -7,7 +7,7 @@ import {
   type Ticket,
   type TicketRun,
 } from "@kibo/schema";
-import { SdkProvider } from "@kibo/sdk";
+import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
@@ -34,6 +34,20 @@ const runs = (s: ProjectSnapshot): TicketRun[] => {
     { ticketId: id("KIB-6"), runId: "r3", label: "sonnet-review-1", state: "done", position: null },
   ];
 };
+
+test("the board is loaded on demand behind a neutral loading line", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  const { container } = render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  const fallback = container.querySelector(LAZY_FALLBACK_SELECTOR);
+  expect(fallback?.textContent).toBe("Chargement du Kanban…");
+  expect(fallback?.className).toContain("text-muted-foreground");
+  expect(await screen.findByRole("region", { name: "À faire" })).toBeTruthy();
+  expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull();
+});
 
 runConformance({ manifest, Component }, seed, { runs });
 
