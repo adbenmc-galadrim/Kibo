@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { fr } from "../i18n/fr";
 import { abbreviateHome } from "../lib/home-path";
 import { navigate } from "../route";
+import { canEdit } from "../state/access";
 
 type Props = { project: ProjectSnapshot; onNewPage: () => void; onSuggest: () => void };
 
@@ -23,18 +24,22 @@ export function ProjectHome({ project, onNewPage, onSuggest }: Props) {
             <p className="font-mono text-sm text-muted-foreground">{abbreviateHome(project.meta.folder)}</p>
           )}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
-          <p className="text-sm text-muted-foreground">{fr.projectHome.help}</p>
-          <Button variant="outline" size="sm" onClick={onNewPage}>
-            <Plus className="size-4" /> {fr.nav.newPage}
-          </Button>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
-          <p className="text-sm text-muted-foreground">{fr.onboarding.suggestPagesHelp}</p>
-          <Button variant="outline" size="sm" onClick={onSuggest}>
-            <Sparkles className="size-4" /> {fr.onboarding.propose}
-          </Button>
-        </div>
+        {canEdit(project) && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
+              <p className="text-sm text-muted-foreground">{fr.projectHome.help}</p>
+              <Button variant="outline" size="sm" onClick={onNewPage}>
+                <Plus className="size-4" /> {fr.nav.newPage}
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
+              <p className="text-sm text-muted-foreground">{fr.onboarding.suggestPagesHelp}</p>
+              <Button variant="outline" size="sm" onClick={onSuggest}>
+                <Sparkles className="size-4" /> {fr.onboarding.propose}
+              </Button>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

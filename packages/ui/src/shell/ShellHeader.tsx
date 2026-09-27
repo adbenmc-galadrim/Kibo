@@ -3,7 +3,9 @@ import { Button } from "@kibo/sdk/ui/button";
 import { SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { Bell, Plus } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
+import { ShareButton } from "./lazy-screens";
 import { NotifyButton } from "./NotifyButton";
 import { PageActionsSlot } from "./page-actions";
 import { ScreenActions } from "./ScreenActions";
@@ -21,6 +23,7 @@ type Props = {
   notifications: Session["notifications"];
   onNewProfile: () => void;
   onNewTicket: () => void;
+  onShare: () => void;
 };
 
 const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "components", "mine"]);
@@ -37,6 +40,7 @@ export function ShellHeader({
   notifications,
   onNewProfile,
   onNewTicket,
+  onShare,
 }: Props) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
@@ -53,7 +57,8 @@ export function ShellHeader({
         </p>
       )}
       <ScreenActions screen={screen} agents={agents} onNewProfile={onNewProfile} />
-      {ticketProject && (
+      {project && <ShareButton onShare={onShare} />}
+      {ticketProject && canEdit(ticketProject) && (
         <Button
           size="sm"
           className="h-7"

@@ -8,6 +8,7 @@ import { fr } from "../i18n/fr";
 import { componentIcon } from "../registry";
 import { SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
+import { canEdit } from "../state/access";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
 import { instanceTitle } from "./instance-title";
@@ -56,7 +57,7 @@ export function PageView({ project, page, viewer }: Props) {
   const instances = project.instances.filter((i) => i.pageId === page.id);
   const [first] = instances;
   const canAdd = page.kind === "dashboard" || !first;
-  const addButton = canAdd && (
+  const addButton = canAdd && canEdit(project) && (
     <Button variant="outline" onClick={() => setAdding(true)}>
       <Plus className="size-4" /> {fr.page.addComponent}
     </Button>

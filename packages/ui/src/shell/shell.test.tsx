@@ -6,6 +6,7 @@ import {
   EMPTY_TABS,
   type ProjectSnapshot,
   type RpcRequest,
+  type SyncStatus,
   type TabTarget,
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -48,10 +49,32 @@ const repo: ProjectSnapshot = {
   pages: [],
   tickets: [],
 };
+const readOnly: ProjectSnapshot = {
+  ...project,
+  meta: { ...project.meta, id: "p3", name: "Lecture", key: "LEC" },
+  sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] },
+};
+const sharedProject: ProjectSnapshot = {
+  ...project,
+  meta: { ...project.meta, id: "p4", name: "Partagé", key: "PAR" },
+  sync: { shared: true, keyAllocator: "server", role: "owner", access: "write", members: [] },
+};
 const snapshots = new Map([
   ["p1", project],
   ["p2", repo],
+  ["p3", readOnly],
+  ["p4", sharedProject],
 ]);
+const unconfigured: SyncStatus = {
+  state: "unconfigured",
+  serverUrl: null,
+  user: null,
+  deviceId: null,
+  retryAt: null,
+  lastError: null,
+  projects: [],
+};
+let syncStatus: SyncStatus = unconfigured;
 const saved: RpcRequest[] = [];
 const code: CodeRequest[] = [];
 const codeListeners = new Set<(e: CodeEvent) => void>();
@@ -91,6 +114,8 @@ mock.module("../state/use-projects", () => ({
   useProjects: () => [
     { ...project.meta, counts },
     { ...repo.meta, counts },
+    { ...readOnly.meta, counts },
+    { ...sharedProject.meta, counts },
   ],
   useProject: (id: string | null) => (id ? (snapshots.get(id) ?? null) : null),
 }));
@@ -106,6 +131,7 @@ mock.module("../api", () => ({
     rpc: (req: RpcRequest) => {
       if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
       if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
+      if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
       saved.push(req);
       if (req.method === "command" && req.command.method === "addPage")
         return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
@@ -155,6 +181,7 @@ const renderShell = () => render(<Shell viewer="adam" notifications="native" />)
 const crumbs = () => within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
 
 beforeEach(() => {
+  syncStatus = unconfigured;
   saved.length = 0;
   code.length = 0;
   location.hash = "";
@@ -336,4 +363,62 @@ test("openView goes to the view page showing the component, or offers to create 
     },
   ]);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+test("a read-only project hides page and ticket creation and shows the banner", async () => {
+  renderShell();
+  await go("#/p/p3/");
+  const banner = await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
+  expect(screen.getAllByRole("status")).toContain(banner);
+  expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Ticket/ })).toBeNull();
+  expect(await screen.findByText("Cette page est vide : ajoute un composant pour commencer.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Ajouter un composant/ })).toBeNull();
+});
+
+test("Rejoindre un projet appears only once a server is configured", async () => {
+  const { unmount } = renderShell();
+  await go("#/p/p1/");
+  expect(screen.queryByRole("button", { name: "Rejoindre un projet" })).toBeNull();
+  unmount();
+  syncStatus = { ...syncStatus, state: "online", serverUrl: "wss://sync.kibo.test" };
+  renderShell();
+  expect(await screen.findByRole("button", { name: "Rejoindre un projet" })).toBeTruthy();
+});
+
+test("a suspended project stays editable and explains why it no longer syncs", async () => {
+  syncStatus = {
+    ...unconfigured,
+    state: "online",
+    serverUrl: "wss://sync.kibo.test",
+    projects: [
+      {
+        projectId: "p4",
+        name: "Partagé",
+        role: "owner",
+        lastSyncAt: null,
+        lastError: "TOO_LARGE",
+        accessRevoked: false,
+      },
+    ],
+  };
+  renderShell();
+  await go("#/p/p4/");
+  const banner = await screen.findByText(
+    "Sync suspendue : données trop volumineuses — Modifiable sur cette machine, mais plus synchronisé.",
+  );
+  expect(screen.getAllByRole("status")).toContain(banner);
+  expect(screen.getByRole("button", { name: /^Ticket/ })).toBeTruthy();
+});
+
+test("the header and the project menu open the share dialog", async () => {
+  renderShell();
+  await go("#/p/p1/");
+  await userEvent.click(await screen.findByRole("button", { name: "Partager" }));
+  expect(await screen.findByRole("dialog", { name: "Partager « Kibo »" })).toBeTruthy();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await userEvent.click(screen.getByRole("button", { name: "Actions de Portfolio" }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: "Partager" }));
+  expect(await screen.findByRole("dialog", { name: "Partager « Portfolio »" })).toBeTruthy();
 });

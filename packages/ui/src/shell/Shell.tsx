@@ -10,6 +10,7 @@ import { projectDomainsOf } from "../lib/project-domains";
 import { countMine, myTickets } from "../mine/my-tickets";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
+import { canEdit } from "../state/access";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
 import { useProject, useProjects } from "../state/use-projects";
 import { useSnapshots } from "../state/use-snapshots";
@@ -25,7 +26,7 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
-import { IntegrationNotices } from "./lazy-screens";
+import { IntegrationNotices, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
@@ -109,7 +110,9 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
       openTicket: (ticketId) => {
         if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
       },
-      openNewTicket: (d) => set({ newTicket: d }),
+      openNewTicket: (d) => {
+        if (!projectRef.current || canEdit(projectRef.current)) set({ newTicket: d });
+      },
       openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),
       openTarget: (target, opts) => go(target, opts?.newTab),
@@ -201,6 +204,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}
               onNewPage={(parentId) => set({ newPageParent: parentId })}
+              onShare={(projectId) => set({ share: projectId })}
+              onJoin={() => set({ join: true })}
             />
             <SidebarInset className="min-h-0 min-w-0">
               <ShellHeader
@@ -215,7 +220,11 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 notifications={notifications}
                 onNewProfile={() => set({ newProfile: true })}
                 onNewTicket={() => set({ newTicket: {} })}
+                onShare={() => project && set({ share: project.meta.id })}
               />
+              {project?.sync.shared && (
+                <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
+              )}
               <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                 {screen ? (
                   <ScreenView

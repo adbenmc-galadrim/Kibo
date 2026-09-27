@@ -60,3 +60,28 @@ export const IntegrationNotices = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+const shareEntry = () => import("./share-entry");
+const hidden = { fallback: "sr-only" } as const;
+
+export const ProjectStatusBanner = lazyPanel(
+  () => shareEntry().then((m) => m.ProjectStatusBanner),
+  fr.lazy,
+  hidden,
+);
+export const ShareButton = lazyPanel(() => shareEntry().then((m) => m.ShareButton), fr.lazy, hidden);
+export const ProjectMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectMenu), fr.lazy, hidden);
+export const JoinProjectEntry = lazyPanel(
+  () => shareEntry().then((m) => m.JoinProjectEntry),
+  fr.lazy,
+  hidden,
+);
+export const ShareProjectDialog = lazyPanel(
+  () => shareEntry().then((m) => m.ShareProjectDialog),
+  fr.lazy,
+  hidden,
+);
+export const JoinProjectDialog = lazyPanel(
+  () => shareEntry().then((m) => m.JoinProjectDialog),
+  fr.lazy,
+  hidden,
+);
