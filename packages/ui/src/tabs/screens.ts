@@ -1,6 +1,7 @@
 import type { Screen } from "@kibo/schema";
 import {
   Bot,
+  Cloud,
   List,
   ListOrdered,
   type LucideIcon,
@@ -39,4 +40,5 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     icon: Package,
     crumbs: [fr.nav.settings, fr.marketSources.crumb],
   },
+  sync: { title: fr.sync.title, icon: Cloud, crumbs: [fr.nav.settings, fr.sync.title] },
 };

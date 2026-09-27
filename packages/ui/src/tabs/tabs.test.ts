@@ -42,6 +42,8 @@ describe("hash codec", () => {
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
     expect(hashToTarget("#/settings/general")).toEqual({ kind: "screen", screen: "general" });
     expect(hashToTarget("#/settings/integrations")).toEqual({ kind: "screen", screen: "integrations" });
+    expect(hashToTarget("#/settings/sync")).toEqual({ kind: "screen", screen: "sync" });
+    expect(targetToHash({ kind: "screen", screen: "sync" })).toBe("#/settings/sync");
     expect(hashToTarget("#/settings/appearance")).toEqual({ kind: "screen", screen: "appearance" });
     expect(targetToHash({ kind: "screen", screen: "security" })).toBe("#/settings/security");
     expect(hashToTarget("#/settings/components")).toEqual({ kind: "screen", screen: "sources" });

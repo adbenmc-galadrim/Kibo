@@ -13,6 +13,7 @@ const SCREEN_HASHES: Record<Screen, string> = {
   appearance: "#/settings/appearance",
   security: "#/settings/security",
   sources: "#/settings/components",
+  sync: "#/settings/sync",
 };
 
 export function targetToHash(target: TabTarget | null): string {

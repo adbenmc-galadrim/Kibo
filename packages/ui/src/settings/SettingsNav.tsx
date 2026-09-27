@@ -1,6 +1,7 @@
 import type { Screen } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
+  Cloud,
   FileText,
   Keyboard,
   type LucideIcon,
@@ -15,7 +16,7 @@ import { targetToHash } from "../tabs/target-hash";
 
 type SettingsScreen = Extract<
   Screen,
-  "general" | "appearance" | "domains" | "integrations" | "security" | "sources"
+  "general" | "appearance" | "domains" | "integrations" | "sync" | "security" | "sources"
 >;
 type Item = { id: string; label: string; icon: LucideIcon; screen?: SettingsScreen };
 
@@ -24,6 +25,7 @@ const ITEMS: Item[] = [
   { id: "appearance", label: fr.settings.appearance, icon: Palette, screen: "appearance" },
   { id: "domains", label: fr.settings.domains, icon: FileText, screen: "domains" },
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
+  { id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" },
   { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
   { id: "components", label: fr.settings.components, icon: Package, screen: "sources" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard },

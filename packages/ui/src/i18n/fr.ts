@@ -1,6 +1,7 @@
 import type { KiboErrorCode } from "@kibo/schema";
 import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
+import { frCollab } from "./fr-collab";
 import { frComponents } from "./fr-components";
 import { frIntegrations } from "./fr-integrations";
 import { frMarket } from "./fr-market";
@@ -438,5 +439,6 @@ export const fr = {
   ...frComponents,
   ...frMarket,
   ...frAi,
+  ...frCollab,
   common: { cancel: "Annuler", close: "Fermer", error: "Une erreur est survenue." },
 } as const;

@@ -1,6 +1,7 @@
 import type { AgentsState, FileRef, RunView } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
+import { SyncIndicator } from "../shell/SyncIndicator";
 import { useAgents, useDaemonOnline, useNow, useRunLog } from "../state/use-agents";
 import { AgentBar } from "./AgentBar";
 import { AgentDrawer } from "./AgentDrawer";
@@ -58,6 +59,7 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
           state={state}
           now={now}
           online={online}
+          indicator={<SyncIndicator online={online} />}
           onExpand={() => setExpanded(true)}
           onSelect={open}
         />

@@ -71,6 +71,7 @@ mock.module("../api", () => ({
     subscribe: () => () => {},
     subscribeCode: () => () => {},
     subscribeIntegrations: () => () => {},
+    subscribeEvents: () => () => {},
   },
 }));
 mock.module("../state/use-projects", () => ({
