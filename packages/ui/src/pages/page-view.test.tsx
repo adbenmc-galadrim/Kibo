@@ -1,6 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import type { Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject } from "../agents/fixtures";
 
@@ -9,6 +9,7 @@ mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       if (req.method === "listComponents") return Promise.resolve([]);
+      if (req.method === "getPresence") return Promise.resolve([]);
       if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
       if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
       return Promise.resolve(null);
@@ -21,6 +22,7 @@ mock.module("../api", () => ({
 
 const { PageView } = await import("./PageView");
 const { HostProvider } = await import("../shell/Host");
+const { PageActionsProvider, PageActionsSlot } = await import("../shell/page-actions");
 
 const host = {
   openTicket: () => undefined,
@@ -30,8 +32,9 @@ const host = {
   openView: () => undefined,
   openTarget: () => undefined,
 };
-const page: Page = { id: "pg", title: "Tableau de bord", kind: "dashboard", parentId: null };
-const withAccess = (access: "write" | "read-only" | "revoked"): ProjectSnapshot => {
+const dashboard: Page = { id: "pg", title: "Tableau de bord", kind: "dashboard", parentId: null };
+const single: Page = { id: "pg", title: "Kanban", kind: "view", parentId: null };
+const withAccess = (access: "write" | "read-only" | "revoked", page: Page = dashboard): ProjectSnapshot => {
   const base = kiboProject();
   return {
     ...base,
@@ -49,10 +52,13 @@ const withAccess = (access: "write" | "read-only" | "revoked"): ProjectSnapshot 
     sync: { ...base.sync, shared: true, access },
   };
 };
-const show = (project: ProjectSnapshot) =>
+const show = (project: ProjectSnapshot, page: Page = dashboard) =>
   render(
     <HostProvider host={host}>
-      <PageView project={project} page={page} viewer="adam" />
+      <PageActionsProvider>
+        <PageActionsSlot />
+        <PageView project={project} page={page} viewer="adam" />
+      </PageActionsProvider>
     </HostProvider>,
   );
 
@@ -72,6 +78,20 @@ test("a read-only or revoked project shows no widget menu", async () => {
     expect(screen.queryByRole("button", { name: "Actions Kanban" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "Réglages…" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "Retirer de la page…" })).toBeNull();
+    view.unmount();
+  }
+});
+
+test("an editable single-widget page offers the widget menu in the page actions", async () => {
+  show(withAccess("write", single), single);
+  expect(await screen.findByRole("button", { name: "Actions Kanban" })).toBeTruthy();
+});
+
+test("a read-only or revoked single-widget page shows no widget menu", async () => {
+  for (const access of ["read-only", "revoked"] as const) {
+    const view = show(withAccess(access, single), single);
+    await waitFor(() => expect(screen.queryByText("Chargement…")).toBeNull());
+    expect(screen.queryByRole("button", { name: "Actions Kanban" })).toBeNull();
     view.unmount();
   }
 });
