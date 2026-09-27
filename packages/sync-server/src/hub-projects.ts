@@ -4,7 +4,7 @@ import { audit } from "./audit";
 import type { ServerDb } from "./db";
 import type { ConnState, HubContext, Session } from "./hub-context";
 import { deleteProject, listMembers, projectOwner, roleOf, setRole } from "./members";
-import { presenceIsOwn } from "./presence-guard";
+import { ownPresence } from "./presence-guard";
 import { publicRejectMessage } from "./public-error";
 import { RoomReject } from "./room";
 
@@ -95,8 +95,9 @@ export function push(ctx: HubContext, state: ConnState, me: Session, frame: Fram
 export function presence(ctx: HubContext, state: ConnState, me: Session, frame: Frame<"presence">): void {
   const { projectId } = frame;
   if (!state.projects.has(projectId)) throw new KiboError("FORBIDDEN", "subscribe before sending presence");
-  const bytes = fromBase64(frame.bytes);
-  if (!presenceIsOwn(bytes, me)) {
+  if (!ctx.presences.take(me.deviceId)) throw new KiboError("RATE_LIMITED", "too many presence frames");
+  const own = ownPresence(fromBase64(frame.bytes), me);
+  if (!own) {
     const detail = "spoofed presence";
     audit(ctx.sdb, {
       at: ctx.now(),
@@ -108,8 +109,10 @@ export function presence(ctx: HubContext, state: ConnState, me: Session, frame: 
     });
     return;
   }
-  ctx.rooms.get(projectId).presence.apply(bytes);
-  ctx.broadcast(projectId, { type: "presence", projectId, bytes: frame.bytes }, state.conn.id);
+  const store = ctx.rooms.get(projectId).presence;
+  store.set(me.deviceId, own);
+  const bytes = toBase64(store.encode(me.deviceId));
+  ctx.broadcast(projectId, { type: "presence", projectId, bytes }, state.conn.id);
 }
 
 export function share(ctx: HubContext, state: ConnState, me: Session, frame: Frame<"share">): void {

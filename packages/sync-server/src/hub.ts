@@ -50,6 +50,7 @@ export class SyncHub {
       rooms: opts.rooms,
       now: opts.now,
       pushes: new RateWindow({ limit: SYNC_LIMITS.updatesPerSecond, windowMs: 1000, now: opts.now }),
+      presences: new RateWindow({ limit: SYNC_LIMITS.updatesPerSecond, windowMs: 1000, now: opts.now }),
       connections: () => this.conns.values(),
       broadcast: (projectId, frame, exceptConnId) => this.broadcast(projectId, frame, exceptConnId),
       leave: (state, projectId) => this.leave(state, projectId),

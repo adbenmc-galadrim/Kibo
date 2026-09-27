@@ -378,6 +378,44 @@ describe("presence", () => {
     await Bun.sleep(100);
     expect(owner.received("presence")).toHaveLength(1);
   });
+  const encodeAt = (shiftMs: number, key: string, value: ReturnType<typeof state>) => {
+    const realNow = Date.now;
+    Date.now = () => realNow() + shiftMs;
+    try {
+      return encode(key, value);
+    } finally {
+      Date.now = realNow;
+    }
+  };
+  test("a presence stamped in the future is restamped, so its withdrawal reaches everyone", async () => {
+    const { owner } = await sharedProject();
+    const lea = await member(owner, "Léa", "editor");
+    const bytes = encodeAt(3_600_000, lea.device.deviceId, state(lea.device.userId, "Léa"));
+    lea.client.send({ type: "presence", projectId: META.id, bytes });
+    const shown = new EphemeralStore(30_000);
+    shown.apply(fromBase64((await owner.next("presence")).bytes));
+    const tom = await member(owner, "Tom", "viewer");
+    const tomShown = new EphemeralStore(30_000);
+    tomShown.apply(fromBase64((await tom.client.next("presence")).bytes));
+    expect(tomShown.keys()).toEqual([lea.device.deviceId]);
+    await Bun.sleep(5);
+    lea.client.close();
+    shown.apply(fromBase64((await owner.next("presence")).bytes));
+    tomShown.apply(fromBase64((await tom.client.next("presence")).bytes));
+    expect(shown.keys()).toEqual([]);
+    expect(tomShown.keys()).toEqual([]);
+    shown.destroy();
+    tomShown.destroy();
+  });
+  test("a burst of presence frames is RATE_LIMITED", async () => {
+    const { owner } = await sharedProject();
+    const lea = await member(owner, "Léa", "editor");
+    const bytes = encode(lea.device.deviceId, state(lea.device.userId, "Léa"));
+    for (let i = 0; i <= SYNC_LIMITS.updatesPerSecond; i++) {
+      lea.client.send({ type: "presence", projectId: META.id, bytes });
+    }
+    expect((await lea.client.next("error")).code).toBe("RATE_LIMITED");
+  });
   test("a new subscriber receives the current presence", async () => {
     const { owner } = await sharedProject();
     const lea = await member(owner, "Léa", "editor");

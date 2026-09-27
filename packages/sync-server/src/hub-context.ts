@@ -26,6 +26,7 @@ export type HubContext = {
   rooms: RoomRegistry;
   now: () => number;
   pushes: RateWindow;
+  presences: RateWindow;
   connections(): Iterable<ConnState>;
   broadcast(projectId: string, frame: ServerFrame, exceptConnId?: string): void;
   leave(state: ConnState, projectId: string): void;
