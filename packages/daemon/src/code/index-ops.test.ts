@@ -182,6 +182,26 @@ test("discarding untracked files inside a new folder deletes only them", async (
   expect(await areas()).toEqual(["unstaged:untracked:docs/deep/keep.md"]);
 });
 
+test("discarding an untracked folder is refused and nothing is deleted", async () => {
+  fx.write("docs/a.md", "a\n");
+  fx.write("docs/b.md", "b\n");
+  await expect(discardChanges(h, ["docs"])).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  expect(existsSync(join(fx.repo, "docs/a.md"))).toBe(true);
+  expect(existsSync(join(fx.repo, "docs/b.md"))).toBe(true);
+});
+
+test("discarding a folder tracked in HEAD is refused and nothing is restored", async () => {
+  fx.write("src/ticket.ts", `${lines(40)}more\n`);
+  await expect(discardChanges(h, ["src"])).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  expect(readFileSync(join(fx.repo, "src/ticket.ts"), "utf8")).toBe(`${lines(40)}more\n`);
+});
+
+test("discarding a tracked folder deleted from disk is refused", async () => {
+  rmSync(join(fx.repo, "src"), { recursive: true });
+  await expect(discardChanges(h, ["src"])).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  expect(existsSync(join(fx.repo, "src"))).toBe(false);
+});
+
 test("discarding a staged rename restores the source and removes the target", async () => {
   fx.git("mv", "src/legacy.ts", "src/renamed.ts");
   expect(await areas()).toEqual(["staged:renamed:src/renamed.ts"]);

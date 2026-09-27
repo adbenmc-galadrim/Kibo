@@ -42,10 +42,26 @@ export async function unstageFiles(h: WorktreeHandle, paths: string[]): Promise<
   await h.git.ok(["restore", "--staged", "--", ...all]);
 }
 
-async function inHead(h: WorktreeHandle, paths: string[]): Promise<Set<string>> {
-  if (!(await hasHead(h))) return new Set();
-  const out = await h.git.ok(["ls-tree", "--name-only", "-z", "HEAD", "--", ...paths]);
-  return new Set(out.split("\0").filter((p) => p.length > 0));
+const folderRefusal = (path: string) =>
+  new KiboError("INVALID_INPUT", `${path} is a folder: discard its files one by one`);
+
+function assertNoFolderOnDisk(h: WorktreeHandle, paths: string[]): void {
+  for (const p of paths)
+    if (lstatSync(resolveInWorktree(h.path, p), { throwIfNoEntry: false })?.isDirectory())
+      throw folderRefusal(p);
+}
+
+async function headEntries(h: WorktreeHandle, paths: string[]): Promise<Map<string, string>> {
+  if (!(await hasHead(h))) return new Map();
+  const out = await h.git.ok(["ls-tree", "-z", "HEAD", "--", ...paths]);
+  const entries = new Map<string, string>();
+  for (const line of out.split("\0")) {
+    const tab = line.indexOf("\t");
+    if (tab < 0) continue;
+    const [, type = ""] = line.slice(0, tab).split(" ");
+    entries.set(line.slice(tab + 1), type);
+  }
+  return entries;
 }
 
 async function assertDiscardable(h: WorktreeHandle, paths: string[]): Promise<void> {
@@ -58,10 +74,13 @@ async function assertDiscardable(h: WorktreeHandle, paths: string[]): Promise<vo
 
 export async function discardChanges(h: WorktreeHandle, paths: string[]): Promise<void> {
   validate(h, paths);
+  assertNoFolderOnDisk(h, paths);
   await assertDiscardable(h, paths);
-  const tracked = await inHead(h, paths);
-  const restore = paths.filter((p) => tracked.has(p));
-  const remove = paths.filter((p) => !tracked.has(p));
+  const head = await headEntries(h, paths);
+  const folder = paths.find((p) => head.get(p) === "tree");
+  if (folder !== undefined) throw folderRefusal(folder);
+  const restore = paths.filter((p) => head.has(p));
+  const remove = paths.filter((p) => !head.has(p));
   if (restore.length > 0)
     await h.git.ok(["restore", "--staged", "--worktree", "--source=HEAD", "--", ...restore]);
   if (remove.length > 0) {
