@@ -12,6 +12,7 @@ import {
 } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Plus } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { BlockDialog } from "./BlockDialog";
@@ -71,6 +72,7 @@ export function Kanban() {
     source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
   );
   const [blocking, setBlocking] = useState<TicketView | null>(null);
+  const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
@@ -153,6 +155,7 @@ export function Kanban() {
                     readOnly={readOnly}
                     onOpen={() => sdk.openTicket(t.id)}
                     onMove={(id) => move(t, id)}
+                    onRemove={() => setRemoving(t)}
                   />
                 ))}
               </Column>
@@ -167,6 +170,19 @@ export function Kanban() {
           onCancel={() => setBlocking(null)}
           onConfirm={async (reason) => {
             if (await setStatus(blocking, "blocked", reason)) setBlocking(null);
+          }}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.keyLabel)}
+          description={fr.removeHelp(tickets.filter((x) => x.parentId === removing.id).length)}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={async () => {
+            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
           }}
         />
       )}
