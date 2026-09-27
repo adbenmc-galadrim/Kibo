@@ -19,7 +19,9 @@ Arrêt au seuil d'usage hebdomadaire (25 %). Ce document permet de reprendre san
 ## Phase 9
 
 - Branche d'intégration `phase/9` (depuis `main`), aucune tâche intégrée.
-- Plan détaillé de la vague 1 (lots 1 et 4) en cours par `kibo-lead` : worktree `.claude/worktrees/p9-plan`, branche `feat/p9-plan`, fichier `docs/superpowers/plans/2026-09-27-kibo-phase-9-vague-1.md` et décisions dans les specs (`kibo-design`, `kibo-code-onglets`, `kibo-mises-a-jour`). Vérifier s'il est commité ; sinon le relire et le committer.
+- Plan détaillé de la vague 1 (lots 1 et 4) commité par `kibo-lead` sur `feat/p9-plan` (`7a5368b`, poussé, worktree `.claude/worktrees/p9-plan`) : `docs/superpowers/plans/2026-09-27-kibo-phase-9-vague-1.md` et décisions de spec (`kibo-code-onglets` §12, `kibo-mises-a-jour` §3.7/§4, `kibo-design` §8).
+- T1 (maquettes), T2 (socle SDK, chargement initial ≤ 224 kB) et T3 (démon : `discardChanges`, `stageAll`, `unstageAll`) sont rédigées en entier ; T4 à T16 cadrées mais marquées « À compléter » : `kibo-lead` doit écrire leurs étapes TDD avant de les confier.
+- Questions pour Adam : réserver toutes les mutations git de `/api/code` aux sessions locales ? renommage automatique des notes `sans-titre` à la première sauvegarde ? glisser-déposer limité au reparentage ?
 
 ## Reprise
 
