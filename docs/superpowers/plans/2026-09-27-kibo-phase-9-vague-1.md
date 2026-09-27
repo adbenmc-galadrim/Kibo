@@ -348,7 +348,7 @@ Vague 0, chef d'équipe (ou `kibo-lead`), sans code de production. Flux : `desig
 - Consumes: `S.shellRef` (shell reconstruit, `08-extra.js`), `S.ticketCard`, `S.C` (couleurs), `S.txt`, `S.box`, `S.kanbanLogo` (`01-core.js`), jeu de données `07-data.js`.
 - Produces: écrans 98 à 106 cités par T6 à T15.
 
-- [ ] **Step 1: Écrire `17-finitions.js`** avec un `S.draw[n]` par écran de la liste « Écrans à dessiner », textes **mot pour mot** (ils sont recopiés dans les fichiers `fr-*.ts` des tâches), composants shadcn (menu contextuel : fond `card`, bordure `border`, entrée destructive en rouge `destructive`, séparateur ; AlertDialog centré avec voile ; Select ; Switch). Données : KIB-12 et ses liens (`design/donnees-fictives.md` : KIB-5 → KIB-12, KIB-13 → KIB-12, KIB-12 → KIB-15, relates KIB-12 — KIB-16).
+- [x] **Step 1: Écrire `17-finitions.js`** avec un `S.draw[n]` par écran de la liste « Écrans à dessiner », textes **mot pour mot** (ils sont recopiés dans les fichiers `fr-*.ts` des tâches), composants shadcn (menu contextuel : fond `card`, bordure `border`, entrée destructive en rouge `destructive`, séparateur ; AlertDialog centré avec voile ; Select ; Switch). Données : KIB-12 et ses liens (`design/donnees-fictives.md` : KIB-5 → KIB-12, KIB-13 → KIB-12, KIB-12 → KIB-15, relates KIB-12 — KIB-16).
 
 - [ ] **Step 2: Dessiner et exporter.** Charger `01` à `08` puis `17-finitions.js`, appeler `S.draw[98]()` … `S.draw[106]()` (moins de 120 s par appel), `S.retext`, puis `storage.exportPage("14")`, `scripts/build-pdf.sh`, `scripts/pack-penpot.sh`.
 
@@ -362,6 +362,8 @@ git commit -m "docs(design): écrans 98 à 106 des finitions UI"
 ```
 
 ---
+
+> Écart assumé (partiel) : `17-finitions.js` écrit et intégré (`3b4721f`) ; seuls 98 et 99 sombres ont été dessinés dans Penpot avant que Chrome ne se fige sur un export PNG. Reste : dessiner 100–106, variantes claires (`S.finish`), `storage.exportPage("14")`, PDF (ajouter les pages par `pdfunite`, ne pas relancer `build-pdf.sh` sur l'export périmé), `pack-penpot.sh`, README. Ne pas exporter de planche entière en PNG par `export_shape`.
 
 ### Task 2: Socle : confirmation, motif, entrées de menu, chargement initial réduit
 
@@ -1098,7 +1100,7 @@ Vague 0. Spec §12.5 et spec I §3.7. La coque reste « Rust minimal » : un mod
 - Consumes: `tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu, IsMenuItem}`, `tauri::ipc::CapabilityBuilder::permission_scoped`, `tauri_plugin_window_state::{StateFlags, WindowExt}`, `tauri_plugin_opener::init`.
 - Produces: Contrats partagés › Coque ; permissions `core:window:allow-set-title` et `opener:allow-open-url` (`https://**`) consommées par T13.
 
-- [ ] **Step 1: Dépendances Rust et verrou**
+- [x] **Step 1: Dépendances Rust et verrou**
 
 `apps/desktop/src-tauri/Cargo.toml`, section `[dependencies]`, après `tauri-plugin-process = "2"` :
 ```toml
@@ -1110,7 +1112,7 @@ Régénérer le verrou sans compiler (le `build.rs` de `tauri-build` exigerait l
 Run: `~/.cargo/bin/cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null && git -C . diff --stat apps/desktop/src-tauri/Cargo.lock`
 Expected: `Cargo.lock` modifié (ajout de `tauri-plugin-opener`, `tauri-plugin-window-state` et de leurs dépendances, dont `open` et `glob`), aucune autre ligne supprimée.
 
-- [ ] **Step 2: Test du menu (rouge)**
+- [x] **Step 2: Test du menu (rouge)**
 
 Créer `apps/desktop/src-tauri/src/menu.rs` avec le seul bloc de tests (le module n'existe pas encore : compilation rouge) :
 ```rust
@@ -1147,7 +1149,7 @@ Déclarer le module dans `main.rs`, sous les `use` : `mod menu;`.
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml menu` (pré-requis locaux : `bun run --cwd packages/ui build`, `bun apps/desktop/scripts/build-sidecar.ts`, `bun apps/desktop/scripts/build-toolchain.ts`, une seule fois)
 Expected: FAIL, `cannot find value MENU`.
 
-- [ ] **Step 3: Le menu en données, puis sa construction sur macOS**
+- [x] **Step 3: Le menu en données, puis sa construction sur macOS**
 
 `apps/desktop/src-tauri/src/menu.rs`, au-dessus des tests :
 ```rust
@@ -1345,7 +1347,7 @@ Aucun `Predefined::CloseWindow` : l'énumération ne le permet pas, c'est ce qui
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml menu`
 Expected: PASS, 3 tests.
 
-- [ ] **Step 4: Capacité, plugins, fenêtre (test rouge puis vert)**
+- [x] **Step 4: Capacité, plugins, fenêtre (test rouge puis vert)**
 
 `apps/desktop/src-tauri/src/main.rs`, remplacer le test `grants_the_updater_to_the_daemon_origin_only` par :
 ```rust
@@ -1435,14 +1437,14 @@ Le plugin restaure aussi l'état au `on_window_ready` et l'enregistre à la ferm
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
 Expected: PASS, 9 tests (6 dans `main.rs`, 3 dans `menu.rs`), aucun avertissement `dead_code`.
 
-- [ ] **Step 5: Vérification à la main (macOS) et smoke**
+- [x] **Step 5: Vérification à la main (macOS) et smoke**
 
 Run: `bun run --cwd apps/desktop build:debug && KIBO_SMOKE=1 KIBO_HOME=$(mktemp -d) apps/desktop/src-tauri/target/debug/kibo; echo "exit=$?"`
 Expected: `exit=0`, aucun `kibo-daemon` restant (`pgrep -f kibo-daemon` vide).
 
 Puis sans `KIBO_SMOKE` : la barre de menu affiche Kibo / Édition / Fenêtre ; `⌘W` ferme l'onglet Kibo actif (pas la fenêtre), `⌘⇧W` ferme la fenêtre ; la fenêtre refuse de descendre sous 960 × 600 ; après redimensionnement, déplacement et relance, elle revient à la même place. Noter le résultat dans le rapport de la tâche.
 
-- [ ] **Step 6: Commits**
+- [x] **Step 6: Commits**
 
 ```bash
 git add apps/desktop/src-tauri/Cargo.toml apps/desktop/src-tauri/Cargo.lock
@@ -1465,7 +1467,7 @@ Vague 0. Spec §12.5 (logo) et spec générale §8 (système visuel). Une **seul
 - Produces: `kiboMarkSvg(mode: "dark" | "light" | "auto", size: number): string` ; `KIBO_MARK` (géométrie : tuile et cinq cartes, unités sur 100) ; `KiboLogo` inchangé en props (`className`, `decorative`).
 - Consumes: rien de nouveau.
 
-- [ ] **Step 1: Test de la géométrie (rouge)**
+- [x] **Step 1: Test de la géométrie (rouge)**
 
 `packages/ui/src/shell/kibo-mark.test.ts` :
 ```ts
@@ -1522,7 +1524,7 @@ test("the geometry has one tile, four ink cards and one brand card", () => {
 Run: `bun test packages/ui/src/shell/kibo-mark.test.ts`
 Expected: FAIL (module introuvable).
 
-- [ ] **Step 2: La géométrie et le générateur SVG**
+- [x] **Step 2: La géométrie et le générateur SVG**
 
 `packages/ui/src/shell/kibo-mark.ts` :
 ```ts
@@ -1582,7 +1584,7 @@ Attention à la sortie « mot pour mot » : en mode `dark` / `light`, `cls()` re
 Run: `bun test packages/ui/src/shell/kibo-mark.test.ts`
 Expected: PASS, 5 tests.
 
-- [ ] **Step 3: `KiboLogo` sur la même géométrie (test rouge puis vert)**
+- [x] **Step 3: `KiboLogo` sur la même géométrie (test rouge puis vert)**
 
 Créer `packages/ui/src/shell/kibo-logo.test.tsx` :
 ```tsx
@@ -1657,7 +1659,7 @@ export function KiboLogo({ className, decorative = false }: { className?: string
 Run: `bun test packages/ui/src/shell/kibo-logo.test.tsx packages/ui/src/shell/pairing-screen.test.tsx`
 Expected: PASS (les 6 tests d'appairage inchangés).
 
-- [ ] **Step 4: Générateur des fichiers et test de non-divergence (rouge puis vert)**
+- [x] **Step 4: Générateur des fichiers et test de non-divergence (rouge puis vert)**
 
 `packages/ui/scripts/tsconfig.json` : ajouter `"references": [{ "path": ".." }]` (le script importe `../src/shell/kibo-mark`, hors de son `rootDir` : la référence de projet fait résoudre l'import vers les déclarations de `packages/ui`, et `bun run typecheck` construit `packages/ui` avant `packages/ui/scripts`).
 
@@ -1714,7 +1716,7 @@ if (import.meta.main) {
 Run: `mkdir -p packages/ui/public && bun packages/ui/scripts/app-icon.ts && bun test packages/ui/scripts/app-icon.test.ts`
 Expected: deux lignes `written …`, puis PASS, 2 tests. `git status --short` montre `apps/desktop/app-icon.svg` modifié et `packages/ui/public/favicon.svg` nouveau.
 
-- [ ] **Step 5: Favicon dans la page et icônes de la coque**
+- [x] **Step 5: Favicon dans la page et icônes de la coque**
 
 `packages/ui/index.html`, dans `<head>` après `<meta name="viewport" …>` :
 ```html
@@ -1729,7 +1731,7 @@ Expected: exactement six fichiers modifiés (`32x32.png`, `128x128.png`, `128x12
 
 Vérification visuelle : ouvrir `apps/desktop/src-tauri/icons/128x128@2x.png` (tuile blanche à bord gris, quatre cartes noires dont deux à 45 %, une carte orange) et `packages/ui/public/favicon.svg` dans un navigateur en thème sombre puis clair.
 
-- [ ] **Step 6: Gate et commits**
+- [x] **Step 6: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui/src/shell packages/ui/scripts && bun run budget`
 Expected: PASS ; budget inchangé à ± 0,2 kB (la géométrie remplace quatre rectangles par six : `kibo-mark.ts` pèse moins de 1 kB gzip et reste dans l'entrée, comme `PairingScreen`).
