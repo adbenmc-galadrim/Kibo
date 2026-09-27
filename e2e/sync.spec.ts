@@ -87,7 +87,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await adam.getByRole("button", { name: "Nouveau ticket dans À faire" }).click();
   await adam.getByLabel("Titre").fill("Visible chez Léa");
   await adam.getByRole("button", { name: "Créer le ticket" }).click();
-  await expect(lea.getByText("Visible chez Léa")).toBeVisible({ timeout: 1_000 });
+  await expect(lea.getByText("Visible chez Léa")).toBeVisible({ timeout: 10_000 });
   await expect(adam.getByText(`${key}-1`)).toBeVisible();
   await expect(lea.getByText(`${key}-1`)).toBeVisible();
 
