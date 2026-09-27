@@ -73,3 +73,8 @@ export const OpenViewDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const RenamePageDialog = lazyPanel(
+  () => import("../dialogs/RenamePageDialog").then((m) => m.RenamePageDialog),
+  fr.lazy,
+  hidden,
+);

@@ -1,16 +1,22 @@
-import type { AgentsState, FileRef, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
+import type { AgentsState, FileRef, Page, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+import { errorMessage } from "../lib/error-message";
 import { projectDomainsOf } from "../lib/project-domains";
 import {
   AssignDialog,
+  ConfirmDialog,
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
   ProfileSheet,
+  RenamePageDialog,
   StarterDialog,
   TicketSheet,
 } from "./lazy-dialogs";
 import { FilePreviewSheet, JoinProjectDialog, ShareProjectDialog } from "./lazy-screens";
+import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
 export type SheetTicket = { projectId: string; ticketId: string };
@@ -27,6 +33,8 @@ export type DialogsState = {
   preview: FileRef | null;
   share: string | null;
   join: boolean;
+  renamePage: Page | null;
+  deletePage: Page | null;
 };
 
 export const NO_DIALOG: DialogsState = {
@@ -41,6 +49,8 @@ export const NO_DIALOG: DialogsState = {
   preview: null,
   share: null,
   join: false,
+  renamePage: null,
+  deletePage: null,
 };
 
 type Props = {
@@ -75,6 +85,8 @@ export function ShellDialogs({
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
   const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
+  const doomed =
+    project && state.deletePage ? descendantIds(project.pages, state.deletePage.id) : new Set<string>();
   return (
     <>
       {newProjectOpened && (
@@ -93,6 +105,35 @@ export function ShellDialogs({
           open
           onOpenChange={(o) => !o && set({ newPageParent: undefined })}
           onSuggest={() => set({ newPageParent: undefined, suggestFor: project.meta.id })}
+        />
+      )}
+      {project && state.renamePage && (
+        <RenamePageDialog
+          projectId={project.meta.id}
+          page={state.renamePage}
+          onClose={() => set({ renamePage: null })}
+        />
+      )}
+      {project && state.deletePage && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && set({ deletePage: null })}
+          title={fr.nav.deletePageTitle(state.deletePage.title)}
+          description={fr.nav.deletePageHelp(
+            doomed.size,
+            project.instances.filter((i) => i.pageId === state.deletePage?.id || doomed.has(i.pageId)).length,
+          )}
+          confirmLabel={fr.common.delete}
+          cancelLabel={fr.common.cancel}
+          onConfirm={async () => {
+            if (!state.deletePage) return;
+            await client.rpc({
+              method: "command",
+              projectId: project.meta.id,
+              command: { method: "deletePage", pageId: state.deletePage.id },
+            });
+          }}
+          describeError={errorMessage}
         />
       )}
       {state.suggestFor && (
