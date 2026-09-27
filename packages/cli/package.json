@@ -12,6 +12,7 @@
   "dependencies": {
     "@kibo/devkit": "workspace:*",
     "@kibo/schema": "workspace:*",
+    "@kibo/trust": "workspace:*",
     "zod": "3.25.76"
   },
   "devDependencies": {

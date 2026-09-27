@@ -161,6 +161,7 @@
       "dependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
+        "@kibo/trust": "workspace:*",
         "zod": "3.25.76",
       },
       "devDependencies": {
@@ -252,6 +253,9 @@
     "packages/sync-server": {
       "name": "@kibo/sync-server",
       "version": "0.0.0",
+      "bin": {
+        "kibo-sync": "./src/cli.ts",
+      },
       "dependencies": {
         "@kibo/core": "workspace:*",
         "@kibo/schema": "workspace:*",
