@@ -47,5 +47,5 @@ test("a malformed key has no fingerprint", async () => {
 });
 
 test("a short key print keeps the head and the tail", () => {
-  expect(shortKeyPrint("7b2e".padEnd(60, "0") + "c41a")).toBe("ed25519:7b2e…c41a");
+  expect(shortKeyPrint(`${"7b2e".padEnd(60, "0")}c41a`)).toBe("ed25519:7b2e…c41a");
 });
