@@ -138,6 +138,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     db: store.db,
     docs: service.docs,
     components,
+    secrets: integrations.secrets,
     notify: opts.notify ?? (() => {}),
     allowLoopbackHttp: opts.marketAllowLoopback ?? false,
   });

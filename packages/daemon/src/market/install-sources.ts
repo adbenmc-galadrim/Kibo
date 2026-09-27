@@ -14,7 +14,7 @@ function targetIn(dir: string, path: string): string {
   return target;
 }
 
-async function writeSources(dir: string, files: SourceFile[]): Promise<void> {
+export async function writeSources(dir: string, files: SourceFile[]): Promise<void> {
   for (const f of files) {
     const target = targetIn(dir, f.path);
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });

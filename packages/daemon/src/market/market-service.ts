@@ -234,6 +234,11 @@ export class MarketService {
     return null;
   }
 
+  hasVersion(sourceId: string, id: string, version: string): boolean {
+    const entry = this.indexes.get(sourceId)?.packages.find((p) => p.id === id);
+    return entry?.versions.some((v) => v.version === version) ?? false;
+  }
+
   sourceUrl(sourceId: string): string {
     return this.source(sourceId).row.url;
   }

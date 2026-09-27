@@ -1,8 +1,13 @@
 import { type RpcHandler, type RpcOutcome, requireLocal } from "../rpc-extensions";
 import { type InstallDeps, installFromMarket } from "./install";
 import type { MarketService } from "./market-service";
+import { exportKpkg, type PublishDeps, publishToMarket } from "./publish";
 
-export function createMarketRpc(market: MarketService, install: InstallDeps): RpcHandler {
+export function createMarketRpc(
+  market: MarketService,
+  install: InstallDeps,
+  publish: PublishDeps,
+): RpcHandler {
   const done = (result: unknown): RpcOutcome => ({ handled: true, result });
   return async (req, ctx) => {
     switch (req.method) {
@@ -33,6 +38,21 @@ export function createMarketRpc(market: MarketService, install: InstallDeps): Rp
         requireLocal(ctx);
         return done(
           await installFromMarket(install, { sourceId: req.sourceId, id: req.id, version: req.version }),
+        );
+      case "publishToMarket":
+        requireLocal(ctx);
+        return done(
+          await publishToMarket(publish, {
+            id: req.id,
+            version: req.version,
+            sourceId: req.sourceId,
+            publisherName: req.publisherName,
+          }),
+        );
+      case "exportKpkg":
+        requireLocal(ctx);
+        return done(
+          await exportKpkg(publish, { id: req.id, version: req.version, publisherName: req.publisherName }),
         );
       case "findMarketSource":
         return done(market.findSourceFor({ id: req.id, version: req.version, hash: req.hash }));

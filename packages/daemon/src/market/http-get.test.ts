@@ -135,4 +135,27 @@ describe("createHttpGet", () => {
     expect(log).toHaveBeenCalledTimes(4);
     expect(log.mock.calls.map(([message]) => message)).toContain(`market: GET ${base}/nope failed`);
   });
+
+  test("asks caFor which certificate authority trusts each host", async () => {
+    const seen: { url: string; ca: unknown }[] = [];
+    const recording = async (
+      input: string | URL | Request,
+      init?: RequestInit & { tls?: { ca?: unknown } },
+    ) => {
+      seen.push({ url: String(input), ca: init?.tls?.ca });
+      return new Response("ok");
+    };
+    const withCa = createHttpGet({
+      allowLoopbackHttp: false,
+      fetchImpl: Object.assign(recording, { preconnect: fetch.preconnect }),
+      caFor: async (url) => (url.host === "sync.kibo.test" ? "TEAM-CA" : null),
+      log: () => {},
+    });
+    await withCa("https://sync.kibo.test/market/index.json", opts);
+    await withCa("https://market.kibo.test/index.json", opts);
+    expect(seen).toEqual([
+      { url: "https://sync.kibo.test/market/index.json", ca: "TEAM-CA" },
+      { url: "https://market.kibo.test/index.json", ca: undefined },
+    ]);
+  });
 });

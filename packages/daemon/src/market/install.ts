@@ -11,7 +11,7 @@ import type { ComponentStore } from "../components/store";
 import { validationFailures, withPrivateSources } from "./install-sources";
 import type { FetchedPackage, MarketService, PackageRef, RegistryPort } from "./market-service";
 
-export { purgeInstallDirs } from "./install-sources";
+export { purgeInstallDirs, writeSources } from "./install-sources";
 
 export type InstallDeps = {
   market: Pick<

@@ -46,7 +46,7 @@ afterEach(async () => {
   rmSync(home, { recursive: true, force: true });
 });
 
-async function rpc(req: RpcRequest): Promise<unknown> {
+async function call(req: RpcRequest): Promise<{ status: number; body: unknown }> {
   const paired = await fetch(`${daemon.url}/api/pair`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: daemon.url },
@@ -58,8 +58,12 @@ async function rpc(req: RpcRequest): Promise<unknown> {
     headers: { "content-type": "application/json", origin: daemon.url, cookie },
     body: JSON.stringify(req),
   });
-  const body: unknown = await res.json();
-  expect(res.status).toBe(200);
+  return { status: res.status, body: await res.json() };
+}
+
+async function rpc(req: RpcRequest): Promise<unknown> {
+  const { status, body } = await call(req);
+  expect(status).toBe(200);
   return body;
 }
 
@@ -107,4 +111,16 @@ test("the daemon purges leftover install folders when it starts", async () => {
     marketAllowLoopback: true,
   });
   expect(existsSync(leftover)).toBe(false);
+});
+
+test("the daemon routes the publication RPCs to the market handler", async () => {
+  const published = await call({
+    method: "publishToMarket",
+    id: "burndown",
+    version: "0.1.0",
+    sourceId: "equipe",
+  });
+  expect(published.body).toMatchObject({ error: { code: "SYNC_OFFLINE" } });
+  const exported = await call({ method: "exportKpkg", id: "burndown", version: "0.1.0" });
+  expect(exported.body).toMatchObject({ error: { code: "NOT_FOUND" } });
 });

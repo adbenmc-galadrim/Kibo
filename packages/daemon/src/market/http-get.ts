@@ -3,7 +3,13 @@ import { KiboError } from "@kibo/schema";
 export type HttpGet = (url: string, opts: { timeoutMs: number; maxBytes: number }) => Promise<Uint8Array>;
 
 type Log = (message: string, error: unknown) => void;
-type HttpGetOptions = { allowLoopbackHttp: boolean; ca?: string | null; fetchImpl?: typeof fetch; log?: Log };
+type HttpGetOptions = {
+  allowLoopbackHttp: boolean;
+  ca?: string | null;
+  caFor?: (url: URL) => Promise<string | null>;
+  fetchImpl?: typeof fetch;
+  log?: Log;
+};
 type Chunk = { done: boolean; value?: unknown };
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]"]);
@@ -24,7 +30,8 @@ export function createHttpGet(opts: HttpGetOptions): HttpGet {
     allowed(url);
     const signal = AbortSignal.timeout(timeoutMs);
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-      const res = await send(doFetch, url, signal, opts.ca ?? null);
+      const ca = opts.caFor ? await opts.caFor(url) : (opts.ca ?? null);
+      const res = await send(doFetch, url, signal, ca);
       if (res.status >= 300 && res.status < 400) {
         await res.body?.cancel();
         url = redirected(res, url);

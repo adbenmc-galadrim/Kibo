@@ -8,6 +8,8 @@ import { makeTestPackage } from "@kibo/trust/testing";
 import { createPublishLock } from "../components/publish-lock";
 import { fakeBuild, okReport } from "../components/service.test-helper";
 import { createComponentStore } from "../components/store";
+import { createMemorySecretStore } from "../integrations/memory-secret-store";
+import { createRedactor } from "../integrations/redact";
 import { type FakeMarket, startFakeMarket } from "../testing/fake-market";
 import { createMemoryRegistry } from "../testing/memory-registry";
 import { createHttpGet } from "./http-get";
@@ -34,16 +36,35 @@ beforeEach(async () => {
     log: mock(() => {}),
     emit: () => {},
   });
-  rpc = createMarketRpc(market, {
+  const store = createComponentStore({ home, toolchain: DEV_TOOLCHAIN, build: fakeBuild });
+  const lock = createPublishLock();
+  const tmpRoot = join(home, "tmp");
+  rpc = createMarketRpc(
     market,
-    store: createComponentStore({ home, toolchain: DEV_TOOLCHAIN, build: fakeBuild }),
-    registry,
-    validate: okReport,
-    sandbox: { ready: async () => {} },
-    lock: createPublishLock(),
-    tmpRoot: join(home, "tmp"),
-    log: () => {},
-  });
+    {
+      market,
+      store,
+      registry,
+      validate: okReport,
+      sandbox: { ready: async () => {} },
+      lock,
+      tmpRoot,
+      log: () => {},
+    },
+    {
+      store,
+      registry,
+      market,
+      secrets: createMemorySecretStore(createRedactor()),
+      syncConfig: () => null,
+      caPem: async () => null,
+      validate: okReport,
+      lock,
+      tmpRoot,
+      now: () => 1,
+      log: () => {},
+    },
+  );
 });
 afterEach(() => {
   fake.stop();
@@ -62,6 +83,24 @@ test("source changes and unpinPublisher are refused from a remote session", asyn
   await expect(
     rpc({ method: "installFromMarket", sourceId: "equipe", id: "burndown", version: "0.1.0" }, remote),
   ).rejects.toThrow("FORBIDDEN");
+});
+
+test("publishing and exporting a package are refused from a remote session", async () => {
+  await expect(
+    rpc({ method: "publishToMarket", id: "burndown", version: "0.1.0", sourceId: "equipe" }, remote),
+  ).rejects.toThrow("FORBIDDEN");
+  await expect(rpc({ method: "exportKpkg", id: "burndown", version: "0.1.0" }, remote)).rejects.toThrow(
+    "FORBIDDEN",
+  );
+});
+
+test("a local session reaches the publication", async () => {
+  await expect(
+    rpc({ method: "publishToMarket", id: "burndown", version: "0.1.0", sourceId: "equipe" }, local),
+  ).rejects.toThrow("SYNC_OFFLINE");
+  await expect(rpc({ method: "exportKpkg", id: "burndown", version: "0.1.0" }, local)).rejects.toThrow(
+    "NOT_FOUND",
+  );
 });
 
 test("a local session adds a source then lists it", async () => {
