@@ -280,6 +280,7 @@ Toutes les maquettes sont dans Penpot, en **thème sombre et en thème clair**.
 - **Tokens shadcn zinc**, avec les sets `shadcn/dark` et `shadcn/light`, un accent **orange `#F97316`** réservé aux **agents et à la marque** (boutons principaux neutres ; en clair, texte orange en orange-600/700 pour le contraste), des couleurs de statut (backlog, à faire, en cours, en review, terminé, bloqué) et des couleurs d'agent (running, waiting, done, failed). Les **profils d'agent n'ont pas de couleur** : la couleur ne dit que l'état du run. Les **domaines** ont une palette propre, distincte des statuts, en puce carrée (statuts : pastille ronde).
 - **Thème :** celui du système par défaut, avec un choix clair / sombre / système dans les paramètres.
 - **Règle de design :** toute proposition de style est livrée en sombre et en clair.
+- **Logo :** la piste 5 « Kanban » de la page Penpot `05 · Logo` (tuile, trois colonnes de cartes, une carte orange) est la seule marque : icône de l'application, favicon, `KiboLogo` et `WorkspaceMark` en dérivent (spec code et onglets §12.5).
 
 ## 9. Intégrations V1
 
