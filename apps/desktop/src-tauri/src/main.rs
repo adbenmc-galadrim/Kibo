@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::ipc::CapabilityBuilder;
 use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindowBuilder};
@@ -9,6 +9,9 @@ use tauri_plugin_shell::{
     process::{CommandChild, CommandEvent},
     ShellExt,
 };
+use tauri_plugin_window_state::{StateFlags, WindowExt};
+
+mod menu;
 
 struct Daemon(Mutex<Option<CommandChild>>);
 
@@ -30,22 +33,57 @@ fn ipc_origin(url: &Url) -> String {
     url.origin().ascii_serialization()
 }
 
-fn updater_capability(daemon_url: &Url) -> CapabilityBuilder {
-    CapabilityBuilder::new("updater")
+const MIN_WINDOW: (f64, f64) = (960.0, 600.0);
+const WINDOW_STATE: StateFlags = StateFlags::SIZE
+    .union(StateFlags::POSITION)
+    .union(StateFlags::MAXIMIZED);
+
+#[derive(Serialize)]
+struct OpenUrlScope {
+    url: String,
+}
+
+impl OpenUrlScope {
+    fn https() -> Self {
+        Self {
+            url: "https://**".into(),
+        }
+    }
+}
+
+fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
+    CapabilityBuilder::new("daemon")
         .window("main")
         .local(false)
         .remote(ipc_origin(daemon_url))
         .permission("updater:default")
         .permission("process:allow-restart")
         .permission("core:app:allow-version")
+        .permission("core:window:allow-set-title")
+        .permission_scoped(
+            "opener:allow-open-url",
+            vec![OpenUrlScope::https()],
+            Vec::<OpenUrlScope>::new(),
+        )
 }
 
 fn main() {
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(WINDOW_STATE)
+                .build(),
+        );
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .menu(menu::build)
+        .on_menu_event(|app, event| menu::on_event(app, event.id().as_ref()));
+    let app = builder
         .setup(|app| {
             let resource_dir = app.path().resource_dir()?;
             let ui_dir = resource_dir.join("ui");
@@ -96,13 +134,21 @@ fn main() {
                             };
                             let url: Url = url.parse().expect("daemon printed an invalid url");
                             handle
-                                .add_capability(updater_capability(&url))
-                                .expect("cannot grant the updater to the daemon origin");
-                            WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url))
-                                .title("Kibo")
-                                .inner_size(1440.0, 900.0)
-                                .build()
-                                .expect("cannot open the main window");
+                                .add_capability(daemon_capability(&url))
+                                .expect("cannot grant the daemon origin its capability");
+                            let window = WebviewWindowBuilder::new(
+                                &handle,
+                                "main",
+                                WebviewUrl::External(url),
+                            )
+                            .title("Kibo")
+                            .inner_size(1440.0, 900.0)
+                            .min_inner_size(MIN_WINDOW.0, MIN_WINDOW.1)
+                            .build()
+                            .expect("cannot open the main window");
+                            if let Err(e) = window.restore_state(WINDOW_STATE) {
+                                eprintln!("[kibo] window state not restored: {e}");
+                            }
                             if std::env::var("KIBO_SMOKE").is_ok() {
                                 handle.exit(0);
                             }
@@ -157,8 +203,19 @@ mod tests {
     }
 
     #[test]
-    fn grants_the_updater_to_the_daemon_origin_only() {
+    fn grants_the_daemon_origin_only() {
         let url: Url = "http://127.0.0.1:4317/?token=abc#/settings".parse().unwrap();
         assert_eq!(ipc_origin(&url), "http://127.0.0.1:4317");
+    }
+
+    #[test]
+    fn opener_scope_is_https_only() {
+        let scope = serde_json::to_value(OpenUrlScope::https()).unwrap();
+        assert_eq!(scope, serde_json::json!({ "url": "https://**" }));
+    }
+
+    #[test]
+    fn window_is_never_smaller_than_the_layout() {
+        assert_eq!(MIN_WINDOW, (960.0, 600.0));
     }
 }
