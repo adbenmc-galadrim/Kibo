@@ -20,7 +20,20 @@ function parseStored(raw: string): PublisherKeys {
   return parsed.data;
 }
 
-export async function loadPublisherKeys(secrets: SecretStore, name?: string): Promise<PublisherKeys> {
+const pending = new WeakMap<SecretStore, Promise<unknown>>();
+
+function serialized<T>(secrets: SecretStore, task: () => Promise<T>): Promise<T> {
+  const run = (pending.get(secrets) ?? Promise.resolve()).then(task);
+  const settled = run.catch(() => undefined);
+  pending.set(secrets, settled);
+  return run;
+}
+
+export function loadPublisherKeys(secrets: SecretStore, name?: string): Promise<PublisherKeys> {
+  return serialized(secrets, () => loadOrCreate(secrets, name));
+}
+
+async function loadOrCreate(secrets: SecretStore, name?: string): Promise<PublisherKeys> {
   const raw = await secrets.get(SECRET_MARKET_PUBLISHER);
   if (raw !== null) return parseStored(raw);
   const parsed = PublisherName.safeParse(name ?? "");
