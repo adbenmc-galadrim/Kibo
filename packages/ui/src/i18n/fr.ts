@@ -150,7 +150,6 @@ export const fr = {
     assignAgent: "Assigner à un agent",
     domainFailed: "Impossible de changer le domaine.",
     prState: { open: "ouverte", draft: "brouillon", merged: "fusionnée", closed: "fermée" },
-    openInTab: "Ouvrir dans un onglet",
   },
   agents: {
     bar: "Agents",
