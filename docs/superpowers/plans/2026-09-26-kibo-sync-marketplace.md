@@ -16125,7 +16125,7 @@ export function restoreLocalAllocation(doc: LoroDoc): { ticketId: string; key: s
   - Domaines : `listDomains(ws): Domain[]` avec `Domain = { id, name, color }` ; les guidelines d'un domaine sont les `Guideline` de `listGuidelines(ws)` dont `owner.scope === "domain"` (voir T7).
   - `Mes tickets` (`packages/ui/src/mine/my-tickets.ts`, `isMine`) et `getSession.user` comparent l'assigné humain au nom d'utilisateur OS : pour un projet partagé, l'assigné devient l'`userId` (T7) ; l'affichage est l'affaire de T29/T30, noté au chef d'équipe.
 
-- [ ] **Step 1: Test de `restoreLocalAllocation`**
+- [x] **Step 1: Test de `restoreLocalAllocation`**
 
 Ajout à `packages/core/src/keys.test.ts` :
 ```ts
@@ -16140,7 +16140,7 @@ test("restoreLocalAllocation keys pending tickets and gives allocation back to t
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec puis implémenter**
+- [x] **Step 2: Vérifier l'échec puis implémenter**
 
 Run: `bun test packages/core/src/keys.test.ts`
 Expected: FAIL « restoreLocalAllocation is not a function ».
@@ -16158,7 +16158,7 @@ export function restoreLocalAllocation(doc: LoroDoc): { ticketId: string; key: s
 Run: `bun test packages/core/src/keys.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Écrire les tests du partage**
+- [x] **Step 3: Écrire les tests du partage**
 
 `packages/daemon/src/collab/share.test.ts` :
 ```ts
@@ -16327,12 +16327,12 @@ Le harnais (T21) gagne `share: ShareDeps` sur chaque `HarnessDaemon`, construit 
 
 Le test des secrets cherche le jeton GitHub en clair et chaque clé privée en base64 comme décodée, dans le fichier `sync.db` et ses fichiers WAL (qui contiennent snapshots et mises à jour).
 
-- [ ] **Step 4: Vérifier l'échec**
+- [x] **Step 4: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/share.test.ts`
 Expected: FAIL « Cannot find module './share' ».
 
-- [ ] **Step 5: Implémenter `share.ts`**
+- [x] **Step 5: Implémenter `share.ts`**
 
 `packages/daemon/src/collab/share.ts` :
 ```ts
@@ -16542,7 +16542,7 @@ const need = (share: ShareDeps | undefined): ShareDeps => {
 };
 ```
 
-- [ ] **Step 6: Dossier local, identité locale et câblage**
+- [x] **Step 6: Dossier local, identité locale et câblage**
 
 6a. Test `packages/daemon/src/project-folder.test.ts` :
 ```ts
@@ -16606,7 +16606,7 @@ test("the viewer of a shared project is the account, of a local one the OS user"
 ```
 `ProjectSnapshot.viewer?: string` (`packages/schema/src/rpc.ts`, facultatif) vaut `docs.identity(projectId)`, renseigné par `getProject` ; l'UI l'utilise en T30.
 
-- [ ] **Step 7: Vérifier**
+- [x] **Step 7: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/share.test.ts packages/daemon/src/project-folder.test.ts packages/core/src/keys.test.ts packages/daemon/src/sync packages/daemon/src/integrations`
 Expected: PASS (9 tests de partage, 1 de dossier local, 1 de `core`, sync d'intégrations inchangée).
@@ -16614,7 +16614,7 @@ Expected: PASS (9 tests de partage, 1 de dossier local, 1 de `core`, sync d'int�
 Run: `bun test packages components && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/daemon/src/project-folder.ts packages/daemon/src/project-folder.test.ts packages/daemon/src/docs.ts \
