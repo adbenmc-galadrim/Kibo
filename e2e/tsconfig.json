@@ -11,6 +11,9 @@
       "path": "../packages/daemon"
     },
     {
+      "path": "../packages/sync-server"
+    },
+    {
       "path": "../packages/trust"
     }
   ]

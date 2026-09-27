@@ -1,5 +1,6 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
 import { MARKET_PORTS } from "./market-fixture";
+import { SYNC_PORTS } from "./sync-fixture";
 
 const daemons = [
   { name: "dark", scheme: "dark", port: 4390, spec: /mvp\.spec\.ts/, scenario: "question" },
@@ -50,6 +51,11 @@ const daemons = [
 
 const marketThemes = ["dark", "light"] as const;
 
+const syncProjects = [
+  { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
+  { name: "sync-light", scheme: "light", port: SYNC_PORTS.light.a, after: ["sync-dark"] },
+] as const;
+
 type WebServer = Exclude<NonNullable<PlaywrightTestConfig["webServer"]>, unknown[]>;
 
 export default defineConfig({
@@ -75,6 +81,14 @@ export default defineConfig({
         },
       }),
     ),
+    ...syncProjects.map(
+      (p): Project => ({
+        name: p.name,
+        testMatch: /sync\.spec\.ts/,
+        dependencies: [...p.after],
+        use: { browserName: "chromium", colorScheme: p.scheme, baseURL: `http://127.0.0.1:${p.port}` },
+      }),
+    ),
   ],
   webServer: [
     ...daemons.map(
@@ -96,6 +110,13 @@ export default defineConfig({
     {
       command: "bun serve-market.ts",
       url: `http://127.0.0.1:${MARKET_PORTS.control}/`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
+    },
+    {
+      command: "bun serve-sync.ts",
+      url: `http://127.0.0.1:${SYNC_PORTS.control}/`,
       reuseExistingServer: false,
       timeout: 120_000,
       gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
