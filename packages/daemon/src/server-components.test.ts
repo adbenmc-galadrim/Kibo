@@ -149,7 +149,7 @@ describe("ui content security policy", () => {
     const { base } = await startPaired({ assets, sandboxOrigin: () => SANDBOX });
     expect((await fetch(`${base}/`)).headers.get("content-security-policy")).toBe(
       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-        `font-src 'self' data:; connect-src 'self'; frame-src ${SANDBOX}; frame-ancestors 'none'; ` +
+        `font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; frame-src ${SANDBOX}; frame-ancestors 'none'; ` +
         "base-uri 'none'; form-action 'self'",
     );
   });
