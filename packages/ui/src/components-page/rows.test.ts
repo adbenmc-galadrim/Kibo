@@ -27,6 +27,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           manifest: null,
           usages: [usage("p1", "a"), usage("p1", "b"), usage("p2", "c")],
           revoked: null,
+          backend: false,
         },
       ],
     },
@@ -45,6 +46,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           manifest: null,
           usages: [usage("p1", "a")],
           revoked: null,
+          backend: false,
         },
         {
           version: "0.4.0",
@@ -56,6 +58,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           manifest: null,
           usages: [],
           revoked: null,
+          backend: false,
         },
       ],
     },
@@ -84,6 +87,7 @@ test("a marketplace version gets its status by id and version, and carries its r
     manifest: null,
     usages: [],
     revoked,
+    backend: false,
   });
   const summaries: ComponentSummary[] = [
     {

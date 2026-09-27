@@ -1,4 +1,12 @@
-import { type Instance, isBuiltinId, type Surface, sandboxPath, splitRef } from "@kibo/schema";
+import {
+  type ComponentVersionSummary,
+  compareSemver,
+  type Instance,
+  isBuiltinId,
+  type Surface,
+  sandboxPath,
+  splitRef,
+} from "@kibo/schema";
 import { createSdk, lazyPanel, projectBackend, SdkProvider } from "@kibo/sdk";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
@@ -10,6 +18,7 @@ import { SandboxFrame } from "../shell/SandboxFrame";
 import { loadTrusted, type TrustedModule } from "../shell/trusted-loader";
 import { useComponents } from "../state/use-components";
 import { useRuntimeInfo } from "../state/use-runtime-info";
+import { BackendGate } from "./BackendStopped";
 import { PendingTrust } from "./PendingTrust";
 
 const MissingComponent = lazyPanel(
@@ -104,11 +113,35 @@ function Trusted({ id, version, hash, ...props }: TrustedProps) {
   return mod ? <Mounted {...props} mod={mod} mode="gated" /> : null;
 }
 
+function Sandboxed({ id, version, hash, title, ...props }: TrustedProps & { title: string }) {
+  const runtime = useRuntimeInfo();
+  const { instance } = props;
+  if (runtime.error) return <LoadFailed />;
+  if (!runtime.info) return null;
+  return (
+    <SandboxFrame
+      key={`${instance.component}:${JSON.stringify(instance.config)}`}
+      projectId={props.projectId}
+      instanceId={instance.id}
+      config={instance.config}
+      viewer={props.viewer}
+      surface={props.surface}
+      title={title}
+      src={`${runtime.info.sandboxOrigin}${sandboxPath(id, version, hash, "index.html")}`}
+    />
+  );
+}
+
+const otherVersions = (versions: ComponentVersionSummary[], current: string): string[] =>
+  versions
+    .filter((x) => x.version !== current && x.revoked === null)
+    .map((x) => x.version)
+    .sort((a, b) => compareSemver(b, a));
+
 function ThirdParty(props: Props) {
   const { instance, surface } = props;
   const { id, version } = splitRef(instance.component);
   const { components, error } = useComponents();
-  const runtime = useRuntimeInfo();
   if (error) return <LoadFailed />;
   if (!components) return null;
   const summary = components.find((c) => c.id === id && !c.builtin);
@@ -131,25 +164,16 @@ function ThirdParty(props: Props) {
         summary={v}
         tampered={v.tampered}
         compact={surface === "widget"}
+        projectId={props.projectId}
+        instanceId={instance.id}
+        others={otherVersions(summary.versions, version)}
       />
     );
   }
   if (v.trust === "trusted") return <Trusted {...props} id={id} version={version} hash={v.hash} />;
   if (isRemoteView()) return <RemoteSandboxed />;
-  if (runtime.error) return <LoadFailed />;
-  if (!runtime.info) return null;
-  return (
-    <SandboxFrame
-      key={`${instance.component}:${JSON.stringify(instance.config)}`}
-      projectId={props.projectId}
-      instanceId={instance.id}
-      config={instance.config}
-      viewer={props.viewer}
-      surface={surface}
-      title={summary.title}
-      src={`${runtime.info.sandboxOrigin}${sandboxPath(id, version, v.hash, "index.html")}`}
-    />
-  );
+  const frame = <Sandboxed {...props} id={id} version={version} hash={v.hash} title={summary.title} />;
+  return v.backend ? <BackendGate compact={surface === "widget"}>{frame}</BackendGate> : frame;
 }
 
 export function InstanceFrame(props: Props) {

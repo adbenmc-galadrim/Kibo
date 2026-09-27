@@ -214,6 +214,7 @@ const version = (v: Partial<ComponentVersionSummary> & { version: string }): Com
   manifest: burndown(v.version),
   usages: [],
   revoked: null,
+  backend: false,
   ...v,
 });
 

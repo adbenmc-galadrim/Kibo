@@ -45,6 +45,7 @@ const version = (over: Partial<ComponentVersionSummary> = {}): ComponentVersionS
   manifest: null,
   usages: [usage(1), usage(2)],
   revoked: null,
+  backend: false,
   ...over,
 });
 const burndown: ComponentSummary = {

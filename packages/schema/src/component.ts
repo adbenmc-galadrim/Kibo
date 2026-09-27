@@ -144,6 +144,7 @@ export type ComponentVersionSummary = {
   manifest: ComponentManifest | null;
   usages: ComponentUsage[];
   revoked: { reason: string; at: number } | null;
+  backend: boolean;
 };
 export type ComponentSummary = {
   id: string;

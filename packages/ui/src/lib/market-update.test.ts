@@ -34,6 +34,7 @@ const current: ComponentVersionSummary = {
   },
   usages: [usage(1), usage(2)],
   revoked: null,
+  backend: false,
 };
 const detail = {
   version: "0.2.0",

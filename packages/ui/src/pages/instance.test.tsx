@@ -89,6 +89,7 @@ const version = (v: string, patch: Partial<Version> = {}): Version => ({
   },
   usages: [],
   revoked: null,
+  backend: false,
   ...patch,
 });
 const prQueue = (...versions: Version[]): ComponentSummary[] => [
@@ -210,6 +211,18 @@ test("a built-in is rendered from the UI bundle, an unknown ref says so", async 
   unmount();
   wrap(<InstanceFrame projectId="p1" instance={inst("ghost@9.9.9")} viewer="adam" surface="widget" />);
   expect(await screen.findByText(/ghost@9\.9\.9/)).toBeTruthy();
+});
+
+test("S7: a revoked instance offers the other installed versions that are not revoked", async () => {
+  const gone = { reason: "faille", at: 1 };
+  components = prQueue(
+    version("0.3.0", { active: false, trust: null, revoked: gone }),
+    version("0.2.0"),
+    version("0.4.0", { revoked: gone }),
+  );
+  wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Choisir une autre version" }));
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Passer en 0.2.0"]);
 });
 
 test("S7: a third-party version absent from the registry is reported as missing", async () => {
