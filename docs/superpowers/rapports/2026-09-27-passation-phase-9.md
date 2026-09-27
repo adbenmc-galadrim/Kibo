@@ -15,11 +15,11 @@ Arrêt au seuil d'usage hebdomadaire (25 %). Ce document permet de reprendre san
 - À vérifier : run vert (macOS aarch64, Linux x86_64, publish), puis
   `curl -sL https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json` contient `darwin-aarch64` et `linux-x86_64`.
 - Run 36319589374 : macOS vert, Linux encore rouge, publish sauté. Cause réelle (log verbeux) : `ERROR: Could not find dependency: libc.musl-x86_64.so.1` ; linuxdeploy analyse un binaire embarqué lié à musl (probablement une ressource produite par `build-toolchain.ts` ou le sidecar). `NO_STRIP` n'y change rien.
-- Pistes : cibler la variante glibc de ce binaire pour Linux x86_64 dans `build-toolchain.ts`/`build-sidecar.ts`, ou bundler Linux en `deb,rpm` seulement (`--bundles deb,rpm`, l'updater Linux ne marche alors plus que via AppImage). Puis relancer `gh workflow run release.yml --ref main`.
+- Correctif `7dab5ee` : `build-toolchain.ts` n'embarque plus les variantes `-musl` des binaires natifs (`@tailwindcss/oxide`, `lightningcss`) que Bun installe à côté des variantes glibc. Release relancée : run 36337886622, résultat non vérifié. S'il est vert, contrôler `latest.json` ; sinon relire `gh run view 36337886622 --log-failed`.
 
 ## Phase 9
 
-- Branche d'intégration `phase/9` (depuis `main`), aucune tâche intégrée.
+- Branche d'intégration `phase/9` (depuis `main`), aucune tâche intégrée. `feat/p9-plan` est rebasée sur `main` (`615e53b`) et la gate locale est verte : il reste à pousser la branche rebasée et à avancer `phase/9` dessus en fast-forward.
 - Plan détaillé de la vague 1 (lots 1 et 4) commité par `kibo-lead` sur `feat/p9-plan` (`7a5368b`, poussé, worktree `.claude/worktrees/p9-plan`) : `docs/superpowers/plans/2026-09-27-kibo-phase-9-vague-1.md` et décisions de spec (`kibo-code-onglets` §12, `kibo-mises-a-jour` §3.7/§4, `kibo-design` §8).
 - T1 (maquettes), T2 (socle SDK, chargement initial ≤ 224 kB) et T3 (démon : `discardChanges`, `stageAll`, `unstageAll`) sont rédigées en entier ; T4 à T16 cadrées mais marquées « À compléter » : `kibo-lead` doit écrire leurs étapes TDD avant de les confier.
 - Questions pour Adam : réserver toutes les mutations git de `/api/code` aux sessions locales ? renommage automatique des notes `sans-titre` à la première sauvegarde ? glisser-déposer limité au reparentage ?
