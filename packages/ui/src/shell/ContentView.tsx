@@ -21,6 +21,7 @@ type Props = {
   onOpen(target: TabTarget): void;
   onOpenFile(ref: FileRef): void;
   onAssign(ticketId: string): void;
+  onOpenTicket(projectId: string, ticketId: string): void;
 };
 
 const missing = (label: string) => <p className="p-8 text-sm text-muted-foreground">{label}</p>;
@@ -81,8 +82,10 @@ export function ContentView(p: Props) {
           project={p.project}
           ticketId={t.ticketId}
           domains={p.domains}
+          viewer={p.project.viewer ?? p.viewer}
           onAssign={p.onAssign}
           onOpenFile={p.onOpenFile}
+          onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}
         />
       );
   }

@@ -261,10 +261,13 @@ test("the ticket sheet offers a domain and the assign action", async () => {
       project={kiboProject()}
       ticketId="t15"
       domains={domainsFixture}
+      viewer="adam"
       onClose={() => {}}
       onAssign={onAssign}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
+      onOpenTicket={() => {}}
+      onDeleted={() => {}}
     />,
   );
   expect(screen.getByRole("combobox", { name: "Domaine" }).textContent).toContain("UI");

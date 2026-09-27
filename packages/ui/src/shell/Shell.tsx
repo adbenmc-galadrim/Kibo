@@ -255,6 +255,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onOpen={(t) => go(t)}
                     onOpenFile={(ref) => set({ preview: ref })}
                     onAssign={(ticketId) => set({ assign: { projectId: null, ticketId } })}
+                    onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                   />
                 )}
               </div>

@@ -2,38 +2,50 @@ import type { Domain, FileRef, ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
-import { Bot, Maximize2 } from "lucide-react";
+import { Bot } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { frPresence } from "../i18n/fr-presence";
+import { canEdit } from "../state/access";
 import { usePresencePeers } from "../state/use-presence";
+import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
+import { TicketTitle } from "../ticket/TicketTitle";
+import { useTicketCommand } from "../ticket/use-ticket-command";
 import { KeyRequired } from "./KeyRequired";
 import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
-import { TicketDetail } from "./TicketDetail";
+import { descendantCount, TicketDetail } from "./TicketDetail";
 
 type Props = {
   project: ProjectSnapshot;
   ticketId: string;
   domains: Domain[];
+  viewer: string;
   onClose(): void;
   onAssign(): void;
   onOpenInTab(): void;
   onOpenFile(ref: FileRef): void;
+  onOpenTicket(ticketId: string): void;
+  onDeleted(): void;
 };
 
 export function TicketSheet({
   project,
   ticketId,
   domains,
+  viewer,
   onClose,
   onAssign,
   onOpenInTab,
   onOpenFile,
+  onOpenTicket,
+  onDeleted,
 }: Props) {
   const peers = usePresencePeers(project.sync.shared ? project.meta.id : null).filter(
     (p) => !p.self && p.ticketId === ticketId,
   );
+  const command = useTicketCommand(project.meta.id);
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return null;
+  const editable = canEdit(project);
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-[480px] sm:max-w-[480px]">
@@ -48,8 +60,26 @@ export function TicketSheet({
               <TicketKeyLabel ticket={t} />
             </SheetDescription>
             <GithubRefs ticket={t} />
+            <span className="mr-8 ml-auto flex items-center gap-2">
+              <TicketActionsMenu
+                projectId={project.meta.id}
+                ticket={t}
+                childCount={descendantCount(project.tickets, t.id)}
+                editable={editable}
+                onOpenInTab={onOpenInTab}
+                onDeleted={onDeleted}
+              />
+            </span>
           </div>
-          <SheetTitle className="text-lg">{t.title}</SheetTitle>
+          <SheetTitle className="text-lg">
+            <TicketTitle
+              title={t.title}
+              editable={editable}
+              error={command.error}
+              onSave={(title) => command.run({ method: "updateTicket", ticketId: t.id, title })}
+              onCancel={command.clearError}
+            />
+          </SheetTitle>
           <GithubLinkNote ticket={t} />
           <div className="mt-2 flex flex-wrap gap-2">
             <KeyRequired ticket={t}>
@@ -63,13 +93,16 @@ export function TicketSheet({
                 {fr.ticket.assignAgent}
               </Button>
             </KeyRequired>
-            <Button variant="outline" size="sm" onClick={onOpenInTab}>
-              <Maximize2 />
-              {fr.ticket.openInTab}
-            </Button>
           </div>
         </SheetHeader>
-        <TicketDetail project={project} ticket={t} domains={domains} onOpenFile={onOpenFile} />
+        <TicketDetail
+          project={project}
+          ticket={t}
+          domains={domains}
+          viewer={viewer}
+          onOpenFile={onOpenFile}
+          onOpenTicket={onOpenTicket}
+        />
       </SheetContent>
     </Sheet>
   );

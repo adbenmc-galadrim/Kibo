@@ -148,6 +148,7 @@ export function ShellDialogs({
           project={sheetProject}
           ticketId={sheet.ticketId}
           domains={projectDomainsOf(sheetProject, config) ?? []}
+          viewer={viewer}
           onClose={() => set({ sheet: null })}
           onAssign={() =>
             set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
@@ -157,6 +158,8 @@ export function ShellDialogs({
             p.onOpenTarget({ kind: "ticket", projectId: sheet.projectId, ticketId: sheet.ticketId }, true);
           }}
           onOpenFile={openFile}
+          onOpenTicket={(ticketId) => set({ sheet: { projectId: sheet.projectId, ticketId } })}
+          onDeleted={() => set({ sheet: null })}
         />
       )}
       {ticketProject && state.newTicket && (
