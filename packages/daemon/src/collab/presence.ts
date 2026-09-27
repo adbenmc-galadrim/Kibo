@@ -12,7 +12,7 @@ import {
 } from "@kibo/schema";
 import { fromBase64, toBase64 } from "@kibo/trust";
 import { EphemeralStore } from "loro-crdt";
-import { BoundedPresenceState, incomingKeys } from "./presence-guard";
+import { BoundedPresenceState, incomingStates } from "./presence-guard";
 
 export type PresenceDeps = {
   send(frame: ClientFrame): void;
@@ -64,18 +64,26 @@ export class PresenceHub {
   receive(projectId: string, bytes: Uint8Array): void {
     if (!this.deps.shared(projectId)) throw new KiboError("NOT_FOUND", `project ${projectId} is not shared`);
     const entry = this.entry(projectId);
-    const keys = incomingKeys(bytes, new Set(entry.store.keys()));
+    const incoming = incomingStates(bytes, new Set(entry.store.keys()));
     try {
       entry.store.apply(bytes);
     } catch (e) {
       throw new KiboError("INVALID_INPUT", `unreadable presence: ${String(e)}`);
     }
     const ownKey = this.deps.identity()?.deviceId;
-    if (ownKey !== undefined && keys.includes(ownKey)) this.restoreOwn(entry, ownKey);
-    const refused = keys.filter(
-      (key) => key !== ownKey && !BoundedPresenceState.safeParse(entry.store.get(key)).success,
-    );
-    for (const key of refused) entry.store.delete(key);
+    const refused: string[] = [];
+    for (const [key, value] of incoming) {
+      if (key === ownKey) continue;
+      const parsed = BoundedPresenceState.safeParse(value);
+      if (parsed.success) entry.store.set(key, parsed.data);
+      else {
+        entry.store.delete(key);
+        refused.push(key);
+      }
+    }
+    if (ownKey !== undefined && (incoming.has(ownKey) || entry.store.get(ownKey) === undefined)) {
+      this.restoreOwn(entry, ownKey);
+    }
     if (refused.length > 0) {
       throw new KiboError("INVALID_INPUT", `presence refused for ${refused.length} device(s)`);
     }
@@ -146,7 +154,7 @@ export class PresenceHub {
 
   private restoreOwn(entry: Entry, ownKey: string): void {
     if (entry.published) entry.store.set(ownKey, entry.published);
-    else entry.store.delete(ownKey);
+    else if (entry.store.get(ownKey) !== undefined) entry.store.delete(ownKey);
   }
 
   private safePublish(projectId: string, entry: Entry): void {
@@ -166,11 +174,16 @@ export class PresenceHub {
   }
 
   private publish(projectId: string, entry: Entry): void {
+    if (!this.deps.shared(projectId)) {
+      this.forget(projectId);
+      return;
+    }
     const me = this.deps.identity();
     if (!me) return;
     const now = Date.now();
+    if (now < entry.publishedAt) entry.publishedAt = now - 1;
     // loro-crdt EphemeralStore drops an update whose timestamp equals the previous one.
-    if (now <= entry.publishedAt) {
+    if (now === entry.publishedAt) {
       this.publishLater(projectId, entry);
       return;
     }
