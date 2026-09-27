@@ -73,3 +73,8 @@ export const OpenViewDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const InstanceSettingsDialog = lazyPanel(
+  () => import("../dialogs/InstanceSettingsDialog").then((m) => m.InstanceSettingsDialog),
+  fr.lazy,
+  hidden,
+);

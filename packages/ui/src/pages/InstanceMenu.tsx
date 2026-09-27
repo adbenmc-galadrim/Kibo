@@ -7,16 +7,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { ArrowUpCircle, Ellipsis, FolderOpen, Sparkles, Trash2 } from "lucide-react";
+import { ArrowUpCircle, Ellipsis, FolderOpen, Settings2, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { modifiable } from "../components-page/rows";
 import { fr } from "../i18n/fr";
+import { configSchemaOf } from "../lib/config-form";
+import { errorMessage } from "../lib/error-message";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { useFlash } from "../lib/use-flash";
 import { findComponent } from "../registry";
-import { ModifyWithAiDialog, NotesDirDialog, TrustDialog } from "../shell/lazy-dialogs";
+import {
+  ConfirmDialog,
+  InstanceSettingsDialog,
+  ModifyWithAiDialog,
+  NotesDirDialog,
+  TrustDialog,
+} from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
 
 type Props = { projectId: string; instance: Instance; title: string };
@@ -45,6 +53,9 @@ export function InstanceMenu({ projectId, instance, title }: Props) {
   const [notesDir, setNotesDir] = useState(false);
   const [pending, setPending] = useState<PendingUpdate | null>(null);
   const [modifying, setModifying] = useState<ModifyTarget | null>(null);
+  const [settings, setSettings] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const schema = configSchemaOf(instance, components);
   const summary = components?.find((c) => c.id === id && !c.builtin);
   const higher = higherVersions(summary, id, version);
   const isNotes = id === "notes";
@@ -62,16 +73,11 @@ export function InstanceMenu({ projectId, instance, title }: Props) {
     }
   };
   const remove = async () => {
-    try {
-      await client.rpc({
-        method: "command",
-        projectId,
-        command: { method: "removeInstance", instanceId: instance.id },
-      });
-    } catch (e) {
-      console.error(e);
-      flash(i.removeFailed, "error");
-    }
+    await client.rpc({
+      method: "command",
+      projectId,
+      command: { method: "removeInstance", instanceId: instance.id },
+    });
   };
   const pick = (v: ComponentSummary["versions"][number]) => {
     const target = !v.active && summary ? trustTargetOf(id, summary.title, v) : null;
@@ -108,20 +114,47 @@ export function InstanceMenu({ projectId, instance, title }: Props) {
               {i.notesDir}
             </DropdownMenuItem>
           )}
+          {schema && (
+            <DropdownMenuItem onSelect={() => setSettings(true)}>
+              <Settings2 aria-hidden />
+              {i.settings}
+            </DropdownMenuItem>
+          )}
           {target && (
             <DropdownMenuItem onSelect={() => setModifying(target)}>
               <Sparkles aria-hidden />
               {fr.ai.modify}
             </DropdownMenuItem>
           )}
-          {(higher.length > 0 || isNotes || target) && <DropdownMenuSeparator />}
-          <DropdownMenuItem variant="destructive" onSelect={() => void remove()}>
+          {(higher.length > 0 || isNotes || target || schema) && <DropdownMenuSeparator />}
+          <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(true)}>
             <Trash2 aria-hidden />
             {i.remove}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       {notesDir && <NotesDirDialog projectId={projectId} open onOpenChange={setNotesDir} />}
+      {settings && schema && (
+        <InstanceSettingsDialog
+          projectId={projectId}
+          instance={instance}
+          title={title}
+          schema={schema}
+          onClose={() => setSettings(false)}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(false)}
+          title={i.removeTitle(title)}
+          description={i.removeHelp}
+          confirmLabel={i.removeConfirm}
+          cancelLabel={fr.common.cancel}
+          onConfirm={remove}
+          describeError={errorMessage}
+        />
+      )}
       {modifying && (
         <ModifyWithAiDialog component={modifying} open onOpenChange={(o) => !o && setModifying(null)} />
       )}

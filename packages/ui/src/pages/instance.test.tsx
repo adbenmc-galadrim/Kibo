@@ -1,7 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { type ComponentSummary, type Instance, KiboError, type RpcRequest } from "@kibo/schema";
 import { type KiboSdk, useSdk } from "@kibo/sdk";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 
@@ -253,7 +253,7 @@ test("D1: update to a higher version, remove from the page", async () => {
     "Mettre à jour vers 0.5.0",
     "Mettre à jour vers 0.4.0",
     "Modifier avec l'IA",
-    "Retirer de la page",
+    "Retirer de la page…",
   ]);
   await user.click(items[0] as HTMLElement);
   expect(calls.at(-1)).toEqual({ method: "updateInstance", projectId: "p1", instanceId: "i1", to: "0.5.0" });
@@ -272,12 +272,17 @@ test("D1: update to a higher version, remove from the page", async () => {
   }
   answer = async () => null;
   await user.click(screen.getByRole("button", { name: "Actions PR en attente" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Retirer de la page" }));
-  expect(calls.at(-1)).toEqual({
-    method: "command",
-    projectId: "p1",
-    command: { method: "removeInstance", instanceId: "i1" },
-  });
+  await user.click(await screen.findByRole("menuitem", { name: "Retirer de la page…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Retirer PR en attente de la page ?" });
+  expect(confirm.textContent).toContain("Le widget disparaît de la page ; les tickets ne sont pas touchés.");
+  await user.click(within(confirm).getByRole("button", { name: "Retirer" }));
+  await waitFor(() =>
+    expect(calls.at(-1)).toEqual({
+      method: "command",
+      projectId: "p1",
+      command: { method: "removeInstance", instanceId: "i1" },
+    }),
+  );
 });
 
 test("D1: an update to an unapproved version asks for trust first", async () => {
@@ -296,8 +301,22 @@ test("D1: Notes offers its folder, built-ins no update", async () => {
   await user.click(await screen.findByRole("button", { name: "Actions Notes" }));
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Dossier des notes…",
-    "Retirer de la page",
+    "Réglages…",
+    "Retirer de la page…",
   ]);
+});
+
+test("a widget with a config schema offers its settings", async () => {
+  wrap(<InstanceMenu projectId="p1" instance={inst("kanban@1.0.0")} title="Kanban" />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions Kanban" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Réglages…",
+    "Retirer de la page…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Réglages…" }));
+  expect(await screen.findByRole("dialog", { name: "Réglages · Kanban" })).toBeTruthy();
+  expect(screen.getByRole("combobox", { name: "Filtre" }).textContent).toBe("Moi + agents");
 });
 
 test("D6: the notes folder dialog shows and saves the folder", async () => {
@@ -346,7 +365,7 @@ test("modify with AI: offered on an ai instance, not on a marketplace one", asyn
   );
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions GH Stats" }));
-  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Retirer de la page"]);
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Retirer de la page…"]);
   await user.keyboard("{Escape}");
   await user.click(screen.getByRole("button", { name: "Actions Burndown" }));
   await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
