@@ -447,6 +447,19 @@ export const fr = {
     failed: "Impossible d'enregistrer.",
     invalidPath: "Chemin invalide : minuscules, chiffres et tirets, terminé par .md.",
     inUse: "Ce domaine est utilisé par des tickets.",
+    rename: (name: string) => `Renommer le domaine ${name}`,
+    renameField: "Nouveau nom",
+    renameHint: "Entrée pour enregistrer · Échap pour annuler",
+    duplicate: "Un domaine porte déjà ce nom.",
+    pickColor: (name: string) => `Couleur du domaine ${name}`,
+    colorOption: (color: string) => `Couleur ${color}`,
+    deleteTitle: (name: string) => `Supprimer le domaine ${name} ?`,
+    deleteHelp: (files: number) =>
+      files === 0
+        ? "Aucun fichier de guidelines n'est concerné. Cette action est irréversible."
+        : `Ses ${files} fichier${files > 1 ? "s" : ""} de guidelines seront supprimés. Cette action est irréversible.`,
+    removeFileTitle: (path: string) => `Supprimer ${path} ?`,
+    removeFileHelp: "Le fichier de guidelines disparaît du workspace. Cette action est irréversible.",
   },
   notify: {
     enable: "Activer les notifications",
