@@ -17,6 +17,13 @@ bun run start
 Développement de l'UI : `bun packages/daemon/src/main.ts --dev` puis `bun run --cwd packages/ui dev` (Vite sur `http://localhost:5173`, appairage avec le jeton de `~/.kibo/token`).
 Tests : `bun test packages components`, `bun run check`, `bun run typecheck`, E2E : `bun run --cwd e2e test`.
 
+## Installer l'application de bureau
+
+Les versions sont publiées sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases) : `.dmg` pour macOS Apple Silicon, `.AppImage`, `.deb` et `.rpm` pour Linux x86_64.
+L'application n'est pas signée par Apple : à la première ouverture, clic droit › Ouvrir. Ensuite, elle vérifie les nouvelles versions au lancement puis toutes les six heures et les propose dans **Paramètres › Général** ; rien ne s'installe sans ton clic (signature minisign vérifiée, spec `docs/superpowers/specs/2026-09-27-kibo-mises-a-jour.md`). Sur Linux, seule l'AppImage se met à jour toute seule.
+
+Publier une version : `bun apps/desktop/scripts/version.ts set X.Y.Z`, commit, puis tag `vX.Y.Z` poussé sur `main` ; le workflow `release` construit, signe et publie.
+
 ## Agents
 
 Kibo lance Claude Code en local (`claude -p`, sur ton abonnement) : installe le CLI (version 2.1.259 ou plus récente) et connecte-toi une fois avec `claude`. Le démon le cherche dans le `PATH`, `~/.local/bin`, `~/.claude/local`, `/opt/homebrew/bin` et `/usr/local/bin` ; sinon, passe `--claude-bin <chemin>` au démon.
