@@ -73,6 +73,7 @@ const pending: ComponentVersionSummary = {
   tampered: false,
   manifest,
   usages: [],
+  revoked: null,
 };
 const burndown: ComponentSummary = { id: "burndown", title: "Burndown", builtin: false, versions: [pending] };
 const approved: RegistryVersion = {

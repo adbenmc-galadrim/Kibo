@@ -2,6 +2,7 @@ import { type RpcHandler, type RpcOutcome, requireLocal } from "../rpc-extension
 import { type InstallDeps, installFromMarket } from "./install";
 import type { MarketService } from "./market-service";
 import { exportKpkg, type PublishDeps, publishToMarket } from "./publish";
+import { marketPublisherInfo, marketStatuses } from "./summary";
 
 export function createMarketRpc(
   market: MarketService,
@@ -54,6 +55,10 @@ export function createMarketRpc(
         return done(
           await exportKpkg(publish, { id: req.id, version: req.version, publisherName: req.publisherName }),
         );
+      case "listMarketStatus":
+        return done(marketStatuses(market, install.registry.installed));
+      case "getMarketPublisher":
+        return done(await marketPublisherInfo(publish.secrets));
       case "findMarketSource":
         return done(market.findSourceFor({ id: req.id, version: req.version, hash: req.hash }));
       default:

@@ -213,6 +213,7 @@ const version = (v: Partial<ComponentVersionSummary> & { version: string }): Com
   tampered: false,
   manifest: burndown(v.version),
   usages: [],
+  revoked: null,
   ...v,
 });
 

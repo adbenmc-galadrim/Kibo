@@ -57,6 +57,7 @@ function builtinSummary(projects: ProjectRef[], id: string): ComponentSummary {
         tampered: false,
         manifest: null,
         usages,
+        revoked: null,
       }),
     ),
   };
@@ -82,6 +83,7 @@ function installedSummary(ctx: InstalledContext, id: string, entry: RegistryEntr
         tampered,
         manifest: ctx.store.get(id, v.version)?.manifest ?? null,
         usages: findUsages(ctx.projects, id, v.version).map(withoutVersion),
+        revoked: v.revoked ?? null,
       };
     });
   return { id, title: entry.title, builtin: false, versions };

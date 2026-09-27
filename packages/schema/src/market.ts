@@ -102,4 +102,11 @@ export type MarketPackageDetail = MarketHit & {
   publisherChanged: boolean;
   files: { path: string; content: string }[];
 };
+export type MarketComponentStatus = {
+  id: string;
+  version: string;
+  sourceId: string;
+  sourceName: string;
+  updateAvailable: string | null;
+};
 export type MarketInstallResult = Omit<TrustPreview, "origin" | "market"> & { market: MarketTrustInfo };

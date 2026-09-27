@@ -144,3 +144,8 @@ test("installFromMarket answers the screen 30 target", async () => {
     },
   });
 });
+
+test("the marketplace status and the publisher identity are readable from a remote session", async () => {
+  expect(await rpc({ method: "listMarketStatus" }, remote)).toEqual({ handled: true, result: [] });
+  expect(await rpc({ method: "getMarketPublisher" }, remote)).toEqual({ handled: true, result: null });
+});

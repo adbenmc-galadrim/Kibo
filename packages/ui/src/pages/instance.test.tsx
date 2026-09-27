@@ -88,6 +88,7 @@ const version = (v: string, patch: Partial<Version> = {}): Version => ({
     sdk: 1,
   },
   usages: [],
+  revoked: null,
   ...patch,
 });
 const prQueue = (...versions: Version[]): ComponentSummary[] => [

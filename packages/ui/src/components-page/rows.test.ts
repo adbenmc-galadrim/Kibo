@@ -26,6 +26,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           tampered: false,
           manifest: null,
           usages: [usage("p1", "a"), usage("p1", "b"), usage("p2", "c")],
+          revoked: null,
         },
       ],
     },
@@ -43,6 +44,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           tampered: false,
           manifest: null,
           usages: [usage("p1", "a")],
+          revoked: null,
         },
         {
           version: "0.4.0",
@@ -53,6 +55,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
           tampered: false,
           manifest: null,
           usages: [],
+          revoked: null,
         },
       ],
     },

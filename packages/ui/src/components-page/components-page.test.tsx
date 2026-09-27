@@ -77,6 +77,7 @@ const v030 = {
   tampered: false,
   manifest: null,
   usages: [dashboard],
+  revoked: null,
 };
 const basePreview: PublishPreview = {
   id: "pr-queue",
