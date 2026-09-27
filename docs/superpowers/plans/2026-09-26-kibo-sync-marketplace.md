@@ -22604,7 +22604,7 @@ Vague 9. Spec G §9 (ligne e2e) et §10 (scénario à deux utilisateurs vert sur
 
 Deux paires de démons (une par projet Playwright `sync-dark` et `sync-light`) évitent qu'un démon déjà connecté par le premier projet fausse le second. Le serveur de contrôle (4411) arrête et relance le serveur de sync pour observer la clé provisoire, qui sinon ne dure que quelques millisecondes.
 
-- [ ] **Step 1: Fixture partagée**
+- [x] **Step 1: Fixture partagée**
 
 `e2e/sync-fixture.ts` :
 ```ts
@@ -22631,7 +22631,7 @@ export function readSyncState(): SyncE2eState {
 ```
 (`as SyncE2eState` : fichier écrit par `serve-sync.ts` juste avant, dans le même dépôt ; pas de schéma Zod pour un fichier de test.)
 
-- [ ] **Step 2: Lanceur**
+- [x] **Step 2: Lanceur**
 
 `e2e/serve-sync.ts` :
 ```ts
@@ -22704,7 +22704,7 @@ process.on("SIGTERM", () => void shutdown());
 process.on("SIGINT", () => void shutdown());
 ```
 
-- [ ] **Step 3: Configuration Playwright**
+- [x] **Step 3: Configuration Playwright**
 
 `e2e/playwright.config.ts` : importer `SYNC_PORTS` de `./sync-fixture` ; ajouter après le tableau `daemons` :
 ```ts
@@ -22715,7 +22715,7 @@ const syncProjects = [
 ```
 `projects` devient `[...daemons.map(/* inchangé */), ...syncProjects.map((p) => ({ name: p.name, testMatch: /sync\.spec\.ts/, use: { browserName: "chromium", colorScheme: p.scheme, baseURL: `http://127.0.0.1:${p.port}` } }))]` et `webServer` devient `[...daemons.map(/* inchangé */), { command: "bun serve-sync.ts", url: `http://127.0.0.1:${SYNC_PORTS.control}/`, reuseExistingServer: false, timeout: 120_000, gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 } }]`. L'URL de contrôle ne répond qu'une fois les codes écrits ; les démons, lancés juste avant, sont attendus par le test (`waitForDaemon`).
 
-- [ ] **Step 4: Écrire le scénario**
+- [x] **Step 4: Écrire le scénario**
 
 `e2e/sync.spec.ts` :
 ```ts
@@ -22825,14 +22825,14 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
 ```
 Le délai de 70 s après la relance couvre le pire backoff (60 s plus gigue) ; en pratique la reconnexion a lieu en quelques secondes. Le Kanban filtre par défaut « Moi + agents » (`components/kanban/src/filter.ts` : un ticket sans assigné est masqué) : chaque utilisateur passe sur « Tous » avant les attentes.
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun install && bun run --cwd packages/ui build && bun run --cwd e2e test -- --project sync-dark --project sync-light`
 Expected: PASS dans `sync-dark` et `sync-light` ; les autres parcours restent verts : `bun run --cwd e2e test`.
 
 Porte d'intégration locale (GitHub Actions hors service) : le chef d'équipe lance `bun run --cwd e2e test` complet sur macOS avant d'intégrer ; le job `e2e` du workflow (macOS et Linux) exécute le nouveau fichier sans changement de workflow quand la CI revient.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add e2e/serve-sync.ts e2e/sync.spec.ts e2e/sync-fixture.ts e2e/playwright.config.ts e2e/package.json e2e/tsconfig.json bun.lock
