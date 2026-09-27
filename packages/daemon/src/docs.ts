@@ -26,4 +26,7 @@ export type Docs = {
   onProjectDoc(listener: (projectId: string, doc: LoroDoc) => void): () => void;
   assertWritable(projectId: string): void;
   setWriteGuard(guard: (projectId: string) => void): () => void;
+  projectMeta(projectId: string): ProjectMeta;
+  identity(projectId: string): string;
+  setIdentity(fn: (projectId: string) => string): () => void;
 };

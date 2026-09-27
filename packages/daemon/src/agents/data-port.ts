@@ -16,7 +16,7 @@ export function createDataPort(docs: Docs): AgentDataPort {
   return {
     profiles: () => listProfiles(docs.workspace),
     ticketContext(projectId, ticketId) {
-      const project = readProject(docs.project(projectId));
+      const project = { ...readProject(docs.project(projectId)), meta: docs.projectMeta(projectId) };
       const ticket = project.tickets.find((t) => t.id === ticketId);
       if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
       const domain = listDomains(docs.workspace).find((d) => d.id === ticket.domainId) ?? null;

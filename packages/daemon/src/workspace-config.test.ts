@@ -22,6 +22,9 @@ function docsWith(): Docs {
     onProjectDoc: unused,
     assertWritable: unused,
     setWriteGuard: unused,
+    projectMeta: unused,
+    identity: unused,
+    setIdentity: unused,
   };
 }
 

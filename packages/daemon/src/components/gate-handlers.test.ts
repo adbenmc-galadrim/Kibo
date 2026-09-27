@@ -23,6 +23,9 @@ const docs: Docs = {
   onProjectDoc: unused,
   assertWritable: unused,
   setWriteGuard: unused,
+  projectMeta: unused,
+  identity: unused,
+  setIdentity: unused,
 };
 const notes: NotesService = { info: unused, setDir: unused, handle: unused, refresh: unused, close: unused };
 const ok = { content: [], isError: false, truncated: false };

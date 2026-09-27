@@ -92,7 +92,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     db: deps.db,
     home: deps.home,
     project: (id) => {
-      const { meta } = readProject(docs.project(id));
+      const meta = docs.projectMeta(id);
       return { id: meta.id, key: meta.key, folder: meta.folder };
     },
     onChange: (id) => docs.emit({ projectId: id }),

@@ -38,6 +38,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
   };
   const host: FakeHost = {
     user: opts.user ?? "adam",
+    identity: () => opts.user ?? "adam",
     home,
     db,
     projectId: meta.id,

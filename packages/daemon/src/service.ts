@@ -3,6 +3,7 @@ import {
   countTicketsByStatus,
   createProjectDoc,
   createWorkspaceDoc,
+  getProjectMeta,
   listInstances,
   listProjects,
   readProject,
@@ -29,6 +30,8 @@ import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./
 import type { Docs } from "./docs";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
+import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
+import { withLocalFolder } from "./project-folder";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
 import { readConfig, runConfigCommand } from "./workspace-config";
@@ -83,6 +86,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   let ai: AiPort | null = null;
   let collab: CollabPort | null = null;
   let writeGuard: ((projectId: string) => void) | null = null;
+  const osIdentity = () => opts.user;
+  let identity: (projectId: string) => string = osIdentity;
+  ensureSettingsTable(store.db);
+  const settings = createProjectSettings(store.db);
   const docListeners = new Set<(projectId: string, doc: LoroDoc) => void>();
   const adopt = (id: string, doc: LoroDoc) => {
     projects.set(id, doc);
@@ -148,6 +155,14 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       writeGuard = guard;
       return () => {
         if (writeGuard === guard) writeGuard = null;
+      };
+    },
+    projectMeta: (projectId) => withLocalFolder(getProjectMeta(docs.project(projectId)), settings),
+    identity: (projectId) => identity(projectId),
+    setIdentity(fn) {
+      identity = fn;
+      return () => {
+        if (identity === fn) identity = osIdentity;
       };
     },
   };
@@ -241,7 +256,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         }
         case "getProject": {
           const doc = docs.project(req.projectId);
-          const snapshot = readProject(doc);
+          const snapshot = { ...readProject(doc), meta: docs.projectMeta(req.projectId) };
           return collab ? { ...snapshot, sync: collab.syncInfo(req.projectId, doc) } : snapshot;
         }
         case "command": {
