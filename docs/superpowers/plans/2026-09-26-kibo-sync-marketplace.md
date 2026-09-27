@@ -22864,7 +22864,7 @@ Parcours Playwright de la spec H §9 (ligne e2e) et §10 : ajout d'une source en
 
 Chaque projet Playwright (`market-dark`, `market-light`) a **son démon et sa fausse source** : le parcours installe et met à jour, il ne peut pas partager l'état d'un autre thème.
 
-- [ ] **Step 1: Écrire le parcours**
+- [x] **Step 1: Écrire le parcours**
 
 `e2e/market-fixture.ts` :
 ```ts
@@ -22970,12 +22970,12 @@ test("source, catalogue, installation puis mise à jour partout", async ({ page,
 ```
 La dernière assertion vérifie qu'aucune instance n'est restée « Composant absent » (T27) ni « Composant introuvable » (texte actuel de `InstanceFrame`) après la mise à jour. Le fichier d'état est lu avec `as MarketE2eState` : écrit par `serve-market.ts` juste avant, dans le même dépôt.
 
-- [ ] **Step 2: Lancer pour le voir échouer**
+- [x] **Step 2: Lancer pour le voir échouer**
 
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- --project market-dark`
 Expected: FAIL (aucun projet `market-dark` : la configuration n'existe pas encore).
 
-- [ ] **Step 3: Serveur de test**
+- [x] **Step 3: Serveur de test**
 
 `e2e/serve-market.ts` :
 ```ts
@@ -23047,19 +23047,19 @@ process.on("SIGINT", () => void shutdown());
 
 Dans `e2e/playwright.config.ts` : importer `MARKET_PORTS` de `./market-fixture` ; ajouter les projets `{ name: "market-dark", testMatch: /market\.spec\.ts/, use: { browserName: "chromium", colorScheme: "dark", baseURL: "http://127.0.0.1:4412" } }` et `market-light` (`light`, 4413), construits depuis `MARKET_PORTS` comme les projets `sync-*` de T31 ; ajouter au tableau `webServer` `{ command: "bun serve-market.ts", url: `http://127.0.0.1:${MARKET_PORTS.control}/`, reuseExistingServer: false, timeout: 120_000, gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 } }`. `pairAndCreateProject` attend le démon par son `page.goto` ; si le démon démarre après le port de contrôle, ajouter l'attente `waitForDaemon` de T31 en tête du test.
 
-- [ ] **Step 4: Relancer**
+- [x] **Step 4: Relancer**
 
 Run: `bun install && bun run --cwd packages/ui build && bun run --cwd e2e test -- --project market-dark --project market-light`
 Expected: PASS. Sous Linux sans bubblewrap utilisable, le test échoue à l'installation (`SANDBOX_UNAVAILABLE`) : c'est voulu, la CI installe bubblewrap.
 
 Puis `bun run --cwd e2e test` complet : tous les parcours verts (porte d'intégration locale, GitHub Actions étant hors service).
 
-- [ ] **Step 5: Vérifications**
+- [x] **Step 5: Vérifications**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucune erreur (le paquet `e2e` est déjà dans le `typecheck` racine ; `e2e/tsconfig.json` référence `../packages/daemon`).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add e2e/serve-market.ts e2e/market.spec.ts e2e/market-fixture.ts e2e/playwright.config.ts e2e/package.json e2e/tsconfig.json bun.lock
