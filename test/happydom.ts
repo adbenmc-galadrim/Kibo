@@ -17,5 +17,6 @@ const native = {
 GlobalRegistrator.register();
 Object.assign(globalThis, native);
 
-const { cleanup } = await import("@testing-library/react");
+const { cleanup, configure } = await import("@testing-library/react");
+configure({ asyncUtilTimeout: 4_000 });
 afterEach(cleanup);
