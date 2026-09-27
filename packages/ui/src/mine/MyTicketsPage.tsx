@@ -3,6 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { useId, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { projectDomainsOf } from "../lib/project-domains";
 import { MyTicketRow } from "./MyTicketRow";
 import { countMine, type MineGroup, type MineTab, myTickets } from "./my-tickets";
 
@@ -59,7 +60,8 @@ type SectionProps = Pick<Props, "config" | "onOpenTicket" | "onAssign"> & {
 function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: SectionProps) {
   const titleId = useId();
   const { project, tickets } = group;
-  const domainOf = (id: string | null) => config?.domains.find((d) => d.id === id) ?? null;
+  const domainOf = (id: string | null) =>
+    projectDomainsOf(snapshot, config)?.find((d) => d.id === id) ?? null;
   const agentName = (ref: string) =>
     config?.profiles.find((p) => p.id === ref || p.name === ref)?.name ?? ref;
   return (

@@ -1,4 +1,4 @@
-import { Assignee, type Domain, KiboError } from "@kibo/schema";
+import { Assignee, Domain, Guideline, KiboError } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { listBindings } from "./bindings";
 import { getKeyAllocator } from "./keys";
@@ -61,4 +61,29 @@ export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { f
   migrateBindings(doc, input);
   doc.commit();
   return { folder };
+}
+
+function projectDomainEntries(doc: LoroDoc): [string, unknown][] {
+  return Object.entries(doc.getMap("projectDomains").toJSON());
+}
+
+export function listProjectDomains(doc: LoroDoc): Domain[] {
+  return projectDomainEntries(doc).flatMap(([id, value]) => {
+    const parsed = Domain.safeParse(value instanceof Object ? { ...value, id } : null);
+    return parsed.success ? [{ id, name: parsed.data.name, color: parsed.data.color }] : [];
+  });
+}
+
+export function listProjectDomainGuidelines(doc: LoroDoc): Guideline[] {
+  const known = new Set(listProjectDomains(doc).map((d) => d.id));
+  return projectDomainEntries(doc).flatMap(([domainId, value]) => {
+    if (!known.has(domainId) || !(value instanceof Object) || !("guidelines" in value)) return [];
+    const list = Array.isArray(value.guidelines) ? value.guidelines : [];
+    return list.flatMap((g: unknown) => {
+      if (!(g instanceof Object) || !("path" in g)) return [];
+      const id = `${domainId}:${String(g.path)}`;
+      const parsed = Guideline.safeParse({ ...g, id, owner: { scope: "domain", domainId } });
+      return parsed.success ? [parsed.data] : [];
+    });
+  });
 }

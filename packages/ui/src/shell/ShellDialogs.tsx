@@ -1,5 +1,6 @@
 import type { AgentsState, FileRef, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
+import { projectDomainsOf } from "../lib/project-domains";
 import {
   AssignDialog,
   NewPageDialog,
@@ -100,7 +101,7 @@ export function ShellDialogs({
         <TicketSheet
           project={sheetProject}
           ticketId={sheet.ticketId}
-          domains={config?.domains ?? []}
+          domains={projectDomainsOf(sheetProject, config) ?? []}
           onClose={() => set({ sheet: null })}
           onAssign={() =>
             set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })

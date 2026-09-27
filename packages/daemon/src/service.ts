@@ -3,8 +3,10 @@ import {
   countTicketsByStatus,
   createProjectDoc,
   createWorkspaceDoc,
+  getKeyAllocator,
   getProjectMeta,
   listInstances,
+  listProjectDomains,
   listProjects,
   readProject,
   registerProject,
@@ -256,7 +258,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         }
         case "getProject": {
           const doc = docs.project(req.projectId);
-          const snapshot = { ...readProject(doc), meta: docs.projectMeta(req.projectId) };
+          const snapshot = {
+            ...readProject(doc),
+            meta: docs.projectMeta(req.projectId),
+            viewer: docs.identity(req.projectId),
+            ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),
+          };
           return collab ? { ...snapshot, sync: collab.syncInfo(req.projectId, doc) } : snapshot;
         }
         case "command": {

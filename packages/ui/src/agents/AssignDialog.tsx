@@ -23,6 +23,7 @@ import { Bot, TriangleAlert } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { projectDomainsOf } from "../lib/project-domains";
 import { reasonText } from "./format";
 
 type Props = {
@@ -267,7 +268,7 @@ export function AssignDialog({
       ticketId={ticketId}
       baseBranch={baseBranch}
       profiles={assignable}
-      domains={config.domains}
+      domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}
     />
   );

@@ -8,6 +8,8 @@ import {
   getProjectMeta,
   getTicket,
   listBindings,
+  listProjectDomainGuidelines,
+  listProjectDomains,
   migrateForSharing,
   type ShareMigrationInput,
 } from "./index";
@@ -93,4 +95,21 @@ test("refuses a project that is already shared", () => {
   migrateForSharing(doc, input);
   enableServerAllocation(doc);
   expect(() => migrateForSharing(doc, input)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
+});
+
+test("reads the domains copied into the project, with their guidelines", () => {
+  const { doc } = localProject();
+  expect(listProjectDomains(doc)).toEqual([]);
+  migrateForSharing(doc, input);
+  doc.getMap("projectDomains").set("broken", { name: 42 });
+  doc.commit();
+  expect(listProjectDomains(doc)).toEqual([{ id: "core", name: "Core", color: "#0EA5E9" }]);
+  expect(listProjectDomainGuidelines(doc)).toEqual([
+    {
+      id: "core:core.md",
+      owner: { scope: "domain", domainId: "core" },
+      path: "core.md",
+      content: "# Core\nTests d'abord.",
+    },
+  ]);
 });

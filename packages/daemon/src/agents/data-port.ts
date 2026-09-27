@@ -1,4 +1,11 @@
-import { executeProjectCommand, listTickets, readProject } from "@kibo/core";
+import {
+  executeProjectCommand,
+  getKeyAllocator,
+  listProjectDomainGuidelines,
+  listProjectDomains,
+  listTickets,
+  readProject,
+} from "@kibo/core";
 import { listDomains, listGuidelines, listProfiles } from "@kibo/core/agent-config";
 import { evaluateRules, type RuleTrigger, readRules } from "@kibo/core/rules";
 import { KiboError, type ProjectCommand } from "@kibo/schema";
@@ -12,6 +19,21 @@ export function applyRules(doc: LoroDoc, trigger: RuleTrigger): ProjectCommand[]
   return commands;
 }
 
+const isShared = (doc: LoroDoc) => getKeyAllocator(doc) === "server";
+
+function domainsOf(docs: Docs, projectId: string) {
+  const doc = docs.project(projectId);
+  return isShared(doc) ? listProjectDomains(doc) : listDomains(docs.workspace);
+}
+
+function guidelinesOf(docs: Docs, projectId: string) {
+  const doc = docs.project(projectId);
+  const workspace = listGuidelines(docs.workspace);
+  if (!isShared(doc)) return [...workspace, ...listGuidelines(doc)];
+  const outsideDomains = workspace.filter((g) => g.owner.scope !== "domain");
+  return [...outsideDomains, ...listProjectDomainGuidelines(doc), ...listGuidelines(doc)];
+}
+
 export function createDataPort(docs: Docs): AgentDataPort {
   return {
     profiles: () => listProfiles(docs.workspace),
@@ -19,13 +41,10 @@ export function createDataPort(docs: Docs): AgentDataPort {
       const project = { ...readProject(docs.project(projectId)), meta: docs.projectMeta(projectId) };
       const ticket = project.tickets.find((t) => t.id === ticketId);
       if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-      const domain = listDomains(docs.workspace).find((d) => d.id === ticket.domainId) ?? null;
+      const domain = domainsOf(docs, projectId).find((d) => d.id === ticket.domainId) ?? null;
       return { project, ticket, domain };
     },
-    guidelines: (projectId) => [
-      ...listGuidelines(docs.workspace),
-      ...listGuidelines(docs.project(projectId)),
-    ],
+    guidelines: (projectId) => guidelinesOf(docs, projectId),
     assignTicket(projectId, ticketId, profileName) {
       docs.run(projectId, {
         method: "updateTicket",

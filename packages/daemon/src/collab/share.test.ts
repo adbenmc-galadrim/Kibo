@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { addBinding, getBinding, getKeyAllocator, getProjectMeta, listTickets } from "@kibo/core";
-import type { ProjectMeta, ProjectSummary, RpcRequest } from "@kibo/schema";
+import type { Domain, ProjectMeta, ProjectSnapshot, ProjectSummary, RpcRequest, Ticket } from "@kibo/schema";
 import { ProjectRoom } from "@kibo/sync-server";
 import { generateKeyPair } from "@kibo/trust";
 import { LoroDoc } from "loro-crdt";
@@ -42,13 +42,23 @@ afterEach(async () => {
   await h.stop();
 });
 
-async function sharedProject(): Promise<string> {
+async function sharedProject(opts: { domain?: { name: string; color: string } } = {}): Promise<string> {
   const meta = (await rpc(0, { ...localProject, folder: "/Users/adam/goinfre/Kibo" })) as ProjectMeta;
-  await rpc(0, {
+  const domain = opts.domain
+    ? ((await rpc(0, {
+        method: "config",
+        command: { method: "createDomain", domain: opts.domain },
+      })) as Domain)
+    : null;
+  const ticket = (await rpc(0, {
     method: "command",
     projectId: meta.id,
     command: { method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "adam" } },
-  });
+  })) as Ticket;
+  if (domain) {
+    const command = { method: "updateTicket", ticketId: ticket.id, domainId: domain.id } as const;
+    await rpc(0, { method: "command", projectId: meta.id, command });
+  }
   await shareProject(deps(0), meta.id);
   return meta.id;
 }
@@ -235,4 +245,29 @@ test("an unshared project gets its keys back from the daemon and can be shared a
   expect(created.key).toBe("KIB-2");
   const info = await shareProject(deps(0), p);
   expect(info.shared).toBe(true);
+});
+
+test("a shared project shows and injects the domains copied into projectDomains", async () => {
+  const p = await sharedProject({ domain: { name: "Intégrations", color: "#8B5CF6" } });
+  const { code } = await createProjectInvite(deps(0), { projectId: p, role: "editor" });
+  await joinProject(deps(1), { code, folder: null });
+  const snapshot = (await rpc(1, { method: "getProject", projectId: p })) as ProjectSnapshot;
+  expect(snapshot.domains?.map((x) => x.name)).toEqual(["Intégrations"]);
+  const ticket = snapshot.tickets[0];
+  if (!ticket) throw new Error("no ticket");
+  expect(d(1).service.agentData.ticketContext(p, ticket.id).domain?.name).toBe("Intégrations");
+  const local = (await rpc(0, { ...localProject, name: "Perso", key: "PER" })) as ProjectMeta;
+  expect(
+    ((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).domains,
+  ).toBeUndefined();
+});
+
+test("the viewer of a shared project is the account, of a local one the OS user", async () => {
+  const p = await sharedProject();
+  const local = (await rpc(0, { ...localProject, name: "Perso", key: "PER" })) as ProjectMeta;
+  const shared = (await rpc(0, { method: "getProject", projectId: p })) as ProjectSnapshot;
+  expect(shared.viewer).toBe(d(0).client.status().user?.id);
+  expect(((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).viewer).toBe(
+    "adam",
+  );
 });

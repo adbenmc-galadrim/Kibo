@@ -6,6 +6,7 @@ import { useRunNotifications } from "../agents/use-run-notifications";
 import { client } from "../api";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
+import { projectDomainsOf } from "../lib/project-domains";
 import { countMine, myTickets } from "../mine/my-tickets";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
@@ -235,7 +236,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     viewer={viewer}
                     projects={projects}
                     project={project}
-                    domains={config?.domains}
+                    domains={projectDomainsOf(project, config)}
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
                     onNewProject={() => set({ newProject: true })}
                     onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
