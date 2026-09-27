@@ -5,6 +5,15 @@ export const fr = {
   newTicketIn: (status: string) => `Nouveau ticket dans ${status}`,
   actions: (key: string) => `Actions ${key}`,
   moveTo: "Déplacer vers",
+  open: "Ouvrir",
+  remove: "Supprimer…",
+  removeTitle: (key: string) => `Supprimer ${key} ?`,
+  removeHelp: (children: number) =>
+    children === 0
+      ? "Ses liens seront supprimés aussi. Cette action est irréversible."
+      : `Ses ${children} sous-ticket${children > 1 ? "s" : ""} et ses liens seront supprimés aussi. Cette action est irréversible.`,
+  removeConfirm: "Supprimer",
+  cancel: "Annuler",
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
   waitingOn: (key: string) => `attend ${key}`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
