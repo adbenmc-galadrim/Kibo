@@ -24,7 +24,9 @@ const PublishDialog = lazyPanel(
   { fallback: "sr-only" },
 );
 
-function WidgetHeader({ projectId, instance }: { projectId: string; instance: Instance }) {
+type HeaderProps = { projectId: string; instance: Instance; editable: boolean };
+
+function WidgetHeader({ projectId, instance, editable }: HeaderProps) {
   const Icon = componentIcon(instance.component);
   const title = instanceTitle(instance, useInstanceTitle(instance.component));
   const { id, version } = splitRef(instance.component);
@@ -34,13 +36,14 @@ function WidgetHeader({ projectId, instance }: { projectId: string; instance: In
       <span className="min-w-0 flex-1 truncate text-xs font-medium">
         {isBuiltinId(id) ? title : `${title} · ${version}`}
       </span>
-      <InstanceMenu projectId={projectId} instance={instance} title={title} />
+      {editable && <InstanceMenu projectId={projectId} instance={instance} title={title} />}
     </div>
   );
 }
 
-function ViewActions({ projectId, instance }: { projectId: string; instance: Instance }) {
+function ViewActions({ projectId, instance, editable }: HeaderProps) {
   const title = useInstanceTitle(instance.component);
+  if (!editable) return null;
   return (
     <PageActions>
       <InstanceMenu projectId={projectId} instance={instance} title={title} />
@@ -57,7 +60,8 @@ export function PageView({ project, page, viewer }: Props) {
   const instances = project.instances.filter((i) => i.pageId === page.id);
   const [first] = instances;
   const canAdd = page.kind === "dashboard" || !first;
-  const addButton = canAdd && canEdit(project) && (
+  const editable = canEdit(project);
+  const addButton = canAdd && editable && (
     <Button variant="outline" onClick={() => setAdding(true)}>
       <Plus className="size-4" /> {fr.page.addComponent}
     </Button>
@@ -82,7 +86,7 @@ export function PageView({ project, page, viewer }: Props) {
         </div>
       ) : page.kind === "view" ? (
         <>
-          <ViewActions projectId={projectId} instance={first} />
+          <ViewActions projectId={projectId} instance={first} editable={editable} />
           {readSource(first.config) && <SourceHeader project={project} instance={first} />}
           <InstanceFrame projectId={projectId} instance={first} viewer={viewer} surface="view" />
         </>
@@ -97,7 +101,7 @@ export function PageView({ project, page, viewer }: Props) {
                 gridRow: `${i.layout.y + 1} / span ${i.layout.h}`,
               }}
             >
-              <WidgetHeader projectId={projectId} instance={i} />
+              <WidgetHeader projectId={projectId} instance={i} editable={editable} />
               {readSource(i.config) && <SourceHeader project={project} instance={i} />}
               <div className="min-h-0 flex-1 overflow-auto">
                 <InstanceFrame projectId={projectId} instance={i} viewer={viewer} surface="widget" />
