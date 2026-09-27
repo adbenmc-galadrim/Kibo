@@ -26,6 +26,7 @@ const ROOTS = [
   "shadcn",
 ];
 const LEAVES = ["shadcn"];
+const MUSL_VARIANT = /-musl(eabihf)?$/;
 const DEPENDENCY_FIELDS = ["dependencies", "optionalDependencies", "peerDependencies"];
 
 function packageDir(name: string, from: string): string | null {
@@ -49,6 +50,7 @@ function closure(): Map<string, string> {
   const queue: [string, string][] = ROOTS.map((name) => [name, root]);
   for (let next = queue.shift(); next; next = queue.shift()) {
     const [name, from] = next;
+    if (MUSL_VARIANT.test(name)) continue;
     const dir = packageDir(name, from);
     if (!dir) continue;
     const known = seen.get(name);
