@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { encodeKpkg, generateKeyPair, type KeyPair, verifyIndex } from "@kibo/trust";
@@ -86,5 +86,27 @@ describe("buildStaticIndex", () => {
     writeFileSync(join(dir, "revoked.json"), JSON.stringify([{ hash: made.pkg.hash, reason: "Faille" }]));
     await buildStaticIndex({ dir, keys, id: "perso", name: "Perso", verified: [], now });
     expect((await read(null)).revoked).toEqual([{ hash: made.pkg.hash, reason: "Faille" }]);
+  });
+
+  test("a symbolic link planted on the temporary file is never followed", async () => {
+    await put("0.1.0");
+    const target = join(dir, "victim.txt");
+    writeFileSync(target, "intact");
+    symlinkSync(target, join(dir, "index.json.tmp"));
+    symlinkSync(target, join(dir, "index.json.sig.tmp"));
+    await buildStaticIndex({ dir, keys, id: "perso", name: "Perso", verified: [], now });
+    expect(readFileSync(target, "utf8")).toBe("intact");
+    expect((await read(null)).serial).toBe(1);
+  });
+
+  test("a package that is not JSON is refused without leaking its content", async () => {
+    mkdirSync(join(dir, "packages", "burndown"), { recursive: true });
+    writeFileSync(join(dir, "packages", "burndown", "0.1.0.kpkg"), "SECRET-CONTENT {");
+    const error = await buildStaticIndex({ dir, keys, id: "perso", name: "Perso", verified: [], now }).catch(
+      (e: unknown) => e,
+    );
+    expect(String(error)).toContain("INVALID_INPUT");
+    expect(String(error)).toContain("packages/burndown/0.1.0.kpkg");
+    expect(String(error)).not.toContain("SECRET");
   });
 });

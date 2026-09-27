@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { compareSemver, grantedOf, KiboError, type Kpkg, type MarketIndex, Sha256 } from "@kibo/schema";
 import { decodeKpkg, type KeyPair, kpkgSourceFiles, signIndex, verifyKpkgSignature } from "@kibo/trust";
@@ -36,9 +36,17 @@ const subdirectories = (dir: string): string[] =>
     .map((e) => e.name)
     .sort();
 
+function decodePackage(bytes: Uint8Array, path: string): Kpkg {
+  try {
+    return decodeKpkg(bytes);
+  } catch {
+    throw new KiboError("INVALID_INPUT", `${path} is not a valid kibo package`);
+  }
+}
+
 async function loadPackage(root: string, id: string, file: string): Promise<Loaded> {
   const bytes = new Uint8Array(readFileSync(join(root, id, file)));
-  const pkg = decodeKpkg(bytes);
+  const pkg = decodePackage(bytes, `packages/${id}/${file}`);
   if (pkg.manifest.id !== id || `${pkg.manifest.version}.kpkg` !== file) {
     throw new KiboError(
       "INVALID_INPUT",
@@ -97,7 +105,8 @@ function entryOf(id: string, loaded: Loaded[]): MarketIndex["packages"][number] 
 
 function writeAtomically(file: string, content: Uint8Array | string): void {
   const tmp = `${file}.tmp`;
-  writeFileSync(tmp, content, { mode: 0o644 });
+  rmSync(tmp, { force: true });
+  writeFileSync(tmp, content, { mode: 0o644, flag: "wx" });
   renameSync(tmp, file);
 }
 
