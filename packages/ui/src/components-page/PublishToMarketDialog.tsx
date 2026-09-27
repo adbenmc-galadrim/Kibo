@@ -11,7 +11,7 @@ import {
 } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { CircleX, Upload } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
@@ -100,22 +100,24 @@ function Summary({ target }: { target: PublishTarget }) {
 
 function SourceChoice(props: { sources: MarketSourceInfo[]; value: string; onChange(id: string): void }) {
   const t = fr.market;
+  const id = useId();
   return (
-    <fieldset className="grid gap-1.5">
-      <legend className="mb-1.5 text-sm font-medium">{t.publishSource}</legend>
-      <RadioGroup value={props.value} onValueChange={props.onChange} className="grid gap-1.5">
-        {props.sources.map((s) => (
-          <Label
-            key={s.id}
-            className="flex items-center gap-2 rounded-md border px-3 py-2 font-normal has-[[data-state=checked]]:border-foreground/70"
-          >
-            <RadioGroupItem value={s.id} aria-label={s.name} />
-            <span className="truncate font-mono text-xs">{t.sourceLine(s.name, s.url)}</span>
-          </Label>
-        ))}
-      </RadioGroup>
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{t.publishSource}</Label>
+      <Select value={props.value} onValueChange={props.onChange}>
+        <SelectTrigger id={id} className="w-full font-mono text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {props.sources.map((s) => (
+            <SelectItem key={s.id} value={s.id} className="font-mono text-xs">
+              {t.sourceOption(s.name, s.url)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <p className="text-xs text-muted-foreground">{t.publishSourceHelp}</p>
-    </fieldset>
+    </div>
   );
 }
 

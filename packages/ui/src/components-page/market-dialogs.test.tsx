@@ -95,8 +95,14 @@ test("the first publication asks for a publisher name and only offers team sourc
   render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
   const user = userEvent.setup();
   expect(await screen.findByText("Ce nom accompagne tes composants publiés.")).toBeTruthy();
-  expect(screen.getByRole("radio", { name: "Équipe" })).toBeTruthy();
-  expect(screen.queryByRole("radio", { name: "Perso" })).toBeNull();
+  const source = screen.getByRole("combobox", { name: "Source" });
+  expect(source.textContent).toBe("Équipe · https://sync.kibo.test/market/");
+  source.focus();
+  await user.keyboard("{Enter}");
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual([
+    "Équipe · https://sync.kibo.test/market/",
+  ]);
+  await user.keyboard("{Escape}");
   await user.type(screen.getByLabelText("Nom d'éditeur"), "Adam");
   await user.click(publishButton());
   expect(await screen.findByText("Publié : index n° 42")).toBeTruthy();
@@ -113,7 +119,7 @@ test("a known publisher publishes without the name field", async () => {
   answers.getMarketPublisher = () => Promise.resolve({ name: "Adam", fingerprint: "a".repeat(64) });
   answers.publishToMarket = () => Promise.resolve({ serial: 43 });
   render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
-  await screen.findByRole("radio", { name: "Équipe" });
+  await screen.findByRole("combobox", { name: "Source" });
   expect(screen.queryByLabelText("Nom d'éditeur")).toBeNull();
   await userEvent.setup().click(publishButton());
   await waitFor(() =>
@@ -130,7 +136,7 @@ test("publication errors are explained in French", async () => {
   answers.getMarketPublisher = () => Promise.resolve({ name: "Adam", fingerprint: "a".repeat(64) });
   answers.publishToMarket = () => Promise.reject(new KiboError("FORBIDDEN", "x"));
   render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} />);
-  await screen.findByRole("radio", { name: "Équipe" });
+  await screen.findByRole("combobox", { name: "Source" });
   const user = userEvent.setup();
   await user.click(publishButton());
   expect((await screen.findByRole("alert")).textContent).toBe(
@@ -155,7 +161,7 @@ test("without a team source the dialog says how to get one", async () => {
 test("publishing is a local action", async () => {
   answers.getMarketPublisher = () => Promise.resolve({ name: "Adam", fingerprint: "a".repeat(64) });
   render(<PublishToMarketDialog target={target} open onOpenChange={() => {}} remote />);
-  await screen.findByRole("radio", { name: "Équipe" });
+  await screen.findByRole("combobox", { name: "Source" });
   expect(publishButton().hasAttribute("disabled")).toBe(true);
   expect(
     screen.getByText("Cette action n'est possible que depuis l'ordinateur où tourne Kibo."),
