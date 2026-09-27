@@ -240,5 +240,9 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
       }),
     runs: async (): Promise<TicketRun[]> => ticketRuns(await client.rpc({ method: "getAgents" }), projectId),
     subscribeRuns: (listener) => client.subscribeTopic("agents", listener),
+    subscribePresence: (listener) =>
+      client.subscribeEvents((m) => {
+        if (m.type === "presence.changed" && m.projectId === projectId) listener();
+      }),
   };
 }

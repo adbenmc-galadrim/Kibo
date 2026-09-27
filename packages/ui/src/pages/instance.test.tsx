@@ -23,6 +23,7 @@ mock.module("../api", () => ({
     },
     subscribe: () => () => undefined,
     subscribeTopic: () => () => undefined,
+    subscribeEvents: () => () => undefined,
   },
 }));
 

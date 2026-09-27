@@ -3,6 +3,7 @@ import {
   type AgentsState,
   type ChangeMessage,
   type PresenceRun,
+  type ProjectSyncInfo,
   type RunView,
   SYNC_LIMITS,
 } from "@kibo/schema";
@@ -128,6 +129,7 @@ export async function startCollab(deps: CollabDeps): Promise<{
   hosts: ProjectHostRegistry;
   handler: RpcHandler;
   presence: PresenceHub;
+  syncInfo(projectId: string): ProjectSyncInfo;
   attachRuns(source: RunSource): () => void;
   stop(): void;
 }> {
@@ -166,6 +168,7 @@ export async function startCollab(deps: CollabDeps): Promise<{
     hosts,
     handler: (req, ctx) => handleSyncRpc(client, req, ctx, sharing.share, presence.presence),
     presence: presence.presence,
+    syncInfo: sharing.share.syncInfo,
     attachRuns: (source) => {
       runSource = source;
       const off = source.onRunState(() => presence.presence.refreshRuns());

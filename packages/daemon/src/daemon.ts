@@ -125,6 +125,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     allowUnsandboxed: () => sandboxService.allowUnsandboxed(),
     ...(opts.net && { net: opts.net }),
     integrations: () => integrations.hooks,
+    presence: (projectId) => collab.presence.peers(projectId),
+    sharing: (projectId) => collab.syncInfo(projectId),
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });

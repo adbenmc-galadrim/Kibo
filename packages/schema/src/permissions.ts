@@ -80,6 +80,9 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "mcp.read":
     case "mcp.import":
       return `mcp:${call.server}`;
+    case "presence.list":
+    case "sharing.get":
+      return "read:ticket";
   }
 }
 

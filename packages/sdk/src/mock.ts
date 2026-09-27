@@ -1,4 +1,10 @@
-import { createProjectDoc, executeProjectCommand, readProject } from "@kibo/core";
+import {
+  createProjectDoc,
+  enableServerAllocation,
+  executeProjectCommand,
+  localSyncInfo,
+  readProject,
+} from "@kibo/core";
 import {
   type CiRun,
   type ComponentCall,
@@ -9,6 +15,9 @@ import {
   type FetchResponse,
   KiboError,
   type McpCallResult,
+  type MemberInfo,
+  type PresencePeer,
+  type ProjectAccess,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionOfCall,
@@ -36,6 +45,8 @@ export type MockSdk = {
   snapshot(): ProjectSnapshot;
   setRuns(runs: TicketRun[]): void;
   touchNote(path: string, markdown: string): void;
+  setAccess(access: ProjectAccess): void;
+  setPresence(peers: PresencePeer[]): void;
 };
 export type MockSdkOptions = {
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
@@ -49,6 +60,9 @@ export type MockSdkOptions = {
   noteAges?: Record<string, number>;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
+  presence?: PresencePeer[];
+  shared?: boolean;
+  members?: MemberInfo[];
 };
 
 const PROJECT_KEY = "KIB";
@@ -82,6 +96,10 @@ export function createMockSdk(
   });
   const changes = notifier();
   const runChanges = notifier();
+  const presenceChanges = notifier();
+  let access: ProjectAccess = "write";
+  let peers = opts.presence ?? [];
+  if (opts.shared) enableServerAllocation(doc);
   const run = (cmd: ProjectCommand) => {
     const result = executeProjectCommand(doc, cmd);
     changes.emit();
@@ -177,6 +195,12 @@ export function createMockSdk(
             title: c.item.title,
           },
         });
+      case "presence.list":
+        return peers;
+      case "sharing.get":
+        return opts.shared
+          ? { shared: true, keyAllocator: "server", role: "editor", access, members: opts.members ?? [] }
+          : { ...localSyncInfo(doc), access };
     }
   };
 
@@ -188,6 +212,7 @@ export function createMockSdk(
       subscribe: changes.subscribe,
       runs: async () => runs,
       subscribeRuns: runChanges.subscribe,
+      subscribePresence: presenceChanges.subscribe,
     },
     manifest,
     {
@@ -251,6 +276,11 @@ export function createMockSdk(
         return record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.importItem(server, item));
       },
     },
+    presence: {
+      list: () => record("read:ticket", "read presence", () => inner.presence.list()),
+      subscribe: inner.presence.subscribe,
+    },
+    sharing: () => record("read:ticket", "read sharing", () => inner.sharing()),
   };
 
   return {
@@ -270,5 +300,13 @@ export function createMockSdk(
       runChanges.emit();
     },
     touchNote: folder.touch,
+    setAccess: (next) => {
+      access = next;
+      changes.emit();
+    },
+    setPresence: (next) => {
+      peers = next;
+      presenceChanges.emit();
+    },
   };
 }

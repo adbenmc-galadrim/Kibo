@@ -1,7 +1,14 @@
 import type { Database } from "bun:sqlite";
 import { listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
-import { type Instance, KiboError, type TicketRun, type ValidationReport } from "@kibo/schema";
+import {
+  type Instance,
+  KiboError,
+  type PresencePeer,
+  type ProjectSyncInfo,
+  type TicketRun,
+  type ValidationReport,
+} from "@kibo/schema";
 import type { CommandHub } from "../command-path";
 import type { Docs } from "../docs";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -41,6 +48,8 @@ export type ComponentsDeps = {
   allowUnsandboxed?: () => boolean;
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
+  presence?: (projectId: string) => PresencePeer[];
+  sharing?: (projectId: string) => ProjectSyncInfo;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -123,6 +132,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       runs: deps.runs,
       ...(deps.net && { net: deps.net }),
       ...(deps.integrations && { integrations: deps.integrations }),
+      ...(deps.presence && { presence: deps.presence }),
+      ...(deps.sharing && { sharing: deps.sharing }),
     }),
   });
 

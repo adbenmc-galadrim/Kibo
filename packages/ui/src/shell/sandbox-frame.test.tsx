@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import type { FileRef, HostToFrame, RpcRequest } from "@kibo/schema";
+import type { FileRef, HostToFrame, Phase7Event, RpcRequest } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { act, render } from "@testing-library/react";
 import type { Host } from "./Host";
@@ -8,6 +8,7 @@ const DEADLINE = 30;
 const requests: RpcRequest[] = [];
 let refusalFailure: Error | null = null;
 const listeners = new Set<(projectId: string | null) => void>();
+const eventListeners = new Set<(event: Phase7Event) => void>();
 
 mock.module("../api", () => ({
   client: {
@@ -19,6 +20,10 @@ mock.module("../api", () => ({
     subscribe: (listener: (projectId: string | null) => void) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    subscribeEvents: (listener: (event: Phase7Event) => void) => {
+      eventListeners.add(listener);
+      return () => eventListeners.delete(listener);
     },
   },
 }));
@@ -143,6 +148,21 @@ test("resize, files and change notifications go through the host", () => {
   expect(posted.filter((m) => m.type === "changed")).toHaveLength(1);
   view.unmount();
   expect(listeners.size).toBe(0);
+});
+
+test("only the presence of the frame's own project reaches it", () => {
+  const { posted, view } = mount();
+  act(() => {
+    for (const l of eventListeners) l({ type: "presence.changed", projectId: "p2" });
+    for (const l of eventListeners) l({ type: "market.changed" });
+  });
+  expect(posted.filter((m) => m.type === "changed")).toHaveLength(0);
+  act(() => {
+    for (const l of eventListeners) l({ type: "presence.changed", projectId: "p1" });
+  });
+  expect(posted.filter((m) => m.type === "changed")).toHaveLength(1);
+  view.unmount();
+  expect(eventListeners.size).toBe(0);
 });
 
 const pastDeadline = () =>

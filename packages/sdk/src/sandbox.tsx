@@ -86,7 +86,15 @@ export function createFrameSdk(
     };
   };
   const sdk = createSdk(
-    { snapshot: unsupported, run: unsupported, runs: unsupported, call, subscribe, subscribeRuns: subscribe },
+    {
+      snapshot: unsupported,
+      run: unsupported,
+      runs: unsupported,
+      call,
+      subscribe,
+      subscribeRuns: subscribe,
+      subscribePresence: subscribe,
+    },
     manifest,
     {
       instanceId: init.instanceId,

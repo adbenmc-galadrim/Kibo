@@ -3,6 +3,7 @@ import {
   ComponentManifest,
   diffPermissions,
   grantedOf,
+  type PresencePeer,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionList,
@@ -28,6 +29,15 @@ export type ConformanceOptions = Pick<
 };
 
 const THEMES: Theme[] = ["dark", "light"];
+const COLLEAGUE: PresencePeer = {
+  deviceId: "conformance-device",
+  self: false,
+  userId: "u-lea",
+  name: "Léa",
+  pageId: null,
+  ticketId: null,
+  runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
+};
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 export function runConformance(
@@ -50,16 +60,21 @@ export function runConformance(
     const surfaces: Surface[] =
       manifest.kind === "both" ? ["widget", "view"] : manifest.kind === "adapter" ? [] : [manifest.kind];
     const { runs, ...mockOpts } = opts;
-    const projects: [string, ConformanceSeed | undefined][] = [
-      ["empty project", undefined],
-      ["seeded project", seed],
+    const projects: [string, ConformanceSeed | undefined, Partial<MockSdkOptions>][] = [
+      ["empty project", undefined, {}],
+      ["seeded project", seed, {}],
+      [
+        "shared project with provisional keys",
+        seed,
+        { shared: true, presence: [COLLEAGUE], members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
+      ],
     ];
     for (const surface of surfaces) {
       for (const theme of THEMES) {
-        for (const [label, s] of projects) {
+        for (const [label, s, extra] of projects) {
           test(`renders an ${label} as a ${surface} in ${theme} within its declared permissions`, async () => {
             document.documentElement.classList.toggle("dark", theme === "dark");
-            const m = createMockSdk(manifest, { ...mockOpts, surface, ...(s && { seed: s }) });
+            const m = createMockSdk(manifest, { ...mockOpts, ...extra, surface, ...(s && { seed: s }) });
             if (s && runs) m.setRuns(runs(m.snapshot()));
             const { container } = render(
               <SdkProvider sdk={m.sdk}>
