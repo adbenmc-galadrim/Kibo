@@ -20456,7 +20456,7 @@ Vague 6. Écrans à dessiner **S1** (Paramètres › Sync, dialogues « Se conne
   - `packages/ui/src/state/use-sync-state.ts` (`useSyncState`) est l'état de la sync des intégrations : le hook de la sync d'équipe s'appelle `useSyncServerStatus` (`use-sync-server.ts`) pour éviter la confusion.
   - Les tests d'UI remplacent `../api` par `mock.module` (modèle `packages/ui/src/settings/IntegrationsPage.test.tsx`).
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-collab.ts` :
 ```ts
@@ -20530,7 +20530,7 @@ export const frCollab = {
 
 Dans `packages/ui/src/i18n/fr.ts` : `import { frCollab } from "./fr-collab";` et `...frCollab,` après `...frAi,`. Le libellé « Démon local » reste `fr.agents.daemon` (aucun doublon).
 
-- [ ] **Step 2: Écran `sync` dans les onglets**
+- [x] **Step 2: Écran `sync` dans les onglets**
 
 Ajouter à `packages/ui/src/tabs/tabs.test.ts`, à côté des cas `#/settings/integrations` :
 ```ts
@@ -20550,7 +20550,7 @@ Dans `packages/schema/src/tabs.ts`, ajouter `"sync"` à la fin de `Screen`. Dans
 Run: `bun test packages/ui/src/tabs/tabs.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Écrire les tests des écrans**
+- [x] **Step 3: Écrire les tests des écrans**
 
 `packages/ui/src/settings/sync-settings.test.tsx` :
 ```tsx
@@ -20697,12 +20697,12 @@ test("a reconnection countdown is shown in settings", async () => {
 });
 ```
 
-- [ ] **Step 4: Vérifier l'échec**
+- [x] **Step 4: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/settings/sync-settings.test.tsx`
 Expected: FAIL « Cannot find module './SyncSettingsPage' ».
 
-- [ ] **Step 5: Implémenter le hook et l'indicateur**
+- [x] **Step 5: Implémenter le hook et l'indicateur**
 
 `packages/ui/src/state/use-sync-server.ts` :
 ```ts
@@ -20797,7 +20797,7 @@ Dans `packages/ui/src/agents/AgentBar.tsx`, ajouter la prop facultative `indicat
 ```
 Dans `packages/ui/src/agents/AgentPanel.tsx`, passer `indicator={<SyncIndicator online={online} />}` à `AgentBar`. Dans `packages/ui/src/agents/agent-panel.test.tsx` et `packages/ui/src/shell/agents-shell.test.tsx` (qui rend `AgentPanel` avec des runs), ajouter `subscribeEvents: () => () => undefined,` au faux `client` (mise en place seulement ; `getSyncStatus` y renvoie `null`, d'où « Démon local » et « Démon injoignable » inchangés).
 
-- [ ] **Step 6: Implémenter les dialogues**
+- [x] **Step 6: Implémenter les dialogues**
 
 `packages/ui/src/dialogs/ConnectServerDialog.tsx` :
 ```tsx
@@ -20940,7 +20940,7 @@ export function AddDeviceDialog({ open, onOpenChange }: { open: boolean; onOpenC
 }
 ```
 
-- [ ] **Step 7: Implémenter `SyncSettingsPage`**
+- [x] **Step 7: Implémenter `SyncSettingsPage`**
 
 `packages/ui/src/settings/SyncSettingsPage.tsx` (gabarit des pages de Paramètres, `SettingsNav active="sync"`, tableaux shadcn) :
 ```tsx
@@ -21159,7 +21159,7 @@ export function SyncSettingsPage({ viewer }: { viewer: string }) {
 ```
 La confirmation de déconnexion suit le motif de `packages/ui/src/settings/DisconnectDialog.tsx` (Dialog, bouton `destructive`).
 
-- [ ] **Step 8: Brancher l'écran**
+- [x] **Step 8: Brancher l'écran**
 
 - `packages/ui/src/settings/SettingsNav.tsx` : `SettingsScreen = Extract<Screen, "general" | "domains" | "integrations" | "sync">` ; importer `Cloud` ; insérer `{ id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" }` entre `integrations` et `security` (si T25 a déjà remplacé l'entrée `security` par un écran, garder son entrée telle quelle).
 - `packages/ui/src/shell/lazy-screens.ts` : `export const SyncSettingsPage = lazyPanel(() => import("../settings/SyncSettingsPage").then((m) => m.SyncSettingsPage), fr.lazy);`
@@ -21169,14 +21169,14 @@ La confirmation de déconnexion suit le motif de `packages/ui/src/settings/Disco
 Run: `bun test packages/ui/src/settings/sync-settings.test.tsx packages/ui/src/tabs/tabs.test.ts packages/ui/src/agents/agent-panel.test.tsx packages/ui/src/shell/agents-shell.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 9: Vérifier**
+- [x] **Step 9: Vérifier**
 
 Run: `bun test packages/ui packages/schema && bun run check && bun run typecheck && bun run --cwd packages/ui build && bun run budget`
 Expected: PASS ; budget ≤ 230 kB gzip (la page est chargée à la demande, seul `SyncIndicator` et son hook entrent dans le chunk d'entrée).
 
 Contrôle visuel : Paramètres › Sync (non configuré, dialogue, connecté) et la barre des agents face aux exports S1 et S9, en sombre et en clair.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add packages/schema/src/tabs.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/tabs/screens.ts \
