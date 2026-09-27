@@ -16701,7 +16701,7 @@ export type FakeRuns = { active(): (PresenceRun & { projectId: string; ticketId:
 - `startCollab` (T21) renvoie en plus `presence: PresenceHub` et `attachRuns(source: { state(): AgentsState; onRunState(listener: (run: RunView) => void): () => void }): () => void`.
 - Vérifié en T0 : il n'existe pas de `runs.active()` ni de `runs.onChange`. Les runs sont ceux de l'orchestrateur (`packages/daemon/src/agents/orchestrator-types.ts`) : `state().runs: RunView[]`, chaque `RunView` porte `projectId: string | null`, `ticketKey: string | null`, `profileId`, `profileName` (le nom affiché, « opus-dev-1 », celui de `AgentBadge`) et `state: RunState` ; les runs terminés y restent (`isTerminal(state)` les distingue) ; `onRunState(listener)` notifie chaque changement d'état, `onChange` tout changement de l'état global. Dans `daemon.ts`, l'orchestrateur est créé **après** le serveur, donc après `startCollab` : la source des runs se branche ensuite par `collab.attachRuns(orchestrator)`, et vaut « aucun run » d'ici là.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 `packages/daemon/src/collab/presence.test.ts` :
 ```ts
@@ -16793,12 +16793,12 @@ test("presence is ignored for a project that is not shared", async () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/presence.test.ts`
 Expected: FAIL « Cannot find module './presence' » (ou `presence` absent du harnais).
 
-- [ ] **Step 3: Implémenter `presence.ts`**
+- [x] **Step 3: Implémenter `presence.ts`**
 
 `packages/daemon/src/collab/presence.ts` :
 ```ts
@@ -16920,7 +16920,7 @@ export class PresenceHub {
 }
 ```
 
-- [ ] **Step 4: RPC et câblage**
+- [x] **Step 4: RPC et câblage**
 
 Dans `rpc.ts`, `handleSyncRpc` reçoit aussi `presence?: PresenceHub` (cinquième paramètre) :
 ```ts
@@ -16981,7 +16981,7 @@ function fakeRuns(): FakeRuns {
 ```
 Le harnais passe `runs: (projectId) => fake.active().filter((r) => r.projectId === projectId).map(({ ticketKey, profile, state }) => ({ ticketKey, profile, state }))`, branche `fake.onChange(() => presence.refreshRuns())` et les trames `presence` comme `startCollab`, expose `handler: (req, ctx) => handleSyncRpc(client, req, ctx, share, presence)`, mais n'installe pas la minuterie de 10 s : les tests appellent `tick()` quand ils en ont besoin.
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/presence.test.ts`
 Expected: PASS (6 tests).
@@ -16989,7 +16989,7 @@ Expected: PASS (6 tests).
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/daemon/src/collab/presence.ts packages/daemon/src/collab/presence.test.ts packages/daemon/src/collab/rpc.ts \
