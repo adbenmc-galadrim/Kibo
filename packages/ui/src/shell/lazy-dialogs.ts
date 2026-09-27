@@ -48,3 +48,28 @@ export const ModifyWithAiDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const ConfirmDialog = lazyPanel(
+  () => import("@kibo/sdk/ui/confirm-dialog").then((m) => m.ConfirmDialog),
+  fr.lazy,
+  hidden,
+);
+export const RenameWorkspaceDialog = lazyPanel(
+  () => import("../dialogs/RenameWorkspaceDialog").then((m) => m.RenameWorkspaceDialog),
+  fr.lazy,
+  hidden,
+);
+export const NotesDirDialog = lazyPanel(
+  () => import("../dialogs/NotesDirDialog").then((m) => m.NotesDirDialog),
+  fr.lazy,
+  hidden,
+);
+export const TrustDialog = lazyPanel(
+  () => import("../dialogs/TrustDialog").then((m) => m.TrustDialog),
+  fr.lazy,
+  hidden,
+);
+export const OpenViewDialog = lazyPanel(
+  () => import("../dialogs/OpenViewDialog").then((m) => m.OpenViewDialog),
+  fr.lazy,
+  hidden,
+);

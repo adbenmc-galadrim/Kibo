@@ -8,8 +8,8 @@ import {
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Check, ChevronDown, Pencil, Settings } from "lucide-react";
 import { useState } from "react";
-import { RenameWorkspaceDialog } from "../dialogs/RenameWorkspaceDialog";
 import { fr } from "../i18n/fr";
+import { RenameWorkspaceDialog } from "./lazy-dialogs";
 import { WorkspaceTile } from "./WorkspaceMark";
 
 type Props = { name: string; onRename(name: string): Promise<void>; onSettings(): void };

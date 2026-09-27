@@ -1,7 +1,7 @@
 import { KiboError, type Session } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { client, onUnauthorized } from "./api";
-import { PairingScreen } from "./shell/PairingScreen";
+import { PairingScreen } from "./shell/lazy-screens";
 import { Shell } from "./shell/Shell";
 
 async function bootstrap(): Promise<Session | null> {

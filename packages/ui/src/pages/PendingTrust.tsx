@@ -2,8 +2,9 @@ import type { ComponentVersionSummary } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { TrustDialog, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { trustTargetOf } from "../lib/trust-target";
+import { TrustDialog } from "../shell/lazy-dialogs";
 import { OtherVersionMenu } from "./OtherVersionMenu";
 
 type Props = {

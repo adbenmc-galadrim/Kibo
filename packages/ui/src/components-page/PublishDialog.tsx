@@ -11,9 +11,10 @@ import {
 import { Skeleton } from "@kibo/sdk/ui/skeleton";
 import { useEffect, useState } from "react";
 import { client } from "../api";
-import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
+import { TrustDialog } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { isRemoteView } from "../lib/remote-view";
+import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { useProjects } from "../state/use-projects";
 import {
   ChangesList,

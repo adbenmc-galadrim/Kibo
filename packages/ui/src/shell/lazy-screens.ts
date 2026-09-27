@@ -98,3 +98,8 @@ export const PresenceAvatars = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) => m.PairingScreen), fr.lazy);
+export const AgentDrawer = lazyPanel(
+  () => import("../agents/AgentDrawer").then((m) => m.AgentDrawer),
+  fr.lazy,
+);

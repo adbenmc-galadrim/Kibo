@@ -440,5 +440,14 @@ export const fr = {
   ...frMarket,
   ...frAi,
   ...frCollab,
-  common: { cancel: "Annuler", close: "Fermer", error: "Une erreur est survenue." },
+  common: {
+    cancel: "Annuler",
+    close: "Fermer",
+    error: "Une erreur est survenue.",
+    confirm: "Confirmer",
+    delete: "Supprimer",
+    rename: "Renommer",
+    save: "Enregistrer",
+    copied: "Copié",
+  },
 } as const;

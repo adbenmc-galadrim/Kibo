@@ -1,10 +1,10 @@
 import type { AgentsState, FileRef, RunView } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
+import { AgentDrawer } from "../shell/lazy-screens";
 import { SyncIndicator } from "../shell/SyncIndicator";
 import { useAgents, useDaemonOnline, useNow, useRunLog } from "../state/use-agents";
 import { AgentBar } from "./AgentBar";
-import { AgentDrawer } from "./AgentDrawer";
 
 type Props = {
   onLaunch: () => void;

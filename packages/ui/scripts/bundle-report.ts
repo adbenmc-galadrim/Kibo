@@ -23,13 +23,15 @@ export const ENTRY_GZIP_BUDGET = 230_000;
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage|AgentDrawer)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
   /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource)\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
+  /\/packages\/ui\/src\/dialogs\/(RenameWorkspaceDialog|NotesDirDialog|TrustDialog|OpenViewDialog)\.tsx$/,
+  /\/packages\/sdk\/src\/ui\/(alert-dialog|confirm-dialog|reason-dialog)\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

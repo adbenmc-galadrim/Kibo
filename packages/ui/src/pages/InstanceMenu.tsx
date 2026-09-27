@@ -12,12 +12,11 @@ import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { modifiable } from "../components-page/rows";
-import { NotesDirDialog } from "../dialogs/NotesDirDialog";
-import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { useFlash } from "../lib/use-flash";
 import { findComponent } from "../registry";
-import { ModifyWithAiDialog } from "../shell/lazy-dialogs";
+import { ModifyWithAiDialog, NotesDirDialog, TrustDialog } from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
 
 type Props = { projectId: string; instance: Instance; title: string };

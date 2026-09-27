@@ -185,20 +185,20 @@ test("the panel opens on the waiting run, shows its journal and folds back", asy
   render(<AgentPanel onLaunch={() => {}} focusRunId={null} onFocused={() => {}} onOpenFile={() => {}} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Répondre à opus-dev-2" }));
-  expect(screen.getByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
   expect(screen.getByLabelText("Réponse à opus-dev-2")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Replier les agents" }));
   expect(screen.getByRole("button", { name: "Déplier les agents" })).toBeTruthy();
 });
-test("a focus request opens the drawer on that run", () => {
+test("a focus request opens the drawer on that run", async () => {
   const onFocused = mock(() => {});
   render(<AgentPanel onLaunch={() => {}} focusRunId="r42" onFocused={onFocused} onOpenFile={() => {}} />);
-  expect(screen.getByRole("list", { name: "Journal de opus-dev-1" })).toBeTruthy();
+  expect(await screen.findByRole("list", { name: "Journal de opus-dev-1" })).toBeTruthy();
   expect(onFocused).toHaveBeenCalledTimes(1);
 });
 test("the launch button asks the shell to open the assign dialog", async () => {
   const onLaunch = mock(() => {});
   render(<AgentPanel onLaunch={onLaunch} focusRunId="r41" onFocused={() => {}} onOpenFile={() => {}} />);
-  await userEvent.setup().click(screen.getByRole("button", { name: "Lancer un agent" }));
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Lancer un agent" }));
   expect(onLaunch).toHaveBeenCalled();
 });

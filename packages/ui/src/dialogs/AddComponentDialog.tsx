@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { nextLayout } from "../lib/next-layout";
+import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { BUILTIN_COMPONENTS, componentIcon } from "../registry";
 import { navigateTo } from "../route";
 import { useComponents } from "../state/use-components";
@@ -26,7 +27,7 @@ import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
 import { SyncSourceForm } from "./sync/SyncSourceForm";
 import { EMPTY_SYNC_FORM, SYNCABLE_COMPONENTS, type SyncForm, toBindingConfig } from "./sync/status-map";
 import { useFirstSync } from "./sync/use-first-sync";
-import { TrustDialog, type TrustTarget, trustTargetOf, trustTargetOfInstall } from "./TrustDialog";
+import { TrustDialog, trustTargetOfInstall } from "./TrustDialog";
 
 type Props = {
   projectId: string;

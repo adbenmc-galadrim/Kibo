@@ -1,12 +1,8 @@
 import {
   type ApprovableTrust,
-  type ComponentOrigin,
-  type ComponentVersionSummary,
   type GrantedPermissions,
-  grantedOf,
   KiboError,
   type MarketInstallResult,
-  type MarketTrustInfo,
   type RegistryVersion,
   shortHash,
 } from "@kibo/schema";
@@ -26,17 +22,8 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { permissionLines } from "../lib/permission-lines";
 import { isRemoteView } from "../lib/remote-view";
+import type { TrustTarget } from "../lib/trust-target";
 import { MarketSubtitle } from "./MarketSubtitle";
-
-export type TrustTarget = {
-  id: string;
-  title: string;
-  version: string;
-  hash: string;
-  origin: ComponentOrigin;
-  permissions: GrantedPermissions;
-  market?: MarketTrustInfo | null;
-};
 
 export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
   return {
@@ -47,18 +34,6 @@ export function trustTargetOfInstall(r: MarketInstallResult): TrustTarget {
     origin: "marketplace",
     permissions: r.permissions,
     market: r.market,
-  };
-}
-
-export function trustTargetOf(id: string, title: string, v: ComponentVersionSummary): TrustTarget | null {
-  if (!v.hash || !v.manifest) return null;
-  return {
-    id,
-    title,
-    version: v.version,
-    hash: v.hash,
-    origin: v.origin,
-    permissions: grantedOf(v.manifest),
   };
 }
 
