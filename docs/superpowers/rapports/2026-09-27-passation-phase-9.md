@@ -40,6 +40,6 @@ Ordre d'intégration conseillé : T7, T11, T9, T8, puis T6, T12, T10 ; ensuite T
 
 - Tests instables sous charge (plusieurs agents en parallèle) : `packages/daemon/src/code/watcher.test.ts` (« removing the watched directory itself… », délai 5 s) et `presence-guards.test.ts` ; un échec E2E isolé est passé à la relance. À stabiliser dans une prochaine tâche.
 - Budget : T7 consomme +2,6 kB (sous-menu partagé) ; surveiller le cumul avec T6, T8, T10, T13 (plafond 230 kB jamais relevé).
-- Questions pour Adam (décisions actuelles appliquées) : mutations git de l'onglet Code réservées aux sessions locales ? renommage automatique des notes `sans-titre` ? glisser-déposer limité au changement de parent ?
+- Réponses d'Adam (2026-09-27), écrites dans la spec §12.3 et les décisions 6, 7, 9 du plan (`phase/9`) : (1) toutes les mutations git de `/api/code` réservées à la machine locale ; (2) aucune note ne reste sans titre (titre obligatoire à la création) ; (3) le glisser-déposer réordonne aussi. Tâches complémentaires T3b, T7b, T10b, T12b listées dans le plan (« Suites des réponses d'Adam ») : `kibo-lead` les rédige à la reprise. T12b couvre aussi la perte de frappe au renommage.
 - Le tag `v1.0.0` pointe l'ancien commit (seul `release.yml` diffère) ; la release publiée est correcte.
 - Jalon de phase : version `1.1.0`, PR `phase/9` → `main`, CI verte sur tous les jobs, tag `v1.1.0`.
