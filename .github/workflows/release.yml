@@ -77,7 +77,7 @@ jobs:
           releaseBody: ${{ needs.version.outputs.notes }}
           releaseDraft: true
           prerelease: false
-          includeUpdaterJson: true
+          uploadUpdaterJson: true
           args: --target ${{ matrix.target }}
   publish:
     needs: [version, build]
