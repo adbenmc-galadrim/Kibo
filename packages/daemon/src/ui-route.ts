@@ -1,10 +1,13 @@
 import { statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
+const TAURI_IPC_ORIGINS = "ipc: http://ipc.localhost";
+
 const uiHeaders = (sandboxOrigin: string | null) => ({
   "content-security-policy":
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-    `font-src 'self' data:; connect-src 'self'; ${sandboxOrigin ? `frame-src ${sandboxOrigin}; ` : ""}frame-ancestors 'none'; ` +
+    `font-src 'self' data:; connect-src 'self' ${TAURI_IPC_ORIGINS}; ` +
+    `${sandboxOrigin ? `frame-src ${sandboxOrigin}; ` : ""}frame-ancestors 'none'; ` +
     "base-uri 'none'; form-action 'self'",
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
