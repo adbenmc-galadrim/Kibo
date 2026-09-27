@@ -7,7 +7,7 @@ on:
         description: "Construire aussi macOS Intel (minutes macOS ×10)"
         type: boolean
         default: false
-permissions: { contents: write }
+permissions: { contents: read }
 concurrency: { group: "release-${{ github.ref }}", cancel-in-progress: false }
 jobs:
   version:
@@ -45,6 +45,7 @@ jobs:
           echo "matrix={\"include\":[$MATRIX]}" >> "$GITHUB_OUTPUT"
   build:
     needs: version
+    permissions: { contents: write }
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.version.outputs.matrix) }}
@@ -81,6 +82,7 @@ jobs:
           args: --target ${{ matrix.target }}
   publish:
     needs: [version, build]
+    permissions: { contents: write }
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
