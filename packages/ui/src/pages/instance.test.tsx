@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 
 const H = "c".repeat(64);
+const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
 const calls: RpcRequest[] = [];
 let components: ComponentSummary[] = [];
 let answer: (req: RpcRequest) => Promise<unknown> = async () => null;
@@ -19,6 +20,8 @@ mock.module("../api", () => ({
       if (req.method === "listDrafts") return Promise.resolve([]);
       if (req.method === "listComponentDrafts") return Promise.resolve([]);
       if (req.method === "getRuntimeInfo") return runtime();
+      if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
+      if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
       return answer(req);
     },
     subscribe: () => () => undefined,

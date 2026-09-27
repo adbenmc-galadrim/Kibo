@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
-import type { CiRun, Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
-import { AgentBadge, type CiTone, worstCiTone } from "@kibo/sdk";
+import type { CiRun, MemberInfo, Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
+import { AgentBadge, assigneeLabel, type CiTone, TicketKeyLabel, worstCiTone } from "@kibo/sdk";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { Bot, MoreHorizontal } from "lucide-react";
 import { fr } from "./fr";
 
 const CI_DOT = {
@@ -34,41 +35,50 @@ type Props = {
   run: TicketRun | null;
   ci?: CiChip;
   statuses: Status[];
+  members: MemberInfo[];
+  remote: { label: string; state: string }[];
+  readOnly: boolean;
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
 };
 
-export function KanbanCard({ ticket: t, run, ci, statuses, onOpen, onMove }: Props) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: t.id });
+export function KanbanCard(props: Props) {
+  const { ticket: t, run, ci, statuses, members, remote, readOnly, onOpen, onMove } = props;
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: t.id, disabled: readOnly });
   const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
   return (
     <article
       ref={setNodeRef}
       style={style}
-      className="grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs"
+      className={cn(
+        "grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs",
+        t.key === null && "border-dashed",
+      )}
     >
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-2xs text-muted-foreground" {...listeners} {...attributes}>
-          {t.keyLabel}
+      <div className="flex h-6 items-center gap-2">
+        <span {...listeners} {...attributes}>
+          <TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />
         </span>
         <span className="flex-1" />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="size-6" aria-label={fr.actions(t.keyLabel)}>
-              <MoreHorizontal className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{fr.moveTo}</DropdownMenuLabel>
-            {statuses
-              .filter((s) => s.id !== t.statusId)
-              .map((s) => (
-                <DropdownMenuItem key={s.id} onSelect={() => onMove(s.id)}>
-                  {s.label}
-                </DropdownMenuItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!readOnly && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="size-6" aria-label={fr.actions(t.keyLabel)}>
+                <MoreHorizontal className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{fr.moveTo}</DropdownMenuLabel>
+              {statuses
+                .filter((s) => s.id !== t.statusId)
+                .map((s) => (
+                  <DropdownMenuItem key={s.id} onSelect={() => onMove(s.id)}>
+                    {s.label}
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       <button type="button" className="text-left" onClick={onOpen}>
         {t.title}
@@ -78,6 +88,20 @@ export function KanbanCard({ ticket: t, run, ci, statuses, onOpen, onMove }: Pro
       )}
       <div className="flex flex-wrap items-center gap-1.5">
         <AgentBadge agent={t.assignee?.kind === "agent" ? t.assignee.ref : null} run={run} texts={fr.run} />
+        {remote.map((r) => (
+          <span
+            key={r.label}
+            className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
+          >
+            <Bot aria-hidden className="size-3" />
+            {r.label}
+          </span>
+        ))}
+        {t.assignee?.kind === "human" && members.length > 0 && (
+          <Badge variant="outline" className="text-3xs font-normal">
+            {assigneeLabel(t.assignee, members)}
+          </Badge>
+        )}
         {t.waitingOn.map((k) => (
           <Badge key={k} variant="outline" className="text-3xs">
             {fr.waitingOn(k)}

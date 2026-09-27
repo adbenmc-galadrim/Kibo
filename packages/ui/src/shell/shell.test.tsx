@@ -132,6 +132,8 @@ mock.module("../api", () => ({
       if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
       if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
       if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
+      if (req.method === "getPresence") return Promise.resolve([]);
+      if (req.method === "setPresence") return Promise.resolve(null);
       saved.push(req);
       if (req.method === "command" && req.command.method === "addPage")
         return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
 import { componentIcon } from "../registry";
-import { SourceHeader } from "../shell/lazy-screens";
+import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
 import { InstanceFrame } from "./InstanceFrame";
@@ -64,6 +64,15 @@ export function PageView({ project, page, viewer }: Props) {
   );
   return (
     <div className="flex h-full flex-col">
+      {project.sync.shared && (
+        <PageActions>
+          <PresenceAvatars
+            project={{ id: projectId, name: project.meta.name }}
+            pages={project.pages}
+            pageId={page.id}
+          />
+        </PageActions>
+      )}
       {!first ? (
         <div className="grid flex-1 place-items-center p-6 text-center">
           <div className="grid gap-3">

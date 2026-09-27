@@ -1,5 +1,15 @@
-import type { Assignee, Status, TicketRun } from "@kibo/schema";
-import { AgentBadge, filterBySource, readSource, StatusDot, useEntities, useSdk } from "@kibo/sdk";
+import type { Assignee, MemberInfo, Status, TicketRun } from "@kibo/schema";
+import {
+  AgentBadge,
+  assigneeLabel,
+  filterBySource,
+  readSource,
+  StatusDot,
+  TicketKeyLabel,
+  useEntities,
+  useMembers,
+  useSdk,
+} from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
@@ -12,7 +22,9 @@ const COLUMNS =
   "grid grid-cols-[minmax(0,1fr)_7rem_5rem_2rem] items-center gap-3 px-2 @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_2rem]";
 const ASSIGNEE_CELL = "hidden min-w-0 @3xl:flex";
 
-function AssigneeCell({ assignee, run }: { assignee: Assignee | null; run: TicketRun | null }) {
+type AssigneeProps = { assignee: Assignee | null; run: TicketRun | null; members: MemberInfo[] };
+
+function AssigneeCell({ assignee, run, members }: AssigneeProps) {
   if (assignee?.kind === "agent" || (run && !assignee))
     return (
       <span className={cn(ASSIGNEE_CELL, "items-center")}>
@@ -26,15 +38,16 @@ function AssigneeCell({ assignee, run }: { assignee: Assignee | null; run: Ticke
     );
   if (!assignee)
     return <span className={cn(ASSIGNEE_CELL, "text-xs text-muted-foreground")}>{fr.unassigned}</span>;
+  const name = assigneeLabel(assignee, members);
   return (
     <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5 text-xs")}>
       <span
         aria-hidden="true"
         className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-3xs font-semibold"
       >
-        {assignee.ref.slice(0, 2).toUpperCase()}
+        {name.slice(0, 2).toUpperCase()}
       </span>
-      <span className="truncate">{assignee.ref}</span>
+      <span className="truncate">{name}</span>
     </span>
   );
 }
@@ -47,6 +60,7 @@ export function TicketsTree() {
   const visible = mine ? mineOnly(tickets, sdk.viewer) : tickets;
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
+  const members = useMembers();
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const label = (id: string) => statuses.find((s: Status) => s.id === id)?.label ?? id;
@@ -80,7 +94,7 @@ export function TicketsTree() {
             ) : (
               <span className="size-4 shrink-0" />
             )}
-            <span className="shrink-0 font-mono text-2xs text-muted-foreground">{t.keyLabel}</span>
+            <TicketKeyLabel ticket={t} className="shrink-0 font-mono text-2xs text-muted-foreground" />
             <button
               type="button"
               className={cn("min-w-16 truncate text-left", t.statusId === "done" && "text-muted-foreground")}
@@ -103,7 +117,7 @@ export function TicketsTree() {
             <StatusDot statusId={t.statusId} />
             <span className="truncate">{label(t.statusId)}</span>
           </span>
-          <AssigneeCell assignee={t.assignee} run={runOf.get(t.id) ?? null} />
+          <AssigneeCell assignee={t.assignee} run={runOf.get(t.id) ?? null} members={members} />
           <span className="font-mono text-2xs text-muted-foreground">
             {t.progress.total > 0 ? `${t.progress.done}/${t.progress.total}` : null}
           </span>

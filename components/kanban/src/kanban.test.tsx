@@ -10,7 +10,7 @@ import {
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -255,4 +255,83 @@ test("an unavailable CI is stated, a missing GitHub account is not", async () =>
   }));
   expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
   expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("shows member names and provisional keys", async () => {
+  const m = createMockSdk(manifest, {
+    viewer: "adam",
+    config: { filter: "all" },
+    shared: true,
+    members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
+    seed: (run) =>
+      run({ method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "u-lea" } }),
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect((await screen.findByText("KIB-…")).className).toContain("italic");
+  expect(await screen.findByText("Léa")).toBeTruthy();
+});
+
+test("shows a colleague's run on the card", async () => {
+  const m = createMockSdk(manifest, {
+    viewer: "adam",
+    presence: [
+      {
+        deviceId: "d2",
+        self: false,
+        userId: "u-lea",
+        name: "Léa",
+        pageId: null,
+        ticketId: null,
+        runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
+      },
+    ],
+    seed: (run) =>
+      run({ method: "createTicket", title: "Schéma", assignee: { kind: "agent", ref: "opus-dev-1" } }),
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect(await screen.findByText("opus-dev-1 · Léa")).toBeTruthy();
+});
+
+test("cards cannot be moved in a read-only project", async () => {
+  const m = createMockSdk(manifest, {
+    viewer: "adam",
+    config: { filter: "all" },
+    shared: true,
+    seed: (run) => run({ method: "createTicket", title: "Lecture" }),
+  });
+  m.setAccess("read-only");
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByText("KIB-…");
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
+  expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
+});
+
+test("in a shared project, 'Moi + agents' follows the account id", async () => {
+  const m = createMockSdk(manifest, {
+    viewer: "u-adam",
+    shared: true,
+    seed: (run) => {
+      run({ method: "createTicket", title: "À moi", assignee: { kind: "human", ref: "u-adam" } });
+      run({ method: "createTicket", title: "Au nom local", assignee: { kind: "human", ref: "adam" } });
+    },
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect(await screen.findByText("À moi")).toBeTruthy();
+  expect(screen.queryByText("Au nom local")).toBeNull();
 });

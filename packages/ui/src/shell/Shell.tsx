@@ -3,7 +3,6 @@ import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
-import { client } from "../api";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { projectDomainsOf } from "../lib/project-domains";
@@ -26,13 +25,14 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
-import { IntegrationNotices, ProjectStatusBanner } from "./lazy-screens";
+import { IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
+import { inTauri, openWindow, renameWorkspace } from "./workspace-actions";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
@@ -55,14 +55,6 @@ export function Shell({ viewer, notifications }: Props) {
     </>
   );
 }
-
-const renameWorkspace = async (name: string) => {
-  await client.rpc({ method: "config", command: { method: "renameWorkspace", name } });
-};
-
-const inTauri = () => "__TAURI_INTERNALS__" in window;
-const openWindow = (t: TabTarget) =>
-  window.open(`${location.pathname}${targetToHash(t)}`, "_blank", "noopener");
 
 type WorkspaceProps = Props & { projects: ProjectSummary[]; tabs: TabsApi; agents: AgentsState | null };
 
@@ -187,6 +179,11 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
             onNewTab={() => setPalette({ newTab: true })}
             onOpenWindow={inTauri() ? null : openWindow}
             error={tabs.error}
+            trailing={
+              project?.sync.shared && (
+                <ProjectPresence project={project} active={active} sheet={dialogs.sheet} />
+              )
+            }
           />
           <SidebarProvider className="min-h-0 flex-1">
             <AppSidebar

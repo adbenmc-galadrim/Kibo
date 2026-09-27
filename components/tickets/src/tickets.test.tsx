@@ -109,3 +109,19 @@ test("filter mine shows only my tickets with a count", async () => {
   expect(screen.getByText("KIB-1")).toBeTruthy();
   expect(screen.queryByText("KIB-3")).toBeNull();
 });
+
+test("the tree shows provisional keys and member names", async () => {
+  const m = createMockSdk(manifest, {
+    shared: true,
+    members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
+    seed: (run) =>
+      run({ method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "u-lea" } }),
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect((await screen.findByText("KIB-…")).className).toContain("italic");
+  expect(await screen.findByText("Léa")).toBeTruthy();
+});

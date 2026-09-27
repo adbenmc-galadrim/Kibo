@@ -33,4 +33,17 @@ describe("my tickets", () => {
   test("a project without snapshot yet is skipped", () => {
     expect(myTickets([mineMeta("x", "X", "X")], mineSnapshots, "adam", "assigned")).toEqual([]);
   });
+  test("in a shared project, my tickets follow the account id, not the OS user", () => {
+    const base = mineSnapshots.get(kib.id);
+    if (!base) throw new Error("fixture kib missing");
+    const human = (ref: string) => ({ kind: "human" as const, ref });
+    const shared = {
+      ...base,
+      viewer: "u-adam",
+      tickets: base.tickets.map((t) => (t.key === "KIB-21" ? { ...t, assignee: human("u-adam") } : t)),
+    };
+    const groups = myTickets([kib], new Map([[kib.id, shared]]), "adam", "assigned");
+    expect(groups[0]?.tickets.map((t) => t.key)).toContain("KIB-21");
+    expect(groups[0]?.tickets.some((t) => t.assignee?.ref === "adam")).toBe(false);
+  });
 });

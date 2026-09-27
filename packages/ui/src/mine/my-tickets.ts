@@ -34,8 +34,9 @@ export function myTickets(
   tab: MineTab,
 ): MineGroup[] {
   return projects.flatMap((project) => {
-    const tickets = (snapshots.get(project.id)?.tickets ?? [])
-      .filter((t) => isMine(t, viewer, tab))
+    const snapshot = snapshots.get(project.id);
+    const tickets = (snapshot?.tickets ?? [])
+      .filter((t) => isMine(t, snapshot?.viewer ?? viewer, tab))
       .sort(compareMine);
     return tickets.length > 0 ? [{ project, tickets }] : [];
   });

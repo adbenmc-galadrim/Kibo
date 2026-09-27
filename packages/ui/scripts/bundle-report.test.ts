@@ -80,6 +80,12 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/shell/TicketSheet.tsx",
       "/Kibo/packages/ui/src/palette/CommandPalette.tsx",
       "/Kibo/packages/ui/src/components-page/PublishDialog.tsx",
+      "/Kibo/packages/ui/src/pages/TicketTab.tsx",
+      "/Kibo/packages/ui/src/shell/TicketDetail.tsx",
+      "/Kibo/packages/ui/src/shell/PresenceAvatars.tsx",
+      "/Kibo/packages/ui/src/shell/ProjectPresence.tsx",
+      "/Kibo/packages/ui/src/shell/KeyRequired.tsx",
+      "/Kibo/packages/ui/src/i18n/fr-presence.ts",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [

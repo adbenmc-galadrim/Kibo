@@ -1,6 +1,15 @@
 import { DndContext, type DragEndEvent, useDroppable } from "@dnd-kit/core";
 import type { Status, StatusId, TicketView } from "@kibo/schema";
-import { filterBySource, readSource, StatusDot, useEntities, useSdk } from "@kibo/sdk";
+import {
+  filterBySource,
+  readSource,
+  remoteRuns,
+  StatusDot,
+  useEntities,
+  usePresence,
+  useSdk,
+  useSharing,
+} from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -55,6 +64,9 @@ export function Kanban() {
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
+  const peers = usePresence();
+  const sharing = useSharing();
+  const readOnly = sharing.access !== "write";
   const [filter, setFilter] = useState<KanbanFilter>(
     source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
   );
@@ -83,6 +95,7 @@ export function Kanban() {
     else void setStatus(t, statusId);
   };
   const onDragEnd = (e: DragEndEvent) => {
+    if (readOnly) return;
     const t = tickets.find((x) => x.id === e.active.id);
     const target = ordered.find((s) => s.id === e.over?.id);
     if (t && target) move(t, target.id);
@@ -124,7 +137,9 @@ export function Kanban() {
                 key={s.id}
                 status={s}
                 count={cards.length}
-                onAdd={s.id === "blocked" ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
+                onAdd={
+                  readOnly || s.id === "blocked" ? undefined : () => sdk.openNewTicket({ statusId: s.id })
+                }
               >
                 {cards.map((t) => (
                   <KanbanCard
@@ -133,6 +148,9 @@ export function Kanban() {
                     run={runOf.get(t.id) ?? null}
                     ci={ciOf(t)}
                     statuses={ordered}
+                    members={sharing.members}
+                    remote={remoteRuns(peers, t.key)}
+                    readOnly={readOnly}
                     onOpen={() => sdk.openTicket(t.id)}
                     onMove={(id) => move(t, id)}
                   />
