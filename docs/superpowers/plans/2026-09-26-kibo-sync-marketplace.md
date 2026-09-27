@@ -19315,7 +19315,7 @@ git commit -m "feat(ui): sources de marketplace"
   - `MarketUpdateDialog({ title, summary, sourceId, id, to, onDone })`, `PublisherChangedDialog({ detail, open, onOpenChange, onUnlocked })`, `PublishToMarketDialog({ target, open, onOpenChange })`, `MissingComponent({ projectId, componentRef, compact })`, `useMarketStatus()`.
   - `keyFingerprintHex(publicKey: string): Promise<string>` (`lib/fingerprint.ts`, WebCrypto du navigateur).
 
-- [ ] **Step 1: Côté démon, tests de la révocation listée et de l'état marketplace**
+- [x] **Step 1: Côté démon, tests de la révocation listée et de l'état marketplace**
 
 `packages/daemon/src/components/registry-listing-revoked.test.ts` :
 ```ts
@@ -19422,7 +19422,7 @@ Le nom de la fausse source (« Équipe ») et l'option `publisher` de `makeTestP
 Run: `bun test packages/daemon/src/components/registry-listing-revoked.test.ts packages/daemon/src/market/summary.test.ts`
 Expected: FAIL (`revoked` absent du résumé ; « Cannot find module './summary' »).
 
-- [ ] **Step 2: Implémenter la révocation listée, `summary.ts` et les RPC**
+- [x] **Step 2: Implémenter la révocation listée, `summary.ts` et les RPC**
 
 Dans `packages/schema/src/component.ts`, `ComponentVersionSummary` gagne `revoked: { reason: string; at: number } | null`. Dans `packages/daemon/src/components/registry-listing.ts`, `installedSummary` ajoute `revoked: v.revoked ?? null` et le résumé d'un intégré `revoked: null`. Les fixtures de tests UI qui construisent un `ComponentVersionSummary` (`components-page.test.tsx`, `rows.test.ts`, tests de `PendingTrust`) gagnent `revoked: null` ; leurs attentes ne changent pas.
 
@@ -19474,7 +19474,7 @@ Dans `packages/daemon/src/market/rpc.ts`, traiter `listMarketStatus` par `market
 Run: `bun test packages/daemon/src/components packages/daemon/src/market packages/schema`
 Expected: PASS.
 
-- [ ] **Step 3: Textes**
+- [x] **Step 3: Textes**
 
 Ajouter à `market` dans `packages/ui/src/i18n/fr-market.ts` :
 ```ts
@@ -19504,7 +19504,7 @@ Ajouter à `market` dans `packages/ui/src/i18n/fr-market.ts` :
     },
 ```
 
-- [ ] **Step 4: Test du calcul de mise à jour**
+- [x] **Step 4: Test du calcul de mise à jour**
 
 `packages/ui/src/lib/market-update.test.ts` :
 ```ts
@@ -19617,7 +19617,7 @@ Dans `PublishSections.tsx`, remplacer le type `PublishPreview` des props de `Usa
 Run: `bun test packages/ui/src/lib/market-update.test.ts packages/ui/src/components-page`
 Expected: PASS ; les tests existants de l'écran 6 passent sans changement de leurs attentes.
 
-- [ ] **Step 5: Tests du flux de mise à jour et de l'onglet Installés**
+- [x] **Step 5: Tests du flux de mise à jour et de l'onglet Installés**
 
 `packages/ui/src/components-page/market-update.test.tsx` :
 ```tsx
@@ -19770,7 +19770,7 @@ Les libellés des radios de `StrategyChoice` sont leurs titres (`aria-label` de 
 Run: `bun test packages/ui/src/components-page/market-update.test.tsx`
 Expected: FAIL avec « Cannot find module './MarketUpdateDialog' ».
 
-- [ ] **Step 6: Implémenter le flux et l'onglet Installés**
+- [x] **Step 6: Implémenter le flux et l'onglet Installés**
 
 `packages/ui/src/components-page/MarketUpdateDialog.tsx` :
 ```tsx
@@ -19951,7 +19951,7 @@ Dans `PendingTrust.tsx`, quand `summary?.revoked` n'est pas nul, afficher `<p cl
 Run: `bun test packages/ui/src/components-page packages/ui/src/pages`
 Expected: PASS (dont les 4 tests de `market-update.test.tsx`).
 
-- [ ] **Step 7: Tests des dialogues M6 et M8**
+- [x] **Step 7: Tests des dialogues M6 et M8**
 
 `packages/ui/src/components-page/market-dialogs.test.tsx` :
 ```tsx
@@ -20078,7 +20078,7 @@ Le statut de sync suit `SyncStatus` de T4 (nom exact des champs repris de sa sec
 Run: `bun test packages/ui/src/components-page/market-dialogs.test.tsx`
 Expected: FAIL avec « Cannot find module '../dialogs/PublisherChangedDialog' ».
 
-- [ ] **Step 8: Implémenter M6 et M8**
+- [x] **Step 8: Implémenter M6 et M8**
 
 Ajouter à `packages/ui/src/lib/fingerprint.ts` :
 ```ts
@@ -20292,7 +20292,7 @@ Une source d'équipe est une source dont l'hôte est celui du serveur de sync co
 Run: `bun test packages/ui/src/components-page/market-dialogs.test.tsx packages/ui/src/lib/market-errors.test.ts`
 Expected: PASS.
 
-- [ ] **Step 9: Test et implémentation du composant absent (S7)**
+- [x] **Step 9: Test et implémentation du composant absent (S7)**
 
 `packages/ui/src/pages/missing-component.test.tsx` :
 ```tsx
@@ -20427,16 +20427,16 @@ Dans `InstanceFrame.tsx` (`ThirdParty`), remplacer `if (!summary || !v) return <
 Run: `bun test packages/ui/src/pages`
 Expected: PASS.
 
-- [ ] **Step 9b: Backend arrêté faute d'isolation OS (M7, instance)**
+- [x] **Step 9b: Backend arrêté faute d'isolation OS (M7, instance)**
 
 `packages/ui/src/pages/backend-stopped.test.tsx` : avec un faux client dont `getSandboxStatus` renvoie `{ kind: null, available: false, reason: "bubblewrap (bwrap) is not installed", fix: "sudo apt install bubblewrap", allowUnsandboxed: false }`, `InstanceFrame` d'une version sandboxée **dont le manifeste déclare un backend** affiche au-dessus du cadre le bandeau ambre « Backend arrêté — isolation OS indisponible » (`role="status"`) et rend toujours l'UI du composant ; aucun bandeau quand `available` est vrai, quand `allowUnsandboxed` est vrai, pour une version `trusted` ou sans backend ; le bandeau disparaît sur `{ type: "sandbox.changed" }`. Run ⇒ FAIL. Implémentation : `packages/ui/src/pages/BackendStopped.tsx` lit l'état par `useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"])` (T25) et `InstanceFrame.tsx` le rend quand `summary.trust === "sandboxed"` et que le manifeste a un `server` ; texte `backendStopped: "Backend arrêté — isolation OS indisponible"` dans `fr-market.ts`. Run ⇒ PASS. Contrôle visuel face à l'export M7.
 
-- [ ] **Step 10: Vérifications**
+- [x] **Step 10: Vérifications**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui packages/daemon/src/market packages/daemon/src/components && bun run --cwd packages/ui build && bun run budget`
 Expected: aucune erreur ; budget ≤ 230 kB gzip (`MissingComponent` est rendu par `InstanceFrame`, lui-même dans le chunk de la page : vérifier que `MarketPackageSheet` et Shiki n'entrent pas dans le chargement initial, sinon charger `MissingComponent` par `lazyPanel`). Contrôle visuel en sombre et en clair face aux exports M4, M6, M8 et S7.
 
-- [ ] **Step 11: Commits**
+- [x] **Step 11: Commits**
 
 ```bash
 git add packages/schema/src/component.ts packages/schema/src/market.ts packages/schema/src/market-rpc.ts packages/daemon/src/components/registry-listing.ts packages/daemon/src/components/registry-listing-revoked.test.ts packages/daemon/src/market/summary.ts packages/daemon/src/market/summary.test.ts packages/daemon/src/market/rpc.ts
