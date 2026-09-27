@@ -5,6 +5,7 @@ import { Switch } from "@kibo/sdk/ui/switch";
 import { FolderOpen } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { fr } from "../i18n/fr";
+import { UpdateCard } from "../updates/UpdateCard";
 import { CliInstallCard } from "./CliInstallCard";
 import { SettingsNav } from "./SettingsNav";
 
@@ -74,6 +75,7 @@ export function GeneralPage() {
           <p className="text-sm text-muted-foreground">{fr.settings.generalSubtitle}</p>
         </div>
         <ApplicationCard />
+        <UpdateCard />
         <CliInstallCard />
       </div>
     </div>

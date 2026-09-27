@@ -87,12 +87,18 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/shell/ProjectPresence.tsx",
       "/Kibo/packages/ui/src/shell/KeyRequired.tsx",
       "/Kibo/packages/ui/src/i18n/fr-presence.ts",
+      pkg("@tauri-apps/plugin-updater", "dist-js/index.js"),
+      pkg("@tauri-apps/api", "app.js"),
+      "/Kibo/packages/ui/src/updates/UpdateCard.tsx",
+      "/Kibo/packages/ui/src/updates/update-store.ts",
+      "/Kibo/packages/ui/src/i18n/fr-updates.ts",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [
       "/Kibo/components/notes/src/NotesWidget.tsx",
       "/Kibo/components/graph/src/GraphWidget.tsx",
       "/Kibo/packages/ui/src/agents/AgentPanel.tsx",
+      "/Kibo/packages/ui/src/shell/use-update-schedule.ts",
       "/Kibo/components/mcp-source/src/config.ts",
     ])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(false);
