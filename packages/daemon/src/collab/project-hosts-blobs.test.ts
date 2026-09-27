@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MAX_TREE_DEPTH, projectDepthViolation } from "@kibo/core";
+import { enableServerAllocation, MAX_TREE_DEPTH, projectDepthViolation } from "@kibo/core";
 import { KiboError, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { call, createService, type Service } from "../service";
@@ -29,6 +29,10 @@ beforeEach(() => {
     color: "#14B8A6",
   });
   projectId = meta.id;
+  hosts.mutate(projectId, (doc) => {
+    doc.getMap("meta").delete("folder");
+    enableServerAllocation(doc);
+  });
 });
 afterEach(() => {
   store.close();

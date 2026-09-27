@@ -39,6 +39,7 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
         const doc = docs.project(projectId);
         const candidate = doc.fork();
         importComplete(projectId, candidate, bytes);
+        assertSharedShape(projectId, candidate);
         refuseTooDeep(projectId, depthViolation(doc, candidate));
         doc.import(bytes);
         docs.imported(projectId);

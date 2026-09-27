@@ -30,6 +30,10 @@ beforeEach(async () => {
     color: "#14B8A6",
   });
   projectId = meta.id;
+  hosts.mutate(projectId, (doc) => {
+    doc.getMap("meta").delete("folder");
+    enableServerAllocation(doc);
+  });
 });
 afterEach(() => {
   store.close();

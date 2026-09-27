@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   createProjectDoc,
   enableServerAllocation,
+  getKeyAllocator,
   getProjectMeta,
   listTickets,
   MAX_TREE_DEPTH,
@@ -258,15 +259,16 @@ test("a resync doc that imposes a folder is refused", async () => {
   expect(service.docs.projectMeta("p-remote").folder).toBeNull();
 });
 
-test("a folder slipped into a shared doc by an update is never used", async () => {
+test("an update that slips a folder into a shared doc is refused", async () => {
   const doc = remoteDoc();
   serverSends(doc.export({ mode: "update" }));
   await joinProject(deps, { code: "CODE", folder: null });
   const before = doc.oplogVersion();
   doc.getMap("meta").set("folder", "/tmp/evil");
   doc.commit();
-  deps.hosts.host("p-remote").applyRemote(doc.export({ mode: "update", from: before }));
-  expect(getProjectMeta(deps.hosts.host("p-remote").doc()).folder).toBe("/tmp/evil");
+  const bytes = doc.export({ mode: "update", from: before });
+  expect(() => deps.hosts.host("p-remote").applyRemote(bytes)).toThrow("INVALID_INPUT");
+  expect(getProjectMeta(deps.hosts.host("p-remote").doc()).folder).toBeNull();
   expect(service.docs.projectMeta("p-remote").folder).toBeNull();
   const snapshot = call(service, { method: "getProject", projectId: "p-remote" });
   expect(snapshot.meta.folder).toBeNull();
@@ -308,4 +310,42 @@ test("sharing a project whose sync is suspended is refused, not reported as shar
   expect(detail).toStartWith("CONFLICT");
   expect(detail).toContain("sync is suspended");
   expect(sent).toEqual([]);
+});
+
+async function joinedRemote(): Promise<LoroDoc> {
+  const doc = remoteDoc();
+  serverSends(doc.export({ mode: "update" }));
+  await joinProject(deps, { code: "CODE", folder: null });
+  return doc;
+}
+
+function updateOf(doc: LoroDoc, change: (meta: LoroDoc) => void): Uint8Array {
+  const before = doc.oplogVersion();
+  change(doc);
+  doc.commit();
+  return doc.export({ mode: "update", from: before });
+}
+
+test("an update that turns the project local and imposes a folder is refused", async () => {
+  const remote = await joinedRemote();
+  const host = deps.hosts.host("p-remote");
+  const before = host.doc().toJSON();
+  const bytes = updateOf(remote, (doc) => {
+    doc.getMap("meta").set("keyAllocator", "local");
+    doc.getMap("meta").set("folder", "/tmp/evil");
+  });
+  expect(() => host.applyRemote(bytes)).toThrow("INVALID_INPUT");
+  expect(host.doc().toJSON()).toEqual(before);
+  expect(getKeyAllocator(host.doc())).toBe("server");
+  expect(service.docs.projectMeta("p-remote").folder).toBeNull();
+});
+
+test("an update that only turns the project local is refused", async () => {
+  const remote = await joinedRemote();
+  const host = deps.hosts.host("p-remote");
+  const before = host.doc().toJSON();
+  const bytes = updateOf(remote, (doc) => doc.getMap("meta").set("keyAllocator", "local"));
+  expect(() => host.applyRemote(bytes)).toThrow("INVALID_INPUT");
+  expect(host.doc().toJSON()).toEqual(before);
+  expect(getKeyAllocator(host.doc())).toBe("server");
 });

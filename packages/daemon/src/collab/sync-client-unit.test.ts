@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { listTickets } from "@kibo/core";
+import { enableServerAllocation, listTickets } from "@kibo/core";
 import { parseClientFrame, type ServerFrame } from "@kibo/schema";
 import { toBase64 } from "@kibo/trust";
 import { LoroDoc } from "loro-crdt";
@@ -68,8 +68,10 @@ async function online(): Promise<void> {
 
 function sharedProject(key = "KIB"): { projectId: string; doc: LoroDoc } {
   const meta = call(service, { method: "createProject", name: key, key, folder: null, color: "#14B8A6" });
-  client.attachProject(meta.id, "editor");
   const doc = service.docs.project(meta.id);
+  doc.getMap("meta").delete("folder");
+  enableServerAllocation(doc);
+  client.attachProject(meta.id, "editor");
   const version = toBase64(doc.oplogVersion().encode());
   const bytes = toBase64(doc.export({ mode: "update", from: doc.oplogVersion() }));
   net.last().deliver({ type: "update", projectId: meta.id, bytes, serverSeq: 1, version });
