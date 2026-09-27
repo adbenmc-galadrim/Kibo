@@ -44,4 +44,5 @@ export const fr = {
   removeTitle: (title: string) => `Supprimer la note « ${title} » ?`,
   removeHelp: (file: string) => `Le fichier ${file} sera supprimé du disque. Cette action est irréversible.`,
   removeConfirm: "Supprimer",
+  removeFailed: "Impossible de supprimer la note.",
 };

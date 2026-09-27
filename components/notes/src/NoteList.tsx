@@ -5,6 +5,7 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Plus, Search } from "lucide-react";
 import { noteDate } from "./dates";
 import { fr } from "./fr";
+import { NoteMenu } from "./NoteMenu";
 
 type Props = {
   notes: NoteMeta[];
@@ -14,6 +15,9 @@ type Props = {
   onQuery(q: string): void;
   onSelect(path: string): void;
   onCreate(): void;
+  readOnly: boolean;
+  onRename(path: string): void;
+  onRemove(path: string): void;
 };
 
 function FolderLine({ info }: { info: NotesInfo }) {
@@ -30,7 +34,8 @@ function FolderLine({ info }: { info: NotesInfo }) {
   );
 }
 
-export function NoteList({ notes, info, selected, query, onQuery, onSelect, onCreate }: Props) {
+export function NoteList(p: Props) {
+  const { notes, info, selected, query, onQuery, onSelect, onCreate, readOnly, onRename, onRemove } = p;
   return (
     <aside className="flex w-64 shrink-0 flex-col gap-3 border-r p-3">
       <div className="relative">
@@ -50,28 +55,37 @@ export function NoteList({ notes, info, selected, query, onQuery, onSelect, onCr
       <ul aria-label="Notes" className="grid flex-1 content-start gap-1 overflow-auto">
         {notes.map((n) => (
           <li key={n.path}>
-            <button
-              type="button"
-              onClick={() => onSelect(n.path)}
-              aria-current={selected === n.path ? "true" : undefined}
-              className={cn(
-                "grid w-full gap-0.5 rounded-md px-2 py-2 text-left hover:bg-accent",
-                selected === n.path && "bg-accent",
-              )}
+            <NoteMenu
+              note={n}
+              readOnly={readOnly}
+              actions={{ rename: () => onRename(n.path), remove: () => onRemove(n.path) }}
             >
-              <span className="truncate text-sm font-medium">{n.title}</span>
-              <span className="text-xs text-muted-foreground">
-                {noteDate(n.mtime)}
-                {n.tickets.length > 0 && ` · ${fr.links(n.tickets.length)}`}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => onSelect(n.path)}
+                aria-current={selected === n.path ? "true" : undefined}
+                className={cn(
+                  "grid w-full gap-0.5 rounded-md px-2 py-2 text-left hover:bg-accent",
+                  selected === n.path && "bg-accent",
+                  !readOnly && "pr-8",
+                )}
+              >
+                <span className="truncate text-sm font-medium">{n.title}</span>
+                <span className="text-xs text-muted-foreground">
+                  {noteDate(n.mtime)}
+                  {n.tickets.length > 0 && ` · ${fr.links(n.tickets.length)}`}
+                </span>
+              </button>
+            </NoteMenu>
           </li>
         ))}
       </ul>
-      <Button variant="outline" size="sm" className="w-fit" onClick={onCreate}>
-        <Plus aria-hidden />
-        {fr.newNote}
-      </Button>
+      {!readOnly && (
+        <Button variant="outline" size="sm" className="w-fit" onClick={onCreate}>
+          <Plus aria-hidden />
+          {fr.newNote}
+        </Button>
+      )}
     </aside>
   );
 }

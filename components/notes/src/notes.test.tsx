@@ -28,6 +28,7 @@ function setup(surface: "view" | "widget", notes: Record<string, string> = DEMO_
 const listed = () =>
   within(screen.getByRole("list", { name: "Notes" }))
     .getAllByRole("button")
+    .filter((b) => !b.getAttribute("aria-label")?.startsWith("Actions de "))
     .map((b) => b.textContent);
 
 test("screen 11: list, document, linked tickets and backlinks", async () => {
@@ -165,4 +166,94 @@ test("a local unsaved edit survives an external change and shows the D4 banner",
   expect(view.state.doc.toString()).toBe(local);
   expect(screen.getByRole("alert").textContent).toContain("Modifié hors de Kibo");
   expect(m.notes.get("decisions-architecture.md")?.markdown).toBe(external);
+});
+
+test("a note is renamed from its menu; the dialog previews the file, a taken name is refused", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Actions de Journal agents" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Renommer…",
+    "Supprimer…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  const field = within(dialog).getByLabelText("Titre");
+  expect((field as HTMLInputElement).value).toBe("Journal agents");
+  await user.clear(field);
+  await user.type(field, "Décisions architecture");
+  expect(within(dialog).getByText("Fichier : decisions-architecture.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  await user.clear(field);
+  await user.type(field, "Journal des agents");
+  expect(within(dialog).getByText("Fichier : journal-des-agents.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  await waitFor(() => expect(m.notes.has("journal-des-agents.md")).toBe(true));
+  expect(m.notes.has("journal-agents.md")).toBe(false);
+  await waitFor(() =>
+    expect(listed()).toEqual(expect.arrayContaining([expect.stringContaining("Journal agents")])),
+  );
+});
+
+test("deleting a note asks, removes the file and selects the next note", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: screen.getByRole("button", { name: /^Décisions d'architecture/ }),
+  });
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", {
+    name: "Supprimer la note « Décisions d'architecture » ?",
+  });
+  expect(confirm.textContent).toContain("Le fichier decisions-architecture.md sera supprimé du disque.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(m.notes.has("decisions-architecture.md")).toBe(false));
+  expect(await screen.findByRole("heading", { level: 1, name: "Journal agents" })).toBeTruthy();
+});
+
+test("the first save of an untitled note renames its file after its title", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1 });
+  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
+  await waitFor(() => expect(m.notes.has("sans-titre.md")).toBe(true));
+  const view = await editorView();
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: "# Plan de test\n\nPremière ligne.\n" },
+    userEvent: "input.type",
+  });
+  await waitFor(() => expect(m.notes.has("plan-de-test.md")).toBe(true), { timeout: 3000 });
+  expect(m.notes.has("sans-titre.md")).toBe(false);
+  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: "# Autre titre\n" },
+    userEvent: "input.type",
+  });
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Autre titre\n"), {
+    timeout: 3000,
+  });
+  expect(m.notes.has("autre-titre.md")).toBe(false);
+});
+
+test("a read-only project shows no note menu", async () => {
+  const m = createMockSdk(manifest, {
+    seed,
+    surface: "view",
+    notes: DEMO_NOTES,
+    noteAges: DEMO_NOTE_AGES,
+    shared: true,
+  });
+  m.setAccess("read-only");
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByRole("list", { name: "Notes" });
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull());
+  expect(screen.queryByRole("button", { name: "Nouvelle note" })).toBeNull();
 });
