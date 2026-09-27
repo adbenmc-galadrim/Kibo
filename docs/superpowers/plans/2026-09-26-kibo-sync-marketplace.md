@@ -15183,7 +15183,7 @@ Publier un composant utilisateur sur la source d'équipe servie par `kibo-sync` 
   - `type MarketCliDeps = { rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>; out(line: string): void; err(line: string): void; now(): Date }` ; `runMarketCommand(argv: string[], flags: Parsed["flags"], deps: MarketCliDeps): Promise<number>` (`packages/cli/src/commands/market.ts`).
   - La validation avant publication est la **suite générique** (`validateComponent(copie, { conformanceOnly: true })`) sur une copie des sources du magasin : c'est exactement ce que le destinataire exécutera à l'installation (T20) ; les tests de l'éditeur ont déjà tourné à la publication locale (`publishComponent`).
 
-- [ ] **Step 1: Tests unitaires de la publication**
+- [x] **Step 1: Tests unitaires de la publication**
 
 `packages/daemon/src/market/publish.test.ts` :
 ```ts
@@ -15312,7 +15312,7 @@ describe("publishToMarket", () => {
 Run: `bun test packages/daemon/src/market/publish.test.ts`
 Expected: FAIL avec « Cannot find module './publish' ».
 
-- [ ] **Step 2: Implémenter les clés d'éditeur et la publication**
+- [x] **Step 2: Implémenter les clés d'éditeur et la publication**
 
 `packages/daemon/src/market/publisher-keys.ts` :
 ```ts
@@ -15505,7 +15505,7 @@ Ajouter à `MarketService` :
 Run: `bun test packages/daemon/src/market/publish.test.ts`
 Expected: PASS (6 tests).
 
-- [ ] **Step 3: Test d'intégration équipe → second démon**
+- [x] **Step 3: Test d'intégration équipe → second démon**
 
 `packages/daemon/src/market/team-publish.integration.test.ts` :
 ```ts
@@ -15666,7 +15666,7 @@ Le test tourne en CI sur macOS et Linux (serveur TLS en processus, aucun réseau
 Run: `bun test packages/daemon/src/market/team-publish.integration.test.ts`
 Expected: PASS une fois T16, T17 et T21 intégrés (dépendances de la vague).
 
-- [ ] **Step 4: RPC et branchement**
+- [x] **Step 4: RPC et branchement**
 
 Dans `packages/daemon/src/market/rpc.ts` (gestionnaire de T15), traiter :
 ```ts
@@ -15680,14 +15680,14 @@ avec `publish = { publish: (i) => publishToMarket(publishDeps, i), exportKpkg: (
 Run: `bun test packages/daemon/src/market`
 Expected: PASS.
 
-- [ ] **Step 5: Commit du démon**
+- [x] **Step 5: Commit du démon**
 
 ```bash
 git add packages/daemon/src/market/publisher-keys.ts packages/daemon/src/market/publish.ts packages/daemon/src/market/publish.test.ts packages/daemon/src/market/team-publish.integration.test.ts packages/daemon/src/market/market-service.ts packages/daemon/src/market/install.ts packages/daemon/src/market/rpc.ts packages/daemon/src/market/bootstrap.ts
 git commit -m "feat(daemon): publication marketplace"
 ```
 
-- [ ] **Step 6: Tests de l'index statique**
+- [x] **Step 6: Tests de l'index statique**
 
 `packages/cli/src/market-index-builder.test.ts` :
 ```ts
@@ -15772,7 +15772,7 @@ describe("buildStaticIndex", () => {
 Run: `bun test packages/cli/src/market-index-builder.test.ts`
 Expected: FAIL avec « Cannot find module './market-index-builder' ».
 
-- [ ] **Step 7: Implémenter le constructeur d'index**
+- [x] **Step 7: Implémenter le constructeur d'index**
 
 `packages/cli/src/market-index-builder.ts` :
 ```ts
@@ -15863,7 +15863,7 @@ Tout contrôle échoue avant la moindre écriture : l'index précédent reste en
 Run: `bun test packages/cli/src/market-index-builder.test.ts`
 Expected: PASS (4 tests).
 
-- [ ] **Step 8: Tests de la commande `kibo market`**
+- [x] **Step 8: Tests de la commande `kibo market`**
 
 `packages/cli/src/commands/market.test.ts` :
 ```ts
@@ -15917,7 +15917,7 @@ test("an unknown sub-command prints the usage and fails", async () => {
 Run: `bun test packages/cli/src/commands/market.test.ts`
 Expected: FAIL avec « Cannot find module './market' ».
 
-- [ ] **Step 9: Implémenter `kibo market` et `publish --to`**
+- [x] **Step 9: Implémenter `kibo market` et `publish --to`**
 
 Dans `packages/cli/src/args.ts`, `VALUED` gagne `"to"`, `"publisher"`, `"out"`, `"dir"`, `"key"`, `"id"`, `"name"`, `"verify"` ; `--verify` se répète : `parseArgs` garde la dernière valeur, on accepte donc une liste séparée par des virgules (`--verify <clé1>,<clé2>`).
 
@@ -16065,7 +16065,7 @@ Ajouter `"@kibo/trust": "workspace:*"` aux `dependencies` de `packages/cli/packa
 Run: `bun install && bun test packages/cli`
 Expected: PASS ; les tests existants de la CLI passent sans changement de leurs attentes (hors ajout des lignes d'usage si un test compare `fr.usage` : l'adapter en ajout).
 
-- [ ] **Step 10: Vérifications et commit de la CLI**
+- [x] **Step 10: Vérifications et commit de la CLI**
 
 Run: `bun run check && bun run typecheck`
 Expected: aucune erreur.
