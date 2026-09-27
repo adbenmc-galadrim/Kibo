@@ -61,7 +61,6 @@ export const fr = {
         : `Ses ${parts.join(" et ")} disparaîtront. Les tickets ne sont pas touchés.`;
     },
     moveFailed: "Impossible de déplacer la page.",
-    dropHere: "Déposer ici pour en faire une sous-page",
   },
   header: {
     newTicket: "Ticket",
