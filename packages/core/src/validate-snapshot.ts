@@ -1,6 +1,7 @@
 import { formatTicketKey, ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, type LoroMap } from "loro-crdt";
 import { projectDepthViolation } from "./update-depth";
+import { bindingsSnapshotViolation } from "./validate-bindings";
 import type { UpdateVerdict } from "./validate-update";
 
 const SHAPED_META_FIELDS = {
@@ -61,12 +62,13 @@ function ticketKeysViolation(doc: LoroDoc, meta: LoroMap): string | null {
   return null;
 }
 
-export function validateSharedSnapshot(doc: LoroDoc, projectId: string): UpdateVerdict {
+export function validateSharedSnapshot(doc: LoroDoc, projectId: string, ownerId: string): UpdateVerdict {
   const meta = doc.getMap("meta");
   const reason =
     projectDepthViolation(doc) ??
     localOnlyViolation(meta) ??
     metaFieldsViolation(meta, projectId) ??
-    ticketKeysViolation(doc, meta);
+    ticketKeysViolation(doc, meta) ??
+    bindingsSnapshotViolation(doc.getMap("bindings"), ownerId);
   return reason === null ? { ok: true } : { ok: false, reason };
 }

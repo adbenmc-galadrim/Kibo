@@ -68,7 +68,7 @@ function migratedCopy(
     userId,
     domains: deps.domains(),
   });
-  const verdict = validateSharedSnapshot(doc, projectId);
+  const verdict = validateSharedSnapshot(doc, projectId, userId);
   if (!verdict.ok)
     throw new KiboError("INVALID_INPUT", `project ${projectId} cannot be shared: ${verdict.reason}`);
   return { doc, folder };

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
+import type { Binding } from "@kibo/schema";
 import { type LoroDoc, LoroMap } from "loro-crdt";
-import { createProjectDoc, createTicket, deleteTicket, validateSharedSnapshot } from "./index";
+import { addBinding, createProjectDoc, createTicket, deleteTicket, validateSharedSnapshot } from "./index";
 
 function sharable(): LoroDoc {
   const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
@@ -19,12 +20,12 @@ function edited(edit: (doc: LoroDoc) => void): LoroDoc {
 }
 
 const reasonOf = (doc: LoroDoc, projectId = "p1"): string | null => {
-  const verdict = validateSharedSnapshot(doc, projectId);
+  const verdict = validateSharedSnapshot(doc, projectId, "u-adam");
   return verdict.ok ? null : verdict.reason;
 };
 
 test("accepts a migrated local project", () => {
-  expect(validateSharedSnapshot(sharable(), "p1")).toEqual({ ok: true });
+  expect(validateSharedSnapshot(sharable(), "p1", "u-adam")).toEqual({ ok: true });
 });
 
 test("accepts an explicit local key allocator", () => {
@@ -124,4 +125,20 @@ test("refuses a document nested deeper than the sync bound", () => {
     for (let i = 0; i < 100; i++) node = node.createNode();
   });
   expect(reasonOf(deep)).toContain("deeper than 64");
+});
+
+test("bindings of the first snapshot are valid and run by the owner", () => {
+  const binding: Binding = {
+    id: "b1",
+    adapter: "github-issues",
+    config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+    createdBy: "u-adam",
+    runner: "u-adam",
+  };
+  expect(reasonOf(edited((d) => addBinding(d, binding)))).toBeNull();
+  expect(reasonOf(edited((d) => addBinding(d, { ...binding, runner: "u-lea" })))).toContain("b1");
+  expect(reasonOf(edited((d) => addBinding(d, { ...binding, createdBy: "u-lea" })))).toContain("b1");
+  expect(reasonOf(edited((d) => d.getMap("bindings").set("b1", { id: "b1" })))).toContain("b1");
+  expect(reasonOf(edited((d) => d.getMap("bindings").setContainer("b1", new LoroMap())))).toContain("b1");
+  expect(reasonOf(edited((d) => d.getMap("bindings").set("b2", binding)))).toContain("b2");
 });

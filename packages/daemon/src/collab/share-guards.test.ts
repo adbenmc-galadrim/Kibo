@@ -197,7 +197,7 @@ test("the snapshot sent passes the server validation and carries no folder", asy
   const share = sent.find((f) => f.type === "share");
   if (share?.type !== "share") throw new Error("no share frame");
   const snapshot = LoroDoc.fromSnapshot(fromBase64(share.snapshot));
-  expect(validateSharedSnapshot(snapshot, meta.id)).toEqual({ ok: true });
+  expect(validateSharedSnapshot(snapshot, meta.id, "u-adam")).toEqual({ ok: true });
   expect(JSON.stringify(snapshot.toJSON())).not.toContain("/Users/adam");
   expect(service.docs.projectMeta(meta.id).folder).toBe("/Users/adam/Kibo");
   expect(listTickets(deps.hosts.host(meta.id).doc())[0]?.assignee).toEqual({ kind: "human", ref: "u-adam" });

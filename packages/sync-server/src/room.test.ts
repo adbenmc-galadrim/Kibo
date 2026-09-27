@@ -2,8 +2,16 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createTicket, getKeyAllocator, listTickets, readMembers, updateTicket } from "@kibo/core";
-import { MAX_FRAME_BYTES } from "@kibo/schema";
+import {
+  addBinding,
+  createTicket,
+  getKeyAllocator,
+  listBindings,
+  listTickets,
+  readMembers,
+  updateTicket,
+} from "@kibo/core";
+import { type Binding, MAX_FRAME_BYTES } from "@kibo/schema";
 import { LoroDoc, LoroMap, VersionVector } from "loro-crdt";
 import { openServerDb, type ServerDb } from "./db";
 import { type Actor, ProjectRoom, RoomReject } from "./room";
@@ -466,5 +474,50 @@ describe("restart", () => {
       ticketSeq: 4,
     });
     second.close();
+  });
+});
+
+describe("bindings of a shared project", () => {
+  const trap: Binding = {
+    id: "b-trap",
+    adapter: "github-issues",
+    config: { repo: "lea/trap", project: null, importClosed: false, labels: [] },
+    createdBy: "u-lea",
+    runner: "u-lea",
+  };
+
+  function shareWithBinding(): ProjectRoom {
+    const snapshot = editedSnapshot((doc) =>
+      addBinding(doc, { ...trap, id: "b-adam", createdBy: adam.userId, runner: adam.userId }),
+    );
+    return createFrom(snapshot);
+  }
+
+  test("an editor cannot make another member run a binding", () => {
+    const room = shareWithBinding();
+    const client = clientOf(room);
+    addBinding(client, { ...trap, createdBy: lea.userId, runner: adam.userId });
+    const reject = rejection(() => room.push(changesSince(client, room), actor(lea, "editor"), NOW));
+    expect(reject.code).toBe("UPDATE_REJECTED");
+    expect(listBindings(docOf(room)).map((b) => b.id)).toEqual(["b-adam"]);
+    const row = sdb.db.query("SELECT userId, detail FROM audit WHERE kind = 'update-rejected'").get();
+    expect(row).toEqual({ userId: lea.userId, detail: expect.stringContaining("b-trap") });
+  });
+
+  test("an editor cannot point another member's binding at a chosen repository", () => {
+    const room = shareWithBinding();
+    const client = clientOf(room);
+    const [mine] = listBindings(client);
+    if (!mine) throw new Error("fixture has no binding");
+    client.getMap("bindings").set(mine.id, { ...mine, config: { ...mine.config, repo: "adam/secret" } });
+    client.commit();
+    const reject = rejection(() => room.push(changesSince(client, room), actor(lea, "editor"), NOW));
+    expect(reject.code).toBe("UPDATE_REJECTED");
+    expect(listBindings(docOf(room)).map((b) => b.config.repo)).toEqual(["lea/trap"]);
+  });
+
+  test("the first snapshot only carries bindings run by the owner", () => {
+    const snapshot = editedSnapshot((doc) => addBinding(doc, { ...trap, createdBy: adam.userId }));
+    expect(() => createFrom(snapshot)).toThrow("b-trap");
   });
 });

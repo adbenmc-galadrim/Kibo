@@ -81,7 +81,7 @@ export type ShareInput = {
 
 function prepareShare(input: ShareInput): { doc: LoroDoc; ticketSeq: number; snapshot: Uint8Array } {
   const doc = importSnapshot(input.snapshot);
-  const verdict = validateSharedSnapshot(doc, input.projectId);
+  const verdict = validateSharedSnapshot(doc, input.projectId, input.ownerId);
   if (!verdict.ok) throw new KiboError("INVALID_INPUT", verdict.reason);
   const ticketSeq = enableServerAllocation(doc);
   writeMembers(doc, [{ userId: input.ownerId, name: input.ownerName }]);
@@ -212,7 +212,7 @@ export class ProjectRoom {
       throw new RoomReject("UPDATE_REJECTED", "update is larger than a frame", this.version());
     }
     const candidate = this.readCandidate(bytes);
-    const verdict = validateProjectUpdate(this.doc, candidate);
+    const verdict = validateProjectUpdate(this.doc, candidate, actor);
     if (!verdict.ok) {
       audit(this.sdb, {
         at: now,

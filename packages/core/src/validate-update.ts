@@ -1,6 +1,7 @@
 import { ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, LoroMap, type LoroTree } from "loro-crdt";
 import { depthViolation } from "./update-depth";
+import { bindingsUpdateViolation, type UpdateAuthor } from "./validate-bindings";
 
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
 
@@ -83,7 +84,7 @@ function keyViolation(before: LoroDoc, after: LoroDoc): string | null {
   return null;
 }
 
-export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVerdict {
+export function validateProjectUpdate(before: LoroDoc, after: LoroDoc, author: UpdateAuthor): UpdateVerdict {
   const metaBefore = before.getMap("meta");
   const metaAfter = after.getMap("meta");
   const reason =
@@ -91,6 +92,7 @@ export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVe
     membersViolation(metaBefore, metaAfter) ??
     editableViolation(metaBefore, metaAfter) ??
     depthViolation(before, after) ??
-    keyViolation(before, after);
+    keyViolation(before, after) ??
+    bindingsUpdateViolation(before, after, author);
   return reason === null ? { ok: true } : { ok: false, reason };
 }

@@ -7,12 +7,14 @@ import {
   enableServerAllocation,
   MAX_CONTAINER_DEPTH,
   MAX_TREE_DEPTH,
+  type UpdateAuthor,
   type UpdateVerdict,
   validateProjectUpdate,
   writeMembers,
 } from "./index";
 
 const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const OWNER: UpdateAuthor = { userId: "u-adam", role: "owner" };
 
 function sharedServer(): LoroDoc {
   const doc = createProjectDoc(meta);
@@ -31,7 +33,7 @@ function verdictFor(server: LoroDoc, edit: (client: LoroDoc) => void): UpdateVer
   client.commit();
   const after = server.fork();
   after.import(client.export({ mode: "update", from: server.oplogVersion() }));
-  return validateProjectUpdate(server, after);
+  return validateProjectUpdate(server, after, OWNER);
 }
 
 function chain(tree: LoroTree, length: number): LoroTreeNode[] {

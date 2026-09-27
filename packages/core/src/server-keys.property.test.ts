@@ -12,9 +12,12 @@ import {
   listTickets,
   migrateForSharing,
   moveTicket,
+  type UpdateAuthor,
   updateTicket,
   validateProjectUpdate,
 } from "./index";
+
+const OWNER: UpdateAuthor = { userId: "u-adam", role: "owner" };
 
 type Step =
   | { kind: "create"; replica: number; parent: number | null }
@@ -56,7 +59,7 @@ function push(server: LoroDoc, client: LoroDoc): void {
   const bytes = client.export({ mode: "update", from: server.oplogVersion() });
   const after = server.fork();
   after.import(bytes);
-  expect(validateProjectUpdate(server, after)).toEqual({ ok: true });
+  expect(validateProjectUpdate(server, after, OWNER)).toEqual({ ok: true });
   server.import(bytes);
   allocateTicketKeys(server);
 }

@@ -11,6 +11,7 @@ import {
   listTickets,
   moveTicket,
   setStatus,
+  type UpdateAuthor,
   type UpdateVerdict,
   updateTicket,
   validateProjectUpdate,
@@ -18,6 +19,7 @@ import {
 } from "./index";
 
 const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const OWNER: UpdateAuthor = { userId: "u-adam", role: "owner" };
 
 function sharedServer(): LoroDoc {
   const doc = createProjectDoc(meta);
@@ -39,7 +41,7 @@ function verdictFor(server: LoroDoc, edit: (client: LoroDoc) => void): UpdateVer
   edit(client);
   const after = server.fork();
   after.import(client.export({ mode: "update", from: server.oplogVersion() }));
-  return validateProjectUpdate(server, after);
+  return validateProjectUpdate(server, after, OWNER);
 }
 
 const firstTicketNode = (doc: LoroDoc) => {
@@ -183,7 +185,7 @@ describe("refusal keeps both documents intact", () => {
     after.import(client.export({ mode: "update", from: server.oplogVersion() }));
     const serverJson = server.toJSON();
     const afterJson = after.toJSON();
-    expect(validateProjectUpdate(server, after).ok).toBe(false);
+    expect(validateProjectUpdate(server, after, OWNER).ok).toBe(false);
     expect(server.oplogVersion().compare(serverVersion)).toBe(0);
     expect(server.toJSON()).toEqual(serverJson);
     expect(after.toJSON()).toEqual(afterJson);
@@ -218,7 +220,7 @@ describe("accepted updates", () => {
     moveTicket(stale, b.id, a.id);
     const after = server.fork();
     after.import(stale.export({ mode: "update", from: server.oplogVersion() }));
-    expect(validateProjectUpdate(server, after)).toEqual({ ok: true });
+    expect(validateProjectUpdate(server, after, OWNER)).toEqual({ ok: true });
   });
 
   test("a new ticket without key", () => {
@@ -236,6 +238,6 @@ describe("accepted updates", () => {
     updateTicket(client, pending.id, { title: "Brouillon relu" });
     const after = server.fork();
     after.import(client.export({ mode: "update", from: beforeFirstPush }));
-    expect(validateProjectUpdate(server, after)).toEqual({ ok: true });
+    expect(validateProjectUpdate(server, after, OWNER)).toEqual({ ok: true });
   });
 });
