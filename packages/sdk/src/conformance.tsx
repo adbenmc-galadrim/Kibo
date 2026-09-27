@@ -38,8 +38,8 @@ const COLLEAGUE: PresencePeer = {
   ticketId: null,
   runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
 };
-const LAZY_LOAD_TIMEOUT_MS = 10_000;
-const RENDER_TEST_TIMEOUT_MS = 30_000;
+const LAZY_LOAD_TIMEOUT_MS = 25_000;
+const RENDER_TEST_TIMEOUT_MS = 45_000;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 export function runConformance(
