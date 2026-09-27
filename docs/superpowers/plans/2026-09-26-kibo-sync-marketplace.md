@@ -23102,6 +23102,29 @@ git add design/penpot/scripts/14-sync.js design/penpot/kibo.penpot.xz design/pdf
 git commit -m "docs: maquettes restantes de la phase 7"
 ```
 
+### Task 34: Section Marketplace du catalogue (écran 3)
+
+Tâche de suivi du contrôle visuel du jalon v1.0 : la spec H §5.2 (points 1 et 3) demande une section « Marketplace » dans le catalogue de l'écran 3, absente jusqu'ici. Aucune maquette Penpot dédiée : style des sections « Intégrés » / « Mes composants » et données des cartes de l'onglet Marketplace. Aucune RPC nouvelle (`listMarketSources`, `searchMarket`, `getMarketPackage`, `installFromMarket` suffisent).
+
+**Files:**
+- Create: `packages/ui/src/components-page/use-market-hits.ts` (recherche extraite de `MarketplaceTab`)
+- Create: `packages/ui/src/components-page/MarketInstallFlow.tsx` (feuille de détail + déblocage de clé, partagés par l'onglet et le catalogue)
+- Create: `packages/ui/src/dialogs/MarketCatalogSection.tsx`, `packages/ui/src/dialogs/market-catalog.test.tsx`
+- Modify: `packages/ui/src/components-page/MarketplaceTab.tsx`, `packages/ui/src/components-page/MarketFilters.tsx` (variante `compact`), `packages/ui/src/dialogs/AddComponentDialog.tsx`, `packages/ui/src/i18n/fr-market.ts`
+- Modify: `packages/ui/src/dialogs/component-dialogs.test.tsx` (faux client complété : `listMarketSources` répond `[]`, aucune attente modifiée)
+
+**Interfaces:**
+- `useMarketHits(sources: MarketSourceInfo[] | null, q: { query: string; sourceId: string | null; kind: ComponentKind | null }): { hits: MarketHit[] | null; error: string | null }`
+- `MarketInstallFlow({ target, onTarget, onInstalled, remote? })` : `MarketPackageSheet` (contrôles §4, refus traduit par `InstallRefusedDialog`) et `PublisherChangedDialog`.
+- `MarketCatalogSection({ query, onCount, onInstalled, remote? })` : section « Marketplace » (filtres source et type, adaptateurs exclus), rien sans source configurée.
+
+- [x] **Step 1: Tests qui échouent** (`market-catalog.test.tsx`) : section et filtres sur l'index en cache ; « Installer » puis écran 30 puis `addInstance` sur la page courante ; refus `HASH_MISMATCH` : dialogue « Installation refusée », aucun `addInstance` ; session distante : bouton désactivé avec « Cette action n'est possible que depuis l'ordinateur où tourne Kibo. » ; aucune section sans source.
+- [x] **Step 2: Extraire `useMarketHits` et `MarketInstallFlow`**, `MarketplaceTab` inchangé à l'écran (`marketplace.test.tsx` vert).
+- [x] **Step 3: `MarketCatalogSection`** branchée dans `AddComponentDialog` : la requête de recherche du dialogue est partagée ; l'installation ouvre l'écran 30 en mode `approveAndAdd`, puis ajoute l'instance.
+- [x] **Step 4: Vérifier** `bun test packages components`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build && bun run budget` (dialogue chargé à la demande, budget 230 kB inchangé).
+- [x] **Step 5: Captures** de l'écran 3 avec la section, en sombre et en clair.
+- [x] **Step 6: Commit** `feat(ui): section Marketplace du catalogue`
+
 ---
 
 ## Jalon v1.0
@@ -23135,7 +23158,7 @@ git commit -m "docs: maquettes restantes de la phase 7"
 | H §3 `.kpkg`, index, tables client, registre | T5, T10, T15 |
 | H §4 confiance et révocation | T10, T15, T20, T26, T27 |
 | H §5.1 publier (équipe et statique) | T16, T22, T27 |
-| H §5.2 découvrir et installer | T15, T20, T26 |
+| H §5.2 découvrir et installer | T15, T20, T26, T34 |
 | H §5.3 mettre à jour | T15, T27 |
 | H §5.4 désinstaller (épinglage conservé) | T20 |
 | H §5.5 composant absent | T5, T27 |
