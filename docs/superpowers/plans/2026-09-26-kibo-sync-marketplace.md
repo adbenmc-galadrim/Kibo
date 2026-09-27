@@ -13949,7 +13949,7 @@ export type SyncHarness = { server: TestSyncServer; caFile: string; daemons: Har
 ```
 - Changement de contrat signalé : `ProjectHostRegistry.mutate` (écriture interne qui persiste, émet et déclenche l'envoi, refusée si l'accès n'est pas `write`) ; `startTestSyncServer(opts?: TestSyncServerOptions)` (T17) accepte `dataDir`, `port`, `cert` et renvoie `cert`, et `stop({ keepData: true })` garde le dossier, pour relancer le serveur sur le même port, le même dossier et le même certificat.
 
-- [ ] **Step 1: Écrire les tests de `SyncDb`**
+- [x] **Step 1: Écrire les tests de `SyncDb`**
 
 `packages/daemon/src/collab/sync-db.test.ts` :
 ```ts
@@ -13988,12 +13988,12 @@ test("round-trips project rows with their server version", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/sync-db.test.ts`
 Expected: FAIL « Cannot find module './sync-db' ».
 
-- [ ] **Step 3: Implémenter `sync-db.ts` et `device-keys.ts`**
+- [x] **Step 3: Implémenter `sync-db.ts` et `device-keys.ts`**
 
 `packages/daemon/src/collab/sync-db.ts` :
 ```ts
@@ -14112,12 +14112,12 @@ export async function clearDeviceKeys(secrets: SecretStore): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `bun test packages/daemon/src/collab/sync-db.test.ts`
 Expected: PASS (2 tests).
 
-- [ ] **Step 5: Registre de projets et garde d'écriture**
+- [x] **Step 5: Registre de projets et garde d'écriture**
 
 5a. Faire de la place dans `service.ts` (300 lignes) : déplacer `readTabs`, `saveTabs` et `TABS_KEY` tels quels dans `packages/daemon/src/tabs-store.ts` (exports nommés `readTabs(store)`, `saveTabs(store, state)`), importés par `service.ts`. Run: `bun test packages/daemon/src/service.test.ts` ⇒ PASS, sans autre changement.
 
@@ -14309,7 +14309,7 @@ export function projectSyncInfo(input: { row: SyncProjectRow | null; doc: LoroDo
 }
 ```
 
-- [ ] **Step 6: Écrire le harnais d'intégration**
+- [x] **Step 6: Écrire le harnais d'intégration**
 
 `packages/daemon/src/testing/sync-harness.ts` :
 ```ts
@@ -14482,7 +14482,7 @@ export async function startSyncHarness(opts: { daemons: number }): Promise<SyncH
 ```
 `SyncClient.send(frame)` est public (envoi brut, `SYNC_OFFLINE` hors ligne) ; il sert au harnais et à T23.
 
-- [ ] **Step 7: Écrire les tests d'intégration du client**
+- [x] **Step 7: Écrire les tests d'intégration du client**
 
 `packages/daemon/src/collab/sync-client.test.ts` :
 ```ts
@@ -14625,12 +14625,12 @@ describe("roles", () => {
 });
 ```
 
-- [ ] **Step 8: Vérifier l'échec**
+- [x] **Step 8: Vérifier l'échec**
 
 Run: `bun test packages/daemon/src/collab/sync-client.test.ts`
 Expected: FAIL « Cannot find module '../collab/sync-client' ».
 
-- [ ] **Step 9: Implémenter `SyncClient`**
+- [x] **Step 9: Implémenter `SyncClient`**
 
 `packages/daemon/src/collab/sync-client.ts` :
 ```ts
@@ -15065,7 +15065,7 @@ export class SyncClient {
 ```
 `ProjectHostRegistry` vit dans `packages/daemon/src/collab/types.ts` (type du contrat plus `mutate`, étape 5d), importé par `project-hosts.ts` et le client ; le service ne l'importe pas.
 
-- [ ] **Step 10: RPC et démarrage**
+- [x] **Step 10: RPC et démarrage**
 
 `packages/daemon/src/collab/rpc.ts` :
 ```ts
@@ -15115,7 +15115,7 @@ test("connectSyncServer is refused from a remote session", async () => {
 });
 ```
 
-- [ ] **Step 11: Vérifier**
+- [x] **Step 11: Vérifier**
 
 Run: `bun test packages/daemon/src/collab`
 Expected: PASS (tests de T18 inchangés, plus les nouveaux de `sync-db`, `project-hosts`, `sync-client` et `rpc`). Le harnais réduit le backoff à 20 → 200 ms : le test « hors ligne puis rattrapage » dure quelques secondes.
@@ -15136,7 +15136,7 @@ test("backoff grows from 1 s to 60 s with jitter", () => {
 Run: `bun test packages/daemon && bun run check && bun run typecheck`
 Expected: PASS ; aucun test existant du démon modifié (seul `service.ts` a perdu `readTabs`/`saveTabs`, déplacés à l'identique).
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add packages/daemon/src/tabs-store.ts packages/daemon/src/docs.ts packages/daemon/src/service.ts \
