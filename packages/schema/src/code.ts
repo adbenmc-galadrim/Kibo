@@ -190,6 +190,9 @@ export const CodeRequest = z.discriminatedUnion("method", [
   }),
   z.object({ method: z.literal("stageFiles"), ...W, paths: z.array(RelPath).min(1).max(1000) }),
   z.object({ method: z.literal("unstageFiles"), ...W, paths: z.array(RelPath).min(1).max(1000) }),
+  z.object({ method: z.literal("discardChanges"), ...W, paths: z.array(RelPath).min(1).max(1000) }),
+  z.object({ method: z.literal("stageAll"), ...W }),
+  z.object({ method: z.literal("unstageAll"), ...W }),
   z.object({
     method: z.literal("stageHunk"),
     ...W,
@@ -235,6 +238,9 @@ export type CodeResult = {
   writeFile: { hash: string };
   stageFiles: null;
   unstageFiles: null;
+  discardChanges: null;
+  stageAll: null;
+  unstageAll: null;
   stageHunk: null;
   commit: CommitInfo;
   reword: null;
@@ -249,3 +255,10 @@ export type CodeResult = {
   createPr: PrInfo;
   openInEditor: null;
 };
+
+export const LOCAL_ONLY_CODE_METHODS = [
+  "discardChanges",
+  "stageAll",
+  "unstageAll",
+  "openInEditor",
+] as const satisfies readonly CodeRequest["method"][];

@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { CodeEvent, CodeRequest, eventTouches, GhLogin, MAX_EVENT_PATHS, RelPath } from "./code";
+import {
+  CodeEvent,
+  CodeRequest,
+  eventTouches,
+  GhLogin,
+  LOCAL_ONLY_CODE_METHODS,
+  MAX_EVENT_PATHS,
+  RelPath,
+} from "./code";
 import { ExternalRef } from "./external-ref";
 import { EMPTY_TABS, salvageTabsState, TabsState, TabTarget } from "./tabs";
 
@@ -48,6 +56,16 @@ describe("code contracts", () => {
         ticketId: null,
       }).success,
     ).toBe(false);
+  });
+
+  test("discardChanges, stageAll and unstageAll are code requests confined to relative paths", () => {
+    const w = { projectId: "p1", worktree: "/repo" };
+    expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: ["src/a.ts"] }).success).toBe(true);
+    expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: [] }).success).toBe(false);
+    expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: ["../x"] }).success).toBe(false);
+    expect(CodeRequest.safeParse({ method: "stageAll", ...w }).success).toBe(true);
+    expect(CodeRequest.safeParse({ method: "unstageAll", ...w }).success).toBe(true);
+    expect(LOCAL_ONLY_CODE_METHODS).toEqual(["discardChanges", "stageAll", "unstageAll", "openInEditor"]);
   });
 
   test("CodeEvent is tagged", () => {
