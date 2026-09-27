@@ -1,9 +1,18 @@
 import { commitDefaults } from "@kibo/core";
-import type { CodeEvent, CodeRequest, CommitDefaults } from "@kibo/schema";
+import { type CodeEvent, type CodeRequest, type CommitDefaults, LOCAL_ONLY_CODE_METHODS } from "@kibo/schema";
+import { type RpcContext, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
 import { editorCommand, openInEditor } from "./editor";
 import { abortOperation, commit, reword, undoCommit } from "./history-ops";
-import { stageFiles, stageHunk, unstageFiles, writeFile } from "./index-ops";
+import {
+  discardChanges,
+  stageAll,
+  stageFiles,
+  stageHunk,
+  unstageAll,
+  unstageFiles,
+  writeFile,
+} from "./index-ops";
 import { type PrPoller, startPrPoller, triggerRules } from "./pr-poller";
 import { compare, readDiff, readFile, readStatus, remoteBranches } from "./read";
 import { createPr, ghStatus, prForBranch, push } from "./remote-ops";
@@ -13,7 +22,7 @@ import { resolveInWorktree } from "./safe-path";
 import { createWorktreeWatch } from "./worktree-watch";
 
 export type CodeService = {
-  handle(req: CodeRequest): Promise<unknown>;
+  handle(req: CodeRequest, ctx: RpcContext): Promise<unknown>;
   onChange(listener: (e: CodeEvent) => void): () => void;
   stop(): void;
 };
@@ -28,6 +37,9 @@ const MUTATION_METHODS = [
   "writeFile",
   "stageFiles",
   "unstageFiles",
+  "discardChanges",
+  "stageAll",
+  "unstageAll",
   "stageHunk",
   "commit",
   "reword",
@@ -42,6 +54,7 @@ type Read = Exclude<WorktreeRequest, Mutation>;
 const PR_POLL_MS = 60_000;
 const IDLE_MS = 600_000;
 const MUTATIONS = new Set<string>(MUTATION_METHODS);
+const LOCAL_ONLY = new Set<string>(LOCAL_ONLY_CODE_METHODS);
 const isMutation = (req: WorktreeRequest): req is Mutation => MUTATIONS.has(req.method);
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
 
@@ -137,6 +150,12 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
         return stageFiles(h, req.paths).then(() => null);
       case "unstageFiles":
         return unstageFiles(h, req.paths).then(() => null);
+      case "discardChanges":
+        return discardChanges(h, req.paths).then(() => null);
+      case "stageAll":
+        return stageAll(h).then(() => null);
+      case "unstageAll":
+        return unstageAll(h).then(() => null);
       case "stageHunk":
         return stageHunk(h, req).then(() => null);
       case "commit":
@@ -165,7 +184,8 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
     });
 
   return {
-    async handle(req) {
+    async handle(req, ctx) {
+      if (LOCAL_ONLY.has(req.method)) requireLocal(ctx);
       if (req.method === "worktrees") return (await repoOf(req.projectId)).worktrees();
       const h = await (await repoOf(req.projectId)).open(req.worktree);
       return isMutation(req) ? mutateAndNotify(h, req) : read(h, req);

@@ -136,7 +136,7 @@ export function startServer(opts: ServerOptions): RunningServer {
       const code = opts.code;
       const parsed = CodeRequest.safeParse(await req.json().catch(() => null));
       if (!parsed.success) return fail("INVALID_INPUT", parsed.error.message, 400);
-      return respond(() => code.handle(parsed.data), redact);
+      return respond(() => code.handle(parsed.data, ctx), redact);
     }
     return new Response("not found", { status: 404 });
   };
