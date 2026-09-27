@@ -11,6 +11,7 @@ import {
   listProjectDomainGuidelines,
   listProjectDomains,
   migrateForSharing,
+  migrateForUnsharing,
   type ShareMigrationInput,
 } from "./index";
 
@@ -112,4 +113,15 @@ test("reads the domains copied into the project, with their guidelines", () => {
       content: "# Core\nTests d'abord.",
     },
   ]);
+});
+
+test("unsharing gives the account's assignments and bindings back to the local user", () => {
+  const { doc, mine, lea, agent } = localProject();
+  migrateForSharing(doc, input);
+  migrateForUnsharing(doc, { localUser: "adam", userId: "u-adam" });
+  expect(getTicket(doc, mine.id).assignee).toEqual({ kind: "human", ref: "adam" });
+  expect(getTicket(doc, lea.id).assignee).toEqual({ kind: "human", ref: "lea" });
+  expect(getTicket(doc, agent.id).assignee).toEqual({ kind: "agent", ref: "adam" });
+  const bindings = Object.fromEntries(listBindings(doc).map((b) => [b.id, [b.runner, b.createdBy]]));
+  expect(bindings).toEqual({ b1: ["adam", "adam"], b2: ["lea", "lea"] });
 });

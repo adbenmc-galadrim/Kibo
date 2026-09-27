@@ -20,11 +20,13 @@ function usedDomainIds(doc: LoroDoc): Set<string> {
   return ids;
 }
 
-function migrateAssignees(doc: LoroDoc, input: ShareMigrationInput): void {
+type Rename = { from: string; to: string };
+
+function renameAssignees(doc: LoroDoc, { from, to }: Rename): void {
   for (const node of walkDepthFirst(doc.getTree("tickets"))) {
     const assignee = Assignee.safeParse(node.data.get("assignee"));
-    if (assignee.success && assignee.data.kind === "human" && assignee.data.ref === input.localUser) {
-      node.data.set("assignee", { kind: "human", ref: input.userId });
+    if (assignee.success && assignee.data.kind === "human" && assignee.data.ref === from) {
+      node.data.set("assignee", { kind: "human", ref: to });
     }
   }
 }
@@ -37,9 +39,9 @@ function copyUsedDomains(doc: LoroDoc, input: ShareMigrationInput): void {
   }
 }
 
-function migrateBindings(doc: LoroDoc, input: ShareMigrationInput): void {
+function renameBindings(doc: LoroDoc, { from, to }: Rename): void {
   const bindings = doc.getMap("bindings");
-  const account = (user: string) => (user === input.localUser ? input.userId : user);
+  const account = (user: string) => (user === from ? to : user);
   for (const binding of listBindings(doc)) {
     const runner = account(binding.runner);
     const createdBy = account(binding.createdBy);
@@ -56,11 +58,19 @@ export function migrateForSharing(doc: LoroDoc, input: ShareMigrationInput): { f
   }
   const { folder } = meta;
   doc.getMap("meta").delete("folder");
-  migrateAssignees(doc, input);
+  const rename = { from: input.localUser, to: input.userId };
+  renameAssignees(doc, rename);
   copyUsedDomains(doc, input);
-  migrateBindings(doc, input);
+  renameBindings(doc, rename);
   doc.commit();
   return { folder };
+}
+
+export function migrateForUnsharing(doc: LoroDoc, input: { localUser: string; userId: string }): void {
+  const rename = { from: input.userId, to: input.localUser };
+  renameAssignees(doc, rename);
+  renameBindings(doc, rename);
+  doc.commit();
 }
 
 function projectDomainEntries(doc: LoroDoc): [string, unknown][] {
