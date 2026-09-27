@@ -7,6 +7,7 @@
   "app": { "windows": [], "security": { "csp": null } },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
     "resources": {
@@ -24,6 +25,12 @@
     "linux": {
       "deb": { "depends": ["bubblewrap"] },
       "rpm": { "depends": ["bubblewrap"] }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYzM0I5NUM2RkFBODUxMDAKUldRQVVhajZ4cFU3WTJJLzRoOWNETDlSTWkySnNpVzV1Uml5dW0ydGNMT1RjTXpUUG40b1VsQlUK",
+      "endpoints": ["https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json"]
     }
   }
 }
