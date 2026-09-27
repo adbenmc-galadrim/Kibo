@@ -29,6 +29,8 @@ const Attack = z.object({
 });
 const Flood = z.object({ allowed: z.number(), limited: z.number(), other: z.array(z.string()) });
 
+// bubblewrap exports PWD for the directory given to --chdir
+const sandboxedEnv = process.platform === "linux" ? ["KIBO_COMPONENT", "PWD"] : ["KIBO_COMPONENT"];
 const home = mkdtempSync(join(tmpdir(), "kibo-exit-"));
 const earlier = new Set(runtimeChildren());
 const reached: string[] = [];
@@ -196,7 +198,7 @@ describe("a sandboxed third-party component stays inside its perimeter", () => {
       child: "blocked",
       signal: "blocked",
       connect: "blocked",
-      env: ["KIBO_COMPONENT"],
+      env: sandboxedEnv,
       descriptors: [],
       worker: { net: "blocked", read: "blocked", signal: "blocked", spawn: "blocked" },
     });
