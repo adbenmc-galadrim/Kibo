@@ -29,10 +29,11 @@ packages/cli/        commande kibo (création, test, aperçu, publication de com
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
 components/<id>/     composants intégrés (kanban, tickets, notes, graph, github-issues sans UI, mcp-source) écrits avec le SDK public
 e2e/                 parcours Playwright
+scripts/dogfood/     import du projet Kibo dans une instance Kibo, par l'API publique du démon
 design/  docs/       maquettes, spec, plans
 ```
 
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon`, `devkit ← cli`, `schema ← trust ← {devkit, daemon, sync-server, cli}`, `schema ← core ← sync-server` ; `core ← sdk/mock` (SDK simulé uniquement). `sync-server` n'est qu'une `devDependency` du démon et d'`e2e`, pour leurs tests.
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon`, `devkit ← cli`, `schema ← trust ← {devkit, daemon, sync-server, cli}`, `schema ← core ← sync-server` ; `core ← sdk/mock` (SDK simulé uniquement). `sync-server` n'est qu'une `devDependency` du démon et d'`e2e`, pour leurs tests. `scripts/dogfood` ne dépend que de `schema`.
 `core` ne fait aucune I/O ; `ui` ne parle qu'au démon (jamais au disque).
 
 ## Code
