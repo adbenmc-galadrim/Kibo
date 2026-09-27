@@ -26,10 +26,10 @@ function StateCell({ project }: { project: SyncProjectStatus }) {
   const hint = hintOf(project);
   return (
     <span className="grid gap-0.5">
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-start gap-1.5">
         <span
           aria-hidden
-          className={cn("size-1.5 shrink-0 rounded-full", failed ? "bg-red-500" : "bg-green-500")}
+          className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", failed ? "bg-red-500" : "bg-green-500")}
         />
         <span className={failed ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>{label}</span>
       </span>
@@ -56,9 +56,9 @@ export function SyncProjectsCard({ status, colors }: Props) {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className={HEAD}>{t.project}</TableHead>
-                  <TableHead className={`${HEAD} w-36`}>{t.role}</TableHead>
-                  <TableHead className={`${HEAD} w-36`}>{t.lastSync}</TableHead>
-                  <TableHead className={`${HEAD} w-64`}>{t.state}</TableHead>
+                  <TableHead className={`${HEAD} w-32`}>{t.role}</TableHead>
+                  <TableHead className={`${HEAD} w-32`}>{t.lastSync}</TableHead>
+                  <TableHead className={`${HEAD} w-80`}>{t.state}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

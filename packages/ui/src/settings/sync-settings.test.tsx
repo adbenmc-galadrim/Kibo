@@ -288,3 +288,11 @@ test("a reconnection countdown is shown in settings", async () => {
   render(<SyncSettingsPage viewer="Adam" remote={false} />);
   expect(await screen.findByText(/Reconnexion dans 1[23] s/)).toBeTruthy();
 });
+
+test("offline without a device list, the table is replaced by an explanation", async () => {
+  results.getSyncStatus = () => Promise.resolve({ ...online, state: "offline", retryAt: null });
+  results.listDevices = () => Promise.reject(new KiboError("SYNC_OFFLINE", "not connected"));
+  render(<SyncSettingsPage viewer="Adam" remote={false} />);
+  expect(await screen.findByText("Liste des appareils disponible une fois connecté.")).toBeTruthy();
+  expect(screen.queryByRole("table", { name: "Appareils" })).toBeNull();
+});

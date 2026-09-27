@@ -50,7 +50,7 @@ export function AddDeviceDialog({
   const { code, error } = useDeviceCode(open);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[34rem]">
         <DialogHeader>
           <DialogTitle>{t.addDeviceTitle}</DialogTitle>
           <DialogDescription>{t.addDeviceHelp}</DialogDescription>
@@ -62,7 +62,7 @@ export function AddDeviceDialog({
         ) : (
           <div className="grid gap-3">
             <div className="flex items-center gap-3 rounded-lg bg-muted px-4 py-3">
-              <span className="flex-1 break-words font-mono text-xl font-medium tracking-wide">
+              <span className="flex-1 break-words font-mono text-lg font-medium">
                 {code ? groupByFour(code) : "…"}
               </span>
               <CopyButton variant="outline" text={code ?? ""} />

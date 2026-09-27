@@ -80,30 +80,33 @@ export function SyncDevicesCard({ status, remote }: { status: SyncStatus; remote
             {failure}
           </p>
         )}
-        <div className="w-full overflow-hidden rounded-md border">
-          <Table aria-label={t.devices}>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD}>{t.device}</TableHead>
-                <TableHead className={`${HEAD} w-36`}>{t.added}</TableHead>
-                <TableHead className={`${HEAD} w-36`}>{t.seen}</TableHead>
-                <TableHead className={`${HEAD} w-28`} />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {active.map((d) => (
-                <DeviceRow
-                  key={d.deviceId}
-                  device={d}
-                  current={d.deviceId === status.deviceId}
-                  canRevoke={!remote && online}
-                  now={now}
-                  onRevoke={() => void revoke(d.deviceId)}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        {devices === null && !online && <p className="text-sm text-muted-foreground">{t.devicesOffline}</p>}
+        {devices !== null && (
+          <div className="w-full overflow-hidden rounded-md border">
+            <Table aria-label={t.devices}>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className={HEAD}>{t.device}</TableHead>
+                  <TableHead className={`${HEAD} w-36`}>{t.added}</TableHead>
+                  <TableHead className={`${HEAD} w-36`}>{t.seen}</TableHead>
+                  <TableHead className={`${HEAD} w-28`} />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {active.map((d) => (
+                  <DeviceRow
+                    key={d.deviceId}
+                    device={d}
+                    current={d.deviceId === status.deviceId}
+                    canRevoke={!remote && online}
+                    now={now}
+                    onRevoke={() => void revoke(d.deviceId)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={remote || !online}>
           <Plus aria-hidden />
           {t.addDevice}

@@ -83,7 +83,7 @@ export function AccountCard({ status }: { status: SyncStatus }) {
             <UserAvatar user={user.name} />
             <div className="grid gap-0.5">
               <span className="text-sm font-medium">{user.name}</span>
-              <span className="font-mono text-2xs text-muted-foreground">{user.id}</span>
+              <span className="font-mono text-2xs text-muted-foreground">{user.id.slice(0, 8)}</span>
             </div>
           </div>
         )}

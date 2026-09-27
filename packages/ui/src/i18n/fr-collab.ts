@@ -76,6 +76,7 @@ export const frCollab = {
       "Tes projets partagés resteront lisibles sur cette machine mais ne seront plus synchronisés.",
     account: "Compte",
     devices: "Appareils",
+    devicesOffline: "Liste des appareils disponible une fois connecté.",
     device: "Nom",
     added: "Ajouté",
     seen: "Vu",
