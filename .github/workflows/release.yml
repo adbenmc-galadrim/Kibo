@@ -71,6 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          NO_STRIP: "true"
         with:
           projectPath: apps/desktop
           tauriScript: bun run tauri
@@ -80,7 +81,7 @@ jobs:
           releaseDraft: true
           prerelease: false
           uploadUpdaterJson: true
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} --verbose
   publish:
     needs: [version, build]
     permissions: { contents: write }
