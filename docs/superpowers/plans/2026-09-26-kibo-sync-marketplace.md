@@ -121,6 +121,7 @@ Aucune ne contredit les specs ; elles comblent leurs silences. **Reportées en T
 43. **Installation marketplace réservée aux sessions locales** (choix du chef d'équipe, T20) : `installFromMarket` exige une session locale (`requireLocal`), une session distante reçoit `FORBIDDEN` ; installer du code tiers sur la machine est une action locale. L'épinglage de l'éditeur est écrit avant l'entrée au registre et retiré si celle-ci échoue. Reportée en spec H §13 (D43).
 44. **Accorder la confiance à un composant est une action locale** (choix du chef d'équipe, T20) : `approveComponent`, `publishComponent` (héritage de confiance) et `finalizeComponentDraft` (approbation du brouillon IA) exigent une session locale (`requireLocal`), une session distante reçoit `FORBIDDEN` (texte français dans l'UI) ; un test de bout en bout du démon vérifie le refus à travers le vrai dispatch. De même, `publishToMarket` et `exportKpkg` (T22) exigent une session locale (`exportKpkg` signe avec la clé d'éditeur). Reportée en spec H §13 (D44).
 45. **Profondeur contrôlée côté client** (choix du chef d'équipe, durcissement, T21) : le démon refuse toute donnée de sync qui imbrique le doc projet au-delà des bornes de la décision 42 : un doc complet (resync, jonction par `addJoinedProject`) est contrôlé par `projectDepthViolation`, puis adopté sous forme de copie propre (`LoroDoc.fromSnapshot`) qui abandonne ses opérations en attente, pour qu'aucune ne soit débloquée plus tard ; chaque `update` reçu est importé dans une copie (`fork`) et contrôlé par `depthViolation` avant d'être appliqué, et refusé s'il laisse des opérations en attente (`ImportStatus.pending` non vide : un serveur conforme envoie des lots causalement complets, un lot incomplet pourrait débloquer plus tard un arbre trop profond sans être contrôlé). Seuls des blobs Loro de mode `update` sont acceptés, à la resync et à la jonction comme au fil de l'eau (c'est tout ce que le serveur envoie : `diffSince` exporte en mode `update`) ; un blob `snapshot` ou `shallow-snapshot` est refusé avant tout import, et un doc à l'historique tronqué (`isShallow()`) est refusé avant adoption, car un snapshot superficiel porte un état sans les opérations qui l'ont produit et échappe au contrôle de profondeur. Refus ⇒ le projet n'est pas modifié, sa sync est suspendue (`enabled = false`, désabonnement) avec `lastError = "TOO_LARGE"` ; des octets indécodables, un blob d'un autre mode ou un doc tronqué suspendent de même avec `lastError = "INVALID_INPUT"`, et une panne du démon lui-même pendant l'application avec `lastError = "INTERNAL"` (journalisée) ; le démon ne plante jamais. Un projet suspendu reste modifiable localement (son accès ne change pas) ; l'état est porté par `lastError` et affiché par l'UI (T28). Coût : une copie du doc par mise à jour reçue. Reportée en spec G §13 (D45).
+46. **Liaisons d'un projet partagé opposables** (sécurité, suivi T7c, choix du chef d'équipe) : `validateProjectUpdate(before, after, author)` reçoit l'auteur du lot (`UpdateAuthor = { userId, role }`, l'acteur authentifié du `push`) et contrôle la map `bindings` du doc projet, par identifiant et en surface : toute valeur doit être une valeur simple (jamais un conteneur Loro), conforme à `Binding` et rangée sous son propre `id` ; une liaison nouvelle a `createdBy = runner = auteur` ; sur une liaison existante, `createdBy` et `adapter` sont figés, `runner` ne change que vers l'auteur lui-même, s'il est le créateur de la liaison ou un `owner` (spec G §6.2 « propriétaire de la liaison ou owner » : la prise en charge se fait toujours sur son propre compte, comme `setBindingRunner`), et `config` ne change que par le `runner` résultant, celui dont le jeton exécutera la liaison ; supprimer puis recréer une liaison sous le même id dans un lot est une réécriture (le contrôle compare deux états, pas des opérations) ; la suppression reste ouverte à tout éditeur (nuisance, sans exfiltration). Refus en `UPDATE_REJECTED`, audité. Le premier snapshot est contrôlé de même par `validateSharedSnapshot(doc, projectId, ownerId)` : liaisons valides, toutes créées et exécutées par le propriétaire (`INVALID_INPUT`). Raison : la garde de `setBindingRunner` n'est que locale ; sans contrôle serveur, un éditeur pose `runner = collègue` et un `config.repo` de son choix, et fait tourner la sync GitHub du collègue, avec son jeton, sur ce dépôt, ou rapatrie ses dépôts privés dans le projet partagé. Le démon ne change pas : il exécute les liaisons `runner === identité` en faisant confiance au serveur pour l'intégrité du doc, comme il le fait déjà pour `members` et les clés. Risque résiduel : un serveur compromis peut toujours attribuer une liaison ; le fermer demanderait une acceptation locale (liaisons acceptées par l'utilisateur sur cette machine, reconfirmation quand la config change), hors périmètre v1.0. Reportée en spec G §13 (D46).
 
 ## Écrans à dessiner (Penpot, avant les tâches UI)
 
@@ -407,7 +408,9 @@ export function writeMembers(doc: LoroDoc, members: { userId: string; name: stri
 export function readMembers(doc: LoroDoc): { userId: string; name: string }[];
 // validate-update.ts (T7)
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
-export function validateProjectUpdate(before: LoroDoc, after: LoroDoc): UpdateVerdict;
+export type UpdateAuthor = { userId: string; role: MemberRole };        // validate-bindings.ts (T7c)
+export function validateProjectUpdate(before: LoroDoc, after: LoroDoc, author: UpdateAuthor): UpdateVerdict;
+export function validateSharedSnapshot(doc: LoroDoc, projectId: string, ownerId: string): UpdateVerdict;   // validate-snapshot.ts (T14, T7c)
 // share-migration.ts (T7)
 export type ShareMigrationInput = { localUser: string; userId: string;
   domains: { domain: Domain; guidelines: { path: string; content: string }[] }[] };   // projectDomains : domainId → { name, color, guidelines }
@@ -4583,6 +4586,26 @@ git commit -m "feat(core): migrations du premier partage"
 ```
 
 - [x] **Suivi T7b** : profondeur bornée dans `validateProjectUpdate` (D42) : arbres ≤ 64 niveaux, conteneurs ≤ 32, refus en `UPDATE_REJECTED` sans conversion profonde (`packages/core/src/update-depth.ts`, `validate-update-depth.test.ts`).
+
+---
+
+### Task 7c: Liaisons d'un projet partagé opposables
+
+Suivi sécurité relevé à la relecture de T23 (décision 46). Les commandes brutes sur la map `bindings` (`addBinding`, réécriture par `LoroMap.set`) laissaient un éditeur poser `runner = userId d'un collègue` et un `config.repo` arbitraire : la garde de `setBindingRunner` est locale, et `validateProjectUpdate` ignorait `bindings`. La règle spec G §6.2 devient opposable côté serveur, le démon ne change pas.
+
+**Files:**
+- Create: `packages/core/src/validate-bindings.ts`, `packages/core/src/validate-update-bindings.test.ts`
+- Modify: `packages/core/src/validate-update.ts` (auteur), `packages/core/src/validate-snapshot.ts` (propriétaire), `packages/core/src/index.ts`, les tests existants de validation (auteur `owner`)
+- Modify: `packages/sync-server/src/room.ts` (`push` passe l'acteur, `create` passe `ownerId`), `packages/sync-server/src/room.test.ts`
+
+**Interfaces:**
+- `type UpdateAuthor = { userId: string; role: MemberRole }`
+- `validateProjectUpdate(before, after, author: UpdateAuthor): UpdateVerdict` et `validateSharedSnapshot(doc, projectId, ownerId): UpdateVerdict`
+- `bindingsUpdateViolation(before, after, author): string | null`, `bindingsSnapshotViolation(bindings: LoroMap, ownerId): string | null`
+
+- [x] **Step 1: Tests d'attaque qui échouent** : dans `core`, un éditeur crée une liaison `runner = autre membre` ou `createdBy = autre membre`, change `config.repo` d'une liaison d'autrui, prend le `runner` d'autrui, le cède à un tiers, change `createdBy`, écrit un conteneur ou une valeur invalide, supprime puis recrée sous le même id ; cas acceptés : création sur son compte, reprise par le créateur, reprise par un `owner` (avec ou sans reconfiguration), suppression, lot sans rapport. Dans la salle : un éditeur qui pose `runner = propriétaire` ou vise `adam/secret` est refusé en `UPDATE_REJECTED` (doc inchangé, audit `update-rejected` avec l'id de la liaison) ; un premier snapshot dont une liaison n'est pas exécutée par le propriétaire est refusé en `INVALID_INPUT`.
+- [x] **Step 2: Implémenter** `validate-bindings.ts` (lecture en surface, `Binding.safeParse`, comparaison canonique des états), brancher dans `validateProjectUpdate` et `validateSharedSnapshot`, passer l'acteur et le propriétaire depuis `ProjectRoom`.
+- [x] **Step 3: Décision 46** dans le plan et la spec G (§6.2, §13) ; `bun test packages components`, `bun run check`, `bun run typecheck` verts ; commits `feat(sync): liaisons partagées validées` et `docs: D46, liaisons partagées opposables`.
 
 ---
 
