@@ -2,11 +2,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { migrateForSharing } from "@kibo/core";
-import type { ChangeMessage } from "@kibo/schema";
+import { type ChangeMessage, type PresenceRun, SYNC_LIMITS } from "@kibo/schema";
 import { startTestSyncServer, type TestSyncServer } from "@kibo/sync-server/testing";
 import { fromBase64, toBase64 } from "@kibo/trust";
-import { wireSharing } from "../collab/bootstrap";
+import { wirePresence, wireSharing } from "../collab/bootstrap";
+import type { PresenceHub } from "../collab/presence";
 import { createProjectHosts } from "../collab/project-hosts";
+import { handleSyncRpc } from "../collab/rpc";
 import type { ShareDeps } from "../collab/share";
 import { docFromServer } from "../collab/sync-blob";
 import { SyncClient } from "../collab/sync-client";
@@ -15,6 +17,7 @@ import { createWebSocketTransport, type SyncTransport } from "../collab/transpor
 import type { ProjectHostRegistry } from "../collab/types";
 import { createMemorySecretStore, type MemorySecretStore } from "../integrations/memory-secret-store";
 import { createRedactor } from "../integrations/redact";
+import type { RpcHandler } from "../rpc-extensions";
 import { createService, type Service } from "../service";
 import { openStore } from "../store";
 
@@ -26,9 +29,18 @@ export type HarnessDaemon = {
   secrets: MemorySecretStore;
   syncDb: SyncDb;
   share: ShareDeps;
+  presence: PresenceHub;
+  runs: FakeRuns;
+  handler: RpcHandler;
   events: ChangeMessage[];
   opens(): number;
   stop(): void;
+};
+export type FakeRun = PresenceRun & { projectId: string; ticketId: string };
+export type FakeRuns = {
+  active(): FakeRun[];
+  set(runs: FakeRun[]): void;
+  onChange(listener: () => void): () => void;
 };
 export type SyncHarness = {
   readonly server: TestSyncServer;
@@ -65,7 +77,23 @@ function countingTransport(inner: SyncTransport): SyncTransport & { opened: numb
   return counting;
 }
 
-function startDaemon(user: string): HarnessDaemon {
+function fakeRuns(): FakeRuns {
+  let current: FakeRun[] = [];
+  const listeners = new Set<() => void>();
+  return {
+    active: () => current,
+    set: (runs) => {
+      current = runs;
+      for (const l of listeners) l();
+    },
+    onChange: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
+function startDaemon(user: string, presenceTimeoutMs: number): HarnessDaemon {
   const home = mkdtempSync(join(tmpdir(), `kibo-sync-${user}-`));
   const store = openStore(home);
   const syncDb = openSyncDb(store.db);
@@ -95,6 +123,23 @@ function startDaemon(user: string): HarnessDaemon {
     backoff: { minMs: 20, maxMs: 200 },
   });
   const sharing = wireSharing({ service, store, db: syncDb, client, hosts, user });
+  const runs = fakeRuns();
+  const presence = wirePresence({
+    client,
+    db: syncDb,
+    runs: (projectId) =>
+      runs
+        .active()
+        .filter((r) => r.projectId === projectId)
+        .map(({ ticketKey, profile, state }) => ({ ticketKey, profile, state })),
+    emit: (message) => {
+      events.push(message);
+      service.docs.emit(message);
+    },
+    log: (message, error) => console.error(`[harness:${user}] ${message}`, error ?? ""),
+    timeoutMs: presenceTimeoutMs,
+  });
+  const offRuns = runs.onChange(() => presence.presence.refreshRuns());
   return {
     home,
     service,
@@ -103,9 +148,14 @@ function startDaemon(user: string): HarnessDaemon {
     secrets,
     syncDb,
     share: sharing.share,
+    presence: presence.presence,
+    runs,
+    handler: (req, ctx) => handleSyncRpc(client, req, ctx, sharing.share, presence.presence),
     events,
     opens: () => transport.opened,
     stop: () => {
+      offRuns();
+      presence.stop();
       client.stop();
       sharing.stop();
       store.close();
@@ -114,14 +164,20 @@ function startDaemon(user: string): HarnessDaemon {
   };
 }
 
-export async function startSyncHarness(opts: { daemons: number }): Promise<SyncHarness> {
+export async function startSyncHarness(opts: {
+  daemons: number;
+  presenceTimeoutMs?: number;
+}): Promise<SyncHarness> {
+  const presenceTimeoutMs = opts.presenceTimeoutMs ?? SYNC_LIMITS.presenceTimeoutMs;
   let server = await startTestSyncServer();
   let running = true;
   const { dataDir, cert } = server;
   const port = server.server.port;
   const caFile = join(dataDir, "ca.pem");
   writeFileSync(caFile, server.caPem, { mode: 0o600 });
-  const daemons = Array.from({ length: opts.daemons }, (_, i) => startDaemon(USERS[i] ?? `user${i}`));
+  const daemons = Array.from({ length: opts.daemons }, (_, i) =>
+    startDaemon(USERS[i] ?? `user${i}`, presenceTimeoutMs),
+  );
   const at = (i: number): HarnessDaemon => {
     const d = daemons[i];
     if (!d) throw new Error(`no daemon ${i}`);

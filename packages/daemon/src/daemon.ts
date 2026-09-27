@@ -204,6 +204,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(() => orchestrator.stop());
   agents = orchestrator;
+  closers.push(collab.attachRuns(orchestrator));
   closers.push(service.attachAgents(orchestrator));
   const ai = await startAi({
     home: opts.home,

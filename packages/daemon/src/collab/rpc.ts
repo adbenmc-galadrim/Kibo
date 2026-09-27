@@ -1,5 +1,6 @@
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { type RpcContext, type RpcOutcome, requireLocal } from "../rpc-extensions";
+import type { PresenceHub } from "./presence";
 import {
   createProjectInvite,
   joinProject,
@@ -21,11 +22,17 @@ const need = (share: ShareDeps | undefined): ShareDeps => {
   return share;
 };
 
+const needPresence = (presence: PresenceHub | undefined): PresenceHub => {
+  if (!presence) throw new KiboError("INTERNAL", "presence is not wired");
+  return presence;
+};
+
 export async function handleSyncRpc(
   client: SyncRpcClient,
   req: RpcRequest,
   ctx: RpcContext,
   share?: ShareDeps,
+  presence?: PresenceHub,
 ): Promise<RpcOutcome> {
   switch (req.method) {
     case "getSyncStatus":
@@ -62,6 +69,11 @@ export async function handleSyncRpc(
     case "setBindingRunner":
       setBindingRunner(need(share), req);
       return { handled: true, result: null };
+    case "setPresence":
+      needPresence(presence).set(req.projectId, { pageId: req.pageId, ticketId: req.ticketId });
+      return { handled: true, result: null };
+    case "getPresence":
+      return { handled: true, result: needPresence(presence).peers(req.projectId) };
     default:
       return { handled: false };
   }
