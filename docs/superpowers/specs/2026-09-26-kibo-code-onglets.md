@@ -103,7 +103,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 
 ### 12.3 Actions réservées à la machine locale
 
-- `/api/code` reçoit désormais le contexte de session (`RpcContext { sessionHash, remote }`) : `CodeService.handle(req, ctx)`. `discardChanges`, `stageAll`, `unstageAll` et **`openInEditor`** (qui lance un programme sur la machine) sont refusées en `FORBIDDEN` depuis une session distante, comme les RPC de la spec G décision 17. Les autres requêtes git ne changent pas en phase 9 ; leur restriction éventuelle est une question posée à Adam (rapport de la vague 1).
+- `/api/code` reçoit désormais le contexte de session (`RpcContext { sessionHash, remote }`) : `CodeService.handle(req, ctx)`. `discardChanges`, `stageAll`, `unstageAll` et **`openInEditor`** (qui lance un programme sur la machine) sont refusées en `FORBIDDEN` depuis une session distante, comme les RPC de la spec G décision 17. Décision d'Adam (2026-09-27) : **toutes** les requêtes de `/api/code` qui modifient le dépôt ou lancent un programme (indexer, désindexer, commit, push, création de PR, changement de branche, annulation, ouverture dans l'éditeur) sont réservées à la machine locale et refusées en `FORBIDDEN` depuis une session distante ; seules les lectures (statut, diff, contenu, historique) restent ouvertes. L'interface distante masque ces actions.
 
 ### 12.4 Menus contextuels de l'interface
 
