@@ -21953,7 +21953,7 @@ export type MockSdk = { /* existant */ setAccess(access: ProjectAccess): void; s
   - `TabBar` (`packages/ui/src/tabs/TabBar.tsx`) n'a pas de zone droite hors `error` : prop `trailing` ajoutée. L'en-tête d'une page expose `PageActions` (portail vers `ShellHeader`, `packages/ui/src/shell/page-actions.tsx`) : la pile réduite d'une page y est rendue.
   - Pas de `client.onEvent` : `client.subscribeEvents` (T4).
 
-- [ ] **Step 1: Tests du SDK et du démon**
+- [x] **Step 1: Tests du SDK et du démon**
 
 `packages/sdk/src/presence.test.tsx` :
 ```tsx
@@ -22048,12 +22048,12 @@ test("presence.list reaches the presence handler", async () => {
 ```
 (`findInstance`, `idleHandlers`, `eventsDb`, `granted` : `gate-test-kit.ts` ; l'instance `thirdparty` y existe. Adapter l'appel de `createGate` au modèle exact des autres tests du fichier si sa forme diffère.)
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `bun test packages/sdk/src/presence.test.tsx packages/daemon/src/components/gate-permissions.test.ts`
 Expected: FAIL « Cannot find module './members' » et `"presence.list"` refusé par Zod / `bun run typecheck`.
 
-- [ ] **Step 3: Schéma et démon**
+- [x] **Step 3: Schéma et démon**
 
 `packages/schema/src/call.ts`, dans `ComponentCall` :
 ```ts
@@ -22080,7 +22080,7 @@ Expected: FAIL « Cannot find module './members' » et `"presence.list"` refusé
 ```
 `packages/daemon/src/components/service.ts` : `ComponentsDeps` gagne les mêmes champs facultatifs, passés à `createGateHandlers` (`...(deps.presence && { presence: deps.presence })`, idem `sharing`). `packages/daemon/src/daemon.ts` : `presence: (projectId) => presenceHub?.peers(projectId) ?? []` et `sharing: (projectId) => …` branchés sur le hub de T24 et la fonction qui remplit `ProjectSnapshot.sync` en T21 (fermetures paresseuses : le hub et le client de sync sont créés après les composants). `packages/daemon/src/components/gate-test-kit.ts` : `idleHandlers` gagne `presence: async () => []` et `sharing: async () => { throw new KiboError("INTERNAL", "unexpected") }` (même motif que ses autres entrées).
 
-- [ ] **Step 4: Implémenter le SDK**
+- [x] **Step 4: Implémenter le SDK**
 
 `packages/sdk/src/fr.ts` :
 ```ts
@@ -22211,12 +22211,12 @@ le backend simulé gagne `subscribePresence: presenceChanges.subscribe` (nouveau
 
 `packages/sdk/src/conformance.tsx` : le tableau `projects` devient `[string, ConformanceSeed | undefined, Partial<MockSdkOptions>][]` avec `["empty project", undefined, {}]`, `["seeded project", seed, {}]` et `["shared project with provisional keys", seed, { shared: true, presence: [COLLEAGUE] }]` ; ces options sont étalées dans `createMockSdk` ; `COLLEAGUE` est un `PresencePeer` fictif (Léa, un run `opus-dev-1` en cours). Le cas vérifie comme les autres le rendu et l'absence de violation, ce qui garantit qu'aucun composant conforme ne plante sur `key: null`.
 
-- [ ] **Step 5: Vérifier le SDK et le démon**
+- [x] **Step 5: Vérifier le SDK et le démon**
 
 Run: `bun test packages/sdk packages/schema packages/daemon/src/components components`
 Expected: PASS, y compris la conformité de Kanban et Tickets avec le nouveau cas (l'affichage de la clé passe par `keyLabel` depuis T6).
 
-- [ ] **Step 6: Commit du SDK**
+- [x] **Step 6: Commit du SDK**
 
 ```bash
 git add packages/schema/src/call.ts packages/schema/src/permissions.ts packages/sdk/src \
@@ -22226,7 +22226,7 @@ git add packages/schema/src/call.ts packages/schema/src/permissions.ts packages/
 git commit -m "feat(sdk): présence et membres"
 ```
 
-- [ ] **Step 7: Tests des composants et du shell**
+- [x] **Step 7: Tests des composants et du shell**
 
 Ajouts à `components/kanban/src/kanban.test.tsx` :
 ```tsx
@@ -22390,12 +22390,12 @@ test("navigation reports presence only for shared projects", async () => {
 });
 ```
 
-- [ ] **Step 8: Vérifier l'échec**
+- [x] **Step 8: Vérifier l'échec**
 
 Run: `bun test components packages/ui/src/shell/presence.test.tsx`
 Expected: FAIL (clé sans italique dans le Kanban, `./PresenceAvatars` introuvable).
 
-- [ ] **Step 9: Implémenter les composants intégrés**
+- [x] **Step 9: Implémenter les composants intégrés**
 
 `KanbanCard.tsx` : nouvelles props `members: MemberInfo[]`, `remote: { label: string; state: string }[]`, `readOnly: boolean` ; `useDraggable({ id: t.id, disabled: readOnly })` ; l'étiquette `{t.keyLabel}` (T6) devient `<TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />` (les `listeners` / `attributes` du glisser restent sur son `<span>` parent) ; le menu « Actions » (`Déplacer vers`) n'est pas rendu si `readOnly` ; un assigné humain affiche `assigneeLabel(t.assignee, members)` dans un `Badge variant="outline"` ; pour chaque entrée de `remote` :
 ```tsx
@@ -22407,7 +22407,7 @@ Expected: FAIL (clé sans italique dans le Kanban, `./PresenceAvatars` introuvab
 
 `TicketsTree.tsx` : l'étiquette `{t.keyLabel}` passe par `TicketKeyLabel` (mêmes classes) ; `AssigneeCell` reçoit `members` (`useMembers()`) et affiche `assigneeLabel(assignee, members)` et les initiales de ce libellé.
 
-- [ ] **Step 10: Implémenter l'UI du shell**
+- [x] **Step 10: Implémenter l'UI du shell**
 
 `packages/ui/src/i18n/fr-presence.ts` :
 ```ts
@@ -22544,7 +22544,7 @@ export function KeyRequired({ ticket, children }: Props) {
 - `Shell.tsx` : `trailing={project && <PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} />}` sur `TabBar` ; `usePresenceReporter({ projectId: activeProjectId, pageId: active?.kind === "page" ? active.pageId : null, ticketId: activeTicketId, shared: project?.sync.shared ?? false })`. Si le fichier dépasse 300 lignes avec T29, extraire ce câblage dans `packages/ui/src/shell/use-collab-shell.ts`.
 - `PageView.tsx` : `<PageActions><PresenceAvatars project={{ id: project.meta.id, name: project.meta.name }} pages={project.pages} pageId={page.id} /></PageActions>` (portail vers l'en-tête, déjà utilisé par `ViewActions`).
 
-- [ ] **Step 10b: `viewer` d'un projet partagé (décision 31)**
+- [x] **Step 10b: `viewer` d'un projet partagé (décision 31)**
 
 Test ajouté à `packages/ui/src/mine/my-tickets.test.ts` :
 ```ts
@@ -22559,7 +22559,7 @@ Test ajouté à `packages/ui/src/mine/my-tickets.test.ts` :
 ```
 Run: `bun test packages/ui/src/mine/my-tickets.test.ts` ⇒ FAIL (KIB-21 absent). Dans `myTickets`, filtrer par `isMine(t, snapshots.get(project.id)?.viewer ?? viewer, tab)`. Dans `Shell.tsx`, `PageView` et `InstanceFrame` reçoivent `project.viewer ?? viewer` (le `viewer` transmis à l'iframe et au SDK), ce qui aligne le filtre « Moi + agents » du Kanban et `assigneeLabel` sur l'`userId` d'un projet partagé (`ProjectSnapshot.viewer` vient de T23). Le cas du Kanban est couvert par un test ajouté à `components/kanban/src/kanban.test.tsx` : SDK simulé avec `viewer: "u-adam"` et un ticket assigné à `{ kind: "human", ref: "u-adam" }`, visible sous le filtre « Moi + agents ». Run ⇒ PASS.
 
-- [ ] **Step 11: Vérifier**
+- [x] **Step 11: Vérifier**
 
 Run: `bun test packages components`
 Expected: PASS, conformité de Kanban et Tickets verte sur les trois cas.
@@ -22569,7 +22569,7 @@ Expected: PASS ; budget ≤ 230 kB gzip.
 
 Contrôle visuel face aux exports S4 et S5, en sombre et en clair.
 
-- [ ] **Step 12: Commit de l'UI**
+- [x] **Step 12: Commit de l'UI**
 
 ```bash
 git add components/kanban/src components/tickets/src packages/ui/src/i18n/fr-presence.ts packages/ui/src/i18n/fr.ts \
