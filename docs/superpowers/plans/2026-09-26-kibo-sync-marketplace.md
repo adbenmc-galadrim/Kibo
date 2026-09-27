@@ -21248,7 +21248,7 @@ Vague 7. Écrans à dessiner **S2** (Partager le projet), **S3** (Rejoindre un p
   - Le bouton « Ticket » (`fr.header.newTicket`) est dans `ShellHeader.tsx` ; `host.openNewTicket` est défini dans `Shell.tsx` (`useMemo<Host>`).
   - `KiboError` porte le message du démon dans `detail` (`new KiboError(code, detail)`).
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-share.ts` :
 ```ts
@@ -21307,7 +21307,7 @@ export const frShare = {
 ```
 Dans `packages/ui/src/i18n/fr.ts` : `import { frShare } from "./fr-share";` et `...frShare,` après `...frCollab,`. Les rôles réutilisent `fr.sync.roles` (T28).
 
-- [ ] **Step 2: Écrire les tests**
+- [x] **Step 2: Écrire les tests**
 
 `packages/ui/src/dialogs/share.test.tsx` :
 ```tsx
@@ -21508,12 +21508,12 @@ test("a shared binding run by someone else can be taken over", async () => {
 ```
 (`instance` : l'instance déjà définie dans le fichier.)
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/SourceHeader.test.tsx`
 Expected: FAIL « Cannot find module './ShareProjectDialog' ».
 
-- [ ] **Step 4: Implémenter le bandeau et l'accès**
+- [x] **Step 4: Implémenter le bandeau et l'accès**
 
 `packages/ui/src/state/access.ts` :
 ```ts
@@ -21548,7 +21548,7 @@ export function ProjectAccessBanner({ access }: { access: ProjectAccess }) {
 }
 ```
 
-- [ ] **Step 5: Implémenter `ShareProjectDialog`**
+- [x] **Step 5: Implémenter `ShareProjectDialog`**
 
 `packages/ui/src/dialogs/ShareProjectDialog.tsx` :
 ```tsx
@@ -21774,7 +21774,7 @@ export function ShareProjectDialog({ project, open, onOpenChange }: Props) {
 }
 ```
 
-- [ ] **Step 6: Implémenter `JoinProjectDialog`**
+- [x] **Step 6: Implémenter `JoinProjectDialog`**
 
 `packages/ui/src/dialogs/JoinProjectDialog.tsx` :
 ```tsx
@@ -21849,7 +21849,7 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
 }
 ```
 
-- [ ] **Step 7: Brancher le shell**
+- [x] **Step 7: Brancher le shell**
 
 - `lazy-dialogs.ts` : `ShareProjectDialog` et `JoinProjectDialog` par `lazyPanel(…, fr.lazy, hidden)` (même motif que `NewTicketDialog`).
 - `ShellDialogs.tsx` : `DialogsState` gagne `share: string | null` et `join: boolean` (`NO_DIALOG` : `share: null`, `join: false`) ; le projet à partager est cherché dans `snapshots` (déjà en props) ; rendu :
@@ -21886,7 +21886,7 @@ export function JoinProjectDialog({ open, onOpenChange }: { open: boolean; onOpe
   ```
   placé avant le bouton de sync, `onError={setError}` (erreur affichée par le `role="alert"` existant).
 
-- [ ] **Step 8: Vérifier**
+- [x] **Step 8: Vérifier**
 
 Run: `bun test packages/ui/src/dialogs/share.test.tsx packages/ui/src/shell/shell.test.tsx packages/ui/src/pages/SourceHeader.test.tsx`
 Expected: PASS.
@@ -21896,7 +21896,7 @@ Expected: PASS ; budget ≤ 230 kB gzip (dialogues chargés à la demande ; seul
 
 Contrôle visuel face aux exports S2, S3, S6, en sombre et en clair.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/ui/src/i18n/fr-share.ts packages/ui/src/i18n/fr.ts packages/ui/src/dialogs/ShareProjectDialog.tsx \
