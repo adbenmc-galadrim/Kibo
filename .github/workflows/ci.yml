@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: packages/sync-server/dist/kibo-sync invite account --name CI --data "$(mktemp -d)"
       - run: bun run --cwd packages/ui build
-      - run: bun test packages components
+      - run: bun test packages components ./scripts
       - run: bun apps/desktop/scripts/cli-smoke.ts
   e2e:
     needs: test
