@@ -31,6 +31,7 @@ async function ownSources(deps: PublishDeps, input: Ref): Promise<SourceFile[]> 
   if (!v) throw new KiboError("NOT_FOUND", `${labelOf(input)} is not published locally`);
   if (!OWN_ORIGINS.has(v.origin))
     throw new KiboError("INVALID_INPUT", `${input.id} is not one of your components`);
+  if (v.revoked !== null) throw new KiboError("REVOKED", `${labelOf(input)} is revoked`);
   const { hash, files } = await readSources(join(deps.store.root, input.id, input.version, v.hash, "source"));
   if (hash !== v.hash) throw new KiboError("HASH_MISMATCH", `${labelOf(input)} changed in the store`);
   return files;

@@ -132,6 +132,19 @@ describe("exportKpkg", () => {
     ).rejects.toThrow("INVALID_INPUT");
   });
 
+  test("a version revoked locally is neither exported nor published", async () => {
+    const v = deps.registry.get("burndown", "0.1.0");
+    if (!v) throw new Error("fixture missing");
+    deps.registry.put("burndown", "Burndown", { ...v, revoked: { reason: "Faille", at: 1 } });
+    await expect(
+      exportKpkg(deps, { id: "burndown", version: "0.1.0", publisherName: "Adam" }),
+    ).rejects.toThrow("REVOKED");
+    await onTeam();
+    await expect(publishToMarket(deps, INPUT)).rejects.toThrow("REVOKED");
+    expect(team.received).toHaveLength(0);
+    expect(await secrets.has(SECRET_MARKET_PUBLISHER)).toBe(false);
+  });
+
   test("an unknown version is not found", async () => {
     await expect(
       exportKpkg(deps, { id: "burndown", version: "9.9.9", publisherName: "Adam" }),
