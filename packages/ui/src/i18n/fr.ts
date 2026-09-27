@@ -39,6 +39,29 @@ export const fr = {
     changes: "Changements",
     changesCount: (n: number) => `${n} fichier${n > 1 ? "s" : ""} modifié${n > 1 ? "s" : ""}`,
     search: "Rechercher…",
+    openNewTab: "Ouvrir dans un nouvel onglet",
+    rename: "Renommer…",
+    moveUp: "Monter",
+    moveDown: "Descendre",
+    moveTo: "Déplacer vers",
+    root: "Racine",
+    remove: "Supprimer…",
+    pageActions: (title: string) => `Actions de la page ${title}`,
+    renameTitle: "Renommer la page",
+    renameName: "Nom",
+    renameFailed: "Impossible de renommer la page.",
+    deletePageTitle: (title: string) => `Supprimer la page ${title} ?`,
+    deletePageHelp: (subPages: number, widgets: number) => {
+      const parts = [
+        subPages > 0 ? `${subPages} sous-page${subPages > 1 ? "s" : ""}` : null,
+        widgets > 0 ? `${widgets} widget${widgets > 1 ? "s" : ""}` : null,
+      ].filter((p) => p !== null);
+      return parts.length === 0
+        ? "La page disparaîtra. Les tickets ne sont pas touchés."
+        : `Ses ${parts.join(" et ")} disparaîtront. Les tickets ne sont pas touchés.`;
+    },
+    moveFailed: "Impossible de déplacer la page.",
+    dropHere: "Déposer ici pour en faire une sous-page",
   },
   header: {
     newTicket: "Ticket",
