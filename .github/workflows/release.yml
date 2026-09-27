@@ -12,6 +12,7 @@ concurrency: { group: "release-${{ github.ref }}", cancel-in-progress: false }
 jobs:
   version:
     runs-on: ubuntu-latest
+    permissions: { contents: write }
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
       notes: ${{ steps.notes.outputs.body }}
