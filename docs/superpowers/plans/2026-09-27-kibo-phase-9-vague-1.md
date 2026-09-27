@@ -1732,35 +1732,3579 @@ git commit -m "build(desktop): icônes régénérées"
 
 ### Task 6: Fiche ticket éditable
 
-**À compléter.** Cadre : décision 4, écrans 98–99, Contrats partagés (UI › `ticket/`, `ShellDialogs`, `ContentView`), vague 1 ← T2. Contenu attendu : `packages/ui/src/ticket/{TicketTitle,TicketActionsMenu,StatusSelect,AssigneeSelect,DescriptionEditor}.tsx`, `use-ticket-command.ts`, `fr-ticket-edit.ts`, `TicketDetail.tsx` (statut par `StatusSelect`, « Bloqué » ⇒ `ReasonDialog`, assigné, description éditable, sous-tickets cliquables via `onOpenTicket`), `TicketSheet.tsx` et `TicketTab.tsx` (titre éditable, menu « ⋯ » : Ouvrir dans un onglet, Copier la clé, Supprimer… ⇒ `ConfirmDialog` ⇒ `deleteTicket` ⇒ `onDeleted`), `ShellDialogs`/`ContentView`/`Shell` (`onOpenTicket`), lecture seule par `canEdit(project)`, `FORBIDDEN_IN_ENTRY` (+ `ticket/`, `fr-ticket-edit`). Tests `ticket-edit.test.tsx` (titre vide refusé garde l'ancien titre, statut bloqué demande un motif, suppression confirmée envoie `deleteTicket` et appelle `onDeleted`, rien d'éditable en lecture seule).
+Vague 1 ← T2. Décision 4, écrans 98 et 99. La fiche (Sheet et onglet) devient éditable : titre en place, statut et assigné par sélecteurs, description par un éditeur, sous-tickets cliquables, menu « ⋯ ». Tout passe par `client.rpc({ method: "command", … })` avec les variantes `updateTicket`, `setStatus`, `deleteTicket` (colonne « Réel »). En lecture seule (`canEdit(project)` faux), rien n'est éditable et le menu ne porte pas « Supprimer… ». Le dossier `ticket/` est chargé avec `TicketDetail` (déjà à la demande) : il entre dans `FORBIDDEN_IN_ENTRY`.
+
+**Précision de contrat (T6 possède ces fichiers, T14 en hérite) :** `TicketSheet`, `TicketTab` et `TicketDetail` reçoivent aussi `viewer: string` (l'UI n'a pas de hook de session ; `ShellDialogs` et `ContentView` l'ont déjà) pour l'option « Moi » du sélecteur d'assigné. `onDeleted` est un prop de `TicketSheet` (le menu « ⋯ » vit dans l'en-tête du Sheet et de l'onglet, pas dans `TicketDetail`) ; `TicketDetail` gagne `onOpenTicket` et `viewer` seulement.
+
+**Files:**
+- Create: `packages/ui/src/ticket/use-ticket-command.ts`, `TicketTitle.tsx`, `StatusSelect.tsx`, `AssigneeSelect.tsx`, `DescriptionEditor.tsx`, `TicketActionsMenu.tsx`, `ticket-edit.test.tsx`
+- Create: `packages/ui/src/i18n/fr-ticket-edit.ts`
+- Modify: `packages/ui/src/shell/TicketDetail.tsx`, `packages/ui/src/shell/TicketSheet.tsx`, `packages/ui/src/pages/TicketTab.tsx`, `packages/ui/src/shell/ShellDialogs.tsx`, `packages/ui/src/shell/ContentView.tsx`, `packages/ui/src/shell/Shell.tsx`, `packages/ui/scripts/bundle-report.ts`
+- Test (existants, attentes inchangées) : `packages/ui/src/shell/sheet/sheet-integrations.test.tsx` (ajouter `viewer="adam"`, `onOpenTicket={() => {}}`, `onDeleted={() => {}}` aux rendus), `packages/ui/src/shell/agents-shell.test.tsx`, `packages/ui/src/shell/presence.test.tsx`, `packages/ui/src/palette/palette.test.tsx` (si elles rendent `TicketSheet` directement, mêmes ajouts)
+
+**Interfaces:**
+- Consumes: `ConfirmDialog` (`shell/lazy-dialogs`, T2), `ReasonDialog` (`@kibo/sdk/ui/reason-dialog`, T2), `DropdownMenuEntries`, `MenuEntry` (`@kibo/sdk/ui/menu-entries`, T2), `canEdit` (`state/access`), `Select`, `Input`, `Textarea`, `Button`, `Tooltip` du SDK.
+- Produces: `useTicketCommand` (réutilisé par T14), `frTicketEdit` (complété par T14 : `deps`), `TicketDetail` props `{ project, ticket, domains?, viewer, onOpenFile, onOpenTicket }`, `TicketSheet` props `+ viewer, onOpenTicket(ticketId), onDeleted()`, `TicketTab` props `+ viewer, onOpenTicket(ticketId)`, `ContentView` props `+ onOpenTicket(projectId, ticketId)`.
+
+- [ ] **Step 1: Textes**
+
+`packages/ui/src/i18n/fr-ticket-edit.ts` (importé directement par `ticket/*`, jamais monté dans `fr.ts`) :
+```ts
+import type { KiboErrorCode } from "@kibo/schema";
+
+const s = (n: number) => (n > 1 ? "s" : "");
+
+export const frTicketEdit = {
+  editTitle: "Modifier le titre",
+  titleField: "Titre",
+  titleHint: "Entrée pour enregistrer · Échap pour annuler",
+  editDescription: "Modifier",
+  descriptionField: "Description",
+  descriptionPlaceholder: "Décris le ticket…",
+  save: "Enregistrer",
+  cancel: "Annuler",
+  assignee: "Assigné",
+  nobody: "Personne",
+  me: "Moi",
+  agentAssignee: "Choisis un profil via Assigner à un agent",
+  actions: (key: string) => `Actions ${key}`,
+  openInTab: "Ouvrir dans un onglet",
+  copyKey: "Copier la clé",
+  copied: "Clé copiée",
+  copyFailed: "Impossible de copier la clé.",
+  remove: "Supprimer…",
+  removeTitle: (key: string) => `Supprimer ${key} ?`,
+  removeHelp: (children: number) =>
+    children === 0
+      ? "Ses liens seront supprimés aussi. Cette action est irréversible."
+      : `Ses ${children} sous-ticket${s(children)} et ses liens seront supprimés aussi. Cette action est irréversible.`,
+  removeConfirm: "Supprimer",
+  block: {
+    title: (key: string) => `Bloquer ${key}`,
+    description: "Un ticket bloqué attend une condition extérieure au projet.",
+    reason: "Motif",
+    placeholder: "Informations attendues du client",
+    confirm: "Bloquer",
+    cancel: "Annuler",
+  },
+  errors: {
+    INVALID_INPUT: "Le titre ne peut pas être vide.",
+    BLOCKED_REASON_REQUIRED: "Un motif est requis pour bloquer un ticket.",
+    FORBIDDEN: "Ce projet est en lecture seule.",
+    NOT_FOUND: "Ce ticket n'existe plus.",
+    TREE_CYCLE: "Un ticket ne peut pas devenir son propre sous-ticket.",
+  } satisfies Partial<Record<KiboErrorCode, string>>,
+  fallback: "Impossible d'enregistrer la modification.",
+};
+```
+
+- [ ] **Step 2: Tests (rouges)**
+
+`packages/ui/src/ticket/ticket-edit.test.tsx` :
+```tsx
+import { beforeEach, expect, mock, test } from "bun:test";
+import { DEFAULT_WORKFLOW, KiboError, type ProjectSnapshot, type RpcRequest, type TicketView } from "@kibo/schema";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+const calls: RpcRequest[] = [];
+let answer: (req: RpcRequest) => unknown = () => null;
+mock.module("../api", () => ({
+  client: {
+    rpc: async (req: RpcRequest) => {
+      calls.push(req);
+      if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
+      if (req.method === "getPresence") return [];
+      return answer(req);
+    },
+    subscribe: () => () => undefined,
+    subscribeEvents: () => () => undefined,
+    subscribeIntegrations: () => () => undefined,
+  },
+}));
+
+const { TicketSheet } = await import("../shell/TicketSheet");
+
+const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
+  id: "12@1",
+  key: "KIB-12",
+  pendingSeq: null,
+  keyLabel: "KIB-12",
+  title: "Schéma Loro des tickets",
+  description: "Arbre LoroTree.",
+  statusId: "in_progress",
+  blockedReason: null,
+  domainId: null,
+  assignee: null,
+  parentId: null,
+  externalRefs: [],
+  progress: { done: 3, total: 5 },
+  waitingOn: [],
+  ...patch,
+});
+const child = (n: number, parentId: string): TicketView =>
+  ticket({ id: `${n}@1`, key: `KIB-${n}`, keyLabel: `KIB-${n}`, title: `Sous-tâche ${n}`, parentId, progress: { done: 0, total: 0 } });
+const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  workflow: DEFAULT_WORKFLOW,
+  pages: [],
+  tickets: [main, child(20, main.id), child(21, "20@1")],
+  links: [],
+  instances: [],
+  rules: [],
+  bindings: [],
+  nextTicketKey: "KIB-22",
+  sync: {
+    shared: access !== "write",
+    keyAllocator: "local",
+    role: null,
+    access,
+    members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
+  },
+});
+
+const show = (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "write") => {
+  const onDeleted = mock(() => {});
+  const onOpenTicket = mock((_id: string) => {});
+  const onOpenInTab = mock(() => {});
+  render(
+    <TicketSheet
+      project={project(main, access)}
+      ticketId={main.id}
+      domains={[]}
+      viewer="adam"
+      onClose={() => {}}
+      onAssign={() => {}}
+      onOpenInTab={onOpenInTab}
+      onOpenFile={() => {}}
+      onOpenTicket={onOpenTicket}
+      onDeleted={onDeleted}
+    />,
+  );
+  return { onDeleted, onOpenTicket, onOpenInTab, user: userEvent.setup() };
+};
+const command = (req: RpcRequest | undefined) => (req?.method === "command" ? req.command : null);
+
+beforeEach(() => {
+  calls.length = 0;
+  answer = () => null;
+});
+
+test("the title is edited in place and saved on Enter", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Modifier le titre" }));
+  const field = screen.getByRole("textbox", { name: "Titre" });
+  expect(screen.getByText("Entrée pour enregistrer · Échap pour annuler")).toBeTruthy();
+  await user.clear(field);
+  await user.type(field, "Schéma Loro des tickets (LoroTree){Enter}");
+  expect(command(calls.at(-1))).toEqual({
+    method: "updateTicket",
+    ticketId: "12@1",
+    title: "Schéma Loro des tickets (LoroTree)",
+  });
+  await waitFor(() => expect(screen.queryByRole("textbox", { name: "Titre" })).toBeNull());
+});
+
+test("an empty title is refused by the daemon: the error shows, the field stays, Escape restores the old title", async () => {
+  answer = () => {
+    throw new KiboError("INVALID_INPUT", "ticket title is empty");
+  };
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Modifier le titre" }));
+  const field = screen.getByRole("textbox", { name: "Titre" });
+  await user.clear(field);
+  await user.type(field, "   {Enter}");
+  expect((await screen.findByRole("alert")).textContent).toBe("Le titre ne peut pas être vide.");
+  expect(screen.getByRole("textbox", { name: "Titre" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  expect(screen.getByRole("button", { name: "Modifier le titre" }).textContent).toBe("Schéma Loro des tickets");
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("the status select sends setStatus, Bloqué asks for a reason first", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("combobox", { name: "Statut" }));
+  await user.click(await screen.findByRole("option", { name: "En review" }));
+  expect(command(calls.at(-1))).toEqual({ method: "setStatus", ticketId: "12@1", statusId: "in_review" });
+  await user.click(screen.getByRole("combobox", { name: "Statut" }));
+  await user.click(await screen.findByRole("option", { name: "Bloqué" }));
+  const dialog = await screen.findByRole("dialog", { name: "Bloquer KIB-12" });
+  expect(calls.filter((c) => command(c)?.method === "setStatus")).toHaveLength(1);
+  await user.type(within(dialog).getByLabelText("Motif"), "Attente du client");
+  await user.click(within(dialog).getByRole("button", { name: "Bloquer" }));
+  expect(command(calls.at(-1))).toEqual({
+    method: "setStatus",
+    ticketId: "12@1",
+    statusId: "blocked",
+    reason: "Attente du client",
+  });
+});
+
+test("the assignee select offers nobody, me and the members; an agent assignee is not editable here", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("combobox", { name: "Assigné" }));
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Personne", "Moi", "Léa"]);
+  await user.click(screen.getByRole("option", { name: "Moi" }));
+  expect(command(calls.at(-1))).toEqual({
+    method: "updateTicket",
+    ticketId: "12@1",
+    assignee: { kind: "human", ref: "adam" },
+  });
+});
+
+test("an agent assignee shows a disabled select with the hint", () => {
+  show(ticket({ assignee: { kind: "agent", ref: "opus-dev-1" } }));
+  const select = screen.getByRole("combobox", { name: "Assigné" });
+  expect(select.getAttribute("data-disabled")).not.toBeNull();
+  expect(select.textContent).toContain("opus-dev-1");
+  expect(screen.getByText("Choisis un profil via Assigner à un agent")).toBeTruthy();
+});
+
+test("the description is edited in a textarea and saved", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const field = screen.getByRole("textbox", { name: "Description" });
+  await user.clear(field);
+  await user.type(field, "Nouveau texte");
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(command(calls.at(-1))).toEqual({ method: "updateTicket", ticketId: "12@1", description: "Nouveau texte" });
+});
+
+test("sub-tickets open in the sheet", async () => {
+  const { user, onOpenTicket } = show();
+  await user.click(screen.getByRole("button", { name: /KIB-20/ }));
+  expect(onOpenTicket).toHaveBeenCalledWith("20@1");
+});
+
+test("the menu opens in a tab, copies the key and deletes after confirmation", async () => {
+  const written: string[] = [];
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (t: string) => void written.push(t) },
+  });
+  answer = (req) => (command(req)?.method === "deleteTicket" ? ["12@1", "20@1", "21@1"] : null);
+  const { user, onDeleted, onOpenInTab } = show();
+  await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir dans un onglet",
+    "Copier la clé",
+    "Supprimer…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Ouvrir dans un onglet" }));
+  expect(onOpenInTab).toHaveBeenCalledTimes(1);
+  await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Copier la clé" }));
+  expect(written).toEqual(["KIB-12"]);
+  expect((await screen.findByRole("status")).textContent).toBe("Clé copiée");
+  await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Supprimer KIB-12 ?" });
+  expect(dialog.textContent).toContain("Ses 2 sous-tickets et ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(dialog).getByRole("button", { name: "Supprimer" }));
+  expect(command(calls.at(-1))).toEqual({ method: "deleteTicket", ticketId: "12@1" });
+  await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
+});
+
+test("a read-only project shows the ticket without any editing control", async () => {
+  const { user } = show(ticket(), "read-only");
+  expect(screen.queryByRole("button", { name: "Modifier le titre" })).toBeNull();
+  expect(screen.getByRole("heading", { name: "Schéma Loro des tickets" })).toBeTruthy();
+  expect(screen.queryByRole("combobox", { name: "Statut" })).toBeNull();
+  expect(screen.getByText("En cours")).toBeTruthy();
+  expect(screen.queryByRole("combobox", { name: "Assigné" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir dans un onglet",
+    "Copier la clé",
+  ]);
+});
+```
+Run: `bun test packages/ui/src/ticket/ticket-edit.test.tsx` — Expected: FAIL (props inconnus, boutons absents).
+
+- [ ] **Step 3: Le hook de commande**
+
+`packages/ui/src/ticket/use-ticket-command.ts` :
+```ts
+import { KiboError, type ProjectCommand } from "@kibo/schema";
+import { useCallback, useState } from "react";
+import { client } from "../api";
+import { frTicketEdit } from "../i18n/fr-ticket-edit";
+
+export type TicketCommand = {
+  run(command: ProjectCommand): Promise<boolean>;
+  error: string | null;
+  busy: boolean;
+  clearError(): void;
+};
+
+export const describeTicketError = (e: unknown): string =>
+  e instanceof KiboError ? (frTicketEdit.errors[e.code as keyof typeof frTicketEdit.errors] ?? frTicketEdit.fallback) : frTicketEdit.fallback;
+
+export function useTicketCommand(projectId: string): TicketCommand {
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const run = useCallback(
+    async (command: ProjectCommand) => {
+      setBusy(true);
+      setError(null);
+      try {
+        await client.rpc({ method: "command", projectId, command });
+        return true;
+      } catch (e) {
+        setError(describeTicketError(e));
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [projectId],
+  );
+  const clearError = useCallback(() => setError(null), []);
+  return { run, error, busy, clearError };
+}
+```
+(`e.code as keyof typeof frTicketEdit.errors` : le `as` est justifié par la recherche dans un `Partial<Record<KiboErrorCode, string>>` ; l'alternative sans `as` est `(frTicketEdit.errors as Partial<Record<KiboErrorCode, string>>)[e.code]`, au choix de l'implémenteur, une seule des deux.)
+
+- [ ] **Step 4: Titre, statut, assigné, description**
+
+`packages/ui/src/ticket/TicketTitle.tsx` :
+```tsx
+import { Input } from "@kibo/sdk/ui/input";
+import { type KeyboardEvent, useState } from "react";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+
+type Props = {
+  title: string;
+  editable: boolean;
+  error: string | null;
+  onSave(title: string): Promise<boolean>;
+  onCancel(): void;
+  className?: string;
+};
+
+export function TicketTitle({ title, editable, error, onSave, onCancel, className }: Props) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const stop = () => {
+    setDraft(null);
+    onCancel();
+  };
+  const save = async () => {
+    if (draft === null) return;
+    if (await onSave(draft.trim())) setDraft(null);
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") void save();
+    if (e.key === "Escape") stop();
+  };
+  if (!editable) return <span className={className}>{title}</span>;
+  if (draft === null)
+    return (
+      <button
+        type="button"
+        aria-label={t.editTitle}
+        className={`text-left hover:underline decoration-dotted underline-offset-4 ${className ?? ""}`}
+        onClick={() => setDraft(title)}
+      >
+        {title}
+      </button>
+    );
+  return (
+    <span className="grid gap-1">
+      <Input
+        aria-label={t.titleField}
+        value={draft}
+        autoFocus
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={onKeyDown}
+        onBlur={() => void save()}
+      />
+      <span className="text-xs text-muted-foreground">{t.titleHint}</span>
+      {error && (
+        <span role="alert" className="text-xs text-destructive">
+          {error}
+        </span>
+      )}
+    </span>
+  );
+}
+```
+
+`packages/ui/src/ticket/StatusSelect.tsx` :
+```tsx
+import type { Status, StatusId, TicketView } from "@kibo/schema";
+import { StatusDot } from "@kibo/sdk";
+import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
+import { useState } from "react";
+import { fr } from "../i18n/fr";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import type { TicketCommand } from "./use-ticket-command";
+
+type Props = { ticket: TicketView; workflow: Status[]; editable: boolean; command: TicketCommand };
+
+export function StatusSelect({ ticket, workflow, editable, command }: Props) {
+  const [blocking, setBlocking] = useState(false);
+  const label = workflow.find((s) => s.id === ticket.statusId)?.label ?? ticket.statusId;
+  if (!editable) return <span>{label}</span>;
+  const pick = (statusId: StatusId) => {
+    if (statusId === ticket.statusId) return;
+    if (statusId === "blocked") setBlocking(true);
+    else void command.run({ method: "setStatus", ticketId: ticket.id, statusId });
+  };
+  const block = async (reason: string) => {
+    if (await command.run({ method: "setStatus", ticketId: ticket.id, statusId: "blocked", reason })) setBlocking(false);
+  };
+  return (
+    <>
+      <Select value={ticket.statusId} onValueChange={(v) => pick(v as StatusId)}>
+        <SelectTrigger size="sm" aria-label={fr.ticket.status} className="w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {[...workflow]
+            .sort((a, b) => a.order - b.order)
+            .map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                <StatusDot statusId={s.id} />
+                {s.label}
+              </SelectItem>
+            ))}
+        </SelectContent>
+      </Select>
+      {blocking && (
+        <ReasonDialog
+          open
+          title={t.block.title(ticket.keyLabel)}
+          description={t.block.description}
+          label={t.block.reason}
+          placeholder={t.block.placeholder}
+          confirmLabel={t.block.confirm}
+          cancelLabel={t.block.cancel}
+          error={command.error}
+          onConfirm={(reason) => void block(reason)}
+          onCancel={() => {
+            command.clearError();
+            setBlocking(false);
+          }}
+        />
+      )}
+    </>
+  );
+}
+```
+(`v as StatusId` : justifié, `Select` ne renvoie que les valeurs de ses `SelectItem`, tous issus de `workflow`.)
+
+`packages/ui/src/ticket/AssigneeSelect.tsx` :
+```tsx
+import type { Assignee, MemberInfo, TicketView } from "@kibo/schema";
+import { assigneeLabel } from "@kibo/sdk";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
+import { useId } from "react";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import type { TicketCommand } from "./use-ticket-command";
+
+type Props = { ticket: TicketView; viewer: string; members: MemberInfo[]; editable: boolean; command: TicketCommand };
+
+const NOBODY = "none";
+const ME = "me";
+
+function assigneeOf(value: string, viewer: string): Assignee | null {
+  if (value === NOBODY) return null;
+  return { kind: "human", ref: value === ME ? viewer : value };
+}
+
+function valueOf(assignee: Assignee | null, viewer: string): string {
+  if (!assignee) return NOBODY;
+  return assignee.ref === viewer ? ME : assignee.ref;
+}
+
+export function AssigneeSelect({ ticket, viewer, members, editable, command }: Props) {
+  const hintId = useId();
+  const others = members.filter((m) => m.userId !== viewer);
+  const label = ticket.assignee ? assigneeLabel(ticket.assignee, members) : t.nobody;
+  if (!editable) return <span>{label}</span>;
+  const agent = ticket.assignee?.kind === "agent";
+  const pick = (value: string) =>
+    void command.run({ method: "updateTicket", ticketId: ticket.id, assignee: assigneeOf(value, viewer) });
+  return (
+    <span className="grid gap-1">
+      <Select value={agent ? ticket.assignee?.ref : valueOf(ticket.assignee, viewer)} onValueChange={pick} disabled={agent}>
+        <SelectTrigger size="sm" aria-label={t.assignee} aria-describedby={agent ? hintId : undefined} className="w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {agent && ticket.assignee && <SelectItem value={ticket.assignee.ref}>{ticket.assignee.ref}</SelectItem>}
+          <SelectItem value={NOBODY}>{t.nobody}</SelectItem>
+          <SelectItem value={ME}>{t.me}</SelectItem>
+          {others.map((m) => (
+            <SelectItem key={m.userId} value={m.userId}>
+              {m.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {agent && (
+        <span id={hintId} className="text-xs text-muted-foreground">
+          {t.agentAssignee}
+        </span>
+      )}
+    </span>
+  );
+}
+```
+(Vérifier la signature d'`assigneeLabel(assignee, members)` dans `packages/sdk/src/members.ts` : c'est celle utilisée par `TicketsTree`. Un assigné humain hors membres et différent du viewer s'affiche par son `ref`.)
+
+`packages/ui/src/ticket/DescriptionEditor.tsx` :
+```tsx
+import { LinkifiedText } from "@kibo/sdk";
+import { Button } from "@kibo/sdk/ui/button";
+import { Textarea } from "@kibo/sdk/ui/textarea";
+import { useState } from "react";
+import { fr } from "../i18n/fr";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import type { TicketCommand } from "./use-ticket-command";
+
+type Props = {
+  ticketId: string;
+  description: string;
+  editable: boolean;
+  command: TicketCommand;
+  onOpenFile(ref: { path: string; line: number | null }): void;
+};
+
+export function DescriptionEditor({ ticketId, description, editable, command, onOpenFile }: Props) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const save = async () => {
+    if (draft === null) return;
+    if (await command.run({ method: "updateTicket", ticketId, description: draft })) setDraft(null);
+  };
+  return (
+    <section className="grid gap-2 px-4 text-sm">
+      <div className="flex items-center gap-2">
+        <h3 className="text-xs font-medium">{fr.ticket.description}</h3>
+        {editable && draft === null && (
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setDraft(description)}>
+            {t.editDescription}
+          </Button>
+        )}
+      </div>
+      {draft === null ? (
+        <p className="whitespace-pre-wrap text-muted-foreground">
+          {description ? <LinkifiedText text={description} onOpen={onOpenFile} /> : "-"}
+        </p>
+      ) : (
+        <div className="grid gap-2">
+          <Textarea
+            aria-label={t.descriptionField}
+            value={draft}
+            placeholder={t.descriptionPlaceholder}
+            autoFocus
+            className="min-h-32"
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          {command.error && (
+            <p role="alert" className="text-xs text-destructive">
+              {command.error}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button size="sm" disabled={command.busy} onClick={() => void save()}>
+              {t.save}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+              {t.cancel}
+            </Button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+```
+
+- [ ] **Step 5: Le menu « ⋯ » et la suppression confirmée**
+
+`packages/ui/src/ticket/TicketActionsMenu.tsx` :
+```tsx
+import type { TicketView } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { Copy, Ellipsis, Maximize2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { client } from "../api";
+import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import { useFlash } from "../lib/use-flash";
+import { ConfirmDialog } from "../shell/lazy-dialogs";
+import { describeTicketError } from "./use-ticket-command";
+
+type Props = {
+  projectId: string;
+  ticket: TicketView;
+  childCount: number;
+  editable: boolean;
+  onOpenInTab: (() => void) | null;
+  onDeleted(): void;
+};
+
+export function ticketMenuEntries(p: Props, copy: () => void, remove: () => void): MenuEntry[] {
+  const entries: MenuEntry[] = [];
+  if (p.onOpenInTab) entries.push({ label: t.openInTab, icon: Maximize2, onSelect: p.onOpenInTab });
+  entries.push({ label: t.copyKey, icon: Copy, onSelect: copy });
+  if (p.editable) entries.push({ separator: true }, { label: t.remove, icon: Trash2, destructive: true, onSelect: remove });
+  return entries;
+}
+
+export function TicketActionsMenu(p: Props) {
+  const [confirming, setConfirming] = useState(false);
+  const { message, tone, flash } = useFlash();
+  const copy = () => {
+    navigator.clipboard.writeText(p.ticket.keyLabel).then(
+      () => flash(t.copied),
+      () => flash(t.copyFailed, "error"),
+    );
+  };
+  const remove = async () => {
+    await client.rpc({ method: "command", projectId: p.projectId, command: { method: "deleteTicket", ticketId: p.ticket.id } });
+    p.onDeleted();
+  };
+  return (
+    <>
+      {message && (
+        <span role={tone === "error" ? "alert" : "status"} className={`text-xs ${tone === "error" ? "text-destructive" : "text-muted-foreground"}`}>
+          {message}
+        </span>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="ghost" className="size-7" aria-label={t.actions(p.ticket.keyLabel)}>
+            <Ellipsis aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuEntries entries={ticketMenuEntries(p, copy, () => setConfirming(true))} />
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {confirming && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setConfirming(false)}
+          title={t.removeTitle(p.ticket.keyLabel)}
+          description={t.removeHelp(p.childCount)}
+          confirmLabel={t.removeConfirm}
+          cancelLabel={t.cancel}
+          onConfirm={remove}
+          describeError={describeTicketError}
+        />
+      )}
+    </>
+  );
+}
+```
+`childCount` = nombre de descendants (tous niveaux), calculé par le parent : `descendantCount(project.tickets, ticket.id)` ci-dessous.
+
+- [ ] **Step 6: Brancher la fiche**
+
+`packages/ui/src/shell/TicketDetail.tsx` : Props devient `{ project; ticket; domains?; viewer: string; onOpenFile(ref: FileRef): void; onOpenTicket(ticketId: string): void }`. Dans le corps :
+- `const editable = canEdit(project); const command = useTicketCommand(project.meta.id);`
+- la ligne Statut devient `<dd><StatusSelect ticket={t} workflow={project.workflow} editable={editable} command={command} /></dd>` ;
+- après Domaine, une ligne Assigné : `<dt className="text-muted-foreground">{frTicketEdit.assignee}</dt><dd><AssigneeSelect ticket={t} viewer={viewer} members={project.sync.members} editable={editable} command={command} /></dd>` ;
+- `command.error` s'affiche sous la `dl` : `{command.error && <p role="alert" className="px-4 text-sm text-destructive">{command.error}</p>}` ;
+- la section Description devient `<DescriptionEditor ticketId={t.id} description={t.description} editable={editable} command={command} onOpenFile={open} />` ;
+- chaque sous-ticket devient un bouton : `<button type="button" className="text-left hover:underline" onClick={() => onOpenTicket(c.id)}><span className="font-mono text-2xs text-muted-foreground">{c.keyLabel}</span> {c.title}</button>` ;
+- exporter `export const descendantCount = (tickets: readonly TicketView[], id: string): number => tickets.filter((x) => x.parentId === id).reduce((n, c) => n + 1 + descendantCount(tickets, c.id), 0);`.
+Les badges « attend » restent (T14 les remplace).
+
+`packages/ui/src/shell/TicketSheet.tsx` : Props `+ viewer: string; onOpenTicket(ticketId: string): void; onDeleted(): void`. Dans l'en-tête : `editable = canEdit(project)` ; le `SheetTitle` devient
+```tsx
+          <SheetTitle className="text-lg">
+            <TicketTitle
+              title={t.title}
+              editable={editable}
+              error={command.error}
+              onSave={(title) => command.run({ method: "updateTicket", ticketId: t.id, title })}
+              onCancel={command.clearError}
+            />
+          </SheetTitle>
+```
+avec `const command = useTicketCommand(project.meta.id);` ; le bouton « Ouvrir dans un onglet » disparaît au profit de `<TicketActionsMenu projectId={project.meta.id} ticket={t} childCount={descendantCount(project.tickets, t.id)} editable={editable} onOpenInTab={onOpenInTab} onDeleted={onDeleted} />` placé dans la ligne de la clé (à droite, `ml-auto`). `TicketDetail` reçoit `viewer` et `onOpenTicket`.
+
+`packages/ui/src/pages/TicketTab.tsx` : Props `+ viewer: string; onOpenTicket(ticketId: string): void`. Le `<h1>` enveloppe `TicketTitle` (même props que le Sheet) ; `TicketActionsMenu` à droite de la clé avec `onOpenInTab={null}` et `onDeleted={() => undefined}` (l'onglet affiche « Ticket introuvable » dès la mise à jour du snapshot).
+
+`packages/ui/src/shell/ShellDialogs.tsx` : `TicketSheet` reçoit `viewer={viewer}`, `onOpenTicket={(ticketId) => set({ sheet: { projectId: sheet.projectId, ticketId } })}`, `onDeleted={() => set({ sheet: null })}`.
+
+`packages/ui/src/shell/ContentView.tsx` : Props `+ onOpenTicket(projectId: string, ticketId: string): void` ; `TicketTab` reçoit `viewer={p.project.viewer ?? p.viewer}` et `onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}`. `Shell.tsx` passe `onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}`.
+
+`packages/ui/scripts/bundle-report.ts`, `FORBIDDEN_IN_ENTRY` : `/\/packages\/ui\/src\/(ticket\/[A-Za-z-]+\.tsx?|i18n\/fr-ticket-edit\.ts)$/,`.
+
+Run: `bun test packages/ui/src/ticket packages/ui/src/shell/sheet packages/ui/src/shell/agents-shell.test.tsx packages/ui/src/shell/presence.test.tsx packages/ui/src/palette` — Expected: PASS (les tests existants gagnent les props ajoutés, sans autre changement).
+
+- [ ] **Step 7: Gate, budget, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; budget inchangé (`ticket/` n'est chargé qu'avec `TicketDetail`), aucun « Module interdit ».
+
+```bash
+git add packages/ui/src/i18n/fr-ticket-edit.ts packages/ui/src/ticket/use-ticket-command.ts packages/ui/src/ticket/TicketTitle.tsx packages/ui/src/ticket/StatusSelect.tsx packages/ui/src/ticket/AssigneeSelect.tsx packages/ui/src/ticket/DescriptionEditor.tsx packages/ui/src/ticket/TicketActionsMenu.tsx packages/ui/src/ticket/ticket-edit.test.tsx
+git commit -m "feat(ui): champs éditables de la fiche ticket"
+git add packages/ui/src/shell/TicketDetail.tsx packages/ui/src/shell/TicketSheet.tsx packages/ui/src/pages/TicketTab.tsx packages/ui/src/shell/ShellDialogs.tsx packages/ui/src/shell/ContentView.tsx packages/ui/src/shell/Shell.tsx packages/ui/scripts/bundle-report.ts packages/ui/src/shell/sheet/sheet-integrations.test.tsx
+git commit -m "feat(ui): fiche ticket éditable, menu et suppression"
+```
+(Ajouter au second commit les autres tests existants modifiés pour les nouveaux props.)
 
 ### Task 7: Pages de la barre latérale : menu, renommer, déplacer, supprimer
 
-**À compléter.** Cadre : décision 6, écran 101, Contrats partagés (UI › `page-menu.ts`, `RenamePageDialog`, `DialogsState.renamePage/deletePage`), vague 1 ← T2. Contenu attendu : `shell/ProjectPages.tsx` (extrait de `AppSidebar.tsx`, `ContextMenu` + `SidebarMenuAction` « ⋯ » par page, `DndContext` reparentage, erreur `role="alert"`), `page-menu.ts` + `page-menu.test.ts` (`moveTargets` exclut la page et ses descendantes ; `pageMenuEntries` sans entrée d'écriture en lecture seule ; Monter/Descendre désactivés aux bornes), `dialogs/RenamePageDialog.tsx` (lazy), `ShellDialogs` (`renamePage`, `deletePage` ⇒ `ConfirmDialog` avec nombre de sous-pages et de widgets), `fr.ts` › `nav` (+ `openNewTab`, `renamePage`, `moveUp`, `moveDown`, `moveTo`, `root`, `deletePage`, `renameTitle`, `deletePageTitle(name)`, `deletePageHelp(subPages, widgets)`), `FORBIDDEN_IN_ENTRY` (+ `RenamePageDialog`).
+Vague 1 ← T2. Décision 6, écran 101, spec §12.4 (menu **page**). Les pages du projet courant sortent d'`AppSidebar` dans `ProjectPages`, qui porte le clic droit, le bouton « ⋯ », le glisser-déposer de reparentage et l'erreur de déplacement. Renommer ouvre un dialogue chargé à la demande ; supprimer confirme en nommant les sous-pages et widgets emportés. Le menu est une liste `MenuEntry[]` pure (`page-menu.ts`), testée sans DOM. Sémantique vérifiée de `movePage { index }` (Loro) : `index` est la **position finale** parmi les sœurs (sur `a,b,c`, `movePage(a, null, 1)` donne `b,a,c`) ; « Monter » envoie `index - 1`, « Descendre » `index + 1`.
+
+**Files:**
+- Create: `packages/ui/src/shell/page-menu.ts`, `packages/ui/src/shell/page-menu.test.ts`, `packages/ui/src/shell/ProjectPages.tsx`, `packages/ui/src/shell/project-pages.test.tsx`, `packages/ui/src/dialogs/RenamePageDialog.tsx`
+- Modify: `packages/ui/src/shell/AppSidebar.tsx` (délègue les pages du projet courant), `packages/ui/src/shell/ShellDialogs.tsx` (`renamePage`, `deletePage`), `packages/ui/src/shell/Shell.tsx` (`onRenamePage`, `onDeletePage` vers `AppSidebar`), `packages/ui/src/shell/lazy-dialogs.ts` (`RenamePageDialog`), `packages/ui/src/i18n/fr.ts` › `nav`, `packages/ui/scripts/bundle-report.ts`
+- Test (existant) : `packages/ui/src/shell/shell.test.tsx` (attentes inchangées : les boutons de page gardent leur nom)
+
+**Interfaces:**
+- Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`shell/lazy-dialogs`, T2), `@dnd-kit/core` (déjà dans `packages/ui`), `SidebarMenuAction`, `SidebarMenuSub*`, `canEdit`.
+- Produces: Contrats partagés › UI › `page-menu.ts`, `RenamePageDialog` ; `AppSidebar` props `+ onRenamePage(page: Page): void; onDeletePage(page: Page): void` ; `DialogsState + renamePage: Page | null; deletePage: Page | null`.
+
+- [ ] **Step 1: Textes**
+
+`packages/ui/src/i18n/fr.ts` › `nav`, ajouter :
+```ts
+    openNewTab: "Ouvrir dans un nouvel onglet",
+    renamePage: "Renommer…",
+    moveUp: "Monter",
+    moveDown: "Descendre",
+    moveTo: "Déplacer vers",
+    root: "Racine",
+    deletePage: "Supprimer…",
+    pageActions: (title: string) => `Actions de la page ${title}`,
+    renameTitle: "Renommer la page",
+    renameName: "Nom",
+    renameFailed: "Impossible de renommer la page.",
+    deletePageTitle: (title: string) => `Supprimer la page ${title} ?`,
+    deletePageHelp: (subPages: number, widgets: number) => {
+      const parts = [
+        subPages > 0 ? `${subPages} sous-page${subPages > 1 ? "s" : ""}` : null,
+        widgets > 0 ? `${widgets} widget${widgets > 1 ? "s" : ""}` : null,
+      ].filter((p) => p !== null);
+      return parts.length === 0
+        ? "La page disparaîtra. Les tickets ne sont pas touchés."
+        : `Ses ${parts.join(" et ")} disparaîtront. Les tickets ne sont pas touchés.`;
+    },
+    moveFailed: "Impossible de déplacer la page.",
+    dropHere: "Déposer ici pour en faire une sous-page",
+```
+(Écran 101 : « Ses 2 sous-pages et 3 widgets disparaîtront. »)
+
+- [ ] **Step 2: Le menu en données (test rouge puis vert)**
+
+`packages/ui/src/shell/page-menu.test.ts` :
+```ts
+import { expect, mock, test } from "bun:test";
+import type { Page } from "@kibo/schema";
+import { isSeparator, isSubmenu, type MenuAction } from "@kibo/sdk/ui/menu-entries";
+import { fr } from "../i18n/fr";
+import { moveTargets, type PageMenuActions, pageMenuEntries, siblingIndex } from "./page-menu";
+
+const page = (id: string, title: string, parentId: string | null): Page => ({ id, title, kind: "dashboard", parentId });
+const pages: Page[] = [
+  page("dash", "Tableau de bord", null),
+  page("kanban", "Kanban", null),
+  page("k1", "Sprint", "kanban"),
+  page("k11", "Rétro", "k1"),
+  page("notes", "Notes", null),
+];
+const actions = (): PageMenuActions => ({
+  openNewTab: mock(() => {}),
+  newSubPage: mock(() => {}),
+  rename: mock(() => {}),
+  moveUp: mock(() => {}),
+  moveDown: mock(() => {}),
+  moveTo: mock((_p: string | null) => {}),
+  remove: mock(() => {}),
+});
+const labels = (entries: ReturnType<typeof pageMenuEntries>) =>
+  entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
+const action = (entries: ReturnType<typeof pageMenuEntries>, label: string): MenuAction => {
+  const found = entries.find((e) => !isSeparator(e) && !isSubmenu(e) && e.label === label);
+  if (!found || isSeparator(found) || isSubmenu(found)) throw new Error(`no action ${label}`);
+  return found;
+};
+
+test("move targets exclude the page itself and its descendants", () => {
+  expect(moveTargets(pages, pages[1] as Page).map((p) => p.id)).toEqual(["dash", "notes"]);
+  expect(moveTargets(pages, pages[4] as Page).map((p) => p.id)).toEqual(["dash", "kanban", "k1", "k11"]);
+});
+
+test("sibling index counts within the same parent, in snapshot order", () => {
+  expect(siblingIndex(pages, pages[0] as Page)).toEqual({ index: 0, count: 3 });
+  expect(siblingIndex(pages, pages[4] as Page)).toEqual({ index: 2, count: 3 });
+  expect(siblingIndex(pages, pages[3] as Page)).toEqual({ index: 0, count: 1 });
+});
+
+test("an editable page gets the full menu, bounds disable Monter / Descendre", () => {
+  const a = actions();
+  const entries = pageMenuEntries({ page: pages[1] as Page, pages, editable: true, texts: fr.nav, actions: a });
+  expect(labels(entries)).toEqual([
+    "Ouvrir dans un nouvel onglet",
+    "Nouvelle sous-page",
+    "Renommer…",
+    "Monter",
+    "Descendre",
+    "Déplacer vers ▸",
+    "—",
+    "Supprimer…",
+  ]);
+  expect(action(entries, "Monter").disabled).toBeFalsy();
+  expect(action(entries, "Descendre").disabled).toBeFalsy();
+  const first = pageMenuEntries({ page: pages[0] as Page, pages, editable: true, texts: fr.nav, actions: a });
+  expect(action(first, "Monter").disabled).toBe(true);
+  const last = pageMenuEntries({ page: pages[4] as Page, pages, editable: true, texts: fr.nav, actions: a });
+  expect(action(last, "Descendre").disabled).toBe(true);
+  const only = pageMenuEntries({ page: pages[3] as Page, pages, editable: true, texts: fr.nav, actions: a });
+  expect(action(only, "Monter").disabled).toBe(true);
+  expect(action(only, "Descendre").disabled).toBe(true);
+});
+
+test("Déplacer vers lists Racine then the targets, the current parent disabled", () => {
+  const a = actions();
+  const entries = pageMenuEntries({ page: pages[2] as Page, pages, editable: true, texts: fr.nav, actions: a });
+  const sub = entries.find(isSubmenu);
+  expect(sub?.items.map((i) => [i.label, i.disabled ?? false])).toEqual([
+    ["Racine", false],
+    ["Tableau de bord", false],
+    ["Kanban", true],
+    ["Notes", false],
+  ]);
+  sub?.items[0]?.onSelect();
+  sub?.items[1]?.onSelect();
+  expect(a.moveTo).toHaveBeenNthCalledWith(1, null);
+  expect(a.moveTo).toHaveBeenNthCalledWith(2, "dash");
+  action(entries, "Supprimer…").onSelect();
+  expect(a.remove).toHaveBeenCalledTimes(1);
+  expect(action(entries, "Supprimer…").destructive).toBe(true);
+});
+
+test("a read-only project only opens the page in a new tab", () => {
+  const entries = pageMenuEntries({ page: pages[1] as Page, pages, editable: false, texts: fr.nav, actions: actions() });
+  expect(labels(entries)).toEqual(["Ouvrir dans un nouvel onglet"]);
+});
+```
+Run: `bun test packages/ui/src/shell/page-menu.test.ts` — Expected: FAIL (module introuvable).
+
+`packages/ui/src/shell/page-menu.ts` :
+```ts
+import type { Page } from "@kibo/schema";
+import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { ArrowDown, ArrowUp, ExternalLink, FolderInput, Pencil, Plus, Trash2 } from "lucide-react";
+
+export type PageMenuTexts = {
+  openNewTab: string;
+  newSubPage: string;
+  rename: string;
+  moveUp: string;
+  moveDown: string;
+  moveTo: string;
+  root: string;
+  remove: string;
+};
+export type PageMenuActions = {
+  openNewTab(): void;
+  newSubPage(): void;
+  rename(): void;
+  moveUp(): void;
+  moveDown(): void;
+  moveTo(parentId: string | null): void;
+  remove(): void;
+};
+
+export function descendantIds(pages: readonly Page[], id: string): Set<string> {
+  const out = new Set<string>();
+  const visit = (parentId: string) => {
+    for (const p of pages) {
+      if (p.parentId === parentId && !out.has(p.id)) {
+        out.add(p.id);
+        visit(p.id);
+      }
+    }
+  };
+  visit(id);
+  return out;
+}
+
+export function moveTargets(pages: readonly Page[], page: Page): Page[] {
+  const excluded = descendantIds(pages, page.id);
+  return pages.filter((p) => p.id !== page.id && !excluded.has(p.id));
+}
+
+export function siblingIndex(pages: readonly Page[], page: Page): { index: number; count: number } {
+  const siblings = pages.filter((p) => p.parentId === page.parentId);
+  return { index: siblings.findIndex((p) => p.id === page.id), count: siblings.length };
+}
+
+export function pageMenuEntries(input: {
+  page: Page;
+  pages: readonly Page[];
+  editable: boolean;
+  texts: PageMenuTexts;
+  actions: PageMenuActions;
+}): MenuEntry[] {
+  const { page, pages, editable, texts, actions } = input;
+  const open: MenuAction = { label: texts.openNewTab, icon: ExternalLink, onSelect: actions.openNewTab };
+  if (!editable) return [open];
+  const { index, count } = siblingIndex(pages, page);
+  const targets: MenuAction[] = [
+    { label: texts.root, disabled: page.parentId === null, onSelect: () => actions.moveTo(null) },
+    ...moveTargets(pages, page).map(
+      (p): MenuAction => ({ label: p.title, disabled: p.id === page.parentId, onSelect: () => actions.moveTo(p.id) }),
+    ),
+  ];
+  return [
+    open,
+    { label: texts.newSubPage, icon: Plus, onSelect: actions.newSubPage },
+    { label: texts.rename, icon: Pencil, onSelect: actions.rename },
+    { label: texts.moveUp, icon: ArrowUp, disabled: index <= 0, onSelect: actions.moveUp },
+    { label: texts.moveDown, icon: ArrowDown, disabled: index >= count - 1, onSelect: actions.moveDown },
+    { label: texts.moveTo, icon: FolderInput, items: targets },
+    { separator: true },
+    { label: texts.remove, icon: Trash2, destructive: true, onSelect: actions.remove },
+  ];
+}
+```
+Run: `bun test packages/ui/src/shell/page-menu.test.ts` — Expected: PASS, 5 tests.
+
+- [ ] **Step 3: `ProjectPages` (test rouge)**
+
+`packages/ui/src/shell/project-pages.test.tsx` :
+```tsx
+import { beforeEach, expect, mock, test } from "bun:test";
+import { DEFAULT_WORKFLOW, KiboError, type Page, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
+import { SidebarMenu, SidebarMenuItem, SidebarProvider } from "@kibo/sdk/ui/sidebar";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+const calls: RpcRequest[] = [];
+let answer: (req: RpcRequest) => unknown = () => null;
+mock.module("../api", () => ({
+  client: {
+    rpc: async (req: RpcRequest) => {
+      calls.push(req);
+      return answer(req);
+    },
+  },
+}));
+const { ProjectPages } = await import("./ProjectPages");
+
+const page = (id: string, title: string, parentId: string | null): Page => ({ id, title, kind: "view", parentId });
+const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  workflow: DEFAULT_WORKFLOW,
+  pages: [page("dash", "Tableau de bord", null), page("kanban", "Kanban", null), page("k1", "Sprint", "kanban")],
+  tickets: [],
+  links: [],
+  instances: [],
+  rules: [],
+  bindings: [],
+  nextTicketKey: "KIB-1",
+  sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
+});
+const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
+  const onOpen = mock((_t: unknown, _newTab: boolean) => {});
+  const onNewPage = mock((_parentId: string | null) => {});
+  const onRenamePage = mock((_p: Page) => {});
+  const onDeletePage = mock((_p: Page) => {});
+  render(
+    <SidebarProvider>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <ProjectPages
+            project={project(access)}
+            activeTarget={null}
+            header={<span>Kibo</span>}
+            trailing={null}
+            onOpen={onOpen}
+            onNewPage={onNewPage}
+            onRenamePage={onRenamePage}
+            onDeletePage={onDeletePage}
+          />
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarProvider>,
+  );
+  return { onOpen, onNewPage, onRenamePage, onDeletePage, user: userEvent.setup() };
+};
+const command = (req: RpcRequest | undefined) => (req?.method === "command" ? req.command : null);
+
+beforeEach(() => {
+  calls.length = 0;
+  answer = () => null;
+});
+
+test("right click on a page opens its menu; the entries call back or send movePage", async () => {
+  const { user, onOpen, onNewPage, onRenamePage, onDeletePage } = show();
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  const menu = await screen.findByRole("menu");
+  expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
+    "Ouvrir dans un nouvel onglet",
+    "Nouvelle sous-page",
+    "Renommer…",
+    "Monter",
+    "Descendre",
+    "Déplacer vers",
+    "Supprimer…",
+  ]);
+  await user.click(within(menu).getByRole("menuitem", { name: "Ouvrir dans un nouvel onglet" }));
+  expect(onOpen).toHaveBeenLastCalledWith({ kind: "page", projectId: "p1", pageId: "kanban" }, true);
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  await user.click(await screen.findByRole("menuitem", { name: "Monter" }));
+  expect(command(calls.at(-1))).toEqual({ method: "movePage", pageId: "kanban", parentId: null, index: 0 });
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  await user.click(await screen.findByRole("menuitem", { name: "Nouvelle sous-page" }));
+  expect(onNewPage).toHaveBeenLastCalledWith("kanban");
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  await user.click(await screen.findByRole("menuitem", { name: "Renommer…" }));
+  expect(onRenamePage).toHaveBeenLastCalledWith(expect.objectContaining({ id: "kanban" }));
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  expect(onDeletePage).toHaveBeenLastCalledWith(expect.objectContaining({ id: "kanban" }));
+});
+
+test("the ⋯ button carries the same entries and Déplacer vers sends movePage to the target", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Actions de la page Sprint" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  const items = await screen.findAllByRole("menuitem", { name: /Racine|Tableau de bord|Kanban/ });
+  expect(items.map((i) => i.textContent)).toEqual(["Racine", "Tableau de bord", "Kanban"]);
+  await user.click(screen.getByRole("menuitem", { name: "Racine" }));
+  expect(command(calls.at(-1))).toEqual({ method: "movePage", pageId: "k1", parentId: null });
+});
+
+test("a refused move is shown as an alert", async () => {
+  answer = () => {
+    throw new KiboError("TREE_CYCLE", "cycle");
+  };
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Actions de la page Kanban" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Descendre" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer la page.");
+});
+
+test("a read-only project has no ⋯ button and a one-entry menu", async () => {
+  const { user } = show("read-only");
+  expect(screen.queryByRole("button", { name: /Actions de la page/ })).toBeNull();
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir dans un nouvel onglet"]);
+});
+```
+Run: `bun test packages/ui/src/shell/project-pages.test.tsx` — Expected: FAIL (module introuvable).
+
+- [ ] **Step 4: `ProjectPages`**
+
+`packages/ui/src/shell/ProjectPages.tsx` :
+```tsx
+import { DndContext, type DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
+import type { Page, ProjectSnapshot, TabTarget } from "@kibo/schema";
+import { cn } from "@kibo/sdk/lib/utils";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { SidebarMenuAction, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from "@kibo/sdk/ui/sidebar";
+import { Ellipsis } from "lucide-react";
+import { type MouseEvent, type ReactNode, useState } from "react";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+import { pageIcon } from "../registry";
+import { canEdit } from "../state/access";
+import { pageMenuEntries, siblingIndex } from "./page-menu";
+
+const ROOT = "root";
+
+type Props = {
+  project: ProjectSnapshot;
+  activeTarget: TabTarget | null;
+  header: ReactNode;
+  trailing: ReactNode;
+  onOpen(target: TabTarget, newTab: boolean): void;
+  onNewPage(parentId: string | null): void;
+  onRenamePage(page: Page): void;
+  onDeletePage(page: Page): void;
+};
+
+const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
+
+function RootDrop({ children, editable }: { children: ReactNode; editable: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: ROOT, disabled: !editable });
+  return (
+    <div ref={setNodeRef} className={cn("rounded-md", isOver && "ring-2 ring-ring")}>
+      {children}
+    </div>
+  );
+}
+
+type RowProps = {
+  page: Page;
+  depth: number;
+  entries: MenuEntry[];
+  editable: boolean;
+  active: boolean;
+  onClick(e: MouseEvent): void;
+  onAuxClick(e: MouseEvent): void;
+  children: ReactNode;
+  icon: ReactNode;
+};
+
+function PageRow({ page, entries, editable, active, onClick, onAuxClick, children, icon }: RowProps) {
+  const drop = useDroppable({ id: page.id, disabled: !editable });
+  const drag = useDraggable({ id: page.id, disabled: !editable });
+  return (
+    <SidebarMenuSubItem ref={drop.setNodeRef} className={cn("group/page", drop.isOver && "rounded-md ring-2 ring-ring")}>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="relative">
+            <SidebarMenuSubButton asChild isActive={active}>
+              <button
+                type="button"
+                ref={drag.setNodeRef}
+                {...drag.attributes}
+                {...drag.listeners}
+                onClick={onClick}
+                onAuxClick={onAuxClick}
+                aria-describedby={undefined}
+              >
+                {icon}
+                <span>{page.title}</span>
+              </button>
+            </SidebarMenuSubButton>
+            {editable && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction
+                    showOnHover
+                    aria-label={fr.nav.pageActions(page.title)}
+                    className="top-1 right-1 size-5"
+                  >
+                    <Ellipsis />
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="right">
+                  <DropdownMenuEntries entries={entries} />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuEntries entries={entries} />
+        </ContextMenuContent>
+      </ContextMenu>
+      {children}
+    </SidebarMenuSubItem>
+  );
+}
+
+export function ProjectPages(p: Props) {
+  const { project, activeTarget, onOpen } = p;
+  const projectId = project.meta.id;
+  const editable = canEdit(project);
+  const [error, setError] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const move = async (pageId: string, parentId: string | null, index?: number) => {
+    setError(null);
+    try {
+      await client.rpc({ method: "command", projectId, command: { method: "movePage", pageId, parentId, ...(index === undefined ? {} : { index }) } });
+    } catch {
+      setError(fr.nav.moveFailed);
+    }
+  };
+  const entriesFor = (page: Page): MenuEntry[] => {
+    const { index } = siblingIndex(project.pages, page);
+    return pageMenuEntries({
+      page,
+      pages: project.pages,
+      editable,
+      texts: fr.nav,
+      actions: {
+        openNewTab: () => onOpen({ kind: "page", projectId, pageId: page.id }, true),
+        newSubPage: () => p.onNewPage(page.id),
+        rename: () => p.onRenamePage(page),
+        moveUp: () => void move(page.id, page.parentId, index - 1),
+        moveDown: () => void move(page.id, page.parentId, index + 1),
+        moveTo: (parentId) => void move(page.id, parentId),
+        remove: () => p.onDeletePage(page),
+      },
+    });
+  };
+  const onDragEnd = (e: DragEndEvent) => {
+    const overId = e.over?.id;
+    if (overId === undefined || overId === e.active.id) return;
+    const page = project.pages.find((x) => x.id === e.active.id);
+    const parentId = overId === ROOT ? null : String(overId);
+    if (!page || page.parentId === parentId) return;
+    void move(page.id, parentId);
+  };
+  const children = (parentId: string | null) => project.pages.filter((x) => x.parentId === parentId);
+  const renderPages = (parentId: string | null, depth: number): ReactNode =>
+    children(parentId).map((page) => {
+      const Icon = pageIcon(page, project.instances);
+      const target: TabTarget = { kind: "page", projectId, pageId: page.id };
+      return (
+        <PageRow
+          key={page.id}
+          page={page}
+          depth={depth}
+          entries={entriesFor(page)}
+          editable={editable}
+          active={activeTarget?.kind === "page" && activeTarget.projectId === projectId && activeTarget.pageId === page.id}
+          onClick={(e) => onOpen(target, wantsNewTab(e))}
+          onAuxClick={(e) => {
+            if (e.button !== 1) return;
+            e.preventDefault();
+            onOpen(target, true);
+          }}
+          icon={<Icon />}
+        >
+          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(page.id, depth + 1)}</SidebarMenuSub>}
+        </PageRow>
+      );
+    });
+  const hasSub = children(null).length > 0 || p.trailing !== null;
+  return (
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      <RootDrop editable={editable}>{p.header}</RootDrop>
+      {hasSub && (
+        <SidebarMenuSub>
+          {renderPages(null, 0)}
+          {p.trailing}
+        </SidebarMenuSub>
+      )}
+      {error && (
+        <p role="alert" className="px-2 py-1 text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </DndContext>
+  );
+}
+```
+Notes : `aria-describedby={undefined}` annule la description que `useDraggable` pose sur le bouton (« To pick up a draggable item… », en anglais) ; `SidebarMenuAction` accepte `showOnHover` (shadcn). Le glisser ne change que le parent (décision 6). Le `trailing` reçoit l'entrée « Changements » d'`AppSidebar`, inchangée.
+
+`packages/ui/src/shell/AppSidebar.tsx` : Props `+ onRenamePage(page: Page): void; onDeletePage(page: Page): void`. Supprimer `children`, `renderPages` et leurs imports (`SidebarMenuSubButton`, `pageIcon` s'ils ne servent plus qu'aux pages ; `changesEntry` reste). Dans la boucle des projets, le corps de `SidebarMenuItem` devient :
+```tsx
+                  {(() => {
+                    const header = (
+                      <>
+                        <SidebarMenuButton isActive={onTarget("project", project.id)} {...link({ kind: "project", projectId: project.id })}>
+                          <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
+                          <span>{project.name}</span>
+                        </SidebarMenuButton>
+                        <ProjectMenu name={project.name} current={current} shifted={current && editable} onShare={() => p.onShare(project.id)} />
+                        {current && editable && (
+                          <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
+                            <Plus />
+                          </SidebarMenuAction>
+                        )}
+                      </>
+                    );
+                    return current && active ? (
+                      <ProjectPages
+                        project={active}
+                        activeTarget={activeTarget}
+                        header={header}
+                        trailing={changesEntry(project.id) || null}
+                        onOpen={(t, newTab) => onOpen(t, newTab)}
+                        onNewPage={p.onNewPage}
+                        onRenamePage={p.onRenamePage}
+                        onDeletePage={p.onDeletePage}
+                      />
+                    ) : (
+                      header
+                    );
+                  })()}
+```
+(Extraire ce bloc en composant `ProjectEntry` dans le même fichier si l'IIFE gêne la lisibilité ; `changesEntry` renvoie `false` quand `changesCount === null`, d'où le `|| null`.)
+
+`Shell.tsx` passe `onRenamePage={(page) => set({ renamePage: page })}` et `onDeletePage={(page) => set({ deletePage: page })}`.
+
+Run: `bun test packages/ui/src/shell/project-pages.test.tsx packages/ui/src/shell/shell.test.tsx` — Expected: PASS.
+
+- [ ] **Step 5: Renommer et supprimer (dialogues)**
+
+`packages/ui/src/dialogs/RenamePageDialog.tsx` :
+```tsx
+import type { Page } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import { Input } from "@kibo/sdk/ui/input";
+import { Label } from "@kibo/sdk/ui/label";
+import { type FormEvent, useId, useState } from "react";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+
+type Props = { projectId: string; page: Page; onClose(): void };
+
+export function RenamePageDialog({ projectId, page, onClose }: Props) {
+  const id = useId();
+  const [title, setTitle] = useState(page.title);
+  const [failed, setFailed] = useState(false);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setFailed(false);
+    try {
+      await client.rpc({ method: "command", projectId, command: { method: "renamePage", pageId: page.id, title: title.trim() } });
+      onClose();
+    } catch {
+      setFailed(true);
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{fr.nav.renameTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor={id}>{fr.nav.renameName}</Label>
+            <Input id={id} value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          {failed && (
+            <p role="alert" className="text-sm text-destructive">
+              {fr.nav.renameFailed}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              {fr.common.cancel}
+            </Button>
+            <Button type="submit" disabled={!title.trim()}>
+              {fr.common.rename}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+(Le bouton est désactivé sur un titre vide ; un titre d'espaces trimé reste vide donc désactivé : le démon n'est jamais appelé avec un titre vide depuis ce dialogue ; s'il refuse pour une autre raison, l'erreur s'affiche et le champ reste éditable.)
+
+`lazy-dialogs.ts` : `export const RenamePageDialog = lazyPanel(() => import("../dialogs/RenamePageDialog").then((m) => m.RenamePageDialog), fr.lazy, hidden);`
+
+`ShellDialogs.tsx` : `DialogsState + renamePage: Page | null; deletePage: Page | null` (et `NO_DIALOG` : `renamePage: null, deletePage: null`). Rendu, avec `import { descendantIds } from "./page-menu"` :
+```tsx
+      {project && state.renamePage && (
+        <RenamePageDialog projectId={project.meta.id} page={state.renamePage} onClose={() => set({ renamePage: null })} />
+      )}
+      {project && state.deletePage && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && set({ deletePage: null })}
+          title={fr.nav.deletePageTitle(state.deletePage.title)}
+          description={fr.nav.deletePageHelp(
+            descendantIds(project.pages, state.deletePage.id).size,
+            project.instances.filter((i) => i.pageId === state.deletePage?.id || descendantIds(project.pages, state.deletePage?.id ?? "").has(i.pageId)).length,
+          )}
+          confirmLabel={fr.common.delete}
+          cancelLabel={fr.common.cancel}
+          onConfirm={async () => {
+            if (!state.deletePage) return;
+            await client.rpc({ method: "command", projectId: project.meta.id, command: { method: "deletePage", pageId: state.deletePage.id } });
+          }}
+          describeError={errorMessage}
+        />
+      )}
+```
+(Calculer `const doomed = state.deletePage ? descendantIds(project.pages, state.deletePage.id) : new Set<string>()` une fois au-dessus du `return`, puis `doomed.size` et `project.instances.filter((i) => i.pageId === state.deletePage?.id || doomed.has(i.pageId)).length`.) `client` et `errorMessage` (`lib/error-message`) sont importés dans `ShellDialogs.tsx` ; `fr` aussi.
+
+Test dans `project-pages.test.tsx` ? Non : le dialogue de renommage se teste dans `packages/ui/src/dialogs/rename-page-dialog.test.tsx` :
+```tsx
+import { beforeEach, expect, mock, test } from "bun:test";
+import { KiboError, type RpcRequest } from "@kibo/schema";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+const calls: RpcRequest[] = [];
+let outcome: () => Promise<unknown> = () => Promise.resolve(null);
+mock.module("../api", () => ({ client: { rpc: (req: RpcRequest) => { calls.push(req); return outcome(); } } }));
+const { RenamePageDialog } = await import("./RenamePageDialog");
+const page = { id: "kanban", title: "Kanban", kind: "view" as const, parentId: null };
+
+beforeEach(() => {
+  calls.length = 0;
+  outcome = () => Promise.resolve(null);
+});
+
+test("renaming sends the trimmed title and closes", async () => {
+  const onClose = mock(() => {});
+  render(<RenamePageDialog projectId="p1" page={page} onClose={onClose} />);
+  const user = userEvent.setup();
+  const field = screen.getByLabelText("Nom");
+  expect((field as HTMLInputElement).value).toBe("Kanban");
+  await user.clear(field);
+  await user.type(field, "  Tableau ");
+  await user.click(screen.getByRole("button", { name: "Renommer" }));
+  expect(calls).toEqual([{ method: "command", projectId: "p1", command: { method: "renamePage", pageId: "kanban", title: "Tableau" } }]);
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("a blank title cannot be submitted; a refusal keeps the dialog open with the error", async () => {
+  outcome = () => Promise.reject(new KiboError("INVALID_INPUT", "empty"));
+  const onClose = mock(() => {});
+  render(<RenamePageDialog projectId="p1" page={page} onClose={onClose} />);
+  const user = userEvent.setup();
+  const field = screen.getByLabelText("Nom");
+  await user.clear(field);
+  await user.type(field, "   ");
+  expect((screen.getByRole("button", { name: "Renommer" }) as HTMLButtonElement).disabled).toBe(true);
+  await user.type(field, "x");
+  await user.click(screen.getByRole("button", { name: "Renommer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de renommer la page.");
+  expect(onClose).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("Nom")).toBeTruthy();
+});
+```
+`bundle-report.ts` › `FORBIDDEN_IN_ENTRY` : ajouter `RenamePageDialog` à la regex des dialogues de T2 : `/\/packages\/ui\/src\/dialogs\/(RenameWorkspaceDialog|NotesDirDialog|TrustDialog|OpenViewDialog|RenamePageDialog)\.tsx$/`.
+
+Run: `bun test packages/ui/src/dialogs/rename-page-dialog.test.tsx packages/ui/src/shell` — Expected: PASS.
+
+- [ ] **Step 6: Gate, budget, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; budget : `ProjectPages` entre dans l'entrée (menu + dnd-kit déjà présents via `TabBar`) : attendre + 1,5 kB au plus par rapport à la mesure après T2 ; noter la valeur.
+
+```bash
+git add packages/ui/src/shell/page-menu.ts packages/ui/src/shell/page-menu.test.ts packages/ui/src/i18n/fr.ts
+git commit -m "feat(ui): entrées du menu d'une page"
+git add packages/ui/src/shell/ProjectPages.tsx packages/ui/src/shell/project-pages.test.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/shell/Shell.tsx
+git commit -m "feat(ui): menu, ⋯ et glisser-déposer des pages"
+git add packages/ui/src/dialogs/RenamePageDialog.tsx packages/ui/src/dialogs/rename-page-dialog.test.tsx packages/ui/src/shell/lazy-dialogs.ts packages/ui/src/shell/ShellDialogs.tsx packages/ui/scripts/bundle-report.ts
+git commit -m "feat(ui): renommer et supprimer une page"
+```
 
 ### Task 8: Réglages d'un widget et retrait confirmé
 
-**À compléter.** Cadre : décision 8, écran 105, Contrats partagés (UI › `config-form.ts`, `InstanceSettingsDialog`), vague 1 ← T2. Contenu attendu : `lib/config-form.ts` + test (`configFields`, `parseFieldInput`, `withFieldValue` conserve `source`, `configSchemaOf` intégré/tiers/vide), `dialogs/InstanceSettingsDialog.tsx` + test (enum ⇒ `Select`, boolean ⇒ `Switch`, number/string ⇒ `Input`, nullable ⇒ case « Aucune valeur », `validateConfig` avant envoi, `setInstanceConfig` avec la config fusionnée), `InstanceMenu.tsx` (« Réglages… » si schéma non vide ; « Retirer de la page… » ⇒ `ConfirmDialog`), `fr-widgets.ts`, `fr-components.ts` › `instance` (+ `settings`, `removeTitle(title)`, `removeHelp`, `removeConfirm`), `FORBIDDEN_IN_ENTRY` (+ `InstanceSettingsDialog`, `fr-widgets`).
+Vague 1 ← T2. Décision 8, écran 105. Le menu « ⋯ » d'un widget gagne « Réglages… » quand le manifeste porte un `configSchema` non vide ; le dialogue est **généré** depuis le schéma (`ConfigField` : `enum` ⇒ sélecteur, `boolean` ⇒ interrupteur, `number` ⇒ champ numérique, `string` ⇒ champ texte, `nullable` ⇒ case « Aucune valeur »), valide par `validateConfig` avant d'envoyer `setInstanceConfig` avec la config **fusionnée** (les clés hors schéma, `source` et configuration MCP, sont conservées). « Retirer de la page » devient « Retirer de la page… » et passe par `ConfirmDialog`. Les libellés des champs et valeurs connus (`filter`, `mine-and-agents`, `all`, `mine`) sont traduits ; les autres s'affichent tels quels.
+
+**Files:**
+- Create: `packages/ui/src/lib/config-form.ts`, `packages/ui/src/lib/config-form.test.ts`, `packages/ui/src/dialogs/InstanceSettingsDialog.tsx`, `packages/ui/src/dialogs/instance-settings.test.tsx`, `packages/ui/src/i18n/fr-widgets.ts`
+- Modify: `packages/ui/src/pages/InstanceMenu.tsx`, `packages/ui/src/pages/instance.test.tsx` (tests D1 : libellé « Retirer de la page… » et confirmation), `packages/ui/src/i18n/fr-components.ts` › `instance`, `packages/ui/src/shell/lazy-dialogs.ts`, `packages/ui/scripts/bundle-report.ts`
+
+**Interfaces:**
+- Consumes: `ConfigField`, `ConfigSchema`, `validateConfig` (`@kibo/schema`), `findComponent` (`registry.ts`), `useComponents`, `ConfirmDialog` (T2), `Select`, `Switch`, `Checkbox`, `Input`, `Label` du SDK.
+- Produces: Contrats partagés › UI › `config-form.ts`, `InstanceSettingsDialog` ; `lazy-dialogs.InstanceSettingsDialog`.
+
+- [ ] **Step 1: Textes**
+
+`packages/ui/src/i18n/fr-widgets.ts` :
+```ts
+const FIELDS: Record<string, string> = { filter: "Filtre" };
+const VALUES: Record<string, string> = { "mine-and-agents": "Moi + agents", all: "Tous", mine: "Mes tickets" };
+
+export const frWidgets = {
+  title: (name: string) => `Réglages · ${name}`,
+  help: "Ces réglages ne concernent que ce widget.",
+  save: "Enregistrer",
+  cancel: "Annuler",
+  noValue: "Aucune valeur",
+  invalid: (errors: string[]) => `Réglages refusés : ${errors.join(" ; ")}`,
+  failed: "Impossible d'enregistrer les réglages.",
+  fieldLabel: (key: string) => FIELDS[key] ?? key,
+  valueLabel: (value: string | number | boolean) => VALUES[String(value)] ?? String(value),
+};
+```
+`packages/ui/src/i18n/fr-components.ts` › `instance` : `remove` devient `"Retirer de la page…"` ; ajouter
+```ts
+    settings: "Réglages…",
+    removeTitle: (title: string) => `Retirer ${title} de la page ?`,
+    removeHelp: "Le widget disparaît de la page ; les tickets ne sont pas touchés.",
+    removeConfirm: "Retirer",
+```
+
+- [ ] **Step 2: Le formulaire en données (test rouge puis vert)**
+
+`packages/ui/src/lib/config-form.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import type { ComponentSummary, ConfigSchema, Instance } from "@kibo/schema";
+import { configFields, configSchemaOf, parseFieldInput, withFieldValue } from "./config-form";
+
+const schema: ConfigSchema = {
+  filter: { enum: ["mine-and-agents", "all"], default: "mine-and-agents" },
+  compact: { type: "boolean", default: false },
+  limit: { type: "number", nullable: true },
+  label: { type: "string" },
+  level: { enum: [1, 2, 3] },
+};
+
+test("fields follow the schema order, take the config value, then the default, then a neutral value", () => {
+  const fields = configFields(schema, { filter: "all", limit: 12, source: { bindingId: "b1" } });
+  expect(fields.map((f) => [f.key, f.value])).toEqual([
+    ["filter", "all"],
+    ["compact", false],
+    ["limit", 12],
+    ["label", ""],
+    ["level", 1],
+  ]);
+  expect(configFields(schema, {}).map((f) => f.value)).toEqual(["mine-and-agents", false, null, "", 1]);
+});
+
+test("raw input is parsed by field: numbers, enums of numbers, empty to null when nullable", () => {
+  expect(parseFieldInput({ type: "number", nullable: true }, "12")).toBe(12);
+  expect(parseFieldInput({ type: "number", nullable: true }, "")).toBeNull();
+  expect(parseFieldInput({ type: "number" }, "")).toBe("");
+  expect(parseFieldInput({ type: "number" }, "abc")).toBe("abc");
+  expect(parseFieldInput({ enum: [1, 2, 3] }, "2")).toBe(2);
+  expect(parseFieldInput({ enum: [true, false] }, "false")).toBe(false);
+  expect(parseFieldInput({ type: "string" }, " x ")).toBe(" x ");
+  expect(parseFieldInput({ type: "string", nullable: true }, "")).toBeNull();
+});
+
+test("setting a field keeps every other key, including the ones outside the schema", () => {
+  const config = { filter: "all", source: { bindingId: "b1" }, mcp: { server: "s" } };
+  expect(withFieldValue(config, "filter", "mine-and-agents")).toEqual({ ...config, filter: "mine-and-agents" });
+  expect(withFieldValue(config, "limit", null)).toEqual({ ...config, limit: null });
+});
+
+const instance = (component: string): Instance => ({
+  id: "i1",
+  pageId: "pg",
+  component,
+  layout: { x: 0, y: 0, w: 6, h: 6 },
+  config: {},
+  componentHash: null,
+});
+const third = (configSchema: ConfigSchema | undefined): ComponentSummary[] => [
+  {
+    id: "pr-queue",
+    title: "PR en attente",
+    builtin: false,
+    versions: [
+      {
+        version: "0.3.0",
+        hash: "c".repeat(64),
+        trust: "sandboxed",
+        origin: "ai",
+        active: true,
+        tampered: false,
+        manifest: {
+          id: "pr-queue",
+          version: "0.3.0",
+          kind: "widget",
+          title: "PR en attente",
+          reads: ["ticket"],
+          writes: [],
+          data: false,
+          net: [],
+          secrets: [],
+          mcp: [],
+          configVersion: 0,
+          ...(configSchema && { configSchema }),
+        },
+        usages: [],
+        revoked: null,
+        backend: false,
+      },
+    ],
+  },
+];
+
+test("the schema comes from the registry for a built-in, from the installed version for a third party, null when empty", () => {
+  expect(configSchemaOf(instance("kanban@1.0.0"), null)).toEqual({
+    filter: { enum: ["mine-and-agents", "all"], default: "mine-and-agents" },
+  });
+  expect(configSchemaOf(instance("graph@1.0.0"), null)).toBeNull();
+  expect(configSchemaOf(instance("pr-queue@0.3.0"), third({ limit: { type: "number" } }))).toEqual({ limit: { type: "number" } });
+  expect(configSchemaOf(instance("pr-queue@0.3.0"), third({}))).toBeNull();
+  expect(configSchemaOf(instance("pr-queue@0.3.0"), third(undefined))).toBeNull();
+  expect(configSchemaOf(instance("pr-queue@0.9.0"), third({ limit: { type: "number" } }))).toBeNull();
+});
+```
+(Si le manifeste du graph porte un `configSchema`, remplacer `graph@1.0.0` par un intégré sans schéma, ou retirer l'assertion ; vérifier `components/*/kibo.component.json`. Le type complet de `ComponentVersionSummary` est dans `packages/schema/src/component.ts:128-148` : compléter la fixture si un champ manque.)
+
+Run: `bun test packages/ui/src/lib/config-form.test.ts` — Expected: FAIL.
+
+`packages/ui/src/lib/config-form.ts` :
+```ts
+import { type ComponentSummary, type ConfigField, type ConfigSchema, type Instance, splitRef } from "@kibo/schema";
+import { findComponent } from "../registry";
+
+export type FieldValue = string | number | boolean | null;
+export type FieldKind = "enum" | "boolean" | "number" | "string";
+export type FormField = { key: string; field: ConfigField; value: FieldValue };
+
+const isFieldValue = (v: unknown): v is FieldValue =>
+  v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean";
+
+export const fieldKind = (field: ConfigField): FieldKind => (field.enum ? "enum" : (field.type ?? "string"));
+
+function neutralValue(field: ConfigField): FieldValue {
+  if (field.nullable) return null;
+  if (field.enum) return field.enum[0] ?? "";
+  if (field.type === "boolean") return false;
+  if (field.type === "number") return 0;
+  return "";
+}
+
+function initialValue(field: ConfigField, raw: unknown): FieldValue {
+  if (isFieldValue(raw) && (raw !== null || field.nullable)) return raw;
+  if (isFieldValue(field.default)) return field.default;
+  return neutralValue(field);
+}
+
+export function configFields(schema: ConfigSchema, config: Record<string, unknown>): FormField[] {
+  return Object.entries(schema).map(([key, field]) => ({ key, field, value: initialValue(field, config[key]) }));
+}
+
+export function parseFieldInput(field: ConfigField, raw: string): FieldValue {
+  if (raw === "" && field.nullable) return null;
+  if (field.enum) return field.enum.find((e) => String(e) === raw) ?? raw;
+  if (field.type === "number") {
+    const n = Number(raw);
+    return raw.trim() === "" || Number.isNaN(n) ? raw : n;
+  }
+  if (field.type === "boolean") return raw === "true";
+  return raw;
+}
+
+export function withFieldValue(config: Record<string, unknown>, key: string, value: FieldValue): Record<string, unknown> {
+  return { ...config, [key]: value };
+}
+
+const nonEmpty = (schema: ConfigSchema | undefined): ConfigSchema | null =>
+  schema && Object.keys(schema).length > 0 ? schema : null;
+
+export function configSchemaOf(instance: Instance, components: ComponentSummary[] | null): ConfigSchema | null {
+  const builtin = findComponent(instance.component);
+  if (builtin) return nonEmpty(builtin.manifest.configSchema);
+  const { id, version } = splitRef(instance.component);
+  const summary = components?.find((c) => c.id === id && !c.builtin);
+  return nonEmpty(summary?.versions.find((v) => v.version === version)?.manifest?.configSchema);
+}
+```
+Run: `bun test packages/ui/src/lib/config-form.test.ts` — Expected: PASS, 4 tests.
+
+- [ ] **Step 3: Le dialogue (test rouge puis vert)**
+
+`packages/ui/src/dialogs/instance-settings.test.tsx` :
+```tsx
+import { beforeEach, expect, mock, test } from "bun:test";
+import type { ConfigSchema, Instance, RpcRequest } from "@kibo/schema";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+const calls: RpcRequest[] = [];
+let outcome: () => Promise<unknown> = () => Promise.resolve(null);
+mock.module("../api", () => ({ client: { rpc: (req: RpcRequest) => { calls.push(req); return outcome(); } } }));
+const { InstanceSettingsDialog } = await import("./InstanceSettingsDialog");
+
+const schema: ConfigSchema = {
+  filter: { enum: ["mine-and-agents", "all"], default: "mine-and-agents" },
+  compact: { type: "boolean", default: false },
+  limit: { type: "number", nullable: true },
+  label: { type: "string" },
+};
+const instance: Instance = {
+  id: "i1",
+  pageId: "pg",
+  component: "kanban@1.0.0",
+  layout: { x: 0, y: 0, w: 6, h: 6 },
+  config: { filter: "mine-and-agents", limit: 5, source: { bindingId: "b1" } },
+  componentHash: null,
+};
+const show = () => {
+  const onClose = mock(() => {});
+  render(<InstanceSettingsDialog projectId="p1" instance={instance} title="Kanban" schema={schema} onClose={onClose} />);
+  return { onClose, user: userEvent.setup() };
+};
+
+beforeEach(() => {
+  calls.length = 0;
+  outcome = () => Promise.resolve(null);
+});
+
+test("the form is generated from the schema and saves the merged config", async () => {
+  const { onClose, user } = show();
+  expect(screen.getByRole("dialog", { name: "Réglages · Kanban" })).toBeTruthy();
+  expect(screen.getByText("Ces réglages ne concernent que ce widget.")).toBeTruthy();
+  await user.click(screen.getByRole("combobox", { name: "Filtre" }));
+  await user.click(await screen.findByRole("option", { name: "Tous" }));
+  await user.click(screen.getByRole("switch", { name: "compact" }));
+  const limit = screen.getByRole("spinbutton", { name: "limit" });
+  expect((limit as HTMLInputElement).value).toBe("5");
+  await user.clear(limit);
+  await user.type(limit, "12");
+  await user.type(screen.getByRole("textbox", { name: "label" }), "Sprint");
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(calls).toEqual([
+    {
+      method: "command",
+      projectId: "p1",
+      command: {
+        method: "setInstanceConfig",
+        instanceId: "i1",
+        config: { filter: "all", compact: true, limit: 12, label: "Sprint", source: { bindingId: "b1" } },
+      },
+    },
+  ]);
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("Aucune valeur sends null for a nullable field and disables its input", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("checkbox", { name: "Aucune valeur" }));
+  expect((screen.getByRole("spinbutton", { name: "limit" }) as HTMLInputElement).disabled).toBe(true);
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  const sent = calls[0];
+  expect(sent?.method === "command" && sent.command.method === "setInstanceConfig" && sent.command.config.limit).toBeNull();
+});
+
+test("an invalid value is refused before any call", async () => {
+  const { onClose, user } = show();
+  await user.click(screen.getByRole("checkbox", { name: "Aucune valeur" }));
+  await user.click(screen.getByRole("checkbox", { name: "Aucune valeur" }));
+  const limit = screen.getByRole("spinbutton", { name: "limit" });
+  await user.clear(limit);
+  await user.type(limit, "abc");
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Réglages refusés : limit: expected number");
+  expect(calls).toEqual([]);
+  expect(onClose).not.toHaveBeenCalled();
+});
+```
+(Un `<input type="number">` refuse la frappe de lettres dans un vrai navigateur ; happy-dom la laisse passer, ce qui exerce la validation. Si `user.type` sur un `spinbutton` ne fait pas passer « abc » en happy-dom, remplacer le champ numérique par `inputMode="decimal"` sur un `type="text"` et adapter le rôle en `textbox` : la validation par `validateConfig` reste la barrière.)
+
+Run: `bun test packages/ui/src/dialogs/instance-settings.test.tsx` — Expected: FAIL.
+
+`packages/ui/src/dialogs/InstanceSettingsDialog.tsx` :
+```tsx
+import { type ConfigSchema, type Instance, validateConfig } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { Checkbox } from "@kibo/sdk/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import { Input } from "@kibo/sdk/ui/input";
+import { Label } from "@kibo/sdk/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
+import { Switch } from "@kibo/sdk/ui/switch";
+import { type FormEvent, useId, useState } from "react";
+import { client } from "../api";
+import { frWidgets as t } from "../i18n/fr-widgets";
+import { configFields, type FieldValue, fieldKind, type FormField, parseFieldInput, withFieldValue } from "../lib/config-form";
+
+type Props = { projectId: string; instance: Instance; title: string; schema: ConfigSchema; onClose(): void };
+
+function FieldInput({ field, value, onChange }: { field: FormField; value: FieldValue; onChange(v: FieldValue): void }) {
+  const kind = fieldKind(field.field);
+  const label = t.fieldLabel(field.key);
+  const disabled = value === null;
+  if (kind === "enum")
+    return (
+      <Select value={value === null ? "" : String(value)} onValueChange={(v) => onChange(parseFieldInput(field.field, v))} disabled={disabled}>
+        <SelectTrigger aria-label={label} className="w-56">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(field.field.enum ?? []).map((e) => (
+            <SelectItem key={String(e)} value={String(e)}>
+              {t.valueLabel(e)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  if (kind === "boolean") return <Switch aria-label={label} checked={value === true} disabled={disabled} onCheckedChange={(c) => onChange(c)} />;
+  return (
+    <Input
+      aria-label={label}
+      type={kind === "number" ? "number" : "text"}
+      value={value === null ? "" : String(value)}
+      disabled={disabled}
+      className="w-56"
+      onChange={(e) => onChange(parseFieldInput(field.field, e.target.value))}
+    />
+  );
+}
+
+export function InstanceSettingsDialog({ projectId, instance, title, schema, onClose }: Props) {
+  const baseId = useId();
+  const [values, setValues] = useState<Record<string, FieldValue>>(() =>
+    Object.fromEntries(configFields(schema, instance.config).map((f) => [f.key, f.value])),
+  );
+  const [error, setError] = useState<string | null>(null);
+  const fields = configFields(schema, instance.config);
+  const set = (key: string, value: FieldValue) => setValues((v) => ({ ...v, [key]: value }));
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const errors = validateConfig(schema, values);
+    if (errors.length > 0) {
+      setError(t.invalid(errors));
+      return;
+    }
+    setError(null);
+    const config = fields.reduce((acc, f) => withFieldValue(acc, f.key, values[f.key] ?? null), instance.config);
+    try {
+      await client.rpc({ method: "command", projectId, command: { method: "setInstanceConfig", instanceId: instance.id, config } });
+      onClose();
+    } catch {
+      setError(t.failed);
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{t.title(title)}</DialogTitle>
+            <DialogDescription>{t.help}</DialogDescription>
+          </DialogHeader>
+          {fields.map((f) => {
+            const value = values[f.key] ?? null;
+            const id = `${baseId}-${f.key}`;
+            return (
+              <div key={f.key} className="grid gap-2">
+                <Label id={id}>{t.fieldLabel(f.key)}</Label>
+                <div className="flex items-center gap-3">
+                  <FieldInput field={f} value={value} onChange={(v) => set(f.key, v)} />
+                  {f.field.nullable && (
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        aria-label={t.noValue}
+                        checked={value === null}
+                        onCheckedChange={(c) => set(f.key, c === true ? null : configFields({ [f.key]: { ...f.field, nullable: false } }, {})[0]?.value ?? "")}
+                      />
+                      {t.noValue}
+                    </label>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              {t.cancel}
+            </Button>
+            <Button type="submit">{t.save}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+(Décocher « Aucune valeur » remet la valeur neutre du champ rendu non nullable : `configFields` sur un schéma d'un seul champ. Plusieurs cases « Aucune valeur » sur un même formulaire portent le même `aria-label` : les tests n'en ont qu'une ; si le schéma réel en a plusieurs, l'a11y reste correcte car chaque case est dans le groupe de son champ.)
+
+`lazy-dialogs.ts` : `export const InstanceSettingsDialog = lazyPanel(() => import("../dialogs/InstanceSettingsDialog").then((m) => m.InstanceSettingsDialog), fr.lazy, hidden);`
+
+Run: `bun test packages/ui/src/dialogs/instance-settings.test.tsx` — Expected: PASS, 3 tests.
+
+- [ ] **Step 4: Le menu d'instance (tests existants mis à jour, puis code)**
+
+`packages/ui/src/pages/instance.test.tsx`, test « D1: update to a higher version, remove from the page » : la liste attendue se termine par `"Retirer de la page…"` ; la fin du test devient
+```tsx
+  await user.click(screen.getByRole("button", { name: "Actions PR en attente" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Retirer de la page…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Retirer PR en attente de la page ?" });
+  expect(confirm.textContent).toContain("Le widget disparaît de la page ; les tickets ne sont pas touchés.");
+  await user.click(within(confirm).getByRole("button", { name: "Retirer" }));
+  await waitFor(() =>
+    expect(calls.at(-1)).toEqual({ method: "command", projectId: "p1", command: { method: "removeInstance", instanceId: "i1" } }),
+  );
+```
+(`within` importé de Testing Library.) Test « D1: Notes offers its folder, built-ins no update » : `["Dossier des notes…", "Réglages…", "Retirer de la page…"]` (le manifeste de Notes porte `configSchema: { path: { type: "string", nullable: true, default: null } }` : son dialogue de réglages montre un champ « path » avec la case « Aucune valeur » cochée). Ajouter :
+```tsx
+test("a widget with a config schema offers its settings", async () => {
+  wrap(<InstanceMenu projectId="p1" instance={inst("kanban@1.0.0")} title="Kanban" />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions Kanban" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Réglages…", "Retirer de la page…"]);
+  await user.click(screen.getByRole("menuitem", { name: "Réglages…" }));
+  expect(await screen.findByRole("dialog", { name: "Réglages · Kanban" })).toBeTruthy();
+  expect(screen.getByRole("combobox", { name: "Filtre" }).textContent).toBe("Moi + agents");
+});
+```
+Run: `bun test packages/ui/src/pages/instance.test.tsx` — Expected: FAIL (libellés, dialogue absent).
+
+`packages/ui/src/pages/InstanceMenu.tsx` :
+- imports : `Settings2` (lucide), `configSchemaOf` (`../lib/config-form`), `ConfirmDialog` et `InstanceSettingsDialog` depuis `../shell/lazy-dialogs`, `frWidgets` non nécessaire ;
+- état : `const [settings, setSettings] = useState(false); const [removing, setRemoving] = useState(false); const schema = configSchemaOf(instance, components);`
+- `remove` devient `async () => { await client.rpc({ method: "command", projectId, command: { method: "removeInstance", instanceId: instance.id } }); }` (l'erreur remonte au `ConfirmDialog`, qui l'affiche : plus de `flash(i.removeFailed)`, retirer `removeFailed` de `fr-components.ts` s'il n'a plus d'usage) ;
+- entrées : après l'entrée `notesDir`, `{schema && (<DropdownMenuItem onSelect={() => setSettings(true)}><Settings2 aria-hidden />{i.settings}</DropdownMenuItem>)}` ; la condition du séparateur ajoute `|| schema` ; l'entrée destructive appelle `() => setRemoving(true)` et affiche `i.remove` (« Retirer de la page… ») ;
+- rendu, après `NotesDirDialog` :
+```tsx
+      {settings && schema && (
+        <InstanceSettingsDialog projectId={projectId} instance={instance} title={title} schema={schema} onClose={() => setSettings(false)} />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(false)}
+          title={i.removeTitle(title)}
+          description={i.removeHelp}
+          confirmLabel={i.removeConfirm}
+          cancelLabel={fr.common.cancel}
+          onConfirm={remove}
+          describeError={errorMessage}
+        />
+      )}
+```
+(`errorMessage` de `../lib/error-message`.)
+
+`bundle-report.ts` › `FORBIDDEN_IN_ENTRY` : `/\/packages\/ui\/src\/(dialogs\/InstanceSettingsDialog\.tsx|i18n\/fr-widgets\.ts)$/,`.
+
+Run: `bun test packages/ui/src/pages packages/ui/src/dialogs packages/ui/src/lib` — Expected: PASS.
+
+- [ ] **Step 5: Gate, budget, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; `config-form.ts` entre dans l'entrée (moins de 1 kB) ; noter la valeur.
+
+```bash
+git add packages/ui/src/lib/config-form.ts packages/ui/src/lib/config-form.test.ts packages/ui/src/i18n/fr-widgets.ts
+git commit -m "feat(ui): formulaire de réglages depuis configSchema"
+git add packages/ui/src/dialogs/InstanceSettingsDialog.tsx packages/ui/src/dialogs/instance-settings.test.tsx packages/ui/src/shell/lazy-dialogs.ts packages/ui/src/pages/InstanceMenu.tsx packages/ui/src/pages/instance.test.tsx packages/ui/src/i18n/fr-components.ts packages/ui/scripts/bundle-report.ts
+git commit -m "feat(ui): réglages d'un widget et retrait confirmé"
+```
 
 ### Task 9: Domaines : renommer, couleur, confirmations
 
-**À compléter.** Cadre : écran 106, vague 1 ← T2. Contenu attendu : `settings/DomainHeader.tsx` + test (nom éditable ⇒ `updateDomain { patch: { name } }`, palette `DOMAIN_COLORS` ⇒ `patch: { color }`, nom en doublon ⇒ erreur affichée), `DomainsPage.tsx` (suppression du domaine et d'un fichier de guideline par `ConfirmDialog`), `fr.ts` › `domains` (+ `rename`, `color`, `pickColor(name)`, `deleteTitle(name)`, `deleteHelp(files)`, `removeFileTitle(path)`, `removeFileHelp`).
+Vague 1 ← T2. Écran 106. L'en-tête « Domaine · Core » sort de `DomainsPage` dans `DomainHeader` : nom éditable en place (crayon, Entrée / Échap), pastille de couleur qui ouvre la palette des sept `DOMAIN_COLORS`, corbeille. `updateDomain` est une `ConfigCommand` de portée workspace (colonne « Réel ») : `client.rpc({ method: "config", command: { method: "updateDomain", domainId, patch } })` ; un nom en doublon (insensible à la casse) est refusé `INVALID_INPUT` et affiché « Un domaine porte déjà ce nom. ». Supprimer un domaine ou un fichier de guidelines passe par `ConfirmDialog` ; le refus « domaine utilisé » reste affiché **avant** toute confirmation.
+
+**Files:**
+- Create: `packages/ui/src/settings/DomainHeader.tsx`, `packages/ui/src/settings/domain-header.test.tsx`
+- Modify: `packages/ui/src/settings/DomainsPage.tsx`, `packages/ui/src/settings/domains-page.test.tsx` (deux tests existants passent par la confirmation ; deux tests ajoutés), `packages/ui/src/i18n/fr.ts` › `domains`
+
+**Interfaces:**
+- Consumes: `DOMAIN_COLORS`, `Domain` (`@kibo/schema`), `ConfirmDialog` (T2), `DropdownMenu*`, `Input`, `Button`.
+- Produces: `DomainHeader` props `{ domain: Domain; usage: number; onRename(name: string): Promise<boolean>; onColor(color: string): Promise<boolean>; onDelete(): void }`.
+
+- [ ] **Step 1: Textes**
+
+`packages/ui/src/i18n/fr.ts` › `domains`, ajouter :
+```ts
+    rename: (name: string) => `Renommer le domaine ${name}`,
+    renameField: "Nouveau nom",
+    renameHint: "Entrée pour enregistrer · Échap pour annuler",
+    duplicate: "Un domaine porte déjà ce nom.",
+    pickColor: (name: string) => `Couleur du domaine ${name}`,
+    colorOption: (color: string) => `Couleur ${color}`,
+    deleteTitle: (name: string) => `Supprimer le domaine ${name} ?`,
+    deleteHelp: (files: number) =>
+      files === 0
+        ? "Aucun fichier de guidelines n'est concerné. Cette action est irréversible."
+        : `Ses ${files} fichier${files > 1 ? "s" : ""} de guidelines seront supprimés. Cette action est irréversible.`,
+    removeFileTitle: (path: string) => `Supprimer ${path} ?`,
+    removeFileHelp: "Le fichier de guidelines disparaît du workspace. Cette action est irréversible.",
+```
+
+- [ ] **Step 2: `DomainHeader` (test rouge puis vert)**
+
+`packages/ui/src/settings/domain-header.test.tsx` :
+```tsx
+import { expect, mock, test } from "bun:test";
+import { DOMAIN_COLORS } from "@kibo/schema";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { DomainHeader } from "./DomainHeader";
+
+const core = { id: "core", name: "Core", color: "#14B8A6" };
+const show = (onRename = mock((_n: string) => Promise.resolve(true))) => {
+  const onColor = mock((_c: string) => Promise.resolve(true));
+  const onDelete = mock(() => {});
+  render(<DomainHeader domain={core} usage={9} onRename={onRename} onColor={onColor} onDelete={onDelete} />);
+  return { onRename, onColor, onDelete, user: userEvent.setup() };
+};
+
+test("the pencil opens an inline field; Enter renames, Escape cancels", async () => {
+  const { user, onRename } = show();
+  expect(screen.getByRole("heading", { name: "Domaine · Core" })).toBeTruthy();
+  expect(screen.getByText("utilisé par 9 tickets")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  const field = screen.getByRole("textbox", { name: "Nouveau nom" });
+  expect((field as HTMLInputElement).value).toBe("Core");
+  await user.clear(field);
+  await user.type(field, "Noyau{Enter}");
+  expect(onRename).toHaveBeenCalledWith("Noyau");
+  await screen.findByRole("heading", { name: "Domaine · Core" });
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  await user.keyboard("{Escape}");
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(onRename).toHaveBeenCalledTimes(1);
+});
+
+test("a refused rename keeps the field open", async () => {
+  const { user } = show(mock((_n: string) => Promise.resolve(false)));
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  await user.type(screen.getByRole("textbox", { name: "Nouveau nom" }), "{Enter}");
+  expect(screen.getByRole("textbox", { name: "Nouveau nom" })).toBeTruthy();
+});
+
+test("the swatch opens the seven palette colors and picks one", async () => {
+  const { user, onColor } = show();
+  await user.click(screen.getByRole("button", { name: "Couleur du domaine Core" }));
+  const items = await screen.findAllByRole("menuitem");
+  expect(items.map((i) => i.getAttribute("aria-label"))).toEqual(DOMAIN_COLORS.map((c) => `Couleur ${c}`));
+  await user.click(items[1] as HTMLElement);
+  expect(onColor).toHaveBeenCalledWith("#6366F1");
+});
+
+test("the trash asks the page to delete", async () => {
+  const { user, onDelete } = show();
+  await user.click(screen.getByRole("button", { name: "Supprimer le domaine Core" }));
+  expect(onDelete).toHaveBeenCalledTimes(1);
+});
+```
+Run: `bun test packages/ui/src/settings/domain-header.test.tsx` — Expected: FAIL.
+
+`packages/ui/src/settings/DomainHeader.tsx` :
+```tsx
+import { DOMAIN_COLORS, type Domain } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { Input } from "@kibo/sdk/ui/input";
+import { Pencil, Trash2 } from "lucide-react";
+import { type KeyboardEvent, useState } from "react";
+import { fr } from "../i18n/fr";
+
+type Props = {
+  domain: Domain;
+  usage: number;
+  onRename(name: string): Promise<boolean>;
+  onColor(color: string): Promise<boolean>;
+  onDelete(): void;
+};
+
+export function DomainHeader({ domain, usage, onRename, onColor, onDelete }: Props) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const save = async () => {
+    if (draft === null) return;
+    if (await onRename(draft.trim())) setDraft(null);
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") void save();
+    if (e.key === "Escape") setDraft(null);
+  };
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={fr.domains.pickColor(domain.name)}
+            className="size-3 rounded-[3px] ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ background: domain.color }}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="grid grid-cols-4 gap-1 p-2">
+          {DOMAIN_COLORS.map((color) => (
+            <DropdownMenuItem
+              key={color}
+              aria-label={fr.domains.colorOption(color)}
+              className="size-7 justify-center p-0"
+              onSelect={() => void onColor(color)}
+            >
+              <span aria-hidden className="size-4 rounded-[3px]" style={{ background: color }} />
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {draft === null ? (
+        <>
+          <h2 className="text-md font-semibold">{fr.domains.domainTitle(domain.name)}</h2>
+          <Button size="icon" variant="ghost" className="size-6" aria-label={fr.domains.rename(domain.name)} onClick={() => setDraft(domain.name)}>
+            <Pencil className="size-3.5" />
+          </Button>
+        </>
+      ) : (
+        <span className="grid gap-0.5">
+          <Input
+            aria-label={fr.domains.renameField}
+            value={draft}
+            autoFocus
+            className="h-7 w-56"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+          />
+          <span className="text-3xs text-muted-foreground">{fr.domains.renameHint}</span>
+        </span>
+      )}
+      <span className="text-xs text-muted-foreground">{fr.domains.usedBy(usage)}</span>
+      <span className="flex-1" />
+      <Button size="icon" variant="ghost" className="size-7" aria-label={fr.domains.deleteDomain(domain.name)} onClick={onDelete}>
+        <Trash2 className="size-3.5" />
+      </Button>
+    </>
+  );
+}
+```
+Run: `bun test packages/ui/src/settings/domain-header.test.tsx` — Expected: PASS, 4 tests.
+
+- [ ] **Step 3: La page (tests d'abord)**
+
+`packages/ui/src/settings/domains-page.test.tsx` :
+- test « editing a file saves its new content, removing it asks the daemon » : après le clic sur « Supprimer le fichier », ajouter
+```tsx
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer guidelines/core.md ?" });
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+```
+avant l'assertion sur `calls` (inchangée).
+- test « domains are created with the next palette color, and a used domain is never deleted » : après le clic sur « Supprimer le domaine Facturation », ajouter
+```tsx
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer le domaine Facturation ?" });
+  expect(confirm.textContent).toContain("de guidelines seront supprimés.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+```
+(le domaine Core, utilisé, montre toujours l'alerte sans dialogue : `expect(screen.queryByRole("alertdialog")).toBeNull()` juste après l'assertion « Ce domaine est utilisé par des tickets. » ; adapter le texte attendu au nombre de fichiers de Facturation dans `configFixture()` : s'il n'en a aucun, attendre « Aucun fichier de guidelines n'est concerné. »).
+- ajouter :
+```tsx
+test("renaming a domain sends updateDomain; a duplicate name is explained", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  const field = screen.getByRole("textbox", { name: "Nouveau nom" });
+  await user.clear(field);
+  await user.type(field, "Noyau{Enter}");
+  expect(calls).toEqual([{ method: "config", command: { method: "updateDomain", domainId: "core", patch: { name: "Noyau" } } }]);
+  outcome = () => Promise.reject(new KiboError("INVALID_INPUT", "domain name already used"));
+  await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
+  await user.clear(screen.getByRole("textbox", { name: "Nouveau nom" }));
+  await user.type(screen.getByRole("textbox", { name: "Nouveau nom" }), "Agents{Enter}");
+  expect((await screen.findByRole("alert")).textContent).toBe("Un domaine porte déjà ce nom.");
+  expect(screen.getByRole("textbox", { name: "Nouveau nom" })).toBeTruthy();
+});
+
+test("picking a color sends updateDomain with the color", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Couleur du domaine Core" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Couleur #EC4899" }));
+  expect(calls).toEqual([{ method: "config", command: { method: "updateDomain", domainId: "core", patch: { color: "#EC4899" } } }]);
+});
+```
+(`waitFor` importé de Testing Library.)
+
+Run: `bun test packages/ui/src/settings/domains-page.test.tsx` — Expected: FAIL (4 tests).
+
+- [ ] **Step 4: La page**
+
+`packages/ui/src/settings/DomainsPage.tsx` :
+- imports : `DomainHeader` (`./DomainHeader`), `ConfirmDialog` (`../shell/lazy-dialogs`), `KiboError` (`@kibo/schema`), `errorMessage` (`../lib/error-message`) ; `Trash2` et `Button` restent si utilisés ailleurs, sinon retirer ;
+- état : `const [confirming, setConfirming] = useState<{ kind: "domain" } | { kind: "file"; path: string; guidelineId: string } | null>(null);`
+- `send` garde son comportement ; ajouter
+```tsx
+  const updateDomain = async (patch: { name?: string; color?: string }): Promise<boolean> => {
+    if (!domain) return false;
+    setError(null);
+    try {
+      await client.rpc({ method: "config", command: { method: "updateDomain", domainId: domain.id, patch } });
+      return true;
+    } catch (e) {
+      setError(e instanceof KiboError && e.code === "INVALID_INPUT" ? fr.domains.duplicate : fr.domains.failed);
+      return false;
+    }
+  };
+```
+- `removeFile` devient `() => selected && setConfirming({ kind: "file", path: selected.path, guidelineId: selected.id })` ; la suppression effective :
+```tsx
+  const confirmRemoveFile = async (guidelineId: string) => {
+    if (!owner) return;
+    await client.rpc({ method: "config", command: { method: "removeGuideline", owner, guidelineId } });
+  };
+```
+- `deleteDomain` devient : si utilisé ⇒ `setError(fr.domains.inUse)` (inchangé), sinon `setConfirming({ kind: "domain" })` ; la suppression effective :
+```tsx
+  const confirmDeleteDomain = async () => {
+    if (!domain) return;
+    await client.rpc({ method: "config", command: { method: "deleteDomain", domainId: domain.id } });
+    pick({ kind: "workspace" });
+  };
+```
+- dans le `<header>`, remplacer la pastille, le `<h2>`, `usedBy`, le `flex-1` et la corbeille par
+```tsx
+                {domain ? (
+                  <DomainHeader
+                    domain={domain}
+                    usage={config.domainUsage[domain.id] ?? 0}
+                    onRename={(name) => updateDomain({ name })}
+                    onColor={(color) => updateDomain({ color })}
+                    onDelete={() => void deleteDomain()}
+                  />
+                ) : (
+                  <>
+                    <h2 className="text-md font-semibold">{title}</h2>
+                    <span className="flex-1" />
+                  </>
+                )}
+```
+- avant la fermeture du composant, les confirmations :
+```tsx
+      {confirming?.kind === "domain" && domain && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setConfirming(null)}
+          title={fr.domains.deleteTitle(domain.name)}
+          description={fr.domains.deleteHelp(files.length)}
+          confirmLabel={fr.common.delete}
+          cancelLabel={fr.common.cancel}
+          onConfirm={confirmDeleteDomain}
+          describeError={errorMessage}
+        />
+      )}
+      {confirming?.kind === "file" && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setConfirming(null)}
+          title={fr.domains.removeFileTitle(confirming.path)}
+          description={fr.domains.removeFileHelp}
+          confirmLabel={fr.common.delete}
+          cancelLabel={fr.common.cancel}
+          onConfirm={() => confirmRemoveFile(confirming.guidelineId)}
+          describeError={errorMessage}
+        />
+      )}
+```
+(Le `<div className="grid min-h-full …">` racine devient un fragment `<>…</>` autour du `div` et des dialogues, ou les dialogues sont placés dans le `div` : ils sont rendus en portail.) Si `DomainsPage.tsx` dépasse ~300 lignes, extraire `confirmDeleteDomain`/`confirmRemoveFile` et les deux `ConfirmDialog` dans `settings/DomainConfirmations.tsx` (props : `confirming`, `domain`, `files`, `onClose`, `onDeleteDomain`, `onRemoveFile`).
+
+Run: `bun test packages/ui/src/settings` — Expected: PASS.
+
+- [ ] **Step 5: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui/src/settings && bun run budget`
+Expected: PASS ; budget inchangé (`DomainsPage` est déjà hors de l'entrée).
+
+```bash
+git add packages/ui/src/settings/DomainHeader.tsx packages/ui/src/settings/domain-header.test.tsx packages/ui/src/i18n/fr.ts
+git commit -m "feat(ui): en-tête de domaine, nom et couleur"
+git add packages/ui/src/settings/DomainsPage.tsx packages/ui/src/settings/domains-page.test.tsx
+git commit -m "feat(ui): confirmations des suppressions de domaine"
+```
+(Ajouter `packages/ui/src/settings/DomainConfirmations.tsx` au second commit si l'extraction a eu lieu.)
 
 ### Task 10: Arbre Tickets : menu, statut, parent, suppression
 
-**À compléter.** Cadre : décision 9, écrans 102 et 99, Contrats partagés › Composants (`ticket-menu.ts`), vague 1 ← T2. Contenu attendu : `kibo.component.json` `writes: ["ticket"]`, `package.json` `@dnd-kit/core`, `ticket-menu.ts` + test, `TicketRowMenu.tsx` (`ContextMenu` sur la ligne + « ⋯ » au survol, `useReadOnly()`), `TicketsTree.tsx` (`DndContext` reparentage ⇒ `moveTicket`, `TREE_CYCLE` affiché, « Bloqué » ⇒ `ReasonDialog`, suppression ⇒ `ConfirmDialog` ⇒ `deleteTicket`), `fr.ts` du composant, `tickets.test.tsx` (mock SDK : `m.snapshot()` après chaque action ; conformité verte avec le nouveau manifeste).
+Vague 1 ← T2. Décision 9, écrans 102 et 99, spec §12.4 (menu **ticket**). Le composant intégré **tickets** déclare enfin `writes: ["ticket"]` (sans quoi `sdk.run` répond `PERMISSION_DENIED`) et gagne un menu par ligne (clic droit et « ⋯ » au survol, même liste `MenuEntry[]`), un sous-menu Statut (« Bloqué… » ouvre `ReasonDialog`), « Nouveau sous-ticket », « Déplacer à la racine », « Supprimer… » confirmé, et le glisser-déposer de **reparentage** (déposer sur une ligne ⇒ sous-ticket). Tout passe par `sdk.run(cmd)` et le SDK simulé (`m.snapshot()` après chaque action). La conformité ne vérifie que les permissions utilisées sans être déclarées (`diffPermissions().missing`) : le manifeste élargi reste conforme.
+
+**Files:**
+- Modify: `components/tickets/kibo.component.json` (`"writes": ["ticket"]`), `components/tickets/package.json` (`"@dnd-kit/core": "6.3.1"` dans `dependencies`), `bun.lock` (mis à jour par `bun install`, sans téléchargement : la version est déjà présente)
+- Create: `components/tickets/src/ticket-menu.ts`, `components/tickets/src/ticket-menu.test.ts`, `components/tickets/src/tree-drop.ts`, `components/tickets/src/tree-drop.test.ts`, `components/tickets/src/TicketRowMenu.tsx`
+- Modify: `components/tickets/src/TicketsTree.tsx`, `components/tickets/src/fr.ts`, `components/tickets/src/tickets.test.tsx`
+
+**Interfaces:**
+- Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (`@kibo/sdk/ui/menu-entries`, T2), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`, T2), `ReasonDialog` (`@kibo/sdk/ui/reason-dialog`, T2), `useReadOnly`, `useSdk`, `useEntities` (`@kibo/sdk`), `@dnd-kit/core`.
+- Produces: Contrats partagés › Composants › `ticket-menu.ts` ; `reparentOnDrop(tickets, activeId, overId): { ticketId: string; parentId: string } | null`.
+
+- [ ] **Step 1: Manifeste, dépendance, textes**
+
+`components/tickets/kibo.component.json` : `"writes": ["ticket"]`. `components/tickets/package.json` › `dependencies` : `"@dnd-kit/core": "6.3.1"` (la version de `packages/ui`, figée dans `bun.lock`).
+
+Run: `bun install && git status --short bun.lock` — Expected: `bun.lock` modifié (lien du workspace), aucun paquet nouveau téléchargé.
+
+`components/tickets/src/fr.ts`, ajouter :
+```ts
+  actions: (key: string) => `Actions ${key}`,
+  open: "Ouvrir",
+  status: "Statut",
+  newSub: "Nouveau sous-ticket",
+  moveToRoot: "Déplacer à la racine",
+  remove: "Supprimer…",
+  removeTitle: (key: string) => `Supprimer ${key} ?`,
+  removeHelp: (children: number) =>
+    children === 0
+      ? "Ses liens seront supprimés aussi. Cette action est irréversible."
+      : `Ses ${children} sous-ticket${children > 1 ? "s" : ""} et ses liens seront supprimés aussi. Cette action est irréversible.`,
+  removeConfirm: "Supprimer",
+  cancel: "Annuler",
+  statusFailed: (key: string) => `Impossible de changer le statut de ${key}.`,
+  moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
+  cycle: "Un ticket ne peut pas devenir le sous-ticket de l'un de ses sous-tickets.",
+  block: {
+    title: (key: string) => `Bloquer ${key}`,
+    description: "Un ticket bloqué attend une condition extérieure au projet.",
+    reason: "Motif",
+    placeholder: "Informations attendues du client",
+    cancel: "Annuler",
+    confirm: "Bloquer",
+  },
+```
+
+- [ ] **Step 2: Menu et dépôt en données (tests rouges puis verts)**
+
+`components/tickets/src/ticket-menu.test.ts` :
+```ts
+import { expect, mock, test } from "bun:test";
+import { DEFAULT_WORKFLOW, type TicketView } from "@kibo/schema";
+import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
+import { fr } from "./fr";
+import { type TicketMenuActions, ticketMenuEntries } from "./ticket-menu";
+
+const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
+  id: "27@1",
+  key: "KIB-27",
+  pendingSeq: null,
+  keyLabel: "KIB-27",
+  title: "Récepteur",
+  description: "",
+  statusId: "in_progress",
+  blockedReason: null,
+  domainId: null,
+  assignee: null,
+  parentId: "12@1",
+  externalRefs: [],
+  progress: { done: 0, total: 0 },
+  waitingOn: [],
+  ...patch,
+});
+const actions = (): TicketMenuActions => ({
+  open: mock(() => {}),
+  setStatus: mock((_s: string) => {}),
+  newSubTicket: mock(() => {}),
+  moveToRoot: mock(() => {}),
+  remove: mock(() => {}),
+});
+const labels = (entries: ReturnType<typeof ticketMenuEntries>) =>
+  entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
+
+test("an editable ticket gets open, status submenu, new sub-ticket, move to root, delete", () => {
+  const a = actions();
+  const entries = ticketMenuEntries({ ticket: ticket(), statuses: DEFAULT_WORKFLOW, readOnly: false, texts: fr, actions: a });
+  expect(labels(entries)).toEqual(["Ouvrir", "Statut ▸", "Nouveau sous-ticket", "Déplacer à la racine", "—", "Supprimer…"]);
+  const status = entries.find(isSubmenu);
+  expect(status?.items.map((i) => [i.label, i.disabled ?? false])).toEqual([
+    ["Backlog", false],
+    ["À faire", false],
+    ["En cours", true],
+    ["En review", false],
+    ["Bloqué…", false],
+    ["Terminé", false],
+  ]);
+  status?.items[5]?.onSelect();
+  expect(a.setStatus).toHaveBeenCalledWith("done");
+  status?.items[4]?.onSelect();
+  expect(a.setStatus).toHaveBeenCalledWith("blocked");
+});
+
+test("a root ticket cannot be moved to the root", () => {
+  const entries = ticketMenuEntries({ ticket: ticket({ parentId: null }), statuses: DEFAULT_WORKFLOW, readOnly: false, texts: fr, actions: actions() });
+  const root = entries.find((e) => !isSeparator(e) && !isSubmenu(e) && e.label === "Déplacer à la racine");
+  expect(root && !isSeparator(root) && !isSubmenu(root) && root.disabled).toBe(true);
+});
+
+test("read-only keeps only Ouvrir", () => {
+  const entries = ticketMenuEntries({ ticket: ticket(), statuses: DEFAULT_WORKFLOW, readOnly: true, texts: fr, actions: actions() });
+  expect(labels(entries)).toEqual(["Ouvrir"]);
+});
+```
+`components/tickets/src/tree-drop.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import type { TicketView } from "@kibo/schema";
+import { reparentOnDrop } from "./tree-drop";
+
+const t = (id: string, parentId: string | null) => ({ id, parentId }) as TicketView;
+const tickets = [t("a", null), t("b", "a"), t("c", "b"), t("d", null)];
+
+test("dropping on another ticket reparents under it", () => {
+  expect(reparentOnDrop(tickets, "d", "b")).toEqual({ ticketId: "d", parentId: "b" });
+});
+
+test("dropping on itself, on its parent or on a descendant does nothing", () => {
+  expect(reparentOnDrop(tickets, "b", "b")).toBeNull();
+  expect(reparentOnDrop(tickets, "b", "a")).toBeNull();
+  expect(reparentOnDrop(tickets, "a", "c")).toBeNull();
+  expect(reparentOnDrop(tickets, "a", "zz")).toBeNull();
+});
+```
+(`as TicketView` : fixture partielle d'un test, seuls `id` et `parentId` sont lus.)
+
+Run: `bun test components/tickets/src/ticket-menu.test.ts components/tickets/src/tree-drop.test.ts` — Expected: FAIL.
+
+`components/tickets/src/ticket-menu.ts` :
+```ts
+import type { Status, StatusId, TicketView } from "@kibo/schema";
+import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { CornerLeftUp, ExternalLink, Plus, Trash2 } from "lucide-react";
+import type { fr } from "./fr";
+
+export type TicketMenuActions = {
+  open(): void;
+  setStatus(statusId: StatusId): void;
+  newSubTicket(): void;
+  moveToRoot(): void;
+  remove(): void;
+};
+
+export function ticketMenuEntries(input: {
+  ticket: TicketView;
+  statuses: Status[];
+  readOnly: boolean;
+  texts: typeof fr;
+  actions: TicketMenuActions;
+}): MenuEntry[] {
+  const { ticket, statuses, readOnly, texts, actions } = input;
+  const open: MenuAction = { label: texts.open, icon: ExternalLink, onSelect: actions.open };
+  if (readOnly) return [open];
+  const items: MenuAction[] = [...statuses]
+    .sort((a, b) => a.order - b.order)
+    .map((s) => ({
+      label: s.id === "blocked" ? `${s.label}…` : s.label,
+      disabled: s.id === ticket.statusId,
+      onSelect: () => actions.setStatus(s.id),
+    }));
+  return [
+    open,
+    { label: texts.status, items },
+    { label: texts.newSub, icon: Plus, onSelect: actions.newSubTicket },
+    { label: texts.moveToRoot, icon: CornerLeftUp, disabled: ticket.parentId === null, onSelect: actions.moveToRoot },
+    { separator: true },
+    { label: texts.remove, icon: Trash2, destructive: true, onSelect: actions.remove },
+  ];
+}
+
+export const descendantCount = (tickets: readonly TicketView[], id: string): number =>
+  tickets.filter((t) => t.parentId === id).reduce((n, c) => n + 1 + descendantCount(tickets, c.id), 0);
+```
+`components/tickets/src/tree-drop.ts` :
+```ts
+import type { TicketView } from "@kibo/schema";
+
+const isDescendant = (tickets: readonly TicketView[], id: string, ancestorId: string): boolean => {
+  let current = tickets.find((t) => t.id === id)?.parentId ?? null;
+  while (current !== null) {
+    if (current === ancestorId) return true;
+    current = tickets.find((t) => t.id === current)?.parentId ?? null;
+  }
+  return false;
+};
+
+export function reparentOnDrop(
+  tickets: readonly TicketView[],
+  activeId: string,
+  overId: string,
+): { ticketId: string; parentId: string } | null {
+  const active = tickets.find((t) => t.id === activeId);
+  const over = tickets.find((t) => t.id === overId);
+  if (!active || !over || activeId === overId) return null;
+  if (active.parentId === overId) return null;
+  if (isDescendant(tickets, overId, activeId)) return null;
+  return { ticketId: activeId, parentId: overId };
+}
+```
+Run: `bun test components/tickets/src/ticket-menu.test.ts components/tickets/src/tree-drop.test.ts` — Expected: PASS, 5 tests.
+
+- [ ] **Step 3: Tests de l'arbre (rouges)**
+
+`components/tickets/src/tickets.test.tsx`, ajouter (`userEvent` et `within`, `waitFor` importés ; `SdkProvider`, `createMockSdk` déjà là) :
+```tsx
+const mount = (m: ReturnType<typeof createMockSdk>) =>
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+const byKey = (m: ReturnType<typeof createMockSdk>, key: string) => m.snapshot().tickets.find((t) => t.key === key);
+
+test("the row menu changes the status; Bloqué asks for a reason", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.pointer({ keys: "[MouseRight]", target: await screen.findByRole("button", { name: /Arbre des pages/ }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir",
+    "Statut",
+    "Nouveau sous-ticket",
+    "Déplacer à la racine",
+    "Supprimer…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Statut" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Terminé" }));
+  await waitFor(() => expect(byKey(m, "KIB-1")?.statusId).toBe("done"));
+  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Statut" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Bloqué…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Bloquer KIB-1" });
+  await user.type(within(dialog).getByLabelText("Motif"), "Attente client");
+  await user.click(within(dialog).getByRole("button", { name: "Bloquer" }));
+  await waitFor(() => expect(byKey(m, "KIB-1")).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" }));
+});
+
+test("new sub-ticket asks the host, move to root reparents, delete asks then removes the subtree", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Nouveau sous-ticket" }));
+  expect(m.newTicketRequests.at(-1)?.parentId).toBe(byKey(m, "KIB-2")?.id);
+  await user.click(screen.getByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer à la racine" }));
+  await waitFor(() => expect(byKey(m, "KIB-2")?.parentId).toBeNull());
+  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer KIB-1 ?" });
+  expect(confirm.textContent).toContain("Ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(byKey(m, "KIB-1")).toBeUndefined());
+  expect(byKey(m, "KIB-2")).toBeDefined();
+});
+
+test("a refused command is shown as an alert", async () => {
+  const m = createMockSdk(manifest, { seed });
+  render(
+    <SdkProvider sdk={{ ...m.sdk, run: () => Promise.reject(new Error("daemon unreachable")) }}>
+      <Component />
+    </SdkProvider>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Statut" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Terminé" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de changer le statut de KIB-3.");
+});
+
+test("a read-only project shows no ⋯ button and a one-entry menu", async () => {
+  const m = createMockSdk(manifest, { seed, shared: true });
+  m.setAccess("read-only");
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("KIB-1");
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: /Arbre des pages/ }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
+});
+```
+(Dans le seed, KIB-2 « Déplacement » est le sous-ticket de KIB-1, KIB-3 « Sync » est bloqué. Le premier test utilise « Terminé » sur KIB-1 puis le bloque : l'ordre des assertions suit.)
+
+Run: `bun test components/tickets/src/tickets.test.tsx` — Expected: FAIL (4 tests).
+
+- [ ] **Step 4: `TicketRowMenu` et l'arbre**
+
+`components/tickets/src/TicketRowMenu.tsx` :
+```tsx
+import { Button } from "@kibo/sdk/ui/button";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { Ellipsis } from "lucide-react";
+import type { ReactNode } from "react";
+
+type Props = { entries: MenuEntry[]; label: string; readOnly: boolean; children: ReactNode };
+
+export function TicketRowMenu({ entries, label, readOnly, children }: Props) {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuEntries entries={entries} />
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+export function TicketRowActions({ entries, label, readOnly }: Omit<Props, "children">) {
+  if (readOnly) return <span className="size-6" />;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="icon" variant="ghost" className="size-6 opacity-0 group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100" aria-label={label}>
+          <Ellipsis className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuEntries entries={entries} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+```
+(`TicketRowMenu` ignore `label` et `readOnly` : les retirer de ses props et ne les garder que sur `TicketRowActions` ; un seul fichier pour les deux, ils vont ensemble.)
+
+`components/tickets/src/TicketsTree.tsx` :
+- imports : `DndContext, type DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors` (`@dnd-kit/core`), `useReadOnly` (`@kibo/sdk`), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`), `ReasonDialog` (`@kibo/sdk/ui/reason-dialog`), `descendantCount, ticketMenuEntries` (`./ticket-menu`), `reparentOnDrop` (`./tree-drop`), `TicketRowActions, TicketRowMenu` (`./TicketRowMenu`), `type StatusId` ;
+- `COLUMNS` : la dernière colonne passe de `2rem` à `4rem` (deux boutons : « + » et « ⋯ ») dans les deux variantes ;
+- état : `const readOnly = useReadOnly(); const [blocking, setBlocking] = useState<TicketView | null>(null); const [removing, setRemoving] = useState<TicketView | null>(null); const [error, setError] = useState<string | null>(null); const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));`
+- commandes :
+```tsx
+  const attempt = async (cmd: ProjectCommand, failure: string): Promise<boolean> => {
+    try {
+      await sdk.run(cmd);
+      setError(null);
+      return true;
+    } catch (e) {
+      setError(e instanceof KiboError && e.code === "TREE_CYCLE" ? fr.cycle : failure);
+      return false;
+    }
+  };
+  const setStatus = (t: TicketView, statusId: StatusId) => {
+    if (statusId === "blocked") setBlocking(t);
+    else void attempt({ method: "setStatus", ticketId: t.id, statusId }, fr.statusFailed(t.keyLabel));
+  };
+  const entriesFor = (t: TicketView) =>
+    ticketMenuEntries({
+      ticket: t,
+      statuses,
+      readOnly,
+      texts: fr,
+      actions: {
+        open: () => sdk.openTicket(t.id),
+        setStatus: (statusId) => setStatus(t, statusId),
+        newSubTicket: () => sdk.openNewTicket({ parentId: t.id }),
+        moveToRoot: () => void attempt({ method: "moveTicket", ticketId: t.id, parentId: null }, fr.moveFailed(t.keyLabel)),
+        remove: () => setRemoving(t),
+      },
+    });
+  const onDragEnd = (e: DragEndEvent) => {
+    if (readOnly || e.over === null) return;
+    const drop = reparentOnDrop(all, String(e.active.id), String(e.over.id));
+    if (drop) void attempt({ method: "moveTicket", ...drop }, fr.moveFailed(all.find((t) => t.id === drop.ticketId)?.keyLabel ?? ""));
+  };
+```
+(`ProjectCommand`, `KiboError` importés de `@kibo/schema`.)
+- la ligne : le `<div className={cn(COLUMNS, "group …")}>` est enveloppé par `<TicketRowMenu entries={entriesFor(t)}>` ; il reçoit `ref={setNodeRef}` d'un `useDroppable({ id: t.id, disabled: readOnly })` et la classe `isOver && "ring-2 ring-ring"` ; la `TicketKeyLabel` est enveloppée d'un `<span ref={drag.setNodeRef} {...drag.listeners} {...drag.attributes} aria-describedby={undefined}>` avec `useDraggable({ id: t.id, disabled: readOnly })` (poignée : la clé, comme le Kanban). Comme les hooks ne peuvent pas être appelés dans `row`, extraire la ligne en composant `TicketRow` (props : `node`, `open`, `entries`, `readOnly`, `runOf`, `members`, `label`, `onToggle`) dans le même fichier ou dans `TicketRow.tsx` si `TicketsTree.tsx` dépasse ~300 lignes ;
+- la dernière cellule devient `<span className="flex items-center justify-end gap-0.5">{!readOnly && <Button … aria-label={fr.newSubTicket(t.keyLabel)} …><Plus /></Button>}<TicketRowActions entries={entries} label={fr.actions(t.keyLabel)} readOnly={readOnly} /></span>` ;
+- le bouton « Nouveau ticket » de l'en-tête est masqué en lecture seule ;
+- rendu : `<DndContext sensors={sensors} onDragEnd={onDragEnd}>` autour de la liste ; sous l'en-tête `{error && <p role="alert" className="px-3 py-1 text-xs text-destructive">{error}</p>}` ; en fin de section :
+```tsx
+      {blocking && (
+        <ReasonDialog
+          open
+          title={fr.block.title(blocking.keyLabel)}
+          description={fr.block.description}
+          label={fr.block.reason}
+          placeholder={fr.block.placeholder}
+          confirmLabel={fr.block.confirm}
+          cancelLabel={fr.block.cancel}
+          error={error}
+          onConfirm={(reason) =>
+            void attempt({ method: "setStatus", ticketId: blocking.id, statusId: "blocked", reason }, fr.statusFailed(blocking.keyLabel)).then(
+              (ok) => ok && setBlocking(null),
+            )
+          }
+          onCancel={() => setBlocking(null)}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.keyLabel)}
+          description={fr.removeHelp(descendantCount(all, removing.id))}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={async () => {
+            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
+          }}
+        />
+      )}
+```
+(`all` est la liste complète `useEntities("ticket").data`, avant filtres, pour compter les descendants et vérifier les cycles.)
+
+Run: `bun test components/tickets` — Expected: PASS (conformité comprise : le manifeste déclare `write:ticket`, les rendus n'écrivent rien, `missing` reste vide).
+
+- [ ] **Step 5: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test components/tickets packages/sdk && bun run budget`
+Expected: PASS ; le composant tickets est chargé à la demande : budget inchangé. Vérifier à la main dans l'app (`bun run start`) qu'un glisser d'une clé de ticket sur une autre ligne fait un sous-ticket, et qu'un clic simple sur le titre ouvre toujours la fiche.
+
+```bash
+git add components/tickets/kibo.component.json components/tickets/package.json bun.lock components/tickets/src/fr.ts components/tickets/src/ticket-menu.ts components/tickets/src/ticket-menu.test.ts components/tickets/src/tree-drop.ts components/tickets/src/tree-drop.test.ts
+git commit -m "feat(tickets): écriture déclarée et menu en données"
+git add components/tickets/src/TicketRowMenu.tsx components/tickets/src/TicketsTree.tsx components/tickets/src/tickets.test.tsx
+git commit -m "feat(tickets): menu, statut, parent et suppression"
+```
+(Ajouter `components/tickets/src/TicketRow.tsx` au second commit si la ligne a été extraite.)
 
 ### Task 11: Kanban : clic droit et suppression
 
-**À compléter.** Cadre : décision 9, écran 99, Contrats partagés › Composants (`card-menu.ts`), vague 1 ← T2. Contenu attendu : `card-menu.ts` + test, `KanbanCard.tsx` (`ContextMenu` autour de l'article ; « ⋯ » rendu par `DropdownMenuEntries` avec Ouvrir, Déplacer vers ▸, Supprimer…), `Kanban.tsx` (`remove` ⇒ `ConfirmDialog` ⇒ `deleteTicket`), `fr.ts` (+ `open`, `remove`, `removeTitle(key)`, `removeHelp(children)`), `kanban.test.tsx` (suppression confirmée retire la carte ; rien en lecture seule).
+Vague 1 ← T2. Décision 9 (« Le Kanban gagne le clic droit et « Supprimer… », rien d'autre »), écran 99, spec §12.4. La carte garde sa poignée (la clé) et son bouton « ⋯ » ; le menu devient une liste `MenuEntry[]` partagée par le clic droit et le « ⋯ » : Ouvrir, Déplacer vers ▸ (statuts autres que le courant, « Bloqué… »), séparateur, Supprimer… confirmé. Le manifeste déclare déjà `writes: ["ticket"]`. Les deux tests existants qui passent par le « ⋯ » traversent désormais le sous-menu « Déplacer vers ».
+
+**Files:**
+- Create: `components/kanban/src/card-menu.ts`, `components/kanban/src/card-menu.test.ts`
+- Modify: `components/kanban/src/KanbanCard.tsx`, `components/kanban/src/Kanban.tsx`, `components/kanban/src/fr.ts`, `components/kanban/src/kanban.test.tsx`
+
+**Interfaces:**
+- Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`, T2), `BlockDialog` (habillage de `ReasonDialog`, T2).
+- Produces: Contrats partagés › Composants › `card-menu.ts` ; `KanbanCard` props `+ onRemove(): void`.
+
+- [ ] **Step 1: Textes**
+
+`components/kanban/src/fr.ts`, ajouter :
+```ts
+  open: "Ouvrir",
+  remove: "Supprimer…",
+  removeTitle: (key: string) => `Supprimer ${key} ?`,
+  removeHelp: (children: number) =>
+    children === 0
+      ? "Ses liens seront supprimés aussi. Cette action est irréversible."
+      : `Ses ${children} sous-ticket${children > 1 ? "s" : ""} et ses liens seront supprimés aussi. Cette action est irréversible.`,
+  removeConfirm: "Supprimer",
+  cancel: "Annuler",
+```
+
+- [ ] **Step 2: Le menu en données (test rouge puis vert)**
+
+`components/kanban/src/card-menu.test.ts` :
+```ts
+import { expect, mock, test } from "bun:test";
+import { DEFAULT_WORKFLOW, type TicketView } from "@kibo/schema";
+import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
+import { type CardMenuActions, cardMenuEntries } from "./card-menu";
+import { fr } from "./fr";
+
+const ticket = {
+  id: "1@1",
+  key: "KIB-1",
+  pendingSeq: null,
+  keyLabel: "KIB-1",
+  title: "Arbre",
+  description: "",
+  statusId: "todo",
+  blockedReason: null,
+  domainId: null,
+  assignee: null,
+  parentId: null,
+  externalRefs: [],
+  progress: { done: 0, total: 0 },
+  waitingOn: [],
+} satisfies TicketView;
+const actions = (): CardMenuActions => ({ open: mock(() => {}), move: mock((_s: string) => {}), remove: mock(() => {}) });
+const labels = (entries: ReturnType<typeof cardMenuEntries>) =>
+  entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
+
+test("an editable card offers open, move to the other statuses, delete", () => {
+  const a = actions();
+  const entries = cardMenuEntries({ ticket, statuses: DEFAULT_WORKFLOW, readOnly: false, texts: fr, actions: a });
+  expect(labels(entries)).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
+  const move = entries.find(isSubmenu);
+  expect(move?.items.map((i) => i.label)).toEqual(["Backlog", "En cours", "En review", "Bloqué…", "Terminé"]);
+  move?.items[3]?.onSelect();
+  expect(a.move).toHaveBeenCalledWith("blocked");
+});
+
+test("read-only keeps only Ouvrir", () => {
+  expect(labels(cardMenuEntries({ ticket, statuses: DEFAULT_WORKFLOW, readOnly: true, texts: fr, actions: actions() }))).toEqual(["Ouvrir"]);
+});
+```
+Run: `bun test components/kanban/src/card-menu.test.ts` — Expected: FAIL.
+
+`components/kanban/src/card-menu.ts` :
+```ts
+import type { Status, StatusId, TicketView } from "@kibo/schema";
+import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { ExternalLink, Trash2 } from "lucide-react";
+import type { fr } from "./fr";
+
+export type CardMenuActions = { open(): void; move(statusId: StatusId): void; remove(): void };
+
+export function cardMenuEntries(input: {
+  ticket: TicketView;
+  statuses: Status[];
+  readOnly: boolean;
+  texts: typeof fr;
+  actions: CardMenuActions;
+}): MenuEntry[] {
+  const { ticket, statuses, readOnly, texts, actions } = input;
+  const open: MenuAction = { label: texts.open, icon: ExternalLink, onSelect: actions.open };
+  if (readOnly) return [open];
+  const targets: MenuAction[] = [...statuses]
+    .sort((a, b) => a.order - b.order)
+    .filter((s) => s.id !== ticket.statusId)
+    .map((s) => ({ label: s.id === "blocked" ? `${s.label}…` : s.label, onSelect: () => actions.move(s.id) }));
+  return [
+    open,
+    { label: texts.moveTo, items: targets },
+    { separator: true },
+    { label: texts.remove, icon: Trash2, destructive: true, onSelect: actions.remove },
+  ];
+}
+```
+Run: `bun test components/kanban/src/card-menu.test.ts` — Expected: PASS.
+
+- [ ] **Step 3: Tests du tableau (mis à jour puis ajoutés)**
+
+`components/kanban/src/kanban.test.tsx` :
+- « moving a card changes its status » et « a failed move shows an alert and keeps the status » : entre le clic sur « Actions KIB-1 » et celui sur « En cours », insérer `await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));`
+- « blocking asks for a reason and refuses an empty one » et « a failed block keeps the dialog open… » : même insertion, et le libellé cliqué devient `"Bloqué…"`.
+- ajouter :
+```tsx
+test("right click opens the same menu as ⋯; delete asks then removes the card", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.pointer({ keys: "[MouseRight]", target: await screen.findByRole("button", { name: "Arbre des pages" }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir", "Déplacer vers", "Supprimer…"]);
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer KIB-1 ?" });
+  expect(confirm.textContent).toContain("Ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")).toBeUndefined());
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull());
+  expect(m.snapshot().links).toEqual([]);
+});
+
+test("Ouvrir from the menu opens the ticket in the host", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Ouvrir" }));
+  expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-2")?.id]);
+});
+```
+- « cards cannot be moved in a read-only project » : ajouter à la fin
+```tsx
+  await userEvent.setup().pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Lecture" }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
+```
+(Le seed relie KIB-1 → KIB-2 par `blocks` : supprimer KIB-1 retire le lien, d'où `links` vide.)
+
+Run: `bun test components/kanban/src/kanban.test.tsx` — Expected: FAIL (sous-menu absent, pas de clic droit).
+
+- [ ] **Step 4: Carte et tableau**
+
+`components/kanban/src/KanbanCard.tsx` :
+- props `+ onRemove: () => void` ; imports : `ContextMenu, ContextMenuContent, ContextMenuTrigger` (`@kibo/sdk/ui/context-menu`), `ContextMenuEntries, DropdownMenuEntries` (`@kibo/sdk/ui/menu-entries`), `cardMenuEntries` (`./card-menu`) ; retirer `DropdownMenuItem`, `DropdownMenuLabel` ;
+- `const entries = cardMenuEntries({ ticket: t, statuses, readOnly, texts: fr, actions: { open: onOpen, move: onMove, remove: onRemove } });`
+- l'`<article>` est enveloppé : `<ContextMenu><ContextMenuTrigger asChild><article …>…</article></ContextMenuTrigger><ContextMenuContent><ContextMenuEntries entries={entries} /></ContextMenuContent></ContextMenu>` ;
+- le `DropdownMenuContent` du « ⋯ » ne contient plus que `<DropdownMenuEntries entries={entries} />` (le bouton reste masqué en lecture seule).
+
+`components/kanban/src/Kanban.tsx` :
+- import `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`) ; état `const [removing, setRemoving] = useState<TicketView | null>(null);`
+- `KanbanCard` reçoit `onRemove={() => setRemoving(t)}` ;
+- en fin de composant, après `BlockDialog` :
+```tsx
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.keyLabel)}
+          description={fr.removeHelp(tickets.filter((x) => x.parentId === removing.id).length)}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={async () => {
+            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
+          }}
+        />
+      )}
+```
+(Le Kanban ne montre qu'un niveau : le nombre annoncé est celui des enfants directs ; l'arbre Tickets (T10) et la fiche (T6) comptent tous les descendants. Si ce décalage gêne, réutiliser un `descendantCount` local identique à celui de T10.)
+
+Run: `bun test components/kanban` — Expected: PASS (conformité comprise).
+
+- [ ] **Step 5: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test components/kanban && bun run budget`
+Expected: PASS ; budget inchangé (Kanban chargé à la demande).
+
+```bash
+git add components/kanban/src/card-menu.ts components/kanban/src/card-menu.test.ts components/kanban/src/fr.ts
+git commit -m "feat(kanban): entrées du menu d'une carte"
+git add components/kanban/src/KanbanCard.tsx components/kanban/src/Kanban.tsx components/kanban/src/kanban.test.tsx
+git commit -m "feat(kanban): clic droit et suppression confirmée"
+```
 
 ### Task 12: Notes : renommer, supprimer, nom tiré du titre
 
-**À compléter.** Cadre : décision 7, écran 103, Contrats partagés › Composants (`note-name.ts`), vague 1 ← T2. Contenu attendu : `note-name.ts` + test (`slugify`, `isUntitledPath`, `renamedPath`, `autoRenameTarget` refuse une cible prise), `NoteMenu.tsx` (« ⋯ » + clic droit : Renommer…, Supprimer…), `RenameNoteDialog.tsx` (titre ⇒ aide « Fichier : <slug>.md » ⇒ `sdk.notes.rename`, `CONFLICT` ⇒ « Une note porte déjà ce nom. »), suppression ⇒ `ConfirmDialog` ⇒ `sdk.notes.remove` puis sélection de la note suivante, `NotesView.tsx` (renommage automatique à la première sauvegarde d'une note `sans-titre`), `fr.ts`, tests avec `createMockSdk({ notes })`.
+Vague 1 ← T2. Décision 7, écran 103, spec §12.4 (menu **note**) et spec composants §8.2 (notes = fichiers `.md`). Chaque note de la liste gagne un menu (clic droit et « ⋯ ») : « Renommer… » demande un **titre** et montre le fichier cible « Fichier : <slug>.md » dans le même dossier ; « Supprimer… » confirme en nommant le fichier supprimé du disque. À la **première sauvegarde** d'une note encore nommée `sans-titre(-n).md`, si le premier titre `# …` donne un slug et que `<slug>.md` est libre, le fichier est renommé ; sinon il garde son nom. Jamais de renommage automatique d'une note existante. Tout passe par `sdk.notes.rename` / `sdk.notes.remove` (permission `writes: note`, déjà déclarée ; implémentées par le SDK simulé). En lecture seule (`useReadOnly()`), aucune entrée d'écriture.
+
+**Files:**
+- Create: `components/notes/src/note-name.ts`, `components/notes/src/note-name.test.ts`, `components/notes/src/NoteMenu.tsx`, `components/notes/src/RenameNoteDialog.tsx`
+- Modify: `components/notes/src/NoteList.tsx`, `components/notes/src/NotesView.tsx`, `components/notes/src/fr.ts`, `components/notes/src/notes.test.tsx`
+
+**Interfaces:**
+- Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`, T2), `useReadOnly`, `useSdk`, `NotesApi.rename/remove`, `NoteMeta.title` (premier titre `# …`, calculé par le démon et le SDK simulé).
+- Produces: Contrats partagés › Composants › `note-name.ts` ; `NoteList` props `+ readOnly: boolean; onRename(path: string): void; onRemove(path: string): void`.
+
+- [ ] **Step 1: Textes**
+
+`components/notes/src/fr.ts`, ajouter :
+```ts
+  actions: (title: string) => `Actions de ${title}`,
+  rename: "Renommer…",
+  remove: "Supprimer…",
+  renameTitle: "Renommer la note",
+  renameField: "Titre",
+  renameFile: (file: string) => `Fichier : ${file}`,
+  renameNoSlug: "Ce titre ne donne aucun nom de fichier.",
+  renameConflict: "Une note porte déjà ce nom.",
+  renameFailed: "Impossible de renommer la note.",
+  renameConfirm: "Renommer",
+  cancel: "Annuler",
+  removeTitle: (title: string) => `Supprimer la note « ${title} » ?`,
+  removeHelp: (file: string) => `Le fichier ${file} sera supprimé du disque. Cette action est irréversible.`,
+  removeConfirm: "Supprimer",
+```
+
+- [ ] **Step 2: Noms de fichier (test rouge puis vert)**
+
+`components/notes/src/note-name.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { autoRenameTarget, isUntitledPath, renamedPath, slugify } from "./note-name";
+
+test("slugify strips accents and punctuation, never starts with a digit prefix", () => {
+  expect(slugify("Architecture du sync")).toBe("architecture-du-sync");
+  expect(slugify("  Réunion — kick-off !  ")).toBe("reunion-kick-off");
+  expect(slugify("2026 bilan")).toBe("2026-bilan");
+  expect(slugify("é")).toBe("");
+  expect(slugify("#")).toBe("");
+  expect(slugify("a".repeat(80))).toHaveLength(40);
+});
+
+test("untitled paths are sans-titre.md and sans-titre-<n>.md, in any folder", () => {
+  expect(isUntitledPath("sans-titre.md")).toBe(true);
+  expect(isUntitledPath("sans-titre-3.md")).toBe(true);
+  expect(isUntitledPath("brouillons/sans-titre-12.md")).toBe(true);
+  expect(isUntitledPath("sans-titre-final.md")).toBe(false);
+  expect(isUntitledPath("mes-sans-titre.md")).toBe(false);
+});
+
+test("the renamed path keeps the folder and takes the slug", () => {
+  expect(renamedPath("sans-titre.md", "Architecture du sync")).toBe("architecture-du-sync.md");
+  expect(renamedPath("brouillons/sans-titre-2.md", "Idées")).toBe("brouillons/idees.md");
+  expect(renamedPath("notes/a.md", "???")).toBeNull();
+});
+
+test("the automatic target exists only for an untitled note whose slug is new and free", () => {
+  const taken = ["sans-titre.md", "architecture-du-sync.md", "journal.md"];
+  expect(autoRenameTarget({ path: "sans-titre.md", title: "Plan de test" }, taken)).toBe("plan-de-test.md");
+  expect(autoRenameTarget({ path: "sans-titre.md", title: "Architecture du sync" }, taken)).toBeNull();
+  expect(autoRenameTarget({ path: "sans-titre.md", title: "Sans titre" }, taken)).toBeNull();
+  expect(autoRenameTarget({ path: "sans-titre.md", title: "" }, taken)).toBeNull();
+  expect(autoRenameTarget({ path: "journal.md", title: "Nouveau journal" }, taken)).toBeNull();
+});
+```
+Run: `bun test components/notes/src/note-name.test.ts` — Expected: FAIL.
+
+`components/notes/src/note-name.ts` (copie de `slugify` de `packages/ui/src/ai/slug.ts` sans le préfixe `c-` : un composant n'importe pas l'UI) :
+```ts
+const MAX_SLUG = 40;
+const UNTITLED = /^sans-titre(-\d+)?\.md$/;
+
+export function slugify(title: string): string {
+  const s = title
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (s.length < 2) return "";
+  return s.slice(0, MAX_SLUG).replace(/-+$/, "");
+}
+
+const fileName = (path: string) => path.slice(path.lastIndexOf("/") + 1);
+const folderOf = (path: string) => path.slice(0, path.lastIndexOf("/") + 1);
+
+export const isUntitledPath = (path: string): boolean => UNTITLED.test(fileName(path));
+
+export function renamedPath(from: string, title: string): string | null {
+  const slug = slugify(title);
+  return slug ? `${folderOf(from)}${slug}.md` : null;
+}
+
+export function autoRenameTarget(note: { path: string; title: string }, taken: readonly string[]): string | null {
+  if (!isUntitledPath(note.path)) return null;
+  const target = renamedPath(note.path, note.title);
+  if (target === null || target === note.path || taken.includes(target)) return null;
+  return target;
+}
+```
+Run: `bun test components/notes/src/note-name.test.ts` — Expected: PASS, 4 tests.
+
+- [ ] **Step 3: Tests de la vue (rouges)**
+
+`components/notes/src/notes.test.tsx`, ajouter (mêmes `setup`, `listed`, `editorView`) :
+```tsx
+test("a note is renamed from its menu; the dialog previews the file, a taken name is refused", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Actions de Journal agents" }));
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Renommer…", "Supprimer…"]);
+  await user.click(screen.getByRole("menuitem", { name: "Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  const field = within(dialog).getByLabelText("Titre");
+  expect((field as HTMLInputElement).value).toBe("Journal agents");
+  await user.clear(field);
+  await user.type(field, "Décisions d'architecture");
+  expect(within(dialog).getByText("Fichier : decisions-architecture.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  await user.clear(field);
+  await user.type(field, "Journal des agents");
+  expect(within(dialog).getByText("Fichier : journal-des-agents.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  await waitFor(() => expect(m.notes.has("journal-des-agents.md")).toBe(true));
+  expect(m.notes.has("journal-agents.md")).toBe(false);
+  await waitFor(() => expect(listed()).toEqual(expect.arrayContaining([expect.stringContaining("Journal agents")])));
+});
+
+test("deleting a note asks, removes the file and selects the next note", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: /^Décisions d'architecture/ }) });
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer la note « Décisions d'architecture » ?" });
+  expect(confirm.textContent).toContain("Le fichier decisions-architecture.md sera supprimé du disque.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(m.notes.has("decisions-architecture.md")).toBe(false));
+  expect(await screen.findByRole("heading", { level: 1, name: "Journal agents" })).toBeTruthy();
+});
+
+test("the first save of an untitled note renames its file after its title", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1 });
+  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
+  await waitFor(() => expect(m.notes.has("sans-titre.md")).toBe(true));
+  const view = await editorView();
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "# Plan de test\n\nPremière ligne.\n" }, userEvent: "input.type" });
+  await waitFor(() => expect(m.notes.has("plan-de-test.md")).toBe(true), { timeout: 3000 });
+  expect(m.notes.has("sans-titre.md")).toBe(false);
+  expect(await screen.findByRole("heading", { level: 1, name: "Plan de test" })).toBeTruthy();
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "# Autre titre\n" }, userEvent: "input.type" });
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Autre titre\n"), { timeout: 3000 });
+  expect(m.notes.has("autre-titre.md")).toBe(false);
+});
+
+test("a read-only project shows no note menu", async () => {
+  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES, shared: true });
+  m.setAccess("read-only");
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByRole("list", { name: "Notes" });
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull());
+  expect(screen.queryByRole("button", { name: "Nouvelle note" })).toBeNull();
+});
+```
+(La liste `Notes` rend ses entrées comme des boutons dont le texte commence par le titre ; le clic droit vise ce bouton. La note `journal-agents.md` de `DEMO_NOTES` est celle titrée « Journal agents » : vérifier le chemin exact dans `packages/sdk/src/fixtures.ts` et adapter `m.notes.has(...)`. L'autosave attend 800 ms : d'où `timeout: 3000`.)
+
+Run: `bun test components/notes/src/notes.test.tsx` — Expected: FAIL (4 tests).
+
+- [ ] **Step 4: Menu, dialogue, liste, vue**
+
+`components/notes/src/NoteMenu.tsx` :
+```tsx
+import type { NoteMeta } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { Ellipsis, Pencil, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { fr } from "./fr";
+
+export type NoteMenuActions = { rename(): void; remove(): void };
+
+export const noteMenuEntries = (actions: NoteMenuActions): MenuEntry[] => [
+  { label: fr.rename, icon: Pencil, onSelect: actions.rename },
+  { label: fr.remove, icon: Trash2, destructive: true, onSelect: actions.remove },
+];
+
+type Props = { note: NoteMeta; readOnly: boolean; actions: NoteMenuActions; children: ReactNode };
+
+export function NoteMenu({ note, readOnly, actions, children }: Props) {
+  if (readOnly) return <>{children}</>;
+  const entries = noteMenuEntries(actions);
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="group/note relative">
+          {children}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute top-1.5 right-1.5 size-6 opacity-0 group-hover/note:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+                aria-label={fr.actions(note.title)}
+              >
+                <Ellipsis className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuEntries entries={entries} />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuEntries entries={entries} />
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+```
+
+`components/notes/src/RenameNoteDialog.tsx` :
+```tsx
+import { KiboError, type NoteMeta } from "@kibo/schema";
+import { useSdk } from "@kibo/sdk";
+import { Button } from "@kibo/sdk/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import { Input } from "@kibo/sdk/ui/input";
+import { Label } from "@kibo/sdk/ui/label";
+import { type FormEvent, useId, useState } from "react";
+import { fr } from "./fr";
+import { renamedPath } from "./note-name";
+
+type Props = { note: NoteMeta; onRenamed(path: string): void; onClose(): void };
+
+export function RenameNoteDialog({ note, onRenamed, onClose }: Props) {
+  const sdk = useSdk();
+  const id = useId();
+  const [title, setTitle] = useState(note.title);
+  const [error, setError] = useState<string | null>(null);
+  const target = renamedPath(note.path, title);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (target === null) return;
+    setError(null);
+    try {
+      const meta = await sdk.notes.rename(note.path, target);
+      onRenamed(meta.path);
+    } catch (err) {
+      setError(err instanceof KiboError && err.code === "CONFLICT" ? fr.renameConflict : fr.renameFailed);
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{fr.renameTitle}</DialogTitle>
+            <DialogDescription>{target ? fr.renameFile(target.slice(target.lastIndexOf("/") + 1)) : fr.renameNoSlug}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor={id}>{fr.renameField}</Label>
+            <Input id={id} value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              {fr.cancel}
+            </Button>
+            <Button type="submit" disabled={target === null || target === note.path}>
+              {fr.renameConfirm}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+(Renommer ne change que le **fichier** : le titre `# …` dans le contenu reste celui de la note ; c'est le choix de la décision 7 — le nom de fichier suit le titre saisi. La liste affiche toujours `NoteMeta.title`, lu du contenu.)
+
+`components/notes/src/NoteList.tsx` : Props `+ readOnly: boolean; onRename(path: string): void; onRemove(path: string): void` ; chaque `<li>` enveloppe son bouton dans `<NoteMenu note={n} readOnly={readOnly} actions={{ rename: () => onRename(n.path), remove: () => onRemove(n.path) }}>…</NoteMenu>` ; le bouton « Nouvelle note » n'est rendu que si `!readOnly`.
+
+`components/notes/src/NotesView.tsx` :
+- imports : `useReadOnly` (`@kibo/sdk`), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`), `RenameNoteDialog` (`./RenameNoteDialog`), `autoRenameTarget` (`./note-name`) ;
+- état : `const readOnly = useReadOnly(); const [renaming, setRenaming] = useState<NoteMeta | null>(null); const [removing, setRemoving] = useState<NoteMeta | null>(null);`
+- renommage automatique dans `createAutosave` : `onSaved` devient
+```tsx
+      onSaved: (meta) => {
+        setNote((n) => (n && n.path === meta.path ? { ...n, ...meta } : n));
+        const target = autoRenameTarget(meta, listedPaths.current);
+        if (target !== null) {
+          notesApi.current.rename(meta.path, target).then(
+            (renamed) => setSelected(renamed.path),
+            fail(fr.renameFailed),
+          );
+        }
+      },
+```
+avec `const listedPaths = useRef<string[]>([]); listedPaths.current = listed.data.map((n) => n.path);` (un `ref`, pour ne pas recréer l'autosave à chaque liste). Le renommage automatique ne s'applique qu'à un chemin `sans-titre(-n).md` : une note renommée une fois (automatiquement ou à la main) ne bouge plus (troisième test) ;
+- `NoteList` reçoit `readOnly={readOnly}`, `onRename={(path) => setRenaming(listed.data.find((n) => n.path === path) ?? null)}`, `onRemove={(path) => setRemoving(listed.data.find((n) => n.path === path) ?? null)}` ;
+- suppression : après la note retirée, sélectionner la suivante dans l'ordre de la liste (ou la précédente si c'était la dernière, `null` si plus rien) :
+```tsx
+  const nextAfter = (path: string): string | null => {
+    const paths = notes.map((n) => n.path);
+    const i = paths.indexOf(path);
+    return paths[i + 1] ?? paths[i - 1] ?? null;
+  };
+  const remove = async (meta: NoteMeta) => {
+    const next = nextAfter(meta.path);
+    await sdk.notes.remove(meta.path);
+    setNote(null);
+    setSelected(next);
+  };
+```
+- rendu, en fin de `div` racine :
+```tsx
+      {renaming && (
+        <RenameNoteDialog
+          note={renaming}
+          onRenamed={(path) => {
+            setRenaming(null);
+            setSelected(path);
+          }}
+          onClose={() => setRenaming(null)}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.title)}
+          description={fr.removeHelp(removing.path.slice(removing.path.lastIndexOf("/") + 1))}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={() => remove(removing)}
+        />
+      )}
+```
+Si `NotesView.tsx` dépasse ~300 lignes, sortir `useSearch`, `resolveTarget`, `freePath`, `backlinksOf`, `linkedOf` dans `notes-view-helpers.ts` (fonctions pures + hook) sans changer leur code.
+
+Run: `bun test components/notes` — Expected: PASS (conformité comprise, `write:note` déclaré).
+
+- [ ] **Step 5: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test components/notes && bun run budget`
+Expected: PASS ; budget inchangé (Notes chargé à la demande).
+
+```bash
+git add components/notes/src/note-name.ts components/notes/src/note-name.test.ts components/notes/src/fr.ts
+git commit -m "feat(notes): nom de fichier tiré du titre"
+git add components/notes/src/NoteMenu.tsx components/notes/src/RenameNoteDialog.tsx components/notes/src/NoteList.tsx components/notes/src/NotesView.tsx components/notes/src/notes.test.tsx
+git commit -m "feat(notes): renommer, supprimer, renommage auto"
+```
+(Ajouter `components/notes/src/notes-view-helpers.ts` au second commit si l'extraction a eu lieu.)
 
 ### Task 13: UI de bureau : liens externes, titre, menu natif bloqué, raccourcis
 
-**À compléter.** Cadre : spec §12.4–12.5, Contrats partagés (UI › `desktop/`, `shortcut-label.ts`), vague 1 ← T2, T4, **après T7** (`AppSidebar.tsx`). Contenu attendu : `packages/ui/package.json` (+ `@tauri-apps/plugin-opener`), `desktop/external-links.ts` + test (`externalLinkOf` : `https:` seulement ; `javascript:`, `file:`, `mailto:`, `http:` ⇒ `null` et clic neutralisé), `desktop/native-context-menu.ts` + test (`allowsNativeMenu` vrai pour `input`/`textarea`/`contenteditable` ou sélection non vide), `desktop/window-title.ts` + test (`windowTitle`), `desktop/install.ts` (`installDesktop`, `setNativeTitle` via `@tauri-apps/api/window`), `Shell.tsx` (`if (inTauri()) import("../desktop/install")…` ; `useWindowTitle(describeTarget(active).title)`), `lib/shortcut-label.ts` + test, `TabBar.tsx` / `AppSidebar.tsx` (libellés par plateforme, `select-none` sur le chrome), `ShellHeader.tsx` (`select-none`), `FORBIDDEN_IN_ENTRY` (+ `desktop/`, `@tauri-apps/plugin-opener` déjà couvert par `@tauri-apps`).
+Vague 1 ← T2, T4, **intégrée après T7** (elle touche `AppSidebar.tsx` après l'extraction de `ProjectPages`). Spec §12.4 (menu natif de la webview bloqué sauf champ de saisie ou sélection ; chrome non sélectionnable) et §12.5 (liens externes `https:` seulement via `tauri-plugin-opener` ; titre de fenêtre ; raccourcis affichés selon la plateforme). Tout ce qui touche Tauri est dans `packages/ui/src/desktop/`, chargé par **import dynamique** depuis `Shell` quand `inTauri()` ; la logique (filtrage d'URL, décision « menu natif autorisé », titre) est pure et testée sans Tauri. Relue par `kibo-lead` (liens externes). Dans un navigateur, rien ne change : `installDesktop` n'est jamais appelé, `document.title` n'est pas touché par Tauri mais **l'UI le pose dans tous les cas** (utile aussi dans un onglet de navigateur).
+
+**Files:**
+- Modify: `packages/ui/package.json` (`"@tauri-apps/plugin-opener"` en `dependencies`, version exacte de la ligne 2.x installée par `bun add`), `bun.lock`
+- Create: `packages/ui/src/desktop/external-links.ts`, `external-links.test.ts`, `native-context-menu.ts`, `native-context-menu.test.ts`, `window-title.ts`, `window-title.test.ts`, `install.ts`, `use-window-title.ts`
+- Create: `packages/ui/src/lib/shortcut-label.ts`, `packages/ui/src/lib/shortcut-label.test.ts`
+- Modify: `packages/ui/src/shell/Shell.tsx`, `packages/ui/src/tabs/TabBar.tsx`, `packages/ui/src/shell/AppSidebar.tsx`, `packages/ui/src/shell/ShellHeader.tsx`, `packages/ui/scripts/bundle-report.ts`
+- Test (existants) : `packages/ui/src/tabs/TabBar.test.tsx` (les raccourcis affichés dépendent de `navigator.platform` : happy-dom répond une plateforme non Mac ⇒ `Ctrl+W`, `Ctrl+Shift+P` ; adapter les attentes qui citent `⌘W` / `⌘⇧P`)
+
+**Interfaces:**
+- Consumes: permissions `core:window:allow-set-title` et `opener:allow-open-url` (`https://**`) de T4 ; `inTauri` (`shell/workspace-actions`), `isMacPlatform` (`tabs/use-tab-shortcuts`), `describeTarget` (`tabs/tab-title`), `@tauri-apps/api/window` (`getCurrentWindow().setTitle`), `@tauri-apps/plugin-opener` (`openUrl`).
+- Produces: Contrats partagés › UI › `shortcut-label.ts`, `desktop/` ; `useWindowTitle(tabTitle: string | null): void`.
+
+- [ ] **Step 1: Dépendance**
+
+Run: `cd packages/ui && bun add --exact @tauri-apps/plugin-opener@^2 && cd ../.. && grep -n "plugin-opener" packages/ui/package.json`
+Expected: une ligne `"@tauri-apps/plugin-opener": "2.x.y"` (version exacte, même ligne majeure que la crate `tauri-plugin-opener = "2"` de T4) ; `bun.lock` mis à jour ; aucun script `postinstall` (vérifier `bun pm ls | grep opener` et l'absence de `postinstall` dans `node_modules/@tauri-apps/plugin-opener/package.json`). Justification (commit) : ouverture des liens `https:` dans le navigateur depuis la fenêtre Tauri, spec §12.5.
+
+- [ ] **Step 2: Fonctions pures (tests rouges)**
+
+`packages/ui/src/lib/shortcut-label.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { shortcutLabel } from "./shortcut-label";
+
+test("mac shows symbols, others show Ctrl and plus signs", () => {
+  expect(shortcutLabel(["K"], true)).toBe("⌘K");
+  expect(shortcutLabel(["K"], false)).toBe("Ctrl+K");
+  expect(shortcutLabel(["Shift", "P"], true)).toBe("⌘⇧P");
+  expect(shortcutLabel(["Shift", "P"], false)).toBe("Ctrl+Shift+P");
+  expect(shortcutLabel(["W"], true)).toBe("⌘W");
+  expect(shortcutLabel(["1"], false)).toBe("Ctrl+1");
+});
+```
+`packages/ui/src/desktop/external-links.test.ts` :
+```ts
+import { expect, mock, test } from "bun:test";
+import { externalLinkOf, installExternalLinks } from "./external-links";
+
+const anchor = (href: string, target: string | null = "_blank") => {
+  const a = document.createElement("a");
+  a.href = href;
+  if (target) a.target = target;
+  const inner = document.createElement("span");
+  a.appendChild(inner);
+  document.body.appendChild(a);
+  return { a, inner };
+};
+
+test("only https links opened in a new tab are external", () => {
+  expect(externalLinkOf(anchor("https://github.com/kibo/pull/4").inner)).toBe("https://github.com/kibo/pull/4");
+  expect(externalLinkOf(anchor("http://example.org/").a)).toBeNull();
+  expect(externalLinkOf(anchor("javascript:alert(1)").a)).toBeNull();
+  expect(externalLinkOf(anchor("file:///etc/passwd").a)).toBeNull();
+  expect(externalLinkOf(anchor("mailto:a@b.c").a)).toBeNull();
+  expect(externalLinkOf(anchor("https://kibo.dev/", null).a)).toBeNull();
+  expect(externalLinkOf(document.createElement("div"))).toBeNull();
+  expect(externalLinkOf(null)).toBeNull();
+});
+
+test("a click on an https link is intercepted and sent to the opener; other schemes are neutralised", () => {
+  const open = mock((_url: string) => Promise.resolve());
+  const off = installExternalLinks(document, open);
+  const https = anchor("https://kibo.dev/docs");
+  const ev1 = new MouseEvent("click", { bubbles: true, cancelable: true });
+  https.inner.dispatchEvent(ev1);
+  expect(ev1.defaultPrevented).toBe(true);
+  expect(open).toHaveBeenCalledWith("https://kibo.dev/docs");
+  const js = anchor("javascript:alert(1)");
+  const ev2 = new MouseEvent("click", { bubbles: true, cancelable: true });
+  js.a.dispatchEvent(ev2);
+  expect(ev2.defaultPrevented).toBe(true);
+  expect(open).toHaveBeenCalledTimes(1);
+  const same = anchor("https://kibo.dev/same", null);
+  const ev3 = new MouseEvent("click", { bubbles: true, cancelable: true });
+  same.a.dispatchEvent(ev3);
+  expect(ev3.defaultPrevented).toBe(false);
+  off();
+  const ev4 = new MouseEvent("click", { bubbles: true, cancelable: true });
+  https.inner.dispatchEvent(ev4);
+  expect(ev4.defaultPrevented).toBe(false);
+});
+
+test("a failed opener is reported, never thrown", async () => {
+  const errors: unknown[] = [];
+  const log = console.error;
+  console.error = (...args: unknown[]) => void errors.push(args);
+  try {
+    const off = installExternalLinks(document, () => Promise.reject(new Error("no browser")));
+    anchor("https://kibo.dev/").a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(errors).toHaveLength(1);
+    off();
+  } finally {
+    console.error = log;
+  }
+});
+```
+`packages/ui/src/desktop/native-context-menu.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { allowsNativeMenu, blockNativeContextMenu } from "./native-context-menu";
+
+test("the native menu stays in text fields, editable areas and on a selection", () => {
+  expect(allowsNativeMenu(document.createElement("input"), "")).toBe(true);
+  expect(allowsNativeMenu(document.createElement("textarea"), "")).toBe(true);
+  const editable = document.createElement("div");
+  editable.setAttribute("contenteditable", "true");
+  const inner = document.createElement("span");
+  editable.appendChild(inner);
+  document.body.appendChild(editable);
+  expect(allowsNativeMenu(inner, "")).toBe(true);
+  expect(allowsNativeMenu(document.createElement("div"), "du texte")).toBe(true);
+  expect(allowsNativeMenu(document.createElement("div"), "   ")).toBe(false);
+  expect(allowsNativeMenu(document.createElement("button"), "")).toBe(false);
+  expect(allowsNativeMenu(null, "")).toBe(false);
+});
+
+test("contextmenu is prevented on the chrome and left alone in a field", () => {
+  let selection = "";
+  const off = blockNativeContextMenu(document, () => selection);
+  const button = document.createElement("button");
+  document.body.appendChild(button);
+  const blocked = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+  button.dispatchEvent(blocked);
+  expect(blocked.defaultPrevented).toBe(true);
+  const input = document.createElement("input");
+  document.body.appendChild(input);
+  const allowed = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+  input.dispatchEvent(allowed);
+  expect(allowed.defaultPrevented).toBe(false);
+  selection = "mot";
+  const withSelection = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+  button.dispatchEvent(withSelection);
+  expect(withSelection.defaultPrevented).toBe(false);
+  off();
+  const after = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+  selection = "";
+  button.dispatchEvent(after);
+  expect(after.defaultPrevented).toBe(false);
+});
+```
+(Les menus Kibo (`ContextMenu` de Radix) écoutent `contextmenu` sur leur déclencheur et appellent `preventDefault` eux-mêmes : bloquer l'événement au niveau du document **en phase de bulle** ne les empêche pas de s'ouvrir, puisqu'ils l'ont déjà traité ; Radix n'appelle pas `stopPropagation`, l'écouteur du document voit donc l'événement déjà `defaultPrevented` et n'a rien à faire. Ne jamais utiliser `capture: true` ici.)
+
+`packages/ui/src/desktop/window-title.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import { windowTitle } from "./window-title";
+
+test("the window title follows the active tab, Kibo alone on the home", () => {
+  expect(windowTitle(null)).toBe("Kibo");
+  expect(windowTitle("Kibo · Kanban")).toBe("Kibo · Kanban — Kibo");
+  expect(windowTitle("Kibo · KIB-12")).toBe("Kibo · KIB-12 — Kibo");
+  expect(windowTitle("")).toBe("Kibo");
+});
+```
+Run: `bun test packages/ui/src/lib/shortcut-label.test.ts packages/ui/src/desktop` — Expected: FAIL (modules introuvables).
+
+- [ ] **Step 3: Fonctions pures (vertes)**
+
+`packages/ui/src/lib/shortcut-label.ts` :
+```ts
+import { isMacPlatform } from "../tabs/use-tab-shortcuts";
+
+const MAC_KEYS: Record<string, string> = { Shift: "⇧", Alt: "⌥", Ctrl: "⌃" };
+
+export const isMac = (): boolean => isMacPlatform(navigator.platform);
+
+export function shortcutLabel(keys: readonly string[], mac: boolean): string {
+  if (mac) return `⌘${keys.map((k) => MAC_KEYS[k] ?? k).join("")}`;
+  return ["Ctrl", ...keys].join("+");
+}
+```
+`packages/ui/src/desktop/external-links.ts` :
+```ts
+export function externalLinkOf(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null;
+  const anchor = target.closest("a[target=_blank]");
+  if (!(anchor instanceof HTMLAnchorElement)) return null;
+  let url: URL;
+  try {
+    url = new URL(anchor.href);
+  } catch {
+    return null;
+  }
+  return url.protocol === "https:" ? url.href : null;
+}
+
+export function installExternalLinks(root: Document, open: (url: string) => Promise<void>): () => void {
+  const onClick = (e: MouseEvent) => {
+    if (!(e.target instanceof Element)) return;
+    const anchor = e.target.closest("a[target=_blank]");
+    if (!anchor) return;
+    e.preventDefault();
+    const url = externalLinkOf(anchor);
+    if (url === null) return;
+    open(url).catch((err: unknown) => console.error("[kibo] cannot open the external link", err));
+  };
+  root.addEventListener("click", onClick);
+  return () => root.removeEventListener("click", onClick);
+}
+```
+(`a[target=_blank]` sans schéma `https:` ⇒ clic neutralisé et rien d'ouvert : c'est le comportement voulu par la spec pour `javascript:`, `file:`, `mailto:`, `http:`. Un lien sans `target="_blank"` n'est pas touché : l'UI n'en produit pas vers l'extérieur.)
+
+`packages/ui/src/desktop/native-context-menu.ts` :
+```ts
+const FIELD = "input, textarea, [contenteditable]:not([contenteditable=false])";
+
+export function allowsNativeMenu(target: EventTarget | null, selection: string): boolean {
+  if (selection.trim().length > 0) return true;
+  return target instanceof Element && target.closest(FIELD) !== null;
+}
+
+export function blockNativeContextMenu(root: Document, selection: () => string): () => void {
+  const onContextMenu = (e: MouseEvent) => {
+    if (e.defaultPrevented) return;
+    if (!allowsNativeMenu(e.target, selection())) e.preventDefault();
+  };
+  root.addEventListener("contextmenu", onContextMenu);
+  return () => root.removeEventListener("contextmenu", onContextMenu);
+}
+```
+`packages/ui/src/desktop/window-title.ts` :
+```ts
+export const APP_TITLE = "Kibo";
+
+export function windowTitle(tabTitle: string | null): string {
+  return tabTitle ? `${tabTitle} — ${APP_TITLE}` : APP_TITLE;
+}
+```
+Run: `bun test packages/ui/src/lib/shortcut-label.test.ts packages/ui/src/desktop` — Expected: PASS, 7 tests.
+
+- [ ] **Step 4: Installation Tauri et titre de fenêtre**
+
+`packages/ui/src/desktop/install.ts` (jamais importé statiquement : `FORBIDDEN_IN_ENTRY`) :
+```ts
+import { installExternalLinks } from "./external-links";
+import { blockNativeContextMenu } from "./native-context-menu";
+
+export async function setNativeTitle(title: string): Promise<void> {
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  await getCurrentWindow().setTitle(title);
+}
+
+const openExternal = async (url: string): Promise<void> => {
+  const { openUrl } = await import("@tauri-apps/plugin-opener");
+  await openUrl(url);
+};
+
+export function installDesktop(): () => void {
+  const offLinks = installExternalLinks(document, openExternal);
+  const offMenu = blockNativeContextMenu(document, () => window.getSelection()?.toString() ?? "");
+  return () => {
+    offLinks();
+    offMenu();
+  };
+}
+```
+`packages/ui/src/desktop/use-window-title.ts` (léger : dans l'entrée, sans import Tauri statique) :
+```ts
+import { useEffect } from "react";
+import { inTauri } from "../shell/workspace-actions";
+import { windowTitle } from "./window-title";
+
+export function useWindowTitle(tabTitle: string | null): void {
+  useEffect(() => {
+    const title = windowTitle(tabTitle);
+    document.title = title;
+    if (!inTauri()) return;
+    import("./install")
+      .then((m) => m.setNativeTitle(title))
+      .catch((e: unknown) => console.error("[kibo] cannot set the window title", e));
+  }, [tabTitle]);
+}
+```
+Sous Tauri, `document.title` ne change pas le titre natif de la fenêtre : d'où `setTitle` par IPC, permis par `core:window:allow-set-title` (T4).
+
+`packages/ui/src/shell/Shell.tsx`, dans `Workspace` :
+```tsx
+  useWindowTitle(active ? describeTarget(active, { projects, snapshots }).title : null);
+  useEffect(() => {
+    if (!inTauri()) return;
+    let off: (() => void) | null = null;
+    let alive = true;
+    import("../desktop/install").then(
+      (m) => {
+        if (alive) off = m.installDesktop();
+      },
+      (e: unknown) => console.error("[kibo] desktop integration failed to load", e),
+    );
+    return () => {
+      alive = false;
+      off?.();
+    };
+  }, []);
+```
+(`useWindowTitle` importé de `../desktop/use-window-title` ; `describeTarget`, `inTauri`, `useEffect` sont déjà importés.)
+
+`bundle-report.ts` › `FORBIDDEN_IN_ENTRY` : `/\/packages\/ui\/src\/desktop\/install\.ts$/,` (`@tauri-apps/` est déjà interdit par la regex `node_modules/@tauri-apps/` ; `window-title.ts`, `external-links.ts`, `native-context-menu.ts` et `use-window-title.ts` peuvent rester dans l'entrée : moins de 1 kB).
+
+- [ ] **Step 5: Raccourcis affichés et chrome non sélectionnable**
+
+- `packages/ui/src/tabs/TabBar.tsx` : `const mac = isMac();` dans `TabMenu` ; `⌘⇧P` devient `{shortcutLabel(["Shift", "P"], mac)}` et `⌘W` devient `{shortcutLabel(["W"], mac)}` ; la `div` racine (`flex h-10 shrink-0 …`) gagne `select-none`.
+- `packages/ui/src/shell/AppSidebar.tsx` : `<kbd className="font-mono text-3xs">⌘K</kbd>` devient `<kbd className="font-mono text-3xs">{shortcutLabel(["K"], isMac())}</kbd>` ; `<Sidebar className={p.className}>` devient `<Sidebar className={cn("select-none", p.className)}>` (`cn` de `@kibo/sdk/lib/utils`).
+- `packages/ui/src/shell/ShellHeader.tsx` : le `<header className="flex h-12 …">` gagne `select-none`.
+- `packages/ui/src/tabs/TabBar.test.tsx` : remplacer les attentes `⌘W` / `⌘⇧P` par `shortcutLabel(["W"], isMac())` / `shortcutLabel(["Shift", "P"], isMac())` (import depuis `../lib/shortcut-label`), pour que le test ne dépende pas de la plateforme d'exécution.
+
+Run: `bun test packages/ui/src/tabs packages/ui/src/shell/shell.test.tsx packages/ui/src/desktop packages/ui/src/lib` — Expected: PASS.
+
+- [ ] **Step 6: Vérification dans la coque, gate, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; aucun « Module interdit » (`install.ts` et `@tauri-apps/plugin-opener` restent hors de l'entrée) ; budget + 0,5 kB au plus.
+
+Puis, avec la coque de T4 (`bun run --cwd packages/ui build && bun run --cwd apps/desktop build:debug`, lancer `apps/desktop/src-tauri/target/debug/kibo`) : le titre de la fenêtre suit l'onglet (« Kibo » sur l'Accueil, « Projet · Page — Kibo » ailleurs) ; un lien `https:` d'une description de ticket s'ouvre dans le navigateur ; le clic droit sur la barre latérale n'ouvre pas le menu de la webview mais celui de Kibo sur une page, et le menu natif reste dans un champ de saisie et sur un texte sélectionné. Noter le résultat dans le rapport de la tâche.
+
+```bash
+git add packages/ui/package.json bun.lock
+git commit -m "build(ui): plugin-opener pour les liens externes"
+git add packages/ui/src/lib/shortcut-label.ts packages/ui/src/lib/shortcut-label.test.ts packages/ui/src/desktop/external-links.ts packages/ui/src/desktop/external-links.test.ts packages/ui/src/desktop/native-context-menu.ts packages/ui/src/desktop/native-context-menu.test.ts packages/ui/src/desktop/window-title.ts packages/ui/src/desktop/window-title.test.ts
+git commit -m "feat(ui): liens externes, menu natif et titre"
+git add packages/ui/src/desktop/install.ts packages/ui/src/desktop/use-window-title.ts packages/ui/src/shell/Shell.tsx packages/ui/src/tabs/TabBar.tsx packages/ui/src/tabs/TabBar.test.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/shell/ShellHeader.tsx packages/ui/scripts/bundle-report.ts
+git commit -m "feat(ui): intégration bureau et raccourcis affichés"
+```
 
 ### Task 14: Dépendances dans la fiche ticket
 
