@@ -1,4 +1,5 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
+import { MARKET_PORTS } from "./market-fixture";
 
 const daemons = [
   { name: "dark", scheme: "dark", port: 4390, spec: /mvp\.spec\.ts/, scenario: "question" },
@@ -47,27 +48,57 @@ const daemons = [
   { name: "ia-light", scheme: "light", port: 4405, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
 ] as const;
 
+const marketThemes = ["dark", "light"] as const;
+
+type WebServer = Exclude<NonNullable<PlaywrightTestConfig["webServer"]>, unknown[]>;
+
 export default defineConfig({
   testDir: ".",
   timeout: 30_000,
   use: { trace: "retain-on-failure" },
-  projects: daemons.map((d) => ({
-    name: d.name,
-    testMatch: d.spec,
-    use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
-  })),
-  webServer: daemons.map((d) => ({
-    command: [
-      "bun serve.ts",
-      d.port,
-      d.scenario,
-      "integrations" in d ? "--integrations" : "",
-      "drafts" in d ? d.drafts : "",
-    ]
-      .filter((part) => part !== "")
-      .join(" "),
-    url: `http://127.0.0.1:${d.port}/`,
-    reuseExistingServer: false,
-    gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-  })),
+  projects: [
+    ...daemons.map(
+      (d): Project => ({
+        name: d.name,
+        testMatch: d.spec,
+        use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
+      }),
+    ),
+    ...marketThemes.map(
+      (theme): Project => ({
+        name: `market-${theme}`,
+        testMatch: /market\.spec\.ts/,
+        use: {
+          browserName: "chromium",
+          colorScheme: theme,
+          baseURL: `http://127.0.0.1:${MARKET_PORTS[theme]}`,
+        },
+      }),
+    ),
+  ],
+  webServer: [
+    ...daemons.map(
+      (d): WebServer => ({
+        command: [
+          "bun serve.ts",
+          d.port,
+          d.scenario,
+          "integrations" in d ? "--integrations" : "",
+          "drafts" in d ? d.drafts : "",
+        ]
+          .filter((part) => part !== "")
+          .join(" "),
+        url: `http://127.0.0.1:${d.port}/`,
+        reuseExistingServer: false,
+        gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
+      }),
+    ),
+    {
+      command: "bun serve-market.ts",
+      url: `http://127.0.0.1:${MARKET_PORTS.control}/`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
+    },
+  ],
 });
