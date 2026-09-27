@@ -1,5 +1,6 @@
+import { KiboError } from "@kibo/schema";
 import type { ServerDb } from "./db";
-import { ProjectRoom, type RoomLimits } from "./room";
+import { ProjectRoom, type RoomLimits, type ShareInput } from "./room";
 
 type Entry = { room: ProjectRoom; connections: Set<string>; idleSince: number | null };
 
@@ -21,6 +22,17 @@ export class RoomRegistry {
 
   create(input: Parameters<typeof ProjectRoom.create>[1]): ProjectRoom {
     const room = ProjectRoom.create(this.sdb, input, this.opts.now(), this.opts.limits);
+    this.entries.set(input.projectId, { room, connections: new Set(), idleSince: this.opts.now() });
+    return room;
+  }
+
+  replaceUnused(input: ShareInput): ProjectRoom {
+    const entry = this.entry(input.projectId);
+    if (entry.connections.size > 0 || entry.room.serverSeq() > 0) {
+      throw new KiboError("CONFLICT", `project ${input.projectId} is already in use, its snapshot is final`);
+    }
+    const room = ProjectRoom.replace(this.sdb, input, this.opts.now(), this.opts.limits);
+    this.drop(input.projectId);
     this.entries.set(input.projectId, { room, connections: new Set(), idleSince: this.opts.now() });
     return room;
   }

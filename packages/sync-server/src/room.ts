@@ -71,6 +71,35 @@ function importSnapshot(snapshot: Uint8Array): LoroDoc {
   return doc;
 }
 
+export type ShareInput = {
+  projectId: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  snapshot: Uint8Array;
+};
+
+function prepareShare(input: ShareInput): { doc: LoroDoc; ticketSeq: number; snapshot: Uint8Array } {
+  const doc = importSnapshot(input.snapshot);
+  const verdict = validateSharedSnapshot(doc, input.projectId);
+  if (!verdict.ok) throw new KiboError("INVALID_INPUT", verdict.reason);
+  const ticketSeq = enableServerAllocation(doc);
+  writeMembers(doc, [{ userId: input.ownerId, name: input.ownerName }]);
+  return { doc, ticketSeq, snapshot: doc.export({ mode: "snapshot" }) };
+}
+
+function insertSnapshot(
+  sdb: ServerDb,
+  projectId: string,
+  doc: LoroDoc,
+  snapshot: Uint8Array,
+  now: number,
+): void {
+  sdb.db
+    .query("INSERT INTO snapshots (projectId, bytes, versionJson, uptoSeq, at) VALUES (?1, ?2, ?3, 0, ?4)")
+    .run(projectId, snapshot, versionJson(doc), now);
+}
+
 export class ProjectRoom {
   readonly presence = new EphemeralStore(SYNC_LIMITS.presenceTimeoutMs);
 
@@ -82,29 +111,38 @@ export class ProjectRoom {
     private readonly limits: RoomLimits,
   ) {}
 
-  static create(
-    sdb: ServerDb,
-    input: { projectId: string; name: string; ownerId: string; ownerName: string; snapshot: Uint8Array },
-    now: number,
-    limits?: Partial<RoomLimits>,
-  ): ProjectRoom {
-    const doc = importSnapshot(input.snapshot);
-    const verdict = validateSharedSnapshot(doc, input.projectId);
-    if (!verdict.ok) throw new KiboError("INVALID_INPUT", verdict.reason);
-    const ticketSeq = enableServerAllocation(doc);
-    writeMembers(doc, [{ userId: input.ownerId, name: input.ownerName }]);
-    const snapshot = doc.export({ mode: "snapshot" });
+  static create(sdb: ServerDb, input: ShareInput, now: number, limits?: Partial<RoomLimits>): ProjectRoom {
+    const { doc, ticketSeq, snapshot } = prepareShare(input);
     sdb.db.transaction(() => {
       insertProject(sdb, { id: input.projectId, ownerId: input.ownerId, name: input.name, ticketSeq }, now);
-      sdb.db
-        .query(
-          "INSERT INTO snapshots (projectId, bytes, versionJson, uptoSeq, at) VALUES (?1, ?2, ?3, 0, ?4)",
-        )
-        .run(input.projectId, snapshot, versionJson(doc), now);
+      insertSnapshot(sdb, input.projectId, doc, snapshot, now);
     })();
+    return ProjectRoom.fresh(sdb, input.projectId, doc, snapshot, limits);
+  }
+
+  static replace(sdb: ServerDb, input: ShareInput, now: number, limits?: Partial<RoomLimits>): ProjectRoom {
+    const { doc, ticketSeq, snapshot } = prepareShare(input);
+    sdb.db.transaction(() => {
+      sdb.db.query("DELETE FROM updates WHERE projectId = ?1").run(input.projectId);
+      sdb.db.query("DELETE FROM snapshots WHERE projectId = ?1").run(input.projectId);
+      sdb.db
+        .query("UPDATE projects SET name = ?2, ticketSeq = ?3 WHERE id = ?1")
+        .run(input.projectId, input.name, ticketSeq);
+      insertSnapshot(sdb, input.projectId, doc, snapshot, now);
+    })();
+    return ProjectRoom.fresh(sdb, input.projectId, doc, snapshot, limits);
+  }
+
+  private static fresh(
+    sdb: ServerDb,
+    projectId: string,
+    doc: LoroDoc,
+    snapshot: Uint8Array,
+    limits?: Partial<RoomLimits>,
+  ): ProjectRoom {
     return new ProjectRoom(
       sdb,
-      input.projectId,
+      projectId,
       doc,
       { seq: 0, sinceSnapshot: 0, size: snapshot.length },
       { ...DEFAULT_LIMITS, ...limits },

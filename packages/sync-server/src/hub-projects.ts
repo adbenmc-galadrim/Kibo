@@ -118,11 +118,16 @@ export function share(ctx: HubContext, state: ConnState, me: Session, frame: Fra
   if (owner !== null && owner !== me.userId) {
     throw new KiboError("FORBIDDEN", "this project id is shared by someone else");
   }
+  const input = { projectId, name: frame.name, ownerId: me.userId, ownerName: me.name };
   if (owner === null) {
-    const snapshot = fromBase64(frame.snapshot);
-    ctx.rooms.create({ projectId, name: frame.name, ownerId: me.userId, ownerName: me.name, snapshot });
-    audit(ctx.sdb, { at: ctx.now(), kind: "project-shared", userId: me.userId, projectId });
+    ctx.rooms.create({ ...input, snapshot: fromBase64(frame.snapshot) });
+  } else {
+    if (listMembers(ctx.sdb, projectId).length > 1) {
+      throw new KiboError("CONFLICT", `project ${projectId} already has members, its snapshot is final`);
+    }
+    ctx.rooms.replaceUnused({ ...input, snapshot: fromBase64(frame.snapshot) });
   }
+  audit(ctx.sdb, { at: ctx.now(), kind: "project-shared", userId: me.userId, projectId });
   state.conn.send({ type: "shared", requestId: frame.requestId, projectId });
 }
 

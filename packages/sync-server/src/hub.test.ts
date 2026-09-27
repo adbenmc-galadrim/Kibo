@@ -166,10 +166,55 @@ describe("authentication", () => {
 });
 
 describe("projects", () => {
-  test("replaying a share by the same owner answers shared again", async () => {
+  test("a share replayed before anyone used the project replaces its snapshot", async () => {
+    const adam = await joinTestAccount(t, "Adam");
+    const owner = await connect(adam);
+    const first = ownerDocOf(adam);
+    owner.send({
+      type: "share",
+      projectId: META.id,
+      requestId: "s1",
+      name: "Kibo",
+      snapshot: toBase64(first.export({ mode: "snapshot" })),
+    });
+    await owner.next("shared");
+    const second = ownerDocOf(adam);
+    createTicket(second, { title: "Entre-temps" });
+    const snapshot = toBase64(second.export({ mode: "snapshot" }));
+    owner.send({ type: "share", projectId: META.id, requestId: "s2", name: "Kibo 2", snapshot });
+    expect((await owner.next("shared", (f) => f.requestId === "s2")).projectId).toBe(META.id);
+    owner.send({ type: "subscribe", projectId: META.id, version: null });
+    const doc = new LoroDoc();
+    doc.import(fromBase64((await owner.next("update")).bytes));
+    expect(listTickets(doc).map((x) => x.title)).toEqual(["Noyau de données", "Entre-temps"]);
+    expect(doc.getMap("meta").get("keyAllocator")).toBe("server");
+  });
+  test("a share replayed while the project is subscribed is refused with CONFLICT", async () => {
     const { owner } = await sharedProject();
     owner.send({ type: "share", projectId: META.id, requestId: "s2", name: "Kibo", snapshot: "" });
-    expect((await owner.next("shared", (f) => f.requestId === "s2")).projectId).toBe(META.id);
+    expect((await owner.next("error", (f) => f.requestId === "s2")).code).toBe("CONFLICT");
+  });
+  test("a share replayed after the first update is refused with CONFLICT", async () => {
+    const { adam, owner, ownerDoc } = await sharedProject();
+    const version = toBase64(ownerDoc.oplogVersion().encode());
+    createTicket(ownerDoc, { title: "Poussé" });
+    owner.send(pushFrom(ownerDoc, version, "b1"));
+    await owner.next("ack");
+    owner.close();
+    const again = await connect(adam);
+    const snapshot = toBase64(ownerDocOf(adam).export({ mode: "snapshot" }));
+    again.send({ type: "share", projectId: META.id, requestId: "s2", name: "Kibo", snapshot });
+    expect((await again.next("error", (f) => f.requestId === "s2")).code).toBe("CONFLICT");
+  });
+  test("a share replayed once another member joined is refused with CONFLICT", async () => {
+    const { adam, owner } = await sharedProject();
+    const lea = await member(owner, "Léa", "viewer");
+    lea.client.close();
+    owner.close();
+    const again = await connect(adam);
+    const snapshot = toBase64(ownerDocOf(adam).export({ mode: "snapshot" }));
+    again.send({ type: "share", projectId: META.id, requestId: "s2", name: "Kibo", snapshot });
+    expect((await again.next("error", (f) => f.requestId === "s2")).code).toBe("CONFLICT");
   });
   test("sharing a project id owned by someone else is FORBIDDEN", async () => {
     await sharedProject();
