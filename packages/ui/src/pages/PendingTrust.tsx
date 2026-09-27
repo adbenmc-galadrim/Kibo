@@ -28,7 +28,15 @@ export function PendingTrust({ id, title, version, summary, tampered, compact }:
         <p className="font-medium">{i.pendingTitle}</p>
         <p className="text-sm text-muted-foreground">{i.pendingHelp(title, version)}</p>
         {tampered && <p className="text-sm text-muted-foreground">{i.pendingChanged}</p>}
-        <Button size="sm" variant="outline" disabled={tampered || !target} onClick={() => setOpen(true)}>
+        {summary?.revoked && (
+          <p className="text-sm text-destructive">{fr.market.authRevoked(summary.revoked.reason)}</p>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={tampered || !target || Boolean(summary?.revoked)}
+          onClick={() => setOpen(true)}
+        >
           <ShieldCheck aria-hidden />
           {i.review}
         </Button>

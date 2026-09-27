@@ -10,7 +10,9 @@ import {
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
 import { ShieldAlert } from "lucide-react";
+import { KeyComparison, type KeyLine } from "../dialogs/KeyComparison";
 import { fr } from "../i18n/fr";
+import { shortKeyPrint } from "../lib/fingerprint";
 
 export const REFUSAL_CODES = [
   "SIGNATURE_INVALID",
@@ -32,6 +34,17 @@ function description(code: RefusalCode, detail: MarketPackageDetail): string {
   const reason = detail.versions.find((v) => v.version === detail.version)?.revoked;
   if (code === "REVOKED" && reason) return t.revoked(reason);
   return t.nothingInstalled;
+}
+
+function keyLines(detail: MarketPackageDetail): KeyLine[] {
+  const t = fr.market;
+  const listed = detail.publisher.publicKey;
+  const expected = detail.pinnedPublisher ?? listed;
+  const nameOf = (key: string) => (key === listed ? detail.publisher.name : null);
+  const lines: KeyLine[] = [{ label: t.expectedKey, publicKey: expected, name: nameOf(expected) }];
+  if (expected !== listed)
+    lines.push({ label: t.receivedKey, publicKey: listed, name: nameOf(listed), mismatch: true });
+  return lines;
 }
 
 type Props = {
@@ -58,6 +71,7 @@ export function InstallRefusedDialog({ code, detail, onClose, onUnlock }: Props)
             <AlertDescription>{description(code, detail)}</AlertDescription>
           </Alert>
         )}
+        {keyIssue && <KeyComparison lines={keyLines(detail)} format={shortKeyPrint} />}
         {keyIssue && <p className="text-sm text-muted-foreground">{t.keyHint(detail.publisher.name)}</p>}
         <DialogFooter>
           {keyIssue && onUnlock && (

@@ -1,8 +1,15 @@
-import type { ComponentKind, MarketHit, MarketInstallResult, MarketSourceInfo } from "@kibo/schema";
+import type {
+  ComponentKind,
+  MarketHit,
+  MarketInstallResult,
+  MarketPackageDetail,
+  MarketSourceInfo,
+} from "@kibo/schema";
 import { Input } from "@kibo/sdk/ui/input";
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { client } from "../api";
+import { PublisherChangedDialog } from "../dialogs/PublisherChangedDialog";
 import { fr } from "../i18n/fr";
 import { marketErrorText } from "../lib/market-errors";
 import { MarketCard } from "./MarketCard";
@@ -43,6 +50,7 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
   const [kind, setKind] = useState<ComponentKind | null>(null);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [target, setTarget] = useState<MarketTarget | null>(null);
+  const [unlocking, setUnlocking] = useState<MarketPackageDetail | null>(null);
   const { hits, error } = useHits(sources, { query, sourceId, kind });
 
   useEffect(() => {
@@ -108,7 +116,19 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
           setTarget(null);
           onInstalled(r);
         }}
+        onUnlock={setUnlocking}
       />
+      {unlocking && (
+        <PublisherChangedDialog
+          detail={unlocking}
+          open
+          onOpenChange={(o) => !o && setUnlocking(null)}
+          onUnlocked={() => {
+            setUnlocking(null);
+            setTarget((t) => (t ? { ...t } : t));
+          }}
+        />
+      )}
     </div>
   );
 }

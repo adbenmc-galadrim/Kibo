@@ -3,6 +3,7 @@ import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { ChevronRight } from "lucide-react";
 import { useId } from "react";
 import { fr } from "../i18n/fr";
+import type { UpdateSummary } from "../lib/market-update";
 import { permissionLabel } from "../lib/permission-lines";
 
 export type Strategy = "update-all" | "new-version";
@@ -35,7 +36,7 @@ export function InvalidPreview({ id, errors }: { id: string; errors: string[] })
   );
 }
 
-type UsagesProps = { preview: PublishPreview; strategy: Strategy; colorOf(projectId: string): string };
+type UsagesProps = { preview: UpdateSummary; strategy: Strategy; colorOf(projectId: string): string };
 
 export function UsagesBox({ preview, strategy, colorOf }: UsagesProps) {
   const projects = new Set(preview.usages.map((u) => u.projectId)).size;
@@ -73,10 +74,10 @@ function Change({ mark, tone, text }: { mark: string; tone: string; text: string
   );
 }
 
-export const hasChanges = (preview: PublishPreview): boolean =>
+export const hasChanges = (preview: UpdateSummary): boolean =>
   preview.changes.length > 0 || preview.newPermissions.length > 0 || preview.migration !== null;
 
-export function ChangesList({ preview }: { preview: PublishPreview }) {
+export function ChangesList({ preview }: { preview: UpdateSummary }) {
   const { migration } = preview;
   return (
     <div className="grid gap-1.5 text-sm">
@@ -121,7 +122,7 @@ function StrategyCard({ value, title, help }: { value: Strategy; title: string; 
   );
 }
 
-type StrategyProps = { preview: PublishPreview; value: Strategy; onChange(s: Strategy): void };
+type StrategyProps = { preview: UpdateSummary; value: Strategy; onChange(s: Strategy): void };
 
 export function StrategyChoice({ preview, value, onChange }: StrategyProps) {
   return (

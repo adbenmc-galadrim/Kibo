@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { client } from "../api";
 import { TrustDialog, type TrustTarget, trustTargetOf } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { isRemoteView } from "../lib/remote-view";
 import { useProjects } from "../state/use-projects";
 import {
   ChangesList,
@@ -31,6 +32,7 @@ type Props = {
   open: boolean;
   onOpenChange(o: boolean): void;
   onPublished?(result: PublishResult): void;
+  remote?: boolean;
 };
 
 function explain(e: unknown, id: string): string {
@@ -76,7 +78,7 @@ function usePreview(id: string, open: boolean) {
   return { preview, error, setError };
 }
 
-export function PublishDialog({ id, open, onOpenChange, onPublished }: Props) {
+export function PublishDialog({ id, open, onOpenChange, onPublished, remote = isRemoteView() }: Props) {
   const p = fr.publish;
   const projects = useProjects() ?? [];
   const { preview, error, setError } = usePreview(id, open);
@@ -125,6 +127,9 @@ export function PublishDialog({ id, open, onOpenChange, onPublished }: Props) {
           {publishable && hasChanges(preview) && <ChangesList preview={preview} />}
           {used && <StrategyChoice preview={preview} value={strategy} onChange={setStrategy} />}
           {result && preview && <PublishReport result={result} version={preview.to} />}
+          {remote && publishable && (
+            <p className="text-sm text-muted-foreground">{fr.componentErrors.FORBIDDEN}</p>
+          )}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
@@ -135,7 +140,7 @@ export function PublishDialog({ id, open, onOpenChange, onPublished }: Props) {
               {result ? fr.common.close : fr.common.cancel}
             </Button>
             {publishable && (
-              <Button disabled={busy} onClick={() => void submit(preview)}>
+              <Button disabled={busy || remote} onClick={() => void submit(preview)}>
                 {p.submit(preview.to)}
               </Button>
             )}

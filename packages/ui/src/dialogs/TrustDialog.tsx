@@ -25,6 +25,7 @@ import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { permissionLines } from "../lib/permission-lines";
+import { isRemoteView } from "../lib/remote-view";
 import { MarketSubtitle } from "./MarketSubtitle";
 
 export type TrustTarget = {
@@ -69,6 +70,7 @@ type Props = {
   onApproved: (v: RegistryVersion) => void;
   approve?: (trust: ApprovableTrust) => Promise<RegistryVersion>;
   onCloseAutoFocus?: (event: Event) => void;
+  remote?: boolean;
 };
 
 type LevelProps = { value: ApprovableTrust; title: string; help: string; warning?: string | null };
@@ -132,6 +134,7 @@ export function TrustDialog({
   onApproved,
   approve: delegate,
   onCloseAutoFocus,
+  remote = isRemoteView(),
 }: Props) {
   const t = fr.trust;
   const [level, setLevel] = useState<ApprovableTrust>("sandboxed");
@@ -189,6 +192,7 @@ export function TrustDialog({
           />
         </RadioGroup>
         <p className="text-xs text-muted-foreground">{t.footer}</p>
+        {remote && <p className="text-sm text-muted-foreground">{fr.componentErrors.FORBIDDEN}</p>}
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -198,7 +202,7 @@ export function TrustDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t.refuse}
           </Button>
-          <Button disabled={busy} onClick={() => void approve()}>
+          <Button disabled={busy || remote} onClick={() => void approve()}>
             {mode === "approveAndAdd" ? t.approveAndAdd : t.approve}
           </Button>
         </DialogFooter>

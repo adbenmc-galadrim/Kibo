@@ -32,6 +32,7 @@ mock.module("../api", () => ({
       if (req.method === "listComponents") return Promise.resolve(components);
       if (req.method === "listDrafts") return Promise.resolve(drafts);
       if (req.method === "listComponentDrafts") return Promise.resolve([]);
+      if (req.method === "listMarketStatus") return Promise.resolve([]);
       if (req.method === "getSandboxStatus")
         return Promise.resolve({
           kind: "bwrap",

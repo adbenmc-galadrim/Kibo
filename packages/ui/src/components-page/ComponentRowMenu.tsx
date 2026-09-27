@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
-import { Ellipsis, ScanSearch, ShieldOff, Sparkles, Trash2 } from "lucide-react";
+import { Ellipsis, ScanSearch, ShieldOff, Sparkles, Trash2, Upload } from "lucide-react";
 import type { ComponentProps } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
@@ -20,6 +20,7 @@ type Props = {
   row: ComponentRow;
   onDone(message: string, tone: FlashTone): void;
   onModifyWithAi(target: ModifyTarget): void;
+  onPublishToMarket(row: ComponentRow): void;
 };
 
 const rehashChanged = (e: unknown): string | null =>
@@ -50,7 +51,10 @@ function BlockedUninstall() {
   );
 }
 
-export function ComponentRowMenu({ row, onDone, onModifyWithAi }: Props) {
+export const publishable = (row: ComponentRow): boolean =>
+  modifiable(row.origin) && row.trust !== "pending" && Boolean(row.summary?.hash && row.summary.manifest);
+
+export function ComponentRowMenu({ row, onDone, onModifyWithAi, onPublishToMarket }: Props) {
   const c = fr.components;
   const label = c.actions(row.title, row.version);
   if (row.builtin) return <MenuButton label={label} disabled />;
@@ -92,6 +96,12 @@ export function ComponentRowMenu({ row, onDone, onModifyWithAi }: Props) {
           <DropdownMenuItem onSelect={() => onModifyWithAi({ ...ref, title: row.title, origin })}>
             <Sparkles aria-hidden />
             {fr.ai.modify}
+          </DropdownMenuItem>
+        )}
+        {publishable(row) && (
+          <DropdownMenuItem onSelect={() => onPublishToMarket(row)}>
+            <Upload aria-hidden />
+            {fr.market.publish}
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
