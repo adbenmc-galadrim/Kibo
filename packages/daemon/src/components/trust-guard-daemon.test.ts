@@ -27,6 +27,7 @@ beforeEach(async () => {
     user: "adam",
     build: fakeBuild,
     validate: okReport,
+    integrations: { testOrigins: [], memorySecrets: true },
   });
 });
 afterEach(async () => {

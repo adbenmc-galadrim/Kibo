@@ -103,6 +103,7 @@ describe("kibo component", () => {
       dev: false,
       toolchain: DEV_TOOLCHAIN,
       user: "adam",
+      integrations: { testOrigins: [], memorySecrets: true },
     });
     cleanups.push(() => daemon.stop());
     const f = copyFixture("hello", { linkModules: false });
