@@ -22,6 +22,7 @@ let add: () => Promise<unknown> = () => Promise.resolve(null);
 mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
+      if (req.method === "listMarketSources") return Promise.resolve([]);
       calls.push(req);
       if (req.method === "listComponents") return components();
       if (req.method === "listDrafts") return Promise.resolve(drafts);

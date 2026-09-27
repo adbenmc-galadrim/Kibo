@@ -1,42 +1,13 @@
-import type {
-  ComponentKind,
-  MarketHit,
-  MarketInstallResult,
-  MarketPackageDetail,
-  MarketSourceInfo,
-} from "@kibo/schema";
+import type { ComponentKind, MarketInstallResult } from "@kibo/schema";
 import { Input } from "@kibo/sdk/ui/input";
 import { Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { client } from "../api";
-import { PublisherChangedDialog } from "../dialogs/PublisherChangedDialog";
+import { useState } from "react";
 import { fr } from "../i18n/fr";
-import { marketErrorText } from "../lib/market-errors";
 import { MarketCard } from "./MarketCard";
 import { MarketFilters } from "./MarketFilters";
-import { MarketPackageSheet, type MarketTarget } from "./MarketPackageSheet";
-
-type Query = { query: string; sourceId: string | null; kind: ComponentKind | null };
-
-function useHits(sources: MarketSourceInfo[] | null, q: Query) {
-  const [hits, setHits] = useState<MarketHit[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const latest = useRef(0);
-  const { query, sourceId, kind } = q;
-  useEffect(() => {
-    if (!sources?.length) return;
-    const ticket = ++latest.current;
-    client
-      .rpc({ method: "searchMarket", query, ...(sourceId ? { sourceId } : {}), ...(kind ? { kind } : {}) })
-      .then((h) => {
-        if (ticket !== latest.current) return;
-        setHits(h);
-        setError(null);
-      })
-      .catch((e: unknown) => ticket === latest.current && setError(marketErrorText(e)));
-  }, [sources, query, sourceId, kind]);
-  return { hits, error };
-}
+import { MarketInstallFlow } from "./MarketInstallFlow";
+import type { MarketTarget } from "./MarketPackageSheet";
+import { useMarketHits, useMarketSources } from "./use-market-hits";
 
 function Empty({ text }: { text: string }) {
   return <p className="p-8 text-center text-sm text-muted-foreground">{text}</p>;
@@ -44,21 +15,12 @@ function Empty({ text }: { text: string }) {
 
 export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInstallResult): void }) {
   const t = fr.market;
-  const [sources, setSources] = useState<MarketSourceInfo[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { sources, error: loadError } = useMarketSources();
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ComponentKind | null>(null);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [target, setTarget] = useState<MarketTarget | null>(null);
-  const [unlocking, setUnlocking] = useState<MarketPackageDetail | null>(null);
-  const { hits, error } = useHits(sources, { query, sourceId, kind });
-
-  useEffect(() => {
-    client
-      .rpc({ method: "listMarketSources" })
-      .then(setSources)
-      .catch((e: unknown) => setLoadError(marketErrorText(e)));
-  }, []);
+  const { hits, error } = useMarketHits(sources, { query, sourceId, kind });
 
   if (sources?.length === 0) return <Empty text={t.noSource} />;
   const shown = error ?? loadError;
@@ -109,26 +71,7 @@ export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInst
           ))}
         </div>
       )}
-      <MarketPackageSheet
-        target={target}
-        onClose={() => setTarget(null)}
-        onInstalled={(r) => {
-          setTarget(null);
-          onInstalled(r);
-        }}
-        onUnlock={setUnlocking}
-      />
-      {unlocking && (
-        <PublisherChangedDialog
-          detail={unlocking}
-          open
-          onOpenChange={(o) => !o && setUnlocking(null)}
-          onUnlocked={() => {
-            setUnlocking(null);
-            setTarget((t) => (t ? { ...t } : t));
-          }}
-        />
-      )}
+      <MarketInstallFlow target={target} onTarget={setTarget} onInstalled={onInstalled} />
     </div>
   );
 }

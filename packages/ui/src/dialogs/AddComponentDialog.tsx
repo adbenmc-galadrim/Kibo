@@ -18,6 +18,7 @@ import { Details } from "./ComponentDetails";
 import { CreateComponentDialog } from "./CreateComponentDialog";
 import { builtinChoices, type Choice, matches, mineChoices } from "./catalog-choices";
 import { DraftRow } from "./DraftRow";
+import { MarketCatalogSection } from "./MarketCatalogSection";
 import { McpSourceStep } from "./mcp-source/McpSourceStep";
 import { FirstSyncStatus } from "./sync/FirstSyncStatus";
 import { type LinkedRepos, repoKey } from "./sync/linked-repos";
@@ -25,7 +26,7 @@ import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
 import { SyncSourceForm } from "./sync/SyncSourceForm";
 import { EMPTY_SYNC_FORM, SYNCABLE_COMPONENTS, type SyncForm, toBindingConfig } from "./sync/status-map";
 import { useFirstSync } from "./sync/use-first-sync";
-import { TrustDialog, type TrustTarget, trustTargetOf } from "./TrustDialog";
+import { TrustDialog, type TrustTarget, trustTargetOf, trustTargetOfInstall } from "./TrustDialog";
 
 type Props = {
   projectId: string;
@@ -60,6 +61,7 @@ export function AddComponentDialog({
   const [failed, setFailed] = useState(false);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
   const [creating, setCreating] = useState(false);
+  const [marketCount, setMarketCount] = useState(0);
   const scope = useApprovalScope();
 
   const mine = mineChoices(components ?? []);
@@ -186,7 +188,15 @@ export function AddComponentDialog({
               {shownDrafts.map((d) => (
                 <DraftRow key={d.id} draft={d} onPublish={onPublishDraft} />
               ))}
-              {shownBuiltins.length + shownMine.length + shownDrafts.length === 0 && (
+              <MarketCatalogSection
+                query={query}
+                onCount={setMarketCount}
+                onInstalled={(r) => {
+                  setRef(null);
+                  setTrust(trustTargetOfInstall(r));
+                }}
+              />
+              {shownBuiltins.length + shownMine.length + shownDrafts.length + marketCount === 0 && (
                 <p className="py-6 text-center text-sm text-muted-foreground">{a.noResult}</p>
               )}
               <button

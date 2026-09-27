@@ -20,6 +20,8 @@ export const frMarket = {
     installed: (v: string) => `Installé ${v}`,
     available: (v: string) => `${v} disponible`,
     open: (title: string) => `Voir ${title}`,
+    catalogLine: (id: string, source: string, verified: boolean) =>
+      `${id} · ${verified ? "vérifié" : "non vérifié"} · ${source}`,
     publishedBy: (name: string, source: string, verified: boolean) =>
       verified ? `Publié par ${name} · vérifié par ${source}` : `Publié par ${name} · éditeur non vérifié`,
     publisherLine: (name: string, source: string, verified: boolean) =>
