@@ -63,17 +63,21 @@ Décision de spec : commande `setInstanceLayout` (x, y, largeur, hauteur bornée
 
 - Mode « Modifier la disposition » : glisser, redimensionner, ordonner (dnd-kit), grille adaptative à la largeur, retour visuel, annulation.
 - Retrait d'un widget confirmé.
+- Formats de composant nommés (petit, moyen, large, demi-page, plein écran), inspirés des widgets Apple : le manifeste déclare les formats pris en charge, le redimensionnement passe d'un format à l'autre (pas de taille libre), chaque composant intégré s'adapte à chacun de ses formats et la suite de conformité rend chaque format. Décision de spec : champ `formats` du manifeste et valeur par défaut pour les composants existants.
 
-Point 9 d'Adam.
+Points 9 et 14 d'Adam.
 
 ### Lot 6 : lisibilité des écrans avancés
 
 - Marketplace et Composants : titre et explication, état vide avec bouton « Ajouter une source », carte sans identifiant brut, empreintes et index dans « Détails », « Créer un composant » accessible, confirmations (désinstaller, retirer la confiance, retirer une source), rafraîchissement par ligne, rangement Paramètres › Sources clarifié.
 - Sync : écran réécrit (à quoi ça sert, comment obtenir un serveur, étapes numérotées), parcours « Ajouter un appareil » cohérent des deux côtés, jargon replié, confirmations de révocation, actions sur les projets partagés, titre français.
-- Agents : confirmations (arrêter un run, retirer de la file, supprimer un profil), historique cliquable avec filtre, vocabulaire (« Runs », « créneaux », options du CLI) expliqué ou remplacé.
+- Agents : confirmations (arrêter un run, retirer de la file, supprimer un profil), historique cliquable avec filtre (une ligne ouvre le journal du run, « Journal indisponible » s'il manque), vocabulaire (« Runs », « créneaux », options du CLI) expliqué ou remplacé.
 - Code : libellés git explicités (M/A/D/R/U en toutes lettres, « Indexés »), commande `git push -u` remplacée par une action.
 
-Point 6 d'Adam ; Composants, Sync, Agents, Code G et C.
+- Composants › Installés : barre de recherche, filtres minimalistes (confiance, origine), tri par clic sur l'en-tête de colonne.
+- « Utilisé dans : N pages · N projets » cliquable : volet latéral qui liste projets et pages, un clic ouvre la page (données `usages` déjà fournies par le démon).
+
+Points 6, 15, 16 et 17 d'Adam ; Composants, Sync, Agents, Code G et C.
 
 ### Lot 7 : réglages et en-tête
 
@@ -92,12 +96,25 @@ Points 2 et 7 d'Adam ; Paramètres G.
 
 Point 4 d'Adam ; lots C du repérage.
 
+### Lot 9 : création de composants par l'IA
+
+Décisions de spec à écrire : brouillons multiples et en arrière-plan (chacun est un run de la file d'attente, avec ses créneaux), pièces jointes image (taille et format bornés, stockées avec le brouillon, jamais dans un CRDT), aperçu du brouillon (bac à sable existant des composants tiers, données simulées), contexte fourni à l'agent.
+
+- Création qui continue quand on ferme la fenêtre ; écran « Créations » (brouillons en cours, étape, journal, reprise) et indicateur dans l'en-tête ; plusieurs créations à la fois.
+- « Créer un composant » accessible depuis la page Composants ; dialogues de hauteur bornée avec défilement interne.
+- Description avec images (glisser, coller, choisir un fichier).
+- Aperçu du composant dans chacun de ses formats avant publication, avec retours envoyés à l'agent ; publication seulement après validation.
+- Contexte donné à l'agent : formats et tailles (lot 5), un composant intégré en exemple, tokens de style et règles responsives ; la validation vérifie le rendu de chaque format déclaré.
+
+Points 11, 12 et 13 d'Adam. Dépend du lot 5 (formats).
+
 ## Ordre et parallélisme
 
 1. **Vague 1** : lot 1 (UI seule) et lot 4 (desktop) en parallèle ; maquettes des lots 2, 3, 5 pendant ce temps ; décisions de spec des lots 2, 3, 5 écrites par `kibo-lead`.
 2. **Vague 2** : lots 2 et 5 (démon + UI) ; lot 7.
 3. **Vague 3** : lots 3, 6 et 8.
-4. **Jalon `v1.1.0`** : contrôle visuel sombre et clair face aux maquettes, rapport, version `1.1.0`, PR de phase, CI verte, tag : la release est publiée et proposée aux apps installées.
+4. **Vague 4** : lot 9 (après le lot 5, dont il reprend les formats).
+5. **Jalon `v1.1.0`** : contrôle visuel sombre et clair face aux maquettes, rapport, version `1.1.0`, PR de phase, CI verte, tag : la release est publiée et proposée aux apps installées.
 
 ## Risques
 
