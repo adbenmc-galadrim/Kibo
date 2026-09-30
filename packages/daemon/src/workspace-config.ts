@@ -7,6 +7,7 @@ import {
   listDomains,
   listGuidelines,
   listProfiles,
+  workspaceDescription,
   workspaceName,
 } from "@kibo/core/agent-config";
 import { type ConfigCommand, KiboError, type WorkspaceConfig } from "@kibo/schema";
@@ -32,6 +33,7 @@ export function readConfig(docs: Docs): WorkspaceConfig {
     ],
     domainUsage: domainUsage(docs),
     workspaceName: workspaceName(docs.workspace),
+    workspaceDescription: workspaceDescription(docs.workspace),
   };
 }
 

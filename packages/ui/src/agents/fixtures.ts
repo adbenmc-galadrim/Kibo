@@ -262,6 +262,7 @@ export function configFixture(): WorkspaceConfig {
     ],
     domainUsage: { core: 9, agents: 3, ui: 2, securite: 3, devops: 3, integrations: 2 },
     workspaceName: "Perso",
+    workspaceDescription: null,
   };
 }
 

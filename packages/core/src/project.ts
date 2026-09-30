@@ -1,5 +1,7 @@
-import { DEFAULT_WORKFLOW, formatTicketKey, type ProjectMeta, type Status } from "@kibo/schema";
+import { DEFAULT_WORKFLOW, formatTicketKey, type ProjectMeta, ProjectPatch, type Status } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
+import { valid } from "./config-store";
+import type { RegisteredProjectPatch } from "./workspace";
 
 export function createProjectDoc(meta: ProjectMeta): LoroDoc {
   const doc = new LoroDoc();
@@ -22,6 +24,16 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     folder: (m.get("folder") as string | null) ?? null,
     color: m.get("color") as string,
   };
+}
+
+export function setProjectMeta(doc: LoroDoc, patch: RegisteredProjectPatch): ProjectMeta {
+  const fields = valid(ProjectPatch.safeParse(patch));
+  const m = doc.getMap("meta");
+  if (fields.name !== undefined) m.set("name", fields.name);
+  if (fields.color !== undefined) m.set("color", fields.color);
+  if (fields.folder !== undefined) m.set("folder", fields.folder);
+  doc.commit();
+  return getProjectMeta(doc);
 }
 
 export function getWorkflow(doc: LoroDoc): Status[] {

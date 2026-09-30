@@ -5,6 +5,7 @@ import {
   type GuidelineOwner,
   KiboError,
   WorkspaceName,
+  WorkspacePatch,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { assertDeletableProfile, createProfile, getProfile, updateProfile } from "./agent-profiles";
@@ -33,6 +34,11 @@ export {
 export function workspaceName(ws: LoroDoc): string | null {
   const name = settingsMap(ws).get("name");
   return typeof name === "string" ? name : null;
+}
+
+export function workspaceDescription(ws: LoroDoc): string | null {
+  const description = settingsMap(ws).get("description");
+  return typeof description === "string" ? description : null;
 }
 
 export function listDomains(ws: LoroDoc): Domain[] {
@@ -190,6 +196,16 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
       settingsMap(doc).set("name", name);
       doc.commit();
       return { name };
+    }
+    case "updateWorkspace": {
+      requireWorkspace(doc);
+      const patch = valid(WorkspacePatch.safeParse(cmd.patch));
+      const settings = settingsMap(doc);
+      if (patch.name !== undefined) settings.set("name", patch.name);
+      if (patch.description === null) settings.delete("description");
+      else if (patch.description !== undefined) settings.set("description", patch.description);
+      doc.commit();
+      return { name: workspaceName(doc), description: workspaceDescription(doc) };
     }
   }
 }

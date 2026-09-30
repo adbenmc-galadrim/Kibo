@@ -15,6 +15,7 @@ import {
   listDomains,
   listGuidelines,
   listProfiles,
+  workspaceDescription,
   workspaceName,
 } from "./agent-config";
 import { createProjectDoc } from "./project";
@@ -206,6 +207,27 @@ describe("workspace name", () => {
   test("an empty or too long workspace name is refused by the schema", () => {
     expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "   " }).success).toBe(false);
     expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "x".repeat(41) }).success).toBe(false);
+  });
+
+  test("updateWorkspace sets the name and the description, and null clears the description", () => {
+    const ws = createWorkspaceDoc();
+    expect(
+      executeConfigCommand(
+        ws,
+        ConfigCommand.parse({
+          method: "updateWorkspace",
+          patch: { name: " Maison ", description: " Mes projets " },
+        }),
+      ),
+    ).toEqual({ name: "Maison", description: "Mes projets" });
+    expect(workspaceDescription(ws)).toBe("Mes projets");
+    expect(executeConfigCommand(ws, { method: "updateWorkspace", patch: { description: null } })).toEqual({
+      name: "Maison",
+      description: null,
+    });
+    expect(workspaceDescription(ws)).toBeNull();
+    expect(() => executeConfigCommand(ws, { method: "updateWorkspace", patch: {} })).toThrow("INVALID_INPUT");
+    expect(configTarget({ method: "updateWorkspace", patch: { name: "x" } })).toBeNull();
   });
 });
 
