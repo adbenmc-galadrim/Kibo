@@ -1803,7 +1803,7 @@ Vague 1 ← T2. Décision 4, écrans 98 et 99. La fiche (Sheet et onglet) devien
 - Consumes: `ConfirmDialog` (`shell/lazy-dialogs`, T2), `ReasonDialog` (`@kibo/sdk/ui/reason-dialog`, T2), `DropdownMenuEntries`, `MenuEntry` (`@kibo/sdk/ui/menu-entries`, T2), `canEdit` (`state/access`), `Select`, `Input`, `Textarea`, `Button`, `Tooltip` du SDK.
 - Produces: `useTicketCommand` (réutilisé par T14), `frTicketEdit` (complété par T14 : `deps`), `TicketDetail` props `{ project, ticket, domains?, viewer, onOpenFile, onOpenTicket }`, `TicketSheet` props `+ viewer, onOpenTicket(ticketId), onDeleted()`, `TicketTab` props `+ viewer, onOpenTicket(ticketId)`, `ContentView` props `+ onOpenTicket(projectId, ticketId)`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-ticket-edit.ts` (importé directement par `ticket/*`, jamais monté dans `fr.ts`) :
 ```ts
@@ -1855,7 +1855,7 @@ export const frTicketEdit = {
 };
 ```
 
-- [ ] **Step 2: Tests (rouges)**
+- [x] **Step 2: Tests (rouges)**
 
 `packages/ui/src/ticket/ticket-edit.test.tsx` :
 ```tsx
@@ -2079,7 +2079,7 @@ test("a read-only project shows the ticket without any editing control", async (
 ```
 Run: `bun test packages/ui/src/ticket/ticket-edit.test.tsx` — Expected: FAIL (props inconnus, boutons absents).
 
-- [ ] **Step 3: Le hook de commande**
+- [x] **Step 3: Le hook de commande**
 
 `packages/ui/src/ticket/use-ticket-command.ts` :
 ```ts
@@ -2126,7 +2126,7 @@ export function useTicketCommand(
 ```
 (`e.code as keyof typeof frTicketEdit.errors` : le `as` est justifié par la recherche dans un `Partial<Record<KiboErrorCode, string>>` ; l'alternative sans `as` est `(frTicketEdit.errors as Partial<Record<KiboErrorCode, string>>)[e.code]`, au choix de l'implémenteur, une seule des deux.)
 
-- [ ] **Step 4: Titre, statut, assigné, description**
+- [x] **Step 4: Titre, statut, assigné, description**
 
 `packages/ui/src/ticket/TicketTitle.tsx` :
 ```tsx
@@ -2383,7 +2383,7 @@ export function DescriptionEditor({ ticketId, description, editable, command, on
 }
 ```
 
-- [ ] **Step 5: Le menu « ⋯ » et la suppression confirmée**
+- [x] **Step 5: Le menu « ⋯ » et la suppression confirmée**
 
 `packages/ui/src/ticket/TicketActionsMenu.tsx` :
 ```tsx
@@ -2464,7 +2464,7 @@ export function TicketActionsMenu(p: Props) {
 ```
 `childCount` = nombre de descendants (tous niveaux), calculé par le parent : `descendantCount(project.tickets, ticket.id)` ci-dessous.
 
-- [ ] **Step 6: Brancher la fiche**
+- [x] **Step 6: Brancher la fiche**
 
 `packages/ui/src/shell/TicketDetail.tsx` : Props devient `{ project; ticket; domains?; viewer: string; onOpenFile(ref: FileRef): void; onOpenTicket(ticketId: string): void }`. Dans le corps :
 - `const editable = canEdit(project); const command = useTicketCommand(project.meta.id);`
@@ -2500,7 +2500,7 @@ avec `const command = useTicketCommand(project.meta.id);` ; le bouton « Ouvrir 
 
 Run: `bun test packages/ui/src/ticket packages/ui/src/shell/sheet packages/ui/src/shell/agents-shell.test.tsx packages/ui/src/shell/presence.test.tsx packages/ui/src/palette` — Expected: PASS (les tests existants gagnent les props ajoutés, sans autre changement).
 
-- [ ] **Step 7: Gate, budget, commits**
+- [x] **Step 7: Gate, budget, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; budget inchangé (`ticket/` n'est chargé qu'avec `TicketDetail`), aucun « Module interdit ».
@@ -2526,7 +2526,7 @@ Vague 1 ← T2. Décision 6, écran 101, spec §12.4 (menu **page**). Les pages 
 - Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`shell/lazy-dialogs`, T2), `@dnd-kit/core` (déjà dans `packages/ui`), `SidebarMenuAction`, `SidebarMenuSub*`, `canEdit`.
 - Produces: Contrats partagés › UI › `page-menu.ts`, `RenamePageDialog` ; `AppSidebar` props `+ onRenamePage(page: Page): void; onDeletePage(page: Page): void` ; `DialogsState + renamePage: Page | null; deletePage: Page | null`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr.ts` › `nav`, ajouter :
 ```ts
@@ -2556,7 +2556,7 @@ Vague 1 ← T2. Décision 6, écran 101, spec §12.4 (menu **page**). Les pages 
 ```
 (Écran 101 : « Ses 2 sous-pages et 3 widgets disparaîtront. »)
 
-- [ ] **Step 2: Le menu en données (test rouge puis vert)**
+- [x] **Step 2: Le menu en données (test rouge puis vert)**
 
 `packages/ui/src/shell/page-menu.test.ts` :
 ```ts
@@ -2733,7 +2733,7 @@ export function pageMenuEntries(input: {
 ```
 Run: `bun test packages/ui/src/shell/page-menu.test.ts` — Expected: PASS, 5 tests.
 
-- [ ] **Step 3: `ProjectPages` (test rouge)**
+- [x] **Step 3: `ProjectPages` (test rouge)**
 
 `packages/ui/src/shell/project-pages.test.tsx` :
 ```tsx
@@ -2858,7 +2858,7 @@ test("a read-only project has no ⋯ button and a one-entry menu", async () => {
 ```
 Run: `bun test packages/ui/src/shell/project-pages.test.tsx` — Expected: FAIL (module introuvable).
 
-- [ ] **Step 4: `ProjectPages`**
+- [x] **Step 4: `ProjectPages`**
 
 `packages/ui/src/shell/ProjectPages.tsx` :
 ```tsx
@@ -3087,7 +3087,7 @@ Notes : `aria-describedby={undefined}` annule la description que `useDraggable` 
 
 Run: `bun test packages/ui/src/shell/project-pages.test.tsx packages/ui/src/shell/shell.test.tsx` — Expected: PASS.
 
-- [ ] **Step 5: Renommer et supprimer (dialogues)**
+- [x] **Step 5: Renommer et supprimer (dialogues)**
 
 `packages/ui/src/dialogs/RenamePageDialog.tsx` :
 ```tsx
@@ -3227,7 +3227,7 @@ test("a blank title cannot be submitted; a refusal keeps the dialog open with th
 
 Run: `bun test packages/ui/src/dialogs/rename-page-dialog.test.tsx packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 6: Gate, budget, commits**
+- [x] **Step 6: Gate, budget, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; budget : `ProjectPages` entre dans l'entrée (menu + dnd-kit déjà présents via `TabBar`) : attendre + 1,5 kB au plus par rapport à la mesure après T2 ; noter la valeur.
@@ -4057,7 +4057,7 @@ Vague 1 ← T2. Décision 9, écrans 102 et 99, spec §12.4 (menu **ticket**). L
 - Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (`@kibo/sdk/ui/menu-entries`, T2), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`, T2), `ReasonDialog` (`@kibo/sdk/ui/reason-dialog`, T2), `useReadOnly`, `useSdk`, `useEntities` (`@kibo/sdk`), `@dnd-kit/core`.
 - Produces: Contrats partagés › Composants › `ticket-menu.ts` ; `reparentOnDrop(tickets, activeId, overId): { ticketId: string; parentId: string } | null`.
 
-- [ ] **Step 1: Manifeste, dépendance, textes**
+- [x] **Step 1: Manifeste, dépendance, textes**
 
 `components/tickets/kibo.component.json` : `"writes": ["ticket"]`. `components/tickets/package.json` › `dependencies` : `"@dnd-kit/core": "6.3.1"` (la version de `packages/ui`, figée dans `bun.lock`).
 
@@ -4091,7 +4091,7 @@ Run: `bun install && git status --short bun.lock` — Expected: `bun.lock` modif
   },
 ```
 
-- [ ] **Step 2: Menu et dépôt en données (tests rouges puis verts)**
+- [x] **Step 2: Menu et dépôt en données (tests rouges puis verts)**
 
 `components/tickets/src/ticket-menu.test.ts` :
 ```ts
@@ -4255,7 +4255,7 @@ export function reparentOnDrop(
 ```
 Run: `bun test components/tickets/src/ticket-menu.test.ts components/tickets/src/tree-drop.test.ts` — Expected: PASS, 5 tests.
 
-- [ ] **Step 3: Tests de l'arbre (rouges)**
+- [x] **Step 3: Tests de l'arbre (rouges)**
 
 `components/tickets/src/tickets.test.tsx`, ajouter (`userEvent` et `within`, `waitFor` importés ; `SdkProvider`, `createMockSdk` déjà là) :
 ```tsx
@@ -4339,7 +4339,7 @@ test("a read-only project shows no ⋯ button and a one-entry menu", async () =>
 
 Run: `bun test components/tickets/src/tickets.test.tsx` — Expected: FAIL (4 tests).
 
-- [ ] **Step 4: `TicketRowMenu` et l'arbre**
+- [x] **Step 4: `TicketRowMenu` et l'arbre**
 
 `components/tickets/src/TicketRowMenu.tsx` :
 ```tsx
@@ -4463,7 +4463,7 @@ export function TicketRowActions({ entries, label, readOnly }: Omit<Props, "chil
 
 Run: `bun test components/tickets` — Expected: PASS (conformité comprise : le manifeste déclare `write:ticket`, les rendus n'écrivent rien, `missing` reste vide).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test components/tickets packages/sdk && bun run budget`
 Expected: PASS ; le composant tickets est chargé à la demande : budget inchangé. Vérifier à la main dans l'app (`bun run start`) qu'un glisser d'une clé de ticket sur une autre ligne fait un sous-ticket, et qu'un clic simple sur le titre ouvre toujours la fiche.
