@@ -1,8 +1,8 @@
-import { beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
 import { type ClientFrame, KiboError, type MemberInfo, type ServerFrame } from "@kibo/schema";
 import { fromBase64, toBase64 } from "@kibo/trust";
 import { EphemeralStore, type Value } from "loro-crdt";
-import { PresenceHub, routePresenceFrames } from "./presence";
+import { type PresenceDeps, PresenceHub, routePresenceFrames } from "./presence";
 import { PRESENCE_LIMITS } from "./presence-guard";
 
 const ME = { userId: "u-me", name: "Moi", deviceId: "dev-me" };
@@ -42,20 +42,29 @@ function codeOf(fn: () => void): string | null {
   }
 }
 
+const T0 = Date.UTC(2026, 8, 30, 12);
+
+const deps = (): PresenceDeps => ({
+  send: (frame) => sent.push(frame),
+  identity: () => ME,
+  runs: () => [],
+  members: () => MEMBERS,
+  shared: (projectId) => projectId === "p1",
+  online: () => true,
+  emit: () => {},
+  log: (message) => logs.push(message),
+  timeoutMs: 30_000,
+});
+
 beforeEach(() => {
   sent = [];
   logs = [];
-  hub = new PresenceHub({
-    send: (frame) => sent.push(frame),
-    identity: () => ME,
-    runs: () => [],
-    members: () => MEMBERS,
-    shared: (projectId) => projectId === "p1",
-    online: () => true,
-    emit: () => {},
-    log: (message) => logs.push(message),
-    timeoutMs: 30_000,
-  });
+  hub = new PresenceHub(deps());
+});
+
+afterEach(() => {
+  hub.dispose();
+  setSystemTime();
 });
 
 test("a state from someone who is not a member is not shown", () => {
@@ -131,14 +140,45 @@ test("the own state is published only for the local device key", () => {
   store.destroy();
 });
 
-test("two changes in the same millisecond both reach the peers", async () => {
-  hub.set("p1", { pageId: "pg1", ticketId: null });
-  hub.set("p1", { pageId: "pg2", ticketId: null });
-  await Bun.sleep(20);
+function receivedOwnState(): Value | undefined {
   const receiver = new EphemeralStore(30_000);
   for (const frame of sent) if (frame.type === "presence") receiver.apply(fromBase64(frame.bytes));
-  expect(receiver.get("dev-me")).toMatchObject({ pageId: "pg2" });
+  const own = receiver.get("dev-me");
   receiver.destroy();
+  return own;
+}
+
+async function framesSent(count: number): Promise<void> {
+  while (sent.length < count) await Bun.sleep(1);
+}
+
+test("two changes in the same millisecond both reach the peers", async () => {
+  setSystemTime(new Date(T0));
+  hub.set("p1", { pageId: "pg1", ticketId: null });
+  hub.set("p1", { pageId: "pg2", ticketId: null });
+  expect(sent).toHaveLength(1);
+  setSystemTime(new Date(T0 + 1));
+  await framesSent(2);
+  expect(receivedOwnState()).toMatchObject({ pageId: "pg2" });
+});
+
+test("a change right after a publish that crossed a millisecond still reaches the peers", async () => {
+  setSystemTime(new Date(T0));
+  let first = true;
+  const slow = new PresenceHub({
+    ...deps(),
+    runs: () => {
+      if (first) setSystemTime(new Date(T0 + 1));
+      first = false;
+      return [];
+    },
+  });
+  slow.set("p1", { pageId: "pg1", ticketId: null });
+  slow.set("p1", { pageId: "pg2", ticketId: null });
+  setSystemTime(new Date(T0 + 2));
+  await framesSent(2);
+  expect(receivedOwnState()).toMatchObject({ pageId: "pg2" });
+  slow.dispose();
 });
 
 test("a refused frame from the server is logged with its code, never thrown", () => {

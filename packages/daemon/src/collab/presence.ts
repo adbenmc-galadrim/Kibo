@@ -182,7 +182,7 @@ export class PresenceHub {
     if (!me) return;
     const now = Date.now();
     if (now < entry.publishedAt) entry.publishedAt = now - 1;
-    // loro-crdt EphemeralStore drops an update whose timestamp equals the previous one.
+    // loro-crdt EphemeralStore stamps inside set() and drops an update whose timestamp equals the previous one.
     if (now === entry.publishedAt) {
       this.publishLater(projectId, entry);
       return;
@@ -197,8 +197,8 @@ export class PresenceHub {
     if (!parsed.success)
       throw new KiboError("INVALID_INPUT", `own presence is invalid: ${parsed.error.message}`);
     entry.published = parsed.data;
-    entry.publishedAt = now;
     entry.store.set(me.deviceId, parsed.data);
+    entry.publishedAt = Date.now();
     if (!this.deps.online()) return;
     this.deps.send({ type: "presence", projectId, bytes: toBase64(entry.store.encode(me.deviceId)) });
   }
