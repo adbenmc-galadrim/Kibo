@@ -28,12 +28,41 @@ function apply(preference: ThemePreference): void {
   document.documentElement.classList.toggle("dark", dark);
 }
 
+export const THEME_PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
+const listeners = new Set<() => void>();
+const notify = () => {
+  for (const listener of listeners) listener();
+};
+
+export function setThemePreference(preference: ThemePreference): void {
+  withStorage((s) => (preference === "system" ? s.removeItem(KEY) : s.setItem(KEY, preference)), undefined);
+  apply(preference);
+  notify();
+}
+
 export function cycleTheme(): ThemePreference {
   const next = nextTheme(readThemePreference());
-  withStorage((s) => (next === "system" ? s.removeItem(KEY) : s.setItem(KEY, next)), undefined);
-  apply(next);
+  setThemePreference(next);
   return next;
 }
+
+function subscribePreference(onChange: () => void): () => void {
+  listeners.add(onChange);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === null || e.key === KEY) {
+      apply(readThemePreference());
+      onChange();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+export const useThemePreference = (): ThemePreference =>
+  useSyncExternalStore(subscribePreference, readThemePreference);
 
 export function followSystemTheme(): void {
   apply(readThemePreference());
