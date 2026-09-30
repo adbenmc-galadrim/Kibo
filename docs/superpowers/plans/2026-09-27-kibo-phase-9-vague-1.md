@@ -368,6 +368,7 @@ Une vague démarre quand toutes les tâches dont elle dépend sont intégrées d
 | 0 | T1 (chef d'équipe), T2, T3, T4, T5 | aucune (spec §12 écrite) | aucun : T2 = `packages/sdk/src/ui`, shell (dialogues), `bundle-report.ts` ; T3 = schéma `code.ts`, `daemon/src/code`, `server.ts` ; T4 = `apps/desktop/src-tauri` ; T5 = `KiboLogo.tsx`, `kibo-mark.ts`, `index.html`, `public/`, `scripts/app-icon.ts`, `scripts/tsconfig.json`, `app-icon.svg`, `icons/` | T1 dessine 98–106 |
 | 1 | T6, T7, T8, T9, T10, T11, T12, T13 | T6, T7, T8, T9 ← T2 · T10, T11 ← T2 (menu-entries, ConfirmDialog, ReasonDialog) · T12 ← T2 · T13 ← T2, T4 | `lazy-dialogs.ts` (T7, T8 : une ligne chacune) ; `bundle-report.ts` (T6, T7, T8, T13 : une regex chacune) ; `fr.ts` (T7 `nav`, T9 `domains`) ; `Shell.tsx` (T6 `onOpenTicket`, T13 `installDesktop`) ; `AppSidebar.tsx` (T7 extrait `ProjectPages`, T13 `select-none` et libellé ⌘K : **T13 après T7**) ; `TabBar.tsx` (T13 seul) | T6 : 98, 99 · T7 : 101 · T8 : 105 · T9 : 106 · T10 : 102, 99 · T11 : 99 · T12 : 103 |
 | 1 bis | T3b, T7b, T10b, T12b (réponses d'Adam du 2026-09-27) | T3b ← T3 (déjà intégrée : démarre dès maintenant) · T7b ← T7 · T10b ← T10 · T12b ← T12 ; chacune démarre dès l'intégration de sa base, sans attendre la fin de la vague 1 | **T3b** = `packages/schema/src/code.ts`, `daemon/src/code/code-service.ts`, `packages/ui/src/code/*`, `files/FileTabView.tsx`, `fr-code.ts` : **avant T15** (qui modifie `FileList`, `ChangesFiles`, `ChangesView`, `fr-code.ts`) ; aucun recouvrement avec la vague 1. **T7b** = `shell/page-drop.ts` (nouveau), `shell/ProjectPages.tsx` seulement : en parallèle de T13 (qui touche `AppSidebar.tsx`, `Shell.tsx`, `TabBar.tsx`, jamais `ProjectPages.tsx`), aucun texte ajouté. **T10b** = `components/tickets/src/tree-drop.ts`, `TicketsTree.tsx` (ou `TicketRow.tsx`), `packages/core/src/tickets.test.ts` : indépendante de T11. **T12b** = `components/notes/src/*` seulement | — |
+| 1 bis | T4b (relecture de sécurité de T13) | T4b ← T4, T13 | `apps/desktop/src-tauri/src/main.rs`, `packages/daemon/src/main.ts` (et leurs tests) : aucun recouvrement avec les autres tâches | — |
 | 2 | T14, T15 | T14 ← T6 · T15 ← T2, T3, **T3b** (`FileList.readOnly`, `errors.FORBIDDEN`) | aucun (T14 = `ticket/`, `TicketDetail.tsx`, `fr-ticket-edit.ts` ; T15 = `code/`, `fr-code.ts`) | T14 : 100 · T15 : 104 |
 | 3 | T16 | T16 ← T6, T7, T15 (et T3) | `e2e/playwright.config.ts` (T16 seul) | — |
 | Jalon partiel | `bun run budget`, contrôle visuel 98–106 sombre et clair, rapport de vague au chef d'équipe | tout | — | toutes |
@@ -7190,6 +7191,49 @@ git add components/notes/src/use-note-session.ts components/notes/src/notes-rena
 git commit -m "fix(notes): tampon vidé après un renommage long"
 ```
 (Si le découpage du Step 3 et les tests du Step 4 ont été écrits dans le même passage, le premier commit porte le découpage seul : les nouveaux tests vont dans les commits qui les font passer.)
+
+### Task 4b: Coque : navigation de la webview limitée aux origines du démon
+
+Vague 1 bis ← T4, T13 (décidée par `kibo-lead` en relecture de sécurité de T13). Spec §12.5 « Navigation de la fenêtre principale ». Depuis T13, l'UI intercepte tout lien hors origine, mais la coque ne pose aucun `on_navigation` : un `window.location = …` d'un composant intégré, ou un chemin non couvert en JS, ferait quitter Kibo à la webview principale sans retour possible. L'UI intercepte, la coque garantit.
+
+Vérifié dans Tauri 2.12.0 et wry 0.57 : `WebviewWindowBuilder::on_navigation<F: Fn(&Url) -> bool + Send + 'static>(self, f: F) -> Self` ; `false` annule la navigation (`WKNavigationActionPolicy::Cancel` sous macOS), la fenêtre reste sur la page courante. Le gestionnaire ne reçoit que l'URL, sans savoir quelle frame navigue : sous macOS et Linux il voit aussi les iframes, dont celle des composants sandboxés (`http://127.0.0.1:<sandboxPort>`, choisi par le démon quand la coque passe `--port 0`). Le démon annonce donc cette origine sur une ligne `KIBO_SANDBOX <origine>` émise juste après `KIBO_READY` ; la coque accorde la capacité sur `KIBO_READY` et n'ouvre la fenêtre qu'à `KIBO_SANDBOX`, avec exactement ces deux origines. Une URL que tauri-runtime-wry ne sait pas analyser est laissée passer **avant** notre gestionnaire (`unwrap_or(true)`) : hors de portée de la coque, noté au rapport.
+
+**Files:**
+- Modify: `packages/daemon/src/main.ts`, `packages/daemon/src/main.test.ts`, `packages/daemon/src/main-agents.test.ts` (lecture de la première ligne seulement)
+- Modify: `apps/desktop/src-tauri/src/main.rs`
+
+**Interfaces:**
+- Consumes: `Daemon.sandboxPort` (`packages/daemon/src/daemon.ts`), `ipc_origin` (T4).
+- Produces: ligne de démarrage `KIBO_SANDBOX http://127.0.0.1:<port>` ; `navigation_allowed(target: &Url, allowed: &[String]) -> bool`, `parse_sandbox(line: &str) -> Option<Url>`.
+
+- [ ] **Step 1: Démon, ligne `KIBO_SANDBOX` (test rouge puis vert)**
+
+`main.test.ts` : le test « announces readiness… » lit deux lignes et attend `KIBO_READY http://127.0.0.1:<port>/#pair=<token>` puis `KIBO_SANDBOX http://127.0.0.1:<sandboxPort>`, `sandboxPort` étant celui de `daemon.json`. `main.ts` : `process.stdout.write(\`KIBO_SANDBOX http://127.0.0.1:${daemon.sandboxPort}\n\`)` juste après `KIBO_READY`. Les tests qui ne lisent que la première ligne cessent d'exiger la fin de la sortie (`\n$` ⇒ `\n`).
+
+Run: `bun test packages/daemon/src/main` — Expected: FAIL puis PASS.
+
+- [ ] **Step 2: Fonctions pures de la coque (test rouge)**
+
+Dans `mod tests` de `main.rs` : `navigation_allowed` vrai pour toute URL des deux origines (chemin, requête, fragment quelconques), faux pour un autre port, `localhost`, `https:`, `about:blank`, `javascript:`, `file:`, `data:`, et pour une liste vide ; `parse_sandbox` lit `KIBO_SANDBOX <url>` et ignore les autres lignes.
+
+Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: FAIL (`navigation_allowed`, `parse_sandbox` introuvables).
+
+- [ ] **Step 3: Implémentation et branchement (vert)**
+
+`navigation_allowed` compare `ipc_origin(target)` à chaque origine autorisée (une origine opaque vaut `"null"` et n'est jamais autorisée). La boucle des événements garde l'URL de `KIBO_READY` et ouvre la fenêtre à `KIBO_SANDBOX` avec `.on_navigation(move |url| navigation_allowed(url, &allowed))`.
+
+Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: PASS.
+
+- [ ] **Step 4: Gate et commits**
+
+Run: `~/.cargo/bin/cargo fmt --check` et `~/.cargo/bin/cargo clippy` dans `apps/desktop/src-tauri`, `bun run check`, `bun test packages/daemon/src/main` — Expected: PASS. Le `desktop-smoke` de la CI fait foi pour Linux.
+
+```bash
+git add packages/daemon/src/main.ts packages/daemon/src/main.test.ts packages/daemon/src/main-agents.test.ts
+git commit -m "feat(daemon): origine sandbox annoncée"
+git add apps/desktop/src-tauri/src/main.rs
+git commit -m "feat(desktop): navigation limitée au démon"
+```
 
 ---
 
