@@ -28,6 +28,7 @@
     "@shikijs/langs": "4.4.3",
     "@shikijs/themes": "4.4.3",
     "@tauri-apps/api": "2.12.0",
+    "@tauri-apps/plugin-opener": "2.7.0",
     "@tauri-apps/plugin-process": "2.4.0",
     "@tauri-apps/plugin-updater": "2.13.0",
     "codemirror": "6.0.2",
