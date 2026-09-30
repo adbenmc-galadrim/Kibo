@@ -107,3 +107,8 @@ export const AgentDrawer = lazyPanel(
   () => import("../agents/AgentDrawer").then((m) => m.AgentDrawer),
   fr.lazy,
 );
+export const ScreenActions = lazyPanel(
+  () => import("./ScreenActions").then((m) => m.ScreenActions),
+  fr.lazy,
+  { fallback: "sr-only" },
+);

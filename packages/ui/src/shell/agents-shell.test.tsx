@@ -216,12 +216,12 @@ test("the header carries the actions of the agent screens", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/agents");
   const user = userEvent.setup();
-  await user.click(header().getByRole("button", { name: "Nouveau profil" }));
+  await user.click(await header().findByRole("button", { name: "Nouveau profil" }));
   expect(within(await screen.findByRole("dialog")).getByText("Nouveau profil d'agent")).toBeTruthy();
   await user.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await go("#/agents/queue");
-  await user.click(header().getByRole("button", { name: "Mettre en pause l'admission" }));
+  await user.click(await header().findByRole("button", { name: "Mettre en pause l'admission" }));
   expect(calls).toContainEqual({ method: "setHost", patch: { paused: true } });
 });
 

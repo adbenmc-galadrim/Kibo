@@ -5,10 +5,9 @@ import { Bell, Plus } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
-import { ShareButton } from "./lazy-screens";
+import { ScreenActions, ShareButton } from "./lazy-screens";
 import { NotifyButton } from "./NotifyButton";
 import { PageActionsSlot } from "./page-actions";
-import { ScreenActions } from "./ScreenActions";
 import { UserAvatar } from "./UserAvatar";
 
 type Props = {
