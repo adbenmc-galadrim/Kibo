@@ -313,19 +313,17 @@ test("12 · Mes tickets", async () => {
   await capture(info, "12");
 });
 
-test("D11 · menu du workspace et renommage", async () => {
+test("D11 · menu du workspace et page Workspace", async () => {
   const info = test.info();
   const trigger = page.getByRole("button", { name: /Perso/ }).first();
   await trigger.click();
-  await expect(page.getByRole("menuitem", { name: "Renommer le workspace…" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Renommer le workspace…" })).toHaveCount(0);
   await expect(page.getByRole("menuitem", { name: "Paramètres du workspace" })).toBeVisible();
   await capture(info, "D11-menu");
-  await page.getByRole("menuitem", { name: "Renommer le workspace…" }).click();
-  const dialog = page.getByRole("dialog", { name: "Renommer le workspace" });
-  await expect(dialog.getByLabel("Nom")).toHaveValue("Perso");
-  await capture(info, "D11-dialogue");
-  await dialog.getByRole("button", { name: "Annuler" }).click();
-  await expect(dialog).toBeHidden();
+  await page.getByRole("menuitem", { name: "Paramètres du workspace" }).click();
+  await expect(page.getByRole("heading", { name: "Workspace", level: 1 })).toBeVisible();
+  await expect(page.getByLabel("Nom")).toHaveValue("Perso");
+  await capture(info, "D11-page");
 });
 
 test("densité 13 px des maquettes", async () => {
