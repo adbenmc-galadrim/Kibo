@@ -1,10 +1,6 @@
 import { Button } from "@kibo/sdk/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@kibo/sdk/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "@kibo/sdk/ui/sidebar";
 import { Ellipsis, LogIn, Share2 } from "lucide-react";
 import { frShare } from "../i18n/fr-share";
@@ -19,9 +15,9 @@ export function ShareButton({ onShare }: { onShare(): void }) {
   );
 }
 
-type MenuProps = { name: string; current: boolean; shifted: boolean; onShare(): void };
+type MenuProps = { name: string; current: boolean; shifted: boolean; entries: readonly MenuEntry[] };
 
-export function ProjectMenu({ name, current, shifted, onShare }: MenuProps) {
+export function ProjectMenu({ name, current, shifted, entries }: MenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -34,10 +30,7 @@ export function ProjectMenu({ name, current, shifted, onShare }: MenuProps) {
         </SidebarMenuAction>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start">
-        <DropdownMenuItem onSelect={onShare}>
-          <Share2 />
-          {frShare.action}
-        </DropdownMenuItem>
+        <DropdownMenuEntries entries={entries} />
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -307,3 +307,44 @@ test("replying from the bell menu opens the drawer on that run", async () => {
   await user.click(await within(menu).findByRole("menuitem", { name: /^opus-dev-2 · KIB-14/ }));
   expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
 });
+
+test("right click and the ellipsis open the same project menu; edit and delete open their dialogs", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/p/kibo/");
+  const user = userEvent.setup();
+  const entry = await screen.findByRole("button", { name: "Kibo" });
+  await user.pointer({ keys: "[MouseRight]", target: entry });
+  const names = () => screen.getAllByRole("menuitem").map((i) => i.textContent);
+  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Supprimer…"]);
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
+  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Supprimer…"]);
+  await user.click(screen.getByRole("menuitem", { name: "Modifier…" }));
+  expect(await screen.findByRole("dialog", { name: "Modifier le projet" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  expect(await screen.findByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Voir les agents" }));
+  expect(location.hash).toBe("#/agents");
+  expect(calls.some((c) => c.method === "deleteProject")).toBe(false);
+});
+
+test("deleting a project closes its tabs and returns to the overview", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/p/fac/");
+  const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
+  expect(await bar.findByRole("tab", { name: /API Facturation/ })).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Actions de API Facturation" }));
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  await screen.findByRole("dialog", { name: "Supprimer le projet API Facturation ?" });
+  await user.type(screen.getByLabelText("Tape API Facturation pour confirmer"), "API Facturation");
+  await user.click(screen.getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(location.hash).toBe("#/"));
+  expect(calls.filter((c) => c.method === "deleteProject")).toEqual([
+    { method: "deleteProject", projectId: "fac" },
+  ]);
+  expect(bar.queryByRole("tab", { name: /API Facturation/ })).toBeNull();
+  expect(screen.queryByRole("dialog")).toBeNull();
+});

@@ -121,6 +121,11 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
   const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
   const currentProject = useCallback(() => projectRef.current, []);
+  const closeProject = (projectId: string) => {
+    tabs.dispatch({ type: "closeProject", projectId });
+    setLastProjectId((id) => (id === projectId ? null : id));
+    go(null);
+  };
   const views = useOpenView(currentProject, go);
 
   const host = useMemo<Host>(
@@ -232,6 +237,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               onRenamePage={(page) => set({ renamePage: page })}
               onDeletePage={(page) => set({ deletePage: page })}
               onShare={(projectId) => set({ share: projectId })}
+              onEditProject={(projectId) => set({ editProject: projectId })}
+              onDeleteProject={(projectId) => set({ deleteProject: projectId })}
               onJoin={() => set({ join: true })}
             />
             <SidebarInset className="min-h-0 min-w-0">
@@ -299,7 +306,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               state={dialogs}
               set={set}
               viewer={viewer}
-              projectsCount={projects.length}
+              projects={projects}
               project={project}
               ticketProject={ticketProject}
               sheetProject={sheetProject}
@@ -308,6 +315,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               config={config}
               onOpenTarget={go}
               onOpenFileTab={openFileTab}
+              onCloseProject={closeProject}
             />
             {views.dialog}
             {paletteOpened && (

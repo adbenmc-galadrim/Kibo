@@ -78,3 +78,13 @@ export const InstanceSettingsDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const EditProjectDialog = lazyPanel(
+  () => import("../dialogs/EditProjectDialog").then((m) => m.EditProjectDialog),
+  fr.lazy,
+  hidden,
+);
+export const DeleteProjectDialog = lazyPanel(
+  () => import("../dialogs/DeleteProjectDialog").then((m) => m.DeleteProjectDialog),
+  fr.lazy,
+  hidden,
+);

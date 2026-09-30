@@ -1,5 +1,7 @@
 import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
+import { ContextMenuEntries } from "@kibo/sdk/ui/menu-entries";
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +36,7 @@ import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { canEdit } from "../state/access";
 import { JoinProjectEntry, ProjectMenu } from "./lazy-screens";
 import { ProjectPages } from "./ProjectPages";
+import { projectMenuEntries } from "./project-menu";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type Props = {
@@ -54,6 +57,8 @@ type Props = {
   onRenamePage(page: Page): void;
   onDeletePage(page: Page): void;
   onShare(projectId: string): void;
+  onEditProject(projectId: string): void;
+  onDeleteProject(projectId: string): void;
   onJoin(): void;
 };
 
@@ -116,6 +121,7 @@ type ProjectEntryProps = {
   activeTarget: TabTarget | null;
   projectActive: boolean;
   editable: boolean;
+  menuEditable: boolean;
   current: boolean;
   trailing: ReactNode;
   link: Link;
@@ -124,16 +130,39 @@ type ProjectEntryProps = {
   onRenamePage(page: Page): void;
   onDeletePage(page: Page): void;
   onShare(): void;
+  onEdit(): void;
+  onDelete(): void;
 };
 
 function ProjectEntry({ project, active, current, editable, link, ...p }: ProjectEntryProps) {
+  const newPage = () => {
+    if (!current) p.onOpen({ kind: "project", projectId: project.id }, false);
+    p.onNewPage(null);
+  };
+  const entries = projectMenuEntries({
+    editable: p.menuEditable,
+    texts: {
+      newPage: fr.nav.newPage,
+      share: fr.nav.shareProject,
+      edit: fr.nav.editProject,
+      remove: fr.nav.deleteProject,
+    },
+    actions: { newPage, share: p.onShare, edit: p.onEdit, remove: p.onDelete },
+  });
   const header = (
     <>
-      <SidebarMenuButton isActive={p.projectActive} {...link({ kind: "project", projectId: project.id })}>
-        <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
-        <span>{project.name}</span>
-      </SidebarMenuButton>
-      <ProjectMenu name={project.name} current={current} shifted={editable} onShare={p.onShare} />
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <SidebarMenuButton isActive={p.projectActive} {...link({ kind: "project", projectId: project.id })}>
+            <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
+            <span>{project.name}</span>
+          </SidebarMenuButton>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuEntries entries={entries} />
+        </ContextMenuContent>
+      </ContextMenu>
+      <ProjectMenu name={project.name} current={current} shifted={editable} entries={entries} />
       {editable && (
         <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
           <Plus />
@@ -246,6 +275,7 @@ export function AppSidebar(p: Props) {
                     activeTarget={activeTarget}
                     projectActive={onTarget("project", project.id)}
                     editable={current && editable}
+                    menuEditable={!current || editable}
                     current={current}
                     trailing={changesEntry(project.id) || null}
                     link={link}
@@ -254,6 +284,8 @@ export function AppSidebar(p: Props) {
                     onRenamePage={p.onRenamePage}
                     onDeletePage={p.onDeletePage}
                     onShare={() => p.onShare(project.id)}
+                    onEdit={() => p.onEditProject(project.id)}
+                    onDelete={() => p.onDeleteProject(project.id)}
                   />
                 </SidebarMenuItem>
               );

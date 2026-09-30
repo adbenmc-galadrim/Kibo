@@ -25,6 +25,7 @@ export const fr = {
     newProject: "Nouveau projet",
     newPage: "Nouvelle page",
     newSubPage: "Nouvelle sous-page",
+    shareProject: "Partager",
     editProject: "Modifier…",
     deleteProject: "Supprimer…",
     agents: "Agents",

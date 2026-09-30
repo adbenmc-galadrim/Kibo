@@ -41,6 +41,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(shell\/ScreenActions|agents\/PauseAdmission)\.tsx$/,
   /\/packages\/ui\/src\/shell\/(RunHistoryList|UserMenuContent)\.tsx$/,
   /\/packages\/ui\/src\/(settings\/WorkspacePage\.tsx|i18n\/fr-workspace\.ts)$/,
+  /\/packages\/ui\/src\/(dialogs\/(EditProjectDialog|DeleteProjectDialog)\.tsx|i18n\/fr-project\.ts)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
