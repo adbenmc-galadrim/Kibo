@@ -25,6 +25,7 @@ export type NotesService = {
   setDir(projectId: string, dir: string): Promise<NotesInfo>;
   handle(projectId: string, call: ComponentCall): Promise<unknown>;
   refresh(projectId: string): Promise<void>;
+  forget(projectId: string): void;
   close(): void;
 };
 
@@ -186,6 +187,11 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       throw new KiboError("INTERNAL", `${call.kind} is not a notes call`);
     },
     refresh,
+    forget(projectId) {
+      release(projectId);
+      indexed.delete(projectId);
+      index.clear(projectId);
+    },
     close() {
       for (const w of watchers.values()) w.close();
       watchers.clear();

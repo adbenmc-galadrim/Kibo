@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
-import { ensureNotesTables } from "./index";
+import { createNotesIndex, ensureNotesTables } from "./index";
 import { createNotesService, type NotesProject } from "./service";
 import { ensureSettingsTable } from "./settings";
 
@@ -50,7 +50,7 @@ function setup(folder: "repo" | null = "repo", onWatch: (dir: string) => void = 
     },
   });
   services.push(svc);
-  return { root, repo, svc, changed };
+  return { root, repo, svc, changed, db };
 }
 
 describe("notes folder", () => {
@@ -164,6 +164,16 @@ describe("notes calls", () => {
     await svc.handle("p1", { kind: "notes.write", path: "b.md", markdown: "# B", expectedMtime: null });
     expect(watches.opened).toBe(before.opened + 1);
     expect(readdirSync(join(repo, "notes"))).toEqual(["b.md"]);
+  });
+  test("forget closes the watcher and empties the index of a project", async () => {
+    const { svc, db } = setup();
+    await svc.handle("p1", { kind: "notes.write", path: "a.md", markdown: "# A", expectedMtime: null });
+    const before = { ...watches };
+    svc.forget("p1");
+    expect(watches.closed).toBe(before.closed + 1);
+    expect(createNotesIndex(db).list("p1")).toEqual([]);
+    svc.forget("p1");
+    expect(watches.closed).toBe(before.closed + 1);
   });
   test("non-note calls are refused", async () => {
     const { svc } = setup();

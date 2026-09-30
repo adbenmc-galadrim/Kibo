@@ -8,6 +8,7 @@ export type Store = {
   db: Database;
   load(id: string): Uint8Array | null;
   save(id: string, snapshot: Uint8Array): void;
+  delete(id: string): void;
   ids(): string[];
   getLocal(key: string): string | null;
   setLocal(key: string, value: string): void;
@@ -42,6 +43,7 @@ export function openStore(home: string): Store {
       "ON CONFLICT(id) DO UPDATE SET snapshot = excluded.snapshot, updated_at = excluded.updated_at",
   );
   const select = db.query("SELECT snapshot FROM docs WHERE id = $id");
+  const remove = db.query("DELETE FROM docs WHERE id = $id");
   const upsertLocal = db.query(
     "INSERT INTO local_state (key, value, updated_at) VALUES ($key, $value, $at) " +
       "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
@@ -55,6 +57,9 @@ export function openStore(home: string): Store {
     },
     save: (id, snapshot) => {
       upsert.run({ id, snapshot, at: Date.now() });
+    },
+    delete: (id) => {
+      remove.run({ id });
     },
     ids: () => (db.query("SELECT id FROM docs ORDER BY id").all() as { id: string }[]).map((r) => r.id),
     getLocal: (key) => (selectLocal.get({ key }) as { value: string } | null)?.value ?? null,

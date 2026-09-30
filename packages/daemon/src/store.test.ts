@@ -64,6 +64,18 @@ describe("store", () => {
     again.close();
   });
 
+  test("delete removes a doc and ignores an unknown id", () => {
+    const store = openStore(tmp());
+    store.save("project:x", new Uint8Array([1, 2, 3]));
+    store.save("project:y", new Uint8Array([4]));
+    store.delete("project:x");
+    expect(store.load("project:x")).toBeNull();
+    expect(store.ids()).toEqual(["project:y"]);
+    store.delete("project:x");
+    expect(store.ids()).toEqual(["project:y"]);
+    store.close();
+  });
+
   test("KIBO_HOME overrides the default home", () => {
     expect(kiboHome({ KIBO_HOME: "/tmp/k" })).toBe("/tmp/k");
     expect(kiboHome({})).toEndWith(".kibo");

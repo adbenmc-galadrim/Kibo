@@ -4,6 +4,7 @@ export type ProjectSettings = {
   get(projectId: string, key: string): string | null;
   set(projectId: string, key: string, value: string): void;
   unset(projectId: string, key: string): void;
+  remove(projectId: string): void;
 };
 
 type Key = { projectId: string; key: string };
@@ -25,6 +26,9 @@ export function createProjectSettings(db: Database): ProjectSettings {
   const remove = db.query<never, Key>(
     "DELETE FROM project_settings WHERE project_id = $projectId AND key = $key",
   );
+  const removeProject = db.query<never, { projectId: string }>(
+    "DELETE FROM project_settings WHERE project_id = $projectId",
+  );
   return {
     get: (projectId, key) => select.get({ projectId, key })?.value ?? null,
     set: (projectId, key, value) => {
@@ -32,6 +36,9 @@ export function createProjectSettings(db: Database): ProjectSettings {
     },
     unset: (projectId, key) => {
       remove.run({ projectId, key });
+    },
+    remove: (projectId) => {
+      removeProject.run({ projectId });
     },
   };
 }
