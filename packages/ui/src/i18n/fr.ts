@@ -65,6 +65,15 @@ export const fr = {
   header: {
     newTicket: "Ticket",
     newTicketIn: (project: string) => `Nouveau ticket dans ${project}`,
+    runHistory: "Historique des runs",
+    unseen: (n: number) => `${n} nouveau${n > 1 ? "x" : ""}`,
+    noRuns: "Aucun run pour l'instant.",
+    reply: "Répondre",
+    userMenu: (user: string) => `Menu de ${user}`,
+    theme: "Thème",
+    sessions: "Sessions",
+    settings: "Paramètres",
+    account: (name: string, host: string) => `${name} · ${host}`,
   },
   pairing: {
     title: "Appairer ce navigateur",
