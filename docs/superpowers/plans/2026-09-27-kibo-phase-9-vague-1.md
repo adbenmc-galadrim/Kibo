@@ -264,7 +264,7 @@ export const isMac = (): boolean;                                   // isMacPlat
 export function shortcutLabel(keys: readonly string[], mac: boolean): string;   // ["K"] ⇒ "⌘K" | "Ctrl+K" ; ["Shift","P"] ⇒ "⌘⇧P" | "Ctrl+Shift+P"
 
 // desktop/ (T13) — chargé par import dynamique depuis Shell quand inTauri()
-export function externalLinkOf(target: EventTarget | null): string | null;      // href https: du <a target="_blank"> le plus proche, sinon null
+export function externalLinkOf(target: EventTarget | null, origin: string): { url: string | null } | null;   // null si le <a> n'est pas sortant ; url https: sinon null
 export function installExternalLinks(root: Document, open: (url: string) => Promise<void>): () => void;
 export function allowsNativeMenu(target: EventTarget | null, selection: string): boolean;   // champ de saisie ou sélection non vide
 export function blockNativeContextMenu(root: Document, selection: () => string): () => void;
@@ -5244,7 +5244,7 @@ export function installExternalLinks(root: Document, open: (url: string) => Prom
   return () => root.removeEventListener("click", onClick);
 }
 ```
-(`a[target=_blank]` sans schéma `https:` ⇒ clic neutralisé et rien d'ouvert : c'est le comportement voulu par la spec pour `javascript:`, `file:`, `mailto:`, `http:`. Un lien sans `target="_blank"` n'est pas touché : l'UI n'en produit pas vers l'extérieur.)
+(`a[target=_blank]` sans schéma `https:` ⇒ clic neutralisé et rien d'ouvert : c'est le comportement voulu par la spec pour `javascript:`, `file:`, `mailto:`, `http:`. Correction de la relecture : l'UI produit des liens sortants sans `target` (liens markdown du composant Notes, intégré au document du shell). Un `<a href>` est donc *sortant* si son URL résolue n'a pas l'origine du document (`javascript:`, `mailto:`, `data:` ont l'origine `"null"`) ou si `target` vaut `_blank` sans tenir compte de la casse ; sortant `https:` ⇒ ouvreur, autre schéma ou URL illisible ⇒ clic neutralisé ; même origine sans `_blank` ⇒ non touché (routage par hash, liens de note). Le clic du milieu (`auxclick`, `button === 1`) suit le même chemin. `externalLinkOf(target, origin)` renvoie `null` (non sortant) ou `{ url: string | null }`.)
 
 `packages/ui/src/desktop/native-context-menu.ts` :
 ```ts
