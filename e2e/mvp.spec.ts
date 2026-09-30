@@ -21,7 +21,8 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(page.getByText("1 / 1 tickets")).toBeVisible();
 
   await todo.getByRole("button", { name: `Actions ${key}-1` }).click();
-  await page.getByRole("menuitem", { name: "Bloqué" }).click();
+  await page.getByRole("menuitem", { name: "Déplacer vers" }).click();
+  await page.getByRole("menuitem", { name: "Bloqué…", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bloquer" })).toBeDisabled();
   await page.getByLabel("Motif").fill("Attente du client");
   await page.getByRole("button", { name: "Bloquer" }).click();
