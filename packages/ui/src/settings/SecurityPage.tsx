@@ -3,6 +3,7 @@ import { IsolationCard } from "./IsolationCard";
 import { RemoteAccessCard } from "./RemoteAccessCard";
 import { SessionsCard } from "./SessionsCard";
 import { SettingsNav } from "./SettingsNav";
+import { WebAccessCard } from "./WebAccessCard";
 
 export function SecurityPage() {
   return (
@@ -14,6 +15,7 @@ export function SecurityPage() {
           <p className="text-sm text-muted-foreground">{fr.security.subtitle}</p>
         </div>
         <RemoteAccessCard />
+        <WebAccessCard />
         <SessionsCard />
         <IsolationCard />
       </div>

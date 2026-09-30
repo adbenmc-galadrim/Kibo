@@ -68,7 +68,7 @@ export const fr = {
   },
   pairing: {
     title: "Appairer ce navigateur",
-    help: "Dans l'app Kibo : Paramètres › Apparence & général › Accès web › Générer un code. Entre le code à 6 caractères ci-dessous.",
+    help: "Dans l'app Kibo : Paramètres › Sécurité › Accès web › Générer un code. Entre le code à 6 caractères ci-dessous.",
     code: "Code d'appairage",
     digit: (n: number) => `Caractère ${n} sur 6`,
     validity: "Code valable 5 minutes · usage unique",

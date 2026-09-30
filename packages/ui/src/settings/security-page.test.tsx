@@ -227,12 +227,19 @@ test("an expired pairing code offers a new one", async () => {
   expect(calls.filter((c) => c.method === "createPairingCode")).toHaveLength(2);
 });
 
-test("the appearance page offers to generate a pairing code (screen 15)", async () => {
-  const { AppearancePage } = await import("./AppearancePage");
+test("web access sits in security before sessions and generates a pairing code (screen 110)", async () => {
   codeExpiresAt = Date.now() + 300_000;
-  render(<AppearancePage />);
-  expect(screen.getByText("Accès web")).toBeTruthy();
-  expect(screen.getByText("Appairer un navigateur (jeton local)")).toBeTruthy();
+  render(<SecurityPage />);
+  const webAccess = screen.getByText("Accès web");
+  const follows = (a: Node, b: Node) =>
+    (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  expect(follows(screen.getByText("Accès distant"), webAccess)).toBe(true);
+  expect(follows(webAccess, screen.getByText("Sessions"))).toBe(true);
+  expect(
+    screen.getByText(
+      "Appaire un navigateur de cet ordinateur ou du réseau local avec un code à usage unique.",
+    ),
+  ).toBeTruthy();
   await userEvent.click(screen.getByRole("button", { name: "Générer un code" }));
   expect(await screen.findByText("K7Q-4M2")).toBeTruthy();
 });

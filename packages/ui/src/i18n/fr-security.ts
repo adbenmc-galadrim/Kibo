@@ -80,9 +80,15 @@ export const frSecurity = {
   appearance: {
     title: "Apparence",
     subtitle: "Kibo suit le thème de ton système par défaut.",
-    daemon: "Démon local",
-    web: "Accès web",
-    webPair: "Appairer un navigateur (jeton local)",
+    theme: "Thème",
+    themeHelp: "Le thème système suit les réglages de ton ordinateur.",
+    system: "Système",
+    light: "Clair",
+    dark: "Sombre",
+  },
+  webAccess: {
+    title: "Accès web",
+    help: "Appaire un navigateur de cet ordinateur ou du réseau local avec un code à usage unique.",
     generate: "Générer un code",
   },
   pairingCode: {
