@@ -152,3 +152,24 @@ test("upsertExternalRef adds a PR once per URL and keeps the latest state", () =
   const after = upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "merged" });
   expect(after.externalRefs).toEqual([{ kind: "github_pr", url, number: 3, state: "merged" }]);
 });
+
+describe("order", () => {
+  test("moveTicket with an index puts the ticket at that final position among its siblings", () => {
+    const d = doc();
+    const a = createTicket(d, { title: "a" });
+    createTicket(d, { title: "b" });
+    const c = createTicket(d, { title: "c" });
+    const p = createTicket(d, { title: "p" });
+    createTicket(d, { title: "q", parentId: p.id });
+    const order = () => listTickets(d).map((t) => t.title);
+    expect(order()).toEqual(["a", "b", "c", "p", "q"]);
+    moveTicket(d, a.id, null, 1);
+    expect(order()).toEqual(["b", "a", "c", "p", "q"]);
+    moveTicket(d, c.id, null, 0);
+    expect(order()).toEqual(["c", "b", "a", "p", "q"]);
+    moveTicket(d, c.id, null, 3);
+    expect(order()).toEqual(["b", "a", "p", "q", "c"]);
+    moveTicket(d, a.id, p.id, 1);
+    expect(order()).toEqual(["b", "p", "q", "a", "c"]);
+  });
+});
