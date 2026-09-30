@@ -392,12 +392,12 @@ Vague 0 bis (← T20). Décision 2, spec §14.6. Trois briques hors de l'entrée
 - Consumes: `ICON_MIMES`, `MAX_ICON_BYTES`, `IconInput`, `IconMime` (`@kibo/schema`, T20, intégrée avant le démarrage de T18), `inTauri` (`shell/workspace-actions.ts`), `Button`, `Input`.
 - Produces: `pickFolder`, `FolderField`, `IconField`, `readIconFile`, `iconDataUrl`, `IconFileError`, `frFields` (contrats « UI »).
 
-- [ ] **Step 1: Mesure de départ**
+- [x] **Step 1: Mesure de départ**
 
 Run: `bun install --frozen-lockfile && bun run budget`
 Expected: `gzip : 227,3 kB (budget 230,0 kB)` (à 0,3 kB près). Noter la valeur exacte pour le rapport.
 
-- [ ] **Step 2: Dépendance**
+- [x] **Step 2: Dépendance**
 
 Run: `bun add --cwd packages/ui @tauri-apps/plugin-dialog@2`
 Expected: `packages/ui/package.json` gagne `"@tauri-apps/plugin-dialog": "2.x.y"` (version exacte, `bunfig` `exact = true`), `bun.lock` mis à jour, aucun `postinstall`. Vérifier que la version dépend de `@tauri-apps/api ^2.12` ou moins (`grep -A3 'plugin-dialog@' bun.lock`).
@@ -407,7 +407,7 @@ git add packages/ui/package.json bun.lock
 git commit -m "build(ui): plugin dialog de Tauri"
 ```
 
-- [ ] **Step 3: `pickFolder` (test rouge puis vert)**
+- [x] **Step 3: `pickFolder` (test rouge puis vert)**
 
 `packages/ui/src/desktop/pick-folder.test.ts` :
 ```ts
@@ -440,7 +440,7 @@ export async function pickFolder(defaultPath: string | null): Promise<string | n
 ```
 Run: `bun test packages/ui/src/desktop/pick-folder.test.ts` — Expected: PASS, 2 tests.
 
-- [ ] **Step 4: Textes**
+- [x] **Step 4: Textes**
 
 `packages/ui/src/i18n/fr-fields.ts` (importé directement par les champs, jamais monté dans `fr.ts`) :
 ```ts
@@ -462,7 +462,7 @@ export const frFields = {
 } as const;
 ```
 
-- [ ] **Step 5: `FolderField` (test rouge puis vert)**
+- [x] **Step 5: `FolderField` (test rouge puis vert)**
 
 `packages/ui/src/dialogs/folder-field.test.tsx` :
 ```tsx
@@ -593,7 +593,7 @@ export function FolderField({
 ```
 Run: `bun test packages/ui/src/dialogs/folder-field.test.tsx` — Expected: PASS, 3 tests.
 
-- [ ] **Step 6: Lecture d'un fichier image (test rouge puis vert)**
+- [x] **Step 6: Lecture d'un fichier image (test rouge puis vert)**
 
 `packages/ui/src/dialogs/icon-file.test.ts` :
 ```ts
@@ -656,7 +656,7 @@ export const iconDataUrl = (icon: IconInput): string => `data:${icon.mime};base6
 ```
 Run: `bun test packages/ui/src/dialogs/icon-file.test.ts` — Expected: PASS, 3 tests.
 
-- [ ] **Step 7: `IconField` (test rouge puis vert)**
+- [x] **Step 7: `IconField` (test rouge puis vert)**
 
 `packages/ui/src/dialogs/icon-field.test.tsx` :
 ```tsx
@@ -787,7 +787,7 @@ export function IconField({ label, currentUrl, pending, removed, onPick, onRemov
 ```
 Run: `bun test packages/ui/src/dialogs/icon-field.test.tsx` — Expected: PASS, 4 tests. (Si `e.target.value = ""` lève sous happy-dom, le remplacer par `if (input.current) input.current.value = ""` dans un `try` qui journalise : le rejet d'un fichier doit laisser le champ prêt pour le suivant.)
 
-- [ ] **Step 8: Les trois dialogues passent à `FolderField`**
+- [x] **Step 8: Les trois dialogues passent à `FolderField`**
 
 `packages/ui/src/dialogs/NewProjectForm.tsx` (l. 58-69) : remplacer le `<Input id={\`${id}-folder\`} …/>` par
 ```tsx
@@ -811,7 +811,7 @@ Run: `bun test packages/ui/src/dialogs/icon-field.test.tsx` — Expected: PASS, 
 
 Run: `bun test packages/ui/src/dialogs packages/ui/src/shell` — Expected: PASS (les tests existants trouvent toujours « Dossier du projet », « Dossier local » et le champ des notes par leur libellé ; aucun bouton « Parcourir… » hors Tauri).
 
-- [ ] **Step 9: Budget : interdictions, mesure, réduction si nécessaire**
+- [x] **Step 9: Budget : interdictions, mesure, réduction si nécessaire**
 
 `packages/ui/scripts/bundle-report.ts`, ajouter à `FORBIDDEN_IN_ENTRY` :
 ```ts
@@ -829,7 +829,7 @@ export const ScreenActions = lazyPanel(
 ```
 `ShellHeader.tsx` importe `ScreenActions` de `./lazy-screens` au lieu de `./ScreenActions` ; regex ajoutée : `/\/packages\/ui\/src\/(shell\/ScreenActions|agents\/PauseAdmission)\.tsx$/`. Les tests qui cherchent « Nouveau profil » ou « Mettre en pause l'admission » dans l'en-tête passent à `findByRole` (`agents-shell.test.tsx:218-227`). Mesurer de nouveau ; si toujours > 226,0 kB, le signaler au chef d'équipe **avant** de continuer (candidat suivant, décidé par le lead : le contenu du menu contextuel des onglets, `tabs/TabBar.tsx`).
 
-- [ ] **Step 10: Gate et commits**
+- [x] **Step 10: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; noter la valeur finale du budget dans le rapport.
@@ -856,7 +856,7 @@ Vague 0. Spec §14.6, spec I §3.7 (amendée). La coque enregistre `tauri-plugin
 - Consumes: `CapabilityBuilder` (`tauri::ipc`), `OpenUrlScope` (existant), `ipc_origin` (T4).
 - Produces: `PLAIN_PERMISSIONS: &[&str]` (contrat « Coque »).
 
-- [ ] **Step 1: Test rouge**
+- [x] **Step 1: Test rouge**
 
 Dans `mod tests` de `main.rs`, ajouter :
 ```rust
@@ -885,14 +885,14 @@ Dans `mod tests` de `main.rs`, ajouter :
 ```
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: FAIL (`PLAIN_PERMISSIONS` introuvable). (Prérequis des binaires du sidecar : `bun run --cwd packages/ui build`, `bun apps/desktop/scripts/build-sidecar.ts`, `bun apps/desktop/scripts/build-toolchain.ts`.)
 
-- [ ] **Step 2: Dépendance et plugin**
+- [x] **Step 2: Dépendance et plugin**
 
 `Cargo.toml`, `[dependencies]` : ajouter `tauri-plugin-dialog = "2"` après `tauri-plugin-window-state`.
 Run: `~/.cargo/bin/cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null` — Expected: `Cargo.lock` gagne `tauri-plugin-dialog` (et ses dépendances `rfd`…), rien d'autre ne change de version.
 
 `main.rs`, dans `main()` après `.plugin(tauri_plugin_window_state::…)` : `.plugin(tauri_plugin_dialog::init())`.
 
-- [ ] **Step 3: Capacité (vert)**
+- [x] **Step 3: Capacité (vert)**
 
 Remplacer `daemon_capability` par :
 ```rust
@@ -921,7 +921,7 @@ fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
 ```
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: PASS (11 tests, dont `opener_scope_is_https_only` inchangé).
 
-- [ ] **Step 4: Gate et commit**
+- [x] **Step 4: Gate et commit**
 
 Run: `~/.cargo/bin/cargo fmt --check --manifest-path apps/desktop/src-tauri/Cargo.toml && ~/.cargo/bin/cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings && bun run check` — Expected: PASS. Le `desktop-smoke` de la CI fait foi pour Linux (le plugin dialog compile avec GTK, dépendance déjà présente).
 
@@ -948,7 +948,7 @@ Vague 0. Spec §14.1, §14.2, §14.4. Les contrats Zod des quatre opérations et
 - Consumes: `ProjectMeta`, `WorkspaceName`, `settingsMap`, `valid`, `requireWorkspace` (`core/config-store.ts`), `LoroList`, `LoroMap`.
 - Produces: tout le contrat « Schéma (T20) » et « Core (T20) » ; `WorkspaceConfig.workspaceDescription`.
 
-- [ ] **Step 1: Schéma des images (test rouge puis vert)**
+- [x] **Step 1: Schéma des images (test rouge puis vert)**
 
 `packages/schema/src/icon.test.ts` :
 ```ts
@@ -1010,7 +1010,7 @@ export const iconUrl = (owner: IconOwner, version: string): string =>
 `packages/schema/src/index.ts` : ajouter `export * from "./icon";` (ordre alphabétique, après `./github-graphql`).
 Run: `bun test packages/schema/src/icon.test.ts` — Expected: PASS, 2 tests.
 
-- [ ] **Step 2: Patchs de projet et de workspace (tests rouges puis verts)**
+- [x] **Step 2: Patchs de projet et de workspace (tests rouges puis verts)**
 
 `packages/schema/src/project.test.ts` (nouveau) :
 ```ts
@@ -1078,7 +1078,7 @@ et à `RpcResult` : `updateProject: ProjectMeta; deleteProject: null; setIcon: {
 
 Run: `bun test packages/schema` puis `bun run typecheck` — Expected: PASS ; le typecheck signale les `switch` exhaustifs à compléter : `packages/daemon/src/agents-rpc.ts` (`handleAgentRequest`, `default` lève déjà `INTERNAL` : rien à faire si le `switch` n'est pas exhaustif) et `packages/daemon/src/components/methods.ts` (`ShellRequest`) : ajouter les trois méthodes là où le typecheck l'exige, sans autre logique. `readConfig` (Step 5) et la fixture UI (Step 6) corrigent `workspaceDescription`.
 
-- [ ] **Step 3: Core, liste du workspace et `meta` (tests rouges puis verts)**
+- [x] **Step 3: Core, liste du workspace et `meta` (tests rouges puis verts)**
 
 `packages/core/src/project.test.ts`, dans `describe("workspace")`, ajouter :
 ```ts
@@ -1159,7 +1159,7 @@ export function setProjectMeta(doc: LoroDoc, patch: RegisteredProjectPatch): Pro
 (imports : `ProjectPatch`, `valid`, `RegisteredProjectPatch` de `./workspace`.)
 Run: `bun test packages/core/src/project.test.ts` — Expected: PASS.
 
-- [ ] **Step 4: Core, `updateWorkspace` (test rouge puis vert)**
+- [x] **Step 4: Core, `updateWorkspace` (test rouge puis vert)**
 
 `packages/core/src/agent-config.test.ts`, dans `describe("workspace name")`, ajouter :
 ```ts
@@ -1200,7 +1200,7 @@ dans `executeConfigCommand`, après le cas `renameWorkspace` :
 (import `WorkspacePatch` de `@kibo/schema` ; `configTarget` renvoie déjà `null` par défaut.)
 Run: `bun test packages/core` — Expected: PASS.
 
-- [ ] **Step 5: Démon, `readConfig` et test de persistance**
+- [x] **Step 5: Démon, `readConfig` et test de persistance**
 
 `packages/daemon/src/workspace-config.ts` : importer `workspaceDescription` de `@kibo/core/agent-config` et ajouter `workspaceDescription: workspaceDescription(docs.workspace),` dans `readConfig`. Dans `service.test.ts`, test « configuration survives a restart » : après `renameWorkspace`, ajouter
 ```ts
@@ -1209,7 +1209,7 @@ Run: `bun test packages/core` — Expected: PASS.
 et après `expect(config.workspaceName).toBe("Maison");` : `expect(config.workspaceDescription).toBe("Mes projets");`.
 Run: `bun test packages/daemon/src/service.test.ts` — Expected: PASS.
 
-- [ ] **Step 6: Fixture UI, gate et commits**
+- [x] **Step 6: Fixture UI, gate et commits**
 
 `packages/ui/src/agents/fixtures.ts:264` : ajouter `workspaceDescription: null,` après `workspaceName: "Perso",`.
 
@@ -2066,7 +2066,7 @@ Vague 0. Spec §14.5 (thème, Accès web, appairage). Décision 6. `theme.ts` ex
 - Consumes: `readThemePreference`, `cycleTheme`, `nextTheme`, `PairingCodeDialog { open, onOpenChange }`, `ToggleGroup`/`ToggleGroupItem` (`@kibo/sdk/ui/toggle-group`).
 - Produces: `THEME_PREFERENCES`, `setThemePreference(preference)`, `useThemePreference()` (T24 s'en sert dans le sous-menu Thème) ; `fr.security.appearance = { title, subtitle, theme, themeHelp, system, light, dark }` ; `fr.security.webAccess = { title, help, generate }` ; `WebAccessCard`.
 
-- [ ] **Step 1: Préférence de thème observable (test rouge puis vert)**
+- [x] **Step 1: Préférence de thème observable (test rouge puis vert)**
 
 `packages/ui/src/theme.test.ts`, ajouter :
 ```ts
@@ -2135,7 +2135,7 @@ export const useThemePreference = (): ThemePreference =>
 (`cycleTheme` remplace l'ancienne version ; `followSystemTheme`, `currentTheme`, `useTheme` inchangés.)
 Run: `bun test packages/ui/src/theme.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Textes**
+- [x] **Step 2: Textes**
 
 `packages/ui/src/i18n/fr-security.ts` : remplacer le bloc `appearance` par
 ```ts
@@ -2156,7 +2156,7 @@ Run: `bun test packages/ui/src/theme.test.ts` — Expected: PASS.
 ```
 `packages/ui/src/i18n/fr.ts:71` : `help: "Dans l'app Kibo : Paramètres › Sécurité › Accès web › Générer un code. Entre le code à 6 caractères ci-dessous.",`. `grep -rn "Apparence & général" packages/ui/src e2e` doit ne rien renvoyer ensuite (adapter `shell/pairing-screen.test.tsx` s'il cite le texte).
 
-- [ ] **Step 3: Page Apparence (test rouge puis vert)**
+- [x] **Step 3: Page Apparence (test rouge puis vert)**
 
 `packages/ui/src/settings/appearance-page.test.tsx` :
 ```tsx
@@ -2245,7 +2245,7 @@ export function AppearancePage() {
 (Un `ToggleGroup type="single"` de Radix rend `role="group"` et des `role="radio"` ; si le rôle réel diffère dans happy-dom, adapter le test au rôle rendu, pas l'inverse.)
 Run: `bun test packages/ui/src/settings/appearance-page.test.tsx` — Expected: PASS.
 
-- [ ] **Step 4: Carte « Accès web » dans Sécurité (test rouge puis vert)**
+- [x] **Step 4: Carte « Accès web » dans Sécurité (test rouge puis vert)**
 
 `packages/ui/src/settings/security-page.test.tsx` : remplacer le test « the appearance page offers to generate a pairing code (screen 15) » par
 ```tsx
@@ -2296,7 +2296,7 @@ export function WebAccessCard() {
 `SecurityPage.tsx` : `<RemoteAccessCard /> <WebAccessCard /> <SessionsCard /> <IsolationCard />`.
 Run: `bun test packages/ui/src/settings` — Expected: PASS.
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun install --frozen-lockfile && bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS, budget ≤ celui mesuré en T18 (Apparence et Sécurité sont déjà hors de l'entrée ; `theme.ts` grossit de quelques lignes).
 
@@ -2837,7 +2837,7 @@ Vague 0 (après T18 pour `bundle-report.ts`, `lazy-screens.ts`, `NewProjectForm.
 - Consumes: `shortcutLabel(keys, mac)`, `isMac()`, `SettingsNav`, `Screen`, `targetToHash`.
 - Produces: `Screen` gagne `"shortcuts"` ; `shortcutGroups(mac): ShortcutGroup[]` ; `ShortcutsPage` ; `MineTab = "assigned" | "agents"` ; `SettingsNav` accepte `active="shortcuts"` (T26 ajoute `"workspace"` de la même façon).
 
-- [ ] **Step 1: Écran `shortcuts` dans les tables (test rouge puis vert)**
+- [x] **Step 1: Écran `shortcuts` dans les tables (test rouge puis vert)**
 
 `packages/ui/src/tabs/tabs.test.ts`, dans la liste `targets` du codec : ajouter `{ kind: "screen", screen: "shortcuts" }` ; et un test :
 ```ts
@@ -2851,7 +2851,7 @@ Run: `bun test packages/ui/src/tabs/tabs.test.ts` — Expected: FAIL (typecheck 
 `packages/schema/src/tabs.ts` : ajouter `"shortcuts"` à `Screen` après `"sync"`. `target-hash.ts` : `shortcuts: "#/settings/shortcuts",`. `screens.ts` : `shortcuts: { title: fr.settings.shortcuts, icon: Keyboard, crumbs: [fr.nav.settings, fr.settings.shortcuts] },` (import `Keyboard`). `CommandPalette.tsx` : `shortcuts: SCREENS.shortcuts.icon,`. `AppSidebar.tsx` `SETTINGS_SCREENS` : `"shortcuts"`. `SettingsNav.tsx` : `SettingsScreen` inclut `"shortcuts"` ; l'entrée devient `{ id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" }` ; la branche `if (!screen)` et `fr.settings.soon` disparaissent (`screen` devient obligatoire dans `Item`). `ScreenView.tsx` : `if (screen === "shortcuts") return <ShortcutsPage />;`. `lazy-screens.ts` : `export const ShortcutsPage = lazyPanel(() => import("../settings/ShortcutsPage").then((m) => m.ShortcutsPage), fr.lazy);`. `bundle-report.ts` : `/\/packages\/ui\/src\/(settings\/ShortcutsPage\.tsx|i18n\/fr-shortcuts\.ts)$/,`.
 Run: `bun run typecheck && bun test packages/ui/src/tabs` — Expected: PASS (le typecheck signale tout `Record<Screen, …>` oublié).
 
-- [ ] **Step 2: Liste des raccourcis (test rouge puis vert)**
+- [x] **Step 2: Liste des raccourcis (test rouge puis vert)**
 
 `packages/ui/src/i18n/fr-shortcuts.ts` :
 ```ts
@@ -2953,7 +2953,7 @@ export function shortcutGroups(mac: boolean): ShortcutGroup[] {
 ```
 Run: `bun test packages/ui/src/settings/shortcuts.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Page (test rouge puis vert)**
+- [x] **Step 3: Page (test rouge puis vert)**
 
 `packages/ui/src/settings/shortcuts-page.test.tsx` :
 ```tsx
@@ -3038,7 +3038,7 @@ export function ShortcutsPage() {
 ```
 Run: `bun test packages/ui/src/settings/shortcuts-page.test.tsx` — Expected: PASS.
 
-- [ ] **Step 4: Réglages factices retirés (tests adaptés d'abord)**
+- [x] **Step 4: Réglages factices retirés (tests adaptés d'abord)**
 
 Modifier les tests avant le code, les voir échouer, puis :
 - `general-page.test.tsx` : retirer les attentes sur « Application », « Langue » ; attendre le sous-titre « Mises à jour et outils en ligne de commande. » et l'absence de `screen.queryByText("Application")`. `GeneralPage.tsx` : supprimer `ApplicationCard`, `Setting`, les imports `Select*`, `Switch`, `FolderOpen`, `useId`, `ReactNode` ; `fr.settings` perd `application`, `language`, `french`, `openAtLogin`, `openAtLoginHelp`, `dataDir`, `dataDirHelp`, `open`, `soon` ; `generalSubtitle: "Mises à jour et outils en ligne de commande."`.
@@ -3048,7 +3048,7 @@ Modifier les tests avant le code, les voir échouer, puis :
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS ; le budget baisse (carte Application, Tooltip du commit et carte « Depuis un projet » sortent de l'entrée ou des chunks).
 
-- [ ] **Step 5: Commits**
+- [x] **Step 5: Commits**
 
 ```bash
 git add packages/schema/src/tabs.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/tabs/screens.ts packages/ui/src/tabs/tabs.test.ts packages/ui/src/palette/CommandPalette.tsx packages/ui/src/shell/AppSidebar.tsx packages/ui/src/settings/SettingsNav.tsx packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/lazy-screens.ts packages/ui/scripts/bundle-report.ts packages/ui/src/settings/shortcuts.ts packages/ui/src/settings/shortcuts.test.ts packages/ui/src/settings/ShortcutsPage.tsx packages/ui/src/settings/shortcuts-page.test.tsx packages/ui/src/i18n/fr-shortcuts.ts
