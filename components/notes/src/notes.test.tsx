@@ -215,8 +215,68 @@ test("deleting a note asks, removes the file and selects the next note", async (
   expect(await screen.findByRole("heading", { level: 1, name: "Journal agents" })).toBeTruthy();
 });
 
-test("the first save of an untitled note renames its file after its title", async () => {
+const noConflict = () =>
+  expect(
+    screen.queryAllByRole("alert").filter((a) => a.textContent?.includes("Modifié hors de Kibo")),
+  ).toEqual([]);
+
+test("renaming the open note keeps what was just typed and saves to the new file", async () => {
   const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.dispatch({
+    changes: { from: view.state.doc.length, insert: "\nFrappe récente" },
+    userEvent: "input.type",
+  });
+  const typed = view.state.doc.toString();
+  await user.click(screen.getByRole("button", { name: "Actions de Décisions d'architecture" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  const field = within(dialog).getByLabelText("Titre");
+  await user.clear(field);
+  await user.type(field, "Choix");
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  await waitFor(() => expect(m.notes.get("choix.md")?.markdown).toBe(typed));
+  expect(m.notes.has("decisions-architecture.md")).toBe(false);
+  await new Promise((r) => setTimeout(r, 1000));
+  expect(m.notes.get("choix.md")?.markdown).toBe(typed);
+  noConflict();
+  expect(view.state.doc.toString()).toBe(typed);
+  view.dispatch({ changes: { from: view.state.doc.length, insert: " et suite" }, userEvent: "input.type" });
+  await waitFor(() => expect(m.notes.get("choix.md")?.markdown).toBe(`${typed} et suite`), { timeout: 3000 });
+  noConflict();
+});
+
+test("the first save of an untitled note renames its file after its title", async () => {
+  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
+  let reached: () => void = () => undefined;
+  const saving = new Promise<void>((r) => {
+    reached = r;
+  });
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((r) => {
+    release = r;
+  });
+  const sdk: KiboSdk = {
+    ...m.sdk,
+    notes: {
+      ...m.sdk.notes,
+      write: async (path, markdown, mtime) => {
+        if (path === "sans-titre.md" && mtime !== null) {
+          reached();
+          await held;
+        }
+        return m.sdk.notes.write(path, markdown, mtime);
+      },
+    },
+  };
+  render(
+    <SdkProvider sdk={sdk}>
+      <Component />
+    </SdkProvider>,
+  );
   const user = userEvent.setup();
   await screen.findByRole("heading", { level: 1 });
   await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
@@ -226,9 +286,18 @@ test("the first save of an untitled note renames its file after its title", asyn
     changes: { from: 0, to: view.state.doc.length, insert: "# Plan de test\n\nPremière ligne.\n" },
     userEvent: "input.type",
   });
-  await waitFor(() => expect(m.notes.has("plan-de-test.md")).toBe(true), { timeout: 3000 });
+  await saving;
+  view.dispatch({ changes: { from: view.state.doc.length, insert: "Pendant." }, userEvent: "input.type" });
+  release();
+  await waitFor(
+    () =>
+      expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n\nPremière ligne.\nPendant."),
+    { timeout: 3000 },
+  );
   expect(m.notes.has("sans-titre.md")).toBe(false);
   expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
+  expect(view.state.doc.toString()).toBe("# Plan de test\n\nPremière ligne.\nPendant.");
+  noConflict();
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: "# Autre titre\n" },
     userEvent: "input.type",
@@ -237,6 +306,7 @@ test("the first save of an untitled note renames its file after its title", asyn
     timeout: 3000,
   });
   expect(m.notes.has("autre-titre.md")).toBe(false);
+  expect(screen.queryByRole("alert")).toBeNull();
 });
 
 test("a read-only project shows no note menu", async () => {

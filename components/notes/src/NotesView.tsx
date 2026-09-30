@@ -2,14 +2,13 @@ import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
 import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type Autosave, createAutosave, type SaveState } from "./autosave";
 import { fr } from "./fr";
 import type { TicketRef } from "./markdown";
 import { NoteDocument } from "./NoteDocument";
 import { type Backlink, type LinkedTicket, NoteLinks } from "./NoteLinks";
 import { NoteList } from "./NoteList";
-import { autoRenameTarget } from "./note-name";
 import { RenameNoteDialog } from "./RenameNoteDialog";
+import { useNoteSession } from "./use-note-session";
 
 function resolveTarget(target: string, notes: NoteMeta[]): string | null {
   const clean = target.replace(/^\.\//, "");
@@ -78,18 +77,10 @@ export function NotesView() {
   const [info, setInfo] = useState<NotesInfo | null>(null);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-  const [note, setNote] = useState<NoteContent | null>(null);
-  const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
-  const [state, setState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<NoteMeta | null>(null);
   const [removing, setRemoving] = useState<NoteMeta | null>(null);
-  const autosave = useRef<Autosave | null>(null);
-  const listedPaths = useRef<string[]>([]);
-  listedPaths.current = listed.data.map((n) => n.path);
-  const notesApi = useRef(sdk.notes);
-  notesApi.current = sdk.notes;
 
   const fail = useCallback((message: string) => {
     return (e: unknown) => {
@@ -117,44 +108,12 @@ export function NotesView() {
     if (selected === null && listed.data[0]) setSelected(listed.data[0].path);
   }, [selected, listed.data]);
 
-  const load = useCallback(
-    async (path: string) => {
-      try {
-        const content = await notesApi.current.read(path);
-        setNote(content);
-        setDraft(content.markdown);
-        setState("saved");
-        autosave.current?.setBase(content.mtime);
-      } catch (e) {
-        fail(fr.loadFailed)(e);
-      }
-    },
-    [fail],
-  );
-
-  useEffect(() => {
-    if (selected === null) return;
-    const a = createAutosave({
-      delayMs: 800,
-      save: (md, mtime) => notesApi.current.write(selected, md, mtime),
-      onState: setState,
-      onSaved: (meta) => {
-        setNote((n) => (n && n.path === meta.path ? { ...n, ...meta } : n));
-        const target = autoRenameTarget(meta, listedPaths.current);
-        if (target !== null) {
-          notesApi.current
-            .rename(meta.path, target)
-            .then((renamed) => setSelected(renamed.path), fail(fr.renameFailed));
-        }
-      },
-    });
-    autosave.current = a;
-    void load(selected);
-    return () => {
-      autosave.current = null;
-      void a.flush().finally(() => a.dispose());
-    };
-  }, [selected, load, fail]);
+  const { note, draft, state, load, rename, remove, change, keepMine } = useNoteSession({
+    selected,
+    select: setSelected,
+    listed: listed.data,
+    fail,
+  });
 
   useEffect(() => {
     const current = listed.data.find((n) => n.path === selected);
@@ -181,12 +140,9 @@ export function NotesView() {
     return paths[i + 1] ?? paths[i - 1] ?? null;
   };
 
-  const remove = async (meta: NoteMeta) => {
+  const removeNote = async (meta: NoteMeta) => {
     const next = nextAfter(meta.path);
-    await sdk.notes.remove(meta.path);
-    if (meta.path !== selected) return;
-    setNote(null);
-    setSelected(next);
+    if (await remove(meta.path)) setSelected(next);
   };
 
   const byPath = (path: string) => listed.data.find((n) => n.path === path) ?? null;
@@ -225,12 +181,9 @@ export function NotesView() {
             draft={draft}
             state={state}
             onToggleEdit={() => setEditing((v) => !v)}
-            onChange={(md) => {
-              setDraft(md);
-              autosave.current?.change(md);
-            }}
+            onChange={change}
             onReload={() => void load(note.path)}
-            onKeepMine={() => void autosave.current?.keepMine()}
+            onKeepMine={keepMine}
             onOpenNote={(target) => {
               const path = resolveTarget(target, listed.data);
               if (path) open(path);
@@ -246,16 +199,7 @@ export function NotesView() {
         onTicket={(id) => sdk.openTicket(id)}
         onNote={open}
       />
-      {renaming && (
-        <RenameNoteDialog
-          note={renaming}
-          onRenamed={(path) => {
-            setRenaming(null);
-            setSelected(path);
-          }}
-          onClose={() => setRenaming(null)}
-        />
-      )}
+      {renaming && <RenameNoteDialog note={renaming} onRename={rename} onClose={() => setRenaming(null)} />}
       {removing && (
         <ConfirmDialog
           open
@@ -264,7 +208,7 @@ export function NotesView() {
           description={fr.removeHelp(removing.path.slice(removing.path.lastIndexOf("/") + 1))}
           confirmLabel={fr.removeConfirm}
           cancelLabel={fr.cancel}
-          onConfirm={() => remove(removing)}
+          onConfirm={() => removeNote(removing)}
           describeError={() => fr.removeFailed}
         />
       )}

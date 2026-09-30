@@ -1,5 +1,4 @@
 import { KiboError, type NoteMeta } from "@kibo/schema";
-import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   Dialog,
@@ -15,10 +14,9 @@ import { type FormEvent, useId, useState } from "react";
 import { fr } from "./fr";
 import { renamedPath } from "./note-name";
 
-type Props = { note: NoteMeta; onRenamed(path: string): void; onClose(): void };
+type Props = { note: NoteMeta; onRename(from: string, to: string): Promise<unknown>; onClose(): void };
 
-export function RenameNoteDialog({ note, onRenamed, onClose }: Props) {
-  const sdk = useSdk();
+export function RenameNoteDialog({ note, onRename, onClose }: Props) {
   const id = useId();
   const [title, setTitle] = useState(note.title);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +26,8 @@ export function RenameNoteDialog({ note, onRenamed, onClose }: Props) {
     if (target === null) return;
     setError(null);
     try {
-      const meta = await sdk.notes.rename(note.path, target);
-      onRenamed(meta.path);
+      await onRename(note.path, target);
+      onClose();
     } catch (err) {
       setError(err instanceof KiboError && err.code === "CONFLICT" ? fr.renameConflict : fr.renameFailed);
     }
