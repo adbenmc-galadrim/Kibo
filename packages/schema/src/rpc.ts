@@ -15,6 +15,7 @@ import {
   type RuntimeInfo,
 } from "./component";
 import type { KiboErrorCode } from "./errors";
+import { IconInput, IconOwner } from "./icon";
 import { NodeId, ProjectKey, Sha256 } from "./ids";
 import type { Instance } from "./instance";
 import type { Binding, IntegrationEvent } from "./integrations";
@@ -24,7 +25,7 @@ import { ComponentId } from "./manifest";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { NotesInfo } from "./note";
 import type { Page } from "./page";
-import type { ProjectMeta } from "./project";
+import { type ProjectMeta, ProjectPatch } from "./project";
 import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
@@ -77,6 +78,9 @@ export const RpcRequest = z.discriminatedUnion("method", [
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   }),
   z.object({ method: z.literal("getProject"), projectId: z.string().min(1) }),
+  z.object({ method: z.literal("updateProject"), projectId: z.string().min(1), patch: ProjectPatch }),
+  z.object({ method: z.literal("deleteProject"), projectId: z.string().min(1) }),
+  z.object({ method: z.literal("setIcon"), owner: IconOwner, icon: IconInput.nullable() }),
   z.object({
     method: z.literal("command"),
     projectId: z.string().min(1),
@@ -168,6 +172,9 @@ export type RpcResult = {
   listProjects: ProjectSummary[];
   createProject: ProjectMeta;
   getProject: ProjectSnapshot;
+  updateProject: ProjectMeta;
+  deleteProject: null;
+  setIcon: { icon: string | null };
   command: unknown;
   getConfig: WorkspaceConfig;
   config: unknown;

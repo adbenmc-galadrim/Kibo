@@ -11,6 +11,7 @@ export * from "./errors";
 export * from "./external-ref";
 export * from "./github-errors";
 export * from "./github-graphql";
+export * from "./icon";
 export * from "./ids";
 export * from "./instance";
 export * from "./integrations";
