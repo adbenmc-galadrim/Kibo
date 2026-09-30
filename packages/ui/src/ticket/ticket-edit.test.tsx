@@ -26,6 +26,7 @@ mock.module("../api", () => ({
 }));
 
 const { TicketSheet } = await import("../shell/TicketSheet");
+const { TicketTab } = await import("../pages/TicketTab");
 
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
@@ -101,6 +102,45 @@ const openSelect = async (user: ReturnType<typeof userEvent.setup>, name: string
 beforeEach(() => {
   calls.length = 0;
   answer = () => null;
+});
+
+test("the sheet title stays a heading named after the ticket, and names the dialog", () => {
+  show();
+  const dialog = screen.getByRole("dialog", { name: "Schéma Loro des tickets" });
+  const heading = within(dialog).getByRole("heading", { name: "Schéma Loro des tickets" });
+  expect(heading.textContent).toBe("Schéma Loro des tickets");
+  // Chromium names the heading after the button's aria-label, dom-accessibility-api does not.
+  expect(heading.getAttribute("aria-label")).toBe("Schéma Loro des tickets");
+  expect(within(heading).getByRole("button", { name: "Modifier le titre" }).textContent).toBe(
+    "Schéma Loro des tickets",
+  );
+});
+
+test("while the title is edited, the sheet keeps its name", async () => {
+  const { user } = show();
+  await user.click(screen.getByRole("button", { name: "Modifier le titre" }));
+  expect(screen.getByRole("textbox", { name: "Titre" })).toBeTruthy();
+  expect(screen.getByRole("dialog", { name: "Schéma Loro des tickets" })).toBeTruthy();
+});
+
+test("the tab title stays a heading named after the ticket", () => {
+  const main = ticket();
+  render(
+    <TicketTab
+      project={project(main)}
+      ticketId={main.id}
+      viewer="adam"
+      onOpenFile={() => {}}
+      onOpenTicket={() => {}}
+    />,
+  );
+  const heading = screen.getByRole("heading", { level: 1, name: "Schéma Loro des tickets" });
+  expect(heading.textContent).toBe("Schéma Loro des tickets");
+  // Chromium names the heading after the button's aria-label, dom-accessibility-api does not.
+  expect(heading.getAttribute("aria-label")).toBe("Schéma Loro des tickets");
+  expect(within(heading).getByRole("button", { name: "Modifier le titre" }).textContent).toBe(
+    "Schéma Loro des tickets",
+  );
 });
 
 test("the title is edited in place and saved on Enter", async () => {

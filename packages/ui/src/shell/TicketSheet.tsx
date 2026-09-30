@@ -71,7 +71,7 @@ export function TicketSheet({
               />
             </span>
           </div>
-          <SheetTitle className="text-lg">
+          <SheetTitle className="text-lg" aria-label={t.title}>
             <TicketTitle
               title={t.title}
               editable={editable}

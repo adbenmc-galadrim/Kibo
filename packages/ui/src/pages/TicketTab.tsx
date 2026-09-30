@@ -43,7 +43,7 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
             />
           </span>
         </div>
-        <h1 className="text-lg font-semibold">
+        <h1 className="text-lg font-semibold" aria-label={t.title}>
           <TicketTitle
             title={t.title}
             editable={editable}
