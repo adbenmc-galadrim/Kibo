@@ -15,6 +15,7 @@ import {
 import { AppWindow, Copy, Pin, PinOff, Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { WorkspaceTile } from "../shell/WorkspaceMark";
 import type { TabDescription } from "./tab-title";
 import type { TabsAction } from "./tabs-model";
@@ -45,12 +46,13 @@ const tabTone = (active: boolean) =>
     : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
 function TabMenu({ tab, dispatch, onOpenWindow }: Pick<ItemProps, "tab" | "dispatch" | "onOpenWindow">) {
+  const mac = isMac();
   return (
     <ContextMenuContent className="w-72">
       <ContextMenuItem onSelect={() => dispatch({ type: "pin", id: tab.id, pinned: !tab.pinned })}>
         {tab.pinned ? <PinOff /> : <Pin />}
         {tab.pinned ? fr.tabs.unpin : fr.tabs.pin}
-        <ContextMenuShortcut>⌘⇧P</ContextMenuShortcut>
+        <ContextMenuShortcut>{shortcutLabel(["Shift", "P"], mac)}</ContextMenuShortcut>
       </ContextMenuItem>
       <ContextMenuItem
         onSelect={() => dispatch({ type: "duplicate", id: tab.id, newId: crypto.randomUUID() })}
@@ -68,7 +70,7 @@ function TabMenu({ tab, dispatch, onOpenWindow }: Pick<ItemProps, "tab" | "dispa
       <ContextMenuItem disabled={tab.pinned} onSelect={() => dispatch({ type: "close", id: tab.id })}>
         <X />
         {fr.tabs.closeTab}
-        <ContextMenuShortcut>⌘W</ContextMenuShortcut>
+        <ContextMenuShortcut>{shortcutLabel(["W"], mac)}</ContextMenuShortcut>
       </ContextMenuItem>
       <ContextMenuItem onSelect={() => dispatch({ type: "closeOthers", id: tab.id })}>
         <X />
@@ -191,7 +193,7 @@ export function TabBar({
     />
   );
   return (
-    <div className="flex h-10 shrink-0 items-stretch border-b bg-sidebar text-sidebar-foreground">
+    <div className="flex h-10 shrink-0 select-none items-stretch border-b bg-sidebar text-sidebar-foreground">
       <div
         role="tablist"
         aria-label={fr.tabs.bar}

@@ -9,6 +9,7 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import type { TabsAction } from "./tabs-model";
 
 const saved: RpcRequest[] = [];
@@ -128,6 +129,16 @@ test("the context menu pins, duplicates, closes others and opens a window when a
   expect(actions[0]).toEqual({ type: "pin", id: "board", pinned: true });
   expect(windows).toEqual([{ kind: "page", projectId: "p1", pageId: "1@1" }]);
   expect(actions[1]).toEqual({ type: "closeOthers", id: "board" });
+});
+
+test("the context menu shows the shortcuts of the running platform", async () => {
+  renderBar();
+  expect(screen.getByRole("tablist").closest(".select-none")).not.toBeNull();
+  fireEvent.contextMenu(screen.getByRole("tab", { name: "Kibo · Kanban" }));
+  const pin = await screen.findByRole("menuitem", { name: /Épingler l'onglet/ });
+  expect(pin.textContent).toContain(shortcutLabel(["Shift", "P"], isMac()));
+  const close = shortcutLabel(["W"], isMac());
+  expect(screen.getByRole("menuitem", { name: `Fermer ${close}` })).toBeTruthy();
 });
 
 test("useTabs loads the stored state and saves changes after a debounce", async () => {

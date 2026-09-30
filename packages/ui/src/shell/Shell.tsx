@@ -5,6 +5,7 @@ import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
+import { useWindowTitle } from "../desktop/use-window-title";
 import { projectDomainsOf } from "../lib/project-domains";
 import { countMine, myTickets } from "../mine/my-tickets";
 import type { PaletteAction, PaletteContext } from "../palette/palette-items";
@@ -85,6 +86,22 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const projectRef = useRef(project);
   const { open } = tabs;
 
+  useWindowTitle(active ? describeTarget(active, { projects, snapshots }).title : null);
+  useEffect(() => {
+    if (!inTauri()) return;
+    let off: (() => void) | null = null;
+    let alive = true;
+    import("../desktop/install").then(
+      (m) => {
+        if (alive) off = m.installDesktop();
+      },
+      (e: unknown) => console.error("[kibo] desktop integration failed to load", e),
+    );
+    return () => {
+      alive = false;
+      off?.();
+    };
+  }, []);
   useEffect(() => {
     if (activeProjectId) setLastProjectId(activeProjectId);
   }, [activeProjectId]);

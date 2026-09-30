@@ -1,4 +1,5 @@
 import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
+import { cn } from "@kibo/sdk/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +30,7 @@ import {
 } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { fr } from "../i18n/fr";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { canEdit } from "../state/access";
 import { JoinProjectEntry, ProjectMenu } from "./lazy-screens";
 import { ProjectPages } from "./ProjectPages";
@@ -190,7 +192,7 @@ export function AppSidebar(p: Props) {
     );
 
   return (
-    <Sidebar className={p.className}>
+    <Sidebar className={cn("select-none", p.className)}>
       <SidebarHeader>
         <WorkspaceSwitcher
           name={p.workspaceName ?? fr.workspace.defaultName}
@@ -204,7 +206,7 @@ export function AppSidebar(p: Props) {
         >
           <Search aria-hidden className="size-4" />
           <span className="flex-1 text-left">{fr.nav.search}</span>
-          <kbd className="font-mono text-3xs">⌘K</kbd>
+          <kbd className="font-mono text-3xs">{shortcutLabel(["K"], isMac())}</kbd>
         </button>
       </SidebarHeader>
       <SidebarContent>

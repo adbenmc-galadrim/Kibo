@@ -11,6 +11,7 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 
 const project: ProjectSnapshot = {
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
@@ -225,6 +226,17 @@ test("the sidebar search button opens the palette", async () => {
   await go("#/");
   await userEvent.click(await screen.findByRole("button", { name: /Rechercher…/ }));
   expect(await screen.findByRole("dialog", { name: "Palette de commandes" })).toBeTruthy();
+});
+
+test("the document title follows the active tab and the search shows the platform shortcut", async () => {
+  renderShell();
+  await go("#/");
+  await waitFor(() => expect(document.title).toBe("Kibo"));
+  const search = await screen.findByRole("button", { name: /Rechercher…/ });
+  expect(search.textContent).toContain(shortcutLabel(["K"], isMac()));
+  await go("#/p/p1/1%401");
+  await screen.findByRole("tab", { name: "Kibo · Board" });
+  await waitFor(() => expect(document.title).toBe("Kibo · Board — Kibo"));
 });
 
 test("⌘-click in the sidebar opens a new tab instead of replacing the current one", async () => {
