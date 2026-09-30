@@ -62,6 +62,21 @@ describe("hash codec", () => {
 });
 
 describe("tabsReducer", () => {
+  test("closeProject closes every tab of the project, pinned included, and purges its recents", () => {
+    let s = open(EMPTY_TABS, page("a"), "t1");
+    s = open(s, { kind: "ticket", projectId: "p1", ticketId: "x" }, "t2", true);
+    s = tabsReducer(s, { type: "pin", id: "t2", pinned: true });
+    s = open(s, { kind: "project", projectId: "p2" }, "t3", true);
+    s = open(s, { kind: "screen", screen: "agents" }, "t4", true);
+    s = tabsReducer(s, { type: "activate", id: "t2" });
+    const out = tabsReducer(s, { type: "closeProject", projectId: "p1" });
+    expect(out.tabs.map((t) => t.id)).toEqual(["t3", "t4"]);
+    expect(out.activeId).toBe("t3");
+    expect(out.recents.every((r) => r.kind === "screen" || r.projectId !== "p1")).toBe(true);
+    expect(out.recents.some((r) => r.kind === "project" && r.projectId === "p2")).toBe(true);
+    expect(tabsReducer(out, { type: "closeProject", projectId: "nope" })).toBe(out);
+  });
+
   test("a plain open replaces the active tab, a new-tab open appends, a known target is focused", () => {
     let s = open(EMPTY_TABS, page("a"), "t1");
     expect(s.tabs.map((t) => t.id)).toEqual(["t1"]);
