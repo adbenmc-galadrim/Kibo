@@ -13,8 +13,9 @@ export type AutosaveOptions = {
 };
 export type Autosave = {
   change(markdown: string): void;
-  flush(): Promise<void>;
+  flush(): Promise<boolean>;
   setBase(mtime: number | null): void;
+  rebase(mtime: number): void;
   keepMine(): Promise<void>;
   dispose(): void;
 };
@@ -27,9 +28,10 @@ export function createAutosave(opts: AutosaveOptions): Autosave {
   let pending: string | null = null;
   let timer: Timer | null = null;
   let disposed = false;
+  let queue: Promise<boolean> = Promise.resolve(true);
 
-  const write = async (force: boolean) => {
-    if (pending === null || disposed) return;
+  const attempt = async (force: boolean): Promise<boolean> => {
+    if (pending === null || disposed) return true;
     const text = pending;
     opts.onState("saving");
     try {
@@ -38,14 +40,22 @@ export function createAutosave(opts: AutosaveOptions): Autosave {
       if (pending === text) pending = null;
       opts.onSaved?.(meta);
       opts.onState(pending === null ? "saved" : "dirty");
+      return true;
     } catch (e) {
       if (e instanceof KiboError && e.code === "CONFLICT") {
         opts.onState("conflict");
-        return;
+        return false;
       }
       report(e);
       opts.onState("error");
+      return false;
     }
+  };
+
+  const write = (force: boolean): Promise<boolean> => {
+    const next = queue.then(() => attempt(force));
+    queue = next.catch(() => false);
+    return next;
   };
 
   const stopTimer = () => {
@@ -65,14 +75,22 @@ export function createAutosave(opts: AutosaveOptions): Autosave {
     },
     async flush() {
       stopTimer();
-      await write(false);
+      while (pending !== null && !disposed) {
+        if (!(await write(false))) return false;
+      }
+      return true;
     },
     setBase(mtime) {
       stopTimer();
       pending = null;
       base = mtime;
     },
-    keepMine: () => write(true),
+    rebase(mtime) {
+      base = mtime;
+    },
+    keepMine: async () => {
+      await write(true);
+    },
     dispose() {
       disposed = true;
       stopTimer();
