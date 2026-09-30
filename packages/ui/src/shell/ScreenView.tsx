@@ -10,6 +10,7 @@ import {
   MyTicketsPage,
   QueuePage,
   SecurityPage,
+  ShortcutsPage,
   SyncSettingsPage,
 } from "./lazy-screens";
 
@@ -34,6 +35,7 @@ export function ScreenView({ screen, projects, agents, config, now, onAnswer, ..
   if (screen === "security") return <SecurityPage />;
   if (screen === "sync") return <SyncSettingsPage viewer={p.viewer} projects={projects} />;
   if (screen === "sources") return <ComponentSourcesPage />;
+  if (screen === "shortcuts") return <ShortcutsPage />;
   if (screen === "mine") return <MyTicketsPage projects={projects} config={config} {...p} />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;

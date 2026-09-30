@@ -14,6 +14,7 @@ const SCREEN_HASHES: Record<Screen, string> = {
   security: "#/settings/security",
   sources: "#/settings/components",
   sync: "#/settings/sync",
+  shortcuts: "#/settings/shortcuts",
 };
 
 export function targetToHash(target: TabTarget | null): string {

@@ -189,7 +189,7 @@ test("preview blocks follow the markdown lines", () => {
   ]);
 });
 
-test("settings navigation marks the current page and disables the unbuilt ones", () => {
+test("settings navigation marks the current page and links every entry", () => {
   render(<SettingsNav active="domains" />);
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
   expect(nav.getByRole("link", { name: "Domaines & guidelines" }).getAttribute("aria-current")).toBe("page");
@@ -198,5 +198,6 @@ test("settings navigation marks the current page and disables the unbuilt ones",
     "#/settings/integrations",
   );
   expect(nav.getByRole("link", { name: "Sécurité" }).getAttribute("href")).toBe("#/settings/security");
-  expect(nav.getByRole("button", { name: "Raccourcis" }).hasAttribute("disabled")).toBe(true);
+  expect(nav.getByRole("link", { name: "Raccourcis" }).getAttribute("href")).toBe("#/settings/shortcuts");
+  expect(nav.queryByRole("button")).toBeNull();
 });

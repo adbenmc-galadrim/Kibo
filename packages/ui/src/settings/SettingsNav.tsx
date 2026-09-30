@@ -16,9 +16,9 @@ import { targetToHash } from "../tabs/target-hash";
 
 type SettingsScreen = Extract<
   Screen,
-  "general" | "appearance" | "domains" | "integrations" | "sync" | "security" | "sources"
+  "general" | "appearance" | "domains" | "integrations" | "sync" | "security" | "sources" | "shortcuts"
 >;
-type Item = { id: string; label: string; icon: LucideIcon; screen?: SettingsScreen };
+type Item = { id: string; label: string; icon: LucideIcon; screen: SettingsScreen };
 
 const ITEMS: Item[] = [
   { id: "general", label: fr.settings.general, icon: SlidersHorizontal, screen: "general" },
@@ -28,7 +28,7 @@ const ITEMS: Item[] = [
   { id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" },
   { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
   { id: "components", label: fr.settings.components, icon: Package, screen: "sources" },
-  { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard },
+  { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" },
 ];
 
 const ENTRY = "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm";
@@ -41,12 +41,6 @@ function Entry({ item, active }: { item: Item; active: SettingsScreen }) {
       {label}
     </>
   );
-  if (!screen)
-    return (
-      <button type="button" disabled title={fr.settings.soon} className={cn(ENTRY, "disabled:opacity-60")}>
-        {content}
-      </button>
-    );
   const current = screen === active;
   return (
     <a
