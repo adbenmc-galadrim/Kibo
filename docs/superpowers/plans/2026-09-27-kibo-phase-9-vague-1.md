@@ -133,7 +133,7 @@ apps/desktop/src-tauri/Cargo.toml  Cargo.lock  src/main.rs  src/menu.rs   (T4)
 apps/desktop/app-icon.svg  src-tauri/icons/*                      régénérés (T5)
 design/penpot/scripts/17-finitions.js  design/penpot/kibo.penpot.xz  design/pdf/*.pdf  design/penpot/README.md   (T1)
 e2e/menus.spec.ts  e2e/playwright.config.ts                       (T16)
-packages/schema/src/code.ts  code.test.ts                         CODE_MUTATION_METHODS, LOCAL_ONLY_CODE_METHODS élargie (T3b)
+packages/schema/src/code.ts  code.test.ts                         CODE_MUTATION_METHODS, LOCAL_ONLY_CODE_METHODS élargie, CODE_READ_METHODS (T3b)
 packages/daemon/src/code/code-service.ts  code-service.test.ts  server-code.test.ts   liste du schéma, refus distant par méthode (T3b)
 packages/ui/src/code/ChangesView.tsx  ChangesFiles.tsx  FileList.tsx  DiffColumn.tsx  DiffToolbar.tsx  DiffView.tsx  OperationBanner.tsx  changes.test.tsx   remote / readOnly (T3b)
 packages/ui/src/files/FileTabView.tsx  files.test.tsx             remote (T3b) ; i18n/fr-code.ts (localOnly, errors.FORBIDDEN)
@@ -339,7 +339,8 @@ export const LOCAL_CONTEXT: RpcContext = { sessionHash: "local", remote: false }
 
 // packages/schema/src/code.ts (T3b) — source unique des listes ; code-service.ts n'a plus de MUTATION_METHODS
 export const CODE_MUTATION_METHODS = ["writeFile", "stageFiles", "unstageFiles", "discardChanges", "stageAll", "unstageAll", "stageHunk", "commit", "reword", "undoCommit", "abortOperation", "push", "createPr"] as const;
-export const LOCAL_ONLY_CODE_METHODS = [...CODE_MUTATION_METHODS, "openInEditor"] as const;   // refusées en FORBIDDEN depuis une session distante (spec §12.3)
+export const LOCAL_ONLY_CODE_METHODS = [...CODE_MUTATION_METHODS, "openInEditor"] as const;   // pour l'UI et les tests
+export const CODE_READ_METHODS = ["worktrees", "status", "diff", "readFile", "remoteBranches", "compare", "commitDefaults", "ghStatus", "prForBranch"] as const;   // liste blanche : toute autre méthode est refusée en FORBIDDEN depuis une session distante (spec §12.3)
 // lectures ouvertes à distance : worktrees, status, diff, readFile, remoteBranches, compare, commitDefaults, ghStatus, prForBranch
 ```
 
@@ -6212,12 +6213,12 @@ Vague 1 bis ← T3 (intégrée dans `phase/9`). Spec §12.3 (décision d'Adam du
 |---|---|
 | `writeFile`, `stageFiles`, `unstageFiles`, `discardChanges`, `stageAll`, `unstageAll`, `stageHunk`, `commit`, `reword`, `undoCommit`, `abortOperation`, `push`, `createPr` (les 13 `MUTATION_METHODS` du service ; `createPr` pousse puis lance `gh pr create`) et `openInEditor` (lance l'éditeur) | `worktrees`, `status`, `diff`, `readFile`, `remoteBranches`, `compare`, `commitDefaults`, `ghStatus` (`gh auth status`, sans écriture), `prForBranch` (`gh pr view`) |
 
-Le schéma devient la source unique : `CODE_MUTATION_METHODS` (13) et `LOCAL_ONLY_CODE_METHODS` (= mutations + `openInEditor`) ; le service n'a plus sa propre liste, et un test du schéma oblige à classer toute méthode future. Côté UI, la vue Changements et l'onglet fichier reçoivent `remote` (défaut `isRemoteView()`, motif déjà employé par `ComponentSourcesPage`, `ShareProjectDialog`, `TrustDialog`) et n'affichent alors aucune action d'écriture : ni cases « Indexer », ni boutons de bloc, ni « Édition », ni « Ouvrir dans l'éditeur externe », ni « Abandonner », ni panneau Commit / Pousser / PR ; une ligne explique pourquoi. Le démon garantit, l'UI masque (colonne « Réel »).
+Le schéma devient la source unique : `CODE_MUTATION_METHODS` (13), `LOCAL_ONLY_CODE_METHODS` (= mutations + `openInEditor`) et `CODE_READ_METHODS` (9). Le service refuse à distance toute méthode absente de `CODE_READ_METHODS` (liste blanche, fermé par défaut : une méthode future non classée est refusée), et un test du schéma oblige à classer toute méthode future dans l'une des deux listes, disjointes. Côté UI, la vue Changements et l'onglet fichier reçoivent `remote` (défaut `isRemoteView()`, motif déjà employé par `ComponentSourcesPage`, `ShareProjectDialog`, `TrustDialog`) et n'affichent alors aucune action d'écriture : ni cases « Indexer », ni boutons de bloc, ni « Édition », ni « Ouvrir dans l'éditeur externe », ni « Abandonner », ni panneau Commit / Pousser / PR ; une ligne explique pourquoi. Le démon garantit, l'UI masque (colonne « Réel »).
 
 **Files:**
-- Modify: `packages/schema/src/code.ts` (`CODE_MUTATION_METHODS`, `LOCAL_ONLY_CODE_METHODS`), `packages/schema/src/code.test.ts`
-- Modify: `packages/daemon/src/code/code-service.ts` (importe `CODE_MUTATION_METHODS`), `packages/daemon/src/code/code-service.test.ts` (refus distant des 14 méthodes, lectures ouvertes), `packages/daemon/src/server-code.test.ts` (le test HTTP distant couvre `commit` et `stageAll` en plus d'`openInEditor`)
-- Modify: `packages/ui/src/code/ChangesView.tsx` (`remote`), `packages/ui/src/code/ChangesFiles.tsx`, `packages/ui/src/code/FileList.tsx`, `packages/ui/src/code/DiffColumn.tsx`, `packages/ui/src/code/DiffToolbar.tsx`, `packages/ui/src/code/DiffView.tsx`, `packages/ui/src/code/OperationBanner.tsx`, `packages/ui/src/files/FileTabView.tsx` (`remote`), `packages/ui/src/i18n/fr-code.ts` (`changes.localOnly`, `file.localOnly`, `errors.FORBIDDEN`), `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/files/files.test.tsx`
+- Modify: `packages/schema/src/code.ts` (`CODE_MUTATION_METHODS`, `LOCAL_ONLY_CODE_METHODS`, `CODE_READ_METHODS`), `packages/schema/src/code.test.ts`
+- Modify: `packages/daemon/src/code/code-service.ts` (importe `CODE_MUTATION_METHODS` et `CODE_READ_METHODS`), `packages/daemon/src/code/code-service.test.ts` (refus distant des 14 méthodes sans lancer git ni gh, refus d'une méthode non classée, lectures ouvertes), `packages/daemon/src/server-code.test.ts` (le test HTTP distant couvre `commit` et `stageAll` en plus d'`openInEditor`)
+- Modify: `packages/ui/src/code/ChangesView.tsx` (`remote`), `packages/ui/src/code/ChangesFiles.tsx`, `packages/ui/src/code/FileList.tsx`, `packages/ui/src/code/DiffColumn.tsx`, `packages/ui/src/code/DiffToolbar.tsx`, `packages/ui/src/code/DiffView.tsx`, `packages/ui/src/code/OperationBanner.tsx`, `packages/ui/src/files/FileTabView.tsx` (`remote`), `packages/ui/src/files/FilePreviewSheet.tsx` (`remote` : ni « Modifier », ni éditeur externe, raccourci inactif), `packages/ui/src/i18n/fr-code.ts` (`changes.localOnly`, `file.localOnly`, `errors.FORBIDDEN`), `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/files/files.test.tsx`
 
 **Interfaces:**
 - Consumes: `requireLocal`, `RpcContext`, `LOCAL_CONTEXT` (T3), `isRemoteView` (`lib/remote-view.ts`), `createGitFixture`, `installFakeBin`, `readFakeBinLog` (`code/testing/git-fixture.ts`), `enableSelfSigned`, `remoteCookie`, `remotePost` (`remote/remote.test-helper.ts`).
@@ -6225,7 +6226,7 @@ Le schéma devient la source unique : `CODE_MUTATION_METHODS` (13) et `LOCAL_ONL
 
 - [ ] **Step 1: Schéma (test rouge puis vert)**
 
-`packages/schema/src/code.test.ts` : retirer la ligne `expect(LOCAL_ONLY_CODE_METHODS).toEqual([...])` du test de T3 et ajouter (`CODE_MUTATION_METHODS` importé) :
+`packages/schema/src/code.test.ts` : retirer la ligne `expect(LOCAL_ONLY_CODE_METHODS).toEqual([...])` du test de T3 et ajouter (`CODE_MUTATION_METHODS` et `CODE_READ_METHODS` importés) :
 ```ts
   test("every code request is either a local-only mutation or a listed read", () => {
     expect(CODE_MUTATION_METHODS).toEqual([
@@ -6244,14 +6245,26 @@ Le schéma devient la source unique : `CODE_MUTATION_METHODS` (13) et `LOCAL_ONL
       "createPr",
     ]);
     expect(LOCAL_ONLY_CODE_METHODS).toEqual([...CODE_MUTATION_METHODS, "openInEditor"]);
-    const reads = ["worktrees", "status", "diff", "readFile", "remoteBranches", "compare", "commitDefaults", "ghStatus", "prForBranch"];
+    expect(CODE_READ_METHODS).toEqual([
+      "worktrees",
+      "status",
+      "diff",
+      "readFile",
+      "remoteBranches",
+      "compare",
+      "commitDefaults",
+      "ghStatus",
+      "prForBranch",
+    ]);
+    const reads = new Set<string>(CODE_READ_METHODS);
+    expect(LOCAL_ONLY_CODE_METHODS.filter((m) => reads.has(m))).toEqual([]);
     const methods = CodeRequest.options.map((o) => o.shape.method.value);
-    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...reads].sort());
+    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...CODE_READ_METHODS].sort());
   });
 ```
-(Le dernier `expect` fait échouer le test dès qu'une méthode nouvelle n'est classée ni locale ni lecture.)
+(Le dernier `expect` fait échouer le test dès qu'une méthode nouvelle n'est classée ni locale ni lecture ; le précédent interdit qu'une méthode soit dans les deux listes. Aucune liste locale au test : classer une méthode oblige à modifier le schéma, donc le service.)
 
-Run: `bun test packages/schema/src/code.test.ts` — Expected: FAIL (`CODE_MUTATION_METHODS` introuvable).
+Run: `bun test packages/schema/src/code.test.ts` — Expected: FAIL (`CODE_MUTATION_METHODS`, `CODE_READ_METHODS` introuvables).
 
 `packages/schema/src/code.ts`, remplacer `LOCAL_ONLY_CODE_METHODS` par :
 ```ts
@@ -6274,6 +6287,18 @@ export const CODE_MUTATION_METHODS = [
 export const LOCAL_ONLY_CODE_METHODS = [
   ...CODE_MUTATION_METHODS,
   "openInEditor",
+] as const satisfies readonly CodeRequest["method"][];
+
+export const CODE_READ_METHODS = [
+  "worktrees",
+  "status",
+  "diff",
+  "readFile",
+  "remoteBranches",
+  "compare",
+  "commitDefaults",
+  "ghStatus",
+  "prForBranch",
 ] as const satisfies readonly CodeRequest["method"][];
 ```
 
@@ -6306,7 +6331,10 @@ const localOnlyRequests = (): CodeRequest[] => {
 
 test("every mutation and openInEditor are refused from a remote session before anything runs", async () => {
   const editor = installFakeBin(fx.dir, "code");
-  const c = start({ env: { ...fx.env, ...gh, VISUAL: editor.path, FAKE_BIN_LOG: editor.log } });
+  const git = installFakeBin(fx.dir, "git");
+  const c = start({
+    env: { ...fx.env, ...gh, KIBO_GIT: git.path, VISUAL: editor.path, FAKE_BIN_LOG: git.log },
+  });
   fx.write("README.md", "# changed\n");
   const requests = localOnlyRequests();
   expect(requests.map((r) => r.method).sort()).toEqual([...LOCAL_ONLY_CODE_METHODS].sort());
@@ -6316,8 +6344,15 @@ test("every mutation and openInEditor are refused from a remote session before a
   expect(readFileSync(join(fx.repo, "README.md"), "utf8")).toBe("# changed\n");
   expect(fx.git("status", "--porcelain").trim()).toBe("M README.md");
   expect(fx.git("rev-list", "--count", "HEAD").trim()).toBe("1");
-  expect(readFakeBinLog(editor.log)).toEqual([]);
+  expect(readFakeBinLog(git.log)).toEqual([]);
+  expect(readFakeGhLog(gh)).toEqual([]);
   expect(events).toEqual([]);
+});
+
+test("a method listed nowhere is refused from a remote session", async () => {
+  const c = start();
+  const unclassified = { method: "futureMethod", ...w() } as unknown as CodeRequest;
+  await expect(c.handle(unclassified, REMOTE)).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
 
 test("reads stay open to a remote session", async () => {
@@ -6336,13 +6371,14 @@ test("reads stay open to a remote session", async () => {
   expect(await c.handle({ method: "ghStatus", ...w() }, REMOTE)).toMatchObject({ available: expect.any(Boolean) });
 });
 ```
-(`fx.git` renvoie la sortie standard ; `as RepoStatus` sur un résultat `unknown`, comme les tests existants du fichier.)
+(`fx.git` renvoie la sortie standard ; `as RepoStatus` sur un résultat `unknown`, comme les tests existants du fichier. Le service reçoit un faux `git` par `KIBO_GIT` tandis que `fx.git` garde le vrai : les deux faux binaires écrivent dans le même `FAKE_BIN_LOG`, dont le vide prouve qu'aucun processus n'a été lancé ; `readFakeGhLog(gh)` fait de même pour `gh`, importé de `./testing/git-fixture`. Le cast `as unknown as CodeRequest` simule une méthode ajoutée à l'union sans être classée.)
 
-Run: `bun test packages/daemon/src/code/code-service.test.ts` — Expected: FAIL (`writeFile`, `stageFiles`… passent depuis la session distante).
+Run: `bun test packages/daemon/src/code/code-service.test.ts` — Expected: FAIL (`writeFile`, `stageFiles`… passent depuis la session distante ; `futureMethod` n'est pas refusée).
 
 `packages/daemon/src/code/code-service.ts` :
-- import : `CODE_MUTATION_METHODS, LOCAL_ONLY_CODE_METHODS` de `@kibo/schema` ; supprimer la constante locale `MUTATION_METHODS` ;
-- `type Mutation = Extract<WorktreeRequest, { method: (typeof CODE_MUTATION_METHODS)[number] }>;` et `const MUTATIONS = new Set<string>(CODE_MUTATION_METHODS);` ; `LOCAL_ONLY` et `handle` restent tels quels (T3) : le refus vient de la liste élargie.
+- import : `CODE_MUTATION_METHODS, CODE_READ_METHODS` de `@kibo/schema` ; supprimer la constante locale `MUTATION_METHODS` et `LOCAL_ONLY` (`LOCAL_ONLY_CODE_METHODS` reste pour l'UI et les tests) ;
+- `type Mutation = Extract<WorktreeRequest, { method: (typeof CODE_MUTATION_METHODS)[number] }>;`, `const MUTATIONS = new Set<string>(CODE_MUTATION_METHODS);` et `const READS = new Set<string>(CODE_READ_METHODS);` ;
+- dans `handle`, remplacer la liste noire de T3 par la liste blanche : `if (!READS.has(req.method)) requireLocal(ctx);` (fermé par défaut : une méthode non classée est refusée à distance).
 
 `packages/daemon/src/server-code.test.ts`, test « openInEditor over the remote listener answers 403 and launches nothing » renommé « local-only requests over the remote listener answer 403 and touch nothing » ; dans son `try`, après `const cookie = await remoteCookie(f);` :
 ```ts
