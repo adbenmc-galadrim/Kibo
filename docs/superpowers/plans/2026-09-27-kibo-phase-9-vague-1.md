@@ -7206,25 +7206,25 @@ Vérifié dans Tauri 2.12.0 et wry 0.57 : `WebviewWindowBuilder::on_navigation<F
 - Consumes: `Daemon.sandboxPort` (`packages/daemon/src/daemon.ts`), `ipc_origin` (T4).
 - Produces: ligne de démarrage `KIBO_SANDBOX http://127.0.0.1:<port>` ; `navigation_allowed(target: &Url, allowed: &[String]) -> bool`, `parse_sandbox(line: &str) -> Option<&str>`.
 
-- [ ] **Step 1: Démon, ligne `KIBO_SANDBOX` (test rouge puis vert)**
+- [x] **Step 1: Démon, ligne `KIBO_SANDBOX` (test rouge puis vert)**
 
 `main.test.ts` : le test « announces readiness… » lit deux lignes et attend `KIBO_READY http://127.0.0.1:<port>/#pair=<token>` puis `KIBO_SANDBOX http://127.0.0.1:<sandboxPort>`, `sandboxPort` étant celui de `daemon.json`. `main.ts` : `process.stdout.write(\`KIBO_SANDBOX http://127.0.0.1:${daemon.sandboxPort}\n\`)` juste après `KIBO_READY`. Les tests qui ne lisent que la première ligne cessent d'exiger la fin de la sortie (`\n$` ⇒ `\n`).
 
 Run: `bun test packages/daemon/src/main` — Expected: FAIL puis PASS.
 
-- [ ] **Step 2: Fonctions pures de la coque (test rouge)**
+- [x] **Step 2: Fonctions pures de la coque (test rouge)**
 
 Dans `mod tests` de `main.rs` : `navigation_allowed` vrai pour toute URL des deux origines (chemin, requête, fragment quelconques), faux pour un autre port, `localhost`, `https:`, `about:blank`, `javascript:`, `file:`, `data:`, et pour une liste vide ; `parse_sandbox` lit `KIBO_SANDBOX <url>` et ignore les autres lignes.
 
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: FAIL (`navigation_allowed`, `parse_sandbox` introuvables).
 
-- [ ] **Step 3: Implémentation et branchement (vert)**
+- [x] **Step 3: Implémentation et branchement (vert)**
 
 `navigation_allowed` compare `ipc_origin(target)` à chaque origine autorisée (une origine opaque vaut `"null"` et n'est jamais autorisée). La boucle des événements garde l'URL de `KIBO_READY` et ouvre la fenêtre à `KIBO_SANDBOX` avec `.on_navigation(move |url| navigation_allowed(url, &allowed))`.
 
 Run: `~/.cargo/bin/cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` — Expected: PASS.
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 Run: `~/.cargo/bin/cargo fmt --check` et `~/.cargo/bin/cargo clippy` dans `apps/desktop/src-tauri`, `bun run check`, `bun test packages/daemon/src/main` — Expected: PASS. Le `desktop-smoke` de la CI fait foi pour Linux.
 
