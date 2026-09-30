@@ -1240,7 +1240,7 @@ Vague 1 ← T20. Spec §14.1, §14.2, §14.4. Décision 1. Le magasin d'images S
 - Consumes: `IconInput`, `IconMime`, `ICON_MIMES`, `MAX_ICON_BYTES`, `iconOwnerKey`, `ProjectPatch`, `isTerminal` (`@kibo/schema`), `setProjectMeta`, `updateRegisteredProject` (`@kibo/core`, T20), `RpcContext`, `RpcHandler`, `requireLocal` (`rpc-extensions.ts`), `ProjectSettings`, `withLocalFolder`, `LOCAL_FOLDER_KEY`, `collab.syncInfo`, `Orchestrator.state`.
 - Produces: contrat « Démon (T21) » (`IconStore`, `decodeIcon`, `sniffIconMime`, `serveIcon`, `parseIconPath`, `Docs.updateProjectMeta`, `Service.icons`, `readConfig(docs, icons)`, `createProjectAdmin` avec `updateProject`, `setIcon`, `handler` ; `ProjectSettings.unset`).
 
-- [ ] **Step 1: Magasin d'images (test rouge puis vert)**
+- [x] **Step 1: Magasin d'images (test rouge puis vert)**
 
 `packages/daemon/src/icons/icon-store.test.ts` :
 ```ts
@@ -1333,7 +1333,7 @@ export function createIconStore(db: Database): IconStore {
 ```
 Run: `bun test packages/daemon/src/icons/icon-store.test.ts` — Expected: PASS, 2 tests.
 
-- [ ] **Step 2: Décodage vérifié (test rouge puis vert)**
+- [x] **Step 2: Décodage vérifié (test rouge puis vert)**
 
 `packages/daemon/src/icons/decode-icon.test.ts` :
 ```ts
@@ -1403,7 +1403,7 @@ export function decodeIcon(input: IconInput): { mime: IconMime; bytes: Uint8Arra
 ```
 Run: `bun test packages/daemon/src/icons/decode-icon.test.ts` — Expected: PASS, 3 tests.
 
-- [ ] **Step 3: Route `GET /icons/…` (test rouge puis vert)**
+- [x] **Step 3: Route `GET /icons/…` (test rouge puis vert)**
 
 `packages/daemon/src/icons/icon-route.test.ts` :
 ```ts
@@ -1493,7 +1493,7 @@ export function serveIcon(req: Request, url: URL, deps: IconRouteDeps): Response
 ```
 Run: `bun test packages/daemon/src/icons/icon-route.test.ts` — Expected: PASS, 3 tests.
 
-- [ ] **Step 4: `Docs.updateProjectMeta`, `Service.icons`, empreintes (tests rouges puis verts)**
+- [x] **Step 4: `Docs.updateProjectMeta`, `Service.icons`, empreintes (tests rouges puis verts)**
 
 `packages/daemon/src/service.test.ts`, dans `describe("service")`, ajouter :
 ```ts
@@ -1569,11 +1569,11 @@ const docFields = (patch: ProjectPatch): ProjectPatch => ({
 
 Run: `bun test packages/daemon/src/service.test.ts packages/daemon/src/workspace-config.test.ts` — Expected: PASS.
 
-- [ ] **Step 5: `ProjectSettings.unset`**
+- [x] **Step 5: `ProjectSettings.unset`**
 
 `packages/daemon/src/notes/settings.ts` : `ProjectSettings` gagne `unset(projectId: string, key: string): void` ; requête `DELETE FROM project_settings WHERE project_id = $projectId AND key = $key`. Test dans `packages/daemon/src/notes/settings.test.ts` (créer s'il manque) : `set` puis `unset` puis `get` ⇒ `null` ; `unset` d'une clé absente ne lève pas.
 
-- [ ] **Step 6: Module d'administration : `updateProject` et `setIcon` (tests rouges puis verts)**
+- [x] **Step 6: Module d'administration : `updateProject` et `setIcon` (tests rouges puis verts)**
 
 `packages/daemon/src/projects/admin.test.ts` :
 ```ts
@@ -1784,7 +1784,7 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
 ```
 Run: `bun test packages/daemon/src/projects/admin.test.ts` — Expected: PASS, 6 tests. (`updateProjectMeta` avec `folderInDoc = false` écrit `folder` dans la copie du workspace mais pas dans le doc : c'est voulu, D32.)
 
-- [ ] **Step 7: Branchement : serveur et démon (test HTTP rouge puis vert)**
+- [x] **Step 7: Branchement : serveur et démon (test HTTP rouge puis vert)**
 
 `packages/daemon/src/daemon.test.ts`, ajouter :
 ```ts
@@ -1837,7 +1837,7 @@ et `startServer({ …, icons: service.icons, handlers: [componentTrustGuard, mar
 
 Run: `bun test packages/daemon/src/daemon.test.ts packages/daemon/src/server*.test.ts` — Expected: PASS.
 
-- [ ] **Step 8: Gate et commits**
+- [x] **Step 8: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/daemon packages/schema packages/core` — Expected: PASS.
 
