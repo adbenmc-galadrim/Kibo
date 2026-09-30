@@ -169,6 +169,7 @@ export const iconUrl = (owner: IconOwner, version: string): string =>
 // packages/schema/src/project.ts (T20)
 export const ProjectPatch = z
   .object({ name: ProjectMeta.shape.name.optional(), color: ProjectMeta.shape.color.optional(), folder: z.string().min(1).max(4096).nullable().optional() })
+  .strict()
   .refine((p) => p.name !== undefined || p.color !== undefined || p.folder !== undefined, { message: "empty patch" });
 export type ProjectPatch = z.infer<typeof ProjectPatch>;
 
@@ -176,6 +177,7 @@ export type ProjectPatch = z.infer<typeof ProjectPatch>;
 export const WorkspaceDescription = z.string().trim().max(500);
 export const WorkspacePatch = z
   .object({ name: WorkspaceName.optional(), description: WorkspaceDescription.nullable().optional() })
+  .strict()
   .refine((p) => p.name !== undefined || p.description !== undefined, { message: "empty patch" });
 export type WorkspacePatch = z.infer<typeof WorkspacePatch>;
 // ConfigCommand gagne  z.object({ method: z.literal("updateWorkspace"), patch: WorkspacePatch })
