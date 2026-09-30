@@ -22,6 +22,7 @@ const renderFiles = (files: FileChange[] | null) =>
       files={files}
       selected={null}
       busy={false}
+      readOnly={false}
       onWorktreeChange={() => {}}
       onSelect={() => {}}
       onToggle={() => {}}

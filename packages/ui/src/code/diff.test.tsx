@@ -97,6 +97,7 @@ test("the toolbar switches modes, toggles editing and opens the file", async () 
       editing={false}
       onEditingChange={(e) => events.push(`edit:${e}`)}
       canEdit
+      readOnly={false}
       onOpenFile={() => events.push("file")}
       onOpenExternal={() => events.push("external")}
     />,
@@ -151,6 +152,7 @@ test("the file list groups by area and toggles staging per file", async () => {
       files={files}
       selected={{ path: "packages/core/ticket.ts", area: "staged" }}
       busy={false}
+      readOnly={false}
       onSelect={(f) => selected.push(`${f.area}:${f.path}`)}
       onToggle={(f) => toggled.push(`${f.area}:${f.path}`)}
     />,

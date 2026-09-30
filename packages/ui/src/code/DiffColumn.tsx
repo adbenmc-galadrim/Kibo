@@ -13,6 +13,7 @@ type Props = {
   mode: DiffMode;
   onModeChange(mode: DiffMode): void;
   busy: boolean;
+  readOnly: boolean;
   onHunk(index: number, header: string): void;
   onOpenFile(line: number | null): void;
   onOpenExternal(line: number | null): void;
@@ -22,7 +23,7 @@ type Props = {
 export function DiffColumn({ file, diff, ...p }: Props) {
   const [editing, setEditing] = useState(false);
   if (!file || !diff) return <p className="p-8 text-sm text-muted-foreground">{fr.changes.noSelection}</p>;
-  const canEdit = file.area === "unstaged" && file.kind !== "deleted" && !diff.binary;
+  const canEdit = !p.readOnly && file.area === "unstaged" && file.kind !== "deleted" && !diff.binary;
   const line = diff.hunks[0]?.newStart ?? null;
   return (
     <>
@@ -35,6 +36,7 @@ export function DiffColumn({ file, diff, ...p }: Props) {
         editing={editing && canEdit}
         onEditingChange={setEditing}
         canEdit={canEdit}
+        readOnly={p.readOnly}
         onOpenFile={() => p.onOpenFile(line)}
         onOpenExternal={() => p.onOpenExternal(line)}
       />
@@ -47,7 +49,13 @@ export function DiffColumn({ file, diff, ...p }: Props) {
           onSaved={p.onSaved}
         />
       ) : (
-        <DiffView diff={diff} area={file.area} mode={p.mode} busy={p.busy} onHunk={p.onHunk} />
+        <DiffView
+          diff={diff}
+          area={file.area}
+          mode={p.mode}
+          busy={p.busy}
+          onHunk={p.readOnly ? undefined : p.onHunk}
+        />
       )}
     </>
   );

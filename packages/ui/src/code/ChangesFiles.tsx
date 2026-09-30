@@ -10,6 +10,7 @@ type Props = {
   files: FileChange[] | null;
   selected: FileSelection | null;
   busy: boolean;
+  readOnly: boolean;
   onWorktreeChange(path: string): void;
   onSelect(file: FileChange): void;
   onToggle(file: FileChange): void;
@@ -45,6 +46,7 @@ export function ChangesFiles(p: Props) {
           files={p.files}
           selected={p.selected}
           busy={p.busy}
+          readOnly={p.readOnly}
           onSelect={p.onSelect}
           onToggle={p.onToggle}
         />

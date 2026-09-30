@@ -6,6 +6,7 @@ import {
   type FileContent,
   type FileDiff,
   KiboError,
+  LOCAL_ONLY_CODE_METHODS,
   type ProjectSnapshot,
   type RepoStatus,
 } from "@kibo/schema";
@@ -370,4 +371,29 @@ test("Commiter d'abord closes the PR dialog and leaves the focus on the message"
     await new Promise((r) => setTimeout(r, 30));
   });
   expect(document.activeElement).toBe(screen.getByLabelText("Message"));
+});
+
+test("a remote view reads the changes but shows no git action", async () => {
+  status = { ...baseStatus, operation: "rebase" };
+  render(
+    <ChangesView
+      project={project}
+      worktree={null}
+      onWorktreeChange={() => {}}
+      onOpenFile={() => {}}
+      remote
+    />,
+  );
+  expect(await screen.findByRole("region", { name: "@@ -1,2 +1,2 @@" })).toBeTruthy();
+  expect(screen.getByText(/se font sur l'ordinateur où tourne Kibo/)).toBeTruthy();
+  expect(screen.getByText(/Rebase en cours/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Abandonner" })).toBeNull();
+  expect(screen.queryByRole("checkbox")).toBeNull();
+  expect(screen.queryByRole("button", { name: /Indexer le bloc|Désindexer le bloc/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Édition" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  expect(screen.queryByLabelText("Message")).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Commit|Pousser|Pull request/ })).toBeNull();
+  const localOnly = new Set<string>(LOCAL_ONLY_CODE_METHODS);
+  expect(calls.filter((c) => localOnly.has(c.method))).toEqual([]);
 });

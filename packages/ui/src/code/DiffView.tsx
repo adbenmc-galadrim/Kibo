@@ -67,7 +67,7 @@ type Props = {
   area: ChangeArea;
   mode: DiffMode;
   busy: boolean;
-  onHunk(index: number, header: string): void;
+  onHunk?: (index: number, header: string) => void;
 };
 
 export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
@@ -86,7 +86,7 @@ export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
         >
           <header className="sticky top-0 z-10 flex h-7 items-center justify-between gap-4 bg-muted px-4 text-2xs text-zinc-600 dark:text-zinc-400">
             <span className="truncate">{hunk.header}</span>
-            {diff.hunkStaging && (
+            {diff.hunkStaging && onHunk && (
               <Button
                 variant="ghost"
                 size="sm"

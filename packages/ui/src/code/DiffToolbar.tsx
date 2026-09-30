@@ -14,6 +14,7 @@ type Props = {
   editing: boolean;
   onEditingChange(editing: boolean): void;
   canEdit: boolean;
+  readOnly: boolean;
   onOpenFile(): void;
   onOpenExternal(): void;
 };
@@ -55,27 +56,31 @@ export function DiffToolbar(p: Props) {
           {fr.changes.split}
         </ToggleGroupItem>
       </ToggleGroup>
-      <Toggle
-        size="sm"
-        variant="outline"
-        pressed={p.editing}
-        disabled={!p.canEdit}
-        onPressedChange={p.onEditingChange}
-        className="h-7 shrink-0 px-2 text-2xs data-[state=on]:border-orange-500 data-[state=on]:bg-orange-500/15 data-[state=on]:text-foreground"
-      >
-        <Pencil aria-hidden />
-        {fr.changes.edit}
-      </Toggle>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="shrink-0"
-        aria-label={fr.changes.openExternal}
-        title={fr.changes.openExternal}
-        onClick={p.onOpenExternal}
-      >
-        <ExternalLink aria-hidden />
-      </Button>
+      {!p.readOnly && (
+        <>
+          <Toggle
+            size="sm"
+            variant="outline"
+            pressed={p.editing}
+            disabled={!p.canEdit}
+            onPressedChange={p.onEditingChange}
+            className="h-7 shrink-0 px-2 text-2xs data-[state=on]:border-orange-500 data-[state=on]:bg-orange-500/15 data-[state=on]:text-foreground"
+          >
+            <Pencil aria-hidden />
+            {fr.changes.edit}
+          </Toggle>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
+            aria-label={fr.changes.openExternal}
+            title={fr.changes.openExternal}
+            onClick={p.onOpenExternal}
+          >
+            <ExternalLink aria-hidden />
+          </Button>
+        </>
+      )}
     </div>
   );
 }

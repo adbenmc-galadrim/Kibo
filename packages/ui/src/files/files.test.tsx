@@ -184,3 +184,12 @@ test("a file tab being edited is not re-read on a change", async () => {
   await emitCode("/repo");
   expect(reads()).toBe(before);
 });
+
+test("a remote view previews the file without Modifier nor the external editor, even when asked to edit", async () => {
+  render(<FileTabView fileRef={ref} startEditing remote />);
+  expect(await screen.findByText(/n'est possible que sur l'ordinateur où tourne Kibo/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
+  expect(screen.queryByRole("textbox")).toBeNull();
+});

@@ -3,17 +3,16 @@ import { useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
+import { isRemoteView } from "../lib/remote-view";
 import { ChangesFiles } from "./ChangesFiles";
-import { CommitPanel } from "./CommitPanel";
+import { CommitColumn } from "./CommitColumn";
 import { type ChangesSlotsHook, useNoSlots } from "./changes-slots";
 import { DiffColumn } from "./DiffColumn";
 import type { DiffMode } from "./DiffView";
 import { type FileSelection, pickSelected } from "./FileList";
 import { ChangesAlerts } from "./OperationBanner";
 import { linkedTicketKey } from "./PrCard";
-import { PushActions } from "./PushActions";
 import { PushPrDialog, type PushPrInput } from "./PushPrDialog";
-import { UnpushedCommits } from "./UnpushedCommits";
 import { useCodeStatus, useCommitDefaults, useCompare, useFileDiff, useRemoteInfo } from "./use-code";
 import { useCommitDraft } from "./use-commit-draft";
 import { usePush } from "./use-push";
@@ -25,9 +24,17 @@ type Props = {
   onWorktreeChange(path: string): void;
   onOpenFile(ref: FileRef): void;
   useSlots?: ChangesSlotsHook;
+  remote?: boolean;
 };
 
-export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, useSlots }: Props) {
+export function ChangesView({
+  project,
+  worktree,
+  onWorktreeChange,
+  onOpenFile,
+  useSlots,
+  remote = isRemoteView(),
+}: Props) {
   const { worktrees, error } = useWorktrees(project.meta.id);
   const current = resolveWorktree(worktrees, worktree) ?? resolveWorktree(worktrees, null);
   if (error?.code === "NOT_A_REPO")
@@ -48,17 +55,20 @@ export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, u
       onWorktreeChange={onWorktreeChange}
       onOpenFile={onOpenFile}
       useSlots={useSlots ?? useNoSlots}
+      readOnly={remote}
     />
   );
 }
 
-type BodyProps = Omit<Props, "worktree" | "useSlots"> & {
+type BodyProps = Omit<Props, "worktree" | "useSlots" | "remote"> & {
   worktrees: Worktree[];
   current: Worktree;
   useSlots: ChangesSlotsHook;
+  readOnly: boolean;
 };
 
-function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile, useSlots }: BodyProps) {
+function ChangesBody(props: BodyProps) {
+  const { project, worktrees, current, onWorktreeChange, onOpenFile, useSlots, readOnly } = props;
   const projectId = project.meta.id;
   const w = { projectId, worktree: current.path };
   const { status, error: statusError, reload } = useCodeStatus(projectId, current.path);
@@ -184,7 +194,7 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
       <ChangesAlerts
         operation={status?.operation ?? null}
         busy={busy}
-        onAbort={() => void run(() => client.code({ method: "abortOperation", ...w }))}
+        onAbort={readOnly ? null : () => void run(() => client.code({ method: "abortOperation", ...w }))}
         error={shownError}
         notice={notice}
       />
@@ -196,6 +206,7 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
           files={status ? files : null}
           selected={selected && { path: selected.path, area: selected.area }}
           busy={busy}
+          readOnly={readOnly}
           onWorktreeChange={onWorktreeChange}
           onSelect={(f) => setSelection({ path: f.path, area: f.area })}
           onToggle={toggle}
@@ -210,6 +221,7 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
             mode={mode}
             onModeChange={setMode}
             busy={busy}
+            readOnly={readOnly}
             onHunk={hunk}
             onOpenFile={(line) => selected && onOpenFile({ ...w, path: selected.path, line, origin: null })}
             onOpenExternal={(line) =>
@@ -219,50 +231,51 @@ function ChangesBody({ project, worktrees, current, onWorktreeChange, onOpenFile
             onSaved={reload}
           />
         </div>
-        <aside className="flex min-h-0 flex-col gap-5 overflow-auto border-l p-4">
-          <CommitPanel
-            branch={branch}
-            loading={status === null}
-            stagedCount={staged.length}
-            message={draft.message}
-            onMessageChange={draft.edit}
-            prefilled={draft.prefilled}
-            amend={draft.amend}
-            onAmendChange={draft.setAmend}
-            canAmend={canAmend}
-            busy={busy}
-            onCommit={commit}
-            banner={slots.commitBanner}
-            messageRef={messageRef}
-          />
-          <UnpushedCommits
-            commits={status?.commits ?? []}
-            busy={busy}
-            onModify={modify}
-            onReword={reword}
-            onUndo={undo}
-          />
-          <PushActions
-            target={status?.upstream ?? `${remoteName}/${branch ?? ""}`}
-            remote={remoteName}
-            branch={branch}
-            base={baseBranch}
-            pending={unpushed}
-            prTicketKey={linkedTicketKey(project.tickets, remote.pr)}
-            canPush={branch !== null}
-            upToDate={upToDate}
-            pushing={pushing}
-            pushError={pushError}
-            busy={busy}
-            pr={remote.pr}
-            prBlocked={prBlocked}
-            canOpenPr={baseBranch !== null}
-            onPush={push}
-            onOpenPr={() => setPrOpen(true)}
-          />
-        </aside>
+        <CommitColumn
+          readOnly={readOnly}
+          commit={{
+            branch,
+            loading: status === null,
+            stagedCount: staged.length,
+            message: draft.message,
+            onMessageChange: draft.edit,
+            prefilled: draft.prefilled,
+            amend: draft.amend,
+            onAmendChange: draft.setAmend,
+            canAmend,
+            busy,
+            onCommit: commit,
+            banner: slots.commitBanner,
+            messageRef,
+          }}
+          unpushed={{
+            commits: status?.commits ?? [],
+            busy,
+            onModify: modify,
+            onReword: reword,
+            onUndo: undo,
+          }}
+          push={{
+            target: status?.upstream ?? `${remoteName}/${branch ?? ""}`,
+            remote: remoteName,
+            branch,
+            base: baseBranch,
+            pending: unpushed,
+            prTicketKey: linkedTicketKey(project.tickets, remote.pr),
+            canPush: branch !== null,
+            upToDate,
+            pushing,
+            pushError,
+            busy,
+            pr: remote.pr,
+            prBlocked,
+            canOpenPr: baseBranch !== null,
+            onPush: push,
+            onOpenPr: () => setPrOpen(true),
+          }}
+        />
       </div>
-      {branch && baseBranch && (
+      {!readOnly && branch && baseBranch && (
         <PushPrDialog
           open={prOpen}
           onOpenChange={setPrOpen}

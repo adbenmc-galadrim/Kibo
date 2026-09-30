@@ -76,6 +76,8 @@ export const frCode = {
       `${op} en cours : résous les conflits dans ton éditeur ou abandonne l'opération.`,
     operations: { rebase: "Rebase", merge: "Fusion", "cherry-pick": "Cherry-pick", revert: "Revert" },
     abortOperation: "Abandonner",
+    localOnly:
+      "Depuis un autre appareil, tu peux lire les changements mais pas les modifier : indexer, commiter et pousser se font sur l'ordinateur où tourne Kibo.",
     kind: { modified: "M", added: "A", deleted: "D", renamed: "R", untracked: "A", conflicted: "U" },
     kindLabel: {
       modified: "modifié",
@@ -180,6 +182,8 @@ export const frCode = {
     saved: "Enregistré",
     plainText: "Texte brut",
     languageFailed: "Coloration indisponible pour ce fichier.",
+    localOnly:
+      "Modifier ce fichier ou l'ouvrir dans l'éditeur externe n'est possible que sur l'ordinateur où tourne Kibo.",
   },
   time: {
     now: "à l'instant",
@@ -201,5 +205,6 @@ export const frCode = {
     TOO_LARGE: "Contenu trop volumineux pour être affiché : ouvre-le dans ton éditeur externe.",
     INVALID_INPUT: "Requête invalide.",
     NOT_FOUND: "Élément introuvable.",
+    FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
   },
 } as const;

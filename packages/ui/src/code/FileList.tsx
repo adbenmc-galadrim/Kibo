@@ -17,6 +17,7 @@ type Props = {
   files: FileChange[];
   selected: FileSelection | null;
   busy: boolean;
+  readOnly: boolean;
   onSelect(file: FileChange): void;
   onToggle(file: FileChange): void;
 };
@@ -38,9 +39,12 @@ const splitPath = (path: string) => {
   return { name: path.slice(slash + 1), dir: slash >= 0 ? path.slice(0, slash + 1) : "" };
 };
 
-type RowProps = { file: FileChange; active: boolean; busy: boolean } & Pick<Props, "onSelect" | "onToggle">;
+type RowProps = { file: FileChange; active: boolean; busy: boolean; readOnly: boolean } & Pick<
+  Props,
+  "onSelect" | "onToggle"
+>;
 
-function Row({ file, active, busy, onSelect, onToggle }: RowProps) {
+function Row({ file, active, busy, readOnly, onSelect, onToggle }: RowProps) {
   const { name, dir } = splitPath(file.path);
   const staged = file.area === "staged";
   return (
@@ -50,12 +54,16 @@ function Row({ file, active, busy, onSelect, onToggle }: RowProps) {
         active && "bg-accent",
       )}
     >
-      <Checkbox
-        checked={staged}
-        disabled={busy || file.kind === "conflicted"}
-        aria-label={staged ? fr.changes.unstageFile(file.path) : fr.changes.stageFile(file.path)}
-        onCheckedChange={() => onToggle(file)}
-      />
+      {readOnly ? (
+        <span aria-hidden className="size-4 shrink-0" />
+      ) : (
+        <Checkbox
+          checked={staged}
+          disabled={busy || file.kind === "conflicted"}
+          aria-label={staged ? fr.changes.unstageFile(file.path) : fr.changes.stageFile(file.path)}
+          onCheckedChange={() => onToggle(file)}
+        />
+      )}
       <button
         type="button"
         aria-current={active || undefined}
@@ -86,7 +94,7 @@ function Row({ file, active, busy, onSelect, onToggle }: RowProps) {
 
 type SectionProps = { area: ChangeArea; title: string; files: FileChange[] } & Omit<Props, "files">;
 
-function Section({ area, title, files, selected, busy, onSelect, onToggle }: SectionProps) {
+function Section({ area, title, files, selected, busy, readOnly, onSelect, onToggle }: SectionProps) {
   const [open, setOpen] = useState(true);
   const id = useId();
   return (
@@ -112,6 +120,7 @@ function Section({ area, title, files, selected, busy, onSelect, onToggle }: Sec
               file={f}
               active={selected?.path === f.path && selected.area === area}
               busy={busy}
+              readOnly={readOnly}
               onSelect={onSelect}
               onToggle={onToggle}
             />

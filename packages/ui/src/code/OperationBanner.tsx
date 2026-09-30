@@ -2,15 +2,17 @@ import type { GitOperation } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { fr } from "../i18n/fr";
 
-type Props = { operation: GitOperation; busy: boolean; onAbort(): void };
+type Props = { operation: GitOperation; busy: boolean; onAbort: (() => void) | null };
 
 export function OperationBanner({ operation, busy, onAbort }: Props) {
   return (
     <div className="flex items-center gap-3 border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-300">
       <span className="flex-1">{fr.changes.operation(fr.changes.operations[operation])}</span>
-      <Button variant="outline" size="sm" disabled={busy} onClick={onAbort}>
-        {fr.changes.abortOperation}
-      </Button>
+      {onAbort && (
+        <Button variant="outline" size="sm" disabled={busy} onClick={onAbort}>
+          {fr.changes.abortOperation}
+        </Button>
+      )}
     </div>
   );
 }
@@ -18,7 +20,7 @@ export function OperationBanner({ operation, busy, onAbort }: Props) {
 type AlertsProps = {
   operation: GitOperation | null;
   busy: boolean;
-  onAbort(): void;
+  onAbort: (() => void) | null;
   error: string | null;
   notice: string | null;
 };
