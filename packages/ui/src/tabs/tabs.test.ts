@@ -26,6 +26,7 @@ describe("hash codec", () => {
     { kind: "screen", screen: "security" },
     { kind: "screen", screen: "sources" },
     { kind: "screen", screen: "shortcuts" },
+    { kind: "screen", screen: "workspace" },
   ];
   test("round-trips every target kind", () => {
     for (const t of targets) expect(hashToTarget(targetToHash(t))).toEqual(t);
@@ -56,6 +57,7 @@ describe("hash codec", () => {
   test("the shortcuts screen has its settings hash", () => {
     expect(targetToHash({ kind: "screen", screen: "shortcuts" })).toBe("#/settings/shortcuts");
     expect(hashToTarget("#/settings/shortcuts")).toEqual({ kind: "screen", screen: "shortcuts" });
+    expect(targetToHash({ kind: "screen", screen: "workspace" })).toBe("#/settings/workspace");
   });
 });
 

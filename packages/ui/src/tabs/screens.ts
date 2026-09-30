@@ -1,6 +1,7 @@
 import type { Screen } from "@kibo/schema";
 import {
   Bot,
+  Building2,
   Cloud,
   Keyboard,
   List,
@@ -46,5 +47,10 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     title: fr.settings.shortcuts,
     icon: Keyboard,
     crumbs: [fr.nav.settings, fr.settings.shortcuts],
+  },
+  workspace: {
+    title: fr.settings.workspace,
+    icon: Building2,
+    crumbs: [fr.nav.settings, fr.settings.workspace],
   },
 };

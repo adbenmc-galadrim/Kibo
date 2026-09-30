@@ -35,6 +35,10 @@ export const ShortcutsPage = lazyPanel(
   () => import("../settings/ShortcutsPage").then((m) => m.ShortcutsPage),
   fr.lazy,
 );
+export const WorkspacePage = lazyPanel(
+  () => import("../settings/WorkspacePage").then((m) => m.WorkspacePage),
+  fr.lazy,
+);
 export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,
