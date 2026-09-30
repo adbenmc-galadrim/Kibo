@@ -155,6 +155,12 @@ test("the file list groups by area and toggles staging per file", async () => {
       readOnly={false}
       onSelect={(f) => selected.push(`${f.area}:${f.path}`)}
       onToggle={(f) => toggled.push(`${f.area}:${f.path}`)}
+      onOpenInTab={() => {}}
+      onOpenExternal={() => {}}
+      onCopyPath={() => {}}
+      onDiscard={() => {}}
+      onStageAll={() => {}}
+      onUnstageAll={() => {}}
     />,
   );
   const staged = screen.getByRole("group", { name: "Indexés" });
@@ -165,7 +171,7 @@ test("the file list groups by area and toggles staging per file", async () => {
       .getAttribute("aria-checked"),
   ).toBe("true");
   await userEvent.click(screen.getByRole("checkbox", { name: "Indexer packages/core/index.ts" }));
-  await userEvent.click(screen.getByRole("button", { name: /legacy-tree\.ts/ }));
+  await userEvent.click(screen.getByRole("button", { name: /^supprimé legacy-tree\.ts/ }));
   expect(toggled).toEqual(["unstaged:packages/core/index.ts"]);
   expect(selected).toEqual(["unstaged:packages/core/legacy-tree.ts"]);
   await userEvent.click(screen.getByRole("button", { name: /Indexés/ }));

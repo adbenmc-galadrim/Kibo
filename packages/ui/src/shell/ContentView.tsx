@@ -18,7 +18,7 @@ type Props = {
   onImportProject(): void;
   onNewPage(): void;
   onSuggestPages(projectId: string): void;
-  onOpen(target: TabTarget): void;
+  onOpen(target: TabTarget, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
   onAssign(ticketId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
@@ -59,6 +59,18 @@ export function ContentView(p: Props) {
           worktree={t.worktree}
           onWorktreeChange={(worktree) => p.onOpen({ ...t, worktree })}
           onOpenFile={p.onOpenFile}
+          onOpenInTab={(ref) =>
+            p.onOpen(
+              {
+                kind: "file",
+                projectId: ref.projectId,
+                worktree: ref.worktree,
+                path: ref.path,
+                line: ref.line,
+              },
+              true,
+            )
+          }
           useSlots={useChangesSlots}
         />
       );
