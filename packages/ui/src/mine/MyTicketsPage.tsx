@@ -1,6 +1,6 @@
 import type { ProjectMeta, ProjectSnapshot, WorkspaceConfig } from "@kibo/schema";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
+import { TooltipProvider } from "@kibo/sdk/ui/tooltip";
 import { useId, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
 import { projectDomainsOf } from "../lib/project-domains";
@@ -37,16 +37,6 @@ function MineTabs({ value, onChange }: { value: MineTab; onChange(tab: MineTab):
       <ToggleGroupItem value="agents" className={SEGMENT}>
         {fr.mine.agents}
       </ToggleGroupItem>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="block">
-            <ToggleGroupItem value="created" className={SEGMENT} disabled>
-              {fr.mine.created}
-            </ToggleGroupItem>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{fr.mine.createdLater}</TooltipContent>
-      </Tooltip>
     </ToggleGroup>
   );
 }

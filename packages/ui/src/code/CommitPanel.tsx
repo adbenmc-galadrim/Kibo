@@ -2,8 +2,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
-import { Check, GitCommitHorizontal, Sparkles } from "lucide-react";
+import { Check, GitCommitHorizontal } from "lucide-react";
 import { type ReactNode, type Ref, useId } from "react";
 import { fr } from "../i18n/fr";
 
@@ -53,19 +52,6 @@ export function CommitPanel(p: Props) {
       />
       <div className="flex items-center justify-between gap-2 text-2xs text-muted-foreground">
         <span>{p.prefilled ? fr.commit.prefilled : ""}</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button variant="ghost" size="sm" disabled>
-                  <Sparkles />
-                  {fr.commit.generate}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{fr.commit.generateSoon}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
       <div className="flex items-center gap-2" title={p.canAmend ? undefined : fr.commit.amendDisabled}>
         <Checkbox

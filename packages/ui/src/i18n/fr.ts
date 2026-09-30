@@ -99,9 +99,6 @@ export const fr = {
     start: "Démarrer depuis",
     startEmpty: "Projet vide",
     startEmptyHelp: "Aucune page, aucun composant.",
-    startCopy: "Depuis un projet",
-    startCopyHelp: "Copie les pages et les composants d'un projet.",
-    soon: "Bientôt",
     submit: "Créer le projet",
     errors: {
       INVALID_INPUT: "Projet refusé : cette clé est peut-être déjà prise, ou un champ est invalide.",
@@ -131,8 +128,6 @@ export const fr = {
     tabs: "Filtre des tickets",
     assigned: "Assignés à moi",
     agents: "Mes agents",
-    created: "Créés par moi",
-    createdLater: "Kibo n'enregistre pas encore l'auteur d'un ticket.",
     summary: (tickets: number, projects: number) =>
       `${tickets} ticket${tickets > 1 ? "s" : ""} · ${projects} projet${projects > 1 ? "s" : ""}`,
     assign: "Assigner",
@@ -140,7 +135,6 @@ export const fr = {
     empty: {
       assigned: "Aucun ticket ouvert ne t'est assigné.",
       agents: "Aucun ticket ouvert n'est confié à un agent.",
-      created: "Kibo n'enregistre pas encore l'auteur d'un ticket.",
     },
   },
   page: {
@@ -401,16 +395,7 @@ export const fr = {
     security: "Sécurité",
     components: "Composants",
     shortcuts: "Raccourcis",
-    soon: "Bientôt",
-    generalSubtitle: "Langue, démarrage et outils en ligne de commande.",
-    application: "Application",
-    language: "Langue",
-    french: "Français",
-    openAtLogin: "Ouvrir Kibo à l'ouverture de session",
-    openAtLoginHelp: "Le démon démarre avec l'application",
-    dataDir: "Dossier des données",
-    dataDirHelp: "~/.kibo · base SQLite, journaux des runs, onglets",
-    open: "Ouvrir",
+    generalSubtitle: "Mises à jour et outils en ligne de commande.",
   },
   domains: {
     title: "Domaines & guidelines",

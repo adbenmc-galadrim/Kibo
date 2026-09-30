@@ -1,10 +1,9 @@
-import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { DialogFooter } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { Folder, LayoutDashboard, Plus } from "lucide-react";
+import { LayoutDashboard, Plus } from "lucide-react";
 import { type FormEvent, useId } from "react";
 import { fr } from "../i18n/fr";
 import { ChoiceCard } from "./ChoiceCard";
@@ -88,15 +87,6 @@ export function NewProjectForm(p: Props) {
             title={fr.onboarding.startSuggested}
             description={p.pageTitles.length > 0 ? p.pageTitles.join(", ") : fr.onboarding.noPage}
             disabled={p.pageTitles.length === 0}
-          />
-          <ChoiceCard
-            stacked
-            disabled
-            value="copy"
-            icon={Folder}
-            title={fr.newProject.startCopy}
-            description={fr.newProject.startCopyHelp}
-            badge={<Badge variant="secondary">{fr.newProject.soon}</Badge>}
           />
         </RadioGroup>
       </fieldset>

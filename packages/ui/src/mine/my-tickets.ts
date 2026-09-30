@@ -1,6 +1,6 @@
 import type { ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
 
-export type MineTab = "assigned" | "agents" | "created";
+export type MineTab = "assigned" | "agents";
 export type MineGroup = { project: ProjectMeta; tickets: TicketView[] };
 
 export const MINE_STATUS_ORDER: readonly StatusId[] = [
@@ -19,8 +19,7 @@ const waits = (t: TicketView) => (t.waitingOn.length > 0 ? 0 : 1);
 export function isMine(t: TicketView, viewer: string, tab: MineTab): boolean {
   if (t.statusId === "done") return false;
   if (tab === "assigned") return t.assignee?.kind === "human" && t.assignee.ref === viewer;
-  if (tab === "agents") return t.assignee?.kind === "agent";
-  return false;
+  return t.assignee?.kind === "agent";
 }
 
 export function compareMine(a: TicketView, b: TicketView): number {

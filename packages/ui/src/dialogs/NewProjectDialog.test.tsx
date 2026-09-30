@@ -94,6 +94,7 @@ test("NewProjectDialog Passer creates an empty project", async () => {
   await user.click(await screen.findByRole("button", { name: "Passer" }));
   expect(screen.getByRole("radio", { name: "Projet vide" }).getAttribute("data-state")).toBe("checked");
   expect(screen.getByRole("radio", { name: "Pages conseillées" }).hasAttribute("disabled")).toBe(true);
+  expect(screen.queryByRole("radio", { name: /Depuis un projet/ })).toBeNull();
   await user.type(screen.getByLabelText("Nom"), "Vide");
   await user.click(screen.getByRole("button", { name: "Créer le projet" }));
   expect(calls.some((c) => c.method === "createProject")).toBe(true);

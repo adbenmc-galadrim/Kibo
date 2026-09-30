@@ -55,9 +55,11 @@ describe("my tickets page", () => {
     ).toBe(true);
   });
 
-  test("my agents tab and the disabled created tab", () => {
+  test("my agents tab, and only two filters", () => {
     renderPage();
-    expect(screen.getByRole("radio", { name: "Créés par moi" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("radio", { name: "Créés par moi" })).toBeNull();
+    const filters = screen.getByRole("radiogroup", { name: "Filtre des tickets" });
+    expect(within(filters).getAllByRole("radio")).toHaveLength(2);
     fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
     expect(screen.getByText("1 ticket · 1 projet")).toBeTruthy();
     const kibo = screen.getByRole("region", { name: "Kibo" });

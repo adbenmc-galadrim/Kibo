@@ -115,8 +115,6 @@ export const frCode = {
     message: "Message",
     placeholder: "Message du commit",
     prefilled: "Pré-rempli depuis le ticket · 0 token",
-    generate: "Générer avec Claude",
-    generateSoon: "Bientôt : la génération passera par la file d'attente des agents.",
     amend: "Modifier le dernier commit (non poussé)",
     amendDisabled: "Le dernier commit est déjà poussé : il ne peut plus être modifié.",
     submit: (branch: string) => `Commit sur ${branch}`,

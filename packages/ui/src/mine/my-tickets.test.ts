@@ -21,9 +21,6 @@ describe("my tickets", () => {
   test("my agents: open tickets assigned to any agent", () => {
     expect(keys("agents")).toEqual([["KIB", ["KIB-12"]]]);
   });
-  test("created by me is empty until tickets record their author (E5)", () => {
-    expect(keys("created")).toEqual([]);
-  });
   test("a ticket waiting for its key comes after the keyed tickets of its rank", () => {
     const adam: Assignee = { kind: "human", ref: "adam" };
     const pending = mineTicket(null, "todo", adam);

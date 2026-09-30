@@ -53,7 +53,7 @@ test("the commit button names the branch and ⌘↵ commits", async () => {
   render(<Panel onCommit={() => commits++} />);
   expect(screen.getByText("2 fichiers indexés")).toBeTruthy();
   expect(screen.getByText("Pré-rempli depuis le ticket · 0 token")).toBeTruthy();
-  expect(screen.getByRole("button", { name: /Générer avec Claude/ }).hasAttribute("disabled")).toBe(true);
+  expect(screen.queryByRole("button", { name: /Générer avec Claude/ })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: /Commit sur kib-12/ }));
   await userEvent.click(screen.getByLabelText("Message"));
   await userEvent.keyboard("{Meta>}{Enter}{/Meta}");
