@@ -1,4 +1,4 @@
-import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
+import { KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
 import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -7,6 +7,8 @@ import type { TicketRef } from "./markdown";
 import { NoteDocument } from "./NoteDocument";
 import { type Backlink, type LinkedTicket, NoteLinks } from "./NoteLinks";
 import { NoteList } from "./NoteList";
+import { NoteTitleDialog } from "./NoteTitleDialog";
+import { createdPath } from "./note-name";
 import { RenameNoteDialog } from "./RenameNoteDialog";
 import { useNoteSession } from "./use-note-session";
 
@@ -20,14 +22,6 @@ function resolveTarget(target: string, notes: NoteMeta[]): string | null {
     .filter((n) => n.path.split("/").pop() === base)
     .sort((a, b) => a.path.length - b.path.length);
   return byName[0]?.path ?? null;
-}
-
-function freePath(notes: NoteMeta[]): string {
-  const taken = new Set(notes.map((n) => n.path));
-  for (let i = 1; ; i += 1) {
-    const path = i === 1 ? "sans-titre.md" : `sans-titre-${i}.md`;
-    if (!taken.has(path)) return path;
-  }
 }
 
 function backlinksOf(note: NoteContent, notes: NoteMeta[]): Backlink[] {
@@ -79,6 +73,7 @@ export function NotesView() {
   const [selected, setSelected] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState<NoteMeta | null>(null);
   const [removing, setRemoving] = useState<NoteMeta | null>(null);
 
@@ -122,16 +117,12 @@ export function NotesView() {
     }
   }, [listed.data, selected, note, state, editing, load]);
 
-  const create = async () => {
-    try {
-      const path = freePath(listed.data);
-      await sdk.notes.write(path, `# ${fr.untitled}\n`, null);
-      setQuery("");
-      setSelected(path);
-      setEditing(true);
-    } catch (e) {
-      fail(fr.createFailed)(e);
-    }
+  const create = async (path: string, title: string) => {
+    if (listed.data.some((n) => n.path === path)) throw new KiboError("CONFLICT", `${path} already exists`);
+    await sdk.notes.write(path, `# ${title}\n`, null);
+    setQuery("");
+    setSelected(path);
+    setEditing(true);
   };
 
   const nextAfter = (path: string): string | null => {
@@ -161,7 +152,7 @@ export function NotesView() {
         query={query}
         onQuery={setQuery}
         onSelect={open}
-        onCreate={() => void create()}
+        onCreate={() => setCreating(true)}
         readOnly={readOnly}
         onRename={(path) => setRenaming(byPath(path))}
         onRemove={(path) => setRemoving(byPath(path))}
@@ -199,6 +190,20 @@ export function NotesView() {
         onTicket={(id) => sdk.openTicket(id)}
         onNote={open}
       />
+      {creating && (
+        <NoteTitleDialog
+          title={fr.createTitle}
+          initial=""
+          confirmLabel={fr.createConfirm}
+          pathFor={createdPath}
+          unchanged={null}
+          submit={create}
+          describeError={(e) =>
+            e instanceof KiboError && e.code === "CONFLICT" ? fr.renameConflict : fr.createFailed
+          }
+          onClose={() => setCreating(false)}
+        />
+      )}
       {renaming && <RenameNoteDialog note={renaming} onRename={rename} onClose={() => setRenaming(null)} />}
       {removing && (
         <ConfirmDialog

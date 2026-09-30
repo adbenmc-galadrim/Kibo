@@ -84,7 +84,12 @@ test("renaming the open note keeps what was just typed and saves to the new file
 });
 
 test("the first save of an untitled note renames its file after its title", async () => {
-  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
+  const m = createMockSdk(manifest, {
+    seed,
+    surface: "view",
+    notes: { ...DEMO_NOTES, "sans-titre.md": "# Sans titre\n" },
+    noteAges: DEMO_NOTE_AGES,
+  });
   let reached: () => void = () => undefined;
   const saving = new Promise<void>((r) => {
     reached = r;
@@ -108,9 +113,10 @@ test("the first save of an untitled note renames its file after its title", asyn
   };
   mount(sdk);
   const user = userEvent.setup();
-  await screen.findByRole("heading", { level: 1 });
-  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
-  await waitFor(() => expect(m.notes.has("sans-titre.md")).toBe(true));
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: /^Sans titre/ }));
+  await screen.findByRole("heading", { level: 1, name: "Sans titre" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
   const view = await editorView();
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: "# Plan de test\n\nPremière ligne.\n" },
@@ -137,4 +143,32 @@ test("the first save of an untitled note renames its file after its title", asyn
   });
   expect(m.notes.has("autre-titre.md")).toBe(false);
   expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("untitled files are flagged in the list and renamed at their next save once titled", async () => {
+  const m = setup("view", {
+    ...DEMO_NOTES,
+    "sans-titre.md": "Brouillon\n",
+    "sans-titre-2.md": "# Sans titre\n\nNotes.\n",
+  });
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  expect(screen.getAllByRole("button", { name: "Fichier sans titre · Renommer…" })).toHaveLength(2);
+  await user.click(screen.getByRole("button", { name: /^Sans titre/ }));
+  await screen.findByRole("heading", { level: 1, name: "Sans titre" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.dispatch({ changes: { from: 0, to: 12, insert: "# Plan de test" }, userEvent: "input.type" });
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n\nNotes.\n"), {
+    timeout: 3000,
+  });
+  expect(m.notes.has("sans-titre-2.md")).toBe(false);
+  expect(m.notes.has("sans-titre.md")).toBe(true);
+  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
+  await waitFor(() =>
+    expect(screen.getAllByRole("button", { name: "Fichier sans titre · Renommer…" })).toHaveLength(1),
+  );
+  await user.click(screen.getByRole("button", { name: "Fichier sans titre · Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  expect((within(dialog).getByLabelText("Titre") as HTMLInputElement).value).toBe("sans-titre");
 });

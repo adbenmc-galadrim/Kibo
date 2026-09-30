@@ -56,7 +56,7 @@ test("ticket chips and backlinks navigate", async () => {
   expect(await screen.findByRole("heading", { level: 1, name: "Journal agents" })).toBeTruthy();
 });
 
-test("search asks the daemon, new note creates a file", async () => {
+test("search asks the daemon, new note asks a title and refuses a taken name", async () => {
   const m = setup("view");
   const user = userEvent.setup();
   await screen.findByRole("heading", { level: 1 });
@@ -64,8 +64,22 @@ test("search asks the daemon, new note creates a file", async () => {
   await waitFor(() => expect(listed()).toEqual([expect.stringContaining("Décisions d'architecture")]));
   await user.clear(screen.getByPlaceholderText("Rechercher une note…"));
   await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
-  await waitFor(() => expect(m.notes.has("sans-titre.md")).toBe(true));
-  expect(m.notes.get("sans-titre.md")?.markdown).toBe("# Sans titre\n");
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle note" });
+  const field = within(dialog).getByLabelText("Titre");
+  expect((within(dialog).getByRole("button", { name: "Créer" }) as HTMLButtonElement).disabled).toBe(true);
+  await user.type(field, "Journal agents");
+  expect(within(dialog).getByText("Fichier : journal-agents.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  expect(m.notes.get("journal-agents.md")?.markdown).toBe(DEMO_NOTES["journal-agents.md"]);
+  await user.clear(field);
+  await user.type(field, "Plan de test");
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n"));
+  expect(m.notes.has("sans-titre.md")).toBe(false);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(await screen.findByRole("textbox", { name: "Contenu de la note" })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
 });
 
 test("D4: the conflict banner offers reload and keep mine", async () => {
@@ -144,7 +158,7 @@ test("a read-only project shows no note menu", async () => {
   const m = createMockSdk(manifest, {
     seed,
     surface: "view",
-    notes: DEMO_NOTES,
+    notes: { ...DEMO_NOTES, "sans-titre.md": "Brouillon\n" },
     noteAges: DEMO_NOTE_AGES,
     shared: true,
   });
@@ -153,4 +167,6 @@ test("a read-only project shows no note menu", async () => {
   await screen.findByRole("list", { name: "Notes" });
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull());
   expect(screen.queryByRole("button", { name: "Nouvelle note" })).toBeNull();
+  expect(screen.getByText("Fichier sans titre")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Fichier sans titre/ })).toBeNull();
 });

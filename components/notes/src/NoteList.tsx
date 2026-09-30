@@ -6,6 +6,7 @@ import { Plus, Search } from "lucide-react";
 import { noteDate } from "./dates";
 import { fr } from "./fr";
 import { NoteMenu } from "./NoteMenu";
+import { isUntitledPath } from "./note-name";
 
 type Props = {
   notes: NoteMeta[];
@@ -76,6 +77,18 @@ export function NoteList(p: Props) {
                   {n.tickets.length > 0 && ` · ${fr.links(n.tickets.length)}`}
                 </span>
               </button>
+              {isUntitledPath(n.path) &&
+                (readOnly ? (
+                  <span className="block px-2 pb-1.5 text-xs text-muted-foreground">{fr.untitledFile}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="block px-2 pb-1.5 text-left text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    onClick={() => onRename(n.path)}
+                  >
+                    {fr.untitledHint}
+                  </button>
+                ))}
             </NoteMenu>
           </li>
         ))}

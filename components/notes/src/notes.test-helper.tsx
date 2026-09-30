@@ -29,6 +29,7 @@ export const listed = () =>
   within(screen.getByRole("list", { name: "Notes" }))
     .getAllByRole("button")
     .filter((b) => !b.getAttribute("aria-label")?.startsWith("Actions de "))
+    .filter((b) => !b.textContent?.startsWith("Fichier sans titre"))
     .map((b) => b.textContent);
 
 export const editorView = async () => {
