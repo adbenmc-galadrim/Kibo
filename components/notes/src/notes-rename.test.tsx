@@ -172,3 +172,46 @@ test("untitled files are flagged in the list and renamed at their next save once
   const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
   expect((within(dialog).getByLabelText("Titre") as HTMLInputElement).value).toBe("sans-titre");
 });
+
+test("a save that fires during a long rename ends up in the new file, without a conflict banner", async () => {
+  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((r) => {
+    release = r;
+  });
+  mount({
+    ...m.sdk,
+    notes: {
+      ...m.sdk.notes,
+      rename: async (from, to) => {
+        const meta = await m.sdk.notes.rename(from, to);
+        await held;
+        return meta;
+      },
+    },
+  });
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  await user.click(screen.getByRole("button", { name: "Actions de Décisions d'architecture" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  const field = within(dialog).getByLabelText("Titre");
+  await user.clear(field);
+  await user.type(field, "Choix");
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  await waitFor(() => expect(m.notes.has("choix.md")).toBe(true));
+  view.dispatch({
+    changes: { from: view.state.doc.length, insert: "\nPendant le renommage" },
+    userEvent: "input.type",
+  });
+  const typed = view.state.doc.toString();
+  await new Promise((r) => setTimeout(r, 1000));
+  release();
+  await waitFor(() => expect(m.notes.get("choix.md")?.markdown).toBe(typed), { timeout: 3000 });
+  expect(await screen.findByText("Enregistré • local")).toBeTruthy();
+  noConflict();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(view.state.doc.toString()).toBe(typed);
+});

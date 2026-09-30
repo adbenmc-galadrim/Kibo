@@ -54,6 +54,7 @@ export function useNoteSession({ selected, select, listed, fail }: Options) {
           s.autosave.rebase(meta.mtime);
           setNote((n) => (n && n.path === from ? { ...n, ...meta } : n));
           select(meta.path);
+          await s.autosave.flush();
         }
         return meta;
       } finally {
