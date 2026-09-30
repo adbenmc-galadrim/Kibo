@@ -74,3 +74,4 @@ setInterval(() => {
   if (process.ppid !== parentPid) stop();
 }, 2000).unref();
 process.stdout.write(`KIBO_READY ${daemon.url}/#pair=${daemon.token}\n`);
+process.stdout.write(`KIBO_SANDBOX http://127.0.0.1:${daemon.sandboxPort}\n`);

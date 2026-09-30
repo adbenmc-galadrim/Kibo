@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { readDaemonInfo } from "./components/daemon-info";
 
-test("announces readiness with the pairing link on stdout only", async () => {
+test("announces readiness with the pairing link, then the sandbox origin, on stdout only", async () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
   const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), "--port", "0"], {
     env: { ...process.env, KIBO_HOME: home },
@@ -14,17 +14,20 @@ test("announces readiness with the pairing link on stdout only", async () => {
   });
   const reader = proc.stdout.getReader();
   let out = "";
-  while (!out.includes("\n")) {
+  while (out.split("\n").length < 3) {
     const { value, done } = await reader.read();
     if (done) break;
     out += new TextDecoder().decode(value);
   }
+  const info = readDaemonInfo(home);
   proc.kill("SIGTERM");
   const code = await proc.exited;
   const err = await new Response(proc.stderr).text();
   const token = readFileSync(join(home, "token"), "utf8").trim();
   rmSync(home, { recursive: true, force: true });
-  expect(out).toMatch(new RegExp(`^KIBO_READY http://127\\.0\\.0\\.1:\\d+/#pair=${token}\\n$`));
+  expect(out).toBe(
+    `KIBO_READY http://127.0.0.1:${info?.port}/#pair=${token}\nKIBO_SANDBOX http://127.0.0.1:${info?.sandboxPort}\n`,
+  );
   expect(err).not.toContain("KIBO_READY");
   expect(code).toBe(0);
 });
@@ -82,7 +85,7 @@ test("tells the ui to leave notifications to the desktop shell", async () => {
     if (done) break;
     out += new TextDecoder().decode(value);
   }
-  const [, origin = "", token = ""] = /^KIBO_READY (\S+)\/#pair=(\w+)\n$/.exec(out) ?? [];
+  const [, origin = "", token = ""] = /^KIBO_READY (\S+)\/#pair=(\w+)\n/.exec(out) ?? [];
   const headers = { "content-type": "application/json", origin };
   const paired = await fetch(`${origin}/api/pair`, {
     method: "POST",

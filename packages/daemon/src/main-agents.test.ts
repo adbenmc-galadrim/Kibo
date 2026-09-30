@@ -27,7 +27,7 @@ async function readyLine(stdout: ReadableStream<Uint8Array>): Promise<string> {
 }
 
 async function rpcClient(out: string) {
-  const [, origin = "", token = ""] = /^KIBO_READY (\S+)\/#pair=(\w+)\n$/.exec(out) ?? [];
+  const [, origin = "", token = ""] = /^KIBO_READY (\S+)\/#pair=(\w+)\n/.exec(out) ?? [];
   const headers = { "content-type": "application/json", origin };
   const paired = await fetch(`${origin}/api/pair`, {
     method: "POST",
