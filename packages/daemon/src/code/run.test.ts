@@ -119,6 +119,14 @@ test("git never prompts and ignores an inherited repository", async () => {
   }
 });
 
+test("gh neither prompts nor checks for updates", async () => {
+  const r = await run(["sh", "-c", 'printf "%s|%s" "$GH_PROMPT_DISABLED" "$GH_NO_UPDATE_NOTIFIER"'], {
+    cwd: fx.repo,
+    env: { GH_PROMPT_DISABLED: "0", GH_NO_UPDATE_NOTIFIER: "0" },
+  });
+  expect(r.stdout).toBe("1|1");
+});
+
 test("runGh uses KIBO_GH and passes stdin", async () => {
   const env = { ...fx.env, ...installFakeGh(fx.dir) };
   const r = await runGh(["pr", "create", "--head=kib-1", "--body-file", "-"], {
