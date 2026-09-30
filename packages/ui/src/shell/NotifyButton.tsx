@@ -8,11 +8,14 @@ const initial = (): NotificationPermission =>
 
 export function NotifyButton() {
   const [permission, setPermission] = useState<NotificationPermission>(initial);
-  if (permission !== "default") return <Bell aria-hidden className="size-4 text-muted-foreground" />;
+  if (permission !== "default") return null;
   const ask = () => void Notification.requestPermission().then(setPermission, () => setPermission("denied"));
   return (
-    <Button size="icon" variant="ghost" className="size-7" aria-label={fr.notify.enable} onClick={ask}>
-      <Bell />
-    </Button>
+    <div className="-mx-1 mt-1 flex justify-end border-t px-1 pt-1">
+      <Button size="sm" variant="ghost" className="h-7" onClick={ask}>
+        <Bell aria-hidden />
+        {fr.notify.enable}
+      </Button>
+    </div>
   );
 }

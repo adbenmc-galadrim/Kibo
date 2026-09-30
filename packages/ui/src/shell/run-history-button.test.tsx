@@ -40,18 +40,23 @@ const state = () => {
   ];
   return s;
 };
-function defaultNotificationPermission() {
+let restoreNotification = () => {};
+function fakeNotificationPermission(permission: NotificationPermission) {
   const saved = globalThis.Notification;
   Object.assign(globalThis, {
     Notification: Object.assign(function FakeNotification() {}, {
-      permission: "default",
-      requestPermission: async () => "default",
+      permission,
+      requestPermission: async () => permission,
     }),
   });
-  return () => Object.assign(globalThis, { Notification: saved });
+  restoreNotification = () => Object.assign(globalThis, { Notification: saved });
 }
 beforeEach(() => localStorage.clear());
-afterEach(() => localStorage.clear());
+afterEach(() => {
+  localStorage.clear();
+  restoreNotification();
+  restoreNotification = () => {};
+});
 
 test("the bell counts unseen runs, lists the history on open and marks it seen (screen 111)", async () => {
   const opened: string[] = [];
@@ -83,7 +88,7 @@ test("the bell counts unseen runs, lists the history on open and marks it seen (
 });
 
 test("without daemon state the bell is inert; without history the list says so; the browser gets the notification switch", async () => {
-  const restore = defaultNotificationPermission();
+  fakeNotificationPermission("default");
   const { unmount } = render(
     <RunHistoryButton agents={null} notifications="browser" now={NOW} onOpenRun={() => {}} />,
   );
@@ -95,6 +100,23 @@ test("without daemon state the bell is inert; without history the list says so; 
   await userEvent.setup().click(screen.getByRole("button", { name: "Historique des runs" }));
   const menu = await screen.findByRole("menu", { name: "Historique des runs" });
   expect(await within(menu).findByText("Aucun run pour l'instant.")).toBeTruthy();
-  expect(within(menu).getByRole("button", { name: "Activer les notifications" })).toBeTruthy();
-  restore();
+  const enable = within(menu).getByRole("button", { name: "Activer les notifications" });
+  expect(enable.textContent).toBe("Activer les notifications");
+});
+
+test("once notifications are granted or denied, the bell menu has no footer", async () => {
+  for (const permission of ["granted", "denied"] as const) {
+    fakeNotificationPermission(permission);
+    const { unmount } = render(
+      <RunHistoryButton agents={state()} notifications="browser" now={NOW} onOpenRun={() => {}} />,
+    );
+    await userEvent.setup().click(screen.getByRole("button", { name: /Historique des runs/ }));
+    const menu = await screen.findByRole("menu", { name: "Historique des runs" });
+    await within(menu).findAllByRole("menuitem");
+    expect(within(menu).queryByRole("separator")).toBeNull();
+    expect(within(menu).queryByRole("button")).toBeNull();
+    expect(menu.querySelector("svg.lucide-bell")).toBeNull();
+    unmount();
+    restoreNotification();
+  }
 });

@@ -1,5 +1,5 @@
 import { type RunView, runSubject, type Session } from "@kibo/schema";
-import { DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@kibo/sdk/ui/dropdown-menu";
+import { DropdownMenuItem, DropdownMenuLabel } from "@kibo/sdk/ui/dropdown-menu";
 import { fr } from "../i18n/fr";
 import { relativeTime } from "../lib/relative-time";
 import { NotifyButton } from "./NotifyButton";
@@ -27,14 +27,7 @@ export function RunHistoryList({ runs, now, notifications, onOpenRun }: Props) {
           {run.state === "waiting_input" && <span className="text-xs text-brand">{fr.header.reply}</span>}
         </DropdownMenuItem>
       ))}
-      {notifications === "browser" && (
-        <>
-          <DropdownMenuSeparator />
-          <div className="flex justify-end px-1 py-0.5">
-            <NotifyButton />
-          </div>
-        </>
-      )}
+      {notifications === "browser" && <NotifyButton />}
     </>
   );
 }
