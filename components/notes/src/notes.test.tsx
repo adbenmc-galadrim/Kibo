@@ -1,35 +1,14 @@
 import { expect, test } from "bun:test";
-import { EditorView } from "@codemirror/view";
-import type { ProjectCommand } from "@kibo/schema";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
-import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo } from "@kibo/sdk/fixtures";
+import { DEMO_NOTE_AGES, DEMO_NOTES } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-
-const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  seedDemo(run);
-};
+import { editorView, listed, mount, seed, setup } from "./notes.test-helper";
 
 runConformance({ manifest, Component }, seed, { notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
-
-function setup(surface: "view" | "widget", notes: Record<string, string> = DEMO_NOTES) {
-  const m = createMockSdk(manifest, { seed, surface, notes, noteAges: DEMO_NOTE_AGES });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  return m;
-}
-
-const listed = () =>
-  within(screen.getByRole("list", { name: "Notes" }))
-    .getAllByRole("button")
-    .filter((b) => !b.getAttribute("aria-label")?.startsWith("Actions de "))
-    .map((b) => b.textContent);
 
 test("screen 11: list, document, linked tickets and backlinks", async () => {
   const m = setup("view");
@@ -119,13 +98,6 @@ test("D9: empty widget", async () => {
   expect(await screen.findByText("Aucune note pour l'instant.")).toBeTruthy();
 });
 
-const editorView = async () => {
-  const content = await screen.findByRole("textbox", { name: "Contenu de la note" });
-  const view = EditorView.findFromDOM(content);
-  if (!view) throw new Error("editor not mounted");
-  return view;
-};
-
 test("the editor does not report a change it received from its value", async () => {
   const { MarkdownEditor } = await import("./MarkdownEditor");
   const changes: string[] = [];
@@ -168,147 +140,6 @@ test("a local unsaved edit survives an external change and shows the D4 banner",
   expect(m.notes.get("decisions-architecture.md")?.markdown).toBe(external);
 });
 
-test("a note is renamed from its menu; the dialog previews the file, a taken name is refused", async () => {
-  const m = setup("view");
-  const user = userEvent.setup();
-  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
-  await user.click(screen.getByRole("button", { name: "Actions de Journal agents" }));
-  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
-    "Renommer…",
-    "Supprimer…",
-  ]);
-  await user.click(screen.getByRole("menuitem", { name: "Renommer…" }));
-  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
-  const field = within(dialog).getByLabelText("Titre");
-  expect((field as HTMLInputElement).value).toBe("Journal agents");
-  await user.clear(field);
-  await user.type(field, "Décisions architecture");
-  expect(within(dialog).getByText("Fichier : decisions-architecture.md")).toBeTruthy();
-  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
-  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
-  await user.clear(field);
-  await user.type(field, "Journal des agents");
-  expect(within(dialog).getByText("Fichier : journal-des-agents.md")).toBeTruthy();
-  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
-  await waitFor(() => expect(m.notes.has("journal-des-agents.md")).toBe(true));
-  expect(m.notes.has("journal-agents.md")).toBe(false);
-  await waitFor(() =>
-    expect(listed()).toEqual(expect.arrayContaining([expect.stringContaining("Journal agents")])),
-  );
-});
-
-test("deleting a note asks, removes the file and selects the next note", async () => {
-  const m = setup("view");
-  const user = userEvent.setup();
-  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
-  await user.pointer({
-    keys: "[MouseRight]",
-    target: screen.getByRole("button", { name: /^Décisions d'architecture/ }),
-  });
-  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
-  const confirm = await screen.findByRole("alertdialog", {
-    name: "Supprimer la note « Décisions d'architecture » ?",
-  });
-  expect(confirm.textContent).toContain("Le fichier decisions-architecture.md sera supprimé du disque.");
-  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
-  await waitFor(() => expect(m.notes.has("decisions-architecture.md")).toBe(false));
-  expect(await screen.findByRole("heading", { level: 1, name: "Journal agents" })).toBeTruthy();
-});
-
-const noConflict = () =>
-  expect(
-    screen.queryAllByRole("alert").filter((a) => a.textContent?.includes("Modifié hors de Kibo")),
-  ).toEqual([]);
-
-test("renaming the open note keeps what was just typed and saves to the new file", async () => {
-  const m = setup("view");
-  const user = userEvent.setup();
-  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
-  await user.click(screen.getByRole("button", { name: "Modifier" }));
-  const view = await editorView();
-  view.dispatch({
-    changes: { from: view.state.doc.length, insert: "\nFrappe récente" },
-    userEvent: "input.type",
-  });
-  const typed = view.state.doc.toString();
-  await user.click(screen.getByRole("button", { name: "Actions de Décisions d'architecture" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Renommer…" }));
-  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
-  const field = within(dialog).getByLabelText("Titre");
-  await user.clear(field);
-  await user.type(field, "Choix");
-  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
-  await waitFor(() => expect(m.notes.get("choix.md")?.markdown).toBe(typed));
-  expect(m.notes.has("decisions-architecture.md")).toBe(false);
-  await new Promise((r) => setTimeout(r, 1000));
-  expect(m.notes.get("choix.md")?.markdown).toBe(typed);
-  noConflict();
-  expect(view.state.doc.toString()).toBe(typed);
-  view.dispatch({ changes: { from: view.state.doc.length, insert: " et suite" }, userEvent: "input.type" });
-  await waitFor(() => expect(m.notes.get("choix.md")?.markdown).toBe(`${typed} et suite`), { timeout: 3000 });
-  noConflict();
-});
-
-test("the first save of an untitled note renames its file after its title", async () => {
-  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
-  let reached: () => void = () => undefined;
-  const saving = new Promise<void>((r) => {
-    reached = r;
-  });
-  let release: () => void = () => undefined;
-  const held = new Promise<void>((r) => {
-    release = r;
-  });
-  const sdk: KiboSdk = {
-    ...m.sdk,
-    notes: {
-      ...m.sdk.notes,
-      write: async (path, markdown, mtime) => {
-        if (path === "sans-titre.md" && mtime !== null) {
-          reached();
-          await held;
-        }
-        return m.sdk.notes.write(path, markdown, mtime);
-      },
-    },
-  };
-  render(
-    <SdkProvider sdk={sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  const user = userEvent.setup();
-  await screen.findByRole("heading", { level: 1 });
-  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
-  await waitFor(() => expect(m.notes.has("sans-titre.md")).toBe(true));
-  const view = await editorView();
-  view.dispatch({
-    changes: { from: 0, to: view.state.doc.length, insert: "# Plan de test\n\nPremière ligne.\n" },
-    userEvent: "input.type",
-  });
-  await saving;
-  view.dispatch({ changes: { from: view.state.doc.length, insert: "Pendant." }, userEvent: "input.type" });
-  release();
-  await waitFor(
-    () =>
-      expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n\nPremière ligne.\nPendant."),
-    { timeout: 3000 },
-  );
-  expect(m.notes.has("sans-titre.md")).toBe(false);
-  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
-  expect(view.state.doc.toString()).toBe("# Plan de test\n\nPremière ligne.\nPendant.");
-  noConflict();
-  view.dispatch({
-    changes: { from: 0, to: view.state.doc.length, insert: "# Autre titre\n" },
-    userEvent: "input.type",
-  });
-  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Autre titre\n"), {
-    timeout: 3000,
-  });
-  expect(m.notes.has("autre-titre.md")).toBe(false);
-  expect(screen.queryByRole("alert")).toBeNull();
-});
-
 test("a read-only project shows no note menu", async () => {
   const m = createMockSdk(manifest, {
     seed,
@@ -318,11 +149,7 @@ test("a read-only project shows no note menu", async () => {
     shared: true,
   });
   m.setAccess("read-only");
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
+  mount(m.sdk);
   await screen.findByRole("list", { name: "Notes" });
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull());
   expect(screen.queryByRole("button", { name: "Nouvelle note" })).toBeNull();
