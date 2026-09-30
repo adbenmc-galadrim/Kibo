@@ -55,6 +55,7 @@ describe("service", () => {
     expect(summary).toEqual({
       ...p,
       counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
+      icon: null,
     });
     store.close();
   });
@@ -257,6 +258,47 @@ describe("service", () => {
     run({ method: "setInstanceConfig", instanceId: inst.id, config: { a: 1 } });
     const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
     expect(snap.instances).toMatchObject([{ id: inst.id, component: "hello@0.1.0", config: { a: 1 } }]);
+    store.close();
+  });
+
+  test("updateProjectMeta writes the doc and the workspace copy, and folder only where asked", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    const seen: unknown[] = [];
+    s.onChange((m) => seen.push(m));
+    expect(
+      s.docs.updateProjectMeta(p.id, { name: "Noyau", color: "#6366F1", folder: "/tmp/kibo" }, true),
+    ).toEqual({
+      ...p,
+      name: "Noyau",
+      color: "#6366F1",
+      folder: "/tmp/kibo",
+    });
+    expect(seen).toEqual([{ projectId: p.id }, { projectId: null }]);
+    const [summary] = s.handle({ method: "listProjects" }) as ProjectSummary[];
+    expect([summary?.name, summary?.color, summary?.folder]).toEqual(["Noyau", "#6366F1", "/tmp/kibo"]);
+    s.docs.updateProjectMeta(p.id, { folder: "/tmp/elsewhere" }, false);
+    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).meta.folder).toBe(
+      "/tmp/kibo",
+    );
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.folder).toBe("/tmp/elsewhere");
+    store.close();
+  });
+
+  test("projects and the workspace expose their icon version", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.icon).toBeNull();
+    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).icon).toBeNull();
+    const version = s.icons.set(`project:${p.id}`, "image/png", png);
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.icon).toBe(version);
+    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).icon).toBe(version);
+    expect((s.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceIcon).toBeNull();
+    s.icons.set("workspace", "image/png", png);
+    expect((s.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceIcon).toBe(version);
     store.close();
   });
 });

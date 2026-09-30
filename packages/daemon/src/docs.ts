@@ -1,5 +1,5 @@
 import type { RuleTrigger } from "@kibo/core/rules";
-import type { ChangeMessage, ProjectCommand, ProjectMeta } from "@kibo/schema";
+import type { ChangeMessage, ProjectCommand, ProjectMeta, ProjectPatch } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 
 export type CommandOrigin = "user" | "sync";
@@ -27,6 +27,7 @@ export type Docs = {
   assertWritable(projectId: string): void;
   setWriteGuard(guard: (projectId: string) => void): () => void;
   projectMeta(projectId: string): ProjectMeta;
+  updateProjectMeta(projectId: string, patch: ProjectPatch, folderInDoc: boolean): ProjectMeta;
   identity(projectId: string): string;
   setIdentity(fn: (projectId: string) => string): () => void;
 };

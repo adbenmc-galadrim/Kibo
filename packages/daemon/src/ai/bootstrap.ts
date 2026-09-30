@@ -1,13 +1,14 @@
 import type { Database } from "bun:sqlite";
 import { mkdirSync, realpathSync } from "node:fs";
 import { delimiter, join } from "node:path";
+import { listProfiles } from "@kibo/core/agent-config";
 import { type Toolchain, toolchainModules } from "@kibo/devkit";
 import { type IntegrationStatus, KiboError } from "@kibo/schema";
 import type { Orchestrator } from "../agents/orchestrator-types";
 import { resolveClaudeBin } from "../agents/runner";
 import { editorCommand, openInEditor } from "../code/editor";
 import type { Docs } from "../docs";
-import { ensureSystemProfiles, readConfig } from "../workspace-config";
+import { ensureSystemProfiles } from "../workspace-config";
 import {
   createExecPort,
   githubConnected,
@@ -87,7 +88,7 @@ function availability(deps: AiBootstrapDeps, exec: Exec): AiAvailability {
   const bin = claudeBinOrNull(deps.claudeBin, deps.agentEnv);
   return createAiAvailability({
     probe: () => (bin ? probeClaude(exec, bin) : Promise.resolve(MISSING)),
-    profileEnabled: (id) => readConfig(deps.docs).profiles.find((p) => p.id === id)?.enabled ?? false,
+    profileEnabled: (id) => listProfiles(deps.docs.workspace).find((p) => p.id === id)?.enabled ?? false,
   });
 }
 

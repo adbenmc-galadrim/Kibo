@@ -14,6 +14,7 @@ import {
 import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
+  iconOwnerKey,
   KiboError,
   type ProjectCommand,
   type ProjectMeta,
@@ -30,10 +31,12 @@ import { type AiPort, isAiRequest } from "./ai/methods";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
+import { createIconStore, ensureIconsTable, type IconStore } from "./icons/icon-store";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import { withLocalFolder } from "./project-folder";
+import { writeProjectMeta } from "./projects/meta";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
 import { readConfig, runConfigCommand } from "./workspace-config";
@@ -49,6 +52,7 @@ export type Service = {
   handle(req: RpcRequest): unknown;
   onChange(listener: (message: ChangeMessage) => void): () => void;
   docs: Docs;
+  icons: IconStore;
   agentData: AgentDataPort;
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
@@ -66,6 +70,7 @@ type ServiceOptions = { user: string; notifications?: Session["notifications"] }
 
 const WORKSPACE = "workspace";
 const projectDocId = (id: string) => `project:${id}`;
+const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
 
@@ -92,6 +97,8 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   let identity: (projectId: string) => string = osIdentity;
   ensureSettingsTable(store.db);
   const settings = createProjectSettings(store.db);
+  ensureIconsTable(store.db);
+  const icons = createIconStore(store.db);
   const docListeners = new Set<(projectId: string, doc: LoroDoc) => void>();
   const adopt = (id: string, doc: LoroDoc) => {
     projects.set(id, doc);
@@ -163,6 +170,8 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       const doc = docs.project(projectId);
       return withLocalFolder(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
     },
+    updateProjectMeta: (projectId, patch, folderInDoc) =>
+      writeProjectMeta(docs, projectId, patch, folderInDoc),
     identity: (projectId) => identity(projectId),
     setIdentity(fn) {
       identity = fn;
@@ -190,6 +199,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
 
   return {
     docs,
+    icons,
     agentData: createDataPort(docs),
     attachAgents(port) {
       agents = port;
@@ -243,6 +253,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
           return listProjects(workspace).map((meta) => ({
             ...meta,
             counts: countTicketsByStatus(docs.project(meta.id)),
+            icon: icons.version(projectIcon(meta.id)),
           }));
         case "createProject": {
           const meta: ProjectMeta = {
@@ -265,6 +276,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
             ...readProject(doc),
             meta: docs.projectMeta(req.projectId),
             viewer: docs.identity(req.projectId),
+            icon: icons.version(projectIcon(req.projectId)),
             ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),
           };
           return collab ? { ...snapshot, sync: collab.syncInfo(req.projectId, doc) } : snapshot;
@@ -280,7 +292,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
           return docs.run(req.projectId, req.command, { origin: "user", instanceId });
         }
         case "getConfig":
-          return readConfig(docs);
+          return readConfig(docs, icons);
         case "config":
           return runConfigCommand(docs, req.command, (profileId) => agents?.activeRuns(profileId) ?? 0);
         case "getTabs":

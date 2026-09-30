@@ -54,8 +54,9 @@ export type ProjectSnapshot = {
   sync: ProjectSyncInfo;
   domains?: Domain[];
   viewer?: string;
+  icon?: string | null;
 };
-export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number> };
+export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number>; icon?: string | null };
 export type Session = { user: string; notifications: "native" | "browser" };
 export type Topic = "agents" | "config";
 export type ChangeMessage =

@@ -132,6 +132,7 @@ export type WorkspaceConfig = {
   domainUsage: Record<string, number>;
   workspaceName: string | null;
   workspaceDescription: string | null;
+  workspaceIcon: string | null;
 };
 
 export const HostSettings = z.object({
