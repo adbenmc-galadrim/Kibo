@@ -7,6 +7,8 @@ import type { CodeService } from "./code/code-service";
 import type { AssetLookup } from "./components/sandbox-server";
 import { serveTrusted } from "./components/trusted-route";
 import { fail, respond, unredacted } from "./http-response";
+import { serveIcon } from "./icons/icon-route";
+import type { IconStore } from "./icons/icon-store";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteListen } from "./remote/remote-access";
 import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
@@ -27,6 +29,7 @@ export type ServerOptions = {
   hooks?: HookSink;
   code?: CodeService;
   assets?: AssetLookup;
+  icons?: Pick<IconStore, "get">;
   sandboxOrigin?: () => string | null;
   redact?: (text: string) => string;
   sessions?: SessionStore;
@@ -179,6 +182,13 @@ export function startServer(opts: ServerOptions): RunningServer {
       }
       if (url.pathname.startsWith("/components/")) {
         return serveTrusted(req, url, { assets: opts.assets, origins: () => allowedOrigins(l), hasSession });
+      }
+      if (url.pathname.startsWith("/icons/")) {
+        return serveIcon(req, url, {
+          icons: opts.icons ?? { get: () => null },
+          origins: () => allowedOrigins(l),
+          hasSession,
+        });
       }
       if (!url.pathname.startsWith("/api/")) {
         return withUiHeaders(serveUi(opts.uiDir, url.pathname), opts.sandboxOrigin?.() ?? null);

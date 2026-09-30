@@ -1,5 +1,5 @@
 import { osSandbox, type Toolchain } from "@kibo/devkit";
-import { type HostLoad, KiboError, type Session, ticketRuns } from "@kibo/schema";
+import { type HostLoad, isTerminal, KiboError, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
@@ -17,6 +17,8 @@ import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { startMarket } from "./market/bootstrap";
+import { createProjectSettings } from "./notes/settings";
+import { createProjectAdmin } from "./projects/admin";
 import { listInterfaces } from "./remote/interfaces";
 import { PairingCodes } from "./remote/pairing-codes";
 import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
@@ -145,6 +147,18 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     allowLoopbackHttp: opts.marketAllowLoopback ?? false,
   });
   closers.push(() => market.stop());
+  const admin = createProjectAdmin({
+    docs: service.docs,
+    settings: createProjectSettings(store.db),
+    icons: service.icons,
+    store,
+    sharing: (projectId) => collab.syncInfo(projectId),
+    activeRuns: (projectId) =>
+      agents
+        ? agents.state().runs.filter((r) => r.projectId === projectId && !isTerminal(r.state)).length
+        : 0,
+    detach: (projectId) => collab.client.detachProject(projectId),
+  });
   const code = createCodeService(service);
   closers.push(() => code.stop());
   const pairingCodes = new PairingCodes(Date.now);
@@ -168,9 +182,10 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       receive: (runId, payload, toolInput) => agents?.hooks.receive(runId, payload, toolInput) ?? null,
     },
     assets: components.assets,
+    icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [componentTrustGuard, market.handler, collab.handler],
+    handlers: [componentTrustGuard, market.handler, collab.handler, admin.handler],
   });
   front.push(() => server.stop());
   const started = createRemoteAccess({
