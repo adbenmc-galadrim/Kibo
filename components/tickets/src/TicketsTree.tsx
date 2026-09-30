@@ -1,59 +1,21 @@
-import type { Assignee, MemberInfo, Status, TicketRun } from "@kibo/schema";
-import {
-  AgentBadge,
-  assigneeLabel,
-  filterBySource,
-  readSource,
-  StatusDot,
-  TicketKeyLabel,
-  useEntities,
-  useMembers,
-  useSdk,
-} from "@kibo/sdk";
+import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { KiboError, type ProjectCommand, type Status, type StatusId, type TicketView } from "@kibo/schema";
+import { filterBySource, readSource, useEntities, useMembers, useReadOnly, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
-import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
+import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { buildTree, mineOnly, type TicketNode } from "./build-tree";
 import { fr } from "./fr";
-
-const COLUMNS =
-  "grid grid-cols-[minmax(0,1fr)_7rem_5rem_2rem] items-center gap-3 px-2 @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_2rem]";
-const ASSIGNEE_CELL = "hidden min-w-0 @3xl:flex";
-
-type AssigneeProps = { assignee: Assignee | null; run: TicketRun | null; members: MemberInfo[] };
-
-function AssigneeCell({ assignee, run, members }: AssigneeProps) {
-  if (assignee?.kind === "agent" || (run && !assignee))
-    return (
-      <span className={cn(ASSIGNEE_CELL, "items-center")}>
-        <AgentBadge
-          agent={assignee?.ref ?? null}
-          run={run}
-          texts={fr.run}
-          className="min-w-0 shrink justify-start truncate text-xs"
-        />
-      </span>
-    );
-  if (!assignee)
-    return <span className={cn(ASSIGNEE_CELL, "text-xs text-muted-foreground")}>{fr.unassigned}</span>;
-  const name = assigneeLabel(assignee, members);
-  return (
-    <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5 text-xs")}>
-      <span
-        aria-hidden="true"
-        className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-3xs font-semibold"
-      >
-        {name.slice(0, 2).toUpperCase()}
-      </span>
-      <span className="truncate">{name}</span>
-    </span>
-  );
-}
+import { ASSIGNEE_CELL, COLUMNS, TicketRow } from "./TicketRow";
+import { descendantCount, ticketMenuEntries } from "./ticket-menu";
+import { reparentOnDrop } from "./tree-drop";
 
 export function TicketsTree() {
   const sdk = useSdk();
+  const readOnly = useReadOnly();
   const { data: all, loading } = useEntities("ticket");
   const tickets = filterBySource(all, readSource(sdk.config));
   const mine = sdk.config.filter === "mine";
@@ -63,6 +25,10 @@ export function TicketsTree() {
   const members = useMembers();
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [blocking, setBlocking] = useState<TicketView | null>(null);
+  const [removing, setRemoving] = useState<TicketView | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const label = (id: string) => statuses.find((s: Status) => s.id === id)?.label ?? id;
   const toggle = (id: string) =>
     setCollapsed((c) => {
@@ -72,69 +38,62 @@ export function TicketsTree() {
       return next;
     });
 
-  const row = (n: TicketNode) => {
-    const t = n.ticket;
-    const open = !collapsed.has(t.id);
-    return (
-      <li key={t.id}>
-        <div className={cn(COLUMNS, "group h-8 rounded-md text-sm hover:bg-muted/50")}>
-          <div
-            className="flex min-w-0 items-center gap-2 overflow-hidden"
-            style={{ paddingLeft: n.depth * 20 }}
-          >
-            {n.children.length > 0 ? (
-              <button
-                type="button"
-                className="text-muted-foreground"
-                aria-label={open ? fr.collapse(t.keyLabel) : fr.expand(t.keyLabel)}
-                onClick={() => toggle(t.id)}
-              >
-                {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-              </button>
-            ) : (
-              <span className="size-4 shrink-0" />
-            )}
-            <TicketKeyLabel ticket={t} className="shrink-0 font-mono text-2xs text-muted-foreground" />
-            <button
-              type="button"
-              className={cn("min-w-16 truncate text-left", t.statusId === "done" && "text-muted-foreground")}
-              onClick={() => sdk.openTicket(t.id)}
-            >
-              {t.title}
-            </button>
-            {t.blockedReason && (
-              <span className="min-w-0 truncate text-2xs text-red-600 dark:text-red-400">
-                {t.blockedReason}
-              </span>
-            )}
-            {t.waitingOn.length > 0 && (
-              <Badge variant="outline" className="min-w-0 shrink justify-start text-3xs">
-                <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
-              </Badge>
-            )}
-          </div>
-          <span className="flex items-center gap-2 text-xs">
-            <StatusDot statusId={t.statusId} />
-            <span className="truncate">{label(t.statusId)}</span>
-          </span>
-          <AssigneeCell assignee={t.assignee} run={runOf.get(t.id) ?? null} members={members} />
-          <span className="font-mono text-2xs text-muted-foreground">
-            {t.progress.total > 0 ? `${t.progress.done}/${t.progress.total}` : null}
-          </span>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-6 opacity-0 group-hover:opacity-100 focus:opacity-100"
-            aria-label={fr.newSubTicket(t.keyLabel)}
-            onClick={() => sdk.openNewTicket({ parentId: t.id })}
-          >
-            <Plus className="size-3.5" />
-          </Button>
-        </div>
-        {open && n.children.length > 0 && <ul>{n.children.map(row)}</ul>}
-      </li>
-    );
+  const attempt = async (cmd: ProjectCommand, failure: string): Promise<boolean> => {
+    try {
+      await sdk.run(cmd);
+      setError(null);
+      return true;
+    } catch (e) {
+      setError(e instanceof KiboError && e.code === "TREE_CYCLE" ? fr.cycle : failure);
+      return false;
+    }
   };
+  const setStatus = (t: TicketView, statusId: StatusId) => {
+    if (statusId === "blocked") {
+      setError(null);
+      setBlocking(t);
+    } else void attempt({ method: "setStatus", ticketId: t.id, statusId }, fr.statusFailed(t.keyLabel));
+  };
+  const entriesFor = (t: TicketView) =>
+    ticketMenuEntries({
+      ticket: t,
+      statuses,
+      readOnly,
+      texts: fr,
+      actions: {
+        open: () => sdk.openTicket(t.id),
+        setStatus: (statusId) => setStatus(t, statusId),
+        newSubTicket: () => sdk.openNewTicket({ parentId: t.id }),
+        moveToRoot: () =>
+          void attempt({ method: "moveTicket", ticketId: t.id, parentId: null }, fr.moveFailed(t.keyLabel)),
+        remove: () => setRemoving(t),
+      },
+    });
+  const onDragEnd = (e: DragEndEvent) => {
+    if (readOnly || e.over === null) return;
+    const drop = reparentOnDrop(all, String(e.active.id), String(e.over.id));
+    if (drop)
+      void attempt(
+        { method: "moveTicket", ...drop },
+        fr.moveFailed(all.find((t) => t.id === drop.ticketId)?.keyLabel ?? ""),
+      );
+  };
+
+  const row = (n: TicketNode) => (
+    <TicketRow
+      key={n.ticket.id}
+      node={n}
+      open={!collapsed.has(n.ticket.id)}
+      entries={entriesFor(n.ticket)}
+      readOnly={readOnly}
+      run={runOf.get(n.ticket.id) ?? null}
+      members={members}
+      statusLabel={label(n.ticket.statusId)}
+      onToggle={() => toggle(n.ticket.id)}
+    >
+      {n.children.map(row)}
+    </TicketRow>
+  );
 
   return (
     <section aria-label={fr.title} className="flex h-full flex-col">
@@ -142,10 +101,17 @@ export function TicketsTree() {
         <span className="text-sm font-medium">
           {mine ? fr.mineCount(visible.length, tickets.length) : fr.title}
         </span>
-        <Button size="sm" variant="outline" onClick={() => sdk.openNewTicket({})}>
-          <Plus className="size-3.5" /> {fr.newTicket}
-        </Button>
+        {!readOnly && (
+          <Button size="sm" variant="outline" onClick={() => sdk.openNewTicket({})}>
+            <Plus className="size-3.5" /> {fr.newTicket}
+          </Button>
+        )}
       </header>
+      {error && !blocking && (
+        <p role="alert" className="px-3 py-1 text-xs text-destructive">
+          {error}
+        </p>
+      )}
       {loading ? null : visible.length === 0 ? (
         <p className="p-6 text-sm text-muted-foreground">{fr.empty}</p>
       ) : (
@@ -157,8 +123,42 @@ export function TicketsTree() {
             <span>{fr.columns.progress}</span>
             <span />
           </div>
-          <ul>{buildTree(visible).map(row)}</ul>
+          <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+            <ul>{buildTree(visible).map(row)}</ul>
+          </DndContext>
         </div>
+      )}
+      {blocking && (
+        <ReasonDialog
+          open
+          title={fr.block.title(blocking.keyLabel)}
+          description={fr.block.description}
+          label={fr.block.reason}
+          placeholder={fr.block.placeholder}
+          confirmLabel={fr.block.confirm}
+          cancelLabel={fr.block.cancel}
+          error={error}
+          onConfirm={(reason) =>
+            void attempt(
+              { method: "setStatus", ticketId: blocking.id, statusId: "blocked", reason },
+              fr.statusFailed(blocking.keyLabel),
+            ).then((ok) => ok && setBlocking(null))
+          }
+          onCancel={() => setBlocking(null)}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.keyLabel)}
+          description={fr.removeHelp(descendantCount(all, removing.id))}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={async () => {
+            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
+          }}
+        />
       )}
     </section>
   );

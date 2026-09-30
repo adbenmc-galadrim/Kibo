@@ -1,5 +1,10 @@
 export const fr = {
   title: "Tickets",
+  lazy: {
+    loading: "Chargement des tickets…",
+    failed: "Impossible de charger les tickets.",
+    retry: "Réessayer",
+  },
   mine: "Mes tickets",
   mineCount: (shown: number, total: number) => `Mes tickets · ${shown} sur ${total}`,
   newTicket: "Nouveau ticket",

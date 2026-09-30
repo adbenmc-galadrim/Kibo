@@ -3,7 +3,8 @@ import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/s
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { fr } from "./fr";
 import { Component, manifest } from "./index";
 
@@ -124,4 +125,93 @@ test("the tree shows provisional keys and member names", async () => {
   );
   expect((await screen.findByText("KIB-…")).className).toContain("italic");
   expect(await screen.findByText("Léa")).toBeTruthy();
+});
+
+const mount = (m: ReturnType<typeof createMockSdk>) =>
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+const byKey = (m: ReturnType<typeof createMockSdk>, key: string) =>
+  m.snapshot().tickets.find((t) => t.key === key);
+const pickStatus = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+  await user.click(await screen.findByRole("menuitem", { name: "Statut" }));
+  await user.keyboard("{ArrowRight}");
+  for (let i = 0; i < 8 && document.activeElement?.textContent !== name; i++)
+    await user.keyboard("{ArrowDown}");
+  await user.keyboard("{Enter}");
+};
+
+test("the row menu changes the status; Bloqué asks for a reason", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: await screen.findByRole("button", { name: /Arbre des pages/ }),
+  });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir",
+    "Statut",
+    "Nouveau sous-ticket",
+    "Déplacer à la racine",
+    "Supprimer…",
+  ]);
+  await pickStatus(user, "Terminé");
+  await waitFor(() => expect(byKey(m, "KIB-1")?.statusId).toBe("done"));
+  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await pickStatus(user, "Bloqué…");
+  const dialog = await screen.findByRole("dialog", { name: "Bloquer KIB-1" });
+  await user.type(within(dialog).getByLabelText("Motif"), "Attente client");
+  await user.click(within(dialog).getByRole("button", { name: "Bloquer" }));
+  await waitFor(() =>
+    expect(byKey(m, "KIB-1")).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" }),
+  );
+});
+
+test("new sub-ticket asks the host, move to root reparents, delete asks then removes the subtree", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Nouveau sous-ticket" }));
+  expect(m.newTicketRequests.at(-1)?.parentId).toBe(byKey(m, "KIB-2")?.id);
+  await user.click(screen.getByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer à la racine" }));
+  await waitFor(() => expect(byKey(m, "KIB-2")?.parentId).toBeNull());
+  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer KIB-1 ?" });
+  expect(confirm.textContent).toContain("Ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(byKey(m, "KIB-1")).toBeUndefined());
+  expect(byKey(m, "KIB-2")).toBeDefined();
+});
+
+test("a refused command is shown as an alert", async () => {
+  const m = createMockSdk(manifest, { seed });
+  render(
+    <SdkProvider sdk={{ ...m.sdk, run: () => Promise.reject(new Error("daemon unreachable")) }}>
+      <Component />
+    </SdkProvider>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
+  await pickStatus(user, "Terminé");
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de changer le statut de KIB-3.");
+});
+
+test("a read-only project shows no ⋯ button and a one-entry menu", async () => {
+  const m = createMockSdk(manifest, { seed, shared: true });
+  m.setAccess("read-only");
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("Arbre des pages");
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: screen.getByRole("button", { name: /Arbre des pages/ }),
+  });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
 });
