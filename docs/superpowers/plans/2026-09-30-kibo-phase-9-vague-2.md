@@ -2322,7 +2322,7 @@ Vague 1 ← T23 (thème), T18 (budget mesuré). Spec §14.5 (cloche, avatar). D�
 - Consumes: `AgentsState`, `RunView`, `RunState`, `runSubject`, `fr.agents.states`, `relativeTime`, `NotifyButton`, `UserAvatar`, `useSyncServerStatus`, `setThemePreference`, `useThemePreference`, `THEME_PREFERENCES` (T23), `fr.security.appearance.{system,light,dark}` (T23), `lazyPanel`, `DropdownMenu*` dont `DropdownMenuSub`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`.
 - Produces: contrat « shell/run-history.ts (T24) » ; `RunHistoryButton`, `RunHistoryList`, `UserMenu`, `UserMenuContent` ; `ShellHeader` props `now`, `onOpenRun`, `onOpen` ; `fr.header` étendu.
 
-- [ ] **Step 1: Modèle de l'historique (test rouge puis vert)**
+- [x] **Step 1: Modèle de l'historique (test rouge puis vert)**
 
 `packages/ui/src/shell/run-history.test.ts` :
 ```ts
@@ -2438,7 +2438,7 @@ export function markSeen(now: number): void {
 ```
 Run: `bun test packages/ui/src/shell/run-history.test.ts` — Expected: PASS, 3 tests.
 
-- [ ] **Step 2: Textes**
+- [x] **Step 2: Textes**
 
 `packages/ui/src/i18n/fr.ts` › `header` :
 ```ts
@@ -2457,7 +2457,7 @@ Run: `bun test packages/ui/src/shell/run-history.test.ts` — Expected: PASS, 3 
   },
 ```
 
-- [ ] **Step 3: Cloche et liste (tests rouges puis verts)**
+- [x] **Step 3: Cloche et liste (tests rouges puis verts)**
 
 `packages/ui/src/shell/run-history-button.test.tsx` :
 ```tsx
@@ -2619,7 +2619,7 @@ export function RunHistoryButton({ agents, notifications, now, onOpenRun }: Prop
 ```
 Run: `bun test packages/ui/src/shell/run-history-button.test.tsx` — Expected: PASS, 2 tests.
 
-- [ ] **Step 4: Menu de l'avatar (test rouge puis vert)**
+- [x] **Step 4: Menu de l'avatar (test rouge puis vert)**
 
 `packages/ui/src/shell/user-menu.test.tsx` :
 ```tsx
@@ -2778,7 +2778,7 @@ export function UserMenu({ viewer, onOpen }: Props) {
 (`UserAvatar` garde `role="img"` : le déclencheur est un `button` de Radix, son nom accessible vient d'`aria-label`.)
 Run: `bun test packages/ui/src/shell/user-menu.test.tsx` — Expected: PASS, 2 tests.
 
-- [ ] **Step 5: En-tête et Shell (test adapté)**
+- [x] **Step 5: En-tête et Shell (test adapté)**
 
 `packages/ui/src/shell/ShellHeader.tsx` : retirer les imports `Bell`, `NotifyButton`, `UserAvatar` ; `Props` gagne `now: number; onOpenRun(runId: string): void; onOpen(target: TabTarget): void;` ; remplacer le bloc `{notifications === "browser" ? <NotifyButton /> : <Bell … />}` et `<UserAvatar user={viewer} />` par
 ```tsx
@@ -2813,7 +2813,7 @@ et ajouter, dans le même fichier, le parcours « Répondre » : ouvrir la cloch
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS ; budget ≤ 230 000 (attendu : + ~0,6 kB pour les deux déclencheurs et `run-history.ts`, contenus hors de l'entrée). Au-delà, `ScreenActions` sort de l'entrée comme prévu en T18 (Step 9) si ce n'est pas déjà fait.
 
-- [ ] **Step 6: Commits**
+- [x] **Step 6: Commits**
 
 ```bash
 git add packages/ui/src/shell/run-history.ts packages/ui/src/shell/run-history.test.ts packages/ui/src/i18n/fr.ts
