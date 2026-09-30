@@ -1,4 +1,4 @@
-import { watch as fsWatch } from "node:fs";
+import { existsSync, watch as fsWatch } from "node:fs";
 import { relative, resolve } from "node:path";
 import { MAX_EVENT_PATHS } from "@kibo/schema";
 import { isInside } from "./safe-path";
@@ -17,6 +17,8 @@ export type WatchOptions = {
   root?: string;
   debounceMs?: number;
   pollMs?: number;
+  vanishCheckMs?: number;
+  exists?: (path: string) => boolean;
   onError?: (e: unknown) => void;
   watch?: WatchFn;
 };
@@ -74,6 +76,9 @@ function changedPath(root: string | undefined, targetPath: string, filename: str
   return rel.length === 0 || rel.includes(".git") ? null : rel.join("/");
 }
 
+// fs.watch on macOS emits nothing when the watched directory itself is removed
+const VANISH_CHECK_MS = 1_000;
+
 // Bun's fs.watch reports the watched directory's own removal with an undefined filename
 const defaultWatch: WatchFn = (path, options, onEvent, onError) => {
   const watcher = fsWatch(path, options, (_event, filename: string | null | undefined) =>
@@ -92,6 +97,7 @@ export function watchPaths(
   const watch = opts.watch ?? defaultWatch;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let poll: ReturnType<typeof setInterval> | null = null;
+  let vanishCheck: ReturnType<typeof setInterval> | null = null;
   let closed = false;
   let pending: Set<string> | null = new Set();
   const watchers: Watcher[] = [];
@@ -119,16 +125,34 @@ export function watchPaths(
     if (timer) clearTimeout(timer);
     timer = null;
   };
+  const stopVanishCheck = () => {
+    if (vanishCheck) clearInterval(vanishCheck);
+    vanishCheck = null;
+  };
+  const watchVanishing = (paths: string[]) => {
+    const exists = opts.exists ?? existsSync;
+    const present = new Map(paths.map((p) => [p, exists(p)]));
+    vanishCheck = setInterval(() => {
+      for (const [path, was] of present) {
+        const now = exists(path);
+        if (now === was) continue;
+        present.set(path, now);
+        fire(null);
+      }
+    }, opts.vanishCheckMs ?? VANISH_CHECK_MS);
+  };
   const fallBack = (e: unknown) => {
     report(e);
     if (closed || poll) return;
     closeWatchers();
     clearTimer();
+    stopVanishCheck();
     poll = setInterval(() => onChange(null), opts.pollMs ?? 3000);
   };
 
+  const unique = dedupeTargets(targets);
   try {
-    for (const t of dedupeTargets(targets)) {
+    for (const t of unique) {
       const onEvent = (filename: string | null) => {
         if (isRelevantChange(t.path, filename)) fire(changedPath(opts.root, t.path, filename));
       };
@@ -137,6 +161,7 @@ export function watchPaths(
   } catch (e) {
     fallBack(e);
   }
+  if (!poll) watchVanishing(unique.map((t) => t.path));
 
   return {
     mode: () => (poll ? "poll" : "watch"),
@@ -145,6 +170,7 @@ export function watchPaths(
       closed = true;
       closeWatchers();
       clearTimer();
+      stopVanishCheck();
       if (poll) clearInterval(poll);
       poll = null;
     },
