@@ -1,5 +1,11 @@
 import { commitDefaults } from "@kibo/core";
-import { type CodeEvent, type CodeRequest, type CommitDefaults, LOCAL_ONLY_CODE_METHODS } from "@kibo/schema";
+import {
+  CODE_MUTATION_METHODS,
+  type CodeEvent,
+  type CodeRequest,
+  type CommitDefaults,
+  LOCAL_ONLY_CODE_METHODS,
+} from "@kibo/schema";
 import { type RpcContext, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
 import { editorCommand, openInEditor } from "./editor";
@@ -33,27 +39,12 @@ export type CodeServiceOptions = {
   platform?: NodeJS.Platform;
 };
 type WorktreeRequest = Exclude<CodeRequest, { method: "worktrees" }>;
-const MUTATION_METHODS = [
-  "writeFile",
-  "stageFiles",
-  "unstageFiles",
-  "discardChanges",
-  "stageAll",
-  "unstageAll",
-  "stageHunk",
-  "commit",
-  "reword",
-  "undoCommit",
-  "abortOperation",
-  "push",
-  "createPr",
-] as const;
-type Mutation = Extract<WorktreeRequest, { method: (typeof MUTATION_METHODS)[number] }>;
+type Mutation = Extract<WorktreeRequest, { method: (typeof CODE_MUTATION_METHODS)[number] }>;
 type Read = Exclude<WorktreeRequest, Mutation>;
 
 const PR_POLL_MS = 60_000;
 const IDLE_MS = 600_000;
-const MUTATIONS = new Set<string>(MUTATION_METHODS);
+const MUTATIONS = new Set<string>(CODE_MUTATION_METHODS);
 const LOCAL_ONLY = new Set<string>(LOCAL_ONLY_CODE_METHODS);
 const isMutation = (req: WorktreeRequest): req is Mutation => MUTATIONS.has(req.method);
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);

@@ -139,7 +139,7 @@ describe("/api/code", () => {
 });
 
 describe("/api/code from a remote session", () => {
-  test("openInEditor over the remote listener answers 403 and launches nothing", async () => {
+  test("local-only requests over the remote listener answer 403 and touch nothing", async () => {
     const editor = installFakeBin(fx.dir, "code");
     const guarded = createCodeService(service, {
       env: { ...fx.env, VISUAL: editor.path, FAKE_BIN_LOG: editor.log },
@@ -167,10 +167,21 @@ describe("/api/code from a remote session", () => {
     try {
       await enableSelfSigned(f);
       const cookie = await remoteCookie(f);
-      const req = { method: "openInEditor", projectId, worktree: fx.repo, path: "README.md", line: null };
-      const res = await remotePost(f, "/api/code", req, { cookie });
-      expect(res.status).toBe(403);
-      expect(await res.json()).toMatchObject({ ok: false, error: { code: "FORBIDDEN" } });
+      fx.write("new.txt", "n\n");
+      const w = { projectId, worktree: fx.repo };
+      const refused = [
+        { method: "openInEditor", ...w, path: "README.md", line: null },
+        { method: "commit", ...w, message: "feat: x", amend: false },
+        { method: "stageAll", ...w },
+      ];
+      for (const body of refused) {
+        const res = await remotePost(f, "/api/code", body, { cookie });
+        expect(res.status).toBe(403);
+        expect(await res.json()).toMatchObject({ ok: false, error: { code: "FORBIDDEN" } });
+      }
+      const status = await remotePost(f, "/api/code", { method: "status", ...w }, { cookie });
+      expect(status.status).toBe(200);
+      expect(fx.git("status", "--porcelain").trim()).toBe("?? new.txt");
       expect(readFakeBinLog(editor.log)).toEqual([]);
     } finally {
       f.remote.stop();

@@ -2,8 +2,15 @@ import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CodeEvent, ProjectMeta, Ticket } from "@kibo/schema";
-import { LOCAL_CONTEXT } from "../rpc-extensions";
+import {
+  type CodeEvent,
+  type CodeRequest,
+  LOCAL_ONLY_CODE_METHODS,
+  type ProjectMeta,
+  type RepoStatus,
+  type Ticket,
+} from "@kibo/schema";
+import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
 import { type CodeService, type CodeServiceOptions, createCodeService } from "./code-service";
@@ -158,6 +165,74 @@ test("the editor opens a path resolved in the worktree, never outside", async ()
   ).toBeNull();
   expect(await waitFor(() => readFakeBinLog(editor.log).length > 0)).toBe(true);
   expect(readFakeBinLog(editor.log)).toEqual([["--goto", `${join(fx.repo, "README.md")}:3`]]);
+});
+
+const REMOTE: RpcContext = { sessionHash: "remote", remote: true };
+const localOnlyRequests = (): CodeRequest[] => {
+  const sha = "a".repeat(40);
+  return [
+    { method: "writeFile", ...w(), path: "README.md", content: "x\n", baseHash: sha },
+    { method: "stageFiles", ...w(), paths: ["README.md"] },
+    { method: "unstageFiles", ...w(), paths: ["README.md"] },
+    { method: "discardChanges", ...w(), paths: ["README.md"] },
+    { method: "stageAll", ...w() },
+    { method: "unstageAll", ...w() },
+    { method: "stageHunk", ...w(), path: "README.md", area: "unstaged", index: 0, header: "@@ -1 +1 @@" },
+    { method: "commit", ...w(), message: "feat: x", amend: false },
+    { method: "reword", ...w(), sha, message: "feat: y" },
+    { method: "undoCommit", ...w(), sha },
+    { method: "abortOperation", ...w() },
+    { method: "push", ...w() },
+    {
+      method: "createPr",
+      ...w(),
+      title: "x",
+      body: "",
+      base: "main",
+      draft: false,
+      reviewers: [],
+      ticketId: null,
+    },
+    { method: "openInEditor", ...w(), path: "README.md", line: null },
+  ];
+};
+
+test("every mutation and openInEditor are refused from a remote session before anything runs", async () => {
+  const editor = installFakeBin(fx.dir, "code");
+  const c = start({ env: { ...fx.env, ...gh, VISUAL: editor.path, FAKE_BIN_LOG: editor.log } });
+  fx.write("README.md", "# changed\n");
+  const requests = localOnlyRequests();
+  expect(requests.map((r) => r.method).sort()).toEqual([...LOCAL_ONLY_CODE_METHODS].sort());
+  for (const req of requests) {
+    await expect(c.handle(req, REMOTE)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  }
+  expect(readFileSync(join(fx.repo, "README.md"), "utf8")).toBe("# changed\n");
+  expect(fx.git("status", "--porcelain").trim()).toBe("M README.md");
+  expect(fx.git("rev-list", "--count", "HEAD").trim()).toBe("1");
+  expect(readFakeBinLog(editor.log)).toEqual([]);
+  expect(events).toEqual([]);
+});
+
+test("reads stay open to a remote session", async () => {
+  const c = start();
+  fx.write("README.md", "# changed\n");
+  expect(await c.handle({ method: "worktrees", projectId: project.id }, REMOTE)).toHaveLength(1);
+  expect(((await c.handle({ method: "status", ...w() }, REMOTE)) as RepoStatus).files).toHaveLength(1);
+  expect(
+    await c.handle({ method: "diff", ...w(), path: "README.md", origPath: null, area: "unstaged" }, REMOTE),
+  ).toMatchObject({ path: "README.md" });
+  expect(
+    await c.handle({ method: "readFile", ...w(), path: "README.md", revision: "worktree" }, REMOTE),
+  ).toMatchObject({
+    content: "# changed\n",
+  });
+  expect(await c.handle({ method: "remoteBranches", ...w() }, REMOTE)).toMatchObject({ remote: "origin" });
+  expect(await c.handle({ method: "commitDefaults", ...w() }, REMOTE)).toMatchObject({
+    message: expect.any(String),
+  });
+  expect(await c.handle({ method: "ghStatus", ...w() }, REMOTE)).toMatchObject({
+    available: expect.any(Boolean),
+  });
 });
 
 test("a rejected push reports git's own message", async () => {
