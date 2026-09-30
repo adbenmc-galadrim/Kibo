@@ -227,6 +227,16 @@ describe("notes", () => {
     expect((await h.rpc({ method: "getNotesDir", projectId })).dir).toBe(dir);
   });
 
+  test("a removed project leaves the notes index", async () => {
+    const { projectId, pageId } = await createProject(h);
+    const call = callOf(projectId, await addInstance(h, projectId, pageId, "notes@1.0.0"));
+    await call({ kind: "notes.write", path: "a.md", markdown: "# A", expectedMtime: null });
+    const rows = () => h.store.db.query<{ path: string }, []>("SELECT path FROM notes").all();
+    expect(rows()).toEqual([{ path: "a.md" }]);
+    h.service.docs.removeProject(projectId);
+    expect(rows()).toEqual([]);
+  });
+
   test("every project is indexed when the daemon starts", async () => {
     await createProject(h);
     await h.stop();

@@ -22,6 +22,8 @@ export type Docs = {
   trigger(projectId: string, trigger: RuleTrigger): number;
   replaceProject(projectId: string, doc: LoroDoc): void;
   addProject(meta: ProjectMeta, doc: LoroDoc): void;
+  removeProject(projectId: string): void;
+  onProjectRemoved(listener: (projectId: string) => void): () => void;
   imported(projectId: string): void;
   onProjectDoc(listener: (projectId: string, doc: LoroDoc) => void): () => void;
   assertWritable(projectId: string): void;

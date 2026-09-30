@@ -137,6 +137,22 @@ test("a replaced document is persisted and still watched", async () => {
   expect(listTickets(reloaded).map((t) => t.title)).toEqual(["Après"]);
 });
 
+test("a removed project is no longer watched and forgets its access", async () => {
+  const doc = hosts.host(projectId).doc();
+  const copy = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
+  hosts.setAccess(projectId, "read-only");
+  hosts.setLocked(projectId, true);
+  const seen: string[] = [];
+  hosts.onLocalChange((id) => seen.push(id));
+  service.docs.removeProject(projectId);
+  doc.getMap("probe").set("k", 1);
+  doc.commit();
+  expect(seen).toEqual([]);
+  hosts.addJoinedProject(copy, null);
+  await create("Revenu");
+  expect(seen).toContain(projectId);
+});
+
 test("a joined project is registered with its local folder", () => {
   const doc = LoroDoc.fromSnapshot(hosts.host(projectId).doc().export({ mode: "snapshot" }));
   doc.getMap("meta").set("id", "joined-1");

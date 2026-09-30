@@ -36,7 +36,9 @@ import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import { withLocalFolder } from "./project-folder";
+import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
+import { createProjectRemoval } from "./projects/remove";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
 import { readConfig, runConfigCommand } from "./workspace-config";
@@ -68,8 +70,6 @@ export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyn
 
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
 
-const WORKSPACE = "workspace";
-const projectDocId = (id: string) => `project:${id}`;
 const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
@@ -79,7 +79,7 @@ export function call<R extends ShellRequest>(service: Service, req: R): RpcResul
 }
 
 export function createService(store: Store, opts: ServiceOptions): Service {
-  const workspace = loadDoc(store, WORKSPACE) ?? createWorkspaceDoc();
+  const workspace = loadDoc(store, WORKSPACE_DOC_ID) ?? createWorkspaceDoc();
   const projects = new Map<string, LoroDoc>();
   for (const meta of listProjects(workspace)) {
     const doc = loadDoc(store, projectDocId(meta.id));
@@ -104,6 +104,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     projects.set(id, doc);
     for (const listener of docListeners) listener(id, doc);
   };
+  const removal = createProjectRemoval({
+    store,
+    workspace,
+    drop: (id) => projects.delete(id),
+    emit: (message) => docs.emit(message),
+  });
   const path = createCommandPath({
     store,
     project: (id) => docs.project(id),
@@ -131,7 +137,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     projectIds: () => [...projects.keys()],
     save(projectId) {
       const doc = projectId === null ? workspace : docs.project(projectId);
-      store.save(projectId === null ? WORKSPACE : projectDocId(projectId), doc.export({ mode: "snapshot" }));
+      store.save(
+        projectId === null ? WORKSPACE_DOC_ID : projectDocId(projectId),
+        doc.export({ mode: "snapshot" }),
+      );
     },
     emit(message) {
       for (const listener of listeners) listener(message);
@@ -150,6 +159,8 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       docs.save(null);
       docs.emit({ projectId: null });
     },
+    removeProject: (projectId) => removal.remove(projectId),
+    onProjectRemoved: (listener) => removal.onRemoved(listener),
     imported(projectId) {
       docs.save(projectId);
       docs.emit({ projectId });

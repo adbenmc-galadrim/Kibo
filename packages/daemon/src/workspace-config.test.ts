@@ -18,6 +18,8 @@ function docsWith(): Docs {
     trigger: unused,
     replaceProject: unused,
     addProject: unused,
+    removeProject: unused,
+    onProjectRemoved: unused,
     imported: unused,
     onProjectDoc: unused,
     assertWritable: unused,

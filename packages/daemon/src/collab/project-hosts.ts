@@ -27,6 +27,12 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
   };
   for (const id of docs.projectIds()) watch(id, docs.project(id));
   docs.onProjectDoc(watch);
+  docs.onProjectRemoved((projectId) => {
+    watching.get(projectId)?.();
+    watching.delete(projectId);
+    access.delete(projectId);
+    locked.delete(projectId);
+  });
   docs.setWriteGuard((projectId) => {
     if (locked.has(projectId)) throw new KiboError("CONFLICT", `project ${projectId} is being shared`);
     const current = access.get(projectId) ?? "write";

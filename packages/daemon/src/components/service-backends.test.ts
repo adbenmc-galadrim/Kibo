@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Instance } from "@kibo/schema";
+import type { Instance, Page } from "@kibo/schema";
 import { HOST_DEFAULTS } from "./host-core";
 import {
   addInstance,
@@ -105,6 +105,31 @@ describe("backend lifecycle", () => {
     });
     const second = await addInstance(h, projectId, pageId, "hello@0.1.0");
     expect(await count(projectId, second)).toBe(1);
+  });
+
+  test("a backend stops when its project is removed", async () => {
+    const first = await createProject(h);
+    const meta = await h.rpc({
+      method: "createProject",
+      name: "Facturation",
+      key: "FAC",
+      folder: null,
+      color: "#6366F1",
+    });
+    const page = (await h.rpc({
+      method: "command",
+      projectId: meta.id,
+      command: { method: "addPage", title: "Tableau", kind: "dashboard" },
+    })) as Page;
+    const second = { projectId: meta.id, pageId: page.id };
+    writeDraft(home, "0.1.0", { server: COUNTER });
+    await publishAndApprove(h, "trusted");
+    const inst = await addInstance(h, first.projectId, first.pageId, "hello@0.1.0");
+    expect(await count(first.projectId, inst)).toBe(1);
+    expect(await count(first.projectId, inst)).toBe(2);
+    h.service.docs.removeProject(first.projectId);
+    const other = await addInstance(h, second.projectId, second.pageId, "hello@0.1.0");
+    expect(await count(second.projectId, other)).toBe(1);
   });
 
   test("a backend stops when its trust is withdrawn", async () => {
