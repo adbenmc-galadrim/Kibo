@@ -25,6 +25,8 @@ export const fr = {
     newProject: "Nouveau projet",
     newPage: "Nouvelle page",
     newSubPage: "Nouvelle sous-page",
+    editProject: "Modifier…",
+    deleteProject: "Supprimer…",
     agents: "Agents",
     queue: "Files d'attente",
     settings: "Paramètres",

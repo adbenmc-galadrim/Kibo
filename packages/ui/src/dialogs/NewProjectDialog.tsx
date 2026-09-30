@@ -12,6 +12,7 @@ import {
 import { useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { PROJECT_COLORS } from "../lib/project-colors";
 import { suggestProjectKey } from "../lib/project-key";
 import { applyStarterPlan } from "../onboarding/apply-plan";
 import { useStarterCatalog } from "../onboarding/catalog-refs";
@@ -20,8 +21,6 @@ import { RoleStep } from "../onboarding/RoleStep";
 import { navigate } from "../route";
 import { NewProjectForm, type ProjectFields, type ProjectStart } from "./NewProjectForm";
 import { projectErrorMessage } from "./project-error";
-
-const COLORS = ["#14B8A6", "#6366F1", "#EC4899", "#84CC16", "#D946EF", "#64748B"];
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void; count: number; focusFolder?: boolean };
 
@@ -69,7 +68,7 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
         name: fields.name.trim(),
         key: effectiveKey,
         folder: fields.folder.trim() || null,
-        color: COLORS[count % COLORS.length] ?? "#64748B",
+        color: PROJECT_COLORS[count % PROJECT_COLORS.length] ?? "#64748B",
       });
       const failures = start === "suggested" ? await applyStarterPlan(client, p.id, pages, refs) : [];
       if (failures.length === 0) return openProject(p.id);
