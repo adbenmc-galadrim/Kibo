@@ -59,20 +59,27 @@ impl OpenUrlScope {
     }
 }
 
+const PLAIN_PERMISSIONS: &[&str] = &[
+    "updater:default",
+    "process:allow-restart",
+    "core:app:allow-version",
+    "core:window:allow-set-title",
+    "dialog:allow-open",
+];
+
 fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
-    CapabilityBuilder::new("daemon")
+    let mut capability = CapabilityBuilder::new("daemon")
         .window("main")
         .local(false)
-        .remote(ipc_origin(daemon_url))
-        .permission("updater:default")
-        .permission("process:allow-restart")
-        .permission("core:app:allow-version")
-        .permission("core:window:allow-set-title")
-        .permission_scoped(
-            "opener:allow-open-url",
-            vec![OpenUrlScope::https()],
-            Vec::<OpenUrlScope>::new(),
-        )
+        .remote(ipc_origin(daemon_url));
+    for permission in PLAIN_PERMISSIONS {
+        capability = capability.permission(*permission);
+    }
+    capability.permission_scoped(
+        "opener:allow-open-url",
+        vec![OpenUrlScope::https()],
+        Vec::<OpenUrlScope>::new(),
+    )
 }
 
 fn main() {
@@ -86,7 +93,8 @@ fn main() {
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(WINDOW_STATE)
                 .build(),
-        );
+        )
+        .plugin(tauri_plugin_dialog::init());
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(menu::build)
@@ -288,6 +296,29 @@ mod tests {
     fn opener_scope_is_https_only() {
         let scope = serde_json::to_value(OpenUrlScope::https()).unwrap();
         assert_eq!(scope, serde_json::json!({ "url": "https://**" }));
+    }
+
+    #[test]
+    fn plain_permissions_are_the_documented_set() {
+        assert_eq!(
+            PLAIN_PERMISSIONS,
+            &[
+                "updater:default",
+                "process:allow-restart",
+                "core:app:allow-version",
+                "core:window:allow-set-title",
+                "dialog:allow-open",
+            ]
+        );
+    }
+
+    #[test]
+    fn dialog_permission_is_open_only() {
+        let dialog: Vec<&&str> = PLAIN_PERMISSIONS
+            .iter()
+            .filter(|p| p.starts_with("dialog:"))
+            .collect();
+        assert_eq!(dialog, vec![&"dialog:allow-open"]);
     }
 
     #[test]
