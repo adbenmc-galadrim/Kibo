@@ -22,12 +22,15 @@ export function renamedPath(from: string, title: string): string | null {
   return slug ? `${folderOf(from)}${slug}.md` : null;
 }
 
+export const createdPath = (title: string): string | null => renamedPath("", title);
+
 export function autoRenameTarget(
   note: { path: string; title: string },
   taken: readonly string[],
 ): string | null {
   if (!isUntitledPath(note.path)) return null;
   const target = renamedPath(note.path, note.title);
-  if (target === null || target === note.path || taken.includes(target)) return null;
+  if (target === null || target === note.path || isUntitledPath(target) || taken.includes(target))
+    return null;
   return target;
 }

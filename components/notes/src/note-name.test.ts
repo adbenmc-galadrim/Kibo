@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { autoRenameTarget, isUntitledPath, renamedPath, slugify } from "./note-name";
+import { autoRenameTarget, createdPath, isUntitledPath, renamedPath, slugify } from "./note-name";
 
 test("slugify strips accents and punctuation, never starts with a digit prefix", () => {
   expect(slugify("Architecture du sync")).toBe("architecture-du-sync");
@@ -31,4 +31,17 @@ test("the automatic target exists only for an untitled note whose slug is new an
   expect(autoRenameTarget({ path: "sans-titre.md", title: "Sans titre" }, taken)).toBeNull();
   expect(autoRenameTarget({ path: "sans-titre.md", title: "" }, taken)).toBeNull();
   expect(autoRenameTarget({ path: "journal.md", title: "Nouveau journal" }, taken)).toBeNull();
+});
+
+test("the created path is the slug at the root of the folder, or null without slug", () => {
+  expect(createdPath("Plan de test")).toBe("plan-de-test.md");
+  expect(createdPath("  Réunion — kick-off !  ")).toBe("reunion-kick-off.md");
+  expect(createdPath("  ")).toBeNull();
+  expect(createdPath("#")).toBeNull();
+});
+
+test("the automatic target is never itself an untitled name", () => {
+  expect(autoRenameTarget({ path: "sans-titre-2.md", title: "Sans titre" }, [])).toBeNull();
+  expect(autoRenameTarget({ path: "sans-titre.md", title: "sans-titre-9" }, [])).toBeNull();
+  expect(autoRenameTarget({ path: "sans-titre-2.md", title: "Plan" }, [])).toBe("plan.md");
 });
