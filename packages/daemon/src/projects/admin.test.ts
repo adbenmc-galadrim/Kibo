@@ -2,7 +2,13 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProjectMeta, ProjectSnapshot, ProjectSummary, ProjectSyncInfo } from "@kibo/schema";
+import {
+  KiboError,
+  type ProjectMeta,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type ProjectSyncInfo,
+} from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
 import { LOCAL_FOLDER_KEY } from "../project-folder";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
@@ -122,6 +128,22 @@ test("a shared project keeps its folder out of the doc", () => {
   s.close();
 });
 
+test("a read-only shared project refuses doc fields but accepts its local folder", () => {
+  const s = setup({ sharing: SHARED_SYNC });
+  s.service.docs.setWriteGuard(() => {
+    throw new KiboError("FORBIDDEN", "read-only project");
+  });
+  const update = (patch: { name?: string; folder?: string }) =>
+    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, LOCAL_CONTEXT);
+  expect(() => update({ name: "Noyau" })).toThrow("FORBIDDEN");
+  expect(s.summary()?.name).toBe("Kibo");
+  expect(s.service.docs.project(s.project.id).getMap("meta").get("name")).toBe("Kibo");
+  expect(update({ folder: "/tmp/ok/x" }).folder).toBe("/tmp/ok/x");
+  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBe("/tmp/ok/x");
+  expect(s.service.docs.project(s.project.id).getMap("meta").get("folder")).toBeNull();
+  s.close();
+});
+
 test("a local project drops a folder left in the settings so the doc is the truth", () => {
   const s = setup();
   s.settings.set(s.project.id, LOCAL_FOLDER_KEY, "/tmp/ok/before");
@@ -204,4 +226,5 @@ test("an existing folder is an absolute path to a directory", () => {
   const file = join(dir, "file.txt");
   writeFileSync(file, "x");
   expect(folderIsDirectory(file)).toBe(false);
+  expect(folderIsDirectory(join(file, "inside"))).toBe(false);
 });

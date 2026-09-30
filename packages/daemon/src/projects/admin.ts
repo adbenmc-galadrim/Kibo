@@ -34,8 +34,14 @@ export type ProjectAdmin = {
   handler: RpcHandler;
 };
 
-export const folderIsDirectory = (path: string): boolean =>
-  isAbsolute(path) && (statSync(path, { throwIfNoEntry: false })?.isDirectory() ?? false);
+export function folderIsDirectory(path: string): boolean {
+  if (!isAbsolute(path)) return false;
+  try {
+    return statSync(path, { throwIfNoEntry: false })?.isDirectory() ?? false;
+  } catch {
+    return false;
+  }
+}
 
 const keepsFolderOutOfDoc = (info: ProjectSyncInfo): boolean => info.shared || info.keyAllocator === "server";
 
