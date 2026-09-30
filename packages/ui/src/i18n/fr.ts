@@ -164,7 +164,6 @@ export const fr = {
   ticket: {
     status: "Statut",
     blockedReason: "Motif du blocage",
-    waiting: "Attend",
     subtickets: "Sous-tickets",
     description: "Description",
     domain: "Domaine",

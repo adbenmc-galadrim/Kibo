@@ -1,5 +1,4 @@
 import type { Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
-import { Badge } from "@kibo/sdk/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { useState } from "react";
 import { client } from "../api";
@@ -7,6 +6,7 @@ import { fr } from "../i18n/fr";
 import { frTicketEdit } from "../i18n/fr-ticket-edit";
 import { canEdit } from "../state/access";
 import { AssigneeSelect } from "../ticket/AssigneeSelect";
+import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
 import { StatusSelect } from "../ticket/StatusSelect";
 import { useTicketCommand } from "../ticket/use-ticket-command";
@@ -123,18 +123,6 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
             <dd className="text-red-600 dark:text-red-400">{t.blockedReason}</dd>
           </>
         )}
-        {t.waitingOn.length > 0 && (
-          <>
-            <dt className="text-muted-foreground">{fr.ticket.waiting}</dt>
-            <dd className="flex gap-1">
-              {t.waitingOn.map((k) => (
-                <Badge key={k} variant="outline">
-                  {k}
-                </Badge>
-              ))}
-            </dd>
-          </>
-        )}
         <FigmaProperty ticket={t} />
       </dl>
       {command.error && (
@@ -142,6 +130,7 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
           {command.error}
         </p>
       )}
+      <DependenciesSection project={project} ticket={t} editable={editable} onOpenTicket={onOpenTicket} />
       <DescriptionEditor
         ticketId={t.id}
         description={t.description}
