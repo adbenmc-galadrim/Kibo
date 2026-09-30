@@ -8,7 +8,7 @@
 
 **Tech Stack:** Bun 1.4.2, TypeScript 5.9 strict, Zod 3.25.76, React 19 + shadcn/ui (`context-menu`, `dropdown-menu`, `alert-dialog` déjà dans `packages/sdk/src/ui`), `@dnd-kit/core` 6.3.1 (déjà présent), Vite 7.1.6, happy-dom + Testing Library, Playwright, Tauri 2 (`tauri-plugin-opener`, `tauri-plugin-window-state`, `tauri::menu`), `@tauri-apps/plugin-opener` (nouvelle dépendance de `packages/ui`, import dynamique seulement), cargo 1.98 disponible en local (`~/.cargo/bin/cargo`).
 
-**Spec:** `docs/superpowers/specs/2026-09-26-kibo-code-onglets.md` **§12** (décisions de la phase 9, écrites avant ce plan : annuler les changements, tout (dés)indexer, actions locales, menus contextuels, coque de bureau, logo) ; `docs/superpowers/specs/2026-09-27-kibo-mises-a-jour.md` §3.7 et §4 (capacité IPC amendée) ; `docs/superpowers/specs/2026-09-25-kibo-design.md` §5 (liens `blocks` / `relates`, pages imbriquées), §8 (Sheet ticket, écran 4, système visuel : logo), §10 ; `docs/superpowers/specs/2026-09-26-kibo-composants.md` §5 (SDK, `notes`), §8.2 (notes = fichiers `.md`). Plan d'action : `docs/superpowers/plans/2026-09-27-kibo-plan-action-ui-ux.md` (lots 1 et 4). Repérage : `docs/superpowers/rapports/2026-09-27-reperage-ui-ux.md`. Données des maquettes : `design/donnees-fictives.md`.
+**Spec:** `docs/superpowers/specs/2026-09-26-kibo-code-onglets.md` **§12** (décisions de la phase 9, écrites avant ce plan : annuler les changements, tout (dés)indexer, actions locales, menus contextuels, coque de bureau, logo ; **§12.7** : réponses d'Adam du 2026-09-27, glisser-déposer qui réordonne et notes toujours titrées, tâches T3b, T7b, T10b, T12b) ; `docs/superpowers/specs/2026-09-27-kibo-mises-a-jour.md` §3.7 et §4 (capacité IPC amendée) ; `docs/superpowers/specs/2026-09-25-kibo-design.md` §5 (liens `blocks` / `relates`, pages imbriquées), §8 (Sheet ticket, écran 4, système visuel : logo), §10 ; `docs/superpowers/specs/2026-09-26-kibo-composants.md` §5 (SDK, `notes`), §8.2 (notes = fichiers `.md`). Plan d'action : `docs/superpowers/plans/2026-09-27-kibo-plan-action-ui-ux.md` (lots 1 et 4). Repérage : `docs/superpowers/rapports/2026-09-27-reperage-ui-ux.md`. Données des maquettes : `design/donnees-fictives.md`.
 
 ## Vérifié sur le code (`main` = `1b53211`, v1.0 + mises à jour)
 
@@ -53,6 +53,9 @@ Le plan d'action citait des RPC et des appels de mémoire ; tout a été confron
 3. **Session distante** : `discardChanges`, `stageAll`, `unstageAll`, `openInEditor` répondent `FORBIDDEN` ; la même requête en local passe (T3, test avec `RpcContext { remote: true }`).
 4. **Titre de ticket ou de page vide** (espaces seuls) : le démon refuse (`INVALID_INPUT`), l'UI garde l'ancien titre affiché et montre l'erreur, le champ reste éditable (T6, T7).
 5. **Lien `javascript:`, `file:`, `mailto:` ou `http:` dans la fenêtre Tauri** : jamais transmis à l'ouvreur, clic neutralisé ; seul `https:` s'ouvre (T13, test `installExternalLinks`). **Cycle de dépendance** (`KIB-12 bloque KIB-15` puis `KIB-15 bloque KIB-12`) : refus expliqué en français, rien n'est écrit (T14).
+6. **Session distante, toutes mutations** (T3b) : les 13 mutations de `/api/code` et `openInEditor` répondent `FORBIDDEN` avant toute commande (disque et index intacts, aucun événement `code`, aucun programme lancé) ; les 9 lectures passent ; la vue Code distante ne rend ni case, ni bouton de bloc, ni panneau de commit, ni « Abandonner ».
+7. **Réordonner par glisser-déposer** (T7b, T10b) : l'`index` envoyé est la position finale parmi les frères, calculée sans l'élément déplacé et sur la liste complète (jamais la liste filtrée) ; déposer juste au-dessus ou au-dessous de sa place actuelle n'envoie rien ; un dépôt dans son propre sous-arbre est ignoré.
+8. **Renommage long d'une note** (T12b) : une sauvegarde partie pendant `notes.rename` finit dans le nouveau fichier, l'état revient à « Enregistré » sans bannière « Modifié hors de Kibo » ; la création refuse un nom pris sans rien écrire.
 
 ## Décisions
 
@@ -66,9 +69,11 @@ Les décisions de démon et de coque sont écrites en spec code et onglets **§1
 6. **Pages** : le glisser-déposer **reparente** (déposer sur une page ⇒ sous-page, sur le nom du projet ⇒ racine) **et réordonne** (déposer au-dessus ou au-dessous d'une sœur ⇒ `movePage` avec `index`, décision d'Adam du 2026-09-27 : le glisser-déposer ne se limite pas au reparentage) ; « Monter » / « Descendre » restent dans le menu. Renommer ouvre un dialogue (un titre de page se saisit rarement en place dans une barre latérale étroite).
 7. **Notes** : « Renommer… » demande un titre ; le nom de fichier est son `slug` (`slugify` déjà dans `packages/ui/src/ai/slug.ts`, recopié dans le composant car un composant n'importe pas l'UI) dans le même dossier. À la **première sauvegarde d'une note nouvelle** encore nommée `sans-titre(-n).md`, si le premier titre `# …` donne un slug et que `<slug>.md` est libre, le fichier est renommé ; sinon il garde son nom. Décision d'Adam (2026-09-27) : **aucune note ne reste sans titre**. « Nouvelle note » demande un titre obligatoire (fichier `<slug>.md`, première ligne `# Titre`) ; une note `sans-titre(-n).md` existante est renommée à sa prochaine sauvegarde si elle a un titre, sinon la liste la signale et propose « Renommer… ». Avant tout renommage, le tampon de l'éditeur est enregistré et les sauvegardes suivantes visent le nouveau chemin (aucune frappe perdue).
 8. **Réglages d'un widget** : formulaire généré depuis `configSchema` du manifeste (`ConfigField` : `enum` ⇒ sélecteur, `boolean` ⇒ interrupteur, `number` ⇒ champ numérique, `string` ⇒ champ texte, `nullable` ⇒ case « Aucune valeur ») ; les clés hors schéma (`source`, configuration MCP) sont conservées telles quelles. Pas d'entrée « Réglages… » quand le schéma est vide ou absent.
-9. **Arbre Tickets** : le composant déclare `writes: ["ticket"]` ; le glisser-déposer reparente (déposer sur une ligne ⇒ sous-ticket ; « Déplacer à la racine » dans le menu) et réordonne entre frères (déposer au-dessus ou au-dessous d'une ligne ; vérifier que `moveTicket` accepte un `index`, sinon décision de schéma à écrire d'abord) ; le statut se change par un sous-menu, « Bloqué » ouvre `ReasonDialog`. Le Kanban gagne le clic droit et « Supprimer… », rien d'autre (carte entière déplaçable et ordre dans la colonne : lot 8).
+9. **Arbre Tickets** : le composant déclare `writes: ["ticket"]` ; le glisser-déposer reparente (déposer sur une ligne ⇒ sous-ticket ; « Déplacer à la racine » dans le menu) et réordonne entre frères (déposer au-dessus ou au-dessous d'une ligne, T10b ; **vérifié le 2026-09-30** : `moveTicket { index? }` existe dans le schéma, `core` et le démon, aucune décision de schéma à écrire ; `index` = position finale parmi les frères, comme `movePage`) ; le statut se change par un sous-menu, « Bloqué » ouvre `ReasonDialog`. Le Kanban gagne le clic droit et « Supprimer… », rien d'autre (carte entière déplaçable et ordre dans la colonne : lot 8).
 10. **Titre de fenêtre** : identique au titre de l'onglet actif suivi de « — Kibo » ; « Kibo » seul sur l'Accueil.
 11. **Écrans Penpot** : dessinés par le chef d'équipe en tête de vague (T1). Si l'édition Penpot n'est pas faisable par un agent, la vague avance et le rapport du jalon liste ces écrans comme écart assumé ; les tâches UI suivent alors les descriptions textuelles de T1.
+12. **Zones de dépôt** (T7b, T10b, ajoutées le 2026-09-30) : trois zones par ligne, quart haut (« au-dessus »), milieu (« dans »), quart bas (« au-dessous »), rendues par des calques `aria-hidden` sans événement de pointeur ; collision `pointerWithin` ; le plan de dépôt est une fonction pure testée sans DOM (`page-drop.ts`, `tree-drop.ts`), le glisser ne se simule pas sous happy-dom.
+13. **Session distante dans l'UI** (T3b) : `remote = isRemoteView()` en prop par défaut (motif de `ComponentSourcesPage`), jamais lu au niveau du module ; les composants reçoivent `readOnly` et ne rendent aucune action d'écriture (pas de bouton désactivé : absent).
 
 ## Écrans à dessiner (Penpot, T1)
 
@@ -128,7 +133,14 @@ apps/desktop/src-tauri/Cargo.toml  Cargo.lock  src/main.rs  src/menu.rs   (T4)
 apps/desktop/app-icon.svg  src-tauri/icons/*                      régénérés (T5)
 design/penpot/scripts/17-finitions.js  design/penpot/kibo.penpot.xz  design/pdf/*.pdf  design/penpot/README.md   (T1)
 e2e/menus.spec.ts  e2e/playwright.config.ts                       (T16)
-docs/superpowers/specs/2026-09-26-kibo-code-onglets.md §12, 2026-09-27-kibo-mises-a-jour.md §3.7 §4, 2026-09-25-kibo-design.md §8   (écrits avec ce plan)
+packages/schema/src/code.ts  code.test.ts                         CODE_MUTATION_METHODS, LOCAL_ONLY_CODE_METHODS élargie (T3b)
+packages/daemon/src/code/code-service.ts  code-service.test.ts  server-code.test.ts   liste du schéma, refus distant par méthode (T3b)
+packages/ui/src/code/ChangesView.tsx  ChangesFiles.tsx  FileList.tsx  DiffColumn.tsx  DiffToolbar.tsx  DiffView.tsx  OperationBanner.tsx  changes.test.tsx   remote / readOnly (T3b)
+packages/ui/src/files/FileTabView.tsx  files.test.tsx             remote (T3b) ; i18n/fr-code.ts (localOnly, errors.FORBIDDEN)
+packages/ui/src/shell/page-drop.ts  page-drop.test.ts             NOUVEAU (T7b) : zones et plan de dépôt ; ProjectPages.tsx (T7b)
+components/tickets/src/tree-drop.ts  tree-drop.test.ts  TicketsTree.tsx   zones et plan de dépôt (T10b) ; packages/core/src/tickets.test.ts (index)
+components/notes/src/NoteTitleDialog.tsx  notes.test-helper.tsx  notes-rename.test.tsx   NOUVEAU (T12b) ; note-name.ts, RenameNoteDialog.tsx, NoteList.tsx, NotesView.tsx, use-note-session.ts, fr.ts, notes.test.tsx (T12b)
+docs/superpowers/specs/2026-09-26-kibo-code-onglets.md §12, §12.7 (T3b, T7b, T10b, T12b), 2026-09-27-kibo-mises-a-jour.md §3.7 §4, 2026-09-25-kibo-design.md §8   (écrits avec ce plan)
 ```
 
 ## Contrats partagés
@@ -259,6 +271,17 @@ export function blockNativeContextMenu(root: Document, selection: () => string):
 export function windowTitle(tabTitle: string | null): string;                   // null ⇒ "Kibo", sinon `${tabTitle} — Kibo`
 export function installDesktop(): () => void;                                   // liens externes + menu natif ; renvoie le nettoyage
 export function setNativeTitle(title: string): Promise<void>;                   // @tauri-apps/api/window (import dynamique)
+
+// shell/page-drop.ts (T7b)
+export type DropZone = { kind: "root" } | { kind: "before" | "inside" | "after"; pageId: string };
+export type PageMove = { pageId: string; parentId: string | null; index?: number };   // index absent ⇒ fin des enfants (reparentage)
+export function zoneId(zone: DropZone): string;                 // "root" | `${pageId}:before` | `${pageId}:inside` | `${pageId}:after`
+export function parseZoneId(id: string): DropZone | null;
+export function pageDropPlan(pages: readonly Page[], activeId: string, zone: DropZone): PageMove | null;   // null = rien à envoyer (sur place, soi-même, sous-arbre, inconnu)
+
+// code/ChangesView.tsx (T3b) : Props gagne remote?: boolean (défaut isRemoteView()) ; ChangesFiles, FileList, DiffColumn, DiffToolbar : + readOnly: boolean ;
+//   DiffView.onHunk devient optionnel ; ChangesAlerts et OperationBanner : onAbort: (() => void) | null
+// files/FileTabView.tsx (T3b) : Props gagne remote?: boolean (défaut isRemoteView()) ; startEditing ignoré quand remote
 ```
 
 ### Composants intégrés
@@ -278,7 +301,20 @@ export function cardMenuEntries(input: { ticket: TicketView; statuses: Status[];
 export function slugify(title: string): string;                 // copie de packages/ui/src/ai/slug.ts, sans préfixe c-
 export const isUntitledPath = (path: string): boolean;          // /^sans-titre(-\d+)?\.md$/ sur le nom de fichier
 export function renamedPath(from: string, title: string): string | null;   // même dossier, `${slug}.md` ; null si slug vide
-export function autoRenameTarget(note: { path: string; title: string }, taken: readonly string[]): string | null;   // cible libre pour une note sans titre, sinon null
+export function autoRenameTarget(note: { path: string; title: string }, taken: readonly string[]): string | null;   // cible libre pour une note sans titre, sinon null ; jamais un nom sans titre (T12b)
+export const createdPath = (title: string): string | null;      // T12b : `${slug}.md` à la racine du dossier, null sans slug
+
+// components/notes/src/NoteTitleDialog.tsx (T12b) — formulaire commun à « Nouvelle note » et « Renommer… »
+export function NoteTitleDialog(props: { title: string; initial: string; confirmLabel: string; pathFor(title: string): string | null; unchanged: string | null; submit(path: string, title: string): Promise<unknown>; describeError(error: unknown): string; onClose(): void }): JSX.Element;
+// components/notes/src/RenameNoteDialog.tsx : props inchangées (note, onRename(from, to), onClose), habillage de NoteTitleDialog
+// components/notes/src/use-note-session.ts (T12) : rename(from, to) vide le tampon, renomme, rebase, puis (T12b) vide à nouveau le tampon tapé pendant le renommage
+
+// components/tickets/src/tree-drop.ts (T10b, en plus de reparentOnDrop de T10)
+export type DropZone = { kind: "before" | "inside" | "after"; ticketId: string };
+export type TicketMove = { ticketId: string; parentId: string | null; index?: number };
+export const zoneId: (zone: DropZone) => string;                 // `${ticketId}:before` | `:inside` | `:after`
+export function parseZoneId(id: string): DropZone | null;
+export function dropPlan(tickets: readonly TicketView[], activeId: string, zone: DropZone): TicketMove | null;   // inside ⇒ reparentOnDrop ; before/after ⇒ index final parmi les frères, sur la liste complète
 ```
 
 ### Démon et schéma (T3)
@@ -300,6 +336,11 @@ export type CodeService = { handle(req: CodeRequest, ctx: RpcContext): Promise<u
 // packages/daemon/src/rpc-extensions.ts
 export const LOCAL_CONTEXT: RpcContext = { sessionHash: "local", remote: false };   // pour les tests et les appels internes
 // packages/daemon/src/server.ts : code.handle(parsed.data, ctx)
+
+// packages/schema/src/code.ts (T3b) — source unique des listes ; code-service.ts n'a plus de MUTATION_METHODS
+export const CODE_MUTATION_METHODS = ["writeFile", "stageFiles", "unstageFiles", "discardChanges", "stageAll", "unstageAll", "stageHunk", "commit", "reword", "undoCommit", "abortOperation", "push", "createPr"] as const;
+export const LOCAL_ONLY_CODE_METHODS = [...CODE_MUTATION_METHODS, "openInEditor"] as const;   // refusées en FORBIDDEN depuis une session distante (spec §12.3)
+// lectures ouvertes à distance : worktrees, status, diff, readFile, remoteBranches, compare, commitDefaults, ghStatus, prForBranch
 ```
 
 ### Coque (T4)
@@ -325,13 +366,16 @@ Une vague démarre quand toutes les tâches dont elle dépend sont intégrées d
 |---|---|---|---|---|
 | 0 | T1 (chef d'équipe), T2, T3, T4, T5 | aucune (spec §12 écrite) | aucun : T2 = `packages/sdk/src/ui`, shell (dialogues), `bundle-report.ts` ; T3 = schéma `code.ts`, `daemon/src/code`, `server.ts` ; T4 = `apps/desktop/src-tauri` ; T5 = `KiboLogo.tsx`, `kibo-mark.ts`, `index.html`, `public/`, `scripts/app-icon.ts`, `scripts/tsconfig.json`, `app-icon.svg`, `icons/` | T1 dessine 98–106 |
 | 1 | T6, T7, T8, T9, T10, T11, T12, T13 | T6, T7, T8, T9 ← T2 · T10, T11 ← T2 (menu-entries, ConfirmDialog, ReasonDialog) · T12 ← T2 · T13 ← T2, T4 | `lazy-dialogs.ts` (T7, T8 : une ligne chacune) ; `bundle-report.ts` (T6, T7, T8, T13 : une regex chacune) ; `fr.ts` (T7 `nav`, T9 `domains`) ; `Shell.tsx` (T6 `onOpenTicket`, T13 `installDesktop`) ; `AppSidebar.tsx` (T7 extrait `ProjectPages`, T13 `select-none` et libellé ⌘K : **T13 après T7**) ; `TabBar.tsx` (T13 seul) | T6 : 98, 99 · T7 : 101 · T8 : 105 · T9 : 106 · T10 : 102, 99 · T11 : 99 · T12 : 103 |
-| 2 | T14, T15 | T14 ← T6 · T15 ← T2, T3 | aucun (T14 = `ticket/`, `TicketDetail.tsx`, `fr-ticket-edit.ts` ; T15 = `code/`, `fr-code.ts`) | T14 : 100 · T15 : 104 |
+| 1 bis | T3b, T7b, T10b, T12b (réponses d'Adam du 2026-09-27) | T3b ← T3 (déjà intégrée : démarre dès maintenant) · T7b ← T7 · T10b ← T10 · T12b ← T12 ; chacune démarre dès l'intégration de sa base, sans attendre la fin de la vague 1 | **T3b** = `packages/schema/src/code.ts`, `daemon/src/code/code-service.ts`, `packages/ui/src/code/*`, `files/FileTabView.tsx`, `fr-code.ts` : **avant T15** (qui modifie `FileList`, `ChangesFiles`, `ChangesView`, `fr-code.ts`) ; aucun recouvrement avec la vague 1. **T7b** = `shell/page-drop.ts` (nouveau), `shell/ProjectPages.tsx` seulement : en parallèle de T13 (qui touche `AppSidebar.tsx`, `Shell.tsx`, `TabBar.tsx`, jamais `ProjectPages.tsx`), aucun texte ajouté. **T10b** = `components/tickets/src/tree-drop.ts`, `TicketsTree.tsx` (ou `TicketRow.tsx`), `packages/core/src/tickets.test.ts` : indépendante de T11. **T12b** = `components/notes/src/*` seulement | — |
+| 2 | T14, T15 | T14 ← T6 · T15 ← T2, T3, **T3b** (`FileList.readOnly`, `errors.FORBIDDEN`) | aucun (T14 = `ticket/`, `TicketDetail.tsx`, `fr-ticket-edit.ts` ; T15 = `code/`, `fr-code.ts`) | T14 : 100 · T15 : 104 |
 | 3 | T16 | T16 ← T6, T7, T15 (et T3) | `e2e/playwright.config.ts` (T16 seul) | — |
 | Jalon partiel | `bun run budget`, contrôle visuel 98–106 sombre et clair, rapport de vague au chef d'équipe | tout | — | toutes |
 
-Ordre d'intégration de la vague 1 : T6, T7, T8, T9, T10, T11, T12, T13. Tâches à risque relues aussi par `kibo-lead` : T3 (git destructif, contexte de session), T4 (capacité IPC, menu natif), T13 (liens externes). T10 modifie le manifeste du composant tickets (`writes`) et sa conformité ; T10 et T11 sont indépendants.
+Ordre d'intégration de la vague 1 : T6, T7, T8, T9, T10, T11, T12, T13. Tâches à risque relues aussi par `kibo-lead` : T3 (git destructif, contexte de session), T3b (session distante), T4 (capacité IPC, menu natif), T13 (liens externes). T10 modifie le manifeste du composant tickets (`writes`) et sa conformité ; T10 et T11 sont indépendants.
 
-Chemin critique : T2 → T6 → T14 → T16 (4 vagues). Vérification locale de la coque (T4) : `cargo test` est possible ici (`~/.cargo/bin/cargo` 1.98.1) après `bun run --cwd packages/ui build`, `bun apps/desktop/scripts/build-sidecar.ts` et `bun apps/desktop/scripts/build-toolchain.ts` (les binaires du sidecar sont exigés par `tauri-build`) ; le `desktop-smoke` de la CI fait foi pour Linux.
+Vague 1 bis : chaque tâche `<n>b` part de `phase/9` **après** l'intégration de sa base (`feat/p9-t3b` dès maintenant, `feat/p9-t7b` après T7, `feat/p9-t10b` après T10, `feat/p9-t12b` après T12), worktree `.claude/worktrees/p9-t<n>b` ; intégration dans l'ordre d'acceptation, `bun run budget` après T3b et T7b (les deux seules qui touchent `packages/ui`). T3b est intégrée avant le démarrage de T15 (fichiers partagés et contrat `readOnly`).
+
+Chemin critique : T2 → T6 → T14 → T16 (4 vagues) ; en parallèle, T3 → T3b → T15 → T16. Vérification locale de la coque (T4) : `cargo test` est possible ici (`~/.cargo/bin/cargo` 1.98.1) après `bun run --cwd packages/ui build`, `bun apps/desktop/scripts/build-sidecar.ts` et `bun apps/desktop/scripts/build-toolchain.ts` (les binaires du sidecar sont exigés par `tauri-build`) ; le `desktop-smoke` de la CI fait foi pour Linux.
 
 ---
 
@@ -5720,6 +5764,8 @@ git commit -m "feat(ui): dépendances dans la fiche ticket"
 
 Vague 2 ← T2, T3. Spec §12.1 à §12.4 (menu **fichier modifié**), écran 104. Chaque ligne de la vue Changements gagne un menu (clic droit et « ⋯ », même liste) : Voir le diff, Ouvrir dans un onglet, Ouvrir dans l'éditeur externe, Copier le chemin, Indexer / Désindexer, séparateur, Annuler les changements… ; un fichier **en conflit** n'a ni Indexer ni Annuler. Les en-têtes de section portent « Tout indexer » (Non indexés) et « Tout désindexer » (Indexés). « Annuler les changements… » confirme en disant, fichier par fichier, ce qui revient à sa dernière version commitée et ce qui est **supprimé du disque** (fichier nouveau), puis envoie `discardChanges { paths }` (T3 ; un renommage envoie `path` et `origPath`, comme `unstageFiles`). Une session distante reçoit `FORBIDDEN` : le texte l'explique.
 
+**Complément T3b (vague 1 bis, intégrée avant T15)** : `FileList` et `ChangesFiles` portent déjà `readOnly: boolean` (vrai en session distante). `fileMenuEntries` reçoit `readOnly: boolean` et, quand il est vrai, ne garde que « Voir le diff », « Ouvrir dans un onglet » et « Copier le chemin » (ni éditeur externe, ni Indexer / Désindexer, ni Annuler les changements…) ; les en-têtes de section ne rendent pas « Tout indexer » / « Tout désindexer » quand `readOnly`. Un test de `file-menu.test.ts` le vérifie (même motif que « a read-only project only opens the page in a new tab » de T7). Le test « … a remote session is told why it is refused » reste : le démon garantit, l'UI masque.
+
 **Files:**
 - Create: `packages/ui/src/code/file-menu.ts`, `packages/ui/src/code/file-menu.test.ts`
 - Modify: `packages/ui/src/code/FileList.tsx`, `packages/ui/src/code/ChangesFiles.tsx`, `packages/ui/src/code/ChangesView.tsx`, `packages/ui/src/code/changes-files.test.tsx`, `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/i18n/fr-code.ts`, `packages/ui/src/shell/ContentView.tsx` (`onOpen(target, newTab?)`, `onOpenInTab` vers `ChangesView`), `packages/ui/src/shell/Shell.tsx` (`onOpen={(t, newTab) => go(t, newTab)}`)
@@ -5751,7 +5797,7 @@ Vague 2 ← T2, T3. Spec §12.1 à §12.4 (menu **fichier modifié**), écran 10
     discardIrreversible: "Cette action est irréversible.",
     discardConfirm: "Annuler les changements",
 ```
-› `errors`, ajouter : `FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",`. (« Ouvrir dans l'éditeur externe » existe : `openExternal`.)
+› `errors` : `FORBIDDEN` est déjà là (ajouté par T3b) ; ne rien ajouter. (« Ouvrir dans l'éditeur externe » existe : `openExternal`.)
 
 - [ ] **Step 2: Menu et description en données (test rouge puis vert)**
 
@@ -6158,14 +6204,961 @@ git add e2e/menus.spec.ts e2e/playwright.config.ts
 git commit -m "test(e2e): menus, fiche ticket et annulation"
 ```
 
+### Task 3b: Démon : toutes les mutations git réservées à la machine, vue Code distante en lecture
+
+Vague 1 bis ← T3 (intégrée dans `phase/9`). Spec §12.3 (décision d'Adam du 2026-09-27) : **toutes** les requêtes de `/api/code` qui modifient le dépôt ou lancent un programme sont refusées en `FORBIDDEN` depuis une session distante ; seules les lectures restent ouvertes ; l'interface distante masque ces actions. Relue par `kibo-lead` (session distante). Liste établie sur `packages/schema/src/code.ts` et `packages/daemon/src/code/code-service.ts` :
+
+| Réservées à la machine locale (14) | Ouvertes à distance (9 : lectures sans effet) |
+|---|---|
+| `writeFile`, `stageFiles`, `unstageFiles`, `discardChanges`, `stageAll`, `unstageAll`, `stageHunk`, `commit`, `reword`, `undoCommit`, `abortOperation`, `push`, `createPr` (les 13 `MUTATION_METHODS` du service ; `createPr` pousse puis lance `gh pr create`) et `openInEditor` (lance l'éditeur) | `worktrees`, `status`, `diff`, `readFile`, `remoteBranches`, `compare`, `commitDefaults`, `ghStatus` (`gh auth status`, sans écriture), `prForBranch` (`gh pr view`) |
+
+Le schéma devient la source unique : `CODE_MUTATION_METHODS` (13) et `LOCAL_ONLY_CODE_METHODS` (= mutations + `openInEditor`) ; le service n'a plus sa propre liste, et un test du schéma oblige à classer toute méthode future. Côté UI, la vue Changements et l'onglet fichier reçoivent `remote` (défaut `isRemoteView()`, motif déjà employé par `ComponentSourcesPage`, `ShareProjectDialog`, `TrustDialog`) et n'affichent alors aucune action d'écriture : ni cases « Indexer », ni boutons de bloc, ni « Édition », ni « Ouvrir dans l'éditeur externe », ni « Abandonner », ni panneau Commit / Pousser / PR ; une ligne explique pourquoi. Le démon garantit, l'UI masque (colonne « Réel »).
+
+**Files:**
+- Modify: `packages/schema/src/code.ts` (`CODE_MUTATION_METHODS`, `LOCAL_ONLY_CODE_METHODS`), `packages/schema/src/code.test.ts`
+- Modify: `packages/daemon/src/code/code-service.ts` (importe `CODE_MUTATION_METHODS`), `packages/daemon/src/code/code-service.test.ts` (refus distant des 14 méthodes, lectures ouvertes), `packages/daemon/src/server-code.test.ts` (le test HTTP distant couvre `commit` et `stageAll` en plus d'`openInEditor`)
+- Modify: `packages/ui/src/code/ChangesView.tsx` (`remote`), `packages/ui/src/code/ChangesFiles.tsx`, `packages/ui/src/code/FileList.tsx`, `packages/ui/src/code/DiffColumn.tsx`, `packages/ui/src/code/DiffToolbar.tsx`, `packages/ui/src/code/DiffView.tsx`, `packages/ui/src/code/OperationBanner.tsx`, `packages/ui/src/files/FileTabView.tsx` (`remote`), `packages/ui/src/i18n/fr-code.ts` (`changes.localOnly`, `file.localOnly`, `errors.FORBIDDEN`), `packages/ui/src/code/changes.test.tsx`, `packages/ui/src/files/files.test.tsx`
+
+**Interfaces:**
+- Consumes: `requireLocal`, `RpcContext`, `LOCAL_CONTEXT` (T3), `isRemoteView` (`lib/remote-view.ts`), `createGitFixture`, `installFakeBin`, `readFakeBinLog` (`code/testing/git-fixture.ts`), `enableSelfSigned`, `remoteCookie`, `remotePost` (`remote/remote.test-helper.ts`).
+- Produces: Contrats partagés › Démon et schéma › T3b ; `ChangesView` props `+ remote?: boolean` ; `ChangesFiles`, `FileList`, `DiffColumn`, `DiffToolbar` props `+ readOnly: boolean` ; `DiffView.onHunk?` (optionnel) ; `ChangesAlerts` et `OperationBanner` `onAbort: (() => void) | null` ; `FileTabView` props `+ remote?: boolean`. T15 s'appuie sur `FileList.readOnly` (voir son complément).
+
+- [ ] **Step 1: Schéma (test rouge puis vert)**
+
+`packages/schema/src/code.test.ts` : retirer la ligne `expect(LOCAL_ONLY_CODE_METHODS).toEqual([...])` du test de T3 et ajouter (`CODE_MUTATION_METHODS` importé) :
+```ts
+  test("every code request is either a local-only mutation or a listed read", () => {
+    expect(CODE_MUTATION_METHODS).toEqual([
+      "writeFile",
+      "stageFiles",
+      "unstageFiles",
+      "discardChanges",
+      "stageAll",
+      "unstageAll",
+      "stageHunk",
+      "commit",
+      "reword",
+      "undoCommit",
+      "abortOperation",
+      "push",
+      "createPr",
+    ]);
+    expect(LOCAL_ONLY_CODE_METHODS).toEqual([...CODE_MUTATION_METHODS, "openInEditor"]);
+    const reads = ["worktrees", "status", "diff", "readFile", "remoteBranches", "compare", "commitDefaults", "ghStatus", "prForBranch"];
+    const methods = CodeRequest.options.map((o) => o.shape.method.value);
+    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...reads].sort());
+  });
+```
+(Le dernier `expect` fait échouer le test dès qu'une méthode nouvelle n'est classée ni locale ni lecture.)
+
+Run: `bun test packages/schema/src/code.test.ts` — Expected: FAIL (`CODE_MUTATION_METHODS` introuvable).
+
+`packages/schema/src/code.ts`, remplacer `LOCAL_ONLY_CODE_METHODS` par :
+```ts
+export const CODE_MUTATION_METHODS = [
+  "writeFile",
+  "stageFiles",
+  "unstageFiles",
+  "discardChanges",
+  "stageAll",
+  "unstageAll",
+  "stageHunk",
+  "commit",
+  "reword",
+  "undoCommit",
+  "abortOperation",
+  "push",
+  "createPr",
+] as const satisfies readonly CodeRequest["method"][];
+
+export const LOCAL_ONLY_CODE_METHODS = [
+  ...CODE_MUTATION_METHODS,
+  "openInEditor",
+] as const satisfies readonly CodeRequest["method"][];
+```
+
+Run: `bun test packages/schema/src/code.test.ts` — Expected: PASS.
+
+- [ ] **Step 2: Service : refus par méthode (tests rouges puis verts)**
+
+`packages/daemon/src/code/code-service.test.ts` : remplacer le test « discardChanges, stageAll, unstageAll and openInEditor are refused from a remote session » par (imports : `CodeRequest`, `LOCAL_ONLY_CODE_METHODS`, `RepoStatus` de `@kibo/schema` ; `RpcContext` de `../rpc-extensions`) :
+```ts
+const REMOTE: RpcContext = { sessionHash: "remote", remote: true };
+const localOnlyRequests = (): CodeRequest[] => {
+  const sha = "a".repeat(40);
+  return [
+    { method: "writeFile", ...w(), path: "README.md", content: "x\n", baseHash: sha },
+    { method: "stageFiles", ...w(), paths: ["README.md"] },
+    { method: "unstageFiles", ...w(), paths: ["README.md"] },
+    { method: "discardChanges", ...w(), paths: ["README.md"] },
+    { method: "stageAll", ...w() },
+    { method: "unstageAll", ...w() },
+    { method: "stageHunk", ...w(), path: "README.md", area: "unstaged", index: 0, header: "@@ -1 +1 @@" },
+    { method: "commit", ...w(), message: "feat: x", amend: false },
+    { method: "reword", ...w(), sha, message: "feat: y" },
+    { method: "undoCommit", ...w(), sha },
+    { method: "abortOperation", ...w() },
+    { method: "push", ...w() },
+    { method: "createPr", ...w(), title: "x", body: "", base: "main", draft: false, reviewers: [], ticketId: null },
+    { method: "openInEditor", ...w(), path: "README.md", line: null },
+  ];
+};
+
+test("every mutation and openInEditor are refused from a remote session before anything runs", async () => {
+  const editor = installFakeBin(fx.dir, "code");
+  const c = start({ env: { ...fx.env, ...gh, VISUAL: editor.path, FAKE_BIN_LOG: editor.log } });
+  fx.write("README.md", "# changed\n");
+  const requests = localOnlyRequests();
+  expect(requests.map((r) => r.method).sort()).toEqual([...LOCAL_ONLY_CODE_METHODS].sort());
+  for (const req of requests) {
+    await expect(c.handle(req, REMOTE)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  }
+  expect(readFileSync(join(fx.repo, "README.md"), "utf8")).toBe("# changed\n");
+  expect(fx.git("status", "--porcelain").trim()).toBe("M README.md");
+  expect(fx.git("rev-list", "--count", "HEAD").trim()).toBe("1");
+  expect(readFakeBinLog(editor.log)).toEqual([]);
+  expect(events).toEqual([]);
+});
+
+test("reads stay open to a remote session", async () => {
+  const c = start();
+  fx.write("README.md", "# changed\n");
+  expect(await c.handle({ method: "worktrees", projectId: project.id }, REMOTE)).toHaveLength(1);
+  expect(((await c.handle({ method: "status", ...w() }, REMOTE)) as RepoStatus).files).toHaveLength(1);
+  expect(
+    await c.handle({ method: "diff", ...w(), path: "README.md", origPath: null, area: "unstaged" }, REMOTE),
+  ).toMatchObject({ path: "README.md" });
+  expect(await c.handle({ method: "readFile", ...w(), path: "README.md", revision: "worktree" }, REMOTE)).toMatchObject({
+    content: "# changed\n",
+  });
+  expect(await c.handle({ method: "remoteBranches", ...w() }, REMOTE)).toMatchObject({ remote: "origin" });
+  expect(await c.handle({ method: "commitDefaults", ...w() }, REMOTE)).toMatchObject({ message: expect.any(String) });
+  expect(await c.handle({ method: "ghStatus", ...w() }, REMOTE)).toMatchObject({ available: expect.any(Boolean) });
+});
+```
+(`fx.git` renvoie la sortie standard ; `as RepoStatus` sur un résultat `unknown`, comme les tests existants du fichier.)
+
+Run: `bun test packages/daemon/src/code/code-service.test.ts` — Expected: FAIL (`writeFile`, `stageFiles`… passent depuis la session distante).
+
+`packages/daemon/src/code/code-service.ts` :
+- import : `CODE_MUTATION_METHODS, LOCAL_ONLY_CODE_METHODS` de `@kibo/schema` ; supprimer la constante locale `MUTATION_METHODS` ;
+- `type Mutation = Extract<WorktreeRequest, { method: (typeof CODE_MUTATION_METHODS)[number] }>;` et `const MUTATIONS = new Set<string>(CODE_MUTATION_METHODS);` ; `LOCAL_ONLY` et `handle` restent tels quels (T3) : le refus vient de la liste élargie.
+
+`packages/daemon/src/server-code.test.ts`, test « openInEditor over the remote listener answers 403 and launches nothing » renommé « local-only requests over the remote listener answer 403 and touch nothing » ; dans son `try`, après `const cookie = await remoteCookie(f);` :
+```ts
+      fx.write("new.txt", "n\n");
+      const w = { projectId, worktree: fx.repo };
+      const refused = [
+        { method: "openInEditor", ...w, path: "README.md", line: null },
+        { method: "commit", ...w, message: "feat: x", amend: false },
+        { method: "stageAll", ...w },
+      ];
+      for (const body of refused) {
+        const res = await remotePost(f, "/api/code", body, { cookie });
+        expect(res.status).toBe(403);
+        expect(await res.json()).toMatchObject({ ok: false, error: { code: "FORBIDDEN" } });
+      }
+      const status = await remotePost(f, "/api/code", { method: "status", ...w }, { cookie });
+      expect(status.status).toBe(200);
+      expect(fx.git("status", "--porcelain").trim()).toBe("?? new.txt");
+      expect(readFakeBinLog(editor.log)).toEqual([]);
+```
+(remplace l'envoi unique de `req` ; `fx.write` existe sur la fixture.)
+
+Run: `bun test packages/daemon/src/code/code-service.test.ts packages/daemon/src/server-code.test.ts` — Expected: PASS.
+
+- [ ] **Step 3: Textes**
+
+`packages/ui/src/i18n/fr-code.ts` :
+- `changes`, ajouter : `localOnly: "Depuis un autre appareil, tu peux lire les changements mais pas les modifier : indexer, commiter et pousser se font sur l'ordinateur où tourne Kibo.",`
+- `file`, ajouter : `localOnly: "Modifier ce fichier ou l'ouvrir dans l'éditeur externe n'est possible que sur l'ordinateur où tourne Kibo.",`
+- `errors`, ajouter : `FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",` (T15 prévoyait cet ajout : il est fait ici, T15 ne l'ajoute plus.)
+
+- [ ] **Step 4: Tests UI (rouges)**
+
+`packages/ui/src/code/changes.test.tsx`, ajouter (`LOCAL_ONLY_CODE_METHODS` importé de `@kibo/schema`) :
+```tsx
+test("a remote view reads the changes but shows no git action", async () => {
+  status = { ...baseStatus, operation: "rebase" };
+  render(
+    <ChangesView project={project} worktree={null} onWorktreeChange={() => {}} onOpenFile={() => {}} remote />,
+  );
+  expect(await screen.findByRole("region", { name: "@@ -1,2 +1,2 @@" })).toBeTruthy();
+  expect(screen.getByText(/se font sur l'ordinateur où tourne Kibo/)).toBeTruthy();
+  expect(screen.getByText(/Rebase en cours/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Abandonner" })).toBeNull();
+  expect(screen.queryByRole("checkbox")).toBeNull();
+  expect(screen.queryByRole("button", { name: /Indexer le bloc|Désindexer le bloc/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Édition" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  expect(screen.queryByLabelText("Message")).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Commit|Pousser|Pull request/ })).toBeNull();
+  const localOnly = new Set<string>(LOCAL_ONLY_CODE_METHODS);
+  expect(calls.filter((c) => localOnly.has(c.method))).toEqual([]);
+});
+```
+(Vérifier les libellés exacts des boutons Commit / Pousser / PR dans `fr-code.ts › commit` et adapter la regex ; l'important est qu'aucun bouton d'écriture ne soit rendu.)
+
+`packages/ui/src/files/files.test.tsx`, ajouter (même `ref` et même montage que « the preview shows the header, metadata, highlighted line and footer ») :
+```tsx
+test("a remote view previews the file without Modifier nor the external editor, even when asked to edit", async () => {
+  render(<FileTabView fileRef={ref} startEditing remote />);
+  expect(await screen.findByText(/n'est possible que sur l'ordinateur où tourne Kibo/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
+  expect(screen.queryByRole("textbox")).toBeNull();
+});
+```
+
+Run: `bun test packages/ui/src/code/changes.test.tsx packages/ui/src/files/files.test.tsx` — Expected: FAIL (2 tests : prop `remote` ignorée, actions rendues).
+
+- [ ] **Step 5: UI distante en lecture**
+
+`packages/ui/src/code/ChangesView.tsx` :
+- `Props + remote?: boolean` ; `export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, useSlots, remote = isRemoteView() }: Props)` (import `isRemoteView` de `../lib/remote-view`) ; `ChangesBody` reçoit `readOnly={remote}` (`BodyProps + readOnly: boolean`) ;
+- dans `ChangesBody` : `<ChangesAlerts … onAbort={readOnly ? null : () => void run(() => client.code({ method: "abortOperation", ...w }))} />` ; `<ChangesFiles … readOnly={readOnly} />` ; `<DiffColumn … readOnly={readOnly} />` ; l'`aside` devient
+```tsx
+        <aside className="flex min-h-0 flex-col gap-5 overflow-auto border-l p-4">
+          {readOnly ? (
+            <p className="text-sm text-muted-foreground">{fr.changes.localOnly}</p>
+          ) : (
+            <>
+              <CommitPanel … />
+              <UnpushedCommits … />
+              <PushActions … />
+            </>
+          )}
+        </aside>
+```
+  et `{!readOnly && branch && baseBranch && (<PushPrDialog … />)}`. Si `ChangesView.tsx` dépasse ~300 lignes, extraire l'`aside` en `CommitColumn.tsx` (props = celles des trois composants, plus `readOnly`) sans changer leur code.
+- `packages/ui/src/code/OperationBanner.tsx` : `onAbort: (() => void) | null` dans `Props` et `AlertsProps` ; le bouton « Abandonner » n'est rendu que si `onAbort` n'est pas nul.
+- `packages/ui/src/code/ChangesFiles.tsx` et `FileList.tsx` : `Props + readOnly: boolean`, transmis à `Section` et `Row` ; dans `Row`, la `Checkbox` est remplacée par `<span aria-hidden className="size-4 shrink-0" />` quand `readOnly` (alignement conservé).
+- `packages/ui/src/code/DiffColumn.tsx` : `Props + readOnly: boolean` ; `<DiffToolbar … readOnly={p.readOnly} canEdit={canEdit && !p.readOnly} />` ; `<DiffView … onHunk={p.readOnly ? undefined : p.onHunk} />` ; `DiffEditorPane` jamais rendu quand `readOnly` (`editing && canEdit && !p.readOnly`).
+- `packages/ui/src/code/DiffToolbar.tsx` : `Props + readOnly: boolean` ; le `Toggle` « Édition » et le bouton « Ouvrir dans l'éditeur externe » ne sont rendus que si `!readOnly`.
+- `packages/ui/src/code/DiffView.tsx` : `onHunk?: (index: number, header: string) => void` ; le bouton de bloc n'est rendu que si `onHunk` est défini.
+- `packages/ui/src/files/FileTabView.tsx` : `Props + remote?: boolean`, `remote = isRemoteView()` ; `useState(startEditing && !remote)` ; quand `remote`, l'en-tête ne rend ni « Modifier » ni le bouton d'éditeur externe, et une ligne `<p className="px-4 py-2 text-xs text-muted-foreground">{fr.file.localOnly}</p>` suit l'en-tête. Le raccourci ⌘⇧O (`hints`) reste : un appel refusé affiche `errors.FORBIDDEN` par `errorMessage`.
+
+Run: `bun test packages/ui/src/code packages/ui/src/files` — Expected: PASS (les tests existants passent sans changement : `remote` vaut `false` sous happy-dom, `location.hostname` étant vide).
+
+- [ ] **Step 6: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/schema packages/daemon/src/code packages/daemon/src/server-code.test.ts packages/ui/src/code packages/ui/src/files && bun run budget`
+Expected: PASS ; la vue Code et l'onglet fichier sont chargés à la demande (`lazy-screens.ts`) : budget inchangé, noter la valeur.
+
+```bash
+git add packages/schema/src/code.ts packages/schema/src/code.test.ts
+git commit -m "feat(schema): mutations git réservées au local"
+git add packages/daemon/src/code/code-service.ts packages/daemon/src/code/code-service.test.ts packages/daemon/src/server-code.test.ts
+git commit -m "feat(daemon): refus distant de toute mutation git"
+git add packages/ui/src/code/ChangesView.tsx packages/ui/src/code/ChangesFiles.tsx packages/ui/src/code/FileList.tsx packages/ui/src/code/DiffColumn.tsx packages/ui/src/code/DiffToolbar.tsx packages/ui/src/code/DiffView.tsx packages/ui/src/code/OperationBanner.tsx packages/ui/src/files/FileTabView.tsx packages/ui/src/i18n/fr-code.ts packages/ui/src/code/changes.test.tsx packages/ui/src/files/files.test.tsx
+git commit -m "feat(ui): vue Code en lecture seule à distance"
+```
+(Ajouter `packages/ui/src/code/CommitColumn.tsx` au dernier commit si l'extraction a eu lieu.)
+
+---
+
+### Task 7b: Pages : glisser-déposer qui réordonne entre sœurs
+
+Vague 1 bis ← T7. Décision 6 et spec §12.7 (réponse d'Adam du 2026-09-27 : le glisser-déposer ne se limite pas au reparentage). Sur la base du `ProjectPages` de T7 (`feat/p9-t7`), chaque ligne de page offre trois zones de dépôt : le **quart haut** (« au-dessus »), le **milieu** (« dans », reparentage de T7) et le **quart bas** (« au-dessous »). Déposer au-dessus ou au-dessous d'une sœur envoie `movePage { pageId, parentId: <parent de la cible>, index }` ; déposer dans une page l'envoie sans `index` (fin de ses sous-pages, comme T7) ; déposer sur le nom du projet ramène à la racine. La collision passe de `rectIntersection` (défaut) à `pointerWithin` : la zone est celle sous le pointeur, ce qui rend les bandes fines fiables. La décision est une fonction pure (`page-drop.ts`), testée sans DOM ; `ProjectPages` ne fait que la brancher.
+
+Sémantique de `index`, vérifiée sur Loro (`LoroTree.move`) : **position finale parmi les sœurs**. Sur `a,b,c`, `index 1` pour `a` donne `b,a,c` ; sur `a,b,c,p`, `index 3` pour `c` le met en dernier (`a,b,p,c`) ; sous un autre parent dont les enfants sont `q`, `index 1` pour `a` donne `q,a`. L'interface calcule donc l'index sur la liste des sœurs **sans** la page déplacée : avant la cible ⇒ sa position, après ⇒ sa position + 1. Un dépôt qui laisse la page où elle est n'envoie rien.
+
+**Files:**
+- Create: `packages/ui/src/shell/page-drop.ts`, `packages/ui/src/shell/page-drop.test.ts`
+- Modify: `packages/ui/src/shell/ProjectPages.tsx`, `packages/ui/src/shell/project-pages.test.tsx` (attentes inchangées ; un test vérifie que le menu reste intact après le changement de collision)
+
+**Interfaces:**
+- Consumes: `movePage { pageId, parentId, index? }` (colonne « Réel »), `descendantIds` (`shell/page-menu.ts`, T7), `useDroppable`, `pointerWithin`, `DragEndEvent` (`@dnd-kit/core`), `cn`.
+- Produces: Contrats partagés › UI › `page-drop.ts`.
+
+- [ ] **Step 1: Le plan de dépôt en données (test rouge puis vert)**
+
+`packages/ui/src/shell/page-drop.test.ts` :
+```ts
+import { expect, test } from "bun:test";
+import type { Page } from "@kibo/schema";
+import { type DropZone, pageDropPlan, parseZoneId, zoneId } from "./page-drop";
+
+const page = (id: string, parentId: string | null): Page => ({ id, title: id, kind: "view", parentId });
+const pages: Page[] = [
+  page("dash", null),
+  page("kanban", null),
+  page("k1", "kanban"),
+  page("k11", "k1"),
+  page("notes", null),
+];
+const before = (pageId: string): DropZone => ({ kind: "before", pageId });
+const after = (pageId: string): DropZone => ({ kind: "after", pageId });
+const inside = (pageId: string): DropZone => ({ kind: "inside", pageId });
+const root: DropZone = { kind: "root" };
+
+test("zone ids round-trip and reject anything else", () => {
+  expect(zoneId(root)).toBe("root");
+  expect(zoneId(before("k1"))).toBe("k1:before");
+  for (const zone of [root, before("k1"), inside("k1"), after("k1")]) {
+    expect(parseZoneId(zoneId(zone))).toEqual(zone);
+  }
+  expect(parseZoneId("k1")).toBeNull();
+  expect(parseZoneId("k1:nowhere")).toBeNull();
+  expect(parseZoneId(":before")).toBeNull();
+});
+
+test("dropping next to a sibling gives the final index among the siblings without the moved page", () => {
+  expect(pageDropPlan(pages, "dash", after("kanban"))).toEqual({ pageId: "dash", parentId: null, index: 1 });
+  expect(pageDropPlan(pages, "notes", before("dash"))).toEqual({ pageId: "notes", parentId: null, index: 0 });
+  expect(pageDropPlan(pages, "dash", after("notes"))).toEqual({ pageId: "dash", parentId: null, index: 2 });
+});
+
+test("dropping where the page already sits sends nothing", () => {
+  expect(pageDropPlan(pages, "dash", before("kanban"))).toBeNull();
+  expect(pageDropPlan(pages, "kanban", after("dash"))).toBeNull();
+  expect(pageDropPlan(pages, "notes", after("kanban"))).toBeNull();
+  expect(pageDropPlan(pages, "dash", root)).toBeNull();
+  expect(pageDropPlan(pages, "k1", inside("kanban"))).toBeNull();
+});
+
+test("dropping between the children of another page reparents with the index", () => {
+  expect(pageDropPlan(pages, "dash", before("k11"))).toEqual({ pageId: "dash", parentId: "k1", index: 0 });
+  expect(pageDropPlan(pages, "notes", after("k1"))).toEqual({ pageId: "notes", parentId: "kanban", index: 1 });
+});
+
+test("inside appends under the target, root brings back to the top level", () => {
+  expect(pageDropPlan(pages, "notes", inside("k1"))).toEqual({ pageId: "notes", parentId: "k1" });
+  expect(pageDropPlan(pages, "k11", root)).toEqual({ pageId: "k11", parentId: null });
+});
+
+test("a page never lands on itself nor inside its own subtree", () => {
+  expect(pageDropPlan(pages, "kanban", before("k1"))).toBeNull();
+  expect(pageDropPlan(pages, "kanban", after("k11"))).toBeNull();
+  expect(pageDropPlan(pages, "kanban", inside("k11"))).toBeNull();
+  expect(pageDropPlan(pages, "kanban", inside("kanban"))).toBeNull();
+  expect(pageDropPlan(pages, "kanban", after("kanban"))).toBeNull();
+  expect(pageDropPlan(pages, "ghost", after("dash"))).toBeNull();
+  expect(pageDropPlan(pages, "dash", after("ghost"))).toBeNull();
+});
+```
+Run: `bun test packages/ui/src/shell/page-drop.test.ts` — Expected: FAIL (module introuvable).
+
+`packages/ui/src/shell/page-drop.ts` :
+```ts
+import type { Page } from "@kibo/schema";
+import { descendantIds } from "./page-menu";
+
+export type DropZone = { kind: "root" } | { kind: "before" | "inside" | "after"; pageId: string };
+export type PageMove = { pageId: string; parentId: string | null; index?: number };
+
+const ROOT = "root";
+const KINDS = ["before", "inside", "after"] as const;
+type Kind = (typeof KINDS)[number];
+const isKind = (s: string): s is Kind => KINDS.some((k) => k === s);
+
+export function zoneId(zone: DropZone): string {
+  return zone.kind === "root" ? ROOT : `${zone.pageId}:${zone.kind}`;
+}
+
+export function parseZoneId(id: string): DropZone | null {
+  if (id === ROOT) return { kind: "root" };
+  const at = id.lastIndexOf(":");
+  const pageId = id.slice(0, at);
+  const kind = id.slice(at + 1);
+  return at > 0 && isKind(kind) ? { kind, pageId } : null;
+}
+
+export function pageDropPlan(pages: readonly Page[], activeId: string, zone: DropZone): PageMove | null {
+  const active = pages.find((p) => p.id === activeId);
+  if (!active) return null;
+  if (zone.kind === "root") return active.parentId === null ? null : { pageId: activeId, parentId: null };
+  const target = pages.find((p) => p.id === zone.pageId);
+  if (!target || target.id === activeId || descendantIds(pages, activeId).has(target.id)) return null;
+  if (zone.kind === "inside") {
+    return active.parentId === target.id ? null : { pageId: activeId, parentId: target.id };
+  }
+  const parentId = target.parentId;
+  const siblings = pages.filter((p) => p.parentId === parentId && p.id !== activeId);
+  const at = siblings.findIndex((p) => p.id === target.id);
+  const index = zone.kind === "before" ? at : at + 1;
+  const current = pages.filter((p) => p.parentId === parentId).findIndex((p) => p.id === activeId);
+  if (active.parentId === parentId && current === index) return null;
+  return { pageId: activeId, parentId, index };
+}
+```
+(`parseZoneId` : les ids de page Loro contiennent `@`, jamais `:` ; `lastIndexOf` isole le suffixe ; `isKind` est un prédicat de type, sans `as`.)
+
+Run: `bun test packages/ui/src/shell/page-drop.test.ts` — Expected: PASS, 6 tests.
+
+- [ ] **Step 2: Zones de dépôt dans `ProjectPages`**
+
+`packages/ui/src/shell/ProjectPages.tsx` :
+- imports : `pointerWithin` (`@dnd-kit/core`), `pageDropPlan, parseZoneId, zoneId` (`./page-drop`) ; la constante `ROOT` disparaît au profit de `zoneId({ kind: "root" })` ;
+- `RootDrop` : `useDroppable({ id: zoneId({ kind: "root" }), disabled: !editable })` (rendu inchangé) ;
+- `PageRow` : les trois zones remplacent le `useDroppable` unique ; le `ring` passe du `SidebarMenuSubItem` à la ligne :
+```tsx
+function PageRow({ page, entries, editable, active, onClick, onAuxClick, children, icon }: RowProps) {
+  const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }), disabled: !editable });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }), disabled: !editable });
+  const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }), disabled: !editable });
+  const drag = useDraggable({ id: page.id, disabled: !editable });
+  return (
+    <SidebarMenuSubItem className="group/page">
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className={cn("relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
+            <div ref={before.setNodeRef} aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/4" />
+            <div ref={inside.setNodeRef} aria-hidden className="pointer-events-none absolute inset-x-0 top-1/4 h-1/2" />
+            <div ref={after.setNodeRef} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4" />
+            {before.isOver && <span aria-hidden className="pointer-events-none absolute inset-x-1 -top-px z-10 h-0.5 rounded bg-ring" />}
+            {after.isOver && <span aria-hidden className="pointer-events-none absolute inset-x-1 -bottom-px z-10 h-0.5 rounded bg-ring" />}
+            <SidebarMenuSubButton asChild isActive={active}>
+              …(bouton, menu « ⋯ » : inchangés)
+```
+  Les trois `div` de zone ne captent aucun événement (`pointer-events-none`) : le clic, le clic droit et le glisser restent ceux du bouton ; dnd-kit ne lit que leurs rectangles. Les zones couvrent la **ligne** seulement (le `div.relative`), pas les sous-pages rendues dans `children` : chaque sous-page a ses propres zones.
+- `onDragEnd` :
+```tsx
+  const onDragEnd = (e: DragEndEvent) => {
+    const zone = e.over ? parseZoneId(String(e.over.id)) : null;
+    const plan = zone ? pageDropPlan(project.pages, String(e.active.id), zone) : null;
+    if (plan) void move(plan.pageId, plan.parentId, plan.index);
+  };
+```
+  (`move` de T7 omet déjà `index` quand il vaut `undefined`.)
+- `<DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>`.
+
+`packages/ui/src/shell/project-pages.test.tsx` : aucune attente ne change (les zones sont `aria-hidden`, sans rôle ni texte ; le menu, le bouton « ⋯ » et la lecture seule se comportent comme en T7). Le glisser ne se simule pas sous happy-dom (rectangles nuls) : la couverture vient de `page-drop.test.ts` et de la vérification manuelle du Step 3.
+
+Run: `bun test packages/ui/src/shell` — Expected: PASS.
+
+- [ ] **Step 3: Gate, budget, vérification manuelle, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
+Expected: PASS ; `pointerWithin` est déjà dans le bundle de `@dnd-kit/core` : attendre + 0,5 kB au plus sur l'entrée ; noter la valeur.
+
+Vérifier à la main (`bun run start`, projet avec trois pages racine et une sous-page) : glisser une page sur le tiers haut d'une sœur la place juste au-dessus (trait), sur le tiers bas juste au-dessous, sur le milieu en fait une sous-page (cadre), sur le nom du projet la remonte à la racine ; un clic simple ouvre toujours la page ; « Monter » / « Descendre » du menu fonctionnent comme avant ; en sombre et en clair, le trait et le cadre sont visibles.
+
+```bash
+git add packages/ui/src/shell/page-drop.ts packages/ui/src/shell/page-drop.test.ts
+git commit -m "feat(ui): plan de dépôt d'une page"
+git add packages/ui/src/shell/ProjectPages.tsx packages/ui/src/shell/project-pages.test.tsx
+git commit -m "feat(ui): pages réordonnées au glisser-déposer"
+```
+
+---
+
+### Task 10b: Arbre Tickets : glisser-déposer qui réordonne entre frères
+
+Vague 1 bis ← T10. Décision 9 et spec §12.7. **Vérification faite** : `moveTicket { ticketId, parentId, index? }` existe dans le schéma (`packages/schema/src/command.ts:47`, `index` entier ≥ 0 optionnel, même définition que `movePage`), dans le domaine (`packages/core/src/tickets.ts:127`, `moveNode(tree, id, parentId, index)`) et le démon l'exécute (`packages/core/src/commands.ts:56`) : **aucune décision de schéma à écrire**. Sémantique identique à celle de T7b (position finale parmi les frères, vérifiée sur `LoroTree.move`) ; un test de `packages/core` la fige. Sur la base du `TicketsTree` de T10 (`DndContext`, `reparentOnDrop`, `attempt`, ligne extraite ou non en `TicketRow`), chaque ligne offre trois zones (quart haut, milieu, quart bas) ; l'index est calculé sur la **liste complète** `all` (ordre du snapshot = parcours en profondeur de l'arbre Loro, `listTickets`), jamais sur la liste filtrée « Mes tickets » ou par source : des frères masqués comptent dans la position.
+
+**Files:**
+- Modify: `packages/core/src/tickets.test.ts` (sémantique de l'index)
+- Modify: `components/tickets/src/tree-drop.ts`, `components/tickets/src/tree-drop.test.ts` (`dropPlan`, zones), `components/tickets/src/TicketsTree.tsx` (et `components/tickets/src/TicketRow.tsx` si T10 a extrait la ligne), `components/tickets/src/tickets.test.tsx` (attentes inchangées)
+
+**Interfaces:**
+- Consumes: `reparentOnDrop` (T10, conservé pour la zone « dans »), `sdk.run({ method: "moveTicket", … })` via `attempt` (T10), `useDroppable`, `pointerWithin` (`@dnd-kit/core`), `createTicket`, `listTickets`, `moveTicket` (`@kibo/core`, test).
+- Produces: Contrats partagés › Composants › `tree-drop.ts` (T10b).
+
+- [ ] **Step 1: Sémantique de l'index (test du domaine, vert d'emblée : il fige un comportement)**
+
+`packages/core/src/tickets.test.ts`, ajouter :
+```ts
+describe("order", () => {
+  test("moveTicket with an index puts the ticket at that final position among its siblings", () => {
+    const d = doc();
+    const a = createTicket(d, { title: "a" });
+    createTicket(d, { title: "b" });
+    const c = createTicket(d, { title: "c" });
+    const p = createTicket(d, { title: "p" });
+    createTicket(d, { title: "q", parentId: p.id });
+    const order = () => listTickets(d).map((t) => t.title);
+    expect(order()).toEqual(["a", "b", "c", "p", "q"]);
+    moveTicket(d, a.id, null, 1);
+    expect(order()).toEqual(["b", "a", "c", "p", "q"]);
+    moveTicket(d, c.id, null, 0);
+    expect(order()).toEqual(["c", "b", "a", "p", "q"]);
+    moveTicket(d, c.id, null, 3);
+    expect(order()).toEqual(["b", "a", "p", "q", "c"]);
+    moveTicket(d, a.id, p.id, 1);
+    expect(order()).toEqual(["b", "p", "q", "a", "c"]);
+  });
+});
+```
+(Attentes établies en exécutant ces mêmes appels sur `@kibo/core` le 2026-09-30 : `index` est la position finale parmi les frères, avec ou sans changement de parent.)
+
+Run: `bun test packages/core/src/tickets.test.ts` — Expected: PASS (si un `expect` échoue, la sémantique diffère de T7b : s'arrêter et le signaler au chef d'équipe avant de toucher au composant).
+
+- [ ] **Step 2: Le plan de dépôt en données (test rouge puis vert)**
+
+`components/tickets/src/tree-drop.test.ts`, ajouter (mêmes `t` et `tickets` que le fichier, fixture étendue) :
+```ts
+import { type DropZone, dropPlan, parseZoneId, zoneId } from "./tree-drop";
+
+const tree = [t("a", null), t("b", "a"), t("c", "b"), t("d", null), t("e", null)];
+const before = (ticketId: string): DropZone => ({ kind: "before", ticketId });
+const after = (ticketId: string): DropZone => ({ kind: "after", ticketId });
+const inside = (ticketId: string): DropZone => ({ kind: "inside", ticketId });
+
+test("zone ids round-trip on Loro ids and reject anything else", () => {
+  for (const zone of [before("27@1"), inside("27@1"), after("27@1")]) {
+    expect(parseZoneId(zoneId(zone))).toEqual(zone);
+  }
+  expect(parseZoneId("27@1")).toBeNull();
+  expect(parseZoneId("27@1:top")).toBeNull();
+});
+
+test("dropping next to a sibling gives the final index among the siblings without the moved ticket", () => {
+  expect(dropPlan(tree, "a", after("d"))).toEqual({ ticketId: "a", parentId: null, index: 1 });
+  expect(dropPlan(tree, "e", before("a"))).toEqual({ ticketId: "e", parentId: null, index: 0 });
+  expect(dropPlan(tree, "a", after("e"))).toEqual({ ticketId: "a", parentId: null, index: 2 });
+});
+
+test("dropping where the ticket already sits sends nothing", () => {
+  expect(dropPlan(tree, "a", before("d"))).toBeNull();
+  expect(dropPlan(tree, "d", after("a"))).toBeNull();
+  expect(dropPlan(tree, "b", inside("a"))).toBeNull();
+});
+
+test("dropping between the children of another ticket reparents with the index", () => {
+  expect(dropPlan(tree, "d", before("c"))).toEqual({ ticketId: "d", parentId: "b", index: 0 });
+  expect(dropPlan(tree, "e", after("b"))).toEqual({ ticketId: "e", parentId: "a", index: 1 });
+});
+
+test("inside delegates to reparentOnDrop", () => {
+  expect(dropPlan(tree, "d", inside("b"))).toEqual({ ticketId: "d", parentId: "b" });
+  expect(dropPlan(tree, "a", inside("c"))).toBeNull();
+});
+
+test("a ticket never lands on itself nor inside its own subtree", () => {
+  expect(dropPlan(tree, "a", before("b"))).toBeNull();
+  expect(dropPlan(tree, "a", after("c"))).toBeNull();
+  expect(dropPlan(tree, "a", after("a"))).toBeNull();
+  expect(dropPlan(tree, "zz", after("a"))).toBeNull();
+  expect(dropPlan(tree, "a", after("zz"))).toBeNull();
+});
+```
+Run: `bun test components/tickets/src/tree-drop.test.ts` — Expected: FAIL (`dropPlan` introuvable).
+
+`components/tickets/src/tree-drop.ts`, ajouter (après `reparentOnDrop`, `isDescendant` réutilisé) :
+```ts
+export type DropZone = { kind: "before" | "inside" | "after"; ticketId: string };
+export type TicketMove = { ticketId: string; parentId: string | null; index?: number };
+
+const KINDS = ["before", "inside", "after"] as const;
+type Kind = (typeof KINDS)[number];
+const isKind = (s: string): s is Kind => KINDS.some((k) => k === s);
+
+export const zoneId = (zone: DropZone): string => `${zone.ticketId}:${zone.kind}`;
+
+export function parseZoneId(id: string): DropZone | null {
+  const at = id.lastIndexOf(":");
+  const ticketId = id.slice(0, at);
+  const kind = id.slice(at + 1);
+  return at > 0 && isKind(kind) ? { kind, ticketId } : null;
+}
+
+export function dropPlan(tickets: readonly TicketView[], activeId: string, zone: DropZone): TicketMove | null {
+  if (zone.kind === "inside") return reparentOnDrop(tickets, activeId, zone.ticketId);
+  const active = tickets.find((t) => t.id === activeId);
+  const target = tickets.find((t) => t.id === zone.ticketId);
+  if (!active || !target || target.id === activeId || isDescendant(tickets, target.id, activeId)) return null;
+  const parentId = target.parentId;
+  const siblings = tickets.filter((t) => t.parentId === parentId && t.id !== activeId);
+  const at = siblings.findIndex((t) => t.id === target.id);
+  const index = zone.kind === "before" ? at : at + 1;
+  const current = tickets.filter((t) => t.parentId === parentId).findIndex((t) => t.id === activeId);
+  if (active.parentId === parentId && current === index) return null;
+  return { ticketId: activeId, parentId, index };
+}
+```
+Run: `bun test components/tickets/src/tree-drop.test.ts` — Expected: PASS, 8 tests.
+
+- [ ] **Step 3: Zones de dépôt dans l'arbre**
+
+`components/tickets/src/TicketsTree.tsx` (ou `TicketRow.tsx` si T10 a extrait la ligne) :
+- imports : `pointerWithin` (`@dnd-kit/core`), `dropPlan, parseZoneId, zoneId` (`./tree-drop`) ; `reparentOnDrop` n'est plus importé par l'arbre (il reste utilisé par `dropPlan`) ;
+- dans la ligne, le `useDroppable({ id: t.id, … })` de T10 devient trois zones :
+```tsx
+  const before = useDroppable({ id: zoneId({ kind: "before", ticketId: t.id }), disabled: readOnly });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", ticketId: t.id }), disabled: readOnly });
+  const after = useDroppable({ id: zoneId({ kind: "after", ticketId: t.id }), disabled: readOnly });
+```
+  le `<div className={cn(COLUMNS, "group relative h-8 …", inside.isOver && "ring-2 ring-ring")}>` de la ligne (sans `ref` de dépôt) reçoit, en premiers enfants :
+```tsx
+            <div ref={before.setNodeRef} aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/4" />
+            <div ref={inside.setNodeRef} aria-hidden className="pointer-events-none absolute inset-x-0 top-1/4 h-1/2" />
+            <div ref={after.setNodeRef} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4" />
+            {before.isOver && <span aria-hidden className="pointer-events-none absolute inset-x-2 -top-px z-10 h-0.5 rounded bg-ring" />}
+            {after.isOver && <span aria-hidden className="pointer-events-none absolute inset-x-2 -bottom-px z-10 h-0.5 rounded bg-ring" />}
+```
+  (les enfants absolus ne participent pas à la grille `COLUMNS` ; la poignée de glisser reste la clé, comme T10) ;
+- `onDragEnd` :
+```tsx
+  const onDragEnd = (e: DragEndEvent) => {
+    if (readOnly || e.over === null) return;
+    const zone = parseZoneId(String(e.over.id));
+    const plan = zone ? dropPlan(all, String(e.active.id), zone) : null;
+    if (!plan) return;
+    const key = all.find((t) => t.id === plan.ticketId)?.keyLabel ?? "";
+    void attempt({ method: "moveTicket", ...plan }, fr.moveFailed(key));
+  };
+```
+- `<DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>`.
+
+`components/tickets/src/tickets.test.tsx` : aucune attente ne change (les zones sont `aria-hidden`, sans rôle ni texte). Le glisser ne se simule pas sous happy-dom : couverture par `tree-drop.test.ts`, `tickets.test.ts` du domaine et la vérification manuelle.
+
+Run: `bun test components/tickets` — Expected: PASS (conformité comprise).
+
+- [ ] **Step 4: Gate, vérification manuelle, commits**
+
+Run: `bun run check && bun run typecheck && bun test packages/core components/tickets && bun run budget`
+Expected: PASS ; le composant tickets est chargé à la demande : budget inchangé.
+
+Vérifier à la main (`bun run start`, projet Kibo du dogfooding) : glisser la clé d'un ticket sur le quart haut d'un frère le place juste au-dessus (trait), sur le quart bas juste au-dessous, sur le milieu en fait un sous-ticket (cadre) ; avec le filtre « Mes tickets », déposer au-dessous d'un ticket le place bien après lui dans l'arbre complet ; un clic simple sur le titre ouvre toujours la fiche ; en sombre et en clair.
+
+```bash
+git add packages/core/src/tickets.test.ts
+git commit -m "test(core): index de moveTicket, position finale"
+git add components/tickets/src/tree-drop.ts components/tickets/src/tree-drop.test.ts
+git commit -m "feat(tickets): plan de dépôt avec index"
+git add components/tickets/src/TicketsTree.tsx components/tickets/src/tickets.test.tsx
+git commit -m "feat(tickets): réordonner au glisser-déposer"
+```
+(Ajouter `components/tickets/src/TicketRow.tsx` au dernier commit si la ligne vit dans ce fichier.)
+
+---
+
+### Task 12b: Notes : titre obligatoire à la création, fichiers sans titre signalés, tampon vidé après un renommage long
+
+Vague 1 bis ← T12 (acceptée : `feat/p9-t12`, `c54eef3`). Décision 7 et spec §12.7 : **aucune note ne reste sans titre**. T12 a déjà livré le renommage sans frappe perdue (`components/notes/src/use-note-session.ts` : session à chemin modifiable, `rename(from, to)` unique qui vide le tampon avant, `autosave.ts` avec `flush(): Promise<boolean>`, écritures sérialisées et `rebase(mtime)`) : T12b ne le refait pas. Elle apporte : (A) « Nouvelle note » demande un **titre obligatoire** dans un dialogue (fichier `<slug>.md` à la racine du dossier, première ligne `# Titre`, refus si le nom est pris) ; les fichiers `sans-titre(-n).md` existants sont **signalés** dans la liste (« Fichier sans titre · Renommer… ») et renommés à leur prochaine sauvegarde dès qu'ils ont un titre (déjà le cas dans `onSaved`, à chaque sauvegarde), sans jamais viser un autre nom sans titre ; (B) les deux points retenus par le reviewer de T12 : un **second `flush()`** après `rebase()` dans `rename()`, pour qu'une sauvegarde partie pendant un renommage long (délai de 800 ms écoulé alors que `notes.rename` n'a pas répondu) soit rejouée sur le nouveau fichier au lieu de laisser une fausse bannière « Modifié hors de Kibo » ; et le **découpage** de `notes.test.tsx` (329 lignes) : les tests de renommage et de suppression passent dans `notes-rename.test.tsx`, les aides de montage dans `notes.test-helper.tsx`. Aucune nouvelle dépendance ; le composant est chargé à la demande (budget inchangé).
+
+**Files:**
+- Create: `components/notes/src/NoteTitleDialog.tsx` (formulaire générique : titre, aperçu « Fichier : … », erreur), `components/notes/src/notes.test-helper.tsx`, `components/notes/src/notes-rename.test.tsx`
+- Modify: `components/notes/src/note-name.ts`, `components/notes/src/note-name.test.ts`, `components/notes/src/RenameNoteDialog.tsx` (habillage de `NoteTitleDialog`, props inchangées), `components/notes/src/NoteList.tsx`, `components/notes/src/NotesView.tsx`, `components/notes/src/use-note-session.ts`, `components/notes/src/fr.ts`, `components/notes/src/notes.test.tsx`
+
+**Interfaces:**
+- Consumes: `useNoteSession` (T12 : `rename`, `remove`, `load`, `change`), `sdk.notes.write(path, markdown, null)` (création, permission `writes: note`), `isUntitledPath`, `renamedPath`, `autoRenameTarget` (T12), `KiboError` (`CONFLICT`), `createMockSdk` (`notes`, `noteAges`, `setAccess`), `runConformance`.
+- Produces: Contrats partagés › Composants › `note-name.ts` (T12b) ; `NoteTitleDialog` ; `NoteList` inchangée en props (le signalement appelle `onRename`).
+
+- [ ] **Step 1: Textes**
+
+`components/notes/src/fr.ts` : retirer `untitled: "Sans titre"` (plus aucune note n'est créée avec ce titre) ; renommer `renameField` en `titleField` (même texte « Titre », lu par le dialogue commun) ; ajouter :
+```ts
+  createTitle: "Nouvelle note",
+  createConfirm: "Créer",
+  untitledFile: "Fichier sans titre",
+  untitledHint: "Fichier sans titre · Renommer…",
+```
+(`renameFile`, `renameNoSlug`, `renameConflict` servent aux deux dialogues.)
+
+- [ ] **Step 2: Noms de fichier (test rouge puis vert)**
+
+`components/notes/src/note-name.test.ts`, ajouter (`createdPath` importé) :
+```ts
+test("the created path is the slug at the root of the folder, or null without slug", () => {
+  expect(createdPath("Plan de test")).toBe("plan-de-test.md");
+  expect(createdPath("  Réunion — kick-off !  ")).toBe("reunion-kick-off.md");
+  expect(createdPath("  ")).toBeNull();
+  expect(createdPath("#")).toBeNull();
+});
+
+test("the automatic target is never itself an untitled name", () => {
+  expect(autoRenameTarget({ path: "sans-titre-2.md", title: "Sans titre" }, [])).toBeNull();
+  expect(autoRenameTarget({ path: "sans-titre.md", title: "sans-titre-9" }, [])).toBeNull();
+  expect(autoRenameTarget({ path: "sans-titre-2.md", title: "Plan" }, [])).toBe("plan.md");
+});
+```
+Run: `bun test components/notes/src/note-name.test.ts` — Expected: FAIL (2 tests).
+
+`components/notes/src/note-name.ts` :
+```ts
+export const createdPath = (title: string): string | null => renamedPath("", title);
+```
+et dans `autoRenameTarget`, la condition devient `if (target === null || target === note.path || isUntitledPath(target) || taken.includes(target)) return null;`.
+
+Run: `bun test components/notes/src/note-name.test.ts` — Expected: PASS, 6 tests.
+
+- [ ] **Step 3: Découpage des tests (mécanique, vert avant, vert après)**
+
+`components/notes/src/notes.test-helper.tsx` : y déplacer, exportés, `seed`, `setup(surface, notes?)`, `listed()`, `editorView()`, `noConflict()` et un `mount(sdk: KiboSdk)` (= `render(<SdkProvider sdk={sdk}><Component /></SdkProvider>)`), avec leurs imports (`EditorView`, `createMockSdk`, `DEMO_NOTES`, `DEMO_NOTE_AGES`, `seedDemo`, `Component`, `manifest`, `render`, `screen`, `within`). Le suffixe `.test-helper.tsx` n'est pas un motif de test de Bun (même convention que `packages/daemon/src/remote/remote.test-helper.ts`).
+
+`components/notes/src/notes-rename.test.tsx` : y déplacer, inchangés, « a note is renamed from its menu… », « deleting a note asks… », « renaming the open note keeps what was just typed… », « the first save of an untitled note renames its file after its title » (avec ses promesses `saving` / `held`). `notes.test.tsx` garde `runConformance` et les autres tests, importe les aides du helper.
+
+Run: `bun test components/notes` — Expected: PASS, même nombre de tests qu'avant le découpage ; `notes.test.tsx` < 200 lignes, `notes-rename.test.tsx` < 200 lignes.
+
+- [ ] **Step 4: Tests de la vue (rouges)**
+
+`components/notes/src/notes.test.tsx`, le test « search asks the daemon, new note creates a file » devient « search asks the daemon, new note asks a title and refuses a taken name » : après `await user.clear(…)`, remplacer la fin par :
+```tsx
+  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle note" });
+  const field = within(dialog).getByLabelText("Titre");
+  expect((within(dialog).getByRole("button", { name: "Créer" }) as HTMLButtonElement).disabled).toBe(true);
+  await user.type(field, "Journal agents");
+  expect(within(dialog).getByText("Fichier : journal-agents.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  expect(m.notes.get("journal-agents.md")?.markdown).toBe(DEMO_NOTES["journal-agents.md"]);
+  await user.clear(field);
+  await user.type(field, "Plan de test");
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n"));
+  expect(m.notes.has("sans-titre.md")).toBe(false);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(await screen.findByRole("textbox", { name: "Contenu de la note" })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
+```
+Dans « a read-only project shows no note menu », passer `notes: { ...DEMO_NOTES, "sans-titre.md": "Brouillon\n" }` et ajouter à la fin :
+```tsx
+  expect(screen.getByText("Fichier sans titre")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Fichier sans titre/ })).toBeNull();
+```
+
+`components/notes/src/notes-rename.test.tsx`, ajouter :
+```tsx
+test("untitled files are flagged in the list and renamed at their next save once titled", async () => {
+  const m = setup("view", { ...DEMO_NOTES, "sans-titre.md": "Brouillon\n", "sans-titre-2.md": "# Sans titre\n\nNotes.\n" });
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  expect(screen.getAllByRole("button", { name: "Fichier sans titre · Renommer…" })).toHaveLength(2);
+  await user.click(screen.getByRole("button", { name: /^Sans titre/ }));
+  await screen.findByRole("heading", { level: 1, name: "Sans titre" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.dispatch({ changes: { from: 0, to: 12, insert: "# Plan de test" }, userEvent: "input.type" });
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n\nNotes.\n"), {
+    timeout: 3000,
+  });
+  expect(m.notes.has("sans-titre-2.md")).toBe(false);
+  expect(m.notes.has("sans-titre.md")).toBe(true);
+  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
+  await waitFor(() => expect(screen.getAllByRole("button", { name: "Fichier sans titre · Renommer…" })).toHaveLength(1));
+  await user.click(screen.getByRole("button", { name: "Fichier sans titre · Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  expect((within(dialog).getByLabelText("Titre") as HTMLInputElement).value).toBe("sans-titre");
+});
+
+test("a save that fires during a long rename ends up in the new file, without a conflict banner", async () => {
+  const m = createMockSdk(manifest, { seed, surface: "view", notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((r) => {
+    release = r;
+  });
+  mount({
+    ...m.sdk,
+    notes: {
+      ...m.sdk.notes,
+      rename: async (from, to) => {
+        const meta = await m.sdk.notes.rename(from, to);
+        await held;
+        return meta;
+      },
+    },
+  });
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  await user.click(screen.getByRole("button", { name: "Actions de Décisions d'architecture" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Renommer…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Renommer la note" });
+  const field = within(dialog).getByLabelText("Titre");
+  await user.clear(field);
+  await user.type(field, "Choix");
+  await user.click(within(dialog).getByRole("button", { name: "Renommer" }));
+  await waitFor(() => expect(m.notes.has("choix.md")).toBe(true));
+  view.dispatch({ changes: { from: view.state.doc.length, insert: "\nPendant le renommage" }, userEvent: "input.type" });
+  const typed = view.state.doc.toString();
+  await new Promise((r) => setTimeout(r, 1000));
+  release();
+  await waitFor(() => expect(m.notes.get("choix.md")?.markdown).toBe(typed), { timeout: 3000 });
+  expect(await screen.findByText("Enregistré • local")).toBeTruthy();
+  noConflict();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(view.state.doc.toString()).toBe(typed);
+});
+```
+(Second test : le faux `rename` applique le renommage puis attend ; le délai de 1 s laisse l'autosave de 800 ms écrire vers l'ancien chemin, qui n'existe plus ⇒ `CONFLICT` dans le SDK simulé, état « conflict », bannière ; sans la correction du Step 6, `typed` n'est jamais écrit dans `choix.md` et la bannière reste. Dans le premier test, `from: 0, to: 12` remplace exactement `# Sans titre`, douze caractères.)
+
+Run: `bun test components/notes` — Expected: FAIL (4 tests : création, lecture seule, signalement, renommage long).
+
+- [ ] **Step 5: Dialogue générique, création avec titre, signalement (verts)**
+
+`components/notes/src/NoteTitleDialog.tsx` :
+```tsx
+import { Button } from "@kibo/sdk/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
+import { Input } from "@kibo/sdk/ui/input";
+import { Label } from "@kibo/sdk/ui/label";
+import { type FormEvent, useId, useState } from "react";
+import { fr } from "./fr";
+
+type Props = {
+  title: string;
+  initial: string;
+  confirmLabel: string;
+  pathFor(title: string): string | null;
+  unchanged: string | null;
+  submit(path: string, title: string): Promise<unknown>;
+  describeError(error: unknown): string;
+  onClose(): void;
+};
+
+const fileName = (path: string) => path.slice(path.lastIndexOf("/") + 1);
+
+export function NoteTitleDialog(p: Props) {
+  const id = useId();
+  const [title, setTitle] = useState(p.initial);
+  const [error, setError] = useState<string | null>(null);
+  const target = p.pathFor(title);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (target === null || target === p.unchanged) return;
+    setError(null);
+    try {
+      await p.submit(target, title.trim());
+      p.onClose();
+    } catch (err) {
+      setError(p.describeError(err));
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && p.onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{p.title}</DialogTitle>
+            <DialogDescription>{target ? fr.renameFile(fileName(target)) : fr.renameNoSlug}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor={id}>{fr.titleField}</Label>
+            <Input id={id} value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={p.onClose}>
+              {fr.cancel}
+            </Button>
+            <Button type="submit" disabled={target === null || target === p.unchanged}>
+              {p.confirmLabel}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+`components/notes/src/RenameNoteDialog.tsx` devient un habillage (mêmes props qu'en T12 : `note`, `onRename(from, to)`, `onClose`) :
+```tsx
+import { KiboError, type NoteMeta } from "@kibo/schema";
+import { fr } from "./fr";
+import { renamedPath } from "./note-name";
+import { NoteTitleDialog } from "./NoteTitleDialog";
+
+type Props = { note: NoteMeta; onRename(from: string, to: string): Promise<unknown>; onClose(): void };
+
+export const describeRenameError = (e: unknown): string =>
+  e instanceof KiboError && e.code === "CONFLICT" ? fr.renameConflict : fr.renameFailed;
+
+export function RenameNoteDialog({ note, onRename, onClose }: Props) {
+  return (
+    <NoteTitleDialog
+      title={fr.renameTitle}
+      initial={note.title}
+      confirmLabel={fr.renameConfirm}
+      pathFor={(title) => renamedPath(note.path, title)}
+      unchanged={note.path}
+      submit={(to) => onRename(note.path, to)}
+      describeError={describeRenameError}
+      onClose={onClose}
+    />
+  );
+}
+```
+(`fr.renameField` a été renommé `titleField` au Step 1.)
+
+`components/notes/src/NotesView.tsx` :
+- supprimer `freePath` ; `const [creating, setCreating] = useState(false);` ; `NoteList` reçoit `onCreate={() => setCreating(true)}` ;
+- `create` devient (`createdPath` importé ; `KiboError` de `@kibo/schema`) :
+```tsx
+  const create = async (path: string, title: string) => {
+    if (listed.data.some((n) => n.path === path)) throw new KiboError("CONFLICT", `${path} already exists`);
+    await sdk.notes.write(path, `# ${title}\n`, null);
+    setQuery("");
+    setSelected(path);
+    setEditing(true);
+  };
+```
+- rendu, avant `{renaming && …}` :
+```tsx
+      {creating && (
+        <NoteTitleDialog
+          title={fr.createTitle}
+          initial=""
+          confirmLabel={fr.createConfirm}
+          pathFor={createdPath}
+          unchanged={null}
+          submit={create}
+          describeError={(e) => (e instanceof KiboError && e.code === "CONFLICT" ? fr.renameConflict : fr.createFailed)}
+          onClose={() => setCreating(false)}
+        />
+      )}
+```
+(Le contrôle du nom pris se fait sur l'index des notes ; un fichier créé hors Kibo entre deux rafraîchissements serait écrasé par `write(…, null)` : accepté, l'index se rafraîchit en 200 ms et le cas est le même que « Garder ma version ».)
+
+`components/notes/src/NoteList.tsx` : `isUntitledPath` importé ; dans chaque `<li>`, après le `<button>` de la note (toujours à l'intérieur de `NoteMenu`) :
+```tsx
+              {isUntitledPath(n.path) &&
+                (readOnly ? (
+                  <span className="block px-2 pb-1.5 text-xs text-muted-foreground">{fr.untitledFile}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="block px-2 pb-1.5 text-left text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    onClick={() => onRename(n.path)}
+                  >
+                    {fr.untitledHint}
+                  </button>
+                ))}
+```
+(Un bouton **à côté** du bouton de la note, jamais dedans : deux boutons imbriqués seraient invalides. `listed()` du helper ignore déjà les boutons « Actions de … » ; il doit aussi ignorer ceux dont le texte commence par « Fichier sans titre » : adapter le filtre dans `notes.test-helper.tsx`.)
+
+Run: `bun test components/notes` — Expected: PASS sauf « a save that fires during a long rename… » (Step 6).
+
+- [ ] **Step 6: Second `flush()` après le renommage (vert)**
+
+`components/notes/src/use-note-session.ts`, dans `rename`, après `s.autosave.rebase(meta.mtime);` :
+```ts
+          await s.autosave.flush();
+```
+(`flush` ne fait rien si le tampon est vide ; sinon il rejoue le texte tapé pendant le renommage sur `s.path`, désormais le nouveau chemin, avec la base `meta.mtime` : l'état revient à « saved » et la bannière disparaît. Le `moving` reste vrai pendant ce second `flush`, ce qui évite un renommage automatique en cascade.)
+
+Run: `bun test components/notes` — Expected: PASS (conformité comprise).
+
+- [ ] **Step 7: Gate et commits**
+
+Run: `bun run check && bun run typecheck && bun test components/notes packages/sdk && bun run budget`
+Expected: PASS ; budget inchangé (Notes chargé à la demande) ; `NotesView.tsx` et `notes.test.tsx` sous 300 lignes.
+
+```bash
+git add components/notes/src/notes.test-helper.tsx components/notes/src/notes-rename.test.tsx components/notes/src/notes.test.tsx
+git commit -m "test(notes): tests de renommage séparés"
+git add components/notes/src/note-name.ts components/notes/src/note-name.test.ts components/notes/src/fr.ts
+git commit -m "feat(notes): nom de fichier jamais sans titre"
+git add components/notes/src/NoteTitleDialog.tsx components/notes/src/RenameNoteDialog.tsx components/notes/src/NoteList.tsx components/notes/src/NotesView.tsx components/notes/src/notes.test.tsx components/notes/src/notes-rename.test.tsx
+git commit -m "feat(notes): titre demandé à la création"
+git add components/notes/src/use-note-session.ts components/notes/src/notes-rename.test.tsx
+git commit -m "fix(notes): tampon vidé après un renommage long"
+```
+(Si le découpage du Step 3 et les tests du Step 4 ont été écrits dans le même passage, le premier commit porte le découpage seul : les nouveaux tests vont dans les commits qui les font passer.)
+
+---
+
 ## Suites des réponses d'Adam (2026-09-27)
 
-À rédiger en tâches TDD par `kibo-lead` à la reprise, avant T13 :
-
-- **T3b** : `requireLocal` étendu à toutes les requêtes de `/api/code` qui modifient le dépôt ou lancent un programme (spec §12.3), tests de refus distant par méthode ; l'UI distante masque ces actions.
-- **T7b** : glisser-déposer des pages qui réordonne entre sœurs (zones de dépôt au-dessus / au-dessous), sur la base de T7.
-- **T10b** : même chose pour l'arbre Tickets (après vérification de `moveTicket { index }`), sur la base de T10.
-- **T12b** : titre obligatoire à la création d'une note, notes `sans-titre` existantes signalées et renommées, et correction de la perte de frappe au renommage (tampon enregistré avant, sauvegardes redirigées), sur la base de T12.
- (chef d'équipe)
+Les réponses d'Adam (2026-09-27) sont devenues quatre tâches de la vague 1 bis, rédigées ci-dessus par `kibo-lead` le 2026-09-30 : **T3b** (toutes les mutations git de `/api/code` réservées à la machine, vue Code distante en lecture), **T7b** (glisser-déposer des pages qui réordonne entre sœurs), **T10b** (idem pour l'arbre Tickets ; `moveTicket { index }` existait déjà, aucune décision de schéma), **T12b** (titre obligatoire à la création d'une note, fichiers sans titre signalés, tampon vidé après un renommage long ; la garantie « aucune frappe perdue » est déjà dans T12). Décisions consignées en spec code et onglets §12.7.
 
 À la fin de la vague 3 : `bun run budget` (valeur au rapport), contrôle visuel des écrans 98–106 en sombre et en clair, liste des écarts (dont T1 si non dessinée), réponses d'Adam du 2026-09-27 : (1) oui, toutes les mutations git de `/api/code` réservées à la machine locale (spec §12.3) ; (2) oui, et aucune note ne reste sans titre (décision 7) ; (3) non, le glisser-déposer réordonne aussi (décisions 6 et 9)
