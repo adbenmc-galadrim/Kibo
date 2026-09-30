@@ -7204,7 +7204,7 @@ Vérifié dans Tauri 2.12.0 et wry 0.57 : `WebviewWindowBuilder::on_navigation<F
 
 **Interfaces:**
 - Consumes: `Daemon.sandboxPort` (`packages/daemon/src/daemon.ts`), `ipc_origin` (T4).
-- Produces: ligne de démarrage `KIBO_SANDBOX http://127.0.0.1:<port>` ; `navigation_allowed(target: &Url, allowed: &[String]) -> bool`, `parse_sandbox(line: &str) -> Option<Url>`.
+- Produces: ligne de démarrage `KIBO_SANDBOX http://127.0.0.1:<port>` ; `navigation_allowed(target: &Url, allowed: &[String]) -> bool`, `parse_sandbox(line: &str) -> Option<&str>`.
 
 - [ ] **Step 1: Démon, ligne `KIBO_SANDBOX` (test rouge puis vert)**
 
