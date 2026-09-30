@@ -1,4 +1,11 @@
-import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { KiboError, type ProjectCommand, type Status, type StatusId, type TicketView } from "@kibo/schema";
 import { filterBySource, readSource, useEntities, useMembers, useReadOnly, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
@@ -11,7 +18,7 @@ import { buildTree, mineOnly, type TicketNode } from "./build-tree";
 import { fr } from "./fr";
 import { ASSIGNEE_CELL, COLUMNS, TicketRow } from "./TicketRow";
 import { descendantCount, ticketMenuEntries } from "./ticket-menu";
-import { reparentOnDrop } from "./tree-drop";
+import { dropPlan, parseZoneId } from "./tree-drop";
 
 export function TicketsTree() {
   const sdk = useSdk();
@@ -71,12 +78,11 @@ export function TicketsTree() {
     });
   const onDragEnd = (e: DragEndEvent) => {
     if (readOnly || e.over === null) return;
-    const drop = reparentOnDrop(all, String(e.active.id), String(e.over.id));
-    if (drop)
-      void attempt(
-        { method: "moveTicket", ...drop },
-        fr.moveFailed(all.find((t) => t.id === drop.ticketId)?.keyLabel ?? ""),
-      );
+    const zone = parseZoneId(String(e.over.id));
+    const plan = zone ? dropPlan(all, String(e.active.id), zone) : null;
+    if (!plan) return;
+    const key = all.find((t) => t.id === plan.ticketId)?.keyLabel ?? "";
+    void attempt({ method: "moveTicket", ...plan }, fr.moveFailed(key));
   };
 
   const row = (n: TicketNode) => (
@@ -123,7 +129,7 @@ export function TicketsTree() {
             <span>{fr.columns.progress}</span>
             <span />
           </div>
-          <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
             <ul>{buildTree(visible).map(row)}</ul>
           </DndContext>
         </div>

@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import type { TicketNode } from "./build-tree";
 import { fr } from "./fr";
 import { TicketRowActions, TicketRowMenu } from "./TicketRowMenu";
+import { zoneId } from "./tree-drop";
 
 export const COLUMNS =
   "grid grid-cols-[minmax(0,1fr)_7rem_5rem_4rem] items-center gap-3 px-2 @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_4rem]";
@@ -70,19 +71,47 @@ export function TicketRow({
 }: Props) {
   const sdk = useSdk();
   const t = node.ticket;
-  const drop = useDroppable({ id: t.id, disabled: readOnly });
+  const before = useDroppable({ id: zoneId({ kind: "before", ticketId: t.id }), disabled: readOnly });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", ticketId: t.id }), disabled: readOnly });
+  const after = useDroppable({ id: zoneId({ kind: "after", ticketId: t.id }), disabled: readOnly });
   const drag = useDraggable({ id: t.id, disabled: readOnly });
   return (
     <li>
       <TicketRowMenu entries={entries}>
         <div
-          ref={drop.setNodeRef}
           className={cn(
             COLUMNS,
-            "group h-8 rounded-md text-sm hover:bg-muted/50",
-            drop.isOver && "ring-2 ring-ring",
+            "group relative h-8 rounded-md text-sm hover:bg-muted/50",
+            inside.isOver && "ring-2 ring-ring",
           )}
         >
+          <div
+            ref={before.setNodeRef}
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-1/4"
+          />
+          <div
+            ref={inside.setNodeRef}
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-1/4 h-1/2"
+          />
+          <div
+            ref={after.setNodeRef}
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4"
+          />
+          {before.isOver && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-2 -top-px z-10 h-0.5 rounded bg-ring"
+            />
+          )}
+          {after.isOver && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-2 -bottom-px z-10 h-0.5 rounded bg-ring"
+            />
+          )}
           <div
             className="flex min-w-0 items-center gap-2 overflow-hidden"
             style={{ paddingLeft: node.depth * 20 }}
