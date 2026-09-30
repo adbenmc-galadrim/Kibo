@@ -46,7 +46,7 @@ type Props = {
   changesCount: number | null;
   mineCount: number | null;
   workspaceName: string | null;
-  onRenameWorkspace(name: string): Promise<void>;
+  workspaceIcon: string | null;
   onOpen(target: TabTarget | null, newTab: boolean): void;
   onSearch(): void;
   onNewProject(): void;
@@ -73,6 +73,7 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "sources",
   "sync",
   "shortcuts",
+  "workspace",
 ]);
 
 type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };
@@ -197,8 +198,8 @@ export function AppSidebar(p: Props) {
       <SidebarHeader>
         <WorkspaceSwitcher
           name={p.workspaceName ?? fr.workspace.defaultName}
-          onRename={p.onRenameWorkspace}
-          onSettings={() => onOpen(screenTarget("domains"), false)}
+          icon={p.workspaceIcon}
+          onSettings={() => onOpen(screenTarget("workspace"), false)}
         />
         <button
           type="button"

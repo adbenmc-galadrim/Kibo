@@ -53,11 +53,6 @@ export const ConfirmDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const RenameWorkspaceDialog = lazyPanel(
-  () => import("../dialogs/RenameWorkspaceDialog").then((m) => m.RenameWorkspaceDialog),
-  fr.lazy,
-  hidden,
-);
 export const NotesDirDialog = lazyPanel(
   () => import("../dialogs/NotesDirDialog").then((m) => m.NotesDirDialog),
   fr.lazy,

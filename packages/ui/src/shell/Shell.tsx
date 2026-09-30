@@ -1,4 +1,11 @@
-import type { AgentsState, FileRef, ProjectSummary, Session, TabTarget } from "@kibo/schema";
+import {
+  type AgentsState,
+  type FileRef,
+  iconUrl,
+  type ProjectSummary,
+  type Session,
+  type TabTarget,
+} from "@kibo/schema";
 import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
@@ -34,7 +41,7 @@ import { ShellHeader } from "./ShellHeader";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useUpdateSchedule } from "./use-update-schedule";
-import { inTauri, openWindow, renameWorkspace } from "./workspace-actions";
+import { inTauri, openWindow } from "./workspace-actions";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
@@ -215,7 +222,9 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               changesCount={git.worktrees ? git.changesCount : null}
               mineCount={mineCount}
               workspaceName={config?.workspaceName ?? null}
-              onRenameWorkspace={renameWorkspace}
+              workspaceIcon={
+                config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
+              }
               onOpen={go}
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}

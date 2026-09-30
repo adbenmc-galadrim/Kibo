@@ -196,20 +196,15 @@ test("my tickets: sidebar count, rows of every project, sheet and assign in the 
   expect(within(await screen.findByRole("dialog")).getByText("Assigner KIB-9 à un agent")).toBeTruthy();
 });
 
-test("the workspace header renames through the config command", async () => {
+test("the workspace header leads to the workspace settings", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /Perso/ }));
-  await user.click(await screen.findByRole("menuitem", { name: "Renommer le workspace…" }));
-  const field = await screen.findByLabelText("Nom");
-  await user.clear(field);
-  await user.type(field, "Maison");
-  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-  expect(calls).toContainEqual({ method: "config", command: { method: "renameWorkspace", name: "Maison" } });
-  await user.click(screen.getByRole("button", { name: /Perso/ }));
+  expect(screen.queryByRole("menuitem", { name: "Renommer le workspace…" })).toBeNull();
   await user.click(await screen.findByRole("menuitem", { name: "Paramètres du workspace" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Domaines & guidelines" })).toBeTruthy();
+  expect(location.hash).toBe("#/settings/workspace");
+  expect(await screen.findByRole("heading", { level: 1, name: "Workspace" })).toBeTruthy();
 });
 
 test("the header carries the actions of the agent screens", async () => {

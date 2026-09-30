@@ -12,14 +12,19 @@ export function WorkspaceMark({ className }: { className?: string }) {
   );
 }
 
-export function WorkspaceTile({ size }: { size: "sm" | "md" }) {
+export function WorkspaceTile({
+  size,
+  src = null,
+  alt = "",
+}: {
+  size: "sm" | "md";
+  src?: string | null;
+  alt?: string;
+}) {
+  const box = size === "md" ? "size-6 rounded-md" : "size-5 rounded-[5px]";
+  if (src) return <img src={src} alt={alt} className={cn("shrink-0 border object-cover", box)} />;
   return (
-    <span
-      className={cn(
-        "grid shrink-0 place-items-center border bg-card text-foreground",
-        size === "md" ? "size-6 rounded-md" : "size-5 rounded-[5px]",
-      )}
-    >
+    <span className={cn("grid shrink-0 place-items-center border bg-card text-foreground", box)}>
       <WorkspaceMark className={size === "md" ? "size-3.5" : "size-3"} />
     </span>
   );

@@ -194,23 +194,18 @@ describe("guidelines", () => {
 });
 
 describe("workspace name", () => {
-  test("the workspace name is stored in the workspace doc and trimmed", () => {
-    const ws = createWorkspaceDoc();
-    expect(workspaceName(ws)).toBeNull();
-    expect(
-      executeConfigCommand(ws, ConfigCommand.parse({ method: "renameWorkspace", name: "  Maison  " })),
-    ).toEqual({ name: "Maison" });
-    expect(workspaceName(ws)).toBe("Maison");
-    expect(configTarget({ method: "renameWorkspace", name: "Maison" })).toBeNull();
-  });
-
   test("an empty or too long workspace name is refused by the schema", () => {
-    expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "   " }).success).toBe(false);
-    expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "x".repeat(41) }).success).toBe(false);
+    expect(ConfigCommand.safeParse({ method: "updateWorkspace", patch: { name: "   " } }).success).toBe(
+      false,
+    );
+    expect(
+      ConfigCommand.safeParse({ method: "updateWorkspace", patch: { name: "x".repeat(41) } }).success,
+    ).toBe(false);
   });
 
   test("updateWorkspace sets the name and the description, and null clears the description", () => {
     const ws = createWorkspaceDoc();
+    expect(workspaceName(ws)).toBeNull();
     expect(
       executeConfigCommand(
         ws,

@@ -180,10 +180,9 @@ describe("service", () => {
       },
     });
     expect((s1.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceName).toBeNull();
-    s1.handle({ method: "config", command: { method: "renameWorkspace", name: "Maison" } });
     s1.handle({
       method: "config",
-      command: { method: "updateWorkspace", patch: { description: "Mes projets" } },
+      command: { method: "updateWorkspace", patch: { name: "Maison", description: "Mes projets" } },
     });
     store1.close();
     const store2 = openStore(home);

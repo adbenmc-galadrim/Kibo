@@ -4,7 +4,6 @@ import {
   Guideline,
   type GuidelineOwner,
   KiboError,
-  WorkspaceName,
   WorkspacePatch,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
@@ -189,13 +188,6 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
       guidelinesMap(doc).delete(cmd.guidelineId);
       doc.commit();
       return null;
-    }
-    case "renameWorkspace": {
-      requireWorkspace(doc);
-      const name = valid(WorkspaceName.safeParse(cmd.name));
-      settingsMap(doc).set("name", name);
-      doc.commit();
-      return { name };
     }
     case "updateWorkspace": {
       requireWorkspace(doc);

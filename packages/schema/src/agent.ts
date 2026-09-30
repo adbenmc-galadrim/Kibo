@@ -106,7 +106,6 @@ export const ConfigCommand = z.discriminatedUnion("method", [
     content: GuidelineContent.optional(),
   }),
   z.object({ method: z.literal("removeGuideline"), owner: GuidelineOwner, guidelineId: Id }),
-  z.object({ method: z.literal("renameWorkspace"), name: WorkspaceName }),
   z.object({ method: z.literal("updateWorkspace"), patch: WorkspacePatch }),
 ]);
 export type ConfigCommand = z.infer<typeof ConfigCommand>;
@@ -121,7 +120,6 @@ export type ConfigResult = {
   addGuideline: Guideline;
   updateGuideline: Guideline;
   removeGuideline: null;
-  renameWorkspace: { name: string };
   updateWorkspace: { name: string | null; description: string | null };
 };
 
