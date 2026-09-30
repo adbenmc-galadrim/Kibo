@@ -141,7 +141,7 @@ test("marketplace : source, installation vérifiée, mises à jour, clé changé
     await expect(row("0.2.0").getByText("1 page · 1 projet")).toBeVisible();
     await expect(row("0.1.0").getByText("Aucune page")).toBeVisible();
     await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-    await page.getByRole("button", { name: "Suivi" }).click();
+    await page.getByRole("button", { name: "Suivi", exact: true }).click();
     await expect(frame.getByText("Burndown")).toBeVisible();
     await expect(page.getByText(/Composant (absent|introuvable)/)).toHaveCount(0);
   });
@@ -171,7 +171,7 @@ test("marketplace : source, installation vérifiée, mises à jour, clé changé
     await expect(row("0.3.0").getByText("Autorisation requise")).toBeVisible();
     await expect(row("0.3.0").getByText(`Révoqué : ${MARKET_REVOKE_REASON}`)).toBeVisible();
     await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-    await page.getByRole("button", { name: "Suivi" }).click();
+    await page.getByRole("button", { name: "Suivi", exact: true }).click();
     await expect(page.getByText(`Révoqué : ${MARKET_REVOKE_REASON}`)).toBeVisible();
     await expect(frame.getByText("Burndown")).toHaveCount(0);
   });
