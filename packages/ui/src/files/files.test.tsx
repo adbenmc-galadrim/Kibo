@@ -193,3 +193,14 @@ test("a remote view previews the file without Modifier nor the external editor, 
   expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
   expect(screen.queryByRole("textbox")).toBeNull();
 });
+
+test("a remote preview hides Modifier and the external editor, and ignores the shortcut", async () => {
+  render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} remote />);
+  expect(await screen.findByText(/worktree kib-12 · TypeScript/)).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ouvrir dans un onglet" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  fireEvent.keyDown(window, { key: "O", metaKey: true, shiftKey: true });
+  await act(() => Promise.resolve());
+  expect(calls.some((c) => c.method === "openInEditor")).toBe(false);
+});
