@@ -133,3 +133,25 @@ test("a read-only project has no ⋯ button and a one-entry menu", async () => {
     "Ouvrir dans un nouvel onglet",
   ]);
 });
+
+test("each editable row carries three hidden drop zones and keeps its button and menu", async () => {
+  const { user } = show();
+  const row = screen.getByRole("button", { name: "Kanban" }).closest("li");
+  const zones = Array.from(row?.querySelectorAll("[data-drop-zone]") ?? []);
+  expect(zones.map((z) => z.getAttribute("data-drop-zone"))).toEqual([
+    "before",
+    "inside",
+    "after",
+    "before",
+    "inside",
+    "after",
+  ]);
+  expect(zones.every((z) => z.getAttribute("aria-hidden") === "true")).toBe(true);
+  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
+  expect(await screen.findAllByRole("menuitem")).toHaveLength(7);
+});
+
+test("a read-only project renders no drop zone", () => {
+  show("read-only");
+  expect(document.querySelectorAll("[data-drop-zone]")).toHaveLength(0);
+});

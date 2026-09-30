@@ -2,6 +2,7 @@ import {
   DndContext,
   type DragEndEvent,
   PointerSensor,
+  pointerWithin,
   useDraggable,
   useDroppable,
   useSensor,
@@ -24,9 +25,8 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
 import { canEdit } from "../state/access";
+import { pageDropPlan, parseZoneId, zoneId } from "./page-drop";
 import { pageMenuEntries, siblingIndex } from "./page-menu";
-
-const ROOT = "root";
 
 type Props = {
   project: ProjectSnapshot;
@@ -42,7 +42,7 @@ type Props = {
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
 
 function RootDrop({ children, editable }: { children: ReactNode; editable: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({ id: ROOT, disabled: !editable });
+  const { setNodeRef, isOver } = useDroppable({ id: zoneId({ kind: "root" }), disabled: !editable });
   return (
     <div ref={setNodeRef} className={cn("rounded-md", isOver && "ring-2 ring-ring")}>
       {children}
@@ -61,17 +61,53 @@ type RowProps = {
   icon: ReactNode;
 };
 
+const ZONE_PLACES = {
+  before: "top-0 h-1/4",
+  inside: "top-1/4 h-1/2",
+  after: "bottom-0 h-1/4",
+} as const;
+
+type ZoneKind = keyof typeof ZONE_PLACES;
+
+function ZoneLayer({ kind, setNodeRef }: { kind: ZoneKind; setNodeRef(node: HTMLElement | null): void }) {
+  return (
+    <div
+      ref={setNodeRef}
+      data-drop-zone={kind}
+      aria-hidden
+      className={cn("pointer-events-none absolute inset-x-0", ZONE_PLACES[kind])}
+    />
+  );
+}
+
+function DropLine({ className }: { className: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn("pointer-events-none absolute inset-x-1 z-10 h-0.5 rounded bg-ring", className)}
+    />
+  );
+}
+
 function PageRow({ page, entries, editable, active, onClick, onAuxClick, children, icon }: RowProps) {
-  const drop = useDroppable({ id: page.id, disabled: !editable });
+  const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }), disabled: !editable });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }), disabled: !editable });
+  const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }), disabled: !editable });
   const drag = useDraggable({ id: page.id, disabled: !editable });
   return (
-    <SidebarMenuSubItem
-      ref={drop.setNodeRef}
-      className={cn("group/page", drop.isOver && "rounded-md ring-2 ring-ring")}
-    >
+    <SidebarMenuSubItem className="group/page">
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className="relative">
+          <div className={cn("relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
+            {editable && (
+              <>
+                <ZoneLayer kind="before" setNodeRef={before.setNodeRef} />
+                <ZoneLayer kind="inside" setNodeRef={inside.setNodeRef} />
+                <ZoneLayer kind="after" setNodeRef={after.setNodeRef} />
+              </>
+            )}
+            {before.isOver && <DropLine className="-top-px" />}
+            {after.isOver && <DropLine className="-bottom-px" />}
             <SidebarMenuSubButton asChild isActive={active}>
               <button
                 type="button"
@@ -150,12 +186,9 @@ export function ProjectPages(p: Props) {
     });
   };
   const onDragEnd = (e: DragEndEvent) => {
-    const overId = e.over?.id;
-    if (overId === undefined || overId === e.active.id) return;
-    const page = project.pages.find((x) => x.id === e.active.id);
-    const parentId = overId === ROOT ? null : String(overId);
-    if (!page || page.parentId === parentId) return;
-    void move(page.id, parentId);
+    const zone = e.over ? parseZoneId(String(e.over.id)) : null;
+    const plan = zone ? pageDropPlan(project.pages, String(e.active.id), zone) : null;
+    if (plan) void move(plan.pageId, plan.parentId, plan.index);
   };
   const children = (parentId: string | null) => project.pages.filter((x) => x.parentId === parentId);
   const renderPages = (parentId: string | null): ReactNode =>
@@ -187,7 +220,7 @@ export function ProjectPages(p: Props) {
     });
   const hasSub = children(null).length > 0 || p.trailing !== null;
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
       <RootDrop editable={editable}>{p.header}</RootDrop>
       {hasSub && (
         <SidebarMenuSub>
