@@ -33,6 +33,14 @@ fn ipc_origin(url: &Url) -> String {
     url.origin().ascii_serialization()
 }
 
+fn parse_sandbox(line: &str) -> Option<&str> {
+    line.strip_prefix("KIBO_SANDBOX ")
+}
+
+fn navigation_allowed(target: &Url, allowed: &[String]) -> bool {
+    allowed.contains(&ipc_origin(target))
+}
+
 const MIN_WINDOW: (f64, f64) = (960.0, 600.0);
 const WINDOW_STATE: StateFlags = StateFlags::SIZE
     .union(StateFlags::POSITION)
@@ -93,7 +101,10 @@ fn main() {
                 .shell()
                 .sidecar("kibo-daemon")?
                 .env("KIBO_NATIVE_NOTIFY", "1")
-                .env("KIBO_BUILTIN_DIR", builtin_dir.to_string_lossy().to_string())
+                .env(
+                    "KIBO_BUILTIN_DIR",
+                    builtin_dir.to_string_lossy().to_string(),
+                )
                 .args([
                     "--port",
                     "0",
@@ -106,6 +117,7 @@ fn main() {
             app.manage(Daemon(Mutex::new(Some(child))));
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
+                let mut ready: Option<Url> = None;
                 while let Some(event) = events.recv().await {
                     match event {
                         CommandEvent::Stdout(line) => {
@@ -129,18 +141,30 @@ fn main() {
                                 }
                                 continue;
                             }
-                            let Some(url) = line.strip_prefix("KIBO_READY ") else {
+                            if let Some(url) = line.strip_prefix("KIBO_READY ") {
+                                let url: Url = url.parse().expect("daemon printed an invalid url");
+                                handle
+                                    .add_capability(daemon_capability(&url))
+                                    .expect("cannot grant the daemon origin its capability");
+                                ready = Some(url);
+                                continue;
+                            }
+                            let Some(sandbox) = parse_sandbox(&line) else {
                                 continue;
                             };
-                            let url: Url = url.parse().expect("daemon printed an invalid url");
-                            handle
-                                .add_capability(daemon_capability(&url))
-                                .expect("cannot grant the daemon origin its capability");
+                            let sandbox: Url = sandbox
+                                .parse()
+                                .expect("daemon printed an invalid sandbox url");
+                            let url = ready
+                                .take()
+                                .expect("daemon announced its sandbox before being ready");
+                            let allowed = vec![ipc_origin(&url), ipc_origin(&sandbox)];
                             let window = WebviewWindowBuilder::new(
                                 &handle,
                                 "main",
                                 WebviewUrl::External(url),
                             )
+                            .on_navigation(move |target| navigation_allowed(target, &allowed))
                             .title("Kibo")
                             .inner_size(1440.0, 900.0)
                             .min_inner_size(MIN_WINDOW.0, MIN_WINDOW.1)
@@ -204,8 +228,60 @@ mod tests {
 
     #[test]
     fn grants_the_daemon_origin_only() {
-        let url: Url = "http://127.0.0.1:4317/?token=abc#/settings".parse().unwrap();
+        let url: Url = "http://127.0.0.1:4317/?token=abc#/settings"
+            .parse()
+            .unwrap();
         assert_eq!(ipc_origin(&url), "http://127.0.0.1:4317");
+    }
+
+    fn allowed() -> Vec<String> {
+        vec![
+            "http://127.0.0.1:4317".into(),
+            "http://127.0.0.1:4318".into(),
+        ]
+    }
+
+    fn navigates(target: &str, allowed: &[String]) -> bool {
+        navigation_allowed(&target.parse().unwrap(), allowed)
+    }
+
+    #[test]
+    fn navigation_stays_on_the_daemon_and_sandbox_origins() {
+        assert!(navigates(
+            "http://127.0.0.1:4317/?token=abc#/settings",
+            &allowed()
+        ));
+        assert!(navigates("http://127.0.0.1:4317/", &allowed()));
+        assert!(navigates(
+            "http://127.0.0.1:4318/c/kanban/1.0.0/abc/index.html",
+            &allowed()
+        ));
+    }
+
+    #[test]
+    fn navigation_elsewhere_is_refused() {
+        for target in [
+            "http://127.0.0.1:4319/",
+            "http://localhost:4317/",
+            "https://127.0.0.1:4317/",
+            "https://github.com/kibo",
+            "about:blank",
+            "javascript:alert(1)",
+            "file:///etc/passwd",
+            "data:text/html,<p>x</p>",
+        ] {
+            assert!(!navigates(target, &allowed()), "{target} must be refused");
+        }
+        assert!(!navigates("http://127.0.0.1:4317/", &[]));
+    }
+
+    #[test]
+    fn reads_the_sandbox_line() {
+        assert_eq!(
+            parse_sandbox("KIBO_SANDBOX http://127.0.0.1:4318"),
+            Some("http://127.0.0.1:4318")
+        );
+        assert_eq!(parse_sandbox("KIBO_READY http://127.0.0.1:4317/"), None);
     }
 
     #[test]
