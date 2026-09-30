@@ -162,6 +162,7 @@ export class SyncClient {
   detachProject(projectId: string): void {
     this.forget(projectId);
     this.projects.detach(projectId);
+    if (this.connection.state === "online") this.connection.send({ type: "unsubscribe", projectId });
   }
 
   async addDevice(): Promise<{ code: string; expiresAt: number }> {

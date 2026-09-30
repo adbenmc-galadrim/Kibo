@@ -28,9 +28,11 @@ export type ProjectAdminDeps = {
 };
 type UpdateRequest = Extract<RpcRequest, { method: "updateProject" }>;
 type IconRequest = Extract<RpcRequest, { method: "setIcon" }>;
+type DeleteRequest = Extract<RpcRequest, { method: "deleteProject" }>;
 export type ProjectAdmin = {
   updateProject(req: UpdateRequest, ctx: RpcContext): ProjectMeta;
   setIcon(req: IconRequest): { icon: string | null };
+  deleteProject(req: DeleteRequest, ctx: RpcContext): null;
   handler: RpcHandler;
 };
 
@@ -44,6 +46,8 @@ export function folderIsDirectory(path: string): boolean {
 }
 
 const keepsFolderOutOfDoc = (info: ProjectSyncInfo): boolean => info.shared || info.keyAllocator === "server";
+const ownsActiveShare = (info: ProjectSyncInfo): boolean =>
+  info.shared && info.role === "owner" && info.access !== "revoked";
 
 function parsePatch(patch: unknown): ProjectPatch {
   const parsed = ProjectPatch.safeParse(patch);
@@ -54,14 +58,18 @@ function parsePatch(patch: unknown): ProjectPatch {
 export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
   const folderExists = deps.folderExists ?? folderIsDirectory;
 
+  const refuseActiveRuns = (projectId: string) => {
+    if (deps.activeRuns(projectId) > 0) {
+      throw new KiboError("CONFLICT", `project ${projectId} has active runs`);
+    }
+  };
+
   const checkFolder = (projectId: string, folder: string | null, ctx: RpcContext) => {
     requireLocal(ctx);
     if (folder !== null && !folderExists(folder)) {
       throw new KiboError("INVALID_INPUT", `${folder} is not an existing folder`);
     }
-    if (deps.activeRuns(projectId) > 0) {
-      throw new KiboError("CONFLICT", `project ${projectId} has active runs`);
-    }
+    refuseActiveRuns(projectId);
   };
 
   const storeLocalFolder = (projectId: string, folder: string | null) => {
@@ -103,12 +111,31 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       } else deps.docs.emit({ topic: "config" });
       return { icon };
     },
+    deleteProject(req, ctx) {
+      requireLocal(ctx);
+      const { projectId } = req;
+      deps.docs.project(projectId);
+      refuseActiveRuns(projectId);
+      const sync = deps.sharing(projectId);
+      if (ownsActiveShare(sync)) {
+        throw new KiboError("CONFLICT", `project ${projectId} is shared: stop sharing first`);
+      }
+      deps.store.transaction(() => {
+        deps.icons.remove(iconOwnerKey({ kind: "project", projectId }));
+        deps.settings.remove(projectId);
+        if (sync.shared) deps.detach(projectId);
+        deps.docs.removeProject(projectId);
+      });
+      return null;
+    },
     handler: async (req, ctx) => {
       switch (req.method) {
         case "updateProject":
           return { handled: true, result: admin.updateProject(req, ctx) };
         case "setIcon":
           return { handled: true, result: admin.setIcon(req) };
+        case "deleteProject":
+          return { handled: true, result: admin.deleteProject(req, ctx) };
         default:
           return { handled: false };
       }

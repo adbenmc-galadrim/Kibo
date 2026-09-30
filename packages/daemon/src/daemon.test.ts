@@ -254,5 +254,10 @@ describe("startDaemon", () => {
       await rpc({ method: "updateProject", projectId, patch: { name: "Noyau" } })
     ).json();
     expect((renamed as { result: { name: string } }).result.name).toBe("Noyau");
+    const deleted = await (await rpc({ method: "deleteProject", projectId })).json();
+    expect(deleted).toEqual({ ok: true, result: null });
+    expect((await fetch(icon, { headers: { cookie } })).status).toBe(404);
+    expect(await (await rpc({ method: "listProjects" })).json()).toEqual({ ok: true, result: [] });
+    expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
   });
 });
