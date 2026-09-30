@@ -258,7 +258,10 @@ test("21 · Changements, fichier indexé sélectionné", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/changes?wt=${encodeURIComponent(mockup.worktree)}`);
   const staged = page.getByRole("group", { name: "Indexés", exact: true });
-  await staged.getByRole("button", { name: /ticket\.ts/ }).click();
+  await staged
+    .getByRole("button", { name: /ticket\.ts/ })
+    .first()
+    .click();
   await expect(page.getByRole("button", { name: "Indexer le bloc" }).first()).toBeVisible();
   await expect(page.getByText("↑2").first()).toBeVisible();
   await expect(page.getByLabel("Message")).not.toHaveValue("");
