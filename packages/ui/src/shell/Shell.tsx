@@ -236,9 +236,12 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 agents={agents}
                 viewer={viewer}
                 notifications={notifications}
+                now={now}
                 onNewProfile={() => set({ newProfile: true })}
                 onNewTicket={() => set({ newTicket: {} })}
                 onShare={() => project && set({ share: project.meta.id })}
+                onOpenRun={setFocusRun}
+                onOpen={(t) => go(t)}
               />
               {project?.sync.shared && (
                 <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />

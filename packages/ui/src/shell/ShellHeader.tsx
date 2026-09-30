@@ -1,14 +1,14 @@
 import type { AgentsState, ProjectSnapshot, Screen, Session, TabTarget } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { SidebarTrigger } from "@kibo/sdk/ui/sidebar";
-import { Bell, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ScreenActions, ShareButton } from "./lazy-screens";
-import { NotifyButton } from "./NotifyButton";
 import { PageActionsSlot } from "./page-actions";
-import { UserAvatar } from "./UserAvatar";
+import { RunHistoryButton } from "./RunHistoryButton";
+import { UserMenu } from "./UserMenu";
 
 type Props = {
   active: TabTarget | null;
@@ -20,9 +20,12 @@ type Props = {
   agents: AgentsState | null;
   viewer: string;
   notifications: Session["notifications"];
+  now: number;
   onNewProfile: () => void;
   onNewTicket: () => void;
   onShare: () => void;
+  onOpenRun(runId: string): void;
+  onOpen(target: TabTarget): void;
 };
 
 const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "components", "mine"]);
@@ -37,9 +40,12 @@ export function ShellHeader({
   agents,
   viewer,
   notifications,
+  now,
   onNewProfile,
   onNewTicket,
   onShare,
+  onOpenRun,
+  onOpen,
 }: Props) {
   return (
     <header className="flex h-12 shrink-0 select-none items-center gap-2 border-b px-3">
@@ -68,12 +74,8 @@ export function ShellHeader({
           {fr.header.newTicket}
         </Button>
       )}
-      {notifications === "browser" ? (
-        <NotifyButton />
-      ) : (
-        <Bell aria-hidden className="size-4 text-muted-foreground" />
-      )}
-      <UserAvatar user={viewer} />
+      <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
+      <UserMenu viewer={viewer} onOpen={onOpen} />
     </header>
   );
 }

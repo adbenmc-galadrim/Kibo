@@ -112,3 +112,13 @@ export const ScreenActions = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+export const RunHistoryList = lazyPanel(
+  () => import("./RunHistoryList").then((m) => m.RunHistoryList),
+  fr.lazy,
+  hidden,
+);
+export const UserMenuContent = lazyPanel(
+  () => import("./UserMenuContent").then((m) => m.UserMenuContent),
+  fr.lazy,
+  hidden,
+);

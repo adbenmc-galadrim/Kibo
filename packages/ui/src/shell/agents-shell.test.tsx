@@ -284,14 +284,31 @@ test("the bell asks for notification permission once", async () => {
   fake.restore();
 });
 
-test("the bell is offered in the browser only", async () => {
+test("the notification switch lives in the bell menu, in the browser only", async () => {
   const fake = fakeNotification("default");
+  const user = userEvent.setup();
   const view = render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
-  expect(header().queryByRole("button", { name: "Activer les notifications" })).toBeNull();
+  await user.click(header().getByRole("button", { name: /Historique des runs/ }));
+  let menu = await screen.findByRole("menu", { name: "Historique des runs" });
+  await within(menu).findAllByRole("menuitem");
+  expect(within(menu).queryByRole("button", { name: "Activer les notifications" })).toBeNull();
+  await user.keyboard("{Escape}");
   view.unmount();
   render(<Shell viewer="adam" notifications="browser" />);
   await go("#/");
-  expect(header().getByRole("button", { name: "Activer les notifications" })).toBeTruthy();
+  await user.click(header().getByRole("button", { name: /Historique des runs/ }));
+  menu = await screen.findByRole("menu", { name: "Historique des runs" });
+  expect(await within(menu).findByRole("button", { name: "Activer les notifications" })).toBeTruthy();
   fake.restore();
+});
+
+test("replying from the bell menu opens the drawer on that run", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/");
+  const user = userEvent.setup();
+  await user.click(header().getByRole("button", { name: /Historique des runs/ }));
+  const menu = await screen.findByRole("menu", { name: "Historique des runs" });
+  await user.click(await within(menu).findByRole("menuitem", { name: /^opus-dev-2 · KIB-14/ }));
+  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
 });
