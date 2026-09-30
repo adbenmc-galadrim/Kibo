@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { rpc } from "./agents-seed";
@@ -101,7 +101,9 @@ test("graphe et notes intégrés", async ({ page }, info) => {
   await page.reload();
   await expect(page.getByRole("list", { name: "Notes" }).getByText("Décisions")).toBeVisible();
 
-  writeFileSync(join(homeOf(info), "notes", key, "sans-titre.md"), "# Changé ailleurs\n");
+  const notesDir = join(homeOf(info), "notes", key);
+  expect(existsSync(join(notesDir, "sans-titre.md"))).toBe(false);
+  writeFileSync(join(notesDir, "decisions.md"), "# Changé ailleurs\n");
   await expect(page.getByRole("heading", { level: 1, name: "Changé ailleurs" })).toBeVisible({
     timeout: 5_000,
   });
