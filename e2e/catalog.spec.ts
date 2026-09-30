@@ -90,6 +90,11 @@ test("graphe et notes intégrés", async ({ page }, info) => {
   await addComponent(page, "Notes");
   await expect(page.getByText("Aucune note dans ce dossier.")).toBeVisible();
   await page.getByRole("button", { name: "Nouvelle note" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouvelle note" });
+  await dialog.getByLabel("Titre").fill("Décisions");
+  await expect(dialog.getByText("Fichier : decisions.md")).toBeVisible();
+  await dialog.getByRole("button", { name: "Créer" }).click();
+  await expect(dialog).toBeHidden();
   const editor = page.getByRole("textbox", { name: "Contenu de la note" });
   await expect(editor).toBeVisible();
   await editor.click();
@@ -103,6 +108,7 @@ test("graphe et notes intégrés", async ({ page }, info) => {
 
   const notesDir = join(homeOf(info), "notes", key);
   expect(existsSync(join(notesDir, "sans-titre.md"))).toBe(false);
+  expect(existsSync(join(notesDir, "decisions.md"))).toBe(true);
   writeFileSync(join(notesDir, "decisions.md"), "# Changé ailleurs\n");
   await expect(page.getByRole("heading", { level: 1, name: "Changé ailleurs" })).toBeVisible({
     timeout: 5_000,
