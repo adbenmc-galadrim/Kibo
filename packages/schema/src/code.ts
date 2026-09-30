@@ -276,3 +276,15 @@ export const LOCAL_ONLY_CODE_METHODS = [
   ...CODE_MUTATION_METHODS,
   "openInEditor",
 ] as const satisfies readonly CodeRequest["method"][];
+
+export const CODE_READ_METHODS = [
+  "worktrees",
+  "status",
+  "diff",
+  "readFile",
+  "remoteBranches",
+  "compare",
+  "commitDefaults",
+  "ghStatus",
+  "prForBranch",
+] as const satisfies readonly CodeRequest["method"][];

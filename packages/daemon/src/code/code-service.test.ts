@@ -21,6 +21,7 @@ import {
   installFakeBin,
   installFakeGh,
   readFakeBinLog,
+  readFakeGhLog,
 } from "./testing/git-fixture";
 
 let fx: GitFixture;
@@ -199,7 +200,10 @@ const localOnlyRequests = (): CodeRequest[] => {
 
 test("every mutation and openInEditor are refused from a remote session before anything runs", async () => {
   const editor = installFakeBin(fx.dir, "code");
-  const c = start({ env: { ...fx.env, ...gh, VISUAL: editor.path, FAKE_BIN_LOG: editor.log } });
+  const git = installFakeBin(fx.dir, "git");
+  const c = start({
+    env: { ...fx.env, ...gh, KIBO_GIT: git.path, VISUAL: editor.path, FAKE_BIN_LOG: git.log },
+  });
   fx.write("README.md", "# changed\n");
   const requests = localOnlyRequests();
   expect(requests.map((r) => r.method).sort()).toEqual([...LOCAL_ONLY_CODE_METHODS].sort());
@@ -209,8 +213,15 @@ test("every mutation and openInEditor are refused from a remote session before a
   expect(readFileSync(join(fx.repo, "README.md"), "utf8")).toBe("# changed\n");
   expect(fx.git("status", "--porcelain").trim()).toBe("M README.md");
   expect(fx.git("rev-list", "--count", "HEAD").trim()).toBe("1");
-  expect(readFakeBinLog(editor.log)).toEqual([]);
+  expect(readFakeBinLog(git.log)).toEqual([]);
+  expect(readFakeGhLog(gh)).toEqual([]);
   expect(events).toEqual([]);
+});
+
+test("a method listed nowhere is refused from a remote session", async () => {
+  const c = start();
+  const unclassified = { method: "futureMethod", ...w() } as unknown as CodeRequest;
+  await expect(c.handle(unclassified, REMOTE)).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
 
 test("reads stay open to a remote session", async () => {

@@ -1,10 +1,10 @@
 import { commitDefaults } from "@kibo/core";
 import {
   CODE_MUTATION_METHODS,
+  CODE_READ_METHODS,
   type CodeEvent,
   type CodeRequest,
   type CommitDefaults,
-  LOCAL_ONLY_CODE_METHODS,
 } from "@kibo/schema";
 import { type RpcContext, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
@@ -45,7 +45,7 @@ type Read = Exclude<WorktreeRequest, Mutation>;
 const PR_POLL_MS = 60_000;
 const IDLE_MS = 600_000;
 const MUTATIONS = new Set<string>(CODE_MUTATION_METHODS);
-const LOCAL_ONLY = new Set<string>(LOCAL_ONLY_CODE_METHODS);
+const READS = new Set<string>(CODE_READ_METHODS);
 const isMutation = (req: WorktreeRequest): req is Mutation => MUTATIONS.has(req.method);
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
 
@@ -176,7 +176,7 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
 
   return {
     async handle(req, ctx) {
-      if (LOCAL_ONLY.has(req.method)) requireLocal(ctx);
+      if (!READS.has(req.method)) requireLocal(ctx);
       if (req.method === "worktrees") return (await repoOf(req.projectId)).worktrees();
       const h = await (await repoOf(req.projectId)).open(req.worktree);
       return isMutation(req) ? mutateAndNotify(h, req) : read(h, req);

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   CODE_MUTATION_METHODS,
+  CODE_READ_METHODS,
   CodeEvent,
   CodeRequest,
   eventTouches,
@@ -85,7 +86,7 @@ describe("code contracts", () => {
       "createPr",
     ]);
     expect(LOCAL_ONLY_CODE_METHODS).toEqual([...CODE_MUTATION_METHODS, "openInEditor"]);
-    const reads: CodeRequest["method"][] = [
+    expect(CODE_READ_METHODS).toEqual([
       "worktrees",
       "status",
       "diff",
@@ -95,9 +96,11 @@ describe("code contracts", () => {
       "commitDefaults",
       "ghStatus",
       "prForBranch",
-    ];
+    ]);
+    const reads = new Set<string>(CODE_READ_METHODS);
+    expect(LOCAL_ONLY_CODE_METHODS.filter((m) => reads.has(m))).toEqual([]);
     const methods = CodeRequest.options.map((o) => o.shape.method.value);
-    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...reads].sort());
+    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...CODE_READ_METHODS].sort());
   });
 
   test("CodeEvent is tagged", () => {
