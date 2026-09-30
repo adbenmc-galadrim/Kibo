@@ -87,6 +87,27 @@ export const frCode = {
       untracked: "nouveau",
       conflicted: "en conflit",
     },
+    fileActions: (path: string) => `Actions ${path}`,
+    viewDiff: "Voir le diff",
+    openInTab: "Ouvrir dans un onglet",
+    copyPath: "Copier le chemin",
+    copied: "Chemin copié",
+    copyFailed: "Impossible de copier le chemin.",
+    stage: "Indexer",
+    unstage: "Désindexer",
+    stageAll: "Tout indexer",
+    unstageAll: "Tout désindexer",
+    discard: "Annuler les changements…",
+    discardTitle: (names: string[]) =>
+      names.length === 1
+        ? `Annuler les changements de ${names[0]} ?`
+        : `Annuler les changements de ${names.length} fichiers ?`,
+    discardRestored: (name: string) => `${name} reviendra à sa dernière version commitée.`,
+    discardDeleted: (name: string) => `${name} est nouveau : il sera supprimé du disque.`,
+    discardRenamed: (from: string, to: string) =>
+      `${to} disparaîtra et ${from} reviendra à sa dernière version commitée.`,
+    discardIrreversible: "Cette action est irréversible.",
+    discardConfirm: "Annuler les changements",
   },
   commit: {
     title: "Commit",
