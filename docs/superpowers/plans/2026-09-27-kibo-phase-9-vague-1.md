@@ -3254,7 +3254,7 @@ Vague 1 ← T2. Décision 8, écran 105. Le menu « ⋯ » d'un widget gagne « 
 - Consumes: `ConfigField`, `ConfigSchema`, `validateConfig` (`@kibo/schema`), `findComponent` (`registry.ts`), `useComponents`, `ConfirmDialog` (T2), `Select`, `Switch`, `Checkbox`, `Input`, `Label` du SDK.
 - Produces: Contrats partagés › UI › `config-form.ts`, `InstanceSettingsDialog` ; `lazy-dialogs.InstanceSettingsDialog`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-widgets.ts` :
 ```ts
@@ -3281,7 +3281,7 @@ export const frWidgets = {
     removeConfirm: "Retirer",
 ```
 
-- [ ] **Step 2: Le formulaire en données (test rouge puis vert)**
+- [x] **Step 2: Le formulaire en données (test rouge puis vert)**
 
 `packages/ui/src/lib/config-form.test.ts` :
 ```ts
@@ -3444,7 +3444,7 @@ export function configSchemaOf(instance: Instance, components: ComponentSummary[
 ```
 Run: `bun test packages/ui/src/lib/config-form.test.ts` — Expected: PASS, 4 tests.
 
-- [ ] **Step 3: Le dialogue (test rouge puis vert)**
+- [x] **Step 3: Le dialogue (test rouge puis vert)**
 
 `packages/ui/src/dialogs/instance-settings.test.tsx` :
 ```tsx
@@ -3662,7 +3662,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
 
 Run: `bun test packages/ui/src/dialogs/instance-settings.test.tsx` — Expected: PASS, 3 tests.
 
-- [ ] **Step 4: Le menu d'instance (tests existants mis à jour, puis code)**
+- [x] **Step 4: Le menu d'instance (tests existants mis à jour, puis code)**
 
 `packages/ui/src/pages/instance.test.tsx`, test « D1: update to a higher version, remove from the page » : la liste attendue se termine par `"Retirer de la page…"` ; la fin du test devient
 ```tsx
@@ -3718,7 +3718,7 @@ Run: `bun test packages/ui/src/pages/instance.test.tsx` — Expected: FAIL (libe
 
 Run: `bun test packages/ui/src/pages packages/ui/src/dialogs packages/ui/src/lib` — Expected: PASS.
 
-- [ ] **Step 5: Gate, budget, commits**
+- [x] **Step 5: Gate, budget, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; `config-form.ts` entre dans l'entrée (moins de 1 kB) ; noter la valeur.
@@ -3742,7 +3742,7 @@ Vague 1 ← T2. Écran 106. L'en-tête « Domaine · Core » sort de `DomainsPag
 - Consumes: `DOMAIN_COLORS`, `Domain` (`@kibo/schema`), `ConfirmDialog` (T2), `DropdownMenu*`, `Input`, `Button`.
 - Produces: `DomainHeader` props `{ domain: Domain; usage: number; onRename(name: string): Promise<boolean>; onColor(color: string): Promise<boolean>; onDelete(): void }`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr.ts` › `domains`, ajouter :
 ```ts
@@ -3761,7 +3761,7 @@ Vague 1 ← T2. Écran 106. L'en-tête « Domaine · Core » sort de `DomainsPag
     removeFileHelp: "Le fichier de guidelines disparaît du workspace. Cette action est irréversible.",
 ```
 
-- [ ] **Step 2: `DomainHeader` (test rouge puis vert)**
+- [x] **Step 2: `DomainHeader` (test rouge puis vert)**
 
 `packages/ui/src/settings/domain-header.test.tsx` :
 ```tsx
@@ -3903,7 +3903,7 @@ export function DomainHeader({ domain, usage, onRename, onColor, onDelete }: Pro
 ```
 Run: `bun test packages/ui/src/settings/domain-header.test.tsx` — Expected: PASS, 4 tests.
 
-- [ ] **Step 3: La page (tests d'abord)**
+- [x] **Step 3: La page (tests d'abord)**
 
 `packages/ui/src/settings/domains-page.test.tsx` :
 - test « editing a file saves its new content, removing it asks the daemon » : après le clic sur « Supprimer le fichier », ajouter
@@ -3950,7 +3950,7 @@ test("picking a color sends updateDomain with the color", async () => {
 
 Run: `bun test packages/ui/src/settings/domains-page.test.tsx` — Expected: FAIL (4 tests).
 
-- [ ] **Step 4: La page**
+- [x] **Step 4: La page**
 
 `packages/ui/src/settings/DomainsPage.tsx` :
 - imports : `DomainHeader` (`./DomainHeader`), `ConfirmDialog` (`../shell/lazy-dialogs`), `KiboError` (`@kibo/schema`), `errorMessage` (`../lib/error-message`) ; `Trash2` et `Button` restent si utilisés ailleurs, sinon retirer ;
@@ -4032,7 +4032,7 @@ Run: `bun test packages/ui/src/settings/domains-page.test.tsx` — Expected: FAI
 
 Run: `bun test packages/ui/src/settings` — Expected: PASS.
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui/src/settings && bun run budget`
 Expected: PASS ; budget inchangé (`DomainsPage` est déjà hors de l'entrée).
@@ -4489,7 +4489,7 @@ Vague 1 ← T2. Décision 9 (« Le Kanban gagne le clic droit et « Supprimer…
 - Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`, T2), `BlockDialog` (habillage de `ReasonDialog`, T2).
 - Produces: Contrats partagés › Composants › `card-menu.ts` ; `KanbanCard` props `+ onRemove(): void`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `components/kanban/src/fr.ts`, ajouter :
 ```ts
@@ -4504,7 +4504,7 @@ Vague 1 ← T2. Décision 9 (« Le Kanban gagne le clic droit et « Supprimer…
   cancel: "Annuler",
 ```
 
-- [ ] **Step 2: Le menu en données (test rouge puis vert)**
+- [x] **Step 2: Le menu en données (test rouge puis vert)**
 
 `components/kanban/src/card-menu.test.ts` :
 ```ts
@@ -4583,7 +4583,7 @@ export function cardMenuEntries(input: {
 ```
 Run: `bun test components/kanban/src/card-menu.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Tests du tableau (mis à jour puis ajoutés)**
+- [x] **Step 3: Tests du tableau (mis à jour puis ajoutés)**
 
 `components/kanban/src/kanban.test.tsx` :
 - « moving a card changes its status » et « a failed move shows an alert and keeps the status » : entre le clic sur « Actions KIB-1 » et celui sur « En cours », insérer `await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));`
@@ -4621,7 +4621,7 @@ test("Ouvrir from the menu opens the ticket in the host", async () => {
 
 Run: `bun test components/kanban/src/kanban.test.tsx` — Expected: FAIL (sous-menu absent, pas de clic droit).
 
-- [ ] **Step 4: Carte et tableau**
+- [x] **Step 4: Carte et tableau**
 
 `components/kanban/src/KanbanCard.tsx` :
 - props `+ onRemove: () => void` ; imports : `ContextMenu, ContextMenuContent, ContextMenuTrigger` (`@kibo/sdk/ui/context-menu`), `ContextMenuEntries, DropdownMenuEntries` (`@kibo/sdk/ui/menu-entries`), `cardMenuEntries` (`./card-menu`) ; retirer `DropdownMenuItem`, `DropdownMenuLabel` ;
@@ -4652,7 +4652,7 @@ Run: `bun test components/kanban/src/kanban.test.tsx` — Expected: FAIL (sous-m
 
 Run: `bun test components/kanban` — Expected: PASS (conformité comprise).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test components/kanban && bun run budget`
 Expected: PASS ; budget inchangé (Kanban chargé à la demande).
@@ -4676,7 +4676,7 @@ Vague 1 ← T2. Décision 7, écran 103, spec §12.4 (menu **note**) et spec com
 - Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`@kibo/sdk/ui/confirm-dialog`, T2), `useReadOnly`, `useSdk`, `NotesApi.rename/remove`, `NoteMeta.title` (premier titre `# …`, calculé par le démon et le SDK simulé).
 - Produces: Contrats partagés › Composants › `note-name.ts` ; `NoteList` props `+ readOnly: boolean; onRename(path: string): void; onRemove(path: string): void`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `components/notes/src/fr.ts`, ajouter :
 ```ts
@@ -4696,7 +4696,7 @@ Vague 1 ← T2. Décision 7, écran 103, spec §12.4 (menu **note**) et spec com
   removeConfirm: "Supprimer",
 ```
 
-- [ ] **Step 2: Noms de fichier (test rouge puis vert)**
+- [x] **Step 2: Noms de fichier (test rouge puis vert)**
 
 `components/notes/src/note-name.test.ts` :
 ```ts
@@ -4772,7 +4772,7 @@ export function autoRenameTarget(note: { path: string; title: string }, taken: r
 ```
 Run: `bun test components/notes/src/note-name.test.ts` — Expected: PASS, 4 tests.
 
-- [ ] **Step 3: Tests de la vue (rouges)**
+- [x] **Step 3: Tests de la vue (rouges)**
 
 `components/notes/src/notes.test.tsx`, ajouter (mêmes `setup`, `listed`, `editorView`) :
 ```tsx
@@ -4846,7 +4846,7 @@ test("a read-only project shows no note menu", async () => {
 
 Run: `bun test components/notes/src/notes.test.tsx` — Expected: FAIL (4 tests).
 
-- [ ] **Step 4: Menu, dialogue, liste, vue**
+- [x] **Step 4: Menu, dialogue, liste, vue**
 
 `components/notes/src/NoteMenu.tsx` :
 ```tsx
@@ -5027,7 +5027,7 @@ Si `NotesView.tsx` dépasse ~300 lignes, sortir `useSearch`, `resolveTarget`, `f
 
 Run: `bun test components/notes` — Expected: PASS (conformité comprise, `write:note` déclaré).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test components/notes && bun run budget`
 Expected: PASS ; budget inchangé (Notes chargé à la demande).
@@ -5055,12 +5055,12 @@ Vague 1 ← T2, T4, **intégrée après T7** (elle touche `AppSidebar.tsx` aprè
 - Consumes: permissions `core:window:allow-set-title` et `opener:allow-open-url` (`https://**`) de T4 ; `inTauri` (`shell/workspace-actions`), `isMacPlatform` (`tabs/use-tab-shortcuts`), `describeTarget` (`tabs/tab-title`), `@tauri-apps/api/window` (`getCurrentWindow().setTitle`), `@tauri-apps/plugin-opener` (`openUrl`).
 - Produces: Contrats partagés › UI › `shortcut-label.ts`, `desktop/` ; `useWindowTitle(tabTitle: string | null): void`.
 
-- [ ] **Step 1: Dépendance**
+- [x] **Step 1: Dépendance**
 
 Run: `cd packages/ui && bun add --exact @tauri-apps/plugin-opener@^2 && cd ../.. && grep -n "plugin-opener" packages/ui/package.json`
 Expected: une ligne `"@tauri-apps/plugin-opener": "2.x.y"` (version exacte, même ligne majeure que la crate `tauri-plugin-opener = "2"` de T4) ; `bun.lock` mis à jour ; aucun script `postinstall` (vérifier `bun pm ls | grep opener` et l'absence de `postinstall` dans `node_modules/@tauri-apps/plugin-opener/package.json`). Justification (commit) : ouverture des liens `https:` dans le navigateur depuis la fenêtre Tauri, spec §12.5.
 
-- [ ] **Step 2: Fonctions pures (tests rouges)**
+- [x] **Step 2: Fonctions pures (tests rouges)**
 
 `packages/ui/src/lib/shortcut-label.test.ts` :
 ```ts
@@ -5200,7 +5200,7 @@ test("the window title follows the active tab, Kibo alone on the home", () => {
 ```
 Run: `bun test packages/ui/src/lib/shortcut-label.test.ts packages/ui/src/desktop` — Expected: FAIL (modules introuvables).
 
-- [ ] **Step 3: Fonctions pures (vertes)**
+- [x] **Step 3: Fonctions pures (vertes)**
 
 `packages/ui/src/lib/shortcut-label.ts` :
 ```ts
@@ -5274,7 +5274,7 @@ export function windowTitle(tabTitle: string | null): string {
 ```
 Run: `bun test packages/ui/src/lib/shortcut-label.test.ts packages/ui/src/desktop` — Expected: PASS, 7 tests.
 
-- [ ] **Step 4: Installation Tauri et titre de fenêtre**
+- [x] **Step 4: Installation Tauri et titre de fenêtre**
 
 `packages/ui/src/desktop/install.ts` (jamais importé statiquement : `FORBIDDEN_IN_ENTRY`) :
 ```ts
@@ -5342,7 +5342,7 @@ Sous Tauri, `document.title` ne change pas le titre natif de la fenêtre : d'où
 
 `bundle-report.ts` › `FORBIDDEN_IN_ENTRY` : `/\/packages\/ui\/src\/desktop\/install\.ts$/,` (`@tauri-apps/` est déjà interdit par la regex `node_modules/@tauri-apps/` ; `window-title.ts`, `external-links.ts`, `native-context-menu.ts` et `use-window-title.ts` peuvent rester dans l'entrée : moins de 1 kB).
 
-- [ ] **Step 5: Raccourcis affichés et chrome non sélectionnable**
+- [x] **Step 5: Raccourcis affichés et chrome non sélectionnable**
 
 - `packages/ui/src/tabs/TabBar.tsx` : `const mac = isMac();` dans `TabMenu` ; `⌘⇧P` devient `{shortcutLabel(["Shift", "P"], mac)}` et `⌘W` devient `{shortcutLabel(["W"], mac)}` ; la `div` racine (`flex h-10 shrink-0 …`) gagne `select-none`.
 - `packages/ui/src/shell/AppSidebar.tsx` : `<kbd className="font-mono text-3xs">⌘K</kbd>` devient `<kbd className="font-mono text-3xs">{shortcutLabel(["K"], isMac())}</kbd>` ; `<Sidebar className={p.className}>` devient `<Sidebar className={cn("select-none", p.className)}>` (`cn` de `@kibo/sdk/lib/utils`).
@@ -5351,7 +5351,7 @@ Sous Tauri, `document.title` ne change pas le titre natif de la fenêtre : d'où
 
 Run: `bun test packages/ui/src/tabs packages/ui/src/shell/shell.test.tsx packages/ui/src/desktop packages/ui/src/lib` — Expected: PASS.
 
-- [ ] **Step 6: Vérification dans la coque, gate, commits**
+- [x] **Step 6: Vérification dans la coque, gate, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; aucun « Module interdit » (`install.ts` et `@tauri-apps/plugin-opener` restent hors de l'entrée) ; budget + 0,5 kB au plus.
@@ -5379,7 +5379,7 @@ Vague 2 ← T6. Décision 5, écran 100, spec générale §5 (liens `blocks` / `
 - Consumes: `useTicketCommand(projectId, describe?)` (T6), `TicketDetail` props `{ project, ticket, viewer, onOpenFile, onOpenTicket }` (T6), `StatusDot` (`@kibo/sdk`), `Select`, `Input`, `Button`.
 - Produces: Contrats partagés › UI › `links.ts` ; `DependenciesSection` props `{ project: ProjectSnapshot; ticket: TicketView; editable: boolean; onOpenTicket(ticketId: string): void }`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-ticket-edit.ts`, ajouter dans `errors` : `LINK_CYCLE: "Impossible : cela créerait une boucle de dépendances."` ; et la section
 ```ts
@@ -5400,7 +5400,7 @@ Vague 2 ← T6. Décision 5, écran 100, spec générale §5 (liens `blocks` / `
   },
 ```
 
-- [ ] **Step 2: Fonctions pures (test rouge puis vert)**
+- [x] **Step 2: Fonctions pures (test rouge puis vert)**
 
 `packages/ui/src/ticket/links.test.ts` :
 ```ts
@@ -5503,7 +5503,7 @@ export function linkCandidates(project: ProjectSnapshot, ticketId: string, query
 ```
 Run: `bun test packages/ui/src/ticket/links.test.ts` — Expected: PASS, 3 tests.
 
-- [ ] **Step 3: Tests de la section (rouges)**
+- [x] **Step 3: Tests de la section (rouges)**
 
 `packages/ui/src/ticket/dependencies.test.tsx` (même `mock.module("../api")`, `TicketSheet`, `ticket()`, `show()` que `ticket-edit.test.tsx` : extraire ces aides dans `packages/ui/src/ticket/test-sheet.tsx` ? Non : `mock.module` doit rester dans le fichier de test ; recopier l'en-tête de `ticket-edit.test.tsx` et n'en garder que le nécessaire) :
 ```tsx
@@ -5590,7 +5590,7 @@ test("a read-only project shows the groups without crosses or the add form", () 
 
 Run: `bun test packages/ui/src/ticket/dependencies.test.tsx` — Expected: FAIL (section absente).
 
-- [ ] **Step 4: Section et formulaire**
+- [x] **Step 4: Section et formulaire**
 
 `packages/ui/src/ticket/DependenciesSection.tsx` :
 ```tsx
@@ -5748,7 +5748,7 @@ export function AddLinkForm({ project, ticket }: { project: ProjectSnapshot; tic
 
 Run: `bun test packages/ui/src/ticket packages/ui/src/shell/sheet` — Expected: PASS.
 
-- [ ] **Step 5: Gate, budget, commits**
+- [x] **Step 5: Gate, budget, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; budget inchangé (`ticket/` hors de l'entrée).
@@ -5775,7 +5775,7 @@ Vague 2 ← T2, T3. Spec §12.1 à §12.4 (menu **fichier modifié**), écran 10
 - Consumes: `ContextMenuEntries`, `DropdownMenuEntries`, `MenuEntry` (T2), `ConfirmDialog` (`shell/lazy-dialogs`, T2), `client.code({ method: "discardChanges" | "stageAll" | "unstageAll", … })` (T3), `errorMessage` (`lib/error-message`), `FileChange` (`@kibo/schema`).
 - Produces: `fileMenuEntries`, `discardLines` (`code/file-menu.ts`) ; `FileList` props `+ onOpenInTab(file), onOpenExternal(file), onCopyPath(file), onDiscard(file), onStageAll(), onUnstageAll()` ; `ChangesFiles` idem ; `ChangesView` props `+ onOpenInTab(ref: FileRef): void` ; `ContentView.onOpen(target: TabTarget, newTab?: boolean)`.
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `packages/ui/src/i18n/fr-code.ts` › `changes`, ajouter :
 ```ts
@@ -5800,7 +5800,7 @@ Vague 2 ← T2, T3. Spec §12.1 à §12.4 (menu **fichier modifié**), écran 10
 ```
 › `errors` : `FORBIDDEN` est déjà là (ajouté par T3b) ; ne rien ajouter. (« Ouvrir dans l'éditeur externe » existe : `openExternal`.)
 
-- [ ] **Step 2: Menu et description en données (test rouge puis vert)**
+- [x] **Step 2: Menu et description en données (test rouge puis vert)**
 
 `packages/ui/src/code/file-menu.test.ts` :
 ```ts
@@ -5920,7 +5920,7 @@ export function discardLines(file: FileChange, texts: FileMenuTexts): string[] {
 ```
 Run: `bun test packages/ui/src/code/file-menu.test.ts` — Expected: PASS, 3 tests.
 
-- [ ] **Step 3: Tests de la liste et de la vue (rouges)**
+- [x] **Step 3: Tests de la liste et de la vue (rouges)**
 
 `packages/ui/src/code/changes-files.test.tsx` : `renderFiles` passe les nouveaux props (`mock`s) et les renvoie ; ajouter
 ```tsx
@@ -6006,7 +6006,7 @@ test("Ouvrir dans un onglet and Copier le chemin", async () => {
 ```
 Run: `bun test packages/ui/src/code/changes-files.test.tsx packages/ui/src/code/changes.test.tsx` — Expected: FAIL (5 tests).
 
-- [ ] **Step 4: Liste, panneau, vue**
+- [x] **Step 4: Liste, panneau, vue**
 
 `packages/ui/src/code/FileList.tsx` :
 - Props `+ onOpenInTab(file: FileChange): void; onOpenExternal(file: FileChange): void; onCopyPath(file: FileChange): void; onDiscard(file: FileChange): void; onStageAll(): void; onUnstageAll(): void` ;
@@ -6062,7 +6062,7 @@ Run: `bun test packages/ui/src/code/changes-files.test.tsx packages/ui/src/code/
 
 Run: `bun test packages/ui/src/code packages/ui/src/shell/shell.test.tsx` — Expected: PASS.
 
-- [ ] **Step 5: Gate, budget, commits**
+- [x] **Step 5: Gate, budget, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; budget inchangé (`code/` hors de l'entrée via `ChangesView`).
@@ -6224,7 +6224,7 @@ Le schéma devient la source unique : `CODE_MUTATION_METHODS` (13), `LOCAL_ONLY_
 - Consumes: `requireLocal`, `RpcContext`, `LOCAL_CONTEXT` (T3), `isRemoteView` (`lib/remote-view.ts`), `createGitFixture`, `installFakeBin`, `readFakeBinLog` (`code/testing/git-fixture.ts`), `enableSelfSigned`, `remoteCookie`, `remotePost` (`remote/remote.test-helper.ts`).
 - Produces: Contrats partagés › Démon et schéma › T3b ; `ChangesView` props `+ remote?: boolean` ; `ChangesFiles`, `FileList`, `DiffColumn`, `DiffToolbar` props `+ readOnly: boolean` ; `DiffView.onHunk?` (optionnel) ; `ChangesAlerts` et `OperationBanner` `onAbort: (() => void) | null` ; `FileTabView` props `+ remote?: boolean`. T15 s'appuie sur `FileList.readOnly` (voir son complément).
 
-- [ ] **Step 1: Schéma (test rouge puis vert)**
+- [x] **Step 1: Schéma (test rouge puis vert)**
 
 `packages/schema/src/code.test.ts` : retirer la ligne `expect(LOCAL_ONLY_CODE_METHODS).toEqual([...])` du test de T3 et ajouter (`CODE_MUTATION_METHODS` et `CODE_READ_METHODS` importés) :
 ```ts
@@ -6304,7 +6304,7 @@ export const CODE_READ_METHODS = [
 
 Run: `bun test packages/schema/src/code.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Service : refus par méthode (tests rouges puis verts)**
+- [x] **Step 2: Service : refus par méthode (tests rouges puis verts)**
 
 `packages/daemon/src/code/code-service.test.ts` : remplacer le test « discardChanges, stageAll, unstageAll and openInEditor are refused from a remote session » par (imports : `CodeRequest`, `LOCAL_ONLY_CODE_METHODS`, `RepoStatus` de `@kibo/schema` ; `RpcContext` de `../rpc-extensions`) :
 ```ts
@@ -6403,14 +6403,14 @@ Run: `bun test packages/daemon/src/code/code-service.test.ts` — Expected: FAIL
 
 Run: `bun test packages/daemon/src/code/code-service.test.ts packages/daemon/src/server-code.test.ts` — Expected: PASS.
 
-- [ ] **Step 3: Textes**
+- [x] **Step 3: Textes**
 
 `packages/ui/src/i18n/fr-code.ts` :
 - `changes`, ajouter : `localOnly: "Depuis un autre appareil, tu peux lire les changements mais pas les modifier : indexer, commiter et pousser se font sur l'ordinateur où tourne Kibo.",`
 - `file`, ajouter : `localOnly: "Modifier ce fichier ou l'ouvrir dans l'éditeur externe n'est possible que sur l'ordinateur où tourne Kibo.",`
 - `errors`, ajouter : `FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",` (T15 prévoyait cet ajout : il est fait ici, T15 ne l'ajoute plus.)
 
-- [ ] **Step 4: Tests UI (rouges)**
+- [x] **Step 4: Tests UI (rouges)**
 
 `packages/ui/src/code/changes.test.tsx`, ajouter (`LOCAL_ONLY_CODE_METHODS` importé de `@kibo/schema`) :
 ```tsx
@@ -6449,7 +6449,7 @@ test("a remote view previews the file without Modifier nor the external editor, 
 
 Run: `bun test packages/ui/src/code/changes.test.tsx packages/ui/src/files/files.test.tsx` — Expected: FAIL (2 tests : prop `remote` ignorée, actions rendues).
 
-- [ ] **Step 5: UI distante en lecture**
+- [x] **Step 5: UI distante en lecture**
 
 `packages/ui/src/code/ChangesView.tsx` :
 - `Props + remote?: boolean` ; `export function ChangesView({ project, worktree, onWorktreeChange, onOpenFile, useSlots, remote = isRemoteView() }: Props)` (import `isRemoteView` de `../lib/remote-view`) ; `ChangesBody` reçoit `readOnly={remote}` (`BodyProps + readOnly: boolean`) ;
@@ -6477,7 +6477,7 @@ Run: `bun test packages/ui/src/code/changes.test.tsx packages/ui/src/files/files
 
 Run: `bun test packages/ui/src/code packages/ui/src/files` — Expected: PASS (les tests existants passent sans changement : `remote` vaut `false` sous happy-dom, `location.hostname` étant vide).
 
-- [ ] **Step 6: Gate et commits**
+- [x] **Step 6: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/schema packages/daemon/src/code packages/daemon/src/server-code.test.ts packages/ui/src/code packages/ui/src/files && bun run budget`
 Expected: PASS ; la vue Code et l'onglet fichier sont chargés à la demande (`lazy-screens.ts`) : budget inchangé, noter la valeur.
@@ -6508,7 +6508,7 @@ Sémantique de `index`, vérifiée sur Loro (`LoroTree.move`) : **position final
 - Consumes: `movePage { pageId, parentId, index? }` (colonne « Réel »), `descendantIds` (`shell/page-menu.ts`, T7), `useDroppable`, `pointerWithin`, `DragEndEvent` (`@dnd-kit/core`), `cn`.
 - Produces: Contrats partagés › UI › `page-drop.ts`.
 
-- [ ] **Step 1: Le plan de dépôt en données (test rouge puis vert)**
+- [x] **Step 1: Le plan de dépôt en données (test rouge puis vert)**
 
 `packages/ui/src/shell/page-drop.test.ts` :
 ```ts
@@ -6623,7 +6623,7 @@ export function pageDropPlan(pages: readonly Page[], activeId: string, zone: Dro
 
 Run: `bun test packages/ui/src/shell/page-drop.test.ts` — Expected: PASS, 6 tests.
 
-- [ ] **Step 2: Zones de dépôt dans `ProjectPages`**
+- [x] **Step 2: Zones de dépôt dans `ProjectPages`**
 
 `packages/ui/src/shell/ProjectPages.tsx` :
 - imports : `pointerWithin` (`@dnd-kit/core`), `pageDropPlan, parseZoneId, zoneId` (`./page-drop`) ; la constante `ROOT` disparaît au profit de `zoneId({ kind: "root" })` ;
@@ -6664,7 +6664,7 @@ function PageRow({ page, entries, editable, active, onClick, onAuxClick, childre
 
 Run: `bun test packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 3: Gate, budget, vérification manuelle, commits**
+- [x] **Step 3: Gate, budget, vérification manuelle, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget`
 Expected: PASS ; `pointerWithin` est déjà dans le bundle de `@dnd-kit/core` : attendre + 0,5 kB au plus sur l'entrée ; noter la valeur.
@@ -6692,7 +6692,7 @@ Vague 1 bis ← T10. Décision 9 et spec §12.7. **Vérification faite** : `move
 - Consumes: `reparentOnDrop` (T10, conservé pour la zone « dans »), `sdk.run({ method: "moveTicket", … })` via `attempt` (T10), `useDroppable`, `pointerWithin` (`@dnd-kit/core`), `createTicket`, `listTickets`, `moveTicket` (`@kibo/core`, test).
 - Produces: Contrats partagés › Composants › `tree-drop.ts` (T10b).
 
-- [ ] **Step 1: Sémantique de l'index (test du domaine, vert d'emblée : il fige un comportement)**
+- [x] **Step 1: Sémantique de l'index (test du domaine, vert d'emblée : il fige un comportement)**
 
 `packages/core/src/tickets.test.ts`, ajouter :
 ```ts
@@ -6721,7 +6721,7 @@ describe("order", () => {
 
 Run: `bun test packages/core/src/tickets.test.ts` — Expected: PASS (si un `expect` échoue, la sémantique diffère de T7b : s'arrêter et le signaler au chef d'équipe avant de toucher au composant).
 
-- [ ] **Step 2: Le plan de dépôt en données (test rouge puis vert)**
+- [x] **Step 2: Le plan de dépôt en données (test rouge puis vert)**
 
 `components/tickets/src/tree-drop.test.ts`, ajouter (mêmes `t` et `tickets` que le fichier, fixture étendue) :
 ```ts
@@ -6806,7 +6806,7 @@ export function dropPlan(tickets: readonly TicketView[], activeId: string, zone:
 ```
 Run: `bun test components/tickets/src/tree-drop.test.ts` — Expected: PASS, 8 tests.
 
-- [ ] **Step 3: Zones de dépôt dans l'arbre**
+- [x] **Step 3: Zones de dépôt dans l'arbre**
 
 `components/tickets/src/TicketsTree.tsx` (ou `TicketRow.tsx` si T10 a extrait la ligne) :
 - imports : `pointerWithin` (`@dnd-kit/core`), `dropPlan, parseZoneId, zoneId` (`./tree-drop`) ; `reparentOnDrop` n'est plus importé par l'arbre (il reste utilisé par `dropPlan`) ;
@@ -6842,7 +6842,7 @@ Run: `bun test components/tickets/src/tree-drop.test.ts` — Expected: PASS, 8 t
 
 Run: `bun test components/tickets` — Expected: PASS (conformité comprise).
 
-- [ ] **Step 4: Gate, vérification manuelle, commits**
+- [x] **Step 4: Gate, vérification manuelle, commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/core components/tickets && bun run budget`
 Expected: PASS ; le composant tickets est chargé à la demande : budget inchangé.
@@ -6873,7 +6873,7 @@ Vague 1 bis ← T12 (acceptée : `feat/p9-t12`, `c54eef3`). Décision 7 et spec 
 - Consumes: `useNoteSession` (T12 : `rename`, `remove`, `load`, `change`), `sdk.notes.write(path, markdown, null)` (création, permission `writes: note`), `isUntitledPath`, `renamedPath`, `autoRenameTarget` (T12), `KiboError` (`CONFLICT`), `createMockSdk` (`notes`, `noteAges`, `setAccess`), `runConformance`.
 - Produces: Contrats partagés › Composants › `note-name.ts` (T12b) ; `NoteTitleDialog` ; `NoteList` inchangée en props (le signalement appelle `onRename`).
 
-- [ ] **Step 1: Textes**
+- [x] **Step 1: Textes**
 
 `components/notes/src/fr.ts` : retirer `untitled: "Sans titre"` (plus aucune note n'est créée avec ce titre) ; renommer `renameField` en `titleField` (même texte « Titre », lu par le dialogue commun) ; ajouter :
 ```ts
@@ -6884,7 +6884,7 @@ Vague 1 bis ← T12 (acceptée : `feat/p9-t12`, `c54eef3`). Décision 7 et spec 
 ```
 (`renameFile`, `renameNoSlug`, `renameConflict` servent aux deux dialogues.)
 
-- [ ] **Step 2: Noms de fichier (test rouge puis vert)**
+- [x] **Step 2: Noms de fichier (test rouge puis vert)**
 
 `components/notes/src/note-name.test.ts`, ajouter (`createdPath` importé) :
 ```ts
@@ -6911,7 +6911,7 @@ et dans `autoRenameTarget`, la condition devient `if (target === null || target 
 
 Run: `bun test components/notes/src/note-name.test.ts` — Expected: PASS, 6 tests.
 
-- [ ] **Step 3: Découpage des tests (mécanique, vert avant, vert après)**
+- [x] **Step 3: Découpage des tests (mécanique, vert avant, vert après)**
 
 `components/notes/src/notes.test-helper.tsx` : y déplacer, exportés, `seed`, `setup(surface, notes?)`, `listed()`, `editorView()`, `noConflict()` et un `mount(sdk: KiboSdk)` (= `render(<SdkProvider sdk={sdk}><Component /></SdkProvider>)`), avec leurs imports (`EditorView`, `createMockSdk`, `DEMO_NOTES`, `DEMO_NOTE_AGES`, `seedDemo`, `Component`, `manifest`, `render`, `screen`, `within`). Le suffixe `.test-helper.tsx` n'est pas un motif de test de Bun (même convention que `packages/daemon/src/remote/remote.test-helper.ts`).
 
@@ -6919,7 +6919,7 @@ Run: `bun test components/notes/src/note-name.test.ts` — Expected: PASS, 6 tes
 
 Run: `bun test components/notes` — Expected: PASS, même nombre de tests qu'avant le découpage ; `notes.test.tsx` < 200 lignes, `notes-rename.test.tsx` < 200 lignes.
 
-- [ ] **Step 4: Tests de la vue (rouges)**
+- [x] **Step 4: Tests de la vue (rouges)**
 
 `components/notes/src/notes.test.tsx`, le test « search asks the daemon, new note creates a file » devient « search asks the daemon, new note asks a title and refuses a taken name » : après `await user.clear(…)`, remplacer la fin par :
 ```tsx
@@ -7015,7 +7015,7 @@ test("a save that fires during a long rename ends up in the new file, without a 
 
 Run: `bun test components/notes` — Expected: FAIL (4 tests : création, lecture seule, signalement, renommage long).
 
-- [ ] **Step 5: Dialogue générique, création avec titre, signalement (verts)**
+- [x] **Step 5: Dialogue générique, création avec titre, signalement (verts)**
 
 `components/notes/src/NoteTitleDialog.tsx` :
 ```tsx
@@ -7164,7 +7164,7 @@ export function RenameNoteDialog({ note, onRename, onClose }: Props) {
 
 Run: `bun test components/notes` — Expected: PASS sauf « a save that fires during a long rename… » (Step 6).
 
-- [ ] **Step 6: Second `flush()` après le renommage (vert)**
+- [x] **Step 6: Second `flush()` après le renommage (vert)**
 
 `components/notes/src/use-note-session.ts`, dans `rename`, après `s.autosave.rebase(meta.mtime);` :
 ```ts
@@ -7174,7 +7174,7 @@ Run: `bun test components/notes` — Expected: PASS sauf « a save that fires du
 
 Run: `bun test components/notes` — Expected: PASS (conformité comprise).
 
-- [ ] **Step 7: Gate et commits**
+- [x] **Step 7: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test components/notes packages/sdk && bun run budget`
 Expected: PASS ; budget inchangé (Notes chargé à la demande) ; `NotesView.tsx` et `notes.test.tsx` sous 300 lignes.
