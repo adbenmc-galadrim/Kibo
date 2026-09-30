@@ -6087,7 +6087,7 @@ Vague 3 ← T6, T7, T15 (et T3). Un parcours Playwright par thème sur un vrai d
 - Consumes: `createE2eRepo`, `E2eRepo` (`e2e/git-repo.ts`), `createRepoProject`, `projectKey`, `shot` (`e2e/repo-project.ts`), `createPage`, `addComponent` (`e2e/helpers.ts`), `rpc`, `text` (`e2e/agents-seed.ts`), `E2E_TOKEN` (`e2e/token.ts`) ; textes des tâches T6, T7, T15 (mot pour mot).
 - Produces: rien (vérification).
 
-- [ ] **Step 1: Configuration**
+- [x] **Step 1: Configuration**
 
 `e2e/playwright.config.ts`, dans `daemons`, après les entrées `ia-*` :
 ```ts
@@ -6095,7 +6095,7 @@ Vague 3 ← T6, T7, T15 (et T3). Un parcours Playwright par thème sur un vrai d
   { name: "menus-light", scheme: "light", port: 4416, spec: /menus\.spec\.ts/, scenario: "question" },
 ```
 
-- [ ] **Step 2: Le parcours (rouge tant que T6, T7, T15 ne sont pas intégrées)**
+- [x] **Step 2: Le parcours (rouge tant que T6, T7, T15 ne sont pas intégrées)**
 
 `e2e/menus.spec.ts` :
 ```ts
@@ -6199,7 +6199,7 @@ Notes : `createPage` clique « Nouvelle page » dans `main` (page d'accueil du p
 Run: `bun run --cwd packages/ui build && bun run --cwd e2e test -- --project menus-dark --project menus-light`
 Expected: PASS sur les deux thèmes ; `e2e/test-results/**/ecran-98.png`, `ecran-101.png`, `ecran-104.png` présents pour chaque thème. Puis `bun run --cwd e2e test -- --project tabs-dark --project code-dark` : aucune régression sur les specs qui touchent les mêmes écrans.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add e2e/menus.spec.ts e2e/playwright.config.ts
