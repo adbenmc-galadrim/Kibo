@@ -92,6 +92,9 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/updates/UpdateCard.tsx",
       "/Kibo/packages/ui/src/updates/update-store.ts",
       "/Kibo/packages/ui/src/i18n/fr-updates.ts",
+      "/Kibo/packages/ui/src/settings/AppearancePage.tsx",
+      "/Kibo/packages/ui/src/settings/SecurityPage.tsx",
+      "/Kibo/packages/ui/src/settings/WebAccessCard.tsx",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [

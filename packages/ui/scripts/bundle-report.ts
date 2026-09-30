@@ -35,6 +35,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(ticket\/[A-Za-z-]+\.tsx?|i18n\/fr-ticket-edit\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/InstanceSettingsDialog\.tsx|i18n\/fr-widgets\.ts)$/,
   /\/packages\/ui\/src\/desktop\/install\.ts$/,
+  /\/packages\/ui\/src\/settings\/(AppearancePage|SecurityPage|WebAccessCard)\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
