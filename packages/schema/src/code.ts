@@ -256,9 +256,23 @@ export type CodeResult = {
   openInEditor: null;
 };
 
-export const LOCAL_ONLY_CODE_METHODS = [
+export const CODE_MUTATION_METHODS = [
+  "writeFile",
+  "stageFiles",
+  "unstageFiles",
   "discardChanges",
   "stageAll",
   "unstageAll",
+  "stageHunk",
+  "commit",
+  "reword",
+  "undoCommit",
+  "abortOperation",
+  "push",
+  "createPr",
+] as const satisfies readonly CodeRequest["method"][];
+
+export const LOCAL_ONLY_CODE_METHODS = [
+  ...CODE_MUTATION_METHODS,
   "openInEditor",
 ] as const satisfies readonly CodeRequest["method"][];

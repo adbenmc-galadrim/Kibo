@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  CODE_MUTATION_METHODS,
   CodeEvent,
   CodeRequest,
   eventTouches,
@@ -65,7 +66,38 @@ describe("code contracts", () => {
     expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: ["../x"] }).success).toBe(false);
     expect(CodeRequest.safeParse({ method: "stageAll", ...w }).success).toBe(true);
     expect(CodeRequest.safeParse({ method: "unstageAll", ...w }).success).toBe(true);
-    expect(LOCAL_ONLY_CODE_METHODS).toEqual(["discardChanges", "stageAll", "unstageAll", "openInEditor"]);
+  });
+
+  test("every code request is either a local-only mutation or a listed read", () => {
+    expect(CODE_MUTATION_METHODS).toEqual([
+      "writeFile",
+      "stageFiles",
+      "unstageFiles",
+      "discardChanges",
+      "stageAll",
+      "unstageAll",
+      "stageHunk",
+      "commit",
+      "reword",
+      "undoCommit",
+      "abortOperation",
+      "push",
+      "createPr",
+    ]);
+    expect(LOCAL_ONLY_CODE_METHODS).toEqual([...CODE_MUTATION_METHODS, "openInEditor"]);
+    const reads: CodeRequest["method"][] = [
+      "worktrees",
+      "status",
+      "diff",
+      "readFile",
+      "remoteBranches",
+      "compare",
+      "commitDefaults",
+      "ghStatus",
+      "prForBranch",
+    ];
+    const methods = CodeRequest.options.map((o) => o.shape.method.value);
+    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...reads].sort());
   });
 
   test("CodeEvent is tagged", () => {
