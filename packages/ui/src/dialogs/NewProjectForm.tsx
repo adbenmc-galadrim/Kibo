@@ -7,6 +7,7 @@ import { LayoutDashboard, Plus } from "lucide-react";
 import { type FormEvent, useId } from "react";
 import { fr } from "../i18n/fr";
 import { ChoiceCard } from "./ChoiceCard";
+import { FolderField } from "./FolderField";
 
 export type ProjectFields = { name: string; key: string | null; folder: string };
 export type ProjectStart = "suggested" | "empty";
@@ -56,15 +57,17 @@ export function NewProjectForm(p: Props) {
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${id}-folder`}>{fr.newProject.folder}</Label>
-        <Input
+        <FolderField
           id={`${id}-folder`}
           value={p.fields.folder}
-          onChange={(e) => p.onFields({ folder: e.target.value })}
+          onChange={(folder) => p.onFields({ folder })}
           autoFocus={p.focusFolder}
           placeholder="/Users/adam/code/kibo"
-          className="font-mono"
+          describedBy={`${id}-folder-help`}
         />
-        <p className="text-xs text-muted-foreground">{fr.newProject.folderHelp}</p>
+        <p id={`${id}-folder-help`} className="text-xs text-muted-foreground">
+          {fr.newProject.folderHelp}
+        </p>
       </div>
       <fieldset className="grid gap-2">
         <legend className="mb-2 text-sm font-medium">{fr.newProject.start}</legend>

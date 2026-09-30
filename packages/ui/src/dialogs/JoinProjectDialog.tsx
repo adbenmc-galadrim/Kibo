@@ -10,13 +10,14 @@ import {
 } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { CircleX, Folder, Loader2 } from "lucide-react";
+import { CircleX, Loader2 } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frShare } from "../i18n/fr-share";
 import { joinErrorText } from "../lib/share-errors";
 import { navigate } from "../route";
+import { FolderField } from "./FolderField";
 
 const t = frShare;
 type Failure = { text: string; badCode: boolean };
@@ -79,19 +80,7 @@ export function JoinProjectDialog({
           </div>
           <div className="grid gap-2">
             <Label htmlFor={folderId}>{t.folder}</Label>
-            <div className="relative">
-              <Folder
-                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                id={folderId}
-                value={folder}
-                onChange={(e) => setFolder(e.target.value)}
-                className="pl-8 font-mono"
-                aria-describedby={folderHelpId}
-              />
-            </div>
+            <FolderField id={folderId} value={folder} onChange={setFolder} describedBy={folderHelpId} />
             <p id={folderHelpId} className="text-xs text-muted-foreground">
               {t.folderHelp}
             </p>
