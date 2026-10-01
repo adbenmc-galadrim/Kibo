@@ -1867,7 +1867,7 @@ test("screen 126: the whole card is the drag handle, the menu is not; the saved 
 });
 ```
 (Le glisser ne se simule pas sous happy-dom : l'écriture est testée par la fonction `onDragEnd` extraite, `dropInColumn(order, event)`, appelée directement avec un `DragEndEvent` construit, qui doit produire `sdk.data.set("order", …)` et `setStatus` si la colonne change.) `KanbanCard.tsx` : `useSortable({ id })` sur l'`article` (`cursor-grab`, `activationConstraint: { distance: 6 }` via un `PointerSensor` dans `Kanban.tsx`), menu et boutons avec `onPointerDown={(e) => e.stopPropagation()}` et `data-dnd-ignore` ; `Kanban.tsx` : `SortableContext` par colonne (`verticalListSortingStrategy`), `order` lu par `sdk.data.get(ORDER_KEY)` au montage et sur `sdk.subscribe`, `onDragEnd` ⇒ `placeInColumn` puis `sdk.data.set` (`readOnly` ⇒ aucun capteur), `useDroppable` conservé pour une colonne vide ; `kibo.component.json` : `"data": true` ; `CI_DOT.neutral: "bg-muted-foreground/60"`.
-Run: `bun test components/kanban` — Expected: PASS ; conformité `bun run --cwd components/kanban test`.
+Run: `bun test components/kanban` — Expected: PASS ; la conformité tourne dans `kanban.test.tsx` (`runConformance`, `data: true`).
 
 - [ ] **Step 3: Filtre explicite (test rouge puis vert)**
 
