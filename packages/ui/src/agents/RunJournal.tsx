@@ -109,6 +109,9 @@ function JournalText({
   );
 }
 
+export const journalUnavailable = (log: { missing: boolean; empty: boolean }, ended: boolean): boolean =>
+  log.missing || (log.empty && ended);
+
 type Props = { label: string; log: RunLogEntry[]; files: JournalFiles | null; missing?: boolean };
 
 export function RunJournal({ label, log, files, missing = false }: Props) {

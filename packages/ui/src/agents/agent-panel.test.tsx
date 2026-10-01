@@ -25,8 +25,8 @@ mock.module("../state/use-agents", () => ({
   useNow: () => NOW,
   useRunLog: (runId: string | null) =>
     runId === "r40"
-      ? { log: null, missing: true }
-      : { log: runId === "r41" ? RUN_LOG : runId ? [] : null, missing: false },
+      ? { log: null, missing: true, empty: false }
+      : { log: runId === "r41" ? RUN_LOG : runId ? [] : null, missing: false, empty: runId !== "r41" },
   useDaemonOnline: () => true,
 }));
 
@@ -176,6 +176,27 @@ test("a finished run has no stop button", () => {
     />,
   );
   expect(screen.queryByRole("button", { name: "Arrêter" })).toBeNull();
+});
+test("an empty journal is unavailable only once the run has ended; a gone journal always is", () => {
+  const drawer = (id: string, log: { missing: boolean; empty: boolean }) => (
+    <AgentDrawer
+      state={agentsFixture()}
+      now={NOW}
+      selected={run(id)}
+      log={[]}
+      {...log}
+      onSelect={() => {}}
+      onCollapse={() => {}}
+      onLaunch={() => {}}
+      onOpenFile={() => {}}
+    />
+  );
+  const view = render(drawer("r42", { missing: false, empty: true }));
+  expect(screen.queryByText("Journal indisponible pour ce run.")).toBeNull();
+  view.rerender(drawer("r40", { missing: false, empty: true }));
+  expect(screen.getByText("Journal indisponible pour ce run.")).toBeTruthy();
+  view.rerender(drawer("r42", { missing: true, empty: false }));
+  expect(screen.getByText("Journal indisponible pour ce run.")).toBeTruthy();
 });
 test("the reply box sends a trimmed answer, and keeps the text when it fails", async () => {
   render(<ReplyBox run={run("r41")} />);

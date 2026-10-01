@@ -49,15 +49,15 @@ const flush = () =>
 function Probe({ runId }: { runId: string | null }) {
   const agents = useAgents();
   const config = useConfig();
-  const { log, missing } = useRunLog(runId);
-  const journal = `${log?.length ?? "-"}${missing ? " missing" : ""}`;
+  const { log, missing, empty } = useRunLog(runId);
+  const journal = `${log?.length ?? "-"}${missing ? " missing" : ""}${empty ? " empty" : ""}`;
   return <p>{`${agents?.runs.length ?? "-"} ${config?.profiles.length ?? "-"} ${journal}`}</p>;
 }
 
 test("agent state, config and run log load, then reload on their topic", async () => {
   const view = render(<Probe runId="r41" />);
   await flush();
-  expect(view.container.textContent).toBe("9 3 0 missing");
+  expect(view.container.textContent).toBe("9 3 0 empty");
   expect(calls.sort()).toEqual(["getAgents", "getConfig", "getRunLog"]);
   calls.length = 0;
   await act(async () => {

@@ -27,6 +27,7 @@ export const frAgentsPage = {
   deleteHelp: "Ses runs passés restent dans l'historique.",
   deleteConfirm: "Supprimer",
   journalMissing: "Journal indisponible pour ce run.",
+  systemParallelHelp: "De 1 à 4 runs en même temps, dans la limite des places de la machine.",
   permissionModes: {
     plan: "Lecture seule (plan)",
     acceptEdits: "Modifications acceptées",

@@ -20,7 +20,7 @@ import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { elapsed, formatDuration, reasonText, runResultText, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
-import { type JournalFiles, RunJournal } from "./RunJournal";
+import { type JournalFiles, journalUnavailable, RunJournal } from "./RunJournal";
 
 type Props = {
   state: AgentsState;
@@ -28,6 +28,7 @@ type Props = {
   selected: RunView | null;
   log: RunLogEntry[] | null;
   missing?: boolean;
+  empty?: boolean;
   onSelect: (runId: string) => void;
   onCollapse: () => void;
   onLaunch: () => void;
@@ -152,6 +153,7 @@ export function AgentDrawer({
   selected,
   log,
   missing = false,
+  empty = false,
   onSelect,
   onCollapse,
   onLaunch,
@@ -234,7 +236,7 @@ export function AgentDrawer({
               run={selected}
               now={now}
               log={log}
-              missing={missing}
+              missing={journalUnavailable({ missing, empty }, isTerminal(selected.state))}
               onOpenFile={onOpenFile}
             />
           ) : (
