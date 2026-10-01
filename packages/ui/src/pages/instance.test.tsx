@@ -370,5 +370,5 @@ test("modify with AI: offered on an ai instance, not on a marketplace one", asyn
   await user.click(screen.getByRole("button", { name: "Actions Burndown" }));
   await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
   expect(await screen.findByRole("dialog", { name: "Modifier « Burndown » avec l'IA" })).toBeTruthy();
-  expect(screen.getByText("Version actuelle 0.1.0 · origine IA")).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · Créé par l'IA")).toBeTruthy();
 });

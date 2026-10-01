@@ -24,11 +24,14 @@ const normalize = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLow
 
 const byText = (a: string, b: string) => a.localeCompare(b, "fr");
 
+const TRUST_ORDER: readonly ComponentRow["trust"][] = ["builtin", "trusted", "sandboxed", "pending"];
+const ORIGIN_ORDER: readonly ComponentOrigin[] = ["kibo", "user", "ai", "marketplace"];
+
 const COMPARE: Record<SortKey, (a: ComponentRow, b: ComponentRow) => number> = {
   title: (a, b) => byText(a.title, b.title),
   version: (a, b) => compareSemver(a.version, b.version),
-  trust: (a, b) => byText(a.trust, b.trust),
-  origin: (a, b) => byText(a.origin, b.origin),
+  trust: (a, b) => TRUST_ORDER.indexOf(a.trust) - TRUST_ORDER.indexOf(b.trust),
+  origin: (a, b) => ORIGIN_ORDER.indexOf(a.origin) - ORIGIN_ORDER.indexOf(b.origin),
   usage: (a, b) => a.pages - b.pages,
 };
 

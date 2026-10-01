@@ -162,7 +162,7 @@ export const frAi = {
     publish: "Publier",
     modify: "Modifier avec l'IA",
     modifyTitle: (title: string) => `Modifier « ${title} » avec l'IA`,
-    modifySubtitle: (version: string, origin: string) => `Version actuelle ${version} · origine ${origin}`,
+    modifySubtitle: (version: string, origin: string) => `Version actuelle ${version} · ${origin}`,
     modifyField: "Ce qu'il faut changer",
     modifyHelp:
       "L'agent reprend le code actuel. La forme de la config ne peut pas changer : pour ça, passe par le code.",

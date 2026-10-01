@@ -1,5 +1,6 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { fr } from "../i18n/fr";
@@ -33,9 +34,16 @@ function TrustCell({ row, onReview }: { row: ComponentRow; onReview(): void }) {
         </Button>
       </span>
     );
-  return (
-    <span className={row.trust === "sandboxed" ? ORANGE : "text-muted-foreground"}>{c.trust[row.trust]}</span>
-  );
+  if (row.trust === "sandboxed")
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={`${ORANGE} cursor-help`}>{c.trust.sandboxed}</span>
+        </TooltipTrigger>
+        <TooltipContent>{c.sandboxedHelp}</TooltipContent>
+      </Tooltip>
+    );
+  return <span className="text-muted-foreground">{c.trust[row.trust]}</span>;
 }
 
 const originText = (row: ComponentRow) =>
@@ -138,7 +146,7 @@ export function ComponentsTable({
             <TableCell className={`${CELL} py-1.5 text-right`}>
               <span className="flex items-center justify-end gap-2">
                 <UpdateButton row={row} onUpdate={(to) => onUpdate(row, to)} />
-                <ComponentRowMenu row={row} {...menu} />
+                {!row.builtin && <ComponentRowMenu row={row} {...menu} />}
               </span>
             </TableCell>
           </TableRow>

@@ -67,7 +67,7 @@ beforeEach(() => {
 test("sends the change request then shows the draft panel", async () => {
   render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
   expect(screen.getByText("Modifier « Burndown » avec l'IA")).toBeTruthy();
-  expect(screen.getByText("Version actuelle 0.1.0 · origine IA")).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · Créé par l'IA")).toBeTruthy();
   const user = userEvent.setup();
   const launch = await screen.findByRole("button", { name: "Lancer l'agent" });
   expect(launch.hasAttribute("disabled")).toBe(true);
@@ -83,7 +83,7 @@ test("sends the change request then shows the draft panel", async () => {
 test("offline disables the agent with the reason", async () => {
   Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
   render(<ModifyWithAiDialog component={{ ...target, origin: "user" }} open onOpenChange={() => {}} />);
-  expect(screen.getByText("Version actuelle 0.1.0 · origine Toi")).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · Créé par toi")).toBeTruthy();
   expect(await screen.findByText("Hors ligne")).toBeTruthy();
 });
 

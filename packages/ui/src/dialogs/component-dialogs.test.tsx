@@ -107,7 +107,7 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(await screen.findByRole("radio", { name: "Burndown" })).toBeTruthy();
   expect(screen.getByText("Intégrés")).toBeTruthy();
   expect(screen.getByText("Mes composants")).toBeTruthy();
-  expect(screen.getByText("IA · autorisation requise")).toBeTruthy();
+  expect(screen.getByText("Créé par l'IA · autorisation requise")).toBeTruthy();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
   expect(screen.getByText("Widget dans la grille")).toBeTruthy();
   expect(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy();
@@ -131,7 +131,7 @@ test("a third-party line names origin, trust and network hosts", async () => {
   };
   components = () => Promise.resolve([{ ...burndown, id: "prs", title: "PR en attente", versions: [prs] }]);
   render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
-  expect(await screen.findByText("IA · sandboxé · GitHub")).toBeTruthy();
+  expect(await screen.findByText("Créé par l'IA · isolé · GitHub")).toBeTruthy();
 });
 
 test("a built-in is added directly in the next free slot", async () => {
@@ -211,7 +211,7 @@ test("TrustDialog: full trust is a choice, a changed hash is explained", async (
   const user = userEvent.setup();
   expect(screen.getByText("Lire les tickets du projet")).toBeTruthy();
   expect(screen.getByText("Aucun accès réseau, aucun fichier local")).toBeTruthy();
-  expect(screen.getByRole("radio", { name: /Sandboxé \(recommandé\)/ }).getAttribute("data-state")).toBe(
+  expect(screen.getByRole("radio", { name: /Isolé \(recommandé\)/ }).getAttribute("data-state")).toBe(
     "checked",
   );
   expect(screen.getByText(/processus séparé confiné par l'OS/)).toBeTruthy();

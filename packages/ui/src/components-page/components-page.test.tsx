@@ -127,14 +127,12 @@ test("screen 6: the table lists built-ins and installed versions", async () => {
   render(<ComponentsPage onOpen={() => undefined} />);
   const row = (await screen.findByText("PR en attente", { selector: "td" })).closest("tr");
   expect(row && within(row).getByText("0.3.0")).toBeTruthy();
-  expect(row && within(row).getByText("Sandboxé")).toBeTruthy();
-  expect(row && within(row).getByText("IA")).toBeTruthy();
+  expect(row && within(row).getByText("Isolé")).toBeTruthy();
+  expect(row && within(row).getByText("Créé par l'IA")).toBeTruthy();
   expect(row && within(row).getByText("1 page · 1 projet")).toBeTruthy();
   const kanban = screen.getByText("Kanban").closest("tr");
   expect(kanban && within(kanban).getByText("Intégré")).toBeTruthy();
-  expect(
-    kanban && within(kanban).getByRole("button", { name: "Actions Kanban 1.0.0" }).hasAttribute("disabled"),
-  ).toBe(true);
+  expect(screen.queryByRole("button", { name: "Actions pour Kanban 1.0.0" })).toBeNull();
 });
 
 test("D8: the kibo command card lives in the settings, not here", async () => {
@@ -221,22 +219,27 @@ test("publishing errors are explained", async () => {
   expect(screen.queryByRole("button", { name: "Publier 0.4.0" })).toBeNull();
 });
 
-test("D3: rehash, revoke and uninstall from the ⋯ menu", async () => {
+test("D3: verify the code, block and uninstall from the ⋯ menu, each confirmed", async () => {
   components = [prQueue([{ ...v030, usages: [] }])];
   render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Actions PR en attente 0.3.0" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Revérifier l'empreinte" }));
+  const menu = () => user.click(screen.getByRole("button", { name: "Actions pour PR en attente 0.3.0" }));
+  await screen.findByRole("button", { name: "Actions pour PR en attente 0.3.0" });
+  await menu();
+  await user.click(await screen.findByRole("menuitem", { name: "Vérifier le code" }));
   expect(await screen.findByText("Empreinte vérifiée.")).toBeTruthy();
   action = async () => {
     throw new KiboError("TRUST_REQUIRED", "changed");
   };
-  await user.click(screen.getByRole("button", { name: "Actions PR en attente 0.3.0" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Revérifier l'empreinte" }));
+  await menu();
+  await user.click(await screen.findByRole("menuitem", { name: "Vérifier le code" }));
   expect(await screen.findByText("L'empreinte a changé : la confiance est redemandée.")).toBeTruthy();
   action = async () => null;
-  await user.click(screen.getByRole("button", { name: "Actions PR en attente 0.3.0" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Retirer la confiance" }));
+  await menu();
+  await user.click(await screen.findByRole("menuitem", { name: "Bloquer ce composant…" }));
+  const block = await screen.findByRole("alertdialog", { name: "Bloquer PR en attente 0.3.0 ?" });
+  expect(within(block).getByText(/n'affichent plus rien/)).toBeTruthy();
+  await user.click(within(block).getByRole("button", { name: "Bloquer" }));
   await waitFor(() =>
     expect(calls.find((c) => c.method === "revokeComponent")).toEqual({
       method: "revokeComponent",
@@ -244,8 +247,12 @@ test("D3: rehash, revoke and uninstall from the ⋯ menu", async () => {
       version: "0.3.0",
     }),
   );
-  await user.click(screen.getByRole("button", { name: "Actions PR en attente 0.3.0" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Désinstaller" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  await menu();
+  await user.click(await screen.findByRole("menuitem", { name: "Désinstaller…" }));
+  const uninstall = await screen.findByRole("alertdialog", { name: "Désinstaller PR en attente 0.3.0 ?" });
+  expect(within(uninstall).getByText(/retiré de ton workspace/)).toBeTruthy();
+  await user.click(within(uninstall).getByRole("button", { name: "Désinstaller" }));
   await waitFor(() =>
     expect(calls.find((c) => c.method === "uninstallComponent")).toEqual({
       method: "uninstallComponent",
@@ -253,6 +260,27 @@ test("D3: rehash, revoke and uninstall from the ⋯ menu", async () => {
       version: "0.3.0",
     }),
   );
+});
+
+test("Escape sends nothing; an error stays in the confirmation", async () => {
+  components = [prQueue([{ ...v030, usages: [] }])];
+  render(<ComponentsPage onOpen={() => undefined} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions pour PR en attente 0.3.0" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Bloquer ce composant…" }));
+  await screen.findByRole("alertdialog", { name: "Bloquer PR en attente 0.3.0 ?" });
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(calls.filter((c) => c.method === "revokeComponent")).toEqual([]);
+  action = () => Promise.reject(new KiboError("CONFLICT", "used"));
+  await user.click(screen.getByRole("button", { name: "Actions pour PR en attente 0.3.0" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Désinstaller…" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Désinstaller PR en attente 0.3.0 ?" });
+  await user.click(within(dialog).getByRole("button", { name: "Désinstaller" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe(
+    "Ce composant est en cours de publication : réessaie dans un instant.",
+  );
+  expect(screen.getByRole("alertdialog")).toBeTruthy();
 });
 
 test("a used version cannot be uninstalled; a pending one can be reviewed", async () => {
@@ -264,8 +292,8 @@ test("a used version cannot be uninstalled; a pending one can be reviewed", asyn
   ];
   render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Actions PR en attente 0.3.0" }));
-  expect((await screen.findByRole("menuitem", { name: "Désinstaller" })).getAttribute("aria-disabled")).toBe(
+  await user.click(await screen.findByRole("button", { name: "Actions pour PR en attente 0.3.0" }));
+  expect((await screen.findByRole("menuitem", { name: "Désinstaller…" })).getAttribute("aria-disabled")).toBe(
     "true",
   );
   await user.keyboard("{Escape}");
@@ -295,7 +323,10 @@ test("drafts: validated ones can be published, others show the command", async (
   render(<ComponentsPage onOpen={() => undefined} />);
   expect(await screen.findByText("Brouillons")).toBeTruthy();
   expect(screen.getByText("Tests verts")).toBeTruthy();
-  expect(screen.getByText("À valider : kibo component test burndown")).toBeTruthy();
+  expect(screen.getByText("À valider : lance les tests du composant (commande dans Détails)")).toBeTruthy();
+  expect(screen.queryByText("kibo component test burndown")).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Détails" }));
+  expect(screen.getByText("kibo component test burndown")).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "Publier" })).toHaveLength(1);
 });
 
@@ -310,7 +341,7 @@ test("modify with AI: only for user and ai components, opens the dialog", async 
   render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   const entries = async (version: string) => {
-    await user.click(await screen.findByRole("button", { name: `Actions PR en attente ${version}` }));
+    await user.click(await screen.findByRole("button", { name: `Actions pour PR en attente ${version}` }));
     const names = (await screen.findAllByRole("menuitem")).map((i) => i.textContent);
     await user.keyboard("{Escape}");
     return names.includes("Modifier avec l'IA");
@@ -318,11 +349,11 @@ test("modify with AI: only for user and ai components, opens the dialog", async 
   expect(await entries("0.3.0")).toBe(true);
   expect(await entries("0.2.0")).toBe(false);
   expect(await entries("0.1.0")).toBe(true);
-  expect(screen.getByRole("button", { name: "Actions Kanban 1.0.0" }).hasAttribute("disabled")).toBe(true);
-  await user.click(screen.getByRole("button", { name: "Actions PR en attente 0.1.0" }));
+  expect(screen.queryByRole("button", { name: "Actions pour Kanban 1.0.0" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Actions pour PR en attente 0.1.0" }));
   await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
   expect(await screen.findByRole("dialog", { name: "Modifier « PR en attente » avec l'IA" })).toBeTruthy();
-  expect(screen.getByText("Version actuelle 0.1.0 · origine Toi")).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · Créé par toi")).toBeTruthy();
 });
 
 test("the components page offers the Installed and Marketplace tabs", async () => {

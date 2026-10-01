@@ -85,3 +85,14 @@ test("versions compare as semver, not as text", () => {
     "1.10.0",
   ]);
 });
+
+test("trust and origin sort in the order of their filters, not by internal key", () => {
+  const all = [
+    ...rows,
+    row({ key: "t", id: "mine", title: "Mine", builtin: false, trust: "trusted", origin: "user" }),
+  ];
+  const byTrust = filterComponents(all, { ...DEFAULT_QUERY, sort: "trust" }).map((r) => r.id);
+  expect(byTrust).toEqual(["kanban", "mine", "meteo", "acme.bug"]);
+  const byOrigin = filterComponents(all, { ...DEFAULT_QUERY, sort: "origin" }).map((r) => r.id);
+  expect(byOrigin).toEqual(["kanban", "mine", "acme.bug", "meteo"]);
+});

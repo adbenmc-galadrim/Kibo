@@ -1,6 +1,7 @@
 import type { DraftSummary } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { fr } from "../i18n/fr";
+import { DetailsBlock } from "./DetailsBlock";
 
 type Props = { drafts: DraftSummary[]; onPublish(id: string): void };
 
@@ -8,8 +9,13 @@ function DraftState({ draft, onPublish }: { draft: DraftSummary; onPublish(id: s
   const c = fr.components;
   if (!draft.validated)
     return (
-      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-        {c.draftPending(draft.id)}
+      <span className="grid justify-items-end gap-1">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {c.draftPending}
+        </span>
+        <DetailsBlock label={c.details}>
+          <span>{c.draftCommand(draft.id)}</span>
+        </DetailsBlock>
       </span>
     );
   return (
