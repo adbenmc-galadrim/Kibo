@@ -1,6 +1,7 @@
 export const fr = {
-  filter: { mineAndAgents: "Moi + agents", all: "Tous" },
-  counter: (shown: number, total: number) => `${shown} / ${total} tickets`,
+  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", all: "Tous" },
+  counter: (shown: number, total: number, filter: string) => `${shown} / ${total} · ${filter}`,
+  hidden: (n: number) => `${n} masqué${n > 1 ? "s" : ""} · Tout afficher`,
   newTicketIn: (status: string) => `Nouveau ticket dans ${status}`,
   actions: (key: string) => `Actions ${key}`,
   moveTo: "Déplacer vers",

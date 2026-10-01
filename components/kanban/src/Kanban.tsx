@@ -17,7 +17,6 @@ import {
   useSdk,
   useSharing,
 } from "@kibo/sdk";
-import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useState } from "react";
 import { announce } from "./announcements";
@@ -28,6 +27,7 @@ import { filterTickets, type KanbanFilter } from "./filter";
 import { fr } from "./fr";
 import { type CiChip, ciChipOf, KanbanCard } from "./KanbanCard";
 import { KanbanColumn } from "./KanbanColumn";
+import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
 import { useColumnOrder } from "./use-column-order";
 
@@ -113,19 +113,9 @@ export function Kanban() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-10 items-center gap-2 border-b px-3 text-sm">
-        <Button
-          size="sm"
-          variant={filter === "mine-and-agents" ? "secondary" : "ghost"}
-          onClick={() => setFilter("mine-and-agents")}
-        >
-          {fr.filter.mineAndAgents}
-        </Button>
-        <Button size="sm" variant={filter === "all" ? "secondary" : "ghost"} onClick={() => setFilter("all")}>
-          {fr.filter.all}
-        </Button>
+      <KanbanToolbar filter={filter} onFilter={setFilter} shown={shown.length} total={scoped.length}>
         {error && !blocking && (
-          <p role="alert" className="text-destructive">
+          <p role="alert" className="truncate text-destructive">
             {error}
           </p>
         )}
@@ -139,10 +129,7 @@ export function Kanban() {
             {fr.ciUnavailable(ciProblem)}
           </p>
         )}
-        <span className="ml-auto font-mono text-xs text-muted-foreground">
-          {fr.counter(shown.length, scoped.length)}
-        </span>
-      </header>
+      </KanbanToolbar>
       <DndContext
         sensors={readOnly ? [] : sensors}
         onDragOver={onDragOver}
@@ -160,7 +147,7 @@ export function Kanban() {
               status={s}
               ids={visible[s.id] ?? []}
               targeted={targetColumn === s.id}
-              onAdd={readOnly || s.id === "blocked" ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
+              onAdd={readOnly ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
             >
               {(columns.get(s.id) ?? []).map((t) => (
                 <KanbanCard

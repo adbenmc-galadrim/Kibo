@@ -18,7 +18,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await createTicket(page, "Nouveau ticket dans À faire", "Écrire le plan");
   const todo = page.getByRole("region", { name: "À faire" });
   await expect(todo.getByText(`${key}-1`)).toBeVisible();
-  await expect(page.getByText("1 / 1 tickets")).toBeVisible();
+  await expect(page.getByText("1 / 1 · Moi + agents")).toBeVisible();
 
   await todo.getByRole("button", { name: `Actions ${key}-1` }).click();
   await page.getByRole("menuitem", { name: "Déplacer vers" }).click();
@@ -66,7 +66,7 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   await expect(tickets).toBeVisible();
   await expect(todo).toBeVisible();
   const left = await tickets.boundingBox();
-  const right = await page.getByText("0 / 0 tickets").boundingBox();
+  const right = await page.getByText("0 / 0 · Moi + agents").boundingBox();
   expect(left && right && left.x + left.width <= right.x).toBe(true);
 
   await createTicket(page, "Nouveau ticket", "Préparer la démo");
@@ -82,7 +82,7 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   await expect(tickets.getByText("0/1")).toBeVisible();
   const parentCard = todo.getByRole("article").filter({ hasText: `${key}-1` });
   await expect(parentCard.getByText("0/1")).toBeVisible();
-  await expect(page.getByText("2 / 2 tickets")).toBeVisible();
+  await expect(page.getByText("2 / 2 · Moi + agents")).toBeVisible();
 
   await parentCard.getByRole("button", { name: "Préparer la démo" }).click();
   const sheet = page.getByRole("dialog");

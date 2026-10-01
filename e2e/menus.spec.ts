@@ -38,7 +38,7 @@ test("menus des pages, fiche ticket éditable, annulation d'un fichier", async (
   const ticketKey = text(ticket, "key");
 
   const card = page.getByRole("button", { name: "Schéma Loro des tickets", exact: true });
-  await page.getByRole("button", { name: "Tous", exact: true }).click();
+  await page.getByRole("radio", { name: "Tous", exact: true }).click();
   await expect(card).toBeVisible();
   await card.click();
   const sheet = page.getByRole("dialog").filter({ hasText: ticketKey });

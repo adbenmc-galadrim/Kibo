@@ -58,7 +58,7 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   expect(within(todo).getByText("À faire")).toBeTruthy();
   expect(within(todo).getByText("2")).toBeTruthy();
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
-  expect(screen.getByText("5 / 6 tickets")).toBeTruthy();
+  expect(screen.getByText("5 / 6 · Moi + agents")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
 });
 
@@ -123,11 +123,15 @@ test("Ouvrir from the menu opens the ticket in the host", async () => {
   expect(m.opened).toEqual([id]);
 });
 
-test("the column '+' asks the host for a new ticket in that status", async () => {
+test("the column '+' asks the host for a new ticket in that status, Bloqué included", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Nouveau ticket dans En cours" }));
-  expect(m.newTicketRequests).toEqual([{ statusId: "in_progress", instanceId: "mock-instance" }]);
+  await user.click(screen.getByRole("button", { name: "Nouveau ticket dans Bloqué" }));
+  expect(m.newTicketRequests).toEqual([
+    { statusId: "in_progress", instanceId: "mock-instance" },
+    { statusId: "blocked", instanceId: "mock-instance" },
+  ]);
 });
 
 const setupFailing = () => {
@@ -239,7 +243,7 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
   expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
   expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
   expect(screen.queryByText("Ticket local")).toBeNull();
-  expect(screen.getByText("3 / 3 tickets")).toBeTruthy();
+  expect(screen.getByText("3 / 3 · Tous")).toBeTruthy();
   const chip = await screen.findByLabelText("CI cassée");
   expect(chip.parentElement?.textContent).toBe("#12");
   expect(screen.queryByLabelText("CI réussie")).toBeNull();
