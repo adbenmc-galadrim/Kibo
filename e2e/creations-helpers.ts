@@ -19,7 +19,7 @@ export async function pairOnComponents(page: Page, info: TestInfo) {
   if (info.project.name.endsWith("dark")) await expect(html).toHaveClass(/dark/);
   else await expect(html).not.toHaveClass(/dark/);
   await page.goto("/#/components");
-  await expect(page.getByRole("heading", { name: "Composants", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Composants", level: 1 }).last()).toBeVisible();
 }
 
 export const createDialog = (page: Page): Locator => page.getByRole("dialog", { name: "Créer un composant" });
