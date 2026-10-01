@@ -1319,7 +1319,7 @@ Vague 3 ← T53, T54. Spec IA §13 entière ; écrans 130 à 135. Ports **4425�
 **Interfaces:**
 - Consumes: aides E2E existantes (`startDaemon({ port, claudeBin, scenario })`, `pair`, `openProject`) ; `page.setInputFiles` ; scénarios `generate-revise.json`, `generate-fixed-width.json` (T51).
 
-- [ ] **Step 1: Parcours (test rouge puis vert)**
+- [x] **Step 1: Parcours (test rouge puis vert)**
 
 ```ts
 test("créer deux composants en arrière-plan, prévisualiser, réviser, publier", async ({ page }) => {
@@ -1353,7 +1353,7 @@ test("la fenêtre reste bornée à 700 px de haut", async ({ page }) => { /* vie
 ```
 `e2e/fixtures/maquette.png` : un PNG 1 × 1 valide généré par le test (`Buffer.from(base64)`) écrit dans un dossier temporaire plutôt que commis, si les fixtures binaires sont absentes de `e2e/` (`ls e2e/fixtures 2>/dev/null`). Run: `bunx playwright test e2e/creations.spec.ts` — Expected: PASS deux fois de suite.
 
-- [ ] **Step 2: Captures, gate et commit**
+- [x] **Step 2: Captures, gate et commit**
 
 Captures `screens/t55/` : 130 à 135 en sombre et en clair, prises par le test (`page.screenshot`) après `page.emulateMedia({ colorScheme })`.
 Run: `bun run check && bun run typecheck && bunx playwright test` — Expected: PASS.
