@@ -1902,7 +1902,7 @@ Vague 4 ← tout. Deux specs Playwright, en sombre et en clair (ports **4419–4
 - Consumes: `pairAndCreateProject`, `createRepoProject`, `projectKey`, `shot`, `rpc`, `seedWorkspace`, `assign` (`agents-seed.ts`), `E2E_TOKEN`, `createE2eRepo`, `createSidebarPage`, `addComponent`.
 - Produces: rien (dernière tâche).
 
-- [ ] **Step 1: Quatre démons de plus**
+- [x] **Step 1: Quatre démons de plus**
 
 `e2e/playwright.config.ts`, après la ligne `projects-light` (T28) ou `menus-light` si T28 n'est pas livrée :
 ```ts
@@ -1912,7 +1912,7 @@ Vague 4 ← tout. Deux specs Playwright, en sombre et en clair (ports **4419–4
   { name: "confort-light", scheme: "light", port: 4422, spec: /confort\.spec\.ts/, scenario: "question" },
 ```
 
-- [ ] **Step 2: Boîte de réception (rouge tant que l'UI n'est pas intégrée, vert ensuite)**
+- [x] **Step 2: Boîte de réception (rouge tant que l'UI n'est pas intégrée, vert ensuite)**
 
 `e2e/inbox.spec.ts` :
 ```ts
@@ -1962,7 +1962,7 @@ test("un ticket sans projet, puis rattaché avec une nouvelle clé", async ({ pa
 (`pairAndCreateProject` appaire déjà : vérifier son comportement si la page est déjà appairée et, si besoin, créer le projet par `rpc(page, { method: "createProject", … })` à la place ; la clé `INX` évite tout doublon.)
 Run: `cd e2e && bunx playwright test --project=inbox-dark --project=inbox-light` — Expected: PASS, captures `ecran-113/114/115.png`.
 
-- [ ] **Step 3: Confort et lisibilité**
+- [x] **Step 3: Confort et lisibilité**
 
 `e2e/confort.spec.ts` : un test par zone, dans un même fichier (démon partagé) :
 - **Composants** : `/#/components`, recherche « kanban », filtre « Kibo », tri par « Utilisé dans », clic sur « n pages · n projets » d'un composant posé par `createSidebarPage` + `addComponent`, le volet ouvre la page ; capture `ecran-116`.
@@ -1973,7 +1973,7 @@ Run: `cd e2e && bunx playwright test --project=inbox-dark --project=inbox-light`
 - **Chargement** : impossible avec `webServer` (le démon tourne) : couvert par `app.test.tsx` ; noter l'écart.
 Run: `cd e2e && bunx playwright test --project=confort-dark --project=confort-light` — Expected: PASS.
 
-- [ ] **Step 4: Gate et commit**
+- [x] **Step 4: Gate et commit**
 
 Run: `bun run check && bun run typecheck` — Expected: PASS.
 
