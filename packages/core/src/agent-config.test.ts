@@ -238,7 +238,7 @@ describe("system profiles", () => {
       system.map((p) => [p.id, p.permissionMode, p.model, p.enabled, p.maxParallel, p.workspace]),
     ).toEqual([
       ["assistant", "default", "opus", true, 1, "isolated"],
-      ["generateur", "acceptEdits", "opus", true, 1, "isolated"],
+      ["generateur", "acceptEdits", "opus", true, 2, "isolated"],
     ]);
   });
 
@@ -260,7 +260,7 @@ describe("system profiles", () => {
     ensureSystemProfiles(ws);
     ws.getMap("profiles").set("assistant", {
       ...getProfile(ws, "assistant"),
-      maxParallel: 4,
+      maxParallel: 9,
       model: "haiku",
     });
     ws.commit();
