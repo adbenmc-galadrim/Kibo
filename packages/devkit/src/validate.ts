@@ -17,14 +17,11 @@ import { z } from "zod";
 import type { BunCommand } from "./bun-command";
 import { FR_DEVKIT, formatIssue } from "./fr";
 import { listSourceFiles, readSources } from "./hash";
-import { checkImports } from "./imports";
-import { inferPermissions } from "./infer-permissions";
 import type { OsSandbox } from "./os-sandbox";
 import { responsiveViolations } from "./responsive";
 import { CONFORMANCE_TEST } from "./scaffold";
+import { runStaticCheck } from "./static-check-run";
 import type { Toolchain } from "./toolchain";
-import { typecheckComponent } from "./typecheck";
-import { loadTypeScript } from "./typescript";
 import { assertNotAborted, runComponentTests } from "./validate-tests";
 
 export type ValidateOptions = {
@@ -128,13 +125,13 @@ async function checkCopy(
   opts: ValidateOptions,
   report: ValidationReport,
 ): Promise<void> {
-  const ts = await loadTypeScript(opts.toolchain);
   const checked = files.filter((f) => /\.(tsx?|css)$/.test(f));
   const texts = await Promise.all(
     checked.map(async (path) => ({ path, text: await readFile(join(copy, path), "utf8") })),
   );
-  report.imports = step(checkImports(ts, texts).map(formatIssue));
-  report.typecheck = step(typecheckComponent(ts, copy, files, opts.toolchain));
+  const analysis = await runStaticCheck(copy, files, opts);
+  report.imports = step(analysis.imports.map(formatIssue));
+  report.typecheck = step(analysis.typecheck);
   if (opts.conformanceOnly) await useGenericSuite(copy, files);
   const tests = await runComponentTests(
     copy,
@@ -142,7 +139,7 @@ async function checkCopy(
   );
   report.tests = tests.report;
 
-  const inference = await inferPermissions(copy, opts.toolchain);
+  const { inference } = analysis;
   const declared = permissionList(grantedOf(manifest));
   const used = [...new Set([...inference.used, ...(tests.used ?? [])])].sort();
   const diff = diffPermissions(declared, used);

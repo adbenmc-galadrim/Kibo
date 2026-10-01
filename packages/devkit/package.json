@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./preload/happydom": "./src/preload/happydom.ts",
     "./preload/restrict": "./src/preload/restrict.ts",
+    "./static-check": "./src/static-check-main.ts",
     "./test-kit": "./src/test-kit.ts"
   },
   "dependencies": {
