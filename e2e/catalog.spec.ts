@@ -49,10 +49,10 @@ test("publier, autoriser, rendre en sandbox, mettre à jour partout", async ({ p
   const trust = page.getByRole("dialog", { name: `Autoriser « ${TITLE} » 0.1.0 ?` });
   await expect(trust.getByText("Lire les tickets du projet")).toBeVisible({ timeout: 60_000 });
   await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toBeVisible();
-  await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
+  await expect(trust.getByRole("radio", { name: /Isolé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
-  await expect(page.getByRole("row", { name: new RegExp(`${TITLE}.*0\\.1\\.0.*Sandboxé`) })).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(`${TITLE}.*0\\.1\\.0.*Isolé`) })).toBeVisible();
 
   for (const pageTitle of ["Tableau A", "Tableau B"]) {
     await createSidebarPage(page, `Kibo ${key}`, pageTitle, "Tableau de bord");

@@ -31,14 +31,14 @@ async function waitForDaemon(request: APIRequestContext, theme: Theme) {
 
 async function openSources(page: Page) {
   await page.getByRole("button", { name: "Paramètres" }).click();
-  await page.getByRole("link", { name: "Composants" }).click();
-  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+  await page.getByRole("link", { name: "Sources de composants" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Sources de composants" })).toBeVisible();
 }
 
 async function refreshSource(page: Page, serial: number) {
   await openSources(page);
   await page.getByRole("button", { name: "Actions Équipe" }).click();
-  await page.getByRole("menuitem", { name: "Rafraîchir" }).click();
+  await page.getByRole("menuitem", { name: "Rafraîchir cette source" }).click();
   const source = page
     .getByRole("row")
     .filter({ has: page.getByRole("cell", { name: "Équipe", exact: true }) });
@@ -54,7 +54,7 @@ async function approveSandboxed(page: Page, subtitle: string) {
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText(subtitle)).toBeVisible();
   await expect(dialog.getByText("Ce code vient d'une marketplace.")).toBeVisible();
-  await dialog.getByRole("radio", { name: /Sandboxé/ }).click();
+  await dialog.getByRole("radio", { name: /Isolé/ }).click();
   await dialog.getByRole("button", { name: "Autoriser" }).click();
   await expect(dialog).toBeHidden();
 }

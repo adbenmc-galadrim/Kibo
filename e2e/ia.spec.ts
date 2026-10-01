@@ -106,7 +106,7 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
   await create.getByRole("button", { name: "J'ai relu, continuer" }).click();
   await expect(trust).toBeVisible();
   await expect(create).toBeHidden();
-  await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
+  await expect(trust.getByRole("radio", { name: /Isolé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
   await expect(trust).toBeHidden({ timeout: 60_000 });
 
