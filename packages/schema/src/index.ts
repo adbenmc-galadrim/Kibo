@@ -13,6 +13,7 @@ export * from "./github-errors";
 export * from "./github-graphql";
 export * from "./icon";
 export * from "./ids";
+export * from "./inbox";
 export * from "./instance";
 export * from "./integrations";
 export * from "./integrations-rpc";

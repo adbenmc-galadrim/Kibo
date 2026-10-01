@@ -88,6 +88,12 @@ export const RpcRequest = z.discriminatedUnion("method", [
     instanceId: z.string().min(1).optional(),
     command: ProjectCommand,
   }),
+  z.object({
+    method: z.literal("fileTicket"),
+    ticketId: NodeId,
+    projectId: z.string().min(1),
+    parentId: NodeId.nullable().optional(),
+  }),
   z.object({ method: z.literal("getConfig") }),
   z.object({ method: z.literal("config"), command: ConfigCommand }),
   z.object({ method: z.literal("getAgents") }),
@@ -177,6 +183,7 @@ export type RpcResult = {
   deleteProject: null;
   setIcon: { icon: string | null };
   command: unknown;
+  fileTicket: { ticketId: string; key: string | null };
   getConfig: WorkspaceConfig;
   config: unknown;
   getAgents: AgentsState;

@@ -27,6 +27,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     title: z.string(),
     description: z.string().optional(),
     statusId: StatusId.optional(),
+    blockedReason: z.string().optional(),
     parentId: NodeId.nullable().optional(),
     assignee: Assignee.nullable().optional(),
   }),

@@ -54,8 +54,22 @@ describe("status", () => {
     expect(setStatus(d, t.id, "in_progress").blockedReason).toBeNull();
   });
 
-  test("a ticket cannot be created already blocked", () => {
-    expect(() => createTicket(doc(), { title: "X", statusId: "blocked" })).toThrow("BLOCKED_REASON_REQUIRED");
+  test("a ticket can be born blocked when a reason is given, and not otherwise", () => {
+    const d = doc();
+    const t = createTicket(d, {
+      title: "Audit",
+      statusId: "blocked",
+      blockedReason: " Audit externe en attente ",
+    });
+    expect([t.statusId, t.blockedReason]).toEqual(["blocked", "Audit externe en attente"]);
+    expect(() => createTicket(d, { title: "B", statusId: "blocked", blockedReason: "   " })).toThrow(
+      "BLOCKED_REASON_REQUIRED",
+    );
+    expect(() => createTicket(d, { title: "C", statusId: "blocked" })).toThrow("BLOCKED_REASON_REQUIRED");
+    expect(
+      createTicket(d, { title: "D", statusId: "todo", blockedReason: "ignored" }).blockedReason,
+    ).toBeNull();
+    expect(listTickets(d).map((x) => x.title)).toEqual(["Audit", "D"]);
   });
 });
 

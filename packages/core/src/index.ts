@@ -12,6 +12,7 @@ export * from "./registry";
 export * from "./share-migration";
 export * from "./sync-plan";
 export * from "./tickets";
+export * from "./transfer";
 export * from "./tree";
 export { depthViolation, MAX_CONTAINER_DEPTH, MAX_TREE_DEPTH, projectDepthViolation } from "./update-depth";
 export * from "./validate-bindings";
