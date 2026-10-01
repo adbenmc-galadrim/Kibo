@@ -16,7 +16,7 @@ export type TestRunOptions = {
 export type TestRun = { report: ValidationReport["tests"]; used: string[] | null };
 
 const OUTPUT_LIMIT = 8_000;
-const DEFAULT_TIMEOUT_MS = 120_000;
+export const DEFAULT_TIMEOUT_MS = 120_000;
 
 function countOf(xml: string, attr: string): number {
   const match = xml.match(new RegExp(`<testsuites[^>]*\\b${attr}="(\\d+)"`));

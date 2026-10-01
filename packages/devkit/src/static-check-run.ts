@@ -1,13 +1,37 @@
 import { dirname } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { type BunCommand, bunCommand } from "./bun-command";
+import { FR_DEVKIT } from "./fr";
 import { StaticCheck } from "./static-check";
 import type { Toolchain } from "./toolchain";
-import { assertNotAborted } from "./validate-tests";
+import { assertNotAborted, DEFAULT_TIMEOUT_MS } from "./validate-tests";
 
-export type StaticCheckOptions = { toolchain: Toolchain; bun?: BunCommand; signal?: AbortSignal };
+export type StaticCheckOptions = {
+  toolchain: Toolchain;
+  bun?: BunCommand;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+};
 
 const STDERR_LIMIT = 2_000;
+
+const timedOut = (timeoutMs: number): StaticCheck => ({
+  imports: [],
+  typecheck: [FR_DEVKIT.timeout(timeoutMs / 1000)],
+  inference: { used: [], issues: [] },
+});
+
+function parseReport(stdout: string): StaticCheck {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(stdout);
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) throw e;
+  }
+  const parsed = StaticCheck.safeParse(raw);
+  if (!parsed.success) throw new KiboError("INTERNAL", "static check returned an invalid report");
+  return parsed.data;
+}
 
 export async function runStaticCheck(
   copy: string,
@@ -28,6 +52,12 @@ export async function runStaticCheck(
   const stop = () => {
     if (proc.exitCode === null && proc.signalCode === null) proc.kill();
   };
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  let expired = false;
+  const timer = setTimeout(() => {
+    expired = true;
+    stop();
+  }, timeoutMs);
   opts.signal?.addEventListener("abort", stop, { once: true });
   try {
     const [stdout, stderr, code] = await Promise.all([
@@ -36,10 +66,12 @@ export async function runStaticCheck(
       proc.exited,
     ]);
     assertNotAborted(opts.signal);
+    if (expired) return timedOut(timeoutMs);
     if (code !== 0)
       throw new KiboError("INTERNAL", `static check exited with ${code}: ${stderr.slice(-STDERR_LIMIT)}`);
-    return StaticCheck.parse(JSON.parse(stdout));
+    return parseReport(stdout);
   } finally {
+    clearTimeout(timer);
     opts.signal?.removeEventListener("abort", stop);
     stop();
   }
