@@ -25,11 +25,13 @@ L'aperçu d'un brouillon généré par l'IA a besoin de WebAssembly pour ses don
 ## Corrigé à la CI de la PR
 
 - Interblocage de la coque au démarrage sur macOS (double `restore_state`, depuis la vague 1) : corrigé, test de démarrage vert en local. Pour reproduire un défaut de coque : `CARGO_TARGET_DIR=<dépôt>/apps/desktop/src-tauri/target bun run --cwd apps/desktop build:debug`, puis `KIBO_SMOKE=1 KIBO_HOME=<dossier vide> apps/desktop/src-tauri/target/debug/kibo` (doit sortir en 0 en quelques secondes ; `sample <pid>` montre la pile s'il reste bloqué).
-- `creations.spec.ts` et `market.spec.ts` : délais d'assertion explicites (le démon ne répond plus pendant plusieurs secondes sur un runner lent pendant la validation d'un brouillon).
+- Démon muet pendant la validation d'un composant (contrôle de types synchrone dans son processus, 6 à 10,5 s sur le runner ; le hook d'un agent parallèle expirait à 5 s et son écriture était refusée) : contrôle de types et inférence déplacés dans un sous-processus de la chaîne d'outils (`packages/devkit/src/static-check*.ts`, spec composants §7.4).
+- `creations.spec.ts` et `market.spec.ts` : délais d'assertion explicites ; titre « Composants » ciblé sans ambiguïté.
+- Lire une CI rouge : `gh run view <run> --log-failed`, `gh run download <run> -n playwright-ubuntu-latest` (le `trace.zip` contient les requêtes réseau et leurs durées, `error-context.md` l'état de la page). Un job annulé par l'échec de l'autre système n'apprend rien.
 
 ## Suivis à prendre en premier après le jalon
 
-- Démon muet plusieurs secondes pendant la validation d'un brouillon sur une machine lente : localiser le travail synchrone et le sortir du fil du démon.
+- Sous-processus de contrôle de types à placer dans le bac à sable OS (décider d'abord du comportement sans bac à sable) ; construction Tailwind encore sur le fil du démon.
 - Deux `h1` sur Composants et Boîte de réception (`HEADING_SCREENS` dans `packages/ui/src/shell/ShellHeader.tsx` et le `h1` de la page) : retirer ces écrans de la liste.
 - Test de démarrage de la coque dans la gate locale des tâches qui touchent `apps/desktop`.
 - Relecture non remise à zéro si l'interface n'observe pas `generating` après une révision (`packages/ui/src/ai/AiDraftPanel.tsx:48-52`, déclencher aussi sur `details.revisions`).
