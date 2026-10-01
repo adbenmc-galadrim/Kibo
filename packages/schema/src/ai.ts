@@ -62,6 +62,7 @@ export type DraftIncident = z.infer<typeof DraftIncident>;
 export const MAX_DRAFT_ATTEMPTS = 3;
 export const MAX_DRAFT_REVISIONS = 10;
 export const MAX_DRAFT_ATTACHMENTS = 4;
+export const MAX_DRAFT_ATTACHMENTS_TOTAL = MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_REVISIONS + 1);
 
 export const DraftAttachmentName = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
 export const DraftAttachmentInput = IconInput.extend({ name: DraftAttachmentName });
@@ -89,10 +90,7 @@ export const ComponentDraft = z.object({
   attempts: z.number().int().min(0).max(MAX_DRAFT_ATTEMPTS),
   failure: DraftFailure.nullable(),
   incidents: z.array(DraftIncident),
-  attachments: z
-    .array(DraftAttachment)
-    .max(MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_REVISIONS + 1))
-    .default([]),
+  attachments: z.array(DraftAttachment).max(MAX_DRAFT_ATTACHMENTS_TOTAL).default([]),
   revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),

@@ -18,7 +18,7 @@ export function sniffIconMime(bytes: Uint8Array): IconMime | null {
 function decodeBase64(data: string): Uint8Array {
   const buffer = Buffer.from(data, "base64");
   if (data.length % 4 !== 0 || buffer.toString("base64") !== data) {
-    throw new KiboError("INVALID_INPUT", "icon data is not valid base64");
+    throw new KiboError("INVALID_INPUT", "image data is not valid base64");
   }
   return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 }
@@ -26,10 +26,10 @@ function decodeBase64(data: string): Uint8Array {
 export function decodeIcon(input: IconInput): { mime: IconMime; bytes: Uint8Array } {
   const bytes = decodeBase64(input.data);
   if (bytes.byteLength > MAX_ICON_BYTES) {
-    throw new KiboError("TOO_LARGE", `icon is ${bytes.byteLength} bytes, at most ${MAX_ICON_BYTES}`);
+    throw new KiboError("TOO_LARGE", `image is ${bytes.byteLength} bytes, at most ${MAX_ICON_BYTES}`);
   }
   if (sniffIconMime(bytes) !== input.mime) {
-    throw new KiboError("INVALID_INPUT", `icon bytes are not ${input.mime}`);
+    throw new KiboError("INVALID_INPUT", `image bytes are not ${input.mime}`);
   }
   return { mime: input.mime, bytes };
 }
