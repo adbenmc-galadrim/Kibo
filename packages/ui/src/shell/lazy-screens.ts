@@ -128,3 +128,7 @@ export const UserMenuContent = lazyPanel(
   fr.lazy,
   hidden,
 );
+const daemonUnreachable = () => import("./DaemonUnreachable").then((m) => m.DaemonUnreachable);
+
+export const preloadDaemonUnreachable = daemonUnreachable;
+export const DaemonUnreachable = lazyPanel(daemonUnreachable, fr.lazy);

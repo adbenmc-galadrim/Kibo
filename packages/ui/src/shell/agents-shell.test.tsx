@@ -75,7 +75,7 @@ mock.module("../api", () => ({
   },
 }));
 mock.module("../state/use-projects", () => ({
-  useProjects: () => projectsFixture,
+  useProjects: () => ({ projects: projectsFixture, error: null, retry: () => {} }),
   useProject: (id: string | null) => (id === "kibo" ? kiboProject() : null),
 }));
 mock.module("../state/use-agents", () => ({

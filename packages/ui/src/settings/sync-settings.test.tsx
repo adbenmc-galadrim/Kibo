@@ -267,12 +267,12 @@ test("connection errors are translated in the server card", async () => {
 
 test("the agent bar indicator follows the daemon and the connection", async () => {
   const cases: [SyncStatus, boolean, string][] = [
-    [unconfigured, true, "Démon local"],
-    [unconfigured, false, "Démon injoignable"],
-    [online, true, "Démon local · synchronisé"],
-    [{ ...online, state: "connecting" }, true, "Démon local · synchronisation…"],
-    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Démon local · hors ligne"],
-    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Démon local · erreur de sync"],
+    [unconfigured, true, "Kibo · connecté"],
+    [unconfigured, false, "Kibo · hors ligne"],
+    [online, true, "Kibo · connecté · synchronisé"],
+    [{ ...online, state: "connecting" }, true, "Kibo · connecté · synchronisation…"],
+    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Kibo · connecté · hors ligne"],
+    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Kibo · connecté · erreur de sync"],
   ];
   for (const [status, daemonOnline, label] of cases) {
     results.getSyncStatus = () => Promise.resolve(status);

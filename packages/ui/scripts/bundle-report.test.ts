@@ -95,6 +95,8 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/settings/AppearancePage.tsx",
       "/Kibo/packages/ui/src/settings/SecurityPage.tsx",
       "/Kibo/packages/ui/src/settings/WebAccessCard.tsx",
+      "/Kibo/packages/ui/src/shell/DaemonUnreachable.tsx",
+      "/Kibo/packages/ui/src/i18n/fr-startup.ts",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [
@@ -103,6 +105,8 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/agents/AgentPanel.tsx",
       "/Kibo/packages/ui/src/shell/use-update-schedule.ts",
       "/Kibo/components/mcp-source/src/config.ts",
+      "/Kibo/packages/ui/src/shell/Startup.tsx",
+      "/Kibo/packages/ui/src/shell/RootBoundary.tsx",
     ])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(false);
   });

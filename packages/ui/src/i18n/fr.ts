@@ -8,7 +8,12 @@ import { frMarket } from "./fr-market";
 import { frSecurity } from "./fr-security";
 
 export const fr = {
-  app: { name: "Kibo" },
+  app: {
+    name: "Kibo",
+    loading: "Chargement de Kibo…",
+    crashed: "Quelque chose s'est mal passé",
+    reload: "Recharger",
+  },
   lazy: { loading: "Chargement…", failed: "Impossible de charger cet écran.", retry: "Réessayer" },
   workspace: {
     defaultName: "Perso",
@@ -182,8 +187,8 @@ export const fr = {
     waitingShort: "attend une réponse",
     answer: "Répondre",
     answerTo: (label: string) => `Répondre à ${label}`,
-    daemon: "Démon local",
-    daemonOffline: "Démon injoignable",
+    daemon: "Kibo · connecté",
+    daemonOffline: "Kibo · hors ligne",
     expand: "Déplier les agents",
     moreRuns: (n: number) => `${n} autre${n > 1 ? "s" : ""} run${n > 1 ? "s" : ""} en cours`,
     collapse: "Replier les agents",

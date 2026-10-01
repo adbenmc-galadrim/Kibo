@@ -112,12 +112,16 @@ const changesResponses: Partial<Record<CodeRequest["method"], unknown>> = {
 };
 
 mock.module("../state/use-projects", () => ({
-  useProjects: () => [
-    { ...project.meta, counts },
-    { ...repo.meta, counts },
-    { ...readOnly.meta, counts },
-    { ...sharedProject.meta, counts },
-  ],
+  useProjects: () => ({
+    projects: [
+      { ...project.meta, counts },
+      { ...repo.meta, counts },
+      { ...readOnly.meta, counts },
+      { ...sharedProject.meta, counts },
+    ],
+    error: null,
+    retry: () => {},
+  }),
   useProject: (id: string | null) => (id ? (snapshots.get(id) ?? null) : null),
 }));
 mock.module("../state/use-agents", () => ({

@@ -1,21 +1,44 @@
 import { KiboError, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 
+const isUnauthorized = (e: unknown) => e instanceof KiboError && e.code === "UNAUTHORIZED";
+
 function unlessUnauthorized(e: unknown): void {
-  if (!(e instanceof KiboError && e.code === "UNAUTHORIZED")) throw e;
+  if (!isUnauthorized(e)) throw e;
 }
 
-export function useProjects(): ProjectSummary[] | null {
+type ProjectsState = { projects: ProjectSummary[] | null; error: unknown; retry(): void };
+
+export function useProjects(): ProjectsState {
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const reload = useRef(() => {});
   useEffect(() => {
-    const load = () => client.rpc({ method: "listProjects" }).then(setProjects, unlessUnauthorized);
+    let current = true;
+    const load = () =>
+      client.rpc({ method: "listProjects" }).then(
+        (list) => {
+          if (!current) return;
+          setProjects(list);
+          setError(null);
+        },
+        (e: unknown) => {
+          if (current && !isUnauthorized(e)) setError(e);
+        },
+      );
+    reload.current = () => void load();
     void load();
-    return client.subscribe((id) => {
+    const unsubscribe = client.subscribe((id) => {
       if (id === null) void load();
     });
+    return () => {
+      current = false;
+      unsubscribe();
+    };
   }, []);
-  return projects;
+  const retry = useCallback(() => reload.current(), []);
+  return { projects, error, retry };
 }
 
 export function useProject(projectId: string | null): ProjectSnapshot | null {

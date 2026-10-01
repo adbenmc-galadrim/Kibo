@@ -96,7 +96,7 @@ export function PublishDialog({
   remote = isRemoteView(),
 }: Props) {
   const p = fr.publish;
-  const projects = useProjects() ?? [];
+  const projects = useProjects().projects ?? [];
   const { preview, error, setError } = usePreview(id, open);
   const [strategy, setStrategy] = useState<Strategy>("update-all");
   const [busy, setBusy] = useState(false);

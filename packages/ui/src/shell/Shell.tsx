@@ -33,11 +33,12 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
-import { IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
+import { DaemonUnreachable, IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
+import { LoadingScreen } from "./Startup";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useUpdateSchedule } from "./use-update-schedule";
@@ -46,12 +47,13 @@ import { inTauri, openWindow } from "./workspace-actions";
 type Props = { viewer: string; notifications: Session["notifications"] };
 
 export function Shell({ viewer, notifications }: Props) {
-  const projects = useProjects();
+  const { projects, error, retry } = useProjects();
   const tabs = useTabs();
   const agents = useAgents();
   useRunNotifications(agents, notifications === "browser");
   useUpdateSchedule();
-  if (!projects || !tabs) return null;
+  if (error) return <DaemonUnreachable error={error} inApp={inTauri()} nextRetryInMs={0} onRetry={retry} />;
+  if (!projects || !tabs) return <LoadingScreen />;
   return (
     <>
       <Workspace

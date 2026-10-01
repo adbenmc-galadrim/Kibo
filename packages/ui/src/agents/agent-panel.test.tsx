@@ -48,7 +48,7 @@ test("the bar sums up slots, queue, running runs and the run waiting for an answ
   const onExpand = mock(() => {});
   render(<AgentBar state={agentsFixture()} now={NOW} online onExpand={onExpand} onSelect={onSelect} />);
   expect(screen.getByText("3/3")).toBeTruthy();
-  expect(screen.getByText("Démon local")).toBeTruthy();
+  expect(screen.getByText("Kibo · connecté")).toBeTruthy();
   expect(screen.getByText("3 en file")).toBeTruthy();
   for (const label of ["opus-dev-1", "opus-dev-3", "sonnet-review-1"]) {
     expect(screen.getByText(label)).toBeTruthy();
@@ -94,8 +94,8 @@ test("the bar says when the daemon is out of reach", () => {
   render(
     <AgentBar state={agentsFixture()} now={NOW} online={false} onExpand={() => {}} onSelect={() => {}} />,
   );
-  expect(screen.getByText("Démon injoignable")).toBeTruthy();
-  expect(screen.queryByText("Démon local")).toBeNull();
+  expect(screen.getByText("Kibo · hors ligne")).toBeTruthy();
+  expect(screen.queryByText("Kibo · connecté")).toBeNull();
 });
 test("the drawer groups runs like the mockup and numbers the queue", async () => {
   const onSelect = mock((_: string) => {});

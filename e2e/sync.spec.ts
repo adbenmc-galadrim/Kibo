@@ -72,7 +72,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   const code = (await share.locator(".font-mono").first().textContent())?.trim() ?? "";
   expect(code).toMatch(/^([A-Z2-7]{4} ){6}[A-Z2-7]{2}$/);
   await adam.keyboard.press("Escape");
-  await expect(adam.getByText("Démon local · synchronisé")).toBeVisible();
+  await expect(adam.getByText("Kibo · connecté · synchronisé")).toBeVisible();
 
   await lea.getByRole("button", { name: "Rejoindre un projet" }).click();
   await lea.getByLabel("Code d'invitation").fill(code);
@@ -92,7 +92,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await expect(lea.getByText(`${key}-1`)).toBeVisible();
 
   await fetch(`http://127.0.0.1:${SYNC_PORTS.control}/stop`, { method: "POST" });
-  await expect(adam.getByText("Démon local · hors ligne")).toBeVisible({ timeout: 10_000 });
+  await expect(adam.getByText("Kibo · connecté · hors ligne")).toBeVisible({ timeout: 10_000 });
   await adam.getByRole("button", { name: "Nouveau ticket dans À faire" }).click();
   await adam.getByLabel("Titre").fill("Créé hors ligne");
   await adam.getByRole("button", { name: "Créer le ticket" }).click();
