@@ -262,7 +262,7 @@ test("21 · Changements, fichier indexé sélectionné", async () => {
     .getByRole("button", { name: /ticket\.ts/ })
     .first()
     .click();
-  await expect(page.getByRole("button", { name: "Ajouter le bloc au commit" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retirer le bloc du commit" }).first()).toBeVisible();
   await expect(page.getByText("↑2").first()).toBeVisible();
   await expect(page.getByLabel("Message")).not.toHaveValue("");
   await expect(page.getByText("opus-dev-1 travaille dans ce worktree.", { exact: false })).toBeVisible();
