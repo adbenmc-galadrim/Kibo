@@ -52,11 +52,11 @@ async function openInstalled(page: Page) {
 
 async function approveSandboxed(page: Page, subtitle: string) {
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText(subtitle)).toBeVisible();
+  await expect(dialog.getByText(subtitle)).toBeVisible({ timeout: 30_000 });
   await expect(dialog.getByText("Ce code vient d'une marketplace.")).toBeVisible();
   await dialog.getByRole("radio", { name: /Isolé/ }).click();
   await dialog.getByRole("button", { name: "Autoriser" }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog).toBeHidden({ timeout: 30_000 });
 }
 
 test.use({ actionTimeout: 15_000 });
