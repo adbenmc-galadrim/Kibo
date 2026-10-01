@@ -1,5 +1,5 @@
 import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fakeToolUses } from "../agents/fake-claude-ai";
 import { fakeCalls } from "../agents/fake-claude-scenario";
@@ -50,13 +50,25 @@ test("attachments are read by the agent, the preview is served, a revision rewri
   h = await startAiHarness({ scenario: "generate-revise.json" });
   const started = await h.rpc({
     method: "startComponentDraft",
-    draft: { ...create, attachments: [png("maquette.png")] },
+    draft: { ...create, formats: ["small", "medium"], attachments: [png("maquette.png")] },
   });
   const review = await h.waitDraft(started.id, "review");
   const images = draftPaths(h.home, review.id).attachmentsDir;
   const sessionId = review.sessionId ?? "";
   const [first] = fakeCalls(h.fakeState, sessionId);
   expect(first?.prompt).toContain(join(images, "1-maquette.png"));
+  expect(first?.prompt).toContain("Formats à prendre en charge : small (Petit, 3 × 3 cellules");
+  expect(first?.prompt).toContain("medium (Moyen, 6 × 3 cellules");
+  expect(first?.prompt).not.toContain("large (");
+  const skill = readFileSync(
+    join(draftPaths(h.home, review.id).dir, ".claude", "skills", "kibo-component", "SKILL.md"),
+    "utf8",
+  );
+  expect(skill).toContain("| small | Petit | 3 × 3 | ≈ 288 × 272 px | oui |");
+  expect(skill).toContain("| large | Large | 6 × 6 | ≈ 592 × 560 px | non |");
+  expect(
+    existsSync(join(draftPaths(h.home, review.id).dir, ".claude", "skills", "kibo-component", "exemple.tsx")),
+  ).toBe(true);
   expect(fakeToolUses(h.fakeState, sessionId)).toContainEqual({
     tool: "Read",
     input: { file_path: join(images, "1-maquette.png") },
