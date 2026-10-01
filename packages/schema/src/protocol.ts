@@ -8,8 +8,6 @@ export const Theme = z.enum(["dark", "light"]);
 export type Theme = z.infer<typeof Theme>;
 export const Surface = z.enum(["widget", "view"]);
 export type Surface = z.infer<typeof Surface>;
-export const surfaceFor = (m: Pick<ComponentManifest, "kind">, format: ComponentFormat): Surface =>
-  format === "full" && m.kind !== "widget" ? "view" : "widget";
 export const KeyCombo = z.enum([
   "mod+k",
   "mod+t",

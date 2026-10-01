@@ -9,11 +9,11 @@ import {
   overlaps,
 } from "@kibo/schema";
 import fc from "fast-check";
+import { formatBox } from "./format-box";
 import {
   canPlace,
   cellMetrics,
   dropTarget,
-  formatBox,
   instanceFormat,
   nextLayout,
   readingOrder,

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { ComponentManifest, defaultFormatOf, formatIssue, formatsOf } from "./manifest";
-import { HostToFrame, surfaceFor } from "./protocol";
+import { HostToFrame } from "./protocol";
+import { surfaceFor } from "./surface";
 
 const base = { id: "x", version: "1.0.0", title: "X", reads: [], writes: [] };
 

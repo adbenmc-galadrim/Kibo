@@ -38,6 +38,7 @@ export * from "./semver";
 export * from "./sharing";
 export * from "./status";
 export * from "./status-projection";
+export * from "./surface";
 export * from "./sync";
 export * from "./sync-rpc";
 export * from "./tabs";

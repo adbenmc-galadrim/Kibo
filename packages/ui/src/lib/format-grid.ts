@@ -1,6 +1,5 @@
 import {
   type ComponentFormat,
-  FORMAT_SIZES,
   type FormatSize,
   formatOf,
   GRID_COLUMNS,
@@ -29,12 +28,6 @@ export const cellMetrics = (width: number): CellMetrics => ({
 
 export const spanLength = (cells: number, unit: number, gap: number): number =>
   cells * unit + (cells - 1) * gap;
-
-export const formatBox = (format: ComponentFormat, width: number): { width: number; height: number } => {
-  const m = cellMetrics(width);
-  const { w, h } = FORMAT_SIZES[format];
-  return { width: spanLength(w, m.column, m.gap), height: spanLength(h, m.row, m.gap) };
-};
 
 export const readingOrder = (instances: readonly Instance[]): Instance[] =>
   [...instances].sort(
