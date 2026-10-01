@@ -9,7 +9,7 @@ export const frCollab = {
     subtitle:
       "Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ».",
     dialogTitle: "Se connecter à un serveur",
-    dialogHelp: "Saisis l'adresse de ton serveur de sync et le code d'invitation reçu.",
+    dialogHelp: "Saisis l'adresse du serveur et le code reçu.",
     serverUrl: "Adresse du serveur",
     urlHelp: "Donnée par ton équipe, elle commence par wss://",
     code: "Code",
