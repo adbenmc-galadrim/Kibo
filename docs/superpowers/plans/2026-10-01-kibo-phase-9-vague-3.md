@@ -1195,11 +1195,11 @@ Vague 3 ← T32, T41. Spec §15.1 ; écrans **113** et **115**. La page liste le
 - Consumes: `fileTicket`, `withInbox`, `displayName`, `MenuEntry`, `ContextMenuEntries`, `DropdownMenuEntries`, `ConfirmDialog`, `useTicketCommand`, `canEdit`.
 - Produces: `InboxPage` (complète), `inboxMenuEntries`, `FileTicketDialog`, `DialogsState.fileTicket`, `TicketActionsMenu.onFile`.
 
-- [ ] **Step 1: Menu en données (test rouge puis vert)**
+- [x] **Step 1: Menu en données (test rouge puis vert)**
 
 `inbox-menu.test.ts` : `inboxMenuEntries({ texts: frInbox, actions })` ⇒ labels `["Ouvrir", "Rattacher à un projet…", <séparateur>, "Supprimer…"]`, le dernier `destructive`. Implémenter. Run: `bun test packages/ui/src/inbox/inbox-menu.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Page (tests rouges puis verts, écran 113)**
+- [x] **Step 2: Page (tests rouges puis verts, écran 113)**
 
 `inbox-page.test.tsx` (mock `../api` : `command deleteTicket` capturé) :
 ```tsx
@@ -1220,7 +1220,7 @@ test("removing asks for confirmation then sends deleteTicket on the inbox", asyn
 `InboxPage.tsx` : `Table` du SDK, une `InboxRow` par ticket (clé en mono, titre bouton, pastille et libellé du statut via `snapshot.workflow`, assigné `ref` ou « — », bouton « Rattacher… », `⋯`), `ContextMenu` sur la ligne avec `ContextMenuEntries`, état `removing` + `ConfirmDialog`, état `filing` + `FileTicketDialog` (lazy : `lazy-dialogs.ts`). La page reçoit `projects` pour le dialogue de rattachement.
 Run: `bun test packages/ui/src/inbox` — Expected: PASS.
 
-- [ ] **Step 3: Dialogue « Rattacher à un projet » (tests rouges puis verts, écran 115)**
+- [x] **Step 3: Dialogue « Rattacher à un projet » (tests rouges puis verts, écran 115)**
 
 `file-ticket-dialog.test.tsx` :
 ```tsx
@@ -1241,7 +1241,7 @@ test("a FORBIDDEN answer is shown in the dialog, which stays open", () => { /* �
 Implémenter selon le contrat (`Select` des projets `canEdit(snapshots.get(p.id))`, texte `nextKey(snapshot.nextTicketKey)` ou `serverKey`, phrases conditionnelles, `role="alert"` sur erreur, `describeError`). `ShellDialogs.tsx` : `fileTicket: { ticketId } | null` rendu avec `snapshots.get(INBOX_ID)` ; `onFiled` ⇒ `set({ fileTicket: null, sheet: { projectId, ticketId } })`.
 Run: `bun test packages/ui/src/dialogs/file-ticket-dialog.test.tsx` — Expected: PASS.
 
-- [ ] **Step 4: Fiche, Mes tickets, AssignDialog (tests rouges puis verts)**
+- [x] **Step 4: Fiche, Mes tickets, AssignDialog (tests rouges puis verts)**
 
 - `TicketActionsMenu.tsx` : prop `onFile?` ⇒ entrée « Rattacher à un projet… » (après « Copier la clé ») ; `TicketSheet.tsx` : si `isInbox(project.meta.id)`, pas de bouton « Assigner », `onFile` passé ; section « Dépendances » conservée (A1). Test : la fiche d'un ticket `INB-n` n'a pas « Assigner » et son menu a « Rattacher à un projet… ».
 - `MyTicketRow.tsx` / `MyTicketsPage.tsx` : bouton « Rattacher… » actif pour la boîte ⇒ `onFile(ticketId)` (prop nouvelle remontée à `ScreenView` → `set({ fileTicket })`).
@@ -1249,7 +1249,7 @@ Run: `bun test packages/ui/src/dialogs/file-ticket-dialog.test.tsx` — Expected
 - `palette-items.ts` : vérifié en T32.
 Run: `bun test packages/ui && bun run budget` — Expected: PASS ; budget noté.
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 ```bash
 git add packages/ui/src/inbox packages/ui/src/i18n/fr-inbox.ts packages/ui/src/shell/lazy-dialogs.ts packages/ui/scripts/bundle-report.ts
