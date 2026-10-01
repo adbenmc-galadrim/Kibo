@@ -274,13 +274,14 @@ test("without a local folder a worktree profile is not launchable and the dialog
   expect(within(screen.getByRole("status")).getByText(NO_FOLDER)).toBeTruthy();
   expect(screen.queryByText(/nouveau worktree/)).toBeNull();
   expect(screen.getByText("indisponible : projet sans dossier local")).toBeTruthy();
+  expect(screen.getByText("File d'attente").nextElementSibling?.textContent).toBe("-");
   const submit = screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement;
   expect(submit.disabled).toBe(true);
   const user = userEvent.setup();
   await user.click(submit);
   await user.click(screen.getByRole("button", { name: "Modifier le projet" }));
   expect(onEditProject).toHaveBeenCalledWith("kibo");
-  expect(calls.some((c) => c.method === "assignAgent")).toBe(false);
+  expect(calls).toEqual([]);
 });
 
 test("without a local folder a repo profile is refused too, and the edit button needs a handler", async () => {
@@ -291,7 +292,59 @@ test("without a local folder a repo profile is refused too, and the edit button 
   expect(screen.queryByText("dossier du projet")).toBeNull();
   expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
   expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(true);
-  await waitFor(() => expect(calls.length).toBe(1));
+  await Bun.sleep(10);
+  expect(calls).toEqual([]);
+});
+
+test("an empty folder counts as no folder", async () => {
+  const project = kiboProject();
+  render(
+    <AssignDialog
+      project={{ ...project, meta: { ...project.meta, folder: "" } }}
+      ticketId="t14"
+      config={configFixture()}
+      onClose={() => {}}
+    />,
+  );
+  expect(within(screen.getByRole("status")).getByText(NO_FOLDER)).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(true);
+  await Bun.sleep(10);
+  expect(calls).toEqual([]);
+});
+
+test("switching to an isolated profile lifts the folder warning", async () => {
+  const onClose = mock(() => {});
+  render(
+    <AssignDialog project={withoutFolder()} ticketId="t14" config={configFixture()} onClose={onClose} />,
+  );
+  expect(screen.getByRole("status")).toBeTruthy();
+  const user = userEvent.setup();
+  screen.getByRole("combobox", { name: "Profil" }).focus();
+  await user.keyboard("{Enter}");
+  await user.click(screen.getByRole("option", { name: /^sonnet-review ·/ }));
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(await screen.findByText(/entrera en file en position #4/)).toBeTruthy();
+  const submit = screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement;
+  expect(submit.disabled).toBe(false);
+  await user.click(submit);
+  await waitFor(() => expect(onClose).toHaveBeenCalled());
+  expect(calls.map((c) => c.method)).toEqual(["previewAssign", "assignAgent"]);
+});
+
+test("a read-only viewer sees the folder warning without the edit button", async () => {
+  const project = withoutFolder();
+  render(
+    <AssignDialog
+      project={{ ...project, sync: { ...project.sync, access: "read-only" } }}
+      ticketId="t14"
+      config={configFixture()}
+      onClose={() => {}}
+      onEditProject={() => {}}
+    />,
+  );
+  expect(within(screen.getByRole("status")).getByText(NO_FOLDER)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
+  await Bun.sleep(10);
 });
 
 test("without a local folder an isolated profile still launches", async () => {

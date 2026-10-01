@@ -26,6 +26,7 @@ import { fr } from "../i18n/fr";
 import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
+import { canEdit } from "../state/access";
 import { NoFolderAlert, Notice, needsFolder, spaceText, WaitingAlert } from "./AssignAlerts";
 import { reasonText } from "./format";
 
@@ -69,10 +70,10 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
   const folderMissing = profile !== null && needsFolder(profile, project);
 
   useEffect(() => {
-    if (!chosenTicket || !profileId || !keyed) return;
-    let alive = true;
     setPreview(null);
     setPreviewFailed(false);
+    if (!chosenTicket || !profileId || !keyed || folderMissing) return;
+    let alive = true;
     client.rpc({ method: "previewAssign", projectId, ticketId: chosenTicket, profileId }).then(
       (p) => alive && setPreview(p),
       () => alive && setPreviewFailed(true),
@@ -80,7 +81,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
     return () => {
       alive = false;
     };
-  }, [projectId, chosenTicket, profileId, keyed]);
+  }, [projectId, chosenTicket, profileId, keyed, folderMissing]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -161,7 +162,9 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
           </div>
           {ticket && ticket.waitingOn.length > 0 && <WaitingAlert project={project} ticket={ticket} />}
           {folderMissing && (
-            <NoFolderAlert onEditProject={onEditProject && (() => onEditProject(projectId))} />
+            <NoFolderAlert
+              onEditProject={onEditProject && canEdit(project) ? () => onEditProject(projectId) : undefined}
+            />
           )}
           <div className="grid gap-2">
             <Label htmlFor={`${id}-brief`}>{fr.assign.brief}</Label>
@@ -183,11 +186,12 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
                 {preview ? fr.assign.guidelineChain(project.meta.name, domain, preview.guidelines) : "-"}
               </dd>
               <dt className="text-muted-foreground">{fr.assign.queue}</dt>
-              <dd className="text-cyan-600 dark:text-cyan-400">
-                {preview &&
-                  (preview.position === null
+              <dd className={preview ? "text-cyan-600 dark:text-cyan-400" : undefined}>
+                {preview
+                  ? preview.position === null
                     ? fr.assign.startsNow
-                    : fr.assign.entersQueue(reasonText(preview.reason), preview.position))}
+                    : fr.assign.entersQueue(reasonText(preview.reason), preview.position)
+                  : "-"}
               </dd>
             </dl>
           )}
