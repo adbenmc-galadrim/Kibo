@@ -306,6 +306,14 @@ test("D1: Notes offers its folder, built-ins no update", async () => {
   ]);
 });
 
+test("the instance menu content is loaded when the menu opens", async () => {
+  const user = userEvent.setup();
+  wrap(<InstanceMenu projectId="p1" instance={inst("kanban@1.0.0")} title="Kanban" />);
+  expect(screen.queryByRole("menu")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Actions Kanban" }));
+  expect(await screen.findByRole("menuitem", { name: "Retirer de la page…" })).toBeTruthy();
+});
+
 test("a widget with a config schema offers its settings", async () => {
   wrap(<InstanceMenu projectId="p1" instance={inst("kanban@1.0.0")} title="Kanban" />);
   const user = userEvent.setup();
