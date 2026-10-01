@@ -276,7 +276,7 @@ export const openInboxCount = (snapshot: ProjectSnapshot | undefined): number; /
 // shell/Overview.tsx (T32) : Props gagne inboxCount: number ; onOpenInbox(): void ; carte « Boîte de réception · n tickets sans projet »
 // Screen gagne "inbox" (T32) : hash "#/inbox", SCREENS.inbox = { title: fr.nav.inbox, icon: Inbox, crumbs: [fr.nav.inbox] }, HEADING_SCREENS gagne "inbox"
 
-// inbox/InboxPage.tsx (T33) : props { snapshot: ProjectSnapshot | null; projects: ProjectSummary[]; viewer: string; onOpenTicket(ticketId: string): void; onNewTicket(): void }
+// inbox/InboxPage.tsx (T33) : props { snapshot: ProjectSnapshot | null; projects: ProjectSummary[]; viewer: string; onOpenTicket(ticketId: string): void; onNewTicket(): void; onFile(ticketId: string): void } — le dialogue de rattachement est monté une seule fois dans ShellDialogs (la page n'a pas les snapshots) ; ScreenView gagne onFile
 // inbox/inbox-menu.ts (T33) : export function inboxMenuEntries(input: { texts: typeof frInbox; actions: { open(): void; file(): void; remove(): void } }): MenuEntry[]
 // dialogs/FileTicketDialog.tsx (T33) : props { ticket: TicketView; hasChildren: boolean; hasLinks: boolean; projects: ProjectSummary[]; snapshots: ReadonlyMap<string, ProjectSnapshot>; onClose(): void; onFiled(projectId: string, ticketId: string): void }   // rpc fileTicket ; projets proposés = canEdit && !isInbox
 // shell/ShellDialogs.tsx (T33) : DialogsState gagne fileTicket: { ticketId: string } | null
