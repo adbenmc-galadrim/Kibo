@@ -19,6 +19,7 @@ import { frCreations } from "../i18n/fr-creations";
 import { AiDraftPanel } from "./AiDraftPanel";
 import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
+import { keepEscapeInReviseForm } from "./revise-escape";
 import { useAiAvailability } from "./use-ai-availability";
 
 export type ModifyTarget = { id: string; title: string; version: string; origin: "user" | "ai" };
@@ -159,7 +160,11 @@ export function ModifyWithAiDialog({ component, draftId: initialDraftId, open, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hidden={scope.hidden} className={draftId ? "sm:max-w-3xl" : "sm:max-w-[520px]"}>
+      <DialogContent
+        hidden={scope.hidden}
+        onEscapeKeyDown={keepEscapeInReviseForm}
+        className={draftId ? "sm:max-w-3xl" : "sm:max-w-[520px]"}
+      >
         <DialogHeader>
           <DialogTitle>
             {component ? fr.ai.modifyTitle(component.title) : frCreations.modify.title}

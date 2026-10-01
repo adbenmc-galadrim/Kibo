@@ -1,4 +1,4 @@
-import type { FinalizeComponentDraftInput } from "@kibo/schema";
+import type { DraftStatus, FinalizeComponentDraftInput } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Copy, SquareTerminal } from "lucide-react";
@@ -8,6 +8,7 @@ import { AiDraftPanel } from "../ai/AiDraftPanel";
 import { ContinueInBackground } from "../ai/ContinueInBackground";
 import { DescribeCard } from "../ai/DescribeCard";
 import { DraftStepper } from "../ai/DraftStepper";
+import { keepEscapeInReviseForm } from "../ai/revise-escape";
 import { fr } from "../i18n/fr";
 import { useFlash } from "../lib/use-flash";
 import { ApprovalScope, useApprovalScope } from "./approval-scope";
@@ -84,6 +85,7 @@ export function CreateComponentDialog({
 }: Props) {
   const t = fr.createComponent;
   const [current, setCurrent] = useState<string | null>(draftId ?? null);
+  const [reported, setReported] = useState<{ draftId: string; status: DraftStatus } | null>(null);
   const scope = useApprovalScope();
   useEffect(() => {
     if (open) setCurrent(draftId ?? null);
@@ -95,7 +97,11 @@ export function CreateComponentDialog({
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hidden={scope.hidden} className="sm:max-w-3xl [&>[data-slot=dialog-close]]:z-20">
+      <DialogContent
+        hidden={scope.hidden}
+        onEscapeKeyDown={keepEscapeInReviseForm}
+        className="sm:max-w-3xl [&>[data-slot=dialog-close]]:z-20"
+      >
         <DialogHeader className="sticky -top-6 z-10 -mx-6 -mt-6 bg-background px-6 pt-6 pb-2">
           <DialogTitle>{t.title}</DialogTitle>
           <DialogDescription className={current ? "sr-only" : undefined}>{t.subtitle}</DialogDescription>
@@ -103,9 +109,18 @@ export function CreateComponentDialog({
         {current ? (
           <>
             <ApprovalScope scope={scope}>
-              <AiDraftPanel draftId={current} target={target} onDone={done} />
+              <AiDraftPanel
+                key={current}
+                draftId={current}
+                target={target}
+                onDone={done}
+                onStatus={(status) => setReported({ draftId: current, status })}
+              />
             </ApprovalScope>
-            <ContinueInBackground draftId={current} onContinue={() => onOpenChange(false)} />
+            <ContinueInBackground
+              status={reported?.draftId === current ? reported.status : null}
+              onContinue={() => onOpenChange(false)}
+            />
           </>
         ) : (
           <>

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, jest, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { aiReady, DRAFT_ID, draftFixture as details } from "../ai/draft-fixtures";
+import { aiReady, burndownManifest, DRAFT_ID, draftFixture as details } from "../ai/draft-fixtures";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
@@ -52,6 +52,28 @@ test("the dialog can be closed while generating without any RPC, and reopens on 
   expect(onOpenChange).toHaveBeenCalledWith(false);
   expect(calls.slice(before)).toEqual([]);
   expect(calls.some((c) => c.method === "abandonComponentDraft")).toBe(false);
+});
+
+test("the open draft is loaded once for the panel and the background button", async () => {
+  answer = () => details({});
+  render(<CreateComponentDialog open onOpenChange={() => {}} target={null} draftId={DRAFT_ID} />);
+  await screen.findByRole("button", { name: "Continuer en arrière-plan" });
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+  expect(calls.filter((c) => c.method === "getComponentDraft")).toHaveLength(1);
+});
+
+test("Échap in the revision form closes the form, not the dialog", async () => {
+  answer = () => details({ status: "review", manifest: burndownManifest });
+  const onOpenChange = mock((_: boolean) => {});
+  const user = userEvent.setup();
+  render(<CreateComponentDialog open onOpenChange={onOpenChange} target={null} draftId={DRAFT_ID} />);
+  await user.click(await screen.findByRole("button", { name: "Demander une modification" }));
+  await user.type(screen.getByLabelText("Ce qu'il faut changer"), "Plus gros{Escape}");
+  await waitFor(() => expect(screen.queryByLabelText("Ce qu'il faut changer")).toBeNull());
+  expect(onOpenChange).not.toHaveBeenCalled();
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });
 
 test("a finished draft offers no background button", async () => {
