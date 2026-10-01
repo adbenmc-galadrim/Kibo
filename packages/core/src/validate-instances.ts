@@ -1,17 +1,8 @@
 import { Instance, inGrid, isFormatLayout } from "@kibo/schema";
 import { isContainer, type LoroDoc, type LoroMap } from "loro-crdt";
+import { sameJson } from "./canonical-json";
 
 const instancesOf = (doc: LoroDoc): LoroMap => doc.getMap("instances");
-
-function sortedKeys(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortedKeys);
-  if (value === null || typeof value !== "object") return value;
-  const entries = Object.entries(value).sort(([a], [b]) => (a < b ? -1 : 1));
-  return Object.fromEntries(entries.map(([key, inner]) => [key, sortedKeys(inner)]));
-}
-
-const sameJson = (a: unknown, b: unknown): boolean =>
-  JSON.stringify(sortedKeys(a)) === JSON.stringify(sortedKeys(b));
 
 function sameEntry(before: unknown, after: unknown, beforeJson: unknown, afterJson: unknown): boolean {
   const sameKind = isContainer(after)
