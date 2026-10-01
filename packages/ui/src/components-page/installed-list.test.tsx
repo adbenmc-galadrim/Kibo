@@ -37,6 +37,7 @@ mock.module("../api", () => ({
 }));
 
 const { ComponentsPage } = await import("./ComponentsPage");
+const { placesOf } = await import("./UsagesSheet");
 
 const use = (
   projectId: string,
@@ -134,6 +135,7 @@ const meteoPreview: PublishPreview = {
 };
 
 beforeEach(() => {
+  localStorage.clear();
   components = [kanbanSummary, meteoSummary, acmeSummary];
   drafts = [];
   preview = null;
@@ -194,8 +196,8 @@ test("the usages sheet lists project › page and opens the page", async () => {
   expect(within(sheet).getByText("Kanban 1.0.0")).toBeTruthy();
   const places = within(within(sheet).getByRole("list")).getAllByRole("button");
   expect(places.map((b) => b.textContent)).toEqual([
-    "Kibo › Tableau de bord",
     "Kibo › Sprint",
+    "Kibo › Tableau de bord",
     "Portfolio › Accueil",
   ]);
   fireEvent.click(within(sheet).getByRole("button", { name: "Kibo › Sprint" }));
@@ -224,4 +226,35 @@ test("the publish preview opens the same usages sheet", async () => {
   fireEvent.click(within(sheet).getByRole("button", { name: "Kibo › Tableau de bord" }));
   expect(opened).toEqual([{ kind: "page", projectId: "p1", pageId: "page-board" }]);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+test("the sort survives a remount, filters do not", async () => {
+  const first = render(<ComponentsPage onOpen={noop} />);
+  await screen.findByRole("row", { name: /Bugs Acme/ });
+  fireEvent.click(screen.getByRole("button", { name: "Trier par Utilisé dans" }));
+  fireEvent.change(search(), { target: { value: "kanban" } });
+  first.unmount();
+  render(<ComponentsPage onOpen={noop} />);
+  await screen.findByRole("row", { name: /Bugs Acme/ });
+  expect(screen.getByRole("columnheader", { name: /Utilisé dans/ }).getAttribute("aria-sort")).toBe(
+    "descending",
+  );
+  expect((search() as HTMLInputElement).value).toBe("");
+  localStorage.clear();
+});
+
+test("places are listed by project, then by page", () => {
+  const places = placesOf([
+    use("p2", "Portfolio", "page-home", "Accueil"),
+    use("p1", "Kibo", "page-board", "Tableau de bord"),
+    use("p1", "Kibo", "page-board", "Tableau de bord", 2),
+    use("p1", "Kibo", "page-sprint", "Sprint"),
+    use("p1", "Kibo", "page-api", "API"),
+  ]);
+  expect(places.map((p) => `${p.projectName} › ${p.pageTitle}`)).toEqual([
+    "Kibo › API",
+    "Kibo › Sprint",
+    "Kibo › Tableau de bord",
+    "Portfolio › Accueil",
+  ]);
 });

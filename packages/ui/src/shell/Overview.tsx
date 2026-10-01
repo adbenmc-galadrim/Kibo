@@ -29,7 +29,7 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
       aria-labelledby={nameId}
       className="relative grid gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <span
           aria-hidden
           className="grid size-8 shrink-0 place-items-center rounded-md text-md font-semibold"

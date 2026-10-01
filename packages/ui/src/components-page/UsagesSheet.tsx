@@ -17,7 +17,10 @@ export function placesOf(usages: readonly ComponentUsage[]): ComponentUsage[] {
     const key = `${u.projectId}/${u.pageId}`;
     if (!seen.has(key)) seen.set(key, u);
   }
-  return [...seen.values()].sort((a, b) => a.projectName.localeCompare(b.projectName, "fr"));
+  return [...seen.values()].sort(
+    (a, b) =>
+      a.projectName.localeCompare(b.projectName, "fr") || a.pageTitle.localeCompare(b.pageTitle, "fr"),
+  );
 }
 
 export function UsagesSheet({ row, onClose, onOpenPage }: Props) {

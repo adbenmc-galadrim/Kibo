@@ -91,6 +91,7 @@ test("a 120-character folder wraps on the overview card instead of overflowing (
   expect(path.className).toContain("break-all");
   expect(path.className).not.toContain("truncate");
   expect(path.parentElement?.className).toContain("min-w-0");
+  expect(path.parentElement?.parentElement?.className).toContain("items-start");
 });
 
 const empty: ProjectSnapshot = {

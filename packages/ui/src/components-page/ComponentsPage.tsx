@@ -24,6 +24,7 @@ import { PublishDialog } from "./PublishDialog";
 import { type PublishTarget, PublishToMarketDialog } from "./PublishToMarketDialog";
 import { type ComponentRow, componentRows } from "./rows";
 import { SandboxBanner } from "./SandboxBanner";
+import { useComponentsSort } from "./sort-pref";
 import { UsagesSheet, type UsagesTarget } from "./UsagesSheet";
 
 const TAB =
@@ -70,7 +71,9 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
   const [modifying, setModifying] = useState<ModifyTarget | null>(null);
   const [updating, setUpdating] = useState<Updating | null>(null);
   const [toMarket, setToMarket] = useState<PublishTarget | null>(null);
-  const [query, setQuery] = useState<ComponentsQuery>(DEFAULT_QUERY);
+  const [filters, setFilters] = useState<ComponentsQuery>(DEFAULT_QUERY);
+  const [sort, setSort] = useComponentsSort();
+  const query: ComponentsQuery = { ...filters, ...sort };
   const [usages, setUsages] = useState<UsagesTarget | null>(null);
   const [creating, setCreating] = useState(false);
   const { statuses, reload: reloadMarket } = useMarketStatus();
@@ -106,12 +109,15 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
           </TabsList>
           <TabsContent value="installed" className="grid content-start gap-6">
             <SandboxBanner />
-            <ComponentsFilters query={query} onChange={setQuery} />
+            <ComponentsFilters query={query} onChange={setFilters} />
             <div className="overflow-hidden rounded-lg border bg-card">
               <ComponentsTable
                 rows={shown}
                 query={query}
-                onSort={(key) => setQuery((q) => toggleSort(q, key))}
+                onSort={(key) => {
+                  const next = toggleSort(query, key);
+                  setSort({ sort: next.sort, descending: next.descending });
+                }}
                 onUsages={setUsages}
                 onReview={review}
                 onUpdate={(row, to) => setUpdating({ row, to })}
