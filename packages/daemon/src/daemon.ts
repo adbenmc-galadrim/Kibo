@@ -158,6 +158,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
         ? agents.state().runs.filter((r) => r.projectId === projectId && !isTerminal(r.state)).length
         : 0,
     detach: (projectId) => collab.client.detachProject(projectId),
+    isLocked: (projectId) => collab.hosts.isLocked(projectId),
   });
   const code = createCodeService(service);
   closers.push(() => code.stop());

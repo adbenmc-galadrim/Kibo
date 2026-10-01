@@ -56,6 +56,7 @@ function setup(opts: { sharing?: ProjectSyncInfo; activeRuns?: number } = {}) {
     sharing: () => opts.sharing ?? LOCAL_SYNC,
     activeRuns: () => opts.activeRuns ?? 0,
     detach: () => {},
+    isLocked: () => false,
     folderExists: (path) => {
       probed.push(path);
       return path.startsWith("/tmp/ok");

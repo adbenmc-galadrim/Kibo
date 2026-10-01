@@ -23,6 +23,7 @@ const adminOf = (i: number) =>
     sharing: (projectId) => d(i).share.syncInfo(projectId),
     activeRuns: () => 0,
     detach: (projectId) => d(i).client.detachProject(projectId),
+    isLocked: (projectId) => d(i).hosts.isLocked(projectId),
   });
 const remove = (i: number, projectId: string) =>
   adminOf(i).deleteProject({ method: "deleteProject", projectId }, LOCAL_CONTEXT);

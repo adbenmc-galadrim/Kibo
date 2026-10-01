@@ -24,6 +24,7 @@ export type ProjectAdminDeps = {
   sharing(projectId: string): ProjectSyncInfo;
   activeRuns(projectId: string): number;
   detach(projectId: string): void;
+  isLocked(projectId: string): boolean;
   folderExists?(path: string): boolean;
 };
 type UpdateRequest = Extract<RpcRequest, { method: "updateProject" }>;
@@ -116,6 +117,7 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       const { projectId } = req;
       deps.docs.project(projectId);
       refuseActiveRuns(projectId);
+      if (deps.isLocked(projectId)) throw new KiboError("CONFLICT", `project ${projectId} is being shared`);
       const sync = deps.sharing(projectId);
       if (ownsActiveShare(sync)) {
         throw new KiboError("CONFLICT", `project ${projectId} is shared: stop sharing first`);

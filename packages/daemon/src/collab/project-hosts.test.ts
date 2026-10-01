@@ -92,6 +92,17 @@ test("a project being shared refuses commands with CONFLICT", async () => {
   await create("Oui");
 });
 
+test("isLocked follows setLocked and is cleared when the project is removed", () => {
+  expect(hosts.isLocked(projectId)).toBe(false);
+  hosts.setLocked(projectId, true);
+  expect(hosts.isLocked(projectId)).toBe(true);
+  hosts.setLocked(projectId, false);
+  expect(hosts.isLocked(projectId)).toBe(false);
+  hosts.setLocked(projectId, true);
+  service.docs.removeProject(projectId);
+  expect(hosts.isLocked(projectId)).toBe(false);
+});
+
 test("mutate writes through the guard, persists and reports the change", () => {
   const seen: string[] = [];
   const changes: unknown[] = [];

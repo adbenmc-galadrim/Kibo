@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 type Failure = "settings" | "detach" | "store" | null;
-type SetupOptions = { sharing?: ProjectSyncInfo; activeRuns?: number };
+type SetupOptions = { sharing?: ProjectSyncInfo; activeRuns?: number; locked?: boolean };
 
 function setup(opts: SetupOptions = {}) {
   const home = tmp();
@@ -73,6 +73,7 @@ function setup(opts: SetupOptions = {}) {
     sharing: () => opts.sharing ?? LOCAL_SYNC,
     activeRuns: () => opts.activeRuns ?? 0,
     detach,
+    isLocked: () => opts.locked ?? false,
     folderExists: () => true,
   });
   const iconKey = `project:${project.id}`;
@@ -218,4 +219,35 @@ test("the handler routes deleteProject with its session context", async () => {
   expect(await s.admin.handler(req, LOCAL_CONTEXT)).toEqual({ handled: true, result: null });
   expect(s.ids()).toEqual([]);
   s.close();
+});
+
+test("a project being shared refuses the deletion with CONFLICT and changes nothing", () => {
+  const s = setup({ locked: true });
+  expect(() => s.remove()).toThrow(new KiboError("CONFLICT", `project ${s.project.id} is being shared`));
+  s.intact();
+  expect(s.detach).not.toHaveBeenCalled();
+  s.close();
+});
+
+test("the three CONFLICT details are distinct and stable", () => {
+  const detailOf = (opts: SetupOptions): string => {
+    const s = setup(opts);
+    try {
+      s.remove();
+      return "deleted";
+    } catch (e) {
+      return e instanceof KiboError ? `${e.code} ${e.detail.replace(s.project.id, "<id>")}` : String(e);
+    } finally {
+      s.close();
+    }
+  };
+  expect([
+    detailOf({ activeRuns: 1, locked: true }),
+    detailOf({ locked: true, sharing: { ...SHARED_SYNC, role: "owner" } }),
+    detailOf({ sharing: { ...SHARED_SYNC, role: "owner" } }),
+  ]).toEqual([
+    "CONFLICT project <id> has active runs",
+    "CONFLICT project <id> is being shared",
+    "CONFLICT project <id> is shared: stop sharing first",
+  ]);
 });

@@ -66,6 +66,7 @@ export function createProjectHosts(docs: Docs, user: string): ProjectHostRegistr
       if (isLocked) locked.add(projectId);
       else locked.delete(projectId);
     },
+    isLocked: (projectId) => locked.has(projectId),
     assertWritable: (projectId) => docs.assertWritable(projectId),
     onLocalChange: (listener) => {
       listeners.add(listener);

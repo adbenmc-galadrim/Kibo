@@ -9,6 +9,7 @@ export type ProjectHostRegistry = {
   projectIds(): string[];
   setAccess(projectId: string, access: ProjectAccess): void;
   setLocked(projectId: string, locked: boolean): void;
+  isLocked(projectId: string): boolean;
   assertWritable(projectId: string): void;
   onLocalChange(listener: (projectId: string) => void): () => void;
   addJoinedProject(doc: LoroDoc, folder: string | null): ProjectMeta;
