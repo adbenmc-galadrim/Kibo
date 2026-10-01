@@ -84,6 +84,7 @@ export function ScreenView(props: Props) {
         viewer={p.viewer}
         onOpenTicket={(ticketId) => p.onOpenTicket(INBOX_ID, ticketId)}
         onNewTicket={onNewTicket}
+        onFile={p.onFile}
       />
     );
   if (screen === "workspace") return <WorkspacePage config={config} />;

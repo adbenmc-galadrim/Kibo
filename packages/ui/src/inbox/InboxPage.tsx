@@ -1,7 +1,15 @@
-import type { ProjectSnapshot, ProjectSummary } from "@kibo/schema";
+import { INBOX_ID, type ProjectSnapshot, type ProjectSummary, type TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { Inbox, Plus } from "lucide-react";
+import { useState } from "react";
+import { client } from "../api";
 import { frInbox as t } from "../i18n/fr-inbox";
+import { frTicketEdit } from "../i18n/fr-ticket-edit";
+import { subtreeIds } from "../lib/inbox";
+import { ConfirmDialog } from "../shell/lazy-dialogs";
+import { describeTicketError } from "../ticket/use-ticket-command";
+import { InboxRow } from "./InboxRow";
 
 export type InboxPageProps = {
   snapshot: ProjectSnapshot | null;
@@ -9,7 +17,10 @@ export type InboxPageProps = {
   viewer: string;
   onOpenTicket(ticketId: string): void;
   onNewTicket(): void;
+  onFile(ticketId: string): void;
 };
+
+const HEAD = "h-9 px-3 text-2xs font-normal text-muted-foreground";
 
 function EmptyInbox({ onNewTicket }: { onNewTicket(): void }) {
   return (
@@ -27,7 +38,37 @@ function EmptyInbox({ onNewTicket }: { onNewTicket(): void }) {
   );
 }
 
-export function InboxPage({ snapshot, onOpenTicket, onNewTicket }: InboxPageProps) {
+function RemoveTicket({
+  ticket,
+  childCount,
+  onClose,
+}: {
+  ticket: TicketView;
+  childCount: number;
+  onClose(): void;
+}) {
+  return (
+    <ConfirmDialog
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title={frTicketEdit.removeTitle(ticket.keyLabel)}
+      description={frTicketEdit.removeHelp(childCount)}
+      confirmLabel={frTicketEdit.removeConfirm}
+      cancelLabel={frTicketEdit.cancel}
+      onConfirm={async () => {
+        await client.rpc({
+          method: "command",
+          projectId: INBOX_ID,
+          command: { method: "deleteTicket", ticketId: ticket.id },
+        });
+      }}
+      describeError={describeTicketError}
+    />
+  );
+}
+
+export function InboxPage({ snapshot, onOpenTicket, onNewTicket, onFile }: InboxPageProps) {
+  const [removing, setRemoving] = useState<TicketView | null>(null);
   const tickets = snapshot?.tickets ?? [];
   return (
     <div className="grid gap-6 p-6">
@@ -44,20 +85,40 @@ export function InboxPage({ snapshot, onOpenTicket, onNewTicket }: InboxPageProp
       {tickets.length === 0 ? (
         <EmptyInbox onNewTicket={onNewTicket} />
       ) : (
-        <ul className="grid gap-1.5">
-          {tickets.map((ticket) => (
-            <li key={ticket.id}>
-              <button
-                type="button"
-                onClick={() => onOpenTicket(ticket.id)}
-                className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-2.5 text-left outline-none hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="shrink-0 font-mono text-2xs text-muted-foreground">{ticket.keyLabel}</span>
-                <span className="truncate text-sm">{ticket.title}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-hidden rounded-lg border">
+          <Table aria-label={t.title}>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className={`${HEAD} w-20`}>{t.columns.key}</TableHead>
+                <TableHead className={HEAD}>{t.columns.title}</TableHead>
+                <TableHead className={`${HEAD} w-36`}>{t.columns.status}</TableHead>
+                <TableHead className={`${HEAD} w-28`}>{t.columns.assignee}</TableHead>
+                <TableHead className={`${HEAD} w-40`}>
+                  <span className="sr-only">{t.columns.actions}</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tickets.map((ticket) => (
+                <InboxRow
+                  key={ticket.id}
+                  ticket={ticket}
+                  workflow={snapshot?.workflow ?? []}
+                  onOpen={() => onOpenTicket(ticket.id)}
+                  onFile={() => onFile(ticket.id)}
+                  onRemove={() => setRemoving(ticket)}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      {removing && (
+        <RemoveTicket
+          ticket={removing}
+          childCount={subtreeIds(tickets, removing.id).size - 1}
+          onClose={() => setRemoving(null)}
+        />
       )}
     </div>
   );

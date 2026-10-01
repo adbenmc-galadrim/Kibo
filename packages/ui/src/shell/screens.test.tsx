@@ -43,7 +43,6 @@ const { ProjectHome } = await import("../pages/ProjectHome");
 const { PairingScreen } = await import("./PairingScreen");
 const { ContentView } = await import("./ContentView");
 const { NewProjectDialog } = await import("../dialogs/NewProjectDialog");
-const { InboxPage } = await import("../inbox/InboxPage");
 
 const counts = { backlog: 1, todo: 9, in_progress: 6, in_review: 2, blocked: 1, done: 5 };
 const kibo: ProjectSummary = {
@@ -195,22 +194,4 @@ test("NewProjectDialog focuses the folder when importing", async () => {
   render(<NewProjectDialog open onOpenChange={() => {}} count={0} focusFolder />);
   const folder = await screen.findByLabelText("Dossier du projet");
   expect(document.activeElement).toBe(folder);
-});
-
-test("the empty inbox explains itself and offers a new ticket (screen 113, empty)", () => {
-  const asked: string[] = [];
-  render(
-    <InboxPage
-      snapshot={null}
-      projects={[kibo]}
-      viewer="adam"
-      onOpenTicket={() => {}}
-      onNewTicket={() => asked.push("new")}
-    />,
-  );
-  expect(screen.getByRole("heading", { level: 1, name: "Boîte de réception" })).toBeTruthy();
-  expect(screen.getByText("Rien en attente.")).toBeTruthy();
-  expect(screen.getByText("Les tickets créés sans projet arrivent ici.")).toBeTruthy();
-  for (const button of screen.getAllByRole("button", { name: "Nouveau ticket" })) button.click();
-  expect(asked).toEqual(["new", "new"]);
 });

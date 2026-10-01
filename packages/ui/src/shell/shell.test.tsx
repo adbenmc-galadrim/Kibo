@@ -337,7 +337,7 @@ test("the sidebar lists the inbox after my tickets with its open count, and open
   await userEvent.click(entry);
   expect(location.hash).toBe("#/inbox");
   expect(await screen.findByRole("tab", { name: "Boîte de réception" })).toBeTruthy();
-  expect(await screen.findByRole("button", { name: /INB-2/ })).toBeTruthy();
+  expect(await screen.findByRole("row", { name: /INB-2/ })).toBeTruthy();
   expect(entry.getAttribute("data-active")).toBe("true");
 });
 
