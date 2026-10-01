@@ -1364,7 +1364,7 @@ Vague 2 ← T30 (`refreshMarketSource`), T34 (`ComponentsPage` remaniée). Spec 
 - Consumes: `ConfirmDialog`, `Collapsible`, `refreshMarketSource`, `removeMarketSource`, `uninstallComponent`, `revokeComponent`, `AddSourceDialog`, `describeError`/`marketErrorText`.
 - Produces: rien de partagé (textes et composants de la page).
 
-- [ ] **Step 1: Confirmations du menu d'un composant (tests rouges puis verts, écran 117)**
+- [x] **Step 1: Confirmations du menu d'un composant (tests rouges puis verts, écran 117)**
 
 `components-page.test.tsx`, test « D3: rehash, revoke and uninstall from the ⋯ menu » adapté :
 ```tsx
@@ -1389,17 +1389,17 @@ test("a built-in component has no ⋯ button at all", () => { /* queryByRole("bu
 (`ConfirmDialog` du SDK rend un `AlertDialog` : vérifier le rôle dans `confirm-dialog.test.tsx`.) `ComponentRowMenu.tsx` : entrées `t.rehash` (« Vérifier le code »), `t.revoke` (« Bloquer ce composant… ») ⇒ `ConfirmDialog` (`title: t.revokeTitle(title, version)`, `description: t.revokeHelp`), `t.uninstall` (« Désinstaller… ») ⇒ `ConfirmDialog` (`t.uninstallTitle`, `t.uninstallHelp` : « Le composant est retiré de ton workspace. Il n'est posé sur aucune page. »), `describeError: marketErrorText` ; `ComponentsTable.tsx` : `row.builtin ? null : <ComponentRowMenu …/>`. `fr-components.ts` : `trust.sandboxed: "Isolé"`, `trust.sandboxedHelp`, `rehash: "Vérifier le code"`, `revoke: "Bloquer ce composant…"`, `revokeTitle`, `revokeHelp`, `uninstall: "Désinstaller…"`, `uninstallTitle`, `uninstallHelp`, `draftPending: (id) => "À valider : lance les tests du composant (commande dans Détails)"` + `draftCommand: (id) => \`kibo component test ${id}\`` affichée dans un `Collapsible` « Détails » de `DraftsSection`.
 Run: `bun test packages/ui/src/components-page` — Expected: PASS.
 
-- [ ] **Step 2: Marketplace : état vide, carte sans identifiant (tests rouges puis verts)**
+- [x] **Step 2: Marketplace : état vide, carte sans identifiant (tests rouges puis verts)**
 
 `marketplace.test.tsx` : « without any source the tab explains… » devient : texte « Aucune source de composants », bouton « Ajouter une source » ouvre `AddSourceDialog` (dialogue « Ajouter une source » visible), lien « Gérer les sources » cible `#/settings/components` ; « cards show… » : `hit.id` absent du texte visible, présent sous « Détails » (`Collapsible` fermé : `screen.getByText("meteo")` absent avant clic sur « Détails », présent après). `MarketplaceTab.tsx` : `EmptySources` avec le dialogue (prop `remote` : bouton absent à distance, texte `t.localOnly`) ; `MarketCard.tsx` : `Collapsible` « Détails » (id, empreinte `hashText`). `fr-market.ts` : `noSource` réécrit, `noSourceHelp`, `addSource`, `manageSources`, `details`, `serial: "Version du catalogue"`, `published: (serial) => \`Publié · version du catalogue ${serial}\``, `ko` ⇒ « ko », `dialog.found` ⇒ « version du catalogue n° … ».
 Run: `bun test packages/ui/src/components-page` — Expected: PASS.
 
-- [ ] **Step 3: Sources : titre, rafraîchir par ligne, retrait confirmé (tests rouges puis verts, écran 118)**
+- [x] **Step 3: Sources : titre, rafraîchir par ligne, retrait confirmé (tests rouges puis verts, écran 118)**
 
 `sources.test.tsx` : « refreshing asks the daemon… » ⇒ `refreshMarketSource { id }` pour une ligne et `refreshMarket` pour « Tout rafraîchir » ; « removing a source shows that it is waiting » ⇒ un `ConfirmDialog` « Retirer la source Galadrim ? » avec le texte sur les éditeurs reconnus, puis `removeMarketSource` ; `h1` « Sources de composants » et sous-titre ; colonne « Version du catalogue ». `ComponentSourcesPage.tsx` : `requestOf("refresh", id)` ⇒ `{ method: "refreshMarketSource", id }`, bouton d'en-tête « Tout rafraîchir » ⇒ `refreshMarket` ; `SourceRow.tsx` : `ConfirmDialog` sur « Retirer… » ; `SettingsNav.tsx` : l'entrée « Composants » devient « Sources de composants » ; `fr-market.ts › marketSources` : `title`, `subtitle`, `refreshOne`, `refreshAll`, `removeTitle(name)`, `removeHelp`.
 Run: `bun test packages/ui/src/settings/sources.test.tsx packages/ui/src/settings/settings-nav.test.tsx` (si présent) — Expected: PASS.
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget && grep -rn "Sandboxé\|Revérifier\|Retirer la confiance\|Index n°" packages/ui/src` — Expected: PASS, aucune occurrence.
 
