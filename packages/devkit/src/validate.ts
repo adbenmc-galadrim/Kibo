@@ -8,6 +8,7 @@ import {
   grantedOf,
   isBuiltinId,
   KiboError,
+  formatIssue as manifestFormatIssue,
   permissionList,
   RESERVED_MCP_IDS,
   type ValidationReport,
@@ -81,6 +82,8 @@ async function readManifest(dir: string): Promise<ComponentManifest | string[]> 
   const parsed = ComponentManifest.safeParse(raw);
   if (!parsed.success) return parsed.error.issues.map((i) => `${i.path.join(".")} : ${i.message}`);
   if (isBuiltinId(parsed.data.id)) return [FR_DEVKIT.reservedId(parsed.data.id)];
+  const formats = manifestFormatIssue(parsed.data);
+  if (formats !== null) return [formats];
   if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];
   const reserved = reservedMcpServers(parsed.data.mcp);
   if (reserved.length > 0) return reserved.map(FR_DEVKIT.reservedMcpServer);

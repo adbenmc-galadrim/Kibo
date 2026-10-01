@@ -207,6 +207,17 @@ describe("validateComponent", () => {
     writeFileSync(join(dir, "kibo.component.json"), "{");
     expect((await validateComponent(dir, opts)).manifest.ok).toBe(false);
   }, 120_000);
+  test("a manifest whose formats contradict its kind stops before the tests", async () => {
+    const dir = fixture("hello");
+    const manifest = { id: "hello", version: "0.1.0", kind: "view", title: "H", reads: [], writes: [] };
+    writeFileSync(join(dir, "kibo.component.json"), JSON.stringify({ ...manifest, formats: ["large"] }));
+    const report = await validateComponent(dir, opts);
+    expect(report.manifest).toEqual({
+      ok: false,
+      errors: ["INVALID_MANIFEST: a view declares the full format"],
+    });
+    expect(report.tests.passed + report.tests.failed).toBe(0);
+  }, 120_000);
   test("the stamp lives in a hidden folder and never changes the hash", async () => {
     const dir = fixture("hello");
     const first = await validateComponent(dir, opts);

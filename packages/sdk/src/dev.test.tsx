@@ -28,16 +28,51 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-test("mountDev renders the component on the demo data with surface and theme toggles", async () => {
+const frameOf = (text: string) => screen.getByText(text).closest<HTMLElement>("[data-format]");
+
+test("mountDev renders the component on the demo data with format and theme toggles", async () => {
   document.body.innerHTML = '<div id="root"></div>';
   await act(async () => mountDev(manifest, Probe));
   expect(await screen.findByText("widget · seeded")).toBeDefined();
-  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Vue" })));
+  expect(
+    screen
+      .getAllByRole("button", { name: /^(Petit|Moyen|Large|Demi-page|Plein écran)$/ })
+      .map((b) => b.textContent),
+  ).toEqual(["Moyen", "Large", "Demi-page", "Plein écran"]);
+  const medium = frameOf("widget · seeded");
+  expect([medium?.dataset.format, medium?.style.width, medium?.style.height]).toEqual([
+    "medium",
+    "592px",
+    "272px",
+  ]);
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Plein écran" })));
   expect(await screen.findByText("view · seeded")).toBeDefined();
+  const full = frameOf("view · seeded");
+  expect([full?.dataset.format, full?.style.width, full?.style.height]).toEqual(["full", "1200px", "848px"]);
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sombre" })));
   expect(document.documentElement.classList.contains("dark")).toBe(true);
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Clair" })));
   expect(document.documentElement.classList.contains("dark")).toBe(false);
+});
+
+test("mountDev offers only the declared formats", async () => {
+  document.body.innerHTML = '<div id="root"></div>';
+  await act(async () => mountDev({ ...manifest, kind: "widget", formats: ["small", "large"] }, Probe));
+  expect(await screen.findByText("widget · seeded")).toBeDefined();
+  expect(screen.queryByRole("button", { name: "Moyen" })).toBeNull();
+  const large = frameOf("widget · seeded");
+  expect([large?.dataset.format, large?.style.width, large?.style.height]).toEqual([
+    "large",
+    "592px",
+    "560px",
+  ]);
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Petit" })));
+  const small = frameOf("widget · seeded");
+  expect([small?.dataset.format, small?.style.width, small?.style.height]).toEqual([
+    "small",
+    "288px",
+    "272px",
+  ]);
 });
 
 test("mountDev rejects an invalid manifest", () => {
