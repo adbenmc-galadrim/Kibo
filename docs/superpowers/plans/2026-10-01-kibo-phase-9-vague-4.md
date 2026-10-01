@@ -207,7 +207,10 @@ export const DraftAttachments = z.array(DraftAttachmentInput).max(MAX_DRAFT_ATTA
 export const DraftAttachment = z.object({ name: DraftAttachmentName, mime: IconMime, bytes: z.number().int().positive() });
 export type DraftAttachment = z.infer<typeof DraftAttachment>;
 export const MAX_DRAFT_REVISIONS = 10;
-// ComponentDraft gagne  attachments: z.array(DraftAttachment).default([]), revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0)
+export const MAX_DRAFT_ATTACHMENTS_TOTAL = MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_REVISIONS + 1);
+// ComponentDraft gagne  attachments: z.array(DraftAttachment).max(MAX_DRAFT_ATTACHMENTS_TOTAL).default([]), revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0)
+// Démon (T50, après relecture lead) : writeAttachments(dir, inputs: readonly DraftAttachmentInput[], existing: readonly DraftAttachment[]) ; checkAttachments(inputs): void ; DraftStore gagne feedback(id): string | null, saveFeedback(id, text: string | null): void ; LaunchInput, launchDraft, draftBrief, ATTACHMENTS_ENV dans draft-launch.ts ; prepareNewDraft dans draft-new.ts
+// Démon (T51) : GeneratorBrief.attachments: readonly string[] ; revisePrompt(b, feedback, attachments: readonly string[])
 // StartComponentDraftInput.create gagne  formats: z.array(ComponentFormat).min(1).max(5).optional(), attachments: DraftAttachments
 // StartComponentDraftInput.modify gagne  attachments: DraftAttachments
 export const ReviseComponentDraftInput = z.object({ draftId: DraftId, feedback: z.string().trim().min(5).max(2000), attachments: DraftAttachments });
@@ -866,6 +869,8 @@ git commit -m "test(e2e): disposition et formats"
 
 ### Task 50: Schéma, core et démon : images jointes, révision, parallélisme du générateur
 
+> **Amendement après relecture lead (1er refus).** `start` : `checkAttachments(input.attachments)` avant `newDraft` (rien n'est créé si une image est refusée), `writeAttachments` juste après `prepareDraft` (`prepareNewDraft`), `removeDraft` si l'écriture échoue. `revise` : contrôles (`revised` à blanc), `writeAttachments` en ajout (refus `INVALID_INPUT` au-delà de `MAX_DRAFT_ATTACHMENTS_TOTAL`, extension du nom conforme au format détecté), `store.saveFeedback`, puis `launchDraft` avec `revisePrompt` ; la liste des images est persistée par l'événement `revised` (pas de `store.save` intermédiaire) ; si le lancement lève, les fichiers écrits par l'appel sont retirés et l'erreur relancée ; refus `CONFLICT` si la version relue est déjà publiée. `retry` : `fixPrompt` si le rapport est en échec, sinon `revisePrompt(brief, store.feedback(id), images)` quand `revisions > 0`, sinon `generatorPrompt`. Tests ajoutés : `revise` dont `runs.enqueue` lève ⇒ état et dossier inchangés ; `revise` puis run `failed`/`cancelled` puis `retry` ⇒ prompt qui contient le retour ; lien symbolique à la place de `<id>.attachments` ; total dépassé ⇒ `INVALID_INPUT` sans écriture ; `isProcessing` devenu vrai pendant `settled()` ⇒ `CONFLICT`.
+
 Vague 0 ← T46 (pour `ComponentFormat` dans `StartComponentDraftInput.create.formats` ; démarrer en parallèle, rebaser). Spec IA **§13.1, §13.4, §13.6, §13.9**, agents §12, §14.2 (bornes). Décisions 6, 7. Les images vivent dans `<draftId>.attachments/`, hors du dossier du brouillon ; `reviseComponentDraft` relance la même session ; le profil `generateur` accepte 2 runs. `draft-lifecycle.ts` (275 l.) extrait `draft-launch.ts`. Relue par `kibo-lead`.
 
 **Files:**
@@ -960,6 +965,8 @@ git commit -m "feat(daemon): révision d'un brouillon par retour"
 ---
 
 ### Task 51: Démon et devkit : contexte de l'agent, aperçu d'un brouillon dans le bac à sable, largeurs fixes refusées, faux `claude`
+
+> **Amendement (relecture lead de T50).** T50 livre `previewComponentDraft` en `KiboError("INTERNAL", …)` (test « the draft preview is refused until it is served » de `methods.test.ts`) : T51 remplace le cas et ce test. `generatorPrompt` et `revisePrompt` listent déjà les chemins des images (`imageLines`) : T51 enrichit le texte sans dupliquer la liste.
 
 Vague 1 ← T46, T50. Spec IA **§13.7, §13.8, §13.11**, composants **§17.4** (largeurs fixes), **§17.5** (aperçu). Décision 8. `prompts.ts` (159 l.) extrait son skill et son exemple dans `prompts-skill.ts`. Relue par `kibo-lead` (listener sandbox, garde-fou, prompt).
 
@@ -1335,7 +1342,7 @@ git commit -m "test(e2e): créations, aperçu, révision, publication"
 - Composants §17.1 (`formats?`, `formatsOf`, `formatIssue`) : T46 ; devkit valide `formatIssue` : T47 pas 4. §17.2 (SDK `format`, init, mock, `mountDev`, `surfaceFor`) : T47. §17.3 (formats des intégrés) : T47 pas 5. §17.4 (conformité par format, largeurs fixes) : T47 pas 3, T51 pas 2. §17.5 (aperçu d'un brouillon) : T51 pas 3, T54.
 - IA §13.1 (arrière-plan, parallélisme) : T50 (profil générateur 2), T52 pas 4, T53 pas 4. §13.2 (Créations) : T53. §13.3 (indicateur) : T53 pas 3. §13.4 (pièces jointes) : T50 (démon), T52 (UI), T51 pas 4 (faux `claude`). §13.5 (formats cochés) : T52 pas 2. §13.6 (aperçu, révision) : T50 (RPC), T51, T54. §13.7 (contexte) : T51 pas 1. §13.8 (validation par format) : T47 pas 3, T51 pas 2. §13.9 (RPC) : T50. §13.10 (dialogues bornés, arrière-plan) : T52. §13.11 (faux `claude`) : T51 pas 4.
 - Sync D48 : T47 pas 2 (`validate-instances.ts`, `room.ts`). Agents §12 : T50 (`SYSTEM_MAX_PARALLEL`, défauts), T53 pas 4 (fiche).
-- Points pour Adam A11 à A21 : chacun a un défaut retenu et une tâche isolée (A11 liste des formats ⇒ T46 seul ; A12 pas de taille libre ⇒ T48 ; A13 chevauchements non refusés ⇒ T47 pas 2 ; A14 emplacement des pièces jointes ⇒ T50 ; A15 parallélisme 2 ⇒ T50 ; A16 dix révisions ⇒ T50/T54 ; A17 aperçu via le listener sandbox ⇒ T51 ; A18 `InstanceMenuContent` paresseux ⇒ T45 ; A19 vignettes en `data:` ⇒ T52 ; A20 largeur fixe ≥ 240 px ⇒ T51 ; A21 écran Créations sous Composants ⇒ T53).
+- Points pour Adam A11 à A21 : chacun a un défaut retenu et une tâche isolée (A11 liste des formats ⇒ T46 seul ; A12 pas de taille libre ⇒ T48 ; A13 chevauchements non refusés ⇒ T47 pas 2 ; A17 images jointes ⇒ T50 ; A16 parallélisme 2 ⇒ T50 ; A18 dix révisions ⇒ T50/T54 ; A17 aperçu via le listener sandbox ⇒ T51 ; A18 `InstanceMenuContent` paresseux ⇒ T45 ; A19 vignettes en `data:` ⇒ T52 ; A20 largeur fixe ≥ 240 px ⇒ T51 ; A21 écran Créations sous Composants ⇒ T53).
 
 **Review Focus.** 1 (disposition hors grille envoyée par un pair) ⇒ T47 pas 2 ; 2 (deux éditeurs simultanés) ⇒ T47 pas 1 (dernier écrit), T49 test 2 ; 3 (cinquième image, GIF, 300 kB) ⇒ T50 pas 1, T52 pas 1 et 2 ; 4 (révision pendant une génération) ⇒ T50 pas 3 (`canRevise` démon), T54 pas 1 ; 5 (aperçu d'un brouillon abandonné ou publié) ⇒ T51 pas 3 (`lookup` suit l'état) ; 6 (page étroite pendant l'édition) ⇒ T48 pas 4 ; 7 (chemin de pièce jointe hors `readRoots`) ⇒ T50 pas 2 (garde-fou).
 
