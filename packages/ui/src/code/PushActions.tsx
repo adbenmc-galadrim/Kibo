@@ -49,7 +49,11 @@ export function PushActions(p: Props) {
   if (p.pushing)
     return (
       <div className="mt-auto grid gap-3">
-        <PushProgress command={fr.commit.pushCommand(p.remote, p.branch ?? "HEAD")} pending={p.pending} />
+        <PushProgress
+          title={fr.commit.pushing(p.branch ?? "HEAD", p.remote)}
+          command={fr.commit.pushCommand(p.remote, p.branch ?? "HEAD")}
+          pending={p.pending}
+        />
         <Button variant="outline" disabled>
           <LoaderCircle aria-hidden className="animate-spin" />
           {fr.commit.pushingTo(p.target)}

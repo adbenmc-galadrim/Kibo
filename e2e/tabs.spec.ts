@@ -36,7 +36,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
   const changesTab = bar.getByRole("tab", { name: `Onglets ${key} · Changements` });
   await expect(changesTab).toBeVisible();
   await changesTab.click();
-  await expect(page.getByRole("group", { name: "Non indexés" }).getByText("README.md")).toBeVisible();
+  await expect(page.getByRole("group", { name: /^Modifications \(/ }).getByText("README.md")).toBeVisible();
   await expect(page.getByRole("button", { name: `Commit sur ${created.branch}` })).toBeVisible();
   await shot(page, info, "ecran-20");
   await page

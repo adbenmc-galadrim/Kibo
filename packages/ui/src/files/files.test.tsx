@@ -105,6 +105,30 @@ test("the preview shows the header, metadata, highlighted line and footer", asyn
   });
 });
 
+function setPlatform(platform: string): () => void {
+  const original = navigator.platform;
+  Object.defineProperty(navigator, "platform", { value: platform, configurable: true });
+  return () => Object.defineProperty(navigator, "platform", { value: original, configurable: true });
+}
+
+test("the footer shows the external editor shortcut of the running platform", async () => {
+  const restoreMac = setPlatform("MacIntel");
+  try {
+    const { unmount } = render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} />);
+    expect(await screen.findByText("⌘⇧O ouvrir dans l'éditeur externe · Esc fermer")).toBeTruthy();
+    unmount();
+  } finally {
+    restoreMac();
+  }
+  const restoreLinux = setPlatform("Linux x86_64");
+  try {
+    render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} />);
+    expect(await screen.findByText("Ctrl+Shift+O ouvrir dans l'éditeur externe · Esc fermer")).toBeTruthy();
+  } finally {
+    restoreLinux();
+  }
+});
+
 test("a binary file is not previewed", async () => {
   readOutcome = () => Promise.resolve({ ...content, content: null, hash: null, binary: true });
   render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} />);

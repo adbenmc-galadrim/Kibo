@@ -26,7 +26,7 @@ const labels = (entries: ReturnType<typeof fileMenuEntries>) =>
 const entriesFor = (patch: Partial<FileChange>, readOnly = false, a = actions()) =>
   fileMenuEntries({ file: file(patch), readOnly, texts: fr.changes, actions: a });
 
-test("an unstaged file offers Indexer and Annuler, a staged one Désindexer", () => {
+test("an unstaged file offers Ajouter au commit, a staged one Retirer du commit", () => {
   const a = actions();
   const entries = entriesFor({}, false, a);
   expect(labels(entries)).toEqual([
@@ -35,18 +35,18 @@ test("an unstaged file offers Indexer and Annuler, a staged one Désindexer", ()
     "Ouvrir dans l'éditeur externe",
     "Copier le chemin",
     "—",
-    "Indexer",
+    "Ajouter au commit",
     "—",
     "Annuler les changements…",
   ]);
-  expect(labels(entriesFor({ area: "staged" }))).toContain("Désindexer");
+  expect(labels(entriesFor({ area: "staged" }))).toContain("Retirer du commit");
   const discard = entries.at(-1);
   expect(discard && !isSeparator(discard) && !isSubmenu(discard) && discard.destructive).toBe(true);
   if (discard && !isSeparator(discard) && !isSubmenu(discard)) discard.onSelect();
   expect(a.discard).toHaveBeenCalledTimes(1);
 });
 
-test("a conflicted file has neither Indexer nor Annuler", () => {
+test("a conflicted file can neither be added to the commit nor discarded", () => {
   expect(labels(entriesFor({ kind: "conflicted" }))).toEqual([
     "Voir le diff",
     "Ouvrir dans un onglet",

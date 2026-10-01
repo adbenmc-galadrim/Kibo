@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@kibo/sdk
 import { Bell, Bot, FileText, FolderKanban, GitCommitHorizontal, Plus, SunMoon, Ticket } from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { SCREENS } from "../tabs/screens";
 import { agentItems } from "./agent-items";
 import {
@@ -203,7 +204,7 @@ export function CommandPalette({
               {fr.palette.hintOpen}
             </span>
             <span className="flex items-center gap-1.5">
-              <Kbd>⌘↵</Kbd>
+              <Kbd>{shortcutLabel(["↵"], isMac())}</Kbd>
               {fr.palette.hintSheet}
             </span>
             <span className="flex items-center gap-1.5">

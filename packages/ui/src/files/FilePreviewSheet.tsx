@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { fr } from "../i18n/fr";
 import { relativeTime } from "../lib/relative-time";
 import { isRemoteView } from "../lib/remote-view";
+import { isMac } from "../lib/shortcut-label";
 import { CodeLines } from "./CodeLines";
 import { columnOf, splitPath } from "./file-path";
 import { languageOf } from "./language";
@@ -110,7 +111,7 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
         )}
         <footer className="flex items-center justify-between border-t px-4 py-2 font-mono text-xs text-muted-foreground">
           <span>{fr.file.position(fileRef.line ?? 1, columnOf(c?.content ?? null, fileRef.line))}</span>
-          <span className="font-sans">{fr.file.hints}</span>
+          <span className="font-sans">{fr.file.hints(isMac())}</span>
         </footer>
       </SheetContent>
     </Sheet>

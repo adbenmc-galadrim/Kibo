@@ -69,11 +69,11 @@ test("modifier → indexer un bloc → commit → amend → PR", async ({ page }
     .getByRole("button", { name: /ticket\.ts/ })
     .first()
     .click();
-  await page.getByRole("button", { name: "Indexer le bloc" }).first().click();
+  await page.getByRole("button", { name: "Ajouter le bloc au commit" }).first().click();
   await expect(
-    page.getByRole("group", { name: "Indexés", exact: true }).getByText("ticket.ts"),
+    page.getByRole("group", { name: /^Dans le prochain commit \(/ }).getByText("ticket.ts"),
   ).toBeVisible();
-  await expect(page.getByRole("group", { name: "Non indexés" }).getByText("ticket.ts")).toBeVisible();
+  await expect(page.getByRole("group", { name: /^Modifications \(/ }).getByText("ticket.ts")).toBeVisible();
   expect(repo.git("diff", "--cached")).toContain("line2 = 20");
   expect(repo.git("diff", "--cached")).not.toContain("line29 = 290");
 
@@ -88,8 +88,8 @@ test("modifier → indexer un bloc → commit → amend → PR", async ({ page }
   await expect(page.getByText("↑1").first()).toBeVisible();
   expect(repo.git("log", "-1", "--format=%s").trim()).toBe(`feat: schéma Loro des tickets (${key}-1)`);
 
-  await page.getByRole("checkbox", { name: /Indexer src\/ticket\.ts/ }).click();
-  await expect(page.getByRole("group", { name: "Non indexés" }).getByText("ticket.ts")).toHaveCount(0);
+  await page.getByRole("checkbox", { name: /Ajouter src\/ticket\.ts au commit/ }).click();
+  await expect(page.getByRole("group", { name: /^Modifications \(/ }).getByText("ticket.ts")).toHaveCount(0);
   const latest = page.getByRole("listitem").filter({ hasText: `(${key}-1)` });
   await latest.getByRole("button", { name: "Modifier" }).click();
   await expect(page.getByRole("checkbox", { name: "Modifier le dernier commit (non poussé)" })).toBeChecked();
@@ -135,9 +135,9 @@ test("push en cours, en échec puis réessayé", async ({ page }, info) => {
 
   editTicketFile(repo);
   await page.getByRole("button", { name: /^Changements/ }).click();
-  await page.getByRole("checkbox", { name: /Indexer src\/ticket\.ts/ }).click();
+  await page.getByRole("checkbox", { name: /Ajouter src\/ticket\.ts au commit/ }).click();
   await expect(
-    page.getByRole("group", { name: "Indexés", exact: true }).getByText("ticket.ts"),
+    page.getByRole("group", { name: /^Dans le prochain commit \(/ }).getByText("ticket.ts"),
   ).toBeVisible();
   await expect(page.getByLabel("Message")).toHaveValue(`feat: push de test (${key}-1)`);
   await page.getByRole("button", { name: `Commit sur ${repo.branch}` }).click();

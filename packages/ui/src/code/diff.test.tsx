@@ -54,7 +54,7 @@ test("the unified diff shows numbers and signs, the hunk button stages", async (
   );
   const section = screen.getByRole("region", { name: hunk.header });
   expect(within(section).getByText("key: z.string(),")).toBeTruthy();
-  await userEvent.click(within(section).getByRole("button", { name: "Indexer le bloc" }));
+  await userEvent.click(within(section).getByRole("button", { name: "Ajouter le bloc au commit" }));
   expect(hunks).toEqual([[0, hunk.header]]);
 });
 
@@ -62,7 +62,7 @@ test("staged diffs offer to unstage, binary files and whole-file-only diffs hide
   const { rerender } = render(
     <DiffView diff={diff} area="staged" mode="split" busy={false} onHunk={() => {}} />,
   );
-  expect(screen.getByRole("button", { name: "Désindexer le bloc" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Retirer le bloc du commit" })).toBeTruthy();
   rerender(
     <DiffView
       diff={{ ...diff, hunkStaging: false }}
@@ -72,7 +72,7 @@ test("staged diffs offer to unstage, binary files and whole-file-only diffs hide
       onHunk={() => {}}
     />,
   );
-  expect(screen.queryByRole("button", { name: "Indexer le bloc" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ajouter le bloc au commit" })).toBeNull();
   rerender(
     <DiffView
       diff={{ ...diff, binary: true, hunks: [] }}
@@ -163,17 +163,21 @@ test("the file list groups by area and toggles staging per file", async () => {
       onUnstageAll={() => {}}
     />,
   );
-  const staged = screen.getByRole("group", { name: "Indexés" });
+  const staged = screen.getByRole("group", { name: "Dans le prochain commit (2)" });
+  const changes = screen.getByRole("group", { name: "Modifications (2)" });
+  expect(within(staged).getByText("Modifié").getAttribute("aria-hidden")).toBeNull();
+  expect(within(staged).getByText("Ajouté")).toBeTruthy();
+  expect(within(changes).getByText("Supprimé")).toBeTruthy();
   expect(within(staged).getAllByRole("checkbox")).toHaveLength(2);
   expect(
     within(staged)
-      .getByRole("checkbox", { name: "Désindexer packages/core/ticket.ts" })
+      .getByRole("checkbox", { name: "Retirer packages/core/ticket.ts du commit" })
       .getAttribute("aria-checked"),
   ).toBe("true");
-  await userEvent.click(screen.getByRole("checkbox", { name: "Indexer packages/core/index.ts" }));
-  await userEvent.click(screen.getByRole("button", { name: /^supprimé legacy-tree\.ts/ }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Ajouter packages/core/index.ts au commit" }));
+  await userEvent.click(screen.getByRole("button", { name: /^Supprimé legacy-tree\.ts/ }));
   expect(toggled).toEqual(["unstaged:packages/core/index.ts"]);
   expect(selected).toEqual(["unstaged:packages/core/legacy-tree.ts"]);
-  await userEvent.click(screen.getByRole("button", { name: /Indexés/ }));
+  await userEvent.click(screen.getByRole("button", { name: /Dans le prochain commit/ }));
   expect(within(staged).queryAllByRole("checkbox")).toHaveLength(0);
 });

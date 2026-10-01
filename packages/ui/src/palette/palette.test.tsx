@@ -145,6 +145,44 @@ test("Enter opens a target, ⌘Enter opens the ticket sheet, Tab cycles the filt
   expect(within(dialog).getByText("Tickets", { selector: "[data-filter]" })).toBeTruthy();
 });
 
+function setPlatform(platform: string): () => void {
+  const original = navigator.platform;
+  Object.defineProperty(navigator, "platform", { value: platform, configurable: true });
+  return () => Object.defineProperty(navigator, "platform", { value: original, configurable: true });
+}
+
+const renderPalette = () =>
+  render(
+    <CommandPalette
+      open
+      onOpenChange={() => {}}
+      newTab={false}
+      context={context}
+      onOpenTarget={() => {}}
+      onOpenTicketSheet={() => {}}
+      onAction={() => {}}
+    />,
+  );
+
+test("the sheet hint shows ⌘↵ on macOS and Ctrl+↵ elsewhere", () => {
+  const sheetHint = () => screen.getByText("ouvrir dans le Sheet").querySelector("kbd")?.textContent;
+  const restoreMac = setPlatform("MacIntel");
+  try {
+    const { unmount } = renderPalette();
+    expect(sheetHint()).toBe("⌘↵");
+    unmount();
+  } finally {
+    restoreMac();
+  }
+  const restoreLinux = setPlatform("Linux x86_64");
+  try {
+    renderPalette();
+    expect(sheetHint()).toBe("Ctrl+↵");
+  } finally {
+    restoreLinux();
+  }
+});
+
 test("the agents group answers a waiting run and assigns the active ticket, Tab reaches it", async () => {
   const actions: unknown[] = [];
   render(

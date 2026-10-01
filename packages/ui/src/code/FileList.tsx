@@ -121,13 +121,9 @@ function Row(props: RowProps) {
             className="flex min-w-0 flex-1 items-center gap-2 text-left"
             onClick={() => onSelect(file)}
           >
-            <span
-              aria-hidden
-              className={cn("w-3 shrink-0 font-mono text-2xs font-semibold", KIND_TONE[file.kind])}
-            >
+            <span className={cn("w-14 shrink-0 text-2xs font-medium", KIND_TONE[file.kind])}>
               {fr.changes.kind[file.kind]}
             </span>
-            <span className="sr-only">{fr.changes.kindLabel[file.kind]}</span>
             <span className="min-w-0 flex-1">
               <span className={cn("block truncate font-mono text-xs", file.kind === "deleted" && MUTED)}>
                 {name}
@@ -169,15 +165,13 @@ function Section({ area, title, files, bulk, selected, busy, readOnly, ...handle
         <button
           type="button"
           aria-expanded={open}
-          className={cn(
-            "flex flex-1 items-center gap-1 px-2 py-2 text-2xs font-medium uppercase tracking-wide",
-            MUTED,
-          )}
+          className={cn("flex min-w-0 flex-1 items-center gap-1 px-2 py-2 text-xs font-medium", MUTED)}
           onClick={() => setOpen((o) => !o)}
         >
           <ChevronDown aria-hidden className={cn("size-3.5 transition-transform", !open && "-rotate-90")} />
-          <span id={id}>{title}</span>
-          <span className="ml-auto">{files.length}</span>
+          <span id={id} className="truncate">
+            {fr.changes.section(title, files.length)}
+          </span>
         </button>
         {!readOnly && files.length > 0 && (
           <Button

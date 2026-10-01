@@ -73,7 +73,7 @@ test("menus des pages, fiche ticket éditable, annulation d'un fichier", async (
   created.write("README.md", "# test\nligne ajoutée\n");
   created.write("docs/notes.md", "# notes\n");
   await page.getByRole("button", { name: /^Changements/ }).click();
-  const unstaged = page.getByRole("group", { name: "Non indexés" });
+  const unstaged = page.getByRole("group", { name: /^Modifications \(/ });
   await expect(unstaged.getByText("README.md")).toBeVisible();
   await expect(unstaged.getByText("notes.md")).toBeVisible();
   await unstaged

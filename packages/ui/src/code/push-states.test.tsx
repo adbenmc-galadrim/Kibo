@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import type { CommitInfo, PrInfo } from "@kibo/schema";
 import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PushActions } from "./PushActions";
 
 const commit = (shortSha: string): CommitInfo => ({
@@ -39,14 +40,15 @@ function renderActions(overrides: Partial<Parameters<typeof PushActions>[0]> = {
   );
 }
 
-test("a push in progress shows the command, the pending commits and the elapsed time", async () => {
+test("a push in progress names the branch, the pending commits and the elapsed time", async () => {
   const realNow = Date.now;
   let now = 1_000_000;
   Date.now = () => now;
   try {
     renderActions({ pushing: true });
     const card = screen.getByRole("status");
-    expect(card.textContent).toContain("git push -u origin kib-12");
+    expect(card.textContent).toContain("Publication de la branche kib-12 sur origin…");
+    expect(card.textContent).not.toContain("git push");
     expect(card.textContent).toContain("2 commits (a1f3c2e, 9bd02e1). Jamais de force-push.");
     expect(card.textContent).toContain("0 s");
     now += 4_000;
@@ -57,6 +59,13 @@ test("a push in progress shows the command, the pending commits and the elapsed 
   } finally {
     Date.now = realNow;
   }
+});
+
+test("the git command of a push in progress is only shown under Détails", async () => {
+  renderActions({ pushing: true });
+  expect(screen.queryByText("git push -u origin kib-12")).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Détails" }));
+  expect(screen.getByText("git push -u origin kib-12")).toBeTruthy();
 });
 
 test("a failed push shows the git output in a code block apart from the explanation", () => {

@@ -58,7 +58,9 @@ test("the dialog shows the summary, the staged warning and submits the defaults"
   });
   expect(screen.getByText("kib-12 → main · 2 commits non poussés · 3 fichiers")).toBeTruthy();
   expect(
-    screen.getByText("2 fichiers indexés ne sont pas commités : ils ne seront pas dans la PR."),
+    screen.getByText(
+      "2 fichiers ajoutés au commit ne sont pas encore commités : ils ne seront pas dans la PR.",
+    ),
   ).toBeTruthy();
   expect(screen.getByText("Lancer sonnet-review sur la PR")).toBeTruthy();
   expect(screen.getByText(/passe en « En review »/)).toBeTruthy();

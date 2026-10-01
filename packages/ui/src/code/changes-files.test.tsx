@@ -50,7 +50,9 @@ test("before the first status the file list is a busy placeholder, not an empty 
 
 test("a loaded status shows its files, an empty one says the worktree is clean", () => {
   renderFiles([file]);
-  expect(screen.getByRole("group", { name: "Indexés" }).textContent).toContain("ticket.ts");
+  expect(screen.getByRole("group", { name: "Dans le prochain commit (1)" }).textContent).toContain(
+    "ticket.ts",
+  );
   expect(screen.queryByLabelText("Chargement des changements…")).toBeNull();
   cleanup();
   renderFiles([]);
@@ -69,32 +71,32 @@ test("each row has a ⋯ menu and a context menu with the same entries; section 
     "Ouvrir dans un onglet",
     "Ouvrir dans l'éditeur externe",
     "Copier le chemin",
-    "Désindexer",
+    "Retirer du commit",
     "Annuler les changements…",
   ]);
   await user.click(screen.getByRole("menuitem", { name: "Copier le chemin" }));
   expect(onCopyPath).toHaveBeenCalledWith(file);
   await user.pointer({
     keys: "[MouseRight]",
-    target: screen.getByRole("button", { name: /^nouveau README\.md/ }),
+    target: screen.getByRole("button", { name: /^Ajouté README\.md/ }),
   });
   await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
   expect(onDiscard).toHaveBeenCalledWith(expect.objectContaining({ path: "README.md" }));
-  await user.click(screen.getByRole("button", { name: "Tout indexer" }));
+  await user.click(screen.getByRole("button", { name: "Tout ajouter" }));
   expect(onStageAll).toHaveBeenCalledTimes(1);
-  await user.click(screen.getByRole("button", { name: "Tout désindexer" }));
+  await user.click(screen.getByRole("button", { name: "Tout retirer" }));
   expect(onUnstageAll).toHaveBeenCalledTimes(1);
 });
 
 test("empty sections have no bulk button", () => {
   renderFiles([file]);
-  expect(screen.getByRole("button", { name: "Tout désindexer" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Tout indexer" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Tout retirer" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Tout ajouter" })).toBeNull();
 });
 
 test("a remote session has neither bulk buttons nor write entries in the menu", async () => {
   renderFiles([file, { ...file, path: "README.md", area: "unstaged", kind: "untracked" }], true);
-  expect(screen.queryByRole("button", { name: /^Tout (dés)?indexer$/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Tout (ajouter|retirer)$/ })).toBeNull();
   await userEvent.setup().click(screen.getByRole("button", { name: "Actions README.md" }));
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Voir le diff",

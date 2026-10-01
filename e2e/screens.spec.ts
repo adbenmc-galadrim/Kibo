@@ -257,12 +257,12 @@ test("20 · menu contextuel d'un onglet", async () => {
 test("21 · Changements, fichier indexé sélectionné", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/changes?wt=${encodeURIComponent(mockup.worktree)}`);
-  const staged = page.getByRole("group", { name: "Indexés", exact: true });
+  const staged = page.getByRole("group", { name: /^Dans le prochain commit \(/ });
   await staged
     .getByRole("button", { name: /ticket\.ts/ })
     .first()
     .click();
-  await expect(page.getByRole("button", { name: "Indexer le bloc" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ajouter le bloc au commit" }).first()).toBeVisible();
   await expect(page.getByText("↑2").first()).toBeVisible();
   await expect(page.getByLabel("Message")).not.toHaveValue("");
   await expect(page.getByText("opus-dev-1 travaille dans ce worktree.", { exact: false })).toBeVisible();

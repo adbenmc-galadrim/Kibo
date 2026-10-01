@@ -196,7 +196,7 @@ test("the first staged file is selected, its diff shown and the message pre-fill
 test("a stale hunk shows an alert and reloads the diff", async () => {
   overrides = { stageHunk: () => Promise.reject(new KiboError("GIT_STALE", "changed")) };
   renderView();
-  await userEvent.click(await enabledButton("Désindexer le bloc"));
+  await userEvent.click(await enabledButton("Retirer le bloc du commit"));
   expect((await screen.findByRole("alert")).textContent).toBe(
     "Le diff a changé entre-temps : il a été rechargé.",
   );
@@ -259,7 +259,7 @@ test("a code event reloads the status", async () => {
 
 test("editing an unstaged file reads the index and the worktree versions", async () => {
   renderView();
-  await userEvent.click(await screen.findByRole("button", { name: /^modifié index\.ts/ }));
+  await userEvent.click(await screen.findByRole("button", { name: /^Modifié index\.ts/ }));
   await userEvent.click(await enabledButton("Édition"));
   await waitFor(() => expect(count("readFile")).toBe(2));
   expect(
@@ -400,7 +400,9 @@ test("a remote view reads the changes but shows no git action", async () => {
   expect(screen.getByText(/Rebase en cours/)).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Abandonner" })).toBeNull();
   expect(screen.queryByRole("checkbox")).toBeNull();
-  expect(screen.queryByRole("button", { name: /Indexer le bloc|Désindexer le bloc/ })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: /Ajouter le bloc au commit|Retirer le bloc du commit/ }),
+  ).toBeNull();
   expect(screen.queryByRole("button", { name: "Édition" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
   expect(screen.queryByLabelText("Message")).toBeNull();
@@ -475,10 +477,10 @@ test("a refused discard keeps the confirmation open with the error", async () =>
   expect((await within(confirm).findByRole("alert")).textContent).toBeTruthy();
 });
 
-test("Tout indexer and Tout désindexer call the daemon; a remote session is told why it is refused", async () => {
+test("Tout ajouter and Tout retirer call the daemon; a remote session is told why it is refused", async () => {
   renderView();
   const user = userEvent.setup();
-  await user.click(await enabledButton("Tout indexer"));
+  await user.click(await enabledButton("Tout ajouter"));
   await waitFor(() =>
     expect(calls.find((c) => c.method === "stageAll")).toEqual({
       method: "stageAll",
@@ -487,7 +489,7 @@ test("Tout indexer and Tout désindexer call the daemon; a remote session is tol
     }),
   );
   overrides = { unstageAll: () => Promise.reject(new KiboError("FORBIDDEN", "local only")) };
-  await user.click(await enabledButton("Tout désindexer"));
+  await user.click(await enabledButton("Tout retirer"));
   expect((await screen.findByRole("alert")).textContent).toBe(
     "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
   );

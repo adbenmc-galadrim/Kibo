@@ -5,6 +5,7 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Check, GitCommitHorizontal } from "lucide-react";
 import { type ReactNode, type Ref, useId } from "react";
 import { fr } from "../i18n/fr";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 
 type Props = {
   branch: string | null;
@@ -72,7 +73,7 @@ export function CommitPanel(p: Props) {
             ? fr.commit.submitAmend(branch)
             : fr.commit.submit(branch)}
         <kbd aria-hidden className="ml-1 text-xs opacity-60">
-          ⌘↵
+          {shortcutLabel(["↵"], isMac())}
         </kbd>
       </Button>
       {!p.loading && p.stagedCount === 0 && !p.amend && (

@@ -51,13 +51,40 @@ function Panel({
 test("the commit button names the branch and ⌘↵ commits", async () => {
   let commits = 0;
   render(<Panel onCommit={() => commits++} />);
-  expect(screen.getByText("2 fichiers indexés")).toBeTruthy();
+  expect(screen.getByText("2 fichiers dans le commit")).toBeTruthy();
   expect(screen.getByText("Pré-rempli depuis le ticket · 0 token")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Générer avec Claude/ })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: /Commit sur kib-12/ }));
   await userEvent.click(screen.getByLabelText("Message"));
   await userEvent.keyboard("{Meta>}{Enter}{/Meta}");
   expect(commits).toBe(2);
+});
+
+function withPlatform(platform: string, run: () => void) {
+  const original = navigator.platform;
+  Object.defineProperty(navigator, "platform", { value: platform, configurable: true });
+  try {
+    run();
+  } finally {
+    Object.defineProperty(navigator, "platform", { value: original, configurable: true });
+  }
+}
+
+test("the commit shortcut is ⌘↵ on macOS and Ctrl+↵ elsewhere", () => {
+  withPlatform("MacIntel", () => {
+    const { unmount } = render(<Panel onCommit={() => {}} />);
+    expect(screen.getByRole("button", { name: /Commit sur kib-12/ }).querySelector("kbd")?.textContent).toBe(
+      "⌘↵",
+    );
+    unmount();
+  });
+  withPlatform("Linux x86_64", () => {
+    const { unmount } = render(<Panel onCommit={() => {}} />);
+    expect(screen.getByRole("button", { name: /Commit sur kib-12/ }).querySelector("kbd")?.textContent).toBe(
+      "Ctrl+↵",
+    );
+    unmount();
+  });
 });
 
 test("nothing staged blocks a commit, amend unlocks it, a pushed head blocks amend", async () => {
