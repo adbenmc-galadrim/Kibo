@@ -290,8 +290,8 @@ export type ComponentsQuery = { text: string; trust: TrustFilter; origin: Origin
 export const DEFAULT_QUERY: ComponentsQuery;
 export function filterComponents(rows: readonly ComponentRow[], query: ComponentsQuery): ComponentRow[];   // normalise accents et casse, trie (localeCompare "fr" ; semver pour version ; usages = pages)
 export const toggleSort = (q: ComponentsQuery, key: SortKey): ComponentsQuery;
-// components-page/UsagesSheet.tsx (T34, à la demande) : props { row: ComponentRow | null; onClose(): void; onOpenPage(projectId: string, pageId: string): void }
-// components-page/ComponentsPage.tsx (T34) : props { onOpen(target: TabTarget): void; onCreate(): void } ; ScreenView passe onOpen = go
+// components-page/UsagesSheet.tsx (T34, à la demande) : props { row: UsagesTarget | null; onClose(): void; onOpenPage(projectId: string, pageId: string): void } ; UsagesTarget = { title; version; usages } (une ComponentRow convient ; ComponentRow.usages ajouté dans rows.ts)
+// components-page/ComponentsPage.tsx (T34, livré) : props { onOpen(target: TabTarget): void } ; la page monte elle-même CreateComponentDialog (target null) ; ScreenView passe onOpen = go
 
 // settings/SyncEmptyState.tsx (T36, à la demande) : props { onConnect(): void; onJoinDevice(): void; remote: boolean }
 // dialogs/ConnectServerDialog.tsx (T36) : props gagne mode: "server" | "device" (texte d'aide), le reste inchangé
@@ -1714,7 +1714,7 @@ git commit -m "feat(ui): retour à la ligne et recherche dans un fichier"
 
 ### Task 41: Largeurs adaptatives, fil d'Ariane cliquable, mineures
 
-Vague 2 ← T32 (`ShellHeader.tsx`), T40 (`ChangesBody.tsx`), T38. Spec §15.3 ; écran **112 amendé**. Une mise en page de Paramètres partagée, une mise en page de Changements pure, des largeurs en `min(90vw, …)`, un fil d'Ariane qui ouvre, et les mineures restantes : `tabIndex={-1}` et libellé « Image » visible, un seul `role="alert"` à la fois dans « Modifier le projet », coche ✓ du sous-menu Thème, test de la page Workspace sans double `mock.module`.
+Vague 2 ← T32 (`ShellHeader.tsx`), T40 (`ChangesBody.tsx`), T38. Spec §15.3 ; écran **112 amendé**. Une mise en page de Paramètres partagée, une mise en page de Changements pure, des largeurs en `min(90vw, …)`, un fil d'Ariane qui ouvre, et les mineures restantes : `tabIndex={-1}` et libellé « Image » visible, un seul `role="alert"` à la fois dans « Modifier le projet », coche ✓ du sous-menu Thème, test de la page Workspace sans double `mock.module`, tri de Composants › Installés mémorisé via `lib/local-pref.ts` (décision 5, raccord T34 ← T40, avec test « tri conservé après remontage »), `placesOf` du volet « Utilisé dans » trié par projet puis page, pastille de la carte projet en `items-start` quand le chemin passe sur plusieurs lignes.
 
 **Files:**
 - Create: `packages/ui/src/settings/SettingsLayout.tsx`, `settings-layout.test.tsx`, `packages/ui/src/code/ChangesLayout.tsx`, `changes-layout.test.tsx`, `packages/ui/src/shell/breadcrumb.test.tsx`
