@@ -8,13 +8,11 @@ import { resolveWorktree } from "../code/use-worktrees";
 import { useDesktopIntegration } from "../desktop/use-desktop-integration";
 import { useWindowTitle } from "../desktop/use-window-title";
 import { projectDomainsOf } from "../lib/project-domains";
-import { countMine, myTickets } from "../mine/my-tickets";
 import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { canEdit } from "../state/access";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
 import { useProject, useProjects } from "../state/use-projects";
-import { useSnapshots } from "../state/use-snapshots";
 import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
@@ -38,6 +36,7 @@ import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useUpdateSchedule } from "./use-update-schedule";
+import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { inTauri, openWindow } from "./workspace-actions";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
@@ -75,11 +74,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;
-  const snapshots = useSnapshots(projects.map((p) => p.id));
-  const mineCount = useMemo(
-    () => countMine(myTickets(projects, snapshots, viewer, "assigned")),
-    [projects, snapshots, viewer],
-  );
+  const { snapshots, mineCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
@@ -114,7 +109,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
         if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
       },
       openNewTicket: (d) => {
-        if (!projectRef.current || canEdit(projectRef.current)) set({ newTicket: d });
+        if (projectRef.current && !canEdit(projectRef.current)) return;
+        set({ newTicket: activeProjectId ? { ...d, projectId: activeProjectId } : d });
       },
       openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),

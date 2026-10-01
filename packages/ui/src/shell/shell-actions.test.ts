@@ -31,10 +31,13 @@ test("theme, reply and assign need no navigation", () => {
   expect(calls).toEqual(["theme", "focus r1", 'set {"assign":{"projectId":null,"ticketId":"t1"}}']);
 });
 
-test("newTicket on another project opens that project first", () => {
+test("newTicket on another project opens that project first and creates the ticket there", () => {
   const { deps, calls } = paletteDeps("p1");
   paletteActionHandler(deps)({ kind: "newTicket", projectId: "p2", parentId: "7@1" });
-  expect(calls).toEqual(['go {"kind":"project","projectId":"p2"}', 'set {"newTicket":{"parentId":"7@1"}}']);
+  expect(calls).toEqual([
+    'go {"kind":"project","projectId":"p2"}',
+    'set {"newTicket":{"parentId":"7@1","projectId":"p2"}}',
+  ]);
 });
 
 test("newPage on the active project stays put", () => {

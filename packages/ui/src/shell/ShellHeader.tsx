@@ -1,8 +1,16 @@
-import type { AgentsState, ProjectSnapshot, Screen, Session, TabTarget } from "@kibo/schema";
+import {
+  type AgentsState,
+  isInbox,
+  type ProjectSnapshot,
+  type Screen,
+  type Session,
+  type TabTarget,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { Plus } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { displayName, inboxMeta } from "../lib/inbox";
 import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ScreenActions, ShareButton } from "./lazy-screens";
@@ -62,18 +70,18 @@ export function ShellHeader({
         </p>
       )}
       <ScreenActions screen={screen} agents={agents} onNewProfile={onNewProfile} />
-      {project && <ShareButton onShare={onShare} />}
-      {ticketProject && canEdit(ticketProject) && (
-        <Button
-          size="sm"
-          className="h-7"
-          title={fr.header.newTicketIn(ticketProject.meta.name)}
-          onClick={onNewTicket}
-        >
-          <Plus />
-          {fr.header.newTicket}
-        </Button>
-      )}
+      {project && !isInbox(project.meta.id) && <ShareButton onShare={onShare} />}
+      <Button
+        size="sm"
+        className="h-7"
+        title={fr.header.newTicketIn(
+          displayName(ticketProject && canEdit(ticketProject) ? ticketProject.meta : inboxMeta()),
+        )}
+        onClick={onNewTicket}
+      >
+        <Plus />
+        {fr.header.newTicket}
+      </Button>
       <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
       <UserMenu viewer={viewer} onOpen={onOpen} />
     </header>

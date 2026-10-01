@@ -311,19 +311,29 @@ test("the sidebar opens the Components screen in its own tab", async () => {
   );
 });
 
-test("the header offers a ticket in the current project and shows the user's initials", async () => {
+test("the header always offers a ticket: in the inbox, then in the last project, and shows the initials", async () => {
   await go("#/");
   renderShell();
   await go("#/");
   const header = () =>
     within(screen.getByRole("navigation", { name: "Fil d'Ariane" }).closest("header") ?? document.body);
-  expect(header().queryByRole("button", { name: "Ticket" })).toBeNull();
+  const button = () => header().getByRole("button", { name: "Ticket" });
+  expect(button().getAttribute("title")).toBe("Nouveau ticket dans Boîte de réception");
   const avatar = header().getByRole("img", { name: "adam" });
   expect(avatar.textContent).toBe("AD");
+  await act(async () => button().click());
+  const inboxDialog = await screen.findByRole("dialog", { name: "Nouveau ticket" });
+  expect(within(inboxDialog).getByRole("combobox", { name: "Projet" }).textContent).toBe(
+    "Boîte de réception",
+  );
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await go("#/p/p1/1%401");
   await go("#/agents");
-  await act(async () => header().getByRole("button", { name: "Ticket" }).click());
-  expect(await screen.findByRole("dialog", { name: "Nouveau ticket" })).toBeTruthy();
+  expect(button().getAttribute("title")).toBe("Nouveau ticket dans Kibo");
+  await act(async () => button().click());
+  const dialog = await screen.findByRole("dialog", { name: "Nouveau ticket" });
+  expect(within(dialog).getByRole("combobox", { name: "Projet" }).textContent).toBe("Kibo");
 });
 
 test("initials come from the first two words, or the first two letters", async () => {
@@ -389,7 +399,9 @@ test("a read-only project hides page and ticket creation and shows the banner", 
   const banner = await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
   expect(screen.getAllByRole("status")).toContain(banner);
   expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /^Ticket/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /^Ticket/ }).getAttribute("title")).toBe(
+    "Nouveau ticket dans Boîte de réception",
+  );
   expect(await screen.findByText("Cette page est vide : ajoute un composant pour commencer.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Ajouter un composant/ })).toBeNull();
 });

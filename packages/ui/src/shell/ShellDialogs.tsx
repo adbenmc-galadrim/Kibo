@@ -1,6 +1,7 @@
 import {
   type AgentsState,
   type FileRef,
+  INBOX_ID,
   isTerminal,
   type Page,
   type ProjectSnapshot,
@@ -12,7 +13,9 @@ import type { NewTicketDefaults } from "@kibo/sdk";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
+import { newTicketProjects } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
+import { canEdit } from "../state/access";
 import {
   AssignDialog,
   ConfirmDialog,
@@ -31,6 +34,7 @@ import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
 export type SheetTicket = { projectId: string; ticketId: string };
+export type NewTicketRequest = NewTicketDefaults & { projectId?: string };
 
 export type DialogsState = {
   newProject: boolean;
@@ -38,7 +42,7 @@ export type DialogsState = {
   newPageParent: string | null | undefined;
   suggestFor: string | null;
   sheet: SheetTicket | null;
-  newTicket: NewTicketDefaults | null;
+  newTicket: NewTicketRequest | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
   newProfile: boolean;
   preview: FileRef | null;
@@ -182,9 +186,15 @@ export function ShellDialogs({
           onDeleted={() => set({ sheet: null })}
         />
       )}
-      {ticketProject && state.newTicket && (
+      {state.newTicket && (
         <NewTicketDialog
-          project={ticketProject}
+          projects={newTicketProjects(projects, snapshots)}
+          snapshots={snapshots}
+          initialProjectId={
+            state.newTicket.projectId ??
+            (ticketProject && canEdit(ticketProject) ? ticketProject.meta.id : INBOX_ID)
+          }
+          lockProject={state.newTicket.parentId != null || state.newTicket.instanceId != null}
           viewer={viewer}
           defaults={state.newTicket}
           onClose={() => set({ newTicket: null })}

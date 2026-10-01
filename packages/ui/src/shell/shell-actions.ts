@@ -22,7 +22,7 @@ export function paletteActionHandler(d: PaletteDeps): (a: PaletteAction) => void
     if (a.kind === "assign") return d.set({ assign: { projectId: null, ticketId: a.ticketId } });
     if (a.projectId !== d.activeProjectId) d.go({ kind: "project", projectId: a.projectId });
     if (a.kind === "newPage") d.set({ newPageParent: null });
-    if (a.kind === "newTicket") d.set({ newTicket: { parentId: a.parentId } });
+    if (a.kind === "newTicket") d.set({ newTicket: { parentId: a.parentId, projectId: a.projectId } });
   };
 }
 

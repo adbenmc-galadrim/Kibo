@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   EMPTY_TABS,
+  INBOX_ID,
   type ProjectSnapshot,
   type RpcRequest,
   type Screen,
@@ -38,6 +39,14 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
 
 function snapshotOf(projectId: string): ProjectSnapshot {
   const kibo = kiboProject();
+  if (projectId === INBOX_ID)
+    return {
+      ...kibo,
+      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+      tickets: [],
+      links: [],
+      nextTicketKey: "INB-1",
+    };
   if (projectId !== "fac")
     return {
       ...kibo,
