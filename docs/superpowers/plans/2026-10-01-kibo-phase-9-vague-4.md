@@ -702,7 +702,7 @@ Vague 1 ← T45, T46, T47. Spec §16.1, §16.2 ; écrans **127, 128, 129**. Déc
 - Consumes: `ComponentFormat`, `FORMAT_SIZES`, `formatOf`, `nearestFormat`, `layoutFor`, `inGrid`, `overlaps`, `formatsOf`, `defaultFormatOf`, `surfaceFor` (T46) ; `SdkContext.format` (T47) ; `DndContext`, `PointerSensor`, `useDraggable`, `DragMoveEvent`, `DragEndEvent` (`@dnd-kit/core`) ; `DropdownMenu*`, `ConfirmDialog` (lazy-dialogs) ; `InstanceMenu` (T45) ; `canEdit`, `useFlash`, `errorMessage`, `client`.
 - Produces: contrat « UI (T48) » : `format-grid.ts`, `useWideGrid`, `DashboardGrid`, `LayoutEditor`, `InstanceFrame.format`, `frLayout`.
 
-- [ ] **Step 1: Grille pure (tests rouges puis verts, propriété fast-check)**
+- [x] **Step 1: Grille pure (tests rouges puis verts, propriété fast-check)**
 
 `packages/ui/src/lib/format-grid.test.ts` :
 ```ts
@@ -753,11 +753,11 @@ describe("format grid", () => {
 ```
 (Dans la propriété, `Math.min(s.x, 12 - s.format.length)` n'est qu'un exemple de borne : utiliser `12 - FORMAT_SIZES[s.format].w`.) Run: FAIL. Implémenter `format-grid.ts` : `resolveOverlaps` parcourt `readingOrder`, garde chaque disposition si `canPlace` par rapport aux déjà posées, sinon incrémente `y` jusqu'à la première rangée libre (bornée par `MAX_GRID_ROWS - h`) ; `dropTarget` arrondit `delta.x / (column + gap)` et `delta.y / (row + gap)` puis borne dans la grille ; `instanceFormat` = `full` sur une page `view`, sinon `formatOf(layout) ?? nearestFormat(layout)`. Supprimer `next-layout.ts` et son test. Run: PASS.
 
-- [ ] **Step 2: Grille de lecture adaptative et format transmis (tests rouges puis verts, écran 129)**
+- [x] **Step 2: Grille de lecture adaptative et format transmis (tests rouges puis verts, écran 129)**
 
 `page-view.test.tsx` : (a) deux instances qui se chevauchent dans le snapshot sont rendues sans chevauchement (`gridRow` de la seconde commence à `7`) ; (b) `useWideGrid` à `false` (simuler `window.matchMedia` qui renvoie `matches: false` : happy-dom expose `matchMedia`, sinon le remplacer dans le test par `Object.defineProperty(window, "matchMedia", …)`) ⇒ les cellules n'ont ni `gridColumn` ni `gridRow`, le conteneur a `grid-cols-1`, l'ordre DOM suit `readingOrder`, le bouton « Modifier la disposition » est absent ; (c) en large et éditable, le bouton est présent ; en `read-only`, absent. `instance.test.tsx` : le `Probe` monté par `InstanceFrame` avec `format="small"` voit `useSdk().format === "small"` ; `SandboxFrame` reçoit `format` et le met dans `init` (test existant du pont : `grep -n "init" packages/ui/src/shell/*.test.ts*`). Run: FAIL. `DashboardGrid.tsx` : `grid gap-4 p-4` + `grid-cols-12 auto-rows-[80px]` ou `grid-cols-1 auto-rows-[80px]` selon `narrow` ; `@container` sur le corps de chaque widget (`<div className="@container min-h-0 flex-1 overflow-auto">`) ; `PageView.tsx` : `layouts = resolveOverlaps(instances)`, `wide = useWideGrid()`, `format = instanceFormat(i, page)` passé à `InstanceFrame` ; `use-wide-grid.ts` : `matchMedia(WIDE_QUERY)` + `change` (modèle `packages/sdk/src/hooks/use-mobile.ts`) ; `InstanceFrame.tsx` : `format` dans `createSdk` et `SandboxFrame` ; `SandboxFrame.tsx` : `format` dans `init` ; `frame-bridge.ts` : `BridgeDeps.init(): Omit<InitMessage, "kibo" | "type"> & { format: ComponentFormat }` (l'oubli ne compile pas ; le schéma `HostToFrame` reste tolérant et n'est pas modifié) ; `frame-bridge.test.ts` et `sandbox-frame.test.tsx` : la fixture `init` porte `format`, et le message posté contient `format: "large"` pour une instance 6 × 6. `PageView.tsx` reste < 130 lignes. Run: PASS.
 
-- [ ] **Step 3: Mode disposition (tests rouges puis verts, écrans 127 et 128)**
+- [x] **Step 3: Mode disposition (tests rouges puis verts, écrans 127 et 128)**
 
 `layout-editor.test.tsx` (mock `../api` avec `calls` et `answer` réassignable ; `LayoutEditor` importé après) :
 ```tsx
@@ -781,11 +781,11 @@ test("dropInGrid moves a widget when the target cell is free and ignores an occu
 ```
 (Le glisser ne se simule pas sous happy-dom : la logique de dépôt est une fonction pure `moveWidget(layouts, id, delta, metrics)` testée directement ; `onDragMove` calcule la cellule visée pour l'aperçu, `onDragEnd` applique `moveWidget`.) Run: FAIL. `LayoutEditor.tsx` : `DndContext` (`PointerSensor`, `activationConstraint: { distance: 6 }`), `useDraggable({ id })` sur l'en-tête de chaque widget (libellé `frLayout.move(title)`, `cursor-grab`), état `draft: Map<id, Layout>` initialisé par `resolveOverlaps(instances)`, `ghost` (cellule visée) rendu par `DashboardGrid.overlay`, `ResizeObserver` sur la grille pour `cellMetrics(width)`, `FormatMenu` (`DropdownMenuRadioGroup`, un item par format déclaré avec `frLayout.formats[f]` et `frLayout.size(w, h)`, désactivé si `!canPlace(layoutFor(f, x, y), others)` avec aide `noRoom`), bouton « Retirer <titre> » qui ouvre le `ConfirmDialog` existant d'`InstanceMenu` (réutiliser `InstanceMenu` tel quel dans l'en-tête), `LayoutToolbar` (`role="toolbar"`, compteur, Annuler, Enregistrer), Échap = Annuler, Enregistrer = commandes dans `readingOrder` ; une erreur laisse les ids refusés dans `draft` et affiche `saveFailed(title)` + `errorMessage(e)`. `PageView.tsx` : `editing` ⇒ `<LayoutEditor …/>` via `lazyPanel(() => import("./LayoutEditor"))`, sinon la grille de lecture ; `fr.ts` : `page.editLayout`, `page.editLayoutNarrow`. `fr-layout.ts` : textes des écrans 127 et 128. Run: PASS.
 
-- [ ] **Step 4: Ajout d'un composant à la taille de son format (test rouge puis vert)**
+- [x] **Step 4: Ajout d'un composant à la taille de son format (test rouge puis vert)**
 
 Test du dialogue d'ajout : ajouter `kanban` sur une page qui a déjà un `large` en (0, 0) ⇒ `addInstance` avec `layout: layoutFor("large", 6, 0)` ; ajouter un composant tiers `widget` à formats `["small"]` ⇒ `layoutFor("small", …)`. `AddComponentDialog.tsx` : `nextLayout(taken, FORMAT_SIZES[defaultFormatOf(manifest)])` où `manifest` = `findBuiltin(id)?.manifest ?? summary.versions.find((v) => v.version === version)?.manifest`, et `{ w: 6, h: 6 }` si le manifeste est inconnu. Run: PASS.
 
-- [ ] **Step 5: Captures, gate et commits**
+- [x] **Step 5: Captures, gate et commits**
 
 Captures `screens/t48/` : 127, 128, 129 en sombre et en clair (projet Kibo avec Kanban, Tickets, Graphe, Notes ; fenêtre 1440 px puis 900 px).
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS, budget ≤ 220,0 kB, aucun module interdit.
