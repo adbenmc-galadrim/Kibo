@@ -12,7 +12,7 @@ Seuil d'usage hebdomadaire fixé par Adam : 80 %. Ce document permet de reprendr
 ## Jalon v1.1.0 : étapes
 
 1. PR `phase/9` → `main`, description en français, sans mention d'outil.
-2. CI de la PR verte sur tous les jobs (`test` et `e2e`, ubuntu et macOS) ; un job rouge se diagnostique depuis ses logs (`gh run view <id> --log-failed`), se corrige sur `phase/9`, et l'on recommence. Jamais de fusion avec une CI rouge ou incomplète.
+2. CI de la PR verte sur tous les jobs (voir « CI » plus bas) ; un job rouge se diagnostique depuis ses logs (`gh run view <id> --log-failed`), se corrige sur `phase/9`, et l'on recommence. Jamais de fusion avec une CI rouge ou incomplète.
 3. Fusion de la PR.
 4. **Tag `v1.1.0` : après la validation de l'ensemble par Adam** (« j'aimerais le poser une fois que j'aurai validé le tout », 1er octobre ; la version reste gérée ici). Le tag déclenche `release.yml`, qui construit et publie la release en « latest », donc en mise à jour automatique des applications installées. Commande, depuis `main` à jour : `git tag v1.1.0 && git push origin v1.1.0`, puis suivre `gh run list --workflow release.yml` et contrôler `latest.json` (`darwin-aarch64`, `linux-x86_64`).
 
@@ -27,7 +27,18 @@ L'aperçu d'un brouillon généré par l'IA a besoin de WebAssembly pour ses don
 - Interblocage de la coque au démarrage sur macOS (double `restore_state`, depuis la vague 1) : corrigé, test de démarrage vert en local. Pour reproduire un défaut de coque : `CARGO_TARGET_DIR=<dépôt>/apps/desktop/src-tauri/target bun run --cwd apps/desktop build:debug`, puis `KIBO_SMOKE=1 KIBO_HOME=<dossier vide> apps/desktop/src-tauri/target/debug/kibo` (doit sortir en 0 en quelques secondes ; `sample <pid>` montre la pile s'il reste bloqué).
 - Démon muet pendant la validation d'un composant (contrôle de types synchrone dans son processus, 6 à 10,5 s sur le runner ; le hook d'un agent parallèle expirait à 5 s et son écriture était refusée) : contrôle de types et inférence déplacés dans un sous-processus de la chaîne d'outils (`packages/devkit/src/static-check*.ts`, spec composants §7.4).
 - `creations.spec.ts` et `market.spec.ts` : délais d'assertion explicites ; titre « Composants » ciblé sans ambiguïté.
-- Lire une CI rouge : `gh run view <run> --log-failed`, `gh run download <run> -n playwright-ubuntu-latest` (le `trace.zip` contient les requêtes réseau et leurs durées, `error-context.md` l'état de la page). Un job annulé par l'échec de l'autre système n'apprend rien.
+- Lire une CI rouge : `gh run view <run> --log-failed`, `gh run download <run> -n playwright-ubuntu` (le `trace.zip` contient les requêtes réseau et leurs durées, `error-context.md` l'état de la page). Un job annulé par l'échec de l'autre système n'apprend rien.
+
+## CI : dix minutes au plus (demande d'Adam, 2 octobre)
+
+L'ancienne CI prenait 32 minutes : `e2e` et `desktop-smoke` attendaient `test`, et tout tournait deux fois (ubuntu et macOS). Depuis `ci: jobs en parallèle, moins de dix minutes`, les jobs sont indépendants et démarrent ensemble :
+
+- `check` (ubuntu) : lint, types, build et test de démarrage de `kibo-sync`, build de l'interface, budget, `cli-smoke`.
+- `unit` (ubuntu), deux groupes en parallèle : `packages/daemon`, et le reste (`packages/*` hors démon, `components`, `scripts`). Mêmes 3 952 tests qu'avant. Ne pas découper fichier par fichier : les `mock.module` fuient entre fichiers d'un même processus et l'ordre compte (`app.test.tsx` casse).
+- `e2e` (ubuntu), thème sombre seulement (`KIBO_E2E_THEME=dark`, 35 parcours sur 70 ; sans la variable, `playwright.config.ts` lance les deux thèmes).
+- `desktop-smoke` (ubuntu et macOS) : compilation de la coque, tests Rust, test de démarrage.
+
+Retiré de la CI, et couvert seulement par la gate locale (macOS, les deux thèmes, obligatoire avant chaque intégration) : les tests unitaires et E2E sur macOS, les parcours E2E en thème clair. Chaque retrait se rétablit en une ligne de `ci.yml` (matrice `os`, variable `KIBO_E2E_THEME`). Si un groupe de `unit` approche huit minutes, le redécouper par paquet.
 
 ## Suivis à prendre en premier après le jalon
 
