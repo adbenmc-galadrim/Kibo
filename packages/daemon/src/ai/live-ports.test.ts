@@ -9,7 +9,8 @@ import {
   type RegistryVersion,
 } from "@kibo/schema";
 import { createPublishLock } from "../components/publish-lock";
-import { catalogPort, differPort } from "./live-ports";
+import { readDraftManifest } from "./draft-files";
+import { catalogPort, devkitPort, differPort } from "./live-ports";
 
 const roots: string[] = [];
 afterEach(() => {
@@ -100,5 +101,30 @@ describe("differPort", () => {
     expect(changed).toMatchObject({ path: "ui.tsx", hunkStaging: false, additions: 1, deletions: 1 });
     const added = await differ({ path: "x.test.tsx", before: null, after: join(dir, "b.tsx") });
     expect(added).toMatchObject({ path: "x.test.tsx", additions: 2, deletions: 0 });
+  });
+});
+
+test("the scaffold writes the title and the chosen formats in the draft manifest", async () => {
+  const home = tmp();
+  const dir = join(home, "draft");
+  mkdirSync(dir);
+  const devkit = devkitPort({
+    home,
+    toolchain: { root: join(home, "toolchain") },
+    validate: null,
+    signal: new AbortController().signal,
+  });
+  await devkit.scaffold({
+    dir,
+    id: "burndown",
+    title: "Burndown du sprint",
+    kind: "widget",
+    withServer: false,
+    formats: ["small", "medium"],
+  });
+  expect(readDraftManifest(dir)).toMatchObject({
+    id: "burndown",
+    title: "Burndown du sprint",
+    formats: ["small", "medium"],
   });
 });

@@ -7,6 +7,7 @@ import {
   type RegistryVersion,
   type ValidationReport,
 } from "./component";
+import { ComponentFormat } from "./format";
 import { IconInput, IconMime } from "./icon";
 import { ComponentManifest } from "./manifest";
 import { PageKind } from "./page";
@@ -106,6 +107,7 @@ export const StartComponentDraftInput = z.discriminatedUnion("mode", [
     kind: DraftKind,
     withServer: z.boolean(),
     description: z.string().trim().min(20).max(2000),
+    formats: z.array(ComponentFormat).min(1).max(5).optional(),
     attachments: DraftAttachments,
   }),
   z.object({

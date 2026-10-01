@@ -14,7 +14,7 @@ import {
 import { verifyAndRestore } from "../draft-files";
 import { createDraftLifecycle } from "../draft-lifecycle";
 import { openDraftStore } from "../draft-store";
-import type { AiAvailability, ComponentCatalog, Devkit, PublishedComponent } from "../ports";
+import type { AiAvailability, ComponentCatalog, Devkit, PublishedComponent, ScaffoldOptions } from "../ports";
 import { createFakeClock, createFakeRuns, createRecordingEvents } from "./fake-ports";
 
 export type CreateDraftInput = Extract<StartComponentDraftInput, { mode: "create" }>;
@@ -61,8 +61,11 @@ export function setupLifecycle(
   let inferGate: Promise<void> = Promise.resolve();
   let published = opts.published ?? null;
   let restoreError: string | null = null;
+  const scaffolds: ScaffoldOptions[] = [];
   const devkit: Devkit = {
-    scaffold: async ({ dir, id, title, kind }) => {
+    scaffold: async (options) => {
+      scaffolds.push(options);
+      const { dir, id, title, kind } = options;
       writeFileSync(
         join(dir, "kibo.component.json"),
         JSON.stringify({ id, version: "0.1.0", kind, title, reads: [], writes: [] }),
@@ -140,6 +143,7 @@ export function setupLifecycle(
     life,
     inferred,
     opened,
+    scaffolds,
     validations: () => validations,
     setInferError: (e: KiboError) => {
       inferError = e;

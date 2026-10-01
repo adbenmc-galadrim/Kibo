@@ -33,12 +33,12 @@ export function devkitPort(opts: {
 }): Devkit {
   const { home, toolchain, signal } = opts;
   return {
-    async scaffold({ dir, id, title, kind, withServer }) {
+    async scaffold({ dir, id, title, kind, withServer, formats }) {
       mkdirSync(join(home, "tmp"), { recursive: true, mode: 0o700 });
       const root = mkdtempSync(join(home, "tmp", "scaffold-"));
       try {
         copySource(await scaffold({ root, id, kind, server: withServer, toolchain }), dir);
-        writeDraftManifest(dir, { ...readDraftManifest(dir), title, description: title });
+        writeDraftManifest(dir, { ...readDraftManifest(dir), title, description: title, formats });
       } finally {
         rmSync(root, { recursive: true, force: true });
       }

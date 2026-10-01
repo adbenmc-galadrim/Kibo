@@ -105,6 +105,22 @@ test("drafts carry attachments and revisions with defaults", () => {
       attachments: Array(5).fill(image),
     }).success,
   ).toBe(false);
+  const created = {
+    mode: "create",
+    id: "x1",
+    title: "X",
+    kind: "widget",
+    withServer: false,
+    description: "a".repeat(20),
+  };
+  expect(StartComponentDraftInput.parse({ ...created, formats: ["medium", "half"] })).toMatchObject({
+    formats: ["medium", "half"],
+  });
+  expect(StartComponentDraftInput.safeParse({ ...created, formats: [] }).success).toBe(false);
+  expect(StartComponentDraftInput.safeParse({ ...created, formats: ["tiny"] }).success).toBe(false);
+  expect(StartComponentDraftInput.safeParse({ ...created, formats: Array(6).fill("small") }).success).toBe(
+    false,
+  );
   const draftId = crypto.randomUUID();
   expect(ReviseComponentDraftInput.safeParse({ draftId, feedback: "ok", attachments: [] }).success).toBe(
     false,

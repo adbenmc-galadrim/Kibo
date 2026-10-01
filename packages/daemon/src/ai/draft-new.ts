@@ -2,8 +2,11 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
   type ComponentDraft,
+  type ComponentFormat,
   type DraftAttachment,
   DraftKind,
+  formatIssue,
+  formatsOf,
   KiboError,
   type StartComponentDraftInput,
 } from "@kibo/schema";
@@ -35,6 +38,8 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
   if (ctx.store.active().some((d) => d.componentId === input.id))
     throw new KiboError("CONFLICT", `a draft of ${input.id} is already open`);
   if (input.mode === "create") {
+    const issue = formatIssue({ kind: input.kind, formats: input.formats });
+    if (issue) throw new KiboError("INVALID_INPUT", issue);
     if (ctx.catalog.isTaken(input.id)) throw new KiboError("CONFLICT", `component id ${input.id} is taken`);
     return {
       ...common,
@@ -70,11 +75,12 @@ export async function prepareNewDraft(
   req: { draft: ComponentDraft; input: StartComponentDraftInput },
 ): Promise<DraftAttachment[]> {
   const { draft, input } = req;
+  const formats = (f: ComponentFormat[] | undefined) => f ?? formatsOf({ kind: draft.kind });
   await prepareDraft({
     paths,
     kiboFiles: draftKiboFiles(draftBrief(draft, [])),
     fill:
-      draft.mode === "create"
+      input.mode === "create"
         ? (dir) =>
             ctx.devkit.scaffold({
               dir,
@@ -82,6 +88,7 @@ export async function prepareNewDraft(
               title: draft.title,
               kind: draft.kind,
               withServer: draft.withServer,
+              formats: formats(input.formats),
             })
         : async (dir) => copySource(ctx.catalog.sourceDir(draft.componentId), dir),
   });

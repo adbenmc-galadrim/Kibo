@@ -1,6 +1,7 @@
 import type {
   AiEvent,
   AiStatus,
+  ComponentFormat,
   ComponentManifest,
   ComponentOrigin,
   DraftKind,
@@ -65,6 +66,7 @@ export type ScaffoldOptions = {
   title: string;
   kind: DraftKind;
   withServer: boolean;
+  formats: ComponentFormat[];
 };
 export type Devkit = {
   scaffold(opts: ScaffoldOptions): Promise<void>;

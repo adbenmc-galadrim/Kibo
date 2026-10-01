@@ -76,6 +76,30 @@ describe("images at start", () => {
   });
 });
 
+describe("formats at start", () => {
+  test("the chosen formats, or those of the kind, reach the scaffold", async () => {
+    const { runs, life, scaffolds } = setupLifecycle();
+    const d = await life.start({ ...create, formats: ["small", "medium"] });
+    runs.end(d.runId ?? "", { state: "cancelled", sessionId: null, stdout: "", error: null });
+    await life.idle();
+    life.abandon(d.id);
+    await life.start({ ...create, kind: "view" });
+    expect(scaffolds.map((s) => s.formats)).toEqual([["small", "medium"], ["full"]]);
+  });
+
+  test("formats that do not fit the kind refuse the start before anything is created", async () => {
+    const { home, store, life } = setupLifecycle();
+    await expect(life.start({ ...create, kind: "view", formats: ["medium"] })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    await expect(life.start({ ...create, formats: ["medium", "medium"] })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    expect(store.list()).toEqual([]);
+    expect(existsSync(join(home, "components", "drafts"))).toBe(false);
+  });
+});
+
 describe("revise", () => {
   test("relaunches the same session with the feedback and new images, from review", async () => {
     const { runs, store, life, d, paths } = await reviewed();
