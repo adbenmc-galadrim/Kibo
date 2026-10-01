@@ -25,8 +25,8 @@ test("an inbox ticket tab is titled after the inbox, never as a missing project"
 });
 
 test("the breadcrumb names the inbox in French", () => {
-  expect(crumbsFor(inboxTicket, { project: inbox, branch: null })).toEqual(["Boîte de réception", "INB-3"]);
-  expect(crumbsFor({ kind: "screen", screen: "inbox" }, { project: null, branch: null })).toEqual([
-    "Boîte de réception",
-  ]);
+  const labels = (target: TabTarget, project: ProjectSnapshot | null) =>
+    crumbsFor(target, { project, branch: null }).map((c) => c.label);
+  expect(labels(inboxTicket, inbox)).toEqual(["Boîte de réception", "INB-3"]);
+  expect(labels({ kind: "screen", screen: "inbox" }, null)).toEqual(["Boîte de réception"]);
 });

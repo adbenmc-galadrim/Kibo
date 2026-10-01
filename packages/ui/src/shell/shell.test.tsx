@@ -13,6 +13,7 @@ import {
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
+import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
@@ -227,6 +228,9 @@ test("navigation opens a « Projet · Page » tab and the breadcrumb follows", a
   expect(crumbs().getByText("Kibo")).toBeTruthy();
   expect(crumbs().getByText("Board").getAttribute("aria-current")).toBe("page");
   await waitFor(() => expect(saved.some((r) => r.method === "saveTabs")).toBe(true), { timeout: 1000 });
+  fireEvent.click(crumbs().getByRole("button", { name: "Kibo" }));
+  await waitFor(() => expect(location.hash).toBe(targetToHash({ kind: "project", projectId: "p1" })));
+  expect(crumbs().queryByRole("button")).toBeNull();
 });
 
 test("⌘K opens the palette, ⌘W closes the tab and returns home", async () => {
@@ -266,7 +270,11 @@ test("⌘-click in the sidebar opens a new tab instead of replacing the current 
   renderShell();
   await go("#/p/p1/1%401");
   await screen.findByRole("tab", { name: "Kibo · Board" });
-  fireEvent.click(screen.getByRole("button", { name: "Kibo" }), { metaKey: true, ctrlKey: true });
+  const inSidebar = screen
+    .getAllByRole("button", { name: "Kibo" })
+    .find((b) => !b.closest('nav[aria-label="Fil d\'Ariane"]'));
+  if (!inSidebar) throw new Error("sidebar entry Kibo missing");
+  fireEvent.click(inSidebar, { metaKey: true, ctrlKey: true });
   await waitFor(() => expect(screen.getAllByRole("tab")).toHaveLength(3));
 });
 

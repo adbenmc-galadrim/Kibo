@@ -61,6 +61,7 @@ export function ShellHeader({
       <Breadcrumb
         crumbs={crumbsFor(active, { project, branch })}
         heading={screen !== null && HEADING_SCREENS.has(screen)}
+        onOpen={onOpen}
       />
       <PageActionsSlot />
       <span className="flex-1" />
