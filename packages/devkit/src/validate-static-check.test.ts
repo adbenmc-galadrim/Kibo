@@ -1,6 +1,6 @@
 import { afterAll, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { copyFixture, DEV_TOOLCHAIN } from "./test-kit";
 import { validateComponent } from "./validate";
@@ -78,3 +78,15 @@ test("an aborted validation kills its type checker and leaves nothing behind", a
   expect(checker?.copy).toContain("kibo-validate-");
   expect(existsSync(dirname(checker?.copy ?? ""))).toBe(false);
 }, 60_000);
+
+test("a bunfig.toml shipped by the component never preloads its code in the type checker", async () => {
+  const dir = fixture("hello");
+  const marker = join(dirname(dir), "escaped-marker");
+  writeFileSync(join(dir, "bunfig.toml"), 'preload = ["./setup.ts"]\n');
+  writeFileSync(
+    join(dir, "setup.ts"),
+    `import { writeFileSync } from "node:fs";\ntry {\n  writeFileSync(${JSON.stringify(marker)}, "escaped");\n} catch {}\n`,
+  );
+  await validateComponent(dir, opts);
+  expect(existsSync(marker)).toBe(false);
+}, 120_000);

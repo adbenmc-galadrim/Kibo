@@ -19,7 +19,7 @@ export async function runStaticCheck(
   const base = dirname(copy);
   const script = Bun.resolveSync("@kibo/devkit/static-check", opts.toolchain.root);
   const proc = Bun.spawn([...bun.argv, script, opts.toolchain.root, copy], {
-    cwd: copy,
+    cwd: base,
     env: { ...bun.env, PATH: process.env.PATH ?? "", HOME: base, TMPDIR: base, NO_COLOR: "1" },
     stdin: new Blob([JSON.stringify(files)]),
     stdout: "pipe",
