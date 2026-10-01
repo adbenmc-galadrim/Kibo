@@ -30,6 +30,7 @@ L'aperçu d'un brouillon généré par l'IA a besoin de WebAssembly pour ses don
 ## Suivis à prendre en premier après le jalon
 
 - Démon muet plusieurs secondes pendant la validation d'un brouillon sur une machine lente : localiser le travail synchrone et le sortir du fil du démon.
+- Deux `h1` sur Composants et Boîte de réception (`HEADING_SCREENS` dans `packages/ui/src/shell/ShellHeader.tsx` et le `h1` de la page) : retirer ces écrans de la liste.
 - Test de démarrage de la coque dans la gate locale des tâches qui touchent `apps/desktop`.
 - Relecture non remise à zéro si l'interface n'observe pas `generating` après une révision (`packages/ui/src/ai/AiDraftPanel.tsx:48-52`, déclencher aussi sur `details.revisions`).
 - Ligne de l'écran Créations identique pour un brouillon en échec et en relecture (`packages/ui/src/creations/CreationRow.tsx`) : point pour Adam.
