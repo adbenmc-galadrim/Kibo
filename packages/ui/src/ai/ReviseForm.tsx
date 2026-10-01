@@ -1,4 +1,4 @@
-import type { DraftAttachmentInput } from "@kibo/schema";
+import { type DraftAttachmentInput, MAX_DRAFT_FEEDBACK, MIN_DRAFT_FEEDBACK } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
@@ -7,8 +7,6 @@ import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState 
 import { frCreations } from "../i18n/fr-creations";
 import { AttachmentsField } from "./AttachmentsField";
 
-const MIN = 5;
-const MAX = 2000;
 const t = frCreations.revise;
 
 export type ReviseInput = { feedback: string; attachments: DraftAttachmentInput[] };
@@ -29,7 +27,7 @@ export function ReviseForm({ busy, remaining, onSubmit, onCancel }: ReviseFormPr
   useEffect(() => {
     feedbackRef.current?.focus();
   }, []);
-  const valid = length >= MIN && length <= MAX;
+  const valid = length >= MIN_DRAFT_FEEDBACK && length <= MAX_DRAFT_FEEDBACK;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -56,7 +54,7 @@ export function ReviseForm({ busy, remaining, onSubmit, onCancel }: ReviseFormPr
           id={`${id}-feedback`}
           ref={feedbackRef}
           rows={3}
-          maxLength={MAX}
+          maxLength={MAX_DRAFT_FEEDBACK}
           placeholder={t.placeholder}
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
@@ -72,7 +70,9 @@ export function ReviseForm({ busy, remaining, onSubmit, onCancel }: ReviseFormPr
         disabled={busy}
         pasteFrom={feedbackRef}
       />
-      {length > 0 && length < MIN && <p className="text-xs text-muted-foreground">{t.tooShort}</p>}
+      {length > 0 && length < MIN_DRAFT_FEEDBACK && (
+        <p className="text-xs text-muted-foreground">{t.tooShort}</p>
+      )}
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel}>
           {t.cancel}

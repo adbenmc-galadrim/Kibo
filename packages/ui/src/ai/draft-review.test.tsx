@@ -145,9 +145,12 @@ test("screen 134: a revision is sent with its image, then the draft goes back to
 const refusals = [
   [
     "CONFLICT",
-    "Impossible pour l'instant : l'agent travaille sur ce brouillon, ou cette version est déjà publiée.",
+    "Révision impossible : une publication de ce brouillon est en cours ou déjà faite. Termine la publication ou abandonne le brouillon.",
   ],
-  ["INVALID_INPUT", "Révision refusée : dix révisions et 44 images au plus par brouillon."],
+  [
+    "INVALID_INPUT",
+    "Révision refusée : le brouillon n'est plus en relecture, une image est invalide, ou la limite est atteinte (10 révisions, 44 images par brouillon).",
+  ],
 ] as const;
 
 for (const [code, text] of refusals) {
@@ -168,7 +171,7 @@ for (const [code, text] of refusals) {
 test("after ten revisions the request is gone and the limit is explained", async () => {
   draft = inReview({ revisions: MAX_DRAFT_REVISIONS });
   mount();
-  expect(await screen.findByText("Dix révisions atteintes : publie ou abandonne le brouillon.")).toBeTruthy();
+  expect(await screen.findByText("10 révisions atteintes : publie ou abandonne le brouillon.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Demander une modification" })).toBeNull();
 });
 

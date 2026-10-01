@@ -62,6 +62,8 @@ export type DraftIncident = z.infer<typeof DraftIncident>;
 export const MAX_DRAFT_ATTEMPTS = 3;
 export const MAX_DRAFT_REVISIONS = 10;
 export const MAX_DRAFT_ATTACHMENTS = 4;
+export const MIN_DRAFT_FEEDBACK = 5;
+export const MAX_DRAFT_FEEDBACK = 2000;
 export const MAX_DRAFT_ATTACHMENTS_TOTAL = MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_REVISIONS + 1);
 
 export const DraftAttachmentName = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
@@ -119,7 +121,7 @@ export type StartComponentDraftInput = z.infer<typeof StartComponentDraftInput>;
 
 export const ReviseComponentDraftInput = z.object({
   draftId: DraftId,
-  feedback: z.string().trim().min(5).max(2000),
+  feedback: z.string().trim().min(MIN_DRAFT_FEEDBACK).max(MAX_DRAFT_FEEDBACK),
   attachments: DraftAttachments,
 });
 export type ReviseComponentDraftInput = z.infer<typeof ReviseComponentDraftInput>;
