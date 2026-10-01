@@ -4,7 +4,6 @@ import {
   compareSemver,
   type Instance,
   isBuiltinId,
-  nearestFormat,
   type Surface,
   sandboxPath,
   splitRef,
@@ -47,10 +46,9 @@ function useSameContent<T>(value: T): T {
   return kept.current;
 }
 
-function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedProps) {
+function Mounted({ projectId, instance, viewer, surface, format, mod, mode }: MountedProps) {
   const host = useHost();
   const config = useSameContent(instance.config);
-  const format = surface === "view" ? "full" : nearestFormat(instance.layout);
   const sdk = useMemo(
     () =>
       createSdk(

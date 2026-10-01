@@ -223,6 +223,23 @@ test("the sdk keeps its identity when the project snapshot changes but the insta
   expect(seenSdks.at(-1)?.config).toEqual({ folder: "docs" });
 });
 
+test("the component reads the format given by the page, not one guessed from its layout", async () => {
+  components = [
+    { id: "probe", title: "Probe", builtin: false, versions: [version("1.0.0", { trust: "trusted" })] },
+  ];
+  wrap(
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("probe@1.0.0")}
+      viewer="adam"
+      surface="widget"
+      format="small"
+    />,
+  );
+  await screen.findByText("probe");
+  expect(seenSdks.at(-1)?.format).toBe("small");
+});
+
 test("D2: an unapproved or tampered version asks for trust", async () => {
   components = prQueue(version("0.3.0", { active: false, trust: null }));
   const { unmount } = wrap(
