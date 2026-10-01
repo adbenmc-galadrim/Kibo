@@ -1424,7 +1424,7 @@ Vague 1 ← T29. Spec §15.2 ; écrans **119** et **120**. UI seule, aucune RPC 
 - Consumes: `getSyncStatus`, `addDevice`, `revokeDevice`, `connectSyncServer`, `ConfirmDialog`, `Collapsible`, `CopyButton` (déjà dans `AddDeviceDialog`), `ShareProjectDialog` (via `ShellDialogs.share`), `DeleteProjectDialog` (via `ShellDialogs.deleteProject`), `projects: ProjectSummary[]`.
 - Produces: `SyncEmptyState`, `ConnectServerDialog.mode`, `SyncProjectsCard` props (contrat).
 
-- [ ] **Step 1: État vide et dialogue de connexion (tests rouges puis verts, écrans 119 et 120)**
+- [x] **Step 1: État vide et dialogue de connexion (tests rouges puis verts, écrans 119 et 120)**
 
 `sync-settings.test.tsx` :
 ```tsx
@@ -1446,12 +1446,12 @@ test("screen 119: the empty state explains, links to the docs, and offers both p
 `SyncEmptyState.tsx` : deux `Card` (titres, aides, boutons), lien `https://github.com/adbenmc-galadrim/Kibo/tree/main/docs` (A8), `remote` ⇒ boutons absents et `t.localOnly`. `ConnectServerDialog.tsx` : prop `mode: "server" | "device"` (texte d'aide sous le champ « Code » : `t.codeHelpServer` / `t.codeHelpDevice`), champ « Adresse du serveur » avec aide, `Collapsible` « Options avancées » autour du certificat. `fr-sync-page.ts` : textes de l'écran 119 ; `fr-collab.ts` : `title: "Synchronisation"`, `codeHelpServer`, `codeHelpDevice`, `urlHelp`, `advanced`.
 Run: `bun test packages/ui/src/settings/sync-settings.test.tsx` — Expected: PASS.
 
-- [ ] **Step 2: Ajouter un appareil, révocation confirmée, cartes sans identifiant brut (tests rouges puis verts)**
+- [x] **Step 2: Ajouter un appareil, révocation confirmée, cartes sans identifiant brut (tests rouges puis verts)**
 
 Tests : « adding a device shows the code once… » gagne : l'adresse du serveur (`status.serverUrl` sans le schéma `wss://`), un bouton « Copier » pour chaque, trois étapes numérotées ; « revoking another device… » ⇒ `ConfirmDialog` « Révoquer PC maison ? » puis `revokeDevice` ; nouveau test : « the server and account cards fold the raw url and id under Détails » (texte `sync.galadrim.fr` visible, `wss://sync.galadrim.fr` et `user.id` seulement après ouverture de « Détails »). `AddDeviceDialog.tsx` : reçoit `serverUrl` ; `SyncDevicesCard.tsx` : état `revoking: DeviceInfo | null` + `ConfirmDialog` ; `SyncServerCards.tsx` : `hostOf(url)` (`new URL(url).host`), `Collapsible` « Détails ».
 Run: `bun test packages/ui/src/settings/sync-settings.test.tsx` — Expected: PASS.
 
-- [ ] **Step 3: Projets partagés avec actions (tests rouges puis verts)**
+- [x] **Step 3: Projets partagés avec actions (tests rouges puis verts)**
 
 ```tsx
 test("shared projects offer Ouvrir, Gérer le partage, and Arrêter / Quitter according to the role", async () => {
@@ -1473,7 +1473,7 @@ test("shared projects offer Ouvrir, Gérer le partage, and Arrêter / Quitter ac
 (« Arrêter le partage… » ouvre le dialogue de partage, qui porte déjà l'arrêt confirmé ; « Quitter… » ouvre `DeleteProjectDialog`, variante « Quitter le projet » de la vague 2.) `SyncProjectsCard.tsx` : menu ⋯ en données (`MenuEntry[]`), props du contrat ; `SyncSettingsPage` les reçoit de `ScreenView` (`onOpen` ⇒ `go({ kind: "project", projectId })`, `onShare` ⇒ `set({ share })`, `onDeleteProject` ⇒ `set({ deleteProject })`).
 Run: `bun test packages/ui && bun run budget` — Expected: PASS ; budget noté.
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 ```bash
 git add packages/ui/src/settings/SyncEmptyState.tsx packages/ui/src/i18n/fr-sync-page.ts packages/ui/src/settings/SyncSettingsPage.tsx packages/ui/src/dialogs/ConnectServerDialog.tsx packages/ui/src/i18n/fr-collab.ts packages/ui/src/tabs/screens.ts packages/ui/src/settings/SettingsNav.tsx packages/ui/src/settings/sync-settings.test.tsx packages/ui/scripts/bundle-report.ts
