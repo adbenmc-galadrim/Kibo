@@ -44,6 +44,8 @@ export function draftFixture(patch: Partial<ComponentDraftDetails>): ComponentDr
     attempts: 1,
     failure: null,
     incidents: [],
+    attachments: [],
+    revisions: 0,
     createdAt: 1,
     updatedAt: 1,
     report: null,

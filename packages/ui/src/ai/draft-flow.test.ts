@@ -18,6 +18,8 @@ const d = (patch: Partial<ComponentDraft>): ComponentDraft => ({
   attempts: 1,
   failure: { kind: "validation", detail: null },
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 1,
   ...patch,

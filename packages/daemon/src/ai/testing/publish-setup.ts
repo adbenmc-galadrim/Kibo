@@ -103,6 +103,8 @@ const draftOf = (id: string, mode: "create" | "modify", status: DraftStatus): Co
   attempts: 1,
   failure: null,
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 1,
 });

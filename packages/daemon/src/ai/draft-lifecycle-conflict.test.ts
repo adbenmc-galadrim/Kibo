@@ -8,13 +8,19 @@ import {
   cleanLifecycles,
   create,
   done,
+  type ModifyDraftInput,
   setupLifecycle,
   writeSource,
 } from "./testing/lifecycle-fixture";
 
 cleanLifecycles();
 
-const modify = { mode: "modify", id: "burndown", description: "Ajoute un titre" } as const;
+const modify: ModifyDraftInput = {
+  mode: "modify",
+  id: "burndown",
+  description: "Ajoute un titre",
+  attachments: [],
+};
 const alreadyOpen = expect.objectContaining({
   code: "CONFLICT",
   detail: "a draft of burndown is already open",

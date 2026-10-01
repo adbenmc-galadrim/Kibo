@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 import { fakeWrites } from "../agents/fake-claude-ai";
 import { fakeCalls } from "../agents/fake-claude-scenario";
 import { type AiHarness, startAiHarness } from "./testing/harness";
+import type { CreateDraftInput } from "./testing/lifecycle-fixture";
 
 setDefaultTimeout(180_000);
 let h: AiHarness | null = null;
@@ -31,14 +32,15 @@ async function projectWithPage(harness: AiHarness) {
   return { projectId: p.id, pageId: page.id };
 }
 
-const create = {
+const create: CreateDraftInput = {
   mode: "create",
   id: "burndown",
   title: "Burndown",
   kind: "widget",
   withServer: false,
   description: "Burndown du sprint : tickets restants par jour.",
-} as const;
+  attachments: [],
+};
 
 async function toReview(harness: AiHarness) {
   const draft = await harness.rpc({ method: "startComponentDraft", draft: create });
@@ -158,7 +160,7 @@ test("modify · minor version proposed, published everywhere", async () => {
   await finalize(h, created.id, target);
   const draft = await h.rpc({
     method: "startComponentDraft",
-    draft: { mode: "modify", id: "burndown", description: "Affiche le nombre d'issues" },
+    draft: { mode: "modify", id: "burndown", description: "Affiche le nombre d'issues", attachments: [] },
   });
   const review = await h.waitDraft(draft.id, "review");
   expect(review.publish).toMatchObject({

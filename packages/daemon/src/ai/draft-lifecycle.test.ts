@@ -8,6 +8,7 @@ import {
   cleanLifecycles,
   create,
   done,
+  type ModifyDraftInput,
   report,
   setupLifecycle,
   writeSource,
@@ -56,7 +57,12 @@ describe("start", () => {
     const { srcRoot, life } = setupLifecycle({
       published: { ...adapter, manifest: { ...adapter.manifest, kind: "adapter" } },
     });
-    const modify = { mode: "modify", id: "burndown", description: "Ajoute un titre" } as const;
+    const modify: ModifyDraftInput = {
+      mode: "modify",
+      id: "burndown",
+      description: "Ajoute un titre",
+      attachments: [],
+    };
     await expect(life.start(modify)).rejects.toThrow("NOT_FOUND");
     writeSource(srcRoot);
     await expect(life.start(modify)).rejects.toThrow("INVALID_INPUT");
@@ -272,7 +278,12 @@ describe("folder and revalidate", () => {
       reports: [report(false)],
     });
     writeSource(srcRoot);
-    const d = await life.start({ mode: "modify", id: "burndown", description: "Ajoute un titre" });
+    const d = await life.start({
+      mode: "modify",
+      id: "burndown",
+      description: "Ajoute un titre",
+      attachments: [],
+    });
     expect(d).toMatchObject({ mode: "modify", baseVersion: "0.1.0", title: "Burndown", withServer: false });
     runs.end("run-1", done());
     await life.idle();

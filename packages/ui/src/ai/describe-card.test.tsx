@@ -48,6 +48,7 @@ test("DescribeCard proposes a title and an id, then starts the draft", async () 
       kind: "widget",
       withServer: false,
       description: "Burndown du sprint : tickets",
+      attachments: [],
     },
   });
   expect(onStarted).toHaveBeenCalledTimes(1);

@@ -48,6 +48,8 @@ const draft = (patch: Partial<ComponentDraft>): ComponentDraft => ({
   attempts: 1,
   failure: null,
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 2,
   ...patch,
@@ -75,7 +77,7 @@ test("sends the change request then shows the draft panel", async () => {
   await user.click(launch);
   expect(calls.at(-1)).toEqual({
     method: "startComponentDraft",
-    draft: { mode: "modify", id: "burndown", description: "Ajoute un titre" },
+    draft: { mode: "modify", id: "burndown", description: "Ajoute un titre", attachments: [] },
   });
   expect(await screen.findByText(`panel ${DRAFT}`)).toBeTruthy();
 });

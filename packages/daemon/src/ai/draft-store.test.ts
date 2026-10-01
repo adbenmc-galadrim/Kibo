@@ -18,6 +18,8 @@ const draft = (id: string, status: ComponentDraft["status"], updatedAt: number):
   attempts: 1,
   failure: status === "failed" ? { kind: "validation", detail: null } : null,
   incidents: [{ kind: "removed", path: "evil.ts" }],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt,
 });

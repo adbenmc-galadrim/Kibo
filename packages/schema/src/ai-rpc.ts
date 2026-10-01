@@ -4,10 +4,12 @@ import {
   type ComponentDraft,
   type ComponentDraftDetails,
   DraftId,
+  type DraftPreview,
   type Environment,
   FinalizeComponentDraftInput,
   type FinalizeResult,
   ReviewComponentDraftInput,
+  ReviseComponentDraftInput,
   Role,
   StartComponentDraftInput,
   StarterText,
@@ -26,6 +28,8 @@ export const AI_RPC = [
   z.object({ method: z.literal("finalizeComponentDraft"), ...FinalizeComponentDraftInput.shape }),
   z.object({ method: z.literal("abandonComponentDraft"), draftId: DraftId }),
   z.object({ method: z.literal("openComponentDraftFolder"), draftId: DraftId }),
+  z.object({ method: z.literal("reviseComponentDraft"), ...ReviseComponentDraftInput.shape }),
+  z.object({ method: z.literal("previewComponentDraft"), draftId: DraftId }),
 ] as const;
 
 export type AiRpcRequest = z.infer<(typeof AI_RPC)[number]>;
@@ -43,4 +47,6 @@ export type AiRpcResult = {
   finalizeComponentDraft: FinalizeResult;
   abandonComponentDraft: null;
   openComponentDraftFolder: null;
+  reviseComponentDraft: ComponentDraft;
+  previewComponentDraft: DraftPreview;
 };

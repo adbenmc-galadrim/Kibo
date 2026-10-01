@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import {
   AiEvent,
   ComponentDraft,
+  DraftAttachmentInput,
+  DraftAttachments,
   FinalizeComponentDraftInput,
+  MAX_DRAFT_REVISIONS,
+  ReviseComponentDraftInput,
   RpcRequest,
   StartComponentDraftInput,
   StarterPlan,
@@ -49,6 +53,75 @@ describe("StartComponentDraftInput", () => {
   });
 });
 
+const baseDraft = {
+  id: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
+  componentId: "burndown",
+  mode: "create",
+  title: "Burndown",
+  kind: "widget",
+  withServer: false,
+  baseVersion: null,
+  description: "Burndown du sprint : tickets restants par jour.",
+  runId: null,
+  sessionId: null,
+  status: "describing",
+  attempts: 0,
+  failure: null,
+  incidents: [],
+  createdAt: 1,
+  updatedAt: 1,
+};
+const image = { name: "a.png", mime: "image/png", data: "AAAA" } as const;
+
+test("drafts carry attachments and revisions with defaults", () => {
+  const d = ComponentDraft.parse(baseDraft);
+  expect(d.attachments).toEqual([]);
+  expect(d.revisions).toBe(0);
+  expect(DraftAttachmentInput.safeParse({ ...image, name: "maquette.png" }).success).toBe(true);
+  expect(DraftAttachmentInput.safeParse({ ...image, name: "../x.png" }).success).toBe(false);
+  expect(DraftAttachmentInput.safeParse({ ...image, name: "a/b.png" }).success).toBe(false);
+  expect(DraftAttachmentInput.safeParse({ ...image, name: `${"a".repeat(64)}.png` }).success).toBe(false);
+  expect(DraftAttachmentInput.safeParse({ ...image, mime: "image/gif" }).success).toBe(false);
+  expect(DraftAttachments.safeParse(Array(4).fill(image)).success).toBe(true);
+  expect(DraftAttachments.safeParse(Array(5).fill(image)).success).toBe(false);
+  expect(
+    StartComponentDraftInput.parse({
+      mode: "create",
+      id: "x1",
+      title: "X",
+      kind: "widget",
+      withServer: false,
+      description: "a".repeat(20),
+    }),
+  ).toMatchObject({ attachments: [] });
+  expect(
+    StartComponentDraftInput.parse({ mode: "modify", id: "burndown", description: "Titre" }),
+  ).toMatchObject({ attachments: [] });
+  expect(
+    StartComponentDraftInput.safeParse({
+      mode: "modify",
+      id: "burndown",
+      description: "Titre",
+      attachments: Array(5).fill(image),
+    }).success,
+  ).toBe(false);
+  const draftId = crypto.randomUUID();
+  expect(ReviseComponentDraftInput.safeParse({ draftId, feedback: "ok", attachments: [] }).success).toBe(
+    false,
+  );
+  expect(ReviseComponentDraftInput.parse({ draftId, feedback: "  Mets le total en gros " })).toEqual({
+    draftId,
+    feedback: "Mets le total en gros",
+    attachments: [],
+  });
+  expect(ReviseComponentDraftInput.safeParse({ draftId, feedback: "x".repeat(2001) }).success).toBe(false);
+  expect(ComponentDraft.safeParse({ ...baseDraft, revisions: MAX_DRAFT_REVISIONS + 1 }).success).toBe(false);
+  expect(
+    ComponentDraft.safeParse({ ...baseDraft, attachments: [{ name: "a.png", mime: "image/png", bytes: 0 }] })
+      .success,
+  ).toBe(false);
+});
+
 test("ComponentDraft round-trips and caps attempts at 3", () => {
   const draft: ComponentDraft = {
     id: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
@@ -65,6 +138,8 @@ test("ComponentDraft round-trips and caps attempts at 3", () => {
     attempts: 0,
     failure: null,
     incidents: [],
+    attachments: [{ name: "maquette.png", mime: "image/png", bytes: 84_000 }],
+    revisions: 2,
     createdAt: 1,
     updatedAt: 1,
   };
@@ -97,6 +172,12 @@ test("RpcRequest carries the new AI methods", () => {
     }).success,
   ).toBe(true);
   expect(RpcRequest.safeParse({ method: "suggestStarter", role: "other", text: "" }).success).toBe(false);
+  const draftId = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
+  expect(
+    RpcRequest.parse({ method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros" }),
+  ).toEqual({ method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros", attachments: [] });
+  expect(RpcRequest.safeParse({ method: "previewComponentDraft", draftId }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "previewComponentDraft", draftId: "x" }).success).toBe(false);
 });
 
 test("AiEvent parses both events and nothing else", () => {

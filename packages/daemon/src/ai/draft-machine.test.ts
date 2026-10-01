@@ -17,6 +17,8 @@ const d0: ComponentDraft = {
   attempts: 0,
   failure: null,
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 1,
 };

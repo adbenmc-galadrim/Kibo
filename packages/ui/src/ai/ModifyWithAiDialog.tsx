@@ -84,7 +84,7 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
     try {
       const draft = await client.rpc({
         method: "startComponentDraft",
-        draft: { mode: "modify", id: componentId, description: text },
+        draft: { mode: "modify", id: componentId, description: text, attachments: [] },
       });
       onStarted(draft.id);
     } catch (err) {

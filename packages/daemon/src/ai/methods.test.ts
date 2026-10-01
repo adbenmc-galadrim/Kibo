@@ -58,7 +58,7 @@ test("routes every AI method to its module", async () => {
     { method: "suggestStarter", role: "other", text: "x" },
     {
       method: "startComponentDraft",
-      draft: { mode: "modify", id: "burndown", description: "Ajoute un titre" },
+      draft: { mode: "modify", id: "burndown", description: "Ajoute un titre", attachments: [] },
     },
     { method: "revalidateComponentDraft", draftId },
     { method: "getComponentDraft", draftId },

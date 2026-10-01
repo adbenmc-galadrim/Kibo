@@ -17,6 +17,8 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     attempts: 0,
     failure: null,
     incidents: [],
+    attachments: [],
+    revisions: 0,
     createdAt: ctx.now,
     updatedAt: ctx.now,
   };
