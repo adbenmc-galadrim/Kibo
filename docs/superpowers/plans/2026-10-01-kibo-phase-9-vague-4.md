@@ -998,7 +998,7 @@ Vague 1 ← T46, T50. Spec IA **§13.7, §13.8, §13.11**, composants **§17.4**
 - Consumes: `ComponentFormat`, `FORMAT_SIZES`, `formatsOf` (T46) ; `GeneratorBrief.attachments`, `revisePrompt` (T50), `DraftPaths.attachmentsDir`, `KIBO_DRAFT_ATTACHMENTS` ; `buildComponent`, `hashSources` (devkit) ; `sandboxHeaders`, `SANDBOX_INDEX`, `startSandboxServer` ; `FakeStep`.
 - Produces: contrat « Démon (T51) » : `prompts-skill.ts`, `revisePrompt` enrichi, `createDraftPreview`, `DraftAssets`, `parseDraftAssetPath`, `SandboxServerOptions.drafts`, `startAi().draftAssets`, `responsiveViolations`, scénarios.
 
-- [ ] **Step 1: Contexte de l'agent (tests rouges puis verts)**
+- [x] **Step 1: Contexte de l'agent (tests rouges puis verts)**
 
 `prompts.test.ts` :
 ```ts
@@ -1027,7 +1027,7 @@ test("revisePrompt carries the feedback, the new images and the test order", () 
 ```
 Run: FAIL. `prompts-skill.ts` : `SKILL` (sections API, Formats avec `formatTable(declared)` : identifiant, libellé, cellules, pixels à 1200 px de large : colonne ≈ 85 px, rangée 80 px, écart 16 px ; Style : jetons autorisés et interdiction des couleurs codées ; Responsive : racine `@container`, variantes `@md:`/`@lg:`, `sdk.format`, jamais `w-[Npx]`, `h-full min-h-0 overflow-auto` ; Tests), `EXAMPLE_COMPONENT` (un composant complet d'environ 40 lignes : `useSdk`, `useEntities("ticket")`, `StatusDot`, bascule par `sdk.format` entre un compteur (`small`), une liste courte (`medium`) et une liste groupée par statut (autres), `@container` à la racine, `openTicket` au clic, textes en français) ; `prompts.ts` : `generatorPrompt` et `revisePrompt` selon les tests, `draftKiboFiles` écrit le skill et `exemple.tsx` (fichiers Kibo : restaurés par `verifyAndRestore` puisque hors `isAgentFile`). Vérifier que l'exemple passe la conformité : `prompts.test.ts` écrit `EXAMPLE_COMPONENT` dans un dossier temporaire avec un manifeste `both` et appelle `runConformance` ? Non : `runConformance` déclare des tests au chargement ; écrire plutôt un test dédié `prompts-example.test.tsx` qui importe l'exemple **comme module** (fichier `prompts-example.tsx` exportant le même code, et `EXAMPLE_COMPONENT` = `readFileSync(import.meta.dir + "/prompts-example.tsx", "utf8")`) et appelle `runConformance({ manifest: EXAMPLE_MANIFEST, Component })`. Run: PASS.
 
-- [ ] **Step 2: Largeurs fixes refusées (tests rouges puis verts)**
+- [x] **Step 2: Largeurs fixes refusées (tests rouges puis verts)**
 
 `packages/devkit/src/responsive.test.ts` :
 ```ts
@@ -1042,7 +1042,7 @@ test("responsiveViolations flags fixed widths of 240px and more, in classes and 
 ```
 `validate.test.ts` : une fixture dont `ui.tsx` contient `w-[480px]` ⇒ `report.conformance.ok === false` et `errors` contient « largeur fixe ». Run: FAIL. `responsive.ts` + branchement dans `validate.ts` après le pas de conformité (lecture de `ui.tsx` dans le dossier validé). Run: PASS.
 
-- [ ] **Step 3: Aperçu servi par le listener sandbox (tests rouges puis verts)**
+- [x] **Step 3: Aperçu servi par le listener sandbox (tests rouges puis verts)**
 
 `asset-path.test.ts` : `parseDraftAssetPath("/c/drafts/<uuid>/<sha256>/ui.sandbox.js")` ⇒ `{ draftId, hash, file }` ; refuse un id non UUID, une empreinte non hex, un fichier inconnu, un chemin à 5 ou 7 segments. `draft-preview.test.ts` (faux `store`, `devkit.hash` et `devkit.buildPreview` comptés) :
 ```ts
@@ -1064,7 +1064,7 @@ test("preview builds once per hash, only for a visible draft, and the assets fol
 ```
 `sandbox-server.test.ts` : avec `drafts` fourni, `GET /c/drafts/<id>/<hash>/ui.sandbox.js` ⇒ 200 avec les en-têtes de `sandboxHeaders` et `cache-control: no-store`, `content-type: text/javascript` ; 404 quand `lookup` renvoie `null` ; sans `drafts`, 404. `methods.test.ts` : `previewComponentDraft` route vers `preview`. Run: FAIL. Implémenter `draft-preview.ts`, `asset-path.ts`, `sandbox-server.ts` (branche `drafts` avant `parseAssetPath`), `ports.ts` (`Devkit.buildPreview`), `live-ports.ts` (`buildPreview: (dir) => buildComponent(dir, toolchain)` réduit aux deux fichiers ; vérifier avec `grep -n "toolchain\|node_modules" packages/devkit/src/build.ts build-resolve.ts` que la construction résout `@kibo/sdk` depuis la toolchain sans `node_modules` dans le dossier ; sinon construire sur une copie liée comme `validate.ts` le fait, `grep -n "symlink\|copy" packages/devkit/src/validate.ts`), `bootstrap.ts` (`createDraftPreview`, `startAi` renvoie `draftAssets`), `daemon.ts` (`startSandboxServer({ …, drafts: ai.draftAssets })` : si le listener démarre avant `startAi`, passer un `DraftAssets` indirect `{ lookup: (...a) => assets?.lookup(...a) ?? null }` rempli après ; un test d'intégration dans `daemon.test.ts` ou `sandbox-server.test.ts` vérifie le 404 avant tout brouillon). Run: PASS.
 
-- [ ] **Step 4: Faux `claude` et cycle complet (tests rouges puis verts)**
+- [x] **Step 4: Faux `claude` et cycle complet (tests rouges puis verts)**
 
 `fake-claude.test.ts` : une étape `hook` dont `input.file_path` vaut `$KIBO_DRAFT_ATTACHMENTS/1-a.png` est envoyée au hook avec le chemin résolu depuis `process.env.KIBO_DRAFT_ATTACHMENTS`. Scénarios : `generate-revise.json` (tour 1 : Read `CLAUDE.md`, write `ui.tsx` ← `burndown/ui.tsx.fixture`, Bash test ; tour 2 : Read `$KIBO_DRAFT_ATTACHMENTS/1-maquette.png`, write `ui.tsx` ← `burndown/ui-revised.tsx.fixture`, Bash test) ; `generate-fixed-width.json` (tour 1 : write ← `ui-fixed-width.tsx.fixture` ; tour 2 : write ← `ui.tsx.fixture`). Fixtures : `ui-revised.tsx.fixture` = le burndown avec `@container` à la racine, un `switch (sdk.format)` (`small` ⇒ le chiffre seul) et le texte « tickets restants (révisé) » ; `ui-fixed-width.tsx.fixture` = le burndown avec `className="w-[480px]"`. `revision.int.test.ts` (modèle `generation.int.test.ts`) :
 ```ts
@@ -1077,7 +1077,7 @@ test("attachments are read by the agent, the preview is served, a revision rewri
 ```
 Run: FAIL puis PASS (`bun test packages/daemon/src/ai packages/daemon/src/agents packages/daemon/src/components`).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/daemon packages/devkit` — Expected: PASS.
 ```bash
