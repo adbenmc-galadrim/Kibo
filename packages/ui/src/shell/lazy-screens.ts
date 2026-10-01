@@ -78,7 +78,9 @@ export const ProjectStatusBanner = lazyPanel(
   hidden,
 );
 export const ShareButton = lazyPanel(() => shareEntry().then((m) => m.ShareButton), fr.lazy, hidden);
-export const ProjectMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectMenu), fr.lazy, hidden);
+export const ProjectHeaderMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectHeaderMenu), fr.lazy, {
+  fallback: "children",
+});
 export const JoinProjectEntry = lazyPanel(
   () => shareEntry().then((m) => m.JoinProjectEntry),
   fr.lazy,

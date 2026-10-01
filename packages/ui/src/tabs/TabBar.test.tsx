@@ -141,6 +141,12 @@ test("the context menu shows the shortcuts of the running platform", async () =>
   expect(screen.getByRole("menuitem", { name: `Fermer ${close}` })).toBeTruthy();
 });
 
+test("the tab menu content is not part of the TabBar module", async () => {
+  const source = await Bun.file(new URL("./TabBar.tsx", import.meta.url)).text();
+  expect(source).not.toContain("ContextMenuItem");
+  expect(source).toContain("TabMenuContent");
+});
+
 test("useTabs loads the stored state and saves changes after a debounce", async () => {
   stored = state;
   const { result } = renderHook(() => useTabs());

@@ -1,8 +1,6 @@
 import { Button } from "@kibo/sdk/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
-import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "@kibo/sdk/ui/sidebar";
-import { Ellipsis, LogIn, Share2 } from "lucide-react";
+import { SidebarMenuButton, SidebarMenuItem } from "@kibo/sdk/ui/sidebar";
+import { LogIn, Share2 } from "lucide-react";
 import { frShare } from "../i18n/fr-share";
 import { useSyncServerStatus } from "../state/use-sync-server";
 
@@ -12,27 +10,6 @@ export function ShareButton({ onShare }: { onShare(): void }) {
       <Share2 />
       {frShare.action}
     </Button>
-  );
-}
-
-type MenuProps = { name: string; current: boolean; shifted: boolean; entries: readonly MenuEntry[] };
-
-export function ProjectMenu({ name, current, shifted, entries }: MenuProps) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <SidebarMenuAction
-          showOnHover={!current}
-          className={shifted ? "right-7" : undefined}
-          aria-label={frShare.menu(name)}
-        >
-          <Ellipsis />
-        </SidebarMenuAction>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="right" align="start">
-        <DropdownMenuEntries entries={entries} />
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 

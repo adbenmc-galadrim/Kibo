@@ -2,20 +2,13 @@ import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } f
 import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Tab, TabsState, TabTarget } from "@kibo/schema";
+import { lazyPanel } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-  ContextMenuTrigger,
-} from "@kibo/sdk/ui/context-menu";
-import { AppWindow, Copy, Pin, PinOff, Plus, X } from "lucide-react";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
+import { Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
-import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { WorkspaceTile } from "../shell/WorkspaceMark";
 import type { TabDescription } from "./tab-title";
 import type { TabsAction } from "./tabs-model";
@@ -40,49 +33,12 @@ type ItemProps = {
   onOpenWindow: ((target: TabTarget) => void) | null;
 };
 
+const TabMenuContent = lazyPanel(() => import("./TabMenuContent").then((m) => m.TabMenuContent), fr.lazy);
+
 const tabTone = (active: boolean) =>
   active
     ? "bg-background text-foreground"
     : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
-
-function TabMenu({ tab, dispatch, onOpenWindow }: Pick<ItemProps, "tab" | "dispatch" | "onOpenWindow">) {
-  const mac = isMac();
-  return (
-    <ContextMenuContent className="w-72">
-      <ContextMenuItem onSelect={() => dispatch({ type: "pin", id: tab.id, pinned: !tab.pinned })}>
-        {tab.pinned ? <PinOff /> : <Pin />}
-        {tab.pinned ? fr.tabs.unpin : fr.tabs.pin}
-        <ContextMenuShortcut>{shortcutLabel(["Shift", "P"], mac)}</ContextMenuShortcut>
-      </ContextMenuItem>
-      <ContextMenuItem
-        onSelect={() => dispatch({ type: "duplicate", id: tab.id, newId: crypto.randomUUID() })}
-      >
-        <Copy />
-        {fr.tabs.duplicate}
-      </ContextMenuItem>
-      {onOpenWindow && (
-        <ContextMenuItem onSelect={() => onOpenWindow(tab.target)}>
-          <AppWindow />
-          {fr.tabs.newWindow}
-        </ContextMenuItem>
-      )}
-      <ContextMenuSeparator />
-      <ContextMenuItem disabled={tab.pinned} onSelect={() => dispatch({ type: "close", id: tab.id })}>
-        <X />
-        {fr.tabs.closeTab}
-        <ContextMenuShortcut>{shortcutLabel(["W"], mac)}</ContextMenuShortcut>
-      </ContextMenuItem>
-      <ContextMenuItem onSelect={() => dispatch({ type: "closeOthers", id: tab.id })}>
-        <X />
-        {fr.tabs.closeOthers}
-      </ContextMenuItem>
-      <ContextMenuItem onSelect={() => dispatch({ type: "closeRight", id: tab.id })}>
-        <X />
-        {fr.tabs.closeRight}
-      </ContextMenuItem>
-    </ContextMenuContent>
-  );
-}
 
 function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: ItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: tab.id });
@@ -154,7 +110,9 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
           )}
         </div>
       </ContextMenuTrigger>
-      <TabMenu tab={tab} dispatch={dispatch} onOpenWindow={onOpenWindow} />
+      <ContextMenuContent className="w-72">
+        <TabMenuContent tab={tab} dispatch={dispatch} onOpenWindow={onOpenWindow} />
+      </ContextMenuContent>
     </ContextMenu>
   );
 }
