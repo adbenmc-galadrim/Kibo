@@ -23,7 +23,7 @@ import {
   safeCopy,
 } from "./draft-fs";
 
-export type DraftPaths = { dir: string; baseDir: string };
+export type DraftPaths = { dir: string; baseDir: string; attachmentsDir: string };
 
 type Entries = Map<string, EntryKind>;
 
@@ -35,6 +35,7 @@ const AGENT_TEST = /^[A-Za-z0-9_-]+\.test\.tsx$/;
 export const draftPaths = (home: string, draftId: string): DraftPaths => ({
   dir: join(home, "components", "drafts", draftId),
   baseDir: join(home, "components", "drafts", `${draftId}.base`),
+  attachmentsDir: join(home, "components", "drafts", `${draftId}.attachments`),
 });
 
 export const isAgentFile = (rel: string, allowServer: boolean): boolean =>
@@ -60,9 +61,10 @@ export async function prepareDraft(input: {
   fill: (dir: string) => Promise<void>;
   kiboFiles: Record<string, string>;
 }): Promise<void> {
-  const { dir, baseDir } = input.paths;
+  const { dir, baseDir, attachmentsDir } = input.paths;
   for (const rel of Object.keys(input.kiboFiles)) assertInside(dir, rel);
-  if (present(dir) || present(baseDir)) throw new KiboError("CONFLICT", `draft folder ${dir} already exists`);
+  if (present(dir) || present(baseDir) || present(attachmentsDir))
+    throw new KiboError("CONFLICT", `draft folder ${dir} already exists`);
   mkdirSync(dirname(dir), { recursive: true, mode: 0o700 });
   mkdirSync(dir, { mode: 0o700 });
   try {
@@ -235,6 +237,7 @@ export function removeDraft(paths: DraftPaths): void {
   guarded("remove draft", () => {
     removeTree(paths.dir);
     removeTree(paths.baseDir);
+    removeTree(paths.attachmentsDir);
     removeTree(unrestoredMark(paths));
   });
 }

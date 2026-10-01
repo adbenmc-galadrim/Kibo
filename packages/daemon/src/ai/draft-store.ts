@@ -27,17 +27,33 @@ type Params = {
   attempts: number;
   failureJson: string | null;
   incidentsJson: string;
+  attachmentsJson: string;
+  revisions: number;
   createdAt: number;
   updatedAt: number;
 };
 
 type UpdateParams = Pick<
   Params,
-  "id" | "runId" | "sessionId" | "status" | "attempts" | "failureJson" | "incidentsJson" | "updatedAt"
+  | "id"
+  | "runId"
+  | "sessionId"
+  | "status"
+  | "attempts"
+  | "failureJson"
+  | "incidentsJson"
+  | "attachmentsJson"
+  | "revisions"
+  | "updatedAt"
 >;
 
 const COLUMNS =
-  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, createdAt, updatedAt";
+  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, attachmentsJson, revisions, createdAt, updatedAt";
+
+const ADDED_COLUMNS: Record<string, string> = {
+  attachmentsJson: "attachmentsJson TEXT NOT NULL DEFAULT '[]'",
+  revisions: "revisions INTEGER NOT NULL DEFAULT 0",
+};
 
 function parseJson(text: string, what: string): unknown {
   try {
@@ -54,6 +70,7 @@ function toDraft(row: Params): ComponentDraft {
     withServer: row.withServer === 1,
     failure: row.failureJson === null ? null : parseJson(row.failureJson, what),
     incidents: parseJson(row.incidentsJson, what),
+    attachments: parseJson(row.attachmentsJson, what),
   });
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `${what} is unreadable: ${parsed.error.message}`);
   return parsed.data;
@@ -74,6 +91,8 @@ const toParams = (d: ComponentDraft): Params => ({
   attempts: d.attempts,
   failureJson: d.failure === null ? null : JSON.stringify(d.failure),
   incidentsJson: JSON.stringify(d.incidents),
+  attachmentsJson: JSON.stringify(d.attachments),
+  revisions: d.revisions,
   createdAt: d.createdAt,
   updatedAt: d.updatedAt,
 });
@@ -86,22 +105,37 @@ const toUpdateParams = (p: Params): UpdateParams => ({
   attempts: p.attempts,
   failureJson: p.failureJson,
   incidentsJson: p.incidentsJson,
+  attachmentsJson: p.attachmentsJson,
+  revisions: p.revisions,
   updatedAt: p.updatedAt,
 });
+
+function addMissingColumns(db: Database): void {
+  const present = new Set(
+    db
+      .query<{ name: string }, []>("PRAGMA table_info(component_drafts)")
+      .all()
+      .map((c) => c.name),
+  );
+  for (const [name, definition] of Object.entries(ADDED_COLUMNS))
+    if (!present.has(name)) db.run(`ALTER TABLE component_drafts ADD COLUMN ${definition}`);
+}
 
 export function openDraftStore(db: Database): DraftStore {
   db.run(`CREATE TABLE IF NOT EXISTS component_drafts (
     id TEXT PRIMARY KEY, componentId TEXT NOT NULL, mode TEXT NOT NULL, title TEXT NOT NULL, kind TEXT NOT NULL,
     withServer INTEGER NOT NULL, baseVersion TEXT, description TEXT NOT NULL, runId TEXT, sessionId TEXT,
     status TEXT NOT NULL, attempts INTEGER NOT NULL, failureJson TEXT, incidentsJson TEXT NOT NULL,
-    reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)`);
+    reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL,
+    attachmentsJson TEXT NOT NULL DEFAULT '[]', revisions INTEGER NOT NULL DEFAULT 0)`);
+  addMissingColumns(db);
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS component_drafts_one_active ON component_drafts (componentId)
     WHERE status NOT IN ('done', 'abandoned')`);
   const insert = db.query<null, Params>(
-    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $createdAt, $updatedAt)`,
+    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $attachmentsJson, $revisions, $createdAt, $updatedAt)`,
   );
   const update = db.query<null, UpdateParams>(
-    "UPDATE component_drafts SET runId = $runId, sessionId = $sessionId, status = $status, attempts = $attempts, failureJson = $failureJson, incidentsJson = $incidentsJson, updatedAt = $updatedAt WHERE id = $id",
+    "UPDATE component_drafts SET runId = $runId, sessionId = $sessionId, status = $status, attempts = $attempts, failureJson = $failureJson, incidentsJson = $incidentsJson, attachmentsJson = $attachmentsJson, revisions = $revisions, updatedAt = $updatedAt WHERE id = $id",
   );
   const writeReport = db.query<null, { id: string; reportJson: string | null }>(
     "UPDATE component_drafts SET reportJson = $reportJson WHERE id = $id",
