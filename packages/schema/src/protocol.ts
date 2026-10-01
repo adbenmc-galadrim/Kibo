@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ComponentCall } from "./call";
+import { ComponentFormat } from "./format";
 import { ComponentManifest } from "./manifest";
 import { StatusId } from "./status";
 
@@ -7,6 +8,8 @@ export const Theme = z.enum(["dark", "light"]);
 export type Theme = z.infer<typeof Theme>;
 export const Surface = z.enum(["widget", "view"]);
 export type Surface = z.infer<typeof Surface>;
+export const surfaceFor = (m: Pick<ComponentManifest, "kind">, format: ComponentFormat): Surface =>
+  format === "full" && m.kind !== "widget" ? "view" : "widget";
 export const KeyCombo = z.enum([
   "mod+k",
   "mod+t",
@@ -44,6 +47,7 @@ export const HostToFrame = z.discriminatedUnion("type", [
     viewer: z.string(),
     theme: Theme,
     surface: Surface,
+    format: ComponentFormat.optional(),
   }),
   z.object({ kibo: z.literal(1), type: z.literal("theme"), theme: Theme }),
   z.object({ kibo: z.literal(1), type: z.literal("changed") }),

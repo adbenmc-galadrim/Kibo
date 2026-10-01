@@ -9,6 +9,7 @@ export * from "./component";
 export * from "./config";
 export * from "./errors";
 export * from "./external-ref";
+export * from "./format";
 export * from "./github-errors";
 export * from "./github-graphql";
 export * from "./icon";
