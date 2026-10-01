@@ -333,10 +333,10 @@ test("the agent bar indicator follows the daemon and the connection", async () =
   const cases: [SyncStatus, boolean, string][] = [
     [unconfigured, true, "Kibo · connecté"],
     [unconfigured, false, "Kibo · hors ligne"],
-    [online, true, "Kibo · connecté · synchronisé"],
-    [{ ...online, state: "connecting" }, true, "Kibo · connecté · synchronisation…"],
-    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Kibo · connecté · hors ligne"],
-    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Kibo · connecté · erreur de sync"],
+    [online, true, "Kibo · synchronisé"],
+    [{ ...online, state: "connecting" }, true, "Kibo · synchronisation…"],
+    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Kibo · sync hors ligne"],
+    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Kibo · erreur de sync"],
   ];
   for (const [status, daemonOnline, label] of cases) {
     results.getSyncStatus = () => Promise.resolve(status);

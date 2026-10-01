@@ -99,7 +99,7 @@ export const frCollab = {
     indicator: {
       synced: "synchronisé",
       syncing: "synchronisation…",
-      offline: "hors ligne",
+      offline: "sync hors ligne",
       error: "erreur de sync",
     },
   },
