@@ -183,3 +183,64 @@ test("a read-only project shows no note menu", async () => {
   expect(screen.getByText("Fichier sans titre")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Fichier sans titre/ })).toBeNull();
 });
+
+test("notes are grouped by folder, root first; sorting by title is remembered on this device", async () => {
+  localStorage.removeItem("kibo.notes.sort");
+  const notes = {
+    "zeta.md": "# Zêta\n",
+    "alpha.md": "# Alpha\n",
+    "idees/b.md": "# Idée B\n",
+    "reunions/c.md": "# Réunion C\n",
+  };
+  const ages = { "zeta.md": 0, "alpha.md": 2, "idees/b.md": 1, "reunions/c.md": 3 };
+  try {
+    mount(createMockSdk(manifest, { seed, surface: "view", notes, noteAges: ages }).sdk);
+    const user = userEvent.setup();
+    const list = await screen.findByRole("list", { name: "Notes" });
+    await waitFor(() => expect(within(list).getByRole("button", { name: "reunions" })).toBeTruthy());
+    const titles = () =>
+      within(list)
+        .getAllByText(/^(Zêta|Alpha|Idée B|Réunion C|idees|reunions)$/)
+        .map((e) => e.textContent);
+    expect(titles()).toEqual(["Zêta", "Alpha", "idees", "Idée B", "reunions", "Réunion C"]);
+    const folder = within(list).getByRole("button", { name: "idees" });
+    expect(folder.getAttribute("aria-expanded")).toBe("true");
+    await user.click(folder);
+    expect(within(list).queryByText("Idée B")).toBeNull();
+    await user.click(folder);
+    screen.getByRole("combobox", { name: "Trier" }).focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(await screen.findByRole("option", { name: "Titre" }));
+    await waitFor(() =>
+      expect(titles()).toEqual(["Alpha", "Zêta", "idees", "Idée B", "reunions", "Réunion C"]),
+    );
+    expect(localStorage.getItem("kibo.notes.sort")).toBe("title");
+  } finally {
+    localStorage.removeItem("kibo.notes.sort");
+  }
+});
+
+test("a stored sort is read back when the list opens", async () => {
+  localStorage.setItem("kibo.notes.sort", "title");
+  try {
+    mount(
+      createMockSdk(manifest, {
+        seed,
+        surface: "view",
+        notes: { "b.md": "# Bêta\n", "a.md": "# Alpha\n" },
+        noteAges: { "b.md": 0, "a.md": 1 },
+      }).sdk,
+    );
+    const list = await screen.findByRole("list", { name: "Notes" });
+    await waitFor(() =>
+      expect(
+        within(list)
+          .getAllByText(/^(Alpha|Bêta)$/)
+          .map((e) => e.textContent),
+      ).toEqual(["Alpha", "Bêta"]),
+    );
+    expect(screen.getByRole("combobox", { name: "Trier" }).textContent).toContain("Titre");
+  } finally {
+    localStorage.removeItem("kibo.notes.sort");
+  }
+});

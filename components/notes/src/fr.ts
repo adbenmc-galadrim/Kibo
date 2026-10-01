@@ -28,6 +28,8 @@ export const fr = {
   keepMine: "Garder ma version",
   emptyList: "Aucune note dans ce dossier.",
   noResult: "Aucune note ne correspond.",
+  sortLabel: "Trier",
+  sorts: { recent: "Modifiées récemment", title: "Titre" },
   pick: "Choisis une note ou crées-en une.",
   emptyWidget: "Aucune note pour l'instant.",
   loadFailed: "Impossible de lire les notes.",

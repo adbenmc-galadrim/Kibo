@@ -9,6 +9,7 @@ import { type Backlink, type LinkedTicket, NoteLinks } from "./NoteLinks";
 import { NoteList } from "./NoteList";
 import { NoteTitleDialog } from "./NoteTitleDialog";
 import { createdPath } from "./note-name";
+import { groupNotes, type NoteSort, readNoteSort, writeNoteSort } from "./note-sort";
 import { RenameNoteDialog } from "./RenameNoteDialog";
 import { useNoteSession } from "./use-note-session";
 
@@ -70,6 +71,7 @@ export function NotesView() {
   const ticketList = useEntities("ticket");
   const [info, setInfo] = useState<NotesInfo | null>(null);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<NoteSort>(readNoteSort);
   const [selected, setSelected] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,15 +95,17 @@ export function NotesView() {
       ),
     [ticketList.data],
   );
-  const notes = found ?? listed.data;
+  const groups = useMemo(() => groupNotes(found ?? listed.data, sort), [found, listed.data, sort]);
+  const notes = useMemo(() => groups.flatMap((g) => g.notes), [groups]);
+  const first = useMemo(() => groupNotes(listed.data, sort)[0]?.notes[0] ?? null, [listed.data, sort]);
 
   useEffect(() => {
     sdk.notes.info().then(setInfo, fail(fr.loadFailed));
   }, [sdk, fail]);
 
   useEffect(() => {
-    if (selected === null && listed.data[0]) setSelected(listed.data[0].path);
-  }, [selected, listed.data]);
+    if (selected === null && first) setSelected(first.path);
+  }, [selected, first]);
 
   const { note, draft, state, load, rename, remove, change, keepMine } = useNoteSession({
     selected,
@@ -145,11 +149,16 @@ export function NotesView() {
   return (
     <div className="flex h-full min-h-0 bg-background text-foreground">
       <NoteList
-        notes={notes}
+        groups={groups}
         info={info}
         selected={selected}
         query={query}
+        sort={sort}
         onQuery={setQuery}
+        onSort={(next) => {
+          setSort(next);
+          writeNoteSort(next);
+        }}
         onSelect={open}
         onCreate={() => setCreating(true)}
         readOnly={readOnly}

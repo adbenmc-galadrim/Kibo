@@ -1,19 +1,21 @@
-import type { NoteMeta, NotesInfo } from "@kibo/schema";
-import { cn } from "@kibo/sdk/lib/utils";
+import type { NotesInfo } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { Input } from "@kibo/sdk/ui/input";
-import { Plus, Search } from "lucide-react";
-import { noteDate } from "./dates";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
+import { ChevronRight, Folder, Plus, Search } from "lucide-react";
 import { fr } from "./fr";
-import { NoteMenu } from "./NoteMenu";
-import { isUntitledPath } from "./note-name";
+import { NoteItem } from "./NoteItem";
+import { NOTE_SORTS, type NoteGroup, type NoteSort } from "./note-sort";
 
 type Props = {
-  notes: NoteMeta[];
+  groups: NoteGroup[];
   info: NotesInfo | null;
   selected: string | null;
   query: string;
+  sort: NoteSort;
   onQuery(q: string): void;
+  onSort(sort: NoteSort): void;
   onSelect(path: string): void;
   onCreate(): void;
   readOnly: boolean;
@@ -35,8 +37,42 @@ function FolderLine({ info }: { info: NotesInfo }) {
   );
 }
 
+function SortSelect({ sort, onSort }: { sort: NoteSort; onSort(sort: NoteSort): void }) {
+  return (
+    <Select
+      value={sort}
+      onValueChange={(v) => {
+        const next = NOTE_SORTS.find((s) => s === v);
+        if (next) onSort(next);
+      }}
+    >
+      <SelectTrigger size="sm" aria-label={fr.sortLabel} className="h-7 w-full text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {NOTE_SORTS.map((s) => (
+          <SelectItem key={s} value={s} className="text-xs">
+            {fr.sorts[s]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function NoteList(p: Props) {
-  const { notes, info, selected, query, onQuery, onSelect, onCreate, readOnly, onRename, onRemove } = p;
+  const { groups, info, selected, query, sort, onQuery, onSort, onCreate, readOnly } = p;
+  const item = (n: NoteGroup["notes"][number]) => (
+    <NoteItem
+      key={n.path}
+      note={n}
+      selected={selected === n.path}
+      readOnly={readOnly}
+      onSelect={p.onSelect}
+      onRename={p.onRename}
+      onRemove={p.onRemove}
+    />
+  );
   return (
     <aside className="flex w-64 shrink-0 flex-col gap-3 border-r p-3">
       <div className="relative">
@@ -49,49 +85,33 @@ export function NoteList(p: Props) {
           onChange={(e) => onQuery(e.target.value)}
         />
       </div>
+      <SortSelect sort={sort} onSort={onSort} />
       {info && <FolderLine info={info} />}
-      {notes.length === 0 && (
+      {groups.length === 0 && (
         <p className="px-1 text-sm text-muted-foreground">{query ? fr.noResult : fr.emptyList}</p>
       )}
       <ul aria-label="Notes" className="grid flex-1 content-start gap-1 overflow-auto">
-        {notes.map((n) => (
-          <li key={n.path}>
-            <NoteMenu
-              note={n}
-              readOnly={readOnly}
-              actions={{ rename: () => onRename(n.path), remove: () => onRemove(n.path) }}
-            >
-              <button
-                type="button"
-                onClick={() => onSelect(n.path)}
-                aria-current={selected === n.path ? "true" : undefined}
-                className={cn(
-                  "grid w-full gap-0.5 rounded-md px-2 py-2 text-left hover:bg-accent",
-                  selected === n.path && "bg-accent",
-                  !readOnly && "pr-8",
-                )}
-              >
-                <span className="truncate text-sm font-medium">{n.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {noteDate(n.mtime)}
-                  {n.tickets.length > 0 && ` · ${fr.links(n.tickets.length)}`}
-                </span>
-              </button>
-              {isUntitledPath(n.path) &&
-                (readOnly ? (
-                  <span className="block px-2 pb-1.5 text-xs text-muted-foreground">{fr.untitledFile}</span>
-                ) : (
-                  <button
-                    type="button"
-                    className="block px-2 pb-1.5 text-left text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                    onClick={() => onRename(n.path)}
-                  >
-                    {fr.untitledHint}
-                  </button>
-                ))}
-            </NoteMenu>
-          </li>
-        ))}
+        {groups.map((g) =>
+          g.dir === "" ? (
+            g.notes.map(item)
+          ) : (
+            <li key={`dir:${g.dir}`}>
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground">
+                  <ChevronRight
+                    aria-hidden
+                    className="size-3.5 transition-transform group-data-[state=open]:rotate-90"
+                  />
+                  <Folder aria-hidden className="size-3.5" />
+                  <span className="truncate">{g.dir}</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ul className="grid gap-1 pl-3">{g.notes.map(item)}</ul>
+                </CollapsibleContent>
+              </Collapsible>
+            </li>
+          ),
+        )}
       </ul>
       {!readOnly && (
         <Button variant="outline" size="sm" className="w-fit" onClick={onCreate}>
