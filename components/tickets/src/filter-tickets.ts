@@ -17,20 +17,26 @@ const assigneeMatches = (t: Ticket, filter: AssigneeFilter, viewer: string): boo
   return true;
 };
 
-export function filterTickets(tickets: readonly Ticket[], q: TicketsQuery, viewer: string): Set<string> {
+export type FilteredTree = { visible: Set<string>; context: Set<string> };
+
+export function filterTree(tickets: readonly Ticket[], q: TicketsQuery, viewer: string): FilteredTree {
   const needle = normalize(q.text.trim());
   const matches = (t: Ticket) =>
     (!needle || normalize(t.title).includes(needle) || normalize(t.key ?? "").includes(needle)) &&
     (q.statuses.size === 0 || q.statuses.has(t.statusId)) &&
     assigneeMatches(t, q.assignee, viewer);
   const parentOf = new Map(tickets.map((t) => [t.id, t.parentId]));
+  const matched = new Set(tickets.filter(matches).map((t) => t.id));
   const visible = new Set<string>();
-  for (const t of tickets.filter(matches)) {
-    let id: string | null = t.id;
+  for (const matchId of matched) {
+    let id: string | null = matchId;
     while (id !== null && !visible.has(id)) {
       visible.add(id);
       id = parentOf.get(id) ?? null;
     }
   }
-  return visible;
+  return { visible, context: new Set([...visible].filter((id) => !matched.has(id))) };
 }
+
+export const filterTickets = (tickets: readonly Ticket[], q: TicketsQuery, viewer: string): Set<string> =>
+  filterTree(tickets, q, viewer).visible;

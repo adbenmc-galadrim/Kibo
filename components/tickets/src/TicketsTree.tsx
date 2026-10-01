@@ -15,7 +15,7 @@ import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { buildTree, mineOnly, type TicketNode } from "./build-tree";
-import { EMPTY_QUERY, filterTickets, isActive } from "./filter-tickets";
+import { EMPTY_QUERY, filterTree, isActive } from "./filter-tickets";
 import { fr } from "./fr";
 import { ASSIGNEE_CELL, COLUMNS, TicketRow } from "./TicketRow";
 import { TicketsEmpty, TicketsNoMatch, TicketsSkeleton } from "./TicketsEmpty";
@@ -36,7 +36,8 @@ export function TicketsTree() {
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const [query, setQuery] = useState(EMPTY_QUERY);
   const filtering = isActive(query);
-  const shown = filtering ? filterTickets(visible, query, sdk.viewer) : null;
+  const filtered = filtering ? filterTree(visible, query, sdk.viewer) : null;
+  const shown = filtered?.visible ?? null;
   const canDrag = !readOnly && !filtering;
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [blocking, setBlocking] = useState<TicketView | null>(null);
@@ -103,6 +104,7 @@ export function TicketsTree() {
       run={runOf.get(n.ticket.id) ?? null}
       members={members}
       statusLabel={label(n.ticket.statusId)}
+      context={filtered?.context.has(n.ticket.id) ?? false}
       onToggle={() => toggle(n.ticket.id)}
     >
       {n.children.map(row)}

@@ -76,6 +76,7 @@ export function KanbanCard(props: Props) {
           style={style}
           {...attributes}
           {...listeners}
+          tabIndex={readOnly ? undefined : attributes.tabIndex}
           aria-label={`${t.keyLabel} ${t.title}`}
           data-key={t.keyLabel}
           className={cn(

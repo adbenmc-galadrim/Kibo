@@ -58,3 +58,20 @@ test("a missing configuration asks to configure", async () => {
   setup({ config: {} });
   expect(await screen.findByText("Configure la source dans les réglages du composant.")).toBeTruthy();
 });
+
+test("the small format shows the title, the item count and opens the list on demand", async () => {
+  setup({ format: "small", config: { ...config, title: "Issues Linear" } });
+  expect(await screen.findByText("2 éléments")).toBeTruthy();
+  expect(screen.getByText("Issues Linear")).toBeTruthy();
+  expect(screen.queryByText("Premier")).toBeNull();
+  const open = screen.getByRole("button", { name: "Ouvrir la source" });
+  expect(open.getAttribute("aria-expanded")).toBe("false");
+  await userEvent.setup().click(open);
+  expect(await screen.findByText("Premier")).toBeTruthy();
+});
+
+test("the medium format shows the list directly", async () => {
+  setup({ format: "medium" });
+  expect(await screen.findByText("Premier")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Ouvrir la source" })).toBeNull();
+});

@@ -57,6 +57,7 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   expect(within(todo).getByText("KIB-1")).toBeTruthy();
   expect(within(todo).getByText("À faire")).toBeTruthy();
   expect(within(todo).getByText("2")).toBeTruthy();
+  expect(within(todo).getAllByRole("article")[0]?.getAttribute("tabindex")).toBe("0");
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
   expect(screen.getByText("5 / 6 · Moi + agents")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
@@ -370,6 +371,7 @@ test("cards cannot be moved in a read-only project", async () => {
   await screen.findByText("KIB-…");
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
   expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
+  expect(screen.getByRole("article", { name: /Lecture/ }).getAttribute("tabindex")).toBeNull();
   await userEvent
     .setup()
     .pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Lecture" }) });

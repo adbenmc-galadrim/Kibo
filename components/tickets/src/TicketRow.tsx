@@ -55,6 +55,7 @@ type Props = {
   run: TicketRun | null;
   members: MemberInfo[];
   statusLabel: string;
+  context: boolean;
   onToggle(): void;
   children: ReactNode;
 };
@@ -68,6 +69,7 @@ export function TicketRow({
   run,
   members,
   statusLabel,
+  context,
   onToggle,
   children,
 }: Props) {
@@ -82,9 +84,11 @@ export function TicketRow({
     <li>
       <TicketRowMenu entries={entries}>
         <div
+          data-context={context || undefined}
           className={cn(
             COLUMNS,
             "group relative h-8 rounded-md text-sm hover:bg-muted/50",
+            context && "text-muted-foreground",
             inside.isOver && "ring-2 ring-ring",
           )}
         >
@@ -132,7 +136,10 @@ export function TicketRow({
               <span className="size-4 shrink-0" />
             )}
             <span ref={drag.setNodeRef} {...handle} aria-describedby={undefined}>
-              <TicketKeyLabel ticket={t} className="shrink-0 font-mono text-2xs text-muted-foreground" />
+              <TicketKeyLabel
+                ticket={t}
+                className="shrink-0 whitespace-nowrap font-mono text-2xs text-muted-foreground"
+              />
             </span>
             <button
               type="button"

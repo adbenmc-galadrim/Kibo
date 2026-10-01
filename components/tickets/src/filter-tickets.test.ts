@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { EMPTY_QUERY, filterTickets, isActive } from "./filter-tickets";
+import { EMPTY_QUERY, filterTickets, filterTree, isActive } from "./filter-tickets";
 import { manifest } from "./index";
 
 const tickets: TicketView[] = createMockSdk(manifest, { seed: (run) => seedDemo(run) }).snapshot().tickets;
@@ -49,4 +49,10 @@ test("a query is active as soon as a text, a status or an assignee narrows it", 
   expect(isActive({ ...EMPTY_QUERY, text: "sync" })).toBe(true);
   expect(isActive({ ...EMPTY_QUERY, statuses: new Set(["todo"]) })).toBe(true);
   expect(isActive({ ...EMPTY_QUERY, assignee: "nobody" })).toBe(true);
+});
+
+test("ancestors kept only for context are told apart from the matches", () => {
+  const { visible, context } = filterTree(tickets, { ...EMPTY_QUERY, text: "schema" }, "adam");
+  expect(keysOf(visible)).toEqual(["KIB-12", "KIB-3"]);
+  expect(keysOf(context)).toEqual(["KIB-3"]);
 });

@@ -227,6 +227,10 @@ test("screen 125: search and filters narrow the tree, drag is disabled meanwhile
   expect(screen.getByText("Déplacement")).toBeTruthy();
   expect(screen.getByText("Arbre des pages")).toBeTruthy();
   expect(screen.queryByText("Sync")).toBeNull();
+  const context = screen.getByText("Arbre des pages").closest("[data-context]");
+  expect(context?.getAttribute("data-context")).toBe("true");
+  expect(context?.classList.contains("text-muted-foreground")).toBe(true);
+  expect(screen.getByText("Déplacement").closest("[data-context]")).toBeNull();
   expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(0);
   await user.click(screen.getByRole("button", { name: "Effacer" }));
   expect(await screen.findByText("Sync")).toBeTruthy();
