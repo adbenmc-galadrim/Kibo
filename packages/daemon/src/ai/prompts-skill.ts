@@ -1,10 +1,9 @@
-import { COMPONENT_FORMATS, type ComponentFormat, FORMAT_SIZES } from "@kibo/schema";
+import { COMPONENT_FORMATS, type ComponentFormat, FORMAT_SIZES, GRID_COLUMNS } from "@kibo/schema";
 
 const REFERENCE_WIDTH = 1200;
 const GAP = 16;
 const ROW = 80;
-const COLUMNS = 12;
-const COLUMN = (REFERENCE_WIDTH - (COLUMNS - 1) * GAP) / COLUMNS;
+const COLUMN = (REFERENCE_WIDTH - (GRID_COLUMNS - 1) * GAP) / GRID_COLUMNS;
 
 export const FORMAT_LABELS: Readonly<Record<ComponentFormat, string>> = {
   small: "Petit",
@@ -62,13 +61,13 @@ Chaque argument de \`useEntities\`, \`sdk.list\`, \`sdk.run\`, \`sdk.fetch\` est
 
 ## Formats
 
-Un tableau de bord est une grille de ${COLUMNS} colonnes ; à ${REFERENCE_WIDTH} px de large, une colonne ≈ ${Math.round(COLUMN)} px, une rangée ${ROW} px, un écart ${GAP} px.
+Un tableau de bord est une grille de ${GRID_COLUMNS} colonnes ; à ${REFERENCE_WIDTH} px de large, une colonne ≈ ${Math.round(COLUMN)} px, une rangée ${ROW} px, un écart ${GAP} px.
 Le composant s'affiche dans chacun de ses formats déclarés (tableau en fin de fichier) et doit rester lisible dans tous les autres.
 Un format \`full\` sur une page vue occupe toute la page.
 
 ## Style
 
-- Jetons seulement : \`bg-background\`, \`bg-card\`, \`text-foreground\`, \`text-muted-foreground\`, \`border\`, \`text-destructive\`.
+- Jetons seulement : \`bg-background\`, \`bg-card\`, \`bg-muted\`, \`text-foreground\`, \`text-muted-foreground\`, \`border\`, \`text-destructive\`.
 - \`variant="agent"\` (bouton orange) est réservé aux actions qui lancent un agent.
 - Jamais de couleur codée (\`bg-blue-500\`, \`#3b82f6\`, \`rgb(…)\`) : le thème sombre et le thème clair doivent fonctionner tous les deux.
 
@@ -77,7 +76,7 @@ Un format \`full\` sur une page vue occupe toute la page.
 - Racine en \`@container\` avec \`h-full min-h-0 overflow-auto\` : le composant remplit sa cellule et défile au besoin.
 - Variantes de conteneur \`@md:\` et \`@lg:\` plutôt que \`md:\` et \`lg:\` (la taille de la fenêtre ne dit rien de la cellule).
 - \`sdk.format\` pour changer de disposition : un chiffre en \`small\`, une liste courte en \`medium\`, plus de détail au-delà.
-- Jamais de largeur fixe en pixels (\`w-[480px]\`, \`min-w-[300px]\`, \`width: 640px\`) : à partir de 240 px, la validation refuse le composant (« largeur fixe »).
+- Jamais de largeur fixe en pixels (\`w-[480px]\`, \`min-w-[300px]\`, \`size-[300px]\`, \`width: 640px\`, \`style={{ width: 640 }}\`) : à partir de 240 px, la validation refuse le composant (« largeur fixe »). Un maximum (\`max-w-[960px]\`) ou une variante de conteneur (\`@lg:w-[320px]\`) reste permis.
 
 ## Tests
 

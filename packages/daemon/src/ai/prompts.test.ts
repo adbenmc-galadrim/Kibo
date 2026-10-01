@@ -104,6 +104,7 @@ test("the kibo files carry the skill with formats, tokens, responsive rules and 
     "@container",
     "@md:",
     "bg-card",
+    "bg-muted",
     "text-muted-foreground",
     "largeur fixe",
     "Petit",
@@ -142,4 +143,12 @@ test("the prompts never carry a path outside the draft, the SDK and the images, 
   expect(texts).not.toMatch(/KIBO_RUN_TOKEN|kibo_session|token|\/Users\/|\/home\//i);
   const absolute = texts.match(/(?<![\w@.:/-])\/[\w.-]+\/[\w./-]*/g) ?? [];
   expect(absolute.filter((p) => !p.startsWith("/h/d.attachments/"))).toEqual([]);
+});
+
+test("every color class of the example is a token listed by the skill", () => {
+  const colors = new Set(
+    EXAMPLE_COMPONENT.match(/(?<=[\s":])(?:bg|text)-(?!xs|sm|base|lg|xl|\dxl|left)[a-z-]+/g) ?? [],
+  );
+  expect(colors.size).toBeGreaterThan(2);
+  for (const c of colors) expect(SKILL).toContain(`\`${c}\``);
 });
