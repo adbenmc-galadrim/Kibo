@@ -1,5 +1,6 @@
 import type { Theme } from "@kibo/schema";
 import { useSyncExternalStore } from "react";
+import { readPref, subscribePref, writePref } from "./lib/local-pref";
 
 export type ThemePreference = "system" | "light" | "dark";
 
@@ -9,17 +10,8 @@ const media = () => window.matchMedia("(prefers-color-scheme: dark)");
 export const nextTheme = (p: ThemePreference): ThemePreference =>
   p === "system" ? "light" : p === "light" ? "dark" : "system";
 
-function withStorage<T>(work: (storage: Storage) => T, fallback: T): T {
-  try {
-    return work(window.localStorage);
-  } catch (e) {
-    console.error("theme storage unavailable", e);
-    return fallback;
-  }
-}
-
 export function readThemePreference(): ThemePreference {
-  const value = withStorage((s) => s.getItem(KEY), null);
+  const value = readPref(KEY, "system");
   return value === "light" || value === "dark" ? value : "system";
 }
 
@@ -29,15 +21,9 @@ function apply(preference: ThemePreference): void {
 }
 
 export const THEME_PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
-const listeners = new Set<() => void>();
-const notify = () => {
-  for (const listener of listeners) listener();
-};
-
 export function setThemePreference(preference: ThemePreference): void {
-  withStorage((s) => (preference === "system" ? s.removeItem(KEY) : s.setItem(KEY, preference)), undefined);
   apply(preference);
-  notify();
+  writePref(KEY, preference === "system" ? null : preference);
 }
 
 export function cycleTheme(): ThemePreference {
@@ -46,20 +32,11 @@ export function cycleTheme(): ThemePreference {
   return next;
 }
 
-function subscribePreference(onChange: () => void): () => void {
-  listeners.add(onChange);
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === null || e.key === KEY) {
-      apply(readThemePreference());
-      onChange();
-    }
-  };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(onChange);
-    window.removeEventListener("storage", onStorage);
-  };
-}
+const subscribePreference = (onChange: () => void): (() => void) =>
+  subscribePref(KEY, (external) => {
+    if (external) apply(readThemePreference());
+    onChange();
+  });
 
 export const useThemePreference = (): ThemePreference =>
   useSyncExternalStore(subscribePreference, readThemePreference);
