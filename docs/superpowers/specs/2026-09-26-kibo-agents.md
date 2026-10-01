@@ -100,3 +100,12 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 - `tauri-plugin-notification` sous Linux dépend de `notify-rust` / D-Bus : sans service de notification, l'affichage échoue (journalisé), le reste fonctionne.
 - Seuil CPU en CI : un runner chargé peut retenir un run en file, même avec des seuils à 100 % (une charge saturée les atteint). Les tests E2E lancent donc le démon avec une charge fixe, `--host-load 62,70` (CPU et RAM en %, valeurs de l'écran 17), à la place de la mesure réelle ; les seuils gardent leurs valeurs par défaut.
 - La détection du binaire compilé (`/$bunfs`) pour trouver `kibo-hook` à côté du démon est vérifiée par le smoke Tauri.
+
+## 11. Décisions de la phase 9, vague 3
+
+Écrites le 2026-10-01 avec la spec de conception §15 ; elles amendent §8 et §9 sans changer le cycle d'un run.
+
+- **Tickets de la boîte de réception** (spec de conception §15.1) : `assignAgent` et `previewAssign` sur `projectId = "inbox"` répondent `INVALID_INPUT` (« inbox tickets cannot be assigned to an agent ») avant toute lecture du ticket ; un run n'a jamais `projectId = "inbox"`. L'interface ne propose « Assigner à un agent » que pour un ticket d'un projet ; pour un ticket de la boîte, elle propose « Rattacher à un projet… ».
+- **En-tête** (amende §8) : « + Ticket » est toujours visible ; sans projet courant, le dialogue présélectionne la boîte de réception.
+- **Historique** (amende §8, écran 13) : une ligne de l'historique de la page Agents ouvre le run dans le tiroir (même mécanisme que la cloche, spec de conception §14.5) ; filtre par état et recherche par clé ; quand `getRunLog` répond `NOT_FOUND` ou une liste vide, le tiroir affiche « Journal indisponible pour ce run. ». Arrêter un run, le retirer de la file et supprimer un profil sont confirmés (spec de conception §15.2).
+- **Vocabulaire** (amende §9) : la pastille de la barre des agents dit « Kibo · connecté » ou « Kibo · hors ligne » ; « créneaux » devient « places » ; les modes de permission ont un libellé en français ; le mot « run » est conservé et expliqué sur la page Agents.
