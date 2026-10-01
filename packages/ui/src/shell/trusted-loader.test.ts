@@ -44,3 +44,16 @@ test("a failed import is not cached", async () => {
   fail = false;
   expect((await loadTrusted("flaky", "1.0.0", H, importer)).manifest.id).toBe("flaky");
 });
+
+test("the shared modules are exposed before the trusted module is imported", async () => {
+  const order: string[] = [];
+  const importer = async (url: string) => {
+    order.push(`import ${url}`);
+    return { manifest: { ...manifest, id: "order" }, Component: () => null };
+  };
+  await loadTrusted("order", "1.0.0", H, importer, async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    order.push("expose");
+  });
+  expect(order).toEqual(["expose", `import /components/order/1.0.0/${H}/ui.trusted.js`]);
+});
