@@ -258,7 +258,7 @@ test("a ticket tab shows the detail, its PR and opens file links in the preview"
   expect(await screen.findByRole("link", { name: "#4" })).toBeTruthy();
   expect(crumbs().getByText("KIB-7").getAttribute("aria-current")).toBe("page");
   await userEvent.click(screen.getByRole("button", { name: "src/a.ts:3" }));
-  expect(await screen.findByText("Ligne 3, col 3")).toBeTruthy();
+  expect(await screen.findByText("Ligne 3 · Col 3")).toBeTruthy();
   expect(code.find((c) => c.method === "readFile")).toMatchObject({ path: "src/a.ts", worktree: "/repo" });
 });
 

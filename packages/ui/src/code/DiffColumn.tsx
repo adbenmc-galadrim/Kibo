@@ -1,5 +1,6 @@
 import type { FileChange, FileDiff } from "@kibo/schema";
 import { useState } from "react";
+import { useWrap } from "../files/wrap-pref";
 import { fr } from "../i18n/fr";
 import { DiffEditorPane } from "./DiffEditorPane";
 import { DiffToolbar } from "./DiffToolbar";
@@ -22,6 +23,7 @@ type Props = {
 
 export function DiffColumn({ file, diff, ...p }: Props) {
   const [editing, setEditing] = useState(false);
+  const [wrap, setWrap] = useWrap();
   if (!file || !diff) return <p className="p-8 text-sm text-muted-foreground">{fr.changes.noSelection}</p>;
   const canEdit = !p.readOnly && file.area === "unstaged" && file.kind !== "deleted" && !diff.binary;
   const line = diff.hunks[0]?.newStart ?? null;
@@ -39,6 +41,8 @@ export function DiffColumn({ file, diff, ...p }: Props) {
         readOnly={p.readOnly}
         onOpenFile={() => p.onOpenFile(line)}
         onOpenExternal={() => p.onOpenExternal(line)}
+        wrap={wrap}
+        onWrapChange={setWrap}
       />
       {editing && canEdit ? (
         <DiffEditorPane
@@ -46,6 +50,7 @@ export function DiffColumn({ file, diff, ...p }: Props) {
           worktree={p.worktree}
           path={file.path}
           layout={p.mode}
+          wrap={wrap}
           onSaved={p.onSaved}
         />
       ) : (
@@ -54,6 +59,7 @@ export function DiffColumn({ file, diff, ...p }: Props) {
           area={file.area}
           mode={p.mode}
           busy={p.busy}
+          wrap={wrap}
           onHunk={p.readOnly ? undefined : p.onHunk}
         />
       )}

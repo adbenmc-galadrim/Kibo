@@ -12,11 +12,12 @@ type Props = {
   worktree: string;
   path: string;
   layout: "unified" | "split";
+  wrap: boolean;
   onSaved(): void;
 };
 type Versions = { original: FileContent; current: FileContent };
 
-export function DiffEditorPane({ projectId, worktree, path, layout, onSaved }: Props) {
+export function DiffEditorPane({ projectId, worktree, path, layout, wrap, onSaved }: Props) {
   const [files, setFiles] = useState<Versions | null>(null);
   const [draft, setDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +93,7 @@ export function DiffEditorPane({ projectId, worktree, path, layout, onSaved }: P
           path={path}
           layout={layout}
           label={path}
+          wrap={wrap}
           onChange={setDraft}
           onSave={save}
         />

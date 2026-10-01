@@ -37,6 +37,7 @@ export function DraftDiffReview({ diff }: { diff: FileDiff[] }) {
           area="unstaged"
           mode="unified"
           busy={false}
+          wrap
           onHunk={() => {}}
         />
       </div>

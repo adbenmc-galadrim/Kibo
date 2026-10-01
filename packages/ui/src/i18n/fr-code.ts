@@ -196,7 +196,7 @@ export const frCode = {
     lines: (n: number) => `${n} ligne${s(n)}`,
     modified: (ago: string) => `modifié ${ago}`,
     uncommitted: "non commité",
-    position: (line: number, col: number) => `Ligne ${line}, col ${col}`,
+    position: (line: number, col: number) => `Ligne ${line} · Col ${col}`,
     hints: (mac: boolean) =>
       `${shortcutLabel(["Shift", "O"], mac)} ouvrir dans l'éditeur externe · Esc fermer`,
     binary: "Fichier binaire : aperçu indisponible.",

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { FileChange, FileDiff, Hunk } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { DiffColumn } from "./DiffColumn";
 import { DiffToolbar } from "./DiffToolbar";
 import { DiffView } from "./DiffView";
 import { splitRows } from "./diff-rows";
@@ -49,6 +50,7 @@ test("the unified diff shows numbers and signs, the hunk button stages", async (
       area="unstaged"
       mode="unified"
       busy={false}
+      wrap
       onHunk={(i, h) => hunks.push([i, h])}
     />,
   );
@@ -58,9 +60,54 @@ test("the unified diff shows numbers and signs, the hunk button stages", async (
   expect(hunks).toEqual([[0, hunk.header]]);
 });
 
+const codeClass = () => screen.getByText("key: z.string(),").className;
+
+test("the diff wraps long lines only when asked", () => {
+  const { rerender } = render(
+    <DiffView diff={diff} area="unstaged" mode="unified" busy={false} wrap={false} />,
+  );
+  expect(codeClass()).toContain("whitespace-pre");
+  expect(codeClass()).not.toContain("whitespace-pre-wrap");
+  rerender(<DiffView diff={diff} area="unstaged" mode="split" busy={false} wrap />);
+  expect(codeClass()).toContain("whitespace-pre-wrap");
+});
+
+test("the diff column follows the wrap preference of the device", async () => {
+  localStorage.clear();
+  const file: FileChange = {
+    path: diff.path,
+    origPath: null,
+    area: "unstaged",
+    kind: "modified",
+    additions: 2,
+    deletions: 1,
+  };
+  render(
+    <DiffColumn
+      projectId="p1"
+      worktree="/repo"
+      file={file}
+      diff={diff}
+      mode="unified"
+      onModeChange={() => {}}
+      busy={false}
+      readOnly
+      onHunk={() => {}}
+      onOpenFile={() => {}}
+      onOpenExternal={() => {}}
+      onSaved={() => {}}
+    />,
+  );
+  expect(codeClass()).toContain("whitespace-pre-wrap");
+  await userEvent.click(screen.getByRole("switch", { name: "Retour à la ligne" }));
+  expect(localStorage.getItem("kibo.wrap")).toBe("off");
+  expect(codeClass()).not.toContain("whitespace-pre-wrap");
+  localStorage.clear();
+});
+
 test("staged diffs offer to unstage, binary files and whole-file-only diffs hide the hunk action", () => {
   const { rerender } = render(
-    <DiffView diff={diff} area="staged" mode="split" busy={false} onHunk={() => {}} />,
+    <DiffView diff={diff} area="staged" mode="split" busy={false} wrap onHunk={() => {}} />,
   );
   expect(screen.getByRole("button", { name: "Retirer le bloc du commit" })).toBeTruthy();
   rerender(
@@ -69,6 +116,7 @@ test("staged diffs offer to unstage, binary files and whole-file-only diffs hide
       area="unstaged"
       mode="unified"
       busy={false}
+      wrap
       onHunk={() => {}}
     />,
   );
@@ -79,6 +127,7 @@ test("staged diffs offer to unstage, binary files and whole-file-only diffs hide
       area="unstaged"
       mode="unified"
       busy={false}
+      wrap
       onHunk={() => {}}
     />,
   );
@@ -100,13 +149,17 @@ test("the toolbar switches modes, toggles editing and opens the file", async () 
       readOnly={false}
       onOpenFile={() => events.push("file")}
       onOpenExternal={() => events.push("external")}
+      wrap
+      onWrapChange={(on) => events.push(`wrap:${on}`)}
     />,
   );
+  expect(screen.getByRole("switch", { name: "Retour à la ligne" }).getAttribute("aria-checked")).toBe("true");
+  await userEvent.click(screen.getByRole("switch", { name: "Retour à la ligne" }));
   await userEvent.click(screen.getByRole("radio", { name: "Côte à côte" }));
   await userEvent.click(screen.getByRole("button", { name: "Édition" }));
   await userEvent.click(screen.getByRole("button", { name: "packages/core/ticket.ts" }));
   await userEvent.click(screen.getByRole("button", { name: "Ouvrir dans l'éditeur externe" }));
-  expect(events).toEqual(["split", "edit:true", "file", "external"]);
+  expect(events).toEqual(["wrap:false", "split", "edit:true", "file", "external"]);
   expect(screen.getByText("+42")).toBeTruthy();
 });
 

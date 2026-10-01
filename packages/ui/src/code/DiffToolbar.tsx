@@ -2,6 +2,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Toggle } from "@kibo/sdk/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { ExternalLink, FileCode, Pencil } from "lucide-react";
+import { WrapSwitch } from "../files/WrapSwitch";
 import { fr } from "../i18n/fr";
 import type { DiffMode } from "./DiffView";
 
@@ -17,6 +18,8 @@ type Props = {
   readOnly: boolean;
   onOpenFile(): void;
   onOpenExternal(): void;
+  wrap: boolean;
+  onWrapChange(on: boolean): void;
 };
 
 const COMPACT = "h-7 px-2 text-2xs";
@@ -38,12 +41,13 @@ export function DiffToolbar(p: Props) {
         <span>+{p.additions}</span>
         <span>−{p.deletions}</span>
       </span>
+      <WrapSwitch wrap={p.wrap} onWrap={p.onWrapChange} className="ml-auto text-2xs" />
       <ToggleGroup
         type="single"
         variant="outline"
         size="sm"
         aria-label={fr.changes.viewMode}
-        className="ml-auto shrink-0"
+        className="shrink-0"
         value={p.mode}
         onValueChange={(v) => {
           if (isDiffMode(v)) p.onModeChange(v);

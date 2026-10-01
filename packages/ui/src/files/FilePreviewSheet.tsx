@@ -8,10 +8,13 @@ import { relativeTime } from "../lib/relative-time";
 import { isRemoteView } from "../lib/remote-view";
 import { isMac } from "../lib/shortcut-label";
 import { CodeLines } from "./CodeLines";
-import { columnOf, splitPath } from "./file-path";
+import { FileToolbar } from "./FileToolbar";
+import { splitPath } from "./file-path";
 import { languageOf } from "./language";
 import { useExternalOpen } from "./use-external-open";
 import { type FileContentState, useFileContent } from "./use-file-content";
+import { useFileFind } from "./use-file-find";
+import { useWrap } from "./wrap-pref";
 
 type Props = { fileRef: FileRef; onClose(): void; onOpenInTab(edit: boolean): void; remote?: boolean };
 
@@ -36,6 +39,8 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
   const { dir, name } = splitPath(fileRef.path);
   const openExternal = useExternalOpen(fileRef, file.worktree?.path ?? null, file.setError);
   const c = file.content;
+  const [wrap, setWrap] = useWrap();
+  const finder = useFileFind(c?.content ?? null, fileRef.line);
 
   useEffect(() => {
     if (remote) return;
@@ -52,6 +57,12 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         showCloseButton={false}
+        onKeyDown={finder.onKeyDown}
+        onEscapeKeyDown={(e) => {
+          if (!finder.find) return;
+          e.preventDefault();
+          finder.close();
+        }}
         className="flex w-1/2 min-w-[min(100vw,480px)] flex-col gap-0 p-0 sm:max-w-none"
       >
         <header className="flex items-center gap-2 px-4 pt-3 pb-1.5">
@@ -97,6 +108,15 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
             <span>{metadata(fileRef, file)}</span>
           </div>
         </SheetDescription>
+        <FileToolbar
+          path={fileRef.path}
+          wrap={wrap}
+          onWrap={setWrap}
+          find={finder.find}
+          onFind={finder.open}
+          onStep={finder.step}
+          onCloseFind={finder.close}
+        />
         {file.error && (
           <p role="alert" className="px-4 py-2 text-sm text-destructive">
             {file.error}
@@ -105,12 +125,20 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
         {c?.binary && <p className="p-6 text-sm text-muted-foreground">{fr.file.binary}</p>}
         {c?.tooLarge && <p className="p-6 text-sm text-muted-foreground">{fr.file.tooLarge}</p>}
         {file.tokens ? (
-          <CodeLines tokens={file.tokens} highlightLine={fileRef.line} label={fileRef.path} />
+          <CodeLines
+            tokens={file.tokens}
+            highlightLine={finder.goTo ?? fileRef.line}
+            label={fileRef.path}
+            wrap={wrap}
+            matches={finder.find?.matches}
+            matchLength={finder.find?.query.length}
+            highlight={finder.current}
+          />
         ) : (
           <div className="flex-1" />
         )}
         <footer className="flex items-center justify-between border-t px-4 py-2 font-mono text-xs text-muted-foreground">
-          <span>{fr.file.position(fileRef.line ?? 1, columnOf(c?.content ?? null, fileRef.line))}</span>
+          <span>{fr.file.position(finder.position.line, finder.position.col)}</span>
           <span className="font-sans">{fr.file.hints(isMac())}</span>
         </footer>
       </SheetContent>

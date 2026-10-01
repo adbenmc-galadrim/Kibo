@@ -292,10 +292,10 @@ test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
   const sheet = page.getByRole("dialog").filter({ hasText: "Schéma Loro des tickets" });
   await sheet.getByRole("button", { name: "packages/core/ticket.ts:43" }).click();
   const preview = page.getByRole("dialog").filter({ hasText: "Ouvrir dans un onglet" });
-  await expect(preview.getByText("Ligne 43, col 3")).toBeVisible();
+  await expect(preview.getByText("Ligne 43 · Col 3")).toBeVisible();
   await capture(info, "23");
   await page.keyboard.press("Escape");
-  await expect(preview.getByText("Ligne 43, col 3")).toBeHidden();
+  await expect(preview.getByText("Ligne 43 · Col 3")).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();
 });
