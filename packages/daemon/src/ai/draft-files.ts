@@ -163,6 +163,7 @@ export function verifyAndRestore(paths: DraftPaths, allowServer: boolean): Draft
     const incidents: DraftIncident[] = [];
     assertRealDir(paths.baseDir);
     sanitizeBuildOutputs(paths.dir, incidents);
+    removeTree(join(paths.dir, ".kibo", "preview"));
     const base = listEntries(paths.baseDir, true);
     const current = listEntries(paths.dir);
     checkFiles(paths, base, current, allowServer, incidents);

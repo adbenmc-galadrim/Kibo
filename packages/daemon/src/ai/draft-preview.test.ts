@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ComponentDraft } from "@kibo/schema";
 import { SANDBOX_INDEX } from "../components/sandbox-server";
-import { draftPaths } from "./draft-files";
+import { draftPaths, verifyAndRestore } from "./draft-files";
 import { createDraftPreview } from "./draft-preview";
 import { openDraftStore } from "./draft-store";
 
@@ -216,4 +216,20 @@ test("a draft folder removed during the build while still in review ⇒ CONFLICT
   await refusedWhile(({ review, home }) => {
     rmSync(draftPaths(home, review.id).dir, { recursive: true, force: true });
   });
+});
+
+test("after a run, a preview planted by the agent is gone and the next preview rebuilds", async () => {
+  const { home, store, review, devkit } = setup();
+  const paths = draftPaths(home, review.id);
+  mkdirSync(paths.baseDir);
+  writeFileSync(join(paths.baseDir, "ui.tsx"), "export const Component = () => null;\n");
+  const planted = join(paths.dir, ".kibo", "preview", HASH);
+  mkdirSync(planted, { recursive: true });
+  writeFileSync(join(planted, "ui.sandbox.js"), "planted");
+  writeFileSync(join(planted, "ui.css"), "planted");
+  verifyAndRestore(paths, false);
+  const { preview, assets } = createDraftPreview({ store, home, devkit });
+  await preview(review.id);
+  expect(devkit.builds).toBe(1);
+  expect(await assets.lookup(review.id, HASH, "ui.sandbox.js")).toEqual(BUNDLE);
 });
