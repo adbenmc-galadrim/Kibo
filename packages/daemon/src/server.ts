@@ -18,7 +18,7 @@ import { SESSION_COOKIE, sessionCookie } from "./sessions/cookie";
 import { deviceNameFromUserAgent } from "./sessions/device-name";
 import { sessionRpc } from "./sessions/rpc";
 import { openSessionStore, type SessionCheck, type SessionStore } from "./sessions/session-store";
-import { serveUi, withUiHeaders } from "./ui-route";
+import { serveUi } from "./ui-route";
 
 export type ServerOptions = {
   service: Service;
@@ -191,7 +191,7 @@ export function startServer(opts: ServerOptions): RunningServer {
         });
       }
       if (!url.pathname.startsWith("/api/")) {
-        return withUiHeaders(serveUi(opts.uiDir, url.pathname), opts.sandboxOrigin?.() ?? null);
+        return serveUi(opts.uiDir, url.pathname, opts.sandboxOrigin?.() ?? null);
       }
       const res = await handleApi(req, url, srv, l);
       res?.headers.set("cache-control", "no-store");
