@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { type BuiltChunk, FORBIDDEN_IN_ENTRY, initialChunks, reportEntry } from "./bundle-report";
+import {
+  type BuiltChunk,
+  FORBIDDEN_IN_ENTRY,
+  initialChunks,
+  reportEntry,
+  reportGraph,
+} from "./bundle-report";
 
 const chunk = (fileName: string, over: Partial<BuiltChunk> = {}): BuiltChunk => ({
   fileName,
@@ -149,5 +155,34 @@ describe("bundle report", () => {
       "/x/node_modules/.bun/loro-crdt@1.16.3/node_modules/loro-crdt/browser/index.js",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
+
+  test("the preview worker must be emitted under workers/", () => {
+    const chunks = [chunk("assets/index.js", { isEntry: true })];
+    expect(reportGraph(chunks, ["assets/index.js", "workers/draft-preview-worker-Ab1_c.js"])).toEqual({
+      previewWorker: "workers/draft-preview-worker-Ab1_c.js",
+      forbidden: [],
+      ok: true,
+    });
+    expect(reportGraph(chunks, ["assets/index.js", "assets/draft-preview-worker-Ab1.js"])).toMatchObject({
+      previewWorker: null,
+      ok: false,
+    });
+  });
+
+  test("core and loro fail the build in any chunk of the main graph, initial or lazy", () => {
+    const core = "/x/packages/core/src/index.ts";
+    const loro = pkg("loro-crdt", "browser/index.js");
+    const chunks = [
+      chunk("assets/index.js", { isEntry: true }),
+      chunk("assets/DraftPreviewFrame.js", { moduleIds: [core] }),
+      chunk("assets/lazy.js", { moduleIds: [loro, "/x/packages/ui/src/App.tsx"] }),
+    ];
+    const report = reportGraph(chunks, ["workers/draft-preview-worker-1.js"]);
+    expect(report.ok).toBe(false);
+    expect(report.forbidden).toEqual([
+      { file: "assets/DraftPreviewFrame.js", module: core },
+      { file: "assets/lazy.js", module: loro },
+    ]);
   });
 });

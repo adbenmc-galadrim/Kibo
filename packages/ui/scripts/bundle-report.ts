@@ -102,3 +102,25 @@ export function reportEntry(chunks: readonly BuiltChunk[], opts: ReportOptions =
     ok: gzipBytes <= opts.budget && forbidden.length === 0,
   };
 }
+
+export const PREVIEW_WORKER = /^workers\/draft-preview-worker-[A-Za-z0-9_-]+\.js$/;
+export const FORBIDDEN_IN_MAIN_GRAPH: readonly RegExp[] = [
+  /\/packages\/core\/src\//,
+  /\/node_modules\/loro-crdt\//,
+];
+
+export type GraphReport = {
+  previewWorker: string | null;
+  forbidden: { file: string; module: string }[];
+  ok: boolean;
+};
+
+export function reportGraph(chunks: readonly BuiltChunk[], emitted: readonly string[]): GraphReport {
+  const previewWorker = emitted.find((name) => PREVIEW_WORKER.test(name)) ?? null;
+  const forbidden = chunks.flatMap((c) =>
+    c.moduleIds
+      .filter((id) => FORBIDDEN_IN_MAIN_GRAPH.some((r) => r.test(id)))
+      .map((module) => ({ file: c.fileName, module })),
+  );
+  return { previewWorker, forbidden, ok: previewWorker !== null && forbidden.length === 0 };
+}
