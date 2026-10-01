@@ -12,15 +12,19 @@ export type IconFieldProps = {
   removed: boolean;
   onPick(icon: IconInput): void;
   onRemove(): void;
+  onError?: (message: string | null) => void;
 };
 
 const t = frFields.icon;
 const refusalText = (e: unknown): string =>
   e instanceof IconFileError ? (e.reason === "too-large" ? t.tooLarge : t.badFormat) : t.readFailed;
 
-export function IconField({ label, currentUrl, pending, removed, onPick, onRemove }: IconFieldProps) {
+export function IconField(props: IconFieldProps) {
+  const { label, currentUrl, pending, removed, onPick, onRemove, onError } = props;
   const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [ownError, setOwnError] = useState<string | null>(null);
+  const setError = onError ?? setOwnError;
+  const error = onError ? null : ownError;
   const src = pending ? iconDataUrl(pending) : removed ? null : currentUrl;
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -33,7 +37,8 @@ export function IconField({ label, currentUrl, pending, removed, onPick, onRemov
     }
   };
   return (
-    <div className="grid gap-2">
+    <fieldset className="grid min-w-0 gap-2">
+      <legend className="mb-2 text-sm font-medium">{t.label}</legend>
       <div className="flex items-center gap-3">
         {src ? (
           <img src={src} alt={t.preview(label)} className="size-12 rounded-md border object-cover" />
@@ -51,6 +56,7 @@ export function IconField({ label, currentUrl, pending, removed, onPick, onRemov
           type="file"
           accept="image/png,image/jpeg,image/webp"
           className="sr-only"
+          tabIndex={-1}
           aria-label={t.choose}
           onChange={(e) => {
             void onFile(e.target.files?.[0]);
@@ -73,6 +79,6 @@ export function IconField({ label, currentUrl, pending, removed, onPick, onRemov
           {error}
         </p>
       )}
-    </div>
+    </fieldset>
   );
 }

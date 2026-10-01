@@ -15,6 +15,7 @@ export type FolderFieldProps = {
   canBrowse?: boolean;
   pick?: (current: string | null) => Promise<string | null>;
   autoFocus?: boolean;
+  onError?: (message: string | null) => void;
 };
 
 export function FolderField({
@@ -26,8 +27,11 @@ export function FolderField({
   canBrowse = inTauri(),
   pick = pickFolder,
   autoFocus = false,
+  onError,
 }: FolderFieldProps) {
-  const [error, setError] = useState<string | null>(null);
+  const [ownError, setOwnError] = useState<string | null>(null);
+  const setError = onError ?? setOwnError;
+  const error = onError ? null : ownError;
   const browse = async () => {
     setError(null);
     try {

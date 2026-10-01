@@ -4,6 +4,7 @@ export const frFields = {
     pickFailed: "Impossible d'ouvrir le sélecteur de dossier.",
   },
   icon: {
+    label: "Image",
     choose: "Choisir une image…",
     remove: "Retirer l'image",
     help: "PNG, JPEG ou WebP, 256 kB au plus. Une image carrée rend mieux.",

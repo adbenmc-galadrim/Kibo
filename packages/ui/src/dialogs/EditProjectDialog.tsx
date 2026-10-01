@@ -17,10 +17,16 @@ import { frProject } from "../i18n/fr-project";
 import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
-import { FolderField } from "./FolderField";
+import { FolderField, type FolderFieldProps } from "./FolderField";
 import { IconField } from "./IconField";
 
-type Props = { project: ProjectSummary; onClose(): void; remote?: boolean };
+type Props = {
+  project: ProjectSummary;
+  onClose(): void;
+  remote?: boolean;
+  canBrowse?: boolean;
+  pick?: FolderFieldProps["pick"];
+};
 type Fields = { name: string; color: string; folder: string };
 
 const t = frProject.edit;
@@ -43,7 +49,7 @@ export function editFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-export function EditProjectDialog({ project, onClose, remote = isRemoteView() }: Props) {
+export function EditProjectDialog({ project, onClose, remote = isRemoteView(), canBrowse, pick }: Props) {
   const nameId = useId();
   const folderId = useId();
   const folderHelpId = useId();
@@ -123,11 +129,20 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView() }:
               setPending(null);
               setRemoved(true);
             }}
+            onError={setError}
           />
           {!remote && (
             <div className="grid gap-1.5">
               <Label htmlFor={folderId}>{t.folder}</Label>
-              <FolderField id={folderId} value={folder} onChange={setFolder} describedBy={folderHelpId} />
+              <FolderField
+                id={folderId}
+                value={folder}
+                onChange={setFolder}
+                describedBy={folderHelpId}
+                canBrowse={canBrowse}
+                pick={pick}
+                onError={setError}
+              />
               <p id={folderHelpId} className="text-xs text-muted-foreground">
                 {t.folderHelp}
               </p>

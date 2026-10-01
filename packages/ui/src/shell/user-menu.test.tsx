@@ -38,6 +38,8 @@ test("the avatar opens a menu with the theme submenu, sessions and settings (scr
   await user.click(within(menu).getByRole("menuitem", { name: "Thème" }));
   const system = await screen.findByRole("menuitemradio", { name: "Système" });
   expect(system.getAttribute("aria-checked")).toBe("true");
+  expect(system.querySelector("svg.lucide-check")).not.toBeNull();
+  expect(screen.getByRole("menuitemradio", { name: "Sombre" }).querySelector("svg")).toBeNull();
   screen.getByRole("menuitemradio", { name: "Sombre" }).focus();
   await user.keyboard("{Enter}");
   expect(document.documentElement.classList.contains("dark")).toBe(true);

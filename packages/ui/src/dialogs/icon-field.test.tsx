@@ -60,3 +60,21 @@ test("a removed image shows the empty tile even when the server still has one", 
   expect(screen.getByRole("img", { name: "Aucune image" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Retirer l'image" })).toBeNull();
 });
+
+test("the field is titled Image and the hidden file input stays out of the tab order (screens 107, 109)", () => {
+  show();
+  expect(screen.getByText("Image")).toBeTruthy();
+  expect(screen.getByRole("group", { name: "Image" })).toBeTruthy();
+  expect(screen.getByLabelText("Choisir une image…").tabIndex).toBe(-1);
+});
+
+test("with onError, a refusal goes to the parent instead of its own alert", async () => {
+  const onError = mock((_message: string | null) => {});
+  const { user } = show({ onError });
+  await user.upload(
+    screen.getByLabelText("Choisir une image…"),
+    new File(["<svg/>"], "a.svg", { type: "image/svg+xml" }),
+  );
+  expect(onError).toHaveBeenLastCalledWith("Format non pris en charge : PNG, JPEG ou WebP.");
+  expect(screen.queryByRole("alert")).toBeNull();
+});

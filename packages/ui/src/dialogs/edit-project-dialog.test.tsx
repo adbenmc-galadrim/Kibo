@@ -129,3 +129,28 @@ test("a remote session has no folder field and never sends a folder", async () =
   await waitFor(() => expect(closed).toHaveBeenCalled());
   expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { name: "Kibo 2" } }]);
 });
+
+test("a folder picker error then a save error leave a single alert, the latest one", async () => {
+  const pick = mock(() => Promise.reject(new Error("dialog plugin down")));
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} canBrowse pick={pick} />);
+  const user = userEvent.setup({ applyAccept: false });
+  await user.click(screen.getByRole("button", { name: "Parcourir…" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'ouvrir le sélecteur de dossier.");
+  fail = new KiboError("FORBIDDEN", "read-only");
+  await user.type(screen.getByLabelText("Nom"), " 2");
+  await user.click(saveButton());
+  await waitFor(() =>
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Impossible de modifier le projet. Ce projet est en lecture seule pour toi.",
+    ),
+  );
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  await user.upload(
+    screen.getByLabelText("Choisir une image…"),
+    new File(["<svg/>"], "a.svg", { type: "image/svg+xml" }),
+  );
+  await waitFor(() =>
+    expect(screen.getByRole("alert").textContent).toBe("Format non pris en charge : PNG, JPEG ou WebP."),
+  );
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+});

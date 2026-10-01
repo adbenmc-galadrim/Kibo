@@ -5,15 +5,19 @@ import userEvent from "@testing-library/user-event";
 import { configFixture } from "../agents/fixtures";
 
 const calls: RpcRequest[] = [];
+const answer = async (req: RpcRequest): Promise<unknown> => {
+  if (req.method === "config") return { name: "Maison", description: "Mes projets" };
+  if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
+  throw new Error(`unexpected ${req.method}`);
+};
+let rpcOutcome: (req: RpcRequest) => Promise<unknown> = answer;
 mock.module("../api", () => ({
   client: {
     subscribe: () => () => {},
     subscribeTopic: () => () => {},
-    rpc: async (req: RpcRequest) => {
+    rpc: (req: RpcRequest) => {
       calls.push(req);
-      if (req.method === "config") return { name: "Maison", description: "Mes projets" };
-      if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
-      throw new Error(`unexpected ${req.method}`);
+      return rpcOutcome(req);
     },
   },
 }));
@@ -24,6 +28,7 @@ const PNG = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 
 });
 beforeEach(() => {
   calls.length = 0;
+  rpcOutcome = answer;
 });
 
 test("shows the identity card from the config, workspace first in the nav (screen 109)", () => {
@@ -84,13 +89,9 @@ test("without config the form waits; a daemon error is shown", async () => {
   expect(screen.getByLabelText("Nom").hasAttribute("disabled")).toBe(true);
   unmount();
   calls.length = 0;
-  mock.module("../api", () => ({
-    client: {
-      rpc: async () => {
-        throw new Error("boom");
-      },
-    },
-  }));
+  rpcOutcome = async () => {
+    throw new Error("boom");
+  };
   render(<WorkspacePage config={configFixture()} />);
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Nom"), "2");
