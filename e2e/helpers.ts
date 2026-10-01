@@ -35,8 +35,8 @@ export async function createPage(page: Page, title: string, kind: PageKind) {
 
 export async function createSidebarPage(page: Page, project: string, title: string, kind: PageKind) {
   const sidebar = page.locator('[data-sidebar="sidebar"]');
-  const button = sidebar.getByRole("button", { name: project, exact: true });
-  await button.click();
+  const button = page.getByRole("button", { name: project, exact: true });
+  await sidebar.locator(button).click();
   await sidebar
     .getByRole("listitem")
     .filter({ has: button })
