@@ -3,7 +3,6 @@ import { lazyPanel } from "@kibo/sdk";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frCreations } from "../i18n/fr-creations";
-import { isRemoteView } from "../lib/remote-view";
 import { useTheme } from "../theme";
 import { FormatPicker } from "./FormatPicker";
 
@@ -18,7 +17,6 @@ export function DraftPreview({ draftId, manifest }: { draftId: string; manifest:
   const theme = useTheme();
   const formats = formatsOf(manifest);
   const [format, setFormat] = useState<ComponentFormat>(() => defaultFormatOf(manifest));
-  if (isRemoteView()) return <output className="block text-sm text-muted-foreground">{t.remote}</output>;
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center gap-2">

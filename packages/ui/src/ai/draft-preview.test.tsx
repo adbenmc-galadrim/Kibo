@@ -4,7 +4,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type BridgeDeps, createFrameBridge } from "../shell/frame-bridge";
 import { DRAFT_ID, burndownManifest as manifest } from "./draft-fixtures";
-import { inMemoryWorkers } from "./preview-channel";
+import { inMemoryWorkers } from "./preview-worker-fixtures";
 import { createWorkerBackend } from "./worker-backend";
 
 const sandbox = Bun.serve({
@@ -69,7 +69,7 @@ function mount(
   const ui = (f: "medium" | "half", t: "dark" | "light") => (
     <DraftPreviewFrame
       draftId={DRAFT_ID}
-      manifest={manifest}
+      manifest={{ ...manifest }}
       format={f}
       theme={t}
       createBridge={createBridge}
@@ -139,6 +139,12 @@ test("the bridge answers its own frame and ignores other windows; opening reques
   await fromFrame(iframe, { kibo: 1, type: "call", id: 1, call: { kind: "data.keys" } });
   await fromFrame(iframe, { kibo: 1, type: "openTicket", ticketId: "t1" });
   await fromFrame(iframe, { kibo: 1, type: "openView", componentId: "kanban" });
+  const keys: string[] = [];
+  const onKey = (e: KeyboardEvent) => keys.push(e.key);
+  document.addEventListener("keydown", onKey);
+  await fromFrame(iframe, { kibo: 1, type: "key", combo: "escape" });
+  document.removeEventListener("keydown", onKey);
+  expect(keys).toEqual([]);
   await settle();
   expect(posted[1]).toEqual({ kibo: 1, type: "reply", id: 1, ok: true, result: [] });
   expect(calls.some((c) => c.method !== "getRuntimeInfo" && c.method !== "previewComponentDraft")).toBe(
@@ -217,6 +223,63 @@ test("a frame that never gets ready is rebuilt once, then the preview is unavail
   expect(alert.textContent).toContain("Le composant ne s'est pas chargé.");
   expect(screen.queryByTitle("Aperçu de Burndown")).toBeNull();
   expect(previewCalls()).toHaveLength(2);
+  view.unmount();
+});
+
+test("a frame that reloads after ready stops the preview at once, without a new build", async () => {
+  const errors = console.error;
+  console.error = () => {};
+  const { view } = mount();
+  const iframe = await frame();
+  await fromFrame(iframe, { kibo: 1, type: "ready" });
+  act(() => {
+    iframe.dispatchEvent(new Event("load"));
+    iframe.dispatchEvent(new Event("load"));
+  });
+  const alert = await screen.findByRole("alert");
+  console.error = errors;
+  expect(alert.textContent).toContain("Le composant a rechargé ou quitté son cadre : aperçu arrêté.");
+  expect(screen.queryByTitle("Aperçu de Burndown")).toBeNull();
+  await settle();
+  expect(previewCalls()).toHaveLength(1);
+  view.unmount();
+});
+
+test("the demo worker is terminated on unmount and on Réessayer", async () => {
+  const errors = console.error;
+  console.error = () => {};
+  const { view, bridges, workers } = mount();
+  let iframe = await frame();
+  await waitFor(() => expect(bridges).toHaveLength(1));
+  await bridges[0]?.call({ kind: "data.keys" });
+  expect(workers.spawned()).toBe(1);
+  await fromFrame(iframe, { kibo: 1, type: "ready" });
+  act(() => {
+    iframe.dispatchEvent(new Event("load"));
+    iframe.dispatchEvent(new Event("load"));
+  });
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Réessayer" }));
+  console.error = errors;
+  expect(workers.terminated()).toBe(workers.spawned());
+  iframe = await frame();
+  await waitFor(() => expect(bridges).toHaveLength(2));
+  await bridges[1]?.call({ kind: "data.keys" });
+  expect(workers.spawned()).toBe(2);
+  view.unmount();
+  expect(workers.terminated()).toBe(workers.spawned());
+});
+
+test("reloaded details with the same manifest keep the demo worker and its data", async () => {
+  const { view, bridges, workers, rerender } = mount();
+  await frame();
+  await waitFor(() => expect(bridges).toHaveLength(1));
+  await bridges[0]?.call({ kind: "run", command: { method: "createTicket", title: "Gardé" } });
+  rerender("medium", "light");
+  await settle();
+  const tickets = await bridges.at(-1)?.call({ kind: "list", entity: "ticket" });
+  expect(JSON.stringify(tickets)).toContain("Gardé");
+  expect(workers.spawned()).toBe(1);
+  expect(workers.terminated()).toBe(0);
   view.unmount();
 });
 

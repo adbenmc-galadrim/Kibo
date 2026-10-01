@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { KiboError } from "@kibo/schema";
 import { burndownManifest as manifest } from "./draft-fixtures";
-import { inMemoryWorkers } from "./preview-channel";
+import { inMemoryWorkers } from "./preview-worker-fixtures";
 import { createWorkerBackend, relayedCode } from "./worker-backend";
 
 test("the worker is spawned on the first call and answers with the demo project", async () => {
@@ -95,6 +95,8 @@ test("a crashed worker fails the pending calls, then every call, and tells the h
 test("only the codes the demo project raises are relayed; anything else reads as INTERNAL", () => {
   expect(relayedCode("NOT_FOUND")).toBe("NOT_FOUND");
   expect(relayedCode("FILE_CHANGED")).toBe("FILE_CHANGED");
+  expect(relayedCode("MCP_UNAVAILABLE")).toBe("MCP_UNAVAILABLE");
+  expect(relayedCode("NOT_CONNECTED")).toBe("NOT_CONNECTED");
   expect(relayedCode("UNAUTHORIZED")).toBe("INTERNAL");
   expect(relayedCode("whatever")).toBe("INTERNAL");
 });

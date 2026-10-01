@@ -1,8 +1,8 @@
 import { type ComponentFormat, type ComponentManifest, surfaceFor, type Theme } from "@kibo/schema";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { formatBox } from "../lib/format-box";
-import { type BridgeDeps, dispatchCombo, type FrameBridge } from "../shell/frame-bridge";
-import { createLoadGuard, type LoadGuard } from "../shell/load-guard";
+import type { BridgeDeps, FrameBridge } from "../shell/frame-bridge";
+import { createLoadGuard, type EscapeReason, type LoadGuard } from "../shell/load-guard";
 import { DEMO_VIEWER } from "./preview-protocol";
 import type { PreviewBackend } from "./worker-backend";
 
@@ -19,8 +19,7 @@ export type DraftPreviewWindowProps = {
   backend: Pick<PreviewBackend, "call" | "subscribe">;
   createBridge(deps: BridgeDeps): FrameBridge;
   readyTimeoutMs: number;
-  onReady(): void;
-  onFailed(): void;
+  onFailed(reason: EscapeReason): void;
 };
 
 export function previewBox(format: ComponentFormat): { width: number; height: number } {
@@ -36,14 +35,13 @@ export function DraftPreviewWindow({
   backend,
   createBridge,
   readyTimeoutMs,
-  onReady,
   onFailed,
 }: DraftPreviewWindowProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const guard = useRef<LoadGuard | null>(null);
   const bridge = useRef<FrameBridge | null>(null);
-  const latest = useRef({ theme, onReady, onFailed });
-  latest.current = { theme, onReady, onFailed };
+  const latest = useRef({ theme, onFailed });
+  latest.current = { theme, onFailed };
   const surface = surfaceFor(manifest, format);
 
   useLayoutEffect(() => {
@@ -51,7 +49,7 @@ export function DraftPreviewWindow({
       readyTimeoutMs,
       onEscape: (reason) => {
         console.error(`[kibo-ui] draft preview ${src} failed to load (${reason})`);
-        latest.current.onFailed();
+        latest.current.onFailed(reason);
       },
       setTimer: (fn, ms) => window.setTimeout(fn, ms),
       clearTimer: (id) => window.clearTimeout(id),
@@ -79,14 +77,9 @@ export function DraftPreviewWindow({
       onOpenNewTicket: ignore,
       onOpenFile: ignore,
       onOpenView: ignore,
-      onKey: (combo) => {
-        if (combo === "escape") dispatchCombo(combo);
-      },
+      onKey: ignore,
       onResize: ignore,
-      onReady: () => {
-        guard.current?.ready();
-        latest.current.onReady();
-      },
+      onReady: () => guard.current?.ready(),
     });
     bridge.current = b;
     window.addEventListener("message", b.handle);

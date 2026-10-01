@@ -1,4 +1,12 @@
-import type { ComponentFormat, KiboErrorCode } from "@kibo/schema";
+import {
+  type ComponentFormat,
+  type KiboErrorCode,
+  MAX_DRAFT_ATTACHMENTS_TOTAL,
+  MAX_DRAFT_FEEDBACK,
+  MAX_DRAFT_REVISIONS,
+  MAX_ICON_BYTES,
+  MIN_DRAFT_FEEDBACK,
+} from "@kibo/schema";
 
 const FORMAT_LABELS: Record<ComponentFormat, string> = {
   small: "Petit",
@@ -93,9 +101,9 @@ export const frCreations = {
     building: "Construction de l'aperçu…",
     unavailable: "Aperçu indisponible.",
     loadFailed: "Le composant ne s'est pas chargé.",
+    navigated: "Le composant a rechargé ou quitté son cadre : aperçu arrêté.",
     demoFailed: "Les données de démonstration n'ont pas pu démarrer.",
     retry: "Réessayer",
-    remote: "L'aperçu ne s'affiche que sur l'ordinateur où tourne Kibo.",
     errors: {
       INVALID_INPUT: "Le brouillon n'est plus en relecture.",
       CONFLICT: "Le brouillon a changé pendant la construction : réessaie.",
@@ -109,18 +117,18 @@ export const frCreations = {
     title: "Demander une modification",
     label: "Ce qu'il faut changer",
     placeholder: "Mets le total en gros et ajoute un filtre par domaine",
-    count: (n: number) => `${n} / 2000`,
-    tooShort: "5 caractères minimum.",
+    count: (n: number) => `${n} / ${MAX_DRAFT_FEEDBACK}`,
+    tooShort: `${MIN_DRAFT_FEEDBACK} caractères minimum.`,
     submit: "Envoyer à l'agent",
     cancel: "Annuler",
     remaining: (n: number) => (n === 1 ? "1 révision restante" : `${n} révisions restantes`),
     progress: (n: number, max: number) => `Révision ${n} sur ${max}`,
-    exhausted: "Dix révisions atteintes : publie ou abandonne le brouillon.",
+    exhausted: `${MAX_DRAFT_REVISIONS} révisions atteintes : publie ou abandonne le brouillon.`,
     errors: {
       CONFLICT:
-        "Impossible pour l'instant : l'agent travaille sur ce brouillon, ou cette version est déjà publiée.",
-      INVALID_INPUT: "Révision refusée : dix révisions et 44 images au plus par brouillon.",
-      TOO_LARGE: "Image trop lourde : 256 ko au plus.",
+        "Révision impossible : une publication de ce brouillon est en cours ou déjà faite. Termine la publication ou abandonne le brouillon.",
+      INVALID_INPUT: `Révision refusée : le brouillon n'est plus en relecture, une image est invalide, ou la limite est atteinte (${MAX_DRAFT_REVISIONS} révisions, ${MAX_DRAFT_ATTACHMENTS_TOTAL} images par brouillon).`,
+      TOO_LARGE: `Image trop lourde : ${MAX_ICON_BYTES / 1024} ko au plus.`,
       NOT_FOUND: "Brouillon introuvable.",
     } satisfies Partial<Record<KiboErrorCode, string>>,
   },

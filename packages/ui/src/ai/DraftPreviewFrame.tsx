@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { frCreations } from "../i18n/fr-creations";
 import { type BridgeDeps, createFrameBridge, type FrameBridge } from "../shell/frame-bridge";
+import type { EscapeReason } from "../shell/load-guard";
 import { useRuntimeInfo } from "../state/use-runtime-info";
 import { aiErrorMessage } from "./ai-error";
 import { DraftPreviewWindow, previewBox } from "./DraftPreviewWindow";
@@ -40,9 +41,23 @@ function refusalOf(e: unknown): string {
   return known ?? aiErrorMessage(e);
 }
 
+function useSameContent<T>(value: T): T {
+  const kept = useRef(value);
+  if (JSON.stringify(kept.current) !== JSON.stringify(value)) kept.current = value;
+  return kept.current;
+}
+
 export function DraftPreviewFrame(props: DraftPreviewFrameProps) {
   const [session, setSession] = useState(0);
-  return <PreviewSession key={session} {...props} onRetry={() => setSession((n) => n + 1)} />;
+  const manifest = useSameContent(props.manifest);
+  return (
+    <PreviewSession
+      key={`${props.draftId}:${session}`}
+      {...props}
+      manifest={manifest}
+      onRetry={() => setSession((n) => n + 1)}
+    />
+  );
 }
 
 function PreviewSession({
@@ -96,12 +111,18 @@ function PreviewSession({
   useEffect(
     () =>
       client.subscribeAi((e) => {
-        if (e.type === "draft.changed" && e.draftId === draftId && PREVIEWABLE.has(e.status)) build();
+        if (e.type !== "draft.changed" || e.draftId !== draftId || !PREVIEWABLE.has(e.status)) return;
+        retried.current = false;
+        build();
       }),
     [draftId, build],
   );
 
-  const onFailed = () => {
+  const onFailed = (reason: EscapeReason) => {
+    if (reason === "reload") {
+      setState({ kind: "failed", detail: t.navigated });
+      return;
+    }
     if (retried.current) {
       setState({ kind: "failed", detail: t.loadFailed });
       return;
@@ -143,9 +164,6 @@ function PreviewSession({
       backend={backend}
       createBridge={createBridge}
       readyTimeoutMs={readyTimeoutMs}
-      onReady={() => {
-        retried.current = false;
-      }}
       onFailed={onFailed}
     />
   );
