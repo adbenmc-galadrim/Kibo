@@ -408,6 +408,9 @@ export const fr = {
     guidelines: "Guidelines",
     queue: "File d'attente",
     newWorktree: (branch: string, base: string) => `nouveau worktree ${branch} (depuis ${base})`,
+    noFolderSpace: "indisponible : projet sans dossier local",
+    noFolder: (field: string, menu: string) =>
+      `Ce projet n'a pas de dossier local : ce profil travaille dans le dépôt du projet. Renseigne le champ ${field} (menu du projet, ${menu}) ou choisis un profil en dossier isolé.`,
     guidelineChain: (project: string, domain: string | null, n: number) =>
       `workspace · projet ${project}${domain ? ` · domaine ${domain}` : ""} (${n} fichier${n > 1 ? "s" : ""} .md)`,
     startsNow: "place libre · démarre tout de suite",

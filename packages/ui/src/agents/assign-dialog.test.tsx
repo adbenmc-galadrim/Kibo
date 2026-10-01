@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { type AssignPreview, INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture, kiboProject } from "./fixtures";
 import { systemProfilesFixture } from "./system-profiles-fixture";
@@ -250,4 +250,66 @@ test("an inbox ticket cannot go to an agent: the dialog says to file it first", 
   ).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
   expect(calls).toEqual([]);
+});
+
+const withoutFolder = () => {
+  const project = kiboProject();
+  return { ...project, meta: { ...project.meta, folder: null } };
+};
+const NO_FOLDER =
+  "Ce projet n'a pas de dossier local : ce profil travaille dans le dépôt du projet. Renseigne le champ Dossier (menu du projet, Modifier…) ou choisis un profil en dossier isolé.";
+
+test("without a local folder a worktree profile is not launchable and the dialog says why", async () => {
+  const onEditProject = mock((_projectId: string) => {});
+  const onClose = mock(() => {});
+  render(
+    <AssignDialog
+      project={withoutFolder()}
+      ticketId="t14"
+      config={configFixture()}
+      onClose={onClose}
+      onEditProject={onEditProject}
+    />,
+  );
+  expect(within(screen.getByRole("status")).getByText(NO_FOLDER)).toBeTruthy();
+  expect(screen.queryByText(/nouveau worktree/)).toBeNull();
+  expect(screen.getByText("indisponible : projet sans dossier local")).toBeTruthy();
+  const submit = screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement;
+  expect(submit.disabled).toBe(true);
+  const user = userEvent.setup();
+  await user.click(submit);
+  await user.click(screen.getByRole("button", { name: "Modifier le projet" }));
+  expect(onEditProject).toHaveBeenCalledWith("kibo");
+  expect(calls.some((c) => c.method === "assignAgent")).toBe(false);
+});
+
+test("without a local folder a repo profile is refused too, and the edit button needs a handler", async () => {
+  const config = configFixture();
+  const repo = { ...config, profiles: config.profiles.map((p) => ({ ...p, workspace: "repo" as const })) };
+  render(<AssignDialog project={withoutFolder()} ticketId="t14" config={repo} onClose={() => {}} />);
+  expect(screen.getByRole("status").textContent).toBe(NO_FOLDER);
+  expect(screen.queryByText("dossier du projet")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
+  expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(true);
+  await waitFor(() => expect(calls.length).toBe(1));
+});
+
+test("without a local folder an isolated profile still launches", async () => {
+  const config = configFixture();
+  const isolated = { ...config, profiles: config.profiles.filter((p) => p.workspace === "isolated") };
+  const onClose = mock(() => {});
+  render(<AssignDialog project={withoutFolder()} ticketId="t14" config={isolated} onClose={onClose} />);
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.getByText("dossier isolé")).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
+  await waitFor(() => expect(onClose).toHaveBeenCalled());
+  expect(calls.some((c) => c.method === "assignAgent" && c.profileId === "sonnet")).toBe(true);
+});
+
+test("with a local folder no folder warning is shown", async () => {
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
+  expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(false);
+  await waitFor(() => expect(calls.length).toBe(1));
 });
