@@ -31,6 +31,7 @@ L'aperçu d'un brouillon généré par l'IA a besoin de WebAssembly pour ses don
 
 ## Suivis à prendre en premier après le jalon
 
+- Texte dédié au délai du contrôle de types (`FR_DEVKIT.timeout` dit « les tests ont dépassé N s ») ; rapport partiel quand ce délai expire (`static-check-run.ts:57-60`).
 - Sous-processus de contrôle de types à placer dans le bac à sable OS (décider d'abord du comportement sans bac à sable) ; construction Tailwind encore sur le fil du démon.
 - Deux `h1` sur Composants et Boîte de réception (`HEADING_SCREENS` dans `packages/ui/src/shell/ShellHeader.tsx` et le `h1` de la page) : retirer ces écrans de la liste.
 - Test de démarrage de la coque dans la gate locale des tâches qui touchent `apps/desktop`.
@@ -46,7 +47,7 @@ L'aperçu d'un brouillon généré par l'IA a besoin de WebAssembly pour ses don
 - `.claude/worktrees/_outils/` : `gate.sh <worktree>` (install, check, typecheck, build UI, budget, tests unitaires, attente des ports 4390-4430, E2E avec une relance), `integ9.sh <tâche> [gate-only]` (rebase sur `phase/9`, gate, copie des captures, fast-forward et push), `notes-vague-4.md` (journal détaillé). Sans ces scripts : `bun install --frozen-lockfile`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build`, `bun run budget`, `bun test packages components ./scripts`, `bun run --cwd e2e test`.
 - Un dev par tâche dans `.claude/worktrees/p9-<tâche>`, branche `feat/p9-<tâche>` ; un dev ne lance jamais la suite E2E complète (config Playwright temporaire limitée à ses ports).
 - Les worktrees des tâches intégrées existent encore (`git worktree list`) : `git worktree remove` quand on veut.
-- Dossiers temporaires laissés par des agents, dont la suppression leur a été refusée (à supprimer à la main) : `/tmp/t54-base2`, `/tmp/t54-base3`, `/tmp/t54-*`, `.claude/worktrees/_outils/tmp-lead-t54/`, `.claude/worktrees/p9-t55/e2e/playwright-report/`.
+- Dossiers temporaires laissés par des agents, dont la suppression leur a été refusée (à supprimer à la main) : `/tmp/t54-base2`, `/tmp/t54-base3`, `/tmp/t54-*`, `.claude/worktrees/_outils/tmp-lead-t54/`, `.claude/worktrees/_outils/tmp-lead-valid/` (contient trois liens symboliques `node_modules` vers le worktree `p9-valid`), `.claude/worktrees/p9-t55/e2e/playwright-report/`.
 
 ## Points d'attention
 
