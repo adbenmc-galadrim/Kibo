@@ -39,6 +39,7 @@ export const fr = {
     general: "Général",
     domains: "Domaines & guidelines",
     components: "Composants",
+    creations: "Créations",
     changes: "Changements",
     changesCount: (n: number) => `${n} fichier${n > 1 ? "s" : ""} modifié${n > 1 ? "s" : ""}`,
     search: "Rechercher…",
@@ -77,6 +78,13 @@ export const fr = {
     sessions: "Sessions",
     settings: "Paramètres",
     account: (name: string, host: string) => `${name} · ${host}`,
+    creations: (awaiting: number, running: number) => {
+      const parts = [
+        ...(awaiting > 0 ? [`${awaiting} ${awaiting > 1 ? "attendent" : "attend"} une action`] : []),
+        ...(running > 0 ? [`${running} en cours`] : []),
+      ];
+      return parts.length > 0 ? `Créations · ${parts.join(", ")}` : "Créations";
+    },
   },
   pairing: {
     title: "Appairer ce navigateur",

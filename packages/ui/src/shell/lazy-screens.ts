@@ -43,6 +43,10 @@ export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,
 );
+export const CreationsPage = lazyPanel(
+  () => import("../creations/CreationsPage").then((m) => m.CreationsPage),
+  fr.lazy,
+);
 export const MyTicketsPage = lazyPanel(
   () => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage),
   fr.lazy,

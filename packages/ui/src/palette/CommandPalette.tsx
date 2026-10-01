@@ -60,6 +60,7 @@ const ICONS = {
   sync: SCREENS.sync.icon,
   shortcuts: SCREENS.shortcuts.icon,
   workspace: SCREENS.workspace.icon,
+  creations: SCREENS.creations.icon,
 };
 const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
   reply: "text-orange-600 dark:text-orange-400",

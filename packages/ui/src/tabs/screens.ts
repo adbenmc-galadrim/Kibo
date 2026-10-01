@@ -15,10 +15,11 @@ import {
   Settings,
   Shield,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
 
-type ScreenInfo = { title: string; icon: LucideIcon; crumbs: string[] };
+type ScreenInfo = { title: string; icon: LucideIcon; crumbs: string[]; parent?: Screen };
 
 export const SCREENS: Record<Screen, ScreenInfo> = {
   agents: { title: fr.nav.agents, icon: Bot, crumbs: [fr.nav.agents] },
@@ -54,5 +55,11 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     title: fr.settings.workspace,
     icon: Building2,
     crumbs: [fr.nav.settings, fr.settings.workspace],
+  },
+  creations: {
+    title: fr.nav.creations,
+    icon: Sparkles,
+    crumbs: [fr.nav.components, fr.nav.creations],
+    parent: "components",
   },
 };

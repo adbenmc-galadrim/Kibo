@@ -85,3 +85,10 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
     { label: "KIB-12", target: null },
   ]);
 });
+
+test("the Créations screen sits under Composants, whose crumb opens the components screen", () => {
+  expect(crumbsFor({ kind: "screen", screen: "creations" }, ctx)).toEqual([
+    { label: "Composants", target: { kind: "screen", screen: "components" } },
+    { label: "Créations", target: null },
+  ]);
+});

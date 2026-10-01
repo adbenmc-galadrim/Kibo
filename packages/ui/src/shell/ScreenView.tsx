@@ -13,6 +13,7 @@ import {
   AppearancePage,
   ComponentSourcesPage,
   ComponentsPage,
+  CreationsPage,
   DomainsPage,
   GeneralPage,
   InboxPage,
@@ -58,6 +59,7 @@ export function ScreenView(props: Props) {
     ...p
   } = props;
   if (screen === "components") return <ComponentsPage onOpen={onOpen} />;
+  if (screen === "creations") return <CreationsPage agents={agents} now={now} />;
   if (screen === "general") return <GeneralPage />;
   if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "appearance") return <AppearancePage />;

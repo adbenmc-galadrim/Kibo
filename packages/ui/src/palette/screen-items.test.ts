@@ -28,6 +28,14 @@ test("the screens are pages of the palette and open as targets", () => {
   );
 });
 
+test("Créations is a page of the palette that opens the screen", () => {
+  const item = searchItems(buildItems(context), "creations", "pages")[0]?.items[0];
+  expect([item?.label, item?.run]).toEqual([
+    "Créations",
+    { kind: "target", target: { kind: "screen", screen: "creations" } },
+  ]);
+});
+
 test("an opened screen comes back among the recents", () => {
   const recents = searchItems(buildItems(context), "", "all").find((s) => s.group === "recents");
   expect(recents?.items.map((i) => i.label)).toEqual(["Files d'attente"]);

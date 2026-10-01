@@ -1,4 +1,4 @@
-import { isInbox, type ProjectSnapshot, type TabTarget } from "@kibo/schema";
+import { isInbox, type ProjectSnapshot, type Screen, type TabTarget } from "@kibo/schema";
 import { ChevronRight } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { displayName } from "../lib/inbox";
@@ -15,11 +15,18 @@ function projectCrumb(p: ProjectSnapshot): Crumb {
   return { label: displayName(p.meta), target };
 }
 
+function screenCrumbs(screen: Screen): Crumb[] {
+  const { crumbs, parent } = SCREENS[screen];
+  return crumbs.map((label, i) =>
+    parent && i === 0 ? { label, target: { kind: "screen", screen: parent } } : text(label),
+  );
+}
+
 export function crumbsFor(
   target: TabTarget | null,
   ctx: { project: ProjectSnapshot | null; branch: string | null },
 ): Crumb[] {
-  if (target?.kind === "screen") return SCREENS[target.screen].crumbs.map(text);
+  if (target?.kind === "screen") return screenCrumbs(target.screen);
   const p = ctx.project;
   if (!target || !p) return [text(fr.nav.overview)];
   const project = projectCrumb(p);

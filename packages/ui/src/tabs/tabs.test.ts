@@ -43,6 +43,8 @@ describe("hash codec", () => {
   test("screens keep their addresses", () => {
     expect(targetToHash({ kind: "screen", screen: "queue" })).toBe("#/agents/queue");
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
+    expect(targetToHash({ kind: "screen", screen: "creations" })).toBe("#/creations");
+    expect(hashToTarget("#/creations")).toEqual({ kind: "screen", screen: "creations" });
     expect(hashToTarget("#/settings/general")).toEqual({ kind: "screen", screen: "general" });
     expect(hashToTarget("#/settings/integrations")).toEqual({ kind: "screen", screen: "integrations" });
     expect(hashToTarget("#/settings/sync")).toEqual({ kind: "screen", screen: "sync" });
