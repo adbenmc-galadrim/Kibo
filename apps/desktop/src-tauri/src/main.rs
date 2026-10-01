@@ -41,6 +41,26 @@ fn navigation_allowed(target: &Url, allowed: &[String]) -> bool {
     allowed.contains(&ipc_origin(target))
 }
 
+fn parse_daemon_url(raw: &str) -> Result<Url, String> {
+    raw.parse()
+        .map_err(|e| format!("le démon a donné une adresse invalide « {raw} » ({e})"))
+}
+
+fn parse_ready_line(line: &str) -> Option<Result<Url, String>> {
+    line.strip_prefix("KIBO_READY ").map(parse_daemon_url)
+}
+
+fn stop_message(reason: &str) -> String {
+    format!("Kibo s'est arrêté : {reason}. Relance l'application.")
+}
+
+fn daemon_exit_message(code: Option<i32>) -> String {
+    match code {
+        Some(code) => format!("le démon a quitté (code {code})"),
+        None => "le démon a quitté".into(),
+    }
+}
+
 const MIN_WINDOW: (f64, f64) = (960.0, 600.0);
 const WINDOW_STATE: StateFlags = StateFlags::SIZE
     .union(StateFlags::POSITION)
@@ -80,6 +100,91 @@ fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
         vec![OpenUrlScope::https()],
         Vec::<OpenUrlScope>::new(),
     )
+}
+
+#[derive(Default)]
+struct StartupState {
+    ready: Option<Url>,
+}
+
+fn show_notice(handle: &AppHandle, notice: Result<Notice, serde_json::Error>) {
+    match notice {
+        Ok(n) => {
+            if let Err(e) = handle
+                .notification()
+                .builder()
+                .title(n.title)
+                .body(n.body)
+                .show()
+            {
+                eprintln!("[kibo] notification failed: {e}");
+            }
+        }
+        Err(e) => eprintln!("[kibo] invalid notification from the daemon: {e}"),
+    }
+}
+
+fn open_main_window(handle: &AppHandle, url: Url, sandbox: &Url) -> Result<(), String> {
+    let allowed = vec![ipc_origin(&url), ipc_origin(sandbox)];
+    let window = WebviewWindowBuilder::new(handle, "main", WebviewUrl::External(url))
+        .on_navigation(move |target| navigation_allowed(target, &allowed))
+        .title("Kibo")
+        .inner_size(1440.0, 900.0)
+        .min_inner_size(MIN_WINDOW.0, MIN_WINDOW.1)
+        .build()
+        .map_err(|e| format!("impossible d'ouvrir la fenêtre ({e})"))?;
+    if let Err(e) = window.restore_state(WINDOW_STATE) {
+        eprintln!("[kibo] window state not restored: {e}");
+    }
+    Ok(())
+}
+
+fn handle_daemon_line(
+    handle: &AppHandle,
+    line: &str,
+    state: &mut StartupState,
+) -> Result<(), String> {
+    if let Some(notice) = parse_notice(line) {
+        show_notice(handle, notice);
+        return Ok(());
+    }
+    if let Some(url) = parse_ready_line(line) {
+        let url = url?;
+        handle
+            .add_capability(daemon_capability(&url))
+            .map_err(|e| format!("impossible d'autoriser l'adresse du démon ({e})"))?;
+        state.ready = Some(url);
+        return Ok(());
+    }
+    let Some(sandbox) = parse_sandbox(line) else {
+        return Ok(());
+    };
+    let sandbox = parse_daemon_url(sandbox)?;
+    let url = state
+        .ready
+        .take()
+        .ok_or_else(|| "le démon a annoncé son bac à sable avant d'être prêt".to_string())?;
+    open_main_window(handle, url, &sandbox)?;
+    if std::env::var("KIBO_SMOKE").is_ok() {
+        handle.exit(0);
+    }
+    Ok(())
+}
+
+fn handle_daemon_event(
+    handle: &AppHandle,
+    event: CommandEvent,
+    state: &mut StartupState,
+) -> Result<(), String> {
+    match event {
+        CommandEvent::Stdout(line) => {
+            handle_daemon_line(handle, String::from_utf8_lossy(&line).trim(), state)
+        }
+        CommandEvent::Terminated(payload) if take_daemon(handle).is_some() => {
+            Err(daemon_exit_message(payload.code))
+        }
+        _ => Ok(()),
+    }
 }
 
 fn main() {
@@ -125,70 +230,11 @@ fn main() {
             app.manage(Daemon(Mutex::new(Some(child))));
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let mut ready: Option<Url> = None;
+                let mut state = StartupState::default();
                 while let Some(event) = events.recv().await {
-                    match event {
-                        CommandEvent::Stdout(line) => {
-                            let line = String::from_utf8_lossy(&line).trim().to_string();
-                            if let Some(notice) = parse_notice(&line) {
-                                match notice {
-                                    Ok(n) => {
-                                        if let Err(e) = handle
-                                            .notification()
-                                            .builder()
-                                            .title(n.title)
-                                            .body(n.body)
-                                            .show()
-                                        {
-                                            eprintln!("[kibo] notification failed: {e}");
-                                        }
-                                    }
-                                    Err(e) => eprintln!(
-                                        "[kibo] invalid notification from the daemon: {e}"
-                                    ),
-                                }
-                                continue;
-                            }
-                            if let Some(url) = line.strip_prefix("KIBO_READY ") {
-                                let url: Url = url.parse().expect("daemon printed an invalid url");
-                                handle
-                                    .add_capability(daemon_capability(&url))
-                                    .expect("cannot grant the daemon origin its capability");
-                                ready = Some(url);
-                                continue;
-                            }
-                            let Some(sandbox) = parse_sandbox(&line) else {
-                                continue;
-                            };
-                            let sandbox: Url = sandbox
-                                .parse()
-                                .expect("daemon printed an invalid sandbox url");
-                            let url = ready
-                                .take()
-                                .expect("daemon announced its sandbox before being ready");
-                            let allowed = vec![ipc_origin(&url), ipc_origin(&sandbox)];
-                            let window = WebviewWindowBuilder::new(
-                                &handle,
-                                "main",
-                                WebviewUrl::External(url),
-                            )
-                            .on_navigation(move |target| navigation_allowed(target, &allowed))
-                            .title("Kibo")
-                            .inner_size(1440.0, 900.0)
-                            .min_inner_size(MIN_WINDOW.0, MIN_WINDOW.1)
-                            .build()
-                            .expect("cannot open the main window");
-                            if let Err(e) = window.restore_state(WINDOW_STATE) {
-                                eprintln!("[kibo] window state not restored: {e}");
-                            }
-                            if std::env::var("KIBO_SMOKE").is_ok() {
-                                handle.exit(0);
-                            }
-                        }
-                        CommandEvent::Terminated(_) if take_daemon(&handle).is_some() => {
-                            std::process::exit(1);
-                        }
-                        _ => {}
+                    if let Err(reason) = handle_daemon_event(&handle, event, &mut state) {
+                        eprintln!("{}", stop_message(&reason));
+                        std::process::exit(1);
                     }
                 }
             });
@@ -319,6 +365,38 @@ mod tests {
             .filter(|p| p.starts_with("dialog:"))
             .collect();
         assert_eq!(dialog, vec![&"dialog:allow-open"]);
+    }
+
+    #[test]
+    fn reads_the_ready_line() {
+        let url = parse_ready_line("KIBO_READY http://127.0.0.1:4317/?token=abc")
+            .unwrap()
+            .unwrap();
+        assert_eq!(ipc_origin(&url), "http://127.0.0.1:4317");
+        assert!(parse_ready_line("KIBO_SANDBOX http://127.0.0.1:4318").is_none());
+    }
+
+    #[test]
+    fn an_invalid_ready_url_is_an_error_not_a_panic() {
+        let error = parse_ready_line("KIBO_READY not a url")
+            .unwrap()
+            .unwrap_err();
+        assert!(error.contains("not a url"), "{error}");
+        assert!(parse_daemon_url("").is_err());
+    }
+
+    #[test]
+    fn the_stop_message_tells_to_relaunch() {
+        assert_eq!(
+            stop_message("le démon a quitté (code 3)"),
+            "Kibo s'est arrêté : le démon a quitté (code 3). Relance l'application."
+        );
+    }
+
+    #[test]
+    fn the_exit_message_gives_the_code_when_known() {
+        assert_eq!(daemon_exit_message(Some(3)), "le démon a quitté (code 3)");
+        assert_eq!(daemon_exit_message(None), "le démon a quitté");
     }
 
     #[test]
