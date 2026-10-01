@@ -151,7 +151,11 @@ export function LayoutEditor({
     stopDrag();
   };
   const stopDrag = () => {
-    latest.current.dragging = null;
+    const ended = latest.current.dragging;
+    // dnd-kit cancels a pointer drag on the document keydown, before the window Escape listener runs
+    window.setTimeout(() => {
+      if (latest.current.dragging === ended) latest.current.dragging = null;
+    }, 0);
     latest.current.ghost = null;
     setGhost(null);
   };

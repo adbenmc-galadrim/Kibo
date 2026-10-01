@@ -20,7 +20,7 @@ export function GridGuides({ metrics, ghost }: { metrics: CellMetrics; ghost: Ta
         <div
           aria-hidden
           data-ghost={ghost.free ? "free" : "taken"}
-          className={`pointer-events-none z-10 rounded-lg border-2 border-dashed ${ghost.free ? "border-ring bg-accent/40" : "border-destructive bg-destructive/10"}`}
+          className={`pointer-events-none z-30 rounded-lg border-2 border-dashed ${ghost.free ? "border-ring bg-accent/40" : "border-destructive bg-destructive/10"}`}
           style={gridArea(ghost.layout)}
         />
       )}

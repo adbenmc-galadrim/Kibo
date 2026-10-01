@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { type Instance, KiboError, type Layout, layoutFor, type Page, type RpcRequest } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
@@ -108,6 +108,20 @@ describe("layout editor", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test("Escape during a pointer drag cancels the drag only", async () => {
+    show();
+    const handle = screen.getByRole("button", { name: "Déplacer Kanban" });
+    const pointer = { isPrimary: true, button: 0, pointerId: 1, clientX: 10, clientY: 10 };
+    fireEvent.pointerDown(handle, pointer);
+    fireEvent.pointerMove(document, { ...pointer, clientX: 60, clientY: 10 });
+    fireEvent.pointerMove(document, { ...pointer, clientX: 120, clientY: 10 });
+    fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    await new Promise((r) => setTimeout(r, 60));
+    fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test("removing a widget is confirmed before the command", async () => {
