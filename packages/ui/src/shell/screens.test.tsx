@@ -80,6 +80,16 @@ test("Overview cards show counts, progress and a short folder", () => {
   expect(bar.getAttribute("aria-valuemax")).toBe("24");
 });
 
+test("a 120-character folder wraps on the overview card instead of overflowing (screen 1)", () => {
+  const folder = `/srv/${"dossier-tres-long/".repeat(6)}kibo/v2`;
+  render(<Overview viewer="adam" projects={[{ ...kibo, folder }]} onNewProject={() => {}} />);
+  const path = within(screen.getByRole("article", { name: "Kibo" })).getByText(folder);
+  expect(folder).toHaveLength(120);
+  expect(path.className).toContain("break-all");
+  expect(path.className).not.toContain("truncate");
+  expect(path.parentElement?.className).toContain("min-w-0");
+});
+
 const empty: ProjectSnapshot = {
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: "/Users/adam/goinfre/Kibo", color: "#14B8A6" },
   workflow: DEFAULT_WORKFLOW,

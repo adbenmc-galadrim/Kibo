@@ -51,9 +51,9 @@ test("deletes after the exact name is typed, spaces around ignored, case respect
   expect(screen.getByRole("dialog", { name: "Supprimer le projet Kibo ?" })).toBeTruthy();
   expect(snapshot.tickets.length).toBe(4);
   expect(screen.getByText("4 tickets, 0 page et 0 widget seront supprimés.")).toBeTruthy();
-  expect(
-    screen.getByText(/Le dossier \/Users\/adam\/code\/kibo et ses fichiers ne sont pas touchés/),
-  ).toBeTruthy();
+  expect(screen.getByText("/Users/adam/code/kibo").parentElement?.textContent).toMatch(
+    /^Le dossier \/Users\/adam\/code\/kibo et ses fichiers ne sont pas touchés/,
+  );
   const confirm = screen.getByRole("button", { name: "Supprimer" });
   expect(confirm.hasAttribute("disabled")).toBe(true);
   const user = userEvent.setup();
@@ -137,4 +137,20 @@ test("without a snapshot the generic text shows; daemon refusals are explained",
   );
   expect(h.onDeleted).not.toHaveBeenCalled();
   expect(screen.getByRole("dialog", { name: "Supprimer le projet Kibo ?" })).toBeTruthy();
+});
+
+test("a 120-character folder wraps instead of overflowing (screen 108)", async () => {
+  const folder = `/srv/${"dossier-tres-long/".repeat(6)}kibo/v2`;
+  render(
+    <DeleteProjectDialog
+      project={{ ...project, folder }}
+      snapshot={local()}
+      activeRuns={0}
+      {...handlers()}
+    />,
+  );
+  const text = await screen.findByText(new RegExp(folder.slice(0, 30)));
+  expect(folder).toHaveLength(120);
+  expect(text.className).toContain("break-all");
+  expect(text.closest("[data-slot=dialog-description]")?.className).toContain("min-w-0");
 });

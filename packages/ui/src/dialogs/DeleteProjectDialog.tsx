@@ -96,13 +96,21 @@ function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: Confi
     snapshot && !leaving
       ? t.summary(snapshot.tickets.length, snapshot.pages.length, snapshot.instances.length)
       : null;
-  const keeps = leaving ? t.leaveHelp : project.folder ? t.keeps(project.folder) : t.keepsNoFolder;
+  const keeps = leaving ? (
+    t.leaveHelp
+  ) : project.folder ? (
+    <>
+      {t.keepsFolder} <span className="break-all">{project.folder}</span> {t.keepsAfter}
+    </>
+  ) : (
+    t.keepsNoFolder
+  );
 
   return (
     <form onSubmit={submit} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>{leaving ? t.leaveTitle(project.name) : t.title(project.name)}</DialogTitle>
-        <DialogDescription className="grid gap-1">
+        <DialogDescription className="grid min-w-0 gap-1">
           {summary && <span>{summary}</span>}
           <span>{keeps}</span>
         </DialogDescription>

@@ -24,8 +24,9 @@ export const frProject = {
     leaveTitle: (name: string) => `Quitter le projet ${name} ?`,
     summary: (tickets: number, pages: number, widgets: number) =>
       `${tickets} ticket${tickets > 1 ? "s" : ""}, ${pages} page${pages > 1 ? "s" : ""} et ${widgets} widget${widgets > 1 ? "s" : ""} seront supprimés.`,
-    keeps: (folder: string) =>
-      `Le dossier ${folder} et ses fichiers ne sont pas touchés ; les notes restent sur le disque ; l'historique des runs est conservé.`,
+    keepsFolder: "Le dossier",
+    keepsAfter:
+      "et ses fichiers ne sont pas touchés ; les notes restent sur le disque ; l'historique des runs est conservé.",
     keepsNoFolder: "Les notes restent sur le disque ; l'historique des runs est conservé.",
     leaveHelp:
       "Ta copie locale sera supprimée. Le projet reste sur le serveur : il te faudra une nouvelle invitation pour y revenir.",

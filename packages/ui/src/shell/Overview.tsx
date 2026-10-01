@@ -46,7 +46,7 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
           >
             {project.name}
           </button>
-          <p className="truncate font-mono text-2xs text-muted-foreground">
+          <p className="break-all font-mono text-2xs text-muted-foreground">
             {project.folder ? abbreviateHome(project.folder) : project.key}
           </p>
         </div>
