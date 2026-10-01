@@ -1,4 +1,4 @@
-import type { Surface } from "@kibo/schema";
+import type { ComponentFormat, Surface } from "@kibo/schema";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
@@ -13,6 +13,7 @@ type Props = {
   config: Record<string, unknown>;
   viewer: string;
   surface: Surface;
+  format: ComponentFormat;
   src: string;
   title: string;
   readyTimeoutMs?: number;
@@ -24,6 +25,7 @@ export function SandboxFrame({
   config,
   viewer,
   surface,
+  format,
   src,
   title,
   readyTimeoutMs = 2000,
@@ -32,8 +34,8 @@ export function SandboxFrame({
   const theme = useTheme();
   const ref = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState<number | null>(null);
-  const latest = useRef({ config, viewer, theme, surface, host });
-  latest.current = { config, viewer, theme, surface, host };
+  const latest = useRef({ config, viewer, theme, surface, format, host });
+  latest.current = { config, viewer, theme, surface, format, host };
   const bridge = useRef<FrameBridge | null>(null);
   const guard = useRef<LoadGuard | null>(null);
   const [escaped, setEscaped] = useState(false);
@@ -71,6 +73,7 @@ export function SandboxFrame({
         viewer: latest.current.viewer,
         theme: latest.current.theme,
         surface: latest.current.surface,
+        format: latest.current.format,
       }),
       call: (call) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
       onOpenTicket: (id) => latest.current.host.openTicket(id),

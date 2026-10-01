@@ -24,7 +24,14 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
   };
   const bridge = createFrameBridge({
     frame: () => frame,
-    init: () => ({ instanceId: "inst-1", config: { filter: "all" }, viewer: "adam", theme: "dark", surface }),
+    init: () => ({
+      instanceId: "inst-1",
+      config: { filter: "all" },
+      viewer: "adam",
+      theme: "dark",
+      surface,
+      format: "large",
+    }),
     call: (c) => {
       calls.push(c);
       return call(c);
@@ -53,6 +60,7 @@ test("ready gets the init message, bound to the frame's own instance, posted to 
         viewer: "adam",
         theme: "dark",
         surface: "widget",
+        format: "large",
       },
       origin: "*",
     },

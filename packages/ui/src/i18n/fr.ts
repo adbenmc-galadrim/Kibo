@@ -156,6 +156,8 @@ export const fr = {
   page: {
     empty: "Cette page est vide : ajoute un composant pour commencer.",
     addComponent: "Ajouter un composant",
+    editLayout: "Modifier la disposition",
+    editLayoutNarrow: "Élargis la fenêtre pour modifier la disposition.",
     unknownComponent: (ref: string) => `Composant introuvable : ${ref}`,
   },
   newTicket: {

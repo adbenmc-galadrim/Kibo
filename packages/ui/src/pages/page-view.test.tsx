@@ -95,3 +95,78 @@ test("a read-only or revoked single-widget page shows no widget menu", async () 
     view.unmount();
   }
 });
+
+const twoWidgets = (access: "write" | "read-only" = "write"): ProjectSnapshot => {
+  const base = withAccess(access);
+  return {
+    ...base,
+    instances: [
+      {
+        id: "i2",
+        pageId: "pg",
+        component: "tickets@1.0.0",
+        layout: { x: 0, y: 3, w: 6, h: 3 },
+        config: {},
+        componentHash: null,
+      },
+      {
+        id: "i1",
+        pageId: "pg",
+        component: "kanban@1.0.0",
+        layout: { x: 0, y: 0, w: 6, h: 6 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+};
+const cells = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll<HTMLElement>("[data-instance]"));
+const withWidth = (wide: boolean, run: () => Promise<void>) => async () => {
+  const original = window.matchMedia;
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: (query: string) => ({
+      matches: wide,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }),
+  });
+  try {
+    await run();
+  } finally {
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
+  }
+};
+
+test(
+  "screen 129: overlapping widgets are pushed down at render, without writing",
+  withWidth(true, async () => {
+    const { container } = show(twoWidgets());
+    await screen.findAllByText("Kanban");
+    const [first, second] = cells(container);
+    expect(first?.dataset.instance).toBe("i1");
+    expect(first?.style.gridRow).toBe("1 / span 6");
+    expect(second?.style.gridRow).toBe("7 / span 3");
+    expect(second?.style.gridColumn).toBe("1 / span 6");
+  }),
+);
+
+test(
+  "screen 129: a narrow window shows one column in reading order and no layout mode",
+  withWidth(false, async () => {
+    const { container } = show(twoWidgets());
+    await screen.findAllByText("Kanban");
+    const list = cells(container);
+    expect(list.map((c) => c.dataset.instance)).toEqual(["i1", "i2"]);
+    for (const c of list) {
+      expect(c.style.gridColumn).toBe("");
+      expect(c.style.gridRow).toBe("");
+    }
+    expect(list[0]?.style.height).toBe("560px");
+    expect(list[0]?.parentElement?.className).toContain("grid-cols-1");
+    expect(screen.queryByRole("button", { name: "Modifier la disposition" })).toBeNull();
+    expect(screen.getByText("Élargis la fenêtre pour modifier la disposition.")).toBeTruthy();
+  }),
+);

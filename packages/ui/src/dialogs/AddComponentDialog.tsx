@@ -1,5 +1,5 @@
 import type { McpSourceStoredConfig } from "@kibo/component-mcp-source";
-import { DEFAULT_WORKFLOW, KiboError, type Layout, type Page, type Status } from "@kibo/schema";
+import { DEFAULT_WORKFLOW, FORMAT_SIZES, KiboError, type Layout, type Page, type Status } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
@@ -8,7 +8,7 @@ import { Blocks, Search, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { nextLayout } from "../lib/next-layout";
+import { nextLayout } from "../lib/format-grid";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { BUILTIN_COMPONENTS, componentIcon } from "../registry";
 import { navigateTo } from "../route";
@@ -115,7 +115,7 @@ export function AddComponentDialog({
           method: "addInstance",
           pageId: page.id,
           component,
-          ...(page.kind === "dashboard" && { layout: nextLayout(taken) }),
+          ...(page.kind === "dashboard" && { layout: nextLayout(taken, FORMAT_SIZES.large) }),
           ...(created && { config: { source: { bindingId: created.id } } }),
           ...(mcpSource && mcpConfig && { config: mcpConfig }),
         },

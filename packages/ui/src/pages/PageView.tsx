@@ -1,17 +1,18 @@
-import { type Instance, isBuiltinId, type Page, type ProjectSnapshot, splitRef } from "@kibo/schema";
+import type { Page, ProjectSnapshot } from "@kibo/schema";
 import { lazyPanel, readSource } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
-import { componentIcon } from "../registry";
+import { resolveOverlaps } from "../lib/format-grid";
 import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
+import { DashboardGrid, WIDGET_CARD } from "./DashboardGrid";
 import { InstanceFrame } from "./InstanceFrame";
-import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
-import { instanceTitle } from "./instance-title";
+import { useWideGrid } from "./use-wide-grid";
+import { ViewActions, WidgetBody, WidgetHeader } from "./WidgetHeader";
 
 const AddComponentDialog = lazyPanel(
   () => import("../dialogs/AddComponentDialog").then((m) => m.AddComponentDialog),
@@ -24,44 +25,16 @@ const PublishDialog = lazyPanel(
   { fallback: "sr-only" },
 );
 
-type HeaderProps = { projectId: string; instance: Instance; editable: boolean };
-
-function WidgetHeader({ projectId, instance, editable }: HeaderProps) {
-  const Icon = componentIcon(instance.component);
-  const title = instanceTitle(instance, useInstanceTitle(instance.component));
-  const { id, version } = splitRef(instance.component);
-  return (
-    <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
-      <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 flex-1 truncate text-xs font-medium">
-        {isBuiltinId(id) ? title : `${title} · ${version}`}
-      </span>
-      {editable && <InstanceMenu projectId={projectId} instance={instance} title={title} />}
-    </div>
-  );
-}
-
-function ViewActions({ projectId, instance, editable }: HeaderProps) {
-  const title = useInstanceTitle(instance.component);
-  if (!editable) return null;
-  return (
-    <PageActions>
-      <InstanceMenu projectId={projectId} instance={instance} title={title} />
-    </PageActions>
-  );
-}
-
 type Props = { project: ProjectSnapshot; page: Page; viewer: string };
-
 export function PageView({ project, page, viewer }: Props) {
   const [adding, setAdding] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const wide = useWideGrid();
   const projectId = project.meta.id;
   const instances = project.instances.filter((i) => i.pageId === page.id);
   const [first] = instances;
-  const canAdd = page.kind === "dashboard" || !first;
   const editable = canEdit(project);
-  const addButton = canAdd && editable && (
+  const addButton = (page.kind === "dashboard" || !first) && editable && (
     <Button variant="outline" onClick={() => setAdding(true)}>
       <Plus className="size-4" /> {fr.page.addComponent}
     </Button>
@@ -88,28 +61,34 @@ export function PageView({ project, page, viewer }: Props) {
         <>
           <ViewActions projectId={projectId} instance={first} editable={editable} />
           {readSource(first.config) && <SourceHeader project={project} instance={first} />}
-          <InstanceFrame projectId={projectId} instance={first} viewer={viewer} surface="view" />
+          <InstanceFrame
+            projectId={projectId}
+            instance={first}
+            viewer={viewer}
+            surface="view"
+            format="full"
+          />
         </>
       ) : (
-        <div className="grid flex-1 auto-rows-[80px] grid-cols-12 gap-4 overflow-auto p-4">
-          {instances.map((i) => (
-            <div
-              key={i.id}
-              className="flex flex-col overflow-hidden rounded-lg border bg-card has-[[data-tampered]]:border-destructive"
-              style={{
-                gridColumn: `${i.layout.x + 1} / span ${i.layout.w}`,
-                gridRow: `${i.layout.y + 1} / span ${i.layout.h}`,
-              }}
-            >
+        <DashboardGrid
+          instances={instances}
+          layouts={resolveOverlaps(instances)}
+          narrow={!wide}
+          renderWidget={(i, layout) => (
+            <div className={WIDGET_CARD}>
               <WidgetHeader projectId={projectId} instance={i} editable={editable} />
-              {readSource(i.config) && <SourceHeader project={project} instance={i} />}
-              <div className="min-h-0 flex-1 overflow-auto">
-                <InstanceFrame projectId={projectId} instance={i} viewer={viewer} surface="widget" />
-              </div>
+              <WidgetBody project={project} page={page} instance={i} layout={layout} viewer={viewer} />
             </div>
-          ))}
-          <div className="col-span-12">{addButton}</div>
-        </div>
+          )}
+          trailing={
+            <div className="flex flex-wrap items-center gap-3">
+              {addButton}
+              {editable && !wide && (
+                <p className="text-xs text-muted-foreground">{fr.page.editLayoutNarrow}</p>
+              )}
+            </div>
+          }
+        />
       )}
       {adding && (
         <AddComponentDialog

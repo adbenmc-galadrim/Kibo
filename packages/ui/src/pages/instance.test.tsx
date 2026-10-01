@@ -113,7 +113,15 @@ test("the sandbox port being unknown is reported instead of rendering nothing", 
   const log = console.error;
   console.error = (...args: unknown[]) => errors.push(args);
   try {
-    wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+    wrap(
+      <InstanceFrame
+        projectId="p1"
+        instance={inst("pr-queue@0.3.0")}
+        viewer="adam"
+        surface="widget"
+        format="large"
+      />,
+    );
     expect((await screen.findByRole("alert")).textContent).toBe("Impossible de charger le composant.");
     expect(errors).toHaveLength(1);
   } finally {
@@ -131,7 +139,15 @@ test("a sandboxed version is rendered in an isolated iframe served by the sandbo
   const errors: unknown[] = [];
   console.error = (...args: unknown[]) => errors.push(args);
   try {
-    wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+    wrap(
+      <InstanceFrame
+        projectId="p1"
+        instance={inst("pr-queue@0.3.0")}
+        viewer="adam"
+        surface="widget"
+        format="large"
+      />,
+    );
     const frame = await screen.findByTitle("PR en attente");
     expect(frame.getAttribute("src")).toBe(`http://127.0.0.1:4318/c/pr-queue/0.3.0/${H}/index.html`);
     expect(frame.getAttribute("sandbox")).toBe("allow-scripts");
@@ -148,7 +164,15 @@ test("D37: seen from a remote browser, a sandboxed widget says it only loads on 
   const before = location.href;
   Reflect.apply(Reflect.get(Object(happy), "setURL"), happy, ["https://192.168.1.20:47832/"]);
   try {
-    wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+    wrap(
+      <InstanceFrame
+        projectId="p1"
+        instance={inst("pr-queue@0.3.0")}
+        viewer="adam"
+        surface="widget"
+        format="large"
+      />,
+    );
     expect((await screen.findByRole("status")).textContent).toBe(
       "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",
     );
@@ -162,7 +186,15 @@ test("a trusted version is loaded as a module", async () => {
   components = [
     { id: "mine", title: "Mine", builtin: false, versions: [version("1.0.0", { trust: "trusted" })] },
   ];
-  wrap(<InstanceFrame projectId="p1" instance={inst("mine@1.0.0")} viewer="adam" surface="widget" />);
+  wrap(
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("mine@1.0.0")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
+  );
   expect(await screen.findByText("trusted content")).toBeTruthy();
 });
 
@@ -177,6 +209,7 @@ test("the sdk keeps its identity when the project snapshot changes but the insta
         instance={{ ...inst("probe@1.0.0"), config }}
         viewer="adam"
         surface="view"
+        format="full"
       />
     </HostProvider>
   );
@@ -193,7 +226,13 @@ test("the sdk keeps its identity when the project snapshot changes but the insta
 test("D2: an unapproved or tampered version asks for trust", async () => {
   components = prQueue(version("0.3.0", { active: false, trust: null }));
   const { unmount } = wrap(
-    <InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="view" />,
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("pr-queue@0.3.0")}
+      viewer="adam"
+      surface="view"
+      format="full"
+    />,
   );
   expect((await screen.findByText("Autorisation requise")).closest("[data-tampered]")).toBeNull();
   expect(screen.getByText("« PR en attente » 0.3.0 doit être autorisé avant de s'afficher.")).toBeTruthy();
@@ -201,7 +240,15 @@ test("D2: an unapproved or tampered version asks for trust", async () => {
   expect(await screen.findByText("Autoriser « PR en attente » 0.3.0 ?")).toBeTruthy();
   unmount();
   components = prQueue(version("0.3.0", { active: false, trust: null, tampered: true }));
-  wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+  wrap(
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("pr-queue@0.3.0")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
+  );
   const changed = await screen.findByText("Son code a changé depuis ton accord.");
   expect(changed.closest("[data-tampered]")).not.toBeNull();
   expect(screen.getByRole("button", { name: "Examiner et autoriser" }).hasAttribute("disabled")).toBe(true);
@@ -209,11 +256,25 @@ test("D2: an unapproved or tampered version asks for trust", async () => {
 
 test("a built-in is rendered from the UI bundle, an unknown ref says so", async () => {
   const { unmount } = wrap(
-    <InstanceFrame projectId="p1" instance={inst("kanban@1.0.0")} viewer="adam" surface="widget" />,
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("kanban@1.0.0")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
   );
   await waitFor(() => expect(calls.some((c) => c.method === "getProject")).toBe(true));
   unmount();
-  wrap(<InstanceFrame projectId="p1" instance={inst("ghost@9.9.9")} viewer="adam" surface="widget" />);
+  wrap(
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("ghost@9.9.9")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
+  );
   expect(await screen.findByText(/ghost@9\.9\.9/)).toBeTruthy();
 });
 
@@ -224,13 +285,29 @@ test("S7: a revoked instance offers the other installed versions that are not re
     version("0.2.0"),
     version("0.4.0", { revoked: gone }),
   );
-  wrap(<InstanceFrame projectId="p1" instance={inst("pr-queue@0.3.0")} viewer="adam" surface="widget" />);
+  wrap(
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("pr-queue@0.3.0")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
+  );
   await userEvent.setup().click(await screen.findByRole("button", { name: "Choisir une autre version" }));
   expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Passer en 0.2.0"]);
 });
 
 test("S7: a third-party version absent from the registry is reported as missing", async () => {
-  wrap(<InstanceFrame projectId="p1" instance={inst("ghost-widget@9.9.9")} viewer="adam" surface="widget" />);
+  wrap(
+    <InstanceFrame
+      projectId="p1"
+      instance={inst("ghost-widget@9.9.9")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
+  );
   expect(await screen.findByText("Composant absent : ghost-widget@9.9.9")).toBeTruthy();
   await waitFor(() =>
     expect(calls).toContainEqual({

@@ -1,4 +1,5 @@
 import {
+  type ComponentFormat,
   type ComponentVersionSummary,
   compareSemver,
   type Instance,
@@ -30,7 +31,13 @@ const MissingComponent = lazyPanel(
   },
 );
 
-type Props = { projectId: string; instance: Instance; viewer: string; surface: Surface };
+type Props = {
+  projectId: string;
+  instance: Instance;
+  viewer: string;
+  surface: Surface;
+  format: ComponentFormat;
+};
 type MountedProps = Props & { mod: TrustedModule; mode: "builtin" | "gated" };
 type TrustedProps = Props & { id: string; version: string; hash: string };
 
@@ -123,12 +130,13 @@ function Sandboxed({ id, version, hash, title, ...props }: TrustedProps & { titl
   if (!runtime.info) return null;
   return (
     <SandboxFrame
-      key={`${instance.component}:${JSON.stringify(instance.config)}`}
+      key={`${instance.component}:${props.format}:${JSON.stringify(instance.config)}`}
       projectId={props.projectId}
       instanceId={instance.id}
       config={instance.config}
       viewer={props.viewer}
       surface={props.surface}
+      format={props.format}
       title={title}
       src={`${runtime.info.sandboxOrigin}${sandboxPath(id, version, hash, "index.html")}`}
     />
