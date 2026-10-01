@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ComponentDraft } from "@kibo/schema";
+import { type ComponentDraft, MAX_DRAFT_REVISIONS } from "@kibo/schema";
 import { failingReport } from "./draft-fixtures";
 import { draftActions, draftStep, problemCount } from "./draft-flow";
 
@@ -35,10 +35,28 @@ test("draftStep maps statuses to the five pills", () => {
 });
 
 test("draftActions: retry until 3 attempts, then the code fallback", () => {
-  expect(draftActions(d({}))).toEqual({ canRetry: true, codeFallback: false, canAbandon: true });
-  expect(draftActions(d({ attempts: 3 }))).toEqual({ canRetry: false, codeFallback: true, canAbandon: true });
+  expect(draftActions(d({}))).toEqual({
+    canRetry: true,
+    codeFallback: false,
+    canAbandon: true,
+    canRevise: false,
+  });
+  expect(draftActions(d({ attempts: 3 }))).toEqual({
+    canRetry: false,
+    codeFallback: true,
+    canAbandon: true,
+    canRevise: false,
+  });
   expect(draftActions(d({ failure: { kind: "config_changed", detail: null } })).codeFallback).toBe(true);
   expect(draftActions(d({ status: "done" })).canAbandon).toBe(false);
+});
+
+test("draftActions.canRevise: review or permissions, under the revision limit", () => {
+  expect(draftActions(d({ status: "review", revisions: 3 })).canRevise).toBe(true);
+  expect(draftActions(d({ status: "permissions", revisions: 0 })).canRevise).toBe(true);
+  for (const status of ["generating", "validating", "done", "failed", "abandoned"] as const)
+    expect(draftActions(d({ status })).canRevise).toBe(false);
+  expect(draftActions(d({ status: "review", revisions: MAX_DRAFT_REVISIONS })).canRevise).toBe(false);
 });
 
 test("problemCount counts every failing section of the report", () => {

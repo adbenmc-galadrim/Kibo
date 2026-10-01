@@ -137,4 +137,17 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/pages/DashboardGrid.tsx"))).toBe(false);
   });
+
+  test("the draft preview host and its demo project are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/ai/worker-backend.ts",
+      "/x/packages/ui/src/ai/preview-protocol.ts",
+      "/x/packages/ui/src/ai/preview-backend.ts",
+      "/x/packages/ui/src/ai/draft-preview-worker.ts",
+      "/x/packages/ui/src/ai/revise-escape.ts",
+      "/x/packages/core/src/index.ts",
+      "/x/node_modules/.bun/loro-crdt@1.16.3/node_modules/loro-crdt/browser/index.js",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
 });

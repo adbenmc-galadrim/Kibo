@@ -1,4 +1,4 @@
-import type { ComponentFormat } from "@kibo/schema";
+import type { ComponentFormat, KiboErrorCode } from "@kibo/schema";
 
 const FORMAT_LABELS: Record<ComponentFormat, string> = {
   small: "Petit",
@@ -82,5 +82,46 @@ export const frCreations = {
     title: (title: string) => `Abandonner ${title} ?`,
     description: "Le brouillon et ses images sont supprimés ; le run en cours est arrêté.",
     confirm: "Abandonner",
+  },
+  preview: {
+    tabs: "Relecture du brouillon",
+    diff: "Diff",
+    preview: "Aperçu",
+    format: "Format de l'aperçu",
+    frameTitle: (title: string) => `Aperçu de ${title}`,
+    note: "Aperçu isolé avec des données de démonstration. Rien n'est enregistré.",
+    building: "Construction de l'aperçu…",
+    unavailable: "Aperçu indisponible.",
+    loadFailed: "Le composant ne s'est pas chargé.",
+    demoFailed: "Les données de démonstration n'ont pas pu démarrer.",
+    retry: "Réessayer",
+    remote: "L'aperçu ne s'affiche que sur l'ordinateur où tourne Kibo.",
+    errors: {
+      INVALID_INPUT: "Le brouillon n'est plus en relecture.",
+      CONFLICT: "Le brouillon a changé pendant la construction : réessaie.",
+      VALIDATION_FAILED: "La construction de l'aperçu a échoué.",
+      NOT_FOUND: "Brouillon introuvable.",
+      STORE_CORRUPT: "Le stockage des brouillons est illisible.",
+    } satisfies Partial<Record<KiboErrorCode, string>>,
+  },
+  revise: {
+    open: "Demander une modification",
+    title: "Demander une modification",
+    label: "Ce qu'il faut changer",
+    placeholder: "Mets le total en gros et ajoute un filtre par domaine",
+    count: (n: number) => `${n} / 2000`,
+    tooShort: "5 caractères minimum.",
+    submit: "Envoyer à l'agent",
+    cancel: "Annuler",
+    remaining: (n: number) => (n === 1 ? "1 révision restante" : `${n} révisions restantes`),
+    progress: (n: number, max: number) => `Révision ${n} sur ${max}`,
+    exhausted: "Dix révisions atteintes : publie ou abandonne le brouillon.",
+    errors: {
+      CONFLICT:
+        "Impossible pour l'instant : l'agent travaille sur ce brouillon, ou cette version est déjà publiée.",
+      INVALID_INPUT: "Révision refusée : dix révisions et 44 images au plus par brouillon.",
+      TOO_LARGE: "Image trop lourde : 256 ko au plus.",
+      NOT_FOUND: "Brouillon introuvable.",
+    } satisfies Partial<Record<KiboErrorCode, string>>,
   },
 };
