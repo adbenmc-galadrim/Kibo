@@ -13,7 +13,7 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 
   await page.getByRole("button", { name: "Nouveau projet" }).first().click();
   await skipRoleStep(page);
-  await page.getByLabel("Nom").fill(`Kibo ${key}`);
+  await page.getByLabel("Nom", { exact: true }).fill(`Kibo ${key}`);
   await page.getByLabel("Clé").fill(key);
   await page.getByRole("button", { name: "Créer le projet" }).click();
   await expect(page.getByText("Projet créé")).toBeVisible();
@@ -23,7 +23,7 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 type PageKind = "Tableau de bord" | "Vue";
 
 async function fillNewPage(page: Page, title: string, kind: PageKind) {
-  await page.getByLabel("Nom").fill(title);
+  await page.getByLabel("Nom", { exact: true }).fill(title);
   await page.getByRole("radio", { name: kind, exact: true }).click();
   await page.getByRole("button", { name: "Créer la page" }).click();
 }

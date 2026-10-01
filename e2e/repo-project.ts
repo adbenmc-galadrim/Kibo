@@ -13,7 +13,7 @@ export async function shot(page: Page, info: TestInfo, name: string) {
 export async function createRepoProject(page: Page, name: string, key: string, folder: string) {
   await page.getByRole("button", { name: "Nouveau projet" }).first().click();
   await skipRoleStep(page);
-  await page.getByLabel("Nom").fill(name);
+  await page.getByLabel("Nom", { exact: true }).fill(name);
   await page.getByLabel("Clé").fill(key);
   await page.getByLabel("Dossier du projet").fill(folder);
   await page.getByRole("button", { name: "Créer le projet" }).click();

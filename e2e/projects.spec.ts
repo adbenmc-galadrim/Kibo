@@ -60,7 +60,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
 
   await page.goto("/#/settings/workspace");
   await expect(page.getByRole("heading", { level: 1, name: "Workspace" })).toBeVisible();
-  await page.getByLabel("Nom").fill("Maison");
+  await page.getByLabel("Nom", { exact: true }).fill("Maison");
   await page.getByLabel("Description").fill("Mes projets et ceux de l'équipe");
   await page
     .getByLabel("Choisir une image…")

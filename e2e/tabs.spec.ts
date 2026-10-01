@@ -20,7 +20,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await createRepoProject(page, `Onglets ${key}`, key, created.repo);
   await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await page.getByLabel("Nom").fill("Kanban");
+  await page.getByLabel("Nom", { exact: true }).fill("Kanban");
   await page.getByRole("radio", { name: "Vue", exact: true }).click();
   await page.getByRole("button", { name: "Créer la page" }).click();
 

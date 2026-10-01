@@ -39,7 +39,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await page.getByRole("button", { name: "Vue d'ensemble" }).click();
   await page.getByRole("button", { name: "Nouveau projet" }).first().click();
   await skipRoleStep(page);
-  await page.getByLabel("Nom").fill(other);
+  await page.getByLabel("Nom", { exact: true }).fill(other);
   await page.getByLabel("Clé").fill(`${key}B`);
   await page.getByRole("button", { name: "Créer le projet" }).click();
   await expect(page.getByText("Projet créé")).toBeVisible();

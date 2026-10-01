@@ -19,7 +19,7 @@ function homeOf(info: TestInfo): string {
 
 async function openComponents(page: Page) {
   await page.getByRole("button", { name: "Composants", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Composants" }).last()).toBeVisible();
 }
 
 async function publishDraft(page: Page, version: string, strategy?: "Mettre à jour partout") {

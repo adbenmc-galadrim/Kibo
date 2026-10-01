@@ -322,7 +322,7 @@ test("D11 · menu du workspace et page Workspace", async () => {
   await capture(info, "D11-menu");
   await page.getByRole("menuitem", { name: "Paramètres du workspace" }).click();
   await expect(page.getByRole("heading", { name: "Workspace", level: 1 })).toBeVisible();
-  await expect(page.getByLabel("Nom")).toHaveValue("Perso");
+  await expect(page.getByLabel("Nom", { exact: true })).toHaveValue("Perso");
   await capture(info, "D11-page");
 });
 
