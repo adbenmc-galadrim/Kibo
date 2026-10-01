@@ -472,7 +472,7 @@ Vague 0 ← rien. Spec §16.1, §16.2, composants §17.1, sync **D48**. Décisio
 - Consumes: `Layout`, `Instance` (`schema/instance.ts`), `ComponentKind`, `Surface`, `LoroDoc`, `isContainer`, `executeProjectCommand`, `validateProjectUpdate`, `validateSharedSnapshot`, `ProjectRoom` (sync-server).
 - Produces: contrat « Schéma (T46) » et « Core (T46) » ci-dessus.
 
-- [ ] **Step 1: Formats purs (tests rouges puis verts)**
+- [x] **Step 1: Formats purs (tests rouges puis verts)**
 
 `packages/schema/src/format.test.ts` :
 ```ts
@@ -507,7 +507,7 @@ describe("formats", () => {
 ```
 Run: `bun test packages/schema/src/format.test.ts` — Expected: FAIL (module absent). Écrire `format.ts` selon le contrat (`nearestFormat` : `formatOf(size) ?? ` le format dont `|w·h − size.w·size.h|` est minimal, égalité tranchée par l'ordre de `FORMAT_PREFERENCE`). Exporter depuis `index.ts`. Run: PASS.
 
-- [ ] **Step 2: Manifeste (tests rouges puis verts)**
+- [x] **Step 2: Manifeste (tests rouges puis verts)**
 
 `packages/schema/src/manifest.test.ts` :
 ```ts
@@ -537,7 +537,7 @@ test("surfaceFor", () => {
 ```
 Run: FAIL. `manifest.ts` : `formats: z.array(ComponentFormat).min(1).max(5).optional()` (après `sdk`), `DEFAULT_FORMATS`, `formatsOf`, `defaultFormatOf`, `formatIssue` (messages : `INVALID_MANIFEST: formats must be unique`, `… a view declares the full format`, `… a widget declares a format other than full`, `… an adapter has no format`) ; `protocol.ts` : `surfaceFor` et `format: ComponentFormat` dans le message `init`. Vérifier que `manifest.ts` reste un `z.object` (`ComponentManifest.shape.version` compile dans `ai.ts`). Run: PASS ; `bun test packages/schema` — Expected: PASS (les manifestes v0 des tests `compat.test.ts` passent sans `formats`).
 
-- [ ] **Step 3: Commande `setInstanceLayout` (tests rouges puis verts)**
+- [x] **Step 3: Commande `setInstanceLayout` (tests rouges puis verts)**
 
 `packages/core/src/instances.test.ts` :
 ```ts
@@ -559,7 +559,7 @@ test("setInstanceLayout is reserved to the shell", () => {
 ```
 (`META`, `addPage` : reprendre les fixtures du fichier ; `executeProjectCommand` et `assertShellCommand` viennent de `commands.ts`.) Run: FAIL. `command.ts` : variante, `COMMAND_WRITES`, `CommandResult` ; `instances.ts` : `setInstanceLayout` ; `commands.ts` : `case "setInstanceLayout"` et ajout à la liste des commandes réservées (l. 99-100). Run: `bun test packages/core packages/schema` — Expected: PASS.
 
-- [ ] **Step 4: Contrôle des instances d'un lot (tests rouges puis verts, D48)**
+- [x] **Step 4: Contrôle des instances d'un lot (tests rouges puis verts, D48)**
 
 `packages/core/src/validate-instances.test.ts` (modèle : `validate-update.test.ts` pour construire `before`/`after` : fork du doc, modification, `validateProjectUpdate(before, after, author)`) :
 ```ts
@@ -586,7 +586,7 @@ test("validateProjectUpdate and validateSharedSnapshot apply the instance rules"
 ```
 (Helpers du test : `forkWithInstance`, `withLayout` (`doc.fork()` puis `setInstanceLayout` ou écriture brute `doc.getMap("instances").set(id, {...})` pour contourner le core), `withRawInstance`, `withContainerInstance` (`setContainer(id, new LoroMap())`), `docWithRawInstance`, `EDITOR = { userId: "u1", role: "editor" }`.) Run: FAIL. `validate-instances.ts` : parcourir `after.getMap("instances")` ; pour chaque clé dont la valeur diffère de `before` (`JSON.stringify` des deux valeurs simples, ou présence d'un conteneur) : `isContainer` ⇒ `instance <id> must be a plain value` ; `Instance.safeParse` ⇒ `instance <id> has an invalid value` ; `value.id !== key` ⇒ `instance <id> is stored under another key` ; `!inGrid` ⇒ `instance <id>: layout is outside the grid` ; `!isFormatLayout` ⇒ `instance <id>: layout is not a component format`. `instancesSnapshotViolation` applique les mêmes règles à toutes les instances. Brancher dans `validateProjectUpdate` (après `keyViolation`) et dans `validateSharedSnapshot`. Exporter depuis `core/index.ts`. Run: PASS.
 
-- [ ] **Step 5: Propriété fast-check et serveur (tests rouges puis verts)**
+- [x] **Step 5: Propriété fast-check et serveur (tests rouges puis verts)**
 
 `validate-instances.test.ts`, propriété : une suite aléatoire de commandes `addInstance` (format et position aléatoires, rejetées si `INVALID_INPUT`) et `setInstanceLayout` (format et position aléatoires, rejetées si `INVALID_INPUT`) sur un doc projet produit, à chaque pas, un `after` tel que `validateProjectUpdate(before, after, EDITOR).ok === true` et aucune paire d'instances de la même page ne se chevauche :
 ```ts
@@ -608,7 +608,7 @@ test("commands never produce a doc the server rejects", () => {
 ```
 (`addInstance` avec un `layout` explicite doit lui aussi refuser hors grille / hors format / chevauchement : l'ajouter dans `addInstance` (`instances.ts:36-44`) en réutilisant la même vérification que `setInstanceLayout` ; un `layout` absent garde le défaut `half` à `(0, 0)` **sans** contrôle de chevauchement, comme aujourd'hui.) `packages/sync-server/src/room.test.ts` : un test « a push that resizes an instance to 5 × 5 is rejected and audited » et un test « a push that overlaps two instances is accepted » (modèle : les tests de `push` existants du fichier, `RoomReject` avec code `UPDATE_REJECTED`). Run: `bun test packages/core packages/sync-server` — Expected: PASS.
 
-- [ ] **Step 6: Gate et commits**
+- [x] **Step 6: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/schema packages/core packages/sync-server packages/daemon` — Expected: PASS (le démon compile avec la nouvelle variante de commande ; `project-rpc.test.ts` inchangé).
 ```bash
