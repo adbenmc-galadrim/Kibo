@@ -1589,7 +1589,7 @@ Vague 1 ← T29. Spec §15.3 ; écran **123**. L'interface n'affiche plus d'écr
 - Consumes: `client.rpc`, `client.pair`, `onUnauthorized`, `KiboError`, `inTauri()`, `PairingScreen`, `lazyPanel`.
 - Produces: contrat « UI » (T39) : `App({ now, retryMs })`, `LoadingScreen`, `DaemonUnreachable`, `RootBoundary`, `useProjects(): { projects, error, retry }`, `useShellDialogs`, `paletteActionHandler`, `fileTabOpener`.
 
-- [ ] **Step 1: Démarrage (tests rouges puis verts, écran 123)**
+- [x] **Step 1: Démarrage (tests rouges puis verts, écran 123)**
 
 `packages/ui/src/app.test.tsx` (mock `../api` avec `let session: () => Promise<Session>`) :
 ```tsx
@@ -1609,22 +1609,22 @@ test("the automatic retry fires every retryMs while unreachable", async () => { 
 (`aria-label` réel de la barre latérale : lire `sdk/ui/sidebar.tsx` ; sinon viser « Vue d'ensemble ».) `App.tsx` : état `{ kind: "loading" } | { kind: "unreachable"; error: unknown; attempt: number } | { kind: "pairing" } | { kind: "ready"; session: Session }` ; `bootstrap` inchangé mais encadré : `UNAUTHORIZED` ⇒ `pairing`, toute autre erreur ⇒ `unreachable` ; `useEffect` de relance par `setTimeout(retryMs)` tant que `unreachable` ; `LoadingScreen` (dans `Startup.tsx`, ≤ 40 lignes, dans l'entrée) rend `null` pendant `delayMs` puis le logo et « Chargement de Kibo… » ; `DaemonUnreachable` à la demande (`lazyPanel`, `fr-startup.ts`), `inApp = inTauri()` choisit le conseil ; `RootBoundary` dans `main.tsx` autour d'`<App />`. `startup.test.tsx` : `DaemonUnreachable` rend le bon conseil selon `inApp` et appelle `onRetry`.
 Run: `bun test packages/ui/src/app.test.tsx packages/ui/src/shell/startup.test.tsx` — Expected: PASS.
 
-- [ ] **Step 2: `useProjects` avec erreur, Shell qui l'affiche (tests rouges puis verts)**
+- [x] **Step 2: `useProjects` avec erreur, Shell qui l'affiche (tests rouges puis verts)**
 
 `use-projects.test.ts` : `listProjects` qui rejette une `TypeError` ⇒ `{ projects: null, error: TypeError }` sans rejection non gérée ; `retry()` relance ; `UNAUTHORIZED` ⇒ `error: null` (le `onUnauthorized` global prend le relais). `Shell.tsx` : `const { projects, error, retry } = useProjects()` ; `if (error) return <DaemonUnreachable error={error} inApp={inTauri()} nextRetryInMs={0} onRetry={retry} />` ; `if (!projects || !tabs) return <LoadingScreen />`. `AgentBar.tsx` : `fr.agents.daemon: "Kibo · connecté"`, `daemonOffline: "Kibo · hors ligne"` (test adapté).
 Run: `bun test packages/ui/src/state packages/ui/src/shell packages/ui/src/agents` — Expected: PASS.
 
-- [ ] **Step 3: Shell allégé (tests existants verts, aucun comportement nouveau)**
+- [x] **Step 3: Shell allégé (tests existants verts, aucun comportement nouveau)**
 
 `use-shell-dialogs.ts` : `useState<DialogsState>`, `set`, `focusRun`, `setFocusRun`, `clearFocus`, `palette`, `setPalette` (contrat) ; `shell-actions.ts` : `paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme })` et `fileTabOpener({ editRequests, set, go })`, fonctions pures sur leurs dépendances, testées (`shell-actions.test.ts` : `newProject` ⇒ `set({ newProject: true })`, `newTicket` sur un autre projet ⇒ `go` puis `set`, `openFileTab(ref, true)` ⇒ `editRequests` contient le hash et `go(target, true)`). `Shell.tsx` les consomme ; `wc -l` ≤ 300.
 Run: `bun test packages/ui/src/shell && bun run typecheck` — Expected: PASS.
 
-- [ ] **Step 4: Coque : message et `exit(1)` au lieu de `expect` (test rouge puis vert)**
+- [x] **Step 4: Coque : message et `exit(1)` au lieu de `expect` (test rouge puis vert)**
 
 `apps/desktop/src-tauri/src/main.rs` : extraire la boucle de `CommandEvent` dans `fn handle_daemon_event(handle: &AppHandle, event: CommandEvent, state: &mut StartupState) -> Result<(), String>` ; les `expect` des lignes 153, 156, 165, 168 et 180 deviennent des `map_err(|e| format!("…: {e}"))?` ; l'appelant fait `if let Err(message) = … { eprintln!("Kibo s'est arrêté : {message}. Relance l'application."); std::process::exit(1); }` ; le cas `Terminated` affiche de même « Kibo s'est arrêté : le démon a quitté (code …) » avant `exit(1)`. Test unitaire Rust (`#[cfg(test)]`) : `parse_ready_line("KIBO_READY not a url")` renvoie `Err` au lieu de paniquer (découper la lecture de l'URL en fonction pure `parse_daemon_url(&str) -> Result<Url, String>`). `expect` conservés hors boucle : `lock().expect("daemon lock")` (poison = bug) et `.expect("cannot build the Kibo app")` (hors boucle de démarrage).
 Run: `cd apps/desktop/src-tauri && ~/.cargo/bin/cargo test` — Expected: PASS (après `bun run --cwd packages/ui build`, `bun apps/desktop/scripts/build-sidecar.ts`, `bun apps/desktop/scripts/build-toolchain.ts` si le build les exige ; sinon le `desktop-smoke` de la CI fait foi).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS ; budget noté (entrée +≈0,8 kB).
 
