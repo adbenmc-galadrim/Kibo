@@ -1832,7 +1832,7 @@ Vague 1 ← T29, T31 (`createTicket.blockedReason` pour le « + » de Bloqué ; 
 - Consumes: `useSortable`, `SortableContext`, `verticalListSortingStrategy`, `useDroppable`, `sdk.data.get/set`, `sdk.subscribe`, `sdk.openNewTicket({ statusId: "blocked" })`, `useReadOnly`.
 - Produces: contrat « Composants intégrés » (T43) : `orderColumn`, `placeInColumn`, `ORDER_KEY`.
 
-- [ ] **Step 1: Ordre pur (tests rouges puis verts)**
+- [x] **Step 1: Ordre pur (tests rouges puis verts)**
 
 `column-order.test.ts` :
 ```ts
@@ -1850,7 +1850,7 @@ test("placeInColumn moves before or after the target, into an empty column, and 
 ```
 Implémenter. Run: `bun test components/kanban/src/column-order.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Carte entière déplaçable et ordre persistant (tests rouges puis verts, écran 126)**
+- [x] **Step 2: Carte entière déplaçable et ordre persistant (tests rouges puis verts, écran 126)**
 
 `kanban.test.tsx` :
 ```tsx
@@ -1869,17 +1869,17 @@ test("screen 126: the whole card is the drag handle, the menu is not; the saved 
 (Le glisser ne se simule pas sous happy-dom : l'écriture est testée par la fonction `onDragEnd` extraite, `dropInColumn(order, event)`, appelée directement avec un `DragEndEvent` construit, qui doit produire `sdk.data.set("order", …)` et `setStatus` si la colonne change.) `KanbanCard.tsx` : `useSortable({ id })` sur l'`article` (`cursor-grab`, `activationConstraint: { distance: 6 }` via un `PointerSensor` dans `Kanban.tsx`), menu et boutons avec `onPointerDown={(e) => e.stopPropagation()}` et `data-dnd-ignore` ; `Kanban.tsx` : `SortableContext` par colonne (`verticalListSortingStrategy`), `order` lu par `sdk.data.get(ORDER_KEY)` au montage et sur `sdk.subscribe`, `onDragEnd` ⇒ `placeInColumn` puis `sdk.data.set` (`readOnly` ⇒ aucun capteur), `useDroppable` conservé pour une colonne vide ; `kibo.component.json` : `"data": true` ; `CI_DOT.neutral: "bg-muted-foreground/60"`.
 Run: `bun test components/kanban` — Expected: PASS ; la conformité tourne dans `kanban.test.tsx` (`runConformance`, `data: true`).
 
-- [ ] **Step 3: Filtre explicite (test rouge puis vert)**
+- [x] **Step 3: Filtre explicite (test rouge puis vert)**
 
 Test : en-tête « 13 / 24 · Moi + agents » et lien « 11 masqués · Tout afficher » qui passe le filtre à « Tous » ; avec « Tous », pas de lien. `KanbanToolbar.tsx` (compteur, `ToggleGroup` Moi + agents / Tous, lien) ; `fr.ts` : `hidden: (n) => \`${n} masqué${n > 1 ? "s" : ""} · Tout afficher\``.
 Run: `bun test components/kanban` — Expected: PASS.
 
-- [ ] **Step 4: « + » dans Bloqué (test rouge puis vert ; après T31)**
+- [x] **Step 4: « + » dans Bloqué (test rouge puis vert ; après T31)**
 
 Test : la colonne Bloqué a un bouton « Nouveau ticket dans Bloqué » qui appelle `sdk.openNewTicket({ statusId: "blocked" })` (`newTicketRequests` du mock). `Kanban.tsx:142-144` : `onAdd` sans l'exception `blocked` (le dialogue de T32 demande le motif).
 Run: `bun test components/kanban` — Expected: PASS.
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 ```bash
 git add components/kanban/kibo.component.json components/kanban/src/column-order.ts components/kanban/src/column-order.test.ts components/kanban/src/Kanban.tsx components/kanban/src/KanbanCard.tsx components/kanban/src/kanban.test.tsx <registry si touché>
