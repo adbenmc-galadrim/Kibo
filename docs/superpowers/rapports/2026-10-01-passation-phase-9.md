@@ -14,16 +14,23 @@ Seuil d'usage hebdomadaire fixé par Adam : 80 %. Ce document permet de reprendr
 1. PR `phase/9` → `main`, description en français, sans mention d'outil.
 2. CI de la PR verte sur tous les jobs (`test` et `e2e`, ubuntu et macOS) ; un job rouge se diagnostique depuis ses logs (`gh run view <id> --log-failed`), se corrige sur `phase/9`, et l'on recommence. Jamais de fusion avec une CI rouge ou incomplète.
 3. Fusion de la PR.
-4. **Tag `v1.1.0` : après la confirmation d'A22 par Adam.** Le tag déclenche `release.yml`, qui construit et publie la release en « latest », donc en mise à jour automatique des applications installées. Commande, depuis `main` à jour : `git tag v1.1.0 && git push origin v1.1.0`, puis suivre `gh run list --workflow release.yml` et contrôler `latest.json` (`darwin-aarch64`, `linux-x86_64`).
+4. **Tag `v1.1.0` : après la validation de l'ensemble par Adam** (« j'aimerais le poser une fois que j'aurai validé le tout », 1er octobre ; la version reste gérée ici). Le tag déclenche `release.yml`, qui construit et publie la release en « latest », donc en mise à jour automatique des applications installées. Commande, depuis `main` à jour : `git tag v1.1.0 && git push origin v1.1.0`, puis suivre `gh run list --workflow release.yml` et contrôler `latest.json` (`darwin-aarch64`, `linux-x86_64`).
 
 L'état d'avancement de ces étapes se lit sur GitHub : `gh pr list --state all --limit 3`, `gh run list --limit 5`, `git tag --list 'v1.1*'`.
 
-## A22 : la décision qui retient le tag
+## A22 : la décision de sécurité à valider
 
 L'aperçu d'un brouillon généré par l'IA a besoin de WebAssembly pour ses données de démonstration (Loro). Défaut retenu par le lead, écrit dans la spec composants §17 point 6 : la politique de sécurité du document de l'interface ne change pas ; seul le script du worker de l'aperçu (`workers/draft-preview-worker-<hash>.js`), construit avec l'interface, est servi avec `default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'`. Alternative : `'wasm-unsafe-eval'` pour toute l'interface (plus simple, une protection en moins). Si Adam préfère l'alternative ou refuse les deux, c'est une tâche isolée dans `packages/daemon/src/ui-route.ts` et `packages/ui/vite.config.ts`, à faire avant le tag.
 
+## Corrigé à la CI de la PR
+
+- Interblocage de la coque au démarrage sur macOS (double `restore_state`, depuis la vague 1) : corrigé, test de démarrage vert en local. Pour reproduire un défaut de coque : `CARGO_TARGET_DIR=<dépôt>/apps/desktop/src-tauri/target bun run --cwd apps/desktop build:debug`, puis `KIBO_SMOKE=1 KIBO_HOME=<dossier vide> apps/desktop/src-tauri/target/debug/kibo` (doit sortir en 0 en quelques secondes ; `sample <pid>` montre la pile s'il reste bloqué).
+- `creations.spec.ts` et `market.spec.ts` : délais d'assertion explicites (le démon ne répond plus pendant plusieurs secondes sur un runner lent pendant la validation d'un brouillon).
+
 ## Suivis à prendre en premier après le jalon
 
+- Démon muet plusieurs secondes pendant la validation d'un brouillon sur une machine lente : localiser le travail synchrone et le sortir du fil du démon.
+- Test de démarrage de la coque dans la gate locale des tâches qui touchent `apps/desktop`.
 - Relecture non remise à zéro si l'interface n'observe pas `generating` après une révision (`packages/ui/src/ai/AiDraftPanel.tsx:48-52`, déclencher aussi sur `details.revisions`).
 - Ligne de l'écran Créations identique pour un brouillon en échec et en relecture (`packages/ui/src/creations/CreationRow.tsx`) : point pour Adam.
 - Carte de l'aperçu qui n'occupe que le haut du cadre en Large et Demi-page ; débordement horizontal de l'aperçu dans le dialogue.
