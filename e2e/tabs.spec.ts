@@ -45,7 +45,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
     .click();
   await page.getByRole("button", { name: "README.md", exact: true }).last().click();
   const preview = page.getByRole("dialog").filter({ hasText: "README.md" });
-  await expect(preview.getByText(/Ligne \d+, col \d+/)).toBeVisible();
+  await expect(preview.getByText(/Ligne \d+ · Col \d+/)).toBeVisible();
   await shot(page, info, "ecran-23");
   await preview.getByRole("button", { name: "Ouvrir dans un onglet" }).click();
   await expect(bar.getByRole("tab", { name: "README.md" })).toHaveAttribute("aria-selected", "true");
