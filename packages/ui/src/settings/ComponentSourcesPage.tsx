@@ -9,7 +9,7 @@ import { fr } from "../i18n/fr";
 import { marketErrorText } from "../lib/market-errors";
 import { isRemoteView } from "../lib/remote-view";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 import { type SourceAction, SourceRow } from "./SourceRow";
 
 const HEAD = "h-9 px-4 text-2xs font-normal text-muted-foreground";
@@ -85,8 +85,7 @@ export function ComponentSourcesPage({ remote = isRemoteView() }: { remote?: boo
   };
 
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="sources" />
+    <SettingsLayout active="sources">
       <div className="flex flex-col gap-4 p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -145,6 +144,6 @@ export function ComponentSourcesPage({ remote = isRemoteView() }: { remote?: boo
           />
         )}
       </div>
-    </div>
+    </SettingsLayout>
   );
 }

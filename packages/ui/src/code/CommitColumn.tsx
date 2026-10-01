@@ -13,7 +13,7 @@ type Props = {
 
 export function CommitColumn({ readOnly, commit, unpushed, push }: Props) {
   return (
-    <aside className="flex min-h-0 flex-col gap-5 overflow-auto border-l p-4">
+    <aside className="flex min-h-0 flex-col gap-5 overflow-auto border-t p-4 lg:border-t-0 lg:border-l">
       {readOnly ? (
         <p className="text-sm text-muted-foreground">{fr.changes.localOnly}</p>
       ) : (

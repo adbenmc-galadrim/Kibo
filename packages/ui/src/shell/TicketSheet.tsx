@@ -48,7 +48,7 @@ export function TicketSheet({
   const editable = canEdit(project);
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-[480px] sm:max-w-[480px]">
+      <SheetContent className="w-full sm:max-w-[min(90vw,560px)]">
         <SheetHeader>
           {peers.map((p) => (
             <p key={p.deviceId} className="mr-8 rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">

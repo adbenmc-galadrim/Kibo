@@ -24,7 +24,7 @@ import { GuidelinePreview } from "./GuidelinePreview";
 import { InjectionChain } from "./InjectionChain";
 import { LevelButton } from "./LevelButton";
 import { NewDomainForm } from "./NewDomainForm";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 
 type Props = { config: WorkspaceConfig; projects: ProjectSummary[] };
 type Level = { kind: "workspace" } | { kind: "project" } | { kind: "domain"; domainId: string };
@@ -158,8 +158,7 @@ export function DomainsPage({ config, projects }: Props) {
   const isActive = (l: Level) => levelKey(l) === levelKey(level);
 
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="domains" />
+    <SettingsLayout active="domains">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{fr.domains.title}</h1>
@@ -297,6 +296,6 @@ export function DomainsPage({ config, projects }: Props) {
         onDeleteDomain={confirmDeleteDomain}
         onRemoveFile={confirmRemoveFile}
       />
-    </div>
+    </SettingsLayout>
   );
 }

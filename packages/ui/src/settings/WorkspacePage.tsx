@@ -11,7 +11,7 @@ import { fr } from "../i18n/fr";
 import { frWorkspace as t } from "../i18n/fr-workspace";
 import { errorMessage } from "../lib/error-message";
 import { useFlash } from "../lib/use-flash";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 
 type Props = { config: WorkspaceConfig | null };
 
@@ -71,8 +71,7 @@ export function WorkspacePage({ config }: Props) {
   };
 
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="workspace" />
+    <SettingsLayout active="workspace">
       <form onSubmit={submit} className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{t.title}</h1>
@@ -135,6 +134,6 @@ export function WorkspacePage({ config }: Props) {
           </CardContent>
         </Card>
       </form>
-    </div>
+    </SettingsLayout>
   );
 }

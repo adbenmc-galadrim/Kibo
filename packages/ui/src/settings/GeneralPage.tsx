@@ -1,12 +1,11 @@
 import { fr } from "../i18n/fr";
 import { UpdateCard } from "../updates/UpdateCard";
 import { CliInstallCard } from "./CliInstallCard";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 
 export function GeneralPage() {
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="general" />
+    <SettingsLayout active="general">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{fr.settings.general}</h1>
@@ -15,6 +14,6 @@ export function GeneralPage() {
         <UpdateCard />
         <CliInstallCard />
       </div>
-    </div>
+    </SettingsLayout>
   );
 }

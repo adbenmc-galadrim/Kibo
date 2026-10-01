@@ -42,7 +42,7 @@ export function CiLogSheet({ projectId, run, job, onClose }: Props) {
   const lines = log ? visibleLines(log, query, errorsOnly) : [];
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-[720px] sm:max-w-[720px]">
+      <SheetContent className="w-full sm:max-w-[min(90vw,720px)]">
         <SheetHeader>
           <SheetTitle>{t.logTitle(job.name)}</SheetTitle>
           <SheetDescription className="font-mono text-xs">{t.logSubtitle(subtitleOf(run))}</SheetDescription>

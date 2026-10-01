@@ -58,6 +58,7 @@ export const frCode = {
     staged: "Dans le prochain commit",
     unstaged: "Modifications",
     section: (title: string, n: number) => `${title} (${n})`,
+    files: (n: number) => `Fichiers (${n})`,
     stageFile: (path: string) => `Ajouter ${path} au commit`,
     unstageFile: (path: string) => `Retirer ${path} du commit`,
     stageHunk: "Ajouter le bloc au commit",

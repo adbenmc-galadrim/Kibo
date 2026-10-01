@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { Fragment, useId } from "react";
 import { frShortcuts } from "../i18n/fr-shortcuts";
 import { isMac } from "../lib/shortcut-label";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 import { type ShortcutGroup, shortcutGroups } from "./shortcuts";
 
 const KBD = "rounded border bg-muted px-1.5 py-0.5 font-mono text-2xs text-foreground";
@@ -40,8 +40,7 @@ function Group({ group }: { group: ShortcutGroup }) {
 export function ShortcutsPage() {
   const groups = shortcutGroups(isMac());
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="shortcuts" />
+    <SettingsLayout active="shortcuts">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{frShortcuts.title}</h1>
@@ -53,6 +52,6 @@ export function ShortcutsPage() {
           ))}
         </div>
       </div>
-    </div>
+    </SettingsLayout>
   );
 }

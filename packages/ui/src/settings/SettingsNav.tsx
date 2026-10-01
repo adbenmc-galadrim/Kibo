@@ -15,7 +15,7 @@ import {
 import { fr } from "../i18n/fr";
 import { targetToHash } from "../tabs/target-hash";
 
-type SettingsScreen = Extract<
+export type SettingsScreen = Extract<
   Screen,
   | "general"
   | "appearance"
@@ -65,7 +65,10 @@ function Entry({ item, active }: { item: Item; active: SettingsScreen }) {
 
 export function SettingsNav({ active }: { active: SettingsScreen }) {
   return (
-    <nav aria-label={fr.settings.title} className="grid content-start gap-0.5 border-r p-3">
+    <nav
+      aria-label={fr.settings.title}
+      className="grid content-start gap-0.5 border-b p-3 md:border-r md:border-b-0"
+    >
       <p className="px-2 pb-1 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
         {fr.settings.workspace}
       </p>

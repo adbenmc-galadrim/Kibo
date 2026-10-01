@@ -258,6 +258,9 @@ test("the CI section opens the logs, filterable to errors", async () => {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Voir les logs" }));
   expect(await screen.findByText("Logs · build")).toBeDefined();
+  expect(screen.getByRole("dialog", { name: "Logs · build" }).className).toContain(
+    "w-full sm:max-w-[min(90vw,720px)]",
+  );
   expect(screen.getByText("CI · PR #12 · KIB-1")).toBeDefined();
   expect(await screen.findByText("2026-09-26T10:00:01Z setup")).toBeDefined();
   await user.click(screen.getByRole("switch", { name: "Erreurs seulement" }));

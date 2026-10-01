@@ -4,6 +4,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
 import { ChangesFiles } from "./ChangesFiles";
+import { ChangesLayout } from "./ChangesLayout";
 import { CommitColumn } from "./CommitColumn";
 import type { ChangesSlotsHook } from "./changes-slots";
 import { DiffColumn } from "./DiffColumn";
@@ -169,30 +170,26 @@ export function ChangesBody(props: Props) {
         onAbort={readOnly ? null : () => void run(() => client.code({ method: "abortOperation", ...w }))}
         error={shownError}
         notice={notice}
+        flash={fileActions.copy}
       />
-      {fileActions.copy.message && (
-        <p
-          role={fileActions.copy.tone === "error" ? "alert" : "status"}
-          className="border-b px-4 py-2 text-sm"
-        >
-          {fileActions.copy.message}
-        </p>
-      )}
-      <div className="grid min-h-0 flex-1 grid-cols-[272px_minmax(0,1fr)_340px] grid-rows-1">
-        <ChangesFiles
-          worktrees={worktrees}
-          current={current}
-          ahead={status?.ahead ?? 0}
-          files={status ? files : null}
-          selected={selected && { path: selected.path, area: selected.area }}
-          busy={busy}
-          readOnly={readOnly}
-          onWorktreeChange={onWorktreeChange}
-          onSelect={(f) => setSelection({ path: f.path, area: f.area })}
-          onToggle={toggle}
-          {...fileActions.handlers}
-        />
-        <div className="flex min-h-0 min-w-0 flex-col">
+      <ChangesLayout
+        filesTitle={fr.changes.files(files.length)}
+        files={
+          <ChangesFiles
+            worktrees={worktrees}
+            current={current}
+            ahead={status?.ahead ?? 0}
+            files={status ? files : null}
+            selected={selected && { path: selected.path, area: selected.area }}
+            busy={busy}
+            readOnly={readOnly}
+            onWorktreeChange={onWorktreeChange}
+            onSelect={(f) => setSelection({ path: f.path, area: f.area })}
+            onToggle={toggle}
+            {...fileActions.handlers}
+          />
+        }
+        diff={
           <DiffColumn
             key={selected ? `${selected.area}:${selected.path}` : ""}
             projectId={projectId}
@@ -211,51 +208,53 @@ export function ChangesBody(props: Props) {
             }
             onSaved={reload}
           />
-        </div>
-        <CommitColumn
-          readOnly={readOnly}
-          commit={{
-            branch,
-            loading: status === null,
-            stagedCount: staged.length,
-            message: draft.message,
-            onMessageChange: draft.edit,
-            prefilled: draft.prefilled,
-            amend: draft.amend,
-            onAmendChange: draft.setAmend,
-            canAmend,
-            busy,
-            onCommit: commit,
-            banner: slots.commitBanner,
-            messageRef,
-          }}
-          unpushed={{
-            commits: status?.commits ?? [],
-            busy,
-            onModify: modify,
-            onReword: reword,
-            onUndo: undo,
-          }}
-          push={{
-            target: status?.upstream ?? `${remoteName}/${branch ?? ""}`,
-            remote: remoteName,
-            branch,
-            base: baseBranch,
-            pending: unpushed,
-            prTicketKey: linkedTicketKey(project.tickets, remote.pr),
-            canPush: branch !== null,
-            upToDate,
-            pushing,
-            pushError,
-            busy,
-            pr: remote.pr,
-            prBlocked,
-            canOpenPr: baseBranch !== null,
-            onPush: push,
-            onOpenPr: () => setPrOpen(true),
-          }}
-        />
-      </div>
+        }
+        commit={
+          <CommitColumn
+            readOnly={readOnly}
+            commit={{
+              branch,
+              loading: status === null,
+              stagedCount: staged.length,
+              message: draft.message,
+              onMessageChange: draft.edit,
+              prefilled: draft.prefilled,
+              amend: draft.amend,
+              onAmendChange: draft.setAmend,
+              canAmend,
+              busy,
+              onCommit: commit,
+              banner: slots.commitBanner,
+              messageRef,
+            }}
+            unpushed={{
+              commits: status?.commits ?? [],
+              busy,
+              onModify: modify,
+              onReword: reword,
+              onUndo: undo,
+            }}
+            push={{
+              target: status?.upstream ?? `${remoteName}/${branch ?? ""}`,
+              remote: remoteName,
+              branch,
+              base: baseBranch,
+              pending: unpushed,
+              prTicketKey: linkedTicketKey(project.tickets, remote.pr),
+              canPush: branch !== null,
+              upToDate,
+              pushing,
+              pushError,
+              busy,
+              pr: remote.pr,
+              prBlocked,
+              canOpenPr: baseBranch !== null,
+              onPush: push,
+              onOpenPr: () => setPrOpen(true),
+            }}
+          />
+        }
+      />
       {!readOnly && branch && baseBranch && (
         <PushPrDialog
           open={prOpen}

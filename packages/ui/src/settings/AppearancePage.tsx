@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { fr } from "../i18n/fr";
 import { setThemePreference, THEME_PREFERENCES, type ThemePreference, useThemePreference } from "../theme";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 
 const t = fr.security.appearance;
 const SEGMENT =
@@ -33,8 +33,7 @@ export function ThemeSegment() {
 
 export function AppearancePage() {
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="appearance" />
+    <SettingsLayout active="appearance">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{t.title}</h1>
@@ -50,6 +49,6 @@ export function AppearancePage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </SettingsLayout>
   );
 }

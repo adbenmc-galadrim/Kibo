@@ -16,7 +16,7 @@ import { fr } from "../i18n/fr";
 import { isRemoteView } from "../lib/remote-view";
 import { syncFailure } from "../lib/sync-errors";
 import { useSyncServerStatus } from "../state/use-sync-server";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 import { SyncDevicesCard } from "./SyncDevicesCard";
 import { SyncEmptyState } from "./SyncEmptyState";
 import { SyncProjectsCard } from "./SyncProjectsCard";
@@ -98,8 +98,7 @@ export function SyncSettingsPage({ viewer, remote = isRemoteView(), ...p }: Prop
     reload();
   };
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="sync" />
+    <SettingsLayout active="sync">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{t.title}</h1>
@@ -149,6 +148,6 @@ export function SyncSettingsPage({ viewer, remote = isRemoteView(), ...p }: Prop
           onConfirm={() => void disconnect()}
         />
       </div>
-    </div>
+    </SettingsLayout>
   );
 }
