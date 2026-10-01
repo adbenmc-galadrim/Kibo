@@ -188,6 +188,7 @@ mock.module("../api", () => ({
     },
     subscribe: () => () => {},
     subscribeEvents: () => () => {},
+    subscribeAi: () => () => {},
     subscribeIntegrations: () => () => undefined,
     subscribeCode: (l: (e: CodeEvent) => void) => {
       codeListeners.add(l);

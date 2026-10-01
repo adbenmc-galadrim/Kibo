@@ -13,6 +13,7 @@ import { fr } from "../i18n/fr";
 import { displayName, inboxMeta } from "../lib/inbox";
 import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
+import { CreationsIndicator } from "./CreationsIndicator";
 import { ScreenActions, ShareButton } from "./lazy-screens";
 import { PageActionsSlot } from "./page-actions";
 import { RunHistoryButton } from "./RunHistoryButton";
@@ -83,6 +84,7 @@ export function ShellHeader({
         <Plus />
         {fr.header.newTicket}
       </Button>
+      <CreationsIndicator agents={agents} onOpen={() => onOpen({ kind: "screen", screen: "creations" })} />
       <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
       <UserMenu viewer={viewer} onOpen={onOpen} />
     </header>

@@ -25,6 +25,7 @@ mock.module("./api", () => ({
     onConnection: () => () => {},
     subscribeCode: () => () => {},
     subscribeEvents: () => () => {},
+    subscribeAi: () => () => {},
     subscribeIntegrations: () => () => {},
   },
   onUnauthorized: () => () => {},

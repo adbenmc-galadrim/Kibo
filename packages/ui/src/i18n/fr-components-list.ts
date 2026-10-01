@@ -3,6 +3,7 @@ export const frComponentsList = {
   subtitle:
     "Les widgets et vues disponibles dans tes pages. Les composants intégrés viennent avec Kibo ; les autres sont à toi, créés par l'IA ou installés depuis une marketplace.",
   create: "Créer un composant",
+  creations: (n: number) => `Créations (${n})`,
   search: "Rechercher un composant",
   trustLabel: "Confiance",
   originLabel: "Origine",
@@ -14,5 +15,6 @@ export const frComponentsList = {
   usagesTitle: "Utilisé dans",
   usagesOf: (title: string, version: string) => `${title} ${version}`,
   usagesEmpty: "Ce composant n'est posé sur aucune page.",
+  formats: (labels: readonly string[]) => `Formats : ${labels.join(", ")}`,
   place: (project: string, page: string) => `${project} › ${page}`,
 };
