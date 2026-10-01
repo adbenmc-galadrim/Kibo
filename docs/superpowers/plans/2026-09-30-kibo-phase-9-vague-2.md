@@ -3389,7 +3389,7 @@ Vague 2 ← T18 (`FolderField`, `IconField`), T20 (`ProjectPatch`), T24 (`ShellH
 - Consumes: `MenuEntry`, `MenuAction`, `ContextMenuEntries`, `DropdownMenuEntries` (`@kibo/sdk/ui/menu-entries`), `ContextMenu*` (`@kibo/sdk/ui/context-menu`), `FolderField`, `IconField` (T18), `iconUrl`, `ProjectPatch`, `ProjectSummary.icon`, `ProjectSnapshot.sync`, `isTerminal`, `isRemoteView`, `errorMessage`, `KiboError`, `RadioGroup`/`RadioGroupItem` (`@kibo/sdk/ui/radio-group`), `frShare.action`, `fr.nav.newPage`.
 - Produces: `PROJECT_COLORS` ; `projectMenuEntries` ; `ProjectMenu { name, current, shifted, entries }` ; `DialogsState.editProject`, `DialogsState.deleteProject` ; `EditProjectDialog`, `DeleteProjectDialog` ; `TabsAction closeProject` ; `AppSidebar` props `onEditProject`, `onDeleteProject` ; `frProject`.
 
-- [ ] **Step 1: Couleurs partagées et entrées de menu (test rouge puis vert)**
+- [x] **Step 1: Couleurs partagées et entrées de menu (test rouge puis vert)**
 
 `packages/ui/src/lib/project-colors.ts` : `export const PROJECT_COLORS = ["#14B8A6", "#6366F1", "#EC4899", "#84CC16", "#D946EF", "#64748B"] as const;` ; `NewProjectDialog.tsx` : supprimer `COLORS`, importer `PROJECT_COLORS`, `color: PROJECT_COLORS[count % PROJECT_COLORS.length] ?? "#64748B"`.
 
@@ -3446,7 +3446,7 @@ export function projectMenuEntries(input: { editable: boolean; texts: ProjectMen
 ```
 Run: `bun test packages/ui/src/shell/project-menu.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Menu dans la barre latérale (test rouge puis vert)**
+- [x] **Step 2: Menu dans la barre latérale (test rouge puis vert)**
 
 `agents-shell.test.tsx`, ajouter :
 ```tsx
@@ -3541,7 +3541,7 @@ avec, à l'appel, `onEdit={() => p.onEditProject(project.id)}` et `onDelete={() 
 avec `const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;` et `doomedProject` de même. `lazy-dialogs.ts` : `EditProjectDialog`, `DeleteProjectDialog` (`hidden`). `Shell.tsx` : `projects={projects}` à la place de `projectsCount`, `onCloseProject={(projectId) => { tabs.dispatch({ type: "closeProject", projectId }); go(null); }}`, `AppSidebar` reçoit `onEditProject={(id) => set({ editProject: id })}` et `onDeleteProject={(id) => set({ deleteProject: id })}`. `bundle-report.ts` : `/\/packages\/ui\/src\/(dialogs\/(EditProjectDialog|DeleteProjectDialog)\.tsx|i18n\/fr-project\.ts)$/,`.
 Run (après Steps 3 à 5) : `bun test packages/ui/src/shell/agents-shell.test.tsx` — Expected: PASS.
 
-- [ ] **Step 3: Textes des dialogues**
+- [x] **Step 3: Textes des dialogues**
 
 `packages/ui/src/i18n/fr-project.ts` :
 ```ts
@@ -3583,7 +3583,7 @@ export const frProject = {
 } as const;
 ```
 
-- [ ] **Step 4: Dialogue « Modifier le projet » (test rouge puis vert)**
+- [x] **Step 4: Dialogue « Modifier le projet » (test rouge puis vert)**
 
 `packages/ui/src/dialogs/edit-project-dialog.test.tsx` :
 ```tsx
@@ -3801,7 +3801,7 @@ export function EditProjectDialog({ project, onClose }: Props) {
 (`RadioGroupItem` de shadcn rend un `button role="radio"` ; si le pastillage par `style` est masqué par la classe par défaut, ajouter `[&>span]:hidden` pour cacher l'indicateur. La couleur courante du projet peut ne pas être dans `PROJECT_COLORS` (orange `#F97316` des projets importés) : elle n'est alors cochée nulle part et reste inchangée tant qu'aucune pastille n'est choisie.)
 Run: `bun test packages/ui/src/dialogs/edit-project-dialog.test.tsx` — Expected: PASS, 3 tests.
 
-- [ ] **Step 5: Dialogue « Supprimer le projet » (test rouge puis vert)**
+- [x] **Step 5: Dialogue « Supprimer le projet » (test rouge puis vert)**
 
 `packages/ui/src/dialogs/delete-project-dialog.test.tsx` :
 ```tsx
@@ -4030,7 +4030,7 @@ export function DeleteProjectDialog({ project, snapshot, activeRuns, onClose, on
 ```
 Run: `bun test packages/ui/src/dialogs/delete-project-dialog.test.tsx` — Expected: PASS, 5 tests.
 
-- [ ] **Step 6: Fermeture des onglets du projet (test rouge puis vert)**
+- [x] **Step 6: Fermeture des onglets du projet (test rouge puis vert)**
 
 `tabs.test.ts`, dans le `describe` du réducteur :
 ```ts
@@ -4063,7 +4063,7 @@ Run: `bun test packages/ui/src/tabs/tabs.test.ts` — Expected: FAIL.
 ```
 Run: `bun test packages/ui/src/tabs/tabs.test.ts` — Expected: PASS.
 
-- [ ] **Step 7: Gate et commits**
+- [x] **Step 7: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS ; budget ≤ 230 000 (`project-menu.ts` et le `ContextMenu` de la barre latérale entrent dans l'entrée : ~0,5 kB ; `ContextMenu*` y est déjà par `ProjectPages`). Sinon : `ProjectMenu` et le `ContextMenu` du projet passent ensemble dans `share-entry` (composant `ProjectHeaderMenu` chargé à la demande, `hidden`).
 
