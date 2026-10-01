@@ -1,56 +1,9 @@
-import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { fakeToolUses } from "./fake-claude-ai";
+import { cleanFakeDirs, finish, readHooks, settings, start, tmp } from "./fake-claude.test-helper";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 
-const dirs: string[] = [];
-const tmp = () => {
-  const d = mkdtempSync(join(tmpdir(), "kibo-fake-"));
-  dirs.push(d);
-  return d;
-};
-afterEach(() => {
-  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
-});
-
-const EVENTS = ["SessionStart", "PreToolUse", "PostToolUse", "Stop", "StopFailure", "SessionEnd"];
-function settings(file: string): string {
-  const command = `cat >> '${file}'; echo >> '${file}'`;
-  const hooks = Object.fromEntries(
-    EVENTS.map((e) => [
-      e,
-      [{ ...(e.endsWith("ToolUse") ? { matcher: "*" } : {}), hooks: [{ type: "command", command }] }],
-    ]),
-  );
-  return JSON.stringify({ hooks });
-}
-function start(args: string[], env: Record<string, string>, prompt = "Lis le brief.") {
-  return Bun.spawn([FAKE_CLAUDE, "-p", "--output-format", "stream-json", "--verbose", ...args], {
-    env: { ...process.env, ...env },
-    stdin: new TextEncoder().encode(prompt),
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-}
-async function finish(proc: ReturnType<typeof start>) {
-  const [out, err, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  const lines = out
-    .split("\n")
-    .filter((l) => l.length > 0)
-    .map((l) => JSON.parse(l) as Record<string, unknown>);
-  return { lines, err, code };
-}
-const readHooks = (file: string) =>
-  readFileSync(file, "utf8")
-    .trim()
-    .split("\n")
-    .map((l) => JSON.parse(l) as Record<string, unknown>);
+cleanFakeDirs();
 
 test("plays a turn: hooks with Claude Code inputs, transcript and a stream-json result", async () => {
   const state = tmp();
@@ -246,65 +199,4 @@ test("a routing file picks the scenario from the prompt and keeps it on resume",
   const held = start(["--session-id", "s2"], env, "# KIB-12 · Schéma Loro");
   releaseFakeRun(state, "s2");
   expect((await finish(held)).lines.at(-1)).toMatchObject({ result: "Tests verts." });
-});
-
-test("a hook path under $KIBO_DRAFT_ATTACHMENTS is resolved from the run's environment and logged", async () => {
-  const state = tmp();
-  const hooks = join(state, "hooks.jsonl");
-  const scenario = join(state, "attachments.json");
-  const read = (file_path: string) => ({ hook: "PreToolUse", tool: "Read", input: { file_path } });
-  writeFileSync(
-    scenario,
-    JSON.stringify({
-      turns: [
-        {
-          steps: [
-            read("$KIBO_DRAFT_ATTACHMENTS/1-a.png"),
-            read("CLAUDE.md"),
-            read("x/$KIBO_DRAFT_ATTACHMENTS"),
-          ],
-        },
-      ],
-    }),
-  );
-  const env = {
-    KIBO_FAKE_CLAUDE_SCENARIO: scenario,
-    KIBO_FAKE_CLAUDE_STATE: state,
-    KIBO_DRAFT_ATTACHMENTS: "/h/d.attachments",
-  };
-  const run = await finish(start(["--session-id", "s9", "--settings", settings(hooks)], env));
-  expect(run.code).toBe(0);
-  const pre = readHooks(hooks).filter((h) => h.hook_event_name === "PreToolUse");
-  expect(pre.map((h) => h.tool_input)).toEqual([
-    { file_path: "/h/d.attachments/1-a.png" },
-    { file_path: "CLAUDE.md" },
-    { file_path: "x/$KIBO_DRAFT_ATTACHMENTS" },
-  ]);
-  expect(fakeToolUses(state, "s9")).toEqual([
-    { tool: "Read", input: { file_path: "/h/d.attachments/1-a.png" }, denied: false },
-    { tool: "Read", input: { file_path: "CLAUDE.md" }, denied: false },
-    { tool: "Read", input: { file_path: "x/$KIBO_DRAFT_ATTACHMENTS" }, denied: false },
-  ]);
-});
-
-test("without KIBO_DRAFT_ATTACHMENTS, a step that needs it fails the run", async () => {
-  const state = tmp();
-  const scenario = join(state, "attachments.json");
-  writeFileSync(
-    scenario,
-    JSON.stringify({
-      turns: [
-        {
-          steps: [
-            { hook: "PreToolUse", tool: "Read", input: { file_path: "$KIBO_DRAFT_ATTACHMENTS/1-a.png" } },
-          ],
-        },
-      ],
-    }),
-  );
-  const run = await finish(
-    start(["--session-id", "s10"], { KIBO_FAKE_CLAUDE_SCENARIO: scenario, KIBO_FAKE_CLAUDE_STATE: state }),
-  );
-  expect(run.code).not.toBe(0);
-  expect(run.err).toContain("KIBO_DRAFT_ATTACHMENTS");
 });
