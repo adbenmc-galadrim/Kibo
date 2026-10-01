@@ -96,7 +96,7 @@ export function CreateComponentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent hidden={scope.hidden} className="sm:max-w-3xl [&>[data-slot=dialog-close]]:z-20">
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 bg-background px-6 pt-6 pb-2">
+        <DialogHeader className="sticky -top-6 z-10 -mx-6 -mt-6 bg-background px-6 pt-6 pb-2">
           <DialogTitle>{t.title}</DialogTitle>
           <DialogDescription className={current ? "sr-only" : undefined}>{t.subtitle}</DialogDescription>
         </DialogHeader>

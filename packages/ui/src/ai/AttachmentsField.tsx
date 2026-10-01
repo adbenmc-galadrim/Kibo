@@ -159,7 +159,7 @@ export function AttachmentsField({ value, onChange, disabled = false, pasteFrom 
           {t.help}
         </p>
         {value.length > 0 && (
-          <ul aria-label={t.list} className="grid gap-1.5 sm:grid-cols-2">
+          <ul aria-label={t.list} className="grid gap-1.5">
             {value.map((item, i) => (
               <Thumbnail key={item.name} item={item} onRemove={() => remove(i)} />
             ))}
