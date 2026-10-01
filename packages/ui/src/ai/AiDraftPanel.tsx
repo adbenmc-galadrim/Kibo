@@ -45,6 +45,11 @@ export function AiDraftPanel({ draftId, target, onDone, onStatus }: Props) {
   const [reviewed, setReviewed] = useState(false);
   const [strategy, setStrategy] = useState<Strategy>("update-all");
   const [refused, setRefused] = useState(false);
+  useEffect(() => {
+    if (status !== "generating") return;
+    setRefused(false);
+    setReviewed(false);
+  }, [status]);
   const finished = useRef(false);
   const reviewedButton = useRef<HTMLButtonElement>(null);
   const approval =
