@@ -34,15 +34,27 @@ type Props = {
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
   onOpen(target: TabTarget): void;
+  onShare(projectId: string): void;
+  onDeleteProject(projectId: string): void;
 };
 
-export function ScreenView({ screen, projects, agents, config, now, onAnswer, onOpen, ...p }: Props) {
+export function ScreenView(props: Props) {
+  const { screen, projects, agents, config, now, onAnswer, onOpen, onShare, onDeleteProject, ...p } = props;
   if (screen === "components") return <ComponentsPage onOpen={onOpen} />;
   if (screen === "general") return <GeneralPage />;
   if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "appearance") return <AppearancePage />;
   if (screen === "security") return <SecurityPage />;
-  if (screen === "sync") return <SyncSettingsPage viewer={p.viewer} projects={projects} />;
+  if (screen === "sync")
+    return (
+      <SyncSettingsPage
+        viewer={p.viewer}
+        projects={projects}
+        onOpen={(projectId) => onOpen({ kind: "project", projectId })}
+        onShare={onShare}
+        onDeleteProject={onDeleteProject}
+      />
+    );
   if (screen === "sources") return <ComponentSourcesPage />;
   if (screen === "shortcuts") return <ShortcutsPage />;
   if (screen === "mine") return <MyTicketsPage projects={projects} config={config} {...p} />;

@@ -27,11 +27,12 @@ async function pair(page: Page) {
 async function connect(page: Page, code: string, device: string) {
   const { caFile, serverUrl } = readSyncState();
   await page.goto("/#/settings/sync");
-  await page.getByRole("button", { name: "Se connecter à un serveur" }).click();
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Adresse du serveur").fill(serverUrl);
-  await dialog.getByLabel("Code d'invitation").fill(code);
+  await dialog.getByLabel("Code", { exact: true }).fill(code);
   await dialog.getByLabel("Nom de cet appareil").fill(device);
+  await dialog.getByRole("button", { name: "Options avancées" }).click();
   await dialog.getByLabel("Certificat racine (optionnel)").fill(caFile);
   await dialog.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.getByText("Connecté")).toBeVisible();

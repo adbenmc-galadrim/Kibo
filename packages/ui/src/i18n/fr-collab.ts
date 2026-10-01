@@ -4,21 +4,23 @@ type ErrorTexts = Partial<Record<KiboErrorCode, string>> & { fallback: string };
 
 export const frCollab = {
   sync: {
-    section: "Sync",
-    title: "Sync",
+    section: "Synchronisation",
+    title: "Synchronisation",
     subtitle:
       "Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ».",
-    empty: "Aucun serveur de sync configuré.",
-    connect: "Se connecter à un serveur",
     dialogTitle: "Se connecter à un serveur",
     dialogHelp: "Saisis l'adresse de ton serveur de sync et le code d'invitation reçu.",
     serverUrl: "Adresse du serveur",
-    code: "Code d'invitation",
-    codeHelp: "Donné par l'administrateur du serveur, valable 48 h.",
+    urlHelp: "Donnée par ton équipe, elle commence par wss://",
+    code: "Code",
+    codeHelpServer: "Code d'invitation (48 h) ou code d'appareil (15 min).",
+    codeHelpDevice:
+      "Sur l'appareil déjà connecté : Paramètres › Synchronisation › Appareils › Ajouter un appareil. Le code vaut 15 minutes.",
     deviceName: "Nom de cet appareil",
     defaultDevice: (user: string) => `Ordinateur de ${user}`,
     caFile: "Certificat racine (optionnel)",
     caFileHelp: "Seulement pour un serveur auto-hébergé avec sa propre autorité.",
+    advanced: "Options avancées",
     submit: "Se connecter",
     submitting: "Connexion…",
     localOnly: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",

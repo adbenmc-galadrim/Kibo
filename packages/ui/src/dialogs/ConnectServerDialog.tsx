@@ -1,4 +1,5 @@
 import { Button } from "@kibo/sdk/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -9,12 +10,19 @@ import {
 } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
+import { ChevronRight } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { syncFailure } from "../lib/sync-errors";
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void; viewer: string; onConnected(): void };
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  viewer: string;
+  mode: "server" | "device";
+  onConnected(): void;
+};
 
 const t = fr.sync;
 
@@ -42,7 +50,7 @@ function Field({
   );
 }
 
-export function ConnectServerDialog({ open, onOpenChange, viewer, onConnected }: Props) {
+export function ConnectServerDialog({ open, onOpenChange, viewer, mode, onConnected }: Props) {
   const id = useId();
   const ids = { url: `${id}-url`, code: `${id}-code`, device: `${id}-device`, ca: `${id}-ca` };
   const [serverUrl, setServerUrl] = useState("");
@@ -82,7 +90,7 @@ export function ConnectServerDialog({ open, onOpenChange, viewer, onConnected }:
             <DialogTitle>{t.dialogTitle}</DialogTitle>
             <DialogDescription>{t.dialogHelp}</DialogDescription>
           </DialogHeader>
-          <Field id={ids.url} label={t.serverUrl}>
+          <Field id={ids.url} label={t.serverUrl} help={t.urlHelp}>
             <Input
               id={ids.url}
               value={serverUrl}
@@ -90,10 +98,11 @@ export function ConnectServerDialog({ open, onOpenChange, viewer, onConnected }:
               placeholder="wss://sync.kibo.test"
               className="font-mono"
               autoComplete="off"
+              aria-describedby={`${ids.url}-help`}
               required
             />
           </Field>
-          <Field id={ids.code} label={t.code} help={t.codeHelp}>
+          <Field id={ids.code} label={t.code} help={mode === "device" ? t.codeHelpDevice : t.codeHelpServer}>
             <Input
               id={ids.code}
               value={code}
@@ -113,16 +122,27 @@ export function ConnectServerDialog({ open, onOpenChange, viewer, onConnected }:
               required
             />
           </Field>
-          <Field id={ids.ca} label={t.caFile} help={t.caFileHelp}>
-            <Input
-              id={ids.ca}
-              value={caFile}
-              onChange={(e) => setCaFile(e.target.value)}
-              placeholder="/etc/ssl/equipe-ca.pem"
-              className="font-mono"
-              aria-describedby={`${ids.ca}-help`}
-            />
-          </Field>
+          <Collapsible className="grid gap-3">
+            <CollapsibleTrigger className="group flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <ChevronRight
+                aria-hidden
+                className="size-3.5 transition-transform group-data-[state=open]:rotate-90"
+              />
+              {t.advanced}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <Field id={ids.ca} label={t.caFile} help={t.caFileHelp}>
+                <Input
+                  id={ids.ca}
+                  value={caFile}
+                  onChange={(e) => setCaFile(e.target.value)}
+                  placeholder="/etc/ssl/equipe-ca.pem"
+                  className="font-mono"
+                  aria-describedby={`${ids.ca}-help`}
+                />
+              </Field>
+            </CollapsibleContent>
+          </Collapsible>
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

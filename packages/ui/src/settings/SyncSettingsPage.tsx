@@ -9,9 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@kibo/sdk/ui/alert-dialog";
-import { Button } from "@kibo/sdk/ui/button";
-import { Card, CardContent } from "@kibo/sdk/ui/card";
-import { CloudOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { client } from "../api";
 import { ConnectServerDialog } from "../dialogs/ConnectServerDialog";
@@ -21,24 +18,11 @@ import { syncFailure } from "../lib/sync-errors";
 import { useSyncServerStatus } from "../state/use-sync-server";
 import { SettingsNav } from "./SettingsNav";
 import { SyncDevicesCard } from "./SyncDevicesCard";
+import { SyncEmptyState } from "./SyncEmptyState";
 import { SyncProjectsCard } from "./SyncProjectsCard";
 import { AccountCard, ServerCard } from "./SyncServerCards";
 
 const t = fr.sync;
-
-function EmptyState({ remote, onConnect }: { remote: boolean; onConnect(): void }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <CloudOff className="size-6 text-muted-foreground" aria-hidden />
-        <p className="text-sm">{t.empty}</p>
-        <Button disabled={remote} onClick={onConnect}>
-          {t.connect}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 function DisconnectDialog({
   open,
@@ -85,13 +69,21 @@ function Connected({ status, remote, colors, onDisconnect }: ConnectedProps) {
   );
 }
 
-type Props = { viewer: string; projects?: readonly ProjectSummary[]; remote?: boolean };
+type Props = {
+  viewer: string;
+  projects: readonly ProjectSummary[];
+  remote?: boolean;
+  onOpen(projectId: string): void;
+  onShare(projectId: string): void;
+  onDeleteProject(projectId: string): void;
+};
 
-export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView() }: Props) {
+export function SyncSettingsPage({ viewer, projects, remote = isRemoteView() }: Props) {
   const { status, error, reload } = useSyncServerStatus();
-  const [connecting, setConnecting] = useState(false);
+  const [connecting, setConnecting] = useState<"server" | "device" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const configured = status !== null && status.state !== "unconfigured";
   const colors = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects]);
   const disconnect = async () => {
     setConfirming(false);
@@ -109,7 +101,7 @@ export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView(
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{t.title}</h1>
-          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+          {configured && <p className="text-sm text-muted-foreground">{t.subtitle}</p>}
         </div>
         {error && (
           <p role="alert" className="text-sm text-destructive">
@@ -121,11 +113,15 @@ export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView(
             {actionError}
           </p>
         )}
-        {remote && status && <p className="text-sm text-muted-foreground">{t.localOnly}</p>}
+        {remote && configured && <p className="text-sm text-muted-foreground">{t.localOnly}</p>}
         {status?.state === "unconfigured" && (
-          <EmptyState remote={remote} onConnect={() => setConnecting(true)} />
+          <SyncEmptyState
+            remote={remote}
+            onConnect={() => setConnecting("server")}
+            onJoinDevice={() => setConnecting("device")}
+          />
         )}
-        {status && status.state !== "unconfigured" && (
+        {status && configured && (
           <Connected
             status={status}
             remote={remote}
@@ -134,7 +130,13 @@ export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView(
           />
         )}
         {connecting && (
-          <ConnectServerDialog open onOpenChange={setConnecting} viewer={viewer} onConnected={reload} />
+          <ConnectServerDialog
+            open
+            onOpenChange={(o) => !o && setConnecting(null)}
+            viewer={viewer}
+            mode={connecting}
+            onConnected={reload}
+          />
         )}
         <DisconnectDialog
           open={confirming}
