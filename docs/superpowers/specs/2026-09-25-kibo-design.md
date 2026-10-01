@@ -489,3 +489,4 @@ Résumé ; décisions détaillées dans la spec IA §13. Plusieurs brouillons en
 - E2E : `layout.spec.ts` sur les ports 4423–4424, `creations.spec.ts` sur 4425–4426 (plage §11 inchangée : 4390–4430).
 - Écrans 127 à 135, décrits textuellement dans le plan ; Penpot reste un écart assumé listé au jalon.
 - Aucun nouveau code d'erreur : `INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `TOO_LARGE`, `UPDATE_REJECTED` suffisent.
+- CSP : inchangée pour le document de l'interface ; les scripts de worker de l'interface (`/workers/*.js`, aujourd'hui le seul worker de l'aperçu d'un brouillon) sont servis avec `default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'` (spec composants §17, point 6). **À confirmer par Adam (A22).**

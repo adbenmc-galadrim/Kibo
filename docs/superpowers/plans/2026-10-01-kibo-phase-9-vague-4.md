@@ -27,6 +27,7 @@ Ces points sont écrits dans la spec avec leur défaut ; le plan les applique te
 | A19 | L'aperçu d'un brouillon montre des **données simulées** (jeu `seedDemo` du SDK), jamais le projet réel | Simulées (composants §17.5) | T54 |
 | A20 | Formats d'un composant généré : **cases à cocher** préremplies selon le type, ou tous les formats d'office | Cases préremplies (IA §13.5) | T52 |
 | A21 | Écran Créations sans entrée dans la **barre latérale** (en-tête, page Composants, palette suffisent) | Pas d'entrée (IA §13.2) | T53 |
+| A22 | L'aperçu d'un brouillon a besoin de **WebAssembly** pour ses données de démonstration : politique à part pour le seul worker de l'aperçu, ou WebAssembly autorisé pour toute l'interface | Politique à part pour le worker ; la CSP du document ne change pas (composants §17, point 6) | T54 |
 
 ## Vérifié sur le code (`phase/9` = `001e4c5`, vagues 1 à 3 intégrées)
 
@@ -1252,6 +1253,8 @@ git commit -m "fix(ui): journal vide d'un run en cours, parallèle système"
 
 ### Task 54: UI : aperçu du brouillon dans le bac à sable et révision
 
+> **Amendement (relecture lead de T54).** Le SDK simulé tourne dans un Web Worker dédié (`draft-preview-worker`), émis sous `workers/` et servi avec sa propre CSP (composants §17, point 6 ; A22) ; la CSP du document ne change pas. Fichiers ajoutés à la tâche : `packages/daemon/src/ui-route.ts`, `server.ts`, `server-ui.test.ts`, `packages/ui/vite.config.ts`, `packages/ui/scripts/bundle-budget.ts`, `bundle-report.ts` et son test. Garde de navigation : un second `load` du cadre arrête l'aperçu sans relance ; seule l'absence de `ready` est relancée, une fois par session. Une révision envoyée remet à zéro la relecture (`refused`, `reviewed`). Libellés retenus (écrans 133 et 134, IA §13.6) : « Demander une modification », « Ce qu'il faut changer », « Envoyer à l'agent ».
+
 > **Amendement (relecture lead de T51).** `previewComponentDraft` répond `{ hash, path }` ; `path` n'est servi que par le démon qui a répondu, tant que le brouillon reste en `review` ou `permissions` avec cette empreinte. `DraftPreviewFrame` appelle la RPC à chaque montage et à chaque `draft.changed` du brouillon, ne mémorise jamais un `path` d'un montage à l'autre, et traite un échec de chargement de l'iframe (`createLoadGuard`) par un nouvel appel, une seule fois, avant `frCreations.preview.unavailable`. Un changement de format ne rappelle pas la RPC (même bundle, `format` passe par `init`). Refus affichés en `role="alert"` : `INVALID_INPUT` (hors `review`/`permissions`), `CONFLICT` (brouillon modifié pendant la construction : un nouvel essai suffit), `VALIDATION_FAILED`, `NOT_FOUND`, `STORE_CORRUPT`. La RPC est permise pendant une relecture ou une publication en cours. Suivi de T52 à prendre ici : `AiDraftPanel` gagne `onStatus` pour supprimer le double `getComponentDraft` de `ContinueInBackground`.
 
 Vague 2 ← T47, T51, T52. Spec IA **§13.6, §13.8**, composants §17.5 ; écrans **133, 134**. Décision 8. Mineure casée : squelette d'attente sans `role="status"` (`DraftReviewStep`). Relue par `kibo-lead` (pont iframe, SDK simulé côté hôte, budget).
@@ -1304,6 +1307,8 @@ git commit -m "feat(ui): révision d'un brouillon après aperçu"
 ---
 
 ### Task 55: E2E : créations en arrière-plan, aperçu, révision, publication
+
+> **Amendement (relecture lead de T54).** Libellés réels : « Demander une modification », « Ce qu'il faut changer », « Envoyer à l'agent » ; onglets « Diff » (actif par défaut, y compris au retour d'une révision) et « Aperçu » ; `radiogroup` « Format de l'aperçu » ; iframe `title="Aperçu de <titre du manifeste>"` ; ligne « Révision 1 sur 10 » pendant la génération ; une création terminée affiche « Publié » sans numéro de version (écart de T53). À vérifier sur l'aperçu réel, sans aucune interception de réponse : `tickets restants` visible dans le cadre ; aucune alerte « Aperçu indisponible. » ; aucun message de console ni `pageerror` contenant « Refused to » ou « Content Security Policy » ; `page.waitForEvent("worker")` dont l'URL correspond à `/workers/draft-preview-worker-[\w-]+\.js`, un `GET` de cette URL porte exactement la politique du worker et un `GET /` une CSP sans `wasm-unsafe-eval` ; « Demi-page » : iframe de 1196 px de large sans second `previewComponentDraft` ; après la révision, retour sur « Aperçu » : texte `(révisé)`.
 
 Vague 3 ← T53, T54. Spec IA §13 entière ; écrans 130 à 135. Ports **4425–4426** (`§11` : plage 4390–4430).
 
@@ -1366,7 +1371,7 @@ git commit -m "test(e2e): créations, aperçu, révision, publication"
 - Composants §17.1 (`formats?`, `formatsOf`, `formatIssue`) : T46 ; devkit valide `formatIssue` : T47 pas 4. §17.2 (SDK `format`, init, mock, `mountDev`, `surfaceFor`) : T47. §17.3 (formats des intégrés) : T47 pas 5. §17.4 (conformité par format, largeurs fixes) : T47 pas 3, T51 pas 2. §17.5 (aperçu d'un brouillon) : T51 pas 3, T54.
 - IA §13.1 (arrière-plan, parallélisme) : T50 (profil générateur 2), T52 pas 4, T53 pas 4. §13.2 (Créations) : T53. §13.3 (indicateur) : T53 pas 3. §13.4 (pièces jointes) : T50 (démon), T52 (UI), T51 pas 4 (faux `claude`). §13.5 (formats cochés) : T52 pas 2. §13.6 (aperçu, révision) : T50 (RPC), T51, T54. §13.7 (contexte) : T51 pas 1. §13.8 (validation par format) : T47 pas 3, T51 pas 2. §13.9 (RPC) : T50. §13.10 (dialogues bornés, arrière-plan) : T52. §13.11 (faux `claude`) : T51 pas 4.
 - Sync D48 : T46 pas 4 et 5 (`validate-instances.ts`, `room.ts`). Agents §12 : T50 (`SYSTEM_MAX_PARALLEL`, défauts), T53 pas 4 (fiche).
-- Points pour Adam A11 à A21 : chacun a un défaut retenu et une tâche isolée (A11 liste des formats ⇒ T46 seul ; A12 pas de taille libre ⇒ T48 ; A14 chevauchements non refusés ⇒ T46 pas 4 ; A17 images jointes ⇒ T50 ; A16 parallélisme 2 ⇒ T50 ; A18 dix révisions ⇒ T50/T54 ; A17 aperçu via le listener sandbox ⇒ T51 ; A18 `InstanceMenuContent` paresseux ⇒ T45 ; A19 vignettes en `data:` ⇒ T52 ; A20 largeur fixe ≥ 240 px ⇒ T51 ; A21 écran Créations sous Composants ⇒ T53).
+- Points pour Adam A11 à A22 : chacun a un défaut retenu et une tâche isolée (A11 liste des formats ⇒ T46 seul ; A12 pas de taille libre ⇒ T48 ; A14 chevauchements non refusés ⇒ T46 pas 4 ; A17 images jointes ⇒ T50 ; A16 parallélisme 2 ⇒ T50 ; A18 dix révisions ⇒ T50/T54 ; A17 aperçu via le listener sandbox ⇒ T51 ; A18 `InstanceMenuContent` paresseux ⇒ T45 ; A19 vignettes en `data:` ⇒ T52 ; A20 largeur fixe ≥ 240 px ⇒ T51 ; A21 écran Créations sous Composants ⇒ T53).
 
 **Review Focus.** 1 (disposition hors grille envoyée par un pair) ⇒ T47 pas 2 ; 2 (deux éditeurs simultanés) ⇒ T47 pas 1 (dernier écrit), T49 test 2 ; 3 (cinquième image, GIF, 300 kB) ⇒ T50 pas 1, T52 pas 1 et 2 ; 4 (révision pendant une génération) ⇒ T50 pas 3 (`canRevise` démon), T54 pas 1 ; 5 (aperçu d'un brouillon abandonné ou publié) ⇒ T51 pas 3 (`lookup` suit l'état) ; 6 (page étroite pendant l'édition) ⇒ T48 pas 4 ; 7 (chemin de pièce jointe hors `readRoots`) ⇒ T50 pas 2 (garde-fou).
 
