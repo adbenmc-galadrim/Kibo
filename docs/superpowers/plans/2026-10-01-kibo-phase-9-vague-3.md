@@ -1272,7 +1272,7 @@ Vague 1 ← T29. Spec §15.2 ; écran **116**. UI seule : `listComponents` fourn
 - Consumes: `ComponentRow` (`rows.ts`), `componentRows`, `Sheet`, `ToggleGroup`, `Select`, `Input`, `Table`, `TabTarget`.
 - Produces: contrat « UI » (T34) : `filterComponents`, `toggleSort`, `DEFAULT_QUERY`, `UsagesSheet`, `ComponentsPage { onOpen, onCreate }`.
 
-- [ ] **Step 1: Filtre et tri purs (tests rouges puis verts)**
+- [x] **Step 1: Filtre et tri purs (tests rouges puis verts)**
 
 `filter-components.test.ts` :
 ```ts
@@ -1301,7 +1301,7 @@ test("sorting by usage puts the most used first when descending, and toggleSort 
 Implémenter (`normalize = (s) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()` ; tri par `localeCompare("fr")` pour `title`, `trust`, `origin`, `compareSemver` de `@kibo/schema` pour `version`, `pages` pour `usage` ; `DEFAULT_QUERY = { text: "", trust: "all", origin: "all", sort: "title", descending: false }` ; `toggleSort` : même clé ⇒ inverse, autre clé ⇒ `descending: key === "usage"`).
 Run: `bun test packages/ui/src/components-page/filter-components.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Page : en-tête, barre, en-têtes triables, « Créer un composant » (tests rouges puis verts, écran 116)**
+- [x] **Step 2: Page : en-tête, barre, en-têtes triables, « Créer un composant » (tests rouges puis verts, écran 116)**
 
 `components-page.test.tsx`, nouveaux tests (mock existant) :
 ```tsx
@@ -1326,7 +1326,7 @@ test("no match offers to clear the filters; Créer un composant opens the creati
 `ComponentsFilters.tsx` : `Input type="search"` (aria-label), deux `ToggleGroup` (`type="single"`, libellés de `fr-components-list.ts`), bouton « Effacer les filtres » quand `query !== DEFAULT_QUERY`. `ComponentsTable.tsx` : props `query`, `onSort(key)` ; en-têtes = `<button aria-label={t.sortBy(label)}>` avec `aria-sort` sur le `th` ; colonne « Utilisé dans » = bouton `t.usage(pages, projects)` ⇒ `onUsages(row)` (désactivé si `pages === 0`). `ComponentsPage.tsx` : `h1` + sous-titre + bouton « Créer un composant » (`CreateComponentDialog target={null}` monté par la page, `onAdded` ⇒ `reload`), état `query`, `rows = filterComponents(componentRows(…), query)`, état `usages: ComponentRow | null` ⇒ `UsagesSheet`.
 Run: `bun test packages/ui/src/components-page` — Expected: PASS.
 
-- [ ] **Step 3: Volet « Utilisé dans » (test rouge puis vert)**
+- [x] **Step 3: Volet « Utilisé dans » (test rouge puis vert)**
 
 ```tsx
 test("the usages sheet lists project › page and opens the page", async () => {
@@ -1342,7 +1342,7 @@ test("the usages sheet lists project › page and opens the page", async () => {
 `UsagesSheet.tsx` : `Sheet` côté droit, titre `t.usagesTitle`, sous-titre « Kanban 1.0.0 », liste dédoublonnée par `projectId/pageId` (une instance par ligne sinon), tri projet puis page ; `PublishSections.tsx:45` : le texte devient un bouton qui ouvre le même volet (prop `onUsages`). `ScreenView.tsx` : `<ComponentsPage onOpen={(t) => onOpen(t)} onCreate=… />` (prop `onOpen` ajoutée à `ScreenView`, passée par `Shell` : `go`).
 Run: `bun test packages/ui && bun run budget` — Expected: PASS ; budget noté (inchangé : tout est dans le chunk de la page).
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 ```bash
 git add packages/ui/src/components-page/filter-components.ts packages/ui/src/components-page/filter-components.test.ts packages/ui/src/i18n/fr-components-list.ts
@@ -1487,6 +1487,8 @@ git commit -m "feat(ui): appareils confirmés, projets partagés actifs"
 ### Task 37: Agents : confirmations, historique cliquable et filtré, journal indisponible, vocabulaire
 
 Vague 2 ← T39 (`Shell.tsx` allégé). Spec §15.2, agents §11 ; écran **121**. UI seule.
+
+Complément (décision lead T39, spec §15.3) : `AgentBar.tsx` / `SyncIndicator.tsx` : « connecté » ne se combine jamais avec un état de sync (`base = fr.app.name` quand `kind` n'est ni `local` ni `down`) ; `fr.sync.indicator.offline` renommé « sync hors ligne » ; adapter `sync-settings.test.tsx` et `e2e/sync.spec.ts`.
 
 **Files:**
 - Create: `packages/ui/src/agents/run-filter.ts`, `run-filter.test.ts`, `RunHistory.tsx`, `permission-mode.ts`, `permission-mode.test.ts`
