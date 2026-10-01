@@ -128,7 +128,7 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => null,
   useConfig: () => null,
   useNow: () => 0,
-  useRunLog: () => null,
+  useRunLog: () => ({ log: null, missing: false }),
   useDaemonOnline: () => false,
 }));
 mock.module("../api", () => ({

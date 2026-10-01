@@ -35,7 +35,7 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
     onFocused();
   }, [focusRunId, onFocused]);
   const selected = state ? pickRun(state, picked) : null;
-  const log = useRunLog(expanded ? (selected?.id ?? null) : null);
+  const { log, missing } = useRunLog(expanded ? (selected?.id ?? null) : null);
   if (!state) return null;
   const open = (runId: string) => {
     setPicked(runId);
@@ -49,6 +49,7 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
           now={now}
           selected={selected}
           log={log}
+          missing={missing}
           onSelect={setPicked}
           onCollapse={() => setExpanded(false)}
           onLaunch={onLaunch}

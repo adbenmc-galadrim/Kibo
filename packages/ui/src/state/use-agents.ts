@@ -38,14 +38,27 @@ export function useConfig(): WorkspaceConfig | null {
   return config;
 }
 
-export function useRunLog(runId: string | null): RunLogEntry[] | null {
-  const [log, setLog] = useState<RunLogEntry[] | null>(null);
+export type RunLog = { log: RunLogEntry[] | null; missing: boolean };
+
+const NO_LOG: RunLog = { log: null, missing: false };
+
+function missingUnlessOther(e: unknown): RunLog {
+  if (e instanceof KiboError && e.code === "NOT_FOUND") return { log: null, missing: true };
+  unlessUnauthorized(e);
+  return NO_LOG;
+}
+
+export function useRunLog(runId: string | null): RunLog {
+  const [state, setState] = useState<RunLog>(NO_LOG);
   useEffect(() => {
-    setLog(null);
+    setState(NO_LOG);
     if (!runId) return;
     let alive = true;
     const load = () =>
-      client.rpc({ method: "getRunLog", runId }).then((l) => alive && setLog(l), unlessUnauthorized);
+      client
+        .rpc({ method: "getRunLog", runId })
+        .then((log) => ({ log, missing: log.length === 0 }), missingUnlessOther)
+        .then((next) => alive && setState(next));
     void load();
     const off = client.subscribeTopic("agents", () => void load());
     return () => {
@@ -53,7 +66,7 @@ export function useRunLog(runId: string | null): RunLogEntry[] | null {
       off();
     };
   }, [runId]);
-  return log;
+  return state;
 }
 
 export function useNow(intervalMs = 15_000): number {

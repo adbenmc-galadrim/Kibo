@@ -10,10 +10,12 @@ import {
 } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Bell, Bot } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frAgentsPage } from "../i18n/fr-agents-page";
 import { elapsed, formatDuration } from "./format";
 import { QueueCapacity } from "./QueueCapacity";
 import { QueueItem } from "./QueueItem";
@@ -63,6 +65,7 @@ function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: 
 
 export function QueuePage({ state, profiles, now, onAnswer }: Props) {
   const [failed, setFailed] = useState(false);
+  const [cancelling, setCancelling] = useState<RunView | null>(null);
   const act = async (req: RpcRequest) => {
     setFailed(false);
     try {
@@ -143,7 +146,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                         onPriority={(priority) =>
                           void act({ method: "setRunPriority", runId: run.id, priority })
                         }
-                        onCancel={() => void act({ method: "cancelRun", runId: run.id })}
+                        onCancel={() => setCancelling(run)}
                       />
                     ))}
                   </ul>
@@ -199,6 +202,18 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
           </section>
         </div>
       </DndContext>
+      <ConfirmDialog
+        open={cancelling !== null}
+        onOpenChange={(open) => !open && setCancelling(null)}
+        title={frAgentsPage.cancelTitle(cancelling?.ticketKey ?? cancelling?.ticketTitle ?? "")}
+        description={frAgentsPage.cancelHelp}
+        confirmLabel={frAgentsPage.cancelConfirm}
+        cancelLabel={fr.common.cancel}
+        onConfirm={async () => {
+          if (cancelling) await client.rpc({ method: "cancelRun", runId: cancelling.id });
+        }}
+        describeError={() => fr.queue.failed}
+      />
     </div>
   );
 }

@@ -210,7 +210,7 @@ test("invalid names and guideline paths are refused before any call", async () =
   expect(calls).toEqual([]);
 });
 
-test("editing saves the whole profile; deleting a busy profile is refused", async () => {
+test("editing saves the whole profile; deleting is confirmed and a busy profile is refused", async () => {
   show();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
@@ -226,8 +226,13 @@ test("editing saves the whole profile; deleting a busy profile is refused", asyn
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
   respond = () => Promise.reject(new KiboError("PROFILE_IN_USE", "opus has active runs"));
   await user.click(sheet().getByRole("button", { name: "Supprimer le profil" }));
+  const confirm = within(await screen.findByRole("alertdialog"));
+  expect(confirm.getByText("Supprimer le profil opus-dev ?")).toBeTruthy();
+  expect(confirm.getByText("Ses runs passés restent dans l'historique.")).toBeTruthy();
+  expect(calls).toEqual([]);
+  await user.click(confirm.getByRole("button", { name: "Supprimer" }));
   expect(calls).toEqual([{ method: "config", command: { method: "deleteProfile", profileId: "opus" } }]);
-  expect((await sheet().findByRole("alert")).textContent).toBe("Ce profil a des runs en cours ou en file.");
+  expect((await confirm.findByRole("alert")).textContent).toBe("Ce profil a des runs en cours ou en file.");
 });
 
 test("in edit mode a guideline is added to the profile at once", async () => {

@@ -38,7 +38,7 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => ({ runs: [{ id: "run-7", label: "generateur", profileName: "opus", state: runState }] }),
   useConfig: () => null,
   useNow: () => 0,
-  useRunLog: () => [],
+  useRunLog: () => ({ log: [], missing: false }),
   useDaemonOnline: () => true,
 }));
 mock.module("../state/use-projects", () => ({

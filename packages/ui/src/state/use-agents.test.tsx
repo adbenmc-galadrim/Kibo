@@ -1,11 +1,12 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { RpcRequest, Topic } from "@kibo/schema";
+import { KiboError, type RpcRequest, type Topic } from "@kibo/schema";
 import { act, render } from "@testing-library/react";
 import { agentsFixture, configFixture } from "../agents/fixtures";
 
 const calls: string[] = [];
 const topics = new Map<Topic, Set<() => void>>();
 const status = { online: false, listeners: new Set<() => void>() };
+let runLog: () => Promise<unknown> = () => Promise.resolve([]);
 
 mock.module("../api", () => ({
   client: {
@@ -13,7 +14,7 @@ mock.module("../api", () => ({
       calls.push(req.method);
       if (req.method === "getAgents") return Promise.resolve(agentsFixture());
       if (req.method === "getConfig") return Promise.resolve(configFixture());
-      return Promise.resolve([]);
+      return runLog();
     },
     subscribeTopic: (topic: Topic, listener: () => void) => {
       const set = topics.get(topic) ?? new Set<() => void>();
@@ -37,6 +38,7 @@ const { useAgents, useConfig, useDaemonOnline, useRunLog }: typeof import("./use
 beforeEach(() => {
   calls.length = 0;
   topics.clear();
+  runLog = () => Promise.resolve([]);
 });
 
 const flush = () =>
@@ -47,14 +49,15 @@ const flush = () =>
 function Probe({ runId }: { runId: string | null }) {
   const agents = useAgents();
   const config = useConfig();
-  const log = useRunLog(runId);
-  return <p>{`${agents?.runs.length ?? "-"} ${config?.profiles.length ?? "-"} ${log?.length ?? "-"}`}</p>;
+  const { log, missing } = useRunLog(runId);
+  const journal = `${log?.length ?? "-"}${missing ? " missing" : ""}`;
+  return <p>{`${agents?.runs.length ?? "-"} ${config?.profiles.length ?? "-"} ${journal}`}</p>;
 }
 
 test("agent state, config and run log load, then reload on their topic", async () => {
   const view = render(<Probe runId="r41" />);
   await flush();
-  expect(view.container.textContent).toBe("9 3 0");
+  expect(view.container.textContent).toBe("9 3 0 missing");
   expect(calls.sort()).toEqual(["getAgents", "getConfig", "getRunLog"]);
   calls.length = 0;
   await act(async () => {
@@ -70,6 +73,20 @@ test("no run selected means no log request", async () => {
   render(<Probe runId={null} />);
   await flush();
   expect(calls).not.toContain("getRunLog");
+});
+
+test("a run log the daemon no longer has is reported missing, not thrown", async () => {
+  runLog = () => Promise.reject(new KiboError("NOT_FOUND", "run r41"));
+  const view = render(<Probe runId="r41" />);
+  await flush();
+  expect(view.container.textContent).toBe("9 3 - missing");
+});
+
+test("a run log with entries is not missing", async () => {
+  runLog = () => Promise.resolve([{ id: 1, at: 0, event: { type: "cancelled" } }]);
+  const view = render(<Probe runId="r41" />);
+  await flush();
+  expect(view.container.textContent).toBe("9 3 1");
 });
 
 function Online() {

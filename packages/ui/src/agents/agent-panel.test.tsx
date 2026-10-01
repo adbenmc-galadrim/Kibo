@@ -23,7 +23,10 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => agentsFixture(),
   useConfig: () => null,
   useNow: () => NOW,
-  useRunLog: (runId: string | null) => (runId === "r41" ? RUN_LOG : runId ? [] : null),
+  useRunLog: (runId: string | null) =>
+    runId === "r40"
+      ? { log: null, missing: true }
+      : { log: runId === "r41" ? RUN_LOG : runId ? [] : null, missing: false },
   useDaemonOnline: () => true,
 }));
 
@@ -132,7 +135,7 @@ test("the drawer groups runs like the mockup and numbers the queue", async () =>
   );
   expect(onSelect).toHaveBeenCalledWith("r41");
 });
-test("stopping a run cancels it, and a refusal is shown", async () => {
+test("stopping a run is confirmed, then cancels it, and a refusal is shown", async () => {
   const props = {
     state: agentsFixture(),
     now: NOW,
@@ -145,9 +148,18 @@ test("stopping a run cancels it, and a refusal is shown", async () => {
   render(<AgentDrawer {...props} selected={run("r42")} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Arrêter" }));
+  const dialog = within(await screen.findByRole("alertdialog"));
+  expect(dialog.getByText("Arrêter le run opus-dev-1 sur KIB-12 ?")).toBeTruthy();
+  expect(dialog.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeTruthy();
+  await user.click(dialog.getByRole("button", { name: "Annuler" }));
+  expect(calls).toEqual([]);
+  await user.click(screen.getByRole("button", { name: "Arrêter" }));
+  await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Arrêter" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   expect(calls).toEqual([{ method: "cancelRun", runId: "r42" }]);
   outcome = () => Promise.reject(new KiboError("INVALID_TRANSITION", "run r42 is done"));
   await user.click(screen.getByRole("button", { name: "Arrêter" }));
+  await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Arrêter" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'arrêter le run.");
 });
 test("a finished run has no stop button", () => {
@@ -195,6 +207,11 @@ test("a focus request opens the drawer on that run", async () => {
   render(<AgentPanel onLaunch={() => {}} focusRunId="r42" onFocused={onFocused} onOpenFile={() => {}} />);
   expect(await screen.findByRole("list", { name: "Journal de opus-dev-1" })).toBeTruthy();
   expect(onFocused).toHaveBeenCalledTimes(1);
+});
+test("a run whose journal is gone says so in the drawer", async () => {
+  render(<AgentPanel onLaunch={() => {}} focusRunId="r40" onFocused={() => {}} onOpenFile={() => {}} />);
+  expect(await screen.findByText("Journal indisponible pour ce run.")).toBeTruthy();
+  expect(screen.queryByRole("list", { name: "Journal de sonnet-review-1" })).toBeNull();
 });
 test("the launch button asks the shell to open the assign dialog", async () => {
   const onLaunch = mock(() => {});

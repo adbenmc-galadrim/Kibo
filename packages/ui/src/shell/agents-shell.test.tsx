@@ -82,7 +82,7 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => agentsFixture(),
   useConfig: () => configFixture(),
   useNow: () => NOW,
-  useRunLog: () => [],
+  useRunLog: () => ({ log: [], missing: false }),
   useDaemonOnline: () => true,
 }));
 

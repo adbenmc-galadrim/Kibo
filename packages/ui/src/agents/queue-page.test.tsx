@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, NOW, profilesFixture } from "./fixtures";
 
@@ -101,7 +101,7 @@ test("sub-agents run in their parent's slot and the waiting column offers an ans
   expect(onAnswer).toHaveBeenCalledWith("r41");
 });
 
-test("the item menu moves, prioritizes and removes queued runs", async () => {
+test("the item menu moves, prioritizes and removes queued runs after a confirmation", async () => {
   show();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Actions KIB-18" }));
@@ -113,6 +113,12 @@ test("the item menu moves, prioritizes and removes queued runs", async () => {
     "true",
   );
   await user.click(screen.getByRole("menuitem", { name: "Retirer de la file" }));
+  const dialog = within(await screen.findByRole("alertdialog"));
+  expect(dialog.getByText("Retirer KIB-29 de la file ?")).toBeTruthy();
+  expect(dialog.getByText("Le run ne démarrera pas ; le ticket reste assigné.")).toBeTruthy();
+  expect(calls).toHaveLength(2);
+  await user.click(dialog.getByRole("button", { name: "Retirer" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   expect(calls).toEqual([
     { method: "moveRun", runId: "q18", index: 0 },
     { method: "setRunPriority", runId: "q10", priority: false },

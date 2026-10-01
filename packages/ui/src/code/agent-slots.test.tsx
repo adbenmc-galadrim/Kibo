@@ -68,7 +68,7 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => agents(),
   useConfig: () => null,
   useNow: () => 0,
-  useRunLog: () => null,
+  useRunLog: () => ({ log: null, missing: false }),
   useDaemonOnline: () => true,
 }));
 const unmockedModule = "../shell/ContentView?unmocked";
