@@ -782,7 +782,7 @@ Vague 0, après T30 (quelques lignes communes dans `projects/admin.ts` et `notes
 - Consumes: `createProjectDoc`, `loadDoc`, `projectDocId`, `createTicket`, `setStatus`, `addLink`, `listLinks`, `deleteTicket`, `walkDepthFirst`, `getNode`, `upsertExternalRef`, `countTicketsByStatus`, `readProject`, `docs.assertWritable`, `store.transaction`, `requireLocal`.
 - Produces: `INBOX_ID`, `INBOX_KEY`, `isInbox`, `inboxAllows`, `RESERVED_PROJECT_KEYS`, `createTicket.blockedReason`, `fileTicket`, `transferTicket`, `loadInbox`, `assertInboxCommand`, `assertNotInbox`, `assertProjectKeyAllowed`, `createFileTicket`, `handleProjectRequest`.
 
-- [ ] **Step 1: Schéma (tests rouges puis verts)**
+- [x] **Step 1: Schéma (tests rouges puis verts)**
 
 `packages/schema/src/inbox.test.ts` :
 ```ts
@@ -810,7 +810,7 @@ test("createTicket accepts a blocked reason and fileTicket is an RPC", () => {
 `packages/schema/src/inbox.ts` : contrat « Schéma » ci-dessus (importer `COMMAND_WRITES`, `ProjectCommand` de `./command`, `EntityType` de `./manifest`). `index.ts` : `export * from "./inbox";` (ordre alphabétique). `command.ts` : `blockedReason: z.string().optional()` dans `createTicket`. `rpc.ts` : requête et `RpcResult.fileTicket`.
 Run: `bun test packages/schema` — Expected: PASS.
 
-- [ ] **Step 2: Core : `blockedReason` à la création et `transferTicket` (tests rouges puis verts)**
+- [x] **Step 2: Core : `blockedReason` à la création et `transferTicket` (tests rouges puis verts)**
 
 `packages/core/src/tickets.test.ts` :
 ```ts
@@ -970,7 +970,7 @@ export function transferTicket(from: LoroDoc, to: LoroDoc, ticketId: string, par
 (`subtreeIds(node)` et `getNode(tree, id)` sont dans `tree.ts` ; l'accesseur `tree` de `tickets.ts:30` est privé : l'exporter sous le nom `ticketTree` ; `children()` renvoie les enfants dans l'ordre fractionnaire. `core/index.ts` : `export * from "./transfer";`.)
 Run: `bun test packages/core` — Expected: PASS (fast-check compris).
 
-- [ ] **Step 3: Doc de la boîte et règles (tests rouges puis verts)**
+- [x] **Step 3: Doc de la boîte et règles (tests rouges puis verts)**
 
 `packages/daemon/src/inbox/inbox-doc.test.ts` :
 ```ts
@@ -993,7 +993,7 @@ Run: `bun test packages/daemon/src/inbox` — Expected: FAIL.
 
 `inbox-doc.ts` et `inbox-rules.ts` : contrat « Démon ». Run: `bun test packages/daemon/src/inbox` — Expected: PASS.
 
-- [ ] **Step 4: Service : la boîte chargée, routée, refusée ; `project-rpc.ts` extrait (tests rouges puis verts)**
+- [x] **Step 4: Service : la boîte chargée, routée, refusée ; `project-rpc.ts` extrait (tests rouges puis verts)**
 
 `packages/daemon/src/service.test.ts` :
 ```ts
@@ -1087,7 +1087,7 @@ export function createFileTicket(deps: FileTicketDeps) {
 - `components/service.ts` : `getNotesDir` / `setNotesDir` ⇒ `assertNotInbox(projectId, "notes")` ; test dans `components/service.test.ts`.
 Run: `bun test packages/daemon` — Expected: PASS.
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages` — Expected: PASS ; `wc -l packages/daemon/src/service.ts` ≤ 300.
 
