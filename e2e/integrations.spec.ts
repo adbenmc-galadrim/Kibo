@@ -111,7 +111,7 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
 
   const local = "Ticket e2e";
   await page.getByRole("button", { name: "Nouveau ticket dans À faire", exact: true }).click();
-  await page.getByLabel("Titre").fill(local);
+  await page.getByLabel("Titre", { exact: true }).fill(local);
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByText(local)).toBeVisible();
   await page.getByRole("button", { name: "Synchroniser" }).click();

@@ -51,7 +51,7 @@ test("modifier → indexer un bloc → commit → amend → PR", async ({ page }
   await expect(palette.getByRole("option", { name: "Nouveau ticket" })).toBeVisible();
   await shot(page, info, "ecran-18");
   await palette.getByRole("option", { name: "Nouveau ticket" }).click();
-  await page.getByLabel("Titre").fill("Schéma Loro des tickets (LoroTree)");
+  await page.getByLabel("Titre", { exact: true }).fill("Schéma Loro des tickets (LoroTree)");
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 
@@ -129,7 +129,7 @@ test("push en cours, en échec puis réessayé", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await createRepoProject(page, `Push ${key}`, key, repo.repo);
   await page.getByRole("button", { name: "Ticket", exact: true }).click();
-  await page.getByLabel("Titre").fill("Push de test");
+  await page.getByLabel("Titre", { exact: true }).fill("Push de test");
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 

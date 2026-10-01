@@ -4,7 +4,7 @@ import { projectKey } from "./repo-project";
 
 async function createTicket(page: Page, opener: string, title: string) {
   await page.getByRole("button", { name: opener, exact: true }).click();
-  await page.getByLabel("Titre").fill(title);
+  await page.getByLabel("Titre", { exact: true }).fill(title);
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 }
@@ -74,7 +74,7 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
 
   await tickets.getByRole("button", { name: `Nouveau sous-ticket de ${key}-1` }).click();
   await expect(page.getByRole("dialog").getByText(`${key}-1`)).toBeVisible();
-  await page.getByLabel("Titre").fill("Enregistrer la vidéo");
+  await page.getByLabel("Titre", { exact: true }).fill("Enregistrer la vidéo");
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 

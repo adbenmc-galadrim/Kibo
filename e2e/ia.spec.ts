@@ -84,7 +84,7 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
   await page
     .getByLabel("Ce que doit faire le composant")
     .fill("Burndown du sprint : tickets restants par jour, ligne idéale.");
-  await page.getByLabel("Titre").fill(`Burndown ${s}`);
+  await page.getByLabel("Titre", { exact: true }).fill(`Burndown ${s}`);
   await expect(page.getByLabel("Identifiant")).toHaveValue(`burndown-${s.toLowerCase()}`);
   await page.getByRole("button", { name: "Générer avec un agent" }).click();
 
