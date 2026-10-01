@@ -20,6 +20,7 @@ import { listSourceFiles, readSources } from "./hash";
 import { checkImports } from "./imports";
 import { inferPermissions } from "./infer-permissions";
 import type { OsSandbox } from "./os-sandbox";
+import { responsiveViolations } from "./responsive";
 import { CONFORMANCE_TEST } from "./scaffold";
 import type { Toolchain } from "./toolchain";
 import { typecheckComponent } from "./typecheck";
@@ -110,6 +111,9 @@ async function sourcesOf(dir: string, copy: string, toolchain: Toolchain) {
   }
 }
 
+const fixedWidths = (texts: { path: string; text: string }[]): string[] =>
+  texts.filter((t) => t.path === "ui.tsx").flatMap((t) => responsiveViolations(t.text, t.path));
+
 const GENERIC_SUITE = "kibo-conformance.test.tsx";
 
 async function useGenericSuite(copy: string, files: string[]): Promise<void> {
@@ -147,6 +151,7 @@ async function checkCopy(
   report.conformance = step([
     ...(tests.used === null ? [FR_DEVKIT.noConformance] : []),
     ...(tests.used ?? []).filter((p) => diff.missing.includes(p)).map(FR_DEVKIT.missing),
+    ...fixedWidths(texts),
   ]);
   report.ok =
     report.imports.ok &&

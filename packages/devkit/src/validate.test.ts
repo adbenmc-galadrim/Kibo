@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   readlinkSync,
   rmSync,
   symlinkSync,
@@ -138,6 +139,17 @@ describe("validateComponent", () => {
     expect(report.ok).toBe(false);
     expect(report.typecheck.errors).toHaveLength(1);
     expect(report.typecheck.errors[0]).toStartWith("ui.tsx:1 · ");
+  }, 120_000);
+  test("a fixed width in ui.tsx fails the conformance step", async () => {
+    const dir = fixture("hello");
+    const ui = join(dir, "ui.tsx");
+    writeFileSync(ui, readFileSync(ui, "utf8").replace('"h-full ', '"h-full w-[480px] '));
+    const report = await validateComponent(dir, opts);
+    expect(report.tests.ok).toBe(true);
+    expect(report.ok).toBe(false);
+    expect(report.conformance.ok).toBe(false);
+    expect(report.conformance.errors).toContain(FR_DEVKIT.fixedWidth("ui.tsx", "w-[480px]"));
+    expect(report.conformance.errors.join("\n")).toContain("largeur fixe");
   }, 120_000);
   test("a forbidden import fails the imports step", async () => {
     const report = await validateComponent(fixture("bad-import"), opts);

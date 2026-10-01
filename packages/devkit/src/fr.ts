@@ -20,6 +20,8 @@ export const FR_DEVKIT = {
   sourcesRefused: (detail: string) => `sources refusées : ${detail}`,
   typeError: (file: string, line: number, text: string) => `${file}:${line} · ${text}`,
   noConformance: "la suite de conformité ne s'est pas exécutée (runConformance manquant)",
+  fixedWidth: (file: string, token: string) =>
+    `${file} : largeur fixe ${token} ; utilise les formats (sdk.format) et les variantes de conteneur (@md:, @lg:)`,
   missing: (p: string) => `permission utilisée mais non déclarée : ${p}`,
   unused: (p: string) => `permission déclarée mais jamais utilisée : ${p}`,
   timeout: (s: number) => `les tests ont dépassé ${s} s`,
