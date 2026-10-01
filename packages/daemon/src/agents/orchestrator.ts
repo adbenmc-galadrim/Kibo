@@ -1,5 +1,5 @@
 import { guidelineChain } from "@kibo/core/context";
-import { initRun } from "@kibo/core/run-machine";
+import { canWriteAfterEnd, initRun } from "@kibo/core/run-machine";
 import {
   defaultHostSlots,
   headRank,
@@ -179,6 +179,11 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   }, opts.tickMs ?? 2000);
   timer.unref();
 
+  const latestOfTicket = (run: RunView, runs: RunView[]): boolean =>
+    !runs.some((r) => r.seq > run.seq && r.projectId === run.projectId && r.ticketId === run.ticketId);
+  const resumable = (run: RunView, runs: RunView[]): boolean =>
+    canWriteAfterEnd(run) && !live.has(run.id) && latestOfTicket(run, runs);
+
   const enqueue = (run: NewRun): RunView => registry.create(run, tailRank(registry.all()));
 
   return {
@@ -261,6 +266,10 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       return { position, reason, guidelines };
     },
     answer(runId, text) {
+      const target = registry.get(runId);
+      if (isTerminal(target.state) && !resumable(target, registry.all())) {
+        throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
+      }
       registry.apply(runId, { type: "answered", text, rank: headRank(registry.all()) });
       tick();
       return registry.get(runId);
@@ -300,6 +309,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         })),
         host: hostView(),
         tokensToday: registry.tokensSince(startOfDay(now())),
+        resumable: runs.filter((r) => resumable(r, runs)).map((r) => r.id),
       };
     },
     log: (runId) => registry.log(runId),

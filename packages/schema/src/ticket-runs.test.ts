@@ -53,6 +53,7 @@ const state = (runs: RunView[], queue: AgentsState["queue"] = []): AgentsState =
     ram: 0,
   },
   tokensToday: 0,
+  resumable: [],
 });
 
 test("each ticket of the project keeps its latest run, with its place in the queue", () => {
