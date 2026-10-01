@@ -5,8 +5,10 @@ import {
   draftKiboFiles,
   fixPrompt,
   generatorPrompt,
+  revisePrompt,
   STARTER_PLAN_JSON_SCHEMA,
 } from "./prompts";
+import { EXAMPLE_COMPONENT, formatTable, SKILL } from "./prompts-skill";
 
 const brief = {
   mode: "create",
@@ -16,6 +18,7 @@ const brief = {
   withServer: false,
   description: "Burndown du sprint : tickets restants par jour.",
   baseVersion: null,
+  formats: ["medium", "large", "half"],
   attachments: [],
 } as const;
 
@@ -65,9 +68,78 @@ test("fixPrompt quotes only failing sections, truncated to their last 4000 chara
   expect(p.length).toBeLessThan(4600);
 });
 
-test("draftKiboFiles writes the rules and the skill", () => {
+test("draftKiboFiles writes the rules, the skill and the example", () => {
   const files = draftKiboFiles(brief);
-  expect(Object.keys(files).sort()).toEqual([".claude/skills/kibo-component/SKILL.md", "CLAUDE.md"]);
   expect(files["CLAUDE.md"]).toContain("runConformance");
+  expect(files["CLAUDE.md"]).toContain(".claude/skills/kibo-component/exemple.tsx");
   expect(files[".claude/skills/kibo-component/SKILL.md"]).toStartWith("---\nname: kibo-component\n");
+  expect(files[".claude/skills/kibo-component/exemple.tsx"]).toBe(EXAMPLE_COMPONENT);
+});
+
+test("the generator prompt names the declared formats, the attachments and the example", () => {
+  const p = generatorPrompt({
+    ...brief,
+    formats: ["medium", "half"],
+    attachments: ["/h/d.attachments/1-maquette.png"],
+  });
+  expect(p).toContain("Formats à prendre en charge : medium (Moyen, 6 × 3");
+  expect(p).toContain("half (Demi-page, 12 × 6");
+  expect(p).not.toContain("small (");
+  expect(p).toContain("Maquettes jointes");
+  expect(p).toContain("/h/d.attachments/1-maquette.png");
+  expect(p).toContain("exemple.tsx");
+  expect(p.match(/1-maquette\.png/g)).toHaveLength(1);
+});
+
+test("the kibo files carry the skill with formats, tokens, responsive rules and the example", () => {
+  const files = draftKiboFiles({ ...brief, formats: ["large"], attachments: [] });
+  expect(Object.keys(files).sort()).toEqual([
+    ".claude/skills/kibo-component/SKILL.md",
+    ".claude/skills/kibo-component/exemple.tsx",
+    "CLAUDE.md",
+  ]);
+  const skill = files[".claude/skills/kibo-component/SKILL.md"] ?? "";
+  for (const needle of [
+    "sdk.format",
+    "@container",
+    "@md:",
+    "bg-card",
+    "text-muted-foreground",
+    "largeur fixe",
+    "Petit",
+    "Plein écran",
+    "1200 px",
+  ])
+    expect(skill).toContain(needle);
+  expect(files[".claude/skills/kibo-component/exemple.tsx"]).toContain('useEntities("ticket")');
+});
+
+test("the format table gives cells and pixels at 1200 px and marks the declared formats", () => {
+  const table = formatTable(["medium", "full"]);
+  expect(table).toContain("| small | Petit | 3 × 3 | ≈ 288 × 272 px | non |");
+  expect(table).toContain("| medium | Moyen | 6 × 3 | ≈ 592 × 272 px | oui |");
+  expect(table).toContain("| large | Large | 6 × 6 | ≈ 592 × 560 px | non |");
+  expect(table).toContain("| half | Demi-page | 12 × 6 | ≈ 1200 × 560 px | non |");
+  expect(table).toContain("| full | Plein écran | 12 × 9 | ≈ 1200 × 848 px | oui |");
+  expect(SKILL).toContain("colonne ≈ 85 px");
+});
+
+test("revisePrompt carries the feedback, the new images and the test order", () => {
+  const p = revisePrompt(brief, "Mets le total en gros", ["/h/d.attachments/2-b.png"]);
+  expect(p).toContain("Retour de l'utilisateur après aperçu : « Mets le total en gros »");
+  expect(p).toContain("/h/d.attachments/2-b.png");
+  expect(p).toContain("kibo component test .");
+  expect(p).toContain("Formats à prendre en charge : medium (Moyen");
+  expect(p.match(/2-b\.png/g)).toHaveLength(1);
+});
+
+test("the prompts never carry a path outside the draft, the SDK and the images, nor a secret", () => {
+  const texts = [
+    generatorPrompt({ ...brief, attachments: ["/h/d.attachments/1-a.png"] }),
+    revisePrompt(brief, "Mets le total en gros", []),
+    ...Object.values(draftKiboFiles(brief)),
+  ].join("\n");
+  expect(texts).not.toMatch(/KIBO_RUN_TOKEN|kibo_session|token|\/Users\/|\/home\//i);
+  const absolute = texts.match(/(?<![\w@.:/-])\/[\w.-]+\/[\w./-]*/g) ?? [];
+  expect(absolute.filter((p) => !p.startsWith("/h/d.attachments/"))).toEqual([]);
 });

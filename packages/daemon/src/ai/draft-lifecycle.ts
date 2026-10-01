@@ -1,6 +1,7 @@
 import {
   type ComponentDraft,
   type DraftIncident,
+  formatsOf,
   KiboError,
   type ReviseComponentDraftInput,
   type StartComponentDraftInput,
@@ -84,6 +85,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
   const paths = (d: ComponentDraft): DraftPaths => draftPaths(deps.home, d.id);
   const images = (d: ComponentDraft, from = 0) =>
     attachmentPaths(paths(d).attachmentsDir, d.attachments).slice(from);
+  const formats = (d: ComponentDraft) => formatsOf(readDraftManifest(paths(d).dir));
   const restore = deps.restore ?? verifyAndRestore;
   const pending = new Set<Promise<void>>();
   const track = (work: Promise<void>) => {
@@ -206,7 +208,9 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       }
       const withImages = { ...current, attachments };
       deps.store.save(withImages);
-      const prompt = generatorPrompt(brief(withImages, images(withImages)));
+      const prompt = generatorPrompt(
+        brief(withImages, { formats: formats(withImages), attachments: images(withImages) }),
+      );
       return launch({ draft: withImages, sdkDir, prompt, resumeSessionId: null, event: "enqueued" });
     },
 
@@ -223,6 +227,7 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
         report: deps.store.report(draftId),
         feedback: d.revisions > 0 ? deps.store.feedback(draftId) : null,
         images: images(d),
+        formats: formats(d),
       });
       return launch({ draft: d, sdkDir, prompt, resumeSessionId: d.sessionId, event: "enqueued" });
     },
@@ -238,7 +243,11 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       const previous = deps.store.feedback(d.id);
       deps.store.saveFeedback(d.id, input.feedback);
       try {
-        const prompt = revisePrompt(brief(withImages, []), input.feedback, fresh);
+        const prompt = revisePrompt(
+          brief(withImages, { formats: formats(withImages), attachments: [] }),
+          input.feedback,
+          fresh,
+        );
         return launch({ draft: withImages, sdkDir, prompt, resumeSessionId: d.sessionId, event: "revised" });
       } catch (e) {
         removeAttachmentFiles(fresh);

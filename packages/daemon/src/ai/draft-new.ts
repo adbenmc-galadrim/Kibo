@@ -76,9 +76,13 @@ export async function prepareNewDraft(
 ): Promise<DraftAttachment[]> {
   const { draft, input } = req;
   const formats = (f: ComponentFormat[] | undefined) => f ?? formatsOf({ kind: draft.kind });
+  const declared =
+    input.mode === "create"
+      ? formats(input.formats)
+      : formatsOf(ctx.catalog.latest(draft.componentId)?.manifest ?? { kind: draft.kind });
   await prepareDraft({
     paths,
-    kiboFiles: draftKiboFiles(draftBrief(draft, [])),
+    kiboFiles: draftKiboFiles(draftBrief(draft, { formats: declared, attachments: [] })),
     fill:
       input.mode === "create"
         ? (dir) =>
@@ -88,7 +92,7 @@ export async function prepareNewDraft(
               title: draft.title,
               kind: draft.kind,
               withServer: draft.withServer,
-              formats: formats(input.formats),
+              formats: declared,
             })
         : async (dir) => copySource(ctx.catalog.sourceDir(draft.componentId), dir),
   });

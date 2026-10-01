@@ -1,4 +1,4 @@
-import type { ComponentDraft, ValidationReport } from "@kibo/schema";
+import type { ComponentDraft, ComponentFormat, ValidationReport } from "@kibo/schema";
 import { clearUnrestored, type DraftPaths, markUnrestored } from "./draft-files";
 import { assertRealDir, isRealDir } from "./draft-fs";
 import { createDraftGuard } from "./draft-guard";
@@ -26,7 +26,9 @@ export type LaunchDeps = {
   onEnd: (draftId: string, runId: string, end: RunEnd) => void;
 };
 
-export const draftBrief = (d: ComponentDraft, attachments: readonly string[]): GeneratorBrief => ({
+export type BriefContext = { formats: readonly ComponentFormat[]; attachments: readonly string[] };
+
+export const draftBrief = (d: ComponentDraft, { formats, attachments }: BriefContext): GeneratorBrief => ({
   mode: d.mode,
   componentId: d.componentId,
   title: d.title,
@@ -34,6 +36,7 @@ export const draftBrief = (d: ComponentDraft, attachments: readonly string[]): G
   withServer: d.withServer,
   description: d.description,
   baseVersion: d.baseVersion,
+  formats,
   attachments,
 });
 
@@ -74,10 +77,16 @@ export function launchDraft(deps: LaunchDeps, input: LaunchInput): ComponentDraf
 
 export function retryPrompt(
   d: ComponentDraft,
-  context: { report: ValidationReport | null; feedback: string | null; images: readonly string[] },
+  context: {
+    report: ValidationReport | null;
+    feedback: string | null;
+    images: readonly string[];
+    formats: readonly ComponentFormat[];
+  },
 ): string {
+  const { formats, images } = context;
   if (context.report && !context.report.ok) return fixPrompt(context.report);
   if (d.revisions > 0 && context.feedback !== null)
-    return revisePrompt(draftBrief(d, []), context.feedback, context.images);
-  return generatorPrompt(draftBrief(d, context.images));
+    return revisePrompt(draftBrief(d, { formats, attachments: [] }), context.feedback, images);
+  return generatorPrompt(draftBrief(d, { formats, attachments: images }));
 }
