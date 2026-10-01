@@ -21,6 +21,7 @@ test("literal SDK calls give the permissions they need", () => {
     await sdk.fetch(\`https://api.github.com/repos\`);
     await sdk.notes.read("a.md");
     await sdk.notes.write("a.md", "x", null);
+    await sdk.notes.create("b.md", "x");
     await sdk.action("ping");
   `);
   expect(issues).toEqual([]);

@@ -86,6 +86,10 @@ function notesApi(guard: Guard, call: Call): NotesApi {
       guard.needWrite("note");
       return call<NoteMeta>({ kind: "notes.write", path, markdown, expectedMtime });
     },
+    async create(path, markdown) {
+      guard.needWrite("note");
+      return call<NoteMeta>({ kind: "notes.create", path, markdown });
+    },
     async rename(from, to) {
       guard.needWrite("note");
       return call<NoteMeta>({ kind: "notes.rename", from, to });

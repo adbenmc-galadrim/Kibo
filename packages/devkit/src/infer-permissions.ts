@@ -13,7 +13,7 @@ type SourceText = { path: string; text: string };
 
 const RECEIVERS = new Set(["sdk", "ctx"]);
 const NOTE_READS = new Set(["read", "search", "info"]);
-const NOTE_WRITES = new Set(["write", "rename", "remove"]);
+const NOTE_WRITES = new Set(["write", "create", "rename", "remove"]);
 const MCP_METHODS = new Set(["call", "read", "importItem"]);
 const isTest = (path: string) => /\.test\.tsx?$/.test(path);
 const isCommandMethod = (method: string): method is ProjectCommand["method"] =>

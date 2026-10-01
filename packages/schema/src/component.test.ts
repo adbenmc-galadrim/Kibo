@@ -110,6 +110,7 @@ describe("permissions", () => {
     expect(permissionOfCall({ kind: "data.keys" })).toBe("data");
     expect(permissionOfCall({ kind: "notes.search", query: "x" })).toBe("read:note");
     expect(permissionOfCall({ kind: "notes.remove", path: "a.md" })).toBe("write:note");
+    expect(permissionOfCall({ kind: "notes.create", path: "a.md", markdown: "# A" })).toBe("write:note");
     expect(permissionOfCall({ kind: "action", name: "x", input: null })).toBeNull();
   });
   test("used net URLs are covered by declared rules", () => {

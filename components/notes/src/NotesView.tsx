@@ -118,8 +118,7 @@ export function NotesView() {
   }, [listed.data, selected, note, state, editing, load]);
 
   const create = async (path: string, title: string) => {
-    if (listed.data.some((n) => n.path === path)) throw new KiboError("CONFLICT", `${path} already exists`);
-    await sdk.notes.write(path, `# ${title}\n`, null);
+    await sdk.notes.create(path, `# ${title}\n`);
     setQuery("");
     setSelected(path);
     setEditing(true);

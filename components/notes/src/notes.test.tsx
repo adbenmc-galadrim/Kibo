@@ -82,6 +82,19 @@ test("search asks the daemon, new note asks a title and refuses a taken name", a
   expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
 });
 
+test("a new note whose file appeared outside Kibo is refused by the folder, not overwritten", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1 });
+  m.notes.set("plan-de-test.md", { markdown: "# Écrite dans Obsidian\n", mtime: 1 });
+  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle note" });
+  await user.type(within(dialog).getByLabelText("Titre"), "Plan de test");
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Écrite dans Obsidian\n");
+});
+
 test("D4: the conflict banner offers reload and keep mine", async () => {
   const { NoteConflictBanner } = await import("./NoteDocument");
   const calls: string[] = [];

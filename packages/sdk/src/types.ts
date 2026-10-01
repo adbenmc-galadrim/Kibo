@@ -49,6 +49,7 @@ export type InstanceData = {
 export type NotesApi = {
   read(path: string): Promise<NoteContent>;
   write(path: string, markdown: string, expectedMtime: number | null): Promise<NoteMeta>;
+  create(path: string, markdown: string): Promise<NoteMeta>;
   rename(from: string, to: string): Promise<NoteMeta>;
   remove(path: string): Promise<void>;
   search(query: string): Promise<NoteMeta[]>;

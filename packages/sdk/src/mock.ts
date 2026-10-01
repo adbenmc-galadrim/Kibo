@@ -167,6 +167,8 @@ export function createMockSdk(
         return folder.read(c.path);
       case "notes.write":
         return folder.write(c.path, c.markdown, c.expectedMtime);
+      case "notes.create":
+        return folder.create(c.path, c.markdown);
       case "notes.rename":
         return folder.rename(c.from, c.to);
       case "notes.remove":
@@ -264,6 +266,7 @@ export function createMockSdk(
       info: () => readNote(() => inner.notes.info()),
       write: (path, markdown, expectedMtime) =>
         writeNote(() => inner.notes.write(path, markdown, expectedMtime)),
+      create: (path, markdown) => writeNote(() => inner.notes.create(path, markdown)),
       rename: (from, to) => writeNote(() => inner.notes.rename(from, to)),
       remove: (path) => writeNote(() => inner.notes.remove(path)),
     },

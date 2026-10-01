@@ -6,7 +6,14 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { type ComponentCall, KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
 import { isInside } from "../code/safe-path";
 import { createNotesIndex, type IndexedNote } from "./index";
-import { listNoteFiles, readNoteFile, removeNoteFile, renameNoteFile, writeNoteFile } from "./notes-fs";
+import {
+  createNoteFile,
+  listNoteFiles,
+  readNoteFile,
+  removeNoteFile,
+  renameNoteFile,
+  writeNoteFile,
+} from "./notes-fs";
 import { createProjectSettings } from "./settings";
 import { type NotesWatcher, type WatchFn, watchNotes } from "./watch";
 
@@ -170,6 +177,10 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
         case "notes.write":
           await mkdir(dir, { recursive: true });
           await writeNoteFile(dir, call.path, call.markdown, call.expectedMtime);
+          return metaOf(projectId, call.path);
+        case "notes.create":
+          await mkdir(dir, { recursive: true });
+          await createNoteFile(dir, call.path, call.markdown);
           return metaOf(projectId, call.path);
         case "notes.rename":
           await renameNoteFile(dir, call.from, call.to);

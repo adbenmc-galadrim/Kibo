@@ -48,6 +48,15 @@ test("notes live in an in-memory folder with conflict detection", async () => {
   expect((await m.sdk.notes.info()).displayDir).toBe("~/goinfre/Kibo/notes");
 });
 
+test("notes.create refuses an existing path and is used as write:note", async () => {
+  const m = createMockSdk({ ...base, reads: ["note"], writes: ["note"] }, { notes: { "a.md": "# A" } });
+  await expect(m.sdk.notes.create("a.md", "# Autre")).rejects.toThrow("CONFLICT");
+  expect(m.notes.get("a.md")?.markdown).toBe("# A");
+  const created = await m.sdk.notes.create("b.md", "# B");
+  expect([created.path, created.title]).toEqual(["b.md", "B"]);
+  expect(m.used).toEqual(["write:note"]);
+});
+
 test("runs are served by list in both modes and notify run subscribers", async () => {
   const m = createMockSdk({ ...base, reads: ["ticket", "run"], writes: [] });
   const heard: string[] = [];

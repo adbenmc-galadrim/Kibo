@@ -1,6 +1,14 @@
 import { Database } from "bun:sqlite";
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
@@ -138,6 +146,19 @@ describe("notes calls", () => {
     await expect(
       svc.handle("p1", { kind: "notes.write", path: "a.md", markdown: "# mine", expectedMtime: a.mtime }),
     ).rejects.toThrow("CONFLICT");
+  });
+  test("create writes a new note and refuses an existing one with CONFLICT", async () => {
+    const { repo, svc } = setup();
+    const meta = (await svc.handle("p1", {
+      kind: "notes.create",
+      path: "a.md",
+      markdown: "# A\n",
+    })) as NoteMeta;
+    expect([meta.path, meta.title]).toEqual(["a.md", "A"]);
+    await expect(svc.handle("p1", { kind: "notes.create", path: "a.md", markdown: "# B\n" })).rejects.toThrow(
+      "CONFLICT",
+    );
+    expect(readFileSync(join(repo, "notes", "a.md"), "utf8")).toBe("# A\n");
   });
   test("a note written while the watch starts is indexed", async () => {
     const { repo, svc } = setup("repo", (dir) => writeFileSync(join(dir, "late.md"), "# Tardive"));
