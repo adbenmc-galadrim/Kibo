@@ -1,9 +1,9 @@
-import { Instance, KiboError, type Layout } from "@kibo/schema";
+import { Instance, inGrid, isFormatLayout, KiboError, type Layout, layoutFor, overlaps } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { assertInstanceData, dropInstanceData, replaceInstanceData } from "./instance-data";
 import { getNode } from "./tree";
 
-const DEFAULT_LAYOUT: Layout = { x: 0, y: 0, w: 12, h: 6 };
+const DEFAULT_LAYOUT: Layout = layoutFor("half", 0, 0);
 const instances = (doc: LoroDoc) => doc.getMap("instances");
 
 export function listInstances(doc: LoroDoc, pageId?: string): Instance[] {
@@ -17,6 +17,13 @@ export function getInstance(doc: LoroDoc, id: string): Instance {
   const raw = instances(doc).get(id);
   if (raw === undefined) throw new KiboError("NOT_FOUND", `instance ${id} not found`);
   return Instance.parse(raw);
+}
+
+function assertPlaceable(doc: LoroDoc, pageId: string, layout: Layout, self: string | null): void {
+  if (!inGrid(layout)) throw new KiboError("INVALID_INPUT", "layout is outside the grid");
+  if (!isFormatLayout(layout)) throw new KiboError("INVALID_INPUT", "layout is not a component format");
+  const other = listInstances(doc, pageId).find((i) => i.id !== self && overlaps(i.layout, layout));
+  if (other !== undefined) throw new KiboError("INVALID_INPUT", `layout overlaps instance ${other.id}`);
 }
 
 export function addInstance(
@@ -42,6 +49,7 @@ export function addInstance(
     componentHash: input.componentHash ?? null,
   });
   if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
+  if (input.layout !== undefined) assertPlaceable(doc, input.pageId, parsed.data.layout, null);
   instances(doc).set(parsed.data.id, parsed.data);
   doc.commit();
   return parsed.data;
@@ -97,6 +105,16 @@ export function setInstanceConfig(
   const parsed = Instance.safeParse({ ...getInstance(doc, instanceId), config });
   if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
   instances(doc).set(parsed.data.id, parsed.data);
+  doc.commit();
+  return parsed.data;
+}
+
+export function setInstanceLayout(doc: LoroDoc, instanceId: string, layout: Layout): Instance {
+  const current = getInstance(doc, instanceId);
+  const parsed = Instance.safeParse({ ...current, layout });
+  if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
+  assertPlaceable(doc, current.pageId, parsed.data.layout, current.id);
+  instances(doc).set(current.id, parsed.data);
   doc.commit();
   return parsed.data;
 }
