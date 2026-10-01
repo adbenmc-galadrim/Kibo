@@ -33,7 +33,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 
 ## 4. Indexation par bloc
 
-- Le diff non indexé compare l'index au worktree ; le diff indexé, `HEAD` à l'index. « Indexer le bloc » applique le patch du bloc (`git apply --cached`), « Désindexer le bloc » l'applique à l'envers (`--reverse`).
+- Le diff non indexé compare l'index au worktree ; le diff indexé, `HEAD` à l'index. « Ajouter le bloc au commit » (anciennement « Indexer le bloc », §12.8) applique le patch du bloc (`git apply --cached`), « Retirer le bloc du commit » l'applique à l'envers (`--reverse`).
 - La requête porte l'en-tête `@@` du bloc : s'il ne correspond plus au diff recalculé, refus `GIT_STALE` et rechargement.
 - Fichier non suivi, supprimé, binaire ou renommé : indexation par fichier seulement.
 
@@ -108,7 +108,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 ### 12.4 Menus contextuels de l'interface
 
 - Dans la fenêtre Tauri, le menu natif de la webview (Recharger, Inspecter…) est bloqué **sauf** dans un champ de saisie (`input`, `textarea`, `contenteditable`) et quand du texte est sélectionné (le menu natif « Copier » reste disponible). Dans un navigateur, rien ne change.
-- Menus Kibo (composant `ContextMenu` de shadcn, même contenu que le bouton « ⋯ » de l'élément quand il existe) : onglet (§7, inchangé), **page** de la barre latérale (Ouvrir dans un nouvel onglet, Nouvelle sous-page, Renommer, Monter / Descendre, Déplacer vers, Supprimer), **ticket** dans l'arbre Tickets et carte Kanban (Ouvrir, Changer le statut, Nouveau sous-ticket, Déplacer à la racine, Supprimer), **note** (Renommer, Supprimer), **fichier modifié** (Voir le diff, Ouvrir dans un onglet, Ouvrir dans l'éditeur externe, Copier le chemin, Indexer / Désindexer, Annuler les changements), **projet** (Nouvelle page, Partager). Toute entrée destructive ouvre une confirmation ; en lecture seule (projet partagé, rôle lecteur), les entrées d'écriture sont absentes.
+- Menus Kibo (composant `ContextMenu` de shadcn, même contenu que le bouton « ⋯ » de l'élément quand il existe) : onglet (§7, inchangé), **page** de la barre latérale (Ouvrir dans un nouvel onglet, Nouvelle sous-page, Renommer, Monter / Descendre, Déplacer vers, Supprimer), **ticket** dans l'arbre Tickets et carte Kanban (Ouvrir, Changer le statut, Nouveau sous-ticket, Déplacer à la racine, Supprimer), **note** (Renommer, Supprimer), **fichier modifié** (Voir le diff, Ouvrir dans un onglet, Ouvrir dans l'éditeur externe, Copier le chemin, Ajouter au commit / Retirer du commit (§12.8), Annuler les changements), **projet** (Nouvelle page, Partager). Toute entrée destructive ouvre une confirmation ; en lecture seule (projet partagé, rôle lecteur), les entrées d'écriture sont absentes.
 - Le chrome du shell (barre d'onglets, barre latérale, en-têtes) n'est pas sélectionnable (`select-none`) ; le contenu des pages le reste.
 
 ### 12.5 Coque de bureau
