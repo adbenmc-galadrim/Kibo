@@ -4090,7 +4090,7 @@ Vague 3 ← T21 à T27. Un parcours Playwright, en sombre et en clair (ports **4
 - Consumes: `pairAndCreateProject`, `createRepoProject`, `projectKey`, `shot`, `rpc` (`agents-seed.ts`), `E2E_TOKEN`, `createE2eRepo`.
 - Produces: rien (dernière tâche).
 
-- [ ] **Step 1: Deux démons de plus**
+- [x] **Step 1: Deux démons de plus**
 
 `e2e/playwright.config.ts`, après la ligne `menus-light` :
 ```ts
@@ -4098,7 +4098,7 @@ Vague 3 ← T21 à T27. Un parcours Playwright, en sombre et en clair (ports **4
   { name: "projects-light", scheme: "light", port: 4418, spec: /projects\.spec\.ts/, scenario: "question" },
 ```
 
-- [ ] **Step 2: Parcours (rouge tant que l'UI n'est pas intégrée, vert ensuite)**
+- [x] **Step 2: Parcours (rouge tant que l'UI n'est pas intégrée, vert ensuite)**
 
 `e2e/projects.spec.ts` :
 ```ts
@@ -4215,7 +4215,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
 
 Run: `cd e2e && bunx playwright test --project=projects-dark --project=projects-light` — Expected: PASS, captures `ecran-107/108/109/110/111/112/77.png` dans `test-results`.
 
-- [ ] **Step 3: Gate et commit**
+- [x] **Step 3: Gate et commit**
 
 Run: `bun run check && bun run typecheck` — Expected: PASS.
 
