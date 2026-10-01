@@ -110,13 +110,7 @@ export function KanbanCard(props: Props) {
               </DropdownMenu>
             )}
           </div>
-          <button
-            type="button"
-            className="w-fit cursor-pointer text-left"
-            data-dnd-ignore="true"
-            onPointerDown={stopDrag}
-            onClick={onOpen}
-          >
+          <button type="button" className="w-fit cursor-pointer text-left" onClick={onOpen}>
             {t.title}
           </button>
           {t.blockedReason && (

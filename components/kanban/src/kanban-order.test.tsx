@@ -38,7 +38,7 @@ test("screen 126: the whole card is the drag handle, the menu is not; the saved 
   expect(card.className).toContain("cursor-grab");
   const menu = within(card).getByRole("button", { name: "Actions KIB-2" });
   expect(menu.getAttribute("data-dnd-ignore")).toBe("true");
-  expect(within(card).getByRole("button", { name: "Sync" }).getAttribute("data-dnd-ignore")).toBe("true");
+  expect(within(card).getByRole("button", { name: "Sync" }).getAttribute("data-dnd-ignore")).toBeNull();
   expect(m.used).toContain("data");
 });
 
