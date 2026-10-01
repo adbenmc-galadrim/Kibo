@@ -3074,12 +3074,12 @@ Vague 1 ← T18 (`IconField`), T20 (`updateWorkspace`), T25 (tables des écrans 
 - Consumes: `IconField`, `readIconFile` (T18), `iconUrl`, `IconInput`, `WorkspaceConfig.{workspaceName, workspaceDescription, workspaceIcon}` (T20, T21), `updateWorkspace` (T20), `useFlash`, `Textarea`, `errorMessage`.
 - Produces: `Screen` gagne `"workspace"` ; `WorkspacePage { config }` ; `WorkspaceSwitcher { name, icon, onSettings }` ; `WorkspaceTile { size, src?, alt? }` ; `AppSidebar` props `workspaceIcon` (sans `onRenameWorkspace`) ; `frWorkspace`.
 
-- [ ] **Step 1: Écran `workspace` dans les tables (test rouge puis vert)**
+- [x] **Step 1: Écran `workspace` dans les tables (test rouge puis vert)**
 
 `tabs.test.ts` : ajouter `{ kind: "screen", screen: "workspace" }` au codec et `expect(targetToHash({ kind: "screen", screen: "workspace" })).toBe("#/settings/workspace");`. Puis, comme en T25 Step 1 : `Screen` gagne `"workspace"` (après `"shortcuts"`), `SCREEN_HASHES.workspace = "#/settings/workspace"`, `SCREENS.workspace = { title: fr.settings.workspace, icon: Building2, crumbs: [fr.nav.settings, fr.settings.workspace] }`, palette `workspace: SCREENS.workspace.icon`, `SETTINGS_SCREENS` += `"workspace"`, `SettingsNav` : `SettingsScreen` inclut `"workspace"` et `ITEMS` commence par `{ id: "workspace", label: fr.settings.workspace, icon: Building2, screen: "workspace" }`, `ScreenView` : `if (screen === "workspace") return <WorkspacePage config={config} />;` (avant `if (!config) return null;`), `lazy-screens.ts` : `WorkspacePage`, `bundle-report.ts` : `/\/packages\/ui\/src\/(settings\/WorkspacePage\.tsx|i18n\/fr-workspace\.ts)$/,`.
 Run: `bun run typecheck && bun test packages/ui/src/tabs` — Expected: PASS.
 
-- [ ] **Step 2: Textes**
+- [x] **Step 2: Textes**
 
 `packages/ui/src/i18n/fr-workspace.ts` :
 ```ts
@@ -3101,7 +3101,7 @@ export const frWorkspace = {
 ```
 `fr.ts` › `workspace` : ne garder que `defaultName`, `local`, `menu`, `settings`.
 
-- [ ] **Step 3: Page Workspace (test rouge puis vert)**
+- [x] **Step 3: Page Workspace (test rouge puis vert)**
 
 `packages/ui/src/settings/workspace-page.test.tsx` :
 ```tsx
@@ -3325,7 +3325,7 @@ export function WorkspacePage({ config }: Props) {
 (`IconField` de T18 rend l'aperçu avec `alt={frFields.icon.preview(label)}` : « Image · Image » ici. `WorkspacePatch` est le type Zod de T20 ; `patch.name = …` sur un objet vide reste typé grâce aux champs optionnels.)
 Run: `bun test packages/ui/src/settings/workspace-page.test.tsx` — Expected: PASS, 4 tests.
 
-- [ ] **Step 4: Tuile, sélecteur et barre latérale (tests adaptés puis verts)**
+- [x] **Step 4: Tuile, sélecteur et barre latérale (tests adaptés puis verts)**
 
 `workspace-switcher.test.tsx` : réécrire avec trois tests : « shows the name and the local subtitle » (inchangé sauf props `icon={null}`), « lists the current workspace and the settings entry only » (items `["PersoWorkspace local", "Paramètres du workspace"]`), « shows the workspace image in the tile when there is one » (`icon="/icons/workspace?v=v1"` ⇒ `screen.getAllByRole("img", { name: "Image du workspace Perso" })[0]?.getAttribute("src")` vaut l'URL), « settings entry opens the workspace settings » (inchangé). Supprimer les tests de renommage.
 Run: `bun test packages/ui/src/shell/workspace-switcher.test.tsx` — Expected: FAIL.
@@ -3360,13 +3360,13 @@ test("the workspace header leads to the workspace settings", async () => {
 (`configFixture()` porte déjà `workspaceDescription` et `workspaceIcon` depuis T20/T21 ; le mock `rpc` du fichier renvoie `null` pour `config`, ce qui suffit.)
 Run: `bun test packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 5: `renameWorkspace` retirée du schéma, du core et du démon**
+- [x] **Step 5: `renameWorkspace` retirée du schéma, du core et du démon**
 
 `packages/core/src/agent-config.test.ts:195-210` : le test « renameWorkspace … » devient un test `updateWorkspace` (celui de T20 existe déjà : supprimer l'ancien et ses assertions `safeParse` sur `renameWorkspace`, reporter les deux `safeParse` de validation sur `{ method: "updateWorkspace", patch: { name: "   " } }` et `{ …, patch: { name: "x".repeat(41) } }`). `packages/schema/src/agent.ts` : supprimer la ligne `z.object({ method: z.literal("renameWorkspace"), name: WorkspaceName })` et `renameWorkspace: { name: string };`. `packages/core/src/agent-config.ts:187-193` : supprimer le `case "renameWorkspace"`. `packages/daemon/src/service.test.ts:182` : `s1.handle({ method: "config", command: { method: "updateWorkspace", patch: { name: "Maison", description: "Mes projets" } } });` (et retirer la ligne `updateWorkspace` ajoutée en T20 juste après, devenue redondante). `grep -rn renameWorkspace packages e2e` doit ne rien renvoyer.
 
 Run: `bun run check && bun run typecheck && bun test packages && bun run budget` — Expected: PASS ; budget ≤ 230 000 (la page est hors de l'entrée ; `WorkspaceSwitcher` perd le dialogue).
 
-- [ ] **Step 6: Commits**
+- [x] **Step 6: Commits**
 
 ```bash
 git add packages/schema/src/tabs.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/tabs/screens.ts packages/ui/src/tabs/tabs.test.ts packages/ui/src/palette/CommandPalette.tsx packages/ui/src/settings/SettingsNav.tsx packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/lazy-screens.ts packages/ui/scripts/bundle-report.ts packages/ui/src/settings/WorkspacePage.tsx packages/ui/src/settings/workspace-page.test.tsx packages/ui/src/i18n/fr-workspace.ts
