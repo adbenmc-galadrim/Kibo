@@ -13,7 +13,7 @@ import {
   runWriteStep,
   type WriteLog,
 } from "./fake-claude-ai";
-import { FAKE_CLAUDE, FakeRoutes, FakeScenario, FakeStep } from "./fake-claude-scenario";
+import { FAKE_CLAUDE, FakeRoutes, FakeScenario, FakeStep, scenarioFor } from "./fake-claude-scenario";
 
 const dirs: string[] = [];
 const tmp = () => {
@@ -132,6 +132,7 @@ test("every AI scenario parses and every fixture or route target exists", () => 
   const files = readdirSync(AI_SCENARIOS_DIR).filter((f) => f.endsWith(".json"));
   expect(files.sort()).toEqual(
     [
+      "creations-routes",
       "e2e-routes",
       "generate-fail-3",
       "generate-fetch",
@@ -163,6 +164,18 @@ test("every AI scenario parses and every fixture or route target exists", () => 
       for (const step of turn.steps)
         if ("write" in step) expect(existsSync(join(FIXTURES_DIR, step.fixture))).toBe(true);
   }
+});
+
+test("the creations routes send a title ending in large to the fixed width scenario", () => {
+  const routes = aiScenarioPath("creations-routes.json");
+  const prompt = (title: string) =>
+    `Écris le composant Kibo « ${title} » (id x, widget) dans le dossier courant.\nFormats à prendre en charge : large (Large, 6 × 6 cellules).`;
+  expect(scenarioFor(routes, prompt("Compteur large"), null)).toBe(
+    aiScenarioPath("generate-fixed-width.json"),
+  );
+  expect(scenarioFor(routes, prompt("Burndown du sprint"), null)).toBe(
+    aiScenarioPath("generate-revise.json"),
+  );
 });
 
 async function spawnFake(argv: string[], env: Record<string, string>, stdin = "") {
