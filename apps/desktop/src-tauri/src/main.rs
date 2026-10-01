@@ -9,7 +9,7 @@ use tauri_plugin_shell::{
     process::{CommandChild, CommandEvent},
     ShellExt,
 };
-use tauri_plugin_window_state::{StateFlags, WindowExt};
+use tauri_plugin_window_state::StateFlags;
 
 mod menu;
 
@@ -126,16 +126,13 @@ fn show_notice(handle: &AppHandle, notice: Result<Notice, serde_json::Error>) {
 
 fn open_main_window(handle: &AppHandle, url: Url, sandbox: &Url) -> Result<(), String> {
     let allowed = vec![ipc_origin(&url), ipc_origin(sandbox)];
-    let window = WebviewWindowBuilder::new(handle, "main", WebviewUrl::External(url))
+    WebviewWindowBuilder::new(handle, "main", WebviewUrl::External(url))
         .on_navigation(move |target| navigation_allowed(target, &allowed))
         .title("Kibo")
         .inner_size(1440.0, 900.0)
         .min_inner_size(MIN_WINDOW.0, MIN_WINDOW.1)
         .build()
         .map_err(|e| format!("impossible d'ouvrir la fenêtre ({e})"))?;
-    if let Err(e) = window.restore_state(WINDOW_STATE) {
-        eprintln!("[kibo] window state not restored: {e}");
-    }
     Ok(())
 }
 
