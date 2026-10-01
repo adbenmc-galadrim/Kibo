@@ -1553,16 +1553,16 @@ Vague 1 ← T29. Spec §15.2, code §12.8 ; écran **122**. UI seule ; les E2E q
 - Consumes: `shortcutLabel`, `isMac`, `Collapsible`.
 - Produces: `fr-code.ts` : `changes.kind` en mots, `staged`/`unstaged`, `stage`/`unstage`/`stageAll`/`unstageAll` renommés, `commit.pushing(branch, remote)`, `file.hints(mac)`.
 
-- [ ] **Step 1: Libellés (tests rouges puis verts, écran 122)**
+- [x] **Step 1: Libellés (tests rouges puis verts, écran 122)**
 
 Adapter d'abord les tests : `file-menu.test.ts` attend « Ajouter au commit » / « Retirer du commit » ; le test de `FileList` attend `screen.getByText("Modifié")` (plus de lettre `aria-hidden`) et les titres « Dans le prochain commit (2) » / « Modifications (3) » ; `commit.test.tsx` attend `kbd` « ⌘↵ » sur Mac et « Ctrl+↵ » ailleurs (`isMac` simulé par `Object.defineProperty(navigator, "platform", …)` comme dans `shortcut-label.test.ts`) ; test de `PushActions` : pendant le push, « Publication de la branche kib-12 sur origin… » visible et `git push -u origin kib-12` seulement sous « Détails ». Puis le code : `fr-code.ts` (`kind: { modified: "Modifié", added: "Ajouté", deleted: "Supprimé", renamed: "Renommé", untracked: "Ajouté", conflicted: "Conflit" }`, `kindLabel` fusionné, `staged: "Dans le prochain commit"`, `unstaged: "Modifications"`, `stage: "Ajouter au commit"`, `unstage: "Retirer du commit"`, `stageAll: "Tout ajouter"`, `unstageAll: "Tout retirer"`, `commit.pushing`, `file.hints: (mac) => \`${shortcutLabel(["Shift", "O"], mac)} ouvrir dans l'éditeur externe · Esc fermer\``), `FileList.tsx` (badge texte `text-2xs` à la place de la lettre), `PushActions.tsx` (`PushProgress` reçoit `title` et `command` dans un `Collapsible`), `CommitPanel.tsx` et `CommandPalette.tsx` (`shortcutLabel(["↵"], isMac())`), `FilePreviewSheet.tsx` (`fr.file.hints(isMac())`).
 Run: `bun test packages/ui/src/code packages/ui/src/palette packages/ui/src/files` — Expected: PASS.
 
-- [ ] **Step 2: E2E alignés**
+- [x] **Step 2: E2E alignés**
 
 `grep -rn "Indexer\|Désindexer\|Indexés\|Non indexés\|Tout indexer" e2e/` : remplacer par les nouveaux libellés ; `cd e2e && bunx playwright test --project=code-dark --project=menus-dark` — Expected: PASS.
 
-- [ ] **Step 3: Gate et commit**
+- [x] **Step 3: Gate et commit**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget && grep -rn "⌘" packages/ui/src --include=*.tsx --include=*.ts | grep -v "shortcut-label\|test\|fr-shortcuts"` — Expected: PASS, aucun raccourci codé en dur.
 
