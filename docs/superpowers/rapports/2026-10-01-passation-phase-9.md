@@ -11,7 +11,16 @@ Arrêt au seuil d'usage hebdomadaire (65 % inclus, fixé par Adam). Aucun agent 
 
 ## Vague 4 (lots 5 et 9)
 
-__VAGUE4__
+Plan : `docs/superpowers/plans/2026-10-01-kibo-phase-9-vague-4.md` (T45 à T55, intégré dans `phase/9`), décisions de spec écrites : design §16, composants §17, IA §13, sync D48, agents §12. Points pour Adam A11 à A21 en tête du plan, défauts appliqués. **Aucune tâche lancée.**
+
+| Vague | Tâches | Relecture `kibo-lead` |
+|---|---|---|
+| 0 | T45 budget (`InstanceMenuContent` à la demande, `FORBIDDEN_IN_ENTRY` pré-rempli, mineure « ⋯ ») ∥ T46 schéma des formats et `setInstanceLayout` ∥ T50 schéma IA, pièces jointes, révision, parallélisme | T45, T46, T50 |
+| 1 | T47 core, sync-server (D48), démon, SDK et composants intégrés (← T46) ∥ T48 UI grille et « Modifier la disposition » (← T45, T46) ∥ T51 contexte de l'agent, aperçu, faux `claude` (← T46, T50) ∥ T52 UI décrire avec images, dialogues bornés (← T45, T50) | T51 (listener, prompt) ; `room.ts` de T47 à faire relire aussi |
+| 2 | T49 E2E disposition, ports 4423-4424 (← T47, T48) ∥ T53 écran Créations (← T50, T52) ∥ T54 aperçu et révision (← T47, T51, T52) | T54 (pont iframe, budget) |
+| 3 | T55 E2E créations, ports 4425-4426 (← T53, T54) | — |
+
+Gate de vague : budget ≤ 222,0 kB (attendu ≈ 220,6), ports 4423 à 4426 dans la plage 4390-4430 déjà couverte par `gate.sh`. Puis rapport de vague 4, jalon `v1.1.0`.
 
 Lot 5 (tableau de bord éditable) retient par défaut les cinq formats de composant proposés à Adam (petit, moyen, large, demi-page, plein écran) ; une réponse différente change la tâche indiquée dans le plan, rien d'autre. Lot 9 (création de composants par l'IA) dépend du lot 5.
 
