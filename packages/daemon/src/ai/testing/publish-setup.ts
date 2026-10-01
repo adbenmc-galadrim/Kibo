@@ -73,6 +73,8 @@ function mergedStores(current: DraftStore, legacy: DraftStore): DraftStore {
     saveReport: (id, report) => owner(id).saveReport(id, report),
     get: (id) => owner(id).get(id),
     report: (id) => owner(id).report(id),
+    saveFeedback: (id, feedback) => owner(id).saveFeedback(id, feedback),
+    feedback: (id) => owner(id).feedback(id),
     list: () => [...current.list(), ...legacy.list()],
     active: () => [...current.active(), ...legacy.active()],
   };

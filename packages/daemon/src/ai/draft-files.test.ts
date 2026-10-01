@@ -89,6 +89,20 @@ describe("prepareDraft", () => {
     });
     expect(existsSync(paths.dir)).toBe(false);
   });
+  test("refuses a leftover symbolic link in place of the images folder, and leaves its target", async () => {
+    const root = home();
+    const paths = draftPaths(root, "d1");
+    const target = join(root, "target");
+    mkdirSync(target);
+    writeFileSync(join(target, "keep.png"), "x");
+    mkdirSync(dirname(paths.attachmentsDir), { recursive: true });
+    symlinkSync(target, paths.attachmentsDir);
+    await expect(prepareDraft({ paths, fill: scaffold, kiboFiles })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(existsSync(paths.dir)).toBe(false);
+    expect(readdirSync(target)).toEqual(["keep.png"]);
+  });
   test("removes the partial draft when filling fails", async () => {
     const paths = draftPaths(home(), "d1");
     const fill = async () => {

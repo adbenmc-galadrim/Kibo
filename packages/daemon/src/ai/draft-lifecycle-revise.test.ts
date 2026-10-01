@@ -1,33 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { type DraftAttachmentInput, MAX_DRAFT_REVISIONS } from "@kibo/schema";
+import { MAX_DRAFT_REVISIONS } from "@kibo/schema";
 import { draftPaths } from "./draft-files";
 import { cleanLifecycles, create, done, setupLifecycle } from "./testing/lifecycle-fixture";
+import { feedback, gif, PNG, png, reviewed } from "./testing/revise-fixture";
 
 cleanLifecycles();
-
-const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3];
-const png = (name: string): DraftAttachmentInput => ({
-  name,
-  mime: "image/png",
-  data: Buffer.from(PNG).toString("base64"),
-});
-const gif = (name: string): DraftAttachmentInput => ({
-  name,
-  mime: "image/png",
-  data: Buffer.from("GIF89a......").toString("base64"),
-});
-const feedback = "Mets le total en gros";
-
-async function reviewed(images: DraftAttachmentInput[] = [png("a.png")]) {
-  const setup = setupLifecycle();
-  const d = await setup.life.start({ ...create, attachments: images });
-  setup.runs.end(d.runId ?? "", done());
-  await setup.life.idle();
-  expect(setup.store.get(d.id).status).toBe("review");
-  return { ...setup, d, paths: draftPaths(setup.home, d.id) };
-}
 
 describe("images at start", () => {
   test("are written beside the draft, listed in the prompt and readable by the agent only", async () => {
@@ -89,9 +68,9 @@ describe("formats at start", () => {
 
   test("formats that do not fit the kind refuse the start before anything is created", async () => {
     const { home, store, life } = setupLifecycle();
-    await expect(life.start({ ...create, kind: "view", formats: ["medium"] })).rejects.toMatchObject({
-      code: "INVALID_INPUT",
-    });
+    const refused = life.start({ ...create, kind: "view", formats: ["medium"] });
+    await expect(refused).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(refused).rejects.not.toThrow("INVALID_MANIFEST");
     await expect(life.start({ ...create, formats: ["medium", "medium"] })).rejects.toMatchObject({
       code: "INVALID_INPUT",
     });

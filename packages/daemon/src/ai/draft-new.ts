@@ -39,7 +39,7 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     throw new KiboError("CONFLICT", `a draft of ${input.id} is already open`);
   if (input.mode === "create") {
     const issue = formatIssue({ kind: input.kind, formats: input.formats });
-    if (issue) throw new KiboError("INVALID_INPUT", issue);
+    if (issue) throw new KiboError("INVALID_INPUT", issue.replace(/^INVALID_MANIFEST: /, ""));
     if (ctx.catalog.isTaken(input.id)) throw new KiboError("CONFLICT", `component id ${input.id} is taken`);
     return {
       ...common,

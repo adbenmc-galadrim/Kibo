@@ -5,16 +5,22 @@ import {
   type ReviseComponentDraftInput,
   type StartComponentDraftInput,
 } from "@kibo/schema";
-import { attachmentPaths, checkAttachments, writeAttachments } from "./draft-attachments";
+import {
+  attachmentPaths,
+  checkAttachments,
+  removeAttachmentFiles,
+  writeAttachments,
+} from "./draft-attachments";
 import {
   clearUnrestored,
   type DraftPaths,
   draftPaths,
   isUnrestored,
+  readDraftManifest,
   removeDraft,
   verifyAndRestore,
 } from "./draft-files";
-import { draftBrief as brief, type LaunchInput, launchDraft } from "./draft-launch";
+import { draftBrief as brief, type LaunchInput, launchDraft, retryPrompt } from "./draft-launch";
 import { applyDraftEvent, canRetry, type DraftEvent, isActive } from "./draft-machine";
 import { newDraft, prepareNewDraft } from "./draft-new";
 import { createDraftRecovery, errorText } from "./draft-recovery";
@@ -30,7 +36,7 @@ import type {
   Editor,
   RunEnd,
 } from "./ports";
-import { fixPrompt, generatorPrompt, revisePrompt } from "./prompts";
+import { generatorPrompt, revisePrompt } from "./prompts";
 
 export type LifecycleDeps = {
   store: DraftStore;
@@ -148,6 +154,13 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       input,
     );
 
+  const assertNotPublishing = (d: ComponentDraft) => {
+    if (d.status !== "permissions") return;
+    const published = deps.catalog.latest(d.componentId)?.version;
+    if (published !== undefined && published === readDraftManifest(paths(d).dir).version)
+      throw new KiboError("CONFLICT", `version ${published} is being published; revise it once it is done`);
+  };
+
   const idle = async () => {
     while (pending.size > 0) await Promise.all([...pending]);
   };
@@ -206,8 +219,11 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
         recovery.noteFailure(d, restored.detail);
         return deps.store.get(draftId);
       }
-      const report = deps.store.report(draftId);
-      const prompt = report && !report.ok ? fixPrompt(report) : generatorPrompt(brief(d, images(d)));
+      const prompt = retryPrompt(d, {
+        report: deps.store.report(draftId),
+        feedback: d.revisions > 0 ? deps.store.feedback(draftId) : null,
+        images: images(d),
+      });
       return launch({ draft: d, sdkDir, prompt, resumeSessionId: d.sessionId, event: "enqueued" });
     },
 
@@ -215,15 +231,20 @@ export function createDraftLifecycle(deps: LifecycleDeps): DraftLifecycle {
       const sdkDir = requireGenerator();
       const d = deps.store.get(input.draftId);
       applyDraftEvent(d, { type: "revised", runId: "check" }, deps.clock.now());
+      assertNotPublishing(d);
       const added = writeAttachments(paths(d).attachmentsDir, input.attachments, d.attachments);
       const withImages = { ...d, attachments: [...d.attachments, ...added] };
-      deps.store.save(withImages);
-      const prompt = revisePrompt(
-        brief(withImages, []),
-        input.feedback,
-        images(withImages, d.attachments.length),
-      );
-      return launch({ draft: withImages, sdkDir, prompt, resumeSessionId: d.sessionId, event: "revised" });
+      const fresh = images(withImages, d.attachments.length);
+      const previous = deps.store.feedback(d.id);
+      deps.store.saveFeedback(d.id, input.feedback);
+      try {
+        const prompt = revisePrompt(brief(withImages, []), input.feedback, fresh);
+        return launch({ draft: withImages, sdkDir, prompt, resumeSessionId: d.sessionId, event: "revised" });
+      } catch (e) {
+        removeAttachmentFiles(fresh);
+        deps.store.saveFeedback(d.id, previous);
+        throw e;
+      }
     },
 
     async revalidate(draftId) {

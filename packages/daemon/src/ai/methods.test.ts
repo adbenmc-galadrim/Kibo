@@ -4,7 +4,7 @@ import { AI_METHODS, createAiRpc, isAiRequest } from "./methods";
 
 const draftId = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
 
-function setup(processing: ReadonlySet<string> = new Set()) {
+function setup(processing: ReadonlySet<string> = new Set(), onSettled: () => void = () => {}) {
   const seen: string[] = [];
   const mark = (name: string) => {
     seen.push(name);
@@ -15,7 +15,10 @@ function setup(processing: ReadonlySet<string> = new Set()) {
       status: () => mark("status"),
       capabilities: () => null,
       refresh: async () => mark("refresh"),
-      settled: async () => mark("settled"),
+      settled: async () => {
+        onSettled();
+        return mark("settled");
+      },
     },
     environment: async () => mark("environment"),
     starter: { suggest: () => mark("suggest") },
@@ -129,4 +132,17 @@ test("the draft preview is refused until it is served", async () => {
   await expect(port.handle({ method: "previewComponentDraft", draftId })).rejects.toMatchObject({
     code: "INTERNAL",
   });
+});
+
+test("a review that starts while the AI status settles still blocks the revision", async () => {
+  const processing = new Set<string>();
+  const { port, seen } = setup(processing, () => processing.add(draftId));
+  const refusal = port.handle({
+    method: "reviseComponentDraft",
+    draftId,
+    feedback: "Mets le total",
+    attachments: [],
+  });
+  await expect(refusal).rejects.toMatchObject({ code: "CONFLICT" });
+  expect(seen).toEqual(["settled"]);
 });

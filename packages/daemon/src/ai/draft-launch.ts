@@ -1,10 +1,10 @@
-import type { ComponentDraft } from "@kibo/schema";
-import { type DraftPaths, markUnrestored } from "./draft-files";
-import { isRealDir } from "./draft-fs";
+import type { ComponentDraft, ValidationReport } from "@kibo/schema";
+import { clearUnrestored, type DraftPaths, markUnrestored } from "./draft-files";
+import { assertRealDir, isRealDir } from "./draft-fs";
 import { createDraftGuard } from "./draft-guard";
 import { applyDraftEvent, type DraftEvent } from "./draft-machine";
 import type { AgentRuns, Clock, RunEnd } from "./ports";
-import type { GeneratorBrief } from "./prompts";
+import { fixPrompt, type GeneratorBrief, generatorPrompt, revisePrompt } from "./prompts";
 
 export const ATTACHMENTS_ENV = "KIBO_DRAFT_ATTACHMENTS";
 
@@ -44,22 +44,40 @@ export function launchDraft(deps: LaunchDeps, input: LaunchInput): ComponentDraf
   const d = input.draft;
   applyDraftEvent(d, { type: input.event, runId: "check" }, deps.clock.now());
   const p = deps.paths(d);
-  markUnrestored(p);
-  const runId = deps.runs.enqueue({
-    profileId: "generateur",
-    label: `Composant ${d.title}`,
-    cwd: p.dir,
-    prompt: input.prompt,
-    args: deps.args(),
-    env: { ...deps.env(), [ATTACHMENTS_ENV]: p.attachmentsDir },
-    resumeSessionId: input.resumeSessionId,
-    guard: createDraftGuard({
-      draftDir: p.dir,
-      readRoots: readRoots(input.sdkDir, p),
-      allowServer: d.withServer,
-    }),
+  assertRealDir(p.dir);
+  const guard = createDraftGuard({
+    draftDir: p.dir,
+    readRoots: readRoots(input.sdkDir, p),
+    allowServer: d.withServer,
   });
+  markUnrestored(p);
+  let runId: string;
+  try {
+    runId = deps.runs.enqueue({
+      profileId: "generateur",
+      label: `Composant ${d.title}`,
+      cwd: p.dir,
+      prompt: input.prompt,
+      args: deps.args(),
+      env: { ...deps.env(), [ATTACHMENTS_ENV]: p.attachmentsDir },
+      resumeSessionId: input.resumeSessionId,
+      guard,
+    });
+  } catch (e) {
+    clearUnrestored(p);
+    throw e;
+  }
   const next = deps.apply(d, { type: input.event, runId });
   deps.runs.onEnd(runId, (end) => deps.onEnd(next.id, runId, end));
   return next;
+}
+
+export function retryPrompt(
+  d: ComponentDraft,
+  context: { report: ValidationReport | null; feedback: string | null; images: readonly string[] },
+): string {
+  if (context.report && !context.report.ok) return fixPrompt(context.report);
+  if (d.revisions > 0 && context.feedback !== null)
+    return revisePrompt(draftBrief(d, []), context.feedback, context.images);
+  return generatorPrompt(draftBrief(d, context.images));
 }

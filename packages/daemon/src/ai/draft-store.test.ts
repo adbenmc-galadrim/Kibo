@@ -121,3 +121,20 @@ test("a database from before the images is migrated when opened", () => {
   expect(store.get(a).revisions).toBe(2);
   expect(openDraftStore(db).get(a).revisions).toBe(2);
 });
+
+test("keeps the last feedback of a revision apart, and migrates an older table", () => {
+  const db = new Database(":memory:", { strict: true });
+  const store = openDraftStore(db);
+  store.insert(draft(a, "review", 2));
+  expect(store.feedback(a)).toBeNull();
+  store.saveFeedback(a, "Mets le total en gros");
+  expect(store.feedback(a)).toBe("Mets le total en gros");
+  store.save(draft(a, "generating", 3));
+  expect(store.feedback(a)).toBe("Mets le total en gros");
+  store.saveFeedback(a, null);
+  expect(store.feedback(a)).toBeNull();
+  expect(() => store.feedback(b)).toThrow("NOT_FOUND");
+  expect(() => store.saveFeedback(b, "x")).toThrow("NOT_FOUND");
+  db.run("ALTER TABLE component_drafts DROP COLUMN feedback");
+  expect(openDraftStore(db).feedback(a)).toBeNull();
+});

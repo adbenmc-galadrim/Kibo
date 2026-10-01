@@ -8,6 +8,8 @@ export type DraftStore = {
   saveReport(id: string, report: ValidationReport | null): void;
   get(id: string): ComponentDraft;
   report(id: string): ValidationReport | null;
+  saveFeedback(id: string, feedback: string | null): void;
+  feedback(id: string): string | null;
   list(): ComponentDraft[];
   active(): ComponentDraft[];
 };
@@ -53,6 +55,7 @@ const COLUMNS =
 const ADDED_COLUMNS: Record<string, string> = {
   attachmentsJson: "attachmentsJson TEXT NOT NULL DEFAULT '[]'",
   revisions: "revisions INTEGER NOT NULL DEFAULT 0",
+  feedback: "feedback TEXT",
 };
 
 function parseJson(text: string, what: string): unknown {
@@ -127,7 +130,7 @@ export function openDraftStore(db: Database): DraftStore {
     withServer INTEGER NOT NULL, baseVersion TEXT, description TEXT NOT NULL, runId TEXT, sessionId TEXT,
     status TEXT NOT NULL, attempts INTEGER NOT NULL, failureJson TEXT, incidentsJson TEXT NOT NULL,
     reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL,
-    attachmentsJson TEXT NOT NULL DEFAULT '[]', revisions INTEGER NOT NULL DEFAULT 0)`);
+    attachmentsJson TEXT NOT NULL DEFAULT '[]', revisions INTEGER NOT NULL DEFAULT 0, feedback TEXT)`);
   addMissingColumns(db);
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS component_drafts_one_active ON component_drafts (componentId)
     WHERE status NOT IN ('done', 'abandoned')`);
@@ -139,6 +142,12 @@ export function openDraftStore(db: Database): DraftStore {
   );
   const writeReport = db.query<null, { id: string; reportJson: string | null }>(
     "UPDATE component_drafts SET reportJson = $reportJson WHERE id = $id",
+  );
+  const writeFeedback = db.query<null, { id: string; feedback: string | null }>(
+    "UPDATE component_drafts SET feedback = $feedback WHERE id = $id",
+  );
+  const oneFeedback = db.query<{ feedback: string | null }, { id: string }>(
+    "SELECT feedback FROM component_drafts WHERE id = $id",
   );
   const one = db.query<Params, { id: string }>(`SELECT ${COLUMNS} FROM component_drafts WHERE id = $id`);
   const oneReport = db.query<{ reportJson: string | null }, { id: string }>(
@@ -153,6 +162,11 @@ export function openDraftStore(db: Database): DraftStore {
   };
   const reportRow = (id: string) => {
     const row = oneReport.get({ id });
+    if (!row) throw new KiboError("NOT_FOUND", `draft ${id} not found`);
+    return row;
+  };
+  const feedbackRow = (id: string) => {
+    const row = oneFeedback.get({ id });
     if (!row) throw new KiboError("NOT_FOUND", `draft ${id} not found`);
     return row;
   };
@@ -184,6 +198,11 @@ export function openDraftStore(db: Database): DraftStore {
       if (!parsed.success) throw new KiboError("STORE_CORRUPT", `report of draft ${id} is unreadable`);
       return parsed.data;
     },
+    saveFeedback: (id, feedback) => {
+      feedbackRow(id);
+      writeFeedback.run({ id, feedback });
+    },
+    feedback: (id) => feedbackRow(id).feedback,
     list,
     active: () => list().filter(isActive),
   };
