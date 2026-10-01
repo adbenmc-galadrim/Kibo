@@ -1651,7 +1651,7 @@ Vague 1 ← T29, après T38 (`FilePreviewSheet.tsx`, `fr-code.ts`). Spec §15.3,
 - Consumes: `useSyncExternalStore`, `EditorView.lineWrapping`, `Compartment`, `Switch`, `Input`, `navigator.clipboard`.
 - Produces: contrat « UI » (T40) : `readPref`, `writePref`, `usePref`, `useWrap`, `findMatches`, `parseGoTo`, `stepMatch`, `FileToolbar`, `CodeLines { wrap, highlight, matches }`, `CodeEditor { wrap }`, `DiffView { wrap }`.
 
-- [ ] **Step 1: Helper de préférence et recherche pure (tests rouges puis verts)**
+- [x] **Step 1: Helper de préférence et recherche pure (tests rouges puis verts)**
 
 `local-pref.test.ts` : `readPref("k", "x")` ⇒ `"x"` sans valeur ; `writePref("k", "y")` puis lecture ⇒ `"y"` ; `writePref("k", null)` efface ; un `localStorage` qui lève (simulé par `Object.defineProperty(globalThis, "localStorage", { get() { throw … } })` dans le test, restauré ensuite) ⇒ valeur par défaut, une ligne `console.error`, pas d'exception ; `usePref` suit `writePref` et l'événement `storage`. Puis `theme.ts` et `run-history.ts` réécrits sur `readPref`/`writePref` (tests existants verts, comportement identique : `removeItem` pour `system` ⇒ `writePref(KEY, null)`).
 
@@ -1671,7 +1671,7 @@ test("parseGoTo reads :42 and nothing else; stepMatch wraps around", () => {
 ```
 Implémenter. Run: `bun test packages/ui/src/lib/local-pref.test.ts packages/ui/src/files/find-in-file.test.ts packages/ui/src/theme.test.ts packages/ui/src/shell/run-history.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Barre d'outils, aperçu, onglet (tests rouges puis verts, écran 124)**
+- [x] **Step 2: Barre d'outils, aperçu, onglet (tests rouges puis verts, écran 124)**
 
 `files.test.tsx` :
 ```tsx
@@ -1698,12 +1698,12 @@ test("screen 124: wrap is on by default and remembered, the search highlights an
 (`copied` : `navigator.clipboard.writeText` remplacé dans le test par `Object.assign(navigator, { clipboard: { writeText: async (t) => { copied.push(t) } } })`.) `FileToolbar.tsx` : `Switch` + `Input type="search"` + compteur + ↑ ↓ + « Copier le chemin » ; `CodeLines.tsx` : `wrap ? "whitespace-pre-wrap [overflow-wrap:anywhere]" : "whitespace-pre"`, surlignage des `matches` (`<mark>` par découpe des spans de la ligne : découper le texte des jetons à la colonne, sans toucher aux couleurs shiki) et `aria-current` sur l'occurrence courante avec `scrollIntoView` ; `CodeEditor.tsx` : compartiment `wrapping` reconfiguré sur la prop ; `FilePreviewSheet.tsx` et `FileTabView.tsx` : état `find`, raccourci ⌘/Ctrl+F dans le volet (`onKeyDown` du conteneur), pied `fr.file.position(currentLine, col)` où `currentLine = fileRef.line ?? find courant ?? 1`.
 Run: `bun test packages/ui/src/files` — Expected: PASS.
 
-- [ ] **Step 3: Diff (test rouge puis vert)**
+- [x] **Step 3: Diff (test rouge puis vert)**
 
 Test de `DiffView` : `wrap={false}` ⇒ `whitespace-pre`, `wrap={true}` ⇒ `whitespace-pre-wrap` ; `ChangesBody.tsx` : `const [wrap, setWrap] = useWrap()` et un `Switch` « Retour à la ligne » dans l'en-tête du diff.
 Run: `bun test packages/ui/src/code && bun run budget` — Expected: PASS ; budget noté.
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 ```bash
 git add packages/ui/src/lib/local-pref.ts packages/ui/src/lib/local-pref.test.ts packages/ui/src/theme.ts packages/ui/src/shell/run-history.ts
