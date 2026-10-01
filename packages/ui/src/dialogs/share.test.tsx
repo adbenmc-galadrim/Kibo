@@ -95,7 +95,7 @@ test("before sharing, the dialog lists what leaves and what stays", async () => 
 test("without a server the share button is disabled", async () => {
   results.getSyncStatus = () => Promise.resolve({ ...online, state: "unconfigured", serverUrl: null });
   render(<ShareProjectDialog project={project(local)} open onOpenChange={() => {}} remote={false} />);
-  expect(await screen.findByText("Configure un serveur dans Paramètres › Sync")).toBeTruthy();
+  expect(await screen.findByText("Configure un serveur dans Paramètres › Synchronisation")).toBeTruthy();
   expect((screen.getByRole("button", { name: "Partager" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
@@ -105,7 +105,9 @@ test("from a remote session the server setup is not offered", async () => {
   expect(
     await screen.findByText("Aucun serveur de sync : il se configure depuis l'ordinateur où tourne Kibo."),
   ).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Configure un serveur dans Paramètres › Sync" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Configure un serveur dans Paramètres › Synchronisation" }),
+  ).toBeNull();
 });
 
 test("sharing offline explains the failure", async () => {
