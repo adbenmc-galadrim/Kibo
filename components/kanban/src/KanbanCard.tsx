@@ -1,4 +1,4 @@
-import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
 import type { CiRun, MemberInfo, Status, StatusId, TicketRun, TicketView } from "@kibo/schema";
 import { AgentBadge, assigneeLabel, type CiTone, TicketKeyLabel, worstCiTone } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
@@ -8,6 +8,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
 import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entries";
 import { Bot, MoreHorizontal } from "lucide-react";
+import type { PointerEvent } from "react";
 import { cardMenuEntries } from "./card-menu";
 import { fr } from "./fr";
 
@@ -15,7 +16,7 @@ const CI_DOT = {
   ok: "bg-emerald-500",
   error: "bg-red-500",
   running: "bg-amber-500",
-  neutral: "bg-zinc-400",
+  neutral: "bg-muted-foreground/60",
 } as const satisfies Record<CiTone, string>;
 
 export type CiChip = { tone: CiTone; prNumber: number | null };
@@ -26,6 +27,8 @@ export function ciChipOf(runs: CiRun[]): CiChip | undefined {
   const latest = [...runs].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   return { tone, prNumber: latest?.prNumber ?? null };
 }
+
+const stopDrag = (e: PointerEvent) => e.stopPropagation();
 
 type Props = {
   ticket: TicketView;
@@ -42,8 +45,18 @@ type Props = {
 
 export function KanbanCard(props: Props) {
   const { ticket: t, run, ci, statuses, members, remote, readOnly, onOpen, onMove, onRemove } = props;
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: t.id, disabled: readOnly });
-  const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
+  const sortable = useSortable({ id: t.id, disabled: readOnly, attributes: { role: "article" } });
+  const { attributes, listeners, transform, transition, isDragging } = sortable;
+  const ref = (node: HTMLElement | null) => {
+    sortable.setNodeRef(node);
+    sortable.setActivatorNodeRef(node);
+  };
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+  };
+  const insertion =
+    sortable.isOver && sortable.active !== null && !sortable.items.includes(String(sortable.active.id));
   const entries = cardMenuEntries({
     ticket: t,
     statuses,
@@ -55,22 +68,35 @@ export function KanbanCard(props: Props) {
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <article
-          ref={setNodeRef}
+          ref={ref}
           style={style}
+          {...attributes}
+          {...listeners}
+          aria-label={`${t.keyLabel} ${t.title}`}
+          data-key={t.keyLabel}
           className={cn(
-            "grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs",
+            "relative grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            !readOnly && "cursor-grab touch-none",
+            isDragging && "z-10 cursor-grabbing shadow-lg ring-1 ring-ring",
+            insertion &&
+              "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
             t.key === null && "border-dashed",
           )}
         >
           <div className="flex h-6 items-center gap-2">
-            <span {...listeners} {...attributes}>
-              <TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />
-            </span>
+            <TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />
             <span className="flex-1" />
             {!readOnly && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost" className="size-6" aria-label={fr.actions(t.keyLabel)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-6"
+                    aria-label={fr.actions(t.keyLabel)}
+                    data-dnd-ignore="true"
+                    onPointerDown={stopDrag}
+                  >
                     <MoreHorizontal className="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -80,7 +106,13 @@ export function KanbanCard(props: Props) {
               </DropdownMenu>
             )}
           </div>
-          <button type="button" className="text-left" onClick={onOpen}>
+          <button
+            type="button"
+            className="w-fit cursor-pointer text-left"
+            data-dnd-ignore="true"
+            onPointerDown={stopDrag}
+            onClick={onOpen}
+          >
             {t.title}
           </button>
           {t.blockedReason && (

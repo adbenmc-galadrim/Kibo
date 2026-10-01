@@ -1,5 +1,4 @@
 export const fr = {
-  lazy: { loading: "Chargement du Kanban…", failed: "Impossible de charger le Kanban.", retry: "Réessayer" },
   filter: { mineAndAgents: "Moi + agents", all: "Tous" },
   counter: (shown: number, total: number) => `${shown} / ${total} tickets`,
   newTicketIn: (status: string) => `Nouveau ticket dans ${status}`,
@@ -14,6 +13,15 @@ export const fr = {
       : `Ses ${children} sous-ticket${children > 1 ? "s" : ""} et ses liens seront supprimés aussi. Cette action est irréversible.`,
   removeConfirm: "Supprimer",
   cancel: "Annuler",
+  orderUnavailable: "Impossible de lire l'ordre des cartes.",
+  drag: {
+    help: "Pour déplacer une carte, appuie sur Espace ou Entrée, choisis sa place avec les flèches, puis appuie de nouveau sur Espace ou Entrée. Échap annule.",
+    picked: (key: string) => `${key} saisi.`,
+    over: (key: string, target: string) => `${key} au-dessus de ${target}.`,
+    outside: (key: string) => `${key} hors des colonnes.`,
+    dropped: (key: string, target: string) => `${key} déposé sur ${target}.`,
+    cancelled: (key: string) => `Déplacement de ${key} annulé.`,
+  },
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
   waitingOn: (key: string) => `attend ${key}`,
   blockedReason: (reason: string) => `Motif : ${reason}`,

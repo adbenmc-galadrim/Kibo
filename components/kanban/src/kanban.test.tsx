@@ -13,18 +13,7 @@ import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, kanbanPanel, manifest } from "./index";
-
-const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  const mine = { kind: "human", ref: "adam" } as const;
-  const a = run({ method: "createTicket", title: "Arbre des pages", assignee: mine }) as Ticket;
-  const b = run({ method: "createTicket", title: "Sync", assignee: mine }) as Ticket;
-  run({ method: "createTicket", title: "Hors filtre", assignee: { kind: "human", ref: "lea" } });
-  run({ method: "addLink", from: a.id, to: b.id, type: "blocks" });
-  const agent = (ref: string) => ({ kind: "agent", ref }) as const;
-  run({ method: "createTicket", title: "Récepteur", statusId: "in_progress", assignee: agent("opus-dev") });
-  run({ method: "createTicket", title: "Watcher", statusId: "backlog", assignee: agent("opus-dev") });
-  run({ method: "createTicket", title: "Review", statusId: "in_review", assignee: agent("sonnet-review") });
-};
+import { seed } from "./test-seed";
 
 const runs = (s: ProjectSnapshot): TicketRun[] => {
   const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
