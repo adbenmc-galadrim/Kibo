@@ -1867,7 +1867,7 @@ Vague 2 ← T21. Spec §14.3. Décision 1. Suppression d'un projet en une transa
 - Consumes: `unregisterProject` (`@kibo/core`, T20), `createProjectAdmin` (T21), `startSyncHarness` (`testing/sync-harness.ts`), `SyncClient.detachProject`, `NotesIndex`, `ProjectSettings`.
 - Produces: `Store.delete`, `ProjectSettings.remove`, `NotesIndex.clear`, `NotesService.forget`, `Docs.removeProject`, `Docs.onProjectRemoved`, `ProjectAdmin.deleteProject`.
 
-- [ ] **Step 1: Briques de stockage (tests rouges puis verts)**
+- [x] **Step 1: Briques de stockage (tests rouges puis verts)**
 
 `packages/daemon/src/store.test.ts` (compléter) : « delete removes a doc and ignores an unknown id » : `save("project:x", bytes)`, `delete("project:x")`, `load` ⇒ `null`, `ids()` sans `project:x`, `delete("project:x")` de nouveau sans erreur. Implémentation `store.ts` : requête `DELETE FROM docs WHERE id = $id`, méthode `delete: (id) => { remove.run({ id }); }`.
 
@@ -1879,7 +1879,7 @@ Vague 2 ← T21. Spec §14.3. Décision 1. Suppression d'un projet en une transa
 
 Run: `bun test packages/daemon/src/store.test.ts packages/daemon/src/notes` — Expected: PASS.
 
-- [ ] **Step 2: `Docs.removeProject` et écouteurs (test rouge puis vert)**
+- [x] **Step 2: `Docs.removeProject` et écouteurs (test rouge puis vert)**
 
 `packages/daemon/src/service.test.ts`, ajouter :
 ```ts
@@ -1937,7 +1937,7 @@ Run: `bun test packages/daemon/src/service.test.ts` — Expected: PASS.
 ```
 (adapter aux noms réels des maps `access` et `locked` du fichier.) Test dans `collab/project-hosts.test.ts` : après `removeProject`, une mutation locale du doc retiré ne notifie plus `onLocalChange`.
 
-- [ ] **Step 3: `deleteProject` (tests rouges puis verts)**
+- [x] **Step 3: `deleteProject` (tests rouges puis verts)**
 
 `packages/daemon/src/projects/delete.test.ts` (même `setup` que `admin.test.ts`, recopié, avec un `detach` espion `mock(() => {})`) :
 ```ts
@@ -2015,7 +2015,7 @@ Run: `bun test packages/daemon/src/projects/delete.test.ts` — Expected: FAIL.
 et le cas `case "deleteProject": return { handled: true, result: admin.deleteProject(req, ctx) };` dans `handler`.
 Run: `bun test packages/daemon/src/projects` — Expected: PASS.
 
-- [ ] **Step 4: Projet partagé, serveur réel (test rouge puis vert)**
+- [x] **Step 4: Projet partagé, serveur réel (test rouge puis vert)**
 
 `packages/daemon/src/projects/delete-shared.test.ts` (modèle `collab/share.test.ts` : `startSyncHarness({ daemons: 2 })`, `h.connect(0, "Adam")`, `h.connect(1, "Léa")`) :
 ```ts
@@ -2037,7 +2037,7 @@ test("a member who deletes the project leaves it; the owner keeps it and cannot 
 ```
 (`sharedProject`, `serverBytes`, `d` recopiés de `share.test.ts` ; `unshareProject` de `../collab/share`.) Run: `bun test packages/daemon/src/projects/delete-shared.test.ts` — Expected: PASS après Step 3 (rouge seulement si le désabonnement ne vide pas `syncDb` : corriger `detach` alors).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/daemon` — Expected: PASS.
 
