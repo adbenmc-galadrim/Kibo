@@ -1,8 +1,18 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { type ComponentDraft, DraftKind, KiboError, type StartComponentDraftInput } from "@kibo/schema";
+import {
+  type ComponentDraft,
+  type DraftAttachment,
+  DraftKind,
+  KiboError,
+  type StartComponentDraftInput,
+} from "@kibo/schema";
+import { writeAttachments } from "./draft-attachments";
+import { copySource, type DraftPaths, prepareDraft, removeDraft } from "./draft-files";
+import { draftBrief } from "./draft-launch";
 import type { DraftStore } from "./draft-store";
-import type { ComponentCatalog } from "./ports";
+import type { ComponentCatalog, Devkit } from "./ports";
+import { draftKiboFiles } from "./prompts";
 
 export type NewDraftContext = { store: DraftStore; catalog: ComponentCatalog; id: string; now: number };
 
@@ -50,4 +60,35 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     withServer: existsSync(join(src, "server.ts")),
     baseVersion: latest.version,
   };
+}
+
+export type PrepareContext = { devkit: Devkit; catalog: ComponentCatalog };
+
+export async function prepareNewDraft(
+  ctx: PrepareContext,
+  paths: DraftPaths,
+  req: { draft: ComponentDraft; input: StartComponentDraftInput },
+): Promise<DraftAttachment[]> {
+  const { draft, input } = req;
+  await prepareDraft({
+    paths,
+    kiboFiles: draftKiboFiles(draftBrief(draft, [])),
+    fill:
+      draft.mode === "create"
+        ? (dir) =>
+            ctx.devkit.scaffold({
+              dir,
+              id: draft.componentId,
+              title: draft.title,
+              kind: draft.kind,
+              withServer: draft.withServer,
+            })
+        : async (dir) => copySource(ctx.catalog.sourceDir(draft.componentId), dir),
+  });
+  try {
+    return writeAttachments(paths.attachmentsDir, input.attachments, []);
+  } catch (e) {
+    removeDraft(paths);
+    throw e;
+  }
 }

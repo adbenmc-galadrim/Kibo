@@ -69,10 +69,18 @@ export type GeneratorBrief = {
   withServer: boolean;
   description: string;
   baseVersion: string | null;
+  attachments: readonly string[];
 };
 
 const writable = (b: GeneratorBrief) =>
   b.withServer ? "ui.tsx, server.ts et des fichiers *.test.tsx" : "ui.tsx et des fichiers *.test.tsx";
+
+const TEST_ORDER = "Lance `kibo component test .` avant de t'arrêter, et corrige jusqu'à ce qu'il passe.";
+
+const imageLines = (paths: readonly string[]): string[] =>
+  paths.length === 0
+    ? []
+    : ["", "Maquettes jointes (lis chaque image avant de coder) :", ...paths.map((p) => `- ${p}`)];
 
 export function generatorPrompt(b: GeneratorBrief): string {
   const task =
@@ -82,12 +90,24 @@ export function generatorPrompt(b: GeneratorBrief): string {
   return [
     task,
     `Demande de l'utilisateur : « ${b.description} »`,
+    ...imageLines(b.attachments),
     "",
     "Avant de commencer, lis CLAUDE.md et le skill kibo-component du dossier.",
     `Tu ne modifies que ${writable(b)} ; component.test.tsx garde l'appel à runConformance.`,
     "N'importe que @kibo/sdk (et ses sous-chemins), react et lucide-react ; les tests ajoutent bun:test et @testing-library/react.",
     "Tu ne peux pas changer le manifeste ni la forme de la config : si c'est nécessaire, arrête-toi et explique pourquoi.",
-    "Lance `kibo component test .` avant de t'arrêter, et corrige jusqu'à ce qu'il passe.",
+    TEST_ORDER,
+  ].join("\n");
+}
+
+export function revisePrompt(b: GeneratorBrief, feedback: string, attachments: readonly string[]): string {
+  return [
+    `Retour de l'utilisateur après aperçu : « ${feedback} »`,
+    ...imageLines(attachments),
+    "",
+    `Reprends le composant « ${b.title} » (${b.componentId}) dans le dossier courant pour tenir compte de ce retour.`,
+    `Tu ne modifies que ${writable(b)}.`,
+    TEST_ORDER,
   ].join("\n");
 }
 

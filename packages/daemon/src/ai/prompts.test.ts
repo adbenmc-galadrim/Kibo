@@ -16,6 +16,7 @@ const brief = {
   withServer: false,
   description: "Burndown du sprint : tickets restants par jour.",
   baseVersion: null,
+  attachments: [],
 } as const;
 
 test("the JSON schema follows StarterPlan", () => {

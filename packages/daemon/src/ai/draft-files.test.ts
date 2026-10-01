@@ -12,6 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { hashSources } from "@kibo/devkit";
 import { ComponentManifest, KiboError, NO_PERMISSIONS } from "@kibo/schema";
 import { attachmentPaths, writeAttachments } from "./draft-attachments";
 import {
@@ -115,9 +116,11 @@ test("agentFiles lists agent files of the draft and of its base", async () => {
 
 test("the images live beside the draft: unseen by the restore and the agent files, removed with it", async () => {
   const paths = await prepared();
+  const before = await hashSources(paths.dir);
   const images = writeAttachments(paths.attachmentsDir, [IMAGE, { ...IMAGE, name: "b.png" }], []);
   expect(readdirSync(paths.dir)).not.toContain("1-a.png");
   expect(readdirSync(paths.baseDir)).not.toContain("1-a.png");
+  expect(await hashSources(paths.dir)).toBe(before);
   expect(verifyAndRestore(paths, false)).toEqual([]);
   expect(agentFiles(paths, false)).toEqual(["component.test.tsx", "ui.tsx"]);
   expect(attachmentPaths(paths.attachmentsDir, images).every((p) => existsSync(p))).toBe(true);

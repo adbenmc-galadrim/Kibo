@@ -25,6 +25,7 @@ function setup(processing: ReadonlySet<string> = new Set()) {
         throw new KiboError("INVALID_INPUT", "no");
       },
       revalidate: async () => mark("revalidate"),
+      revise: async () => mark("revise"),
       abandon: () => mark("abandon"),
       openFolder: async () => mark("openFolder"),
       list: () => mark("list"),
@@ -75,6 +76,7 @@ test("routes every AI method to its module", async () => {
     },
     { method: "abandonComponentDraft", draftId },
     { method: "openComponentDraftFolder", draftId },
+    { method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros", attachments: [] },
   ];
   for (const r of requests) if (isAiRequest(r)) await port.handle(r);
   expect(seen).toEqual([
@@ -91,6 +93,8 @@ test("routes every AI method to its module", async () => {
     "finalize",
     "abandon",
     "openFolder",
+    "settled",
+    "revise",
   ]);
 });
 
@@ -106,4 +110,23 @@ test("a draft being reviewed or published cannot be abandoned", async () => {
   await expect(refusal).rejects.toMatchObject({ code: "CONFLICT" });
   await expect(refusal).rejects.toThrow("being reviewed or published");
   expect(seen).toEqual([]);
+});
+
+test("a draft being reviewed or published cannot be revised", async () => {
+  const { port, seen } = setup(new Set([draftId]));
+  const refusal = port.handle({
+    method: "reviseComponentDraft",
+    draftId,
+    feedback: "Mets le total",
+    attachments: [],
+  });
+  await expect(refusal).rejects.toMatchObject({ code: "CONFLICT" });
+  expect(seen).toEqual([]);
+});
+
+test("the draft preview is refused until it is served", async () => {
+  const { port } = setup();
+  await expect(port.handle({ method: "previewComponentDraft", draftId })).rejects.toMatchObject({
+    code: "INTERNAL",
+  });
 });

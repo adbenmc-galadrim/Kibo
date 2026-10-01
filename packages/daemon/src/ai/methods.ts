@@ -25,9 +25,12 @@ export const AI_METHODS: ReadonlySet<string> = new Set(AI_RPC.map((s) => s.shape
 export const isAiRequest = (req: RpcRequest): req is AiRpcRequest => AI_METHODS.has(req.method);
 
 export function createAiRpc(deps: AiRpcDeps): AiPort {
-  const abandon = (draftId: string) => {
+  const assertIdle = (draftId: string) => {
     if (deps.publisher.isProcessing(draftId))
       throw new KiboError("CONFLICT", "this draft is being reviewed or published; try again once it is done");
+  };
+  const abandon = (draftId: string) => {
+    assertIdle(draftId);
     return deps.lifecycle.abandon(draftId);
   };
 
@@ -67,6 +70,17 @@ export function createAiRpc(deps: AiRpcDeps): AiPort {
         return abandon(req.draftId);
       case "openComponentDraftFolder":
         return deps.lifecycle.openFolder(req.draftId);
+      case "reviseComponentDraft":
+        assertIdle(req.draftId);
+        await deps.ai.settled();
+        assertIdle(req.draftId);
+        return deps.lifecycle.revise({
+          draftId: req.draftId,
+          feedback: req.feedback,
+          attachments: req.attachments,
+        });
+      case "previewComponentDraft":
+        throw new KiboError("INTERNAL", "the draft preview is not served by this daemon yet");
     }
   };
   return { handle: route };
