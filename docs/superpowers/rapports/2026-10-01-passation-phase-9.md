@@ -36,6 +36,7 @@ Relecture `kibo-lead` exigée : T43 (déjà faites : T29, T31, T39). Ordre d'int
 - T40 : compteur « n / N » sans `role="status"` ; état `copied` ne revient pas à `idle` ; `subscribePref` `external` non testé ; Esc hors champ non testé ; `bg-yellow-*` assumé ; le pied ne suit pas le défilement (écart écran 124).
 - T30 : tests RPC manquants pour `refreshMarketSource` (erreur, source désactivée, retirée) ; `sdk/mock.ts` 315 lignes.
 - T31 : `fileTicket` n'émet pas `{ topic: "config" }` (usage des domaines périmé) ; `restoreBoth` recharge même sur NOT_FOUND.
+- T36 : libellé « Paramètres › Sync » à aligner sur « Synchronisation » (`fr-share.ts`, `share.test.tsx`, spec `kibo-sync` l. 69, 72) : écrit dans T37.
 - T38 : « Commit sur <branche> » conservé (écran 122 dit « Valider ») ; `primitives.test.tsx` aria-label « Indexer ».
 - Vague 2 (déjà listées au rapport de vague 2) : `tabIndex={-1}` et libellé « Image » de `IconField`, double `role="alert"`, etc. (T41).
 
