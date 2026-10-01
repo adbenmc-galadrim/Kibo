@@ -96,6 +96,8 @@ Les décisions de schéma, de démon, de sync et de vocabulaire sont en spec (§
 10. **Ouvrir un brouillon depuis Créations** : `CreateComponentDialog` et `ModifyWithAiDialog` acceptent `draftId?: string` (reprise directe) ; la page héberge ces dialogues elle-même, sans toucher `ShellDialogs` ni `Shell.tsx`.
 11. **Écrans Penpot** : décrits textuellement ci-dessous (127 à 135) ; Penpot reste un écart assumé listé au jalon.
 
+12. **`format` facultatif dans le message `init`, obligatoire à l'envoi** : le schéma du protocole tolère son absence (un composant construit avec ce SDK doit démarrer dans un hôte antérieur, même logique que `formats?`) ; l'iframe retombe sur `defaultFormatOf(manifest)` ; l'hôte l'envoie toujours, garanti par le type de `BridgeDeps.init`.
+
 ## Écrans décrits (127 à 135 ; 29 et 116 amendés)
 
 Page Penpot « 15 · Formats et créations » si elle est dessinée un jour ; sinon ces descriptions font foi, en sombre et en clair, données de `design/donnees-fictives.md` (workspace « Perso », projet Kibo (KIB), page « Tableau de bord » avec Kanban, Tickets, Graphe, Notes ; utilisateur Adam). Chaque tâche UI cite les écrans qu'elle implémente.
@@ -192,11 +194,13 @@ export const formatIssue = (m: Pick<ComponentManifest, "kind" | "formats">): str
 
 // packages/schema/src/protocol.ts (T46)
 export const surfaceFor = (m: Pick<ComponentManifest, "kind">, format: ComponentFormat): Surface; // "view" si full et kind ≠ widget
-// HostToFrame init gagne  format: ComponentFormat
+// HostToFrame init gagne  format: ComponentFormat.optional()
+//   facultatif sur le fil, définitivement : un hôte antérieur ne l'envoie pas ; l'iframe lit init.format ?? defaultFormatOf(manifest) (T47) ;
+//   l'hôte de cette version l'envoie toujours, imposé par le type de BridgeDeps.init (T48)
 
 // packages/schema/src/command.ts (T46)
 z.object({ method: z.literal("setInstanceLayout"), instanceId: z.string(), layout: Layout }),
-// COMMAND_WRITES.setInstanceLayout = null ; CommandResult.setInstanceLayout = Instance
+// COMMAND_WRITES.setInstanceLayout = null ; CommandResult.setInstanceLayout = Instance ; commande du shell : absente de DAEMON_ONLY_COMMANDS (assertShellCommand l'accepte), refusée aux composants par isReservedCommand (gate.ts)
 
 // packages/schema/src/ai.ts (T50)
 export const DraftAttachmentName = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
@@ -455,6 +459,8 @@ git commit -m "fix(ui): menu du projet courant bien placé"
 
 ### Task 46: Schéma, core et contrôle serveur : formats, `setInstanceLayout`, instances validées
 
+> **Amendement après relecture lead (accepté).** `nearestFormat` : aire la plus proche, égalité tranchée par `FORMAT_PREFERENCE` (5 × 5 ⇒ `"medium"`). `protocol.ts` : `format: ComponentFormat.optional()` dans `init`. `setInstanceLayout` est une commande du shell : `DAEMON_ONLY_COMMANDS` n'est pas modifié ; le test vérifie `assertShellCommand(cmd)` sans erreur, `isReservedCommand(cmd.method)` vrai et `COMMAND_WRITES.setInstanceLayout` nul. Tests serveur dans `packages/sync-server/src/room-instances.test.ts`, propriétés dans `packages/core/src/format.property.test.ts`.
+
 Vague 0 ← rien. Spec §16.1, §16.2, composants §17.1, sync **D48**. Décisions 1, 2, 3. Le schéma gagne les formats et la commande ; le core refuse toute disposition invalide et contrôle les instances écrites d'un lot de sync (ce que le serveur applique sans changer, `room.ts:215`) ; une propriété fast-check garantit qu'une suite de commandes valides produit toujours un doc accepté par le serveur. Relue par `kibo-lead`.
 
 **Files:**
@@ -484,7 +490,7 @@ describe("formats", () => {
     expect(formatOf({ w: 12, h: 6 })).toBe("half");
   });
   test("nearestFormat picks the closest area and breaks ties by preference", () => {
-    expect(nearestFormat({ w: 5, h: 5 })).toBe("large");
+    expect(nearestFormat({ w: 5, h: 5 })).toBe("medium");
     expect(nearestFormat({ w: 4, h: 4 })).toBe("medium");
     expect(nearestFormat({ w: 12, h: 12 })).toBe("full");
   });
@@ -617,6 +623,8 @@ git commit -m "feat(core): instances contrôlées à la sync"
 
 ### Task 47: SDK : `format` dans le contexte, SDK simulé, conformité par format, composants intégrés
 
+> **Amendement (relecture lead de T46).** `packages/sdk/src/sandbox.test.tsx` : le message `init` avec `format: "large"` donne `useSdk().format === "large"` ; **sans `format`** (hôte antérieur : la fixture `init` existante, inchangée), `useSdk().format === defaultFormatOf(manifest)` (`"medium"` pour le manifeste `widget` du fichier). `sandbox.tsx` : `format: init.format ?? defaultFormatOf(manifest)`. Un `view` qui déclare `full` et d'autres formats est rendu en surface `widget` pour ces derniers par la conformité.
+
 Vague 1 ← T46. Spec composants §17.2, §17.3, §17.4 (première moitié : conformité par format ; les largeurs fixes sont en T51). Décision 2, 8 (`MockSdk.backend`). `mock.ts` (315 l.) descend sous 300 en extrayant son dispatcher `handle` dans `mock-calls.ts`. Mineures casées : `article` focusable en lecture seule (Kanban), ancêtre de contexte non atténué (arbre Tickets).
 
 **Files:**
@@ -638,7 +646,7 @@ test("the mock exposes the format, defaulting to the manifest's default format",
   expect(typeof m.backend.call).toBe("function");
 });
 ```
-`packages/sdk/src/sandbox.test.tsx` : le message `init` avec `format: "large"` donne `useSdk().format === "large"` dans le composant monté (modèle : le test d'`init` existant du fichier). Run: FAIL. `types.ts` (`format` dans `KiboSdk` et `SdkContext`), `sdk.ts` (recopie `ctx.format`), `sandbox.tsx` (`format: init.format`), `mock.ts` (`format: opts.format ?? defaultFormatOf(manifest)`, `backend` exposé = l'objet passé à `createSdk`), extraction de `handle` et `listEntity` dans `mock-calls.ts` (`createMockCalls(deps): (c: ComponentCall) => Promise<unknown>`), `mock.ts` < 300 lignes. Run: `bun test packages/sdk` — Expected: PASS.
+`packages/sdk/src/sandbox.test.tsx` : le message `init` avec `format: "large"` donne `useSdk().format === "large"` dans le composant monté (modèle : le test d'`init` existant du fichier). Run: FAIL. `types.ts` (`format` dans `KiboSdk` et `SdkContext`), `sdk.ts` (recopie `ctx.format`), `sandbox.tsx` (`format: init.format ?? defaultFormatOf(manifest)`), `mock.ts` (`format: opts.format ?? defaultFormatOf(manifest)`, `backend` exposé = l'objet passé à `createSdk`), extraction de `handle` et `listEntity` dans `mock-calls.ts` (`createMockCalls(deps): (c: ComponentCall) => Promise<unknown>`), `mock.ts` < 300 lignes. Run: `bun test packages/sdk` — Expected: PASS.
 
 - [ ] **Step 2: Conformité par format (test rouge puis vert)**
 
@@ -672,6 +680,8 @@ git commit -m "feat(components): formats déclarés"
 ---
 
 ### Task 48: UI : grille adaptative, chevauchements résolus, mode « Modifier la disposition », menu Format
+
+> **Amendement (relecture lead de T46).** Files › Modify : ajouter `packages/ui/src/shell/frame-bridge.ts`, `frame-bridge.test.ts`, `sandbox-frame.test.tsx` (à stager au pas 5). `BridgeDeps.init(): Omit<InitMessage, "kibo" | "type"> & { format: ComponentFormat }` : l'envoi de `format` est imposé par le type, le schéma `HostToFrame` reste tolérant et n'est pas modifié. `instanceFormat` d'une instance 5 × 5 vaut `"medium"`. `addInstance` avec disposition explicite refuse désormais un chevauchement (`INVALID_INPUT`) : `AddComponentDialog` doit calculer la place sur l'état courant.
 
 Vague 1 ← T45, T46, T47. Spec §16.1, §16.2 ; écrans **127, 128, 129**. Décisions 2, 3, 4. `PageView` garde le rendu de lecture (via `DashboardGrid`) et un bouton ; le mode disposition est un chunk. Chaque instance reçoit son `format` (`InstanceFrame`, `SandboxFrame`). `lib/next-layout.ts` disparaît au profit de `lib/format-grid.ts`.
 
@@ -728,7 +738,7 @@ describe("format grid", () => {
     expect(dropTarget(layoutFor("small", 0, 0), { x: 2 * (m.column + 16) + 10, y: -5 }, m)).toEqual(layoutFor("small", 2, 0));
     expect(dropTarget(layoutFor("half", 0, 0), { x: 500, y: 0 }, m)).toEqual(layoutFor("half", 0, 0));
     expect(canPlace(layoutFor("small", 0, 0), [layoutFor("small", 2, 2)])).toBe(false);
-    expect(instanceFormat(inst("a", { x: 0, y: 0, w: 5, h: 5 }), { kind: "dashboard" })).toBe("large");
+    expect(instanceFormat(inst("a", { x: 0, y: 0, w: 5, h: 5 }), { kind: "dashboard" })).toBe("medium");
     expect(instanceFormat(inst("a", layoutFor("small", 0, 0)), { kind: "view" })).toBe("full");
   });
 });
@@ -737,7 +747,7 @@ describe("format grid", () => {
 
 - [ ] **Step 2: Grille de lecture adaptative et format transmis (tests rouges puis verts, écran 129)**
 
-`page-view.test.tsx` : (a) deux instances qui se chevauchent dans le snapshot sont rendues sans chevauchement (`gridRow` de la seconde commence à `7`) ; (b) `useWideGrid` à `false` (simuler `window.matchMedia` qui renvoie `matches: false` : happy-dom expose `matchMedia`, sinon le remplacer dans le test par `Object.defineProperty(window, "matchMedia", …)`) ⇒ les cellules n'ont ni `gridColumn` ni `gridRow`, le conteneur a `grid-cols-1`, l'ordre DOM suit `readingOrder`, le bouton « Modifier la disposition » est absent ; (c) en large et éditable, le bouton est présent ; en `read-only`, absent. `instance.test.tsx` : le `Probe` monté par `InstanceFrame` avec `format="small"` voit `useSdk().format === "small"` ; `SandboxFrame` reçoit `format` et le met dans `init` (test existant du pont : `grep -n "init" packages/ui/src/shell/*.test.ts*`). Run: FAIL. `DashboardGrid.tsx` : `grid gap-4 p-4` + `grid-cols-12 auto-rows-[80px]` ou `grid-cols-1 auto-rows-[80px]` selon `narrow` ; `@container` sur le corps de chaque widget (`<div className="@container min-h-0 flex-1 overflow-auto">`) ; `PageView.tsx` : `layouts = resolveOverlaps(instances)`, `wide = useWideGrid()`, `format = instanceFormat(i, page)` passé à `InstanceFrame` ; `use-wide-grid.ts` : `matchMedia(WIDE_QUERY)` + `change` (modèle `packages/sdk/src/hooks/use-mobile.ts`) ; `InstanceFrame.tsx` : `format` dans `createSdk` et `SandboxFrame` ; `SandboxFrame.tsx` : `format` dans `init`. `PageView.tsx` reste < 130 lignes. Run: PASS.
+`page-view.test.tsx` : (a) deux instances qui se chevauchent dans le snapshot sont rendues sans chevauchement (`gridRow` de la seconde commence à `7`) ; (b) `useWideGrid` à `false` (simuler `window.matchMedia` qui renvoie `matches: false` : happy-dom expose `matchMedia`, sinon le remplacer dans le test par `Object.defineProperty(window, "matchMedia", …)`) ⇒ les cellules n'ont ni `gridColumn` ni `gridRow`, le conteneur a `grid-cols-1`, l'ordre DOM suit `readingOrder`, le bouton « Modifier la disposition » est absent ; (c) en large et éditable, le bouton est présent ; en `read-only`, absent. `instance.test.tsx` : le `Probe` monté par `InstanceFrame` avec `format="small"` voit `useSdk().format === "small"` ; `SandboxFrame` reçoit `format` et le met dans `init` (test existant du pont : `grep -n "init" packages/ui/src/shell/*.test.ts*`). Run: FAIL. `DashboardGrid.tsx` : `grid gap-4 p-4` + `grid-cols-12 auto-rows-[80px]` ou `grid-cols-1 auto-rows-[80px]` selon `narrow` ; `@container` sur le corps de chaque widget (`<div className="@container min-h-0 flex-1 overflow-auto">`) ; `PageView.tsx` : `layouts = resolveOverlaps(instances)`, `wide = useWideGrid()`, `format = instanceFormat(i, page)` passé à `InstanceFrame` ; `use-wide-grid.ts` : `matchMedia(WIDE_QUERY)` + `change` (modèle `packages/sdk/src/hooks/use-mobile.ts`) ; `InstanceFrame.tsx` : `format` dans `createSdk` et `SandboxFrame` ; `SandboxFrame.tsx` : `format` dans `init` ; `frame-bridge.ts` : `BridgeDeps.init(): Omit<InitMessage, "kibo" | "type"> & { format: ComponentFormat }` (l'oubli ne compile pas ; le schéma `HostToFrame` reste tolérant et n'est pas modifié) ; `frame-bridge.test.ts` et `sandbox-frame.test.tsx` : la fixture `init` porte `format`, et le message posté contient `format: "large"` pour une instance 6 × 6. `PageView.tsx` reste < 130 lignes. Run: PASS.
 
 - [ ] **Step 3: Mode disposition (tests rouges puis verts, écrans 127 et 128)**
 
@@ -1341,8 +1351,8 @@ git commit -m "test(e2e): créations, aperçu, révision, publication"
 - Design §16.1 (formats, grille, défauts, une colonne, chevauchements) : T46 (schéma), T48 (`format-grid.ts`, `DashboardGrid`), T47 (SDK `format`). §16.2 (`setInstanceLayout`, garde, mode de disposition, Échap, Annuler) : T46 (commande), T47 (core + démon), T48 (`LayoutEditor`), T49 (E2E). §16.3 (résumé créations) : T50 à T55. §16.4 (dialogues bornés) : T52 pas 3. §16.5 (ports, écrans, codes) : T49, T55 ; aucun code d'erreur nouveau — vérifié dans chaque tâche (`INVALID_INPUT`, `NOT_FOUND`, `CONFLICT` existants).
 - Composants §17.1 (`formats?`, `formatsOf`, `formatIssue`) : T46 ; devkit valide `formatIssue` : T47 pas 4. §17.2 (SDK `format`, init, mock, `mountDev`, `surfaceFor`) : T47. §17.3 (formats des intégrés) : T47 pas 5. §17.4 (conformité par format, largeurs fixes) : T47 pas 3, T51 pas 2. §17.5 (aperçu d'un brouillon) : T51 pas 3, T54.
 - IA §13.1 (arrière-plan, parallélisme) : T50 (profil générateur 2), T52 pas 4, T53 pas 4. §13.2 (Créations) : T53. §13.3 (indicateur) : T53 pas 3. §13.4 (pièces jointes) : T50 (démon), T52 (UI), T51 pas 4 (faux `claude`). §13.5 (formats cochés) : T52 pas 2. §13.6 (aperçu, révision) : T50 (RPC), T51, T54. §13.7 (contexte) : T51 pas 1. §13.8 (validation par format) : T47 pas 3, T51 pas 2. §13.9 (RPC) : T50. §13.10 (dialogues bornés, arrière-plan) : T52. §13.11 (faux `claude`) : T51 pas 4.
-- Sync D48 : T47 pas 2 (`validate-instances.ts`, `room.ts`). Agents §12 : T50 (`SYSTEM_MAX_PARALLEL`, défauts), T53 pas 4 (fiche).
-- Points pour Adam A11 à A21 : chacun a un défaut retenu et une tâche isolée (A11 liste des formats ⇒ T46 seul ; A12 pas de taille libre ⇒ T48 ; A13 chevauchements non refusés ⇒ T47 pas 2 ; A17 images jointes ⇒ T50 ; A16 parallélisme 2 ⇒ T50 ; A18 dix révisions ⇒ T50/T54 ; A17 aperçu via le listener sandbox ⇒ T51 ; A18 `InstanceMenuContent` paresseux ⇒ T45 ; A19 vignettes en `data:` ⇒ T52 ; A20 largeur fixe ≥ 240 px ⇒ T51 ; A21 écran Créations sous Composants ⇒ T53).
+- Sync D48 : T46 pas 4 et 5 (`validate-instances.ts`, `room.ts`). Agents §12 : T50 (`SYSTEM_MAX_PARALLEL`, défauts), T53 pas 4 (fiche).
+- Points pour Adam A11 à A21 : chacun a un défaut retenu et une tâche isolée (A11 liste des formats ⇒ T46 seul ; A12 pas de taille libre ⇒ T48 ; A14 chevauchements non refusés ⇒ T46 pas 4 ; A17 images jointes ⇒ T50 ; A16 parallélisme 2 ⇒ T50 ; A18 dix révisions ⇒ T50/T54 ; A17 aperçu via le listener sandbox ⇒ T51 ; A18 `InstanceMenuContent` paresseux ⇒ T45 ; A19 vignettes en `data:` ⇒ T52 ; A20 largeur fixe ≥ 240 px ⇒ T51 ; A21 écran Créations sous Composants ⇒ T53).
 
 **Review Focus.** 1 (disposition hors grille envoyée par un pair) ⇒ T47 pas 2 ; 2 (deux éditeurs simultanés) ⇒ T47 pas 1 (dernier écrit), T49 test 2 ; 3 (cinquième image, GIF, 300 kB) ⇒ T50 pas 1, T52 pas 1 et 2 ; 4 (révision pendant une génération) ⇒ T50 pas 3 (`canRevise` démon), T54 pas 1 ; 5 (aperçu d'un brouillon abandonné ou publié) ⇒ T51 pas 3 (`lookup` suit l'état) ; 6 (page étroite pendant l'édition) ⇒ T48 pas 4 ; 7 (chemin de pièce jointe hors `readRoots`) ⇒ T50 pas 2 (garde-fou).
 
