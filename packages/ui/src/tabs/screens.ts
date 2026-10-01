@@ -40,7 +40,7 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
   sources: {
     title: fr.marketSources.title,
     icon: Package,
-    crumbs: [fr.nav.settings, fr.marketSources.crumb],
+    crumbs: [fr.nav.settings, fr.marketSources.title],
   },
   sync: { title: fr.sync.title, icon: Cloud, crumbs: [fr.nav.settings, fr.sync.title] },
   shortcuts: {

@@ -104,30 +104,74 @@ beforeEach(() => {
   answers = {};
 });
 
-test("without any source the tab explains where to add one", async () => {
+test("without any source the tab explains what a source is and adds one in place", async () => {
   answers.listMarketSources = () => Promise.resolve([]);
-  render(<MarketplaceTab onInstalled={() => {}} />);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
+  expect(await screen.findByText("Aucune source de composants")).toBeTruthy();
   expect(
-    await screen.findByText("Aucune source de marketplace. Ajoute-en une dans Paramètres › Composants."),
+    screen.getByText("Une source est un catalogue signé, publié par ton équipe ou par un tiers."),
+  ).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Gérer les sources" }).getAttribute("href")).toBe(
+    "#/settings/components",
+  );
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter une source" }));
+  expect(await screen.findByRole("dialog", { name: "Ajouter une source" })).toBeTruthy();
+});
+
+test("a remote session sees the empty state without the add button", async () => {
+  answers.listMarketSources = () => Promise.resolve([]);
+  render(<MarketplaceTab onInstalled={() => {}} remote />);
+  expect(await screen.findByText("Aucune source de composants")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Ajouter une source" })).toBeNull();
+  expect(
+    screen.getByText("Ajouter ou retirer une source n'est possible que depuis l'ordinateur où tourne Kibo."),
   ).toBeTruthy();
 });
 
-test("cards show the publisher status, the version and the install badge", async () => {
+test("adding the first source from the empty state lists its components", async () => {
+  answers.listMarketSources = () => Promise.resolve([]);
+  answers.probeMarketSource = () =>
+    Promise.resolve({
+      sourceId: "equipe",
+      name: "Équipe",
+      publicKey: "PK",
+      fingerprint: "3f9a".repeat(16),
+      serial: 42,
+      packages: 1,
+    });
+  answers.addMarketSource = () => Promise.resolve(source);
+  answers.searchMarket = () => Promise.resolve([hit]);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Ajouter une source" }));
+  await user.type(await screen.findByLabelText("Adresse"), "https://market.kibo.test/");
+  await user.click(screen.getByRole("button", { name: "Suivant" }));
+  answers.listMarketSources = () => Promise.resolve([source]);
+  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
+  expect(await screen.findByText("Revue de sprint")).toBeTruthy();
+});
+
+test("cards show the publisher status, the version and the install badge, the id only in Details", async () => {
   answers.listMarketSources = () => Promise.resolve([source]);
   answers.searchMarket = () => Promise.resolve([burndown, hit]);
-  render(<MarketplaceTab onInstalled={() => {}} />);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
   expect(await screen.findByText("Revue de sprint")).toBeTruthy();
   expect(screen.getByText("non vérifié · Équipe")).toBeTruthy();
   expect(screen.getByText("vérifié · Équipe")).toBeTruthy();
   expect(screen.getByText("Installé 0.3.0")).toBeTruthy();
   expect(screen.getByText("0.1.2")).toBeTruthy();
   expect(screen.getByText("1 source · 2 paquets")).toBeTruthy();
+  expect(screen.queryByText("sprint-review")).toBeNull();
+  const card = screen.getByRole("button", { name: "Voir Revue de sprint" }).closest("[data-slot=card]");
+  if (!(card instanceof HTMLElement)) throw new Error("card not found");
+  await userEvent.setup().click(within(card).getByRole("button", { name: "Détails" }));
+  expect(within(card).getByText("sprint-review")).toBeTruthy();
 });
 
 test("typing searches the cached index", async () => {
   answers.listMarketSources = () => Promise.resolve([source]);
   answers.searchMarket = () => Promise.resolve([hit]);
-  render(<MarketplaceTab onInstalled={() => {}} />);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
   await screen.findByText("Revue de sprint");
   await userEvent.setup().type(screen.getByLabelText("Rechercher un composant"), "burn");
   await waitFor(() => expect(calls.at(-1)).toEqual({ method: "searchMarket", query: "burn" }));
@@ -136,7 +180,7 @@ test("typing searches the cached index", async () => {
 test("the kind and source filters narrow the search", async () => {
   answers.listMarketSources = () => Promise.resolve([source]);
   answers.searchMarket = () => Promise.resolve([hit]);
-  render(<MarketplaceTab onInstalled={() => {}} />);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
   await screen.findByText("Revue de sprint");
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Type : tous" }));
@@ -153,7 +197,7 @@ test("the kind and source filters narrow the search", async () => {
 test("an empty search result says so", async () => {
   answers.listMarketSources = () => Promise.resolve([source]);
   answers.searchMarket = () => Promise.resolve([]);
-  render(<MarketplaceTab onInstalled={() => {}} />);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
   expect(await screen.findByText("Aucun composant ne correspond à ta recherche.")).toBeTruthy();
 });
 
@@ -161,7 +205,7 @@ test("opening a card loads its detail", async () => {
   answers.listMarketSources = () => Promise.resolve([source]);
   answers.searchMarket = () => Promise.resolve([hit]);
   answers.getMarketPackage = () => Promise.resolve(detail);
-  render(<MarketplaceTab onInstalled={() => {}} />);
+  render(<MarketplaceTab onInstalled={() => {}} remote={false} />);
   await userEvent.setup().click(await screen.findByRole("button", { name: "Voir Revue de sprint" }));
   await waitFor(() =>
     expect(calls).toContainEqual({
@@ -180,7 +224,7 @@ test("the detail shows the verified publisher, the source, revoked versions and 
   expect(await screen.findByText("Léa · vérifié par Équipe")).toBeTruthy();
   expect(screen.getByText("Nouvel éditeur")).toBeTruthy();
   expect(await screen.findByText("Équipe (https://market.kibo.test)")).toBeTruthy();
-  expect(screen.getByText("184 Ko")).toBeTruthy();
+  expect(screen.getByText("184 ko")).toBeTruthy();
   expect(screen.getByText("sha256:9c41…7e0b")).toBeTruthy();
   expect(screen.getByText("Code vérifié : signature et empreinte correspondent")).toBeTruthy();
   expect(screen.getByText("Révoquée : calcul des échéances faux")).toBeTruthy();

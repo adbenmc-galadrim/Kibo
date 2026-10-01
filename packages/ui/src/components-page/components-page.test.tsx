@@ -361,9 +361,7 @@ test("the components page offers the Installed and Marketplace tabs", async () =
   render(<ComponentsPage onOpen={() => undefined} />);
   expect(screen.getByRole("tab", { name: "Installés" }).getAttribute("aria-selected")).toBe("true");
   await userEvent.setup().click(screen.getByRole("tab", { name: "Marketplace" }));
-  expect(
-    await screen.findByText("Aucune source de marketplace. Ajoute-en une dans Paramètres › Composants."),
-  ).toBeTruthy();
+  expect(await screen.findByText("Aucune source de composants")).toBeTruthy();
 });
 
 test("installing from the marketplace opens the approval with the publisher", async () => {

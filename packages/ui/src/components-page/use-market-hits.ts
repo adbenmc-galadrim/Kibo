@@ -1,5 +1,5 @@
 import type { ComponentKind, MarketHit, MarketSourceInfo } from "@kibo/schema";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { marketErrorText } from "../lib/market-errors";
 
@@ -28,11 +28,14 @@ export function useMarketHits(sources: MarketSourceInfo[] | null, q: MarketQuery
 export function useMarketSources() {
   const [sources, setSources] = useState<MarketSourceInfo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
+  const reload = useCallback(() => {
     client
       .rpc({ method: "listMarketSources" })
       .then(setSources)
       .catch((e: unknown) => setError(marketErrorText(e)));
   }, []);
-  return { sources, error };
+  useEffect(() => {
+    reload();
+  }, [reload]);
+  return { sources, error, reload };
 }

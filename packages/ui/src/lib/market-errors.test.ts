@@ -5,7 +5,9 @@ import { marketErrorCode, marketErrorCodeText, marketErrorText, storedErrorText 
 
 test("known codes get their French message", () => {
   expect(marketErrorText(new KiboError("SIGNATURE_INVALID", "bad"))).toBe("Signature invalide.");
-  expect(marketErrorCodeText("INDEX_ROLLBACK")).toBe("Index refusé : numéro inférieur au dernier vu");
+  expect(marketErrorCodeText("INDEX_ROLLBACK")).toBe(
+    "Catalogue refusé : version inférieure à la dernière vue",
+  );
   expect(marketErrorText(new KiboError("FORBIDDEN", "remote"))).toBe(
     "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
   );
@@ -19,7 +21,7 @@ test("unknown errors fall back to the generic message", () => {
 
 test("a stored source error is read from its code prefix", () => {
   expect(storedErrorText("INDEX_ROLLBACK: serial 3 < 4")).toBe(
-    "Index refusé : numéro inférieur au dernier vu",
+    "Catalogue refusé : version inférieure à la dernière vue",
   );
   expect(storedErrorText("fetch failed")).toBe("Une erreur est survenue.");
 });

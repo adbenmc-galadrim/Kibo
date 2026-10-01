@@ -37,7 +37,7 @@ const ITEMS: Item[] = [
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
   { id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" },
   { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
-  { id: "components", label: fr.settings.components, icon: Package, screen: "sources" },
+  { id: "components", label: fr.marketSources.title, icon: Package, screen: "sources" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" },
 ];
 

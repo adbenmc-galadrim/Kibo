@@ -1,8 +1,12 @@
 import type { ComponentKind, MarketInstallResult } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
-import { Search } from "lucide-react";
+import { Plus, Search, Store } from "lucide-react";
 import { useState } from "react";
+import { AddSourceDialog } from "../dialogs/AddSourceDialog";
 import { fr } from "../i18n/fr";
+import { isRemoteView } from "../lib/remote-view";
+import { targetToHash } from "../tabs/target-hash";
 import { MarketCard } from "./MarketCard";
 import { MarketFilters } from "./MarketFilters";
 import { MarketInstallFlow } from "./MarketInstallFlow";
@@ -13,16 +17,47 @@ function Empty({ text }: { text: string }) {
   return <p className="p-8 text-center text-sm text-muted-foreground">{text}</p>;
 }
 
-export function MarketplaceTab({ onInstalled }: { onInstalled(result: MarketInstallResult): void }) {
+function EmptySources({ remote, onAdded }: { remote: boolean; onAdded(): void }) {
   const t = fr.market;
-  const { sources, error: loadError } = useMarketSources();
+  const [adding, setAdding] = useState(false);
+  return (
+    <div className="grid justify-items-center gap-3 rounded-lg border border-dashed p-10 text-center">
+      <Store aria-hidden className="size-6 text-muted-foreground" />
+      <div className="grid gap-1">
+        <p className="text-sm font-medium">{t.noSource}</p>
+        <p className="max-w-md text-sm text-muted-foreground">{t.noSourceHelp}</p>
+      </div>
+      {remote ? (
+        <p className="max-w-md text-xs text-muted-foreground">{fr.marketSources.localOnly}</p>
+      ) : (
+        <Button size="sm" onClick={() => setAdding(true)}>
+          <Plus aria-hidden />
+          {t.addSource}
+        </Button>
+      )}
+      <a
+        href={targetToHash({ kind: "screen", screen: "sources" })}
+        className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        {t.manageSources}
+      </a>
+      {adding && <AddSourceDialog open onOpenChange={setAdding} onAdded={onAdded} />}
+    </div>
+  );
+}
+
+type Props = { onInstalled(result: MarketInstallResult): void; remote?: boolean };
+
+export function MarketplaceTab({ onInstalled, remote = isRemoteView() }: Props) {
+  const t = fr.market;
+  const { sources, error: loadError, reload } = useMarketSources();
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ComponentKind | null>(null);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [target, setTarget] = useState<MarketTarget | null>(null);
   const { hits, error } = useMarketHits(sources, { query, sourceId, kind });
 
-  if (sources?.length === 0) return <Empty text={t.noSource} />;
+  if (sources?.length === 0) return <EmptySources remote={remote} onAdded={reload} />;
   const shown = error ?? loadError;
   return (
     <div className="flex flex-col gap-4">
