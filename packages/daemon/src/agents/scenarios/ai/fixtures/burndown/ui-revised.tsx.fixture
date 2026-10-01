@@ -1,0 +1,18 @@
+import { useEntities } from "@kibo/sdk";
+import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
+
+export function Component() {
+  const { data: tickets } = useEntities("ticket");
+  const open = tickets.filter((t) => t.statusId !== "done").length;
+  return (
+    <Card className="@container h-full min-h-0 overflow-auto">
+      <CardHeader>
+        <CardTitle>Burndown du sprint</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-4xl font-bold @md:text-6xl">{open}</p>
+        <p className="text-sm text-muted-foreground">tickets restants (révisé)</p>
+      </CardContent>
+    </Card>
+  );
+}

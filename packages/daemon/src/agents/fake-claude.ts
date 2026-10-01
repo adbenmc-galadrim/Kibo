@@ -3,7 +3,14 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileS
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { appendWrite, denialReason, fakeMeta, runWriteStep } from "./fake-claude-ai";
+import {
+  appendToolUse,
+  appendWrite,
+  denialReason,
+  fakeMeta,
+  resolveStepInput,
+  runWriteStep,
+} from "./fake-claude-ai";
 import { FakeScenario, type FakeStep, scenarioFor } from "./fake-claude-scenario";
 
 const Settings = z.object({
@@ -143,10 +150,14 @@ async function main(): Promise<number> {
   const denials: string[] = [];
   const play = async (step: FakeStep) => {
     if ("hook" in step) {
+      const resolved = resolveStepInput(step.input, process.env);
       const tool = step.tool ? { tool_name: step.tool } : {};
-      const input = step.input ? { tool_input: step.input } : {};
+      const input = resolved ? { tool_input: resolved } : {};
       const runs = await runHooks(step.hook, { ...tool, ...input, ...step.extra });
-      if (step.hook === "PreToolUse" && denied(runs)) denials.push(step.tool ?? "?");
+      const refused = step.hook === "PreToolUse" && denied(runs);
+      if (refused) denials.push(step.tool ?? "?");
+      if (step.hook === "PreToolUse" && step.tool)
+        appendToolUse(stateDir, sessionId, { tool: step.tool, input: resolved ?? {}, denied: refused });
       return;
     }
     if ("write" in step) {

@@ -18,6 +18,7 @@ import { startDaemon } from "../../daemon";
 
 export type AiHarness = {
   home: string;
+  sandboxUrl: string;
   fakeState: string;
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
   events: ChangeMessage[];
@@ -118,6 +119,7 @@ export async function startAiHarness(opts: AiHarnessOptions): Promise<AiHarness>
     });
   return {
     home,
+    sandboxUrl: `http://127.0.0.1:${daemon.sandboxPort}`,
     fakeState,
     rpc,
     events,

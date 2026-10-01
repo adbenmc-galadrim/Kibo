@@ -1,0 +1,12 @@
+{
+  "turns": [
+    {
+      "steps": [{ "write": "ui.tsx", "fixture": "burndown/ui-fixed-width.tsx.fixture" }],
+      "result": "Composant écrit."
+    },
+    {
+      "steps": [{ "write": "ui.tsx", "fixture": "burndown/ui.tsx.fixture" }],
+      "result": "Largeur fixe retirée."
+    }
+  ]
+}
