@@ -28,25 +28,32 @@ function realDir(path: string): string {
   return path;
 }
 
-function readBuilt(dir: string): PreviewFiles | null {
-  if (!isRealDir(dir) || !BUILT_FILES.every((f) => isSafeFile(join(dir, f)))) return null;
+const previewsPath = (draftDir: string) => join(draftDir, ".kibo", "preview");
+
+function readBuilt(draftDir: string, hash: string): PreviewFiles | null {
+  const root = previewsPath(draftDir);
+  const dir = join(root, hash);
+  if (![join(draftDir, ".kibo"), root, dir].every(isRealDir)) return null;
+  if (!BUILT_FILES.every((f) => isSafeFile(join(dir, f)))) return null;
   return {
     "ui.sandbox.js": new Uint8Array(readFileSync(join(dir, "ui.sandbox.js"))),
     "ui.css": new Uint8Array(readFileSync(join(dir, "ui.css"))),
   };
 }
 
-function previewsDir(draftDir: string): string {
-  return guarded("prepare preview", () => realDir(join(realDir(join(draftDir, ".kibo")), "preview")));
-}
-
-function writeBuilt(root: string, hash: string, files: PreviewFiles): void {
+function writeBuilt(draftDir: string, hash: string, files: PreviewFiles): void {
   guarded("write preview", () => {
+    const root = realDir(join(realDir(join(draftDir, ".kibo")), "preview"));
     for (const name of readdirSync(root)) removeTree(join(root, name));
     const dir = realDir(join(root, hash));
     for (const f of BUILT_FILES) writeFileSync(join(dir, f), files[f], { mode: 0o600, flag: "wx" });
   });
 }
+
+const changed = () => new KiboError("CONFLICT", "the draft changed while its preview was built");
+
+const stampOf = (d: ComponentDraft): string | null =>
+  PREVIEWABLE.has(d.status) ? JSON.stringify([d.status, d.runId, d.attempts, d.revisions]) : null;
 
 export function createDraftPreview(deps: PreviewDeps): {
   preview(draftId: string): Promise<DraftPreview>;
@@ -64,24 +71,59 @@ export function createDraftPreview(deps: PreviewDeps): {
     }
   };
 
-  const loadOrBuild = async (draftDir: string, hash: string): Promise<PreviewFiles> => {
-    const root = previewsDir(draftDir);
-    const cached = guarded("read preview", () => readBuilt(join(root, hash)));
+  const stamp = (draftId: string): string | null => {
+    try {
+      return stampOf(deps.store.get(draftId));
+    } catch (e) {
+      if (e instanceof KiboError && e.code === "NOT_FOUND") return null;
+      throw e;
+    }
+  };
+
+  const assertUnchanged = async (draftId: string, before: string, hash: string): Promise<void> => {
+    const dir = dirOf(draftId);
+    if (stamp(draftId) !== before || !isRealDir(dir)) throw changed();
+    const now = await deps.devkit.hash(dir).catch((e: unknown) => {
+      if (!(e instanceof KiboError) && !isRealDir(dir)) throw changed();
+      throw e;
+    });
+    if (now !== hash || stamp(draftId) !== before) throw changed();
+  };
+
+  const build = async (draftId: string, before: string): Promise<PreviewFiles> => {
+    const dir = dirOf(draftId);
+    try {
+      return await deps.devkit.buildPreview(dir);
+    } catch (e) {
+      if (!(e instanceof KiboError) && (stamp(draftId) !== before || !isRealDir(dir))) throw changed();
+      throw e;
+    }
+  };
+
+  const loadOrBuild = async (draftId: string, before: string, hash: string): Promise<PreviewFiles> => {
+    const dir = dirOf(draftId);
+    const cached = guarded("read preview", () => readBuilt(dir, hash));
     if (cached) return cached;
-    const files = await deps.devkit.buildPreview(draftDir);
-    writeBuilt(previewsDir(draftDir), hash, files);
+    const files = await build(draftId, before);
+    await assertUnchanged(draftId, before, hash);
+    writeBuilt(dir, hash, files);
     return files;
   };
 
   return {
     async preview(draftId) {
       const d = deps.store.get(draftId);
-      if (!PREVIEWABLE.has(d.status))
+      const before = stampOf(d);
+      if (before === null)
         throw new KiboError("INVALID_INPUT", `draft is ${d.status}; only a draft in review can be previewed`);
       const dir = dirOf(d.id);
       guarded("open draft", () => assertRealDir(dir));
       const hash = await deps.devkit.hash(dir);
-      if (built.get(d.id)?.hash !== hash) built.set(d.id, { hash, files: await loadOrBuild(dir, hash) });
+      if (built.get(d.id)?.hash !== hash) {
+        const files = await loadOrBuild(d.id, before, hash);
+        await assertUnchanged(d.id, before, hash);
+        built.set(d.id, { hash, files });
+      }
       return { hash, path: draftPreviewPath(d.id, hash) };
     },
     assets: {

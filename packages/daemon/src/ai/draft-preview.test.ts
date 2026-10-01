@@ -67,12 +67,16 @@ function setup() {
     builds: 0,
     current: HASH,
     hashed: [] as string[],
+    during: () => {},
     async hash(dir: string) {
       devkit.hashed.push(dir);
+      if (!existsSync(dir)) throw Object.assign(new Error(`ENOENT: ${dir}`), { code: "ENOENT" });
       return devkit.current;
     },
-    async buildPreview() {
+    async buildPreview(dir: string) {
       devkit.builds++;
+      devkit.during();
+      if (!existsSync(dir)) throw Object.assign(new Error(`ENOENT: ${dir}`), { code: "ENOENT" });
       return { "ui.sandbox.js": BUNDLE, "ui.css": CSS };
     },
   };
@@ -168,4 +172,48 @@ test("a .kibo folder that is a symbolic link is refused without writing through 
   const { preview } = createDraftPreview({ store, home, devkit });
   await expect(preview(review.id)).rejects.toMatchObject({ code: "STORE_CORRUPT" });
   expect(existsSync(join(outside, "preview"))).toBe(false);
+});
+
+async function refusedWhile(change: (ctx: ReturnType<typeof setup>) => void) {
+  const ctx = setup();
+  const { home, store, review, devkit } = ctx;
+  devkit.during = () => change(ctx);
+  const { preview, assets } = createDraftPreview({ store, home, devkit });
+  await expect(preview(review.id)).rejects.toMatchObject({ code: "CONFLICT" });
+  expect(await assets.lookup(review.id, HASH, "ui.sandbox.js")).toBeNull();
+  expect(await assets.lookup(review.id, NEXT, "ui.sandbox.js")).toBeNull();
+  const previews = join(draftPaths(home, review.id).dir, ".kibo", "preview");
+  expect(existsSync(previews) ? readdirSync(previews) : []).toEqual([]);
+}
+
+test("sources changed while the preview is built ⇒ CONFLICT, nothing cached", async () => {
+  await refusedWhile(({ devkit }) => {
+    devkit.current = NEXT;
+  });
+});
+
+test("a revision run during the build ⇒ CONFLICT even when the sources come back to the same hash", async () => {
+  await refusedWhile(({ store, review }) => {
+    store.save({ ...review, status: "generating", runId: "r2", revisions: 1 });
+    store.save({ ...review, status: "review", runId: "r2", revisions: 1 });
+  });
+});
+
+test("a draft that turns generating during the build ⇒ CONFLICT", async () => {
+  await refusedWhile(({ store, review }) => {
+    store.save({ ...review, status: "generating", runId: "r2" });
+  });
+});
+
+test("a draft abandoned and removed during the build ⇒ CONFLICT, not a raw error", async () => {
+  await refusedWhile(({ store, review, home }) => {
+    store.save({ ...review, status: "abandoned" });
+    rmSync(draftPaths(home, review.id).dir, { recursive: true, force: true });
+  });
+});
+
+test("a draft folder removed during the build while still in review ⇒ CONFLICT", async () => {
+  await refusedWhile(({ review, home }) => {
+    rmSync(draftPaths(home, review.id).dir, { recursive: true, force: true });
+  });
 });
