@@ -1098,7 +1098,7 @@ Vague 1 ← T45, T50. Spec IA **§13.4, §13.5, §13.10**, §16.4 ; écrans **13
 - Consumes: `DraftAttachmentInput`, `MAX_DRAFT_ATTACHMENTS`, `ComponentFormat`, `COMPONENT_FORMATS`, `formatsOf` ; `readIconFile`, `IconFileError` (`dialogs/icon-file.ts`) ; `Checkbox`, `Tabs` (SDK) ; `client.rpc` (`startComponentDraft` avec `attachments` et `formats`, `listComponentDrafts`).
 - Produces: contrat « UI (T52) » : `attachments.ts`, `AttachmentsField`, `FormatsField`, `CreateComponentDialog { draftId?, onOpenCreations? }`, `ModifyWithAiDialog { component: ModifyTarget | null, draftId? }`, `frCreations.attachments`, `formats`, `background`, `banner`.
 
-- [ ] **Step 1: Pièces jointes pures (tests rouges puis verts)**
+- [x] **Step 1: Pièces jointes pures (tests rouges puis verts)**
 
 `attachments.test.ts` :
 ```ts
@@ -1115,7 +1115,7 @@ test("addAttachment refuses the fifth image", () => {
 ```
 Run: FAIL puis PASS.
 
-- [ ] **Step 2: Champs images et formats (tests rouges puis verts, écran 132)**
+- [x] **Step 2: Champs images et formats (tests rouges puis verts, écran 132)**
 
 `describe-card.test.tsx` :
 ```tsx
@@ -1138,11 +1138,11 @@ test("pasting an image into the description attaches it", async () => { /* user.
 ```
 (`pngBytes()` : signature PNG + quelques octets ; `readIconFile` lit `file.type` et la signature.) `modify.test.tsx` : le formulaire « Modifier avec l'IA » a la zone images et envoie `attachments`. Run: FAIL. `AttachmentsField.tsx` (zone `onDrop`/`onDragOver`, `<input type="file" accept="image/png,image/jpeg,image/webp" multiple class="sr-only">` étiqueté « Ajouter des images », vignettes `<img alt={name} src={`data:${mime};base64,${data}`}>` avec « Retirer <name> », message `role="alert"` par `AttachmentRefusal`), `FormatsField.tsx` (cases par format avec `frCreations.formats.labels[f]`, au moins une cochée, `kind` change ⇒ `formatsOf({ kind })`), `DescribeFields.tsx` (titre, identifiant, type, backend, formats), `DescribeCard.tsx` (état, `onPaste` du textarea relayé à `addAttachment`, envoi), `ModifyWithAiDialog.tsx` (zone images). Run: PASS.
 
-- [ ] **Step 3: Dialogues bornés (test rouge puis vert, écran 135)**
+- [x] **Step 3: Dialogues bornés (test rouge puis vert, écran 135)**
 
 `packages/sdk/src/primitives.test.tsx` : `DialogContent` rendu porte `max-h-[calc(100dvh-2rem)]` et `overflow-y-auto` ; avec `className="overflow-hidden"`, `overflow-hidden` l'emporte (tailwind-merge). Run: FAIL. `dialog.tsx:63` : ajouter les deux classes. Vérifier la palette (`grep -n "DialogContent" packages/ui/src/palette/CommandPalette.tsx`) : si elle rend un `DialogContent`, lui passer `overflow-hidden`. Run: `bun test packages/sdk packages/ui/src/palette` — Expected: PASS.
 
-- [ ] **Step 4: Arrière-plan, reprise et `copied` (tests rouges puis verts, écran 29 amendé)**
+- [x] **Step 4: Arrière-plan, reprise et `copied` (tests rouges puis verts, écran 29 amendé)**
 
 `ai-dialog.test.tsx` :
 ```tsx
@@ -1165,7 +1165,7 @@ test("« Commandes copiées. » disappears after two seconds", async () => { /* 
 ```
 `CreateComponentDialog.tsx` : `draftId` initial, `DialogFooter` avec « Continuer en arrière-plan » quand un brouillon est affiché et non terminé, `ActiveDraftsBanner` (remplace `ResumeDraftBanner` : jusqu'à trois lignes « <titre> · <étape> » avec « Reprendre », lien « Voir les créations » si `onOpenCreations`), `copied` remis à `false` par `useFlash` (déjà présent dans `lib/use-flash.ts`). `ModifyWithAiDialog.tsx` : `draftId?` ouvre directement le panneau du brouillon (`component` peut être `null`). Run: PASS.
 
-- [ ] **Step 5: Captures, gate et commits**
+- [x] **Step 5: Captures, gate et commits**
 
 Captures `screens/t52/` : 132 et 135 (fenêtre 1440 × 700) en sombre et en clair.
 Run: `bun run check && bun run typecheck && bun test packages/sdk packages/ui && bun run budget` — Expected: PASS, budget ≤ 220,1 kB.
