@@ -446,3 +446,46 @@ Aucun nouveau code : `INVALID_INPUT`, `TOO_LARGE`, `CONFLICT`, `FORBIDDEN`, `NOT
 ### 15.5 Codes d'erreur
 
 Aucun nouveau code : `INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT` suffisent.
+
+## 16. Décisions de la phase 9, vague 4 : formats de composant, tableau de bord éditable, créations par l'IA
+
+Écrites le 2026-10-01, avant le plan `docs/superpowers/plans/2026-10-01-kibo-phase-9-vague-4.md` (lots 5 et 9 du plan d'action UI/UX). Mêmes garde-fous que §14 et §15 : local-first, zéro token pour l'état, rien de nouveau dans un CRDT partagé sans décision, aucune confiance implicite au code généré. Le détail technique vit dans les specs concernées : composants §17 (manifeste, SDK, conformité, aperçu d'un brouillon), IA §13 (brouillons), sync D48 (contrôle serveur des instances), agents §12 (profil générateur).
+
+### 16.1 Formats de composant
+
+- Cinq formats nommés, façon widgets Apple, **retenus par défaut en attendant la confirmation d'Adam** ; une autre liste ne changerait que la table ci-dessous, les manifestes des composants intégrés et la table du skill de l'agent (tâche isolée dans le plan) :
+
+| Format | `ComponentFormat` | Taille (colonnes × rangées) | Usage |
+|---|---|---|---|
+| Petit | `small` | 3 × 3 | un chiffre, un état |
+| Moyen | `medium` | 6 × 3 | une liste courte, une ligne de widgets |
+| Large | `large` | 6 × 6 | tableau ou graphe compact |
+| Demi-page | `half` | 12 × 6 | tableau complet |
+| Plein écran | `full` | 12 × 9 sur un tableau de bord ; toute la page sur une page « vue » | vue |
+
+- Grille d'un tableau de bord : 12 colonnes (`GRID_COLUMNS`), rangées de 80 px, écart de 16 px (inchangé), hauteur bornée à `MAX_GRID_ROWS = 400` rangées. **Pas de taille libre** : `Layout` reste `{ x, y, w, h }` mais une disposition n'est acceptée que si `(w, h)` est la taille d'un format (`formatOf(layout) !== null`), avec `x + w ≤ 12` et `y + h ≤ 400`.
+- Un composant déclare les formats qu'il prend en charge (`manifest.formats`, spec composants §17.1), lit `sdk.format` et s'y adapte ; la suite de conformité rend chaque format déclaré, en sombre et en clair. Les composants intégrés déclarent leurs formats (§17.3).
+- Instances existantes : 6 × 6 (défaut de l'interface) est `large`, 12 × 6 (défaut du core) est `half` : aucune migration. Une disposition héritée qui n'est la taille d'aucun format (doc modifié à la main) s'affiche telle quelle et reçoit le format le plus proche (`nearestFormat`) à sa première modification.
+- Largeur adaptative : à partir de `lg` (1024 px), 12 colonnes et respect de `(x, y)` ; en dessous, une seule colonne, les widgets dans l'ordre de lecture (`y` puis `x`), chacun à la hauteur de son format ; le mode « Modifier la disposition » n'est proposé qu'à partir de `lg`.
+- Chevauchements (deux membres posent deux widgets au même endroit hors ligne, D48) : le rendu pousse vers le bas le widget le plus récent dans l'ordre (`y`, `x`, id) jusqu'à la première rangée libre (`resolveOverlaps`), de façon déterministe et sans écriture ; aucun widget n'est perdu.
+
+### 16.2 Tableau de bord éditable : `setInstanceLayout`
+
+- `ProjectCommand` gagne `{ method: "setInstanceLayout", instanceId, layout: Layout }` ⇒ `Instance`, réservée au shell (`WRITES = null`, comme `setInstanceConfig`, spec composants §3.6). Le core refuse en `INVALID_INPUT` une disposition hors grille, qui n'est pas la taille d'un format, ou qui chevauche une autre instance de la même page ; `NOT_FOUND` pour une instance inconnue. La commande passe par la garde d'écriture (sync D30) : lecture seule ou accès retiré ⇒ `FORBIDDEN`, partage en cours ⇒ `CONFLICT`. Le démon ne vérifie pas que le format appartient au manifeste du composant : l'interface n'offre que les formats déclarés et un composant doit s'afficher dans tout format (§17.2). `addInstance` sans `layout` garde `half` (12 × 6) comme défaut du core ; l'interface pose toujours une disposition : la taille du format par défaut du composant (`defaultFormatOf`) à la première place libre.
+- Serveur de sync : D48 (forme, bornes et taille de format vérifiées pour toute instance écrite ; le chevauchement n'est pas refusé).
+- Interface (écrans 127 à 129) : un bouton « Modifier la disposition » sur un tableau de bord modifiable, à partir de `lg`, passe la page en mode disposition. Chaque widget y a une poignée (son en-tête, curseur `grab`), un menu « Format » (les formats déclarés par son composant, le courant coché ; un format impossible à poser sans chevauchement est désactivé, aide « Pas de place »), et « Retirer… » (confirmation existante). Déplacement par dnd-kit (`@dnd-kit/core`, déjà présent) : cible calculée en cellules depuis le déplacement du pointeur, aperçu de la cellule visée (contour accentué si la place est libre, contour destructif sinon), un dépôt impossible ne change rien. Le mode tient un **brouillon local** : « Enregistrer » envoie une commande `setInstanceLayout` par widget déplacé ou redimensionné, dans l'ordre de lecture ; « Annuler » ou Échap rétablit la disposition d'origine ; une commande refusée laisse le mode ouvert avec le message de l'erreur et les commandes déjà passées restent (le brouillon ne garde que les widgets refusés). Les widgets restent lisibles pendant le mode ; l'ajout d'un composant passe par le dialogue existant.
+- Retrait d'un widget : déjà confirmé (« Retirer X de la page ? »), inchangé.
+
+### 16.3 Créations par l'IA
+
+Résumé ; décisions détaillées dans la spec IA §13. Plusieurs brouillons en parallèle, chacun un run de la file (créneaux et seuils CPU/RAM, sans exception) ; fermer le dialogue n'interrompt rien ; écran « Créations » (`#/creations`, écran 130) et indicateur dans l'en-tête (écran 131) ; images jointes à la description (4 au plus, 256 kB chacune, PNG, JPEG ou WebP, stockées à côté du brouillon, jamais dans un CRDT ni dans le dossier du brouillon) ; aperçu du brouillon validé dans le bac à sable existant avec les données simulées du SDK, format par format, et « Demander une modification » (retour envoyé à l'agent, `reviseComponentDraft`) ; publication seulement après validation (inchangé) ; contexte de l'agent enrichi (formats, exemple intégré, tokens, règles responsives) ; validation qui rend chaque format déclaré et refuse les largeurs fixes.
+
+### 16.4 Dialogues bornés
+
+`DialogContent` du SDK borne sa hauteur à `calc(100dvh - 2rem)` et défile en interne ; la règle vaut pour tous les dialogues (écran 135). Un dialogue qui gère son propre défilement (palette de commandes) garde `overflow-hidden` par sa propre classe.
+
+### 16.5 Ports, écrans, codes
+
+- E2E : `layout.spec.ts` sur les ports 4423–4424, `creations.spec.ts` sur 4425–4426 (plage §11 inchangée : 4390–4430).
+- Écrans 127 à 135, décrits textuellement dans le plan ; Penpot reste un écart assumé listé au jalon.
+- Aucun nouveau code d'erreur : `INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `TOO_LARGE`, `UPDATE_REJECTED` suffisent.
