@@ -104,7 +104,7 @@ describe("update panel", () => {
     const install = screen.getByRole("button", { name: "Installer et redémarrer" });
     expect(install.hasAttribute("disabled")).toBe(true);
     expect(
-      screen.getByText("2 runs occupent un créneau : attends leur fin ou annule-les avant d'installer."),
+      screen.getByText("2 runs sont en cours : attends leur fin ou annule-les avant d'installer."),
     ).toBeTruthy();
   });
 
@@ -174,7 +174,7 @@ describe("update card", () => {
     render(<UpdateCard store={store} desktop />);
     expect(await screen.findByText("Version installée : 1.0.0")).toBeTruthy();
     const install = await screen.findByRole("button", { name: "Installer et redémarrer" });
-    await screen.findByText(/occupent un créneau/);
+    await screen.findByText(/sont en cours : attends/);
     expect(install.hasAttribute("disabled")).toBe(true);
   });
 });

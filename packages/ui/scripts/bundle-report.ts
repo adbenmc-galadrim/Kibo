@@ -50,6 +50,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(shell\/DaemonUnreachable\.tsx|i18n\/fr-startup\.ts)$/,
   /\/packages\/ui\/src\/(files\/(FileToolbar|WrapSwitch)\.tsx|i18n\/fr-file-tools\.ts)$/,
   /\/packages\/ui\/src\/(settings\/SyncEmptyState\.tsx|i18n\/fr-sync-page\.ts)$/,
+  /\/packages\/ui\/src\/(agents\/RunHistory\.tsx|i18n\/fr-agents-page\.ts)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

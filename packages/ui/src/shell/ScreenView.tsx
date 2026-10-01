@@ -62,6 +62,7 @@ export function ScreenView(props: Props) {
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;
   if (!agents) return null;
-  if (screen === "agents") return <AgentsPage state={agents} config={config} now={now} />;
+  if (screen === "agents")
+    return <AgentsPage state={agents} config={config} now={now} onOpenRun={onAnswer} />;
   return <QueuePage state={agents} profiles={config.profiles} now={now} onAnswer={onAnswer} />;
 }

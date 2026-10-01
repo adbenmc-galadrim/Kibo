@@ -111,8 +111,8 @@ test("the drawer groups runs like the mockup and numbers the queue", async () =>
       onOpenFile={() => {}}
     />,
   );
-  expect(screen.getByText("3/3 créneaux · 3 en file · 1 attend une réponse")).toBeTruthy();
-  const running = within(screen.getByRole("list", { name: "En cours · 3/3 créneaux" }));
+  expect(screen.getByText("3/3 places · 3 en file · 1 attend une réponse")).toBeTruthy();
+  const running = within(screen.getByRole("list", { name: "En cours · 3/3 places" }));
   expect(running.getAllByRole("button").map((b) => b.textContent?.split("KIB")[0])).toEqual([
     "opus-dev-1",
     "opus-dev-3",
@@ -121,14 +121,14 @@ test("the drawer groups runs like the mockup and numbers the queue", async () =>
   const queued = within(screen.getByRole("list", { name: "En file · 3" }));
   expect(queued.getByText("#1")).toBeTruthy();
   expect(queued.getByText("KIB-10 · Prioritaire")).toBeTruthy();
-  expect(queued.getByText("KIB-29 · attend un créneau hôte (3/3)")).toBeTruthy();
+  expect(queued.getByText("KIB-29 · attend une place sur la machine (3/3)")).toBeTruthy();
   const finished = within(screen.getByRole("list", { name: "Terminé" }));
   expect(finished.getByText("KIB-11 · Terminé")).toBeTruthy();
   expect(finished.getByText("KIB-7 · Échec : exit code 1")).toBeTruthy();
   expect(screen.getByText("Choisis un run pour voir son journal.")).toBeTruthy();
   const user = userEvent.setup();
   await user.click(
-    within(screen.getByRole("list", { name: "Attend une réponse · créneau libéré" })).getByRole("button"),
+    within(screen.getByRole("list", { name: "Attend une réponse · place libérée" })).getByRole("button"),
   );
   expect(onSelect).toHaveBeenCalledWith("r41");
 });

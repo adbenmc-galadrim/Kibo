@@ -2,20 +2,26 @@ import {
   type AgentProfile,
   type AgentsState,
   type RunState,
-  runSubject,
   SLOT_STATES,
   type WorkspaceConfig,
 } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { Bot } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
-import { elapsed, formatDuration, formatTokens, runResultText } from "./format";
+import { frAgentsPage } from "../i18n/fr-agents-page";
+import { formatTokens } from "./format";
 import { ProfileSheet } from "./ProfileSheet";
+import { permissionModeLabel } from "./permission-mode";
+import { RunHistory } from "./RunHistory";
 
-type Props = { state: AgentsState; config: WorkspaceConfig; now: number };
+type Props = {
+  state: AgentsState;
+  config: WorkspaceConfig;
+  now: number;
+  onOpenRun: (runId: string) => void;
+};
 
 function ProfileCard({
   profile,
@@ -29,7 +35,7 @@ function ProfileCard({
   const f = fr.agentsPage.fields;
   const fields: [string, string][] = [
     [f.workspace, fr.strategiesShort[profile.workspace]],
-    [f.permissions, profile.permissionMode],
+    [f.permissions, permissionModeLabel(profile.permissionMode)],
     [f.parallel, fr.agentsPage.parallel(profile.maxParallel)],
     [f.subagents, profile.subagents.map((m) => fr.modelsShort[m]).join(", ") || fr.agentsPage.none],
   ];
@@ -80,36 +86,43 @@ function ProfileCard({
   );
 }
 
-function Stat({ state, value, label }: { state: RunState; value: string; label: string }) {
+type StatProps = { state: RunState; value: string; label: string; help?: string };
+
+function Stat({ state, value, label, help }: StatProps) {
   return (
-    <li className="grid gap-1 rounded-lg border bg-card p-4">
+    <li className="grid content-start gap-1 rounded-lg border bg-card p-4">
       <span className="flex items-center gap-2 text-2xl font-semibold">
         <RunDot state={state} />
         {value}
       </span>
       <span className="text-xs text-muted-foreground">{label}</span>
+      {help && <span className="text-2xs text-muted-foreground">{help}</span>}
     </li>
   );
 }
 
-export function AgentsPage({ state, config, now }: Props) {
+export function AgentsPage({ state, config, now, onOpenRun }: Props) {
   const [editing, setEditing] = useState<AgentProfile | null>(null);
   const positions = new Map(state.queue.map((q) => [q.runId, q.position]));
   const waiting = state.runs.filter((r) => r.state === "waiting_input").length;
-  const history = [...state.runs].sort((a, b) => b.seq - a.seq);
-  const c = fr.agentsPage.columns;
   const s = fr.agentsPage.stats;
   return (
     <div className="grid content-start gap-6 p-6">
+      <p className="text-sm text-muted-foreground">{frAgentsPage.subtitle}</p>
       <ul aria-label={fr.agentsPage.title} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           state="running"
-          value={fr.agents.slots(state.host.used, state.host.hostSlots)}
-          label={s.slots}
+          value={frAgentsPage.stats.slots(state.host.used, state.host.hostSlots)}
+          label={s.running}
         />
         <Stat state="queued" value={String(state.queue.length)} label={s.queued} />
         <Stat state="waiting_input" value={String(waiting)} label={s.waiting} />
-        <Stat state="cancelled" value={formatTokens(state.tokensToday)} label={s.tokens} />
+        <Stat
+          state="cancelled"
+          value={formatTokens(state.tokensToday)}
+          label={s.tokens}
+          help={frAgentsPage.stats.tokensHelp}
+        />
       </ul>
       <section className="grid gap-3">
         <h2 className="text-md font-semibold">{fr.agentsPage.profiles}</h2>
@@ -131,46 +144,7 @@ export function AgentsPage({ state, config, now }: Props) {
           </div>
         )}
       </section>
-      <section className="grid gap-3">
-        <h2 className="text-md font-semibold">{fr.agentsPage.history}</h2>
-        {history.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{fr.agentsPage.noRuns}</p>
-        ) : (
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{c.run}</TableHead>
-                  <TableHead>{c.ticket}</TableHead>
-                  <TableHead>{c.profile}</TableHead>
-                  <TableHead>{c.duration}</TableHead>
-                  <TableHead>{c.tokens}</TableHead>
-                  <TableHead>{c.result}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-muted-foreground">{`#${r.seq}`}</TableCell>
-                    <TableCell>{runSubject(r)}</TableCell>
-                    <TableCell className="font-mono">{r.profileName}</TableCell>
-                    <TableCell className="font-mono">
-                      {r.startedAt === null ? "-" : formatDuration(elapsed(r, now))}
-                    </TableCell>
-                    <TableCell>{formatTokens(r.tokens)}</TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-2">
-                        <RunDot state={r.state} />
-                        {runResultText(r, positions.get(r.id) ?? null)}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </section>
+      <RunHistory runs={state.runs} positions={positions} now={now} onOpenRun={onOpenRun} />
       {editing && (
         <ProfileSheet
           profile={editing}

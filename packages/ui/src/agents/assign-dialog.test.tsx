@@ -44,7 +44,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
     "opus-dev · Claude Opus 5.5 · worktree par ticket",
   );
   expect(
-    await screen.findByText("attend un créneau opus-dev (2/2) · entrera en file en position #4"),
+    await screen.findByText("attend une place du profil opus-dev (2/2) · entrera en file en position #4"),
   ).toBeTruthy();
   expect(screen.getByText("nouveau worktree kib-15 (depuis main)")).toBeTruthy();
   expect(screen.getByLabelText("Brief (optionnel)").tagName).toBe("INPUT");
@@ -104,7 +104,7 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
 test("a free slot means the run starts at once", async () => {
   preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
   render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
-  expect(await screen.findByText("créneau libre · démarre tout de suite")).toBeTruthy();
+  expect(await screen.findByText("place libre · démarre tout de suite")).toBeTruthy();
   expect(screen.queryByText(/attend KIB/)).toBeNull();
 });
 

@@ -20,7 +20,7 @@ export const frAi = {
           : `git ${git} · gh ${gh} détectés`,
     capacity: "Capacité machine",
     capacityDetail: (cores: number, ramGb: number, slots: number) =>
-      `${cores} cœurs, ${ramGb} Go → ${slots} créneau${slots > 1 ? "x" : ""} d'agents (modifiable)`,
+      `${cores} cœurs, ${ramGb} Go → ${slots} place${slots > 1 ? "s" : ""} d'agents (modifiable)`,
     github: "GitHub (optionnel)",
     githubDetail: "Pour synchroniser issues, PR et CI",
     githubConnect: "Connecter",

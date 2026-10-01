@@ -19,6 +19,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import type { GuidelineDraft } from "./GuidelineRow";
 import { ProfileGuidelines } from "./ProfileGuidelines";
+import { permissionModeLabel } from "./permission-mode";
 import { SystemProfileFields } from "./SystemProfileFields";
 
 type Props = {
@@ -212,7 +213,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
               >
                 {MODES.map((m) => (
                   <ToggleGroupItem key={m} value={m} className="flex-1">
-                    {m}
+                    {permissionModeLabel(m)}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>

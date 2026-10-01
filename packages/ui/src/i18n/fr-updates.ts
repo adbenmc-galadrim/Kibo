@@ -18,8 +18,8 @@ export const frUpdates = {
   installing: "Installation, Kibo va redémarrer…",
   blockedByRuns: (n: number) =>
     n > 1
-      ? `${n} runs occupent un créneau : attends leur fin ou annule-les avant d'installer.`
-      : "Un run occupe un créneau : attends sa fin ou annule-le avant d'installer.",
+      ? `${n} runs sont en cours : attends leur fin ou annule-les avant d'installer.`
+      : "Un run est en cours : attends sa fin ou annule-le avant d'installer.",
   failed: "Mise à jour impossible",
   errors: {
     check: "Impossible de joindre GitHub. Vérifie la connexion, puis réessaie.",

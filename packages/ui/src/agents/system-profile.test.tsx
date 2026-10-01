@@ -25,7 +25,8 @@ beforeEach(() => {
 });
 
 const config = () => ({ ...configFixture(), profiles: [...systemProfilesFixture, ...profilesFixture] });
-const show = () => render(<AgentsPage state={agentsFixture()} config={config()} now={NOW} />);
+const show = () =>
+  render(<AgentsPage state={agentsFixture()} config={config()} now={NOW} onOpenRun={() => {}} />);
 const sheet = () => within(screen.getByRole("dialog"));
 
 test("a system profile card carries the Système badge, a user profile does not", () => {
@@ -84,7 +85,7 @@ test("choosing Haiku saves only the model of the system profile", async () => {
 
 test("with only system profiles the page still invites to create a profile", () => {
   const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
-  render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} />);
+  render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} onOpenRun={() => {}} />);
   expect(
     screen.getByText("Aucun profil à toi : crée-en un pour assigner des tickets à un agent."),
   ).toBeTruthy();
