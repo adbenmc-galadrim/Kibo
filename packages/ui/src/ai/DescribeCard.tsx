@@ -1,15 +1,15 @@
-import { type ComponentDraft, DraftComponentId, type DraftKind, KiboError } from "@kibo/schema";
+import { type ComponentDraft, type DraftAttachmentInput, DraftComponentId, KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { Checkbox } from "@kibo/sdk/ui/checkbox";
-import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot, Sparkles } from "lucide-react";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
+import { type DescribeEdits, DescribeFields, initialEdits } from "./DescribeFields";
+import { formatProblem } from "./FormatsField";
 import { slugify, suggestTitle } from "./slug";
 import { useAiAvailability } from "./use-ai-availability";
 
@@ -18,19 +18,23 @@ const MAX = 2000;
 
 export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft) => void }) {
   const id = useId();
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const { ready, block } = useAiAvailability("generateur");
   const [description, setDescription] = useState("");
-  const [title, setTitle] = useState<string | null>(null);
-  const [componentId, setComponentId] = useState<string | null>(null);
-  const [kind, setKind] = useState<DraftKind>("widget");
-  const [withServer, setWithServer] = useState(false);
+  const [edits, setEdits] = useState<DescribeEdits>(initialEdits);
+  const [attachments, setAttachments] = useState<DraftAttachmentInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const effectiveTitle = title ?? suggestTitle(description);
-  const effectiveId = componentId ?? slugify(effectiveTitle);
+  const effectiveTitle = edits.title ?? suggestTitle(description);
+  const effectiveId = edits.componentId ?? slugify(effectiveTitle);
   const length = description.trim().length;
   const idValid = DraftComponentId.safeParse(effectiveId).success;
-  const valid = length >= MIN && length <= MAX && effectiveTitle.trim().length > 0 && idValid;
+  const valid =
+    length >= MIN &&
+    length <= MAX &&
+    effectiveTitle.trim().length > 0 &&
+    idValid &&
+    formatProblem(edits.kind, edits.formats) === null;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,10 +48,11 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
             mode: "create",
             id: effectiveId,
             title: effectiveTitle.trim(),
-            kind,
-            withServer,
+            kind: edits.kind,
+            withServer: edits.withServer,
             description: description.trim(),
-            attachments: [],
+            formats: edits.formats,
+            attachments,
           },
         }),
       );
@@ -69,6 +74,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
         <Label htmlFor={`${id}-desc`}>{fr.ai.create.describe}</Label>
         <Textarea
           id={`${id}-desc`}
+          ref={descriptionRef}
           rows={3}
           maxLength={MAX}
           placeholder={fr.createComponent.aiPlaceholder}
@@ -77,65 +83,21 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
         />
         <p className="text-right font-mono text-[11px] text-muted-foreground">{fr.ai.create.count(length)}</p>
       </div>
-      {length > 0 && (
-        <div className="grid grid-cols-2 items-end gap-2">
-          <div className="col-span-2 grid gap-1">
-            <Label htmlFor={`${id}-title`} className="text-xs">
-              {fr.ai.create.titleLabel}
-            </Label>
-            <Input
-              id={`${id}-title`}
-              maxLength={60}
-              value={effectiveTitle}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-          <div className="col-span-2 grid gap-1">
-            <Label htmlFor={`${id}-id`} className="text-xs">
-              {fr.ai.create.idLabel}
-            </Label>
-            <Input
-              id={`${id}-id`}
-              className="font-mono"
-              maxLength={40}
-              aria-invalid={!idValid}
-              aria-describedby={idValid ? undefined : `${id}-id-help`}
-              value={effectiveId}
-              onChange={(e) => setComponentId(e.target.value.toLowerCase())}
-            />
-            {!idValid && (
-              <p id={`${id}-id-help`} className="text-xs text-destructive">
-                {fr.ai.create.idInvalid}
-              </p>
-            )}
-          </div>
-          <div className="grid gap-1">
-            <Label htmlFor={`${id}-kind`} className="text-xs">
-              {fr.ai.create.kindLabel}
-            </Label>
-            <Select value={kind} onValueChange={(v) => setKind(v === "view" || v === "both" ? v : "widget")}>
-              <SelectTrigger id={`${id}-kind`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(["widget", "view", "both"] as const).map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {fr.ai.create.kinds[k]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <label htmlFor={`${id}-server`} className="flex h-9 items-center gap-2 text-xs">
-            <Checkbox
-              id={`${id}-server`}
-              checked={withServer}
-              onCheckedChange={(v) => setWithServer(v === true)}
-            />
-            {fr.ai.create.withServer}
-          </label>
-        </div>
-      )}
+      <DescribeFields
+        id={id}
+        described={length > 0}
+        edits={edits}
+        title={effectiveTitle}
+        componentId={effectiveId}
+        idValid={idValid}
+        onChange={(patch) => setEdits((current) => ({ ...current, ...patch }))}
+      />
+      <AttachmentsField
+        value={attachments}
+        onChange={setAttachments}
+        disabled={busy}
+        pasteFrom={descriptionRef}
+      />
       <p className="text-xs text-muted-foreground">{fr.ai.create.describeHelp}</p>
       {length > 0 && length < MIN && <p className="text-xs text-muted-foreground">{fr.ai.create.tooShort}</p>}
       {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}

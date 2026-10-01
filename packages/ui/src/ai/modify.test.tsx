@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { type ComponentDraft, KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const DRAFT = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
@@ -144,4 +144,26 @@ test("a conflict without a draft to resume says the component is busy", async ()
 test("cancel is an outline button, as on the mockup", () => {
   render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
   expect(screen.getByRole("button", { name: "Annuler" }).getAttribute("data-variant")).toBe("outline");
+});
+
+test("the change request carries the attached images, pasted or picked", async () => {
+  render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
+  const user = userEvent.setup();
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+  expect(screen.getByRole("group", { name: "Maquettes (facultatif)" })).toBeTruthy();
+  await user.upload(
+    screen.getByLabelText("Ajouter des images"),
+    new File([png], "Titre voulu.png", { type: "image/png" }),
+  );
+  fireEvent.paste(screen.getByLabelText("Ce qu'il faut changer"), {
+    clipboardData: { files: [new File([png], "image.png", { type: "image/png" })], getData: () => "" },
+  });
+  expect(await screen.findByRole("img", { name: "image.png" })).toBeTruthy();
+  await user.type(screen.getByLabelText("Ce qu'il faut changer"), "Ajoute un titre");
+  await user.click(await screen.findByRole("button", { name: "Lancer l'agent" }));
+  const req = calls.at(-1);
+  expect(req?.method === "startComponentDraft" && req.draft.attachments.map((a) => a.name)).toEqual([
+    "Titre-voulu.png",
+    "image.png",
+  ]);
 });

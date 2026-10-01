@@ -1,4 +1,4 @@
-import { type ComponentDraft, KiboError } from "@kibo/schema";
+import { type ComponentDraft, type DraftAttachmentInput, KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   Dialog,
@@ -11,11 +11,12 @@ import {
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { client } from "../api";
 import { ApprovalScope, useApprovalScope } from "../dialogs/approval-scope";
 import { fr } from "../i18n/fr";
 import { AiDraftPanel } from "./AiDraftPanel";
+import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
 import { useAiAvailability } from "./use-ai-availability";
 
@@ -71,7 +72,9 @@ type FormProps = {
 function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps) {
   const id = useId();
   const { ready, block } = useAiAvailability("generateur");
+  const requestRef = useRef<HTMLTextAreaElement>(null);
   const [request, setRequest] = useState("");
+  const [attachments, setAttachments] = useState<DraftAttachmentInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const text = request.trim();
@@ -84,7 +87,7 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
     try {
       const draft = await client.rpc({
         method: "startComponentDraft",
-        draft: { mode: "modify", id: componentId, description: text, attachments: [] },
+        draft: { mode: "modify", id: componentId, description: text, attachments },
       });
       onStarted(draft.id);
     } catch (err) {
@@ -101,12 +104,19 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
       <Label htmlFor={`${id}-request`}>{fr.ai.modifyField}</Label>
       <Textarea
         id={`${id}-request`}
+        ref={requestRef}
         rows={4}
         maxLength={2000}
         value={request}
         onChange={(e) => setRequest(e.target.value)}
       />
       <p className="text-xs text-muted-foreground">{fr.ai.modifyHelp}</p>
+      <AttachmentsField
+        value={attachments}
+        onChange={setAttachments}
+        disabled={busy}
+        pasteFrom={requestRef}
+      />
       {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
       {error && (
         <p role="alert" className="text-xs text-destructive">
