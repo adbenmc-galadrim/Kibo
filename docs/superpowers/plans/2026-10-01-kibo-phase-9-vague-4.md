@@ -216,6 +216,13 @@ export const MAX_DRAFT_ATTACHMENTS_TOTAL = MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_RE
 // Démon (T50, après relecture lead) : writeAttachments(dir, inputs: readonly DraftAttachmentInput[], existing: readonly DraftAttachment[]) ; checkAttachments(inputs): void ; DraftStore gagne feedback(id): string | null, saveFeedback(id, text: string | null): void ; LaunchInput, launchDraft, draftBrief, ATTACHMENTS_ENV dans draft-launch.ts ; prepareNewDraft dans draft-new.ts
 // Démon (T51) : GeneratorBrief.attachments: readonly string[] ; revisePrompt(b, feedback, attachments: readonly string[])
 // Démon (T50, livré) : removeAttachmentFiles(paths) dans draft-attachments.ts ; retryPrompt(d, { report, feedback, images }) dans draft-launch.ts ; launchDraft répond STORE_CORRUPT si le dossier du brouillon manque
+// Démon (T51, après relecture lead) :
+//   draft-launch.ts : type BriefContext = { formats: readonly ComponentFormat[]; attachments: readonly string[] } ; draftBrief(d, ctx: BriefContext): GeneratorBrief ;
+//     retryPrompt(d, { report, feedback, images, formats }) (formats relus dans le manifeste du brouillon)
+//   prompts-skill.ts : SKILL, EXAMPLE_COMPONENT (chaîne, validée par prompts-example.int.test.ts avec validateComponent réel), FORMAT_LABELS, formatLine(f), formatTable(declared)
+//   draft-preview.ts : type DraftFile = SandboxFile ; DraftAssets = { lookup(draftId, hash, file): Promise<Uint8Array | string | null> } (empreinte recalculée à chaque appel) ;
+//     preview(draftId) : INVALID_INPUT hors review/permissions, NOT_FOUND, CONFLICT si le brouillon change pendant la construction, VALIDATION_FAILED si la construction échoue, STORE_CORRUPT
+//   agents/fake-claude-ai.ts : fakeToolUses(stateDir, sessionId): { tool: string; input: Record<string, unknown>; denied: boolean }[]
 // StartComponentDraftInput.create gagne  formats: z.array(ComponentFormat).min(1).max(5).optional(), attachments: DraftAttachments
 // StartComponentDraftInput.modify gagne  attachments: DraftAttachments
 export const ReviseComponentDraftInput = z.object({ draftId: DraftId, feedback: z.string().trim().min(5).max(2000), attachments: DraftAttachments });
@@ -977,6 +984,8 @@ git commit -m "feat(daemon): révision d'un brouillon par retour"
 
 ### Task 51: Démon et devkit : contexte de l'agent, aperçu d'un brouillon dans le bac à sable, largeurs fixes refusées, faux `claude`
 
+> **Amendement après relecture lead (1er refus).** `preview()` : après `buildPreview` et avant toute écriture (mémoire, disque), relire l'état et recalculer l'empreinte ; différence ⇒ `CONFLICT` sans rien conserver ; une erreur de construction sur un brouillon qui n'est plus en `review`/`permissions` ⇒ `CONFLICT`. `buildComponent` : `componentCss(stageSources(stage), toolchain)`. `verifyAndRestore` supprime `.kibo/preview` à chaque fin de run. `responsive.ts` : règle de la spec composants §17.4 amendée (`max-w` retiré, `size-[Npx]` et nombre sans unité d'un `style={{ … }}` ajoutés, variante de conteneur et condition de requête exemptées). Jeton `bg-muted` ajouté au skill. `GRID_COLUMNS` importé du schéma. `fake-claude.test.ts` redescend sous 300 lignes. Tests : trois cas de course dans `draft-preview.test.ts`, classe hors sources absente de `ui.css` dans `build.test.ts`, cache planté purgé dans `draft-verify.test.ts`, cas de la règle dans `responsive.test.ts`.
+
 > **Amendement (relecture lead de T50).** T50 livre `previewComponentDraft` en `KiboError("INTERNAL", …)` (test « the draft preview is refused until it is served » de `methods.test.ts`) : T51 remplace le cas et ce test. `generatorPrompt` et `revisePrompt` listent déjà les chemins des images (`imageLines`) : T51 enrichit le texte sans dupliquer la liste.
 
 Vague 1 ← T46, T50. Spec IA **§13.7, §13.8, §13.11**, composants **§17.4** (largeurs fixes), **§17.5** (aperçu). Décision 8. `prompts.ts` (159 l.) extrait son skill et son exemple dans `prompts-skill.ts`. Relue par `kibo-lead` (listener sandbox, garde-fou, prompt).
@@ -1242,6 +1251,8 @@ git commit -m "fix(ui): journal vide d'un run en cours, parallèle système"
 ---
 
 ### Task 54: UI : aperçu du brouillon dans le bac à sable et révision
+
+> **Amendement (relecture lead de T51).** `previewComponentDraft` répond `{ hash, path }` ; `path` n'est servi que par le démon qui a répondu, tant que le brouillon reste en `review` ou `permissions` avec cette empreinte. `DraftPreviewFrame` appelle la RPC à chaque montage et à chaque `draft.changed` du brouillon, ne mémorise jamais un `path` d'un montage à l'autre, et traite un échec de chargement de l'iframe (`createLoadGuard`) par un nouvel appel, une seule fois, avant `frCreations.preview.unavailable`. Un changement de format ne rappelle pas la RPC (même bundle, `format` passe par `init`). Refus affichés en `role="alert"` : `INVALID_INPUT` (hors `review`/`permissions`), `CONFLICT` (brouillon modifié pendant la construction : un nouvel essai suffit), `VALIDATION_FAILED`, `NOT_FOUND`, `STORE_CORRUPT`. La RPC est permise pendant une relecture ou une publication en cours. Suivi de T52 à prendre ici : `AiDraftPanel` gagne `onStatus` pour supprimer le double `getComponentDraft` de `ContinueInBackground`.
 
 Vague 2 ← T47, T51, T52. Spec IA **§13.6, §13.8**, composants §17.5 ; écrans **133, 134**. Décision 8. Mineure casée : squelette d'attente sans `role="status"` (`DraftReviewStep`). Relue par `kibo-lead` (pont iframe, SDK simulé côté hôte, budget).
 
