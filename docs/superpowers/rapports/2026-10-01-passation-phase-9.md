@@ -6,7 +6,7 @@ Seuil d'usage hebdomadaire fixé par Adam : 80 %. Ce document permet de reprendr
 
 - `phase/9` (poussée) : les quatre vagues sont intégrées (T1 à T55), chaque tâche après relecture et gate complète ; version de l'application `1.1.0`.
 - Rapports : `docs/superpowers/rapports/2026-10-01-jalon-v1.1.md` (synthèse, points pour Adam) et les rapports de vague `2026-09-30-phase-9-vague-1.md`, `2026-10-01-phase-9-vague-2.md`, `2026-10-01-phase-9-vague-3.md`, `2026-10-01-phase-9-vague-4.md` (écarts, risques, suivis).
-- Mesures sur `phase/9` : budget UI **221,4 kB** (221 449 octets ; exigence de la vague 4 : 222,0 kB ; plafond 230 kB, jamais relevé), **70 parcours E2E** verts (ports 4390 à 4426), **3 946 tests unitaires** (1 ignoré).
+- Mesures sur `phase/9` : budget UI **221,4 kB** (221 449 octets ; exigence de la vague 4 : 222,0 kB ; plafond 230 kB, jamais relevé), **70 parcours E2E** verts (ports 4390 à 4426), **3 952 tests unitaires** (1 ignoré).
 - Captures de contrôle (non commitées, `screens/` ignoré par git) : `screens/2026-10-01-t<n>/`.
 
 ## Jalon v1.1.0 : étapes
