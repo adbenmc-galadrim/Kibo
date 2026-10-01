@@ -1488,7 +1488,7 @@ git commit -m "feat(ui): appareils confirmés, projets partagés actifs"
 
 Vague 2 ← T39 (`Shell.tsx` allégé). Spec §15.2, agents §11 ; écran **121**. UI seule.
 
-Complément (décision lead T39, spec §15.3) : `AgentBar.tsx` / `SyncIndicator.tsx` : « connecté » ne se combine jamais avec un état de sync (`base = fr.app.name` quand `kind` n'est ni `local` ni `down`) ; `fr.sync.indicator.offline` renommé « sync hors ligne » ; adapter `sync-settings.test.tsx` et `e2e/sync.spec.ts`.
+Complément (T36) : la section s'appelle « Synchronisation » ; aligner le libellé « Paramètres › Sync » restant dans `fr-share.ts` (l. 39), `share.test.tsx` et la spec `2026-09-26-kibo-sync.md` (l. 69, 72). Complément (décision lead T39, spec §15.3) : `AgentBar.tsx` / `SyncIndicator.tsx` : « connecté » ne se combine jamais avec un état de sync (`base = fr.app.name` quand `kind` n'est ni `local` ni `down`) ; `fr.sync.indicator.offline` renommé « sync hors ligne » ; adapter `sync-settings.test.tsx` et `e2e/sync.spec.ts`.
 
 **Files:**
 - Create: `packages/ui/src/agents/run-filter.ts`, `run-filter.test.ts`, `RunHistory.tsx`, `permission-mode.ts`, `permission-mode.test.ts`
