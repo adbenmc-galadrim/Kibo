@@ -667,7 +667,7 @@ Vague 0. Spec §15.4, composants §16.1, marketplace D47. Trois compléments ind
 - Consumes: `locked` de `project-hosts.ts`, `writeNoteFile`, `resolveNotePath`, `MarketService.refresh(sourceId?)`, `listSources()`.
 - Produces: `ProjectHostRegistry.isLocked`, `ProjectAdminDeps.isLocked`, `notes.create`, `NotesApi.create`, `createNoteFile`, `refreshMarketSource`.
 
-- [ ] **Step 1: `isLocked` et `detail` stables (tests rouges puis verts)**
+- [x] **Step 1: `isLocked` et `detail` stables (tests rouges puis verts)**
 
 Test du registre (fichier existant de `createProjectHosts`) :
 ```ts
@@ -696,7 +696,7 @@ Run: `bun test packages/daemon/src/collab packages/daemon/src/projects` — Expe
 `collab/types.ts` : `isLocked(projectId: string): boolean;` ; `project-hosts.ts` : `isLocked: (projectId) => locked.has(projectId),` ; `admin.ts` : `isLocked(projectId: string): boolean` dans `ProjectAdminDeps`, et dans `deleteProject`, après `refuseActiveRuns` : `if (deps.isLocked(projectId)) throw new KiboError("CONFLICT", \`project ${projectId} is being shared\`);` ; `daemon.ts` : `isLocked: (projectId) => collab.hosts.isLocked(projectId)` (lire comment `daemon.ts` accède au registre : `collab.hosts` ou équivalent ; sinon exposer `isLocked` sur l'objet `collab`). Tous les tests existants qui construisent `ProjectAdminDeps` gagnent `isLocked: () => false`.
 Run: `bun test packages/daemon/src/collab packages/daemon/src/projects packages/daemon/src/daemon.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: `notes.create` exclusif, de la schéma au composant (tests rouges puis verts)**
+- [x] **Step 2: `notes.create` exclusif, de la schéma au composant (tests rouges puis verts)**
 
 `packages/daemon/src/notes/notes-fs.test.ts` :
 ```ts
@@ -729,7 +729,7 @@ export async function createNoteFile(dir: string, rel: string, markdown: string)
 (`isExisting` = `code === "EEXIST"`, à côté d'`isMissing`.) Schéma `call.ts` : `z.object({ kind: z.literal("notes.create"), path: NotePath, markdown: z.string().max(1_048_576) })`. `notes/service.ts` : `case "notes.create"` ⇒ `mkdir` + `createNoteFile` + `metaOf`, même chemin que `notes.write` ; test de service : « create refuses an existing note with CONFLICT ». Permissions : là où `notes.write` exige `writes: note` (`packages/daemon/src/components/gate*.ts`, `packages/schema/src/permissions.ts` : `grep -rn "notes.write"`), ajouter `notes.create` ; `devkit/infer-permissions.ts` : `sdk.notes.create` ⇒ `writes: note` (test à côté). SDK : `types.ts` `create(path, markdown): Promise<NoteMeta>` ; `sdk.ts` `create: (path, markdown) => call<NoteMeta>({ kind: "notes.create", path, markdown })` sous la même garde que `write` ; `mock.ts` `case "notes.create"` ⇒ `CONFLICT` si présent, sinon création (`mock-notes.ts` gagne `create(path, markdown)`), usage enregistré sous `writes: note` ; test du mock : « notes.create refuses an existing path ». Composant : `components/notes/src/NotesView.tsx:120-126`, `create` appelle `sdk.notes.create(path, \`# ${title}\n\`)` et supprime le `listed.data.some(...)` ; le message « Une note porte déjà ce nom. » est affiché sur `CONFLICT` (`describeError`). Test `notes.test.tsx` : le cas « a title whose slug is taken is refused » passe par un mock qui répond `CONFLICT`.
 Run: `bun test packages/schema packages/sdk packages/daemon/src/notes packages/devkit components/notes` — Expected: PASS ; `bun run --cwd components/notes test` (conformité) — Expected: PASS.
 
-- [ ] **Step 3: `refreshMarketSource` (test rouge puis vert)**
+- [x] **Step 3: `refreshMarketSource` (test rouge puis vert)**
 
 Test RPC marketplace (fichier existant) :
 ```ts
@@ -753,7 +753,7 @@ test("refreshMarketSource refreshes one source and returns it; unknown id is NOT
 ```
 Run: `bun test packages/schema packages/daemon/src/market` — Expected: PASS.
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages components` — Expected: PASS.
 
