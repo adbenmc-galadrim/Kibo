@@ -1498,12 +1498,12 @@ Complément (T36) : la section s'appelle « Synchronisation » ; aligner le libe
 - Consumes: `AgentsState`, `RunView`, `runSubject`, `isTerminal`, `getRunLog`, `cancelRun`, `config deleteProfile`, `ConfirmDialog`, `ToggleGroup`, `Input`, `focusRun` (`onAnswer` de `ScreenView`).
 - Produces: contrat « UI » (T37) : `filterRuns`, `AgentsPage.onOpenRun`, `useRunLog(): { log, missing }`, `RunJournal.missing`, `permissionModeLabel`.
 
-- [ ] **Step 1: Filtre pur et libellés (tests rouges puis verts)**
+- [x] **Step 1: Filtre pur et libellés (tests rouges puis verts)**
 
 `run-filter.test.ts` : `filterRuns(runs, "all", "")` trié par `seq` décroissant ; `"failed"` ne garde que `failed` ; `"waiting"` = `waiting_input` ; `"done"` = `done` ; `"cancelled"` ; `query "kib-1"` garde `KIB-1`, `KIB-12` (préfixe insensible à la casse, sur `ticketKey`). `permission-mode.test.ts` : `plan` ⇒ « Lecture seule (plan) », `acceptEdits` ⇒ « Modifications acceptées », `default` ⇒ « Demande à chaque action ». Implémenter.
 Run: `bun test packages/ui/src/agents/run-filter.test.ts packages/ui/src/agents/permission-mode.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Historique cliquable et filtré (tests rouges puis verts, écran 121)**
+- [x] **Step 2: Historique cliquable et filtré (tests rouges puis verts, écran 121)**
 
 `agents-page.test.tsx` :
 ```tsx
@@ -1523,17 +1523,17 @@ test("screen 121: a history line opens the run, the filter and the key search na
 `RunHistory.tsx` (sorti d'`AgentsPage.tsx` pour la taille) : `ToggleGroup` + `Input type="search"` + table dont chaque ligne contient un bouton plein (`aria-label = \`${profile} · ${runSubject(run)}\``) ; `AgentsPage` : prop `onOpenRun`, sous-titre, cartes « places ». `ScreenView.tsx` : `onOpenRun={onAnswer}`. `fr.ts` : `agentsPage.subtitle`, `agentsPage.stats.slots: (used, total) => \`${used} place${used > 1 ? "s" : ""} sur ${total}\``, `agentsPage.filters.*`, `agentsPage.searchKey`, `agentsPage.stats.tokensHelp`, `queue.capacityHelp` et `hostSlots` sans « créneau », `agents.groups.*`, `agents.reasons.*`, `agents.reply.hint: "Reprend la session"`, `agents.events.resumed: "reprise de la session"`, `profile.cli: "Claude Code en ligne de commande"`, `profile.neverBypass: "Les permissions ne sont jamais contournées."` ; `AgentsPage.ProfileCard` et `ProfileSheet` affichent `permissionModeLabel(mode)`.
 Run: `bun test packages/ui/src/agents/agents-page.test.tsx` — Expected: PASS.
 
-- [ ] **Step 3: Journal indisponible (tests rouges puis verts)**
+- [x] **Step 3: Journal indisponible (tests rouges puis verts)**
 
 `agent-panel.test.tsx` : avec `getRunLog` qui rejette `NOT_FOUND`, le tiroir affiche « Journal indisponible pour ce run. » et aucune erreur n'est relancée ; avec `[]`, même texte. `use-agents.ts` : `useRunLog(runId): { log: RunLogEntry[] | null; missing: boolean }` (`missing = NOT_FOUND || log.length === 0`, toute autre erreur relancée comme avant) ; `AgentPanel` passe `log` et `missing` à `AgentDrawer` → `RunJournal missing` ⇒ `<p>` (`fr.agents.journalMissing`). `run-journal.test.tsx` : test de l'état.
 Run: `bun test packages/ui/src/agents` — Expected: PASS.
 
-- [ ] **Step 4: Confirmations (tests rouges puis verts)**
+- [x] **Step 4: Confirmations (tests rouges puis verts)**
 
 `agent-panel.test.tsx` « stopping a run cancels it… » ⇒ `ConfirmDialog` « Arrêter le run opus-dev-2 sur KIB-14 ? » (texte « L'agent est interrompu ; le ticket reste assigné. ») puis `cancelRun` ; `queue-page.test.tsx` « the item menu moves, prioritizes and removes queued runs » ⇒ « Retirer KIB-18 de la file ? » puis `cancelRun` ; test de `ProfileSheet` « Supprimer le profil opus-dev ? » (« Ses runs passés restent dans l'historique. ») puis `deleteProfile` ; `PROFILE_IN_USE` affiché dans le dialogue. `fr.ts` : `agents.stopTitle(profile, key)`, `stopHelp`, `queue.cancelTitle(key)`, `queue.cancelHelp`, `profile.deleteTitle(name)`, `profile.deleteHelp`.
 Run: `bun test packages/ui && bun run budget && grep -rn "créneau\|--resume\|claude -p\|dangerously" packages/ui/src/i18n` — Expected: PASS, aucune occurrence (hors `fr-ai.ts` si elle cite une commande dans un bloc « Détails »).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 ```bash
 git add packages/ui/src/agents/run-filter.ts packages/ui/src/agents/run-filter.test.ts packages/ui/src/agents/permission-mode.ts packages/ui/src/agents/permission-mode.test.ts packages/ui/src/agents/RunHistory.tsx packages/ui/src/agents/AgentsPage.tsx packages/ui/src/agents/agents-page.test.tsx packages/ui/src/agents/ProfileSheet.tsx packages/ui/src/shell/ScreenView.tsx packages/ui/src/i18n/fr.ts
