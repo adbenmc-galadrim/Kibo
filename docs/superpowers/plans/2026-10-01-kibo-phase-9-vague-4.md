@@ -892,7 +892,7 @@ Vague 0 ← T46 (pour `ComponentFormat` dans `StartComponentDraftInput.create.fo
 - Consumes: `IconInput`, `IconMime` (`schema/icon.ts`), `decodeIcon` (`daemon/icons/decode-icon.ts`), `ComponentFormat`, `formatsOf` (T46), `DraftStore`, `applyDraftEvent`, `createDraftGuard`, `AgentRuns`.
 - Produces: contrat « Schéma (T50) », « Core (T50) », « Démon (T50) ».
 
-- [ ] **Step 1: Schéma (tests rouges puis verts)**
+- [x] **Step 1: Schéma (tests rouges puis verts)**
 
 `packages/schema/src/ai.test.ts` :
 ```ts
@@ -910,11 +910,11 @@ test("drafts carry attachments and revisions with defaults", () => {
 ```
 (Retirer la ligne `.toBeUndefined` sans appel : garder seulement le `safeParse`.) Run: FAIL. Écrire le contrat « Schéma (T50) » dans `ai.ts`, `ai-rpc.ts` (`reviseComponentDraft`, `previewComponentDraft`, résultats). Run: `bun test packages/schema` — Expected: PASS.
 
-- [ ] **Step 2: Profil générateur (tests rouges puis verts)**
+- [x] **Step 2: Profil générateur (tests rouges puis verts)**
 
 `packages/core/src/agent-profiles.test.ts` : `ensureSystemProfiles` sur un workspace neuf crée `generateur` avec `maxParallel: 2` et `assistant` avec 1 ; un workspace où `generateur` existe avec 1 le garde ; `updateProfile(ws, "generateur", { maxParallel: 3 })` passe, `{ maxParallel: 5 }` ⇒ `INVALID_INPUT`, `{ workspace: "repo" }` ⇒ `INVALID_INPUT`. Run: FAIL. `agent-profiles.ts` : `SYSTEM_EDITABLE` + `maxParallel`, `SYSTEM_MAX_PARALLEL`, `SYSTEM_DEFAULT_PARALLEL`, `systemProfile` (`maxParallel: current?.maxParallel ?? SYSTEM_DEFAULT_PARALLEL[id]`), `assertEditable` borne. Run: PASS.
 
-- [ ] **Step 3: Images jointes (tests rouges puis verts)**
+- [x] **Step 3: Images jointes (tests rouges puis verts)**
 
 `draft-attachments.test.ts` :
 ```ts
@@ -934,11 +934,11 @@ test("writeAttachments decodes, numbers, protects and lists; a wrong signature w
 ```
 (`pngBase64()` : les 8 octets de signature PNG suivis de quelques octets ; `decodeIcon` lit la signature.) `draft-files.test.ts` : `draftPaths(home, id).attachmentsDir` = `…/<id>.attachments` ; `removeDraft` supprime le dossier des images ; `prepareDraft` refuse si `attachmentsDir` existe déjà ; `verifyAndRestore` et `agentFiles` ignorent le dossier (il est hors de `dir`). `draft-guard.test.ts` : avec `readRoots: [sdkDir, attachmentsDir]`, `Read` d'un fichier du dossier des images est accepté, `Write` refusé (« writes are limited to the draft folder »), `Glob` sur ce dossier accepté. Run: FAIL puis PASS.
 
-- [ ] **Step 4: Magasin et machine (tests rouges puis verts)**
+- [x] **Step 4: Magasin et machine (tests rouges puis verts)**
 
 `draft-store.test.ts` : une base créée par l'ancien `CREATE TABLE` (sans `attachmentsJson` ni `revisions`) est migrée à l'ouverture (`PRAGMA table_info`), `save` persiste `attachments` et `revisions`, une ligne ancienne se lit avec `[]` et `0`. `draft-machine.test.ts` : `revised` depuis `review` ⇒ `generating`, `runId`, `attempts: 1`, `revisions: 1`, `failure: null`, `incidents: []` ; depuis `permissions` idem ; depuis `generating`, `failed`, `done` ⇒ `INVALID_INPUT` ; à `revisions: 10` ⇒ `INVALID_INPUT` (« no revision left ») ; `canRevise`. Run: FAIL puis PASS (`UpdateParams` gagne `attachmentsJson`, `revisions`).
 
-- [ ] **Step 5: `revise` dans le cycle (tests rouges puis verts)**
+- [x] **Step 5: `revise` dans le cycle (tests rouges puis verts)**
 
 `draft-lifecycle.test.ts` (faux ports du fichier) :
 ```ts
@@ -959,7 +959,7 @@ test("revise relaunches the same session with the feedback and new attachments, 
 ```
 (Adapter `setup`, `endRun`, `validated`, `png` aux helpers du fichier.) `methods.test.ts` : `reviseComponentDraft` route vers `lifecycle.revise`, refusé en `CONFLICT` si `publisher.isProcessing(draftId)` (même garde que `abandon`). Run: FAIL. `draft-launch.ts` : `launchDraft(deps, input: LaunchInput)` (extrait de `launch`, l. 145-167 : `markUnrestored`, `enqueue` avec `guard` dont `readRoots: [sdkDir, attachmentsDir]`, `env: { ...deps.env(), KIBO_DRAFT_ATTACHMENTS: attachmentsDir }`, événement `enqueued` ou `revised`) ; `draft-lifecycle.ts` : `start` écrit les images (`writeAttachments`) avant `prepare`, `revise` (contrôles, `writeAttachments` en ajout, `store.save` des `attachments`, `launchDraft` avec `revisePrompt` de `prompts.ts` : en T50 un texte minimal « Retour de l'utilisateur après aperçu : « … » » + liste des chemins + consigne de test ; T51 l'enrichit), `draft-new.ts` : `attachments: []`, `revisions: 0`, `formats` transmis au `scaffold` (`ScaffoldOptions.formats`, `live-ports.ts` l'écrit dans le manifeste : `formats: input.formats ?? formatsOf({ kind })` pour `create`, `formatsOf(latest.manifest)` pour `modify`) ; `draft-recovery.ts` : `abandon` et `removeDraft` couvrent `attachmentsDir` (déjà par `removeDraft`). `draft-lifecycle.ts` < 300 lignes. Run: `bun test packages/daemon/src/ai` — Expected: PASS.
 
-- [ ] **Step 6: Gate et commits**
+- [x] **Step 6: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/schema packages/core packages/daemon` — Expected: PASS.
 ```bash
