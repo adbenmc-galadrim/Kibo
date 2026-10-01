@@ -1267,11 +1267,11 @@ Vague 2 ← T47, T51, T52. Spec IA **§13.6, §13.8**, composants §17.5 ; écra
 - Consumes: `previewComponentDraft`, `reviseComponentDraft` (T50 RPC), `DraftPreview { hash, path }` ; `SandboxFrame`, `createFrameBridge`, `createLoadGuard` (`components/sandbox/`) ; `createMockSdk({ manifest, format, seed: seedDemo, … })` et `MockSdk.backend` (T47) ; `surfaceFor`, `formatsOf`, `FORMAT_SIZES` ; `useTheme` ; `AttachmentsField` (T52) ; `draftStep`, `fr.ai.steps`.
 - Produces: contrat « UI (T54) » : `DraftPreviewFrame { draftId, manifest, format, theme }`, `FormatPicker { formats, value, onChange }`, `ReviseForm { onSubmit, busy }`, `draftActions.canRevise`, `frCreations.preview`, `revise`.
 
-- [ ] **Step 1: Actions pures (test rouge puis vert)**
+- [x] **Step 1: Actions pures (test rouge puis vert)**
 
 `draft-actions.test.ts` : `canRevise({ status: "review", revisions: 3 })` vrai ; faux pour `generating`, `done`, `failed` ; faux à `revisions === MAX_DRAFT_REVISIONS`. Run: FAIL puis PASS.
 
-- [ ] **Step 2: Cadre d'aperçu (tests rouges puis verts, écran 133)**
+- [x] **Step 2: Cadre d'aperçu (tests rouges puis verts, écran 133)**
 
 `draft-preview.test.tsx` (mock `../api` : `previewComponentDraft` ⇒ `{ hash: HASH, path }` ; `SandboxFrame` rend un `iframe` réel sous happy-dom, le pont est testé par un faux `frame` : `vi`-like via `mock.module("../components/sandbox/frame-bridge", …)` est interdit par la règle « mock.module seulement sur ../api » ⇒ injecter `bridge` par prop facultative `createBridge?: typeof createFrameBridge` avec `createFrameBridge` par défaut) :
 ```tsx
@@ -1289,11 +1289,11 @@ test("the frame is sized by the format and a build error is shown with role=aler
 ```
 `DraftPreviewFrame.tsx` : `useEffect` sur `[draftId, hash]` ⇒ `client.rpc({ method: "previewComponentDraft", draftId })` ; `useMemo` ⇒ `createMockSdk({ manifest, format, seed: seedDemo })` ; `createFrameBridge({ frame, init: { surface, theme, format, … mêmes champs que PageView », call: (req) => mock.backend.call(req), … })` ; `createLoadGuard` pour l'erreur de chargement ; `Skeleton` avec `role="status"` pendant la construction. `DraftPreview.tsx` : `FormatPicker` (segmented `ToggleGroup` ou `Tabs` : libellés `frCreations.formats.labels`), cadre centré dans une zone `overflow-auto` de hauteur bornée (`max-h-[60vh]`). Import paresseux : `const DraftPreviewFrame = lazy(() => import("./DraftPreviewFrame"))` encapsulé par `lazyPanel` (fallback squelette). Run: PASS.
 
-- [ ] **Step 3: Onglets Diff/Aperçu et formulaire de révision (tests rouges puis verts, écran 134)**
+- [x] **Step 3: Onglets Diff/Aperçu et formulaire de révision (tests rouges puis verts, écran 134)**
 
 `draft-review.test.tsx` : en `review`, deux onglets « Diff » (actif) et « Aperçu » ; « Aperçu » monte `DraftPreview` ; le bouton « Demander une révision » ouvre `ReviseForm` ; envoi avec « Mets le total en gros » et une image ⇒ `reviseComponentDraft { draftId, feedback, attachments: [{ name, mime, data }] }` ; le brouillon passe à `generating` et l'étape « 2 · Générer (agent) » s'affiche ; à 10 révisions, le bouton est absent et « Dix révisions atteintes : publiez ou abandonnez. » est visible ; le squelette d'attente a `role="status"`. `revise-form.test.tsx` : moins de 5 caractères ⇒ bouton désactivé ; `busy` ⇒ désactivé ; Échap ⇒ `onCancel`. Run: FAIL puis PASS (`DraftReviewStep.tsx` : `Tabs` du SDK, `ReviseForm` dans un `Collapsible` ; `revisions` lus depuis `ComponentDraft`).
 
-- [ ] **Step 4: Captures, gate et commits**
+- [x] **Step 4: Captures, gate et commits**
 
 Captures `screens/t54/` : 133 (aperçu en `medium` puis `half`) et 134, en sombre et en clair. Pour l'aperçu réel : démon avec le faux `claude` et le scénario `ai/generate-revise.json`.
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS, budget ≤ 221,0 kB ; `DraftPreviewFrame` et `createMockSdk` absents de l'entrée (le rapport le vérifie).
