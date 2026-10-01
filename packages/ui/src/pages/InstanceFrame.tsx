@@ -3,6 +3,7 @@ import {
   compareSemver,
   type Instance,
   isBuiltinId,
+  nearestFormat,
   type Surface,
   sandboxPath,
   splitRef,
@@ -42,6 +43,7 @@ function useSameContent<T>(value: T): T {
 function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedProps) {
   const host = useHost();
   const config = useSameContent(instance.config);
+  const format = surface === "view" ? "full" : nearestFormat(instance.layout);
   const sdk = useMemo(
     () =>
       createSdk(
@@ -52,6 +54,7 @@ function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedPro
           config,
           viewer,
           surface,
+          format,
           openTicket: host.openTicket,
           openNewTicket: host.openNewTicket,
           openFile: (r) =>
@@ -66,7 +69,7 @@ function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedPro
         },
         mode,
       ),
-    [mod, mode, projectId, instance.id, config, viewer, surface, host],
+    [mod, mode, projectId, instance.id, config, viewer, surface, format, host],
   );
   return (
     <SdkProvider sdk={sdk}>

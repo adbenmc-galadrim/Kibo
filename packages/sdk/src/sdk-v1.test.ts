@@ -11,6 +11,7 @@ const ctx: SdkContext = {
   config: {},
   viewer: "adam",
   surface: "widget",
+  format: "medium",
   openTicket: () => undefined,
   openNewTicket: () => undefined,
   openFile: () => undefined,

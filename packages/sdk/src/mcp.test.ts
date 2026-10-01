@@ -135,6 +135,7 @@ describe("sdk.mcp over the backend", () => {
     config: {},
     viewer: "adam",
     surface: "widget" as const,
+    format: "medium" as const,
     openTicket: () => {},
     openNewTicket: () => {},
     openFile: () => {},

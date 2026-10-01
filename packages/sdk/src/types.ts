@@ -2,6 +2,7 @@ import type {
   CiRun,
   CommandResult,
   ComponentCall,
+  ComponentFormat,
   ComponentManifest,
   EntityType,
   FetchInitInput,
@@ -67,6 +68,7 @@ export type KiboSdk = {
   config: Record<string, unknown>;
   viewer: string;
   surface: Surface;
+  format: ComponentFormat;
   list<T extends EntityType>(type: T): Promise<EntityMap[T][]>;
   run<C extends ProjectCommand>(cmd: C): Promise<CommandResult[C["method"]]>;
   subscribe(listener: () => void, type?: EntityType): () => void;
@@ -100,7 +102,15 @@ export type ProjectBackend = {
 
 export type SdkContext = Pick<
   KiboSdk,
-  "instanceId" | "config" | "viewer" | "surface" | "openTicket" | "openNewTicket" | "openFile" | "openView"
+  | "instanceId"
+  | "config"
+  | "viewer"
+  | "surface"
+  | "format"
+  | "openTicket"
+  | "openNewTicket"
+  | "openFile"
+  | "openView"
 >;
 export type SdkMode = "builtin" | "gated";
 

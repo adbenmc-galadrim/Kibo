@@ -1,6 +1,7 @@
 import {
   type ComponentCall,
   ComponentManifest,
+  defaultFormatOf,
   type FrameToHost,
   HostToFrame,
   type InitMessage,
@@ -101,6 +102,7 @@ export function createFrameSdk(
       config: init.config,
       viewer: init.viewer,
       surface: init.surface,
+      format: init.format ?? defaultFormatOf(manifest),
       openTicket: (ticketId) => port.post({ kibo: 1, type: "openTicket", ticketId }),
       openNewTicket: ({ statusId, parentId }) =>
         port.post({ kibo: 1, type: "openNewTicket", defaults: { statusId, parentId } }),

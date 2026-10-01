@@ -1,18 +1,11 @@
-import {
-  createProjectDoc,
-  enableServerAllocation,
-  executeProjectCommand,
-  localSyncInfo,
-  readProject,
-} from "@kibo/core";
+import { createProjectDoc, enableServerAllocation, executeProjectCommand, readProject } from "@kibo/core";
 import {
   type CiRun,
-  type ComponentCall,
+  type ComponentFormat,
   ComponentManifest,
   type ComponentManifestInput,
+  defaultFormatOf,
   type EntityType,
-  type FetchInit,
-  type FetchResponse,
   KiboError,
   type McpCallResult,
   type MemberInfo,
@@ -24,15 +17,17 @@ import {
   type Surface,
   type TicketRun,
 } from "@kibo/schema";
+import { createMockCalls, type MockFetch } from "./mock-calls";
 import { createMockNotes, type MockNote } from "./mock-notes";
 import { createSdk } from "./sdk";
 import type { ServerContext, ServerDefinition } from "./server";
-import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults } from "./types";
+import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
+export type { MockFetch } from "./mock-calls";
 export type { MockNote } from "./mock-notes";
-export type MockFetch = (url: string, init: FetchInit) => FetchResponse | Promise<FetchResponse>;
 export type MockSdk = {
   sdk: KiboSdk;
+  backend: ProjectBackend;
   violations: string[];
   used: string[];
   opened: string[];
@@ -53,6 +48,7 @@ export type MockSdkOptions = {
   viewer?: string;
   config?: Record<string, unknown>;
   surface?: Surface;
+  format?: ComponentFormat;
   runs?: TicketRun[];
   fetch?: MockFetch;
   server?: ServerDefinition;
@@ -116,20 +112,6 @@ export function createMockSdk(
   const openedFiles: FileTarget[] = [];
   const openedViews: string[] = [];
 
-  const listEntity = (entity: EntityType): unknown[] => {
-    const snapshot = readProject(doc);
-    const lists: { [K in EntityType]: () => EntityMap[K][] } = {
-      ticket: () => snapshot.tickets,
-      status: () => snapshot.workflow,
-      link: () => snapshot.links,
-      page: () => snapshot.pages,
-      run: () => runs,
-      note: () => folder.list(),
-      ci_run: () => opts.ciRuns ?? [],
-    };
-    return lists[entity]();
-  };
-
   const serverContext = (): ServerContext => ({
     instanceId: sdk.instanceId,
     config: sdk.config,
@@ -139,95 +121,37 @@ export function createMockSdk(
     fetch: sdk.fetch,
   });
 
-  const handle = async (c: ComponentCall): Promise<unknown> => {
-    switch (c.kind) {
-      case "list":
-        return listEntity(c.entity);
-      case "run":
-        return run(c.command);
-      case "data.get":
-        return structuredClone(data.get(c.key));
-      case "data.set":
-        data.set(c.key, structuredClone(c.value));
-        return null;
-      case "data.delete":
-        data.delete(c.key);
-        return null;
-      case "data.keys":
-        return [...data.keys()];
-      case "fetch":
-        if (!opts.fetch) throw new KiboError("NOT_FOUND", `no response programmed for ${c.url}`);
-        return opts.fetch(c.url, c.init);
-      case "action": {
-        const action = opts.server?.actions?.[c.name];
-        if (!action) throw new KiboError("PERMISSION_DENIED", `unknown action ${c.name}`);
-        return action(serverContext(), c.input);
-      }
-      case "notes.read":
-        return folder.read(c.path);
-      case "notes.write":
-        return folder.write(c.path, c.markdown, c.expectedMtime);
-      case "notes.create":
-        return folder.create(c.path, c.markdown);
-      case "notes.rename":
-        return folder.rename(c.from, c.to);
-      case "notes.remove":
-        folder.remove(c.path);
-        return null;
-      case "notes.search":
-        return folder.search(c.query);
-      case "notes.info":
-        return folder.info();
-      case "mcp.call":
-      case "mcp.read": {
-        const key = c.kind === "mcp.call" ? `${c.server}/${c.tool}` : `${c.server}@${c.uri}`;
-        const reply = opts.mcp?.[key];
-        if (!reply) throw new KiboError("MCP_FAILED", `no programmed response for ${key}`);
-        return reply;
-      }
-      case "mcp.import":
-        return run({
-          method: "importExternalTicket",
-          title: c.item.title,
-          ref: {
-            kind: "mcp_item",
-            server: c.server,
-            itemId: c.item.itemId,
-            url: c.item.url,
-            title: c.item.title,
-          },
-        });
-      case "presence.list":
-        return peers;
-      case "sharing.get":
-        return opts.shared
-          ? { shared: true, keyAllocator: "server", role: "editor", access, members: opts.members ?? [] }
-          : { ...localSyncInfo(doc), access };
-    }
+  const backend: ProjectBackend = {
+    snapshot: async () => readProject(doc),
+    run: async (cmd) => run(cmd),
+    call: createMockCalls({
+      ...opts,
+      doc,
+      run,
+      data,
+      folder,
+      runs: () => runs,
+      peers: () => peers,
+      access: () => access,
+      serverContext,
+    }),
+    subscribe: changes.subscribe,
+    runs: async () => runs,
+    subscribeRuns: runChanges.subscribe,
+    subscribePresence: presenceChanges.subscribe,
   };
 
-  const inner = createSdk(
-    {
-      snapshot: async () => readProject(doc),
-      run: async (cmd) => run(cmd),
-      call: handle,
-      subscribe: changes.subscribe,
-      runs: async () => runs,
-      subscribeRuns: runChanges.subscribe,
-      subscribePresence: presenceChanges.subscribe,
-    },
-    manifest,
-    {
-      instanceId: "mock-instance",
-      config: opts.config ?? {},
-      viewer: opts.viewer ?? "adam",
-      surface: opts.surface ?? (manifest.kind === "view" ? "view" : "widget"),
-      openTicket: (id) => opened.push(id),
-      openNewTicket: (d) => newTicketRequests.push(d),
-      openFile: (target) => openedFiles.push(target),
-      openView: (componentId) => openedViews.push(componentId),
-    },
-  );
+  const inner = createSdk(backend, manifest, {
+    instanceId: "mock-instance",
+    config: opts.config ?? {},
+    viewer: opts.viewer ?? "adam",
+    surface: opts.surface ?? (manifest.kind === "view" ? "view" : "widget"),
+    format: opts.format ?? defaultFormatOf(manifest),
+    openTicket: (id) => opened.push(id),
+    openNewTicket: (d) => newTicketRequests.push(d),
+    openFile: (target) => openedFiles.push(target),
+    openView: (componentId) => openedViews.push(componentId),
+  });
 
   const markUsed = (permission: string) => {
     if (!used.includes(permission)) used.push(permission);
@@ -288,6 +212,7 @@ export function createMockSdk(
 
   return {
     sdk,
+    backend,
     violations,
     used,
     opened,

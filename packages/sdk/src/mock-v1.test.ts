@@ -67,3 +67,15 @@ test("runs are served by list in both modes and notify run subscribers", async (
   expect(heard).toEqual(["run"]);
   expect(m.used).toEqual(["read:run"]);
 });
+
+test("the mock exposes the format, defaulting to the manifest's default format", async () => {
+  const m = createMockSdk(
+    { ...base, kind: "both", formats: ["small", "full"], reads: ["ticket"], writes: [] },
+    { seed: (run) => run({ method: "createTicket", title: "A" }) },
+  );
+  expect(m.sdk.format).toBe("small");
+  expect(createMockSdk({ ...base, reads: [], writes: [] }).sdk.format).toBe("medium");
+  expect(createMockSdk({ ...base, reads: [], writes: [] }, { format: "half" }).sdk.format).toBe("half");
+  const listed = await m.backend.call({ kind: "list", entity: "ticket" });
+  expect(Array.isArray(listed) && listed.length).toBe(1);
+});
