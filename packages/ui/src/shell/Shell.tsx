@@ -1,21 +1,15 @@
-import {
-  type AgentsState,
-  type FileRef,
-  iconUrl,
-  type ProjectSummary,
-  type Session,
-  type TabTarget,
-} from "@kibo/schema";
+import { type AgentsState, iconUrl, type ProjectSummary, type Session, type TabTarget } from "@kibo/schema";
 import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
+import { useDesktopIntegration } from "../desktop/use-desktop-integration";
 import { useWindowTitle } from "../desktop/use-window-title";
 import { projectDomainsOf } from "../lib/project-domains";
 import { countMine, myTickets } from "../mine/my-tickets";
-import type { PaletteAction, PaletteContext } from "../palette/palette-items";
+import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { canEdit } from "../state/access";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
@@ -36,11 +30,13 @@ import { CommandPalette } from "./lazy-dialogs";
 import { DaemonUnreachable, IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
-import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
+import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { LoadingScreen } from "./Startup";
+import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
+import { useShellDialogs } from "./use-shell-dialogs";
 import { useUpdateSchedule } from "./use-update-schedule";
 import { inTauri, openWindow } from "./workspace-actions";
 
@@ -87,30 +83,14 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
-  const [palette, setPalette] = useState<{ newTab: boolean } | null>(null);
+  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
-  const [dialogs, setDialogs] = useState<DialogsState>(NO_DIALOG);
-  const [focusRun, setFocusRun] = useState<string | null>(null);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
   const { open } = tabs;
 
   useWindowTitle(active ? describeTarget(active, { projects, snapshots }).title : null);
-  useEffect(() => {
-    if (!inTauri()) return;
-    let off: (() => void) | null = null;
-    let alive = true;
-    import("../desktop/install").then(
-      (m) => {
-        if (alive) off = m.installDesktop();
-      },
-      (e: unknown) => console.error("[kibo] desktop integration failed to load", e),
-    );
-    return () => {
-      alive = false;
-      off?.();
-    };
-  }, []);
+  useDesktopIntegration();
   useEffect(() => {
     if (activeProjectId) setLastProjectId(activeProjectId);
   }, [activeProjectId]);
@@ -118,8 +98,6 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
     projectRef.current = project;
   }, [project]);
 
-  const set = useCallback((patch: Partial<DialogsState>) => setDialogs((d) => ({ ...d, ...patch })), []);
-  const clearFocus = useCallback(() => setFocusRun(null), []);
   const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
   const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
   const currentProject = useCallback(() => projectRef.current, []);
@@ -157,27 +135,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
       tabs.dispatch({ type: "pin", id, pinned: !tabs.state.tabs.find((t) => t.id === id)?.pinned });
   });
 
-  const onAction = (a: PaletteAction) => {
-    if (a.kind === "newProject") return set({ newProject: true });
-    if (a.kind === "toggleTheme") return void cycleTheme();
-    if (a.kind === "reply") return setFocusRun(a.runId);
-    if (a.kind === "assign") return set({ assign: { projectId: null, ticketId: a.ticketId } });
-    if (a.projectId !== activeProjectId) go({ kind: "project", projectId: a.projectId });
-    if (a.kind === "newPage") set({ newPageParent: null });
-    if (a.kind === "newTicket") set({ newTicket: { parentId: a.parentId } });
-  };
-  const openFileTab = (ref: FileRef, edit: boolean) => {
-    const target: TabTarget = {
-      kind: "file",
-      projectId: ref.projectId,
-      worktree: ref.worktree,
-      path: ref.path,
-      line: ref.line,
-    };
-    if (edit) editRequests.current.add(targetToHash(target));
-    set({ preview: null });
-    go(target, true);
-  };
+  const onAction = paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme });
+  const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
 
   const branch =
     active?.kind === "changes" ? (resolveWorktree(git.worktrees, active.worktree)?.branch ?? null) : null;
