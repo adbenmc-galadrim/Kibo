@@ -1780,7 +1780,7 @@ Vague 1 ← T29, T30 (`notes.create` déjà posé). Spec §15.3, composants §16
 - Consumes: `useEntities("ticket")`, `useSdk().viewer`, `useReadOnly`, `Skeleton`, `Input`, `ToggleGroup`, `Select`, `Collapsible`, `NoteMeta`, `window.localStorage`.
 - Produces: contrat « Composants intégrés » (T42) : `filterTickets`, `TicketsQuery`, `groupNotes`, `NoteSort`.
 
-- [ ] **Step 1: Filtre pur de l'arbre (tests rouges puis verts)**
+- [x] **Step 1: Filtre pur de l'arbre (tests rouges puis verts)**
 
 `filter-tickets.test.ts` :
 ```ts
@@ -1795,7 +1795,7 @@ test("a matching child keeps its ancestors visible; statuses and assignee combin
 (Fixtures : le jeu `design/donnees-fictives.md` déjà encodé dans `tickets.test.tsx`, à extraire dans `fixtures.ts` du composant s'il n'y est pas.) Implémenter (`normalize` comme T34 ; `agents` = `assignee?.kind === "agent"`, `nobody` = `assignee === null`).
 Run: `bun test components/tickets/src/filter-tickets.test.ts` — Expected: PASS.
 
-- [ ] **Step 2: Barre, état vide, squelette (tests rouges puis verts, écran 125)**
+- [x] **Step 2: Barre, état vide, squelette (tests rouges puis verts, écran 125)**
 
 `tickets.test.tsx` :
 ```tsx
@@ -1805,12 +1805,12 @@ test("the empty state explains the tree and offers a new ticket; a loading snaps
 `TicketsToolbar.tsx` (query + `onChange`), `TicketsEmpty.tsx`, `TicketsTree.tsx` : `const [query, setQuery] = useState(EMPTY_QUERY)` ; `visible = filterTickets(...)` ; `canDrag = !readOnly && !isActive(query)` ; `loading ? <Skeleton ×5/>` ; `fr.ts` : textes. Conformité : `bun run --cwd components/tickets test`.
 Run: `bun test components/tickets` — Expected: PASS.
 
-- [ ] **Step 3: Notes : tri et dossiers (tests rouges puis verts)**
+- [x] **Step 3: Notes : tri et dossiers (tests rouges puis verts)**
 
 `note-sort.test.ts` : `groupNotes(notes, "recent")` ⇒ racine `""` en premier (tri `mtime` décroissant), puis `"idees"`, `"reunions"` par nom ; `"title"` ⇒ `localeCompare("fr")` sur `title`. `NoteList.tsx` : `Select` « Trier » (`recent` / `title`), groupes `Collapsible` par dossier (ouverts par défaut, en-tête = nom du dossier, racine sans en-tête), préférence lue/écrite par `window.localStorage[NOTE_SORT_KEY]` dans `try/catch` (le composant n'importe pas `packages/ui`). `notes.test.tsx` : un jeu `createMockSdk(manifest, { notes: { "a.md": …, "idees/b.md": …, "reunions/c.md": … } })` rend trois groupes et le tri par titre réordonne. Conformité : `bun run --cwd components/notes test`.
 Run: `bun test components/notes` — Expected: PASS.
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 ```bash
 git add components/tickets/src/filter-tickets.ts components/tickets/src/filter-tickets.test.ts components/tickets/src/TicketsToolbar.tsx components/tickets/src/TicketsEmpty.tsx components/tickets/src/TicketsTree.tsx components/tickets/src/TicketRow.tsx components/tickets/src/fr.ts components/tickets/src/tickets.test.tsx <fixtures>
