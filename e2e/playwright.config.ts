@@ -51,6 +51,10 @@ const daemons = [
   { name: "menus-light", scheme: "light", port: 4416, spec: /menus\.spec\.ts/, scenario: "question" },
   { name: "projects-dark", scheme: "dark", port: 4417, spec: /projects\.spec\.ts/, scenario: "question" },
   { name: "projects-light", scheme: "light", port: 4418, spec: /projects\.spec\.ts/, scenario: "question" },
+  { name: "inbox-dark", scheme: "dark", port: 4419, spec: /inbox\.spec\.ts/, scenario: "question" },
+  { name: "inbox-light", scheme: "light", port: 4420, spec: /inbox\.spec\.ts/, scenario: "question" },
+  { name: "confort-dark", scheme: "dark", port: 4421, spec: /confort\.spec\.ts/, scenario: "question" },
+  { name: "confort-light", scheme: "light", port: 4422, spec: /confort\.spec\.ts/, scenario: "question" },
 ] as const;
 
 const marketThemes = ["dark", "light"] as const;
