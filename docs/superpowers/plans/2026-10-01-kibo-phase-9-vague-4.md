@@ -215,6 +215,7 @@ export const MAX_DRAFT_ATTACHMENTS_TOTAL = MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_RE
 // ComponentDraft gagne  attachments: z.array(DraftAttachment).max(MAX_DRAFT_ATTACHMENTS_TOTAL).default([]), revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0)
 // Démon (T50, après relecture lead) : writeAttachments(dir, inputs: readonly DraftAttachmentInput[], existing: readonly DraftAttachment[]) ; checkAttachments(inputs): void ; DraftStore gagne feedback(id): string | null, saveFeedback(id, text: string | null): void ; LaunchInput, launchDraft, draftBrief, ATTACHMENTS_ENV dans draft-launch.ts ; prepareNewDraft dans draft-new.ts
 // Démon (T51) : GeneratorBrief.attachments: readonly string[] ; revisePrompt(b, feedback, attachments: readonly string[])
+// Démon (T50, livré) : removeAttachmentFiles(paths) dans draft-attachments.ts ; retryPrompt(d, { report, feedback, images }) dans draft-launch.ts ; launchDraft répond STORE_CORRUPT si le dossier du brouillon manque
 // StartComponentDraftInput.create gagne  formats: z.array(ComponentFormat).min(1).max(5).optional(), attachments: DraftAttachments
 // StartComponentDraftInput.modify gagne  attachments: DraftAttachments
 export const ReviseComponentDraftInput = z.object({ draftId: DraftId, feedback: z.string().trim().min(5).max(2000), attachments: DraftAttachments });
@@ -1084,6 +1085,8 @@ git commit -m "test(daemon): révision et aperçu avec le faux claude"
 ---
 
 ### Task 52: UI : décrire avec images et formats, dialogues bornés, création en arrière-plan
+
+> **Amendement (relecture lead de T50).** Le démon refuse un nom d'image hors `^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$` ou dont l'extension ne suit pas le format détecté (`.png` ; `.jpg`/`.jpeg` ; `.webp`, sans tenir compte de la casse). L'interface normalise donc le nom avant l'envoi (espaces et accents des captures d'écran remplacés, extension déduite du format lu dans les octets), avec un test : un fichier « Capture d'écran 2026-10-01 à 10.12.33.png » glissé est envoyé sous un nom accepté. `attachments: []` posé par T50 dans `DescribeCard.tsx` et `ModifyWithAiDialog.tsx` est remplacé par le champ réel.
 
 Vague 1 ← T45, T50. Spec IA **§13.4, §13.5, §13.10**, §16.4 ; écrans **132, 135, 29 amendé**. Décision 10 (`draftId` des dialogues). Mineure casée : état `copied` qui ne revient pas à `idle` (`CreateComponentDialog.tsx:20`). `DescribeCard.tsx` (181 l.) extrait `DescribeFields.tsx`.
 
