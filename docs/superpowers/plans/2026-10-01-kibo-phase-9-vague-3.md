@@ -390,11 +390,11 @@ Vague 0, **intégrée la première**. Spec §15.3 (chemins longs). Décisions 1 
 - Consumes: `lazyPanel`, `projectMenuEntries`, `ContextMenuEntries`, `DropdownMenuEntries`, `SidebarMenuAction`, `shortcutLabel`, `exposeSharedModules`.
 - Produces: `LazyOptions.fallback: "children"` ; `ProjectHeaderMenu` ; `ProjectEntry` ; `TabMenuContent` ; `loadTrusted(…, importer, expose)`.
 
-- [ ] **Step 1: Mesure de départ**
+- [x] **Step 1: Mesure de départ**
 
 Run: `bun install --frozen-lockfile && bun run budget` — Expected: `gzip : 229.2 kB (budget 230.0 kB)` (noter la valeur exacte dans le rapport).
 
-- [ ] **Step 2: `lazyPanel` rend ses enfants pendant le chargement (test rouge puis vert)**
+- [x] **Step 2: `lazyPanel` rend ses enfants pendant le chargement (test rouge puis vert)**
 
 `packages/sdk/src/lazy.test.tsx`, dans `describe("lazyPanel")` :
 ```tsx
@@ -438,7 +438,7 @@ Run: `bun test packages/sdk/src/lazy.test.tsx` — Expected: FAIL (type et `Char
 ```
 Run: `bun test packages/sdk/src/lazy.test.tsx` — Expected: PASS.
 
-- [ ] **Step 3: `ProjectHeaderMenu` dans le chunk `share-entry` (test rouge puis vert)**
+- [x] **Step 3: `ProjectHeaderMenu` dans le chunk `share-entry` (test rouge puis vert)**
 
 `packages/ui/src/shell/project-header-menu.test.tsx` :
 ```tsx
@@ -544,7 +544,7 @@ export function ProjectHeaderMenu({ project, current, shifted, editable, actions
 `share-entry.ts` : `export { ProjectHeaderMenu } from "./ProjectHeaderMenu";` et retirer `ProjectMenu` de l'export de `ShareControls` (supprimer la fonction `ProjectMenu` et ses imports devenus inutiles). `lazy-screens.ts` : remplacer `ProjectMenu` par `export const ProjectHeaderMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectHeaderMenu), fr.lazy, { fallback: "children" });`.
 Run: `bun test packages/ui/src/shell/project-header-menu.test.tsx` — Expected: PASS.
 
-- [ ] **Step 4: `ProjectEntry` extrait, `AppSidebar` sans `ContextMenu` ni `project-menu` (tests existants verts)**
+- [x] **Step 4: `ProjectEntry` extrait, `AppSidebar` sans `ContextMenu` ni `project-menu` (tests existants verts)**
 
 Créer `packages/ui/src/shell/ProjectEntry.tsx` avec le composant `ProjectEntry` et son type `ProjectEntryProps` tels qu'ils sont dans `AppSidebar.tsx:118-186`, en remplaçant le bloc `header` par :
 ```tsx
@@ -573,7 +573,7 @@ Créer `packages/ui/src/shell/ProjectEntry.tsx` avec le composant `ProjectEntry`
 (`ProjectHeaderMenu` importé depuis `./lazy-screens`, `Link` exporté de `AppSidebar.tsx` ou déplacé dans `ProjectEntry.tsx` et importé par `AppSidebar`). `AppSidebar.tsx` perd `ContextMenu*`, `ContextMenuEntries`, `projectMenuEntries`, `ProjectMenu`, et importe `ProjectEntry` ; il passe sous 250 lignes. `fr.ts` : supprimer `nav.shareProject` (`grep -rn "shareProject" packages/ui/src` doit ne rien renvoyer ; `project-menu.test.ts` utilise ses propres textes).
 Run: `bun run typecheck && bun test packages/ui/src/shell` — Expected: PASS (`shell.test.tsx` trouve toujours le bouton « Menu du projet … » et les entrées : adapter uniquement les `await import` si le test attendait `ProjectMenu`).
 
-- [ ] **Step 5: Contenu du menu des onglets à la demande (test rouge puis vert)**
+- [x] **Step 5: Contenu du menu des onglets à la demande (test rouge puis vert)**
 
 `packages/ui/src/tabs/TabBar.test.tsx` : repérer le test du menu contextuel (`grep -n "contextMenu" packages/ui/src/tabs/TabBar.test.tsx`) et le rendre asynchrone : après `fireEvent.contextMenu(tab)`, `expect(await screen.findByRole("menuitem", { name: /Épingler/ })).toBeTruthy()` ; ajouter :
 ```tsx
@@ -596,7 +596,7 @@ const TabMenuContent = lazyPanel(() => import("./TabMenuContent").then((m) => m.
 (`TabBar.tsx` garde `ContextMenu`, `ContextMenuTrigger`, `ContextMenuContent` et l'icône `X` du bouton de fermeture ; `lazyPanel` importé de `@kibo/sdk`.) `bundle-report.ts` : ajouter `/\/packages\/ui\/src\/tabs\/TabMenuContent\.tsx$/,` et `/\/packages\/ui\/src\/shell\/(ProjectHeaderMenu\.tsx|project-menu\.ts)$/,`.
 Run: `bun test packages/ui/src/tabs && bun run budget` — Expected: PASS ; budget ≈ 227,4 kB (noter).
 
-- [ ] **Step 6: Modules partagés exposés à la demande (test rouge puis vert)**
+- [x] **Step 6: Modules partagés exposés à la demande (test rouge puis vert)**
 
 `packages/ui/src/shell/trusted-loader.test.ts` :
 ```ts
@@ -619,7 +619,7 @@ Run: `bun test packages/ui/src/shell && bun run build --cwd packages/ui && bun r
 
 Vérification manuelle (notée dans le rapport) : `bun run --cwd packages/daemon start` puis l'UI, installer un composant trusted de test ou ouvrir une page qui en contient un (E2E `catalog.spec.ts` le fait : `cd e2e && bunx playwright test --project=catalog-dark`), le composant se rend.
 
-- [ ] **Step 7: Chemins longs coupés (tests rouges puis verts, écrans 1 et 108)**
+- [x] **Step 7: Chemins longs coupés (tests rouges puis verts, écrans 1 et 108)**
 
 `packages/ui/src/dialogs/delete-project-dialog.test.tsx` :
 ```tsx
@@ -637,7 +637,7 @@ Run: `bun test packages/ui/src/dialogs/delete-project-dialog.test.tsx packages/u
 `DeleteProjectDialog.tsx` : `DialogDescription className="grid min-w-0 gap-1"` et `<span className="break-all">{keeps}</span>` ; `Overview.tsx:49-51` : `className="break-all font-mono text-2xs text-muted-foreground"` (le titre garde `truncate`).
 Run: `bun test packages/ui/src/dialogs/delete-project-dialog.test.tsx packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 8: Gate et commits**
+- [x] **Step 8: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/sdk packages/ui && bun run budget` — Expected: PASS, budget ≤ 226,0 kB.
 
