@@ -1201,11 +1201,11 @@ Vague 2 ← T50, T52. Spec IA **§13.1, §13.2, §13.3**, agents §12 ; écrans 
 - Consumes: `ComponentDraft`, `DraftStatus`, `RunView`, `AgentsState` ; `client.rpc({ method: "listComponentDrafts" })`, `client.subscribeAi`, `useAgents`, `useRunLog`, `RunJournal`, `draftStep` (`ai/draft-flow.ts`), `fr.ai.steps` ; `CreateComponentDialog { draftId, onOpenCreations }`, `ModifyWithAiDialog { draftId }` (T52) ; `ConfirmDialog` (lazy-dialogs) ; `errorMessage`.
 - Produces: contrat « UI (T53) » : `useComponentDrafts`, `creation-status.ts`, `CreationsPage`, `CreationsIndicator`, `Screen` `creations`, `RunLog.empty`.
 
-- [ ] **Step 1: État pur (tests rouges puis verts)**
+- [x] **Step 1: État pur (tests rouges puis verts)**
 
 `creation-status.test.ts` : `awaitingAction` vrai pour `failed`, `review`, `permissions`, faux sinon ; `groupDrafts` sépare actifs et terminés en gardant l'ordre reçu (`updatedAt` décroissant côté démon) ; `indicatorState([], [])` ⇒ `{ visible: false, awaiting: 0, busy: false }` ; avec un brouillon `generating` dont le run est `running` ⇒ `{ visible: true, awaiting: 0, busy: true }` ; avec un `review` ⇒ `awaiting: 1` ; avec seulement des `done` ⇒ `visible: false`. Run: FAIL puis PASS.
 
-- [ ] **Step 2: Écran enregistré et page (tests rouges puis verts, écran 130)**
+- [x] **Step 2: Écran enregistré et page (tests rouges puis verts, écran 130)**
 
 `packages/schema/src/tabs.test.ts` : `Screen.parse("creations")`. `creations-page.test.tsx` (mock `../api` : `listComponentDrafts` ⇒ fixtures de `ai/draft-fixtures.ts` dans trois états ; `getAgents` ⇒ un run `queued` à la position 2 pour le second ; `getRunLog` ⇒ `NOT_FOUND` pour l'un, `[]` pour un autre) :
 ```tsx
@@ -1227,15 +1227,15 @@ test("empty state offers Créer un composant", async () => { /* listComponentDra
 ```
 Run: FAIL. `tabs.ts` + `screens.ts` (`creations: { title: fr.nav.creations, icon: Sparkles, crumbs: [fr.nav.components, fr.nav.creations] }`), `lazy-screens.ts` (`CreationsPage`), `ScreenView.tsx` (`if (screen === "creations") return <CreationsPage onOpen={onOpen} />`), `use-component-drafts.ts` (liste au montage, `subscribeAi` `draft.changed` ⇒ recharge, `UNAUTHORIZED` ignoré, erreur ⇒ `error`), `CreationsPage.tsx`/`CreationRow.tsx` (`table` par groupe avec `role="region"` et en-tête, étape par `draftStep` + `fr.ai.steps`, état du run par `useAgents()` : `queued` ⇒ « En file #n » (`state.queue.indexOf(runId) + 1`), `running`/`starting` ⇒ « En cours », `waiting_input` ⇒ « Attend une réponse », sinon rien ; « Journal » = `Collapsible` avec `RunJournal` et `useRunLog(draft.runId)` ; « Abandonner… » = `ConfirmDialog` ⇒ `abandonComponentDraft` ; « Ouvrir » monte le dialogue), `fr.ts › nav.creations`, `fr-creations.ts › page, row, abandon`. Run: PASS.
 
-- [ ] **Step 3: Indicateur, liens et palette (tests rouges puis verts, écran 131, 116 amendé)**
+- [x] **Step 3: Indicateur, liens et palette (tests rouges puis verts, écran 131, 116 amendé)**
 
 `shell-header.test.tsx` : sans brouillon actif, aucun bouton « Créations » ; avec un `review` et un `generating` (run `running`), le bouton « Créations · 1 attend une action, 1 en cours » est présent avec le badge « 1 » et `data-busy="true"` ; clic ⇒ `onOpen({ kind: "screen", screen: "creations" })`. `components-page.test.tsx` : l'en-tête montre « Créations (2) » quand deux brouillons sont actifs et appelle `onOpen` sur l'écran ; les Détails d'une version listent « Formats : Moyen, Large, Demi-page ». Palette : « Créations » ouvre l'écran (si les écrans sont dérivés de `SCREENS`, aucun code ; sinon ajouter l'entrée). Run: FAIL puis PASS (`CreationsIndicator.tsx` : `useComponentDrafts` + `useAgents` + `indicatorState`, `Sparkles` avec `animate-pulse` quand `busy`, badge comme `RunHistoryButton.tsx:41-45`, `fr.header.creations(awaiting, busy)`).
 
-- [ ] **Step 4: `useRunLog.empty` et profil générateur (tests rouges puis verts)**
+- [x] **Step 4: `useRunLog.empty` et profil générateur (tests rouges puis verts)**
 
 `agents/agent-panel.test.tsx` : pour un run `running` dont le journal est `[]`, le tiroir n'affiche pas « Journal indisponible » ; pour un run `done` avec `[]`, il l'affiche ; `NOT_FOUND` ⇒ affiché quel que soit l'état. `use-agents.ts` : `RunLog = { log, missing, empty }`, `missing` seulement sur `NOT_FOUND`, `empty` quand la liste chargée est vide ; `AgentDrawer.tsx` et `CreationRow.tsx` affichent « indisponible » si `missing || (empty && terminal)`. Fiche du profil : pour un profil système, le champ « Parallèle » est modifiable (1 à 4) et envoyé ; `profile-sheet` test. Run: PASS.
 
-- [ ] **Step 5: Captures, gate et commits**
+- [x] **Step 5: Captures, gate et commits**
 
 Captures `screens/t53/` : 130 (deux créations en cours : lancer deux brouillons avec le faux `claude` via `bun packages/daemon/src/main.ts --claude-bin packages/daemon/src/agents/fake-claude.ts` et le scénario `ai/generate-ok.json` en `hold`, ou avec les fixtures en test), 131, 116 amendé, en sombre et en clair.
 Run: `bun run check && bun run typecheck && bun test packages/schema packages/ui && bun run budget` — Expected: PASS, budget ≤ 221,0 kB.
