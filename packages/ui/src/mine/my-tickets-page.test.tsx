@@ -6,7 +6,11 @@ import { withInbox } from "../lib/inbox";
 import { fac, kib, mineSnapshots, mineTicket, por } from "./fixtures";
 import { MyTicketsPage } from "./MyTicketsPage";
 
-type Handlers = { onOpenTicket?(p: string, t: string): void; onAssign?(p: string, t: string): void };
+type Handlers = {
+  onOpenTicket?(p: string, t: string): void;
+  onAssign?(p: string, t: string): void;
+  onFile?(t: string): void;
+};
 
 function renderPage(h: Handlers = {}) {
   return render(
@@ -17,6 +21,7 @@ function renderPage(h: Handlers = {}) {
       config={configFixture()}
       onOpenTicket={h.onOpenTicket ?? (() => {})}
       onAssign={h.onAssign ?? (() => {})}
+      onFile={h.onFile ?? (() => {})}
     />,
   );
 }
@@ -79,6 +84,7 @@ describe("my tickets page", () => {
         config={null}
         onOpenTicket={() => {}}
         onAssign={() => {}}
+        onFile={() => {}}
       />,
     );
     fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
@@ -94,6 +100,7 @@ describe("my tickets page", () => {
         config={null}
         onOpenTicket={() => {}}
         onAssign={() => {}}
+        onFile={() => {}}
       />,
     );
     expect(screen.getByText("Aucun ticket ouvert ne t'est assigné.")).toBeTruthy();
@@ -110,6 +117,7 @@ describe("my tickets page", () => {
     };
     const snapshots = new Map(mineSnapshots).set(INBOX_ID, inbox);
     const assigned: string[] = [];
+    const filed: string[] = [];
     render(
       <MyTicketsPage
         viewer="adam"
@@ -118,6 +126,7 @@ describe("my tickets page", () => {
         config={configFixture()}
         onOpenTicket={() => {}}
         onAssign={(p) => assigned.push(p)}
+        onFile={(t) => filed.push(t)}
       />,
     );
     expect(screen.getAllByRole("region")).toHaveLength(2);
@@ -125,10 +134,12 @@ describe("my tickets page", () => {
     expect(rowKeys(group)).toEqual(["INB-2"]);
     expect(within(group).queryByRole("button", { name: "Assigner" })).toBeNull();
     const file = within(group).getByRole("button", { name: "Rattacher…" });
-    expect(file.hasAttribute("disabled")).toBe(true);
-    expect(file.closest("[title]")?.getAttribute("title")).toBe(
+    expect(file.hasAttribute("disabled")).toBe(false);
+    expect(file.getAttribute("title")).toBe(
       "Rattache d'abord ce ticket à un projet pour le confier à un agent.",
     );
+    fireEvent.click(file);
+    expect(filed).toEqual([inbox.tickets[0]?.id ?? ""]);
     expect(assigned).toEqual([]);
   });
 });

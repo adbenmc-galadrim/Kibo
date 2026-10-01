@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AssignPreview, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
+import { type AssignPreview, INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture, kiboProject } from "./fixtures";
@@ -238,4 +238,16 @@ test("the launcher does not offer tickets waiting for their key", async () => {
   expect(screen.getByRole("combobox", { name: "Ticket" }).textContent).not.toContain("Clé en attente");
   await waitFor(() => expect(calls.some((c) => c.method === "previewAssign")).toBe(true));
   expect(calls.some((c) => c.method === "previewAssign" && c.ticketId === "p9")).toBe(false);
+});
+
+test("an inbox ticket cannot go to an agent: the dialog says to file it first", () => {
+  const inbox = { ...kiboProject(), meta: { ...kiboProject().meta, id: INBOX_ID, key: "INB", folder: null } };
+  render(<AssignDialog project={inbox} ticketId="t15" config={configFixture()} onClose={() => {}} />);
+  expect(
+    screen.getByText(
+      "Rattache d'abord ce ticket à un projet : un agent travaille dans le dossier d'un projet.",
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
+  expect(calls).toEqual([]);
 });

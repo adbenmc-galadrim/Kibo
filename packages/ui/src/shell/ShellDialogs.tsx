@@ -13,7 +13,7 @@ import type { NewTicketDefaults } from "@kibo/sdk";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
-import { newTicketProjects } from "../lib/inbox";
+import { fileScope, newTicketProjects } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { canEdit } from "../state/access";
 import {
@@ -21,6 +21,7 @@ import {
   ConfirmDialog,
   DeleteProjectDialog,
   EditProjectDialog,
+  FileTicketDialog,
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
@@ -43,6 +44,7 @@ export type DialogsState = {
   suggestFor: string | null;
   sheet: SheetTicket | null;
   newTicket: NewTicketRequest | null;
+  fileTicket: { ticketId: string } | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
   newProfile: boolean;
   preview: FileRef | null;
@@ -61,6 +63,7 @@ export const NO_DIALOG: DialogsState = {
   suggestFor: null,
   sheet: null,
   newTicket: null,
+  fileTicket: null,
   assign: null,
   newProfile: false,
   preview: null,
@@ -109,6 +112,8 @@ export function ShellDialogs({
   const doomedProject = state.deleteProject
     ? (projects.find((x) => x.id === state.deleteProject) ?? null)
     : null;
+  const inbox = snapshots.get(INBOX_ID);
+  const filing = inbox?.tickets.find((x) => x.id === state.fileTicket?.ticketId) ?? null;
   const doomed =
     project && state.deletePage ? descendantIds(project.pages, state.deletePage.id) : new Set<string>();
   return (
@@ -177,6 +182,7 @@ export function ShellDialogs({
           onAssign={() =>
             set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
           }
+          onFile={() => set({ sheet: null, fileTicket: { ticketId: sheet.ticketId } })}
           onOpenInTab={() => {
             set({ sheet: null });
             p.onOpenTarget({ kind: "ticket", projectId: sheet.projectId, ticketId: sheet.ticketId }, true);
@@ -198,6 +204,16 @@ export function ShellDialogs({
           viewer={viewer}
           defaults={state.newTicket}
           onClose={() => set({ newTicket: null })}
+        />
+      )}
+      {filing && inbox && (
+        <FileTicketDialog
+          ticket={filing}
+          {...fileScope(inbox, filing.id)}
+          projects={projects}
+          snapshots={snapshots}
+          onClose={() => set({ fileTicket: null })}
+          onFiled={(projectId, ticketId) => set({ fileTicket: null, sheet: { projectId, ticketId } })}
         />
       )}
       {state.assign && (

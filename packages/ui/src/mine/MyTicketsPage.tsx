@@ -15,6 +15,7 @@ type Props = {
   config: WorkspaceConfig | null;
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
+  onFile(ticketId: string): void;
 };
 
 const SEGMENT =
@@ -42,13 +43,13 @@ function MineTabs({ value, onChange }: { value: MineTab; onChange(tab: MineTab):
   );
 }
 
-type SectionProps = Pick<Props, "config" | "onOpenTicket" | "onAssign"> & {
+type SectionProps = Pick<Props, "config" | "onOpenTicket" | "onAssign" | "onFile"> & {
   group: MineGroup;
   tab: MineTab;
   snapshot: ProjectSnapshot | undefined;
 };
 
-function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: SectionProps) {
+function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign, onFile }: SectionProps) {
   const titleId = useId();
   const { project, tickets } = group;
   const domainOf = (id: string | null) =>
@@ -77,6 +78,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
             inbox={isInbox(project.id)}
             onOpen={() => onOpenTicket(project.id, ticket.id)}
             onAssign={() => onAssign(project.id, ticket.id)}
+            onFile={() => onFile(ticket.id)}
           />
         ))}
       </ul>

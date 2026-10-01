@@ -1,4 +1,4 @@
-import type { Domain, FileRef, ProjectSnapshot } from "@kibo/schema";
+import { type Domain, type FileRef, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
@@ -21,6 +21,7 @@ type Props = {
   viewer: string;
   onClose(): void;
   onAssign(): void;
+  onFile?: () => void;
   onOpenInTab(): void;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
@@ -34,6 +35,7 @@ export function TicketSheet({
   viewer,
   onClose,
   onAssign,
+  onFile,
   onOpenInTab,
   onOpenFile,
   onOpenTicket,
@@ -46,6 +48,7 @@ export function TicketSheet({
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return null;
   const editable = canEdit(project);
+  const inbox = isInbox(project.meta.id);
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-[min(90vw,560px)]">
@@ -67,6 +70,7 @@ export function TicketSheet({
                 childCount={descendantCount(project.tickets, t.id)}
                 editable={editable}
                 onOpenInTab={onOpenInTab}
+                onFile={inbox ? onFile : undefined}
                 onDeleted={onDeleted}
               />
             </span>
@@ -81,19 +85,21 @@ export function TicketSheet({
             />
           </SheetTitle>
           <GithubLinkNote ticket={t} />
-          <div className="mt-2 flex flex-wrap gap-2">
-            <KeyRequired ticket={t}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-brand/50 text-brand-strong dark:text-brand"
-                onClick={onAssign}
-              >
-                <Bot />
-                {fr.ticket.assignAgent}
-              </Button>
-            </KeyRequired>
-          </div>
+          {!inbox && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <KeyRequired ticket={t}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-brand/50 text-brand-strong dark:text-brand"
+                  onClick={onAssign}
+                >
+                  <Bot />
+                  {fr.ticket.assignAgent}
+                </Button>
+              </KeyRequired>
+            </div>
+          )}
         </SheetHeader>
         <TicketDetail
           project={project}

@@ -1,7 +1,16 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type StatusId } from "@kibo/schema";
 import { kiboProject, projectsFixture } from "../agents/fixtures";
-import { displayName, inboxMeta, inboxSummary, newTicketProjects, openInboxCount, withInbox } from "./inbox";
+import {
+  displayName,
+  fileScope,
+  inboxMeta,
+  inboxSummary,
+  newTicketProjects,
+  openInboxCount,
+  subtreeIds,
+  withInbox,
+} from "./inbox";
 
 function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
   const kibo = kiboProject();
@@ -59,4 +68,18 @@ test("a new ticket can go to the inbox first, then to the projects one can write
     ["fac", readOnly],
   ]);
   expect(newTicketProjects(projectsFixture, snapshots).map((p) => p.id)).toEqual([INBOX_ID, "kibo"]);
+});
+
+test("the filing scope says whether a ticket brings children and loses links to the rest of the inbox", () => {
+  const inbox = inboxSnapshot(["todo", "todo", "todo", "todo"]);
+  const [a, b, c, d] = inbox.tickets;
+  if (!a || !b || !c || !d) throw new Error("fixture");
+  const tickets = [a, { ...b, parentId: a.id }, { ...c, parentId: b.id }, d];
+  const inside = { ...inbox, tickets, links: [{ id: "l1", from: a.id, to: c.id, type: "blocks" as const }] };
+  expect([...subtreeIds(tickets, a.id)]).toEqual([a.id, b.id, c.id]);
+  expect(fileScope(inside, a.id)).toEqual({ hasChildren: true, hasLinks: false });
+  const outside = { ...inside, links: [{ id: "l2", from: d.id, to: b.id, type: "relates" as const }] };
+  expect(fileScope(outside, a.id)).toEqual({ hasChildren: true, hasLinks: true });
+  expect(fileScope(outside, d.id)).toEqual({ hasChildren: false, hasLinks: true });
+  expect(fileScope(inside, d.id)).toEqual({ hasChildren: false, hasLinks: false });
 });

@@ -233,6 +233,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onAnswer={setFocusRun}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                     onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
+                    onFile={(ticketId) => set({ fileTicket: { ticketId } })}
                     onOpen={(t) => go(t)}
                     onShare={(projectId) => set({ share: projectId })}
                     onDeleteProject={(projectId) => set({ deleteProject: projectId })}

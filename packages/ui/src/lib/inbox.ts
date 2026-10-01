@@ -6,6 +6,7 @@ import {
   type ProjectSnapshot,
   type ProjectSummary,
   type StatusId,
+  type TicketView,
 } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 import { canEdit } from "../state/access";
@@ -52,4 +53,21 @@ export function newTicketProjects(
     return !isInbox(p.id) && snapshot !== undefined && canEdit(snapshot);
   });
   return [inboxMeta(), ...writable];
+}
+
+export function subtreeIds(tickets: readonly TicketView[], rootId: string): Set<string> {
+  const ids = new Set([rootId]);
+  for (const id of ids) for (const t of tickets) if (t.parentId === id) ids.add(t.id);
+  return ids;
+}
+
+export function fileScope(
+  inbox: ProjectSnapshot,
+  ticketId: string,
+): { hasChildren: boolean; hasLinks: boolean } {
+  const ids = subtreeIds(inbox.tickets, ticketId);
+  return {
+    hasChildren: ids.size > 1,
+    hasLinks: inbox.links.some((l) => ids.has(l.from) !== ids.has(l.to)),
+  };
 }

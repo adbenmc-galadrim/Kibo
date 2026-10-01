@@ -23,6 +23,11 @@ export const NewTicketDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const FileTicketDialog = lazyPanel(
+  () => import("../dialogs/FileTicketDialog").then((m) => m.FileTicketDialog),
+  fr.lazy,
+  hidden,
+);
 export const AssignDialog = lazyPanel(
   () => import("../agents/AssignDialog").then((m) => m.AssignDialog),
   fr.lazy,

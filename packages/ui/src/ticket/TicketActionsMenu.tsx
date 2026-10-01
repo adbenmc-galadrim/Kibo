@@ -2,9 +2,10 @@ import type { TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
 import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { Copy, Ellipsis, Maximize2, Trash2 } from "lucide-react";
+import { Copy, Ellipsis, FolderInput, Maximize2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
+import { frInbox } from "../i18n/fr-inbox";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
 import { useFlash } from "../lib/use-flash";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
@@ -16,6 +17,7 @@ type Props = {
   childCount: number;
   editable: boolean;
   onOpenInTab: (() => void) | null;
+  onFile?: () => void;
   onDeleted(): void;
 };
 
@@ -23,6 +25,7 @@ export function ticketMenuEntries(p: Props, copy: () => void, remove: () => void
   const entries: MenuEntry[] = [];
   if (p.onOpenInTab) entries.push({ label: t.openInTab, icon: Maximize2, onSelect: p.onOpenInTab });
   entries.push({ label: t.copyKey, icon: Copy, onSelect: copy });
+  if (p.onFile) entries.push({ label: frInbox.fileTo, icon: FolderInput, onSelect: p.onFile });
   if (p.editable)
     entries.push({ separator: true }, { label: t.remove, icon: Trash2, destructive: true, onSelect: remove });
   return entries;

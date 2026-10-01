@@ -1,4 +1,4 @@
-import type { Domain, FileRef, ProjectSnapshot } from "@kibo/schema";
+import { type Domain, type FileRef, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
@@ -53,7 +53,7 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
           />
         </h1>
         <GithubLinkNote ticket={t} />
-        {onAssign && (
+        {onAssign && !isInbox(project.meta.id) && (
           <KeyRequired ticket={t}>
             <Button
               variant="outline"

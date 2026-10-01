@@ -36,6 +36,7 @@ type Props = {
   onAnswer(runId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
+  onFile(ticketId: string): void;
   onOpen(target: TabTarget): void;
   onShare(projectId: string): void;
   onDeleteProject(projectId: string): void;
