@@ -137,7 +137,7 @@ export function Kanban() {
         )}
       </KanbanToolbar>
       <DndContext
-        sensors={readOnly ? [] : sensors}
+        sensors={sensors}
         onDragMove={onDragMove}
         onDragOver={onDragOver}
         onDragCancel={() => setTargetColumn(null)}
