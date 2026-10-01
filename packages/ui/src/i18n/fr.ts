@@ -99,6 +99,7 @@ export const fr = {
     todo: "à faire",
     blocked: "bloqué",
     progress: (done: number, total: number) => `${done} terminé${done > 1 ? "s" : ""} sur ${total}`,
+    inbox: (n: number) => `Boîte de réception · ${n} ticket${n > 1 ? "s" : ""} sans projet`,
   },
   newProject: {
     title: "Nouveau projet",
@@ -106,6 +107,7 @@ export const fr = {
     name: "Nom",
     key: "Clé",
     keyHelp: "2 à 6 majuscules, préfixe des tickets (KIB-12).",
+    keyReserved: (key: string) => `La clé ${key} est réservée à la boîte de réception.`,
     folder: "Dossier du projet",
     folderHelp: "Facultatif. Chemin absolu du dépôt.",
     start: "Démarrer depuis",
@@ -144,6 +146,8 @@ export const fr = {
       `${tickets} ticket${tickets > 1 ? "s" : ""} · ${projects} projet${projects > 1 ? "s" : ""}`,
     assign: "Assigner",
     noFolder: "Ajoute un dossier au projet pour lancer un agent.",
+    file: "Rattacher…",
+    noFolderInbox: "Rattache d'abord ce ticket à un projet pour le confier à un agent.",
     empty: {
       assigned: "Aucun ticket ouvert ne t'est assigné.",
       agents: "Aucun ticket ouvert n'est confié à un agent.",

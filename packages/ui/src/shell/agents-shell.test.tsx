@@ -43,9 +43,9 @@ function snapshotOf(projectId: string): ProjectSnapshot {
     return {
       ...kibo,
       meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
-      tickets: [],
+      tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
-      nextTicketKey: "INB-1",
+      nextTicketKey: "INB-3",
     };
   if (projectId !== "fac")
     return {
@@ -154,7 +154,9 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
   const sidebar = within(screen.getByRole("button", { name: /^Agents/ }).closest("ul") ?? document.body);
-  expect(sidebar.getByText("3")).toBeTruthy();
+  expect(
+    within(screen.getByRole("button", { name: /^Agents/ }).closest("li") ?? document.body).getByText("3"),
+  ).toBeTruthy();
   expect(sidebar.queryByRole("button", { name: "Files d'attente" })).toBeNull();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /^Agents/ }));
@@ -189,12 +191,15 @@ test("my tickets: sidebar count, rows of every project, sheet and assign in the 
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
   const entry = await screen.findByRole("button", { name: "Mes tickets" });
-  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Mes tickets2"));
+  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Mes tickets3"));
   const user = userEvent.setup();
   await user.click(entry);
   expect(location.hash).toBe("#/mine");
   expect(await screen.findByRole("heading", { level: 1, name: "Mes tickets" })).toBeTruthy();
-  expect(await screen.findByText("2 tickets · 2 projets")).toBeTruthy();
+  expect(await screen.findByText("3 tickets · 3 projets")).toBeTruthy();
+  const inbox = screen.getByRole("region", { name: "Boîte de réception" });
+  expect(within(inbox).getByRole("button", { name: /^INB-2/ })).toBeTruthy();
+  expect(within(inbox).queryByRole("button", { name: "Assigner" })).toBeNull();
   const facturation = screen.getByRole("region", { name: "API Facturation" });
   await user.click(within(facturation).getByRole("button", { name: /^FAC-31/ }));
   expect(within(await screen.findByRole("dialog")).getByText("Export PDF des factures")).toBeTruthy();

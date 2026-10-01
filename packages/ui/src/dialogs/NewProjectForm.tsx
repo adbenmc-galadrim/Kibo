@@ -16,6 +16,7 @@ type Props = {
   fields: ProjectFields;
   onFields: (patch: Partial<ProjectFields>) => void;
   effectiveKey: string;
+  keyReserved: boolean;
   valid: boolean;
   busy: boolean;
   error: string | null;
@@ -53,7 +54,13 @@ export function NewProjectForm(p: Props) {
           onChange={(e) => p.onFields({ key: e.target.value.toUpperCase() })}
           className="font-mono"
         />
-        <p className="text-xs text-muted-foreground">{fr.newProject.keyHelp}</p>
+        {p.keyReserved ? (
+          <p role="alert" className="text-xs text-destructive">
+            {fr.newProject.keyReserved(p.effectiveKey)}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">{fr.newProject.keyHelp}</p>
+        )}
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${id}-folder`}>{fr.newProject.folder}</Label>

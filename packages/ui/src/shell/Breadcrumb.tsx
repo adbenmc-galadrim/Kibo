@@ -1,6 +1,7 @@
 import type { ProjectSnapshot, TabTarget } from "@kibo/schema";
 import { ChevronRight } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { displayName } from "../lib/inbox";
 import { SCREENS } from "../tabs/screens";
 
 export function crumbsFor(
@@ -10,7 +11,7 @@ export function crumbsFor(
   if (target?.kind === "screen") return SCREENS[target.screen].crumbs;
   const p = ctx.project;
   if (!target || !p) return [fr.nav.overview];
-  const name = p.meta.name;
+  const name = displayName(p.meta);
   switch (target.kind) {
     case "project":
       return [name];

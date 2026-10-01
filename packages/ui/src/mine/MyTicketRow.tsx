@@ -14,6 +14,7 @@ type Props = {
   agent: string | null;
   workflow: readonly Status[];
   canRun: boolean;
+  inbox: boolean;
   onOpen(): void;
   onAssign(): void;
 };
@@ -49,7 +50,27 @@ function AssignAction({ canRun, onAssign }: { canRun: boolean; onAssign(): void 
   );
 }
 
-export function MyTicketRow({ ticket, tab, domain, agent, workflow, canRun, onOpen, onAssign }: Props) {
+function FileAction() {
+  return (
+    <span className="block" title={fr.mine.noFolderInbox}>
+      <Button variant="ghost" size="sm" className="h-7" disabled>
+        {fr.mine.file}
+      </Button>
+    </span>
+  );
+}
+
+export function MyTicketRow({
+  ticket,
+  tab,
+  domain,
+  agent,
+  workflow,
+  canRun,
+  inbox,
+  onOpen,
+  onAssign,
+}: Props) {
   const status = workflow.find((s) => s.id === ticket.statusId)?.label ?? ticket.statusId;
   return (
     <li className="flex h-12 items-center gap-3 rounded-lg border bg-card pr-4">
@@ -72,6 +93,8 @@ export function MyTicketRow({ ticket, tab, domain, agent, workflow, canRun, onOp
       <span className="w-24 shrink-0 text-sm text-muted-foreground">{status}</span>
       {tab === "agents" && agent ? (
         <AgentName name={agent} />
+      ) : inbox ? (
+        <FileAction />
       ) : (
         <AssignAction canRun={canRun} onAssign={onAssign} />
       )}

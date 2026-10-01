@@ -1,4 +1,4 @@
-import { ProjectKey, type Role } from "@kibo/schema";
+import { ProjectKey, RESERVED_PROJECT_KEYS, type Role } from "@kibo/schema";
 import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -48,7 +48,8 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
   const [created, setCreated] = useState<string | null>(null);
   const pages = skipped ? [] : chosenPages(selection);
   const effectiveKey = fields.key ?? suggestProjectKey(fields.name);
-  const valid = fields.name.trim().length > 0 && ProjectKey.safeParse(effectiveKey).success;
+  const keyReserved = RESERVED_PROJECT_KEYS.includes(effectiveKey);
+  const valid = fields.name.trim().length > 0 && ProjectKey.safeParse(effectiveKey).success && !keyReserved;
 
   const toForm = (skip: boolean) => {
     setSkipped(skip);
@@ -128,6 +129,7 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
               fields={fields}
               onFields={(patch) => setFields((f) => ({ ...f, ...patch }))}
               effectiveKey={effectiveKey}
+              keyReserved={keyReserved}
               valid={valid}
               busy={busy}
               error={error}

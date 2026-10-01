@@ -19,6 +19,7 @@ import {
 import {
   Bot,
   GitCommitHorizontal,
+  Inbox,
   LayoutGrid,
   List,
   ListOrdered,
@@ -44,6 +45,7 @@ type Props = {
   agents: AgentsState | null;
   changesCount: number | null;
   mineCount: number | null;
+  inboxCount: number | null;
   workspaceName: string | null;
   workspaceIcon: string | null;
   onOpen(target: TabTarget | null, newTab: boolean): void;
@@ -177,6 +179,15 @@ export function AppSidebar(p: Props) {
                 <span>{fr.nav.mine}</span>
               </SidebarMenuButton>
               {p.mineCount !== null && p.mineCount > 0 && <SidebarMenuBadge>{p.mineCount}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={screen === "inbox"} {...link(screenTarget("inbox"))}>
+                <Inbox />
+                <span>{fr.nav.inbox}</span>
+              </SidebarMenuButton>
+              {p.inboxCount !== null && p.inboxCount > 0 && (
+                <SidebarMenuBadge>{p.inboxCount}</SidebarMenuBadge>
+              )}
             </SidebarMenuItem>
             <AgentsEntry screen={screen} agents={p.agents} link={link} />
           </SidebarMenu>

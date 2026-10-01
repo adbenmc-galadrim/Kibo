@@ -74,7 +74,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;
-  const { snapshots, mineCount } = useWorkspaceSnapshots(projects, viewer);
+  const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
@@ -183,6 +183,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               agents={agents}
               changesCount={git.worktrees ? git.changesCount : null}
               mineCount={mineCount}
+              inboxCount={inboxCount}
               workspaceName={config?.workspaceName ?? null}
               workspaceIcon={
                 config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
@@ -242,6 +243,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     target={active}
                     viewer={viewer}
                     projects={projects}
+                    inboxCount={inboxCount}
                     project={project}
                     domains={projectDomainsOf(project, config)}
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}

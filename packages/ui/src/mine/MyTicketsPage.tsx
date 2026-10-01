@@ -1,8 +1,9 @@
-import type { ProjectMeta, ProjectSnapshot, WorkspaceConfig } from "@kibo/schema";
+import { isInbox, type ProjectMeta, type ProjectSnapshot, type WorkspaceConfig } from "@kibo/schema";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { TooltipProvider } from "@kibo/sdk/ui/tooltip";
 import { useId, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { displayName } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { MyTicketRow } from "./MyTicketRow";
 import { countMine, type MineGroup, type MineTab, myTickets } from "./my-tickets";
@@ -59,7 +60,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
       <h2 className="flex items-center gap-2 px-1">
         <span aria-hidden className="size-2 rounded-full" style={{ background: project.color }} />
         <span id={titleId} className="text-sm font-semibold">
-          {project.name}
+          {displayName(project)}
         </span>
         <span className="text-2xs text-muted-foreground tabular-nums">{tickets.length}</span>
       </h2>
@@ -73,6 +74,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
             agent={ticket.assignee?.kind === "agent" ? agentName(ticket.assignee.ref) : null}
             workflow={snapshot?.workflow ?? []}
             canRun={project.folder !== null}
+            inbox={isInbox(project.id)}
             onOpen={() => onOpenTicket(project.id, ticket.id)}
             onAssign={() => onAssign(project.id, ticket.id)}
           />

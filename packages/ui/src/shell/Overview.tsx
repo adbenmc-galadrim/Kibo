@@ -1,7 +1,7 @@
 import type { ProjectSummary, StatusId } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
-import { Plus } from "lucide-react";
+import { Inbox, Plus } from "lucide-react";
 import { useId } from "react";
 import { fr } from "../i18n/fr";
 import { abbreviateHome } from "../lib/home-path";
@@ -73,9 +73,28 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
   );
 }
 
-type Props = { viewer: string; projects: ProjectSummary[]; onNewProject: () => void };
+function InboxCard({ count, onOpen }: { count: number; onOpen(): void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 text-left text-sm text-card-foreground shadow-sm outline-none transition-colors hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <Inbox aria-hidden className="size-4 text-muted-foreground" />
+      <span>{fr.overview.inbox(count)}</span>
+    </button>
+  );
+}
 
-export function Overview({ viewer, projects, onNewProject }: Props) {
+type Props = {
+  viewer: string;
+  projects: ProjectSummary[];
+  inboxCount: number;
+  onNewProject: () => void;
+  onOpenInbox(): void;
+};
+
+export function Overview({ viewer, projects, inboxCount, onNewProject, onOpenInbox }: Props) {
   const openTickets = projects.reduce((n, p) => n + open(p), 0);
   return (
     <div className="grid gap-6 p-6">
@@ -88,6 +107,7 @@ export function Overview({ viewer, projects, onNewProject }: Props) {
           <Plus className="size-4" /> {fr.nav.newProject}
         </Button>
       </div>
+      {inboxCount > 0 && <InboxCard count={inboxCount} onOpen={onOpenInbox} />}
       {projects.length === 0 ? (
         <p className="text-muted-foreground">{fr.overview.empty}</p>
       ) : (

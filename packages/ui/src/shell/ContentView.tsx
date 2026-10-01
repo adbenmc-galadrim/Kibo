@@ -11,6 +11,7 @@ type Props = {
   target: TabTarget | null;
   viewer: string;
   projects: ProjectSummary[];
+  inboxCount: number;
   project: ProjectSnapshot | null;
   domains: Domain[] | undefined;
   startEditing: boolean;
@@ -36,7 +37,16 @@ export function ContentView(p: Props) {
         onConnectGithub={() => p.onOpen({ kind: "screen", screen: "integrations" })}
       />
     );
-  if (!t) return <Overview viewer={p.viewer} projects={p.projects} onNewProject={p.onNewProject} />;
+  if (!t)
+    return (
+      <Overview
+        viewer={p.viewer}
+        projects={p.projects}
+        inboxCount={p.inboxCount}
+        onNewProject={p.onNewProject}
+        onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
+      />
+    );
   if (!p.project) return null;
   switch (t.kind) {
     case "project":

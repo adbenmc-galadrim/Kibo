@@ -4,6 +4,7 @@ import {
   type CodeRequest,
   DEFAULT_WORKFLOW,
   EMPTY_TABS,
+  INBOX_ID,
   type ProjectSnapshot,
   type RpcRequest,
   type SyncStatus,
@@ -60,7 +61,25 @@ const sharedProject: ProjectSnapshot = {
   meta: { ...project.meta, id: "p4", name: "Partagé", key: "PAR" },
   sync: { shared: true, keyAllocator: "server", role: "owner", access: "write", members: [] },
 };
+const inboxTicket = (id: string, key: string, statusId: "todo" | "done") => {
+  const [model] = project.tickets;
+  if (!model) throw new Error("fixture without ticket");
+  return { ...model, id, key, keyLabel: key, title: `Idée ${key}`, statusId, externalRefs: [] };
+};
+const inbox: ProjectSnapshot = {
+  ...project,
+  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B" },
+  pages: [],
+  tickets: [
+    inboxTicket("i1", "INB-1", "todo"),
+    inboxTicket("i2", "INB-2", "todo"),
+    inboxTicket("i3", "INB-3", "todo"),
+    inboxTicket("i4", "INB-4", "done"),
+  ],
+  nextTicketKey: "INB-5",
+};
 const snapshots = new Map([
+  [INBOX_ID, inbox],
   ["p1", project],
   ["p2", repo],
   ["p3", readOnly],
@@ -296,6 +315,22 @@ test("an agent screen keeps its URL and opens in a tab like any target", async (
   await waitFor(() => expect(location.hash).toBe("#/"));
   await userEvent.click(screen.getByRole("tab", { name: "Agents" }));
   await waitFor(() => expect(location.hash).toBe("#/agents"));
+});
+
+test("the sidebar lists the inbox after my tickets with its open count, and opens it (screen 113)", async () => {
+  renderShell();
+  await go("#/");
+  const entry = await screen.findByRole("button", { name: "Boîte de réception" });
+  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Boîte de réception3"));
+  const labels = within(entry.closest("ul") ?? document.body)
+    .getAllByRole("button")
+    .map((b) => b.textContent);
+  expect(labels.indexOf("Boîte de réception")).toBe(labels.indexOf("Mes tickets") + 1);
+  await userEvent.click(entry);
+  expect(location.hash).toBe("#/inbox");
+  expect(await screen.findByRole("tab", { name: "Boîte de réception" })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: /INB-2/ })).toBeTruthy();
+  expect(entry.getAttribute("data-active")).toBe("true");
 });
 
 test("the sidebar opens the Components screen in its own tab", async () => {

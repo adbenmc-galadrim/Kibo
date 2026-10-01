@@ -100,6 +100,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       target={target}
       viewer="adam"
       projects={[]}
+      inboxCount={0}
       project={snapshot}
       domains={[]}
       startEditing={false}
