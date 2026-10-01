@@ -167,3 +167,10 @@ test("the change request carries the attached images, pasted or picked", async (
     "image.png",
   ]);
 });
+
+test("a draft id opens its panel directly, even without the component", async () => {
+  render(<ModifyWithAiDialog component={null} draftId={ACTIVE} open onOpenChange={() => {}} />);
+  expect(await screen.findByText(`panel ${ACTIVE}`)).toBeTruthy();
+  expect(screen.getByRole("dialog", { name: "Modifier avec l'IA" })).toBeTruthy();
+  expect(calls.some((c) => c.method === "listComponentDrafts")).toBe(false);
+});

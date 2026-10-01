@@ -3,7 +3,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot, Sparkles } from "lucide-react";
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { AttachmentsField } from "./AttachmentsField";
@@ -115,30 +115,5 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
         <Bot className="size-4" /> {fr.ai.create.generate}
       </Button>
     </form>
-  );
-}
-
-export function ResumeDraftBanner({ onResume }: { onResume: (draftId: string) => void }) {
-  const [draft, setDraft] = useState<ComponentDraft | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    client.rpc({ method: "listComponentDrafts" }).then(
-      (list) => alive && setDraft(list.find((d) => d.status !== "done" && d.status !== "abandoned") ?? null),
-      (e: unknown) => alive && setError(aiErrorMessage(e)),
-    );
-    return () => {
-      alive = false;
-    };
-  }, []);
-  if (error) return <p className="text-xs text-destructive">{error}</p>;
-  if (!draft) return null;
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
-      <span>{fr.ai.create.resume(draft.title)}</span>
-      <Button size="sm" variant="outline" onClick={() => onResume(draft.id)}>
-        {fr.ai.create.resumeAction}
-      </Button>
-    </div>
   );
 }

@@ -18,7 +18,7 @@ mock.module("../api", () => ({
   },
 }));
 
-const { DescribeCard, ResumeDraftBanner } = await import("./DescribeCard");
+const { DescribeCard } = await import("./DescribeCard");
 
 const describeLabel = "Ce que doit faire le composant";
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13];
@@ -115,13 +115,6 @@ test("DescribeCard is disabled offline", async () => {
   render(<DescribeCard onStarted={() => {}} />);
   expect(await screen.findByText("Hors ligne")).toBeTruthy();
   expect(screen.getByRole("button", { name: generateName }).hasAttribute("disabled")).toBe(true);
-});
-
-test("ResumeDraftBanner translates a listing failure", async () => {
-  answer = () => new KiboError("INTERNAL", "sqlite: disk I/O error");
-  render(<ResumeDraftBanner onResume={() => {}} />);
-  expect(await screen.findByText("Erreur interne du démon.")).toBeTruthy();
-  expect(screen.queryByText(/sqlite/)).toBeNull();
 });
 
 test("screen 132: formats are pre-checked by kind and sent; an image is attached by the file picker, shown, removable", async () => {

@@ -2,13 +2,17 @@ import type { FinalizeComponentDraftInput } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Copy, SquareTerminal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ActiveDraftsBanner } from "../ai/ActiveDraftsBanner";
 import { AiDraftPanel } from "../ai/AiDraftPanel";
-import { DescribeCard, ResumeDraftBanner } from "../ai/DescribeCard";
+import { ContinueInBackground } from "../ai/ContinueInBackground";
+import { DescribeCard } from "../ai/DescribeCard";
 import { DraftStepper } from "../ai/DraftStepper";
 import { fr } from "../i18n/fr";
+import { useFlash } from "../lib/use-flash";
 import { ApprovalScope, useApprovalScope } from "./approval-scope";
 
+const COPIED_MS = 2_000;
 const COMMANDS = [
   "kibo component new burndown",
   "kibo component test burndown",
@@ -17,13 +21,13 @@ const COMMANDS = [
 
 function CodeColumn() {
   const t = fr.createComponent;
-  const [copied, setCopied] = useState(false);
+  const copied = useFlash(COPIED_MS);
   const [failed, setFailed] = useState(false);
   const copy = async () => {
     setFailed(false);
     try {
       await navigator.clipboard.writeText(COMMANDS.join("\n"));
-      setCopied(true);
+      copied.flash(t.copied);
     } catch (e) {
       console.error(e);
       setFailed(true);
@@ -50,7 +54,7 @@ function CodeColumn() {
           <Copy aria-hidden />
         </Button>
       </div>
-      {copied && <p className="text-xs text-muted-foreground">{t.copied}</p>}
+      {copied.message && <p className="text-xs text-muted-foreground">{copied.message}</p>}
       {failed && (
         <p role="alert" className="text-xs text-destructive">
           {fr.common.error}
@@ -66,33 +70,48 @@ type Props = {
   onOpenChange: (o: boolean) => void;
   target: FinalizeComponentDraftInput["target"];
   onAdded?: () => void;
+  draftId?: string;
+  onOpenCreations?: () => void;
 };
 
-export function CreateComponentDialog({ open, onOpenChange, target, onAdded }: Props) {
+export function CreateComponentDialog({
+  open,
+  onOpenChange,
+  target,
+  onAdded,
+  draftId,
+  onOpenCreations,
+}: Props) {
   const t = fr.createComponent;
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [current, setCurrent] = useState<string | null>(draftId ?? null);
   const scope = useApprovalScope();
+  useEffect(() => {
+    if (open) setCurrent(draftId ?? null);
+  }, [open, draftId]);
   const done = () => {
-    setDraftId(null);
+    setCurrent(null);
     onOpenChange(false);
     onAdded?.();
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hidden={scope.hidden} className="sm:max-w-3xl">
-        <DialogHeader>
+      <DialogContent hidden={scope.hidden} className="sm:max-w-3xl [&>[data-slot=dialog-close]]:z-20">
+        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 bg-background px-6 pt-6 pb-2">
           <DialogTitle>{t.title}</DialogTitle>
-          <DialogDescription className={draftId ? "sr-only" : undefined}>{t.subtitle}</DialogDescription>
+          <DialogDescription className={current ? "sr-only" : undefined}>{t.subtitle}</DialogDescription>
         </DialogHeader>
-        {draftId ? (
-          <ApprovalScope scope={scope}>
-            <AiDraftPanel draftId={draftId} target={target} onDone={done} />
-          </ApprovalScope>
+        {current ? (
+          <>
+            <ApprovalScope scope={scope}>
+              <AiDraftPanel draftId={current} target={target} onDone={done} />
+            </ApprovalScope>
+            <ContinueInBackground draftId={current} onContinue={() => onOpenChange(false)} />
+          </>
         ) : (
           <>
-            <ResumeDraftBanner onResume={setDraftId} />
+            <ActiveDraftsBanner onResume={setCurrent} onOpenCreations={onOpenCreations} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <DescribeCard onStarted={(d) => setDraftId(d.id)} />
+              <DescribeCard onStarted={(d) => setCurrent(d.id)} />
               <CodeColumn />
             </div>
             <DraftStepper current={1} />
