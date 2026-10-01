@@ -813,7 +813,7 @@ Vague 2 ← T48. Une spec Playwright, en sombre et en clair (ports **4423–4424
 - Consumes: `pairAndCreateProject`, `createPage`, `addComponent` (`e2e/helpers.ts`), `shot` (`e2e/repo-project.ts`), `rpc` (`e2e/agents-seed.ts`).
 - Produces: rien.
 
-- [ ] **Step 1: Deux démons de plus**
+- [x] **Step 1: Deux démons de plus**
 
 `e2e/playwright.config.ts`, après `confort-light` :
 ```ts
@@ -821,7 +821,7 @@ Vague 2 ← T48. Une spec Playwright, en sombre et en clair (ports **4423–4424
   { name: "layout-light", scheme: "light", port: 4424, spec: /layout\.spec\.ts/, scenario: "question" },
 ```
 
-- [ ] **Step 2: Disposition (rouge tant que T48 n'est pas intégrée, vert ensuite)**
+- [x] **Step 2: Disposition (rouge tant que T48 n'est pas intégrée, vert ensuite)**
 
 `e2e/layout.spec.ts` :
 ```ts
@@ -875,7 +875,7 @@ test("formats et disposition d'un tableau de bord", async ({ page }, info) => {
 ```
 (`DashboardGrid` pose `data-instance={id}` et, en large, `data-layout="x,y,w,h"` sur chaque cellule : T48 l'ajoute si ce n'est pas fait ; le déplacement de 4 rangées = 4 × (80 + 16) px.) Run: `cd e2e && bunx playwright test --project=layout-dark --project=layout-light` — Expected: PASS, captures `ecran-127/128/129.png`.
 
-- [ ] **Step 3: Gate et commit**
+- [x] **Step 3: Gate et commit**
 
 Run: `bun run check && bun run typecheck` — Expected: PASS.
 ```bash
