@@ -11,6 +11,7 @@ const ctx: SdkContext = {
   config: {},
   viewer: "adam",
   surface: "widget",
+  format: "medium",
   openTicket: () => undefined,
   openNewTicket: () => undefined,
   openFile: () => undefined,
@@ -111,6 +112,7 @@ describe("new capabilities", () => {
     await reader.sdk.notes.search("loro");
     await reader.sdk.notes.info();
     await expect(reader.sdk.notes.write("a.md", "x", null)).rejects.toThrow("PERMISSION_DENIED");
+    await expect(reader.sdk.notes.create("a.md", "x")).rejects.toThrow("PERMISSION_DENIED");
     expect(reader.calls.map((c) => c.kind)).toEqual(["notes.read", "notes.search", "notes.info"]);
   });
   test("actions always reach the backend, reserved commands never do", async () => {

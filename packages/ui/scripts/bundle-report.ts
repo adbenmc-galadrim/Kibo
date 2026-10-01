@@ -23,13 +23,41 @@ export const ENTRY_GZIP_BUDGET = 230_000;
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/ChangesView|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage|AgentDrawer)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
   /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource)\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
+  /\/packages\/ui\/src\/dialogs\/(NotesDirDialog|TrustDialog|OpenViewDialog|RenamePageDialog)\.tsx$/,
+  /\/packages\/sdk\/src\/ui\/(alert-dialog|confirm-dialog|reason-dialog)\.tsx$/,
+  /\/packages\/ui\/src\/(ticket\/[A-Za-z-]+\.tsx?|i18n\/fr-ticket-edit\.ts)$/,
+  /\/packages\/ui\/src\/(dialogs\/InstanceSettingsDialog\.tsx|i18n\/fr-widgets\.ts)$/,
+  /\/packages\/ui\/src\/desktop\/install\.ts$/,
+  /\/packages\/ui\/src\/settings\/(AppearancePage|SecurityPage|WebAccessCard)\.tsx$/,
+  /\/packages\/ui\/src\/(settings\/ShortcutsPage\.tsx|i18n\/fr-shortcuts\.ts)$/,
+  /\/packages\/ui\/src\/(desktop\/pick-folder\.ts|dialogs\/(FolderField|IconField)\.tsx|dialogs\/icon-file\.ts|i18n\/fr-fields\.ts)$/,
+  /\/packages\/ui\/src\/(shell\/ScreenActions|agents\/PauseAdmission)\.tsx$/,
+  /\/packages\/ui\/src\/shell\/(RunHistoryList|UserMenuContent)\.tsx$/,
+  /\/packages\/ui\/src\/(settings\/WorkspacePage\.tsx|i18n\/fr-workspace\.ts)$/,
+  /\/packages\/ui\/src\/(dialogs\/(EditProjectDialog|DeleteProjectDialog)\.tsx|i18n\/fr-project\.ts)$/,
+  /\/packages\/ui\/src\/tabs\/TabMenuContent\.tsx$/,
+  /\/packages\/ui\/src\/shell\/(ProjectHeaderMenu\.tsx|project-menu\.ts)$/,
+  /\/packages\/ui\/src\/shell\/shared-modules\.ts$/,
+  /\/node_modules\/@radix-ui\/react-(select|radio-group)\//,
+  /\/packages\/ui\/src\/(components-page\/(ComponentsFilters|UsagesSheet)\.tsx|i18n\/fr-components-list\.ts)$/,
+  /\/packages\/ui\/src\/(shell\/DaemonUnreachable\.tsx|i18n\/fr-startup\.ts)$/,
+  /\/packages\/ui\/src\/(files\/(FileToolbar|WrapSwitch)\.tsx|i18n\/fr-file-tools\.ts)$/,
+  /\/packages\/ui\/src\/(settings\/SyncEmptyState\.tsx|i18n\/fr-sync-page\.ts)$/,
+  /\/packages\/ui\/src\/(agents\/RunHistory\.tsx|i18n\/fr-agents-page\.ts)$/,
+  /\/packages\/ui\/src\/(settings\/SettingsLayout\.tsx|code\/ChangesLayout\.tsx|components-page\/sort-pref\.ts)$/,
+  /\/packages\/ui\/src\/(inbox\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts|dialogs\/FileTicketDialog\.tsx)$/,
+  /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
+  /\/packages\/ui\/src\/(creations\/[A-Za-z-]+\.tsx?|i18n\/fr-creations\.ts)$/,
+  /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures)\.tsx?$/,
+  /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,
+  /\/packages\/core\/src\/|\/node_modules\/loro-crdt\//,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
@@ -73,4 +101,26 @@ export function reportEntry(chunks: readonly BuiltChunk[], opts: ReportOptions =
     forbidden,
     ok: gzipBytes <= opts.budget && forbidden.length === 0,
   };
+}
+
+export const PREVIEW_WORKER = /^workers\/draft-preview-worker-[A-Za-z0-9_-]+\.js$/;
+export const FORBIDDEN_IN_MAIN_GRAPH: readonly RegExp[] = [
+  /\/packages\/core\/src\//,
+  /\/node_modules\/loro-crdt\//,
+];
+
+export type GraphReport = {
+  previewWorker: string | null;
+  forbidden: { file: string; module: string }[];
+  ok: boolean;
+};
+
+export function reportGraph(chunks: readonly BuiltChunk[], emitted: readonly string[]): GraphReport {
+  const previewWorker = emitted.find((name) => PREVIEW_WORKER.test(name)) ?? null;
+  const forbidden = chunks.flatMap((c) =>
+    c.moduleIds
+      .filter((id) => FORBIDDEN_IN_MAIN_GRAPH.some((r) => r.test(id)))
+      .map((module) => ({ file: c.fileName, module })),
+  );
+  return { previewWorker, forbidden, ok: previewWorker !== null && forbidden.length === 0 };
 }

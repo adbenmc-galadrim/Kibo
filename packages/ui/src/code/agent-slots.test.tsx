@@ -68,7 +68,7 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => agents(),
   useConfig: () => null,
   useNow: () => 0,
-  useRunLog: () => null,
+  useRunLog: () => ({ log: null, missing: false }),
   useDaemonOnline: () => true,
 }));
 const unmockedModule = "../shell/ContentView?unmocked";
@@ -100,6 +100,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       target={target}
       viewer="adam"
       projects={[]}
+      inboxCount={0}
       project={snapshot}
       domains={[]}
       startEditing={false}
@@ -110,6 +111,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       onOpen={() => {}}
       onOpenFile={() => {}}
       onAssign={() => {}}
+      onOpenTicket={() => {}}
     />,
   );
 };

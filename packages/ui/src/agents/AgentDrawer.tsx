@@ -10,21 +10,25 @@ import {
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Bot, ChevronDown, Plus, Square } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { client } from "../api";
 import { owningWorktree } from "../code/agent-slots";
 import { useWorktrees } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
+import { frAgentsPage } from "../i18n/fr-agents-page";
 import { elapsed, formatDuration, reasonText, runResultText, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
-import { type JournalFiles, RunJournal } from "./RunJournal";
+import { type JournalFiles, journalUnavailable, RunJournal } from "./RunJournal";
 
 type Props = {
   state: AgentsState;
   now: number;
   selected: RunView | null;
   log: RunLogEntry[] | null;
+  missing?: boolean;
+  empty?: boolean;
   onSelect: (runId: string) => void;
   onCollapse: () => void;
   onLaunch: () => void;
@@ -96,19 +100,15 @@ type DetailProps = {
   run: RunView;
   now: number;
   log: RunLogEntry[] | null;
+  missing: boolean;
   onOpenFile: (ref: FileRef) => void;
 };
 
-function RunDetail({ run, now, log, onOpenFile }: DetailProps) {
-  const [failed, setFailed] = useState(false);
+function RunDetail({ run, now, log, missing, onOpenFile }: DetailProps) {
+  const [stopping, setStopping] = useState(false);
   const { worktrees } = useWorktrees(run.cwd && run.workspace !== "isolated" ? run.projectId : null);
   const stop = async () => {
-    setFailed(false);
-    try {
-      await client.rpc({ method: "cancelRun", runId: run.id });
-    } catch {
-      setFailed(true);
-    }
+    await client.rpc({ method: "cancelRun", runId: run.id });
   };
   const where = [workspaceText(run.workspace), formatDuration(elapsed(run, now))].filter(Boolean).join(" · ");
   return (
@@ -120,18 +120,28 @@ function RunDetail({ run, now, log, onOpenFile }: DetailProps) {
         <span className="flex-1" />
         <span className="shrink-0 font-mono text-xs text-muted-foreground">{where}</span>
         {!isTerminal(run.state) && (
-          <Button size="sm" variant="ghost" className="h-7" onClick={stop}>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => setStopping(true)}>
             <Square className="size-3" />
             {fr.agents.stop}
           </Button>
         )}
       </div>
-      {failed && (
-        <p role="alert" className="text-xs text-destructive">
-          {fr.agents.stopFailed}
-        </p>
-      )}
-      <RunJournal label={run.label} log={log ?? []} files={journalFiles(run, worktrees, onOpenFile)} />
+      <ConfirmDialog
+        open={stopping}
+        onOpenChange={setStopping}
+        title={frAgentsPage.stopTitle(run.label, run.ticketKey)}
+        description={frAgentsPage.stopHelp}
+        confirmLabel={frAgentsPage.stopConfirm}
+        cancelLabel={fr.common.cancel}
+        onConfirm={stop}
+        describeError={() => fr.agents.stopFailed}
+      />
+      <RunJournal
+        label={run.label}
+        log={log ?? []}
+        missing={missing}
+        files={journalFiles(run, worktrees, onOpenFile)}
+      />
       {run.state === "waiting_input" && <ReplyBox run={run} />}
     </div>
   );
@@ -142,6 +152,8 @@ export function AgentDrawer({
   now,
   selected,
   log,
+  missing = false,
+  empty = false,
   onSelect,
   onCollapse,
   onLaunch,
@@ -219,7 +231,14 @@ export function AgentDrawer({
         </nav>
         <div className="flex min-h-0 flex-col p-3">
           {selected ? (
-            <RunDetail key={selected.id} run={selected} now={now} log={log} onOpenFile={onOpenFile} />
+            <RunDetail
+              key={selected.id}
+              run={selected}
+              now={now}
+              log={log}
+              missing={journalUnavailable({ missing, empty }, isTerminal(selected.state))}
+              onOpenFile={onOpenFile}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">{fr.agents.pick}</p>
           )}

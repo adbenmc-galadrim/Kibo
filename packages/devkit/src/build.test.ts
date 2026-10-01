@@ -97,3 +97,15 @@ test("a macro never runs at build time", async () => {
   await expect(buildComponent(dir, toolchain)).rejects.toThrow("VALIDATION_FAILED");
   expect(existsSync(marker)).toBe(false);
 }, 60_000);
+
+test("the css only sees the component's sources, never hidden folders", async () => {
+  const dir = component({ "kibo.component.json": manifest, "ui.tsx": ui });
+  mkdirSync(join(dir, ".claude"));
+  writeFileSync(join(dir, ".claude", "x.tsx"), 'export const X = () => <p className="bg-fuchsia-700" />;\n');
+  mkdirSync(join(dir, ".kibo", "preview", "h"), { recursive: true });
+  writeFileSync(join(dir, ".kibo", "preview", "h", "ui.sandbox.js"), 'const c = "bg-lime-800";\n');
+  const css = new TextDecoder().decode((await buildComponent(dir, toolchain)).files["ui.css"]);
+  expect(css).toContain(".bg-emerald-500");
+  expect(css).not.toContain("bg-fuchsia-700");
+  expect(css).not.toContain("bg-lime-800");
+}, 60_000);

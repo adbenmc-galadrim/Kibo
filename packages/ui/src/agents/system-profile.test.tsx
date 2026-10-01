@@ -25,7 +25,8 @@ beforeEach(() => {
 });
 
 const config = () => ({ ...configFixture(), profiles: [...systemProfilesFixture, ...profilesFixture] });
-const show = () => render(<AgentsPage state={agentsFixture()} config={config()} now={NOW} />);
+const show = () =>
+  render(<AgentsPage state={agentsFixture()} config={config()} now={NOW} onOpenRun={() => {}} />);
 const sheet = () => within(screen.getByRole("dialog"));
 
 test("a system profile card carries the Système badge, a user profile does not", () => {
@@ -34,7 +35,7 @@ test("a system profile card carries the Système badge, a user profile does not"
   expect(within(screen.getByRole("article", { name: "opus-dev" })).queryByText("Système")).toBeNull();
 });
 
-test("a system profile sheet only offers the model and the enabled switch", async () => {
+test("a system profile sheet only offers the model, the parallel runs and the enabled switch", async () => {
   show();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Modifier le profil assistant" }));
@@ -82,9 +83,40 @@ test("choosing Haiku saves only the model of the system profile", async () => {
   ]);
 });
 
+test("a system profile runs 1 to 4 in parallel; the choice is saved and a refusal is said", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Modifier le profil generateur" }));
+  const parallel = sheet().getByRole("combobox", { name: "Runs en parallèle (profil)" });
+  expect(parallel.textContent).toBe("1");
+  parallel.focus();
+  await user.keyboard("{Enter}");
+  expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["1", "2", "3", "4"]);
+  await user.click(screen.getByRole("option", { name: "2" }));
+  expect(calls).toEqual([
+    {
+      method: "config",
+      command: { method: "updateProfile", profileId: "generateur", patch: { maxParallel: 2 } },
+    },
+  ]);
+});
+
+test("a parallel count refused by the daemon is said and goes back", async () => {
+  respond = () => Promise.reject(new KiboError("INVALID_INPUT", "maxParallel"));
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Modifier le profil generateur" }));
+  const parallel = sheet().getByRole("combobox", { name: "Runs en parallèle (profil)" });
+  parallel.focus();
+  await user.keyboard("{Enter}");
+  await user.click(screen.getByRole("option", { name: "3" }));
+  expect((await sheet().findByRole("alert")).textContent).toBe("Impossible d'enregistrer le profil.");
+  expect(parallel.textContent).toBe("1");
+});
+
 test("with only system profiles the page still invites to create a profile", () => {
   const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
-  render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} />);
+  render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} onOpenRun={() => {}} />);
   expect(
     screen.getByText("Aucun profil à toi : crée-en un pour assigner des tickets à un agent."),
   ).toBeTruthy();

@@ -22,7 +22,7 @@ let members = [
 
 mock.module("../state/use-projects", () => ({
   useProject: () => ({ sync: { members } }),
-  useProjects: () => [],
+  useProjects: () => ({ projects: [], error: null, retry: () => {} }),
 }));
 
 const { MissingComponent } = await import("./MissingComponent");

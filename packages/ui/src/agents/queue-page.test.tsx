@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, NOW, profilesFixture } from "./fixtures";
 
@@ -27,19 +27,19 @@ beforeEach(() => {
 const show = (onAnswer: (runId: string) => void = () => {}) =>
   render(<QueuePage state={agentsFixture()} profiles={profilesFixture} now={NOW} onAnswer={onAnswer} />);
 
-test("capacity shows one card per host slot, the gauges and the slot rule", () => {
+test("capacity shows one card per place, the gauges and the admission rule", () => {
   show();
   const capacity = within(screen.getByRole("region", { name: "Capacité de la machine" }));
   const cards = capacity.getAllByRole("listitem");
   expect(cards.map((c) => c.textContent)).toEqual([
-    "Créneau 1opus-dev-1KIB-12 · 12m",
-    "Créneau 2opus-dev-3KIB-16 · 4m",
-    "Créneau 3sonnet-review-1KIB-7 · 1m",
+    "Place 1opus-dev-1KIB-12 · 12m",
+    "Place 2opus-dev-3KIB-16 · 4m",
+    "Place 3sonnet-review-1KIB-7 · 1m",
   ]);
   expect(capacity.getByText("62 % · seuil 85 %")).toBeTruthy();
   expect(capacity.getByText("11,2 / 16 Go · seuil 90 %")).toBeTruthy();
   expect(capacity.getByRole("progressbar", { name: "CPU" })).toBeTruthy();
-  expect(capacity.getByText("Créneaux hôte : 3 (auto : 8 cœurs, 16 Go)")).toBeTruthy();
+  expect(capacity.getByText("Places sur la machine : 3 (auto : 8 cœurs, 16 Go)")).toBeTruthy();
 });
 
 test("profiles with runs come first, then the idle ones, each group by name", () => {
@@ -63,7 +63,7 @@ test("fixed host slots say so and still give the automatic value", () => {
     />,
   );
   const capacity = within(screen.getByRole("region", { name: "Capacité de la machine" }));
-  expect(capacity.getByText("Créneaux hôte : 3 (fixé · auto : 5)")).toBeTruthy();
+  expect(capacity.getByText("Places sur la machine : 3 (fixé · auto : 5)")).toBeTruthy();
   expect(capacity.getByRole("button", { name: "modifiable" })).toBeTruthy();
 });
 
@@ -81,8 +81,8 @@ test("each profile lists its running runs and its queue in order", () => {
   };
   expect(item("q10").getByText("#1")).toBeTruthy();
   expect(item("q10").getByText("Prioritaire")).toBeTruthy();
-  expect(item("q10").getByText("réponse reçue · reprise --resume")).toBeTruthy();
-  expect(item("q29").getByText("attend un créneau hôte (3/3)")).toBeTruthy();
+  expect(item("q10").getByText("réponse reçue · reprise de la session")).toBeTruthy();
+  expect(item("q29").getByText("attend une place sur la machine (3/3)")).toBeTruthy();
   const sonnet = within(screen.getByRole("region", { name: "sonnet-review" }));
   expect(sonnet.getByText("1/3")).toBeTruthy();
   expect(sonnet.getByText("Vide")).toBeTruthy();
@@ -93,7 +93,7 @@ test("sub-agents run in their parent's slot and the waiting column offers an ans
   show(onAnswer);
   const haiku = within(screen.getByRole("region", { name: "haiku-tests" }));
   expect(haiku.getByText("sous-agent")).toBeTruthy();
-  expect(haiku.getByText("Dans le créneau de opus-dev-1")).toBeTruthy();
+  expect(haiku.getByText("Dans la place de opus-dev-1")).toBeTruthy();
   expect(haiku.getByText("KIB-12 · Schéma Loro des tickets")).toBeTruthy();
   const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
   expect(waiting.getByText("« Quel port pour le récepteur ? 4747 (défaut) ou dynamique ? »")).toBeTruthy();
@@ -101,7 +101,7 @@ test("sub-agents run in their parent's slot and the waiting column offers an ans
   expect(onAnswer).toHaveBeenCalledWith("r41");
 });
 
-test("the item menu moves, prioritizes and removes queued runs", async () => {
+test("the item menu moves, prioritizes and removes queued runs after a confirmation", async () => {
   show();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Actions KIB-18" }));
@@ -113,6 +113,12 @@ test("the item menu moves, prioritizes and removes queued runs", async () => {
     "true",
   );
   await user.click(screen.getByRole("menuitem", { name: "Retirer de la file" }));
+  const dialog = within(await screen.findByRole("alertdialog"));
+  expect(dialog.getByText("Retirer KIB-29 de la file ?")).toBeTruthy();
+  expect(dialog.getByText("Le run ne démarrera pas ; le ticket reste assigné.")).toBeTruthy();
+  expect(calls).toHaveLength(2);
+  await user.click(dialog.getByRole("button", { name: "Retirer" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   expect(calls).toEqual([
     { method: "moveRun", runId: "q18", index: 0 },
     { method: "setRunPriority", runId: "q10", priority: false },
@@ -125,7 +131,7 @@ test("host slots can be changed; a refusal is shown", async () => {
   expect(screen.queryByRole("button", { name: "Mettre en pause l'admission" })).toBeNull();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "modifiable" }));
-  const slots = screen.getByLabelText("Créneaux hôte");
+  const slots = screen.getByLabelText("Places sur la machine");
   await user.clear(slots);
   await user.type(slots, "4");
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));

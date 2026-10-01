@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { RpcRequest } from "@kibo/schema";
+import { layoutFor, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -65,7 +65,7 @@ test("the MCP source is added with its flat configuration, never as a synced sou
       method: "addInstance",
       pageId: "pg1",
       component: "mcp-source@1.0.0",
-      layout: { x: 0, y: 0, w: 6, h: 6 },
+      layout: layoutFor("medium", 0, 0),
       config: {
         server: "ctx",
         mode: "tool",

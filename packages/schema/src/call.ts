@@ -30,6 +30,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
     markdown: z.string().max(1_048_576),
     expectedMtime: z.number().nullable(),
   }),
+  z.object({ kind: z.literal("notes.create"), path: NotePath, markdown: z.string().max(1_048_576) }),
   z.object({ kind: z.literal("notes.rename"), from: NotePath, to: NotePath }),
   z.object({ kind: z.literal("notes.remove"), path: NotePath }),
   z.object({ kind: z.literal("notes.search"), query: z.string().max(200) }),

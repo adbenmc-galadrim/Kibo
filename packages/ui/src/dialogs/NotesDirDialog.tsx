@@ -8,11 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
-import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { FolderField } from "./FolderField";
 
 type Props = { projectId: string; open: boolean; onOpenChange(open: boolean): void };
 
@@ -56,7 +56,7 @@ export function NotesDirDialog({ projectId, open, onOpenChange }: Props) {
         </DialogHeader>
         <div className="grid gap-2">
           <Label htmlFor={id}>{n.label}</Label>
-          <Input id={id} className="font-mono" value={dir} onChange={(e) => setDir(e.target.value)} />
+          <FolderField id={id} value={dir} onChange={setDir} />
         </div>
         {error && (
           <p role="alert" className="text-sm text-destructive">

@@ -2,6 +2,7 @@ import { KiboError, type RpcRequest } from "@kibo/schema";
 import type { Service } from "./service";
 
 export type RpcContext = { sessionHash: string; remote: boolean };
+export const LOCAL_CONTEXT: RpcContext = { sessionHash: "local", remote: false };
 export type RpcExtension = {
   methods: readonly RpcRequest["method"][];
   handle(req: RpcRequest, ctx: RpcContext): Promise<unknown>;

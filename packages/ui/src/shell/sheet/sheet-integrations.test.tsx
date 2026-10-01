@@ -123,10 +123,13 @@ const show = async (shown: TicketView = ticket) => {
       project={{ ...project, tickets: [shown] }}
       ticketId={shown.id}
       domains={[]}
+      viewer="adam"
       onClose={() => {}}
       onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
+      onOpenTicket={() => {}}
+      onDeleted={() => {}}
     />,
   );
   await screen.findByRole("alert");
@@ -153,7 +156,9 @@ test("the issue and PR chips sit in the header, issue first", async () => {
 });
 
 test("the ticket tab shows the GitHub chips in its header", async () => {
-  render(<TicketTab project={project} ticketId="t1" onOpenFile={() => {}} />);
+  render(
+    <TicketTab project={project} ticketId="t1" viewer="adam" onOpenFile={() => {}} onOpenTicket={() => {}} />,
+  );
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("tab has a header");
   expect(await within(header).findByRole("link", { name: "#42" })).toBeDefined();
@@ -253,6 +258,9 @@ test("the CI section opens the logs, filterable to errors", async () => {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Voir les logs" }));
   expect(await screen.findByText("Logs · build")).toBeDefined();
+  expect(screen.getByRole("dialog", { name: "Logs · build" }).className).toContain(
+    "w-full sm:max-w-[min(90vw,720px)]",
+  );
   expect(screen.getByText("CI · PR #12 · KIB-1")).toBeDefined();
   expect(await screen.findByText("2026-09-26T10:00:01Z setup")).toBeDefined();
   await user.click(screen.getByRole("switch", { name: "Erreurs seulement" }));

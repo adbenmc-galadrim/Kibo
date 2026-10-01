@@ -73,6 +73,8 @@ function mergedStores(current: DraftStore, legacy: DraftStore): DraftStore {
     saveReport: (id, report) => owner(id).saveReport(id, report),
     get: (id) => owner(id).get(id),
     report: (id) => owner(id).report(id),
+    saveFeedback: (id, feedback) => owner(id).saveFeedback(id, feedback),
+    feedback: (id) => owner(id).feedback(id),
     list: () => [...current.list(), ...legacy.list()],
     active: () => [...current.active(), ...legacy.active()],
   };
@@ -103,6 +105,8 @@ const draftOf = (id: string, mode: "create" | "modify", status: DraftStatus): Co
   attempts: 1,
   failure: null,
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 1,
 });
@@ -194,6 +198,9 @@ export async function setup(opts: SetupOptions = {}) {
       infer: async () => NO_PERMISSIONS,
       validate: async () => green,
       hash: async (dir) => hashOf(dir),
+      buildPreview: async () => {
+        throw new Error("not used by the publisher");
+      },
     },
     catalog,
     projects: {

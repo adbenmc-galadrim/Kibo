@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { KiboError, type RpcRequest, type SyncStatus } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
@@ -83,6 +83,19 @@ const withProject = (lastError: string): SyncStatus => ({
   ],
 });
 
+function page(remote = false) {
+  return render(
+    <SyncSettingsPage
+      viewer="Adam"
+      projects={[]}
+      remote={remote}
+      onOpen={() => {}}
+      onShare={() => {}}
+      onDeleteProject={() => {}}
+    />,
+  );
+}
+
 beforeEach(() => {
   calls.length = 0;
   results = { getSyncStatus: () => Promise.resolve(online), listDevices: () => Promise.resolve(devices) };
@@ -90,23 +103,38 @@ beforeEach(() => {
 
 async function openConnect() {
   results.getSyncStatus = () => Promise.resolve(unconfigured);
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
-  await userEvent.click(await screen.findByRole("button", { name: "Se connecter à un serveur" }));
+  page();
+  await userEvent.click(await screen.findByRole("button", { name: "Se connecter" }));
   return screen.getByRole("dialog");
 }
 
 async function submitConnect(dialog: HTMLElement, url: string) {
   await userEvent.type(within(dialog).getByLabelText("Adresse du serveur"), url);
-  await userEvent.type(within(dialog).getByLabelText("Code d'invitation"), "ABCD");
+  await userEvent.type(within(dialog).getByLabelText("Code"), "ABCD");
   await userEvent.click(within(dialog).getByRole("button", { name: "Se connecter" }));
 }
 
-test("unconfigured shows the empty state and the connect button", async () => {
+test("screen 119: the empty state explains, links to the docs, and offers both paths", async () => {
   results.getSyncStatus = () => Promise.resolve(unconfigured);
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
-  expect(await screen.findByText("Aucun serveur de sync configuré.")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Se connecter à un serveur" })).toBeTruthy();
-  expect(screen.getByRole("link", { name: "Sync" }).getAttribute("aria-current")).toBe("page");
+  page();
+  expect(await screen.findByRole("heading", { level: 1, name: "Synchronisation" })).toBeTruthy();
+  expect(screen.getByText(/Partage tes projets entre tes appareils/)).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Comment en installer un" }).getAttribute("href")).toContain(
+    "kibo-sync",
+  );
+  expect(screen.getByRole("link", { name: "Synchronisation" }).getAttribute("aria-current")).toBe("page");
+  fireEvent.click(screen.getByRole("button", { name: "Entrer le code" }));
+  const dialog = screen.getByRole("dialog", { name: "Se connecter à un serveur" });
+  expect(within(dialog).getByText(/Ajouter un appareil/)).toBeTruthy();
+  expect(within(dialog).queryByLabelText(/Certificat/)).toBeNull();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Options avancées" }));
+  expect(within(dialog).getByLabelText(/Certificat racine/)).toBeTruthy();
+  expect(within(dialog).getByText(/commence par wss:\/\//)).toBeTruthy();
+});
+
+test("connecting with an invitation explains both kinds of code", async () => {
+  const dialog = await openConnect();
+  expect(within(dialog).getByText("Code d'invitation (48 h) ou code d'appareil (15 min).")).toBeTruthy();
 });
 
 test("the connect dialog sends the form and maps server errors", async () => {
@@ -142,10 +170,9 @@ test("an unknown connect failure never shows the raw daemon message", async () =
 });
 
 test("connected shows server, account, devices and shared projects", async () => {
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
-  expect(await screen.findByText("wss://sync.kibo.test")).toBeTruthy();
+  page();
+  expect(await screen.findByText("sync.kibo.test")).toBeTruthy();
   expect(screen.getByText("Connecté")).toBeTruthy();
-  expect(screen.getByText("u_7f3c9a")).toBeTruthy();
   const table = await screen.findByRole("table", { name: "Appareils" });
   expect(await within(table).findByText("Cet appareil")).toBeTruthy();
   expect(within(table).getByText("il y a 2 h")).toBeTruthy();
@@ -158,20 +185,50 @@ test("connected shows server, account, devices and shared projects", async () =>
 
 test("a status that cannot be read is reported without technical details", async () => {
   results.getSyncStatus = () => Promise.reject(new KiboError("INTERNAL", "boom"));
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
+  page();
   const alert = await screen.findByRole("alert");
   expect(alert.textContent).toBe("Impossible de lire l'état de la sync.");
 });
 
-test("revoking another device calls the daemon", async () => {
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
+test("the server and account cards fold the raw url and id under Détails", async () => {
+  page();
+  expect(await screen.findByText("sync.kibo.test")).toBeTruthy();
+  expect(screen.getByText("Adam")).toBeTruthy();
+  expect(screen.queryByText("wss://sync.kibo.test")).toBeNull();
+  expect(screen.queryByText("u_7f3c9a")).toBeNull();
+  for (const button of screen.getAllByRole("button", { name: "Détails" })) fireEvent.click(button);
+  expect(screen.getByText("wss://sync.kibo.test")).toBeTruthy();
+  expect(screen.getByText("u_7f3c9a")).toBeTruthy();
+});
+
+async function revokeDialogFor(name: string) {
   const table = await screen.findByRole("table", { name: "Appareils" });
-  const row = (await within(table).findByText("iMac bureau")).closest("tr");
+  const row = (await within(table).findByText(name)).closest("tr");
   if (!row) throw new Error("no row");
-  await userEvent.click(within(row).getByRole("button", { name: "Révoquer" }));
+  await userEvent.click(within(row).getByRole("button", { name: "Révoquer…" }));
+  return screen.getByRole("alertdialog", { name: `Révoquer ${name} ?` });
+}
+
+test("revoking another device asks for confirmation, then calls the daemon", async () => {
+  page();
+  let dialog = await revokeDialogFor("iMac bureau");
+  expect(within(dialog).getByText("Cet appareil ne pourra plus se connecter.")).toBeTruthy();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Annuler" }));
+  expect(calls.some((c) => c.method === "revokeDevice")).toBe(false);
+  dialog = await revokeDialogFor("iMac bureau");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Révoquer" }));
   await waitFor(() =>
     expect(calls.some((c) => c.method === "revokeDevice" && c.deviceId === "d2")).toBe(true),
   );
+});
+
+test("a failed revocation stays in the confirmation with a readable message", async () => {
+  results.revokeDevice = () => Promise.reject(new KiboError("SYNC_OFFLINE", "socket closed"));
+  page();
+  const dialog = await revokeDialogFor("iMac bureau");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Révoquer" }));
+  expect(await within(dialog).findByText("Serveur injoignable : réessaie une fois reconnecté.")).toBeTruthy();
+  expect(dialog.textContent).not.toContain("socket closed");
 });
 
 test("adding a device shows the code once, grouped by four, and never logs it", async () => {
@@ -183,13 +240,20 @@ test("adding a device shows the code once, grouped by four, and never logs it", 
     spyOn(console, "info"),
   ];
   results.addDevice = () => Promise.resolve({ code, expiresAt: NOW + 900_000 });
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
+  page();
   await userEvent.click(await screen.findByRole("button", { name: "Ajouter un appareil" }));
   const dialog = screen.getByRole("dialog");
   expect(await within(dialog).findByText("K7QD 9XMP 2RTA HW4C 8NEV B3YF QZ")).toBeTruthy();
-  expect(
-    within(dialog).getByText("Saisis ce code sur l'autre appareil dans Paramètres › Sync."),
-  ).toBeTruthy();
+  expect(within(dialog).getByText("sync.kibo.test")).toBeTruthy();
+  expect(within(dialog).getAllByRole("button", { name: "Copier" })).toHaveLength(2);
+  const steps = within(dialog)
+    .getAllByRole("listitem")
+    .map((li) => li.textContent);
+  expect(steps).toEqual([
+    "Sur l'autre appareil, ouvre Paramètres › Synchronisation.",
+    "Choisis « C'est mon autre appareil ».",
+    "Saisis l'adresse et ce code (15 minutes).",
+  ]);
   expect(within(dialog).getByText("Valable 15 minutes. Montré une seule fois.")).toBeTruthy();
   expect(globalThis.location.href).not.toContain(code);
   for (const spy of logs) {
@@ -206,27 +270,27 @@ test("groupByFour splits a code in blocks of four", () => {
 });
 
 test("from a remote session, sensitive actions are disabled but devices stay visible", async () => {
-  render(<SyncSettingsPage viewer="Adam" remote />);
+  page(true);
   const table = await screen.findByRole("table", { name: "Appareils" });
   expect(await within(table).findByText("iMac bureau")).toBeTruthy();
   expect((screen.getByRole("button", { name: "Se déconnecter" }) as HTMLButtonElement).disabled).toBe(true);
   expect((screen.getByRole("button", { name: "Ajouter un appareil" }) as HTMLButtonElement).disabled).toBe(
     true,
   );
-  expect(within(table).queryByRole("button", { name: "Révoquer" })).toBeNull();
+  expect(within(table).queryByRole("button", { name: "Révoquer…" })).toBeNull();
   expect(
     screen.getByText("Cette action n'est possible que depuis l'ordinateur où tourne Kibo."),
   ).toBeTruthy();
 });
 
-test("from a remote session, connecting is disabled", async () => {
+test("from a remote session, the empty state offers no connection", async () => {
   results.getSyncStatus = () => Promise.resolve(unconfigured);
-  render(<SyncSettingsPage viewer="Adam" remote />);
-  const button = await screen.findByRole("button", { name: "Se connecter à un serveur" });
-  expect((button as HTMLButtonElement).disabled).toBe(true);
+  page(true);
   expect(
-    screen.getByText("Cette action n'est possible que depuis l'ordinateur où tourne Kibo."),
+    await screen.findByText("Cette action n'est possible que depuis l'ordinateur où tourne Kibo."),
   ).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Se connecter" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Entrer le code" })).toBeNull();
 });
 
 test("project errors are translated and a suspended project is explained", async () => {
@@ -239,7 +303,7 @@ test("project errors are translated and a suspended project is explained", async
   ];
   for (const [code, label, hint] of cases) {
     results.getSyncStatus = () => Promise.resolve(withProject(code));
-    const { unmount } = render(<SyncSettingsPage viewer="Adam" remote={false} />);
+    const { unmount } = page();
     const projects = await screen.findByRole("table", { name: "Projets partagés" });
     expect(within(projects).getByText(label)).toBeTruthy();
     if (hint) expect(projects.textContent).toContain(hint);
@@ -259,7 +323,7 @@ test("connection errors are translated in the server card", async () => {
   ];
   for (const [code, text] of cases) {
     results.getSyncStatus = () => Promise.resolve({ ...online, state: "offline", lastError: code });
-    const { unmount } = render(<SyncSettingsPage viewer="Adam" remote={false} />);
+    const { unmount } = page();
     expect(await screen.findByText(text)).toBeTruthy();
     unmount();
   }
@@ -267,12 +331,12 @@ test("connection errors are translated in the server card", async () => {
 
 test("the agent bar indicator follows the daemon and the connection", async () => {
   const cases: [SyncStatus, boolean, string][] = [
-    [unconfigured, true, "Démon local"],
-    [unconfigured, false, "Démon injoignable"],
-    [online, true, "Démon local · synchronisé"],
-    [{ ...online, state: "connecting" }, true, "Démon local · synchronisation…"],
-    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Démon local · hors ligne"],
-    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Démon local · erreur de sync"],
+    [unconfigured, true, "Kibo · connecté"],
+    [unconfigured, false, "Kibo · hors ligne"],
+    [online, true, "Kibo · synchronisé"],
+    [{ ...online, state: "connecting" }, true, "Kibo · synchronisation…"],
+    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Kibo · sync hors ligne"],
+    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Kibo · erreur de sync"],
   ];
   for (const [status, daemonOnline, label] of cases) {
     results.getSyncStatus = () => Promise.resolve(status);
@@ -285,14 +349,53 @@ test("the agent bar indicator follows the daemon and the connection", async () =
 test("a reconnection countdown is shown in settings", async () => {
   results.getSyncStatus = () =>
     Promise.resolve({ ...online, state: "offline", retryAt: Date.now() + 12_400 });
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
+  page();
   expect(await screen.findByText(/Reconnexion dans 1[23] s/)).toBeTruthy();
 });
 
 test("offline without a device list, the table is replaced by an explanation", async () => {
   results.getSyncStatus = () => Promise.resolve({ ...online, state: "offline", retryAt: null });
   results.listDevices = () => Promise.reject(new KiboError("SYNC_OFFLINE", "not connected"));
-  render(<SyncSettingsPage viewer="Adam" remote={false} />);
+  page();
   expect(await screen.findByText("Liste des appareils disponible une fois connecté.")).toBeTruthy();
   expect(screen.queryByRole("table", { name: "Appareils" })).toBeNull();
+});
+
+test("shared projects offer Ouvrir, Gérer le partage, and Arrêter / Quitter according to the role", async () => {
+  const opened: string[] = [];
+  const shared: string[] = [];
+  const deleted: string[] = [];
+  render(
+    <SyncSettingsPage
+      viewer="Adam"
+      projects={[]}
+      remote={false}
+      onOpen={(id) => opened.push(id)}
+      onShare={(id) => shared.push(id)}
+      onDeleteProject={(id) => deleted.push(id)}
+    />,
+  );
+  const kibo = await screen.findByRole("row", { name: /Kibo/ });
+  await userEvent.click(within(kibo).getByRole("button", { name: "Actions pour Kibo" }));
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
+    "Ouvrir",
+    "Gérer le partage…",
+    "Arrêter le partage…",
+  ]);
+  await userEvent.click(screen.getByRole("menuitem", { name: "Arrêter le partage…" }));
+  expect(shared).toEqual(["p1"]);
+  const portfolio = screen.getByRole("row", { name: /Portfolio/ });
+  await userEvent.click(within(portfolio).getByRole("button", { name: "Actions pour Portfolio" }));
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
+    "Ouvrir",
+    "Gérer le partage…",
+    "Quitter…",
+  ]);
+  await userEvent.click(screen.getByRole("menuitem", { name: "Quitter…" }));
+  expect(deleted).toEqual(["p2"]);
+  await userEvent.click(within(portfolio).getByRole("button", { name: "Actions pour Portfolio" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Ouvrir" }));
+  await userEvent.click(within(kibo).getByRole("button", { name: "Actions pour Kibo" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Gérer le partage…" }));
+  expect([opened, shared]).toEqual([["p2"], ["p1", "p1"]]);
 });

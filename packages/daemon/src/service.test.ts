@@ -55,6 +55,7 @@ describe("service", () => {
     expect(summary).toEqual({
       ...p,
       counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
+      icon: null,
     });
     store.close();
   });
@@ -179,13 +180,17 @@ describe("service", () => {
       },
     });
     expect((s1.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceName).toBeNull();
-    s1.handle({ method: "config", command: { method: "renameWorkspace", name: "Maison" } });
+    s1.handle({
+      method: "config",
+      command: { method: "updateWorkspace", patch: { name: "Maison", description: "Mes projets" } },
+    });
     store1.close();
     const store2 = openStore(home);
     const config = createService(store2, { user: "adam" }).handle({ method: "getConfig" }) as WorkspaceConfig;
     expect(config.domains.map((d) => d.name)).toEqual(["Core"]);
     expect(config.guidelines.map((g) => g.path)).toEqual(["k.md"]);
     expect(config.workspaceName).toBe("Maison");
+    expect(config.workspaceDescription).toBe("Mes projets");
     store2.close();
   });
 
@@ -253,6 +258,103 @@ describe("service", () => {
     const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
     expect(snap.instances).toMatchObject([{ id: inst.id, component: "hello@0.1.0", config: { a: 1 } }]);
     store.close();
+  });
+
+  test("updateProjectMeta writes the doc and the workspace copy, and folder only where asked", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    const seen: unknown[] = [];
+    s.onChange((m) => seen.push(m));
+    expect(
+      s.docs.updateProjectMeta(p.id, { name: "Noyau", color: "#6366F1", folder: "/tmp/kibo" }, true),
+    ).toEqual({
+      ...p,
+      name: "Noyau",
+      color: "#6366F1",
+      folder: "/tmp/kibo",
+    });
+    expect(seen).toEqual([{ projectId: p.id }, { projectId: null }]);
+    const [summary] = s.handle({ method: "listProjects" }) as ProjectSummary[];
+    expect([summary?.name, summary?.color, summary?.folder]).toEqual(["Noyau", "#6366F1", "/tmp/kibo"]);
+    s.docs.updateProjectMeta(p.id, { folder: "/tmp/elsewhere" }, false);
+    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).meta.folder).toBe(
+      "/tmp/kibo",
+    );
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.folder).toBe("/tmp/elsewhere");
+    store.close();
+  });
+
+  test("projects and the workspace expose their icon version", () => {
+    const store = openStore(tmp());
+    const s = createService(store, { user: "adam" });
+    const p = s.handle(newProject) as ProjectMeta;
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.icon).toBeNull();
+    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).icon).toBeNull();
+    const version = s.icons.set(`project:${p.id}`, "image/png", png);
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.icon).toBe(version);
+    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).icon).toBe(version);
+    expect((s.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceIcon).toBeNull();
+    s.icons.set("workspace", "image/png", png);
+    expect((s.handle({ method: "getConfig" }) as WorkspaceConfig).workspaceIcon).toBe(version);
+    store.close();
+  });
+
+  test("removeProject forgets the doc everywhere, tells its listeners, and survives a restart", () => {
+    const home = tmp();
+    const store1 = openStore(home);
+    const s1 = createService(store1, { user: "adam" });
+    const p = s1.handle(newProject) as ProjectMeta;
+    const other = s1.handle({ ...newProject, name: "Facturation", key: "FAC" }) as ProjectMeta;
+    const removed: string[] = [];
+    const seen: unknown[] = [];
+    s1.docs.onProjectRemoved((id) => removed.push(id));
+    s1.onChange((m) => seen.push(m));
+    s1.docs.removeProject(p.id);
+    expect(removed).toEqual([p.id]);
+    expect(seen).toEqual([{ projectId: null }]);
+    expect(() => s1.docs.project(p.id)).toThrow("NOT_FOUND");
+    expect(s1.docs.projectIds()).toEqual([other.id]);
+    expect((s1.handle({ method: "listProjects" }) as ProjectSummary[]).map((x) => x.id)).toEqual([other.id]);
+    expect(store1.load(`project:${p.id}`)).toBeNull();
+    expect(() => s1.docs.removeProject(p.id)).toThrow("NOT_FOUND");
+    expect(removed).toEqual([p.id]);
+    store1.close();
+    const s2 = createService(openStore(home), { user: "adam" });
+    expect((s2.handle({ method: "listProjects" }) as ProjectSummary[]).map((x) => x.id)).toEqual([other.id]);
+  });
+
+  test("removeProject changes nothing when the store refuses the write", () => {
+    const home = tmp();
+    const store = openStore(home);
+    let failing = false;
+    const s = createService(
+      {
+        ...store,
+        save: (id, snapshot) => {
+          if (failing && id === "workspace") throw new Error("disk full");
+          store.save(id, snapshot);
+        },
+      },
+      { user: "adam" },
+    );
+    const p = s.handle(newProject) as ProjectMeta;
+    const removed: string[] = [];
+    const seen: unknown[] = [];
+    s.docs.onProjectRemoved((id) => removed.push(id));
+    s.onChange((m) => seen.push(m));
+    failing = true;
+    expect(() => s.docs.removeProject(p.id)).toThrow("disk full");
+    failing = false;
+    expect([removed, seen]).toEqual([[], []]);
+    expect(s.docs.project(p.id)).toBeDefined();
+    expect((s.handle({ method: "listProjects" }) as ProjectSummary[]).map((x) => x.id)).toEqual([p.id]);
+    expect(store.load(`project:${p.id}`)).not.toBeNull();
+    s.docs.save(null);
+    store.close();
+    const again = createService(openStore(home), { user: "adam" });
+    expect((again.handle({ method: "listProjects" }) as ProjectSummary[]).map((x) => x.id)).toEqual([p.id]);
   });
 });
 

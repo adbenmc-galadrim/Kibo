@@ -51,7 +51,7 @@ export function SourceCode({ files }: { files: File[] }) {
           </Button>
         ))}
       </nav>
-      {current && <CodeLines tokens={tokens} highlightLine={null} label={current.path} />}
+      {current && <CodeLines tokens={tokens} highlightLine={null} label={current.path} wrap={false} />}
     </div>
   );
 }

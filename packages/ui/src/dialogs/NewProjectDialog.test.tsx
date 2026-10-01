@@ -94,6 +94,7 @@ test("NewProjectDialog Passer creates an empty project", async () => {
   await user.click(await screen.findByRole("button", { name: "Passer" }));
   expect(screen.getByRole("radio", { name: "Projet vide" }).getAttribute("data-state")).toBe("checked");
   expect(screen.getByRole("radio", { name: "Pages conseillées" }).hasAttribute("disabled")).toBe(true);
+  expect(screen.queryByRole("radio", { name: /Depuis un projet/ })).toBeNull();
   await user.type(screen.getByLabelText("Nom"), "Vide");
   await user.click(screen.getByRole("button", { name: "Créer le projet" }));
   expect(calls.some((c) => c.method === "createProject")).toBe(true);
@@ -181,4 +182,20 @@ test("NewProjectDialog falls back to the generic error for an unknown failure", 
   await user.click(screen.getByRole("button", { name: "Créer le projet" }));
   expect(await screen.findByText("Une erreur est survenue.")).toBeTruthy();
   expect(screen.queryByText(/socket hang up/)).toBeNull();
+});
+
+test("NewProjectDialog refuses the key reserved for the inbox", async () => {
+  answer = creating;
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Passer" }));
+  await user.type(screen.getByLabelText("Nom"), "Courrier");
+  const key = screen.getByLabelText("Clé");
+  await user.clear(key);
+  await user.type(key, "inb");
+  expect(screen.getByText("La clé INB est réservée à la boîte de réception.")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Créer le projet" }).hasAttribute("disabled")).toBe(true);
+  await user.type(key, "X");
+  expect(screen.queryByText("La clé INB est réservée à la boîte de réception.")).toBeNull();
+  expect(screen.getByRole("button", { name: "Créer le projet" }).hasAttribute("disabled")).toBe(false);
 });

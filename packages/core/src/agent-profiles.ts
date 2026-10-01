@@ -21,7 +21,17 @@ const SYSTEM_FIELDS: Record<SystemProfileId, Pick<AgentProfile, "name" | "permis
   assistant: { name: "assistant", permissionMode: "default" },
   generateur: { name: "generateur", permissionMode: "acceptEdits" },
 };
-const SYSTEM_EDITABLE = new Set(["model", "enabled"]);
+const SYSTEM_EDITABLE = new Set(["model", "enabled", "maxParallel"]);
+export const SYSTEM_MAX_PARALLEL = 4;
+export const SYSTEM_DEFAULT_PARALLEL: Readonly<Record<SystemProfileId, number>> = {
+  assistant: 1,
+  generateur: 2,
+};
+
+const systemParallel = (id: SystemProfileId, current: AgentProfile | null): number => {
+  const stored = current?.maxParallel;
+  return stored !== undefined && stored <= SYSTEM_MAX_PARALLEL ? stored : SYSTEM_DEFAULT_PARALLEL[id];
+};
 
 const isSystemId = (id: string): id is SystemProfileId =>
   SYSTEM_PROFILE_IDS.some((systemId) => systemId === id);
@@ -58,7 +68,7 @@ function systemProfile(
       system: true,
       execution: "cli",
       workspace: "isolated",
-      maxParallel: 1,
+      maxParallel: systemParallel(id, current),
       subagents: [],
       model: current?.model ?? systemModel(profiles),
       enabled: current?.enabled ?? true,
@@ -92,14 +102,19 @@ function assertFreeName(name: string): void {
   if (isReservedName(name)) throw new KiboError("INVALID_INPUT", `name ${name} is reserved to Kibo`);
 }
 
-function assertEditable(current: AgentProfile, patch: object): void {
+function assertEditable(current: AgentProfile, patch: Partial<ProfileInput>): void {
   if (!current.system) return;
   if (Object.keys(patch).some((key) => !SYSTEM_EDITABLE.has(key))) {
     throw new KiboError(
       "INVALID_INPUT",
-      "only the model and the enabled flag of a system profile can change",
+      "only the model, the enabled flag and the parallelism of a system profile can change",
     );
   }
+  if (patch.maxParallel !== undefined && patch.maxParallel > SYSTEM_MAX_PARALLEL)
+    throw new KiboError(
+      "INVALID_INPUT",
+      `a system profile runs at most ${SYSTEM_MAX_PARALLEL} agents at once`,
+    );
 }
 
 export function createProfile(ws: LoroDoc, input: ProfileInput): AgentProfile {

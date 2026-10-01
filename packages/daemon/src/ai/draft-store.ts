@@ -8,6 +8,8 @@ export type DraftStore = {
   saveReport(id: string, report: ValidationReport | null): void;
   get(id: string): ComponentDraft;
   report(id: string): ValidationReport | null;
+  saveFeedback(id: string, feedback: string | null): void;
+  feedback(id: string): string | null;
   list(): ComponentDraft[];
   active(): ComponentDraft[];
 };
@@ -27,17 +29,34 @@ type Params = {
   attempts: number;
   failureJson: string | null;
   incidentsJson: string;
+  attachmentsJson: string;
+  revisions: number;
   createdAt: number;
   updatedAt: number;
 };
 
 type UpdateParams = Pick<
   Params,
-  "id" | "runId" | "sessionId" | "status" | "attempts" | "failureJson" | "incidentsJson" | "updatedAt"
+  | "id"
+  | "runId"
+  | "sessionId"
+  | "status"
+  | "attempts"
+  | "failureJson"
+  | "incidentsJson"
+  | "attachmentsJson"
+  | "revisions"
+  | "updatedAt"
 >;
 
 const COLUMNS =
-  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, createdAt, updatedAt";
+  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, attachmentsJson, revisions, createdAt, updatedAt";
+
+const ADDED_COLUMNS: Record<string, string> = {
+  attachmentsJson: "attachmentsJson TEXT NOT NULL DEFAULT '[]'",
+  revisions: "revisions INTEGER NOT NULL DEFAULT 0",
+  feedback: "feedback TEXT",
+};
 
 function parseJson(text: string, what: string): unknown {
   try {
@@ -54,6 +73,7 @@ function toDraft(row: Params): ComponentDraft {
     withServer: row.withServer === 1,
     failure: row.failureJson === null ? null : parseJson(row.failureJson, what),
     incidents: parseJson(row.incidentsJson, what),
+    attachments: parseJson(row.attachmentsJson, what),
   });
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `${what} is unreadable: ${parsed.error.message}`);
   return parsed.data;
@@ -74,6 +94,8 @@ const toParams = (d: ComponentDraft): Params => ({
   attempts: d.attempts,
   failureJson: d.failure === null ? null : JSON.stringify(d.failure),
   incidentsJson: JSON.stringify(d.incidents),
+  attachmentsJson: JSON.stringify(d.attachments),
+  revisions: d.revisions,
   createdAt: d.createdAt,
   updatedAt: d.updatedAt,
 });
@@ -86,25 +108,46 @@ const toUpdateParams = (p: Params): UpdateParams => ({
   attempts: p.attempts,
   failureJson: p.failureJson,
   incidentsJson: p.incidentsJson,
+  attachmentsJson: p.attachmentsJson,
+  revisions: p.revisions,
   updatedAt: p.updatedAt,
 });
+
+function addMissingColumns(db: Database): void {
+  const present = new Set(
+    db
+      .query<{ name: string }, []>("PRAGMA table_info(component_drafts)")
+      .all()
+      .map((c) => c.name),
+  );
+  for (const [name, definition] of Object.entries(ADDED_COLUMNS))
+    if (!present.has(name)) db.run(`ALTER TABLE component_drafts ADD COLUMN ${definition}`);
+}
 
 export function openDraftStore(db: Database): DraftStore {
   db.run(`CREATE TABLE IF NOT EXISTS component_drafts (
     id TEXT PRIMARY KEY, componentId TEXT NOT NULL, mode TEXT NOT NULL, title TEXT NOT NULL, kind TEXT NOT NULL,
     withServer INTEGER NOT NULL, baseVersion TEXT, description TEXT NOT NULL, runId TEXT, sessionId TEXT,
     status TEXT NOT NULL, attempts INTEGER NOT NULL, failureJson TEXT, incidentsJson TEXT NOT NULL,
-    reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)`);
+    reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL,
+    attachmentsJson TEXT NOT NULL DEFAULT '[]', revisions INTEGER NOT NULL DEFAULT 0, feedback TEXT)`);
+  addMissingColumns(db);
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS component_drafts_one_active ON component_drafts (componentId)
     WHERE status NOT IN ('done', 'abandoned')`);
   const insert = db.query<null, Params>(
-    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $createdAt, $updatedAt)`,
+    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $attachmentsJson, $revisions, $createdAt, $updatedAt)`,
   );
   const update = db.query<null, UpdateParams>(
-    "UPDATE component_drafts SET runId = $runId, sessionId = $sessionId, status = $status, attempts = $attempts, failureJson = $failureJson, incidentsJson = $incidentsJson, updatedAt = $updatedAt WHERE id = $id",
+    "UPDATE component_drafts SET runId = $runId, sessionId = $sessionId, status = $status, attempts = $attempts, failureJson = $failureJson, incidentsJson = $incidentsJson, attachmentsJson = $attachmentsJson, revisions = $revisions, updatedAt = $updatedAt WHERE id = $id",
   );
   const writeReport = db.query<null, { id: string; reportJson: string | null }>(
     "UPDATE component_drafts SET reportJson = $reportJson WHERE id = $id",
+  );
+  const writeFeedback = db.query<null, { id: string; feedback: string | null }>(
+    "UPDATE component_drafts SET feedback = $feedback WHERE id = $id",
+  );
+  const oneFeedback = db.query<{ feedback: string | null }, { id: string }>(
+    "SELECT feedback FROM component_drafts WHERE id = $id",
   );
   const one = db.query<Params, { id: string }>(`SELECT ${COLUMNS} FROM component_drafts WHERE id = $id`);
   const oneReport = db.query<{ reportJson: string | null }, { id: string }>(
@@ -119,6 +162,11 @@ export function openDraftStore(db: Database): DraftStore {
   };
   const reportRow = (id: string) => {
     const row = oneReport.get({ id });
+    if (!row) throw new KiboError("NOT_FOUND", `draft ${id} not found`);
+    return row;
+  };
+  const feedbackRow = (id: string) => {
+    const row = oneFeedback.get({ id });
     if (!row) throw new KiboError("NOT_FOUND", `draft ${id} not found`);
     return row;
   };
@@ -150,6 +198,11 @@ export function openDraftStore(db: Database): DraftStore {
       if (!parsed.success) throw new KiboError("STORE_CORRUPT", `report of draft ${id} is unreadable`);
       return parsed.data;
     },
+    saveFeedback: (id, feedback) => {
+      feedbackRow(id);
+      writeFeedback.run({ id, feedback });
+    },
+    feedback: (id) => feedbackRow(id).feedback,
     list,
     active: () => list().filter(isActive),
   };

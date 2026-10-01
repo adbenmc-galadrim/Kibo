@@ -15,6 +15,7 @@ import {
   listDomains,
   listGuidelines,
   listProfiles,
+  workspaceDescription,
   workspaceName,
 } from "./agent-config";
 import { createProjectDoc } from "./project";
@@ -193,19 +194,35 @@ describe("guidelines", () => {
 });
 
 describe("workspace name", () => {
-  test("the workspace name is stored in the workspace doc and trimmed", () => {
+  test("an empty or too long workspace name is refused by the schema", () => {
+    expect(ConfigCommand.safeParse({ method: "updateWorkspace", patch: { name: "   " } }).success).toBe(
+      false,
+    );
+    expect(
+      ConfigCommand.safeParse({ method: "updateWorkspace", patch: { name: "x".repeat(41) } }).success,
+    ).toBe(false);
+  });
+
+  test("updateWorkspace sets the name and the description, and null clears the description", () => {
     const ws = createWorkspaceDoc();
     expect(workspaceName(ws)).toBeNull();
     expect(
-      executeConfigCommand(ws, ConfigCommand.parse({ method: "renameWorkspace", name: "  Maison  " })),
-    ).toEqual({ name: "Maison" });
-    expect(workspaceName(ws)).toBe("Maison");
-    expect(configTarget({ method: "renameWorkspace", name: "Maison" })).toBeNull();
-  });
-
-  test("an empty or too long workspace name is refused by the schema", () => {
-    expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "   " }).success).toBe(false);
-    expect(ConfigCommand.safeParse({ method: "renameWorkspace", name: "x".repeat(41) }).success).toBe(false);
+      executeConfigCommand(
+        ws,
+        ConfigCommand.parse({
+          method: "updateWorkspace",
+          patch: { name: " Maison ", description: " Mes projets " },
+        }),
+      ),
+    ).toEqual({ name: "Maison", description: "Mes projets" });
+    expect(workspaceDescription(ws)).toBe("Mes projets");
+    expect(executeConfigCommand(ws, { method: "updateWorkspace", patch: { description: null } })).toEqual({
+      name: "Maison",
+      description: null,
+    });
+    expect(workspaceDescription(ws)).toBeNull();
+    expect(() => executeConfigCommand(ws, { method: "updateWorkspace", patch: {} })).toThrow("INVALID_INPUT");
+    expect(configTarget({ method: "updateWorkspace", patch: { name: "x" } })).toBeNull();
   });
 });
 
@@ -221,7 +238,7 @@ describe("system profiles", () => {
       system.map((p) => [p.id, p.permissionMode, p.model, p.enabled, p.maxParallel, p.workspace]),
     ).toEqual([
       ["assistant", "default", "opus", true, 1, "isolated"],
-      ["generateur", "acceptEdits", "opus", true, 1, "isolated"],
+      ["generateur", "acceptEdits", "opus", true, 2, "isolated"],
     ]);
   });
 
@@ -243,7 +260,7 @@ describe("system profiles", () => {
     ensureSystemProfiles(ws);
     ws.getMap("profiles").set("assistant", {
       ...getProfile(ws, "assistant"),
-      maxParallel: 4,
+      maxParallel: 9,
       model: "haiku",
     });
     ws.commit();

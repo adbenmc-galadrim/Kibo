@@ -4,7 +4,22 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KiboError, type KiboErrorCode } from "@kibo/schema";
 import { type CodeService, createCodeService } from "./code/code-service";
-import { createGitFixture, type GitFixture } from "./code/testing/git-fixture";
+import {
+  createGitFixture,
+  type GitFixture,
+  installFakeBin,
+  readFakeBinLog,
+} from "./code/testing/git-fixture";
+import { createMemorySecretStore } from "./integrations/memory-secret-store";
+import { createRedactor } from "./integrations/redact";
+import { PairingCodes } from "./remote/pairing-codes";
+import {
+  enableSelfSigned,
+  freePort,
+  makeRemote,
+  remoteCookie,
+  remotePost,
+} from "./remote/remote.test-helper";
 import { startServer } from "./server";
 import { call, createService, type Service } from "./service";
 import { openStore, type Store } from "./store";
@@ -120,6 +135,59 @@ describe("/api/code", () => {
     );
     expect(JSON.parse(await message)).toEqual({ type: "code", projectId, worktree: fx.repo });
     ws.close();
+  });
+});
+
+describe("/api/code from a remote session", () => {
+  test("local-only requests over the remote listener answer 403 and touch nothing", async () => {
+    const editor = installFakeBin(fx.dir, "code");
+    const guarded = createCodeService(service, {
+      env: { ...fx.env, VISUAL: editor.path, FAKE_BIN_LOG: editor.log },
+      prPollMs: 0,
+    });
+    const codes = new PairingCodes(Date.now);
+    const secrets = createMemorySecretStore(createRedactor());
+    const remoteServer = startServer({
+      service,
+      code: guarded,
+      pairingCodes: codes,
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+    });
+    const f = {
+      home,
+      store,
+      codes,
+      secrets,
+      server: remoteServer,
+      port: freePort(),
+      remote: makeRemote({ home, store, secrets, server: remoteServer }),
+    };
+    try {
+      await enableSelfSigned(f);
+      const cookie = await remoteCookie(f);
+      fx.write("new.txt", "n\n");
+      const w = { projectId, worktree: fx.repo };
+      const refused = [
+        { method: "openInEditor", ...w, path: "README.md", line: null },
+        { method: "commit", ...w, message: "feat: x", amend: false },
+        { method: "stageAll", ...w },
+      ];
+      for (const body of refused) {
+        const res = await remotePost(f, "/api/code", body, { cookie });
+        expect(res.status).toBe(403);
+        expect(await res.json()).toMatchObject({ ok: false, error: { code: "FORBIDDEN" } });
+      }
+      const status = await remotePost(f, "/api/code", { method: "status", ...w }, { cookie });
+      expect(status.status).toBe(200);
+      expect(fx.git("status", "--porcelain").trim()).toBe("?? new.txt");
+      expect(readFakeBinLog(editor.log)).toEqual([]);
+    } finally {
+      f.remote.stop();
+      remoteServer.stop();
+      guarded.stop();
+    }
   });
 });
 

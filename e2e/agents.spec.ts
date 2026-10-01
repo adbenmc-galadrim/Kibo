@@ -23,7 +23,7 @@ async function createOpusProfile(page: Page, info: TestInfo) {
   await page.getByRole("button", { name: "Nouveau profil" }).click();
   const sheet = page.getByRole("dialog");
   await sheet.getByLabel("Nom").fill("opus-dev");
-  await sheet.getByText("acceptEdits").click();
+  await sheet.getByText("Modifications acceptées").click();
   await sheet.getByLabel("Runs en parallèle (profil)").fill("2");
   await sheet.getByRole("button", { name: "Sonnet", exact: true }).click();
   await sheet.getByRole("button", { name: "Haiku", exact: true }).click();
@@ -85,7 +85,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   const capacity = page.getByRole("region", { name: "Capacité de la machine" });
   await expect(capacity.getByText(/seuil 85 %/)).toBeVisible();
   await expect(capacity.getByText(/seuil 90 %/)).toBeVisible();
-  await expect(capacity.getByText(/Créneaux hôte : 3 \(fixé · auto : \d+\)/)).toBeVisible();
+  await expect(capacity.getByText(/Places sur la machine : 3 \(fixé · auto : \d+\)/)).toBeVisible();
   await expect(page.getByRole("region", { name: "En attente de réponse" }).getByText("KIB-14")).toBeVisible();
   await shot(page, info, "ecran-17");
 

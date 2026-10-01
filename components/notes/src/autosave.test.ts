@@ -94,3 +94,52 @@ test("setBase after a reload drops the unsaved text", async () => {
   await auto.flush();
   expect(saves).toEqual([["mine", 10]]);
 });
+
+test("flush also writes what was typed during the save, and tells whether all is saved", async () => {
+  const saves: [string, number | null][] = [];
+  let release: () => void = () => undefined;
+  let mtime = 10;
+  const { auto } = harness(async (md, m) => {
+    saves.push([md, m]);
+    if (saves.length === 1)
+      await new Promise<void>((r) => {
+        release = r;
+      });
+    mtime += 1;
+    return meta(mtime);
+  });
+  auto.setBase(10);
+  auto.change("a");
+  const done = auto.flush();
+  await flush();
+  auto.change("ab");
+  release();
+  expect(await done).toBe(true);
+  expect(saves).toEqual([
+    ["a", 10],
+    ["ab", 11],
+  ]);
+});
+
+test("flush reports a conflict instead of pretending the text is saved", async () => {
+  const { auto } = harness(async () => {
+    throw new KiboError("CONFLICT", "changed");
+  });
+  auto.setBase(10);
+  auto.change("mine");
+  expect(await auto.flush()).toBe(false);
+});
+
+test("rebase moves the base after a rename and keeps the unsaved text", async () => {
+  const saves: [string, number | null][] = [];
+  const { auto, timers } = harness(async (md, m) => {
+    saves.push([md, m]);
+    return meta(60);
+  });
+  auto.setBase(10);
+  auto.change("typed");
+  auto.rebase(50);
+  timers.at(-1)?.();
+  await flush();
+  expect(saves).toEqual([["typed", 50]]);
+});

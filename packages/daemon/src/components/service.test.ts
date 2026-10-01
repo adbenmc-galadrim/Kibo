@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   type ComponentCall,
+  INBOX_ID,
   type Instance,
   KiboError,
   type TicketRun,
@@ -216,6 +217,21 @@ describe("notes", () => {
     await expect(h.rpc({ method: "getNotesDir", projectId: "ghost" })).rejects.toThrow("NOT_FOUND");
   });
 
+  test("the inbox has no notes folder to read or set", async () => {
+    const dir = join(home, "vault-inbox");
+    mkdirSync(dir);
+    await expect(h.rpc({ method: "getNotesDir", projectId: INBOX_ID })).rejects.toThrow(
+      "notes is not available for the inbox",
+    );
+    await expect(h.rpc({ method: "setNotesDir", projectId: INBOX_ID, dir })).rejects.toThrow(
+      "notes is not available for the inbox",
+    );
+    const rows = h.store.db
+      .query<{ n: number }, []>("SELECT count(*) AS n FROM project_settings WHERE project_id = 'inbox'")
+      .all();
+    expect(rows).toEqual([{ n: 0 }]);
+  });
+
   test("the notes folder must be an existing absolute folder", async () => {
     const { projectId } = await createProject(h);
     const set = (dir: string) => h.rpc({ method: "setNotesDir", projectId, dir });
@@ -225,6 +241,16 @@ describe("notes", () => {
     mkdirSync(dir);
     expect((await set(dir)).dir).toBe(dir);
     expect((await h.rpc({ method: "getNotesDir", projectId })).dir).toBe(dir);
+  });
+
+  test("a removed project leaves the notes index", async () => {
+    const { projectId, pageId } = await createProject(h);
+    const call = callOf(projectId, await addInstance(h, projectId, pageId, "notes@1.0.0"));
+    await call({ kind: "notes.write", path: "a.md", markdown: "# A", expectedMtime: null });
+    const rows = () => h.store.db.query<{ path: string }, []>("SELECT path FROM notes").all();
+    expect(rows()).toEqual([{ path: "a.md" }]);
+    h.service.docs.removeProject(projectId);
+    expect(rows()).toEqual([]);
   });
 
   test("every project is indexed when the daemon starts", async () => {

@@ -5,8 +5,16 @@ import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { type ComponentCall, KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
 import { isInside } from "../code/safe-path";
+import { assertNotInbox } from "../inbox/inbox-rules";
 import { createNotesIndex, type IndexedNote } from "./index";
-import { listNoteFiles, readNoteFile, removeNoteFile, renameNoteFile, writeNoteFile } from "./notes-fs";
+import {
+  createNoteFile,
+  listNoteFiles,
+  readNoteFile,
+  removeNoteFile,
+  renameNoteFile,
+  writeNoteFile,
+} from "./notes-fs";
 import { createProjectSettings } from "./settings";
 import { type NotesWatcher, type WatchFn, watchNotes } from "./watch";
 
@@ -25,6 +33,7 @@ export type NotesService = {
   setDir(projectId: string, dir: string): Promise<NotesInfo>;
   handle(projectId: string, call: ComponentCall): Promise<unknown>;
   refresh(projectId: string): Promise<void>;
+  forget(projectId: string): void;
   close(): void;
 };
 
@@ -139,8 +148,12 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
   };
 
   return {
-    info,
+    info: (projectId) => {
+      assertNotInbox(projectId, "notes");
+      return info(projectId);
+    },
     async setDir(projectId, dir) {
+      assertNotInbox(projectId, "notes");
       if (!(await usableDir(dir))) throw new KiboError("INVALID_INPUT", `${dir} is not an existing folder`);
       settings.set(projectId, "notesDir", dir);
       release(projectId);
@@ -170,6 +183,10 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
           await mkdir(dir, { recursive: true });
           await writeNoteFile(dir, call.path, call.markdown, call.expectedMtime);
           return metaOf(projectId, call.path);
+        case "notes.create":
+          await mkdir(dir, { recursive: true });
+          await createNoteFile(dir, call.path, call.markdown);
+          return metaOf(projectId, call.path);
         case "notes.rename":
           await renameNoteFile(dir, call.from, call.to);
           return metaOf(projectId, call.to);
@@ -186,6 +203,11 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       throw new KiboError("INTERNAL", `${call.kind} is not a notes call`);
     },
     refresh,
+    forget(projectId) {
+      release(projectId);
+      indexed.delete(projectId);
+      index.clear(projectId);
+    },
     close() {
       for (const w of watchers.values()) w.close();
       watchers.clear();

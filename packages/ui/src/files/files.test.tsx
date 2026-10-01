@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { type CodeEvent, type CodeRequest, type FileContent, KiboError } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -50,6 +50,7 @@ const ref = {
 };
 
 beforeEach(() => {
+  localStorage.clear();
   calls.length = 0;
   readOutcome = () => Promise.resolve(content);
   writeOutcome = () => Promise.resolve({ hash: "b".repeat(40) });
@@ -89,7 +90,7 @@ test("the preview shows the header, metadata, highlighted line and footer", asyn
   await waitFor(() =>
     expect(document.querySelector('[data-line="4"]')?.getAttribute("aria-current")).toBe("location"),
   );
-  expect(screen.getByText("Ligne 4, col 3")).toBeTruthy();
+  expect(screen.getByText("Ligne 4 · Col 3")).toBeTruthy();
   await userEvent.click(screen.getByRole("button", { name: "Ouvrir dans un onglet" }));
   await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
   await userEvent.click(screen.getByRole("button", { name: "Fermer l'aperçu" }));
@@ -103,6 +104,30 @@ test("the preview shows the header, metadata, highlighted line and footer", asyn
     path: "packages/core/ticket.ts",
     line: 4,
   });
+});
+
+function setPlatform(platform: string): () => void {
+  const original = navigator.platform;
+  Object.defineProperty(navigator, "platform", { value: platform, configurable: true });
+  return () => Object.defineProperty(navigator, "platform", { value: original, configurable: true });
+}
+
+test("the footer shows the external editor shortcut of the running platform", async () => {
+  const restoreMac = setPlatform("MacIntel");
+  try {
+    const { unmount } = render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} />);
+    expect(await screen.findByText("⌘⇧O ouvrir dans l'éditeur externe · Esc fermer")).toBeTruthy();
+    unmount();
+  } finally {
+    restoreMac();
+  }
+  const restoreLinux = setPlatform("Linux x86_64");
+  try {
+    render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} />);
+    expect(await screen.findByText("Ctrl+Shift+O ouvrir dans l'éditeur externe · Esc fermer")).toBeTruthy();
+  } finally {
+    restoreLinux();
+  }
 });
 
 test("a binary file is not previewed", async () => {
@@ -183,4 +208,109 @@ test("a file tab being edited is not re-read on a change", async () => {
   const before = reads();
   await emitCode("/repo");
   expect(reads()).toBe(before);
+});
+
+test("a remote view previews the file without Modifier nor the external editor, even when asked to edit", async () => {
+  render(<FileTabView fileRef={ref} startEditing remote />);
+  expect(await screen.findByText(/n'est possible que sur l'ordinateur où tourne Kibo/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
+  expect(screen.queryByRole("textbox")).toBeNull();
+});
+
+test("a remote preview hides Modifier and the external editor, and ignores the shortcut", async () => {
+  render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} remote />);
+  expect(await screen.findByText(/worktree kib-12 · TypeScript/)).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ouvrir dans un onglet" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  fireEvent.keyDown(window, { key: "O", metaKey: true, shiftKey: true });
+  await act(() => Promise.resolve());
+  expect(calls.some((c) => c.method === "openInEditor")).toBe(false);
+});
+
+const appRef = { ...ref, path: "src/app.ts", line: null, origin: null };
+const appContent: FileContent = {
+  ...content,
+  path: "src/app.ts",
+  content: "const Kibo = 1;\nkibo.run();\nexport { KIBO };\n",
+  lines: 4,
+};
+
+const clipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+afterEach(() => {
+  if (clipboard) Object.defineProperty(navigator, "clipboard", clipboard);
+  else Reflect.deleteProperty(navigator, "clipboard");
+});
+
+function setClipboard(writeText: (text: string) => Promise<void>): void {
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+}
+
+function captureClipboard(): string[] {
+  const copied: string[] = [];
+  setClipboard(async (text) => {
+    copied.push(text);
+  });
+  return copied;
+}
+
+test("screen 124: wrap is on by default and remembered, the search highlights and steps, :n goes to a line, the path is copied", async () => {
+  readOutcome = () => Promise.resolve(appContent);
+  const copied = captureClipboard();
+  render(<FilePreviewSheet fileRef={appRef} onClose={() => {}} onOpenInTab={() => {}} />);
+  const wrap = await screen.findByRole("switch", { name: "Retour à la ligne" });
+  expect(wrap.getAttribute("aria-checked")).toBe("true");
+  await waitFor(() => expect(document.querySelector("code")?.className).toContain("whitespace-pre-wrap"));
+  fireEvent.click(wrap);
+  expect(localStorage.getItem("kibo.wrap")).toBe("off");
+  expect(document.querySelector("code")?.className).toContain("whitespace-pre");
+  expect(document.querySelector("code")?.className).not.toContain("whitespace-pre-wrap");
+  fireEvent.keyDown(screen.getByRole("dialog"), { key: "f", metaKey: true });
+  const find = screen.getByRole("searchbox", { name: "Rechercher ou :ligne" });
+  fireEvent.change(find, { target: { value: "kibo" } });
+  expect(screen.getByText("1 / 3")).toBeTruthy();
+  await waitFor(() => expect(document.querySelectorAll("mark")).toHaveLength(3));
+  expect(
+    document.querySelector('mark[aria-current="true"]')?.closest("[data-line]")?.getAttribute("data-line"),
+  ).toBe("1");
+  expect(screen.getByText("Ligne 1 · Col 7")).toBeTruthy();
+  fireEvent.keyDown(find, { key: "Enter" });
+  expect(screen.getByText("2 / 3")).toBeTruthy();
+  fireEvent.keyDown(find, { key: "Enter", shiftKey: true });
+  expect(screen.getByText("1 / 3")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Occurrence précédente" }));
+  expect(screen.getByText("3 / 3")).toBeTruthy();
+  fireEvent.change(find, { target: { value: ":2" } });
+  expect(screen.getByText("Ligne 2 · Col 1")).toBeTruthy();
+  expect(document.querySelectorAll("mark")).toHaveLength(0);
+  expect(document.querySelector('[data-line="2"]')?.getAttribute("aria-current")).toBe("location");
+  fireEvent.click(screen.getByRole("button", { name: "Copier le chemin" }));
+  await waitFor(() => expect(copied).toEqual(["src/app.ts"]));
+  fireEvent.keyDown(find, { key: "Escape" });
+  expect(screen.queryByRole("searchbox")).toBeNull();
+  expect(screen.getByRole("dialog")).toBeTruthy();
+});
+
+test("the wrap preference is shared with the file tab, which also searches", async () => {
+  localStorage.setItem("kibo.wrap", "off");
+  readOutcome = () => Promise.resolve(appContent);
+  render(<FileTabView fileRef={appRef} startEditing={false} />);
+  const wrap = await screen.findByRole("switch", { name: "Retour à la ligne" });
+  expect(wrap.getAttribute("aria-checked")).toBe("false");
+  await waitFor(() => expect(document.querySelector("code")?.className).toContain("whitespace-pre"));
+  fireEvent.keyDown(wrap, { key: "f", ctrlKey: true });
+  fireEvent.change(screen.getByRole("searchbox", { name: "Rechercher ou :ligne" }), {
+    target: { value: "nothing" },
+  });
+  expect(screen.getByText("0 / 0")).toBeTruthy();
+});
+
+test("a failed copy of the path is shown", async () => {
+  readOutcome = () => Promise.resolve(appContent);
+  setClipboard(() => Promise.reject(new Error("denied")));
+  render(<FilePreviewSheet fileRef={appRef} onClose={() => {}} onOpenInTab={() => {}} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Copier le chemin" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de copier le chemin.");
 });

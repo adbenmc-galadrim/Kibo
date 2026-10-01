@@ -8,6 +8,7 @@ export type NotesIndex = {
   list(projectId: string): NoteMeta[];
   get(projectId: string, path: string): NoteMeta | null;
   search(projectId: string, query: string): NoteMeta[];
+  clear(projectId: string): void;
 };
 
 type NoteRow = { path: string; title: string; mtime: number; size: number };
@@ -62,8 +63,11 @@ export function createNotesIndex(db: Database): NotesIndex {
     "SELECT path, key AS target FROM note_tickets WHERE project_id = $projectId ORDER BY path, ord",
   );
 
-  const replace = db.transaction((projectId: string, projectKey: string, notes: IndexedNote[]) => {
+  const clear = db.transaction((projectId: string) => {
     for (const d of deletes) d.run({ projectId });
+  });
+  const replace = db.transaction((projectId: string, projectKey: string, notes: IndexedNote[]) => {
+    clear(projectId);
     const paths = notes.map((n) => n.path);
     for (const n of notes) {
       const parsed = parseNote(n.path, n.markdown, projectKey, paths);
@@ -95,5 +99,8 @@ export function createNotesIndex(db: Database): NotesIndex {
     get: (projectId, path) =>
       withRelations(projectId, selectNotes.all({ projectId })).find((n) => n.path === path) ?? null,
     search: (projectId, query) => withRelations(projectId, searchNotes.all({ projectId, q: query })),
+    clear: (projectId) => {
+      clear(projectId);
+    },
   };
 }

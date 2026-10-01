@@ -8,6 +8,7 @@ export type TabsAction =
   | { type: "close"; id: string }
   | { type: "closeOthers"; id: string }
   | { type: "closeRight"; id: string }
+  | { type: "closeProject"; projectId: string }
   | { type: "pin"; id: string; pinned: boolean }
   | { type: "duplicate"; id: string; newId: string }
   | { type: "move"; id: string; toIndex: number }
@@ -101,6 +102,14 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         { ...state, activeId: ids.has(state.activeId ?? "") ? action.id : state.activeId },
         ids,
       );
+    }
+    case "closeProject": {
+      const ofProject = (target: TabTarget) =>
+        target.kind !== "screen" && target.projectId === action.projectId;
+      const ids = new Set(state.tabs.filter((t) => ofProject(t.target)).map((t) => t.id));
+      const recents = state.recents.filter((r) => !ofProject(r));
+      if (ids.size === 0 && recents.length === state.recents.length) return state;
+      return { ...closeIds(state, ids), recents };
     }
     case "pin":
       return {

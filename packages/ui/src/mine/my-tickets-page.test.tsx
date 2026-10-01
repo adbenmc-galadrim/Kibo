@@ -1,10 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import { INBOX_ID, type ProjectSnapshot } from "@kibo/schema";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { configFixture } from "../agents/fixtures";
-import { fac, kib, mineSnapshots, por } from "./fixtures";
+import { withInbox } from "../lib/inbox";
+import { fac, kib, mineSnapshots, mineTicket, por } from "./fixtures";
 import { MyTicketsPage } from "./MyTicketsPage";
 
-type Handlers = { onOpenTicket?(p: string, t: string): void; onAssign?(p: string, t: string): void };
+type Handlers = {
+  onOpenTicket?(p: string, t: string): void;
+  onAssign?(p: string, t: string): void;
+  onFile?(t: string): void;
+};
 
 function renderPage(h: Handlers = {}) {
   return render(
@@ -15,6 +21,7 @@ function renderPage(h: Handlers = {}) {
       config={configFixture()}
       onOpenTicket={h.onOpenTicket ?? (() => {})}
       onAssign={h.onAssign ?? (() => {})}
+      onFile={h.onFile ?? (() => {})}
     />,
   );
 }
@@ -55,9 +62,11 @@ describe("my tickets page", () => {
     ).toBe(true);
   });
 
-  test("my agents tab and the disabled created tab", () => {
+  test("my agents tab, and only two filters", () => {
     renderPage();
-    expect(screen.getByRole("radio", { name: "Créés par moi" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("radio", { name: "Créés par moi" })).toBeNull();
+    const filters = screen.getByRole("radiogroup", { name: "Filtre des tickets" });
+    expect(within(filters).getAllByRole("radio")).toHaveLength(2);
     fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
     expect(screen.getByText("1 ticket · 1 projet")).toBeTruthy();
     const kibo = screen.getByRole("region", { name: "Kibo" });
@@ -75,6 +84,7 @@ describe("my tickets page", () => {
         config={null}
         onOpenTicket={() => {}}
         onAssign={() => {}}
+        onFile={() => {}}
       />,
     );
     fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
@@ -90,9 +100,46 @@ describe("my tickets page", () => {
         config={null}
         onOpenTicket={() => {}}
         onAssign={() => {}}
+        onFile={() => {}}
       />,
     );
     expect(screen.getByText("Aucun ticket ouvert ne t'est assigné.")).toBeTruthy();
     expect(screen.getByText("0 ticket · 0 projet")).toBeTruthy();
+  });
+
+  test("inbox tickets assigned to me form a « Boîte de réception » group, filed rather than run by an agent", () => {
+    const base = mineSnapshots.get(kib.id);
+    if (!base) throw new Error("fixture");
+    const inbox: ProjectSnapshot = {
+      ...base,
+      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+      tickets: [mineTicket("INB-2", "todo", { kind: "human", ref: "adam" })],
+    };
+    const snapshots = new Map(mineSnapshots).set(INBOX_ID, inbox);
+    const assigned: string[] = [];
+    const filed: string[] = [];
+    render(
+      <MyTicketsPage
+        viewer="adam"
+        projects={withInbox([kib], snapshots)}
+        snapshots={snapshots}
+        config={configFixture()}
+        onOpenTicket={() => {}}
+        onAssign={(p) => assigned.push(p)}
+        onFile={(t) => filed.push(t)}
+      />,
+    );
+    expect(screen.getAllByRole("region")).toHaveLength(2);
+    const group = screen.getByRole("region", { name: "Boîte de réception" });
+    expect(rowKeys(group)).toEqual(["INB-2"]);
+    expect(within(group).queryByRole("button", { name: "Assigner" })).toBeNull();
+    const file = within(group).getByRole("button", { name: "Rattacher…" });
+    expect(file.hasAttribute("disabled")).toBe(false);
+    expect(file.getAttribute("title")).toBe(
+      "Rattache d'abord ce ticket à un projet pour le confier à un agent.",
+    );
+    fireEvent.click(file);
+    expect(filed).toEqual([inbox.tickets[0]?.id ?? ""]);
+    expect(assigned).toEqual([]);
   });
 });

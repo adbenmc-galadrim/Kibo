@@ -18,6 +18,8 @@ const draft = (id: string, status: ComponentDraft["status"], updatedAt: number):
   attempts: 1,
   failure: status === "failed" ? { kind: "validation", detail: null } : null,
   incidents: [{ kind: "removed", path: "evil.ts" }],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt,
 });
@@ -83,4 +85,56 @@ test("a component has one active draft at most, whatever the writer (I43)", () =
   store.save(draft(a, "abandoned", 4));
   store.insert(draft(c, "describing", 5));
   expect(store.active().map((d) => d.id)).toEqual([c]);
+});
+
+test("saves the images and the revisions of a draft", () => {
+  const store = openDraftStore(new Database(":memory:", { strict: true }));
+  store.insert(draft(a, "review", 2));
+  const images = [{ name: "a.png", mime: "image/png" as const, bytes: 12 }];
+  store.save({ ...draft(a, "generating", 3), attachments: images, revisions: 1 });
+  expect(store.get(a)).toMatchObject({ attachments: images, revisions: 1, status: "generating" });
+});
+
+test("unreadable images are STORE_CORRUPT", () => {
+  const db = new Database(":memory:", { strict: true });
+  const store = openDraftStore(db);
+  store.insert(draft(a, "review", 2));
+  db.run("UPDATE component_drafts SET attachmentsJson = 'nope' WHERE id = ?", [a]);
+  expect(() => store.get(a)).toThrow("STORE_CORRUPT");
+});
+
+test("a database from before the images is migrated when opened", () => {
+  const db = new Database(":memory:", { strict: true });
+  db.run(`CREATE TABLE component_drafts (
+    id TEXT PRIMARY KEY, componentId TEXT NOT NULL, mode TEXT NOT NULL, title TEXT NOT NULL, kind TEXT NOT NULL,
+    withServer INTEGER NOT NULL, baseVersion TEXT, description TEXT NOT NULL, runId TEXT, sessionId TEXT,
+    status TEXT NOT NULL, attempts INTEGER NOT NULL, failureJson TEXT, incidentsJson TEXT NOT NULL,
+    reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)`);
+  db.run(
+    `INSERT INTO component_drafts (id, componentId, mode, title, kind, withServer, description, status, attempts, incidentsJson, createdAt, updatedAt)
+     VALUES (?, 'burndown', 'create', 'Burndown', 'widget', 0, 'Burndown du sprint', 'review', 1, '[]', 1, 1)`,
+    [a],
+  );
+  const store = openDraftStore(db);
+  expect(store.get(a)).toMatchObject({ attachments: [], revisions: 0, status: "review" });
+  store.save({ ...store.get(a), revisions: 2 });
+  expect(store.get(a).revisions).toBe(2);
+  expect(openDraftStore(db).get(a).revisions).toBe(2);
+});
+
+test("keeps the last feedback of a revision apart, and migrates an older table", () => {
+  const db = new Database(":memory:", { strict: true });
+  const store = openDraftStore(db);
+  store.insert(draft(a, "review", 2));
+  expect(store.feedback(a)).toBeNull();
+  store.saveFeedback(a, "Mets le total en gros");
+  expect(store.feedback(a)).toBe("Mets le total en gros");
+  store.save(draft(a, "generating", 3));
+  expect(store.feedback(a)).toBe("Mets le total en gros");
+  store.saveFeedback(a, null);
+  expect(store.feedback(a)).toBeNull();
+  expect(() => store.feedback(b)).toThrow("NOT_FOUND");
+  expect(() => store.saveFeedback(b, "x")).toThrow("NOT_FOUND");
+  db.run("ALTER TABLE component_drafts DROP COLUMN feedback");
+  expect(openDraftStore(db).feedback(a)).toBeNull();
 });

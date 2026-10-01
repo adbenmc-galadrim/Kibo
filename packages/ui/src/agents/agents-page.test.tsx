@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { agentsFixture, configFixture, NOW, profilesFixture } from "./fixtures";
@@ -25,7 +25,8 @@ beforeEach(() => {
   respond = () => Promise.resolve(null);
 });
 
-const show = () => render(<AgentsPage state={agentsFixture()} config={configFixture()} now={NOW} />);
+const show = (onOpenRun: (runId: string) => void = () => {}) =>
+  render(<AgentsPage state={agentsFixture()} config={configFixture()} now={NOW} onOpenRun={onOpenRun} />);
 const sheet = () => within(screen.getByRole("dialog"));
 
 function NewProfile() {
@@ -37,14 +38,14 @@ function NewProfile() {
 
 const showNew = () => render(<NewProfile />);
 
-test("the page counts slots, queue, waiting runs and today's tokens", () => {
+test("the page counts places, queue, waiting runs and today's tokens", () => {
   show();
   const stats = within(screen.getByRole("list", { name: "Agents" }));
   expect(stats.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
-    "3/3créneaux hôte utilisés",
+    "3 places sur 3runs en cours",
     "3runs en file d'attente",
-    "1attend une réponse (créneau libéré)",
-    "1,2Mtokens aujourd'hui (abonnement)",
+    "1attend une réponse (place libérée)",
+    "1,2Mtokens aujourd'huiComptés par Claude Code sur ton abonnement.",
   ]);
 });
 
@@ -57,16 +58,17 @@ test("the page leaves its title and actions to the shell header", () => {
 test("profile cards describe each profile", () => {
   show();
   const opus = within(screen.getByRole("article", { name: "opus-dev" }));
-  expect(opus.getByText("Claude Opus 5.5 · CLI headless")).toBeTruthy();
+  expect(opus.getByText("Claude Opus 5.5 · Claude Code")).toBeTruthy();
   expect(opus.getByText("2 actifs")).toBeTruthy();
-  for (const text of ["worktree par ticket", "acceptEdits", "2 max", "Sonnet, Haiku"]) {
+  for (const text of ["worktree par ticket", "Modifications acceptées", "2 max", "Sonnet, Haiku"]) {
     expect(opus.getByText(text)).toBeTruthy();
   }
   const sonnet = within(screen.getByRole("article", { name: "sonnet-review" }));
-  for (const text of ["dossier isolé", "plan", "3 max", "aucun"]) expect(sonnet.getByText(text)).toBeTruthy();
-  expect(sonnet.getByText("Claude Sonnet 5 · CLI headless")).toBeTruthy();
+  for (const text of ["dossier isolé", "Lecture seule (plan)", "3 max", "aucun"])
+    expect(sonnet.getByText(text)).toBeTruthy();
+  expect(sonnet.getByText("Claude Sonnet 5 · Claude Code")).toBeTruthy();
   const haiku = within(screen.getByRole("article", { name: "haiku-tests" }));
-  expect(haiku.getByText("Claude Haiku 4.5 · CLI headless")).toBeTruthy();
+  expect(haiku.getByText("Claude Haiku 4.5 · Claude Code")).toBeTruthy();
 });
 
 test("the history lists runs newest first with their result", () => {
@@ -90,6 +92,26 @@ test("the history lists runs newest first with their result", () => {
   expect(screen.getByText("41m").className).toContain("font-mono");
 });
 
+test("screen 121: a history line opens the run, the filter and the key search narrow it", () => {
+  const opened: string[] = [];
+  show((id) => opened.push(id));
+  expect(screen.getByText("Un run est le travail d'un agent sur un ticket.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /^sonnet-review · KIB-11/ }));
+  expect(opened).toEqual(["r40"]);
+  fireEvent.click(screen.getByRole("radio", { name: "En échec" }));
+  expect(screen.getAllByRole("row")).toHaveLength(2);
+  expect(screen.getByRole("row", { name: /KIB-7/ })).toBeTruthy();
+  fireEvent.click(screen.getByRole("radio", { name: "Tous" }));
+  fireEvent.change(screen.getByRole("searchbox", { name: "Clé du ticket" }), { target: { value: "kib-1" } });
+  const keys = screen
+    .getAllByRole("row")
+    .slice(1)
+    .map((r) => r.getAttribute("aria-label")?.split(" · ")[0]);
+  expect(keys).toEqual(["KIB-18", "KIB-10", "KIB-16", "KIB-12", "KIB-14", "KIB-11"]);
+  fireEvent.click(screen.getByRole("radio", { name: "Annulés" }));
+  expect(screen.getByText("Aucun run ne correspond à ce filtre.")).toBeTruthy();
+});
+
 test("a new profile is created with its guidelines", async () => {
   respond = (req) =>
     Promise.resolve(
@@ -102,14 +124,14 @@ test("a new profile is created with its guidelines", async () => {
   expect(sheet().getByText("Nouveau profil d'agent")).toBeTruthy();
   await user.type(sheet().getByLabelText("Nom"), "opus-front");
   await user.click(sheet().getByText("Dossier isolé"));
-  await user.click(sheet().getByText("plan"));
+  await user.click(sheet().getByText("Lecture seule (plan)"));
   const parallel = sheet().getByLabelText("Runs en parallèle (profil)");
   await user.clear(parallel);
   await user.type(parallel, "2");
   await user.click(sheet().getByText("Sonnet"));
   expect(
     sheet().getByText(
-      "Les sous-agents utilisent le créneau de leur parent. La limite hôte (3) s'applique en plus.",
+      "Les sous-agents travaillent dans la place de leur parent. La limite de la machine (3) s'applique en plus.",
     ),
   ).toBeTruthy();
   expect(sheet().getByRole("combobox", { name: "Modèle" }).textContent).toBe("Claude Opus 5.5");
@@ -188,7 +210,7 @@ test("invalid names and guideline paths are refused before any call", async () =
   expect(calls).toEqual([]);
 });
 
-test("editing saves the whole profile; deleting a busy profile is refused", async () => {
+test("editing saves the whole profile; deleting is confirmed and a busy profile is refused", async () => {
   show();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
@@ -204,8 +226,13 @@ test("editing saves the whole profile; deleting a busy profile is refused", asyn
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
   respond = () => Promise.reject(new KiboError("PROFILE_IN_USE", "opus has active runs"));
   await user.click(sheet().getByRole("button", { name: "Supprimer le profil" }));
+  const confirm = within(await screen.findByRole("alertdialog"));
+  expect(confirm.getByText("Supprimer le profil opus-dev ?")).toBeTruthy();
+  expect(confirm.getByText("Ses runs passés restent dans l'historique.")).toBeTruthy();
+  expect(calls).toEqual([]);
+  await user.click(confirm.getByRole("button", { name: "Supprimer" }));
   expect(calls).toEqual([{ method: "config", command: { method: "deleteProfile", profileId: "opus" } }]);
-  expect((await sheet().findByRole("alert")).textContent).toBe("Ce profil a des runs en cours ou en file.");
+  expect((await confirm.findByRole("alert")).textContent).toBe("Ce profil a des runs en cours ou en file.");
 });
 
 test("in edit mode a guideline is added to the profile at once", async () => {
@@ -244,7 +271,7 @@ test("in edit mode a guideline's content is edited in place", async () => {
     path: "guidelines/review.md",
     content: "# Review",
   });
-  render(<AgentsPage state={agentsFixture()} config={config} now={NOW} />);
+  render(<AgentsPage state={agentsFixture()} config={config} now={NOW} onOpenRun={() => {}} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
   const row = sheet().getByRole("button", { name: "guidelines/review.md" });

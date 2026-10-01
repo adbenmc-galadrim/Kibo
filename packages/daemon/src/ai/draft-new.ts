@@ -1,8 +1,21 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { type ComponentDraft, DraftKind, KiboError, type StartComponentDraftInput } from "@kibo/schema";
+import {
+  type ComponentDraft,
+  type ComponentFormat,
+  type DraftAttachment,
+  DraftKind,
+  formatIssue,
+  formatsOf,
+  KiboError,
+  type StartComponentDraftInput,
+} from "@kibo/schema";
+import { writeAttachments } from "./draft-attachments";
+import { copySource, type DraftPaths, prepareDraft, removeDraft } from "./draft-files";
+import { draftBrief } from "./draft-launch";
 import type { DraftStore } from "./draft-store";
-import type { ComponentCatalog } from "./ports";
+import type { ComponentCatalog, Devkit } from "./ports";
+import { draftKiboFiles } from "./prompts";
 
 export type NewDraftContext = { store: DraftStore; catalog: ComponentCatalog; id: string; now: number };
 
@@ -17,12 +30,16 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     attempts: 0,
     failure: null,
     incidents: [],
+    attachments: [],
+    revisions: 0,
     createdAt: ctx.now,
     updatedAt: ctx.now,
   };
   if (ctx.store.active().some((d) => d.componentId === input.id))
     throw new KiboError("CONFLICT", `a draft of ${input.id} is already open`);
   if (input.mode === "create") {
+    const issue = formatIssue({ kind: input.kind, formats: input.formats });
+    if (issue) throw new KiboError("INVALID_INPUT", issue.replace(/^INVALID_MANIFEST: /, ""));
     if (ctx.catalog.isTaken(input.id)) throw new KiboError("CONFLICT", `component id ${input.id} is taken`);
     return {
       ...common,
@@ -48,4 +65,41 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     withServer: existsSync(join(src, "server.ts")),
     baseVersion: latest.version,
   };
+}
+
+export type PrepareContext = { devkit: Devkit; catalog: ComponentCatalog };
+
+export async function prepareNewDraft(
+  ctx: PrepareContext,
+  paths: DraftPaths,
+  req: { draft: ComponentDraft; input: StartComponentDraftInput },
+): Promise<DraftAttachment[]> {
+  const { draft, input } = req;
+  const formats = (f: ComponentFormat[] | undefined) => f ?? formatsOf({ kind: draft.kind });
+  const declared =
+    input.mode === "create"
+      ? formats(input.formats)
+      : formatsOf(ctx.catalog.latest(draft.componentId)?.manifest ?? { kind: draft.kind });
+  await prepareDraft({
+    paths,
+    kiboFiles: draftKiboFiles(draftBrief(draft, { formats: declared, attachments: [] })),
+    fill:
+      input.mode === "create"
+        ? (dir) =>
+            ctx.devkit.scaffold({
+              dir,
+              id: draft.componentId,
+              title: draft.title,
+              kind: draft.kind,
+              withServer: draft.withServer,
+              formats: declared,
+            })
+        : async (dir) => copySource(ctx.catalog.sourceDir(draft.componentId), dir),
+  });
+  try {
+    return writeAttachments(paths.attachmentsDir, input.attachments, []);
+  } catch (e) {
+    removeDraft(paths);
+    throw e;
+  }
 }

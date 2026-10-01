@@ -19,6 +19,7 @@ test("the split layout shows a read-only original beside the editable file", () 
       path="x.ts"
       layout="split"
       label="x.ts"
+      wrap
       onChange={noop}
       onSave={noop}
     />,
@@ -37,6 +38,7 @@ test("the unified layout keeps a single editable view", () => {
       path="x.ts"
       layout="unified"
       label="x.ts"
+      wrap
       onChange={noop}
       onSave={noop}
     />,
@@ -53,6 +55,7 @@ test("edits are reported and the editor follows the dark theme", async () => {
       path="x.ts"
       layout="single"
       label="x.ts"
+      wrap
       onChange={(v) => changes.push(v)}
       onSave={noop}
     />,
@@ -68,4 +71,35 @@ test("edits are reported and the editor follows the dark theme", async () => {
   });
   expect(view.state.facet(EditorView.darkTheme)).toBe(true);
   document.documentElement.classList.remove("dark");
+});
+
+test("long lines wrap when asked, and the setting follows the prop", () => {
+  const { rerender } = render(
+    <CodeEditor
+      initial="a"
+      original={null}
+      path="x.ts"
+      layout="single"
+      label="x.ts"
+      wrap={false}
+      onChange={noop}
+      onSave={noop}
+    />,
+  );
+  const [view] = views();
+  if (!view) throw new Error("editor not mounted");
+  expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(false);
+  rerender(
+    <CodeEditor
+      initial="a"
+      original={null}
+      path="x.ts"
+      layout="single"
+      label="x.ts"
+      wrap
+      onChange={noop}
+      onSave={noop}
+    />,
+  );
+  expect(view.contentDOM.classList.contains("cm-lineWrapping")).toBe(true);
 });

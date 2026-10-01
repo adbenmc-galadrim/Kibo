@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
+import { KiboError } from "@kibo/schema";
 import { makeTestPackage } from "@kibo/trust/testing";
 import { createPublishLock } from "../components/publish-lock";
 import { fakeBuild, okReport } from "../components/service.test-helper";
@@ -115,6 +116,26 @@ test("other methods are left to the next handler", async () => {
 
 test("refreshMarket answers null", async () => {
   expect(await rpc({ method: "refreshMarket" }, local)).toEqual({ handled: true, result: null });
+});
+
+test("refreshMarketSource rereads one source and answers its row; unknown id is NOT_FOUND", async () => {
+  await rpc({ method: "addMarketSource", url: fake.url, publicKey: fake.publicKey }, local);
+  const search = async () => {
+    const out = await rpc({ method: "searchMarket", query: "burndown" }, remote);
+    return out.handled && Array.isArray(out.result) ? out.result.length : -1;
+  };
+  expect(await search()).toBe(0);
+  await fake.publish((await makeTestPackage({ id: "burndown", version: "0.1.0" })).bytes);
+  const out = await rpc({ method: "refreshMarketSource", id: "equipe" }, remote);
+  const listed = await rpc({ method: "listMarketSources" }, local);
+  expect(out).toEqual({
+    handled: true,
+    result: listed.handled && Array.isArray(listed.result) ? listed.result[0] : null,
+  });
+  expect(await search()).toBe(1);
+  await expect(rpc({ method: "refreshMarketSource", id: "nope" }, local)).rejects.toThrow(
+    new KiboError("NOT_FOUND", "market source nope not found"),
+  );
 });
 
 test("findMarketSource answers null when nothing matches", async () => {

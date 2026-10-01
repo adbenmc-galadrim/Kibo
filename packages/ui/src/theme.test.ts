@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { act, renderHook } from "@testing-library/react";
-import { currentTheme, cycleTheme, nextTheme, readThemePreference, useTheme } from "./theme";
+import {
+  currentTheme,
+  cycleTheme,
+  nextTheme,
+  readThemePreference,
+  setThemePreference,
+  THEME_PREFERENCES,
+  useTheme,
+  useThemePreference,
+} from "./theme";
 
 beforeEach(() => localStorage.clear());
 afterEach(() => document.documentElement.classList.remove("dark"));
@@ -47,5 +56,27 @@ test("the current theme follows the dark class of the document", async () => {
     await new Promise((r) => setTimeout(r, 0));
   });
   expect(currentTheme()).toBe("dark");
+  expect(result.current).toBe("dark");
+});
+
+test("the preference is set directly, applied, and observed by the hook", () => {
+  expect(THEME_PREFERENCES).toEqual(["system", "light", "dark"]);
+  const { result } = renderHook(() => useThemePreference());
+  expect(result.current).toBe("system");
+  act(() => setThemePreference("dark"));
+  expect(result.current).toBe("dark");
+  expect(document.documentElement.classList.contains("dark")).toBe(true);
+  expect(localStorage.getItem("kibo.theme")).toBe("dark");
+  act(() => setThemePreference("system"));
+  expect(result.current).toBe("system");
+  expect(localStorage.getItem("kibo.theme")).toBeNull();
+  act(() => {
+    localStorage.setItem("kibo.theme", "light");
+    window.dispatchEvent(new StorageEvent("storage", { key: "kibo.theme", newValue: "light" }));
+  });
+  expect(result.current).toBe("light");
+  act(() => {
+    expect(cycleTheme()).toBe("dark");
+  });
   expect(result.current).toBe("dark");
 });

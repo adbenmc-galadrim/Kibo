@@ -1,5 +1,13 @@
-import { type DraftKind, type DraftMode, PageKind, type Role, type ValidationReport } from "@kibo/schema";
+import {
+  type ComponentFormat,
+  type DraftKind,
+  type DraftMode,
+  PageKind,
+  type Role,
+  type ValidationReport,
+} from "@kibo/schema";
 import type { CatalogEntry } from "./ports";
+import { EXAMPLE_COMPONENT, formatLine, formatTable, SKILL } from "./prompts-skill";
 
 export const STARTER_PLAN_JSON_SCHEMA = {
   type: "object",
@@ -69,10 +77,24 @@ export type GeneratorBrief = {
   withServer: boolean;
   description: string;
   baseVersion: string | null;
+  formats: readonly ComponentFormat[];
+  attachments: readonly string[];
 };
+
+const SKILL_DIR = ".claude/skills/kibo-component";
 
 const writable = (b: GeneratorBrief) =>
   b.withServer ? "ui.tsx, server.ts et des fichiers *.test.tsx" : "ui.tsx et des fichiers *.test.tsx";
+
+const TEST_ORDER = "Lance `kibo component test .` avant de t'arrêter, et corrige jusqu'à ce qu'il passe.";
+
+const formatsLine = (b: GeneratorBrief) =>
+  `Formats à prendre en charge : ${b.formats.map(formatLine).join(" ; ")}.`;
+
+const imageLines = (paths: readonly string[]): string[] =>
+  paths.length === 0
+    ? []
+    : ["", "Maquettes jointes (lis chaque image avant de coder) :", ...paths.map((p) => `- ${p}`)];
 
 export function generatorPrompt(b: GeneratorBrief): string {
   const task =
@@ -82,12 +104,27 @@ export function generatorPrompt(b: GeneratorBrief): string {
   return [
     task,
     `Demande de l'utilisateur : « ${b.description} »`,
+    formatsLine(b),
+    ...imageLines(b.attachments),
     "",
-    "Avant de commencer, lis CLAUDE.md et le skill kibo-component du dossier.",
+    `Avant de commencer, lis CLAUDE.md, le skill kibo-component du dossier et son exemple ${SKILL_DIR}/exemple.tsx.`,
+    "Le composant s'adapte à chaque format avec sdk.format et les variantes de conteneur, sans largeur fixe.",
     `Tu ne modifies que ${writable(b)} ; component.test.tsx garde l'appel à runConformance.`,
     "N'importe que @kibo/sdk (et ses sous-chemins), react et lucide-react ; les tests ajoutent bun:test et @testing-library/react.",
     "Tu ne peux pas changer le manifeste ni la forme de la config : si c'est nécessaire, arrête-toi et explique pourquoi.",
-    "Lance `kibo component test .` avant de t'arrêter, et corrige jusqu'à ce qu'il passe.",
+    TEST_ORDER,
+  ].join("\n");
+}
+
+export function revisePrompt(b: GeneratorBrief, feedback: string, attachments: readonly string[]): string {
+  return [
+    `Retour de l'utilisateur après aperçu : « ${feedback} »`,
+    ...imageLines(attachments),
+    "",
+    `Reprends le composant « ${b.title} » (${b.componentId}) dans le dossier courant pour tenir compte de ce retour.`,
+    formatsLine(b),
+    `Tu ne modifies que ${writable(b)} ; les règles de CLAUDE.md et du skill kibo-component restent valables.`,
+    TEST_ORDER,
   ].join("\n");
 }
 
@@ -116,34 +153,6 @@ export function fixPrompt(report: ValidationReport): string {
   ].join("\n");
 }
 
-const SKILL = `---
-name: kibo-component
-description: Écrire, tester et corriger un composant Kibo avec le SDK public.
----
-
-# Composant Kibo
-
-Un composant exporte \`Component\` depuis \`ui.tsx\`. Son manifeste \`kibo.component.json\` est écrit par Kibo.
-
-## API du SDK (\`@kibo/sdk\`)
-
-- \`useEntities("ticket" | "status" | "link" | "page" | "run" | "note" | "ci_run")\` : \`{ data, error, loading }\`, rechargé à chaque changement.
-- \`useSdk()\` : \`{ instanceId, config, viewer, surface, list, run, subscribe, openTicket, openNewTicket, openFile, openView, data, fetch, action, notes, mcp }\`.
-- \`sdk.run({ method: "createTicket", title })\`, \`sdk.run({ method: "setStatus", ticketId, statusId })\` : commandes du projet.
-- \`sdk.data.get/set/delete/keys\` : données privées de l'instance (256 Kio).
-- \`sdk.fetch("https://hôte/chemin")\` : HTTPS via le démon, réponse \`{ status, headers, body }\` (\`body\` texte) ; l'URL doit être un littéral.
-- \`StatusDot({ statusId })\` et les primitives shadcn : \`@kibo/sdk/ui/button\`, \`card\`, \`badge\`, \`input\`, \`select\`, \`dialog\`…
-- Serveur (\`server.ts\`, si présent) : \`defineServer({ actions, jobs })\` depuis \`@kibo/sdk/server\`.
-
-Chaque argument de \`useEntities\`, \`sdk.list\`, \`sdk.run\`, \`sdk.fetch\` est un littéral : Kibo en déduit les permissions.
-
-## Tests
-
-- \`component.test.tsx\` importe \`runConformance\` de \`@kibo/sdk/conformance\` et appelle \`runConformance({ manifest, Component })\` : ne le retire pas.
-- Ajoute tes tests dans des fichiers \`*.test.tsx\` avec \`createMockSdk(manifest, { seed })\` de \`@kibo/sdk/mock\` et \`@testing-library/react\`.
-- Commande : \`kibo component test .\` (typecheck, tests, conformité, permissions).
-`;
-
 export function draftKiboFiles(b: GeneratorBrief): Record<string, string> {
   const rules = `# Règles du brouillon « ${b.title} »
 
@@ -153,7 +162,13 @@ export function draftKiboFiles(b: GeneratorBrief): Record<string, string> {
 - Pas de réseau direct, pas de \`node:*\`, \`bun:*\` ni \`bun\` : tout passe par le SDK.
 - \`component.test.tsx\` garde l'appel à \`runConformance\`.
 - Textes affichés en français, en tutoyant l'utilisateur.
+- Formats déclarés : ${b.formats.join(", ")} ; le skill \`kibo-component\` donne leurs tailles, les jetons de style et les règles responsives.
+- Exemple complet à suivre : \`${SKILL_DIR}/exemple.tsx\`.
 - Termine par \`kibo component test .\` : il doit passer.
 `;
-  return { "CLAUDE.md": rules, ".claude/skills/kibo-component/SKILL.md": SKILL };
+  return {
+    "CLAUDE.md": rules,
+    [`${SKILL_DIR}/SKILL.md`]: `${SKILL}\n## Formats de ce composant\n\n${formatTable(b.formats)}\n`,
+    [`${SKILL_DIR}/exemple.tsx`]: EXAMPLE_COMPONENT,
+  };
 }

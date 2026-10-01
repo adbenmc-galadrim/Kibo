@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   EMPTY_TABS,
+  INBOX_ID,
   type ProjectSnapshot,
   type RpcRequest,
   type Screen,
@@ -38,6 +39,14 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
 
 function snapshotOf(projectId: string): ProjectSnapshot {
   const kibo = kiboProject();
+  if (projectId === INBOX_ID)
+    return {
+      ...kibo,
+      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+      tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
+      links: [],
+      nextTicketKey: "INB-3",
+    };
   if (projectId !== "fac")
     return {
       ...kibo,
@@ -72,17 +81,18 @@ mock.module("../api", () => ({
     subscribeCode: () => () => {},
     subscribeIntegrations: () => () => {},
     subscribeEvents: () => () => {},
+    subscribeAi: () => () => {},
   },
 }));
 mock.module("../state/use-projects", () => ({
-  useProjects: () => projectsFixture,
+  useProjects: () => ({ projects: projectsFixture, error: null, retry: () => {} }),
   useProject: (id: string | null) => (id === "kibo" ? kiboProject() : null),
 }));
 mock.module("../state/use-agents", () => ({
   useAgents: () => agentsFixture(),
   useConfig: () => configFixture(),
   useNow: () => NOW,
-  useRunLog: () => [],
+  useRunLog: () => ({ log: [], missing: false }),
   useDaemonOnline: () => true,
 }));
 
@@ -145,7 +155,9 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
   const sidebar = within(screen.getByRole("button", { name: /^Agents/ }).closest("ul") ?? document.body);
-  expect(sidebar.getByText("3")).toBeTruthy();
+  expect(
+    within(screen.getByRole("button", { name: /^Agents/ }).closest("li") ?? document.body).getByText("3"),
+  ).toBeTruthy();
   expect(sidebar.queryByRole("button", { name: "Files d'attente" })).toBeNull();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /^Agents/ }));
@@ -180,12 +192,15 @@ test("my tickets: sidebar count, rows of every project, sheet and assign in the 
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
   const entry = await screen.findByRole("button", { name: "Mes tickets" });
-  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Mes tickets2"));
+  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Mes tickets3"));
   const user = userEvent.setup();
   await user.click(entry);
   expect(location.hash).toBe("#/mine");
   expect(await screen.findByRole("heading", { level: 1, name: "Mes tickets" })).toBeTruthy();
-  expect(await screen.findByText("2 tickets · 2 projets")).toBeTruthy();
+  expect(await screen.findByText("3 tickets · 3 projets")).toBeTruthy();
+  const inbox = screen.getByRole("region", { name: "Boîte de réception" });
+  expect(within(inbox).getByRole("button", { name: /^INB-2/ })).toBeTruthy();
+  expect(within(inbox).queryByRole("button", { name: "Assigner" })).toBeNull();
   const facturation = screen.getByRole("region", { name: "API Facturation" });
   await user.click(within(facturation).getByRole("button", { name: /^FAC-31/ }));
   expect(within(await screen.findByRole("dialog")).getByText("Export PDF des factures")).toBeTruthy();
@@ -196,32 +211,27 @@ test("my tickets: sidebar count, rows of every project, sheet and assign in the 
   expect(within(await screen.findByRole("dialog")).getByText("Assigner KIB-9 à un agent")).toBeTruthy();
 });
 
-test("the workspace header renames through the config command", async () => {
+test("the workspace header leads to the workspace settings", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /Perso/ }));
-  await user.click(await screen.findByRole("menuitem", { name: "Renommer le workspace…" }));
-  const field = await screen.findByLabelText("Nom");
-  await user.clear(field);
-  await user.type(field, "Maison");
-  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-  expect(calls).toContainEqual({ method: "config", command: { method: "renameWorkspace", name: "Maison" } });
-  await user.click(screen.getByRole("button", { name: /Perso/ }));
+  expect(screen.queryByRole("menuitem", { name: "Renommer le workspace…" })).toBeNull();
   await user.click(await screen.findByRole("menuitem", { name: "Paramètres du workspace" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Domaines & guidelines" })).toBeTruthy();
+  expect(location.hash).toBe("#/settings/workspace");
+  expect(await screen.findByRole("heading", { level: 1, name: "Workspace" })).toBeTruthy();
 });
 
 test("the header carries the actions of the agent screens", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/agents");
   const user = userEvent.setup();
-  await user.click(header().getByRole("button", { name: "Nouveau profil" }));
+  await user.click(await header().findByRole("button", { name: "Nouveau profil" }));
   expect(within(await screen.findByRole("dialog")).getByText("Nouveau profil d'agent")).toBeTruthy();
   await user.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await go("#/agents/queue");
-  await user.click(header().getByRole("button", { name: "Mettre en pause l'admission" }));
+  await user.click(await header().findByRole("button", { name: "Mettre en pause l'admission" }));
   expect(calls).toContainEqual({ method: "setHost", patch: { paused: true } });
 });
 
@@ -261,10 +271,13 @@ test("the ticket sheet offers a domain and the assign action", async () => {
       project={kiboProject()}
       ticketId="t15"
       domains={domainsFixture}
+      viewer="adam"
       onClose={() => {}}
       onAssign={onAssign}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
+      onOpenTicket={() => {}}
+      onDeleted={() => {}}
     />,
   );
   expect(screen.getByRole("combobox", { name: "Domaine" }).textContent).toContain("UI");
@@ -281,14 +294,72 @@ test("the bell asks for notification permission once", async () => {
   fake.restore();
 });
 
-test("the bell is offered in the browser only", async () => {
+test("the notification switch lives in the bell menu, in the browser only", async () => {
   const fake = fakeNotification("default");
+  const user = userEvent.setup();
   const view = render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
-  expect(header().queryByRole("button", { name: "Activer les notifications" })).toBeNull();
+  await user.click(header().getByRole("button", { name: /Historique des runs/ }));
+  let menu = await screen.findByRole("menu", { name: "Historique des runs" });
+  await within(menu).findAllByRole("menuitem");
+  expect(within(menu).queryByRole("button", { name: "Activer les notifications" })).toBeNull();
+  await user.keyboard("{Escape}");
   view.unmount();
   render(<Shell viewer="adam" notifications="browser" />);
   await go("#/");
-  expect(header().getByRole("button", { name: "Activer les notifications" })).toBeTruthy();
+  await user.click(header().getByRole("button", { name: /Historique des runs/ }));
+  menu = await screen.findByRole("menu", { name: "Historique des runs" });
+  expect(await within(menu).findByRole("button", { name: "Activer les notifications" })).toBeTruthy();
   fake.restore();
+});
+
+test("replying from the bell menu opens the drawer on that run", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/");
+  const user = userEvent.setup();
+  await user.click(header().getByRole("button", { name: /Historique des runs/ }));
+  const menu = await screen.findByRole("menu", { name: "Historique des runs" });
+  await user.click(await within(menu).findByRole("menuitem", { name: /^opus-dev-2 · KIB-14/ }));
+  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+});
+
+test("right click and the ellipsis open the same project menu; edit and delete open their dialogs", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/p/kibo/");
+  const user = userEvent.setup();
+  const entry = await screen.findByRole("button", { name: "Kibo" });
+  await user.pointer({ keys: "[MouseRight]", target: entry });
+  const names = () => screen.getAllByRole("menuitem").map((i) => i.textContent);
+  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Supprimer…"]);
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
+  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Supprimer…"]);
+  await user.click(screen.getByRole("menuitem", { name: "Modifier…" }));
+  expect(await screen.findByRole("dialog", { name: "Modifier le projet" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  expect(await screen.findByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Voir les agents" }));
+  expect(location.hash).toBe("#/agents");
+  expect(calls.some((c) => c.method === "deleteProject")).toBe(false);
+});
+
+test("deleting a project closes its tabs and returns to the overview", async () => {
+  render(<Shell viewer="adam" notifications="native" />);
+  await go("#/p/fac/");
+  const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
+  expect(await bar.findByRole("tab", { name: /API Facturation/ })).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Actions de API Facturation" }));
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  await screen.findByRole("dialog", { name: "Supprimer le projet API Facturation ?" });
+  await user.type(screen.getByLabelText("Tape API Facturation pour confirmer"), "API Facturation");
+  await user.click(screen.getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(location.hash).toBe("#/"));
+  expect(calls.filter((c) => c.method === "deleteProject")).toEqual([
+    { method: "deleteProject", projectId: "fac" },
+  ]);
+  expect(bar.queryByRole("tab", { name: /API Facturation/ })).toBeNull();
+  expect(screen.queryByRole("dialog")).toBeNull();
 });

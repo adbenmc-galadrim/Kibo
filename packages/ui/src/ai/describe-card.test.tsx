@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { aiReady, draftFixture } from "./draft-fixtures";
 
@@ -18,9 +18,17 @@ mock.module("../api", () => ({
   },
 }));
 
-const { DescribeCard, ResumeDraftBanner } = await import("./DescribeCard");
+const { DescribeCard } = await import("./DescribeCard");
 
 const describeLabel = "Ce que doit faire le composant";
+const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13];
+const pngBytes = () => new Uint8Array(PNG);
+const startRequest = () => {
+  const req = calls.find((c) => c.method === "startComponentDraft");
+  if (req?.method !== "startComponentDraft") throw new Error("no startComponentDraft");
+  return req.draft;
+};
+const imagesZone = () => screen.getByRole("group", { name: "Maquettes (facultatif)" });
 const generateName = "Générer avec un agent";
 
 beforeEach(() => {
@@ -48,6 +56,8 @@ test("DescribeCard proposes a title and an id, then starts the draft", async () 
       kind: "widget",
       withServer: false,
       description: "Burndown du sprint : tickets",
+      formats: ["medium", "large", "half"],
+      attachments: [],
     },
   });
   expect(onStarted).toHaveBeenCalledTimes(1);
@@ -107,9 +117,102 @@ test("DescribeCard is disabled offline", async () => {
   expect(screen.getByRole("button", { name: generateName }).hasAttribute("disabled")).toBe(true);
 });
 
-test("ResumeDraftBanner translates a listing failure", async () => {
-  answer = () => new KiboError("INTERNAL", "sqlite: disk I/O error");
-  render(<ResumeDraftBanner onResume={() => {}} />);
-  expect(await screen.findByText("Erreur interne du démon.")).toBeTruthy();
-  expect(screen.queryByText(/sqlite/)).toBeNull();
+test("screen 132: formats are pre-checked by kind and sent; an image is attached by the file picker, shown, removable", async () => {
+  answer = (req) =>
+    req.method === "getAiStatus" ? aiReady : req.method === "startComponentDraft" ? draftFixture({}) : null;
+  const user = userEvent.setup();
+  render(<DescribeCard onStarted={() => {}} />);
+  expect(screen.getByRole("checkbox", { name: "Moyen" }).getAttribute("aria-checked")).toBe("true");
+  expect(screen.getByRole("checkbox", { name: "Petit" }).getAttribute("aria-checked")).toBe("false");
+  await user.click(screen.getByRole("checkbox", { name: "Petit" }));
+  const file = new File([pngBytes()], "maquette kanban.png", { type: "image/png" });
+  await user.upload(screen.getByLabelText("Ajouter des images"), file);
+  expect(await screen.findByRole("img", { name: "maquette-kanban.png" })).toBeTruthy();
+  expect(within(imagesZone()).getByText("maquette-kanban.png · 1 ko")).toBeTruthy();
+  await user.upload(
+    screen.getByLabelText("Ajouter des images"),
+    new File([pngBytes()], "autre.png", { type: "image/png" }),
+  );
+  await user.click(await screen.findByRole("button", { name: "Retirer autre.png" }));
+  expect(screen.queryByRole("img", { name: "autre.png" })).toBeNull();
+  await user.type(screen.getByLabelText(describeLabel), "Burndown du sprint avec total");
+  await user.click(await screen.findByRole("button", { name: generateName }));
+  expect(startRequest()).toMatchObject({
+    formats: ["small", "medium", "large", "half"],
+    attachments: [{ name: "maquette-kanban.png", mime: "image/png" }],
+  });
+});
+
+test("changing the kind resets the formats, and a view without the full format cannot be sent", async () => {
+  answer = (req) => (req.method === "getAiStatus" ? aiReady : null);
+  const user = userEvent.setup();
+  render(<DescribeCard onStarted={() => {}} />);
+  await user.type(await screen.findByLabelText(describeLabel), "Burndown du sprint : tickets");
+  screen.getByRole("combobox", { name: "Type" }).focus();
+  await user.keyboard("{Enter}");
+  await user.click(await screen.findByRole("option", { name: "Vue" }));
+  const state = (name: string) => screen.getByRole("checkbox", { name }).getAttribute("aria-checked");
+  expect(["Petit", "Moyen", "Large", "Demi-page"].map(state)).toEqual(["false", "false", "false", "false"]);
+  expect(screen.getByRole("checkbox", { name: "Plein écran" }).getAttribute("aria-checked")).toBe("true");
+  await user.click(screen.getByRole("checkbox", { name: "Plein écran" }));
+  expect(screen.getByText("Choisis au moins un format.")).toBeTruthy();
+  await user.click(screen.getByRole("checkbox", { name: "Moyen" }));
+  expect(screen.getByText("Une vue s'affiche en plein écran : garde « Plein écran ».")).toBeTruthy();
+  expect(screen.getByRole("button", { name: generateName }).hasAttribute("disabled")).toBe(true);
+});
+
+test("a GIF is refused with a message and nothing is attached", async () => {
+  answer = (req) => (req.method === "getAiStatus" ? aiReady : null);
+  const user = userEvent.setup({ applyAccept: false });
+  render(<DescribeCard onStarted={() => {}} />);
+  const gif = new File([new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])], "anim.png", {
+    type: "image/png",
+  });
+  await user.upload(screen.getByLabelText("Ajouter des images"), gif);
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Format non pris en charge : PNG, JPEG ou WebP.",
+  );
+  expect(screen.queryAllByRole("img")).toHaveLength(0);
+});
+
+test("a fifth image is refused before sending, with a single alert", async () => {
+  answer = (req) => (req.method === "getAiStatus" ? aiReady : null);
+  const user = userEvent.setup();
+  render(<DescribeCard onStarted={() => {}} />);
+  const files = Array.from(
+    { length: 5 },
+    (_, i) => new File([pngBytes()], `${i}.png`, { type: "image/png" }),
+  );
+  await user.upload(screen.getByLabelText("Ajouter des images"), files);
+  expect(await screen.findAllByRole("img")).toHaveLength(4);
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.getByRole("alert").textContent).toBe(
+    "4 images au plus : retire une image pour en ajouter une autre.",
+  );
+});
+
+test("a dropped screenshot is sent under a name the daemon accepts", async () => {
+  answer = (req) =>
+    req.method === "getAiStatus" ? aiReady : req.method === "startComponentDraft" ? draftFixture({}) : null;
+  const user = userEvent.setup();
+  render(<DescribeCard onStarted={() => {}} />);
+  const shot = new File([pngBytes()], "Capture d'écran 2026-10-01 à 10.12.33.png", { type: "image/png" });
+  fireEvent.dragOver(imagesZone(), { dataTransfer: { files: [shot] } });
+  fireEvent.drop(imagesZone(), { dataTransfer: { files: [shot] } });
+  expect(await screen.findByRole("img", { name: "Capture-d-ecran-2026-10-01-a-10.12.33.png" })).toBeTruthy();
+  await user.type(screen.getByLabelText(describeLabel), "Burndown du sprint : tickets");
+  await user.click(screen.getByRole("button", { name: generateName }));
+  expect(startRequest()).toMatchObject({
+    attachments: [{ name: "Capture-d-ecran-2026-10-01-a-10.12.33.png", mime: "image/png" }],
+  });
+});
+
+test("pasting an image into the description attaches it", async () => {
+  answer = (req) => (req.method === "getAiStatus" ? aiReady : null);
+  render(<DescribeCard onStarted={() => {}} />);
+  const image = new File([pngBytes()], "image.png", { type: "image/png" });
+  fireEvent.paste(screen.getByLabelText(describeLabel), {
+    clipboardData: { files: [image], getData: () => "" },
+  });
+  expect(await screen.findByRole("img", { name: "image.png" })).toBeTruthy();
 });

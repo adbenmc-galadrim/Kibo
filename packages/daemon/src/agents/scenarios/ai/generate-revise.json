@@ -1,0 +1,29 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Read", "input": { "file_path": "CLAUDE.md" } },
+        {
+          "hook": "PreToolUse",
+          "tool": "Read",
+          "input": { "file_path": "$KIBO_DRAFT_ATTACHMENTS/1-maquette.png" }
+        },
+        { "write": "ui.tsx", "fixture": "burndown/ui.tsx.fixture" },
+        { "hook": "PreToolUse", "tool": "Bash", "input": { "command": "kibo component test ." } }
+      ],
+      "result": "Composant écrit ; kibo component test . passe."
+    },
+    {
+      "steps": [
+        {
+          "hook": "PreToolUse",
+          "tool": "Read",
+          "input": { "file_path": "$KIBO_DRAFT_ATTACHMENTS/2-retour.png" }
+        },
+        { "write": "ui.tsx", "fixture": "burndown/ui-revised.tsx.fixture" },
+        { "hook": "PreToolUse", "tool": "Bash", "input": { "command": "kibo component test ." } }
+      ],
+      "result": "Retour pris en compte ; kibo component test . passe."
+    }
+  ]
+}

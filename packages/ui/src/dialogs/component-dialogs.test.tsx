@@ -4,7 +4,9 @@ import {
   type ComponentSummary,
   type ComponentVersionSummary,
   type DraftSummary,
+  defaultFormatOf,
   KiboError,
+  layoutFor,
   NO_PERMISSIONS,
   type RegistryVersion,
   type RpcRequest,
@@ -48,6 +50,12 @@ mock.module("../api", () => ({
 const { AddComponentDialog } = await import("./AddComponentDialog");
 const { TrustDialog } = await import("./TrustDialog");
 const { CreateComponentDialog } = await import("./CreateComponentDialog");
+const { findBuiltin } = await import("../registry");
+const kanbanManifest = () => {
+  const found = findBuiltin("kanban");
+  if (!found) throw new Error("kanban is a built-in");
+  return found.manifest;
+};
 
 const manifest: ComponentManifest = {
   id: "burndown",
@@ -107,7 +115,7 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(await screen.findByRole("radio", { name: "Burndown" })).toBeTruthy();
   expect(screen.getByText("Intégrés")).toBeTruthy();
   expect(screen.getByText("Mes composants")).toBeTruthy();
-  expect(screen.getByText("IA · autorisation requise")).toBeTruthy();
+  expect(screen.getByText("Créé par l'IA · autorisation requise")).toBeTruthy();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
   expect(screen.getByText("Widget dans la grille")).toBeTruthy();
   expect(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy();
@@ -131,10 +139,10 @@ test("a third-party line names origin, trust and network hosts", async () => {
   };
   components = () => Promise.resolve([{ ...burndown, id: "prs", title: "PR en attente", versions: [prs] }]);
   render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
-  expect(await screen.findByText("IA · sandboxé · GitHub")).toBeTruthy();
+  expect(await screen.findByText("Créé par l'IA · isolé · GitHub")).toBeTruthy();
 });
 
-test("a built-in is added directly in the next free slot", async () => {
+test("a built-in is added at the size of its default format in the next free slot", async () => {
   const onOpenChange = mock((_: boolean) => {});
   render(
     <AddComponentDialog
@@ -155,10 +163,42 @@ test("a built-in is added directly in the next free slot", async () => {
       method: "addInstance",
       pageId: "pg1",
       component: "kanban@1.0.0",
-      layout: { x: 6, y: 0, w: 6, h: 6 },
+      layout: layoutFor(defaultFormatOf(kanbanManifest()), 6, 0),
     },
   });
   expect(onOpenChange).toHaveBeenCalledWith(false);
+});
+
+test("a third-party widget is added at the size of its only format", async () => {
+  const small: ComponentVersionSummary = {
+    ...pending,
+    trust: "sandboxed",
+    active: true,
+    manifest: { ...manifest, id: "widget", formats: ["small"] },
+  };
+  components = () => Promise.resolve([{ ...burndown, id: "widget", title: "Compteur", versions: [small] }]);
+  render(
+    <AddComponentDialog
+      projectId="p1"
+      page={page}
+      taken={[layoutFor("large", 0, 0)]}
+      open
+      onOpenChange={() => {}}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("radio", { name: "Compteur" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
+  expect(calls.at(-1)).toEqual({
+    method: "command",
+    projectId: "p1",
+    command: {
+      method: "addInstance",
+      pageId: "pg1",
+      component: "widget@0.1.0",
+      layout: layoutFor("small", 6, 0),
+    },
+  });
 });
 
 test("a component that is not approved goes through screen 30 before being added", async () => {
@@ -181,7 +221,7 @@ test("a component that is not approved goes through screen 30 before being added
         method: "addInstance",
         pageId: "pg1",
         component: "burndown@0.1.0",
-        layout: { x: 0, y: 0, w: 6, h: 6 },
+        layout: layoutFor("medium", 0, 0),
       },
     },
   ]);
@@ -211,7 +251,7 @@ test("TrustDialog: full trust is a choice, a changed hash is explained", async (
   const user = userEvent.setup();
   expect(screen.getByText("Lire les tickets du projet")).toBeTruthy();
   expect(screen.getByText("Aucun accès réseau, aucun fichier local")).toBeTruthy();
-  expect(screen.getByRole("radio", { name: /Sandboxé \(recommandé\)/ }).getAttribute("data-state")).toBe(
+  expect(screen.getByRole("radio", { name: /Isolé \(recommandé\)/ }).getAttribute("data-state")).toBe(
     "checked",
   );
   expect(screen.getByText(/processus séparé confiné par l'OS/)).toBeTruthy();

@@ -158,6 +158,10 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     usage.prune();
     jobs.refresh().catch(log("jobs refresh failed"));
   };
+  const offRemoved = docs.onProjectRemoved((projectId) => {
+    notes.forget(projectId);
+    usageChanged();
+  });
 
   const update = async (projectId: string, instanceId: string, to: string) => {
     docs.assertWritable(projectId);
@@ -262,6 +266,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
 
   const stopAll = async () => {
     offStamp?.();
+    offRemoved();
     jobs.stop();
     backends.stopAll();
     shutdown.abort();

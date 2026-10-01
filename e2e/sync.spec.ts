@@ -27,14 +27,15 @@ async function pair(page: Page) {
 async function connect(page: Page, code: string, device: string) {
   const { caFile, serverUrl } = readSyncState();
   await page.goto("/#/settings/sync");
-  await page.getByRole("button", { name: "Se connecter à un serveur" }).click();
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Adresse du serveur").fill(serverUrl);
-  await dialog.getByLabel("Code d'invitation").fill(code);
+  await dialog.getByLabel("Code", { exact: true }).fill(code);
   await dialog.getByLabel("Nom de cet appareil").fill(device);
+  await dialog.getByRole("button", { name: "Options avancées" }).click();
   await dialog.getByLabel("Certificat racine (optionnel)").fill(caFile);
   await dialog.getByRole("button", { name: "Se connecter" }).click();
-  await expect(page.getByText("Connecté")).toBeVisible();
+  await expect(page.getByText("Connecté", { exact: true })).toBeVisible();
 }
 
 function presentIn(page: Page, name: string) {
@@ -61,7 +62,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await adam.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
   await createPage(adam, "Kanban", "Vue");
   await addComponent(adam, "Kanban");
-  await adam.getByRole("button", { name: "Tous", exact: true }).click();
+  await adam.getByRole("radio", { name: "Tous", exact: true }).click();
 
   await adam.getByRole("main").getByRole("button", { name: "Partager", exact: true }).click();
   const share = adam.getByRole("dialog");
@@ -72,14 +73,14 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   const code = (await share.locator(".font-mono").first().textContent())?.trim() ?? "";
   expect(code).toMatch(/^([A-Z2-7]{4} ){6}[A-Z2-7]{2}$/);
   await adam.keyboard.press("Escape");
-  await expect(adam.getByText("Démon local · synchronisé")).toBeVisible();
+  await expect(adam.getByText("Kibo · synchronisé")).toBeVisible();
 
   await lea.getByRole("button", { name: "Rejoindre un projet" }).click();
   await lea.getByLabel("Code d'invitation").fill(code);
   await lea.getByRole("button", { name: "Rejoindre" }).click();
   await lea.getByRole("button", { name: "Kanban", exact: true }).click();
   await expect(lea.getByRole("region", { name: "À faire" })).toBeVisible();
-  await lea.getByRole("button", { name: "Tous", exact: true }).click();
+  await lea.getByRole("radio", { name: "Tous", exact: true }).click();
 
   await expect(presentIn(adam, "Léa")).toBeVisible({ timeout: 5_000 });
   await expect(presentIn(lea, "Adam")).toBeVisible({ timeout: 5_000 });
@@ -92,7 +93,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await expect(lea.getByText(`${key}-1`)).toBeVisible();
 
   await fetch(`http://127.0.0.1:${SYNC_PORTS.control}/stop`, { method: "POST" });
-  await expect(adam.getByText("Démon local · hors ligne")).toBeVisible({ timeout: 10_000 });
+  await expect(adam.getByText("Kibo · sync hors ligne")).toBeVisible({ timeout: 10_000 });
   await adam.getByRole("button", { name: "Nouveau ticket dans À faire" }).click();
   await adam.getByLabel("Titre").fill("Créé hors ligne");
   await adam.getByRole("button", { name: "Créer le ticket" }).click();

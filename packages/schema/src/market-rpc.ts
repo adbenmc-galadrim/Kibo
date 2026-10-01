@@ -22,6 +22,7 @@ export const MARKET_RPC_REQUESTS = [
   z.object({ method: z.literal("addMarketSource"), url, publicKey: z.string().min(1) }),
   z.object({ method: z.literal("removeMarketSource"), id: sourceId }),
   z.object({ method: z.literal("refreshMarket") }),
+  z.object({ method: z.literal("refreshMarketSource"), id: sourceId }),
   z.object({
     method: z.literal("searchMarket"),
     query: z.string().max(200),
@@ -62,6 +63,7 @@ export type MarketRpcResult = {
   addMarketSource: MarketSourceInfo;
   removeMarketSource: null;
   refreshMarket: null;
+  refreshMarketSource: MarketSourceInfo;
   searchMarket: MarketHit[];
   getMarketPackage: MarketPackageDetail;
   unpinPublisher: null;

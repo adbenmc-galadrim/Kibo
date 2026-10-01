@@ -1,5 +1,6 @@
 import type { SandboxFile } from "@kibo/schema";
-import { type AssetLookup, lookupAsset, parseAssetPath } from "./asset-path";
+import type { DraftAssets } from "../ai/draft-preview";
+import { type AssetLookup, lookupAsset, parseAssetPath, parseDraftAssetPath } from "./asset-path";
 
 export type { AssetLookup } from "./asset-path";
 
@@ -35,6 +36,7 @@ export type SandboxServerOptions = {
   uiPort: number;
   assets: AssetLookup;
   extraAncestors?: readonly string[];
+  drafts?: DraftAssets;
 };
 
 const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -42,26 +44,35 @@ const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export function startSandboxServer(opts: SandboxServerOptions): { url: string; port: number; stop(): void } {
   const headers = sandboxHeaders(opts.uiPort, opts.extraAncestors);
   const plain = (body: string, status: number) => new Response(body, { status, headers });
-  const serve = (req: Request, port: number): Response => {
+  const file = (body: Uint8Array | string, name: SandboxFile) => {
+    const extra: Record<string, string> = name === "index.html" ? {} : { "access-control-allow-origin": "*" };
+    return new Response(body, { headers: { ...headers, "content-type": TYPES[name], ...extra } });
+  };
+  const serveDraft = async (draftId: string, hash: string, name: SandboxFile): Promise<Response> => {
+    const body = opts.drafts ? await opts.drafts.lookup(draftId, hash, name) : null;
+    return body === null ? plain("not found", 404) : file(body, name);
+  };
+  const serve = (req: Request, port: number): Response | Promise<Response> => {
     if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.get("host") ?? "")) {
       return plain("forbidden host", 403);
     }
     if (req.method !== "GET") return plain("method not allowed", 405);
-    const asset = parseAssetPath(new URL(req.url).pathname, "c", SANDBOX_FILES);
+    const pathname = new URL(req.url).pathname;
+    const draft = parseDraftAssetPath(pathname);
+    if (draft) return serveDraft(draft.draftId, draft.hash, draft.file);
+    const asset = parseAssetPath(pathname, "c", SANDBOX_FILES);
     if (!asset) return plain("not found", 404);
     const found = lookupAsset(opts.assets, asset);
     if (!found) return plain("not found", 404);
     const body = asset.file === "index.html" ? SANDBOX_INDEX : found.stored.build[asset.file];
     if (body === undefined) return plain("not found", 404);
-    const extra: Record<string, string> =
-      asset.file === "index.html" ? {} : { "access-control-allow-origin": "*" };
-    return new Response(body, { headers: { ...headers, "content-type": TYPES[asset.file], ...extra } });
+    return file(body, asset.file);
   };
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: opts.port,
     maxRequestBodySize: 0,
-    fetch: (req, srv): Response => serve(req, srv.port ?? opts.port),
+    fetch: (req, srv): Response | Promise<Response> => serve(req, srv.port ?? opts.port),
     error: (e): Response => {
       console.error(`[kibo-daemon] sandbox request failed: ${reason(e)}`);
       return plain("internal error", 500);

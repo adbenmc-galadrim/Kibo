@@ -31,14 +31,27 @@ export const ComponentSourcesPage = lazyPanel(
   () => import("../settings/ComponentSourcesPage").then((m) => m.ComponentSourcesPage),
   fr.lazy,
 );
+export const ShortcutsPage = lazyPanel(
+  () => import("../settings/ShortcutsPage").then((m) => m.ShortcutsPage),
+  fr.lazy,
+);
+export const WorkspacePage = lazyPanel(
+  () => import("../settings/WorkspacePage").then((m) => m.WorkspacePage),
+  fr.lazy,
+);
 export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
+  fr.lazy,
+);
+export const CreationsPage = lazyPanel(
+  () => import("../creations/CreationsPage").then((m) => m.CreationsPage),
   fr.lazy,
 );
 export const MyTicketsPage = lazyPanel(
   () => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage),
   fr.lazy,
 );
+export const InboxPage = lazyPanel(() => import("../inbox/InboxPage").then((m) => m.InboxPage), fr.lazy);
 export const TicketTab = lazyPanel(() => import("../pages/TicketTab").then((m) => m.TicketTab), fr.lazy);
 export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
 export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
@@ -70,7 +83,9 @@ export const ProjectStatusBanner = lazyPanel(
   hidden,
 );
 export const ShareButton = lazyPanel(() => shareEntry().then((m) => m.ShareButton), fr.lazy, hidden);
-export const ProjectMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectMenu), fr.lazy, hidden);
+export const ProjectHeaderMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectHeaderMenu), fr.lazy, {
+  fallback: "children",
+});
 export const JoinProjectEntry = lazyPanel(
   () => shareEntry().then((m) => m.JoinProjectEntry),
   fr.lazy,
@@ -98,3 +113,27 @@ export const PresenceAvatars = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) => m.PairingScreen), fr.lazy);
+export const AgentDrawer = lazyPanel(
+  () => import("../agents/AgentDrawer").then((m) => m.AgentDrawer),
+  fr.lazy,
+);
+export const ScreenActions = lazyPanel(
+  () => import("./ScreenActions").then((m) => m.ScreenActions),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
+export const RunHistoryList = lazyPanel(
+  () => import("./RunHistoryList").then((m) => m.RunHistoryList),
+  fr.lazy,
+  hidden,
+);
+export const UserMenuContent = lazyPanel(
+  () => import("./UserMenuContent").then((m) => m.UserMenuContent),
+  fr.lazy,
+  hidden,
+);
+const daemonUnreachable = () => import("./DaemonUnreachable").then((m) => m.DaemonUnreachable);
+
+export const preloadDaemonUnreachable = daemonUnreachable;
+export const DaemonUnreachable = lazyPanel(daemonUnreachable, fr.lazy);

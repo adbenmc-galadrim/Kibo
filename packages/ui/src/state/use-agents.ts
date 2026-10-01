@@ -1,6 +1,7 @@
-import { type AgentsState, KiboError, type RunLogEntry, type WorkspaceConfig } from "@kibo/schema";
+import { type AgentsState, KiboError, type WorkspaceConfig } from "@kibo/schema";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { client } from "../api";
+import { useRunLog as runLogOf } from "./use-run-log";
 
 function unlessUnauthorized(e: unknown): void {
   if (!(e instanceof KiboError && e.code === "UNAUTHORIZED")) throw e;
@@ -38,23 +39,8 @@ export function useConfig(): WorkspaceConfig | null {
   return config;
 }
 
-export function useRunLog(runId: string | null): RunLogEntry[] | null {
-  const [log, setLog] = useState<RunLogEntry[] | null>(null);
-  useEffect(() => {
-    setLog(null);
-    if (!runId) return;
-    let alive = true;
-    const load = () =>
-      client.rpc({ method: "getRunLog", runId }).then((l) => alive && setLog(l), unlessUnauthorized);
-    void load();
-    const off = client.subscribeTopic("agents", () => void load());
-    return () => {
-      alive = false;
-      off();
-    };
-  }, [runId]);
-  return log;
-}
+export type { RunLog } from "./use-run-log";
+export const useRunLog = runLogOf;
 
 export function useNow(intervalMs = 15_000): number {
   const [now, setNow] = useState(() => Date.now());

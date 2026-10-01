@@ -2,7 +2,15 @@ import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CodeEvent, ProjectMeta, Ticket } from "@kibo/schema";
+import {
+  type CodeEvent,
+  type CodeRequest,
+  LOCAL_ONLY_CODE_METHODS,
+  type ProjectMeta,
+  type RepoStatus,
+  type Ticket,
+} from "@kibo/schema";
+import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
 import { type CodeService, type CodeServiceOptions, createCodeService } from "./code-service";
@@ -13,6 +21,7 @@ import {
   installFakeBin,
   installFakeGh,
   readFakeBinLog,
+  readFakeGhLog,
 } from "./testing/git-fixture";
 
 let fx: GitFixture;
@@ -77,14 +86,14 @@ const waitFor = async (check: () => boolean, ms = 3000) => {
 
 test("reads go through the registered worktree only", async () => {
   const c = start();
-  expect(await c.handle({ method: "worktrees", projectId: project.id })).toMatchObject([
+  expect(await c.handle({ method: "worktrees", projectId: project.id }, LOCAL_CONTEXT)).toMatchObject([
     { path: fx.repo, isMain: true },
   ]);
-  await expect(c.handle({ method: "status", projectId: project.id, worktree: fx.dir })).rejects.toMatchObject(
-    {
-      code: "PATH_OUTSIDE_PROJECT",
-    },
-  );
+  await expect(
+    c.handle({ method: "status", projectId: project.id, worktree: fx.dir }, LOCAL_CONTEXT),
+  ).rejects.toMatchObject({
+    code: "PATH_OUTSIDE_PROJECT",
+  });
   const bare = call(service, {
     method: "createProject",
     name: "Sans",
@@ -92,14 +101,14 @@ test("reads go through the registered worktree only", async () => {
     folder: null,
     color: "#F97316",
   });
-  await expect(c.handle({ method: "worktrees", projectId: bare.id })).rejects.toMatchObject({
+  await expect(c.handle({ method: "worktrees", projectId: bare.id }, LOCAL_CONTEXT)).rejects.toMatchObject({
     code: "NOT_A_REPO",
   });
 });
 
 test("a mutation emits an event at once, an external change emits one through the watcher", async () => {
   const c = start();
-  await c.handle({ method: "status", ...w() });
+  await c.handle({ method: "status", ...w() }, LOCAL_CONTEXT);
   fx.write("README.md", "# kibo\nedit\n");
   expect(await waitFor(() => events.length > 0)).toBe(true);
   expect(events).toContainEqual({ ...event(), paths: ["README.md"] });
@@ -107,18 +116,18 @@ test("a mutation emits an event at once, an external change emits one through th
   fx.write("README.md", "# kibo\nedit again\n");
   expect(await waitFor(() => events.length > 0)).toBe(true);
   events.length = 0;
-  await c.handle({ method: "stageFiles", ...w(), paths: ["README.md"] });
+  await c.handle({ method: "stageFiles", ...w(), paths: ["README.md"] }, LOCAL_CONTEXT);
   expect(events).toEqual([event()]);
 });
 
 test("an idle worktree is no longer watched, stop releases everything", async () => {
   const c = start({ idleMs: 50 });
-  await c.handle({ method: "status", ...w() });
+  await c.handle({ method: "status", ...w() }, LOCAL_CONTEXT);
   await Bun.sleep(300);
   fx.write("README.md", "# kibo\nedit\n");
   await Bun.sleep(500);
   expect(events).toEqual([]);
-  await c.handle({ method: "status", ...w() });
+  await c.handle({ method: "status", ...w() }, LOCAL_CONTEXT);
   c.stop();
   fx.write("README.md", "# kibo\nafter stop\n");
   await Bun.sleep(500);
@@ -130,7 +139,7 @@ test("commit defaults come from the ticket named by the branch and the branch co
   createTicket("Schéma Loro des tickets");
   fx.commit("feat: premier pas", { "a.txt": "a\n" });
   fx.git("push", "-q", "-u", "origin", "kib-1");
-  expect(await c.handle({ method: "commitDefaults", ...w() })).toMatchObject({
+  expect(await c.handle({ method: "commitDefaults", ...w() }, LOCAL_CONTEXT)).toMatchObject({
     ticketKey: "KIB-1",
     message: "feat: schéma Loro des tickets (KIB-1)",
     prTitle: "feat: schéma Loro des tickets (KIB-1)",
@@ -141,8 +150,8 @@ test("commit defaults come from the ticket named by the branch and the branch co
 test("commit writes exactly the message received", async () => {
   const c = start();
   fx.write("a.txt", "a\n");
-  await c.handle({ method: "stageFiles", ...w(), paths: ["a.txt"] });
-  await c.handle({ method: "commit", ...w(), message: "feat: a (KIB-1)", amend: false });
+  await c.handle({ method: "stageFiles", ...w(), paths: ["a.txt"] }, LOCAL_CONTEXT);
+  await c.handle({ method: "commit", ...w(), message: "feat: a (KIB-1)", amend: false }, LOCAL_CONTEXT);
   expect(fx.git("log", "-1", "--format=%B").trim()).toBe("feat: a (KIB-1)");
 });
 
@@ -150,11 +159,91 @@ test("the editor opens a path resolved in the worktree, never outside", async ()
   const editor = installFakeBin(fx.dir, "code");
   const c = start({ env: { ...fx.env, VISUAL: editor.path, FAKE_BIN_LOG: editor.log } });
   await expect(
-    c.handle({ method: "openInEditor", ...w(), path: ".git/config", line: null }),
+    c.handle({ method: "openInEditor", ...w(), path: ".git/config", line: null }, LOCAL_CONTEXT),
   ).rejects.toMatchObject({ code: "PATH_OUTSIDE_PROJECT" });
-  expect(await c.handle({ method: "openInEditor", ...w(), path: "README.md", line: 3 })).toBeNull();
+  expect(
+    await c.handle({ method: "openInEditor", ...w(), path: "README.md", line: 3 }, LOCAL_CONTEXT),
+  ).toBeNull();
   expect(await waitFor(() => readFakeBinLog(editor.log).length > 0)).toBe(true);
   expect(readFakeBinLog(editor.log)).toEqual([["--goto", `${join(fx.repo, "README.md")}:3`]]);
+});
+
+const REMOTE: RpcContext = { sessionHash: "remote", remote: true };
+const localOnlyRequests = (): CodeRequest[] => {
+  const sha = "a".repeat(40);
+  return [
+    { method: "writeFile", ...w(), path: "README.md", content: "x\n", baseHash: sha },
+    { method: "stageFiles", ...w(), paths: ["README.md"] },
+    { method: "unstageFiles", ...w(), paths: ["README.md"] },
+    { method: "discardChanges", ...w(), paths: ["README.md"] },
+    { method: "stageAll", ...w() },
+    { method: "unstageAll", ...w() },
+    { method: "stageHunk", ...w(), path: "README.md", area: "unstaged", index: 0, header: "@@ -1 +1 @@" },
+    { method: "commit", ...w(), message: "feat: x", amend: false },
+    { method: "reword", ...w(), sha, message: "feat: y" },
+    { method: "undoCommit", ...w(), sha },
+    { method: "abortOperation", ...w() },
+    { method: "push", ...w() },
+    {
+      method: "createPr",
+      ...w(),
+      title: "x",
+      body: "",
+      base: "main",
+      draft: false,
+      reviewers: [],
+      ticketId: null,
+    },
+    { method: "openInEditor", ...w(), path: "README.md", line: null },
+  ];
+};
+
+test("every mutation and openInEditor are refused from a remote session before anything runs", async () => {
+  const editor = installFakeBin(fx.dir, "code");
+  const git = installFakeBin(fx.dir, "git");
+  const c = start({
+    env: { ...fx.env, ...gh, KIBO_GIT: git.path, VISUAL: editor.path, FAKE_BIN_LOG: git.log },
+  });
+  fx.write("README.md", "# changed\n");
+  const requests = localOnlyRequests();
+  expect(requests.map((r) => r.method).sort()).toEqual([...LOCAL_ONLY_CODE_METHODS].sort());
+  for (const req of requests) {
+    await expect(c.handle(req, REMOTE)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  }
+  expect(readFileSync(join(fx.repo, "README.md"), "utf8")).toBe("# changed\n");
+  expect(fx.git("status", "--porcelain").trim()).toBe("M README.md");
+  expect(fx.git("rev-list", "--count", "HEAD").trim()).toBe("1");
+  expect(readFakeBinLog(git.log)).toEqual([]);
+  expect(readFakeGhLog(gh)).toEqual([]);
+  expect(events).toEqual([]);
+});
+
+test("a method listed nowhere is refused from a remote session", async () => {
+  const c = start();
+  const unclassified = { method: "futureMethod", ...w() } as unknown as CodeRequest;
+  await expect(c.handle(unclassified, REMOTE)).rejects.toMatchObject({ code: "FORBIDDEN" });
+});
+
+test("reads stay open to a remote session", async () => {
+  const c = start();
+  fx.write("README.md", "# changed\n");
+  expect(await c.handle({ method: "worktrees", projectId: project.id }, REMOTE)).toHaveLength(1);
+  expect(((await c.handle({ method: "status", ...w() }, REMOTE)) as RepoStatus).files).toHaveLength(1);
+  expect(
+    await c.handle({ method: "diff", ...w(), path: "README.md", origPath: null, area: "unstaged" }, REMOTE),
+  ).toMatchObject({ path: "README.md" });
+  expect(
+    await c.handle({ method: "readFile", ...w(), path: "README.md", revision: "worktree" }, REMOTE),
+  ).toMatchObject({
+    content: "# changed\n",
+  });
+  expect(await c.handle({ method: "remoteBranches", ...w() }, REMOTE)).toMatchObject({ remote: "origin" });
+  expect(await c.handle({ method: "commitDefaults", ...w() }, REMOTE)).toMatchObject({
+    message: expect.any(String),
+  });
+  expect(await c.handle({ method: "ghStatus", ...w() }, REMOTE)).toMatchObject({
+    available: expect.any(Boolean),
+  });
 });
 
 test("a rejected push reports git's own message", async () => {
@@ -165,7 +254,7 @@ test("a rejected push reports git's own message", async () => {
   gitSync(other, ["commit", "-q", "--allow-empty", "-m", "ailleurs"], fx.env);
   gitSync(other, ["push", "-q", "origin", "kib-1"], fx.env);
   fx.commit("feat: ici", { "a.txt": "a\n" });
-  await expect(c.handle({ method: "push", ...w() })).rejects.toMatchObject({
+  await expect(c.handle({ method: "push", ...w() }, LOCAL_CONTEXT)).rejects.toMatchObject({
     code: "GIT_FAILED",
     detail: expect.stringContaining("failed to push"),
   });
@@ -175,16 +264,19 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
   const c = start({ prPollMs: 50 });
   const ticket = createTicket("Schéma");
   fx.commit("feat: schéma (KIB-1)", { "a.txt": "a\n" });
-  const pr = await c.handle({
-    method: "createPr",
-    ...w(),
-    title: "feat: schéma (KIB-1)",
-    body: "## Ticket",
-    base: "main",
-    draft: false,
-    reviewers: [],
-    ticketId: ticket.id,
-  });
+  const pr = await c.handle(
+    {
+      method: "createPr",
+      ...w(),
+      title: "feat: schéma (KIB-1)",
+      body: "## Ticket",
+      base: "main",
+      draft: false,
+      reviewers: [],
+      ticketId: ticket.id,
+    },
+    LOCAL_CONTEXT,
+  );
   expect(pr).toEqual({ number: 1, url: "https://github.com/kibo/test/pull/1", state: "open" });
   expect(refs()).toEqual([
     { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
@@ -202,16 +294,19 @@ test("a PR without a ticket, or closed without merging, moves no ticket", async 
   const c = start({ prPollMs: 50 });
   const ticket = createTicket("Schéma");
   fx.commit("feat: schéma", { "a.txt": "a\n" });
-  await c.handle({
-    method: "createPr",
-    ...w(),
-    title: "feat: schéma",
-    body: "",
-    base: "main",
-    draft: false,
-    reviewers: [],
-    ticketId: null,
-  });
+  await c.handle(
+    {
+      method: "createPr",
+      ...w(),
+      title: "feat: schéma",
+      body: "",
+      base: "main",
+      draft: false,
+      reviewers: [],
+      ticketId: null,
+    },
+    LOCAL_CONTEXT,
+  );
   expect(statusOf()).toBe(ticket.statusId);
   call(service, {
     method: "command",
@@ -231,16 +326,19 @@ test("a PR without a ticket, or closed without merging, moves no ticket", async 
 
 const createLinkedPr = (c: CodeService, ticketId: string, draft: boolean) => {
   fx.commit("feat: schéma (KIB-1)", { "a.txt": "a\n" });
-  return c.handle({
-    method: "createPr",
-    ...w(),
-    title: "feat: schéma (KIB-1)",
-    body: "",
-    base: "main",
-    draft,
-    reviewers: [],
-    ticketId,
-  });
+  return c.handle(
+    {
+      method: "createPr",
+      ...w(),
+      title: "feat: schéma (KIB-1)",
+      body: "",
+      base: "main",
+      draft,
+      reviewers: [],
+      ticketId,
+    },
+    LOCAL_CONTEXT,
+  );
 };
 const setFakePrs = (patch: Record<string, unknown>) => {
   const state = gh.FAKE_GH_STATE ?? "";

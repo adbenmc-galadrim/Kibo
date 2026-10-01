@@ -1,4 +1,5 @@
 import { KiboError, type RpcRequest } from "@kibo/schema";
+import { assertNotInbox } from "../inbox/inbox-rules";
 import { type RpcContext, type RpcOutcome, requireLocal } from "../rpc-extensions";
 import type { PresenceHub } from "./presence";
 import {
@@ -56,8 +57,10 @@ export async function handleSyncRpc(
       await client.revokeDevice(req.deviceId);
       return { handled: true, result: null };
     case "shareProject":
+      assertNotInbox(req.projectId, "sharing");
       return { handled: true, result: await shareProject(need(share), req.projectId) };
     case "createProjectInvite":
+      assertNotInbox(req.projectId, "sharing");
       return { handled: true, result: await createProjectInvite(need(share), req) };
     case "joinProject":
       return { handled: true, result: await joinProject(need(share), req) };

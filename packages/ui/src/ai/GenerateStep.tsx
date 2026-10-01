@@ -8,7 +8,7 @@ import { draftRelativeLog } from "./draft-log";
 
 export function GenerateStep({ draft }: { draft: ComponentDraft }) {
   const agents = useAgents();
-  const log = useRunLog(draft.runId);
+  const { log } = useRunLog(draft.runId);
   const run = agents?.runs.find((r) => r.id === draft.runId) ?? null;
   return (
     <div className="grid gap-3">

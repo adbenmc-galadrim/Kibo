@@ -9,11 +9,15 @@ const SCREEN_HASHES: Record<Screen, string> = {
   domains: "#/settings/domains",
   components: "#/components",
   mine: "#/mine",
+  inbox: "#/inbox",
   integrations: "#/settings/integrations",
   appearance: "#/settings/appearance",
   security: "#/settings/security",
   sources: "#/settings/components",
   sync: "#/settings/sync",
+  shortcuts: "#/settings/shortcuts",
+  workspace: "#/settings/workspace",
+  creations: "#/creations",
 };
 
 export function targetToHash(target: TabTarget | null): string {

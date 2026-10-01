@@ -27,6 +27,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     title: z.string(),
     description: z.string().optional(),
     statusId: StatusId.optional(),
+    blockedReason: z.string().optional(),
     parentId: NodeId.nullable().optional(),
     assignee: Assignee.nullable().optional(),
   }),
@@ -83,6 +84,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     componentHash: Sha256.nullable().optional(),
   }),
   z.object({ method: z.literal("setInstanceConfig"), instanceId: z.string(), config: JsonRecord }),
+  z.object({ method: z.literal("setInstanceLayout"), instanceId: z.string(), layout: Layout }),
   z.object({
     method: z.literal("setInstanceData"),
     instanceId: z.string(),
@@ -113,6 +115,7 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   importExternalTicket: null,
   setInstanceComponent: null,
   setInstanceConfig: null,
+  setInstanceLayout: null,
   setInstanceData: null,
 };
 
@@ -140,5 +143,6 @@ export type CommandResult = {
   importExternalTicket: Ticket;
   setInstanceComponent: Instance;
   setInstanceConfig: Instance;
+  setInstanceLayout: Instance;
   setInstanceData: null;
 };

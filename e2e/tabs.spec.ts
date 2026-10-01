@@ -20,7 +20,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await createRepoProject(page, `Onglets ${key}`, key, created.repo);
   await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
-  await page.getByLabel("Nom").fill("Kanban");
+  await page.getByLabel("Nom", { exact: true }).fill("Kanban");
   await page.getByRole("radio", { name: "Vue", exact: true }).click();
   await page.getByRole("button", { name: "Créer la page" }).click();
 
@@ -36,7 +36,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
   const changesTab = bar.getByRole("tab", { name: `Onglets ${key} · Changements` });
   await expect(changesTab).toBeVisible();
   await changesTab.click();
-  await expect(page.getByRole("group", { name: "Non indexés" }).getByText("README.md")).toBeVisible();
+  await expect(page.getByRole("group", { name: /^Modifications \(/ }).getByText("README.md")).toBeVisible();
   await expect(page.getByRole("button", { name: `Commit sur ${created.branch}` })).toBeVisible();
   await shot(page, info, "ecran-20");
   await page
@@ -45,7 +45,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
     .click();
   await page.getByRole("button", { name: "README.md", exact: true }).last().click();
   const preview = page.getByRole("dialog").filter({ hasText: "README.md" });
-  await expect(preview.getByText(/Ligne \d+, col \d+/)).toBeVisible();
+  await expect(preview.getByText(/Ligne \d+ · Col \d+/)).toBeVisible();
   await shot(page, info, "ecran-23");
   await preview.getByRole("button", { name: "Ouvrir dans un onglet" }).click();
   await expect(bar.getByRole("tab", { name: "README.md" })).toHaveAttribute("aria-selected", "true");

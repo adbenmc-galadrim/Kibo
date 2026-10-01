@@ -2,6 +2,7 @@
   "id": "notes",
   "version": "1.0.0",
   "kind": "both",
+  "formats": ["medium", "large", "half", "full"],
   "title": "Notes",
   "description": "Markdown local, compatible Obsidian",
   "reads": ["note", "ticket", "status"],

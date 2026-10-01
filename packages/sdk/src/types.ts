@@ -2,6 +2,7 @@ import type {
   CiRun,
   CommandResult,
   ComponentCall,
+  ComponentFormat,
   ComponentManifest,
   EntityType,
   FetchInitInput,
@@ -49,6 +50,7 @@ export type InstanceData = {
 export type NotesApi = {
   read(path: string): Promise<NoteContent>;
   write(path: string, markdown: string, expectedMtime: number | null): Promise<NoteMeta>;
+  create(path: string, markdown: string): Promise<NoteMeta>;
   rename(from: string, to: string): Promise<NoteMeta>;
   remove(path: string): Promise<void>;
   search(query: string): Promise<NoteMeta[]>;
@@ -66,6 +68,7 @@ export type KiboSdk = {
   config: Record<string, unknown>;
   viewer: string;
   surface: Surface;
+  format: ComponentFormat;
   list<T extends EntityType>(type: T): Promise<EntityMap[T][]>;
   run<C extends ProjectCommand>(cmd: C): Promise<CommandResult[C["method"]]>;
   subscribe(listener: () => void, type?: EntityType): () => void;
@@ -99,7 +102,15 @@ export type ProjectBackend = {
 
 export type SdkContext = Pick<
   KiboSdk,
-  "instanceId" | "config" | "viewer" | "surface" | "openTicket" | "openNewTicket" | "openFile" | "openView"
+  | "instanceId"
+  | "config"
+  | "viewer"
+  | "surface"
+  | "format"
+  | "openTicket"
+  | "openNewTicket"
+  | "openFile"
+  | "openView"
 >;
 export type SdkMode = "builtin" | "gated";
 

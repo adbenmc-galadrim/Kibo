@@ -45,6 +45,7 @@ export const McpSourceConfig = Stored.transform((c, ctx) => {
     return z.NEVER;
   }
   return {
+    title: c.title ?? fr.defaultTitle,
     server: c.server,
     mode: c.mode,
     tool: c.tool,

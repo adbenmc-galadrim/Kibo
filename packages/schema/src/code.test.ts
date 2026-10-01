@@ -1,5 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { CodeEvent, CodeRequest, eventTouches, GhLogin, MAX_EVENT_PATHS, RelPath } from "./code";
+import {
+  CODE_MUTATION_METHODS,
+  CODE_READ_METHODS,
+  CodeEvent,
+  CodeRequest,
+  eventTouches,
+  GhLogin,
+  LOCAL_ONLY_CODE_METHODS,
+  MAX_EVENT_PATHS,
+  RelPath,
+} from "./code";
 import { ExternalRef } from "./external-ref";
 import { EMPTY_TABS, salvageTabsState, TabsState, TabTarget } from "./tabs";
 
@@ -48,6 +58,49 @@ describe("code contracts", () => {
         ticketId: null,
       }).success,
     ).toBe(false);
+  });
+
+  test("discardChanges, stageAll and unstageAll are code requests confined to relative paths", () => {
+    const w = { projectId: "p1", worktree: "/repo" };
+    expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: ["src/a.ts"] }).success).toBe(true);
+    expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: [] }).success).toBe(false);
+    expect(CodeRequest.safeParse({ method: "discardChanges", ...w, paths: ["../x"] }).success).toBe(false);
+    expect(CodeRequest.safeParse({ method: "stageAll", ...w }).success).toBe(true);
+    expect(CodeRequest.safeParse({ method: "unstageAll", ...w }).success).toBe(true);
+  });
+
+  test("every code request is either a local-only mutation or a listed read", () => {
+    expect(CODE_MUTATION_METHODS).toEqual([
+      "writeFile",
+      "stageFiles",
+      "unstageFiles",
+      "discardChanges",
+      "stageAll",
+      "unstageAll",
+      "stageHunk",
+      "commit",
+      "reword",
+      "undoCommit",
+      "abortOperation",
+      "push",
+      "createPr",
+    ]);
+    expect(LOCAL_ONLY_CODE_METHODS).toEqual([...CODE_MUTATION_METHODS, "openInEditor"]);
+    expect(CODE_READ_METHODS).toEqual([
+      "worktrees",
+      "status",
+      "diff",
+      "readFile",
+      "remoteBranches",
+      "compare",
+      "commitDefaults",
+      "ghStatus",
+      "prForBranch",
+    ]);
+    const reads = new Set<string>(CODE_READ_METHODS);
+    expect(LOCAL_ONLY_CODE_METHODS.filter((m) => reads.has(m))).toEqual([]);
+    const methods = CodeRequest.options.map((o) => o.shape.method.value);
+    expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...CODE_READ_METHODS].sort());
   });
 
   test("CodeEvent is tagged", () => {

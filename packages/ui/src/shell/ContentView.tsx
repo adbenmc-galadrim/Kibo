@@ -11,6 +11,7 @@ type Props = {
   target: TabTarget | null;
   viewer: string;
   projects: ProjectSummary[];
+  inboxCount: number;
   project: ProjectSnapshot | null;
   domains: Domain[] | undefined;
   startEditing: boolean;
@@ -18,9 +19,10 @@ type Props = {
   onImportProject(): void;
   onNewPage(): void;
   onSuggestPages(projectId: string): void;
-  onOpen(target: TabTarget): void;
+  onOpen(target: TabTarget, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
   onAssign(ticketId: string): void;
+  onOpenTicket(projectId: string, ticketId: string): void;
 };
 
 const missing = (label: string) => <p className="p-8 text-sm text-muted-foreground">{label}</p>;
@@ -35,7 +37,16 @@ export function ContentView(p: Props) {
         onConnectGithub={() => p.onOpen({ kind: "screen", screen: "integrations" })}
       />
     );
-  if (!t) return <Overview viewer={p.viewer} projects={p.projects} onNewProject={p.onNewProject} />;
+  if (!t)
+    return (
+      <Overview
+        viewer={p.viewer}
+        projects={p.projects}
+        inboxCount={p.inboxCount}
+        onNewProject={p.onNewProject}
+        onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
+      />
+    );
   if (!p.project) return null;
   switch (t.kind) {
     case "project":
@@ -58,6 +69,18 @@ export function ContentView(p: Props) {
           worktree={t.worktree}
           onWorktreeChange={(worktree) => p.onOpen({ ...t, worktree })}
           onOpenFile={p.onOpenFile}
+          onOpenInTab={(ref) =>
+            p.onOpen(
+              {
+                kind: "file",
+                projectId: ref.projectId,
+                worktree: ref.worktree,
+                path: ref.path,
+                line: ref.line,
+              },
+              true,
+            )
+          }
           useSlots={useChangesSlots}
         />
       );
@@ -81,8 +104,10 @@ export function ContentView(p: Props) {
           project={p.project}
           ticketId={t.ticketId}
           domains={p.domains}
+          viewer={p.project.viewer ?? p.viewer}
           onAssign={p.onAssign}
           onOpenFile={p.onOpenFile}
+          onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}
         />
       );
   }

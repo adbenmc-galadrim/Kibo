@@ -1,13 +1,13 @@
-import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { DialogFooter } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { Folder, LayoutDashboard, Plus } from "lucide-react";
+import { LayoutDashboard, Plus } from "lucide-react";
 import { type FormEvent, useId } from "react";
 import { fr } from "../i18n/fr";
 import { ChoiceCard } from "./ChoiceCard";
+import { FolderField } from "./FolderField";
 
 export type ProjectFields = { name: string; key: string | null; folder: string };
 export type ProjectStart = "suggested" | "empty";
@@ -16,6 +16,7 @@ type Props = {
   fields: ProjectFields;
   onFields: (patch: Partial<ProjectFields>) => void;
   effectiveKey: string;
+  keyReserved: boolean;
   valid: boolean;
   busy: boolean;
   error: string | null;
@@ -53,19 +54,27 @@ export function NewProjectForm(p: Props) {
           onChange={(e) => p.onFields({ key: e.target.value.toUpperCase() })}
           className="font-mono"
         />
-        <p className="text-xs text-muted-foreground">{fr.newProject.keyHelp}</p>
+        {p.keyReserved ? (
+          <p role="alert" className="text-xs text-destructive">
+            {fr.newProject.keyReserved(p.effectiveKey)}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">{fr.newProject.keyHelp}</p>
+        )}
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${id}-folder`}>{fr.newProject.folder}</Label>
-        <Input
+        <FolderField
           id={`${id}-folder`}
           value={p.fields.folder}
-          onChange={(e) => p.onFields({ folder: e.target.value })}
+          onChange={(folder) => p.onFields({ folder })}
           autoFocus={p.focusFolder}
           placeholder="/Users/adam/code/kibo"
-          className="font-mono"
+          describedBy={`${id}-folder-help`}
         />
-        <p className="text-xs text-muted-foreground">{fr.newProject.folderHelp}</p>
+        <p id={`${id}-folder-help`} className="text-xs text-muted-foreground">
+          {fr.newProject.folderHelp}
+        </p>
       </div>
       <fieldset className="grid gap-2">
         <legend className="mb-2 text-sm font-medium">{fr.newProject.start}</legend>
@@ -88,15 +97,6 @@ export function NewProjectForm(p: Props) {
             title={fr.onboarding.startSuggested}
             description={p.pageTitles.length > 0 ? p.pageTitles.join(", ") : fr.onboarding.noPage}
             disabled={p.pageTitles.length === 0}
-          />
-          <ChoiceCard
-            stacked
-            disabled
-            value="copy"
-            icon={Folder}
-            title={fr.newProject.startCopy}
-            description={fr.newProject.startCopyHelp}
-            badge={<Badge variant="secondary">{fr.newProject.soon}</Badge>}
           />
         </RadioGroup>
       </fieldset>

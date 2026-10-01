@@ -7,10 +7,12 @@ import {
   listDomains,
   listGuidelines,
   listProfiles,
+  workspaceDescription,
   workspaceName,
 } from "@kibo/core/agent-config";
-import { type ConfigCommand, KiboError, type WorkspaceConfig } from "@kibo/schema";
+import { type ConfigCommand, iconOwnerKey, KiboError, type WorkspaceConfig } from "@kibo/schema";
 import type { Docs } from "./docs";
+import type { IconStore } from "./icons/icon-store";
 
 export function domainUsage(docs: Docs): Record<string, number> {
   const usage: Record<string, number> = {};
@@ -22,7 +24,7 @@ export function domainUsage(docs: Docs): Record<string, number> {
   return usage;
 }
 
-export function readConfig(docs: Docs): WorkspaceConfig {
+export function readConfig(docs: Docs, icons: Pick<IconStore, "version">): WorkspaceConfig {
   return {
     profiles: listProfiles(docs.workspace),
     domains: listDomains(docs.workspace),
@@ -32,6 +34,8 @@ export function readConfig(docs: Docs): WorkspaceConfig {
     ],
     domainUsage: domainUsage(docs),
     workspaceName: workspaceName(docs.workspace),
+    workspaceDescription: workspaceDescription(docs.workspace),
+    workspaceIcon: icons.version(iconOwnerKey({ kind: "workspace" })),
   };
 }
 

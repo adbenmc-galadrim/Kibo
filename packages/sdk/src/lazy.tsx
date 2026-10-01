@@ -3,7 +3,7 @@ import { cn } from "./lib/utils";
 import { Button } from "./ui/button";
 
 export type LazyLabels = { loading: string; failed: string; retry: string };
-export type LazyOptions = { fallback?: "visible" | "sr-only" };
+export type LazyOptions = { fallback?: "visible" | "sr-only" | "children" };
 
 export const LAZY_FALLBACK_SELECTOR = "[data-kibo-loading]";
 
@@ -73,9 +73,15 @@ export function lazyPanel<P extends object>(
       Loaded = create();
       setAttempt((n) => n + 1);
     };
+    const fallback =
+      opts.fallback === "children" ? (
+        ((props as { children?: ReactNode }).children ?? null)
+      ) : (
+        <Loading label={labels.loading} srOnly={opts.fallback === "sr-only"} />
+      );
     return (
       <LoadBoundary key={attempt} labels={labels} onRetry={retry}>
-        <Suspense fallback={<Loading label={labels.loading} srOnly={opts.fallback === "sr-only"} />}>
+        <Suspense fallback={fallback}>
           <Loaded {...props} />
         </Suspense>
       </LoadBoundary>

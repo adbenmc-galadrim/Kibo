@@ -1,6 +1,7 @@
 import {
   type ComponentOrigin,
   type ComponentSummary,
+  type ComponentUsage,
   type ComponentVersionSummary,
   compareSemver,
   type MarketComponentStatus,
@@ -21,12 +22,14 @@ export type ComponentRow = {
   pages: number;
   projects: number;
   used: boolean;
+  usages: ComponentUsage[];
   summary: ComponentVersionSummary | null;
   revoked: ComponentVersionSummary["revoked"];
   market: MarketComponentStatus | null;
 };
 
-const counts = (usages: ComponentVersionSummary["usages"]) => ({
+const counts = (usages: ComponentUsage[]) => ({
+  usages,
   pages: new Set(usages.map((u) => `${u.projectId}/${u.pageId}`)).size,
   projects: new Set(usages.map((u) => u.projectId)).size,
   used: usages.length > 0,

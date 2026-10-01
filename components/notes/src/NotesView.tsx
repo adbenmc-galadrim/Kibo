@@ -1,12 +1,17 @@
-import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
-import { useEntities, useSdk } from "@kibo/sdk";
+import { KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
+import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type Autosave, createAutosave, type SaveState } from "./autosave";
 import { fr } from "./fr";
 import type { TicketRef } from "./markdown";
 import { NoteDocument } from "./NoteDocument";
 import { type Backlink, type LinkedTicket, NoteLinks } from "./NoteLinks";
 import { NoteList } from "./NoteList";
+import { NoteTitleDialog } from "./NoteTitleDialog";
+import { createdPath } from "./note-name";
+import { groupNotes, type NoteSort, readNoteSort, writeNoteSort } from "./note-sort";
+import { RenameNoteDialog } from "./RenameNoteDialog";
+import { useNoteSession } from "./use-note-session";
 
 function resolveTarget(target: string, notes: NoteMeta[]): string | null {
   const clean = target.replace(/^\.\//, "");
@@ -18,14 +23,6 @@ function resolveTarget(target: string, notes: NoteMeta[]): string | null {
     .filter((n) => n.path.split("/").pop() === base)
     .sort((a, b) => a.path.length - b.path.length);
   return byName[0]?.path ?? null;
-}
-
-function freePath(notes: NoteMeta[]): string {
-  const taken = new Set(notes.map((n) => n.path));
-  for (let i = 1; ; i += 1) {
-    const path = i === 1 ? "sans-titre.md" : `sans-titre-${i}.md`;
-    if (!taken.has(path)) return path;
-  }
 }
 
 function backlinksOf(note: NoteContent, notes: NoteMeta[]): Backlink[] {
@@ -70,18 +67,17 @@ function useSearch(query: string, onError: (e: unknown) => void): NoteMeta[] | n
 export function NotesView() {
   const sdk = useSdk();
   const listed = useEntities("note");
+  const readOnly = useReadOnly();
   const ticketList = useEntities("ticket");
   const [info, setInfo] = useState<NotesInfo | null>(null);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<NoteSort>(readNoteSort);
   const [selected, setSelected] = useState<string | null>(null);
-  const [note, setNote] = useState<NoteContent | null>(null);
-  const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
-  const [state, setState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
-  const autosave = useRef<Autosave | null>(null);
-  const notesApi = useRef(sdk.notes);
-  notesApi.current = sdk.notes;
+  const [creating, setCreating] = useState(false);
+  const [renaming, setRenaming] = useState<NoteMeta | null>(null);
+  const [removing, setRemoving] = useState<NoteMeta | null>(null);
 
   const fail = useCallback((message: string) => {
     return (e: unknown) => {
@@ -99,46 +95,24 @@ export function NotesView() {
       ),
     [ticketList.data],
   );
-  const notes = found ?? listed.data;
+  const groups = useMemo(() => groupNotes(found ?? listed.data, sort), [found, listed.data, sort]);
+  const notes = useMemo(() => groups.flatMap((g) => g.notes), [groups]);
+  const first = useMemo(() => groupNotes(listed.data, sort)[0]?.notes[0] ?? null, [listed.data, sort]);
 
   useEffect(() => {
     sdk.notes.info().then(setInfo, fail(fr.loadFailed));
   }, [sdk, fail]);
 
   useEffect(() => {
-    if (selected === null && listed.data[0]) setSelected(listed.data[0].path);
-  }, [selected, listed.data]);
+    if (selected === null && first) setSelected(first.path);
+  }, [selected, first]);
 
-  const load = useCallback(
-    async (path: string) => {
-      try {
-        const content = await notesApi.current.read(path);
-        setNote(content);
-        setDraft(content.markdown);
-        setState("saved");
-        autosave.current?.setBase(content.mtime);
-      } catch (e) {
-        fail(fr.loadFailed)(e);
-      }
-    },
-    [fail],
-  );
-
-  useEffect(() => {
-    if (selected === null) return;
-    const a = createAutosave({
-      delayMs: 800,
-      save: (md, mtime) => notesApi.current.write(selected, md, mtime),
-      onState: setState,
-      onSaved: (meta) => setNote((n) => (n && n.path === meta.path ? { ...n, ...meta } : n)),
-    });
-    autosave.current = a;
-    void load(selected);
-    return () => {
-      autosave.current = null;
-      void a.flush().finally(() => a.dispose());
-    };
-  }, [selected, load]);
+  const { note, draft, state, load, rename, remove, change, keepMine } = useNoteSession({
+    selected,
+    select: setSelected,
+    listed: listed.data,
+    fail,
+  });
 
   useEffect(() => {
     const current = listed.data.find((n) => n.path === selected);
@@ -147,17 +121,25 @@ export function NotesView() {
     }
   }, [listed.data, selected, note, state, editing, load]);
 
-  const create = async () => {
-    try {
-      const path = freePath(listed.data);
-      await sdk.notes.write(path, `# ${fr.untitled}\n`, null);
-      setQuery("");
-      setSelected(path);
-      setEditing(true);
-    } catch (e) {
-      fail(fr.createFailed)(e);
-    }
+  const create = async (path: string, title: string) => {
+    await sdk.notes.create(path, `# ${title}\n`);
+    setQuery("");
+    setSelected(path);
+    setEditing(true);
   };
+
+  const nextAfter = (path: string): string | null => {
+    const paths = notes.map((n) => n.path);
+    const i = paths.indexOf(path);
+    return paths[i + 1] ?? paths[i - 1] ?? null;
+  };
+
+  const removeNote = async (meta: NoteMeta) => {
+    const next = nextAfter(meta.path);
+    if (await remove(meta.path)) setSelected(next);
+  };
+
+  const byPath = (path: string) => listed.data.find((n) => n.path === path) ?? null;
 
   const open = (path: string) => {
     setEditing(false);
@@ -167,13 +149,21 @@ export function NotesView() {
   return (
     <div className="flex h-full min-h-0 bg-background text-foreground">
       <NoteList
-        notes={notes}
+        groups={groups}
         info={info}
         selected={selected}
         query={query}
+        sort={sort}
         onQuery={setQuery}
+        onSort={(next) => {
+          setSort(next);
+          writeNoteSort(next);
+        }}
         onSelect={open}
-        onCreate={() => void create()}
+        onCreate={() => setCreating(true)}
+        readOnly={readOnly}
+        onRename={(path) => setRenaming(byPath(path))}
+        onRemove={(path) => setRemoving(byPath(path))}
       />
       <main className="min-w-0 flex-1 overflow-auto">
         {error && (
@@ -190,12 +180,9 @@ export function NotesView() {
             draft={draft}
             state={state}
             onToggleEdit={() => setEditing((v) => !v)}
-            onChange={(md) => {
-              setDraft(md);
-              autosave.current?.change(md);
-            }}
+            onChange={change}
             onReload={() => void load(note.path)}
-            onKeepMine={() => void autosave.current?.keepMine()}
+            onKeepMine={keepMine}
             onOpenNote={(target) => {
               const path = resolveTarget(target, listed.data);
               if (path) open(path);
@@ -211,6 +198,33 @@ export function NotesView() {
         onTicket={(id) => sdk.openTicket(id)}
         onNote={open}
       />
+      {creating && (
+        <NoteTitleDialog
+          title={fr.createTitle}
+          initial=""
+          confirmLabel={fr.createConfirm}
+          pathFor={createdPath}
+          unchanged={null}
+          submit={create}
+          describeError={(e) =>
+            e instanceof KiboError && e.code === "CONFLICT" ? fr.renameConflict : fr.createFailed
+          }
+          onClose={() => setCreating(false)}
+        />
+      )}
+      {renaming && <RenameNoteDialog note={renaming} onRename={rename} onClose={() => setRenaming(null)} />}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.title)}
+          description={fr.removeHelp(removing.path.slice(removing.path.lastIndexOf("/") + 1))}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={() => removeNote(removing)}
+          describeError={() => fr.removeFailed}
+        />
+      )}
     </div>
   );
 }

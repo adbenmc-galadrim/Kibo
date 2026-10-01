@@ -4,6 +4,7 @@ import {
   existsSync,
   linkSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   statSync,
@@ -11,13 +12,17 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { hashSources } from "@kibo/devkit";
 import { ComponentManifest, KiboError, NO_PERMISSIONS } from "@kibo/schema";
+import { attachmentPaths, writeAttachments } from "./draft-attachments";
 import {
   agentFiles,
   draftPaths,
   isAgentFile,
   prepareDraft,
   readDraftManifest,
+  removeDraft,
+  verifyAndRestore,
   writeDraftManifest,
   writePermissions,
 } from "./draft-files";
@@ -25,10 +30,17 @@ import { cleanHomes, home, kiboFiles, prepared, scaffold } from "./testing/draft
 
 cleanHomes();
 
+const IMAGE = {
+  name: "a.png",
+  mime: "image/png",
+  data: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2]).toString("base64"),
+} as const;
+
 test("draftPaths places the draft and its base under components/drafts", () => {
   expect(draftPaths("/h", "d1")).toEqual({
     dir: "/h/components/drafts/d1",
     baseDir: "/h/components/drafts/d1.base",
+    attachmentsDir: "/h/components/drafts/d1.attachments",
   });
 });
 
@@ -69,6 +81,28 @@ describe("prepareDraft", () => {
     });
     expect(existsSync(paths.dir)).toBe(false);
   });
+  test("refuses a leftover images folder", async () => {
+    const paths = draftPaths(home(), "d1");
+    mkdirSync(paths.attachmentsDir, { recursive: true });
+    await expect(prepareDraft({ paths, fill: scaffold, kiboFiles })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(existsSync(paths.dir)).toBe(false);
+  });
+  test("refuses a leftover symbolic link in place of the images folder, and leaves its target", async () => {
+    const root = home();
+    const paths = draftPaths(root, "d1");
+    const target = join(root, "target");
+    mkdirSync(target);
+    writeFileSync(join(target, "keep.png"), "x");
+    mkdirSync(dirname(paths.attachmentsDir), { recursive: true });
+    symlinkSync(target, paths.attachmentsDir);
+    await expect(prepareDraft({ paths, fill: scaffold, kiboFiles })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(existsSync(paths.dir)).toBe(false);
+    expect(readdirSync(target)).toEqual(["keep.png"]);
+  });
   test("removes the partial draft when filling fails", async () => {
     const paths = draftPaths(home(), "d1");
     const fill = async () => {
@@ -92,6 +126,20 @@ test("agentFiles lists agent files of the draft and of its base", async () => {
   const paths = await prepared();
   writeFileSync(join(paths.dir, "burndown.test.tsx"), "x");
   expect(agentFiles(paths, false)).toEqual(["burndown.test.tsx", "component.test.tsx", "ui.tsx"]);
+});
+
+test("the images live beside the draft: unseen by the restore and the agent files, removed with it", async () => {
+  const paths = await prepared();
+  const before = await hashSources(paths.dir);
+  const images = writeAttachments(paths.attachmentsDir, [IMAGE, { ...IMAGE, name: "b.png" }], []);
+  expect(readdirSync(paths.dir)).not.toContain("1-a.png");
+  expect(readdirSync(paths.baseDir)).not.toContain("1-a.png");
+  expect(await hashSources(paths.dir)).toBe(before);
+  expect(verifyAndRestore(paths, false)).toEqual([]);
+  expect(agentFiles(paths, false)).toEqual(["component.test.tsx", "ui.tsx"]);
+  expect(attachmentPaths(paths.attachmentsDir, images).every((p) => existsSync(p))).toBe(true);
+  removeDraft(paths);
+  expect(existsSync(paths.attachmentsDir) || existsSync(paths.dir) || existsSync(paths.baseDir)).toBe(false);
 });
 
 test("writePermissions rewrites the inferable permission fields and keeps declared secrets", async () => {

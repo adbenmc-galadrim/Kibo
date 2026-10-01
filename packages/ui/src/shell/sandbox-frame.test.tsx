@@ -51,6 +51,7 @@ function mount(src = "about:blank") {
         config={{ filter: "all" }}
         viewer="adam"
         surface="widget"
+        format="large"
         src={src}
         title="Mine"
         readyTimeoutMs={DEADLINE}
@@ -87,6 +88,7 @@ function mount(src = "about:blank") {
           config={{ filter: "all" }}
           viewer="adam"
           surface="widget"
+          format="large"
           src={nextSrc}
           title="Mine"
           readyTimeoutMs={DEADLINE}
@@ -124,7 +126,13 @@ test("the frame is initialised, its calls reach the daemon for its own instance"
   await act(async () => {
     await new Promise((r) => setTimeout(r, 0));
   });
-  expect(posted[0]).toMatchObject({ type: "init", instanceId: "inst-1", viewer: "adam", surface: "widget" });
+  expect(posted[0]).toMatchObject({
+    type: "init",
+    instanceId: "inst-1",
+    viewer: "adam",
+    surface: "widget",
+    format: "large",
+  });
   expect(requests).toContainEqual({
     method: "componentCall",
     projectId: "p1",

@@ -20,7 +20,7 @@ export const frAi = {
           : `git ${git} · gh ${gh} détectés`,
     capacity: "Capacité machine",
     capacityDetail: (cores: number, ramGb: number, slots: number) =>
-      `${cores} cœurs, ${ramGb} Go → ${slots} créneau${slots > 1 ? "x" : ""} d'agents (modifiable)`,
+      `${cores} cœurs, ${ramGb} Go → ${slots} place${slots > 1 ? "s" : ""} d'agents (modifiable)`,
     github: "GitHub (optionnel)",
     githubDetail: "Pour synchroniser issues, PR et CI",
     githubConnect: "Connecter",
@@ -162,7 +162,7 @@ export const frAi = {
     publish: "Publier",
     modify: "Modifier avec l'IA",
     modifyTitle: (title: string) => `Modifier « ${title} » avec l'IA`,
-    modifySubtitle: (version: string, origin: string) => `Version actuelle ${version} · origine ${origin}`,
+    modifySubtitle: (version: string, origin: string) => `Version actuelle ${version} · ${origin}`,
     modifyField: "Ce qu'il faut changer",
     modifyHelp:
       "L'agent reprend le code actuel. La forme de la config ne peut pas changer : pour ça, passe par le code.",

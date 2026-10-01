@@ -92,6 +92,17 @@ test("a project being shared refuses commands with CONFLICT", async () => {
   await create("Oui");
 });
 
+test("isLocked follows setLocked and is cleared when the project is removed", () => {
+  expect(hosts.isLocked(projectId)).toBe(false);
+  hosts.setLocked(projectId, true);
+  expect(hosts.isLocked(projectId)).toBe(true);
+  hosts.setLocked(projectId, false);
+  expect(hosts.isLocked(projectId)).toBe(false);
+  hosts.setLocked(projectId, true);
+  service.docs.removeProject(projectId);
+  expect(hosts.isLocked(projectId)).toBe(false);
+});
+
 test("mutate writes through the guard, persists and reports the change", () => {
   const seen: string[] = [];
   const changes: unknown[] = [];
@@ -135,6 +146,22 @@ test("a replaced document is persisted and still watched", async () => {
   store = openStore(home);
   const reloaded = createService(store, { user: "adam" }).docs.project(projectId);
   expect(listTickets(reloaded).map((t) => t.title)).toEqual(["Après"]);
+});
+
+test("a removed project is no longer watched and forgets its access", async () => {
+  const doc = hosts.host(projectId).doc();
+  const copy = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
+  hosts.setAccess(projectId, "read-only");
+  hosts.setLocked(projectId, true);
+  const seen: string[] = [];
+  hosts.onLocalChange((id) => seen.push(id));
+  service.docs.removeProject(projectId);
+  doc.getMap("probe").set("k", 1);
+  doc.commit();
+  expect(seen).toEqual([]);
+  hosts.addJoinedProject(copy, null);
+  await create("Revenu");
+  expect(seen).toContain(projectId);
 });
 
 test("a joined project is registered with its local folder", () => {

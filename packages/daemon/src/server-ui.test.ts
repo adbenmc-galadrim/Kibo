@@ -61,6 +61,53 @@ describe("ui files", () => {
     rmSync(uiDir, { recursive: true, force: true });
   });
 
+  test("only an existing worker script gets the worker policy, never the document", async () => {
+    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    mkdirSync(join(uiDir, "workers", "sub"), { recursive: true });
+    mkdirSync(join(uiDir, "assets"));
+    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
+    writeFileSync(join(uiDir, "workers", "draft-preview-worker-abc.js"), "work()");
+    writeFileSync(join(uiDir, "workers", "sub", "x.js"), "nested()");
+    writeFileSync(join(uiDir, "workers", "x.css"), "a{}");
+    writeFileSync(join(uiDir, "assets", "x.js"), "asset()");
+    const ui = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir,
+      sandboxOrigin: () => "http://127.0.0.1:9999",
+    });
+    const worker = await fetch(`${ui.url}/workers/draft-preview-worker-abc.js`);
+    expect(await worker.text()).toBe("work()");
+    expect(worker.headers.get("content-security-policy")).toBe(
+      "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'",
+    );
+    expect(worker.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(worker.headers.get("referrer-policy")).toBe("no-referrer");
+    const strict = (csp: string | null) =>
+      csp?.startsWith("default-src 'self'; script-src 'self'; style-src") === true &&
+      csp.includes("frame-src http://127.0.0.1:9999") &&
+      !csp.includes("wasm");
+    for (const path of [
+      "/workers/absent.js",
+      "/workers/sub/x.js",
+      "/workers/x.css",
+      "/assets/x.js",
+      "/",
+      "/workers/..%2Findex.html",
+    ]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect({ path, strict: strict(res.headers.get("content-security-policy")) }).toEqual({
+        path,
+        strict: true,
+      });
+    }
+    expect(await (await fetch(`${ui.url}/workers/absent.js`)).text()).toBe("<p>kibo</p>");
+    expect(await (await fetch(`${ui.url}/workers/..%2Findex.html`)).text()).toBe("<p>kibo</p>");
+    ui.stop();
+    rmSync(uiDir, { recursive: true, force: true });
+  });
+
   test("an unreadable ui path is a clean 400", async () => {
     const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
     writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");

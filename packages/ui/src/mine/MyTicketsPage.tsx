@@ -1,8 +1,9 @@
-import type { ProjectMeta, ProjectSnapshot, WorkspaceConfig } from "@kibo/schema";
+import { isInbox, type ProjectMeta, type ProjectSnapshot, type WorkspaceConfig } from "@kibo/schema";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
+import { TooltipProvider } from "@kibo/sdk/ui/tooltip";
 import { useId, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { displayName } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { MyTicketRow } from "./MyTicketRow";
 import { countMine, type MineGroup, type MineTab, myTickets } from "./my-tickets";
@@ -14,6 +15,7 @@ type Props = {
   config: WorkspaceConfig | null;
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
+  onFile(ticketId: string): void;
 };
 
 const SEGMENT =
@@ -37,27 +39,17 @@ function MineTabs({ value, onChange }: { value: MineTab; onChange(tab: MineTab):
       <ToggleGroupItem value="agents" className={SEGMENT}>
         {fr.mine.agents}
       </ToggleGroupItem>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="block">
-            <ToggleGroupItem value="created" className={SEGMENT} disabled>
-              {fr.mine.created}
-            </ToggleGroupItem>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{fr.mine.createdLater}</TooltipContent>
-      </Tooltip>
     </ToggleGroup>
   );
 }
 
-type SectionProps = Pick<Props, "config" | "onOpenTicket" | "onAssign"> & {
+type SectionProps = Pick<Props, "config" | "onOpenTicket" | "onAssign" | "onFile"> & {
   group: MineGroup;
   tab: MineTab;
   snapshot: ProjectSnapshot | undefined;
 };
 
-function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: SectionProps) {
+function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign, onFile }: SectionProps) {
   const titleId = useId();
   const { project, tickets } = group;
   const domainOf = (id: string | null) =>
@@ -69,7 +61,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
       <h2 className="flex items-center gap-2 px-1">
         <span aria-hidden className="size-2 rounded-full" style={{ background: project.color }} />
         <span id={titleId} className="text-sm font-semibold">
-          {project.name}
+          {displayName(project)}
         </span>
         <span className="text-2xs text-muted-foreground tabular-nums">{tickets.length}</span>
       </h2>
@@ -83,8 +75,10 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign }: S
             agent={ticket.assignee?.kind === "agent" ? agentName(ticket.assignee.ref) : null}
             workflow={snapshot?.workflow ?? []}
             canRun={project.folder !== null}
+            inbox={isInbox(project.id)}
             onOpen={() => onOpenTicket(project.id, ticket.id)}
             onAssign={() => onAssign(project.id, ticket.id)}
+            onFile={() => onFile(ticket.id)}
           />
         ))}
       </ul>

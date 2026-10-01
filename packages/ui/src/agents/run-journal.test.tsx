@@ -138,6 +138,11 @@ test("without a worktree the journal shows paths as plain text", () => {
   expect(screen.getByText("Write apps/daemon/src/hooks/receiver.ts")).toBeTruthy();
   expect(screen.queryByRole("button")).toBeNull();
 });
+test("a missing journal says so instead of an empty list", () => {
+  render(<RunJournal label="opus-dev-2" log={[]} files={null} missing />);
+  expect(screen.getByText("Journal indisponible pour ce run.")).toBeTruthy();
+  expect(screen.queryByRole("list")).toBeNull();
+});
 test("daemon events keep their raw type as name", () => {
   const exited = { type: "exited", code: 0, isError: false, result: null, tokens: 0, costUsd: 0 } as const;
   const cases: [RunEvent, string | null][] = [

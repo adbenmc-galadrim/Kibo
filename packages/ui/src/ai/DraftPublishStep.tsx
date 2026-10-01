@@ -22,7 +22,7 @@ type Props = {
 
 export function DraftPublishStep({ details, busy, onSubmit }: Props) {
   const id = useId();
-  const projects = useProjects() ?? [];
+  const projects = useProjects().projects ?? [];
   const preview = details.publish;
   const [version, setVersion] = useState(preview?.to ?? "0.1.0");
   const [changes, setChanges] = useState((preview?.changes ?? []).join("\n"));

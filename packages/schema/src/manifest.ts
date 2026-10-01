@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ConfigSchema } from "./config";
+import { ComponentFormat, FORMAT_PREFERENCE } from "./format";
 import { GITHUB_SECRET_HOSTS, IntegrationSecretNameSchema } from "./integrations";
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
@@ -44,6 +45,36 @@ export const ComponentManifest = z.object({
   configVersion: z.number().int().nonnegative().default(0),
   changes: z.array(z.string().min(1)).default([]),
   sdk: z.literal(1).default(1),
+  formats: z.array(ComponentFormat).min(1).max(5).optional(),
 });
 export type ComponentManifest = z.infer<typeof ComponentManifest>;
 export type ComponentManifestInput = z.input<typeof ComponentManifest>;
+
+type FormatFields = Pick<ComponentManifest, "kind" | "formats">;
+
+export const DEFAULT_FORMATS: Readonly<Record<ComponentKind, readonly ComponentFormat[]>> = {
+  widget: ["medium", "large", "half"],
+  view: ["full"],
+  both: ["medium", "large", "half", "full"],
+  adapter: [],
+};
+
+export const formatsOf = (m: FormatFields): ComponentFormat[] => [...(m.formats ?? DEFAULT_FORMATS[m.kind])];
+
+export const defaultFormatOf = (m: FormatFields): ComponentFormat => {
+  const declared = formatsOf(m);
+  return FORMAT_PREFERENCE.find((f) => declared.includes(f)) ?? "half";
+};
+
+export const formatIssue = (m: FormatFields): string | null => {
+  if (m.formats === undefined) return null;
+  if (new Set(m.formats).size !== m.formats.length) return "INVALID_MANIFEST: formats must be unique";
+  if (m.kind === "adapter") return "INVALID_MANIFEST: an adapter has no format";
+  if (m.kind === "view" && !m.formats.includes("full")) {
+    return "INVALID_MANIFEST: a view declares the full format";
+  }
+  if (m.kind === "widget" && m.formats.every((f) => f === "full")) {
+    return "INVALID_MANIFEST: a widget declares a format other than full";
+  }
+  return null;
+};

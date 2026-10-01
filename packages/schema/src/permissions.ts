@@ -72,6 +72,7 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "notes.info":
       return "read:note";
     case "notes.write":
+    case "notes.create":
     case "notes.rename":
     case "notes.remove":
       return "write:note";

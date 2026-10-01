@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { rpc } from "./agents-seed";
@@ -19,7 +19,7 @@ function homeOf(info: TestInfo): string {
 
 async function openComponents(page: Page) {
   await page.getByRole("button", { name: "Composants", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Composants" }).last()).toBeVisible();
 }
 
 async function publishDraft(page: Page, version: string, strategy?: "Mettre à jour partout") {
@@ -49,10 +49,10 @@ test("publier, autoriser, rendre en sandbox, mettre à jour partout", async ({ p
   const trust = page.getByRole("dialog", { name: `Autoriser « ${TITLE} » 0.1.0 ?` });
   await expect(trust.getByText("Lire les tickets du projet")).toBeVisible({ timeout: 60_000 });
   await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toBeVisible();
-  await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
+  await expect(trust.getByRole("radio", { name: /Isolé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
-  await expect(page.getByRole("row", { name: new RegExp(`${TITLE}.*0\\.1\\.0.*Sandboxé`) })).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(`${TITLE}.*0\\.1\\.0.*Isolé`) })).toBeVisible();
 
   for (const pageTitle of ["Tableau A", "Tableau B"]) {
     await createSidebarPage(page, `Kibo ${key}`, pageTitle, "Tableau de bord");
@@ -90,6 +90,11 @@ test("graphe et notes intégrés", async ({ page }, info) => {
   await addComponent(page, "Notes");
   await expect(page.getByText("Aucune note dans ce dossier.")).toBeVisible();
   await page.getByRole("button", { name: "Nouvelle note" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouvelle note" });
+  await dialog.getByLabel("Titre").fill("Décisions");
+  await expect(dialog.getByText("Fichier : decisions.md")).toBeVisible();
+  await dialog.getByRole("button", { name: "Créer" }).click();
+  await expect(dialog).toBeHidden();
   const editor = page.getByRole("textbox", { name: "Contenu de la note" });
   await expect(editor).toBeVisible();
   await editor.click();
@@ -101,7 +106,10 @@ test("graphe et notes intégrés", async ({ page }, info) => {
   await page.reload();
   await expect(page.getByRole("list", { name: "Notes" }).getByText("Décisions")).toBeVisible();
 
-  writeFileSync(join(homeOf(info), "notes", key, "sans-titre.md"), "# Changé ailleurs\n");
+  const notesDir = join(homeOf(info), "notes", key);
+  expect(existsSync(join(notesDir, "sans-titre.md"))).toBe(false);
+  expect(existsSync(join(notesDir, "decisions.md"))).toBe(true);
+  writeFileSync(join(notesDir, "decisions.md"), "# Changé ailleurs\n");
   await expect(page.getByRole("heading", { level: 1, name: "Changé ailleurs" })).toBeVisible({
     timeout: 5_000,
   });

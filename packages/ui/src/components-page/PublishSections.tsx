@@ -1,4 +1,5 @@
 import type { PublishPreview, PublishResult } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { ChevronRight } from "lucide-react";
 import { useId } from "react";
@@ -36,13 +37,24 @@ export function InvalidPreview({ id, errors }: { id: string; errors: string[] })
   );
 }
 
-type UsagesProps = { preview: UpdateSummary; strategy: Strategy; colorOf(projectId: string): string };
+type UsagesProps = {
+  preview: UpdateSummary;
+  strategy: Strategy;
+  colorOf(projectId: string): string;
+  onUsages?: () => void;
+};
 
-export function UsagesBox({ preview, strategy, colorOf }: UsagesProps) {
+export function UsagesBox({ preview, strategy, colorOf, onUsages }: UsagesProps) {
   const projects = new Set(preview.usages.map((u) => u.projectId)).size;
   return (
     <div className="grid gap-2 rounded-lg border p-3 text-sm">
-      <p className="font-medium">{p.usedIn(projects)}</p>
+      {onUsages ? (
+        <Button variant="link" className="h-auto justify-self-start p-0 font-medium" onClick={onUsages}>
+          {p.usedIn(projects)}
+        </Button>
+      ) : (
+        <p className="font-medium">{p.usedIn(projects)}</p>
+      )}
       {preview.usages.map((u) => (
         <div key={u.instanceId} className="flex items-center gap-2">
           <span

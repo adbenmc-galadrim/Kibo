@@ -257,9 +257,12 @@ test("20 · menu contextuel d'un onglet", async () => {
 test("21 · Changements, fichier indexé sélectionné", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/changes?wt=${encodeURIComponent(mockup.worktree)}`);
-  const staged = page.getByRole("group", { name: "Indexés", exact: true });
-  await staged.getByRole("button", { name: /ticket\.ts/ }).click();
-  await expect(page.getByRole("button", { name: "Indexer le bloc" }).first()).toBeVisible();
+  const staged = page.getByRole("group", { name: /^Dans le prochain commit \(/ });
+  await staged
+    .getByRole("button", { name: /ticket\.ts/ })
+    .first()
+    .click();
+  await expect(page.getByRole("button", { name: "Retirer le bloc du commit" }).first()).toBeVisible();
   await expect(page.getByText("↑2").first()).toBeVisible();
   await expect(page.getByLabel("Message")).not.toHaveValue("");
   await expect(page.getByText("opus-dev-1 travaille dans ce worktree.", { exact: false })).toBeVisible();
@@ -289,10 +292,10 @@ test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
   const sheet = page.getByRole("dialog").filter({ hasText: "Schéma Loro des tickets" });
   await sheet.getByRole("button", { name: "packages/core/ticket.ts:43" }).click();
   const preview = page.getByRole("dialog").filter({ hasText: "Ouvrir dans un onglet" });
-  await expect(preview.getByText("Ligne 43, col 3")).toBeVisible();
+  await expect(preview.getByText("Ligne 43 · Col 3")).toBeVisible();
   await capture(info, "23");
   await page.keyboard.press("Escape");
-  await expect(preview.getByText("Ligne 43, col 3")).toBeHidden();
+  await expect(preview.getByText("Ligne 43 · Col 3")).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();
 });
@@ -310,19 +313,17 @@ test("12 · Mes tickets", async () => {
   await capture(info, "12");
 });
 
-test("D11 · menu du workspace et renommage", async () => {
+test("D11 · menu du workspace et page Workspace", async () => {
   const info = test.info();
   const trigger = page.getByRole("button", { name: /Perso/ }).first();
   await trigger.click();
-  await expect(page.getByRole("menuitem", { name: "Renommer le workspace…" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Renommer le workspace…" })).toHaveCount(0);
   await expect(page.getByRole("menuitem", { name: "Paramètres du workspace" })).toBeVisible();
   await capture(info, "D11-menu");
-  await page.getByRole("menuitem", { name: "Renommer le workspace…" }).click();
-  const dialog = page.getByRole("dialog", { name: "Renommer le workspace" });
-  await expect(dialog.getByLabel("Nom")).toHaveValue("Perso");
-  await capture(info, "D11-dialogue");
-  await dialog.getByRole("button", { name: "Annuler" }).click();
-  await expect(dialog).toBeHidden();
+  await page.getByRole("menuitem", { name: "Paramètres du workspace" }).click();
+  await expect(page.getByRole("heading", { name: "Workspace", level: 1 })).toBeVisible();
+  await expect(page.getByLabel("Nom", { exact: true })).toHaveValue("Perso");
+  await capture(info, "D11-page");
 });
 
 test("densité 13 px des maquettes", async () => {

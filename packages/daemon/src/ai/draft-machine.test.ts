@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ComponentDraft } from "@kibo/schema";
-import { applyDraftEvent, canRetry, isActive } from "./draft-machine";
+import { type ComponentDraft, MAX_DRAFT_REVISIONS } from "@kibo/schema";
+import { applyDraftEvent, canRetry, canRevise, isActive } from "./draft-machine";
 
 const d0: ComponentDraft = {
   id: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
@@ -17,6 +17,8 @@ const d0: ComponentDraft = {
   attempts: 0,
   failure: null,
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 1,
 };
@@ -110,5 +112,41 @@ describe("applyDraftEvent", () => {
   test("isActive", () => {
     expect(isActive(d0)).toBe(true);
     expect(isActive(applyDraftEvent(d0, { type: "abandoned" }, 2))).toBe(false);
+  });
+  test("a revision relaunches a reviewed draft with fresh attempts", () => {
+    const review: ComponentDraft = {
+      ...d0,
+      status: "review",
+      runId: "r3",
+      sessionId: "s1",
+      attempts: 3,
+      incidents: [{ kind: "removed", path: "evil.ts" }],
+    };
+    const revised = applyDraftEvent(review, { type: "revised", runId: "r4" }, 9);
+    expect(revised).toMatchObject({
+      status: "generating",
+      runId: "r4",
+      sessionId: "s1",
+      attempts: 1,
+      revisions: 1,
+      failure: null,
+      incidents: [],
+      updatedAt: 9,
+    });
+    const permissions: ComponentDraft = { ...review, status: "permissions" };
+    expect(applyDraftEvent(permissions, { type: "revised", runId: "r4" }, 9).status).toBe("generating");
+    expect(canRevise(review)).toBe(true);
+    expect(canRevise(permissions)).toBe(true);
+  });
+  test("a revision is refused outside review and after ten", () => {
+    for (const status of ["describing", "generating", "validating", "failed", "done", "abandoned"] as const) {
+      expect(canRevise({ ...d0, status })).toBe(false);
+      expect(() => applyDraftEvent({ ...d0, status }, { type: "revised", runId: "r2" }, 2)).toThrow(
+        "INVALID_INPUT",
+      );
+    }
+    const spent = { ...d0, status: "review", revisions: MAX_DRAFT_REVISIONS } as const;
+    expect(canRevise(spent)).toBe(false);
+    expect(() => applyDraftEvent(spent, { type: "revised", runId: "r2" }, 2)).toThrow("no revision left");
   });
 });

@@ -13,7 +13,10 @@ import {
   peekTicketKey,
   readProject,
   registerProject,
+  setProjectMeta,
   setStatus,
+  unregisterProject,
+  updateRegisteredProject,
 } from "./index";
 
 const meta = { id: "p1", key: "KIB", name: "Kibo", folder: "/tmp/kibo", color: "#F97316" };
@@ -29,6 +32,42 @@ describe("workspace", () => {
     const ws = createWorkspaceDoc();
     registerProject(ws, meta);
     expect(() => registerProject(ws, { ...meta, id: "p3" })).toThrow("INVALID_INPUT");
+  });
+  test("a registered project is updated in place and can be removed", () => {
+    const ws = createWorkspaceDoc();
+    registerProject(ws, meta);
+    registerProject(ws, { ...meta, id: "p2", key: "FAC", name: "API Facturation" });
+    expect(updateRegisteredProject(ws, "p1", { name: "Kibo 2", folder: null })).toEqual({
+      ...meta,
+      name: "Kibo 2",
+      folder: null,
+    });
+    expect(listProjects(ws).map((p) => [p.id, p.name, p.folder])).toEqual([
+      ["p1", "Kibo 2", null],
+      ["p2", "API Facturation", "/tmp/kibo"],
+    ]);
+    expect(() => updateRegisteredProject(ws, "p1", {})).toThrow("empty patch");
+    expect(() => updateRegisteredProject(ws, "p9", { name: "x" })).toThrow("NOT_FOUND");
+    unregisterProject(ws, "p1");
+    expect(listProjects(ws).map((p) => p.id)).toEqual(["p2"]);
+    expect(() => unregisterProject(ws, "p1")).toThrow("NOT_FOUND");
+    registerProject(ws, meta);
+    expect(listProjects(ws).map((p) => p.id)).toEqual(["p2", "p1"]);
+  });
+});
+
+describe("project meta", () => {
+  test("setProjectMeta writes only the given fields and keeps key and id", () => {
+    const doc = createProjectDoc(meta);
+    expect(setProjectMeta(doc, { color: "#6366F1" })).toEqual({ ...meta, color: "#6366F1" });
+    expect(setProjectMeta(doc, { name: "Noyau", folder: null })).toEqual({
+      ...meta,
+      name: "Noyau",
+      color: "#6366F1",
+      folder: null,
+    });
+    expect(() => setProjectMeta(doc, { name: " " })).toThrow("INVALID_INPUT");
+    expect(getProjectMeta(doc).key).toBe("KIB");
   });
 });
 

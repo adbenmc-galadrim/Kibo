@@ -1,5 +1,6 @@
 import { Binding, type MemberRole } from "@kibo/schema";
 import { isContainer, type LoroDoc, type LoroMap } from "loro-crdt";
+import { sameJson } from "./canonical-json";
 
 export type UpdateAuthor = { userId: string; role: MemberRole };
 
@@ -10,8 +11,6 @@ function readBinding(raw: unknown, id: string): Binding | string {
   if (parsed.data.id !== id) return `binding ${id} is stored under another id`;
   return parsed.data;
 }
-
-const canonical = (value: unknown): string => JSON.stringify(value);
 
 function creationViolation(binding: Binding, author: UpdateAuthor): string | null {
   if (binding.createdBy !== author.userId || binding.runner !== author.userId) {
@@ -29,7 +28,7 @@ function rewriteViolation(previous: Binding, current: Binding, author: UpdateAut
       return `binding ${current.id}: only its creator or an owner takes over the runner, on their own account`;
     }
   }
-  if (canonical(current.config) !== canonical(previous.config) && author.userId !== current.runner) {
+  if (!sameJson(current.config, previous.config) && author.userId !== current.runner) {
     return `binding ${current.id}: only its runner changes its config`;
   }
   return null;
@@ -40,7 +39,7 @@ function bindingViolation(previous: unknown, raw: unknown, id: string, author: U
   if (typeof current === "string") return current;
   const before = previous === undefined ? null : readBinding(previous, id);
   if (before === null || typeof before === "string") return creationViolation(current, author);
-  if (canonical(before) === canonical(current)) return null;
+  if (sameJson(before, current)) return null;
   return rewriteViolation(before, current, author);
 }
 
@@ -54,12 +53,7 @@ export function bindingsUpdateViolation(
   for (const id of current.keys()) {
     const raw = current.get(id);
     const known = previous.get(id);
-    if (
-      known !== undefined &&
-      !isContainer(known) &&
-      !isContainer(raw) &&
-      canonical(known) === canonical(raw)
-    ) {
+    if (known !== undefined && !isContainer(known) && !isContainer(raw) && sameJson(known, raw)) {
       continue;
     }
     const reason = bindingViolation(known, raw, id, author);

@@ -1,19 +1,25 @@
-import { type FinalizeComponentDraftInput, grantedOf } from "@kibo/schema";
+import {
+  type DraftStatus,
+  type FinalizeComponentDraftInput,
+  grantedOf,
+  MAX_DRAFT_REVISIONS,
+} from "@kibo/schema";
 import { Alert, AlertTitle } from "@kibo/sdk/ui/alert";
 import { Skeleton } from "@kibo/sdk/ui/skeleton";
 import { Info } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import type { Strategy } from "../components-page/PublishSections";
 import { useReportApproval } from "../dialogs/approval-scope";
 import { TrustDialog } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { frCreations } from "../i18n/fr-creations";
 import { aiErrorMessage } from "./ai-error";
-import { DraftDiffReview } from "./DraftDiffReview";
 import { DraftFailedStep } from "./DraftFailedStep";
 import { DraftFooter } from "./DraftFooter";
 import { DraftHeadline } from "./DraftHeadline";
 import { DraftPublishStep } from "./DraftPublishStep";
+import { DraftReviewStep } from "./DraftReviewStep";
 import { DraftStepper } from "./DraftStepper";
 import { draftActions, draftStep } from "./draft-flow";
 import { GenerateStep } from "./GenerateStep";
@@ -23,15 +29,27 @@ type Props = {
   draftId: string;
   target: FinalizeComponentDraftInput["target"];
   onDone: () => void;
+  onStatus?: (status: DraftStatus) => void;
 };
 
-export function AiDraftPanel({ draftId, target, onDone }: Props) {
+export function AiDraftPanel({ draftId, target, onDone, onStatus }: Props) {
   const { details, error, reload } = useComponentDraft(draftId);
+  const status = details?.status ?? null;
+  const reportStatus = useRef(onStatus);
+  reportStatus.current = onStatus;
+  useEffect(() => {
+    if (status) reportStatus.current?.(status);
+  }, [status]);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [reviewed, setReviewed] = useState(false);
   const [strategy, setStrategy] = useState<Strategy>("update-all");
   const [refused, setRefused] = useState(false);
+  useEffect(() => {
+    if (status !== "generating") return;
+    setRefused(false);
+    setReviewed(false);
+  }, [status]);
   const finished = useRef(false);
   const reviewedButton = useRef<HTMLButtonElement>(null);
   const approval =
@@ -64,7 +82,7 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
         {error}
       </p>
     );
-  if (!details) return <Skeleton className="h-48" />;
+  if (!details) return <Skeleton role="status" aria-label={fr.lazy.loading} className="h-48" />;
   const actions = draftActions(details);
   const publish = details.publish;
   const hash = publish?.hash ?? null;
@@ -80,15 +98,30 @@ export function AiDraftPanel({ draftId, target, onDone }: Props) {
     <div className="grid gap-4">
       <DraftHeadline details={details} reviewed={reviewed} exhausted={actions.codeFallback} />
       {details.status === "generating" && <GenerateStep draft={details} />}
+      {details.revisions > 0 && (details.status === "generating" || details.status === "validating") && (
+        <p className="text-xs text-muted-foreground">
+          {frCreations.revise.progress(details.revisions, MAX_DRAFT_REVISIONS)}
+        </p>
+      )}
       {details.status === "validating" && (
-        <div className="grid gap-2">
+        <output aria-label={fr.ai.validating} className="grid gap-2">
           <Skeleton className="h-10" />
           <Skeleton className="h-10" />
           <Skeleton className="h-10" />
-        </div>
+        </output>
       )}
       {details.status === "failed" && <DraftFailedStep details={details} exhausted={actions.codeFallback} />}
-      {((details.status === "review" && !reviewed) || refused) && <DraftDiffReview diff={details.diff} />}
+      {((details.status === "review" && !reviewed) || refused) && (
+        <DraftReviewStep
+          details={details}
+          canRevise={actions.canRevise}
+          busy={busy}
+          onRevise={async ({ feedback, attachments }) => {
+            await client.rpc({ method: "reviseComponentDraft", draftId, feedback, attachments });
+            if (!finished.current) reload();
+          }}
+        />
+      )}
       {details.status === "review" && reviewed && (
         <DraftPublishStep
           details={details}

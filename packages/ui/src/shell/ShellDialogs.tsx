@@ -1,19 +1,41 @@
-import type { AgentsState, FileRef, ProjectSnapshot, TabTarget, WorkspaceConfig } from "@kibo/schema";
+import {
+  type AgentsState,
+  type FileRef,
+  INBOX_ID,
+  isTerminal,
+  type Page,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type TabTarget,
+  type WorkspaceConfig,
+} from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
+import { client } from "../api";
+import { fr } from "../i18n/fr";
+import { errorMessage } from "../lib/error-message";
+import { fileScope, newTicketProjects } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
+import { canEdit } from "../state/access";
 import {
   AssignDialog,
+  ConfirmDialog,
+  DeleteProjectDialog,
+  EditProjectDialog,
+  FileTicketDialog,
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
   ProfileSheet,
+  RenamePageDialog,
   StarterDialog,
   TicketSheet,
 } from "./lazy-dialogs";
 import { FilePreviewSheet, JoinProjectDialog, ShareProjectDialog } from "./lazy-screens";
+import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
 export type SheetTicket = { projectId: string; ticketId: string };
+export type NewTicketRequest = NewTicketDefaults & { projectId?: string };
 
 export type DialogsState = {
   newProject: boolean;
@@ -21,12 +43,17 @@ export type DialogsState = {
   newPageParent: string | null | undefined;
   suggestFor: string | null;
   sheet: SheetTicket | null;
-  newTicket: NewTicketDefaults | null;
+  newTicket: NewTicketRequest | null;
+  fileTicket: { ticketId: string } | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
   newProfile: boolean;
   preview: FileRef | null;
   share: string | null;
   join: boolean;
+  renamePage: Page | null;
+  deletePage: Page | null;
+  editProject: string | null;
+  deleteProject: string | null;
 };
 
 export const NO_DIALOG: DialogsState = {
@@ -36,18 +63,23 @@ export const NO_DIALOG: DialogsState = {
   suggestFor: null,
   sheet: null,
   newTicket: null,
+  fileTicket: null,
   assign: null,
   newProfile: false,
   preview: null,
   share: null,
   join: false,
+  renamePage: null,
+  deletePage: null,
+  editProject: null,
+  deleteProject: null,
 };
 
 type Props = {
   state: DialogsState;
   set(patch: Partial<DialogsState>): void;
   viewer: string;
-  projectsCount: number;
+  projects: ProjectSummary[];
   project: ProjectSnapshot | null;
   ticketProject: ProjectSnapshot | null;
   sheetProject: ProjectSnapshot | null;
@@ -56,13 +88,14 @@ type Props = {
   config: WorkspaceConfig | null;
   onOpenTarget(target: TabTarget, newTab: boolean): void;
   onOpenFileTab(ref: FileRef, edit: boolean): void;
+  onCloseProject(projectId: string): void;
 };
 
 export function ShellDialogs({
   state,
   set,
   viewer,
-  projectsCount,
+  projects,
   project,
   ticketProject,
   sheetProject,
@@ -75,13 +108,21 @@ export function ShellDialogs({
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
   const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
+  const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
+  const doomedProject = state.deleteProject
+    ? (projects.find((x) => x.id === state.deleteProject) ?? null)
+    : null;
+  const inbox = snapshots.get(INBOX_ID);
+  const filing = inbox?.tickets.find((x) => x.id === state.fileTicket?.ticketId) ?? null;
+  const doomed =
+    project && state.deletePage ? descendantIds(project.pages, state.deletePage.id) : new Set<string>();
   return (
     <>
       {newProjectOpened && (
         <NewProjectDialog
           open={state.newProject}
           onOpenChange={(o) => set(o ? { newProject: true } : { newProject: false, newProjectFocus: "name" })}
-          count={projectsCount}
+          count={projects.length}
           focusFolder={state.newProjectFocus === "folder"}
         />
       )}
@@ -93,6 +134,35 @@ export function ShellDialogs({
           open
           onOpenChange={(o) => !o && set({ newPageParent: undefined })}
           onSuggest={() => set({ newPageParent: undefined, suggestFor: project.meta.id })}
+        />
+      )}
+      {project && state.renamePage && (
+        <RenamePageDialog
+          projectId={project.meta.id}
+          page={state.renamePage}
+          onClose={() => set({ renamePage: null })}
+        />
+      )}
+      {project && state.deletePage && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && set({ deletePage: null })}
+          title={fr.nav.deletePageTitle(state.deletePage.title)}
+          description={fr.nav.deletePageHelp(
+            doomed.size,
+            project.instances.filter((i) => i.pageId === state.deletePage?.id || doomed.has(i.pageId)).length,
+          )}
+          confirmLabel={fr.common.delete}
+          cancelLabel={fr.common.cancel}
+          onConfirm={async () => {
+            if (!state.deletePage) return;
+            await client.rpc({
+              method: "command",
+              projectId: project.meta.id,
+              command: { method: "deletePage", pageId: state.deletePage.id },
+            });
+          }}
+          describeError={errorMessage}
         />
       )}
       {state.suggestFor && (
@@ -107,23 +177,43 @@ export function ShellDialogs({
           project={sheetProject}
           ticketId={sheet.ticketId}
           domains={projectDomainsOf(sheetProject, config) ?? []}
+          viewer={viewer}
           onClose={() => set({ sheet: null })}
           onAssign={() =>
             set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
           }
+          onFile={() => set({ sheet: null, fileTicket: { ticketId: sheet.ticketId } })}
           onOpenInTab={() => {
             set({ sheet: null });
             p.onOpenTarget({ kind: "ticket", projectId: sheet.projectId, ticketId: sheet.ticketId }, true);
           }}
           onOpenFile={openFile}
+          onOpenTicket={(ticketId) => set({ sheet: { projectId: sheet.projectId, ticketId } })}
+          onDeleted={() => set({ sheet: null })}
         />
       )}
-      {ticketProject && state.newTicket && (
+      {state.newTicket && (
         <NewTicketDialog
-          project={ticketProject}
+          projects={newTicketProjects(projects, snapshots)}
+          snapshots={snapshots}
+          initialProjectId={
+            state.newTicket.projectId ??
+            (ticketProject && canEdit(ticketProject) ? ticketProject.meta.id : INBOX_ID)
+          }
+          lockProject={state.newTicket.parentId != null || state.newTicket.instanceId != null}
           viewer={viewer}
           defaults={state.newTicket}
           onClose={() => set({ newTicket: null })}
+        />
+      )}
+      {filing && inbox && (
+        <FileTicketDialog
+          ticket={filing}
+          {...fileScope(inbox, filing.id)}
+          projects={projects}
+          snapshots={snapshots}
+          onClose={() => set({ fileTicket: null })}
+          onFiled={(projectId, ticketId) => set({ fileTicket: null, sheet: { projectId, ticketId } })}
         />
       )}
       {state.assign && (
@@ -144,6 +234,28 @@ export function ShellDialogs({
       )}
       {shareProject && (
         <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
+      )}
+      {editing && <EditProjectDialog project={editing} onClose={() => set({ editProject: null })} />}
+      {doomedProject && (
+        <DeleteProjectDialog
+          project={doomedProject}
+          snapshot={snapshots.get(doomedProject.id) ?? null}
+          activeRuns={
+            agents
+              ? agents.runs.filter((r) => r.projectId === doomedProject.id && !isTerminal(r.state)).length
+              : 0
+          }
+          onClose={() => set({ deleteProject: null })}
+          onDeleted={(projectId) => {
+            set({ deleteProject: null });
+            p.onCloseProject(projectId);
+          }}
+          onOpenAgents={() => {
+            set({ deleteProject: null });
+            p.onOpenTarget({ kind: "screen", screen: "agents" }, false);
+          }}
+          onShare={() => set({ deleteProject: null, share: doomedProject.id })}
+        />
       )}
       {state.join && <JoinProjectDialog open onOpenChange={(o) => !o && set({ join: false })} />}
       {preview && (

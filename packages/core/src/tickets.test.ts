@@ -54,8 +54,22 @@ describe("status", () => {
     expect(setStatus(d, t.id, "in_progress").blockedReason).toBeNull();
   });
 
-  test("a ticket cannot be created already blocked", () => {
-    expect(() => createTicket(doc(), { title: "X", statusId: "blocked" })).toThrow("BLOCKED_REASON_REQUIRED");
+  test("a ticket can be born blocked when a reason is given, and not otherwise", () => {
+    const d = doc();
+    const t = createTicket(d, {
+      title: "Audit",
+      statusId: "blocked",
+      blockedReason: " Audit externe en attente ",
+    });
+    expect([t.statusId, t.blockedReason]).toEqual(["blocked", "Audit externe en attente"]);
+    expect(() => createTicket(d, { title: "B", statusId: "blocked", blockedReason: "   " })).toThrow(
+      "BLOCKED_REASON_REQUIRED",
+    );
+    expect(() => createTicket(d, { title: "C", statusId: "blocked" })).toThrow("BLOCKED_REASON_REQUIRED");
+    expect(
+      createTicket(d, { title: "D", statusId: "todo", blockedReason: "ignored" }).blockedReason,
+    ).toBeNull();
+    expect(listTickets(d).map((x) => x.title)).toEqual(["Audit", "D"]);
   });
 });
 
@@ -151,4 +165,25 @@ test("upsertExternalRef adds a PR once per URL and keeps the latest state", () =
   upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "draft" });
   const after = upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "merged" });
   expect(after.externalRefs).toEqual([{ kind: "github_pr", url, number: 3, state: "merged" }]);
+});
+
+describe("order", () => {
+  test("moveTicket with an index puts the ticket at that final position among its siblings", () => {
+    const d = doc();
+    const a = createTicket(d, { title: "a" });
+    createTicket(d, { title: "b" });
+    const c = createTicket(d, { title: "c" });
+    const p = createTicket(d, { title: "p" });
+    createTicket(d, { title: "q", parentId: p.id });
+    const order = () => listTickets(d).map((t) => t.title);
+    expect(order()).toEqual(["a", "b", "c", "p", "q"]);
+    moveTicket(d, a.id, null, 1);
+    expect(order()).toEqual(["b", "a", "c", "p", "q"]);
+    moveTicket(d, c.id, null, 0);
+    expect(order()).toEqual(["c", "b", "a", "p", "q"]);
+    moveTicket(d, c.id, null, 3);
+    expect(order()).toEqual(["b", "a", "p", "q", "c"]);
+    moveTicket(d, a.id, p.id, 1);
+    expect(order()).toEqual(["b", "p", "q", "a", "c"]);
+  });
 });

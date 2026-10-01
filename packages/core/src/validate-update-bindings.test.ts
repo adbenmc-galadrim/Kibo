@@ -21,7 +21,25 @@ const MAX: UpdateAuthor = { userId: "u-max", role: "editor" };
 const adamsBinding: Binding = {
   id: "b-adam",
   adapter: "github-issues",
-  config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
+  config: {
+    repo: "adam/kibo",
+    project: {
+      owner: "adam",
+      number: 3,
+      nodeId: "PVT_1",
+      statusFieldId: "PVTSSF_1",
+      statusMap: {
+        backlog: "Backlog",
+        todo: "Todo",
+        in_progress: "En cours",
+        in_review: "En revue",
+        blocked: "Bloqué",
+        done: "Fait",
+      },
+    },
+    importClosed: false,
+    labels: ["bug", "ux"],
+  },
   createdBy: "u-adam",
   runner: "u-adam",
 };
@@ -181,6 +199,39 @@ describe("shape of a binding", () => {
       removeBinding(c, "b-adam");
       addBinding(c, { ...adamsBinding, runner: "u-lea", createdBy: "u-lea" });
     });
+    expect(verdict).toEqual(refusedAbout("b-adam"));
+  });
+});
+
+function reversedKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(reversedKeys);
+  if (value === null || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .reverse()
+      .map(([key, inner]) => [key, reversedKeys(inner)]),
+  );
+}
+
+describe("key order of a stored binding", () => {
+  test("rewriting it with its keys reordered at every depth is not a change", () => {
+    expect(verdictFor(MAX, (c) => bindings(c).set("b-adam", reversedKeys(adamsBinding)))).toEqual({
+      ok: true,
+    });
+  });
+
+  test("a reordered binding with a real config change is still refused", () => {
+    const verdict = verdictFor(MAX, (c) =>
+      bindings(c).set("b-adam", reversedKeys(withRepo(adamsBinding, "adam/private"))),
+    );
+    expect(verdict).toEqual(refusedAbout("b-adam"));
+  });
+
+  test("reordering an array in its config is a change", () => {
+    const labels = [...adamsBinding.config.labels].reverse();
+    const verdict = verdictFor(MAX, (c) =>
+      rewrite(c, adamsBinding, { config: { ...adamsBinding.config, labels } }),
+    );
     expect(verdict).toEqual(refusedAbout("b-adam"));
   });
 });

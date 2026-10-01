@@ -2,8 +2,12 @@ import type { SyncStatus } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
+import { frSyncPage } from "../i18n/fr-sync-page";
+import { hostOf } from "../lib/host-of";
 import { syncErrorText } from "../lib/sync-errors";
 import { UserAvatar } from "../shell/UserAvatar";
 
@@ -41,6 +45,23 @@ function ConnectionState({ status }: { status: SyncStatus }) {
   );
 }
 
+function Details({ value }: { value: string }) {
+  return (
+    <Collapsible className="grid gap-1">
+      <CollapsibleTrigger className="group flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <ChevronRight
+          aria-hidden
+          className="size-3.5 transition-transform group-data-[state=open]:rotate-90"
+        />
+        {frSyncPage.details}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <code className="block font-mono text-xs break-all text-muted-foreground">{value}</code>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 type ServerProps = { status: SyncStatus; remote: boolean; onDisconnect(): void };
 
 export function ServerCard({ status, remote, onDisconnect }: ServerProps) {
@@ -52,9 +73,12 @@ export function ServerCard({ status, remote, onDisconnect }: ServerProps) {
       </CardHeader>
       <CardContent className="grid gap-3">
         <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate font-mono text-sm">{status.serverUrl}</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">
+            {hostOf(status.serverUrl ?? "")}
+          </span>
           <ConnectionState status={status} />
         </div>
+        {status.serverUrl && <Details value={status.serverUrl} />}
         {failure && status.lastError && (
           <p role="alert" className="text-xs text-red-600 dark:text-red-400">
             {syncErrorText(t.connectionErrors, status.lastError)}
@@ -79,12 +103,12 @@ export function AccountCard({ status }: { status: SyncStatus }) {
       </CardHeader>
       <CardContent>
         {user && (
-          <div className="flex items-center gap-3">
-            <UserAvatar user={user.name} />
-            <div className="grid gap-0.5">
+          <div className="grid gap-3">
+            <div className="flex items-center gap-3">
+              <UserAvatar user={user.name} />
               <span className="text-sm font-medium">{user.name}</span>
-              <span className="font-mono text-2xs text-muted-foreground">{user.id.slice(0, 8)}</span>
             </div>
+            <Details value={user.id} />
           </div>
         )}
       </CardContent>

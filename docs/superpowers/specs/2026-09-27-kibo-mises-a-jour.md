@@ -99,7 +99,10 @@ TypeScript testé, et la coque ne fait que :
 1. enregistrer `tauri-plugin-updater` et `tauri-plugin-process` ;
 2. au message `KIBO_READY`, accorder **à l'exécution** une capacité IPC (`updater:default`, `process:allow-restart`,
    `core:app:allow-version`) à **l'origine exacte** du démon (`http://127.0.0.1:<port>`), et à elle seule : l'origine du
-   bac à sable des composants, sur un autre port, n'obtient rien.
+   bac à sable des composants, sur un autre port, n'obtient rien. Depuis la phase 9, la même capacité porte aussi
+   `core:window:allow-set-title` (titre de la fenêtre) et `opener:allow-open-url` limitée à `https://**` (liens
+   externes) : spec code et onglets §12.5. Depuis la vague 2 de la phase 9, elle porte aussi `dialog:allow-open`
+   (sélecteur de dossier natif, sans `save`, `message`, `ask` ni `confirm`) : spec de conception §14.6.
 
 L'UI appelle l'API Tauri (`@tauri-apps/plugin-updater`, `@tauri-apps/plugin-process`) **uniquement pour cela** et
 uniquement quand `__TAURI_INTERNALS__` est présent. Le démon ajoute `ipc:` et `http://ipc.localhost` au `connect-src` de
@@ -109,7 +112,7 @@ sa CSP (les seuls schémas de l'IPC Tauri, inertes dans un navigateur) ; il ne c
 
 - Signature minisign obligatoire (updater Tauri) ; HTTPS vers `github.com` ; aucun exécutable lancé hors du bundle
   téléchargé et vérifié.
-- Capacité IPC limitée à trois permissions et à une origine, accordée après la réponse `KIBO_READY` du démon local.
+- Capacité IPC limitée à une origine et aux permissions listées en §3.7 (mise à jour, redémarrage, version, titre de la fenêtre, ouverture d'URL `https` dans le navigateur, sélecteur de dossier), accordée après la réponse `KIBO_READY` du démon local.
 - Aucun secret dans l'application, le CRDT ou la CI hors des secrets GitHub chiffrés.
 
 ## 5. Tests

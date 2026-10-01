@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@kibo/sdk
 import { Bell, Bot, FileText, FolderKanban, GitCommitHorizontal, Plus, SunMoon, Ticket } from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { SCREENS } from "../tabs/screens";
 import { agentItems } from "./agent-items";
 import {
@@ -51,11 +52,15 @@ const ICONS = {
   domains: SCREENS.domains.icon,
   components: SCREENS.components.icon,
   mine: SCREENS.mine.icon,
+  inbox: SCREENS.inbox.icon,
   integrations: SCREENS.integrations.icon,
   appearance: SCREENS.appearance.icon,
   security: SCREENS.security.icon,
   sources: SCREENS.sources.icon,
   sync: SCREENS.sync.icon,
+  shortcuts: SCREENS.shortcuts.icon,
+  workspace: SCREENS.workspace.icon,
+  creations: SCREENS.creations.icon,
 };
 const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
   reply: "text-orange-600 dark:text-orange-400",
@@ -201,7 +206,7 @@ export function CommandPalette({
               {fr.palette.hintOpen}
             </span>
             <span className="flex items-center gap-1.5">
-              <Kbd>⌘↵</Kbd>
+              <Kbd>{shortcutLabel(["↵"], isMac())}</Kbd>
               {fr.palette.hintSheet}
             </span>
             <span className="flex items-center gap-1.5">

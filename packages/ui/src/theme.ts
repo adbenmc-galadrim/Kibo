@@ -1,5 +1,6 @@
 import type { Theme } from "@kibo/schema";
 import { useSyncExternalStore } from "react";
+import { readPref, subscribePref, writePref } from "./lib/local-pref";
 
 export type ThemePreference = "system" | "light" | "dark";
 
@@ -9,17 +10,8 @@ const media = () => window.matchMedia("(prefers-color-scheme: dark)");
 export const nextTheme = (p: ThemePreference): ThemePreference =>
   p === "system" ? "light" : p === "light" ? "dark" : "system";
 
-function withStorage<T>(work: (storage: Storage) => T, fallback: T): T {
-  try {
-    return work(window.localStorage);
-  } catch (e) {
-    console.error("theme storage unavailable", e);
-    return fallback;
-  }
-}
-
 export function readThemePreference(): ThemePreference {
-  const value = withStorage((s) => s.getItem(KEY), null);
+  const value = readPref(KEY, "system");
   return value === "light" || value === "dark" ? value : "system";
 }
 
@@ -28,12 +20,26 @@ function apply(preference: ThemePreference): void {
   document.documentElement.classList.toggle("dark", dark);
 }
 
+export const THEME_PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
+export function setThemePreference(preference: ThemePreference): void {
+  apply(preference);
+  writePref(KEY, preference === "system" ? null : preference);
+}
+
 export function cycleTheme(): ThemePreference {
   const next = nextTheme(readThemePreference());
-  withStorage((s) => (next === "system" ? s.removeItem(KEY) : s.setItem(KEY, next)), undefined);
-  apply(next);
+  setThemePreference(next);
   return next;
 }
+
+const subscribePreference = (onChange: () => void): (() => void) =>
+  subscribePref(KEY, (external) => {
+    if (external) apply(readThemePreference());
+    onChange();
+  });
+
+export const useThemePreference = (): ThemePreference =>
+  useSyncExternalStore(subscribePreference, readThemePreference);
 
 export function followSystemTheme(): void {
   apply(readThemePreference());

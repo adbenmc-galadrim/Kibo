@@ -12,11 +12,15 @@ export const Screen = z.enum([
   "domains",
   "components",
   "mine",
+  "inbox",
   "integrations",
   "appearance",
   "security",
   "sources",
   "sync",
+  "shortcuts",
+  "workspace",
+  "creations",
 ]);
 export type Screen = z.infer<typeof Screen>;
 

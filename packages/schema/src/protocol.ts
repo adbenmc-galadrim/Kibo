@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ComponentCall } from "./call";
+import { ComponentFormat } from "./format";
 import { ComponentManifest } from "./manifest";
 import { StatusId } from "./status";
 
@@ -44,6 +45,7 @@ export const HostToFrame = z.discriminatedUnion("type", [
     viewer: z.string(),
     theme: Theme,
     surface: Surface,
+    format: ComponentFormat.optional(),
   }),
   z.object({ kibo: z.literal(1), type: z.literal("theme"), theme: Theme }),
   z.object({ kibo: z.literal(1), type: z.literal("changed") }),

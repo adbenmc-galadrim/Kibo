@@ -16,6 +16,7 @@ export type NewTicket = {
   title: string;
   description?: string;
   statusId?: StatusId;
+  blockedReason?: string | null;
   parentId?: string | null;
   assignee?: Assignee | null;
   domainId?: string | null;
@@ -27,7 +28,7 @@ export type TicketPatch = {
   assignee?: Assignee | null;
 };
 
-const tree = (doc: LoroDoc) => doc.getTree("tickets");
+export const ticketTree = (doc: LoroDoc) => doc.getTree("tickets");
 
 const RefList = ExternalRef.array();
 
@@ -63,6 +64,12 @@ function readTicket(n: LoroTreeNode): Ticket {
   };
 }
 
+function cleanReason(reason: string | null | undefined): string {
+  const r = reason?.trim() ?? "";
+  if (!r) throw new KiboError("BLOCKED_REASON_REQUIRED", "a blocked ticket needs a reason");
+  return r;
+}
+
 function writeDescription(n: LoroTreeNode, value: string): void {
   const text = n.data.getOrCreateContainer("description", new LoroText());
   if (text.length > 0) text.delete(0, text.length);
@@ -70,20 +77,18 @@ function writeDescription(n: LoroTreeNode, value: string): void {
 }
 
 export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
-  if (input.statusId === "blocked") {
-    throw new KiboError("BLOCKED_REASON_REQUIRED", "create the ticket first, then block it with a reason");
-  }
+  const blockedReason = input.statusId === "blocked" ? cleanReason(input.blockedReason) : null;
   const title = cleanTitle(input.title);
-  const parent = input.parentId ? getNode(tree(doc), input.parentId) : undefined;
+  const parent = input.parentId ? getNode(ticketTree(doc), input.parentId) : undefined;
   const serverKeys = getKeyAllocator(doc) === "server";
   const pendingSeq = serverKeys ? nextPendingSeq(doc) : null;
   const key = serverKeys ? null : formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
-  const node = parent ? parent.createNode() : tree(doc).createNode();
+  const node = parent ? parent.createNode() : ticketTree(doc).createNode();
   node.data.set("key", key);
   node.data.set("pendingSeq", pendingSeq);
   node.data.set("title", title);
   node.data.set("statusId", input.statusId ?? "todo");
-  node.data.set("blockedReason", null);
+  node.data.set("blockedReason", blockedReason);
   node.data.set("domainId", input.domainId ?? null);
   node.data.set("assignee", input.assignee ?? null);
   node.data.set("externalRefs", []);
@@ -93,15 +98,15 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
 }
 
 export function getTicket(doc: LoroDoc, id: string): Ticket {
-  return readTicket(getNode(tree(doc), id));
+  return readTicket(getNode(ticketTree(doc), id));
 }
 
 export function listTickets(doc: LoroDoc): Ticket[] {
-  return walkDepthFirst(tree(doc)).map(readTicket);
+  return walkDepthFirst(ticketTree(doc)).map(readTicket);
 }
 
 export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Ticket {
-  const node = getNode(tree(doc), id);
+  const node = getNode(ticketTree(doc), id);
   if (patch.title !== undefined) node.data.set("title", cleanTitle(patch.title));
   if (patch.description !== undefined) writeDescription(node, patch.description);
   if (patch.domainId !== undefined) node.data.set("domainId", patch.domainId);
@@ -111,32 +116,26 @@ export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Tick
 }
 
 export function setStatus(doc: LoroDoc, id: string, statusId: StatusId, reason?: string): Ticket {
-  const node = getNode(tree(doc), id);
-  if (statusId === "blocked") {
-    const r = reason?.trim() ?? "";
-    if (!r) throw new KiboError("BLOCKED_REASON_REQUIRED", "a blocked ticket needs a reason");
-    node.data.set("blockedReason", r);
-  } else {
-    node.data.set("blockedReason", null);
-  }
+  const node = getNode(ticketTree(doc), id);
+  node.data.set("blockedReason", statusId === "blocked" ? cleanReason(reason) : null);
   node.data.set("statusId", statusId);
   doc.commit();
   return readTicket(node);
 }
 
 export function moveTicket(doc: LoroDoc, id: string, parentId: string | null, index?: number): void {
-  moveNode(tree(doc), id, parentId, index);
+  moveNode(ticketTree(doc), id, parentId, index);
   doc.commit();
 }
 
 export function deleteTicket(doc: LoroDoc, id: string): string[] {
-  const ids = subtreeIds(getNode(tree(doc), id));
-  tree(doc).delete(id as TreeID);
+  const ids = subtreeIds(getNode(ticketTree(doc), id));
+  ticketTree(doc).delete(id as TreeID);
   pruneLinks(doc, ids);
   return ids;
 }
 
 export function childProgress(doc: LoroDoc, id: string): { done: number; total: number } {
-  const children = getNode(tree(doc), id).children() ?? [];
+  const children = getNode(ticketTree(doc), id).children() ?? [];
   return { done: children.filter((c) => c.data.get("statusId") === "done").length, total: children.length };
 }

@@ -4,10 +4,12 @@ import {
   type DraftStatus,
   KiboError,
   MAX_DRAFT_ATTEMPTS,
+  MAX_DRAFT_REVISIONS,
 } from "@kibo/schema";
 
 export type DraftEvent =
   | { type: "enqueued"; runId: string }
+  | { type: "revised"; runId: string }
   | {
       type: "run_ended";
       runId: string;
@@ -26,11 +28,15 @@ export type DraftEvent =
   | { type: "interrupted" };
 
 const TERMINAL: DraftStatus[] = ["done", "abandoned"];
+const REVISABLE: DraftStatus[] = ["review", "permissions"];
 
 export const isActive = (d: ComponentDraft): boolean => !TERMINAL.includes(d.status);
 
 export const canRetry = (d: ComponentDraft): boolean =>
   d.status === "failed" && d.attempts < MAX_DRAFT_ATTEMPTS && d.failure?.kind !== "config_changed";
+
+export const canRevise = (d: ComponentDraft): boolean =>
+  REVISABLE.includes(d.status) && d.revisions < MAX_DRAFT_REVISIONS;
 
 function assertStatus(d: ComponentDraft, allowed: DraftStatus[], event: DraftEvent["type"]) {
   if (!allowed.includes(d.status))
@@ -48,6 +54,17 @@ export function applyDraftEvent(d: ComponentDraft, e: DraftEvent, now: number): 
         status: "generating",
         runId: e.runId,
         attempts: d.attempts + 1,
+        failure: null,
+        incidents: [],
+      });
+    case "revised":
+      assertStatus(d, REVISABLE, e.type);
+      if (d.revisions >= MAX_DRAFT_REVISIONS) throw new KiboError("INVALID_INPUT", "no revision left");
+      return next({
+        status: "generating",
+        runId: e.runId,
+        attempts: 1,
+        revisions: d.revisions + 1,
         failure: null,
         incidents: [],
       });

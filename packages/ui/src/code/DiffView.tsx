@@ -9,7 +9,8 @@ export type DiffMode = "unified" | "split";
 
 const LINE_HEIGHT_PX = 24;
 const GUTTER = "select-none pr-3 text-right text-zinc-600 dark:text-zinc-400";
-const CODE = "min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere]";
+const codeClass = (wrap: boolean) =>
+  cn("min-w-0", wrap ? "whitespace-pre-wrap [overflow-wrap:anywhere]" : "whitespace-pre");
 const TONE: Record<DiffLine["kind"], string> = {
   add: "bg-green-500/10 text-green-800 dark:bg-green-500/15 dark:text-green-300",
   del: "bg-red-500/10 text-red-700 dark:bg-red-500/15 dark:text-red-300",
@@ -19,7 +20,9 @@ const SIGN: Record<DiffLine["kind"], string> = { add: "+", del: "-", context: ""
 
 const lineKey = (l: DiffLine) => `${l.kind}:${l.oldNo ?? ""}:${l.newNo ?? ""}`;
 
-const UnifiedHunk = memo(function UnifiedHunk({ hunk }: { hunk: Hunk }) {
+type HunkProps = { hunk: Hunk; wrap: boolean };
+
+const UnifiedHunk = memo(function UnifiedHunk({ hunk, wrap }: HunkProps) {
   return (
     <div>
       {hunk.lines.map((l) => (
@@ -27,26 +30,26 @@ const UnifiedHunk = memo(function UnifiedHunk({ hunk }: { hunk: Hunk }) {
           <span className={GUTTER}>{l.oldNo ?? ""}</span>
           <span className={GUTTER}>{l.newNo ?? ""}</span>
           <span className="select-none">{SIGN[l.kind]}</span>
-          <span className={CODE}>{l.text}</span>
+          <span className={codeClass(wrap)}>{l.text}</span>
         </div>
       ))}
     </div>
   );
 });
 
-function Half({ line, side }: { line: DiffLine | null; side: "old" | "new" }) {
+function Half({ line, side, wrap }: { line: DiffLine | null; side: "old" | "new"; wrap: boolean }) {
   if (!line) return <div className="bg-muted/40" />;
   const no = side === "old" ? line.oldNo : line.newNo;
   return (
     <div className={cn("grid min-w-0 grid-cols-[3.5rem_1.5rem_1fr]", TONE[line.kind])}>
       <span className={GUTTER}>{no ?? ""}</span>
       <span className="select-none">{SIGN[line.kind]}</span>
-      <span className={CODE}>{line.text}</span>
+      <span className={codeClass(wrap)}>{line.text}</span>
     </div>
   );
 }
 
-const SplitHunk = memo(function SplitHunk({ hunk }: { hunk: Hunk }) {
+const SplitHunk = memo(function SplitHunk({ hunk, wrap }: HunkProps) {
   return (
     <div>
       {splitRows(hunk).map((r) => (
@@ -54,8 +57,8 @@ const SplitHunk = memo(function SplitHunk({ hunk }: { hunk: Hunk }) {
           key={`${r.left ? lineKey(r.left) : "-"}|${r.right ? lineKey(r.right) : "-"}`}
           className="grid grid-cols-2 divide-x"
         >
-          <Half line={r.left} side="old" />
-          <Half line={r.right} side="new" />
+          <Half line={r.left} side="old" wrap={wrap} />
+          <Half line={r.right} side="new" wrap={wrap} />
         </div>
       ))}
     </div>
@@ -67,10 +70,11 @@ type Props = {
   area: ChangeArea;
   mode: DiffMode;
   busy: boolean;
-  onHunk(index: number, header: string): void;
+  wrap: boolean;
+  onHunk?: (index: number, header: string) => void;
 };
 
-export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
+export function DiffView({ diff, area, mode, busy, wrap, onHunk }: Props) {
   if (diff.binary) return <p className="p-6 text-sm text-muted-foreground">{fr.changes.binary}</p>;
   const label = area === "unstaged" ? fr.changes.stageHunk : fr.changes.unstageHunk;
   return (
@@ -86,7 +90,7 @@ export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
         >
           <header className="sticky top-0 z-10 flex h-7 items-center justify-between gap-4 bg-muted px-4 text-2xs text-zinc-600 dark:text-zinc-400">
             <span className="truncate">{hunk.header}</span>
-            {diff.hunkStaging && (
+            {diff.hunkStaging && onHunk && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -98,7 +102,11 @@ export function DiffView({ diff, area, mode, busy, onHunk }: Props) {
               </Button>
             )}
           </header>
-          {mode === "unified" ? <UnifiedHunk hunk={hunk} /> : <SplitHunk hunk={hunk} />}
+          {mode === "unified" ? (
+            <UnifiedHunk hunk={hunk} wrap={wrap} />
+          ) : (
+            <SplitHunk hunk={hunk} wrap={wrap} />
+          )}
         </section>
       ))}
     </div>

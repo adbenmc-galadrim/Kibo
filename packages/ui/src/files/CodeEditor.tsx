@@ -18,15 +18,18 @@ type Props = {
   path: string;
   layout: EditorLayout;
   label: string;
+  wrap: boolean;
   onChange(value: string): void;
   onSave(): void;
 };
 
-type Mounted = { views: EditorView[]; mode: Compartment; destroy(): void };
+type Compartments = { mode: Compartment; wrapping: Compartment };
+type Mounted = { views: EditorView[]; compartments: Compartments; destroy(): void };
 
 const modeOf = (dark: boolean) => EditorView.darkTheme.of(dark);
+const wrappingOf = (wrap: boolean): Extension => (wrap ? EditorView.lineWrapping : []);
 
-export function CodeEditor({ initial, original, path, layout, label, onChange, onSave }: Props) {
+export function CodeEditor({ initial, original, path, layout, label, wrap, onChange, onSave }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const handlers = useRef({ onChange, onSave });
   handlers.current = { onChange, onSave };
@@ -35,17 +38,20 @@ export function CodeEditor({ initial, original, path, layout, label, onChange, o
   const dark = useDarkMode();
   const latestDark = useRef(dark);
   latestDark.current = dark;
+  const latestWrap = useRef(wrap);
+  latestWrap.current = wrap;
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const parent = host.current;
     if (!parent) return;
     const language = new Compartment();
-    const mode = new Compartment();
+    const compartments: Compartments = { mode: new Compartment(), wrapping: new Compartment() };
     const shared: Extension[] = [
       basicSetup,
       kiboEditorTheme,
-      mode.of(modeOf(latestDark.current)),
+      compartments.mode.of(modeOf(latestDark.current)),
+      compartments.wrapping.of(wrappingOf(latestWrap.current)),
       language.of([]),
     ];
     const editable: Extension[] = [
@@ -67,7 +73,7 @@ export function CodeEditor({ initial, original, path, layout, label, onChange, o
         handlers.current.onChange(doc.current);
       }),
     ];
-    const next = createEditor(parent, doc.current, original, layout, shared, editable, mode);
+    const next = createEditor(parent, doc.current, original, layout, shared, editable, compartments);
     mounted.current = next;
     const description = LanguageDescription.matchFilename(languages, splitPath(path).name);
     let alive = true;
@@ -90,8 +96,16 @@ export function CodeEditor({ initial, original, path, layout, label, onChange, o
   useEffect(() => {
     const current = mounted.current;
     if (!current) return;
-    for (const view of current.views) view.dispatch({ effects: current.mode.reconfigure(modeOf(dark)) });
+    const effects = current.compartments.mode.reconfigure(modeOf(dark));
+    for (const view of current.views) view.dispatch({ effects });
   }, [dark]);
+
+  useEffect(() => {
+    const current = mounted.current;
+    if (!current) return;
+    const effects = current.compartments.wrapping.reconfigure(wrappingOf(wrap));
+    for (const view of current.views) view.dispatch({ effects });
+  }, [wrap]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -112,7 +126,7 @@ function createEditor(
   layout: EditorLayout,
   shared: Extension[],
   editable: Extension[],
-  mode: Compartment,
+  compartments: Compartments,
 ): Mounted {
   if (layout === "split" && original !== null) {
     const merge = new MergeView({
@@ -123,12 +137,12 @@ function createEditor(
       b: { doc, extensions: editable },
       parent,
     });
-    return { views: [merge.a, merge.b], mode, destroy: () => merge.destroy() };
+    return { views: [merge.a, merge.b], compartments, destroy: () => merge.destroy() };
   }
   const extensions =
     layout === "unified" && original !== null
       ? [...editable, unifiedMergeView({ original, mergeControls: false })]
       : editable;
   const view = new EditorView({ parent, state: EditorState.create({ doc, extensions }) });
-  return { views: [view], mode, destroy: () => view.destroy() };
+  return { views: [view], compartments, destroy: () => view.destroy() };
 }

@@ -97,18 +97,38 @@ test("changes inside .git internals and .kibo/worktrees are ignored, HEAD is not
 test("removing the watched directory itself is a change, not a crash", async () => {
   const changes: (string[] | null)[] = [];
   const errors: unknown[] = [];
-  writeFileSync(join(dir, "src", "a.ts"), "x");
   track(
     watchPaths([{ path: join(dir, "src"), recursive: true }], (paths) => changes.push(paths), {
-      debounceMs: 50,
+      debounceMs: 10,
+      vanishCheckMs: 10,
       root: dir,
       onError: (e) => errors.push(e),
     }),
   );
-  await wait(SETTLE_MS);
   rmSync(join(dir, "src"), { recursive: true });
   await waitFor(() => changes.length > 0);
+  expect(changes).toEqual([null]);
   expect(errors).toEqual([]);
+});
+
+test("a watched directory that disappears without any event is reported once", async () => {
+  const { watch } = fakeWatch();
+  const present = new Set(["/repo", "/common/.git"]);
+  const changes: (string[] | null)[] = [];
+  track(
+    watchPaths(
+      [
+        { path: "/repo", recursive: true },
+        { path: "/common/.git", recursive: true },
+      ],
+      (paths) => changes.push(paths),
+      { debounceMs: 1, vanishCheckMs: 1, root: "/repo", watch, exists: (p) => present.has(p) },
+    ),
+  );
+  present.delete("/repo");
+  await waitFor(() => changes.length === 1);
+  await wait(30);
+  expect(changes).toEqual([null]);
 });
 
 test("an unwatchable path falls back to polling and reports the error", async () => {

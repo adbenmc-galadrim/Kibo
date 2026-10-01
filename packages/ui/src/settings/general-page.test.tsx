@@ -11,24 +11,16 @@ mock.module("../api", () => ({
 }));
 const { GeneralPage } = await import("./GeneralPage");
 
-test("the general settings hold the application and the kibo command", async () => {
+test("the general settings hold the updates and the kibo command, without placeholder settings", async () => {
   render(<GeneralPage />);
   expect(screen.getByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
-  expect(screen.getByText("Langue, démarrage et outils en ligne de commande.")).toBeTruthy();
-  expect(screen.getByText("Application")).toBeTruthy();
+  expect(screen.getByText("Mises à jour et outils en ligne de commande.")).toBeTruthy();
+  expect(screen.queryByText("Application")).toBeNull();
+  expect(screen.queryByRole("combobox", { name: "Langue" })).toBeNull();
+  expect(screen.queryByRole("switch")).toBeNull();
   expect(screen.getByText("Mises à jour")).toBeTruthy();
   expect(screen.getByText("Les mises à jour se gèrent depuis l'application de bureau.")).toBeTruthy();
   expect(screen.getByText("Commande kibo")).toBeTruthy();
-  expect(await screen.findByText("Non installée")).toBeTruthy();
-});
-
-test("the application settings are shown but not yet available", async () => {
-  render(<GeneralPage />);
-  expect(screen.getByRole("combobox", { name: "Langue" }).hasAttribute("disabled")).toBe(true);
-  expect(
-    screen.getByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" }).hasAttribute("disabled"),
-  ).toBe(true);
-  expect(screen.getByRole("button", { name: "Ouvrir" }).hasAttribute("disabled")).toBe(true);
   expect(await screen.findByText("Non installée")).toBeTruthy();
 });
 

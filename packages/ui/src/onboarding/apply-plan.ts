@@ -1,6 +1,6 @@
-import { type Layout, Page, type StarterPage } from "@kibo/schema";
+import { FORMAT_SIZES, type Layout, Page, type StarterPage } from "@kibo/schema";
 import type { KiboClient } from "@kibo/sdk";
-import { nextLayout } from "../lib/next-layout";
+import { nextLayout } from "../lib/format-grid";
 
 export type ApplyFailure = { title: string; message: string };
 
@@ -24,7 +24,7 @@ export async function applyStarterPlan(
       for (const c of page.components) {
         const ref = refs.get(c.id);
         if (!ref) continue;
-        const layout = page.kind === "dashboard" ? nextLayout(taken) : null;
+        const layout = page.kind === "dashboard" ? nextLayout(taken, FORMAT_SIZES.large) : null;
         if (layout) taken.push(layout);
         await client.rpc({
           method: "command",

@@ -6,13 +6,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { Check, ChevronDown, Pencil, Settings } from "lucide-react";
-import { useState } from "react";
-import { RenameWorkspaceDialog } from "../dialogs/RenameWorkspaceDialog";
+import { Check, ChevronDown, Settings } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { WorkspaceTile } from "./WorkspaceMark";
 
-type Props = { name: string; onRename(name: string): Promise<void>; onSettings(): void };
+type Props = { name: string; icon: string | null; onSettings(): void };
 
 function WorkspaceLabel({ name }: { name: string }) {
   return (
@@ -23,37 +21,27 @@ function WorkspaceLabel({ name }: { name: string }) {
   );
 }
 
-export function WorkspaceSwitcher({ name, onRename, onSettings }: Props) {
-  const [renaming, setRenaming] = useState(false);
+export function WorkspaceSwitcher({ name, icon, onSettings }: Props) {
   return (
-    <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-sidebar-accent">
-          <WorkspaceTile size="md" />
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-sidebar-accent">
+        <WorkspaceTile size="md" src={icon} alt={fr.workspace.iconAlt(name)} />
+        <WorkspaceLabel name={name} />
+        <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{fr.workspace.menu}</DropdownMenuLabel>
+        <DropdownMenuItem>
+          <WorkspaceTile size="md" src={icon} alt={fr.workspace.iconAlt(name)} />
           <WorkspaceLabel name={name} />
-          <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
-          <DropdownMenuLabel className="text-xs text-muted-foreground">{fr.workspace.menu}</DropdownMenuLabel>
-          <DropdownMenuItem>
-            <WorkspaceTile size="md" />
-            <WorkspaceLabel name={name} />
-            <Check aria-hidden className="ml-auto" />
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setRenaming(true)}>
-            <Pencil aria-hidden />
-            {fr.workspace.rename}
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={onSettings}>
-            <Settings aria-hidden />
-            {fr.workspace.settings}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {renaming && (
-        <RenameWorkspaceDialog name={name} onSubmit={onRename} onClose={() => setRenaming(false)} />
-      )}
-    </>
+          <Check aria-hidden className="ml-auto" />
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onSettings}>
+          <Settings aria-hidden />
+          {fr.workspace.settings}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

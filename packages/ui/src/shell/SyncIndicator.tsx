@@ -38,14 +38,13 @@ function kindOf(online: boolean, status: SyncStatus | null): Kind {
 export function SyncIndicator({ online }: { online: boolean }) {
   const { status } = useSyncServerStatus();
   const kind = kindOf(online, status);
-  const base = online ? fr.agents.daemon : fr.agents.daemonOffline;
   const className = cn("flex shrink-0 items-center gap-1.5", TEXT[kind]);
   const dot = <span aria-hidden className={cn("size-1.5 rounded-full", DOT[kind])} />;
   if (kind === "local" || kind === "down")
     return (
       <span className={className}>
         {dot}
-        {base}
+        {kind === "local" ? fr.agents.daemon : fr.agents.daemonOffline}
       </span>
     );
   return (
@@ -55,7 +54,7 @@ export function SyncIndicator({ online }: { online: boolean }) {
       onClick={() => navigateTo({ kind: "screen", screen: "sync" })}
     >
       {dot}
-      {`${base} · ${fr.sync.indicator[kind]}`}
+      {`${fr.app.name} · ${fr.sync.indicator[kind]}`}
     </button>
   );
 }

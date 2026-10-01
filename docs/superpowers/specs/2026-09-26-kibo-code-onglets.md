@@ -33,7 +33,7 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 
 ## 4. Indexation par bloc
 
-- Le diff non indexé compare l'index au worktree ; le diff indexé, `HEAD` à l'index. « Indexer le bloc » applique le patch du bloc (`git apply --cached`), « Désindexer le bloc » l'applique à l'envers (`--reverse`).
+- Le diff non indexé compare l'index au worktree ; le diff indexé, `HEAD` à l'index. « Ajouter le bloc au commit » (anciennement « Indexer le bloc », §12.8) applique le patch du bloc (`git apply --cached`), « Retirer le bloc du commit » l'applique à l'envers (`--reverse`).
 - La requête porte l'en-tête `@@` du bloc : s'il ne correspond plus au diff recalculé, refus `GIT_STALE` et rechargement.
 - Fichier non suivi, supprimé, binaire ou renommé : indexation par fichier seulement.
 
@@ -85,3 +85,52 @@ La spec générale prime. Ce document fixe les points qu'elle laisse ouverts ; c
 ## 11. Codes d'erreur ajoutés
 
 `NOT_A_REPO`, `PATH_OUTSIDE_PROJECT` (403), `GIT_FAILED`, `GIT_STALE` (409), `GIT_PUSHED` (409), `GIT_BUSY` (409), `FILE_CHANGED` (409), `GH_UNAVAILABLE` (502), `GH_FAILED` (502), `EDITOR_UNAVAILABLE`.
+
+## 12. Décisions de la phase 9 : menus contextuels et coque de bureau
+
+Écrites avant le plan `docs/superpowers/plans/2026-09-27-kibo-phase-9-vague-1.md` (lot 4 du plan d'action UI/UX). Elles complètent §1, §4, §7 et §9 sans les contredire.
+
+### 12.1 Annuler les changements d'un fichier
+
+- Nouvelle requête `discardChanges { projectId, worktree, paths: RelPath[] (1 à 1000) }` sur `/api/code`, résultat `null`. **Sens** : chaque fichier revient à son état dans `HEAD`, index et worktree compris ; un fichier absent de `HEAD` (nouveau, non suivi ou ajouté à l'index) est supprimé du disque. C'est la seule opération de Kibo qui perd du travail non commité : l'UI la confirme toujours (nombre de fichiers, mention « irréversible », nom des fichiers qui seront supprimés).
+- Mise en œuvre : `git ls-tree --name-only HEAD -- <paths>` sépare les chemins présents dans `HEAD` (`git restore --staged --worktree --source=HEAD -- …`) des autres (`git rm --cached -q --ignore-unmatch -- …` puis `git clean -f -q -- …`). Sans `HEAD`, tous les chemins sont « absents de `HEAD` ». Un chemin renommé dans l'index est traité avec sa source (`origPath`), comme `unstageFiles`.
+- Sécurité : chemins confinés par `resolveInWorktree` (§1 : relatifs, sans `..`, hors `.git/`, `realpath` dans le worktree) ; `GIT_LITERAL_PATHSPECS=1` (aucun motif) ; `git clean` sans `-d` ni `-x` (jamais de dossier entier, jamais les fichiers ignorés) ; un lien symbolique est remplacé ou supprimé lui-même, jamais sa cible (comportement de git). Refus en `GIT_BUSY` si une opération (rebase, fusion, cherry-pick, revert) est en cours, en `INVALID_INPUT` pour un fichier en conflit (résoudre ou abandonner d'abord).
+- Mutation sérialisée par worktree, suivie de l'événement `code` comme les autres.
+
+### 12.2 Tout indexer, tout désindexer
+
+- `stageAll { projectId, worktree }` = `git add -A` (fichiers nouveaux compris) ; `unstageAll { projectId, worktree }` = `git reset -q` (index remis à `HEAD`, worktree intact), ou `git rm --cached -r -q -- .` sans `HEAD`. Résultat `null`, mutations sérialisées, événement `code`.
+
+### 12.3 Actions réservées à la machine locale
+
+- `/api/code` reçoit désormais le contexte de session (`RpcContext { sessionHash, remote }`) : `CodeService.handle(req, ctx)`. `discardChanges`, `stageAll`, `unstageAll` et **`openInEditor`** (qui lance un programme sur la machine) sont refusées en `FORBIDDEN` depuis une session distante, comme les RPC de la spec G décision 17. Décision d'Adam (2026-09-27) : **toutes** les requêtes de `/api/code` qui modifient le dépôt ou lancent un programme (indexer, désindexer, commit, push, création de PR, changement de branche, annulation, ouverture dans l'éditeur) sont réservées à la machine locale et refusées en `FORBIDDEN` depuis une session distante ; seules les lectures (statut, diff, contenu, historique) restent ouvertes. L'interface distante masque ces actions.
+
+### 12.4 Menus contextuels de l'interface
+
+- Dans la fenêtre Tauri, le menu natif de la webview (Recharger, Inspecter…) est bloqué **sauf** dans un champ de saisie (`input`, `textarea`, `contenteditable`) et quand du texte est sélectionné (le menu natif « Copier » reste disponible). Dans un navigateur, rien ne change.
+- Menus Kibo (composant `ContextMenu` de shadcn, même contenu que le bouton « ⋯ » de l'élément quand il existe) : onglet (§7, inchangé), **page** de la barre latérale (Ouvrir dans un nouvel onglet, Nouvelle sous-page, Renommer, Monter / Descendre, Déplacer vers, Supprimer), **ticket** dans l'arbre Tickets et carte Kanban (Ouvrir, Changer le statut, Nouveau sous-ticket, Déplacer à la racine, Supprimer), **note** (Renommer, Supprimer), **fichier modifié** (Voir le diff, Ouvrir dans un onglet, Ouvrir dans l'éditeur externe, Copier le chemin, Ajouter au commit / Retirer du commit (§12.8), Annuler les changements), **projet** (Nouvelle page, Partager). Toute entrée destructive ouvre une confirmation ; en lecture seule (projet partagé, rôle lecteur), les entrées d'écriture sont absentes.
+- Le chrome du shell (barre d'onglets, barre latérale, en-têtes) n'est pas sélectionnable (`select-none`) ; le contenu des pages le reste.
+
+### 12.5 Coque de bureau
+
+- **Menu natif macOS explicite** : « Kibo » (À propos, Services, Masquer, Masquer les autres, Tout afficher, Quitter), « Édition » (Annuler, Rétablir, Couper, Copier, Coller, Tout sélectionner), « Fenêtre » (Réduire, Agrandir, Plein écran, Fermer la fenêtre `⌘⇧W`). Aucune entrée ne porte `⌘W`, `⌘T`, `⌘K`, `⌘1…9` ni `⌘⇧P` : ces raccourcis arrivent à la webview (§7). Le menu par défaut de Tauri fermait la fenêtre sur `⌘W`. Linux et Windows : pas de barre de menu.
+- **Fenêtre** : taille minimale 960 × 600, taille et position mémorisées entre deux lancements (`tauri-plugin-window-state`, fichier dans le dossier de configuration de l'app, hors CRDT). Le titre de la fenêtre suit `document.title` : « Kibo », « Projet · Page — Kibo », « Projet · KIB-12 — Kibo » (mêmes libellés que les onglets, §7), posé par l'UI (`core:window:allow-set-title`).
+- **Liens externes** : dans la fenêtre Tauri, un clic sur `<a target="_blank">` est intercepté par l'UI et ouvert dans le navigateur par `tauri-plugin-opener`, **pour les seules URL `https:`** ; tout autre schéma est ignoré. Plus largement, tout `<a>` dont l'URL résolue est hors de l'origine du démon, avec ou sans `target="_blank"`, est intercepté : `https:` s'ouvre dans le navigateur, tout autre schéma est ignoré ; la webview ne quitte jamais l'origine du démon. Le clic du milieu sur un lien `https:` sortant suit le même chemin. La capacité accordée à l'exécution à l'origine du démon (spec I §3.7) gagne `opener:allow-open-url` limitée au motif `https://**` et `core:window:allow-set-title` ; aucune ouverture de chemin de fichier ni de programme.
+- **Navigation de la fenêtre principale** : la coque refuse toute navigation de la webview principale vers une autre origine que celle du démon (`on_navigation`) ; l'UI intercepte les liens, la coque garantit. Deux origines exactes sont autorisées : celle du démon (`KIBO_READY`) et celle du serveur sandbox des composants (`http://127.0.0.1:<sandboxPort>`, annoncée par le démon sur une ligne `KIBO_SANDBOX <origine>` émise juste après `KIBO_READY`), car sous macOS (WKWebView) et Linux (WebKitGTK) le gestionnaire de navigation voit aussi celle des iframes ; tout le reste est refusé (`about:blank`, `javascript:`, `file:`, `https:`…). Point faible accepté pour cette phase : la fenêtre principale pourrait naviguer vers l'origine sandbox, qui ne porte ni capacité IPC ni accès au démon ; `window.open` passe par `new_window_handler`, non posé : sous macOS et Linux, wry abandonne la nouvelle fenêtre ; sous Windows, WebView2 ouvrirait sa propre fenêtre hors coque, mais les iframes sandbox n'ont pas `allow-popups` et l'UI n'ouvre que sa propre origine. Sous Windows, `on_navigation` ne voit que la frame principale.
+- **Raccourcis affichés** selon la plateforme : `⌘` sur macOS, `Ctrl` ailleurs (§7 le prévoyait pour le comportement, pas pour l'affichage).
+- **Logo** : icône de l'application, favicon et `KiboLogo` dessinent la piste 5 « Kanban » de la page Penpot `05 · Logo` (`design/penpot/scripts/01-core.js`, `S.kanbanLogo`) ; un script génère `apps/desktop/app-icon.svg` et `packages/ui/public/favicon.svg` depuis la même géométrie, et un test refuse toute divergence.
+
+### 12.6 Codes d'erreur
+
+Aucun nouveau code : `FORBIDDEN`, `GIT_BUSY`, `INVALID_INPUT`, `PATH_OUTSIDE_PROJECT`, `GIT_FAILED` suffisent.
+
+### 12.7 Réponses d'Adam du 2026-09-27 : glisser-déposer et notes
+
+Écrites le 2026-09-30, à la rédaction des tâches T3b, T7b, T10b et T12b du plan de la phase 9 (vague 1 bis). La réponse (1), « toutes les mutations git de `/api/code` réservées à la machine locale », est déjà consignée en §12.3 ; l'interface distante montre la vue Changements et l'aperçu d'un fichier **en lecture** (diff, contenu, historique) sans aucune action d'écriture, avec une ligne qui dit pourquoi.
+
+- **Glisser-déposer des pages (barre latérale) et des tickets (arbre)** : il reparente **et** réordonne. Déposer sur un élément en fait le parent (à la fin de ses enfants) ; déposer au-dessus ou au-dessous d'un élément place le déplacé juste avant ou juste après lui, chez le même parent, par `movePage` / `moveTicket { parentId, index }`. `index` est la **position finale** parmi les frères (sémantique de `LoroTree.move`, vérifiée : sur `a,b,c`, déplacer `a` à l'index 1 donne `b,a,c` ; déplacer `c` à l'index 3 parmi `a,b,c,p` le met en dernier ; sous un autre parent dont l'enfant est `q`, l'index 1 donne `q,a`). L'interface calcule cet index sur la liste complète des frères sans l'élément déplacé, jamais sur une liste filtrée (« Mes tickets », filtre de source) ; « Monter » / « Descendre » restent dans le menu. Un dépôt qui ne change rien n'envoie rien ; un dépôt sur soi-même ou dans son propre sous-arbre est ignoré (le démon refuserait de toute façon, `TREE_CYCLE`). Trois zones par ligne : quart haut, milieu, quart bas ; la zone est celle sous le pointeur.
+- **Aucune note sans titre** : « Nouvelle note » demande un titre obligatoire ; le fichier créé est `<slug>.md` à la racine du dossier de notes et sa première ligne `# Titre` ; un titre dont le slug est déjà pris est refusé (« Une note porte déjà ce nom. ») sans rien écrire. Un fichier `sans-titre(-n).md` existant est signalé dans la liste (« Fichier sans titre · Renommer… ») et renommé à sa prochaine sauvegarde dès qu'il a un titre `# …` dont le slug est libre et n'est pas lui-même un nom sans titre. Un renommage n'entraîne jamais de frappe perdue : le tampon est enregistré avant, les sauvegardes suivantes visent le nouveau chemin, et une sauvegarde partie pendant un renommage long est rejouée sur le nouveau fichier (état « Enregistré », pas de bannière « Modifié hors de Kibo »).
+
+### 12.8 Vocabulaire et confort de lecture (phase 9, vague 3)
+
+Écrit le 2026-10-01 avec la spec de conception §15.2 et §15.3. Les entrées de menu d'un fichier modifié (§12.4) se nomment désormais « Ajouter au commit » / « Retirer du commit » (et « Tout ajouter » / « Tout retirer » pour la liste) ; les sections de la liste « Dans le prochain commit » et « Modifications » ; l'état d'un fichier s'écrit en toutes lettres (« Modifié », « Ajouté », « Supprimé », « Renommé », « Conflit ») ; la commande git exécutée n'apparaît que dans « Détails ». Le retour à la ligne de l'aperçu, de l'éditeur et du diff suit une préférence par appareil (`localStorage["kibo.wrap"]`, `on` par défaut) ; l'aperçu et l'onglet fichier gagnent une recherche (⌘F, `:n` pour aller à la ligne) et « Copier le chemin ». Aucune RPC de `/api/code` ne change.

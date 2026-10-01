@@ -4,7 +4,7 @@ import { AI_METHODS, createAiRpc, isAiRequest } from "./methods";
 
 const draftId = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
 
-function setup(processing: ReadonlySet<string> = new Set()) {
+function setup(processing: ReadonlySet<string> = new Set(), onSettled: () => void = () => {}) {
   const seen: string[] = [];
   const mark = (name: string) => {
     seen.push(name);
@@ -15,9 +15,13 @@ function setup(processing: ReadonlySet<string> = new Set()) {
       status: () => mark("status"),
       capabilities: () => null,
       refresh: async () => mark("refresh"),
-      settled: async () => mark("settled"),
+      settled: async () => {
+        onSettled();
+        return mark("settled");
+      },
     },
     environment: async () => mark("environment"),
+    preview: async (id) => mark(`preview ${id}`),
     starter: { suggest: () => mark("suggest") },
     lifecycle: {
       start: async () => mark("start"),
@@ -25,6 +29,7 @@ function setup(processing: ReadonlySet<string> = new Set()) {
         throw new KiboError("INVALID_INPUT", "no");
       },
       revalidate: async () => mark("revalidate"),
+      revise: async () => mark("revise"),
       abandon: () => mark("abandon"),
       openFolder: async () => mark("openFolder"),
       list: () => mark("list"),
@@ -58,7 +63,7 @@ test("routes every AI method to its module", async () => {
     { method: "suggestStarter", role: "other", text: "x" },
     {
       method: "startComponentDraft",
-      draft: { mode: "modify", id: "burndown", description: "Ajoute un titre" },
+      draft: { mode: "modify", id: "burndown", description: "Ajoute un titre", attachments: [] },
     },
     { method: "revalidateComponentDraft", draftId },
     { method: "getComponentDraft", draftId },
@@ -75,6 +80,8 @@ test("routes every AI method to its module", async () => {
     },
     { method: "abandonComponentDraft", draftId },
     { method: "openComponentDraftFolder", draftId },
+    { method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros", attachments: [] },
+    { method: "previewComponentDraft", draftId },
   ];
   for (const r of requests) if (isAiRequest(r)) await port.handle(r);
   expect(seen).toEqual([
@@ -91,6 +98,9 @@ test("routes every AI method to its module", async () => {
     "finalize",
     "abandon",
     "openFolder",
+    "settled",
+    "revise",
+    `preview ${draftId}`,
   ]);
 });
 
@@ -106,4 +116,35 @@ test("a draft being reviewed or published cannot be abandoned", async () => {
   await expect(refusal).rejects.toMatchObject({ code: "CONFLICT" });
   await expect(refusal).rejects.toThrow("being reviewed or published");
   expect(seen).toEqual([]);
+});
+
+test("a draft being reviewed or published cannot be revised", async () => {
+  const { port, seen } = setup(new Set([draftId]));
+  const refusal = port.handle({
+    method: "reviseComponentDraft",
+    draftId,
+    feedback: "Mets le total",
+    attachments: [],
+  });
+  await expect(refusal).rejects.toMatchObject({ code: "CONFLICT" });
+  expect(seen).toEqual([]);
+});
+
+test("the draft preview is answered by the preview module, without waiting for claude", async () => {
+  const { port, seen } = setup(new Set([draftId]));
+  await port.handle({ method: "previewComponentDraft", draftId });
+  expect(seen).toEqual([`preview ${draftId}`]);
+});
+
+test("a review that starts while the AI status settles still blocks the revision", async () => {
+  const processing = new Set<string>();
+  const { port, seen } = setup(processing, () => processing.add(draftId));
+  const refusal = port.handle({
+    method: "reviseComponentDraft",
+    draftId,
+    feedback: "Mets le total",
+    attachments: [],
+  });
+  await expect(refusal).rejects.toMatchObject({ code: "CONFLICT" });
+  expect(seen).toEqual(["settled"]);
 });

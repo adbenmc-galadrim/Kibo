@@ -1,3 +1,4 @@
+import { KiboError } from "@kibo/schema";
 import { type RpcHandler, type RpcOutcome, requireLocal } from "../rpc-extensions";
 import { type InstallDeps, installFromMarket } from "./install";
 import type { MarketService } from "./market-service";
@@ -27,6 +28,12 @@ export function createMarketRpc(
       case "refreshMarket":
         await market.refresh();
         return done(null);
+      case "refreshMarketSource": {
+        const known = market.listSources().find((s) => s.id === req.id);
+        if (!known) throw new KiboError("NOT_FOUND", `market source ${req.id} not found`);
+        await market.refresh(req.id);
+        return done(market.listSources().find((s) => s.id === req.id) ?? known);
+      }
       case "searchMarket":
         return done(market.search({ query: req.query, sourceId: req.sourceId, kind: req.kind }));
       case "getMarketPackage":

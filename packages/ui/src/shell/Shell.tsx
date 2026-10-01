@@ -1,18 +1,18 @@
-import type { AgentsState, FileRef, ProjectSummary, Session, TabTarget } from "@kibo/schema";
+import { type AgentsState, iconUrl, type ProjectSummary, type Session, type TabTarget } from "@kibo/schema";
 import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
+import { useDesktopIntegration } from "../desktop/use-desktop-integration";
+import { useWindowTitle } from "../desktop/use-window-title";
 import { projectDomainsOf } from "../lib/project-domains";
-import { countMine, myTickets } from "../mine/my-tickets";
-import type { PaletteAction, PaletteContext } from "../palette/palette-items";
+import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { canEdit } from "../state/access";
 import { useAgents, useConfig, useNow } from "../state/use-agents";
 import { useProject, useProjects } from "../state/use-projects";
-import { useSnapshots } from "../state/use-snapshots";
 import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
@@ -25,25 +25,30 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { CommandPalette } from "./lazy-dialogs";
-import { IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
+import { DaemonUnreachable, IntegrationNotices, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
-import { type DialogsState, NO_DIALOG, ShellDialogs } from "./ShellDialogs";
+import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
+import { LoadingScreen } from "./Startup";
+import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
+import { useShellDialogs } from "./use-shell-dialogs";
 import { useUpdateSchedule } from "./use-update-schedule";
-import { inTauri, openWindow, renameWorkspace } from "./workspace-actions";
+import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
+import { inTauri, openWindow } from "./workspace-actions";
 
 type Props = { viewer: string; notifications: Session["notifications"] };
 
 export function Shell({ viewer, notifications }: Props) {
-  const projects = useProjects();
+  const { projects, error, retry } = useProjects();
   const tabs = useTabs();
   const agents = useAgents();
   useRunNotifications(agents, notifications === "browser");
   useUpdateSchedule();
-  if (!projects || !tabs) return null;
+  if (error) return <DaemonUnreachable error={error} inApp={inTauri()} nextRetryInMs={0} onRetry={retry} />;
+  if (!projects || !tabs) return <LoadingScreen />;
   return (
     <>
       <Workspace
@@ -69,22 +74,18 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
   const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;
-  const snapshots = useSnapshots(projects.map((p) => p.id));
-  const mineCount = useMemo(
-    () => countMine(myTickets(projects, snapshots, viewer, "assigned")),
-    [projects, snapshots, viewer],
-  );
+  const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
-  const [palette, setPalette] = useState<{ newTab: boolean } | null>(null);
+  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
-  const [dialogs, setDialogs] = useState<DialogsState>(NO_DIALOG);
-  const [focusRun, setFocusRun] = useState<string | null>(null);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
   const { open } = tabs;
 
+  useWindowTitle(active ? describeTarget(active, { projects, snapshots }).title : null);
+  useDesktopIntegration();
   useEffect(() => {
     if (activeProjectId) setLastProjectId(activeProjectId);
   }, [activeProjectId]);
@@ -92,11 +93,14 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
     projectRef.current = project;
   }, [project]);
 
-  const set = useCallback((patch: Partial<DialogsState>) => setDialogs((d) => ({ ...d, ...patch })), []);
-  const clearFocus = useCallback(() => setFocusRun(null), []);
   const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
   const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
   const currentProject = useCallback(() => projectRef.current, []);
+  const closeProject = (projectId: string) => {
+    tabs.dispatch({ type: "closeProject", projectId });
+    setLastProjectId((id) => (id === projectId ? null : id));
+    go(null);
+  };
   const views = useOpenView(currentProject, go);
 
   const host = useMemo<Host>(
@@ -105,7 +109,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
         if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
       },
       openNewTicket: (d) => {
-        if (!projectRef.current || canEdit(projectRef.current)) set({ newTicket: d });
+        if (projectRef.current && !canEdit(projectRef.current)) return;
+        set({ newTicket: activeProjectId ? { ...d, projectId: activeProjectId } : d });
       },
       openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),
@@ -126,27 +131,8 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
       tabs.dispatch({ type: "pin", id, pinned: !tabs.state.tabs.find((t) => t.id === id)?.pinned });
   });
 
-  const onAction = (a: PaletteAction) => {
-    if (a.kind === "newProject") return set({ newProject: true });
-    if (a.kind === "toggleTheme") return void cycleTheme();
-    if (a.kind === "reply") return setFocusRun(a.runId);
-    if (a.kind === "assign") return set({ assign: { projectId: null, ticketId: a.ticketId } });
-    if (a.projectId !== activeProjectId) go({ kind: "project", projectId: a.projectId });
-    if (a.kind === "newPage") set({ newPageParent: null });
-    if (a.kind === "newTicket") set({ newTicket: { parentId: a.parentId } });
-  };
-  const openFileTab = (ref: FileRef, edit: boolean) => {
-    const target: TabTarget = {
-      kind: "file",
-      projectId: ref.projectId,
-      worktree: ref.worktree,
-      path: ref.path,
-      line: ref.line,
-    };
-    if (edit) editRequests.current.add(targetToHash(target));
-    set({ preview: null });
-    go(target, true);
-  };
+  const onAction = paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme });
+  const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
 
   const branch =
     active?.kind === "changes" ? (resolveWorktree(git.worktrees, active.worktree)?.branch ?? null) : null;
@@ -197,13 +183,20 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               agents={agents}
               changesCount={git.worktrees ? git.changesCount : null}
               mineCount={mineCount}
+              inboxCount={inboxCount}
               workspaceName={config?.workspaceName ?? null}
-              onRenameWorkspace={renameWorkspace}
+              workspaceIcon={
+                config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
+              }
               onOpen={go}
               onSearch={() => setPalette({ newTab: false })}
               onNewProject={() => set({ newProject: true })}
               onNewPage={(parentId) => set({ newPageParent: parentId })}
+              onRenamePage={(page) => set({ renamePage: page })}
+              onDeletePage={(page) => set({ deletePage: page })}
               onShare={(projectId) => set({ share: projectId })}
+              onEditProject={(projectId) => set({ editProject: projectId })}
+              onDeleteProject={(projectId) => set({ deleteProject: projectId })}
               onJoin={() => set({ join: true })}
             />
             <SidebarInset className="min-h-0 min-w-0">
@@ -217,9 +210,12 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                 agents={agents}
                 viewer={viewer}
                 notifications={notifications}
+                now={now}
                 onNewProfile={() => set({ newProfile: true })}
                 onNewTicket={() => set({ newTicket: {} })}
                 onShare={() => project && set({ share: project.meta.id })}
+                onOpenRun={setFocusRun}
+                onOpen={(t) => go(t)}
               />
               {project?.sync.shared && (
                 <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
@@ -237,12 +233,18 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onAnswer={setFocusRun}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                     onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
+                    onFile={(ticketId) => set({ fileTicket: { ticketId } })}
+                    onOpen={(t) => go(t)}
+                    onShare={(projectId) => set({ share: projectId })}
+                    onDeleteProject={(projectId) => set({ deleteProject: projectId })}
+                    onNewTicket={() => set({ newTicket: {} })}
                   />
                 ) : (
                   <ContentView
                     target={active}
                     viewer={viewer}
                     projects={projects}
+                    inboxCount={inboxCount}
                     project={project}
                     domains={projectDomainsOf(project, config)}
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
@@ -250,9 +252,10 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
                     onNewPage={() => set({ newPageParent: null })}
                     onSuggestPages={(projectId) => set({ suggestFor: projectId })}
-                    onOpen={(t) => go(t)}
+                    onOpen={(t, newTab) => go(t, newTab)}
                     onOpenFile={(ref) => set({ preview: ref })}
                     onAssign={(ticketId) => set({ assign: { projectId: null, ticketId } })}
+                    onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                   />
                 )}
               </div>
@@ -267,7 +270,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               state={dialogs}
               set={set}
               viewer={viewer}
-              projectsCount={projects.length}
+              projects={projects}
               project={project}
               ticketProject={ticketProject}
               sheetProject={sheetProject}
@@ -276,6 +279,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
               config={config}
               onOpenTarget={go}
               onOpenFileTab={openFileTab}
+              onCloseProject={closeProject}
             />
             {views.dialog}
             {paletteOpened && (

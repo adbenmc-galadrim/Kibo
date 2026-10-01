@@ -249,3 +249,37 @@ describe("other tools", () => {
     expect(decision(denyAllGuard({ toolName: "mcp__kibo__ask_user", toolInput: {} }))).toBe("deny");
   });
 });
+
+describe("the images folder", () => {
+  function withImages() {
+    const s = setup();
+    const images = join(s.root, "draft.attachments");
+    mkdirSync(images);
+    writeFileSync(join(images, "1-a.png"), "");
+    symlinkSync(join(s.root, "secret.txt"), join(images, "2-link.png"));
+    const guard = createDraftGuard({ draftDir: s.draft, readRoots: [s.sdk, images], allowServer: false });
+    return { ...s, images, guard };
+  }
+  test("is readable and searchable, never writable", () => {
+    const { images, guard } = withImages();
+    expect(decision(guard(read(join(images, "1-a.png"))))).toBe("allow");
+    expect(decision(guard({ toolName: "Glob", toolInput: { pattern: "*.png", path: images } }))).toBe(
+      "allow",
+    );
+    for (const name of ["1-a.png", "3-new.png", "ui.tsx"]) {
+      const denied = guard(write(join(images, name)));
+      expect(denied).toMatchObject({ decision: "deny" });
+      expect(denied.decision === "deny" && denied.reason).toContain("writes are limited to the draft folder");
+    }
+    expect(decision(guard({ toolName: "Edit", toolInput: { file_path: join(images, "1-a.png") } }))).toBe(
+      "deny",
+    );
+  });
+  test("exposes nothing beside it: no traversal, no symbolic link out", () => {
+    const { root, images, guard } = withImages();
+    expect(decision(guard(read(join(images, "2-link.png"))))).toBe("deny");
+    expect(decision(guard(read(`${images}/../secret.txt`)))).toBe("deny");
+    expect(decision(guard(read(join(root, "secret.txt"))))).toBe("deny");
+    expect(decision(guard(read(join(root, "draft.attachments-x", "a.png"))))).toBe("deny");
+  });
+});

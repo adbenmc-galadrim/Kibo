@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AssignPreview, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
+import { type AssignPreview, INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture, kiboProject } from "./fixtures";
@@ -44,7 +44,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
     "opus-dev · Claude Opus 5.5 · worktree par ticket",
   );
   expect(
-    await screen.findByText("attend un créneau opus-dev (2/2) · entrera en file en position #4"),
+    await screen.findByText("attend une place du profil opus-dev (2/2) · entrera en file en position #4"),
   ).toBeTruthy();
   expect(screen.getByText("nouveau worktree kib-15 (depuis main)")).toBeTruthy();
   expect(screen.getByLabelText("Brief (optionnel)").tagName).toBe("INPUT");
@@ -104,7 +104,7 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
 test("a free slot means the run starts at once", async () => {
   preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
   render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
-  expect(await screen.findByText("créneau libre · démarre tout de suite")).toBeTruthy();
+  expect(await screen.findByText("place libre · démarre tout de suite")).toBeTruthy();
   expect(screen.queryByText(/attend KIB/)).toBeNull();
 });
 
@@ -238,4 +238,16 @@ test("the launcher does not offer tickets waiting for their key", async () => {
   expect(screen.getByRole("combobox", { name: "Ticket" }).textContent).not.toContain("Clé en attente");
   await waitFor(() => expect(calls.some((c) => c.method === "previewAssign")).toBe(true));
   expect(calls.some((c) => c.method === "previewAssign" && c.ticketId === "p9")).toBe(false);
+});
+
+test("an inbox ticket cannot go to an agent: the dialog says to file it first", () => {
+  const inbox = { ...kiboProject(), meta: { ...kiboProject().meta, id: INBOX_ID, key: "INB", folder: null } };
+  render(<AssignDialog project={inbox} ticketId="t15" config={configFixture()} onClose={() => {}} />);
+  expect(
+    screen.getByText(
+      "Rattache d'abord ce ticket à un projet : un agent travaille dans le dossier d'un projet.",
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
+  expect(calls).toEqual([]);
 });

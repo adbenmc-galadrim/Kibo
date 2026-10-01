@@ -1,0 +1,7 @@
+{
+  "routes": [
+    { "prompt": " large »", "scenario": "generate-fixed-width.json" },
+    { "prompt": "Écris le composant Kibo", "scenario": "generate-revise.json" }
+  ],
+  "fallback": "generate-revise.json"
+}

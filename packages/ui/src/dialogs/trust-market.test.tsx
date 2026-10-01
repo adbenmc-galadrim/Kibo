@@ -32,7 +32,7 @@ test("an unverified publisher is announced as such", () => {
 
 test("the marketplace dialog still preselects the sandboxed level", () => {
   open(trustTargetOfInstall(result(true, false)));
-  expect(screen.getByRole("radio", { name: "Sandboxé (recommandé)" }).getAttribute("data-state")).toBe(
+  expect(screen.getByRole("radio", { name: "Isolé (recommandé)" }).getAttribute("data-state")).toBe(
     "checked",
   );
 });

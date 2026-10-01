@@ -85,7 +85,7 @@ export async function buildComponent(srcDir: string, toolchain: Toolchain): Prom
     const files: BuildOutput["files"] = {
       "ui.sandbox.js": await bundle(join(stage.root, "sandbox.tsx"), "sandbox", stage),
       "ui.trusted.js": await bundle(join(stage.root, "trusted.tsx"), "trusted", stage),
-      "ui.css": new TextEncoder().encode(await componentCss(srcDir, toolchain)),
+      "ui.css": new TextEncoder().encode(await componentCss(sources, toolchain)),
     };
     for (const [name, file] of SERVER_ENTRIES) {
       if (existsSync(join(sources, name))) files[file] = await bundle(join(sources, name), "server", stage);

@@ -34,6 +34,7 @@ export function McpSource() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [expanded, setExpanded] = useState(false);
 
   const load = useCallback(async () => {
     if (!config.success) return;
@@ -95,6 +96,32 @@ export function McpSource() {
     }
   };
   const message = problemMessage(problem);
+  const small = sdk.format === "small";
+
+  if (small && !expanded) {
+    return (
+      <div className="flex h-full flex-col gap-2 p-3">
+        {message && (
+          <p role="alert" className="text-sm text-destructive">
+            {message}
+          </p>
+        )}
+        <p className="truncate text-sm font-medium">{config.data.title}</p>
+        <p className="text-2xl font-semibold tabular-nums">
+          {loaded ? fr.count(loaded.items.length) : fr.loading}
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-auto"
+          aria-expanded={false}
+          onClick={() => setExpanded(true)}
+        >
+          {fr.openSource}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -131,6 +158,11 @@ export function McpSource() {
       <footer className="flex items-center gap-2 border-t px-3 py-1.5 text-xs text-muted-foreground">
         <span>{loaded ? fr.updated(fr.ago(Math.floor((now - loaded.fetchedAt) / 60_000))) : fr.never}</span>
         {loaded?.truncated && <span>· {fr.truncated}</span>}
+        {small && (
+          <Button size="sm" variant="ghost" className="h-6" aria-expanded onClick={() => setExpanded(false)}>
+            {fr.closeSource}
+          </Button>
+        )}
         <Button size="sm" variant="ghost" className="ml-auto h-6" onClick={() => void load()}>
           <RefreshCw aria-hidden className="size-3" />
           {fr.refresh}

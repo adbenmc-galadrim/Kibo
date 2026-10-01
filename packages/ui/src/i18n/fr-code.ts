@@ -1,3 +1,5 @@
+import { shortcutLabel } from "../lib/shortcut-label";
+
 const s = (n: number) => (n > 1 ? "s" : "");
 
 export const frCode = {
@@ -53,12 +55,14 @@ export const frCode = {
     worktree: (branch: string) => `worktree ${branch}`,
     worktreePicker: "Choisir le worktree",
     detached: "HEAD détachée",
-    staged: "Indexés",
-    unstaged: "Non indexés",
-    stageFile: (path: string) => `Indexer ${path}`,
-    unstageFile: (path: string) => `Désindexer ${path}`,
-    stageHunk: "Indexer le bloc",
-    unstageHunk: "Désindexer le bloc",
+    staged: "Dans le prochain commit",
+    unstaged: "Modifications",
+    section: (title: string, n: number) => `${title} (${n})`,
+    files: (n: number) => `Fichiers (${n})`,
+    stageFile: (path: string) => `Ajouter ${path} au commit`,
+    unstageFile: (path: string) => `Retirer ${path} du commit`,
+    stageHunk: "Ajouter le bloc au commit",
+    unstageHunk: "Retirer le bloc du commit",
     viewMode: "Affichage du diff",
     unified: "Unifié",
     split: "Côte à côte",
@@ -76,29 +80,49 @@ export const frCode = {
       `${op} en cours : résous les conflits dans ton éditeur ou abandonne l'opération.`,
     operations: { rebase: "Rebase", merge: "Fusion", "cherry-pick": "Cherry-pick", revert: "Revert" },
     abortOperation: "Abandonner",
-    kind: { modified: "M", added: "A", deleted: "D", renamed: "R", untracked: "A", conflicted: "U" },
-    kindLabel: {
-      modified: "modifié",
-      added: "ajouté",
-      deleted: "supprimé",
-      renamed: "renommé",
-      untracked: "nouveau",
-      conflicted: "en conflit",
+    localOnly:
+      "Depuis un autre appareil, tu peux lire les changements mais pas les modifier : ajouter au commit, commiter et pousser se font sur l'ordinateur où tourne Kibo.",
+    kind: {
+      modified: "Modifié",
+      added: "Ajouté",
+      deleted: "Supprimé",
+      renamed: "Renommé",
+      untracked: "Ajouté",
+      conflicted: "Conflit",
     },
+    fileActions: (path: string) => `Actions ${path}`,
+    viewDiff: "Voir le diff",
+    openInTab: "Ouvrir dans un onglet",
+    copyPath: "Copier le chemin",
+    copied: "Chemin copié",
+    copyFailed: "Impossible de copier le chemin.",
+    stage: "Ajouter au commit",
+    unstage: "Retirer du commit",
+    stageAll: "Tout ajouter",
+    unstageAll: "Tout retirer",
+    discard: "Annuler les changements…",
+    discardTitle: (names: string[]) =>
+      names.length === 1
+        ? `Annuler les changements de ${names[0]} ?`
+        : `Annuler les changements de ${names.length} fichiers ?`,
+    discardRestored: (name: string) => `${name} reviendra à sa dernière version commitée.`,
+    discardDeleted: (name: string) => `${name} est nouveau : il sera supprimé du disque.`,
+    discardRenamed: (from: string, to: string) =>
+      `${to} disparaîtra et ${from} reviendra à sa dernière version commitée.`,
+    discardIrreversible: "Cette action est irréversible.",
+    discardConfirm: "Annuler les changements",
   },
   commit: {
     title: "Commit",
-    stagedCount: (n: number) => `${n} fichier${s(n)} indexé${s(n)}`,
+    stagedCount: (n: number) => `${n} fichier${s(n)} dans le commit`,
     message: "Message",
     placeholder: "Message du commit",
     prefilled: "Pré-rempli depuis le ticket · 0 token",
-    generate: "Générer avec Claude",
-    generateSoon: "Bientôt : la génération passera par la file d'attente des agents.",
     amend: "Modifier le dernier commit (non poussé)",
     amendDisabled: "Le dernier commit est déjà poussé : il ne peut plus être modifié.",
     submit: (branch: string) => `Commit sur ${branch}`,
     submitAmend: (branch: string) => `Modifier le commit sur ${branch}`,
-    nothingStaged: "Indexe au moins un fichier pour commiter.",
+    nothingStaged: "Ajoute au moins un fichier au commit.",
     unpushed: "Commits non poussés",
     modify: "Modifier",
     reword: "Reformuler",
@@ -110,12 +134,14 @@ export const frCode = {
     undoTitle: "Annuler des commits",
     undoHelp: (sha: string, newer: number) =>
       newer === 0
-        ? `Le commit ${sha} est retiré de la branche : ses modifications reviennent dans l'index.`
-        : `Le commit ${sha} et ${newer} commit${s(newer)} plus récent${s(newer)} sont retirés de la branche : leurs modifications reviennent dans l'index.`,
+        ? `Le commit ${sha} est retiré de la branche : ses modifications reviennent dans le prochain commit.`
+        : `Le commit ${sha} et ${newer} commit${s(newer)} plus récent${s(newer)} sont retirés de la branche : leurs modifications reviennent dans le prochain commit.`,
     undoSubmit: "Annuler les commits",
     submitPending: "Commit",
     push: "Pousser",
     pushingTo: (target: string) => `Envoi vers ${target}…`,
+    pushing: (branch: string, remote: string) => `Publication de la branche ${branch} sur ${remote}…`,
+    details: "Détails",
     pushFailed: "Le push a échoué",
     pushFailedHelp:
       "Git a refusé l'envoi : sa sortie est ci-dessous. Corrige la cause puis réessaie ; Kibo ne force jamais le push.",
@@ -150,8 +176,8 @@ export const frCode = {
     invalidReviewer: (login: string) => `Login GitHub invalide : ${login}`,
     staged: (n: number) =>
       n > 1
-        ? `${n} fichiers indexés ne sont pas commités : ils ne seront pas dans la PR.`
-        : "1 fichier indexé n'est pas commité : il ne sera pas dans la PR.",
+        ? `${n} fichiers ajoutés au commit ne sont pas encore commités : ils ne seront pas dans la PR.`
+        : "1 fichier ajouté au commit n'est pas encore commité : il ne sera pas dans la PR.",
     commitFirst: "Commiter d'abord",
     draft: "Brouillon (draft)",
     link: (key: string) => `Lier la PR à ${key}`,
@@ -171,8 +197,9 @@ export const frCode = {
     lines: (n: number) => `${n} ligne${s(n)}`,
     modified: (ago: string) => `modifié ${ago}`,
     uncommitted: "non commité",
-    position: (line: number, col: number) => `Ligne ${line}, col ${col}`,
-    hints: "⌘⇧O ouvrir dans l'éditeur externe · Esc fermer",
+    position: (line: number, col: number) => `Ligne ${line} · Col ${col}`,
+    hints: (mac: boolean) =>
+      `${shortcutLabel(["Shift", "O"], mac)} ouvrir dans l'éditeur externe · Esc fermer`,
     binary: "Fichier binaire : aperçu indisponible.",
     tooLarge: "Fichier trop volumineux pour l'aperçu (plus de 1 Mo).",
     save: "Enregistrer",
@@ -180,6 +207,8 @@ export const frCode = {
     saved: "Enregistré",
     plainText: "Texte brut",
     languageFailed: "Coloration indisponible pour ce fichier.",
+    localOnly:
+      "Modifier ce fichier ou l'ouvrir dans l'éditeur externe n'est possible que sur l'ordinateur où tourne Kibo.",
   },
   time: {
     now: "à l'instant",
@@ -201,5 +230,6 @@ export const frCode = {
     TOO_LARGE: "Contenu trop volumineux pour être affiché : ouvre-le dans ton éditeur externe.",
     INVALID_INPUT: "Requête invalide.",
     NOT_FOUND: "Élément introuvable.",
+    FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
   },
 } as const;

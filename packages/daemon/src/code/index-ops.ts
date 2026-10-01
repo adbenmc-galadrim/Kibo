@@ -2,7 +2,7 @@ import { chmodSync, lstatSync, readFileSync, renameSync, rmSync, writeFileSync }
 import { basename, dirname, join } from "node:path";
 import { type ChangeArea, KiboError } from "@kibo/schema";
 import { hunkPatch } from "./patch";
-import { hasHead, MAX_FILE_BYTES, readDiff, sha1 } from "./read";
+import { currentOperation, hasHead, MAX_FILE_BYTES, readDiff, readStatus, sha1 } from "./read";
 import type { WorktreeHandle } from "./repo";
 import { assertNotSymlink, resolveInWorktree } from "./safe-path";
 
@@ -40,6 +40,62 @@ export async function unstageFiles(h: WorktreeHandle, paths: string[]): Promise<
   }
   const all = [...paths, ...(await stagedRenameSources(h, paths))];
   await h.git.ok(["restore", "--staged", "--", ...all]);
+}
+
+const folderRefusal = (path: string) =>
+  new KiboError("INVALID_INPUT", `${path} is a folder: discard its files one by one`);
+
+function assertNoFolderOnDisk(h: WorktreeHandle, paths: string[]): void {
+  for (const p of paths)
+    if (lstatSync(resolveInWorktree(h.path, p), { throwIfNoEntry: false })?.isDirectory())
+      throw folderRefusal(p);
+}
+
+async function headEntries(h: WorktreeHandle, paths: string[]): Promise<Map<string, string>> {
+  if (!(await hasHead(h))) return new Map();
+  const out = await h.git.ok(["ls-tree", "-z", "HEAD", "--", ...paths]);
+  const entries = new Map<string, string>();
+  for (const line of out.split("\0")) {
+    const tab = line.indexOf("\t");
+    if (tab < 0) continue;
+    const [, type = ""] = line.slice(0, tab).split(" ");
+    entries.set(line.slice(tab + 1), type);
+  }
+  return entries;
+}
+
+async function assertDiscardable(h: WorktreeHandle, paths: string[]): Promise<void> {
+  if ((await currentOperation(h)) !== null)
+    throw new KiboError("GIT_BUSY", "finish or abort the current operation before discarding changes");
+  const status = await readStatus(h);
+  const conflicted = status.files.find((f) => f.kind === "conflicted" && paths.includes(f.path));
+  if (conflicted) throw new KiboError("INVALID_INPUT", `${conflicted.path} is conflicted: resolve it first`);
+}
+
+export async function discardChanges(h: WorktreeHandle, paths: string[]): Promise<void> {
+  validate(h, paths);
+  assertNoFolderOnDisk(h, paths);
+  await assertDiscardable(h, paths);
+  const head = await headEntries(h, paths);
+  const folder = paths.find((p) => head.get(p) === "tree");
+  if (folder !== undefined) throw folderRefusal(folder);
+  const restore = paths.filter((p) => head.has(p));
+  const remove = paths.filter((p) => !head.has(p));
+  if (restore.length > 0)
+    await h.git.ok(["restore", "--staged", "--worktree", "--source=HEAD", "--", ...restore]);
+  if (remove.length > 0) {
+    await h.git.ok(["rm", "--cached", "-q", "--ignore-unmatch", "--", ...remove]);
+    await h.git.ok(["clean", "-f", "-q", "--", ...remove]);
+  }
+}
+
+export async function stageAll(h: WorktreeHandle): Promise<void> {
+  await h.git.ok(["add", "-A"]);
+}
+
+export async function unstageAll(h: WorktreeHandle): Promise<void> {
+  if (await hasHead(h)) await h.git.ok(["reset", "-q"]);
+  else await h.git.ok(["rm", "--cached", "-r", "-q", "--", "."]);
 }
 
 export async function stageHunk(h: WorktreeHandle, input: HunkInput): Promise<void> {

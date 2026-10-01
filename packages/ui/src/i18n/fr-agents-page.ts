@@ -1,0 +1,36 @@
+export const frAgentsPage = {
+  subtitle: "Un run est le travail d'un agent sur un ticket.",
+  stats: {
+    slots: (used: number, total: number) => `${used} place${used > 1 ? "s" : ""} sur ${total}`,
+    tokensHelp: "Comptés par Claude Code sur ton abonnement.",
+  },
+  filters: {
+    label: "Filtrer par état",
+    all: "Tous",
+    done: "Terminés",
+    failed: "En échec",
+    cancelled: "Annulés",
+    waiting: "En attente",
+  },
+  searchKey: "Clé du ticket",
+  searchPlaceholder: "KIB-12",
+  noMatch: "Aucun run ne correspond à ce filtre.",
+  openRun: (profile: string, subject: string) => `${profile} · ${subject}`,
+  stopTitle: (label: string, key: string | null) =>
+    key ? `Arrêter le run ${label} sur ${key} ?` : `Arrêter le run ${label} ?`,
+  stopHelp: "L'agent est interrompu ; le ticket reste assigné.",
+  stopConfirm: "Arrêter",
+  cancelTitle: (key: string) => `Retirer ${key} de la file ?`,
+  cancelHelp: "Le run ne démarrera pas ; le ticket reste assigné.",
+  cancelConfirm: "Retirer",
+  deleteTitle: (name: string) => `Supprimer le profil ${name} ?`,
+  deleteHelp: "Ses runs passés restent dans l'historique.",
+  deleteConfirm: "Supprimer",
+  journalMissing: "Journal indisponible pour ce run.",
+  systemParallelHelp: "De 1 à 4 runs en même temps, dans la limite des places de la machine.",
+  permissionModes: {
+    plan: "Lecture seule (plan)",
+    acceptEdits: "Modifications acceptées",
+    default: "Demande à chaque action",
+  },
+} as const;

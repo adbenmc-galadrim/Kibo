@@ -1,20 +1,24 @@
 import { type FileRef, KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { FileCode, Pencil, RotateCw, Save, SquareTerminal } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
+import { isRemoteView } from "../lib/remote-view";
 import { CodeEditor } from "./CodeEditor";
 import { CodeLines } from "./CodeLines";
+import { FileToolbar } from "./FileToolbar";
 import { splitPath } from "./file-path";
 import { useExternalOpen } from "./use-external-open";
 import { useFileContent } from "./use-file-content";
+import { useFileFind } from "./use-file-find";
+import { useWrap } from "./wrap-pref";
 
-type Props = { fileRef: FileRef; startEditing: boolean };
+type Props = { fileRef: FileRef; startEditing: boolean; remote?: boolean };
 
-export function FileTabView({ fileRef, startEditing }: Props) {
-  const [editing, setEditing] = useState(startEditing);
+export function FileTabView({ fileRef, startEditing, remote = isRemoteView() }: Props) {
+  const [editing, setEditing] = useState(startEditing && !remote);
   const file = useFileContent(fileRef, !editing);
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -23,6 +27,15 @@ export function FileTabView({ fileRef, startEditing }: Props) {
   const { dir, name } = splitPath(fileRef.path);
   const openExternal = useExternalOpen(fileRef, file.worktree?.path ?? null, file.setError);
   const c = file.content;
+  const [wrap, setWrap] = useWrap();
+  const finder = useFileFind(c?.content ?? null, fileRef.line, !editing);
+  const container = useRef<HTMLDivElement>(null);
+  const onFindKey = finder.onKeyDown;
+  useEffect(() => {
+    const node = container.current;
+    node?.addEventListener("keydown", onFindKey);
+    return () => node?.removeEventListener("keydown", onFindKey);
+  }, [onFindKey]);
 
   const save = () => {
     if (inFlight.current || !c?.hash || c.content === null || !file.worktree) return;
@@ -63,41 +76,54 @@ export function FileTabView({ fileRef, startEditing }: Props) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div ref={container} className="flex h-full min-h-0 flex-col">
       <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
         <FileCode aria-hidden className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
         <h1 className="min-w-0 truncate font-mono text-sm">
           <span className="text-muted-foreground">{dir}</span>
           {name}
         </h1>
-        <div className="ml-auto flex items-center gap-1">
-          {editing ? (
-            <Button size="sm" disabled={saving || draft === null} onClick={save}>
-              <Save />
-              {saving ? fr.file.saving : fr.file.save}
-            </Button>
-          ) : (
+        {!remote && (
+          <div className="ml-auto flex items-center gap-1">
+            {editing ? (
+              <Button size="sm" disabled={saving || draft === null} onClick={save}>
+                <Save />
+                {saving ? fr.file.saving : fr.file.save}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(true)}
+                disabled={c?.content == null}
+              >
+                <Pencil />
+                {fr.file.edit}
+              </Button>
+            )}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditing(true)}
-              disabled={c?.content == null}
+              variant="ghost"
+              size="icon-sm"
+              aria-label={fr.file.external}
+              title={fr.file.external}
+              onClick={openExternal}
             >
-              <Pencil />
-              {fr.file.edit}
+              <SquareTerminal />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={fr.file.external}
-            title={fr.file.external}
-            onClick={openExternal}
-          >
-            <SquareTerminal />
-          </Button>
-        </div>
+          </div>
+        )}
       </header>
+      <FileToolbar
+        path={fileRef.path}
+        wrap={wrap}
+        onWrap={setWrap}
+        find={finder.find}
+        onFind={finder.open}
+        onStep={finder.step}
+        onCloseFind={finder.close}
+        searchable={!editing}
+      />
+      {remote && <p className="px-4 py-2 text-xs text-muted-foreground">{fr.file.localOnly}</p>}
       {file.error && (
         <div role="alert" className="flex items-center gap-3 px-4 py-2 text-sm text-destructive">
           {file.error}
@@ -118,12 +144,21 @@ export function FileTabView({ fileRef, startEditing }: Props) {
           path={fileRef.path}
           layout="single"
           label={fileRef.path}
+          wrap={wrap}
           onChange={setDraft}
           onSave={save}
         />
       )}
       {!editing && file.tokens && (
-        <CodeLines tokens={file.tokens} highlightLine={fileRef.line} label={fileRef.path} />
+        <CodeLines
+          tokens={file.tokens}
+          highlightLine={finder.goTo ?? fileRef.line}
+          label={fileRef.path}
+          wrap={wrap}
+          matches={finder.find?.matches}
+          matchLength={finder.find?.query.length}
+          highlight={finder.current}
+        />
       )}
     </div>
   );

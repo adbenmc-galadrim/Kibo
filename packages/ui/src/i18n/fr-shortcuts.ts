@@ -1,0 +1,24 @@
+export const frShortcuts = {
+  title: "Raccourcis",
+  subtitle:
+    "⌘ sur macOS, Ctrl ailleurs. Dans un navigateur, certains raccourcis restent pris par le navigateur ; ils fonctionnent dans la fenêtre Kibo.",
+  navigation: "Navigation",
+  palette: "Palette",
+  code: "Code",
+  items: {
+    palette: "Palette de commandes",
+    newTab: "Nouvel onglet (palette)",
+    closeTab: "Fermer l'onglet",
+    home: "Aller à l'Accueil",
+    goToTab: "Aller à un onglet",
+    lastTab: "Dernier onglet",
+    togglePin: "Épingler ou détacher l'onglet",
+    openSelection: "Ouvrir la sélection",
+    openInSheet: "Ouvrir un ticket dans le Sheet",
+    nextFilter: "Filtre suivant (Tout, Tickets, Pages…)",
+    save: "Enregistrer le fichier édité",
+    externalEditor: "Ouvrir dans l'éditeur externe",
+    commit: "Valider le commit",
+  },
+  range: "…",
+} as const;

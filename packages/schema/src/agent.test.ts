@@ -12,6 +12,7 @@ import {
   Rule,
   RunEvent,
   runSubject,
+  WorkspacePatch,
 } from "./index";
 
 const profile = {
@@ -122,5 +123,20 @@ describe("runs and hooks", () => {
     expect(RpcRequest.safeParse({ method: "answerRun", runId: "r", text: "" }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "setHost", patch: { cpuThreshold: 5 } }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "moveRun", runId: "r", index: -1 }).success).toBe(false);
+  });
+});
+
+test("a workspace patch needs a field; the description is bounded and can be cleared", () => {
+  expect(WorkspacePatch.safeParse({}).success).toBe(false);
+  expect(WorkspacePatch.safeParse({ description: null }).success).toBe(true);
+  expect(WorkspacePatch.safeParse({ description: "x".repeat(501) }).success).toBe(false);
+  expect(WorkspacePatch.safeParse({ name: "x".repeat(41) }).success).toBe(false);
+  const parsed = ConfigCommand.parse({
+    method: "updateWorkspace",
+    patch: { name: " Maison ", description: " Mes projets " },
+  });
+  expect(parsed).toEqual({
+    method: "updateWorkspace",
+    patch: { name: "Maison", description: "Mes projets" },
   });
 });

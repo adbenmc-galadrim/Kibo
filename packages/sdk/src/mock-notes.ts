@@ -8,6 +8,7 @@ export type MockNotesFolder = {
   list(): NoteMeta[];
   read(path: string): NoteContent;
   write(path: string, markdown: string, expectedMtime: number | null): NoteMeta;
+  create(path: string, markdown: string): NoteMeta;
   rename(from: string, to: string): NoteMeta;
   remove(path: string): void;
   search(query: string): NoteMeta[];
@@ -68,6 +69,11 @@ export function createMockNotes(
       if (expectedMtime !== null && notes.get(path)?.mtime !== expectedMtime) {
         throw new KiboError("CONFLICT", `${path} changed`);
       }
+      notes.set(path, { markdown, mtime: tick() });
+      return changed(metaOf(path));
+    },
+    create: (path, markdown) => {
+      if (notes.has(path)) throw new KiboError("CONFLICT", `${path} already exists`);
       notes.set(path, { markdown, mtime: tick() });
       return changed(metaOf(path));
     },

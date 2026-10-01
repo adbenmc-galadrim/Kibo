@@ -208,6 +208,18 @@ describe("startDaemon", () => {
     expect((await fetch(page)).status).toBe(404);
   });
 
+  test("the sandbox listener answers draft previews with a 404 until a draft is previewed", async () => {
+    const { d } = await launch();
+    const draft = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
+    for (const file of ["index.html", "ui.sandbox.js", "ui.css"]) {
+      const res = await fetch(
+        `http://127.0.0.1:${d.sandboxPort}/c/drafts/${draft}/${"a".repeat(64)}/${file}`,
+      );
+      expect(res.status).toBe(404);
+      expect(res.headers.get("content-security-policy")).toContain("connect-src 'none'");
+    }
+  });
+
   test("in dev, Vite may call the api and frame the sandbox, the sandbox origin never calls the api", async () => {
     const { d } = await launch({ dev: true });
     const rpc = await pair(d);
@@ -219,5 +231,45 @@ describe("startDaemon", () => {
     expect(refused.headers.get("content-security-policy")).toContain(
       `frame-ancestors http://127.0.0.1:${d.port} http://localhost:${d.port} ${VITE};`,
     );
+  });
+
+  test("icons are set by rpc and served under the session cookie only", async () => {
+    const { d } = await launch();
+    const cookie = await pairCookie(d);
+    const rpc = rpcWith(d.url, cookie);
+    const created = await (
+      await rpc({ method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#F97316" })
+    ).json();
+    const projectId = (created as { result: { id: string } }).result.id;
+    const owner = { kind: "project", projectId } as const;
+    const refused = await rpc({
+      method: "setIcon",
+      owner,
+      icon: { mime: "image/jpeg", data: "iVBORw0KGgoAAA==" },
+    });
+    expect(refused.status).toBe(400);
+    const set = await (
+      await rpc({ method: "setIcon", owner, icon: { mime: "image/png", data: "iVBORw0KGgoAAA==" } })
+    ).json();
+    const version = (set as { result: { icon: string } }).result.icon;
+    const icon = `${d.url}/icons/project/${projectId}?v=${version}`;
+    const ok = await fetch(icon, { headers: { cookie } });
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("content-type")).toBe("image/png");
+    expect(ok.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
+    expect((await fetch(icon)).status).toBe(401);
+    expect((await fetch(icon, { headers: { cookie, "sec-fetch-site": "cross-site" } })).status).toBe(403);
+    expect((await fetch(`${d.url}/icons/workspace`, { headers: { cookie } })).status).toBe(404);
+    const projects = await (await rpc({ method: "listProjects" })).json();
+    expect((projects as { result: { icon: string | null }[] }).result[0]?.icon).toBe(version);
+    const renamed = await (
+      await rpc({ method: "updateProject", projectId, patch: { name: "Noyau" } })
+    ).json();
+    expect((renamed as { result: { name: string } }).result.name).toBe("Noyau");
+    const deleted = await (await rpc({ method: "deleteProject", projectId })).json();
+    expect(deleted).toEqual({ ok: true, result: null });
+    expect((await fetch(icon, { headers: { cookie } })).status).toBe(404);
+    expect(await (await rpc({ method: "listProjects" })).json()).toEqual({ ok: true, result: [] });
+    expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
   });
 });

@@ -1,10 +1,11 @@
-import type {
-  AgentProfile,
-  AssignPreview,
-  Domain,
-  ProjectSnapshot,
-  TicketView,
-  WorkspaceConfig,
+import {
+  type AgentProfile,
+  type AssignPreview,
+  type Domain,
+  isInbox,
+  type ProjectSnapshot,
+  type TicketView,
+  type WorkspaceConfig,
 } from "@kibo/schema";
 import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
@@ -23,6 +24,7 @@ import { Bot, TriangleAlert } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { reasonText } from "./format";
@@ -262,6 +264,8 @@ export function AssignDialog({
   onClose,
 }: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
+  if (isInbox(project.meta.id))
+    return <Notice title={fr.assign.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
   if (!config) return null;
   const assignable = config.profiles.filter((p) => !p.system);
   if (assignable.length === 0) {

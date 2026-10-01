@@ -3,7 +3,7 @@ import { StatusDot } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
-import { Bot } from "lucide-react";
+import { Bot, FolderInput } from "lucide-react";
 import { fr } from "../i18n/fr";
 import type { MineTab } from "./my-tickets";
 
@@ -14,8 +14,10 @@ type Props = {
   agent: string | null;
   workflow: readonly Status[];
   canRun: boolean;
+  inbox: boolean;
   onOpen(): void;
   onAssign(): void;
+  onFile(): void;
 };
 
 function AgentName({ name }: { name: string }) {
@@ -49,7 +51,27 @@ function AssignAction({ canRun, onAssign }: { canRun: boolean; onAssign(): void 
   );
 }
 
-export function MyTicketRow({ ticket, tab, domain, agent, workflow, canRun, onOpen, onAssign }: Props) {
+function FileAction({ onFile }: { onFile(): void }) {
+  return (
+    <Button variant="ghost" size="sm" className="h-7" title={fr.mine.noFolderInbox} onClick={onFile}>
+      <FolderInput aria-hidden />
+      {fr.mine.file}
+    </Button>
+  );
+}
+
+export function MyTicketRow({
+  ticket,
+  tab,
+  domain,
+  agent,
+  workflow,
+  canRun,
+  inbox,
+  onOpen,
+  onAssign,
+  onFile,
+}: Props) {
   const status = workflow.find((s) => s.id === ticket.statusId)?.label ?? ticket.statusId;
   return (
     <li className="flex h-12 items-center gap-3 rounded-lg border bg-card pr-4">
@@ -72,6 +94,8 @@ export function MyTicketRow({ ticket, tab, domain, agent, workflow, canRun, onOp
       <span className="w-24 shrink-0 text-sm text-muted-foreground">{status}</span>
       {tab === "agents" && agent ? (
         <AgentName name={agent} />
+      ) : inbox ? (
+        <FileAction onFile={onFile} />
       ) : (
         <AssignAction canRun={canRun} onAssign={onAssign} />
       )}

@@ -2,13 +2,14 @@ import { describe, expect, test } from "bun:test";
 import {
   ComponentManifest,
   diffPermissions,
+  formatsOf,
   grantedOf,
   type PresencePeer,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionList,
-  type Surface,
   secretHostsCovered,
+  surfaceFor,
   type Theme,
   type TicketRun,
   USED_MARKER,
@@ -59,8 +60,6 @@ export function runConformance(
       expect(secretHostsCovered(manifest)).toEqual([]);
     });
     const declared = permissionList(grantedOf(manifest));
-    const surfaces: Surface[] =
-      manifest.kind === "both" ? ["widget", "view"] : manifest.kind === "adapter" ? [] : [manifest.kind];
     const { runs, ...mockOpts } = opts;
     const projects: [string, ConformanceSeed | undefined, Partial<MockSdkOptions>][] = [
       ["empty project", undefined, {}],
@@ -71,14 +70,21 @@ export function runConformance(
         { shared: true, presence: [COLLEAGUE], members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
       ],
     ];
-    for (const surface of surfaces) {
+    for (const format of formatsOf(manifest)) {
+      const surface = surfaceFor(manifest, format);
       for (const theme of THEMES) {
         for (const [label, s, extra] of projects) {
           test(
-            `renders an ${label} as a ${surface} in ${theme} within its declared permissions`,
+            `renders an ${label} as ${format} (${surface}) in ${theme} within its declared permissions`,
             async () => {
               document.documentElement.classList.toggle("dark", theme === "dark");
-              const m = createMockSdk(manifest, { ...mockOpts, ...extra, surface, ...(s && { seed: s }) });
+              const m = createMockSdk(manifest, {
+                ...mockOpts,
+                ...extra,
+                surface,
+                format,
+                ...(s && { seed: s }),
+              });
               if (s && runs) m.setRuns(runs(m.snapshot()));
               const { container } = render(
                 <SdkProvider sdk={m.sdk}>

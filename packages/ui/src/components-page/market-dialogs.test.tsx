@@ -105,7 +105,7 @@ test("the first publication asks for a publisher name and only offers team sourc
   await user.keyboard("{Escape}");
   await user.type(screen.getByLabelText("Nom d'éditeur"), "Adam");
   await user.click(publishButton());
-  expect(await screen.findByText("Publié : index n° 42")).toBeTruthy();
+  expect(await screen.findByText("Publié · version du catalogue 42")).toBeTruthy();
   expect(calls.at(-1)).toEqual({
     method: "publishToMarket",
     id: "burndown",

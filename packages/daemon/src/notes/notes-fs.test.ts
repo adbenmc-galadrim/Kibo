@@ -11,7 +11,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { KiboError } from "@kibo/schema";
 import {
+  createNoteFile,
   listNoteFiles,
   readNoteFile,
   removeNoteFile,
@@ -96,4 +98,25 @@ describe("writes", () => {
     await expect(readNoteFile(dir, "b.md")).rejects.toThrow("NOT_FOUND");
     await expect(removeNoteFile(dir, "b.md")).rejects.toThrow("NOT_FOUND");
   });
+});
+
+test("createNoteFile writes a new file and refuses an existing one without touching it", async () => {
+  const { dir } = folder();
+  const created = await createNoteFile(dir, "idees.md", "# Idées\n");
+  expect(created.markdown).toBe("# Idées\n");
+  await expect(createNoteFile(dir, "idees.md", "# Autre\n")).rejects.toThrow(
+    new KiboError("CONFLICT", "idees.md already exists"),
+  );
+  expect(readFileSync(join(dir, "idees.md"), "utf8")).toBe("# Idées\n");
+});
+
+test("createNoteFile creates missing folders and refuses a symlinked target", async () => {
+  const { root, dir } = folder();
+  await createNoteFile(dir, "projets/kibo.md", "# Kibo\n");
+  expect(readFileSync(join(dir, "projets", "kibo.md"), "utf8")).toBe("# Kibo\n");
+  const outsideDir = join(root, "ailleurs");
+  mkdirSync(outsideDir);
+  symlinkSync(join(outsideDir, "cible.md"), join(dir, "lien.md"));
+  await expect(createNoteFile(dir, "lien.md", "# X\n")).rejects.toThrow("PATH_OUTSIDE_PROJECT");
+  expect(readdirSync(outsideDir)).toEqual([]);
 });

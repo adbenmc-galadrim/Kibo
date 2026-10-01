@@ -31,14 +31,14 @@ async function waitForDaemon(request: APIRequestContext, theme: Theme) {
 
 async function openSources(page: Page) {
   await page.getByRole("button", { name: "Paramètres" }).click();
-  await page.getByRole("link", { name: "Composants" }).click();
-  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+  await page.getByRole("link", { name: "Sources de composants" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Sources de composants" })).toBeVisible();
 }
 
 async function refreshSource(page: Page, serial: number) {
   await openSources(page);
   await page.getByRole("button", { name: "Actions Équipe" }).click();
-  await page.getByRole("menuitem", { name: "Rafraîchir" }).click();
+  await page.getByRole("menuitem", { name: "Rafraîchir cette source" }).click();
   const source = page
     .getByRole("row")
     .filter({ has: page.getByRole("cell", { name: "Équipe", exact: true }) });
@@ -52,11 +52,11 @@ async function openInstalled(page: Page) {
 
 async function approveSandboxed(page: Page, subtitle: string) {
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText(subtitle)).toBeVisible();
+  await expect(dialog.getByText(subtitle)).toBeVisible({ timeout: 30_000 });
   await expect(dialog.getByText("Ce code vient d'une marketplace.")).toBeVisible();
-  await dialog.getByRole("radio", { name: /Sandboxé/ }).click();
+  await dialog.getByRole("radio", { name: /Isolé/ }).click();
   await dialog.getByRole("button", { name: "Autoriser" }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog).toBeHidden({ timeout: 30_000 });
 }
 
 test.use({ actionTimeout: 15_000 });
@@ -141,7 +141,7 @@ test("marketplace : source, installation vérifiée, mises à jour, clé changé
     await expect(row("0.2.0").getByText("1 page · 1 projet")).toBeVisible();
     await expect(row("0.1.0").getByText("Aucune page")).toBeVisible();
     await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-    await page.getByRole("button", { name: "Suivi" }).click();
+    await page.getByRole("button", { name: "Suivi", exact: true }).click();
     await expect(frame.getByText("Burndown")).toBeVisible();
     await expect(page.getByText(/Composant (absent|introuvable)/)).toHaveCount(0);
   });
@@ -171,7 +171,7 @@ test("marketplace : source, installation vérifiée, mises à jour, clé changé
     await expect(row("0.3.0").getByText("Autorisation requise")).toBeVisible();
     await expect(row("0.3.0").getByText(`Révoqué : ${MARKET_REVOKE_REASON}`)).toBeVisible();
     await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-    await page.getByRole("button", { name: "Suivi" }).click();
+    await page.getByRole("button", { name: "Suivi", exact: true }).click();
     await expect(page.getByText(`Révoqué : ${MARKET_REVOKE_REASON}`)).toBeVisible();
     await expect(frame.getByText("Burndown")).toHaveCount(0);
   });

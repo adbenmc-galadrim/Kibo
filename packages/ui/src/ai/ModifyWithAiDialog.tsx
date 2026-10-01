@@ -1,4 +1,4 @@
-import { type ComponentDraft, KiboError } from "@kibo/schema";
+import { type ComponentDraft, type DraftAttachmentInput, KiboError } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   Dialog,
@@ -11,19 +11,23 @@ import {
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { client } from "../api";
 import { ApprovalScope, useApprovalScope } from "../dialogs/approval-scope";
 import { fr } from "../i18n/fr";
+import { frCreations } from "../i18n/fr-creations";
 import { AiDraftPanel } from "./AiDraftPanel";
+import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
+import { keepEscapeInReviseForm } from "./revise-escape";
 import { useAiAvailability } from "./use-ai-availability";
 
 export type ModifyTarget = { id: string; title: string; version: string; origin: "user" | "ai" };
 export { modifiable } from "../components-page/rows";
 
 type Props = {
-  component: ModifyTarget;
+  component: ModifyTarget | null;
+  draftId?: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 };
@@ -31,10 +35,11 @@ type Props = {
 const activeDraftOf = (list: ComponentDraft[], componentId: string) =>
   list.find((d) => d.componentId === componentId && d.status !== "done" && d.status !== "abandoned") ?? null;
 
-function useActiveDraft(componentId: string) {
+function useActiveDraft(componentId: string | null) {
   const [active, setActive] = useState<ComponentDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(async () => {
+    if (componentId === null) return null;
     try {
       const found = activeDraftOf(await client.rpc({ method: "listComponentDrafts" }), componentId);
       setActive(found);
@@ -71,7 +76,9 @@ type FormProps = {
 function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps) {
   const id = useId();
   const { ready, block } = useAiAvailability("generateur");
+  const requestRef = useRef<HTMLTextAreaElement>(null);
   const [request, setRequest] = useState("");
+  const [attachments, setAttachments] = useState<DraftAttachmentInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const text = request.trim();
@@ -84,7 +91,7 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
     try {
       const draft = await client.rpc({
         method: "startComponentDraft",
-        draft: { mode: "modify", id: componentId, description: text },
+        draft: { mode: "modify", id: componentId, description: text, attachments },
       });
       onStarted(draft.id);
     } catch (err) {
@@ -101,12 +108,19 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
       <Label htmlFor={`${id}-request`}>{fr.ai.modifyField}</Label>
       <Textarea
         id={`${id}-request`}
+        ref={requestRef}
         rows={4}
         maxLength={2000}
         value={request}
         onChange={(e) => setRequest(e.target.value)}
       />
       <p className="text-xs text-muted-foreground">{fr.ai.modifyHelp}</p>
+      <AttachmentsField
+        value={attachments}
+        onChange={setAttachments}
+        disabled={busy}
+        pasteFrom={requestRef}
+      />
       {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
       {error && (
         <p role="alert" className="text-xs text-destructive">
@@ -125,14 +139,15 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
   );
 }
 
-export function ModifyWithAiDialog({ component, open, onOpenChange }: Props) {
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const { active, error, refresh } = useActiveDraft(component.id);
+export function ModifyWithAiDialog({ component, draftId: initialDraftId, open, onOpenChange }: Props) {
+  const [draftId, setDraftId] = useState<string | null>(initialDraftId ?? null);
+  const { active, error, refresh } = useActiveDraft(initialDraftId || !component ? null : component.id);
   const scope = useApprovalScope();
 
   const body = () => {
     if (draftId) return <AiDraftPanel draftId={draftId} target={null} onDone={() => onOpenChange(false)} />;
     if (active) return <ResumeBox draft={active} onResume={() => setDraftId(active.id)} />;
+    if (!component) return null;
     return (
       <ModifyForm
         componentId={component.id}
@@ -145,11 +160,19 @@ export function ModifyWithAiDialog({ component, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hidden={scope.hidden} className={draftId ? "sm:max-w-3xl" : "sm:max-w-[520px]"}>
+      <DialogContent
+        hidden={scope.hidden}
+        onEscapeKeyDown={keepEscapeInReviseForm}
+        className={draftId ? "sm:max-w-3xl" : "sm:max-w-[520px]"}
+      >
         <DialogHeader>
-          <DialogTitle>{fr.ai.modifyTitle(component.title)}</DialogTitle>
-          <DialogDescription>
-            {fr.ai.modifySubtitle(component.version, fr.components.origin[component.origin])}
+          <DialogTitle>
+            {component ? fr.ai.modifyTitle(component.title) : frCreations.modify.title}
+          </DialogTitle>
+          <DialogDescription className={component ? undefined : "sr-only"}>
+            {component
+              ? fr.ai.modifySubtitle(component.version, fr.components.origin[component.origin])
+              : frCreations.modify.title}
           </DialogDescription>
         </DialogHeader>
         {error && !draftId && <p className="text-xs text-destructive">{error}</p>}

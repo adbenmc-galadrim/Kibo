@@ -1,8 +1,8 @@
 import type { ProjectSnapshot, TabTarget } from "@kibo/schema";
 import { type ReactNode, useCallback, useState } from "react";
-import { OpenViewDialog } from "../dialogs/OpenViewDialog";
 import { viewPageFor } from "../pages/view-page";
 import { componentRef, findBuiltin } from "../registry";
+import { OpenViewDialog } from "./lazy-dialogs";
 
 type Pending = { projectId: string; componentId: string };
 export type OpenView = { openView(componentId: string): void; dialog: ReactNode };

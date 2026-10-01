@@ -2,6 +2,7 @@
   "id": "graph",
   "version": "1.0.0",
   "kind": "both",
+  "formats": ["large", "half", "full"],
   "title": "Graphe de dépendances",
   "description": "Généré depuis les liens bloque / bloqué par",
   "reads": ["ticket", "status", "link", "run"],

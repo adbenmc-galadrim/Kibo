@@ -3,7 +3,8 @@ import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/s
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { fr } from "./fr";
 import { Component, manifest } from "./index";
 
@@ -45,8 +46,9 @@ test("shows keys, progress, blocked reason and opens a ticket", async () => {
   expect(await screen.findByText("KIB-1")).toBeTruthy();
   expect(screen.getByText("1/1")).toBeTruthy();
   expect(screen.getByText("Attente client")).toBeTruthy();
+  const headers = screen.getByText("Sous-tickets").parentElement ?? document.body;
   for (const header of ["Ticket", "Statut", "Assigné", "Sous-tickets"])
-    expect(screen.getByText(header)).toBeTruthy();
+    expect(within(headers).getByText(header)).toBeTruthy();
   expect(screen.getByText("Terminé")).toBeTruthy();
   expect(screen.getByText("Bloqué")).toBeTruthy();
   expect(screen.getAllByText("À faire")).toHaveLength(1);
@@ -124,4 +126,148 @@ test("the tree shows provisional keys and member names", async () => {
   );
   expect((await screen.findByText("KIB-…")).className).toContain("italic");
   expect(await screen.findByText("Léa")).toBeTruthy();
+});
+
+const mount = (m: ReturnType<typeof createMockSdk>) =>
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+const byKey = (m: ReturnType<typeof createMockSdk>, key: string) =>
+  m.snapshot().tickets.find((t) => t.key === key);
+const pickStatus = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+  await user.click(await screen.findByRole("menuitem", { name: "Statut" }));
+  await user.keyboard("{ArrowRight}");
+  for (let i = 0; i < 8 && document.activeElement?.textContent !== name; i++)
+    await user.keyboard("{ArrowDown}");
+  await user.keyboard("{Enter}");
+};
+
+test("the row menu changes the status; Bloqué asks for a reason", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: await screen.findByRole("button", { name: /Arbre des pages/ }),
+  });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir",
+    "Statut",
+    "Nouveau sous-ticket",
+    "Déplacer à la racine",
+    "Supprimer…",
+  ]);
+  await pickStatus(user, "Terminé");
+  await waitFor(() => expect(byKey(m, "KIB-1")?.statusId).toBe("done"));
+  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await pickStatus(user, "Bloqué…");
+  const dialog = await screen.findByRole("dialog", { name: "Bloquer KIB-1" });
+  await user.type(within(dialog).getByLabelText("Motif"), "Attente client");
+  await user.click(within(dialog).getByRole("button", { name: "Bloquer" }));
+  await waitFor(() =>
+    expect(byKey(m, "KIB-1")).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" }),
+  );
+});
+
+test("new sub-ticket asks the host, move to root reparents, delete asks then removes the subtree", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Nouveau sous-ticket" }));
+  expect(m.newTicketRequests.at(-1)?.parentId).toBe(byKey(m, "KIB-2")?.id);
+  await user.click(screen.getByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer à la racine" }));
+  await waitFor(() => expect(byKey(m, "KIB-2")?.parentId).toBeNull());
+  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer KIB-1 ?" });
+  expect(confirm.textContent).toContain("Ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(byKey(m, "KIB-1")).toBeUndefined());
+  expect(byKey(m, "KIB-2")).toBeDefined();
+});
+
+test("a refused command is shown as an alert", async () => {
+  const m = createMockSdk(manifest, { seed });
+  render(
+    <SdkProvider sdk={{ ...m.sdk, run: () => Promise.reject(new Error("daemon unreachable")) }}>
+      <Component />
+    </SdkProvider>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
+  await pickStatus(user, "Terminé");
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de changer le statut de KIB-3.");
+});
+
+test("a read-only project shows no ⋯ button and a one-entry menu", async () => {
+  const m = createMockSdk(manifest, { seed, shared: true });
+  m.setAccess("read-only");
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("Arbre des pages");
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: screen.getByRole("button", { name: /Arbre des pages/ }),
+  });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
+});
+
+test("screen 125: search and filters narrow the tree, drag is disabled meanwhile, clearing restores", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("Arbre des pages");
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(3);
+  await user.type(screen.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }), "deplacement");
+  expect(screen.getByText("Déplacement")).toBeTruthy();
+  expect(screen.getByText("Arbre des pages")).toBeTruthy();
+  expect(screen.queryByText("Sync")).toBeNull();
+  const context = screen.getByText("Arbre des pages").closest("[data-context]");
+  expect(context?.getAttribute("data-context")).toBe("true");
+  expect(context?.classList.contains("text-muted-foreground")).toBe(true);
+  expect(screen.getByText("Déplacement").closest("[data-context]")).toBeNull();
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(0);
+  await user.click(screen.getByRole("button", { name: "Effacer" }));
+  expect(await screen.findByText("Sync")).toBeTruthy();
+  await user.click(screen.getByRole("radio", { name: "Agents" }));
+  expect(screen.getByText("Sync")).toBeTruthy();
+  expect(screen.queryByText("Arbre des pages")).toBeNull();
+  await user.click(screen.getByRole("radio", { name: "Tous" }));
+  await user.click(screen.getByRole("button", { name: "Statut" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Terminé" }));
+  await user.keyboard("{Escape}");
+  expect(screen.getByText("Déplacement")).toBeTruthy();
+  expect(screen.queryByText("Sync")).toBeNull();
+  await user.type(screen.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }), "introuvable");
+  const none = screen.getByText("Aucun ticket ne correspond.").closest("div");
+  await user.click(within(none ?? document.body).getByRole("button", { name: "Effacer" }));
+  expect(await screen.findByText("Sync")).toBeTruthy();
+  expect(screen.getByText("Arbre des pages")).toBeTruthy();
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(3);
+});
+
+test("the empty state explains the tree and offers a new ticket; a loading snapshot shows a skeleton", async () => {
+  const m = createMockSdk(manifest);
+  const { unmount } = mount(m);
+  const empty = (await screen.findByText("Aucun ticket pour l'instant.")).closest("div");
+  expect(empty?.textContent).toContain(
+    "Les tickets s'organisent en arbre : un ticket, ses sous-tickets, leurs dépendances.",
+  );
+  expect(screen.getAllByRole("button", { name: "Nouveau ticket" })).toHaveLength(1);
+  fireEvent.click(within(empty ?? document.body).getByRole("button", { name: "Nouveau ticket" }));
+  expect(m.newTicketRequests).toHaveLength(1);
+  expect(screen.queryByRole("searchbox")).toBeNull();
+  unmount();
+  render(
+    <SdkProvider sdk={{ ...m.sdk, list: () => new Promise(() => {}) }}>
+      <Component />
+    </SdkProvider>,
+  );
+  await waitFor(() => expect(document.querySelectorAll("[data-slot=skeleton]")).toHaveLength(5));
+  expect(screen.queryByText("Aucun ticket pour l'instant.")).toBeNull();
 });

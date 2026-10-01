@@ -1,4 +1,9 @@
-import { type ComponentDraft, MAX_DRAFT_ATTEMPTS, type ValidationReport } from "@kibo/schema";
+import {
+  type ComponentDraft,
+  MAX_DRAFT_ATTEMPTS,
+  MAX_DRAFT_REVISIONS,
+  type ValidationReport,
+} from "@kibo/schema";
 
 export type DraftStep = 1 | 2 | 3 | 4 | 5;
 
@@ -23,6 +28,7 @@ export function draftActions(d: ComponentDraft): {
   canRetry: boolean;
   codeFallback: boolean;
   canAbandon: boolean;
+  canRevise: boolean;
 } {
   const failed = d.status === "failed";
   const exhausted = d.attempts >= MAX_DRAFT_ATTEMPTS || d.failure?.kind === "config_changed";
@@ -30,6 +36,7 @@ export function draftActions(d: ComponentDraft): {
     canRetry: failed && !exhausted,
     codeFallback: failed && exhausted,
     canAbandon: d.status !== "done" && d.status !== "abandoned",
+    canRevise: (d.status === "review" || d.status === "permissions") && d.revisions < MAX_DRAFT_REVISIONS,
   };
 }
 

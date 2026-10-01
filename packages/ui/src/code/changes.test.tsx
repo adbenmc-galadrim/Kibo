@@ -6,6 +6,7 @@ import {
   type FileContent,
   type FileDiff,
   KiboError,
+  LOCAL_ONLY_CODE_METHODS,
   type ProjectSnapshot,
   type RepoStatus,
 } from "@kibo/schema";
@@ -146,16 +147,26 @@ const project: ProjectSnapshot = {
   nextTicketKey: "KIB-1",
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
+const onOpenInTab = mock((_: unknown) => {});
 const count = (method: CodeRequest["method"]) => calls.filter((c) => c.method === method).length;
 
 beforeEach(() => {
   calls.length = 0;
   overrides = {};
   status = baseStatus;
+  onOpenInTab.mockClear();
 });
 
 const renderView = () =>
-  render(<ChangesView project={project} worktree={null} onWorktreeChange={() => {}} onOpenFile={() => {}} />);
+  render(
+    <ChangesView
+      project={project}
+      worktree={null}
+      onWorktreeChange={() => {}}
+      onOpenFile={() => {}}
+      onOpenInTab={onOpenInTab}
+    />,
+  );
 
 const enabledButton = async (name: string | RegExp) => {
   const button = await screen.findByRole("button", { name });
@@ -185,7 +196,7 @@ test("the first staged file is selected, its diff shown and the message pre-fill
 test("a stale hunk shows an alert and reloads the diff", async () => {
   overrides = { stageHunk: () => Promise.reject(new KiboError("GIT_STALE", "changed")) };
   renderView();
-  await userEvent.click(await enabledButton("Désindexer le bloc"));
+  await userEvent.click(await enabledButton("Retirer le bloc du commit"));
   expect((await screen.findByRole("alert")).textContent).toBe(
     "Le diff a changé entre-temps : il a été rechargé.",
   );
@@ -248,7 +259,7 @@ test("a code event reloads the status", async () => {
 
 test("editing an unstaged file reads the index and the worktree versions", async () => {
   renderView();
-  await userEvent.click(await screen.findByRole("button", { name: /index\.ts/ }));
+  await userEvent.click(await screen.findByRole("button", { name: /^Modifié index\.ts/ }));
   await userEvent.click(await enabledButton("Édition"));
   await waitFor(() => expect(count("readFile")).toBe(2));
   expect(
@@ -370,4 +381,151 @@ test("Commiter d'abord closes the PR dialog and leaves the focus on the message"
     await new Promise((r) => setTimeout(r, 30));
   });
   expect(document.activeElement).toBe(screen.getByLabelText("Message"));
+});
+
+test("a remote view reads the changes but shows no git action", async () => {
+  status = { ...baseStatus, operation: "rebase" };
+  render(
+    <ChangesView
+      project={project}
+      worktree={null}
+      onWorktreeChange={() => {}}
+      onOpenFile={() => {}}
+      onOpenInTab={onOpenInTab}
+      remote
+    />,
+  );
+  expect(await screen.findByRole("region", { name: "@@ -1,2 +1,2 @@" })).toBeTruthy();
+  expect(screen.getByText(/se font sur l'ordinateur où tourne Kibo/)).toBeTruthy();
+  expect(screen.getByText(/Rebase en cours/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Abandonner" })).toBeNull();
+  expect(screen.queryByRole("checkbox")).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: /Ajouter le bloc au commit|Retirer le bloc du commit/ }),
+  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Édition" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
+  expect(screen.queryByLabelText("Message")).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Commit|Pousser|Pull request/ })).toBeNull();
+  const localOnly = new Set<string>(LOCAL_ONLY_CODE_METHODS);
+  expect(calls.filter((c) => localOnly.has(c.method))).toEqual([]);
+});
+
+test("Annuler les changements asks, names the deleted file, then sends discardChanges with the rename source", async () => {
+  status = {
+    ...baseStatus,
+    files: [
+      {
+        path: "src/renamed.ts",
+        origPath: "src/legacy.ts",
+        area: "staged",
+        kind: "renamed",
+        additions: 0,
+        deletions: 0,
+      },
+      {
+        path: "docs/notes.md",
+        origPath: null,
+        area: "unstaged",
+        kind: "untracked",
+        additions: 3,
+        deletions: 0,
+      },
+    ],
+  };
+  renderView();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions docs/notes.md" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Annuler les changements de notes.md ?" });
+  expect(confirm.textContent).toContain("notes.md est nouveau : il sera supprimé du disque.");
+  expect(confirm.textContent).toContain("Cette action est irréversible.");
+  expect(count("discardChanges")).toBe(0);
+  await user.click(within(confirm).getByRole("button", { name: "Annuler les changements" }));
+  await waitFor(() =>
+    expect(calls.find((c) => c.method === "discardChanges")).toEqual({
+      method: "discardChanges",
+      projectId: "p1",
+      worktree: "/repo",
+      paths: ["docs/notes.md"],
+    }),
+  );
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  await user.click(screen.getByRole("button", { name: "Actions src/renamed.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
+  const renamed = await screen.findByRole("alertdialog", { name: "Annuler les changements de renamed.ts ?" });
+  expect(renamed.textContent).toContain(
+    "renamed.ts disparaîtra et legacy.ts reviendra à sa dernière version commitée.",
+  );
+  await user.click(within(renamed).getByRole("button", { name: "Annuler les changements" }));
+  await waitFor(() =>
+    expect(calls.filter((c) => c.method === "discardChanges").at(-1)).toMatchObject({
+      paths: ["src/renamed.ts", "src/legacy.ts"],
+    }),
+  );
+});
+
+test("a refused discard keeps the confirmation open with the error", async () => {
+  overrides = { discardChanges: () => Promise.reject(new KiboError("GIT_BUSY", "rebase")) };
+  renderView();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions packages/core/index.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Annuler les changements…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Annuler les changements de index.ts ?" });
+  expect(confirm.textContent).toContain("index.ts reviendra à sa dernière version commitée.");
+  await user.click(within(confirm).getByRole("button", { name: "Annuler les changements" }));
+  expect((await within(confirm).findByRole("alert")).textContent).toBeTruthy();
+});
+
+test("Tout ajouter and Tout retirer call the daemon; a remote session is told why it is refused", async () => {
+  renderView();
+  const user = userEvent.setup();
+  await user.click(await enabledButton("Tout ajouter"));
+  await waitFor(() =>
+    expect(calls.find((c) => c.method === "stageAll")).toEqual({
+      method: "stageAll",
+      projectId: "p1",
+      worktree: "/repo",
+    }),
+  );
+  overrides = { unstageAll: () => Promise.reject(new KiboError("FORBIDDEN", "local only")) };
+  await user.click(await enabledButton("Tout retirer"));
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
+  );
+});
+
+test("Ouvrir dans un onglet and Copier le chemin", async () => {
+  const written: string[] = [];
+  renderView();
+  const user = userEvent.setup();
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (t: string) => void written.push(t) },
+  });
+  await user.click(await screen.findByRole("button", { name: "Actions packages/core/index.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Ouvrir dans un onglet" }));
+  expect(onOpenInTab).toHaveBeenCalledWith({
+    projectId: "p1",
+    worktree: "/repo",
+    path: "packages/core/index.ts",
+    line: null,
+    origin: null,
+  });
+  await user.click(screen.getByRole("button", { name: "Actions packages/core/index.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Copier le chemin" }));
+  expect(written).toEqual(["packages/core/index.ts"]);
+  expect((await screen.findByRole("status")).textContent).toBe("Chemin copié");
+});
+
+test("a refused clipboard says the path was not copied", async () => {
+  renderView();
+  const user = userEvent.setup();
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: () => Promise.reject(new Error("denied")) },
+  });
+  await user.click(await screen.findByRole("button", { name: "Actions packages/core/index.ts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Copier le chemin" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de copier le chemin.");
 });

@@ -122,6 +122,22 @@ test("a push refused with FORBIDDEN leaves the project read-only for good", asyn
   expect(() => service.handle({ method: "command", projectId, command: create })).toThrow("FORBIDDEN");
 });
 
+test("detaching a project unsubscribes from it when online, and only forgets it offline", async () => {
+  await online();
+  const { projectId } = sharedProject();
+  await until(() => syncDb.project(projectId)?.lastSyncAt !== null);
+  client.detachProject(projectId);
+  expect(syncDb.project(projectId)).toBeNull();
+  expect(sentFrames().filter((f) => f.type === "unsubscribe")).toEqual([{ type: "unsubscribe", projectId }]);
+  const other = sharedProject("FAC");
+  net.last().drop(1006);
+  await until(() => client.status().state !== "online");
+  const before = net.last().sent.length;
+  client.detachProject(other.projectId);
+  expect(syncDb.project(other.projectId)).toBeNull();
+  expect(net.last().sent).toHaveLength(before);
+});
+
 test("an update from the server that nests the project too deep is refused without crashing", async () => {
   await online();
   const { projectId, doc } = sharedProject();

@@ -1,5 +1,7 @@
 import {
   type AgentsState,
+  isInbox,
+  type ProjectMeta,
   type ProjectSnapshot,
   type ProjectSummary,
   Screen,
@@ -7,6 +9,7 @@ import {
   type TabTarget,
 } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { withInbox } from "../lib/inbox";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
 
@@ -83,22 +86,24 @@ const screenItems = (): PaletteItem[] =>
     run: { kind: "target", target: { kind: "screen", screen } },
   }));
 
+const projectItem = (project: ProjectMeta): PaletteItem => ({
+  ...base,
+  id: `project:${project.id}`,
+  group: "projects",
+  label: project.name,
+  keywords: normalize(`${project.name} ${project.key}`),
+  color: project.color,
+  icon: "project",
+  run: { kind: "target", target: { kind: "project", projectId: project.id } },
+});
+
 function targets(ctx: PaletteContext): PaletteItem[] {
   const out: PaletteItem[] = screenItems();
   const queued = queuePositions(ctx.agents);
-  for (const project of ctx.projects) {
+  for (const project of withInbox(ctx.projects, ctx.snapshots)) {
     const snapshot = ctx.snapshots.get(project.id);
-    out.push({
-      ...base,
-      id: `project:${project.id}`,
-      group: "projects",
-      label: project.name,
-      keywords: normalize(`${project.name} ${project.key}`),
-      color: project.color,
-      icon: "project",
-      run: { kind: "target", target: { kind: "project", projectId: project.id } },
-    });
-    for (const page of snapshot?.pages ?? []) {
+    if (!isInbox(project.id)) out.push(projectItem(project));
+    for (const page of isInbox(project.id) ? [] : (snapshot?.pages ?? [])) {
       out.push({
         ...base,
         id: `page:${project.id}:${page.id}`,

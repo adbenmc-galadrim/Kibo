@@ -1,5 +1,6 @@
 import {
   type ComponentCall,
+  type ComponentFormat,
   FrameToHost,
   type HostToFrame,
   type InitMessage,
@@ -14,7 +15,7 @@ export const MAX_IN_FLIGHT = 64;
 
 export type BridgeDeps = {
   frame(): Window | null;
-  init(): Omit<InitMessage, "kibo" | "type">;
+  init(): Omit<InitMessage, "kibo" | "type"> & { format: ComponentFormat };
   call(call: ComponentCall): Promise<unknown>;
   onOpenTicket(ticketId: string): void;
   onOpenNewTicket(defaults: NewTicketDefaults): void;

@@ -38,10 +38,13 @@ mock.module("../state/use-agents", () => ({
   useAgents: () => ({ runs: [{ id: "run-7", label: "generateur", profileName: "opus", state: runState }] }),
   useConfig: () => null,
   useNow: () => 0,
-  useRunLog: () => [],
+  useRunLog: () => ({ log: [], missing: false }),
   useDaemonOnline: () => true,
 }));
-mock.module("../state/use-projects", () => ({ useProjects: () => [], useProject: () => null }));
+mock.module("../state/use-projects", () => ({
+  useProjects: () => ({ projects: [], error: null, retry: () => {} }),
+  useProject: () => null,
+}));
 
 const { AiDraftPanel } = await import("./AiDraftPanel");
 const { ApprovalScope } = await import("../dialogs/approval-scope");

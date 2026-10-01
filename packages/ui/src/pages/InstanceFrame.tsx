@@ -1,4 +1,5 @@
 import {
+  type ComponentFormat,
   type ComponentVersionSummary,
   compareSemver,
   type Instance,
@@ -29,7 +30,13 @@ const MissingComponent = lazyPanel(
   },
 );
 
-type Props = { projectId: string; instance: Instance; viewer: string; surface: Surface };
+type Props = {
+  projectId: string;
+  instance: Instance;
+  viewer: string;
+  surface: Surface;
+  format: ComponentFormat;
+};
 type MountedProps = Props & { mod: TrustedModule; mode: "builtin" | "gated" };
 type TrustedProps = Props & { id: string; version: string; hash: string };
 
@@ -39,7 +46,7 @@ function useSameContent<T>(value: T): T {
   return kept.current;
 }
 
-function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedProps) {
+function Mounted({ projectId, instance, viewer, surface, format, mod, mode }: MountedProps) {
   const host = useHost();
   const config = useSameContent(instance.config);
   const sdk = useMemo(
@@ -52,6 +59,7 @@ function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedPro
           config,
           viewer,
           surface,
+          format,
           openTicket: host.openTicket,
           openNewTicket: host.openNewTicket,
           openFile: (r) =>
@@ -66,7 +74,7 @@ function Mounted({ projectId, instance, viewer, surface, mod, mode }: MountedPro
         },
         mode,
       ),
-    [mod, mode, projectId, instance.id, config, viewer, surface, host],
+    [mod, mode, projectId, instance.id, config, viewer, surface, format, host],
   );
   return (
     <SdkProvider sdk={sdk}>
@@ -120,12 +128,13 @@ function Sandboxed({ id, version, hash, title, ...props }: TrustedProps & { titl
   if (!runtime.info) return null;
   return (
     <SandboxFrame
-      key={`${instance.component}:${JSON.stringify(instance.config)}`}
+      key={`${instance.component}:${props.format}:${JSON.stringify(instance.config)}`}
       projectId={props.projectId}
       instanceId={instance.id}
       config={instance.config}
       viewer={props.viewer}
       surface={props.surface}
+      format={props.format}
       title={title}
       src={`${runtime.info.sandboxOrigin}${sandboxPath(id, version, hash, "index.html")}`}
     />

@@ -1,34 +1,14 @@
 import { expect, test } from "bun:test";
-import { EditorView } from "@codemirror/view";
-import type { ProjectCommand } from "@kibo/schema";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
-import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo } from "@kibo/sdk/fixtures";
+import { DEMO_NOTE_AGES, DEMO_NOTES } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-
-const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  seedDemo(run);
-};
+import { editorView, listed, mount, seed, setup } from "./notes.test-helper";
 
 runConformance({ manifest, Component }, seed, { notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
-
-function setup(surface: "view" | "widget", notes: Record<string, string> = DEMO_NOTES) {
-  const m = createMockSdk(manifest, { seed, surface, notes, noteAges: DEMO_NOTE_AGES });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  return m;
-}
-
-const listed = () =>
-  within(screen.getByRole("list", { name: "Notes" }))
-    .getAllByRole("button")
-    .map((b) => b.textContent);
 
 test("screen 11: list, document, linked tickets and backlinks", async () => {
   const m = setup("view");
@@ -76,7 +56,7 @@ test("ticket chips and backlinks navigate", async () => {
   expect(await screen.findByRole("heading", { level: 1, name: "Journal agents" })).toBeTruthy();
 });
 
-test("search asks the daemon, new note creates a file", async () => {
+test("search asks the daemon, new note asks a title and refuses a taken name", async () => {
   const m = setup("view");
   const user = userEvent.setup();
   await screen.findByRole("heading", { level: 1 });
@@ -84,8 +64,35 @@ test("search asks the daemon, new note creates a file", async () => {
   await waitFor(() => expect(listed()).toEqual([expect.stringContaining("Décisions d'architecture")]));
   await user.clear(screen.getByPlaceholderText("Rechercher une note…"));
   await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
-  await waitFor(() => expect(m.notes.has("sans-titre.md")).toBe(true));
-  expect(m.notes.get("sans-titre.md")?.markdown).toBe("# Sans titre\n");
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle note" });
+  const field = within(dialog).getByLabelText("Titre");
+  expect((within(dialog).getByRole("button", { name: "Créer" }) as HTMLButtonElement).disabled).toBe(true);
+  await user.type(field, "Journal agents");
+  expect(within(dialog).getByText("Fichier : journal-agents.md")).toBeTruthy();
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  expect(m.notes.get("journal-agents.md")?.markdown).toBe(DEMO_NOTES["journal-agents.md"]);
+  await user.clear(field);
+  await user.type(field, "Plan de test");
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  await waitFor(() => expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Plan de test\n"));
+  expect(m.notes.has("sans-titre.md")).toBe(false);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(await screen.findByRole("textbox", { name: "Contenu de la note" })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: "notes/plan-de-test.md" })).toBeTruthy();
+});
+
+test("a new note whose file appeared outside Kibo is refused by the folder, not overwritten", async () => {
+  const m = setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1 });
+  m.notes.set("plan-de-test.md", { markdown: "# Écrite dans Obsidian\n", mtime: 1 });
+  await user.click(screen.getByRole("button", { name: "Nouvelle note" }));
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle note" });
+  await user.type(within(dialog).getByLabelText("Titre"), "Plan de test");
+  await user.click(within(dialog).getByRole("button", { name: "Créer" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("Une note porte déjà ce nom.");
+  expect(m.notes.get("plan-de-test.md")?.markdown).toBe("# Écrite dans Obsidian\n");
 });
 
 test("D4: the conflict banner offers reload and keep mine", async () => {
@@ -117,13 +124,6 @@ test("D9: empty widget", async () => {
   setup("widget", {});
   expect(await screen.findByText("Aucune note pour l'instant.")).toBeTruthy();
 });
-
-const editorView = async () => {
-  const content = await screen.findByRole("textbox", { name: "Contenu de la note" });
-  const view = EditorView.findFromDOM(content);
-  if (!view) throw new Error("editor not mounted");
-  return view;
-};
 
 test("the editor does not report a change it received from its value", async () => {
   const { MarkdownEditor } = await import("./MarkdownEditor");
@@ -165,4 +165,82 @@ test("a local unsaved edit survives an external change and shows the D4 banner",
   expect(view.state.doc.toString()).toBe(local);
   expect(screen.getByRole("alert").textContent).toContain("Modifié hors de Kibo");
   expect(m.notes.get("decisions-architecture.md")?.markdown).toBe(external);
+});
+
+test("a read-only project shows no note menu", async () => {
+  const m = createMockSdk(manifest, {
+    seed,
+    surface: "view",
+    notes: { ...DEMO_NOTES, "sans-titre.md": "Brouillon\n" },
+    noteAges: DEMO_NOTE_AGES,
+    shared: true,
+  });
+  m.setAccess("read-only");
+  mount(m.sdk);
+  await screen.findByRole("list", { name: "Notes" });
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull());
+  expect(screen.queryByRole("button", { name: "Nouvelle note" })).toBeNull();
+  expect(screen.getByText("Fichier sans titre")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Fichier sans titre/ })).toBeNull();
+});
+
+test("notes are grouped by folder, root first; sorting by title is remembered on this device", async () => {
+  localStorage.removeItem("kibo.notes.sort");
+  const notes = {
+    "zeta.md": "# Zêta\n",
+    "alpha.md": "# Alpha\n",
+    "idees/b.md": "# Idée B\n",
+    "reunions/c.md": "# Réunion C\n",
+  };
+  const ages = { "zeta.md": 0, "alpha.md": 2, "idees/b.md": 1, "reunions/c.md": 3 };
+  try {
+    mount(createMockSdk(manifest, { seed, surface: "view", notes, noteAges: ages }).sdk);
+    const user = userEvent.setup();
+    const list = await screen.findByRole("list", { name: "Notes" });
+    await waitFor(() => expect(within(list).getByRole("button", { name: "reunions" })).toBeTruthy());
+    const titles = () =>
+      within(list)
+        .getAllByText(/^(Zêta|Alpha|Idée B|Réunion C|idees|reunions)$/)
+        .map((e) => e.textContent);
+    expect(titles()).toEqual(["Zêta", "Alpha", "idees", "Idée B", "reunions", "Réunion C"]);
+    const folder = within(list).getByRole("button", { name: "idees" });
+    expect(folder.getAttribute("aria-expanded")).toBe("true");
+    await user.click(folder);
+    expect(within(list).queryByText("Idée B")).toBeNull();
+    await user.click(folder);
+    screen.getByRole("combobox", { name: "Trier" }).focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(await screen.findByRole("option", { name: "Titre" }));
+    await waitFor(() =>
+      expect(titles()).toEqual(["Alpha", "Zêta", "idees", "Idée B", "reunions", "Réunion C"]),
+    );
+    expect(localStorage.getItem("kibo.notes.sort")).toBe("title");
+  } finally {
+    localStorage.removeItem("kibo.notes.sort");
+  }
+});
+
+test("a stored sort is read back when the list opens", async () => {
+  localStorage.setItem("kibo.notes.sort", "title");
+  try {
+    mount(
+      createMockSdk(manifest, {
+        seed,
+        surface: "view",
+        notes: { "b.md": "# Bêta\n", "a.md": "# Alpha\n" },
+        noteAges: { "b.md": 0, "a.md": 1 },
+      }).sdk,
+    );
+    const list = await screen.findByRole("list", { name: "Notes" });
+    await waitFor(() =>
+      expect(
+        within(list)
+          .getAllByText(/^(Alpha|Bêta)$/)
+          .map((e) => e.textContent),
+      ).toEqual(["Alpha", "Bêta"]),
+    );
+    expect(screen.getByRole("combobox", { name: "Trier" }).textContent).toContain("Titre");
+  } finally {
+    localStorage.removeItem("kibo.notes.sort");
+  }
 });

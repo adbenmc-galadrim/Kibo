@@ -25,6 +25,9 @@ describe("hash codec", () => {
     { kind: "screen", screen: "appearance" },
     { kind: "screen", screen: "security" },
     { kind: "screen", screen: "sources" },
+    { kind: "screen", screen: "shortcuts" },
+    { kind: "screen", screen: "workspace" },
+    { kind: "screen", screen: "inbox" },
   ];
   test("round-trips every target kind", () => {
     for (const t of targets) expect(hashToTarget(targetToHash(t))).toEqual(t);
@@ -40,6 +43,8 @@ describe("hash codec", () => {
   test("screens keep their addresses", () => {
     expect(targetToHash({ kind: "screen", screen: "queue" })).toBe("#/agents/queue");
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
+    expect(targetToHash({ kind: "screen", screen: "creations" })).toBe("#/creations");
+    expect(hashToTarget("#/creations")).toEqual({ kind: "screen", screen: "creations" });
     expect(hashToTarget("#/settings/general")).toEqual({ kind: "screen", screen: "general" });
     expect(hashToTarget("#/settings/integrations")).toEqual({ kind: "screen", screen: "integrations" });
     expect(hashToTarget("#/settings/sync")).toEqual({ kind: "screen", screen: "sync" });
@@ -50,11 +55,33 @@ describe("hash codec", () => {
     expect(hashToTarget("#/agents")).toEqual({ kind: "screen", screen: "agents" });
     expect(targetToHash({ kind: "screen", screen: "components" })).toBe("#/components");
     expect(hashToTarget("#/mine")).toEqual({ kind: "screen", screen: "mine" });
+    expect(targetToHash({ kind: "screen", screen: "inbox" })).toBe("#/inbox");
+    expect(hashToTarget("#/inbox")).toEqual({ kind: "screen", screen: "inbox" });
     expect(hashToTarget("#/elsewhere")).toBeNull();
+  });
+  test("the shortcuts screen has its settings hash", () => {
+    expect(targetToHash({ kind: "screen", screen: "shortcuts" })).toBe("#/settings/shortcuts");
+    expect(hashToTarget("#/settings/shortcuts")).toEqual({ kind: "screen", screen: "shortcuts" });
+    expect(targetToHash({ kind: "screen", screen: "workspace" })).toBe("#/settings/workspace");
   });
 });
 
 describe("tabsReducer", () => {
+  test("closeProject closes every tab of the project, pinned included, and purges its recents", () => {
+    let s = open(EMPTY_TABS, page("a"), "t1");
+    s = open(s, { kind: "ticket", projectId: "p1", ticketId: "x" }, "t2", true);
+    s = tabsReducer(s, { type: "pin", id: "t2", pinned: true });
+    s = open(s, { kind: "project", projectId: "p2" }, "t3", true);
+    s = open(s, { kind: "screen", screen: "agents" }, "t4", true);
+    s = tabsReducer(s, { type: "activate", id: "t2" });
+    const out = tabsReducer(s, { type: "closeProject", projectId: "p1" });
+    expect(out.tabs.map((t) => t.id)).toEqual(["t3", "t4"]);
+    expect(out.activeId).toBe("t3");
+    expect(out.recents.every((r) => r.kind === "screen" || r.projectId !== "p1")).toBe(true);
+    expect(out.recents.some((r) => r.kind === "project" && r.projectId === "p2")).toBe(true);
+    expect(tabsReducer(out, { type: "closeProject", projectId: "nope" })).toBe(out);
+  });
+
   test("a plain open replaces the active tab, a new-tab open appends, a known target is focused", () => {
     let s = open(EMPTY_TABS, page("a"), "t1");
     expect(s.tabs.map((t) => t.id)).toEqual(["t1"]);

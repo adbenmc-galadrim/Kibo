@@ -8,13 +8,17 @@ import {
   ComponentManifest,
   KiboError,
   NO_PERMISSIONS,
+  type StartComponentDraftInput,
   type ValidationReport,
 } from "@kibo/schema";
 import { verifyAndRestore } from "../draft-files";
 import { createDraftLifecycle } from "../draft-lifecycle";
 import { openDraftStore } from "../draft-store";
-import type { AiAvailability, ComponentCatalog, Devkit, PublishedComponent } from "../ports";
+import type { AiAvailability, ComponentCatalog, Devkit, PublishedComponent, ScaffoldOptions } from "../ports";
 import { createFakeClock, createFakeRuns, createRecordingEvents } from "./fake-ports";
+
+export type CreateDraftInput = Extract<StartComponentDraftInput, { mode: "create" }>;
+export type ModifyDraftInput = Extract<StartComponentDraftInput, { mode: "modify" }>;
 
 const roots: string[] = [];
 
@@ -57,8 +61,11 @@ export function setupLifecycle(
   let inferGate: Promise<void> = Promise.resolve();
   let published = opts.published ?? null;
   let restoreError: string | null = null;
+  const scaffolds: ScaffoldOptions[] = [];
   const devkit: Devkit = {
-    scaffold: async ({ dir, id, title, kind }) => {
+    scaffold: async (options) => {
+      scaffolds.push(options);
+      const { dir, id, title, kind } = options;
       writeFileSync(
         join(dir, "kibo.component.json"),
         JSON.stringify({ id, version: "0.1.0", kind, title, reads: [], writes: [] }),
@@ -77,6 +84,9 @@ export function setupLifecycle(
       return reports.shift() ?? report(true);
     },
     hash: async () => "a".repeat(64),
+    buildPreview: async () => {
+      throw new Error("not used by the lifecycle");
+    },
   };
   const srcRoot = join(home, "components", "src");
   const catalog: ComponentCatalog = {
@@ -136,6 +146,7 @@ export function setupLifecycle(
     life,
     inferred,
     opened,
+    scaffolds,
     validations: () => validations,
     setInferError: (e: KiboError) => {
       inferError = e;
@@ -156,14 +167,15 @@ export function setupLifecycle(
   };
 }
 
-export const create = {
+export const create: CreateDraftInput = {
   mode: "create",
   id: "burndown",
   title: "Burndown",
   kind: "widget",
   withServer: false,
   description: "Burndown du sprint : tickets restants par jour.",
-} as const;
+  attachments: [],
+};
 export const done = (sessionId = "s1") => ({ state: "done", sessionId, stdout: "", error: null }) as const;
 
 export const burndownAt = (version: string): PublishedComponent => ({

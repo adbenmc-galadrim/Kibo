@@ -17,8 +17,10 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { DeleteProfileButton } from "./DeleteProfileButton";
 import type { GuidelineDraft } from "./GuidelineRow";
 import { ProfileGuidelines } from "./ProfileGuidelines";
+import { permissionModeLabel } from "./permission-mode";
 import { SystemProfileFields } from "./SystemProfileFields";
 
 type Props = {
@@ -112,18 +114,6 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
     onClose();
   };
 
-  const remove = async () => {
-    if (!profile) return;
-    setError(null);
-    try {
-      await client.rpc({ method: "config", command: { method: "deleteProfile", profileId: profile.id } });
-    } catch (e) {
-      setError(failure(e));
-      return;
-    }
-    onClose();
-  };
-
   if (profile?.system) {
     return (
       <Sheet open onOpenChange={(o) => !o && onClose()}>
@@ -212,7 +202,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
               >
                 {MODES.map((m) => (
                   <ToggleGroupItem key={m} value={m} className="flex-1">
-                    {m}
+                    {permissionModeLabel(m)}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
@@ -266,16 +256,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
             )}
           </div>
           <SheetFooter className="mt-auto flex-row items-center">
-            {profile && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-destructive"
-                onClick={() => void remove()}
-              >
-                {fr.profile.delete}
-              </Button>
-            )}
+            {profile && <DeleteProfileButton profile={profile} describeError={failure} onDeleted={onClose} />}
             <span className="flex-1" />
             <Button type="button" variant="outline" onClick={onClose}>
               {fr.common.cancel}

@@ -3,6 +3,7 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { Card } from "@kibo/sdk/ui/card";
 import { Package } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { DetailsBlock } from "./DetailsBlock";
 import { AMBER_TEXT, BLUE_BADGE } from "./market-tones";
 import { PublisherMark } from "./PublisherMark";
 
@@ -39,7 +40,6 @@ export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) 
           <InstallBadge hit={hit} />
         </span>
       </div>
-      <span className="font-mono text-2xs text-muted-foreground">{hit.id}</span>
       <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{hit.description}</p>
       <div className="mt-auto flex items-center gap-2 text-2xs">
         <Badge variant="secondary" className="rounded-sm px-1.5 font-medium">
@@ -51,6 +51,9 @@ export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) 
         </span>
         <span className="ml-auto font-mono text-muted-foreground">{hit.latest}</span>
       </div>
+      <DetailsBlock label={fr.market.details} className="relative z-10">
+        <span>{hit.id}</span>
+      </DetailsBlock>
     </Card>
   );
 }

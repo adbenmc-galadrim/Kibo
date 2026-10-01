@@ -19,15 +19,25 @@ const docs: Docs = {
   trigger: unused,
   replaceProject: unused,
   addProject: unused,
+  removeProject: unused,
+  onProjectRemoved: unused,
   imported: unused,
   onProjectDoc: unused,
   assertWritable: unused,
   setWriteGuard: unused,
   projectMeta: unused,
+  updateProjectMeta: unused,
   identity: unused,
   setIdentity: unused,
 };
-const notes: NotesService = { info: unused, setDir: unused, handle: unused, refresh: unused, close: unused };
+const notes: NotesService = {
+  info: unused,
+  setDir: unused,
+  handle: unused,
+  refresh: unused,
+  forget: unused,
+  close: unused,
+};
 const ok = { content: [], isError: false, truncated: false };
 const ciRun: CiRun = {
   repo: "adam/kibo",

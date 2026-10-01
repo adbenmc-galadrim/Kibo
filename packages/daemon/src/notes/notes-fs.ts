@@ -11,6 +11,7 @@ const outside = (p: string) =>
 const tooLarge = (p: string) => new KiboError("QUOTA_EXCEEDED", `${p} is larger than 1 MiB`);
 const notFound = (p: string) => new KiboError("NOT_FOUND", `note ${p} not found`);
 const isMissing = (e: unknown) => e instanceof Error && "code" in e && e.code === "ENOENT";
+const isExisting = (e: unknown) => e instanceof Error && "code" in e && e.code === "EEXIST";
 const mtimeOf = (ms: number) => Math.floor(ms);
 
 async function lstatOrNull(path: string) {
@@ -91,6 +92,22 @@ export async function writeNoteFile(
   await mkdir(dirname(full), { recursive: true });
   await resolveNotePath(dir, rel);
   await replaceAtomically(full, bytes);
+  const info = await stat(full);
+  return { markdown, mtime: mtimeOf(info.mtimeMs), size: info.size };
+}
+
+export async function createNoteFile(dir: string, rel: string, markdown: string): Promise<NoteFile> {
+  const bytes = new TextEncoder().encode(markdown);
+  if (bytes.byteLength > MAX_NOTE_BYTES) throw tooLarge(rel);
+  const full = await resolveNotePath(dir, rel);
+  await mkdir(dirname(full), { recursive: true });
+  await resolveNotePath(dir, rel);
+  try {
+    await writeFile(full, bytes, { flag: "wx" });
+  } catch (e) {
+    if (isExisting(e)) throw new KiboError("CONFLICT", `${rel} already exists`);
+    throw e;
+  }
   const info = await stat(full);
   return { markdown, mtime: mtimeOf(info.mtimeMs), size: info.size };
 }

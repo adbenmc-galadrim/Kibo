@@ -2,9 +2,11 @@
   "id": "kanban",
   "version": "1.0.0",
   "kind": "both",
+  "formats": ["large", "half", "full"],
   "title": "Kanban",
   "description": "Tickets par statut, glisser-déposer",
   "reads": ["ticket", "status", "run", "ci_run"],
   "writes": ["ticket"],
+  "data": true,
   "configSchema": { "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" } }
 }

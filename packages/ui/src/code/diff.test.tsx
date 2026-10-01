@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { FileChange, FileDiff, Hunk } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { DiffColumn } from "./DiffColumn";
 import { DiffToolbar } from "./DiffToolbar";
 import { DiffView } from "./DiffView";
 import { splitRows } from "./diff-rows";
@@ -49,36 +50,84 @@ test("the unified diff shows numbers and signs, the hunk button stages", async (
       area="unstaged"
       mode="unified"
       busy={false}
+      wrap
       onHunk={(i, h) => hunks.push([i, h])}
     />,
   );
   const section = screen.getByRole("region", { name: hunk.header });
   expect(within(section).getByText("key: z.string(),")).toBeTruthy();
-  await userEvent.click(within(section).getByRole("button", { name: "Indexer le bloc" }));
+  await userEvent.click(within(section).getByRole("button", { name: "Ajouter le bloc au commit" }));
   expect(hunks).toEqual([[0, hunk.header]]);
+});
+
+const codeClass = () => screen.getByText("key: z.string(),").className;
+
+test("the diff wraps long lines only when asked", () => {
+  const { rerender } = render(
+    <DiffView diff={diff} area="unstaged" mode="unified" busy={false} wrap={false} />,
+  );
+  expect(codeClass()).toContain("whitespace-pre");
+  expect(codeClass()).not.toContain("whitespace-pre-wrap");
+  rerender(<DiffView diff={diff} area="unstaged" mode="split" busy={false} wrap />);
+  expect(codeClass()).toContain("whitespace-pre-wrap");
+});
+
+test("the diff column follows the wrap preference of the device", async () => {
+  localStorage.clear();
+  const file: FileChange = {
+    path: diff.path,
+    origPath: null,
+    area: "unstaged",
+    kind: "modified",
+    additions: 2,
+    deletions: 1,
+  };
+  render(
+    <DiffColumn
+      projectId="p1"
+      worktree="/repo"
+      file={file}
+      diff={diff}
+      mode="unified"
+      onModeChange={() => {}}
+      busy={false}
+      readOnly
+      onHunk={() => {}}
+      onOpenFile={() => {}}
+      onOpenExternal={() => {}}
+      onSaved={() => {}}
+    />,
+  );
+  expect(codeClass()).toContain("whitespace-pre-wrap");
+  await userEvent.click(screen.getByRole("switch", { name: "Retour à la ligne" }));
+  expect(localStorage.getItem("kibo.wrap")).toBe("off");
+  expect(codeClass()).not.toContain("whitespace-pre-wrap");
+  localStorage.clear();
 });
 
 test("staged diffs offer to unstage, binary files and whole-file-only diffs hide the hunk action", () => {
   const { rerender } = render(
-    <DiffView diff={diff} area="staged" mode="split" busy={false} onHunk={() => {}} />,
+    <DiffView diff={diff} area="staged" mode="split" busy={false} wrap onHunk={() => {}} />,
   );
-  expect(screen.getByRole("button", { name: "Désindexer le bloc" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Retirer le bloc du commit" })).toBeTruthy();
   rerender(
     <DiffView
       diff={{ ...diff, hunkStaging: false }}
       area="unstaged"
       mode="unified"
       busy={false}
+      wrap
       onHunk={() => {}}
     />,
   );
-  expect(screen.queryByRole("button", { name: "Indexer le bloc" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ajouter le bloc au commit" })).toBeNull();
   rerender(
     <DiffView
       diff={{ ...diff, binary: true, hunks: [] }}
       area="unstaged"
       mode="unified"
       busy={false}
+      wrap
       onHunk={() => {}}
     />,
   );
@@ -97,15 +146,20 @@ test("the toolbar switches modes, toggles editing and opens the file", async () 
       editing={false}
       onEditingChange={(e) => events.push(`edit:${e}`)}
       canEdit
+      readOnly={false}
       onOpenFile={() => events.push("file")}
       onOpenExternal={() => events.push("external")}
+      wrap
+      onWrapChange={(on) => events.push(`wrap:${on}`)}
     />,
   );
+  expect(screen.getByRole("switch", { name: "Retour à la ligne" }).getAttribute("aria-checked")).toBe("true");
+  await userEvent.click(screen.getByRole("switch", { name: "Retour à la ligne" }));
   await userEvent.click(screen.getByRole("radio", { name: "Côte à côte" }));
   await userEvent.click(screen.getByRole("button", { name: "Édition" }));
   await userEvent.click(screen.getByRole("button", { name: "packages/core/ticket.ts" }));
   await userEvent.click(screen.getByRole("button", { name: "Ouvrir dans l'éditeur externe" }));
-  expect(events).toEqual(["split", "edit:true", "file", "external"]);
+  expect(events).toEqual(["wrap:false", "split", "edit:true", "file", "external"]);
   expect(screen.getByText("+42")).toBeTruthy();
 });
 
@@ -151,21 +205,32 @@ test("the file list groups by area and toggles staging per file", async () => {
       files={files}
       selected={{ path: "packages/core/ticket.ts", area: "staged" }}
       busy={false}
+      readOnly={false}
       onSelect={(f) => selected.push(`${f.area}:${f.path}`)}
       onToggle={(f) => toggled.push(`${f.area}:${f.path}`)}
+      onOpenInTab={() => {}}
+      onOpenExternal={() => {}}
+      onCopyPath={() => {}}
+      onDiscard={() => {}}
+      onStageAll={() => {}}
+      onUnstageAll={() => {}}
     />,
   );
-  const staged = screen.getByRole("group", { name: "Indexés" });
+  const staged = screen.getByRole("group", { name: "Dans le prochain commit (2)" });
+  const changes = screen.getByRole("group", { name: "Modifications (2)" });
+  expect(within(staged).getByText("Modifié").getAttribute("aria-hidden")).toBeNull();
+  expect(within(staged).getByText("Ajouté")).toBeTruthy();
+  expect(within(changes).getByText("Supprimé")).toBeTruthy();
   expect(within(staged).getAllByRole("checkbox")).toHaveLength(2);
   expect(
     within(staged)
-      .getByRole("checkbox", { name: "Désindexer packages/core/ticket.ts" })
+      .getByRole("checkbox", { name: "Retirer packages/core/ticket.ts du commit" })
       .getAttribute("aria-checked"),
   ).toBe("true");
-  await userEvent.click(screen.getByRole("checkbox", { name: "Indexer packages/core/index.ts" }));
-  await userEvent.click(screen.getByRole("button", { name: /legacy-tree\.ts/ }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Ajouter packages/core/index.ts au commit" }));
+  await userEvent.click(screen.getByRole("button", { name: /^Supprimé legacy-tree\.ts/ }));
   expect(toggled).toEqual(["unstaged:packages/core/index.ts"]);
   expect(selected).toEqual(["unstaged:packages/core/legacy-tree.ts"]);
-  await userEvent.click(screen.getByRole("button", { name: /Indexés/ }));
+  await userEvent.click(screen.getByRole("button", { name: /Dans le prochain commit/ }));
   expect(within(staged).queryAllByRole("checkbox")).toHaveLength(0);
 });

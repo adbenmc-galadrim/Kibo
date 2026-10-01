@@ -10,9 +10,16 @@ type Props = {
   files: FileChange[] | null;
   selected: FileSelection | null;
   busy: boolean;
+  readOnly: boolean;
   onWorktreeChange(path: string): void;
   onSelect(file: FileChange): void;
   onToggle(file: FileChange): void;
+  onOpenInTab(file: FileChange): void;
+  onOpenExternal(file: FileChange): void;
+  onCopyPath(file: FileChange): void;
+  onDiscard(file: FileChange): void;
+  onStageAll(): void;
+  onUnstageAll(): void;
 };
 
 const PLACEHOLDER_ROWS = ["w-3/4", "w-2/3", "w-4/5"];
@@ -27,27 +34,16 @@ function FilesPlaceholder() {
   );
 }
 
-export function ChangesFiles(p: Props) {
+export function ChangesFiles({ worktrees, current, ahead, files, onWorktreeChange, ...list }: Props) {
   return (
-    <aside className="flex min-h-0 flex-col gap-3 overflow-auto border-r p-3">
-      <WorktreePicker
-        worktrees={p.worktrees}
-        current={p.current}
-        ahead={p.ahead}
-        onChange={p.onWorktreeChange}
-      />
-      {p.files === null ? (
+    <aside className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3 lg:border-r">
+      <WorktreePicker worktrees={worktrees} current={current} ahead={ahead} onChange={onWorktreeChange} />
+      {files === null ? (
         <FilesPlaceholder />
-      ) : p.files.length === 0 ? (
+      ) : files.length === 0 ? (
         <p className="px-2 text-sm text-muted-foreground">{fr.changes.clean}</p>
       ) : (
-        <FileList
-          files={p.files}
-          selected={p.selected}
-          busy={p.busy}
-          onSelect={p.onSelect}
-          onToggle={p.onToggle}
-        />
+        <FileList files={files} {...list} />
       )}
     </aside>
   );

@@ -36,7 +36,7 @@ export const frShare = {
   ],
   plaintext: "Le serveur voit les données en clair.",
   plaintextHelp: "Utilise un serveur que ton équipe contrôle.",
-  noServer: "Configure un serveur dans Paramètres › Sync",
+  noServer: "Configure un serveur dans Paramètres › Synchronisation",
   noServerRemote: "Aucun serveur de sync : il se configure depuis l'ordinateur où tourne Kibo.",
   submit: "Partager",
   sharing: "Partage en cours…",

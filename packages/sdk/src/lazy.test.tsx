@@ -81,4 +81,26 @@ describe("lazyPanel", () => {
     render(<Panel name="Adam" />);
     expect(screen.getByRole("status").className).toContain("sr-only");
   });
+
+  test('fallback "children" keeps the wrapped element visible while loading', async () => {
+    let resolve: (c: typeof Wrapper) => void = () => {};
+    const Wrapper = ({ children }: { children: ReactNode }) => <div data-wrapped>{children}</div>;
+    const Panel = lazyPanel<{ children: ReactNode }>(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+      labels,
+      { fallback: "children" },
+    );
+    const { container } = render(
+      <Panel>
+        <button type="button">Kibo</button>
+      </Panel>,
+    );
+    expect(screen.getByRole("button", { name: "Kibo" })).toBeTruthy();
+    expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull();
+    await act(async () => resolve(Wrapper));
+    expect(container.querySelector("[data-wrapped]")?.textContent).toBe("Kibo");
+  });
 });

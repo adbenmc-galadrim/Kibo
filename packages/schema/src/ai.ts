@@ -7,6 +7,8 @@ import {
   type RegistryVersion,
   type ValidationReport,
 } from "./component";
+import { ComponentFormat } from "./format";
+import { IconInput, IconMime } from "./icon";
 import { ComponentManifest } from "./manifest";
 import { PageKind } from "./page";
 
@@ -58,6 +60,22 @@ export type DraftFailure = z.infer<typeof DraftFailure>;
 export const DraftIncident = z.object({ kind: z.enum(["restored", "removed"]), path: z.string() });
 export type DraftIncident = z.infer<typeof DraftIncident>;
 export const MAX_DRAFT_ATTEMPTS = 3;
+export const MAX_DRAFT_REVISIONS = 10;
+export const MAX_DRAFT_ATTACHMENTS = 4;
+export const MIN_DRAFT_FEEDBACK = 5;
+export const MAX_DRAFT_FEEDBACK = 2000;
+export const MAX_DRAFT_ATTACHMENTS_TOTAL = MAX_DRAFT_ATTACHMENTS * (MAX_DRAFT_REVISIONS + 1);
+
+export const DraftAttachmentName = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+export const DraftAttachmentInput = IconInput.extend({ name: DraftAttachmentName });
+export type DraftAttachmentInput = z.infer<typeof DraftAttachmentInput>;
+export const DraftAttachments = z.array(DraftAttachmentInput).max(MAX_DRAFT_ATTACHMENTS).default([]);
+export const DraftAttachment = z.object({
+  name: DraftAttachmentName,
+  mime: IconMime,
+  bytes: z.number().int().positive(),
+});
+export type DraftAttachment = z.infer<typeof DraftAttachment>;
 
 export const ComponentDraft = z.object({
   id: DraftId,
@@ -74,6 +92,8 @@ export const ComponentDraft = z.object({
   attempts: z.number().int().min(0).max(MAX_DRAFT_ATTEMPTS),
   failure: DraftFailure.nullable(),
   incidents: z.array(DraftIncident),
+  attachments: z.array(DraftAttachment).max(MAX_DRAFT_ATTACHMENTS_TOTAL).default([]),
+  revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });
@@ -87,14 +107,26 @@ export const StartComponentDraftInput = z.discriminatedUnion("mode", [
     kind: DraftKind,
     withServer: z.boolean(),
     description: z.string().trim().min(20).max(2000),
+    formats: z.array(ComponentFormat).min(1).max(5).optional(),
+    attachments: DraftAttachments,
   }),
   z.object({
     mode: z.literal("modify"),
     id: ComponentManifest.shape.id,
     description: z.string().trim().min(5).max(2000),
+    attachments: DraftAttachments,
   }),
 ]);
 export type StartComponentDraftInput = z.infer<typeof StartComponentDraftInput>;
+
+export const ReviseComponentDraftInput = z.object({
+  draftId: DraftId,
+  feedback: z.string().trim().min(MIN_DRAFT_FEEDBACK).max(MAX_DRAFT_FEEDBACK),
+  attachments: DraftAttachments,
+});
+export type ReviseComponentDraftInput = z.infer<typeof ReviseComponentDraftInput>;
+
+export type DraftPreview = { hash: string; path: string };
 
 export const DraftChanges = z.array(z.string().trim().min(1).max(200)).max(20);
 export const ReviewComponentDraftInput = z.object({

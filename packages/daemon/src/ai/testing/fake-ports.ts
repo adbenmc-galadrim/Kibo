@@ -8,6 +8,7 @@ export type FakeRuns = AgentRuns & {
   setState(runId: string, state: RunState): void;
   end(runId: string, end: RunEnd): void;
   deferCancel(): void;
+  refuseEnqueue(error: Error | null): void;
 };
 
 export function createFakeRuns(): FakeRuns {
@@ -17,6 +18,7 @@ export function createFakeRuns(): FakeRuns {
   const endListeners = new Map<string, Set<(e: RunEnd) => void>>();
   const ended = new Map<string, RunEnd>();
   let cancelEndsRun = true;
+  let enqueueError: Error | null = null;
   const find = (id: string) => runs.find((r) => r.id === id);
   const end = (runId: string, e: RunEnd) => {
     const run = find(runId);
@@ -29,6 +31,7 @@ export function createFakeRuns(): FakeRuns {
     runs,
     cancelled,
     enqueue(req) {
+      if (enqueueError) throw enqueueError;
       const id = `run-${runs.length + 1}`;
       runs.push({ id, req, state: "queued" });
       return id;
@@ -65,6 +68,9 @@ export function createFakeRuns(): FakeRuns {
     end,
     deferCancel() {
       cancelEndsRun = false;
+    },
+    refuseEnqueue(error) {
+      enqueueError = error;
     },
   };
 }

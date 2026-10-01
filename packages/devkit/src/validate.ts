@@ -8,6 +8,7 @@ import {
   grantedOf,
   isBuiltinId,
   KiboError,
+  formatIssue as manifestFormatIssue,
   permissionList,
   RESERVED_MCP_IDS,
   type ValidationReport,
@@ -16,13 +17,11 @@ import { z } from "zod";
 import type { BunCommand } from "./bun-command";
 import { FR_DEVKIT, formatIssue } from "./fr";
 import { listSourceFiles, readSources } from "./hash";
-import { checkImports } from "./imports";
-import { inferPermissions } from "./infer-permissions";
 import type { OsSandbox } from "./os-sandbox";
+import { responsiveViolations } from "./responsive";
 import { CONFORMANCE_TEST } from "./scaffold";
+import { runStaticCheck } from "./static-check-run";
 import type { Toolchain } from "./toolchain";
-import { typecheckComponent } from "./typecheck";
-import { loadTypeScript } from "./typescript";
 import { assertNotAborted, runComponentTests } from "./validate-tests";
 
 export type ValidateOptions = {
@@ -81,6 +80,8 @@ async function readManifest(dir: string): Promise<ComponentManifest | string[]> 
   const parsed = ComponentManifest.safeParse(raw);
   if (!parsed.success) return parsed.error.issues.map((i) => `${i.path.join(".")} : ${i.message}`);
   if (isBuiltinId(parsed.data.id)) return [FR_DEVKIT.reservedId(parsed.data.id)];
+  const formats = manifestFormatIssue(parsed.data);
+  if (formats !== null) return [formats];
   if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];
   const reserved = reservedMcpServers(parsed.data.mcp);
   if (reserved.length > 0) return reserved.map(FR_DEVKIT.reservedMcpServer);
@@ -107,6 +108,13 @@ async function sourcesOf(dir: string, copy: string, toolchain: Toolchain) {
   }
 }
 
+const UI_FILE = "ui.tsx";
+
+async function fixedWidths(copy: string, files: string[]): Promise<string[]> {
+  if (!files.includes(UI_FILE)) return [];
+  return responsiveViolations(await readFile(join(copy, UI_FILE), "utf8"), UI_FILE);
+}
+
 const GENERIC_SUITE = "kibo-conformance.test.tsx";
 
 async function useGenericSuite(copy: string, files: string[]): Promise<void> {
@@ -121,13 +129,10 @@ async function checkCopy(
   opts: ValidateOptions,
   report: ValidationReport,
 ): Promise<void> {
-  const ts = await loadTypeScript(opts.toolchain);
-  const checked = files.filter((f) => /\.(tsx?|css)$/.test(f));
-  const texts = await Promise.all(
-    checked.map(async (path) => ({ path, text: await readFile(join(copy, path), "utf8") })),
-  );
-  report.imports = step(checkImports(ts, texts).map(formatIssue));
-  report.typecheck = step(typecheckComponent(ts, copy, files, opts.toolchain));
+  const widths = await fixedWidths(copy, files);
+  const analysis = await runStaticCheck(copy, files, opts);
+  report.imports = step(analysis.imports.map(formatIssue));
+  report.typecheck = step(analysis.typecheck);
   if (opts.conformanceOnly) await useGenericSuite(copy, files);
   const tests = await runComponentTests(
     copy,
@@ -135,7 +140,7 @@ async function checkCopy(
   );
   report.tests = tests.report;
 
-  const inference = await inferPermissions(copy, opts.toolchain);
+  const { inference } = analysis;
   const declared = permissionList(grantedOf(manifest));
   const used = [...new Set([...inference.used, ...(tests.used ?? [])])].sort();
   const diff = diffPermissions(declared, used);
@@ -144,6 +149,7 @@ async function checkCopy(
   report.conformance = step([
     ...(tests.used === null ? [FR_DEVKIT.noConformance] : []),
     ...(tests.used ?? []).filter((p) => diff.missing.includes(p)).map(FR_DEVKIT.missing),
+    ...widths,
   ]);
   report.ok =
     report.imports.ok &&

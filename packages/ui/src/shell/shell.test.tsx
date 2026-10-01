@@ -4,6 +4,7 @@ import {
   type CodeRequest,
   DEFAULT_WORKFLOW,
   EMPTY_TABS,
+  INBOX_ID,
   type ProjectSnapshot,
   type RpcRequest,
   type SyncStatus,
@@ -11,6 +12,8 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
+import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
   meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
@@ -59,7 +62,25 @@ const sharedProject: ProjectSnapshot = {
   meta: { ...project.meta, id: "p4", name: "Partagé", key: "PAR" },
   sync: { shared: true, keyAllocator: "server", role: "owner", access: "write", members: [] },
 };
+const inboxTicket = (id: string, key: string, statusId: "todo" | "done") => {
+  const [model] = project.tickets;
+  if (!model) throw new Error("fixture without ticket");
+  return { ...model, id, key, keyLabel: key, title: `Idée ${key}`, statusId, externalRefs: [] };
+};
+const inbox: ProjectSnapshot = {
+  ...project,
+  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B" },
+  pages: [],
+  tickets: [
+    inboxTicket("i1", "INB-1", "todo"),
+    inboxTicket("i2", "INB-2", "todo"),
+    inboxTicket("i3", "INB-3", "todo"),
+    inboxTicket("i4", "INB-4", "done"),
+  ],
+  nextTicketKey: "INB-5",
+};
 const snapshots = new Map([
+  [INBOX_ID, inbox],
   ["p1", project],
   ["p2", repo],
   ["p3", readOnly],
@@ -111,19 +132,23 @@ const changesResponses: Partial<Record<CodeRequest["method"], unknown>> = {
 };
 
 mock.module("../state/use-projects", () => ({
-  useProjects: () => [
-    { ...project.meta, counts },
-    { ...repo.meta, counts },
-    { ...readOnly.meta, counts },
-    { ...sharedProject.meta, counts },
-  ],
+  useProjects: () => ({
+    projects: [
+      { ...project.meta, counts },
+      { ...repo.meta, counts },
+      { ...readOnly.meta, counts },
+      { ...sharedProject.meta, counts },
+    ],
+    error: null,
+    retry: () => {},
+  }),
   useProject: (id: string | null) => (id ? (snapshots.get(id) ?? null) : null),
 }));
 mock.module("../state/use-agents", () => ({
   useAgents: () => null,
   useConfig: () => null,
   useNow: () => 0,
-  useRunLog: () => null,
+  useRunLog: () => ({ log: null, missing: false }),
   useDaemonOnline: () => false,
 }));
 mock.module("../api", () => ({
@@ -163,6 +188,7 @@ mock.module("../api", () => ({
     },
     subscribe: () => () => {},
     subscribeEvents: () => () => {},
+    subscribeAi: () => () => {},
     subscribeIntegrations: () => () => undefined,
     subscribeCode: (l: (e: CodeEvent) => void) => {
       codeListeners.add(l);
@@ -203,6 +229,9 @@ test("navigation opens a « Projet · Page » tab and the breadcrumb follows", a
   expect(crumbs().getByText("Kibo")).toBeTruthy();
   expect(crumbs().getByText("Board").getAttribute("aria-current")).toBe("page");
   await waitFor(() => expect(saved.some((r) => r.method === "saveTabs")).toBe(true), { timeout: 1000 });
+  fireEvent.click(crumbs().getByRole("button", { name: "Kibo" }));
+  await waitFor(() => expect(location.hash).toBe(targetToHash({ kind: "project", projectId: "p1" })));
+  expect(crumbs().queryByRole("button")).toBeNull();
 });
 
 test("⌘K opens the palette, ⌘W closes the tab and returns home", async () => {
@@ -227,11 +256,26 @@ test("the sidebar search button opens the palette", async () => {
   expect(await screen.findByRole("dialog", { name: "Palette de commandes" })).toBeTruthy();
 });
 
+test("the document title follows the active tab and the search shows the platform shortcut", async () => {
+  renderShell();
+  await go("#/");
+  await waitFor(() => expect(document.title).toBe("Kibo"));
+  const search = await screen.findByRole("button", { name: /Rechercher…/ });
+  expect(search.textContent).toContain(shortcutLabel(["K"], isMac()));
+  await go("#/p/p1/1%401");
+  await screen.findByRole("tab", { name: "Kibo · Board" });
+  await waitFor(() => expect(document.title).toBe("Kibo · Board — Kibo"));
+});
+
 test("⌘-click in the sidebar opens a new tab instead of replacing the current one", async () => {
   renderShell();
   await go("#/p/p1/1%401");
   await screen.findByRole("tab", { name: "Kibo · Board" });
-  fireEvent.click(screen.getByRole("button", { name: "Kibo" }), { metaKey: true, ctrlKey: true });
+  const inSidebar = screen
+    .getAllByRole("button", { name: "Kibo" })
+    .find((b) => !b.closest('nav[aria-label="Fil d\'Ariane"]'));
+  if (!inSidebar) throw new Error("sidebar entry Kibo missing");
+  fireEvent.click(inSidebar, { metaKey: true, ctrlKey: true });
   await waitFor(() => expect(screen.getAllByRole("tab")).toHaveLength(3));
 });
 
@@ -242,7 +286,7 @@ test("a ticket tab shows the detail, its PR and opens file links in the preview"
   expect(await screen.findByRole("link", { name: "#4" })).toBeTruthy();
   expect(crumbs().getByText("KIB-7").getAttribute("aria-current")).toBe("page");
   await userEvent.click(screen.getByRole("button", { name: "src/a.ts:3" }));
-  expect(await screen.findByText("Ligne 3, col 3")).toBeTruthy();
+  expect(await screen.findByText("Ligne 3 · Col 3")).toBeTruthy();
   expect(code.find((c) => c.method === "readFile")).toMatchObject({ path: "src/a.ts", worktree: "/repo" });
 });
 
@@ -282,6 +326,22 @@ test("an agent screen keeps its URL and opens in a tab like any target", async (
   await waitFor(() => expect(location.hash).toBe("#/agents"));
 });
 
+test("the sidebar lists the inbox after my tickets with its open count, and opens it (screen 113)", async () => {
+  renderShell();
+  await go("#/");
+  const entry = await screen.findByRole("button", { name: "Boîte de réception" });
+  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Boîte de réception3"));
+  const labels = within(entry.closest("ul") ?? document.body)
+    .getAllByRole("button")
+    .map((b) => b.textContent);
+  expect(labels.indexOf("Boîte de réception")).toBe(labels.indexOf("Mes tickets") + 1);
+  await userEvent.click(entry);
+  expect(location.hash).toBe("#/inbox");
+  expect(await screen.findByRole("tab", { name: "Boîte de réception" })).toBeTruthy();
+  expect(await screen.findByRole("row", { name: /INB-2/ })).toBeTruthy();
+  expect(entry.getAttribute("data-active")).toBe("true");
+});
+
 test("the sidebar opens the Components screen in its own tab", async () => {
   renderShell();
   await go("#/");
@@ -295,19 +355,29 @@ test("the sidebar opens the Components screen in its own tab", async () => {
   );
 });
 
-test("the header offers a ticket in the current project and shows the user's initials", async () => {
+test("the header always offers a ticket: in the inbox, then in the last project, and shows the initials", async () => {
   await go("#/");
   renderShell();
   await go("#/");
   const header = () =>
     within(screen.getByRole("navigation", { name: "Fil d'Ariane" }).closest("header") ?? document.body);
-  expect(header().queryByRole("button", { name: "Ticket" })).toBeNull();
+  const button = () => header().getByRole("button", { name: "Ticket" });
+  expect(button().getAttribute("title")).toBe("Nouveau ticket dans Boîte de réception");
   const avatar = header().getByRole("img", { name: "adam" });
   expect(avatar.textContent).toBe("AD");
+  await act(async () => button().click());
+  const inboxDialog = await screen.findByRole("dialog", { name: "Nouveau ticket" });
+  expect(within(inboxDialog).getByRole("combobox", { name: "Projet" }).textContent).toBe(
+    "Boîte de réception",
+  );
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await go("#/p/p1/1%401");
   await go("#/agents");
-  await act(async () => header().getByRole("button", { name: "Ticket" }).click());
-  expect(await screen.findByRole("dialog", { name: "Nouveau ticket" })).toBeTruthy();
+  expect(button().getAttribute("title")).toBe("Nouveau ticket dans Kibo");
+  await act(async () => button().click());
+  const dialog = await screen.findByRole("dialog", { name: "Nouveau ticket" });
+  expect(within(dialog).getByRole("combobox", { name: "Projet" }).textContent).toBe("Kibo");
 });
 
 test("initials come from the first two words, or the first two letters", async () => {
@@ -373,7 +443,9 @@ test("a read-only project hides page and ticket creation and shows the banner", 
   const banner = await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
   expect(screen.getAllByRole("status")).toContain(banner);
   expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /^Ticket/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /^Ticket/ }).getAttribute("title")).toBe(
+    "Nouveau ticket dans Boîte de réception",
+  );
   expect(await screen.findByText("Cette page est vide : ajoute un composant pour commencer.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Ajouter un composant/ })).toBeNull();
 });

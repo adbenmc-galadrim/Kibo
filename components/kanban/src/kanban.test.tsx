@@ -13,18 +13,7 @@ import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, kanbanPanel, manifest } from "./index";
-
-const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  const mine = { kind: "human", ref: "adam" } as const;
-  const a = run({ method: "createTicket", title: "Arbre des pages", assignee: mine }) as Ticket;
-  const b = run({ method: "createTicket", title: "Sync", assignee: mine }) as Ticket;
-  run({ method: "createTicket", title: "Hors filtre", assignee: { kind: "human", ref: "lea" } });
-  run({ method: "addLink", from: a.id, to: b.id, type: "blocks" });
-  const agent = (ref: string) => ({ kind: "agent", ref }) as const;
-  run({ method: "createTicket", title: "Récepteur", statusId: "in_progress", assignee: agent("opus-dev") });
-  run({ method: "createTicket", title: "Watcher", statusId: "backlog", assignee: agent("opus-dev") });
-  run({ method: "createTicket", title: "Review", statusId: "in_review", assignee: agent("sonnet-review") });
-};
+import { seed } from "./test-seed";
 
 const runs = (s: ProjectSnapshot): TicketRun[] => {
   const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
@@ -68,8 +57,9 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   expect(within(todo).getByText("KIB-1")).toBeTruthy();
   expect(within(todo).getByText("À faire")).toBeTruthy();
   expect(within(todo).getByText("2")).toBeTruthy();
+  expect(within(todo).getAllByRole("article")[0]?.getAttribute("tabindex")).toBe("0");
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
-  expect(screen.getByText("5 / 6 tickets")).toBeTruthy();
+  expect(screen.getByText("5 / 6 · Moi + agents")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
 });
 
@@ -77,7 +67,11 @@ test("moving a card changes its status", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
-  await user.click(await screen.findByRole("menuitem", { name: "En cours" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "En cours" }),
+  });
   expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("in_progress");
 });
 
@@ -85,7 +79,11 @@ test("blocking asks for a reason and refuses an empty one", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Bloqué" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "Bloqué…" }),
+  });
   const confirm = await screen.findByRole("button", { name: "Bloquer" });
   expect(confirm.hasAttribute("disabled")).toBe(true);
   await user.type(screen.getByLabelText("Motif"), "Attente client");
@@ -96,11 +94,45 @@ test("blocking asks for a reason and refuses an empty one", async () => {
   expect(await within(blocked).findByText("Motif : Attente client")).toBeTruthy();
 });
 
-test("the column '+' asks the host for a new ticket in that status", async () => {
+test("right click opens the same menu as ⋯; delete asks then removes the card", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.pointer({
+    keys: "[MouseRight]",
+    target: await screen.findByRole("button", { name: "Arbre des pages" }),
+  });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Ouvrir",
+    "Déplacer vers",
+    "Supprimer…",
+  ]);
+  await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
+  const confirm = await screen.findByRole("alertdialog", { name: "Supprimer KIB-1 ?" });
+  expect(confirm.textContent).toContain("Ses liens seront supprimés aussi. Cette action est irréversible.");
+  await user.click(within(confirm).getByRole("button", { name: "Supprimer" }));
+  await waitFor(() => expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")).toBeUndefined());
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull());
+  expect(m.snapshot().links).toEqual([]);
+});
+
+test("Ouvrir from the menu opens the ticket in the host", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Ouvrir" }));
+  const id = m.snapshot().tickets.find((t) => t.key === "KIB-2")?.id ?? "missing";
+  expect(m.opened).toEqual([id]);
+});
+
+test("the column '+' asks the host for a new ticket in that status, Bloqué included", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Nouveau ticket dans En cours" }));
-  expect(m.newTicketRequests).toEqual([{ statusId: "in_progress", instanceId: "mock-instance" }]);
+  await user.click(screen.getByRole("button", { name: "Nouveau ticket dans Bloqué" }));
+  expect(m.newTicketRequests).toEqual([
+    { statusId: "in_progress", instanceId: "mock-instance" },
+    { statusId: "blocked", instanceId: "mock-instance" },
+  ]);
 });
 
 const setupFailing = () => {
@@ -118,7 +150,11 @@ test("a failed move shows an alert and keeps the status", async () => {
   const m = setupFailing();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
-  await user.click(await screen.findByRole("menuitem", { name: "En cours" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "En cours" }),
+  });
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-1.");
   expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("todo");
 });
@@ -127,7 +163,11 @@ test("a failed block keeps the dialog open and shows an alert", async () => {
   setupFailing();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-2" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Bloqué" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déplacer vers" }));
+  await user.pointer({
+    keys: "[MouseLeft]",
+    target: await screen.findByRole("menuitem", { name: "Bloqué…" }),
+  });
   await user.type(await screen.findByLabelText("Motif"), "Attente client");
   await user.click(screen.getByRole("button", { name: "Bloquer" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-2.");
@@ -204,7 +244,7 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
   expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
   expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
   expect(screen.queryByText("Ticket local")).toBeNull();
-  expect(screen.getByText("3 / 3 tickets")).toBeTruthy();
+  expect(screen.getByText("3 / 3 · Tous")).toBeTruthy();
   const chip = await screen.findByLabelText("CI cassée");
   expect(chip.parentElement?.textContent).toBe("#12");
   expect(screen.queryByLabelText("CI réussie")).toBeNull();
@@ -331,6 +371,11 @@ test("cards cannot be moved in a read-only project", async () => {
   await screen.findByText("KIB-…");
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
   expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
+  expect(screen.getByRole("article", { name: /Lecture/ }).getAttribute("tabindex")).toBeNull();
+  await userEvent
+    .setup()
+    .pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Lecture" }) });
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
 });
 
 test("in a shared project, 'Moi + agents' follows the account id", async () => {

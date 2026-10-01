@@ -22,7 +22,18 @@ test("the screens are pages of the palette and open as targets", () => {
   expect(searchItems(buildItems(context), "parametres general", "pages")[0]?.items[0]?.label).toBe("Général");
   expect(searchItems(buildItems(context), "integrations", "pages")[0]?.items[0]?.label).toBe("Intégrations");
   expect(searchItems(buildItems(context), "mes tickets", "pages")[0]?.items[0]?.label).toBe("Mes tickets");
-  expect(searchItems(buildItems(context), "sources", "pages")[0]?.items[0]?.label).toBe("Sources");
+  expect(searchItems(buildItems(context), "boite", "pages")[0]?.items[0]?.label).toBe("Boîte de réception");
+  expect(searchItems(buildItems(context), "sources", "pages")[0]?.items[0]?.label).toBe(
+    "Sources de composants",
+  );
+});
+
+test("Créations is a page of the palette that opens the screen", () => {
+  const item = searchItems(buildItems(context), "creations", "pages")[0]?.items[0];
+  expect([item?.label, item?.run]).toEqual([
+    "Créations",
+    { kind: "target", target: { kind: "screen", screen: "creations" } },
+  ]);
 });
 
 test("an opened screen comes back among the recents", () => {

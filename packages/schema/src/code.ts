@@ -190,6 +190,9 @@ export const CodeRequest = z.discriminatedUnion("method", [
   }),
   z.object({ method: z.literal("stageFiles"), ...W, paths: z.array(RelPath).min(1).max(1000) }),
   z.object({ method: z.literal("unstageFiles"), ...W, paths: z.array(RelPath).min(1).max(1000) }),
+  z.object({ method: z.literal("discardChanges"), ...W, paths: z.array(RelPath).min(1).max(1000) }),
+  z.object({ method: z.literal("stageAll"), ...W }),
+  z.object({ method: z.literal("unstageAll"), ...W }),
   z.object({
     method: z.literal("stageHunk"),
     ...W,
@@ -235,6 +238,9 @@ export type CodeResult = {
   writeFile: { hash: string };
   stageFiles: null;
   unstageFiles: null;
+  discardChanges: null;
+  stageAll: null;
+  unstageAll: null;
   stageHunk: null;
   commit: CommitInfo;
   reword: null;
@@ -249,3 +255,36 @@ export type CodeResult = {
   createPr: PrInfo;
   openInEditor: null;
 };
+
+export const CODE_MUTATION_METHODS = [
+  "writeFile",
+  "stageFiles",
+  "unstageFiles",
+  "discardChanges",
+  "stageAll",
+  "unstageAll",
+  "stageHunk",
+  "commit",
+  "reword",
+  "undoCommit",
+  "abortOperation",
+  "push",
+  "createPr",
+] as const satisfies readonly CodeRequest["method"][];
+
+export const LOCAL_ONLY_CODE_METHODS = [
+  ...CODE_MUTATION_METHODS,
+  "openInEditor",
+] as const satisfies readonly CodeRequest["method"][];
+
+export const CODE_READ_METHODS = [
+  "worktrees",
+  "status",
+  "diff",
+  "readFile",
+  "remoteBranches",
+  "compare",
+  "commitDefaults",
+  "ghStatus",
+  "prForBranch",
+] as const satisfies readonly CodeRequest["method"][];

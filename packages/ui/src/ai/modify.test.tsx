@@ -1,7 +1,8 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { type ComponentDraft, KiboError, type RpcRequest } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { draftFixture } from "./draft-fixtures";
 
 const DRAFT = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
 const ACTIVE = "5d2e8a41-3c7b-4f19-8e60-9a1b2c3d4e5f";
@@ -22,15 +23,18 @@ mock.module("../api", () => ({
       calls.push(req);
       if (req.method === "getAiStatus") return ok;
       if (req.method === "listComponentDrafts") return drafts;
+      if (req.method === "getComponentDraft")
+        return draftFixture({ id: req.draftId, mode: "modify", baseVersion: "0.1.0", status: "review" });
       return start();
     },
     subscribeAi: () => () => {},
   },
 }));
-mock.module("./AiDraftPanel", () => ({
-  AiDraftPanel: ({ draftId }: { draftId: string }) => <p>panel {draftId}</p>,
-}));
 const { ModifyWithAiDialog, modifiable } = await import("./ModifyWithAiDialog");
+const panelOf = async (draftId: string) => {
+  await screen.findByRole("button", { name: "J'ai relu, continuer" });
+  await waitFor(() => expect(calls).toContainEqual({ method: "getComponentDraft", draftId }));
+};
 const target = { id: "burndown", title: "Burndown", version: "0.1.0", origin: "ai" } as const;
 
 const draft = (patch: Partial<ComponentDraft>): ComponentDraft => ({
@@ -48,6 +52,8 @@ const draft = (patch: Partial<ComponentDraft>): ComponentDraft => ({
   attempts: 1,
   failure: null,
   incidents: [],
+  attachments: [],
+  revisions: 0,
   createdAt: 1,
   updatedAt: 2,
   ...patch,
@@ -67,23 +73,23 @@ beforeEach(() => {
 test("sends the change request then shows the draft panel", async () => {
   render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
   expect(screen.getByText("Modifier « Burndown » avec l'IA")).toBeTruthy();
-  expect(screen.getByText("Version actuelle 0.1.0 · origine IA")).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · Créé par l'IA")).toBeTruthy();
   const user = userEvent.setup();
   const launch = await screen.findByRole("button", { name: "Lancer l'agent" });
   expect(launch.hasAttribute("disabled")).toBe(true);
   await user.type(screen.getByLabelText("Ce qu'il faut changer"), "Ajoute un titre");
   await user.click(launch);
-  expect(calls.at(-1)).toEqual({
+  expect(calls.find((c) => c.method === "startComponentDraft")).toEqual({
     method: "startComponentDraft",
-    draft: { mode: "modify", id: "burndown", description: "Ajoute un titre" },
+    draft: { mode: "modify", id: "burndown", description: "Ajoute un titre", attachments: [] },
   });
-  expect(await screen.findByText(`panel ${DRAFT}`)).toBeTruthy();
+  await panelOf(DRAFT);
 });
 
 test("offline disables the agent with the reason", async () => {
   Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
   render(<ModifyWithAiDialog component={{ ...target, origin: "user" }} open onOpenChange={() => {}} />);
-  expect(screen.getByText("Version actuelle 0.1.0 · origine Toi")).toBeTruthy();
+  expect(screen.getByText("Version actuelle 0.1.0 · Créé par toi")).toBeTruthy();
   expect(await screen.findByText("Hors ligne")).toBeTruthy();
 });
 
@@ -97,7 +103,7 @@ test("an active draft of the component is offered for resumption", async () => {
   expect(await screen.findByText("Brouillon en cours : Burndown")).toBeTruthy();
   expect(screen.queryByLabelText("Ce qu'il faut changer")).toBeNull();
   await userEvent.setup().click(screen.getByRole("button", { name: "Reprendre" }));
-  expect(await screen.findByText(`panel ${ACTIVE}`)).toBeTruthy();
+  await panelOf(ACTIVE);
 });
 
 test("a conflict on start offers the draft that won the race", async () => {
@@ -142,4 +148,33 @@ test("a conflict without a draft to resume says the component is busy", async ()
 test("cancel is an outline button, as on the mockup", () => {
   render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
   expect(screen.getByRole("button", { name: "Annuler" }).getAttribute("data-variant")).toBe("outline");
+});
+
+test("the change request carries the attached images, pasted or picked", async () => {
+  render(<ModifyWithAiDialog component={target} open onOpenChange={() => {}} />);
+  const user = userEvent.setup();
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+  expect(screen.getByRole("group", { name: "Maquettes (facultatif)" })).toBeTruthy();
+  await user.upload(
+    screen.getByLabelText("Ajouter des images"),
+    new File([png], "Titre voulu.png", { type: "image/png" }),
+  );
+  fireEvent.paste(screen.getByLabelText("Ce qu'il faut changer"), {
+    clipboardData: { files: [new File([png], "image.png", { type: "image/png" })], getData: () => "" },
+  });
+  expect(await screen.findByRole("img", { name: "image.png" })).toBeTruthy();
+  await user.type(screen.getByLabelText("Ce qu'il faut changer"), "Ajoute un titre");
+  await user.click(await screen.findByRole("button", { name: "Lancer l'agent" }));
+  const req = calls.find((c) => c.method === "startComponentDraft");
+  expect(req?.method === "startComponentDraft" && req.draft.attachments.map((a) => a.name)).toEqual([
+    "Titre-voulu.png",
+    "image.png",
+  ]);
+});
+
+test("a draft id opens its panel directly, even without the component", async () => {
+  render(<ModifyWithAiDialog component={null} draftId={ACTIVE} open onOpenChange={() => {}} />);
+  await panelOf(ACTIVE);
+  expect(screen.getByRole("dialog", { name: "Modifier avec l'IA" })).toBeTruthy();
+  expect(calls.some((c) => c.method === "listComponentDrafts")).toBe(false);
 });

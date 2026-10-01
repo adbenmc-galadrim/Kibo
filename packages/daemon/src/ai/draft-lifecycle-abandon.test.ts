@@ -23,7 +23,12 @@ const toPermissions = (store: DraftStore, d: ComponentDraft) =>
 async function installedModify(version: string) {
   const setup = setupLifecycle({ published: burndownAt("0.1.0") });
   const src = writeSource(setup.srcRoot);
-  const d = await setup.life.start({ mode: "modify", id: "burndown", description: "Ajoute un titre" });
+  const d = await setup.life.start({
+    mode: "modify",
+    id: "burndown",
+    description: "Ajoute un titre",
+    attachments: [],
+  });
   setup.runs.end("run-1", done());
   await setup.life.idle();
   toPermissions(setup.store, d);

@@ -1,4 +1,13 @@
-import { ComponentManifest, type Surface, type Theme } from "@kibo/schema";
+import {
+  type ComponentFormat,
+  ComponentManifest,
+  defaultFormatOf,
+  FORMAT_SIZES,
+  formatsOf,
+  GRID_COLUMNS,
+  surfaceFor,
+  type Theme,
+} from "@kibo/schema";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { devFr } from "./dev-fr";
@@ -7,15 +16,27 @@ import { createMockSdk } from "./mock";
 import { SdkProvider } from "./react";
 import { Button } from "./ui/button";
 
-const SURFACES: Surface[] = ["widget", "view"];
 const THEMES: Theme[] = ["dark", "light"];
+const PREVIEW_WIDTH = 1200;
+const ROW_HEIGHT = 80;
+const GAP = 16;
+
+function formatBox(format: ComponentFormat): { width: number; height: number } {
+  const { w, h } = FORMAT_SIZES[format];
+  const columns = PREVIEW_WIDTH - (GRID_COLUMNS - 1) * GAP;
+  return {
+    width: Math.round((w * columns) / GRID_COLUMNS + (w - 1) * GAP),
+    height: h * ROW_HEIGHT + (h - 1) * GAP,
+  };
+}
 
 const systemTheme = (): Theme =>
   window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
 function DevShell({ manifest, Component }: { manifest: ComponentManifest; Component: ComponentType }) {
-  const [surface, setSurface] = useState<Surface>(manifest.kind === "view" ? "view" : "widget");
+  const [format, setFormat] = useState<ComponentFormat>(() => defaultFormatOf(manifest));
   const [theme, setTheme] = useState<Theme>(systemTheme);
+  const surface = surfaceFor(manifest, format);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
@@ -24,28 +45,27 @@ function DevShell({ manifest, Component }: { manifest: ComponentManifest; Compon
       createMockSdk(manifest, {
         seed: (run) => seedDemo(run),
         surface,
+        format,
         notes: DEMO_NOTES,
         noteAges: DEMO_NOTE_AGES,
       }),
-    [manifest, surface],
+    [manifest, surface, format],
   );
   return (
     <div className="flex min-h-screen flex-col gap-4 bg-background p-4 text-foreground">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        {manifest.kind === "both" && (
-          <fieldset aria-label={devFr.surface} className="flex gap-2">
-            {SURFACES.map((s) => (
-              <Button
-                key={s}
-                size="sm"
-                variant={surface === s ? "default" : "outline"}
-                onClick={() => setSurface(s)}
-              >
-                {devFr[s]}
-              </Button>
-            ))}
-          </fieldset>
-        )}
+        <fieldset aria-label={devFr.format} className="flex gap-2">
+          {formatsOf(manifest).map((f) => (
+            <Button
+              key={f}
+              size="sm"
+              variant={format === f ? "default" : "outline"}
+              onClick={() => setFormat(f)}
+            >
+              {devFr.formats[f]}
+            </Button>
+          ))}
+        </fieldset>
         <fieldset aria-label={devFr.theme} className="flex gap-2">
           {THEMES.map((t) => (
             <Button
@@ -58,18 +78,21 @@ function DevShell({ manifest, Component }: { manifest: ComponentManifest; Compon
             </Button>
           ))}
         </fieldset>
+        <span className="text-muted-foreground">
+          {devFr.surface} : {devFr[surface]}
+        </span>
         <span className="text-muted-foreground">{devFr.hint}</span>
       </div>
-      <div
-        className={
-          surface === "widget"
-            ? "h-80 w-[480px] overflow-hidden rounded-lg border bg-card"
-            : "flex-1 rounded-lg border"
-        }
-      >
-        <SdkProvider key={surface} sdk={mock.sdk}>
-          <Component />
-        </SdkProvider>
+      <div className="overflow-auto">
+        <div
+          data-format={format}
+          style={formatBox(format)}
+          className={`@container overflow-hidden rounded-lg border ${surface === "widget" ? "bg-card" : "bg-background"}`}
+        >
+          <SdkProvider key={format} sdk={mock.sdk}>
+            <Component />
+          </SdkProvider>
+        </div>
       </div>
     </div>
   );

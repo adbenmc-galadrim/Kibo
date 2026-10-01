@@ -27,6 +27,16 @@ describe("verifyAndRestore", () => {
     expect(existsSync(join(paths.dir, "node_modules", "ignored.js"))).toBe(true);
     expect(existsSync(join(paths.dir, ".kibo", "validation.json"))).toBe(true);
   });
+  test("a file planted under .kibo/preview is removed without an incident", async () => {
+    const paths = await prepared();
+    const planted = join(paths.dir, ".kibo", "preview", "a".repeat(64));
+    mkdirSync(planted, { recursive: true });
+    writeFileSync(join(planted, "ui.sandbox.js"), "planted");
+    writeFileSync(join(paths.dir, ".kibo", "validation.json"), "{}");
+    expect(verifyAndRestore(paths, false)).toEqual([]);
+    expect(existsSync(join(paths.dir, ".kibo", "preview"))).toBe(false);
+    expect(existsSync(join(paths.dir, ".kibo", "validation.json"))).toBe(true);
+  });
   test("an untouched draft has no incident", async () => {
     const paths = await prepared();
     expect(verifyAndRestore(paths, false)).toEqual([]);

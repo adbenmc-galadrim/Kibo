@@ -4,6 +4,7 @@ import {
   type Guideline,
   type GuidelineOwner,
   GuidelinePath,
+  KiboError,
   type ProjectSummary,
   type RpcRequest,
   type WorkspaceConfig,
@@ -12,16 +13,18 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@kibo/sdk/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { Textarea } from "@kibo/sdk/ui/textarea";
-import { Folder, LayoutGrid, Trash2 } from "lucide-react";
+import { Folder, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { DomainConfirmations, type DomainConfirming } from "./DomainConfirmations";
+import { DomainHeader } from "./DomainHeader";
 import { GuidelineFiles } from "./GuidelineFiles";
 import { GuidelinePreview } from "./GuidelinePreview";
 import { InjectionChain } from "./InjectionChain";
 import { LevelButton } from "./LevelButton";
 import { NewDomainForm } from "./NewDomainForm";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 
 type Props = { config: WorkspaceConfig; projects: ProjectSummary[] };
 type Level = { kind: "workspace" } | { kind: "project" } | { kind: "domain"; domainId: string };
@@ -45,6 +48,7 @@ export function DomainsPage({ config, projects }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<DomainConfirming | null>(null);
 
   const project = projects.find((p) => p.id === projectId) ?? null;
   const domain =
@@ -113,13 +117,25 @@ export function DomainsPage({ config, projects }: Props) {
       command: { method: "addGuideline", owner, path: parsed.data, content: "" },
     });
   };
-  const removeFile = () => {
-    if (owner && selected) {
-      void send({
-        method: "config",
-        command: { method: "removeGuideline", owner, guidelineId: selected.id },
-      });
+  const updateDomain = async (patch: { name?: string; color?: string }): Promise<boolean> => {
+    if (!domain) return false;
+    setError(null);
+    try {
+      await client.rpc({ method: "config", command: { method: "updateDomain", domainId: domain.id, patch } });
+      return true;
+    } catch (e) {
+      setError(
+        e instanceof KiboError && e.code === "INVALID_INPUT" ? fr.domains.duplicate : fr.domains.failed,
+      );
+      return false;
     }
+  };
+  const removeFile = () => {
+    if (selected) setConfirming({ kind: "file", path: selected.path, guidelineId: selected.id });
+  };
+  const confirmRemoveFile = async (guidelineId: string) => {
+    if (!owner) return;
+    await client.rpc({ method: "config", command: { method: "removeGuideline", owner, guidelineId } });
   };
   const createDomain = (name: string) => {
     const color = DOMAIN_COLORS[config.domains.length % DOMAIN_COLORS.length] ?? DOMAIN_COLORS[0];
@@ -131,16 +147,18 @@ export function DomainsPage({ config, projects }: Props) {
       setError(fr.domains.inUse);
       return;
     }
-    if (await send({ method: "config", command: { method: "deleteDomain", domainId: domain.id } })) {
-      pick({ kind: "workspace" });
-    }
+    setConfirming({ kind: "domain" });
+  };
+  const confirmDeleteDomain = async () => {
+    if (!domain) return;
+    await client.rpc({ method: "config", command: { method: "deleteDomain", domainId: domain.id } });
+    pick({ kind: "workspace" });
   };
 
   const isActive = (l: Level) => levelKey(l) === levelKey(level);
 
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="domains" />
+    <SettingsLayout active="domains">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{fr.domains.title}</h1>
@@ -203,26 +221,19 @@ export function DomainsPage({ config, projects }: Props) {
           <section className="flex min-w-0 flex-col rounded-lg border bg-card">
             <Tabs defaultValue="edit" className="flex flex-1 flex-col gap-0">
               <header className="flex items-center gap-3 border-b px-4 py-3">
-                {domain && (
-                  <span aria-hidden className="size-3 rounded-[3px]" style={{ background: domain.color }} />
-                )}
-                <h2 className="text-md font-semibold">{title}</h2>
-                {domain && (
-                  <span className="text-xs text-muted-foreground">
-                    {fr.domains.usedBy(config.domainUsage[domain.id] ?? 0)}
-                  </span>
-                )}
-                <span className="flex-1" />
-                {domain && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-7"
-                    aria-label={fr.domains.deleteDomain(domain.name)}
-                    onClick={() => void deleteDomain()}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
+                {domain ? (
+                  <DomainHeader
+                    domain={domain}
+                    usage={config.domainUsage[domain.id] ?? 0}
+                    onRename={(name) => updateDomain({ name })}
+                    onColor={(color) => updateDomain({ color })}
+                    onDelete={() => void deleteDomain()}
+                  />
+                ) : (
+                  <>
+                    <h2 className="text-md font-semibold">{title}</h2>
+                    <span className="flex-1" />
+                  </>
                 )}
                 <TabsList>
                   <TabsTrigger value="edit">{fr.domains.edit}</TabsTrigger>
@@ -277,6 +288,14 @@ export function DomainsPage({ config, projects }: Props) {
           </section>
         </div>
       </div>
-    </div>
+      <DomainConfirmations
+        confirming={confirming}
+        domain={domain}
+        files={files.length}
+        onClose={() => setConfirming(null)}
+        onDeleteDomain={confirmDeleteDomain}
+        onRemoveFile={confirmRemoveFile}
+      />
+    </SettingsLayout>
   );
 }

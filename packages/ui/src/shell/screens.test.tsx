@@ -62,14 +62,16 @@ const portfolio: ProjectSummary = {
   counts: { ...counts, done: 0, todo: 4, in_progress: 1, blocked: 0, backlog: 0, in_review: 0 },
 };
 
+const noInbox = { inboxCount: 0, onOpenInbox: () => {} };
+
 test("Overview greets the viewer and sums up the open work", () => {
-  render(<Overview viewer="adam" projects={[kibo, portfolio]} onNewProject={() => {}} />);
+  render(<Overview viewer="adam" projects={[kibo, portfolio]} onNewProject={() => {}} {...noInbox} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Bonjour Adam");
   expect(screen.getByText("2 projets · 24 tickets ouverts")).toBeTruthy();
 });
 
 test("Overview cards show counts, progress and a short folder", () => {
-  render(<Overview viewer="adam" projects={[kibo]} onNewProject={() => {}} />);
+  render(<Overview viewer="adam" projects={[kibo]} onNewProject={() => {}} {...noInbox} />);
   const card = screen.getByRole("article", { name: "Kibo" });
   expect(within(card).getByText("~/goinfre/Kibo")).toBeTruthy();
   expect(within(card).getByText("6").parentElement?.textContent).toBe("6 en cours");
@@ -78,6 +80,17 @@ test("Overview cards show counts, progress and a short folder", () => {
   const bar = within(card).getByRole("progressbar", { name: "5 terminés sur 24" });
   expect(bar.getAttribute("aria-valuenow")).toBe("5");
   expect(bar.getAttribute("aria-valuemax")).toBe("24");
+});
+
+test("a 120-character folder wraps on the overview card instead of overflowing (screen 1)", () => {
+  const folder = `/srv/${"dossier-tres-long/".repeat(6)}kibo/v2`;
+  render(<Overview viewer="adam" projects={[{ ...kibo, folder }]} onNewProject={() => {}} {...noInbox} />);
+  const path = within(screen.getByRole("article", { name: "Kibo" })).getByText(folder);
+  expect(folder).toHaveLength(120);
+  expect(path.className).toContain("break-all");
+  expect(path.className).not.toContain("truncate");
+  expect(path.parentElement?.className).toContain("min-w-0");
+  expect(path.parentElement?.parentElement?.className).toContain("items-start");
 });
 
 const empty: ProjectSnapshot = {
@@ -93,6 +106,26 @@ const empty: ProjectSnapshot = {
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
+test("Overview points to the inbox only when it holds open tickets", () => {
+  const opened: string[] = [];
+  const { unmount } = render(
+    <Overview viewer="adam" projects={[kibo]} onNewProject={() => {}} {...noInbox} />,
+  );
+  expect(screen.queryByRole("button", { name: /Boîte de réception/ })).toBeNull();
+  unmount();
+  render(
+    <Overview
+      viewer="adam"
+      projects={[kibo]}
+      onNewProject={() => {}}
+      inboxCount={3}
+      onOpenInbox={() => opened.push("inbox")}
+    />,
+  );
+  screen.getByRole("button", { name: "Boîte de réception · 3 tickets sans projet" }).click();
+  expect(opened).toEqual(["inbox"]);
+});
+
 test("ProjectHome names the created project and its folder", () => {
   render(<ProjectHome project={empty} onNewPage={() => {}} onSuggest={() => {}} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Projet créé : Kibo");
@@ -107,6 +140,7 @@ test("PairingScreen shows the logo, a centred title and the security notice", ()
 });
 
 const contentProps = {
+  inboxCount: 0,
   target: null,
   viewer: "adam",
   project: null,
@@ -119,6 +153,7 @@ const contentProps = {
   onOpen: () => {},
   onOpenFile: () => {},
   onAssign: () => {},
+  onOpenTicket: () => {},
 };
 
 test("ContentView welcomes a workspace without any project", async () => {
@@ -130,6 +165,13 @@ test("ContentView keeps the overview once a project exists", () => {
   render(<ContentView {...contentProps} projects={[kibo]} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Bonjour Adam");
   expect(screen.queryByText("Bienvenue dans Kibo")).toBeNull();
+});
+
+test("ContentView leads from the overview inbox card to the inbox screen", () => {
+  const opened: unknown[] = [];
+  render(<ContentView {...contentProps} projects={[kibo]} inboxCount={2} onOpen={(t) => opened.push(t)} />);
+  screen.getByRole("button", { name: "Boîte de réception · 2 tickets sans projet" }).click();
+  expect(opened).toEqual([{ kind: "screen", screen: "inbox" }]);
 });
 
 test("the empty project home suggests pages for its project", async () => {

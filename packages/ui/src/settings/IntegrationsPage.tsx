@@ -10,7 +10,7 @@ import { DisconnectDialog, type DisconnectTarget, disconnectable } from "./Disco
 import { IntegrationRow } from "./IntegrationRow";
 import { dialogOf, INTEGRATION_DIALOGS, type IntegrationDialogId } from "./integration-dialogs";
 import { integrationRow, type RowMenuItem } from "./integration-rows";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 
 const time = (ms: number) => new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const hasDialog = (id: IntegrationId) => {
@@ -65,8 +65,7 @@ export function IntegrationsPage() {
   const Dialog = dialog ? INTEGRATION_DIALOGS[dialog] : undefined;
 
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="integrations" />
+    <SettingsLayout active="integrations">
       <section className="flex flex-col gap-4 p-8">
         <header>
           <h1 className="text-xl font-semibold">{t.title}</h1>
@@ -120,6 +119,6 @@ export function IntegrationsPage() {
           onConfirm={(id) => void confirmDisconnect(id)}
         />
       </section>
-    </div>
+    </SettingsLayout>
   );
 }

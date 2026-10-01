@@ -41,7 +41,7 @@ test("shows the five checks of screen 19", async () => {
   expect(await screen.findByText("Bienvenue dans Kibo")).toBeTruthy();
   expect(await screen.findByText("claude détecté · connecté à ton abonnement")).toBeTruthy();
   expect(screen.getByText("git 2.51 · gh 2.80 détectés")).toBeTruthy();
-  expect(screen.getByText("8 cœurs, 16 Go → 3 créneaux d'agents (modifiable)")).toBeTruthy();
+  expect(screen.getByText("8 cœurs, 16 Go → 3 places d'agents (modifiable)")).toBeTruthy();
   expect(screen.getByText("En marche sur 127.0.0.1:47831 · données dans ~/.kibo")).toBeTruthy();
 });
 

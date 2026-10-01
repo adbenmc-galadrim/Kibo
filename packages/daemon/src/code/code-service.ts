@@ -1,9 +1,24 @@
 import { commitDefaults } from "@kibo/core";
-import type { CodeEvent, CodeRequest, CommitDefaults } from "@kibo/schema";
+import {
+  CODE_MUTATION_METHODS,
+  CODE_READ_METHODS,
+  type CodeEvent,
+  type CodeRequest,
+  type CommitDefaults,
+} from "@kibo/schema";
+import { type RpcContext, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
 import { editorCommand, openInEditor } from "./editor";
 import { abortOperation, commit, reword, undoCommit } from "./history-ops";
-import { stageFiles, stageHunk, unstageFiles, writeFile } from "./index-ops";
+import {
+  discardChanges,
+  stageAll,
+  stageFiles,
+  stageHunk,
+  unstageAll,
+  unstageFiles,
+  writeFile,
+} from "./index-ops";
 import { type PrPoller, startPrPoller, triggerRules } from "./pr-poller";
 import { compare, readDiff, readFile, readStatus, remoteBranches } from "./read";
 import { createPr, ghStatus, prForBranch, push } from "./remote-ops";
@@ -13,7 +28,7 @@ import { resolveInWorktree } from "./safe-path";
 import { createWorktreeWatch } from "./worktree-watch";
 
 export type CodeService = {
-  handle(req: CodeRequest): Promise<unknown>;
+  handle(req: CodeRequest, ctx: RpcContext): Promise<unknown>;
   onChange(listener: (e: CodeEvent) => void): () => void;
   stop(): void;
 };
@@ -24,24 +39,13 @@ export type CodeServiceOptions = {
   platform?: NodeJS.Platform;
 };
 type WorktreeRequest = Exclude<CodeRequest, { method: "worktrees" }>;
-const MUTATION_METHODS = [
-  "writeFile",
-  "stageFiles",
-  "unstageFiles",
-  "stageHunk",
-  "commit",
-  "reword",
-  "undoCommit",
-  "abortOperation",
-  "push",
-  "createPr",
-] as const;
-type Mutation = Extract<WorktreeRequest, { method: (typeof MUTATION_METHODS)[number] }>;
+type Mutation = Extract<WorktreeRequest, { method: (typeof CODE_MUTATION_METHODS)[number] }>;
 type Read = Exclude<WorktreeRequest, Mutation>;
 
 const PR_POLL_MS = 60_000;
 const IDLE_MS = 600_000;
-const MUTATIONS = new Set<string>(MUTATION_METHODS);
+const MUTATIONS = new Set<string>(CODE_MUTATION_METHODS);
+const READS = new Set<string>(CODE_READ_METHODS);
 const isMutation = (req: WorktreeRequest): req is Mutation => MUTATIONS.has(req.method);
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
 
@@ -137,6 +141,12 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
         return stageFiles(h, req.paths).then(() => null);
       case "unstageFiles":
         return unstageFiles(h, req.paths).then(() => null);
+      case "discardChanges":
+        return discardChanges(h, req.paths).then(() => null);
+      case "stageAll":
+        return stageAll(h).then(() => null);
+      case "unstageAll":
+        return unstageAll(h).then(() => null);
       case "stageHunk":
         return stageHunk(h, req).then(() => null);
       case "commit":
@@ -165,7 +175,8 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
     });
 
   return {
-    async handle(req) {
+    async handle(req, ctx) {
+      if (!READS.has(req.method)) requireLocal(ctx);
       if (req.method === "worktrees") return (await repoOf(req.projectId)).worktrees();
       const h = await (await repoOf(req.projectId)).open(req.worktree);
       return isMutation(req) ? mutateAndNotify(h, req) : read(h, req);

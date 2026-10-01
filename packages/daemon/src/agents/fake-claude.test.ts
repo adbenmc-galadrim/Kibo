@@ -1,55 +1,9 @@
-import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { expect, test } from "bun:test";
 import { join } from "node:path";
+import { cleanFakeDirs, finish, readHooks, settings, start, tmp } from "./fake-claude.test-helper";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 
-const dirs: string[] = [];
-const tmp = () => {
-  const d = mkdtempSync(join(tmpdir(), "kibo-fake-"));
-  dirs.push(d);
-  return d;
-};
-afterEach(() => {
-  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
-});
-
-const EVENTS = ["SessionStart", "PreToolUse", "PostToolUse", "Stop", "StopFailure", "SessionEnd"];
-function settings(file: string): string {
-  const command = `cat >> '${file}'; echo >> '${file}'`;
-  const hooks = Object.fromEntries(
-    EVENTS.map((e) => [
-      e,
-      [{ ...(e.endsWith("ToolUse") ? { matcher: "*" } : {}), hooks: [{ type: "command", command }] }],
-    ]),
-  );
-  return JSON.stringify({ hooks });
-}
-function start(args: string[], env: Record<string, string>, prompt = "Lis le brief.") {
-  return Bun.spawn([FAKE_CLAUDE, "-p", "--output-format", "stream-json", "--verbose", ...args], {
-    env: { ...process.env, ...env },
-    stdin: new TextEncoder().encode(prompt),
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-}
-async function finish(proc: ReturnType<typeof start>) {
-  const [out, err, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  const lines = out
-    .split("\n")
-    .filter((l) => l.length > 0)
-    .map((l) => JSON.parse(l) as Record<string, unknown>);
-  return { lines, err, code };
-}
-const readHooks = (file: string) =>
-  readFileSync(file, "utf8")
-    .trim()
-    .split("\n")
-    .map((l) => JSON.parse(l) as Record<string, unknown>);
+cleanFakeDirs();
 
 test("plays a turn: hooks with Claude Code inputs, transcript and a stream-json result", async () => {
   const state = tmp();

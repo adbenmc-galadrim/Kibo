@@ -63,3 +63,25 @@ test("project settings are local key/values", () => {
   s.set("p1", "notesDir", "/b");
   expect(s.get("p1", "notesDir")).toBe("/b");
 });
+
+test("clear drops the notes, links and ticket mentions of one project", () => {
+  const db = new Database(":memory:", { strict: true });
+  ensureNotesTables(db);
+  const idx = createNotesIndex(db);
+  idx.replace("p1", "KIB", NOTES);
+  idx.replace("p2", "KIB", NOTES);
+  idx.clear("p1");
+  expect(idx.list("p1")).toEqual([]);
+  expect(idx.search("p1", "agents")).toEqual([]);
+  expect(idx.list("p2")).toHaveLength(3);
+  const rows = (table: string, projectId: string) =>
+    db
+      .query<{ n: number }, { projectId: string }>(
+        `SELECT count(*) AS n FROM ${table} WHERE project_id = $projectId`,
+      )
+      .get({ projectId })?.n;
+  for (const table of ["notes", "note_links", "note_tickets"]) {
+    expect([table, rows(table, "p1")]).toEqual([table, 0]);
+    expect(rows(table, "p2")).toBeGreaterThan(0);
+  }
+});

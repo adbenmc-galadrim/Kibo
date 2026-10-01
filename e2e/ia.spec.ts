@@ -47,9 +47,9 @@ test("Ton rôle : preset Designer, une page décochée", async ({ page }, info) 
   await page.getByLabel("Inclure Kanban").click();
   await finishProject(page, `Design ${s}`, `DSG${s}`);
   const pages = projectPages(page, `Design ${s}`);
-  await expect(pages.getByRole("button", { name: "Tableau de bord" })).toBeVisible();
-  await expect(pages.getByRole("button", { name: "Notes" })).toBeVisible();
-  await expect(pages.getByRole("button", { name: "Kanban" })).toHaveCount(0);
+  await expect(pages.getByRole("button", { name: "Tableau de bord", exact: true })).toBeVisible();
+  await expect(pages.getByRole("button", { name: "Notes", exact: true })).toBeVisible();
+  await expect(pages.getByRole("button", { name: "Kanban", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("region", { name: "Tickets" }).getByText("Mes tickets · 0 sur 0"),
   ).toBeVisible();
@@ -66,8 +66,8 @@ test("Ton rôle : suggestion de Claude (faux claude)", async ({ page }, info) =>
   await expect(page.getByLabel("Nom de la page 1")).toHaveValue("Suivi clients");
   await finishProject(page, `Freelance ${s}`, `FRL${s}`);
   const pages = projectPages(page, `Freelance ${s}`);
-  await expect(pages.getByRole("button", { name: "Suivi clients" })).toBeVisible();
-  await expect(pages.getByRole("button", { name: "Tickets" })).toBeVisible();
+  await expect(pages.getByRole("button", { name: "Suivi clients", exact: true })).toBeVisible();
+  await expect(pages.getByRole("button", { name: "Tickets", exact: true })).toBeVisible();
 });
 
 test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ page }, info) => {
@@ -84,7 +84,7 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
   await page
     .getByLabel("Ce que doit faire le composant")
     .fill("Burndown du sprint : tickets restants par jour, ligne idéale.");
-  await page.getByLabel("Titre").fill(`Burndown ${s}`);
+  await page.getByLabel("Titre", { exact: true }).fill(`Burndown ${s}`);
   await expect(page.getByLabel("Identifiant")).toHaveValue(`burndown-${s.toLowerCase()}`);
   await page.getByRole("button", { name: "Générer avec un agent" }).click();
 
@@ -106,7 +106,7 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
   await create.getByRole("button", { name: "J'ai relu, continuer" }).click();
   await expect(trust).toBeVisible();
   await expect(create).toBeHidden();
-  await expect(trust.getByRole("radio", { name: /Sandboxé \(recommandé\)/ })).toBeChecked();
+  await expect(trust.getByRole("radio", { name: /Isolé \(recommandé\)/ })).toBeChecked();
   await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
   await expect(trust).toBeHidden({ timeout: 60_000 });
 

@@ -47,7 +47,7 @@ export function MarketUpdateDialog({
   remote = isRemoteView(),
 }: Props) {
   const t = fr.market;
-  const projects = useProjects() ?? [];
+  const projects = useProjects().projects ?? [];
   const [error, setError] = useState<string | null>(null);
   const [fail] = useState(() => (text: string) => setError(text));
   const detail = usePackageDetail(sourceId, id, to, fail);

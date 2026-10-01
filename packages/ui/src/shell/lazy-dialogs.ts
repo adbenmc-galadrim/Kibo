@@ -23,6 +23,11 @@ export const NewTicketDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const FileTicketDialog = lazyPanel(
+  () => import("../dialogs/FileTicketDialog").then((m) => m.FileTicketDialog),
+  fr.lazy,
+  hidden,
+);
 export const AssignDialog = lazyPanel(
   () => import("../agents/AssignDialog").then((m) => m.AssignDialog),
   fr.lazy,
@@ -45,6 +50,46 @@ export const CommandPalette = lazyPanel(
 );
 export const ModifyWithAiDialog = lazyPanel(
   () => import("../ai/ModifyWithAiDialog").then((m) => m.ModifyWithAiDialog),
+  fr.lazy,
+  hidden,
+);
+export const ConfirmDialog = lazyPanel(
+  () => import("@kibo/sdk/ui/confirm-dialog").then((m) => m.ConfirmDialog),
+  fr.lazy,
+  hidden,
+);
+export const NotesDirDialog = lazyPanel(
+  () => import("../dialogs/NotesDirDialog").then((m) => m.NotesDirDialog),
+  fr.lazy,
+  hidden,
+);
+export const TrustDialog = lazyPanel(
+  () => import("../dialogs/TrustDialog").then((m) => m.TrustDialog),
+  fr.lazy,
+  hidden,
+);
+export const OpenViewDialog = lazyPanel(
+  () => import("../dialogs/OpenViewDialog").then((m) => m.OpenViewDialog),
+  fr.lazy,
+  hidden,
+);
+export const RenamePageDialog = lazyPanel(
+  () => import("../dialogs/RenamePageDialog").then((m) => m.RenamePageDialog),
+  fr.lazy,
+  hidden,
+);
+export const InstanceSettingsDialog = lazyPanel(
+  () => import("../dialogs/InstanceSettingsDialog").then((m) => m.InstanceSettingsDialog),
+  fr.lazy,
+  hidden,
+);
+export const EditProjectDialog = lazyPanel(
+  () => import("../dialogs/EditProjectDialog").then((m) => m.EditProjectDialog),
+  fr.lazy,
+  hidden,
+);
+export const DeleteProjectDialog = lazyPanel(
+  () => import("../dialogs/DeleteProjectDialog").then((m) => m.DeleteProjectDialog),
   fr.lazy,
   hidden,
 );

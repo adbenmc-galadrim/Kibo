@@ -89,7 +89,7 @@ const withVersion = (patch: Partial<ComponentSummary["versions"][number]>): Comp
 const frame = () =>
   render(
     <HostProvider host={host}>
-      <InstanceFrame projectId="p1" instance={instance} viewer="adam" surface="widget" />
+      <InstanceFrame projectId="p1" instance={instance} viewer="adam" surface="widget" format="large" />
     </HostProvider>,
   );
 

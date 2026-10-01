@@ -10,6 +10,7 @@ import {
 } from "@kibo/sdk/ui/dropdown-menu";
 import { TableCell, TableRow } from "@kibo/sdk/ui/table";
 import { Loader2, MoreHorizontal, RefreshCw, Store, Trash2 } from "lucide-react";
+import { DetailsBlock } from "../components-page/DetailsBlock";
 import { fr } from "../i18n/fr";
 import { fingerprintHead } from "../lib/fingerprint";
 import { storedErrorText } from "../lib/market-errors";
@@ -66,8 +67,13 @@ export function SourceRow({ source, pending, remote, now, onAction }: Props) {
           {source.name}
         </span>
       </TableCell>
-      <TableCell className={`${CELL} max-w-72 truncate font-mono`}>{source.url}</TableCell>
-      <TableCell className={`${CELL} font-mono`}>{fingerprintHead(source.fingerprint)}</TableCell>
+      <TableCell className={`${CELL} max-w-72`}>
+        <span className="block truncate font-mono">{source.url}</span>
+        <DetailsBlock label={t.details} className="mt-1">
+          <span className="font-sans">{t.key}</span>
+          <span>{fingerprintHead(source.fingerprint)}</span>
+        </DetailsBlock>
+      </TableCell>
       <TableCell className={`${CELL} font-mono`}>{source.lastSerial ?? "—"}</TableCell>
       <TableCell className={CELL}>{updatedText(source.lastFetchedAt, now)}</TableCell>
       <TableCell className={`${CELL} w-56 whitespace-normal`}>
@@ -89,7 +95,7 @@ export function SourceRow({ source, pending, remote, now, onAction }: Props) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onSelect={() => onAction("refresh")}>
               <RefreshCw aria-hidden />
-              {t.refresh}
+              {t.refreshOne}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" disabled={remote} onSelect={() => onAction("remove")}>

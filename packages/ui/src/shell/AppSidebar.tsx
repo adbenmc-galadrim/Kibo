@@ -1,4 +1,5 @@
 import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
+import { cn } from "@kibo/sdk/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -8,7 +9,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -19,6 +19,7 @@ import {
 import {
   Bot,
   GitCommitHorizontal,
+  Inbox,
   LayoutGrid,
   List,
   ListOrdered,
@@ -29,9 +30,10 @@ import {
 } from "lucide-react";
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
-import { pageIcon } from "../registry";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { canEdit } from "../state/access";
-import { JoinProjectEntry, ProjectMenu } from "./lazy-screens";
+import { JoinProjectEntry } from "./lazy-screens";
+import { type Link, ProjectEntry } from "./ProjectEntry";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type Props = {
@@ -43,22 +45,23 @@ type Props = {
   agents: AgentsState | null;
   changesCount: number | null;
   mineCount: number | null;
+  inboxCount: number | null;
   workspaceName: string | null;
-  onRenameWorkspace(name: string): Promise<void>;
+  workspaceIcon: string | null;
   onOpen(target: TabTarget | null, newTab: boolean): void;
   onSearch(): void;
   onNewProject(): void;
   onNewPage(parentId: string | null): void;
+  onRenamePage(page: Page): void;
+  onDeletePage(page: Page): void;
   onShare(projectId: string): void;
+  onEditProject(projectId: string): void;
+  onDeleteProject(projectId: string): void;
   onJoin(): void;
 };
 
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
 
-type Link = (target: TabTarget | null) => {
-  onClick(e: MouseEvent): void;
-  onAuxClick(e: MouseEvent): void;
-};
 const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen });
 const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "general",
@@ -68,6 +71,8 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "security",
   "sources",
   "sync",
+  "shortcuts",
+  "workspace",
 ]);
 
 type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };
@@ -120,28 +125,6 @@ export function AppSidebar(p: Props) {
       onOpen(target, true);
     },
   });
-  const children = (parentId: string | null): Page[] =>
-    active?.pages.filter((x) => x.parentId === parentId) ?? [];
-  const renderPages = (projectId: string, parentId: string | null) =>
-    children(parentId).map((page) => {
-      const Icon = pageIcon(page, active?.instances ?? []);
-      return (
-        <SidebarMenuSubItem key={page.id}>
-          <SidebarMenuSubButton
-            asChild
-            isActive={
-              onTarget("page", projectId) && activeTarget?.kind === "page" && activeTarget.pageId === page.id
-            }
-          >
-            <button type="button" {...link({ kind: "page", projectId, pageId: page.id })}>
-              <Icon />
-              <span>{page.title}</span>
-            </button>
-          </SidebarMenuSubButton>
-          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(projectId, page.id)}</SidebarMenuSub>}
-        </SidebarMenuSubItem>
-      );
-    });
   const changesEntry = (projectId: string) =>
     changesCount !== null && (
       <SidebarMenuSubItem>
@@ -164,12 +147,12 @@ export function AppSidebar(p: Props) {
     );
 
   return (
-    <Sidebar className={p.className}>
+    <Sidebar className={cn("select-none", p.className)}>
       <SidebarHeader>
         <WorkspaceSwitcher
           name={p.workspaceName ?? fr.workspace.defaultName}
-          onRename={p.onRenameWorkspace}
-          onSettings={() => onOpen(screenTarget("domains"), false)}
+          icon={p.workspaceIcon}
+          onSettings={() => onOpen(screenTarget("workspace"), false)}
         />
         <button
           type="button"
@@ -178,7 +161,7 @@ export function AppSidebar(p: Props) {
         >
           <Search aria-hidden className="size-4" />
           <span className="flex-1 text-left">{fr.nav.search}</span>
-          <kbd className="font-mono text-3xs">⌘K</kbd>
+          <kbd className="font-mono text-3xs">{shortcutLabel(["K"], isMac())}</kbd>
         </button>
       </SidebarHeader>
       <SidebarContent>
@@ -197,6 +180,15 @@ export function AppSidebar(p: Props) {
               </SidebarMenuButton>
               {p.mineCount !== null && p.mineCount > 0 && <SidebarMenuBadge>{p.mineCount}</SidebarMenuBadge>}
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={screen === "inbox"} {...link(screenTarget("inbox"))}>
+                <Inbox />
+                <span>{fr.nav.inbox}</span>
+              </SidebarMenuButton>
+              {p.inboxCount !== null && p.inboxCount > 0 && (
+                <SidebarMenuBadge>{p.inboxCount}</SidebarMenuBadge>
+              )}
+            </SidebarMenuItem>
             <AgentsEntry screen={screen} agents={p.agents} link={link} />
           </SidebarMenu>
         </SidebarGroup>
@@ -210,34 +202,24 @@ export function AppSidebar(p: Props) {
               const current = active?.meta.id === project.id;
               return (
                 <SidebarMenuItem key={project.id}>
-                  <SidebarMenuButton
-                    isActive={onTarget("project", project.id)}
-                    {...link({ kind: "project", projectId: project.id })}
-                  >
-                    <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
-                    <span>{project.name}</span>
-                  </SidebarMenuButton>
-                  <ProjectMenu
-                    name={project.name}
+                  <ProjectEntry
+                    project={project}
+                    active={current ? active : null}
+                    activeTarget={activeTarget}
+                    projectActive={onTarget("project", project.id)}
+                    editable={current && editable}
+                    menuEditable={!current || editable}
                     current={current}
-                    shifted={current && editable}
+                    trailing={changesEntry(project.id) || null}
+                    link={link}
+                    onOpen={onOpen}
+                    onNewPage={p.onNewPage}
+                    onRenamePage={p.onRenamePage}
+                    onDeletePage={p.onDeletePage}
                     onShare={() => p.onShare(project.id)}
+                    onEdit={() => p.onEditProject(project.id)}
+                    onDelete={() => p.onDeleteProject(project.id)}
                   />
-                  {current && (
-                    <>
-                      {editable && (
-                        <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
-                          <Plus />
-                        </SidebarMenuAction>
-                      )}
-                      {(children(null).length > 0 || changesCount !== null) && (
-                        <SidebarMenuSub>
-                          {renderPages(project.id, null)}
-                          {changesEntry(project.id)}
-                        </SidebarMenuSub>
-                      )}
-                    </>
-                  )}
                 </SidebarMenuItem>
               );
             })}

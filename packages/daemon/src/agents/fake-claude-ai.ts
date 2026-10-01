@@ -89,6 +89,39 @@ export function fakeWrites(stateDir: string, sessionId: string): WriteLog[] {
     .map((l) => WriteLogEntry.parse(JSON.parse(l)));
 }
 
+const ATTACHMENTS_VAR = "$KIBO_DRAFT_ATTACHMENTS";
+
+export function resolveStepInput(
+  input: Record<string, unknown> | undefined,
+  env: Record<string, string | undefined>,
+): Record<string, unknown> | undefined {
+  const path = input?.file_path;
+  if (typeof path !== "string" || !(path === ATTACHMENTS_VAR || path.startsWith(`${ATTACHMENTS_VAR}/`)))
+    return input;
+  const dir = env.KIBO_DRAFT_ATTACHMENTS;
+  if (!dir) throw new Error("KIBO_DRAFT_ATTACHMENTS is not set for a step that reads an attachment");
+  return { ...input, file_path: dir + path.slice(ATTACHMENTS_VAR.length) };
+}
+
+const ToolUse = z.object({ tool: z.string(), input: z.record(z.string(), z.unknown()), denied: z.boolean() });
+export type ToolUse = z.infer<typeof ToolUse>;
+
+const toolUsesFile = (stateDir: string, sessionId: string): string =>
+  join(stateDir, `${sessionId}.tools.jsonl`);
+
+export function appendToolUse(stateDir: string, sessionId: string, use: ToolUse): void {
+  appendFileSync(toolUsesFile(stateDir, sessionId), `${JSON.stringify(use)}\n`);
+}
+
+export function fakeToolUses(stateDir: string, sessionId: string): ToolUse[] {
+  const file = toolUsesFile(stateDir, sessionId);
+  if (!existsSync(file)) return [];
+  return readFileSync(file, "utf8")
+    .split("\n")
+    .filter((l) => l.length > 0)
+    .map((l) => ToolUse.parse(JSON.parse(l)));
+}
+
 export function fakeMeta(argv: string[], env: Record<string, string | undefined>): string | null {
   if (argv[0] === "--version") return "2.1.283 (Claude Code)\n";
   if (argv.includes("--help")) {

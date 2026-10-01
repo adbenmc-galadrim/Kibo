@@ -1,60 +1,38 @@
-import { DndContext, type DragEndEvent, useDroppable } from "@dnd-kit/core";
-import type { Status, StatusId, TicketView } from "@kibo/schema";
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragMoveEvent,
+  type DragOverEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { StatusId, TicketView } from "@kibo/schema";
 import {
   filterBySource,
   readSource,
   remoteRuns,
-  StatusDot,
   useEntities,
   usePresence,
   useSdk,
   useSharing,
 } from "@kibo/sdk";
-import { cn } from "@kibo/sdk/lib/utils";
-import { Button } from "@kibo/sdk/ui/button";
-import { Plus } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
+import { useRef, useState } from "react";
+import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
+import { type ColumnOrder, orderColumn } from "./column-order";
+import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
 import { filterTickets, type KanbanFilter } from "./filter";
 import { fr } from "./fr";
 import { type CiChip, ciChipOf, KanbanCard } from "./KanbanCard";
+import { KanbanColumn } from "./KanbanColumn";
+import { KanbanToolbar } from "./KanbanToolbar";
+import { cardSteps } from "./keyboard-steps";
+import { useColumnOrder } from "./use-column-order";
 
-type ColumnProps = { status: Status; count: number; children: ReactNode; onAdd?: () => void };
-
-function Column({ status, count, children, onAdd }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: status.id });
-  return (
-    <section
-      ref={setNodeRef}
-      aria-label={status.label}
-      className={cn(
-        "flex min-w-[180px] flex-1 flex-col gap-2 rounded-lg bg-muted/40 p-2",
-        isOver && "ring-2 ring-ring",
-      )}
-    >
-      <header className="flex h-7 items-center gap-2 px-1 text-xs">
-        <StatusDot statusId={status.id} />
-        <span className="font-medium">{status.label}</span>
-        <span className="flex-1" />
-        <span className="font-mono text-2xs text-muted-foreground">{count}</span>
-        {onAdd ? (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-6"
-            aria-label={fr.newTicketIn(status.label)}
-            onClick={onAdd}
-          >
-            <Plus className="size-3.5" />
-          </Button>
-        ) : (
-          <span className="size-6" />
-        )}
-      </header>
-      {children}
-    </section>
-  );
-}
+type Blocking = { ticket: TicketView; drop: Drop | null };
 
 export function Kanban() {
   const sdk = useSdk();
@@ -67,17 +45,40 @@ export function Kanban() {
   const peers = usePresence();
   const sharing = useSharing();
   const readOnly = sharing.access !== "write";
+  const columnOrder = useColumnOrder(sdk);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: cardSteps }),
+  );
   const [filter, setFilter] = useState<KanbanFilter>(
     source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
   );
-  const [blocking, setBlocking] = useState<TicketView | null>(null);
+  const [blocking, setBlocking] = useState<Blocking | null>(null);
+  const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
+  const board = useRef<HTMLDivElement>(null);
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
   const ciOf = (t: TicketView): CiChip | undefined =>
     ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
+  const columns = new Map(
+    ordered.map((s) => [
+      s.id,
+      orderColumn(
+        shown.filter((t) => t.statusId === s.id),
+        columnOrder.order[s.id],
+      ),
+    ]),
+  );
+  const visible: ColumnOrder = Object.fromEntries(
+    [...columns].map(([statusId, cards]) => [statusId, cards.map((t) => t.id)]),
+  );
+
+  const keyOf = (id: string | number) => tickets.find((t) => t.id === id)?.keyLabel ?? statusLabel(id);
+  const statusLabel = (id: string | number) => ordered.find((s) => s.id === id)?.label ?? "";
 
   const setStatus = async (t: TicketView, statusId: StatusId, reason?: string): Promise<boolean> => {
     try {
@@ -89,34 +90,44 @@ export function Kanban() {
       return false;
     }
   };
+  const place = async (t: TicketView, drop: Drop, reason?: string): Promise<boolean> => {
+    const done = await columnOrder.write(nextOrder(columnOrder.order, tickets, drop), () =>
+      commitDrop(sdk, tickets, drop, reason),
+    );
+    setError(done ? null : fr.moveFailed(t.keyLabel));
+    return done;
+  };
   const move = (t: TicketView, statusId: StatusId) => {
     if (statusId === t.statusId) return;
-    if (statusId === "blocked") setBlocking(t);
+    if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
     else void setStatus(t, statusId);
   };
+  const onDragMove = (e: DragMoveEvent) => {
+    board.current?.style.setProperty("--drag-x", `${e.delta.x}px`);
+    board.current?.style.setProperty("--drag-y", `${e.delta.y}px`);
+  };
+  const onDragOver = (e: DragOverEvent) => setTargetColumn(dropInColumn(e, visible)?.statusId ?? null);
   const onDragEnd = (e: DragEndEvent) => {
+    setTargetColumn(null);
     if (readOnly) return;
-    const t = tickets.find((x) => x.id === e.active.id);
-    const target = ordered.find((s) => s.id === e.over?.id);
-    if (t && target) move(t, target.id);
+    const drop = dropInColumn(e, visible);
+    const t = tickets.find((x) => x.id === drop?.ticketId);
+    if (!drop || !t) return;
+    if (drop.statusId === "blocked" && t.statusId !== "blocked") setBlocking({ ticket: t, drop });
+    else void place(t, drop);
   };
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-10 items-center gap-2 border-b px-3 text-sm">
-        <Button
-          size="sm"
-          variant={filter === "mine-and-agents" ? "secondary" : "ghost"}
-          onClick={() => setFilter("mine-and-agents")}
-        >
-          {fr.filter.mineAndAgents}
-        </Button>
-        <Button size="sm" variant={filter === "all" ? "secondary" : "ghost"} onClick={() => setFilter("all")}>
-          {fr.filter.all}
-        </Button>
+      <KanbanToolbar filter={filter} onFilter={setFilter} shown={shown.length} total={scoped.length}>
         {error && !blocking && (
-          <p role="alert" className="text-destructive">
+          <p role="alert" className="truncate text-destructive">
             {error}
+          </p>
+        )}
+        {columnOrder.failed && (
+          <p role="alert" className="truncate text-destructive">
+            {fr.orderUnavailable}
           </p>
         )}
         {ciProblem && (
@@ -124,49 +135,70 @@ export function Kanban() {
             {fr.ciUnavailable(ciProblem)}
           </p>
         )}
-        <span className="ml-auto font-mono text-xs text-muted-foreground">
-          {fr.counter(shown.length, scoped.length)}
-        </span>
-      </header>
-      <DndContext onDragEnd={onDragEnd}>
-        <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto p-3">
-          {ordered.map((s) => {
-            const cards = shown.filter((t) => t.statusId === s.id);
-            return (
-              <Column
-                key={s.id}
-                status={s}
-                count={cards.length}
-                onAdd={
-                  readOnly || s.id === "blocked" ? undefined : () => sdk.openNewTicket({ statusId: s.id })
-                }
-              >
-                {cards.map((t) => (
-                  <KanbanCard
-                    key={t.id}
-                    ticket={t}
-                    run={runOf.get(t.id) ?? null}
-                    ci={ciOf(t)}
-                    statuses={ordered}
-                    members={sharing.members}
-                    remote={remoteRuns(peers, t.key)}
-                    readOnly={readOnly}
-                    onOpen={() => sdk.openTicket(t.id)}
-                    onMove={(id) => move(t, id)}
-                  />
-                ))}
-              </Column>
-            );
-          })}
+      </KanbanToolbar>
+      <DndContext
+        sensors={sensors}
+        onDragMove={onDragMove}
+        onDragOver={onDragOver}
+        onDragCancel={() => setTargetColumn(null)}
+        onDragEnd={onDragEnd}
+        accessibility={{
+          screenReaderInstructions: { draggable: fr.drag.help },
+          announcements: announce(keyOf),
+        }}
+      >
+        <div ref={board} className="flex min-h-0 flex-1 gap-2 overflow-x-auto p-3">
+          {ordered.map((s) => (
+            <KanbanColumn
+              key={s.id}
+              status={s}
+              ids={visible[s.id] ?? []}
+              targeted={targetColumn === s.id}
+              onAdd={readOnly ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
+            >
+              {(columns.get(s.id) ?? []).map((t) => (
+                <KanbanCard
+                  key={t.id}
+                  ticket={t}
+                  run={runOf.get(t.id) ?? null}
+                  ci={ciOf(t)}
+                  statuses={ordered}
+                  members={sharing.members}
+                  remote={remoteRuns(peers, t.key)}
+                  readOnly={readOnly}
+                  onOpen={() => sdk.openTicket(t.id)}
+                  onMove={(id) => move(t, id)}
+                  onRemove={() => setRemoving(t)}
+                />
+              ))}
+            </KanbanColumn>
+          ))}
         </div>
       </DndContext>
       {blocking && (
         <BlockDialog
-          ticketKey={blocking.keyLabel}
+          ticketKey={blocking.ticket.keyLabel}
           error={error}
           onCancel={() => setBlocking(null)}
           onConfirm={async (reason) => {
-            if (await setStatus(blocking, "blocked", reason)) setBlocking(null);
+            const { ticket, drop } = blocking;
+            const done = drop
+              ? await place(ticket, drop, reason)
+              : await setStatus(ticket, "blocked", reason);
+            if (done) setBlocking(null);
+          }}
+        />
+      )}
+      {removing && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRemoving(null)}
+          title={fr.removeTitle(removing.keyLabel)}
+          description={fr.removeHelp(tickets.filter((x) => x.parentId === removing.id).length)}
+          confirmLabel={fr.removeConfirm}
+          cancelLabel={fr.cancel}
+          onConfirm={async () => {
+            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
           }}
         />
       )}

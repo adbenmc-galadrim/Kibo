@@ -9,36 +9,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@kibo/sdk/ui/alert-dialog";
-import { Button } from "@kibo/sdk/ui/button";
-import { Card, CardContent } from "@kibo/sdk/ui/card";
-import { CloudOff } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { client } from "../api";
 import { ConnectServerDialog } from "../dialogs/ConnectServerDialog";
 import { fr } from "../i18n/fr";
 import { isRemoteView } from "../lib/remote-view";
 import { syncFailure } from "../lib/sync-errors";
 import { useSyncServerStatus } from "../state/use-sync-server";
-import { SettingsNav } from "./SettingsNav";
+import { SettingsLayout } from "./SettingsLayout";
 import { SyncDevicesCard } from "./SyncDevicesCard";
+import { SyncEmptyState } from "./SyncEmptyState";
 import { SyncProjectsCard } from "./SyncProjectsCard";
 import { AccountCard, ServerCard } from "./SyncServerCards";
 
 const t = fr.sync;
-
-function EmptyState({ remote, onConnect }: { remote: boolean; onConnect(): void }) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <CloudOff className="size-6 text-muted-foreground" aria-hidden />
-        <p className="text-sm">{t.empty}</p>
-        <Button disabled={remote} onClick={onConnect}>
-          {t.connect}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 function DisconnectDialog({
   open,
@@ -68,11 +52,14 @@ function DisconnectDialog({
 type ConnectedProps = {
   status: SyncStatus;
   remote: boolean;
-  colors: ReadonlyMap<string, string>;
+  projects: readonly ProjectSummary[];
   onDisconnect(): void;
+  onOpen(projectId: string): void;
+  onManage(projectId: string): void;
+  onDelete(projectId: string): void;
 };
 
-function Connected({ status, remote, colors, onDisconnect }: ConnectedProps) {
+function Connected({ status, remote, onDisconnect, ...projectProps }: ConnectedProps) {
   return (
     <>
       <div className="grid grid-cols-2 items-start gap-3">
@@ -80,19 +67,26 @@ function Connected({ status, remote, colors, onDisconnect }: ConnectedProps) {
         <AccountCard status={status} />
       </div>
       <SyncDevicesCard status={status} remote={remote} />
-      <SyncProjectsCard status={status} colors={colors} />
+      <SyncProjectsCard status={status} {...projectProps} />
     </>
   );
 }
 
-type Props = { viewer: string; projects?: readonly ProjectSummary[]; remote?: boolean };
+type Props = {
+  viewer: string;
+  projects: readonly ProjectSummary[];
+  remote?: boolean;
+  onOpen(projectId: string): void;
+  onShare(projectId: string): void;
+  onDeleteProject(projectId: string): void;
+};
 
-export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView() }: Props) {
+export function SyncSettingsPage({ viewer, remote = isRemoteView(), ...p }: Props) {
   const { status, error, reload } = useSyncServerStatus();
-  const [connecting, setConnecting] = useState(false);
+  const [connecting, setConnecting] = useState<"server" | "device" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const colors = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects]);
+  const configured = status !== null && status.state !== "unconfigured";
   const disconnect = async () => {
     setConfirming(false);
     setActionError(null);
@@ -104,12 +98,11 @@ export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView(
     reload();
   };
   return (
-    <div className="grid min-h-full grid-cols-[14rem_1fr]">
-      <SettingsNav active="sync" />
+    <SettingsLayout active="sync">
       <div className="flex flex-col gap-4 p-8">
         <div>
           <h1 className="text-xl font-semibold">{t.title}</h1>
-          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+          {configured && <p className="text-sm text-muted-foreground">{t.subtitle}</p>}
         </div>
         {error && (
           <p role="alert" className="text-sm text-destructive">
@@ -121,20 +114,33 @@ export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView(
             {actionError}
           </p>
         )}
-        {remote && status && <p className="text-sm text-muted-foreground">{t.localOnly}</p>}
+        {remote && configured && <p className="text-sm text-muted-foreground">{t.localOnly}</p>}
         {status?.state === "unconfigured" && (
-          <EmptyState remote={remote} onConnect={() => setConnecting(true)} />
+          <SyncEmptyState
+            remote={remote}
+            onConnect={() => setConnecting("server")}
+            onJoinDevice={() => setConnecting("device")}
+          />
         )}
-        {status && status.state !== "unconfigured" && (
+        {status && configured && (
           <Connected
             status={status}
             remote={remote}
-            colors={colors}
+            projects={p.projects}
             onDisconnect={() => setConfirming(true)}
+            onOpen={p.onOpen}
+            onManage={p.onShare}
+            onDelete={p.onDeleteProject}
           />
         )}
         {connecting && (
-          <ConnectServerDialog open onOpenChange={setConnecting} viewer={viewer} onConnected={reload} />
+          <ConnectServerDialog
+            open
+            onOpenChange={(o) => !o && setConnecting(null)}
+            viewer={viewer}
+            mode={connecting}
+            onConnected={reload}
+          />
         )}
         <DisconnectDialog
           open={confirming}
@@ -142,6 +148,6 @@ export function SyncSettingsPage({ viewer, projects = [], remote = isRemoteView(
           onConfirm={() => void disconnect()}
         />
       </div>
-    </div>
+    </SettingsLayout>
   );
 }

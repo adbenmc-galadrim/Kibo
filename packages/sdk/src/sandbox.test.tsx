@@ -135,6 +135,22 @@ test("unmounting releases every listener and the rendered tree", async () => {
   expect(sent.some((m) => m.type === "key")).toBe(false);
 });
 
+function FormatProbe() {
+  return <p>format {useSdk().format}</p>;
+}
+
+test("the frame reads the format from init, or falls back to the manifest's default", async () => {
+  const withFormat = fakePort();
+  mounts.push(mountSandboxed(manifest, FormatProbe, withFormat.port));
+  withFormat.deliver({ ...init, format: "large" });
+  expect(await screen.findByText("format large")).toBeTruthy();
+  for (const unmount of mounts.splice(0)) unmount();
+  const legacy = fakePort();
+  mounts.push(mountSandboxed(manifest, FormatProbe, legacy.port));
+  legacy.deliver(init);
+  expect(await screen.findByText("format medium")).toBeTruthy();
+});
+
 test("comboOf maps only the relayed shortcuts", () => {
   expect(comboOf(new KeyboardEvent("keydown", { key: "3", ctrlKey: true }))).toBe("mod+3");
   expect(comboOf(new KeyboardEvent("keydown", { key: "T", metaKey: true }))).toBe("mod+t");

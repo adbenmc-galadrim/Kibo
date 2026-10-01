@@ -24,9 +24,9 @@ test("durations and token counts read like the mockups", () => {
 
 test("wait reasons, workspaces and errors are said in French", () => {
   expect(reasonText({ kind: "profile", profileName: "opus-dev", used: 2, total: 2 })).toBe(
-    "attend un créneau opus-dev (2/2)",
+    "attend une place du profil opus-dev (2/2)",
   );
-  expect(reasonText({ kind: "host", used: 3, total: 3 })).toBe("attend un créneau hôte (3/3)");
+  expect(reasonText({ kind: "host", used: 3, total: 3 })).toBe("attend une place sur la machine (3/3)");
   expect(reasonText({ kind: "cpu", value: 91, threshold: 85 })).toBe("CPU 91 % (seuil 85 %)");
   expect(reasonText(null)).toBe("admission au prochain passage");
   expect(workspaceText("worktree:kib-14")).toBe("worktree kib-14");

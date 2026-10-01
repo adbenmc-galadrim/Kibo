@@ -78,6 +78,12 @@ export type Guideline = z.infer<typeof Guideline>;
 const Id = z.string().min(1);
 
 export const WorkspaceName = z.string().trim().min(1).max(40);
+export const WorkspaceDescription = z.string().trim().max(500);
+export const WorkspacePatch = z
+  .object({ name: WorkspaceName.optional(), description: WorkspaceDescription.nullable().optional() })
+  .strict()
+  .refine((p) => p.name !== undefined || p.description !== undefined, { message: "empty patch" });
+export type WorkspacePatch = z.infer<typeof WorkspacePatch>;
 
 export const ConfigCommand = z.discriminatedUnion("method", [
   z.object({ method: z.literal("createProfile"), profile: ProfileInput }),
@@ -100,7 +106,7 @@ export const ConfigCommand = z.discriminatedUnion("method", [
     content: GuidelineContent.optional(),
   }),
   z.object({ method: z.literal("removeGuideline"), owner: GuidelineOwner, guidelineId: Id }),
-  z.object({ method: z.literal("renameWorkspace"), name: WorkspaceName }),
+  z.object({ method: z.literal("updateWorkspace"), patch: WorkspacePatch }),
 ]);
 export type ConfigCommand = z.infer<typeof ConfigCommand>;
 
@@ -114,7 +120,7 @@ export type ConfigResult = {
   addGuideline: Guideline;
   updateGuideline: Guideline;
   removeGuideline: null;
-  renameWorkspace: { name: string };
+  updateWorkspace: { name: string | null; description: string | null };
 };
 
 export type WorkspaceConfig = {
@@ -123,6 +129,8 @@ export type WorkspaceConfig = {
   guidelines: Guideline[];
   domainUsage: Record<string, number>;
   workspaceName: string | null;
+  workspaceDescription: string | null;
+  workspaceIcon: string | null;
 };
 
 export const HostSettings = z.object({

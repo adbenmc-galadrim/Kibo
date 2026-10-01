@@ -2,6 +2,7 @@ import type { HookEventName, HookPayload, RunEvent, RunLogEntry } from "@kibo/sc
 import { LinkifiedText, RUN_TEXT } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { fr } from "../i18n/fr";
+import { frAgentsPage } from "../i18n/fr-agents-page";
 import { errorText, formatClock } from "./format";
 
 type Tone = "blue" | "amber" | "green" | "red" | "muted";
@@ -108,9 +109,18 @@ function JournalText({
   );
 }
 
-type Props = { label: string; log: RunLogEntry[]; files: JournalFiles | null };
+export const journalUnavailable = (log: { missing: boolean; empty: boolean }, ended: boolean): boolean =>
+  log.missing || (log.empty && ended);
 
-export function RunJournal({ label, log, files }: Props) {
+type Props = { label: string; log: RunLogEntry[]; files: JournalFiles | null; missing?: boolean };
+
+export function RunJournal({ label, log, files, missing = false }: Props) {
+  if (missing)
+    return (
+      <p className="min-h-0 flex-1 rounded-md border p-3 text-xs text-muted-foreground">
+        {frAgentsPage.journalMissing}
+      </p>
+    );
   const lines = journalLines(log);
   return (
     <ol

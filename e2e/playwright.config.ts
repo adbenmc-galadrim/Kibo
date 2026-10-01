@@ -47,6 +47,30 @@ const daemons = [
   },
   { name: "ia-dark", scheme: "dark", port: 4404, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
   { name: "ia-light", scheme: "light", port: 4405, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
+  { name: "menus-dark", scheme: "dark", port: 4415, spec: /menus\.spec\.ts/, scenario: "question" },
+  { name: "menus-light", scheme: "light", port: 4416, spec: /menus\.spec\.ts/, scenario: "question" },
+  { name: "projects-dark", scheme: "dark", port: 4417, spec: /projects\.spec\.ts/, scenario: "question" },
+  { name: "projects-light", scheme: "light", port: 4418, spec: /projects\.spec\.ts/, scenario: "question" },
+  { name: "inbox-dark", scheme: "dark", port: 4419, spec: /inbox\.spec\.ts/, scenario: "question" },
+  { name: "inbox-light", scheme: "light", port: 4420, spec: /inbox\.spec\.ts/, scenario: "question" },
+  { name: "confort-dark", scheme: "dark", port: 4421, spec: /confort\.spec\.ts/, scenario: "question" },
+  { name: "confort-light", scheme: "light", port: 4422, spec: /confort\.spec\.ts/, scenario: "question" },
+  { name: "layout-dark", scheme: "dark", port: 4423, spec: /layout\.spec\.ts/, scenario: "question" },
+  { name: "layout-light", scheme: "light", port: 4424, spec: /layout\.spec\.ts/, scenario: "question" },
+  {
+    name: "creations-dark",
+    scheme: "dark",
+    port: 4425,
+    spec: /creations\.spec\.ts/,
+    scenario: "ai/creations-routes",
+  },
+  {
+    name: "creations-light",
+    scheme: "light",
+    port: 4426,
+    spec: /creations\.spec\.ts/,
+    scenario: "ai/creations-routes",
+  },
 ] as const;
 
 const marketThemes = ["dark", "light"] as const;
