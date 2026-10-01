@@ -17,7 +17,7 @@ const fixture = (name: string) => {
 const opts = { toolchain: DEV_TOOLCHAIN, now: () => 1 };
 
 const TICK_MS = 50;
-const MAX_STALL_MS = 1_000;
+const MAX_STALL_MS = 500;
 
 async function longestStall<T>(work: () => Promise<T>): Promise<{ result: T; stall: number }> {
   let last = performance.now();
@@ -52,7 +52,6 @@ function staticCheckChildren(): Child[] {
 
 test("the event loop keeps running while a component is validated", async () => {
   const { result, stall } = await longestStall(() => validateComponent(fixture("hello"), opts));
-  console.log(`longest event loop stall: ${Math.round(stall)} ms`);
   expect(result.typecheck).toEqual({ ok: true, errors: [] });
   expect(result.ok).toBe(true);
   expect(stall).toBeLessThan(MAX_STALL_MS);

@@ -108,8 +108,12 @@ async function sourcesOf(dir: string, copy: string, toolchain: Toolchain) {
   }
 }
 
-const fixedWidths = (texts: { path: string; text: string }[]): string[] =>
-  texts.filter((t) => t.path === "ui.tsx").flatMap((t) => responsiveViolations(t.text, t.path));
+const UI_FILE = "ui.tsx";
+
+async function fixedWidths(copy: string, files: string[]): Promise<string[]> {
+  if (!files.includes(UI_FILE)) return [];
+  return responsiveViolations(await readFile(join(copy, UI_FILE), "utf8"), UI_FILE);
+}
 
 const GENERIC_SUITE = "kibo-conformance.test.tsx";
 
@@ -125,10 +129,7 @@ async function checkCopy(
   opts: ValidateOptions,
   report: ValidationReport,
 ): Promise<void> {
-  const checked = files.filter((f) => /\.(tsx?|css)$/.test(f));
-  const texts = await Promise.all(
-    checked.map(async (path) => ({ path, text: await readFile(join(copy, path), "utf8") })),
-  );
+  const widths = await fixedWidths(copy, files);
   const analysis = await runStaticCheck(copy, files, opts);
   report.imports = step(analysis.imports.map(formatIssue));
   report.typecheck = step(analysis.typecheck);
@@ -148,7 +149,7 @@ async function checkCopy(
   report.conformance = step([
     ...(tests.used === null ? [FR_DEVKIT.noConformance] : []),
     ...(tests.used ?? []).filter((p) => diff.missing.includes(p)).map(FR_DEVKIT.missing),
-    ...fixedWidths(texts),
+    ...widths,
   ]);
   report.ok =
     report.imports.ok &&
