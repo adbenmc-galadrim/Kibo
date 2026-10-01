@@ -90,6 +90,7 @@ test("créer deux composants en arrière-plan, prévisualiser, réviser, publier
   await expect(frame.getByText("tickets restants", { exact: true })).toBeVisible(PREVIEW);
   await shot(page, info, "ecran-133");
   const callsBefore = previewCalls();
+  expect(callsBefore).toBeGreaterThan(0);
   await formats.getByRole("radio", { name: "Demi-page" }).click();
   const iframe = review.locator(`iframe[title="Aperçu de ${BURNDOWN}"]`);
   await expect(async () => expect((await boxOf(iframe)).width).toBe(1196)).toPass(PREVIEW);
