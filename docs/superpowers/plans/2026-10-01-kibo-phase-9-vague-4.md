@@ -636,7 +636,7 @@ Vague 1 ← T46. Spec composants §17.2, §17.3, §17.4 (première moitié : con
 - Consumes: `ComponentFormat`, `formatsOf`, `defaultFormatOf`, `surfaceFor`, `FORMAT_SIZES`, `formatIssue` (T46).
 - Produces: contrat « SDK (T47) ».
 
-- [ ] **Step 1: `format` dans le contexte du SDK (tests rouges puis verts)**
+- [x] **Step 1: `format` dans le contexte du SDK (tests rouges puis verts)**
 
 `packages/sdk/src/mock-v1.test.ts` :
 ```ts
@@ -649,24 +649,24 @@ test("the mock exposes the format, defaulting to the manifest's default format",
 ```
 `packages/sdk/src/sandbox.test.tsx` : le message `init` avec `format: "large"` donne `useSdk().format === "large"` dans le composant monté (modèle : le test d'`init` existant du fichier). Run: FAIL. `types.ts` (`format` dans `KiboSdk` et `SdkContext`), `sdk.ts` (recopie `ctx.format`), `sandbox.tsx` (`format: init.format ?? defaultFormatOf(manifest)`), `mock.ts` (`format: opts.format ?? defaultFormatOf(manifest)`, `backend` exposé = l'objet passé à `createSdk`), extraction de `handle` et `listEntity` dans `mock-calls.ts` (`createMockCalls(deps): (c: ComponentCall) => Promise<unknown>`), `mock.ts` < 300 lignes. Run: `bun test packages/sdk` — Expected: PASS.
 
-- [ ] **Step 2: Conformité par format (test rouge puis vert)**
+- [x] **Step 2: Conformité par format (test rouge puis vert)**
 
 `packages/sdk/src/conformance.test.tsx` (existe ? sinon `sdk-v1.test.ts` ; vérifier avec `grep -ln runConformance packages/sdk/src/*.test.ts*`) : une fixture `both` avec `formats: ["small", "full"]` dont le composant rend `useSdk().format` ; après `runConformance`, les noms des tests générés contiennent `small (widget)` et `full (view)` (lire `describe`/`test` enregistrés via un `bun:test` réel : le plus simple est de faire de ce test un fichier qui appelle `runConformance` sur la fixture et vérifie, dans un `afterAll`, que le composant a été rendu avec les deux formats : la fixture pousse `sdk.format` dans un tableau partagé).
 `conformance.tsx` : `for (const format of formatsOf(manifest))` avec `surface = surfaceFor(manifest, format)`, `createMockSdk(manifest, { …, surface, format })`, nom `renders an ${label} as ${format} (${surface}) in ${theme} within its declared permissions`. Run: `bun test packages/sdk components` — Expected: PASS (les intégrés passent dans leurs formats par défaut).
 
-- [ ] **Step 3: Aperçu `kibo component dev` par format et `formatIssue` à la validation (tests rouges puis verts)**
+- [x] **Step 3: Aperçu `kibo component dev` par format et `formatIssue` à la validation (tests rouges puis verts)**
 
 `dev.test.tsx` : un bouton par format déclaré (`devFr.formats[f]`), le cadre de l'aperçu a `style.width`/`style.height` de `formatBox` (`FORMAT_SIZES[f]` × 80 px et colonne `(1200 − 11 × 16) / 12`, écart 16 : définir `formatBox` dans `dev.tsx` localement, l'interface aura le sien dans `format-grid.ts`). `packages/devkit/src/validate.test.ts` : un manifeste `view` avec `formats: ["large"]` fait échouer le pas `manifest` avec le message de `formatIssue`. Run: FAIL puis PASS.
 
-- [ ] **Step 4: Composants intégrés : formats déclarés et `small` de Source MCP (tests rouges puis verts)**
+- [x] **Step 4: Composants intégrés : formats déclarés et `small` de Source MCP (tests rouges puis verts)**
 
 Manifestes : kanban `"formats": ["large", "half", "full"]`, tickets `["medium", "large", "half", "full"]`, graph `["large", "half", "full"]`, notes `["medium", "large", "half", "full"]`, mcp-source `["small", "medium", "large", "half"]`. Test mcp-source : avec `createMockSdk(manifest, { format: "small", … })`, le composant rend le titre, « n éléments » et un bouton « Ouvrir la source », et pas la liste ; en `medium`, la liste. Implémenter dans `McpSource.tsx` (`useSdk().format === "small"`). Run: `bun test components` — Expected: PASS (la conformité de chaque intégré rend chaque format déclaré).
 
-- [ ] **Step 5: Mineures Kanban et Tickets (tests rouges puis verts)**
+- [x] **Step 5: Mineures Kanban et Tickets (tests rouges puis verts)**
 
 `kanban.test.tsx` : en lecture seule (`shared: true`, membre `viewer`), l'`article` d'une carte n'a pas `tabIndex` (`getAttribute("tabindex")` null) ; en écriture, il en a un. `KanbanCard.tsx` : `tabIndex` seulement quand `useSortable` n'est pas désactivé. `tickets.test.tsx` : avec la recherche « schéma », l'ancêtre affiché pour le contexte porte `data-context="true"` et la classe `text-muted-foreground`, la ligne qui correspond non. `TicketsTree.tsx` : marquer les ancêtres de contexte (déjà calculés par `filter-tickets.ts`). Run: PASS.
 
-- [ ] **Step 6: Gate et commits**
+- [x] **Step 6: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/sdk packages/devkit components packages/ui` — Expected: PASS.
 ```bash
