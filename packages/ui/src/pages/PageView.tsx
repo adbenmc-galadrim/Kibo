@@ -1,4 +1,4 @@
-import type { Page, ProjectSnapshot } from "@kibo/schema";
+import type { Instance, Layout, Page, ProjectSnapshot } from "@kibo/schema";
 import { lazyPanel, readSource } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -19,6 +19,7 @@ const AddComponentDialog = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+const EditLayout = lazyPanel(() => import("./EditLayout").then((m) => m.EditLayout), fr.lazy);
 const PublishDialog = lazyPanel(
   () => import("../components-page/PublishDialog").then((m) => m.PublishDialog),
   fr.lazy,
@@ -28,6 +29,7 @@ const PublishDialog = lazyPanel(
 type Props = { project: ProjectSnapshot; page: Page; viewer: string };
 export function PageView({ project, page, viewer }: Props) {
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
   const wide = useWideGrid();
   const projectId = project.meta.id;
@@ -39,6 +41,10 @@ export function PageView({ project, page, viewer }: Props) {
       <Plus className="size-4" /> {fr.page.addComponent}
     </Button>
   );
+  const body = (i: Instance, layout: Layout) => (
+    <WidgetBody project={project} page={page} instance={i} layout={layout} viewer={viewer} />
+  );
+  const layoutMode = editable && wide && page.kind === "dashboard" && first !== undefined;
   return (
     <div className="flex h-full flex-col">
       {project.sync.shared && (
@@ -48,6 +54,13 @@ export function PageView({ project, page, viewer }: Props) {
             pages={project.pages}
             pageId={page.id}
           />
+        </PageActions>
+      )}
+      {layoutMode && !editing && (
+        <PageActions>
+          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+            {fr.page.editLayout}
+          </Button>
         </PageActions>
       )}
       {!first ? (
@@ -69,6 +82,14 @@ export function PageView({ project, page, viewer }: Props) {
             format="full"
           />
         </>
+      ) : editing && layoutMode ? (
+        <EditLayout
+          projectId={projectId}
+          page={page}
+          instances={instances}
+          renderWidget={body}
+          onClose={() => setEditing(false)}
+        />
       ) : (
         <DashboardGrid
           instances={instances}
@@ -77,7 +98,7 @@ export function PageView({ project, page, viewer }: Props) {
           renderWidget={(i, layout) => (
             <div className={WIDGET_CARD}>
               <WidgetHeader projectId={projectId} instance={i} editable={editable} />
-              <WidgetBody project={project} page={page} instance={i} layout={layout} viewer={viewer} />
+              {body(i, layout)}
             </div>
           )}
           trailing={

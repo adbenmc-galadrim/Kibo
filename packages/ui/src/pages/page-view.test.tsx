@@ -170,3 +170,21 @@ test(
     expect(screen.getByText("Élargis la fenêtre pour modifier la disposition.")).toBeTruthy();
   }),
 );
+
+test(
+  "the layout mode is offered on a wide editable dashboard only",
+  withWidth(true, async () => {
+    const user = userEvent.setup();
+    const editable = show(twoWidgets());
+    await user.click(await screen.findByRole("button", { name: "Modifier la disposition" }));
+    expect(await screen.findByRole("toolbar", { name: "Disposition" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Déplacer Kanban" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Modifier la disposition" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Annuler" }));
+    expect(await screen.findByRole("button", { name: "Modifier la disposition" })).toBeTruthy();
+    editable.unmount();
+    show(twoWidgets("read-only"));
+    await screen.findAllByText("Kanban");
+    expect(screen.queryByRole("button", { name: "Modifier la disposition" })).toBeNull();
+  }),
+);
