@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@kibo/sdk/ui/alert-dialog";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { client } from "../api";
 import { ConnectServerDialog } from "../dialogs/ConnectServerDialog";
 import { fr } from "../i18n/fr";
@@ -52,11 +52,14 @@ function DisconnectDialog({
 type ConnectedProps = {
   status: SyncStatus;
   remote: boolean;
-  colors: ReadonlyMap<string, string>;
+  projects: readonly ProjectSummary[];
   onDisconnect(): void;
+  onOpen(projectId: string): void;
+  onManage(projectId: string): void;
+  onDelete(projectId: string): void;
 };
 
-function Connected({ status, remote, colors, onDisconnect }: ConnectedProps) {
+function Connected({ status, remote, onDisconnect, ...projectProps }: ConnectedProps) {
   return (
     <>
       <div className="grid grid-cols-2 items-start gap-3">
@@ -64,7 +67,7 @@ function Connected({ status, remote, colors, onDisconnect }: ConnectedProps) {
         <AccountCard status={status} />
       </div>
       <SyncDevicesCard status={status} remote={remote} />
-      <SyncProjectsCard status={status} colors={colors} />
+      <SyncProjectsCard status={status} {...projectProps} />
     </>
   );
 }
@@ -78,13 +81,12 @@ type Props = {
   onDeleteProject(projectId: string): void;
 };
 
-export function SyncSettingsPage({ viewer, projects, remote = isRemoteView() }: Props) {
+export function SyncSettingsPage({ viewer, remote = isRemoteView(), ...p }: Props) {
   const { status, error, reload } = useSyncServerStatus();
   const [connecting, setConnecting] = useState<"server" | "device" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const configured = status !== null && status.state !== "unconfigured";
-  const colors = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects]);
   const disconnect = async () => {
     setConfirming(false);
     setActionError(null);
@@ -125,8 +127,11 @@ export function SyncSettingsPage({ viewer, projects, remote = isRemoteView() }: 
           <Connected
             status={status}
             remote={remote}
-            colors={colors}
+            projects={p.projects}
             onDisconnect={() => setConfirming(true)}
+            onOpen={p.onOpen}
+            onManage={p.onShare}
+            onDelete={p.onDeleteProject}
           />
         )}
         {connecting && (

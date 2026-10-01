@@ -2,12 +2,14 @@ import type { DeviceInfo, SyncStatus } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
+import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { Laptop, Plus } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { AddDeviceDialog } from "../dialogs/AddDeviceDialog";
 import { fr } from "../i18n/fr";
+import { frSyncPage } from "../i18n/fr-sync-page";
 import { relativeTime } from "../lib/relative-time";
 import { syncFailure } from "../lib/sync-errors";
 import { useRpcQuery } from "../state/use-rpc-query";
@@ -40,7 +42,7 @@ function DeviceRow({ device, current, canRevoke, now, onRevoke }: RowProps) {
       <TableCell className={`${CELL} w-28 py-1.5 text-right`}>
         {canRevoke && !current && (
           <Button variant="ghost" size="sm" onClick={onRevoke}>
-            {t.revoke}
+            {frSyncPage.revokeAction}
           </Button>
         )}
       </TableCell>
@@ -54,19 +56,14 @@ export function SyncDevicesCard({ status, remote }: { status: SyncStatus; remote
     error: loadError,
     reload,
   } = useRpcQuery({ method: "listDevices" }, ["collab.changed"]);
-  const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [revoking, setRevoking] = useState<DeviceInfo | null>(null);
   const online = status.state === "online";
   const revoke = async (deviceId: string) => {
-    setError(null);
-    try {
-      await client.rpc({ method: "revokeDevice", deviceId });
-    } catch (e) {
-      setError(syncFailure(t.actionErrors, e));
-    }
+    await client.rpc({ method: "revokeDevice", deviceId });
     reload();
   };
-  const failure = error ?? (loadError && online ? syncFailure(t.actionErrors, loadError) : null);
+  const failure = loadError && online ? syncFailure(t.actionErrors, loadError) : null;
   const now = Date.now();
   const active = (devices ?? []).filter((d) => d.revokedAt === null);
   return (
@@ -100,7 +97,7 @@ export function SyncDevicesCard({ status, remote }: { status: SyncStatus; remote
                     current={d.deviceId === status.deviceId}
                     canRevoke={!remote && online}
                     now={now}
-                    onRevoke={() => void revoke(d.deviceId)}
+                    onRevoke={() => setRevoking(d)}
                   />
                 ))}
               </TableBody>
@@ -112,7 +109,19 @@ export function SyncDevicesCard({ status, remote }: { status: SyncStatus; remote
           {t.addDevice}
         </Button>
       </CardContent>
-      <AddDeviceDialog open={adding} onOpenChange={setAdding} />
+      <AddDeviceDialog open={adding} onOpenChange={setAdding} serverUrl={status.serverUrl ?? ""} />
+      {revoking && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setRevoking(null)}
+          title={frSyncPage.revokeTitle(revoking.name)}
+          description={frSyncPage.revokeBody}
+          confirmLabel={frSyncPage.revokeConfirm}
+          cancelLabel={fr.common.cancel}
+          onConfirm={() => revoke(revoking.deviceId)}
+          describeError={(e) => syncFailure(t.actionErrors, e)}
+        />
+      )}
     </Card>
   );
 }

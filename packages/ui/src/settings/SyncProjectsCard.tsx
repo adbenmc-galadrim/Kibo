@@ -1,8 +1,14 @@
-import type { SyncProjectStatus, SyncStatus } from "@kibo/schema";
+import type { ProjectSummary, SyncProjectStatus, SyncStatus } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
+import { Button } from "@kibo/sdk/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
+import { Ellipsis } from "lucide-react";
+import { useMemo } from "react";
 import { fr } from "../i18n/fr";
+import { frSyncPage } from "../i18n/fr-sync-page";
 import { relativeTime } from "../lib/relative-time";
 import { isSuspended, syncErrorText } from "../lib/sync-errors";
 
@@ -38,9 +44,44 @@ function StateCell({ project }: { project: SyncProjectStatus }) {
   );
 }
 
-type Props = { status: SyncStatus; colors: ReadonlyMap<string, string> };
+type Actions = {
+  onOpen(projectId: string): void;
+  onManage(projectId: string): void;
+  onDelete(projectId: string): void;
+};
 
-export function SyncProjectsCard({ status, colors }: Props) {
+type Props = Actions & { status: SyncStatus; projects: readonly ProjectSummary[] };
+
+export function syncProjectMenuEntries(project: SyncProjectStatus, a: Actions): MenuEntry[] {
+  const id = project.projectId;
+  const last: MenuEntry =
+    project.role === "owner"
+      ? { label: frSyncPage.stop, destructive: true, onSelect: () => a.onManage(id) }
+      : { label: frSyncPage.leave, destructive: true, onSelect: () => a.onDelete(id) };
+  return [
+    { label: frSyncPage.open, onSelect: () => a.onOpen(id) },
+    { label: frSyncPage.manage, onSelect: () => a.onManage(id) },
+    last,
+  ];
+}
+
+function ProjectMenu({ project, actions }: { project: SyncProjectStatus; actions: Actions }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="icon" variant="ghost" className="size-7" aria-label={frSyncPage.actions(project.name)}>
+          <Ellipsis aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuEntries entries={syncProjectMenuEntries(project, actions)} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function SyncProjectsCard({ status, projects, ...actions }: Props) {
+  const colors = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects]);
   const now = Date.now();
   return (
     <Card className="gap-3">
@@ -59,6 +100,7 @@ export function SyncProjectsCard({ status, colors }: Props) {
                   <TableHead className={`${HEAD} w-32`}>{t.role}</TableHead>
                   <TableHead className={`${HEAD} w-32`}>{t.lastSync}</TableHead>
                   <TableHead className={`${HEAD} w-80`}>{t.state}</TableHead>
+                  <TableHead className={`${HEAD} w-12`} />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -80,6 +122,9 @@ export function SyncProjectsCard({ status, colors }: Props) {
                     </TableCell>
                     <TableCell className={`${CELL} whitespace-normal`}>
                       <StateCell project={p} />
+                    </TableCell>
+                    <TableCell className={`${CELL} py-1.5 text-right`}>
+                      <ProjectMenu project={p} actions={actions} />
                     </TableCell>
                   </TableRow>
                 ))}

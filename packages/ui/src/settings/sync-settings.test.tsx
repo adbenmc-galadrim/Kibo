@@ -171,9 +171,8 @@ test("an unknown connect failure never shows the raw daemon message", async () =
 
 test("connected shows server, account, devices and shared projects", async () => {
   page();
-  expect(await screen.findByText("wss://sync.kibo.test")).toBeTruthy();
+  expect(await screen.findByText("sync.kibo.test")).toBeTruthy();
   expect(screen.getByText("Connecté")).toBeTruthy();
-  expect(screen.getByText("u_7f3c9a")).toBeTruthy();
   const table = await screen.findByRole("table", { name: "Appareils" });
   expect(await within(table).findByText("Cet appareil")).toBeTruthy();
   expect(within(table).getByText("il y a 2 h")).toBeTruthy();
@@ -191,15 +190,45 @@ test("a status that cannot be read is reported without technical details", async
   expect(alert.textContent).toBe("Impossible de lire l'état de la sync.");
 });
 
-test("revoking another device calls the daemon", async () => {
+test("the server and account cards fold the raw url and id under Détails", async () => {
   page();
+  expect(await screen.findByText("sync.kibo.test")).toBeTruthy();
+  expect(screen.getByText("Adam")).toBeTruthy();
+  expect(screen.queryByText("wss://sync.kibo.test")).toBeNull();
+  expect(screen.queryByText("u_7f3c9a")).toBeNull();
+  for (const button of screen.getAllByRole("button", { name: "Détails" })) fireEvent.click(button);
+  expect(screen.getByText("wss://sync.kibo.test")).toBeTruthy();
+  expect(screen.getByText("u_7f3c9a")).toBeTruthy();
+});
+
+async function revokeDialogFor(name: string) {
   const table = await screen.findByRole("table", { name: "Appareils" });
-  const row = (await within(table).findByText("iMac bureau")).closest("tr");
+  const row = (await within(table).findByText(name)).closest("tr");
   if (!row) throw new Error("no row");
-  await userEvent.click(within(row).getByRole("button", { name: "Révoquer" }));
+  await userEvent.click(within(row).getByRole("button", { name: "Révoquer…" }));
+  return screen.getByRole("alertdialog", { name: `Révoquer ${name} ?` });
+}
+
+test("revoking another device asks for confirmation, then calls the daemon", async () => {
+  page();
+  let dialog = await revokeDialogFor("iMac bureau");
+  expect(within(dialog).getByText("Cet appareil ne pourra plus se connecter.")).toBeTruthy();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Annuler" }));
+  expect(calls.some((c) => c.method === "revokeDevice")).toBe(false);
+  dialog = await revokeDialogFor("iMac bureau");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Révoquer" }));
   await waitFor(() =>
     expect(calls.some((c) => c.method === "revokeDevice" && c.deviceId === "d2")).toBe(true),
   );
+});
+
+test("a failed revocation stays in the confirmation with a readable message", async () => {
+  results.revokeDevice = () => Promise.reject(new KiboError("SYNC_OFFLINE", "socket closed"));
+  page();
+  const dialog = await revokeDialogFor("iMac bureau");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Révoquer" }));
+  expect(await within(dialog).findByText("Serveur injoignable : réessaie une fois reconnecté.")).toBeTruthy();
+  expect(dialog.textContent).not.toContain("socket closed");
 });
 
 test("adding a device shows the code once, grouped by four, and never logs it", async () => {
@@ -215,9 +244,16 @@ test("adding a device shows the code once, grouped by four, and never logs it", 
   await userEvent.click(await screen.findByRole("button", { name: "Ajouter un appareil" }));
   const dialog = screen.getByRole("dialog");
   expect(await within(dialog).findByText("K7QD 9XMP 2RTA HW4C 8NEV B3YF QZ")).toBeTruthy();
-  expect(
-    within(dialog).getByText("Saisis ce code sur l'autre appareil dans Paramètres › Sync."),
-  ).toBeTruthy();
+  expect(within(dialog).getByText("sync.kibo.test")).toBeTruthy();
+  expect(within(dialog).getAllByRole("button", { name: "Copier" })).toHaveLength(2);
+  const steps = within(dialog)
+    .getAllByRole("listitem")
+    .map((li) => li.textContent);
+  expect(steps).toEqual([
+    "Sur l'autre appareil, ouvre Paramètres › Synchronisation.",
+    "Choisis « C'est mon autre appareil ».",
+    "Saisis l'adresse et ce code (15 minutes).",
+  ]);
   expect(within(dialog).getByText("Valable 15 minutes. Montré une seule fois.")).toBeTruthy();
   expect(globalThis.location.href).not.toContain(code);
   for (const spy of logs) {
@@ -241,7 +277,7 @@ test("from a remote session, sensitive actions are disabled but devices stay vis
   expect((screen.getByRole("button", { name: "Ajouter un appareil" }) as HTMLButtonElement).disabled).toBe(
     true,
   );
-  expect(within(table).queryByRole("button", { name: "Révoquer" })).toBeNull();
+  expect(within(table).queryByRole("button", { name: "Révoquer…" })).toBeNull();
   expect(
     screen.getByText("Cette action n'est possible que depuis l'ordinateur où tourne Kibo."),
   ).toBeTruthy();
@@ -323,4 +359,43 @@ test("offline without a device list, the table is replaced by an explanation", a
   page();
   expect(await screen.findByText("Liste des appareils disponible une fois connecté.")).toBeTruthy();
   expect(screen.queryByRole("table", { name: "Appareils" })).toBeNull();
+});
+
+test("shared projects offer Ouvrir, Gérer le partage, and Arrêter / Quitter according to the role", async () => {
+  const opened: string[] = [];
+  const shared: string[] = [];
+  const deleted: string[] = [];
+  render(
+    <SyncSettingsPage
+      viewer="Adam"
+      projects={[]}
+      remote={false}
+      onOpen={(id) => opened.push(id)}
+      onShare={(id) => shared.push(id)}
+      onDeleteProject={(id) => deleted.push(id)}
+    />,
+  );
+  const kibo = await screen.findByRole("row", { name: /Kibo/ });
+  await userEvent.click(within(kibo).getByRole("button", { name: "Actions pour Kibo" }));
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
+    "Ouvrir",
+    "Gérer le partage…",
+    "Arrêter le partage…",
+  ]);
+  await userEvent.click(screen.getByRole("menuitem", { name: "Arrêter le partage…" }));
+  expect(shared).toEqual(["p1"]);
+  const portfolio = screen.getByRole("row", { name: /Portfolio/ });
+  await userEvent.click(within(portfolio).getByRole("button", { name: "Actions pour Portfolio" }));
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
+    "Ouvrir",
+    "Gérer le partage…",
+    "Quitter…",
+  ]);
+  await userEvent.click(screen.getByRole("menuitem", { name: "Quitter…" }));
+  expect(deleted).toEqual(["p2"]);
+  await userEvent.click(within(portfolio).getByRole("button", { name: "Actions pour Portfolio" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Ouvrir" }));
+  await userEvent.click(within(kibo).getByRole("button", { name: "Actions pour Kibo" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Gérer le partage…" }));
+  expect([opened, shared]).toEqual([["p2"], ["p1", "p1"]]);
 });
