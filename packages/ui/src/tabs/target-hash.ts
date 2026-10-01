@@ -9,6 +9,7 @@ const SCREEN_HASHES: Record<Screen, string> = {
   domains: "#/settings/domains",
   components: "#/components",
   mine: "#/mine",
+  inbox: "#/inbox",
   integrations: "#/settings/integrations",
   appearance: "#/settings/appearance",
   security: "#/settings/security",

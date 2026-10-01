@@ -26,6 +26,7 @@ export const fr = {
     breadcrumb: "Fil d'Ariane",
     overview: "Vue d'ensemble",
     mine: "Mes tickets",
+    inbox: "Boîte de réception",
     projects: "Projets",
     newProject: "Nouveau projet",
     newPage: "Nouvelle page",

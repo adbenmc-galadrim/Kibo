@@ -3,6 +3,7 @@ import {
   Bot,
   Building2,
   Cloud,
+  Inbox,
   Keyboard,
   List,
   ListOrdered,
@@ -26,6 +27,7 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
   domains: { title: fr.nav.domains, icon: Settings, crumbs: [fr.nav.settings, fr.nav.domains] },
   components: { title: fr.nav.components, icon: Puzzle, crumbs: [fr.nav.components] },
   mine: { title: fr.nav.mine, icon: List, crumbs: [fr.nav.mine] },
+  inbox: { title: fr.nav.inbox, icon: Inbox, crumbs: [fr.nav.inbox] },
   integrations: {
     title: fr.settings.integrations,
     icon: Plug,

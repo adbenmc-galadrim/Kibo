@@ -239,6 +239,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onOpen={(t) => go(t)}
                     onShare={(projectId) => set({ share: projectId })}
                     onDeleteProject={(projectId) => set({ deleteProject: projectId })}
+                    onNewTicket={() => set({ newTicket: {} })}
                   />
                 ) : (
                   <ContentView

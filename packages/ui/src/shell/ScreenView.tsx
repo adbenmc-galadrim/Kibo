@@ -1,11 +1,13 @@
-import type {
-  AgentsState,
-  ProjectSnapshot,
-  ProjectSummary,
-  Screen,
-  TabTarget,
-  WorkspaceConfig,
+import {
+  type AgentsState,
+  INBOX_ID,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type Screen,
+  type TabTarget,
+  type WorkspaceConfig,
 } from "@kibo/schema";
+import { withInbox } from "../lib/inbox";
 import {
   AgentsPage,
   AppearancePage,
@@ -13,6 +15,7 @@ import {
   ComponentsPage,
   DomainsPage,
   GeneralPage,
+  InboxPage,
   IntegrationsPage,
   MyTicketsPage,
   QueuePage,
@@ -36,10 +39,23 @@ type Props = {
   onOpen(target: TabTarget): void;
   onShare(projectId: string): void;
   onDeleteProject(projectId: string): void;
+  onNewTicket(): void;
 };
 
 export function ScreenView(props: Props) {
-  const { screen, projects, agents, config, now, onAnswer, onOpen, onShare, onDeleteProject, ...p } = props;
+  const {
+    screen,
+    projects,
+    agents,
+    config,
+    now,
+    onAnswer,
+    onOpen,
+    onShare,
+    onDeleteProject,
+    onNewTicket,
+    ...p
+  } = props;
   if (screen === "components") return <ComponentsPage onOpen={onOpen} />;
   if (screen === "general") return <GeneralPage />;
   if (screen === "integrations") return <IntegrationsPage />;
@@ -57,7 +73,18 @@ export function ScreenView(props: Props) {
     );
   if (screen === "sources") return <ComponentSourcesPage />;
   if (screen === "shortcuts") return <ShortcutsPage />;
-  if (screen === "mine") return <MyTicketsPage projects={projects} config={config} {...p} />;
+  if (screen === "mine")
+    return <MyTicketsPage projects={withInbox(projects, p.snapshots)} config={config} {...p} />;
+  if (screen === "inbox")
+    return (
+      <InboxPage
+        snapshot={p.snapshots.get(INBOX_ID) ?? null}
+        projects={projects}
+        viewer={p.viewer}
+        onOpenTicket={(ticketId) => p.onOpenTicket(INBOX_ID, ticketId)}
+        onNewTicket={onNewTicket}
+      />
+    );
   if (screen === "workspace") return <WorkspacePage config={config} />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;

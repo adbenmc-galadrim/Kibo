@@ -28,7 +28,7 @@ type Props = {
   onOpen(target: TabTarget): void;
 };
 
-const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "components", "mine"]);
+const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "components", "mine", "inbox"]);
 
 export function ShellHeader({
   active,

@@ -22,6 +22,7 @@ test("the screens are pages of the palette and open as targets", () => {
   expect(searchItems(buildItems(context), "parametres general", "pages")[0]?.items[0]?.label).toBe("Général");
   expect(searchItems(buildItems(context), "integrations", "pages")[0]?.items[0]?.label).toBe("Intégrations");
   expect(searchItems(buildItems(context), "mes tickets", "pages")[0]?.items[0]?.label).toBe("Mes tickets");
+  expect(searchItems(buildItems(context), "boite", "pages")[0]?.items[0]?.label).toBe("Boîte de réception");
   expect(searchItems(buildItems(context), "sources", "pages")[0]?.items[0]?.label).toBe(
     "Sources de composants",
   );
