@@ -8,6 +8,7 @@ test("marketplace RPCs parse", () => {
     { method: "addMarketSource", url: "https://market.kibo.test", publicKey: "AAAA" },
     { method: "removeMarketSource", id: "team" },
     { method: "refreshMarket" },
+    { method: "refreshMarketSource", id: "team" },
     { method: "searchMarket", query: "burn" },
     { method: "searchMarket", query: "", sourceId: "team", kind: "widget" },
     { method: "getMarketPackage", sourceId: "team", id: "burndown", version: "0.3.0" },
