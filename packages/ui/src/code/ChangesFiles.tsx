@@ -36,7 +36,7 @@ function FilesPlaceholder() {
 
 export function ChangesFiles({ worktrees, current, ahead, files, onWorktreeChange, ...list }: Props) {
   return (
-    <aside className="flex min-h-0 flex-col gap-3 overflow-auto p-3 lg:border-r">
+    <aside className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3 lg:border-r">
       <WorktreePicker worktrees={worktrees} current={current} ahead={ahead} onChange={onWorktreeChange} />
       {files === null ? (
         <FilesPlaceholder />

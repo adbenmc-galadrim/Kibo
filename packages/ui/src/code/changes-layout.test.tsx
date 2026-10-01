@@ -18,6 +18,7 @@ test("three columns from lg, the three zones rendered in order", () => {
   const order = ["Liste", "Diff", "Commit"].map((text) => screen.getByText(text));
   expect(order[0]?.compareDocumentPosition(order[1] as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order[1]?.compareDocumentPosition(order[2] as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  for (const zone of order) expect(zone.parentElement?.closest(".max-lg\\:shrink-0")).not.toBeNull();
 });
 
 test("below lg the file list folds behind its title, open by default", () => {

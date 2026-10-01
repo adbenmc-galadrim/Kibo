@@ -11,7 +11,7 @@ export function ChangesLayout({ files, diff, commit, filesTitle }: Props) {
       <Collapsible
         open={open}
         onOpenChange={setOpen}
-        className="flex min-h-0 flex-col border-b lg:border-b-0"
+        className="flex min-h-0 flex-col border-b max-lg:shrink-0 lg:border-b-0"
       >
         <CollapsibleTrigger className="group flex items-center gap-1.5 px-3 py-2 text-left text-sm font-medium hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none lg:hidden">
           <ChevronRight
@@ -27,8 +27,8 @@ export function ChangesLayout({ files, diff, commit, filesTitle }: Props) {
           {files}
         </CollapsibleContent>
       </Collapsible>
-      <div className="flex min-h-96 min-w-0 flex-col lg:min-h-0">{diff}</div>
-      {commit}
+      <div className="flex min-h-96 min-w-0 flex-col max-lg:shrink-0 lg:min-h-0">{diff}</div>
+      <div className="flex min-h-0 flex-col max-lg:shrink-0 lg:contents">{commit}</div>
     </div>
   );
 }
