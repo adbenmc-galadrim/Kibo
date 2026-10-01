@@ -1,4 +1,10 @@
-import { type ComponentFormat, type ComponentManifest, KiboError, type Theme } from "@kibo/schema";
+import {
+  type ComponentFormat,
+  type ComponentManifest,
+  type DraftStatus,
+  KiboError,
+  type Theme,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Skeleton } from "@kibo/sdk/ui/skeleton";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,6 +32,7 @@ type State =
   | { kind: "failed"; detail: string };
 
 const t = frCreations.preview;
+const PREVIEWABLE: ReadonlySet<DraftStatus> = new Set(["review", "permissions"]);
 const refusals: Partial<Record<string, string>> = t.errors;
 
 function refusalOf(e: unknown): string {
@@ -89,7 +96,7 @@ function PreviewSession({
   useEffect(
     () =>
       client.subscribeAi((e) => {
-        if (e.type === "draft.changed" && e.draftId === draftId) build();
+        if (e.type === "draft.changed" && e.draftId === draftId && PREVIEWABLE.has(e.status)) build();
       }),
     [draftId, build],
   );

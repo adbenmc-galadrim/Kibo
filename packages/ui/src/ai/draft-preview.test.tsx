@@ -175,13 +175,16 @@ test("the theme follows the application without a new build", async () => {
   view.unmount();
 });
 
-test("draft.changed of this draft asks for the build again; another draft does not", async () => {
+test("draft.changed of this draft back in review asks for the build again; another draft or a generation does not", async () => {
   const { view } = mount();
   await frame();
   preview = () => ({ hash: OTHER_HASH, path: `/c/drafts/${DRAFT_ID}/${OTHER_HASH}/index.html` });
   act(() => {
     for (const l of aiListeners)
       l({ type: "draft.changed", draftId: "1b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11", status: "review" });
+  });
+  act(() => {
+    for (const l of aiListeners) l({ type: "draft.changed", draftId: DRAFT_ID, status: "generating" });
   });
   expect(previewCalls()).toHaveLength(1);
   act(() => {
