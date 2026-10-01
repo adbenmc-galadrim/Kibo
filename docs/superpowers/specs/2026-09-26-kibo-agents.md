@@ -109,3 +109,9 @@ Version minimale : **2.1.259** (première avec `--permission-prompts`).
 - **En-tête** (amende §8) : « + Ticket » est toujours visible ; sans projet courant, le dialogue présélectionne la boîte de réception.
 - **Historique** (amende §8, écran 13) : une ligne de l'historique de la page Agents ouvre le run dans le tiroir (même mécanisme que la cloche, spec de conception §14.5) ; filtre par état et recherche par clé ; quand `getRunLog` répond `NOT_FOUND` ou une liste vide, le tiroir affiche « Journal indisponible pour ce run. ». Arrêter un run, le retirer de la file et supprimer un profil sont confirmés (spec de conception §15.2).
 - **Vocabulaire** (amende §9) : la pastille de la barre des agents dit « Kibo · connecté » ou « Kibo · hors ligne » ; « créneaux » devient « places » ; les modes de permission ont un libellé en français ; le mot « run » est conservé et expliqué sur la page Agents.
+
+## 12. Décisions de la phase 9, vague 4
+
+Écrites le 2026-10-01 avec la spec IA §13 ; elles amendent §7 et la décision IA I18.
+
+- **Profils système** : `maxParallel` d'un profil système est modifiable (1 à 4, `INVALID_INPUT` au-delà) ; `generateur` vaut 2 par défaut à la création du profil (deux créations de composant en parallèle quand les créneaux hôte et les seuils le permettent ; un workspace existant garde sa valeur et peut la monter dans la fiche du profil), `assistant` reste à 1. Un brouillon de plus attend en file ; la page Files d'attente et la barre des agents le montrent comme tout run sans ticket (« Composant <titre> »).
