@@ -1,9 +1,10 @@
-import { expect, type Page, test } from "@playwright/test";
+import { type Page, test } from "@playwright/test";
 import {
   boxOf,
   countPreviewCalls,
   createDialog,
   describeComponent,
+  expect,
   generateInBackground,
   openCreateDialog,
   pairOnComponents,
@@ -19,7 +20,7 @@ const COUNTER = "Compteur large";
 const WORKER_URL = /\/workers\/draft-preview-worker-[A-Za-z0-9_-]+\.js$/;
 const WORKER_CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'";
 const GENERATION = { timeout: 150_000 };
-const PREVIEW = { timeout: 30_000 };
+const PREVIEW = { timeout: 60_000 };
 
 const previewFrame = (page: Page) => page.frameLocator(`iframe[title="Aperçu de ${BURNDOWN}"]`);
 

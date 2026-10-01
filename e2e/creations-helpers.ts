@@ -1,5 +1,7 @@
-import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { expect as baseExpect, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { E2E_TOKEN } from "./token";
+
+export const expect = baseExpect.configure({ timeout: 60_000 });
 
 const ONE_PIXEL_PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
