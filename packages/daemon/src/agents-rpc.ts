@@ -1,5 +1,6 @@
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import type { Orchestrator } from "./agents/orchestrator";
+import { assertNotInboxForAgents } from "./inbox/inbox-rules";
 
 export type AgentsPort = Pick<
   Orchestrator,
@@ -24,8 +25,10 @@ export function handleAgentRequest(port: AgentsPort, req: RpcRequest): unknown {
     case "getRunLog":
       return port.log(req.runId);
     case "previewAssign":
+      assertNotInboxForAgents(req.projectId);
       return port.preview({ projectId: req.projectId, ticketId: req.ticketId, profileId: req.profileId });
     case "assignAgent":
+      assertNotInboxForAgents(req.projectId);
       return port.assign({
         projectId: req.projectId,
         ticketId: req.ticketId,

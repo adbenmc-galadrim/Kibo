@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
-import type { SyncStatus } from "@kibo/schema";
+import { INBOX_ID, type SyncStatus } from "@kibo/schema";
 import { handleSyncRpc, type SyncRpcClient } from "./rpc";
+import type { ShareDeps } from "./share";
 
 const status: SyncStatus = {
   state: "unconfigured",
@@ -81,4 +82,28 @@ test("sync methods reach the client, others are left to the next handler", async
   });
   expect(await handleSyncRpc(client, { method: "listProjects" }, local)).toEqual({ handled: false });
   expect(calls).toEqual(["connect wss://sync.kibo.test Adam", "revoke d2", "disconnect"]);
+});
+
+test("the inbox is never shared nor offered to an invitation, and sharing is not even reached", async () => {
+  const calls: string[] = [];
+  const touched: string[] = [];
+  const untouchable = new Proxy(
+    {},
+    {
+      get: (_, key) => {
+        touched.push(String(key));
+        throw new Error("sharing should not be reached");
+      },
+    },
+  ) as ShareDeps;
+  const requests = [
+    { method: "shareProject", projectId: INBOX_ID },
+    { method: "createProjectInvite", projectId: INBOX_ID, role: "editor" },
+  ] as const;
+  for (const req of requests) {
+    await expect(handleSyncRpc(fakeClient(calls), req, local, untouchable)).rejects.toThrow(
+      "sharing is not available for the inbox",
+    );
+  }
+  expect([calls, touched]).toEqual([[], []]);
 });

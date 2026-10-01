@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  INBOX_ID,
   KiboError,
   type ProjectMeta,
   type ProjectSnapshot,
@@ -216,6 +217,40 @@ test("the handler answers its two methods and leaves the rest alone", async () =
     LOCAL_CONTEXT,
   );
   expect(out).toMatchObject({ handled: true, result: { name: "Via handler" } });
+  s.close();
+});
+
+test("the inbox cannot be renamed, given an icon or deleted, and nothing changes", () => {
+  const s = setup();
+  s.service.handle({
+    method: "command",
+    projectId: INBOX_ID,
+    command: { method: "createTicket", title: "T" },
+  });
+  const seen: unknown[] = [];
+  s.service.onChange((m) => seen.push(m));
+  const inbox = () => s.service.handle({ method: "getProject", projectId: INBOX_ID }) as ProjectSnapshot;
+  const before = inbox();
+  const owner = { kind: "project", projectId: INBOX_ID } as const;
+  const attempts = [
+    () =>
+      s.admin.updateProject(
+        { method: "updateProject", projectId: INBOX_ID, patch: { name: "X" } },
+        LOCAL_CONTEXT,
+      ),
+    () =>
+      s.admin.updateProject(
+        { method: "updateProject", projectId: INBOX_ID, patch: { folder: "/tmp/ok" } },
+        LOCAL_CONTEXT,
+      ),
+    () => s.admin.setIcon({ method: "setIcon", owner, icon: { mime: "image/png", data: PNG } }),
+    () => s.admin.setIcon({ method: "setIcon", owner, icon: null }),
+    () => s.admin.deleteProject({ method: "deleteProject", projectId: INBOX_ID }, LOCAL_CONTEXT),
+  ];
+  for (const attempt of attempts) expect(attempt).toThrow("is not available for the inbox");
+  expect(inbox()).toEqual(before);
+  expect([seen, s.probed]).toEqual([[], []]);
+  expect(s.settings.get(INBOX_ID, LOCAL_FOLDER_KEY)).toBeNull();
   s.close();
 });
 

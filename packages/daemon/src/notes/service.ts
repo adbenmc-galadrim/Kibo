@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { type ComponentCall, KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
 import { isInside } from "../code/safe-path";
+import { assertNotInbox } from "../inbox/inbox-rules";
 import { createNotesIndex, type IndexedNote } from "./index";
 import {
   createNoteFile,
@@ -147,8 +148,12 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
   };
 
   return {
-    info,
+    info: (projectId) => {
+      assertNotInbox(projectId, "notes");
+      return info(projectId);
+    },
     async setDir(projectId, dir) {
+      assertNotInbox(projectId, "notes");
       if (!(await usableDir(dir))) throw new KiboError("INVALID_INPUT", `${dir} is not an existing folder`);
       settings.set(projectId, "notesDir", dir);
       release(projectId);

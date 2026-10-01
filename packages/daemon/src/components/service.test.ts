@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   type ComponentCall,
+  INBOX_ID,
   type Instance,
   KiboError,
   type TicketRun,
@@ -214,6 +215,21 @@ describe("notes", () => {
     await call({ kind: "notes.write", path: "a.md", markdown: "# A", expectedMtime: null });
     expect(await call({ kind: "list", entity: "note" })).toHaveLength(1);
     await expect(h.rpc({ method: "getNotesDir", projectId: "ghost" })).rejects.toThrow("NOT_FOUND");
+  });
+
+  test("the inbox has no notes folder to read or set", async () => {
+    const dir = join(home, "vault-inbox");
+    mkdirSync(dir);
+    await expect(h.rpc({ method: "getNotesDir", projectId: INBOX_ID })).rejects.toThrow(
+      "notes is not available for the inbox",
+    );
+    await expect(h.rpc({ method: "setNotesDir", projectId: INBOX_ID, dir })).rejects.toThrow(
+      "notes is not available for the inbox",
+    );
+    const rows = h.store.db
+      .query<{ n: number }, []>("SELECT count(*) AS n FROM project_settings WHERE project_id = 'inbox'")
+      .all();
+    expect(rows).toEqual([{ n: 0 }]);
   });
 
   test("the notes folder must be an existing absolute folder", async () => {

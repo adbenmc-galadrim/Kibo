@@ -11,6 +11,7 @@ import {
 import type { Docs } from "../docs";
 import { decodeIcon } from "../icons/decode-icon";
 import type { IconStore } from "../icons/icon-store";
+import { assertNotInbox } from "../inbox/inbox-rules";
 import type { ProjectSettings } from "../notes/settings";
 import { LOCAL_FOLDER_KEY } from "../project-folder";
 import { type RpcContext, type RpcHandler, requireLocal } from "../rpc-extensions";
@@ -81,6 +82,7 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
   const admin: ProjectAdmin = {
     updateProject(req, ctx) {
       const { projectId } = req;
+      assertNotInbox(projectId, "updating a project");
       deps.docs.project(projectId);
       const patch = parsePatch(req.patch);
       if (patch.folder !== undefined) checkFolder(projectId, patch.folder, ctx);
@@ -98,7 +100,10 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
     },
     setIcon(req) {
       const owner = req.owner;
-      if (owner.kind === "project") deps.docs.project(owner.projectId);
+      if (owner.kind === "project") {
+        assertNotInbox(owner.projectId, "an icon");
+        deps.docs.project(owner.projectId);
+      }
       const key = iconOwnerKey(owner);
       let icon: string | null = null;
       if (req.icon === null) deps.icons.remove(key);
@@ -115,6 +120,7 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
     deleteProject(req, ctx) {
       requireLocal(ctx);
       const { projectId } = req;
+      assertNotInbox(projectId, "deleting a project");
       deps.docs.project(projectId);
       refuseActiveRuns(projectId);
       if (deps.isLocked(projectId)) throw new KiboError("CONFLICT", `project ${projectId} is being shared`);

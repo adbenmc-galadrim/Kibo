@@ -1,24 +1,17 @@
 import {
-  assertShellCommand,
-  countTicketsByStatus,
-  createProjectDoc,
   createWorkspaceDoc,
   getKeyAllocator,
   getProjectMeta,
-  listInstances,
-  listProjectDomains,
   listProjects,
-  readProject,
   registerProject,
 } from "@kibo/core";
 import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
-  iconOwnerKey,
+  INBOX_ID,
+  isInbox,
   KiboError,
   type ProjectCommand,
-  type ProjectMeta,
-  type ProjectSyncInfo,
   type RpcRequest,
   type RpcResult,
   type Session,
@@ -32,12 +25,16 @@ import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
 import { createIconStore, ensureIconsTable, type IconStore } from "./icons/icon-store";
+import { createFileTicket } from "./inbox/file-ticket";
+import { loadInbox } from "./inbox/inbox-doc";
+import { assertInboxCommand, assertNotInbox } from "./inbox/inbox-rules";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import { withLocalFolder } from "./project-folder";
 import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
+import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
 import { createProjectRemoval } from "./projects/remove";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
@@ -49,6 +46,7 @@ export type ComponentsPort = {
 };
 
 export type { AgentsPort } from "./agents-rpc";
+export type { CollabPort } from "./projects/project-rpc";
 
 export type Service = {
   handle(req: RpcRequest): unknown;
@@ -66,11 +64,8 @@ export type Service = {
   commands: CommandHub;
 };
 
-export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
-
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
 
-const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
 
@@ -86,6 +81,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     if (!doc) throw new KiboError("STORE_CORRUPT", `project ${meta.key} is registered but has no data`);
     projects.set(meta.id, doc);
   }
+  projects.set(INBOX_ID, loadInbox(store));
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
   let components: ComponentsPort | null = null;
@@ -102,7 +98,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const docListeners = new Set<(projectId: string, doc: LoroDoc) => void>();
   const adopt = (id: string, doc: LoroDoc) => {
     projects.set(id, doc);
-    for (const listener of docListeners) listener(id, doc);
+    if (!isInbox(id)) for (const listener of docListeners) listener(id, doc);
+  };
+  const restore = (id: string) => {
+    const restored = isInbox(id) ? loadInbox(store) : loadDoc(store, projectDocId(id));
+    if (!restored) throw new KiboError("STORE_CORRUPT", `project ${id} lost its snapshot`);
+    adopt(id, restored);
   };
   const removal = createProjectRemoval({
     store,
@@ -115,11 +116,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     project: (id) => docs.project(id),
     assertWritable: (id) => docs.assertWritable(id),
     save: (id) => docs.save(id),
-    restore(id) {
-      const restored = loadDoc(store, projectDocId(id));
-      if (!restored) throw new KiboError("STORE_CORRUPT", `project ${id} lost its snapshot`);
-      adopt(id, restored);
-    },
+    restore,
     emit: (message) => docs.emit(message),
     published(projectId, done) {
       docs.emit({ projectId });
@@ -134,7 +131,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       if (!doc) throw new KiboError("NOT_FOUND", `project ${id} not found`);
       return doc;
     },
-    projectIds: () => [...projects.keys()],
+    projectIds: () => [...projects.keys()].filter((id) => !isInbox(id)),
     save(projectId) {
       const doc = projectId === null ? workspace : docs.project(projectId);
       store.save(
@@ -145,21 +142,29 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     emit(message) {
       for (const listener of listeners) listener(message);
     },
-    run: (projectId, command, meta) => path.run(projectId, command, meta),
+    run(projectId, command, meta) {
+      if (isInbox(projectId)) assertInboxCommand(command);
+      return path.run(projectId, command, meta);
+    },
     trigger: (projectId, trigger) => path.trigger(projectId, trigger),
     replaceProject(projectId, doc) {
+      assertNotInbox(projectId, "replacing a project");
       docs.project(projectId);
       adopt(projectId, doc);
       docs.imported(projectId);
     },
     addProject(meta, doc) {
+      assertNotInbox(meta.id, "adding a project");
       registerProject(workspace, meta);
       adopt(meta.id, doc);
       docs.save(meta.id);
       docs.save(null);
       docs.emit({ projectId: null });
     },
-    removeProject: (projectId) => removal.remove(projectId),
+    removeProject(projectId) {
+      assertNotInbox(projectId, "removing a project");
+      removal.remove(projectId);
+    },
     onProjectRemoved: (listener) => removal.onRemoved(listener),
     imported(projectId) {
       docs.save(projectId);
@@ -206,6 +211,14 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const agentsReady = (): AgentsPort => {
     if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
     return agents;
+  };
+  const projectRpc = {
+    workspace,
+    docs,
+    icons,
+    collab: () => collab,
+    adopt,
+    fileTicket: createFileTicket({ docs, store, restore }),
   };
 
   return {
@@ -257,51 +270,11 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       if (isComponentRequest(req)) return componentsReady().handle(req);
       if (isIntegrationRequest(req)) return integrationsReady().handle(req);
       if (isAiRequest(req)) return aiReady().handle(req);
+      const handled = handleProjectRequest(projectRpc, req);
+      if (handled !== NOT_HANDLED) return handled;
       switch (req.method) {
         case "getSession":
           return { user: opts.user, notifications: opts.notifications ?? "browser" };
-        case "listProjects":
-          return listProjects(workspace).map((meta) => ({
-            ...meta,
-            counts: countTicketsByStatus(docs.project(meta.id)),
-            icon: icons.version(projectIcon(meta.id)),
-          }));
-        case "createProject": {
-          const meta: ProjectMeta = {
-            id: crypto.randomUUID(),
-            key: req.key,
-            name: req.name,
-            folder: req.folder,
-            color: req.color,
-          };
-          registerProject(workspace, meta);
-          adopt(meta.id, createProjectDoc(meta));
-          docs.save(meta.id);
-          docs.save(null);
-          docs.emit({ projectId: null });
-          return meta;
-        }
-        case "getProject": {
-          const doc = docs.project(req.projectId);
-          const snapshot = {
-            ...readProject(doc),
-            meta: docs.projectMeta(req.projectId),
-            viewer: docs.identity(req.projectId),
-            icon: icons.version(projectIcon(req.projectId)),
-            ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),
-          };
-          return collab ? { ...snapshot, sync: collab.syncInfo(req.projectId, doc) } : snapshot;
-        }
-        case "command": {
-          assertShellCommand(req.command);
-          const instanceId = req.instanceId ?? null;
-          if (
-            instanceId !== null &&
-            !listInstances(docs.project(req.projectId)).some((i) => i.id === instanceId)
-          )
-            throw new KiboError("NOT_FOUND", `instance ${instanceId} not found`);
-          return docs.run(req.projectId, req.command, { origin: "user", instanceId });
-        }
         case "getConfig":
           return readConfig(docs, icons);
         case "config":
