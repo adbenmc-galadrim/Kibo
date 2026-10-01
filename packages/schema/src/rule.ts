@@ -19,13 +19,6 @@ export const DEFAULT_RULES: Rule[] = [
     to: "in_progress",
   },
   {
-    id: "run-done-review",
-    enabled: true,
-    when: "run_done",
-    from: ["backlog", "todo", "in_progress"],
-    to: "in_review",
-  },
-  {
     id: "pr-opened-review",
     enabled: true,
     when: "pr_opened",

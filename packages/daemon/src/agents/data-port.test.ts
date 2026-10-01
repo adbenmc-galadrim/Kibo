@@ -17,16 +17,16 @@ import { applyRules } from "./data-port";
 
 const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
 
-test("a finished run sends its ticket to review, and a manual status wins", () => {
+test("a finished run leaves its ticket in its status, and a started one moves it on", () => {
   const d = doc();
   const t = createTicket(d, { title: "A", statusId: "in_progress" });
-  const blocked = createTicket(d, { title: "B", statusId: "todo" });
-  setStatus(d, blocked.id, "blocked", "attente");
-  expect(applyRules(d, { kind: "run_done", ticketId: t.id })).toEqual([
-    { method: "setStatus", ticketId: t.id, statusId: "in_review" },
+  const todo = createTicket(d, { title: "B", statusId: "todo" });
+  expect(applyRules(d, { kind: "run_done", ticketId: t.id })).toEqual([]);
+  expect(applyRules(d, { kind: "run_started", ticketId: todo.id })).toEqual([
+    { method: "setStatus", ticketId: todo.id, statusId: "in_progress" },
   ]);
-  expect(applyRules(d, { kind: "run_done", ticketId: blocked.id })).toEqual([]);
-  expect(listTickets(d).map((x) => x.statusId)).toEqual(["in_review", "blocked"]);
+  expect(applyRules(d, { kind: "run_done", ticketId: todo.id })).toEqual([]);
+  expect(listTickets(d).map((x) => x.statusId)).toEqual(["in_progress", "in_progress"]);
 });
 
 test("the last child done closes its parent", () => {

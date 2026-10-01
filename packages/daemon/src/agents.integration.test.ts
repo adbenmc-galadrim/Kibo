@@ -140,7 +140,7 @@ const profileInput = {
 };
 const newProject = { method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#F97316" };
 
-test("assign, question, answer, done: the ticket ends in review", async () => {
+test("assign, question, answer, done: the ticket stays in progress until asked", async () => {
   const s = boot("question");
   const rpc = await client(s);
   const p = await rpc<ProjectMeta>(newProject);
@@ -169,9 +169,12 @@ test("assign, question, answer, done: the ticket ends in review", async () => {
   await until(agents, (a) => find(a)?.state === "done");
   const snap = await rpc<ProjectSnapshot>({ method: "getProject", projectId: p.id });
   expect(snap.tickets.find((x) => x.id === t.id)).toMatchObject({
-    statusId: "in_review",
+    statusId: "in_progress",
     assignee: { kind: "agent", ref: "opus-dev" },
   });
+  expect((await agents()).resumable).toEqual([run.id]);
+  await rpc({ method: "answerRun", runId: run.id, text: "Ajoute un test" });
+  await until(agents, (a) => find(a)?.state === "done" && find(a)?.turns === 3);
   expect(s.messages).toContainEqual({ type: "run.changed", runId: run.id, state: "waiting_input" });
   expect(s.messages).toContainEqual({ type: "run.changed", runId: run.id, state: "done" });
   expect(s.messages).toContainEqual({ topic: "agents" });
@@ -222,5 +225,10 @@ test("four runs on three slots leave one queued", async () => {
     (a) => a.runs.every((r) => r.state === "done"),
   );
   const snap = await rpc<ProjectSnapshot>({ method: "getProject", projectId: p.id });
-  expect(snap.tickets.map((x) => x.statusId)).toEqual(["in_review", "in_review", "in_review", "in_review"]);
+  expect(snap.tickets.map((x) => x.statusId)).toEqual([
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+  ]);
 }, 40_000);

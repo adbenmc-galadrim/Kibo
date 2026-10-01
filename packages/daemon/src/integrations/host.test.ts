@@ -126,8 +126,8 @@ test("run start and end go through rule triggers", () => {
   host.onCommand((e) => seen.push(e.command.method === "setStatus" ? e.command.statusId : e.command.method));
   service.agentData.runStarted(project.id, ticket.id);
   service.agentData.runDone(project.id, ticket.id);
-  expect(seen).toEqual(["in_progress", "in_review"]);
-  expect(persistedStatuses()).toEqual(["in_review"]);
+  expect(seen).toEqual(["in_progress"]);
+  expect(persistedStatuses()).toEqual(["in_progress"]);
 });
 
 test("agents, rules and derived statuses reach the same observers", () => {

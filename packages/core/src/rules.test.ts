@@ -10,16 +10,31 @@ const t = (id: string, statusId: RuleTicket["statusId"], parentId: string | null
   parentId,
 });
 
+const runDoneReview: Rule = {
+  id: "run-done-review",
+  enabled: true,
+  when: "run_done",
+  from: ["backlog", "todo", "in_progress"],
+  to: "in_review",
+};
+
 describe("run done", () => {
-  test("moves the ticket to review", () => {
+  test("leaves the ticket in its status by default", () => {
+    expect(DEFAULT_RULES.some((r) => r.when === "run_done")).toBe(false);
+    for (const s of ["backlog", "todo", "in_progress"] as const) {
+      expect(evaluateRules(DEFAULT_RULES, { kind: "run_done", ticketId: "a" }, [t("a", s)])).toEqual([]);
+    }
+  });
+
+  test("a rule stored in the project still moves the ticket to review", () => {
     expect(
-      evaluateRules(DEFAULT_RULES, { kind: "run_done", ticketId: "a" }, [t("a", "in_progress")]),
+      evaluateRules([runDoneReview], { kind: "run_done", ticketId: "a" }, [t("a", "in_progress")]),
     ).toEqual([{ method: "setStatus", ticketId: "a", statusId: "in_review" }]);
   });
 
   test("blocked or done tickets are never moved by a rule", () => {
     for (const s of ["blocked", "done", "in_review"] as const) {
-      expect(evaluateRules(DEFAULT_RULES, { kind: "run_done", ticketId: "a" }, [t("a", s)])).toEqual([]);
+      expect(evaluateRules([runDoneReview], { kind: "run_done", ticketId: "a" }, [t("a", s)])).toEqual([]);
     }
     const tickets = [t("p", "blocked"), t("c1", "done", "p"), t("c2", "done", "p")];
     expect(evaluateRules(DEFAULT_RULES, { kind: "status_changed", ticketId: "c2" }, tickets)).toEqual([]);
@@ -82,13 +97,14 @@ describe("children done", () => {
 
   test("a finished run never closes the parent by itself", () => {
     const tickets = [t("p", "in_progress"), t("c1", "in_progress", "p")];
-    expect(evaluateRules(DEFAULT_RULES, { kind: "run_done", ticketId: "c1" }, tickets)).toEqual([
+    const rules = [...DEFAULT_RULES, runDoneReview];
+    expect(evaluateRules(rules, { kind: "run_done", ticketId: "c1" }, tickets)).toEqual([
       { method: "setStatus", ticketId: "c1", statusId: "in_review" },
     ]);
   });
 
   test("disabled rules are ignored", () => {
-    const off: Rule[] = DEFAULT_RULES.map((r) => ({ ...r, enabled: false }));
+    const off: Rule[] = [...DEFAULT_RULES, runDoneReview].map((r) => ({ ...r, enabled: false }));
     expect(evaluateRules(off, { kind: "run_done", ticketId: "a" }, [t("a", "todo")])).toEqual([]);
   });
 });
