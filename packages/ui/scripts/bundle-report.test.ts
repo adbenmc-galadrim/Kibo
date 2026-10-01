@@ -117,4 +117,24 @@ describe("bundle report", () => {
     ])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(false);
   });
+
+  test("the wave 4 chunks are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/pages/InstanceMenuContent.tsx",
+      "/x/packages/ui/src/pages/LayoutEditor.tsx",
+      "/x/packages/ui/src/pages/LayoutToolbar.tsx",
+      "/x/packages/ui/src/pages/FormatMenu.tsx",
+      "/x/packages/ui/src/i18n/fr-layout.ts",
+      "/x/packages/ui/src/creations/CreationsPage.tsx",
+      "/x/packages/ui/src/creations/creation-status.ts",
+      "/x/packages/ui/src/i18n/fr-creations.ts",
+      "/x/packages/ui/src/ai/DraftPreviewFrame.tsx",
+      "/x/packages/sdk/src/mock.ts",
+      "/x/packages/sdk/src/mock-calls.ts",
+      "/x/packages/sdk/src/mock-notes.ts",
+      "/x/packages/sdk/src/fixtures.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/pages/DashboardGrid.tsx"))).toBe(false);
+  });
 });
