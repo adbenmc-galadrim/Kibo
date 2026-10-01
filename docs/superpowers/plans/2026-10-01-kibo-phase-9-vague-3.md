@@ -1113,7 +1113,7 @@ Vague 2 ← T31 (schéma), T29, T39 (`Shell.tsx` allégé). Spec §15.1 ; écran
 - Consumes: `INBOX_ID`, `INBOX_KEY`, `isInbox`, `RESERVED_PROJECT_KEYS`, `useProject`, `useSnapshots`, `canEdit`, `AssigneeSelect` (`ticket/AssigneeSelect.tsx` : lire ses props ; sinon un `Select` local), `StatusSelect`.
 - Produces: contrat « UI » (T32) : `inboxMeta`, `displayName`, `withInbox`, `inboxSummary`, `openInboxCount`, `NewTicketDialog` props, `AppSidebar.inboxCount`, `Overview.inboxCount/onOpenInbox`, `Screen "inbox"`.
 
-- [ ] **Step 1: `lib/inbox.ts` (test rouge puis vert)**
+- [x] **Step 1: `lib/inbox.ts` (test rouge puis vert)**
 
 ```ts
 test("withInbox puts the inbox first only when its snapshot is loaded, and counts open tickets", () => {
@@ -1129,12 +1129,12 @@ test("withInbox puts the inbox first only when its snapshot is loaded, and count
 ```
 (`inboxSnapshot(tickets)` : petit constructeur local du test à partir de `kiboProject()`.) Implémenter selon le contrat. Run: `bun test packages/ui/src/lib/inbox.test.ts` — Expected: PASS après implémentation.
 
-- [ ] **Step 2: Écran `inbox` dans les tables (test rouge puis vert)**
+- [x] **Step 2: Écran `inbox` dans les tables (test rouge puis vert)**
 
 `tabs.test.ts` : `targetToHash({ kind: "screen", screen: "inbox" })` ⇒ `#/inbox` et retour. `Screen` gagne `"inbox"` (après `"mine"`), `SCREEN_HASHES.inbox`, `SCREENS.inbox = { title: fr.nav.inbox, icon: Inbox, crumbs: [fr.nav.inbox] }`, `CommandPalette` icône, `ShellHeader.HEADING_SCREENS` gagne `"inbox"`, `ScreenView` : `if (screen === "inbox") return <InboxPage snapshot={snapshots.get(INBOX_ID) ?? null} projects={projects} viewer={viewer} onOpenTicket={(id) => onOpenTicket(INBOX_ID, id)} onNewTicket={onNewTicket} />` (prop `onNewTicket` ajoutée à `ScreenView` et passée par `Shell`), `lazy-screens.ts` : `InboxPage`, `bundle-report.ts` : `/\/packages\/ui\/src\/(inbox\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts)$/`. `inbox/InboxPage.tsx` (T32) rend l'en-tête et l'état vide (écran 113, variante vide) et, si des tickets existent, une liste provisoire `<ul>` clé · titre (remplacée en T33).
 Run: `bun run typecheck && bun test packages/ui/src/tabs packages/ui/src/shell/screens.test.tsx` — Expected: PASS.
 
-- [ ] **Step 3: Dialogue « Nouveau ticket » autonome (tests rouges puis verts, écran 114)**
+- [x] **Step 3: Dialogue « Nouveau ticket » autonome (tests rouges puis verts, écran 114)**
 
 `dialogs/dialogs.test.tsx`, remplacer les tests de `NewTicketDialog` :
 ```tsx
@@ -1159,7 +1159,7 @@ test("with a parent the project is locked and explained", () => { /* lockProject
 (`getProject` du mock renvoie `kibo` ou un snapshot de la boîte selon `projectId`, avec `nextTicketKey` « KIB-25 » / « INB-4 ».) `NewTicketDialog.tsx` : props du contrat ; `const [projectId, setProjectId] = useState(initialProjectId)` ; `const project = useProject(projectId)` ; sélecteur `Select` (label `fr.newTicket.project`) sur `projects.filter((p) => isInbox(p.id) || canEditMeta(p))` (`canEdit` attend un snapshot : les `ProjectMeta` passés par le shell sont déjà filtrés en amont par `withInbox(projects, snapshots).filter(p => isInbox(p.id) || canEdit(snapshots.get(p.id)))`, le dialogue ne refiltre pas) ; statut : `StatusSelect` ou le `Select` existant **avec** « Bloqué » ; champ « Motif » (`Textarea`, `required`) quand `blocked` ; assigné : `Select` « Moi (adam) » / « Personne » / membres (`project.sync.members` quand partagé) ; soumission : `createTicket { title, description, statusId, blockedReason?, parentId, assignee }` ; en attente de `project` (snapshot nul) le bouton « Créer » est désactivé. `ShellDialogs.tsx` : rendu dès `state.newTicket`, `projects={editableWithInbox}`, `initialProjectId={ticketProject?.meta.id ?? INBOX_ID}`, `lockProject={...}`. `ShellHeader.tsx` : bouton toujours rendu, `title = fr.header.newTicketIn(displayName(ticketProject?.meta ?? inboxMeta()))`. `Host.openNewTicket` (Shell) garde sa garde `canEdit` pour un projet, et ouvre sur la boîte sans projet.
 Run: `bun test packages/ui/src/dialogs packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 4: Barre latérale, vue d'ensemble, snapshots, Mes tickets, palette, titres (tests rouges puis verts)**
+- [x] **Step 4: Barre latérale, vue d'ensemble, snapshots, Mes tickets, palette, titres (tests rouges puis verts)**
 
 - `Shell.tsx` : `useSnapshots([...projects.map((p) => p.id), INBOX_ID])` ; `inboxCount = openInboxCount(snapshots.get(INBOX_ID))` ; `mineCount = countMine(myTickets(withInbox(projects, snapshots), snapshots, viewer, "assigned"))`.
 - `AppSidebar.tsx` : prop `inboxCount`, entrée `fr.nav.inbox` (icône `Inbox`) après « Mes tickets », badge si > 0, active sur `screen === "inbox"`. Test dans `shell.test.tsx` : l'entrée est présente avec le badge « 3 » et ouvre `#/inbox`.
@@ -1170,7 +1170,7 @@ Run: `bun test packages/ui/src/dialogs packages/ui/src/shell` — Expected: PASS
 - `NewProjectDialog.tsx` : la clé `INB` affiche `fr.newProject.keyReserved` et désactive « Créer » ; test.
 Run: `bun test packages/ui && bun run budget` — Expected: PASS ; budget noté (entrée : +≈0,6 kB).
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 ```bash
 git add packages/ui/src/lib/inbox.ts packages/ui/src/lib/inbox.test.ts packages/ui/src/i18n/fr-inbox.ts packages/ui/src/inbox/InboxPage.tsx packages/schema/src/tabs.ts packages/ui/src/tabs/target-hash.ts packages/ui/src/tabs/screens.ts packages/ui/src/tabs/tabs.test.ts packages/ui/src/palette/CommandPalette.tsx packages/ui/src/shell/ScreenView.tsx packages/ui/src/shell/lazy-screens.ts packages/ui/src/shell/ShellHeader.tsx packages/ui/scripts/bundle-report.ts packages/ui/src/i18n/fr.ts
