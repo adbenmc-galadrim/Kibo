@@ -1,5 +1,16 @@
 import type { McpSourceStoredConfig } from "@kibo/component-mcp-source";
-import { DEFAULT_WORKFLOW, FORMAT_SIZES, KiboError, type Layout, type Page, type Status } from "@kibo/schema";
+import {
+  type ComponentSummary,
+  DEFAULT_WORKFLOW,
+  defaultFormatOf,
+  FORMAT_SIZES,
+  type FormatSize,
+  KiboError,
+  type Layout,
+  type Page,
+  type Status,
+  splitRef,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
@@ -10,7 +21,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { nextLayout } from "../lib/format-grid";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
-import { BUILTIN_COMPONENTS, componentIcon } from "../registry";
+import { BUILTIN_COMPONENTS, componentIcon, findBuiltin } from "../registry";
 import { navigateTo } from "../route";
 import { useComponents } from "../state/use-components";
 import { ApprovalScope, useApprovalScope } from "./approval-scope";
@@ -41,6 +52,13 @@ type Props = {
 };
 
 const BUILTINS = builtinChoices(BUILTIN_COMPONENTS);
+const sizeOf = (ref: string, components: ComponentSummary[] | null): FormatSize => {
+  const { id, version } = splitRef(ref);
+  const manifest =
+    findBuiltin(id)?.manifest ??
+    components?.find((c) => c.id === id && !c.builtin)?.versions.find((v) => v.version === version)?.manifest;
+  return manifest ? FORMAT_SIZES[defaultFormatOf(manifest)] : FORMAT_SIZES.large;
+};
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const NO_LINK: LinkedRepos = new Map();
 const src = fr.integrations.source;
@@ -115,7 +133,7 @@ export function AddComponentDialog({
           method: "addInstance",
           pageId: page.id,
           component,
-          ...(page.kind === "dashboard" && { layout: nextLayout(taken, FORMAT_SIZES.large) }),
+          ...(page.kind === "dashboard" && { layout: nextLayout(taken, sizeOf(component, components)) }),
           ...(created && { config: { source: { bindingId: created.id } } }),
           ...(mcpSource && mcpConfig && { config: mcpConfig }),
         },
