@@ -84,6 +84,9 @@ export function setupLifecycle(
       return reports.shift() ?? report(true);
     },
     hash: async () => "a".repeat(64),
+    buildPreview: async () => {
+      throw new Error("not used by the lifecycle");
+    },
   };
   const srcRoot = join(home, "components", "src");
   const catalog: ComponentCatalog = {

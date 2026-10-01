@@ -208,6 +208,18 @@ describe("startDaemon", () => {
     expect((await fetch(page)).status).toBe(404);
   });
 
+  test("the sandbox listener answers draft previews with a 404 until a draft is previewed", async () => {
+    const { d } = await launch();
+    const draft = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
+    for (const file of ["index.html", "ui.sandbox.js", "ui.css"]) {
+      const res = await fetch(
+        `http://127.0.0.1:${d.sandboxPort}/c/drafts/${draft}/${"a".repeat(64)}/${file}`,
+      );
+      expect(res.status).toBe(404);
+      expect(res.headers.get("content-security-policy")).toContain("connect-src 'none'");
+    }
+  });
+
   test("in dev, Vite may call the api and frame the sandbox, the sandbox origin never calls the api", async () => {
     const { d } = await launch({ dev: true });
     const rpc = await pair(d);

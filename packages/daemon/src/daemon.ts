@@ -6,6 +6,7 @@ import type { Notice } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
+import type { DraftAssets } from "./ai/draft-preview";
 import { loadOrCreateToken } from "./auth";
 import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
@@ -200,11 +201,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   remote = started;
   front.push(() => started.stop());
   await started.resume();
+  let draftAssets: DraftAssets | null = null;
   const sandbox = startSandboxServer({
     port: opts.sandboxPort,
     uiPort: server.port,
     assets: components.assets,
     extraAncestors: devOrigins,
+    drafts: { lookup: async (...a) => (draftAssets ? draftAssets.lookup(...a) : null) },
   });
   front.push(() => sandbox.stop());
   sandboxOrigin = sandbox.url;
@@ -238,6 +241,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     listIntegrations: async () => call(service, { method: "listIntegrations" }),
     ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
   });
+  draftAssets = ai.draftAssets;
   closers.push(service.attachAi(ai.port));
   closers.push(() => ai.stop());
   writeDaemonInfo(opts.home, { port: server.port, sandboxPort: sandbox.port, pid: process.pid });

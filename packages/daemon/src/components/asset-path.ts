@@ -1,4 +1,4 @@
-import { ComponentManifest, Sha256 } from "@kibo/schema";
+import { ComponentManifest, DraftId, type SandboxFile, Sha256 } from "@kibo/schema";
 import type { StoredVersion } from "./store";
 
 export type AssetLookup = (
@@ -36,4 +36,21 @@ export function lookupAsset<F extends string>(
   const { stored } = found;
   if (stored.id !== req.id || stored.version !== req.version || stored.hash !== req.hash) return null;
   return found;
+}
+
+export type DraftAssetRequest = { draftId: string; hash: string; file: SandboxFile };
+
+const DRAFT_FILES: readonly SandboxFile[] = ["index.html", "ui.sandbox.js", "ui.css"];
+const LOWERCASE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export function parseDraftAssetPath(pathname: string): DraftAssetRequest | null {
+  const parts = pathname.split("/");
+  if (parts.length !== 6 || parts[0] !== "" || parts[1] !== "c" || parts[2] !== "drafts") return null;
+  const [, , , draftId = "", hash, name] = parts;
+  const file = DRAFT_FILES.find((f) => f === name);
+  if (file === undefined || !LOWERCASE_UUID.test(draftId)) return null;
+  const id = DraftId.safeParse(draftId);
+  const digest = Sha256.safeParse(hash);
+  if (!id.success || !digest.success) return null;
+  return { draftId: id.data, hash: digest.data, file };
 }

@@ -21,6 +21,7 @@ function setup(processing: ReadonlySet<string> = new Set(), onSettled: () => voi
       },
     },
     environment: async () => mark("environment"),
+    preview: async (id) => mark(`preview ${id}`),
     starter: { suggest: () => mark("suggest") },
     lifecycle: {
       start: async () => mark("start"),
@@ -80,6 +81,7 @@ test("routes every AI method to its module", async () => {
     { method: "abandonComponentDraft", draftId },
     { method: "openComponentDraftFolder", draftId },
     { method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros", attachments: [] },
+    { method: "previewComponentDraft", draftId },
   ];
   for (const r of requests) if (isAiRequest(r)) await port.handle(r);
   expect(seen).toEqual([
@@ -98,6 +100,7 @@ test("routes every AI method to its module", async () => {
     "openFolder",
     "settled",
     "revise",
+    `preview ${draftId}`,
   ]);
 });
 
@@ -127,11 +130,10 @@ test("a draft being reviewed or published cannot be revised", async () => {
   expect(seen).toEqual([]);
 });
 
-test("the draft preview is refused until it is served", async () => {
-  const { port } = setup();
-  await expect(port.handle({ method: "previewComponentDraft", draftId })).rejects.toMatchObject({
-    code: "INTERNAL",
-  });
+test("the draft preview is answered by the preview module, without waiting for claude", async () => {
+  const { port, seen } = setup(new Set([draftId]));
+  await port.handle({ method: "previewComponentDraft", draftId });
+  expect(seen).toEqual([`preview ${draftId}`]);
 });
 
 test("a review that starts while the AI status settles still blocks the revision", async () => {

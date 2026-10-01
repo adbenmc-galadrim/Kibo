@@ -1,7 +1,14 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { listPages } from "@kibo/core";
-import { hashSources, inferPermissions, scaffold, type Toolchain, validateComponent } from "@kibo/devkit";
+import {
+  buildComponent,
+  hashSources,
+  inferPermissions,
+  scaffold,
+  type Toolchain,
+  validateComponent,
+} from "@kibo/devkit";
 import { Instance, isBuiltinId, KiboError, type ValidationReport } from "@kibo/schema";
 import { parseDiff } from "../code/parse-diff";
 import { DIFF_FLAGS } from "../code/read";
@@ -51,6 +58,13 @@ export function devkitPort(opts: {
     validate: (dir) =>
       opts.validate ? opts.validate(dir, signal) : validateComponent(dir, { toolchain, signal }),
     hash: (dir) => hashSources(dir),
+    async buildPreview(dir) {
+      const { files } = await buildComponent(dir, toolchain);
+      const js = files["ui.sandbox.js"];
+      const css = files["ui.css"];
+      if (!js || !css) throw new KiboError("VALIDATION_FAILED", "the sandbox build produced no bundle");
+      return { "ui.sandbox.js": js, "ui.css": css };
+    },
   };
 }
 

@@ -73,6 +73,7 @@ export type Devkit = {
   infer(dir: string): Promise<GrantedPermissions>;
   validate(dir: string): Promise<ValidationReport>;
   hash(dir: string): Promise<string>;
+  buildPreview(dir: string): Promise<{ "ui.sandbox.js": Uint8Array; "ui.css": Uint8Array }>;
 };
 
 export type CatalogEntry = { id: string; title: string; description: string; kind: DraftKind };

@@ -26,6 +26,7 @@ import {
   probeClaude,
 } from "./claude-cli";
 import { createDraftLifecycle } from "./draft-lifecycle";
+import { createDraftPreview, type DraftAssets } from "./draft-preview";
 import { createDraftPublisher } from "./draft-publish";
 import { openDraftStore } from "./draft-store";
 import { readEnvironment } from "./environment";
@@ -108,7 +109,9 @@ function environmentOf(deps: AiBootstrapDeps, ai: AiAvailability, exec: Exec) {
     });
 }
 
-export async function startAi(deps: AiBootstrapDeps): Promise<{ port: AiPort; stop(): Promise<void> }> {
+export type StartedAi = { port: AiPort; stop(): Promise<void>; draftAssets: DraftAssets };
+
+export async function startAi(deps: AiBootstrapDeps): Promise<StartedAi> {
   const { home, docs, agentEnv, toolchain } = deps;
   const shutdown = new AbortController();
   ensureSystemProfiles(docs);
@@ -162,7 +165,15 @@ export async function startAi(deps: AiBootstrapDeps): Promise<{ port: AiPort; st
     args: () => assistantArgs(caps(), JSON.stringify(STARTER_PLAN_JSON_SCHEMA)),
     ...(deps.assistantTimeoutMs !== undefined && { timeoutMs: deps.assistantTimeoutMs }),
   });
-  const port = createAiRpc({ ai, starter, lifecycle, publisher, environment: environmentOf(deps, ai, exec) });
+  const preview = createDraftPreview({ store, home, devkit });
+  const port = createAiRpc({
+    ai,
+    starter,
+    lifecycle,
+    publisher,
+    environment: environmentOf(deps, ai, exec),
+    preview: preview.preview,
+  });
   await lifecycle.recover();
-  return { port, stop: createAiStop(shutdown, [lifecycle, publisher]) };
+  return { port, stop: createAiStop(shutdown, [lifecycle, publisher]), draftAssets: preview.assets };
 }

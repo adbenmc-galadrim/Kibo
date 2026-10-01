@@ -198,6 +198,9 @@ export async function setup(opts: SetupOptions = {}) {
       infer: async () => NO_PERMISSIONS,
       validate: async () => green,
       hash: async (dir) => hashOf(dir),
+      buildPreview: async () => {
+        throw new Error("not used by the publisher");
+      },
     },
     catalog,
     projects: {

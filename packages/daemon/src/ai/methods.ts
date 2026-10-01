@@ -1,6 +1,7 @@
 import {
   AI_RPC,
   type AiRpcRequest,
+  type DraftPreview,
   type Environment,
   KiboError,
   type Role,
@@ -15,6 +16,7 @@ export type AiPort = { handle(req: AiRpcRequest): Promise<unknown> };
 export type AiRpcDeps = {
   ai: AiAvailability;
   environment: () => Promise<Environment>;
+  preview: (draftId: string) => Promise<DraftPreview>;
   starter: { suggest(input: { role: Role; text: string }): { runId: string } };
   lifecycle: DraftLifecycle;
   publisher: DraftPublisher;
@@ -80,7 +82,7 @@ export function createAiRpc(deps: AiRpcDeps): AiPort {
           attachments: req.attachments,
         });
       case "previewComponentDraft":
-        throw new KiboError("INTERNAL", "the draft preview is not served by this daemon yet");
+        return deps.preview(req.draftId);
     }
   };
   return { handle: route };
