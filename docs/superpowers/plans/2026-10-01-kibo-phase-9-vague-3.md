@@ -1726,12 +1726,12 @@ Vague 2 ← T32 (`ShellHeader.tsx`), T40 (`ChangesBody.tsx`), T38. Spec §15.3 ;
 - Consumes: `SettingsNav`, `Collapsible`, `targetToHash`, `TabTarget`, `onOpen` de `ShellHeader`.
 - Produces: contrat « UI » (T41) : `SettingsLayout`, `ChangesLayout`, `Breadcrumb { crumbs: Crumb[] }`, `crumbsFor(): Crumb[]`.
 
-- [ ] **Step 1: Mises en page (tests rouges puis verts)**
+- [x] **Step 1: Mises en page (tests rouges puis verts)**
 
 `settings-layout.test.tsx` : le conteneur porte `md:grid-cols-[14rem_1fr]` et pas `grid-cols-[14rem_1fr]` ; la navigation est rendue avant le contenu. `changes-layout.test.tsx` : le conteneur porte `lg:grid-cols-[272px_minmax(0,1fr)_340px]`, les trois zones sont rendues, la liste des fichiers est dans un `Collapsible` ouvert par défaut avec un bouton `filesTitle` (visible sous `lg` : classe `lg:hidden`). Puis : les 9 pages utilisent `<SettingsLayout active="…">`, `ChangesBody.tsx` rend `<ChangesLayout files=… diff=… commit=… filesTitle={fr.changes.files(n)} />` (reste ≤ 300 lignes), `TicketSheet.tsx` : `w-full sm:max-w-[min(90vw,560px)]`, `CiLogSheet.tsx` : `w-full sm:max-w-[min(90vw,720px)]` (tests existants : adapter les attentes de classes s'il y en a).
 Run: `bun test packages/ui/src/settings packages/ui/src/code packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 2: Fil d'Ariane cliquable (tests rouges puis verts)**
+- [x] **Step 2: Fil d'Ariane cliquable (tests rouges puis verts)**
 
 `breadcrumb.test.tsx` :
 ```tsx
@@ -1747,7 +1747,7 @@ test("crumbsFor gives a project target to the project crumb and a page target to
 `Breadcrumb.tsx` : `Crumb = { label: string; target: TabTarget | null }`, prop `onOpen` ; `crumbsFor(target, ctx)` renvoie des cibles (écran : `null` ; projet : `{ kind: "project" }` pour le premier élément ; page : projet puis `null` ; ticket : projet puis `null` ; fichier : projet, changes, `null`) ; `ShellHeader.tsx` passe `onOpen`.
 Run: `bun test packages/ui/src/shell` — Expected: PASS.
 
-- [ ] **Step 3: Mineures (tests rouges puis verts)**
+- [x] **Step 3: Mineures (tests rouges puis verts)**
 
 - `icon-field.test.tsx` : l'`input[type=file]` a `tabIndex -1` ; un libellé « Image » visible (`<Label>` lié au bouton « Choisir une image… » par `aria-describedby`, ou un `<p>` titre du champ : `screen.getByText("Image")`). `IconField.tsx` et `fr-fields.ts` (`icon.label: "Image"`).
 - `edit-project-dialog.test.tsx` : avec une erreur de sélecteur de dossier **et** une erreur de soumission, un seul `role="alert"` est rendu (la plus récente ; les champs remontent leur erreur par `onError(message)` au dialogue, qui la fusionne) ; `FolderField` et `IconField` gagnent `onError?` et n'affichent leur `<p role="alert">` que sans `onError`.
@@ -1755,7 +1755,7 @@ Run: `bun test packages/ui/src/shell` — Expected: PASS.
 - `sdk/ui/dropdown-menu.tsx` : `DropdownMenuRadioItem` rend `CheckIcon` au lieu de `CircleIcon` ; `user-menu.test.tsx` : l'item coché contient un `svg.lucide-check`.
 Run: `bun test packages/ui packages/sdk && bun run budget` — Expected: PASS ; budget noté (+≈0,3 kB).
 
-- [ ] **Step 4: Gate et commits**
+- [x] **Step 4: Gate et commits**
 
 ```bash
 git add packages/ui/src/settings packages/ui/src/code/ChangesLayout.tsx packages/ui/src/code/changes-layout.test.tsx packages/ui/src/code/ChangesBody.tsx packages/ui/src/shell/TicketSheet.tsx packages/ui/src/shell/sheet/CiLogSheet.tsx
