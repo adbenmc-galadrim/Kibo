@@ -46,8 +46,9 @@ test("shows keys, progress, blocked reason and opens a ticket", async () => {
   expect(await screen.findByText("KIB-1")).toBeTruthy();
   expect(screen.getByText("1/1")).toBeTruthy();
   expect(screen.getByText("Attente client")).toBeTruthy();
+  const headers = screen.getByText("Sous-tickets").parentElement ?? document.body;
   for (const header of ["Ticket", "Statut", "Assigné", "Sous-tickets"])
-    expect(screen.getByText(header)).toBeTruthy();
+    expect(within(headers).getByText(header)).toBeTruthy();
   expect(screen.getByText("Terminé")).toBeTruthy();
   expect(screen.getByText("Bloqué")).toBeTruthy();
   expect(screen.getAllByText("À faire")).toHaveLength(1);
@@ -214,4 +215,55 @@ test("a read-only project shows no ⋯ button and a one-entry menu", async () =>
     target: screen.getByRole("button", { name: /Arbre des pages/ }),
   });
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
+});
+
+test("screen 125: search and filters narrow the tree, drag is disabled meanwhile, clearing restores", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("Arbre des pages");
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(3);
+  await user.type(screen.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }), "deplacement");
+  expect(screen.getByText("Déplacement")).toBeTruthy();
+  expect(screen.getByText("Arbre des pages")).toBeTruthy();
+  expect(screen.queryByText("Sync")).toBeNull();
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(0);
+  await user.click(screen.getByRole("button", { name: "Effacer" }));
+  expect(await screen.findByText("Sync")).toBeTruthy();
+  await user.click(screen.getByRole("radio", { name: "Agents" }));
+  expect(screen.getByText("Sync")).toBeTruthy();
+  expect(screen.queryByText("Arbre des pages")).toBeNull();
+  await user.click(screen.getByRole("radio", { name: "Tous" }));
+  await user.click(screen.getByRole("button", { name: "Statut" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Terminé" }));
+  await user.keyboard("{Escape}");
+  expect(screen.getByText("Déplacement")).toBeTruthy();
+  expect(screen.queryByText("Sync")).toBeNull();
+  await user.type(screen.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }), "introuvable");
+  const none = screen.getByText("Aucun ticket ne correspond.").closest("div");
+  await user.click(within(none ?? document.body).getByRole("button", { name: "Effacer" }));
+  expect(await screen.findByText("Sync")).toBeTruthy();
+  expect(screen.getByText("Arbre des pages")).toBeTruthy();
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(3);
+});
+
+test("the empty state explains the tree and offers a new ticket; a loading snapshot shows a skeleton", async () => {
+  const m = createMockSdk(manifest);
+  const { unmount } = mount(m);
+  const empty = (await screen.findByText("Aucun ticket pour l'instant.")).closest("div");
+  expect(empty?.textContent).toContain(
+    "Les tickets s'organisent en arbre : un ticket, ses sous-tickets, leurs dépendances.",
+  );
+  expect(screen.getAllByRole("button", { name: "Nouveau ticket" })).toHaveLength(1);
+  fireEvent.click(within(empty ?? document.body).getByRole("button", { name: "Nouveau ticket" }));
+  expect(m.newTicketRequests).toHaveLength(1);
+  expect(screen.queryByRole("searchbox")).toBeNull();
+  unmount();
+  render(
+    <SdkProvider sdk={{ ...m.sdk, list: () => new Promise(() => {}) }}>
+      <Component />
+    </SdkProvider>,
+  );
+  await waitFor(() => expect(document.querySelectorAll("[data-slot=skeleton]")).toHaveLength(5));
+  expect(screen.queryByText("Aucun ticket pour l'instant.")).toBeNull();
 });

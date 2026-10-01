@@ -51,6 +51,7 @@ type Props = {
   open: boolean;
   entries: MenuEntry[];
   readOnly: boolean;
+  canDrag: boolean;
   run: TicketRun | null;
   members: MemberInfo[];
   statusLabel: string;
@@ -63,6 +64,7 @@ export function TicketRow({
   open,
   entries,
   readOnly,
+  canDrag,
   run,
   members,
   statusLabel,
@@ -71,10 +73,11 @@ export function TicketRow({
 }: Props) {
   const sdk = useSdk();
   const t = node.ticket;
-  const before = useDroppable({ id: zoneId({ kind: "before", ticketId: t.id }), disabled: readOnly });
-  const inside = useDroppable({ id: zoneId({ kind: "inside", ticketId: t.id }), disabled: readOnly });
-  const after = useDroppable({ id: zoneId({ kind: "after", ticketId: t.id }), disabled: readOnly });
-  const drag = useDraggable({ id: t.id, disabled: readOnly });
+  const before = useDroppable({ id: zoneId({ kind: "before", ticketId: t.id }), disabled: !canDrag });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", ticketId: t.id }), disabled: !canDrag });
+  const after = useDroppable({ id: zoneId({ kind: "after", ticketId: t.id }), disabled: !canDrag });
+  const drag = useDraggable({ id: t.id, disabled: !canDrag });
+  const handle = canDrag ? { ...drag.listeners, ...drag.attributes } : {};
   return (
     <li>
       <TicketRowMenu entries={entries}>
@@ -128,7 +131,7 @@ export function TicketRow({
             ) : (
               <span className="size-4 shrink-0" />
             )}
-            <span ref={drag.setNodeRef} {...drag.listeners} {...drag.attributes} aria-describedby={undefined}>
+            <span ref={drag.setNodeRef} {...handle} aria-describedby={undefined}>
               <TicketKeyLabel ticket={t} className="shrink-0 font-mono text-2xs text-muted-foreground" />
             </span>
             <button

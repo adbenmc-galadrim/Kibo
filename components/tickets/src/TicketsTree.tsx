@@ -15,8 +15,11 @@ import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { buildTree, mineOnly, type TicketNode } from "./build-tree";
+import { EMPTY_QUERY, filterTickets, isActive } from "./filter-tickets";
 import { fr } from "./fr";
 import { ASSIGNEE_CELL, COLUMNS, TicketRow } from "./TicketRow";
+import { TicketsEmpty, TicketsNoMatch, TicketsSkeleton } from "./TicketsEmpty";
+import { TicketsToolbar } from "./TicketsToolbar";
 import { descendantCount, ticketMenuEntries } from "./ticket-menu";
 import { dropPlan, parseZoneId } from "./tree-drop";
 
@@ -31,6 +34,10 @@ export function TicketsTree() {
   const { data: runs } = useEntities("run");
   const members = useMembers();
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
+  const [query, setQuery] = useState(EMPTY_QUERY);
+  const filtering = isActive(query);
+  const shown = filtering ? filterTickets(visible, query, sdk.viewer) : null;
+  const canDrag = !readOnly && !filtering;
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [blocking, setBlocking] = useState<TicketView | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
@@ -77,7 +84,7 @@ export function TicketsTree() {
       },
     });
   const onDragEnd = (e: DragEndEvent) => {
-    if (readOnly || e.over === null) return;
+    if (!canDrag || e.over === null) return;
     const zone = parseZoneId(String(e.over.id));
     const plan = zone ? dropPlan(all, String(e.active.id), zone) : null;
     if (!plan) return;
@@ -92,6 +99,7 @@ export function TicketsTree() {
       open={!collapsed.has(n.ticket.id)}
       entries={entriesFor(n.ticket)}
       readOnly={readOnly}
+      canDrag={canDrag}
       run={runOf.get(n.ticket.id) ?? null}
       members={members}
       statusLabel={label(n.ticket.statusId)}
@@ -107,7 +115,7 @@ export function TicketsTree() {
         <span className="text-sm font-medium">
           {mine ? fr.mineCount(visible.length, tickets.length) : fr.title}
         </span>
-        {!readOnly && (
+        {!readOnly && (loading || visible.length > 0) && (
           <Button size="sm" variant="outline" onClick={() => sdk.openNewTicket({})}>
             <Plus className="size-3.5" /> {fr.newTicket}
           </Button>
@@ -118,21 +126,30 @@ export function TicketsTree() {
           {error}
         </p>
       )}
-      {loading ? null : visible.length === 0 ? (
-        <p className="p-6 text-sm text-muted-foreground">{fr.empty}</p>
+      {loading ? (
+        <TicketsSkeleton />
+      ) : visible.length === 0 ? (
+        <TicketsEmpty readOnly={readOnly} onNewTicket={() => sdk.openNewTicket({})} />
       ) : (
-        <div className="@container min-h-0 flex-1 overflow-auto px-1 py-2">
-          <div className={cn(COLUMNS, "h-8 text-2xs whitespace-nowrap text-muted-foreground")}>
-            <span className="pl-6">{fr.columns.ticket}</span>
-            <span>{fr.columns.status}</span>
-            <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>
-            <span>{fr.columns.progress}</span>
-            <span />
-          </div>
-          <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
-            <ul>{buildTree(visible).map(row)}</ul>
-          </DndContext>
-        </div>
+        <>
+          <TicketsToolbar query={query} statuses={statuses} onChange={setQuery} />
+          {shown?.size === 0 ? (
+            <TicketsNoMatch onClear={() => setQuery(EMPTY_QUERY)} />
+          ) : (
+            <div className="@container min-h-0 flex-1 overflow-auto px-1 py-2">
+              <div className={cn(COLUMNS, "h-8 text-2xs whitespace-nowrap text-muted-foreground")}>
+                <span className="pl-6">{fr.columns.ticket}</span>
+                <span>{fr.columns.status}</span>
+                <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>
+                <span>{fr.columns.progress}</span>
+                <span />
+              </div>
+              <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
+                <ul>{buildTree(shown ? visible.filter((t) => shown.has(t.id)) : visible).map(row)}</ul>
+              </DndContext>
+            </div>
+          )}
+        </>
       )}
       {blocking && (
         <ReasonDialog
