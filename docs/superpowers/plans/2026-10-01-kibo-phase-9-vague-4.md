@@ -365,11 +365,11 @@ Vague 0, **intégrée la première**. Spec §16 (budget, Global Constraints). D�
 - Consumes: `lazyPanel` (`@kibo/sdk`, `fallback: "sr-only"`), `DropdownMenu*` (`@kibo/sdk/ui/dropdown-menu`), `ProjectHeaderMenu`, `ProjectEntry`, `ProjectPages`.
 - Produces: `InstanceMenuContent` (contenu du menu d'instance), `FORBIDDEN_IN_ENTRY` complété.
 
-- [ ] **Step 1: Mesure de départ**
+- [x] **Step 1: Mesure de départ**
 
 Run: `bun install --frozen-lockfile && bun run budget` — Expected: `gzip : 220.1 kB (budget 230.0 kB)` (noter la valeur exacte dans le rapport).
 
-- [ ] **Step 2: Chunks de la vague interdits dans l'entrée (test rouge puis vert)**
+- [x] **Step 2: Chunks de la vague interdits dans l'entrée (test rouge puis vert)**
 
 `packages/ui/scripts/bundle-report.test.ts` (existe : `ls packages/ui/scripts/*.test.ts`) : ajouter un test qui vérifie que chaque chemin ci-dessous est reconnu par `FORBIDDEN_IN_ENTRY` :
 ```ts
@@ -403,7 +403,7 @@ Run: `bun test packages/ui/scripts` — Expected: FAIL.
 ```
 (`ai/DraftPreviewFrame.tsx` est déjà couvert par `ai\/[A-Za-z]+\.tsx`.) Run: `bun test packages/ui/scripts` — Expected: PASS.
 
-- [ ] **Step 3: Contenu du menu d'instance à la demande (test rouge puis vert)**
+- [x] **Step 3: Contenu du menu d'instance à la demande (test rouge puis vert)**
 
 `packages/ui/src/pages/instance.test.tsx` : repérer le test existant qui ouvre le menu « Actions <titre> » (`grep -n "Actions" packages/ui/src/pages/instance.test.tsx`) et ajouter :
 ```tsx
@@ -420,7 +420,7 @@ test("the instance menu content is loaded when the menu opens", async () => {
 `InstanceMenuContent.tsx` : déplacer tout ce qui est sous `<DropdownMenuContent>` et les dialogues (`NotesDirDialog`, `InstanceSettingsDialog`, `ConfirmDialog`, `ModifyWithAiDialog`, `TrustDialog`) ainsi que les états `notesDir`, `pending`, `modifying`, `settings`, `removing`, les calculs `schema`, `summary`, `higher`, `target`, `update`, `remove`, `pick` dans un composant `InstanceMenuContent({ projectId, instance, title, flash })` ; `InstanceMenu.tsx` garde `useFlash`, le `DropdownMenu`, le `DropdownMenuTrigger` et rend `<InstanceMenuContent …/>` à l'intérieur de `<DropdownMenuContent align="end">` via `const Content = lazyPanel(() => import("./InstanceMenuContent").then((m) => m.InstanceMenuContent), fr.lazy, { fallback: "sr-only" })` ; les dialogues restent montés **hors** du `DropdownMenuContent` (ils doivent survivre à la fermeture du menu) : `InstanceMenuContent` rend un fragment `<>{items}</>` et expose les dialogues par un rendu dans un `Portal`, ou plus simplement `InstanceMenu` monte `<Content …>` une fois ouvert et le garde monté (`opened` state à `true` au premier `onOpenChange(true)`), `InstanceMenuContent` rendant `<DropdownMenuContent>` + dialogues lui-même. Retenir la seconde forme (un seul chunk, un seul état). `useInstanceTitle` reste exporté par `InstanceMenu.tsx` (importé par `PageView.tsx:13`).
 Run: `bun test packages/ui/src/pages` — Expected: PASS ; `bun run budget` — Expected: ≈ 219,3 kB, aucun module interdit.
 
-- [ ] **Step 4: Mineure « ⋯ » du projet courant (reproduction, test rouge puis vert)**
+- [x] **Step 4: Mineure « ⋯ » du projet courant (reproduction, test rouge puis vert)**
 
 Reproduire : `bun run --cwd packages/ui dev` (ou `bun run build` + démon), ouvrir un projet avec des pages, observer le bouton « Menu du projet <nom> » du projet courant ; capturer `screens/t45/avant-sombre.png` et `avant-clair.png`. Deux suspects, à vérifier dans l'ordre : (a) `ProjectPages.tsx:224` enveloppe l'en-tête du projet courant dans `RootDrop` (l. 44-51), dont le `div` devient le parent du `SidebarMenuAction` absolu alors que, pour un projet non courant, le parent est le `SidebarMenuItem` ; (b) `ProjectHeaderMenu.tsx:49-52` applique `right-7` quand `shifted` mais `SidebarMenuAction` (`@kibo/sdk/ui/sidebar`) impose aussi `right-1` par ses classes de base : `tailwind-merge` doit garder la dernière, vérifier avec `getAttribute("class")`.
 Test dans `project-header-menu.test.tsx` (monter `ProjectEntry` avec `active` non nul pour passer par `ProjectPages`, dans un `DndContext` si `useDroppable` l'exige) :
@@ -436,7 +436,7 @@ test("the ⋯ action of the current project is positioned by its menu item, not 
 ```
 Run: `bun test packages/ui/src/shell/project-header-menu.test.tsx` — Expected: FAIL sur la cause réelle. Corriger la cause (pour (a) : `RootDrop` rend `children` sans `div` positionné, en posant `setNodeRef` et la classe de surbrillance sur le `SidebarMenuItem` par un `className` transmis, ou en donnant `relative` au `SidebarMenuItem` et `static` au `div` ; pour (b) : `cn("right-7")` doit remplacer `right-1`, sinon passer par `style={{ right: "1.75rem" }}`). Run: PASS. Capturer `screens/t45/apres-sombre.png` et `apres-clair.png`.
 
-- [ ] **Step 5: Gate et commits**
+- [x] **Step 5: Gate et commits**
 
 Run: `bun run check && bun run typecheck && bun test packages/ui && bun run budget` — Expected: PASS, budget ≤ 220,1 kB.
 ```bash
