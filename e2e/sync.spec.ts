@@ -35,7 +35,7 @@ async function connect(page: Page, code: string, device: string) {
   await dialog.getByRole("button", { name: "Options avancées" }).click();
   await dialog.getByLabel("Certificat racine (optionnel)").fill(caFile);
   await dialog.getByRole("button", { name: "Se connecter" }).click();
-  await expect(page.getByText("Connecté")).toBeVisible();
+  await expect(page.getByText("Connecté", { exact: true })).toBeVisible();
 }
 
 function presentIn(page: Page, name: string) {
