@@ -275,6 +275,7 @@ function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceP
                     onAnswer={setFocusRun}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                     onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
+                    onOpen={(t) => go(t)}
                   />
                 ) : (
                   <ContentView

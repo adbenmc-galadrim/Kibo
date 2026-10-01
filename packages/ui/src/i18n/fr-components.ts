@@ -29,7 +29,7 @@ export const frComponents = {
   components: {
     title: "Composants",
     column: {
-      name: "Composant",
+      name: "Nom",
       version: "Version",
       trust: "Confiance",
       origin: "Origine",

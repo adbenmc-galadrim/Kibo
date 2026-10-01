@@ -116,7 +116,7 @@ beforeEach(() => {
 test("the installed tab shows the marketplace origin, the update and a revoked version", async () => {
   answers.listComponents = () => Promise.resolve([burndown, roadmap]);
   answers.listMarketStatus = () => Promise.resolve(statuses);
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   expect((await screen.findAllByText("Marketplace · Équipe")).length).toBe(2);
   expect(screen.getByText("0.2.0 disponible")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Mettre à jour" })).toBeTruthy();
@@ -219,7 +219,7 @@ test("an own active component can be published to the marketplace from the ⋯ m
   answers.listMarketStatus = () => Promise.resolve(statuses);
   answers.getSyncStatus = () => Promise.resolve({ serverUrl: null });
   answers.getMarketPublisher = () => Promise.resolve(null);
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions Burndown 0.1.0" }));
   expect(screen.queryByRole("menuitem", { name: "Publier sur la marketplace" })).toBeNull();

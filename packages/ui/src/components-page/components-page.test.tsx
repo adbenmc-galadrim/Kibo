@@ -124,7 +124,7 @@ beforeEach(() => {
 });
 
 test("screen 6: the table lists built-ins and installed versions", async () => {
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const row = (await screen.findByText("PR en attente", { selector: "td" })).closest("tr");
   expect(row && within(row).getByText("0.3.0")).toBeTruthy();
   expect(row && within(row).getByText("Sandboxé")).toBeTruthy();
@@ -138,13 +138,13 @@ test("screen 6: the table lists built-ins and installed versions", async () => {
 });
 
 test("D8: the kibo command card lives in the settings, not here", async () => {
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   expect(await screen.findByRole("button", { name: "Publier" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Installer la commande kibo" })).toBeNull();
 });
 
 test("publishing: usages, changes, strategy, then the report", async () => {
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Publier" }));
   expect(await screen.findByText("Publier « PR en attente » 0.4.0")).toBeTruthy();
@@ -185,7 +185,7 @@ test("D10: a partial failure lists the instances left behind", async () => {
       },
     ],
   });
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Publier" }));
   await user.click(await screen.findByRole("button", { name: "Publier 0.4.0" }));
@@ -206,14 +206,14 @@ test("publishing errors are explained", async () => {
     preview = async () => {
       throw error;
     };
-    const { unmount } = render(<ComponentsPage />);
+    const { unmount } = render(<ComponentsPage onOpen={() => undefined} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Publier" }));
     expect((await screen.findByRole("alert")).textContent).toBe(text);
     unmount();
   }
   preview = async () => ({ ...basePreview, status: "unchanged" });
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   await userEvent.setup().click(await screen.findByRole("button", { name: "Publier" }));
   expect(
     await screen.findByText("Rien à publier : cette version est déjà publiée avec le même code."),
@@ -223,7 +223,7 @@ test("publishing errors are explained", async () => {
 
 test("D3: rehash, revoke and uninstall from the ⋯ menu", async () => {
   components = [prQueue([{ ...v030, usages: [] }])];
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions PR en attente 0.3.0" }));
   await user.click(await screen.findByRole("menuitem", { name: "Revérifier l'empreinte" }));
@@ -262,7 +262,7 @@ test("a used version cannot be uninstalled; a pending one can be reviewed", asyn
       { ...v030, version: "0.4.0", hash: "b".repeat(64), trust: null, active: false, usages: [] },
     ]),
   ];
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions PR en attente 0.3.0" }));
   expect((await screen.findByRole("menuitem", { name: "Désinstaller" })).getAttribute("aria-disabled")).toBe(
@@ -292,7 +292,7 @@ test("drafts: validated ones can be published, others show the command", async (
       publishedVersion: null,
     },
   ];
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   expect(await screen.findByText("Brouillons")).toBeTruthy();
   expect(screen.getByText("Tests verts")).toBeTruthy();
   expect(screen.getByText("À valider : kibo component test burndown")).toBeTruthy();
@@ -307,7 +307,7 @@ test("modify with AI: only for user and ai components, opens the dialog", async 
       { ...v030, version: "0.1.0", origin: "user" },
     ]),
   ];
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   const entries = async (version: string) => {
     await user.click(await screen.findByRole("button", { name: `Actions PR en attente ${version}` }));
@@ -327,7 +327,7 @@ test("modify with AI: only for user and ai components, opens the dialog", async 
 
 test("the components page offers the Installed and Marketplace tabs", async () => {
   action = async () => [];
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   expect(screen.getByRole("tab", { name: "Installés" }).getAttribute("aria-selected")).toBe("true");
   await userEvent.setup().click(screen.getByRole("tab", { name: "Marketplace" }));
   expect(
@@ -376,7 +376,7 @@ test("installing from the marketplace opens the approval with the publisher", as
     if (req.method === "installFromMarket") return result;
     return null;
   };
-  render(<ComponentsPage />);
+  render(<ComponentsPage onOpen={() => undefined} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("tab", { name: "Marketplace" }));
   await user.click(await screen.findByRole("button", { name: "Voir Calendrier des jalons" }));

@@ -27,12 +27,14 @@ import {
   UsagesBox,
   validationErrors,
 } from "./PublishSections";
+import { UsagesSheet, type UsagesTarget } from "./UsagesSheet";
 
 type Props = {
   id: string;
   open: boolean;
   onOpenChange(o: boolean): void;
   onPublished?(result: PublishResult): void;
+  onOpenPage?(projectId: string, pageId: string): void;
   remote?: boolean;
 };
 
@@ -79,7 +81,20 @@ function usePreview(id: string, open: boolean) {
   return { preview, error, setError };
 }
 
-export function PublishDialog({ id, open, onOpenChange, onPublished, remote = isRemoteView() }: Props) {
+const usagesOf = (preview: PublishPreview): UsagesTarget => ({
+  title: preview.title,
+  version: preview.from ?? preview.to,
+  usages: preview.usages,
+});
+
+export function PublishDialog({
+  id,
+  open,
+  onOpenChange,
+  onPublished,
+  onOpenPage,
+  remote = isRemoteView(),
+}: Props) {
   const p = fr.publish;
   const projects = useProjects() ?? [];
   const { preview, error, setError } = usePreview(id, open);
@@ -87,6 +102,7 @@ export function PublishDialog({ id, open, onOpenChange, onPublished, remote = is
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PublishResult | null>(null);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
+  const [showUsages, setShowUsages] = useState(false);
 
   const submit = async (pv: PublishPreview) => {
     setBusy(true);
@@ -124,7 +140,14 @@ export function PublishDialog({ id, open, onOpenChange, onPublished, remote = is
           {!preview && !error && <Skeleton className="h-40 w-full" />}
           {preview?.status === "unchanged" && <p className="text-sm text-muted-foreground">{p.unchanged}</p>}
           {preview && !preview.validation.ok && <InvalidPreview id={id} errors={errors} />}
-          {used && <UsagesBox preview={preview} strategy={strategy} colorOf={colorOf} />}
+          {used && (
+            <UsagesBox
+              preview={preview}
+              strategy={strategy}
+              colorOf={colorOf}
+              onUsages={onOpenPage && (() => setShowUsages(true))}
+            />
+          )}
           {publishable && hasChanges(preview) && <ChangesList preview={preview} />}
           {used && <StrategyChoice preview={preview} value={strategy} onChange={setStrategy} />}
           {result && preview && <PublishReport result={result} version={preview.to} />}
@@ -146,6 +169,13 @@ export function PublishDialog({ id, open, onOpenChange, onPublished, remote = is
               </Button>
             )}
           </DialogFooter>
+          {onOpenPage && (
+            <UsagesSheet
+              row={showUsages && preview ? usagesOf(preview) : null}
+              onClose={() => setShowUsages(false)}
+              onOpenPage={onOpenPage}
+            />
+          )}
         </DialogContent>
       </Dialog>
       {trust && (

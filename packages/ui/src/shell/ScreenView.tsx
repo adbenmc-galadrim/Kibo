@@ -1,4 +1,11 @@
-import type { AgentsState, ProjectSnapshot, ProjectSummary, Screen, WorkspaceConfig } from "@kibo/schema";
+import type {
+  AgentsState,
+  ProjectSnapshot,
+  ProjectSummary,
+  Screen,
+  TabTarget,
+  WorkspaceConfig,
+} from "@kibo/schema";
 import {
   AgentsPage,
   AppearancePage,
@@ -26,10 +33,11 @@ type Props = {
   onAnswer(runId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
+  onOpen(target: TabTarget): void;
 };
 
-export function ScreenView({ screen, projects, agents, config, now, onAnswer, ...p }: Props) {
-  if (screen === "components") return <ComponentsPage />;
+export function ScreenView({ screen, projects, agents, config, now, onAnswer, onOpen, ...p }: Props) {
+  if (screen === "components") return <ComponentsPage onOpen={onOpen} />;
   if (screen === "general") return <GeneralPage />;
   if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "appearance") return <AppearancePage />;

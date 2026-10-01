@@ -46,6 +46,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/shell\/(ProjectHeaderMenu\.tsx|project-menu\.ts)$/,
   /\/packages\/ui\/src\/shell\/shared-modules\.ts$/,
   /\/node_modules\/@radix-ui\/react-(select|radio-group)\//,
+  /\/packages\/ui\/src\/(components-page\/(ComponentsFilters|UsagesSheet)\.tsx|i18n\/fr-components-list\.ts)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
