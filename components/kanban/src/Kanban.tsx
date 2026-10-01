@@ -1,6 +1,7 @@
 import {
   DndContext,
   type DragEndEvent,
+  type DragMoveEvent,
   type DragOverEvent,
   KeyboardSensor,
   PointerSensor,
@@ -18,7 +19,7 @@ import {
   useSharing,
 } from "@kibo/sdk";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
 import { type ColumnOrder, orderColumn } from "./column-order";
@@ -56,6 +57,7 @@ export function Kanban() {
   const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
+  const board = useRef<HTMLDivElement>(null);
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
   const ciOf = (t: TicketView): CiChip | undefined =>
@@ -100,6 +102,10 @@ export function Kanban() {
     if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
     else void setStatus(t, statusId);
   };
+  const onDragMove = (e: DragMoveEvent) => {
+    board.current?.style.setProperty("--drag-x", `${e.delta.x}px`);
+    board.current?.style.setProperty("--drag-y", `${e.delta.y}px`);
+  };
   const onDragOver = (e: DragOverEvent) => setTargetColumn(dropInColumn(e, visible)?.statusId ?? null);
   const onDragEnd = (e: DragEndEvent) => {
     setTargetColumn(null);
@@ -132,6 +138,7 @@ export function Kanban() {
       </KanbanToolbar>
       <DndContext
         sensors={readOnly ? [] : sensors}
+        onDragMove={onDragMove}
         onDragOver={onDragOver}
         onDragCancel={() => setTargetColumn(null)}
         onDragEnd={onDragEnd}
@@ -140,7 +147,7 @@ export function Kanban() {
           announcements: announce(keyOf),
         }}
       >
-        <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto p-3">
+        <div ref={board} className="flex min-h-0 flex-1 gap-2 overflow-x-auto p-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}

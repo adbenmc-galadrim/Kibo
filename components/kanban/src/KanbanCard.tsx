@@ -52,7 +52,11 @@ export function KanbanCard(props: Props) {
     sortable.setActivatorNodeRef(node);
   };
   const style = {
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : isDragging
+        ? "translate3d(var(--drag-x, 0), var(--drag-y, 0), 0)"
+        : undefined,
     transition,
   };
   const insertion =
