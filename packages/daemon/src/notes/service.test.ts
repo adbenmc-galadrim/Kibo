@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, spyOn, test } from "bun:test";
 import {
   mkdirSync,
   mkdtempSync,
@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { NoteContent, NoteMeta, NotesInfo } from "@kibo/schema";
 import { createNotesIndex, ensureNotesTables } from "./index";
+import { MAX_NOTE_BYTES } from "./notes-fs";
 import { createNotesService, type NotesProject } from "./service";
 import { ensureSettingsTable } from "./settings";
 
@@ -199,5 +200,50 @@ describe("notes calls", () => {
   test("non-note calls are refused", async () => {
     const { svc } = setup();
     await expect(svc.handle("p1", { kind: "data.keys" })).rejects.toThrow("INTERNAL");
+  });
+});
+
+describe("skipped notes", () => {
+  const oversized = "#".repeat(MAX_NOTE_BYTES + 1);
+  const skipLines = (spy: { mock: { calls: unknown[][] } }) =>
+    spy.mock.calls.map((c) => String(c[0])).filter((line) => line.includes("big.md skipped"));
+
+  test("an oversized note is logged once until it becomes readable again", async () => {
+    const { repo, svc } = setup();
+    mkdirSync(join(repo, "notes"));
+    const big = join(repo, "notes", "big.md");
+    writeFileSync(big, oversized);
+    const spy = spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await svc.refresh("p1");
+      await svc.refresh("p1");
+      await svc.refresh("p1");
+      expect(skipLines(spy)).toEqual([
+        "[kibo-daemon] note big.md skipped: QUOTA_EXCEEDED: big.md is larger than 1 MiB",
+      ]);
+      writeFileSync(big, "# Petite");
+      await svc.refresh("p1");
+      expect(skipLines(spy)).toHaveLength(1);
+      writeFileSync(big, oversized);
+      await svc.refresh("p1");
+      await svc.refresh("p1");
+      expect(skipLines(spy)).toHaveLength(2);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+  test("forget lets a still skipped note be logged again", async () => {
+    const { repo, svc } = setup();
+    mkdirSync(join(repo, "notes"));
+    writeFileSync(join(repo, "notes", "big.md"), oversized);
+    const spy = spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await svc.refresh("p1");
+      svc.forget("p1");
+      await svc.refresh("p1");
+      expect(skipLines(spy)).toHaveLength(2);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

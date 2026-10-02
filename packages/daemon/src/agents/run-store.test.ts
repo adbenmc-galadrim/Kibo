@@ -3,6 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { holdWriteLock } from "@kibo/sync-server/testing/hold-write-lock";
 import { type NewRun, openRunStore } from "./run-store";
 
 const dirs: string[] = [];
@@ -50,6 +51,16 @@ test("runs get increasing sequence numbers and survive a reopen", () => {
     ["r1", "admitted"],
   ]);
   b.close();
+});
+
+test("a write waits for another process to release its lock", async () => {
+  const h = home();
+  const s = openRunStore(h);
+  const lock = await holdWriteLock(join(h, "runs.db"), 300);
+  s.create(newRun("r1"), 0, 10);
+  expect(await lock.released).toBe(0);
+  expect(s.records().map((r) => r.id)).toEqual(["r1"]);
+  s.close();
 });
 
 test("a run without ticket is stored with null ticket fields", () => {

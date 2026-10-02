@@ -16,6 +16,7 @@ Intégré dans `main` par la PR « CI en dix minutes, correctifs v1.1 » puis pa
 - CI en dix minutes (section « CI » plus bas).
 - Enregistrement de la disposition : « Enregistrer » échouait (« Requête invalide ») avec des widgets enregistrés empilés ; plan d'écriture ordonné (`packages/ui/src/pages/layout-plan.ts`, spec de conception §16.2).
 - Fenêtre « Assigner » : projet sans dossier local et profil `worktree` ou `repo` ⇒ alerte, bouton « Modifier le projet », lancement désactivé (spec agents §6).
+- Base verrouillée : `busy_timeout` de 5 s à l'ouverture de `kibo.db`, `runs.db` et de la base de `kibo-sync`, transactions de `store.transaction` et de la création d'un run en mode `immediate` ; une note ignorée (plus de 1 Mio, par exemple) n'est journalisée qu'une fois.
 - Conversation avec un run (demande d'Adam, spec agents §13) : écrire à un run terminé (reprise de la session par la file), règle « run terminé → En review » retirée des défauts, bouton « Passer en review », message de fin de tour en entier, journal qui suit la dernière ligne.
 
 Suivis nés de ces changements :
@@ -28,6 +29,10 @@ Suivis nés de ces changements :
 - La base `~/.kibo/runs.db` d'un démon qui a repris un run terminé ne se relit plus avec une version antérieure (`STORE_CORRUPT`).
 - Propriété fast-check de `planLayoutSave` à rejouer sur le vrai `setInstanceLayout` du core ; taille héritée non format d'un widget non touché (cas rare, spec §16.2).
 - `orchestrator.ts` à 308 lignes.
+- **Deux démons sur le même `KIBO_HOME`** : rien ne l'empêche (constaté chez Adam : `daemon.json` désignait un autre pid que le démon en cours, d'où « database is locked »). Chacun garde ses documents en mémoire et écrit ses snapshots : risque d'écrasement. À décider et écrire dans la spec : refus de démarrer si le démon désigné par `daemon.json` est vivant, et ce que montre la coque dans ce cas.
+- Les autres transactions qui lisent puis écrivent restent en mode différé et n'attendent pas le verrou d'un autre processus : `integrations/db.ts`, `components/events.ts`, `collab/sync-db.ts`, `market/market-db.ts`, l'index des notes ; côté `sync-server` : `room.ts`, `members.ts`, `accounts.ts`, `market-store.ts`.
+- L'attente de verrou (5 s) bloque le fil du démon et vaut le délai du hook d'un agent (5 s, refus par défaut) : à ramener à 2 ou 3 s si deux processus sur la même base deviennent un cas normal.
+- Quota de 1 Mio par note : `docs/superpowers/plans/2026-09-26-kibo-sync-marketplace.md` (1,17 Mio) est ignoré quand le dossier de notes du projet est `docs/`.
 
 ## Jalon v1.1.0 : étapes
 

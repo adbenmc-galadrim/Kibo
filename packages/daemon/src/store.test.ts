@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { holdWriteLock } from "@kibo/sync-server/testing/hold-write-lock";
 import { LoroDoc } from "loro-crdt";
 import { kiboHome } from "./paths";
 import { loadDoc, openStore } from "./store";
@@ -36,6 +37,30 @@ describe("store", () => {
     openStore(home).close();
     expect(statSync(home).mode & 0o777).toBe(0o700);
     expect(statSync(join(home, "kibo.db")).mode & 0o777).toBe(0o600);
+  });
+
+  test("a write waits for another process to release its lock", async () => {
+    const home = tmp();
+    const store = openStore(home);
+    const lock = await holdWriteLock(join(home, "kibo.db"), 300);
+    store.save("workspace", new Uint8Array([1]));
+    expect(await lock.released).toBe(0);
+    expect(store.load("workspace")).toEqual(new Uint8Array([1]));
+    store.close();
+  });
+
+  test("a read-then-write transaction waits for another process too", async () => {
+    const home = tmp();
+    const store = openStore(home);
+    store.save("workspace", new Uint8Array([1]));
+    const lock = await holdWriteLock(join(home, "kibo.db"), 300);
+    store.transaction(() => {
+      const current = store.load("workspace") ?? new Uint8Array();
+      store.save("workspace", new Uint8Array([...current, 2]));
+    });
+    expect(await lock.released).toBe(0);
+    expect(store.load("workspace")).toEqual(new Uint8Array([1, 2]));
+    store.close();
   });
 
   test("an unreadable database stops the start instead of starting empty", () => {
