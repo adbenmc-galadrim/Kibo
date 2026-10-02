@@ -4,12 +4,27 @@ import { Input } from "@kibo/sdk/ui/input";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frRunChat } from "../i18n/fr-run-chat";
 
-export function ReplyBox({ run }: { run: RunView }) {
+type Props = { run: RunView; mode?: "answer" | "write"; title?: string; busy?: boolean };
+
+function texts(mode: "answer" | "write", label: string) {
+  const r = fr.agents.reply;
+  return mode === "answer"
+    ? { label: r.label(label), placeholder: r.placeholder, failed: r.failed }
+    : {
+        label: frRunChat.writeLabel(label),
+        placeholder: frRunChat.writePlaceholder,
+        failed: frRunChat.writeFailed,
+      };
+}
+
+export function ReplyBox({ run, mode = "answer", title, busy = false }: Props) {
   const id = useId();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(false);
+  const t = texts(mode, run.label);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setFailed(false);
@@ -25,30 +40,33 @@ export function ReplyBox({ run }: { run: RunView }) {
   };
   return (
     <form onSubmit={submit} className="grid gap-1">
+      {title && <p className="text-xs font-medium text-muted-foreground">{title}</p>}
       <div className="flex items-center gap-3 rounded-md border border-brand/60 px-3 py-1.5">
         <label htmlFor={id} className="sr-only">
-          {fr.agents.reply.label(run.label)}
+          {t.label}
         </label>
         <Input
           id={id}
           value={text}
+          disabled={busy}
           onChange={(e) => setText(e.target.value)}
-          placeholder={fr.agents.reply.placeholder}
+          placeholder={t.placeholder}
           className="h-8 border-0 px-0 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
-        <span className="shrink-0 text-xs text-muted-foreground">{fr.agents.reply.hint}</span>
+        {!busy && <span className="shrink-0 text-xs text-muted-foreground">{fr.agents.reply.hint}</span>}
         <Button
           type="submit"
           size="sm"
-          disabled={!text.trim() || sending}
+          disabled={busy || !text.trim() || sending}
           className="bg-brand-strong text-white hover:bg-brand-strong/90"
         >
           {fr.agents.reply.send}
         </Button>
       </div>
+      {busy && <p className="text-xs text-muted-foreground">{frRunChat.busy}</p>}
       {failed && (
         <p role="alert" className="text-xs text-destructive">
-          {fr.agents.reply.failed}
+          {t.failed}
         </p>
       )}
     </form>

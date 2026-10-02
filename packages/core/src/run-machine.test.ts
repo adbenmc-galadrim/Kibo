@@ -160,3 +160,52 @@ test("sub-agents live inside their parent run", () => {
   v = reduceRun(v, hook("SubagentStart", { tool: null, agentId: "a2" }), 150);
   expect(reduceRun(v, exit(), 160).subagents).toEqual([]);
 });
+
+test("a ticket run that has started can be written to once it ended", () => {
+  const ended = [
+    reduceRun(running(), exit(), 200),
+    reduceRun(running(), exit(1), 200),
+    reduceRun(reduceRun(running(), { type: "cancelled" }, 200), exit(143), 210),
+    reduceRun(running(), { type: "failed", error: "INTERRUPTED: restart" }, 200),
+  ];
+  for (const view of ended) {
+    const next = reduceRun(
+      { ...view, subagents: [{ id: "a1", type: "x", since: 1 }] },
+      { type: "answered", text: "Encore une chose", rank: -3 },
+      300,
+    );
+    expect(next).toMatchObject({
+      state: "queued",
+      stateSince: 300,
+      lane: null,
+      label: "opus-dev",
+      priority: true,
+      rank: -3,
+      question: null,
+      pendingAnswer: "Encore une chose",
+      error: null,
+      endedAt: null,
+      subagents: [],
+      startedAt: 120,
+      tokens: view.tokens,
+      turns: 1,
+    });
+  }
+});
+
+test("a run that never started or has no ticket cannot be written to once ended", () => {
+  const answered: RunEvent = { type: "answered", text: "x", rank: 0 };
+  const neverStarted = reduceRun(initRun(record, 0, 0), { type: "failed", error: "WORKSPACE_FAILED: x" }, 1);
+  const cancelledInQueue = reduceRun(initRun(record, 0, 0), { type: "cancelled" }, 1);
+  const task = initRun({ ...record, projectId: null, ticketId: null, ticketKey: null }, 0, 0);
+  const taskDone = reduceRun(
+    reduceRun(reduceRun(task, { type: "admitted", lane: 1 }, 1), spawned(false), 2),
+    exit(),
+    3,
+  );
+  for (const view of [neverStarted, cancelledInQueue, taskDone, initRun(record, 0, 0)]) {
+    expect(() => reduceRun(view, answered, 10)).toThrow("INVALID_TRANSITION");
+  }
+  const starting = reduceRun(initRun(record, 0, 0), { type: "admitted", lane: 1 }, 1);
+  expect(() => reduceRun(starting, answered, 10)).toThrow("INVALID_TRANSITION");
+});

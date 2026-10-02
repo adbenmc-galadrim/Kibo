@@ -60,6 +60,10 @@ function enter(view: RunView, state: RunState, at: number, patch: Partial<RunVie
   };
 }
 
+export function canWriteAfterEnd(view: RunView): boolean {
+  return isTerminal(view.state) && view.ticketId !== null && view.startedAt !== null;
+}
+
 function applyHook(view: RunView, p: HookPayload, at: number): RunView {
   const next: RunView = {
     ...view,
@@ -119,10 +123,13 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
     case "exited":
       return applyExit(view, event, at);
     case "answered":
-      requireState(view, event, ["waiting_input"]);
+      if (view.state !== "waiting_input" && !canWriteAfterEnd(view)) refuse(view, event);
       return enter(view, "queued", at, {
         lane: null,
         question: null,
+        error: null,
+        endedAt: null,
+        subagents: [],
         pendingAnswer: event.text,
         priority: true,
         rank: event.rank,

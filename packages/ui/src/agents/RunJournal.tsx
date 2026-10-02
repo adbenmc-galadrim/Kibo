@@ -4,6 +4,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { errorText, formatClock } from "./format";
+import { useFollowBottom } from "./use-follow-bottom";
 
 type Tone = "blue" | "amber" | "green" | "red" | "muted";
 export type JournalLine = {
@@ -13,13 +14,14 @@ export type JournalLine = {
   tool: string | null;
   text: string;
   tone: Tone;
+  whole: boolean;
 };
 export type JournalFiles = {
   worktree: string;
   ticketKey: string | null;
   open(path: string, line: number | null, origin: string): void;
 };
-type Line = Omit<JournalLine, "id" | "at" | "tool"> & { tool?: string | null };
+type Line = Omit<JournalLine, "id" | "at" | "tool" | "whole"> & { tool?: string | null; whole?: boolean };
 
 const TONE: Record<Tone, string> = {
   blue: RUN_TEXT.running,
@@ -43,10 +45,16 @@ function hookLine(p: HookPayload): Line | null {
     tool: p.tool,
     text: [p.tool, p.detail].filter(Boolean).join(" "),
     tone: HOOK_TONE[p.event] ?? "blue",
+    whole: p.event === "Stop",
   };
 }
 
-function exitLine(event: Extract<RunEvent, { type: "exited" }>): Line | null {
+type Exit = Extract<RunEvent, { type: "exited" }>;
+
+const cleanEnding = (e: Exit): string | null => (!e.isError && e.code === 0 && e.result ? e.result : null);
+const endingLine = (text: string): Line => ({ name: "Stop", text, tone: "green", whole: true });
+
+function exitLine(event: Exit): Line | null {
   const e = fr.agents.events;
   const denied = event.denied.length > 0 ? e.denied(event.denied.join(", ")) : null;
   if (event.isError || event.code !== 0) {
@@ -69,7 +77,7 @@ function eventLine(event: RunEvent): Line | null {
     case "exited":
       return exitLine(event);
     case "answered":
-      return { name: event.type, text: event.text, tone: "muted" };
+      return { name: event.type, text: event.text, tone: "muted", whole: true };
     case "cancelled":
       return { name: event.type, text: "", tone: "muted" };
     case "failed":
@@ -83,11 +91,40 @@ function eventLine(event: RunEvent): Line | null {
   }
 }
 
+function turnEndings(log: RunLogEntry[]): Map<number, string> {
+  const endings = new Map<number, string>();
+  let turn = 0;
+  for (const { event } of log) {
+    if (event.type === "spawned") turn += 1;
+    const ending = event.type === "exited" ? cleanEnding(event) : null;
+    if (ending) endings.set(turn, ending);
+  }
+  return endings;
+}
+
 export function journalLines(log: RunLogEntry[]): JournalLine[] {
-  return log.flatMap((entry) => {
-    const line = eventLine(entry.event);
-    return line ? [{ ...line, tool: line.tool ?? null, id: entry.id, at: entry.at }] : [];
-  });
+  const endings = turnEndings(log);
+  const shown = new Set<number>();
+  let turn = 0;
+  const linesOf = (event: RunEvent): Line[] => {
+    if (event.type === "spawned") turn += 1;
+    const ending = endings.get(turn);
+    const endsTurn = (event.type === "hook" && event.payload.event === "Stop") || event.type === "exited";
+    if (!ending || !endsTurn) return [eventLine(event)].filter((l) => l !== null);
+    const first = shown.has(turn) ? [] : [endingLine(ending)];
+    shown.add(turn);
+    const rest = event.type === "exited" ? [exitLine(event)].filter((l) => l !== null) : [];
+    return [...first, ...rest];
+  };
+  return log.flatMap((entry) =>
+    linesOf(entry.event).map((line) => ({
+      ...line,
+      tool: line.tool ?? null,
+      whole: line.whole ?? false,
+      id: entry.id,
+      at: entry.at,
+    })),
+  );
 }
 
 function JournalText({
@@ -99,11 +136,12 @@ function JournalText({
   label: string;
   files: JournalFiles | null;
 }) {
-  if (!files) return <span className="line-clamp-3 break-words">{line.text}</span>;
+  const shape = line.whole ? "whitespace-pre-wrap break-words" : "line-clamp-3 break-words";
+  if (!files) return <span className={shape}>{line.text}</span>;
   const origin = `${files.ticketKey ?? label} · ${[line.name, line.tool].filter(Boolean).join(" ")}`;
   const text = line.text.replaceAll(`${files.worktree}/`, "");
   return (
-    <span className="line-clamp-3 break-words">
+    <span className={shape}>
       <LinkifiedText text={text} onOpen={(ref) => files.open(ref.path, ref.line, origin)} />
     </span>
   );
@@ -121,14 +159,21 @@ export function RunJournal({ label, log, files, missing = false }: Props) {
         {frAgentsPage.journalMissing}
       </p>
     );
+  return <JournalList label={label} log={log} files={files} />;
+}
+
+function JournalList({ label, log, files }: Omit<Props, "missing">) {
   const lines = journalLines(log);
+  const { ref, onScroll } = useFollowBottom<HTMLOListElement>(lines.length);
   return (
     <ol
+      ref={ref}
+      onScroll={onScroll}
       aria-label={fr.agents.journal(label)}
       className="grid min-h-0 flex-1 content-start gap-1.5 overflow-y-auto rounded-md border p-3 text-xs"
     >
       {lines.map((l) => (
-        <li key={l.id} data-tone={l.tone} className="grid grid-cols-[3rem_8rem_1fr] gap-2">
+        <li key={`${l.id}-${l.name}`} data-tone={l.tone} className="grid grid-cols-[3rem_8rem_1fr] gap-2">
           <span className="font-mono text-muted-foreground">{formatClock(l.at)}</span>
           <span className={cn("truncate font-mono", TONE[l.tone])}>{l.name}</span>
           <JournalText line={l} label={label} files={files} />

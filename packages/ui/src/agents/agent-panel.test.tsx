@@ -16,6 +16,7 @@ mock.module("../api", () => ({
       return outcome();
     },
     subscribeEvents: () => () => undefined,
+    subscribe: () => () => undefined,
   },
 }));
 
@@ -39,6 +40,8 @@ beforeEach(() => {
   calls.length = 0;
   outcome = () => Promise.resolve(null);
 });
+
+const actions = () => calls.filter((c) => c.method !== "getProject");
 
 const run = (id: string) => {
   const found = agentsFixture().runs.find((r) => r.id === id);
@@ -152,11 +155,11 @@ test("stopping a run is confirmed, then cancels it, and a refusal is shown", asy
   expect(dialog.getByText("Arrêter le run opus-dev-1 sur KIB-12 ?")).toBeTruthy();
   expect(dialog.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeTruthy();
   await user.click(dialog.getByRole("button", { name: "Annuler" }));
-  expect(calls).toEqual([]);
+  expect(actions()).toEqual([]);
   await user.click(screen.getByRole("button", { name: "Arrêter" }));
   await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Arrêter" }));
   await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
-  expect(calls).toEqual([{ method: "cancelRun", runId: "r42" }]);
+  expect(actions()).toEqual([{ method: "cancelRun", runId: "r42" }]);
   outcome = () => Promise.reject(new KiboError("INVALID_TRANSITION", "run r42 is done"));
   await user.click(screen.getByRole("button", { name: "Arrêter" }));
   await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Arrêter" }));

@@ -189,7 +189,7 @@ Aucun agent ne démarre directement : **tous les runs passent par une file d'att
 | Watchers git et `gh` | Commits, branche, PR, CI |
 
 **Moteur de règles** (déclaratif, modifiable dans l'UI), par exemple :
-- run terminé → ticket passe en *En review* ;
+- run terminé → ticket passe en *En review* (règle retirée des défauts le 2 octobre : le passage en review est une action de l'utilisateur, spec agents §13) ;
 - PR mergée → ticket passe en *Terminé* ;
 - tous les sous-tickets sont terminés → le parent passe en *Terminé*.
 

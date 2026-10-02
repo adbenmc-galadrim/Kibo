@@ -14,6 +14,7 @@ mock.module("../api", () => ({
     rpc: () => Promise.resolve(null),
     code: () => Promise.resolve(worktrees),
     subscribeCode: () => () => {},
+    subscribe: () => () => {},
   },
 }));
 
@@ -161,4 +162,94 @@ test("daemon events keep their raw type as name", () => {
   for (const [event, name] of cases) {
     expect(journalLines([{ id: 1, at: NOW, event }]).at(0)?.name ?? null).toBe(name);
   }
+});
+test("the agent's last message and the user's messages are shown whole, on several lines", () => {
+  const message = "Fait.\nDeux fichiers modifiés.\nVeux-tu des tests ?\nJe peux aussi documenter.";
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "hook", payload: hook("Stop", { detail: message }) } },
+    { id: 2, at: NOW, event: { type: "answered", text: "Oui,\najoute les tests.", rank: 0 } },
+    {
+      id: 3,
+      at: NOW,
+      event: { type: "hook", payload: hook("PostToolUse", { tool: "Read", detail: "a.ts" }) },
+    },
+  ];
+  render(<RunJournal label="opus-dev-2" log={log} files={null} />);
+  const [stop, answer, tool] = screen.getAllByRole("listitem").map((l) => l.lastElementChild);
+  expect(stop?.textContent).toBe(message);
+  expect(answer?.textContent).toBe("Oui,\najoute les tests.");
+  for (const whole of [stop, answer]) {
+    expect(whole?.className).toContain("whitespace-pre-wrap");
+    expect(whole?.className).not.toContain("line-clamp");
+  }
+  expect(tool?.className).toContain("line-clamp-3");
+});
+test("a clean end of turn shows the whole result once, in place of its clipped Stop line", () => {
+  const result = `${"Compte rendu détaillé. ".repeat(110)}\nQuelle option préfères-tu ?`;
+  expect(result.length).toBeGreaterThan(2000);
+  const log: RunLogEntry[] = [
+    {
+      id: 1,
+      at: NOW,
+      event: { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 },
+    },
+    { id: 2, at: NOW, event: { type: "hook", payload: hook("Stop", { detail: result.slice(0, 2000) }) } },
+    { id: 3, at: NOW, event: { type: "hook", payload: hook("SessionEnd", { detail: "other" }) } },
+    {
+      id: 4,
+      at: NOW,
+      event: { type: "exited", code: 0, isError: false, result, tokens: 1, costUsd: 0, denied: ["Bash"] },
+    },
+  ];
+  const lines = journalLines(log);
+  expect(lines.map((l) => [l.name, l.tone])).toEqual([
+    ["SessionStart", "blue"],
+    ["Stop", "green"],
+    ["SessionEnd", "muted"],
+    ["exited", "amber"],
+  ]);
+  expect(lines[1]).toMatchObject({ text: result, whole: true });
+  render(<RunJournal label="opus-dev-2" log={log} files={null} />);
+  expect(screen.getByText(/Quelle option préfères-tu \?/)).toBeTruthy();
+});
+test("a clean end of turn without Stop hook still shows its result", () => {
+  const log: RunLogEntry[] = [
+    {
+      id: 1,
+      at: NOW,
+      event: { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 },
+    },
+    {
+      id: 2,
+      at: NOW,
+      event: { type: "exited", code: 0, isError: false, result: "Fini.", tokens: 1, costUsd: 0, denied: [] },
+    },
+  ];
+  expect(journalLines(log).at(-1)).toMatchObject({ name: "Stop", text: "Fini.", tone: "green", whole: true });
+});
+test("the journal follows new lines unless the reader scrolled up", () => {
+  const entry = (id: number): RunLogEntry => ({
+    id,
+    at: NOW,
+    event: { type: "hook", payload: hook("PostToolUse", { tool: "Read", detail: `f${id}.ts` }) },
+  });
+  const view = render(<RunJournal label="opus-dev-2" log={[entry(1)]} files={null} />);
+  const list = screen.getByRole("list", { name: "Journal de opus-dev-2" });
+  let height = 400;
+  Object.defineProperty(list, "scrollHeight", { configurable: true, get: () => height });
+  Object.defineProperty(list, "clientHeight", { configurable: true, get: () => 100 });
+  view.rerender(<RunJournal label="opus-dev-2" log={[entry(1), entry(2)]} files={null} />);
+  expect(list.scrollTop).toBe(400);
+  list.scrollTop = 50;
+  list.dispatchEvent(new Event("scroll"));
+  height = 600;
+  view.rerender(<RunJournal label="opus-dev-2" log={[entry(1), entry(2), entry(3)]} files={null} />);
+  expect(list.scrollTop).toBe(50);
+  list.scrollTop = 500;
+  list.dispatchEvent(new Event("scroll"));
+  height = 800;
+  view.rerender(
+    <RunJournal label="opus-dev-2" log={[entry(1), entry(2), entry(3), entry(4)]} files={null} />,
+  );
+  expect(list.scrollTop).toBe(800);
 });

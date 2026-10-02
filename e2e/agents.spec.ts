@@ -1,6 +1,6 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, createGitRepo, rpc, seedWorkspace } from "./agents-seed";
+import { assign, createGitRepo, rpc, runState, seedWorkspace } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 test.setTimeout(180_000);
@@ -110,7 +110,10 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await page.getByLabel("Réponse à opus-dev-2").fill("Port dynamique, écrit dans ~/.kibo/daemon.json");
   await page.getByRole("button", { name: "Envoyer" }).click();
   await rpc(page, { method: "cancelRun", runId: rules });
+  await expect.poll(() => runState(page, "KIB-14"), { timeout: 45_000 }).toBe("done");
+  await expect(doing.getByRole("article").filter({ hasText: "KIB-14" })).toBeVisible();
+  await page.getByRole("button", { name: "Passer en review" }).click();
   const review = page.getByRole("region", { name: "En review" });
-  await expect(review.getByText("KIB-14")).toBeVisible({ timeout: 45_000 });
+  await expect(review.getByText("KIB-14")).toBeVisible();
   await expect(review.getByRole("article").filter({ hasText: "KIB-14" }).getByText("opus-dev")).toBeVisible();
 });

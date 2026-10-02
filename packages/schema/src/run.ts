@@ -160,7 +160,13 @@ export type HostView = HostSettings & {
   ram: number;
 };
 
-export type AgentsState = { runs: RunView[]; queue: QueueEntry[]; host: HostView; tokensToday: number };
+export type AgentsState = {
+  runs: RunView[];
+  queue: QueueEntry[];
+  host: HostView;
+  tokensToday: number;
+  resumable: string[];
+};
 export type AssignPreview = { position: number | null; reason: WaitReason | null; guidelines: number };
 export type RunLogEntry = { id: number; at: number; event: RunEvent };
 export const TicketRun = z.object({

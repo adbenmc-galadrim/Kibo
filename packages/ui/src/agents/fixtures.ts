@@ -206,6 +206,7 @@ export function agentsFixture(): AgentsState {
       ram: 70,
     },
     tokensToday: 1_200_000,
+    resumable: [],
   };
 }
 
