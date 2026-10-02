@@ -85,6 +85,20 @@ const allDaemons = [
     spec: /creations\.spec\.ts/,
     scenario: "ai/creations-routes",
   },
+  {
+    name: "conversation-dark",
+    scheme: "dark",
+    port: 4427,
+    spec: /conversation\.spec\.ts/,
+    scenario: "conversation",
+  },
+  {
+    name: "conversation-light",
+    scheme: "light",
+    port: 4428,
+    spec: /conversation\.spec\.ts/,
+    scenario: "conversation",
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 

@@ -1,0 +1,21 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Write", "input": { "file_path": "src/hooks/receiver.ts" } },
+        { "hook": "PostToolUse", "tool": "Write", "input": { "file_path": "src/hooks/receiver.ts" } }
+      ],
+      "result": "Récepteur écrit dans src/hooks/receiver.ts.\nVeux-tu que j'ajoute des tests ?",
+      "tokens": 1500
+    },
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Write", "input": { "file_path": "src/hooks/receiver.test.ts" } },
+        { "sleepMs": 4000 },
+        { "hook": "PostToolUse", "tool": "Write", "input": { "file_path": "src/hooks/receiver.test.ts" } }
+      ],
+      "result": "Tests ajoutés.\nTout passe.",
+      "tokens": 900
+    }
+  ]
+}
