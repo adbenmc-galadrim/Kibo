@@ -60,6 +60,14 @@ export const RUN_LOG: RunLogEntry[] = [
   {
     id: 8,
     at: NOW,
-    event: { type: "exited", code: 0, isError: false, result: "ok", tokens: 1, costUsd: 0, denied: [] },
+    event: {
+      type: "exited",
+      code: 0,
+      isError: false,
+      result: "J'attends ta réponse.",
+      tokens: 1,
+      costUsd: 0,
+      denied: [],
+    },
   },
 ];
