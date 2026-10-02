@@ -16,6 +16,7 @@ import {
   writeNoteFile,
 } from "./notes-fs";
 import { createProjectSettings } from "./settings";
+import { createSkippedNotes, type SkippedNote } from "./skipped-notes";
 import { type NotesWatcher, type WatchFn, watchNotes } from "./watch";
 
 export type NotesProject = { id: string; key: string; folder: string | null };
@@ -49,18 +50,19 @@ async function isDirectory(path: string): Promise<boolean> {
   }
 }
 
-async function readAll(dir: string): Promise<IndexedNote[]> {
+async function readAll(dir: string): Promise<{ notes: IndexedNote[]; skipped: SkippedNote[] }> {
   const notes: IndexedNote[] = [];
+  const skipped: SkippedNote[] = [];
   for (const path of await listNoteFiles(dir)) {
     try {
       const file = await readNoteFile(dir, path);
       notes.push({ path, markdown: file.markdown, mtime: file.mtime, size: file.size });
     } catch (e) {
       if (!(e instanceof KiboError && SKIPPED_NOTE_CODES.has(e.code))) throw e;
-      log(`note ${path} skipped: ${e.message}`);
+      skipped.push({ path, error: e });
     }
   }
-  return notes;
+  return { notes, skipped };
 }
 
 export function createNotesService(deps: NotesServiceDeps): NotesService {
@@ -69,6 +71,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
   const homeDir = deps.homeDir ?? homedir();
   const indexed = new Set<string>();
   const watchers = new Map<string, NotesWatcher>();
+  const skippedNotes = createSkippedNotes(log);
 
   const dirOf = (projectId: string): string => {
     const saved = settings.get(projectId, "notesDir");
@@ -117,13 +120,15 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
   const refresh = async (projectId: string): Promise<void> => {
     const dir = dirOf(projectId);
     let notes: IndexedNote[] = [];
+    let skipped: SkippedNote[] = [];
     if (await isDirectory(dir)) {
       await follow(projectId, dir);
-      notes = await readAll(dir);
+      ({ notes, skipped } = await readAll(dir));
     } else if (watchers.has(projectId)) {
       release(projectId);
       log(`notes folder ${dir} disappeared, watch released`);
     }
+    skippedNotes.report(projectId, skipped);
     index.replace(projectId, deps.project(projectId).key, notes);
     indexed.add(projectId);
     deps.onChange?.(projectId);
@@ -206,6 +211,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     forget(projectId) {
       release(projectId);
       indexed.delete(projectId);
+      skippedNotes.forget(projectId);
       index.clear(projectId);
     },
     close() {
