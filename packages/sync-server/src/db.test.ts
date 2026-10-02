@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { audit, readAudit } from "./audit";
 import { openServerDb } from "./db";
+import { holdWriteLock } from "./testing/hold-write-lock";
 
 let dir = "";
 afterEach(() => {
@@ -17,6 +18,17 @@ test("creates the database file with mode 0600 in a 0700 directory", () => {
   audit(sdb, { at: 1, kind: "connect", userId: "u1" });
   expect(statSync(file).mode & 0o777).toBe(0o600);
   expect(statSync(join(dir, "data")).mode & 0o777).toBe(0o700);
+  sdb.close();
+});
+
+test("a write waits for another process to release its lock", async () => {
+  dir = mkdtempSync(join(tmpdir(), "kibo-sync-db-"));
+  const file = join(dir, "sync.db");
+  const sdb = openServerDb(file);
+  const lock = await holdWriteLock(file, 300);
+  audit(sdb, { at: 1, kind: "connect", userId: "u1" });
+  expect(await lock.released).toBe(0);
+  expect(readAudit(sdb, 10).map((e) => e.kind)).toEqual(["connect"]);
   sdb.close();
 });
 

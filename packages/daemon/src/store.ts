@@ -3,6 +3,7 @@ import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
+import { SQLITE_BUSY_TIMEOUT_MS } from "./sqlite-busy";
 
 export type Store = {
   db: Database;
@@ -23,6 +24,7 @@ export function openStore(home: string): Store {
   let db: Database;
   try {
     db = new Database(file, { create: true, strict: true });
+    db.exec(`PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`);
     db.exec("PRAGMA journal_mode = WAL");
     db.exec("PRAGMA synchronous = FULL");
     db.exec(
@@ -66,7 +68,7 @@ export function openStore(home: string): Store {
     setLocal: (key, value) => {
       upsertLocal.run({ key, value, at: Date.now() });
     },
-    transaction: <T>(fn: () => T): T => db.transaction(fn)(),
+    transaction: <T>(fn: () => T): T => db.transaction(fn).immediate(),
     close: () => db.close(),
   };
 }

@@ -5,6 +5,8 @@ import { KiboError } from "@kibo/schema";
 
 export type ServerDb = { db: Database; close(): void };
 
+const SQLITE_BUSY_TIMEOUT_MS = 5_000;
+
 const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT NOT NULL, createdAt INTEGER NOT NULL, disabledAt INTEGER)",
   "CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, userId TEXT NOT NULL REFERENCES users(id), publicKey TEXT NOT NULL UNIQUE, name TEXT NOT NULL, createdAt INTEGER NOT NULL, lastSeenAt INTEGER, revokedAt INTEGER)",
@@ -38,6 +40,7 @@ export function openServerDb(file: string): ServerDb {
   let db: Database;
   try {
     db = new Database(file, { create: true, strict: true });
+    db.exec(`PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`);
     db.exec("PRAGMA journal_mode = WAL");
     db.exec("PRAGMA synchronous = FULL");
     db.exec("PRAGMA foreign_keys = ON");

@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { HostSettings, KiboError, RunEvent, type RunLogEntry, type RunRecord } from "@kibo/schema";
+import { SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 
 export type NewRun = Omit<RunRecord, "seq" | "createdAt">;
 export type StoredEvent = RunLogEntry & { runId: string };
@@ -84,6 +85,7 @@ export function openRunStore(home: string): RunStore {
   let db: Database;
   try {
     db = new Database(file, { create: true, strict: true });
+    db.exec(`PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`);
     db.exec("PRAGMA journal_mode = WAL");
     db.exec("PRAGMA synchronous = FULL");
     db.exec("PRAGMA foreign_keys = ON");
@@ -136,7 +138,7 @@ export function openRunStore(home: string): RunStore {
   };
 
   return {
-    create: (run, rank, at) => create(run, rank, at),
+    create: (run, rank, at) => create.immediate(run, rank, at),
     append(runId, event, at) {
       requireRun(runId);
       const row = insertEvent.get({ run_id: runId, at, data: JSON.stringify(event) }) as { id: number };
