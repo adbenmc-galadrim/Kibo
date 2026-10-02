@@ -9,6 +9,12 @@ Seuil d'usage hebdomadaire fixé par Adam : 80 %. Ce document permet de reprendr
 - Mesures sur `phase/9` : budget UI **221,4 kB** (221 449 octets ; exigence de la vague 4 : 222,0 kB ; plafond 230 kB, jamais relevé), **70 parcours E2E** verts (ports 4390 à 4426), **3 952 tests unitaires** (1 ignoré) au jalon ; après les changements du 2 octobre, ports E2E jusqu'à 4428.
 - Captures de contrôle (non commitées, `screens/` ignoré par git) : `screens/2026-10-01-t<n>/`.
 
+## État à l'arrêt (2 octobre, usage hebdomadaire 81 %, seuil 80 %)
+
+- `main` = `654f32cd` (PR « base verrouillée, journal des notes » fusionnée), CI verte sur les six jobs, environ cinq minutes. Aucune PR ouverte, aucun agent en cours, aucune tâche à moitié faite.
+- Tag `v1.1.0` non posé : il attend la validation d'Adam.
+- À reprendre dans cet ordre : deux démons sur le même `KIBO_HOME` (décision à écrire dans la spec, puis garde au démarrage) ; cause d'un run échoué au lieu de « espace de travail indisponible » ; tri des alertes Dependabot (3 hautes, 7 modérées, non examinées) ; décisions d'Adam (A22, « PR ouverte → En review », second run sur un ticket, écriture sur un projet en lecture seule) ; tag. Le reste est dans « Suivis » plus bas.
+
 ## Après le jalon (2 octobre)
 
 Intégré dans `main` par la PR « CI en dix minutes, correctifs v1.1 » puis par la PR de la conversation avec un run (état : `gh pr list --state all --limit 5`) :
