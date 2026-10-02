@@ -126,6 +126,12 @@ const projectIdOf = (page: Page): string => {
   return decodeURIComponent(match[1]);
 };
 
+const pageIdOf = (page: Page): string => {
+  const match = /#\/p\/[^/]+\/([^/?]+)/.exec(page.url());
+  if (!match?.[1]) throw new Error(`no page in ${page.url()}`);
+  return decodeURIComponent(match[1]);
+};
+
 test.describe("fenêtre large", () => {
   test.use({ viewport: WIDE });
 
@@ -182,6 +188,40 @@ test.describe("fenêtre large", () => {
     const kanban = await widget(page, "Kanban").boundingBox();
     expect(tickets && kanban && tickets.y < kanban.y).toBe(true);
     await shot(page, info, "ecran-129");
+  });
+});
+
+test.describe("widgets empilés", () => {
+  test.use({ viewport: TALL });
+
+  test("addInstance sans disposition, format changé et enregistré", async ({ page }, info) => {
+    await pairAndCreateProject(page, info, "LST");
+    await createDashboard(page);
+    const projectId = projectIdOf(page);
+    const pageId = pageIdOf(page);
+    for (const component of ["kanban@1.0.0", "tickets@1.0.0"]) {
+      await rpc(page, {
+        method: "command",
+        projectId,
+        command: { method: "addInstance", pageId, component },
+      });
+    }
+    const titles = ["Kanban", "Tickets"];
+    await expect
+      .poll(async () => (await Promise.all(titles.map((t) => layoutOf(widget(page, t))))).sort())
+      .toEqual(["0,0,12,6", "0,6,12,6"]);
+    const top = (await layoutOf(widget(page, "Kanban"))) === "0,0,12,6" ? "Kanban" : "Tickets";
+    const below = top === "Kanban" ? "Tickets" : "Kanban";
+
+    await editLayout(page);
+    await page.getByRole("button", { name: `Format de ${top}` }).click();
+    await page.getByRole("menuitemradio", { name: /Large · 6 × 6/ }).click();
+    await expectLayout(widget(page, top), "0,0,6,6");
+    await expect(toolbar(page)).toContainText("1 changement");
+    await save(page);
+    await page.reload();
+    await expectLayout(widget(page, top), "0,0,6,6");
+    await expectLayout(widget(page, below), "0,6,12,6");
   });
 });
 

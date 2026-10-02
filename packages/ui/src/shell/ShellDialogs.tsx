@@ -222,6 +222,7 @@ export function ShellDialogs({
           ticketId={state.assign.ticketId}
           config={config}
           onClose={() => set({ assign: null })}
+          onEditProject={(projectId) => set({ assign: null, editProject: projectId })}
         />
       )}
       {state.newProfile && config && agents && (

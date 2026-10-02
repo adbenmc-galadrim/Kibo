@@ -2,7 +2,21 @@ import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwrig
 import { MARKET_PORTS } from "./market-fixture";
 import { SYNC_PORTS } from "./sync-fixture";
 
-const daemons = [
+const THEMES = ["dark", "light"] as const;
+type Theme = (typeof THEMES)[number];
+
+function onlyTheme(): Theme | null {
+  const wanted = process.env.KIBO_E2E_THEME;
+  if (wanted === undefined || wanted === "") return null;
+  const theme = THEMES.find((t) => t === wanted);
+  if (theme === undefined) throw new Error(`KIBO_E2E_THEME must be one of ${THEMES.join(", ")}`);
+  return theme;
+}
+
+const only = onlyTheme();
+const inTheme = (scheme: Theme): boolean => only === null || only === scheme;
+
+const allDaemons = [
   { name: "dark", scheme: "dark", port: 4390, spec: /mvp\.spec\.ts/, scenario: "question" },
   { name: "light", scheme: "light", port: 4391, spec: /mvp\.spec\.ts/, scenario: "question" },
   { name: "agents-dark", scheme: "dark", port: 4392, spec: /agents\.spec\.ts/, scenario: "routes" },
@@ -72,13 +86,16 @@ const daemons = [
     scenario: "ai/creations-routes",
   },
 ] as const;
+const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
-const marketThemes = ["dark", "light"] as const;
+const marketThemes = THEMES.filter(inTheme);
 
-const syncProjects = [
+const allSyncProjects = [
   { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
   { name: "sync-light", scheme: "light", port: SYNC_PORTS.light.a, after: ["sync-dark"] },
 ] as const;
+const syncProjects = allSyncProjects.filter((p) => inTheme(p.scheme));
+const syncNames: readonly string[] = syncProjects.map((p) => p.name);
 
 type WebServer = Exclude<NonNullable<PlaywrightTestConfig["webServer"]>, unknown[]>;
 
@@ -109,7 +126,7 @@ export default defineConfig({
       (p): Project => ({
         name: p.name,
         testMatch: /sync\.spec\.ts/,
-        dependencies: [...p.after],
+        dependencies: p.after.filter((name) => syncNames.includes(name)),
         use: { browserName: "chromium", colorScheme: p.scheme, baseURL: `http://127.0.0.1:${p.port}` },
       }),
     ),

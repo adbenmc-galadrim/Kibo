@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { type Instance, KiboError, type Layout, layoutFor, type Page, type RpcRequest } from "@kibo/schema";
+import { type Instance, KiboError, type Layout, layoutFor, Page, type RpcRequest } from "@kibo/schema";
+import { createMockSdk } from "@kibo/sdk/mock";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -23,7 +24,7 @@ mock.module("../api", () => ({
 
 const { LayoutEditor } = await import("./LayoutEditor");
 const { moveWidget, changedIds } = await import("./layout-draft");
-const { cellMetrics } = await import("../lib/format-grid");
+const { cellMetrics, resolveOverlaps } = await import("../lib/format-grid");
 
 const dashboard: Page = { id: "pg", title: "Tableau de bord", kind: "dashboard", parentId: null };
 const widget = (id: string, component: string, layout: Layout): Instance => ({
@@ -82,6 +83,91 @@ describe("layout editor", () => {
         command: { method: "setInstanceLayout", instanceId: "tickets", layout: layoutFor("medium", 6, 0) },
       },
     ]);
+  });
+
+  test("widgets stacked at (0, 0) by addInstance save a new format in an order the core accepts", async () => {
+    const user = userEvent.setup();
+    const core = createMockSdk({
+      id: "probe",
+      version: "0.1.0",
+      kind: "widget",
+      title: "Probe",
+      reads: [],
+      writes: [],
+    });
+    const page = Page.parse(core.run({ method: "addPage", title: "Tableau de bord", kind: "dashboard" }));
+    for (const component of ["kanban@1.0.0", "tickets@1.0.0", "graph@1.0.0"]) {
+      core.run({ method: "addInstance", pageId: page.id, component });
+    }
+    answer = (req) => (req.method === "command" ? core.run(req.command) : null);
+    const instances = core.snapshot().instances;
+    const shown = resolveOverlaps(instances);
+    const first = instances.find((i) => shown.get(i.id)?.y === 0);
+    if (!first) throw new Error("no first widget");
+    render(
+      <LayoutEditor
+        projectId="p1"
+        page={{ ...dashboard, id: page.id }}
+        instances={instances}
+        formatsFor={() => ["medium", "large", "half"]}
+        renderWidget={(i) => <p>{i.component}</p>}
+        onClose={onClose}
+      />,
+    );
+    const titles = new Map([
+      ["kanban@1.0.0", "Kanban"],
+      ["tickets@1.0.0", "Tickets"],
+      ["graph@1.0.0", "Graphe de dépendances"],
+    ]);
+    await user.click(screen.getByRole("button", { name: `Format de ${titles.get(first.component)}` }));
+    await user.click(screen.getByRole("menuitemradio", { name: /Moyen · 6 × 3/ }));
+    expect(toolbar().textContent).toContain("1 changement");
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).toBeNull();
+    const saved = new Map(core.snapshot().instances.map((i) => [i.id, i.layout]));
+    expect(saved).toEqual(new Map(shown).set(first.id, layoutFor("medium", 0, 0)));
+  });
+
+  test("a widget moved meanwhile by another member is not moved back, the conflicting change is refused", async () => {
+    const user = userEvent.setup();
+    const core = createMockSdk({
+      id: "probe",
+      version: "0.1.0",
+      kind: "widget",
+      title: "Probe",
+      reads: [],
+      writes: [],
+    });
+    const page = Page.parse(core.run({ method: "addPage", title: "Tableau de bord", kind: "dashboard" }));
+    const add = (component: string, layout: Layout) =>
+      core.run({ method: "addInstance", pageId: page.id, component, layout });
+    add("kanban@1.0.0", layoutFor("large", 0, 0));
+    add("tickets@1.0.0", layoutFor("medium", 6, 9));
+    answer = (req) => (req.method === "command" ? core.run(req.command) : null);
+    const editor = (instances: Instance[]) => (
+      <LayoutEditor
+        projectId="p1"
+        page={{ ...dashboard, id: page.id }}
+        instances={instances}
+        formatsFor={() => ["medium", "large", "half", "full"]}
+        renderWidget={(i) => <p>{i.component}</p>}
+        onClose={onClose}
+      />
+    );
+    const view = render(editor(core.snapshot().instances));
+    const ticketsId = core.snapshot().instances.find((i) => i.component === "tickets@1.0.0")?.id ?? "";
+    core.run({ method: "setInstanceLayout", instanceId: ticketsId, layout: layoutFor("medium", 0, 6) });
+    view.rerender(editor(core.snapshot().instances));
+    await user.click(screen.getByRole("button", { name: "Format de Kanban" }));
+    await user.click(screen.getByRole("menuitemradio", { name: /Plein écran/ }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("La disposition de Kanban n'a pas été enregistrée.");
+    expect(onClose).not.toHaveBeenCalled();
+    const saved = new Map(core.snapshot().instances.map((i) => [i.component, i.layout]));
+    expect(saved.get("tickets@1.0.0")).toEqual(layoutFor("medium", 0, 6));
+    expect(saved.get("kanban@1.0.0")).toEqual(layoutFor("large", 0, 0));
   });
 
   test("a refused command keeps the editor open with the error, Cancel and Escape restore", async () => {

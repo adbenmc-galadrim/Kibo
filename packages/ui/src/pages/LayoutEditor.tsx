@@ -26,6 +26,7 @@ import { GridGuides } from "./GridGuides";
 import { instanceTitle } from "./instance-title";
 import { LayoutToolbar } from "./LayoutToolbar";
 import { changedIds, type Draft, formatChoice, moveWidget, type Target, targetOf } from "./layout-draft";
+import { planLayoutSave, saveTarget } from "./layout-plan";
 
 export type LayoutEditorProps = {
   projectId: string;
@@ -165,31 +166,29 @@ export function LayoutEditor({
   };
 
   const save = async () => {
+    if (changes.length === 0) return onClose();
     setSaving(true);
     setFailure(null);
     const done = new Map(origin);
-    let pending = changes;
+    const plan = planLayoutSave(
+      new Map(instances.map((i) => [i.id, i.layout])),
+      saveTarget(instances, layouts, changes),
+    );
+    const last = new Map(plan.map((step, index) => [step.id, index]));
     let refusal: { id: string; error: unknown } | null = null;
-    while (pending.length > 0) {
-      const refused: string[] = [];
-      refusal = null;
-      for (const id of pending) {
-        const layout = layouts.get(id);
-        if (!layout) continue;
-        try {
-          await client.rpc({
-            method: "command",
-            projectId,
-            command: { method: "setInstanceLayout", instanceId: id, layout },
-          });
-          done.set(id, layout);
-        } catch (error) {
-          refused.push(id);
-          refusal ??= { id, error };
-        }
+    for (const [index, { id, layout }] of plan.entries()) {
+      try {
+        await client.rpc({
+          method: "command",
+          projectId,
+          command: { method: "setInstanceLayout", instanceId: id, layout },
+        });
+      } catch (error) {
+        refusal = { id, error };
+        break;
       }
-      if (refused.length === pending.length) break;
-      pending = refused;
+      const shown = layouts.get(id);
+      if (shown && last.get(id) === index) done.set(id, shown);
     }
     setOrigin(done);
     setSaving(false);

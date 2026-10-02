@@ -2,17 +2,18 @@ name: ci
 on:
   push: { branches: [main] }
   pull_request:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  test:
-    strategy:
-      matrix: { os: [ubuntu-latest, macos-latest] }
-    runs-on: ${{ matrix.os }}
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.2 }
-      - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run typecheck
@@ -21,19 +22,34 @@ jobs:
         shell: bash
         run: packages/sync-server/dist/kibo-sync invite account --name CI --data "$(mktemp -d)"
       - run: bun run --cwd packages/ui build
-      - run: bun test packages components ./scripts
+      - run: bun run budget
       - run: bun apps/desktop/scripts/cli-smoke.ts
-  e2e:
-    needs: test
+  unit:
     strategy:
-      matrix: { os: [ubuntu-latest, macos-latest] }
-    runs-on: ${{ matrix.os }}
+      fail-fast: false
+      matrix: { group: [daemon, reste] }
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.2 }
-      - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: bun install --frozen-lockfile
+      - if: matrix.group == 'daemon'
+        run: bun test ./packages/daemon
+      - if: matrix.group == 'reste'
+        shell: bash
+        run: bun test $(ls -d packages/*/ | grep -v '^packages/daemon/$' | sed 's|^|./|') ./components ./scripts
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env: { KIBO_E2E_THEME: dark }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.2 }
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: bun install --frozen-lockfile
       - run: cd e2e && bunx playwright install --with-deps chromium
       - run: bun run --cwd packages/ui build
@@ -41,11 +57,11 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: playwright-${{ matrix.os }}
+          name: playwright-ubuntu
           path: e2e/test-results
   desktop-smoke:
-    needs: test
     strategy:
+      fail-fast: false
       matrix: { os: [ubuntu-22.04, macos-latest] }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -69,3 +85,5 @@ jobs:
           export KIBO_SMOKE=1 KIBO_HOME=$(mktemp -d) WEBKIT_DISABLE_DMABUF_RENDERER=1
           if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a apps/desktop/src-tauri/target/debug/kibo; else apps/desktop/src-tauri/target/debug/kibo; fi
           if pgrep -f kibo-daemon; then exit 1; fi
+      - if: runner.os == 'macOS'
+        run: bun apps/desktop/scripts/cli-smoke.ts

@@ -7,7 +7,6 @@ import {
   type TicketView,
   type WorkspaceConfig,
 } from "@kibo/schema";
-import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   Dialog,
@@ -20,13 +19,15 @@ import {
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
-import { Bot, TriangleAlert } from "lucide-react";
+import { Bot } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
+import { canEdit } from "../state/access";
+import { NoFolderAlert, Notice, needsFolder, spaceText, WaitingAlert } from "./AssignAlerts";
 import { reasonText } from "./format";
 
 type Props = {
@@ -35,46 +36,10 @@ type Props = {
   config: WorkspaceConfig | null;
   baseBranch?: string;
   onClose: () => void;
+  onEditProject?: (projectId: string) => void;
 };
 
 const DEFAULT_BASE_BRANCH = "main";
-
-function spaceText(profile: AgentProfile, ticket: TicketView, baseBranch: string): string {
-  if (profile.workspace === "worktree")
-    return fr.assign.newWorktree(ticket.keyLabel.toLowerCase(), baseBranch);
-  return profile.workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
-}
-
-function Notice({ title, text, onClose }: { title: string; text: string; onClose: () => void }) {
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{text}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {fr.common.cancel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function waitingText(project: ProjectSnapshot, ticket: TicketView): string {
-  const deps = ticket.waitingOn.map(
-    (label) => project.tickets.find((t) => t.key !== null && t.key === label) ?? label,
-  );
-  const labels = deps.map((dep) => {
-    if (typeof dep === "string") return dep;
-    const status = project.workflow.find((s) => s.id === dep.statusId)?.label.toLowerCase();
-    return status ? fr.assign.dependency(dep.keyLabel, status) : dep.keyLabel;
-  });
-  const titles = deps.map((dep) => (typeof dep === "string" ? dep : `« ${dep.title} »`));
-  return fr.assign.waiting(ticket.keyLabel, labels.join(", "), titles.join(", "));
-}
 
 type FormProps = {
   project: ProjectSnapshot;
@@ -83,11 +48,12 @@ type FormProps = {
   profiles: AgentProfile[];
   domains: Domain[];
   onClose: () => void;
+  onEditProject?: (projectId: string) => void;
 };
 
 const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
 
-function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose }: FormProps) {
+function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose, onEditProject }: FormProps) {
   const id = useId();
   const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
@@ -101,12 +67,13 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
   const domain = domains.find((d) => d.id === ticket?.domainId)?.name ?? null;
   const projectId = project.meta.id;
   const keyed = ticket?.key != null;
+  const folderMissing = profile !== null && needsFolder(profile, project);
 
   useEffect(() => {
-    if (!chosenTicket || !profileId || !keyed) return;
-    let alive = true;
     setPreview(null);
     setPreviewFailed(false);
+    if (!chosenTicket || !profileId || !keyed || folderMissing) return;
+    let alive = true;
     client.rpc({ method: "previewAssign", projectId, ticketId: chosenTicket, profileId }).then(
       (p) => alive && setPreview(p),
       () => alive && setPreviewFailed(true),
@@ -114,11 +81,11 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
     return () => {
       alive = false;
     };
-  }, [projectId, chosenTicket, profileId, keyed]);
+  }, [projectId, chosenTicket, profileId, keyed, folderMissing]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!ticket || !profile) return;
+    if (!ticket || !profile || folderMissing) return;
     setFailed(false);
     try {
       await client.rpc({
@@ -138,7 +105,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
   const submitButton = (
     <Button
       type="submit"
-      disabled={!ticket || !profile}
+      disabled={!ticket || !profile || folderMissing}
       className="bg-brand-strong text-white hover:bg-brand-strong/90"
     >
       {fr.assign.submit}
@@ -193,14 +160,11 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
               </SelectContent>
             </Select>
           </div>
-          {ticket && ticket.waitingOn.length > 0 && (
-            <Alert
-              role="status"
-              className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-            >
-              <TriangleAlert aria-hidden />
-              <AlertDescription className="text-inherit">{waitingText(project, ticket)}</AlertDescription>
-            </Alert>
+          {ticket && ticket.waitingOn.length > 0 && <WaitingAlert project={project} ticket={ticket} />}
+          {folderMissing && (
+            <NoFolderAlert
+              onEditProject={onEditProject && canEdit(project) ? () => onEditProject(projectId) : undefined}
+            />
           )}
           <div className="grid gap-2">
             <Label htmlFor={`${id}-brief`}>{fr.assign.brief}</Label>
@@ -214,7 +178,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
           {ticket && profile && (
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
               <dt className="text-muted-foreground">{fr.assign.space}</dt>
-              <dd>{spaceText(profile, ticket, baseBranch)}</dd>
+              <dd>{spaceText(profile, project, ticket, baseBranch)}</dd>
               <dt className="text-muted-foreground">{fr.assign.permissions}</dt>
               <dd>{profile.permissionMode}</dd>
               <dt className="text-muted-foreground">{fr.assign.guidelines}</dt>
@@ -222,11 +186,12 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose 
                 {preview ? fr.assign.guidelineChain(project.meta.name, domain, preview.guidelines) : "-"}
               </dd>
               <dt className="text-muted-foreground">{fr.assign.queue}</dt>
-              <dd className="text-cyan-600 dark:text-cyan-400">
-                {preview &&
-                  (preview.position === null
+              <dd className={preview ? "text-cyan-600 dark:text-cyan-400" : undefined}>
+                {preview
+                  ? preview.position === null
                     ? fr.assign.startsNow
-                    : fr.assign.entersQueue(reasonText(preview.reason), preview.position))}
+                    : fr.assign.entersQueue(reasonText(preview.reason), preview.position)
+                  : "-"}
               </dd>
             </dl>
           )}
@@ -262,6 +227,7 @@ export function AssignDialog({
   config,
   baseBranch = DEFAULT_BASE_BRANCH,
   onClose,
+  onEditProject,
 }: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
   if (isInbox(project.meta.id))
@@ -282,6 +248,7 @@ export function AssignDialog({
       profiles={assignable}
       domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}
+      onEditProject={onEditProject}
     />
   );
 }

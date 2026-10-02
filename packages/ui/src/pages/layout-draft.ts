@@ -15,10 +15,10 @@ export type Target = { layout: Layout; free: boolean };
 const othersThan = (layouts: Draft, id: string): Layout[] =>
   [...layouts].filter(([other]) => other !== id).map(([, l]) => l);
 
-const sameLayout = (a: Layout, b: Layout): boolean =>
+export const sameLayout = (a: Layout, b: Layout): boolean =>
   a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 
-const asFormat = (l: Layout): Layout => layoutFor(formatOf(l) ?? nearestFormat(l), l.x, l.y);
+export const asFormat = (l: Layout): Layout => layoutFor(formatOf(l) ?? nearestFormat(l), l.x, l.y);
 
 export function targetOf(
   layouts: Draft,
