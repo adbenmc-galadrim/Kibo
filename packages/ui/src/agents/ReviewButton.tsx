@@ -4,6 +4,7 @@ import { Eye } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { frRunChat } from "../i18n/fr-run-chat";
+import { canEdit } from "../state/access";
 import { useProject } from "../state/use-projects";
 import { canSendToReview } from "./run-chat";
 
@@ -12,7 +13,7 @@ export function ReviewButton({ run }: { run: RunView }) {
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(false);
   const ticket = project?.tickets.find((t) => t.id === run.ticketId) ?? null;
-  if (!project || !ticket || !canSendToReview(ticket.statusId)) return null;
+  if (!project || !ticket || !canEdit(project) || !canSendToReview(ticket.statusId)) return null;
   const send = async () => {
     setFailed(false);
     setSending(true);

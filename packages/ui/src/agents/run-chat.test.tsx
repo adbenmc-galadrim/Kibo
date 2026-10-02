@@ -1,18 +1,20 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import type { AgentsState, RpcRequest, RunView, StatusId } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, kiboProject, NOW, runFixture } from "./fixtures";
 import { chatBox } from "./run-chat";
 
 const calls: RpcRequest[] = [];
 let status: StatusId = "in_progress";
+let access: "write" | "read" = "write";
 
 const project = () => {
   const snapshot = kiboProject();
   return {
     ...snapshot,
     tickets: snapshot.tickets.map((t) => (t.id === "t14" ? { ...t, statusId: status } : t)),
+    sync: { ...snapshot.sync, access },
   };
 };
 
@@ -20,7 +22,7 @@ mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
-      return Promise.resolve(null);
+      return Promise.resolve(req.method === "getProject" ? project() : null);
     },
     subscribe: () => () => {},
     code: () => Promise.resolve([]),
@@ -28,9 +30,11 @@ mock.module("../api", () => ({
   },
 }));
 
+const unmockedProjects = "../state/use-projects?unmocked";
+const realProjects: typeof import("../state/use-projects") = await import(unmockedProjects);
 mock.module("../state/use-projects", () => ({
-  useProjects: () => ({ projects: [], error: null, retry: () => {} }),
-  useProject: (id: string | null) => (id === "kibo" ? project() : null),
+  useProject: realProjects.useProject,
+  useProjects: realProjects.useProjects,
 }));
 
 const { AgentDrawer } = await import("./AgentDrawer");
@@ -38,6 +42,7 @@ const { AgentDrawer } = await import("./AgentDrawer");
 beforeEach(() => {
   calls.length = 0;
   status = "in_progress";
+  access = "write";
 });
 
 const ticketRun = (p: Partial<RunView>): RunView =>
@@ -109,9 +114,11 @@ test("during a turn the box is disabled and says why", async () => {
   expect(await screen.findByRole("button", { name: "Passer en review" })).toBeTruthy();
 });
 
-test("a run that cannot resume has no box; a ticket already in review has no review button", () => {
+test("a run that cannot resume has no box; a ticket already in review has no review button", async () => {
   status = "in_review";
   render(drawer(ticketRun({ state: "failed", endedAt: NOW, error: "exit code 1" })));
+  await waitFor(() => expect(calls.some((c) => c.method === "getProject")).toBe(true));
+  await Promise.resolve();
   expect(screen.queryByRole("textbox")).toBeNull();
   expect(screen.queryByRole("button", { name: "Passer en review" })).toBeNull();
 });
@@ -120,4 +127,13 @@ test("a waiting run is answered under the « Répondre » title", () => {
   render(drawer(ticketRun({ state: "waiting_input", question: "Quel port ?" })));
   expect(screen.getByText("Répondre")).toBeTruthy();
   expect(screen.getByLabelText("Réponse à opus-dev-2")).toBeTruthy();
+});
+
+test("without write access to the project there is no review button", async () => {
+  access = "read";
+  render(drawer(ticketRun({ state: "done", endedAt: NOW }), ["r50"]));
+  await waitFor(() => expect(calls.some((c) => c.method === "getProject")).toBe(true));
+  await Promise.resolve();
+  expect(screen.queryByRole("button", { name: "Passer en review" })).toBeNull();
+  expect(screen.getByLabelText("Écrire à opus-dev-2")).toBeTruthy();
 });
