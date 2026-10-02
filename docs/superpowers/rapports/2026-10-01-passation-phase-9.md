@@ -38,7 +38,7 @@ L'ancienne CI prenait 32 minutes : `e2e` et `desktop-smoke` attendaient `test`, 
 - `e2e` (ubuntu), thème sombre seulement (`KIBO_E2E_THEME=dark`, 35 parcours sur 70 ; sans la variable, `playwright.config.ts` lance les deux thèmes).
 - `desktop-smoke` (ubuntu et macOS) : compilation de la coque, tests Rust, test de démarrage.
 
-Retiré de la CI, et couvert seulement par la gate locale (macOS, les deux thèmes, obligatoire avant chaque intégration) : les tests unitaires et E2E sur macOS, les parcours E2E en thème clair. Chaque retrait se rétablit en une ligne de `ci.yml` (matrice `os`, variable `KIBO_E2E_THEME`). Si un groupe de `unit` approche huit minutes, le redécouper par paquet.
+Retiré de la CI, et couvert seulement par la gate locale (macOS, les deux thèmes, obligatoire avant chaque intégration) : les tests unitaires et E2E sur macOS, les parcours E2E en thème clair. Chaque retrait se rétablit en une ligne de `ci.yml` (matrice `os`, variable `KIBO_E2E_THEME`). Mesuré sur la PR du 2 octobre (run 36943283874) : 5 min 05 s en tout ; `check` 1 min 40, `unit` démon 5 min 01, `unit` reste 3 min 56, `e2e` 3 min 29, `desktop-smoke` 2 min 45 (ubuntu) et 3 min 07 (macOS, cache Rust chaud). Si un groupe de `unit` approche huit minutes, le redécouper par paquet.
 
 ## Suivis à prendre en premier après le jalon
 
