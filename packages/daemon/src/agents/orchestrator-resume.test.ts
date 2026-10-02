@@ -126,3 +126,30 @@ test("a message written before a restart keeps the run queued with its message",
     await restarted.stop();
   }
 }, 30_000);
+
+test("a resumed turn cancelled while starting, then written to again, spawns one agent", async () => {
+  const h = setup({ scenario: "done" });
+  const r = assign(h, "t1");
+  await waitUntil(() => run(h, r.id).state === "done");
+  expect(h.orch.answer(r.id, "Premier message").state).toBe("starting");
+  h.orch.cancel(r.id);
+  expect(h.orch.answer(r.id, "Second message").state).toBe("starting");
+  await waitUntil(() => run(h, r.id).state === "done" && run(h, r.id).turns === 2);
+  await Bun.sleep(300);
+  const spawned = h.orch.log(r.id).filter((e) => e.event.type === "spawned");
+  expect(spawned).toHaveLength(2);
+  const calls = fakeCalls(h.state, r.sessionId);
+  expect(calls).toHaveLength(2);
+  expect(calls[1]?.prompt).toBe("Second message");
+}, 30_000);
+
+test("a run whose profile was deleted cannot be written to", async () => {
+  const profiles = [profile()];
+  const h = setup({ scenario: "done", profiles });
+  const r = assign(h, "t1");
+  await waitUntil(() => run(h, r.id).state === "done");
+  expect(h.orch.state().resumable).toEqual([r.id]);
+  profiles.splice(0);
+  expect(h.orch.state().resumable).toEqual([]);
+  expect(() => h.orch.answer(r.id, "x")).toThrow("INVALID_TRANSITION");
+}, 30_000);

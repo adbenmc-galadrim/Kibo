@@ -1,5 +1,5 @@
 import { guidelineChain } from "@kibo/core/context";
-import { canWriteAfterEnd, initRun } from "@kibo/core/run-machine";
+import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import {
   defaultHostSlots,
   headRank,
@@ -18,10 +18,11 @@ import {
   isTerminal,
   KiboError,
   type RunView,
-  SLOT_STATES,
 } from "@kibo/schema";
+import { previewAssign } from "./assign-preview";
 import type { HookSink } from "./hook-route";
 import { noticeFor } from "./notifier";
+import { guarded, holdsSlot, startOfDay } from "./orchestrator-support";
 import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
@@ -38,23 +39,6 @@ export type {
   TicketContext,
   ToolGuard,
 } from "./orchestrator-types";
-
-const PREVIEW_ID = "preview";
-const holdsSlot = (r: RunView) => SLOT_STATES.includes(r.state);
-
-function startOfDay(at: number): number {
-  const d = new Date(at);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
-
-function guarded(what: string, action: () => void): void {
-  try {
-    action();
-  } catch (e) {
-    console.error(`[kibo-daemon] ${what} failed`, e);
-  }
-}
 
 export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const now = opts.now ?? Date.now;
@@ -179,10 +163,11 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   }, opts.tickMs ?? 2000);
   timer.unref();
 
-  const latestOfTicket = (run: RunView, runs: RunView[]): boolean =>
-    !runs.some((r) => r.seq > run.seq && r.projectId === run.projectId && r.ticketId === run.ticketId);
-  const resumable = (run: RunView, runs: RunView[]): boolean =>
-    canWriteAfterEnd(run) && !live.has(run.id) && latestOfTicket(run, runs);
+  const resumeContext = (runs: RunView[]) => ({
+    runs,
+    alive: (id: string) => live.has(id),
+    profileIds: new Set(opts.data.profiles().map((p) => p.id)),
+  });
 
   const enqueue = (run: NewRun): RunView => registry.create(run, tailRank(registry.all()));
 
@@ -232,42 +217,28 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     },
     preview(input) {
       const profile = ticketProfileOf(input.profileId);
-      const ctx = opts.data.ticketContext(input.projectId, input.ticketId);
-      if (ctx.ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
-      const runs = registry.all();
-      const at = now();
-      const candidate = initRun(
-        {
-          id: PREVIEW_ID,
-          seq: Number.MAX_SAFE_INTEGER,
-          projectId: input.projectId,
-          ticketId: ctx.ticket.id,
-          ticketKey: ctx.ticket.key,
-          ticketTitle: ctx.ticket.title,
-          profileId: profile.id,
-          profileName: profile.name,
-          sessionId: PREVIEW_ID,
-          brief: "",
-          createdAt: at,
-        },
-        tailRank(runs),
-        at,
-      );
-      const withCandidate = [...runs, candidate];
-      const next = plan(withCandidate);
+      const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
+      const key = ticket.key;
+      if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       const guidelines = guidelineChain(opts.data.guidelines(input.projectId), {
         projectId: input.projectId,
-        domainId: ctx.ticket.domainId,
+        domainId: ticket.domainId,
         profileId: profile.id,
       }).length;
-      if (next.admit.some((a) => a.runId === PREVIEW_ID)) return { position: null, reason: null, guidelines };
-      const position = orderQueue(withCandidate).findIndex((r) => r.id === PREVIEW_ID) + 1;
-      const reason = next.waiting.find((w) => w.runId === PREVIEW_ID)?.reason ?? null;
-      return { position, reason, guidelines };
+      const runs = registry.all();
+      return previewAssign({
+        runs,
+        projectId: input.projectId,
+        ticket: { ...ticket, key },
+        profile,
+        guidelines,
+        at: now(),
+        plan,
+      });
     },
     answer(runId, text) {
       const target = registry.get(runId);
-      if (isTerminal(target.state) && !resumable(target, registry.all())) {
+      if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
       }
       registry.apply(runId, { type: "answered", text, rank: headRank(registry.all()) });
@@ -309,7 +280,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         })),
         host: hostView(),
         tokensToday: registry.tokensSince(startOfDay(now())),
-        resumable: runs.filter((r) => resumable(r, runs)).map((r) => r.id),
+        resumable: resumableRuns(resumeContext(runs)),
       };
     },
     log: (runId) => registry.log(runId),
