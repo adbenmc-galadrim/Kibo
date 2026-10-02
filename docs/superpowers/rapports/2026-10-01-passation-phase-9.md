@@ -6,8 +6,28 @@ Seuil d'usage hebdomadaire fixé par Adam : 80 %. Ce document permet de reprendr
 
 - `phase/9` (poussée) : les quatre vagues sont intégrées (T1 à T55), chaque tâche après relecture et gate complète ; version de l'application `1.1.0`.
 - Rapports : `docs/superpowers/rapports/2026-10-01-jalon-v1.1.md` (synthèse, points pour Adam) et les rapports de vague `2026-09-30-phase-9-vague-1.md`, `2026-10-01-phase-9-vague-2.md`, `2026-10-01-phase-9-vague-3.md`, `2026-10-01-phase-9-vague-4.md` (écarts, risques, suivis).
-- Mesures sur `phase/9` : budget UI **221,4 kB** (221 449 octets ; exigence de la vague 4 : 222,0 kB ; plafond 230 kB, jamais relevé), **70 parcours E2E** verts (ports 4390 à 4426), **3 952 tests unitaires** (1 ignoré).
+- Mesures sur `phase/9` : budget UI **221,4 kB** (221 449 octets ; exigence de la vague 4 : 222,0 kB ; plafond 230 kB, jamais relevé), **70 parcours E2E** verts (ports 4390 à 4426), **3 952 tests unitaires** (1 ignoré) au jalon ; après les changements du 2 octobre, ports E2E jusqu'à 4428.
 - Captures de contrôle (non commitées, `screens/` ignoré par git) : `screens/2026-10-01-t<n>/`.
+
+## Après le jalon (2 octobre)
+
+Intégré dans `main` par la PR « CI en dix minutes, correctifs v1.1 » puis par la PR de la conversation avec un run (état : `gh pr list --state all --limit 5`) :
+
+- CI en dix minutes (section « CI » plus bas).
+- Enregistrement de la disposition : « Enregistrer » échouait (« Requête invalide ») avec des widgets enregistrés empilés ; plan d'écriture ordonné (`packages/ui/src/pages/layout-plan.ts`, spec de conception §16.2).
+- Fenêtre « Assigner » : projet sans dossier local et profil `worktree` ou `repo` ⇒ alerte, bouton « Modifier le projet », lancement désactivé (spec agents §6).
+- Conversation avec un run (demande d'Adam, spec agents §13) : écrire à un run terminé (reprise de la session par la file), règle « run terminé → En review » retirée des défauts, bouton « Passer en review », message de fin de tour en entier, journal qui suit la dernière ligne.
+
+Suivis nés de ces changements :
+
+- Envoyer un message pendant qu'un tour tourne (zone de saisie désactivée aujourd'hui).
+- Points pour Adam : retirer aussi « PR ouverte → En review » ? `assignAgent` doit-il refuser un ticket qui a déjà un run non terminé ? `answerRun` doit-il refuser un projet partagé passé en lecture seule ?
+- Texte d'un run échoué : « espace de travail indisponible » ne dit pas la cause (dossier absent, dépôt git inutilisable) ; il faut des codes d'erreur distincts côté démon.
+- Durée affichée d'un run repris : compte le temps mort entre deux tours (`packages/ui/src/agents/format.ts`, `elapsed`).
+- `assign` met le run en file avant le contrôle d'écriture du ticket (`packages/daemon/src/agents/orchestrator.ts`) : sur un projet en lecture seule la RPC échoue mais le run reste en file. Lu dans le code, sans test.
+- La base `~/.kibo/runs.db` d'un démon qui a repris un run terminé ne se relit plus avec une version antérieure (`STORE_CORRUPT`).
+- Propriété fast-check de `planLayoutSave` à rejouer sur le vrai `setInstanceLayout` du core ; taille héritée non format d'un widget non touché (cas rare, spec §16.2).
+- `orchestrator.ts` à 308 lignes.
 
 ## Jalon v1.1.0 : étapes
 
@@ -58,7 +78,7 @@ Retiré de la CI, et couvert seulement par la gate locale (macOS, les deux thèm
 - `.claude/worktrees/_outils/` : `gate.sh <worktree>` (install, check, typecheck, build UI, budget, tests unitaires, attente des ports 4390-4430, E2E avec une relance), `integ9.sh <tâche> [gate-only]` (rebase sur `phase/9`, gate, copie des captures, fast-forward et push), `notes-vague-4.md` (journal détaillé). Sans ces scripts : `bun install --frozen-lockfile`, `bun run check`, `bun run typecheck`, `bun run --cwd packages/ui build`, `bun run budget`, `bun test packages components ./scripts`, `bun run --cwd e2e test`.
 - Un dev par tâche dans `.claude/worktrees/p9-<tâche>`, branche `feat/p9-<tâche>` ; un dev ne lance jamais la suite E2E complète (config Playwright temporaire limitée à ses ports).
 - Les worktrees des tâches intégrées existent encore (`git worktree list`) : `git worktree remove` quand on veut.
-- Dossiers temporaires laissés par des agents, dont la suppression leur a été refusée (à supprimer à la main) : `/tmp/t54-base2`, `/tmp/t54-base3`, `/tmp/t54-*`, `.claude/worktrees/_outils/tmp-lead-t54/`, `.claude/worktrees/_outils/tmp-lead-valid/` (contient trois liens symboliques `node_modules` vers le worktree `p9-valid`), `.claude/worktrees/p9-t55/e2e/playwright-report/`.
+- Dossiers temporaires laissés par des agents, dont la suppression leur a été refusée (à supprimer à la main) : `/tmp/t54-base2`, `/tmp/t54-base3`, `/tmp/t54-*`, `.claude/worktrees/_outils/tmp-lead-t54/`, `.claude/worktrees/_outils/tmp-lead-valid/` (contient trois liens symboliques `node_modules` vers le worktree `p9-valid`), `.claude/worktrees/p9-t55/e2e/playwright-report/`, `/tmp/kibo-e2e-4450` à `/tmp/kibo-e2e-4453`, `/tmp/kibo-review-p9/`.
 
 ## Points d'attention
 
