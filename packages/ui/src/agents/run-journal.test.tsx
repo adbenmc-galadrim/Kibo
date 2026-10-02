@@ -14,6 +14,7 @@ mock.module("../api", () => ({
     rpc: () => Promise.resolve(null),
     code: () => Promise.resolve(worktrees),
     subscribeCode: () => () => {},
+    subscribe: () => () => {},
   },
 }));
 
@@ -161,4 +162,25 @@ test("daemon events keep their raw type as name", () => {
   for (const [event, name] of cases) {
     expect(journalLines([{ id: 1, at: NOW, event }]).at(0)?.name ?? null).toBe(name);
   }
+});
+test("the agent's last message and the user's messages are shown whole, on several lines", () => {
+  const message = "Fait.\nDeux fichiers modifiés.\nVeux-tu des tests ?\nJe peux aussi documenter.";
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "hook", payload: hook("Stop", { detail: message }) } },
+    { id: 2, at: NOW, event: { type: "answered", text: "Oui,\najoute les tests.", rank: 0 } },
+    {
+      id: 3,
+      at: NOW,
+      event: { type: "hook", payload: hook("PostToolUse", { tool: "Read", detail: "a.ts" }) },
+    },
+  ];
+  render(<RunJournal label="opus-dev-2" log={log} files={null} />);
+  const [stop, answer, tool] = screen.getAllByRole("listitem").map((l) => l.lastElementChild);
+  expect(stop?.textContent).toBe(message);
+  expect(answer?.textContent).toBe("Oui,\najoute les tests.");
+  for (const whole of [stop, answer]) {
+    expect(whole?.className).toContain("whitespace-pre-wrap");
+    expect(whole?.className).not.toContain("line-clamp");
+  }
+  expect(tool?.className).toContain("line-clamp-3");
 });

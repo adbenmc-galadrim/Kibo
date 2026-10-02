@@ -13,13 +13,14 @@ export type JournalLine = {
   tool: string | null;
   text: string;
   tone: Tone;
+  whole: boolean;
 };
 export type JournalFiles = {
   worktree: string;
   ticketKey: string | null;
   open(path: string, line: number | null, origin: string): void;
 };
-type Line = Omit<JournalLine, "id" | "at" | "tool"> & { tool?: string | null };
+type Line = Omit<JournalLine, "id" | "at" | "tool" | "whole"> & { tool?: string | null; whole?: boolean };
 
 const TONE: Record<Tone, string> = {
   blue: RUN_TEXT.running,
@@ -43,6 +44,7 @@ function hookLine(p: HookPayload): Line | null {
     tool: p.tool,
     text: [p.tool, p.detail].filter(Boolean).join(" "),
     tone: HOOK_TONE[p.event] ?? "blue",
+    whole: p.event === "Stop",
   };
 }
 
@@ -69,7 +71,7 @@ function eventLine(event: RunEvent): Line | null {
     case "exited":
       return exitLine(event);
     case "answered":
-      return { name: event.type, text: event.text, tone: "muted" };
+      return { name: event.type, text: event.text, tone: "muted", whole: true };
     case "cancelled":
       return { name: event.type, text: "", tone: "muted" };
     case "failed":
@@ -86,7 +88,9 @@ function eventLine(event: RunEvent): Line | null {
 export function journalLines(log: RunLogEntry[]): JournalLine[] {
   return log.flatMap((entry) => {
     const line = eventLine(entry.event);
-    return line ? [{ ...line, tool: line.tool ?? null, id: entry.id, at: entry.at }] : [];
+    return line
+      ? [{ ...line, tool: line.tool ?? null, whole: line.whole ?? false, id: entry.id, at: entry.at }]
+      : [];
   });
 }
 
@@ -99,11 +103,12 @@ function JournalText({
   label: string;
   files: JournalFiles | null;
 }) {
-  if (!files) return <span className="line-clamp-3 break-words">{line.text}</span>;
+  const shape = line.whole ? "whitespace-pre-wrap break-words" : "line-clamp-3 break-words";
+  if (!files) return <span className={shape}>{line.text}</span>;
   const origin = `${files.ticketKey ?? label} · ${[line.name, line.tool].filter(Boolean).join(" ")}`;
   const text = line.text.replaceAll(`${files.worktree}/`, "");
   return (
-    <span className="line-clamp-3 break-words">
+    <span className={shape}>
       <LinkifiedText text={text} onOpen={(ref) => files.open(ref.path, ref.line, origin)} />
     </span>
   );

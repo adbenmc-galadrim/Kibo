@@ -5,22 +5,16 @@ import {
   type RunLogEntry,
   type RunView,
   runSubject,
-  type Worktree,
 } from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { Bot, ChevronDown, Plus, Square } from "lucide-react";
-import { type ReactNode, useState } from "react";
-import { client } from "../api";
-import { owningWorktree } from "../code/agent-slots";
-import { useWorktrees } from "../code/use-worktrees";
+import { Bot, ChevronDown, Plus } from "lucide-react";
+import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
-import { frAgentsPage } from "../i18n/fr-agents-page";
-import { elapsed, formatDuration, reasonText, runResultText, workspaceText } from "./format";
-import { ReplyBox } from "./ReplyBox";
-import { type JournalFiles, journalUnavailable, RunJournal } from "./RunJournal";
+import { elapsed, formatDuration, reasonText, runResultText } from "./format";
+import { RunDetail } from "./RunDetail";
+import { journalUnavailable } from "./RunJournal";
 
 type Props = {
   state: AgentsState;
@@ -73,76 +67,6 @@ function Group({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function journalFiles(
-  run: RunView,
-  worktrees: Worktree[] | null,
-  onOpenFile: (ref: FileRef) => void,
-): JournalFiles | null {
-  const { projectId, cwd } = run;
-  if (!projectId || !cwd || !worktrees || run.workspace === "isolated") return null;
-  const worktree = owningWorktree(
-    worktrees.map((w) => w.path),
-    cwd,
-  );
-  if (!worktree) return null;
-  return {
-    worktree,
-    ticketKey: run.ticketKey,
-    open: (path, line, origin) => onOpenFile({ projectId, worktree, path, line, origin }),
-  };
-}
-
-type DetailProps = {
-  run: RunView;
-  now: number;
-  log: RunLogEntry[] | null;
-  missing: boolean;
-  onOpenFile: (ref: FileRef) => void;
-};
-
-function RunDetail({ run, now, log, missing, onOpenFile }: DetailProps) {
-  const [stopping, setStopping] = useState(false);
-  const { worktrees } = useWorktrees(run.cwd && run.workspace !== "isolated" ? run.projectId : null);
-  const stop = async () => {
-    await client.rpc({ method: "cancelRun", runId: run.id });
-  };
-  const where = [workspaceText(run.workspace), formatDuration(elapsed(run, now))].filter(Boolean).join(" · ");
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex items-center gap-2 text-sm">
-        <Bot aria-hidden className="size-4 text-brand" />
-        <span className="font-mono font-semibold">{run.label}</span>
-        <span className="min-w-0 truncate text-muted-foreground">{runSubject(run)}</span>
-        <span className="flex-1" />
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">{where}</span>
-        {!isTerminal(run.state) && (
-          <Button size="sm" variant="ghost" className="h-7" onClick={() => setStopping(true)}>
-            <Square className="size-3" />
-            {fr.agents.stop}
-          </Button>
-        )}
-      </div>
-      <ConfirmDialog
-        open={stopping}
-        onOpenChange={setStopping}
-        title={frAgentsPage.stopTitle(run.label, run.ticketKey)}
-        description={frAgentsPage.stopHelp}
-        confirmLabel={frAgentsPage.stopConfirm}
-        cancelLabel={fr.common.cancel}
-        onConfirm={stop}
-        describeError={() => fr.agents.stopFailed}
-      />
-      <RunJournal
-        label={run.label}
-        log={log ?? []}
-        missing={missing}
-        files={journalFiles(run, worktrees, onOpenFile)}
-      />
-      {run.state === "waiting_input" && <ReplyBox run={run} />}
     </div>
   );
 }
@@ -234,6 +158,7 @@ export function AgentDrawer({
             <RunDetail
               key={selected.id}
               run={selected}
+              resumable={state.resumable.includes(selected.id)}
               now={now}
               log={log}
               missing={journalUnavailable({ missing, empty }, isTerminal(selected.state))}
