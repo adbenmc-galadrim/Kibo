@@ -3,6 +3,7 @@ import { type AiEvent, KiboError, type RpcRequest, surfaceFor } from "@kibo/sche
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type BridgeDeps, createFrameBridge } from "../shell/frame-bridge";
+import { previewBox } from "./DraftPreviewWindow";
 import { DRAFT_ID, burndownManifest as manifest } from "./draft-fixtures";
 import { inMemoryWorkers } from "./preview-worker-fixtures";
 import { createWorkerBackend } from "./worker-backend";
@@ -164,6 +165,28 @@ test("a format change remounts the frame at the new size without asking for a ne
   expect(next.style.width).toBe("1196px");
   expect(next.style.height).toBe("560px");
   expect(previewCalls()).toHaveLength(1);
+  view.unmount();
+});
+
+test("the frame is scaled down to the available width, keeping its grid width inside", async () => {
+  const workers = inMemoryWorkers();
+  const view = render(
+    <DraftPreviewFrame
+      draftId={DRAFT_ID}
+      manifest={manifest}
+      format="full"
+      theme="dark"
+      available={598}
+      createBridge={(deps) => createFrameBridge({ ...deps, log: () => {} })}
+      createBackend={(m) => createWorkerBackend(m, workers.spawn)}
+      readyTimeoutMs={PATIENT}
+    />,
+  );
+  const iframe = await frame();
+  expect(iframe.style.width).toBe("1196px");
+  expect(iframe.style.transform).toBe("scale(0.5)");
+  expect(iframe.parentElement?.style.width).toBe("598px");
+  expect(iframe.parentElement?.style.height).toBe(`${previewBox("full").height / 2}px`);
   view.unmount();
 });
 

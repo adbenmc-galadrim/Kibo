@@ -61,6 +61,7 @@ describe("sandbox server", () => {
     const page = await html.text();
     expect(page).toContain('<script type="module" src="ui.sandbox.js"></script>');
     expect(page).toContain('<link rel="stylesheet" href="ui.css" crossorigin="anonymous">');
+    expect(page).toContain("<style>html,body,#root{height:100%}</style>");
     expect(html.headers.get("content-security-policy")).toBe(CSP);
     expect(html.headers.get("x-content-type-options")).toBe("nosniff");
     expect(html.headers.get("referrer-policy")).toBe("no-referrer");
