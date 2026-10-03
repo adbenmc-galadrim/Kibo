@@ -140,7 +140,7 @@ const pageHead = (p, t, sub, right) => { const h = S.row(p, { gap: 12, align: "s
 const SETTINGS = [["building", "Workspace"], ["sliders", "Général"], ["palette", "Apparence"], ["fileText", "Domaines & guidelines"], ["plug", "Intégrations"], ["cloud", "Synchronisation"], ["shield", "Sécurité"], ["package", "Sources de composants"], ["keyboard", "Raccourcis"]];
 const settingsScreen = async (page, name, col, row, active) => { await S.page(page);
   const r = S.baseScreen(name, col, row, null, ["Paramètres", "Workspace"], ["settings", "Paramètres"]); S.activate(r.frame, "Paramètres");
-  const bc = find(r.frame, "Breadcrumb"); const last = penpotUtils.findShapes(s => s.type === "text", bc).pop(); if (last && last.characters !== active) S.setText(last, active);
+  const bc = find(r.frame, "Breadcrumb"); const last = penpotUtils.findShape(s => s.type === "text" && s.characters === "Workspace", bc); if (last && active !== "Workspace") S.setText(last, active);
   const c = r.content; c.flex.dir = "row"; c.flex.columnGap = 24; c.flex.alignItems = "start";
   const nav = S.box(c, { name: "SettingsNav", w: 220, dir: "column", gap: 2, vs: "auto" }); S.box(nav, { name: "gap", w: 1, h: 2 }); S.label(nav, "Workspace"); S.box(nav, { name: "gap", w: 1, h: 4 });
   SETTINGS.forEach(([ic, l]) => S.navItem(nav, ic, l, { active: l === active })); S.fixIconOrder(r.frame);
