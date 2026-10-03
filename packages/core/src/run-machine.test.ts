@@ -123,9 +123,6 @@ test("a run without ticket follows the same cycle", () => {
 test("illegal transitions throw INVALID_TRANSITION", () => {
   const queued = initRun(record, 0, 0);
   const done = reduceRun(running(), exit(), 200);
-  expect(() => reduceRun(running(), { type: "answered", text: "x", rank: 0 }, 1)).toThrow(
-    "INVALID_TRANSITION",
-  );
   expect(() => reduceRun(running(), { type: "admitted", lane: 1 }, 1)).toThrow("INVALID_TRANSITION");
   expect(() => reduceRun(queued, spawned(false), 1)).toThrow("INVALID_TRANSITION");
   expect(() => reduceRun(done, { type: "cancelled" }, 1)).toThrow("INVALID_TRANSITION");
@@ -203,11 +200,9 @@ test("a run that never started or has no ticket cannot be written to once ended"
     exit(),
     3,
   );
-  for (const view of [neverStarted, cancelledInQueue, taskDone, initRun(record, 0, 0)]) {
+  for (const view of [neverStarted, cancelledInQueue, taskDone]) {
     expect(() => reduceRun(view, answered, 10)).toThrow("INVALID_TRANSITION");
   }
-  const starting = reduceRun(initRun(record, 0, 0), { type: "admitted", lane: 1 }, 1);
-  expect(() => reduceRun(starting, answered, 10)).toThrow("INVALID_TRANSITION");
 });
 
 test("the active time sums the turns and leaves out the queue and the pause between them", () => {
@@ -240,4 +235,61 @@ test("a cancelled or failed turn counts up to its end; a turn that never spawned
     turnStartedAt: null,
   });
   expect(initRun(record, 5, 100)).toMatchObject({ activeMs: 0, turnStartedAt: null });
+});
+
+test("a message during a turn waits, joins the next one, and starts the next turn when the process exits", () => {
+  let v = reduceRun(running(), { type: "answered", text: "Ajoute les tests", rank: 9 }, 130);
+  expect(v).toMatchObject({ state: "running", pendingAnswer: "Ajoute les tests", rank: 5, priority: false });
+  v = reduceRun(v, { type: "answered", text: "Et la doc.", rank: 9 }, 140);
+  expect(v.pendingAnswer).toBe("Ajoute les tests\n\nEt la doc.");
+  v = reduceRun(v, exit(), 200);
+  expect(v).toMatchObject({ state: "done", pendingAnswer: "Ajoute les tests\n\nEt la doc.", endedAt: 200 });
+  v = reduceRun(v, { type: "requeued", rank: 1 }, 201);
+  expect(v).toMatchObject({
+    state: "queued",
+    priority: true,
+    rank: 1,
+    endedAt: null,
+    error: null,
+    lane: null,
+  });
+  expect(v.pendingAnswer).toBe("Ajoute les tests\n\nEt la doc.");
+  v = reduceRun(reduceRun(v, { type: "admitted", lane: 1 }, 210), spawned(true), 220);
+  expect(v).toMatchObject({ state: "running", pendingAnswer: null, turns: 2 });
+});
+
+test("a message answers a question asked after it, and a queued first turn keeps its message", () => {
+  let v = reduceRun(running(), { type: "answered", text: "Vas-y", rank: 9 }, 130);
+  v = reduceRun(v, hook("PostToolUse", { tool: ASK_TOOL, question: "Je continue ?" }), 140);
+  v = reduceRun(v, exit(), 150);
+  expect(v).toMatchObject({ state: "waiting_input", pendingAnswer: "Vas-y" });
+  expect(reduceRun(v, { type: "requeued", rank: 1 }, 151)).toMatchObject({ state: "queued", question: null });
+  const queued = reduceRun(initRun(record, 5, 100), { type: "answered", text: "Précision", rank: 9 }, 101);
+  expect(queued).toMatchObject({ state: "queued", rank: 5, pendingAnswer: "Précision", turns: 0 });
+});
+
+test("cancelling or failing drops the waiting message; requeued needs one", () => {
+  const withMessage = reduceRun(running(), { type: "answered", text: "x", rank: 9 }, 130);
+  expect(reduceRun(withMessage, { type: "cancelled" }, 140).pendingAnswer).toBeNull();
+  expect(
+    reduceRun(withMessage, { type: "failed", error: "INTERRUPTED: restart" }, 140).pendingAnswer,
+  ).toBeNull();
+  const done = reduceRun(running(), exit(), 200);
+  expect(() => reduceRun(done, { type: "requeued", rank: 1 }, 201)).toThrow("INVALID_TRANSITION");
+  expect(() => reduceRun(withMessage, { type: "requeued", rank: 1 }, 131)).toThrow("INVALID_TRANSITION");
+  const failedExit = reduceRun(withMessage, exit(1), 200);
+  expect(reduceRun(failedExit, { type: "requeued", rank: 1 }, 201)).toMatchObject({
+    state: "queued",
+    error: null,
+  });
+});
+
+test("a run without ticket still only answers a question", () => {
+  const task = { ...record, projectId: null, ticketId: null, ticketKey: null };
+  const v = reduceRun(
+    reduceRun(initRun(task, 5, 100), { type: "admitted", lane: 1 }, 110),
+    spawned(false),
+    120,
+  );
+  expect(() => reduceRun(v, { type: "answered", text: "x", rank: 1 }, 130)).toThrow("INVALID_TRANSITION");
 });

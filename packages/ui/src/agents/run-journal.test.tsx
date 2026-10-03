@@ -153,6 +153,7 @@ test("daemon events keep their raw type as name", () => {
     [{ ...exited, denied: [] }, null],
     [{ ...exited, denied: ["Bash"] }, "exited"],
     [{ type: "answered", text: "oui", rank: 0 }, "answered"],
+    [{ type: "requeued", rank: 1 }, null],
     [{ type: "cancelled" }, "cancelled"],
     [{ type: "failed", error: "exit code 1" }, "failed"],
     [{ type: "prioritized", priority: true }, "prioritized"],

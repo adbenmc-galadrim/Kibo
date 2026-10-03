@@ -34,7 +34,6 @@ test("a question suspends the run, the answer resumes it, and the ticket moves o
   });
 
   h.orch.answer(first.id, "Port dynamique");
-  expect(() => h.orch.answer(first.id, "encore")).toThrow("INVALID_TRANSITION");
   await waitUntil(() => run(h, first.id).state === "done");
 
   const calls = fakeCalls(h.state, first.sessionId);

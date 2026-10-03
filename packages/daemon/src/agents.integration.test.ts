@@ -165,7 +165,6 @@ test("assign, question, answer, done: the ticket stays in progress until asked",
   await until(agents, (a) => find(a)?.state === "waiting_input");
   await rpc({ method: "config", command: { method: "deleteProfile", profileId: profile.id } }, 409);
   await rpc({ method: "answerRun", runId: run.id, text: "Port dynamique" });
-  await rpc({ method: "answerRun", runId: run.id, text: "encore" }, 409);
   await until(agents, (a) => find(a)?.state === "done");
   const snap = await rpc<ProjectSnapshot>({ method: "getProject", projectId: p.id });
   expect(snap.tickets.find((x) => x.id === t.id)).toMatchObject({
