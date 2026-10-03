@@ -6,7 +6,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frRunChat } from "../i18n/fr-run-chat";
 
-type Props = { run: RunView; mode?: "answer" | "write"; title?: string; busy?: boolean };
+type Props = { run: RunView; mode?: "answer" | "write"; title?: string; pending?: boolean };
 
 function texts(mode: "answer" | "write", label: string) {
   const r = fr.agents.reply;
@@ -19,7 +19,7 @@ function texts(mode: "answer" | "write", label: string) {
       };
 }
 
-export function ReplyBox({ run, mode = "answer", title, busy = false }: Props) {
+export function ReplyBox({ run, mode = "answer", title, pending = false }: Props) {
   const id = useId();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -48,22 +48,21 @@ export function ReplyBox({ run, mode = "answer", title, busy = false }: Props) {
         <Input
           id={id}
           value={text}
-          disabled={busy}
           onChange={(e) => setText(e.target.value)}
           placeholder={t.placeholder}
           className="h-8 border-0 px-0 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
-        {!busy && <span className="shrink-0 text-xs text-muted-foreground">{fr.agents.reply.hint}</span>}
+        {!pending && <span className="shrink-0 text-xs text-muted-foreground">{fr.agents.reply.hint}</span>}
         <Button
           type="submit"
           size="sm"
-          disabled={busy || !text.trim() || sending}
+          disabled={!text.trim() || sending}
           className="bg-brand-strong text-white hover:bg-brand-strong/90"
         >
           {fr.agents.reply.send}
         </Button>
       </div>
-      {busy && <p className="text-xs text-muted-foreground">{frRunChat.busy}</p>}
+      {pending && <p className="text-xs text-muted-foreground">{frRunChat.nextTurn}</p>}
       {failed && (
         <p role="alert" className="text-xs text-destructive">
           {t.failed}

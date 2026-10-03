@@ -4,7 +4,7 @@ export const frRunChat = {
   writeLabel: (label: string) => `Écrire à ${label}`,
   writePlaceholder: "Ton message…",
   writeFailed: "Impossible d'envoyer le message.",
-  busy: "L'agent travaille : écris-lui à la fin de son tour, ou arrête-le.",
+  nextTurn: "L'agent travaille : ton message lui sera remis au début de son prochain tour.",
   review: "Passer en review",
   reviewFailed: "Impossible de passer le ticket en review.",
 };

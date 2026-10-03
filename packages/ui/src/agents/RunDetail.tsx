@@ -95,7 +95,7 @@ export function RunDetail({ run, resumable, now, log, missing, onOpenFile }: Det
           key={box.mode}
           run={run}
           mode={box.mode}
-          busy={box.busy}
+          pending={box.pending}
           title={box.mode === "answer" ? frRunChat.answerTitle : frRunChat.writeTitle}
         />
       )}
