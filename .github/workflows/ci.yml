@@ -78,12 +78,9 @@ jobs:
       - run: bun run --cwd packages/ui build
       - run: bun run --cwd apps/desktop build:debug
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - run: bun test apps/desktop/scripts
       - name: smoke
-        shell: bash
-        timeout-minutes: 2
-        run: |
-          export KIBO_SMOKE=1 KIBO_HOME=$(mktemp -d) WEBKIT_DISABLE_DMABUF_RENDERER=1
-          if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a apps/desktop/src-tauri/target/debug/kibo; else apps/desktop/src-tauri/target/debug/kibo; fi
-          if pgrep -f kibo-daemon; then exit 1; fi
+        timeout-minutes: 3
+        run: bun run --cwd apps/desktop smoke
       - if: runner.os == 'macOS'
         run: bun apps/desktop/scripts/cli-smoke.ts

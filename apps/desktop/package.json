@@ -9,7 +9,9 @@
     "tauri": "tauri",
     "build": "bun run sidecar && bun run toolchain && tauri build",
     "build:debug": "bun run sidecar && bun run toolchain && tauri build --debug --no-bundle",
-    "dev": "bun run sidecar && bun run toolchain && tauri dev"
+    "dev": "bun run sidecar && bun run toolchain && tauri dev",
+    "smoke": "bun scripts/desktop-smoke.ts",
+    "test": "bun test scripts"
   },
   "devDependencies": {
     "@kibo/devkit": "workspace:*",
