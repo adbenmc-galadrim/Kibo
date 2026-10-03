@@ -161,6 +161,45 @@ describe("ui files", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
+  test("an index.html that leaves the ui folder is refused on every fallback path", async () => {
+    const root = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    const uiDir = join(root, "ui");
+    mkdirSync(uiDir);
+    writeFileSync(join(root, "outside.html"), "stolen");
+    symlinkSync(join(root, "outside.html"), join(uiDir, "index.html"));
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    for (const path of ["/", "/index.html", "/projects/KIB", "/workers/absent.js"]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect({ path, status: res.status }).toEqual({ path, status: 403 });
+      expect(await res.text()).not.toBe("stolen");
+    }
+    ui.stop();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("an index.html linked inside the ui folder is served; a missing one is a 404", async () => {
+    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    mkdirSync(join(uiDir, "pages"));
+    writeFileSync(join(uiDir, "pages", "home.html"), "<p>kibo</p>");
+    symlinkSync(join(uiDir, "pages", "home.html"), join(uiDir, "index.html"));
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    expect(await (await fetch(`${ui.url}/projects/KIB`)).text()).toBe("<p>kibo</p>");
+    ui.stop();
+    const empty = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    const bare = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: empty,
+    });
+    const res = await fetch(`${bare.url}/projects/KIB`);
+    expect(res.status).toBe(404);
+    expect(await res.text()).toBe("ui not built");
+    bare.stop();
+    rmSync(uiDir, { recursive: true, force: true });
+    rmSync(empty, { recursive: true, force: true });
+  });
+
   test("an unreadable ui path is a clean 400", async () => {
     const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
     writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");

@@ -35,6 +35,8 @@ function realInside(root: string, file: string): string | null {
   return real === realRoot || real.startsWith(realRoot + sep) ? real : null;
 }
 
+const isRegularFile = (path: string): boolean => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
+
 export function serveUi(uiDir: string | null, pathname: string, sandboxOrigin: string | null): Response {
   const page = (res: Response) => withHeaders(res, documentHeaders(sandboxOrigin));
   if (!uiDir) return page(new Response("ui not built", { status: 404 }));
@@ -47,21 +49,25 @@ export function serveUi(uiDir: string | null, pathname: string, sandboxOrigin: s
   }
   const file = resolve(root, `.${decoded}`);
   if (file !== root && !file.startsWith(root + sep)) return page(new Response("forbidden", { status: 403 }));
+  const index = join(root, "index.html");
   let isFile: boolean;
+  let hasIndex: boolean;
   try {
-    isFile = statSync(file, { throwIfNoEntry: false })?.isFile() ?? false;
+    isFile = isRegularFile(file);
+    hasIndex = isFile || isRegularFile(index);
   } catch {
     return page(new Response("bad path", { status: 400 }));
   }
-  if (!isFile) return page(new Response(Bun.file(join(root, "index.html"))));
+  if (!hasIndex) return page(new Response("ui not built", { status: 404 }));
+  const target = isFile ? file : index;
   let real: string | null;
   try {
-    real = realInside(root, file);
+    real = realInside(root, target);
   } catch {
     return page(new Response("bad path", { status: 400 }));
   }
   if (real === null) return page(new Response("forbidden", { status: 403 }));
-  if (isWorkerScript(realpathSync(root), real))
+  if (isFile && isWorkerScript(realpathSync(root), real))
     return withHeaders(new Response(Bun.file(real)), workerHeaders);
   return page(new Response(Bun.file(real)));
 }
