@@ -132,3 +132,91 @@ test("counts the tokens of the day", () => {
   expect(reg.tokensSince(2000)).toBe(0);
   store.close();
 });
+
+const activity: RunEvent = {
+  type: "hook",
+  payload: {
+    event: "PreToolUse",
+    sessionId: "s",
+    transcriptPath: null,
+    tool: "Read",
+    detail: null,
+    question: null,
+    agentId: null,
+  },
+};
+
+test("an interrupted run is closed at its last event, not at the restart; queued runs keep their message", () => {
+  const h = home();
+  const store = openRunStore(h);
+  const reg = openRunRegistry(store, now);
+  clock = 1000;
+  for (const id of ["running", "starting", "queued"]) reg.create(newRun(id), 0);
+  clock = 1100;
+  reg.apply("running", { type: "admitted", lane: 1 });
+  reg.apply("starting", { type: "admitted", lane: 2 });
+  clock = 1200;
+  reg.apply("running", spawned);
+  clock = 1500;
+  reg.apply("running", activity);
+  reg.apply("queued", { type: "answered", text: "Commence par les tests.", rank: 0 });
+  store.close();
+
+  clock = 9_000;
+  const reopened = openRunStore(h);
+  const again = openRunRegistry(reopened, now);
+  expect(again.get("running")).toMatchObject({
+    state: "failed",
+    activeMs: 300,
+    turnStartedAt: null,
+    endedAt: 1500,
+    stateSince: 1500,
+  });
+  expect(again.get("starting")).toMatchObject({
+    state: "failed",
+    activeMs: 0,
+    endedAt: 1100,
+    stateSince: 1100,
+  });
+  expect(again.get("queued")).toMatchObject({
+    state: "queued",
+    pendingAnswer: "Commence par les tests.",
+    rank: 0,
+  });
+  expect(
+    again
+      .interrupted()
+      .map((r) => r.id)
+      .sort(),
+  ).toEqual(["running", "starting"]);
+  expect(reopened.log("running").at(-1)).toMatchObject({ at: 1500, event: { type: "failed" } });
+  expect(reopened.log("starting").at(-1)).toMatchObject({ at: 1100, event: { type: "failed" } });
+  reopened.close();
+
+  const thirdStore = openRunStore(h);
+  const third = openRunRegistry(thirdStore, now);
+  expect(third.get("running")).toMatchObject({ state: "failed", activeMs: 300, endedAt: 1500 });
+  expect(third.interrupted()).toEqual([]);
+  thirdStore.close();
+});
+
+test("a journal closed at the restart time by an older daemon replays unchanged", () => {
+  const h = home();
+  const store = openRunStore(h);
+  const reg = openRunRegistry(store, now);
+  clock = 1000;
+  reg.create(newRun("r1"), 0);
+  reg.apply("r1", { type: "admitted", lane: 1 });
+  clock = 1200;
+  reg.apply("r1", spawned);
+  store.append("r1", { type: "failed", error: "INTERRUPTED: the daemon restarted during the run" }, 5_000);
+  store.close();
+
+  clock = 9_000;
+  const reopened = openRunStore(h);
+  const again = openRunRegistry(reopened, now);
+  expect(again.get("r1")).toMatchObject({ state: "failed", activeMs: 3_800, endedAt: 5_000 });
+  expect(again.interrupted()).toEqual([]);
+  expect(reopened.log("r1").filter((e) => e.event.type === "failed")).toHaveLength(1);
+  reopened.close();
+});
