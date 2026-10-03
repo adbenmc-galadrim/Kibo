@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadOrCreateToken } from "./auth";
-import { startServer } from "./server";
+import { healthResponse, startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
 
@@ -45,6 +45,15 @@ async function pair(): Promise<string> {
   expect(cookie).toContain("SameSite=Strict");
   return cookie.split(";")[0] ?? "";
 }
+
+test("GET /api/health answers the pid without origin nor session, locally only", async () => {
+  const res = await fetch(`${server.url}/api/health`);
+  expect(res.status).toBe(200);
+  expect(res.headers.get("cache-control")).toBe("no-store");
+  expect(await res.json()).toEqual({ pid: process.pid });
+  expect((await fetch(`${server.url}/api/health`, { method: "POST" })).status).toBe(404);
+  expect(healthResponse({ hostname: "0.0.0.0", port: 1, secure: true, remote: true }, "GET")).toBeNull();
+});
 
 describe("pairing and auth", () => {
   test("listens on loopback only", () => {

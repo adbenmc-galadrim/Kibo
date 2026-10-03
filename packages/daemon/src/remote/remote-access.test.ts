@@ -83,6 +83,11 @@ describe("remote listener", () => {
     expect((await remotePost(f, `/hooks/${crypto.randomUUID()}`, {})).status).toBe(404);
   });
 
+  test("the health route is not served remotely", async () => {
+    await enableSelfSigned(f);
+    expect((await fetch(`${remoteUrl(f)}/api/health`, { tls: { ca: certOf(f) } })).status).toBe(404);
+  });
+
   test("sensitive RPCs are refused from a remote session", async () => {
     await enableSelfSigned(f);
     const cookie = await remoteCookie(f);
