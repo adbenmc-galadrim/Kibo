@@ -13,7 +13,7 @@ import {
 } from "@kibo/sdk/ui/dropdown-menu";
 import { GripVertical, MoreHorizontal } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { reasonText } from "./format";
+import { queueHint } from "./format";
 
 type Props = {
   run: RunView;
@@ -62,7 +62,7 @@ export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: P
           {runSubject(run)}
         </span>
         <span className="line-clamp-2 break-words text-3xs text-muted-foreground">
-          {run.pendingAnswer && run.turns > 0 ? fr.queue.resumeHint : reasonText(entry.reason)}
+          {queueHint(run, entry.reason)}
         </span>
       </span>
       {run.priority && (

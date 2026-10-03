@@ -6,6 +6,7 @@ import {
   formatDuration,
   formatGb,
   formatTokens,
+  queueHint,
   reasonText,
   runResultText,
   workspaceText,
@@ -71,4 +72,17 @@ test("the elapsed time is the active time, live during a turn only", () => {
   expect(elapsed({ ...paused, state: "running", turnStartedAt: NOW - 2 * MIN }, NOW)).toBe(5 * MIN);
   expect(elapsed({ ...paused, state: "queued" }, NOW + 60 * MIN)).toBe(3 * MIN);
   expect(elapsed(runFixture({ id: "n", state: "queued" }), NOW)).toBe(0);
+});
+
+test("the queue says why a resumed run waits: an answer, a message, or the usual reason", () => {
+  const reason = { kind: "paused" } as const;
+  const resumed = runFixture({ id: "q", state: "queued", turns: 1, pendingAnswer: "Oui" });
+  expect(queueHint({ ...resumed, question: "Quel port ?" }, reason)).toBe(
+    "réponse reçue · reprise de la session",
+  );
+  expect(queueHint(resumed, reason)).toBe("message reçu · reprise de la session");
+  expect(queueHint(runFixture({ id: "f", state: "queued", turns: 0, pendingAnswer: "Oui" }), reason)).toBe(
+    "admission en pause",
+  );
+  expect(queueHint(runFixture({ id: "n", state: "queued", turns: 1 }), null)).toBe(reasonText(null));
 });
