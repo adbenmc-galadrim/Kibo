@@ -1,5 +1,5 @@
 import { KiboError } from "@kibo/schema";
-import type { ServerDb } from "../db";
+import { immediateTransaction, type ServerDb } from "../db";
 import type { IndexedPackage } from "./index-builder";
 
 export type MarketRole = "owner" | "publisher";
@@ -169,6 +169,6 @@ export class MarketStore {
   }
 
   transaction(apply: () => void): void {
-    this.sdb.db.transaction(apply)();
+    immediateTransaction(this.sdb.db, apply)();
   }
 }

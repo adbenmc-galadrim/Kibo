@@ -51,3 +51,11 @@ export function openServerDb(file: string): ServerDb {
   if (onDisk) restrictFiles(file);
   return { db, close: () => db.close() };
 }
+
+export function immediateTransaction<A extends unknown[], R>(
+  db: Database,
+  fn: (...args: A) => R,
+): (...args: A) => R {
+  const tx = db.transaction(fn);
+  return (...args) => tx.immediate(...args);
+}

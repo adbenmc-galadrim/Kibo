@@ -10,7 +10,7 @@ import {
 import { hashCode, newInviteCode, parsePublicKey } from "@kibo/trust";
 import { z } from "zod";
 import { audit } from "./audit";
-import type { ServerDb } from "./db";
+import { immediateTransaction, type ServerDb } from "./db";
 import { validate } from "./validate";
 
 export const InviteInput = z.discriminatedUnion("kind", [
@@ -75,7 +75,7 @@ export async function createInvite(
   const code = newInviteCode();
   const codeHash = await hashCode(code);
   const expiresAt = now + TTL[input.kind];
-  sdb.db.transaction(() => {
+  immediateTransaction(sdb.db, () => {
     sdb.db
       .query(
         "INSERT INTO invites (codeHash, kind, name, userId, projectId, role, createdBy, createdAt, expiresAt, usedAt) " +
@@ -138,7 +138,7 @@ export async function redeemDeviceInvite(
   const input = validate(JoinRequest, req);
   parsePublicKey(input.publicKey);
   const codeHash = await hashCode(input.code);
-  return sdb.db.transaction(() => {
+  return immediateTransaction(sdb.db, () => {
     const invite = takeInvite(sdb, codeHash, ["account", "device"], now);
     const { userId, name } = accountOf(sdb, invite, now);
     if (sdb.db.query("SELECT 1 FROM devices WHERE publicKey = $k").get({ k: input.publicKey })) {
@@ -163,7 +163,7 @@ export async function redeemProjectInvite(
 ): Promise<{ projectId: string; role: MemberRole }> {
   const input = validate(ProjectRedeem, raw);
   const codeHash = await hashCode(input.code);
-  return sdb.db.transaction(() => {
+  return immediateTransaction(sdb.db, () => {
     const invite = takeInvite(sdb, codeHash, ["project"], now);
     const { projectId, role } = invite;
     if (projectId === null || role === null || !projectExists(sdb, projectId)) throw invalidInvite();
@@ -230,7 +230,7 @@ export function listDevices(sdb: ServerDb, userId: string): DeviceInfo[] {
 
 export function revokeDevice(sdb: ServerDb, input: { deviceId: string; by: string }, now: number): void {
   if (!deviceRecord(sdb, input.deviceId)) throw new KiboError("NOT_FOUND", "device not found");
-  sdb.db.transaction(() => {
+  immediateTransaction(sdb.db, () => {
     sdb.db
       .query("UPDATE devices SET revokedAt = $now WHERE id = $id AND revokedAt IS NULL")
       .run({ now, id: input.deviceId });
@@ -242,7 +242,7 @@ export function disableUser(sdb: ServerDb, userId: string, now: number): void {
   if (!sdb.db.query("SELECT 1 FROM users WHERE id = $id").get({ id: userId })) {
     throw new KiboError("NOT_FOUND", "user not found");
   }
-  sdb.db.transaction(() => {
+  immediateTransaction(sdb.db, () => {
     sdb.db
       .query("UPDATE users SET disabledAt = $now WHERE id = $id AND disabledAt IS NULL")
       .run({ now, id: userId });
