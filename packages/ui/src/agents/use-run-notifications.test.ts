@@ -45,6 +45,21 @@ test("only entries into waiting, done or failed are announced", () => {
   ]);
 });
 
+test("a failed run names the cause of its failure", () => {
+  const runs = [
+    runFixture({
+      id: "c",
+      label: "opus-dev-3",
+      ticketKey: "KIB-16",
+      state: "failed",
+      error: "PROJECT_FOLDER_NOT_FOUND: folder /x does not exist",
+    }),
+  ];
+  expect(runNotices(new Map<string, RunState>([["c", "running"]]), runs)).toEqual([
+    { title: "opus-dev-3 a échoué", body: "KIB-16 · dossier du projet introuvable" },
+  ]);
+});
+
 function withNotification(permission: NotificationPermission, run: (shown: string[]) => void) {
   const shown: string[] = [];
   const saved = globalThis.Notification;

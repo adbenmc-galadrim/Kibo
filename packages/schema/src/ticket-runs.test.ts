@@ -33,6 +33,8 @@ const run = (p: Pick<RunView, "id" | "seq" | "state"> & Partial<RunView>): RunVi
   startedAt: null,
   endedAt: null,
   turns: 0,
+  activeMs: 0,
+  turnStartedAt: null,
   ...p,
 });
 

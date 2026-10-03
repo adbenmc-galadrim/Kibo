@@ -45,6 +45,9 @@ export const STATUS: Partial<Record<KiboErrorCode, number>> = {
   PUBLISHER_CHANGED: 409,
   REVOKED: 410,
   INDEX_ROLLBACK: 409,
+  DAEMON_RUNNING: 409,
+  PROJECT_FOLDER_MISSING: 409,
+  PROJECT_FOLDER_NOT_FOUND: 404,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 

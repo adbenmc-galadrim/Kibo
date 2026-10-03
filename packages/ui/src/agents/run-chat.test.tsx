@@ -77,15 +77,15 @@ const drawer = (run: RunView, resumable: string[] = []) => {
 
 test("the box answers a question, writes to a resumable run, waits during a turn", () => {
   const ended = ticketRun({ state: "done", endedAt: NOW });
-  expect(chatBox(ticketRun({ state: "waiting_input" }), false)).toEqual({ mode: "answer", busy: false });
-  expect(chatBox(ended, true)).toEqual({ mode: "write", busy: false });
+  expect(chatBox(ticketRun({ state: "waiting_input" }), false)).toEqual({ mode: "answer", pending: false });
+  expect(chatBox(ended, true)).toEqual({ mode: "write", pending: false });
   expect(chatBox(ended, false)).toBeNull();
   for (const state of ["queued", "starting", "running"] as const) {
-    expect(chatBox(ticketRun({ state }), false)).toEqual({ mode: "write", busy: true });
+    expect(chatBox(ticketRun({ state }), false)).toEqual({ mode: "write", pending: true });
   }
   const task = ticketRun({ projectId: null, ticketId: null, ticketKey: null });
   expect(chatBox({ ...task, state: "running" }, false)).toBeNull();
-  expect(chatBox({ ...task, state: "waiting_input" }, false)).toEqual({ mode: "answer", busy: false });
+  expect(chatBox({ ...task, state: "waiting_input" }, false)).toEqual({ mode: "answer", pending: false });
 });
 
 test("a finished run can be written to and sent to review from the drawer", async () => {
@@ -105,12 +105,17 @@ test("a finished run can be written to and sent to review from the drawer", asyn
   });
 });
 
-test("during a turn the box is disabled and says why", async () => {
+test("during a turn the box stays open, says the message waits for the next turn, and sends it", async () => {
   render(drawer(ticketRun({ state: "running" })));
+  const user = userEvent.setup();
   const field = screen.getByLabelText<HTMLInputElement>("Écrire à opus-dev-2");
-  expect(field.disabled).toBe(true);
-  expect(screen.getByRole<HTMLButtonElement>("button", { name: "Envoyer" }).disabled).toBe(true);
-  expect(screen.getByText("L'agent travaille : écris-lui à la fin de son tour, ou arrête-le.")).toBeTruthy();
+  expect(field.disabled).toBe(false);
+  expect(
+    screen.getByText("L'agent travaille : ton message lui sera remis au début de son prochain tour."),
+  ).toBeTruthy();
+  await user.type(field, "Ajoute les tests");
+  await user.click(screen.getByRole("button", { name: "Envoyer" }));
+  expect(calls).toContainEqual({ method: "answerRun", runId: "r50", text: "Ajoute les tests" });
   expect(await screen.findByRole("button", { name: "Passer en review" })).toBeTruthy();
 });
 

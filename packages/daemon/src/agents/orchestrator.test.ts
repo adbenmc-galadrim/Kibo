@@ -34,7 +34,6 @@ test("a question suspends the run, the answer resumes it, and the ticket moves o
   });
 
   h.orch.answer(first.id, "Port dynamique");
-  expect(() => h.orch.answer(first.id, "encore")).toThrow("INVALID_TRANSITION");
   await waitUntil(() => run(h, first.id).state === "done");
 
   const calls = fakeCalls(h.state, first.sessionId);
@@ -165,7 +164,7 @@ test("a workspace failure fails the run with its code and notifies", async () =>
   });
   const r = assign(h, "t1", "repo");
   await waitUntil(() => run(h, r.id).state === "failed");
-  expect(run(h, r.id).error).toStartWith("WORKSPACE_FAILED: ");
+  expect(run(h, r.id).error).toStartWith("PROJECT_FOLDER_MISSING: ");
   expect(h.orch.state().host.used).toBe(0);
   expect(h.notices.map((n) => n.title)).toContain("repo-dev-1 a échoué");
 });
@@ -475,3 +474,29 @@ test("a process ending while its run is queued again records no exit", async () 
     errors.mockRestore();
   }
 }, 30_000);
+
+test("assigning on a read-only project is refused before anything is queued", () => {
+  const h = setup({ scenario: "done", readOnly: true });
+  expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" })).toThrow(
+    "FORBIDDEN",
+  );
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.assigned).toEqual([]);
+  expect(h.store.records()).toEqual([]);
+});
+
+test("a refused ticket write queues nothing either", () => {
+  const h = setup({ scenario: "done", assignFails: true });
+  expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.store.records()).toEqual([]);
+});
+
+test("the inbox and an unknown ticket are still refused before the write check", () => {
+  const h = setup({ scenario: "done", readOnly: true });
+  expect(() => h.orch.assign({ projectId: "p1", ticketId: "nope", profileId: "opus", brief: "" })).toThrow(
+    "NOT_FOUND",
+  );
+});

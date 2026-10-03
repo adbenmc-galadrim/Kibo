@@ -2,6 +2,7 @@ import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
+import { headRank } from "@kibo/core/scheduler";
 import { type AgentProfile, isTerminal, KiboError, RunEvent, type RunView } from "@kibo/schema";
 import type { OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
@@ -33,6 +34,8 @@ type Prepared = { cwd: string; label: string; guidelines: number; brief: string;
 
 const LOST_TASK = "INTERRUPTED: the task was lost when the daemon restarted";
 const EXIT_STATES = new Set(["starting", "running", "done", "failed", "cancelled"]);
+const firstPrompt = (brief: string, pending: string | null) =>
+  pending === null ? brief : `${brief}\n\n${pending}`;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<void> {
@@ -143,7 +146,10 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         extraArgs: task?.extraArgs ?? [],
         sessionId: current.sessionId,
         resume,
-        prompt: current.turns > 0 ? (current.pendingAnswer ?? "") : prepared.brief,
+        prompt:
+          current.turns > 0
+            ? (current.pendingAnswer ?? "")
+            : firstPrompt(prepared.brief, current.pendingAnswer),
         systemPromptFile: prepared.systemPromptFile,
         hook: opts.hook,
         hookUrl: `${opts.baseUrl()}/hooks/${runId}`,
@@ -168,6 +174,9 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       if (after?.state === "failed" || after?.state === "cancelled") proc.kill();
       if (after?.state === "done" && after.projectId && after.ticketId) {
         opts.data.runDone(after.projectId, after.ticketId);
+      }
+      if (after && after.pendingAnswer !== null && after.state !== "cancelled") {
+        registry.apply(runId, { type: "requeued", rank: headRank(registry.all()) });
       }
     } catch (e) {
       live.get(runId)?.proc.kill();

@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { userInfo } from "node:os";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { resolveToolchain } from "@kibo/devkit";
+import { KiboError } from "@kibo/schema";
 import { createLoadSampler, fixedLoadSampler } from "./agents/host-load";
 import { stdoutNotifier } from "./agents/notifier";
 import { sandboxPortFor } from "./components/daemon-info";
@@ -9,6 +12,8 @@ import { startDaemon } from "./daemon";
 import { parseIntegrationFlags } from "./integrations/bootstrap";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { kiboHome } from "./paths";
+import { DaemonRunning } from "./single-instance";
+import { fatalLine, REUSED_EXIT_CODE, reuseLines } from "./startup-lines";
 
 const parentPid = process.ppid;
 const { values } = parseArgs({
@@ -26,16 +31,38 @@ const { values } = parseArgs({
 });
 const port = Number(values.port);
 const native = process.env.KIBO_NATIVE_NOTIFY === "1";
-const failStart = (e: unknown): never => {
-  process.stderr.write(`[kibo-daemon] cannot start: ${e instanceof Error ? e.message : String(e)}\n`);
+const home = kiboHome();
+const detailOf = (e: unknown) =>
+  e instanceof KiboError ? e.detail : e instanceof Error ? e.message : String(e);
+const fatal = (e: unknown): never => {
+  process.stdout.write(fatalLine(e));
+  process.stderr.write(`[kibo-daemon] cannot start: ${detailOf(e)}\n`);
   process.exit(1);
+};
+const readToken = (): string => {
+  try {
+    return readFileSync(join(home, "token"), "utf8").trim();
+  } catch (e) {
+    throw new KiboError("STORE_CORRUPT", `token file missing while a daemon is running: ${detailOf(e)}`);
+  }
+};
+const failStart = (e: unknown): never => {
+  if (!(e instanceof DaemonRunning && e.running.answers)) return fatal(e);
+  let token: string;
+  try {
+    token = readToken();
+  } catch (tokenError) {
+    return fatal(tokenError);
+  }
+  process.stdout.write(reuseLines(e.running, token));
+  process.exit(REUSED_EXIT_CODE);
 };
 const redactor = createRedactor();
 installConsoleRedaction(redactor);
 const daemon = await Promise.resolve()
   .then(() =>
     startDaemon({
-      home: kiboHome(),
+      home,
       port,
       sandboxPort: sandboxPortFor(port, values["sandbox-port"]),
       uiDir: values.ui ?? null,

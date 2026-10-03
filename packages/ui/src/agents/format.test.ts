@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
-import { runFixture } from "./fixtures";
+import { NOW, runFixture } from "./fixtures";
 import {
+  elapsed,
   errorText,
   formatDuration,
   formatGb,
@@ -9,6 +10,8 @@ import {
   runResultText,
   workspaceText,
 } from "./format";
+
+const MIN = 60_000;
 
 test("durations and token counts read like the mockups", () => {
   expect(formatDuration(45_000)).toBe("45s");
@@ -34,6 +37,18 @@ test("wait reasons, workspaces and errors are said in French", () => {
   expect(errorText("WORKSPACE_FAILED: the project has no local folder")).toBe(
     "espace de travail indisponible",
   );
+  expect(errorText("PROJECT_FOLDER_MISSING: the project has no local folder")).toBe(
+    "projet sans dossier local",
+  );
+  expect(errorText("PROJECT_FOLDER_NOT_FOUND: folder /x does not exist")).toBe(
+    "dossier du projet introuvable",
+  );
+  expect(errorText("NOT_A_REPO: /x is not a git repository")).toBe(
+    "le dossier du projet n'est pas un dépôt git",
+  );
+  expect(errorText("GIT_FAILED: git worktree add failed: fatal")).toBe(
+    "git n'a pas pu préparer l'espace de travail",
+  );
   expect(errorText("exit code 1")).toBe("exit code 1");
 });
 
@@ -43,4 +58,17 @@ test("a run result says where the run is", () => {
     "Échec : exit code 1",
   );
   expect(runResultText(runFixture({ id: "c", state: "waiting_input" }), null)).toBe("Attend une réponse");
+});
+
+test("the elapsed time is the active time, live during a turn only", () => {
+  const paused = runFixture({
+    id: "e",
+    state: "waiting_input",
+    startedAt: NOW - 60 * MIN,
+    activeMs: 3 * MIN,
+  });
+  expect(elapsed(paused, NOW)).toBe(3 * MIN);
+  expect(elapsed({ ...paused, state: "running", turnStartedAt: NOW - 2 * MIN }, NOW)).toBe(5 * MIN);
+  expect(elapsed({ ...paused, state: "queued" }, NOW + 60 * MIN)).toBe(3 * MIN);
+  expect(elapsed(runFixture({ id: "n", state: "queued" }), NOW)).toBe(0);
 });

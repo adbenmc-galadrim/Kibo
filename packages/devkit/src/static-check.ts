@@ -14,16 +14,26 @@ export const StaticCheck = z.object({
 });
 export type StaticCheck = z.infer<typeof StaticCheck>;
 
-export async function staticCheck(root: string, copy: string, files: string[]): Promise<StaticCheck> {
+export const StaticCheckStep = StaticCheck.partial();
+export type StaticCheckStep = z.infer<typeof StaticCheckStep>;
+
+export async function staticCheck(
+  root: string,
+  copy: string,
+  files: string[],
+  emit: (step: StaticCheckStep) => void = () => {},
+): Promise<StaticCheck> {
   const toolchain = { root };
   const ts = await loadTypeScript(toolchain);
   const checked = files.filter((f) => /\.(tsx?|css)$/.test(f));
   const texts = await Promise.all(
     checked.map(async (path) => ({ path, text: await readFile(join(copy, path), "utf8") })),
   );
-  return {
-    imports: checkImports(ts, texts),
-    typecheck: typecheckComponent(ts, copy, files, toolchain),
-    inference: await inferPermissions(copy, toolchain),
-  };
+  const imports = checkImports(ts, texts);
+  emit({ imports });
+  const typecheck = typecheckComponent(ts, copy, files, toolchain);
+  emit({ typecheck });
+  const inference = await inferPermissions(copy, toolchain);
+  emit({ inference });
+  return { imports, typecheck, inference };
 }

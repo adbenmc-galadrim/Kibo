@@ -8,6 +8,7 @@ export const SourceIssueCode = z.enum([
   "non-literal-argument",
   "reserved-command",
   "unknown-entity",
+  "inference-skipped",
 ]);
 export type SourceIssueCode = z.infer<typeof SourceIssueCode>;
 

@@ -15,6 +15,7 @@ import type { EscapeReason } from "../shell/load-guard";
 import { useRuntimeInfo } from "../state/use-runtime-info";
 import { aiErrorMessage } from "./ai-error";
 import { DraftPreviewWindow, previewBox } from "./DraftPreviewWindow";
+import { fitScale } from "./preview-scale";
 import { createWorkerBackend, type PreviewBackend } from "./worker-backend";
 
 export type DraftPreviewFrameProps = {
@@ -22,6 +23,7 @@ export type DraftPreviewFrameProps = {
   manifest: ComponentManifest;
   format: ComponentFormat;
   theme: Theme;
+  available?: number;
   createBridge?: (deps: BridgeDeps) => FrameBridge;
   createBackend?: (manifest: ComponentManifest) => PreviewBackend;
   readyTimeoutMs?: number;
@@ -65,6 +67,7 @@ function PreviewSession({
   manifest,
   format,
   theme,
+  available = 0,
   createBridge = createFrameBridge,
   createBackend = createWorkerBackend,
   readyTimeoutMs = 4_000,
@@ -131,6 +134,8 @@ function PreviewSession({
     build();
   };
 
+  const box = previewBox(format);
+  const scale = fitScale(available, box.width);
   const failure = runtime.error ? t.loadFailed : state.kind === "failed" ? state.detail : null;
   if (failure !== null)
     return (
@@ -142,17 +147,15 @@ function PreviewSession({
         </Button>
       </div>
     );
-  if (state.kind !== "ready" || backend === null) {
-    const box = previewBox(format);
+  if (state.kind !== "ready" || backend === null)
     return (
       <Skeleton
         role="status"
         aria-label={t.building}
         className="shrink-0"
-        style={{ width: box.width, height: box.height }}
+        style={{ width: box.width * scale, height: box.height * scale }}
       />
     );
-  }
   return (
     <DraftPreviewWindow
       key={`${state.build}:${format}`}
@@ -161,6 +164,7 @@ function PreviewSession({
       manifest={manifest}
       format={format}
       theme={theme}
+      scale={scale}
       backend={backend}
       createBridge={createBridge}
       readyTimeoutMs={readyTimeoutMs}

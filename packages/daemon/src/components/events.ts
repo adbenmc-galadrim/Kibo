@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { immediateTransaction } from "../sqlite-busy";
 
 export type ComponentEvent = {
   at: number;
@@ -73,10 +74,10 @@ export function createEventLog(
       windows.delete(key);
     }
   };
-  const flushAll = db.transaction(() => {
+  const flushAll = immediateTransaction(db, () => {
     for (const w of windows.values()) summarize(w);
   });
-  const append = db.transaction((e: Refusal, key: string, t: number) => {
+  const append = immediateTransaction(db, (e: Refusal, key: string, t: number) => {
     closeExpired(t);
     const w: Window = windows.get(key) ?? { first: e, start: t, written: 0, pending: 0, lastAt: t };
     windows.set(key, w);

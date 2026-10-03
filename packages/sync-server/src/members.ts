@@ -1,7 +1,7 @@
 import { KiboError, type MemberInfo, MemberRole, SyncId } from "@kibo/schema";
 import { z } from "zod";
 import { audit } from "./audit";
-import type { ServerDb } from "./db";
+import { immediateTransaction, type ServerDb } from "./db";
 import { validate } from "./validate";
 
 const NewProject = z.object({
@@ -18,7 +18,7 @@ export function insertProject(
   now: number,
 ): void {
   const input = validate(NewProject, raw);
-  sdb.db.transaction(() => {
+  immediateTransaction(sdb.db, () => {
     sdb.db
       .query(
         "INSERT INTO projects (id, ownerId, name, createdAt, ticketSeq) VALUES ($id, $ownerId, $name, $now, $ticketSeq)",
@@ -72,7 +72,7 @@ export function setRole(
   now: number,
 ): void {
   const input = validate(RoleChange, raw);
-  sdb.db.transaction(() => {
+  immediateTransaction(sdb.db, () => {
     assertTargets(sdb, input.projectId, input.userId);
     const current = roleOf(sdb, input.projectId, input.userId);
     if (current === "owner" && input.role !== "owner" && ownerCount(sdb, input.projectId) <= 1) {
@@ -121,7 +121,7 @@ export function projectOwner(sdb: ServerDb, projectId: string): string | null {
 const PROJECT_TABLES = ["updates", "snapshots", "invites", "members"] as const;
 
 export function deleteProject(sdb: ServerDb, input: { projectId: string; by: string }, now: number): void {
-  sdb.db.transaction(() => {
+  immediateTransaction(sdb.db, () => {
     for (const table of PROJECT_TABLES) {
       sdb.db.query(`DELETE FROM ${table} WHERE projectId = $id`).run({ id: input.projectId });
     }

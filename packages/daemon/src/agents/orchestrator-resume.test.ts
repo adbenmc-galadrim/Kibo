@@ -37,14 +37,17 @@ test("writing to a finished ticket run resumes the same session at the head of t
   });
   expect(h.orch.state().queue.map((q) => q.runId)).toEqual([first.id, other.id]);
   expect(h.orch.state().resumable).toEqual([]);
-  expect(() => h.orch.answer(first.id, "encore")).toThrow("INVALID_TRANSITION");
+  expect(h.orch.answer(first.id, "encore")).toMatchObject({
+    state: "queued",
+    pendingAnswer: "Ajoute aussi les tests\nsur deux lignes.\n\nencore",
+  });
 
   h.orch.setHost({ paused: false });
   await waitUntil(() => run(h, first.id).state === "done" && run(h, first.id).turns === 2);
   const calls = fakeCalls(h.state, first.sessionId);
   expect(calls).toHaveLength(2);
   expect(calls[1]?.argv.slice(-2)).toEqual(["--resume", first.sessionId]);
-  expect(calls[1]?.prompt).toBe("Ajoute aussi les tests\nsur deux lignes.");
+  expect(calls[1]?.prompt).toBe("Ajoute aussi les tests\nsur deux lignes.\n\nencore");
   expect(run(h, first.id)).toMatchObject({ tokens: 2400, label: "opus-dev-1", pendingAnswer: null });
   expect(h.started.filter((t) => t === "t1")).toEqual(["t1", "t1"]);
   await waitUntil(() => ticketDone(h, "KIB-1").length === 2);
@@ -54,7 +57,7 @@ test("a failed or cancelled ticket run can be written to once its process has ex
   const h = setup({ scenario: "hold" });
   const r = assign(h, "t1");
   await waitUntil(() => run(h, r.id).lastActivity?.event === "PreToolUse");
-  expect(() => h.orch.answer(r.id, "x")).toThrow("INVALID_TRANSITION");
+  expect(h.orch.answer(r.id, "x")).toMatchObject({ state: "running", pendingAnswer: "x" });
   h.orch.cancel(r.id);
   expect(() => h.orch.answer(r.id, "x")).toThrow("INVALID_TRANSITION");
   expect(h.orch.state().resumable).toEqual([]);
@@ -152,4 +155,46 @@ test("a run whose profile was deleted cannot be written to", async () => {
   profiles.splice(0);
   expect(h.orch.state().resumable).toEqual([]);
   expect(() => h.orch.answer(r.id, "x")).toThrow("INVALID_TRANSITION");
+}, 30_000);
+
+test("a message written during a turn is kept and starts the next turn as soon as the process exits", async () => {
+  const h = setup({ scenario: "hold" });
+  const r = assign(h, "t1");
+  await waitUntil(() => run(h, r.id).lastActivity?.event === "PreToolUse");
+  expect(h.orch.answer(r.id, "Ajoute les tests")).toMatchObject({
+    state: "running",
+    pendingAnswer: "Ajoute les tests",
+  });
+  expect(h.orch.answer(r.id, "Et la doc.")).toMatchObject({
+    pendingAnswer: "Ajoute les tests\n\nEt la doc.",
+  });
+  expect(h.orch.state().queue).toEqual([]);
+  releaseFakeRun(h.state, r.sessionId);
+  await waitUntil(() => run(h, r.id).turns === 2 && fakeCalls(h.state, r.sessionId).length === 2);
+  expect(run(h, r.id)).toMatchObject({ state: "running", pendingAnswer: null });
+  const calls = fakeCalls(h.state, r.sessionId);
+  expect(calls[1]?.prompt).toBe("Ajoute les tests\n\nEt la doc.");
+  expect(calls[1]?.argv.slice(-2)).toEqual(["--resume", r.sessionId]);
+  const types = h.orch.log(r.id).map((e) => e.event.type);
+  expect(types.filter((t) => t === "answered")).toHaveLength(2);
+  expect(types.indexOf("requeued")).toBeGreaterThan(types.indexOf("exited"));
+  releaseFakeRun(h.state, r.sessionId);
+  await waitUntil(() => run(h, r.id).state === "done");
+  expect(h.done).toEqual(["t1", "t1"]);
+}, 30_000);
+
+test("a message written to a queued first turn is appended to the brief", async () => {
+  const h = setup({ scenario: "done" });
+  h.orch.setHost({ paused: true });
+  const r = assign(h, "t1");
+  expect(h.orch.answer(r.id, "Commence par les tests.")).toMatchObject({
+    state: "queued",
+    pendingAnswer: "Commence par les tests.",
+  });
+  h.orch.setHost({ paused: false });
+  await waitUntil(() => run(h, r.id).state === "done");
+  const [first] = fakeCalls(h.state, r.sessionId);
+  expect(first?.prompt).toContain("# KIB-1 · Ticket KIB-1");
+  expect(first?.prompt).toEndWith("\n\nCommence par les tests.");
+  expect(run(h, r.id).turns).toBe(1);
 }, 30_000);

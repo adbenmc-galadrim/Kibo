@@ -16,6 +16,7 @@ export type DraftPreviewWindowProps = {
   manifest: ComponentManifest;
   format: ComponentFormat;
   theme: Theme;
+  scale: number;
   backend: Pick<PreviewBackend, "call" | "subscribe">;
   createBridge(deps: BridgeDeps): FrameBridge;
   readyTimeoutMs: number;
@@ -32,6 +33,7 @@ export function DraftPreviewWindow({
   manifest,
   format,
   theme,
+  scale,
   backend,
   createBridge,
   readyTimeoutMs,
@@ -98,15 +100,25 @@ export function DraftPreviewWindow({
 
   const box = previewBox(format);
   return (
-    <iframe
-      ref={ref}
-      onLoad={() => guard.current?.load()}
-      title={title}
-      src={src}
-      sandbox="allow-scripts"
-      referrerPolicy="no-referrer"
-      className="block shrink-0 rounded-md border bg-background"
-      style={{ width: box.width, height: box.height }}
-    />
+    <div
+      className="shrink-0 overflow-hidden"
+      style={{ width: box.width * scale, height: box.height * scale }}
+    >
+      <iframe
+        ref={ref}
+        onLoad={() => guard.current?.load()}
+        title={title}
+        src={src}
+        sandbox="allow-scripts"
+        referrerPolicy="no-referrer"
+        className="block rounded-md border bg-background"
+        style={{
+          width: box.width,
+          height: box.height,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+      />
+    </div>
   );
 }

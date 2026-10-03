@@ -59,6 +59,13 @@ function sessionStoreOf(given: SessionStore | undefined): { sessions: SessionSto
   return { sessions: openSessionStore(db), close: () => db.close() };
 }
 
+const HEALTH_HEADERS = { "cache-control": "no-store" };
+
+export function healthResponse(l: ListenInfo, method: string): Response | null {
+  if (l.remote || method !== "GET") return null;
+  return Response.json({ pid: process.pid }, { headers: HEALTH_HEADERS });
+}
+
 export function startServer(opts: ServerOptions): RunningServer {
   const now = opts.now ?? Date.now;
   const { sessions, close: closeSessions } = sessionStoreOf(opts.sessions);
@@ -171,6 +178,9 @@ export function startServer(opts: ServerOptions): RunningServer {
       const url = new URL(req.url);
       if (!allowedHosts(l).includes(req.headers.get("host") ?? ""))
         return new Response("forbidden host", { status: 403 });
+      if (url.pathname === "/api/health") {
+        return healthResponse(l, req.method) ?? new Response("not found", { status: 404 });
+      }
       const hookRun = HOOK_PATH.exec(url.pathname)?.[1];
       if (hookRun) {
         const res =

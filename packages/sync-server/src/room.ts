@@ -9,7 +9,7 @@ import {
 import { KiboError, MAX_FRAME_BYTES, type MemberRole, type RejectCode, SYNC_LIMITS } from "@kibo/schema";
 import { decodeImportBlobMeta, EphemeralStore, type ImportStatus, LoroDoc, VersionVector } from "loro-crdt";
 import { audit } from "./audit";
-import type { ServerDb } from "./db";
+import { immediateTransaction, type ServerDb } from "./db";
 import { insertProject, listMembers } from "./members";
 
 export type Actor = { userId: string; deviceId: string; role: MemberRole };
@@ -113,7 +113,7 @@ export class ProjectRoom {
 
   static create(sdb: ServerDb, input: ShareInput, now: number, limits?: Partial<RoomLimits>): ProjectRoom {
     const { doc, ticketSeq, snapshot } = prepareShare(input);
-    sdb.db.transaction(() => {
+    immediateTransaction(sdb.db, () => {
       insertProject(sdb, { id: input.projectId, ownerId: input.ownerId, name: input.name, ticketSeq }, now);
       insertSnapshot(sdb, input.projectId, doc, snapshot, now);
     })();
@@ -122,7 +122,7 @@ export class ProjectRoom {
 
   static replace(sdb: ServerDb, input: ShareInput, now: number, limits?: Partial<RoomLimits>): ProjectRoom {
     const { doc, ticketSeq, snapshot } = prepareShare(input);
-    sdb.db.transaction(() => {
+    immediateTransaction(sdb.db, () => {
       sdb.db.query("DELETE FROM updates WHERE projectId = ?1").run(input.projectId);
       sdb.db.query("DELETE FROM snapshots WHERE projectId = ?1").run(input.projectId);
       sdb.db
@@ -300,7 +300,7 @@ export class ProjectRoom {
     write: { seq: number; delta: Uint8Array; compacted: Uint8Array | null; author: Author; now: number },
   ): void {
     const ticketSeq = currentTicketSeq(candidate);
-    this.sdb.db.transaction(() => {
+    immediateTransaction(this.sdb.db, () => {
       this.sdb.db
         .query(
           "INSERT INTO updates (projectId, seq, bytes, userId, deviceId, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",

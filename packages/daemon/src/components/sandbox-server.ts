@@ -5,7 +5,8 @@ import { type AssetLookup, lookupAsset, parseAssetPath, parseDraftAssetPath } fr
 export type { AssetLookup } from "./asset-path";
 
 export const SANDBOX_INDEX =
-  '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css" crossorigin="anonymous"></head>' +
+  '<!doctype html><html><head><meta charset="utf-8"><style>html,body,#root{height:100%}</style>' +
+  '<link rel="stylesheet" href="ui.css" crossorigin="anonymous"></head>' +
   '<body><div id="root"></div><script type="module" src="ui.sandbox.js"></script></body></html>';
 
 const SANDBOX_FILES: readonly SandboxFile[] = ["index.html", "ui.sandbox.js", "ui.css"];

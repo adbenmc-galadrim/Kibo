@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::ipc::CapabilityBuilder;
 use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::{
     process::{CommandChild, CommandEvent},
@@ -41,9 +42,20 @@ fn navigation_allowed(target: &Url, allowed: &[String]) -> bool {
     allowed.contains(&ipc_origin(target))
 }
 
+fn is_local_http(url: &Url) -> bool {
+    url.scheme() == "http" && matches!(url.host_str(), Some("127.0.0.1" | "[::1]"))
+}
+
 fn parse_daemon_url(raw: &str) -> Result<Url, String> {
-    raw.parse()
-        .map_err(|e| format!("le démon a donné une adresse invalide « {raw} » ({e})"))
+    let url: Url = raw
+        .parse()
+        .map_err(|e| format!("le démon a donné une adresse invalide « {raw} » ({e})"))?;
+    if !is_local_http(&url) {
+        return Err(format!(
+            "le démon a donné une adresse hors de cette machine « {raw} »"
+        ));
+    }
+    Ok(url)
 }
 
 fn parse_ready_line(line: &str) -> Option<Result<Url, String>> {
@@ -102,9 +114,45 @@ fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
     )
 }
 
+#[derive(Debug)]
+enum Failure {
+    Fatal(String),
+    Stopped(String),
+}
+
 #[derive(Default)]
 struct StartupState {
     ready: Option<Url>,
+    reused: bool,
+}
+
+fn parse_fatal_line(line: &str) -> Option<(&str, &str)> {
+    let rest = line.strip_prefix("KIBO_FATAL ")?;
+    Some(rest.split_once(' ').unwrap_or((rest, "")))
+}
+
+fn fatal_message(code: &str, detail: &str) -> String {
+    match code {
+        "DAEMON_RUNNING" => format!(
+            "Un autre Kibo utilise déjà ce dossier de données et ne répond pas. Quitte-le, puis relance Kibo.\n\n{detail}"
+        ),
+        _ => format!("Kibo n'a pas pu démarrer : {detail}"),
+    }
+}
+
+fn classify_line(line: &str) -> Option<Failure> {
+    parse_fatal_line(line).map(|(code, detail)| Failure::Fatal(fatal_message(code, detail)))
+}
+
+fn mark_reused(state: &mut StartupState) {
+    state.reused = true;
+}
+
+fn terminated(state: &StartupState, code: Option<i32>, had_child: bool) -> Result<(), Failure> {
+    if state.reused || !had_child {
+        return Ok(());
+    }
+    Err(Failure::Stopped(daemon_exit_message(code)))
 }
 
 fn show_notice(handle: &AppHandle, notice: Result<Notice, serde_json::Error>) {
@@ -140,28 +188,37 @@ fn handle_daemon_line(
     handle: &AppHandle,
     line: &str,
     state: &mut StartupState,
-) -> Result<(), String> {
+) -> Result<(), Failure> {
+    if let Some(failure) = classify_line(line) {
+        return Err(failure);
+    }
+    if line == "KIBO_REUSED" {
+        mark_reused(state);
+        drop(take_daemon(handle));
+        return Ok(());
+    }
     if let Some(notice) = parse_notice(line) {
         show_notice(handle, notice);
         return Ok(());
     }
     if let Some(url) = parse_ready_line(line) {
-        let url = url?;
+        let url = url.map_err(Failure::Stopped)?;
         handle
             .add_capability(daemon_capability(&url))
-            .map_err(|e| format!("impossible d'autoriser l'adresse du démon ({e})"))?;
+            .map_err(|e| {
+                Failure::Stopped(format!("impossible d'autoriser l'adresse du démon ({e})"))
+            })?;
         state.ready = Some(url);
         return Ok(());
     }
     let Some(sandbox) = parse_sandbox(line) else {
         return Ok(());
     };
-    let sandbox = parse_daemon_url(sandbox)?;
-    let url = state
-        .ready
-        .take()
-        .ok_or_else(|| "le démon a annoncé son bac à sable avant d'être prêt".to_string())?;
-    open_main_window(handle, url, &sandbox)?;
+    let sandbox = parse_daemon_url(sandbox).map_err(Failure::Stopped)?;
+    let url = state.ready.take().ok_or_else(|| {
+        Failure::Stopped("le démon a annoncé son bac à sable avant d'être prêt".to_string())
+    })?;
+    open_main_window(handle, url, &sandbox).map_err(Failure::Stopped)?;
     if std::env::var("KIBO_SMOKE").is_ok() {
         handle.exit(0);
     }
@@ -172,13 +229,13 @@ fn handle_daemon_event(
     handle: &AppHandle,
     event: CommandEvent,
     state: &mut StartupState,
-) -> Result<(), String> {
+) -> Result<(), Failure> {
     match event {
         CommandEvent::Stdout(line) => {
             handle_daemon_line(handle, String::from_utf8_lossy(&line).trim(), state)
         }
-        CommandEvent::Terminated(payload) if take_daemon(handle).is_some() => {
-            Err(daemon_exit_message(payload.code))
+        CommandEvent::Terminated(payload) => {
+            terminated(state, payload.code, take_daemon(handle).is_some())
         }
         _ => Ok(()),
     }
@@ -229,8 +286,22 @@ fn main() {
             tauri::async_runtime::spawn(async move {
                 let mut state = StartupState::default();
                 while let Some(event) = events.recv().await {
-                    if let Err(reason) = handle_daemon_event(&handle, event, &mut state) {
-                        eprintln!("{}", stop_message(&reason));
+                    if let Err(failure) = handle_daemon_event(&handle, event, &mut state) {
+                        match failure {
+                            Failure::Stopped(reason) => eprintln!("{}", stop_message(&reason)),
+                            Failure::Fatal(text) => {
+                                if std::env::var("KIBO_SMOKE").is_ok() {
+                                    eprintln!("{text}");
+                                } else {
+                                    handle
+                                        .dialog()
+                                        .message(text)
+                                        .title("Kibo")
+                                        .kind(MessageDialogKind::Error)
+                                        .blocking_show();
+                                }
+                            }
+                        }
                         std::process::exit(1);
                     }
                 }
@@ -383,6 +454,23 @@ mod tests {
     }
 
     #[test]
+    fn only_a_local_http_daemon_url_is_accepted() {
+        assert!(parse_daemon_url("http://127.0.0.1:4317/#pair=abc").is_ok());
+        assert!(parse_daemon_url("http://[::1]:4317/").is_ok());
+        for raw in [
+            "http://10.0.0.1:4317/",
+            "http://127.0.0.2:4317/",
+            "http://example.com/",
+            "http://localhost:4317/",
+            "https://127.0.0.1:4317/",
+            "file:///etc/passwd",
+        ] {
+            let error = parse_daemon_url(raw).unwrap_err();
+            assert!(error.contains(raw), "{raw} must be refused: {error}");
+        }
+    }
+
+    #[test]
     fn the_stop_message_tells_to_relaunch() {
         assert_eq!(
             stop_message("le démon a quitté (code 3)"),
@@ -399,5 +487,55 @@ mod tests {
     #[test]
     fn window_is_never_smaller_than_the_layout() {
         assert_eq!(MIN_WINDOW, (960.0, 600.0));
+    }
+
+    #[test]
+    fn reads_the_fatal_line_with_its_code_and_detail() {
+        assert_eq!(
+            parse_fatal_line("KIBO_FATAL DAEMON_RUNNING another daemon (pid 7) holds /h"),
+            Some(("DAEMON_RUNNING", "another daemon (pid 7) holds /h"))
+        );
+        assert_eq!(
+            parse_fatal_line("KIBO_FATAL INTERNAL"),
+            Some(("INTERNAL", ""))
+        );
+        assert_eq!(parse_fatal_line("KIBO_READY http://x"), None);
+    }
+
+    #[test]
+    fn the_fatal_message_explains_a_running_daemon_in_french() {
+        let text = fatal_message("DAEMON_RUNNING", "another daemon (pid 7) holds /h");
+        assert!(text.starts_with("Un autre Kibo utilise déjà ce dossier de données et ne répond pas. Quitte-le, puis relance Kibo."), "{text}");
+        assert!(text.ends_with("another daemon (pid 7) holds /h"), "{text}");
+        assert_eq!(
+            fatal_message("STORE_CORRUPT", "cannot open kibo.db"),
+            "Kibo n'a pas pu démarrer : cannot open kibo.db"
+        );
+    }
+
+    #[test]
+    fn a_reused_daemon_is_not_a_failure_when_it_exits() {
+        let mut state = StartupState::default();
+        assert!(!state.reused);
+        mark_reused(&mut state);
+        assert!(state.reused);
+        assert!(matches!(terminated(&state, Some(3), true), Ok(())));
+        assert!(matches!(
+            terminated(&StartupState::default(), Some(1), true),
+            Err(Failure::Stopped(_))
+        ));
+        assert!(matches!(
+            terminated(&StartupState::default(), Some(1), false),
+            Ok(())
+        ));
+    }
+
+    #[test]
+    fn a_fatal_line_is_a_fatal_failure_not_a_stop() {
+        let failure = classify_line("KIBO_FATAL INTERNAL boom").expect("fatal");
+        assert!(
+            matches!(failure, Failure::Fatal(ref text) if text == "Kibo n'a pas pu démarrer : boom")
+        );
+        assert!(classify_line("KIBO_SANDBOX http://127.0.0.1:1").is_none());
     }
 }

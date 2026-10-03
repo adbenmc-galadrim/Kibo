@@ -1,12 +1,12 @@
 import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
-import { readDaemonInfo } from "./components/daemon-info";
+import { readDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { fakeBuild, okReport, writeDraft } from "./components/service.test-helper";
 import { type DaemonOptions, startDaemon } from "./daemon";
 import { commandLineOf } from "./mcp/command-line";
@@ -174,6 +174,44 @@ describe("startDaemon", () => {
     const { d } = await launch({ home });
     expect(readDaemonInfo(home)).toMatchObject({ port: d.port });
   });
+
+  test("a second daemon on the same home refuses to start and leaves the first one alone", async () => {
+    const { d, home } = await launch();
+    const before = readDaemonInfo(home);
+    await expect(launch({ home })).rejects.toMatchObject({
+      code: "DAEMON_RUNNING",
+      running: { info: before, answers: true },
+    });
+    expect(readDaemonInfo(home)).toEqual(before);
+    expect((await fetch(`${d.url}/api/health`)).status).toBe(200);
+  });
+
+  test("a stale daemon.json whose port is closed does not prevent the start", async () => {
+    const home = mkdtempSync(join(tmpdir(), "kibo-start-"));
+    const closed = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("x") });
+    const port = closed.port ?? 0;
+    closed.stop(true);
+    writeDaemonInfo(home, { port, sandboxPort: port + 1, pid: 99_999 });
+    const { d } = await launch({ home });
+    expect(readDaemonInfo(home)).toEqual({ port: d.port, sandboxPort: d.sandboxPort, pid: process.pid });
+  });
+
+  test("a listener that never answers on the recorded port blocks the start without touching the home", async () => {
+    const home = mkdtempSync(join(tmpdir(), "kibo-start-"));
+    const mute = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Promise<Response>(() => {}) });
+    try {
+      writeDaemonInfo(home, { port: mute.port ?? 0, sandboxPort: 0, pid: 99_999 });
+      await expect(launch({ home })).rejects.toMatchObject({
+        code: "DAEMON_RUNNING",
+        running: { answers: false },
+      });
+      expect(existsSync(join(home, "kibo.db"))).toBe(false);
+      expect(existsSync(join(home, "runs.db"))).toBe(false);
+    } finally {
+      mute.stop(true);
+      rmSync(home, { recursive: true, force: true });
+    }
+  }, 10_000);
 
   test("a busy sandbox port fails the start and releases what was opened", async () => {
     const busy = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("busy") });

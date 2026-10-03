@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startServer } from "./server";
@@ -106,6 +106,98 @@ describe("ui files", () => {
     expect(await (await fetch(`${ui.url}/workers/..%2Findex.html`)).text()).toBe("<p>kibo</p>");
     ui.stop();
     rmSync(uiDir, { recursive: true, force: true });
+  });
+
+  test("a symbolic link that leaves the ui folder is refused; one that stays inside is served by its real path", async () => {
+    const root = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    const uiDir = join(root, "ui");
+    mkdirSync(join(uiDir, "workers"), { recursive: true });
+    mkdirSync(join(uiDir, "assets"));
+    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
+    writeFileSync(join(root, "outside.js"), "stolen()");
+    writeFileSync(join(uiDir, "assets", "real.js"), "real()");
+    writeFileSync(join(uiDir, "workers", "real-worker.js"), "work()");
+    symlinkSync(join(root, "outside.js"), join(uiDir, "workers", "evil.js"));
+    symlinkSync(join(root, "outside.js"), join(uiDir, "assets", "evil.js"));
+    symlinkSync(join(uiDir, "assets", "real.js"), join(uiDir, "assets", "alias.js"));
+    symlinkSync(join(uiDir, "assets", "real.js"), join(uiDir, "workers", "alias.js"));
+    symlinkSync(join(uiDir, "workers", "real-worker.js"), join(uiDir, "workers", "worker-alias.js"));
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    const worker = (csp: string | null) => csp?.includes("wasm-unsafe-eval") === true;
+    for (const path of ["/workers/evil.js", "/assets/evil.js"]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect({ path, status: res.status }).toEqual({ path, status: 403 });
+      expect(worker(res.headers.get("content-security-policy"))).toBe(false);
+      expect(await res.text()).not.toBe("stolen()");
+    }
+    const inside = await fetch(`${ui.url}/assets/alias.js`);
+    expect(await inside.text()).toBe("real()");
+    const aliasInWorkers = await fetch(`${ui.url}/workers/alias.js`);
+    expect(await aliasInWorkers.text()).toBe("real()");
+    expect(worker(aliasInWorkers.headers.get("content-security-policy"))).toBe(false);
+    const workerAlias = await fetch(`${ui.url}/workers/worker-alias.js`);
+    expect(await workerAlias.text()).toBe("work()");
+    expect(worker(workerAlias.headers.get("content-security-policy"))).toBe(true);
+    ui.stop();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("a linked folder that leaves the ui folder is refused, even through an encoded path", async () => {
+    const root = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    const uiDir = join(root, "ui");
+    mkdirSync(join(root, "outside"));
+    mkdirSync(uiDir);
+    writeFileSync(join(uiDir, "index.html"), "<p>kibo</p>");
+    writeFileSync(join(root, "outside", "secret.js"), "stolen()");
+    symlinkSync(join(root, "outside"), join(uiDir, "workers"));
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    for (const path of ["/workers/secret.js", "/workers%2Fsecret.js", "/%77orkers/secret.js"]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect({ path, status: res.status }).toEqual({ path, status: 403 });
+      expect(res.headers.get("content-security-policy")?.includes("wasm-unsafe-eval")).toBe(false);
+      expect(await res.text()).not.toBe("stolen()");
+    }
+    ui.stop();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("an index.html that leaves the ui folder is refused on every fallback path", async () => {
+    const root = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    const uiDir = join(root, "ui");
+    mkdirSync(uiDir);
+    writeFileSync(join(root, "outside.html"), "stolen");
+    symlinkSync(join(root, "outside.html"), join(uiDir, "index.html"));
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    for (const path of ["/", "/index.html", "/projects/KIB", "/workers/absent.js"]) {
+      const res = await fetch(`${ui.url}${path}`);
+      expect({ path, status: res.status }).toEqual({ path, status: 403 });
+      expect(await res.text()).not.toBe("stolen");
+    }
+    ui.stop();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("an index.html linked inside the ui folder is served; a missing one is a 404", async () => {
+    const uiDir = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    mkdirSync(join(uiDir, "pages"));
+    writeFileSync(join(uiDir, "pages", "home.html"), "<p>kibo</p>");
+    symlinkSync(join(uiDir, "pages", "home.html"), join(uiDir, "index.html"));
+    const ui = startServer({ service: createService(store, { user: "adam" }), token: TOKEN, port: 0, uiDir });
+    expect(await (await fetch(`${ui.url}/projects/KIB`)).text()).toBe("<p>kibo</p>");
+    ui.stop();
+    const empty = mkdtempSync(join(tmpdir(), "kibo-ui-"));
+    const bare = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: empty,
+    });
+    const res = await fetch(`${bare.url}/projects/KIB`);
+    expect(res.status).toBe(404);
+    expect(await res.text()).toBe("ui not built");
+    bare.stop();
+    rmSync(uiDir, { recursive: true, force: true });
+    rmSync(empty, { recursive: true, force: true });
   });
 
   test("an unreadable ui path is a clean 400", async () => {

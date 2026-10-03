@@ -28,7 +28,7 @@ export function formatClock(at: number): string {
 }
 
 export function elapsed(run: RunView, now: number): number {
-  return (run.endedAt ?? now) - (run.startedAt ?? run.createdAt);
+  return run.activeMs + (run.turnStartedAt === null ? 0 : Math.max(0, now - run.turnStartedAt));
 }
 
 export function reasonText(reason: WaitReason | null): string {

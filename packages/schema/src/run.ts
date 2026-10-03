@@ -88,6 +88,7 @@ export const RunEvent = z.discriminatedUnion("type", [
     output: z.string().max(1_000_000).optional(),
   }),
   z.object({ type: z.literal("answered"), text: z.string().trim().min(1).max(10_000), rank: z.number() }),
+  z.object({ type: z.literal("requeued"), rank: z.number() }),
   z.object({ type: z.literal("cancelled") }),
   z.object({ type: z.literal("failed"), error: z.string() }),
   z.object({ type: z.literal("reranked"), rank: z.number() }),
@@ -135,6 +136,8 @@ export type RunView = RunRecord & {
   startedAt: number | null;
   endedAt: number | null;
   turns: number;
+  activeMs: number;
+  turnStartedAt: number | null;
 };
 
 export type HostLoad = { cpu: number; ram: number };

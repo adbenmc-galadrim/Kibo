@@ -40,6 +40,8 @@ export function initRun(record: RunRecord, rank: number, at: number): RunView {
     startedAt: null,
     endedAt: null,
     turns: 0,
+    activeMs: 0,
+    turnStartedAt: null,
   };
 }
 
@@ -59,6 +61,29 @@ function enter(view: RunView, state: RunState, at: number, patch: Partial<RunVie
     endedAt: isTerminal(state) ? at : next.endedAt,
   };
 }
+
+const closedTurn = (view: RunView, at: number): Pick<RunView, "activeMs" | "turnStartedAt"> => ({
+  activeMs: view.activeMs + (view.turnStartedAt === null ? 0 : at - view.turnStartedAt),
+  turnStartedAt: null,
+});
+
+const WORKING: readonly RunState[] = ["queued", "starting", "running"];
+const REQUEUABLE: readonly RunState[] = ["done", "failed", "waiting_input"];
+
+const pendingWith = (view: RunView, text: string): string =>
+  view.pendingAnswer === null ? text : `${view.pendingAnswer}\n\n${text}`;
+
+const resumeHead = (view: RunView, at: number, rank: number, patch: Partial<RunView> = {}): RunView =>
+  enter(view, "queued", at, {
+    lane: null,
+    question: null,
+    error: null,
+    endedAt: null,
+    subagents: [],
+    priority: true,
+    rank,
+    ...patch,
+  });
 
 export function canWriteAfterEnd(view: RunView): boolean {
   return isTerminal(view.state) && view.ticketId !== null && view.startedAt !== null;
@@ -96,9 +121,14 @@ function applyExit(view: RunView, e: ExitEvent, at: number): RunView {
     refuse(view, e);
   }
   const clean = e.code === 0 && !e.isError;
-  if (clean && view.question !== null) return enter(view, "waiting_input", at, totals);
-  if (clean) return enter(view, "done", at, totals);
-  return enter(view, "failed", at, { ...totals, error: e.result ?? `exit code ${e.code}` });
+  if (clean && view.question !== null)
+    return enter(view, "waiting_input", at, { ...totals, ...closedTurn(view, at) });
+  if (clean) return enter(view, "done", at, { ...totals, ...closedTurn(view, at) });
+  return enter(view, "failed", at, {
+    ...totals,
+    ...closedTurn(view, at),
+    error: e.result ?? `exit code ${e.code}`,
+  });
 }
 
 export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
@@ -117,29 +147,31 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
         startedAt: view.startedAt ?? at,
         pendingAnswer: null,
         turns: view.turns + 1,
+        turnStartedAt: at,
       });
     case "hook":
       return applyHook(view, event.payload, at);
     case "exited":
       return applyExit(view, event, at);
     case "answered":
-      if (view.state !== "waiting_input" && !canWriteAfterEnd(view)) refuse(view, event);
-      return enter(view, "queued", at, {
-        lane: null,
-        question: null,
-        error: null,
-        endedAt: null,
-        subagents: [],
-        pendingAnswer: event.text,
-        priority: true,
-        rank: event.rank,
-      });
+      if (view.ticketId === null && view.state !== "waiting_input") refuse(view, event);
+      if (isTerminal(view.state) && !canWriteAfterEnd(view)) refuse(view, event);
+      if (WORKING.includes(view.state)) return { ...view, pendingAnswer: pendingWith(view, event.text) };
+      return resumeHead(view, at, event.rank, { pendingAnswer: pendingWith(view, event.text) });
+    case "requeued":
+      if (view.pendingAnswer === null || !REQUEUABLE.includes(view.state)) refuse(view, event);
+      return resumeHead(view, at, event.rank);
     case "cancelled":
       if (isTerminal(view.state)) refuse(view, event);
-      return enter(view, "cancelled", at, { subagents: [] });
+      return enter(view, "cancelled", at, { subagents: [], pendingAnswer: null, ...closedTurn(view, at) });
     case "failed":
       if (isTerminal(view.state)) refuse(view, event);
-      return enter(view, "failed", at, { error: event.error, subagents: [] });
+      return enter(view, "failed", at, {
+        error: event.error,
+        subagents: [],
+        pendingAnswer: null,
+        ...closedTurn(view, at),
+      });
     case "reranked":
       requireState(view, event, ["queued"]);
       return { ...view, rank: event.rank };

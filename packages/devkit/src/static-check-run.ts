@@ -2,7 +2,8 @@ import { dirname } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { type BunCommand, bunCommand } from "./bun-command";
 import { FR_DEVKIT } from "./fr";
-import { StaticCheck } from "./static-check";
+import { issueAt } from "./issues";
+import { StaticCheck, StaticCheckStep } from "./static-check";
 import type { Toolchain } from "./toolchain";
 import { assertNotAborted, DEFAULT_TIMEOUT_MS } from "./validate-tests";
 
@@ -15,20 +16,40 @@ export type StaticCheckOptions = {
 
 const STDERR_LIMIT = 2_000;
 
-const timedOut = (timeoutMs: number): StaticCheck => ({
-  imports: [],
-  typecheck: [FR_DEVKIT.timeout(timeoutMs / 1000)],
-  inference: { used: [], issues: [] },
-});
+const SKIPPED_INFERENCE = { used: [], issues: [issueAt("kibo.component.json", 0, "inference-skipped", "")] };
 
-function parseReport(stdout: string): StaticCheck {
+function parseStep(line: string, lenient: boolean): StaticCheckStep | null {
   let raw: unknown;
   try {
-    raw = JSON.parse(stdout);
+    raw = JSON.parse(line);
   } catch (e) {
     if (!(e instanceof SyntaxError)) throw e;
+    if (lenient) return null;
   }
-  const parsed = StaticCheck.safeParse(raw);
+  const parsed = StaticCheckStep.safeParse(raw);
+  if (parsed.success) return parsed.data;
+  if (lenient) return null;
+  throw new KiboError("INTERNAL", "static check returned an invalid report");
+}
+
+function collectSteps(stdout: string, lenient: boolean): StaticCheckStep {
+  const steps: StaticCheckStep = {};
+  for (const line of stdout.split("\n").filter((l) => l.trim() !== ""))
+    Object.assign(steps, parseStep(line, lenient));
+  return steps;
+}
+
+const completeReport = (stdout: string, timeoutMs: number): StaticCheck => {
+  const steps = collectSteps(stdout, true);
+  return {
+    imports: steps.imports ?? [],
+    typecheck: steps.typecheck ?? [FR_DEVKIT.typecheckTimeout(timeoutMs / 1000)],
+    inference: steps.inference ?? SKIPPED_INFERENCE,
+  };
+};
+
+function fullReport(stdout: string): StaticCheck {
+  const parsed = StaticCheck.safeParse(collectSteps(stdout, false));
   if (!parsed.success) throw new KiboError("INTERNAL", "static check returned an invalid report");
   return parsed.data;
 }
@@ -66,10 +87,10 @@ export async function runStaticCheck(
       proc.exited,
     ]);
     assertNotAborted(opts.signal);
-    if (expired) return timedOut(timeoutMs);
+    if (expired) return completeReport(stdout, timeoutMs);
     if (code !== 0)
       throw new KiboError("INTERNAL", `static check exited with ${code}: ${stderr.slice(-STDERR_LIMIT)}`);
-    return parseReport(stdout);
+    return fullReport(stdout);
   } finally {
     clearTimeout(timer);
     opts.signal?.removeEventListener("abort", stop);

@@ -50,6 +50,13 @@ export function AiDraftPanel({ draftId, target, onDone, onStatus }: Props) {
     setRefused(false);
     setReviewed(false);
   }, [status]);
+  const revisions = details?.revisions ?? 0;
+  const [seenRevisions, setSeenRevisions] = useState(revisions);
+  if (seenRevisions !== revisions) {
+    setSeenRevisions(revisions);
+    setRefused(false);
+    setReviewed(false);
+  }
   const finished = useRef(false);
   const reviewedButton = useRef<HTMLButtonElement>(null);
   const approval =

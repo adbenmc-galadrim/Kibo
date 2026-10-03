@@ -48,6 +48,8 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     startedAt: null,
     endedAt: null,
     turns: 0,
+    activeMs: p.startedAt != null && p.endedAt != null ? p.endedAt - p.startedAt : 0,
+    turnStartedAt: p.state === "running" || p.state === "starting" ? (p.startedAt ?? null) : null,
     ...p,
   };
 }
@@ -153,6 +155,7 @@ export function agentsFixture(): AgentsState {
         rank: -1,
         priority: true,
         pendingAnswer: "Oui, utilise gh.",
+        turns: 1,
       }),
       runFixture({
         id: "q18",

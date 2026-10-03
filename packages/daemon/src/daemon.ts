@@ -30,6 +30,7 @@ import { startServer } from "./server";
 import { call, createService } from "./service";
 import { openSessionStore } from "./sessions/session-store";
 import { openLocalSettings } from "./settings";
+import { DaemonRunning, findRunningDaemon, type Probe } from "./single-instance";
 import { openStore } from "./store";
 
 export type DaemonOptions = {
@@ -49,6 +50,7 @@ export type DaemonOptions = {
   agentEnv?: Record<string, string | undefined>;
   assistantTimeoutMs?: number;
   marketAllowLoopback?: boolean;
+  probe?: Probe;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -81,6 +83,8 @@ async function shutdown(closers: Closers): Promise<void> {
 }
 
 async function assemble(opts: DaemonOptions, { front, back: closers }: Closers): Promise<Daemon> {
+  const running = await findRunningDaemon(opts.home, opts.probe);
+  if (running) throw new DaemonRunning(opts.home, running);
   const devOrigins = opts.dev ? [VITE_ORIGIN] : [];
   const store = openStore(opts.home);
   closers.push(() => store.close());

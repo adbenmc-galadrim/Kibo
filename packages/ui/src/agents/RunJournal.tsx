@@ -87,6 +87,7 @@ function eventLine(event: RunEvent): Line | null {
     case "enqueued":
     case "admitted":
     case "reranked":
+    case "requeued":
       return null;
   }
 }

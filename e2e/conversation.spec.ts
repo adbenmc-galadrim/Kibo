@@ -1,5 +1,5 @@
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { rpc, runState, text } from "./agents-seed";
+import { list, rpc, runState, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 test.setTimeout(120_000);
@@ -7,6 +7,15 @@ test.use({ viewport: { width: 1440, height: 900 } });
 
 async function shot(page: Page, info: TestInfo, name: string) {
   await page.screenshot({ path: info.outputPath(`${name}.png`), fullPage: true });
+}
+
+const NEXT_TURN = "L'agent travaille : ton message lui sera remis au début de son prochain tour.";
+
+async function lastRunTurns(page: Page): Promise<number> {
+  const run = list(await rpc(page, { method: "getAgents" }), "runs").at(-1);
+  return typeof run === "object" && run !== null && "turns" in run && typeof run.turns === "number"
+    ? run.turns
+    : 0;
 }
 
 async function seed(page: Page) {
@@ -63,14 +72,17 @@ test("conversation avec un run terminé, puis passage en review à la demande", 
   const field = page.getByLabel("Écrire à opus-dev-1");
   await field.fill("Oui, ajoute les tests du récepteur.");
   await page.getByRole("button", { name: "Envoyer" }).click();
-  await expect(field).toBeDisabled();
-  await expect(
-    page.getByText("L'agent travaille : écris-lui à la fin de son tour, ou arrête-le."),
-  ).toBeVisible();
+  await expect(page.getByText(NEXT_TURN)).toBeVisible();
+  await expect(field).toBeEnabled();
+  await field.fill("Documente aussi le format des hooks.");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(journal.getByText("Documente aussi le format des hooks.")).toBeVisible();
   await shot(page, info, "tour-en-cours");
 
-  await expect(journal.getByText("Tout passe.")).toBeVisible({ timeout: 30_000 });
-  await expect(field).toBeEnabled();
+  await expect.poll(() => lastRunTurns(page), { timeout: 45_000 }).toBe(3);
+  await expect.poll(() => runState(page, "KIB-1"), { timeout: 30_000 }).toBe("done");
+  await expect(page.getByText(NEXT_TURN)).toBeHidden();
+  await expect(journal.getByText("Tout passe.").first()).toBeVisible();
   await expect(journal.getByText("Oui, ajoute les tests du récepteur.")).toBeVisible();
   expect(await runState(page, "KIB-1")).toBe("done");
   await expect(doing.getByRole("article").filter({ hasText: "KIB-1" })).toBeVisible();

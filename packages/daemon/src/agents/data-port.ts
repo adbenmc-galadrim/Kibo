@@ -45,6 +45,7 @@ export function createDataPort(docs: Docs): AgentDataPort {
       return { project, ticket, domain };
     },
     guidelines: (projectId) => guidelinesOf(docs, projectId),
+    assertWritable: (projectId) => docs.assertWritable(projectId),
     assignTicket(projectId, ticketId, profileName) {
       docs.run(projectId, {
         method: "updateTicket",

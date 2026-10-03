@@ -121,3 +121,14 @@ test("back in review after a revision (modify), the publish step waits for a new
   await user.click(screen.getByRole("button", { name: "J'ai relu, continuer" }));
   expect(await screen.findByRole("button", { name: "Publier" })).toBeTruthy();
 });
+
+test("a revision seen only through its count, without observing generating, resets the review", async () => {
+  draft = inStatus("review", "modify");
+  render(<AiDraftPanel draftId={DRAFT_ID} target={null} onDone={() => {}} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "J'ai relu, continuer" }));
+  expect(await screen.findByRole("button", { name: "Publier" })).toBeTruthy();
+  await backTo({ ...inStatus("review", "modify"), revisions: 1 });
+  expect(await screen.findByRole("tablist", { name: "Relecture du brouillon" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Publier" })).toBeNull();
+});

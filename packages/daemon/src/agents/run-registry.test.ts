@@ -73,7 +73,7 @@ test("a refused transition appends nothing", () => {
   const store = openRunStore(home());
   const reg = openRunRegistry(store, now);
   reg.create(newRun("r1"), 0);
-  expect(() => reg.apply("r1", { type: "answered", text: "x", rank: 0 })).toThrow("INVALID_TRANSITION");
+  expect(() => reg.apply("r1", { type: "requeued", rank: 0 })).toThrow("INVALID_TRANSITION");
   expect(() => reg.apply("r1", spawned)).toThrow("INVALID_TRANSITION");
   expect(store.log("r1")).toHaveLength(1);
   expect(reg.get("r1").state).toBe("queued");

@@ -62,7 +62,7 @@ export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: P
           {runSubject(run)}
         </span>
         <span className="line-clamp-2 break-words text-3xs text-muted-foreground">
-          {run.pendingAnswer ? fr.queue.resumeHint : reasonText(entry.reason)}
+          {run.pendingAnswer && run.turns > 0 ? fr.queue.resumeHint : reasonText(entry.reason)}
         </span>
       </span>
       {run.priority && (

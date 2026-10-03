@@ -2,7 +2,8 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { FR_DEVKIT } from "./fr";
+import { FR_DEVKIT, formatIssue } from "./fr";
+import { issueAt } from "./issues";
 import { runStaticCheck } from "./static-check-run";
 import { DEV_TOOLCHAIN } from "./test-kit";
 
@@ -35,8 +36,8 @@ test("a type checker that never ends is killed and fails the typecheck step", as
   expect(Date.now() - started).toBeLessThan(3_000);
   expect(result).toEqual({
     imports: [],
-    typecheck: [FR_DEVKIT.timeout(1)],
-    inference: { used: [], issues: [] },
+    typecheck: [FR_DEVKIT.typecheckTimeout(1)],
+    inference: { used: [], issues: [issueAt("kibo.component.json", 0, "inference-skipped", "")] },
   });
   expect(checkersAlive()).toEqual([]);
 }, 10_000);
@@ -61,3 +62,50 @@ test("a type checker that prints an invalid report rejects", async () => {
     });
   }
 }, 10_000);
+
+const line = (step: object) => `process.stdout.write(${JSON.stringify(`${JSON.stringify(step)}\n`)});`;
+const forbidden = issueAt("ui.tsx", 3, "forbidden-import", "node:fs");
+
+test("steps printed before the timeout are kept, the missing ones are named", async () => {
+  const result = await runStaticCheck(copy, [], {
+    toolchain: DEV_TOOLCHAIN,
+    bun: fakeBun(
+      `${line({ imports: [forbidden] })} await new Promise(() => setInterval(() => undefined, 1_000))`,
+    ),
+    timeoutMs: 1_000,
+  });
+  expect(result.imports).toEqual([forbidden]);
+  expect(result.typecheck).toEqual([FR_DEVKIT.typecheckTimeout(1)]);
+  expect(result.inference.issues.map((i) => i.code)).toEqual(["inference-skipped"]);
+}, 10_000);
+
+test("a report split over one line per step is assembled; a truncated last line is ignored on timeout", async () => {
+  const whole = await runStaticCheck(copy, [], {
+    toolchain: DEV_TOOLCHAIN,
+    bun: fakeBun(
+      `${line({ imports: [] })}${line({ typecheck: ["ui.tsx:1 · boom"] })}${line({ inference: { used: ["ticket"], issues: [] } })}`,
+    ),
+  });
+  expect(whole).toEqual({
+    imports: [],
+    typecheck: ["ui.tsx:1 · boom"],
+    inference: { used: ["ticket"], issues: [] },
+  });
+  const cut = await runStaticCheck(copy, [], {
+    toolchain: DEV_TOOLCHAIN,
+    bun: fakeBun(
+      `${line({ imports: [] })} process.stdout.write('{"typecheck": ['); await new Promise(() => setInterval(() => undefined, 1_000))`,
+    ),
+    timeoutMs: 1_000,
+  });
+  expect(cut.imports).toEqual([]);
+  expect(cut.typecheck).toEqual([FR_DEVKIT.typecheckTimeout(1)]);
+}, 10_000);
+
+test("the French texts tell the type check and the tests apart", () => {
+  expect(FR_DEVKIT.typecheckTimeout(120)).toBe("le contrôle de types a dépassé 120 s");
+  expect(FR_DEVKIT.timeout(120)).toBe("les tests ont dépassé 120 s");
+  expect(formatIssue(issueAt("kibo.component.json", 0, "inference-skipped", ""))).toBe(
+    "kibo.component.json:0 · permissions non vérifiées : contrôle de types interrompu",
+  );
+});

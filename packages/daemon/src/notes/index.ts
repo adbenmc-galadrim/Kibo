@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { parseNote } from "@kibo/core/notes";
 import type { NoteMeta } from "@kibo/schema";
+import { immediateTransaction } from "../sqlite-busy";
 
 export type IndexedNote = { path: string; markdown: string; mtime: number; size: number };
 export type NotesIndex = {
@@ -63,10 +64,10 @@ export function createNotesIndex(db: Database): NotesIndex {
     "SELECT path, key AS target FROM note_tickets WHERE project_id = $projectId ORDER BY path, ord",
   );
 
-  const clear = db.transaction((projectId: string) => {
+  const clear = immediateTransaction(db, (projectId: string) => {
     for (const d of deletes) d.run({ projectId });
   });
-  const replace = db.transaction((projectId: string, projectKey: string, notes: IndexedNote[]) => {
+  const replace = immediateTransaction(db, (projectId: string, projectKey: string, notes: IndexedNote[]) => {
     clear(projectId);
     const paths = notes.map((n) => n.path);
     for (const n of notes) {

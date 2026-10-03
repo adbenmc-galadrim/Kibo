@@ -83,12 +83,15 @@ describe("trusted component modules", () => {
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
       "cross-origin-resource-policy": "same-origin",
+      "content-security-policy": "default-src 'none'; sandbox",
+      "referrer-policy": "no-referrer",
     });
     expect(ok.headers.get("access-control-allow-origin")).toBeNull();
     expect(ok.headers.get("set-cookie")).toBeNull();
     const css = await fetch(url(base, "ui.css"), { headers: { cookie } });
     expect(css.status).toBe(200);
     expect(css.headers.get("content-type")).toBe("text/css; charset=utf-8");
+    expect(css.headers.get("content-security-policy")).toBe("default-src 'none'; sandbox");
   });
 
   test("a foreign origin or Host is refused before any lookup", async () => {

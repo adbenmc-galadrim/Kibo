@@ -94,7 +94,13 @@ test("créer deux composants en arrière-plan, prévisualiser, réviser, publier
   expect(callsBefore).toBeGreaterThan(0);
   await formats.getByRole("radio", { name: "Demi-page" }).click();
   const iframe = review.locator(`iframe[title="Aperçu de ${BURNDOWN}"]`);
-  await expect(async () => expect((await boxOf(iframe)).width).toBe(1196)).toPass(PREVIEW);
+  const gridWidth = () => iframe.evaluate((el: HTMLIFrameElement) => el.offsetWidth);
+  await expect(async () => expect(await gridWidth()).toBe(1196)).toPass(PREVIEW);
+  const overflows = await iframe.evaluate((el) => {
+    const scroller = el.parentElement?.parentElement;
+    return scroller ? scroller.scrollWidth > scroller.clientWidth : true;
+  });
+  expect(overflows).toBe(false);
   await expect(frame.getByText("tickets restants", { exact: true })).toBeVisible(PREVIEW);
   expect(previewCalls()).toBe(callsBefore);
   await expect(review.getByText("Aperçu indisponible.")).toHaveCount(0);

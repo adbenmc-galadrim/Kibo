@@ -1,33 +1,23 @@
 import { guidelineChain } from "@kibo/core/context";
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
-import {
-  defaultHostSlots,
-  headRank,
-  orderQueue,
-  planAdmissions,
-  rankForMove,
-  tailRank,
-} from "@kibo/core/scheduler";
+import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
 import {
   type AgentProfile,
-  DEFAULT_CPU_THRESHOLD,
-  DEFAULT_RAM_THRESHOLD,
   type HostLoad,
   HostSettings,
-  type HostView,
   isTerminal,
   KiboError,
   type RunView,
 } from "@kibo/schema";
 import { previewAssign } from "./assign-preview";
-import type { HookSink } from "./hook-route";
+import { createHookSink } from "./hook-sink";
+import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
-import { guarded, holdsSlot, startOfDay } from "./orchestrator-support";
+import { guarded, startOfDay } from "./orchestrator-support";
 import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
-import { sameRunToken } from "./run-token";
 import { reapOrphan } from "./runner";
 
 export type {
@@ -68,13 +58,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     emit();
   });
 
-  const settings = (): HostSettings => ({
-    hostSlots: defaultHostSlots(opts.hostInfo),
-    cpuThreshold: DEFAULT_CPU_THRESHOLD,
-    ramThreshold: DEFAULT_RAM_THRESHOLD,
-    paused: false,
-    ...opts.store.hostSettings(),
-  });
+  const settings = () => hostSettingsOf(opts.store, opts.hostInfo);
   const profileOf = (id: string): AgentProfile => {
     const found = opts.data.profiles().find((p) => p.id === id);
     if (!found) throw new KiboError("NOT_FOUND", `profile ${id} not found`);
@@ -119,34 +103,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     }
   }
 
-  const hostView = (): HostView => ({
-    ...settings(),
-    autoSlots: defaultHostSlots(opts.hostInfo),
-    slotsFixed: opts.store.hostSettings().hostSlots !== undefined,
-    cores: opts.hostInfo.cores,
-    ramGb: opts.hostInfo.ramGb,
-    used: registry.all().filter(holdsSlot).length,
-    cpu: Math.round(load.cpu),
-    ram: Math.round(load.ram),
-  });
-
-  const hooks: HookSink = {
-    verify(runId, token) {
-      const entry = live.get(runId);
-      return entry !== undefined && sameRunToken(token, entry.hash);
-    },
-    receive(runId, payload, toolInput) {
-      registry.apply(runId, { type: "hook", payload });
-      const guard = tasks.get(runId)?.guard;
-      if (!guard || payload.event !== "PreToolUse") return null;
-      try {
-        return guard({ tool: payload.tool ?? "", input: toolInput ?? null });
-      } catch (e) {
-        console.error(`[kibo-daemon] guard of run ${runId} failed, denying`, e);
-        return { decision: "deny", reason: "guard error" };
-      }
-    },
-  };
+  const hostView = () => hostViewOf(opts.store, opts.hostInfo, registry.all(), load);
+  const hooks = createHookSink({ live, tasks, registry });
 
   for (const run of registry.interrupted()) {
     const spawned = registry
@@ -176,6 +134,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       const profile = ticketProfileOf(input.profileId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
+      opts.data.assertWritable(input.projectId);
+      opts.data.assignTicket(input.projectId, ticket.id, profile.name);
       const view = enqueue({
         id: crypto.randomUUID(),
         projectId: input.projectId,
@@ -187,7 +147,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         sessionId: crypto.randomUUID(),
         brief: input.brief,
       });
-      opts.data.assignTicket(input.projectId, ticket.id, profile.name);
       tick();
       return registry.get(view.id);
     },
