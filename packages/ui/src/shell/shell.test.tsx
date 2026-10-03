@@ -339,6 +339,7 @@ test("the sidebar lists the inbox after my tickets with its open count, and open
   expect(location.hash).toBe("#/inbox");
   expect(await screen.findByRole("tab", { name: "Boîte de réception" })).toBeTruthy();
   expect(await screen.findByRole("row", { name: /INB-2/ })).toBeTruthy();
+  expect(screen.getAllByRole("heading", { level: 1, name: "Boîte de réception" })).toHaveLength(1);
   expect(entry.getAttribute("data-active")).toBe("true");
 });
 
@@ -350,9 +351,9 @@ test("the sidebar opens the Components screen in its own tab", async () => {
   expect(location.hash).toBe("#/components");
   expect(await screen.findByRole("columnheader", { name: "Confiance" })).toBeTruthy();
   expect((await screen.findByRole("tab", { name: "Composants" })).getAttribute("aria-selected")).toBe("true");
-  expect(crumbs().getByRole("heading", { level: 1, name: "Composants" }).getAttribute("aria-current")).toBe(
-    "page",
-  );
+  expect(crumbs().queryByRole("heading", { level: 1 })).toBeNull();
+  expect(crumbs().getByText("Composants").getAttribute("aria-current")).toBe("page");
+  expect(screen.getAllByRole("heading", { level: 1, name: "Composants" })).toHaveLength(1);
 });
 
 test("the header always offers a ticket: in the inbox, then in the last project, and shows the initials", async () => {

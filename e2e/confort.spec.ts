@@ -77,7 +77,7 @@ test("composants : recherche, filtres, tri et volet « Utilisé dans »", async 
   await addComponent(page, "Kanban");
 
   await page.goto("/#/components");
-  await expect(page.getByRole("heading", { level: 1, name: "Composants" }).last()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
   await page.getByRole("searchbox", { name: "Rechercher un composant" }).fill("kanban");
   await page.getByRole("radiogroup", { name: "Origine" }).getByRole("radio", { name: "Kibo" }).click();
   await page.getByRole("button", { name: "Trier par Utilisé dans" }).click();
