@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { immediateTransaction } from "../sqlite-busy";
 
 export type MarketSourceRow = {
   id: string;
@@ -75,7 +76,7 @@ export function openMarketDb(db: Database): MarketDb {
       db.query("DELETE FROM market_index_cache WHERE sourceId = ?").run(id);
     },
     setFetched: (id, { serial, bytes, sig, at, publicKey }) =>
-      db.transaction(() => {
+      immediateTransaction(db, () => {
         const touched = db
           .query(
             "UPDATE market_sources SET lastSerial = ?1, lastFetchedAt = ?2, lastError = NULL " +

@@ -1,5 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { MemberRole } from "@kibo/schema";
+import { immediateTransaction } from "../sqlite-busy";
 
 export type SyncConfig = {
   serverUrl: string;
@@ -78,7 +79,7 @@ export function openSyncDb(db: Database): SyncDb {
   return {
     config: () => selectConfig.get() ?? null,
     setConfig: (config) => {
-      db.transaction(() => {
+      immediateTransaction(db, () => {
         db.exec("DELETE FROM sync_config");
         if (!config) return;
         insertConfig.run({

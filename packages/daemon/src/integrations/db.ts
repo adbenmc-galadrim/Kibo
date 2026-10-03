@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { immediateTransaction } from "../sqlite-busy";
 
 const TABLES = [
   "CREATE TABLE IF NOT EXISTS integration_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
@@ -28,7 +29,7 @@ function addColumn(db: Database, table: string, column: string, definition: stri
 }
 
 export function migrateIntegrations(db: Database): void {
-  db.transaction(() => {
+  immediateTransaction(db, () => {
     for (const sql of TABLES) db.exec(sql);
     for (const c of ADDED_COLUMNS) addColumn(db, c.table, c.column, c.definition);
   })();

@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { HostSettings, KiboError, RunEvent, type RunLogEntry, type RunRecord } from "@kibo/schema";
-import { SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
+import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 
 export type NewRun = Omit<RunRecord, "seq" | "createdAt">;
 export type StoredEvent = RunLogEntry & { runId: string };
@@ -113,7 +113,7 @@ export function openRunStore(home: string): RunStore {
     "INSERT INTO host_settings (key, value) VALUES ($key, $value) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
   );
 
-  const create = db.transaction((run: NewRun, rank: number, at: number): RunRecord => {
+  const create = immediateTransaction(db, (run: NewRun, rank: number, at: number): RunRecord => {
     const { seq } = nextSeq.get() as { seq: number };
     insertRun.run({
       id: run.id,
@@ -138,7 +138,7 @@ export function openRunStore(home: string): RunStore {
   };
 
   return {
-    create: (run, rank, at) => create.immediate(run, rank, at),
+    create: (run, rank, at) => create(run, rank, at),
     append(runId, event, at) {
       requireRun(runId);
       const row = insertEvent.get({ run_id: runId, at, data: JSON.stringify(event) }) as { id: number };
