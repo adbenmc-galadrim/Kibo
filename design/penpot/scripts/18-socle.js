@@ -10,6 +10,18 @@ const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; 
 const rel = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
 const byText = (root, t) => { const x = penpotUtils.findShape(s => s.type === "text" && s.characters === t, root); return x && x.parent; };
 
+// Même S.box que 01-core, sans écrire les valeurs par défaut du flex (chaque écriture coûte)
+S.box = (parent, o = {}) => { const b = penpot.createBoard(); b.name = o.name || "box"; b.resize(o.w || 100, o.h || 100);
+  b.fills = o.fill ? [{ fillColor: o.fill, fillOpacity: o.op ?? 1 }] : []; if (o.radius) b.borderRadius = o.radius;
+  if (o.stroke) b.strokes = [{ strokeColor: o.stroke, strokeWidth: o.sw || 1, strokeAlignment: "inner", strokeOpacity: 1, ...(o.dashed ? { strokeStyle: "dashed" } : {}) }];
+  if (parent) parent.appendChild(b);
+  if (o.dir) { const fl = b.addFlexLayout(); if (o.dir !== "row") fl.dir = o.dir; const g = o.gap ?? 0; if (g) { fl.rowGap = g; fl.columnGap = g; }
+    const p = o.pad ?? 0; const [pt, pr, pb, pl] = Array.isArray(p) ? (p.length === 2 ? [p[0], p[1], p[0], p[1]] : p) : [p, p, p, p];
+    if (pt) fl.topPadding = pt; if (pr) fl.rightPadding = pr; if (pb) fl.bottomPadding = pb; if (pl) fl.leftPadding = pl;
+    if (o.align && o.align !== "start") fl.alignItems = o.align; if (o.justify && o.justify !== "start") fl.justifyContent = o.justify;
+    if (o.hs && o.hs !== "fix") fl.horizontalSizing = o.hs; if (o.vs && o.vs !== "fix") fl.verticalSizing = o.vs; }
+  return b; };
+
 // ---------- Palettes ----------
 S.DARK = S.DARK || { ...S.C };
 S.LIGHT = { ...S.DARK, bg: "#FFFFFF", fg: "#09090B", card: "#FFFFFF", muted: "#F4F4F5", mfg: "#52525B", dim: "#71717A", border: "#E4E4E7", accent: "#F4F4F5", sidebar: "#FAFAFA", sbBorder: "#E4E4E7", primary: "#18181B", pfg: "#FAFAFA", brandSoft: "#FFEDD5" };
@@ -54,9 +66,10 @@ const finishOne = (id) => { const f = penpotUtils.findShapeById(id); if (S.mode 
 S.both = async (n) => { penpot.selection = []; const out = [];
   for (const m of ["dark", "light"]) { S.setMode(m); try { const id = await S.draw[n](); await wait(400); out.push(finishOne(id)); } finally { S.setMode("dark"); } }
   return out; };
-S.job = (list) => { const st = S.jobState = { status: "running", done: [], list: list.map(String) };
-  (async () => { for (const n of list) { st.current = String(n); await S.both(n); st.done.push(String(n)); } })()
-    .then(() => { st.status = "done"; }).catch(e => { st.status = "error"; st.error = String(e && (e.stack || e.message) || e); });
+const report = (st) => fetch("http://127.0.0.1:8787/upload?name=job-status.txt", { method: "POST", body: st.status + " " + st.done.length + "/" + st.list.length + " " + (st.current || "") + (st.error ? " " + st.error : "") }).catch(() => null);
+S.job = (list) => { const st = S.jobState = { status: "running", done: [], list: list.map(String) }; report(st);
+  (async () => { for (const n of list) { st.current = String(n); await S.both(n); st.done.push(String(n)); report(st); } })()
+    .then(() => { st.status = "done"; report(st); }).catch(e => { st.status = "error"; st.error = String(e && (e.stack || e.message) || e); report(st); });
   return "started " + list.join(","); };
 
 Object.assign(S.ICONS, {
