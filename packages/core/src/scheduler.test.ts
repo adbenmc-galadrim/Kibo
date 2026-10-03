@@ -38,6 +38,8 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     startedAt: null,
     endedAt: null,
     turns: 0,
+    activeMs: 0,
+    turnStartedAt: null,
     ...p,
   };
 }

@@ -209,3 +209,35 @@ test("a run that never started or has no ticket cannot be written to once ended"
   const starting = reduceRun(initRun(record, 0, 0), { type: "admitted", lane: 1 }, 1);
   expect(() => reduceRun(starting, answered, 10)).toThrow("INVALID_TRANSITION");
 });
+
+test("the active time sums the turns and leaves out the queue and the pause between them", () => {
+  let v = running();
+  expect(v).toMatchObject({ activeMs: 0, turnStartedAt: 120 });
+  v = reduceRun(v, hook("PostToolUse", { tool: ASK_TOOL, question: "Quel port ?" }), 150);
+  v = reduceRun(v, exit(), 200);
+  expect(v).toMatchObject({ state: "waiting_input", activeMs: 80, turnStartedAt: null });
+  v = reduceRun(v, { type: "answered", text: "4317", rank: 1 }, 5_000);
+  expect(v).toMatchObject({ state: "queued", activeMs: 80, turnStartedAt: null });
+  v = reduceRun(v, { type: "admitted", lane: 1 }, 6_000);
+  v = reduceRun(v, spawned(true), 6_100);
+  expect(v).toMatchObject({ activeMs: 80, turnStartedAt: 6_100 });
+  v = reduceRun(v, exit(), 6_400);
+  expect(v).toMatchObject({ state: "done", activeMs: 380, turnStartedAt: null });
+});
+
+test("a cancelled or failed turn counts up to its end; a turn that never spawned counts nothing", () => {
+  expect(reduceRun(running(), { type: "cancelled" }, 170)).toMatchObject({
+    activeMs: 50,
+    turnStartedAt: null,
+  });
+  expect(reduceRun(running(), { type: "failed", error: "x" }, 180)).toMatchObject({
+    activeMs: 60,
+    turnStartedAt: null,
+  });
+  const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
+  expect(reduceRun(starting, { type: "failed", error: "x" }, 180)).toMatchObject({
+    activeMs: 0,
+    turnStartedAt: null,
+  });
+  expect(initRun(record, 5, 100)).toMatchObject({ activeMs: 0, turnStartedAt: null });
+});

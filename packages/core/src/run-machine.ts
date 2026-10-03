@@ -40,6 +40,8 @@ export function initRun(record: RunRecord, rank: number, at: number): RunView {
     startedAt: null,
     endedAt: null,
     turns: 0,
+    activeMs: 0,
+    turnStartedAt: null,
   };
 }
 
@@ -59,6 +61,11 @@ function enter(view: RunView, state: RunState, at: number, patch: Partial<RunVie
     endedAt: isTerminal(state) ? at : next.endedAt,
   };
 }
+
+const closedTurn = (view: RunView, at: number): Pick<RunView, "activeMs" | "turnStartedAt"> => ({
+  activeMs: view.activeMs + (view.turnStartedAt === null ? 0 : at - view.turnStartedAt),
+  turnStartedAt: null,
+});
 
 export function canWriteAfterEnd(view: RunView): boolean {
   return isTerminal(view.state) && view.ticketId !== null && view.startedAt !== null;
@@ -96,9 +103,14 @@ function applyExit(view: RunView, e: ExitEvent, at: number): RunView {
     refuse(view, e);
   }
   const clean = e.code === 0 && !e.isError;
-  if (clean && view.question !== null) return enter(view, "waiting_input", at, totals);
-  if (clean) return enter(view, "done", at, totals);
-  return enter(view, "failed", at, { ...totals, error: e.result ?? `exit code ${e.code}` });
+  if (clean && view.question !== null)
+    return enter(view, "waiting_input", at, { ...totals, ...closedTurn(view, at) });
+  if (clean) return enter(view, "done", at, { ...totals, ...closedTurn(view, at) });
+  return enter(view, "failed", at, {
+    ...totals,
+    ...closedTurn(view, at),
+    error: e.result ?? `exit code ${e.code}`,
+  });
 }
 
 export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
@@ -117,6 +129,7 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
         startedAt: view.startedAt ?? at,
         pendingAnswer: null,
         turns: view.turns + 1,
+        turnStartedAt: at,
       });
     case "hook":
       return applyHook(view, event.payload, at);
@@ -136,10 +149,10 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
       });
     case "cancelled":
       if (isTerminal(view.state)) refuse(view, event);
-      return enter(view, "cancelled", at, { subagents: [] });
+      return enter(view, "cancelled", at, { subagents: [], ...closedTurn(view, at) });
     case "failed":
       if (isTerminal(view.state)) refuse(view, event);
-      return enter(view, "failed", at, { error: event.error, subagents: [] });
+      return enter(view, "failed", at, { error: event.error, subagents: [], ...closedTurn(view, at) });
     case "reranked":
       requireState(view, event, ["queued"]);
       return { ...view, rank: event.rank };

@@ -36,6 +36,8 @@ const run = (p: Partial<RunView>): RunView => ({
   startedAt: null,
   endedAt: null,
   turns: 1,
+  activeMs: 0,
+  turnStartedAt: null,
   ...p,
 });
 

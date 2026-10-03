@@ -135,6 +135,8 @@ export type RunView = RunRecord & {
   startedAt: number | null;
   endedAt: number | null;
   turns: number;
+  activeMs: number;
+  turnStartedAt: number | null;
 };
 
 export type HostLoad = { cpu: number; ram: number };
