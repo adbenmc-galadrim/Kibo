@@ -27,7 +27,7 @@ export function Component() {
       <CardHeader>
         <CardTitle>${title}</CardTitle>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">{sdk.surface === "view" ? "Vue" : "Widget"}</CardContent>
+      <CardContent className="flex min-h-0 flex-1 flex-col text-sm text-muted-foreground">{sdk.surface === "view" ? "Vue" : "Widget"}</CardContent>
     </Card>
   );
 }

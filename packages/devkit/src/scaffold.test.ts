@@ -31,6 +31,9 @@ test("new creates a valid 0.1.0 component with its conformance test", async () =
     expect(existsSync(join(dir, f))).toBe(true);
   }
   expect(readFileSync(join(dir, "component.test.tsx"), "utf8")).toContain("runConformance");
+  expect(readFileSync(join(dir, "ui.tsx"), "utf8")).toContain(
+    '<CardContent className="flex min-h-0 flex-1 flex-col text-sm text-muted-foreground">',
+  );
   expect(lstatSync(join(dir, "node_modules")).isSymbolicLink()).toBe(true);
 });
 
