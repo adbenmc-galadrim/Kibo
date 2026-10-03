@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 export function recordedPid(home: string): number | null {
@@ -25,4 +25,12 @@ export function isAlive(pid: number): boolean {
 
 export function smokeCommand(binary: string, platform: NodeJS.Platform): string[] {
   return platform === "linux" ? ["xvfb-run", "-a", binary] : [binary];
+}
+
+export function cleanUpSmokeHome(home: string): number | null {
+  const pid = recordedPid(home);
+  const killed = pid !== null && isAlive(pid) ? pid : null;
+  if (killed !== null) process.kill(killed, "SIGKILL");
+  rmSync(home, { recursive: true, force: true });
+  return killed;
 }
