@@ -8,6 +8,7 @@ const ISSUES: Record<SourceIssueCode, (detail: string) => string> = {
   "non-literal-argument": (d) => `argument non littéral : impossible de vérifier la permission (${d})`,
   "reserved-command": (d) => `commande réservée au shell : ${d}`,
   "unknown-entity": (d) => `entité ou commande inconnue : ${d}`,
+  "inference-skipped": () => "permissions non vérifiées : contrôle de types interrompu",
 };
 
 export const formatIssue = (i: SourceIssue): string => `${i.file}:${i.line} · ${ISSUES[i.code](i.detail)}`;
@@ -25,6 +26,7 @@ export const FR_DEVKIT = {
   missing: (p: string) => `permission utilisée mais non déclarée : ${p}`,
   unused: (p: string) => `permission déclarée mais jamais utilisée : ${p}`,
   timeout: (s: number) => `les tests ont dépassé ${s} s`,
+  typecheckTimeout: (s: number) => `le contrôle de types a dépassé ${s} s`,
   sandboxUnavailable: (detail: string) =>
     `tests non lancés : bac à sable du système indisponible (${detail}). Sous Linux, installe bubblewrap (sudo apt install bubblewrap) puis relance.`,
 };
