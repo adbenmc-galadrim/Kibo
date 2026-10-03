@@ -63,7 +63,7 @@ S.screenX = (name, col, row, active, crumbs, tab, o = {}) => {
   const f = r.frame; f.resize(1440, 940);
   const tb = penpotUtils.findShape(s => s.name === "TabBar", f); const nb = S.tabBar(null, S.tabsX(tab)); f.insertChild(0, nb); S.child(nb, { h: "fill" }); tb.remove();
   S.fixIcons(f); S.fixIconOrder(f); if (o.nav) S.activate(f, o.nav);
-  const mt = penpotUtils.findShape(s => s.name === "SidebarItem / Mes tickets", f); if (mt) { const t = mt.children.filter(c => c.type === "text")[1]; if (t) S.setText(t, "9"); }
+  const mt = penpotUtils.findShape(s => s.name === "SidebarItem / Mes tickets", f); if (mt) { const t = mt.children.find(c => c.type === "text" && /^\d+$/.test(c.characters)); if (t) S.setText(t, "9"); }
   if (o.noTicket) { const b = penpotUtils.findShape(s => s.name === "Topbar", f).children.find(c => /Button/.test(c.name)); if (b) b.remove(); }
   return { ...r, frame: f }; };
 

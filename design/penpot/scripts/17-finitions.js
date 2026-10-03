@@ -7,9 +7,8 @@ const PAGE = "14 · Finitions UI";
 const find = (f, n) => penpotUtils.findShape(s => s.name === n, f);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const shadow = (b, o = 0.5) => { b.shadows = [{ style: "drop-shadow", offsetX: 0, offsetY: 8, blur: 24, spread: 0, color: { color: "#000000", opacity: o } }]; };
-const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y); return s; };
+const { abs, rel } = S.fx;
 const byText = (root, t) => { const x = penpotUtils.findShape(s => s.type === "text" && s.characters === t, root); return x && x.parent; };
-const rel = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
 
 Object.assign(S.ICONS, {
   arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',

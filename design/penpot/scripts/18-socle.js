@@ -6,8 +6,13 @@ S.draw = S.draw || {};
 const find = (f, n) => penpotUtils.findShape(s => s.name === n, f);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const shadow = (b, o = 0.5) => { b.shadows = [{ style: "drop-shadow", offsetX: 0, offsetY: 8, blur: 24, spread: 0, color: { color: "#000000", opacity: S.mode === "light" ? 0.12 : o } }]; };
-const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y); return s; };
-const rel = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
+const measure = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
+S.pins = []; S.lastRel = null;
+const rel = (f, s) => { const r = measure(f, s); S.lastRel = { fid: f.id, a: s, r }; return r; };
+const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y);
+  if (S.lastRel && S.lastRel.fid === f.id) S.pins.push({ ...S.lastRel, s }); return s; };
+S.applyPins = (f) => { let n = 0; for (const p of S.pins.filter(q => q.fid === f.id)) { const a = measure(f, p.a), dx = a.x - p.r.x, dy = a.y - p.r.y;
+  if (dx || dy) { const c = measure(f, p.s); penpotUtils.setParentXY(p.s, c.x + dx, c.y + dy); n++; } } return n; };
 const byText = (root, t) => { const x = penpotUtils.findShape(s => s.type === "text" && s.characters === t, root); return x && x.parent; };
 
 // Même S.box que 01-core, sans écrire les valeurs par défaut du flex (chaque écriture coûte)
@@ -62,9 +67,10 @@ S.baseScreen = (name, col, row, nav, crumbs, tab, o = {}) => { const light = S.m
 S.dropBases = () => { const bs = penpot.currentPage.root.children.filter(c => /^base · /.test(c.name)); bs.forEach(b => b.remove()); return bs.length; };
 
 // ---------- Dessin sombre puis clair, en tâche de fond (un appel du plugin est limité à 120 s) ----------
-const finishOne = (id) => { const f = penpotUtils.findShapeById(id); if (S.mode === "light") { S.lightFix(f, S.fresh); S.fixIconOrder(f); } S.retext(f); S.recenter(f); return id; };
+const finishOne = async (id) => { const f = penpotUtils.findShapeById(id); if (S.mode === "light") { S.lightFix(f, S.fresh); S.fixIconOrder(f); } S.retext(f);
+  await wait(2000); S.applyPins(f); S.recenter(f); return id; };
 S.both = async (n) => { penpot.selection = []; const out = [];
-  for (const m of ["dark", "light"]) { S.setMode(m); try { const id = await S.draw[n](); await wait(400); out.push(finishOne(id)); } finally { S.setMode("dark"); } }
+  for (const m of ["dark", "light"]) { S.setMode(m); S.pins = []; S.lastRel = null; try { const id = await S.draw[n](); await wait(400); out.push(await finishOne(id)); } finally { S.setMode("dark"); } }
   return out; };
 const report = (st) => fetch("http://127.0.0.1:8787/upload?name=job-status.txt", { method: "POST", body: st.status + " " + st.done.length + "/" + st.list.length + " " + (st.current || "") + (st.error ? " " + st.error : "") }).catch(() => null);
 S.job = (list) => { const st = S.jobState = { status: "running", done: [], list: list.map(String) }; report(st);
