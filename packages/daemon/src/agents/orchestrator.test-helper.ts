@@ -91,6 +91,8 @@ type Setup = {
   claudeBin?: string | null;
   env?: Record<string, string>;
   guidelines?: Guideline[];
+  readOnly?: boolean;
+  assignFails?: boolean;
 };
 
 let current: Harness | null = null;
@@ -114,7 +116,11 @@ export function setup(o: Setup): Harness {
       return { project, ticket: t, domain: null };
     },
     guidelines: () => o.guidelines ?? [],
+    assertWritable: (projectId) => {
+      if (o.readOnly) throw new KiboError("FORBIDDEN", `project ${projectId} is read-only`);
+    },
     assignTicket: (_projectId, ticketId, name) => {
+      if (o.assignFails) throw new KiboError("INVALID_INPUT", "ticket write refused");
       assigned.push(`${ticketId}:${name}`);
     },
     runStarted: (_projectId, ticketId) => {

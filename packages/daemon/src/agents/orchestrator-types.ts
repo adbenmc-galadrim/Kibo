@@ -25,6 +25,7 @@ export type AgentDataPort = {
   profiles(): AgentProfile[];
   ticketContext(projectId: string, ticketId: string): TicketContext;
   guidelines(projectId: string): Guideline[];
+  assertWritable(projectId: string): void;
   assignTicket(projectId: string, ticketId: string, profileName: string): void;
   runStarted(projectId: string, ticketId: string): void;
   runDone(projectId: string, ticketId: string): void;

@@ -176,6 +176,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       const profile = ticketProfileOf(input.profileId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
+      opts.data.assertWritable(input.projectId);
+      opts.data.assignTicket(input.projectId, ticket.id, profile.name);
       const view = enqueue({
         id: crypto.randomUUID(),
         projectId: input.projectId,
@@ -187,7 +189,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         sessionId: crypto.randomUUID(),
         brief: input.brief,
       });
-      opts.data.assignTicket(input.projectId, ticket.id, profile.name);
       tick();
       return registry.get(view.id);
     },

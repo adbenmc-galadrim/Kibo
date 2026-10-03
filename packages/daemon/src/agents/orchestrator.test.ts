@@ -475,3 +475,29 @@ test("a process ending while its run is queued again records no exit", async () 
     errors.mockRestore();
   }
 }, 30_000);
+
+test("assigning on a read-only project is refused before anything is queued", () => {
+  const h = setup({ scenario: "done", readOnly: true });
+  expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" })).toThrow(
+    "FORBIDDEN",
+  );
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.assigned).toEqual([]);
+  expect(h.store.records()).toEqual([]);
+});
+
+test("a refused ticket write queues nothing either", () => {
+  const h = setup({ scenario: "done", assignFails: true });
+  expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.store.records()).toEqual([]);
+});
+
+test("the inbox and an unknown ticket are still refused before the write check", () => {
+  const h = setup({ scenario: "done", readOnly: true });
+  expect(() => h.orch.assign({ projectId: "p1", ticketId: "nope", profileId: "opus", brief: "" })).toThrow(
+    "NOT_FOUND",
+  );
+});
