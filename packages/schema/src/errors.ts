@@ -54,6 +54,7 @@ export const KIBO_ERROR_CODES = [
   "PUBLISHER_CHANGED",
   "REVOKED",
   "INDEX_ROLLBACK",
+  "DAEMON_RUNNING",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

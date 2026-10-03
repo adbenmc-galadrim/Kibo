@@ -27,3 +27,7 @@ test("existing mappings are unchanged", () => {
     AI_UNAVAILABLE: 503,
   });
 });
+
+test("phase 10 codes map to HTTP statuses", () => {
+  expect(STATUS).toMatchObject({ DAEMON_RUNNING: 409 });
+});
