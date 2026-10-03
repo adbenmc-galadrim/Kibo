@@ -80,12 +80,12 @@ test("full cycle: queue, run, question, answer, resume, done", () => {
     label: "opus-dev",
     priority: true,
     rank: -1,
-    question: null,
+    question: "Quel port pour le récepteur ?",
     pendingAnswer: "Port dynamique",
   });
   v = reduceRun(v, { type: "admitted", lane: 1 }, 160);
   v = reduceRun(v, spawned(true), 170);
-  expect(v).toMatchObject({ pendingAnswer: null, turns: 2, startedAt: 120 });
+  expect(v).toMatchObject({ pendingAnswer: null, question: null, turns: 2, startedAt: 120 });
   v = reduceRun(v, exit(), 180);
   expect(v).toMatchObject({ state: "done", endedAt: 180, tokens: 200, costUsd: 0.02 });
 });
@@ -263,7 +263,10 @@ test("a message answers a question asked after it, and a queued first turn keeps
   v = reduceRun(v, hook("PostToolUse", { tool: ASK_TOOL, question: "Je continue ?" }), 140);
   v = reduceRun(v, exit(), 150);
   expect(v).toMatchObject({ state: "waiting_input", pendingAnswer: "Vas-y" });
-  expect(reduceRun(v, { type: "requeued", rank: 1 }, 151)).toMatchObject({ state: "queued", question: null });
+  expect(reduceRun(v, { type: "requeued", rank: 1 }, 151)).toMatchObject({
+    state: "queued",
+    question: "Je continue ?",
+  });
   const queued = reduceRun(initRun(record, 5, 100), { type: "answered", text: "Précision", rank: 9 }, 101);
   expect(queued).toMatchObject({ state: "queued", rank: 5, pendingAnswer: "Précision", turns: 0 });
 });
@@ -292,4 +295,27 @@ test("a run without ticket still only answers a question", () => {
     120,
   );
   expect(() => reduceRun(v, { type: "answered", text: "x", rank: 1 }, 130)).toThrow("INVALID_TRANSITION");
+});
+
+test("the question stays on the run until the next turn starts, so the queue can tell an answer from a message", () => {
+  let v = reduceRun(running(), hook("PostToolUse", { tool: ASK_TOOL, question: "Quel port ?" }), 150);
+  v = reduceRun(v, exit(), 200);
+  v = reduceRun(v, { type: "answered", text: "4317", rank: 1 }, 300);
+  expect(v).toMatchObject({ state: "queued", question: "Quel port ?", pendingAnswer: "4317" });
+  v = reduceRun(reduceRun(v, { type: "admitted", lane: 1 }, 310), spawned(true), 320);
+  expect(v).toMatchObject({ state: "running", question: null, pendingAnswer: null, turns: 2 });
+  expect(reduceRun(v, exit(), 400).state).toBe("done");
+  const finished = reduceRun(running(), exit(), 200);
+  expect(reduceRun(finished, { type: "answered", text: "Ajoute la doc", rank: 1 }, 300)).toMatchObject({
+    state: "queued",
+    question: null,
+    pendingAnswer: "Ajoute la doc",
+  });
+  const asked = reduceRun(
+    reduceRun(running(), { type: "answered", text: "Vas-y", rank: 9 }, 130),
+    hook("PostToolUse", { tool: ASK_TOOL, question: "Je continue ?" }),
+    140,
+  );
+  const requeued = reduceRun(reduceRun(asked, exit(), 150), { type: "requeued", rank: 1 }, 151);
+  expect(requeued).toMatchObject({ state: "queued", question: "Je continue ?", pendingAnswer: "Vas-y" });
 });

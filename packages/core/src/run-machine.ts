@@ -76,7 +76,6 @@ const pendingWith = (view: RunView, text: string): string =>
 const resumeHead = (view: RunView, at: number, rank: number, patch: Partial<RunView> = {}): RunView =>
   enter(view, "queued", at, {
     lane: null,
-    question: null,
     error: null,
     endedAt: null,
     subagents: [],
@@ -146,6 +145,7 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
         guidelines: event.guidelines,
         startedAt: view.startedAt ?? at,
         pendingAnswer: null,
+        question: null,
         turns: view.turns + 1,
         turnStartedAt: at,
       });
