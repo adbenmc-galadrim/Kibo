@@ -1,5 +1,5 @@
 // Page « 14 · Finitions UI » : écrans 98 à 106 (phase 9, plan kibo-phase-9-vague-1).
-// Shell reconstruit (S.screenX), une rangée par écran, états en colonnes paires ; S.relight place le clair à droite.
+// Écrans clonés d'une base (S.baseScreen, 18-socle.js), une rangée par écran, états en colonnes paires ; S.both(n) dessine le sombre puis le clair à droite.
 // Menus : fond card, bordure border, entrée destructive en rouge, séparateur. Confirmations : AlertDialog centré avec voile.
 const S = storage, C = S.C;
 S.draw = S.draw || {};
@@ -51,8 +51,8 @@ const ringed = (s) => { s.strokes = [{ strokeColor: C.mfg, strokeWidth: 1, strok
 const item = (f, label) => penpotUtils.findShape(s => /^SidebarItem ?\/ ?/.test(s.name) && s.name.replace(/^SidebarItem ?\/ ?/, "") === label, f);
 
 // ---------- Écrans de base ----------
-const screen = async (name, n, col, nav, crumbs, tab) => { await S.page(PAGE); return S.screenX(name, col, n - 98, nav, crumbs, tab); };
-const kanban = async (name, n, col = 0) => { const r = await screen(name, n, col, "Kanban", ["Kibo", "Kanban"], ["kanban", "Kibo · Kanban"]); S.fillKanban(r.content); return r; };
+const screen = async (name, n, col, nav, crumbs, tab, o = {}) => { await S.page(PAGE); return S.baseScreen(name, col, n - 98, nav, crumbs, tab, o); };
+const kanban = async (name, n, col = 0) => screen(name, n, col, "Kanban", ["Kibo", "Kanban"], ["kanban", "Kibo · Kanban"], { kanban: true });
 
 // Sheet de KIB-12 (écran 4) : édition en place, sélecteurs, dépendances
 const SUBS = [["KIB-24", "Types Zod Ticket / Link / Status", "Terminé"], ["KIB-25", "Opérations move / reparent", "Terminé"], ["KIB-26", "Index SQLite dérivé", "Terminé"],
@@ -86,7 +86,7 @@ const ticketSheet = (f, o = {}) => { const sh = sheetBox(f); sheetHead(sh, o); s
 
 // ---------- 98 · Fiche ticket éditable ----------
 S.draw[98] = async () => { const { frame: f } = await kanban("98 · Fiche ticket éditable", 98);
-  const { props } = ticketSheet(f, { editing: true, menu: true, hoverSub: true }); await wait(800);
+  const { props } = ticketSheet(f, { editing: true, menu: true, hoverSub: true }); await wait(2000);
   const p = rel(f, find(props, "Select-opus-dev-1"));
   tooltip(f, p.x - 20, p.y + p.h + 6, "Choisis un profil via Assigner à un agent");
   menu(f, 1440 - 24 - 36 - 220, 40 + 20 + 32, [["Ouvrir dans un onglet", "external"], ["Copier la clé", "copy"], "-", ["Supprimer…", "trash", { danger: true }]], 220);
@@ -113,13 +113,13 @@ const depsSheet = (f, form) => { const sh = sheetBox(f); sheetHead(sh); sheetTit
   const ft = S.row(fm, { gap: 8, justify: "end" }); S.button(ft, "Annuler", "outline", { sm: true }); S.button(ft, "Ajouter", "default", { sm: true, disabled: !form.canAdd });
   return { sh, typ, q, rows }; };
 S.draw[100] = async () => { const { frame: f } = await kanban("100 · Dépendances", 100);
-  const { q, rows } = depsSheet(f, { type: "Bloqué par", query: "KIB-2" }); await wait(800);
+  const { q, rows } = depsSheet(f, { type: "Bloqué par", query: "KIB-2" }); await wait(2000);
   const p = rel(f, q); const res = S.box(f, { name: "SearchResults", fill: C.card, stroke: C.border, radius: 8, w: p.w, dir: "column", gap: 2, pad: 4, vs: "auto" }); shadow(res); abs(f, res, p.x, p.y + p.h + 4);
   [["KIB-21", "Sandbox iframe des composants", "Bloqué"], ["KIB-22", "Export Markdown / Obsidian", "Backlog"], ["KIB-24", "Types Zod Ticket / Link / Status", "Terminé"]].forEach(([k, t, s], i) => {
     const r = S.box(res, { name: "Result", fill: i === 0 ? C.accent : null, radius: 4, dir: "row", gap: 8, pad: [6, 8], vs: "auto", align: "center" }); S.fillX(r); S.statusDot(r, s, 8); S.txt(r, k, { size: 12, mono: true, color: C.dim }); S.fillX(S.txt(r, t, { size: 13 })); });
   const x = rel(f, rows[2]); tooltip(f, x.x - 22, x.y - 32, "Retirer"); S.frontAbs(f); return f.id; };
 S.draw["100b"] = async () => { const { frame: f } = await kanban("100b · Dépendances : type de lien", 100, 2);
-  const { typ } = depsSheet(f, { type: "Bloqué par", query: "Rechercher par clé ou titre…", typeOpen: true }); await wait(800);
+  const { typ } = depsSheet(f, { type: "Bloqué par", query: "Rechercher par clé ou titre…", typeOpen: true }); await wait(2000);
   const p = rel(f, typ); listbox(f, p.x, p.y + p.h + 4, [["Bloqué par", true], ["Bloque", false], ["Lié à", false]], 180); S.frontAbs(f); return f.id; };
 S.draw["100c"] = async () => { const { frame: f } = await kanban("100c · Dépendances : boucle refusée", 100, 4);
   depsSheet(f, { type: "Bloque", query: "KIB-5", error: "Impossible : cela créerait une boucle de dépendances." }); S.frontAbs(f); return f.id; };
@@ -127,10 +127,10 @@ S.draw["100c"] = async () => { const { frame: f } = await kanban("100c · Dépen
 // ---------- 101 · Menu d'une page ----------
 const pageScreen = async (name, col) => { const r = await kanban(name, 101, col); return r; };
 S.draw[101] = async () => { const { frame: f } = await pageScreen("101 · Menu d'une page", 0);
-  const it = item(f, "Kanban"); ringed(it); await wait(800); const p = rel(f, it);
+  const it = item(f, "Kanban"); ringed(it); await wait(2000); const p = rel(f, it);
   const m = menu(f, p.x + 120, p.y + p.h - 4, [["Ouvrir dans un nouvel onglet", "external"], ["Nouvelle sous-page", "filePlus"], ["Renommer…", "pencil"], ["Monter", "arrowUp"], ["Descendre", "arrowDown"],
     ["Déplacer vers", "folderInput", { sub: true, hover: true }], "-", ["Supprimer…", "trash", { danger: true }]], 236);
-  await wait(500); const mv = rel(f, byText(m, "Déplacer vers")); menu(f, p.x + 120 + 236 - 4, mv.y - 4, [["Racine", "cornerUpLeft"], ["Tableau de bord", "dashboard", { hover: true }]], 190);
+  await wait(1500); const mv = rel(f, byText(m, "Déplacer vers")); menu(f, p.x + 120 + 236 - 4, mv.y - 4, [["Racine", "cornerUpLeft"], ["Tableau de bord", "dashboard", { hover: true }]], 190);
   S.frontAbs(f); return f.id; };
 S.draw["101b"] = async () => { const { frame: f } = await pageScreen("101b · Renommer la page", 2);
   const d = formDialog(f, "Renommer la page"); S.field(d, "Nom", "Kanban", { focus: true }); S.footer(d, "Annuler", "Renommer"); S.frontAbs(f); return f.id; };
@@ -139,7 +139,7 @@ S.draw["101c"] = async () => { const { frame: f } = await pageScreen("101c · Su
 S.draw["101d"] = async () => { const { frame: f } = await pageScreen("101d · Déplacer une page (glisser-déposer)", 6);
   const src = item(f, "Graphe"); src.opacity = 0.4; const dst = item(f, "Tableau de bord");
   dst.fills = [{ fillColor: C.accent, fillOpacity: 1 }]; dst.strokes = [{ strokeColor: C.fg, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1 }];
-  await wait(800); const p = rel(f, dst); const g = S.box(f, { name: "DragGhost", fill: C.card, stroke: C.border, radius: 6, dir: "row", gap: 8, pad: [6, 10], hs: "auto", vs: "auto", align: "center" }); shadow(g);
+  await wait(2000); const p = rel(f, dst); const g = S.box(f, { name: "DragGhost", fill: C.card, stroke: C.border, radius: 6, dir: "row", gap: 8, pad: [6, 10], hs: "auto", vs: "auto", align: "center" }); shadow(g);
   S.icon(g, "grip", 14, C.dim); S.icon(g, "graph", 14, C.mfg); S.txt(g, "Graphe", { size: 13 }); abs(f, g, p.x + 70, p.y + p.h - 8); g.opacity = 0.9;
   S.frontAbs(f); return f.id; };
 
@@ -161,13 +161,13 @@ const treeScreen = async (name, col, o = {}) => { const r = await screen(name, 1
     cell => { if (i === HOT) row = cell.parent; if (i === HOT && o.more) { more = S.box(cell, { name: "MoreButton", fill: o.menuFromMore ? C.accent : null, radius: 4, w: 24, h: 24, dir: "row", align: "center", justify: "center" }); S.icon(more, "more", 14, C.fg); } else S.txt(cell, " ", { size: 12 }); }]), { hl: HOT });
   if (o.ring) ringed(row); return { ...r, row, more }; };
 const TICKET_MENU = (sub) => [["Ouvrir", "ticket"], ["Statut", "circleDot", { sub: true, hover: sub }], ["Nouveau sous-ticket", "plus"], ["Déplacer à la racine", "cornerUpLeft"], "-", ["Supprimer…", "trash", { danger: true }]];
-S.draw[102] = async () => { const { frame: f, row } = await treeScreen("102 · Menu d'un ticket dans l'arbre", 0, { ring: true, more: true }); await wait(800);
+S.draw[102] = async () => { const { frame: f, row } = await treeScreen("102 · Menu d'un ticket dans l'arbre", 0, { ring: true, more: true }); await wait(2000);
   const p = rel(f, row); const mx = p.x + 320, my = p.y + p.h - 6; const m = menu(f, mx, my, TICKET_MENU(true), 220);
-  await wait(500); const s = rel(f, byText(m, "Statut"));
+  await wait(1500); const s = rel(f, byText(m, "Statut"));
   menu(f, mx + 216, s.y - 4, [["Backlog", null, { status: "Backlog" }], ["À faire", null, { status: "À faire" }], ["En cours", null, { status: "En cours", check: true }], ["En review", null, { status: "En review" }],
     ["Bloqué…", null, { status: "Bloqué", hover: true }], ["Terminé", null, { status: "Terminé" }]], 180);
   S.frontAbs(f); return f.id; };
-S.draw["102b"] = async () => { const { frame: f, more } = await treeScreen("102b · Menu « ⋯ » d'un ticket", 2, { more: true, menuFromMore: true }); await wait(800);
+S.draw["102b"] = async () => { const { frame: f, more } = await treeScreen("102b · Menu « ⋯ » d'un ticket", 2, { more: true, menuFromMore: true }); await wait(2000);
   const p = rel(f, more); menu(f, p.x + p.w - 220, p.y + p.h + 4, TICKET_MENU(false), 220); S.frontAbs(f); return f.id; };
 S.draw["102c"] = async () => { const { frame: f } = await treeScreen("102c · Bloquer un ticket", 4, {});
   const d = formDialog(f, "Bloquer KIB-27"); const ds = d.children.find(c => c.name === "header").children.find(c => c.name === "t");
@@ -189,7 +189,7 @@ const notesScreen = async (name, col, o = {}) => { const r = await screen(name, 
   S.sub(ed, "Le serveur kibo-sync ne fait que relayer les mises à jour Loro chiffrées entre les machines d'un projet partagé ; chaque machine garde l'état complet et fonctionne hors ligne.", { size: 14, color: C.fg });
   S.txt(ed, "Voir KIB-12 et KIB-13.", { size: 14, color: C.mfg });
   return { ...r, more, hot }; };
-S.draw[103] = async () => { const { frame: f, more } = await notesScreen("103 · Menu d'une note", 0, { more: true, menu: true }); await wait(800);
+S.draw[103] = async () => { const { frame: f, more } = await notesScreen("103 · Menu d'une note", 0, { more: true, menu: true }); await wait(2000);
   const p = rel(f, more); menu(f, p.x - 4, p.y + p.h + 4, [["Renommer…", "pencil"], ["Supprimer…", "trash", { danger: true }]], 180); S.frontAbs(f); return f.id; };
 S.draw["103b"] = async () => { const { frame: f } = await notesScreen("103b · Renommer la note", 2);
   const d = formDialog(f, "Renommer la note"); S.field(d, "Titre", "Architecture du sync", { focus: true }); help(d.children.find(c => /^Field/.test(c.name)), "Fichier : architecture-du-sync.md");
@@ -216,7 +216,7 @@ const changesScreen = async (name, col, o = {}) => { const r = await screen(name
   S.fillX(S.txt(rh, "packages/core/ticket.ts", { size: 12, mono: true })); S.txt(rh, "+3 −1", { size: 12, mono: true, color: C.mfg });
   const code = S.col(right, { gap: 0, pad: [6, 0] }); DIFF.forEach(([t, col, bg]) => { const l = S.row(code, { gap: 0, pad: [2, 14], fill: bg }); S.fillX(S.txt(l, t, { size: 12, mono: true, color: col, lh: 1.5 })); });
   if (o.ring) ringed(hot); return { ...r, hot }; };
-S.draw[104] = async () => { const { frame: f, hot } = await changesScreen("104 · Menu d'un fichier modifié", 0, { ring: true }); await wait(800);
+S.draw[104] = async () => { const { frame: f, hot } = await changesScreen("104 · Menu d'un fichier modifié", 0, { ring: true }); await wait(2000);
   const p = rel(f, hot); menu(f, p.x + 150, p.y + p.h - 6, [["Voir le diff", "fileDiff"], ["Ouvrir dans un onglet", "external"], ["Ouvrir dans l'éditeur externe", "code"], ["Copier le chemin", "copy"], ["Indexer", "plusSq"],
     "-", ["Annuler les changements…", "undo", { danger: true }]], 250); S.frontAbs(f); return f.id; };
 S.draw["104b"] = async () => { const { frame: f } = await changesScreen("104b · Annuler les changements", 2, { selectAll: true });
@@ -235,9 +235,9 @@ const dashScreen = async (name, col, o = {}) => { const r = await screen(name, 1
   return { ...r, more }; };
 S.draw[105] = async () => { const { frame: f } = await dashScreen("105 · Réglages d'un widget", 0);
   const d = formDialog(f, "Réglages · Kanban", 460); const fl = S.col(d, { gap: 6 }); S.txt(fl, "Filtre", { size: 12, weight: 500 }); const s = select(fl, "Moi + agents", { w: 412, open: true });
-  help(d, "Ces réglages ne concernent que ce widget."); S.footer(d, "Annuler", "Enregistrer"); await wait(800);
+  help(d, "Ces réglages ne concernent que ce widget."); S.footer(d, "Annuler", "Enregistrer"); await wait(2000);
   const p = rel(f, s); listbox(f, p.x, p.y + p.h + 4, [["Moi + agents", true], ["Tous", false]], p.w); S.frontAbs(f); return f.id; };
-S.draw["105b"] = async () => { const { frame: f, more } = await dashScreen("105b · Menu « ⋯ » d'un widget", 2, { menu: true }); await wait(800);
+S.draw["105b"] = async () => { const { frame: f, more } = await dashScreen("105b · Menu « ⋯ » d'un widget", 2, { menu: true }); await wait(2000);
   const p = rel(f, more); menu(f, p.x + p.w - 230, p.y + p.h + 4, [["Mettre à jour vers…", "arrowUpCircle"], ["Réglages…", "settings"], "-", ["Retirer de la page…", "trash", { danger: true }]], 230); S.frontAbs(f); return f.id; };
 S.draw["105c"] = async () => { const { frame: f } = await dashScreen("105c · Retirer un widget", 4);
   alertDialog(f, "Retirer Kanban de la page ?", "Le widget disparaît de la page ; les tickets ne sont pas touchés.", "Retirer"); S.frontAbs(f); return f.id; };
@@ -264,7 +264,7 @@ const domainScreen = async (name, col, o = {}) => { const r = await screen(name,
     S.button(fr, "Éditer", "ghost", { sm: true }); });
   S.button(right, "Ajouter un fichier", "outline", { sm: true, icon: "plus" });
   return { ...r, sw, field }; };
-S.draw[106] = async () => { const { frame: f, sw } = await domainScreen("106 · Domaine : nom et couleur", 0, { rename: true, palette: true }); await wait(800);
+S.draw[106] = async () => { const { frame: f, sw } = await domainScreen("106 · Domaine : nom et couleur", 0, { rename: true, palette: true }); await wait(2000);
   const p = rel(f, sw); const pop = S.box(f, { name: "ColorPopover", fill: C.card, stroke: C.border, radius: 8, dir: "row", gap: 8, pad: 10, hs: "auto", vs: "auto", align: "center" }); shadow(pop); abs(f, pop, p.x - 10, p.y + p.h + 8);
   PALETTE.forEach((col, i) => { const b = S.box(pop, { name: "Color " + col, fill: col, radius: 999, w: 22, h: 22, dir: "row", align: "center", justify: "center" });
     if (i === 0) { b.strokes = [{ strokeColor: C.fg, strokeWidth: 2, strokeAlignment: "outer", strokeOpacity: 1 }]; S.icon(b, "check", 12, "#FFFFFF"); } });
@@ -272,7 +272,5 @@ S.draw[106] = async () => { const { frame: f, sw } = await domainScreen("106 · 
 S.draw["106b"] = async () => { const { frame: f } = await domainScreen("106b · Supprimer le domaine", 2);
   alertDialog(f, "Supprimer le domaine Core ?", "Ses 3 fichiers de guidelines seront supprimés."); S.frontAbs(f); return f.id; };
 
-// Deuxième appel après un dessin : textes recalculés, dialogue recentré, variante claire régénérée
-S.finish = (id) => { const f = penpotUtils.findShapeById(id); S.retext(f); S.recenter(f); const nid = S.relight(id); const l = penpotUtils.findShapeById(nid); S.retext(l); S.fixLightX(l); S.fixIconOrder(l); return [id, nid]; };
 S.FINITIONS = [98, 99, 100, "100b", "100c", 101, "101b", "101c", "101d", 102, "102b", "102c", 103, "103b", "103c", 104, "104b", 105, "105b", "105c", 106, "106b"];
 return "finitions ok";
