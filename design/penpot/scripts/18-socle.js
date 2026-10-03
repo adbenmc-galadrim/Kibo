@@ -68,7 +68,7 @@ S.dropBases = () => { const bs = penpot.currentPage.root.children.filter(c => /^
 
 // ---------- Dessin sombre puis clair, en tâche de fond (un appel du plugin est limité à 120 s) ----------
 const finishOne = async (id) => { const f = penpotUtils.findShapeById(id); if (S.mode === "light") { S.lightFix(f, S.fresh); S.fixIconOrder(f); } S.retext(f);
-  await wait(2000); S.applyPins(f); S.recenter(f); return id; };
+  await wait(2000); S.recenter(f); S.applyPins(f); return id; };
 S.both = async (n) => { penpot.selection = []; const out = [];
   for (const m of ["dark", "light"]) { S.setMode(m); S.pins = []; S.lastRel = null; try { const id = await S.draw[n](); await wait(400); out.push(await finishOne(id)); } finally { S.setMode("dark"); } }
   return out; };
