@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { prepareWorkspace, runGit, writeRunContext } from "./workspace-prep";
+import { type GitRunner, prepareWorkspace, runGit, writeRunContext } from "./workspace-prep";
 
 const dirs: string[] = [];
 const tmp = () => {
@@ -83,10 +83,10 @@ test("worktree needs a git folder", async () => {
   const runDir = join(tmp(), "run");
   await expect(
     prepareWorkspace({ strategy: "worktree", projectFolder: tmp(), ticketKey: "KIB-1", runDir }),
-  ).rejects.toThrow("WORKSPACE_FAILED");
+  ).rejects.toThrow("NOT_A_REPO");
   await expect(
     prepareWorkspace({ strategy: "worktree", projectFolder: null, ticketKey: "KIB-1", runDir }),
-  ).rejects.toThrow("WORKSPACE_FAILED");
+  ).rejects.toThrow("PROJECT_FOLDER_MISSING");
 });
 
 test("repo works in the project folder, isolated in a private run folder", async () => {
@@ -105,7 +105,7 @@ test("repo works in the project folder, isolated in a private run folder", async
       ticketKey: "KIB-1",
       runDir,
     }),
-  ).rejects.toThrow("WORKSPACE_FAILED");
+  ).rejects.toThrow("PROJECT_FOLDER_NOT_FOUND");
   const isolated = await prepareWorkspace({
     strategy: "isolated",
     projectFolder: null,
@@ -154,7 +154,7 @@ test("worktree refuses a plain folder squatting its path", async () => {
       ticketKey: "KIB-2",
       runDir: join(tmp(), "run"),
     }),
-  ).rejects.toThrow("WORKSPACE_FAILED");
+  ).rejects.toThrow("GIT_FAILED");
 });
 
 test("a new worktree starts from main, whatever branch is checked out", async () => {
@@ -182,4 +182,43 @@ test("without a main branch the new worktree starts from HEAD", async () => {
     runDir: join(tmp(), "run"),
   });
   expect(await git(["rev-parse", "HEAD"], ws.cwd)).toBe(head);
+});
+
+test("each failure of the workspace has its own code", async () => {
+  const runDir = join(tmp(), "run");
+  const base = { ticketKey: "KIB-7", runDir };
+  await expect(prepareWorkspace({ ...base, strategy: "repo", projectFolder: null })).rejects.toMatchObject({
+    code: "PROJECT_FOLDER_MISSING",
+    detail: "the project has no local folder",
+  });
+  const gone = join(tmp(), "gone");
+  await expect(prepareWorkspace({ ...base, strategy: "repo", projectFolder: gone })).rejects.toMatchObject({
+    code: "PROJECT_FOLDER_NOT_FOUND",
+    detail: `folder ${gone} does not exist`,
+  });
+  await expect(
+    prepareWorkspace({ ...base, strategy: "worktree", projectFolder: tmp() }),
+  ).rejects.toMatchObject({
+    code: "NOT_A_REPO",
+  });
+});
+
+test("a refusal of git is a GIT_FAILED with git's message", async () => {
+  const folder = await repo();
+  const git: GitRunner = async (args, cwd) =>
+    args[0] === "worktree"
+      ? { code: 128, stdout: "", stderr: "fatal: 'x' is a missing but locked\n" }
+      : runGit(args, cwd);
+  await expect(
+    prepareWorkspace({
+      strategy: "worktree",
+      projectFolder: folder,
+      ticketKey: "KIB-7",
+      runDir: join(tmp(), "run"),
+      git,
+    }),
+  ).rejects.toMatchObject({
+    code: "GIT_FAILED",
+    detail: "git worktree add failed: fatal: 'x' is a missing but locked",
+  });
 });

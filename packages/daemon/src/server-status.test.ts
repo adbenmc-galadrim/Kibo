@@ -29,5 +29,9 @@ test("existing mappings are unchanged", () => {
 });
 
 test("phase 10 codes map to HTTP statuses", () => {
-  expect(STATUS).toMatchObject({ DAEMON_RUNNING: 409 });
+  expect(STATUS).toMatchObject({
+    DAEMON_RUNNING: 409,
+    PROJECT_FOLDER_MISSING: 409,
+    PROJECT_FOLDER_NOT_FOUND: 404,
+  });
 });

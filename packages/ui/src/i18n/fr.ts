@@ -268,6 +268,10 @@ export const fr = {
     },
     errors: {
       WORKSPACE_FAILED: "espace de travail indisponible",
+      PROJECT_FOLDER_MISSING: "projet sans dossier local",
+      PROJECT_FOLDER_NOT_FOUND: "dossier du projet introuvable",
+      NOT_A_REPO: "le dossier du projet n'est pas un dépôt git",
+      GIT_FAILED: "git n'a pas pu préparer l'espace de travail",
       AGENT_CLI_NOT_FOUND: "CLI claude introuvable",
       INTERRUPTED: "démon redémarré pendant le run",
       NOT_FOUND: "ticket ou profil introuvable",

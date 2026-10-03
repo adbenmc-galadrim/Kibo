@@ -165,7 +165,7 @@ test("a workspace failure fails the run with its code and notifies", async () =>
   });
   const r = assign(h, "t1", "repo");
   await waitUntil(() => run(h, r.id).state === "failed");
-  expect(run(h, r.id).error).toStartWith("WORKSPACE_FAILED: ");
+  expect(run(h, r.id).error).toStartWith("PROJECT_FOLDER_MISSING: ");
   expect(h.orch.state().host.used).toBe(0);
   expect(h.notices.map((n) => n.title)).toContain("repo-dev-1 a échoué");
 });

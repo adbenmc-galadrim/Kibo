@@ -34,10 +34,12 @@ export const runGit: GitRunner = async (args, cwd) => {
 };
 
 const failed = (detail: string) => new KiboError("WORKSPACE_FAILED", detail);
+const gitFailed = (detail: string) => new KiboError("GIT_FAILED", detail);
 
 function requireFolder(folder: string | null): string {
-  if (!folder) throw failed("the project has no local folder");
-  if (!existsSync(folder) || !statSync(folder).isDirectory()) throw failed(`folder ${folder} does not exist`);
+  if (!folder) throw new KiboError("PROJECT_FOLDER_MISSING", "the project has no local folder");
+  if (!existsSync(folder) || !statSync(folder).isDirectory())
+    throw new KiboError("PROJECT_FOLDER_NOT_FOUND", `folder ${folder} does not exist`);
   return folder;
 }
 
@@ -49,7 +51,7 @@ function branchFor(ticketKey: string): string {
 
 async function excludeKiboFolder(root: string, git: GitRunner): Promise<void> {
   const res = await git(["rev-parse", "--git-path", "info/exclude"], root);
-  if (res.code !== 0) throw failed(`cannot locate info/exclude: ${res.stderr.trim()}`);
+  if (res.code !== 0) throw gitFailed(`cannot locate info/exclude: ${res.stderr.trim()}`);
   const relative = res.stdout.trim();
   const file = isAbsolute(relative) ? relative : join(root, relative);
   const current = existsSync(file) ? readFileSync(file, "utf8") : "";
@@ -67,14 +69,14 @@ async function prepareWorktree(input: PrepareInput, git: GitRunner): Promise<Pre
   const branch = branchFor(input.ticketKey);
   const folder = requireFolder(input.projectFolder);
   const top = await git(["rev-parse", "--show-toplevel"], folder);
-  if (top.code !== 0) throw failed(`${folder} is not a git repository`);
+  if (top.code !== 0) throw new KiboError("NOT_A_REPO", `${folder} is not a git repository`);
   const root = top.stdout.trim();
   const path = join(root, ".kibo", "worktrees", branch);
   await excludeKiboFolder(root, git);
   if (existsSync(path)) {
     const own = await git(["rev-parse", "--show-toplevel"], path);
     if (own.code !== 0 || realpathSync(own.stdout.trim()) !== realpathSync(path)) {
-      throw failed(`${path} exists but is not a worktree`);
+      throw gitFailed(`${path} exists but is not a worktree`);
     }
     return { cwd: path, label: `worktree:${branch}` };
   }
@@ -84,7 +86,7 @@ async function prepareWorktree(input: PrepareInput, git: GitRunner): Promise<Pre
       ? ["worktree", "add", path, branch]
       : ["worktree", "add", "-b", branch, path, await defaultBase(root, git)];
   const added = await git(args, root);
-  if (added.code !== 0) throw failed(`git worktree add failed: ${added.stderr.trim()}`);
+  if (added.code !== 0) throw gitFailed(`git worktree add failed: ${added.stderr.trim()}`);
   return { cwd: path, label: `worktree:${branch}` };
 }
 

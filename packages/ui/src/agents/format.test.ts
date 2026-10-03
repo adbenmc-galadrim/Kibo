@@ -34,6 +34,18 @@ test("wait reasons, workspaces and errors are said in French", () => {
   expect(errorText("WORKSPACE_FAILED: the project has no local folder")).toBe(
     "espace de travail indisponible",
   );
+  expect(errorText("PROJECT_FOLDER_MISSING: the project has no local folder")).toBe(
+    "projet sans dossier local",
+  );
+  expect(errorText("PROJECT_FOLDER_NOT_FOUND: folder /x does not exist")).toBe(
+    "dossier du projet introuvable",
+  );
+  expect(errorText("NOT_A_REPO: /x is not a git repository")).toBe(
+    "le dossier du projet n'est pas un dépôt git",
+  );
+  expect(errorText("GIT_FAILED: git worktree add failed: fatal")).toBe(
+    "git n'a pas pu préparer l'espace de travail",
+  );
   expect(errorText("exit code 1")).toBe("exit code 1");
 });
 
