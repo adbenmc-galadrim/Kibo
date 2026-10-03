@@ -42,6 +42,28 @@ test("a deferred read-then-write loses to a concurrent writer; an immediate one 
   });
   expect(immediate(3)).toBe(2);
   expect(count(b)).toBe(2);
+  b.close();
+  a.close();
+});
+
+test("an immediate transaction nested in another joins it; an error in the inner one rolls back only the inner", () => {
+  const { a, b } = twoConnections();
+  b.close();
+  const values = () => (a.query("SELECT n FROM t ORDER BY n").all() as { n: number }[]).map((r) => r.n);
+  const inner = immediateTransaction(a, (value: number) => {
+    a.query("INSERT INTO t VALUES (?)").run(value);
+    if (value < 0) throw new Error("inner failure");
+  });
+  const outer = immediateTransaction(a, () => {
+    a.query("INSERT INTO t VALUES (1)").run();
+    inner(2);
+    expect(() => inner(-1)).toThrow("inner failure");
+    a.query("INSERT INTO t VALUES (3)").run();
+  });
+  outer();
+  expect(values()).toEqual([1, 2, 3]);
+  expect(a.inTransaction).toBe(false);
+  a.close();
 });
 
 const SOURCES = [
