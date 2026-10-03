@@ -52,6 +52,19 @@ test("profiles with runs come first, then the idle ones, each group by name", ()
   expect(columns).toEqual(["opus-dev", "sonnet-review", "haiku-tests"]);
 });
 
+test("a first turn with a message keeps its queue reason", () => {
+  const state = agentsFixture();
+  const runs = state.runs.map((r) =>
+    r.id === "q18" ? { ...r, pendingAnswer: "Commence par les tests." } : r,
+  );
+  render(<QueuePage state={{ ...state, runs }} profiles={profilesFixture} now={NOW} onAnswer={() => {}} />);
+  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  const q18 = opus.getAllByRole("listitem").find((li) => li.dataset.run === "q18");
+  if (!q18) throw new Error("queue item q18 missing");
+  expect(within(q18).getByText("attend une place du profil opus-dev (2/2)")).toBeTruthy();
+  expect(within(q18).queryByText("réponse reçue · reprise de la session")).toBeNull();
+});
+
 test("fixed host slots say so and still give the automatic value", () => {
   const state = agentsFixture();
   render(

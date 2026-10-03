@@ -155,6 +155,7 @@ export function agentsFixture(): AgentsState {
         rank: -1,
         priority: true,
         pendingAnswer: "Oui, utilise gh.",
+        turns: 1,
       }),
       runFixture({
         id: "q18",
