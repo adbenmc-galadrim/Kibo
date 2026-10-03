@@ -42,9 +42,20 @@ fn navigation_allowed(target: &Url, allowed: &[String]) -> bool {
     allowed.contains(&ipc_origin(target))
 }
 
+fn is_local_http(url: &Url) -> bool {
+    url.scheme() == "http" && matches!(url.host_str(), Some("127.0.0.1" | "[::1]"))
+}
+
 fn parse_daemon_url(raw: &str) -> Result<Url, String> {
-    raw.parse()
-        .map_err(|e| format!("le démon a donné une adresse invalide « {raw} » ({e})"))
+    let url: Url = raw
+        .parse()
+        .map_err(|e| format!("le démon a donné une adresse invalide « {raw} » ({e})"))?;
+    if !is_local_http(&url) {
+        return Err(format!(
+            "le démon a donné une adresse hors de cette machine « {raw} »"
+        ));
+    }
+    Ok(url)
 }
 
 fn parse_ready_line(line: &str) -> Option<Result<Url, String>> {
@@ -440,6 +451,23 @@ mod tests {
             .unwrap_err();
         assert!(error.contains("not a url"), "{error}");
         assert!(parse_daemon_url("").is_err());
+    }
+
+    #[test]
+    fn only_a_local_http_daemon_url_is_accepted() {
+        assert!(parse_daemon_url("http://127.0.0.1:4317/#pair=abc").is_ok());
+        assert!(parse_daemon_url("http://[::1]:4317/").is_ok());
+        for raw in [
+            "http://10.0.0.1:4317/",
+            "http://127.0.0.2:4317/",
+            "http://example.com/",
+            "http://localhost:4317/",
+            "https://127.0.0.1:4317/",
+            "file:///etc/passwd",
+        ] {
+            let error = parse_daemon_url(raw).unwrap_err();
+            assert!(error.contains(raw), "{raw} must be refused: {error}");
+        }
     }
 
     #[test]
