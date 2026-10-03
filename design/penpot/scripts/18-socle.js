@@ -7,12 +7,14 @@ const find = (f, n) => penpotUtils.findShape(s => s.name === n, f);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const shadow = (b, o = 0.5) => { b.shadows = [{ style: "drop-shadow", offsetX: 0, offsetY: 8, blur: 24, spread: 0, color: { color: "#000000", opacity: S.mode === "light" ? 0.12 : o } }]; };
 const measure = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
-S.pins = []; S.lastRel = null;
-const rel = (f, s) => { const r = measure(f, s); S.lastRel = { fid: f.id, a: s, r }; return r; };
+S.lastRel = null;
+const rel = (f, s) => { const r = measure(f, s); S.lastRel = { fid: f.id, a: s.id, r }; return r; };
 const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y);
-  if (S.lastRel && S.lastRel.fid === f.id) S.pins.push({ ...S.lastRel, s }); return s; };
-S.applyPins = (f) => { let n = 0; for (const p of S.pins.filter(q => q.fid === f.id)) { const a = measure(f, p.a), dx = a.x - p.r.x, dy = a.y - p.r.y;
-  if (dx || dy) { const c = measure(f, p.s); penpotUtils.setParentXY(p.s, c.x + dx, c.y + dy); n++; } } return n; };
+  if (S.lastRel && S.lastRel.fid === f.id) s.setPluginData("pin", JSON.stringify({ a: S.lastRel.a, dx: x - S.lastRel.r.x, dy: y - S.lastRel.r.y })); return s; };
+const repinOnce = (f) => { let n = 0; for (const s of f.children.filter(x => !!x.getPluginData("pin"))) { const p = JSON.parse(s.getPluginData("pin")); const a = penpotUtils.findShapeById(p.a); if (!a) continue;
+  const m = measure(f, a), c = measure(f, s), x = m.x + p.dx, y = m.y + p.dy; if (c.x !== x || c.y !== y) { penpotUtils.setParentXY(s, x, y); n++; } } return n; };
+S.applyPins = (f) => repinOnce(f) + repinOnce(f);
+S.repinPage = () => penpot.currentPage.root.children.filter(c => c.type === "board").reduce((n, f) => n + S.applyPins(f), 0);
 const byText = (root, t) => { const x = penpotUtils.findShape(s => s.type === "text" && s.characters === t, root); return x && x.parent; };
 
 // Même S.box que 01-core, sans écrire les valeurs par défaut du flex (chaque écriture coûte)
@@ -70,7 +72,7 @@ S.dropBases = () => { const bs = penpot.currentPage.root.children.filter(c => /^
 const finishOne = async (id) => { const f = penpotUtils.findShapeById(id); if (S.mode === "light") { S.lightFix(f, S.fresh); S.fixIconOrder(f); } S.retext(f);
   await wait(2000); S.recenter(f); S.applyPins(f); return id; };
 S.both = async (n) => { penpot.selection = []; const out = [];
-  for (const m of ["dark", "light"]) { S.setMode(m); S.pins = []; S.lastRel = null; try { const id = await S.draw[n](); await wait(400); out.push(await finishOne(id)); } finally { S.setMode("dark"); } }
+  for (const m of ["dark", "light"]) { S.setMode(m); S.lastRel = null; try { const id = await S.draw[n](); await wait(400); out.push(await finishOne(id)); } finally { S.setMode("dark"); } }
   return out; };
 const report = (st) => fetch("http://127.0.0.1:8787/upload?name=job-status.txt", { method: "POST", body: st.status + " " + st.done.length + "/" + st.list.length + " " + (st.current || "") + (st.error ? " " + st.error : "") }).catch(() => null);
 S.job = (list) => { const st = S.jobState = { status: "running", done: [], list: list.map(String) }; report(st);
