@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { realpathSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 
 const TAURI_IPC_ORIGINS = "ipc: http://ipc.localhost";
@@ -29,6 +29,12 @@ function withHeaders(res: Response, headers: Record<string, string>): Response {
 const isWorkerScript = (root: string, file: string): boolean =>
   WORKER_SCRIPT.test(relative(root, file).split(sep).join("/"));
 
+function realInside(root: string, file: string): string | null {
+  const realRoot = realpathSync(root);
+  const real = realpathSync(file);
+  return real === realRoot || real.startsWith(realRoot + sep) ? real : null;
+}
+
 export function serveUi(uiDir: string | null, pathname: string, sandboxOrigin: string | null): Response {
   const page = (res: Response) => withHeaders(res, documentHeaders(sandboxOrigin));
   if (!uiDir) return page(new Response("ui not built", { status: 404 }));
@@ -47,7 +53,15 @@ export function serveUi(uiDir: string | null, pathname: string, sandboxOrigin: s
   } catch {
     return page(new Response("bad path", { status: 400 }));
   }
-  if (isFile && isWorkerScript(root, file)) return withHeaders(new Response(Bun.file(file)), workerHeaders);
-  if (isFile) return page(new Response(Bun.file(file)));
-  return page(new Response(Bun.file(join(root, "index.html"))));
+  if (!isFile) return page(new Response(Bun.file(join(root, "index.html"))));
+  let real: string | null;
+  try {
+    real = realInside(root, file);
+  } catch {
+    return page(new Response("bad path", { status: 400 }));
+  }
+  if (real === null) return page(new Response("forbidden", { status: 403 }));
+  if (isWorkerScript(realpathSync(root), real))
+    return withHeaders(new Response(Bun.file(real)), workerHeaders);
+  return page(new Response(Bun.file(real)));
 }

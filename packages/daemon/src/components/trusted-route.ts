@@ -16,6 +16,8 @@ const HEADERS = {
   "cache-control": "no-store",
   "x-content-type-options": "nosniff",
   "cross-origin-resource-policy": "same-origin",
+  "content-security-policy": "default-src 'none'; sandbox",
+  "referrer-policy": "no-referrer",
 };
 
 const plain = (body: string, status: number) => new Response(body, { status, headers: HEADERS });
