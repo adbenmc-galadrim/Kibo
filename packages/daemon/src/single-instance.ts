@@ -7,7 +7,10 @@ export type RunningDaemon = { info: DaemonInfo; answers: boolean };
 
 export const HEALTH_TIMEOUT_MS = 1_000;
 
-const isTimeout = (e: unknown): boolean => e instanceof Error && e.name === "TimeoutError";
+const REFUSED_CODES = new Set(["ConnectionRefused", "ECONNREFUSED"]);
+
+const isRefused = (e: unknown): boolean =>
+  typeof e === "object" && e !== null && REFUSED_CODES.has(String(Reflect.get(e, "code")));
 
 const pidOf = (body: unknown): number | null => {
   const pid: unknown = typeof body === "object" && body !== null ? Reflect.get(body, "pid") : null;
@@ -21,7 +24,7 @@ export const probeHealth: Probe = async (port) => {
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     });
   } catch (e) {
-    return isTimeout(e) ? "silent" : "refused";
+    return isRefused(e) ? "refused" : "silent";
   }
   if (!res.ok) return "silent";
   const pid = pidOf(await res.json().catch(() => null));

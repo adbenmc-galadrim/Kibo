@@ -7,8 +7,10 @@ import { DaemonRunning, findRunningDaemon, HEALTH_TIMEOUT_MS, probeHealth } from
 
 const homes: string[] = [];
 const servers: ReturnType<typeof Bun.serve>[] = [];
+const listeners: Bun.TCPSocketListener<undefined>[] = [];
 afterEach(() => {
   for (const s of servers.splice(0)) s.stop(true);
+  for (const l of listeners.splice(0)) l.stop(true);
   for (const h of homes.splice(0)) rmSync(h, { recursive: true, force: true });
 });
 const home = () => {
@@ -44,6 +46,41 @@ test("the probe tells a kibo daemon, a silent listener and a closed port apart",
   expect(Date.now() - started).toBeLessThan(HEALTH_TIMEOUT_MS + 1_000);
   expect(await probeHealth(closedPort())).toBe("refused");
 }, 10_000);
+
+const rawTcp = (
+  onData: (socket: { write(text: string): number; end(): void }) => void,
+  closeAtOnce = false,
+) => {
+  const l = Bun.listen({
+    hostname: "127.0.0.1",
+    port: 0,
+    socket: {
+      open(socket) {
+        if (closeAtOnce) socket.end();
+      },
+      data(socket) {
+        onData(socket);
+      },
+    },
+  });
+  listeners.push(l);
+  return l.port;
+};
+
+test("only a refused connection means nobody listens; any other failure is a silent holder", async () => {
+  expect(await probeHealth(rawTcp(() => {}, true))).toBe("silent");
+  expect(
+    await probeHealth(
+      rawTcp((socket) => {
+        socket.write("hello there\r\n\r\n");
+        socket.end();
+      }),
+    ),
+  ).toBe("silent");
+  expect(await probeHealth(serve(() => Response.json({ pid: "777" })))).toBe("silent");
+  expect(await probeHealth(serve(() => Response.json({ name: "kibo" })))).toBe("silent");
+  expect(await probeHealth(closedPort())).toBe("refused");
+});
 
 test("no daemon.json, a corrupt one or a closed port mean nobody is running", async () => {
   const h = home();
