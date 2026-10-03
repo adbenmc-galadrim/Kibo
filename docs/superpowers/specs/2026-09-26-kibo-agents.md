@@ -135,3 +135,32 @@ Demande : « si un agent a des questions, on doit pouvoir y répondre ; le statu
   - Données (§4) : un journal contenant `answered` après un état terminal ne se rejoue pas sur un démon plus ancien (`STORE_CORRUPT` au démarrage) ; pas de retour à une version antérieure sans perdre ces runs.
   - Projets partagés (§7) : la règle est appliquée par le pair qui fait tourner l'agent ; un pair resté sur une version plus ancienne passe encore ses tickets en review à la fin de ses propres runs. Pas de divergence du CRDT.
   - Points pour Adam, défaut actuel conservé : `assignAgent` accepte un ticket qui a déjà un run non terminé (deux sessions peuvent partager le worktree) ; `answerRun` ne vérifie pas le droit d'écriture sur un projet partagé passé en lecture seule (les runs sont locaux à la machine).
+
+## 14. Décisions de la phase 10 (suivis après v1.1)
+
+Écrites le 2026-10-03 avec la spec de conception §17 ; elles amendent §6, §8 et §13.
+
+### 14.1 Causes distinctes d'un run échoué
+
+- `prepareWorkspace` distingue les causes au lieu d'un `WORKSPACE_FAILED` unique : `PROJECT_FOLDER_MISSING` (projet sans dossier local, profils `worktree` et `repo`) ; `PROJECT_FOLDER_NOT_FOUND` (dossier configuré absent ou qui n'est pas un dossier ; détail : le chemin) ; `NOT_A_REPO` (dossier qui n'est pas un dépôt git, profil `worktree`) ; `GIT_FAILED` (git a refusé : `worktree add`, `info/exclude`, chemin `.kibo/worktrees/<clé>` occupé par autre chose qu'un worktree). `WORKSPACE_FAILED` ne reste que pour les défauts internes (clé de ticket invalide, fichier de contexte hors du dossier du run). `run.error` garde la forme `CODE: détail`.
+- Interface (`fr.agents.errors`, même texte dans la notification d'échec, l'historique et le journal) : `PROJECT_FOLDER_MISSING` « projet sans dossier local », `PROJECT_FOLDER_NOT_FOUND` « dossier du projet introuvable », `NOT_A_REPO` « le dossier du projet n'est pas un dépôt git », `GIT_FAILED` « git n'a pas pu préparer l'espace de travail » ; « espace de travail indisponible » ne reste que pour `WORKSPACE_FAILED`.
+
+### 14.2 Durée affichée d'un run
+
+`RunView` gagne deux champs dérivés du journal par la machine à états (aucun changement des événements ni de `runs.db`) : `activeMs`, somme des durées des tours terminés (de `spawned` à `exited`, `failed` ou `cancelled`), et `turnStartedAt`, début du tour en cours (`null` hors tour). La durée affichée (tiroir, historique, files d'attente) vaut `activeMs + (now − turnStartedAt)` : le temps en file et le temps mort entre deux tours (y compris `waiting_input`) n'y entrent pas. Un run jamais démarré affiche « - » comme aujourd'hui.
+
+### 14.3 `assignAgent` : ordre des contrôles
+
+`assign` vérifie le profil, le ticket et sa clé, puis le droit d'écriture sur le projet (`AgentDataPort.assertWritable`, même garde que les commandes : `FORBIDDEN` sur un projet partagé en lecture seule), écrit l'assigné sur le ticket, et met le run en file **en dernier**. Une RPC refusée ne laisse donc aucun run en file ; si la mise en file échoue après l'écriture (base indisponible), le ticket reste assigné sans run, ce qui est visible et réversible.
+
+### 14.4 Écrire à un run pendant son tour (remplace le deuxième point de §13)
+
+- `answerRun` est accepté dans tous les états d'un run **de ticket**, sauf un run terminé non reprenable (§13) ; un run sans ticket n'accepte toujours qu'une réponse à sa question (`waiting_input`). Pendant `queued`, `starting` ou `running`, le message est **mis en attente** : il est journalisé aussitôt (`answered`, affiché dans le journal comme un message de l'utilisateur), s'ajoute aux messages déjà en attente (séparés par une ligne vide), et devient le prompt du **tour suivant** ; l'état et le rang du run ne changent pas. Le message n'est jamais injecté dans la session en cours (Claude Code ne lit pas d'entrée pendant un tour).
+- **Fin du tour.** Quand le processus sort alors qu'un message attend, le run ne reste pas `done`, `failed` ni `waiting_input` : le démon applique l'événement `requeued { rank }` (tête de file, prioritaire, même mécanique que la réponse à une question) et le tour suivant démarre par `--resume` avec les messages en attente comme prompt, que le tour finisse propre, en question ou en échec. Un tour qui finit par une question alors qu'un message attend prend ce message comme réponse (aucune interprétation : zéro token pour l'état). Un run en file pour son **premier** tour qui reçoit un message démarre avec le brief suivi du message.
+- **Arrêt.** `cancelled` et `failed` (décision du démon : arrêt par l'utilisateur, redémarrage) effacent le message en attente : il n'est pas remis à l'agent et reste dans le journal (précision de §13 conservée). Un run `queued` conservé au redémarrage garde son message.
+- **Interface.** La zone de saisie n'est plus désactivée pendant un tour : libellé « Écrire à l'agent », aide « L'agent travaille : ton message lui sera remis au début de son prochain tour. », le message envoyé apparaît dans le journal ; « Arrêter » reste. Le journal masque `requeued` comme `enqueued` et `admitted`.
+- **Données** (§4) : un journal contenant `requeued` ne se rejoue pas sur un démon plus ancien (`STORE_CORRUPT` au démarrage), comme pour `answered` après un état terminal.
+
+### 14.5 Attente de verrou et délai du hook
+
+`busy_timeout` reste à 5 s (spec de conception §17.2) : un seul démon par `KIBO_HOME` retire le cas qui faisait durer l'attente.

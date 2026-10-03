@@ -490,3 +490,44 @@ Résumé ; décisions détaillées dans la spec IA §13. Plusieurs brouillons en
 - Écrans 127 à 135, décrits textuellement dans le plan ; Penpot reste un écart assumé listé au jalon.
 - Aucun nouveau code d'erreur : `INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `TOO_LARGE`, `UPDATE_REJECTED` suffisent.
 - CSP : inchangée pour le document de l'interface ; les scripts de worker de l'interface (`/workers/*.js`, aujourd'hui le seul worker de l'aperçu d'un brouillon) sont servis avec `default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'` (spec composants §17, point 6). **À confirmer par Adam (A22).**
+
+## 17. Décisions de la phase 10 : suivis après v1.1
+
+Écrites le 2026-10-03, avant le plan `docs/superpowers/plans/2026-10-03-kibo-phase-10.md` ; elles complètent §4, §10, §11, §15.3 et la spec composants §4.2, §7.4 et §17 sans les contredire. Les décisions propres aux agents (causes d'échec d'un run, durée affichée, ordre des contrôles d'`assignAgent`, message pendant un tour) sont dans la spec agents §14.
+
+### 17.1 Un seul démon par `KIBO_HOME`
+
+Constat (passation de la phase 9) : rien n'empêchait deux démons d'ouvrir le même `KIBO_HOME` ; chacun garde ses documents Loro en mémoire et écrit ses snapshots dans `kibo.db` (« database is locked » chez Adam, écrasement possible d'un snapshot par l'autre démon). Règle :
+
+- **Sonde au démarrage.** Avant d'ouvrir `kibo.db`, le démon lit `<KIBO_HOME>/daemon.json`. Fichier absent ou illisible (`STORE_CORRUPT`) ⇒ démarrage normal, le fichier est réécrit. Fichier valide ⇒ le démon sonde le démon désigné par `GET http://127.0.0.1:<port>/api/health`, délai 1 s :
+  - connexion refusée (rien n'écoute sur le port) ⇒ fichier périmé (démon mort, pid éventuellement réattribué à un autre programme) : démarrage normal ;
+  - réponse `200` `{ "pid": <n> }` ⇒ un démon Kibo sert déjà ce dossier : **refus de démarrer**, `KiboError("DAEMON_RUNNING", "another daemon (pid <n>) serves <home> at http://127.0.0.1:<port>")`, sans rien ouvrir ni écrire ;
+  - délai dépassé, ou réponse qui n'est pas celle d'un démon Kibo (autre programme sur le port, démon figé) ⇒ même refus `DAEMON_RUNNING` (détail « holds <home> … and does not answer »), car démarrer écraserait ses données. L'utilisateur quitte l'autre processus, ou supprime `daemon.json` s'il est certain qu'aucun démon ne tourne.
+- **`GET /api/health`** : route sans session ni `Origin` (comme `/api/pair`, hors authentification), réponse `{ "pid": <pid du démon> }` avec `cache-control: no-store`, servie sur `127.0.0.1` seulement (`404` sur l'écoute distante). Elle ne révèle que le pid et sert aussi de sonde à la CLI et aux scripts.
+- **Sortie standard du démon** (protocole lu par la coque ; étend `KIBO_READY` / `KIBO_SANDBOX`, spec composants §16 point 8) :
+  - démon en place qui répond : le démon écrit `KIBO_REUSED`, puis `KIBO_READY http://127.0.0.1:<port>/#pair=<jeton>` et `KIBO_SANDBOX http://127.0.0.1:<sandboxPort>` **du démon en place** (ports lus dans `daemon.json`, jeton lu dans `<KIBO_HOME>/token`, partagé par construction), puis quitte avec le code **3** ;
+  - toute autre erreur de démarrage (dont `DAEMON_RUNNING` sans réponse) : le démon écrit `KIBO_FATAL <code> <détail>` (une ligne ; détail sur une ligne, espaces normalisés ; `code` est un `KiboErrorCode`, `INTERNAL` pour une erreur qui n'est pas une `KiboError`) avant son message habituel sur la sortie d'erreur, et quitte avec le code 1.
+- **Coque de bureau.** `KIBO_REUSED` marque le démon sidecar comme « emprunté » : la fin de ce processus n'est plus une panne, et la coque n'a rien à tuer à sa fermeture (le démon en place appartient à un autre parent). `KIBO_FATAL` ouvre une **boîte de dialogue native** (plugin dialog, type erreur, titre « Kibo ») puis quitte avec le code 1 à sa fermeture ; texte selon le code : `DAEMON_RUNNING` ⇒ « Un autre Kibo utilise déjà ce dossier de données et ne répond pas. Quitte-le, puis relance Kibo. » suivi du détail ; autre code ⇒ « Kibo n'a pas pu démarrer : <détail> ». Le message « Kibo s'est arrêté : …, relance l'application » (§15.3) reste pour une mort du démon après le démarrage. En `KIBO_SMOKE`, aucune boîte de dialogue : le texte va sur la sortie d'erreur.
+- **Limites assumées.** Le démon emprunté peut être d'une autre version que la coque (démon de développement laissé en route) ; la coque ne compare pas les versions. S'il s'arrête, la fenêtre affiche « Kibo ne répond pas » (§15.3) ; relancer l'application relance un démon. `kibo-sync` n'est pas concerné (un seul processus par base, démarré explicitement).
+
+### 17.2 Transactions SQLite
+
+- Toute transaction qui lit puis écrit démarre en mode **`immediate`** (verrou d'écriture pris au `BEGIN`, attente `busy_timeout`), jamais en mode différé : en différé, une écriture qui suit une lecture échoue aussitôt (`SQLITE_BUSY_SNAPSHOT`, sans attendre) dès qu'une autre connexion a écrit entre-temps. Démon : `integrations/db.ts` (migrations), `components/events.ts`, `collab/sync-db.ts`, `market/market-db.ts`, `notes/index.ts`, en plus de `store.transaction` et de la création d'un run, déjà en `immediate` ; `kibo-sync` : `accounts.ts`, `members.ts`, `room.ts`, `market/market-store.ts`. Un seul point d'entrée par paquet (`immediateTransaction`) ; un test de garde interdit `db.transaction(` ailleurs.
+- `busy_timeout` reste à **5 s** sur les trois bases : avec §17.1, deux processus sur `kibo.db` ou `runs.db` ne sont plus un cas normal ; l'attente ne bloque le fil du démon (et n'approche le délai de 5 s du hook d'un agent) que dans la situation anormale qu'elle sert à absorber. À ramener à 2 ou 3 s seulement si un second processus légitime apparaît (décision à réécrire ici).
+
+### 17.3 Routes de l'interface et des composants approuvés (durcissement)
+
+- `ui-route.ts` : le confinement au dossier de l'interface se vérifie sur le **chemin réel** (`realpathSync`) du fichier demandé et du dossier lui-même (sur macOS, `/var` est un lien vers `/private/var`) : un lien symbolique qui sort du dossier répond `403` (jamais la politique du worker, même sous `workers/<nom>.js`) ; un lien qui reste dans le dossier est servi comme le fichier visé, et la politique du worker s'applique au chemin réel.
+- `ui.trusted.js` et `ui.css` (`trusted-route.ts`) sont servis avec `content-security-policy: default-src 'none'; sandbox` et `referrer-policy: no-referrer` en plus des en-têtes actuels : sans effet sur leur chargement en module ou en feuille de style par le document de l'interface (qui garde sa propre politique), mais une navigation directe vers l'URL ou un usage en worker ne reçoit aucun droit.
+
+### 17.4 Gate locale et coque
+
+Le script `apps/desktop/scripts/desktop-smoke.ts` (`bun run --cwd apps/desktop smoke`) construit la coque en debug si le binaire manque (ou si `KIBO_SMOKE_REBUILD=1`), la lance avec `KIBO_SMOKE=1` sur un `KIBO_HOME` vide (sous `xvfb-run` sur Linux), exige la sortie `0` en moins de 90 s, puis vérifie qu'aucun démon désigné par le `daemon.json` de ce dossier ne survit. La CI (`desktop-smoke`) et la gate locale l'appellent ; la gate seulement quand la branche touche `apps/desktop/` par rapport à `main`. Il complète `cargo test`, il ne le remplace pas.
+
+### 17.5 Codes d'erreur
+
+Nouveaux codes : `DAEMON_RUNNING` (HTTP 409), `PROJECT_FOLDER_MISSING` (409), `PROJECT_FOLDER_NOT_FOUND` (404) ; les deux derniers sont décrits dans la spec agents §14.1. Nouvel événement de run `requeued` (spec agents §14.4).
+
+### 17.6 Dépendances : alertes de sécurité
+
+Les alertes Dependabot se traitent à chaque jalon : mise à jour vers la première version corrigée quand elle est compatible (ici `vite` 7.3.5 et `markdown-it` 14.3.1), sinon rejet motivé dans GitHub (`dismissed_reason`, commentaire) repris dans le rapport de jalon. Ici `glib` 0.18 (dépendance transitive de `gtk` 0.18 via Tauri 2, Linux seulement ; `glib::VariantStrIter` n'est appelé nulle part dans Kibo) est rejetée en `tolerable_risk` jusqu'à ce que Tauri passe à `gtk` 0.20. Jamais de `postinstall` ; `bun.lock` figé et vérifié par `bun install --frozen-lockfile`.
