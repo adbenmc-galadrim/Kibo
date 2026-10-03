@@ -31,6 +31,14 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 11 · IA | 58–64 (phase 6) |
 | 12 · Sync & marketplace | 65–97 (phase 7) |
 | 13 · Compléments | 76–78 (revue §7) |
+| 14 · Finitions UI | 98–106 (phase 9, vague 1 : fiche ticket, menus, confirmations) ; **dessinés : 98 à 101d**, 102 à 106b à dessiner |
+| 15 · Projets & réglages | 107–112 (vague 2 : projet, workspace, apparence, historique, avatar) ; **à dessiner** |
+| 16 · Tickets & boîte de réception | 113–115, 125, 126 (vague 3) ; **à dessiner** |
+| 17 · Composants & synchronisation | 116–120 (vague 3 ; 116 amendé en vague 4) ; **à dessiner** |
+| 18 · Agents, code & démarrage | 121–124 (vague 3) ; **à dessiner** |
+| 19 · Formats & créations | 127–135 (vague 4) ; **à dessiner** |
+
+Pages 15 à 19 : scripts écrits, pas encore créées dans le fichier Penpot. Les PDF et `kibo.penpot.xz` s'arrêtent à la page 13.
 
 Règles :
 - Chaque écran existe en **sombre et en clair**, le clair nommé `… (clair)`. Modifier le sombre, puis régénérer le clair (`S.relight`).
@@ -53,6 +61,12 @@ for (const n of ["01-core", "02-icons", "03-shell", "04-components", "05-tabs", 
 
 Écrans 32+ : `08-extra.js` (shell reconstruit, menus, alertes, tableaux, `S.relight` + `S.fixLightX`), puis un script par page
 (`09-agents`, `10-code`, `11-composants`, `12-integrations`, `13-ia`, `14-sync`, `15-complements`, `16-integrations-suite`) qui définit `S.draw[n]()`.
+
+Écrans 98+ (scripts écrits ; seuls 98 à 101d ont été exécutés) : charger aussi `18-socle.js` puis `17-finitions` et `19-projets-reglages` … `23-formats-creations`. Un écran y est le clone d'une
+base (`base · …`, hors champ à gauche, retirée par `S.dropBases()` avant l'export) ; le clair est redessiné avec la palette claire (`S.setMode`),
+bien plus rapide qu'un `S.relight`. `S.job(S.FINITIONS)` (ou `S.PROJETS`, `S.TICKETS`, `S.COMPOSANTS`, `S.AGENTS_CODE`, `S.CREATIONS`) dessine
+sombre puis clair en tâche de fond ; suivre `storage.jobState`. Garder l'onglet « Ressources » ouvert (l'arbre des calques ralentit tout) et la
+vue hors des écrans dessinés.
 Un clone ne change pas de page : les écrans de base (`base · n`) sont copiés puis collés (⌘C / ⌘V) sur la page, puis supprimés.
 Après un dessin, appeler `S.retext(écran)` (et `S.recenter` pour un dialogue) dans un **second** appel, une fois la mise en page calculée.
 
@@ -66,6 +80,6 @@ Pièges :
 
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … `("13")` (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("13")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz`.
