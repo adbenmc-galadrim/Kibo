@@ -65,6 +65,23 @@ test("a first turn with a message keeps its queue reason", () => {
   expect(within(q18).queryByText("réponse reçue · reprise de la session")).toBeNull();
 });
 
+test("a message that resumes a finished run says so, an answer to a question says so too", () => {
+  const state = agentsFixture();
+  const runs = state.runs.map((r) =>
+    r.id === "q29" ? { ...r, turns: 1, pendingAnswer: "Ajoute les tests.", question: null } : r,
+  );
+  render(<QueuePage state={{ ...state, runs }} profiles={profilesFixture} now={NOW} onAnswer={() => {}} />);
+  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  const item = (runId: string) => {
+    const li = opus.getAllByRole("listitem").find((x) => x.dataset.run === runId);
+    if (!li) throw new Error(`queue item ${runId} missing`);
+    return within(li);
+  };
+  expect(item("q29").getByText("message reçu · reprise de la session")).toBeTruthy();
+  expect(item("q29").queryByText("réponse reçue · reprise de la session")).toBeNull();
+  expect(item("q10").getByText("réponse reçue · reprise de la session")).toBeTruthy();
+});
+
 test("fixed host slots say so and still give the automatic value", () => {
   const state = agentsFixture();
   render(

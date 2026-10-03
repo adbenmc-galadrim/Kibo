@@ -19,11 +19,14 @@ const INTERRUPTED: RunEvent = { type: "failed", error: "INTERRUPTED: the daemon 
 function replay(store: RunStore): {
   views: Map<string, RunView>;
   exits: Array<{ at: number; tokens: number }>;
+  lastAt: Map<string, number>;
 } {
   const views = new Map<string, RunView>();
   const exits: Array<{ at: number; tokens: number }> = [];
+  const lastAt = new Map<string, number>();
   const records = new Map(store.records().map((r) => [r.id, r]));
   for (const { runId, at, event } of store.events()) {
+    lastAt.set(runId, at);
     const current = views.get(runId);
     if (!current) {
       const record = records.get(runId);
@@ -40,18 +43,18 @@ function replay(store: RunStore): {
     }
     if (event.type === "exited") exits.push({ at, tokens: event.tokens });
   }
-  return { views, exits };
+  return { views, exits, lastAt };
 }
 
 export function openRunRegistry(store: RunStore, now: () => number = Date.now): RunRegistry {
-  const { views, exits } = replay(store);
+  const { views, exits, lastAt } = replay(store);
   const listeners = new Set<RunChange>();
-  const restartedAt = now();
   const interrupted: RunView[] = [];
   for (const view of [...views.values()]) {
     if (view.state === "starting" || view.state === "running") {
-      store.append(view.id, INTERRUPTED, restartedAt);
-      const failed = reduceRun(view, INTERRUPTED, restartedAt);
+      const closedAt = lastAt.get(view.id) ?? view.stateSince;
+      store.append(view.id, INTERRUPTED, closedAt);
+      const failed = reduceRun(view, INTERRUPTED, closedAt);
       views.set(view.id, failed);
       interrupted.push(failed);
     }

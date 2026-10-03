@@ -5,11 +5,11 @@ export function Component() {
   const { data: tickets } = useEntities("ticket");
   const open = tickets.filter((t) => t.statusId !== "done").length;
   return (
-    <Card className="h-full">
+    <Card className="@container h-full min-h-0 overflow-auto">
       <CardHeader>
         <CardTitle>Burndown du sprint</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex min-h-0 flex-1 flex-col justify-center">
         <p className="text-3xl font-semibold">{open}</p>
         <p className="text-sm text-muted-foreground">tickets restants</p>
       </CardContent>

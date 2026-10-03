@@ -74,6 +74,7 @@ Un format \`full\` sur une page vue occupe toute la page.
 ## Responsive
 
 - Racine en \`@container\` avec \`h-full min-h-0 overflow-auto\` : le composant remplit sa cellule et défile au besoin.
+- Le corps occupe la hauteur du format : \`CardContent\` en \`flex min-h-0 flex-1 flex-col\` (il s'étire sous l'en-tête jusqu'au bas de la carte) ; une liste ou un graphe le remplit, un chiffre seul se centre avec \`justify-center\`.
 - Variantes de conteneur \`@md:\` et \`@lg:\` plutôt que \`md:\` et \`lg:\` (la taille de la fenêtre ne dit rien de la cellule).
 - \`sdk.format\` pour changer de disposition : un chiffre en \`small\`, une liste courte en \`medium\`, plus de détail au-delà.
 - Jamais de largeur fixe en pixels (\`w-[480px]\`, \`min-w-[300px]\`, \`size-[300px]\`, \`width: 640px\`, \`style={{ width: 640 }}\`) : à partir de 240 px, la validation refuse le composant (« largeur fixe »). Un maximum (\`max-w-[960px]\`) ou une variante de conteneur (\`@lg:w-[320px]\`) reste permis.
@@ -130,7 +131,7 @@ export function Component() {
       <CardHeader>
         <CardTitle>Tickets ouverts</CardTitle>
       </CardHeader>
-      <CardContent>{tickets.loading ? null : body()}</CardContent>
+      <CardContent className="flex min-h-0 flex-1 flex-col">{tickets.loading ? null : body()}</CardContent>
     </Card>
   );
 }

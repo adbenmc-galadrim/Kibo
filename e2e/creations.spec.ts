@@ -102,6 +102,19 @@ test("créer deux composants en arrière-plan, prévisualiser, réviser, publier
   });
   expect(overflows).toBe(false);
   await expect(frame.getByText("tickets restants", { exact: true })).toBeVisible(PREVIEW);
+  const filled = await frame.locator('[data-slot="card"]').evaluate((card) => {
+    const bottom = (el: Element | null) => Math.round(el?.getBoundingClientRect().bottom ?? 0);
+    return {
+      frame: document.documentElement.clientHeight,
+      card: bottom(card),
+      content: bottom(card.querySelector('[data-slot="card-content"]')),
+    };
+  });
+  const halfBoxHeight = 560;
+  const frameBorders = 2;
+  expect(filled.frame).toBe(halfBoxHeight - frameBorders);
+  expect(filled.card).toBeGreaterThanOrEqual(filled.frame - 1);
+  expect(filled.content).toBeGreaterThanOrEqual(filled.card - 25);
   expect(previewCalls()).toBe(callsBefore);
   await expect(review.getByText("Aperçu indisponible.")).toHaveCount(0);
 

@@ -115,6 +115,11 @@ test("the kibo files carry the skill with formats, tokens, responsive rules and 
   expect(files[".claude/skills/kibo-component/exemple.tsx"]).toContain('useEntities("ticket")');
 });
 
+test("the skill asks the body to take the height of the format, and the example does", () => {
+  expect(SKILL).toContain("`CardContent` en `flex min-h-0 flex-1 flex-col`");
+  expect(EXAMPLE_COMPONENT).toContain('<CardContent className="flex min-h-0 flex-1 flex-col">');
+});
+
 test("the format table gives cells and pixels at 1200 px and marks the declared formats", () => {
   const table = formatTable(["medium", "full"]);
   expect(table).toContain("| small | Petit | 3 × 3 | ≈ 288 × 272 px | non |");

@@ -308,6 +308,7 @@ export const fr = {
     waitingHelp: "Session suspendue : la place est libérée. À la réponse, le run revient en tête de file.",
     priority: "Prioritaire",
     resumeHint: "réponse reçue · reprise de la session",
+    messageHint: "message reçu · reprise de la session",
     drag: (key: string) => `Déplacer ${key} dans la file`,
     actions: (key: string) => `Actions ${key}`,
     moveUp: "Monter",

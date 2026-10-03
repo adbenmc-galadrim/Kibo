@@ -322,16 +322,26 @@ test("demo data that cannot start makes the preview unavailable", async () => {
   view.unmount();
 });
 
-test("a skeleton with role=status is shown while the build runs", async () => {
-  let release: (v: unknown) => void = () => {};
-  preview = () =>
-    new Promise((r) => {
-      release = r;
-    });
+function deferred<T>() {
+  let resolve: (value: T) => void = () => {};
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
+test("a skeleton with role=status is shown while the build runs, whenever the build is asked", async () => {
+  const build = deferred<{ hash: string; path: string }>();
+  preview = () => build.promise;
   const { view } = mount();
-  expect(await screen.findByRole("status", { name: "Construction de l'aperçu…" })).toBeTruthy();
-  await act(async () => release({ hash: HASH, path: `/c/drafts/${DRAFT_ID}/${HASH}/index.html` }));
+  const building = { name: "Construction de l'aperçu…" };
+  expect(await screen.findByRole("status", building)).toBeTruthy();
+  await waitFor(() => expect(previewCalls()).toHaveLength(1));
+  expect(screen.getByRole("status", building)).toBeTruthy();
+  expect(screen.queryByTitle("Aperçu de Burndown")).toBeNull();
+  await act(async () => build.resolve({ hash: HASH, path: `/c/drafts/${DRAFT_ID}/${HASH}/index.html` }));
   expect(await frame()).toBeTruthy();
+  expect(screen.queryByRole("status")).toBeNull();
   view.unmount();
 });
 

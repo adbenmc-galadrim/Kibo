@@ -27,7 +27,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
