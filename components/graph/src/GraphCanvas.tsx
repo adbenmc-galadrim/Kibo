@@ -1,6 +1,7 @@
 import type { TicketRun, TicketView } from "@kibo/schema";
 import { liveRun, RunDot, StatusDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
+import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
 import { useId, useRef } from "react";
 import type { GraphEdge } from "./critical-path";
@@ -8,6 +9,7 @@ import { fr } from "./fr";
 import { Legend, ZoomControls } from "./GraphControls";
 import { type GraphLayout, NODE_H, NODE_W, type NodePosition } from "./layout";
 import { Minimap } from "./Minimap";
+import { boxRect, type SelectionBox, useGraphSelection } from "./use-graph-selection";
 import { useGraphViewport } from "./use-graph-viewport";
 import type { Point } from "./viewport";
 
@@ -88,32 +90,60 @@ function Edges({ edges, layout, critical }: Pick<Props, "edges" | "layout" | "cr
   );
 }
 
-function Node({
-  ticket,
-  at,
-  hot,
-  run,
-  onOpen,
-  onFrame,
-}: {
+type NodeProps = {
   ticket: TicketView;
   at: NodePosition;
   hot: boolean;
   run: TicketRun | null;
-  onOpen(id: string): void;
+  selected: boolean;
+  neighbor: boolean;
+  dimmed: boolean;
+  onSelect(id: string): void;
   onFrame(at: Point): void;
+};
+
+function OpenButton({
+  ticket,
+  at,
+  onOpen,
+}: {
+  ticket: TicketView;
+  at: NodePosition;
+  onOpen(id: string): void;
 }) {
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      data-open
+      className="absolute h-6 border px-2 text-2xs"
+      style={{ left: at.x, top: at.y + NODE_H + 6 }}
+      aria-label={fr.openTicket(ticket.keyLabel)}
+      onClick={() => onOpen(ticket.id)}
+    >
+      {fr.openShort}
+    </Button>
+  );
+}
+
+function Node({ ticket, at, hot, run, selected, neighbor, dimmed, onSelect, onFrame }: NodeProps) {
   return (
     <button
       type="button"
+      data-node={ticket.id}
       data-critical={hot ? "true" : "false"}
+      data-selected={selected ? "true" : "false"}
+      data-neighbor={neighbor ? "true" : "false"}
       aria-label={`${ticket.keyLabel} ${ticket.title}`}
-      onClick={() => onOpen(ticket.id)}
+      aria-pressed={selected}
+      onClick={() => onSelect(ticket.id)}
       onDoubleClick={() => onFrame(at)}
       className={cn(
-        "absolute grid content-center gap-1 rounded-md border bg-card px-3 text-left hover:bg-accent",
+        "absolute grid content-center gap-1 rounded-md border bg-card px-3 text-left transition-opacity hover:bg-accent",
         hot && "border-2 border-foreground",
         ticket.statusId === "done" && "opacity-45",
+        dimmed && "opacity-60",
+        selected && "ring-2 ring-ring ring-offset-2 ring-offset-background",
       )}
       style={{ left: at.x, top: at.y, width: NODE_W, height: NODE_H }}
     >
@@ -131,20 +161,47 @@ function Node({
   );
 }
 
+function BoxOverlay({ box }: { box: SelectionBox }) {
+  const r = boxRect(box);
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute rounded-sm border border-dashed border-ring bg-accent/30"
+      style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top }}
+    />
+  );
+}
+
 export function GraphCanvas({ tickets, edges, layout, critical, runs, onOpen }: Props) {
   const section = useRef<HTMLElement>(null);
+  const help = useId();
   const vp = useGraphViewport(section, layout);
   const { view } = vp;
+  const sel = useGraphSelection({ layout, edges, view, onOpen });
   const byId = new Map(tickets.map((t) => [t.id, t]));
+  const isDimmed = (id: string) => sel.selected.size > 0 && !sel.selected.has(id) && !sel.related.has(id);
 
   return (
     <section
       ref={section}
       aria-label={fr.canvas}
+      aria-describedby={help}
       data-zoom={String(view.zoom)}
       className="relative h-full min-h-[320px] cursor-grab touch-none overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px] active:cursor-grabbing"
-      {...vp.pointer}
+      onKeyDown={sel.onKeyDown}
+      onPointerDown={(e) => {
+        if (!sel.pointer.onPointerDown(e)) vp.pointer.onPointerDown(e);
+      }}
+      onPointerMove={(e) => {
+        if (!sel.pointer.onPointerMove(e)) vp.pointer.onPointerMove(e);
+      }}
+      onPointerUp={() => {
+        if (!sel.pointer.onPointerUp()) vp.pointer.onPointerUp();
+      }}
     >
+      <p id={help} className="sr-only">
+        {fr.graphHelp}
+      </p>
       <div
         data-stage
         className="absolute top-0 left-0 origin-top-left"
@@ -164,12 +221,23 @@ export function GraphCanvas({ tickets, edges, layout, critical, runs, onOpen }: 
               at={n}
               hot={critical.has(t.id)}
               run={liveRun(runs.get(t.id) ?? null)}
-              onOpen={onOpen}
+              selected={sel.selected.has(t.id)}
+              neighbor={sel.related.has(t.id)}
+              dimmed={isDimmed(t.id)}
+              onSelect={sel.select}
               onFrame={(at) => vp.frame(at, NODE_SIZE)}
             />
           ) : null;
         })}
+        {layout.nodes.map((n) => {
+          const t = byId.get(n.id);
+          return t && sel.selected.has(t.id) ? (
+            <OpenButton key={`open-${t.id}`} ticket={t} at={n} onOpen={onOpen} />
+          ) : null;
+        })}
       </div>
+      {sel.box && <BoxOverlay box={sel.box} />}
+      <output className="sr-only">{sel.selected.size > 1 ? fr.selected(sel.selected.size) : ""}</output>
       <Legend />
       <Minimap layout={layout} view={view} box={vp.box} onJump={vp.centerOn} />
       <ZoomControls zoom={view.zoom} onZoom={vp.zoomTo} onFit={vp.fit} />

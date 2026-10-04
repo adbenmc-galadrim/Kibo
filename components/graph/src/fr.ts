@@ -19,6 +19,10 @@ export const fr = {
   blocked: (key: string, reason: string) =>
     `${key} bloqué : ${reason.charAt(0).toLowerCase()}${reason.slice(1)}`,
   open: "Ouvrir le graphe →",
+  openTicket: (key: string) => `Ouvrir ${key}`,
+  openShort: "Ouvrir",
+  selected: (n: number) => `${n} sélectionnés`,
+  graphHelp: "Flèches : voisins · Entrée : ouvrir · Échap : désélectionner",
   legend: { blocks: "Bloque", critical: "Chemin critique", relates: "Lié à" },
   zoomIn: "Zoom avant",
   zoomOut: "Zoom arrière",

@@ -47,8 +47,38 @@ test("screen 10: nodes, critical path summary, legend and zoom", async () => {
   ).toBe("false");
   expect(within(canvas).getByRole("button", { name: /KIB-5 / }).className).toContain("opacity-45");
   expect(screen.getByText("Lié à")).toBeTruthy();
-  await userEvent.setup().click(node);
+  const user = userEvent.setup();
+  await user.click(node);
+  expect(node.getAttribute("data-selected")).toBe("true");
+  expect(m.opened).toEqual([]);
+  await user.click(within(canvas).getByRole("button", { name: "Ouvrir KIB-21" }));
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-21")?.id ?? ""]);
+});
+
+test("keyboard: arrows walk the neighbors, Enter opens, Escape clears; shift-drag selects a box", async () => {
+  const m = setup("view");
+  await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
+  const canvas = screen.getByRole("region", { name: "Graphe des dépendances" });
+  const user = userEvent.setup();
+  await user.click(within(canvas).getByRole("button", { name: /KIB-11 / }));
+  canvas.focus();
+  await user.keyboard("{ArrowRight}");
+  expect(
+    within(canvas)
+      .getByRole("button", { name: /KIB-21 / })
+      .getAttribute("data-selected"),
+  ).toBe("true");
+  await user.keyboard("{Enter}");
+  expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-21")?.id ?? ""]);
+  await user.keyboard("{Escape}");
+  expect(canvas.querySelectorAll("[data-selected='true']")).toHaveLength(0);
+  // happy-dom implements no pointer capture
+  Object.assign(canvas, { setPointerCapture: () => undefined });
+  fireEvent.pointerDown(canvas, { shiftKey: true, clientX: 0, clientY: 0, pointerId: 1 });
+  fireEvent.pointerMove(canvas, { shiftKey: true, clientX: 5000, clientY: 5000, pointerId: 1 });
+  fireEvent.pointerUp(canvas, { pointerId: 1 });
+  expect(canvas.querySelectorAll("[data-selected='true']").length).toBeGreaterThan(2);
+  expect(screen.getByRole("status").textContent).toMatch(/sélectionnés$/);
 });
 
 test("toolbar: hide done, critical path toggle, zoom", async () => {
