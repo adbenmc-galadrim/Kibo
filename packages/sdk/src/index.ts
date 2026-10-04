@@ -7,6 +7,8 @@ export * from "./lazy";
 export * from "./members";
 export * from "./react";
 export * from "./sdk";
+export * from "./selection-chip";
+export * from "./signal";
 export * from "./source";
 export * from "./status";
 export * from "./ticket-key";

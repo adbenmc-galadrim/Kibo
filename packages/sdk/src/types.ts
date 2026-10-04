@@ -1,5 +1,7 @@
 import type {
   AssetMime,
+  AssetUrl,
+  Capability,
   CiRun,
   CommandResult,
   ComponentCall,
@@ -16,9 +18,11 @@ import type {
   NotesInfo,
   Page,
   PresencePeer,
+  ProjectAsset,
   ProjectCommand,
   ProjectSnapshot,
   ProjectSyncInfo,
+  Selection,
   Status,
   StatusId,
   Surface,
@@ -68,6 +72,20 @@ export type McpApi = {
   importItem(server: string, item: McpImportItem): Promise<Ticket>;
 };
 
+export type AssetsApi = { list(): Promise<ProjectAsset[]>; url(name: string): Promise<AssetUrl> };
+export type FocusApi = {
+  active(): boolean;
+  request(): void;
+  exit(): void;
+  subscribe(listener: () => void): () => void;
+};
+export type VisibilityApi = { visible(): boolean; subscribe(listener: () => void): () => void };
+export type SelectionApi = {
+  get(): Selection | null;
+  set(selection: Selection | null): void;
+  subscribe(listener: () => void): () => void;
+};
+
 export type KiboSdk = {
   instanceId: string;
   config: Record<string, unknown>;
@@ -88,6 +106,12 @@ export type KiboSdk = {
   mcp: McpApi;
   presence: PresenceApi;
   sharing(): Promise<ProjectSyncInfo>;
+  capabilities: readonly Capability[];
+  capability(name: Capability): void;
+  assets: AssetsApi;
+  focus: FocusApi;
+  visibility: VisibilityApi;
+  selection: SelectionApi;
 };
 
 export type PresenceApi = {
@@ -116,7 +140,8 @@ export type SdkContext = Pick<
   | "openNewTicket"
   | "openFile"
   | "openView"
->;
+> &
+  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection">>;
 export type SdkMode = "builtin" | "gated";
 
 export type ComponentModule = { manifest: ComponentManifest; Component: ComponentType };

@@ -8,13 +8,16 @@ import {
   isKiboErrorCode,
   KeyCombo,
   KiboError,
+  type Selection,
   type Theme,
 } from "@kibo/schema";
 import type { ComponentType } from "react";
 import { createRoot } from "react-dom/client";
+import { installCapabilityGuards } from "./capability-guards";
 import { guardDestructiveKeys } from "./key-guard";
 import { SdkProvider } from "./react";
 import { createSdk } from "./sdk";
+import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import type { KiboSdk } from "./types";
 
 export type FramePort = { post(msg: FrameToHost): void; listen(cb: (msg: HostToFrame) => void): () => void };
@@ -58,11 +61,17 @@ export function createFrameSdk(
   let seq = 0;
   const pending = new Map<number, Pending>();
   const listeners = new Set<() => void>();
+  const focus = createSignal(init.focus ?? false);
+  const visible = createSignal(init.visible ?? true);
+  const selection = createSignal<Selection | null>(init.selection ?? null);
   const off = port.listen((m) => {
     if (m.type === "changed") {
       for (const listener of listeners) listener();
       return;
     }
+    if (m.type === "focus") focus.set(m.active);
+    else if (m.type === "visibility") visible.set(m.visible);
+    else if (m.type === "selection") selection.set(m.selection);
     if (m.type !== "reply") return;
     const waiting = pending.get(m.id);
     if (!waiting) {
@@ -110,6 +119,11 @@ export function createFrameSdk(
       openFile: ({ path, line }) =>
         port.post({ kibo: 1, type: "openFile", path, ...(typeof line === "number" && { line }) }),
       openView: (componentId) => port.post({ kibo: 1, type: "openView", componentId }),
+      focus: focusApi(focus, (on) => port.post({ kibo: 1, type: "focus", on })),
+      visibility: visibilityApi(visible),
+      selection: selectionApi(selection, (next) =>
+        port.post({ kibo: 1, type: "selection", selection: next }),
+      ),
     },
     "gated",
   );
@@ -145,6 +159,7 @@ function start(manifest: ComponentManifest, init: InitMessage, Component: Compon
   applyTheme(init.theme);
   const bodyClasses = [init.surface === "widget" ? "bg-card" : "bg-background", "text-foreground"];
   document.body.classList.add(...bodyClasses);
+  const restoreGuards = installCapabilityGuards(window, manifest.capabilities);
   const frame = createFrameSdk(manifest, init, port);
   const root = createRoot(rootElement());
   root.render(
@@ -178,6 +193,7 @@ function start(manifest: ComponentManifest, init: InitMessage, Component: Compon
     root.unmount();
     frame.dispose();
     document.body.classList.remove(...bodyClasses);
+    restoreGuards();
   };
 }
 

@@ -109,3 +109,68 @@ test("the mock exposes the format, defaulting to the manifest's default format",
   const listed = await m.backend.call({ kind: "list", entity: "ticket" });
   expect(Array.isArray(listed) && listed.length).toBe(1);
 });
+
+const robot = { name: "robot.glb", mime: "model/gltf-binary", kind: "model", size: 600, mtime: 1 } as const;
+const decode = (url: string) =>
+  Uint8Array.from(atob(url.slice(url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
+
+test("capabilities are recorded in used, undeclared ones also in violations", () => {
+  const m = createMockSdk({ ...base, reads: [], writes: [], capabilities: ["webgl"] });
+  m.sdk.capability("webgl");
+  expect(() => m.sdk.capability("gamepad")).toThrow("PERMISSION_DENIED");
+  expect(m.used).toEqual(["cap:webgl", "cap:gamepad"]);
+  expect(m.violations).toEqual(["cap:gamepad"]);
+});
+
+test("project files are served as data urls under cap:assets", async () => {
+  const m = createMockSdk(
+    { ...base, reads: [], writes: [], capabilities: ["assets"] },
+    {
+      assets: [
+        robot,
+        { name: "logo.png", mime: "image/png", kind: "image", size: 10, mtime: 1 },
+        { name: "bip.wav", mime: "audio/wav", kind: "audio", size: 10, mtime: 1 },
+      ],
+    },
+  );
+  expect((await m.sdk.assets.list()).map((a) => a.name)).toEqual(["robot.glb", "logo.png", "bip.wav"]);
+  const model = await m.sdk.assets.url("robot.glb");
+  expect(model.url.startsWith("data:model/gltf-binary;base64,")).toBe(true);
+  expect(new TextDecoder().decode(decode(model.url).slice(0, 4))).toBe("glTF");
+  const image = decode((await m.sdk.assets.url("logo.png")).url);
+  expect([...image.slice(1, 4)].map((c) => String.fromCharCode(c)).join("")).toBe("PNG");
+  const sound = decode((await m.sdk.assets.url("bip.wav")).url);
+  expect(new TextDecoder().decode(sound.slice(8, 12))).toBe("WAVE");
+  await expect(m.sdk.assets.url("absent.glb")).rejects.toThrow("NOT_FOUND");
+  expect(m.used).toEqual(["cap:assets"]);
+});
+
+test("project files without cap:assets are a violation", async () => {
+  const m = createMockSdk({ ...base, reads: [], writes: [] }, { assets: [robot] });
+  await expect(m.sdk.assets.list()).rejects.toThrow("PERMISSION_DENIED");
+  expect(m.violations).toEqual(["cap:assets"]);
+});
+
+test("the mock drives focus, visibility and selection and records requests", () => {
+  const m = createMockSdk(
+    { ...base, reads: [], writes: [], selection: true },
+    { visible: false, focus: true },
+  );
+  expect(m.sdk.visibility.visible()).toBe(false);
+  expect(m.sdk.focus.active()).toBe(true);
+  let hits = 0;
+  m.sdk.visibility.subscribe(() => hits++);
+  m.setVisible(true);
+  m.setFocus(false);
+  expect(m.sdk.visibility.visible()).toBe(true);
+  expect(m.sdk.focus.active()).toBe(false);
+  expect(hits).toBe(1);
+  m.sdk.focus.request();
+  m.sdk.focus.exit();
+  expect(m.focusRequests).toEqual([true, false]);
+  m.setSelection({ kind: "ticket", ids: ["a"] });
+  expect(m.sdk.selection.get()).toEqual({ kind: "ticket", ids: ["a"] });
+  m.sdk.selection.set(null);
+  expect(m.selections).toEqual([null]);
+  expect(m.sdk.selection.get()).toBeNull();
+});

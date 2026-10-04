@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PerspectiveCamera, Scene, WebGLRenderer } from "three";
+import { useSdk, useVisible } from "../react";
 import { disposeObject } from "./dispose";
 import { frThree } from "./fr";
 import { clampDt, loopState } from "./scheduler";
@@ -21,7 +22,6 @@ export type ThreeCanvasProps = {
   animate?: boolean;
   className?: string;
   createRenderer?(canvas: HTMLCanvasElement): WebGLRenderer | null;
-  visible?: boolean;
 };
 
 function defaultRenderer(canvas: HTMLCanvasElement): WebGLRenderer | null {
@@ -44,13 +44,17 @@ export function ThreeCanvas({
   animate = true,
   className,
   createRenderer = defaultRenderer,
-  visible = true,
 }: ThreeCanvasProps) {
+  const sdk = useSdk();
+  const visible = useVisible();
+  const wake = useRef<(() => void) | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [unavailable, setUnavailable] = useState(false);
   const latest = useRef({ frame, animate, visible });
   latest.current = { frame, animate, visible };
+
+  useEffect(() => sdk.capability("webgl"), [sdk]);
 
   useEffect(() => {
     const el = canvas.current;
@@ -102,10 +106,11 @@ export function ThreeCanvas({
       draw();
       raf = requestAnimationFrame(tick);
     };
-    const wake = () => {
+    const resume = () => {
       if (raf === 0) raf = requestAnimationFrame(tick);
     };
-    wake();
+    wake.current = resume;
+    resume();
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
     observer?.observe(box);
     const theme = new MutationObserver(() => {
@@ -113,11 +118,10 @@ export function ThreeCanvas({
       draw();
     });
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    document.addEventListener("visibilitychange", wake);
-    const wakeTimer = setInterval(wake, 500);
+    document.addEventListener("visibilitychange", resume);
     return () => {
-      clearInterval(wakeTimer);
-      document.removeEventListener("visibilitychange", wake);
+      wake.current = null;
+      document.removeEventListener("visibilitychange", resume);
       theme.disconnect();
       observer?.disconnect();
       if (raf !== 0) cancelAnimationFrame(raf);
@@ -127,6 +131,10 @@ export function ThreeCanvas({
       renderer.forceContextLoss();
     };
   }, [createRenderer, setup]);
+
+  useEffect(() => {
+    if (visible && animate) wake.current?.();
+  }, [visible, animate]);
 
   if (unavailable)
     return <output className="block p-4 text-sm text-muted-foreground">{frThree.unavailable}</output>;

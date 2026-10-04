@@ -10,10 +10,12 @@ import {
   type MemberInfo,
   type PresencePeer,
   type ProjectAccess,
+  type ProjectAsset,
   type ProjectCommand,
   type TicketRun,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
+import { mockAssetUrl } from "./mock-assets";
 import type { MockNotesFolder } from "./mock-notes";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
@@ -34,6 +36,7 @@ export type MockCallDeps = {
   ciRuns?: CiRun[];
   shared?: boolean;
   members?: MemberInfo[];
+  assets?: ProjectAsset[];
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
@@ -132,8 +135,9 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
             }
           : { ...localSyncInfo(deps.doc), access: deps.access() };
       case "assets.list":
+        return deps.assets ?? [];
       case "assets.url":
-        throw new KiboError("INTERNAL", "project files are not mocked yet");
+        return mockAssetUrl(deps.assets ?? [], c.name);
     }
   };
 }

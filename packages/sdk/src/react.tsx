@@ -4,8 +4,9 @@ import {
   type MemberInfo,
   type PresencePeer,
   type ProjectSyncInfo,
+  type Selection,
 } from "@kibo/schema";
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import type { EntityMap, KiboSdk } from "./types";
 
 const SdkContext = createContext<KiboSdk | null>(null);
@@ -100,4 +101,27 @@ export function useMembers(): MemberInfo[] {
 
 export function useReadOnly(): boolean {
   return useSharing().access !== "write";
+}
+
+export function useVisible(): boolean {
+  const { visibility } = useSdk();
+  return useSyncExternalStore(visibility.subscribe, visibility.visible, visibility.visible);
+}
+
+export type FocusMode = { active: boolean; available: boolean; request(): void; exit(): void };
+
+export function useFocusMode(): FocusMode {
+  const sdk = useSdk();
+  const active = useSyncExternalStore(sdk.focus.subscribe, sdk.focus.active, sdk.focus.active);
+  return {
+    active,
+    available: sdk.capabilities.includes("fullscreen"),
+    request: sdk.focus.request,
+    exit: sdk.focus.exit,
+  };
+}
+
+export function useSelection(): [Selection | null, (selection: Selection | null) => void] {
+  const { selection } = useSdk();
+  return [useSyncExternalStore(selection.subscribe, selection.get, selection.get), selection.set];
 }

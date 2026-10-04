@@ -3,6 +3,7 @@ import { ComponentManifest, type FrameToHost, type HostToFrame, KiboError } from
 import { act, screen, waitFor } from "@testing-library/react";
 import { useEntities, useSdk } from "./react";
 import { comboOf, createFrameSdk, type FramePort, mountSandboxed, windowPort } from "./sandbox";
+import type { KiboSdk } from "./types";
 
 function fakePort() {
   const sent: FrameToHost[] = [];
@@ -152,6 +153,65 @@ test("unmounting releases every listener and the rendered tree", async () => {
   expect(screen.queryByRole("button")).toBeNull();
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
   expect(sent.some((m) => m.type === "key")).toBe(false);
+});
+
+test("init carries focus, visibility and selection, and the frame relays focus and selection", () => {
+  const { port, sent, deliver } = fakePort();
+  let seen: KiboSdk | null = null;
+  const SdkProbe = () => {
+    seen = useSdk();
+    return null;
+  };
+  mounts.push(mountSandboxed({ ...manifest, capabilities: ["fullscreen"], selection: true }, SdkProbe, port));
+  deliver({
+    ...init,
+    surface: "widget",
+    format: "medium",
+    capabilities: ["fullscreen"],
+    focus: false,
+    visible: false,
+    selection: null,
+  });
+  const sdk = (): KiboSdk => {
+    if (!seen) throw new Error("the probe did not render");
+    return seen;
+  };
+  expect(sdk().visibility.visible()).toBe(false);
+  expect(sdk().capabilities).toEqual(["fullscreen"]);
+  sdk().focus.request();
+  expect(sent.at(-1)).toEqual({ kibo: 1, type: "focus", on: true });
+  sdk().focus.exit();
+  expect(sent.at(-1)).toEqual({ kibo: 1, type: "focus", on: false });
+  deliver({ kibo: 1, type: "focus", active: true });
+  expect(sdk().focus.active()).toBe(true);
+  deliver({ kibo: 1, type: "visibility", visible: true });
+  expect(sdk().visibility.visible()).toBe(true);
+  deliver({ kibo: 1, type: "selection", selection: { kind: "ticket", ids: ["t1"] } });
+  expect(sdk().selection.get()).toEqual({ kind: "ticket", ids: ["t1"] });
+  sdk().selection.set(null);
+  expect(sent.at(-1)).toEqual({ kibo: 1, type: "selection", selection: null });
+  expect(sdk().selection.get()).toBeNull();
+});
+
+test("without init values the frame is visible, out of focus and without selection", () => {
+  const { port } = fakePort();
+  const frame = createFrameSdk(ComponentManifest.parse(manifest), init, port);
+  expect(frame.sdk.visibility.visible()).toBe(true);
+  expect(frame.sdk.focus.active()).toBe(false);
+  expect(frame.sdk.selection.get()).toBeNull();
+  frame.dispose();
+});
+
+test("the frame neutralises undeclared capabilities while mounted", () => {
+  const { port, deliver } = fakePort();
+  const getContext = HTMLCanvasElement.prototype.getContext;
+  const unmount = mountSandboxed(manifest, Probe, port);
+  expect(HTMLCanvasElement.prototype.getContext).toBe(getContext);
+  deliver(init);
+  expect(HTMLCanvasElement.prototype.getContext).not.toBe(getContext);
+  expect(Reflect.get(window, "AudioContext")).toBeUndefined();
+  act(() => unmount());
+  expect(HTMLCanvasElement.prototype.getContext).toBe(getContext);
 });
 
 function FormatProbe() {

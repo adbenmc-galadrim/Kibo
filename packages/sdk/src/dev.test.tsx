@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { act, fireEvent, screen } from "@testing-library/react";
 import { mountDev } from "./dev";
-import { useEntities, useSdk } from "./react";
+import { useEntities, useFocusMode, useSdk, useVisible } from "./react";
 
 const manifest = {
   id: "acme.preview",
@@ -73,6 +73,38 @@ test("mountDev offers only the declared formats", async () => {
     "288px",
     "272px",
   ]);
+});
+
+function ModeProbe() {
+  const visible = useVisible();
+  const focus = useFocusMode();
+  return (
+    <p>
+      {visible ? "visible" : "hidden"} · {focus.active ? "focused" : "inline"}
+    </p>
+  );
+}
+
+test("mountDev toggles visibility, and focus mode when the component declares it", async () => {
+  document.body.innerHTML = '<div id="root"></div>';
+  await act(async () => mountDev({ ...manifest, capabilities: ["fullscreen"] }, ModeProbe));
+  expect(await screen.findByText("visible · inline")).toBeDefined();
+  const visibleToggle = screen.getByRole("button", { name: "Visible" });
+  expect(visibleToggle.getAttribute("aria-pressed")).toBe("true");
+  await act(async () => fireEvent.click(visibleToggle));
+  expect(await screen.findByText("hidden · inline")).toBeDefined();
+  expect(visibleToggle.getAttribute("aria-pressed")).toBe("false");
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Mode plein écran" })));
+  expect(await screen.findByText("hidden · focused")).toBeDefined();
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Large" })));
+  expect(await screen.findByText("hidden · focused")).toBeDefined();
+});
+
+test("mountDev hides the focus toggle without the fullscreen capability", async () => {
+  document.body.innerHTML = '<div id="root"></div>';
+  await act(async () => mountDev(manifest, ModeProbe));
+  expect(await screen.findByText("visible · inline")).toBeDefined();
+  expect(screen.queryByRole("button", { name: "Mode plein écran" })).toBeNull();
 });
 
 test("mountDev rejects an invalid manifest", () => {

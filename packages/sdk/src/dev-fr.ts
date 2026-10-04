@@ -15,5 +15,8 @@ export const devFr = {
     full: "Plein écran",
   } satisfies Record<ComponentFormat, string>,
   theme: "Thème",
+  modes: "Modes",
+  visible: "Visible",
+  focus: "Mode plein écran",
   hint: "Aperçu local avec le jeu de données fictif ; rien n'est envoyé au démon.",
 };
