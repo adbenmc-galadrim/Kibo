@@ -9,6 +9,14 @@
     "active": true,
     "createUpdaterArtifacts": true,
     "targets": "all",
+    "shortDescription": "Centre de contrôle local pour tes projets de code",
+    "longDescription": "Kibo organise tes projets de code en pages et composants : Kanban, tickets, graphe, notes.\nIl lance Claude Code en local sur tes tickets, sans jamais quitter ta machine.\nLocal-first : tes données restent dans ~/.kibo.",
+    "category": "DeveloperTool",
+    "copyright": "© 2026 Adam Ben Mchichi",
+    "publisher": "Kibo",
+    "homepage": "https://github.com/adbenmc-galadrim/Kibo",
+    "license": "MIT",
+    "licenseFile": "../../../LICENSE",
     "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
     "resources": {
       "../../../packages/ui/dist/": "ui/",
@@ -19,12 +27,24 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/256x256.png",
+      "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],
     "linux": {
-      "deb": { "depends": ["bubblewrap"] },
+      "deb": { "depends": ["bubblewrap"], "desktopTemplate": "linux/kibo.desktop.hbs" },
       "rpm": { "depends": ["bubblewrap"] }
+    },
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "12.0",
+      "dmg": {
+        "background": "../dmg/background.png",
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 180, "y": 170 },
+        "applicationFolderPosition": { "x": 480, "y": 170 }
+      }
     }
   },
   "plugins": {
