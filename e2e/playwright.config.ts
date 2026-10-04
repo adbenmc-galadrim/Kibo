@@ -147,6 +147,8 @@ const allDaemons = [
   { name: "about-light", scheme: "light", port: 4450, spec: /about\.spec\.ts/, scenario: "question" },
   { name: "help-dark", scheme: "dark", port: 4451, spec: /help\.spec\.ts/, scenario: "question" },
   { name: "help-light", scheme: "light", port: 4452, spec: /help\.spec\.ts/, scenario: "question" },
+  { name: "backups-dark", scheme: "dark", port: 4447, spec: /backups\.spec\.ts/, scenario: "question" },
+  { name: "backups-light", scheme: "light", port: 4448, spec: /backups\.spec\.ts/, scenario: "question" },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
