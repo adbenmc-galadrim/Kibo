@@ -1,4 +1,13 @@
-import { Instance, inGrid, isFormatLayout, KiboError, type Layout, layoutFor, overlaps } from "@kibo/schema";
+import {
+  compactLayouts,
+  Instance,
+  inGrid,
+  isFormatLayout,
+  KiboError,
+  type Layout,
+  layoutFor,
+  overlaps,
+} from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { assertInstanceData, dropInstanceData, replaceInstanceData } from "./instance-data";
 import { getNode } from "./tree";
@@ -19,12 +28,33 @@ export function getInstance(doc: LoroDoc, id: string): Instance {
   return Instance.parse(raw);
 }
 
-function assertPlaceable(doc: LoroDoc, pageId: string, layout: Layout, self: string | null): void {
+function assertInGrid(layout: Layout): void {
   if (!inGrid(layout)) throw new KiboError("INVALID_INPUT", "layout is outside the grid");
   if (!isFormatLayout(layout)) throw new KiboError("INVALID_INPUT", "layout is not a component format");
-  const other = listInstances(doc, pageId).find((i) => i.id !== self && overlaps(i.layout, layout));
-  if (other !== undefined) throw new KiboError("INVALID_INPUT", `layout overlaps instance ${other.id}`);
 }
+
+const sameLayout = (a: Layout, b: Layout): boolean =>
+  a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+
+function compactPage(doc: LoroDoc, pageId: string, first: readonly string[]): Instance[] {
+  const page = listInstances(doc, pageId);
+  const compacted = compactLayouts(
+    page.map((i) => ({ id: i.id, layout: i.layout })),
+    first,
+  );
+  return page.map((i) => {
+    const layout = compacted.get(i.id) ?? i.layout;
+    if (sameLayout(layout, i.layout)) return i;
+    const next = { ...i, layout };
+    instances(doc).set(i.id, next);
+    return next;
+  });
+}
+
+const belowAll = (doc: LoroDoc, pageId: string): Layout => ({
+  ...DEFAULT_LAYOUT,
+  y: Math.max(0, ...listInstances(doc, pageId).map((i) => i.layout.y + i.layout.h)),
+});
 
 export function addInstance(
   doc: LoroDoc,
@@ -44,21 +74,23 @@ export function addInstance(
     id: crypto.randomUUID(),
     pageId: input.pageId,
     component: input.component,
-    layout: input.layout ?? DEFAULT_LAYOUT,
+    layout: input.layout ?? belowAll(doc, input.pageId),
     config: input.config ?? {},
     componentHash: input.componentHash ?? null,
   });
   if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
-  if (input.layout !== undefined) assertPlaceable(doc, input.pageId, parsed.data.layout, null);
+  if (input.layout !== undefined) assertInGrid(parsed.data.layout);
   instances(doc).set(parsed.data.id, parsed.data);
+  compactPage(doc, input.pageId, input.layout === undefined ? [] : [parsed.data.id]);
   doc.commit();
-  return parsed.data;
+  return getInstance(doc, parsed.data.id);
 }
 
 export function removeInstance(doc: LoroDoc, id: string): void {
-  getInstance(doc, id);
+  const { pageId } = getInstance(doc, id);
   instances(doc).delete(id);
   dropInstanceData(doc, id);
+  compactPage(doc, pageId, []);
   doc.commit();
 }
 
@@ -113,8 +145,41 @@ export function setInstanceLayout(doc: LoroDoc, instanceId: string, layout: Layo
   const current = getInstance(doc, instanceId);
   const parsed = Instance.safeParse({ ...current, layout });
   if (!parsed.success) throw new KiboError("INVALID_INPUT", parsed.error.message);
-  assertPlaceable(doc, current.pageId, parsed.data.layout, current.id);
+  assertInGrid(parsed.data.layout);
   instances(doc).set(current.id, parsed.data);
+  compactPage(doc, current.pageId, [current.id]);
   doc.commit();
-  return parsed.data;
+  return getInstance(doc, current.id);
+}
+
+export function setPageLayout(
+  doc: LoroDoc,
+  pageId: string,
+  layouts: readonly { instanceId: string; layout: Layout }[],
+): Instance[] {
+  getNode(doc.getTree("pages"), pageId);
+  if (layouts.length === 0) throw new KiboError("INVALID_INPUT", "setPageLayout needs at least one layout");
+  const listed = layouts.map(({ instanceId, layout }) => {
+    const current = getInstance(doc, instanceId);
+    if (current.pageId !== pageId) {
+      throw new KiboError("INVALID_INPUT", `instance ${instanceId} is not on page ${pageId}`);
+    }
+    assertInGrid(layout);
+    return { ...current, layout };
+  });
+  for (const [i, a] of listed.entries()) {
+    for (const b of listed.slice(i + 1)) {
+      if (overlaps(a.layout, b.layout)) {
+        throw new KiboError("INVALID_INPUT", `layouts of ${a.id} and ${b.id} overlap`);
+      }
+    }
+  }
+  for (const instance of listed) instances(doc).set(instance.id, instance);
+  const pinned = listed
+    .map((i) => ({ id: i.id, layout: i.layout }))
+    .sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x || (a.id < b.id ? -1 : 1))
+    .map((i) => i.id);
+  const result = compactPage(doc, pageId, pinned);
+  doc.commit();
+  return result;
 }

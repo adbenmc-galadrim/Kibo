@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { type Instance, KiboError, type Layout, layoutFor, Page, type RpcRequest } from "@kibo/schema";
+import {
+  compactLayouts,
+  type Instance,
+  KiboError,
+  type Layout,
+  layoutFor,
+  Page,
+  type RpcRequest,
+} from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -126,10 +134,15 @@ describe("layout editor", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(screen.queryByRole("alert")).toBeNull();
     const saved = new Map(core.snapshot().instances.map((i) => [i.id, i.layout]));
-    expect(saved).toEqual(new Map(shown).set(first.id, layoutFor("medium", 0, 0)));
+    const draft = new Map(shown).set(first.id, layoutFor("medium", 0, 0));
+    const compacted = compactLayouts(
+      [...draft].map(([id, layout]) => ({ id, layout })),
+      [first.id],
+    );
+    expect(saved).toEqual(compacted);
   });
 
-  test("a widget moved meanwhile by another member is not moved back, the conflicting change is refused", async () => {
+  test("a widget moved meanwhile by another member is not moved back", async () => {
     const user = userEvent.setup();
     const core = createMockSdk({
       id: "probe",
@@ -160,14 +173,12 @@ describe("layout editor", () => {
     core.run({ method: "setInstanceLayout", instanceId: ticketsId, layout: layoutFor("medium", 0, 6) });
     view.rerender(editor(core.snapshot().instances));
     await user.click(screen.getByRole("button", { name: "Format de Kanban" }));
-    await user.click(screen.getByRole("menuitemradio", { name: /Plein écran/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /Moyen · 6 × 3/ }));
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toContain("La disposition de Kanban n'a pas été enregistrée.");
-    expect(onClose).not.toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
     const saved = new Map(core.snapshot().instances.map((i) => [i.component, i.layout]));
-    expect(saved.get("tickets@1.0.0")).toEqual(layoutFor("medium", 0, 6));
-    expect(saved.get("kanban@1.0.0")).toEqual(layoutFor("large", 0, 0));
+    expect(saved.get("kanban@1.0.0")).toEqual(layoutFor("medium", 0, 0));
+    expect(saved.get("tickets@1.0.0")).toEqual(layoutFor("medium", 0, 3));
   });
 
   test("a refused command keeps the editor open with the error, Cancel and Escape restore", async () => {

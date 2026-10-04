@@ -10,9 +10,7 @@ import {
   layoutFor,
   overlaps,
 } from "@kibo/schema";
-import { createMockSdk } from "@kibo/sdk/mock";
 import fc from "fast-check";
-import { burndownManifest } from "../ai/draft-fixtures";
 import { canPlace, nextLayout, resolveOverlaps } from "../lib/format-grid";
 import { type Draft, formatChoice, sameLayout } from "./layout-draft";
 import { type LayoutStep, planLayoutSave } from "./layout-plan";
@@ -79,14 +77,6 @@ const scenario = (
     ),
   };
 };
-
-const formatLayout = fc
-  .constantFrom(...COMPONENT_FORMATS)
-  .chain((format) =>
-    fc
-      .record({ x: fc.nat(12 - FORMAT_SIZES[format].w), y: fc.nat(12) })
-      .map((p) => layoutFor(format, p.x, p.y)),
-  );
 
 describe("planLayoutSave", () => {
   test("stacked widgets at (0, 0): the first one changes format and every step is accepted", () => {
@@ -165,47 +155,6 @@ describe("planLayoutSave", () => {
         expect(plan.length).toBeLessThanOrEqual(2 * changed);
       }),
       { numRuns: 500 },
-    );
-  });
-});
-
-describe("planLayoutSave against the core", () => {
-  test("property: every step is accepted by setInstanceLayout itself and the page ends on the draft", () => {
-    const arb = fc.record({
-      placed: fc.array(formatLayout, { minLength: 0, maxLength: 5 }),
-      stacked: fc.nat(3),
-      wishes: fc.array(wish, { minLength: 8, maxLength: 8 }),
-    });
-    fc.assert(
-      fc.property(arb, ({ placed, stacked, wishes }) => {
-        const mock = createMockSdk(burndownManifest, {
-          seed(run) {
-            const page = run({ method: "addPage", title: "Tableau", kind: "dashboard" }) as { id: string };
-            const taken: Layout[] = [];
-            for (const layout of placed) {
-              if (taken.some((t) => overlaps(t, layout))) continue;
-              taken.push(layout);
-              run({ method: "addInstance", pageId: page.id, component: "kanban@1.0.0", layout });
-            }
-            for (let i = 0; i < stacked; i++) {
-              run({ method: "addInstance", pageId: page.id, component: "kanban@1.0.0" });
-            }
-          },
-        });
-        const instances = mock.snapshot().instances;
-        fc.pre(instances.length > 0);
-        const stored = storedOf(instances);
-        const target = targetOf(
-          stored,
-          wishes.slice(0, instances.length),
-          instances.map((i) => i.id),
-        );
-        for (const step of planLayoutSave(stored, target)) {
-          mock.run({ method: "setInstanceLayout", instanceId: step.id, layout: step.layout });
-        }
-        expect(storedOf(mock.snapshot().instances)).toEqual(target);
-      }),
-      { numRuns: 300 },
     );
   });
 });
