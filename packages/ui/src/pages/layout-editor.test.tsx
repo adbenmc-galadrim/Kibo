@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { type Instance, KiboError, type Layout, layoutFor, Page, type RpcRequest } from "@kibo/schema";
+import {
+  DEFAULT_SIZE_LIMITS,
+  type Instance,
+  KiboError,
+  type Layout,
+  layoutFor,
+  Page,
+  type RpcRequest,
+  type SizeLimits,
+} from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -44,13 +53,17 @@ beforeEach(() => {
   onClose = mock(() => {});
 });
 
-const show = (instances = [kanban(layoutFor("large", 0, 0)), tickets(layoutFor("large", 6, 0))]) =>
+const show = (
+  instances = [kanban(layoutFor("large", 0, 0)), tickets(layoutFor("large", 6, 0))],
+  limits: Readonly<Record<string, SizeLimits>> = {},
+) =>
   render(
     <LayoutEditor
       projectId="p1"
       page={dashboard}
       instances={instances}
       formatsFor={() => ["medium", "large", "half", "full"]}
+      limitsFor={(i) => limits[i.id] ?? DEFAULT_SIZE_LIMITS}
       renderWidget={(i) => <p>{i.component}</p>}
       onClose={onClose}
     />,
@@ -64,6 +77,22 @@ const cellOf = (id: string): string | null => {
   return `${Number(column[1]) - 1},${Number(row[1]) - 1},${column[2]},${row[2]}`;
 };
 const press = (code: string) => fireEvent.keyDown(document.activeElement ?? document, { key: code, code });
+const statusWith = (text: string) =>
+  screen.getAllByRole("status").find((s) => s.textContent?.includes(text))?.textContent ?? null;
+const KANBAN_LIMITS = { kanban: { min: { w: 6, h: 4 }, max: { w: 12, h: 12 } } };
+const GRID_WIDTH = 1232;
+const COLUMN = (GRID_WIDTH - 32 - 11 * 16) / 12;
+const withGridWidth = async (run: () => Promise<void>) => {
+  const owner = HTMLElement.prototype;
+  const before = Object.getOwnPropertyDescriptor(owner, "clientWidth");
+  Object.defineProperty(owner, "clientWidth", { configurable: true, get: () => GRID_WIDTH });
+  try {
+    await run();
+  } finally {
+    if (before) Object.defineProperty(owner, "clientWidth", before);
+    else Reflect.deleteProperty(owner, "clientWidth");
+  }
+};
 const tick = () => new Promise((r) => setTimeout(r, 0));
 const pickAndMove = async (title: string, codes: readonly string[]) => {
   screen.getByRole("button", { name: `Déplacer ${title}` }).focus();
@@ -122,9 +151,7 @@ describe("layout editor", () => {
       "ArrowLeft",
       "ArrowLeft",
     ]);
-    await waitFor(() =>
-      expect(screen.getByRole("status").textContent).toBe("Tickets : colonne 1, rangée 1."),
-    );
+    await waitFor(() => expect(statusWith("Tickets")).toBe("Tickets : colonne 1, rangée 1."));
     expect(document.querySelector("[data-ghost]")?.getAttribute("data-ghost")).toBe("free");
     expect(cellOf("kanban")).toBe("0,3,6,6");
     await act(async () => press("Space"));
@@ -165,6 +192,7 @@ describe("layout editor", () => {
         page={{ ...dashboard, id: page.id }}
         instances={instances}
         formatsFor={() => ["medium", "large", "half", "full"]}
+        limitsFor={() => DEFAULT_SIZE_LIMITS}
         renderWidget={(i) => <p>{i.component}</p>}
         onClose={onClose}
       />
@@ -222,6 +250,52 @@ describe("layout editor", () => {
     await new Promise((r) => setTimeout(r, 60));
     fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("the corner handle resizes by cells, shows the size, and compacts the neighbours live", () =>
+    withGridWidth(async () => {
+      show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })], KANBAN_LIMITS);
+      expect(screen.getByText("Taille · 6 × 6")).toBeTruthy();
+      const handle = screen.getByRole("button", { name: "Redimensionner Kanban (coin)" });
+      fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+      fireEvent.pointerMove(handle, { clientX: 2 * (COLUMN + 16), clientY: 80 + 16, pointerId: 1 });
+      expect(statusWith("cases")).toBe("8 × 7 cases");
+      expect(cellOf("kanban")).toBe("0,0,8,7");
+      expect(cellOf("tickets")).toBe("6,7,6,3");
+      expect(screen.getByText("Taille · 8 × 7")).toBeTruthy();
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,8,7");
+      expect(cellOf("tickets")).toBe("6,7,6,3");
+      expect(toolbar().textContent).toContain("2 changements");
+    }));
+
+  test("the handle stops at the manifest minimum and Escape during a resize cancels it only", () =>
+    withGridWidth(async () => {
+      show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })], KANBAN_LIMITS);
+      const handle = screen.getByRole("button", { name: "Redimensionner Kanban (droite)" });
+      fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+      fireEvent.pointerMove(handle, { clientX: -3 * (COLUMN + 16), clientY: 400, pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,6,6");
+      fireEvent.pointerMove(handle, { clientX: 3 * (COLUMN + 16), clientY: 0, pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,9,6");
+      fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(cellOf("kanban")).toBe("0,0,6,6");
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,6,6");
+      expect(toolbar().textContent).toContain("Aucun changement");
+    }));
+
+  test("Shift + arrows resize the focused widget within its limits", async () => {
+    show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })], KANBAN_LIMITS);
+    const user = userEvent.setup();
+    screen.getByRole("button", { name: "Redimensionner Kanban (droite)" }).focus();
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    expect(cellOf("kanban")).toBe("0,0,6,7");
+    await user.keyboard("{Shift>}{ArrowLeft}{/Shift}");
+    expect(cellOf("kanban")).toBe("0,0,6,7");
+    expect(statusWith("cases")).toBe("Kanban : 6 × 7 cases.");
+    expect(toolbar().textContent).toContain("1 changement");
   });
 
   test("removing a widget is confirmed before the command", async () => {
