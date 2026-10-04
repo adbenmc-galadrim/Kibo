@@ -16,6 +16,7 @@ import { rpcRefusal } from "./rpc-refusal";
 import type { Service } from "./service";
 import { SESSION_COOKIE, sessionCookie } from "./sessions/cookie";
 import { deviceNameFromUserAgent } from "./sessions/device-name";
+import { readPairingField } from "./sessions/pairing-body";
 import { sessionRpc } from "./sessions/rpc";
 import { openSessionStore, type SessionCheck, type SessionStore } from "./sessions/session-store";
 import { serveUi } from "./ui-route";
@@ -107,16 +108,18 @@ export function startServer(opts: ServerOptions): RunningServer {
 
   const pairWithToken = async (req: Request, l: ListenInfo) => {
     if (l.remote) return fail("FORBIDDEN", "token pairing is only allowed on 127.0.0.1", 403);
-    const body = (await req.json().catch(() => null)) as { token?: unknown } | null;
-    if (typeof body?.token !== "string" || !sameSecret(body.token, opts.token)) {
+    const token = await readPairingField(req, "token");
+    if (token.tooLarge) return fail("TOO_LARGE", "pairing body too large", 413);
+    if (token.value === null || !sameSecret(token.value, opts.token)) {
       return fail("UNAUTHORIZED", "invalid pairing token", 401);
     }
     return paired(req, l);
   };
 
   const pairWithCode = async (req: Request, l: ListenInfo) => {
-    const body = (await req.json().catch(() => null)) as { code?: unknown } | null;
-    const outcome = typeof body?.code === "string" ? pairingCodes.redeem(body.code) : "invalid";
+    const code = await readPairingField(req, "code");
+    if (code.tooLarge) return fail("TOO_LARGE", "pairing body too large", 413);
+    const outcome = code.value === null ? "invalid" : pairingCodes.redeem(code.value);
     if (outcome === "rate-limited") return fail("RATE_LIMITED", "too many attempts, create a new code", 429);
     if (outcome === "invalid") return fail("UNAUTHORIZED", "invalid or expired code", 401);
     return paired(req, l);
