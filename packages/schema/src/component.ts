@@ -74,6 +74,8 @@ export const SDK_UI_PRIMITIVES = [
   "separator",
   "sheet",
   "skeleton",
+  "switch",
+  "table",
   "textarea",
   "tooltip",
 ] as const;
@@ -86,6 +88,10 @@ export const SHARED_SPECIFIERS: readonly string[] = [
   "@kibo/sdk/lib/utils",
   ...SDK_UI_PRIMITIVES.map((n) => `@kibo/sdk/ui/${n}`),
 ];
+export const EMBEDDED_SPECIFIERS: readonly string[] = ["three", "@kibo/sdk/three", "@kibo/sdk/game"];
+export const EMBEDDED_PREFIXES: readonly string[] = ["three/addons/", "three/examples/jsm/"];
+export const isEmbeddedSpecifier = (spec: string): boolean =>
+  EMBEDDED_SPECIFIERS.includes(spec) || EMBEDDED_PREFIXES.some((prefix) => spec.startsWith(prefix));
 export const SERVER_SPECIFIERS: readonly string[] = ["@kibo/sdk/server", "@kibo/sdk/migrations"];
 export const TEST_SPECIFIERS: readonly string[] = [
   "bun:test",
