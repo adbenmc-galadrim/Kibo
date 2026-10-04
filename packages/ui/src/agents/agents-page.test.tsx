@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { KiboError, type RpcRequest } from "@kibo/schema";
+import { KiboError, type RpcRequest, runSubject } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
@@ -110,6 +110,27 @@ test("screen 121: a history line opens the run, the filter and the key search na
   expect(keys).toEqual(["KIB-18", "KIB-10", "KIB-16", "KIB-12", "KIB-14", "KIB-11"]);
   fireEvent.click(screen.getByRole("radio", { name: "Annulés" }));
   expect(screen.getByText("Aucun run ne correspond à ce filtre.")).toBeTruthy();
+});
+
+test("clicking anywhere on a history row opens that run, and only once", async () => {
+  const opened: string[] = [];
+  show((id) => opened.push(id));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("radio", { name: "Tous" }));
+  const rows = screen.getAllByRole("row").filter((r) => r.getAttribute("aria-label"));
+  expect(rows.length).toBeGreaterThan(2);
+  const second = rows[1];
+  if (!second) throw new Error("no second row");
+  const cells = within(second).getAllByRole("cell");
+  await user.click(cells[2] ?? second);
+  const expected = agentsFixture().runs.find((r) => runSubject(r) === second.getAttribute("aria-label"))?.id;
+  if (!expected) throw new Error("no run for the second row");
+  expect(opened).toEqual([expected]);
+  await user.click(within(second).getByRole("button"));
+  expect(opened).toEqual([expected, expected]);
+  for (const row of rows) {
+    expect(within(row).getByRole("button").className).not.toContain("after:absolute");
+  }
 });
 
 test("a new profile is created with its guidelines", async () => {

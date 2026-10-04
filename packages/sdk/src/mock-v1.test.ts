@@ -57,6 +57,36 @@ test("notes.create refuses an existing path and is used as write:note", async ()
   expect(m.used).toEqual(["write:note"]);
 });
 
+test("pasted images are attached and read back in memory, with the daemon's rules", async () => {
+  const m = createMockSdk({ ...base, reads: ["note"], writes: ["note"] }, { notes: { "a.md": "# A" } });
+  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+  expect(await m.sdk.notes.attach("a.md", "a-20261004-101500.png", "image/png", png)).toEqual({
+    path: "assets/a-20261004-101500.png",
+  });
+  expect(await m.sdk.notes.attach("a.md", "a-20261004-101500.png", "image/png", png)).toEqual({
+    path: "assets/a-20261004-101500-2.png",
+  });
+  const back = await m.sdk.notes.asset("assets/a-20261004-101500.png");
+  expect(back.mime).toBe("image/png");
+  expect([...back.bytes]).toEqual([...png]);
+  await expect(m.sdk.notes.asset("assets/none.png")).rejects.toThrow("NOT_FOUND");
+  await expect(m.sdk.notes.asset("assets/../a.md")).rejects.toThrow("INVALID_INPUT");
+  const html = new TextEncoder().encode("<html>");
+  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", html)).rejects.toThrow("INVALID_INPUT");
+  await expect(m.sdk.notes.attach("a.md", "../x.png", "image/png", png)).rejects.toThrow("INVALID_INPUT");
+  const big = new Uint8Array(2 * 1024 * 1024 + 1);
+  big.set(png);
+  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", big)).rejects.toThrow("TOO_LARGE");
+  expect(m.used).toEqual(["write:note", "read:note"]);
+});
+
+test("notes.attach needs write:note", async () => {
+  const m = createMockSdk({ ...base, reads: ["note"], writes: [] }, { notes: { "a.md": "# A" } });
+  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", png)).rejects.toThrow("PERMISSION_DENIED");
+  expect(m.violations).toEqual(["write note"]);
+});
+
 test("runs are served by list in both modes and notify run subscribers", async () => {
   const m = createMockSdk({ ...base, reads: ["ticket", "run"], writes: [] });
   const heard: string[] = [];

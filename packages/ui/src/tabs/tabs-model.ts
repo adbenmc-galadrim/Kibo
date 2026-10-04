@@ -133,3 +133,8 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       return action.state;
   }
 }
+
+export function closedTargets(before: TabsState, after: TabsState): TabTarget[] {
+  const kept = new Set(after.tabs.map((t) => t.id));
+  return before.tabs.filter((t) => !kept.has(t.id)).map((t) => t.target);
+}

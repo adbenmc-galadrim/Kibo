@@ -18,6 +18,7 @@ export const fr = {
   saving: "Enregistrement…",
   edit: "Modifier",
   preview: "Aperçu",
+  imageMissing: "Image introuvable",
   editor: "Contenu de la note",
   linkedTickets: "Tickets liés",
   backlinks: "Rétroliens",

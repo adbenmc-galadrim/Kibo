@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { EMPTY_TABS, type TabsState, type TabTarget } from "@kibo/schema";
-import { activeTarget, tabsReducer } from "./tabs-model";
+import { activeTarget, closedTargets, tabsReducer } from "./tabs-model";
 import { hashToTarget, targetToHash } from "./target-hash";
 import { shortcutFor } from "./use-tab-shortcuts";
 
@@ -168,4 +168,30 @@ test("shortcuts use ⌘ on macOS and Ctrl elsewhere", () => {
   expect(shortcutFor(key("3", { metaKey: true }), true)).toEqual({ kind: "activate", index: 2 });
   expect(shortcutFor(key("P", { metaKey: true, shiftKey: true }), true)).toEqual({ kind: "togglePin" });
   expect(shortcutFor(key("t"), true)).toBeNull();
+});
+
+test("closedTargets lists the targets that left the state, pinned tabs excluded by the reducer", () => {
+  const state: TabsState = {
+    tabs: [
+      { id: "a", target: page("1"), pinned: true },
+      { id: "b", target: page("2"), pinned: false },
+      { id: "c", target: page("3"), pinned: false },
+    ],
+    activeId: "b",
+    recents: [],
+  };
+  expect(closedTargets(state, tabsReducer(state, { type: "close", id: "b" }))).toEqual([page("2")]);
+  expect(closedTargets(state, tabsReducer(state, { type: "closeOthers", id: "c" }))).toEqual([page("2")]);
+  expect(closedTargets(state, tabsReducer(state, { type: "close", id: "a" }))).toEqual([]);
+  expect(closedTargets(state, tabsReducer(state, { type: "activate", id: "c" }))).toEqual([]);
+});
+
+test("⌘⇧T asks to reopen the last closed tab", () => {
+  const base = { metaKey: true, ctrlKey: false, altKey: false, shiftKey: true };
+  expect(shortcutFor({ ...base, key: "T" }, true)).toEqual({ kind: "reopen" });
+  expect(shortcutFor({ ...base, key: "t" }, true)).toEqual({ kind: "reopen" });
+  expect(shortcutFor({ ...base, key: "p" }, true)).toEqual({ kind: "togglePin" });
+  expect(shortcutFor({ ...base, metaKey: false, ctrlKey: true, key: "t" }, false)).toEqual({
+    kind: "reopen",
+  });
 });

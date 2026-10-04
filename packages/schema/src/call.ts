@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { ProjectCommand } from "./command";
+import { Base64 } from "./ids";
 import { DataKey } from "./instance";
 import { McpImportItem, McpServerId } from "./integrations";
 import { BuiltinEntityType } from "./manifest";
-import { NotePath } from "./note";
+import { AssetMime, AssetName, AssetPath, MAX_ASSET_BASE64, NotePath } from "./note";
 
 export const FetchInit = z.object({
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]).default("GET"),
@@ -35,6 +36,14 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("notes.remove"), path: NotePath }),
   z.object({ kind: z.literal("notes.search"), query: z.string().max(200) }),
   z.object({ kind: z.literal("notes.info") }),
+  z.object({
+    kind: z.literal("notes.attach"),
+    notePath: NotePath,
+    name: AssetName,
+    mime: AssetMime,
+    bytes: z.string().max(MAX_ASSET_BASE64).pipe(Base64),
+  }),
+  z.object({ kind: z.literal("notes.asset"), path: AssetPath }),
   z.object({
     kind: z.literal("mcp.call"),
     server: McpServerId,

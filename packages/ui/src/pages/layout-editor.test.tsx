@@ -1,7 +1,16 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { type Instance, KiboError, type Layout, layoutFor, Page, type RpcRequest } from "@kibo/schema";
+import {
+  DEFAULT_SIZE_LIMITS,
+  type Instance,
+  KiboError,
+  type Layout,
+  layoutFor,
+  Page,
+  type RpcRequest,
+  type SizeLimits,
+} from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
@@ -23,8 +32,7 @@ mock.module("../api", () => ({
 }));
 
 const { LayoutEditor } = await import("./LayoutEditor");
-const { moveWidget, changedIds } = await import("./layout-draft");
-const { cellMetrics, resolveOverlaps } = await import("../lib/format-grid");
+const { shortcutFormats } = await import("./layout-draft");
 
 const dashboard: Page = { id: "pg", title: "Tableau de bord", kind: "dashboard", parentId: null };
 const widget = (id: string, component: string, layout: Layout): Instance => ({
@@ -45,91 +53,124 @@ beforeEach(() => {
   onClose = mock(() => {});
 });
 
-const show = (instances = [kanban(layoutFor("large", 0, 0)), tickets(layoutFor("large", 6, 0))]) =>
+const show = (
+  instances = [kanban(layoutFor("large", 0, 0)), tickets(layoutFor("large", 6, 0))],
+  limits: Readonly<Record<string, SizeLimits>> = {},
+) =>
   render(
     <LayoutEditor
       projectId="p1"
       page={dashboard}
       instances={instances}
       formatsFor={() => ["medium", "large", "half", "full"]}
+      limitsFor={(i) => limits[i.id] ?? DEFAULT_SIZE_LIMITS}
       renderWidget={(i) => <p>{i.component}</p>}
       onClose={onClose}
     />,
   );
 const toolbar = () => screen.getByRole("toolbar", { name: "Disposition" });
+const cellOf = (id: string): string | null => {
+  const el = document.querySelector<HTMLElement>(`[data-instance="${id}"]`);
+  const column = /^(\d+) \/ span (\d+)$/.exec(el?.style.gridColumn ?? "");
+  const row = /^(\d+) \/ span (\d+)$/.exec(el?.style.gridRow ?? "");
+  if (!column || !row) return null;
+  return `${Number(column[1]) - 1},${Number(row[1]) - 1},${column[2]},${row[2]}`;
+};
+const press = (code: string) => fireEvent.keyDown(document.activeElement ?? document, { key: code, code });
+const statusWith = (text: string) =>
+  screen.getAllByRole("status").find((s) => s.textContent?.includes(text))?.textContent ?? null;
+const KANBAN_LIMITS = { kanban: { min: { w: 6, h: 4 }, max: { w: 12, h: 12 } } };
+const GRID_WIDTH = 1232;
+const COLUMN = (GRID_WIDTH - 32 - 11 * 16) / 12;
+const withGridWidth = async (run: () => Promise<void>) => {
+  const owner = HTMLElement.prototype;
+  const before = Object.getOwnPropertyDescriptor(owner, "clientWidth");
+  Object.defineProperty(owner, "clientWidth", { configurable: true, get: () => GRID_WIDTH });
+  try {
+    await run();
+  } finally {
+    if (before) Object.defineProperty(owner, "clientWidth", before);
+    else Reflect.deleteProperty(owner, "clientWidth");
+  }
+};
+const tick = () => new Promise((r) => setTimeout(r, 0));
+const pickAndMove = async (title: string, codes: readonly string[]) => {
+  screen.getByRole("button", { name: `Déplacer ${title}` }).focus();
+  await act(async () => {
+    press("Space");
+    await tick();
+  });
+  for (const code of codes) await act(async () => press(code));
+};
 
 describe("layout editor", () => {
-  test("screen 127/128: Format menu offers the declared formats, disables what does not fit, and Save sends one command per change", async () => {
+  test("screen 127/128: the format menu lists the formats, always enabled, and Save sends one setPageLayout", async () => {
     const user = userEvent.setup();
-    show();
+    show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })]);
     expect(toolbar().textContent).toContain("Aucun changement");
-    expect(screen.getByRole("button", { name: "Déplacer Kanban" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Format de Tickets" }));
-    expect(screen.getByRole("menuitemradio", { name: /Large · 6 × 6/ }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
-    const full = screen.getByRole("menuitemradio", { name: /Plein écran/ });
-    expect(full.getAttribute("aria-disabled")).toBe("true");
-    expect(full.textContent).toContain("Pas de place");
-    expect(screen.getByText("Un composant s'adapte à chacun de ses formats.")).toBeTruthy();
-    await user.click(screen.getByRole("menuitemradio", { name: /Moyen · 6 × 3/ }));
-    expect(toolbar().textContent).toContain("1 changement");
+    expect(screen.getByText("Raccourcis de taille")).toBeTruthy();
+    const items = screen.getAllByRole("menuitemradio");
+    expect(items.map((i) => i.textContent)).toEqual([
+      "Moyen · 6 × 3",
+      "Large · 6 × 6",
+      "Demi-page · 12 × 6",
+      "Plein écran · 12 × 9",
+    ]);
+    for (const item of items) expect(item.getAttribute("aria-disabled")).not.toBe("true");
+    expect(screen.queryByText(/Pas de place/)).toBeNull();
+    await user.click(screen.getByRole("menuitemradio", { name: /^Demi-page/ }));
+    expect(cellOf("tickets")).toBe("0,0,12,6");
+    expect(cellOf("kanban")).toBe("0,6,6,6");
+    expect(toolbar().textContent).toContain("2 changements");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(calls).toEqual([
       {
         method: "command",
         projectId: "p1",
-        command: { method: "setInstanceLayout", instanceId: "tickets", layout: layoutFor("medium", 6, 0) },
+        command: {
+          method: "setPageLayout",
+          pageId: "pg",
+          layouts: [
+            { instanceId: "tickets", layout: { x: 0, y: 0, w: 12, h: 6 } },
+            { instanceId: "kanban", layout: { x: 0, y: 6, w: 6, h: 6 } },
+          ],
+        },
       },
     ]);
   });
 
-  test("widgets stacked at (0, 0) by addInstance save a new format in an order the core accepts", async () => {
-    const user = userEvent.setup();
-    const core = createMockSdk({
-      id: "probe",
-      version: "0.1.0",
-      kind: "widget",
-      title: "Probe",
-      reads: [],
-      writes: [],
-    });
-    const page = Page.parse(core.run({ method: "addPage", title: "Tableau de bord", kind: "dashboard" }));
-    for (const component of ["kanban@1.0.0", "tickets@1.0.0", "graph@1.0.0"]) {
-      core.run({ method: "addInstance", pageId: page.id, component });
-    }
-    answer = (req) => (req.method === "command" ? core.run(req.command) : null);
-    const instances = core.snapshot().instances;
-    const shown = resolveOverlaps(instances);
-    const first = instances.find((i) => shown.get(i.id)?.y === 0);
-    if (!first) throw new Error("no first widget");
-    render(
-      <LayoutEditor
-        projectId="p1"
-        page={{ ...dashboard, id: page.id }}
-        instances={instances}
-        formatsFor={() => ["medium", "large", "half"]}
-        renderWidget={(i) => <p>{i.component}</p>}
-        onClose={onClose}
-      />,
-    );
-    const titles = new Map([
-      ["kanban@1.0.0", "Kanban"],
-      ["tickets@1.0.0", "Tickets"],
-      ["graph@1.0.0", "Graphe de dépendances"],
+  test("during a drag the other widgets flow live and no drop is refused", async () => {
+    show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })]);
+    await pickAndMove("Tickets", [
+      "ArrowLeft",
+      "ArrowLeft",
+      "ArrowLeft",
+      "ArrowLeft",
+      "ArrowLeft",
+      "ArrowLeft",
     ]);
-    await user.click(screen.getByRole("button", { name: `Format de ${titles.get(first.component)}` }));
-    await user.click(screen.getByRole("menuitemradio", { name: /Moyen · 6 × 3/ }));
-    expect(toolbar().textContent).toContain("1 changement");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(screen.queryByRole("alert")).toBeNull();
-    const saved = new Map(core.snapshot().instances.map((i) => [i.id, i.layout]));
-    expect(saved).toEqual(new Map(shown).set(first.id, layoutFor("medium", 0, 0)));
+    await waitFor(() => expect(statusWith("Tickets")).toBe("Tickets : colonne 1, rangée 1."));
+    expect(document.querySelector("[data-ghost]")?.getAttribute("data-ghost")).toBe("free");
+    expect(cellOf("kanban")).toBe("0,3,6,6");
+    await act(async () => press("Space"));
+    expect(cellOf("tickets")).toBe("0,0,6,3");
+    expect(cellOf("kanban")).toBe("0,3,6,6");
+    expect(screen.queryByText(/la place est prise/)).toBeNull();
+    expect(toolbar().textContent).toContain("2 changements");
   });
 
-  test("a widget moved meanwhile by another member is not moved back, the conflicting change is refused", async () => {
+  test("shortcutFormats keeps the declared formats within the manifest size limits", () => {
+    const size = { min: { w: 6, h: 4 } };
+    expect(shortcutFormats({ kind: "widget", formats: ["small", "medium", "large", "half"], size })).toEqual([
+      "large",
+      "half",
+    ]);
+    expect(shortcutFormats({ kind: "widget" })).toEqual(["medium", "large", "half"]);
+  });
+
+  test("a widget moved meanwhile by another member is not moved back", async () => {
     const user = userEvent.setup();
     const core = createMockSdk({
       id: "probe",
@@ -151,6 +192,7 @@ describe("layout editor", () => {
         page={{ ...dashboard, id: page.id }}
         instances={instances}
         formatsFor={() => ["medium", "large", "half", "full"]}
+        limitsFor={() => DEFAULT_SIZE_LIMITS}
         renderWidget={(i) => <p>{i.component}</p>}
         onClose={onClose}
       />
@@ -159,15 +201,15 @@ describe("layout editor", () => {
     const ticketsId = core.snapshot().instances.find((i) => i.component === "tickets@1.0.0")?.id ?? "";
     core.run({ method: "setInstanceLayout", instanceId: ticketsId, layout: layoutFor("medium", 0, 6) });
     view.rerender(editor(core.snapshot().instances));
+    expect(cellOf(ticketsId)).toBe("0,6,6,3");
     await user.click(screen.getByRole("button", { name: "Format de Kanban" }));
-    await user.click(screen.getByRole("menuitemradio", { name: /Plein écran/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /^Demi-page/ }));
+    expect(toolbar().textContent).toContain("1 changement");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toContain("La disposition de Kanban n'a pas été enregistrée.");
-    expect(onClose).not.toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
     const saved = new Map(core.snapshot().instances.map((i) => [i.component, i.layout]));
+    expect(saved.get("kanban@1.0.0")).toEqual(layoutFor("half", 0, 0));
     expect(saved.get("tickets@1.0.0")).toEqual(layoutFor("medium", 0, 6));
-    expect(saved.get("kanban@1.0.0")).toEqual(layoutFor("large", 0, 0));
   });
 
   test("a refused command keeps the editor open with the error, Cancel and Escape restore", async () => {
@@ -210,6 +252,52 @@ describe("layout editor", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  test("the corner handle resizes by cells, shows the size, and compacts the neighbours live", () =>
+    withGridWidth(async () => {
+      show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })], KANBAN_LIMITS);
+      expect(screen.getByText("Taille · 6 × 6")).toBeTruthy();
+      const handle = screen.getByRole("button", { name: "Redimensionner Kanban (coin)" });
+      fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+      fireEvent.pointerMove(handle, { clientX: 2 * (COLUMN + 16), clientY: 80 + 16, pointerId: 1 });
+      expect(statusWith("cases")).toBe("8 × 7 cases");
+      expect(cellOf("kanban")).toBe("0,0,8,7");
+      expect(cellOf("tickets")).toBe("6,7,6,3");
+      expect(screen.getByText("Taille · 8 × 7")).toBeTruthy();
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,8,7");
+      expect(cellOf("tickets")).toBe("6,7,6,3");
+      expect(toolbar().textContent).toContain("2 changements");
+    }));
+
+  test("the handle stops at the manifest minimum and Escape during a resize cancels it only", () =>
+    withGridWidth(async () => {
+      show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })], KANBAN_LIMITS);
+      const handle = screen.getByRole("button", { name: "Redimensionner Kanban (droite)" });
+      fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+      fireEvent.pointerMove(handle, { clientX: -3 * (COLUMN + 16), clientY: 400, pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,6,6");
+      fireEvent.pointerMove(handle, { clientX: 3 * (COLUMN + 16), clientY: 0, pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,9,6");
+      fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(cellOf("kanban")).toBe("0,0,6,6");
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+      expect(cellOf("kanban")).toBe("0,0,6,6");
+      expect(toolbar().textContent).toContain("Aucun changement");
+    }));
+
+  test("Shift + arrows resize the focused widget within its limits", async () => {
+    show([kanban({ x: 0, y: 0, w: 6, h: 6 }), tickets({ x: 6, y: 0, w: 6, h: 3 })], KANBAN_LIMITS);
+    const user = userEvent.setup();
+    screen.getByRole("button", { name: "Redimensionner Kanban (droite)" }).focus();
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    expect(cellOf("kanban")).toBe("0,0,6,7");
+    await user.keyboard("{Shift>}{ArrowLeft}{/Shift}");
+    expect(cellOf("kanban")).toBe("0,0,6,7");
+    expect(statusWith("cases")).toBe("Kanban : 6 × 7 cases.");
+    expect(toolbar().textContent).toContain("1 changement");
+  });
+
   test("removing a widget is confirmed before the command", async () => {
     const user = userEvent.setup();
     show();
@@ -225,28 +313,5 @@ describe("layout editor", () => {
         command: { method: "removeInstance", instanceId: "tickets" },
       }),
     );
-  });
-
-  test("a widget whose layout is no format takes the nearest format once moved", () => {
-    const m = cellMetrics(1200);
-    const step = m.column + m.gap;
-    const legacy = new Map([["a", { x: 0, y: 0, w: 5, h: 5 }]]);
-    const out = moveWidget(legacy, "a", { x: 2 * step, y: 0 }, m);
-    expect(out).toEqual({ layouts: new Map([["a", layoutFor("medium", 2, 0)]]), placed: true });
-  });
-
-  test("moveWidget moves a widget when the target cell is free and ignores an occupied one", () => {
-    const m = cellMetrics(1200);
-    const step = m.column + m.gap;
-    const draft = new Map([
-      ["a", layoutFor("small", 0, 0)],
-      ["b", layoutFor("small", 6, 0)],
-    ]);
-    const moved = moveWidget(draft, "a", { x: 3 * step, y: 0 }, m);
-    expect(moved.placed).toBe(true);
-    expect(moved.layouts.get("a")).toEqual(layoutFor("small", 3, 0));
-    expect(changedIds(draft, moved.layouts)).toEqual(["a"]);
-    const blocked = moveWidget(draft, "a", { x: 5 * step, y: 0 }, m);
-    expect(blocked).toEqual({ layouts: draft, placed: false });
   });
 });

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "kind": "widget",
   "formats": ["small", "medium", "large", "half"],
+  "size": { "min": { "w": 3, "h": 2 } },
   "title": "Source MCP",
   "description": "Liste des éléments d'un serveur MCP, un ticket par élément sur demande",
   "reads": ["ticket"],

@@ -1,5 +1,5 @@
 import type { TicketView } from "@kibo/schema";
-import { useEntities, useSdk } from "@kibo/sdk";
+import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -13,11 +13,10 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { Filter, Network, Sparkle } from "lucide-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
-import { criticalPath } from "./critical-path";
-import { domainsOf, type GraphFilter, graphInput } from "./filter";
+import { domainsOf, type GraphFilter } from "./filter";
 import { fr } from "./fr";
 import { GraphCanvas } from "./GraphCanvas";
-import { layoutGraph } from "./layout";
+import { initialFilter, useGraphData } from "./use-graph-data";
 
 const TOGGLE = "h-7 text-xs aria-pressed:bg-accent dark:aria-pressed:bg-accent";
 
@@ -114,34 +113,18 @@ function Toolbar(props: ToolbarProps) {
 
 export function GraphView() {
   const sdk = useSdk();
-  const tickets = useEntities("ticket");
-  const links = useEntities("link");
-  const runList = useEntities("run");
-  const runs = useMemo(() => new Map(runList.data.map((r) => [r.ticketId, r])), [runList.data]);
   const [showCritical, setShowCritical] = useState(true);
-  const [filter, setFilter] = useState<GraphFilter>({
-    assignee: sdk.config.filter === "all" ? "all" : "mine-and-agents",
-    hideDone: sdk.config.hideDone === true,
-    domain: null,
-  });
-  const input = useMemo(
-    () => graphInput(tickets.data, links.data, filter, sdk.viewer),
-    [tickets.data, links.data, filter, sdk.viewer],
-  );
-  const layout = useMemo(() => layoutGraph(input.tickets, input.edges), [input]);
-  const path = useMemo(() => criticalPath(input.tickets, input.edges), [input]);
+  const [filter, setFilter] = useState<GraphFilter>(() => initialFilter(sdk.config));
+  const { allTickets, input, layout, path, runs, loading, failed, hasBlocks } = useGraphData(filter);
   const critical = useMemo(() => new Set(showCritical ? path : []), [path, showCritical]);
   const blocked = input.tickets.filter((t) => path.includes(t.id) && t.statusId === "blocked").length;
-  const loading = tickets.loading || links.loading;
-  const failed = tickets.error !== null || links.error !== null || runList.error !== null;
-  const hasBlocks = input.edges.some((e) => e.type === "blocks");
 
   return (
     <TooltipProvider>
       <div className="flex h-full flex-col">
         <div className="flex items-center gap-2 border-b px-4 py-2">
           <Toolbar
-            tickets={tickets.data}
+            tickets={allTickets}
             filter={filter}
             setFilter={setFilter}
             showCritical={showCritical}

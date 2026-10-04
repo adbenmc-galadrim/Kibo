@@ -123,6 +123,25 @@ test("shortcuts are relayed to the host", () => {
   ]);
 });
 
+const pressBackspace = (target: EventTarget, key = "Backspace"): boolean => {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  target.dispatchEvent(event);
+  return event.defaultPrevented;
+};
+
+test("Backspace and Delete are neutralized in the frame outside editable fields", () => {
+  const { port, deliver } = fakePort();
+  const unmount = mountSandboxed(manifest, Probe, port);
+  deliver(init);
+  const field = document.body.appendChild(document.createElement("input"));
+  expect(pressBackspace(document.body)).toBe(true);
+  expect(pressBackspace(document.body, "Delete")).toBe(true);
+  expect(pressBackspace(field)).toBe(false);
+  act(() => unmount());
+  expect(pressBackspace(document.body)).toBe(false);
+  field.remove();
+});
+
 test("unmounting releases every listener and the rendered tree", async () => {
   const { port, sent, deliver, listeners } = fakePort();
   const unmount = mountSandboxed(manifest, Probe, port);

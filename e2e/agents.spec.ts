@@ -1,10 +1,13 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, createGitRepo, rpc, runState, seedWorkspace } from "./agents-seed";
+import { assign, createGitRepo, rpc, runState, type Seeded, seedWorkspace } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 test.setTimeout(180_000);
 test.use({ viewport: { width: 1440, height: 900 } });
+test.describe.configure({ mode: "serial" });
+
+let seeded: Seeded | null = null;
 
 let repo: string | null = null;
 test.afterAll(async () => {
@@ -39,7 +42,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await createOpusProfile(page, info);
 
   repo = createGitRepo();
-  const seeded = await seedWorkspace(page, repo);
+  seeded = await seedWorkspace(page, repo);
   await assign(page, seeded, 12, "opus-dev", "running");
   await assign(page, seeded, 14, "opus-dev", "waiting_input");
   const rules = await assign(page, seeded, 16, "opus-dev", "running");
@@ -116,4 +119,33 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   const review = page.getByRole("region", { name: "En review" });
   await expect(review.getByText("KIB-14")).toBeVisible();
   await expect(review.getByRole("article").filter({ hasText: "KIB-14" }).getByText("opus-dev")).toBeVisible();
+});
+
+test("l'historique ouvre le run cliqué, pour trois agents différents", async ({ page }, info) => {
+  if (!seeded) throw new Error("seed missing");
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await assign(page, seeded, 9, "haiku-tests", "queued");
+  await page.goto("/#/agents");
+  await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
+  await page
+    .getByRole("radiogroup", { name: "Filtrer par état" })
+    .getByRole("radio", { name: "Tous" })
+    .click();
+  const drawer = page.getByRole("region", { name: "Agents" });
+  for (const [profile, key] of [
+    ["sonnet-review", "KIB-7"],
+    ["haiku-tests", "KIB-9"],
+    ["opus-dev", "KIB-12"],
+  ] as const) {
+    await page
+      .getByRole("row", { name: new RegExp(`^${key} · `) })
+      .getByRole("cell")
+      .nth(2)
+      .click();
+    await expect(
+      drawer.getByRole("list", { name: new RegExp(`^Journal de ${profile}(-\\d+)?$`) }),
+    ).toBeVisible();
+    await expect(drawer.getByText(new RegExp(`^${key} · `)).first()).toBeVisible();
+  }
+  await shot(page, info, "historique-trois-agents");
 });

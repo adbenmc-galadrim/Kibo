@@ -16,6 +16,7 @@ import {
   setInstanceComponent,
   setInstanceConfig,
   setInstanceLayout,
+  setPageLayout,
 } from "./instances";
 import { localSyncInfo } from "./keys";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
@@ -92,6 +93,8 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return setInstanceConfig(doc, cmd.instanceId, cmd.config);
     case "setInstanceLayout":
       return setInstanceLayout(doc, cmd.instanceId, cmd.layout);
+    case "setPageLayout":
+      return setPageLayout(doc, cmd.pageId, cmd.layouts);
     case "setInstanceData":
       writeInstanceData(doc, cmd.instanceId, cmd.key, cmd.value);
       return null;

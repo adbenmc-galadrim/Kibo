@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { rpc } from "./agents-seed";
-import { e2eHome } from "./e2e-home";
+import { homeOf } from "./e2e-home";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import { projectKey } from "./repo-project";
 
@@ -10,12 +10,6 @@ test.setTimeout(240_000);
 
 const DRAFT = "hello";
 const TITLE = "Hello";
-
-function homeOf(info: TestInfo): string {
-  const base = info.project.use.baseURL;
-  if (!base) throw new Error(`project ${info.project.name} has no baseURL`);
-  return e2eHome(new URL(base).port);
-}
 
 async function openComponents(page: Page) {
   await page.getByRole("button", { name: "Composants", exact: true }).click();

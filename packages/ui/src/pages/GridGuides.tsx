@@ -1,8 +1,8 @@
+import type { Layout } from "@kibo/schema";
 import type { CellMetrics } from "../lib/format-grid";
 import { gridArea } from "./DashboardGrid";
-import type { Target } from "./layout-draft";
 
-export function GridGuides({ metrics, ghost }: { metrics: CellMetrics; ghost: Target | null }) {
+export function GridGuides({ metrics, ghost }: { metrics: CellMetrics; ghost: Layout | null }) {
   const offset = 16 - metrics.gap / 2;
   return (
     <>
@@ -19,9 +19,9 @@ export function GridGuides({ metrics, ghost }: { metrics: CellMetrics; ghost: Ta
       {ghost && (
         <div
           aria-hidden
-          data-ghost={ghost.free ? "free" : "taken"}
-          className={`pointer-events-none z-30 rounded-lg border-2 border-dashed ${ghost.free ? "border-ring bg-accent/40" : "border-destructive bg-destructive/10"}`}
-          style={gridArea(ghost.layout)}
+          data-ghost="free"
+          className="pointer-events-none z-30 rounded-lg border-2 border-dashed border-ring bg-accent/40"
+          style={gridArea(ghost)}
         />
       )}
     </>

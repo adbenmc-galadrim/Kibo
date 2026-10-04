@@ -1,4 +1,5 @@
 import {
+  type AssetMime,
   type CiRun,
   COMMAND_WRITES,
   type CommandResult,
@@ -19,6 +20,7 @@ import {
   ruleCovers,
   type Ticket,
 } from "@kibo/schema";
+import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import type {
   EntityMap,
   InstanceData,
@@ -105,6 +107,21 @@ function notesApi(guard: Guard, call: Call): NotesApi {
     async info() {
       guard.needRead("note");
       return call<NotesInfo>({ kind: "notes.info" });
+    },
+    async attach(notePath, name, mime, bytes) {
+      guard.needWrite("note");
+      return call<{ path: string }>({
+        kind: "notes.attach",
+        notePath,
+        name,
+        mime,
+        bytes: bytesToBase64(bytes),
+      });
+    },
+    async asset(path) {
+      guard.needRead("note");
+      const asset = await call<{ mime: AssetMime; bytes: string }>({ kind: "notes.asset", path });
+      return { mime: asset.mime, bytes: base64ToBytes(asset.bytes) };
     },
   };
 }

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "kind": "both",
   "formats": ["medium", "large", "half", "full"],
+  "size": { "min": { "w": 4, "h": 3 } },
   "title": "Tickets",
   "description": "Arbre des tickets, sous-tickets illimités",
   "reads": ["ticket", "status", "run"],

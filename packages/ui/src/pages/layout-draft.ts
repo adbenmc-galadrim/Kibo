@@ -1,58 +1,71 @@
 import {
   type ComponentFormat,
+  type ComponentManifest,
+  compactLayouts,
   FORMAT_SIZES,
-  formatOf,
+  type FormatSize,
+  formatsOf,
   GRID_COLUMNS,
   type Layout,
-  layoutFor,
-  nearestFormat,
+  sizeLimitsOf,
 } from "@kibo/schema";
-import { type CellMetrics, canPlace, dropTarget } from "../lib/format-grid";
+import { type CellMetrics, dropTarget } from "../lib/format-grid";
 
 export type Draft = ReadonlyMap<string, Layout>;
-export type Target = { layout: Layout; free: boolean };
-
-const othersThan = (layouts: Draft, id: string): Layout[] =>
-  [...layouts].filter(([other]) => other !== id).map(([, l]) => l);
+export type Preview = { layouts: Draft; landing: Layout };
 
 export const sameLayout = (a: Layout, b: Layout): boolean =>
   a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 
-export const asFormat = (l: Layout): Layout => layoutFor(formatOf(l) ?? nearestFormat(l), l.x, l.y);
+export const compactDraft = (layouts: Draft, first: readonly string[] = []): Draft =>
+  compactLayouts(
+    [...layouts].map(([id, layout]) => ({ id, layout })),
+    first,
+  );
 
-export function targetOf(
+const preview = (layouts: Draft, id: string, layout: Layout): Preview => {
+  const compacted = compactDraft(new Map(layouts).set(id, layout), [id]);
+  return { layouts: compacted, landing: compacted.get(id) ?? layout };
+};
+
+export function previewMove(
   layouts: Draft,
   id: string,
   delta: { x: number; y: number },
   m: CellMetrics,
-): Target | null {
+): Preview | null {
   const current = layouts.get(id);
-  if (!current) return null;
-  const layout = dropTarget(asFormat(current), delta, m);
-  return { layout, free: canPlace(layout, othersThan(layouts, id)) };
+  return current ? preview(layouts, id, dropTarget(current, delta, m)) : null;
 }
 
-export function moveWidget(
-  layouts: Draft,
-  id: string,
-  delta: { x: number; y: number },
-  m: CellMetrics,
-): { layouts: Draft; placed: boolean } {
-  const current = layouts.get(id);
-  const target = targetOf(layouts, id, delta, m);
-  if (!current || !target?.free || (target.layout.x === current.x && target.layout.y === current.y)) {
-    return { layouts, placed: false };
-  }
-  return { layouts: new Map(layouts).set(id, target.layout), placed: true };
-}
-
-export function formatChoice(layouts: Draft, id: string, format: ComponentFormat): Target | null {
+export function previewSize(layouts: Draft, id: string, size: FormatSize): Preview | null {
   const current = layouts.get(id);
   if (!current) return null;
-  const { w } = FORMAT_SIZES[format];
-  const layout = layoutFor(format, Math.min(current.x, Math.max(0, GRID_COLUMNS - w)), current.y);
-  return { layout, free: canPlace(layout, othersThan(layouts, id)) };
+  const x = Math.min(current.x, Math.max(0, GRID_COLUMNS - size.w));
+  return preview(layouts, id, { x, y: current.y, w: size.w, h: size.h });
 }
+
+export function displayedLayouts(saved: Draft, edits: Draft): Draft {
+  const kept = [...edits].filter(([id]) => saved.has(id));
+  if (kept.length === 0) return saved;
+  return compactDraft(
+    new Map([...saved, ...kept]),
+    kept.map(([id]) => id),
+  );
+}
+
+export const heldPreview = (preview: Draft, id: string, layouts: Draft): Draft => {
+  const held = layouts.get(id);
+  return held ? new Map(preview).set(id, held) : preview;
+};
+
+export const editsOf = (saved: Draft, preview: Preview): Draft =>
+  new Map(
+    [...preview.layouts].filter(([id, layout]) => {
+      const before = saved.get(id);
+      return !before || !sameLayout(before, layout);
+    }),
+  );
 
 export function changedIds(origin: Draft, draft: Draft): string[] {
   return [...draft]
@@ -62,4 +75,14 @@ export function changedIds(origin: Draft, draft: Draft): string[] {
     })
     .sort(([a, la], [b, lb]) => la.y - lb.y || la.x - lb.x || (a < b ? -1 : a > b ? 1 : 0))
     .map(([id]) => id);
+}
+
+export function shortcutFormats(
+  manifest: Pick<ComponentManifest, "kind" | "formats" | "size">,
+): ComponentFormat[] {
+  const { min, max } = sizeLimitsOf(manifest);
+  return formatsOf(manifest).filter((f) => {
+    const { w, h } = FORMAT_SIZES[f];
+    return w >= min.w && h >= min.h && w <= max.w && h <= max.h;
+  });
 }

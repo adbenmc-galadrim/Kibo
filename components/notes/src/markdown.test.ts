@@ -34,3 +34,11 @@ test("wiki links and relative Markdown links are marked for in-app navigation", 
   expect(html).toContain('data-note-href="idees.md"');
   expect(html).toContain('href="https://kibo.dev"');
 });
+
+test("relative assets/ images are marked for the asset call, without a source", () => {
+  const html = renderNote("![x](assets/a.png) ![y](https://k.dev/b.png) ![z](assets/../c.png)", tickets);
+  expect(html).toContain('<img data-asset="assets/a.png" alt="x">');
+  expect(html).not.toContain('src="assets/a.png"');
+  expect(html).toContain('<img src="https://k.dev/b.png" alt="y">');
+  expect(html).not.toContain('data-asset="assets/../c.png"');
+});

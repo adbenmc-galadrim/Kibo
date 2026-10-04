@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadOrCreateToken } from "./auth";
+import { PairingCodes } from "./remote/pairing-codes";
 import { healthResponse, startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
@@ -117,10 +118,40 @@ describe("pairing and auth", () => {
     expect(ok.headers.get("cache-control")).toBe("no-store");
   });
 
-  test("oversized request bodies are rejected", async () => {
+  test("oversized request bodies are rejected, a pasted image of 2 MiB fits", async () => {
     const cookie = await pair();
-    const res = await post("/api/rpc", { method: "listProjects", pad: "x".repeat(1_100_000) }, { cookie });
+    const res = await post("/api/rpc", { method: "listProjects", pad: "x".repeat(3_200_000) }, { cookie });
     expect(res.status).toBe(413);
+    const image = await post("/api/rpc", { method: "listProjects", pad: "x".repeat(2_800_000) }, { cookie });
+    expect(image.status).toBe(200);
+  });
+
+  test("pairing routes refuse a body over 4 KiB before parsing it", async () => {
+    const pad = "x".repeat(5 * 1024);
+    expect((await post("/api/pair", { token: TOKEN, pad })).status).toBe(413);
+    expect((await post("/api/pair-code", { code: "ABCD-EFGH", pad })).status).toBe(413);
+    expect((await post("/api/pair", { token: TOKEN })).status).toBe(204);
+  });
+
+  test("pairing with a code still works under the cap", async () => {
+    const codes = new PairingCodes(() => Date.now());
+    const coded = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      pairingCodes: codes,
+    });
+    try {
+      const res = await fetch(`${coded.url}/api/pair-code`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: coded.url },
+        body: JSON.stringify({ code: codes.create().code }),
+      });
+      expect(res.status).toBe(204);
+    } finally {
+      coded.stop();
+    }
   });
 
   test("websocket needs a session and receives changes", async () => {

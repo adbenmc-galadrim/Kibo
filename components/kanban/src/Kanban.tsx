@@ -147,7 +147,7 @@ export function Kanban() {
           announcements: announce(keyOf),
         }}
       >
-        <div ref={board} className="flex min-h-0 flex-1 gap-2 overflow-x-auto p-3">
+        <div ref={board} className="flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}

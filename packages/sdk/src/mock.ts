@@ -193,6 +193,9 @@ export function createMockSdk(
       create: (path, markdown) => writeNote(() => inner.notes.create(path, markdown)),
       rename: (from, to) => writeNote(() => inner.notes.rename(from, to)),
       remove: (path) => writeNote(() => inner.notes.remove(path)),
+      attach: (notePath, name, mime, bytes) =>
+        writeNote(() => inner.notes.attach(notePath, name, mime, bytes)),
+      asset: (path) => readNote(() => inner.notes.asset(path)),
     },
     mcp: {
       call: (server, tool, args) =>

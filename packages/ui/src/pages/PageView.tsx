@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
-import { resolveOverlaps } from "../lib/format-grid";
+import { compactInstances } from "../lib/format-grid";
 import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
@@ -93,7 +93,7 @@ export function PageView({ project, page, viewer }: Props) {
       ) : (
         <DashboardGrid
           instances={instances}
-          layouts={resolveOverlaps(instances)}
+          layouts={compactInstances(instances)}
           narrow={!wide}
           renderWidget={(i, layout) => (
             <div className={WIDGET_CARD}>

@@ -1,6 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import type { Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject } from "../agents/fixtures";
 
@@ -141,15 +141,23 @@ const withWidth = (wide: boolean, run: () => Promise<void>) => async () => {
 };
 
 test(
-  "screen 129: overlapping widgets are pushed down at render, without writing",
+  "screen 129: a stored state is rendered compacted, without writing",
   withWidth(true, async () => {
-    const { container } = show(twoWidgets());
+    const project = twoWidgets();
+    const floating = project.instances.map((i) =>
+      i.id === "i1" ? { ...i, layout: { x: 0, y: 4, w: 6, h: 6 } } : i,
+    );
+    const { container } = show(project);
     await screen.findAllByText("Kanban");
     const [first, second] = cells(container);
     expect(first?.dataset.instance).toBe("i1");
     expect(first?.style.gridRow).toBe("1 / span 6");
     expect(second?.style.gridRow).toBe("7 / span 3");
     expect(second?.style.gridColumn).toBe("1 / span 6");
+    cleanup();
+    const gap = show({ ...project, instances: floating });
+    await screen.findAllByText("Kanban");
+    expect(cells(gap.container).map((c) => c.style.gridRow)).toEqual(["1 / span 3", "4 / span 6"]);
   }),
 );
 

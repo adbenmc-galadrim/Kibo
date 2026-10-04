@@ -86,6 +86,11 @@ export const ProjectCommand = z.discriminatedUnion("method", [
   z.object({ method: z.literal("setInstanceConfig"), instanceId: z.string(), config: JsonRecord }),
   z.object({ method: z.literal("setInstanceLayout"), instanceId: z.string(), layout: Layout }),
   z.object({
+    method: z.literal("setPageLayout"),
+    pageId: NodeId,
+    layouts: z.array(z.object({ instanceId: z.string(), layout: Layout })).max(200),
+  }),
+  z.object({
     method: z.literal("setInstanceData"),
     instanceId: z.string(),
     key: DataKey,
@@ -116,6 +121,7 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   setInstanceComponent: null,
   setInstanceConfig: null,
   setInstanceLayout: null,
+  setPageLayout: null,
   setInstanceData: null,
 };
 
@@ -144,5 +150,6 @@ export type CommandResult = {
   setInstanceComponent: Instance;
   setInstanceConfig: Instance;
   setInstanceLayout: Instance;
+  setPageLayout: Instance[];
   setInstanceData: null;
 };

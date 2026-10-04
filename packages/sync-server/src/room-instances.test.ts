@@ -77,13 +77,21 @@ const auditCount = (): unknown =>
   sdb.db.query("SELECT COUNT(*) AS n FROM audit WHERE kind = 'update-rejected'").get();
 
 describe("instances of a shared project", () => {
-  test("a push that resizes an instance to 5 × 5 is rejected, audited and changes nothing", () => {
+  test("a push that resizes an instance to 5 × 5 is accepted and applied", () => {
+    const { room, widget } = roomWithWidget();
+    const bytes = forged(room, (m) => m.set(widget.id, { ...widget, layout: { x: 0, y: 0, w: 5, h: 5 } }));
+    room.push(bytes, actor(lea, "editor"), NOW);
+    expect(getInstance(clientOf(room), widget.id).layout).toEqual({ x: 0, y: 0, w: 5, h: 5 });
+    expect(auditCount()).toEqual({ n: 0 });
+  });
+
+  test("a push that moves an instance outside the grid is rejected, audited and changes nothing", () => {
     const { room, widget } = roomWithWidget();
     const before = room.version();
-    const bytes = forged(room, (m) => m.set(widget.id, { ...widget, layout: { x: 0, y: 0, w: 5, h: 5 } }));
+    const bytes = forged(room, (m) => m.set(widget.id, { ...widget, layout: { x: 8, y: 0, w: 5, h: 5 } }));
     const reject = rejection(() => room.push(bytes, actor(lea, "editor"), NOW));
     expect(reject.code).toBe("UPDATE_REJECTED");
-    expect(reject.message).toContain(`instance ${widget.id}: layout is not a component format`);
+    expect(reject.message).toContain(`instance ${widget.id}: layout is outside the grid`);
     expect(sameVersion(room.version(), before)).toBe(true);
     expect(getInstance(clientOf(room), widget.id).layout).toEqual(layoutFor("large", 0, 0));
     expect(auditCount()).toEqual({ n: 1 });
@@ -111,7 +119,7 @@ describe("instances of a shared project", () => {
     const client = clientOf(room);
     setInstanceLayout(client, widget.id, layoutFor("half", 0, 6));
     addInstance(client, { pageId, component: "tickets@1.0.0", layout: layoutFor("medium", 6, 0) });
-    client.getMap("instances").set("i9", { ...widget, id: "i9", layout: { x: 0, y: 20, w: 5, h: 5 } });
+    client.getMap("instances").set("i9", { ...widget, id: "i9", layout: { x: 8, y: 20, w: 5, h: 5 } });
     client.commit();
     expect(rejection(() => room.push(changesSince(client, room), actor(lea, "editor"), NOW)).code).toBe(
       "UPDATE_REJECTED",
@@ -134,11 +142,21 @@ describe("instances of a shared project", () => {
     expect(auditCount()).toEqual({ n: 0 });
   });
 
-  test("a first snapshot with an instance off format is refused", () => {
+  test("a first snapshot with an instance off format is accepted", () => {
     const doc = LoroDoc.fromSnapshot(ownerSnapshot());
     const page = addPage(doc, { title: "Tableau", kind: "dashboard", parentId: null });
     const widget = addInstance(doc, { pageId: page.id, component: "kanban@1.0.0" });
     doc.getMap("instances").set(widget.id, { ...widget, layout: { x: 0, y: 0, w: 5, h: 5 } });
+    doc.commit();
+    create(doc.export({ mode: "snapshot" }));
+    expect(sdb.db.query("SELECT COUNT(*) AS n FROM projects").get()).toEqual({ n: 1 });
+  });
+
+  test("a first snapshot with an instance outside the grid is refused", () => {
+    const doc = LoroDoc.fromSnapshot(ownerSnapshot());
+    const page = addPage(doc, { title: "Tableau", kind: "dashboard", parentId: null });
+    const widget = addInstance(doc, { pageId: page.id, component: "kanban@1.0.0" });
+    doc.getMap("instances").set(widget.id, { ...widget, layout: { x: 8, y: 0, w: 5, h: 5 } });
     doc.commit();
     expect(() => create(doc.export({ mode: "snapshot" }))).toThrow("INVALID_INPUT");
     expect(sdb.db.query("SELECT COUNT(*) AS n FROM projects").get()).toEqual({ n: 0 });

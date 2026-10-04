@@ -40,6 +40,11 @@ test("literal SDK calls give the permissions they need", () => {
   );
 });
 
+test("pasted images are notes: attach writes, asset reads", () => {
+  expect(infer(`await sdk.notes.attach("a.md", "a.png", "image/png", bytes);`).used).toEqual(["write:note"]);
+  expect(infer(`await sdk.notes.asset("assets/a.png");`).used).toEqual(["read:note"]);
+});
+
 test("server code is analysed through ctx", () => {
   const { used } = infer(
     `export const server = defineServer({ actions: { go: async (ctx) => ctx.list("ticket") } });`,

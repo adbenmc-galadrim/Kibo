@@ -71,6 +71,8 @@ const allDaemons = [
   { name: "confort-light", scheme: "light", port: 4422, spec: /confort\.spec\.ts/, scenario: "question" },
   { name: "layout-dark", scheme: "dark", port: 4423, spec: /layout\.spec\.ts/, scenario: "question" },
   { name: "layout-light", scheme: "light", port: 4424, spec: /layout\.spec\.ts/, scenario: "question" },
+  { name: "notes-dark", scheme: "dark", port: 4431, spec: /notes\.spec\.ts/, scenario: "question" },
+  { name: "notes-light", scheme: "light", port: 4432, spec: /notes\.spec\.ts/, scenario: "question" },
   {
     name: "creations-dark",
     scheme: "dark",
@@ -99,6 +101,10 @@ const allDaemons = [
     spec: /conversation\.spec\.ts/,
     scenario: "conversation",
   },
+  { name: "widgets-dark", scheme: "dark", port: 4429, spec: /widgets\.spec\.ts/, scenario: "question" },
+  { name: "widgets-light", scheme: "light", port: 4430, spec: /widgets\.spec\.ts/, scenario: "question" },
+  { name: "graph-dark", scheme: "dark", port: 4433, spec: /graph\.spec\.ts/, scenario: "question" },
+  { name: "graph-light", scheme: "light", port: 4434, spec: /graph\.spec\.ts/, scenario: "question" },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 

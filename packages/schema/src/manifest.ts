@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { ConfigSchema } from "./config";
-import { ComponentFormat, FORMAT_PREFERENCE } from "./format";
+import {
+  ComponentFormat,
+  FORMAT_PREFERENCE,
+  FORMAT_SIZES,
+  type FormatSize,
+  GRID_COLUMNS,
+  MAX_GRID_ROWS,
+} from "./format";
 import { GITHUB_SECRET_HOSTS, IntegrationSecretNameSchema } from "./integrations";
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
@@ -14,6 +21,12 @@ export const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
 export type ComponentId = z.infer<typeof ComponentId>;
 export const ComponentKind = z.enum(["widget", "view", "both", "adapter"]);
 export type ComponentKind = z.infer<typeof ComponentKind>;
+
+const Cells = z.object({
+  w: z.number().int().min(1).max(GRID_COLUMNS),
+  h: z.number().int().min(1).max(MAX_GRID_ROWS),
+});
+export const SizeSpec = z.object({ min: Cells.optional(), max: Cells.optional() });
 
 export const ComponentManifest = z.object({
   id: ComponentId,
@@ -46,6 +59,7 @@ export const ComponentManifest = z.object({
   changes: z.array(z.string().min(1)).default([]),
   sdk: z.literal(1).default(1),
   formats: z.array(ComponentFormat).min(1).max(5).optional(),
+  size: SizeSpec.optional(),
 });
 export type ComponentManifest = z.infer<typeof ComponentManifest>;
 export type ComponentManifestInput = z.input<typeof ComponentManifest>;
@@ -77,4 +91,30 @@ export const formatIssue = (m: FormatFields): string | null => {
     return "INVALID_MANIFEST: a widget declares a format other than full";
   }
   return null;
+};
+
+export type SizeLimits = { min: FormatSize; max: FormatSize };
+export const DEFAULT_SIZE_LIMITS: SizeLimits = { min: { w: 2, h: 2 }, max: { w: 12, h: 12 } };
+type SizeFields = Pick<ComponentManifest, "size">;
+
+export const sizeLimitsOf = (m: Partial<SizeFields>): SizeLimits => ({
+  min: m.size?.min ?? DEFAULT_SIZE_LIMITS.min,
+  max: m.size?.max ?? DEFAULT_SIZE_LIMITS.max,
+});
+
+export const clampSize = (size: FormatSize, limits: SizeLimits): FormatSize => ({
+  w: Math.min(limits.max.w, Math.max(limits.min.w, size.w)),
+  h: Math.min(limits.max.h, Math.max(limits.min.h, size.h)),
+});
+
+const within = (size: FormatSize, limits: SizeLimits): boolean =>
+  size.w >= limits.min.w && size.h >= limits.min.h && size.w <= limits.max.w && size.h <= limits.max.h;
+
+export const sizeIssue = (m: Partial<SizeFields> & FormatFields): string | null => {
+  const limits = sizeLimitsOf(m);
+  if (limits.min.w > limits.max.w || limits.min.h > limits.max.h)
+    return "INVALID_MANIFEST: size.min exceeds size.max";
+  if (m.size === undefined) return null;
+  const outside = formatsOf(m).find((f) => !within(FORMAT_SIZES[f], limits));
+  return outside === undefined ? null : `INVALID_MANIFEST: format ${outside} is outside size limits`;
 };

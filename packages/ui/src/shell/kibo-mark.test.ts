@@ -53,3 +53,11 @@ test("the geometry has one tile, four ink cards and one brand card", () => {
     { x: 42, y: 46, w: 16, h: 30, fill: "brand", opacity: 1 },
   ]);
 });
+
+test("the mark can be drawn smaller than its canvas, centered, like Apple's icon grid", () => {
+  const svg = kiboMarkSvg("light", 1024, 824);
+  expect(svg).toContain('width="1024" height="1024" viewBox="0 0 1024 1024"');
+  expect(svg).toContain('<rect x="116.48" y="116.48" width="791.04" height="791.04" rx="197.76"');
+  expect(svg).toContain('<rect x="281.28" y="297.76" width="131.84" height="181.28" rx="32.96"');
+  expect(kiboMarkSvg("light", 1024)).toBe(kiboMarkSvg("light", 1024, 1024));
+});

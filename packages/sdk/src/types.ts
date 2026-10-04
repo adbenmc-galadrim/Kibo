@@ -1,4 +1,5 @@
 import type {
+  AssetMime,
   CiRun,
   CommandResult,
   ComponentCall,
@@ -55,7 +56,11 @@ export type NotesApi = {
   remove(path: string): Promise<void>;
   search(query: string): Promise<NoteMeta[]>;
   info(): Promise<NotesInfo>;
+  attach(notePath: string, name: string, mime: AssetMime, bytes: Uint8Array): Promise<{ path: string }>;
+  asset(path: string): Promise<NoteAsset>;
 };
+
+export type NoteAsset = { mime: AssetMime; bytes: Uint8Array<ArrayBuffer> };
 
 export type McpApi = {
   call(server: string, tool: string, args?: Record<string, unknown>): Promise<McpCallResult>;

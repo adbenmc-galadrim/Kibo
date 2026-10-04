@@ -12,6 +12,7 @@ import {
 } from "@kibo/schema";
 import type { ComponentType } from "react";
 import { createRoot } from "react-dom/client";
+import { guardDestructiveKeys } from "./key-guard";
 import { SdkProvider } from "./react";
 import { createSdk } from "./sdk";
 import type { KiboSdk } from "./types";
@@ -158,6 +159,7 @@ function start(manifest: ComponentManifest, init: InitMessage, Component: Compon
     port.post({ kibo: 1, type: "key", combo });
   };
   document.addEventListener("keydown", onKey);
+  const stopKeyGuard = guardDestructiveKeys(window);
   const resize =
     init.surface === "widget"
       ? new ResizeObserver(() =>
@@ -172,6 +174,7 @@ function start(manifest: ComponentManifest, init: InitMessage, Component: Compon
   return () => {
     resize?.disconnect();
     document.removeEventListener("keydown", onKey);
+    stopKeyGuard();
     root.unmount();
     frame.dispose();
     document.body.classList.remove(...bodyClasses);

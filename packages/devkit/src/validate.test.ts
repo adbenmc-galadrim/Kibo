@@ -230,6 +230,15 @@ describe("validateComponent", () => {
     });
     expect(report.tests.passed + report.tests.failed).toBe(0);
   }, 120_000);
+  test("a manifest whose size minimum exceeds its maximum stops before the tests", async () => {
+    const dir = fixture("hello");
+    const manifest = { id: "hello", version: "0.1.0", kind: "widget", title: "H", reads: [], writes: [] };
+    const size = { min: { w: 6, h: 6 }, max: { w: 4, h: 4 } };
+    writeFileSync(join(dir, "kibo.component.json"), JSON.stringify({ ...manifest, size }));
+    const report = await validateComponent(dir, opts);
+    expect(report.manifest).toEqual({ ok: false, errors: ["INVALID_MANIFEST: size.min exceeds size.max"] });
+    expect(report.tests.passed + report.tests.failed).toBe(0);
+  }, 120_000);
   test("the stamp lives in a hidden folder and never changes the hash", async () => {
     const dir = fixture("hello");
     const first = await validateComponent(dir, opts);

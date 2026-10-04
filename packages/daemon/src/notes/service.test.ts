@@ -247,3 +247,42 @@ describe("skipped notes", () => {
     }
   });
 });
+
+describe("pasted images", () => {
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]).toString("base64");
+
+  test("attach stores base64 bytes under assets/ and asset reads them back, unlisted", async () => {
+    const { repo, svc } = setup();
+    const call = {
+      kind: "notes.attach",
+      notePath: "journal.md",
+      name: "journal-20261004-101500.png",
+    } as const;
+    expect(await svc.handle("p1", { ...call, mime: "image/png", bytes: png })).toEqual({
+      path: "assets/journal-20261004-101500.png",
+    });
+    expect(readdirSync(join(repo, "notes", "assets"))).toEqual(["journal-20261004-101500.png"]);
+    expect(
+      await svc.handle("p1", { kind: "notes.asset", path: "assets/journal-20261004-101500.png" }),
+    ).toEqual({
+      mime: "image/png",
+      bytes: png,
+    });
+    expect(await svc.handle("p1", { kind: "list", entity: "note" })).toEqual([]);
+  });
+
+  test("attach refuses a lying type before touching the disk", async () => {
+    const { repo, svc } = setup();
+    const html = Buffer.from("<html>").toString("base64");
+    await expect(
+      svc.handle("p1", {
+        kind: "notes.attach",
+        notePath: "a.md",
+        name: "a.png",
+        mime: "image/png",
+        bytes: html,
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(readdirSync(join(repo, "notes"))).toEqual([]);
+  });
+});

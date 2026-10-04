@@ -320,7 +320,7 @@ Chaque intégration est un adaptateur activé par un composant synchronisé. Les
 | Bout en bout | Playwright | Parcours MVP : projet → page → Kanban → ticket |
 | Desktop | smoke test Tauri | CI sur macOS et Linux (GitHub Actions) |
 
-Ports des démons E2E (`e2e/playwright.config.ts`) : **4390 à 4430** (sync 4406–4411, marketplace 4412–4414, chaque spec prend une paire sombre/clair à la suite) ; 4461–4499 sont réservés aux démos. Faux serveurs dérivés : GitHub = port + 1000, MCP = port + 2000.
+Ports des démons E2E (`e2e/playwright.config.ts`) : **4390 à 4440** (sync 4406–4411, marketplace 4412–4414, chaque spec prend une paire sombre/clair à la suite ; plage portée de 4430 à 4440 en phase 12, §18.8) ; 4461–4499 sont réservés aux démos. Faux serveurs dérivés : GitHub = port + 1000, MCP = port + 2000.
 
 ## 12. Hors périmètre de cette spec / décisions ouvertes
 
@@ -531,3 +531,48 @@ Nouveaux codes : `DAEMON_RUNNING` (HTTP 409), `PROJECT_FOLDER_MISSING` (409), `P
 ### 17.6 Dépendances : alertes de sécurité
 
 Les alertes Dependabot se traitent à chaque jalon : mise à jour vers la première version corrigée quand elle est compatible (ici `vite` 7.3.5 et `markdown-it` 14.3.1), sinon rejet motivé dans GitHub (`dismissed_reason`, commentaire) repris dans le rapport de jalon. Ici `glib` 0.18 (dépendance transitive de `gtk` 0.18 via Tauri 2, Linux seulement ; `glib::VariantStrIter` n'est appelé nulle part dans Kibo) est rejetée en `tolerable_risk` jusqu'à ce que Tauri passe à `gtk` 0.20. Jamais de `postinstall` ; `bun.lock` figé et vérifié par `bun install --frozen-lockfile`.
+
+## 18. Décisions de la phase 12 : demandes d'Adam du 2026-10-04
+
+Écrites le 2026-10-04, avant le plan `docs/superpowers/plans/2026-10-04-kibo-phase-12.md`, d'après les demandes d'Adam du 4 octobre 2026 (corrections ; notes et graphe ; disposition des tableaux de bord). Mêmes garde-fous que §14 à §17 : local-first, zéro token pour l'état, rien de nouveau dans un CRDT partagé sans décision écrite ici. Le détail des composants vit dans la spec composants §18, celui des onglets dans la spec code et onglets §13, celui de la sync en D48 (amendé).
+
+### 18.1 Taille libre des widgets (remplace « Pas de taille libre », §16.1)
+
+- **Décision d'Adam (2026-10-04)** : un widget se redimensionne **librement** par des poignées (bord droit, bord bas, coin), au pas de la cellule, au-delà des cinq formats nommés. La phrase « Pas de taille libre » de §16.1 est abrogée ; la liste A11 des formats reste en attente sans rien bloquer : les formats deviennent des **raccourcis** du menu de chaque widget (« Moyen · 6 × 3 »…), qui posent une taille.
+- `Layout` reste `{ x, y, w, h }` ; une disposition est acceptée si elle est **dans la grille** : `x + w ≤ 12`, `y + h ≤ 400`, `w ≥ 1`, `h ≥ 1`. Le core, la validation d'un lot de sync (D48) et le premier snapshot n'exigent plus la taille d'un format.
+- **Bornes par composant** : le manifeste gagne `size?: { min?: { w, h }, max?: { w, h } }` (spec composants §18 point 5) ; défaut `min 2 × 2`, `max 12 × 12`. La poignée s'arrête aux bornes ; le menu n'offre que les formats compris dans les bornes. Le core et le serveur de sync **ne connaissent pas les manifestes** et ne vérifient pas les bornes : un composant doit s'afficher à toute taille (spec composants §17 point 2, règle de robustesse inchangée) et `sdk.format` vaut le format nommé exact ou le plus proche (`nearestFormat`), inchangé ; le protocole `init` ne change pas.
+- Pendant un redimensionnement, la taille s'affiche sur le widget et dans la région `status` (« 6 × 9 cases ») ; au clavier, `Shift + flèches` sur un widget dont une poignée a le focus change `w` ou `h` d'une cellule, dans les bornes.
+
+### 18.2 Compaction verticale (précise §16.1 « Chevauchements » et §16.2)
+
+- Après tout déplacement, retrait, ajout ou redimensionnement, **chaque widget remonte à la première rangée libre au-dessus de lui** : la page commence à la rangée 1, sans trou vertical. Fonction pure et déterministe `compactLayouts(items, first)` dans `@kibo/schema` (`packages/schema/src/layout-compaction.ts`, à côté de `format.ts`, parce que l'interface ne peut pas charger `@kibo/core` : budget et worker, §16.5 point 6) : deux passes. D'abord les widgets de `first` sont **fixés** à leur place (ramenée dans la grille, `w` borné à 12) et les autres, dans l'ordre de lecture (`y`, `x`, id), **descendent** jusqu'à la première place libre à partir de leur rangée s'ils chevauchent un widget déjà posé ; puis tous, dans l'ordre de lecture de ces places, **remontent** au plus petit `y ≥ 0` sans chevauchement avec les widgets déjà remontés, `x` inchangé. Ainsi un widget déposé sous un autre reste sous lui, un widget déposé sur un autre le pousse vers le bas, et aucun trou ne subsiste. La fonction est idempotente sur un état compact et ne dépend pas de l'ordre d'entrée.
+- Le **core l'applique à chaque écriture** d'une disposition (`setInstanceLayout`, `addInstance`, `removeInstance`, et la nouvelle commande `setPageLayout`), sur la page concernée, dans le même commit Loro, en posant d'abord le widget écrit ; le **chevauchement n'est plus refusé** : les autres widgets s'écartent vers le bas puis remontent. `addInstance` sans disposition pose le widget après tous les autres (il prend la première place libre sur 12 colonnes). Le rendu d'un état reçu par sync qui ne serait pas compact (deux membres hors ligne, D48) passe par la même fonction, sans écriture : `resolveOverlaps` de l'interface disparaît au profit de `compactLayouts`.
+- Nouvelle `ProjectCommand` `{ method: "setPageLayout", pageId, layouts: { instanceId, layout }[] }` ⇒ `Instance[]` (les instances de la page après compaction), réservée au shell (`WRITES = null`, comme `setInstanceLayout`). `INVALID_INPUT` si une disposition sort de la grille, si deux dispositions listées se chevauchent, si une instance listée n'est pas sur la page ou si la liste est vide ; `NOT_FOUND` pour une page ou une instance inconnue. Les instances listées sont posées en premier (ordre de lecture de leurs dispositions), les autres suivent depuis leur disposition enregistrée : un déplacement fait entre-temps par un autre membre sur un widget non listé n'est pas écrasé. Garde d'écriture inchangée (D30).
+- **Interface** : « Enregistrer » envoie **une seule** commande `setPageLayout` avec les widgets dont la disposition affichée diffère de l'enregistrée ; le plan de sauvegarde pas à pas (`planLayoutSave`, places intermédiaires) disparaît. Pendant un glisser ou un redimensionnement, l'aperçu montre **en direct** la disposition compactée (le widget manipulé posé en premier) et le fantôme marque sa place d'arrivée ; aucun dépôt n'est refusé, le fantôme « destructif » et l'aide « Pas de place » disparaissent. Un refus du démon (`FORBIDDEN`, hors ligne) laisse le mode ouvert avec le message, comme avant ; « Annuler » et Échap rétablissent la disposition d'origine. L'éditeur ne fige pas la disposition à l'ouverture : l'état enregistré est recalculé à chaque rendu depuis les instances reçues (`compactLayouts` sans épingle) ; seules les dispositions que l'utilisateur a modifiées, directement ou par compaction, sont conservées et posées en premier par-dessus cet état (`compactLayouts(enregistré ∪ modifiées, modifiées)`). Un widget retiré ou déplacé par un autre membre pendant l'édition disparaît ou bouge donc à l'écran, et l'aperçu prédit le résultat de `setPageLayout` ; un widget poussé par la compaction locale est listé et l'emporte sur un déplacement concurrent (dernier écrit). Pendant un glisser, le widget saisi reste affiché à sa place de départ ; pendant un redimensionnement, il grandit en place ; le fantôme et les voisins montrent la disposition compactée.
+
+### 18.3 Kanban : colonnes qui défilent
+
+- Chaque colonne du Kanban défile **à l'intérieur** de son fond : l'en-tête reste visible, la liste des cartes (`flex min-h-0 flex-1 flex-col overflow-y-auto`) défile sous lui, la rangée des colonnes ne défile jamais verticalement (`overflow-y-hidden`). Règle générale pour tout composant : **le contenu ne déborde jamais de son fond** (un élément peint, fond ou bordure, qui ne rogne pas contient toutes ses boîtes descendantes, à 1 px près).
+- Vérification : la suite de conformité tourne sous happy-dom, qui ne calcule aucune mise en page ; la règle est donc portée par un **évaluateur pur** du paquet de conformité (`@kibo/sdk/conformance-overflow` : `collectBoxes(element)` relève les boîtes dans un navigateur, `overflowViolations(tree)` les juge) et exercée **par format** dans un vrai navigateur par le parcours E2E `widgets.spec.ts` pour les composants intégrés (Kanban en Large, Demi-page et Plein écran, avec une colonne qui déborde). Limite assumée : `kibo component test` ne mesure pas ; l'aperçu format par format reste la vérification manuelle de référence pour un composant tiers.
+
+### 18.4 Icône macOS
+
+L'icône de l'application suit la grille d'Apple : sur une toile de 1024 px, la tuile occupe **824 px** centrés (marge transparente de 100 px de chaque côté). `kiboMarkSvg(mode, size, art)` dessine la marque à `art` px au centre de `size` ; `apps/desktop/app-icon.svg` passe à `art: 824`, le favicon reste plein cadre (`art = size`) ; `icon.icns`, `icon.ico` et les PNG 32, 128, 256 et 512 sont régénérés par `tauri icon` depuis ce SVG, sans autre changement de la coque ; le smoke test reste exigé (§17.4).
+
+### 18.5 Clavier : aucune touche seule ne ferme ni ne détruit
+
+Spec code et onglets §13 : garde globale sur `Backspace` et `Delete` hors champ éditable, toast « Onglet fermé · Annuler » à toute fermeture d'onglet, `⌘⇧T` rouvre le dernier onglet fermé (pile de 10, en mémoire).
+
+### 18.6 Agents : historique
+
+Une ligne de l'historique des runs ouvre le run cliqué, par son identifiant, dans le tiroir (§15.2 inchangé). La zone cliquable est la ligne elle-même (`onClick` sur `<tr>`, bouton accessible dans la première cellule) ; plus aucun pseudo-élément étiré en position absolue depuis une cellule : selon le moteur, `position: relative` sur `<tr>` n'est pas un bloc conteneur, l'overlay de chaque ligne couvrait toute la table et la dernière ligne captait tous les clics.
+
+### 18.7 Notes et graphe
+
+Spec composants §18 points 1 à 4 : éditeur de notes (barre d'outils, bulle de sélection, menu `/`, raccourcis, aperçu en direct, images collées), navigation du graphe au trackpad et au clavier, widget du graphe par format.
+
+### 18.8 Ports, écrans, codes
+
+- E2E : plage des démons portée à **4390–4440** (amende §11) : `widgets.spec.ts` 4429–4430, `notes.spec.ts` 4431–4432, `graph.spec.ts` 4433–4434.
+- Maquettes Penpot : les écrans touchés (Kanban défilant, disposition libre et compaction, éditeur de notes, graphe navigable et ses formats, toast d'onglet) sont dessinés par ailleurs ; écart assumé listé au jalon.
+- Aucun code d'erreur nouveau : `INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `TOO_LARGE` suffisent. Nouvelle commande `setPageLayout` ; nouveaux appels `notes.attach` et `notes.asset` (spec composants §18 point 2).

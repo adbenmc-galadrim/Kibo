@@ -70,11 +70,13 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "notes.read":
     case "notes.search":
     case "notes.info":
+    case "notes.asset":
       return "read:note";
     case "notes.write":
     case "notes.create":
     case "notes.rename":
     case "notes.remove":
+    case "notes.attach":
       return "write:note";
     case "mcp.call":
       return `mcp:${call.server}/${call.tool}`;

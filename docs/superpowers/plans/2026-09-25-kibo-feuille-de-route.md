@@ -83,3 +83,25 @@ plusieurs workspaces : création et bascule depuis l'en-tête de la barre latér
 
 Mises à jour de l'application de bureau par l'updater Tauri et les releases GitHub signées (spec I, plan `2026-09-27-kibo-mises-a-jour.md`) ;
 import du projet Kibo dans Kibo (dogfooding).
+
+## Après v1.1 · Phases 9 à 11 (v1.1, v1.2, v1.2.1)
+
+Finitions UI et UX (plan d'action `2026-09-27-kibo-plan-action-ui-ux.md`, lots 1 à 9), un seul démon par dossier de données, durcissements, correctifs (plans `2026-10-03-kibo-phase-10.md` et `2026-10-03-kibo-phase-11.md`).
+
+## Phase 12 (v1.3) · Corrections, notes, graphe, tableau de bord
+
+Plan `2026-10-04-kibo-phase-12.md` : colonnes du Kanban, icône, garde clavier, onglets fermés, historique des runs ; éditeur de notes (barre d'outils, bulle, menu `/`, aperçu en direct, images collées) ; graphe au pavé tactile et widget par format ; tableau de bord sans trou en hauteur et taille libre à la poignée (demandes d'Adam du 2026-10-04).
+
+## Phase 13 · Composants plus riches
+
+Capacités déclarées dans le manifeste et appliquées par la CSP de chaque composant ; kit 3D (three.js) ; fichiers de projet hors CRDT (glTF exporté de Blender, images, audio) ; gabarits (3D, jeu, graphique, tableau) ; jeux (boucle d'animation, clavier et manette, plein écran) ; composants qui se parlent (sélection partagée) ; réglages générés depuis le manifeste ; la création par l'IA connaît ces capacités.
+
+## Phase 14 · Installation et finition
+
+`.dmg` soigné (et version Intel), signature et notarisation Apple (compte d'Adam) ; Linux : dépôt apt et rpm signé, script d'installation, fichier `.desktop` et icônes ; assistant de premier lancement (vérifie `claude`, `git`, `gh`, guide l'installation et la connexion, premier projet) ; « Lancer au démarrage » ; « Quoi de neuf » après mise à jour ; « Signaler un problème » sans secret ; sauvegardes automatiques de `~/.kibo` ; aide des raccourcis (⌘/) ; fenêtre « À propos ».
+
+**Didacticiel après l'assistant** (demande d'Adam du 2026-10-04) : proposé, jamais imposé (on peut le passer et le reprendre plus tard), il fait le tour de Kibo par la pratique dans un projet de démonstration avec des tickets de démonstration. Parcours en petites étapes, chacune faite par l'utilisateur : créer et déplacer un ticket dans le Kanban, lier deux tickets et les voir dans le graphe, écrire une note avec la barre d'outils, réorganiser et redimensionner le tableau de bord, assigner un ticket à un agent (avec le faux agent de démonstration, sans consommer de token), créer un composant en démonstration. Progression visible, reprise à l'étape en cours, projet de démonstration supprimable en un clic.
+
+## Ensuite · Intégrations
+
+Cadres Figma et Penpot affichés dans les composants (intégration côté démon, jeton dans le trousseau, cache local).
