@@ -49,6 +49,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(components-page\/(ComponentsFilters|UsagesSheet)\.tsx|i18n\/fr-components-list\.ts)$/,
   /\/packages\/ui\/src\/(shell\/DaemonUnreachable\.tsx|i18n\/fr-startup\.ts)$/,
   /\/packages\/ui\/src\/(files\/(FileToolbar|WrapSwitch)\.tsx|i18n\/fr-file-tools\.ts)$/,
+  /\/packages\/ui\/src\/(files\/(ProjectFilesDialog|FilesDirDialog|FilesList)\.tsx|files\/(use-project-files|upload|slug)\.ts|i18n\/fr-files\.ts)$/,
   /\/packages\/ui\/src\/(settings\/SyncEmptyState\.tsx|i18n\/fr-sync-page\.ts)$/,
   /\/packages\/ui\/src\/(agents\/RunHistory\.tsx|i18n\/fr-agents-page\.ts)$/,
   /\/packages\/ui\/src\/(settings\/SettingsLayout\.tsx|code\/ChangesLayout\.tsx|components-page\/sort-pref\.ts)$/,

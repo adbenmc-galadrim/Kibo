@@ -17,6 +17,7 @@ export const frWidgets = {
   assetsFailed: "Impossible de lister les fichiers du projet.",
   assetMissing: (name: string) => `${name} (introuvable sur cet appareil)`,
   filesLink: "Fichiers du projet…",
+  fileRequired: (label: string) => `Choisis un fichier : ${label}.`,
   invalid: (errors: string[]) => `Réglages refusés : ${errors.join(" ; ")}`,
   failed: "Impossible d'enregistrer les réglages.",
   fieldLabel: (key: string) => FIELDS[key] ?? key,

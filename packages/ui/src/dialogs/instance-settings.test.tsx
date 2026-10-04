@@ -195,3 +195,36 @@ test("number bounds reach the input and a value above max is refused before any 
   expect((await screen.findByRole("alert")).textContent).toBe("Réglages refusés : speed: above 4");
   expect(calls).toEqual([]);
 });
+
+test("Fichiers du projet… opens the files dialog and the list is reloaded when it closes", async () => {
+  const { user } = show(modelSchema);
+  const trigger = screen.getByRole("combobox", { name: "Modèle (.glb)" });
+  await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(false));
+  assetsOutcome = () => Promise.resolve([asset("robot.glb", "model", "model/gltf-binary")]);
+  await user.click(screen.getByRole("button", { name: "Fichiers du projet…" }));
+  expect(await screen.findByRole("dialog", { name: "Fichiers du projet" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Fichiers du projet" })).toBeNull());
+  expect(screen.getByRole("dialog", { name: "Réglages · Kanban" })).toBeTruthy();
+  await waitFor(() => expect(calls.filter((c) => c.method === "listAssets").length).toBe(3));
+  const reloaded = screen.getByRole("combobox", { name: "Modèle (.glb)" });
+  await waitFor(() => expect((reloaded as HTMLButtonElement).disabled).toBe(false));
+  reloaded.focus();
+  await user.keyboard("{Enter}");
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Aucun", "robot.glb"]);
+});
+
+test("the Inbox offers no link to project files", async () => {
+  show(modelSchema, "inbox");
+  await screen.findByRole("combobox", { name: "Modèle (.glb)" });
+  expect(screen.queryByRole("button", { name: "Fichiers du projet…" })).toBeNull();
+});
+
+test("a required file field left empty is refused before any call", async () => {
+  const { user } = show({ model: { type: "string", asset: "model", label: "Modèle (.glb)" } });
+  const trigger = screen.getByRole("combobox", { name: "Modèle (.glb)" });
+  await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(false));
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Choisis un fichier : Modèle (.glb).");
+  expect(calls.filter((c) => c.method !== "listAssets")).toEqual([]);
+});

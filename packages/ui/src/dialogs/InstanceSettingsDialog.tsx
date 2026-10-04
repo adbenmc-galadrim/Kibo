@@ -1,4 +1,4 @@
-import { type ConfigField, type ConfigSchema, type Instance, validateConfig } from "@kibo/schema";
+import { type ConfigField, type ConfigSchema, type Instance, isInbox, validateConfig } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import {
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@kibo/sdk/ui/switch";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
+import { ProjectFilesDialog } from "../files/lazy-files";
 import { frWidgets as t } from "../i18n/fr-widgets";
 import {
   configFields,
@@ -35,18 +36,23 @@ type FieldProps = {
   field: FormField;
   value: FieldValue;
   disabled: boolean;
+  refreshKey: number;
   onChange(v: FieldValue): void;
 };
+
+const missingFile = (fields: FormField[], values: Record<string, FieldValue>): FormField | undefined =>
+  fields.find((f) => fieldKind(f.field) === "asset" && !f.field.nullable && !values[f.key]);
 
 const valueWhenFilled = (key: string, field: ConfigField): FieldValue =>
   configFields({ [key]: { ...field, nullable: false } }, {})[0]?.value ?? "";
 
-function FieldInput({ id, projectId, field, value, disabled, onChange }: FieldProps) {
+function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChange }: FieldProps) {
   const kind = fieldKind(field.field);
   const label = fieldLabel(field.key, field.field);
   if (kind === "asset" && field.field.asset)
     return (
       <AssetField
+        key={refreshKey}
         id={id}
         projectId={projectId}
         kind={field.field.asset}
@@ -88,7 +94,7 @@ function FieldInput({ id, projectId, field, value, disabled, onChange }: FieldPr
   return <TextInput id={id} field={field} value={value} disabled={disabled} onChange={onChange} />;
 }
 
-function TextInput({ id, field, value, disabled, onChange }: Omit<FieldProps, "projectId">) {
+function TextInput({ id, field, value, disabled, onChange }: Omit<FieldProps, "projectId" | "refreshKey">) {
   const [text, setText] = useState(value === null ? "" : String(value));
   const shown = parseFieldInput(field.field, text) === value ? text : value === null ? "" : String(value);
   const numeric = fieldKind(field.field) === "number";
@@ -121,6 +127,8 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
     () => new Set(fields.filter((f) => f.value === null && fieldKind(f.field) !== "asset").map((f) => f.key)),
   );
   const [error, setError] = useState<string | null>(null);
+  const [filesOpen, setFilesOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const set = (key: string, value: FieldValue) => setValues((v) => ({ ...v, [key]: value }));
   const toggleNone = (f: FormField, checked: boolean) => {
     setNone((keys) => new Set([...keys].filter((k) => k !== f.key).concat(checked ? [f.key] : [])));
@@ -128,6 +136,11 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
   };
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    const missing = missingFile(fields, values);
+    if (missing) {
+      setError(t.fileRequired(fieldLabel(missing.key, missing.field)));
+      return;
+    }
     const errors = validateConfig(schema, values);
     if (errors.length > 0) {
       setError(t.invalid(errors));
@@ -169,6 +182,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
                     field={f}
                     value={value}
                     disabled={none.has(f.key)}
+                    refreshKey={refreshKey}
                     onChange={(v) => set(f.key, v)}
                   />
                   {f.field.nullable && fieldKind(f.field) !== "asset" && (
@@ -186,6 +200,17 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
                   )}
                 </div>
                 {f.field.help && <p className="text-xs text-muted-foreground">{f.field.help}</p>}
+                {fieldKind(f.field) === "asset" && !isInbox(projectId) && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto justify-self-start p-0 text-xs"
+                    onClick={() => setFilesOpen(true)}
+                  >
+                    {t.filesLink}
+                  </Button>
+                )}
               </div>
             );
           })}
@@ -202,6 +227,15 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
           </DialogFooter>
         </form>
       </DialogContent>
+      {filesOpen && (
+        <ProjectFilesDialog
+          projectId={projectId}
+          onClose={() => {
+            setFilesOpen(false);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
     </Dialog>
   );
 }
