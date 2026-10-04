@@ -21,6 +21,7 @@ export const frBackups = {
   chooseFolder: "Choisir le dossier…",
   defaultFolder: "Dossier par défaut",
   list: (n: number) => (n > 1 ? `${n} sauvegardes` : "1 sauvegarde"),
+  listLabel: "Liste des sauvegardes",
   remove: "Supprimer",
   removeTitle: "Supprimer cette sauvegarde ?",
   removeHelp: (date: string) => `La sauvegarde du ${date} sera effacée du disque.`,

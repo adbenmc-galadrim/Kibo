@@ -40,7 +40,7 @@ export function BackupsList({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <ul className="divide-y rounded-md border px-3">
+        <ul aria-label={t.listLabel} className="divide-y rounded-md border px-3">
           {backups.map((backup) => (
             <BackupRow key={backup.id} backup={backup} onRemove={() => setTarget(backup)} />
           ))}

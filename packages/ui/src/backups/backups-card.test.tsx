@@ -74,7 +74,9 @@ test("shows the state, the last backup and the list newest first", async () => {
   ).toBe("true");
   expect(screen.getByText(/^Prochaine : /)).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("button", { name: "2 sauvegardes" }));
-  const rows = screen.getAllByRole("listitem").map((row) => row.textContent ?? "");
+  const rows = within(screen.getByRole("list", { name: "Liste des sauvegardes" }))
+    .getAllByRole("listitem")
+    .map((row) => row.textContent ?? "");
   expect(rows).toHaveLength(2);
   expect(rows[0]).toContain("automatique");
   expect(rows[1]).toContain("manuelle");
@@ -134,7 +136,9 @@ test("Supprimer on a row asks confirmation then calls deleteBackup", async () =>
   render(<BackupsCard desktop={false} />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "2 sauvegardes" }));
-  const [first] = screen.getAllByRole("listitem");
+  const [first] = within(screen.getByRole("list", { name: "Liste des sauvegardes" })).getAllByRole(
+    "listitem",
+  );
   if (!first) throw new Error("no backup row");
   await user.click(within(first).getByRole("button", { name: "Supprimer" }));
   expect(sent("deleteBackup")).toEqual([]);
