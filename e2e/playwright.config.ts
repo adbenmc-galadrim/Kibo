@@ -99,6 +99,8 @@ const allDaemons = [
     spec: /conversation\.spec\.ts/,
     scenario: "conversation",
   },
+  { name: "graph-dark", scheme: "dark", port: 4433, spec: /graph\.spec\.ts/, scenario: "question" },
+  { name: "graph-light", scheme: "light", port: 4434, spec: /graph\.spec\.ts/, scenario: "question" },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
