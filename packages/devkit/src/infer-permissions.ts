@@ -1,6 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { BuiltinEntityType, COMMAND_WRITES, type ProjectCommand } from "@kibo/schema";
+import {
+  BuiltinEntityType,
+  Capability,
+  COMMAND_WRITES,
+  capPermission,
+  isEmbeddedSpecifier,
+  type ProjectCommand,
+} from "@kibo/schema";
 import type * as TS from "typescript";
 import { listSourceFiles } from "./hash";
 import { issueAt, type SourceIssue } from "./issues";
@@ -15,6 +22,13 @@ const RECEIVERS = new Set(["sdk", "ctx"]);
 const NOTE_READS = new Set(["read", "search", "info", "asset"]);
 const NOTE_WRITES = new Set(["write", "create", "rename", "remove", "attach"]);
 const MCP_METHODS = new Set(["call", "read", "importItem"]);
+const KIT_HOOKS = new Map<string, Capability>([
+  ["useGamepad", "gamepad"],
+  ["createAudio", "audio"],
+  ["useFocusMode", "fullscreen"],
+]);
+const isWebglSpecifier = (spec: string) =>
+  isEmbeddedSpecifier(spec) && (spec === "three" || spec.startsWith("three/") || spec === "@kibo/sdk/three");
 const isTest = (path: string) => /\.test\.tsx?$/.test(path);
 const isCommandMethod = (method: string): method is ProjectCommand["method"] =>
   Object.hasOwn(COMMAND_WRITES, method);
@@ -79,9 +93,19 @@ function inferFile(ts: TypeScript, file: SourceText, used: Set<string>, issues: 
     if (tool === null) return nonLiteral(call);
     used.add(`mcp:${server}/${tool}`);
   };
+  const capability = (call: TS.CallExpression) => {
+    const value = literal(ts, call.arguments[0]);
+    if (value === null) return nonLiteral(call);
+    const parsed = Capability.safeParse(value);
+    if (!parsed.success) return report(call, "unknown-entity", value);
+    used.add(capPermission(parsed.data));
+  };
   const sdkCall = (call: TS.CallExpression, path: string[]) => {
     const [, first, second] = path;
     if (path.length === 2 && first === "list") entity(call, "read");
+    else if (path.length === 2 && first === "capability") capability(call);
+    else if (path.length === 3 && first === "assets") used.add(capPermission("assets"));
+    else if (path.length === 3 && first === "focus") used.add(capPermission("fullscreen"));
     else if (path.length === 2 && first === "run") run(call);
     else if (path.length === 2 && first === "fetch") fetch(call);
     else if (path.length === 3 && first === "data") used.add("data");
@@ -92,8 +116,14 @@ function inferFile(ts: TypeScript, file: SourceText, used: Set<string>, issues: 
     else if (path.length === 3 && first === "mcp") mcp(call, second);
   };
   const visit = (node: TS.Node): void => {
+    if (ts.isImportDeclaration(node)) {
+      const spec = literal(ts, node.moduleSpecifier);
+      if (spec !== null && isWebglSpecifier(spec)) used.add(capPermission("webgl"));
+    }
     if (ts.isCallExpression(node)) {
       if (ts.isIdentifier(node.expression) && node.expression.text === "useEntities") entity(node, "read");
+      const hook = ts.isIdentifier(node.expression) ? KIT_HOOKS.get(node.expression.text) : undefined;
+      if (hook) used.add(capPermission(hook));
       const path = chain(ts, node.expression);
       if (path) sdkCall(node, path);
     }
