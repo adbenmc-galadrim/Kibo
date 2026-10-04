@@ -89,9 +89,10 @@ export function useImport(projectId: string, onSent: () => Promise<void>) {
       const prepared = prepare(file);
       sent ||= prepared.ok;
       const problem = prepared.ok ? await send(prepared.name, prepared.mime, file) : prepared.problem;
+      if (abort.current.signal.aborted) return;
       if (problem) setProblems((list) => [...list, problem]);
     }
-    if (sent && !abort.current.signal.aborted) await onSent();
+    if (sent) await onSent();
   };
   return { sending, problems, importFiles };
 }

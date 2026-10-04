@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 const calls: RpcRequest[] = [];
 let assets: ProjectAsset[] = [];
 let refuse: (req: RpcRequest) => Error | null = () => null;
+let appendGate: Promise<void> | null = null;
 const answer = (req: RpcRequest): unknown => {
   switch (req.method) {
     case "listAssets":
@@ -28,6 +29,7 @@ mock.module("../api", () => ({
   client: {
     rpc: async (req: RpcRequest) => {
       calls.push(req);
+      if (req.method === "appendAssetUpload" && appendGate) await appendGate;
       const error = refuse(req);
       if (error) throw error;
       return answer(req);
@@ -49,12 +51,13 @@ beforeEach(() => {
   calls.length = 0;
   assets = [robot, beep];
   refuse = () => null;
+  appendGate = null;
 });
 
 const show = () => {
   const onClose = mock(() => {});
-  render(<ProjectFilesDialog projectId="p1" onClose={onClose} />);
-  return { onClose, user: userEvent.setup() };
+  const { unmount } = render(<ProjectFilesDialog projectId="p1" onClose={onClose} />);
+  return { onClose, unmount, user: userEvent.setup() };
 };
 const methods = () => calls.map((c) => c.method);
 const glb = (name: string, type = "application/octet-stream") =>
@@ -200,4 +203,33 @@ test("a failed listing is shown", async () => {
   show();
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de lister les fichiers du projet.");
   error.mockRestore();
+});
+
+test("an empty file is refused before any call", async () => {
+  show();
+  await screen.findByRole("table");
+  calls.length = 0;
+  pick(new File([], "vide.glb"));
+  expect((await screen.findByRole("alert")).textContent).toBe("vide.glb · Fichier vide.");
+  expect(calls).toEqual([]);
+});
+
+test("closing during a send cancels once the append in flight settled, then stays silent", async () => {
+  let release = () => {};
+  appendGate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const { unmount } = show();
+  await screen.findByRole("table");
+  calls.length = 0;
+  pick(glb("a.glb"), glb("b.glb"));
+  await waitFor(() => expect(methods()).toEqual(["beginAssetUpload", "appendAssetUpload"]));
+  unmount();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(methods()).not.toContain("cancelAssetUpload");
+  release();
+  await waitFor(() => expect(methods()).toContain("cancelAssetUpload"));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(methods()).toEqual(["beginAssetUpload", "appendAssetUpload", "cancelAssetUpload"]);
+  expect(screen.queryByRole("alert")).toBeNull();
 });
