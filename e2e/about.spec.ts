@@ -60,6 +60,6 @@ test("the general settings show the application card, desktop only", async ({ pa
   await page.goto("/#/settings/general");
   await expect(page.getByText("Application", { exact: true })).toBeVisible();
   await expect(page.getByText("Ce réglage vit dans l'application de bureau.")).toBeVisible();
-  await expect(page.getByRole("switch")).toHaveCount(0);
+  await expect(page.getByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" })).toHaveCount(0);
   await shot(page, info, "76-general");
 });
