@@ -1,3 +1,5 @@
+import type { Capability } from "@kibo/schema";
+
 export const frComponentsList = {
   title: "Composants",
   subtitle:
@@ -16,5 +18,13 @@ export const frComponentsList = {
   usagesOf: (title: string, version: string) => `${title} ${version}`,
   usagesEmpty: "Ce composant n'est posé sur aucune page.",
   formats: (labels: readonly string[]) => `Formats : ${labels.join(", ")}`,
+  capabilities: (labels: readonly string[]) => `Capacités : ${labels.join(", ")}`,
+  capabilityLabels: {
+    webgl: "3D",
+    audio: "Son",
+    fullscreen: "Plein écran",
+    gamepad: "Manette",
+    assets: "Fichiers du projet",
+  } satisfies Record<Capability, string>,
   place: (project: string, page: string) => `${project} › ${page}`,
 };
