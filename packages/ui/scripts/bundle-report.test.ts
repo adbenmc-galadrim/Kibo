@@ -249,4 +249,15 @@ describe("bundle report", () => {
       { file: "assets/lazy.js", module: loro },
     ]);
   });
+
+  test("the backups card, its texts and the folder reveal are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/backups/BackupsCard.tsx",
+      "/x/packages/ui/src/backups/BackupsList.tsx",
+      "/x/packages/ui/src/backups/backups-text.ts",
+      "/x/packages/ui/src/i18n/fr-backups.ts",
+      "/x/packages/ui/src/desktop/reveal.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
 });

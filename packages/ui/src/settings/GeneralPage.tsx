@@ -1,3 +1,4 @@
+import { BackupsCard } from "../backups/BackupsCard";
 import { fr } from "../i18n/fr";
 import { UpdateCard } from "../updates/UpdateCard";
 import { ApplicationCard } from "./ApplicationCard";
@@ -14,6 +15,7 @@ export function GeneralPage() {
         </div>
         <ApplicationCard />
         <UpdateCard />
+        <BackupsCard />
         <CliInstallCard />
       </div>
     </SettingsLayout>
