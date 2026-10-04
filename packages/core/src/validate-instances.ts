@@ -1,4 +1,4 @@
-import { Instance, inGrid, isFormatLayout } from "@kibo/schema";
+import { Instance, inGrid } from "@kibo/schema";
 import { isContainer, type LoroDoc, type LoroMap } from "loro-crdt";
 import { sameJson } from "./canonical-json";
 
@@ -25,7 +25,6 @@ function entryViolation(key: string, value: unknown): string | null {
   if (!parsed.success) return `instance ${key} has an invalid value`;
   if (parsed.data.id !== key) return `instance ${key} is stored under another key`;
   if (!inGrid(parsed.data.layout)) return `instance ${key}: layout is outside the grid`;
-  if (!isFormatLayout(parsed.data.layout)) return `instance ${key}: layout is not a component format`;
   return null;
 }
 

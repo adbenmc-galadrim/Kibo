@@ -48,7 +48,12 @@ describe("setInstanceLayout", () => {
       h: 3,
     });
     expect(getInstance(doc, a.id).layout).toEqual({ x: 0, y: 0, w: 6, h: 3 });
-    expect(() => setInstanceLayout(doc, a.id, { x: 0, y: 0, w: 5, h: 5 })).toThrow(/not a component format/);
+    expect(setInstanceLayout(doc, a.id, { x: 0, y: 0, w: 5, h: 5 }).layout).toEqual({
+      x: 0,
+      y: 0,
+      w: 5,
+      h: 5,
+    });
     expect(() => setInstanceLayout(doc, a.id, layoutFor("half", 1, 0))).toThrow(/outside the grid/);
     expect(() => setInstanceLayout(doc, a.id, layoutFor("half", 0, 395))).toThrow(/outside the grid/);
     const moved = setInstanceLayout(doc, a.id, layoutFor("large", 6, 0));
@@ -74,7 +79,7 @@ describe("setInstanceLayout", () => {
     });
     addInstance(doc, { pageId: page.id, component: "tickets@1.0.0", layout: layoutFor("large", 6, 0) });
     const version = doc.version().toJSON();
-    for (const layout of [{ x: 0, y: 0, w: 5, h: 5 }, layoutFor("half", 1, 0)]) {
+    for (const layout of [{ x: 8, y: 0, w: 5, h: 5 }, layoutFor("half", 1, 0)]) {
       expect(codeOf(() => setInstanceLayout(doc, a.id, layout))).toBe("INVALID_INPUT");
     }
     expect(codeOf(() => setInstanceLayout(doc, "nope", layoutFor("small", 0, 0)))).toBe("NOT_FOUND");
@@ -101,12 +106,12 @@ describe("setInstanceLayout", () => {
     const page = addPage(doc, { title: "Tableau", kind: "dashboard", parentId: null });
     const add = (layout?: Layout) => addInstance(doc, { pageId: page.id, component: "kanban@1.0.0", layout });
     const large = add(layoutFor("large", 0, 0));
-    expect(() => add({ x: 0, y: 6, w: 4, h: 4 })).toThrow(/not a component format/);
     expect(() => add(layoutFor("large", 9, 6))).toThrow(/outside the grid/);
     expect(add(layoutFor("small", 3, 3)).layout).toEqual(layoutFor("small", 3, 0));
     expect(getInstance(doc, large.id).layout).toEqual(layoutFor("large", 0, 3));
     expect(add().layout).toEqual(layoutFor("half", 0, 9));
-    expect(listInstances(doc, page.id)).toHaveLength(3);
+    expect(add({ x: 6, y: 3, w: 4, h: 5 }).layout).toEqual({ x: 6, y: 0, w: 4, h: 5 });
+    expect(listInstances(doc, page.id)).toHaveLength(4);
   });
 
   test("is a shell command, refused to components", () => {

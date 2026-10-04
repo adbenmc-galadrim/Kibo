@@ -1,13 +1,4 @@
-import {
-  compactLayouts,
-  Instance,
-  inGrid,
-  isFormatLayout,
-  KiboError,
-  type Layout,
-  layoutFor,
-  overlaps,
-} from "@kibo/schema";
+import { compactLayouts, Instance, inGrid, KiboError, type Layout, layoutFor, overlaps } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { assertInstanceData, dropInstanceData, replaceInstanceData } from "./instance-data";
 import { getNode } from "./tree";
@@ -30,7 +21,6 @@ export function getInstance(doc: LoroDoc, id: string): Instance {
 
 function assertInGrid(layout: Layout): void {
   if (!inGrid(layout)) throw new KiboError("INVALID_INPUT", "layout is outside the grid");
-  if (!isFormatLayout(layout)) throw new KiboError("INVALID_INPUT", "layout is not a component format");
 }
 
 const sameLayout = (a: Layout, b: Layout): boolean =>

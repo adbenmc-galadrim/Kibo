@@ -3,7 +3,6 @@ import {
   COMPONENT_FORMATS,
   type Instance,
   inGrid,
-  isFormatLayout,
   KiboError,
   type Layout,
   layoutFor,
@@ -53,7 +52,7 @@ function docWithRawInstance(layout: Layout): { doc: LoroDoc; instance: Instance 
 }
 
 describe("instancesUpdateViolation", () => {
-  test("a new or moved instance stored under its id, inside the grid, with a format size is accepted", () => {
+  test("a new or moved instance stored under its id, inside the grid, of any size is accepted", () => {
     const { doc, instance } = projectWith(layoutFor("large", 0, 0));
     const added = edited(doc, (m) =>
       m.set("i2", { ...instance, id: "i2", layout: layoutFor("small", 9, 397) }),
@@ -61,13 +60,11 @@ describe("instancesUpdateViolation", () => {
     expect(instancesUpdateViolation(doc, added)).toBeNull();
     expect(instancesUpdateViolation(doc, withLayout(doc, instance, layoutFor("full", 0, 391)))).toBeNull();
     expect(instancesUpdateViolation(doc, doc.fork())).toBeNull();
+    expect(instancesUpdateViolation(doc, withLayout(doc, instance, { x: 0, y: 0, w: 5, h: 5 }))).toBeNull();
   });
 
-  test("a layout that is not a format or leaves the grid is refused", () => {
+  test("a layout that leaves the grid is refused", () => {
     const { doc, instance } = projectWith(layoutFor("large", 0, 0));
-    expect(instancesUpdateViolation(doc, withLayout(doc, instance, { x: 0, y: 0, w: 5, h: 5 }))).toBe(
-      `instance ${instance.id}: layout is not a component format`,
-    );
     expect(instancesUpdateViolation(doc, withLayout(doc, instance, { x: 8, y: 0, w: 6, h: 3 }))).toBe(
       `instance ${instance.id}: layout is outside the grid`,
     );
@@ -124,7 +121,7 @@ describe("instancesUpdateViolation", () => {
   });
 
   test("overlaps are accepted, removals too, and untouched legacy instances are not checked", () => {
-    const { doc: legacy, instance } = docWithRawInstance({ x: 0, y: 0, w: 5, h: 5 });
+    const { doc: legacy, instance } = docWithRawInstance({ x: 8, y: 0, w: 5, h: 5 });
     const after = edited(legacy, (m) =>
       m.set("i2", { ...instance, id: "i2", layout: layoutFor("small", 0, 0) }),
     );
@@ -136,19 +133,24 @@ describe("instancesUpdateViolation", () => {
       ),
     ).toBeNull();
     expect(
-      instancesUpdateViolation(legacy, withLayout(legacy, instance, { x: 0, y: 6, w: 5, h: 5 })),
-    ).toMatch(/not a component format/);
+      instancesUpdateViolation(legacy, withLayout(legacy, instance, { x: 8, y: 6, w: 5, h: 5 })),
+    ).toMatch(/outside the grid/);
   });
 });
 
 describe("server rules", () => {
   test("validateProjectUpdate applies the instance rules", () => {
     const { doc, instance } = projectWith(layoutFor("large", 0, 0));
-    const bad = withLayout(doc, instance, { x: 0, y: 0, w: 5, h: 5 });
+    const bad = withLayout(doc, instance, { x: 8, y: 0, w: 5, h: 5 });
     expect(validateProjectUpdate(doc, bad, EDITOR)).toEqual({
       ok: false,
-      reason: `instance ${instance.id}: layout is not a component format`,
+      reason: `instance ${instance.id}: layout is outside the grid`,
     });
+    expect(validateProjectUpdate(doc, withLayout(doc, instance, { x: 0, y: 0, w: 5, h: 5 }), EDITOR)).toEqual(
+      {
+        ok: true,
+      },
+    );
     expect(validateProjectUpdate(doc, withLayout(doc, instance, layoutFor("half", 0, 6)), EDITOR)).toEqual({
       ok: true,
     });
@@ -158,9 +160,12 @@ describe("server rules", () => {
     expect(validateSharedSnapshot(projectWith(layoutFor("large", 0, 0)).doc, "p1", "u1")).toEqual({
       ok: true,
     });
-    const legacy = docWithRawInstance({ x: 0, y: 0, w: 5, h: 5 }).doc;
-    expect(instancesSnapshotViolation(legacy)).toBe("instance legacy: layout is not a component format");
-    expect(validateSharedSnapshot(legacy, "p1", "u1")).toMatchObject({ ok: false });
+    const free = docWithRawInstance({ x: 0, y: 0, w: 5, h: 5 }).doc;
+    expect(instancesSnapshotViolation(free)).toBeNull();
+    expect(validateSharedSnapshot(free, "p1", "u1")).toEqual({ ok: true });
+    const outside = docWithRawInstance({ x: 8, y: 0, w: 5, h: 5 }).doc;
+    expect(instancesSnapshotViolation(outside)).toBe("instance legacy: layout is outside the grid");
+    expect(validateSharedSnapshot(outside, "p1", "u1")).toMatchObject({ ok: false });
     const boxed = projectWith(layoutFor("large", 0, 0)).doc;
     boxed.getMap("instances").setContainer("box", new LoroMap());
     boxed.commit();
@@ -202,7 +207,7 @@ function pushed(server: LoroDoc, client: LoroDoc): LoroDoc {
 }
 
 describe("properties", () => {
-  test("a written layout is accepted exactly when it is a format inside the grid", () => {
+  test("a written layout is accepted exactly when it lies inside the grid", () => {
     const { doc, instance } = projectWith(layoutFor("large", 0, 0));
     const anyLayout = fc.record({
       x: fc.nat(14),
@@ -213,7 +218,7 @@ describe("properties", () => {
     fc.assert(
       fc.property(anyLayout, (layout) => {
         const verdict = validateProjectUpdate(doc, withLayout(doc, instance, layout), EDITOR);
-        expect(verdict.ok).toBe(inGrid(layout) && isFormatLayout(layout));
+        expect(verdict.ok).toBe(inGrid(layout));
       }),
       { numRuns: 150 },
     );
