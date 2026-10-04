@@ -416,6 +416,11 @@ const mockupProperty = () => {
   return value;
 };
 
+test("Mockups: the sheet scrolls when its thumbnails overflow it", async () => {
+  await show();
+  expect(screen.getByRole("dialog").className).toContain("overflow-y-auto");
+});
+
 test("the Maquette property shows the first frame with its provider icon", async () => {
   await show();
   const value = mockupProperty();

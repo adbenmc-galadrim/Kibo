@@ -51,7 +51,7 @@ export function TicketSheet({
   const inbox = isInbox(project.meta.id);
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-[min(90vw,560px)]">
+      <SheetContent className="w-full sm:max-w-[min(90vw,560px)] overflow-y-auto">
         <SheetHeader>
           {peers.map((p) => (
             <p key={p.deviceId} className="mr-8 rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
