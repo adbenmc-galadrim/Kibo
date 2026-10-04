@@ -1,5 +1,6 @@
 import {
   type ComponentFormat,
+  compactLayouts,
   type FormatSize,
   formatOf,
   GRID_COLUMNS,
@@ -34,33 +35,14 @@ export const readingOrder = (instances: readonly Instance[]): Instance[] =>
     (a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
 
-export const canPlace = (layout: Layout, others: readonly Layout[]): boolean =>
-  inGrid(layout) && !others.some((o) => overlaps(layout, o));
-
-const firstFreeRow = (layout: Layout, placed: readonly Layout[]): Layout | null => {
-  const x = layout.w <= GRID_COLUMNS ? clamp(layout.x, 0, GRID_COLUMNS - layout.w) : layout.x;
-  for (let y = layout.y; y + layout.h <= MAX_GRID_ROWS; y++) {
-    const candidate = { ...layout, x, y };
-    if (canPlace(candidate, placed)) return candidate;
-  }
-  return null;
-};
-
-export const resolveOverlaps = (instances: readonly Instance[]): Map<string, Layout> => {
-  const out = new Map<string, Layout>();
-  for (const instance of readingOrder(instances)) {
-    const placed = [...out.values()];
-    const kept = canPlace(instance.layout, placed) ? instance.layout : firstFreeRow(instance.layout, placed);
-    out.set(instance.id, kept ?? instance.layout);
-  }
-  return out;
-};
+export const compactInstances = (instances: readonly Instance[]): Map<string, Layout> =>
+  compactLayouts(instances.map((i) => ({ id: i.id, layout: i.layout })));
 
 export const nextLayout = (taken: readonly Layout[], size: FormatSize): Layout => {
   for (let y = 0; y + size.h <= MAX_GRID_ROWS; y++) {
     for (let x = 0; x + size.w <= GRID_COLUMNS; x++) {
       const slot = { x, y, ...size };
-      if (canPlace(slot, taken)) return slot;
+      if (inGrid(slot) && !taken.some((t) => overlaps(slot, t))) return slot;
     }
   }
   return { x: 0, y: Math.max(0, ...taken.map((t) => t.y + t.h)), ...size };

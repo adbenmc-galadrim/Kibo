@@ -10,13 +10,20 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { type ComponentFormat, type Instance, type Layout, type Page, splitRef } from "@kibo/schema";
+import {
+  type ComponentFormat,
+  FORMAT_SIZES,
+  type Instance,
+  type Layout,
+  type Page,
+  splitRef,
+} from "@kibo/schema";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frLayout } from "../i18n/fr-layout";
 import { errorMessage } from "../lib/error-message";
-import { type CellMetrics, cellMetrics, instanceFormat, resolveOverlaps } from "../lib/format-grid";
+import { type CellMetrics, cellMetrics, compactInstances, instanceFormat } from "../lib/format-grid";
 import { findComponent } from "../registry";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
@@ -25,8 +32,16 @@ import { EditorWidget } from "./EditorWidget";
 import { GridGuides } from "./GridGuides";
 import { instanceTitle } from "./instance-title";
 import { LayoutToolbar } from "./LayoutToolbar";
-import { changedIds, type Draft, formatChoice, moveWidget, type Target, targetOf } from "./layout-draft";
-import { planLayoutSave, saveTarget } from "./layout-plan";
+import {
+  changedIds,
+  type Draft,
+  displayedLayouts,
+  editsOf,
+  heldPreview,
+  type Preview,
+  previewMove,
+  previewSize,
+} from "./layout-draft";
 
 export type LayoutEditorProps = {
   projectId: string;
@@ -79,22 +94,22 @@ export function LayoutEditor({
   renderWidget,
   onClose,
 }: LayoutEditorProps) {
-  const [origin, setOrigin] = useState<Draft>(() => resolveOverlaps(instances));
-  const [draft, setDraft] = useState<Draft>(origin);
-  const [ghost, setGhost] = useState<Target | null>(null);
+  const saved = compactInstances(instances);
+  const [edits, setEdits] = useState<Draft>(() => new Map());
+  const [preview, setPreview] = useState<{ id: string; preview: Preview } | null>(null);
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Instance | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const metrics = useGridMetrics(wrapper);
+  const ghost = preview?.preview.landing ?? null;
   const latest = useRef({ metrics, ghost, dragging: null as string | null, dropped: "" });
   latest.current.metrics = metrics;
   latest.current.ghost = ghost;
   const titleOf = useTitles(instances);
-  const layouts: Draft = new Map(
-    instances.map((i) => [i.id, draft.get(i.id) ?? origin.get(i.id) ?? i.layout]),
-  );
-  const changes = changedIds(origin, layouts);
+  const layouts = displayedLayouts(saved, edits);
+  const changes = changedIds(saved, layouts);
+  const shown = preview ? heldPreview(preview.preview.layouts, preview.id, layouts) : layouts;
 
   const close = useRef(onClose);
   close.current = onClose;
@@ -125,7 +140,7 @@ export function LayoutEditor({
     onDragStart: ({ active }) => frLayout.picked(titleOf(String(active.id))),
     onDragMove: ({ active }) => {
       const g = latest.current.ghost;
-      return g ? frLayout.over(titleOf(String(active.id)), g.layout.x, g.layout.y, g.free) : undefined;
+      return g ? frLayout.over(titleOf(String(active.id)), g.x, g.y) : undefined;
     },
     onDragOver: () => undefined,
     onDragEnd: () => latest.current.dropped,
@@ -136,19 +151,18 @@ export function LayoutEditor({
     latest.current.dragging = String(active.id);
   };
   const onDragMove = ({ active, delta }: DragMoveEvent) => {
-    const target = targetOf(layouts, String(active.id), delta, metrics);
-    latest.current.ghost = target;
-    setGhost(target);
+    const id = String(active.id);
+    const next = previewMove(layouts, id, delta, metrics);
+    latest.current.ghost = next?.landing ?? null;
+    setPreview(next ? { id, preview: next } : null);
   };
   const onDragEnd = ({ active, delta }: DragEndEvent) => {
     const id = String(active.id);
-    const moved = moveWidget(layouts, id, delta, metrics);
-    const placed = moved.layouts.get(id);
-    latest.current.dropped =
-      moved.placed && placed
-        ? frLayout.dropped(titleOf(id), placed.x, placed.y)
-        : frLayout.refused(titleOf(id));
-    if (moved.placed) setDraft(moved.layouts);
+    const next = previewMove(layouts, id, delta, metrics);
+    if (next) {
+      latest.current.dropped = frLayout.dropped(titleOf(id), next.landing.x, next.landing.y);
+      setEdits(editsOf(saved, next));
+    }
     stopDrag();
   };
   const stopDrag = () => {
@@ -158,43 +172,37 @@ export function LayoutEditor({
       if (latest.current.dragging === ended) latest.current.dragging = null;
     }, 0);
     latest.current.ghost = null;
-    setGhost(null);
+    setPreview(null);
   };
   const pickFormat = (id: string, format: ComponentFormat) => {
-    const choice = formatChoice(layouts, id, format);
-    if (choice?.free) setDraft(new Map(layouts).set(id, choice.layout));
+    const next = previewSize(layouts, id, FORMAT_SIZES[format]);
+    if (next) setEdits(editsOf(saved, next));
   };
 
   const save = async () => {
     if (changes.length === 0) return onClose();
     setSaving(true);
     setFailure(null);
-    const done = new Map(origin);
-    const plan = planLayoutSave(
-      new Map(instances.map((i) => [i.id, i.layout])),
-      saveTarget(instances, layouts, changes),
-    );
-    const last = new Map(plan.map((step, index) => [step.id, index]));
-    let refusal: { id: string; error: unknown } | null = null;
-    for (const [index, { id, layout }] of plan.entries()) {
-      try {
-        await client.rpc({
-          method: "command",
-          projectId,
-          command: { method: "setInstanceLayout", instanceId: id, layout },
-        });
-      } catch (error) {
-        refusal = { id, error };
-        break;
-      }
-      const shown = layouts.get(id);
-      if (shown && last.get(id) === index) done.set(id, shown);
+    try {
+      await client.rpc({
+        method: "command",
+        projectId,
+        command: {
+          method: "setPageLayout",
+          pageId: page.id,
+          layouts: changes.flatMap((id) => {
+            const layout = layouts.get(id);
+            return layout ? [{ instanceId: id, layout }] : [];
+          }),
+        },
+      });
+      onClose();
+    } catch (error) {
+      console.error(error);
+      setFailure(`${frLayout.saveFailed(titleOf(changes[0] ?? ""))} ${errorMessage(error)}`);
+    } finally {
+      setSaving(false);
     }
-    setOrigin(done);
-    setSaving(false);
-    if (!refusal) return onClose();
-    console.error(refusal.error);
-    setFailure(`${frLayout.saveFailed(titleOf(refusal.id))} ${errorMessage(refusal.error)}`);
   };
 
   return (
@@ -217,7 +225,7 @@ export function LayoutEditor({
         >
           <DashboardGrid
             instances={instances}
-            layouts={layouts}
+            layouts={shown}
             narrow={false}
             overlay={<GridGuides metrics={metrics} ghost={ghost} />}
             renderWidget={(i, layout) => {
@@ -229,7 +237,6 @@ export function LayoutEditor({
                   title={title}
                   current={current}
                   formats={formatsFor(i)}
-                  fits={(f) => formatChoice(layouts, i.id, f)?.free === true}
                   onFormat={(f) => pickFormat(i.id, f)}
                   onRemove={() => setRemoving(i)}
                 >

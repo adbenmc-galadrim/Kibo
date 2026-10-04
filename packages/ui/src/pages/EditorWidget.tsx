@@ -14,7 +14,6 @@ export type EditorWidgetProps = {
   title: string;
   current: ComponentFormat;
   formats: readonly ComponentFormat[];
-  fits(format: ComponentFormat): boolean;
   onFormat(format: ComponentFormat): void;
   onRemove(): void;
   children: ReactNode;
@@ -25,7 +24,6 @@ export function EditorWidget({
   title,
   current,
   formats,
-  fits,
   onFormat,
   onRemove,
   children,
@@ -52,7 +50,7 @@ export function EditorWidget({
           <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 truncate text-xs font-medium">{title}</span>
         </button>
-        <FormatMenu title={title} current={current} formats={formats} fits={fits} onPick={onFormat} />
+        <FormatMenu title={title} current={current} formats={formats} onPick={onFormat} />
         <Button
           size="icon"
           variant="ghost"

@@ -16,11 +16,10 @@ export type FormatMenuProps = {
   title: string;
   current: ComponentFormat;
   formats: readonly ComponentFormat[];
-  fits(format: ComponentFormat): boolean;
   onPick(format: ComponentFormat): void;
 };
 
-export function FormatMenu({ title, current, formats, fits, onPick }: FormatMenuProps) {
+export function FormatMenu({ title, current, formats, onPick }: FormatMenuProps) {
   const pick = (value: string) => {
     const parsed = FormatSchema.safeParse(value);
     if (parsed.success && parsed.data !== current) onPick(parsed.data);
@@ -39,18 +38,15 @@ export function FormatMenu({ title, current, formats, fits, onPick }: FormatMenu
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          {frLayout.shortcuts}
+        </DropdownMenuLabel>
         <DropdownMenuRadioGroup value={current} onValueChange={pick}>
-          {formats.map((f) => {
-            const room = f === current || fits(f);
-            return (
-              <DropdownMenuRadioItem key={f} value={f} disabled={!room}>
-                <span>
-                  {frLayout.formats[f]} · {frLayout.size(FORMAT_SIZES[f].w, FORMAT_SIZES[f].h)}
-                </span>
-                {!room && <span className="ml-auto text-xs text-muted-foreground">({frLayout.noRoom})</span>}
-              </DropdownMenuRadioItem>
-            );
-          })}
+          {formats.map((f) => (
+            <DropdownMenuRadioItem key={f} value={f}>
+              {frLayout.formats[f]} · {frLayout.size(FORMAT_SIZES[f].w, FORMAT_SIZES[f].h)}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">

@@ -19,15 +19,13 @@ export const frLayout = {
   format: (title: string) => `Format de ${title}`,
   current: (label: string) => `Format : ${label}`,
   remove: (title: string) => `Retirer ${title}`,
-  noRoom: "Pas de place",
+  shortcuts: "Raccourcis de taille",
   help: "Un composant s'adapte à chacun de ses formats.",
   saveFailed: (title: string) => `La disposition de ${title} n'a pas été enregistrée.`,
   instructions:
     "Pour déplacer un widget, appuie sur Espace ou Entrée, déplace-le avec les flèches, puis appuie sur Espace ou Entrée pour le poser. Échap annule.",
   picked: (title: string) => `${title} saisi.`,
-  over: (title: string, x: number, y: number, free: boolean) =>
-    `${title} : ${cell(x, y)}${free ? "." : ", la place est prise."}`,
+  over: (title: string, x: number, y: number) => `${title} : ${cell(x, y)}.`,
   dropped: (title: string, x: number, y: number) => `${title} posé ${cell(x, y)}.`,
-  refused: (title: string) => `${title} n'a pas bougé : la place est prise.`,
   canceled: (title: string) => `Déplacement de ${title} annulé.`,
 };
