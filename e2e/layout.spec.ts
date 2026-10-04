@@ -196,6 +196,40 @@ test.describe("fenêtre large", () => {
     await cancelWithEscape(page);
     await expectLayout(widget(page, "Tickets"), "0,6,6,6");
 
+    await editLayout(page);
+    await expect(widget(page, "Tickets").getByText("Taille · 6 × 6")).toBeVisible();
+    const cornerHandle = page.getByRole("button", { name: "Redimensionner Tickets (coin)" });
+    await cornerHandle.scrollIntoViewIfNeeded();
+    const corner = await cornerHandle.boundingBox();
+    if (!corner) throw new Error("no resize handle");
+    const start = { x: corner.x + corner.width / 2, y: corner.y + corner.height / 2 };
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x + column, start.y + 96, { steps: 8 });
+    await expect(page.getByRole("status").filter({ hasText: "cases" })).toHaveText("7 × 7 cases");
+    await expect(widget(page, "Tickets").getByText("Taille · 7 × 7")).toBeVisible();
+    await expectLayout(widget(page, "Tickets"), "0,6,7,7");
+    await shot(page, info, "redimensionnement");
+    await page.mouse.up();
+    await expect(toolbar(page)).toContainText("1 changement");
+    await save(page);
+    await page.reload();
+    await expectLayout(widget(page, "Tickets"), "0,6,7,7");
+
+    await editLayout(page);
+    await page.getByRole("button", { name: "Redimensionner Tickets (droite)" }).focus();
+    await page.keyboard.press("Shift+ArrowDown");
+    await expectLayout(widget(page, "Tickets"), "0,6,7,8");
+    await expect(page.getByRole("status").filter({ hasText: "cases" })).toHaveText("Tickets : 7 × 8 cases.");
+    await page.getByRole("button", { name: "Redimensionner Kanban (droite)" }).focus();
+    for (const _ of times("ArrowLeft", 6)) await page.keyboard.press("Shift+ArrowLeft");
+    await expectLayout(widget(page, "Kanban"), "0,0,6,6");
+    await expect(toolbar(page)).toContainText("1 changement");
+    await save(page);
+    await page.reload();
+    await expectLayout(widget(page, "Tickets"), "0,6,7,8");
+    await expectLayout(widget(page, "Kanban"), "0,0,6,6");
+
     await page.setViewportSize({ width: 900, height: 900 });
     await expect(page.getByRole("button", { name: "Modifier la disposition" })).toHaveCount(0);
     await expect(page.getByText("Élargis la fenêtre pour modifier la disposition.")).toBeVisible();
