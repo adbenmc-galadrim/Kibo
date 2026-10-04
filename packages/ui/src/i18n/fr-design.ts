@@ -25,6 +25,11 @@ export const frDesign = {
         detail: (address: string) =>
           `Rien n'écoute sur ${address}. Vérifie que Figma est lancé et que le serveur MCP est activé.`,
       },
+      unreachableToken: {
+        title: "Figma injoignable",
+        detail: (address: string) =>
+          `Impossible de joindre ${address}. Vérifie ta connexion internet, puis réessaie.`,
+      },
       connected: (handle: string) => `Connecté en tant que ${handle}`,
       connectedMcp: "Serveur MCP connecté",
     },

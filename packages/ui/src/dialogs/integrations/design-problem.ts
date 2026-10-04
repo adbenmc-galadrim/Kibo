@@ -5,7 +5,7 @@ import { frDesign } from "../../i18n/fr-design";
 const t = frDesign.connect;
 const LACKS_TOOLS = /lacks tools: (.+)$/;
 
-export type DesignProvider = "figma" | "penpot";
+export type ConnectMode = "figma-token" | "figma-mcp" | "penpot";
 export type ConnectProblem = {
   tone: "error" | "warning";
   title: string;
@@ -23,12 +23,16 @@ function asFailure(e: unknown): Failure | null {
   return null;
 }
 
-const unreachable = (provider: DesignProvider, address: string): ConnectProblem => ({
-  tone: "error",
-  field: "address",
-  title: t[provider].unreachable.title,
-  detail: t[provider].unreachable.detail(addressOf(address)),
-});
+const UNREACHABLE = {
+  "figma-token": { text: t.figma.unreachableToken, field: null },
+  "figma-mcp": { text: t.figma.unreachable, field: "address" },
+  penpot: { text: t.penpot.unreachable, field: "address" },
+} as const;
+
+function unreachable(mode: ConnectMode, address: string): ConnectProblem {
+  const { text, field } = UNREACHABLE[mode];
+  return { tone: "error", title: text.title, detail: text.detail(addressOf(address)), field };
+}
 
 function missingTools(message: string): ConnectProblem {
   const tools = LACKS_TOOLS.exec(message)?.[1] ?? t.figma.expectedTools;
@@ -40,8 +44,8 @@ function missingTools(message: string): ConnectProblem {
   };
 }
 
-export function connectProblem(provider: DesignProvider, e: unknown, address: string): ConnectProblem {
-  if (e === null) return unreachable(provider, address);
+export function connectProblem(mode: ConnectMode, e: unknown, address: string): ConnectProblem {
+  if (e === null) return unreachable(mode, address);
   const failure = asFailure(e);
   if (failure === null) return { tone: "error", title: fr.common.error, detail: String(e), field: null };
   switch (failure.code) {
@@ -54,6 +58,6 @@ export function connectProblem(provider: DesignProvider, e: unknown, address: st
     case "SECRET_STORE_UNAVAILABLE":
       return { tone: "error", title: fr.integrations.keychainUnavailable, detail: "", field: null };
     default:
-      return unreachable(provider, address);
+      return unreachable(mode, address);
   }
 }

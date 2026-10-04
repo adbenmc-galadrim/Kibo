@@ -50,9 +50,9 @@ export function FigmaConnectDialog({ open, onOpenChange, onDone }: IntegrationDi
     try {
       const s = await client.rpc({ method: "connectFigma", auth });
       if (s.state === "connected") onDone(doneText(s));
-      else setError(connectProblem("figma", s.error, address));
+      else setError(connectProblem(`figma-${mode}`, s.error, address));
     } catch (e) {
-      setError(connectProblem("figma", e, address));
+      setError(connectProblem(`figma-${mode}`, e, address));
     } finally {
       setBusy(false);
     }

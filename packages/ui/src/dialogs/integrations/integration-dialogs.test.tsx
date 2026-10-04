@@ -146,6 +146,25 @@ test("figma: a refused token is explained on the field", async () => {
   expect(document.body.innerHTML).not.toContain("figd_wrong");
 });
 
+test("figma: an unreachable api in token mode does not mention the mcp server", async () => {
+  reply = async () => {
+    throw new KiboError("REMOTE_UNAVAILABLE", "down");
+  };
+  const user = userEvent.setup();
+  render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  await user.type(screen.getByLabelText("Jeton"), "figd_x");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  const alert = await screen.findByRole("alert");
+  expect(within(alert).getByText("Figma injoignable")).toBeDefined();
+  expect(
+    within(alert).getByText(
+      "Impossible de joindre api.figma.com. Vérifie ta connexion internet, puis réessaie.",
+    ),
+  ).toBeDefined();
+  expect(alert.textContent).not.toContain("serveur MCP");
+  expect(screen.getByLabelText("Jeton").getAttribute("aria-invalid")).toBe("false");
+});
+
 test("figma: the mcp server mode sends the prefilled address", async () => {
   let state: IntegrationStatus["state"] = "error";
   reply = async () =>
