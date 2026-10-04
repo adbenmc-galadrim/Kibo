@@ -17,7 +17,7 @@ test("only the first image item of the clipboard is taken", () => {
   const png = new File([new Uint8Array([1])], "a.png", { type: "image/png" });
   const svg = new File([new Uint8Array([1])], "a.svg", { type: "image/svg+xml" });
   const txt = new File([new Uint8Array([1])], "a.txt", { type: "text/plain" });
-  const data = (files: File[]) => ({ files }) as unknown as DataTransfer;
+  const data = (files: File[]) => ({ files });
   expect(imageFromClipboard(data([txt, svg, png]))).toBe(png);
   expect(imageFromClipboard(data([txt, svg]))).toBeNull();
   expect(imageFromClipboard(null)).toBeNull();

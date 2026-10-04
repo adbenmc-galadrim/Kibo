@@ -20,7 +20,7 @@ export function assetNameFor(notePath: string, mime: AssetMime, now: Date): stri
   return `${slugify(base) || "note"}-${stampOf(now)}.${EXT[mime]}`;
 }
 
-export function imageFromClipboard(data: DataTransfer | null): File | null {
+export function imageFromClipboard(data: { readonly files: ArrayLike<File> } | null): File | null {
   if (!data) return null;
   return Array.from(data.files).find((f) => isAssetMime(f.type)) ?? null;
 }
