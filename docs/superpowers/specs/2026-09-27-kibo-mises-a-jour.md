@@ -131,3 +131,10 @@ sa CSP (les seuls schémas de l'IPC Tauri, inertes dans un navigateur) ; il ne c
 2. Fusion sur `main`, puis `git tag v1.1.0 && git push origin v1.1.0`.
 3. Le workflow `release` construit, signe, crée la release brouillon, la publie ; vérifier `latest.json` dans les assets.
 4. Les applications installées proposent la mise à jour à la prochaine vérification (au plus 6 h, ou « Rechercher »).
+
+## 7. Amendements de la phase 14 (spec de conception §20.1)
+
+- **Signature ad hoc** sur macOS (`bundle.macOS.signingIdentity: "-"`), décision d'Adam du 2026-10-04 : ni certificat ni notarisation pour l'instant ; §3.2 reste vrai (première ouverture par clic droit ▸ Ouvrir, mises à jour sans quarantaine), la signature minisign de l'updater est inchangée et indépendante.
+- **macOS Intel construit à chaque tag** (amende §3.6) ; l'entrée `workflow_dispatch` devient `skipIntel`.
+- La release publie en plus `SHA256SUMS` et `install.sh` ; son corps commence par l'encart d'installation puis la section du `CHANGELOG.md` de la version (le tag est refusé si elle manque).
+- Avant `downloadAndInstall`, l'interface demande au démon une sauvegarde (`createBackup { reason: "update" }`, §20.5) ; un échec de sauvegarde bloque l'installation et l'explique.
