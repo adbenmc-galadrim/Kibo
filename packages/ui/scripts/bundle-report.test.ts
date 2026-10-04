@@ -188,6 +188,15 @@ describe("bundle report", () => {
     );
   });
 
+  test("frame url parsing and config validation stay out of the entry, not the schemas", () => {
+    for (const p of ["/x/packages/schema/src/design-url.ts", "/x/packages/schema/src/config-validate.ts"]) {
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    }
+    for (const p of ["/x/packages/schema/src/design.ts", "/x/packages/schema/src/config.ts"]) {
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(false);
+    }
+  });
+
   test("the draft preview host and its demo project are forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/ai/worker-backend.ts",

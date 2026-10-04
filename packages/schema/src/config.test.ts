@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { ConfigField, validateConfig } from "./config";
+import { ConfigField } from "./config";
+import { validateConfig } from "./config-validate";
 
 test("a frame field holds a figma or penpot frame url", () => {
   const schema = { frame: { type: "string", nullable: true, default: null, frame: true } } as const;

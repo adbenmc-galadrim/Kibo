@@ -67,6 +67,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(help\/ShortcutsDialog\.tsx|settings\/(ShortcutList\.tsx|shortcuts\.ts)|report\/[A-Za-z-]+\.tsx?|i18n\/fr-report\.ts)$/,
   /\/packages\/ui\/src\/(backups\/[A-Za-z-]+\.tsx?|i18n\/fr-backups\.ts|desktop\/reveal\.ts)$/,
   /\/packages\/ui\/src\/(tutorial\/[A-Za-z-]+\.tsx?|i18n\/fr-tutorial\.ts)$/,
+  /\/packages\/schema\/src\/(design-url|config-validate)\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

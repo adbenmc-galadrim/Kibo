@@ -7,8 +7,8 @@ import {
   frameExtension,
   frameKeyOfRef,
   PenpotBoardRef,
-  parseDesignUrl,
 } from "./design";
+import { parseDesignUrl } from "./design-url";
 
 const FIGMA = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34&t=abc";
 const IDS = {
