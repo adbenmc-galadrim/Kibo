@@ -1,6 +1,6 @@
 import { autocompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import { EditorSelection } from "@codemirror/state";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { frEditor } from "../fr-editor";
 import { type Command, insertCodeBlock, insertLink, insertTable, setHeading, toggleBlock } from "./commands";
 
@@ -47,9 +47,41 @@ export function slashCompletions(context: CompletionContext): CompletionResult |
   return {
     from: line.from + before.indexOf("/") + 1,
     validFor: QUERY,
-    options: SLASH_ITEMS.map((item) => ({ label: item.label, apply: applyItem(item) })),
+    options: SLASH_ITEMS.map((item, index) => ({
+      label: item.label,
+      boost: -index,
+      apply: applyItem(item),
+    })),
   };
 }
 
-export const slashMenu = () =>
-  autocompletion({ override: [slashCompletions], activateOnTyping: true, icons: false });
+const slashMenuTheme = EditorView.theme({
+  ".cm-tooltip.cm-tooltip-autocomplete": {
+    backgroundColor: "var(--popover)",
+    color: "var(--popover-foreground)",
+    border: "1px solid var(--border)",
+    borderRadius: "calc(var(--radius) - 2px)",
+    padding: "4px",
+    boxShadow: "0 4px 12px rgb(0 0 0 / 0.15)",
+  },
+  ".cm-tooltip.cm-tooltip-autocomplete > ul": {
+    fontFamily: "var(--font-sans)",
+    fontSize: "13px",
+    maxHeight: "18rem",
+    minWidth: "12rem",
+  },
+  ".cm-tooltip.cm-tooltip-autocomplete > ul > li": {
+    padding: "4px 8px",
+    borderRadius: "calc(var(--radius) - 4px)",
+  },
+  ".cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]": {
+    backgroundColor: "var(--accent)",
+    color: "var(--accent-foreground)",
+  },
+  ".cm-completionMatchedText": { textDecoration: "none", fontWeight: "600" },
+});
+
+export const slashMenu = () => [
+  autocompletion({ override: [slashCompletions], activateOnTyping: true, icons: false }),
+  slashMenuTheme,
+];

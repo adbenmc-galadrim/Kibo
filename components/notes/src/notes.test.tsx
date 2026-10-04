@@ -332,7 +332,21 @@ test("typing / at the start of a line opens the block menu, filtered and applied
   view.focus();
   view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "" } });
   view.dispatch({ changes: { from: 0, insert: "/" }, selection: { anchor: 1 }, userEvent: "input.type" });
-  await waitFor(() => expect(currentCompletions(view.state)).toHaveLength(11));
+  await waitFor(() =>
+    expect(currentCompletions(view.state).map((c) => c.label)).toEqual([
+      "Titre 1",
+      "Titre 2",
+      "Titre 3",
+      "Liste",
+      "Liste numérotée",
+      "Case à cocher",
+      "Citation",
+      "Bloc de code",
+      "Tableau",
+      "Lien",
+      "Image",
+    ]),
+  );
   view.dispatch({ changes: { from: 1, insert: "tab" }, selection: { anchor: 4 }, userEvent: "input.type" });
   await waitFor(() => expect(currentCompletions(view.state).map((c) => c.label)).toEqual(["Tableau"]));
   await waitFor(() => expect(acceptCompletion(view)).toBe(true));
