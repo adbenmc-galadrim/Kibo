@@ -22,6 +22,7 @@ import {
   DeleteProjectDialog,
   EditProjectDialog,
   FileTicketDialog,
+  HelpDialogs,
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
@@ -55,6 +56,10 @@ export type DialogsState = {
   editProject: string | null;
   deleteProject: string | null;
   tutorial: boolean;
+  about: boolean;
+  whatsNew: boolean;
+  shortcutsHelp: boolean;
+  report: boolean;
 };
 
 export const NO_DIALOG: DialogsState = {
@@ -75,6 +80,10 @@ export const NO_DIALOG: DialogsState = {
   editProject: null,
   deleteProject: null,
   tutorial: false,
+  about: false,
+  whatsNew: false,
+  shortcutsHelp: false,
+  report: false,
 };
 
 type Props = {
@@ -109,6 +118,7 @@ export function ShellDialogs({
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
+  const helpOpened = useOpened(state.about || state.whatsNew);
   const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
   const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
   const doomedProject = state.deleteProject
@@ -268,6 +278,7 @@ export function ShellDialogs({
           onOpenInTab={(edit) => p.onOpenFileTab(preview, edit)}
         />
       )}
+      {helpOpened && <HelpDialogs state={state} set={set} />}
     </>
   );
 }

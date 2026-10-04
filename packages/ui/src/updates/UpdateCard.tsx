@@ -6,13 +6,12 @@ import { CircleX, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { holdsSlot } from "../agents/queue-runs";
 import { frUpdates as t } from "../i18n/fr-updates";
+import { RELEASES_URL } from "../lib/kibo-links";
 import { inTauri } from "../shell/workspace-actions";
 import { useAgents } from "../state/use-agents";
 import { classifyUpdateFailure, downloadPercent, type UpdateInfo, type UpdateStatus } from "./update-state";
 import type { UpdateSnapshot, UpdateStore } from "./update-store";
 import { updateStore, useUpdateSnapshot } from "./use-update";
-
-export const RELEASES_URL = "https://github.com/adbenmc-galadrim/Kibo/releases";
 
 const timeOf = (ms: number) =>
   new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });

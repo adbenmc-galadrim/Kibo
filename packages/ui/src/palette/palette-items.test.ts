@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot } from "@kibo/schema";
 import { kiboProject, projectsFixture } from "../agents/fixtures";
+import { isHelpDialog } from "../shell/help-dialogs";
 import { agentItems } from "./agent-items";
 import { activeTicket, buildItems, type PaletteContext, searchItems } from "./palette-items";
 
@@ -49,4 +50,18 @@ test("an inbox ticket cannot be assigned to an agent from the palette", () => {
   expect(agentItems([], active).some((i) => i.icon === "assign")).toBe(false);
   const onKibo = activeTicket({ ...context, activeProjectId: "kibo", activeTicketId: model.id });
   expect(agentItems([], onKibo).some((i) => i.icon === "assign")).toBe(true);
+});
+
+test("the help entries are palette actions, in the help menu order", () => {
+  const help = buildItems(context).filter((i) => i.run.kind === "action" && isHelpDialog(i.run.action.kind));
+  expect(help.map((i) => [i.label, i.run])).toEqual([
+    ["Raccourcis clavier", { kind: "action", action: { kind: "shortcutsHelp" } }],
+    ["Didacticiel", { kind: "action", action: { kind: "tutorial" } }],
+    ["Quoi de neuf", { kind: "action", action: { kind: "whatsNew" } }],
+    ["Signaler un problème", { kind: "action", action: { kind: "report" } }],
+    ["À propos de Kibo", { kind: "action", action: { kind: "about" } }],
+  ]);
+  expect(searchItems(buildItems(context), "a propos", "actions")[0]?.items.map((i) => i.label)).toEqual([
+    "À propos de Kibo",
+  ]);
 });

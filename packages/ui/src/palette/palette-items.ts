@@ -10,6 +10,8 @@ import {
 } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 import { withInbox } from "../lib/inbox";
+import { HELP_DIALOGS, type HelpDialog } from "../shell/help-dialogs";
+import { helpLabel } from "../shell/help-labels";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
 
@@ -23,7 +25,8 @@ export type PaletteAction =
   | { kind: "newProject" }
   | { kind: "toggleTheme" }
   | { kind: "reply"; runId: string }
-  | { kind: "assign"; projectId: string; ticketId: string };
+  | { kind: "assign"; projectId: string; ticketId: string }
+  | { kind: HelpDialog };
 
 export type PaletteItem = {
   id: string;
@@ -33,7 +36,17 @@ export type PaletteItem = {
   detail: string | null;
   statusId: StatusId | null;
   color: string | null;
-  icon: "ticket" | "page" | "project" | "changes" | "new" | "theme" | "reply" | "assign" | Screen;
+  icon:
+    | "ticket"
+    | "page"
+    | "project"
+    | "changes"
+    | "new"
+    | "theme"
+    | "reply"
+    | "assign"
+    | HelpDialog
+    | Screen;
   run: { kind: "target"; target: TabTarget } | { kind: "action"; action: PaletteAction };
   ticket: { projectId: string; ticketId: string; keyLabel: string } | null;
 };
@@ -191,6 +204,8 @@ function actions(ctx: PaletteContext): PaletteItem[] {
   out.push(
     action("theme", fr.palette.toggleTheme, "theme", { kind: "action", action: { kind: "toggleTheme" } }),
   );
+  for (const key of HELP_DIALOGS)
+    out.push(action(key, helpLabel(key), key, { kind: "action", action: { kind: key } }));
   return out;
 }
 

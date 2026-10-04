@@ -10,7 +10,21 @@ import {
   CommandList,
 } from "@kibo/sdk/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@kibo/sdk/ui/dialog";
-import { Bell, Bot, FileText, FolderKanban, GitCommitHorizontal, Plus, SunMoon, Ticket } from "lucide-react";
+import {
+  Bell,
+  Bot,
+  Bug,
+  FileText,
+  FolderKanban,
+  GitCommitHorizontal,
+  GraduationCap,
+  Info,
+  Keyboard,
+  Plus,
+  Sparkles,
+  SunMoon,
+  Ticket,
+} from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
@@ -46,6 +60,11 @@ const ICONS = {
   theme: SunMoon,
   reply: Bell,
   assign: Bot,
+  shortcutsHelp: Keyboard,
+  tutorial: GraduationCap,
+  whatsNew: Sparkles,
+  report: Bug,
+  about: Info,
   agents: SCREENS.agents.icon,
   queue: SCREENS.queue.icon,
   general: SCREENS.general.icon,

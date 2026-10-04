@@ -93,3 +93,8 @@ export const DeleteProjectDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const HelpDialogs = lazyPanel(
+  () => import("./HelpDialogs").then((m) => m.HelpDialogs),
+  fr.lazy,
+  hidden,
+);

@@ -25,6 +25,7 @@ import { cycleTheme } from "../theme";
 import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
+import { helpPatch } from "./help-dialogs";
 import { CommandPalette } from "./lazy-dialogs";
 import { ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
@@ -33,6 +34,7 @@ import type { ShellProps } from "./Shell";
 import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
+import { useAppHelp } from "./use-app-help";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useShellDialogs } from "./use-shell-dialogs";
@@ -56,6 +58,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
+  useAppHelp(set);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
   const { open } = tabs;
@@ -195,6 +198,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 onShare={() => project && set({ share: project.meta.id })}
                 onOpenRun={setFocusRun}
                 onOpen={(t) => go(t)}
+                onHelp={(key) => set(helpPatch(key))}
               />
               {project?.sync.shared && (
                 <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />

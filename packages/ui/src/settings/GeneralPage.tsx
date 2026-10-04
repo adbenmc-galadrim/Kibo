@@ -1,5 +1,6 @@
 import { fr } from "../i18n/fr";
 import { UpdateCard } from "../updates/UpdateCard";
+import { ApplicationCard } from "./ApplicationCard";
 import { CliInstallCard } from "./CliInstallCard";
 import { SettingsLayout } from "./SettingsLayout";
 
@@ -11,6 +12,7 @@ export function GeneralPage() {
           <h1 className="text-xl font-semibold">{fr.settings.general}</h1>
           <p className="text-sm text-muted-foreground">{fr.settings.generalSubtitle}</p>
         </div>
+        <ApplicationCard />
         <UpdateCard />
         <CliInstallCard />
       </div>

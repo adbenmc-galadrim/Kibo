@@ -61,6 +61,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/sdk\/src\/(three|game)\//,
   /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,
   /\/packages\/core\/src\/|\/node_modules\/loro-crdt\//,
+  /\/packages\/ui\/src\/((about|whats-new)\/[A-Za-z-]+\.tsx?|i18n\/fr-(about|whats-new)\.ts)$/,
+  /\/packages\/ui\/src\/(settings\/ApplicationCard\.tsx|desktop\/(autostart|about-event)\.ts|shell\/(HelpDialogs\.tsx|help-boot\.ts|help-labels\.ts))$/,
+  /\/CHANGELOG\.md\?raw$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

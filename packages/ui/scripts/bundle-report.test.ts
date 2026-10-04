@@ -151,6 +151,28 @@ describe("bundle report", () => {
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/pages/DashboardGrid.tsx"))).toBe(false);
   });
 
+  test("the about, what's new and application chunks are forbidden in the entry, not the help hook", () => {
+    const paths = [
+      "/x/packages/ui/src/about/AboutDialog.tsx",
+      "/x/packages/ui/src/about/about-text.ts",
+      "/x/packages/ui/src/whats-new/WhatsNewDialog.tsx",
+      "/x/packages/ui/src/whats-new/BundledWhatsNewDialog.tsx",
+      "/x/packages/ui/src/i18n/fr-about.ts",
+      "/x/packages/ui/src/i18n/fr-whats-new.ts",
+      "/x/packages/ui/src/settings/ApplicationCard.tsx",
+      "/x/packages/ui/src/desktop/autostart.ts",
+      "/x/packages/ui/src/whats-new/whats-new.ts",
+      "/x/packages/ui/src/desktop/about-event.ts",
+      "/x/packages/ui/src/shell/HelpDialogs.tsx",
+      "/x/packages/ui/src/shell/help-boot.ts",
+      "/x/packages/ui/src/shell/help-labels.ts",
+      "/x/CHANGELOG.md?raw",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    for (const p of ["/x/packages/ui/src/shell/use-app-help.ts", "/x/packages/ui/src/shell/help-dialogs.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(false);
+  });
+
   test("the draft preview host and its demo project are forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/ai/worker-backend.ts",

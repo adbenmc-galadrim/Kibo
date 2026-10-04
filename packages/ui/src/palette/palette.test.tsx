@@ -115,6 +115,11 @@ test("an empty query shows recents, projects and contextual actions", () => {
     "Voir les changements de Kibo",
     "Nouveau projet",
     "Basculer le thème (système / clair / sombre)",
+    "Raccourcis clavier",
+    "Didacticiel",
+    "Quoi de neuf",
+    "Signaler un problème",
+    "À propos de Kibo",
   ]);
 });
 
