@@ -1,12 +1,15 @@
 import type { TicketRun, TicketView } from "@kibo/schema";
 import { liveRun, RunDot, StatusDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
-import { Button } from "@kibo/sdk/ui/button";
-import { Bot, Minus, Plus } from "lucide-react";
-import { type PointerEvent, useId, useRef, useState } from "react";
+import { Bot } from "lucide-react";
+import { useId, useRef } from "react";
 import type { GraphEdge } from "./critical-path";
 import { fr } from "./fr";
+import { Legend, ZoomControls } from "./GraphControls";
 import { type GraphLayout, NODE_H, NODE_W, type NodePosition } from "./layout";
+import { Minimap } from "./Minimap";
+import { useGraphViewport } from "./use-graph-viewport";
+import type { Point } from "./viewport";
 
 type Props = {
   tickets: TicketView[];
@@ -17,10 +20,7 @@ type Props = {
   onOpen(id: string): void;
 };
 
-type Point = { x: number; y: number };
-
-const MARGIN = 48;
-const clampZoom = (z: number) => Math.min(2, Math.max(0.5, Math.round(z * 10) / 10));
+const NODE_SIZE = { width: NODE_W, height: NODE_H };
 
 function edgePath(a: Point, b: Point, relates: boolean): string {
   if (relates && Math.abs(a.x - b.x) < 1) {
@@ -94,12 +94,14 @@ function Node({
   hot,
   run,
   onOpen,
+  onFrame,
 }: {
   ticket: TicketView;
   at: NodePosition;
   hot: boolean;
   run: TicketRun | null;
   onOpen(id: string): void;
+  onFrame(at: Point): void;
 }) {
   return (
     <button
@@ -107,6 +109,7 @@ function Node({
       data-critical={hot ? "true" : "false"}
       aria-label={`${ticket.keyLabel} ${ticket.title}`}
       onClick={() => onOpen(ticket.id)}
+      onDoubleClick={() => onFrame(at)}
       className={cn(
         "absolute grid content-center gap-1 rounded-md border bg-card px-3 text-left hover:bg-accent",
         hot && "border-2 border-foreground",
@@ -128,88 +131,25 @@ function Node({
   );
 }
 
-function Legend() {
-  return (
-    <div className="absolute bottom-3 left-3 grid gap-1 rounded-md border bg-card p-2 text-2xs text-muted-foreground">
-      <span className="flex items-center gap-2">
-        <span aria-hidden="true" className="h-px w-5 bg-muted-foreground" />
-        {fr.legend.blocks}
-      </span>
-      <span className="flex items-center gap-2">
-        <span aria-hidden="true" className="h-0.5 w-5 bg-foreground" />
-        {fr.legend.critical}
-      </span>
-      <span className="flex items-center gap-2">
-        <span aria-hidden="true" className="w-5 border-t border-dashed border-muted-foreground" />
-        {fr.legend.relates}
-      </span>
-    </div>
-  );
-}
-
-function ZoomControls({ zoom, onZoom }: { zoom: number; onZoom(z: number): void }) {
-  return (
-    <div className="absolute right-3 bottom-3 flex items-center rounded-md border bg-card">
-      <Button
-        size="icon"
-        variant="ghost"
-        className="size-7"
-        aria-label={fr.zoomIn}
-        onClick={() => onZoom(clampZoom(zoom + 0.1))}
-      >
-        <Plus aria-hidden="true" />
-      </Button>
-      <Button
-        variant="ghost"
-        className="h-7 px-2 font-mono text-2xs"
-        aria-label={fr.zoomReset}
-        onClick={() => onZoom(1)}
-      >
-        {`${Math.round(zoom * 100)} %`}
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="size-7"
-        aria-label={fr.zoomOut}
-        onClick={() => onZoom(clampZoom(zoom - 0.1))}
-      >
-        <Minus aria-hidden="true" />
-      </Button>
-    </div>
-  );
-}
-
 export function GraphCanvas({ tickets, edges, layout, critical, runs, onOpen }: Props) {
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
-  const drag = useRef<{ start: Point; from: Point } | null>(null);
+  const section = useRef<HTMLElement>(null);
+  const vp = useGraphViewport(section, layout);
+  const { view } = vp;
   const byId = new Map(tickets.map((t) => [t.id, t]));
-
-  const onPointerDown = (e: PointerEvent<HTMLElement>) => {
-    if (e.target instanceof Element && e.target.closest("button")) return;
-    drag.current = { start: { x: e.clientX, y: e.clientY }, from: pan };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: PointerEvent<HTMLElement>) => {
-    const d = drag.current;
-    if (d) setPan({ x: d.from.x + e.clientX - d.start.x, y: d.from.y + e.clientY - d.start.y });
-  };
 
   return (
     <section
+      ref={section}
       aria-label={fr.canvas}
-      className="relative h-full min-h-[320px] cursor-grab overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px] active:cursor-grabbing"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={() => {
-        drag.current = null;
-      }}
+      data-zoom={String(view.zoom)}
+      className="relative h-full min-h-[320px] cursor-grab touch-none overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px] active:cursor-grabbing"
+      {...vp.pointer}
     >
       <div
+        data-stage
         className="absolute top-0 left-0 origin-top-left"
         style={{
-          transform: `translate(${pan.x + MARGIN}px, ${pan.y + MARGIN}px) scale(${zoom})`,
+          transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})`,
           width: layout.width,
           height: layout.height,
         }}
@@ -225,12 +165,14 @@ export function GraphCanvas({ tickets, edges, layout, critical, runs, onOpen }: 
               hot={critical.has(t.id)}
               run={liveRun(runs.get(t.id) ?? null)}
               onOpen={onOpen}
+              onFrame={(at) => vp.frame(at, NODE_SIZE)}
             />
           ) : null;
         })}
       </div>
       <Legend />
-      <ZoomControls zoom={zoom} onZoom={setZoom} />
+      <Minimap layout={layout} view={view} box={vp.box} onJump={vp.centerOn} />
+      <ZoomControls zoom={view.zoom} onZoom={vp.zoomTo} onFit={vp.fit} />
     </section>
   );
 }

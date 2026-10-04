@@ -23,6 +23,8 @@ export const fr = {
   zoomIn: "Zoom avant",
   zoomOut: "Zoom arrière",
   zoomReset: "Taille réelle",
+  fitAll: "Tout voir",
+  minimap: "Vue d'ensemble du graphe",
   agent: "Assigné à un agent",
   emptyView: "Aucune dépendance entre les tickets affichés.",
   emptyWidget: "Aucun chemin critique : aucun ticket bloquant.",

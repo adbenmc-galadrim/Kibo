@@ -4,7 +4,7 @@ import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -64,6 +64,35 @@ test("toolbar: hide done, critical path toggle, zoom", async () => {
   expect(screen.getByRole("button", { name: "Taille réelle" }).textContent).toBe("110 %");
   await user.click(screen.getByRole("button", { name: "Taille réelle" }));
   expect(screen.getByRole("button", { name: "Taille réelle" }).textContent).toBe("100 %");
+});
+
+// happy-dom WheelEvent carries neither modifier keys nor pointer coordinates
+const pinch = (el: Element, deltaY: number, at: { x: number; y: number }) => {
+  const event = createEvent.wheel(el, { deltaY });
+  Object.defineProperties(event, {
+    ctrlKey: { value: true },
+    clientX: { value: at.x },
+    clientY: { value: at.y },
+  });
+  fireEvent(el, event);
+};
+
+test("pinch zooms around the pointer, two fingers pan, double click frames a node, Tout voir fits", async () => {
+  setup("view");
+  await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
+  const canvas = screen.getByRole("region", { name: "Graphe des dépendances" });
+  const stage = () => canvas.querySelector<HTMLElement>("[data-stage]");
+  const before = stage()?.style.transform ?? "";
+  fireEvent.wheel(canvas, { deltaX: 30, deltaY: 20 });
+  expect(stage()?.style.transform).not.toBe(before);
+  pinch(canvas, -100, { x: 10, y: 10 });
+  expect(canvas.getAttribute("data-zoom")).toBe("2.72");
+  expect(screen.getByRole("button", { name: "Taille réelle" }).textContent).toBe("272 %");
+  await userEvent.setup().dblClick(within(canvas).getByRole("button", { name: /KIB-21 / }));
+  expect(canvas.getAttribute("data-zoom")).toBe("1.25");
+  await userEvent.setup().click(screen.getByRole("button", { name: "Tout voir" }));
+  expect(canvas.getAttribute("data-zoom")).toBe("1");
+  expect(screen.getByRole("img", { name: "Vue d'ensemble du graphe" })).toBeTruthy();
 });
 
 test("screen 7 widget: chain, blocked reason and a link to the view", async () => {
