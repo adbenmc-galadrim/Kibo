@@ -6,6 +6,15 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 1.5.0 — 2026-10-04
+
+- Installation : image disque macOS (Apple Silicon et Intel), paquets Linux, script `install.sh` avec vérification des sommes.
+- Premier lancement complété : vérifications avec aide pour Claude Code, git et gh, bouton Réessayer.
+- Didacticiel par la pratique sur un projet de démonstration, avec un agent de démonstration qui ne consomme aucun token.
+- Sauvegardes automatiques de tes données, et une sauvegarde avant chaque mise à jour.
+- Lancer Kibo à l'ouverture de session, « À propos », « Quoi de neuf » après une mise à jour.
+- Aide des raccourcis `⌘/` et « Signaler un problème » avec un rapport sans secret.
+
 ## 1.4.0 — 2026-10-04
 
 - Composants en 3D : kit `@kibo/sdk/three`, modèles GLB du projet, intégré « Visionneuse 3D ».
