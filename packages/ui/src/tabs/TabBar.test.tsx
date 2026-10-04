@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   DEFAULT_WORKFLOW,
+  MAX_TABS,
   type ProjectSnapshot,
   type ProjectSummary,
   type RpcRequest,
@@ -159,8 +160,8 @@ test("useTabs loads the stored state and saves changes after a debounce", async 
 
 const pageTarget = (pageId: string): TabTarget => ({ kind: "page", projectId: "p1", pageId });
 
-async function mountTabs() {
-  stored = { tabs: [], activeId: null, recents: [] };
+async function mountTabs(initial: TabsState = { tabs: [], activeId: null, recents: [] }) {
+  stored = initial;
   const { result } = renderHook(() => useTabs());
   await waitFor(() => expect(result.current).not.toBeNull());
   return () => {
@@ -194,4 +195,71 @@ test("closing a project's tabs does not fill the closed pile", async () => {
   act(() => api().dispatch({ type: "closeProject", projectId: "p1" }));
   expect(api().state.tabs).toEqual([]);
   expect(api().closed).toEqual([]);
+});
+
+test("closing a tab and its duplicate counts two closes", async () => {
+  const api = await mountTabs();
+  act(() => api().open(pageTarget("1"), { newTab: true }));
+  const first = api().state.activeId ?? "";
+  act(() => api().dispatch({ type: "duplicate", id: first, newId: "copy" }));
+  act(() => api().dispatch({ type: "close", id: "copy" }));
+  act(() => api().dispatch({ type: "close", id: first }));
+  expect(api().closures).toBe(2);
+  expect(api().closed).toEqual([pageTarget("1"), pageTarget("1")]);
+});
+
+const fullPinned = (count: number): TabsState => ({
+  tabs: Array.from({ length: count }, (_, i) => ({
+    id: `pin${i}`,
+    target: pageTarget(`pin${i}`),
+    pinned: true,
+  })),
+  activeId: null,
+  recents: [],
+});
+
+test("reopen keeps the pile when every tab is pinned at the limit", async () => {
+  const api = await mountTabs(fullPinned(MAX_TABS - 1));
+  act(() => api().open(pageTarget("gone"), { newTab: true }));
+  act(() => api().dispatch({ type: "close", id: api().state.activeId ?? "" }));
+  act(() => api().open(pageTarget("last"), { newTab: true }));
+  act(() => api().dispatch({ type: "pin", id: api().state.activeId ?? "", pinned: true }));
+  act(() => api().reopen());
+  expect(api().state.tabs).toHaveLength(MAX_TABS);
+  expect(api().closed).toEqual([pageTarget("gone")]);
+});
+
+test("reopen at the limit evicts an unpinned tab and opens the closed one", async () => {
+  const api = await mountTabs(fullPinned(MAX_TABS - 2));
+  act(() => api().open(pageTarget("gone"), { newTab: true }));
+  act(() => api().dispatch({ type: "close", id: api().state.activeId ?? "" }));
+  act(() => api().open(pageTarget("b"), { newTab: true }));
+  act(() => api().open(pageTarget("c"), { newTab: true }));
+  act(() => api().reopen());
+  const targets = api().state.tabs.map((t) => t.target);
+  expect(targets).toContainEqual(pageTarget("gone"));
+  expect(targets).not.toContainEqual(pageTarget("b"));
+  expect(api().closed).toEqual([]);
+});
+
+test("reopen activates the tab that already holds the closed target and pops it", async () => {
+  const api = await mountTabs();
+  act(() => api().open(pageTarget("1"), { newTab: true }));
+  const first = api().state.activeId ?? "";
+  act(() => api().dispatch({ type: "duplicate", id: first, newId: "copy" }));
+  act(() => api().dispatch({ type: "close", id: "copy" }));
+  act(() => api().open(null));
+  act(() => api().reopen());
+  expect(api().state.activeId).toBe(first);
+  expect(api().closed).toEqual([]);
+});
+
+test("closing a project drops its targets from the closed pile", async () => {
+  const api = await mountTabs();
+  act(() => api().open(pageTarget("1"), { newTab: true }));
+  act(() => api().open({ kind: "screen", screen: "agents" }, { newTab: true }));
+  act(() => api().dispatch({ type: "close", id: api().state.tabs[0]?.id ?? "" }));
+  act(() => api().dispatch({ type: "close", id: api().state.tabs[0]?.id ?? "" }));
+  act(() => api().dispatch({ type: "closeProject", projectId: "p1" }));
+  expect(api().closed).toEqual([{ kind: "screen", screen: "agents" }]);
 });

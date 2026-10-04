@@ -3,13 +3,12 @@ import { showClosedTabToast } from "./closed-toast";
 import type { TabsApi } from "./use-tabs";
 
 export function useClosedTabToast(tabs: TabsApi): void {
-  const previous = useRef(tabs.closed);
+  const seen = useRef(tabs.closures);
   const reopen = useRef(tabs.reopen);
   reopen.current = tabs.reopen;
-  const { closed } = tabs;
+  const { closures } = tabs;
   useEffect(() => {
-    const latest = closed[0];
-    if (latest && !previous.current.includes(latest)) void showClosedTabToast(() => reopen.current());
-    previous.current = closed;
-  }, [closed]);
+    if (closures > seen.current) void showClosedTabToast(() => reopen.current());
+    seen.current = closures;
+  }, [closures]);
 }

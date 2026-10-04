@@ -23,6 +23,7 @@ const api = (s: TabsState): TabsApi => ({
   dispatch: () => {},
   open,
   closed: [],
+  closures: 0,
   reopen: () => {},
 });
 
