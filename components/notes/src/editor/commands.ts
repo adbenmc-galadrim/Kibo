@@ -76,13 +76,16 @@ const commonSuffix = (a: string, b: string): number => {
 const rewriteLines = (
   state: EditorState,
   rewrite: (text: string, index: number) => string,
-): TransactionSpec => ({
-  changes: selectedLines(state).map((line, index) => {
-    const next = rewrite(line.text, index);
-    const kept = commonSuffix(line.text, next);
-    return { from: line.from, to: line.to - kept, insert: next.slice(0, next.length - kept) };
-  }),
-});
+): TransactionSpec => {
+  const changes = state.changes(
+    selectedLines(state).map((line, index) => {
+      const next = rewrite(line.text, index);
+      const kept = commonSuffix(line.text, next);
+      return { from: line.from, to: line.to - kept, insert: next.slice(0, next.length - kept) };
+    }),
+  );
+  return { changes, selection: state.selection.map(changes, 1) };
+};
 
 const HEADING = /^#{1,6} /;
 

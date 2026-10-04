@@ -51,6 +51,10 @@ test("lists toggle, ordered lists count, a task replaces a bullet, a quote nests
   expect(apply(state("- a\n- b", 0, 7), toggleBlock("bullet")).doc.toString()).toBe("a\nb");
   expect(apply(state("a\nb", 0, 3), toggleBlock("ordered")).doc.toString()).toBe("1. a\n2. b");
   expect(apply(state("- a", 0), toggleBlock("task")).doc.toString()).toBe("- [ ] a");
+  const emptyTask = apply(state("", 0), toggleBlock("task"));
+  expect(emptyTask.doc.toString()).toBe("- [ ] ");
+  expect(sel(emptyTask)).toEqual([6, 6]);
+  expect(sel(apply(state("x\n", 2), setHeading(2)))).toEqual([5, 5]);
   expect(apply(state("- [ ] a", 0), toggleBlock("task")).doc.toString()).toBe("a");
   expect(apply(state("a", 0), toggleBlock("quote")).doc.toString()).toBe("> a");
   expect(apply(state("> a", 0), toggleBlock("quote")).doc.toString()).toBe("a");
