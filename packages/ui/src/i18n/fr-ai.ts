@@ -91,6 +91,8 @@ export const frAi = {
       idInvalid: "Minuscules, chiffres et tirets, 2 à 40 caractères, en commençant par une lettre.",
       kindLabel: "Type",
       kinds: { widget: "Widget", view: "Vue", both: "Les deux" },
+      templateLabel: "Gabarit",
+      templates: { blank: "Vide", "3d": "3D", game: "Jeu", chart: "Graphique", table: "Tableau" },
       withServer: "Avec backend (server.ts)",
       generate: "Générer avec un agent",
       resume: (title: string) => `Brouillon en cours : ${title}`,

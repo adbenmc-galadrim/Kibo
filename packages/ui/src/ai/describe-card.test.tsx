@@ -162,6 +162,21 @@ test("changing the kind resets the formats, and a view without the full format c
   expect(screen.getByRole("button", { name: generateName }).hasAttribute("disabled")).toBe(true);
 });
 
+test("choosing the 3D template sends it with the draft", async () => {
+  answer = (req) =>
+    req.method === "getAiStatus" ? aiReady : req.method === "startComponentDraft" ? draftFixture({}) : null;
+  const user = userEvent.setup();
+  render(<DescribeCard onStarted={() => {}} />);
+  await user.type(await screen.findByLabelText(describeLabel), "Visionneuse du modèle 3D du projet");
+  screen.getByRole("combobox", { name: "Gabarit" }).focus();
+  await user.keyboard("{Enter}");
+  const options = await screen.findAllByRole("option");
+  expect(options.map((o) => o.textContent)).toEqual(["Vide", "3D", "Jeu", "Graphique", "Tableau"]);
+  await user.click(screen.getByRole("option", { name: "3D" }));
+  await user.click(screen.getByRole("button", { name: generateName }));
+  expect(startRequest()).toMatchObject({ template: "3d" });
+});
+
 test("a GIF is refused with a message and nothing is attached", async () => {
   answer = (req) => (req.method === "getAiStatus" ? aiReady : null);
   const user = userEvent.setup({ applyAccept: false });
