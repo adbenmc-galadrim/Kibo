@@ -12,6 +12,7 @@ import { useRoute } from "../route";
 import { canEdit } from "../state/access";
 import { useConfig, useNow } from "../state/use-agents";
 import { useProject } from "../state/use-projects";
+import { useDestructiveKeyGuard } from "../tabs/key-guard";
 import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
@@ -94,6 +95,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     [activeProjectId, set, go, views.openView],
   );
 
+  useDestructiveKeyGuard();
   useTabShortcuts((s) => {
     if (s.kind === "palette") return setPalette({ newTab: false });
     if (s.kind === "newTab") return setPalette({ newTab: true });
