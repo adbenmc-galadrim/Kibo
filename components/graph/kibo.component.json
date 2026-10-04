@@ -2,7 +2,7 @@
   "id": "graph",
   "version": "1.0.0",
   "kind": "both",
-  "formats": ["large", "half", "full"],
+  "formats": ["small", "medium", "large", "half", "full"],
   "size": { "min": { "w": 3, "h": 3 } },
   "title": "Graphe de dépendances",
   "description": "Généré depuis les liens bloque / bloqué par",

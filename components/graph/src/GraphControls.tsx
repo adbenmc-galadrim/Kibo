@@ -1,10 +1,16 @@
+import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Maximize, Minus, Plus } from "lucide-react";
 import { fr } from "./fr";
 
-export function Legend() {
+export function Legend({ compact }: { compact: boolean }) {
   return (
-    <div className="absolute bottom-3 left-3 grid gap-1 rounded-md border bg-card p-2 text-2xs text-muted-foreground">
+    <div
+      className={cn(
+        "absolute bottom-3 left-3 rounded-md border bg-card p-2 text-2xs text-muted-foreground",
+        compact ? "flex items-center gap-3 py-1" : "grid gap-1",
+      )}
+    >
       <span className="flex items-center gap-2">
         <span aria-hidden="true" className="h-px w-5 bg-muted-foreground" />
         {fr.legend.blocks}

@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, ProjectSnapshot, TicketRun } from "@kibo/schema";
+import type { ComponentFormat, ProjectCommand, ProjectSnapshot, TicketRun } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -24,8 +24,13 @@ const runs = (s: ProjectSnapshot): TicketRun[] => {
 
 runConformance({ manifest, Component }, seed, { runs });
 
-const setup = (surface: "view" | "widget", seedFn: typeof seed | null = seed) => {
-  const m = createMockSdk(manifest, { ...(seedFn && { seed: seedFn }), surface, viewer: "adam" });
+const setup = (surface: "view" | "widget", seedFn: typeof seed | null = seed, format?: ComponentFormat) => {
+  const m = createMockSdk(manifest, {
+    ...(seedFn && { seed: seedFn }),
+    ...(format && { format }),
+    surface,
+    viewer: "adam",
+  });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -125,8 +130,8 @@ test("pinch zooms around the pointer, two fingers pan, double click frames a nod
   expect(screen.getByRole("img", { name: "Vue d'ensemble du graphe" })).toBeTruthy();
 });
 
-test("screen 7 widget: chain, blocked reason and a link to the view", async () => {
-  const m = setup("widget");
+test("screen 7 widget (medium): chain, waiting list with blocked reason, link to the view", async () => {
+  const m = setup("widget", seed, "medium");
   expect(await screen.findByText("Chemin critique · 3 tickets")).toBeTruthy();
   const chain = screen.getByRole("list", { name: "Chemin critique" });
   expect(
@@ -134,9 +139,45 @@ test("screen 7 widget: chain, blocked reason and a link to the view", async () =
       .getAllByRole("button")
       .map((b) => b.textContent),
   ).toEqual(["KIB-11", "KIB-21", "KIB-22"]);
-  expect(screen.getByText("KIB-21 bloqué : audit sécurité externe en attente")).toBeTruthy();
+  const waiting = screen.getByRole("list", { name: "En attente" });
+  expect(within(waiting).getByText(/^KIB-21 · bloqué : Audit sécurité externe en attente/)).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le graphe →" }));
   expect(m.openedViews).toEqual(["graph"]);
+});
+
+test("small: three counters; medium: chain and waiting list; large: framed graph; full: the page", async () => {
+  setup("widget", seed, "small");
+  expect(await screen.findByText("Bloqués")).toBeTruthy();
+  expect(screen.getByText("Prêts")).toBeTruthy();
+  expect(screen.getByText("Chemin critique")).toBeTruthy();
+  expect(screen.getByRole("group", { name: "Bloqués" }).textContent).toMatch(/\d/);
+  cleanup();
+
+  const medium = setup("widget", seed, "medium");
+  expect(await screen.findByRole("list", { name: "Chemin critique" })).toBeTruthy();
+  const waiting = screen.getByRole("list", { name: "En attente" });
+  expect(within(waiting).getAllByRole("listitem")[0]?.textContent).toMatch(/^KIB-\d+ · attend KIB-\d+/);
+  await userEvent.setup().click(within(waiting).getAllByRole("button")[0] ?? document.body);
+  expect(medium.opened).toHaveLength(1);
+  cleanup();
+
+  setup("widget", seed, "large");
+  expect(await screen.findByRole("region", { name: "Graphe des dépendances" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Tout voir" })).toBeTruthy();
+  expect(screen.queryByRole("img", { name: "Vue d'ensemble du graphe" })).toBeNull();
+  cleanup();
+
+  setup("widget", seed, "full");
+  expect(await screen.findByRole("button", { name: "Masquer terminés" })).toBeTruthy();
+});
+
+test("small counts blocked and ready tickets of the widget's tickets", async () => {
+  setup("widget", seed, "small");
+  const count = async (name: string) =>
+    (await screen.findByRole("group", { name })).querySelector("dd")?.textContent;
+  expect(await count("Chemin critique")).toBe("3");
+  expect(Number(await count("Bloqués"))).toBeGreaterThan(0);
+  expect(Number(await count("Prêts"))).toBeGreaterThan(0);
 });
 
 test("D9: empty states", async () => {
@@ -145,7 +186,7 @@ test("D9: empty states", async () => {
 });
 
 test("D9: empty widget", async () => {
-  setup("widget", null);
+  setup("widget", null, "medium");
   expect(await screen.findByText("Aucun chemin critique : aucun ticket bloquant.")).toBeTruthy();
 });
 

@@ -30,6 +30,13 @@ export const fr = {
   fitAll: "Tout voir",
   minimap: "Vue d'ensemble du graphe",
   agent: "Assigné à un agent",
+  blockedCount: "Bloqués",
+  readyCount: "Prêts",
+  waiting: "En attente",
+  waitsFor: (key: string, on: string[]) => `${key} · attend ${on.join(", ")}`,
+  blockedStatus: (key: string, reason: string | null) =>
+    reason ? `${key} · bloqué : ${reason}` : `${key} · bloqué`,
+  more: (n: number) => `+${n}`,
   emptyView: "Aucune dépendance entre les tickets affichés.",
   emptyWidget: "Aucun chemin critique : aucun ticket bloquant.",
   loadFailed: "Impossible de charger les tickets.",
