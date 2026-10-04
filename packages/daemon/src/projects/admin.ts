@@ -27,6 +27,7 @@ export type ProjectAdminDeps = {
   detach(projectId: string): void;
   isLocked(projectId: string): boolean;
   folderExists?(path: string): boolean;
+  prepareDelete?(projectId: string): (() => void) | null;
 };
 type UpdateRequest = Extract<RpcRequest, { method: "updateProject" }>;
 type IconRequest = Extract<RpcRequest, { method: "setIcon" }>;
@@ -128,12 +129,14 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       if (ownsActiveShare(sync)) {
         throw new KiboError("CONFLICT", `project ${projectId} is shared: stop sharing first`);
       }
+      const afterDelete = deps.prepareDelete?.(projectId) ?? null;
       deps.store.transaction(() => {
         deps.icons.remove(iconOwnerKey({ kind: "project", projectId }));
         deps.settings.remove(projectId);
         if (sync.shared) deps.detach(projectId);
         deps.docs.removeProject(projectId);
       });
+      afterDelete?.();
       return null;
     },
     handler: async (req, ctx) => {

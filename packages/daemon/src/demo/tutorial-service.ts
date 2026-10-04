@@ -22,11 +22,14 @@ export type TutorialService = {
 
 export type TutorialServiceDeps = {
   settings: LocalSettings;
-  createDemo(): Promise<{ projectId: string; seed: TutorialSeed }>;
+  createDemo(): Promise<DemoProject>;
+  findDemo(): DemoProject | null;
   snapshot(projectId: string): TutorialSnapshot | null;
   emit(event: Phase7Event): void;
   now?: () => number;
 };
+
+type DemoProject = { projectId: string; seed: TutorialSeed };
 
 const KEY = "tutorial";
 const inProgress = (s: TutorialState) => s.status === "active" || s.status === "paused";
@@ -47,7 +50,7 @@ export function createTutorialService(deps: TutorialServiceDeps): TutorialServic
     const current = get();
     if (current.status === "active" && demoExists(current)) return current;
     if (!startsOver(current) && demoExists(current)) return save({ ...current, status: "active" });
-    const { projectId, seed } = await deps.createDemo();
+    const { projectId, seed } = deps.findDemo() ?? (await deps.createDemo());
     const kept = startsOver(current) ? { completed: [], seenViews: [], startedAt: now() } : current;
     return save({
       status: "active",

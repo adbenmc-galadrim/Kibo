@@ -31,11 +31,13 @@ afterEach(() => {
 
 type Failure = "settings" | "detach" | "store" | null;
 type SetupOptions = { sharing?: ProjectSyncInfo; activeRuns?: number; locked?: boolean };
+type Steps = string[];
 
 function setup(opts: SetupOptions = {}) {
   const home = tmp();
   const store = openStore(home);
   let failing: Failure = null;
+  const steps: Steps = [];
   const service = createService(
     {
       ...store,
@@ -75,6 +77,10 @@ function setup(opts: SetupOptions = {}) {
     detach,
     isLocked: () => opts.locked ?? false,
     folderExists: () => true,
+    prepareDelete: (projectId) => {
+      steps.push(`prepare:${service.docs.projectMeta(projectId).key}`);
+      return () => steps.push(`after:${service.docs.projectIds().length}`);
+    },
   });
   const iconKey = `project:${project.id}`;
   admin.setIcon({
@@ -115,6 +121,7 @@ function setup(opts: SetupOptions = {}) {
     ids,
     intact,
     reopenedIds,
+    steps,
     fail: (failure: Failure) => {
       failing = failure;
     },
@@ -250,4 +257,20 @@ test("the three CONFLICT details are distinct and stable", () => {
     "CONFLICT project <id> is being shared",
     "CONFLICT project <id> is shared: stop sharing first",
   ]);
+});
+
+test("prepareDelete sees the project before the deletion and its action runs once it succeeded", () => {
+  const s = setup();
+  expect(s.remove()).toBeNull();
+  expect(s.steps).toEqual(["prepare:KIB", "after:0"]);
+});
+
+test("the prepared action never runs when the deletion is refused or rolled back", () => {
+  const refused = setup({ activeRuns: 1 });
+  expect(codeOf(() => refused.remove())).toBe("CONFLICT");
+  expect(refused.steps).toEqual([]);
+  const failed = setup({ sharing: SHARED_SYNC });
+  failed.fail("store");
+  expect(() => failed.remove()).toThrow();
+  expect(failed.steps).toEqual(["prepare:KIB"]);
 });

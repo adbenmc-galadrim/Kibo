@@ -175,6 +175,16 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     allowLoopbackHttp: opts.marketAllowLoopback ?? false,
   });
   closers.push(() => market.stop());
+  const tutorial = startTutorial({
+    home: opts.home,
+    service,
+    settings: openLocalSettings(store),
+    projectSettings: createProjectSettings(store.db),
+    notesDir: (projectId) => components.notesDir(projectId),
+    runs: () => (agents ? agents.state().runs : []),
+    log: (message, ...error) => console.error(`[kibo-daemon] ${message}`, ...error),
+  });
+  closers.push(() => tutorial.stop());
   const admin = createProjectAdmin({
     docs: service.docs,
     settings: createProjectSettings(store.db),
@@ -187,16 +197,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
         : 0,
     detach: (projectId) => collab.client.detachProject(projectId),
     isLocked: (projectId) => collab.hosts.isLocked(projectId),
+    prepareDelete: (projectId) => tutorial.prepareDelete(projectId),
   });
-  const tutorial = startTutorial({
-    service,
-    settings: openLocalSettings(store),
-    projectSettings: createProjectSettings(store.db),
-    notesDir: (projectId) => components.notesDir(projectId),
-    runs: () => (agents ? agents.state().runs : []),
-    log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
-  });
-  closers.push(() => tutorial.stop());
   const code = createCodeService(service);
   closers.push(() => code.stop());
   const pairingCodes = new PairingCodes(Date.now);
@@ -237,7 +239,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [componentTrustGuard, market.handler, collab.handler, admin.handler],
+    handlers: [tutorial.guard, componentTrustGuard, market.handler, collab.handler, admin.handler],
   });
   front.push(() => server.stop());
   const started = createRemoteAccess({

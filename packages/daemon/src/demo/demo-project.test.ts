@@ -5,8 +5,9 @@ import { join } from "node:path";
 import type { ProjectSnapshot, ProjectSummary, RpcRequest } from "@kibo/schema";
 import { boot, type Harness } from "../components/service.test-helper";
 import { createProjectSettings } from "../notes/settings";
-import { createDemoProject, DEMO_FLAG, isDemoProject, noteHashOf } from "./demo-project";
+import { createDemoProject, DEMO_FLAG, isDemoProject, noteHashOf, seedFromProject } from "./demo-project";
 import { DEMO_NOTE } from "./demo-seed";
+import { readNoteHash } from "./tutorial-snapshot";
 
 const dirs: string[] = [];
 const harnesses: Harness[] = [];
@@ -98,4 +99,30 @@ test("a welcome note left by a deleted demo is kept and becomes the seed", async
   const second = await createDemoProject(deps);
   expect(second.projectId).not.toBe(first.projectId);
   expect(second.seed.noteHash).toBe(noteHashOf("# Bienvenue\n\nmodifiée\n"));
+});
+
+test("seedFromProject rebuilds the seed of an existing demo from its current state", async () => {
+  const { home, deps, snapshot } = await setup();
+  const { projectId, seed } = await createDemoProject(deps);
+  const snap = snapshot(projectId);
+  const hash = readNoteHash(join(home, "notes", "DEMO", DEMO_NOTE.path));
+  const rebuilt = seedFromProject(snap, hash);
+  expect({
+    ...rebuilt,
+    ticketIds: [...rebuilt.ticketIds].sort(),
+    linkKeys: [...rebuilt.linkKeys].sort(),
+  }).toEqual({
+    ...seed,
+    ticketIds: [...seed.ticketIds].sort(),
+    linkKeys: [...seed.linkKeys].sort(),
+  });
+  expect(seedFromProject(snap, null).noteHash).toBe(noteHashOf(DEMO_NOTE.markdown));
+});
+
+test("seedFromProject falls back when pages were removed and refuses a project without pages", () => {
+  const empty = { pages: [], tickets: [], links: [], instances: [] };
+  expect(() => seedFromProject(empty, null)).toThrow("CONFLICT");
+  const view = { id: "p9", title: "Vue", kind: "view" as const, parentId: null };
+  const one = seedFromProject({ ...empty, pages: [view] }, null);
+  expect([one.dashboardPageId, one.graphPageId, one.layouts]).toEqual(["p9", "p9", {}]);
 });

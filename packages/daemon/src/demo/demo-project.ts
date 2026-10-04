@@ -99,6 +99,30 @@ async function seedNote(deps: DemoProjectDeps, projectId: string, instanceId: st
   }
 }
 
+export type DemoProjectState = {
+  pages: Page[];
+  tickets: Pick<Ticket, "id">[];
+  links: Link[];
+  instances: Instance[];
+};
+
+export function seedFromProject(project: DemoProjectState, noteHash: string | null): TutorialSeed {
+  const first = project.pages[0];
+  if (!first) throw new KiboError("CONFLICT", "the demo project has no page left: delete it to start over");
+  const dashboard = project.pages.find((p) => p.kind === "dashboard") ?? first;
+  const graphPage = project.instances.find((i) => i.component.startsWith("graph@"))?.pageId ?? dashboard.id;
+  return {
+    ticketIds: project.tickets.map((t) => t.id),
+    linkKeys: project.links.map(linkKeyOf),
+    layouts: Object.fromEntries(
+      project.instances.filter((i) => i.pageId === dashboard.id).map((i) => [i.id, i.layout]),
+    ),
+    noteHash: noteHash ?? noteHashOf(DEMO_NOTE.markdown),
+    dashboardPageId: dashboard.id,
+    graphPageId: graphPage,
+  };
+}
+
 export async function createDemoProject(
   deps: DemoProjectDeps,
 ): Promise<{ projectId: string; seed: TutorialSeed }> {

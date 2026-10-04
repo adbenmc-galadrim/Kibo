@@ -49,6 +49,10 @@ function setup() {
       projects.set(projectId, SNAP);
       return { projectId, seed: seedOf(created.length) };
     },
+    findDemo: () => {
+      const projectId = [...projects.keys()].at(-1);
+      return projectId === undefined ? null : { projectId, seed: seedOf(9) };
+    },
     snapshot: (projectId) => projects.get(projectId) ?? null,
     emit: (e) => events.push(e),
     now: () => 1_000,
@@ -162,4 +166,18 @@ test("markSeen('graph') is idempotent", async () => {
   expect(s.service.markSeen("graph").seenViews).toEqual(["graph"]);
   expect(s.stored().seenViews).toEqual(["graph"]);
   expect(s.events).toHaveLength(2);
+});
+
+test("start after a reset takes the existing demo project back instead of creating a second one", async () => {
+  const s = setup();
+  await s.service.start();
+  s.service.reset();
+  const again = await s.service.start();
+  expect([again.status, again.completed, again.projectId, again.seed]).toEqual([
+    "active",
+    [],
+    "demo-1",
+    seedOf(9),
+  ]);
+  expect(s.created).toEqual(["demo-1"]);
 });

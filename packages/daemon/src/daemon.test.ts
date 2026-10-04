@@ -358,7 +358,17 @@ describe("startDaemon", () => {
     });
     const after = TutorialState.parse(await result({ method: "getTutorial" }));
     expect([after.completed, currentStep(after)]).toEqual([["kanban"], "links"]);
+    const folder = await rpc({ method: "updateProject", projectId, patch: { folder: home } });
+    expect([folder.status, await folder.text()]).toEqual([
+      400,
+      expect.stringContaining("the demo project stays local"),
+    ]);
+    await result({ method: "resetTutorial" });
+    const again = TutorialState.parse(await result({ method: "startTutorial" }));
+    expect([again.status, again.projectId, again.completed]).toEqual(["active", projectId, []]);
+    expect(ProjectSummaryRow.array().parse(await result({ method: "listProjects" }))).toHaveLength(1);
     expect(await result({ method: "deleteProject", projectId })).toBeNull();
     expect(await result({ method: "listProjects" })).toEqual([]);
+    expect(existsSync(join(home, "notes", "DEMO"))).toBe(false);
   });
 });
