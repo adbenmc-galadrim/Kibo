@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { type ComponentCall, type HostToFrame, KiboError, type Surface } from "@kibo/schema";
+import { type ComponentCall, type HostToFrame, KiboError, type Selection, type Surface } from "@kibo/schema";
 import type { FileOpenRequest } from "@kibo/sdk";
 import { createFrameBridge, dispatchCombo, MAX_IN_FLIGHT } from "./frame-bridge";
 
@@ -21,6 +21,8 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
     onKey: mock(() => {}),
     onResize: mock((_: number) => {}),
     onReady: mock(() => {}),
+    onFocus: mock((_: boolean) => {}),
+    onSelection: mock((_: Selection | null) => {}),
   };
   const bridge = createFrameBridge({
     frame: () => frame,
@@ -223,4 +225,37 @@ test("dispatchCombo reaches the window listeners by default", () => {
     window.removeEventListener("keydown", listener);
   }
   expect(seen).toEqual(["t"]);
+});
+
+test("focus and selection asked by the frame reach the host, invalid selections never do", () => {
+  const { frame, from, handlers, logs } = setup();
+  from(frame, { kibo: 1, type: "focus", on: true });
+  from(frame, { kibo: 1, type: "focus", on: false });
+  from(frame, { kibo: 1, type: "selection", selection: { kind: "ticket", ids: ["t1"] } });
+  from(frame, { kibo: 1, type: "selection", selection: null });
+  from(frame, { kibo: 1, type: "selection", selection: { kind: "ticket", ids: ["t1", "t1"] } });
+  from(frame, {
+    kibo: 1,
+    type: "selection",
+    selection: { kind: "ticket", ids: Array.from({ length: 201 }, (_, i) => `t${i}`) },
+  });
+  expect(handlers.onFocus.mock.calls).toEqual([[true], [false]]);
+  expect(handlers.onSelection.mock.calls).toEqual([[{ kind: "ticket", ids: ["t1"] }], [null]]);
+  expect(logs.filter((l) => l.startsWith("invalid frame message ignored"))).toHaveLength(2);
+});
+
+test("focus, visibility and selection are pushed to the frame until disposed", () => {
+  const { bridge, messages } = setup();
+  bridge.focus(true);
+  bridge.visibility(false);
+  bridge.selection({ kind: "ticket", ids: ["t2"] });
+  bridge.selection(null);
+  bridge.dispose();
+  bridge.visibility(true);
+  expect(messages()).toEqual([
+    { kibo: 1, type: "focus", active: true },
+    { kibo: 1, type: "visibility", visible: false },
+    { kibo: 1, type: "selection", selection: { kind: "ticket", ids: ["t2"] } },
+    { kibo: 1, type: "selection", selection: null },
+  ]);
 });

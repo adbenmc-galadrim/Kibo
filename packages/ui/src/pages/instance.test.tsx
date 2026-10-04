@@ -1,9 +1,26 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type ComponentSummary, type Instance, KiboError, type RpcRequest } from "@kibo/schema";
-import { type KiboSdk, useSdk } from "@kibo/sdk";
+import {
+  type ComponentSummary,
+  type Instance,
+  KiboError,
+  type RpcRequest,
+  type Selection,
+} from "@kibo/schema";
+import {
+  ALWAYS_VISIBLE,
+  createSignal,
+  focusApi,
+  type KiboSdk,
+  NO_FOCUS,
+  NO_SELECTION,
+  selectionApi,
+  useSdk,
+  visibilityApi,
+} from "@kibo/sdk";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
+import type { InstanceApis } from "../lib/instance-capabilities";
 
 const H = "c".repeat(64);
 const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
@@ -35,6 +52,12 @@ const { InstanceFrame } = await import("./InstanceFrame");
 const { InstanceMenu } = await import("./InstanceMenu");
 const { NotesDirDialog } = await import("../dialogs/NotesDirDialog");
 const { HostProvider } = await import("../shell/Host");
+const APIS: InstanceApis = {
+  capabilities: [],
+  focus: NO_FOCUS,
+  visibility: ALWAYS_VISIBLE,
+  selection: NO_SELECTION,
+};
 
 await loadTrusted("mine", "1.0.0", H, async () => ({
   manifest: { id: "mine", version: "1.0.0", kind: "widget", title: "Mine", reads: [], writes: [] },
@@ -117,6 +140,7 @@ test("the sandbox port being unknown is reported instead of rendering nothing", 
   try {
     wrap(
       <InstanceFrame
+        apis={APIS}
         projectId="p1"
         instance={inst("pr-queue@0.3.0")}
         viewer="adam"
@@ -143,6 +167,7 @@ test("a sandboxed version is rendered in an isolated iframe served by the sandbo
   try {
     wrap(
       <InstanceFrame
+        apis={APIS}
         projectId="p1"
         instance={inst("pr-queue@0.3.0")}
         viewer="adam"
@@ -168,6 +193,7 @@ test("D37: seen from a remote browser, a sandboxed widget says it only loads on 
   try {
     wrap(
       <InstanceFrame
+        apis={APIS}
         projectId="p1"
         instance={inst("pr-queue@0.3.0")}
         viewer="adam"
@@ -190,6 +216,7 @@ test("a trusted version is loaded as a module", async () => {
   ];
   wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("mine@1.0.0")}
       viewer="adam"
@@ -207,6 +234,7 @@ test("the sdk keeps its identity when the project snapshot changes but the insta
   const frame = (config: Record<string, unknown>) => (
     <HostProvider host={host}>
       <InstanceFrame
+        apis={APIS}
         projectId="p1"
         instance={{ ...inst("probe@1.0.0"), config }}
         viewer="adam"
@@ -225,12 +253,40 @@ test("the sdk keeps its identity when the project snapshot changes but the insta
   expect(seenSdks.at(-1)?.config).toEqual({ folder: "docs" });
 });
 
+test("a component loaded in the app receives the focus, visibility and selection of its instance", async () => {
+  components = [
+    { id: "probe", title: "Probe", builtin: false, versions: [version("1.0.0", { trust: "trusted" })] },
+  ];
+  const apis: InstanceApis = {
+    capabilities: ["fullscreen"],
+    focus: focusApi(createSignal(true), () => undefined),
+    visibility: visibilityApi(createSignal(false)),
+    selection: selectionApi(createSignal<Selection | null>({ kind: "ticket", ids: ["t1"] })),
+  };
+  wrap(
+    <InstanceFrame
+      apis={apis}
+      projectId="p1"
+      instance={inst("probe@1.0.0")}
+      viewer="adam"
+      surface="view"
+      format="full"
+    />,
+  );
+  await screen.findByText("probe");
+  const sdk = seenSdks.at(-1);
+  expect(sdk?.focus).toBe(apis.focus);
+  expect(sdk?.visibility.visible()).toBe(false);
+  expect(sdk?.selection.get()).toEqual({ kind: "ticket", ids: ["t1"] });
+});
+
 test("the component reads the format given by the page, not one guessed from its layout", async () => {
   components = [
     { id: "probe", title: "Probe", builtin: false, versions: [version("1.0.0", { trust: "trusted" })] },
   ];
   wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("probe@1.0.0")}
       viewer="adam"
@@ -246,6 +302,7 @@ test("D2: an unapproved or tampered version asks for trust", async () => {
   components = prQueue(version("0.3.0", { active: false, trust: null }));
   const { unmount } = wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("pr-queue@0.3.0")}
       viewer="adam"
@@ -261,6 +318,7 @@ test("D2: an unapproved or tampered version asks for trust", async () => {
   components = prQueue(version("0.3.0", { active: false, trust: null, tampered: true }));
   wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("pr-queue@0.3.0")}
       viewer="adam"
@@ -276,6 +334,7 @@ test("D2: an unapproved or tampered version asks for trust", async () => {
 test("a built-in is rendered from the UI bundle, an unknown ref says so", async () => {
   const { unmount } = wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("kanban@1.0.0")}
       viewer="adam"
@@ -287,6 +346,7 @@ test("a built-in is rendered from the UI bundle, an unknown ref says so", async 
   unmount();
   wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("ghost@9.9.9")}
       viewer="adam"
@@ -306,6 +366,7 @@ test("S7: a revoked instance offers the other installed versions that are not re
   );
   wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("pr-queue@0.3.0")}
       viewer="adam"
@@ -320,6 +381,7 @@ test("S7: a revoked instance offers the other installed versions that are not re
 test("S7: a third-party version absent from the registry is reported as missing", async () => {
   wrap(
     <InstanceFrame
+      apis={APIS}
       projectId="p1"
       instance={inst("ghost-widget@9.9.9")}
       viewer="adam"

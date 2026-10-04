@@ -12,6 +12,7 @@ import { createSdk, lazyPanel, projectBackend, SdkProvider } from "@kibo/sdk";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import type { InstanceApis } from "../lib/instance-capabilities";
 import { isRemoteView } from "../lib/remote-view";
 import { findComponent } from "../registry";
 import { useHost } from "../shell/Host";
@@ -36,6 +37,7 @@ type Props = {
   viewer: string;
   surface: Surface;
   format: ComponentFormat;
+  apis: InstanceApis;
 };
 type MountedProps = Props & { mod: TrustedModule; mode: "builtin" | "gated" };
 type TrustedProps = Props & { id: string; version: string; hash: string };
@@ -46,9 +48,10 @@ function useSameContent<T>(value: T): T {
   return kept.current;
 }
 
-function Mounted({ projectId, instance, viewer, surface, format, mod, mode }: MountedProps) {
+function Mounted({ projectId, instance, viewer, surface, format, mod, mode, apis }: MountedProps) {
   const host = useHost();
   const config = useSameContent(instance.config);
+  const { focus, visibility, selection } = apis;
   const sdk = useMemo(
     () =>
       createSdk(
@@ -71,10 +74,13 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, mode }: Mo
               origin: r.origin ?? null,
             }),
           openView: host.openView,
+          focus,
+          visibility,
+          selection,
         },
         mode,
       ),
-    [mod, mode, projectId, instance.id, config, viewer, surface, format, host],
+    [mod, mode, projectId, instance.id, config, viewer, surface, format, host, focus, visibility, selection],
   );
   return (
     <SdkProvider sdk={sdk}>
@@ -136,6 +142,7 @@ function Sandboxed({ id, version, hash, title, ...props }: TrustedProps & { titl
       surface={props.surface}
       format={props.format}
       title={title}
+      apis={props.apis}
       src={`${runtime.info.sandboxOrigin}${sandboxPath(id, version, hash, "index.html")}`}
     />
   );

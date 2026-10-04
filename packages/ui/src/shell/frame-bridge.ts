@@ -6,6 +6,7 @@ import {
   type InitMessage,
   type KeyCombo,
   KiboError,
+  type Selection,
   type Theme,
 } from "@kibo/schema";
 import type { FileOpenRequest, NewTicketDefaults } from "@kibo/sdk";
@@ -24,6 +25,8 @@ export type BridgeDeps = {
   onKey(combo: KeyCombo): void;
   onResize(height: number): void;
   onReady(): void;
+  onFocus(on: boolean): void;
+  onSelection(selection: Selection | null): void;
   log?: (line: string) => void;
 };
 
@@ -31,6 +34,9 @@ export type FrameBridge = {
   handle(e: MessageEvent): void;
   changed(): void;
   theme(t: Theme): void;
+  focus(active: boolean): void;
+  visibility(visible: boolean): void;
+  selection(selection: Selection | null): void;
   dispose(): void;
 };
 
@@ -100,6 +106,12 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
         if (deps.init().surface === "widget") deps.onResize(m.height);
         else log("resize ignored outside a widget");
         return;
+      case "focus":
+        deps.onFocus(m.on);
+        return;
+      case "selection":
+        deps.onSelection(m.selection);
+        return;
     }
   };
 
@@ -119,6 +131,9 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
     },
     changed: () => send({ kibo: 1, type: "changed" }),
     theme: (theme) => send({ kibo: 1, type: "theme", theme }),
+    focus: (active) => send({ kibo: 1, type: "focus", active }),
+    visibility: (visible) => send({ kibo: 1, type: "visibility", visible }),
+    selection: (selection) => send({ kibo: 1, type: "selection", selection }),
     dispose: () => {
       disposed = true;
     },

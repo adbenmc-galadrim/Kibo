@@ -7,7 +7,9 @@ import {
   type RpcRequest,
   type SandboxStatus,
 } from "@kibo/schema";
+import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "@kibo/sdk";
 import { act, render, screen, waitFor } from "@testing-library/react";
+import type { InstanceApis } from "../lib/instance-capabilities";
 
 const H = "d".repeat(64);
 let components: ComponentSummary[] = [];
@@ -34,6 +36,12 @@ mock.module("../api", () => ({
 }));
 const { InstanceFrame } = await import("./InstanceFrame");
 const { HostProvider } = await import("../shell/Host");
+const APIS: InstanceApis = {
+  capabilities: [],
+  focus: NO_FOCUS,
+  visibility: ALWAYS_VISIBLE,
+  selection: NO_SELECTION,
+};
 
 const host = {
   openTicket: () => undefined,
@@ -89,7 +97,14 @@ const withVersion = (patch: Partial<ComponentSummary["versions"][number]>): Comp
 const frame = () =>
   render(
     <HostProvider host={host}>
-      <InstanceFrame projectId="p1" instance={instance} viewer="adam" surface="widget" format="large" />
+      <InstanceFrame
+        apis={APIS}
+        projectId="p1"
+        instance={instance}
+        viewer="adam"
+        surface="widget"
+        format="large"
+      />
     </HostProvider>,
   );
 

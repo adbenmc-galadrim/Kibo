@@ -9,7 +9,7 @@ export type ComponentsState = {
   reload(): void;
 };
 
-export function useComponents(): ComponentsState {
+export function useComponents(enabled = true): ComponentsState {
   const [components, setComponents] = useState<ComponentSummary[] | null>(null);
   const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
   const [error, setError] = useState(false);
@@ -28,10 +28,11 @@ export function useComponents(): ComponentsState {
     );
   }, []);
   useEffect(() => {
+    if (!enabled) return;
     reload();
     return client.subscribe((id) => {
       if (id === null) reload();
     });
-  }, [reload]);
+  }, [reload, enabled]);
   return { components, drafts, error, reload };
 }

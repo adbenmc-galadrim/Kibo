@@ -2,7 +2,10 @@ import type { ComponentFormat, Surface } from "@kibo/schema";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import type { InstanceApis } from "../lib/instance-capabilities";
+import { reportRefusal } from "../lib/report-refusal";
 import { useTheme } from "../theme";
+import { allowAttribute } from "./frame-allow";
 import { createFrameBridge, dispatchCombo, type FrameBridge } from "./frame-bridge";
 import { useHost } from "./Host";
 import { createLoadGuard, type LoadGuard } from "./load-guard";
@@ -17,6 +20,7 @@ type Props = {
   src: string;
   title: string;
   readyTimeoutMs?: number;
+  apis: InstanceApis;
 };
 
 export function SandboxFrame({
@@ -29,13 +33,14 @@ export function SandboxFrame({
   src,
   title,
   readyTimeoutMs = 2000,
+  apis,
 }: Props) {
   const host = useHost();
   const theme = useTheme();
   const ref = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState<number | null>(null);
-  const latest = useRef({ config, viewer, theme, surface, format, host });
-  latest.current = { config, viewer, theme, surface, format, host };
+  const latest = useRef({ config, viewer, theme, surface, format, host, apis });
+  latest.current = { config, viewer, theme, surface, format, host, apis };
   const bridge = useRef<FrameBridge | null>(null);
   const guard = useRef<LoadGuard | null>(null);
   const [escaped, setEscaped] = useState(false);
@@ -49,9 +54,7 @@ export function SandboxFrame({
           `[kibo-ui] component instance ${instanceId} navigated away from ${src} (${reason}), frame destroyed`,
         );
         setEscaped(true);
-        client
-          .rpc({ method: "reportComponentRefusal", projectId, instanceId, kind: "navigate" })
-          .catch((e: unknown) => console.error(`[kibo-ui] refusal of ${instanceId} not recorded`, e));
+        reportRefusal(projectId, instanceId, "navigate");
       },
       setTimer: (fn, ms) => window.setTimeout(fn, ms),
       clearTimer: (id) => window.clearTimeout(id),
@@ -74,6 +77,10 @@ export function SandboxFrame({
         theme: latest.current.theme,
         surface: latest.current.surface,
         format: latest.current.format,
+        capabilities: [...latest.current.apis.capabilities],
+        focus: latest.current.apis.focus.active(),
+        visible: latest.current.apis.visibility.visible(),
+        selection: latest.current.apis.selection.get(),
       }),
       call: (call) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
       onOpenTicket: (id) => latest.current.host.openTicket(id),
@@ -90,6 +97,8 @@ export function SandboxFrame({
       onKey: (combo) => dispatchCombo(combo),
       onResize: (h) => setHeight(h),
       onReady: () => guard.current?.ready(),
+      onFocus: (on) => (on ? latest.current.apis.focus.request() : latest.current.apis.focus.exit()),
+      onSelection: (selection) => latest.current.apis.selection.set(selection),
     });
     bridge.current = b;
     window.addEventListener("message", b.handle);
@@ -112,6 +121,18 @@ export function SandboxFrame({
     bridge.current?.theme(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const { focus, visibility, selection } = apis;
+    const offs = [
+      focus.subscribe(() => bridge.current?.focus(focus.active())),
+      visibility.subscribe(() => bridge.current?.visibility(visibility.visible())),
+      selection.subscribe(() => bridge.current?.selection(selection.get())),
+    ];
+    return () => {
+      for (const off of offs) off();
+    };
+  }, [apis]);
+
   if (escaped) {
     return (
       <p role="alert" className="p-4 text-sm text-destructive">
@@ -127,6 +148,7 @@ export function SandboxFrame({
       title={title}
       src={src}
       sandbox="allow-scripts"
+      allow={allowAttribute(apis.capabilities)}
       referrerPolicy="no-referrer"
       className="block w-full border-0 bg-transparent"
       style={surface === "widget" && height !== null ? { height } : { height: "100%" }}
