@@ -11,6 +11,7 @@ export * from "./release-version";
 export * from "./restrict";
 export * from "./scaffold";
 export * from "./tailwind";
+export * from "./templates";
 export * from "./toolchain";
 export * from "./typescript";
 export * from "./validate";
