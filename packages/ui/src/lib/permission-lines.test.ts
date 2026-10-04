@@ -108,3 +108,36 @@ test("new permission entries of a version read in plain French", () => {
   expect(permissionLabel("secret:broken")).toBe("Permission secret:broken");
   expect(permissionLabel("secret:github@")).toBe("Permission secret:github@");
 });
+
+test("capabilities and selection get plain-language lines", () => {
+  const g = {
+    ...NO_PERMISSIONS,
+    capabilities: ["webgl", "assets", "fullscreen", "gamepad", "audio"] as const,
+  };
+  expect(titles({ ...g, capabilities: [...g.capabilities] })).toEqual([
+    ["Afficher de la 3D (WebGL)", "utilise la carte graphique"],
+    ["Jouer du son", null],
+    ["Passer en plein écran dans Kibo", null],
+    ["Lire les manettes branchées", null],
+    ["Lire les fichiers du projet", "dossier des fichiers de ce projet, lecture seule"],
+    ["Aucun accès réseau", null],
+  ]);
+  expect(titles({ ...NO_PERMISSIONS, net: ["api.github.com"], capabilities: ["assets"] })).toEqual([
+    ["Accéder au réseau", "HTTPS via le démon uniquement : api.github.com"],
+    ["Lire les fichiers du projet", "dossier des fichiers de ce projet, lecture seule"],
+  ]);
+  expect(titles({ ...NO_PERMISSIONS, capabilities: ["gamepad"] }).at(-1)).toEqual([
+    "Aucun accès réseau, aucun fichier local",
+    null,
+  ]);
+  expect(permissionLines(NO_PERMISSIONS).map((l) => l.title)).toEqual([
+    "Aucun accès réseau, aucun fichier local",
+  ]);
+  expect(permissionLines(NO_PERMISSIONS, { selection: true }).map((l) => l.title)).toEqual([
+    "Partage la sélection avec les composants de la page",
+    "Aucun accès réseau, aucun fichier local",
+  ]);
+  expect(permissionLabel("cap:webgl")).toBe("Afficher de la 3D (WebGL)");
+  expect(permissionLabel("cap:assets")).toBe("Lire les fichiers du projet");
+  expect(permissionLabel("cap:unknown")).toBe("Permission cap:unknown");
+});

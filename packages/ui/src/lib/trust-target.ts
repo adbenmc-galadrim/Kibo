@@ -14,6 +14,7 @@ export type TrustTarget = {
   origin: ComponentOrigin;
   permissions: GrantedPermissions;
   market?: MarketTrustInfo | null;
+  selection?: boolean;
 };
 
 export function trustTargetOf(id: string, title: string, v: ComponentVersionSummary): TrustTarget | null {
@@ -25,5 +26,6 @@ export function trustTargetOf(id: string, title: string, v: ComponentVersionSumm
     hash: v.hash,
     origin: v.origin,
     permissions: grantedOf(v.manifest),
+    selection: v.manifest.selection,
   };
 }
