@@ -4,7 +4,16 @@ import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
@@ -205,4 +214,39 @@ test("screen 10: an agent's node shows its live run state dot", async () => {
   expect(dot("KIB-12")).toBe("running");
   expect(dot("KIB-16")).toBeUndefined();
   expect(dot("KIB-21")).toBeUndefined();
+});
+
+test("shared selection: a click emits it, an outside selection is followed, Escape clears it", async () => {
+  const m = setup("view");
+  await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
+  const canvas = screen.getByRole("region", { name: "Graphe des dépendances" });
+  const idOf = (key: string) => m.snapshot().tickets.find((t) => t.key === key)?.id ?? "";
+  const node = (key: string) => within(canvas).getByRole("button", { name: new RegExp(`${key} `) });
+  const user = userEvent.setup();
+  await user.click(node("KIB-21"));
+  expect(m.selections.at(-1)).toEqual({ kind: "ticket", ids: [idOf("KIB-21")] });
+  act(() => m.setSelection({ kind: "ticket", ids: [idOf("KIB-12")] }));
+  expect(node("KIB-12").getAttribute("data-selected")).toBe("true");
+  expect(node("KIB-12").getAttribute("aria-pressed")).toBe("true");
+  expect(node("KIB-21").getAttribute("data-selected")).toBe("false");
+  canvas.focus();
+  await user.keyboard("{Escape}");
+  expect(m.selections.at(-1)).toBeNull();
+  expect(canvas.querySelectorAll("[data-selected='true']")).toHaveLength(0);
+});
+
+test("shared selection: an echo of its own selection keeps the keyboard anchor", async () => {
+  const m = setup("view");
+  await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
+  const canvas = screen.getByRole("region", { name: "Graphe des dépendances" });
+  const idOf = (key: string) => m.snapshot().tickets.find((t) => t.key === key)?.id ?? "";
+  const user = userEvent.setup();
+  await user.click(within(canvas).getByRole("button", { name: /KIB-11 / }));
+  act(() => m.setSelection({ kind: "ticket", ids: [idOf("KIB-11")] }));
+  canvas.focus();
+  await user.keyboard("{ArrowRight}");
+  expect(m.selections.at(-1)).toEqual({ kind: "ticket", ids: [idOf("KIB-21")] });
+  act(() => m.setSelection({ kind: "ticket", ids: [idOf("KIB-12")] }));
+  await user.keyboard("{Enter}");
+  expect(m.opened).toEqual([idOf("KIB-12")]);
 });

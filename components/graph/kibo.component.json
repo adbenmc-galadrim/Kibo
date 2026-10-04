@@ -7,6 +7,7 @@
   "title": "Graphe de dépendances",
   "description": "Généré depuis les liens bloque / bloqué par",
   "reads": ["ticket", "status", "link", "run"],
+  "selection": true,
   "writes": [],
   "configSchema": {
     "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" },
