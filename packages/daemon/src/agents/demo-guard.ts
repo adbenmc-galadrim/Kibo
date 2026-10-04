@@ -1,6 +1,7 @@
 import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import type { GuardDecision, RunView } from "@kibo/schema";
+import { MAX_TEXT } from "./hook-payload";
 import { DEMO_PROFILE_ID, type ToolGuard } from "./orchestrator-types";
 
 const PATH_KEYS = ["file_path", "notebook_path", "path"] as const;
@@ -18,10 +19,10 @@ export function demoWorkspaceGuard(cwd: string): ToolGuard {
   const root = realpathSync(cwd);
   const brief = join(dirname(root), "brief.md");
   return ({ tool, input }) => {
-    const paths = PATH_KEYS.flatMap((key) => {
-      const value = input?.[key];
-      return typeof value === "string" ? [realTarget(resolve(root, value))] : [];
-    });
+    const values = PATH_KEYS.flatMap((key) => (input && Object.hasOwn(input, key) ? [input[key]] : []));
+    const texts = values.filter((v): v is string => typeof v === "string" && v.length < MAX_TEXT);
+    if (texts.length !== values.length) return DENIED;
+    const paths = texts.map((value) => realTarget(resolve(root, value)));
     const allowed = (path: string) => inside(root, path) || (tool === "Read" && path === brief);
     return paths.every(allowed) ? null : DENIED;
   };

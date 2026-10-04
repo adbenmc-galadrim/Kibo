@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { demoRunGuard, demoWorkspaceGuard } from "./demo-guard";
+import { MAX_TEXT } from "./hook-payload";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -61,4 +62,14 @@ test("only a demo run is guarded, and a demo run without workspace yet touches n
   expect(demoRunGuard({ profileId: "opus", cwd })).toBeNull();
   expect(demoRunGuard({ profileId: "demo", cwd })?.(outside)?.decision).toBe("deny");
   expect(demoRunGuard({ profileId: "demo", cwd: null })?.(outside)?.decision).toBe("deny");
+});
+
+test("a path the hook may have clipped, or that is not text, is denied", () => {
+  const dir = runDir();
+  const guard = demoWorkspaceGuard(join(dir, "workspace"));
+  const padded = `${"a/".repeat(MAX_TEXT / 2)}notes.md`.slice(0, MAX_TEXT);
+  expect(guard({ tool: "Write", input: { file_path: padded } })?.decision).toBe("deny");
+  expect(guard({ tool: "Write", input: { file_path: padded.slice(0, MAX_TEXT - 1) } })).toBeNull();
+  expect(guard({ tool: "Write", input: { file_path: null } })?.decision).toBe("deny");
+  expect(guard({ tool: "Grep", input: { path: ["/"] } })?.decision).toBe("deny");
 });
