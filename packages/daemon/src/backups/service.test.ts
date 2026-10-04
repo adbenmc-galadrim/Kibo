@@ -69,7 +69,6 @@ test("a tick before a day has passed does nothing", async () => {
 test("a manual backup is never rotated", async () => {
   const { clock, service } = setup();
   const manual = await service.create("manual");
-  clock.now += 1000;
   const update = await service.create("update");
   for (let i = 0; i < 9; i++) {
     clock.now += DAY;
@@ -191,4 +190,30 @@ test("remove refuses an id that is not a backup id", async () => {
   const { home, service } = setup();
   await expect(service.remove("../kibo.db")).rejects.toMatchObject({ code: "INVALID_INPUT" });
   expect(existsSync(join(home, "kibo.db"))).toBe(true);
+});
+
+test("backups created in the same second take the next free seconds", async () => {
+  const { home, service } = setup();
+  const a = await service.create("manual");
+  const b = await service.create("manual");
+  const c = await service.create("update");
+  expect([a.id, b.id, c.id]).toEqual([
+    "2026-10-04T12-00-00Z",
+    "2026-10-04T12-00-01Z",
+    "2026-10-04T12-00-02Z",
+  ]);
+  expect([a.createdAt, b.createdAt, c.createdAt]).toEqual([START, START, START]);
+  for (const info of [a, b, c])
+    expect(existsSync(join(home, "backups", info.id, "manifest.json"))).toBe(true);
+});
+
+test("a chosen folder that disappeared is never recreated", async () => {
+  const { root, service } = setup();
+  const target = join(root, "target");
+  mkdirSync(target);
+  await service.setSettings({ dir: target });
+  rmSync(target, { recursive: true });
+  await expect(service.create("manual")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  expect(existsSync(target)).toBe(false);
+  expect((await service.status()).running).toBe(false);
 });

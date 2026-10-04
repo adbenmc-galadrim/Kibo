@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, realpath, stat } from "node:fs/promises";
 import { isAbsolute, join, relative, sep } from "node:path";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@kibo/schema";
 import type { LocalSettings } from "../settings";
 import { type BackupDatabase, readBackups, removeBackupDir, writeBackup } from "./backup-fs";
-import { backupIdAt } from "./backup-id";
+import { backupIdAt, backupTime } from "./backup-id";
 import { toRotate } from "./rotate";
 import { isBackupDue } from "./schedule";
 
@@ -81,6 +82,19 @@ export function createBackupsService(deps: BackupsDeps): BackupsService {
     return { settings: s, dir, displayDir: displayPath(dir, deps.userHome), last, nextAt, running };
   };
 
+  const prepareDest = async (s: BackupSettings): Promise<string> => {
+    const dest = dirOf(s);
+    if (s.dir === null) {
+      await mkdir(dest, { recursive: true, mode: 0o700 });
+      return dest;
+    }
+    const found = await stat(dest).catch((e: unknown) => {
+      throw new KiboError("INVALID_INPUT", `the backup folder no longer exists: ${String(e)}`);
+    });
+    if (!found.isDirectory()) throw new KiboError("INVALID_INPUT", "the backup folder no longer exists");
+    return dest;
+  };
+
   const rotate = async (dest: string) => {
     for (const old of toRotate(await readBackups(dest))) await removeBackupDir(dest, old.id);
   };
@@ -91,12 +105,13 @@ export function createBackupsService(deps: BackupsDeps): BackupsService {
     const at = now();
     changed();
     try {
-      const dest = dirOf(settings());
-      await mkdir(dest, { recursive: true, mode: 0o700 });
+      const dest = await prepareDest(settings());
+      let id = backupIdAt(at);
+      while (existsSync(join(dest, id))) id = backupIdAt(backupTime(id) + 1000);
       const info = await writeBackup({
         home: deps.home,
         dest,
-        id: backupIdAt(at),
+        id,
         reason,
         appVersion: deps.appVersion,
         now: at,

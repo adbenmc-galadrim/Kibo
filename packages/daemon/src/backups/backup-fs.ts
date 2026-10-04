@@ -29,6 +29,14 @@ export type WriteBackupInput = {
 
 type Manifest = BackupInfo & { entries: string[] };
 
+const PARTIAL = ".partial";
+
+async function purgePartials(dest: string): Promise<void> {
+  if (!existsSync(dest)) return;
+  for (const name of await readdir(dest))
+    if (name.endsWith(PARTIAL)) await rm(join(dest, name), { recursive: true, force: true });
+}
+
 function assertId(id: string): void {
   if (!BackupId.safeParse(id).success) throw new KiboError("INVALID_INPUT", `${id} is not a backup id`);
 }
@@ -72,8 +80,8 @@ export async function writeBackup(input: WriteBackupInput): Promise<BackupInfo> 
   assertId(input.id);
   const final = join(input.dest, input.id);
   if (existsSync(final)) throw new KiboError("CONFLICT", `backup ${input.id} already exists`);
-  const staging = `${final}.partial`;
-  await rm(staging, { recursive: true, force: true });
+  const staging = `${final}${PARTIAL}`;
+  await purgePartials(input.dest);
   await mkdir(staging, { recursive: true, mode: 0o700 });
   await chmod(staging, 0o700);
   try {

@@ -148,6 +148,15 @@ test("a backup id that is not a backup id is refused before touching the disk", 
   expect(existsSync(join(h, "token"))).toBe(true);
 });
 
+test("orphan partial folders are purged by a successful backup", async () => {
+  const h = home();
+  const orphan = join(h, "backups/2026-01-02T00-00-00Z.partial");
+  mkdirSync(orphan, { recursive: true });
+  writeFileSync(join(orphan, "kibo.db"), "half");
+  const info = await writeBackup(input(h, []));
+  expect(readdirSync(join(h, "backups"))).toEqual([info.id]);
+});
+
 test("readBackups ignores folders without a valid manifest", async () => {
   const h = home();
   mkdirSync(join(h, "backups/2026-01-01T00-00-00Z"), { recursive: true });
