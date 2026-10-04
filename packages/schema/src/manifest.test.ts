@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { ComponentManifest, defaultFormatOf, formatIssue, formatsOf } from "./manifest";
+import {
+  ComponentManifest,
+  clampSize,
+  defaultFormatOf,
+  formatIssue,
+  formatsOf,
+  sizeIssue,
+  sizeLimitsOf,
+} from "./manifest";
 import { HostToFrame } from "./protocol";
 import { surfaceFor } from "./surface";
 
@@ -75,4 +83,29 @@ test("the init message carries the format of the instance", () => {
   };
   expect(HostToFrame.parse({ ...init, format: "large" })).toMatchObject({ format: "large" });
   expect(HostToFrame.safeParse({ ...init, format: "huge" }).success).toBe(false);
+});
+
+test("size is optional, bounded, and gives limits with defaults", () => {
+  const widget = { ...base, kind: "widget" };
+  expect(ComponentManifest.safeParse({ ...widget, size: { min: { w: 4, h: 3 } } }).success).toBe(true);
+  expect(ComponentManifest.safeParse({ ...widget, size: { min: { w: 0, h: 3 } } }).success).toBe(false);
+  expect(ComponentManifest.safeParse({ ...widget, size: { max: { w: 13, h: 3 } } }).success).toBe(false);
+  expect(sizeLimitsOf({})).toEqual({ min: { w: 2, h: 2 }, max: { w: 12, h: 12 } });
+  expect(sizeLimitsOf({ size: { min: { w: 6, h: 4 } } })).toEqual({
+    min: { w: 6, h: 4 },
+    max: { w: 12, h: 12 },
+  });
+  expect(clampSize({ w: 1, h: 40 }, sizeLimitsOf({ size: { min: { w: 6, h: 4 } } }))).toEqual({
+    w: 6,
+    h: 12,
+  });
+});
+
+test("sizeIssue refuses min above max and a declared format outside the limits", () => {
+  expect(sizeIssue({ kind: "widget", size: { min: { w: 6, h: 6 }, max: { w: 4, h: 4 } } })).toMatch(
+    /INVALID_MANIFEST/,
+  );
+  expect(sizeIssue({ kind: "widget", formats: ["small"], size: { min: { w: 6, h: 4 } } })).toMatch(/small/);
+  expect(sizeIssue({ kind: "widget", formats: ["large", "half"], size: { min: { w: 6, h: 4 } } })).toBeNull();
+  expect(sizeIssue({ kind: "widget" })).toBeNull();
 });
