@@ -19,8 +19,11 @@ test("section exits 1 when the version has no section", () => {
   expect(err).toContain("CHANGELOG.md has no section for 0.0.1");
 });
 
-test("version check accepts a tag whose version has a changelog section", () => {
-  const result = Bun.spawnSync(["bun", join(import.meta.dir, "version.ts"), "check", "v1.4.0"]);
+test("version check accepts the current version, which has a changelog section", () => {
+  const version = Bun.spawnSync(["bun", join(import.meta.dir, "version.ts"), "get"])
+    .stdout.toString()
+    .trim();
+  const result = Bun.spawnSync(["bun", join(import.meta.dir, "version.ts"), "check", `v${version}`]);
   expect(result.exitCode).toBe(0);
-  expect(result.stdout.toString()).toContain("tag v1.4.0 matches version 1.4.0");
+  expect(result.stdout.toString()).toContain(`tag v${version} matches version ${version}`);
 });
