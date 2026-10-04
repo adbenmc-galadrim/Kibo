@@ -69,3 +69,12 @@ test("the demo profile keeps maxParallel 1", () => {
   expect(ensureSystemProfiles(ws)).toBe(true);
   expect(getProfile(ws, "demo").maxParallel).toBe(1);
 });
+
+test("the demo profile parallelism stays at 1, its model and enabled flag can change", () => {
+  const ws = createWorkspaceDoc();
+  ensureSystemProfiles(ws);
+  expect(() => updateProfile(ws, "demo", { maxParallel: 2 })).toThrow("INVALID_INPUT");
+  expect(updateProfile(ws, "demo", { maxParallel: 1 }).maxParallel).toBe(1);
+  expect(updateProfile(ws, "demo", { enabled: false }).enabled).toBe(false);
+  expect(updateProfile(ws, "demo", { model: "haiku" }).model).toBe("haiku");
+});

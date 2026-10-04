@@ -118,6 +118,12 @@ function assertEditable(current: AgentProfile, patch: Partial<ProfileInput>): vo
       "INVALID_INPUT",
       `a system profile runs at most ${SYSTEM_MAX_PARALLEL} agents at once`,
     );
+  if (
+    current.id === "demo" &&
+    patch.maxParallel !== undefined &&
+    patch.maxParallel !== SYSTEM_DEFAULT_PARALLEL.demo
+  )
+    throw new KiboError("INVALID_INPUT", "the demo agent runs one ticket at a time");
 }
 
 export function createProfile(ws: LoroDoc, input: ProfileInput): AgentProfile {
