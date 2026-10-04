@@ -44,25 +44,30 @@ const cellText = (c: Cell) => `colonne ${c.x + 1}, rangée ${c.y + 1}`;
 const cellOf = async (w: Locator): Promise<string | undefined> =>
   (await layoutOf(w))?.split(",").slice(0, 2).join(",");
 
-async function moveByKeyboard(page: Page, title: string, from: Cell, keys: readonly Arrow[]) {
+const ghostOf = (page: Page): Locator => page.locator("[data-ghost]");
+
+async function pickAndMove(page: Page, title: string, keys: readonly Arrow[]) {
   const live = page.getByRole("status").filter({ hasText: title });
-  const ghost = page.locator("[data-ghost]");
-  const ghostCell = async () => ((await ghost.count()) > 0 ? cellOf(ghost) : `${from.x},${from.y}`);
+  const ghost = ghostOf(page);
   await page.getByRole("button", { name: `Déplacer ${title}` }).focus();
   await page.keyboard.press("Space");
   await expect(live).toHaveText(`${title} saisi.`);
-  let at = from;
-  for (const key of keys) {
-    const before = `${at.x},${at.y}`;
-    at = { x: at.x + ARROWS[key].x, y: at.y + ARROWS[key].y };
-    const expected = `${at.x},${at.y}`;
-    await expect(async () => {
-      if ((await ghostCell()) === before) await page.keyboard.press(key);
-      await expect.poll(ghostCell, { timeout: 1_000 }).toBe(expected);
-    }).toPass();
-  }
+  const [first, ...rest] = keys;
+  if (!first) return;
+  await expect(async () => {
+    if ((await ghost.count()) === 0) await page.keyboard.press(first);
+    await expect(ghost).toHaveCount(1, { timeout: 1_000 });
+  }).toPass();
+  for (const key of rest) await page.keyboard.press(key);
+}
+
+async function moveByKeyboard(page: Page, title: string, keys: readonly Arrow[], landing: Cell) {
+  await pickAndMove(page, title, keys);
+  await expect.poll(() => cellOf(ghostOf(page))).toBe(`${landing.x},${landing.y}`);
   await page.keyboard.press("Space");
-  await expect(live).toHaveText(`${title} posé ${cellText(at)}.`);
+  await expect(page.getByRole("status").filter({ hasText: title })).toHaveText(
+    `${title} posé ${cellText(landing)}.`,
+  );
 }
 
 const times = (key: Arrow, n: number): Arrow[] => Array.from({ length: n }, () => key);
@@ -150,34 +155,46 @@ test.describe("fenêtre large", () => {
       "aria-checked",
       "true",
     );
-    const half = page.getByRole("menuitemradio", { name: /Demi-page · 12 × 6/ });
-    await expect(half).toContainText("(Pas de place)");
-    await expect(half).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByText("Raccourcis de taille")).toBeVisible();
+    const half = page.getByRole("menuitemradio", { name: /^Demi-page/ });
+    await expect(half).toBeEnabled();
+    await expect(half).not.toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("menu")).not.toContainText("Pas de place");
     await shot(page, info, "ecran-128");
     await page.getByRole("menuitemradio", { name: /Large · 6 × 6/ }).click();
     await expectLayout(widget(page, "Tickets"), "6,0,6,6");
 
-    const handle = page.getByRole("button", { name: "Déplacer Kanban" });
+    const kanbanBox = await widget(page, "Kanban").boundingBox();
+    const handle = page.getByRole("button", { name: "Déplacer Tickets" });
     const box = await handle.boundingBox();
-    if (!box) throw new Error("no handle");
+    if (!box || !kanbanBox) throw new Error("no handle");
+    const column = (kanbanBox.width + 16) / 6;
     await page.mouse.move(box.x + 20, box.y + 10);
     await page.mouse.down();
-    await page.mouse.move(box.x + 20, box.y + 10 + 96 * 4, { steps: 12 });
+    await page.mouse.move(box.x + 20 - 6 * column, box.y + 10 + 96 * 6, { steps: 16 });
+    await expect.poll(() => cellOf(ghostOf(page))).toBe("0,6");
+    await expectLayout(widget(page, "Kanban"), "0,0,6,6");
     await shot(page, info, "ecran-127");
     await page.mouse.up();
-    await expectLayout(widget(page, "Kanban"), "0,4,6,6");
-    await expect(toolbar(page)).toContainText("2 changements");
+    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expect(toolbar(page)).toContainText("1 changement");
     await saveAfterDrag(page);
     await page.reload();
-    await expectLayout(widget(page, "Kanban"), "0,4,6,6");
-    await expectLayout(widget(page, "Tickets"), "6,0,6,6");
+    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expectLayout(widget(page, "Kanban"), "0,0,6,6");
 
     await editLayout(page);
-    await moveByKeyboard(page, "Tickets", { x: 6, y: 0 }, times("ArrowDown", 2));
-    await expectLayout(widget(page, "Tickets"), "6,2,6,6");
-    await expect(toolbar(page)).toContainText("1 changement");
+    await pickAndMove(page, "Tickets", times("ArrowUp", 6));
+    await expect.poll(() => cellOf(ghostOf(page))).toBe("0,0");
+    await expectLayout(widget(page, "Kanban"), "0,6,6,6");
+    await shot(page, info, "ecran-127-compaction");
+    await page.keyboard.press("Escape");
+    await expect(ghostOf(page)).toHaveCount(0);
+    await expectLayout(widget(page, "Kanban"), "0,0,6,6");
+    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expect(toolbar(page)).toContainText("Aucun changement");
     await cancelWithEscape(page);
-    await expectLayout(widget(page, "Tickets"), "6,0,6,6");
+    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
 
     await page.setViewportSize({ width: 900, height: 900 });
     await expect(page.getByRole("button", { name: "Modifier la disposition" })).toHaveCount(0);
@@ -186,7 +203,7 @@ test.describe("fenêtre large", () => {
     expect(await layoutOf(widget(page, "Tickets"))).toBeNull();
     const tickets = await widget(page, "Tickets").boundingBox();
     const kanban = await widget(page, "Kanban").boundingBox();
-    expect(tickets && kanban && tickets.y < kanban.y).toBe(true);
+    expect(tickets && kanban && kanban.y < tickets.y).toBe(true);
     await shot(page, info, "ecran-129");
   });
 });
@@ -228,7 +245,10 @@ test.describe("widgets empilés", () => {
 test.describe("deux éditeurs", () => {
   test.use({ viewport: TALL });
 
-  test("dernier écrit, chevauchement et hors grille refusés", async ({ page, browser }, info) => {
+  test("la place d'un autre membre est conservée, hors grille refusé, aucun trou", async ({
+    page,
+    browser,
+  }, info) => {
     await pairAndCreateProject(page, info, "LDE");
     await createDashboard(page);
     await addComponent(page, "Kanban");
@@ -242,42 +262,48 @@ test.describe("deux éditeurs", () => {
     const editors = [page, other];
 
     for (const editor of editors) await editLayout(editor);
-    await page.getByRole("button", { name: "Format de Tickets" }).click();
-    await page.getByRole("menuitemradio", { name: /Large · 6 × 6/ }).click();
-    await expectLayout(widget(page, "Tickets"), "6,0,6,6");
-    await save(page);
-    await moveByKeyboard(other, "Tickets", { x: 6, y: 0 }, times("ArrowDown", 3));
+    await moveByKeyboard(other, "Tickets", [...times("ArrowLeft", 6), ...times("ArrowDown", 6)], {
+      x: 0,
+      y: 6,
+    });
     await expect(toolbar(other)).toContainText("1 changement");
     await save(other);
-    for (const editor of editors) await expectLayout(widget(editor, "Tickets"), "6,3,6,3");
-
-    for (const editor of editors) await editLayout(editor);
-    await moveByKeyboard(page, "Tickets", { x: 6, y: 3 }, [
-      ...times("ArrowLeft", 6),
-      ...times("ArrowDown", 3),
-    ]);
+    await expectLayout(widget(page, "Tickets"), "0,6,6,3");
+    await page.getByRole("button", { name: "Format de Kanban" }).click();
+    await page.getByRole("menuitemradio", { name: /^Demi-page/ }).click();
+    await expectLayout(widget(page, "Kanban"), "0,0,12,6");
+    await expect(toolbar(page)).toContainText("1 changement");
     await save(page);
-    await moveByKeyboard(other, "Kanban", { x: 0, y: 0 }, times("ArrowDown", 3));
-    await other.getByRole("button", { name: "Enregistrer" }).click();
-    await expect(other.getByRole("alert")).toContainText("La disposition de Kanban n'a pas été enregistrée.");
-    await expect(toolbar(other)).toContainText("1 changement");
-    await cancelWithEscape(other);
     for (const editor of editors) {
-      await expectLayout(widget(editor, "Kanban"), "0,0,6,6");
+      await expectLayout(widget(editor, "Kanban"), "0,0,12,6");
       await expectLayout(widget(editor, "Tickets"), "0,6,6,3");
     }
 
-    const instanceId = await widget(page, "Tickets").getAttribute("data-instance");
-    const setLayout = (layout: Box) =>
+    const projectId = projectIdOf(page);
+    const setLayout = async (title: string, layout: Box) =>
       rpc(page, {
         method: "command",
-        projectId: projectIdOf(page),
-        command: { method: "setInstanceLayout", instanceId, layout },
+        projectId,
+        command: {
+          method: "setInstanceLayout",
+          instanceId: await widget(page, title).getAttribute("data-instance"),
+          layout,
+        },
       });
-    await expect(setLayout({ x: 8, y: 0, w: 6, h: 3 })).rejects.toThrow(/INVALID_INPUT/);
-    await expect(setLayout({ x: 6, y: 0, w: 5, h: 5 })).rejects.toThrow(/INVALID_INPUT/);
+    await expect(setLayout("Tickets", { x: 8, y: 0, w: 6, h: 3 })).rejects.toThrow(/INVALID_INPUT/);
+    await setLayout("Kanban", { x: 0, y: 0, w: 5, h: 5 });
     await page.reload();
-    await expectLayout(widget(page, "Tickets"), "0,6,6,3");
+    await expectLayout(widget(page, "Kanban"), "0,0,5,5");
+    await expectLayout(widget(page, "Tickets"), "0,5,6,3");
+
+    await editLayout(page);
+    await page.getByRole("button", { name: "Retirer Kanban" }).click();
+    const dialog = page.getByRole("alertdialog");
+    await dialog.getByRole("button", { name: "Retirer" }).click();
+    await expect(dialog).toBeHidden();
+    await expectLayout(widget(page, "Tickets"), "0,0,6,3");
+    await cancelWithEscape(page);
+    for (const editor of editors) await expectLayout(widget(editor, "Tickets"), "0,0,6,3");
     await other.context().close();
   });
 });
