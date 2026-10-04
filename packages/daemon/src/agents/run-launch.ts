@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
 import { headRank } from "@kibo/core/scheduler";
 import { type AgentProfile, isTerminal, KiboError, RunEvent, type RunView } from "@kibo/schema";
-import type { OrchestratorOptions, TaskSpec } from "./orchestrator-types";
+import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
 import {
@@ -131,7 +131,10 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const prepared = task
         ? prepareTaskRun(initial, profile, task, runDir)
         : await prepareTicketRun(initial, profile, runDir);
-      const claudeBin = resolveClaudeBin(opts.claudeBin, env, opts.userHome ?? homedir());
+      const demo = profile.id === DEMO_PROFILE_ID;
+      const claudeBin = demo
+        ? opts.demoAgent.bin
+        : resolveClaudeBin(opts.claudeBin, env, opts.userHome ?? homedir());
       const flag = permissionFlag(profile.permissionMode, await capsOf(claudeBin));
       const current = registry.get(runId);
       if (deps.stopping() || current.state !== "starting") return;
@@ -155,7 +158,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         hookUrl: `${opts.baseUrl()}/hooks/${runId}`,
         token,
         baseEnv: env,
-        extraEnv: task?.env ?? {},
+        extraEnv: { ...(task?.env ?? {}), ...(demo ? opts.demoAgent.env() : {}) },
       });
       live.set(runId, { hash, proc });
       registry.apply(runId, {

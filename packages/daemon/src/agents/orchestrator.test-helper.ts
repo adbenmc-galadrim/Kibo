@@ -93,6 +93,8 @@ type Setup = {
   guidelines?: Guideline[];
   readOnly?: boolean;
   assignFails?: boolean;
+  demoProject?: boolean;
+  demoAgent?: OrchestratorOptions["demoAgent"];
 };
 
 let current: Harness | null = null;
@@ -129,6 +131,7 @@ export function setup(o: Setup): Harness {
     runDone: (_projectId, ticketId) => {
       done.push(ticketId);
     },
+    isDemoProject: () => o.demoProject ?? false,
   };
   let orch: Orchestrator | null = null;
   const sink: HookSink = {
@@ -150,6 +153,7 @@ export function setup(o: Setup): Harness {
     data,
     claudeBin: o.claudeBin === undefined ? FAKE_CLAUDE : o.claudeBin,
     hook: defaultHookLauncher(),
+    demoAgent: o.demoAgent ?? { bin: FAKE_CLAUDE, env: () => ({}) },
     baseUrl: () => url,
     sampler: o.load ?? (() => ({ cpu: 10, ram: 20 })),
     hostInfo: { cores: 8, ramGb: 16 },

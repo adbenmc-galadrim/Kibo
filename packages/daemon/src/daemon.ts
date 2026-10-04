@@ -19,6 +19,9 @@ import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
 import { componentTrustGuard } from "./components/trust-guard";
+import { demoAgentBin } from "./demo/agent-bin";
+import { demoAgentEnv } from "./demo/agent-env";
+import { ensureDemoAgentFiles } from "./demo/agent-scenarios";
 import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
@@ -273,6 +276,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     data: service.agentData,
     claudeBin: opts.claudeBin ?? null,
     hook: defaultHookLauncher(),
+    demoAgent: { bin: demoAgentBin(), env: () => demoAgentEnv(ensureDemoAgentFiles(opts.home)) },
     baseUrl: () => server.url,
     sampler: opts.sampler ?? createLoadSampler(),
     hostInfo: readHostInfo(),

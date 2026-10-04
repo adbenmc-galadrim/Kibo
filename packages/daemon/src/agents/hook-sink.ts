@@ -1,5 +1,7 @@
+import type { GuardDecision } from "@kibo/schema";
+import { demoRunGuard } from "./demo-guard";
 import type { HookSink } from "./hook-route";
-import type { TaskSpec } from "./orchestrator-types";
+import type { TaskSpec, ToolGuard } from "./orchestrator-types";
 import type { LiveRun } from "./run-launch";
 import type { RunRegistry } from "./run-registry";
 import { sameRunToken } from "./run-token";
@@ -10,6 +12,15 @@ export type HookSinkDeps = {
   registry: RunRegistry;
 };
 
+function decide(runId: string, guard: ToolGuard, call: Parameters<ToolGuard>[0]): GuardDecision | null {
+  try {
+    return guard(call);
+  } catch (e) {
+    console.error(`[kibo-daemon] guard of run ${runId} failed, denying`, e);
+    return { decision: "deny", reason: "guard error" };
+  }
+}
+
 export function createHookSink({ live, tasks, registry }: HookSinkDeps): HookSink {
   return {
     verify(runId, token) {
@@ -18,14 +29,13 @@ export function createHookSink({ live, tasks, registry }: HookSinkDeps): HookSin
     },
     receive(runId, payload, toolInput) {
       registry.apply(runId, { type: "hook", payload });
-      const guard = tasks.get(runId)?.guard;
-      if (!guard || payload.event !== "PreToolUse") return null;
-      try {
-        return guard({ tool: payload.tool ?? "", input: toolInput ?? null });
-      } catch (e) {
-        console.error(`[kibo-daemon] guard of run ${runId} failed, denying`, e);
-        return { decision: "deny", reason: "guard error" };
-      }
+      if (payload.event !== "PreToolUse") return null;
+      const guards = [tasks.get(runId)?.guard, demoRunGuard(registry.get(runId))].filter(
+        (g): g is ToolGuard => g !== undefined && g !== null,
+      );
+      const call = { tool: payload.tool ?? "", input: toolInput ?? null };
+      const decisions = guards.map((guard) => decide(runId, guard, call));
+      return decisions.find((d) => d?.decision === "deny") ?? decisions.find((d) => d !== null) ?? null;
     },
   };
 }

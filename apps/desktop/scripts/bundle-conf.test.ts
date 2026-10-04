@@ -50,3 +50,11 @@ test("Linux gets the desktop template and the four icon sizes", () => {
   expect(desktop).toContain("Terminal=false");
   expect(desktop).toMatch(/^Comment=.+/m);
 });
+
+test("three external binaries ship with the app: the daemon, the hook and the demo agent", () => {
+  expect(conf.bundle.externalBin).toEqual([
+    "binaries/kibo-daemon",
+    "binaries/kibo-hook",
+    "binaries/kibo-demo-agent",
+  ]);
+});

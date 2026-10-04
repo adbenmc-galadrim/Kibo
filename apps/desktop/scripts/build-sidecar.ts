@@ -50,6 +50,10 @@ const daemon: Binary = {
   define: { "process.env.KIBO_VERSION": JSON.stringify(appVersionOfTauriConf()) },
 };
 const hook: Binary = { entrypoints: ["packages/daemon/src/agents/kibo-hook.ts"], loadsToolchain: false };
+const demoAgent: Binary = {
+  entrypoints: ["packages/daemon/src/agents/fake-claude.ts"],
+  loadsToolchain: false,
+};
 
 async function prebuildAdapters(outDir: string): Promise<void> {
   for (const id of BUILTIN_ADAPTER_IDS) {
@@ -61,11 +65,13 @@ async function prebuildAdapters(outDir: string): Promise<void> {
 if (values.out) {
   await compile(daemon, resolve(values.out));
   await compile(hook, join(dirname(resolve(values.out)), "kibo-hook"));
+  await compile(demoAgent, join(dirname(resolve(values.out)), "kibo-demo-agent"));
   await prebuildAdapters(join(dirname(resolve(values.out)), "builtin"));
 } else {
   const outDir = join(root, "apps/desktop/src-tauri/binaries");
   const triple = hostTriple();
   await compile(daemon, join(outDir, `kibo-daemon-${triple}`));
   await compile(hook, join(outDir, `kibo-hook-${triple}`));
+  await compile(demoAgent, join(outDir, `kibo-demo-agent-${triple}`));
   await prebuildAdapters(join(root, "apps/desktop/src-tauri/builtin"));
 }

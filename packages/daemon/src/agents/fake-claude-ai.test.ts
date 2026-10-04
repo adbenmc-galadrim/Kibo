@@ -10,6 +10,7 @@ import {
   FIXTURES_DIR,
   fakeMeta,
   fakeWrites,
+  fixturesDir,
   runWriteStep,
   type WriteLog,
 } from "./fake-claude-ai";
@@ -35,7 +36,9 @@ const DENY = JSON.stringify({
 
 type Sent = { event: string; extra: Record<string, unknown> };
 
-function step(write: string, fixture: string, opts: { bypassHooks?: boolean; deny?: string } = {}) {
+type StepOptions = { bypassHooks?: boolean; deny?: string; fixtures?: string };
+
+function step(write: string, fixture: string, opts: StepOptions = {}) {
   const cwd = tmp();
   const sent: Sent[] = [];
   const log: WriteLog[] = [];
@@ -45,7 +48,7 @@ function step(write: string, fixture: string, opts: { bypassHooks?: boolean; den
   };
   const run = runWriteStep(
     { write, fixture, bypassHooks: opts.bypassHooks ?? false },
-    { cwd, hook, log: (e) => log.push(e) },
+    { cwd, hook, log: (e) => log.push(e), ...(opts.fixtures && { fixtures: opts.fixtures }) },
   );
   return { cwd, sent, log, run };
 }
@@ -96,6 +99,26 @@ describe("runWriteStep", () => {
     expect(sent).toEqual([]);
     expect(existsSync(join(cwd, "ui.tsx"))).toBe(false);
   });
+
+  test("a fixture outside the fixtures dir is refused", async () => {
+    const { cwd, sent, run } = step("ui.tsx", "../../fake-claude-ai.ts");
+    await expect(run).rejects.toThrow(/outside the fixtures dir/);
+    expect(sent).toEqual([]);
+    expect(existsSync(join(cwd, "ui.tsx"))).toBe(false);
+  });
+
+  test("the fixtures come from the given dir when one is set", async () => {
+    const fixtures = tmp();
+    await Bun.write(join(fixtures, "demo/notes.md.fixture"), "plan");
+    const { cwd, run } = step("notes.md", "demo/notes.md.fixture", { fixtures });
+    await run;
+    expect(readFileSync(join(cwd, "notes.md"), "utf8")).toBe("plan");
+  });
+});
+
+test("fixturesDir follows KIBO_FAKE_CLAUDE_FIXTURES, else the test fixtures", () => {
+  expect(fixturesDir({ KIBO_FAKE_CLAUDE_FIXTURES: "/h/demo-agent/fixtures" })).toBe("/h/demo-agent/fixtures");
+  expect(fixturesDir({})).toBe(FIXTURES_DIR);
 });
 
 test("denialReason reads the PreToolUse decision printed by kibo-hook", () => {

@@ -16,7 +16,7 @@
     "publisher": "Kibo",
     "homepage": "https://github.com/adbenmc-galadrim/Kibo",
     "license": "MIT",
-    "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
+    "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook", "binaries/kibo-demo-agent"],
     "resources": {
       "../../../packages/ui/dist/": "ui/",
       "toolchain/": "toolchain/",

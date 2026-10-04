@@ -1,13 +1,24 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { z } from "zod";
+import CURRENT_HELP from "./scenarios/help/claude-2.1.283.txt";
+import LEGACY_HELP from "./scenarios/help/legacy.txt";
 
 export const AI_SCENARIOS_DIR = join(import.meta.dir, "scenarios", "ai");
 export const FIXTURES_DIR = join(AI_SCENARIOS_DIR, "fixtures");
-const HELP_DIR = join(import.meta.dir, "scenarios", "help");
 
 export type WriteLog = { write: string; bypass?: true } | { denied: string; reason: string };
 type WriteStep = { write: string; fixture: string; bypassHooks: boolean };
+export const fixturesDir = (env: Record<string, string | undefined> = process.env): string =>
+  env.KIBO_FAKE_CLAUDE_FIXTURES ?? FIXTURES_DIR;
+
+function fixturePath(dir: string, fixture: string): string {
+  const root = resolve(dir);
+  const file = resolve(root, fixture);
+  if (!file.startsWith(root + sep)) throw new Error(`fixture ${fixture} is outside the fixtures dir`);
+  return file;
+}
+
 type HookFn = (event: "PreToolUse" | "PostToolUse", extra: Record<string, unknown>) => Promise<string | null>;
 
 const WriteLogEntry = z.union([
@@ -45,10 +56,10 @@ export function denialReason(stdouts: string[]): string | null {
 
 export async function runWriteStep(
   step: WriteStep,
-  ctx: { cwd: string; hook: HookFn; log: (entry: WriteLog) => void },
+  ctx: { cwd: string; hook: HookFn; log: (entry: WriteLog) => void; fixtures?: string },
 ): Promise<WriteLog> {
   const filePath = resolve(ctx.cwd, step.write);
-  const content = readFileSync(join(FIXTURES_DIR, step.fixture), "utf8");
+  const content = readFileSync(fixturePath(ctx.fixtures ?? fixturesDir(), step.fixture), "utf8");
   const write = () => {
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, content);
@@ -125,8 +136,7 @@ export function fakeToolUses(stateDir: string, sessionId: string): ToolUse[] {
 export function fakeMeta(argv: string[], env: Record<string, string | undefined>): string | null {
   if (argv[0] === "--version") return "2.1.283 (Claude Code)\n";
   if (argv.includes("--help")) {
-    const name = env.KIBO_FAKE_CLAUDE_HELP === "legacy" ? "legacy.txt" : "claude-2.1.283.txt";
-    return readFileSync(join(HELP_DIR, name), "utf8");
+    return env.KIBO_FAKE_CLAUDE_HELP === "legacy" ? LEGACY_HELP : CURRENT_HELP;
   }
   if (argv[0] === "auth" && argv[1] === "status")
     return env.KIBO_FAKE_CLAUDE_LOGGED_OUT === "1"

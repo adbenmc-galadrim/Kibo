@@ -225,7 +225,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   return {
     docs,
     icons,
-    agentData: createDataPort(docs),
+    agentData: createDataPort(docs, settings),
     attachAgents(port) {
       agents = port;
       const offTopic = port.onChange(() => docs.emit({ topic: "agents" }));
