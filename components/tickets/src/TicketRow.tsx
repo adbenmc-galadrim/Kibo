@@ -94,7 +94,7 @@ export function TicketRow({
             COLUMNS,
             "group relative h-8 rounded-md text-sm hover:bg-muted/50",
             context && "text-muted-foreground",
-            selected === true && "bg-muted ring-1 ring-ring",
+            selected === true && "bg-muted ring-1 ring-ring ring-inset",
             dimmed && "opacity-50",
             inside.isOver && "ring-2 ring-ring",
           )}

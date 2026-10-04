@@ -100,7 +100,7 @@ export function KanbanCard(props: Props) {
             insertion &&
               "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
             t.key === null && "border-dashed",
-            selected === true && "ring-2 ring-ring",
+            selected === true && "ring-2 ring-ring ring-inset",
             selected === false && "opacity-50",
           )}
         >
