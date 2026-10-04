@@ -60,12 +60,14 @@ export type GithubCredentials = {
   mode(): "gh" | "token" | null;
 };
 
-export type InternalRule = { host: string; suffix: boolean; auth: boolean };
+export type AuthHeader = { header: string; prefix: string };
+export type InternalRule = { host: string; suffix: boolean; auth: boolean; insecureLoopback?: boolean };
 export type IntegrationFetchInit = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   headers?: Record<string, string>;
   body?: string;
   bearer?: string | null;
+  auth?: AuthHeader;
   maxBytes?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
