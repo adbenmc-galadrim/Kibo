@@ -15,13 +15,29 @@ pub const RESERVED_FOR_WEBVIEW: &[&str] = &[
     "CmdOrCtrl+7",
     "CmdOrCtrl+8",
     "CmdOrCtrl+9",
+    "CmdOrCtrl+/",
 ];
 
 pub const CLOSE_WINDOW: &str = "close-window";
+pub const ABOUT: &str = "about";
+pub const ABOUT_EVENT: &str = "kibo:about";
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Action {
+    About,
+    CloseWindow,
+}
+
+pub fn menu_action(id: &str) -> Option<Action> {
+    match id {
+        ABOUT => Some(Action::About),
+        CLOSE_WINDOW => Some(Action::CloseWindow),
+        _ => None,
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Predefined {
-    About,
     Services,
     Hide,
     HideOthers,
@@ -41,7 +57,6 @@ pub enum Predefined {
 impl Predefined {
     pub fn label(self) -> &'static str {
         match self {
-            Predefined::About => "À propos de Kibo",
             Predefined::Services => "Services",
             Predefined::Hide => "Masquer Kibo",
             Predefined::HideOthers => "Masquer les autres",
@@ -75,7 +90,11 @@ pub const MENU: &[(&str, &[Entry])] = &[
     (
         "Kibo",
         &[
-            Entry::Predefined(Predefined::About),
+            Entry::Custom {
+                id: ABOUT,
+                text: "À propos de Kibo",
+                accelerator: None,
+            },
             Entry::Separator,
             Entry::Predefined(Predefined::Services),
             Entry::Separator,
@@ -127,14 +146,13 @@ pub fn accelerators(menu: &[(&str, &[Entry])]) -> Vec<&'static str> {
 
 #[cfg(target_os = "macos")]
 mod native {
-    use super::{Entry, Predefined, CLOSE_WINDOW, MENU};
+    use super::{menu_action, Action, Entry, Predefined, ABOUT_EVENT, MENU};
     use tauri::menu::{IsMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
-    use tauri::{AppHandle, Manager, Wry};
+    use tauri::{AppHandle, Emitter, Manager, Wry};
 
     fn predefined(app: &AppHandle, item: Predefined) -> tauri::Result<PredefinedMenuItem<Wry>> {
         let text = Some(item.label());
         match item {
-            Predefined::About => PredefinedMenuItem::about(app, text, None),
             Predefined::Services => PredefinedMenuItem::services(app, text),
             Predefined::Hide => PredefinedMenuItem::hide(app, text),
             Predefined::HideOthers => PredefinedMenuItem::hide_others(app, text),
@@ -178,9 +196,18 @@ mod native {
     }
 
     pub fn on_event(app: &AppHandle, id: &str) {
-        if id != CLOSE_WINDOW {
-            return;
+        match menu_action(id) {
+            Some(Action::About) => {
+                if let Err(e) = app.emit(ABOUT_EVENT, ()) {
+                    eprintln!("[kibo] cannot emit the about event: {e}");
+                }
+            }
+            Some(Action::CloseWindow) => close_main_window(app),
+            None => {}
         }
+    }
+
+    fn close_main_window(app: &AppHandle) {
         let Some(window) = app.get_webview_window("main") else {
             return;
         };
@@ -216,5 +243,28 @@ mod tests {
     fn menu_has_the_three_macos_submenus() {
         let titles: Vec<&str> = MENU.iter().map(|(title, _)| *title).collect();
         assert_eq!(titles, vec!["Kibo", "Édition", "Fenêtre"]);
+    }
+
+    #[test]
+    fn about_menu_emits_the_about_event() {
+        let (_, kibo) = MENU[0];
+        assert_eq!(
+            kibo[0],
+            Entry::Custom {
+                id: ABOUT,
+                text: "À propos de Kibo",
+                accelerator: None,
+            }
+        );
+        assert_eq!(ABOUT, "about");
+        assert_eq!(ABOUT_EVENT, "kibo:about");
+        assert_eq!(menu_action("about"), Some(Action::About));
+        assert_eq!(menu_action(CLOSE_WINDOW), Some(Action::CloseWindow));
+        assert_eq!(menu_action("unknown"), None);
+    }
+
+    #[test]
+    fn slash_is_reserved_for_the_webview() {
+        assert!(RESERVED_FOR_WEBVIEW.contains(&"CmdOrCtrl+/"));
     }
 }

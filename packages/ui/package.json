@@ -30,6 +30,7 @@
     "@shikijs/langs": "4.4.3",
     "@shikijs/themes": "4.4.3",
     "@tauri-apps/api": "2.12.0",
+    "@tauri-apps/plugin-autostart": "2.7.0",
     "@tauri-apps/plugin-dialog": "2.8.0",
     "@tauri-apps/plugin-opener": "2.7.0",
     "@tauri-apps/plugin-process": "2.4.0",
