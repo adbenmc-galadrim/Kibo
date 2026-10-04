@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./mock": "./src/mock.ts",
     "./conformance": "./src/conformance.tsx",
+    "./conformance-overflow": "./src/conformance-overflow.ts",
     "./fixtures": "./src/fixtures.ts",
     "./sandbox": "./src/sandbox.tsx",
     "./server": "./src/server.ts",
