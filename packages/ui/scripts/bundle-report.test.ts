@@ -157,6 +157,26 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
+  test("three and the sdk 3d and game kits never reach the entry", () => {
+    const three = pkg("three", "build/three.module.js");
+    const chunks = [
+      chunk("index.js", { isEntry: true, moduleIds: [three] }),
+      chunk("Viewer3d.js", { moduleIds: [pkg("three", "examples/jsm/loaders/GLTFLoader.js")] }),
+    ];
+    const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
+    expect(report.forbidden).toEqual([{ file: "index.js", module: three }]);
+    const paths = [
+      "/x/packages/sdk/src/three/ThreeCanvas.tsx",
+      "/x/packages/sdk/src/three/index.ts",
+      "/x/packages/sdk/src/game/loop.ts",
+      "/x/packages/sdk/src/fixtures-glb.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(
+      FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/node_modules/.bun/threejs-x@1/node_modules/threejs-x/a.js")),
+    ).toBe(false);
+  });
+
   test("the preview worker must be emitted under workers/", () => {
     const chunks = [chunk("assets/index.js", { isEntry: true })];
     expect(reportGraph(chunks, ["assets/index.js", "workers/draft-preview-worker-Ab1_c.js"])).toEqual({

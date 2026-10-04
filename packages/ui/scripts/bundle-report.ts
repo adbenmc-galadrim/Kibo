@@ -55,7 +55,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(inbox\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts|dialogs\/FileTicketDialog\.tsx)$/,
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
   /\/packages\/ui\/src\/(creations\/[A-Za-z-]+\.tsx?|i18n\/fr-creations\.ts)$/,
-  /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures)\.tsx?$/,
+  /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures|fixtures-glb)\.tsx?$/,
+  /\/node_modules\/three\//,
+  /\/packages\/sdk\/src\/(three|game)\//,
   /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,
   /\/packages\/core\/src\/|\/node_modules\/loro-crdt\//,
 ];
