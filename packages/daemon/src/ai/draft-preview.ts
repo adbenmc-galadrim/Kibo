@@ -1,6 +1,13 @@
-import { chmodSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, constants, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { open } from "node:fs/promises";
 import { join } from "node:path";
-import { type ComponentDraft, type DraftPreview, KiboError, type SandboxFile } from "@kibo/schema";
+import {
+  type ComponentDraft,
+  ComponentManifest,
+  type DraftPreview,
+  KiboError,
+  type SandboxFile,
+} from "@kibo/schema";
 import { SANDBOX_INDEX } from "../components/sandbox-server";
 import { draftPaths } from "./draft-files";
 import { assertRealDir, guarded, isRealDir, isSafeFile, present, removeTree } from "./draft-fs";
@@ -9,6 +16,7 @@ import type { Devkit } from "./ports";
 
 export type DraftFile = SandboxFile;
 export type DraftAssets = {
+  manifest(draftId: string): Promise<ComponentManifest | null>;
   lookup(draftId: string, hash: string, file: DraftFile): Promise<Uint8Array | string | null>;
 };
 export type PreviewFiles = { "ui.sandbox.js": Uint8Array; "ui.css": Uint8Array };
@@ -48,6 +56,40 @@ function writeBuilt(draftDir: string, hash: string, files: PreviewFiles): void {
     const dir = realDir(join(root, hash));
     for (const f of BUILT_FILES) writeFileSync(join(dir, f), files[f], { mode: 0o600, flag: "wx" });
   });
+}
+
+const MANIFEST = "kibo.component.json";
+const MAX_MANIFEST_BYTES = 256 * 1024;
+const NO_FOLLOW = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
+const UNREADABLE = new Set(["ENOENT", "ELOOP", "ENOTDIR"]);
+
+async function readManifestText(dir: string): Promise<string | null> {
+  let file: Awaited<ReturnType<typeof open>>;
+  try {
+    file = await open(join(dir, MANIFEST), NO_FOLLOW);
+  } catch (e) {
+    if (e instanceof Error && "code" in e && UNREADABLE.has(String(e.code))) return null;
+    throw e;
+  }
+  try {
+    const info = await file.stat();
+    if (!info.isFile() || info.size > MAX_MANIFEST_BYTES) return null;
+    return await file.readFile("utf8");
+  } finally {
+    await file.close();
+  }
+}
+
+function parseManifest(text: string): ComponentManifest | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch (e) {
+    if (e instanceof SyntaxError) return null;
+    throw e;
+  }
+  const parsed = ComponentManifest.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 const changed = () => new KiboError("CONFLICT", "the draft changed while its preview was built");
@@ -127,6 +169,11 @@ export function createDraftPreview(deps: PreviewDeps): {
       return { hash, path: draftPreviewPath(d.id, hash) };
     },
     assets: {
+      async manifest(draftId) {
+        if (!isPreviewable(draftId) || !isRealDir(dirOf(draftId))) return null;
+        const text = await readManifestText(dirOf(draftId));
+        return text === null ? null : parseManifest(text);
+      },
       async lookup(draftId, hash, file) {
         if (!isPreviewable(draftId)) {
           built.delete(draftId);

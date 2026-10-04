@@ -61,6 +61,7 @@ test("url mints a token served by the sandbox port, open resolves it", async () 
   const token = url.split("/")[4] ?? "";
   expect(await files.open(token)).toEqual({
     path: join(realpathSync(dir), "robot.glb"),
+    name: "robot.glb",
     mime: "model/gltf-binary",
     size: 20,
   });

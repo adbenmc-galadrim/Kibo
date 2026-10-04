@@ -72,8 +72,18 @@ describe("components over RPC", () => {
     await call({ kind: "data.set", key: "k", value: { a: 1 } });
     expect(await call({ kind: "data.get", key: "k" })).toEqual({ a: 1 });
     expect(h.components.assets("hello", "0.1.0", hash)?.trust).toBe("sandboxed");
+    expect(h.components.assets("hello", "0.1.0", hash)?.capabilities).toEqual([]);
     expect(h.components.assets("hello", "0.1.0", "0".repeat(64))).toBeNull();
     expect(await h.rpc({ method: "getRuntimeInfo" })).toEqual({ sandboxOrigin: SANDBOX_ORIGIN });
+  });
+
+  test("each version is served with the capabilities it was granted", async () => {
+    writeDraft(home, "0.1.0", { capabilities: ["audio", "assets"] });
+    const first = await publishAndApprove(h);
+    writeDraft(home, "0.2.0", { capabilities: ["audio"] });
+    const second = await publishAndApprove(h);
+    expect(h.components.assets("hello", "0.1.0", first.hash)?.capabilities).toEqual(["audio", "assets"]);
+    expect(h.components.assets("hello", "0.2.0", second.hash)?.capabilities).toEqual(["audio"]);
   });
 
   test("assets are not served once the trust is withdrawn", async () => {

@@ -27,7 +27,9 @@ let answer = stored;
 let lookups = 0;
 const assets: AssetLookup = (id, version, hash) => {
   lookups += 1;
-  return id === "mine" && version === "1.0.0" && hash === H ? { stored: answer, trust } : null;
+  return id === "mine" && version === "1.0.0" && hash === H
+    ? { stored: answer, trust, capabilities: [] }
+    : null;
 };
 
 let home: string;

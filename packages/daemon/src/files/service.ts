@@ -23,7 +23,7 @@ import {
 import { createFileTokens } from "./tokens";
 import { createUploads, type Uploads } from "./uploads";
 
-export type OpenedFile = { path: string; mime: ProjectAssetMime; size: number };
+export type OpenedFile = { path: string; name: string; mime: ProjectAssetMime; size: number };
 export type FilesService = {
   dirOf(projectId: string): string;
   info(projectId: string): Promise<FilesInfo>;
@@ -89,7 +89,7 @@ export function createFilesService(deps: FilesServiceDeps): FilesService {
     if (!grant) return null;
     try {
       const file = await openAssetFile(dirOf(grant.projectId), grant.name, grant.mime);
-      return { path: file.path, mime: grant.mime, size: file.size };
+      return { path: file.path, name: grant.name, mime: grant.mime, size: file.size };
     } catch (e) {
       if (isGone(e)) return null;
       throw e;

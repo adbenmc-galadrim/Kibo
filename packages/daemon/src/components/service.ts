@@ -210,7 +210,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     const ref = `${id}@${version}`;
     const stored = registry.stored(ref);
     if (!stored || stored.hash !== hash) return null;
-    return { stored, trust: registry.active(ref).trust };
+    const active = registry.active(ref);
+    return { stored, trust: active.trust, capabilities: active.granted.capabilities };
   };
 
   const reportRefusal = (projectId: string, instanceId: string, kind: "navigate" | "focus") => {

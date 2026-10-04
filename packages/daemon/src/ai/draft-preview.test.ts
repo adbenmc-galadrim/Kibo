@@ -234,3 +234,34 @@ test("after a run, a preview planted by the agent is gone and the next preview r
   expect(devkit.builds).toBe(1);
   expect(await assets.lookup(review.id, HASH, "ui.sandbox.js")).toEqual(BUNDLE);
 });
+
+test("the manifest of a previewable draft is read for its capabilities, never followed through a link", async () => {
+  const { home, store, review, generating, devkit } = setup();
+  const { assets } = createDraftPreview({ store, home, devkit });
+  const manifestOf = (id: string) => join(draftPaths(home, id).dir, "kibo.component.json");
+  const manifest = {
+    id: "burndown",
+    version: "0.1.0",
+    kind: "widget",
+    title: "Burndown",
+    reads: [],
+    writes: [],
+    capabilities: ["audio"],
+  };
+  expect(await assets.manifest(review.id)).toBeNull();
+  writeFileSync(manifestOf(review.id), JSON.stringify(manifest));
+  writeFileSync(manifestOf(generating.id), JSON.stringify(manifest));
+  expect((await assets.manifest(review.id))?.capabilities).toEqual(["audio"]);
+  expect(await assets.manifest(generating.id)).toBeNull();
+  expect(await assets.manifest("2d7e3a5f-9c73-4f4c-9e3a-4b2f8b3d0c33")).toBeNull();
+  writeFileSync(manifestOf(review.id), "{ not json");
+  expect(await assets.manifest(review.id)).toBeNull();
+  writeFileSync(manifestOf(review.id), JSON.stringify({ ...manifest, kind: "nope" }));
+  expect(await assets.manifest(review.id)).toBeNull();
+  rmSync(manifestOf(review.id));
+  const outside = mkdtempSync(join(tmpdir(), "kibo-outside-"));
+  homes.push(outside);
+  writeFileSync(join(outside, "m.json"), JSON.stringify(manifest));
+  symlinkSync(join(outside, "m.json"), manifestOf(review.id));
+  expect(await assets.manifest(review.id)).toBeNull();
+});
