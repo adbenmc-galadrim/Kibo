@@ -2,7 +2,8 @@ import { KiboError } from "@kibo/schema";
 import { createCiStore } from "../ci/ci-store";
 import { ciModule } from "../ci/module";
 import { createCiPoller } from "../ci/poller";
-import { figmaModule } from "../figma/module";
+import type { ServedFile } from "../components/file-response";
+import { designModule } from "../design/module";
 import { createGithubApi, type GithubApi } from "../github/api";
 import { createGithubAccount, type GithubAccount } from "../github/auth";
 import { githubModule } from "../github/handlers";
@@ -70,7 +71,10 @@ export function parseIntegrationFlags(values: {
   return { testOrigins, memorySecrets };
 }
 
-export type StartedIntegrations = IntegrationRpc & { secrets: SecretStore };
+export type StartedIntegrations = IntegrationRpc & {
+  secrets: SecretStore;
+  design: { open(token: string): Promise<ServedFile | null> };
+};
 
 function secretStoreFor(flags: IntegrationFlags, redactor: Redactor): SecretStore {
   if (flags.memorySecrets) return createMemorySecretStore(redactor);
@@ -138,12 +142,14 @@ export function startIntegrations(
     net,
     github,
   };
+  const design = designModule(kit, mcpHub);
+  kit.hooks.design = design.gate;
   const modules: IntegrationModule[] = [
     { probes: builtinProbes(kit.host) },
     githubModule(kit, kit.github),
     ciModule(kit, ciPoller, ciStore),
     mcpModule(kit, mcpHub),
-    figmaModule(kit, mcpHub),
+    design,
     githubIssuesModule(kit),
   ];
   const rpc = createIntegrationRpc({
@@ -153,5 +159,5 @@ export function startIntegrations(
     hooks: kit.hooks,
     redact: redactor.redact,
   });
-  return { ...rpc, secrets };
+  return { ...rpc, secrets, design: { open: design.open } };
 }

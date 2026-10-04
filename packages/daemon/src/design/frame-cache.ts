@@ -1,5 +1,6 @@
 import type { Database } from "bun:sqlite";
-import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   DESIGN_CACHE_IDLE_MS,
@@ -112,13 +113,13 @@ export function createFrameCache(deps: FrameCacheDeps): FrameCache {
       drop(row);
     }
   };
-  const write = (input: FramePut): string => {
-    const path = join(dir, `${hashOf(input.id)}.${frameExtension(input.mime)}`);
+  const writeTemporary = (body: Uint8Array): string => {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
     chmodSync(dir, 0o700);
-    writeFileSync(path, input.body, { mode: 0o600 });
-    chmodSync(path, 0o600);
-    return path;
+    const temporary = join(dir, `.${randomBytes(8).toString("hex")}.tmp`);
+    writeFileSync(temporary, body, { mode: 0o600 });
+    chmodSync(temporary, 0o600);
+    return temporary;
   };
 
   return {
@@ -139,8 +140,8 @@ export function createFrameCache(deps: FrameCacheDeps): FrameCache {
       if (sniffImage(input.body) !== input.mime)
         throw new KiboError("INVALID_INPUT", "frame image does not match its mime");
       const previous = q.select.get({ id: input.id });
-      const path = write(input);
-      if (previous && previous.path !== path) rmSync(previous.path, { force: true });
+      const path = join(dir, `${hashOf(input.id)}.${frameExtension(input.mime)}`);
+      const temporary = writeTemporary(input.body);
       const row: Row = {
         frame_id: input.id,
         provider: input.provider,
@@ -154,10 +155,16 @@ export function createFrameCache(deps: FrameCacheDeps): FrameCache {
         used_at: deps.now(),
         bytes: input.body.byteLength,
       };
-      immediateTransaction(db, () => {
-        q.upsert.run(row);
-        evict();
-      })();
+      try {
+        immediateTransaction(db, () => {
+          q.upsert.run(row);
+          renameSync(temporary, path);
+          evict();
+        })();
+      } finally {
+        rmSync(temporary, { force: true });
+      }
+      if (previous && previous.path !== path) rmSync(previous.path, { force: true });
       return rowToFrame(row);
     },
     touch(id, fetchedAt) {

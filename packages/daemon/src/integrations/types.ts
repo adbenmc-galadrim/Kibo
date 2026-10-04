@@ -20,8 +20,10 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
+import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 
+export type { DesignGate } from "../design/gate";
 export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";
 export type SystemNotification = Notice;
 export type GhRunner = (args: string[]) => Promise<{ code: number; stdout: string; stderr: string }>;
@@ -43,6 +45,7 @@ export type IntegrationHost = {
   gitAvailable(): Promise<boolean>;
   gh: GhRunner;
   now(): number;
+  sandboxOrigin(): string | null;
 };
 
 export type SecretStore = {
@@ -119,5 +122,6 @@ export type ComponentIntegrationHooks = {
   observe(host: string, headers: Headers): void;
   secret: SecretResolver;
   mcp: McpComponentGate | null;
+  design: DesignGate | null;
   ciRuns: ((projectId: string) => Promise<CiRun[]>) | null;
 };

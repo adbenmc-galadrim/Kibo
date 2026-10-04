@@ -31,6 +31,7 @@ export type NotesCall =
   | { kind: "list"; entity: "note" };
 export type McpCall = Extract<ComponentCall, { kind: `mcp.${string}` }>;
 export type AssetsCall = Extract<ComponentCall, { kind: "assets.list" | "assets.url" }>;
+export type DesignCall = Extract<ComponentCall, { kind: "design.frame" }>;
 
 export type GateHandlers = {
   list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
@@ -48,6 +49,7 @@ export type GateHandlers = {
   notes(projectId: string, call: NotesCall): Promise<unknown>;
   mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
   assets(projectId: string, instanceId: string, call: AssetsCall): Promise<unknown>;
+  design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
   presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
 };
@@ -113,7 +115,7 @@ function dispatch(
     case "assets.url":
       return h.assets(projectId, inst.id, call);
     case "design.frame":
-      throw new KiboError("NOT_CONNECTED", "design integrations not started");
+      return h.design(projectId, inst.id, call);
     default:
       return h.notes(projectId, call);
   }
@@ -134,6 +136,9 @@ function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: Compo
   }
   if (call.kind.startsWith("mcp.") && !quotas.take(instanceId, "mcp")) {
     throw new KiboError("RATE_LIMITED", `${ref} calls mcp servers too often`);
+  }
+  if (call.kind === "design.frame" && !quotas.take(instanceId, "design")) {
+    throw new KiboError("RATE_LIMITED", `${ref} renders design frames too often`);
   }
 }
 

@@ -127,6 +127,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     appVersion: appVersion(),
     emit: (event) => service.docs.emit(event),
   });
+  let sandboxOrigin = "";
   const integrations = startIntegrations(
     createIntegrationHost({
       user: opts.user,
@@ -134,6 +135,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       store,
       service,
       notify: opts.notify ?? (() => {}),
+      sandboxOrigin: () => sandboxOrigin || null,
     }),
     opts.integrations ?? NO_INTEGRATION_FLAGS,
     redactor,
@@ -143,7 +145,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
-  let sandboxOrigin = "";
   const components = createComponentsService({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -267,6 +268,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       manifest: async (draftId) => (draftAssets ? draftAssets.manifest(draftId) : null),
     },
     files: { open: (token) => components.files.open(token) },
+    designs: { open: (token) => integrations.design.open(token) },
   });
   front.push(() => sandbox.stop());
   sandboxOrigin = sandbox.url;

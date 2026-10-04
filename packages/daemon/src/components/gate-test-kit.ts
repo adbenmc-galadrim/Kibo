@@ -50,6 +50,7 @@ export const idleHandlers: GateHandlers = {
   notes: async () => null,
   mcp: async () => null,
   assets: async () => null,
+  design: async () => null,
   presence: async () => [],
   sharing: async () => {
     throw new KiboError("INTERNAL", "unexpected");
@@ -95,6 +96,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       mcp: handler("mcp"),
       assets: async (_projectId, instanceId, call) => {
         handled.push(`assets:${instanceId}:${call.kind}`);
+        return null;
+      },
+      design: async (_projectId, instanceId, call) => {
+        handled.push(`design:${instanceId}:${call.kind}`);
         return null;
       },
       presence: async () => {

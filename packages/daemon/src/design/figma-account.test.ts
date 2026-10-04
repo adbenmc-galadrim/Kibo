@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
+import { KiboError } from "@kibo/schema";
 import { createEventLog } from "../integrations/events";
 import {
   createMemorySecretStore,
@@ -183,4 +184,20 @@ test("a keychain failure on disconnect keeps the settings, so the token is never
   await expect(account.disconnect()).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
   expect(settings.get("figma.mode")).toBe("token");
   expect(settings.get("figma.account")).toBe("adam");
+});
+
+test("a keychain failure while switching to mcp restores the previous server and settings", async () => {
+  const failing: SecretStore = {
+    ...secrets,
+    delete: async () => {
+      throw new KiboError("SECRET_STORE_UNAVAILABLE", "locked");
+    },
+  };
+  const account = build(failing);
+  await account.connect({ mode: "token", token: SECRET });
+  await expect(account.connect({ mode: "mcp", url: server.url })).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+  await expect(hub.tools("figma")).rejects.toThrow();
+  expect(settings.get("figma.mode")).toBe("token");
+  expect(settings.get("figma.url")).toBeNull();
+  expect(secrets.dump().get("figma")).toBe(SECRET);
 });

@@ -131,3 +131,20 @@ test("the brief lists the linked mockups, only their URL", () => {
   );
   expect(buildBrief({ project, ticket, domain: null, note: "" })).not.toContain("## Maquettes");
 });
+
+test("the brief lists penpot boards next to figma nodes", () => {
+  const { project, ticket } = kibo();
+  const url =
+    "http://localhost:9010/#/workspace/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/33333333-3333-4333-8333-333333333333?page-id=44444444-4444-4444-8444-444444444444&board-id=55555555-5555-4555-8555-555555555555";
+  const board = {
+    kind: "penpot_board" as const,
+    instance: "http://localhost:9010",
+    fileId: "33333333-3333-4333-8333-333333333333",
+    pageId: "44444444-4444-4444-8444-444444444444",
+    boardId: "55555555-5555-4555-8555-555555555555",
+    url,
+    name: "Fiche",
+  };
+  const brief = buildBrief({ project, ticket: { ...ticket, externalRefs: [board] }, domain: null, note: "" });
+  expect(brief).toContain(`## Maquettes\n\n- Fiche : ${url}\n`);
+});

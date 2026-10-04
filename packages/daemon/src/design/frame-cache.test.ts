@@ -1,8 +1,17 @@
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { migrateIntegrations } from "../integrations/db";
 import { createFrameCache, type FrameCache } from "./frame-cache";
 
@@ -116,4 +125,31 @@ test("the legacy figma cache folder is removed when the cache is built", () => {
   writeFileSync(join(home, "cache", "figma", "AbC123", "1:2.png"), PNG);
   createFrameCache({ db, home, now: () => clock.now });
   expect(existsSync(join(home, "cache", "figma"))).toBe(false);
+});
+
+test("the legacy figma cache table is dropped by the migration", () => {
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS figma_cache (file_key TEXT NOT NULL, node_id TEXT NOT NULL, png_path TEXT NOT NULL, fetched_at INTEGER NOT NULL, PRIMARY KEY (file_key, node_id))",
+  );
+  migrateIntegrations(db);
+  const tables = db.query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'").all();
+  expect(tables.map((t) => t.name)).not.toContain("figma_cache");
+});
+
+test("a failed write leaves neither a temporary nor an orphan file", () => {
+  put("a");
+  db.exec(
+    "CREATE TRIGGER refuse BEFORE INSERT ON design_cache WHEN NEW.frame_id = 'b' BEGIN SELECT RAISE(ABORT, 'refused'); END",
+  );
+  expect(() => put("b")).toThrow("refused");
+  expect(readdirSync(join(home, "cache", "design"))).toEqual([basename(cache.get("a")?.path ?? "")]);
+});
+
+test("rewriting a frame replaces its file in place, without a temporary left behind", () => {
+  const first = put("a");
+  const next = Uint8Array.from([...PNG, 9]);
+  const second = put("a", next);
+  expect(second.path).toBe(first.path);
+  expect(readFileSync(second.path)).toEqual(Buffer.from(next));
+  expect(readdirSync(join(home, "cache", "design"))).toHaveLength(1);
 });

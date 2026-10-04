@@ -84,6 +84,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
       return host.ghReply;
     },
     now: () => host.clock.now,
+    sandboxOrigin: () => "http://127.0.0.1:4999",
     close() {
       db.close();
       rmSync(home, { recursive: true, force: true });

@@ -14,7 +14,7 @@ const TABLES = [
   "CREATE TABLE IF NOT EXISTS ci_jobs (run_id INTEGER NOT NULL, job_id INTEGER PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL, conclusion TEXT, started_at TEXT, completed_at TEXT, log_path TEXT, log_fetched_at INTEGER, steps_json TEXT NOT NULL)",
   "CREATE TABLE IF NOT EXISTS mcp_servers (id TEXT PRIMARY KEY, name TEXT NOT NULL, transport TEXT NOT NULL, command TEXT, args_json TEXT NOT NULL, env_names_json TEXT NOT NULL, url TEXT, bearer INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1, command_line TEXT NOT NULL, created_at INTEGER NOT NULL)",
   "CREATE TABLE IF NOT EXISTS mcp_calls (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, server TEXT NOT NULL, tool TEXT NOT NULL, instance_id TEXT, duration_ms INTEGER NOT NULL, ok INTEGER NOT NULL)",
-  "CREATE TABLE IF NOT EXISTS figma_cache (file_key TEXT NOT NULL, node_id TEXT NOT NULL, png_path TEXT NOT NULL, fetched_at INTEGER NOT NULL, PRIMARY KEY (file_key, node_id))",
+  "DROP TABLE IF EXISTS figma_cache",
   "CREATE TABLE IF NOT EXISTS design_cache (frame_id TEXT PRIMARY KEY, provider TEXT NOT NULL, name TEXT NOT NULL, width INTEGER, height INTEGER, mime TEXT NOT NULL, path TEXT NOT NULL, version TEXT, fetched_at INTEGER NOT NULL, used_at INTEGER NOT NULL, bytes INTEGER NOT NULL)",
 ];
 

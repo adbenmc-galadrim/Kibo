@@ -55,11 +55,11 @@ export function createFigmaAccount(deps: {
     await hub.setReserved("figma", url);
     try {
       await deps.mcp.checkTools();
+      if (mode() === "token") await secrets.delete("figma");
     } catch (e) {
       await hub.setReserved("figma", previous);
       throw e;
     }
-    if (mode() === "token") await secrets.delete("figma");
     settings.set("figma.url", url);
     settings.set("figma.mode", "mcp");
     settings.delete("figma.account");
