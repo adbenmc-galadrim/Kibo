@@ -1,6 +1,13 @@
 import type { Database } from "bun:sqlite";
 
-export type SettingKey = "github.mode" | "github.login" | "figma.url";
+export type SettingKey =
+  | "github.mode"
+  | "github.login"
+  | "figma.mode"
+  | "figma.url"
+  | "figma.account"
+  | "penpot.url"
+  | "penpot.account";
 export type Settings = {
   get(key: SettingKey): string | null;
   set(key: SettingKey, value: string): void;
