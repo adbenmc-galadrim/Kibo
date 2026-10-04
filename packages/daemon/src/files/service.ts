@@ -10,6 +10,7 @@ import {
   type ProjectAssetMime,
 } from "@kibo/schema";
 import { isInside } from "../code/safe-path";
+import { assertNotInbox } from "../inbox/inbox-rules";
 import { createProjectSettings } from "../notes/settings";
 import {
   describeAssetFile,
@@ -51,6 +52,7 @@ export function createFilesService(deps: FilesServiceDeps): FilesService {
   const settings = createProjectSettings(deps.db);
   const homeDir = deps.homeDir ?? homedir();
   const dirOf = (projectId: string) => {
+    assertNotInbox(projectId, "project files");
     const { key } = deps.project(projectId);
     return settings.get(projectId, FILES_DIR) ?? join(deps.home, "files", key);
   };
@@ -63,12 +65,13 @@ export function createFilesService(deps: FilesServiceDeps): FilesService {
     return { dir, displayDir, used: await folderUsage(dir) };
   };
   const setDir = async (projectId: string, dir: string | null): Promise<FilesInfo> => {
-    deps.project(projectId);
+    dirOf(projectId);
     if (dir === null) {
       settings.unset(projectId, FILES_DIR);
       return info(projectId);
     }
-    if (!isAbsolute(dir)) throw new KiboError("INVALID_INPUT", "the files folder must be an absolute path");
+    if (!isAbsolute(dir) || dir.includes("\0"))
+      throw new KiboError("INVALID_INPUT", "the files folder must be an absolute path");
     await mkdir(dir, { recursive: true, mode: 0o700 });
     settings.set(projectId, FILES_DIR, await realpath(dir));
     return info(projectId);

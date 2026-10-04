@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ASSET_URL_TTL_MS } from "@kibo/schema";
 import { ensureSettingsTable } from "../notes/settings";
@@ -69,6 +69,15 @@ test("url mints a token served by the sandbox port, open resolves it", async () 
   await expect(files.url("p", "i", "fake.glb")).rejects.toMatchObject({ code: "NOT_FOUND" });
   writeFileSync(join(dir, "robot.glb"), PNG);
   expect(await files.open(token)).toBeNull();
+  writeFileSync(join(dir, "robot.glb"), GLB);
+  const again = (await files.url("p", "i", "robot.glb")).url.split("/")[4] ?? "";
+  rmSync(dir, { recursive: true });
+  expect(await files.open(again)).toBeNull();
+});
+
+test("a folder path with a null byte is refused", async () => {
+  const { root, files } = setup();
+  await expect(files.setDir("p", `${root}/a\0b`)).rejects.toMatchObject({ code: "INVALID_INPUT" });
 });
 
 test("url needs the sandbox listener", async () => {

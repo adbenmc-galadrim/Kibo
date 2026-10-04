@@ -66,3 +66,8 @@ test("cancel and shutdown drop pending uploads", async () => {
   h = await boot(home);
   expect(existsSync(join(home, "files", "KIB", "a.glb"))).toBe(false);
 });
+
+test("the inbox has no files folder", async () => {
+  await expect(h.rpc({ method: "getFilesDir", projectId: "inbox" })).rejects.toThrow("INVALID_INPUT");
+  await expect(h.rpc({ method: "listAssets", projectId: "inbox" })).rejects.toThrow("INVALID_INPUT");
+});

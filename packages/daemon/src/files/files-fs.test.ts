@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { folder, GLB, PNG } from "./files.test-helper";
 import { folderUsage, listAssetFiles, openAssetFile, removeAssetFile } from "./files-fs";
@@ -47,4 +47,22 @@ test("usage sums listed files and remove deletes one", async () => {
   await removeAssetFile(dir, "a.png");
   expect((await listAssetFiles(dir)).map((a) => a.name)).toEqual(["b.png"]);
   await expect(removeAssetFile(dir, "a.png")).rejects.toMatchObject({ code: "NOT_FOUND" });
+});
+
+test("a missing folder answers not found", async () => {
+  const { dir } = folder();
+  const gone = join(dir, "missing");
+  await expect(removeAssetFile(gone, "a.png")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  await expect(openAssetFile(gone, "a.png", "image/png")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  expect(await folderUsage(gone)).toBe(0);
+});
+
+test.skipIf(process.getuid?.() === 0)("an unreadable file is skipped, not fatal", async () => {
+  const { dir } = folder();
+  writeFileSync(join(dir, "a.png"), PNG);
+  writeFileSync(join(dir, "b.png"), PNG);
+  chmodSync(join(dir, "a.png"), 0o000);
+  expect((await listAssetFiles(dir)).map((a) => a.name)).toEqual(["b.png"]);
+  await expect(openAssetFile(dir, "a.png", "image/png")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  chmodSync(join(dir, "a.png"), 0o600);
 });

@@ -19,14 +19,23 @@ export type SniffedFile = { mime: ProjectAssetMime | null; size: number; mtime: 
 
 const errnoOf = (e: unknown) => (e instanceof Error && "code" in e ? e.code : null);
 export const notFound = (name: string) => new KiboError("NOT_FOUND", `project file ${name} not found`);
-export const resolveAsset = (dir: string, name: string) => resolveInside(dir, name, LABEL);
+const UNREADABLE = new Set(["ENOENT", "EACCES", "EPERM", "ENXIO"]);
+
+export async function resolveAsset(dir: string, name: string): Promise<string> {
+  try {
+    return await resolveInside(dir, name, LABEL);
+  } catch (e) {
+    if (errnoOf(e) === "ENOENT") throw notFound(name);
+    throw e;
+  }
+}
 
 export async function sniffFile(path: string, rel: string): Promise<SniffedFile | null> {
   let file: Awaited<ReturnType<typeof open>>;
   try {
     file = await open(path, READ_FLAGS);
   } catch (e) {
-    if (errnoOf(e) === "ENOENT") return null;
+    if (UNREADABLE.has(String(errnoOf(e)))) return null;
     if (errnoOf(e) === "ELOOP") throw outside(rel, LABEL);
     throw e;
   }

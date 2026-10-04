@@ -1,5 +1,6 @@
 import { constants } from "node:fs";
-import { link, mkdir, open, rm } from "node:fs/promises";
+import { link, lstat, mkdir, open, readdir, rm } from "node:fs/promises";
+import { join } from "node:path";
 import {
   extensionMatches,
   KiboError,
@@ -39,25 +40,13 @@ type Upload = {
   path: string | null;
   touchedAt: number;
   busy: boolean;
+  cancelled: boolean;
 };
 
 const UPLOADS = ".uploads";
 const APPEND_FLAGS = constants.O_WRONLY | constants.O_APPEND | constants.O_NOFOLLOW;
 const invalid = (detail: string) => new KiboError("INVALID_INPUT", detail);
 const errnoOf = (e: unknown) => (e instanceof Error && "code" in e ? e.code : null);
-
-async function createTemp(dir: string, id: string): Promise<string> {
-  const folder = await resolveAsset(dir, UPLOADS);
-  try {
-    await mkdir(folder, { mode: 0o700 });
-  } catch (e) {
-    if (errnoOf(e) !== "EEXIST") throw e;
-  }
-  const path = await resolveAsset(dir, `${UPLOADS}/${id}`);
-  const handle = await open(path, "wx", 0o600);
-  await handle.close();
-  return path;
-}
 
 async function appendBytes(path: string, bytes: Uint8Array): Promise<void> {
   const handle = await open(path, APPEND_FLAGS);
@@ -77,6 +66,8 @@ async function linkExclusive(from: string, to: string, name: string): Promise<vo
     await link(from, to);
   } catch (e) {
     if (errnoOf(e) === "EEXIST") throw new KiboError("CONFLICT", `project file ${name} already exists`);
+    if (errnoOf(e) === "EPERM" || errnoOf(e) === "ENOTSUP")
+      throw new KiboError("INTERNAL", `the files folder does not support hard links: ${String(e)}`);
     throw e;
   }
 }
@@ -93,6 +84,27 @@ export function createUploads(opts: UploadsOptions): Uploads {
   const sweep = async () => {
     const idle = [...live.values()].filter((u) => !u.busy && now() - u.touchedAt > UPLOAD_IDLE_MS);
     for (const u of idle) await discard(u);
+  };
+  const purgeOrphans = async (folder: string) => {
+    for (const name of await readdir(folder)) {
+      if (live.has(name)) continue;
+      const path = join(folder, name);
+      const info = await lstat(path);
+      if (now() - info.mtimeMs > UPLOAD_IDLE_MS) await rm(path, { force: true, recursive: true });
+    }
+  };
+  const createTemp = async (dir: string, id: string): Promise<string> => {
+    const folder = await resolveAsset(dir, UPLOADS);
+    try {
+      await mkdir(folder, { mode: 0o700 });
+    } catch (e) {
+      if (errnoOf(e) !== "EEXIST") throw e;
+    }
+    const path = await resolveAsset(dir, `${UPLOADS}/${id}`);
+    await purgeOrphans(folder);
+    const handle = await open(path, "wx", 0o600);
+    await handle.close();
+    return path;
   };
   const pendingBytes = (dir: string, except: string) =>
     [...live.values()].filter((u) => u.dir === dir && u.id !== except).reduce((sum, u) => sum + u.size, 0);
@@ -120,6 +132,7 @@ export function createUploads(opts: UploadsOptions): Uploads {
   const complete = async (u: Upload): Promise<ProjectAsset> => {
     if (u.received !== u.size || !u.path)
       throw invalid(`upload ${u.id} received ${u.received} of ${u.size} bytes`);
+    if (u.cancelled) throw new KiboError("NOT_FOUND", `upload ${u.id} was cancelled`);
     const file = await sniffFile(u.path, `${UPLOADS}/${u.id}`);
     if (!file || file.size !== u.size || file.mime !== u.mime) throw invalid(`${u.name} is not a ${u.mime}`);
     await linkExclusive(u.path, await resolveAsset(u.dir, u.name), u.name);
@@ -145,6 +158,7 @@ export function createUploads(opts: UploadsOptions): Uploads {
         path: null,
         touchedAt: now(),
         busy: true,
+        cancelled: false,
       };
       live.set(id, u);
       try {
@@ -162,7 +176,12 @@ export function createUploads(opts: UploadsOptions): Uploads {
       const last = u.received + length === u.size;
       if (index !== Math.floor(u.received / UPLOAD_CHUNK_BYTES))
         throw invalid(`chunk ${index} is not expected`);
-      if (length === 0 || u.received + length > u.size || (length !== UPLOAD_CHUNK_BYTES && !last))
+      if (
+        length === 0 ||
+        length > UPLOAD_CHUNK_BYTES ||
+        u.received + length > u.size ||
+        (length !== UPLOAD_CHUNK_BYTES && !last)
+      )
         throw invalid(`chunk ${index} has a wrong size`);
       if (!u.path) throw invalid(`upload ${uploadId} is not ready`);
       u.busy = true;
@@ -171,6 +190,10 @@ export function createUploads(opts: UploadsOptions): Uploads {
       } catch (e) {
         await discard(u);
         throw e;
+      }
+      if (u.cancelled) {
+        await discard(u);
+        throw new KiboError("NOT_FOUND", `upload ${uploadId} was cancelled`);
       }
       u.received += length;
       u.touchedAt = now();
@@ -188,7 +211,9 @@ export function createUploads(opts: UploadsOptions): Uploads {
     },
     async cancel(uploadId) {
       const u = live.get(uploadId);
-      if (u && !u.busy) await discard(u);
+      if (!u) return;
+      if (u.busy) u.cancelled = true;
+      else await discard(u);
     },
     async close() {
       for (const u of [...live.values()]) await discard(u);

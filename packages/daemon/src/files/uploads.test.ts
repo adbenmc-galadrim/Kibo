@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { existsSync, readdirSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { MAX_PROJECT_ASSET_BYTES, UPLOAD_CHUNK_BYTES, UPLOAD_IDLE_MS } from "@kibo/schema";
 import { folder, GLB, PNG } from "./files.test-helper";
@@ -117,4 +117,35 @@ test("concurrent begins cannot exceed the per-project limit", async () => {
     [0, 1, 2, 3, 4, 5].map((i) => uploads.begin("p", `c${i}.glb`, "model/gltf-binary", 20)),
   );
   expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(4);
+});
+
+test("a single chunk larger than the chunk size is refused even when it is the last", async () => {
+  const { uploads } = kit();
+  const size = UPLOAD_CHUNK_BYTES + 10;
+  const { uploadId } = await uploads.begin("p", "robot.glb", "model/gltf-binary", size);
+  await expect(uploads.append(uploadId, 0, chunk(size))).rejects.toMatchObject({ code: "INVALID_INPUT" });
+});
+
+test("orphans left by a crash are purged when a new upload starts", async () => {
+  const { dir, uploads, now } = kit({ t: Date.now() });
+  const first = await uploads.begin("p", "a.glb", "model/gltf-binary", 20);
+  writeFileSync(join(dir, ".uploads", "stale"), "x");
+  writeFileSync(join(dir, ".uploads", "fresh"), "x");
+  const old = (now.t - UPLOAD_IDLE_MS - 1000) / 1000;
+  utimesSync(join(dir, ".uploads", "stale"), old, old);
+  utimesSync(join(dir, ".uploads", first.uploadId), old, old);
+  await uploads.begin("p", "b.glb", "model/gltf-binary", 20);
+  expect(readdirSync(join(dir, ".uploads"))).toHaveLength(3);
+  expect(existsSync(join(dir, ".uploads", "stale"))).toBe(false);
+  expect(existsSync(join(dir, ".uploads", first.uploadId))).toBe(true);
+});
+
+test("cancel during an append drops the upload once the append ends", async () => {
+  const { dir, uploads } = kit();
+  const { uploadId } = await uploads.begin("p", "a.glb", "model/gltf-binary", 20);
+  const pending = uploads.append(uploadId, 0, GLB);
+  await uploads.cancel(uploadId);
+  await expect(pending).rejects.toMatchObject({ code: "NOT_FOUND" });
+  expect(readdirSync(join(dir, ".uploads"))).toEqual([]);
+  await expect(uploads.finish(uploadId)).rejects.toMatchObject({ code: "NOT_FOUND" });
 });
