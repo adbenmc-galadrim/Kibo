@@ -151,6 +151,24 @@ test("project files without cap:assets are a violation", async () => {
   expect(m.violations).toEqual(["cap:assets"]);
 });
 
+const FIGMA_URL = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
+
+test("design frames are served as data urls under cap:design", async () => {
+  const frames = [{ url: FIGMA_URL, name: "Tickets" }];
+  const m = createMockSdk({ ...base, reads: [], writes: [], capabilities: ["design"] }, { frames });
+  const frame = await m.sdk.design.frame(FIGMA_URL);
+  expect(frame).toMatchObject({ provider: "figma", name: "Tickets", stale: false });
+  expect(frame.url.startsWith("data:image/png;base64,")).toBe(true);
+  expect(m.used).toEqual(["cap:design"]);
+  expect(m.violations).toEqual([]);
+});
+
+test("design frames without cap:design are a violation", async () => {
+  const m = createMockSdk({ ...base, reads: [], writes: [] }, { frames: [{ url: FIGMA_URL, name: "T" }] });
+  await expect(m.sdk.design.frame(FIGMA_URL)).rejects.toThrow("PERMISSION_DENIED");
+  expect(m.violations).toEqual(["cap:design"]);
+});
+
 test("the mock drives focus, visibility and selection and records requests", () => {
   const m = createMockSdk(
     { ...base, reads: [], writes: [], selection: true },

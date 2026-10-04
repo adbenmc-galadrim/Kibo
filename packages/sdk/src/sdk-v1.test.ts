@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createProjectDoc, readProject } from "@kibo/core";
-import { type ComponentCall, ComponentManifest, type TicketRun } from "@kibo/schema";
+import { type ComponentCall, ComponentManifest, type DesignFrame, type TicketRun } from "@kibo/schema";
 import { defineMigrations } from "./migrations";
 import { createSdk } from "./sdk";
 import { defineServer } from "./server";
@@ -146,6 +146,61 @@ describe("capabilities", () => {
     expect(bare.focus.active()).toBe(false);
     expect(bare.visibility.visible()).toBe(true);
     expect(bare.selection.get()).toBeNull();
+  });
+});
+
+describe("design", () => {
+  const FIGMA_URL = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
+  const FRAME: DesignFrame = {
+    id: "figma:AbC123xyz/12:34",
+    provider: "figma",
+    name: "Tickets",
+    width: 1440,
+    height: 900,
+    url: "data:image/png;base64,AAAA",
+    mime: "image/png",
+    fetchedAt: 1,
+    stale: false,
+    reachable: true,
+    source: FIGMA_URL,
+  };
+  const backendOf = (calls: ComponentCall[]): ProjectBackend => ({
+    snapshot: async () => {
+      throw new Error("unused");
+    },
+    run: async () => null,
+    call: async (c) => {
+      calls.push(c);
+      return FRAME;
+    },
+    subscribe: () => () => undefined,
+    runs: async () => [],
+    subscribeRuns: () => () => undefined,
+  });
+  const manifestWith = (capabilities: string[]) =>
+    ComponentManifest.parse({
+      id: "probe",
+      version: "1.0.0",
+      kind: "widget",
+      title: "Probe",
+      reads: [],
+      writes: [],
+      capabilities,
+    });
+
+  test("design.frame needs the design capability and calls the daemon", async () => {
+    const calls: ComponentCall[] = [];
+    const without = createSdk(backendOf(calls), manifestWith([]), ctx, "gated");
+    await expect(without.design.frame(FIGMA_URL)).rejects.toThrow("PERMISSION_DENIED");
+    expect(calls).toEqual([]);
+    const sdk = createSdk(backendOf(calls), manifestWith(["design"]), ctx, "gated");
+    expect(await sdk.design.frame(FIGMA_URL, { refresh: true })).toEqual(FRAME);
+    await sdk.design.frame(FIGMA_URL);
+    expect(calls).toEqual([
+      { kind: "design.frame", url: FIGMA_URL, refresh: true },
+      { kind: "design.frame", url: FIGMA_URL, refresh: false },
+    ]);
+    expect(sdk.capabilities).toEqual(["design"]);
   });
 });
 

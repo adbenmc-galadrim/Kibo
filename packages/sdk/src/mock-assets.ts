@@ -2,7 +2,7 @@ import { ASSET_URL_TTL_MS, type AssetUrl, KiboError, type ProjectAsset } from "@
 import { sampleGlb } from "./fixtures-glb";
 import { bytesToBase64 } from "./lib/base64";
 
-const PIXEL_PNG =
+export const PIXEL_PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
 function silentWav(): Uint8Array {
