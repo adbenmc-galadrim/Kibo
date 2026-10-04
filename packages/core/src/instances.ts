@@ -149,6 +149,10 @@ export function setPageLayout(
 ): Instance[] {
   getNode(doc.getTree("pages"), pageId);
   if (layouts.length === 0) throw new KiboError("INVALID_INPUT", "setPageLayout needs at least one layout");
+  const twice = layouts.find((l, i) => layouts.findIndex((o) => o.instanceId === l.instanceId) !== i);
+  if (twice !== undefined) {
+    throw new KiboError("INVALID_INPUT", `instance ${twice.instanceId} is listed more than once`);
+  }
   const listed = layouts.map(({ instanceId, layout }) => {
     const current = getInstance(doc, instanceId);
     if (current.pageId !== pageId) {

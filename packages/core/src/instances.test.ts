@@ -166,6 +166,13 @@ describe("compaction", () => {
         { instanceId: b.id, layout: layoutFor("large", 0, 0) },
       ]),
     ).toThrow(/overlap/);
+    const twice = () =>
+      setPageLayout(doc, pageId, [
+        { instanceId: a.id, layout: layoutFor("large", 0, 0) },
+        { instanceId: a.id, layout: layoutFor("large", 6, 0) },
+      ]);
+    expect(codeOf(twice)).toBe("INVALID_INPUT");
+    expect(twice).toThrow(/listed more than once/);
     expect(
       codeOf(() => setPageLayout(doc, pageId, [{ instanceId: "nope", layout: layoutFor("large", 0, 0) }])),
     ).toBe("NOT_FOUND");
