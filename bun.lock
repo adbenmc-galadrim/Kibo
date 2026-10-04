@@ -136,6 +136,24 @@
         "react": "19.1.1",
       },
     },
+    "components/snake": {
+      "name": "@kibo/component-snake",
+      "version": "1.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+      },
+      "devDependencies": {
+        "@testing-library/react": "16.3.0",
+        "@types/react": "19.1.13",
+        "fast-check": "4.3.0",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+      },
+      "peerDependencies": {
+        "react": "19.1.1",
+      },
+    },
     "components/tickets": {
       "name": "@kibo/component-tickets",
       "version": "1.0.0",
@@ -322,6 +340,7 @@
         "@kibo/component-kanban": "workspace:*",
         "@kibo/component-mcp-source": "workspace:*",
         "@kibo/component-notes": "workspace:*",
+        "@kibo/component-snake": "workspace:*",
         "@kibo/component-tickets": "workspace:*",
         "@kibo/component-viewer-3d": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -617,6 +636,8 @@
     "@kibo/component-mcp-source": ["@kibo/component-mcp-source@workspace:components/mcp-source"],
 
     "@kibo/component-notes": ["@kibo/component-notes@workspace:components/notes"],
+
+    "@kibo/component-snake": ["@kibo/component-snake@workspace:components/snake"],
 
     "@kibo/component-tickets": ["@kibo/component-tickets@workspace:components/tickets"],
 

@@ -22,6 +22,7 @@
     "@kibo/component-kanban": "workspace:*",
     "@kibo/component-mcp-source": "workspace:*",
     "@kibo/component-notes": "workspace:*",
+    "@kibo/component-snake": "workspace:*",
     "@kibo/component-tickets": "workspace:*",
     "@kibo/component-viewer-3d": "workspace:*",
     "@kibo/schema": "workspace:*",

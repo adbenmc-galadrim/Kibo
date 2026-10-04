@@ -5,6 +5,7 @@ import {
   Blocks,
   Box,
   FileText,
+  Gamepad,
   LayoutDashboard,
   ListTree,
   Network,
@@ -19,6 +20,7 @@ test("built-in components resolve by exact id@version", () => {
     "kanban@1.0.0",
     "mcp-source@1.0.0",
     "notes@1.0.0",
+    "snake@1.0.0",
     "tickets@1.0.0",
     "viewer-3d@1.0.0",
   ]);
@@ -45,7 +47,7 @@ test("a page shows the icon of its kind, or of the component a view holds", () =
   expect(pageIcon(view, [{ ...kanban, component: "nope@1.0.0" }])).toBe(Blocks);
 });
 
-test("graph, notes and the MCP source are built-ins with their icons", () => {
+test("graph, notes, the MCP source and the snake are built-ins with their icons", () => {
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([
     "kanban",
     "tickets",
@@ -53,9 +55,11 @@ test("graph, notes and the MCP source are built-ins with their icons", () => {
     "notes",
     "mcp-source",
     "viewer-3d",
+    "snake",
   ]);
   expect(componentIcon("mcp-source@1.0.0")).toBe(Plug);
   expect(componentIcon("viewer-3d@1.0.0")).toBe(Box);
+  expect(componentIcon("snake@1.0.0")).toBe(Gamepad);
   expect(componentIcon("graph@1.0.0")).toBe(Network);
   expect(componentIcon("notes@1.0.0")).toBe(FileText);
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([...BUILTIN_IDS]);
@@ -72,6 +76,7 @@ test("every built-in declares a size minimum that fits its formats", () => {
     notes: { w: 4, h: 3 },
     "mcp-source": { w: 3, h: 2 },
     "viewer-3d": { w: 3, h: 3 },
+    snake: { w: 3, h: 3 },
   });
   for (const c of BUILTIN_COMPONENTS) expect(sizeIssue(c.manifest)).toBeNull();
 });

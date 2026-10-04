@@ -2,6 +2,7 @@ import * as graph from "@kibo/component-graph";
 import * as kanban from "@kibo/component-kanban";
 import * as mcpSource from "@kibo/component-mcp-source";
 import * as notes from "@kibo/component-notes";
+import * as snake from "@kibo/component-snake";
 import * as tickets from "@kibo/component-tickets";
 import * as viewer3d from "@kibo/component-viewer-3d";
 import type { ComponentManifest, Instance, Page } from "@kibo/schema";
@@ -11,6 +12,7 @@ import {
   Blocks,
   Box,
   FileText,
+  Gamepad,
   LayoutDashboard,
   ListTree,
   type LucideIcon,
@@ -19,7 +21,15 @@ import {
   SquareKanban,
 } from "lucide-react";
 
-export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets, graph, notes, mcpSource, viewer3d];
+export const BUILTIN_COMPONENTS: ComponentModule[] = [
+  kanban,
+  tickets,
+  graph,
+  notes,
+  mcpSource,
+  viewer3d,
+  snake,
+];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
   kanban: SquareKanban,
@@ -28,6 +38,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   notes: FileText,
   "mcp-source": Plug,
   "viewer-3d": Box,
+  snake: Gamepad,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;
