@@ -39,6 +39,7 @@ type FieldProps = {
   value: FieldValue;
   disabled: boolean;
   refreshKey: number;
+  frameHint: boolean;
   onChange(v: FieldValue): void;
 };
 
@@ -56,7 +57,7 @@ const hasNoValueToggle = (f: FormField): boolean => {
 const valueWhenFilled = (key: string, field: ConfigField): FieldValue =>
   configFields({ [key]: { ...field, nullable: false } }, {})[0]?.value ?? "";
 
-function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChange }: FieldProps) {
+function FieldInput({ id, projectId, field, value, disabled, refreshKey, frameHint, onChange }: FieldProps) {
   const kind = fieldKind(field.field);
   const label = fieldLabel(field.key, field.field);
   if (kind === "asset" && field.field.asset)
@@ -79,6 +80,7 @@ function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChang
         label={label}
         value={typeof value === "string" ? value : null}
         disabled={disabled}
+        hint={frameHint}
         onChange={(raw) => onChange(parseFieldInput(field.field, raw))}
       />
     );
@@ -114,7 +116,13 @@ function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChang
   return <TextInput id={id} field={field} value={value} disabled={disabled} onChange={onChange} />;
 }
 
-function TextInput({ id, field, value, disabled, onChange }: Omit<FieldProps, "projectId" | "refreshKey">) {
+function TextInput({
+  id,
+  field,
+  value,
+  disabled,
+  onChange,
+}: Omit<FieldProps, "projectId" | "refreshKey" | "frameHint">) {
   const [text, setText] = useState(value === null ? "" : String(value));
   const shown = parseFieldInput(field.field, text) === value ? text : value === null ? "" : String(value);
   const numeric = fieldKind(field.field) === "number";
@@ -207,6 +215,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
                     value={value}
                     disabled={none.has(f.key)}
                     refreshKey={refreshKey}
+                    frameHint={error !== frDesign.field.invalid}
                     onChange={(v) => set(f.key, v)}
                   />
                   {hasNoValueToggle(f) && (

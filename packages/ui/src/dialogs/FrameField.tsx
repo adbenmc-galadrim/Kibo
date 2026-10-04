@@ -7,13 +7,14 @@ type Props = {
   label: string;
   value: string | null;
   disabled: boolean;
+  hint: boolean;
   onChange(raw: string): void;
 };
 
 export const isBadFrame = (value: unknown): boolean =>
   typeof value === "string" && value.trim() !== "" && parseDesignUrl(value) === null;
 
-export function FrameField({ id, label, value, disabled, onChange }: Props) {
+export function FrameField({ id, label, value, disabled, hint, onChange }: Props) {
   const text = value ?? "";
   const bad = isBadFrame(text);
   return (
@@ -27,10 +28,10 @@ export function FrameField({ id, label, value, disabled, onChange }: Props) {
         value={text}
         disabled={disabled}
         aria-invalid={bad}
-        aria-describedby={bad ? `${id}-invalid` : undefined}
+        aria-describedby={bad && hint ? `${id}-invalid` : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
-      {bad && (
+      {bad && hint && (
         <p id={`${id}-invalid`} className="text-xs text-destructive">
           {frDesign.field.invalid}
         </p>
