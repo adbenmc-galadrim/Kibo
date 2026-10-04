@@ -15,10 +15,10 @@ export const McpServerId = z.string().regex(/^[a-z0-9-]{1,32}$/);
 export const RESERVED_MCP_IDS: readonly string[] = ["figma"];
 export const EnvName = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
 
-const INTEGRATION_SECRET = /^(github|figma|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
+const INTEGRATION_SECRET = /^(github|figma|penpot|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
 export const SYSTEM_SECRET_NAMES = ["sync:device", "market:publisher", "remote:tls"] as const;
 export type SystemSecretName = (typeof SYSTEM_SECRET_NAMES)[number];
-export type IntegrationSecretName = `${"github" | "mcp" | "figma"}${"" | `:${string}`}`;
+export type IntegrationSecretName = `${"github" | "mcp" | "figma" | "penpot"}${"" | `:${string}`}`;
 export type SecretName = IntegrationSecretName | SystemSecretName;
 export const SECRET_SYNC_DEVICE: SystemSecretName = "sync:device";
 export const SECRET_MARKET_PUBLISHER: SystemSecretName = "market:publisher";
@@ -148,6 +148,7 @@ export const IntegrationId = z.enum([
   "github-issues",
   "github-actions",
   "figma",
+  "penpot",
   "notifications",
   "markdown",
   "mcp",
@@ -242,12 +243,6 @@ export const McpImportItem = z.object({
 });
 export type McpImportItem = z.infer<typeof McpImportItem>;
 
-export type FigmaPreview = {
-  png: string | null;
-  fetchedAt: number | null;
-  reachable: boolean;
-  available: boolean;
-};
 export type GithubRepo = { fullName: RepoSlug; private: boolean; description: string | null };
 export type GithubProject = {
   owner: string;

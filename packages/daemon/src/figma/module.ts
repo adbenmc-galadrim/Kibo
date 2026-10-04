@@ -12,9 +12,14 @@ export function figmaModule(kit: IntegrationKit, hub: McpHub): IntegrationModule
     );
   return {
     handlers: {
-      configureFigma: (req) => figma.configure(req.url),
-      linkFigmaNode: (req) => figma.link(req.projectId, req.ticketId, req.url),
-      getFigmaPreview: (req) => figma.preview(req.fileKey, req.nodeId),
+      connectFigma: (req) =>
+        req.auth.mode === "mcp"
+          ? figma.configure(req.auth.url)
+          : Promise.reject(new KiboError("INVALID_INPUT", "token mode arrives with T5")),
+      linkDesignFrame: (req) => figma.link(req.projectId, req.ticketId, req.url),
+      getDesignFrame: async () => {
+        throw new KiboError("INTERNAL", "replaced by T6");
+      },
     },
     probes: [
       {

@@ -19,6 +19,7 @@ export const frIntegrations = {
     },
     "github-actions": { title: "GitHub Actions", description: "Runs et logs liés à la PR et au ticket" },
     figma: { title: "Figma (MCP)", description: "Nœuds Figma liés aux tickets, aperçus" },
+    penpot: { title: "Penpot", description: "Cadres liés aux tickets et widgets Maquette" },
     notifications: {
       title: "Notifications système",
       description: "Agent en attente, run terminé, CI cassée",

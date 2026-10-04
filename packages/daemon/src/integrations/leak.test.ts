@@ -194,9 +194,8 @@ async function githubScenario(): Promise<string> {
   const log = await ok({ method: "getCiLog", projectId: project.id, runId: 900, jobId: 70 });
   expect(log.text).toContain("Bearer ***");
 
-  await ok({ method: "configureFigma", url: figmaMcp.url });
-  await ok({ method: "linkFigmaNode", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
-  await ok({ method: "getFigmaPreview", fileKey: "AbC123xyz", nodeId: "12:34" });
+  await ok({ method: "connectFigma", auth: { mode: "mcp", url: figmaMcp.url } });
+  await ok({ method: "linkDesignFrame", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
 
   gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 500, ECHO_AUTH);
   await kanban.sync();
@@ -241,7 +240,6 @@ function journalsWereWritten(tables: Place[]): void {
   const table = (name: string) =>
     tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
   expect(table("mcp_calls")).toContain('"tool":"echo_env"');
-  expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
   expect(table("integration_events")).toContain("upstream said ***");
   expect(table("component_events")).not.toBe("");
   expect(tables.some(([where]) => where.startsWith("loro doc "))).toBe(true);

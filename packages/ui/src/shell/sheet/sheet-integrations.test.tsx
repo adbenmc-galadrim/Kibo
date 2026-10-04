@@ -54,8 +54,7 @@ const replies: Record<string, (req: RpcRequest) => unknown> = {
     truncated: false,
     errorLines: [2],
   }),
-  getFigmaPreview: () => ({ png: null, fetchedAt: null, reachable: false, available: false }),
-  linkFigmaNode: () => {
+  linkDesignFrame: () => {
     throw new KiboError("INVALID_INPUT", "not a figma node url");
   },
 };
@@ -134,7 +133,7 @@ const show = async (shown: TicketView = ticket) => {
   );
   await screen.findByRole("alert");
   if (shown.externalRefs.some((r) => r.kind === "github_pr")) await screen.findByText("3 min 12 s");
-  if (shown.externalRefs.some((r) => r.kind === "figma_node")) await screen.findByText("Figma non joignable");
+  if (shown.externalRefs.some((r) => r.kind === "figma_node")) await screen.findAllByText("Tickets / Arbre");
   return view;
 };
 
@@ -163,7 +162,7 @@ test("the ticket tab shows the GitHub chips in its header", async () => {
   if (!header) throw new Error("tab has a header");
   expect(await within(header).findByRole("link", { name: "#42" })).toBeDefined();
   expect(within(header).getByRole("link", { name: "#12" })).toBeDefined();
-  await screen.findByText("Figma non joignable");
+  await screen.findAllByText("Tickets / Arbre");
 });
 
 test("a broken issue link shows a badge instead of a link", async () => {
@@ -268,9 +267,10 @@ test("the CI section opens the logs, filterable to errors", async () => {
   expect(screen.getByText("##[error]Test failed")).toBeDefined();
 });
 
-test("Figma: unreachable badge, invalid URL message and unlink", async () => {
+test("Figma: linked frame names, invalid URL message and unlink", async () => {
   await show();
-  expect(screen.getByText("Figma non joignable")).toBeDefined();
+  expect(screen.queryByText("Figma non joignable")).toBeNull();
+  expect(calls.some((c) => c.method === "getDesignFrame")).toBe(false);
   expect(screen.getAllByText("Tickets / Arbre").length).toBeGreaterThan(0);
   const user = userEvent.setup();
   await user.type(

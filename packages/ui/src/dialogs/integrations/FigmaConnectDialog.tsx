@@ -29,7 +29,7 @@ export function FigmaConnectDialog({ open, onOpenChange, onDone }: IntegrationDi
     setBusy(true);
     setError(null);
     try {
-      const s = await client.rpc({ method: "configureFigma", url });
+      const s = await client.rpc({ method: "connectFigma", auth: { mode: "mcp", url } });
       if (s.state === "connected") onDone();
       else setError(figmaProblem(s.error, url));
     } catch (e) {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PenpotBoardRef } from "./design";
 import { FigmaNodeRef, GithubIssueRef, McpItemRef, WebUrl } from "./integrations";
 
 export const PrState = z.enum(["open", "draft", "merged", "closed"]);
@@ -16,10 +17,17 @@ export const ExternalRef = z.discriminatedUnion("kind", [
   GithubPrRef,
   GithubIssueRef,
   FigmaNodeRef,
+  PenpotBoardRef,
   McpItemRef,
 ]);
 export type ExternalRef = z.infer<typeof ExternalRef>;
-export const ExternalRefKind = z.enum(["github_pr", "github_issue", "figma_node", "mcp_item"]);
+export const ExternalRefKind = z.enum([
+  "github_pr",
+  "github_issue",
+  "figma_node",
+  "penpot_board",
+  "mcp_item",
+]);
 export type ExternalRefKind = z.infer<typeof ExternalRefKind>;
 
 export function externalRefKey(ref: ExternalRef): string {
@@ -30,6 +38,8 @@ export function externalRefKey(ref: ExternalRef): string {
       return ref.bindingId;
     case "figma_node":
       return `${ref.fileKey}:${ref.nodeId}`;
+    case "penpot_board":
+      return `${ref.fileId}/${ref.pageId}/${ref.boardId}`;
     case "mcp_item":
       return `${ref.server}:${ref.itemId}`;
   }

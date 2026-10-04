@@ -2,7 +2,6 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import { dirname, join } from "node:path";
 import {
   type FigmaNodeRef,
-  type FigmaPreview,
   type IntegrationStatus,
   KiboError,
   type KiboErrorCode,
@@ -25,6 +24,7 @@ type Deps = { host: IntegrationHost; hub: McpHub; settings: Settings; events: Ev
 type CacheKey = { f: string; n: string };
 type CacheRow = { png_path: string; fetched_at: number };
 type Cached = { png: string; fetchedAt: number };
+type FigmaPreview = { png: string | null; fetchedAt: number | null; reachable: boolean; available: boolean };
 
 export type Figma = ReturnType<typeof createFigma>;
 

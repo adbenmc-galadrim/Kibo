@@ -1,12 +1,12 @@
 import { z } from "zod";
+import { DESIGN_URL_MAX, type DesignFrame, PenpotInstanceUrl } from "./design";
+import type { ExternalRef } from "./external-ref";
 import { NodeId } from "./ids";
 import {
   type Binding,
   BindingConfig,
   type CiLog,
   type CiRun,
-  type FigmaNodeRef,
-  type FigmaPreview,
   type GithubConnectOptions,
   type GithubProject,
   type GithubRepo,
@@ -26,7 +26,7 @@ const bindingId = z.string().min(1);
 export const INTEGRATION_RPC = [
   z.object({ method: z.literal("listIntegrations") }),
   z.object({ method: z.literal("testIntegration"), id: IntegrationId }),
-  z.object({ method: z.literal("disconnectIntegration"), id: z.enum(["github", "figma", "mcp"]) }),
+  z.object({ method: z.literal("disconnectIntegration"), id: z.enum(["github", "figma", "penpot", "mcp"]) }),
   z.object({ method: z.literal("getGithubConnectOptions") }),
   z.object({
     method: z.literal("connectGithub"),
@@ -49,12 +49,28 @@ export const INTEGRATION_RPC = [
   }),
   z.object({ method: z.literal("listCiRuns"), projectId, ticketId: NodeId.nullable() }),
   z.object({ method: z.literal("getCiLog"), projectId, runId: z.number().int(), jobId: z.number().int() }),
-  z.object({ method: z.literal("configureFigma"), url: z.string().url() }),
-  z.object({ method: z.literal("linkFigmaNode"), projectId, ticketId: NodeId, url: z.string().url() }),
   z.object({
-    method: z.literal("getFigmaPreview"),
-    fileKey: z.string().regex(/^[A-Za-z0-9]{6,64}$/),
-    nodeId: z.string().regex(/^\d+:\d+$/),
+    method: z.literal("connectFigma"),
+    auth: z.discriminatedUnion("mode", [
+      z.object({ mode: z.literal("token"), token: z.string().trim().min(1).max(255) }),
+      z.object({ mode: z.literal("mcp"), url: z.string().url() }),
+    ]),
+  }),
+  z.object({
+    method: z.literal("connectPenpot"),
+    url: PenpotInstanceUrl,
+    token: z.string().trim().min(1).max(512),
+  }),
+  z.object({
+    method: z.literal("linkDesignFrame"),
+    projectId,
+    ticketId: NodeId,
+    url: z.string().min(1).max(DESIGN_URL_MAX),
+  }),
+  z.object({
+    method: z.literal("getDesignFrame"),
+    url: z.string().min(1).max(DESIGN_URL_MAX),
+    refresh: z.boolean().default(false),
   }),
   z.object({ method: z.literal("listMcpServers") }),
   z.object({ method: z.literal("previewMcpServer"), server: McpServerInput }),
@@ -86,9 +102,10 @@ export type IntegrationRpcResult = {
   resolveOutbox: null;
   listCiRuns: CiRun[];
   getCiLog: CiLog;
-  configureFigma: IntegrationStatus;
-  linkFigmaNode: FigmaNodeRef;
-  getFigmaPreview: FigmaPreview;
+  connectFigma: IntegrationStatus;
+  connectPenpot: IntegrationStatus;
+  linkDesignFrame: ExternalRef;
+  getDesignFrame: DesignFrame;
   listMcpServers: McpServerView[];
   previewMcpServer: { commandLine: string };
   addMcpServer: McpServerView;

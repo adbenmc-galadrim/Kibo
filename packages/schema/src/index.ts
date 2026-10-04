@@ -13,6 +13,7 @@ export * from "./code";
 export * from "./command";
 export * from "./component";
 export * from "./config";
+export * from "./design";
 export * from "./errors";
 export * from "./external-ref";
 export * from "./format";

@@ -1,14 +1,7 @@
-import {
-  externalRefKey,
-  type FigmaNodeRef,
-  type FigmaPreview,
-  KiboError,
-  type TicketView,
-} from "@kibo/schema";
-import { Badge } from "@kibo/sdk/ui/badge";
+import { externalRefKey, type FigmaNodeRef, KiboError, type TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
 import { failureText } from "../../lib/remote-error";
@@ -23,24 +16,7 @@ function linkError(e: unknown): string {
   return failureText(e);
 }
 
-function PreviewBadge({ preview }: { preview: FigmaPreview | null }) {
-  if (!preview) return null;
-  if (!preview.reachable)
-    return (
-      <Badge variant="outline" className="bg-background">
-        {t.figmaUnreachable}
-      </Badge>
-    );
-  if (!preview.available)
-    return (
-      <Badge variant="outline" className="bg-background">
-        {t.previewUnavailable}
-      </Badge>
-    );
-  return null;
-}
-
-function Thumbnail({
+function LinkedFrame({
   projectId,
   ticketId,
   node,
@@ -49,22 +25,7 @@ function Thumbnail({
   ticketId: string;
   node: FigmaNodeRef;
 }) {
-  const [preview, setPreview] = useState<FigmaPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let live = true;
-    client
-      .rpc({ method: "getFigmaPreview", fileKey: node.fileKey, nodeId: node.nodeId })
-      .then((p) => {
-        if (live) setPreview(p);
-      })
-      .catch((e: unknown) => {
-        if (live) setError(failureText(e));
-      });
-    return () => {
-      live = false;
-    };
-  }, [node.fileKey, node.nodeId]);
   const unlink = async () => {
     try {
       await client.rpc({
@@ -77,29 +38,17 @@ function Thumbnail({
     }
   };
   return (
-    <figure className="grid gap-1">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-md border bg-muted">
-        {preview?.png && (
-          <img
-            src={`data:image/png;base64,${preview.png}`}
-            alt={node.name}
-            className="size-full object-cover"
-          />
-        )}
-        <div className="absolute top-2 left-2 flex gap-1">
-          <PreviewBadge preview={preview} />
-        </div>
-      </div>
-      <figcaption className="flex min-w-0 items-center gap-2">
+    <li className="grid gap-1">
+      <div className="flex min-w-0 items-center gap-2">
         <a className="truncate hover:underline" href={node.url} target="_blank" rel="noreferrer noopener">
           {node.name}
         </a>
         <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={() => void unlink()}>
           {t.unlink}
         </Button>
-      </figcaption>
+      </div>
       {error && <p className="text-destructive">{error}</p>}
-    </figure>
+    </li>
   );
 }
 
@@ -109,7 +58,7 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
   const nodes = figmaRefs(ticket);
   const link = async () => {
     try {
-      await client.rpc({ method: "linkFigmaNode", projectId, ticketId: ticket.id, url: url.trim() });
+      await client.rpc({ method: "linkDesignFrame", projectId, ticketId: ticket.id, url: url.trim() });
       setUrl("");
       setError(null);
     } catch (e) {
@@ -120,11 +69,11 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
     <section className="grid gap-2 px-4 pb-4 text-xs">
       <h3 className="font-medium">{t.mockups}</h3>
       {nodes.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <ul className="grid gap-1">
           {nodes.map((n) => (
-            <Thumbnail key={externalRefKey(n)} projectId={projectId} ticketId={ticket.id} node={n} />
+            <LinkedFrame key={externalRefKey(n)} projectId={projectId} ticketId={ticket.id} node={n} />
           ))}
-        </div>
+        </ul>
       )}
       <form
         className="flex gap-2"

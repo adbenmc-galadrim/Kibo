@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ComponentKind } from "./manifest";
 
-export const CAPABILITIES = ["webgl", "audio", "fullscreen", "gamepad", "assets"] as const;
+export const CAPABILITIES = ["webgl", "audio", "fullscreen", "gamepad", "assets", "design"] as const;
 export const Capability = z.enum(CAPABILITIES);
 export type Capability = z.infer<typeof Capability>;
 

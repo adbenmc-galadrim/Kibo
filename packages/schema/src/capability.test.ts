@@ -9,8 +9,8 @@ import {
   Selection,
 } from "./capability";
 
-test("the five capabilities and their permission names", () => {
-  expect([...CAPABILITIES]).toEqual(["webgl", "audio", "fullscreen", "gamepad", "assets"]);
+test("the six capabilities and their permission names", () => {
+  expect([...CAPABILITIES]).toEqual(["webgl", "audio", "fullscreen", "gamepad", "assets", "design"]);
   expect(Capability.safeParse("network").success).toBe(false);
   expect(capPermission("webgl")).toBe("cap:webgl");
   expect(capabilityOfPermission("cap:assets")).toBe("assets");

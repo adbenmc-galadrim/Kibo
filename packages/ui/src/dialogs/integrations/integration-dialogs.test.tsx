@@ -119,7 +119,10 @@ test("figma: the default address is sent, an unreachable server is explained", a
   render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
   expect(screen.getByLabelText("Adresse du serveur")).toHaveProperty("value", "http://127.0.0.1:3845/mcp");
   await user.click(screen.getByRole("button", { name: "Connecter" }));
-  expect(calls).toContainEqual({ method: "configureFigma", url: "http://127.0.0.1:3845/mcp" });
+  expect(calls).toContainEqual({
+    method: "connectFigma",
+    auth: { mode: "mcp", url: "http://127.0.0.1:3845/mcp" },
+  });
   const alert = await screen.findByRole("alert");
   expect(within(alert).getByText("Serveur Figma injoignable")).toBeDefined();
   expect(

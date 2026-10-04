@@ -112,6 +112,8 @@ function dispatch(
     case "assets.list":
     case "assets.url":
       return h.assets(projectId, inst.id, call);
+    case "design.frame":
+      throw new KiboError("NOT_CONNECTED", "design integrations not started");
     default:
       return h.notes(projectId, call);
   }

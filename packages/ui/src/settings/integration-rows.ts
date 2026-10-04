@@ -7,6 +7,7 @@ import {
   GitPullRequestArrow,
   ListTodo,
   type LucideIcon,
+  PenTool,
   Plug,
   SquareTerminal,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const ICONS: Record<IntegrationId, LucideIcon> = {
   "github-issues": ListTodo,
   "github-actions": SquareTerminal,
   figma: Frame,
+  penpot: PenTool,
   notifications: Bell,
   markdown: FileText,
   mcp: Plug,
@@ -43,6 +45,7 @@ const MENUS: Record<IntegrationId, RowMenuItem[]> = {
   "github-issues": ["configure", "test"],
   "github-actions": ["configure", "test"],
   figma: ["configure", "test", "disconnect"],
+  penpot: ["configure", "test", "disconnect"],
   notifications: [],
   markdown: ["test"],
   mcp: ["configure", "test", "disconnect"],

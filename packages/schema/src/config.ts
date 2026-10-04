@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ProjectAssetKind, ProjectAssetName } from "./asset";
+import { parseDesignUrl } from "./design";
 
 export const ConfigField = z
   .object({
@@ -15,11 +16,16 @@ export const ConfigField = z
     min: z.number().optional(),
     max: z.number().optional(),
     asset: ProjectAssetKind.optional(),
+    frame: z.literal(true).optional(),
   })
   .strict()
   .refine(
     (f) => f.asset === undefined || f.type === undefined || f.type === "string",
     "an asset field is a string",
+  )
+  .refine(
+    (f) => f.frame === undefined || f.type === undefined || f.type === "string",
+    "a frame field is a string",
   )
   .refine((f) => f.min === undefined || f.max === undefined || f.min <= f.max, "min exceeds max");
 export type ConfigField = z.infer<typeof ConfigField>;
@@ -44,6 +50,8 @@ function fieldError(key: string, field: ConfigField, value: unknown): string | n
   if (!SCALAR.has(typeof value)) return `${key}: unsupported value`;
   if (field.asset && typeof value === "string" && !ProjectAssetName.safeParse(value).success)
     return `${key}: not a project file name`;
+  if (field.frame && typeof value === "string" && parseDesignUrl(value) === null)
+    return `${key}: not a figma or penpot frame url`;
   if (typeof value === "number" && field.min !== undefined && value < field.min)
     return `${key}: below ${field.min}`;
   if (typeof value === "number" && field.max !== undefined && value > field.max)
