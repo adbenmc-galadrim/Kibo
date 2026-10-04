@@ -121,3 +121,12 @@ test("an unavailable keychain is an error", async () => {
   });
   await expect(account.connect(penpot.url, SECRET)).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
 });
+
+test("a keychain failure on disconnect keeps the settings, so the token is never orphaned", async () => {
+  settings.set("penpot.url", penpot.url);
+  settings.set("penpot.account", "Adam");
+  const account = build(unavailableSecretStore("locked"));
+  await expect(account.disconnect()).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+  expect(settings.get("penpot.url")).toBe(penpot.url);
+  expect(settings.get("penpot.account")).toBe("Adam");
+});

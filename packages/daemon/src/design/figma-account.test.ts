@@ -175,3 +175,12 @@ test("an unavailable keychain puts the token mode in error", async () => {
   });
   await expect(account.connect({ mode: "token", token: SECRET })).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
 });
+
+test("a keychain failure on disconnect keeps the settings, so the token is never orphaned", async () => {
+  settings.set("figma.mode", "token");
+  settings.set("figma.account", "adam");
+  const account = build(unavailableSecretStore("locked"));
+  await expect(account.disconnect()).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
+  expect(settings.get("figma.mode")).toBe("token");
+  expect(settings.get("figma.account")).toBe("adam");
+});

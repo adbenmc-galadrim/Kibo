@@ -100,12 +100,11 @@ export function createFigmaAccount(deps: {
       return account.status();
     },
     async disconnect() {
-      const m = mode();
+      if (mode() === "token") await secrets.delete("figma");
       settings.delete("figma.mode");
       settings.delete("figma.account");
       lastError = null;
       await leaveMcp();
-      if (m === "token") await secrets.delete("figma");
       events.log("figma", "info", "disconnected");
     },
     async start() {

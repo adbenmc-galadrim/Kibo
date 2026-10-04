@@ -73,10 +73,10 @@ export function createPenpotAccount(deps: {
       return account.status();
     },
     async disconnect() {
+      await secrets.delete("penpot");
       settings.delete("penpot.url");
       settings.delete("penpot.account");
       lastError = null;
-      await secrets.delete("penpot");
       events.log("penpot", "info", "disconnected");
     },
   };
