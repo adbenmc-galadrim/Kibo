@@ -17,7 +17,7 @@ export function KanbanColumn({ status, ids, targeted, children, onAdd }: Props) 
       ref={setNodeRef}
       aria-label={status.label}
       className={cn(
-        "flex min-w-[180px] flex-1 flex-col gap-2 rounded-lg bg-muted/40 p-2",
+        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2",
         targeted && "ring-2 ring-ring",
       )}
     >
@@ -40,9 +40,11 @@ export function KanbanColumn({ status, ids, targeted, children, onAdd }: Props) 
           <span className="size-6" />
         )}
       </header>
-      <SortableContext id={status.id} items={ids}>
-        {children}
-      </SortableContext>
+      <div data-slot="kanban-cards" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-2">
+        <SortableContext id={status.id} items={ids}>
+          {children}
+        </SortableContext>
+      </div>
     </section>
   );
 }

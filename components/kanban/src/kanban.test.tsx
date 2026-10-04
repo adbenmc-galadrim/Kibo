@@ -395,3 +395,18 @@ test("in a shared project, 'Moi + agents' follows the account id", async () => {
   expect(await screen.findByText("À moi")).toBeTruthy();
   expect(screen.queryByText("Au nom local")).toBeNull();
 });
+
+test("a column scrolls its cards inside its own background", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  expect(column.className).toContain("min-h-0");
+  const cards = column.querySelector('[data-slot="kanban-cards"]');
+  if (!(cards instanceof HTMLElement)) throw new Error("cards container missing");
+  expect(cards.className).toContain("overflow-y-auto");
+  expect(cards.className).toContain("min-h-0");
+  expect(cards.className).toContain("flex-1");
+  expect(within(cards).getAllByRole("button").length).toBeGreaterThan(0);
+  const board = column.parentElement;
+  if (!board) throw new Error("board missing");
+  expect(board.className).toContain("overflow-y-hidden");
+});
