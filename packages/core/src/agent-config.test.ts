@@ -227,7 +227,7 @@ describe("workspace name", () => {
 });
 
 describe("system profiles", () => {
-  test("ensureSystemProfiles creates both profiles once, with the first user model", () => {
+  test("ensureSystemProfiles creates the system profiles once, with the first user model", () => {
     const ws = createWorkspaceDoc();
     run(ws, { method: "createProfile", profile: { ...opus, name: "zed", model: "haiku" } });
     run(ws, { method: "createProfile", profile: { ...opus, name: "alpha", model: "opus" } });
@@ -238,6 +238,7 @@ describe("system profiles", () => {
       system.map((p) => [p.id, p.permissionMode, p.model, p.enabled, p.maxParallel, p.workspace]),
     ).toEqual([
       ["assistant", "default", "opus", true, 1, "isolated"],
+      ["demo", "acceptEdits", "opus", true, 1, "isolated"],
       ["generateur", "acceptEdits", "opus", true, 2, "isolated"],
     ]);
   });
@@ -314,7 +315,7 @@ describe("system profiles", () => {
       listProfiles(ws)
         .filter((p) => p.system)
         .map((p) => p.id),
-    ).toEqual(["assistant", "generateur"]);
+    ).toEqual(["assistant", "demo", "generateur"]);
     expect(() => run(ws, { method: "deleteProfile", profileId: "assistant" })).toThrow("INVALID_INPUT");
   });
 

@@ -237,6 +237,12 @@ test("comboOf maps only the relayed shortcuts", () => {
   expect(comboOf(new KeyboardEvent("keydown", { key: "0", metaKey: true }))).toBeNull();
 });
 
+test("mod+/ is relayed", () => {
+  expect(comboOf(new KeyboardEvent("keydown", { key: "/", metaKey: true }))).toBe("mod+/");
+  expect(comboOf(new KeyboardEvent("keydown", { key: "/", ctrlKey: true }))).toBe("mod+/");
+  expect(comboOf(new KeyboardEvent("keydown", { key: "/" }))).toBeNull();
+});
+
 test("the frame sdk ignores unknown reply ids and rejects pending calls on dispose", async () => {
   const { port, sent, deliver } = fakePort();
   const frame = createFrameSdk(ComponentManifest.parse(manifest), init, port);

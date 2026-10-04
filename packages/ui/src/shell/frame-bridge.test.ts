@@ -215,6 +215,19 @@ test("dispatchCombo replays the shortcut as a keydown in the app", () => {
   expect(seen).toEqual(["mod+k", "mod+3", "Escape"]);
 });
 
+test("mod+/ from a frame reaches the host and replays as a keydown", () => {
+  const { frame, from, handlers } = setup();
+  from(frame, { kibo: 1, type: "key", combo: "mod+/" });
+  expect(handlers.onKey).toHaveBeenCalledWith("mod+/");
+  const seen: string[] = [];
+  const target = new EventTarget();
+  target.addEventListener("keydown", (e) => {
+    if (e instanceof KeyboardEvent && (e.metaKey || e.ctrlKey)) seen.push(e.key);
+  });
+  dispatchCombo("mod+/", target);
+  expect(seen).toEqual(["/"]);
+});
+
 test("dispatchCombo reaches the window listeners by default", () => {
   const seen: string[] = [];
   const listener = (e: KeyboardEvent) => seen.push(e.key);

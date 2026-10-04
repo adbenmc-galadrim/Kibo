@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { AiStatus } from "@kibo/schema";
+import type { AiStatus, AppInfo } from "@kibo/schema";
 import { parseToolVersion, readEnvironment } from "./environment";
 
 const ai: AiStatus = {
@@ -8,6 +8,15 @@ const ai: AiStatus = {
   version: "2.1.283",
   loggedIn: true,
   profiles: { assistant: true, generateur: true },
+};
+
+const app: AppInfo = {
+  version: "1.5.0",
+  platform: "darwin",
+  arch: "arm64",
+  home: "~/.kibo",
+  daemonPid: 42,
+  uptimeMs: 1000,
 };
 
 test("parseToolVersion keeps major.minor", () => {
@@ -25,6 +34,7 @@ test("readEnvironment gathers every check of screen 19", async () => {
     ghBin: "gh",
     capacity: () => ({ cores: 8, ramGb: 16, hostSlots: 3 }),
     githubConnected: async () => false,
+    app: () => app,
   });
   expect(env).toEqual({
     daemon: { address: "127.0.0.1:47831", home: "/Users/adam/.kibo" },
@@ -33,6 +43,7 @@ test("readEnvironment gathers every check of screen 19", async () => {
     gh: null,
     capacity: { cores: 8, ramGb: 16, hostSlots: 3 },
     github: { connected: false },
+    app,
   });
 });
 
@@ -45,6 +56,7 @@ test("readEnvironment treats a failing tool as missing", async () => {
     ghBin: "gh",
     capacity: () => ({ cores: 1, ramGb: 1, hostSlots: 1 }),
     githubConnected: async () => true,
+    app: () => app,
   });
   expect([env.git, env.gh, env.github.connected]).toEqual([null, null, true]);
 });

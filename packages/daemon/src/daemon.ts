@@ -247,6 +247,14 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agentEnv: opts.agentEnv ?? process.env,
     address: `127.0.0.1:${server.port}`,
     listIntegrations: async () => call(service, { method: "listIntegrations" }),
+    appInfo: () => ({
+      version: "0.0.0",
+      platform: process.platform === "darwin" ? "darwin" : "linux",
+      arch: process.arch === "arm64" ? "arm64" : "x64",
+      home: "~/.kibo",
+      daemonPid: process.pid,
+      uptimeMs: 0,
+    }),
     ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
   });
   draftAssets = ai.draftAssets;

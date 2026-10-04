@@ -3,7 +3,7 @@ import { mkdirSync, realpathSync } from "node:fs";
 import { delimiter, join } from "node:path";
 import { listProfiles } from "@kibo/core/agent-config";
 import { type Toolchain, toolchainModules } from "@kibo/devkit";
-import { type IntegrationStatus, KiboError } from "@kibo/schema";
+import { type AppInfo, type IntegrationStatus, KiboError } from "@kibo/schema";
 import type { Orchestrator } from "../agents/orchestrator-types";
 import { resolveClaudeBin } from "../agents/runner";
 import { editorCommand, openInEditor } from "../code/editor";
@@ -55,6 +55,7 @@ export type AiBootstrapDeps = {
   agentEnv: Record<string, string | undefined>;
   address: string;
   listIntegrations: () => Promise<IntegrationStatus[]>;
+  appInfo: () => AppInfo;
   assistantTimeoutMs?: number;
 };
 
@@ -106,6 +107,7 @@ function environmentOf(deps: AiBootstrapDeps, ai: AiAvailability, exec: Exec) {
         return { cores: h.cores, ramGb: h.ramGb, hostSlots: h.hostSlots };
       },
       githubConnected: async () => githubConnected(await deps.listIntegrations()),
+      app: deps.appInfo,
     });
 }
 

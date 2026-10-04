@@ -13,14 +13,17 @@ import {
   GrantedPermissions,
   grantedOf,
   isKiboErrorCode,
+  KeyCombo,
   KiboError,
   NO_PERMISSIONS,
+  Phase7Event,
   ProjectKey,
   permissionList,
   permissionOfCall,
   RpcRequest,
   Sha256,
   StartComponentDraftInput,
+  SYSTEM_PROFILE_IDS,
   sniffImage,
   Ticket,
   TicketKey,
@@ -347,4 +350,22 @@ test("file rpc methods parse", () => {
     description: "Un cube qui tourne lentement dans le widget.",
   });
   expect(created.mode === "create" ? created.template : null).toBe("blank");
+});
+
+test("phase 14 methods are part of RpcRequest", () => {
+  expect(RpcRequest.safeParse({ method: "getAppInfo" }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "createBackup", reason: "manual" }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "createBackup", reason: "auto" }).success).toBe(false);
+  expect(RpcRequest.safeParse({ method: "deleteBackup", id: "../x" }).success).toBe(false);
+  expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { dir: null } }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { nope: 1 } }).success).toBe(false);
+  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "agent" }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "markTutorialSeen", view: "kanban" }).success).toBe(false);
+});
+
+test("phase 14 events and the help combo", () => {
+  expect(Phase7Event.safeParse({ type: "backups.changed" }).success).toBe(true);
+  expect(Phase7Event.safeParse({ type: "tutorial.changed" }).success).toBe(true);
+  expect(KeyCombo.safeParse("mod+/").success).toBe(true);
+  expect(SYSTEM_PROFILE_IDS).toEqual(["assistant", "generateur", "demo"]);
 });

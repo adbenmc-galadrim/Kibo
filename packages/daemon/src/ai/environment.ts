@@ -1,4 +1,4 @@
-import type { AiStatus, Environment } from "@kibo/schema";
+import type { AiStatus, AppInfo, Environment } from "@kibo/schema";
 import type { Exec } from "./ports";
 
 const VERSION_TIMEOUT_MS = 5_000;
@@ -11,6 +11,7 @@ export type EnvironmentDeps = {
   ghBin: string;
   capacity: () => { cores: number; ramGb: number; hostSlots: number };
   githubConnected: () => Promise<boolean>;
+  app: () => AppInfo;
 };
 
 export function parseToolVersion(out: string): string | null {
@@ -30,5 +31,13 @@ export async function readEnvironment(deps: EnvironmentDeps): Promise<Environmen
     toolVersion(deps.exec, deps.ghBin),
     deps.githubConnected(),
   ]);
-  return { daemon: deps.daemon, ai, git, gh, capacity: deps.capacity(), github: { connected } };
+  return {
+    daemon: deps.daemon,
+    ai,
+    git,
+    gh,
+    capacity: deps.capacity(),
+    github: { connected },
+    app: deps.app(),
+  };
 }

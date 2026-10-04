@@ -214,6 +214,7 @@ describe("service", () => {
     const config = s2.handle({ method: "getConfig" }) as WorkspaceConfig;
     expect(config.profiles.map((p) => [p.id, p.system, p.enabled])).toEqual([
       ["assistant", true, false],
+      ["demo", true, true],
       ["generateur", true, true],
     ]);
     store2.close();

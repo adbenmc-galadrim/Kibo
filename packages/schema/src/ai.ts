@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AppInfo } from "./app-info";
 import type { FileDiff } from "./code";
 import {
   ApprovableTrust,
@@ -174,6 +175,7 @@ export type Environment = {
   gh: string | null;
   capacity: { cores: number; ramGb: number; hostSlots: number };
   github: { connected: boolean };
+  app: AppInfo;
 };
 
 export const AiEvent = z.discriminatedUnion("type", [
