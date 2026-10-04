@@ -17,6 +17,7 @@ type Props = {
   startEditing: boolean;
   onNewProject(): void;
   onImportProject(): void;
+  onTutorial(): void;
   onNewPage(): void;
   onSuggestPages(projectId: string): void;
   onOpen(target: TabTarget, newTab?: boolean): void;
@@ -34,6 +35,7 @@ export function ContentView(p: Props) {
       <Welcome
         onCreate={p.onNewProject}
         onImport={p.onImportProject}
+        onTutorial={p.onTutorial}
         onConnectGithub={() => p.onOpen({ kind: "screen", screen: "integrations" })}
       />
     );

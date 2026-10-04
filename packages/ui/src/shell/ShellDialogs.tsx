@@ -54,6 +54,7 @@ export type DialogsState = {
   deletePage: Page | null;
   editProject: string | null;
   deleteProject: string | null;
+  tutorial: boolean;
 };
 
 export const NO_DIALOG: DialogsState = {
@@ -73,6 +74,7 @@ export const NO_DIALOG: DialogsState = {
   deletePage: null,
   editProject: null,
   deleteProject: null,
+  tutorial: false,
 };
 
 type Props = {

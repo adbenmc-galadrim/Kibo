@@ -127,6 +127,22 @@ const allDaemons = [
   },
   { name: "game-dark", scheme: "dark", port: 4439, spec: /game\.spec\.ts/, scenario: "question" },
   { name: "game-light", scheme: "light", port: 4440, spec: /game\.spec\.ts/, scenario: "question" },
+  {
+    name: "onboarding-dark",
+    scheme: "dark",
+    port: 4443,
+    spec: /onboarding\.spec\.ts/,
+    scenario: "question",
+    noGh: true,
+  },
+  {
+    name: "onboarding-light",
+    scheme: "light",
+    port: 4444,
+    spec: /onboarding\.spec\.ts/,
+    scenario: "question",
+    noGh: true,
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
@@ -181,6 +197,7 @@ export default defineConfig({
           d.port,
           d.scenario,
           "integrations" in d ? "--integrations" : "",
+          "noGh" in d ? "--no-gh" : "",
           "drafts" in d ? d.drafts : "",
         ]
           .filter((part) => part !== "")

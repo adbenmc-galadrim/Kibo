@@ -229,6 +229,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
                     onNewProject={() => set({ newProject: true })}
                     onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
+                    onTutorial={() => set({ tutorial: true })}
                     onNewPage={() => set({ newPageParent: null })}
                     onSuggestPages={(projectId) => set({ suggestFor: projectId })}
                     onOpen={(t, newTab) => go(t, newTab)}

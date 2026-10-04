@@ -149,6 +149,7 @@ const contentProps = {
   startEditing: false,
   onNewProject: () => {},
   onImportProject: () => {},
+  onTutorial: () => {},
   onNewPage: () => {},
   onSuggestPages: () => {},
   onOpen: () => {},

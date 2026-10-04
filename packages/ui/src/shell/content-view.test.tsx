@@ -37,6 +37,7 @@ test("a reopened tab whose page was deleted shows « Page introuvable »", () =>
       startEditing={false}
       onNewProject={noop}
       onImportProject={noop}
+      onTutorial={noop}
       onNewPage={noop}
       onSuggestPages={noop}
       onOpen={noop}
