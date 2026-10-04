@@ -59,6 +59,18 @@ const shownPathOf = (info: NotesInfo | null, path: string) => {
 const PROSE =
   "grid gap-3 text-sm text-muted-foreground leading-relaxed [&_a]:text-foreground [&_a]:underline [&_code]:font-mono [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h2]:mt-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:font-semibold [&_h3]:text-foreground [&_img]:max-w-full [&_img]:rounded-md [&_li]:ml-1 [&_li]:list-['•_'] [&_li]:list-inside [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:text-sm [&_pre]:text-foreground";
 
+const MISSING_IMAGE =
+  "inline-flex w-fit items-center rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground";
+
+function missingImage(): HTMLElement {
+  const placeholder = document.createElement("span");
+  placeholder.setAttribute("role", "img");
+  placeholder.setAttribute("aria-label", fr.imageMissing);
+  placeholder.className = MISSING_IMAGE;
+  placeholder.textContent = fr.imageMissing;
+  return placeholder;
+}
+
 function RenderedNote({
   html,
   onTicket,
@@ -103,7 +115,10 @@ function RenderedNote({
         ({ mime, bytes }) => {
           if (live) img.src = `data:${mime};base64,${bytesToBase64(bytes)}`;
         },
-        (e: unknown) => console.error(e),
+        (e: unknown) => {
+          console.error(e);
+          if (live) img.replaceWith(missingImage());
+        },
       );
     }
     return () => {

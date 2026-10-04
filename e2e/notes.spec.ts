@@ -111,4 +111,9 @@ test("éditeur : barre d'outils, aperçu en direct, menu /, enregistré sur disq
   await expect(image).toHaveAttribute("src", /^data:image\/png;base64,/);
   await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(480);
   await shot(page, info, "notes-image-apercu");
+
+  writeFileSync(file, `${readFileSync(file, "utf8")}\n![](assets/absent.png)\n`);
+  await expect(page.getByRole("img", { name: "Image introuvable" })).toBeVisible({ timeout: 5_000 });
+  await expect(image).toHaveAttribute("src", /^data:image\/png;base64,/);
+  await shot(page, info, "notes-image-introuvable");
 });

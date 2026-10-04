@@ -50,3 +50,19 @@ test("a pasted image that is not an image type is left to the editor, a refused 
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'enregistrer l'image.");
   expect(view.state.doc.toString()).toBe(before);
 });
+
+test("an image whose asset is missing shows a visible placeholder", async () => {
+  const errors: unknown[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => errors.push(args);
+  try {
+    setup("view", { "journal.md": "# Journal\n\n![schéma](assets/absent.png)\n" });
+    await screen.findByRole("heading", { level: 1, name: "Journal" });
+    const placeholder = await screen.findByRole("img", { name: "Image introuvable" });
+    expect(placeholder.textContent).toBe("Image introuvable");
+    expect(screen.getByRole("article").querySelector("img[data-asset]")).toBeNull();
+    expect(errors).toHaveLength(1);
+  } finally {
+    console.error = original;
+  }
+});
