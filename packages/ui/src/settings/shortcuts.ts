@@ -15,6 +15,7 @@ export function shortcutGroups(mac: boolean): ShortcutGroup[] {
         { label: t.palette, keys: [mod("K")] },
         { label: t.newTab, keys: [mod("T")] },
         { label: t.closeTab, keys: [mod("W")] },
+        { label: t.reopenTab, keys: [mod("Shift", "T")] },
         { label: t.togglePin, keys: [mod("Shift", "P")] },
         { label: t.home, keys: [mod("1")] },
         { label: t.goToTab, keys: [mod("2"), mod("8")], range: true },

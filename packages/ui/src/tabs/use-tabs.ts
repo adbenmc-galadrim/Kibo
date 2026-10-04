@@ -2,19 +2,40 @@ import { EMPTY_TABS, KiboError, type TabsState, type TabTarget } from "@kibo/sch
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { type TabsAction, tabsReducer } from "./tabs-model";
+import { closedTargets, type TabsAction, tabsReducer } from "./tabs-model";
 
 export type TabsApi = {
   state: TabsState;
   error: string | null;
   dispatch(action: TabsAction): void;
   open(target: TabTarget | null, opts?: { newTab?: boolean }): void;
+  closed: readonly TabTarget[];
+  reopen(): void;
 };
 
+type TabsMemory = { tabs: TabsState; closed: TabTarget[] };
+
+const MAX_CLOSED = 10;
+const CLOSING: ReadonlySet<TabsAction["type"]> = new Set(["close", "closeOthers", "closeRight"]);
+
+function applyAction(s: TabsMemory, action: TabsAction): TabsMemory {
+  const tabs = tabsReducer(s.tabs, action);
+  const gone = CLOSING.has(action.type) ? closedTargets(s.tabs, tabs) : [];
+  if (gone.length === 0) return { ...s, tabs };
+  return { tabs, closed: [...gone.reverse(), ...s.closed].slice(0, MAX_CLOSED) };
+}
+
+function reopenLast(s: TabsMemory, id: string): TabsMemory {
+  const [last, ...closed] = s.closed;
+  if (!last) return s;
+  return { tabs: tabsReducer(s.tabs, { type: "open", target: last, newTab: true, id }), closed };
+}
+
 export function useTabs(): TabsApi | null {
-  const [state, setState] = useState<TabsState | null>(null);
+  const [all, setAll] = useState<TabsMemory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const lastSaved = useRef<string | null>(null);
+  const state = all?.tabs ?? null;
 
   useEffect(() => {
     let alive = true;
@@ -22,12 +43,12 @@ export function useTabs(): TabsApi | null {
       (s) => {
         if (!alive) return;
         lastSaved.current = JSON.stringify(s);
-        setState(s);
+        setAll({ tabs: s, closed: [] });
       },
       (e: unknown) => {
         if (!alive || (e instanceof KiboError && e.code === "UNAUTHORIZED")) return;
         lastSaved.current = JSON.stringify(EMPTY_TABS);
-        setState(EMPTY_TABS);
+        setAll({ tabs: EMPTY_TABS, closed: [] });
         setError(fr.tabs.loadFailed);
       },
     );
@@ -52,7 +73,11 @@ export function useTabs(): TabsApi | null {
     return () => clearTimeout(timer);
   }, [state]);
 
-  const dispatch = useCallback((action: TabsAction) => setState((s) => (s ? tabsReducer(s, action) : s)), []);
+  const dispatch = useCallback((action: TabsAction) => setAll((s) => (s ? applyAction(s, action) : s)), []);
+  const reopen = useCallback(() => {
+    const id = crypto.randomUUID();
+    setAll((s) => (s ? reopenLast(s, id) : s));
+  }, []);
   const open = useCallback(
     (target: TabTarget | null, opts: { newTab?: boolean } = {}) =>
       dispatch(
@@ -62,5 +87,8 @@ export function useTabs(): TabsApi | null {
       ),
     [dispatch],
   );
-  return useMemo(() => (state ? { state, error, dispatch, open } : null), [state, error, dispatch, open]);
+  return useMemo(
+    () => (all ? { state: all.tabs, error, dispatch, open, closed: all.closed, reopen } : null),
+    [all, error, dispatch, open, reopen],
+  );
 }

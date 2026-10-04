@@ -17,7 +17,14 @@ const state = (activeId: string | null, ids: string[]): TabsState => ({
 type Props = { tabs: TabsApi; route: TabTarget | null };
 
 const open = mock((_target: TabTarget | null) => {});
-const api = (s: TabsState): TabsApi => ({ state: s, error: null, dispatch: () => {}, open });
+const api = (s: TabsState): TabsApi => ({
+  state: s,
+  error: null,
+  dispatch: () => {},
+  open,
+  closed: [],
+  reopen: () => {},
+});
 
 beforeEach(() => {
   open.mockClear();

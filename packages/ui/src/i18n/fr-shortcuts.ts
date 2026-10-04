@@ -9,6 +9,7 @@ export const frShortcuts = {
     palette: "Palette de commandes",
     newTab: "Nouvel onglet (palette)",
     closeTab: "Fermer l'onglet",
+    reopenTab: "Rouvrir le dernier onglet fermé",
     home: "Aller à l'Accueil",
     goToTab: "Aller à un onglet",
     lastTab: "Dernier onglet",

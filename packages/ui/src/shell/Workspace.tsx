@@ -100,6 +100,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     if (s.kind === "palette") return setPalette({ newTab: false });
     if (s.kind === "newTab") return setPalette({ newTab: true });
     if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
+    if (s.kind === "reopen") return tabs.reopen();
     const id = tabs.state.activeId;
     if (!id) return;
     if (s.kind === "close") tabs.dispatch({ type: "close", id });

@@ -156,3 +156,42 @@ test("useTabs loads the stored state and saves changes after a debounce", async 
   await waitFor(() => expect(saved).toHaveLength(1), { timeout: 1000 });
   expect(saved[0]).toEqual({ method: "saveTabs", state: { ...state, activeId: "changes" } });
 });
+
+const pageTarget = (pageId: string): TabTarget => ({ kind: "page", projectId: "p1", pageId });
+
+async function mountTabs() {
+  stored = { tabs: [], activeId: null, recents: [] };
+  const { result } = renderHook(() => useTabs());
+  await waitFor(() => expect(result.current).not.toBeNull());
+  return () => {
+    if (!result.current) throw new Error("tabs not loaded");
+    return result.current;
+  };
+}
+
+test("useTabs keeps the last ten closed targets and reopen brings the last one back", async () => {
+  const api = await mountTabs();
+  act(() => api().open(pageTarget("1"), { newTab: true }));
+  act(() => api().open(pageTarget("2"), { newTab: true }));
+  const second = api().state.tabs[1]?.id ?? "";
+  act(() => api().dispatch({ type: "close", id: second }));
+  expect(api().closed).toEqual([pageTarget("2")]);
+  act(() => api().reopen());
+  expect(api().state.tabs.map((t) => t.target)).toEqual([pageTarget("1"), pageTarget("2")]);
+  expect(api().closed).toEqual([]);
+  for (let i = 0; i < 12; i++) {
+    act(() => api().open(pageTarget(`x${i}`), { newTab: true }));
+    const id = api().state.tabs.at(-1)?.id ?? "";
+    act(() => api().dispatch({ type: "close", id }));
+  }
+  expect(api().closed).toHaveLength(10);
+  expect(api().closed[0]).toEqual(pageTarget("x11"));
+});
+
+test("closing a project's tabs does not fill the closed pile", async () => {
+  const api = await mountTabs();
+  act(() => api().open(pageTarget("1"), { newTab: true }));
+  act(() => api().dispatch({ type: "closeProject", projectId: "p1" }));
+  expect(api().state.tabs).toEqual([]);
+  expect(api().closed).toEqual([]);
+});
