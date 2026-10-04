@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
-import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { createMockSdk, type MockFrame, type MockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { fr } from "./fr";
 import { Component, manifest } from "./index";
 
@@ -47,12 +47,54 @@ test("a known frame renders its image, name and provider", async () => {
   cleanup();
 });
 
-test("stale and offline frames show their badges, refresh asks again", async () => {
-  mount(FRAME, { frames: [{ url: FRAME, name: "Tickets", stale: true, reachable: false }] });
+const spyFrames = (m: MockSdk) => {
+  const asked: { url: string; refresh: boolean | undefined }[] = [];
+  const frame = m.sdk.design.frame;
+  m.sdk.design.frame = (url, opts) => {
+    asked.push({ url, refresh: opts?.refresh });
+    return frame(url, opts);
+  };
+  return asked;
+};
+
+const mountSpied = (frame: string, frames: MockFrame[]) => {
+  const m = createMockSdk(manifest, { config: { frame, fit: "contain" }, frames, seed: seedDemo });
+  const asked = spyFrames(m);
+  const view = () => (
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>
+  );
+  const { rerender } = render(view());
+  return { m, asked, rerender: () => rerender(view()) };
+};
+
+test("stale and offline frames show their badges, refresh asks the daemon again", async () => {
+  const { asked } = mountSpied(FRAME, [{ url: FRAME, name: "Tickets", stale: true, reachable: false }]);
   expect(await screen.findByText(fr.stale)).toBeTruthy();
   expect(await screen.findByText(fr.offline)).toBeTruthy();
+  expect(asked).toEqual([{ url: FRAME, refresh: false }]);
   fireEvent.click(screen.getByRole("button", { name: fr.refresh }));
+  await waitFor(() => expect(asked.at(-1)).toEqual({ url: FRAME, refresh: true }));
   expect(await screen.findByRole("img", { name: "Tickets" })).toBeTruthy();
+  cleanup();
+});
+
+test("another frame after a refresh loads afresh without refresh", async () => {
+  const OTHER = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=56-78";
+  const { m, asked, rerender } = mountSpied(FRAME, [
+    { url: FRAME, name: "Tickets" },
+    { url: OTHER, name: "Réglages" },
+  ]);
+  await screen.findByRole("img", { name: "Tickets" });
+  fireEvent.click(screen.getByRole("button", { name: fr.refresh }));
+  await waitFor(() => expect(asked.at(-1)?.refresh).toBe(true));
+  m.sdk.config.frame = OTHER;
+  rerender();
+  expect(screen.queryByRole("img", { name: "Tickets" })).toBeNull();
+  expect(screen.getByText(fr.loading)).toBeTruthy();
+  expect(await screen.findByRole("img", { name: "Réglages" })).toBeTruthy();
+  expect(asked.at(-1)).toEqual({ url: OTHER, refresh: false });
   cleanup();
 });
 

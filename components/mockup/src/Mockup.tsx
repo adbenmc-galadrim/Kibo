@@ -134,27 +134,39 @@ function configuredUrl(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
+function FramePanel({
+  url,
+  frameKey,
+  fit,
+}: {
+  url: string | null;
+  frameKey: DesignFrameKey | null;
+  fit: Fit;
+}) {
+  const [refreshCount, setRefreshCount] = useState(0);
+  const view = useFrame(url, frameKey, refreshCount);
+  if (view.status === "ready") {
+    return (
+      <>
+        <FrameHeader frame={view.frame} onRefresh={() => setRefreshCount((n) => n + 1)} />
+        <FrameImage frame={view.frame} fit={fit} />
+      </>
+    );
+  }
+  if (view.status === "failed") return <Message text={fr.failed} alert />;
+  return <Message text={MESSAGES[view.status]} />;
+}
+
 export function Mockup() {
   const sdk = useSdk();
   const url = configuredUrl(sdk.config.frame);
   const fit: Fit = sdk.config.fit === "width" ? "width" : "contain";
   const key = useMemo(() => (url ? (parseDesignUrl(url)?.key ?? null) : null), [url]);
-  const [refreshCount, setRefreshCount] = useState(0);
-  const view = useFrame(url, key, refreshCount);
   const { data: tickets } = useEntities("ticket");
   const linked = useMemo(() => (key ? linkedTickets(tickets, key) : []), [tickets, key]);
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {view.status === "ready" ? (
-        <>
-          <FrameHeader frame={view.frame} onRefresh={() => setRefreshCount((n) => n + 1)} />
-          <FrameImage frame={view.frame} fit={fit} />
-        </>
-      ) : view.status === "failed" ? (
-        <Message text={fr.failed} alert />
-      ) : (
-        <Message text={MESSAGES[view.status]} />
-      )}
+      <FramePanel key={url ?? ""} url={url} frameKey={key} fit={fit} />
       {key && <LinkedTickets tickets={linked} />}
     </div>
   );
