@@ -80,6 +80,26 @@ Un format \`full\` sur une page vue occupe toute la page.
 - \`sdk.format\` pour changer de disposition : un chiffre en \`small\`, une liste courte en \`medium\`, plus de détail au-delà.
 - Jamais de largeur fixe en pixels (\`w-[480px]\`, \`min-w-[300px]\`, \`size-[300px]\`, \`width: 640px\`, \`style={{ width: 640 }}\`) : à partir de 240 px, la validation refuse le composant (« largeur fixe »). Un maximum (\`max-w-[960px]\`) ou une variante de conteneur (\`@lg:w-[320px]\`) reste permis.
 
+## Capacités
+
+Le manifeste déclare ce que le composant utilise au-delà des données : \`webgl\` (3D, \`three\`), \`audio\` (son), \`fullscreen\` (plein écran de Kibo), \`gamepad\` (manettes), \`assets\` (fichiers du projet). Tu ne modifies pas le manifeste : Kibo ajoute les capacités que ton code utilise, comme les permissions. Un import de \`three\`, \`three/addons/*\` ou \`@kibo/sdk/three\` exige \`webgl\` ; \`useGamepad\` exige \`gamepad\` ; \`createAudio\` exige \`audio\` ; \`useFocusMode\` et \`sdk.focus\` exigent \`fullscreen\` ; \`sdk.assets\` exige \`assets\`. Pour une capacité sans API dédiée, appelle \`sdk.capability("<nom>")\` avec un littéral au montage. Sans la capacité, l'appel lève \`PERMISSION_DENIED\` et la validation échoue.
+
+## 3D
+
+\`import { ThreeCanvas, loadGlb, fitCameraTo } from "@kibo/sdk/three"\` et \`import { Mesh, … } from "three"\`. \`<ThreeCanvas label="…" setup={setup} frame={(h, dt) => …} />\` : \`setup(h)\` reçoit \`{ scene, camera, renderer, width, height, dark }\`, s'exécute une fois et peut rendre une fonction de nettoyage ; mémorise-le avec \`useCallback\`. Le kit suit la taille du format et le thème, se met en pause hors écran ou sous \`prefers-reduced-motion\`, libère tout au démontage, et affiche un repli sans WebGL : n'écris rien de tout cela. Un modèle vient d'un fichier du projet : \`const { url } = await sdk.assets.url(sdk.config.model)\` puis \`loadGlb(url)\` ; attrape l'erreur (fichier absent sur cet appareil).
+
+## Jeux
+
+\`import { useGameLoop, useKeys, useGamepad, createAudio, useFocusMode } from "@kibo/sdk/game"\`. \`useGameLoop((dt) => …)\` tourne à pas fixe (1/60 s) quand le widget est visible ; \`useKeys().isDown("ArrowLeft")\` ; \`useGamepad()\` rend \`{ connected, axes, buttons }\` ; \`createAudio(sdk).beep(440, 60)\` ; \`useFocusMode()\` rend \`{ active, available, request, exit }\` : propose un bouton « Plein écran » quand \`available\`. Dessine dans un \`<canvas>\` 2D dimensionné par \`ResizeObserver\`. L'état d'une partie (meilleur score) va dans \`sdk.data\`, jamais dans un ticket.
+
+## Fichiers du projet
+
+\`sdk.assets.list()\` rend \`{ name, mime, kind: "model" | "image" | "audio", size, mtime }[]\` ; \`sdk.assets.url(name)\` rend une URL valable 15 min. Un champ de config \`{ type: "string", nullable: true, asset: "model" }\` laisse l'utilisateur choisir le fichier dans les réglages du widget. Les fichiers ne sont pas synchronisés : affiche « Fichier introuvable sur cet appareil. » sur \`NOT_FOUND\`.
+
+## Sélection partagée
+
+Si le manifeste porte \`selection: true\`, \`useSelection()\` rend \`[selection, setSelection]\` partagés avec les autres composants de la page (\`{ kind: "ticket", ids }\`). Marque les éléments sélectionnés (\`data-selected="true"\`), atténue les autres, et affiche \`<SelectionChip selection onClear />\` du SDK.
+
 ## Tests
 
 - \`component.test.tsx\` importe \`runConformance\` de \`@kibo/sdk/conformance\` et appelle \`runConformance({ manifest, Component })\` : ne le retire pas. La suite rend chaque format déclaré, en sombre et en clair.

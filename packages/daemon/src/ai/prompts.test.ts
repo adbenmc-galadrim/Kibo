@@ -20,6 +20,7 @@ const brief = {
   baseVersion: null,
   formats: ["medium", "large", "half"],
   attachments: [],
+  template: "blank",
 } as const;
 
 test("the JSON schema follows StarterPlan", () => {
@@ -157,4 +158,25 @@ test("every color class of the example is a token listed by the skill", () => {
   );
   expect(colors.size).toBeGreaterThan(2);
   for (const c of colors) expect(SKILL).toContain(`\`${c}\``);
+});
+
+test("the brief names the template and the skill explains the capabilities", () => {
+  const prompt = generatorPrompt({ ...brief, template: "3d" });
+  expect(prompt).toContain(
+    "Le gabarit 3D est déjà en place dans `ui.tsx` : pars de là, garde ses conventions.",
+  );
+  expect(prompt).toContain("avec la capacité `webgl` : `three`, `three/addons/*`");
+  expect(generatorPrompt({ ...brief, template: "blank" })).not.toContain("gabarit");
+  const files = draftKiboFiles({ ...brief, template: "game" });
+  const skill = files[".claude/skills/kibo-component/SKILL.md"] ?? "";
+  for (const heading of [
+    "## Capacités",
+    "## 3D",
+    "## Jeux",
+    "## Fichiers du projet",
+    "## Sélection partagée",
+  ])
+    expect(skill).toContain(heading);
+  expect(skill).toContain("sdk.capability(");
+  expect(files["CLAUDE.md"]).toContain("`three`, `three/addons/*`");
 });

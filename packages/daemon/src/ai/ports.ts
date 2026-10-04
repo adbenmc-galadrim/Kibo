@@ -12,6 +12,7 @@ import type {
   PublishUsage,
   RegistryVersion,
   RunState,
+  Template,
   ValidationReport,
 } from "@kibo/schema";
 
@@ -67,6 +68,7 @@ export type ScaffoldOptions = {
   kind: DraftKind;
   withServer: boolean;
   formats: ComponentFormat[];
+  template: Template;
 };
 export type Devkit = {
   scaffold(opts: ScaffoldOptions): Promise<void>;

@@ -31,6 +31,7 @@ type Params = {
   incidentsJson: string;
   attachmentsJson: string;
   revisions: number;
+  template: string;
   createdAt: number;
   updatedAt: number;
 };
@@ -50,12 +51,13 @@ type UpdateParams = Pick<
 >;
 
 const COLUMNS =
-  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, attachmentsJson, revisions, createdAt, updatedAt";
+  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, attachmentsJson, revisions, template, createdAt, updatedAt";
 
 const ADDED_COLUMNS: Record<string, string> = {
   attachmentsJson: "attachmentsJson TEXT NOT NULL DEFAULT '[]'",
   revisions: "revisions INTEGER NOT NULL DEFAULT 0",
   feedback: "feedback TEXT",
+  template: "template TEXT NOT NULL DEFAULT 'blank'",
 };
 
 function parseJson(text: string, what: string): unknown {
@@ -96,6 +98,7 @@ const toParams = (d: ComponentDraft): Params => ({
   incidentsJson: JSON.stringify(d.incidents),
   attachmentsJson: JSON.stringify(d.attachments),
   revisions: d.revisions,
+  template: d.template,
   createdAt: d.createdAt,
   updatedAt: d.updatedAt,
 });
@@ -130,12 +133,13 @@ export function openDraftStore(db: Database): DraftStore {
     withServer INTEGER NOT NULL, baseVersion TEXT, description TEXT NOT NULL, runId TEXT, sessionId TEXT,
     status TEXT NOT NULL, attempts INTEGER NOT NULL, failureJson TEXT, incidentsJson TEXT NOT NULL,
     reportJson TEXT, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL,
-    attachmentsJson TEXT NOT NULL DEFAULT '[]', revisions INTEGER NOT NULL DEFAULT 0, feedback TEXT)`);
+    attachmentsJson TEXT NOT NULL DEFAULT '[]', revisions INTEGER NOT NULL DEFAULT 0, feedback TEXT,
+    template TEXT NOT NULL DEFAULT 'blank')`);
   addMissingColumns(db);
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS component_drafts_one_active ON component_drafts (componentId)
     WHERE status NOT IN ('done', 'abandoned')`);
   const insert = db.query<null, Params>(
-    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $attachmentsJson, $revisions, $createdAt, $updatedAt)`,
+    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $attachmentsJson, $revisions, $template, $createdAt, $updatedAt)`,
   );
   const update = db.query<null, UpdateParams>(
     "UPDATE component_drafts SET runId = $runId, sessionId = $sessionId, status = $status, attempts = $attempts, failureJson = $failureJson, incidentsJson = $incidentsJson, attachmentsJson = $attachmentsJson, revisions = $revisions, updatedAt = $updatedAt WHERE id = $id",

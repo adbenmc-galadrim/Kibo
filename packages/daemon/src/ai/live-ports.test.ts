@@ -104,7 +104,7 @@ describe("differPort", () => {
   });
 });
 
-test("the scaffold writes the title and the chosen formats in the draft manifest", async () => {
+test("the scaffold writes the title, the chosen formats and the template in the draft manifest", async () => {
   const home = tmp();
   const dir = join(home, "draft");
   mkdirSync(dir);
@@ -121,10 +121,12 @@ test("the scaffold writes the title and the chosen formats in the draft manifest
     kind: "widget",
     withServer: false,
     formats: ["small", "medium"],
+    template: "3d",
   });
   expect(readDraftManifest(dir)).toMatchObject({
     id: "burndown",
     title: "Burndown du sprint",
     formats: ["small", "medium"],
+    capabilities: ["webgl", "assets"],
   });
 });

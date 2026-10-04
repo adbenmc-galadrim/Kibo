@@ -56,6 +56,14 @@ describe("images at start", () => {
 });
 
 describe("formats at start", () => {
+  test("the chosen template reaches the scaffold, the draft and the prompt", async () => {
+    const { runs, store, life, scaffolds } = setupLifecycle();
+    const d = await life.start({ ...create, template: "3d" });
+    expect(scaffolds.map((s) => s.template)).toEqual(["3d"]);
+    expect(store.get(d.id).template).toBe("3d");
+    expect(runs.runs[0]?.req.prompt).toContain("Le gabarit 3D est déjà en place");
+  });
+
   test("the chosen formats, or those of the kind, reach the scaffold", async () => {
     const { runs, life, scaffolds } = setupLifecycle();
     const d = await life.start({ ...create, formats: ["small", "medium"] });
