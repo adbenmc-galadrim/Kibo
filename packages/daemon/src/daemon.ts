@@ -8,6 +8,7 @@ import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
+import { appVersion } from "./app-version";
 import { loadOrCreateToken } from "./auth";
 import { backupsRpc } from "./backups/rpc";
 import { startBackupSchedule } from "./backups/schedule";
@@ -18,9 +19,11 @@ import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
 import { componentTrustGuard } from "./components/trust-guard";
+import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { createProjectAdmin } from "./projects/admin";
@@ -51,6 +54,8 @@ export type DaemonOptions = {
   sampler?: () => HostLoad;
   integrations?: IntegrationFlags;
   redactor?: Redactor;
+  logBuffer?: LogBuffer;
+  userHome?: string;
   agentEnv?: Record<string, string | undefined>;
   assistantTimeoutMs?: number;
   marketAllowLoopback?: boolean;
@@ -62,7 +67,6 @@ export type DaemonOptions = {
 export type Daemon = { url: string; port: number; sandboxPort: number; token: string; stop(): Promise<void> };
 
 const VITE_ORIGIN = "http://localhost:5173";
-const APP_VERSION = "0.0.0";
 
 type Closer = () => void | Promise<void>;
 type Closers = { front: Closer[]; back: Closer[] };
@@ -96,6 +100,9 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const runs = openRunStore(opts.home);
   closers.push(() => runs.close());
   const token = loadOrCreateToken(opts.home);
+  const redactor = opts.redactor ?? createRedactor();
+  redactor.add(token);
+  const startedAt = Date.now();
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
@@ -107,16 +114,15 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   const backups = createBackupsService({
     home: opts.home,
-    userHome: homedir(),
+    userHome: opts.userHome ?? homedir(),
     settings: openLocalSettings(store),
     databases: [
       { file: "kibo.db", vacuumInto: store.vacuumInto },
       { file: "runs.db", vacuumInto: runs.vacuumInto },
     ],
-    appVersion: APP_VERSION,
+    appVersion: appVersion(),
     emit: (event) => service.docs.emit(event),
   });
-  const redactor = opts.redactor ?? createRedactor();
   const integrations = startIntegrations(
     createIntegrationHost({
       user: opts.user,
@@ -189,13 +195,26 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
     return remote;
   };
+  const app = startAppDiagnostics({
+    home: opts.home,
+    userHome: opts.userHome ?? homedir(),
+    startedAt,
+    service,
+    components,
+    log: opts.logBuffer ?? createLogBuffer(),
+  });
   const server = startServer({
     service,
     code,
     token,
     sessions: openSessionStore(store.db),
     pairingCodes,
-    extensions: [remoteRpc(remoteAccess, pairingCodes), sandboxRpc(sandboxService), backupsRpc(backups)],
+    extensions: [
+      remoteRpc(remoteAccess, pairingCodes),
+      sandboxRpc(sandboxService),
+      backupsRpc(backups),
+      app.rpc,
+    ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
@@ -263,14 +282,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agentEnv: opts.agentEnv ?? process.env,
     address: `127.0.0.1:${server.port}`,
     listIntegrations: async () => call(service, { method: "listIntegrations" }),
-    appInfo: () => ({
-      version: APP_VERSION,
-      platform: process.platform === "darwin" ? "darwin" : "linux",
-      arch: process.arch === "arm64" ? "arm64" : "x64",
-      home: "~/.kibo",
-      daemonPid: process.pid,
-      uptimeMs: 0,
-    }),
+    appInfo: app.appInfo,
     ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
   });
   draftAssets = ai.draftAssets;
