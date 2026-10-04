@@ -2,15 +2,31 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { Annotation, EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { type BubbleAnchor, BubbleMenu } from "./editor/BubbleMenu";
 import type { Command } from "./editor/commands";
 import { EditorToolbar } from "./editor/EditorToolbar";
 import { editorKeymap } from "./editor/keymap";
+import { slashMenu } from "./editor/slash-menu";
 import { fr } from "./fr";
 
 type Props = { value: string; onChange(markdown: string): void };
 
 const fromValue = Annotation.define<boolean>();
+
+const bubbleAnchor = (view: EditorView, frame: HTMLElement): BubbleAnchor | null => {
+  const { from, to } = view.state.selection.main;
+  if (from === to) return null;
+  const coords = view.coordsAtPos(from);
+  if (!coords) return { left: 0, top: 0 };
+  const box = frame.getBoundingClientRect();
+  return { left: coords.left - box.left, top: coords.top - box.top };
+};
+
+const bubbleMeasure = {};
+
+const sameAnchor = (a: BubbleAnchor | null, b: BubbleAnchor | null): boolean =>
+  a === b || (a !== null && b !== null && a.left === b.left && a.top === b.top);
 
 const editorTheme = EditorView.theme({
   "&": { fontSize: "14px" },
@@ -20,10 +36,12 @@ const editorTheme = EditorView.theme({
 
 export function MarkdownEditor({ value, onChange }: Props) {
   const host = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const initial = useRef(value);
   const change = useRef(onChange);
   change.current = onChange;
+  const [bubble, setBubble] = useState<BubbleAnchor | null>(null);
 
   useEffect(() => {
     if (!host.current) return;
@@ -35,11 +53,19 @@ export function MarkdownEditor({ value, onChange }: Props) {
           history(),
           keymap.of([...editorKeymap, ...defaultKeymap, ...historyKeymap]),
           markdown(),
+          slashMenu(),
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ "aria-label": fr.editor, "aria-multiline": "true" }),
           EditorView.updateListener.of((u) => {
             if (u.docChanged && !u.transactions.some((t) => t.annotation(fromValue))) {
               change.current(u.state.doc.toString());
+            }
+            if (u.selectionSet || u.docChanged || u.geometryChanged) {
+              u.view.requestMeasure({
+                key: bubbleMeasure,
+                read: (v) => (frame.current ? bubbleAnchor(v, frame.current) : null),
+                write: (next) => setBubble((prev) => (sameAnchor(prev, next) ? prev : next)),
+              });
             }
           }),
           editorTheme,
@@ -76,7 +102,10 @@ export function MarkdownEditor({ value, onChange }: Props) {
   return (
     <div className="grid min-h-[60vh] grid-rows-[auto_1fr] rounded-md border bg-background text-foreground">
       <EditorToolbar run={run} focusEditor={focusEditor} />
-      <div ref={host} className="min-h-0 p-2" />
+      <div ref={frame} className="relative min-h-0">
+        <div ref={host} className="h-full p-2" />
+        <BubbleMenu at={bubble} run={run} />
+      </div>
     </div>
   );
 }

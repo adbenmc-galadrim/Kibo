@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { acceptCompletion, currentCompletions } from "@codemirror/autocomplete";
 import type { TransactionSpec } from "@codemirror/state";
 import { runScopeHandlers } from "@codemirror/view";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
@@ -305,4 +306,37 @@ test("the toolbar formats the selection and ⌘B, ⌘I, ⌘E are bound", async (
   expect(text()).toBe("a ***b***");
   expect(shortcut("e")).toBe(true);
   expect(text()).toBe("a ***`b`***");
+});
+
+test("a bubble menu follows a non-empty selection and formats it", async () => {
+  setup("view");
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
+  const { view, press, edit } = await blurredEditor();
+  const bubbleName = { name: "Mise en forme de la sélection" };
+  edit({ changes: { from: 0, to: view.state.doc.length, insert: "un mot" }, selection: { anchor: 0 } });
+  expect(screen.queryByRole("toolbar", bubbleName)).toBeNull();
+  edit({ selection: { anchor: 3, head: 6 } });
+  const bubble = await screen.findByRole("toolbar", bubbleName);
+  await press(within(bubble).getByRole("button", { name: "Barré" }));
+  expect(view.state.doc.toString()).toBe("un ~~mot~~");
+  edit({ selection: { anchor: 0 } });
+  await waitFor(() => expect(screen.queryByRole("toolbar", bubbleName)).toBeNull());
+});
+
+test("typing / at the start of a line opens the block menu, filtered and applied", async () => {
+  setup("view");
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.focus();
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "" } });
+  view.dispatch({ changes: { from: 0, insert: "/" }, selection: { anchor: 1 }, userEvent: "input.type" });
+  await waitFor(() => expect(currentCompletions(view.state)).toHaveLength(11));
+  view.dispatch({ changes: { from: 1, insert: "tab" }, selection: { anchor: 4 }, userEvent: "input.type" });
+  await waitFor(() => expect(currentCompletions(view.state).map((c) => c.label)).toEqual(["Tableau"]));
+  await waitFor(() => expect(acceptCompletion(view)).toBe(true));
+  expect(view.state.doc.toString()).toBe(
+    "| Colonne 1 | Colonne 2 | Colonne 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |",
+  );
 });
