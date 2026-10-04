@@ -38,6 +38,7 @@ test("a known frame renders its image, name and provider", async () => {
   const m = mount(FRAME);
   const img = await screen.findByRole("img", { name: "Tickets" });
   expect(img.getAttribute("src")?.startsWith("data:image/png")).toBe(true);
+  expect(img.getAttribute("crossorigin")).toBe("anonymous");
   expect(await screen.findByText("Figma")).toBeTruthy();
   expect(screen.getByRole("link", { name: fr.open("figma") }).getAttribute("href")).toBe(FRAME);
   expect(await screen.findByText(fr.noLinked)).toBeTruthy();

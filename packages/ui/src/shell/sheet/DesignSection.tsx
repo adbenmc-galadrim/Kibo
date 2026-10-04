@@ -55,7 +55,7 @@ function Thumbnail({ thumb, name }: { thumb: Thumb; name: string }) {
   const { frame } = thumb;
   return (
     <>
-      <img src={frame.url} alt={name} className="size-full object-contain" />
+      <img src={frame.url} alt={name} crossOrigin="anonymous" className="size-full object-contain" />
       {(frame.stale || !frame.reachable) && (
         <div className="absolute top-1.5 left-1.5 flex gap-1">
           {frame.stale && (

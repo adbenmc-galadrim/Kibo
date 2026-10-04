@@ -98,6 +98,7 @@ function FrameImage({ frame, fit }: { frame: DesignFrame; fit: Fit }) {
       <img
         src={frame.url}
         alt={frame.name}
+        crossOrigin="anonymous"
         className={fit === "contain" ? "size-full object-contain" : "h-auto w-full"}
       />
     </div>

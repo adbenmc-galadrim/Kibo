@@ -315,6 +315,7 @@ test("Mockups: each frame is a thumbnail served by the daemon, with its badges",
   const penpot = await screen.findByRole("img", { name: "Accueil" });
   expect(figma.getAttribute("src")).toBe(`${PNG}F`);
   expect(penpot.getAttribute("src")).toBe(`${PNG}P`);
+  expect([figma, penpot].map((img) => img.getAttribute("crossorigin"))).toEqual(["anonymous", "anonymous"]);
   expect(frameCalls()).toEqual([
     { method: "getDesignFrame", url: FIGMA_URL, refresh: false },
     { method: "getDesignFrame", url: PENPOT_URL, refresh: false },
