@@ -2,3 +2,7 @@ export const E2E_TOKEN = "e2e000000000000000000000000000000000000000000000000000
 export const E2E_GH_TOKEN = "ghp_E2ETOKEN0123456789abcdefghijklmnopq";
 export const fakeGithubPort = (daemonPort: number): number => daemonPort + 1000;
 export const fakeMcpPort = (daemonPort: number): number => daemonPort + 2000;
+export const E2E_FIGMA_TOKEN = "figd_E2ETOKEN0123456789abcdefghijklmnop";
+export const E2E_PENPOT_TOKEN = "penpot-e2e-token-0123456789abcdefghijkl";
+export const fakeFigmaPort = (daemonPort: number): number => daemonPort + 3000;
+export const fakePenpotPort = (daemonPort: number): number => daemonPort + 4000;
