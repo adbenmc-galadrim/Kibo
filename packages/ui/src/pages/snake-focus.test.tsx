@@ -39,7 +39,7 @@ const project = (): ProjectSnapshot => ({ ...kiboProject(), pages: [page], insta
 const key = (code: string, key = code) =>
   act(() => window.dispatchEvent(new KeyboardEvent("keydown", { code, key })));
 
-test("the snake keeps its board in fullscreen, entered by the host button or by F", async () => {
+test("the snake keeps its board in fullscreen, entered by the host button or by F once focused", async () => {
   const view = render(
     <HostProvider host={host}>
       <PageActionsProvider>
@@ -56,6 +56,9 @@ test("the snake keeps its board in fullscreen, entered by the host button or by 
   await waitFor(() => expect(document.activeElement?.textContent).toBe("Quitter le plein écran (Échap)"));
   key("Escape");
   expect(screen.queryByRole("dialog")).toBeNull();
+  key("KeyF", "f");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  act(() => screen.getByRole("application", { name: "Jeu du serpent" }).focus());
   key("KeyF", "f");
   expect(card).toBe(screen.getByRole("dialog", { name: "Serpent" }));
   key("KeyF", "f");

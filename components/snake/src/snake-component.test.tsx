@@ -51,7 +51,9 @@ async function play(m: MockSdk) {
       <Component />
     </SdkProvider>,
   );
-  return screen.findByRole("img");
+  const board = await screen.findByRole("img");
+  act(() => screen.getByRole("application", { name: "Jeu du serpent" }).focus());
+  return board;
 }
 
 test("Space starts the game, F asks for the fullscreen, the best score is read", async () => {
@@ -93,4 +95,30 @@ test("an apple scores and beats the best, a wall ends the game, Space starts aga
   } finally {
     random.mockRestore();
   }
+});
+
+test("the keys only reach the game when it has the focus or fills the window", async () => {
+  const m = createMockSdk(manifest);
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <button type="button">Autre widget</button>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByRole("img");
+  const status = screen.getByRole("status");
+  act(() => screen.getByRole("button", { name: "Autre widget" }).focus());
+  press("Space");
+  press("KeyF");
+  expect(status.textContent).toContain("Appuie sur Espace pour jouer");
+  expect(m.focusRequests).toEqual([]);
+  act(() => screen.getByRole("application", { name: "Jeu du serpent" }).focus());
+  press("Space");
+  expect(status.textContent).toBe("Score 0 · Meilleur 0");
+  act(() => screen.getByRole("button", { name: "Autre widget" }).focus());
+  press("Space");
+  expect(status.textContent).toBe("Score 0 · Meilleur 0");
+  act(() => m.setFocus(true));
+  press("Space");
+  expect(status.textContent).toContain("Pause");
 });

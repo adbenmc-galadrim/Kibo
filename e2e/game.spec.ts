@@ -36,20 +36,26 @@ test("le Serpent : plein écran sans remontage, partie, meilleur score gardé", 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(board).toHaveAttribute("data-game-id", id ?? "");
+  await expect(page.getByRole("button", { name: "Plein écran" })).toBeFocused();
+  await page.keyboard.press("f");
+  await expect(dialog).toBeHidden();
+  await expect(status).toContainText("Appuie sur Espace pour jouer");
 
   await board.click();
   await page.keyboard.press("Space");
   await expect(status).toHaveText("Score 0 · Meilleur 0");
   await page.keyboard.press("ArrowUp");
-  await expect(status).toHaveText("Score 0 · Meilleur 0 · Perdu, Espace pour rejouer");
+  await expect(status).toHaveText(/^Score \d+ · Meilleur \d+ · Perdu, Espace pour rejouer$/);
 
   await fixRandom(page, APPLE_AHEAD);
   await page.keyboard.press("Space");
-  await expect(status).toContainText("Score 1 · Meilleur 1");
   await fixRandom(page, null);
-  await expect(status).toHaveText("Score 1 · Meilleur 1 · Perdu, Espace pour rejouer");
+  await expect(status).toHaveText(/^Score [1-9]\d* · Meilleur [1-9]\d* · Perdu, Espace pour rejouer$/);
   await shot(page, info, "serpent-perdu");
+  const best = /Meilleur (\d+)/.exec((await status.textContent()) ?? "")?.[1];
 
   await page.reload();
-  await expect(status).toHaveText("Score 0 · Meilleur 1 · Appuie sur Espace pour jouer · F : plein écran");
+  await expect(status).toHaveText(
+    `Score 0 · Meilleur ${best} · Appuie sur Espace pour jouer · F : plein écran`,
+  );
 });

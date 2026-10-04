@@ -24,6 +24,7 @@ export function Snake() {
   const audio = useMemo(() => createAudio(sdk), [sdk]);
   const [gameId] = useState(() => crypto.randomUUID());
   const canvas = useRef<HTMLCanvasElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const game = useRef(fresh());
   const ticks = useRef(0);
   const [phase, setPhase] = useState<Phase>("ready");
@@ -50,9 +51,16 @@ export function Snake() {
     setPhase(phase === "playing" ? "paused" : "playing");
   }, [phase, redraw]);
 
+  const latest = useRef({ toggle, focus });
+  latest.current = { toggle, focus };
+  const listening = useCallback(
+    () => latest.current.focus.active || (root.current?.contains(document.activeElement) ?? false),
+    [],
+  );
+
   useGameLoop(
     () => {
-      const dir = dirFromKeys(keys.isDown) ?? dirFromPad(pad);
+      const dir = (listening() ? dirFromKeys(keys.isDown) : null) ?? dirFromPad(pad);
       if (dir) game.current = turn(game.current, dir);
       ticks.current += 1;
       if (ticks.current < STEP_EVERY) return;
@@ -70,18 +78,16 @@ export function Snake() {
     { running: phase === "playing" },
   );
 
-  const latest = useRef({ toggle, focus });
-  latest.current = { toggle, focus };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.repeat || isEditableTarget(e.target)) return;
+      if (e.repeat || isEditableTarget(e.target) || !listening()) return;
       const { toggle, focus } = latest.current;
       if (e.code === "Space") toggle();
       else if (e.code === "KeyF" && focus.available) (focus.active ? focus.exit : focus.request)();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [listening]);
 
   const started = START_BUTTONS.some((b) => pad.buttons[b] === true);
   const wasStarted = useRef(false);
@@ -98,7 +104,13 @@ export function Snake() {
   }[phase];
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 p-3">
+    <div
+      ref={root}
+      role="application"
+      aria-label={fr.game}
+      tabIndex={-1}
+      className="flex h-full min-h-0 flex-col gap-2 rounded-md p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <output aria-live="polite" className="block truncate text-xs text-muted-foreground tabular-nums">
         {hint ? `${fr.score(score, best)} · ${hint}` : fr.score(score, best)}
       </output>
