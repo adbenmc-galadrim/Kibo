@@ -118,7 +118,7 @@ export function ShellDialogs({
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
-  const helpOpened = useOpened(state.about || state.whatsNew);
+  const helpOpened = useOpened(state.about || state.whatsNew || state.shortcutsHelp || state.report);
   const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
   const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
   const doomedProject = state.deleteProject

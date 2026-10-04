@@ -106,6 +106,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     if (s.kind === "newTab") return setPalette({ newTab: true });
     if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
     if (s.kind === "reopen") return tabs.reopen();
+    if (s.kind === "help") return set(helpPatch("shortcutsHelp"));
     const id = tabs.state.activeId;
     if (!id) return;
     if (s.kind === "close") tabs.dispatch({ type: "close", id });

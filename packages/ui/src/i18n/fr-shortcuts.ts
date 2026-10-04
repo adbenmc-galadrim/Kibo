@@ -14,6 +14,7 @@ export const frShortcuts = {
     goToTab: "Aller à un onglet",
     lastTab: "Dernier onglet",
     togglePin: "Épingler ou détacher l'onglet",
+    help: "Aide des raccourcis",
     openSelection: "Ouvrir la sélection",
     openInSheet: "Ouvrir un ticket dans le Sheet",
     nextFilter: "Filtre suivant (Tout, Tickets, Pages…)",
@@ -22,4 +23,5 @@ export const frShortcuts = {
     commit: "Valider le commit",
   },
   range: "…",
+  seeInSettings: "Voir dans les Paramètres",
 } as const;

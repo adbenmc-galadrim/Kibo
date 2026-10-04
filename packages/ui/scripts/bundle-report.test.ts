@@ -173,6 +173,21 @@ describe("bundle report", () => {
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(false);
   });
 
+  test("the shortcuts help and the problem report stay out of the entry, not the shortcut hook", () => {
+    const paths = [
+      "/x/packages/ui/src/help/ShortcutsDialog.tsx",
+      "/x/packages/ui/src/settings/ShortcutList.tsx",
+      "/x/packages/ui/src/settings/shortcuts.ts",
+      "/x/packages/ui/src/report/ReportDialog.tsx",
+      "/x/packages/ui/src/report/report-text.ts",
+      "/x/packages/ui/src/i18n/fr-report.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/use-tab-shortcuts.ts"))).toBe(
+      false,
+    );
+  });
+
   test("the draft preview host and its demo project are forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/ai/worker-backend.ts",

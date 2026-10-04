@@ -1,0 +1,29 @@
+name: Signaler un problème
+description: Quelque chose ne marche pas dans Kibo.
+title: "Problème : "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci ! Dans Kibo, ouvre Aide ▸ Signaler un problème, relis le rapport, puis clique sur Copier et colle-le plus bas.
+  - type: textarea
+    id: ce-qui-s-est-passe
+    attributes:
+      label: Ce qui s'est passé
+      description: Ce que tu faisais, ce que tu attendais, ce qui est arrivé à la place.
+    validations:
+      required: true
+  - type: textarea
+    id: rapport
+    attributes:
+      label: Rapport de Kibo (Aide ▸ Signaler un problème ▸ Copier)
+      render: markdown
+    validations:
+      required: false
+  - type: checkboxes
+    id: sans-secret
+    attributes:
+      label: Confidentialité
+      options:
+        - label: Je confirme que le rapport ne contient aucun secret
+          required: true
