@@ -1,15 +1,16 @@
-import { beforeEach, expect, mock, test } from "bun:test";
-import type { ConfigSchema, Instance, RpcRequest } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
+import type { ConfigSchema, Instance, ProjectAsset, RpcRequest } from "@kibo/schema";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
+let assetsOutcome: () => Promise<ProjectAsset[]> = () => Promise.resolve([]);
 mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
-      return outcome();
+      return req.method === "listAssets" ? assetsOutcome() : outcome();
     },
   },
 }));
@@ -29,14 +30,14 @@ const instance: Instance = {
   config: { filter: "mine-and-agents", limit: 5, source: { bindingId: "b1" } },
   componentHash: null,
 };
-const show = () => {
+const show = (fields: ConfigSchema = schema, projectId = "p1", config = instance.config) => {
   const onClose = mock(() => {});
   render(
     <InstanceSettingsDialog
-      projectId="p1"
-      instance={instance}
+      projectId={projectId}
+      instance={{ ...instance, config }}
       title="Kanban"
-      schema={schema}
+      schema={fields}
       onClose={onClose}
     />,
   );
@@ -46,6 +47,7 @@ const show = () => {
 beforeEach(() => {
   calls.length = 0;
   outcome = () => Promise.resolve(null);
+  assetsOutcome = () => Promise.resolve([]);
 });
 
 test("the form is generated from the schema and saves the merged config", async () => {
@@ -56,7 +58,7 @@ test("the form is generated from the schema and saves the merged config", async 
   await user.keyboard("{Enter}");
   await user.click(await screen.findByRole("option", { name: "Tous" }));
   await user.click(screen.getByRole("switch", { name: "compact" }));
-  const limit = screen.getByRole("textbox", { name: "limit" });
+  const limit = screen.getByRole("spinbutton", { name: "limit" });
   expect((limit as HTMLInputElement).value).toBe("5");
   await user.clear(limit);
   await user.type(limit, "12");
@@ -79,7 +81,7 @@ test("the form is generated from the schema and saves the merged config", async 
 test("Aucune valeur sends null for a nullable field and disables its input", async () => {
   const { user } = show();
   await user.click(screen.getByRole("checkbox", { name: "Aucune valeur" }));
-  expect((screen.getByRole("textbox", { name: "limit" }) as HTMLInputElement).disabled).toBe(true);
+  expect((screen.getByRole("spinbutton", { name: "limit" }) as HTMLInputElement).disabled).toBe(true);
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   const sent = calls[0];
   expect(
@@ -88,21 +90,17 @@ test("Aucune valeur sends null for a nullable field and disables its input", asy
 });
 
 test("an invalid value is refused before any call", async () => {
-  const { onClose, user } = show();
-  await user.click(screen.getByRole("checkbox", { name: "Aucune valeur" }));
-  await user.click(screen.getByRole("checkbox", { name: "Aucune valeur" }));
-  const limit = screen.getByRole("textbox", { name: "limit" });
-  await user.clear(limit);
-  await user.type(limit, "abc");
+  const { onClose, user } = show({ count: { type: "number", default: 3 } });
+  await user.clear(screen.getByRole("spinbutton", { name: "count" }));
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-  expect((await screen.findByRole("alert")).textContent).toBe("Réglages refusés : limit: expected number");
+  expect((await screen.findByRole("alert")).textContent).toBe("Réglages refusés : count: expected number");
   expect(calls).toEqual([]);
   expect(onClose).not.toHaveBeenCalled();
 });
 
 test("a decimal number can be typed character by character", async () => {
   const { user } = show();
-  const limit = screen.getByRole("textbox", { name: "limit" });
+  const limit = screen.getByRole("spinbutton", { name: "limit" });
   await user.clear(limit);
   await user.type(limit, "1.5");
   expect((limit as HTMLInputElement).value).toBe("1.5");
@@ -111,4 +109,89 @@ test("a decimal number can be typed character by character", async () => {
   expect(
     sent?.method === "command" && sent.command.method === "setInstanceConfig" && sent.command.config.limit,
   ).toBe(1.5);
+});
+
+const asset = (name: string, kind: ProjectAsset["kind"], mime: ProjectAsset["mime"]): ProjectAsset => ({
+  name,
+  mime,
+  kind,
+  size: 1024,
+  mtime: 0,
+});
+const modelSchema: ConfigSchema = {
+  model: {
+    type: "string",
+    nullable: true,
+    default: null,
+    asset: "model",
+    label: "Modèle (.glb)",
+    help: "Exporté de Blender",
+  },
+};
+const sentConfig = () => {
+  const sent = calls.find((c) => c.method === "command");
+  return sent?.method === "command" && sent.command.method === "setInstanceConfig"
+    ? sent.command.config
+    : null;
+};
+
+test("an asset field lists the project files of its kind and saves the chosen name", async () => {
+  assetsOutcome = () =>
+    Promise.resolve([
+      asset("robot.glb", "model", "model/gltf-binary"),
+      asset("fond.png", "image", "image/png"),
+    ]);
+  const { user } = show(modelSchema);
+  expect(screen.getByText("Exporté de Blender")).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: "Aucune valeur" })).toBeNull();
+  const trigger = screen.getByRole("combobox", { name: "Modèle (.glb)" });
+  await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(false));
+  expect(calls).toEqual([{ method: "listAssets", projectId: "p1" }]);
+  trigger.focus();
+  await user.keyboard("{Enter}");
+  const options = await screen.findAllByRole("option");
+  expect(options.map((o) => o.textContent)).toEqual(["Aucun", "robot.glb"]);
+  await user.click(screen.getByRole("option", { name: "robot.glb" }));
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(sentConfig()?.model).toBe("robot.glb");
+});
+
+test("a saved file missing on this device stays selectable and is marked as such", async () => {
+  const { user } = show(modelSchema, "p1", { model: "ancien.glb" });
+  const trigger = screen.getByRole("combobox", { name: "Modèle (.glb)" });
+  await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(false));
+  expect(trigger.textContent).toBe("ancien.glb (introuvable sur cet appareil)");
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(sentConfig()?.model).toBe("ancien.glb");
+});
+
+test("a failed listing is shown instead of the field", async () => {
+  assetsOutcome = () => Promise.reject(new Error("down"));
+  const error = spyOn(console, "error").mockImplementation(() => {});
+  show(modelSchema);
+  expect((await screen.findByRole("alert")).textContent).toBe("Impossible de lister les fichiers du projet.");
+  expect(error).toHaveBeenCalledTimes(1);
+  error.mockRestore();
+});
+
+test("the Inbox has no project files: nothing is listed, only Aucun is offered", async () => {
+  const { user } = show(modelSchema, "inbox");
+  const trigger = screen.getByRole("combobox", { name: "Modèle (.glb)" });
+  await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(false));
+  trigger.focus();
+  await user.keyboard("{Enter}");
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Aucun"]);
+  expect(calls).toEqual([]);
+});
+
+test("number bounds reach the input and a value above max is refused before any call", async () => {
+  const { user } = show({ speed: { type: "number", min: 0.5, max: 4, default: 1, label: "Vitesse" } });
+  const speed = screen.getByRole("spinbutton", { name: "Vitesse" }) as HTMLInputElement;
+  expect(speed.min).toBe("0.5");
+  expect(speed.max).toBe("4");
+  await user.clear(speed);
+  await user.type(speed, "5");
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Réglages refusés : speed: above 4");
+  expect(calls).toEqual([]);
 });

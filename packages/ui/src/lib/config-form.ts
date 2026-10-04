@@ -5,16 +5,28 @@ import {
   type Instance,
   splitRef,
 } from "@kibo/schema";
+import { frWidgets } from "../i18n/fr-widgets";
 import { findComponent } from "../registry";
 
 export type FieldValue = string | number | boolean | null;
-export type FieldKind = "enum" | "boolean" | "number" | "string";
+export type FieldKind = "enum" | "boolean" | "number" | "string" | "asset";
 export type FormField = { key: string; field: ConfigField; value: FieldValue };
 
 const isFieldValue = (v: unknown): v is FieldValue =>
   v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean";
 
-export const fieldKind = (field: ConfigField): FieldKind => (field.enum ? "enum" : (field.type ?? "string"));
+export const fieldKind = (field: ConfigField): FieldKind => {
+  if (field.asset) return "asset";
+  return field.enum ? "enum" : (field.type ?? "string");
+};
+
+export const fieldLabel = (key: string, field: ConfigField): string =>
+  field.label ?? frWidgets.fieldLabel(key);
+
+export const numberBounds = (field: ConfigField): { min?: number; max?: number } => ({
+  ...(field.min !== undefined && { min: field.min }),
+  ...(field.max !== undefined && { max: field.max }),
+});
 
 function neutralValue(field: ConfigField): FieldValue {
   if (field.nullable) return null;

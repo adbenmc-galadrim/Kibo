@@ -21,13 +21,17 @@ import {
   type FieldValue,
   type FormField,
   fieldKind,
+  fieldLabel,
+  numberBounds,
   parseFieldInput,
   withFieldValue,
 } from "../lib/config-form";
+import { AssetField } from "./AssetField";
 
 type Props = { projectId: string; instance: Instance; title: string; schema: ConfigSchema; onClose(): void };
 type FieldProps = {
   id: string;
+  projectId: string;
   field: FormField;
   value: FieldValue;
   disabled: boolean;
@@ -37,9 +41,21 @@ type FieldProps = {
 const valueWhenFilled = (key: string, field: ConfigField): FieldValue =>
   configFields({ [key]: { ...field, nullable: false } }, {})[0]?.value ?? "";
 
-function FieldInput({ id, field, value, disabled, onChange }: FieldProps) {
+function FieldInput({ id, projectId, field, value, disabled, onChange }: FieldProps) {
   const kind = fieldKind(field.field);
-  const label = t.fieldLabel(field.key);
+  const label = fieldLabel(field.key, field.field);
+  if (kind === "asset" && field.field.asset)
+    return (
+      <AssetField
+        id={id}
+        projectId={projectId}
+        kind={field.field.asset}
+        value={typeof value === "string" ? value : null}
+        nullable={field.field.nullable === true}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    );
   if (kind === "enum")
     return (
       <Select
@@ -72,15 +88,18 @@ function FieldInput({ id, field, value, disabled, onChange }: FieldProps) {
   return <TextInput id={id} field={field} value={value} disabled={disabled} onChange={onChange} />;
 }
 
-function TextInput({ id, field, value, disabled, onChange }: FieldProps) {
+function TextInput({ id, field, value, disabled, onChange }: Omit<FieldProps, "projectId">) {
   const [text, setText] = useState(value === null ? "" : String(value));
   const shown = parseFieldInput(field.field, text) === value ? text : value === null ? "" : String(value);
+  const numeric = fieldKind(field.field) === "number";
   return (
     <Input
       id={id}
-      aria-label={t.fieldLabel(field.key)}
-      type="text"
-      inputMode={fieldKind(field.field) === "number" ? "decimal" : undefined}
+      aria-label={fieldLabel(field.key, field.field)}
+      type={numeric ? "number" : "text"}
+      inputMode={numeric ? "decimal" : undefined}
+      step={numeric ? "any" : undefined}
+      {...(numeric && numberBounds(field.field))}
       value={shown}
       disabled={disabled}
       className="w-56"
@@ -99,7 +118,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
     Object.fromEntries(fields.map((f) => [f.key, f.value])),
   );
   const [none, setNone] = useState<ReadonlySet<string>>(
-    () => new Set(fields.filter((f) => f.value === null).map((f) => f.key)),
+    () => new Set(fields.filter((f) => f.value === null && fieldKind(f.field) !== "asset").map((f) => f.key)),
   );
   const [error, setError] = useState<string | null>(null);
   const set = (key: string, value: FieldValue) => setValues((v) => ({ ...v, [key]: value }));
@@ -133,7 +152,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="grid gap-4">
+        <form onSubmit={submit} noValidate className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{t.title(title)}</DialogTitle>
             <DialogDescription>{t.help}</DialogDescription>
@@ -142,16 +161,17 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
             const value = values[f.key] ?? null;
             return (
               <div key={f.key} className="grid gap-2">
-                <Label htmlFor={`${baseId}-${f.key}`}>{t.fieldLabel(f.key)}</Label>
+                <Label htmlFor={`${baseId}-${f.key}`}>{fieldLabel(f.key, f.field)}</Label>
                 <div className="flex items-center gap-3">
                   <FieldInput
                     id={`${baseId}-${f.key}`}
+                    projectId={projectId}
                     field={f}
                     value={value}
                     disabled={none.has(f.key)}
                     onChange={(v) => set(f.key, v)}
                   />
-                  {f.field.nullable && (
+                  {f.field.nullable && fieldKind(f.field) !== "asset" && (
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id={`${baseId}-${f.key}-none`}
@@ -165,6 +185,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
                     </div>
                   )}
                 </div>
+                {f.field.help && <p className="text-xs text-muted-foreground">{f.field.help}</p>}
               </div>
             );
           })}
