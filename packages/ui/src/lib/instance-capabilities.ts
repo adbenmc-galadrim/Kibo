@@ -26,14 +26,4 @@ export function manifestOf(
   return v?.active && v.manifest ? v.manifest : null;
 }
 
-const NONE: readonly Capability[] = [];
-
-export const instanceCapabilities = (
-  instance: Pick<Instance, "component">,
-  components: ComponentSummary[] | null,
-): readonly Capability[] => manifestOf(instance, components)?.capabilities ?? NONE;
-
-export const instanceSelects = (
-  instance: Pick<Instance, "component">,
-  components: ComponentSummary[] | null,
-): boolean => manifestOf(instance, components)?.selection ?? false;
+export const NONE: readonly Capability[] = [];

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { ComponentManifest, ComponentSummary, ComponentVersionSummary, Instance } from "@kibo/schema";
 import { componentRef, findBuiltin } from "../registry";
-import { instanceCapabilities, instanceSelects } from "./instance-capabilities";
+import { manifestOf } from "./instance-capabilities";
 
 const manifest: ComponentManifest = {
   id: "pad",
@@ -49,18 +49,15 @@ test("a built-in takes its own manifest, a third party its active version", () =
   const kanban = findBuiltin("kanban");
   if (!kanban) throw new Error("kanban is a built-in");
   const builtin = instanceOf(componentRef(kanban.manifest));
-  expect(instanceCapabilities(builtin, null)).toEqual([]);
-  expect(instanceSelects(builtin, null)).toBe(false);
+  expect(manifestOf(builtin, null)).toBe(kanban.manifest);
   const pad = instanceOf("pad@0.2.0");
-  expect(instanceCapabilities(pad, summary([version({})]))).toEqual(["gamepad"]);
-  expect(instanceSelects(pad, summary([version({})]))).toBe(true);
+  expect(manifestOf(pad, summary([version({})]))).toBe(manifest);
 });
 
 test("a missing, pending or neighbouring version grants nothing", () => {
   const pad = instanceOf("pad@0.2.0");
-  expect(instanceCapabilities(pad, null)).toEqual([]);
-  expect(instanceCapabilities(pad, summary([version({ version: "0.1.0" })]))).toEqual([]);
-  expect(instanceCapabilities(pad, summary([version({ active: false })]))).toEqual([]);
-  expect(instanceSelects(pad, summary([version({ active: false })]))).toBe(false);
-  expect(instanceCapabilities(pad, summary([version({ manifest: null })]))).toEqual([]);
+  expect(manifestOf(pad, null)).toBeNull();
+  expect(manifestOf(pad, summary([version({ version: "0.1.0" })]))).toBeNull();
+  expect(manifestOf(pad, summary([version({ active: false })]))).toBeNull();
+  expect(manifestOf(pad, summary([version({ manifest: null })]))).toBeNull();
 });

@@ -1,7 +1,7 @@
 import type { Instance } from "@kibo/schema";
 import { createSignal, focusApi, NO_SELECTION, type Signal, visibilityApi } from "@kibo/sdk";
 import { type RefObject, useEffect, useMemo, useState } from "react";
-import { type InstanceApis, instanceCapabilities, instanceSelects } from "../lib/instance-capabilities";
+import { type InstanceApis, manifestOf, NONE } from "../lib/instance-capabilities";
 import { reportRefusal } from "../lib/report-refusal";
 import { usePageContext } from "./PageContext";
 import { useVisibility } from "./use-visibility";
@@ -20,11 +20,9 @@ export function useInstanceApis(
   const page = usePageContext();
   const components = page?.components ?? null;
   const { component } = instance;
-  const capabilities = useMemo(
-    () => instanceCapabilities({ component }, components),
-    [component, components],
-  );
-  const selects = useMemo(() => instanceSelects({ component }, components), [component, components]);
+  const manifest = useMemo(() => manifestOf({ component }, components), [component, components]);
+  const capabilities = manifest?.capabilities ?? NONE;
+  const selects = manifest?.selection ?? false;
   const bus = page?.bus;
   const dispatch = page?.dispatch;
   const focusedId = page?.focusedId ?? null;
@@ -46,5 +44,5 @@ export function useInstanceApis(
     () => ({ capabilities, focus, visibility, selection }),
     [capabilities, focus, visibility, selection],
   );
-  return components !== null ? apis : null;
+  return manifest !== null || components !== null ? apis : null;
 }
