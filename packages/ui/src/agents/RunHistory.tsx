@@ -31,13 +31,16 @@ function HistoryRow({
 }) {
   const subject = runSubject(run);
   return (
-    <TableRow aria-label={subject} className="relative cursor-pointer">
+    <TableRow aria-label={subject} className="cursor-pointer" onClick={() => onOpenRun(run.id)}>
       <TableCell className="font-mono text-muted-foreground">
         <button
           type="button"
           aria-label={frAgentsPage.openRun(run.profileName, subject)}
-          className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
-          onClick={() => onOpenRun(run.id)}
+          className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenRun(run.id);
+          }}
         >
           {`#${run.seq}`}
         </button>
