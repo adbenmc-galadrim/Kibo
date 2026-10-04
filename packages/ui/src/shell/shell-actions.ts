@@ -1,6 +1,7 @@
 import type { FileRef, TabTarget } from "@kibo/schema";
 import type { PaletteAction } from "../palette/palette-items";
 import { targetToHash } from "../tabs/target-hash";
+import { type HelpDialog, helpPatch, isHelpDialog } from "./help-dialogs";
 import type { DialogsState } from "./ShellDialogs";
 
 type SetDialogs = (patch: Partial<DialogsState>) => void;
@@ -14,12 +15,16 @@ type PaletteDeps = {
   cycleTheme(): void;
 };
 
+const isHelpAction = (a: PaletteAction): a is Extract<PaletteAction, { kind: HelpDialog }> =>
+  isHelpDialog(a.kind);
+
 export function paletteActionHandler(d: PaletteDeps): (a: PaletteAction) => void {
   return (a) => {
     if (a.kind === "newProject") return d.set({ newProject: true });
     if (a.kind === "toggleTheme") return d.cycleTheme();
     if (a.kind === "reply") return d.setFocusRun(a.runId);
     if (a.kind === "assign") return d.set({ assign: { projectId: null, ticketId: a.ticketId } });
+    if (isHelpAction(a)) return d.set(helpPatch(a.kind));
     if (a.projectId !== d.activeProjectId) d.go({ kind: "project", projectId: a.projectId });
     if (a.kind === "newPage") d.set({ newPageParent: null });
     if (a.kind === "newTicket") d.set({ newTicket: { parentId: a.parentId, projectId: a.projectId } });

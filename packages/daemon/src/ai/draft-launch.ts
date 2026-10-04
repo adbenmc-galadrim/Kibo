@@ -14,6 +14,7 @@ export type LaunchInput = {
   prompt: string;
   resumeSessionId: string | null;
   event: "enqueued" | "revised";
+  demo: boolean;
 };
 
 export type LaunchDeps = {
@@ -58,7 +59,7 @@ export function launchDraft(deps: LaunchDeps, input: LaunchInput): ComponentDraf
   let runId: string;
   try {
     runId = deps.runs.enqueue({
-      profileId: "generateur",
+      profileId: input.demo ? "demo" : "generateur",
       label: `Composant ${d.title}`,
       cwd: p.dir,
       prompt: input.prompt,

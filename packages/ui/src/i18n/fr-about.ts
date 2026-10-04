@@ -1,0 +1,36 @@
+export const frAbout = {
+  title: "À propos de Kibo",
+  description: "Centre de contrôle local pour tes projets de code.",
+  version: (version: string) => `Kibo ${version}`,
+  platform: { darwin: "macOS", linux: "Linux" },
+  arch: {
+    darwin: { arm64: "Apple Silicon", x64: "Intel" },
+    linux: { arm64: "ARM 64 bits", x64: "x86-64" },
+  },
+  shell: { tauri: "application de bureau", browser: "navigateur" },
+  daemon: (pid: number, port: number | null, home: string) =>
+    port === null ? `Démon : PID ${pid} · ${home}` : `Démon : PID ${pid} · port ${port} · ${home}`,
+  uptime: (duration: string) => `En marche depuis ${duration}`,
+  lessThanMinute: "moins d'une minute",
+  minutes: (n: number) => `${n} min`,
+  hours: (h: number, m: number) => (m === 0 ? `${h} h` : `${h} h ${m} min`),
+  unavailable: "Informations indisponibles : le démon ne répond pas.",
+  releaseNotes: "Notes de version",
+  source: "Code source",
+  license: "Licence MIT",
+  copy: "Copier les informations",
+  copied: "Copié",
+  copyFailed: "Copie impossible",
+  close: "Fermer",
+  application: {
+    title: "Application",
+    description: "Comportement de Kibo sur cet ordinateur.",
+    autostart: "Ouvrir Kibo à l'ouverture de session",
+    autostartHelp:
+      "Le démon démarre avec l'application. Garde Kibo dans le dossier Applications : si tu le déplaces après avoir activé ce réglage, désactive-le puis réactive-le.",
+    enabled: "Activé",
+    disabled: "Désactivé",
+    desktopOnly: "Ce réglage vit dans l'application de bureau.",
+    failed: "Le réglage n'a pas pu être modifié.",
+  },
+} as const;

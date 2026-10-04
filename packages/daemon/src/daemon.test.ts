@@ -1,10 +1,10 @@
 import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import type { RpcRequest } from "@kibo/schema";
+import { currentStep, type RpcRequest, TutorialState } from "@kibo/schema";
 import { z } from "zod";
 import { readDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { fakeBuild, okReport, writeDraft } from "./components/service.test-helper";
@@ -14,6 +14,7 @@ import { pidsMatching, stubbornServer, survivors } from "./mcp/processes.test-he
 
 const VITE = "http://localhost:5173";
 const Published = z.object({ result: z.object({ version: z.object({ hash: z.string() }) }) });
+const ProjectSummaryRow = z.object({ key: z.string(), name: z.string(), demo: z.boolean().optional() });
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const clean of cleanups.splice(0).reverse()) await clean();
@@ -158,6 +159,33 @@ describe("startDaemon", () => {
       });
     expect((await redeem()).status).toBe(204);
     expect((await redeem()).status).toBe(401);
+  });
+
+  test("an automatic backup runs at start, then createBackup from the RPC writes under <home>/backups and getBackups lists it", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const Listed = z.object({
+      result: z.object({
+        status: z.object({ running: z.boolean(), dir: z.string() }),
+        backups: z.array(z.object({ id: z.string(), reason: z.string() })),
+      }),
+    });
+    const list = async () => Listed.parse(await (await rpc({ method: "getBackups" })).json()).result;
+    let listed = await list();
+    for (let i = 0; i < 100 && (listed.status.running || listed.backups.length === 0); i++) {
+      await Bun.sleep(20);
+      listed = await list();
+    }
+    expect(listed.status.dir).toBe(join(home, "backups"));
+    expect(listed.backups.map((b) => b.reason)).toEqual(["auto"]);
+    const auto = listed.backups[0]?.id ?? "";
+    expect((await rpc({ method: "deleteBackup", id: auto })).status).toBe(200);
+    const created = z
+      .object({ result: z.object({ id: z.string(), reason: z.literal("manual") }) })
+      .parse(await (await rpc({ method: "createBackup", reason: "manual" })).json());
+    expect(existsSync(join(home, "backups", created.result.id, "kibo.db"))).toBe(true);
+    expect(existsSync(join(home, "backups", created.result.id, "token"))).toBe(false);
+    expect((await list()).backups.map((b) => b.id)).toEqual([created.result.id]);
   });
 
   test("a pairing session survives a daemon restart on the same home", async () => {
@@ -309,5 +337,50 @@ describe("startDaemon", () => {
     expect((await fetch(icon, { headers: { cookie } })).status).toBe(404);
     expect(await (await rpc({ method: "listProjects" })).json()).toEqual({ ok: true, result: [] });
     expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
+  });
+
+  test("startTutorial creates project DEMO and getTutorial reports status active with step kanban", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
+    const started = TutorialState.parse(await result({ method: "startTutorial" }));
+    const state = TutorialState.parse(await result({ method: "getTutorial" }));
+    expect(state).toEqual(started);
+    expect([state.status, currentStep(state)]).toEqual(["active", "kanban"]);
+    const projects = ProjectSummaryRow.array().parse(await result({ method: "listProjects" }));
+    expect(projects.map((p) => [p.key, p.name, p.demo])).toEqual([["DEMO", "Démo Kibo", true]]);
+    expect(existsSync(join(home, "notes", "DEMO", "bienvenue.md"))).toBe(true);
+    const projectId = state.projectId ?? "";
+    await result({
+      method: "command",
+      projectId,
+      command: { method: "createTicket", title: "Mon ticket", statusId: "in_progress" },
+    });
+    const after = TutorialState.parse(await result({ method: "getTutorial" }));
+    expect([after.completed, currentStep(after)]).toEqual([["kanban"], "links"]);
+    const folder = await rpc({ method: "updateProject", projectId, patch: { folder: home } });
+    expect([folder.status, await folder.text()]).toEqual([
+      400,
+      expect.stringContaining("the demo project stays local"),
+    ]);
+    await result({ method: "resetTutorial" });
+    const again = TutorialState.parse(await result({ method: "startTutorial" }));
+    expect([again.status, again.projectId, again.completed]).toEqual(["active", projectId, []]);
+    expect(ProjectSummaryRow.array().parse(await result({ method: "listProjects" }))).toHaveLength(1);
+    expect(await result({ method: "deleteProject", projectId })).toBeNull();
+    expect(await result({ method: "listProjects" })).toEqual([]);
+    expect(existsSync(join(home, "notes", "DEMO"))).toBe(false);
+  });
+
+  test("notes left in notes/DEMO before the demo are never erased with it", async () => {
+    const { d, home } = await launch();
+    mkdirSync(join(home, "notes", "DEMO"), { recursive: true });
+    writeFileSync(join(home, "notes", "DEMO", "mes-idees.md"), "# Mes idées\n");
+    const rpc = await pair(d);
+    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
+    const state = TutorialState.parse(await result({ method: "startTutorial" }));
+    expect(existsSync(join(home, "notes", "DEMO", ".kibo-demo"))).toBe(false);
+    expect(await result({ method: "deleteProject", projectId: state.projectId ?? "" })).toBeNull();
+    expect(existsSync(join(home, "notes", "DEMO", "mes-idees.md"))).toBe(true);
   });
 });

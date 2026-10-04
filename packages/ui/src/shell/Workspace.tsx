@@ -25,7 +25,8 @@ import { cycleTheme } from "../theme";
 import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
-import { CommandPalette } from "./lazy-dialogs";
+import { helpPatch } from "./help-dialogs";
+import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
 import { ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
@@ -33,6 +34,7 @@ import type { ShellProps } from "./Shell";
 import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
+import { useAppHelp } from "./use-app-help";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useShellDialogs } from "./use-shell-dialogs";
@@ -56,6 +58,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
+  useAppHelp(set);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
   const { open } = tabs;
@@ -103,6 +106,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     if (s.kind === "newTab") return setPalette({ newTab: true });
     if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
     if (s.kind === "reopen") return tabs.reopen();
+    if (s.kind === "help") return set(helpPatch("shortcutsHelp"));
     const id = tabs.state.activeId;
     if (!id) return;
     if (s.kind === "close") tabs.dispatch({ type: "close", id });
@@ -195,6 +199,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 onShare={() => project && set({ share: project.meta.id })}
                 onOpenRun={setFocusRun}
                 onOpen={(t) => go(t)}
+                onHelp={(key) => set(helpPatch(key))}
               />
               {project?.sync.shared && (
                 <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
@@ -229,6 +234,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
                     onNewProject={() => set({ newProject: true })}
                     onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
+                    onTutorial={() => set({ tutorial: true })}
                     onNewPage={() => set({ newPageParent: null })}
                     onSuggestPages={(projectId) => set({ suggestFor: projectId })}
                     onOpen={(t, newTab) => go(t, newTab)}
@@ -259,6 +265,13 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               onOpenTarget={go}
               onOpenFileTab={openFileTab}
               onCloseProject={closeProject}
+            />
+            <TutorialSlot
+              projects={projects}
+              snapshots={snapshots}
+              activeTarget={active}
+              onOpen={(t) => go(t)}
+              onDeleteDemo={(projectId) => set({ deleteProject: projectId })}
             />
             {views.dialog}
             {paletteOpened && (

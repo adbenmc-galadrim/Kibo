@@ -23,6 +23,7 @@ export const fr = {
     iconAlt: (name: string) => `Image du workspace ${name}`,
   },
   nav: {
+    demo: "Démo",
     breadcrumb: "Fil d'Ariane",
     overview: "Vue d'ensemble",
     mine: "Mes tickets",
@@ -77,6 +78,12 @@ export const fr = {
     theme: "Thème",
     sessions: "Sessions",
     settings: "Paramètres",
+    help: "Aide",
+    helpShortcuts: "Raccourcis clavier",
+    helpTutorial: "Didacticiel",
+    helpWhatsNew: "Quoi de neuf",
+    helpReport: "Signaler un problème",
+    helpAbout: "À propos de Kibo",
     account: (name: string, host: string) => `${name} · ${host}`,
     creations: (awaiting: number, running: number) => {
       const parts = [

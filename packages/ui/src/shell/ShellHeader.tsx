@@ -14,6 +14,7 @@ import { displayName, inboxMeta } from "../lib/inbox";
 import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { CreationsIndicator } from "./CreationsIndicator";
+import type { HelpDialog } from "./help-dialogs";
 import { ScreenActions, ShareButton } from "./lazy-screens";
 import { PageActionsSlot } from "./page-actions";
 import { RunHistoryButton } from "./RunHistoryButton";
@@ -35,6 +36,7 @@ type Props = {
   onShare: () => void;
   onOpenRun(runId: string): void;
   onOpen(target: TabTarget): void;
+  onHelp(key: HelpDialog): void;
 };
 
 const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "mine"]);
@@ -55,6 +57,7 @@ export function ShellHeader({
   onShare,
   onOpenRun,
   onOpen,
+  onHelp,
 }: Props) {
   return (
     <header className="flex h-12 shrink-0 select-none items-center gap-2 border-b px-3">
@@ -86,7 +89,7 @@ export function ShellHeader({
       </Button>
       <CreationsIndicator agents={agents} onOpen={() => onOpen({ kind: "screen", screen: "creations" })} />
       <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
-      <UserMenu viewer={viewer} onOpen={onOpen} />
+      <UserMenu viewer={viewer} onOpen={onOpen} onHelp={onHelp} />
     </header>
   );
 }

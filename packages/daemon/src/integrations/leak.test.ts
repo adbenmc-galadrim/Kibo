@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest, RpcResult } from "@kibo/schema";
 import { z } from "zod";
@@ -237,7 +237,9 @@ async function mcpSourceScenario(projectId: string): Promise<void> {
 }
 
 function journalsWereWritten(tables: Place[]): void {
-  const table = (name: string) => tables.find(([where]) => where.startsWith(`table ${name} in `))?.[1] ?? "";
+  const live = (where: string) => !where.includes(`${sep}backups${sep}`);
+  const table = (name: string) =>
+    tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
   expect(table("mcp_calls")).toContain('"tool":"echo_env"');
   expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
   expect(table("integration_events")).toContain("upstream said ***");

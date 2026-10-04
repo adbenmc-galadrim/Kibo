@@ -37,7 +37,7 @@ const { createTauriUpdaterPort } = await import("./tauri-updater");
 
 describe("tauri updater port", () => {
   test("maps the plugin update to the store's update info", async () => {
-    const port = createTauriUpdaterPort();
+    const port = createTauriUpdaterPort(async () => {});
     expect(await port.installedVersion()).toBe("1.0.0");
     expect(await port.check()).toEqual({
       version: "1.1.0",
@@ -54,11 +54,20 @@ describe("tauri updater port", () => {
 
   test("a new check releases the previous update, and nothing installs without one", async () => {
     calls.length = 0;
-    const port = createTauriUpdaterPort();
+    const port = createTauriUpdaterPort(async () => {});
     await port.check();
     found = null;
     expect(await port.check()).toBeNull();
     expect(calls).toEqual(["check", "close", "check"]);
     await expect(port.downloadAndInstall(() => {})).rejects.toBeInstanceOf(KiboError);
+  });
+
+  test("the backup before an update is the one given by the daemon side", async () => {
+    const backups: string[] = [];
+    const port = createTauriUpdaterPort(async () => {
+      backups.push("update");
+    });
+    await port.backup();
+    expect(backups).toEqual(["update"]);
   });
 });

@@ -3,8 +3,8 @@ on:
   push: { tags: ["v*"] }
   workflow_dispatch:
     inputs:
-      intel:
-        description: "Construire aussi macOS Intel (minutes macOS ×10)"
+      skipIntel:
+        description: "Ne pas construire macOS Intel (essai)"
         type: boolean
         default: false
 permissions: { contents: read }
@@ -32,17 +32,29 @@ jobs:
         shell: bash
         env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ steps.tag.outputs.tag }}" }
         run: |
+          INSTALL=$(sed -n '/<!-- release-start -->/,/<!-- release-end -->/p' docs/installation.md | sed '1d;$d')
+          if [ -z "$INSTALL" ]; then echo "docs/installation.md has no release block" >&2; exit 1; fi
+          CHANGES=$(bun apps/desktop/scripts/changelog.ts section "${TAG#v}")
+          GENERATED=$(gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" --jq .body)
           {
             echo 'body<<KIBO_NOTES'
-            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" --jq .body
+            echo "$INSTALL"
+            echo
+            echo "## Nouveautés"
+            echo
+            echo "$CHANGES"
+            echo
+            echo "## Détail des changements"
+            echo
+            echo "$GENERATED"
             echo 'KIBO_NOTES'
           } >> "$GITHUB_OUTPUT"
       - id: matrix
         shell: bash
-        env: { INTEL: "${{ inputs.intel }}" }
+        env: { SKIP_INTEL: "${{ inputs.skipIntel }}" }
         run: |
           MATRIX='{"os":"macos-latest","target":"aarch64-apple-darwin"},{"os":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu"}'
-          if [ "$INTEL" = "true" ]; then MATRIX="$MATRIX,"'{"os":"macos-15-intel","target":"x86_64-apple-darwin"}'; fi
+          if [ "$SKIP_INTEL" != "true" ]; then MATRIX="$MATRIX,"'{"os":"macos-15-intel","target":"x86_64-apple-darwin"}'; fi
           echo "matrix={\"include\":[$MATRIX]}" >> "$GITHUB_OUTPUT"
   build:
     needs: version
@@ -82,8 +94,23 @@ jobs:
           prerelease: false
           uploadUpdaterJson: true
           args: --target ${{ matrix.target }} --verbose
-  publish:
+  checksums:
     needs: [version, build]
+    permissions: { contents: write }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.version.outputs.tag }}" }
+        shell: bash
+        run: |
+          cp apps/desktop/src-tauri/icons/icon.png icon-512.png
+          gh release upload "$TAG" icon-512.png --clobber
+          gh release download "$TAG" -D dist --pattern '*'
+          rm -f dist/SHA256SUMS dist/install.sh
+          (cd dist && sha256sum -- * > SHA256SUMS)
+          gh release upload "$TAG" dist/SHA256SUMS scripts/install/install.sh --clobber
+  publish:
+    needs: [version, build, checksums]
     permissions: { contents: write }
     runs-on: ubuntu-latest
     steps:

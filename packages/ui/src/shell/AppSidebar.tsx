@@ -38,7 +38,7 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 type Props = {
   className?: string;
-  projects: ProjectMeta[];
+  projects: (ProjectMeta & { demo?: boolean })[];
   active: ProjectSnapshot | null;
   activeTarget: TabTarget | null;
   screen: Screen | null;

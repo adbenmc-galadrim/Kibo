@@ -127,6 +127,30 @@ const allDaemons = [
   },
   { name: "game-dark", scheme: "dark", port: 4439, spec: /game\.spec\.ts/, scenario: "question" },
   { name: "game-light", scheme: "light", port: 4440, spec: /game\.spec\.ts/, scenario: "question" },
+  {
+    name: "onboarding-dark",
+    scheme: "dark",
+    port: 4443,
+    spec: /onboarding\.spec\.ts/,
+    scenario: "question",
+    noGh: true,
+  },
+  {
+    name: "onboarding-light",
+    scheme: "light",
+    port: 4444,
+    spec: /onboarding\.spec\.ts/,
+    scenario: "question",
+    noGh: true,
+  },
+  { name: "about-dark", scheme: "dark", port: 4449, spec: /about\.spec\.ts/, scenario: "question" },
+  { name: "about-light", scheme: "light", port: 4450, spec: /about\.spec\.ts/, scenario: "question" },
+  { name: "help-dark", scheme: "dark", port: 4451, spec: /help\.spec\.ts/, scenario: "question" },
+  { name: "help-light", scheme: "light", port: 4452, spec: /help\.spec\.ts/, scenario: "question" },
+  { name: "backups-dark", scheme: "dark", port: 4447, spec: /backups\.spec\.ts/, scenario: "question" },
+  { name: "backups-light", scheme: "light", port: 4448, spec: /backups\.spec\.ts/, scenario: "question" },
+  { name: "tutorial-dark", scheme: "dark", port: 4445, spec: /tutorial\.spec\.ts/, scenario: "question" },
+  { name: "tutorial-light", scheme: "light", port: 4446, spec: /tutorial\.spec\.ts/, scenario: "question" },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
@@ -181,6 +205,7 @@ export default defineConfig({
           d.port,
           d.scenario,
           "integrations" in d ? "--integrations" : "",
+          "noGh" in d ? "--no-gh" : "",
           "drafts" in d ? d.drafts : "",
         ]
           .filter((part) => part !== "")

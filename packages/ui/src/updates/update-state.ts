@@ -5,13 +5,14 @@ export type UpdateInfo = {
   publishedAt: string | null;
 };
 
-export type UpdateStep = "check" | "install";
+export type UpdateStep = "check" | "backup" | "install";
 
 export type UpdateStatus =
   | { phase: "idle" }
   | { phase: "checking"; update: UpdateInfo | null }
   | { phase: "current"; checkedAt: number }
   | { phase: "available"; update: UpdateInfo }
+  | { phase: "backingUp"; update: UpdateInfo }
   | { phase: "downloading"; update: UpdateInfo; received: number; total: number | null }
   | { phase: "installing"; update: UpdateInfo }
   | { phase: "error"; step: UpdateStep; detail: string; update: UpdateInfo | null };
@@ -22,6 +23,8 @@ export type UpdateEvent =
   | { type: "none"; at: number }
   | { type: "checkFailed"; detail: string }
   | { type: "install" }
+  | { type: "backedUp" }
+  | { type: "backupFailed"; detail: string }
   | { type: "started"; total: number | null }
   | { type: "progress"; chunk: number }
   | { type: "downloaded" }
@@ -29,7 +32,7 @@ export type UpdateEvent =
 
 export const IDLE: UpdateStatus = { phase: "idle" };
 
-const BUSY: readonly UpdateStatus["phase"][] = ["checking", "downloading", "installing"];
+const BUSY: readonly UpdateStatus["phase"][] = ["checking", "backingUp", "downloading", "installing"];
 
 function knownUpdate(state: UpdateStatus): UpdateInfo | null {
   return "update" in state ? state.update : null;
@@ -48,8 +51,14 @@ export function reduceUpdate(state: UpdateStatus, event: UpdateEvent): UpdateSta
     case "install": {
       const update = knownUpdate(state);
       if (!update || BUSY.includes(state.phase)) return state;
-      return { phase: "downloading", update, received: 0, total: null };
+      return { phase: "backingUp", update };
     }
+    case "backedUp":
+      return state.phase === "backingUp"
+        ? { phase: "downloading", update: state.update, received: 0, total: null }
+        : state;
+    case "backupFailed":
+      return { phase: "error", step: "backup", detail: event.detail, update: knownUpdate(state) };
     case "started":
       return state.phase === "downloading" ? { ...state, total: event.total } : state;
     case "progress":
@@ -66,11 +75,11 @@ export function downloadPercent(state: UpdateStatus): number | null {
   return Math.min(100, Math.round((state.received / state.total) * 100));
 }
 
-export type UpdateFailure = "check" | "install" | "appImageOnly";
+export type UpdateFailure = "check" | "backup" | "install" | "appImageOnly";
 
 const APPIMAGE_ONLY = /appimage|unsupported linux package/i;
 
 export function classifyUpdateFailure(step: UpdateStep, detail: string): UpdateFailure {
-  if (step === "check") return "check";
+  if (step === "check" || step === "backup") return step;
   return APPIMAGE_ONLY.test(detail) ? "appImageOnly" : "install";
 }

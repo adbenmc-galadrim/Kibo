@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { KiboError } from "@kibo/schema";
-import { checkReleaseTag, readAppVersion, type VersionFiles, withAppVersion } from "./release-version";
+import {
+  assertChangelogHasVersion,
+  checkReleaseTag,
+  readAppVersion,
+  type VersionFiles,
+  withAppVersion,
+} from "./release-version";
 
 const files: VersionFiles = {
   tauriConf:
@@ -45,4 +51,11 @@ describe("release version", () => {
     expect(() => checkReleaseTag("v1.2.0", "1.1.0")).toThrow(KiboError);
     expect(() => checkReleaseTag("1.1.0", "1.1.0")).toThrow(KiboError);
   });
+});
+
+test("assertChangelogHasVersion accepts a dated heading and refuses a missing one", () => {
+  const log = "# Journal\n\n## Non publié\n\n- x\n\n## 1.5.0 — 2026-10-05\n\n- y\n";
+  expect(() => assertChangelogHasVersion(log, "1.5.0")).not.toThrow();
+  expect(() => assertChangelogHasVersion(log, "1.6.0")).toThrow(/CHANGELOG\.md has no section for 1\.6\.0/);
+  expect(() => assertChangelogHasVersion("## 1.5.0\n", "1.5.0")).not.toThrow();
 });

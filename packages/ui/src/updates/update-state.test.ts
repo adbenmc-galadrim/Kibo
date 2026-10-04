@@ -35,8 +35,27 @@ describe("update state", () => {
     });
   });
 
+  test("an install backs up first, and a failed backup keeps the update", () => {
+    const backingUp = reduceUpdate({ phase: "available", update }, { type: "install" });
+    expect(backingUp).toEqual({ phase: "backingUp", update });
+    expect(reduceUpdate(backingUp, { type: "check" })).toBe(backingUp);
+    expect(reduceUpdate(backingUp, { type: "install" })).toBe(backingUp);
+    expect(reduceUpdate(backingUp, { type: "backupFailed", detail: "CONFLICT" })).toEqual({
+      phase: "error",
+      step: "backup",
+      detail: "CONFLICT",
+      update,
+    });
+    expect(reduceUpdate({ phase: "available", update }, { type: "backedUp" })).toEqual({
+      phase: "available",
+      update,
+    });
+  });
+
   test("an install downloads, then installs, then can fail without losing the update", () => {
-    const downloading = reduceUpdate({ phase: "available", update }, { type: "install" });
+    const downloading = reduceUpdate(reduceUpdate({ phase: "available", update }, { type: "install" }), {
+      type: "backedUp",
+    });
     expect(downloading).toEqual({ phase: "downloading", update, received: 0, total: null });
     const started = reduceUpdate(downloading, { type: "started", total: 200 });
     const half = reduceUpdate(started, { type: "progress", chunk: 100 });
@@ -54,8 +73,10 @@ describe("update state", () => {
 
   test("an install can be retried after a failure, and a check is ignored while busy", () => {
     const failed: UpdateStatus = { phase: "error", step: "install", detail: "disk", update };
-    expect(reduceUpdate(failed, { type: "install" }).phase).toBe("downloading");
-    const downloading = reduceUpdate({ phase: "available", update }, { type: "install" });
+    expect(reduceUpdate(failed, { type: "install" }).phase).toBe("backingUp");
+    const downloading = reduceUpdate(reduceUpdate({ phase: "available", update }, { type: "install" }), {
+      type: "backedUp",
+    });
     expect(reduceUpdate(downloading, { type: "check" })).toBe(downloading);
     expect(reduceUpdate({ phase: "installing", update }, { type: "check" })).toEqual({
       phase: "installing",
@@ -74,5 +95,6 @@ describe("update state", () => {
     );
     expect(classifyUpdateFailure("install", "AppImage path not found")).toBe("appImageOnly");
     expect(classifyUpdateFailure("install", "permission denied")).toBe("install");
+    expect(classifyUpdateFailure("backup", "AppImage")).toBe("backup");
   });
 });

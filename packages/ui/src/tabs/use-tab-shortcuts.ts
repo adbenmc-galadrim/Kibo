@@ -6,6 +6,7 @@ export type TabShortcut =
   | { kind: "close" }
   | { kind: "togglePin" }
   | { kind: "reopen" }
+  | { kind: "help" }
   | { kind: "activate"; index: number };
 type KeyInput = { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean };
 
@@ -15,6 +16,7 @@ export function shortcutFor(e: KeyInput, mac: boolean): TabShortcut | null {
   const mod = mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
   if (!mod || e.altKey) return null;
   const key = e.key.toLowerCase();
+  if (key === "/") return { kind: "help" };
   if (e.shiftKey) return key === "p" ? { kind: "togglePin" } : key === "t" ? { kind: "reopen" } : null;
   if (key === "t") return { kind: "newTab" };
   if (key === "k") return { kind: "palette" };

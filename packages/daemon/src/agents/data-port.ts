@@ -10,7 +10,9 @@ import { listDomains, listGuidelines, listProfiles } from "@kibo/core/agent-conf
 import { evaluateRules, type RuleTrigger, readRules } from "@kibo/core/rules";
 import { KiboError, type ProjectCommand } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { isDemoProject } from "../demo/demo-project";
 import type { Docs } from "../docs";
+import type { ProjectSettings } from "../notes/settings";
 import type { AgentDataPort } from "./orchestrator";
 
 export function applyRules(doc: LoroDoc, trigger: RuleTrigger): ProjectCommand[] {
@@ -34,7 +36,7 @@ function guidelinesOf(docs: Docs, projectId: string) {
   return [...outsideDomains, ...listProjectDomainGuidelines(doc), ...listGuidelines(doc)];
 }
 
-export function createDataPort(docs: Docs): AgentDataPort {
+export function createDataPort(docs: Docs, settings: Pick<ProjectSettings, "get">): AgentDataPort {
   return {
     profiles: () => listProfiles(docs.workspace),
     ticketContext(projectId, ticketId) {
@@ -59,5 +61,6 @@ export function createDataPort(docs: Docs): AgentDataPort {
     runDone(projectId, ticketId) {
       docs.trigger(projectId, { kind: "run_done", ticketId });
     },
+    isDemoProject: (projectId) => isDemoProject(settings, projectId),
   };
 }

@@ -10,9 +10,10 @@ const toUpdateInfo = (update: Update): UpdateInfo => ({
   publishedAt: update.date ?? null,
 });
 
-export function createTauriUpdaterPort(): UpdaterPort {
+export function createTauriUpdaterPort(backup: () => Promise<void>): UpdaterPort {
   let pending: Update | null = null;
   return {
+    backup,
     async installedVersion() {
       const { getVersion } = await import("@tauri-apps/api/app");
       return getVersion();

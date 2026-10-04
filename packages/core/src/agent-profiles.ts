@@ -20,15 +20,18 @@ import {
 const SYSTEM_FIELDS: Record<SystemProfileId, Pick<AgentProfile, "name" | "permissionMode">> = {
   assistant: { name: "assistant", permissionMode: "default" },
   generateur: { name: "generateur", permissionMode: "acceptEdits" },
+  demo: { name: "demo", permissionMode: "acceptEdits" },
 };
 const SYSTEM_EDITABLE = new Set(["model", "enabled", "maxParallel"]);
 export const SYSTEM_MAX_PARALLEL = 4;
 export const SYSTEM_DEFAULT_PARALLEL: Readonly<Record<SystemProfileId, number>> = {
   assistant: 1,
   generateur: 2,
+  demo: 1,
 };
 
 const systemParallel = (id: SystemProfileId, current: AgentProfile | null): number => {
+  if (id === "demo") return SYSTEM_DEFAULT_PARALLEL.demo;
   const stored = current?.maxParallel;
   return stored !== undefined && stored <= SYSTEM_MAX_PARALLEL ? stored : SYSTEM_DEFAULT_PARALLEL[id];
 };
@@ -115,6 +118,12 @@ function assertEditable(current: AgentProfile, patch: Partial<ProfileInput>): vo
       "INVALID_INPUT",
       `a system profile runs at most ${SYSTEM_MAX_PARALLEL} agents at once`,
     );
+  if (
+    current.id === "demo" &&
+    patch.maxParallel !== undefined &&
+    patch.maxParallel !== SYSTEM_DEFAULT_PARALLEL.demo
+  )
+    throw new KiboError("INVALID_INPUT", "the demo agent runs one ticket at a time");
 }
 
 export function createProfile(ws: LoroDoc, input: ProfileInput): AgentProfile {

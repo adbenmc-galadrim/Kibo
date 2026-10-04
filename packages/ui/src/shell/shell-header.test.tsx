@@ -51,6 +51,7 @@ function header(onOpen: (t: TabTarget) => void = () => {}) {
         onShare={() => {}}
         onOpenRun={() => {}}
         onOpen={onOpen}
+        onHelp={() => {}}
       />
     </SidebarProvider>,
   );

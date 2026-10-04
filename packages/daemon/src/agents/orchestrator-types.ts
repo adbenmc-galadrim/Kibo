@@ -29,7 +29,11 @@ export type AgentDataPort = {
   assignTicket(projectId: string, ticketId: string, profileName: string): void;
   runStarted(projectId: string, ticketId: string): void;
   runDone(projectId: string, ticketId: string): void;
+  isDemoProject(projectId: string): boolean;
 };
+
+export const DEMO_PROFILE_ID = "demo";
+export type DemoAgent = { bin: string; env(): Record<string, string> };
 
 export type OrchestratorOptions = {
   home: string;
@@ -37,6 +41,7 @@ export type OrchestratorOptions = {
   data: AgentDataPort;
   claudeBin: string | null;
   hook: HookLauncher;
+  demoAgent: DemoAgent;
   baseUrl: () => string;
   sampler: () => HostLoad;
   hostInfo: HostInfo;

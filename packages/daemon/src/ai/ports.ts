@@ -25,7 +25,7 @@ export type GuardDecision = { decision: "allow" } | { decision: "deny"; reason: 
 export type Guard = (call: ToolCall) => GuardDecision;
 
 export type AgentRunRequest = {
-  profileId: "assistant" | "generateur";
+  profileId: "assistant" | "generateur" | "demo";
   label: string;
   cwd: string;
   prompt: string;

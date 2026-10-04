@@ -65,6 +65,7 @@ export type ComponentsService = {
   publishLock: PublishLock;
   events: EventLog;
   files: FilesService;
+  notesDir(projectId: string): string;
   usageChanged(): void;
   start(): Promise<void>;
   stop(): Promise<void>;
@@ -314,6 +315,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     publishLock,
     events,
     files,
+    notesDir: (projectId) => notes.info(projectId).dir,
     usageChanged,
     afterCommand: () => usageChanged(),
     async start() {

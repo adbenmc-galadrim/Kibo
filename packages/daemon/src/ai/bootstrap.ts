@@ -3,11 +3,13 @@ import { mkdirSync, realpathSync } from "node:fs";
 import { delimiter, join } from "node:path";
 import { listProfiles } from "@kibo/core/agent-config";
 import { type Toolchain, toolchainModules } from "@kibo/devkit";
-import { type IntegrationStatus, KiboError } from "@kibo/schema";
+import { type AppInfo, type IntegrationStatus, KiboError } from "@kibo/schema";
 import type { Orchestrator } from "../agents/orchestrator-types";
 import { resolveClaudeBin } from "../agents/runner";
 import { editorCommand, openInEditor } from "../code/editor";
+import { isDemoProject } from "../demo/demo-project";
 import type { Docs } from "../docs";
+import { createProjectSettings } from "../notes/settings";
 import { ensureSystemProfiles } from "../workspace-config";
 import {
   createExecPort,
@@ -55,6 +57,7 @@ export type AiBootstrapDeps = {
   agentEnv: Record<string, string | undefined>;
   address: string;
   listIntegrations: () => Promise<IntegrationStatus[]>;
+  appInfo: () => AppInfo;
   assistantTimeoutMs?: number;
 };
 
@@ -106,6 +109,7 @@ function environmentOf(deps: AiBootstrapDeps, ai: AiAvailability, exec: Exec) {
         return { cores: h.cores, ramGb: h.ramGb, hostSlots: h.hostSlots };
       },
       githubConnected: async () => githubConnected(await deps.listIntegrations()),
+      app: deps.appInfo,
     });
 }
 
@@ -125,6 +129,7 @@ export async function startAi(deps: AiBootstrapDeps): Promise<StartedAi> {
   const store = openDraftStore(deps.db);
   const binDir = writeKiboShim(join(home, "bin"), kiboShimArgv());
   const caps = () => ai.capabilities() ?? parseHelp("");
+  const projectSettings = createProjectSettings(deps.db);
   const lifecycle = createDraftLifecycle({
     store,
     runs,
@@ -141,6 +146,7 @@ export async function startAi(deps: AiBootstrapDeps): Promise<StartedAi> {
     args: () => generatorArgs(caps()),
     env: () => ({ PATH: `${binDir}${delimiter}${agentEnv.PATH ?? ""}`, KIBO_TOOLCHAIN: toolchain.root }),
     newId: () => crypto.randomUUID(),
+    isDemoProject: (projectId) => isDemoProject(projectSettings, projectId),
   });
   const publisher = createDraftPublisher({
     store,

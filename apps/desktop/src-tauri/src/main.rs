@@ -97,6 +97,11 @@ const PLAIN_PERMISSIONS: &[&str] = &[
     "core:app:allow-version",
     "core:window:allow-set-title",
     "dialog:allow-open",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled",
+    "core:event:allow-listen",
+    "opener:allow-reveal-item-in-dir",
 ];
 
 fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
@@ -253,7 +258,11 @@ fn main() {
                 .with_state_flags(WINDOW_STATE)
                 .build(),
         )
-        .plugin(tauri_plugin_dialog::init());
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ));
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(menu::build)
@@ -422,6 +431,11 @@ mod tests {
                 "core:app:allow-version",
                 "core:window:allow-set-title",
                 "dialog:allow-open",
+                "autostart:allow-enable",
+                "autostart:allow-disable",
+                "autostart:allow-is-enabled",
+                "core:event:allow-listen",
+                "opener:allow-reveal-item-in-dir",
             ]
         );
     }

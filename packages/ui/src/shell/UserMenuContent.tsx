@@ -5,16 +5,38 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { Settings, Shield, SunMoon } from "lucide-react";
+import {
+  Bug,
+  CircleHelp,
+  GraduationCap,
+  Info,
+  Keyboard,
+  type LucideIcon,
+  Settings,
+  Shield,
+  Sparkles,
+  SunMoon,
+} from "lucide-react";
 import { fr } from "../i18n/fr";
+import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { useSyncServerStatus } from "../state/use-sync-server";
 import { setThemePreference, THEME_PREFERENCES, type ThemePreference, useThemePreference } from "../theme";
+import { HELP_DIALOGS, type HelpDialog } from "./help-dialogs";
+import { helpLabel } from "./help-labels";
 
-type Props = { viewer: string; onOpen(target: TabTarget): void };
+type Props = { viewer: string; onOpen(target: TabTarget): void; onHelp(key: HelpDialog): void };
+const HELP_ICONS: Record<HelpDialog, LucideIcon> = {
+  shortcutsHelp: Keyboard,
+  tutorial: GraduationCap,
+  whatsNew: Sparkles,
+  report: Bug,
+  about: Info,
+};
 const isPreference = (v: string): v is ThemePreference => THEME_PREFERENCES.some((p) => p === v);
 const hostOf = (url: string): string => {
   try {
@@ -24,7 +46,32 @@ const hostOf = (url: string): string => {
   }
 };
 
-export function UserMenuContent({ viewer, onOpen }: Props) {
+function HelpSubmenu({ onHelp }: Pick<Props, "onHelp">) {
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        <CircleHelp aria-hidden />
+        {fr.header.help}
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="w-56">
+        {HELP_DIALOGS.map((key) => {
+          const Icon = HELP_ICONS[key];
+          return (
+            <DropdownMenuItem key={key} onSelect={() => onHelp(key)}>
+              <Icon aria-hidden />
+              {helpLabel(key)}
+              {key === "shortcutsHelp" && (
+                <DropdownMenuShortcut>{shortcutLabel(["/"], isMac())}</DropdownMenuShortcut>
+              )}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
+  );
+}
+
+export function UserMenuContent({ viewer, onOpen, onHelp }: Props) {
   const preference = useThemePreference();
   const { status } = useSyncServerStatus();
   const account =
@@ -65,6 +112,8 @@ export function UserMenuContent({ viewer, onOpen }: Props) {
         <Settings aria-hidden />
         {fr.header.settings}
       </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <HelpSubmenu onHelp={onHelp} />
     </>
   );
 }

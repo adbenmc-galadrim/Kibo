@@ -22,6 +22,7 @@ import {
   DeleteProjectDialog,
   EditProjectDialog,
   FileTicketDialog,
+  HelpDialogs,
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
@@ -54,6 +55,11 @@ export type DialogsState = {
   deletePage: Page | null;
   editProject: string | null;
   deleteProject: string | null;
+  tutorial: boolean;
+  about: boolean;
+  whatsNew: boolean;
+  shortcutsHelp: boolean;
+  report: boolean;
 };
 
 export const NO_DIALOG: DialogsState = {
@@ -73,6 +79,11 @@ export const NO_DIALOG: DialogsState = {
   deletePage: null,
   editProject: null,
   deleteProject: null,
+  tutorial: false,
+  about: false,
+  whatsNew: false,
+  shortcutsHelp: false,
+  report: false,
 };
 
 type Props = {
@@ -107,11 +118,15 @@ export function ShellDialogs({
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
+  const helpOpened = useOpened(
+    state.about || state.whatsNew || state.shortcutsHelp || state.report || state.tutorial,
+  );
   const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
   const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
   const doomedProject = state.deleteProject
     ? (projects.find((x) => x.id === state.deleteProject) ?? null)
     : null;
+  const assignProject = state.assign?.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project;
   const inbox = snapshots.get(INBOX_ID);
   const filing = inbox?.tickets.find((x) => x.id === state.fileTicket?.ticketId) ?? null;
   const doomed =
@@ -218,7 +233,8 @@ export function ShellDialogs({
       )}
       {state.assign && (
         <AssignDialog
-          project={state.assign.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project}
+          project={assignProject}
+          demo={projects.some((x) => x.id === assignProject?.meta.id && x.demo)}
           ticketId={state.assign.ticketId}
           config={config}
           onClose={() => set({ assign: null })}
@@ -266,6 +282,7 @@ export function ShellDialogs({
           onOpenInTab={(edit) => p.onOpenFileTab(preview, edit)}
         />
       )}
+      {helpOpened && <HelpDialogs state={state} set={set} onOpen={(t) => p.onOpenTarget(t, false)} />}
     </>
   );
 }

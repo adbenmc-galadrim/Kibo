@@ -132,6 +132,36 @@ describe("update panel", () => {
     expect(screen.getByText("Installation, Kibo va redémarrer…")).toBeTruthy();
   });
 
+  test("the backup before an update is shown, and a failed one says nothing was installed", () => {
+    const { rerender } = render(
+      <UpdatePanel
+        snapshot={snap({ phase: "backingUp", update })}
+        activeRuns={0}
+        desktop
+        onCheck={noop}
+        onInstall={noop}
+      />,
+    );
+    expect(screen.getByText("Sauvegarde avant la mise à jour…")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Rechercher" }).hasAttribute("disabled")).toBe(true);
+    rerender(
+      <UpdatePanel
+        snapshot={snap({ phase: "error", step: "backup", detail: "CONFLICT", update })}
+        activeRuns={0}
+        desktop
+        onCheck={noop}
+        onInstall={noop}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "La sauvegarde a échoué : la mise à jour n'a pas été installée. Vérifie la carte Sauvegardes.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Page des releases" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Installer et redémarrer" })).toBeTruthy();
+  });
+
   test("failures are explained, the AppImage case included", () => {
     const { rerender } = render(
       <UpdatePanel
@@ -166,6 +196,7 @@ describe("update card", () => {
     const port: UpdaterPort = {
       installedVersion: () => Promise.resolve("1.0.0"),
       check: () => Promise.resolve(update),
+      backup: () => Promise.resolve(),
       downloadAndInstall: () => Promise.resolve(),
       relaunch: () => Promise.resolve(),
     };

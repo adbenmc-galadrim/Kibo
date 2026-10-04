@@ -18,16 +18,19 @@ import {
   type RpcRequest,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { isDemoProject } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
+import type { ProjectSettings } from "../notes/settings";
 
 export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
   workspace: LoroDoc;
   docs: Docs;
   icons: Pick<IconStore, "version">;
+  settings: Pick<ProjectSettings, "get">;
   collab(): CollabPort | null;
   adopt(id: string, doc: LoroDoc): void;
   fileTicket: ReturnType<typeof createFileTicket>;
@@ -90,6 +93,7 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
         ...meta,
         counts: countTicketsByStatus(deps.docs.project(meta.id)),
         icon: deps.icons.version(projectIcon(meta.id)),
+        demo: isDemoProject(deps.settings, meta.id),
       }));
     case "createProject":
       return createProject(deps, req);

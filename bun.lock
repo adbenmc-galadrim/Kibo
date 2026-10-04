@@ -29,7 +29,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -348,6 +348,7 @@
         "@shikijs/langs": "4.4.3",
         "@shikijs/themes": "4.4.3",
         "@tauri-apps/api": "2.12.0",
+        "@tauri-apps/plugin-autostart": "2.7.0",
         "@tauri-apps/plugin-dialog": "2.8.0",
         "@tauri-apps/plugin-opener": "2.7.0",
         "@tauri-apps/plugin-process": "2.4.0",
@@ -380,6 +381,13 @@
         "@kibo/schema": "workspace:*",
         "zod": "3.25.76",
       },
+      "devDependencies": {
+        "@types/bun": "1.4.2",
+      },
+    },
+    "scripts/install": {
+      "name": "@kibo/install",
+      "version": "0.0.0",
       "devDependencies": {
         "@types/bun": "1.4.2",
       },
@@ -654,6 +662,8 @@
     "@kibo/dogfood": ["@kibo/dogfood@workspace:scripts/dogfood"],
 
     "@kibo/e2e": ["@kibo/e2e@workspace:e2e"],
+
+    "@kibo/install": ["@kibo/install@workspace:scripts/install"],
 
     "@kibo/schema": ["@kibo/schema@workspace:packages/schema"],
 
@@ -960,6 +970,8 @@
     "@tauri-apps/cli-win32-ia32-msvc": ["@tauri-apps/cli-win32-ia32-msvc@2.11.5", "", { "os": "win32", "cpu": "ia32" }, "sha512-bHOv/yxqfKpI7ioIFQi5wOfZ7jkbPzJD/UhXY52I/hrmE3qNh71cohIPyqZB5GQn3LZeJWdCUOqmIg/w6XX+Wg=="],
 
     "@tauri-apps/cli-win32-x64-msvc": ["@tauri-apps/cli-win32-x64-msvc@2.11.5", "", { "os": "win32", "cpu": "x64" }, "sha512-vaaOmavqdCeS7oMib2banBZemgrC5v54tSkwoBV+bxrXQZhQZrOwE2EO2i4x+CHNtvQUM/6bSs3iymZMAsycWg=="],
+
+    "@tauri-apps/plugin-autostart": ["@tauri-apps/plugin-autostart@2.7.0", "", { "dependencies": { "@tauri-apps/api": "^2.12.0" } }, "sha512-4uRq+rqKSAh6MWAxgk6FnUPigc8VMG8eDVYTLk3A7OfKs9sLVwfeM8kbUvzjpabRQvyl4zd9tfzXBTrrtuprsA=="],
 
     "@tauri-apps/plugin-dialog": ["@tauri-apps/plugin-dialog@2.8.0", "", { "dependencies": { "@tauri-apps/api": "^2.12.0" } }, "sha512-HSSD5C8UFE9ijD1wue84F7jjaIReFmj8AAPtS+xyjYRltJafIc4BiWHY7SJ6vbbew6u+YljEJHfyNfy5VwywXg=="],
 

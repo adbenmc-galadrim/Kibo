@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
-import { Fragment, useId } from "react";
+import { useId } from "react";
 import { frShortcuts } from "../i18n/fr-shortcuts";
 import { isMac } from "../lib/shortcut-label";
 import { SettingsLayout } from "./SettingsLayout";
+import { ShortcutList } from "./ShortcutList";
 import { type ShortcutGroup, shortcutGroups } from "./shortcuts";
-
-const KBD = "rounded border bg-muted px-1.5 py-0.5 font-mono text-2xs text-foreground";
 
 function Group({ group }: { group: ShortcutGroup }) {
   const id = useId();
@@ -15,23 +14,7 @@ function Group({ group }: { group: ShortcutGroup }) {
         <CardTitle id={id}>{group.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="grid gap-2">
-          {group.items.map((item) => (
-            <li key={item.label} className="flex items-center justify-between gap-4 text-sm">
-              <span className="text-muted-foreground">{item.label}</span>
-              <span className="flex items-center gap-1.5">
-                {item.keys.map((key, i) => (
-                  <Fragment key={key}>
-                    {i > 0 && item.range && (
-                      <span className="text-xs text-muted-foreground">{frShortcuts.range}</span>
-                    )}
-                    <kbd className={KBD}>{key}</kbd>
-                  </Fragment>
-                ))}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <ShortcutList items={group.items} />
       </CardContent>
     </Card>
   );

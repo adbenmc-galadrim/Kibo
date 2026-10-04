@@ -4,10 +4,14 @@ import { resolve } from "node:path";
 import { inflateSync } from "node:zlib";
 
 const icons = resolve(import.meta.dir, "../src-tauri/icons");
-const png = (name: string) => {
-  const bytes = readFileSync(resolve(icons, name));
+const pngHeader = (path: string) => {
+  const bytes = readFileSync(path);
   expect(bytes.subarray(1, 4).toString("latin1")).toBe("PNG");
-  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20), colorType: bytes.readUInt8(25) };
+};
+const png = (name: string) => {
+  const { width, height } = pngHeader(resolve(icons, name));
+  return { width, height };
 };
 const icnsTypes = (): string[] => {
   const bytes = readFileSync(resolve(icons, "icon.icns"));
@@ -65,6 +69,7 @@ test("the raster icons have the sizes tauri.conf.json expects", () => {
   expect(png("32x32.png")).toEqual({ width: 32, height: 32 });
   expect(png("128x128.png")).toEqual({ width: 128, height: 128 });
   expect(png("128x128@2x.png")).toEqual({ width: 256, height: 256 });
+  expect(png("256x256.png")).toEqual({ width: 256, height: 256 });
   expect(png("icon.png")).toEqual({ width: 512, height: 512 });
 });
 
@@ -81,4 +86,9 @@ test("the icons were regenerated after the Apple grid margin", () => {
   expect(alphaAt(rows, 40, 256)).toBe(0);
   expect(alphaAt(rows, 256, 40)).toBe(0);
   expect(alphaAt(rows, 256, 256)).toBe(255);
+});
+
+test("the dmg background is 1320×800 RGBA", () => {
+  const background = pngHeader(resolve(import.meta.dir, "../dmg/background.png"));
+  expect(background).toEqual({ width: 1320, height: 800, colorType: 6 });
 });

@@ -29,7 +29,7 @@ test("the avatar opens a menu with the theme submenu, sessions and settings (scr
     projects: [],
   };
   const opened: TabTarget[] = [];
-  render(<UserMenu viewer="adam" onOpen={(t) => opened.push(t)} />);
+  render(<UserMenu viewer="adam" onOpen={(t) => opened.push(t)} onHelp={() => {}} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Menu de adam" }));
   const menu = await screen.findByRole("menu", { name: "Menu de adam" });
@@ -54,9 +54,30 @@ test("the avatar opens a menu with the theme submenu, sessions and settings (scr
 });
 
 test("without a sync account only the name shows", async () => {
-  render(<UserMenu viewer="adam" onOpen={() => {}} />);
+  render(<UserMenu viewer="adam" onOpen={() => {}} onHelp={() => {}} />);
   await userEvent.setup().click(screen.getByRole("button", { name: "Menu de adam" }));
   const menu = await screen.findByRole("menu", { name: "Menu de adam" });
   expect(await within(menu).findByText("adam")).toBeTruthy();
   expect(within(menu).queryByText(/·/)).toBeNull();
+});
+
+test("the help group lists its five entries and opens the chosen dialog", async () => {
+  const asked: string[] = [];
+  render(<UserMenu viewer="adam" onOpen={() => {}} onHelp={(key) => asked.push(key)} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Menu de adam" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Aide" }));
+  const entries = await screen.findAllByRole("menuitem", {
+    name: /^(Raccourcis clavier|Didacticiel|Quoi de neuf|Signaler un problème|À propos de Kibo)/,
+  });
+  expect(entries.map((e) => e.textContent)).toEqual([
+    "Raccourcis clavierCtrl+/",
+    "Didacticiel",
+    "Quoi de neuf",
+    "Signaler un problème",
+    "À propos de Kibo",
+  ]);
+  screen.getByRole("menuitem", { name: "À propos de Kibo" }).focus();
+  await user.keyboard("{Enter}");
+  expect(asked).toEqual(["about"]);
 });

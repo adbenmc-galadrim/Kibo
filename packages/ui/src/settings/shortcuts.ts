@@ -20,6 +20,7 @@ export function shortcutGroups(mac: boolean): ShortcutGroup[] {
         { label: t.home, keys: [mod("1")] },
         { label: t.goToTab, keys: [mod("2"), mod("8")], range: true },
         { label: t.lastTab, keys: [mod("9")] },
+        { label: t.help, keys: [mod("/")] },
       ],
     },
     {

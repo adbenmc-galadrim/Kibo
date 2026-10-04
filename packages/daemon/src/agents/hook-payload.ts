@@ -58,7 +58,7 @@ export function reduceHookInput(raw: unknown): HookPayload {
   return reduce(parseHookInput(raw));
 }
 
-const MAX_TEXT = 2000;
+export const MAX_TEXT = 2000;
 export const MAX_INPUT_KEYS = 20;
 
 function clipValue(value: unknown, depth: number): unknown {

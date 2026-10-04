@@ -22,6 +22,7 @@ export const KeyCombo = z.enum([
   "mod+7",
   "mod+8",
   "mod+9",
+  "mod+/",
   "escape",
 ]);
 export type KeyCombo = z.infer<typeof KeyCombo>;

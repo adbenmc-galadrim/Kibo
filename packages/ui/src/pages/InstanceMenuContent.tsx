@@ -129,7 +129,12 @@ export function InstanceMenuContent({ projectId, instance, title, flash }: Insta
         />
       )}
       {modifying && (
-        <ModifyWithAiDialog component={modifying} open onOpenChange={(o) => !o && setModifying(null)} />
+        <ModifyWithAiDialog
+          component={modifying}
+          projectId={projectId}
+          open
+          onOpenChange={(o) => !o && setModifying(null)}
+        />
       )}
       {pending && (
         <TrustDialog

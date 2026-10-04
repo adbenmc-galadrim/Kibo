@@ -33,6 +33,7 @@ import { ComponentId } from "./manifest";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { NotesInfo } from "./note";
 import type { Page } from "./page";
+import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
 import { type ProjectMeta, ProjectPatch } from "./project";
 import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
@@ -64,7 +65,11 @@ export type ProjectSnapshot = {
   viewer?: string;
   icon?: string | null;
 };
-export type ProjectSummary = ProjectMeta & { counts: Record<StatusId, number>; icon?: string | null };
+export type ProjectSummary = ProjectMeta & {
+  counts: Record<StatusId, number>;
+  icon?: string | null;
+  demo?: boolean;
+};
 export type Session = { user: string; notifications: "native" | "browser" };
 export type Topic = "agents" | "config";
 export type ChangeMessage =
@@ -202,6 +207,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...AI_RPC,
   ...MARKET_RPC_REQUESTS,
   ...SYNC_RPC_REQUESTS,
+  ...PHASE14_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -255,7 +261,8 @@ export type RpcResult = {
 } & IntegrationRpcResult &
   AiRpcResult &
   MarketRpcResult &
-  SyncRpcResult;
+  SyncRpcResult &
+  Phase14RpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

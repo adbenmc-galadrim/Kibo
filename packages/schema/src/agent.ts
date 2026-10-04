@@ -29,7 +29,7 @@ export const AgentProfile = ProfileInput.extend({
 });
 export type AgentProfile = z.infer<typeof AgentProfile>;
 
-export const SYSTEM_PROFILE_IDS = ["assistant", "generateur"] as const;
+export const SYSTEM_PROFILE_IDS = ["assistant", "generateur", "demo"] as const;
 export type SystemProfileId = (typeof SYSTEM_PROFILE_IDS)[number];
 
 export const DOMAIN_COLORS = [

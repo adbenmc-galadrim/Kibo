@@ -6,13 +6,12 @@ import { CircleX, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { holdsSlot } from "../agents/queue-runs";
 import { frUpdates as t } from "../i18n/fr-updates";
+import { RELEASES_URL } from "../lib/kibo-links";
 import { inTauri } from "../shell/workspace-actions";
 import { useAgents } from "../state/use-agents";
 import { classifyUpdateFailure, downloadPercent, type UpdateInfo, type UpdateStatus } from "./update-state";
 import type { UpdateSnapshot, UpdateStore } from "./update-store";
 import { updateStore, useUpdateSnapshot } from "./use-update";
-
-export const RELEASES_URL = "https://github.com/adbenmc-galadrim/Kibo/releases";
 
 const timeOf = (ms: number) =>
   new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -77,7 +76,7 @@ function Failure({ status }: { status: Extract<UpdateStatus, { phase: "error" }>
       <AlertTitle>{t.failed}</AlertTitle>
       <AlertDescription className="text-foreground/80!">
         <span>{t.errors[kind]}</span>
-        {kind !== "check" && (
+        {(kind === "install" || kind === "appImageOnly") && (
           <a href={RELEASES_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
             {t.releases}
           </a>
@@ -109,6 +108,8 @@ function Status({
       );
     case "available":
       return <Available update={status.update} activeRuns={activeRuns} onInstall={onInstall} />;
+    case "backingUp":
+      return <p className="text-sm">{t.backingUp}</p>;
     case "downloading":
       return <Downloading status={status} />;
     case "installing":
@@ -134,7 +135,7 @@ export type UpdatePanelProps = {
 };
 
 export function UpdatePanel({ snapshot, activeRuns, desktop, onCheck, onInstall }: UpdatePanelProps) {
-  const busy = snapshot.status.phase === "checking" || snapshot.status.phase === "downloading";
+  const busy = ["checking", "backingUp", "downloading"].includes(snapshot.status.phase);
   return (
     <Card className="gap-4">
       <CardHeader>

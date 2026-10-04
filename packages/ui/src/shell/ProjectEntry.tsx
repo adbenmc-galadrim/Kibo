@@ -12,7 +12,7 @@ export type Link = (target: TabTarget | null) => {
 };
 
 export type ProjectEntryProps = {
-  project: ProjectMeta;
+  project: ProjectMeta & { demo?: boolean };
   active: ProjectSnapshot | null;
   activeTarget: TabTarget | null;
   projectActive: boolean;
@@ -47,6 +47,11 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
         <SidebarMenuButton isActive={p.projectActive} {...link({ kind: "project", projectId: project.id })}>
           <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
           <span>{project.name}</span>
+          {project.demo && (
+            <span className="rounded-sm bg-secondary px-1 text-3xs font-medium text-secondary-foreground">
+              {fr.nav.demo}
+            </span>
+          )}
         </SidebarMenuButton>
       </ProjectHeaderMenu>
       {editable && (

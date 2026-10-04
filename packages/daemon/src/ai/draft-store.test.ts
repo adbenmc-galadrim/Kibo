@@ -21,6 +21,7 @@ const draft = (id: string, status: ComponentDraft["status"], updatedAt: number):
   attachments: [],
   revisions: 0,
   template: "blank",
+  projectId: null,
   createdAt: 1,
   updatedAt,
 });
@@ -149,4 +150,13 @@ test("keeps the template of a draft, and an older table reads it as blank", () =
   expect(store.get(a).template).toBe("3d");
   db.run("ALTER TABLE component_drafts DROP COLUMN template");
   expect(openDraftStore(db).get(a).template).toBe("blank");
+});
+
+test("keeps the project of a draft, and an older table reads it as none", () => {
+  const db = new Database(":memory:", { strict: true });
+  const store = openDraftStore(db);
+  store.insert({ ...draft(a, "review", 2), projectId: "p-demo" });
+  expect(store.get(a).projectId).toBe("p-demo");
+  db.run("ALTER TABLE component_drafts DROP COLUMN projectId");
+  expect(openDraftStore(db).get(a).projectId).toBeNull();
 });

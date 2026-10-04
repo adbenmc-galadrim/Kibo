@@ -44,6 +44,7 @@ export function setupLifecycle(
     published?: PublishedComponent | null;
     reports?: ValidationReport[];
     withoutSdk?: boolean;
+    demoProjects?: string[];
   } = {},
 ) {
   const home = mkdtempSync(join(tmpdir(), "kibo-life-"));
@@ -131,6 +132,7 @@ export function setupLifecycle(
     sdkDir: opts.withoutSdk ? null : sdkDir,
     args: () => ["--tools", "Read,Edit,Write,Glob,Grep,Bash"],
     env: () => ({ PATH: "/kibo/bin" }),
+    isDemoProject: (projectId) => opts.demoProjects?.includes(projectId) ?? false,
     newId: () => `0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a1${n++}`,
     restore: (paths, allowServer) => {
       if (restoreError) throw new KiboError("STORE_CORRUPT", restoreError);

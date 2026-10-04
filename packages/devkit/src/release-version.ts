@@ -1,4 +1,4 @@
-import { KiboError } from "@kibo/schema";
+import { changelogVersions, KiboError } from "@kibo/schema";
 
 export type VersionFiles = { tauriConf: string; cargoToml: string; cargoLock: string; packageJson: string };
 
@@ -37,4 +37,9 @@ export function withAppVersion(files: VersionFiles, version: string): VersionFil
 export function checkReleaseTag(tag: string, version: string): void {
   if (tag !== `v${version}`)
     throw new KiboError("INVALID_INPUT", `tag ${tag} does not match the application version ${version}`);
+}
+
+export function assertChangelogHasVersion(markdown: string, version: string): void {
+  if (!changelogVersions(markdown).includes(version))
+    throw new KiboError("INVALID_INPUT", `CHANGELOG.md has no section for ${version}`);
 }

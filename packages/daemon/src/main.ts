@@ -11,6 +11,7 @@ import { cliStatus, installCli } from "./components/install-cli";
 import { startDaemon } from "./daemon";
 import { parseIntegrationFlags } from "./integrations/bootstrap";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
+import { createLogBuffer } from "./log-buffer";
 import { kiboHome } from "./paths";
 import { DaemonRunning } from "./single-instance";
 import { fatalLine, REUSED_EXIT_CODE, reuseLines } from "./startup-lines";
@@ -57,6 +58,8 @@ const failStart = (e: unknown): never => {
   process.stdout.write(reuseLines(e.running, token));
   process.exit(REUSED_EXIT_CODE);
 };
+const logBuffer = createLogBuffer();
+logBuffer.install(console);
 const redactor = createRedactor();
 installConsoleRedaction(redactor);
 const daemon = await Promise.resolve()
@@ -78,6 +81,7 @@ const daemon = await Promise.resolve()
       cliStatus: () => cliStatus(),
       integrations: parseIntegrationFlags(values),
       redactor,
+      logBuffer,
       marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1",
     }),
   )

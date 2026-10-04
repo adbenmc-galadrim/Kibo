@@ -8,9 +8,13 @@ import { E2E_GH_TOKEN, E2E_TOKEN, fakeGithubPort, fakeMcpPort } from "./token";
 
 const root = resolve(import.meta.dir, "..");
 const INTEGRATIONS_FLAG = "--integrations";
+const NO_GH_FLAG = "--no-gh";
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
-const [port = "4390", scenario = "question", ...drafts] = argv.filter((a) => a !== INTEGRATIONS_FLAG);
+const withGh = !argv.includes(NO_GH_FLAG);
+const [port = "4390", scenario = "question", ...drafts] = argv.filter(
+  (a) => a !== INTEGRATIONS_FLAG && a !== NO_GH_FLAG,
+);
 const home = e2eHome(port);
 rmSync(home, { recursive: true, force: true });
 mkdirSync(home, { recursive: true, mode: 0o700 });
@@ -27,8 +31,10 @@ const ghDir = fakeGhDir(port);
 rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
-copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
-chmodSync(gh, 0o755);
+if (withGh) {
+  copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
+  chmodSync(gh, 0o755);
+}
 async function startFakes() {
   const github = startFakeGithub({ token: E2E_GH_TOKEN, port: fakeGithubPort(Number(port)) });
   github.addRepo("adam/kibo");

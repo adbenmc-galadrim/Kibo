@@ -9,15 +9,15 @@ export const frAi = {
     claude: "Claude Code",
     claudeReady: "claude détecté · connecté à ton abonnement",
     claudeUnverified: "claude détecté · connexion non vérifiée",
-    claudeLoggedOut: "claude détecté · non connecté : lance claude puis /login",
-    claudeMissing: "claude introuvable : l'assistant et la génération de composants sont désactivés",
+    claudeLoggedOut: "claude détecté · non connecté",
+    claudeMissing: "claude introuvable dans le PATH · les agents sont désactivés",
+    claudeInstallHelp: "Installe Claude Code, puis lance claude et tape /login :",
+    claudeLoginHelp: "Lance claude dans un terminal, puis tape /login :",
     git: "Git",
-    gitDetail: (git: string | null, gh: string | null) =>
-      git === null
-        ? "git introuvable"
-        : gh === null
-          ? `git ${git} détecté · gh introuvable`
-          : `git ${git} · gh ${gh} détectés`,
+    gitDetail: (git: string | null) => (git === null ? "git introuvable" : `git ${git} détecté`),
+    gh: "GitHub CLI",
+    ghDetail: (gh: string | null) =>
+      gh === null ? "gh introuvable · facultatif" : `gh ${gh} · pour les PR et la CI depuis Kibo`,
     capacity: "Capacité machine",
     capacityDetail: (cores: number, ramGb: number, slots: number) =>
       `${cores} cœurs, ${ramGb} Go → ${slots} place${slots > 1 ? "s" : ""} d'agents (modifiable)`,
@@ -27,6 +27,10 @@ export const frAi = {
     githubConnected: "Connecté",
     importFolder: "Importer un dossier existant",
     createFirst: "Créer mon premier projet",
+    tutorial: "Suivre le didacticiel (10 min)",
+    retry: "Réessayer",
+    showHelp: "Comment corriger",
+    failed: "Une vérification a échoué. Tu peux continuer : tout fonctionne sauf les agents.",
   },
   onboarding: {
     step: (n: number) => `Étape ${n} sur 2`,

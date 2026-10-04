@@ -14,7 +14,12 @@ import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
 import { guarded, startOfDay } from "./orchestrator-support";
-import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
+import {
+  DEMO_PROFILE_ID,
+  type Orchestrator,
+  type OrchestratorOptions,
+  type TaskSpec,
+} from "./orchestrator-types";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
@@ -23,6 +28,7 @@ import { reapOrphan } from "./runner";
 export type {
   AgentDataPort,
   AssignInput,
+  DemoAgent,
   Orchestrator,
   OrchestratorOptions,
   TaskInput,
@@ -64,8 +70,12 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     if (!found) throw new KiboError("NOT_FOUND", `profile ${id} not found`);
     return found;
   };
-  const ticketProfileOf = (id: string): AgentProfile => {
+  const ticketProfileOf = (id: string, projectId: string): AgentProfile => {
     const found = profileOf(id);
+    if (found.id === DEMO_PROFILE_ID) {
+      if (opts.data.isDemoProject(projectId)) return found;
+      throw new KiboError("INVALID_INPUT", "the demo agent only works in the demo project");
+    }
     if (found.system) throw new KiboError("INVALID_INPUT", `profile ${found.name} is reserved to Kibo`);
     return found;
   };
@@ -131,7 +141,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
 
   return {
     assign(input) {
-      const profile = ticketProfileOf(input.profileId);
+      const profile = ticketProfileOf(input.profileId, input.projectId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       opts.data.assertWritable(input.projectId);
@@ -175,7 +185,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       return registry.get(id);
     },
     preview(input) {
-      const profile = ticketProfileOf(input.profileId);
+      const profile = ticketProfileOf(input.profileId, input.projectId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       const key = ticket.key;
       if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");

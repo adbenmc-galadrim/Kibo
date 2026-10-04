@@ -56,6 +56,7 @@ function boot(scenario: "question" | "hold"): Stack {
     data: service.agentData,
     claudeBin: FAKE_CLAUDE,
     hook: defaultHookLauncher(),
+    demoAgent: { bin: FAKE_CLAUDE, env: () => ({}) },
     baseUrl: () => server.url,
     sampler: () => ({ cpu: 5, ram: 5 }),
     hostInfo: { cores: 8, ramGb: 16 },

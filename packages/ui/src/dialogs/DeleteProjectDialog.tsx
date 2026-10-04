@@ -71,25 +71,67 @@ type ConfirmProps = { project: ProjectSummary; snapshot: ProjectSnapshot | null;
   "onClose" | "onDeleted"
 >;
 
-function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: ConfirmProps) {
-  const id = useId();
-  const [typed, setTyped] = useState("");
+function useDeletion(projectId: string, onDeleted: (projectId: string) => void) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const matches = nameMatches(typed, project.name);
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!matches || busy) return;
+  const remove = async () => {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
-      await client.rpc({ method: "deleteProject", projectId: project.id });
-      onDeleted(project.id);
+      await client.rpc({ method: "deleteProject", projectId });
+      onDeleted(projectId);
     } catch (err) {
       setError(deleteFailure(err));
       setBusy(false);
     }
+  };
+  return { busy, error, remove };
+}
+
+function ErrorLine({ error }: { error: string | null }) {
+  if (!error) return null;
+  return (
+    <p role="alert" className="text-sm text-destructive">
+      {error}
+    </p>
+  );
+}
+
+function ConfirmDemo({
+  project,
+  onClose,
+  onDeleted,
+}: Pick<ConfirmProps, "project" | "onClose" | "onDeleted">) {
+  const { busy, error, remove } = useDeletion(project.id, onDeleted);
+  return (
+    <div className="grid gap-4">
+      <DialogHeader>
+        <DialogTitle>{t.demoTitle}</DialogTitle>
+        <DialogDescription>{t.demoHelp}</DialogDescription>
+      </DialogHeader>
+      <ErrorLine error={error} />
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>
+          {t.cancel}
+        </Button>
+        <Button type="button" variant="destructive" disabled={busy} onClick={() => void remove()}>
+          {t.demoConfirm}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: ConfirmProps) {
+  const id = useId();
+  const [typed, setTyped] = useState("");
+  const { busy, error, remove } = useDeletion(project.id, onDeleted);
+  const matches = nameMatches(typed, project.name);
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (matches) void remove();
   };
 
   const summary =
@@ -126,11 +168,7 @@ function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: Confi
           onChange={(e) => setTyped(e.target.value)}
         />
       </div>
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      <ErrorLine error={error} />
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>
           {t.cancel}
@@ -174,7 +212,10 @@ export function DeleteProjectDialog({
             onClose={onClose}
           />
         )}
-        {(variant === "delete" || variant === "leave") && (
+        {variant === "delete" && project.demo && (
+          <ConfirmDemo project={project} onClose={onClose} onDeleted={onDeleted} />
+        )}
+        {((variant === "delete" && !project.demo) || variant === "leave") && (
           <ConfirmByName
             project={project}
             snapshot={snapshot}

@@ -1,5 +1,6 @@
+import { homedir } from "node:os";
 import { osSandbox, type Toolchain } from "@kibo/devkit";
-import { type HostLoad, isTerminal, KiboError, type Session, ticketRuns } from "@kibo/schema";
+import { BACKUP_TICK_MS, type HostLoad, isTerminal, KiboError, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
@@ -7,16 +8,26 @@ import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
+import { appVersion } from "./app-version";
 import { loadOrCreateToken } from "./auth";
+import { backupsRpc } from "./backups/rpc";
+import { startBackupSchedule } from "./backups/schedule";
+import { createBackupsService } from "./backups/service";
 import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
 import { componentTrustGuard } from "./components/trust-guard";
+import { demoAgentBin } from "./demo/agent-bin";
+import { demoAgentEnv } from "./demo/agent-env";
+import { ensureDemoAgentFiles } from "./demo/agent-scenarios";
+import { startTutorial } from "./demo/bootstrap";
+import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { createProjectAdmin } from "./projects/admin";
@@ -47,6 +58,8 @@ export type DaemonOptions = {
   sampler?: () => HostLoad;
   integrations?: IntegrationFlags;
   redactor?: Redactor;
+  logBuffer?: LogBuffer;
+  userHome?: string;
   agentEnv?: Record<string, string | undefined>;
   assistantTimeoutMs?: number;
   marketAllowLoopback?: boolean;
@@ -91,6 +104,9 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const runs = openRunStore(opts.home);
   closers.push(() => runs.close());
   const token = loadOrCreateToken(opts.home);
+  const redactor = opts.redactor ?? createRedactor();
+  redactor.add(token);
+  const startedAt = Date.now();
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
@@ -100,7 +116,17 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     settings: openLocalSettings(store),
     emit: (message) => service.docs.emit(message),
   });
-  const redactor = opts.redactor ?? createRedactor();
+  const backups = createBackupsService({
+    home: opts.home,
+    userHome: opts.userHome ?? homedir(),
+    settings: openLocalSettings(store),
+    databases: [
+      { file: "kibo.db", vacuumInto: store.vacuumInto },
+      { file: "runs.db", vacuumInto: runs.vacuumInto },
+    ],
+    appVersion: appVersion(),
+    emit: (event) => service.docs.emit(event),
+  });
   const integrations = startIntegrations(
     createIntegrationHost({
       user: opts.user,
@@ -152,6 +178,16 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     allowLoopbackHttp: opts.marketAllowLoopback ?? false,
   });
   closers.push(() => market.stop());
+  const tutorial = startTutorial({
+    home: opts.home,
+    service,
+    settings: openLocalSettings(store),
+    projectSettings: createProjectSettings(store.db),
+    notesDir: (projectId) => components.notesDir(projectId),
+    runs: () => (agents ? agents.state().runs : []),
+    log: (message, ...error) => console.error(`[kibo-daemon] ${message}`, ...error),
+  });
+  closers.push(() => tutorial.stop());
   const admin = createProjectAdmin({
     docs: service.docs,
     settings: createProjectSettings(store.db),
@@ -164,6 +200,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
         : 0,
     detach: (projectId) => collab.client.detachProject(projectId),
     isLocked: (projectId) => collab.hosts.isLocked(projectId),
+    prepareDelete: (projectId) => tutorial.prepareDelete(projectId),
   });
   const code = createCodeService(service);
   closers.push(() => code.stop());
@@ -173,13 +210,27 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
     return remote;
   };
+  const app = startAppDiagnostics({
+    home: opts.home,
+    userHome: opts.userHome ?? homedir(),
+    startedAt,
+    service,
+    components,
+    log: opts.logBuffer ?? createLogBuffer(),
+  });
   const server = startServer({
     service,
     code,
     token,
     sessions: openSessionStore(store.db),
     pairingCodes,
-    extensions: [remoteRpc(remoteAccess, pairingCodes), sandboxRpc(sandboxService)],
+    extensions: [
+      remoteRpc(remoteAccess, pairingCodes),
+      sandboxRpc(sandboxService),
+      backupsRpc(backups),
+      app.rpc,
+      tutorial.rpc,
+    ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
@@ -191,7 +242,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [componentTrustGuard, market.handler, collab.handler, admin.handler],
+    handlers: [tutorial.guard, componentTrustGuard, market.handler, collab.handler, admin.handler],
   });
   front.push(() => server.stop());
   const started = createRemoteAccess({
@@ -225,6 +276,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     data: service.agentData,
     claudeBin: opts.claudeBin ?? null,
     hook: defaultHookLauncher(),
+    demoAgent: { bin: demoAgentBin(), env: () => demoAgentEnv(ensureDemoAgentFiles(opts.home)) },
     baseUrl: () => server.url,
     sampler: opts.sampler ?? createLoadSampler(),
     hostInfo: readHostInfo(),
@@ -247,11 +299,18 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agentEnv: opts.agentEnv ?? process.env,
     address: `127.0.0.1:${server.port}`,
     listIntegrations: async () => call(service, { method: "listIntegrations" }),
+    appInfo: app.appInfo,
     ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
   });
   draftAssets = ai.draftAssets;
   closers.push(service.attachAi(ai.port));
   closers.push(() => ai.stop());
+  closers.push(
+    startBackupSchedule(backups, {
+      intervalMs: BACKUP_TICK_MS,
+      log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
+    }),
+  );
   writeDaemonInfo(opts.home, { port: server.port, sandboxPort: sandbox.port, pid: process.pid });
   front.push(() => removeDaemonInfo(opts.home));
   return {

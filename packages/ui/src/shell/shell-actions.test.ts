@@ -64,3 +64,13 @@ test("openFileTab to read records nothing", () => {
   fileTabOpener({ editRequests, set: () => {}, go: () => {} })(ref, false);
   expect(editRequests.size).toBe(0);
 });
+
+test("help actions open their dialog alone, without navigation", () => {
+  const { deps, calls } = paletteDeps("p1");
+  paletteActionHandler(deps)({ kind: "about" });
+  paletteActionHandler(deps)({ kind: "whatsNew" });
+  expect(calls).toEqual([
+    'set {"shortcutsHelp":false,"tutorial":false,"whatsNew":false,"report":false,"about":true}',
+    'set {"shortcutsHelp":false,"tutorial":false,"whatsNew":true,"report":false,"about":false}',
+  ]);
+});
