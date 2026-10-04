@@ -8,8 +8,8 @@ Kibo s'installe comme une application de bureau sur macOS (Apple Silicon et Inte
 ### macOS
 
 1. Télécharge le `.dmg` de ton Mac : `aarch64` pour Apple Silicon, `x64` pour Intel. Ouvre-le et glisse Kibo dans Applications.
-2. L'application est signée par Kibo, pas par Apple : à la première ouverture, macOS la bloque. Clic droit sur Kibo ▸ Ouvrir ▸ Ouvrir.
-3. Si le menu n'apparaît pas : Réglages Système ▸ Confidentialité et sécurité ▸ « Ouvrir quand même ».
+2. L'application est signée par Kibo, pas par Apple. Ouvre Kibo une première fois : macOS refuse. Réglages Système ▸ Confidentialité et sécurité ▸ « Ouvrir quand même ».
+3. Sur macOS 14 et avant, clic droit sur Kibo ▸ Ouvrir ▸ Ouvrir suffit.
 4. Avancé : `xattr -d com.apple.quarantine /Applications/Kibo.app`.
 
 Ensuite, les mises à jour s'installent depuis Paramètres › Général, sans question.
