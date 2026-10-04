@@ -1,14 +1,13 @@
 import { expect, test } from "bun:test";
 import {
   assetKindOf,
-  extensionMatches,
   MAX_PROJECT_ASSET_BYTES,
   MAX_UPLOAD_CHUNK_BASE64,
-  mimeOfName,
   ProjectAssetName,
   sniffAsset,
   UPLOAD_CHUNK_BYTES,
 } from "./asset";
+import { extensionMatches, mimeOfName } from "./asset-extension";
 
 const ascii = (s: string) => Array.from(s, (c) => c.charCodeAt(0));
 const bytes = (...parts: (number[] | string)[]) =>

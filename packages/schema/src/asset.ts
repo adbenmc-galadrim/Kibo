@@ -48,25 +48,8 @@ export const FilesInfo = z.object({
 });
 export type FilesInfo = z.infer<typeof FilesInfo>;
 
-const EXTENSIONS: Readonly<Record<ProjectAssetMime, readonly string[]>> = {
-  "model/gltf-binary": ["glb"],
-  "image/png": ["png"],
-  "image/jpeg": ["jpg", "jpeg"],
-  "image/webp": ["webp"],
-  "image/gif": ["gif"],
-  "audio/mpeg": ["mp3"],
-  "audio/ogg": ["ogg"],
-  "audio/wav": ["wav"],
-};
-
 export const assetKindOf = (mime: ProjectAssetMime): ProjectAssetKind =>
   mime === "model/gltf-binary" ? "model" : mime.startsWith("image/") ? "image" : "audio";
-
-export const extensionMatches = (name: string, mime: ProjectAssetMime): boolean =>
-  EXTENSIONS[mime].includes(name.slice(name.lastIndexOf(".") + 1));
-
-export const mimeOfName = (name: string): ProjectAssetMime | null =>
-  PROJECT_ASSET_MIMES.find((mime) => extensionMatches(name, mime)) ?? null;
 
 const ascii = (text: string) => Array.from(text, (c) => c.charCodeAt(0));
 const at = (bytes: Uint8Array, offset: number, magic: readonly number[]) =>
