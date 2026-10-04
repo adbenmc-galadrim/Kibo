@@ -66,6 +66,20 @@ test("a tick before a day has passed does nothing", async () => {
   expect(await service.list()).toHaveLength(1);
 });
 
+test("a manual backup postpones the next automatic one by a day", async () => {
+  const { clock, service } = setup();
+  await service.tick();
+  clock.now += DAY / 2;
+  const manual = await service.create("manual");
+  clock.now += DAY / 2;
+  await service.tick();
+  expect((await service.list()).map((b) => b.reason)).toEqual(["auto", "manual"]);
+  expect((await service.status()).nextAt).toBe(manual.createdAt + DAY);
+  clock.now = manual.createdAt + DAY;
+  await service.tick();
+  expect((await service.list()).map((b) => b.reason)).toEqual(["auto", "manual", "auto"]);
+});
+
 test("a manual backup is never rotated", async () => {
   const { clock, service } = setup();
   const manual = await service.create("manual");
