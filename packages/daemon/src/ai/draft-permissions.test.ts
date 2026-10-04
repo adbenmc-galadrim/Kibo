@@ -43,6 +43,7 @@ test("grantedFromKeys reads the devkit notation", () => {
     net: ["api.github.com/graphql"],
     secrets: [],
     mcp: ["figma/get_file"],
+    capabilities: [],
   });
   expect(grantedFromKeys(["net:api.github.com", "net:https://api.github.com"]).net).toEqual([
     "api.github.com",
@@ -56,14 +57,25 @@ test("grantedFromKeys never declares a secret nor an unknown key", () => {
   expect(() => grantedFromKeys(["net:http://localhost:3000"])).toThrow("VALIDATION_FAILED");
 });
 
+test("grantedFromKeys reads capabilities and refuses an unknown one", () => {
+  expect(grantedFromKeys(["cap:webgl", "cap:assets", "cap:webgl"]).capabilities).toEqual(["webgl", "assets"]);
+  expect(() => grantedFromKeys(["cap:network"])).toThrow("VALIDATION_FAILED");
+});
+
 test("unionGranted keeps both sides once and the declared secrets", () => {
   const secrets: GrantedPermissions["secrets"] = [{ name: "github", hosts: ["api.github.com"] }];
   expect(
     unionGranted(
-      { ...NO_PERMISSIONS, reads: ["ticket"], secrets },
-      { ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true },
+      { ...NO_PERMISSIONS, reads: ["ticket"], secrets, capabilities: ["webgl"] },
+      { ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true, capabilities: ["webgl", "audio"] },
     ),
-  ).toEqual({ ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true, secrets });
+  ).toEqual({
+    ...NO_PERMISSIONS,
+    reads: ["ticket", "status"],
+    data: true,
+    secrets,
+    capabilities: ["webgl", "audio"],
+  });
 });
 
 test("declareMissing adds declarable permissions and refuses anything else", () => {

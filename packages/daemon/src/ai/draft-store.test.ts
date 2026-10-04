@@ -20,6 +20,7 @@ const draft = (id: string, status: ComponentDraft["status"], updatedAt: number):
   incidents: [{ kind: "removed", path: "evil.ts" }],
   attachments: [],
   revisions: 0,
+  template: "blank",
   createdAt: 1,
   updatedAt,
 });

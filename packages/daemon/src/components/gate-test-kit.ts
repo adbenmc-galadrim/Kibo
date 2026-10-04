@@ -12,6 +12,7 @@ export const granted: GrantedPermissions = {
   net: ["api.github.com/graphql"],
   secrets: [],
   mcp: [],
+  capabilities: [],
 };
 export const instances: Record<string, Instance> = {
   thirdparty: {

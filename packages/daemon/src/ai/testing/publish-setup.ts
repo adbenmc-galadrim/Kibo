@@ -107,6 +107,7 @@ const draftOf = (id: string, mode: "create" | "modify", status: DraftStatus): Co
   incidents: [],
   attachments: [],
   revisions: 0,
+  template: "blank",
   createdAt: 1,
   updatedAt: 1,
 });

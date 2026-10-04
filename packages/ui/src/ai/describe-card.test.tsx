@@ -57,6 +57,7 @@ test("DescribeCard proposes a title and an id, then starts the draft", async () 
       withServer: false,
       description: "Burndown du sprint : tickets",
       formats: ["medium", "large", "half"],
+      template: "blank",
       attachments: [],
     },
   });

@@ -64,7 +64,15 @@ test("a trust preview is a trust target plus market details", () => {
     version: "0.3.0",
     hash: "c".repeat(64),
     origin: "marketplace",
-    permissions: { reads: ["ticket"], writes: [], data: false, net: [], secrets: [], mcp: [] },
+    permissions: {
+      reads: ["ticket"],
+      writes: [],
+      data: false,
+      net: [],
+      secrets: [],
+      mcp: [],
+      capabilities: [],
+    },
     market: { publisherName: "Léa", verified: true, sourceName: "Équipe", newPublisher: true },
   };
   expect(preview.market?.newPublisher).toBe(true);

@@ -109,3 +109,19 @@ test("sizeIssue refuses min above max and a declared format outside the limits",
   expect(sizeIssue({ kind: "widget", formats: ["large", "half"], size: { min: { w: 6, h: 4 } } })).toBeNull();
   expect(sizeIssue({ kind: "widget" })).toBeNull();
 });
+
+test("capabilities and selection are optional manifest fields", () => {
+  const m = ComponentManifest.parse({
+    id: "v",
+    version: "0.1.0",
+    kind: "widget",
+    title: "V",
+    reads: [],
+    writes: [],
+  });
+  expect(m.capabilities).toEqual([]);
+  expect(m.selection).toBe(false);
+  const rich = ComponentManifest.parse({ ...m, capabilities: ["webgl", "assets"], selection: true });
+  expect(rich.capabilities).toEqual(["webgl", "assets"]);
+  expect(ComponentManifest.safeParse({ ...m, capabilities: ["network"] }).success).toBe(false);
+});

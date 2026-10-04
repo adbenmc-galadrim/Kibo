@@ -19,6 +19,7 @@ const d0: ComponentDraft = {
   incidents: [],
   attachments: [],
   revisions: 0,
+  template: "blank",
   createdAt: 1,
   updatedAt: 1,
 };

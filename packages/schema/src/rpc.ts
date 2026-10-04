@@ -2,6 +2,14 @@ import { z } from "zod";
 import { ConfigCommand, type Domain, HostSettings, type WorkspaceConfig } from "./agent";
 import type { AiEvent } from "./ai";
 import { AI_RPC, type AiRpcResult } from "./ai-rpc";
+import {
+  type FilesInfo,
+  MAX_PROJECT_ASSET_BYTES,
+  MAX_UPLOAD_CHUNK_BASE64,
+  type ProjectAsset,
+  ProjectAssetMime,
+  ProjectAssetName,
+} from "./asset";
 import { ComponentCall } from "./call";
 import type { CodeEvent } from "./code";
 import { ProjectCommand } from "./command";
@@ -16,7 +24,7 @@ import {
 } from "./component";
 import type { KiboErrorCode } from "./errors";
 import { IconInput, IconOwner } from "./icon";
-import { NodeId, ProjectKey, Sha256 } from "./ids";
+import { Base64, NodeId, ProjectKey, Sha256 } from "./ids";
 import type { Instance } from "./instance";
 import type { Binding, IntegrationEvent } from "./integrations";
 import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
@@ -165,7 +173,30 @@ export const RpcRequest = z.discriminatedUnion("method", [
     method: z.literal("reportComponentRefusal"),
     projectId: z.string().min(1),
     instanceId: z.string().min(1),
-    kind: z.literal("navigate"),
+    kind: z.enum(["navigate", "focus"]),
+  }),
+  z.object({ method: z.literal("listAssets"), projectId: z.string().min(1) }),
+  z.object({
+    method: z.literal("beginAssetUpload"),
+    projectId: z.string().min(1),
+    name: ProjectAssetName,
+    mime: ProjectAssetMime,
+    size: z.number().int().positive().max(MAX_PROJECT_ASSET_BYTES),
+  }),
+  z.object({
+    method: z.literal("appendAssetUpload"),
+    uploadId: z.string().uuid(),
+    index: z.number().int().nonnegative(),
+    bytes: z.string().min(1).max(MAX_UPLOAD_CHUNK_BASE64).pipe(Base64),
+  }),
+  z.object({ method: z.literal("finishAssetUpload"), uploadId: z.string().uuid() }),
+  z.object({ method: z.literal("cancelAssetUpload"), uploadId: z.string().uuid() }),
+  z.object({ method: z.literal("removeAsset"), projectId: z.string().min(1), name: ProjectAssetName }),
+  z.object({ method: z.literal("getFilesDir"), projectId: z.string().min(1) }),
+  z.object({
+    method: z.literal("setFilesDir"),
+    projectId: z.string().min(1),
+    dir: z.string().min(1).max(1024).nullable(),
   }),
   ...INTEGRATION_RPC,
   ...AI_RPC,
@@ -213,6 +244,14 @@ export type RpcResult = {
   installCli: { path: string };
   cliStatus: { path: string; installed: boolean };
   reportComponentRefusal: null;
+  listAssets: ProjectAsset[];
+  beginAssetUpload: { uploadId: string };
+  appendAssetUpload: { received: number };
+  finishAssetUpload: ProjectAsset;
+  cancelAssetUpload: null;
+  removeAsset: null;
+  getFilesDir: FilesInfo;
+  setFilesDir: FilesInfo;
 } & IntegrationRpcResult &
   AiRpcResult &
   MarketRpcResult &

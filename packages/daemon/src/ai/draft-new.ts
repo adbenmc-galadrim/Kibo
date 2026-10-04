@@ -32,6 +32,7 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     incidents: [],
     attachments: [],
     revisions: 0,
+    template: "blank" as const,
     createdAt: ctx.now,
     updatedAt: ctx.now,
   };

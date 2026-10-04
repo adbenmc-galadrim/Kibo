@@ -22,6 +22,7 @@ test("writes, notes and network are spelled out", () => {
       net: ["api.github.com/graphql"],
       secrets: [],
       mcp: [],
+      capabilities: [],
     }),
   ).toEqual([
     ["Lire les données du projet", "entités : page"],

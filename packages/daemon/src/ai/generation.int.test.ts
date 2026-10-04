@@ -39,6 +39,7 @@ const create: CreateDraftInput = {
   kind: "widget",
   withServer: false,
   description: "Burndown du sprint : tickets restants par jour.",
+  template: "blank",
   attachments: [],
 };
 

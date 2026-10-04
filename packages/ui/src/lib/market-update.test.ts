@@ -28,6 +28,8 @@ const current: ComponentVersionSummary = {
     net: [],
     secrets: [],
     mcp: [],
+    capabilities: [],
+    selection: false,
     configVersion: 0,
     changes: [],
     sdk: 1,

@@ -107,6 +107,9 @@ function dispatch(
       return h.presence(projectId);
     case "sharing.get":
       return h.sharing(projectId);
+    case "assets.list":
+    case "assets.url":
+      throw new KiboError("PERMISSION_DENIED", "project files are not served yet");
     default:
       return h.notes(projectId, call);
   }

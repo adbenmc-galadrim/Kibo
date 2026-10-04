@@ -131,6 +131,9 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
               members: deps.members ?? [],
             }
           : { ...localSyncInfo(deps.doc), access: deps.access() };
+      case "assets.list":
+      case "assets.url":
+        throw new KiboError("INTERNAL", "project files are not mocked yet");
     }
   };
 }

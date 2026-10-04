@@ -16,7 +16,7 @@ const version = (v: string, hash = "a".repeat(64)): RegistryVersion => ({
   origin: "user",
   trust: null,
   approvedHash: null,
-  granted: { reads: ["ticket"], writes: [], data: false, net: [], secrets: [], mcp: [] },
+  granted: { reads: ["ticket"], writes: [], data: false, net: [], secrets: [], mcp: [], capabilities: [] },
   publishedAt: 1,
   autoUpdate: false,
   source: null,

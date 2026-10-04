@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ComponentCall } from "./call";
+import { Capability, Selection } from "./capability";
 import { ComponentFormat } from "./format";
 import { ComponentManifest } from "./manifest";
 import { StatusId } from "./status";
@@ -46,9 +47,16 @@ export const HostToFrame = z.discriminatedUnion("type", [
     theme: Theme,
     surface: Surface,
     format: ComponentFormat.optional(),
+    capabilities: z.array(Capability).optional(),
+    focus: z.boolean().optional(),
+    visible: z.boolean().optional(),
+    selection: Selection.nullable().optional(),
   }),
   z.object({ kibo: z.literal(1), type: z.literal("theme"), theme: Theme }),
   z.object({ kibo: z.literal(1), type: z.literal("changed") }),
+  z.object({ kibo: z.literal(1), type: z.literal("focus"), active: z.boolean() }),
+  z.object({ kibo: z.literal(1), type: z.literal("visibility"), visible: z.boolean() }),
+  z.object({ kibo: z.literal(1), type: z.literal("selection"), selection: Selection.nullable() }),
   Reply,
 ]);
 export type HostToFrame = z.infer<typeof HostToFrame>;
@@ -77,6 +85,8 @@ export const FrameToHost = z.discriminatedUnion("type", [
   z.object({ kibo: z.literal(1), type: z.literal("openView"), componentId: z.string().min(1).max(128) }),
   z.object({ kibo: z.literal(1), type: z.literal("key"), combo: KeyCombo }),
   z.object({ kibo: z.literal(1), type: z.literal("resize"), height: z.number().int().min(0).max(10_000) }),
+  z.object({ kibo: z.literal(1), type: z.literal("focus"), on: z.boolean() }),
+  z.object({ kibo: z.literal(1), type: z.literal("selection"), selection: Selection.nullable() }),
 ]);
 export type FrameToHost = z.infer<typeof FrameToHost>;
 

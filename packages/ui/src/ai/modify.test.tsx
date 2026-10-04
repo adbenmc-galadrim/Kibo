@@ -54,6 +54,7 @@ const draft = (patch: Partial<ComponentDraft>): ComponentDraft => ({
   incidents: [],
   attachments: [],
   revisions: 0,
+  template: "blank",
   createdAt: 1,
   updatedAt: 2,
   ...patch,

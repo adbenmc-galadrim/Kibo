@@ -87,6 +87,8 @@ const version = (v: string, patch: Partial<Version> = {}): Version => ({
     net: [],
     secrets: [],
     mcp: [],
+    capabilities: [],
+    selection: false,
     configVersion: 0,
     changes: [],
     sdk: 1,

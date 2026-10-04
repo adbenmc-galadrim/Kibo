@@ -45,6 +45,7 @@ const draft = (id: string, status: ComponentDraft["status"], componentId: string
   incidents: [],
   attachments: [],
   revisions: 0,
+  template: "blank",
   createdAt: 1,
   updatedAt: 2,
 });

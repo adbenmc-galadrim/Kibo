@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ComponentCall } from "./call";
+import { Capability, capPermission } from "./capability";
 import { COMMAND_WRITES } from "./command";
 import { BuiltinEntityType, ComponentManifest } from "./manifest";
 import { mcpCovered } from "./mcp-rules";
@@ -12,6 +13,7 @@ export const GrantedPermissions = z.object({
   net: z.array(NetRule),
   secrets: ComponentManifest.shape.secrets,
   mcp: z.array(z.string()).default([]),
+  capabilities: z.array(Capability).default([]),
 });
 export type GrantedPermissions = z.infer<typeof GrantedPermissions>;
 
@@ -22,12 +24,13 @@ export const NO_PERMISSIONS: GrantedPermissions = {
   net: [],
   secrets: [],
   mcp: [],
+  capabilities: [],
 };
 
 const unique = <T>(xs: T[]): T[] => [...new Set(xs)];
 
 export function grantedOf(
-  m: Pick<ComponentManifest, "reads" | "writes" | "data" | "net" | "secrets" | "mcp">,
+  m: Pick<ComponentManifest, "reads" | "writes" | "data" | "net" | "secrets" | "mcp" | "capabilities">,
 ): GrantedPermissions {
   return {
     reads: unique(m.reads),
@@ -36,6 +39,7 @@ export function grantedOf(
     net: unique(m.net),
     secrets: m.secrets,
     mcp: unique(m.mcp),
+    capabilities: unique(m.capabilities),
   };
 }
 
@@ -47,6 +51,7 @@ export function permissionList(g: GrantedPermissions): string[] {
     ...g.net.map((r) => `net:${r}`),
     ...g.secrets.flatMap((s) => s.hosts.map((host) => `secret:${s.name}@${host}`)),
     ...g.mcp.map((r) => `mcp:${r}`),
+    ...g.capabilities.map(capPermission),
   ];
 }
 
@@ -86,6 +91,9 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "presence.list":
     case "sharing.get":
       return "read:ticket";
+    case "assets.list":
+    case "assets.url":
+      return capPermission("assets");
   }
 }
 

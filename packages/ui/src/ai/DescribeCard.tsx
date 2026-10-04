@@ -52,6 +52,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
             withServer: edits.withServer,
             description: description.trim(),
             formats: edits.formats,
+            template: "blank",
             attachments,
           },
         }),

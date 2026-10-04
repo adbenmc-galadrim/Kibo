@@ -203,7 +203,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     return { stored, trust: registry.active(ref).trust };
   };
 
-  const reportRefusal = (projectId: string, instanceId: string, kind: "navigate") => {
+  const reportRefusal = (projectId: string, instanceId: string, kind: "navigate" | "focus") => {
     const inst = instanceOf(projectId, instanceId);
     events.record({ projectId, instanceId, ref: inst.component, kind, code: "PERMISSION_DENIED" });
     return null;

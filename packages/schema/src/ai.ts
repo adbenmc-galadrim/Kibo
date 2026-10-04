@@ -35,6 +35,8 @@ export const STARTER_TEXT_MAX = 500;
 export const StarterText = z.string().trim().min(1).max(STARTER_TEXT_MAX);
 
 const Version = ComponentManifest.shape.version;
+export const Template = z.enum(["blank", "3d", "game", "chart", "table"]);
+export type Template = z.infer<typeof Template>;
 export const DraftKind = z.enum(["widget", "view", "both"]);
 export type DraftKind = z.infer<typeof DraftKind>;
 export const DraftComponentId = z.string().regex(/^[a-z][a-z0-9-]{1,39}$/);
@@ -94,6 +96,7 @@ export const ComponentDraft = z.object({
   incidents: z.array(DraftIncident),
   attachments: z.array(DraftAttachment).max(MAX_DRAFT_ATTACHMENTS_TOTAL).default([]),
   revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0),
+  template: Template.default("blank"),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });
@@ -108,6 +111,7 @@ export const StartComponentDraftInput = z.discriminatedUnion("mode", [
     withServer: z.boolean(),
     description: z.string().trim().min(20).max(2000),
     formats: z.array(ComponentFormat).min(1).max(5).optional(),
+    template: Template.default("blank"),
     attachments: DraftAttachments,
   }),
   z.object({
