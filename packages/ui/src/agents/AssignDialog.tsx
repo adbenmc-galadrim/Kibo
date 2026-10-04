@@ -23,15 +23,18 @@ import { Bot } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { canEdit } from "../state/access";
 import { NoFolderAlert, Notice, needsFolder, spaceText, WaitingAlert } from "./AssignAlerts";
+import { assignableProfiles, isDemoProfile } from "./demo-profile";
 import { reasonText } from "./format";
 
 type Props = {
   project: ProjectSnapshot | null;
+  demo?: boolean;
   ticketId: string | null;
   config: WorkspaceConfig | null;
   baseBranch?: string;
@@ -150,11 +153,13 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
                 {profiles.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     <Bot aria-hidden />
-                    {fr.assign.profileOption(
-                      p.name,
-                      fr.agents.modelNames[p.model],
-                      fr.strategiesShort[p.workspace],
-                    )}
+                    {isDemoProfile(p)
+                      ? frAgentsPage.demo.option
+                      : fr.assign.profileOption(
+                          p.name,
+                          fr.agents.modelNames[p.model],
+                          fr.strategiesShort[p.workspace],
+                        )}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -223,6 +228,7 @@ function hasOpenTicket(project: ProjectSnapshot): boolean {
 
 export function AssignDialog({
   project,
+  demo = false,
   ticketId,
   config,
   baseBranch = DEFAULT_BASE_BRANCH,
@@ -233,7 +239,7 @@ export function AssignDialog({
   if (isInbox(project.meta.id))
     return <Notice title={fr.assign.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
   if (!config) return null;
-  const assignable = config.profiles.filter((p) => !p.system);
+  const assignable = assignableProfiles(config.profiles, demo);
   if (assignable.length === 0) {
     return <Notice title={fr.assign.launchTitle} text={fr.assign.noProfile} onClose={onClose} />;
   }

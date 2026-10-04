@@ -98,3 +98,8 @@ export const HelpDialogs = lazyPanel(
   fr.lazy,
   hidden,
 );
+export const TutorialSlot = lazyPanel(
+  () => import("../tutorial/TutorialSlot").then((m) => m.TutorialSlot),
+  fr.lazy,
+  hidden,
+);

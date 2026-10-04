@@ -6,14 +6,41 @@ import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
+import { isDemoProfile } from "./demo-profile";
 
 type Props = { profile: AgentProfile; onSaved: () => void };
 type Patch = Partial<Pick<ProfileInput, "model" | "enabled" | "maxParallel">>;
 
 const PARALLEL = ["1", "2", "3", "4"];
 
+type ParallelProps = { id: string; value: string; onChange(value: string): void };
+
+function ParallelField({ id, value, onChange }: ParallelProps) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={`${id}-parallel`}>{fr.profile.parallel}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id={`${id}-parallel`} className="w-24" aria-describedby={`${id}-parallel-help`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PARALLEL.map((n) => (
+            <SelectItem key={n} value={n}>
+              {n}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p id={`${id}-parallel-help`} className="text-xs text-muted-foreground">
+        {frAgentsPage.systemParallelHelp}
+      </p>
+    </div>
+  );
+}
+
 export function SystemProfileFields({ profile, onSaved }: Props) {
   const id = useId();
+  const demo = isDemoProfile(profile);
   const [model, setModel] = useState<AgentModel>(profile.model);
   const [enabled, setEnabled] = useState(profile.enabled);
   const [parallel, setParallel] = useState(String(profile.maxParallel));
@@ -58,7 +85,11 @@ export function SystemProfileFields({ profile, onSaved }: Props) {
       <div className="grid gap-2">
         <Label htmlFor={`${id}-model`}>{fr.profile.model}</Label>
         <Select value={model} onValueChange={pickModel}>
-          <SelectTrigger id={`${id}-model`} className="w-full">
+          <SelectTrigger
+            id={`${id}-model`}
+            className="w-full"
+            aria-describedby={demo ? `${id}-model-help` : undefined}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -69,25 +100,20 @@ export function SystemProfileFields({ profile, onSaved }: Props) {
             ))}
           </SelectContent>
         </Select>
+        {demo && (
+          <p id={`${id}-model-help`} className="text-xs text-muted-foreground">
+            {frAgentsPage.demo.modelNoEffect}
+          </p>
+        )}
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor={`${id}-parallel`}>{fr.profile.parallel}</Label>
-        <Select value={parallel} onValueChange={pickParallel}>
-          <SelectTrigger id={`${id}-parallel`} className="w-24" aria-describedby={`${id}-parallel-help`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PARALLEL.map((n) => (
-              <SelectItem key={n} value={n}>
-                {n}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p id={`${id}-parallel-help`} className="text-xs text-muted-foreground">
-          {frAgentsPage.systemParallelHelp}
-        </p>
-      </div>
+      {demo ? (
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">{fr.profile.parallel}</span>
+          <p className="text-sm text-muted-foreground">{frAgentsPage.demo.parallel}</p>
+        </div>
+      ) : (
+        <ParallelField id={id} value={parallel} onChange={pickParallel} />
+      )}
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={`${id}-enabled`}>{fr.profile.enabled}</Label>
         <Switch id={`${id}-enabled`} checked={enabled} onCheckedChange={toggle} />

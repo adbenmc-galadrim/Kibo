@@ -11,6 +11,7 @@ import { Bot } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
+import { isDemoProfile, profileLabel } from "./demo-profile";
 import { formatTokens } from "./format";
 import { ProfileSheet } from "./ProfileSheet";
 import { permissionModeLabel } from "./permission-mode";
@@ -33,6 +34,7 @@ function ProfileCard({
   onEdit: () => void;
 }) {
   const f = fr.agentsPage.fields;
+  const label = profileLabel(profile);
   const fields: [string, string][] = [
     [f.workspace, fr.strategiesShort[profile.workspace]],
     [f.permissions, permissionModeLabel(profile.permissionMode)],
@@ -41,7 +43,7 @@ function ProfileCard({
   ];
   return (
     <article
-      aria-label={profile.name}
+      aria-label={label}
       className="relative grid gap-3 rounded-lg border bg-card p-4 hover:bg-accent/40"
     >
       <header className="flex items-center gap-3">
@@ -52,16 +54,19 @@ function ProfileCard({
           <h3 className="font-mono text-sm font-semibold">
             <button
               type="button"
-              aria-label={fr.agentsPage.editProfile(profile.name)}
+              aria-label={fr.agentsPage.editProfile(label)}
               className="after:absolute after:inset-0"
               onClick={onEdit}
             >
-              {profile.name}
+              {label}
             </button>
           </h3>
           <span className="text-2xs text-muted-foreground">
             {fr.agentsPage.modelLine(fr.agents.modelNames[profile.model])}
           </span>
+          {isDemoProfile(profile) && (
+            <span className="text-2xs text-muted-foreground">{frAgentsPage.demo.noTokens}</span>
+          )}
         </div>
         {profile.system && (
           <Badge variant="secondary" className="text-3xs">

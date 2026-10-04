@@ -19,8 +19,9 @@ import { frCreations } from "../i18n/fr-creations";
 import { AiDraftPanel } from "./AiDraftPanel";
 import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
+import { DemoAgentNote } from "./DemoAgentNote";
 import { keepEscapeInReviseForm } from "./revise-escape";
-import { useAiAvailability } from "./use-ai-availability";
+import { useGeneratorAvailability } from "./use-demo-project";
 
 export type ModifyTarget = { id: string; title: string; version: string; origin: "user" | "ai" };
 export { modifiable } from "../components-page/rows";
@@ -28,6 +29,7 @@ export { modifiable } from "../components-page/rows";
 type Props = {
   component: ModifyTarget | null;
   draftId?: string;
+  projectId?: string | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 };
@@ -68,14 +70,15 @@ function ResumeBox({ draft, onResume }: { draft: ComponentDraft; onResume: () =>
 
 type FormProps = {
   componentId: string;
+  projectId: string | null;
   onStarted: (draftId: string) => void;
   onConflict: () => Promise<boolean>;
   onCancel: () => void;
 };
 
-function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps) {
+function ModifyForm({ componentId, projectId, onStarted, onConflict, onCancel }: FormProps) {
   const id = useId();
-  const { ready, block } = useAiAvailability("generateur");
+  const { ready, block, demo } = useGeneratorAvailability(projectId);
   const requestRef = useRef<HTMLTextAreaElement>(null);
   const [request, setRequest] = useState("");
   const [attachments, setAttachments] = useState<DraftAttachmentInput[]>([]);
@@ -91,7 +94,13 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
     try {
       const draft = await client.rpc({
         method: "startComponentDraft",
-        draft: { mode: "modify", id: componentId, description: text, attachments },
+        draft: {
+          mode: "modify",
+          id: componentId,
+          description: text,
+          attachments,
+          ...(projectId ? { projectId } : {}),
+        },
       });
       onStarted(draft.id);
     } catch (err) {
@@ -121,6 +130,7 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
         disabled={busy}
         pasteFrom={requestRef}
       />
+      {demo && <DemoAgentNote />}
       {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
       {error && (
         <p role="alert" className="text-xs text-destructive">
@@ -139,7 +149,13 @@ function ModifyForm({ componentId, onStarted, onConflict, onCancel }: FormProps)
   );
 }
 
-export function ModifyWithAiDialog({ component, draftId: initialDraftId, open, onOpenChange }: Props) {
+export function ModifyWithAiDialog({
+  component,
+  draftId: initialDraftId,
+  projectId = null,
+  open,
+  onOpenChange,
+}: Props) {
   const [draftId, setDraftId] = useState<string | null>(initialDraftId ?? null);
   const { active, error, refresh } = useActiveDraft(initialDraftId || !component ? null : component.id);
   const scope = useApprovalScope();
@@ -151,6 +167,7 @@ export function ModifyWithAiDialog({ component, draftId: initialDraftId, open, o
     return (
       <ModifyForm
         componentId={component.id}
+        projectId={projectId}
         onStarted={setDraftId}
         onConflict={async () => (await refresh()) !== null}
         onCancel={() => onOpenChange(false)}

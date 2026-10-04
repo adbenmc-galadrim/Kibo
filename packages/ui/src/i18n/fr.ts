@@ -23,6 +23,7 @@ export const fr = {
     iconAlt: (name: string) => `Image du workspace ${name}`,
   },
   nav: {
+    demo: "Démo",
     breadcrumb: "Fil d'Ariane",
     overview: "Vue d'ensemble",
     mine: "Mes tickets",

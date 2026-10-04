@@ -188,6 +188,30 @@ test("system profiles are never offered for a ticket", () => {
   expect(screen.getByText("Crée d'abord un profil d'agent dans la page Agents.")).toBeTruthy();
 });
 
+test("in the demo project the demo agent is offered first and preselected, with its honesty line", async () => {
+  const config = configFixture();
+  const withSystem = { ...config, profiles: [...systemProfilesFixture, ...config.profiles] };
+  render(<AssignDialog project={kiboProject()} demo ticketId="t14" config={withSystem} onClose={() => {}} />);
+  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toBe(
+    "Agent de démonstration · aucun token consommé",
+  );
+  await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
+  await waitFor(() =>
+    expect(calls.at(-1)).toMatchObject({ method: "assignAgent", ticketId: "t14", profileId: "demo" }),
+  );
+});
+
+test("the demo agent alone is enough in the demo project, and never shows elsewhere", () => {
+  const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
+  const view = render(
+    <AssignDialog project={kiboProject()} demo ticketId="t14" config={onlySystem} onClose={() => {}} />,
+  );
+  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toContain("Agent de démonstration");
+  view.unmount();
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={onlySystem} onClose={() => {}} />);
+  expect(screen.queryByText(/Agent de démonstration/)).toBeNull();
+});
+
 const provisional = (): TicketView => ({
   id: "p9",
   key: null,

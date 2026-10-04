@@ -35,7 +35,7 @@ mock.module("../api", () => ({
       calls.push(req);
       if (req.method === "listComponents") return Promise.resolve(components);
       if (req.method === "listDrafts") return Promise.resolve([]);
-      if (req.method === "listComponentDrafts") return Promise.resolve([]);
+      if (req.method === "listComponentDrafts" || req.method === "listProjects") return Promise.resolve([]);
       if (req.method === "getRuntimeInfo") return runtime();
       if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
       if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);

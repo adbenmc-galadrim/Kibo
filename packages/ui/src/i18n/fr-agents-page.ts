@@ -27,6 +27,13 @@ export const frAgentsPage = {
   deleteHelp: "Ses runs passés restent dans l'historique.",
   deleteConfirm: "Supprimer",
   journalMissing: "Journal indisponible pour ce run.",
+  demo: {
+    name: "Agent de démonstration",
+    noTokens: "aucun token consommé",
+    option: "Agent de démonstration · aucun token consommé",
+    parallel: "Un ticket à la fois",
+    modelNoEffect: "Sans effet : l'agent de démonstration rejoue un scénario, il n'appelle aucun modèle.",
+  },
   systemParallelHelp: "De 1 à 4 runs en même temps, dans la limite des places de la machine.",
   permissionModes: {
     plan: "Lecture seule (plan)",

@@ -16,4 +16,5 @@ const systemProfile = (id: string, permissionMode: AgentProfile["permissionMode"
 export const systemProfilesFixture: AgentProfile[] = [
   systemProfile("assistant", "default"),
   systemProfile("generateur", "acceptEdits"),
+  systemProfile("demo", "acceptEdits"),
 ];

@@ -8,18 +8,21 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
+import { DemoAgentNote } from "./DemoAgentNote";
 import { type DescribeEdits, DescribeFields, initialEdits } from "./DescribeFields";
 import { formatProblem } from "./FormatsField";
 import { slugify, suggestTitle } from "./slug";
-import { useAiAvailability } from "./use-ai-availability";
+import { useGeneratorAvailability } from "./use-demo-project";
 
 const MIN = 20;
 const MAX = 2000;
 
-export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft) => void }) {
+type Props = { projectId?: string | null; onStarted: (draft: ComponentDraft) => void };
+
+export function DescribeCard({ projectId = null, onStarted }: Props) {
   const id = useId();
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
-  const { ready, block } = useAiAvailability("generateur");
+  const { ready, block, demo } = useGeneratorAvailability(projectId);
   const [description, setDescription] = useState("");
   const [edits, setEdits] = useState<DescribeEdits>(initialEdits);
   const [attachments, setAttachments] = useState<DraftAttachmentInput[]>([]);
@@ -54,6 +57,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
             formats: edits.formats,
             template: edits.template,
             attachments,
+            ...(projectId ? { projectId } : {}),
           },
         }),
       );
@@ -101,6 +105,7 @@ export function DescribeCard({ onStarted }: { onStarted: (draft: ComponentDraft)
       />
       <p className="text-xs text-muted-foreground">{fr.ai.create.describeHelp}</p>
       {length > 0 && length < MIN && <p className="text-xs text-muted-foreground">{fr.ai.create.tooShort}</p>}
+      {demo && <DemoAgentNote />}
       {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
       {error && (
         <p role="alert" className="text-xs text-destructive">

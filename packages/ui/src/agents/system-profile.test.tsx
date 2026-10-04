@@ -122,3 +122,27 @@ test("with only system profiles the page still invites to create a profile", () 
   ).toBeTruthy();
   expect(screen.getByRole("article", { name: "assistant" })).toBeTruthy();
 });
+
+test("the demo profile shows as Agent de démonstration, spends no token and has no parallel choice", async () => {
+  show();
+  const card = within(screen.getByRole("article", { name: "Agent de démonstration" }));
+  expect(card.getByText("aucun token consommé")).toBeTruthy();
+  expect(card.getByText("Système")).toBeTruthy();
+  expect(
+    within(screen.getByRole("article", { name: "generateur" })).queryByText("aucun token consommé"),
+  ).toBeNull();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Modifier le profil Agent de démonstration" }));
+  expect(sheet().getByText("Profil Agent de démonstration")).toBeTruthy();
+  expect(sheet().queryByRole("combobox", { name: "Runs en parallèle (profil)" })).toBeNull();
+  expect(sheet().getByText("Un ticket à la fois")).toBeTruthy();
+  expect(sheet().getByRole("combobox", { name: "Modèle" })).toBeTruthy();
+  expect(sheet().getByText(/^Sans effet/)).toBeTruthy();
+});
+
+test("the generateur sheet keeps its parallel choice and no demo mention", async () => {
+  show();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Modifier le profil generateur" }));
+  expect(sheet().getByRole("combobox", { name: "Runs en parallèle (profil)" })).toBeTruthy();
+  expect(sheet().queryByText(/^Sans effet/)).toBeNull();
+});

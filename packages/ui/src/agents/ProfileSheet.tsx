@@ -18,6 +18,7 @@ import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { DeleteProfileButton } from "./DeleteProfileButton";
+import { profileLabel } from "./demo-profile";
 import type { GuidelineDraft } from "./GuidelineRow";
 import { ProfileGuidelines } from "./ProfileGuidelines";
 import { permissionModeLabel } from "./permission-mode";
@@ -119,7 +120,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
       <Sheet open onOpenChange={(o) => !o && onClose()}>
         <SheetContent className="w-[520px] overflow-y-auto sm:max-w-[520px]">
           <SheetHeader>
-            <SheetTitle>{fr.profile.editTitle(profile.name)}</SheetTitle>
+            <SheetTitle>{fr.profile.editTitle(profileLabel(profile))}</SheetTitle>
           </SheetHeader>
           <SystemProfileFields profile={profile} onSaved={onClose} />
         </SheetContent>

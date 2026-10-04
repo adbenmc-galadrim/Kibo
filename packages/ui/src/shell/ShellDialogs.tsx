@@ -118,12 +118,15 @@ export function ShellDialogs({
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
-  const helpOpened = useOpened(state.about || state.whatsNew || state.shortcutsHelp || state.report);
+  const helpOpened = useOpened(
+    state.about || state.whatsNew || state.shortcutsHelp || state.report || state.tutorial,
+  );
   const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
   const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
   const doomedProject = state.deleteProject
     ? (projects.find((x) => x.id === state.deleteProject) ?? null)
     : null;
+  const assignProject = state.assign?.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project;
   const inbox = snapshots.get(INBOX_ID);
   const filing = inbox?.tickets.find((x) => x.id === state.fileTicket?.ticketId) ?? null;
   const doomed =
@@ -230,7 +233,8 @@ export function ShellDialogs({
       )}
       {state.assign && (
         <AssignDialog
-          project={state.assign.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project}
+          project={assignProject}
+          demo={projects.some((x) => x.id === assignProject?.meta.id && x.demo)}
           ticketId={state.assign.ticketId}
           config={config}
           onClose={() => set({ assign: null })}
@@ -278,7 +282,7 @@ export function ShellDialogs({
           onOpenInTab={(edit) => p.onOpenFileTab(preview, edit)}
         />
       )}
-      {helpOpened && <HelpDialogs state={state} set={set} />}
+      {helpOpened && <HelpDialogs state={state} set={set} onOpen={(t) => p.onOpenTarget(t, false)} />}
     </>
   );
 }

@@ -126,7 +126,7 @@ export function CreateComponentDialog({
           <>
             <ActiveDraftsBanner onResume={setCurrent} onOpenCreations={onOpenCreations} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <DescribeCard onStarted={(d) => setCurrent(d.id)} />
+              <DescribeCard projectId={target?.projectId ?? null} onStarted={(d) => setCurrent(d.id)} />
               <CodeColumn />
             </div>
             <DraftStepper current={1} />

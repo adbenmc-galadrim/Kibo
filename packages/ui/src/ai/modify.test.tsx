@@ -15,6 +15,7 @@ const ok = {
   profiles: { assistant: true, generateur: true },
 };
 let drafts: ComponentDraft[] = [];
+let demoProject = false;
 let start: () => Promise<unknown> = async () => ({ id: DRAFT, status: "generating" });
 
 mock.module("../api", () => ({
@@ -23,6 +24,7 @@ mock.module("../api", () => ({
       calls.push(req);
       if (req.method === "getAiStatus") return ok;
       if (req.method === "listComponentDrafts") return drafts;
+      if (req.method === "listProjects") return [{ id: "p", demo: demoProject }];
       if (req.method === "getComponentDraft")
         return draftFixture({ id: req.draftId, mode: "modify", baseVersion: "0.1.0", status: "review" });
       return start();
@@ -68,6 +70,7 @@ test("only user and ai components can be modified", () => {
 beforeEach(() => {
   calls.length = 0;
   drafts = [];
+  demoProject = false;
   start = async () => ({ id: DRAFT, status: "generating" });
   Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
 });
@@ -179,4 +182,16 @@ test("a draft id opens its panel directly, even without the component", async ()
   await panelOf(ACTIVE);
   expect(screen.getByRole("dialog", { name: "Modifier avec l'IA" })).toBeTruthy();
   expect(calls.some((c) => c.method === "listComponentDrafts")).toBe(false);
+});
+
+test("the change request carries the current project, and the demo project says no token is spent", async () => {
+  demoProject = true;
+  render(<ModifyWithAiDialog component={target} projectId="p" open onOpenChange={() => {}} />);
+  expect(await screen.findByText("Agent de démonstration · aucun token consommé")).toBeTruthy();
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Ce qu'il faut changer"), "Ajoute un titre");
+  await user.click(screen.getByRole("button", { name: "Lancer l'agent" }));
+  expect(calls.find((c) => c.method === "startComponentDraft")).toMatchObject({
+    draft: { mode: "modify", id: "burndown", projectId: "p" },
+  });
 });

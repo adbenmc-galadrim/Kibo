@@ -260,4 +260,16 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
+
+  test("the whole tutorial and its texts are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/tutorial/TutorialSlot.tsx",
+      "/x/packages/ui/src/tutorial/use-tutorial.ts",
+      "/x/packages/ui/src/tutorial/TutorialOffer.tsx",
+      "/x/packages/ui/src/tutorial/TutorialPanel.tsx",
+      "/x/packages/ui/src/tutorial/tutorial-steps.ts",
+      "/x/packages/ui/src/i18n/fr-tutorial.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
 });

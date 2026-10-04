@@ -26,7 +26,7 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
-import { CommandPalette } from "./lazy-dialogs";
+import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
 import { ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
@@ -265,6 +265,13 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               onOpenTarget={go}
               onOpenFileTab={openFileTab}
               onCloseProject={closeProject}
+            />
+            <TutorialSlot
+              projects={projects}
+              snapshots={snapshots}
+              activeTarget={active}
+              onOpen={(t) => go(t)}
+              onDeleteDemo={(projectId) => set({ deleteProject: projectId })}
             />
             {views.dialog}
             {paletteOpened && (

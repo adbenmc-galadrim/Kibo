@@ -154,3 +154,35 @@ test("a 120-character folder wraps instead of overflowing (screen 108)", async (
   expect(text.className).toContain("break-all");
   expect(text.closest("[data-slot=dialog-description]")?.className).toContain("min-w-0");
 });
+
+const demo: ProjectSummary = {
+  ...project,
+  id: "demo",
+  key: "DEMO",
+  name: "Démo Kibo",
+  folder: null,
+  demo: true,
+};
+
+test("the demo project is deleted in one click, without typing its name", async () => {
+  const h = handlers();
+  render(<DeleteProjectDialog project={demo} snapshot={local()} activeRuns={0} {...h} />);
+  expect(screen.getByRole("dialog", { name: "Supprimer le projet de démonstration ?" })).toBeTruthy();
+  expect(screen.queryByRole("textbox")).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Supprimer la démo" }));
+  await waitFor(() => expect(h.onDeleted).toHaveBeenCalledWith("demo"));
+  expect(calls).toEqual([{ method: "deleteProject", projectId: "demo" }]);
+});
+
+test("active runs still block the demo deletion, and a refusal is explained", async () => {
+  const h = handlers();
+  const { unmount } = render(<DeleteProjectDialog project={demo} snapshot={local()} activeRuns={1} {...h} />);
+  expect(screen.getByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Supprimer la démo" })).toBeNull();
+  unmount();
+  fail = new KiboError("CONFLICT", "runs");
+  render(<DeleteProjectDialog project={demo} snapshot={local()} activeRuns={0} {...h} />);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Supprimer la démo" }));
+  expect((await screen.findByRole("alert")).textContent).toStartWith("Impossible de supprimer le projet.");
+  expect(h.onDeleted).not.toHaveBeenCalled();
+});

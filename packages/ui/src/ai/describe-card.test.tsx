@@ -232,3 +232,51 @@ test("pasting an image into the description attaches it", async () => {
   });
   expect(await screen.findByRole("img", { name: "image.png" })).toBeTruthy();
 });
+
+const noClaude = { ...aiReady, available: false, reason: "missing" as const, loggedIn: null, version: null };
+const projectsWith = (demo: boolean) => [
+  {
+    id: "p",
+    key: "DEMO",
+    name: "Démo Kibo",
+    folder: null,
+    color: "#14B8A6",
+    counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
+    demo,
+  },
+];
+
+test("the card sends the current project with the draft", async () => {
+  answer = (req) =>
+    req.method === "getAiStatus"
+      ? aiReady
+      : req.method === "listProjects"
+        ? projectsWith(false)
+        : req.method === "startComponentDraft"
+          ? draftFixture({})
+          : null;
+  render(<DescribeCard projectId="p" onStarted={() => {}} />);
+  const user = userEvent.setup();
+  await user.type(await screen.findByLabelText(describeLabel), "Burndown du sprint : tickets");
+  await user.click(screen.getByRole("button", { name: generateName }));
+  expect(startRequest()).toMatchObject({ mode: "create", projectId: "p" });
+  expect(screen.queryByText("Agent de démonstration · aucun token consommé")).toBeNull();
+});
+
+test("in the demo project the card stays active without claude and says no token is spent", async () => {
+  answer = (req) =>
+    req.method === "getAiStatus" ? noClaude : req.method === "listProjects" ? projectsWith(true) : null;
+  render(<DescribeCard projectId="p" onStarted={() => {}} />);
+  expect(await screen.findByText("Agent de démonstration · aucun token consommé")).toBeTruthy();
+  await userEvent.setup().type(screen.getByLabelText(describeLabel), "Burndown du sprint : tickets");
+  expect(screen.getByRole("button", { name: generateName }).hasAttribute("disabled")).toBe(false);
+  expect(screen.queryByText("claude introuvable")).toBeNull();
+});
+
+test("outside the demo project a missing claude still blocks the card", async () => {
+  answer = (req) =>
+    req.method === "getAiStatus" ? noClaude : req.method === "listProjects" ? projectsWith(false) : null;
+  render(<DescribeCard projectId="p" onStarted={() => {}} />);
+  expect(await screen.findByText("claude introuvable")).toBeTruthy();
+  expect(screen.getByRole("button", { name: generateName }).hasAttribute("disabled")).toBe(true);
+});
