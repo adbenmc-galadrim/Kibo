@@ -101,6 +101,8 @@ const allDaemons = [
     spec: /conversation\.spec\.ts/,
     scenario: "conversation",
   },
+  { name: "widgets-dark", scheme: "dark", port: 4429, spec: /widgets\.spec\.ts/, scenario: "question" },
+  { name: "widgets-light", scheme: "light", port: 4430, spec: /widgets\.spec\.ts/, scenario: "question" },
   { name: "graph-dark", scheme: "dark", port: 4433, spec: /graph\.spec\.ts/, scenario: "question" },
   { name: "graph-light", scheme: "light", port: 4434, spec: /graph\.spec\.ts/, scenario: "question" },
 ] as const;

@@ -156,6 +156,7 @@
       "name": "@kibo/e2e",
       "version": "0.0.0",
       "devDependencies": {
+        "@kibo/sdk": "workspace:*",
         "@kibo/sync-server": "workspace:*",
         "@kibo/trust": "workspace:*",
         "@playwright/test": "1.55.0",
