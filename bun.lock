@@ -385,6 +385,13 @@
         "@types/bun": "1.4.2",
       },
     },
+    "scripts/install": {
+      "name": "@kibo/install",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@types/bun": "1.4.2",
+      },
+    },
   },
   "overrides": {
     "@types/node": "26.6.2",
@@ -655,6 +662,8 @@
     "@kibo/dogfood": ["@kibo/dogfood@workspace:scripts/dogfood"],
 
     "@kibo/e2e": ["@kibo/e2e@workspace:e2e"],
+
+    "@kibo/install": ["@kibo/install@workspace:scripts/install"],
 
     "@kibo/schema": ["@kibo/schema@workspace:packages/schema"],
 
