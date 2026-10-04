@@ -21,6 +21,7 @@ describe("every template scaffolds a component that passes validation", () => {
       });
       const report = await validateComponent(dir, { toolchain: DEV_TOOLCHAIN });
       expect(report.permissions.missing).toEqual([]);
+      expect(report.permissions.unused).toEqual([]);
       expect(report.ok).toBe(true);
     }, 240_000);
   }
