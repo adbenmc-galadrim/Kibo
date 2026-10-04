@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { acceptCompletion, currentCompletions } from "@codemirror/autocomplete";
 import type { TransactionSpec } from "@codemirror/state";
-import { runScopeHandlers } from "@codemirror/view";
+import { type EditorView, runScopeHandlers } from "@codemirror/view";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { DEMO_NOTE_AGES, DEMO_NOTES } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 import { editorView, listed, mount, seed, setup } from "./notes.test-helper";
@@ -308,20 +308,47 @@ test("the toolbar formats the selection and ⌘B, ⌘I, ⌘E are bound", async (
   expect(text()).toBe("a ***`b`***");
 });
 
-test("a bubble menu follows a non-empty selection and formats it", async () => {
+const withFocus = (view: EditorView) => {
+  let focused = false;
+  Object.defineProperty(view, "hasFocus", { configurable: true, get: () => focused });
+  view.focus = () => {
+    focused = true;
+  };
+  return (next: boolean) => {
+    focused = next;
+    view.dispatch({});
+  };
+};
+
+test("a bubble menu shows on a focused non-empty selection, survives its own clicks and hides on blur", async () => {
   setup("view");
   await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
   await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
   const { view, press, edit } = await blurredEditor();
+  const setFocus = withFocus(view);
   const bubbleName = { name: "Mise en forme de la sélection" };
+  const bubbleShown = () => screen.queryByRole("toolbar", bubbleName) !== null;
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
   edit({ changes: { from: 0, to: view.state.doc.length, insert: "un mot" }, selection: { anchor: 0 } });
-  expect(screen.queryByRole("toolbar", bubbleName)).toBeNull();
+  setFocus(true);
+  await settle();
+  expect(bubbleShown()).toBe(false);
+  setFocus(false);
   edit({ selection: { anchor: 3, head: 6 } });
+  await settle();
+  expect(bubbleShown()).toBe(false);
+  setFocus(true);
   const bubble = await screen.findByRole("toolbar", bubbleName);
-  await press(within(bubble).getByRole("button", { name: "Barré" }));
+  const strike = within(bubble).getByRole("button", { name: "Barré" });
+  const down = createEvent.mouseDown(strike);
+  fireEvent(strike, down);
+  expect(down.defaultPrevented).toBe(true);
+  await press(strike);
   expect(view.state.doc.toString()).toBe("un ~~mot~~");
-  edit({ selection: { anchor: 0 } });
-  await waitFor(() => expect(screen.queryByRole("toolbar", bubbleName)).toBeNull());
+  await settle();
+  expect(bubbleShown()).toBe(true);
+  setFocus(false);
+  await waitFor(() => expect(bubbleShown()).toBe(false));
 });
 
 test("typing / at the start of a line opens the block menu, filtered and applied", async () => {

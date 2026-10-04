@@ -19,7 +19,7 @@ const fromValue = Annotation.define<boolean>();
 
 const bubbleAnchor = (view: EditorView, frame: HTMLElement): BubbleAnchor | null => {
   const { from, to } = view.state.selection.main;
-  if (from === to) return null;
+  if (from === to || !view.hasFocus) return null;
   const coords = view.coordsAtPos(from);
   if (!coords) return { left: 0, top: 0 };
   const box = frame.getBoundingClientRect();
@@ -66,7 +66,7 @@ export function MarkdownEditor({ value, onChange }: Props) {
             if (u.docChanged && !u.transactions.some((t) => t.annotation(fromValue))) {
               change.current(u.state.doc.toString());
             }
-            if (u.selectionSet || u.docChanged || u.geometryChanged) {
+            if (u.selectionSet || u.docChanged || u.geometryChanged || u.focusChanged) {
               u.view.requestMeasure({
                 key: bubbleMeasure,
                 read: (v) => (frame.current ? bubbleAnchor(v, frame.current) : null),
