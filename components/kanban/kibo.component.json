@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "kind": "both",
   "formats": ["large", "half", "full"],
+  "size": { "min": { "w": 6, "h": 4 } },
   "title": "Kanban",
   "description": "Tickets par statut, glisser-déposer",
   "reads": ["ticket", "status", "run", "ci_run"],

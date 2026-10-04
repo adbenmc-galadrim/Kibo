@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { BUILTIN_IDS } from "@kibo/schema";
+import { BUILTIN_IDS, sizeIssue, sizeLimitsOf } from "@kibo/schema";
 import {
   AppWindow,
   Blocks,
@@ -55,4 +55,18 @@ test("graph, notes and the MCP source are built-ins with their icons", () => {
   expect(componentIcon("graph@1.0.0")).toBe(Network);
   expect(componentIcon("notes@1.0.0")).toBe(FileText);
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([...BUILTIN_IDS]);
+});
+
+test("every built-in declares a size minimum that fits its formats", () => {
+  const minimums = Object.fromEntries(
+    BUILTIN_COMPONENTS.map((c) => [c.manifest.id, sizeLimitsOf(c.manifest).min]),
+  );
+  expect(minimums).toEqual({
+    kanban: { w: 6, h: 4 },
+    tickets: { w: 4, h: 3 },
+    graph: { w: 3, h: 3 },
+    notes: { w: 4, h: 3 },
+    "mcp-source": { w: 3, h: 2 },
+  });
+  for (const c of BUILTIN_COMPONENTS) expect(sizeIssue(c.manifest)).toBeNull();
 });
