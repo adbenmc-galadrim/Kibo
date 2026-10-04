@@ -30,11 +30,11 @@ export function createHookSink({ live, tasks, registry }: HookSinkDeps): HookSin
     receive(runId, payload, toolInput) {
       registry.apply(runId, { type: "hook", payload });
       if (payload.event !== "PreToolUse") return null;
-      const guards = [tasks.get(runId)?.guard, demoRunGuard(registry.get(runId))].filter(
-        (g): g is ToolGuard => g !== undefined && g !== null,
-      );
       const call = { tool: payload.tool ?? "", input: toolInput ?? null };
-      const decisions = guards.map((guard) => decide(runId, guard, call));
+      const decisions = [
+        tasks.get(runId)?.guard,
+        (c: Parameters<ToolGuard>[0]) => demoRunGuard(registry.get(runId))?.(c) ?? null,
+      ].flatMap((guard) => (guard ? [decide(runId, guard, call)] : []));
       return decisions.find((d) => d?.decision === "deny") ?? decisions.find((d) => d !== null) ?? null;
     },
   };
