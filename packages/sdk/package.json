@@ -10,6 +10,7 @@
     "./conformance-overflow": "./src/conformance-overflow.ts",
     "./fixtures": "./src/fixtures.ts",
     "./sandbox": "./src/sandbox.tsx",
+    "./key-guard": "./src/key-guard.ts",
     "./server": "./src/server.ts",
     "./adapter": "./src/adapter.ts",
     "./migrations": "./src/migrations.ts",

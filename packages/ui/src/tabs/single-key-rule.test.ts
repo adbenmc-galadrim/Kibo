@@ -4,8 +4,9 @@ import { resolve } from "node:path";
 
 const repo = resolve(import.meta.dir, "../../../..");
 const ALLOWED = new Set([
-  "packages/ui/src/tabs/key-guard.ts",
-  "packages/ui/src/tabs/key-guard.test.ts",
+  "packages/sdk/src/key-guard.ts",
+  "packages/sdk/src/key-guard.test.ts",
+  "packages/sdk/src/sandbox.test.tsx",
   "packages/ui/src/tabs/single-key-rule.test.ts",
   "packages/ui/src/shell/PairingScreen.tsx",
   "packages/ui/src/shell/pairing-screen.test.tsx",
