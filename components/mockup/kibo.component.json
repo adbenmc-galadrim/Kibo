@@ -1,0 +1,23 @@
+{
+  "id": "mockup",
+  "version": "1.0.0",
+  "kind": "both",
+  "formats": ["medium", "large", "half", "full"],
+  "size": { "min": { "w": 3, "h": 3 } },
+  "title": "Maquette",
+  "description": "Affiche un cadre Figma ou un board Penpot et les tickets qui y sont liés",
+  "reads": ["ticket"],
+  "writes": [],
+  "capabilities": ["design"],
+  "configSchema": {
+    "frame": {
+      "type": "string",
+      "nullable": true,
+      "default": null,
+      "frame": true,
+      "label": "Cadre",
+      "help": "Colle l'URL d'un cadre Figma ou d'un board Penpot."
+    },
+    "fit": { "enum": ["contain", "width"], "default": "contain", "label": "Ajustement" }
+  }
+}

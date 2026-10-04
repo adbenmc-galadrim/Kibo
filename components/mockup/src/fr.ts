@@ -1,0 +1,15 @@
+export const fr = {
+  empty: "Colle l'URL d'un cadre Figma ou d'un board Penpot dans les réglages du widget.",
+  notConnected: "Connecte Figma ou Penpot dans Paramètres › Intégrations.",
+  noThumbnail: "Aucun aperçu : ouvre le fichier dans Penpot pour le générer.",
+  failed: "Maquette indisponible.",
+  loading: "Chargement de la maquette…",
+  stale: "Périmé",
+  offline: "Hors ligne",
+  refresh: "Actualiser",
+  open: (provider: "figma" | "penpot") => (provider === "figma" ? "Ouvrir dans Figma" : "Ouvrir dans Penpot"),
+  provider: { figma: "Figma", penpot: "Penpot" } as const,
+  linked: "Tickets liés",
+  noLinked: "Aucun ticket lié à ce cadre.",
+  ticket: (key: string, title: string) => `${key} · ${title}`,
+};
