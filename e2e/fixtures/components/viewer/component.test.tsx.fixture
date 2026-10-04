@@ -1,0 +1,5 @@
+import { runConformance } from "@kibo/sdk/conformance";
+import manifest from "./kibo.component.json";
+import { Component } from "./ui";
+
+runConformance({ manifest, Component });
