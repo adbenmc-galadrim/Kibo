@@ -128,6 +128,7 @@ test("the format table gives cells and pixels at 1200 px and marks the declared 
   expect(table).toContain("| half | Demi-page | 12 × 6 | ≈ 1200 × 560 px | non |");
   expect(table).toContain("| full | Plein écran | 12 × 9 | ≈ 1200 × 848 px | oui |");
   expect(SKILL).toContain("colonne ≈ 85 px");
+  expect(SKILL).toContain("toute taille entre ses bornes");
 });
 
 test("revisePrompt carries the feedback, the new images and the test order", () => {

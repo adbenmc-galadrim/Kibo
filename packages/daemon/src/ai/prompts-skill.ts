@@ -63,6 +63,7 @@ Chaque argument de \`useEntities\`, \`sdk.list\`, \`sdk.run\`, \`sdk.fetch\` est
 
 Un tableau de bord est une grille de ${GRID_COLUMNS} colonnes ; à ${REFERENCE_WIDTH} px de large, une colonne ≈ ${Math.round(COLUMN)} px, une rangée ${ROW} px, un écart ${GAP} px.
 Le composant s'affiche dans chacun de ses formats déclarés (tableau en fin de fichier) et doit rester lisible dans tous les autres.
+L'utilisateur peut aussi donner au widget toute taille entre ses bornes (\`size.min\`, \`size.max\` du manifeste, par défaut 2 × 2 à 12 × 12 cellules) : \`sdk.format\` vaut alors le format le plus proche ; les variantes de conteneur font le reste.
 Un format \`full\` sur une page vue occupe toute la page.
 
 ## Style
