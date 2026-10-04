@@ -10,7 +10,7 @@ export type FakePenpotBoard = {
   mime: "image/png" | "image/webp";
 };
 export type FakePenpotFile = { name: string; pages: Map<string, Map<string, FakePenpotBoard>> };
-type Failure = { status: number; body: string };
+type Failure = { status: number; body: string; headers: Record<string, string> };
 export type FakePenpot = {
   url: string;
   token: string;
@@ -26,7 +26,7 @@ export type FakePenpot = {
     patch?: Partial<FakePenpotBoard>,
   ): FakePenpotBoard;
   rerender(fileId: string, pageId: string, boardId: string): string;
-  failNext(status: number, body?: string): void;
+  failNext(status: number, body?: string, headers?: Record<string, string>): void;
   stop(): void;
 };
 
@@ -159,7 +159,7 @@ export function startFakePenpot(opts: { token: string; port?: number; fullname?:
       if (failure) {
         const f = failure;
         failure = null;
-        return new Response(f.body, { status: f.status });
+        return new Response(f.body, { status: f.status, headers: f.headers });
       }
       return route(req, u, text);
     },
@@ -201,8 +201,8 @@ export function startFakePenpot(opts: { token: string; port?: number; fullname?:
       board.mediaId = mediaId;
       return mediaId;
     },
-    failNext(status, body = "") {
-      failure = { status, body };
+    failNext(status, body = "", headers = {}) {
+      failure = { status, body, headers };
     },
     stop: () => server.stop(true),
   };

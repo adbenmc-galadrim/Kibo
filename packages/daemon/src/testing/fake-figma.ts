@@ -3,7 +3,7 @@ import { FAKE_PNG_BASE64 } from "./fake-mcp";
 export const FAKE_FIGMA_IMAGE_HOST = "figma-alpha-api.s3.us-west-2.amazonaws.com";
 export type FakeFigmaNode = { name: string; width: number; height: number; png: Uint8Array };
 export type FakeFigmaFile = { name: string; version: number; nodes: Map<string, FakeFigmaNode> };
-type Failure = { status: number; body: string };
+type Failure = { status: number; body: string; headers: Record<string, string> };
 export type FakeFigma = {
   url: string;
   token: string;
@@ -14,7 +14,7 @@ export type FakeFigma = {
   addFile(fileKey: string, name: string): FakeFigmaFile;
   addNode(fileKey: string, nodeId: string, patch?: Partial<FakeFigmaNode>): FakeFigmaNode;
   bump(fileKey: string): number;
-  failNext(status: number, body?: string): void;
+  failNext(status: number, body?: string, headers?: Record<string, string>): void;
   stop(): void;
 };
 
@@ -107,7 +107,7 @@ export function startFakeFigma(opts: { token: string; port?: number; handle?: st
       if (failure) {
         const f = failure;
         failure = null;
-        return new Response(f.body, { status: f.status });
+        return new Response(f.body, { status: f.status, headers: f.headers });
       }
       const img = /^\/img\/(.+)\.png$/.exec(u.pathname);
       if (img?.[1]) {
@@ -137,8 +137,8 @@ export function startFakeFigma(opts: { token: string; port?: number; handle?: st
       return node;
     },
     bump: (fileKey) => ++fileOf(fileKey).version,
-    failNext(status, body = "") {
-      failure = { status, body };
+    failNext(status, body = "", headers = {}) {
+      failure = { status, body, headers };
     },
     stop: () => server.stop(true),
   };

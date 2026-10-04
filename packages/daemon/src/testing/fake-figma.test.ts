@@ -64,3 +64,11 @@ test("rate limit and failNext", async () => {
   expect((await fetch(`${figma.url}/v1/me`, { headers: auth() })).status).toBe(200);
   expect(figma.requests.map((r) => r.path)).toContain("/v1/me");
 });
+
+test("failNext can carry headers", async () => {
+  figma.failNext(429, "slow down", { "retry-after": "2" });
+  const limited = await fetch(`${figma.url}/v1/me`, { headers: auth() });
+  expect(limited.status).toBe(429);
+  expect(limited.headers.get("retry-after")).toBe("2");
+  expect((await fetch(`${figma.url}/v1/me`, { headers: auth() })).status).toBe(200);
+});
