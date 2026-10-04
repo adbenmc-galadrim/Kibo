@@ -2,19 +2,20 @@ import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { demoNotesCleanup } from "./notes-cleanup";
+import { DEMO_NOTES_MARKER, demoNotesCleanup, prepareDemoNotes } from "./notes-cleanup";
 
 const dirs: string[] = [];
 afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-function setup(opts: { demo?: boolean; notesDir?: (home: string) => string } = {}) {
+function setup(opts: { demo?: boolean; marker?: boolean; notesDir?: (home: string) => string } = {}) {
   const home = mkdtempSync(join(tmpdir(), "kibo-demo-notes-"));
   dirs.push(home);
   const demoDir = join(home, "notes", "DEMO");
   mkdirSync(demoDir, { recursive: true });
   writeFileSync(join(demoDir, "bienvenue.md"), "# Bienvenue\n");
+  if (opts.marker ?? true) writeFileSync(join(demoDir, DEMO_NOTES_MARKER), "");
   const logged: string[] = [];
   const cleanup = demoNotesCleanup({
     home,
@@ -73,4 +74,32 @@ test("a notes parent replaced by a symbolic link is never followed", () => {
   symlinkSync(elsewhere, join(home, "notes"));
   expect(cleanup("p1")).toBeNull();
   expect(existsSync(join(elsewhere, "DEMO", "garde.md"))).toBe(true);
+});
+
+test("a notes folder without the demo marker is kept and the refusal is logged", () => {
+  const { demoDir, cleanup, logged } = setup({ marker: false });
+  cleanup("p1")?.();
+  expect(existsSync(join(demoDir, "bienvenue.md"))).toBe(true);
+  expect(logged).toEqual([`demo notes ${demoDir} were not created by the demo, kept`]);
+});
+
+test("the demo marks only a notes folder it created itself", () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-demo-notes-"));
+  dirs.push(home);
+  const demoDir = join(home, "notes", "DEMO");
+  const claim = prepareDemoNotes(home);
+  mkdirSync(demoDir, { recursive: true });
+  claim();
+  expect(existsSync(join(demoDir, DEMO_NOTES_MARKER))).toBe(true);
+  rmSync(join(demoDir, DEMO_NOTES_MARKER));
+  const late = prepareDemoNotes(home);
+  late();
+  expect(existsSync(join(demoDir, DEMO_NOTES_MARKER))).toBe(false);
+});
+
+test("a demo that never created its notes folder marks nothing", () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-demo-notes-"));
+  dirs.push(home);
+  prepareDemoNotes(home)();
+  expect(existsSync(join(home, "notes", "DEMO"))).toBe(false);
 });

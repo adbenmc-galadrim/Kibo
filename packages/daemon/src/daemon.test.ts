@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
@@ -370,5 +370,17 @@ describe("startDaemon", () => {
     expect(await result({ method: "deleteProject", projectId })).toBeNull();
     expect(await result({ method: "listProjects" })).toEqual([]);
     expect(existsSync(join(home, "notes", "DEMO"))).toBe(false);
+  });
+
+  test("notes left in notes/DEMO before the demo are never erased with it", async () => {
+    const { d, home } = await launch();
+    mkdirSync(join(home, "notes", "DEMO"), { recursive: true });
+    writeFileSync(join(home, "notes", "DEMO", "mes-idees.md"), "# Mes idées\n");
+    const rpc = await pair(d);
+    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
+    const state = TutorialState.parse(await result({ method: "startTutorial" }));
+    expect(existsSync(join(home, "notes", "DEMO", ".kibo-demo"))).toBe(false);
+    expect(await result({ method: "deleteProject", projectId: state.projectId ?? "" })).toBeNull();
+    expect(existsSync(join(home, "notes", "DEMO", "mes-idees.md"))).toBe(true);
   });
 });

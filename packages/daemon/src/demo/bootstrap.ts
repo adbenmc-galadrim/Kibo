@@ -7,7 +7,7 @@ import type { RpcExtension, RpcHandler } from "../rpc-extensions";
 import type { LocalSettings } from "../settings";
 import { createDemoProject, isDemoProject, seedFromProject } from "./demo-project";
 import { demoCommandGuard, demoRpcGuard } from "./local-guard";
-import { demoNotesCleanup } from "./notes-cleanup";
+import { demoNotesCleanup, prepareDemoNotes } from "./notes-cleanup";
 import { tutorialRpc } from "./rpc";
 import type { TutorialRun } from "./tutorial-eval";
 import { createTutorialService, type TutorialService } from "./tutorial-service";
@@ -53,8 +53,15 @@ export function startTutorial(deps: TutorialBootDeps): TutorialBoot {
   };
   const tutorial = createTutorialService({
     settings: deps.settings,
-    createDemo: () =>
-      createDemoProject({ handle: async (req) => deps.service.handle(req), settings: deps.projectSettings }),
+    createDemo: async () => {
+      const claimNotes = prepareDemoNotes(deps.home);
+      const created = await createDemoProject({
+        handle: async (req) => deps.service.handle(req),
+        settings: deps.projectSettings,
+      });
+      claimNotes();
+      return created;
+    },
     findDemo,
     snapshot,
     emit: (event: Phase7Event) => docs.emit(event),
