@@ -8,13 +8,31 @@ ARCH="${KIBO_INSTALL_ARCH:-$(uname -m)}"
 fail() { echo "kibo : $*" >&2; exit 1; }
 info() { echo "kibo : $*" >&2; }
 need() { command -v "$1" >/dev/null 2>&1 || fail "la commande $1 est nécessaire"; }
-fetch() { curl -fsSL --proto '=https,http' "$BASE_URL/$1" -o "$2" || fail "téléchargement impossible : $1"; }
+fetch() { curl -fsSL "${CURL_PROTOCOLS[@]}" "$BASE_URL/$1" -o "$2" || fail "téléchargement impossible : $1"; }
 sha256() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
   else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }
 
 [ "$ARCH" = "x86_64" ] || fail "architecture $ARCH non prise en charge : Kibo est publié pour Linux x86_64 (et macOS en .dmg)"
+
+is_local_http() {
+  [ "${KIBO_INSTALL_ALLOW_HTTP:-}" = "1" ] || return 1
+  [[ "$BASE_URL" =~ ^http://(127\.0\.0\.1|localhost)(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?$ ]]
+}
+if is_local_http; then
+  CURL_PROTOCOLS=(--proto '=http' --proto-redir '=http')
+else
+  case "$BASE_URL" in
+    https://*) CURL_PROTOCOLS=(--proto '=https' --proto-redir '=https' --tlsv1.2) ;;
+    *) fail "adresse de téléchargement refusée : $BASE_URL (https:// obligatoire)" ;;
+  esac
+fi
+
+check_version() {
+  [[ "$1" =~ ^[0-9][0-9.]*$ && "$1" != *..* ]] || fail "version invalide : $1 (attendu : chiffres et points, par exemple 1.5.0)"
+}
+if [ -n "${KIBO_INSTALL_VERSION:-}" ]; then check_version "$KIBO_INSTALL_VERSION"; fi
 need curl
 
 detect_format() {
@@ -34,6 +52,7 @@ published_version() {
 }
 VERSION="${KIBO_INSTALL_VERSION:-$(published_version)}"
 [ -n "$VERSION" ] || fail "version introuvable dans SHA256SUMS"
+check_version "$VERSION"
 
 case "$FORMAT" in
   deb) ASSET="Kibo_${VERSION}_amd64.deb" ;;
