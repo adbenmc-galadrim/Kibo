@@ -1,5 +1,5 @@
 export { CiSection } from "./CiSection";
-export { FigmaProperty } from "./FigmaProperty";
-export { FigmaSection } from "./FigmaSection";
+export { DesignProperty } from "./DesignProperty";
+export { DesignSection } from "./DesignSection";
 export { GithubLinkNote, GithubRefs } from "./GithubRefs";
 export { SyncStatus } from "./SyncStatus";

@@ -114,6 +114,8 @@ test("labels come from the manifest first, bounds reach the input, asset fields 
   expect(fieldLabel("speed", { type: "number", label: "Vitesse" })).toBe("Vitesse");
   expect(fieldLabel("other", {})).toBe("other");
   expect(fieldKind({ type: "string", asset: "model" })).toBe("asset");
+  expect(fieldKind({ type: "string", frame: true })).toBe("frame");
+  expect(fieldKind({ type: "string", nullable: true, frame: true })).toBe("frame");
   expect(numberBounds({ type: "number", min: 0.5, max: 4 })).toEqual({ min: 0.5, max: 4 });
   expect(numberBounds({ type: "number", min: 0 })).toEqual({ min: 0 });
   expect(numberBounds({ type: "number" })).toEqual({});

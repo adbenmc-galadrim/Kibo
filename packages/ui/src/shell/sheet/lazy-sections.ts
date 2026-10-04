@@ -9,7 +9,7 @@ const section = <P extends object>(pick: (m: Sections) => ComponentType<P>) =>
 
 export const GithubRefs = section((m) => m.GithubRefs);
 export const GithubLinkNote = section((m) => m.GithubLinkNote);
-export const FigmaProperty = section((m) => m.FigmaProperty);
+export const DesignProperty = section((m) => m.DesignProperty);
 export const SyncStatus = section((m) => m.SyncStatus);
 export const CiSection = section((m) => m.CiSection);
-export const FigmaSection = section((m) => m.FigmaSection);
+export const DesignSection = section((m) => m.DesignSection);

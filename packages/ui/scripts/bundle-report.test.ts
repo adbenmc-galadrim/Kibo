@@ -292,4 +292,14 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integrations.ts"))).toBe(false);
   });
+
+  test("the mockups section, its property and the frame field are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/shell/sheet/DesignSection.tsx",
+      "/x/packages/ui/src/shell/sheet/DesignProperty.tsx",
+      "/x/packages/ui/src/shell/sheet/design-refs.ts",
+      "/x/packages/ui/src/dialogs/FrameField.tsx",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
 });

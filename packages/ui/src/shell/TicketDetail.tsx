@@ -10,7 +10,7 @@ import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
 import { StatusSelect } from "../ticket/StatusSelect";
 import { useTicketCommand } from "../ticket/use-ticket-command";
-import { CiSection, FigmaProperty, FigmaSection, SyncStatus } from "./sheet/lazy-sections";
+import { CiSection, DesignProperty, DesignSection, SyncStatus } from "./sheet/lazy-sections";
 
 type Props = {
   project: ProjectSnapshot;
@@ -123,7 +123,7 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
             <dd className="text-red-600 dark:text-red-400">{t.blockedReason}</dd>
           </>
         )}
-        <FigmaProperty ticket={t} />
+        <DesignProperty ticket={t} />
       </dl>
       {command.error && (
         <p role="alert" className="px-4 text-sm text-destructive">
@@ -156,7 +156,7 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
         </section>
       )}
       {hasPr && <CiSection projectId={project.meta.id} ticketId={t.id} />}
-      <FigmaSection projectId={project.meta.id} ticket={t} />
+      <DesignSection projectId={project.meta.id} ticket={t} />
     </div>
   );
 }
