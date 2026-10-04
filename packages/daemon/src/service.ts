@@ -216,6 +216,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     workspace,
     docs,
     icons,
+    settings,
     collab: () => collab,
     adopt,
     fileTicket: createFileTicket({ docs, store, restore }),

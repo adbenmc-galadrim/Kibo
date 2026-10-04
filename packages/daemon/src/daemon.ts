@@ -19,6 +19,7 @@ import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
 import { componentTrustGuard } from "./components/trust-guard";
+import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
 import { createIntegrationHost } from "./integrations/host";
@@ -187,6 +188,15 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     detach: (projectId) => collab.client.detachProject(projectId),
     isLocked: (projectId) => collab.hosts.isLocked(projectId),
   });
+  const tutorial = startTutorial({
+    service,
+    settings: openLocalSettings(store),
+    projectSettings: createProjectSettings(store.db),
+    notesDir: (projectId) => components.notesDir(projectId),
+    runs: () => (agents ? agents.state().runs : []),
+    log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
+  });
+  closers.push(() => tutorial.stop());
   const code = createCodeService(service);
   closers.push(() => code.stop());
   const pairingCodes = new PairingCodes(Date.now);
@@ -214,6 +224,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sandboxRpc(sandboxService),
       backupsRpc(backups),
       app.rpc,
+      tutorial.rpc,
     ],
     port: opts.port,
     uiDir: opts.uiDir,

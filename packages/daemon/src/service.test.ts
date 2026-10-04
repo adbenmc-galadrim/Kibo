@@ -56,6 +56,7 @@ describe("service", () => {
       ...p,
       counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
       icon: null,
+      demo: false,
     });
     store.close();
   });

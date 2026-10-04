@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import type { RpcRequest } from "@kibo/schema";
+import { currentStep, type RpcRequest, TutorialState } from "@kibo/schema";
 import { z } from "zod";
 import { readDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { fakeBuild, okReport, writeDraft } from "./components/service.test-helper";
@@ -14,6 +14,7 @@ import { pidsMatching, stubbornServer, survivors } from "./mcp/processes.test-he
 
 const VITE = "http://localhost:5173";
 const Published = z.object({ result: z.object({ version: z.object({ hash: z.string() }) }) });
+const ProjectSummaryRow = z.object({ key: z.string(), name: z.string(), demo: z.boolean().optional() });
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const clean of cleanups.splice(0).reverse()) await clean();
@@ -336,5 +337,28 @@ describe("startDaemon", () => {
     expect((await fetch(icon, { headers: { cookie } })).status).toBe(404);
     expect(await (await rpc({ method: "listProjects" })).json()).toEqual({ ok: true, result: [] });
     expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
+  });
+
+  test("startTutorial creates project DEMO and getTutorial reports status active with step kanban", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
+    const started = TutorialState.parse(await result({ method: "startTutorial" }));
+    const state = TutorialState.parse(await result({ method: "getTutorial" }));
+    expect(state).toEqual(started);
+    expect([state.status, currentStep(state)]).toEqual(["active", "kanban"]);
+    const projects = ProjectSummaryRow.array().parse(await result({ method: "listProjects" }));
+    expect(projects.map((p) => [p.key, p.name, p.demo])).toEqual([["DEMO", "Démo Kibo", true]]);
+    expect(existsSync(join(home, "notes", "DEMO", "bienvenue.md"))).toBe(true);
+    const projectId = state.projectId ?? "";
+    await result({
+      method: "command",
+      projectId,
+      command: { method: "createTicket", title: "Mon ticket", statusId: "in_progress" },
+    });
+    const after = TutorialState.parse(await result({ method: "getTutorial" }));
+    expect([after.completed, currentStep(after)]).toEqual([["kanban"], "links"]);
+    expect(await result({ method: "deleteProject", projectId })).toBeNull();
+    expect(await result({ method: "listProjects" })).toEqual([]);
   });
 });

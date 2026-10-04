@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { listProjects } from "@kibo/core";
-import { type ChangeMessage, INBOX_ID } from "@kibo/schema";
+import { type ChangeMessage, INBOX_ID, ProjectMeta, type ProjectSummary } from "@kibo/schema";
+import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
 import { openStore } from "../store";
 import { WORKSPACE_DOC_ID } from "./doc-ids";
@@ -24,10 +25,12 @@ function setup() {
   const service = createService(store, { user: "adam" });
   const adopted: string[] = [];
   const filed: string[] = [];
+  const settings = createProjectSettings(store.db);
   const deps: ProjectRpcDeps = {
     workspace: service.docs.workspace,
     docs: service.docs,
     icons: service.icons,
+    settings,
     collab: () => null,
     adopt: (id) => adopted.push(id),
     fileTicket: (req) => {
@@ -35,7 +38,7 @@ function setup() {
       return { ticketId: req.ticketId, key: null };
     },
   };
-  return { store, service, deps, adopted, filed };
+  return { store, service, deps, adopted, filed, settings };
 }
 
 test("project methods are answered here and every other method is left to the service", () => {
@@ -69,4 +72,19 @@ test("a command aimed at an inbox instance is refused", () => {
     command: { method: "createTicket", title: "T" },
   } as const;
   expect(() => handleProjectRequest(deps, req)).toThrow("the inbox has no component instances");
+});
+
+test("listProjects flags the demo project from the project settings", () => {
+  const { service, settings } = setup();
+  const create = (key: string) =>
+    ProjectMeta.parse(
+      service.handle({ method: "createProject", name: key, key, folder: null, color: "#F97316" }),
+    );
+  create("KIB");
+  settings.set(create("DEMO").id, "demo", "1");
+  const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
+  expect(listed.map((p) => [p.key, p.demo])).toEqual([
+    ["KIB", false],
+    ["DEMO", true],
+  ]);
 });
