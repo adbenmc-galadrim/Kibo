@@ -1,6 +1,6 @@
 import type { TicketView } from "@kibo/schema";
 import { Frame } from "lucide-react";
-import { fr } from "../../i18n/fr";
+import { frDesign } from "../../i18n/fr-design";
 import { figmaRefs } from "./figma-refs";
 
 export function FigmaProperty({ ticket }: { ticket: TicketView }) {
@@ -8,7 +8,7 @@ export function FigmaProperty({ ticket }: { ticket: TicketView }) {
   if (!first) return null;
   return (
     <>
-      <dt className="text-muted-foreground">{fr.integrations.sheet.mockupProperty}</dt>
+      <dt className="text-muted-foreground">{frDesign.sheet.mockupProperty}</dt>
       <dd className="flex min-w-0 items-center gap-1">
         <Frame aria-hidden className="size-3 shrink-0" />
         <a

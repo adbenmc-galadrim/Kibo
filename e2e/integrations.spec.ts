@@ -83,7 +83,7 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
   await openIntegrations(page);
   const row = (title: string) => page.getByRole("main").getByRole("listitem").filter({ hasText: title });
   await expect(row("Git local").getByText("Actif")).toBeVisible();
-  await expect(row("Figma (MCP)").getByRole("button", { name: "Connecter" })).toBeVisible();
+  await expect(row("Figma").getByRole("button", { name: "Connecter" })).toBeVisible();
 
   const github = row("PR, reviews, statuts CI");
   await github.getByRole("button", { name: "Connecter" }).click();

@@ -281,4 +281,15 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
+
+  test("the design dialogs, their problems and texts are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/i18n/fr-design.ts",
+      "/x/packages/ui/src/dialogs/integrations/FigmaConnectDialog.tsx",
+      "/x/packages/ui/src/dialogs/integrations/PenpotConnectDialog.tsx",
+      "/x/packages/ui/src/dialogs/integrations/design-problem.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integrations.ts"))).toBe(false);
+  });
 });

@@ -3,16 +3,16 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frDesign } from "../../i18n/fr-design";
 import { failureText } from "../../lib/remote-error";
 import { figmaRefs } from "./figma-refs";
 
-const t = fr.integrations.sheet;
+const t = frDesign.sheet;
 
 function linkError(e: unknown): string {
-  if (e instanceof KiboError && e.code === "INVALID_INPUT") return t.figmaInvalid;
-  if (e instanceof KiboError && e.code === "NOT_CONNECTED") return t.figmaNotConnected;
-  if (e instanceof KiboError && e.code === "MCP_UNAVAILABLE") return fr.integrations.figma.unreachable.title;
+  if (e instanceof KiboError && e.code === "INVALID_INPUT") return t.invalid;
+  if (e instanceof KiboError && e.code === "NOT_CONNECTED") return t.notConnected;
+  if (e instanceof KiboError && e.code === "MCP_UNAVAILABLE") return frDesign.connect.figma.unreachable.title;
   return failureText(e);
 }
 
@@ -83,8 +83,8 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
         }}
       >
         <Input
-          aria-label={t.linkFigma}
-          placeholder={t.figmaPlaceholder}
+          aria-label={t.link}
+          placeholder={t.placeholder}
           value={url}
           onChange={(e) => {
             setUrl(e.target.value);
@@ -94,7 +94,7 @@ export function FigmaSection({ projectId, ticket }: { projectId: string; ticket:
           className="h-8 text-xs"
         />
         <Button type="submit" size="sm" variant="outline" disabled={url.trim() === ""}>
-          {t.linkFigma}
+          {t.link}
         </Button>
       </form>
       {error && (

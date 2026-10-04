@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { KiboError, type McpServerView, type RpcRequest } from "@kibo/schema";
+import { type IntegrationStatus, KiboError, type McpServerView, type RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -16,6 +16,7 @@ mock.module("../../api", () => ({
 
 const { GithubConnectDialog } = await import("./GithubConnectDialog");
 const { FigmaConnectDialog } = await import("./FigmaConnectDialog");
+const { PenpotConnectDialog } = await import("./PenpotConnectDialog");
 const { McpServerDialog } = await import("./McpServerDialog");
 const { McpServersDialog } = await import("./McpServersDialog");
 const { INTEGRATION_DIALOGS } = await import("../../settings/integration-dialogs");
@@ -46,8 +47,8 @@ beforeEach(() => {
     req.method === "getGithubConnectOptions" ? { ghAvailable: false, ghLogin: null, mode: null } : null;
 });
 
-test("the three dialogs are registered", () => {
-  expect(Object.keys(INTEGRATION_DIALOGS).sort()).toEqual(["figma", "github", "mcp"]);
+test("the four dialogs are registered", () => {
+  expect(Object.keys(INTEGRATION_DIALOGS).sort()).toEqual(["figma", "github", "mcp", "penpot"]);
 });
 
 test("github: gh is disabled when missing, a refused token is explained", async () => {
@@ -104,19 +105,60 @@ test("github: a locked keychain is explained", async () => {
   expect((await screen.findByRole("alert")).textContent).toMatch(/^Trousseau système indisponible/);
 });
 
-test("figma: the default address is sent, an unreachable server is explained", async () => {
-  let state = "error";
-  reply = async () => ({
-    id: "figma",
-    state,
-    account: null,
-    servers: [],
-    error: { code: "NETWORK", message: "down" },
-    resumeAt: null,
-  });
+const status = (patch: Partial<IntegrationStatus> & Pick<IntegrationStatus, "id">): IntegrationStatus => ({
+  state: "connected",
+  account: null,
+  servers: [],
+  error: null,
+  resumeAt: null,
+  ...patch,
+});
+
+test("figma: the personal token is the default and is never shown again", async () => {
+  reply = async () => status({ id: "figma", account: "adam" });
   const onDone = mock((_message?: string) => {});
   const user = userEvent.setup();
   render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
+  expect(screen.getByRole("radio", { name: "Jeton personnel" }).getAttribute("data-state")).toBe("checked");
+  expect(screen.getByText("Recommandé")).toBeDefined();
+  const field = screen.getByLabelText("Jeton");
+  expect(field.getAttribute("type")).toBe("password");
+  expect(screen.getByRole("button", { name: "Connecter" })).toHaveProperty("disabled", true);
+  await user.type(field, "figd_x");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect(calls).toContainEqual({ method: "connectFigma", auth: { mode: "token", token: "figd_x" } });
+  expect(onDone).toHaveBeenCalledWith("Connecté en tant que adam");
+  expect(field).toHaveProperty("value", "");
+  expect(document.body.innerHTML).not.toContain("figd_x");
+});
+
+test("figma: a refused token is explained on the field", async () => {
+  reply = async () => {
+    throw new KiboError("REMOTE_REJECTED", "figma 403");
+  };
+  const user = userEvent.setup();
+  render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  await user.type(screen.getByLabelText("Jeton"), "figd_wrong");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  const alert = await screen.findByRole("alert");
+  expect(within(alert).getByText("Jeton refusé")).toBeDefined();
+  expect(screen.getByLabelText("Jeton").getAttribute("aria-invalid")).toBe("true");
+  expect(document.body.innerHTML).not.toContain("figd_wrong");
+});
+
+test("figma: the mcp server mode sends the prefilled address", async () => {
+  let state: IntegrationStatus["state"] = "error";
+  reply = async () =>
+    status({
+      id: "figma",
+      state,
+      error: state === "error" ? { code: "MCP_UNAVAILABLE", message: "down" } : null,
+    });
+  const onDone = mock((_message?: string) => {});
+  const user = userEvent.setup();
+  render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
+  await user.click(screen.getByRole("radio", { name: "Serveur MCP de l'application Figma" }));
+  expect(screen.queryByLabelText("Jeton")).toBeNull();
   expect(screen.getByLabelText("Adresse du serveur")).toHaveProperty("value", "http://127.0.0.1:3845/mcp");
   await user.click(screen.getByRole("button", { name: "Connecter" }));
   expect(calls).toContainEqual({
@@ -125,14 +167,9 @@ test("figma: the default address is sent, an unreachable server is explained", a
   });
   const alert = await screen.findByRole("alert");
   expect(within(alert).getByText("Serveur Figma injoignable")).toBeDefined();
-  expect(
-    within(alert).getByText(
-      "Rien n'écoute sur 127.0.0.1:3845. Vérifie que Figma est lancé et que le serveur MCP est activé.",
-    ),
-  ).toBeDefined();
   state = "connected";
   await user.click(screen.getByRole("button", { name: "Connecter" }));
-  expect(onDone).toHaveBeenCalled();
+  expect(onDone).toHaveBeenCalledWith("Serveur MCP connecté");
 });
 
 test("figma: missing tools are listed as a warning", async () => {
@@ -141,11 +178,51 @@ test("figma: missing tools are listed as a warning", async () => {
   };
   const user = userEvent.setup();
   render(<FigmaConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  await user.click(screen.getByRole("radio", { name: "Serveur MCP de l'application Figma" }));
   await user.click(screen.getByRole("button", { name: "Connecter" }));
   const alert = await screen.findByRole("alert");
   expect(within(alert).getByText("Ce serveur n'expose pas les outils Figma attendus")).toBeDefined();
   expect(within(alert).getByText("Outils manquants : get_screenshot. Mets Figma à jour.")).toBeDefined();
   expect(alert.dataset.tone).toBe("warning");
+});
+
+test("penpot: the default instance and the token connect the account", async () => {
+  reply = async () => status({ id: "penpot", account: "Adam" });
+  const onDone = mock((_message?: string) => {});
+  const user = userEvent.setup();
+  render(<PenpotConnectDialog open onOpenChange={() => {}} onDone={onDone} />);
+  expect(screen.getByLabelText("Adresse de l'instance")).toHaveProperty("value", "https://design.penpot.app");
+  const field = screen.getByLabelText("Jeton d'accès");
+  expect(field.getAttribute("type")).toBe("password");
+  expect(screen.getByRole("button", { name: "Connecter" })).toHaveProperty("disabled", true);
+  await user.type(field, "penpot-secret");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect(calls).toContainEqual({
+    method: "connectPenpot",
+    url: "https://design.penpot.app",
+    token: "penpot-secret",
+  });
+  expect(onDone).toHaveBeenCalledWith("Connecté en tant que Adam");
+  expect(field).toHaveProperty("value", "");
+  expect(document.body.innerHTML).not.toContain("penpot-secret");
+});
+
+test("penpot: an unreachable instance is explained and the token is cleared", async () => {
+  reply = async () => {
+    throw new KiboError("REMOTE_UNAVAILABLE", "econnrefused");
+  };
+  const user = userEvent.setup();
+  render(<PenpotConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  const url = screen.getByLabelText("Adresse de l'instance");
+  await user.clear(url);
+  await user.type(url, "http://localhost:9010");
+  await user.type(screen.getByLabelText("Jeton d'accès"), "penpot-secret");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  const alert = await screen.findByRole("alert");
+  expect(within(alert).getByText("Instance injoignable")).toBeDefined();
+  expect(within(alert).getByText(/localhost:9010/)).toBeDefined();
+  expect(screen.getByLabelText("Jeton d'accès")).toHaveProperty("value", "");
+  expect(document.body.innerHTML).not.toContain("penpot-secret");
 });
 
 test("mcp: the exact command is shown and confirmed before adding", async () => {

@@ -267,21 +267,23 @@ test("the CI section opens the logs, filterable to errors", async () => {
   expect(screen.getByText("##[error]Test failed")).toBeDefined();
 });
 
-test("Figma: linked frame names, invalid URL message and unlink", async () => {
+test("Mockups: linked frame names, invalid URL message and unlink", async () => {
   await show();
-  expect(screen.queryByText("Figma non joignable")).toBeNull();
+  expect(screen.queryByText("Aperçu indisponible")).toBeNull();
   expect(calls.some((c) => c.method === "getDesignFrame")).toBe(false);
   expect(screen.getAllByText("Tickets / Arbre").length).toBeGreaterThan(0);
   const user = userEvent.setup();
   await user.type(
-    screen.getByPlaceholderText("Colle l'URL d'un nœud Figma (figma.com/design/…?node-id=…)"),
+    screen.getByPlaceholderText("Colle l'URL d'un cadre Figma ou d'un board Penpot"),
     "https://example.com/x",
   );
-  await user.click(screen.getByRole("button", { name: "Lier un nœud Figma" }));
-  expect(await screen.findByText("URL Figma invalide : il faut un lien de nœud (node-id).")).toBeDefined();
-  expect(screen.getByRole("textbox", { name: "Lier un nœud Figma" }).getAttribute("aria-invalid")).toBe(
-    "true",
-  );
+  await user.click(screen.getByRole("button", { name: "Lier un cadre" }));
+  expect(
+    await screen.findByText(
+      "URL invalide : il faut un lien de cadre Figma (node-id) ou de board Penpot (board-id).",
+    ),
+  ).toBeDefined();
+  expect(screen.getByRole("textbox", { name: "Lier un cadre" }).getAttribute("aria-invalid")).toBe("true");
   await user.click(screen.getByRole("button", { name: "Retirer" }));
   expect(calls).toContainEqual({
     method: "command",

@@ -62,6 +62,9 @@ function describe(s: IntegrationStatus): { title: string; description: string } 
       return { title: r.github.title, description: r.github.description(s.account) };
     case "mcp":
       return { title: r.mcp.title, description: r.mcp.description(s.servers) };
+    case "figma":
+    case "penpot":
+      return { title: r[s.id].title, description: r[s.id].description(s.account) };
     default:
       return r[s.id];
   }

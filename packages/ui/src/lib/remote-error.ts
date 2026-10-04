@@ -35,6 +35,8 @@ export function integrationErrorText(id: IntegrationId, error: IntegrationError)
   if (id === "mcp" && error.code === "MCP_UNAVAILABLE") return t.mcpServers(error.message.split(", "));
   if (id === "figma" && error.code === "MCP_UNAVAILABLE") return t.figmaUnreachable;
   if (id === "figma" && error.code === "NOT_CONNECTED") return t.figmaNotConnected;
+  if (id === "penpot" && error.code === "REMOTE_UNAVAILABLE") return t.penpotUnreachable;
+  if (id === "penpot" && error.code === "NOT_CONNECTED") return t.penpotNotConnected;
   if (id === "git" && error.code === "NOT_FOUND") return t.gitMissing;
   return remoteErrorText(error.code, error.message);
 }

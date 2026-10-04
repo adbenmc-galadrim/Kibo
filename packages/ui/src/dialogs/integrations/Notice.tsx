@@ -33,7 +33,7 @@ export function Notice({ tone, title, detail }: Props) {
     <Alert role={role} data-tone={tone} className={cn(className)}>
       <Icon aria-hidden />
       <AlertTitle className="line-clamp-none">{title}</AlertTitle>
-      <AlertDescription>{detail}</AlertDescription>
+      {detail && <AlertDescription>{detail}</AlertDescription>}
     </Alert>
   );
 }
