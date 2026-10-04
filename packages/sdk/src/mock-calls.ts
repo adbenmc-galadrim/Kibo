@@ -13,6 +13,7 @@ import {
   type ProjectCommand,
   type TicketRun,
 } from "@kibo/schema";
+import { base64ToBytes, bytesToBase64 } from "./base64";
 import type { MockNotesFolder } from "./mock-notes";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
@@ -96,6 +97,12 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return folder.search(c.query);
       case "notes.info":
         return folder.info();
+      case "notes.attach":
+        return { path: folder.attach(c.name, c.mime, base64ToBytes(c.bytes)) };
+      case "notes.asset": {
+        const asset = folder.asset(c.path);
+        return { mime: asset.mime, bytes: bytesToBase64(asset.bytes) };
+      }
       case "mcp.call":
         return mcpReply(deps, `${c.server}/${c.tool}`);
       case "mcp.read":

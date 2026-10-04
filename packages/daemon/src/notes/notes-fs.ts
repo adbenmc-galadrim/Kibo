@@ -1,6 +1,26 @@
-import { lstat, mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import {
+  lstat,
+  mkdir,
+  open,
+  readdir,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { isSafeNotePath, KiboError } from "@kibo/schema";
+import {
+  type AssetMime,
+  AssetName,
+  AssetPath,
+  isSafeNotePath,
+  KiboError,
+  MAX_ASSET_BYTES,
+  sniffImage,
+} from "@kibo/schema";
 import { isInside } from "../code/safe-path";
 
 export type NoteFile = { markdown: string; mtime: number; size: number };
@@ -23,8 +43,7 @@ async function lstatOrNull(path: string) {
   }
 }
 
-export async function resolveNotePath(dir: string, rel: string): Promise<string> {
-  if (!isSafeNotePath(rel)) throw outside(rel);
+async function resolveInside(dir: string, rel: string): Promise<string> {
   const root = await realpath(dir);
   const full = join(root, ...rel.split("/"));
   if (full === root || !isInside(root, full)) throw outside(rel);
@@ -36,6 +55,11 @@ export async function resolveNotePath(dir: string, rel: string): Promise<string>
     if (info.isSymbolicLink()) throw outside(rel);
   }
   return full;
+}
+
+export async function resolveNotePath(dir: string, rel: string): Promise<string> {
+  if (!isSafeNotePath(rel)) throw outside(rel);
+  return resolveInside(dir, rel);
 }
 
 export async function listNoteFiles(dir: string): Promise<string[]> {
@@ -126,4 +150,62 @@ export async function removeNoteFile(dir: string, rel: string): Promise<void> {
   const full = await resolveNotePath(dir, rel);
   if ((await lstatOrNull(full)) === null) throw notFound(rel);
   await rm(full);
+}
+
+const ASSETS = "assets";
+const MAX_SUFFIX = 100;
+const assetTooLarge = (name: string) =>
+  new KiboError("TOO_LARGE", `${name} exceeds ${MAX_ASSET_BYTES} bytes`);
+const withSuffix = (name: string, n: number): string =>
+  n === 1 ? name : name.replace(/(\.[a-z]+)$/, `-${n}$1`);
+
+export async function attachAssetFile(
+  dir: string,
+  name: string,
+  mime: AssetMime,
+  bytes: Uint8Array,
+): Promise<string> {
+  if (!AssetName.safeParse(name).success) throw new KiboError("INVALID_INPUT", `invalid asset name ${name}`);
+  if (bytes.byteLength > MAX_ASSET_BYTES) throw assetTooLarge(name);
+  if (sniffImage(bytes) !== mime) throw new KiboError("INVALID_INPUT", `${name} is not a ${mime}`);
+  await mkdir(await resolveInside(dir, ASSETS), { recursive: true });
+  await resolveInside(dir, ASSETS);
+  for (let n = 1; n <= MAX_SUFFIX; n++) {
+    const rel = `${ASSETS}/${withSuffix(name, n)}`;
+    const full = await resolveInside(dir, rel);
+    try {
+      await writeFile(full, bytes, { flag: "wx" });
+      return rel;
+    } catch (e) {
+      if (!isExisting(e)) throw e;
+    }
+  }
+  throw new KiboError("CONFLICT", `no free name for ${name}`);
+}
+
+export async function readAssetFile(
+  dir: string,
+  rel: string,
+): Promise<{ mime: AssetMime; bytes: Uint8Array }> {
+  if (!AssetPath.safeParse(rel).success) throw new KiboError("INVALID_INPUT", `invalid asset path ${rel}`);
+  const full = await resolveInside(dir, rel);
+  let file: Awaited<ReturnType<typeof open>>;
+  try {
+    file = await open(full, constants.O_RDONLY | constants.O_NOFOLLOW);
+  } catch (e) {
+    if (isMissing(e)) throw new KiboError("NOT_FOUND", `${rel} not found`);
+    if (e instanceof Error && "code" in e && e.code === "ELOOP") throw outside(rel);
+    throw e;
+  }
+  try {
+    const info = await file.stat();
+    if (!info.isFile()) throw new KiboError("NOT_FOUND", `${rel} is not a file`);
+    if (info.size > MAX_ASSET_BYTES) throw assetTooLarge(rel);
+    const bytes = new Uint8Array(await file.readFile());
+    const mime = sniffImage(bytes);
+    if (mime === null) throw new KiboError("INVALID_INPUT", `${rel} is not an image`);
+    return { mime, bytes };
+  } finally {
+    await file.close();
+  }
 }

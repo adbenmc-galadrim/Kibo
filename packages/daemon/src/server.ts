@@ -42,7 +42,7 @@ type WsData = { sessionHash: string };
 export type ListenInfo = { hostname: string; port: number; secure: boolean; remote: boolean };
 export type RunningServer = { url: string; port: number; stop(): void; listenRemote: RemoteListen };
 
-const MAX_BODY_BYTES = 1_048_576;
+const MAX_BODY_BYTES = 3 * 1_048_576;
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
 
 const sandboxOrigins = (origin: string | null): string[] => {

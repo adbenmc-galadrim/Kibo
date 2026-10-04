@@ -1,5 +1,16 @@
 import { parseNote } from "@kibo/core/notes";
-import { KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
+import {
+  type AssetMime,
+  AssetName,
+  AssetPath,
+  KiboError,
+  MAX_ASSET_BYTES,
+  type NoteContent,
+  type NoteMeta,
+  type NotesInfo,
+  sniffImage,
+} from "@kibo/schema";
+import type { NoteAsset } from "./types";
 
 export type MockNote = { markdown: string; mtime: number };
 
@@ -13,6 +24,8 @@ export type MockNotesFolder = {
   remove(path: string): void;
   search(query: string): NoteMeta[];
   info(): NotesInfo;
+  attach(name: string, mime: AssetMime, bytes: Uint8Array): string;
+  asset(path: string): NoteAsset;
   touch(path: string, markdown: string): void;
 };
 
@@ -23,6 +36,33 @@ const MOCK_NOTES_INFO: NotesInfo = {
   obsidian: true,
   folderRelative: "notes",
 };
+
+const suffixed = (name: string, n: number): string =>
+  n === 1 ? name : name.replace(/(\.[a-z]+)$/, `-${n}$1`);
+
+function createMockAssets() {
+  const assets = new Map<string, NoteAsset>();
+  return {
+    attach(name: string, mime: AssetMime, bytes: Uint8Array): string {
+      if (!AssetName.safeParse(name).success)
+        throw new KiboError("INVALID_INPUT", `invalid asset name ${name}`);
+      if (bytes.byteLength > MAX_ASSET_BYTES) throw new KiboError("TOO_LARGE", `${name} is too large`);
+      if (sniffImage(bytes) !== mime) throw new KiboError("INVALID_INPUT", `${name} is not a ${mime}`);
+      let n = 1;
+      while (assets.has(`assets/${suffixed(name, n)}`)) n += 1;
+      const path = `assets/${suffixed(name, n)}`;
+      assets.set(path, { mime, bytes: bytes.slice() });
+      return path;
+    },
+    asset(path: string): NoteAsset {
+      if (!AssetPath.safeParse(path).success)
+        throw new KiboError("INVALID_INPUT", `invalid asset path ${path}`);
+      const asset = assets.get(path);
+      if (!asset) throw new KiboError("NOT_FOUND", `${path} not found`);
+      return { mime: asset.mime, bytes: asset.bytes.slice() };
+    },
+  };
+}
 
 const byRecency = (a: NoteMeta, b: NoteMeta) =>
   b.mtime - a.mtime || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
@@ -61,9 +101,13 @@ export function createMockNotes(
     return value;
   };
 
+  const assets = createMockAssets();
+
   return {
     notes,
     list,
+    attach: assets.attach,
+    asset: assets.asset,
     read: (path) => ({ ...metaOf(path), markdown: existing(path).markdown }),
     write: (path, markdown, expectedMtime) => {
       if (expectedMtime !== null && notes.get(path)?.mtime !== expectedMtime) {

@@ -8,11 +8,14 @@ import { isInside } from "../code/safe-path";
 import { assertNotInbox } from "../inbox/inbox-rules";
 import { createNotesIndex, type IndexedNote } from "./index";
 import {
+  attachAssetFile,
   createNoteFile,
   listNoteFiles,
+  readAssetFile,
   readNoteFile,
   removeNoteFile,
   renameNoteFile,
+  resolveNotePath,
   writeNoteFile,
 } from "./notes-fs";
 import { createProjectSettings } from "./settings";
@@ -204,6 +207,16 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
           return index.search(projectId, call.query);
         case "notes.info":
           return info(projectId);
+        case "notes.attach": {
+          await mkdir(dir, { recursive: true });
+          await resolveNotePath(dir, call.notePath);
+          const path = await attachAssetFile(dir, call.name, call.mime, Buffer.from(call.bytes, "base64"));
+          return { path };
+        }
+        case "notes.asset": {
+          const asset = await readAssetFile(dir, call.path);
+          return { mime: asset.mime, bytes: Buffer.from(asset.bytes).toString("base64") };
+        }
       }
       throw new KiboError("INTERNAL", `${call.kind} is not a notes call`);
     },

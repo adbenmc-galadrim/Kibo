@@ -117,10 +117,12 @@ describe("pairing and auth", () => {
     expect(ok.headers.get("cache-control")).toBe("no-store");
   });
 
-  test("oversized request bodies are rejected", async () => {
+  test("oversized request bodies are rejected, a pasted image of 2 MiB fits", async () => {
     const cookie = await pair();
-    const res = await post("/api/rpc", { method: "listProjects", pad: "x".repeat(1_100_000) }, { cookie });
+    const res = await post("/api/rpc", { method: "listProjects", pad: "x".repeat(3_200_000) }, { cookie });
     expect(res.status).toBe(413);
+    const image = await post("/api/rpc", { method: "listProjects", pad: "x".repeat(2_800_000) }, { cookie });
+    expect(image.status).toBe(200);
   });
 
   test("websocket needs a session and receives changes", async () => {

@@ -17,6 +17,7 @@ import {
   permissionList,
   permissionOfCall,
   Sha256,
+  sniffImage,
   Ticket,
   TicketKey,
 } from "./index";
@@ -139,6 +140,38 @@ describe("mcp and ci_run permissions", () => {
     const item = { itemId: "a1", title: "A", url: "javascript:alert(1)" };
     expect(ComponentCall.safeParse({ kind: "mcp.import", server: "ctx", item }).success).toBe(false);
     expect(ComponentCall.safeParse({ kind: "list", entity: "ci_run" }).success).toBe(true);
+  });
+
+  test("notes.attach and notes.asset are calls with strict names", () => {
+    const attach = { kind: "notes.attach", notePath: "a.md", mime: "image/png", bytes: "AA==" };
+    expect(ComponentCall.safeParse({ ...attach, name: "a-20261004-101500.png" }).success).toBe(true);
+    expect(ComponentCall.safeParse({ ...attach, name: "../x.png" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ ...attach, name: "a/x.png" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ ...attach, name: "X.png" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ ...attach, name: "x.svg", mime: "image/svg+xml" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ ...attach, name: "x.png", notePath: "../a.md" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ ...attach, name: "x.png", bytes: "A".repeat(2_800_001) }).success).toBe(
+      false,
+    );
+    expect(ComponentCall.safeParse({ ...attach, name: "x.png", bytes: "<html>" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/x.png" }).success).toBe(true);
+    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "x.png" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/../x.png" }).success).toBe(false);
+    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/a/x.png" }).success).toBe(false);
+    expect(permissionOfCall({ ...attach, kind: "notes.attach", mime: "image/png", name: "x.png" })).toBe(
+      "write:note",
+    );
+    expect(permissionOfCall({ kind: "notes.asset", path: "assets/x.png" })).toBe("read:note");
+  });
+
+  test("sniffImage reads the type from the first bytes only", () => {
+    expect(sniffImage(Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe("image/png");
+    expect(sniffImage(Uint8Array.from([0xff, 0xd8, 0xff, 0xe0]))).toBe("image/jpeg");
+    expect(sniffImage(new TextEncoder().encode("GIF89a"))).toBe("image/gif");
+    expect(sniffImage(new TextEncoder().encode("RIFF\0\0\0\0WEBPVP8 "))).toBe("image/webp");
+    expect(sniffImage(new TextEncoder().encode("RIFF\0\0\0\0WAVEfmt "))).toBeNull();
+    expect(sniffImage(new TextEncoder().encode("<html>"))).toBeNull();
+    expect(sniffImage(new Uint8Array())).toBeNull();
   });
 
   test("covers resolves mcp rules, the config rule only with a config", () => {

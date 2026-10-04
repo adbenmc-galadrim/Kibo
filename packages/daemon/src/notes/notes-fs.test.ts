@@ -13,8 +13,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import {
+  attachAssetFile,
   createNoteFile,
   listNoteFiles,
+  readAssetFile,
   readNoteFile,
   removeNoteFile,
   renameNoteFile,
@@ -119,4 +121,88 @@ test("createNoteFile creates missing folders and refuses a symlinked target", as
   symlinkSync(join(outsideDir, "cible.md"), join(dir, "lien.md"));
   await expect(createNoteFile(dir, "lien.md", "# X\n")).rejects.toThrow("PATH_OUTSIDE_PROJECT");
   expect(readdirSync(outsideDir)).toEqual([]);
+});
+
+const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+const STAMPED = "note-20261004-101500.png";
+
+describe("assets", () => {
+  test("attach writes exclusively under assets/, suffixes a taken name and reads back", async () => {
+    const { dir } = folder();
+    expect(await attachAssetFile(dir, STAMPED, "image/png", PNG)).toBe(`assets/${STAMPED}`);
+    expect(await attachAssetFile(dir, STAMPED, "image/png", PNG)).toBe("assets/note-20261004-101500-2.png");
+    expect(await attachAssetFile(dir, STAMPED, "image/png", PNG)).toBe("assets/note-20261004-101500-3.png");
+    const back = await readAssetFile(dir, `assets/${STAMPED}`);
+    expect(back.mime).toBe("image/png");
+    expect([...back.bytes]).toEqual([...PNG]);
+    expect(await listNoteFiles(dir)).toEqual([]);
+  });
+
+  test("attach refuses a lying mime, a file over 2 MiB and a bad name, writing nothing", async () => {
+    const { dir } = folder();
+    await expect(
+      attachAssetFile(dir, "x.png", "image/png", new TextEncoder().encode("<html>")),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(attachAssetFile(dir, "x.jpg", "image/jpeg", PNG)).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    const big = new Uint8Array(2 * 1024 * 1024 + 1).fill(0x89);
+    big.set(PNG);
+    await expect(attachAssetFile(dir, "x.png", "image/png", big)).rejects.toMatchObject({
+      code: "TOO_LARGE",
+    });
+    await expect(attachAssetFile(dir, "../x.png", "image/png", PNG)).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    await expect(attachAssetFile(dir, "x.svg", "image/png", PNG)).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
+  test("attach refuses an assets folder that is a symlink", async () => {
+    const { root, dir } = folder();
+    const outsideDir = join(root, "ailleurs");
+    mkdirSync(outsideDir);
+    symlinkSync(outsideDir, join(dir, "assets"));
+    await expect(attachAssetFile(dir, "x.png", "image/png", PNG)).rejects.toMatchObject({
+      code: "PATH_OUTSIDE_PROJECT",
+    });
+    expect(readdirSync(outsideDir)).toEqual([]);
+  });
+
+  test("attach never follows a dangling symlink at the target name", async () => {
+    const { root, dir } = folder();
+    mkdirSync(join(dir, "assets"));
+    symlinkSync(join(root, "cible.png"), join(dir, "assets", "x.png"));
+    await expect(attachAssetFile(dir, "x.png", "image/png", PNG)).rejects.toMatchObject({
+      code: "PATH_OUTSIDE_PROJECT",
+    });
+    expect(readdirSync(root).includes("cible.png")).toBe(false);
+  });
+
+  test("asset reads stay confined to assets/ and refuse symlinks and non images", async () => {
+    const { root, dir } = folder();
+    mkdirSync(join(dir, "assets"));
+    writeFileSync(join(root, "photo.png"), PNG);
+    symlinkSync(join(root, "photo.png"), join(dir, "assets", "link.png"));
+    writeFileSync(join(dir, "assets", "page.png"), "<html>");
+    await expect(readAssetFile(dir, "assets/../photo.png")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(readAssetFile(dir, "secret.md")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(readAssetFile(dir, "assets/missing.png")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(readAssetFile(dir, "assets/link.png")).rejects.toMatchObject({
+      code: "PATH_OUTSIDE_PROJECT",
+    });
+    await expect(readAssetFile(dir, "assets/page.png")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  });
+
+  test("asset reads refuse a file over 2 MiB and a folder", async () => {
+    const { dir } = folder();
+    mkdirSync(join(dir, "assets", "dir.png"), { recursive: true });
+    const big = new Uint8Array(2 * 1024 * 1024 + 1);
+    big.set(PNG);
+    writeFileSync(join(dir, "assets", "big.png"), big);
+    await expect(readAssetFile(dir, "assets/big.png")).rejects.toMatchObject({ code: "TOO_LARGE" });
+    await expect(readAssetFile(dir, "assets/dir.png")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
 });
