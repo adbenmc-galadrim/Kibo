@@ -7,6 +7,7 @@ import {
   GitPullRequestArrow,
   ListTodo,
   type LucideIcon,
+  PenTool,
   Plug,
   SquareTerminal,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const ICONS: Record<IntegrationId, LucideIcon> = {
   "github-issues": ListTodo,
   "github-actions": SquareTerminal,
   figma: Frame,
+  penpot: PenTool,
   notifications: Bell,
   markdown: FileText,
   mcp: Plug,
@@ -43,6 +45,7 @@ const MENUS: Record<IntegrationId, RowMenuItem[]> = {
   "github-issues": ["configure", "test"],
   "github-actions": ["configure", "test"],
   figma: ["configure", "test", "disconnect"],
+  penpot: ["configure", "test", "disconnect"],
   notifications: [],
   markdown: ["test"],
   mcp: ["configure", "test", "disconnect"],
@@ -59,6 +62,9 @@ function describe(s: IntegrationStatus): { title: string; description: string } 
       return { title: r.github.title, description: r.github.description(s.account) };
     case "mcp":
       return { title: r.mcp.title, description: r.mcp.description(s.servers) };
+    case "figma":
+    case "penpot":
+      return { title: r[s.id].title, description: r[s.id].description(s.account) };
     default:
       return r[s.id];
   }

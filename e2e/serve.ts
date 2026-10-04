@@ -1,20 +1,32 @@
 import { chmodSync, copyFileSync, cpSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { FAKE_FIGMA_IMAGE_HOST, startFakeFigma } from "../packages/daemon/src/testing/fake-figma";
 import { LOGS_HOST, startFakeGithub } from "../packages/daemon/src/testing/fake-github";
 import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
+import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
 import { e2eHome } from "./e2e-home";
 import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
-import { E2E_GH_TOKEN, E2E_TOKEN, fakeGithubPort, fakeMcpPort } from "./token";
+import {
+  E2E_FIGMA_TOKEN,
+  E2E_GH_TOKEN,
+  E2E_PENPOT_TOKEN,
+  E2E_TOKEN,
+  fakeFigmaPort,
+  fakeGithubPort,
+  fakeMcpPort,
+  fakePenpotPort,
+} from "./token";
 
 const root = resolve(import.meta.dir, "..");
 const INTEGRATIONS_FLAG = "--integrations";
 const NO_GH_FLAG = "--no-gh";
+const DESIGN_FLAG = "--design";
+const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG];
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
+const design = argv.includes(DESIGN_FLAG);
 const withGh = !argv.includes(NO_GH_FLAG);
-const [port = "4390", scenario = "question", ...drafts] = argv.filter(
-  (a) => a !== INTEGRATIONS_FLAG && a !== NO_GH_FLAG,
-);
+const [port = "4390", scenario = "question", ...drafts] = argv.filter((a) => !FLAGS.includes(a));
 const home = e2eHome(port);
 rmSync(home, { recursive: true, force: true });
 mkdirSync(home, { recursive: true, mode: 0o700 });
@@ -47,7 +59,29 @@ async function startFakes() {
     },
   };
 }
-const fakes = integrations ? await startFakes() : null;
+function startDesignFakes() {
+  const figma = startFakeFigma({ token: E2E_FIGMA_TOKEN, port: fakeFigmaPort(Number(port)) });
+  figma.addFile("AbC123xyz", "Kibo");
+  figma.addNode("AbC123xyz", "12:34", { name: "Tickets", width: 1440, height: 900 });
+  const penpot = startFakePenpot({ token: E2E_PENPOT_TOKEN, port: fakePenpotPort(Number(port)) });
+  penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, PENPOT_IDS.board, {
+    name: "Accueil",
+    width: 1440,
+    height: 900,
+  });
+  return {
+    args: [
+      "--test-origins",
+      `api.figma.com=${figma.url},${FAKE_FIGMA_IMAGE_HOST}=${figma.url}`,
+      "--memory-secrets",
+    ],
+    stop: async () => {
+      figma.stop();
+      penpot.stop();
+    },
+  };
+}
+const fakes = integrations ? await startFakes() : design ? startDesignFakes() : null;
 const proc = Bun.spawn(
   [
     "bun",

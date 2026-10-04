@@ -80,6 +80,7 @@ function hooks(seen: unknown[]): ComponentIntegrationHooks {
     aliases: new Map(),
     observe: () => {},
     secret: async () => null,
+    design: null,
     ciRuns: async (projectId) => {
       seen.push(["ci", projectId]);
       return [ciRun];
@@ -173,4 +174,24 @@ test("project file calls reach the files service with the calling instance", asy
     ["list", "p"],
     ["url", "p", "i1", "a.png"],
   ]);
+});
+
+test("design frames reach the design gate with the calling instance, or fail when not started", async () => {
+  const seen: unknown[] = [];
+  const frame = { url: "https://www.figma.com/design/AbC123xyz/K?node-id=1-2", refresh: true };
+  const h = handlersWith({
+    ...hooks([]),
+    design: {
+      frame: async (ctx, url, refresh) => {
+        seen.push([ctx.projectId, ctx.instanceId, url, refresh]);
+        return unused();
+      },
+    },
+  });
+  await expect(h.design("p", "i1", { kind: "design.frame", ...frame })).rejects.toThrow("unused");
+  expect(seen).toEqual([["p", "i1", frame.url, true]]);
+  for (const integrations of [undefined, null, hooks([])])
+    await expect(
+      handlersWith(integrations).design("p", "i1", { kind: "design.frame", ...frame }),
+    ).rejects.toThrow("NOT_CONNECTED");
 });

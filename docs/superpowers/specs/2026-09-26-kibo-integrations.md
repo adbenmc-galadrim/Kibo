@@ -318,6 +318,19 @@ Recopiées mot pour mot de `docs/superpowers/plans/2026-09-26-kibo-integrations.
 - **N54 · Titre d'instance** (correctifs du jalon v0.5) : une clé de config `title` (texte non vide) remplace le titre du composant dans l'en-tête du widget. La Source MCP la déclare (`title`, défaut « Source MCP »), saisie dans le champ « Titre du widget » à l'ajout.
 - **N55 · Pastille CI agrégée** (correctifs du jalon v0.5) : une pastille qui résume plusieurs runs (chip Kanban) prend le dernier run de chaque workflow puis le pire état : échec > en cours > réussi > sans verdict.
 
+## 15. Phase 15 : cadres Figma et Penpot dans les composants
+
+Décisions écrites dans la spec de conception **§21** (2026-10-05), avant le plan `docs/superpowers/plans/2026-10-05-kibo-phase-15.md`. Ce qu'elles changent dans cette spec :
+
+- **§3.1** : `ExternalRef` gagne `penpot_board { instance, fileId, pageId, boardId, url, name }` (clé `<fileId>/<pageId>/<boardId>`) ; `figma_node` est inchangé. `linkFigmaNode` devient `linkDesignFrame { projectId, ticketId, url }` et accepte les deux URL.
+- **§3.3** : `figma_cache` disparaît au profit de `design_cache(frame_id, provider, name, width, height, mime, path, version, fetched_at, used_at, bytes)`, fichiers sous `<KIBO_HOME>/cache/design/` (4 Mio par image, 200 Mio au total, purge à 90 jours). `integration_settings` gagne `figma.mode`, `figma.account`, `penpot.url`, `penpot.account`.
+- **§3.4** : `SecretName` gagne le préfixe `penpot` ; secrets `figma` (jeton personnel) et `penpot` (jeton d'accès), lus à la demande, jamais mis en cache ni journalisés.
+- **§8.2 (D1)** : le serveur MCP local devient l'un des deux modes de Figma (`figma.mode = "mcp" | "token"`) ; l'aperçu (`getFigmaPreview`, PNG en base64) est remplacé par `getDesignFrame` (image servie par le port bac à sable) et le cache unifié de §21.3 ; le badge « Figma non joignable » devient « Hors ligne » / « Périmé ». N21 reste vrai pour la liaison (le nom vient du fournisseur) et pour l'aperçu (repli sur le cache).
+- **§9** : l'écran 16 gagne la ligne Penpot ; le dialogue 53 (Connecter Figma) a deux modes ; nouveau dialogue « Connecter Penpot ».
+- **§10 et N27** : `IntegrationFetchInit.auth` (en-tête et préfixe d'authentification paramétrables : `X-Figma-Token`, `Authorization: Token`) et règle `insecureLoopback` (http en boucle locale pour une instance Penpot locale, N48 étendu). Le test de fuite couvre les jetons Figma et Penpot factices.
+- **§11** : faux Figma (`fake-figma.ts`) et faux Penpot (`fake-penpot.ts`) ; `design.spec.ts` sur 4453–4454 ; faux dérivés : Figma = port + 3000, Penpot = port + 4000.
+- **§13** : Figma distant par OAuth reste hors périmètre ; le rendu Penpot par l'exportateur (session navigateur) aussi : la phase 15 sert la vignette du board.
+
 ## Comptes et secrets réels
 
-Aucun pour la CI. Optionnel, pour une vérification manuelle : un dépôt GitHub de test avec un Project v2 et un jeton (portées `repo`, `project`), l'application Figma desktop avec le serveur Dev Mode activé (compte Figma avec siège Dev ou Full).
+Aucun pour la CI. Optionnel, pour une vérification manuelle : un dépôt GitHub de test avec un Project v2 et un jeton (portées `repo`, `project`), l'application Figma desktop avec le serveur Dev Mode activé (compte Figma avec siège Dev ou Full) ; phase 15 : un jeton personnel Figma (portées `current_user:read`, `file_content:read`) et un jeton d'accès de l'instance Penpot d'Adam (`http://localhost:9010`), pour le contrôle manuel du jalon seulement.

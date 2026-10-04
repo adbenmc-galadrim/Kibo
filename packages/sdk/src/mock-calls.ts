@@ -16,6 +16,7 @@ import {
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { mockAssetUrl } from "./mock-assets";
+import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { MockNotesFolder } from "./mock-notes";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
@@ -37,6 +38,7 @@ export type MockCallDeps = {
   shared?: boolean;
   members?: MemberInfo[];
   assets?: ProjectAsset[];
+  frames?: MockFrame[];
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
@@ -138,6 +140,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.assets ?? [];
       case "assets.url":
         return mockAssetUrl(deps.assets ?? [], c.name);
+      case "design.frame":
+        return mockDesignFrame(deps.frames ?? [], c.url, c.refresh);
     }
   };
 }

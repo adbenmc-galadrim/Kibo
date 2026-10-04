@@ -25,7 +25,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
   /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage|AgentDrawer)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
-  /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource|viewer-3d\/src\/Viewer3d|snake\/src\/Snake)\.tsx$/,
+  /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource|viewer-3d\/src\/Viewer3d|snake\/src\/Snake|mockup\/src\/Mockup)\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
   /\/node_modules\/@tauri-apps\//,
@@ -67,6 +67,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(help\/ShortcutsDialog\.tsx|settings\/(ShortcutList\.tsx|shortcuts\.ts)|report\/[A-Za-z-]+\.tsx?|i18n\/fr-report\.ts)$/,
   /\/packages\/ui\/src\/(backups\/[A-Za-z-]+\.tsx?|i18n\/fr-backups\.ts|desktop\/reveal\.ts)$/,
   /\/packages\/ui\/src\/(tutorial\/[A-Za-z-]+\.tsx?|i18n\/fr-tutorial\.ts)$/,
+  /\/packages\/schema\/src\/(design-url|config-validate)\.ts$/,
+  /\/packages\/ui\/src\/(i18n\/fr-design\.ts|dialogs\/integrations\/((FigmaConnectDialog|PenpotConnectDialog)\.tsx|design-problem\.ts))$/,
+  /\/packages\/ui\/src\/(shell\/sheet\/((DesignSection|DesignProperty)\.tsx|design-refs\.ts)|dialogs\/FrameField\.tsx)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

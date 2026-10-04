@@ -20,7 +20,15 @@ export type DaemonSide = {
 export function openDaemonSide(home: string, gh: FakeGithub, now: () => number): DaemonSide {
   const store = openStore(home);
   const service = createService(store, { user: "adam" });
-  const host = createIntegrationHost({ user: "adam", home, store, service, notify: () => {}, now });
+  const host = createIntegrationHost({
+    user: "adam",
+    home,
+    store,
+    service,
+    notify: () => {},
+    now,
+    sandboxOrigin: () => null,
+  });
   const integrations = startIntegrations(
     host,
     parseIntegrationFlags({ "test-origins": `api.github.com=${gh.url}`, "memory-secrets": true }),

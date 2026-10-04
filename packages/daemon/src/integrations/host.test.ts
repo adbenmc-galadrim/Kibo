@@ -22,7 +22,14 @@ beforeEach(() => {
   store = openStore(home);
   service = createService(store, { user: "adam" });
   notices = [];
-  host = createIntegrationHost({ user: "adam", home, store, service, notify: (n) => notices.push(n) });
+  host = createIntegrationHost({
+    user: "adam",
+    home,
+    store,
+    service,
+    notify: (n) => notices.push(n),
+    sandboxOrigin: () => null,
+  });
   project = call(service, {
     method: "createProject",
     name: "Kibo",

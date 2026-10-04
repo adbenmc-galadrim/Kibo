@@ -20,8 +20,10 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
+import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 
+export type { DesignGate } from "../design/gate";
 export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";
 export type SystemNotification = Notice;
 export type GhRunner = (args: string[]) => Promise<{ code: number; stdout: string; stderr: string }>;
@@ -43,6 +45,7 @@ export type IntegrationHost = {
   gitAvailable(): Promise<boolean>;
   gh: GhRunner;
   now(): number;
+  sandboxOrigin(): string | null;
 };
 
 export type SecretStore = {
@@ -60,12 +63,14 @@ export type GithubCredentials = {
   mode(): "gh" | "token" | null;
 };
 
-export type InternalRule = { host: string; suffix: boolean; auth: boolean };
+export type AuthHeader = { header: string; prefix: string };
+export type InternalRule = { host: string; suffix: boolean; auth: boolean; insecureLoopback?: boolean };
 export type IntegrationFetchInit = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   headers?: Record<string, string>;
   body?: string;
   bearer?: string | null;
+  auth?: AuthHeader;
   maxBytes?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
@@ -117,5 +122,6 @@ export type ComponentIntegrationHooks = {
   observe(host: string, headers: Headers): void;
   secret: SecretResolver;
   mcp: McpComponentGate | null;
+  design: DesignGate | null;
   ciRuns: ((projectId: string) => Promise<CiRun[]>) | null;
 };

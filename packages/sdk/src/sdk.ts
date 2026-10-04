@@ -7,6 +7,7 @@ import {
   type ComponentCall,
   type ComponentManifest,
   capPermission,
+  type DesignFrame,
   type EntityType,
   type FetchInitInput,
   type FetchResponse,
@@ -27,6 +28,7 @@ import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import type {
   AssetsApi,
+  DesignApi,
   EntityMap,
   InstanceData,
   KiboSdk,
@@ -174,6 +176,15 @@ function assetsApi(manifest: ComponentManifest, guard: Guard, call: Call): Asset
   };
 }
 
+function designApi(manifest: ComponentManifest, guard: Guard, call: Call): DesignApi {
+  return {
+    async frame(url, opts = {}) {
+      if (!manifest.capabilities.includes("design")) guard.deny(capPermission("design"));
+      return call<DesignFrame>({ kind: "design.frame", url, refresh: opts.refresh ?? false });
+    },
+  };
+}
+
 export function createSdk(
   backend: ProjectBackend,
   manifest: ComponentManifest,
@@ -246,6 +257,7 @@ export function createSdk(
       if (!manifest.capabilities.includes(name)) guard.deny(capPermission(name));
     },
     assets: assetsApi(manifest, guard, call),
+    design: designApi(manifest, guard, call),
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,

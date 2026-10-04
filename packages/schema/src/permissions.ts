@@ -94,6 +94,8 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "assets.list":
     case "assets.url":
       return capPermission("assets");
+    case "design.frame":
+      return capPermission("design");
   }
 }
 

@@ -73,6 +73,11 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       if (call.kind === "mcp.read") return gate.read(ctx, call.server, call.uri);
       return gate.importItem(ctx, call.server, call.item);
     },
+    async design(projectId, instanceId, call) {
+      const gate = deps.integrations?.()?.design ?? null;
+      if (!gate) throw new KiboError("NOT_CONNECTED", "design integrations not started");
+      return gate.frame({ projectId, instanceId }, call.url, call.refresh);
+    },
     assets: (projectId, instanceId, call) =>
       call.kind === "assets.list"
         ? deps.files.list(projectId)

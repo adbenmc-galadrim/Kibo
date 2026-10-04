@@ -24,12 +24,19 @@ import {
   until,
   type WsCollector,
 } from "./leak.test-helper";
+import {
+  type DesignFakes,
+  designScenario,
+  FIGMA_NODE,
+  FIGMA_TOKEN,
+  PENPOT_TOKEN,
+  startDesignFakes,
+} from "./leak-design.test-helper";
 
 const SECRET = "ghp_TESTSECRET0123456789abcdefghijklmn";
 const MCP_ENV = "mcp-env-secret-0123456789";
 const MCP_BEARER = "mcp-bearer-secret-0123456789";
-const SECRETS = [SECRET, MCP_ENV, MCP_BEARER];
-const FIGMA_NODE = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
+const SECRETS = [SECRET, MCP_ENV, MCP_BEARER, FIGMA_TOKEN, PENPOT_TOKEN];
 const FOREIGN_ECHO = JSON.stringify({ message: `upstream said ${MCP_ENV}` });
 
 type McpHttp = Awaited<ReturnType<typeof startFakeMcpHttp>>;
@@ -41,6 +48,7 @@ const McpText = z.object({ content: z.array(z.object({ type: z.literal("text"), 
 let gh: FakeGithub;
 let mcpHttp: McpHttp;
 let figmaMcp: McpHttp;
+let design: DesignFakes;
 let output: CapturedOutput;
 let repo: string;
 let home: string;
@@ -79,6 +87,8 @@ beforeAll(async () => {
   cleanups.push(() => mcpHttp.stop());
   figmaMcp = await startFakeMcpHttp();
   cleanups.push(() => figmaMcp.stop());
+  design = startDesignFakes();
+  cleanups.push(() => design.stop());
   output = captureOutput();
   cleanups.push(() => output.restore());
   home = mkdtempSync(join(tmpdir(), "kibo-leak-"));
@@ -98,7 +108,7 @@ beforeAll(async () => {
     user: "adam",
     redactor: output.redactor,
     integrations: parseIntegrationFlags({
-      "test-origins": `api.github.com=${gh.url},${LOGS_HOST}=${gh.url}`,
+      "test-origins": `api.github.com=${gh.url},${LOGS_HOST}=${gh.url},${design.origins}`,
       "memory-secrets": true,
     }),
   }).finally(() => ciPoller.restore());
@@ -164,7 +174,7 @@ async function syncedKanban(projectId: string) {
   return { instanceId: instance.id, sync };
 }
 
-async function githubScenario(): Promise<string> {
+async function githubScenario(): Promise<{ projectId: string; ticketId: string }> {
   await ok({ method: "connectGithub", auth: { mode: "token", token: SECRET } });
   const project = await ok({
     method: "createProject",
@@ -194,9 +204,9 @@ async function githubScenario(): Promise<string> {
   const log = await ok({ method: "getCiLog", projectId: project.id, runId: 900, jobId: 70 });
   expect(log.text).toContain("Bearer ***");
 
-  await ok({ method: "configureFigma", url: figmaMcp.url });
-  await ok({ method: "linkFigmaNode", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
-  await ok({ method: "getFigmaPreview", fileKey: "AbC123xyz", nodeId: "12:34" });
+  await ok({ method: "connectFigma", auth: { mode: "mcp", url: figmaMcp.url } });
+  await ok({ method: "linkDesignFrame", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
+  await ok({ method: "getDesignFrame", url: FIGMA_NODE, refresh: false });
 
   gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 500, ECHO_AUTH);
   await kanban.sync();
@@ -210,7 +220,7 @@ async function githubScenario(): Promise<string> {
   expect(JSON.stringify(await ok({ method: "testIntegration", id: "github" }))).toContain(
     "upstream said ***",
   );
-  return project.id;
+  return { projectId: project.id, ticketId: created.id };
 }
 
 async function mcpSourceScenario(projectId: string): Promise<void> {
@@ -249,8 +259,9 @@ function journalsWereWritten(tables: Place[]): void {
 
 test("after a full scenario, no secret appears anywhere", async () => {
   await addMcpServers();
-  const projectId = await githubScenario();
+  const { projectId, ticketId } = await githubScenario();
   await mcpSourceScenario(projectId);
+  await designScenario(design, { ok, call }, projectId, ticketId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });
 

@@ -9,13 +9,14 @@ import { frWidgets } from "../i18n/fr-widgets";
 import { findComponent } from "../registry";
 
 export type FieldValue = string | number | boolean | null;
-export type FieldKind = "enum" | "boolean" | "number" | "string" | "asset";
+export type FieldKind = "enum" | "boolean" | "number" | "string" | "asset" | "frame";
 export type FormField = { key: string; field: ConfigField; value: FieldValue };
 
 const isFieldValue = (v: unknown): v is FieldValue =>
   v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean";
 
 export const fieldKind = (field: ConfigField): FieldKind => {
+  if (field.frame) return "frame";
   if (field.asset) return "asset";
   return field.enum ? "enum" : (field.type ?? "string");
 };

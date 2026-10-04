@@ -9,6 +9,7 @@ import {
   githubIssueState,
   githubStatusOf,
   IntegrationEvent,
+  IntegrationId,
   IntegrationSecretNameSchema,
   MappedRemote,
   McpItemRef,
@@ -46,10 +47,10 @@ describe("integration contracts", () => {
   });
 
   test("secret names are scoped", () => {
-    for (const ok of ["github", "figma", "mcp:context7", "mcp:context7:API_KEY"]) {
+    for (const ok of ["github", "figma", "penpot", "penpot:x", "mcp:context7", "mcp:context7:API_KEY"]) {
       expect(SecretNameSchema.safeParse(ok).success).toBe(true);
     }
-    for (const ko of ["aws", "github:", "mcp:Bad", "mcp:ctx:lower", ""]) {
+    for (const ko of ["aws", "notion", "github:", "mcp:Bad", "mcp:ctx:lower", ""]) {
       expect(SecretNameSchema.safeParse(ko).success).toBe(false);
     }
   });
@@ -279,5 +280,30 @@ describe("integration contracts", () => {
       }).success,
     ).toBe(true);
     expect(IntegrationEvent.safeParse({ projectId: "p" }).success).toBe(false);
+  });
+
+  test("design rpc replace the figma methods of phase 5", () => {
+    const figma = "https://www.figma.com/design/AbC123xyz/K?node-id=1-2";
+    const ok = (req: unknown) => RpcRequest.safeParse(req).success;
+    expect(ok({ method: "connectPenpot", url: "https://design.penpot.app", token: "t" })).toBe(true);
+    expect(ok({ method: "connectPenpot", url: "http://localhost:9010", token: "t" })).toBe(true);
+    expect(ok({ method: "connectPenpot", url: "http://192.168.1.2:9010", token: "t" })).toBe(false);
+    expect(ok({ method: "connectFigma", auth: { mode: "token", token: "figd_x" } })).toBe(true);
+    expect(ok({ method: "connectFigma", auth: { mode: "mcp", url: "http://127.0.0.1:3845/mcp" } })).toBe(
+      true,
+    );
+    expect(ok({ method: "connectFigma", auth: { mode: "token", token: " " } })).toBe(false);
+    expect(RpcRequest.parse({ method: "getDesignFrame", url: figma })).toEqual({
+      method: "getDesignFrame",
+      url: figma,
+      refresh: false,
+    });
+    expect(ok({ method: "linkDesignFrame", projectId: "p", ticketId: "t1", url: figma })).toBe(true);
+    expect(ok({ method: "disconnectIntegration", id: "penpot" })).toBe(true);
+    for (const gone of ["configureFigma", "linkFigmaNode", "getFigmaPreview"]) {
+      expect(ok({ method: gone, url: "x" })).toBe(false);
+    }
+    const ids = IntegrationId.options;
+    expect(ids[ids.indexOf("figma") + 1]).toBe("penpot");
   });
 });

@@ -11,6 +11,7 @@ import {
   Database,
   File,
   FolderOpen,
+  Frame,
   Gamepad2,
   Globe,
   KeyRound,
@@ -48,10 +49,16 @@ const CAPABILITY_ICONS: Record<Capability, LucideIcon> = {
   fullscreen: Maximize2,
   gamepad: Gamepad2,
   assets: FolderOpen,
+  design: Frame,
+};
+const CAPABILITY_HELP: Partial<Record<Capability, string>> = {
+  webgl: caps.webglHelp,
+  assets: caps.assetsHelp,
+  design: caps.designHelp,
 };
 
 function capabilityLine(c: Capability): PermissionLine {
-  const detail = c === "webgl" ? caps.webglHelp : c === "assets" ? caps.assetsHelp : undefined;
+  const detail = CAPABILITY_HELP[c];
   return { icon: CAPABILITY_ICONS[c], title: caps[c], ...(detail && { detail }) };
 }
 

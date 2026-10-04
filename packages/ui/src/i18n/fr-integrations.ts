@@ -1,4 +1,7 @@
 const plural = (n: number, one: string, many: string) => (n > 1 ? many : one);
+const DESIGN_ROW = "Cadres liés aux tickets et widgets Maquette";
+const DESIGN_DISCONNECT =
+  "Le jeton est supprimé du trousseau. Les liens vers les cadres restent, les aperçus en cache aussi.";
 
 export const frIntegrations = {
   nav: "Intégrations",
@@ -18,7 +21,15 @@ export const frIntegrations = {
       description: "Synchronise les tickets d'un composant",
     },
     "github-actions": { title: "GitHub Actions", description: "Runs et logs liés à la PR et au ticket" },
-    figma: { title: "Figma (MCP)", description: "Nœuds Figma liés aux tickets, aperçus" },
+    figma: {
+      title: "Figma",
+      description: (account: string | null) =>
+        account ? `${DESIGN_ROW} · compte ${account}` : `${DESIGN_ROW} · serveur MCP`,
+    },
+    penpot: {
+      title: "Penpot",
+      description: (account: string | null) => (account ? `${DESIGN_ROW} · ${account}` : DESIGN_ROW),
+    },
     notifications: {
       title: "Notifications système",
       description: "Agent en attente, run terminé, CI cassée",
@@ -53,7 +64,8 @@ export const frIntegrations = {
     githubToken:
       "Le jeton est supprimé du trousseau. GitHub Issues & Projects et GitHub Actions sont aussi déconnectés ; les tickets déjà importés restent.",
     githubGh: "Kibo cesse d'utiliser ton compte gh. gh reste connecté sur ta machine.",
-    figma: "Les liens vers les nœuds restent, les aperçus en cache aussi.",
+    figma: DESIGN_DISCONNECT,
+    penpot: DESIGN_DISCONNECT,
     confirm: "Déconnecter",
     mcp: "Tous les serveurs MCP sont désactivés. Leur configuration et leurs secrets restent ; réactive-les dans Configurer.",
   },
@@ -73,26 +85,6 @@ export const frIntegrations = {
     verifying: "Vérification…",
     refused: "GitHub a refusé ce jeton.",
     connected: (login: string) => `Connecté en tant que ${login}`,
-  },
-  figma: {
-    title: "Connecter Figma (MCP)",
-    subtitle: "Kibo lit les nœuds Figma liés aux tickets via le serveur MCP de l'application Figma.",
-    url: "Adresse du serveur",
-    urlHelp:
-      "Active « Dev Mode MCP Server » dans les préférences de Figma, puis garde l'application ouverte.",
-    defaultUrl: "http://127.0.0.1:3845/mcp",
-    submit: "Connecter",
-    expectedTools: "get_metadata, get_screenshot",
-    unreachable: {
-      title: "Serveur Figma injoignable",
-      detail: (address: string) =>
-        `Rien n'écoute sur ${address}. Vérifie que Figma est lancé et que le serveur MCP est activé.`,
-    },
-    missingTools: {
-      title: "Ce serveur n'expose pas les outils Figma attendus",
-      detail: (tools: string) => `Outils manquants : ${tools}. Mets Figma à jour.`,
-    },
-    invalidUrl: { title: "Adresse invalide", detail: "https obligatoire, sauf 127.0.0.1." },
   },
   mcpServers: {
     title: "Serveurs MCP",
@@ -207,15 +199,6 @@ export const frIntegrations = {
       running: "En cours",
       queued: "En file",
     },
-    mockups: "Maquettes",
-    mockupProperty: "Maquette",
-    linkFigma: "Lier un nœud Figma",
-    figmaPlaceholder: "Colle l'URL d'un nœud Figma (figma.com/design/…?node-id=…)",
-    figmaInvalid: "URL Figma invalide : il faut un lien de nœud (node-id).",
-    figmaUnreachable: "Figma non joignable",
-    previewUnavailable: "Aperçu indisponible",
-    unlink: "Retirer",
-    figmaNotConnected: "Connecte Figma dans Paramètres › Intégrations.",
     dropUpdateHelp:
       "Cette modification n'est pas envoyée à GitHub : le ticket la garde dans Kibo, et elle repartira avec sa prochaine modification.",
     ciPr: (numbers: number[]) => `PR ${numbers.map((n) => `#${n}`).join(", ")}`,
@@ -306,6 +289,8 @@ export const frIntegrations = {
       ids.length > 1 ? `Serveurs ${ids.join(", ")} injoignables` : `Serveur ${ids[0] ?? ""} injoignable`,
     figmaUnreachable: "Serveur Figma injoignable",
     figmaNotConnected: "Figma n'est pas connecté",
+    penpotUnreachable: "Instance Penpot injoignable",
+    penpotNotConnected: "Penpot n'est pas connecté",
     gitMissing: "git introuvable",
     mcpServer: "Connexion impossible : vérifie l'adresse ou la commande du serveur.",
   },

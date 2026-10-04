@@ -152,3 +152,22 @@ test("a failing mcp row offers Réessayer and Déconnecter, after confirmation",
   await user.click(within(dialog).getByRole("button", { name: "Déconnecter" }));
   expect(calls).toContainEqual({ method: "disconnectIntegration", id: "mcp" });
 });
+
+test("penpot disconnects after confirmation, keeping the links and the cache", async () => {
+  statuses = [status("penpot", "connected", { account: "Adam · design.penpot.app" })];
+  const user = userEvent.setup();
+  render(<IntegrationsPage />);
+  expect(
+    await screen.findByText("Cadres liés aux tickets et widgets Maquette · Adam · design.penpot.app"),
+  ).toBeDefined();
+  await user.click(screen.getByRole("button", { name: "Actions pour Penpot" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Déconnecter" }));
+  const dialog = await screen.findByRole("dialog", { name: "Déconnecter Penpot ?" });
+  expect(
+    within(dialog).getByText(
+      "Le jeton est supprimé du trousseau. Les liens vers les cadres restent, les aperçus en cache aussi.",
+    ),
+  ).toBeDefined();
+  await user.click(within(dialog).getByRole("button", { name: "Déconnecter" }));
+  expect(calls).toContainEqual({ method: "disconnectIntegration", id: "penpot" });
+});

@@ -1,0 +1,48 @@
+import { DESIGN_URL_MAX, type DesignFrameKey, PenpotFrameKey } from "./design";
+import { mcpUrlAllowed } from "./integrations";
+
+export type ParsedDesignUrl = { key: DesignFrameKey; url: string };
+
+const FIGMA_HOSTS = new Set(["figma.com", "www.figma.com"]);
+const FIGMA_PATH = /^\/(?:design|file|proto)\/([A-Za-z0-9]{6,64})(?:\/|$)/;
+const FIGMA_NODE = /^(\d+)[-:](\d+)$/;
+const PENPOT_WORKSPACE = /^\/workspace\/[^/]+\/[^/]+\/([^/]+)$/;
+const PENPOT_VIEW = /^\/view\/([^/]+)$/;
+
+function figmaKey(u: URL): DesignFrameKey | null {
+  if (u.protocol !== "https:" || !FIGMA_HOSTS.has(u.hostname)) return null;
+  const file = FIGMA_PATH.exec(u.pathname);
+  const node = FIGMA_NODE.exec(u.searchParams.get("node-id") ?? "");
+  if (!file?.[1] || !node) return null;
+  return { provider: "figma", fileKey: file[1], nodeId: `${node[1]}:${node[2]}` };
+}
+
+function penpotFileId(path: string, params: URLSearchParams): string | null {
+  const fromPath = PENPOT_WORKSPACE.exec(path)?.[1] ?? PENPOT_VIEW.exec(path)?.[1];
+  if (fromPath) return fromPath;
+  return path === "/workspace" ? params.get("file-id") : null;
+}
+
+function penpotKey(u: URL): DesignFrameKey | null {
+  if (!mcpUrlAllowed(u.origin)) return null;
+  const hash = u.hash.startsWith("#") ? u.hash.slice(1) : u.hash;
+  const [path = "", query = ""] = hash.split("?");
+  const params = new URLSearchParams(query);
+  const parsed = PenpotFrameKey.safeParse({
+    provider: "penpot",
+    instance: u.origin,
+    fileId: penpotFileId(path, params),
+    pageId: params.get("page-id"),
+    boardId: params.get("board-id"),
+  });
+  return parsed.success ? parsed.data : null;
+}
+
+export function parseDesignUrl(raw: string): ParsedDesignUrl | null {
+  const text = raw.trim();
+  if (text.length === 0 || text.length > DESIGN_URL_MAX || !URL.canParse(text)) return null;
+  const u = new URL(text);
+  if (u.username !== "" || u.password !== "") return null;
+  const key = figmaKey(u) ?? penpotKey(u);
+  return key ? { key, url: u.toString() } : null;
+}

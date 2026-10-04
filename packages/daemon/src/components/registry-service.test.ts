@@ -191,6 +191,7 @@ describe("listing and uninstall", () => {
       ["mcp-source", true],
       ["viewer-3d", true],
       ["snake", true],
+      ["mockup", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -222,6 +223,7 @@ describe("listing and uninstall", () => {
       "mcp-source",
       "viewer-3d",
       "snake",
+      "mockup",
     ]);
   });
 });

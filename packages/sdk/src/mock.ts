@@ -21,6 +21,7 @@ import {
   type TicketRun,
 } from "@kibo/schema";
 import { createMockCalls, type MockFetch } from "./mock-calls";
+import type { MockFrame } from "./mock-design";
 import { createMockNotes, type MockNote } from "./mock-notes";
 import { createSdk } from "./sdk";
 import type { ServerContext, ServerDefinition } from "./server";
@@ -28,6 +29,7 @@ import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type { MockFetch } from "./mock-calls";
+export type { MockFrame } from "./mock-design";
 export type { MockNote } from "./mock-notes";
 export type MockSdk = {
   sdk: KiboSdk;
@@ -69,6 +71,7 @@ export type MockSdkOptions = {
   shared?: boolean;
   members?: MemberInfo[];
   assets?: ProjectAsset[];
+  frames?: MockFrame[];
   visible?: boolean;
   focus?: boolean;
   selection?: Selection | null;
@@ -246,6 +249,10 @@ export function createMockSdk(
     assets: {
       list: () => useAssets(() => inner.assets.list()),
       url: (name) => useAssets(() => inner.assets.url(name)),
+    },
+    design: {
+      frame: (url, opts) =>
+        record(capPermission("design"), "cap:design", () => inner.design.frame(url, opts)),
     },
   };
 

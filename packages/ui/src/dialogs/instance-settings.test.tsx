@@ -228,3 +228,61 @@ test("a required file field left empty is refused before any call", async () => 
   expect((await screen.findByRole("alert")).textContent).toBe("Choisis un fichier : Modèle (.glb).");
   expect(calls.filter((c) => c.method !== "listAssets")).toEqual([]);
 });
+
+const frameSchema: ConfigSchema = {
+  frame: {
+    type: "string",
+    nullable: true,
+    default: null,
+    frame: true,
+    label: "Cadre",
+    help: "Colle l'URL d'un cadre Figma ou d'un board Penpot.",
+  },
+};
+const FIGMA_FRAME = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
+const BAD_FRAME = "URL de cadre invalide : lien Figma (node-id) ou Penpot (board-id) attendu.";
+
+test("a frame field is a URL input with its help, refused locally when it is not a frame", async () => {
+  const { onClose, user } = show(frameSchema, "p1", {});
+  const input = screen.getByRole("textbox", { name: "Cadre" });
+  expect(input.getAttribute("type")).toBe("url");
+  expect(input.getAttribute("aria-invalid")).toBe("false");
+  expect(screen.getByText("Colle l'URL d'un cadre Figma ou d'un board Penpot.")).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: "Aucune valeur" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Fichiers du projet…" })).toBeNull();
+  await user.type(input, "https://example.com");
+  expect(input.getAttribute("aria-invalid")).toBe("true");
+  expect(screen.getByText(BAD_FRAME)).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe(BAD_FRAME);
+  expect(screen.getAllByText(BAD_FRAME)).toHaveLength(1);
+  expect(calls).toEqual([]);
+  expect(onClose).not.toHaveBeenCalled();
+});
+
+test("a Figma frame URL is saved as the field value", async () => {
+  const { onClose, user } = show(frameSchema, "p1", {});
+  await user.type(screen.getByRole("textbox", { name: "Cadre" }), FIGMA_FRAME);
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(calls).toEqual([
+    {
+      method: "command",
+      projectId: "p1",
+      command: { method: "setInstanceConfig", instanceId: "i1", config: { frame: FIGMA_FRAME } },
+    },
+  ]);
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("an emptied frame field saves null", async () => {
+  const { user } = show(frameSchema, "p1", { frame: FIGMA_FRAME });
+  await user.clear(screen.getByRole("textbox", { name: "Cadre" }));
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(calls).toEqual([
+    {
+      method: "command",
+      projectId: "p1",
+      command: { method: "setInstanceConfig", instanceId: "i1", config: { frame: null } },
+    },
+  ]);
+});

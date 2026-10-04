@@ -48,7 +48,14 @@ function rpc(wrap: (s: SecretStore) => SecretStore = (s) => s) {
     events: createEventLog(host.db, redactor, host.now),
     settings,
     secrets,
-    hooks: { aliases, observe: () => undefined, secret: async () => null, mcp: null, ciRuns: null },
+    hooks: {
+      aliases,
+      observe: () => undefined,
+      secret: async () => null,
+      mcp: null,
+      design: null,
+      ciRuns: null,
+    },
     net: { fetch, gate, aliases },
     github: { account, api },
   };

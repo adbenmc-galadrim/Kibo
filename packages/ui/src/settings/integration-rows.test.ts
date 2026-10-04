@@ -45,6 +45,48 @@ describe("integration rows (screen 16)", () => {
       integrationRow(s({ id: "figma", state: "disconnected" }), { ...opts, hasDialog: () => false }).action,
     ).toBeNull();
   });
+  test("figma shows its account or the mcp server", () => {
+    expect(integrationRow(s({ id: "figma", state: "connected", account: "adam" }), opts)).toMatchObject({
+      title: "Figma",
+      description: "Cadres liés aux tickets et widgets Maquette · compte adam",
+    });
+    expect(integrationRow(s({ id: "figma", state: "connected" }), opts).description).toBe(
+      "Cadres liés aux tickets et widgets Maquette · serveur MCP",
+    );
+  });
+  test("penpot shows its account and instance, with the full menu", () => {
+    const r = integrationRow(
+      s({ id: "penpot", state: "connected", account: "Adam · design.penpot.app" }),
+      opts,
+    );
+    expect(r).toMatchObject({
+      title: "Penpot",
+      description: "Cadres liés aux tickets et widgets Maquette · Adam · design.penpot.app",
+      menu: ["configure", "test", "disconnect"],
+    });
+  });
+  test("disconnected penpot offers Connecter through its dialog", async () => {
+    const { dialogOf, INTEGRATION_DIALOGS } = await import("./integration-dialogs");
+    const hasDialog = (id: IntegrationStatus["id"]) => {
+      const d = dialogOf(id);
+      return d !== null && INTEGRATION_DIALOGS[d] !== undefined;
+    };
+    expect(dialogOf("penpot")).toBe("penpot");
+    expect(integrationRow(s({ id: "penpot", state: "disconnected" }), { ...opts, hasDialog })).toMatchObject({
+      description: "Cadres liés aux tickets et widgets Maquette",
+      action: "connect",
+    });
+  });
+  test("penpot errors are named in French", () => {
+    const unreachable = { code: "REMOTE_UNAVAILABLE" as const, message: "penpot 503" };
+    expect(integrationRow(s({ id: "penpot", state: "error", error: unreachable }), opts).error).toBe(
+      "Instance Penpot injoignable",
+    );
+    const missing = { code: "NOT_CONNECTED" as const, message: "penpot token missing" };
+    expect(integrationRow(s({ id: "penpot", state: "error", error: missing }), opts).error).toBe(
+      "Penpot n'est pas connecté",
+    );
+  });
   test("errors show a French message, Réessayer and the menu", () => {
     const r = integrationRow(
       s({

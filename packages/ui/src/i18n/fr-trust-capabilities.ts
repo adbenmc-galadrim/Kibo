@@ -6,5 +6,7 @@ export const frTrustCapabilities = {
   gamepad: "Lire les manettes branchées",
   assets: "Lire les fichiers du projet",
   assetsHelp: "dossier des fichiers de ce projet, lecture seule",
+  design: "Afficher des maquettes Figma et Penpot",
+  designHelp: "images rendues par Kibo avec ton compte, lecture seule",
   selection: "Partage la sélection avec les composants de la page",
 };

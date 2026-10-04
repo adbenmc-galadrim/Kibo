@@ -20,6 +20,7 @@ export const NEUTRAL_HOOKS: ComponentIntegrationHooks = {
   observe: () => undefined,
   secret: async () => null,
   mcp: null,
+  design: null,
   ciRuns: null,
 };
 

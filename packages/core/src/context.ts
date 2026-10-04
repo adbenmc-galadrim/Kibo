@@ -89,7 +89,7 @@ export function buildBrief({ project, ticket, domain, note }: BriefInput): strin
       ...blockers.map((b) => `- Attend ${b.keyLabel} · ${b.title} (${label(b.statusId)})`),
     );
   }
-  const mockups = ticket.externalRefs.filter((r) => r.kind === "figma_node");
+  const mockups = ticket.externalRefs.filter((r) => r.kind === "figma_node" || r.kind === "penpot_board");
   if (mockups.length > 0) {
     lines.push("", "## Maquettes", "", ...mockups.map((m) => `- ${m.name} : ${m.url}`));
   }

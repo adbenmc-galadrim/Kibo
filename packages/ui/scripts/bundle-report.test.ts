@@ -188,6 +188,15 @@ describe("bundle report", () => {
     );
   });
 
+  test("frame url parsing and config validation stay out of the entry, not the schemas", () => {
+    for (const p of ["/x/packages/schema/src/design-url.ts", "/x/packages/schema/src/config-validate.ts"]) {
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    }
+    for (const p of ["/x/packages/schema/src/design.ts", "/x/packages/schema/src/config.ts"]) {
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(false);
+    }
+  });
+
   test("the draft preview host and its demo project are forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/ai/worker-backend.ts",
@@ -269,6 +278,27 @@ describe("bundle report", () => {
       "/x/packages/ui/src/tutorial/TutorialPanel.tsx",
       "/x/packages/ui/src/tutorial/tutorial-steps.ts",
       "/x/packages/ui/src/i18n/fr-tutorial.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
+
+  test("the design dialogs, their problems and texts are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/i18n/fr-design.ts",
+      "/x/packages/ui/src/dialogs/integrations/FigmaConnectDialog.tsx",
+      "/x/packages/ui/src/dialogs/integrations/PenpotConnectDialog.tsx",
+      "/x/packages/ui/src/dialogs/integrations/design-problem.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integrations.ts"))).toBe(false);
+  });
+
+  test("the mockups section, its property and the frame field are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/shell/sheet/DesignSection.tsx",
+      "/x/packages/ui/src/shell/sheet/DesignProperty.tsx",
+      "/x/packages/ui/src/shell/sheet/design-refs.ts",
+      "/x/packages/ui/src/dialogs/FrameField.tsx",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });

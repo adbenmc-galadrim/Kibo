@@ -29,7 +29,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -97,6 +97,24 @@
       },
       "devDependencies": {
         "@testing-library/dom": "10.4.2",
+        "@testing-library/react": "16.3.0",
+        "@types/react": "19.1.13",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+      },
+      "peerDependencies": {
+        "react": "19.1.1",
+      },
+    },
+    "components/mockup": {
+      "name": "@kibo/component-mockup",
+      "version": "1.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "lucide-react": "1.48.0",
+      },
+      "devDependencies": {
         "@testing-library/react": "16.3.0",
         "@types/react": "19.1.13",
         "react": "19.1.1",
@@ -269,6 +287,9 @@
       "dependencies": {
         "zod": "3.25.76",
       },
+      "devDependencies": {
+        "fast-check": "4.3.0",
+      },
     },
     "packages/sdk": {
       "name": "@kibo/sdk",
@@ -339,6 +360,7 @@
         "@kibo/component-graph": "workspace:*",
         "@kibo/component-kanban": "workspace:*",
         "@kibo/component-mcp-source": "workspace:*",
+        "@kibo/component-mockup": "workspace:*",
         "@kibo/component-notes": "workspace:*",
         "@kibo/component-snake": "workspace:*",
         "@kibo/component-tickets": "workspace:*",
@@ -642,6 +664,8 @@
     "@kibo/component-kanban": ["@kibo/component-kanban@workspace:components/kanban"],
 
     "@kibo/component-mcp-source": ["@kibo/component-mcp-source@workspace:components/mcp-source"],
+
+    "@kibo/component-mockup": ["@kibo/component-mockup@workspace:components/mockup"],
 
     "@kibo/component-notes": ["@kibo/component-notes@workspace:components/notes"],
 

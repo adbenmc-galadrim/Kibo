@@ -25,6 +25,7 @@ export const frComponentsList = {
     fullscreen: "Plein écran",
     gamepad: "Manette",
     assets: "Fichiers du projet",
+    design: "Maquettes",
   } satisfies Record<Capability, string>,
   place: (project: string, page: string) => `${project} › ${page}`,
 };

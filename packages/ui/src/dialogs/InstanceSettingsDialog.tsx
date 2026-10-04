@@ -16,6 +16,7 @@ import { Switch } from "@kibo/sdk/ui/switch";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { ProjectFilesDialog } from "../files/lazy-files";
+import { frDesign } from "../i18n/fr-design";
 import { frWidgets as t } from "../i18n/fr-widgets";
 import {
   configFields,
@@ -28,6 +29,7 @@ import {
   withFieldValue,
 } from "../lib/config-form";
 import { AssetField } from "./AssetField";
+import { FrameField, isBadFrame } from "./FrameField";
 
 type Props = { projectId: string; instance: Instance; title: string; schema: ConfigSchema; onClose(): void };
 type FieldProps = {
@@ -37,16 +39,25 @@ type FieldProps = {
   value: FieldValue;
   disabled: boolean;
   refreshKey: number;
+  frameHint: boolean;
   onChange(v: FieldValue): void;
 };
 
 const missingFile = (fields: FormField[], values: Record<string, FieldValue>): FormField | undefined =>
   fields.find((f) => fieldKind(f.field) === "asset" && !f.field.nullable && !values[f.key]);
 
+const badFrame = (fields: FormField[], values: Record<string, FieldValue>): FormField | undefined =>
+  fields.find((f) => fieldKind(f.field) === "frame" && isBadFrame(values[f.key]));
+
+const hasNoValueToggle = (f: FormField): boolean => {
+  const kind = fieldKind(f.field);
+  return f.field.nullable === true && kind !== "asset" && kind !== "frame";
+};
+
 const valueWhenFilled = (key: string, field: ConfigField): FieldValue =>
   configFields({ [key]: { ...field, nullable: false } }, {})[0]?.value ?? "";
 
-function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChange }: FieldProps) {
+function FieldInput({ id, projectId, field, value, disabled, refreshKey, frameHint, onChange }: FieldProps) {
   const kind = fieldKind(field.field);
   const label = fieldLabel(field.key, field.field);
   if (kind === "asset" && field.field.asset)
@@ -60,6 +71,17 @@ function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChang
         nullable={field.field.nullable === true}
         disabled={disabled}
         onChange={onChange}
+      />
+    );
+  if (kind === "frame")
+    return (
+      <FrameField
+        id={id}
+        label={label}
+        value={typeof value === "string" ? value : null}
+        disabled={disabled}
+        hint={frameHint}
+        onChange={(raw) => onChange(parseFieldInput(field.field, raw))}
       />
     );
   if (kind === "enum")
@@ -94,7 +116,13 @@ function FieldInput({ id, projectId, field, value, disabled, refreshKey, onChang
   return <TextInput id={id} field={field} value={value} disabled={disabled} onChange={onChange} />;
 }
 
-function TextInput({ id, field, value, disabled, onChange }: Omit<FieldProps, "projectId" | "refreshKey">) {
+function TextInput({
+  id,
+  field,
+  value,
+  disabled,
+  onChange,
+}: Omit<FieldProps, "projectId" | "refreshKey" | "frameHint">) {
   const [text, setText] = useState(value === null ? "" : String(value));
   const shown = parseFieldInput(field.field, text) === value ? text : value === null ? "" : String(value);
   const numeric = fieldKind(field.field) === "number";
@@ -124,7 +152,7 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
     Object.fromEntries(fields.map((f) => [f.key, f.value])),
   );
   const [none, setNone] = useState<ReadonlySet<string>>(
-    () => new Set(fields.filter((f) => f.value === null && fieldKind(f.field) !== "asset").map((f) => f.key)),
+    () => new Set(fields.filter((f) => f.value === null && hasNoValueToggle(f)).map((f) => f.key)),
   );
   const [error, setError] = useState<string | null>(null);
   const [filesOpen, setFilesOpen] = useState(false);
@@ -139,6 +167,10 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
     const missing = missingFile(fields, values);
     if (missing) {
       setError(t.fileRequired(fieldLabel(missing.key, missing.field)));
+      return;
+    }
+    if (badFrame(fields, values)) {
+      setError(frDesign.field.invalid);
       return;
     }
     const errors = validateConfig(schema, values);
@@ -183,9 +215,10 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
                     value={value}
                     disabled={none.has(f.key)}
                     refreshKey={refreshKey}
+                    frameHint={error !== frDesign.field.invalid}
                     onChange={(v) => set(f.key, v)}
                   />
-                  {f.field.nullable && fieldKind(f.field) !== "asset" && (
+                  {hasNoValueToggle(f) && (
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id={`${baseId}-${f.key}-none`}

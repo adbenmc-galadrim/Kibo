@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseDraftAssetPath, parseFilePath } from "./asset-path";
+import { parseDesignPath, parseDraftAssetPath, parseFilePath } from "./asset-path";
 
 const ID = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
 const H = "c".repeat(64);
@@ -56,4 +56,28 @@ test("parseFilePath refuses anything else", () => {
     "/f/short/robot.glb",
   ])
     expect(parseFilePath(path)).toBeNull();
+});
+
+test("parseDesignPath reads a token and a frame name", () => {
+  const token = "a".repeat(64);
+  for (const name of ["frame.png", "frame.webp", "frame.jpg"])
+    expect(parseDesignPath(`/d/${token}/${name}`)).toEqual({ token, name });
+});
+
+test("parseDesignPath refuses anything else", () => {
+  const token = "a".repeat(64);
+  for (const path of [
+    `/d/${token}/frame.svg`,
+    `/d/${token}/frame.jpeg`,
+    `/d/${token}/robot.png`,
+    `/d/${token}/Frame.png`,
+    `/d/${"a".repeat(63)}/frame.png`,
+    `/d/${token.toUpperCase()}/frame.png`,
+    `/d/${token}`,
+    `/d/${token}/`,
+    `/d/${token}/frame.png/x`,
+    `/f/${token}/frame.png`,
+    `//d/${token}/frame.png`,
+  ])
+    expect(parseDesignPath(path)).toBeNull();
 });

@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { ECHO_AUTH, type FakeGithub, LOGS_HOST, startFakeGithub } from "../testing/fake-github";
-import { createIntegrationFetch, GITHUB_LOG_RULES, GITHUB_RULES, parseTestOrigins, secretFor } from "./net";
+import {
+  createIntegrationFetch,
+  FIGMA_AUTH,
+  FIGMA_RULES,
+  GITHUB_LOG_RULES,
+  GITHUB_RULES,
+  isLoopbackHost,
+  PENPOT_AUTH,
+  parseTestOrigins,
+  penpotRules,
+  secretFor,
+} from "./net";
 
 let gh: FakeGithub;
 beforeEach(() => {
@@ -204,4 +215,238 @@ test("the github secret never leaves the github api, even with a forged manifest
   expect(await secretFor(new URL("https://uploads.github.com/x"), forged, () => true, resolve)).toBe(
     "ghp_value_12345678",
   );
+});
+
+describe("design providers", () => {
+  test("the auth header and prefix are configurable, the secret still scrubbed", async () => {
+    const seen: Record<string, string | null>[] = [];
+    const server = Bun.serve({
+      hostname: "127.0.0.1",
+      port: 0,
+      fetch(req) {
+        seen.push({ figma: req.headers.get("x-figma-token"), auth: req.headers.get("authorization") });
+        return new Response(`token=${req.headers.get("x-figma-token") ?? req.headers.get("authorization")}`);
+      },
+    });
+    const origin = new URL(`http://127.0.0.1:${server.port}/`);
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map([
+        ["api.figma.com", origin],
+        ["penpot.test", origin],
+      ]),
+    });
+    const figma = await fetchIt(
+      "https://api.figma.com/v1/me",
+      { bearer: "figd_SECRET", auth: FIGMA_AUTH, headers: { "x-figma-token": "forged" } },
+      FIGMA_RULES,
+    );
+    expect(seen[0]).toEqual({ figma: "figd_SECRET", auth: null });
+    expect(new TextDecoder().decode(figma.body)).toBe("token=***");
+    const penpot = await fetchIt(
+      "https://penpot.test/api/rpc/command/get-profile",
+      { method: "POST", bearer: "penpot-SECRET", auth: PENPOT_AUTH },
+      penpotRules(new URL("https://penpot.test")),
+    );
+    expect(seen[1]).toEqual({ figma: null, auth: "Token penpot-SECRET" });
+    expect(new TextDecoder().decode(penpot.body)).toBe("token=Token ***");
+    server.stop(true);
+  });
+
+  test("http is accepted on loopback only for a rule that says so, without pinning", async () => {
+    const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("local") });
+    const fetchIt = createIntegrationFetch({ aliases: new Map() });
+    const instance = new URL(`http://127.0.0.1:${server.port}`);
+    const res = await fetchIt(
+      `${instance.origin}/api/rpc/command/get-profile`,
+      { bearer: "t", auth: PENPOT_AUTH },
+      penpotRules(instance),
+    );
+    expect(new TextDecoder().decode(res.body)).toBe("local");
+    await expect(
+      fetchIt(`http://127.0.0.1:${server.port}/x`, {}, [{ host: "127.0.0.1", suffix: false, auth: false }]),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      fetchIt("http://192.168.1.10:9010/x", {}, [
+        { host: "192.168.1.10", suffix: false, auth: true, insecureLoopback: true },
+      ]),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      fetchIt("http://design.penpot.app/x", {}, penpotRules(new URL("https://design.penpot.app"))),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    await expect(
+      fetchIt("ftp://127.0.0.1/x", {}, penpotRules(new URL("http://127.0.0.1:9010"))),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    server.stop(true);
+  });
+
+  test("localhost must resolve to a loopback address", async () => {
+    const fetchIt = createIntegrationFetch({ aliases: new Map(), resolve: async () => ["10.0.0.5"] });
+    const instance = new URL("http://localhost:9010");
+    await expect(fetchIt(`${instance.origin}/x`, {}, penpotRules(instance))).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+  });
+
+  test("a loopback instance never follows a redirect off its host", async () => {
+    const server = Bun.serve({
+      hostname: "127.0.0.1",
+      port: 0,
+      fetch: () => new Response(null, { status: 307, headers: { location: "https://evil.test/x" } }),
+    });
+    const instance = new URL(`http://localhost:${server.port}`);
+    const fetchIt = createIntegrationFetch({ aliases: new Map() });
+    await expect(fetchIt(`${instance.origin}/assets/by-id/1`, {}, penpotRules(instance))).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    server.stop(true);
+  });
+
+  test("a loopback instance never follows a redirect to another origin, even an allowed one", async () => {
+    const hits: string[] = [];
+    const server = Bun.serve({
+      hostname: "127.0.0.1",
+      port: 0,
+      fetch: (req) => {
+        hits.push(new URL(req.url).pathname);
+        return new Response(null, {
+          status: 307,
+          headers: { location: "https://bucket.s3.amazonaws.com/x" },
+        });
+      },
+    });
+    const instance = new URL(`http://127.0.0.1:${server.port}`);
+    const transport = async () => new Response("s3");
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.216.1.1"],
+      transport,
+    });
+    await expect(
+      fetchIt(`${instance.origin}/assets/by-id/1`, { bearer: "t", auth: PENPOT_AUTH }, penpotRules(instance)),
+    ).rejects.toThrow("PERMISSION_DENIED");
+    expect(hits).toEqual(["/assets/by-id/1"]);
+    server.stop(true);
+  });
+
+  test("a hop through a host without auth drops the token for good", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (_url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      if (sent.length === 1)
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://bucket.s3.amazonaws.com/x" },
+        });
+      if (sent.length === 2)
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://api.figma.com/v1/files/evil" },
+        });
+      return new Response("{}");
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.1.1.1"],
+      transport,
+    });
+    await fetchIt(
+      "https://api.figma.com/v1/images/x",
+      { bearer: "figd_SECRET", auth: FIGMA_AUTH },
+      FIGMA_RULES,
+    );
+    expect(sent.map((h) => h["x-figma-token"] ?? null)).toEqual(["figd_SECRET", null, null]);
+  });
+
+  test("a token dropped on the way is still scrubbed from the final response", async () => {
+    let hops = 0;
+    const transport = async () => {
+      hops++;
+      if (hops === 1)
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://bucket.s3.amazonaws.com/x" },
+        });
+      return new Response("leak figd_SECRET", { headers: { "x-echo": "figd_SECRET" } });
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.1.1.1"],
+      transport,
+    });
+    const res = await fetchIt(
+      "https://api.figma.com/v1/images/x",
+      { bearer: "figd_SECRET", auth: FIGMA_AUTH },
+      FIGMA_RULES,
+    );
+    expect(new TextDecoder().decode(res.body)).toBe("leak ***");
+    expect(res.headers.get("x-echo")).toBe("***");
+  });
+
+  test("a penpot media redirect to storage carries neither the token nor identity", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      if (url.includes("52.1.1.1"))
+        return new Response(null, {
+          status: 307,
+          headers: { location: "https://bucket.s3.amazonaws.com/m/1" },
+        });
+      return new Response("png");
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async (host) => (host === "design.penpot.app" ? ["52.1.1.1"] : ["52.2.2.2"]),
+      transport,
+    });
+    const res = await fetchIt(
+      "https://design.penpot.app/assets/by-id/1",
+      { bearer: "penpot-SECRET", auth: PENPOT_AUTH },
+      penpotRules(new URL("https://design.penpot.app")),
+    );
+    expect(res.status).toBe(200);
+    expect(sent[0]?.authorization).toBe("Token penpot-SECRET");
+    expect(sent[1]?.authorization).toBeUndefined();
+    expect(sent[1]?.["accept-encoding"]).toBeUndefined();
+  });
+
+  test("a caller never sets the auth header itself, whatever its name", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (_url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      return new Response("{}");
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.1.1.1"],
+      transport,
+    });
+    const auth = { header: "X-Custom-Key", prefix: "" };
+    const rules = [{ host: "api.example.com", suffix: false, auth: false }];
+    await fetchIt(
+      "https://api.example.com/x",
+      { bearer: "s", auth, headers: { "X-Custom-Key": "forged" } },
+      rules,
+    );
+    expect(sent[0]?.["x-custom-key"]).toBeUndefined();
+  });
+
+  test("figma rules carry the token to api.figma.com only", () => {
+    expect(FIGMA_RULES).toEqual([
+      { host: "api.figma.com", suffix: false, auth: true },
+      { host: "figma.com", suffix: true, auth: false },
+      { host: "amazonaws.com", suffix: true, auth: false },
+    ]);
+    expect(penpotRules(new URL("https://design.penpot.app"))).toEqual([
+      { host: "design.penpot.app", suffix: false, auth: true },
+      { host: "amazonaws.com", suffix: true, auth: false },
+    ]);
+    expect(penpotRules(new URL("http://localhost:9010"))[0]).toEqual({
+      host: "localhost",
+      suffix: false,
+      auth: true,
+      insecureLoopback: true,
+    });
+    expect(isLoopbackHost("[::1]")).toBe(true);
+    expect(isLoopbackHost("10.0.0.1")).toBe(false);
+  });
 });

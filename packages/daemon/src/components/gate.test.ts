@@ -154,3 +154,38 @@ describe("project files", () => {
     expect(handled).toEqual(["assets:builtin:assets.url"]);
   });
 });
+
+describe("design frames", () => {
+  const frameCall: ComponentCall = {
+    kind: "design.frame",
+    url: "https://www.figma.com/design/AbC123xyz/K?node-id=1-2",
+    refresh: false,
+  };
+  test("design.frame needs cap:design", async () => {
+    const denied = testGate();
+    await refused(denied.gate.call("p1", "thirdparty", frameCall), "PERMISSION_DENIED");
+    expect(denied.handled).toEqual([]);
+    expect(denied.events.list().map((e) => [e.kind, e.code])).toEqual([
+      ["design.frame", "PERMISSION_DENIED"],
+    ]);
+    const allowed = testGate(createQuotas(), { ...granted, capabilities: ["design"] });
+    await allowed.gate.call("p1", "thirdparty", frameCall);
+    await allowed.gate.call("p1", "builtin", frameCall);
+    expect(allowed.handled).toEqual(["design:thirdparty:design.frame", "design:builtin:design.frame"]);
+  });
+  test("design.frame is rate limited per instance", async () => {
+    const {
+      gate: g,
+      events,
+      handled,
+    } = testGate(createQuotas({ now: () => 0 }), {
+      ...granted,
+      capabilities: ["design"],
+    });
+    for (let i = 0; i < 30; i++) await g.call("p1", "thirdparty", frameCall);
+    await refused(g.call("p1", "thirdparty", frameCall), "RATE_LIMITED");
+    await g.call("p1", "builtin", frameCall);
+    expect(handled).toHaveLength(31);
+    expect(events.list().map((e) => [e.kind, e.code])).toEqual([["design.frame", "RATE_LIMITED"]]);
+  });
+});

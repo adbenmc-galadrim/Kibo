@@ -14,6 +14,7 @@ export type HostParts = {
   service: Service;
   notify(notice: Notice): void;
   now?: () => number;
+  sandboxOrigin(): string | null;
 };
 
 export function createIntegrationHost(parts: HostParts): IntegrationHost {
@@ -56,5 +57,6 @@ export function createIntegrationHost(parts: HostParts): IntegrationHost {
     },
     gh: (args) => runGh(args, { cwd: parts.home, env: {} }),
     now: parts.now ?? Date.now,
+    sandboxOrigin: () => parts.sandboxOrigin(),
   };
 }

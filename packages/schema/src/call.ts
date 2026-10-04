@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
+import { DESIGN_URL_MAX } from "./design";
 import { Base64 } from "./ids";
 import { DataKey } from "./instance";
 import { McpImportItem, McpServerId } from "./integrations";
@@ -57,5 +58,10 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("sharing.get") }),
   z.object({ kind: z.literal("assets.list") }),
   z.object({ kind: z.literal("assets.url"), name: ProjectAssetName }),
+  z.object({
+    kind: z.literal("design.frame"),
+    url: z.string().min(1).max(DESIGN_URL_MAX),
+    refresh: z.boolean().default(false),
+  }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

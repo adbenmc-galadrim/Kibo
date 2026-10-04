@@ -4,6 +4,7 @@ import {
   type AssetLookup,
   lookupAsset,
   parseAssetPath,
+  parseDesignPath,
   parseDraftAssetPath,
   parseFilePath,
 } from "./asset-path";
@@ -50,6 +51,7 @@ export type SandboxServerOptions = {
   extraAncestors?: readonly string[];
   drafts?: DraftAssets;
   files?: FileOpener;
+  designs?: FileOpener;
 };
 
 const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -72,13 +74,18 @@ export function startSandboxServer(opts: SandboxServerOptions): { url: string; p
     const manifest = await opts.drafts.manifest(draftId);
     return file(body, name, manifest?.capabilities ?? []);
   };
-  const serveFile = async (token: string, name: string, method: "GET" | "HEAD"): Promise<Response> => {
+  const serveFile = async (
+    token: string,
+    name: string,
+    method: "GET" | "HEAD",
+    opener: FileOpener | undefined,
+  ): Promise<Response> => {
     try {
-      const found = opts.files ? await opts.files.open(token) : null;
+      const found = opener ? await opener.open(token) : null;
       if (!found || found.name !== name) return plain("not found", 404);
       return (await fileResponse(found, method)) ?? plain("not found", 404);
     } catch (e) {
-      console.error(`[kibo-daemon] project file not served: ${reason(e)}`);
+      console.error(`[kibo-daemon] sandbox file not served: ${reason(e)}`);
       return plain("not found", 404);
     }
   };
@@ -90,7 +97,12 @@ export function startSandboxServer(opts: SandboxServerOptions): { url: string; p
     const project = parseFilePath(pathname);
     if (project) {
       if (req.method !== "GET" && req.method !== "HEAD") return plain("method not allowed", 405);
-      return serveFile(project.token, project.name, req.method);
+      return serveFile(project.token, project.name, req.method, opts.files);
+    }
+    const design = parseDesignPath(pathname);
+    if (design) {
+      if (req.method !== "GET" && req.method !== "HEAD") return plain("method not allowed", 405);
+      return serveFile(design.token, design.name, req.method, opts.designs);
     }
     if (req.method !== "GET") return plain("method not allowed", 405);
     const draft = parseDraftAssetPath(pathname);

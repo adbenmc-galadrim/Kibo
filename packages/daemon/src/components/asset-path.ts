@@ -69,3 +69,13 @@ export function parseFilePath(pathname: string): { token: string; name: string }
   if (!FILE_TOKEN.test(token) || !ProjectAssetName.safeParse(name).success) return null;
   return { token, name };
 }
+
+const DESIGN_NAME = /^frame\.(png|webp|jpg)$/;
+
+export function parseDesignPath(pathname: string): { token: string; name: string } | null {
+  const parts = pathname.split("/");
+  if (parts.length !== 4 || parts[0] !== "" || parts[1] !== "d") return null;
+  const [, , token = "", name = ""] = parts;
+  if (!FILE_TOKEN.test(token) || !DESIGN_NAME.test(name)) return null;
+  return { token, name };
+}
