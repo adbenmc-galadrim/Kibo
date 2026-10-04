@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { inGrid, MAX_GRID_ROWS } from "./format";
 import { compactLayouts, type PlacedLayout } from "./layout-compaction";
 
 const at = (id: string, x: number, y: number, w: number, h: number): PlacedLayout => ({
@@ -53,4 +54,16 @@ test("unknown ids in first are ignored and the input order does not matter", () 
   const backward = compactLayouts([...items].reverse());
   expect(sorted(forward)).toEqual(sorted(backward));
   expect(forward.get("c")).toEqual({ x: 0, y: 3, w: 12, h: 3 });
+});
+
+test("a widget can rise to the last rows of the grid but never past them, even when the grid is full", () => {
+  const tall = at("a", 0, 0, 12, MAX_GRID_ROWS - 4);
+  expect(compactLayouts([tall, at("b", 0, 0, 12, 4)]).get("b")).toEqual({
+    x: 0,
+    y: MAX_GRID_ROWS - 4,
+    w: 12,
+    h: 4,
+  });
+  const full = compactLayouts([tall, at("b", 0, 0, 12, 4), at("c", 0, 0, 12, 4)]);
+  for (const layout of full.values()) expect(inGrid(layout)).toBe(true);
 });
