@@ -108,6 +108,7 @@
       "name": "@kibo/component-notes",
       "version": "1.0.0",
       "dependencies": {
+        "@codemirror/autocomplete": "6.20.3",
         "@codemirror/commands": "6.11.1",
         "@codemirror/lang-markdown": "6.5.2",
         "@codemirror/state": "6.7.6",

@@ -15,6 +15,10 @@ export const frEditor = {
   quote: "Citation",
   link: "Lien",
   table: "Tableau",
+  image: "Image",
+  imageAlt: "description",
+  imagePath: "assets/nom.png",
+  bubble: "Mise en forme de la sélection",
   placeholder: "texte",
   column: (n: number) => `Colonne ${n}`,
   languages: [
