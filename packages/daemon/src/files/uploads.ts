@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { link, lstat, mkdir, open, readdir, rm } from "node:fs/promises";
+import { link, mkdir, open, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import {
   extensionMatches,
@@ -89,8 +89,9 @@ export function createUploads(opts: UploadsOptions): Uploads {
     for (const name of await readdir(folder)) {
       if (live.has(name)) continue;
       const path = join(folder, name);
-      const info = await lstat(path);
-      if (now() - info.mtimeMs > UPLOAD_IDLE_MS) await rm(path, { force: true, recursive: true });
+      const info = await lstatOrNull(path);
+      if (info !== null && now() - info.mtimeMs > UPLOAD_IDLE_MS)
+        await rm(path, { force: true, recursive: true });
     }
   };
   const createTemp = async (dir: string, id: string): Promise<string> => {

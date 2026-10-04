@@ -149,3 +149,18 @@ test("cancel during an append drops the upload once the append ends", async () =
   expect(readdirSync(join(dir, ".uploads"))).toEqual([]);
   await expect(uploads.finish(uploadId)).rejects.toMatchObject({ code: "NOT_FOUND" });
 });
+
+test("concurrent uploads purge the same orphans without failing", async () => {
+  const { dir, uploads, now } = kit({ t: Date.now() });
+  await uploads.cancel((await uploads.begin("p", "a.glb", "model/gltf-binary", 20)).uploadId);
+  const old = (now.t - UPLOAD_IDLE_MS - 1000) / 1000;
+  for (let i = 0; i < 40; i++) {
+    const orphan = join(dir, ".uploads", `orphan-${i}`);
+    writeFileSync(orphan, "x");
+    utimesSync(orphan, old, old);
+  }
+  const names = ["b.glb", "c.glb", "d.glb", "e.glb"];
+  const begun = await Promise.all(names.map((n) => uploads.begin("p", n, "model/gltf-binary", 20)));
+  expect(begun).toHaveLength(4);
+  expect(readdirSync(join(dir, ".uploads")).sort()).toEqual(begun.map((b) => b.uploadId).sort());
+});
