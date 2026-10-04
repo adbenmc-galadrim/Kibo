@@ -6,7 +6,7 @@ import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { DEMO_NOTE_AGES, DEMO_NOTES } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 import { editorView, listed, mount, seed, setup } from "./notes.test-helper";
@@ -353,4 +353,24 @@ test("typing / at the start of a line opens the block menu, filtered and applied
   expect(view.state.doc.toString()).toBe(
     "| Colonne 1 | Colonne 2 | Colonne 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |",
   );
+});
+
+test("live preview hides the marks away from the cursor and a checkbox toggles its task", async () => {
+  setup("view");
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await user.click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: "# Titre\n\n- [ ] faire\n\n**gras**" },
+    selection: { anchor: 0 },
+  });
+  await waitFor(() => expect(view.contentDOM.textContent).not.toContain("**"));
+  expect(view.contentDOM.textContent).toContain("# Titre");
+  const box = await screen.findByRole("checkbox", { name: "Case à cocher, non cochée" });
+  fireEvent.mouseDown(box);
+  expect(view.state.doc.toString()).toContain("- [x] faire");
+  view.dispatch({ selection: { anchor: view.state.doc.length } });
+  await waitFor(() => expect(view.contentDOM.textContent).toContain("**gras**"));
+  expect(view.contentDOM.textContent).not.toContain("# ");
 });

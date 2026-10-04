@@ -12,6 +12,8 @@ export const frEditor = {
   bullet: "Liste",
   ordered: "Liste numérotée",
   task: "Case à cocher",
+  taskTodo: "Case à cocher, non cochée",
+  taskDone: "Case à cocher, cochée",
   quote: "Citation",
   link: "Lien",
   table: "Tableau",

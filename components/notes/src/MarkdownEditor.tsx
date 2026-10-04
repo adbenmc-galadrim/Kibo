@@ -1,12 +1,15 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { markdown } from "@codemirror/lang-markdown";
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { languages } from "@codemirror/language-data";
 import { Annotation, EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef, useState } from "react";
 import { type BubbleAnchor, BubbleMenu } from "./editor/BubbleMenu";
 import type { Command } from "./editor/commands";
 import { EditorToolbar } from "./editor/EditorToolbar";
+import { editorHighlight } from "./editor/highlight";
 import { editorKeymap } from "./editor/keymap";
+import { livePreview } from "./editor/live-preview";
 import { slashMenu } from "./editor/slash-menu";
 import { fr } from "./fr";
 
@@ -31,7 +34,8 @@ const sameAnchor = (a: BubbleAnchor | null, b: BubbleAnchor | null): boolean =>
 const editorTheme = EditorView.theme({
   "&": { fontSize: "14px" },
   "&.cm-focused": { outline: "none" },
-  ".cm-content": { fontFamily: "var(--font-mono)", caretColor: "currentColor" },
+  ".cm-content": { fontFamily: "var(--font-sans)", lineHeight: "1.6", caretColor: "currentColor" },
+  ".cm-code-line": { fontFamily: "var(--font-mono)", fontSize: "13px", backgroundColor: "var(--muted)" },
 });
 
 export function MarkdownEditor({ value, onChange }: Props) {
@@ -52,7 +56,9 @@ export function MarkdownEditor({ value, onChange }: Props) {
         extensions: [
           history(),
           keymap.of([...editorKeymap, ...defaultKeymap, ...historyKeymap]),
-          markdown(),
+          markdown({ base: markdownLanguage, codeLanguages: languages }),
+          editorHighlight,
+          livePreview,
           slashMenu(),
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ "aria-label": fr.editor, "aria-multiline": "true" }),
