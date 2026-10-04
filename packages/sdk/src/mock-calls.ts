@@ -13,7 +13,7 @@ import {
   type ProjectCommand,
   type TicketRun,
 } from "@kibo/schema";
-import { base64ToBytes, bytesToBase64 } from "./base64";
+import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import type { MockNotesFolder } from "./mock-notes";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";

@@ -60,7 +60,7 @@ export type NotesApi = {
   asset(path: string): Promise<NoteAsset>;
 };
 
-export type NoteAsset = { mime: AssetMime; bytes: Uint8Array };
+export type NoteAsset = { mime: AssetMime; bytes: Uint8Array<ArrayBuffer> };
 
 export type McpApi = {
   call(server: string, tool: string, args?: Record<string, unknown>): Promise<McpCallResult>;

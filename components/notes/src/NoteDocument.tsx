@@ -1,5 +1,6 @@
 import type { NoteContent, NotesInfo } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
+import { bytesToBase64 } from "@kibo/sdk/lib/base64";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Eye, FileText, Pencil, TriangleAlert } from "lucide-react";
@@ -36,6 +37,7 @@ type Props = {
   state: SaveState;
   onToggleEdit(): void;
   onChange(markdown: string): void;
+  onPasteImage(file: File): Promise<string | null>;
   onReload(): void;
   onKeepMine(): void;
   onOpenNote(target: string): void;
@@ -55,7 +57,7 @@ const shownPathOf = (info: NotesInfo | null, path: string) => {
 };
 
 const PROSE =
-  "grid gap-3 text-sm text-muted-foreground leading-relaxed [&_a]:text-foreground [&_a]:underline [&_code]:font-mono [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h2]:mt-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:font-semibold [&_h3]:text-foreground [&_li]:ml-1 [&_li]:list-['•_'] [&_li]:list-inside [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:text-sm [&_pre]:text-foreground";
+  "grid gap-3 text-sm text-muted-foreground leading-relaxed [&_a]:text-foreground [&_a]:underline [&_code]:font-mono [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h2]:mt-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:font-semibold [&_h3]:text-foreground [&_img]:max-w-full [&_img]:rounded-md [&_li]:ml-1 [&_li]:list-['•_'] [&_li]:list-inside [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:text-sm [&_pre]:text-foreground";
 
 function RenderedNote({
   html,
@@ -67,6 +69,9 @@ function RenderedNote({
   onNote(target: string): void;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const sdk = useSdk();
+  const notesApi = useRef(sdk.notes);
+  notesApi.current = sdk.notes;
   const handlers = useRef({ onTicket, onNote });
   handlers.current = { onTicket, onNote };
 
@@ -89,7 +94,25 @@ function RenderedNote({
     return () => el.removeEventListener("click", onClick);
   }, []);
 
-  return <div ref={host} className={PROSE} dangerouslySetInnerHTML={{ __html: html }} />;
+  useEffect(() => {
+    const el = host.current;
+    if (!el || !html.includes("data-asset")) return;
+    let live = true;
+    for (const img of Array.from(el.querySelectorAll<HTMLImageElement>("img[data-asset]"))) {
+      notesApi.current.asset(img.dataset.asset ?? "").then(
+        ({ mime, bytes }) => {
+          if (live) img.src = `data:${mime};base64,${bytesToBase64(bytes)}`;
+        },
+        (e: unknown) => console.error(e),
+      );
+    }
+    return () => {
+      live = false;
+    };
+  }, [html]);
+
+  const inner = useMemo(() => ({ __html: html }), [html]);
+  return <div ref={host} className={PROSE} dangerouslySetInnerHTML={inner} />;
 }
 
 export function NoteDocument(props: Props) {
@@ -133,7 +156,7 @@ export function NoteDocument(props: Props) {
       </div>
       {state === "conflict" && <NoteConflictBanner onReload={props.onReload} onKeepMine={props.onKeepMine} />}
       {editing ? (
-        <MarkdownEditor value={draft} onChange={props.onChange} />
+        <MarkdownEditor value={draft} onChange={props.onChange} onPasteImage={props.onPasteImage} />
       ) : (
         <RenderedNote html={html} onTicket={openTicket} onNote={props.onOpenNote} />
       )}

@@ -1,4 +1,4 @@
-import type { StatusId } from "@kibo/schema";
+import { AssetPath, type StatusId } from "@kibo/schema";
 import { statusDotClass } from "@kibo/sdk";
 import MarkdownIt from "markdown-it";
 
@@ -72,6 +72,19 @@ function expandInline(children: Token[], tickets: ReadonlyMap<string, TicketRef>
     }
   }
 }
+
+const renderImage = md.renderer.rules.image;
+md.renderer.rules.image = (tokens, idx, options, env, self) => {
+  const token = tokens[idx];
+  const src = token?.attrGet("src") ?? "";
+  if (!token || !AssetPath.safeParse(src).success) {
+    return renderImage
+      ? renderImage(tokens, idx, options, env, self)
+      : self.renderToken(tokens, idx, options);
+  }
+  const alt = self.renderInlineAsText(token.children ?? [], options, env);
+  return `<img data-asset="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
+};
 
 export function renderNote(markdown: string, tickets: ReadonlyMap<string, TicketRef>): string {
   const env = {};

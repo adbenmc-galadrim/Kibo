@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { homeOf } from "./e2e-home";
@@ -76,4 +76,39 @@ test("éditeur : barre d'outils, aperçu en direct, menu /, enregistré sur disq
   await expect.poll(() => readFileSync(file, "utf8")).toContain("- [x] écrire le plan");
   await editor.locator(".cm-line").last().click();
   await shot(page, info, "notes-apercu-direct");
+
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.press("Enter");
+  await editor.evaluate(async (el) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 480;
+    canvas.height = 200;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no 2d context");
+    const gradient = ctx.createLinearGradient(0, 0, 480, 200);
+    gradient.addColorStop(0, "#f97316");
+    gradient.addColorStop(1, "#3f3f46");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 480, 200);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 40px sans-serif";
+    ctx.fillText("Capture collée", 40, 115);
+    const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/png"));
+    if (!blob) throw new Error("no png");
+    const data = new DataTransfer();
+    data.items.add(new File([blob], "pasted.png", { type: "image/png" }));
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+  });
+  await expect(editor).toContainText("![](assets/journal-");
+  const assets = join(homeOf(info), "notes", key, "assets");
+  await expect
+    .poll(() => (existsSync(assets) ? readdirSync(assets) : []))
+    .toEqual([expect.stringMatching(/^journal-\d{8}-\d{6}\.png$/)]);
+  await expect.poll(() => readFileSync(file, "utf8")).toMatch(/!\[\]\(assets\/journal-\d{8}-\d{6}\.png\)/);
+  await shot(page, info, "notes-image-edition");
+  await page.getByRole("button", { name: "Aperçu" }).click();
+  const image = page.locator("img[data-asset]");
+  await expect(image).toHaveAttribute("src", /^data:image\/png;base64,/);
+  await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(480);
+  await shot(page, info, "notes-image-apercu");
 });

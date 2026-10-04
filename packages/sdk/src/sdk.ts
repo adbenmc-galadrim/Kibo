@@ -20,7 +20,7 @@ import {
   ruleCovers,
   type Ticket,
 } from "@kibo/schema";
-import { base64ToBytes, bytesToBase64 } from "./base64";
+import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import type {
   EntityMap,
   InstanceData,

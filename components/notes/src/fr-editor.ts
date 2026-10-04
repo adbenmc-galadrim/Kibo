@@ -20,6 +20,8 @@ export const frEditor = {
   image: "Image",
   imageAlt: "description",
   imagePath: "assets/nom.png",
+  attachFailed: "Impossible d'enregistrer l'image.",
+  attachTooLarge: "L'image dépasse 2 Mio.",
   bubble: "Mise en forme de la sélection",
   placeholder: "texte",
   column: (n: number) => `Colonne ${n}`,

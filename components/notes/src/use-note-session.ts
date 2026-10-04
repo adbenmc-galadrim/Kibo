@@ -1,8 +1,10 @@
-import { KiboError, type NoteContent, type NoteMeta } from "@kibo/schema";
+import { KiboError, MAX_ASSET_BYTES, type NoteContent, type NoteMeta } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Autosave, createAutosave, type SaveState } from "./autosave";
+import { assetNameFor, isAssetMime } from "./editor/paste-image";
 import { fr } from "./fr";
+import { frEditor } from "./fr-editor";
 import { autoRenameTarget } from "./note-name";
 
 type Session = { path: string; autosave: Autosave; moving: boolean };
@@ -116,5 +118,23 @@ export function useNoteSession({ selected, select, listed, fail }: Options) {
 
   const keepMine = () => void session.current?.autosave.keepMine();
 
-  return { note, draft, state, load, rename, remove, change, keepMine };
+  const attachImage = async (file: File): Promise<string | null> => {
+    const path = session.current?.path;
+    const mime = file.type;
+    if (!path || !isAssetMime(mime)) return null;
+    if (file.size > MAX_ASSET_BYTES) {
+      fail(frEditor.attachTooLarge)(new KiboError("TOO_LARGE", `${file.name} is larger than 2 MiB`));
+      return null;
+    }
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const saved = await notesApi.current.attach(path, assetNameFor(path, mime, new Date()), mime, bytes);
+      return `![](${saved.path})`;
+    } catch (e) {
+      fail(frEditor.attachFailed)(e);
+      return null;
+    }
+  };
+
+  return { note, draft, state, load, rename, remove, change, keepMine, attachImage };
 }

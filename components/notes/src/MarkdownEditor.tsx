@@ -10,10 +10,15 @@ import { EditorToolbar } from "./editor/EditorToolbar";
 import { editorHighlight } from "./editor/highlight";
 import { editorKeymap } from "./editor/keymap";
 import { livePreview } from "./editor/live-preview";
+import { imageFromClipboard } from "./editor/paste-image";
 import { slashMenu } from "./editor/slash-menu";
 import { fr } from "./fr";
 
-type Props = { value: string; onChange(markdown: string): void };
+type Props = {
+  value: string;
+  onChange(markdown: string): void;
+  onPasteImage?: (file: File) => Promise<string | null>;
+};
 
 const fromValue = Annotation.define<boolean>();
 
@@ -38,13 +43,30 @@ const editorTheme = EditorView.theme({
   ".cm-code-line": { fontFamily: "var(--font-mono)", fontSize: "13px", backgroundColor: "var(--muted)" },
 });
 
-export function MarkdownEditor({ value, onChange }: Props) {
+const pasteImages = (paste: { current: Props["onPasteImage"] }) =>
+  EditorView.domEventHandlers({
+    paste(event, view) {
+      const file = imageFromClipboard(event.clipboardData);
+      const attach = paste.current;
+      if (!file || !attach) return false;
+      event.preventDefault();
+      void attach(file).then((inserted) => {
+        if (inserted && view.dom.isConnected)
+          view.dispatch({ ...view.state.replaceSelection(inserted), userEvent: "input.paste" });
+      });
+      return true;
+    },
+  });
+
+export function MarkdownEditor({ value, onChange, onPasteImage }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const initial = useRef(value);
   const change = useRef(onChange);
   change.current = onChange;
+  const paste = useRef(onPasteImage);
+  paste.current = onPasteImage;
   const [bubble, setBubble] = useState<BubbleAnchor | null>(null);
 
   useEffect(() => {
@@ -60,6 +82,7 @@ export function MarkdownEditor({ value, onChange }: Props) {
           editorHighlight,
           livePreview,
           slashMenu(),
+          pasteImages(paste),
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ "aria-label": fr.editor, "aria-multiline": "true" }),
           EditorView.updateListener.of((u) => {

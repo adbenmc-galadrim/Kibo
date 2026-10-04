@@ -8,5 +8,5 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-export const base64ToBytes = (encoded: string): Uint8Array =>
+export const base64ToBytes = (encoded: string): Uint8Array<ArrayBuffer> =>
   Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));

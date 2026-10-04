@@ -107,7 +107,7 @@ export function NotesView() {
     if (selected === null && first) setSelected(first.path);
   }, [selected, first]);
 
-  const { note, draft, state, load, rename, remove, change, keepMine } = useNoteSession({
+  const { note, draft, state, load, rename, remove, change, keepMine, attachImage } = useNoteSession({
     selected,
     select: setSelected,
     listed: listed.data,
@@ -181,6 +181,7 @@ export function NotesView() {
             state={state}
             onToggleEdit={() => setEditing((v) => !v)}
             onChange={change}
+            onPasteImage={attachImage}
             onReload={() => void load(note.path)}
             onKeepMine={keepMine}
             onOpenNote={(target) => {
