@@ -128,3 +128,12 @@ test("an echoed token is redacted from errors", async () => {
   expect(String(e)).toContain("REMOTE_UNAVAILABLE");
   expect(String(e)).not.toContain(SECRET);
 });
+
+test("a known secret echoed across the truncation point leaves no fragment", async () => {
+  const other = "ghp_OTHERSECRET0123456789abcdef";
+  redactor.add(other);
+  penpot.failNext(500, `${"x".repeat(190)}${other}`);
+  const e = await client.version(key()).catch((x: unknown) => x);
+  expect(String(e)).toContain("REMOTE_UNAVAILABLE");
+  expect(String(e)).not.toContain(other.slice(0, 8));
+});
