@@ -6,6 +6,14 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 1.6.0 — 2026-10-05
+
+- Figma par jeton personnel, en plus du serveur MCP de l'application Figma.
+- Penpot : connexion à ton instance (penpot.app ou locale) avec un jeton d'accès.
+- Widget « Maquette » : un cadre Figma ou un board Penpot dans une page, avec ses tickets liés.
+- Maquettes dans la fiche d'un ticket, avec un aperçu rendu par Kibo.
+- Aperçus gardés en cache : toujours visibles hors ligne, marqués « Périmé ».
+
 ## 1.5.0 — 2026-10-04
 
 - Installation : image disque macOS (Apple Silicon et Intel), paquets Linux, script `install.sh` avec vérification des sommes.
