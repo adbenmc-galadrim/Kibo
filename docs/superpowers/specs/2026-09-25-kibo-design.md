@@ -270,6 +270,18 @@ Toutes les maquettes sont dans Penpot, en **thème sombre et en thème clair**.
 - `11 · IA` : 58. Nouveau projet · Ton rôle (proposition de Claude) · 59. Suggestion indisponible · 60. Créer un composant : génération (agent) · 61. Rapport de validation · 62. Tentatives épuisées · 63. Relire le diff · 64. Modifier avec l'IA
 - `12 · Sync & marketplace` : 65. Partager le projet · 66. Membres et invitation · 67. Présence et ticket à clé provisoire · 68. Projet en lecture seule · 69. Paramètres › Sync · 70. Ajouter un appareil · 71. Paramètres › Sécurité (accès distant, sessions) · 72. Activer l'accès distant · 73. Marketplace · 74. Détail d'un paquet · 75. Installation refusée (signature invalide)
 - `13 · Compléments` : 76. Paramètres › Général · 77. Paramètres › Raccourcis · 78. Premier lancement : échec d'une vérification
+- `20 · Notes, graphe & disposition` et `21 · Composants riches` (phases 12 et 13, numéros donnés au dessin des maquettes ; les variantes à lettre restent dans `design/penpot/README.md`) :
+  - 150. Kanban : colonnes qui défilent (phase 12, §18.3)
+  - 151. Tableau de bord : taille libre et compaction (phase 12, §18.1 et §18.2)
+  - 152. Notes : éditeur, barre d'outils, menu `/`, bulle, images (phase 12, §18.7)
+  - 153. Graphe : navigation et sélection (phase 12, §18.7)
+  - 154. Widget Graphe par format (phase 12, §18.7)
+  - 155. Onglet fermé, Annuler (phase 12, §18.5)
+  - 156. Visionneuse 3D (phase 13, §19)
+  - 157. Serpent et plein écran de Kibo (phase 13, §19)
+  - 158. Sélection partagée (phase 13, §19)
+  - 159. Fichiers du projet (phase 13, §19)
+  - 160. Créer un composant : gabarits (phase 13, §19)
 
 **Règles d'affichage :** le Kanban affiche les tickets filtrés (« moi + agents » par défaut) avec le compteur `affichés / total` ; les onglets sont nommés « Projet · Page » ; la palette cherche aussi les pages, projets et éléments récents.
 

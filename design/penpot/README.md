@@ -91,8 +91,7 @@ Scripts écrits d'après la spec (§18 à §21), `packages/ui/src/i18n` et les c
 `27-installation-aide`, `28-didacticiel` (après 27 : il réutilise l'écran d'accueil) et `29-maquettes`. Listes de job : `S.NOTES_GRAPHE`,
 `S.COMPOSANTS_RICHES`, `S.INSTALLATION`, `S.DIDACTICIEL`, `S.MAQUETTES`.
 
-Numéros : la spec numérote 136 à 149 (phases 14 et 15) ; **150 à 160 sont proposés ici** pour les phases 12 et 13, qui n'en avaient pas
-(à reporter dans la spec §8). Les variantes d'un écran existant prennent une lettre (30b, 76b, 112c, 4b…).
+Numéros : 136 à 149 (phases 14 et 15) et 150 à 160 (phases 12 et 13) suivent la spec (§8, §20.7, §21.8). Les variantes d'un écran existant prennent une lettre (30b, 76b, 112c, 4b…).
 
 - 20 · Notes, graphe & disposition : 150 Kanban, colonnes qui défilent · 151 disposition, taille libre (poignées, « 6 × 8 cases ») · 151b raccourcis de taille ·
   151c compaction pendant le glisser · 152 notes, barre d'outils · 152b menu `/` · 152c bulle de sélection · 152d image collée et aperçu en direct ·
