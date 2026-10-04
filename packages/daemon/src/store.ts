@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "./sqlite-busy";
+import { vacuumFileInto } from "./sqlite-vacuum";
 
 export type Store = {
   db: Database;
@@ -14,6 +15,7 @@ export type Store = {
   getLocal(key: string): string | null;
   setLocal(key: string, value: string): void;
   transaction<T>(fn: () => T): T;
+  vacuumInto(path: string): void;
   close(): void;
 };
 
@@ -69,6 +71,7 @@ export function openStore(home: string): Store {
       upsertLocal.run({ key, value, at: Date.now() });
     },
     transaction: <T>(fn: () => T): T => immediateTransaction(db, fn)(),
+    vacuumInto: (path) => vacuumFileInto(file, path),
     close: () => db.close(),
   };
 }

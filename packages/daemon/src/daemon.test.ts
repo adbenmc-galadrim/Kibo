@@ -160,6 +160,33 @@ describe("startDaemon", () => {
     expect((await redeem()).status).toBe(401);
   });
 
+  test("an automatic backup runs at start, then createBackup from the RPC writes under <home>/backups and getBackups lists it", async () => {
+    const { d, home } = await launch();
+    const rpc = await pair(d);
+    const Listed = z.object({
+      result: z.object({
+        status: z.object({ running: z.boolean(), dir: z.string() }),
+        backups: z.array(z.object({ id: z.string(), reason: z.string() })),
+      }),
+    });
+    const list = async () => Listed.parse(await (await rpc({ method: "getBackups" })).json()).result;
+    let listed = await list();
+    for (let i = 0; i < 100 && (listed.status.running || listed.backups.length === 0); i++) {
+      await Bun.sleep(20);
+      listed = await list();
+    }
+    expect(listed.status.dir).toBe(join(home, "backups"));
+    expect(listed.backups.map((b) => b.reason)).toEqual(["auto"]);
+    const auto = listed.backups[0]?.id ?? "";
+    expect((await rpc({ method: "deleteBackup", id: auto })).status).toBe(200);
+    const created = z
+      .object({ result: z.object({ id: z.string(), reason: z.literal("manual") }) })
+      .parse(await (await rpc({ method: "createBackup", reason: "manual" })).json());
+    expect(existsSync(join(home, "backups", created.result.id, "kibo.db"))).toBe(true);
+    expect(existsSync(join(home, "backups", created.result.id, "token"))).toBe(false);
+    expect((await list()).backups.map((b) => b.id)).toEqual([created.result.id]);
+  });
+
   test("a pairing session survives a daemon restart on the same home", async () => {
     const { d, home, stop } = await launch();
     const cookie = await pairCookie(d);

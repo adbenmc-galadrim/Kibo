@@ -1,5 +1,6 @@
+import { homedir } from "node:os";
 import { osSandbox, type Toolchain } from "@kibo/devkit";
-import { type HostLoad, isTerminal, KiboError, type Session, ticketRuns } from "@kibo/schema";
+import { BACKUP_TICK_MS, type HostLoad, isTerminal, KiboError, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
@@ -8,6 +9,9 @@ import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
 import { loadOrCreateToken } from "./auth";
+import { backupsRpc } from "./backups/rpc";
+import { startBackupSchedule } from "./backups/schedule";
+import { createBackupsService } from "./backups/service";
 import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
@@ -58,6 +62,7 @@ export type DaemonOptions = {
 export type Daemon = { url: string; port: number; sandboxPort: number; token: string; stop(): Promise<void> };
 
 const VITE_ORIGIN = "http://localhost:5173";
+const APP_VERSION = "0.0.0";
 
 type Closer = () => void | Promise<void>;
 type Closers = { front: Closer[]; back: Closer[] };
@@ -99,6 +104,17 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     sandbox: osSandbox(),
     settings: openLocalSettings(store),
     emit: (message) => service.docs.emit(message),
+  });
+  const backups = createBackupsService({
+    home: opts.home,
+    userHome: homedir(),
+    settings: openLocalSettings(store),
+    databases: [
+      { file: "kibo.db", vacuumInto: store.vacuumInto },
+      { file: "runs.db", vacuumInto: runs.vacuumInto },
+    ],
+    appVersion: APP_VERSION,
+    emit: (event) => service.docs.emit(event),
   });
   const redactor = opts.redactor ?? createRedactor();
   const integrations = startIntegrations(
@@ -179,7 +195,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     token,
     sessions: openSessionStore(store.db),
     pairingCodes,
-    extensions: [remoteRpc(remoteAccess, pairingCodes), sandboxRpc(sandboxService)],
+    extensions: [remoteRpc(remoteAccess, pairingCodes), sandboxRpc(sandboxService), backupsRpc(backups)],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
@@ -248,7 +264,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     address: `127.0.0.1:${server.port}`,
     listIntegrations: async () => call(service, { method: "listIntegrations" }),
     appInfo: () => ({
-      version: "0.0.0",
+      version: APP_VERSION,
       platform: process.platform === "darwin" ? "darwin" : "linux",
       arch: process.arch === "arm64" ? "arm64" : "x64",
       home: "~/.kibo",
@@ -260,6 +276,12 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   draftAssets = ai.draftAssets;
   closers.push(service.attachAi(ai.port));
   closers.push(() => ai.stop());
+  closers.push(
+    startBackupSchedule(backups, {
+      intervalMs: BACKUP_TICK_MS,
+      log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
+    }),
+  );
   writeDaemonInfo(opts.home, { port: server.port, sandboxPort: sandbox.port, pid: process.pid });
   front.push(() => removeDaemonInfo(opts.home));
   return {

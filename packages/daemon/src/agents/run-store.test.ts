@@ -131,3 +131,15 @@ test("a corrupted file or event is reported, never ignored", () => {
   expect(() => s.log("r1")).toThrow("STORE_CORRUPT");
   s.close();
 });
+
+test("vacuumInto writes a readable snapshot of the runs", () => {
+  const h = home();
+  const store = openRunStore(h);
+  store.create(newRun("r1"), 0, 1);
+  const target = join(h, "copy.db");
+  store.vacuumInto(target);
+  store.close();
+  const db = new Database(target, { readonly: true });
+  expect(db.query("SELECT id FROM runs").all()).toEqual([{ id: "r1" }]);
+  db.close();
+});

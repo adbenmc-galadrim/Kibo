@@ -3,6 +3,7 @@ import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { HostSettings, KiboError, RunEvent, type RunLogEntry, type RunRecord } from "@kibo/schema";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
+import { vacuumFileInto } from "../sqlite-vacuum";
 
 export type NewRun = Omit<RunRecord, "seq" | "createdAt">;
 export type StoredEvent = RunLogEntry & { runId: string };
@@ -16,6 +17,7 @@ export type RunStore = {
   tokenHash(runId: string): string | null;
   hostSettings(): Partial<HostSettings>;
   saveHostSettings(patch: Partial<HostSettings>): void;
+  vacuumInto(path: string): void;
   close(): void;
 };
 
@@ -171,6 +173,7 @@ export function openRunStore(home: string): RunStore {
         if (value !== undefined) upsertSetting.run({ key, value: JSON.stringify(value) });
       }
     },
+    vacuumInto: (path) => vacuumFileInto(file, path),
     close: () => db.close(),
   };
 }

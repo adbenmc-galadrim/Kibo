@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -104,5 +105,20 @@ describe("store", () => {
   test("KIBO_HOME overrides the default home", () => {
     expect(kiboHome({ KIBO_HOME: "/tmp/k" })).toBe("/tmp/k");
     expect(kiboHome({})).toEndWith(".kibo");
+  });
+  test("vacuumInto writes a consistent snapshot even while a write transaction is open", () => {
+    const home = tmp();
+    const store = openStore(home);
+    store.setLocal("a", "1");
+    store.db.exec("BEGIN IMMEDIATE");
+    store.setLocal("b", "2");
+    const target = join(home, "copy.db");
+    store.vacuumInto(target);
+    store.db.exec("COMMIT");
+    store.close();
+    const copy = new Database(target, { readonly: true });
+    expect(copy.query("SELECT key FROM local_state ORDER BY key").all()).toEqual([{ key: "a" }]);
+    expect(copy.query("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
+    copy.close();
   });
 });
