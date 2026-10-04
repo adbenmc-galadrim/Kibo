@@ -1,10 +1,9 @@
 import { createSignal, type Signal } from "@kibo/sdk";
 import { type RefObject, useEffect, useState } from "react";
 
-export function useVisibility(ref: RefObject<Element | null>, enabled: boolean): Signal<boolean> {
+export function useVisibility(ref: RefObject<Element | null>): Signal<boolean> {
   const [signal] = useState(() => createSignal(true));
   useEffect(() => {
-    if (!enabled) return;
     let stop: (() => void) | null = null;
     let live = true;
     import("./visibility-watch").then(
@@ -17,6 +16,6 @@ export function useVisibility(ref: RefObject<Element | null>, enabled: boolean):
       live = false;
       stop?.();
     };
-  }, [ref, enabled, signal]);
+  }, [ref, signal]);
   return signal;
 }

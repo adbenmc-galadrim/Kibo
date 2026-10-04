@@ -16,7 +16,7 @@ export type InstanceApis = {
 };
 
 export function manifestOf(
-  instance: Instance,
+  instance: Pick<Instance, "component">,
   components: ComponentSummary[] | null,
 ): ComponentManifest | null {
   const builtin = findComponent(instance.component);
@@ -26,10 +26,14 @@ export function manifestOf(
   return v?.active && v.manifest ? v.manifest : null;
 }
 
-export const instanceCapabilities = (
-  instance: Instance,
-  components: ComponentSummary[] | null,
-): Capability[] => [...(manifestOf(instance, components)?.capabilities ?? [])];
+const NONE: readonly Capability[] = [];
 
-export const instanceSelects = (instance: Instance, components: ComponentSummary[] | null): boolean =>
-  manifestOf(instance, components)?.selection ?? false;
+export const instanceCapabilities = (
+  instance: Pick<Instance, "component">,
+  components: ComponentSummary[] | null,
+): readonly Capability[] => manifestOf(instance, components)?.capabilities ?? NONE;
+
+export const instanceSelects = (
+  instance: Pick<Instance, "component">,
+  components: ComponentSummary[] | null,
+): boolean => manifestOf(instance, components)?.selection ?? false;

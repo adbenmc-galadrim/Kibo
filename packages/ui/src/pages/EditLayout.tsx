@@ -12,14 +12,14 @@ import {
 import { useCallback, useRef } from "react";
 import { instanceFormat } from "../lib/format-grid";
 import { findComponent } from "../registry";
-import { useComponents } from "../state/use-components";
 import { LayoutEditor, type LayoutEditorProps } from "./LayoutEditor";
 import { shortcutFormats } from "./layout-draft";
+import { usePageContext } from "./PageContext";
 import { useInstanceApis } from "./use-instance-apis";
 import { type BodyProps, WidgetBody } from "./WidgetHeader";
 
 function useManifestOf(): (instance: Instance) => ComponentManifest | null | undefined {
-  const { components } = useComponents();
+  const components = usePageContext()?.components ?? null;
   return useCallback(
     (instance: Instance) => {
       const { id, version } = splitRef(instance.component);

@@ -119,7 +119,7 @@ function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
       await load;
     });
   };
-  return { view, iframe, posted, opened, newTickets, fromFrame, loaded, navigate, changeSrc };
+  return { view, iframe, posted, opened, newTickets, fromFrame, loaded, navigate, changeSrc, rerender };
 }
 
 test("a new ticket asked by the frame carries the instance fixed by the host", () => {
@@ -412,4 +412,27 @@ test("a refusal the daemon cannot record is logged, never swallowed", async () =
     refusalFailure = null;
     capture.restore();
   }
+});
+
+test("a parent render with the same apis keeps a single live subscription", () => {
+  const t = testApis();
+  let live = 0;
+  const visibility = {
+    visible: t.apis.visibility.visible,
+    subscribe(listener: () => void) {
+      live += 1;
+      const off = t.apis.visibility.subscribe(listener);
+      return () => {
+        live -= 1;
+        off();
+      };
+    },
+  };
+  const apis = { ...t.apis, visibility };
+  const { view, rerender } = mount("about:blank", apis);
+  rerender("about:blank");
+  rerender("about:blank");
+  expect(live).toBe(1);
+  view.unmount();
+  expect(live).toBe(0);
 });

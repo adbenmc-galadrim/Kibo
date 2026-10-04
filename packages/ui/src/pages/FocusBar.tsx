@@ -11,6 +11,7 @@ export function FocusBar({ instanceId, title, dispatch }: Props) {
   const exit = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     exit.current?.focus();
+    const cell = exit.current?.closest("[data-instance]");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") dispatch({ type: "escape", dialogOpen: dialogOpen() });
     };
@@ -20,6 +21,7 @@ export function FocusBar({ instanceId, title, dispatch }: Props) {
     return () => {
       window.removeEventListener("keydown", onKey, true);
       document.body.style.overflow = overflow;
+      setTimeout(() => cell?.querySelector<HTMLElement>("[data-fullscreen]")?.focus());
     };
   }, [dispatch]);
   return (
@@ -42,6 +44,7 @@ export function FullscreenButton({ instanceId }: { instanceId: string }) {
       variant="ghost"
       className="size-7 shrink-0"
       aria-label={frFocus.enter}
+      data-fullscreen=""
       onClick={() => focus.dispatch({ type: "request", id: instanceId, allowed: true })}
     >
       <Maximize2 aria-hidden />

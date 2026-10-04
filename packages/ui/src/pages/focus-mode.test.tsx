@@ -104,14 +104,14 @@ const project = (): ProjectSnapshot => ({
   pages: [page],
   instances: [widget("i1", "arcade@1.0.0", 0), widget("i2", "plain@1.0.0", 4)],
 });
-const show = () =>
-  render(
-    <HostProvider host={host}>
-      <PageActionsProvider>
-        <PageView project={project()} page={page} viewer="adam" />
-      </PageActionsProvider>
-    </HostProvider>,
-  );
+const page_ = (snapshot: ProjectSnapshot) => (
+  <HostProvider host={host}>
+    <PageActionsProvider>
+      <PageView project={snapshot} page={page} viewer="adam" />
+    </PageActionsProvider>
+  </HostProvider>
+);
+const show = () => render(page_(project()));
 const cardOf = (container: HTMLElement, id: string) =>
   container.querySelector(`[data-instance="${id}"] > div`);
 const pressEscape = () => act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
@@ -190,7 +190,7 @@ test("a focus request without the capability changes nothing and is reported", a
   view.unmount();
 });
 
-test("only a widget that declares a capability follows the visibility of the tab", async () => {
+test("every widget follows the visibility of the tab", async () => {
   const view = show();
   await screen.findByText("arcade content");
   await screen.findByText("plain content");
@@ -199,10 +199,45 @@ test("only a widget that declares a capability follows the visibility of the tab
     await waitFor(() => {
       document.dispatchEvent(new Event("visibilitychange"));
       expect(sdks.get("arcade")?.visibility.visible()).toBe(false);
+      expect(sdks.get("plain")?.visibility.visible()).toBe(false);
     });
-    expect(sdks.get("plain")?.visibility.visible()).toBe(true);
   } finally {
     Reflect.deleteProperty(document, "visibilityState");
     view.unmount();
   }
+});
+
+test("the page lists the components once, the widgets do not ask again for their capabilities", async () => {
+  const view = show();
+  await screen.findByText("arcade content");
+  await screen.findByText("plain content");
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 10));
+  });
+  const listed = calls.filter((c) => c.method === "listComponents").length;
+  expect(listed).toBe(5);
+  view.unmount();
+});
+
+test("leaving the fullscreen gives the focus back to its button", async () => {
+  const view = show();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Plein écran" }));
+  await user.click(await screen.findByRole("button", { name: "Quitter le plein écran (Échap)" }));
+  await waitFor(() => expect(document.activeElement?.getAttribute("aria-label")).toBe("Plein écran"));
+  view.unmount();
+});
+
+test("a widget removed while in fullscreen does not come back in fullscreen", async () => {
+  const view = show();
+  await screen.findByText("arcade content");
+  act(() => sdks.get("arcade")?.focus.request());
+  expect(screen.getByRole("dialog", { name: "Arcade" })).toBeTruthy();
+  const without = { ...project(), instances: project().instances.filter((i) => i.id !== "i1") };
+  view.rerender(page_(without));
+  await waitFor(() => expect(screen.queryByText("arcade content")).toBeNull());
+  view.rerender(page_(project()));
+  await screen.findByText("arcade content");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  view.unmount();
 });

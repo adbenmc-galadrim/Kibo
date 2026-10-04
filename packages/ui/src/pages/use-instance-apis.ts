@@ -3,8 +3,6 @@ import { createSignal, focusApi, NO_SELECTION, type Signal, visibilityApi } from
 import { type RefObject, useEffect, useMemo, useState } from "react";
 import { type InstanceApis, instanceCapabilities, instanceSelects } from "../lib/instance-capabilities";
 import { reportRefusal } from "../lib/report-refusal";
-import { findComponent } from "../registry";
-import { useComponents } from "../state/use-components";
 import { usePageContext } from "./PageContext";
 import { useVisibility } from "./use-visibility";
 
@@ -19,15 +17,18 @@ export function useInstanceApis(
   instance: Instance,
   ref: RefObject<Element | null>,
 ): InstanceApis | null {
-  const builtin = findComponent(instance.component) !== undefined;
-  const { components, error } = useComponents(!builtin);
-  const capabilities = instanceCapabilities(instance, components);
-  const selects = instanceSelects(instance, components);
   const page = usePageContext();
+  const components = page?.components ?? null;
+  const { component } = instance;
+  const capabilities = useMemo(
+    () => instanceCapabilities({ component }, components),
+    [component, components],
+  );
+  const selects = useMemo(() => instanceSelects({ component }, components), [component, components]);
   const bus = page?.bus;
   const dispatch = page?.dispatch;
   const focusedId = page?.focusedId ?? null;
-  const visible = useVisibility(ref, capabilities.length > 0 || selects);
+  const visible = useVisibility(ref);
   const active = useSignalOf(focusedId === instance.id);
   const fullscreen = capabilities.includes("fullscreen");
   const id = instance.id;
@@ -45,5 +46,5 @@ export function useInstanceApis(
     () => ({ capabilities, focus, visibility, selection }),
     [capabilities, focus, visibility, selection],
   );
-  return builtin || components !== null || error ? apis : null;
+  return components !== null ? apis : null;
 }
