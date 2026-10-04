@@ -54,8 +54,9 @@ async function seedPages(run: ReturnType<typeof commandOf>) {
     for (const c of page.components) {
       const component = formatRef(c.id, DEMO_COMPONENT_VERSION);
       const layout = c.layout ? { layout: c.layout } : {};
+      const config = c.config ? { config: c.config } : {};
       instances.push(
-        await run(Instance, { method: "addInstance", pageId: created.id, component, ...layout }),
+        await run(Instance, { method: "addInstance", pageId: created.id, component, ...layout, ...config }),
       );
     }
   }

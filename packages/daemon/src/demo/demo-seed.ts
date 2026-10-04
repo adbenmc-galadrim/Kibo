@@ -13,7 +13,7 @@ export type DemoComponentId = "kanban" | "tickets" | "notes" | "graph";
 export type DemoPage = {
   title: string;
   kind: "dashboard" | "view";
-  components: readonly { id: DemoComponentId; layout?: Layout }[];
+  components: readonly { id: DemoComponentId; layout?: Layout; config?: { filter: "all" } }[];
 };
 
 export const DEMO_COMPONENT_VERSION = "1.0.0";
@@ -83,17 +83,19 @@ export const DEMO_NOTE = {
     "# Bienvenue dans la démo\n\nCe projet sert au didacticiel. Modifie cette note avec la barre d'outils : mets un mot en **gras**, ajoute une liste.\n",
 } as const;
 
+const ALL_TICKETS = { filter: "all" } as const;
+
 export const DEMO_PAGES: readonly DemoPage[] = [
   {
     title: "Tableau de bord",
     kind: "dashboard",
     components: [
-      { id: "kanban", layout: { x: 0, y: 0, w: 8, h: 6 } },
+      { id: "kanban", layout: { x: 0, y: 0, w: 8, h: 6 }, config: ALL_TICKETS },
       { id: "tickets", layout: { x: 8, y: 0, w: 4, h: 6 } },
       { id: "notes", layout: { x: 0, y: 6, w: 12, h: 4 } },
     ],
   },
-  { title: "Kanban", kind: "view", components: [{ id: "kanban" }] },
-  { title: "Graphe", kind: "view", components: [{ id: "graph" }] },
+  { title: "Kanban", kind: "view", components: [{ id: "kanban", config: ALL_TICKETS }] },
+  { title: "Graphe", kind: "view", components: [{ id: "graph", config: ALL_TICKETS }] },
   { title: "Notes", kind: "view", components: [{ id: "notes" }] },
 ];

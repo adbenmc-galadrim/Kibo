@@ -46,6 +46,8 @@ test("createDemoProject builds the project through the public API and marks it d
   expect(snap.pages.map((p) => p.title)).toEqual(["Tableau de bord", "Kanban", "Graphe", "Notes"]);
   expect(snap.instances).toHaveLength(6);
   expect(snap.instances.every((i) => i.component.endsWith("@1.0.0"))).toBe(true);
+  const boards = snap.instances.filter((i) => /^(graph|kanban)@/.test(i.component));
+  expect(boards.map((i) => i.config)).toEqual([{ filter: "all" }, { filter: "all" }, { filter: "all" }]);
   expect(isDemoProject(settings, projectId)).toBe(true);
   expect(settings.get(projectId, DEMO_FLAG)).toBe("1");
   expect([...seed.ticketIds].sort()).toEqual(snap.tickets.map((t) => t.id).sort());
