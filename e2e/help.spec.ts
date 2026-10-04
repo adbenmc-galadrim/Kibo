@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { expect, test } from "@playwright/test";
+import { APP_VERSION } from "./app-version";
 import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -40,7 +41,7 @@ test("the help menu shows the whole report, without token nor personal folder, a
   await page.getByRole("menuitem", { name: "Signaler un problème" }).click();
   const dialog = page.getByRole("dialog", { name: "Signaler un problème" });
   const report = dialog.getByRole("region", { name: "Rapport" });
-  await expect(report).toContainText("Kibo 1.4.0");
+  await expect(report).toContainText(`Kibo ${APP_VERSION}`);
   await expect(report).toContainText("navigateur");
   await expect(report).toContainText("## Journal (50 dernières lignes)");
   const text = (await report.textContent()) ?? "";
@@ -55,7 +56,7 @@ test("the help menu shows the whole report, without token nor personal folder, a
   await dialog.getByRole("button", { name: "Copier" }).click();
   await expect(dialog.getByRole("button", { name: "Copié" })).toBeVisible();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
-  expect(copied).toContain("## Application\n- Kibo 1.4.0");
+  expect(copied).toContain(`## Application\n- Kibo ${APP_VERSION}`);
   expect(copied).not.toContain("Journal");
   expect(copied).not.toContain(E2E_TOKEN);
 });
