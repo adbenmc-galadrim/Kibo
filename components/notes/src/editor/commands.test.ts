@@ -82,3 +82,11 @@ test("italic inside bold adds a third star, and each mark comes off on its own",
   expect(apply(both, toggleInline("bold")).doc.toString()).toBe("un *mot*");
   expect(apply(state("un **mot**", 3, 10), toggleInline("italic")).doc.toString()).toBe("un ***mot***");
 });
+
+test("line commands only touch the prefix, so the cursor stays on its word", () => {
+  const h = apply(state("un mot", 6), setHeading(2));
+  expect(sel(h)).toEqual([9, 9]);
+  const quoted = apply(state("## un mot", 9), toggleBlock("quote"));
+  expect(quoted.doc.toString()).toBe("> ## un mot");
+  expect(sel(quoted)).toEqual([11, 11]);
+});

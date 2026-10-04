@@ -67,15 +67,21 @@ const selectedLines = (state: EditorState): Line[] => {
   return lines;
 };
 
+const commonSuffix = (a: string, b: string): number => {
+  let n = 0;
+  while (n < a.length && n < b.length && a[a.length - 1 - n] === b[b.length - 1 - n]) n++;
+  return n;
+};
+
 const rewriteLines = (
   state: EditorState,
   rewrite: (text: string, index: number) => string,
 ): TransactionSpec => ({
-  changes: selectedLines(state).map((line, index) => ({
-    from: line.from,
-    to: line.to,
-    insert: rewrite(line.text, index),
-  })),
+  changes: selectedLines(state).map((line, index) => {
+    const next = rewrite(line.text, index);
+    const kept = commonSuffix(line.text, next);
+    return { from: line.from, to: line.to - kept, insert: next.slice(0, next.length - kept) };
+  }),
 });
 
 const HEADING = /^#{1,6} /;

@@ -3,6 +3,9 @@ import { markdown } from "@codemirror/lang-markdown";
 import { Annotation, EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
+import type { Command } from "./editor/commands";
+import { EditorToolbar } from "./editor/EditorToolbar";
+import { editorKeymap } from "./editor/keymap";
 import { fr } from "./fr";
 
 type Props = { value: string; onChange(markdown: string): void };
@@ -30,7 +33,7 @@ export function MarkdownEditor({ value, onChange }: Props) {
         doc: initial.current,
         extensions: [
           history(),
-          keymap.of([...defaultKeymap, ...historyKeymap]),
+          keymap.of([...editorKeymap, ...defaultKeymap, ...historyKeymap]),
           markdown(),
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ "aria-label": fr.editor, "aria-multiline": "true" }),
@@ -60,5 +63,20 @@ export function MarkdownEditor({ value, onChange }: Props) {
     }
   }, [value]);
 
-  return <div ref={host} className="min-h-[60vh] rounded-md border bg-background p-2 text-foreground" />;
+  const run = (cmd: Command) => {
+    const v = view.current;
+    if (!v) return;
+    const spec = cmd(v.state);
+    if (!spec) return;
+    v.dispatch({ ...spec, userEvent: "input" });
+    v.focus();
+  };
+  const focusEditor = () => view.current?.focus();
+
+  return (
+    <div className="grid min-h-[60vh] grid-rows-[auto_1fr] rounded-md border bg-background text-foreground">
+      <EditorToolbar run={run} focusEditor={focusEditor} />
+      <div ref={host} className="min-h-0 p-2" />
+    </div>
+  );
 }

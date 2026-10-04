@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test";
+import type { TransactionSpec } from "@codemirror/state";
+import { runScopeHandlers } from "@codemirror/view";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { DEMO_NOTE_AGES, DEMO_NOTES } from "@kibo/sdk/fixtures";
@@ -243,4 +245,64 @@ test("a stored sort is read back when the list opens", async () => {
   } finally {
     localStorage.removeItem("kibo.notes.sort");
   }
+});
+
+const modKey = (key: string) =>
+  new KeyboardEvent("keydown", {
+    key,
+    metaKey: /Mac/.test(navigator.platform),
+    ctrlKey: !/Mac/.test(navigator.platform),
+  });
+
+const blurredEditor = async () => {
+  const view = await editorView();
+  const user = userEvent.setup();
+  const blurred = <T,>(act: () => T): T => {
+    view.contentDOM.blur();
+    return act();
+  };
+  return {
+    view,
+    press: (target: HTMLElement) => blurred(() => user.click(target)),
+    edit: (spec: TransactionSpec) => blurred(() => view.dispatch(spec)),
+    shortcut: (key: string) => blurred(() => runScopeHandlers(view, modKey(key), "editor")),
+    choose: async (item: string) => {
+      (await screen.findByRole("menuitem", { name: item })).focus();
+      await user.keyboard("{Enter}");
+    },
+  };
+};
+
+test("the toolbar formats the selection and ⌘B, ⌘I, ⌘E are bound", async () => {
+  setup("view");
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
+  const { view, press, edit, shortcut, choose } = await blurredEditor();
+  const text = () => view.state.doc.toString();
+  edit({
+    changes: { from: 0, to: view.state.doc.length, insert: "un mot" },
+    selection: { anchor: 3, head: 6 },
+  });
+  const toolbar = screen.getByRole("toolbar", { name: "Mise en forme" });
+  await press(within(toolbar).getByRole("button", { name: "Gras" }));
+  expect(text()).toBe("un **mot**");
+  expect(view.hasFocus).toBe(true);
+  edit({ selection: { anchor: 5, head: 8 } });
+  await press(within(toolbar).getByRole("button", { name: "Italique" }));
+  expect(text()).toBe("un ***mot***");
+  await press(within(toolbar).getByRole("button", { name: "Titre" }));
+  await choose("Titre 2");
+  expect(text()).toBe("## un ***mot***");
+  await waitFor(() => expect(view.hasFocus).toBe(true));
+  edit({ selection: { anchor: view.state.doc.length } });
+  await press(within(toolbar).getByRole("button", { name: "Bloc de code" }));
+  await choose("ts");
+  expect(text()).toBe("## un ***mot***\n```ts\n\n```");
+  edit({ changes: { from: 0, to: view.state.doc.length, insert: "a b" }, selection: { anchor: 2, head: 3 } });
+  expect(shortcut("b")).toBe(true);
+  expect(text()).toBe("a **b**");
+  expect(shortcut("i")).toBe(true);
+  expect(text()).toBe("a ***b***");
+  expect(shortcut("e")).toBe(true);
+  expect(text()).toBe("a ***`b`***");
 });
