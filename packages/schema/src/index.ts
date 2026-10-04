@@ -18,6 +18,7 @@ export * from "./inbox";
 export * from "./instance";
 export * from "./integrations";
 export * from "./integrations-rpc";
+export * from "./layout-compaction";
 export * from "./link";
 export * from "./manifest";
 export * from "./market";
