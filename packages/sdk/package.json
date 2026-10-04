@@ -16,6 +16,7 @@
     "./migrations": "./src/migrations.ts",
     "./dev": "./src/dev.tsx",
     "./three": "./src/three/index.ts",
+    "./game": "./src/game/index.ts",
     "./theme.css": "./src/theme.css",
     "./ui/*": "./src/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
