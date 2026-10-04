@@ -17,7 +17,7 @@ export type ThreeHandle = {
 
 export type ThreeCanvasProps = {
   label: string;
-  setup(handle: ThreeHandle): unknown;
+  setup(handle: ThreeHandle): void | (() => void);
   frame?(handle: ThreeHandle, dt: number): void;
   animate?: boolean;
   className?: string;
