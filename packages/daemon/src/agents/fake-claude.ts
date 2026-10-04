@@ -8,6 +8,7 @@ import {
   appendWrite,
   denialReason,
   fakeMeta,
+  isDemoAgent,
   resolveStepInput,
   runWriteStep,
 } from "./fake-claude-ai";
@@ -163,6 +164,7 @@ async function main(): Promise<number> {
     if ("write" in step) {
       const entry = await runWriteStep(step, {
         cwd: process.cwd(),
+        allowBypass: !isDemoAgent(import.meta.dir, process.env),
         hook: async (event, extra) => {
           const runs = await runHooks(event, extra);
           return event === "PreToolUse" && denied(runs)

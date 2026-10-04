@@ -11,6 +11,7 @@ import {
   fakeMeta,
   fakeWrites,
   fixturesDir,
+  isDemoAgent,
   runWriteStep,
   type WriteLog,
 } from "./fake-claude-ai";
@@ -36,7 +37,7 @@ const DENY = JSON.stringify({
 
 type Sent = { event: string; extra: Record<string, unknown> };
 
-type StepOptions = { bypassHooks?: boolean; deny?: string; fixtures?: string };
+type StepOptions = { bypassHooks?: boolean; deny?: string; fixtures?: string; allowBypass?: boolean };
 
 function step(write: string, fixture: string, opts: StepOptions = {}) {
   const cwd = tmp();
@@ -48,7 +49,13 @@ function step(write: string, fixture: string, opts: StepOptions = {}) {
   };
   const run = runWriteStep(
     { write, fixture, bypassHooks: opts.bypassHooks ?? false },
-    { cwd, hook, log: (e) => log.push(e), ...(opts.fixtures && { fixtures: opts.fixtures }) },
+    {
+      cwd,
+      hook,
+      log: (e) => log.push(e),
+      ...(opts.fixtures && { fixtures: opts.fixtures }),
+      ...(opts.allowBypass !== undefined && { allowBypass: opts.allowBypass }),
+    },
   );
   return { cwd, sent, log, run };
 }
@@ -100,6 +107,17 @@ describe("runWriteStep", () => {
     expect(existsSync(join(cwd, "ui.tsx"))).toBe(false);
   });
 
+  test("the demo agent refuses a write that bypasses the hooks", async () => {
+    const { cwd, sent, log, run } = step("ui.tsx", "burndown/ui.tsx.fixture", {
+      bypassHooks: true,
+      allowBypass: false,
+    });
+    await expect(run).rejects.toThrow(/the demo agent never bypasses the hooks/);
+    expect(sent).toEqual([]);
+    expect(log).toEqual([]);
+    expect(existsSync(join(cwd, "ui.tsx"))).toBe(false);
+  });
+
   test("a fixture outside the fixtures dir is refused", async () => {
     const { cwd, sent, run } = step("ui.tsx", "../../fake-claude-ai.ts");
     await expect(run).rejects.toThrow(/outside the fixtures dir/);
@@ -114,6 +132,12 @@ describe("runWriteStep", () => {
     await run;
     expect(readFileSync(join(cwd, "notes.md"), "utf8")).toBe("plan");
   });
+});
+
+test("the fake claude is the demo agent once compiled or when the demo env says so", () => {
+  expect(isDemoAgent("/$bunfs/root", {})).toBe(true);
+  expect(isDemoAgent("/repo/packages/daemon/src/agents", { KIBO_FAKE_CLAUDE_DEMO: "1" })).toBe(true);
+  expect(isDemoAgent("/repo/packages/daemon/src/agents", {})).toBe(false);
 });
 
 test("fixturesDir follows KIBO_FAKE_CLAUDE_FIXTURES, else the test fixtures", () => {

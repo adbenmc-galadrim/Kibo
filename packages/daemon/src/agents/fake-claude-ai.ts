@@ -12,6 +12,9 @@ type WriteStep = { write: string; fixture: string; bypassHooks: boolean };
 export const fixturesDir = (env: Record<string, string | undefined> = process.env): string =>
   env.KIBO_FAKE_CLAUDE_FIXTURES ?? FIXTURES_DIR;
 
+export const isDemoAgent = (dir: string, env: Record<string, string | undefined>): boolean =>
+  dir.startsWith("/$bunfs") || env.KIBO_FAKE_CLAUDE_DEMO === "1";
+
 function fixturePath(dir: string, fixture: string): string {
   const root = resolve(dir);
   const file = resolve(root, fixture);
@@ -56,8 +59,16 @@ export function denialReason(stdouts: string[]): string | null {
 
 export async function runWriteStep(
   step: WriteStep,
-  ctx: { cwd: string; hook: HookFn; log: (entry: WriteLog) => void; fixtures?: string },
+  ctx: {
+    cwd: string;
+    hook: HookFn;
+    log: (entry: WriteLog) => void;
+    fixtures?: string;
+    allowBypass?: boolean;
+  },
 ): Promise<WriteLog> {
+  if (step.bypassHooks && ctx.allowBypass === false)
+    throw new Error("the demo agent never bypasses the hooks");
   const filePath = resolve(ctx.cwd, step.write);
   const content = readFileSync(fixturePath(ctx.fixtures ?? fixturesDir(), step.fixture), "utf8");
   const write = () => {

@@ -1,4 +1,5 @@
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { chmodSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { TEMPLATES } from "@kibo/devkit";
 import type { FakeScenario } from "../agents/fake-claude-scenario";
@@ -69,8 +70,9 @@ const FILE_MODE = 0o600;
 
 function writePrivate(file: string, content: string): void {
   mkdirSync(dirname(file), { recursive: true, mode: DIR_MODE });
-  writeFileSync(file, content, { mode: FILE_MODE });
-  chmodSync(file, FILE_MODE);
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  writeFileSync(temporary, content, { mode: FILE_MODE, flag: "wx" });
+  renameSync(temporary, file);
 }
 
 export function ensureDemoAgentFiles(home: string): DemoAgentFiles {

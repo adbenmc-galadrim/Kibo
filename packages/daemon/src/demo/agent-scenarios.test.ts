@@ -1,5 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FakeRoutes, FakeScenario } from "../agents/fake-claude-scenario";
@@ -55,10 +66,25 @@ test("ensureDemoAgentFiles writes routes, scenarios, fixtures and a state dir un
   expect(ensureDemoAgentFiles(home)).toEqual(files);
 });
 
+test("a symbolic link planted in place of a demo file is replaced, never followed", () => {
+  const home = tempHome();
+  const outside = join(home, "outside.json");
+  writeFileSync(outside, "intact");
+  mkdirSync(join(home, "demo-agent/scenarios"), { recursive: true });
+  symlinkSync(outside, join(home, "demo-agent/routes.json"));
+  symlinkSync(outside, join(home, "demo-agent/scenarios/ticket.json"));
+  ensureDemoAgentFiles(home);
+  expect(readFileSync(outside, "utf8")).toBe("intact");
+  expect(lstatSync(join(home, "demo-agent/routes.json")).isSymbolicLink()).toBe(false);
+  expect(lstatSync(join(home, "demo-agent/scenarios/ticket.json")).isSymbolicLink()).toBe(false);
+  expect(readdirSync(join(home, "demo-agent/scenarios")).sort()).toEqual(["component.json", "ticket.json"]);
+});
+
 test("the demo environment points the fake claude at the demo files", () => {
   expect(demoAgentEnv({ scenario: "/h/routes.json", state: "/h/state", fixtures: "/h/fixtures" })).toEqual({
     KIBO_FAKE_CLAUDE_SCENARIO: "/h/routes.json",
     KIBO_FAKE_CLAUDE_STATE: "/h/state",
     KIBO_FAKE_CLAUDE_FIXTURES: "/h/fixtures",
+    KIBO_FAKE_CLAUDE_DEMO: "1",
   });
 });
