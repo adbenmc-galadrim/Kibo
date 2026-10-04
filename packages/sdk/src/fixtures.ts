@@ -1,5 +1,7 @@
 import { type Assignee, type ProjectCommand, type StatusId, Ticket } from "@kibo/schema";
 
+export { sampleGlb } from "./fixtures-glb";
+
 type Row = [number, string, number | null, StatusId, string | null];
 
 const ROWS: Row[] = [

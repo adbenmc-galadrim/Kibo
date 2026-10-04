@@ -106,6 +106,13 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/files/FileToolbar.tsx",
       "/Kibo/packages/ui/src/files/WrapSwitch.tsx",
       "/Kibo/packages/ui/src/i18n/fr-file-tools.ts",
+      "/Kibo/packages/ui/src/files/ProjectFilesDialog.tsx",
+      "/Kibo/packages/ui/src/files/FilesDirDialog.tsx",
+      "/Kibo/packages/ui/src/files/FilesList.tsx",
+      "/Kibo/packages/ui/src/files/use-project-files.ts",
+      "/Kibo/packages/ui/src/files/upload.ts",
+      "/Kibo/packages/ui/src/files/slug.ts",
+      "/Kibo/packages/ui/src/i18n/fr-files.ts",
       "/Kibo/packages/ui/src/settings/SyncEmptyState.tsx",
       "/Kibo/packages/ui/src/i18n/fr-sync-page.ts",
       "/Kibo/packages/ui/src/agents/RunHistory.tsx",
@@ -155,6 +162,26 @@ describe("bundle report", () => {
       "/x/node_modules/.bun/loro-crdt@1.16.3/node_modules/loro-crdt/browser/index.js",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
+
+  test("three and the sdk 3d and game kits never reach the entry", () => {
+    const three = pkg("three", "build/three.module.js");
+    const chunks = [
+      chunk("index.js", { isEntry: true, moduleIds: [three] }),
+      chunk("Viewer3d.js", { moduleIds: [pkg("three", "examples/jsm/loaders/GLTFLoader.js")] }),
+    ];
+    const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
+    expect(report.forbidden).toEqual([{ file: "index.js", module: three }]);
+    const paths = [
+      "/x/packages/sdk/src/three/ThreeCanvas.tsx",
+      "/x/packages/sdk/src/three/index.ts",
+      "/x/packages/sdk/src/game/loop.ts",
+      "/x/packages/sdk/src/fixtures-glb.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(
+      FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/node_modules/.bun/threejs-x@1/node_modules/threejs-x/a.js")),
+    ).toBe(false);
   });
 
   test("the preview worker must be emitted under workers/", () => {

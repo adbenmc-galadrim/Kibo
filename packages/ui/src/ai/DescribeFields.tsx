@@ -1,4 +1,4 @@
-import { type ComponentFormat, type DraftKind, formatsOf } from "@kibo/schema";
+import { type ComponentFormat, type DraftKind, formatsOf, Template } from "@kibo/schema";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
@@ -12,6 +12,7 @@ export type DescribeEdits = {
   kind: DraftKind;
   withServer: boolean;
   formats: ComponentFormat[];
+  template: Template;
 };
 
 export const initialEdits = (): DescribeEdits => ({
@@ -20,6 +21,7 @@ export const initialEdits = (): DescribeEdits => ({
   kind: "widget",
   withServer: false,
   formats: formatsOf({ kind: "widget" }),
+  template: "blank",
 });
 
 type Props = {
@@ -34,6 +36,10 @@ type Props = {
 
 const KINDS = ["widget", "view", "both"] as const;
 const kindOf = (v: string): DraftKind => (v === "view" || v === "both" ? v : "widget");
+const templateOf = (v: string): Template => {
+  const parsed = Template.safeParse(v);
+  return parsed.success ? parsed.data : "blank";
+};
 
 export function DescribeFields({ id, described, edits, title, componentId, idValid, onChange }: Props) {
   const t = fr.ai.create;
@@ -96,7 +102,24 @@ export function DescribeFields({ id, described, edits, title, componentId, idVal
           </SelectContent>
         </Select>
       </div>
-      <label htmlFor={`${id}-server`} className="flex h-9 items-center gap-2 text-xs">
+      <div className="grid gap-1">
+        <Label htmlFor={`${id}-template`} className="text-xs">
+          {t.templateLabel}
+        </Label>
+        <Select value={edits.template} onValueChange={(v) => onChange({ template: templateOf(v) })}>
+          <SelectTrigger id={`${id}-template`} className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Template.options.map((tpl) => (
+              <SelectItem key={tpl} value={tpl}>
+                {t.templates[tpl]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <label htmlFor={`${id}-server`} className="col-span-2 flex h-9 items-center gap-2 text-xs">
         <Checkbox
           id={`${id}-server`}
           checked={edits.withServer}

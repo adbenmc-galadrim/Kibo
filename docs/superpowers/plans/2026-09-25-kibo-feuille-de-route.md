@@ -94,6 +94,8 @@ Plan `2026-10-04-kibo-phase-12.md` : colonnes du Kanban, icône, garde clavier, 
 
 ## Phase 13 · Composants plus riches
 
+Plan : `2026-10-04-kibo-phase-13.md` · Spec : composants §19, conception §19, IA §14.
+
 Capacités déclarées dans le manifeste et appliquées par la CSP de chaque composant ; kit 3D (three.js) ; fichiers de projet hors CRDT (glTF exporté de Blender, images, audio) ; gabarits (3D, jeu, graphique, tableau) ; jeux (boucle d'animation, clavier et manette, plein écran) ; composants qui se parlent (sélection partagée) ; réglages générés depuis le manifeste ; la création par l'IA connaît ces capacités.
 
 ## Phase 14 · Installation et finition

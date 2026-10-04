@@ -1,5 +1,5 @@
 import { dirname, normalize } from "node:path/posix";
-import { SERVER_SPECIFIERS, SHARED_SPECIFIERS, TEST_SPECIFIERS } from "@kibo/schema";
+import { isEmbeddedSpecifier, SERVER_SPECIFIERS, SHARED_SPECIFIERS, TEST_SPECIFIERS } from "@kibo/schema";
 import type * as TS from "typescript";
 import { issueAt, type SourceIssue } from "./issues";
 import type { TypeScript } from "./typescript";
@@ -19,6 +19,8 @@ const BANNED = new Set([
 ]);
 const IMPORT_ATTRIBUTES = "import attributes";
 const isTest = (path: string) => /\.test\.tsx?$/.test(path);
+const SERVER_FILES = new Set(["server.ts", "migrations.ts"]);
+const isServerFile = (path: string) => SERVER_FILES.has(path);
 
 function allowedFor(path: string): Set<string> {
   return new Set([
@@ -54,7 +56,8 @@ function checkFile(ts: TypeScript, file: { path: string; text: string }, issues:
       if (normalize(`${dirname(file.path)}/${spec}`).startsWith("..")) report(node, "outside-import", spec);
       return;
     }
-    if (!allowed.has(spec)) report(node, "forbidden-import", spec);
+    const embedded = !isServerFile(file.path) && isEmbeddedSpecifier(spec);
+    if (!allowed.has(spec) && !embedded) report(node, "forbidden-import", spec);
   };
   const visit = (node: TS.Node): void => {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {

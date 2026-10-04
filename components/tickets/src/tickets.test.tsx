@@ -271,3 +271,43 @@ test("the empty state explains the tree and offers a new ticket; a loading snaps
   await waitFor(() => expect(document.querySelectorAll("[data-slot=skeleton]")).toHaveLength(5));
   expect(screen.queryByText("Aucun ticket pour l'instant.")).toBeNull();
 });
+
+test("shared selection: the selected sub-ticket and its ancestors stay sharp, the chip clears it", async () => {
+  const m = createMockSdk(manifest, { seed });
+  m.setSelection({
+    kind: "ticket",
+    ids: [m.snapshot().tickets.find((t) => t.title === "Déplacement")?.id ?? ""],
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  const row = async (title: string) =>
+    (await screen.findByRole("button", { name: title })).closest<HTMLElement>("[data-selected]");
+  const child = await row("Déplacement");
+  const parent = await row("Arbre des pages");
+  const other = await row("Sync");
+  expect(child?.getAttribute("data-selected")).toBe("true");
+  expect(parent?.getAttribute("data-selected")).toBe("false");
+  expect(parent?.className).not.toContain("opacity-50");
+  expect(other?.getAttribute("data-selected")).toBe("false");
+  expect(other?.className).toContain("opacity-50");
+  expect(screen.getByText("1 sélectionné")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Effacer la sélection" }));
+  expect(m.selections.at(-1)).toBeNull();
+  await waitFor(() => expect(screen.queryByText("1 sélectionné")).toBeNull());
+  expect(other?.className).not.toContain("opacity-50");
+});
+
+test("without a selection: no chip and no fading in the tree", async () => {
+  render(
+    <SdkProvider sdk={createMockSdk(manifest, { seed }).sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect(await screen.findByText("KIB-1")).toBeTruthy();
+  expect(document.querySelector(".opacity-50")).toBeNull();
+  expect(document.querySelectorAll("[data-selected='true']")).toHaveLength(0);
+  expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
+});

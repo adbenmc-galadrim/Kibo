@@ -446,3 +446,24 @@ test("screen 116: the details of a version list its formats", async () => {
   await userEvent.setup().click(await screen.findByRole("button", { name: "1 page · 1 projet" }));
   expect(await screen.findByText("Formats : Moyen, Large, Demi-page")).toBeTruthy();
 });
+
+test("the details of a version name its capabilities in short words", async () => {
+  const manifest = {
+    ...burndownManifest,
+    id: "pr-queue",
+    version: "0.3.0",
+    capabilities: ["webgl" as const, "assets" as const],
+  };
+  components = [prQueue([{ ...v030, manifest }])];
+  render(<ComponentsPage onOpen={() => undefined} />);
+  await userEvent.setup().click(await screen.findByRole("button", { name: "1 page · 1 projet" }));
+  expect(await screen.findByText("Capacités : 3D, Fichiers du projet")).toBeTruthy();
+});
+
+test("a version without capabilities shows no capability line", async () => {
+  components = [prQueue([{ ...v030, manifest: { ...burndownManifest, id: "pr-queue", version: "0.3.0" } }])];
+  render(<ComponentsPage onOpen={() => undefined} />);
+  await userEvent.setup().click(await screen.findByRole("button", { name: "1 page · 1 projet" }));
+  expect(await screen.findByText("Formats : Moyen, Large, Demi-page")).toBeTruthy();
+  expect(screen.queryByText(/^Capacités/)).toBeNull();
+});

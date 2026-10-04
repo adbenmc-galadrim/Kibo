@@ -15,6 +15,8 @@
     "./adapter": "./src/adapter.ts",
     "./migrations": "./src/migrations.ts",
     "./dev": "./src/dev.tsx",
+    "./three": "./src/three/index.ts",
+    "./game": "./src/game/index.ts",
     "./theme.css": "./src/theme.css",
     "./ui/*": "./src/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
@@ -30,6 +32,7 @@
     "next-themes": "0.4.6",
     "radix-ui": "1.6.7",
     "sonner": "2.0.8",
+    "three": "0.186.1",
     "zod": "3.25.76"
   },
   "peerDependencies": {
@@ -41,6 +44,7 @@
     "@testing-library/react": "16.3.0",
     "@types/react": "19.1.13",
     "@types/react-dom": "19.1.9",
+    "@types/three": "0.186.0",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   }

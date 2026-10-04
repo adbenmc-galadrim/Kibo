@@ -1,4 +1,5 @@
 export const frProject = {
+  files: "Fichiers du projet…",
   edit: {
     title: "Modifier le projet",
     name: "Nom",

@@ -1,4 +1,6 @@
-import { type KeyboardEvent, type PointerEvent, useRef, useState } from "react";
+import type { Selection } from "@kibo/schema";
+import { useSelection } from "@kibo/sdk";
+import { type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { GraphEdge } from "./critical-path";
 import type { GraphLayout } from "./layout";
 import { type Dir, neighborOf, nodesInRect, type Rect } from "./neighbors";
@@ -34,6 +36,19 @@ const localPoint = (e: PointerEvent<HTMLElement>): Point => {
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 };
 
+const MAX_SELECTED = 200;
+
+const sameIds = (a: Selection | null, b: Selection | null) => {
+  const left = a?.ids ?? [];
+  const right = new Set(b?.ids ?? []);
+  return left.length === right.size && left.every((id) => right.has(id));
+};
+
+const singleOf = (s: Selection | null) => (s?.ids.length === 1 ? (s.ids[0] ?? null) : null);
+
+const ticketSelection = (ids: readonly string[]): Selection | null =>
+  ids.length === 0 ? null : { kind: "ticket", ids: ids.slice(0, MAX_SELECTED) };
+
 function relatedTo(edges: readonly GraphEdge[], id: string | null): ReadonlySet<string> {
   if (id === null) return new Set();
   return new Set(edges.flatMap((e) => (e.from === id ? [e.to] : e.to === id ? [e.from] : [])));
@@ -47,19 +62,27 @@ type Input = {
 };
 
 export function useGraphSelection({ layout, edges, view, onOpen }: Input) {
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [focused, setFocused] = useState<string | null>(null);
+  const [selection, setSelection] = useSelection();
+  const known = useRef<Selection | null>(selection);
+  const [focused, setFocused] = useState<string | null>(() => singleOf(selection));
   const [box, setBox] = useState<SelectionBox | null>(null);
   const boxRef = useRef<SelectionBox | null>(null);
+  const selected = useMemo<ReadonlySet<string>>(() => new Set(selection?.ids ?? []), [selection]);
 
-  const select = (id: string) => {
-    setSelected(new Set([id]));
-    setFocused(id);
+  useEffect(() => {
+    if (sameIds(selection, known.current)) return;
+    known.current = selection;
+    setFocused(singleOf(selection));
+  }, [selection]);
+
+  const emit = (next: Selection | null, anchor: string | null) => {
+    setFocused(anchor);
+    if (sameIds(next, known.current)) return;
+    known.current = next;
+    setSelection(next);
   };
-  const clear = () => {
-    setSelected(new Set());
-    setFocused(null);
-  };
+  const select = (id: string) => emit(ticketSelection([id]), id);
+  const clear = () => emit(null, null);
   const updateBox = (next: SelectionBox | null) => {
     boxRef.current = next;
     setBox(next);
@@ -93,8 +116,7 @@ export function useGraphSelection({ layout, edges, view, onOpen }: Input) {
         const current = boxRef.current;
         if (!current) return false;
         updateBox(null);
-        setFocused(null);
-        setSelected(new Set(nodesInRect(layout, toScene(boxRect(current), view))));
+        emit(ticketSelection(nodesInRect(layout, toScene(boxRect(current), view))), null);
         return true;
       },
     },

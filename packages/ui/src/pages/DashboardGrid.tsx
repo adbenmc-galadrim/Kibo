@@ -9,6 +9,7 @@ export type DashboardGridProps = {
   renderWidget(instance: Instance, layout: Layout): ReactNode;
   trailing?: ReactNode;
   overlay?: ReactNode;
+  focused?: boolean;
 };
 
 export const WIDGET_CARD =
@@ -29,13 +30,14 @@ export function DashboardGrid({
   renderWidget,
   trailing,
   overlay,
+  focused = false,
 }: DashboardGridProps) {
   const byId = new Map(instances.map((i) => [i.id, i]));
   const placed = readingOrder(instances.map((i) => ({ ...i, layout: layouts.get(i.id) ?? i.layout })));
   const bottom = Math.max(0, ...placed.map((i) => i.layout.y + i.layout.h));
   return (
     <div
-      className={`relative isolate grid flex-1 content-start gap-4 overflow-auto p-4 ${narrow ? "grid-cols-1" : "auto-rows-[80px] grid-cols-12"}`}
+      className={`relative ${focused ? "" : "isolate "}grid flex-1 content-start gap-4 overflow-auto p-4 ${narrow ? "grid-cols-1" : "auto-rows-[80px] grid-cols-12"}`}
     >
       {overlay}
       {placed.map((i) => (

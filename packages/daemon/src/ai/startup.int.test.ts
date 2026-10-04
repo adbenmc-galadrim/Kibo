@@ -41,6 +41,7 @@ test("a toolchain without @kibo/sdk starts the daemon and refuses the generator"
         kind: "widget",
         withServer: false,
         description: "Burndown du sprint : tickets restants par jour.",
+        template: "blank",
         attachments: [],
       },
     }),

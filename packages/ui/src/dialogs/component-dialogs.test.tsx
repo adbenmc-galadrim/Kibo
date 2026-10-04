@@ -69,6 +69,8 @@ const manifest: ComponentManifest = {
   net: [],
   secrets: [],
   mcp: [],
+  capabilities: [],
+  selection: false,
   configVersion: 0,
   changes: [],
   sdk: 1,
@@ -225,6 +227,18 @@ test("a component that is not approved goes through screen 30 before being added
       },
     },
   ]);
+});
+
+test("screen 30 names the capabilities and the shared selection of the version", async () => {
+  const rich = { ...pending, manifest: { ...manifest, capabilities: ["gamepad" as const], selection: true } };
+  components = () => Promise.resolve([{ ...burndown, versions: [rich] }]);
+  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("radio", { name: "Burndown" }));
+  await user.click(screen.getByRole("button", { name: "Ajouter à la page" }));
+  expect(await screen.findByText("Lire les manettes branchées")).toBeTruthy();
+  expect(screen.getByText("Partage la sélection avec les composants de la page")).toBeTruthy();
+  expect(screen.getByText("Aucun accès réseau, aucun fichier local")).toBeTruthy();
 });
 
 test("refusing on screen 30 adds nothing", async () => {

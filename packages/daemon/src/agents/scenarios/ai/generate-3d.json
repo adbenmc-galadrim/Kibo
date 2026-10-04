@@ -1,0 +1,12 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Read", "input": { "file_path": "CLAUDE.md" } },
+        { "write": "ui.tsx", "fixture": "viewer/ui.tsx.fixture" },
+        { "hook": "PreToolUse", "tool": "Bash", "input": { "command": "kibo component test ." } }
+      ],
+      "result": "Composant écrit ; kibo component test . passe."
+    }
+  ]
+}

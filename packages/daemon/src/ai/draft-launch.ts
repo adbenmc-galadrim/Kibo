@@ -38,6 +38,7 @@ export const draftBrief = (d: ComponentDraft, { formats, attachments }: BriefCon
   baseVersion: d.baseVersion,
   formats,
   attachments,
+  template: d.template,
 });
 
 const readRoots = (sdkDir: string, p: DraftPaths): string[] =>

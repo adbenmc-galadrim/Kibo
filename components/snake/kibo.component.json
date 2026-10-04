@@ -1,0 +1,13 @@
+{
+  "id": "snake",
+  "version": "1.0.0",
+  "kind": "widget",
+  "formats": ["medium", "large", "half"],
+  "size": { "min": { "w": 3, "h": 3 } },
+  "title": "Serpent",
+  "description": "Un serpent, des pommes, un meilleur score",
+  "reads": [],
+  "writes": [],
+  "data": true,
+  "capabilities": ["fullscreen", "gamepad", "audio"]
+}

@@ -20,6 +20,7 @@ export function grantedFromKeys(keys: string[]): GrantedPermissions {
   const writes: string[] = [];
   const net: string[] = [];
   const mcp: string[] = [];
+  const capabilities: string[] = [];
   let data = false;
   for (const key of keys) {
     if (key === "data") data = true;
@@ -27,6 +28,7 @@ export function grantedFromKeys(keys: string[]): GrantedPermissions {
     else if (key.startsWith("write:")) writes.push(key.slice(6));
     else if (key.startsWith("net:")) net.push(netRuleOf(key.slice(4)));
     else if (key.startsWith("mcp:")) mcp.push(key.slice(4));
+    else if (key.startsWith("cap:")) capabilities.push(key.slice(4));
     else throw new KiboError("VALIDATION_FAILED", `permission ${key} cannot be declared by Kibo`);
   }
   const parsed = GrantedPermissions.safeParse({
@@ -36,6 +38,7 @@ export function grantedFromKeys(keys: string[]): GrantedPermissions {
     net: unique(net),
     secrets: [],
     mcp: unique(mcp),
+    capabilities: unique(capabilities),
   });
   if (!parsed.success || !ComponentManifest.shape.mcp.safeParse(parsed.data.mcp).success)
     throw new KiboError("VALIDATION_FAILED", `invalid permissions: ${keys.join(", ")}`);
@@ -50,6 +53,7 @@ export function unionGranted(a: GrantedPermissions, b: GrantedPermissions): Gran
     net: unique([...a.net, ...b.net]),
     secrets: a.secrets,
     mcp: unique([...a.mcp, ...b.mcp]),
+    capabilities: unique([...a.capabilities, ...b.capabilities]),
   };
 }
 

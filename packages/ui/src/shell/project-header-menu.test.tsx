@@ -5,7 +5,12 @@ import userEvent from "@testing-library/user-event";
 import { ProjectHeaderMenu } from "./ProjectHeaderMenu";
 
 const project = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
-const actions = () => ({ newPage: () => {}, share: () => {}, edit: () => {}, remove: () => {} });
+const actions = () => ({
+  newPage: () => {},
+  share: () => {},
+  edit: () => {},
+  remove: () => {},
+});
 
 function mount(editable: boolean, shifted: boolean) {
   return render(
@@ -42,14 +47,18 @@ test("⋯ and right click render the same entries, share labelled by frShare", a
   mount(true, false);
   await userEvent.click(screen.getByRole("button", { name: "Actions de Kibo" }));
   const names = () => screen.getAllByRole("menuitem").map((m) => m.textContent);
-  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Supprimer…"]);
+  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
   await userEvent.keyboard("{Escape}");
   fireEvent.contextMenu(screen.getByRole("button", { name: "Kibo" }));
-  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Supprimer…"]);
+  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
 });
 
 test("a non editable project only shares and removes", () => {
   mount(false, false);
   fireEvent.contextMenu(screen.getByRole("button", { name: "Kibo" }));
-  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Partager", "Supprimer…"]);
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
+    "Partager",
+    "Fichiers du projet…",
+    "Supprimer…",
+  ]);
 });

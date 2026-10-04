@@ -59,6 +59,7 @@ function mount(
   format: "medium" | "half" = "medium",
   theme: "dark" | "light" = "dark",
   readyTimeoutMs = PATIENT,
+  draftManifest: typeof manifest = manifest,
 ) {
   const bridges: BridgeDeps[] = [];
   const createBridge = (deps: BridgeDeps) => {
@@ -70,7 +71,7 @@ function mount(
   const ui = (f: "medium" | "half", t: "dark" | "light") => (
     <DraftPreviewFrame
       draftId={DRAFT_ID}
-      manifest={{ ...manifest }}
+      manifest={{ ...draftManifest }}
       format={f}
       theme={t}
       createBridge={createBridge}
@@ -105,6 +106,9 @@ test("screen 133: the sandbox frame loads the draft path and the mock answers, n
   expect(iframe.getAttribute("src")).toBe(`${ORIGIN}/c/drafts/${DRAFT_ID}/${HASH}/index.html`);
   expect(iframe.getAttribute("sandbox")).toBe("allow-scripts");
   expect(iframe.getAttribute("referrerpolicy")).toBe("no-referrer");
+  expect(iframe.getAttribute("allow")).toBe(
+    "autoplay 'none'; gamepad 'none'; fullscreen 'none'; camera 'none'; microphone 'none'; geolocation 'none'",
+  );
   await waitFor(() => expect(bridges).toHaveLength(1));
   expect(bridges[0]?.init()).toMatchObject({
     format: "medium",
@@ -122,6 +126,20 @@ test("screen 133: the sandbox frame loads the draft path and the mock answers, n
   expect(calls.every((c) => c.method === "getRuntimeInfo" || c.method === "previewComponentDraft")).toBe(
     true,
   );
+  view.unmount();
+});
+
+test("the frame of a draft opens what its own manifest declares", async () => {
+  const { view, bridges } = mount("medium", "dark", PATIENT, {
+    ...manifest,
+    capabilities: ["audio", "webgl"],
+  });
+  const iframe = await frame();
+  expect(iframe.getAttribute("allow")).toBe(
+    "autoplay *; gamepad 'none'; fullscreen 'none'; camera 'none'; microphone 'none'; geolocation 'none'",
+  );
+  await waitFor(() => expect(bridges).toHaveLength(1));
+  expect(bridges[0]?.init()).toMatchObject({ capabilities: ["audio", "webgl"] });
   view.unmount();
 });
 

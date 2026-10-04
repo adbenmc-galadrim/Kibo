@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import {
   CONFIG_SERVER_RULE,
   ComponentManifest,
+  capabilityIssue,
   diffPermissions,
   grantedOf,
   isBuiltinId,
@@ -85,6 +86,8 @@ async function readManifest(dir: string): Promise<ComponentManifest | string[]> 
   if (formats !== null) return [formats];
   const size = sizeIssue(parsed.data);
   if (size !== null) return [size];
+  const capabilities = capabilityIssue(parsed.data);
+  if (capabilities !== null) return [capabilities];
   if (parsed.data.mcp.includes(CONFIG_SERVER_RULE)) return [FR_DEVKIT.configServerReserved];
   const reserved = reservedMcpServers(parsed.data.mcp);
   if (reserved.length > 0) return reserved.map(FR_DEVKIT.reservedMcpServer);

@@ -174,6 +174,7 @@ export const create: CreateDraftInput = {
   kind: "widget",
   withServer: false,
   description: "Burndown du sprint : tickets restants par jour.",
+  template: "blank",
   attachments: [],
 };
 export const done = (sessionId = "s1") => ({ state: "done", sessionId, stdout: "", error: null }) as const;

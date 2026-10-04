@@ -239,6 +239,17 @@ describe("validateComponent", () => {
     expect(report.manifest).toEqual({ ok: false, errors: ["INVALID_MANIFEST: size.min exceeds size.max"] });
     expect(report.tests.passed + report.tests.failed).toBe(0);
   }, 120_000);
+  test("a manifest with repeated capabilities stops before the tests", async () => {
+    const dir = fixture("hello");
+    const manifest = { id: "hello", version: "0.1.0", kind: "widget", title: "H", reads: [], writes: [] };
+    writeFileSync(
+      join(dir, "kibo.component.json"),
+      JSON.stringify({ ...manifest, capabilities: ["webgl", "webgl"] }),
+    );
+    const report = await validateComponent(dir, opts);
+    expect(report.manifest).toEqual({ ok: false, errors: ["INVALID_MANIFEST: capabilities must be unique"] });
+    expect(report.tests.passed + report.tests.failed).toBe(0);
+  }, 120_000);
   test("the stamp lives in a hidden folder and never changes the hash", async () => {
     const dir = fixture("hello");
     const first = await validateComponent(dir, opts);

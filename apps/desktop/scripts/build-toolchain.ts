@@ -24,6 +24,8 @@ const ROOTS = [
   "@tailwindcss/oxide",
   "tw-animate-css",
   "shadcn",
+  "three",
+  "@types/three",
 ];
 const LEAVES = ["shadcn"];
 const MUSL_VARIANT = /-musl(eabihf)?$/;

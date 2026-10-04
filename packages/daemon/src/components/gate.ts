@@ -30,6 +30,7 @@ export type NotesCall =
   | Extract<ComponentCall, { kind: `notes.${string}` }>
   | { kind: "list"; entity: "note" };
 export type McpCall = Extract<ComponentCall, { kind: `mcp.${string}` }>;
+export type AssetsCall = Extract<ComponentCall, { kind: "assets.list" | "assets.url" }>;
 
 export type GateHandlers = {
   list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
@@ -46,6 +47,7 @@ export type GateHandlers = {
   ): Promise<unknown>;
   notes(projectId: string, call: NotesCall): Promise<unknown>;
   mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
+  assets(projectId: string, instanceId: string, call: AssetsCall): Promise<unknown>;
   presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
 };
@@ -107,6 +109,9 @@ function dispatch(
       return h.presence(projectId);
     case "sharing.get":
       return h.sharing(projectId);
+    case "assets.list":
+    case "assets.url":
+      return h.assets(projectId, inst.id, call);
     default:
       return h.notes(projectId, call);
   }

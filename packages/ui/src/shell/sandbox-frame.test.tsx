@@ -1,7 +1,8 @@
 import { expect, mock, test } from "bun:test";
-import type { FileRef, HostToFrame, Phase7Event, RpcRequest } from "@kibo/schema";
-import type { NewTicketDefaults } from "@kibo/sdk";
+import type { Capability, FileRef, HostToFrame, Phase7Event, RpcRequest, Selection } from "@kibo/schema";
+import { createSignal, focusApi, type NewTicketDefaults, selectionApi, visibilityApi } from "@kibo/sdk";
 import { act, render } from "@testing-library/react";
+import type { InstanceApis } from "../lib/instance-capabilities";
 import type { Host } from "./Host";
 
 const DEADLINE = 30;
@@ -32,7 +33,21 @@ const unmockedModule = "./SandboxFrame?unmocked";
 const { SandboxFrame }: typeof import("./SandboxFrame") = await import(unmockedModule);
 const { HostProvider }: typeof import("./Host") = await import("./Host");
 
-function mount(src = "about:blank") {
+function testApis(capabilities: readonly Capability[] = []) {
+  const focus = createSignal(false);
+  const visible = createSignal(true);
+  const selection = createSignal<Selection | null>(null);
+  const focusAsked: boolean[] = [];
+  const apis: InstanceApis = {
+    capabilities,
+    focus: focusApi(focus, (on) => focusAsked.push(on)),
+    visibility: visibilityApi(visible),
+    selection: selectionApi(selection),
+  };
+  return { apis, focus, visible, selection, focusAsked };
+}
+
+function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
   const opened: FileRef[] = [];
   const newTickets: NewTicketDefaults[] = [];
   const host: Host = {
@@ -55,6 +70,7 @@ function mount(src = "about:blank") {
         src={src}
         title="Mine"
         readyTimeoutMs={DEADLINE}
+        apis={apis}
       />
     </HostProvider>,
   );
@@ -92,6 +108,7 @@ function mount(src = "about:blank") {
           src={nextSrc}
           title="Mine"
           readyTimeoutMs={DEADLINE}
+          apis={apis}
         />
       </HostProvider>,
     );
@@ -102,7 +119,7 @@ function mount(src = "about:blank") {
       await load;
     });
   };
-  return { view, iframe, posted, opened, newTickets, fromFrame, loaded, navigate, changeSrc };
+  return { view, iframe, posted, opened, newTickets, fromFrame, loaded, navigate, changeSrc, rerender };
 }
 
 test("a new ticket asked by the frame carries the instance fixed by the host", () => {
@@ -116,6 +133,61 @@ test("the iframe is sandboxed without same-origin and sends no referrer", () => 
   const { iframe, view } = mount();
   expect(iframe.getAttribute("sandbox")).toBe("allow-scripts");
   expect(iframe.getAttribute("referrerpolicy")).toBe("no-referrer");
+  view.unmount();
+});
+
+test("the allow attribute is strict by default and opens only granted capabilities", () => {
+  const strict = mount();
+  expect(strict.iframe.getAttribute("allow")).toBe(
+    "autoplay 'none'; gamepad 'none'; fullscreen 'none'; camera 'none'; microphone 'none'; geolocation 'none'",
+  );
+  expect(strict.iframe.hasAttribute("allowfullscreen")).toBe(false);
+  strict.view.unmount();
+  const pad = mount("about:blank", testApis(["gamepad", "fullscreen"]).apis);
+  expect(pad.iframe.getAttribute("allow")).toBe(
+    "autoplay 'none'; gamepad *; fullscreen 'none'; camera 'none'; microphone 'none'; geolocation 'none'",
+  );
+  expect(pad.iframe.getAttribute("sandbox")).toBe("allow-scripts");
+  expect(pad.iframe.hasAttribute("allowfullscreen")).toBe(false);
+  pad.view.unmount();
+});
+
+test("init carries capabilities, focus, visibility and selection, then each change follows", () => {
+  const t = testApis(["fullscreen"]);
+  t.visible.set(false);
+  t.selection.set({ kind: "ticket", ids: ["t1"] });
+  const { posted, fromFrame, view } = mount("about:blank", t.apis);
+  fromFrame({ kibo: 1, type: "ready" });
+  expect(posted[0]).toMatchObject({
+    type: "init",
+    capabilities: ["fullscreen"],
+    focus: false,
+    visible: false,
+    selection: { kind: "ticket", ids: ["t1"] },
+  });
+  act(() => {
+    t.focus.set(true);
+    t.visible.set(true);
+    t.selection.set(null);
+  });
+  expect(posted.slice(1)).toEqual([
+    { kibo: 1, type: "focus", active: true },
+    { kibo: 1, type: "visibility", visible: true },
+    { kibo: 1, type: "selection", selection: null },
+  ]);
+  view.unmount();
+  act(() => t.visible.set(false));
+  expect(posted).toHaveLength(4);
+});
+
+test("focus and selection asked by the frame go to the instance apis", () => {
+  const t = testApis(["fullscreen"]);
+  const { fromFrame, view } = mount("about:blank", t.apis);
+  fromFrame({ kibo: 1, type: "focus", on: true });
+  fromFrame({ kibo: 1, type: "focus", on: false });
+  fromFrame({ kibo: 1, type: "selection", selection: { kind: "ticket", ids: ["t3"] } });
+  expect(t.focusAsked).toEqual([true, false]);
+  expect(t.selection.get()).toEqual({ kind: "ticket", ids: ["t3"] });
   view.unmount();
 });
 
@@ -340,4 +412,27 @@ test("a refusal the daemon cannot record is logged, never swallowed", async () =
     refusalFailure = null;
     capture.restore();
   }
+});
+
+test("a parent render with the same apis keeps a single live subscription", () => {
+  const t = testApis();
+  let live = 0;
+  const visibility = {
+    visible: t.apis.visibility.visible,
+    subscribe(listener: () => void) {
+      live += 1;
+      const off = t.apis.visibility.subscribe(listener);
+      return () => {
+        live -= 1;
+        off();
+      };
+    },
+  };
+  const apis = { ...t.apis, visibility };
+  const { view, rerender } = mount("about:blank", apis);
+  rerender("about:blank");
+  rerender("about:blank");
+  expect(live).toBe(1);
+  view.unmount();
+  expect(live).toBe(0);
 });

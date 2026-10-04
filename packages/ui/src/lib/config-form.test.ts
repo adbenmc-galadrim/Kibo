@@ -1,6 +1,14 @@
 import { expect, test } from "bun:test";
 import type { ComponentSummary, ConfigSchema, Instance } from "@kibo/schema";
-import { configFields, configSchemaOf, parseFieldInput, withFieldValue } from "./config-form";
+import {
+  configFields,
+  configSchemaOf,
+  fieldKind,
+  fieldLabel,
+  numberBounds,
+  parseFieldInput,
+  withFieldValue,
+} from "./config-form";
 
 const schema: ConfigSchema = {
   filter: { enum: ["mine-and-agents", "all"], default: "mine-and-agents" },
@@ -74,6 +82,8 @@ const third = (configSchema: ConfigSchema | undefined): ComponentSummary[] => [
           net: [],
           secrets: [],
           mcp: [],
+          capabilities: [],
+          selection: false,
           configVersion: 0,
           changes: [],
           sdk: 1,
@@ -97,4 +107,14 @@ test("the schema comes from the registry for a built-in, from the installed vers
   expect(configSchemaOf(instance("pr-queue@0.3.0"), third({}))).toBeNull();
   expect(configSchemaOf(instance("pr-queue@0.3.0"), third(undefined))).toBeNull();
   expect(configSchemaOf(instance("pr-queue@0.9.0"), third({ limit: { type: "number" } }))).toBeNull();
+});
+
+test("labels come from the manifest first, bounds reach the input, asset fields have their own kind", () => {
+  expect(fieldLabel("filter", {})).toBe("Filtre");
+  expect(fieldLabel("speed", { type: "number", label: "Vitesse" })).toBe("Vitesse");
+  expect(fieldLabel("other", {})).toBe("other");
+  expect(fieldKind({ type: "string", asset: "model" })).toBe("asset");
+  expect(numberBounds({ type: "number", min: 0.5, max: 4 })).toEqual({ min: 0.5, max: 4 });
+  expect(numberBounds({ type: "number", min: 0 })).toEqual({ min: 0 });
+  expect(numberBounds({ type: "number" })).toEqual({});
 });

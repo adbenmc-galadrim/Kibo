@@ -27,7 +27,9 @@ let answer = stored;
 let lookups = 0;
 const assets: AssetLookup = (id, version, hash) => {
   lookups += 1;
-  return id === "mine" && version === "1.0.0" && hash === H ? { stored: answer, trust } : null;
+  return id === "mine" && version === "1.0.0" && hash === H
+    ? { stored: answer, trust, capabilities: [] }
+    : null;
 };
 
 let home: string;
@@ -148,20 +150,23 @@ describe("trusted component modules", () => {
 });
 
 describe("ui content security policy", () => {
-  test("allows frames from the sandbox origin only", async () => {
+  test("frames, fetches, images and media may come from the sandbox origin, scripts never", async () => {
     const { base } = await startPaired({ assets, sandboxOrigin: () => SANDBOX });
-    expect((await fetch(`${base}/`)).headers.get("content-security-policy")).toBe(
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-        `font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; frame-src ${SANDBOX}; frame-ancestors 'none'; ` +
-        "base-uri 'none'; form-action 'self'",
+    const csp = (await fetch(`${base}/`)).headers.get("content-security-policy");
+    expect(csp).toBe(
+      `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: ${SANDBOX}; ` +
+        `font-src 'self' data:; media-src 'self' ${SANDBOX}; connect-src 'self' ipc: http://ipc.localhost ${SANDBOX}; ` +
+        `frame-src ${SANDBOX}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`,
     );
   });
 
-  test("allows no foreign frame while the sandbox origin is unknown", async () => {
+  test("allows no foreign origin while the sandbox origin is unknown", async () => {
     const { base } = await startPaired({ assets, sandboxOrigin: () => null });
-    const csp = (await fetch(`${base}/`)).headers.get("content-security-policy") ?? "";
-    expect(csp).not.toContain("frame-src");
-    expect(csp).toStartWith("default-src 'self';");
+    expect((await fetch(`${base}/`)).headers.get("content-security-policy")).toBe(
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+        "font-src 'self' data:; media-src 'self'; connect-src 'self' ipc: http://ipc.localhost; " +
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+    );
   });
 });
 

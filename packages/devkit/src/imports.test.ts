@@ -60,3 +60,20 @@ test("macros, import attributes and worker escapes are refused", () => {
   expect(codes("server.ts", "global.fetch;")).toContain("banned-identifier:global");
   expect(codes("server.ts", "self.postMessage(1);")).toContain("banned-identifier:self");
 });
+
+test("three, its addons and the kits are allowed in ui.tsx", () => {
+  expect(codes("ui.tsx", 'import * as THREE from "three";')).toEqual([]);
+  expect(codes("ui.tsx", 'import { OrbitControls } from "three/addons/controls/OrbitControls.js";')).toEqual(
+    [],
+  );
+  expect(
+    codes(
+      "ui.tsx",
+      'import { ThreeCanvas } from "@kibo/sdk/three"; import { useKeys } from "@kibo/sdk/game";',
+    ),
+  ).toEqual([]);
+  expect(codes("ui.tsx", 'import x from "three/src/Three.js";')).toEqual([
+    "forbidden-import:three/src/Three.js",
+  ]);
+  expect(codes("server.ts", 'import * as THREE from "three";')).toEqual(["forbidden-import:three"]);
+});

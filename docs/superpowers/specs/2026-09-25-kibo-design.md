@@ -576,3 +576,14 @@ Spec composants §18 points 1 à 4 : éditeur de notes (barre d'outils, bulle de
 - E2E : plage des démons portée à **4390–4440** (amende §11) : `widgets.spec.ts` 4429–4430, `notes.spec.ts` 4431–4432, `graph.spec.ts` 4433–4434.
 - Maquettes Penpot : les écrans touchés (Kanban défilant, disposition libre et compaction, éditeur de notes, graphe navigable et ses formats, toast d'onglet) sont dessinés par ailleurs ; écart assumé listé au jalon.
 - Aucun code d'erreur nouveau : `INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `CONFLICT`, `TOO_LARGE` suffisent. Nouvelle commande `setPageLayout` ; nouveaux appels `notes.attach` et `notes.asset` (spec composants §18 point 2).
+
+## 19. Décisions de la phase 13 : composants plus riches (demande d'Adam du 2026-10-04)
+
+Écrites le 2026-10-04, avant le plan `docs/superpowers/plans/2026-10-04-kibo-phase-13.md`. Adam veut que les composants, centre de Kibo, puissent afficher de la 3D (three.js), des contenus Blender (glTF/GLB), des jeux, et plus tard des visuels Figma. Le détail vit dans la spec composants **§19** ; cette section n'écrit que ce qui touche la conception générale.
+
+- **Capacités** (§6 amendé) : un composant déclare dans son manifeste les capacités qu'il utilise (`webgl`, `audio`, `fullscreen`, `gamepad`, `assets`) ; elles sont des permissions, affichées et acceptées à l'installation, appliquées par la CSP de **son** iframe et par le démon. Aucune capacité réseau nouvelle (décision d'Adam en attente).
+- **Fichiers de projet** (§5 amendé) : des fichiers binaires (GLB, images, sons) vivent **hors du CRDT**, dans un dossier local par projet (`<KIBO_HOME>/files/<KEY>` par défaut), jamais synchronisés, servis aux composants par un jeton éphémère sur le port bac à sable ; la CSP du document de l'interface gagne l'origine du port bac à sable dans `connect-src`, `img-src` et `media-src` (jamais dans `script-src`).
+- **Mode plein écran de Kibo** (§8) : un widget peut remplir la fenêtre de l'application sans être rechargé ; `Échap` sort ; ce n'est pas l'API Fullscreen du navigateur.
+- **Sélection partagée** (§8) : les composants d'une même page partagent une sélection typée, en mémoire, opt-in.
+- **Ports E2E** (§11 amendé) : plage portée à **4390–4460** ; `files` 4435–4436, `viewer` 4437–4438, `game` 4439–4440, `selection` 4441–4442. Les ports 4461–4499 restent réservés aux démos.
+- **Dépendance nouvelle** : `three` 0.186.1 dans le SDK (embarqué par les composants, interdit dans l'entrée de l'interface) ; aucun code d'erreur nouveau.

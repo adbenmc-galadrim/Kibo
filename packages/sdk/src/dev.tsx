@@ -33,9 +33,19 @@ function formatBox(format: ComponentFormat): { width: number; height: number } {
 const systemTheme = (): Theme =>
   window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
+function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange(on: boolean): void }) {
+  return (
+    <Button size="sm" variant={on ? "default" : "outline"} aria-pressed={on} onClick={() => onChange(!on)}>
+      {label}
+    </Button>
+  );
+}
+
 function DevShell({ manifest, Component }: { manifest: ComponentManifest; Component: ComponentType }) {
   const [format, setFormat] = useState<ComponentFormat>(() => defaultFormatOf(manifest));
   const [theme, setTheme] = useState<Theme>(systemTheme);
+  const [visible, setVisible] = useState(true);
+  const [focused, setFocused] = useState(false);
   const surface = surfaceFor(manifest, format);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -51,6 +61,10 @@ function DevShell({ manifest, Component }: { manifest: ComponentManifest; Compon
       }),
     [manifest, surface, format],
   );
+  useEffect(() => {
+    mock.setVisible(visible);
+    mock.setFocus(focused);
+  }, [mock, visible, focused]);
   return (
     <div className="flex min-h-screen flex-col gap-4 bg-background p-4 text-foreground">
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -77,6 +91,12 @@ function DevShell({ manifest, Component }: { manifest: ComponentManifest; Compon
               {devFr[t]}
             </Button>
           ))}
+        </fieldset>
+        <fieldset aria-label={devFr.modes} className="flex gap-2">
+          <Toggle label={devFr.visible} on={visible} onChange={setVisible} />
+          {manifest.capabilities.includes("fullscreen") && (
+            <Toggle label={devFr.focus} on={focused} onChange={setFocused} />
+          )}
         </fieldset>
         <span className="text-muted-foreground">
           {devFr.surface} : {devFr[surface]}

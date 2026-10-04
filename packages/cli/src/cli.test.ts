@@ -63,6 +63,18 @@ describe("kibo component", () => {
     expect(t.err.every((l) => l.startsWith("Erreur INVALID_INPUT : "))).toBe(true);
   });
 
+  test("new --template writes the template manifest and refuses an unknown one", async () => {
+    const t = io();
+    expect(await runCli(["component", "new", "cube", "--template", "3d"], t.io)).toBe(0);
+    const manifest = JSON.parse(
+      readFileSync(join(t.home, "components", "src", "cube", "kibo.component.json"), "utf8"),
+    );
+    expect(manifest.capabilities).toEqual(["webgl", "assets"]);
+    expect(await runCli(["component", "new", "other", "--template", "bogus"], t.io)).toBe(1);
+    expect(t.err).toEqual(["Erreur INVALID_INPUT : unknown template bogus"]);
+    expect(existsSync(join(t.home, "components", "src", "other"))).toBe(false);
+  });
+
   test("test validates a folder outside the monorepo and reports each step", async () => {
     const t = io();
     const f = copyFixture("hello");

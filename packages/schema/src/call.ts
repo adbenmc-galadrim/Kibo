@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
 import { Base64 } from "./ids";
 import { DataKey } from "./instance";
@@ -54,5 +55,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("mcp.import"), server: McpServerId, item: McpImportItem }),
   z.object({ kind: z.literal("presence.list") }),
   z.object({ kind: z.literal("sharing.get") }),
+  z.object({ kind: z.literal("assets.list") }),
+  z.object({ kind: z.literal("assets.url"), name: ProjectAssetName }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

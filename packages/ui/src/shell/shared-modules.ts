@@ -12,6 +12,8 @@ import * as select from "@kibo/sdk/ui/select";
 import * as separator from "@kibo/sdk/ui/separator";
 import * as sheet from "@kibo/sdk/ui/sheet";
 import * as skeleton from "@kibo/sdk/ui/skeleton";
+import * as switchUi from "@kibo/sdk/ui/switch";
+import * as table from "@kibo/sdk/ui/table";
 import * as textarea from "@kibo/sdk/ui/textarea";
 import * as tooltip from "@kibo/sdk/ui/tooltip";
 import * as React from "react";
@@ -34,6 +36,8 @@ export const SHARED_MODULES: Readonly<Record<string, unknown>> = Object.freeze({
   "@kibo/sdk/ui/separator": separator,
   "@kibo/sdk/ui/sheet": sheet,
   "@kibo/sdk/ui/skeleton": skeleton,
+  "@kibo/sdk/ui/switch": switchUi,
+  "@kibo/sdk/ui/table": table,
   "@kibo/sdk/ui/textarea": textarea,
   "@kibo/sdk/ui/tooltip": tooltip,
 });

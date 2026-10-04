@@ -7,7 +7,7 @@ const MARKET_USAGE = [
 export const fr = {
   usage: [
     "Usage :",
-    "  kibo component new <id> [--kind widget|view|both] [--server]",
+    "  kibo component new <id> [--kind widget|view|both] [--server] [--template blank|3d|game|chart|table]",
     "  kibo component test <id|dossier>",
     "  kibo component dev <id|dossier> [--port <n>]",
     "  kibo component publish <id> [--update-all|--new-version]",

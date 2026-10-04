@@ -211,7 +211,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     uiPort: server.port,
     assets: components.assets,
     extraAncestors: devOrigins,
-    drafts: { lookup: async (...a) => (draftAssets ? draftAssets.lookup(...a) : null) },
+    drafts: {
+      lookup: async (...a) => (draftAssets ? draftAssets.lookup(...a) : null),
+      manifest: async (draftId) => (draftAssets ? draftAssets.manifest(draftId) : null),
+    },
+    files: { open: (token) => components.files.open(token) },
   });
   front.push(() => sandbox.stop());
   sandboxOrigin = sandbox.url;

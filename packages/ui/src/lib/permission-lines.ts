@@ -1,17 +1,31 @@
-import { CONFIG_SERVER_RULE, type GrantedPermissions, RESERVED_MCP_IDS } from "@kibo/schema";
 import {
+  CAPABILITIES,
+  type Capability,
+  CONFIG_SERVER_RULE,
+  capPermission,
+  type GrantedPermissions,
+  RESERVED_MCP_IDS,
+} from "@kibo/schema";
+import {
+  Box,
   Database,
   File,
+  FolderOpen,
+  Gamepad2,
   Globe,
   KeyRound,
   type LucideIcon,
+  Maximize2,
+  MousePointerClick,
   NotebookText,
   Pencil,
   Plug,
   Ticket,
+  Volume2,
   X,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { frTrustCapabilities as caps } from "../i18n/fr-trust-capabilities";
 
 export type PermissionLine = { icon: LucideIcon; title: string; detail?: string };
 
@@ -28,8 +42,23 @@ const entityList = (entities: string[]): string =>
 
 const SECRET_ENTRY = /^secret:(.+)@([^@]+)$/;
 
+const CAPABILITY_ICONS: Record<Capability, LucideIcon> = {
+  webgl: Box,
+  audio: Volume2,
+  fullscreen: Maximize2,
+  gamepad: Gamepad2,
+  assets: FolderOpen,
+};
+
+function capabilityLine(c: Capability): PermissionLine {
+  const detail = c === "webgl" ? caps.webglHelp : c === "assets" ? caps.assetsHelp : undefined;
+  return { icon: CAPABILITY_ICONS[c], title: caps[c], ...(detail && { detail }) };
+}
+
 export function permissionLabel(entry: string): string {
   if (entry.startsWith("mcp:")) return mcpTitle(entry.slice(4));
+  const capability = CAPABILITIES.find((c) => entry === capPermission(c));
+  if (capability) return caps[capability];
   const secret = SECRET_ENTRY.exec(entry);
   if (secret?.[1] && secret[2]) return fr.integrations.permissions.secret(secret[1], [secret[2]]);
   return fr.publish.permission(entry);
@@ -38,15 +67,18 @@ export function permissionLabel(entry: string): string {
 function closingLine(g: GrantedPermissions): PermissionLine | null {
   const t = fr.trust;
   if (g.mcp.length > 0) return null;
-  const notes = g.reads.includes("note") || g.writes.includes("note");
+  const files = g.reads.includes("note") || g.writes.includes("note") || g.capabilities.includes("assets");
   const offline = g.net.length === 0;
-  if (offline && !notes) return { icon: X, title: t.noNetworkNoFiles };
+  if (offline && !files) return { icon: X, title: t.noNetworkNoFiles };
   if (offline) return { icon: X, title: t.noNetwork };
-  if (!notes) return { icon: X, title: t.noFiles };
+  if (!files) return { icon: X, title: t.noFiles };
   return null;
 }
 
-export function permissionLines(g: GrantedPermissions): PermissionLine[] {
+export function permissionLines(
+  g: GrantedPermissions,
+  extra: { selection?: boolean } = {},
+): PermissionLine[] {
   const t = fr.trust;
   const lines: PermissionLine[] = [];
   const reads = g.reads.filter((e) => e !== "note");
@@ -66,6 +98,8 @@ export function permissionLines(g: GrantedPermissions): PermissionLine[] {
   for (const s of g.secrets)
     lines.push({ icon: KeyRound, title: fr.integrations.permissions.secret(s.name, s.hosts) });
   for (const rule of g.mcp.filter(usableByThirdParty)) lines.push({ icon: Plug, title: mcpTitle(rule) });
+  for (const c of CAPABILITIES.filter((x) => g.capabilities.includes(x))) lines.push(capabilityLine(c));
+  if (extra.selection) lines.push({ icon: MousePointerClick, title: caps.selection });
   const closing = closingLine(g);
   return closing ? [...lines, closing] : lines;
 }

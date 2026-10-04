@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { buildComponent } from "./build";
+import { copyFixture } from "./test-kit";
 
 const repo = resolve(import.meta.dir, "../../..");
 const toolchain = { root: repo };
@@ -109,3 +110,17 @@ test("the css only sees the component's sources, never hidden folders", async ()
   expect(css).not.toContain("bg-fuchsia-700");
   expect(css).not.toContain("bg-lime-800");
 }, 60_000);
+
+test("three and the 3D kit are embedded in both browser bundles", async () => {
+  const fixture = copyFixture("three-cube");
+  try {
+    const out = await buildComponent(fixture.dir, toolchain);
+    const sandbox = new TextDecoder().decode(out.files["ui.sandbox.js"]);
+    const trusted = new TextDecoder().decode(out.files["ui.trusted.js"]);
+    expect(sandbox).toContain("WebGLRenderer");
+    expect(trusted).toContain("WebGLRenderer");
+    expect(trusted).toContain("__kiboShared");
+  } finally {
+    fixture.dispose();
+  }
+}, 120_000);

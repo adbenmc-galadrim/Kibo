@@ -52,3 +52,31 @@ test("backend messages carry invocations and calls", () => {
       .success,
   ).toBe(false);
 });
+
+test("init carries capabilities, focus, visibility and selection, all optional on the wire", () => {
+  const legacy = {
+    kibo: 1,
+    type: "init",
+    instanceId: "i",
+    config: {},
+    viewer: "adam",
+    theme: "dark",
+    surface: "widget",
+  };
+  expect(HostToFrame.safeParse(legacy).success).toBe(true);
+  const rich = {
+    ...legacy,
+    capabilities: ["webgl"],
+    focus: false,
+    visible: true,
+    selection: { kind: "ticket", ids: ["t1"] },
+  };
+  expect(HostToFrame.safeParse(rich).success).toBe(true);
+  expect(HostToFrame.safeParse({ kibo: 1, type: "focus", active: true }).success).toBe(true);
+  expect(HostToFrame.safeParse({ kibo: 1, type: "visibility", visible: false }).success).toBe(true);
+  expect(HostToFrame.safeParse({ kibo: 1, type: "selection", selection: null }).success).toBe(true);
+  expect(FrameToHost.safeParse({ kibo: 1, type: "focus", on: true }).success).toBe(true);
+  expect(
+    FrameToHost.safeParse({ kibo: 1, type: "selection", selection: { kind: "ticket", ids: [] } }).success,
+  ).toBe(false);
+});

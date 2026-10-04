@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseDraftAssetPath } from "./asset-path";
+import { parseDraftAssetPath, parseFilePath } from "./asset-path";
 
 const ID = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
 const H = "c".repeat(64);
@@ -32,4 +32,28 @@ test("parseDraftAssetPath refuses anything else", () => {
     `//c/drafts/${ID}/${H}/index.html`,
   ])
     expect(parseDraftAssetPath(path)).toBeNull();
+});
+
+test("parseFilePath reads a token and a project file name", () => {
+  const token = "a".repeat(64);
+  expect(parseFilePath(`/f/${token}/robot.glb`)).toEqual({ token, name: "robot.glb" });
+});
+
+test("parseFilePath refuses anything else", () => {
+  const token = "a".repeat(64);
+  for (const path of [
+    `/f/${token}/Robot.glb`,
+    `/f/${"a".repeat(63)}/a.glb`,
+    `/f/${token.toUpperCase()}/a.glb`,
+    `/f/${token}/a.glb/b`,
+    `/f/${token}`,
+    `/f/${token}/`,
+    `/f/${token}/a.gltf`,
+    `/f/${token}/..%2Fa.glb`,
+    `/f/${token}/.a.glb`,
+    `/c/${token}/a.glb`,
+    `//f/${token}/a.glb`,
+    "/f/short/robot.glb",
+  ])
+    expect(parseFilePath(path)).toBeNull();
 });

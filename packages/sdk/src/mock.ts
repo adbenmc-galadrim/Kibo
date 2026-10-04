@@ -4,6 +4,7 @@ import {
   type ComponentFormat,
   ComponentManifest,
   type ComponentManifestInput,
+  capPermission,
   defaultFormatOf,
   type EntityType,
   KiboError,
@@ -11,9 +12,11 @@ import {
   type MemberInfo,
   type PresencePeer,
   type ProjectAccess,
+  type ProjectAsset,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionOfCall,
+  type Selection,
   type Surface,
   type TicketRun,
 } from "@kibo/schema";
@@ -21,6 +24,7 @@ import { createMockCalls, type MockFetch } from "./mock-calls";
 import { createMockNotes, type MockNote } from "./mock-notes";
 import { createSdk } from "./sdk";
 import type { ServerContext, ServerDefinition } from "./server";
+import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type { MockFetch } from "./mock-calls";
@@ -42,6 +46,11 @@ export type MockSdk = {
   touchNote(path: string, markdown: string): void;
   setAccess(access: ProjectAccess): void;
   setPresence(peers: PresencePeer[]): void;
+  focusRequests: boolean[];
+  selections: (Selection | null)[];
+  setVisible(visible: boolean): void;
+  setFocus(active: boolean): void;
+  setSelection(selection: Selection | null): void;
 };
 export type MockSdkOptions = {
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
@@ -59,6 +68,10 @@ export type MockSdkOptions = {
   presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];
+  assets?: ProjectAsset[];
+  visible?: boolean;
+  focus?: boolean;
+  selection?: Selection | null;
 };
 
 const PROJECT_KEY = "KIB";
@@ -111,6 +124,11 @@ export function createMockSdk(
   const newTicketRequests: NewTicketDefaults[] = [];
   const openedFiles: FileTarget[] = [];
   const openedViews: string[] = [];
+  const focusRequests: boolean[] = [];
+  const selections: (Selection | null)[] = [];
+  const focus = createSignal(opts.focus ?? false);
+  const visible = createSignal(opts.visible ?? true);
+  const selection = createSignal<Selection | null>(opts.selection ?? null);
 
   const serverContext = (): ServerContext => ({
     instanceId: sdk.instanceId,
@@ -151,6 +169,9 @@ export function createMockSdk(
     openNewTicket: (d) => newTicketRequests.push(d),
     openFile: (target) => openedFiles.push(target),
     openView: (componentId) => openedViews.push(componentId),
+    focus: focusApi(focus, (on) => focusRequests.push(on)),
+    visibility: visibilityApi(visible),
+    selection: selectionApi(selection, (next) => selections.push(next)),
   });
 
   const markUsed = (permission: string) => {
@@ -168,6 +189,7 @@ export function createMockSdk(
   const readNote = <T>(work: () => Promise<T>) => record("read:note", "read note", work);
   const writeNote = <T>(work: () => Promise<T>) => record("write:note", "write note", work);
   const useData = <T>(work: () => Promise<T>) => record("data", "data", work);
+  const useAssets = <T>(work: () => Promise<T>) => record(capPermission("assets"), "cap:assets", work);
 
   const sdk: KiboSdk = {
     ...inner,
@@ -211,6 +233,20 @@ export function createMockSdk(
       subscribe: inner.presence.subscribe,
     },
     sharing: () => record("read:ticket", "read sharing", () => inner.sharing()),
+    capability: (name) => {
+      const permission = capPermission(name);
+      markUsed(permission);
+      try {
+        inner.capability(name);
+      } catch (e) {
+        if (e instanceof KiboError && e.code === "PERMISSION_DENIED") violations.push(permission);
+        throw e;
+      }
+    },
+    assets: {
+      list: () => useAssets(() => inner.assets.list()),
+      url: (name) => useAssets(() => inner.assets.url(name)),
+    },
   };
 
   return {
@@ -239,5 +275,10 @@ export function createMockSdk(
       peers = next;
       presenceChanges.emit();
     },
+    focusRequests,
+    selections,
+    setVisible: visible.set,
+    setFocus: focus.set,
+    setSelection: selection.set,
   };
 }

@@ -1,5 +1,5 @@
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { KiboError, SERVER_SPECIFIERS, SHARED_SPECIFIERS } from "@kibo/schema";
+import { isEmbeddedSpecifier, KiboError, SERVER_SPECIFIERS, SHARED_SPECIFIERS } from "@kibo/schema";
 import type { BunPlugin } from "bun";
 import type { Toolchain } from "./toolchain";
 
@@ -49,7 +49,9 @@ export function resolver(stage: BuildStage, mode: BuildMode): BunPlugin {
             throw new KiboError("VALIDATION_FAILED", `import outside the component: ${spec}`);
           return undefined;
         }
-        if (!allowed.has(spec)) throw new KiboError("VALIDATION_FAILED", `forbidden import: ${spec}`);
+        const embedded = mode !== "server" && isEmbeddedSpecifier(spec);
+        if (!allowed.has(spec) && !embedded)
+          throw new KiboError("VALIDATION_FAILED", `forbidden import: ${spec}`);
         return undefined;
       });
       build.onLoad({ filter: /.*/, namespace: "kibo-shared" }, async (args) => ({

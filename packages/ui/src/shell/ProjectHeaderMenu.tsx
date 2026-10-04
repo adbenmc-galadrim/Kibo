@@ -1,11 +1,13 @@
-import type { ProjectMeta } from "@kibo/schema";
+import { isInbox, type ProjectMeta } from "@kibo/schema";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
 import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entries";
 import { SidebarMenuAction } from "@kibo/sdk/ui/sidebar";
 import { Ellipsis } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import { ProjectFilesDialog } from "../files/lazy-files";
 import { fr } from "../i18n/fr";
+import { frProject } from "../i18n/fr-project";
 import { frShare } from "../i18n/fr-share";
 import { type ProjectMenuActions, projectMenuEntries } from "./project-menu";
 
@@ -14,7 +16,7 @@ export type ProjectHeaderMenuProps = {
   current: boolean;
   shifted: boolean;
   editable: boolean;
-  actions: ProjectMenuActions;
+  actions: Omit<ProjectMenuActions, "files">;
   children: ReactNode;
 };
 
@@ -26,15 +28,17 @@ export function ProjectHeaderMenu({
   actions,
   children,
 }: ProjectHeaderMenuProps) {
+  const [filesOpen, setFilesOpen] = useState(false);
   const entries = projectMenuEntries({
     editable,
     texts: {
       newPage: fr.nav.newPage,
       share: frShare.action,
       edit: fr.nav.editProject,
+      files: frProject.files,
       remove: fr.nav.deleteProject,
     },
-    actions,
+    actions: { ...actions, files: isInbox(project.id) ? null : () => setFilesOpen(true) },
   });
   return (
     <>
@@ -58,6 +62,7 @@ export function ProjectHeaderMenu({
           <DropdownMenuEntries entries={entries} />
         </DropdownMenuContent>
       </DropdownMenu>
+      {filesOpen && <ProjectFilesDialog projectId={project.id} onClose={() => setFilesOpen(false)} />}
     </>
   );
 }

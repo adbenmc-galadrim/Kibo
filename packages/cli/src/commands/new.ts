@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { scaffold } from "@kibo/devkit";
+import type { Template } from "@kibo/schema";
 import { fr } from "../fr";
 import type { CliIo } from "../index";
 
@@ -9,6 +10,7 @@ export async function newCommand(
   id: string,
   kind: ComponentKind,
   server: boolean,
+  template: Template,
   io: CliIo,
 ): Promise<number> {
   const dir = await scaffold({
@@ -16,6 +18,7 @@ export async function newCommand(
     id,
     kind,
     server,
+    template,
     toolchain: io.toolchain,
   });
   io.out(fr.created(dir));

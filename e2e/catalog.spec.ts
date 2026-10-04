@@ -55,6 +55,11 @@ test("publier, autoriser, rendre en sandbox, mettre à jour partout", async ({ p
     await expect(frame.getByText("Hello")).toBeVisible();
     await expect(frame.getByText("Version 0.1.0")).toBeVisible();
     await expect(page.locator(`iframe[title="${TITLE}"]`)).toHaveAttribute("sandbox", "allow-scripts");
+    await expect(page.locator(`iframe[title="${TITLE}"]`)).toHaveAttribute(
+      "allow",
+      "autoplay 'none'; gamepad 'none'; fullscreen 'none'; camera 'none'; microphone 'none'; geolocation 'none'",
+    );
+    await expect(page.getByRole("button", { name: "Plein écran" })).toHaveCount(0);
   }
 
   bumpDraft(info, "0.2.0", "Affiche la version");

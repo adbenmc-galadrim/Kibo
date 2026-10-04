@@ -4,6 +4,7 @@ import {
   type DraftMode,
   PageKind,
   type Role,
+  type Template,
   type ValidationReport,
 } from "@kibo/schema";
 import type { CatalogEntry } from "./ports";
@@ -79,7 +80,26 @@ export type GeneratorBrief = {
   baseVersion: string | null;
   formats: readonly ComponentFormat[];
   attachments: readonly string[];
+  template: Template;
 };
+
+const TEMPLATE_LABELS: Record<Template, string> = {
+  blank: "Vide",
+  "3d": "3D",
+  game: "Jeu",
+  chart: "Graphique",
+  table: "Tableau",
+};
+
+const templateLines = (t: Template): string[] =>
+  t === "blank"
+    ? []
+    : [
+        `Le gabarit ${TEMPLATE_LABELS[t]} est déjà en place dans \`ui.tsx\` : pars de là, garde ses conventions.`,
+      ];
+
+const IMPORTS_LINE =
+  "N'importe que `@kibo/sdk` (et ses sous-chemins), `react`, `lucide-react` ; avec la capacité `webgl` : `three`, `three/addons/*` ; les tests ajoutent `bun:test` et `@testing-library/react`.";
 
 const SKILL_DIR = ".claude/skills/kibo-component";
 
@@ -105,12 +125,13 @@ export function generatorPrompt(b: GeneratorBrief): string {
     task,
     `Demande de l'utilisateur : « ${b.description} »`,
     formatsLine(b),
+    ...templateLines(b.template),
     ...imageLines(b.attachments),
     "",
     `Avant de commencer, lis CLAUDE.md, le skill kibo-component du dossier et son exemple ${SKILL_DIR}/exemple.tsx.`,
     "Le composant s'adapte à chaque format avec sdk.format et les variantes de conteneur, sans largeur fixe.",
     `Tu ne modifies que ${writable(b)} ; component.test.tsx garde l'appel à runConformance.`,
-    "N'importe que @kibo/sdk (et ses sous-chemins), react et lucide-react ; les tests ajoutent bun:test et @testing-library/react.",
+    IMPORTS_LINE,
     "Tu ne peux pas changer le manifeste ni la forme de la config : si c'est nécessaire, arrête-toi et explique pourquoi.",
     TEST_ORDER,
   ].join("\n");
@@ -158,7 +179,7 @@ export function draftKiboFiles(b: GeneratorBrief): Record<string, string> {
 
 - Fichiers que tu peux écrire : ${writable(b)}, à la racine du dossier.
 - Tout autre fichier appartient à Kibo : une modification est annulée à la fin du run.
-- Imports autorisés : chemins relatifs, \`@kibo/sdk\` et ses sous-chemins, \`react\`, \`lucide-react\` ; dans les tests, aussi \`bun:test\` et \`@testing-library/react\`.
+- Imports autorisés : chemins relatifs, \`@kibo/sdk\` et ses sous-chemins, \`react\`, \`lucide-react\` ; avec la capacité \`webgl\` : \`three\`, \`three/addons/*\` ; dans les tests, aussi \`bun:test\` et \`@testing-library/react\`.
 - Pas de réseau direct, pas de \`node:*\`, \`bun:*\` ni \`bun\` : tout passe par le SDK.
 - \`component.test.tsx\` garde l'appel à \`runConformance\`.
 - Textes affichés en français, en tutoyant l'utilisateur.

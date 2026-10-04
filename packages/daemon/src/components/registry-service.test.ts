@@ -189,6 +189,8 @@ describe("listing and uninstall", () => {
       ["graph", true],
       ["notes", true],
       ["mcp-source", true],
+      ["viewer-3d", true],
+      ["snake", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -212,7 +214,15 @@ describe("listing and uninstall", () => {
     await svc.uninstall("pr-queue", "0.3.0");
     expect(getRegistryVersion(ws, "pr-queue", "0.3.0")).toBeNull();
     expect(await store.verify("pr-queue", "0.3.0", H1)).toBe(false);
-    expect(svc.list().map((c) => c.id)).toEqual(["kanban", "tickets", "graph", "notes", "mcp-source"]);
+    expect(svc.list().map((c) => c.id)).toEqual([
+      "kanban",
+      "tickets",
+      "graph",
+      "notes",
+      "mcp-source",
+      "viewer-3d",
+      "snake",
+    ]);
   });
 });
 

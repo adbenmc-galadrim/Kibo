@@ -1,10 +1,12 @@
 import {
   type AssetMime,
+  type AssetUrl,
   type CiRun,
   COMMAND_WRITES,
   type CommandResult,
   type ComponentCall,
   type ComponentManifest,
+  capPermission,
   type EntityType,
   type FetchInitInput,
   type FetchResponse,
@@ -15,13 +17,16 @@ import {
   type NoteMeta,
   type NotesInfo,
   type PresencePeer,
+  type ProjectAsset,
   type ProjectCommand,
   type ProjectSyncInfo,
   ruleCovers,
   type Ticket,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
+import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import type {
+  AssetsApi,
   EntityMap,
   InstanceData,
   KiboSdk,
@@ -153,6 +158,22 @@ function mcpApi(
   };
 }
 
+function assetsApi(manifest: ComponentManifest, guard: Guard, call: Call): AssetsApi {
+  const need = () => {
+    if (!manifest.capabilities.includes("assets")) guard.deny(capPermission("assets"));
+  };
+  return {
+    async list() {
+      need();
+      return call<ProjectAsset[]>({ kind: "assets.list" });
+    },
+    async url(name) {
+      need();
+      return call<AssetUrl>({ kind: "assets.url", name });
+    },
+  };
+}
+
 export function createSdk(
   backend: ProjectBackend,
   manifest: ComponentManifest,
@@ -220,5 +241,13 @@ export function createSdk(
       guard.needRead("ticket");
       return call<ProjectSyncInfo>({ kind: "sharing.get" });
     },
+    capabilities: [...manifest.capabilities],
+    capability(name) {
+      if (!manifest.capabilities.includes(name)) guard.deny(capPermission(name));
+    },
+    assets: assetsApi(manifest, guard, call),
+    focus: ctx.focus ?? NO_FOCUS,
+    visibility: ctx.visibility ?? ALWAYS_VISIBLE,
+    selection: ctx.selection ?? NO_SELECTION,
   };
 }

@@ -1,16 +1,5 @@
 import { constants } from "node:fs";
-import {
-  lstat,
-  mkdir,
-  open,
-  readdir,
-  readFile,
-  realpath,
-  rename,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, open, readdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import {
   type AssetMime,
@@ -21,41 +10,16 @@ import {
   MAX_ASSET_BYTES,
   sniffImage,
 } from "@kibo/schema";
-import { isInside } from "../code/safe-path";
+import { lstatOrNull, outside, resolveInside } from "../fs/resolve-inside";
 
 export type NoteFile = { markdown: string; mtime: number; size: number };
 export const MAX_NOTE_BYTES = 1_048_576;
 
-const outside = (p: string) =>
-  new KiboError("PATH_OUTSIDE_PROJECT", `note path ${p} leaves the notes folder`);
 const tooLarge = (p: string) => new KiboError("QUOTA_EXCEEDED", `${p} is larger than 1 MiB`);
 const notFound = (p: string) => new KiboError("NOT_FOUND", `note ${p} not found`);
 const isMissing = (e: unknown) => e instanceof Error && "code" in e && e.code === "ENOENT";
 const isExisting = (e: unknown) => e instanceof Error && "code" in e && e.code === "EEXIST";
 const mtimeOf = (ms: number) => Math.floor(ms);
-
-async function lstatOrNull(path: string) {
-  try {
-    return await lstat(path);
-  } catch (e) {
-    if (isMissing(e)) return null;
-    throw e;
-  }
-}
-
-async function resolveInside(dir: string, rel: string): Promise<string> {
-  const root = await realpath(dir);
-  const full = join(root, ...rel.split("/"));
-  if (full === root || !isInside(root, full)) throw outside(rel);
-  let current = root;
-  for (const segment of rel.split("/")) {
-    current = join(current, segment);
-    const info = await lstatOrNull(current);
-    if (info === null) break;
-    if (info.isSymbolicLink()) throw outside(rel);
-  }
-  return full;
-}
 
 export async function resolveNotePath(dir: string, rel: string): Promise<string> {
   if (!isSafeNotePath(rel)) throw outside(rel);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Capability } from "./capability";
 import { ConfigSchema } from "./config";
 import {
   ComponentFormat,
@@ -60,6 +61,8 @@ export const ComponentManifest = z.object({
   sdk: z.literal(1).default(1),
   formats: z.array(ComponentFormat).min(1).max(5).optional(),
   size: SizeSpec.optional(),
+  capabilities: z.array(Capability).default([]),
+  selection: z.boolean().default(false),
 });
 export type ComponentManifest = z.infer<typeof ComponentManifest>;
 export type ComponentManifestInput = z.input<typeof ComponentManifest>;

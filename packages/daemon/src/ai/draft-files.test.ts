@@ -144,12 +144,19 @@ test("the images live beside the draft: unseen by the restore and the agent file
 
 test("writePermissions rewrites the inferable permission fields and keeps declared secrets", async () => {
   const paths = await prepared();
-  writePermissions(paths.dir, { ...NO_PERMISSIONS, reads: ["ticket", "status"], data: true, mcp: ["figma"] });
+  writePermissions(paths.dir, {
+    ...NO_PERMISSIONS,
+    reads: ["ticket", "status"],
+    data: true,
+    mcp: ["figma"],
+    capabilities: ["webgl"],
+  });
   expect(readDraftManifest(paths.dir)).toMatchObject({
     id: "burndown",
     reads: ["ticket", "status"],
     data: true,
     mcp: ["figma"],
+    capabilities: ["webgl"],
     secrets: [],
   });
 });

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { resolveToolchain, type Toolchain } from "@kibo/devkit";
-import { KiboError } from "@kibo/schema";
+import { KiboError, Template } from "@kibo/schema";
 import { type Parsed, parseArgs } from "./args";
 import { startDevServer } from "./commands/dev";
 import { type MarketCliDeps, runMarketCommand } from "./commands/market";
@@ -28,6 +28,13 @@ export function cliIo(): CliIo {
 const kindOf = (flags: Parsed["flags"]): ComponentKind =>
   flags.kind === "view" || flags.kind === "both" ? flags.kind : "widget";
 
+function templateOf(flag: string | true | undefined): Template {
+  if (flag === undefined) return "blank";
+  const parsed = Template.safeParse(flag);
+  if (!parsed.success) throw new KiboError("INVALID_INPUT", `unknown template ${String(flag)}`);
+  return parsed.data;
+}
+
 const strategyOf = (flags: Parsed["flags"]): PublishStrategy | null =>
   flags["update-all"] === true ? "update-all" : flags["new-version"] === true ? "new-version" : null;
 
@@ -50,7 +57,7 @@ async function devCommand(target: string, flags: Parsed["flags"], io: CliIo): Pr
 async function dispatch(command: string, target: string, flags: Parsed["flags"], io: CliIo): Promise<number> {
   switch (command) {
     case "new":
-      return newCommand(target, kindOf(flags), flags.server === true, io);
+      return newCommand(target, kindOf(flags), flags.server === true, templateOf(flags.template), io);
     case "test":
       return testCommand(target, io);
     case "dev":

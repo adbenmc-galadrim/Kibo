@@ -206,6 +206,8 @@ test("an own active component can be published to the marketplace from the ⋯ m
     net: [],
     secrets: [],
     mcp: [],
+    capabilities: [],
+    selection: false,
     configVersion: 0,
     changes: [],
     sdk: 1,

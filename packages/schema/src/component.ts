@@ -5,7 +5,15 @@ import type { ComponentManifest } from "./manifest";
 import { GrantedPermissions } from "./permissions";
 import { SemVer } from "./semver";
 
-export const BUILTIN_IDS = ["kanban", "tickets", "graph", "notes", "mcp-source"] as const;
+export const BUILTIN_IDS = [
+  "kanban",
+  "tickets",
+  "graph",
+  "notes",
+  "mcp-source",
+  "viewer-3d",
+  "snake",
+] as const;
 export const BUILTIN_ADAPTER_IDS = ["github-issues"] as const;
 const BUILTIN_ANY: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];
 export const isBuiltinId = (id: string): boolean => BUILTIN_ANY.includes(id);
@@ -74,6 +82,8 @@ export const SDK_UI_PRIMITIVES = [
   "separator",
   "sheet",
   "skeleton",
+  "switch",
+  "table",
   "textarea",
   "tooltip",
 ] as const;
@@ -86,6 +96,10 @@ export const SHARED_SPECIFIERS: readonly string[] = [
   "@kibo/sdk/lib/utils",
   ...SDK_UI_PRIMITIVES.map((n) => `@kibo/sdk/ui/${n}`),
 ];
+export const EMBEDDED_SPECIFIERS: readonly string[] = ["three", "@kibo/sdk/three", "@kibo/sdk/game"];
+export const EMBEDDED_PREFIXES: readonly string[] = ["three/addons/", "three/examples/jsm/"];
+export const isEmbeddedSpecifier = (spec: string): boolean =>
+  EMBEDDED_SPECIFIERS.includes(spec) || EMBEDDED_PREFIXES.some((prefix) => spec.startsWith(prefix));
 export const SERVER_SPECIFIERS: readonly string[] = ["@kibo/sdk/server", "@kibo/sdk/migrations"];
 export const TEST_SPECIFIERS: readonly string[] = [
   "bun:test",

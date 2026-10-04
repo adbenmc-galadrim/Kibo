@@ -4,6 +4,8 @@ import {
   Base64,
   ComponentCall,
   ComponentManifest,
+  ConfigField,
+  ConfigSchema,
   covers,
   DEFAULT_WORKFLOW,
   diffPermissions,
@@ -16,10 +18,13 @@ import {
   ProjectKey,
   permissionList,
   permissionOfCall,
+  RpcRequest,
   Sha256,
+  StartComponentDraftInput,
   sniffImage,
   Ticket,
   TicketKey,
+  validateConfig,
 } from "./index";
 
 describe("keys", () => {
@@ -261,4 +266,85 @@ describe("shared encodings", () => {
     expect(Sha256.safeParse("a".repeat(64)).success).toBe(true);
     expect(Sha256.safeParse("A".repeat(64)).success).toBe(false);
   });
+});
+
+test("capabilities are permissions", () => {
+  const granted = grantedOf({
+    reads: [],
+    writes: [],
+    data: false,
+    net: [],
+    secrets: [],
+    mcp: [],
+    capabilities: ["gamepad", "webgl"],
+  });
+  expect(granted.capabilities).toEqual(["gamepad", "webgl"]);
+  expect(permissionList(granted)).toEqual(["cap:gamepad", "cap:webgl"]);
+  expect(
+    GrantedPermissions.parse({ reads: [], writes: [], data: false, net: [], secrets: [], mcp: [] })
+      .capabilities,
+  ).toEqual([]);
+  expect(permissionOfCall({ kind: "assets.list" })).toBe("cap:assets");
+  expect(permissionOfCall({ kind: "assets.url", name: "robot.glb" })).toBe("cap:assets");
+  expect(covers(["cap:assets"], "cap:assets")).toBe(true);
+  expect(diffPermissions(["cap:assets"], ["cap:webgl"]).missing).toEqual(["cap:webgl"]);
+  expect(addedPermissions(granted, { ...granted, capabilities: ["gamepad", "webgl", "audio"] })).toEqual([
+    "cap:audio",
+  ]);
+});
+
+test("config fields may carry a label, help, bounds and an asset kind", () => {
+  const schema = ConfigSchema.parse({
+    model: { type: "string", nullable: true, default: null, asset: "model", label: "Modèle (.glb)" },
+    speed: { type: "number", default: 1, min: 0.5, max: 4, help: "Vitesse de rotation" },
+  });
+  expect(validateConfig(schema, { model: "robot.glb", speed: 2 })).toEqual([]);
+  expect(validateConfig(schema, { model: "../x.glb" })).toEqual(["model: not a project file name"]);
+  expect(validateConfig(schema, { speed: 9 })).toEqual(["speed: above 4"]);
+  expect(validateConfig(schema, { speed: 0 })).toEqual(["speed: below 0.5"]);
+  expect(ConfigField.safeParse({ type: "string", label: "" }).success).toBe(false);
+  expect(ConfigField.safeParse({ type: "number", asset: "model" }).success).toBe(false);
+});
+
+test("file rpc methods parse", () => {
+  const ok = (req: unknown) => expect(RpcRequest.safeParse(req).success).toBe(true);
+  ok({ method: "listAssets", projectId: "p" });
+  ok({ method: "beginAssetUpload", projectId: "p", name: "robot.glb", mime: "model/gltf-binary", size: 12 });
+  ok({
+    method: "appendAssetUpload",
+    uploadId: "9f0a2c3e-1111-4222-8333-444455556666",
+    index: 0,
+    bytes: "Z2xURg==",
+  });
+  ok({ method: "finishAssetUpload", uploadId: "9f0a2c3e-1111-4222-8333-444455556666" });
+  ok({ method: "removeAsset", projectId: "p", name: "robot.glb" });
+  ok({ method: "setFilesDir", projectId: "p", dir: null });
+  ok({ method: "reportComponentRefusal", projectId: "p", instanceId: "i", kind: "focus" });
+  expect(
+    RpcRequest.safeParse({
+      method: "beginAssetUpload",
+      projectId: "p",
+      name: "x.gltf",
+      mime: "model/gltf-binary",
+      size: 1,
+    }).success,
+  ).toBe(false);
+  expect(
+    RpcRequest.safeParse({
+      method: "beginAssetUpload",
+      projectId: "p",
+      name: "x.glb",
+      mime: "model/gltf-binary",
+      size: 64 * 1024 * 1024 + 1,
+    }).success,
+  ).toBe(false);
+  const created = StartComponentDraftInput.parse({
+    mode: "create",
+    id: "cube",
+    title: "Cube",
+    kind: "widget",
+    withServer: false,
+    description: "Un cube qui tourne lentement dans le widget.",
+  });
+  expect(created.mode === "create" ? created.template : null).toBe("blank");
 });

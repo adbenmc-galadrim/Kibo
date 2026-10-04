@@ -20,6 +20,7 @@ const draft = (id: string, status: ComponentDraft["status"], updatedAt: number):
   incidents: [{ kind: "removed", path: "evil.ts" }],
   attachments: [],
   revisions: 0,
+  template: "blank",
   createdAt: 1,
   updatedAt,
 });
@@ -137,4 +138,15 @@ test("keeps the last feedback of a revision apart, and migrates an older table",
   expect(() => store.saveFeedback(b, "x")).toThrow("NOT_FOUND");
   db.run("ALTER TABLE component_drafts DROP COLUMN feedback");
   expect(openDraftStore(db).feedback(a)).toBeNull();
+});
+
+test("keeps the template of a draft, and an older table reads it as blank", () => {
+  const db = new Database(":memory:", { strict: true });
+  const store = openDraftStore(db);
+  store.insert({ ...draft(a, "review", 2), template: "3d" });
+  expect(store.get(a).template).toBe("3d");
+  store.save({ ...draft(a, "generating", 3), template: "3d" });
+  expect(store.get(a).template).toBe("3d");
+  db.run("ALTER TABLE component_drafts DROP COLUMN template");
+  expect(openDraftStore(db).get(a).template).toBe("blank");
 });

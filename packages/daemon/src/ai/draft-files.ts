@@ -216,6 +216,7 @@ export function writePermissions(dir: string, p: GrantedPermissions): void {
     data: p.data,
     net: p.net,
     mcp: p.mcp,
+    capabilities: p.capabilities,
   });
 }
 

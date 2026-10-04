@@ -132,3 +132,21 @@ test("inferPermissions reads the TypeScript sources of a directory", async () =>
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("capabilities are inferred from the kits, the imports and sdk.capability", () => {
+  expect(infer(`sdk.capability("webgl");`).used).toEqual(["cap:webgl"]);
+  expect(infer(`sdk.capability(name);`).issues.map((i) => i.code)).toEqual(["non-literal-argument"]);
+  expect(infer(`sdk.capability("network");`).issues.map((i) => i.code)).toEqual(["unknown-entity"]);
+  expect(infer(`await sdk.assets.list(); await sdk.assets.url("a.glb");`).used).toEqual(["cap:assets"]);
+  expect(infer(`sdk.focus.request();`).used).toEqual(["cap:fullscreen"]);
+  expect(infer('import { ThreeCanvas } from "@kibo/sdk/three";').used).toEqual(["cap:webgl"]);
+  expect(infer('import * as THREE from "three";').used).toEqual(["cap:webgl"]);
+  expect(infer('import { OrbitControls } from "three/addons/controls/OrbitControls.js";').used).toEqual([
+    "cap:webgl",
+  ]);
+  expect(
+    infer(
+      'import { useGamepad, createAudio, useFocusMode, useKeys } from "@kibo/sdk/game"; useGamepad(); createAudio(sdk); useFocusMode(); useKeys();',
+    ).used,
+  ).toEqual(["cap:gamepad", "cap:audio", "cap:fullscreen"]);
+});

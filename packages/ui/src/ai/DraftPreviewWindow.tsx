@@ -1,6 +1,7 @@
 import { type ComponentFormat, type ComponentManifest, surfaceFor, type Theme } from "@kibo/schema";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { formatBox } from "../lib/format-box";
+import { allowAttribute } from "../shell/frame-allow";
 import type { BridgeDeps, FrameBridge } from "../shell/frame-bridge";
 import { createLoadGuard, type EscapeReason, type LoadGuard } from "../shell/load-guard";
 import { DEMO_VIEWER } from "./preview-protocol";
@@ -42,8 +43,8 @@ export function DraftPreviewWindow({
   const ref = useRef<HTMLIFrameElement>(null);
   const guard = useRef<LoadGuard | null>(null);
   const bridge = useRef<FrameBridge | null>(null);
-  const latest = useRef({ theme, onFailed });
-  latest.current = { theme, onFailed };
+  const latest = useRef({ theme, onFailed, capabilities: manifest.capabilities });
+  latest.current = { theme, onFailed, capabilities: manifest.capabilities };
   const surface = surfaceFor(manifest, format);
 
   useLayoutEffect(() => {
@@ -73,6 +74,7 @@ export function DraftPreviewWindow({
         theme: latest.current.theme,
         surface,
         format,
+        capabilities: [...latest.current.capabilities],
       }),
       call: (call) => backend.call(call),
       onOpenTicket: ignore,
@@ -82,6 +84,8 @@ export function DraftPreviewWindow({
       onKey: ignore,
       onResize: ignore,
       onReady: () => guard.current?.ready(),
+      onFocus: ignore,
+      onSelection: ignore,
     });
     bridge.current = b;
     window.addEventListener("message", b.handle);
@@ -110,6 +114,7 @@ export function DraftPreviewWindow({
         title={title}
         src={src}
         sandbox="allow-scripts"
+        allow={allowAttribute(manifest.capabilities)}
         referrerPolicy="no-referrer"
         className="block rounded-md border bg-background"
         style={{

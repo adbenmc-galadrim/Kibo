@@ -32,6 +32,7 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     incidents: [],
     attachments: [],
     revisions: 0,
+    template: input.mode === "create" ? input.template : ("blank" as const),
     createdAt: ctx.now,
     updatedAt: ctx.now,
   };
@@ -93,6 +94,7 @@ export async function prepareNewDraft(
               kind: draft.kind,
               withServer: draft.withServer,
               formats: declared,
+              template: draft.template,
             })
         : async (dir) => copySource(ctx.catalog.sourceDir(draft.componentId), dir),
   });

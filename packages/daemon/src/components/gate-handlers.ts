@@ -1,6 +1,7 @@
 import { localSyncInfo, readInstanceData, readProject, writeInstanceData } from "@kibo/core";
 import { KiboError, type PresencePeer, type ProjectSyncInfo, type TicketRun } from "@kibo/schema";
 import type { Docs } from "../docs";
+import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import type { NotesService } from "../notes/service";
 import type { Backends } from "./backends";
@@ -10,6 +11,7 @@ import { type NetProxyOptions, proxyFetch } from "./net-proxy";
 export type GateHandlersDeps = {
   docs: Docs;
   notes: NotesService;
+  files: FilesService;
   backends: () => Backends;
   runs(projectId: string): TicketRun[];
   net?: NetProxyOptions;
@@ -71,6 +73,10 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       if (call.kind === "mcp.read") return gate.read(ctx, call.server, call.uri);
       return gate.importItem(ctx, call.server, call.item);
     },
+    assets: (projectId, instanceId, call) =>
+      call.kind === "assets.list"
+        ? deps.files.list(projectId)
+        : deps.files.url(projectId, instanceId, call.name),
     presence: async (projectId) => deps.presence?.(projectId) ?? [],
     sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
   };

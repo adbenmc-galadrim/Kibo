@@ -1,0 +1,9 @@
+{
+  "id": "three-cube",
+  "version": "0.1.0",
+  "kind": "widget",
+  "title": "Cube",
+  "reads": [],
+  "writes": [],
+  "capabilities": ["webgl"]
+}

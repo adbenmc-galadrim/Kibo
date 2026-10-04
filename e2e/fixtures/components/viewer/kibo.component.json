@@ -1,0 +1,10 @@
+{
+  "id": "viewer",
+  "version": "0.1.0",
+  "kind": "widget",
+  "title": "Viewer",
+  "reads": [],
+  "writes": [],
+  "capabilities": ["gamepad", "assets"],
+  "changes": ["Premier jet"]
+}

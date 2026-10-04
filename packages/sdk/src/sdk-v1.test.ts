@@ -38,6 +38,7 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
     },
     call: async (c) => {
       calls.push(c);
+      if (c.kind === "assets.url") return { url: `http://127.0.0.1:1/f/a/${c.name}`, expiresAt: 1 };
       return c.kind === "data.keys" ? ["a"] : [];
     },
     subscribe: () => () => undefined,
@@ -123,6 +124,28 @@ describe("new capabilities", () => {
       "PERMISSION_DENIED",
     );
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe("capabilities", () => {
+  test("capabilities gate the kits and the project files", async () => {
+    const { sdk, calls } = setup({ capabilities: ["assets"] }, "gated");
+    expect(sdk.capabilities).toEqual(["assets"]);
+    expect(() => sdk.capability("webgl")).toThrow("PERMISSION_DENIED");
+    sdk.capability("assets");
+    expect(await sdk.assets.list()).toEqual([]);
+    expect((await sdk.assets.url("b.glb")).url).toContain("/f/");
+    expect(calls.map((c) => c.kind)).toEqual(["assets.list", "assets.url"]);
+  });
+
+  test("without capabilities the context defaults keep focus off, the view visible and nothing selected", async () => {
+    const { sdk: bare, calls } = setup({}, "gated");
+    await expect(bare.assets.list()).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
+    await expect(bare.assets.url("b.glb")).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
+    expect(calls).toEqual([]);
+    expect(bare.focus.active()).toBe(false);
+    expect(bare.visibility.visible()).toBe(true);
+    expect(bare.selection.get()).toBeNull();
   });
 });
 

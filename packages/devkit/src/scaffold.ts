@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ComponentManifest, isBuiltinId, KiboError } from "@kibo/schema";
+import { ComponentManifest, isBuiltinId, KiboError, type Template } from "@kibo/schema";
+import { TEMPLATES } from "./templates";
 import { type Toolchain, toolchainModules } from "./toolchain";
 
 export type ScaffoldOptions = {
@@ -10,28 +11,13 @@ export type ScaffoldOptions = {
   kind: "widget" | "view" | "both";
   server: boolean;
   toolchain: Toolchain;
+  template?: Template;
 };
 
 const titleOf = (id: string) => {
   const words = (id.split(".").at(-1) ?? id).split("-").join(" ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
-
-const UI = (title: string) => `import { useSdk } from "@kibo/sdk";
-import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
-
-export function Component() {
-  const sdk = useSdk();
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>${title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col text-sm text-muted-foreground">{sdk.surface === "view" ? "Vue" : "Widget"}</CardContent>
-    </Card>
-  );
-}
-`;
 
 const SERVER = `import { defineServer } from "@kibo/sdk/server";
 
@@ -70,6 +56,7 @@ const json = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
 export async function scaffold(opts: ScaffoldOptions): Promise<string> {
   const dir = join(opts.root, opts.id);
   const title = titleOf(opts.id);
+  const template = TEMPLATES[opts.template ?? "blank"];
   const manifest = {
     id: opts.id,
     version: "0.1.0",
@@ -79,6 +66,7 @@ export async function scaffold(opts: ScaffoldOptions): Promise<string> {
     reads: [],
     writes: [],
     changes: [],
+    ...template.manifest,
   };
   if (!ComponentManifest.safeParse(manifest).success) {
     throw new KiboError("INVALID_INPUT", `invalid component id ${opts.id}`);
@@ -87,7 +75,7 @@ export async function scaffold(opts: ScaffoldOptions): Promise<string> {
   if (existsSync(dir)) throw new KiboError("INVALID_INPUT", `${dir} already exists`);
   await mkdir(dir, { recursive: true, mode: 0o700 });
   await writeFile(join(dir, "kibo.component.json"), json(manifest));
-  await writeFile(join(dir, "ui.tsx"), UI(title));
+  await writeFile(join(dir, "ui.tsx"), template.ui(title));
   if (opts.server) await writeFile(join(dir, "server.ts"), SERVER);
   await writeFile(join(dir, "component.test.tsx"), CONFORMANCE_TEST);
   await writeFile(join(dir, "tsconfig.json"), json(TSCONFIG));

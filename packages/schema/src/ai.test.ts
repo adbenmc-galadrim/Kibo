@@ -156,6 +156,7 @@ test("ComponentDraft round-trips and caps attempts at 3", () => {
     incidents: [],
     attachments: [{ name: "maquette.png", mime: "image/png", bytes: 84_000 }],
     revisions: 2,
+    template: "blank",
     createdAt: 1,
     updatedAt: 1,
   };
