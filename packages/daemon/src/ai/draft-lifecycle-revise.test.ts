@@ -147,6 +147,7 @@ describe("revise", () => {
   test("refused without AI", async () => {
     const { life, d } = await reviewed();
     const offline = setupLifecycle({ status: { available: false, reason: "missing" } });
+    offline.store.insert(d);
     await expect(offline.life.revise({ draftId: d.id, feedback, attachments: [] })).rejects.toThrow(
       "AI_UNAVAILABLE",
     );

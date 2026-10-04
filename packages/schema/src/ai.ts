@@ -98,6 +98,7 @@ export const ComponentDraft = z.object({
   attachments: z.array(DraftAttachment).max(MAX_DRAFT_ATTACHMENTS_TOTAL).default([]),
   revisions: z.number().int().min(0).max(MAX_DRAFT_REVISIONS).default(0),
   template: Template.default("blank"),
+  projectId: z.string().nullable().default(null),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });
@@ -114,12 +115,14 @@ export const StartComponentDraftInput = z.discriminatedUnion("mode", [
     formats: z.array(ComponentFormat).min(1).max(5).optional(),
     template: Template.default("blank"),
     attachments: DraftAttachments,
+    projectId: z.string().min(1).optional(),
   }),
   z.object({
     mode: z.literal("modify"),
     id: ComponentManifest.shape.id,
     description: z.string().trim().min(5).max(2000),
     attachments: DraftAttachments,
+    projectId: z.string().min(1).optional(),
   }),
 ]);
 export type StartComponentDraftInput = z.infer<typeof StartComponentDraftInput>;

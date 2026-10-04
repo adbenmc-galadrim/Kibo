@@ -18,7 +18,7 @@ const runDir = () => {
 
 test("the demo agent writes and reads inside its workspace only", () => {
   const dir = runDir();
-  const guard = demoWorkspaceGuard(join(dir, "workspace"));
+  const guard = demoWorkspaceGuard(join(dir, "workspace"), true);
   expect(guard({ tool: "Write", input: { file_path: join(dir, "workspace/notes.md") } })).toBeNull();
   expect(guard({ tool: "Read", input: { file_path: "notes.md" } })).toBeNull();
   expect(guard({ tool: "Write", input: { file_path: join(dir, "escape.md") } })).toEqual({
@@ -33,7 +33,7 @@ test("the demo agent writes and reads inside its workspace only", () => {
 
 test("the brief next to the workspace stays readable, nothing else of the run folder", () => {
   const dir = runDir();
-  const guard = demoWorkspaceGuard(join(dir, "workspace"));
+  const guard = demoWorkspaceGuard(join(dir, "workspace"), true);
   expect(guard({ tool: "Read", input: { file_path: join(dir, "brief.md") } })).toBeNull();
   expect(guard({ tool: "Write", input: { file_path: join(dir, "brief.md") } })?.decision).toBe("deny");
   expect(guard({ tool: "Read", input: { file_path: join(dir, "CLAUDE.md") } })?.decision).toBe("deny");
@@ -42,14 +42,14 @@ test("the brief next to the workspace stays readable, nothing else of the run fo
 test("a symbolic link inside the workspace cannot lead outside", () => {
   const dir = runDir();
   symlinkSync(tmpdir(), join(dir, "workspace/out"));
-  const guard = demoWorkspaceGuard(join(dir, "workspace"));
+  const guard = demoWorkspaceGuard(join(dir, "workspace"), true);
   expect(guard({ tool: "Write", input: { file_path: join(dir, "workspace/out/x.md") } })?.decision).toBe(
     "deny",
   );
 });
 
 test("tools without a path and the question tool pass", () => {
-  const guard = demoWorkspaceGuard(join(runDir(), "workspace"));
+  const guard = demoWorkspaceGuard(join(runDir(), "workspace"), true);
   expect(guard({ tool: "mcp__kibo__ask_user", input: { question: "?" } })).toBeNull();
   expect(guard({ tool: "Bash", input: { command: "kibo component test ." } })).toBeNull();
   expect(guard({ tool: "Write", input: null })).toBeNull();
@@ -59,17 +59,31 @@ test("only a demo run is guarded, and a demo run without workspace yet touches n
   const dir = runDir();
   const cwd = join(dir, "workspace");
   const outside = { tool: "Write", input: { file_path: join(dir, "escape.md") } };
-  expect(demoRunGuard({ profileId: "opus", cwd })).toBeNull();
-  expect(demoRunGuard({ profileId: "demo", cwd })?.(outside)?.decision).toBe("deny");
-  expect(demoRunGuard({ profileId: "demo", cwd: null })?.(outside)?.decision).toBe("deny");
+  expect(demoRunGuard({ profileId: "opus", cwd, ticketId: "t1" })).toBeNull();
+  expect(demoRunGuard({ profileId: "demo", cwd, ticketId: "t1" })?.(outside)?.decision).toBe("deny");
+  expect(demoRunGuard({ profileId: "demo", cwd: null, ticketId: "t1" })?.(outside)?.decision).toBe("deny");
 });
 
 test("a path the hook may have clipped, or that is not text, is denied", () => {
   const dir = runDir();
-  const guard = demoWorkspaceGuard(join(dir, "workspace"));
+  const guard = demoWorkspaceGuard(join(dir, "workspace"), true);
   const padded = `${"a/".repeat(MAX_TEXT / 2)}notes.md`.slice(0, MAX_TEXT);
   expect(guard({ tool: "Write", input: { file_path: padded } })?.decision).toBe("deny");
   expect(guard({ tool: "Write", input: { file_path: padded.slice(0, MAX_TEXT - 1) } })).toBeNull();
   expect(guard({ tool: "Write", input: { file_path: null } })?.decision).toBe("deny");
   expect(guard({ tool: "Grep", input: { path: ["/"] } })?.decision).toBe("deny");
+});
+
+test("a draft run of the demo agent has no brief to read outside its folder", () => {
+  const dir = runDir();
+  const cwd = join(dir, "workspace");
+  const readBrief = { tool: "Read", input: { file_path: join(dir, "brief.md") } };
+  expect(demoRunGuard({ profileId: "demo", cwd, ticketId: "t1" })?.(readBrief)).toBeNull();
+  expect(demoRunGuard({ profileId: "demo", cwd, ticketId: null })?.(readBrief)?.decision).toBe("deny");
+  expect(
+    demoRunGuard({ profileId: "demo", cwd, ticketId: null })?.({
+      tool: "Read",
+      input: { file_path: "ui.tsx" },
+    }),
+  ).toBeNull();
 });

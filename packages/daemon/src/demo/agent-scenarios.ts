@@ -51,7 +51,10 @@ export const DEMO_ROUTES: {
   routes: { prompt: string; scenario: DemoScenarioName }[];
   fallback: DemoScenarioName;
 } = {
-  routes: [{ prompt: "Écris le composant Kibo", scenario: "component" }],
+  routes: [
+    { prompt: "Écris le composant Kibo", scenario: "component" },
+    { prompt: "Modifie le composant Kibo", scenario: "component" },
+  ],
   fallback: "ticket",
 };
 

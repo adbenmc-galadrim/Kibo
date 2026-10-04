@@ -15,7 +15,7 @@ function realTarget(path: string): string {
 
 const inside = (root: string, path: string) => path === root || path.startsWith(root + sep);
 
-export function demoWorkspaceGuard(cwd: string): ToolGuard {
+export function demoWorkspaceGuard(cwd: string, readsBrief: boolean): ToolGuard {
   const root = realpathSync(cwd);
   const brief = join(dirname(root), "brief.md");
   return ({ tool, input }) => {
@@ -23,12 +23,12 @@ export function demoWorkspaceGuard(cwd: string): ToolGuard {
     const texts = values.filter((v): v is string => typeof v === "string" && v.length < MAX_TEXT);
     if (texts.length !== values.length) return DENIED;
     const paths = texts.map((value) => realTarget(resolve(root, value)));
-    const allowed = (path: string) => inside(root, path) || (tool === "Read" && path === brief);
+    const allowed = (path: string) => inside(root, path) || (readsBrief && tool === "Read" && path === brief);
     return paths.every(allowed) ? null : DENIED;
   };
 }
 
-export function demoRunGuard(run: Pick<RunView, "profileId" | "cwd">): ToolGuard | null {
+export function demoRunGuard(run: Pick<RunView, "profileId" | "cwd" | "ticketId">): ToolGuard | null {
   if (run.profileId !== DEMO_PROFILE_ID) return null;
-  return run.cwd === null ? () => DENIED : demoWorkspaceGuard(run.cwd);
+  return run.cwd === null ? () => DENIED : demoWorkspaceGuard(run.cwd, run.ticketId !== null);
 }

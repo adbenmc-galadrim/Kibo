@@ -32,6 +32,7 @@ type Params = {
   attachmentsJson: string;
   revisions: number;
   template: string;
+  projectId: string | null;
   createdAt: number;
   updatedAt: number;
 };
@@ -51,13 +52,14 @@ type UpdateParams = Pick<
 >;
 
 const COLUMNS =
-  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, attachmentsJson, revisions, template, createdAt, updatedAt";
+  "id, componentId, mode, title, kind, withServer, baseVersion, description, runId, sessionId, status, attempts, failureJson, incidentsJson, attachmentsJson, revisions, template, projectId, createdAt, updatedAt";
 
 const ADDED_COLUMNS: Record<string, string> = {
   attachmentsJson: "attachmentsJson TEXT NOT NULL DEFAULT '[]'",
   revisions: "revisions INTEGER NOT NULL DEFAULT 0",
   feedback: "feedback TEXT",
   template: "template TEXT NOT NULL DEFAULT 'blank'",
+  projectId: "projectId TEXT",
 };
 
 function parseJson(text: string, what: string): unknown {
@@ -99,6 +101,7 @@ const toParams = (d: ComponentDraft): Params => ({
   attachmentsJson: JSON.stringify(d.attachments),
   revisions: d.revisions,
   template: d.template,
+  projectId: d.projectId,
   createdAt: d.createdAt,
   updatedAt: d.updatedAt,
 });
@@ -139,7 +142,7 @@ export function openDraftStore(db: Database): DraftStore {
   db.run(`CREATE UNIQUE INDEX IF NOT EXISTS component_drafts_one_active ON component_drafts (componentId)
     WHERE status NOT IN ('done', 'abandoned')`);
   const insert = db.query<null, Params>(
-    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $attachmentsJson, $revisions, $template, $createdAt, $updatedAt)`,
+    `INSERT INTO component_drafts (${COLUMNS}) VALUES ($id, $componentId, $mode, $title, $kind, $withServer, $baseVersion, $description, $runId, $sessionId, $status, $attempts, $failureJson, $incidentsJson, $attachmentsJson, $revisions, $template, $projectId, $createdAt, $updatedAt)`,
   );
   const update = db.query<null, UpdateParams>(
     "UPDATE component_drafts SET runId = $runId, sessionId = $sessionId, status = $status, attempts = $attempts, failureJson = $failureJson, incidentsJson = $incidentsJson, attachmentsJson = $attachmentsJson, revisions = $revisions, updatedAt = $updatedAt WHERE id = $id",

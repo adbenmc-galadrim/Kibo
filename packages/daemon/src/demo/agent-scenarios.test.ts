@@ -41,6 +41,10 @@ test("the demo scenarios are valid FakeScenario objects that cost zero tokens", 
     true,
   );
   expect(DEMO_ROUTES.fallback).toBe("ticket");
+  expect(DEMO_ROUTES.routes).toEqual([
+    { prompt: "Écris le composant Kibo", scenario: "component" },
+    { prompt: "Modifie le composant Kibo", scenario: "component" },
+  ]);
 });
 
 test("every fixture a demo scenario writes is shipped, and the chart is the devkit template", () => {

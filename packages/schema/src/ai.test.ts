@@ -35,6 +35,21 @@ describe("StartComponentDraftInput", () => {
     withServer: false,
     description: "Burndown du sprint : tickets restants par jour.",
   };
+  test("a draft may name its project, in both modes, and still parses without one", () => {
+    expect(StartComponentDraftInput.parse(create)).not.toHaveProperty("projectId");
+    expect(StartComponentDraftInput.parse({ ...create, projectId: "p-demo" })).toMatchObject({
+      projectId: "p-demo",
+    });
+    expect(
+      StartComponentDraftInput.parse({
+        mode: "modify",
+        id: "burndown",
+        description: "Titre",
+        projectId: "p",
+      }),
+    ).toMatchObject({ projectId: "p" });
+    expect(StartComponentDraftInput.safeParse({ ...create, projectId: "" }).success).toBe(false);
+  });
   test("accepts a create draft and a short modify request", () => {
     expect(StartComponentDraftInput.parse(create).mode).toBe("create");
     expect(
@@ -77,6 +92,7 @@ test("drafts carry attachments and revisions with defaults", () => {
   const d = ComponentDraft.parse(baseDraft);
   expect(d.attachments).toEqual([]);
   expect(d.revisions).toBe(0);
+  expect(d.projectId).toBeNull();
   expect(DraftAttachmentInput.safeParse({ ...image, name: "maquette.png" }).success).toBe(true);
   expect(DraftAttachmentInput.safeParse({ ...image, name: "../x.png" }).success).toBe(false);
   expect(DraftAttachmentInput.safeParse({ ...image, name: "a/b.png" }).success).toBe(false);
@@ -157,6 +173,7 @@ test("ComponentDraft round-trips and caps attempts at 3", () => {
     attachments: [{ name: "maquette.png", mime: "image/png", bytes: 84_000 }],
     revisions: 2,
     template: "blank",
+    projectId: "p-demo",
     createdAt: 1,
     updatedAt: 1,
   };

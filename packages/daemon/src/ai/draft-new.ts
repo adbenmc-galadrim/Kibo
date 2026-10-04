@@ -33,6 +33,7 @@ export function newDraft(input: StartComponentDraftInput, ctx: NewDraftContext):
     attachments: [],
     revisions: 0,
     template: input.mode === "create" ? input.template : ("blank" as const),
+    projectId: input.projectId ?? null,
     createdAt: ctx.now,
     updatedAt: ctx.now,
   };

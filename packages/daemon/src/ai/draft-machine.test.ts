@@ -20,6 +20,7 @@ const d0: ComponentDraft = {
   attachments: [],
   revisions: 0,
   template: "blank",
+  projectId: null,
   createdAt: 1,
   updatedAt: 1,
 };

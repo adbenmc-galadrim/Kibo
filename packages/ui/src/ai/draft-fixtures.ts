@@ -47,6 +47,7 @@ export function draftFixture(patch: Partial<ComponentDraftDetails>): ComponentDr
     attachments: [],
     revisions: 0,
     template: "blank",
+    projectId: null,
     createdAt: 1,
     updatedAt: 1,
     report: null,
