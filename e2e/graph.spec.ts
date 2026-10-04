@@ -1,6 +1,7 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { createGitRepo, rpc, type Seeded, seedWorkspace, text } from "./agents-seed";
+import { addComponent, createSidebarPage } from "./helpers";
 import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -98,4 +99,43 @@ test("sélection : clic, Ouvrir, flèches, Entrée, boîte avec Shift", async ({
   await page.keyboard.up("Shift");
   await expect.poll(() => canvas.locator("[data-selected='true']").count()).toBeGreaterThan(2);
   await shot(page, info, "graphe-selection-multiple");
+});
+
+async function setFormat(page: Page, format: RegExp) {
+  await page.getByRole("button", { name: "Modifier la disposition" }).click();
+  await page.getByRole("button", { name: "Format de Graphe de dépendances" }).click();
+  await page.getByRole("menuitemradio", { name: format }).click();
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByRole("button", { name: "Modifier la disposition" })).toBeVisible();
+}
+
+test("widget : un contenu par format", async ({ page }, info) => {
+  await openGraph(page);
+  await createSidebarPage(page, "Kibo", "Suivi des dépendances", "Tableau de bord");
+  await addComponent(page, "Graphe de dépendances");
+  const widget = page.locator("[data-instance]").filter({ has: page.getByText("Graphe de dépendances") });
+
+  const waiting = widget.getByRole("list", { name: "En attente" });
+  await expect(waiting.getByRole("listitem").first()).toHaveText(/^KIB-\d+ · attend KIB-\d+/);
+  await expect(widget.getByRole("list", { name: "Chemin critique" })).toBeVisible();
+  await shot(page, info, "graphe-widget-moyen");
+  await waiting.getByRole("button").first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+
+  await setFormat(page, /Large · 6 × 6/);
+  await expect(widget.getByRole("region", { name: "Graphe des dépendances" })).toBeVisible();
+  await expect(widget.getByRole("button", { name: "Tout voir" })).toBeVisible();
+  await expect(widget.getByRole("img", { name: "Vue d'ensemble du graphe" })).toHaveCount(0);
+  await shot(page, info, "graphe-widget-large");
+
+  await setFormat(page, /Demi-page · 12 × 6/);
+  await expect(widget.getByRole("region", { name: "Graphe des dépendances" })).toBeVisible();
+  await shot(page, info, "graphe-widget-demi-page");
+
+  await setFormat(page, /Petit · 3 × 3/);
+  for (const name of ["Bloqués", "Prêts", "Chemin critique"])
+    await expect(widget.getByRole("group", { name })).toContainText(/\d/);
+  await shot(page, info, "graphe-widget-petit");
 });
