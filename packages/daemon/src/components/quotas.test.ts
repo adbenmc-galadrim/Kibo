@@ -31,3 +31,14 @@ test("mcp calls are limited to 30 per minute and per instance by default (N47)",
   const tight = createQuotas({ now: () => 0, mcpPerMinute: 1 });
   expect([tight.take("a", "mcp"), tight.take("a", "mcp")]).toEqual([true, false]);
 });
+
+test("design frames are limited per instance on a one minute window", () => {
+  let now = 0;
+  const q = createQuotas({ now: () => now, designPerMinute: 2 });
+  expect([q.take("a", "design"), q.take("a", "design"), q.take("a", "design")]).toEqual([true, true, false]);
+  expect(q.take("b", "design")).toBe(true);
+  now = 60_001;
+  expect(q.take("a", "design")).toBe(true);
+  const fallback = createQuotas({ now: () => 0 });
+  expect(Array.from({ length: 31 }, () => fallback.take("a", "design")).filter(Boolean)).toHaveLength(30);
+});
