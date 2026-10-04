@@ -11,15 +11,17 @@ const workerHeaders = {
   "referrer-policy": "no-referrer",
 };
 
-const documentHeaders = (sandboxOrigin: string | null) => ({
-  "content-security-policy":
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-    `font-src 'self' data:; connect-src 'self' ${TAURI_IPC_ORIGINS}; ` +
-    `${sandboxOrigin ? `frame-src ${sandboxOrigin}; ` : ""}frame-ancestors 'none'; ` +
-    "base-uri 'none'; form-action 'self'",
-  "x-content-type-options": "nosniff",
-  "referrer-policy": "no-referrer",
-});
+const documentHeaders = (sandboxOrigin: string | null) => {
+  const sandbox = sandboxOrigin ? ` ${sandboxOrigin}` : "";
+  return {
+    "content-security-policy":
+      `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:${sandbox}; ` +
+      `font-src 'self' data:; media-src 'self'${sandbox}; connect-src 'self' ${TAURI_IPC_ORIGINS}${sandbox}; ` +
+      `${sandboxOrigin ? `frame-src ${sandboxOrigin}; ` : ""}frame-ancestors 'none'; base-uri 'none'; form-action 'self'`,
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer",
+  };
+};
 
 function withHeaders(res: Response, headers: Record<string, string>): Response {
   for (const [name, value] of Object.entries(headers)) res.headers.set(name, value);

@@ -51,7 +51,7 @@ describe("ui files", () => {
       const res = await fetch(`${ui.url}${path}`);
       expect(res.headers.get("content-security-policy")).toBe(
         "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-          "font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; frame-ancestors 'none'; " +
+          "font-src 'self' data:; media-src 'self'; connect-src 'self' ipc: http://ipc.localhost; frame-ancestors 'none'; " +
           "base-uri 'none'; form-action 'self'",
       );
       expect(res.headers.get("x-content-type-options")).toBe("nosniff");
