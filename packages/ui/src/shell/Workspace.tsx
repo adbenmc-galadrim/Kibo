@@ -17,6 +17,7 @@ import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
+import { useClosedTabToast } from "../tabs/use-closed-tab-toast";
 import { useHashSync } from "../tabs/use-hash-sync";
 import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import type { TabsApi } from "../tabs/use-tabs";
@@ -96,6 +97,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   );
 
   useDestructiveKeyGuard();
+  useClosedTabToast(tabs);
   useTabShortcuts((s) => {
     if (s.kind === "palette") return setPalette({ newTab: false });
     if (s.kind === "newTab") return setPalette({ newTab: true });
