@@ -134,6 +134,7 @@ test("every AI scenario parses and every fixture or route target exists", () => 
     [
       "creations-routes",
       "e2e-routes",
+      "generate-3d",
       "generate-fail-3",
       "generate-fetch",
       "generate-fetch-dynamic",
@@ -176,6 +177,14 @@ test("the creations routes send a title ending in large to the fixed width scena
   expect(scenarioFor(routes, prompt("Burndown du sprint"), null)).toBe(
     aiScenarioPath("generate-revise.json"),
   );
+});
+
+test("the e2e routes send the viewer to the 3D scenario and other creations to the burndown", () => {
+  const routes = aiScenarioPath("e2e-routes.json");
+  const prompt = (title: string) =>
+    `Écris le composant Kibo « ${title} » (id x, widget) dans le dossier courant.`;
+  expect(scenarioFor(routes, prompt("Visionneuse"), null)).toBe(aiScenarioPath("generate-3d.json"));
+  expect(scenarioFor(routes, prompt("Burndown"), null)).toBe(aiScenarioPath("generate-ok.json"));
 });
 
 async function spawnFake(argv: string[], env: Record<string, string>, stdin = "") {
