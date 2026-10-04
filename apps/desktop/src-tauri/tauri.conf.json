@@ -16,7 +16,6 @@
     "publisher": "Kibo",
     "homepage": "https://github.com/adbenmc-galadrim/Kibo",
     "license": "MIT",
-    "licenseFile": "../../../LICENSE",
     "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
     "resources": {
       "../../../packages/ui/dist/": "ui/",
@@ -38,6 +37,7 @@
     },
     "macOS": {
       "signingIdentity": "-",
+      "hardenedRuntime": false,
       "minimumSystemVersion": "12.0",
       "dmg": {
         "background": "../dmg/background.png",

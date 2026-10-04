@@ -4,8 +4,9 @@ import { join } from "node:path";
 
 const conf = JSON.parse(readFileSync(join(import.meta.dir, "../src-tauri/tauri.conf.json"), "utf8"));
 
-test("macOS is signed ad hoc, without Apple identity or entitlements", () => {
+test("macOS is signed ad hoc, without hardened runtime, Apple identity or entitlements", () => {
   expect(conf.bundle.macOS.signingIdentity).toBe("-");
+  expect(conf.bundle.macOS.hardenedRuntime).toBe(false);
   expect(conf.bundle.macOS.minimumSystemVersion).toBe("12.0");
   expect(conf.bundle.macOS.entitlements).toBeUndefined();
   expect(JSON.stringify(conf)).not.toMatch(/APPLE_|notar/i);
@@ -28,7 +29,7 @@ test("bundle metadata describes the application", () => {
   expect(conf.bundle.publisher).toBe("Kibo");
   expect(conf.bundle.homepage).toBe("https://github.com/adbenmc-galadrim/Kibo");
   expect(conf.bundle.license).toBe("MIT");
-  expect(conf.bundle.licenseFile).toBe("../../../LICENSE");
+  expect(conf.bundle.licenseFile).toBeUndefined();
 });
 
 test("Linux gets the desktop template and the four icon sizes", () => {
