@@ -8,6 +8,7 @@ import { InstanceFrame } from "./InstanceFrame";
 import { useInstanceTitle } from "./InstanceMenu";
 import { instanceTitle } from "./instance-title";
 import { usePageContext } from "./PageContext";
+import { useFocusedCard } from "./use-focused-card";
 import { useInstanceApis } from "./use-instance-apis";
 import { type BodyProps, WidgetBody, WidgetHeader } from "./WidgetHeader";
 
@@ -22,6 +23,7 @@ export function WidgetCard(props: BodyProps & { editable: boolean }) {
   const focus = usePageContext();
   const title = instanceTitle(instance, useInstanceTitle(instance.component));
   const focused = focus !== null && focus.focusedId === instance.id;
+  useFocusedCard(focused, card, focus?.dispatch);
   return (
     <div
       ref={card}

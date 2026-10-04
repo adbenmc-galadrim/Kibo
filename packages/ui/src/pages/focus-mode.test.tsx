@@ -132,6 +132,19 @@ test("only a widget that declares fullscreen offers the button", async () => {
   view.unmount();
 });
 
+test("Échap right after entering leaves, before the bar has loaded, and gives the focus back", async () => {
+  const view = show();
+  await screen.findByText("arcade content");
+  const button = await screen.findByRole("button", { name: "Plein écran" });
+  act(() => button.click());
+  expect(screen.getByRole("dialog", { name: "Arcade" })).toBeTruthy();
+  pressEscape();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  await waitFor(() => expect(document.activeElement?.getAttribute("aria-label")).toBe("Plein écran"));
+  expect(document.body.style.overflow).toBe("");
+  view.unmount();
+});
+
 test("the focused card fills the window in the same node, Échap leaves unless a dialog is open", async () => {
   const view = show();
   await screen.findByText("arcade content");
