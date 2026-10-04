@@ -2,7 +2,7 @@ import {
   CAPABILITIES,
   type Capability,
   CONFIG_SERVER_RULE,
-  capabilityOfPermission,
+  capPermission,
   type GrantedPermissions,
   RESERVED_MCP_IDS,
 } from "@kibo/schema";
@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { frTrustCapabilities as caps } from "../i18n/fr-trust-capabilities";
 
 export type PermissionLine = { icon: LucideIcon; title: string; detail?: string };
 
@@ -50,15 +51,14 @@ const CAPABILITY_ICONS: Record<Capability, LucideIcon> = {
 };
 
 function capabilityLine(c: Capability): PermissionLine {
-  const t = fr.trust.capabilities;
-  const detail = c === "webgl" ? t.webglHelp : c === "assets" ? t.assetsHelp : undefined;
-  return { icon: CAPABILITY_ICONS[c], title: t[c], ...(detail && { detail }) };
+  const detail = c === "webgl" ? caps.webglHelp : c === "assets" ? caps.assetsHelp : undefined;
+  return { icon: CAPABILITY_ICONS[c], title: caps[c], ...(detail && { detail }) };
 }
 
 export function permissionLabel(entry: string): string {
   if (entry.startsWith("mcp:")) return mcpTitle(entry.slice(4));
-  const capability = capabilityOfPermission(entry);
-  if (capability) return fr.trust.capabilities[capability];
+  const capability = CAPABILITIES.find((c) => entry === capPermission(c));
+  if (capability) return caps[capability];
   const secret = SECRET_ENTRY.exec(entry);
   if (secret?.[1] && secret[2]) return fr.integrations.permissions.secret(secret[1], [secret[2]]);
   return fr.publish.permission(entry);
@@ -99,7 +99,7 @@ export function permissionLines(
     lines.push({ icon: KeyRound, title: fr.integrations.permissions.secret(s.name, s.hosts) });
   for (const rule of g.mcp.filter(usableByThirdParty)) lines.push({ icon: Plug, title: mcpTitle(rule) });
   for (const c of CAPABILITIES.filter((x) => g.capabilities.includes(x))) lines.push(capabilityLine(c));
-  if (extra.selection) lines.push({ icon: MousePointerClick, title: t.selection });
+  if (extra.selection) lines.push({ icon: MousePointerClick, title: caps.selection });
   const closing = closingLine(g);
   return closing ? [...lines, closing] : lines;
 }
