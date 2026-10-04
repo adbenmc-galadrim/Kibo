@@ -104,6 +104,8 @@ Capacités déclarées dans le manifeste et appliquées par la CSP de chaque com
 
 **Didacticiel après l'assistant** (demande d'Adam du 2026-10-04) : proposé, jamais imposé (on peut le passer et le reprendre plus tard), il fait le tour de Kibo par la pratique dans un projet de démonstration avec des tickets de démonstration. Parcours en petites étapes, chacune faite par l'utilisateur : créer et déplacer un ticket dans le Kanban, lier deux tickets et les voir dans le graphe, écrire une note avec la barre d'outils, réorganiser et redimensionner le tableau de bord, assigner un ticket à un agent (avec le faux agent de démonstration, sans consommer de token), créer un composant en démonstration. Progression visible, reprise à l'étape en cours, projet de démonstration supprimable en un clic.
 
-## Ensuite · Intégrations
+## Phase 15 · Intégrations Figma et Penpot (v1.6)
 
-Cadres Figma et Penpot affichés dans les composants (intégration côté démon, jeton dans le trousseau, cache local).
+Plan : `2026-10-05-kibo-phase-15.md` · Spec : conception §21, intégrations §15, composants §19 point 13.
+
+Cadres Figma et Penpot affichés dans les composants (intégration côté démon, jeton dans le trousseau, cache local) : Figma par jeton personnel (API REST) en plus du serveur MCP local, Penpot (penpot.app ou instance auto-hébergée) par jeton d'accès, cache hors CRDT revalidé par version et servi hors ligne avec l'état « périmé », images servies par le port bac à sable, capacité `design`, widget intégré « Maquette », liens cadre ⇄ ticket étendus à Penpot, écran 16 et dialogues de connexion ; tests contre de faux serveurs Figma et Penpot locaux.
