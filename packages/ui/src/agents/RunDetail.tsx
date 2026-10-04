@@ -16,6 +16,7 @@ import { useWorktrees } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frRunChat } from "../i18n/fr-run-chat";
+import { isDemoProfile } from "./demo-profile";
 import { elapsed, formatDuration, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
 import { ReviewButton } from "./ReviewButton";
@@ -62,8 +63,13 @@ export function RunDetail({ run, resumable, now, log, missing, onOpenFile }: Det
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex items-center gap-2 text-sm">
         <Bot aria-hidden className="size-4 text-brand" />
-        <span className="font-mono font-semibold">{run.label}</span>
+        <span className="shrink-0 font-mono font-semibold">{run.label}</span>
         <span className="min-w-0 truncate text-muted-foreground">{runSubject(run)}</span>
+        {isDemoProfile({ id: run.profileId }) && (
+          <span className="shrink-0 text-xs text-brand-strong dark:text-brand">
+            {frAgentsPage.demo.option}
+          </span>
+        )}
         <span className="flex-1" />
         <span className="shrink-0 font-mono text-xs text-muted-foreground">{where}</span>
         <ReviewButton run={run} />

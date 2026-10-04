@@ -108,6 +108,10 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
   await page.getByLabel(/^Réponse à /).fill("Non");
   await page.getByRole("button", { name: "Envoyer" }).click();
   await expect(dot(page, "Confier un ticket à un agent", "fait")).toBeVisible({ timeout: 45_000 });
+  await expect(
+    page.getByRole("region", { name: "Agents" }).getByText("Agent de démonstration · aucun token consommé"),
+  ).toBeVisible();
+  await shot(page, info, "tiroir-demo");
   const runs = await demoRuns(page);
   expect(runs.length).toBe(1);
   expect(runs[0]).toMatchObject({ state: "done", tokens: 0, costUsd: 0 });
