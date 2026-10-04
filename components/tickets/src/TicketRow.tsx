@@ -56,6 +56,8 @@ type Props = {
   members: MemberInfo[];
   statusLabel: string;
   context: boolean;
+  selected: boolean | null;
+  dimmed: boolean;
   onToggle(): void;
   children: ReactNode;
 };
@@ -70,6 +72,8 @@ export function TicketRow({
   members,
   statusLabel,
   context,
+  selected,
+  dimmed,
   onToggle,
   children,
 }: Props) {
@@ -85,10 +89,13 @@ export function TicketRow({
       <TicketRowMenu entries={entries}>
         <div
           data-context={context || undefined}
+          data-selected={selected === true}
           className={cn(
             COLUMNS,
             "group relative h-8 rounded-md text-sm hover:bg-muted/50",
             context && "text-muted-foreground",
+            selected === true && "bg-muted ring-1 ring-ring",
+            dimmed && "opacity-50",
             inside.isOver && "ring-2 ring-ring",
           )}
         >

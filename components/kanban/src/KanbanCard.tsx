@@ -34,6 +34,7 @@ type Props = {
   ticket: TicketView;
   run: TicketRun | null;
   ci?: CiChip;
+  selected: boolean | null;
   statuses: Status[];
   members: MemberInfo[];
   remote: { label: string; state: string }[];
@@ -44,7 +45,19 @@ type Props = {
 };
 
 export function KanbanCard(props: Props) {
-  const { ticket: t, run, ci, statuses, members, remote, readOnly, onOpen, onMove, onRemove } = props;
+  const {
+    ticket: t,
+    run,
+    ci,
+    selected,
+    statuses,
+    members,
+    remote,
+    readOnly,
+    onOpen,
+    onMove,
+    onRemove,
+  } = props;
   const sortable = useSortable({ id: t.id, disabled: readOnly, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
@@ -79,6 +92,7 @@ export function KanbanCard(props: Props) {
           tabIndex={readOnly ? undefined : attributes.tabIndex}
           aria-label={`${t.keyLabel} ${t.title}`}
           data-key={t.keyLabel}
+          data-selected={selected === true}
           className={cn(
             "relative grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
             !readOnly && "cursor-grab touch-none",
@@ -86,6 +100,8 @@ export function KanbanCard(props: Props) {
             insertion &&
               "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
             t.key === null && "border-dashed",
+            selected === true && "ring-2 ring-ring",
+            selected === false && "opacity-50",
           )}
         >
           <div className="flex h-6 items-center gap-2">

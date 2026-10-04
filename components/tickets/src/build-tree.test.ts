@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
-import { buildTree, mineOnly } from "./build-tree";
+import { buildTree, mineOnly, withAncestors } from "./build-tree";
 
 const t = (id: string, parentId: string | null, assignee: TicketView["assignee"] = null): TicketView => ({
   id,
@@ -39,4 +39,10 @@ test("mineOnly keeps the viewer's tickets and lifts those whose parent is hidden
     ["c", "b"],
     ["d", null],
   ]);
+});
+
+test("withAncestors keeps the selected tickets and every ancestor, nothing else", () => {
+  const tickets = [t("a", null), t("b", "a"), t("c", "b"), t("d", null), t("e", "a")];
+  expect([...withAncestors(tickets, ["c"])].sort()).toEqual(["a", "b", "c"]);
+  expect([...withAncestors(tickets, ["d", "missing"])].sort()).toEqual(["d", "missing"]);
 });

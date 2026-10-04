@@ -13,9 +13,11 @@ import {
   filterBySource,
   readSource,
   remoteRuns,
+  SelectionChip,
   useEntities,
   usePresence,
   useSdk,
+  useSelection,
   useSharing,
 } from "@kibo/sdk";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
@@ -46,6 +48,8 @@ export function Kanban() {
   const sharing = useSharing();
   const readOnly = sharing.access !== "write";
   const columnOrder = useColumnOrder(sdk);
+  const [selection, setSelection] = useSelection();
+  const selected = selection ? new Set(selection.ids) : null;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: cardSteps }),
@@ -120,6 +124,7 @@ export function Kanban() {
   return (
     <div className="flex h-full flex-col">
       <KanbanToolbar filter={filter} onFilter={setFilter} shown={shown.length} total={scoped.length}>
+        <SelectionChip selection={selection} onClear={() => setSelection(null)} />
         {error && !blocking && (
           <p role="alert" className="truncate text-destructive">
             {error}
@@ -162,6 +167,7 @@ export function Kanban() {
                   ticket={t}
                   run={runOf.get(t.id) ?? null}
                   ci={ciOf(t)}
+                  selected={selected ? selected.has(t.id) : null}
                   statuses={ordered}
                   members={sharing.members}
                   remote={remoteRuns(peers, t.key)}

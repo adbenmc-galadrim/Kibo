@@ -7,14 +7,23 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { KiboError, type ProjectCommand, type Status, type StatusId, type TicketView } from "@kibo/schema";
-import { filterBySource, readSource, useEntities, useMembers, useReadOnly, useSdk } from "@kibo/sdk";
+import {
+  filterBySource,
+  readSource,
+  SelectionChip,
+  useEntities,
+  useMembers,
+  useReadOnly,
+  useSdk,
+  useSelection,
+} from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { buildTree, mineOnly, type TicketNode } from "./build-tree";
+import { buildTree, mineOnly, type TicketNode, withAncestors } from "./build-tree";
 import { EMPTY_QUERY, filterTree, isActive } from "./filter-tickets";
 import { fr } from "./fr";
 import { ASSIGNEE_CELL, COLUMNS, TicketRow } from "./TicketRow";
@@ -33,6 +42,9 @@ export function TicketsTree() {
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const members = useMembers();
+  const [selection, setSelection] = useSelection();
+  const selected = new Set(selection?.ids ?? []);
+  const sharp = selection ? withAncestors(all, selection.ids) : null;
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const [query, setQuery] = useState(EMPTY_QUERY);
   const filtering = isActive(query);
@@ -105,6 +117,8 @@ export function TicketsTree() {
       members={members}
       statusLabel={label(n.ticket.statusId)}
       context={filtered?.context.has(n.ticket.id) ?? false}
+      selected={sharp ? selected.has(n.ticket.id) : null}
+      dimmed={sharp !== null && !sharp.has(n.ticket.id)}
       onToggle={() => toggle(n.ticket.id)}
     >
       {n.children.map(row)}
@@ -114,8 +128,9 @@ export function TicketsTree() {
   return (
     <section aria-label={fr.title} className="flex h-full flex-col">
       <header className="flex h-10 items-center justify-between border-b px-3">
-        <span className="text-sm font-medium">
+        <span className="flex items-center gap-2 text-sm font-medium">
           {mine ? fr.mineCount(visible.length, tickets.length) : fr.title}
+          <SelectionChip selection={selection} onClear={() => setSelection(null)} />
         </span>
         {!readOnly && (loading || visible.length > 0) && (
           <Button size="sm" variant="outline" onClick={() => sdk.openNewTicket({})}>

@@ -410,3 +410,33 @@ test("a column scrolls its cards inside its own background", async () => {
   if (!board) throw new Error("board missing");
   expect(board.className).toContain("overflow-y-hidden");
 });
+
+test("shared selection: the selected card stands out, the others fade, the chip clears it", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  m.setSelection({ kind: "ticket", ids: [m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? ""] });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  const card = await screen.findByRole("article", { name: /Sync/ });
+  expect(card.getAttribute("data-selected")).toBe("true");
+  const other = screen.getByRole("article", { name: /Arbre des pages/ });
+  expect(other.getAttribute("data-selected")).toBe("false");
+  expect(other.className).toContain("opacity-50");
+  expect(card.className).not.toContain("opacity-50");
+  expect(screen.getByText("1 sélectionné")).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Effacer la sélection" }));
+  expect(m.selections.at(-1)).toBeNull();
+  await waitFor(() => expect(screen.queryByText("1 sélectionné")).toBeNull());
+  expect(other.className).not.toContain("opacity-50");
+  expect(document.querySelectorAll("[data-selected='true']")).toHaveLength(0);
+});
+
+test("without a selection: no chip and no fading", async () => {
+  setup();
+  const card = await screen.findByRole("article", { name: /Sync/ });
+  expect(card.getAttribute("data-selected")).toBe("false");
+  expect(document.querySelector(".opacity-50")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
+});
