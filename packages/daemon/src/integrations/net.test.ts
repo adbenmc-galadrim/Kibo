@@ -328,6 +328,108 @@ describe("design providers", () => {
     server.stop(true);
   });
 
+  test("a hop through a host without auth drops the token for good", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (_url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      if (sent.length === 1)
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://bucket.s3.amazonaws.com/x" },
+        });
+      if (sent.length === 2)
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://api.figma.com/v1/files/evil" },
+        });
+      return new Response("{}");
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.1.1.1"],
+      transport,
+    });
+    await fetchIt(
+      "https://api.figma.com/v1/images/x",
+      { bearer: "figd_SECRET", auth: FIGMA_AUTH },
+      FIGMA_RULES,
+    );
+    expect(sent.map((h) => h["x-figma-token"] ?? null)).toEqual(["figd_SECRET", null, null]);
+  });
+
+  test("a token dropped on the way is still scrubbed from the final response", async () => {
+    let hops = 0;
+    const transport = async () => {
+      hops++;
+      if (hops === 1)
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://bucket.s3.amazonaws.com/x" },
+        });
+      return new Response("leak figd_SECRET", { headers: { "x-echo": "figd_SECRET" } });
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.1.1.1"],
+      transport,
+    });
+    const res = await fetchIt(
+      "https://api.figma.com/v1/images/x",
+      { bearer: "figd_SECRET", auth: FIGMA_AUTH },
+      FIGMA_RULES,
+    );
+    expect(new TextDecoder().decode(res.body)).toBe("leak ***");
+    expect(res.headers.get("x-echo")).toBe("***");
+  });
+
+  test("a penpot media redirect to storage carries neither the token nor identity", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      if (url.includes("52.1.1.1"))
+        return new Response(null, {
+          status: 307,
+          headers: { location: "https://bucket.s3.amazonaws.com/m/1" },
+        });
+      return new Response("png");
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async (host) => (host === "design.penpot.app" ? ["52.1.1.1"] : ["52.2.2.2"]),
+      transport,
+    });
+    const res = await fetchIt(
+      "https://design.penpot.app/assets/by-id/1",
+      { bearer: "penpot-SECRET", auth: PENPOT_AUTH },
+      penpotRules(new URL("https://design.penpot.app")),
+    );
+    expect(res.status).toBe(200);
+    expect(sent[0]?.authorization).toBe("Token penpot-SECRET");
+    expect(sent[1]?.authorization).toBeUndefined();
+    expect(sent[1]?.["accept-encoding"]).toBeUndefined();
+  });
+
+  test("a caller never sets the auth header itself, whatever its name", async () => {
+    const sent: Record<string, string>[] = [];
+    const transport = async (_url: string, init: { headers: Record<string, string> }) => {
+      sent.push(init.headers);
+      return new Response("{}");
+    };
+    const fetchIt = createIntegrationFetch({
+      aliases: new Map(),
+      resolve: async () => ["52.1.1.1"],
+      transport,
+    });
+    const auth = { header: "X-Custom-Key", prefix: "" };
+    const rules = [{ host: "api.example.com", suffix: false, auth: false }];
+    await fetchIt(
+      "https://api.example.com/x",
+      { bearer: "s", auth, headers: { "X-Custom-Key": "forged" } },
+      rules,
+    );
+    expect(sent[0]?.["x-custom-key"]).toBeUndefined();
+  });
+
   test("figma rules carry the token to api.figma.com only", () => {
     expect(FIGMA_RULES).toEqual([
       { host: "api.figma.com", suffix: false, auth: true },

@@ -118,12 +118,14 @@ function outgoing(
   auth: AuthHeader = BEARER_AUTH,
 ): Record<string, string> {
   const headers: Record<string, string> = {};
+  const authName = auth.header.toLowerCase();
   for (const [name, value] of Object.entries(init ?? {})) {
-    if (!STRIPPED.has(name.toLowerCase())) headers[name.toLowerCase()] = value;
+    const lower = name.toLowerCase();
+    if (!STRIPPED.has(lower) && lower !== authName) headers[lower] = value;
   }
   headers["user-agent"] = "kibo";
   if (bearer) {
-    headers[auth.header] = `${auth.prefix}${bearer}`;
+    headers[authName] = `${auth.prefix}${bearer}`;
     headers["accept-encoding"] = "identity";
   }
   return headers;
@@ -131,7 +133,7 @@ function outgoing(
 
 function allowedRule(current: URL, rules: InternalRule[]): InternalRule {
   if (current.protocol !== "https:" && current.protocol !== "http:")
-    throw new KiboError("PERMISSION_DENIED", `https only: ${current.origin}`);
+    throw new KiboError("PERMISSION_DENIED", `https or loopback http only: ${current.origin}`);
   if (current.username !== "" || current.password !== "") {
     throw new KiboError("PERMISSION_DENIED", "credentials in url are not allowed");
   }
@@ -193,10 +195,13 @@ export function createIntegrationFetch(deps: IntegrationFetchDeps): IntegrationF
     if (!URL.canParse(url)) throw new KiboError("INVALID_INPUT", "invalid url");
     let current = new URL(url);
     const signal = deadline(init);
+    const secret = init.bearer || null;
+    let token = secret;
     try {
       for (let hop = 0; hop <= MAX_HOPS; hop++) {
         const rule = allowedRule(current, rules);
-        const bearer = rule.auth && init.bearer ? init.bearer : null;
+        if (!rule.auth) token = null;
+        const bearer = token;
         const res = await send(deps, current, {
           method: hop === 0 ? (init.method ?? "GET") : "GET",
           headers: outgoing(init.headers, bearer, init.auth),
@@ -208,11 +213,11 @@ export function createIntegrationFetch(deps: IntegrationFetchDeps): IntegrationF
           await refuseEncodedBody(res, bearer);
           const { bytes, truncated } = scrubCapped(
             await readCapped(res, init.maxBytes ?? DEFAULT_MAX_BYTES),
-            bearer,
+            secret,
           );
           return {
             status: res.status,
-            headers: bearer ? scrubHeaders(res.headers, bearer) : res.headers,
+            headers: secret ? scrubHeaders(res.headers, secret) : res.headers,
             body: bytes,
             truncated,
             url: current.toString(),
