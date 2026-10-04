@@ -26,7 +26,12 @@ export function waitingOn(
   return out;
 }
 
+const NOT_STARTED: ReadonlySet<GraphTicket["statusId"]> = new Set(["backlog", "todo"]);
+
 export function readyTickets(tickets: readonly GraphTicket[], edges: readonly GraphEdge[]): string[] {
   const waiting = waitingOn(tickets, edges);
-  return [...unfinished(tickets)].filter((id) => !waiting.has(id)).sort(keyOrder(tickets));
+  return tickets
+    .filter((t) => NOT_STARTED.has(t.statusId) && !waiting.has(t.id))
+    .map((t) => t.id)
+    .sort(keyOrder(tickets));
 }

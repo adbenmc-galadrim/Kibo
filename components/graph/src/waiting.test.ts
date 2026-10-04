@@ -18,8 +18,17 @@ test("waitingOn lists unfinished tickets with their unfinished blocks predecesso
   ]);
 });
 
-test("readyTickets are unfinished tickets whose predecessors are all finished (or absent)", () => {
-  expect(readyTickets(tickets, edges)).toEqual(["B", "E"]);
+test("readyTickets are backlog or todo tickets whose blocks predecessors are all done", () => {
+  const extra = [t("F", "todo"), t("G", "backlog")];
+  const withExtra = [...tickets, ...extra];
+  const toG: GraphEdge = { from: "A", to: "G", type: "blocks" };
+  expect(readyTickets(withExtra, [...edges, toG])).toEqual(["F", "G"]);
+});
+
+test("readyTickets never counts a started or blocked ticket, even with done predecessors", () => {
+  const started = [t("A", "done"), t("B", "in_progress"), t("R", "in_review"), t("E", "blocked")];
+  const fromA = (to: string): GraphEdge => ({ from: "A", to, type: "blocks" });
+  expect(readyTickets(started, [fromA("B"), fromA("R"), fromA("E")])).toEqual([]);
 });
 
 test("waitingOn sorts blockers by ticket key, not by id, and ignores duplicate edges", () => {
