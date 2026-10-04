@@ -3,6 +3,7 @@ import { BUILTIN_IDS, sizeIssue, sizeLimitsOf } from "@kibo/schema";
 import {
   AppWindow,
   Blocks,
+  Box,
   FileText,
   LayoutDashboard,
   ListTree,
@@ -19,6 +20,7 @@ test("built-in components resolve by exact id@version", () => {
     "mcp-source@1.0.0",
     "notes@1.0.0",
     "tickets@1.0.0",
+    "viewer-3d@1.0.0",
   ]);
   expect(findComponent("kanban@1.0.0")?.manifest.title).toBe("Kanban");
   expect(findComponent("kanban@2.0.0")).toBeUndefined();
@@ -50,8 +52,10 @@ test("graph, notes and the MCP source are built-ins with their icons", () => {
     "graph",
     "notes",
     "mcp-source",
+    "viewer-3d",
   ]);
   expect(componentIcon("mcp-source@1.0.0")).toBe(Plug);
+  expect(componentIcon("viewer-3d@1.0.0")).toBe(Box);
   expect(componentIcon("graph@1.0.0")).toBe(Network);
   expect(componentIcon("notes@1.0.0")).toBe(FileText);
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([...BUILTIN_IDS]);
@@ -67,6 +71,7 @@ test("every built-in declares a size minimum that fits its formats", () => {
     graph: { w: 3, h: 3 },
     notes: { w: 4, h: 3 },
     "mcp-source": { w: 3, h: 2 },
+    "viewer-3d": { w: 3, h: 3 },
   });
   for (const c of BUILTIN_COMPONENTS) expect(sizeIssue(c.manifest)).toBeNull();
 });

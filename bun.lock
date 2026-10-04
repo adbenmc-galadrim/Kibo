@@ -154,6 +154,24 @@
         "react": "19.1.1",
       },
     },
+    "components/viewer-3d": {
+      "name": "@kibo/component-viewer-3d",
+      "version": "1.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "lucide-react": "1.48.0",
+      },
+      "devDependencies": {
+        "@testing-library/react": "16.3.0",
+        "@types/react": "19.1.13",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+      },
+      "peerDependencies": {
+        "react": "19.1.1",
+      },
+    },
     "e2e": {
       "name": "@kibo/e2e",
       "version": "0.0.0",
@@ -305,6 +323,7 @@
         "@kibo/component-mcp-source": "workspace:*",
         "@kibo/component-notes": "workspace:*",
         "@kibo/component-tickets": "workspace:*",
+        "@kibo/component-viewer-3d": "workspace:*",
         "@kibo/schema": "workspace:*",
         "@kibo/sdk": "workspace:*",
         "@shikijs/langs": "4.4.3",
@@ -600,6 +619,8 @@
     "@kibo/component-notes": ["@kibo/component-notes@workspace:components/notes"],
 
     "@kibo/component-tickets": ["@kibo/component-tickets@workspace:components/tickets"],
+
+    "@kibo/component-viewer-3d": ["@kibo/component-viewer-3d@workspace:components/viewer-3d"],
 
     "@kibo/core": ["@kibo/core@workspace:packages/core"],
 

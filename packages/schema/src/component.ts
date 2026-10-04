@@ -5,7 +5,7 @@ import type { ComponentManifest } from "./manifest";
 import { GrantedPermissions } from "./permissions";
 import { SemVer } from "./semver";
 
-export const BUILTIN_IDS = ["kanban", "tickets", "graph", "notes", "mcp-source"] as const;
+export const BUILTIN_IDS = ["kanban", "tickets", "graph", "notes", "mcp-source", "viewer-3d"] as const;
 export const BUILTIN_ADAPTER_IDS = ["github-issues"] as const;
 const BUILTIN_ANY: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];
 export const isBuiltinId = (id: string): boolean => BUILTIN_ANY.includes(id);

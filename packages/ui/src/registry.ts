@@ -3,11 +3,13 @@ import * as kanban from "@kibo/component-kanban";
 import * as mcpSource from "@kibo/component-mcp-source";
 import * as notes from "@kibo/component-notes";
 import * as tickets from "@kibo/component-tickets";
+import * as viewer3d from "@kibo/component-viewer-3d";
 import type { ComponentManifest, Instance, Page } from "@kibo/schema";
 import type { ComponentModule } from "@kibo/sdk";
 import {
   AppWindow,
   Blocks,
+  Box,
   FileText,
   LayoutDashboard,
   ListTree,
@@ -17,7 +19,7 @@ import {
   SquareKanban,
 } from "lucide-react";
 
-export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets, graph, notes, mcpSource];
+export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, tickets, graph, notes, mcpSource, viewer3d];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
   kanban: SquareKanban,
@@ -25,6 +27,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   graph: Network,
   notes: FileText,
   "mcp-source": Plug,
+  "viewer-3d": Box,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;

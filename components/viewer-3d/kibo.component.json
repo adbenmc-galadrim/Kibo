@@ -1,0 +1,22 @@
+{
+  "id": "viewer-3d",
+  "version": "1.0.0",
+  "kind": "both",
+  "formats": ["medium", "large", "half", "full"],
+  "size": { "min": { "w": 3, "h": 3 } },
+  "title": "Visionneuse 3D",
+  "description": "Affiche un modèle .glb du projet",
+  "reads": [],
+  "writes": [],
+  "capabilities": ["webgl", "assets"],
+  "configSchema": {
+    "model": {
+      "type": "string",
+      "nullable": true,
+      "default": null,
+      "asset": "model",
+      "label": "Modèle (.glb)"
+    },
+    "autoRotate": { "type": "boolean", "default": true, "label": "Rotation automatique" }
+  }
+}

@@ -23,6 +23,7 @@
     "@kibo/component-mcp-source": "workspace:*",
     "@kibo/component-notes": "workspace:*",
     "@kibo/component-tickets": "workspace:*",
+    "@kibo/component-viewer-3d": "workspace:*",
     "@kibo/schema": "workspace:*",
     "@kibo/sdk": "workspace:*",
     "@shikijs/langs": "4.4.3",
