@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { type CiRun, KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
+import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
 import type { NotesService } from "../notes/service";
 import { createGateHandlers } from "./gate-handlers";
@@ -36,6 +37,24 @@ const notes: NotesService = {
   handle: unused,
   refresh: unused,
   forget: unused,
+  close: unused,
+};
+const fileCalls: unknown[] = [];
+const files: FilesService = {
+  dirOf: unused,
+  info: unused,
+  setDir: unused,
+  list: async (projectId) => {
+    fileCalls.push(["list", projectId]);
+    return [];
+  },
+  remove: unused,
+  uploads: { begin: unused, append: unused, finish: unused, cancel: unused, close: unused },
+  url: async (projectId, instanceId, name) => {
+    fileCalls.push(["url", projectId, instanceId, name]);
+    return { url: "http://127.0.0.1:1/f/x/a.png", expiresAt: 1 };
+  },
+  open: unused,
   close: unused,
 };
 const ok = { content: [], isError: false, truncated: false };
@@ -86,6 +105,7 @@ const handlersWith = (integrations: ComponentIntegrationHooks | null | undefined
   createGateHandlers({
     docs,
     notes,
+    files,
     backends: unused,
     runs: unused,
     ...(integrations !== undefined && { integrations: () => integrations }),
@@ -135,6 +155,7 @@ test("instance data writes go through the project write guard", async () => {
       },
     },
     notes,
+    files,
     backends: unused,
     runs: unused,
   });
@@ -142,4 +163,14 @@ test("instance data writes go through the project write guard", async () => {
     "FORBIDDEN",
   );
   expect(project.oplogVersion().length()).toBe(0);
+});
+
+test("project file calls reach the files service with the calling instance", async () => {
+  const h = handlersWith(undefined);
+  await h.assets("p", "i1", { kind: "assets.list" });
+  await h.assets("p", "i1", { kind: "assets.url", name: "a.png" });
+  expect(fileCalls).toEqual([
+    ["list", "p"],
+    ["url", "p", "i1", "a.png"],
+  ]);
 });

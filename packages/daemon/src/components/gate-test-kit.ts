@@ -49,6 +49,7 @@ export const idleHandlers: GateHandlers = {
   action: async () => null,
   notes: async () => null,
   mcp: async () => null,
+  assets: async () => null,
   presence: async () => [],
   sharing: async () => {
     throw new KiboError("INTERNAL", "unexpected");
@@ -67,7 +68,7 @@ export function eventsDb(): Database {
   return db;
 }
 
-export function testGate(quotas: Quotas = createQuotas()) {
+export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: GrantedPermissions = granted) {
   const db = eventsDb();
   const events = createEventLog(db, () => 42);
   const handled: string[] = [];
@@ -78,7 +79,7 @@ export function testGate(quotas: Quotas = createQuotas()) {
   const gate = createGate({
     instance: findInstance,
     active: (ref) => {
-      if (ref === "evil@0.1.0") return { ref, trust: "sandboxed", granted };
+      if (ref === "evil@0.1.0") return { ref, trust: "sandboxed", granted: grantedToEvil };
       throw new KiboError("TRUST_REQUIRED", `${ref} is not approved`);
     },
     handlers: {
@@ -92,6 +93,10 @@ export function testGate(quotas: Quotas = createQuotas()) {
       action: handler("action"),
       notes: handler("notes"),
       mcp: handler("mcp"),
+      assets: async (_projectId, instanceId, call) => {
+        handled.push(`assets:${instanceId}:${call.kind}`);
+        return null;
+      },
       presence: async () => {
         handled.push("presence");
         return [];

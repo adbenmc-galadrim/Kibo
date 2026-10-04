@@ -130,3 +130,27 @@ describe("componentCall checks, in order", () => {
     expect(events.list().map((e) => e.code)).toEqual(["RATE_LIMITED"]);
   });
 });
+
+describe("project files", () => {
+  test("third parties need cap:assets, refusals are journaled", async () => {
+    const { gate: g, events, handled } = testGate();
+    await refused(g.call("p1", "thirdparty", { kind: "assets.list" }), "PERMISSION_DENIED");
+    await refused(g.call("p1", "thirdparty", { kind: "assets.url", name: "robot.glb" }), "PERMISSION_DENIED");
+    expect(handled).toEqual([]);
+    expect(events.list().map((e) => [e.kind, e.code])).toEqual([
+      ["assets.list", "PERMISSION_DENIED"],
+      ["assets.url", "PERMISSION_DENIED"],
+    ]);
+  });
+  test("a granted capability reaches the handler with the instance", async () => {
+    const { gate: g, handled } = testGate(createQuotas(), { ...granted, capabilities: ["assets"] });
+    await g.call("p1", "thirdparty", { kind: "assets.list" });
+    await g.call("p1", "thirdparty", { kind: "assets.url", name: "robot.glb" });
+    expect(handled).toEqual(["assets:thirdparty:assets.list", "assets:thirdparty:assets.url"]);
+  });
+  test("built-ins pass without a check", async () => {
+    const { gate: g, handled } = testGate();
+    await g.call("p1", "builtin", { kind: "assets.url", name: "robot.glb" });
+    expect(handled).toEqual(["assets:builtin:assets.url"]);
+  });
+});

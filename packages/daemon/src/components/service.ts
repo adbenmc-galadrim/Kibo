@@ -11,6 +11,7 @@ import {
 } from "@kibo/schema";
 import type { CommandHub } from "../command-path";
 import type { Docs } from "../docs";
+import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService } from "../notes/service";
@@ -63,6 +64,7 @@ export type ComponentsService = {
   publisher: Publisher;
   publishLock: PublishLock;
   events: EventLog;
+  files: FilesService;
   usageChanged(): void;
   start(): Promise<void>;
   stop(): Promise<void>;
@@ -107,6 +109,13 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     onChange: (id) => docs.emit({ projectId: id }),
   });
 
+  const files = createFilesService({
+    db: deps.db,
+    home: deps.home,
+    project: (id) => docs.projectMeta(id),
+    sandboxOrigin: deps.sandboxOrigin,
+  });
+
   const registry = createRegistryService({
     workspace: docs.workspace,
     persistWorkspace: () => docs.save(null),
@@ -128,6 +137,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     handlers: createGateHandlers({
       docs,
       notes,
+      files,
       backends: () => backends,
       runs: deps.runs,
       ...(deps.net && { net: deps.net }),
@@ -256,6 +266,24 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
         return deps.cliStatus();
       case "reportComponentRefusal":
         return reportRefusal(req.projectId, req.instanceId, req.kind);
+      case "listAssets":
+        return files.list(req.projectId);
+      case "beginAssetUpload":
+        return files.uploads.begin(req.projectId, req.name, req.mime, req.size);
+      case "appendAssetUpload":
+        return files.uploads.append(req.uploadId, req.index, Buffer.from(req.bytes, "base64"));
+      case "finishAssetUpload":
+        return files.uploads.finish(req.uploadId);
+      case "cancelAssetUpload":
+        await files.uploads.cancel(req.uploadId);
+        return null;
+      case "removeAsset":
+        await files.remove(req.projectId, req.name);
+        return null;
+      case "getFilesDir":
+        return files.info(req.projectId);
+      case "setFilesDir":
+        return files.setDir(req.projectId, req.dir);
     }
   };
 
@@ -271,6 +299,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     backends.stopAll();
     shutdown.abort();
     await inflight.drain(deps.drainMs ?? DEFAULT_DRAIN_MS);
+    await files.close();
     notes.close();
     events.flush();
   };
@@ -283,6 +312,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     publisher,
     publishLock,
     events,
+    files,
     usageChanged,
     afterCommand: () => usageChanged(),
     async start() {

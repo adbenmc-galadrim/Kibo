@@ -54,6 +54,7 @@ function harness(granted: Partial<GrantedPermissions>, quotas: Quotas = createQu
       handled.push(`mcp:${instanceId}:${call.kind}`);
       return null;
     },
+    assets: async () => null,
     presence: async () => [],
     sharing: async () => {
       throw new KiboError("INTERNAL", "unexpected");

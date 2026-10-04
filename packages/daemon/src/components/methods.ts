@@ -17,6 +17,14 @@ export const COMPONENT_METHODS = [
   "installCli",
   "cliStatus",
   "reportComponentRefusal",
+  "listAssets",
+  "beginAssetUpload",
+  "appendAssetUpload",
+  "finishAssetUpload",
+  "cancelAssetUpload",
+  "removeAsset",
+  "getFilesDir",
+  "setFilesDir",
 ] as const satisfies readonly RpcRequest["method"][];
 
 export type ComponentRequest = Extract<RpcRequest, { method: (typeof COMPONENT_METHODS)[number] }>;
