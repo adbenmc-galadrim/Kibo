@@ -374,3 +374,25 @@ test("live preview hides the marks away from the cursor and a checkbox toggles i
   await waitFor(() => expect(view.contentDOM.textContent).toContain("**gras**"));
   expect(view.contentDOM.textContent).not.toContain("# ");
 });
+
+test("a focused checkbox toggles its task in the document with Space and Enter", async () => {
+  setup("view");
+  await screen.findByRole("heading", { level: 1, name: "Décisions d'architecture" });
+  await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
+  const view = await editorView();
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: "- [ ] faire\n\nfin" },
+    selection: { anchor: 13 },
+  });
+  const todo = await screen.findByRole("checkbox", { name: "Case à cocher, non cochée" });
+  todo.focus();
+  expect(fireEvent.keyDown(todo, { key: " " })).toBe(false);
+  expect(view.state.doc.toString()).toBe("- [x] faire\n\nfin");
+  const done = await screen.findByRole("checkbox", { name: "Case à cocher, cochée" });
+  done.focus();
+  expect(fireEvent.keyDown(done, { key: "Enter" })).toBe(false);
+  expect(view.state.doc.toString()).toBe("- [ ] faire\n\nfin");
+  const again = await screen.findByRole("checkbox", { name: "Case à cocher, non cochée" });
+  expect(fireEvent.click(again)).toBe(false);
+  expect(view.state.doc.toString()).toBe("- [ ] faire\n\nfin");
+});

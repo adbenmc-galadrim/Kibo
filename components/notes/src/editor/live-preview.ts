@@ -1,5 +1,5 @@
 import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
-import type { EditorState, Extension } from "@codemirror/state";
+import { type EditorState, type Extension, Prec } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { toggleTaskAt } from "./commands";
 import { TaskWidget } from "./task-widget";
@@ -102,15 +102,30 @@ const plugin = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 );
 
-const clicks = EditorView.domEventHandlers({
-  mousedown(e, view) {
-    const target = e.target instanceof HTMLElement ? e.target.closest<HTMLElement>("[data-task]") : null;
-    if (!target) return false;
-    const spec = toggleTaskAt(view.posAtDOM(target))(view.state);
-    if (spec) view.dispatch({ ...spec, userEvent: "input" });
-    e.preventDefault();
-    return true;
-  },
-});
+const taskTarget = (e: Event): HTMLElement | null =>
+  e.target instanceof HTMLElement ? e.target.closest<HTMLElement>("[data-task]") : null;
 
-export const livePreview: Extension = [plugin, clicks];
+const toggleFrom = (e: Event, view: EditorView): boolean => {
+  const target = taskTarget(e);
+  if (!target) return false;
+  const spec = toggleTaskAt(view.posAtDOM(target))(view.state);
+  if (spec) view.dispatch({ ...spec, userEvent: "input" });
+  e.preventDefault();
+  return true;
+};
+
+const ACTIVATION_KEYS = new Set([" ", "Enter"]);
+
+const taskEvents = Prec.highest(
+  EditorView.domEventHandlers({
+    mousedown: (e, view) => toggleFrom(e, view),
+    keydown: (e, view) => ACTIVATION_KEYS.has(e.key) && toggleFrom(e, view),
+    click(e) {
+      if (!taskTarget(e)) return false;
+      e.preventDefault();
+      return true;
+    },
+  }),
+);
+
+export const livePreview: Extension = [plugin, taskEvents];
