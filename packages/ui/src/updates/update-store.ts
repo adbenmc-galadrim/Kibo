@@ -8,6 +8,7 @@ export type DownloadEvent =
 export type UpdaterPort = {
   installedVersion(): Promise<string>;
   check(): Promise<UpdateInfo | null>;
+  backup(): Promise<void>;
   downloadAndInstall(onEvent: (event: DownloadEvent) => void): Promise<void>;
   relaunch(): Promise<void>;
 };
@@ -61,6 +62,13 @@ export function createUpdateStore(port: UpdaterPort, now: () => number = Date.no
     const status = reduceUpdate(current.status, { type: "install" });
     if (status === current.status) return;
     publish({ ...current, status });
+    try {
+      await port.backup();
+    } catch (e) {
+      dispatch({ type: "backupFailed", detail: detailOf(e) });
+      return;
+    }
+    dispatch({ type: "backedUp" });
     try {
       await port.downloadAndInstall((event) => dispatch(downloadEventToUpdateEvent(event)));
       dispatch({ type: "downloaded" });

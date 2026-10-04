@@ -23,6 +23,10 @@ function fakePort(overrides: Partial<UpdaterPort> = {}) {
       calls.push("check");
       return Promise.resolve(update);
     },
+    backup: () => {
+      calls.push("backup");
+      return Promise.resolve();
+    },
     downloadAndInstall: (report) => {
       calls.push("install");
       onEvent = report;
@@ -119,7 +123,7 @@ describe("update store", () => {
     done.resolve();
     await installing;
     expect(store.snapshot().status).toEqual({ phase: "installing", update });
-    expect(calls).toEqual(["check", "install", "relaunch"]);
+    expect(calls).toEqual(["check", "backup", "install", "relaunch"]);
   });
 
   test("a failed install keeps the update and never relaunches", async () => {
@@ -129,6 +133,34 @@ describe("update store", () => {
     await store.install();
     expect(store.snapshot().status).toEqual({ phase: "error", step: "install", detail: "disk full", update });
     expect(calls).not.toContain("relaunch");
+  });
+
+  test("install backs up first, then downloads; a failed backup blocks the install with a backup error", async () => {
+    const order: string[] = [];
+    const backup = deferred<void>();
+    const { port } = fakePort({
+      backup: () => {
+        order.push("backup");
+        return backup.promise;
+      },
+      downloadAndInstall: async () => {
+        order.push("download");
+      },
+    });
+    const store = createUpdateStore(port);
+    await store.check();
+    const installing = store.install();
+    await settle();
+    expect(store.snapshot().status).toEqual({ phase: "backingUp", update });
+    backup.resolve();
+    await installing;
+    expect(order).toEqual(["backup", "download"]);
+    const failing = fakePort({ backup: () => Promise.reject(new Error("CONFLICT: a backup is running")) });
+    const refused = createUpdateStore(failing.port);
+    await refused.check();
+    await refused.install();
+    expect(refused.snapshot().status).toMatchObject({ phase: "error", step: "backup", update });
+    expect(failing.calls).toEqual(["check"]);
   });
 
   test("install does nothing without an available update", async () => {

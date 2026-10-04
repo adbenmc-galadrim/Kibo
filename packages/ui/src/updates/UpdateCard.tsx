@@ -76,7 +76,7 @@ function Failure({ status }: { status: Extract<UpdateStatus, { phase: "error" }>
       <AlertTitle>{t.failed}</AlertTitle>
       <AlertDescription className="text-foreground/80!">
         <span>{t.errors[kind]}</span>
-        {kind !== "check" && (
+        {(kind === "install" || kind === "appImageOnly") && (
           <a href={RELEASES_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
             {t.releases}
           </a>
@@ -108,6 +108,8 @@ function Status({
       );
     case "available":
       return <Available update={status.update} activeRuns={activeRuns} onInstall={onInstall} />;
+    case "backingUp":
+      return <p className="text-sm">{t.backingUp}</p>;
     case "downloading":
       return <Downloading status={status} />;
     case "installing":
@@ -133,7 +135,7 @@ export type UpdatePanelProps = {
 };
 
 export function UpdatePanel({ snapshot, activeRuns, desktop, onCheck, onInstall }: UpdatePanelProps) {
-  const busy = snapshot.status.phase === "checking" || snapshot.status.phase === "downloading";
+  const busy = ["checking", "backingUp", "downloading"].includes(snapshot.status.phase);
   return (
     <Card className="gap-4">
       <CardHeader>

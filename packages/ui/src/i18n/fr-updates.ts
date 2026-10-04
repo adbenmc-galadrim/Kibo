@@ -13,6 +13,7 @@ export const frUpdates = {
   notes: "Notes de version",
   noNotes: "Aucune note pour cette version.",
   install: "Installer et redémarrer",
+  backingUp: "Sauvegarde avant la mise à jour…",
   downloading: "Téléchargement…",
   downloaded: (percent: number) => `${percent} %`,
   installing: "Installation, Kibo va redémarrer…",
@@ -23,6 +24,7 @@ export const frUpdates = {
   failed: "Mise à jour impossible",
   errors: {
     check: "Impossible de joindre GitHub. Vérifie la connexion, puis réessaie.",
+    backup: "La sauvegarde a échoué : la mise à jour n'a pas été installée. Vérifie la carte Sauvegardes.",
     install:
       "L'installation a échoué ; l'application actuelle reste intacte. Réessaie ou télécharge la version depuis la page des releases.",
     appImageOnly:
