@@ -91,7 +91,7 @@ S.fillMiniKanban = (body, cols = ["À faire", "En cours", "En review"]) => {
 
 // Régénère la version claire d'un écran sombre (même position que l'ancienne)
 S.relight = (darkId, dx = 1540) => {
-  const d = penpotUtils.findShapeById(darkId);
+  const d = penpot.currentPage.getShapeById(darkId);
   const old = penpot.currentPage.root.children.find(c => c.name === d.name + " (clair)");
   const x = old ? old.x : d.x + dx, y = old ? old.y : d.y; if (old) old.remove();
   const cl = d.clone(); cl.name = d.name + " (clair)"; cl.x = x; cl.y = y; S.toLight(cl);

@@ -123,7 +123,7 @@ S.stepper = (p, steps, cur) => { const r = S.row(p, { gap: 8 }); steps.forEach((
 S.avatar = (p, ini, sz = 24, o = {}) => { const a = S.box(p, { name: "Avatar", fill: o.fill || C.accent, stroke: o.ring || null, sw: 2, radius: 999, w: sz, h: sz, dir: "row", align: "center", justify: "center" }); S.txt(a, ini, { size: Math.round(sz * 0.4), weight: 600, color: o.color || C.fg }); return a; };
 S.spinner = (p, c = C.mfg, sz = 14) => { const s = penpot.createShapeFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`); s.name = "icon/spinner"; if (p) p.appendChild(s); s.resize(sz, sz); return s; };
 // Clair : régénère et corrige (retext + ordre des icônes)
-S.lightX = async (f) => { const id = S.relight(f.id); const l = penpotUtils.findShapeById(id); S.retext(l); S.fixIconOrder(l); return id; };
+S.lightX = async (f) => { const id = S.relight(f.id); const l = penpot.currentPage.getShapeById(id); S.retext(l); S.fixIconOrder(l); return id; };
 // Couleurs propres aux écrans 32+ que toLight ne connaît pas
 S.X_FILL = { "#0B1426": "#EFF6FF", "#2B2B2E": "#FFFFFF", "#0C0C0E": "#FAFAFA" };
 S.X_STROKE = { "#7F1D1D": "#FECACA", "#14532D": "#BBF7D0", "#1E3A8A": "#BFDBFE" };
@@ -132,7 +132,7 @@ S.fixLightX = (l) => { penpotUtils.analyzeDescendants(l, (r, s) => { try { const
   if (s.type === "text") { if (s.fills?.some(f => S.X_TEXT[up(f.fillColor)])) s.fills = s.fills.map(f => ({ ...f, fillColor: S.X_TEXT[up(f.fillColor)] || f.fillColor })); }
   else { if (s.fills?.some(f => S.X_FILL[up(f.fillColor)])) s.fills = s.fills.map(f => ({ ...f, fillColor: S.X_FILL[up(f.fillColor)] || f.fillColor }));
     if (s.strokes?.some(f => S.X_STROKE[up(f.strokeColor)])) s.strokes = s.strokes.map(f => ({ ...f, strokeColor: S.X_STROKE[up(f.strokeColor)] || f.strokeColor })); } } catch (e) {} return null; }); };
-S.lightAll = (ids) => ids.map(id => { const nid = S.relight(id); const l = penpotUtils.findShapeById(nid); S.fixLightX(l); S.fixIconOrder(l); return nid; });
+S.lightAll = (ids) => ids.map(id => { const nid = S.relight(id); const l = penpot.currentPage.getShapeById(nid); S.fixLightX(l); S.fixIconOrder(l); return nid; });
 // Recentre le dialogue une fois sa hauteur calculée (appel séparé)
 S.recenter = (f) => { const d = f.children.find(c => /^Dialog/.test(c.name)); if (d) S.center(f, d); return d ? Math.round(d.height) : 0; };
 // Export PDF par tranches (un appel est limité à 120 s) : mêmes noms que storage.exportPage

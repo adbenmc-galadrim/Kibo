@@ -11,7 +11,7 @@ S.lastRel = null;
 const rel = (f, s) => { const r = measure(f, s); S.lastRel = { fid: f.id, a: s.id, r }; return r; };
 const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y);
   if (S.lastRel && S.lastRel.fid === f.id) s.setPluginData("pin", JSON.stringify({ a: S.lastRel.a, dx: x - S.lastRel.r.x, dy: y - S.lastRel.r.y })); return s; };
-const repinOnce = (f) => { let n = 0; for (const s of f.children.filter(x => !!x.getPluginData("pin"))) { const p = JSON.parse(s.getPluginData("pin")); const a = penpotUtils.findShapeById(p.a); if (!a) continue;
+const repinOnce = (f) => { let n = 0; for (const s of f.children.filter(x => !!x.getPluginData("pin"))) { const p = JSON.parse(s.getPluginData("pin")); const a = penpot.currentPage.getShapeById(p.a); if (!a) continue;
   const m = measure(f, a), c = measure(f, s), x = m.x + p.dx, y = m.y + p.dy; if (c.x !== x || c.y !== y) { penpotUtils.setParentXY(s, x, y); n++; } } return n; };
 S.applyPins = (f) => repinOnce(f) + repinOnce(f);
 S.repinPage = () => penpot.currentPage.root.children.filter(c => c.type === "board").reduce((n, f) => n + S.applyPins(f), 0);
@@ -58,7 +58,7 @@ const ensureBase = (key, col, row, nav, crumbs, tab, o) => { const root = penpot
     const r = S.screenX(key, 0, 0, nav, crumbs, tab, o.noTicket ? { noTicket: true } : {}); if (o.kanban) S.fillKanban(r.content); d = r.frame; d.x = -40000; d.y = n * 1040; S.retext(d); S.setMode(m); }
   if (S.mode !== "light") return d;
   let l = root.children.find(c => c.name === lk);
-  if (!l) { const id = S.relight(d.id); l = penpotUtils.findShapeById(id); S.retext(l); S.fixLightX(l); S.fixIconOrder(l); S.fixLogo(l); }
+  if (!l) { const id = S.relight(d.id); l = penpot.currentPage.getShapeById(id); S.retext(l); S.fixLightX(l); S.fixIconOrder(l); S.fixLogo(l); }
   return l; };
 S.baseScreen = (name, col, row, nav, crumbs, tab, o = {}) => { const light = S.mode === "light"; const full = light ? name + " (clair)" : name;
   const root = penpot.currentPage.root; const old = root.children.find(c => c.name === full); if (old) old.remove();
@@ -69,7 +69,7 @@ S.baseScreen = (name, col, row, nav, crumbs, tab, o = {}) => { const light = S.m
 S.dropBases = () => { const bs = penpot.currentPage.root.children.filter(c => /^base · /.test(c.name)); bs.forEach(b => b.remove()); return bs.length; };
 
 // ---------- Dessin sombre puis clair, en tâche de fond (un appel du plugin est limité à 120 s) ----------
-const finishOne = async (id) => { const f = penpotUtils.findShapeById(id); if (S.mode === "light") S.lightFix(f, S.fresh); S.fixIconOrder(f); S.retext(f);
+const finishOne = async (id) => { const f = penpot.currentPage.getShapeById(id); if (S.mode === "light") S.lightFix(f, S.fresh); S.fixIconOrder(f); S.retext(f);
   await wait(2000); S.recenter(f); S.applyPins(f); return id; };
 S.both = async (n) => { penpot.selection = []; const out = [];
   for (const m of ["dark", "light"]) { S.setMode(m); S.lastRel = null; try { const id = await S.draw[n](); await wait(400); out.push(await finishOne(id)); } finally { S.setMode("dark"); } }
