@@ -52,7 +52,7 @@ S.draw["147d"] = async () => { const { frame: f } = await integrations("147d · 
 const shot = (p, w, h) => { const s = S.box(p, { name: "FrameImage", fill: "#FAFAFA", w, h, dir: "column", gap: 10, pad: [16, 20] }); s.clipContent = true;
   S.txt(s, "Tickets", { size: 16, weight: 700, color: "#09090B" }); for (let i = 0; i < 8; i++) { const r = S.box(s, { name: "Row", fill: i % 2 ? "#F4F4F5" : "#FFFFFF", radius: 3, h: 22, dir: "row", gap: 8, pad: [0, 8], align: "center" }); S.fillX(r);
     S.box(r, { name: "k", fill: "#A1A1AA", w: 30, h: 6 }); S.box(r, { name: "t", fill: "#52525B", w: 120 + (i * 37) % 90, h: 6 }); } return s; };
-const badges = (h, o) => { S.badge(h, o.provider || "Figma", C.fg, { fill: C.accent, round: true }); if (o.stale) S.badge(h, "Périmé", C.amber, { round: true }); if (o.offline) S.badge(h, "Hors ligne", C.fg, { round: true });
+const badges = (h, o) => { S.badge(h, o.provider || "Figma", C.fg, { fill: C.accent, round: true }); if (o.stale) S.badge(h, "Périmé", C.fg); if (o.offline) S.badge(h, "Hors ligne", C.fg);
   iconButton(h, "refresh"); iconButton(h, "external"); };
 const linked = (b, list) => { const l = S.col(b, { gap: 6, pad: [8, 12] }); S.border(l); S.txt(l, "Tickets liés", { size: 11, color: C.mfg });
   if (!list.length) { S.txt(l, "Aucun ticket lié à ce cadre.", { size: 12, color: C.mfg }); return l; } const r = S.row(l, { gap: 6 }); list.forEach(t => S.badge(r, t, C.fg, { round: true })); return r; };
@@ -86,7 +86,7 @@ const sheet = (f, o = {}) => { const sh = S.box(f, { name: "Sheet", fill: C.card
   prop("Maquette", r => { S.icon(r, "frame", 13, C.mfg); S.txt(r, "Tickets · liste", { size: 12 }); });
   S.txt(sh, "Maquettes", { size: 13, weight: 600 });
   const thumb = (name, provider, x = {}) => { const t = S.col(sh, { gap: 6 }); const img = S.box(t, { name: "Thumb", fill: C.muted, stroke: C.border, radius: 8, h: 200, dir: "row", justify: "center", align: "center" }); S.fillX(img); img.clipContent = true;
-    if (x.none) S.txt(img, "Aucun aperçu : ouvre le fichier dans Penpot pour le générer.", { size: 12, color: C.mfg }); else { shot(img, 300, 200); if (x.stale) { const bb = S.row(null, { gap: 6, hs: "auto" }); img.appendChild(bb); abs(img, bb, 10, 10); S.badge(bb, "Périmé", C.amber, { round: true, fill: C.card }); S.badge(bb, "Hors ligne", C.fg, { round: true, fill: C.card }); } }
+    if (x.none) S.txt(img, "Aucun aperçu : ouvre le fichier dans Penpot pour le générer.", { size: 12, color: C.mfg }); else { shot(img, 300, 200); if (x.stale) { const bb = S.row(null, { gap: 6, hs: "auto" }); img.appendChild(bb); abs(img, bb, 10, 10); S.badge(bb, "Périmé", C.fg, { fill: C.card }); S.badge(bb, "Hors ligne", C.fg, { fill: C.card }); } }
     const r = S.row(t, { gap: 6 }); S.icon(r, provider === "Figma" ? "frame" : "penTool", 13, C.mfg); S.fillX(S.txt(r, name, { size: 12, weight: 500 })); S.button(r, null, "ghost", { sm: true, icon: "refresh" });
     S.button(r, "Ouvrir dans " + provider, "ghost", { sm: true }); S.button(r, "Retirer", "ghost", { sm: true }); };
   thumb("Tickets · liste", "Figma"); thumb("Liste · filtres", "Penpot", o.none ? { none: true } : { stale: true });
