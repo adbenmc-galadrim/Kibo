@@ -143,7 +143,7 @@ services:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
 
       # Needs the Docker VM at 8 GiB: saving kibo.penpot (over 150 MB) exhausts a smaller heap.
-      JAVA_OPTS: "-Xms1g -Xmx3g -XX:+UseG1GC -XX:MaxMetaspaceSize=384m -XX:ReservedCodeCacheSize=128m -XX:MaxDirectMemorySize=512m"
+      JAVA_OPTS: "-Xms1g -Xmx4g -XX:+UseG1GC -XX:MaxMetaspaceSize=384m -XX:ReservedCodeCacheSize=128m -XX:MaxDirectMemorySize=512m"
 
       # Don't touch it; this uses an internal docker network to
       # communicate with the admin-console.
