@@ -21,8 +21,8 @@ const demoDash = async (name, col, row, o = {}) => { const r = await dashboard(P
   const k = widget(r.g, "Kanban", "kanban", o.kanbanPos || cell(0, 0, 8, 6), { ...e, size: "8 × 6", format: "Large" }); filterBar(k.body, 8, 8);
   demoKanban(k.body, S.DEMO, ["Backlog", "À faire", "En cours", "En review"], 150);
   const t = widget(r.g, "Tickets", "list", o.ticketsPos || cell(8, 0, 4, 6), { ...e, size: "4 × 6", format: "Moyen" });
-  [["DEMO-1", "En cours"], ["DEMO-2", "En cours"], ["DEMO-3", "Terminé"], ["DEMO-4", "Terminé"], ["DEMO-5", "En review"], ["DEMO-6", "À faire"], ["DEMO-7", "À faire"], ["DEMO-8", "Bloqué"]].forEach(([k2, s]) => {
-    const rr = S.row(t.body, { gap: 8, pad: [3, 0] }); S.txt(rr, k2, { size: 11, mono: true, color: C.dim }); S.statusDot(rr, s, 7); S.txt(rr, s, { size: 12 }); });
+  Object.entries(S.DEMO).flatMap(([s, ts]) => ts.map(x => [x.id, x.title, s])).sort((a, b) => Number(a[0].slice(5)) - Number(b[0].slice(5))).forEach(([k2, title, s]) => {
+    const rr = S.row(t.body, { gap: 8, pad: [3, 0] }); S.statusDot(rr, s, 7); S.txt(rr, k2, { size: 11, mono: true, color: C.dim }); S.txt(rr, title, { size: 12 }); });
   const n = widget(r.g, "Notes", "note", o.notesPos || cell(0, 6, 12, 3), { ...e, size: "12 × 3", format: "Demi-page" }); S.txt(n.body, "Bienvenue dans la démo", { size: 13, weight: 600 });
   S.sub(n.body, "Ce projet sert au didacticiel. Modifie cette note avec la barre d'outils : mets un mot en **gras**, ajoute une liste.");
   return { ...r, k, t, n }; };
