@@ -63,7 +63,7 @@ const SOURCE = ["## Choix du stockage", "Le démon garde les notes en **local**,
 S.draw[152] = async () => { const { frame: f, area } = await notesScreen("152 · Notes : barre d'outils", 0, 2, { tool: "bold" });
   SOURCE.forEach((l, i) => md(area, l, { weight: i === 0 ? 600 : 400 })); await wait(1500);
   const b = penpotUtils.findShape(s => s.name === "IconButton-bold", f); const p = rel(f, b); tooltip(f, p.x - 30, p.y + p.h + 6, "Gras ⌘B"); S.frontAbs(f); return f.id; };
-S.draw["152b"] = async () => { const { frame: f, area } = await notesScreen("152b · Notes : menu /", 2, 2);
+S.draw["152b"] = async () => { const { frame: f, area } = await notesScreen("152b · Notes : menu des commandes", 2, 2);
   md(area, "# Décisions", { weight: 600 }); md(area, "Le démon reste local et écoute sur 127.0.0.1."); const slash = md(area, "/"); await wait(1500); const p = rel(f, slash);
   menu(f, p.x, p.y + 22, [["Titre 1", "heading", { hover: true }], ["Titre 2", "heading"], ["Titre 3", "heading"], ["Liste", "list"], ["Liste numérotée", "listOrdered"], ["Case à cocher", "listChecks"], ["Citation", "quote"], ["Bloc de code", "squareCode"], ["Tableau", "table"], ["Lien", "link"], ["Image", "image"]], 220);
   S.frontAbs(f); return f.id; };
