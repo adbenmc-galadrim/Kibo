@@ -40,13 +40,16 @@ const empty = (p, t, o = {}) => { const e = S.box(p, { name: "Empty", dir: "colu
 // ---------- Barre latérale : projet de démonstration, premier lancement ----------
 const DEMO_COLOR = "#EC4899";
 const KIBO_PAGES = ["Tableau de bord", "Kanban", "Tickets", "Graphe", "Notes", "Changements", "Ajouter une page"];
-const insertAt = (sb, i, shape) => { sb.insertChild(i, shape); S.fillX(shape); return shape; };
+const placeAfter = (sb, anchor, shape) => { sb.insertChild(0, shape); sb.insertChild(sb.children.findIndex(c => c.id === anchor.id) + 1, shape); return shape; };
+const addItems = (sb, anchor, shapes) => { shapes.forEach(x => { sb.insertChild(0, x); S.fillX(x); }); return shapes; };
+// L'ordre des enfants posé par S.job (tâche détachée) n'est pas conservé : S.fixNav le rétablit ensuite, dans un appel direct.
+const NAV_ORDER = [["Jeux", "Changements"], ["Démo Kibo", "API Facturation"], ["Tableau de bord", "Démo Kibo"], ["Kanban", "Tableau de bord"], ["Graphe", "Kanban"], ["Notes", "Graphe"]];
+S.fixNav = () => penpot.currentPage.root.children.filter(c => c.type === "board" && !/^base/.test(c.name)).reduce((n, f) => { const sb = find(f, "Sidebar"); if (!sb) return n;
+  const demo = !!item(f, "Démo Kibo"); NAV_ORDER.filter(([x]) => demo || x === "Jeux").forEach(([x, after]) => { const a = item(f, after), it = item(f, x); if (a && it) { placeAfter(sb, a, it); n++; } }); return n; }, 0);
 const demoSidebar = (f, active, o = {}) => { const sb = find(f, "Sidebar"); KIBO_PAGES.forEach(l => { const it = item(f, l); if (it) it.remove(); });
-  const anchor = item(f, "API Facturation"); let i = sb.children.findIndex(c => c.id === anchor.id) + 1;
-  const p = insertAt(sb, i++, S.navItem(null, null, "Démo Kibo", { dot: DEMO_COLOR })); S.badge(p, "Démo", C.fg, { fill: C.accent });
-  if (o.collapsed) return p;
-  [["dashboard", "Tableau de bord"], ["kanban", "Kanban"], ["graph", "Graphe"], ["note", "Notes"]].forEach(([ic, l]) => insertAt(sb, i++, S.navItem(null, ic, l, { indent: 14, active: l === active })));
-  return p; };
+  const p = S.navItem(null, null, "Démo Kibo", { dot: DEMO_COLOR }); S.badge(p, "Démo", C.fg, { fill: C.accent });
+  const pages = o.collapsed ? [] : [["dashboard", "Tableau de bord"], ["kanban", "Kanban"], ["graph", "Graphe"], ["note", "Notes"]].map(([ic, l]) => S.navItem(null, ic, l, { indent: 14, active: l === active }));
+  addItems(sb, item(f, "API Facturation"), [p, ...pages]); return p; };
 const noProjects = (f) => { const sb = find(f, "Sidebar"); const kids = [...sb.children]; const from = kids.findIndex(c => c.type === "text" && c.characters === "PROJETS"); const to = kids.findIndex(c => c.name === "spacer");
   kids.slice(from + 1, to).forEach(k => k.remove()); return sb; };
 const bareTabs = (f) => { const tb = find(f, "TabBar"); tb.children.filter(c => (/^Tab-/.test(c.name) && c.name !== "Tab-Accueil") || c.name === "sep").forEach(c => c.remove()); return tb; };
@@ -116,5 +119,5 @@ const tutorialPanel = (f, step, o = {}) => { const done = o.done ? 6 : step; con
     const l = S.row(p, { gap: 12 }); S.txt(l, "Mettre en pause", { size: 12, weight: 500 }); S.txt(l, "Arrêter le didacticiel", { size: 12, weight: 500 }); }
   abs(f, p, 1440 - 24 - 320, o.y ?? 610); return p; };
 
-S.fx2 = { kbd, link, iconButton, empty, demoSidebar, noProjects, bareTabs, crumbAction, CELL, cell, dashboard, widget, handles, demoCard, demoColumn, demoKanban, filterBar, tutorialPanel, DEMO_COLOR };
+S.fx2 = { addItems, kbd, link, iconButton, empty, demoSidebar, noProjects, bareTabs, crumbAction, CELL, cell, dashboard, widget, handles, demoCard, demoColumn, demoKanban, filterBar, tutorialPanel, DEMO_COLOR };
 return "socle-suite ok";
