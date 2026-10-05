@@ -71,9 +71,11 @@ S.dropBases = () => { const bs = penpot.currentPage.root.children.filter(c => /^
 // ---------- Dessin sombre puis clair, en tâche de fond (un appel du plugin est limité à 120 s) ----------
 const finishOne = async (id) => { const f = penpot.currentPage.getShapeById(id); if (S.mode === "light") S.lightFix(f, S.fresh); S.fixIconOrder(f); S.retext(f);
   await wait(2000); S.recenter(f); S.applyPins(f); return id; };
-S.both = async (n) => { penpot.selection = []; const out = [];
-  for (const m of ["dark", "light"]) { S.setMode(m); S.lastRel = null; try { const id = await S.draw[n](); await wait(400); out.push(await finishOne(id)); } finally { S.setMode("dark"); } }
-  return out; };
+const collapsed = (id) => { const tb = penpot.currentPage.getShapeById(id)?.children.find(c => c.name === "TabBar"); return !!tb && tb.width < 800; };
+const drawIn = async (n, m) => { S.setMode(m); S.lastRel = null; try { const id = await S.draw[n](); await wait(400); return await finishOne(id); } finally { S.setMode("dark"); } };
+S.both = async (n) => { penpot.selection = []; let dark = await drawIn(n, "dark"); const light = await drawIn(n, "light");
+  if (collapsed(dark)) dark = await drawIn(n, "dark");
+  return [dark, light]; };
 const report = (st) => fetch("http://127.0.0.1:8787/upload?name=job-status.txt", { method: "POST", body: st.status + " " + st.done.length + "/" + st.list.length + " " + (st.current || "") + (st.error ? " " + st.error : "") }).catch(() => null);
 S.job = (list) => { const st = S.jobState = { status: "running", done: [], list: list.map(String) }; report(st);
   (async () => { for (const n of list) { st.current = String(n); await S.both(n); st.done.push(String(n)); report(st); } })()
