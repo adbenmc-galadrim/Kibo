@@ -88,8 +88,9 @@ const edge = (g, x1, y1, x2, y2, o = {}) => { const s = penpot.createShapeFromSv
 const GRAPH = [["KIB-5", "Monorepo Bun workspaces", "Terminé", 40, 60], ["KIB-13", "Snapshots Loro ↔ SQLite", "Terminé", 40, 160], ["KIB-12", "Schéma Loro des tickets", "En cours", 300, 110], ["KIB-15", "Kanban : drag & drop", "À faire", 560, 110],
   ["KIB-11", "Démon : auth par jeton local", "En review", 40, 300], ["KIB-21", "Sandbox iframe", "Bloqué", 300, 300], ["KIB-16", "Moteur de règles", "En cours", 300, 400], ["KIB-22", "Export Markdown", "Backlog", 560, 350]];
 const EDGES = [[0, 2], [1, 2], [2, 3], [4, 5, true], [5, 7, true], [6, 7]];
-const drawGraph = (g, o = {}) => { EDGES.forEach(([a, b, crit]) => { const A = GRAPH[a], B = GRAPH[b]; edge(g, A[3] + 176, A[4] + 26, B[3], B[4] + 26, { crit }); }); edge(g, 476, 160, 476, 400, { dashed: true });
-  GRAPH.forEach(([k, t, s, x, y]) => node(g, k, t, s, x, y, { ring: (o.sel || []).includes(k), crit: ["KIB-11", "KIB-21", "KIB-22"].includes(k) })); };
+const drawGraph = (g, o = {}) => { const shown = (n) => !o.maxY || GRAPH[n][4] < o.maxY;
+  EDGES.filter(([a, b]) => shown(a) && shown(b)).forEach(([a, b, crit]) => { const A = GRAPH[a], B = GRAPH[b]; edge(g, A[3] + 176, A[4] + 26, B[3], B[4] + 26, { crit }); }); if (!o.maxY) edge(g, 476, 160, 476, 400, { dashed: true });
+  GRAPH.filter((_, n) => shown(n)).forEach(([k, t, s, x, y]) => node(g, k, t, s, x, y, { ring: (o.sel || []).includes(k), crit: ["KIB-11", "KIB-21", "KIB-22"].includes(k) })); };
 const legend = (p) => { const l = S.panel(p, { gap: 4, pad: [8, 12], radius: 8 }); [["Bloque", C.mfg, 1], ["Chemin critique", C.fg, 2], ["Lié à", C.mfg, 0]].forEach(([t, c, w]) => { const r = S.row(l, { gap: 8 }); S.box(r, { name: "line", fill: c, w: 18, h: w || 1, op: w ? 1 : 0.5 }); S.txt(r, t, { size: 11, color: C.mfg }); }); return l; };
 const zoomBar = (p, z) => { const b = S.box(p, { name: "ZoomBar", fill: C.card, stroke: C.border, radius: 8, dir: "row", gap: 2, pad: 3, hs: "auto", vs: "auto", align: "center" }); iconButton(b, "scan"); iconButton(b, "plus"); S.txt(b, z, { size: 11, mono: true }); iconButton(b, "minus"); return b; };
 const graphScreen = async (name, col, row, o = {}) => { const r = await appScreen(PAGE, name, col, row, "Graphe", ["Kibo", "Graphe"], ["graph", "Kibo · Graphe"]); S.topAction(r.frame, "Partager", "outline", "share2");
@@ -111,7 +112,7 @@ S.draw[154] = async () => { const { frame: f, g } = await dashboard(PAGE, "154 �
   const med = widget(g, "Graphe de dépendances", "graph", cell(3, 0, 9, 4)); med.body.flex.dir = "row"; med.body.flex.columnGap = 8; med.body.flex.alignItems = "center";
   ["KIB-11", "KIB-21", "KIB-22"].forEach((k, i) => { if (i) S.icon(med.body, "chevRight", 14, C.dim); const n = S.box(med.body, { name: "Node", stroke: C.fg, radius: 6, dir: "row", gap: 6, pad: [6, 10], hs: "auto", vs: "auto", align: "center" }); S.statusDot(n, ["En review", "Bloqué", "Backlog"][i], 7); S.txt(n, k, { size: 11, mono: true }); });
   help(med.body, "Chemin critique · 3 tickets");
-  const big = widget(g, "Graphe de dépendances", "graph", cell(0, 4, 12, 5), { pad: 0 }); const cv = S.box(big.body, { name: "Canvas", w: 1100, h: 300 }); drawGraph(cv); const zb = zoomBar(big.w, "100 %"); abs(big.w, zb, big.w.width - 150, big.w.height - 44);
+  const big = widget(g, "Graphe de dépendances", "graph", cell(0, 4, 12, 5), { pad: 0 }); const cv = S.box(big.body, { name: "Canvas", w: 1100, h: 300 }); drawGraph(cv, { maxY: 250 }); const zb = zoomBar(big.w, "100 %"); abs(big.w, zb, big.w.width - 150, big.w.height - 44);
   return f.id; };
 
 // ---------- 155 · Onglet fermé, Annuler (§18.5) ----------
