@@ -87,6 +87,14 @@ Pièges :
   de 3 à 20 min. Les scripts attendent donc par le receiver (`/sleep?ms=`, passé comme `setTimeout` par `storage.load`).
 - Onglet masqué : l'enregistrement côté serveur prend aussi du retard. Après chaque page, recharger l'onglet, reconnecter le plugin et relister
   les boards de la page pour vérifier qu'ils sont bien enregistrés ; redessiner ceux qui manquent.
+- Fichier en stockage page par page (flags `enable-feature-fdata-objects-map` et `enable-feature-fdata-pointer-map` de `PENPOT_FLAGS`,
+  `docker-compose.yaml`) : une modification ne réécrit plus tout le fichier. Ne pas retirer ces flags, le fichier ne s'ouvrirait plus.
+- Persistance : un job annoncé terminé peut n'avoir rien enregistré (onglet figé ou backend redémarré : page 19 entière perdue une fois).
+  Dessiner par lots de 2 ou 3 écrans (`S.job([127, "127b"])`), puis comparer le nombre de formes côté serveur (`get-page` depuis l'onglet,
+  `fetch("/api/main/methods/get-page?file-id=…&page-id=…&features=…", { credentials: "include" })`) au nombre local
+  (`penpotUtils.findShapes(() => true, root).length + 1`) avant le lot suivant. Recharger l'onglet entre deux pages ou au-delà de 3,5 Go de tas.
+- Onglet de dessin en rendu SVG : ajouter `&wasm=false` à l'URL du workspace (prime sur l'option WebGL du profil). Avec WebGL, le dessin
+  est plus lent et l'onglet finit par se figer.
 
 ## Phases 12 à 15 (pages 20 à 24)
 
