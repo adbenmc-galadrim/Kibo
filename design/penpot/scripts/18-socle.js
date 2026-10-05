@@ -6,8 +6,15 @@ S.draw = S.draw || {};
 const find = (f, n) => penpotUtils.findShape(s => s.name === n, f);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const shadow = (b, o = 0.5) => { b.shadows = [{ style: "drop-shadow", offsetX: 0, offsetY: 8, blur: 24, spread: 0, color: { color: "#000000", opacity: S.mode === "light" ? 0.12 : o } }]; };
-const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y); return s; };
-const rel = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
+const measure = (f, s) => ({ x: Math.round(s.x - f.x), y: Math.round(s.y - f.y), w: Math.round(s.width), h: Math.round(s.height) });
+S.lastRel = null;
+const rel = (f, s) => { const r = measure(f, s); S.lastRel = { fid: f.id, a: s.id, r }; return r; };
+const abs = (f, s, x, y) => { if (s.layoutChild) s.layoutChild.absolute = true; penpotUtils.setParentXY(s, x, y);
+  if (S.lastRel && S.lastRel.fid === f.id) s.setPluginData("pin", JSON.stringify({ a: S.lastRel.a, dx: x - S.lastRel.r.x, dy: y - S.lastRel.r.y })); return s; };
+const repinOnce = (f) => { let n = 0; for (const s of f.children.filter(x => !!x.getPluginData("pin"))) { const p = JSON.parse(s.getPluginData("pin")); const a = penpot.currentPage.getShapeById(p.a); if (!a) continue;
+  const m = measure(f, a), c = measure(f, s), x = m.x + p.dx, y = m.y + p.dy; if (c.x !== x || c.y !== y) { penpotUtils.setParentXY(s, x, y); n++; } } return n; };
+S.applyPins = (f) => repinOnce(f) + repinOnce(f);
+S.repinPage = () => penpot.currentPage.root.children.filter(c => c.type === "board").reduce((n, f) => n + S.applyPins(f), 0);
 const byText = (root, t) => { const x = penpotUtils.findShape(s => s.type === "text" && s.characters === t, root); return x && x.parent; };
 
 // Même S.box que 01-core, sans écrire les valeurs par défaut du flex (chaque écriture coûte)
@@ -51,7 +58,7 @@ const ensureBase = (key, col, row, nav, crumbs, tab, o) => { const root = penpot
     const r = S.screenX(key, 0, 0, nav, crumbs, tab, o.noTicket ? { noTicket: true } : {}); if (o.kanban) S.fillKanban(r.content); d = r.frame; d.x = -40000; d.y = n * 1040; S.retext(d); S.setMode(m); }
   if (S.mode !== "light") return d;
   let l = root.children.find(c => c.name === lk);
-  if (!l) { const id = S.relight(d.id); l = penpotUtils.findShapeById(id); S.retext(l); S.fixLightX(l); S.fixIconOrder(l); S.fixLogo(l); }
+  if (!l) { const id = S.relight(d.id); l = penpot.currentPage.getShapeById(id); S.retext(l); S.fixLightX(l); S.fixIconOrder(l); S.fixLogo(l); }
   return l; };
 S.baseScreen = (name, col, row, nav, crumbs, tab, o = {}) => { const light = S.mode === "light"; const full = light ? name + " (clair)" : name;
   const root = penpot.currentPage.root; const old = root.children.find(c => c.name === full); if (old) old.remove();
@@ -62,10 +69,13 @@ S.baseScreen = (name, col, row, nav, crumbs, tab, o = {}) => { const light = S.m
 S.dropBases = () => { const bs = penpot.currentPage.root.children.filter(c => /^base · /.test(c.name)); bs.forEach(b => b.remove()); return bs.length; };
 
 // ---------- Dessin sombre puis clair, en tâche de fond (un appel du plugin est limité à 120 s) ----------
-const finishOne = (id) => { const f = penpotUtils.findShapeById(id); if (S.mode === "light") { S.lightFix(f, S.fresh); S.fixIconOrder(f); } S.retext(f); S.recenter(f); return id; };
-S.both = async (n) => { penpot.selection = []; const out = [];
-  for (const m of ["dark", "light"]) { S.setMode(m); try { const id = await S.draw[n](); await wait(400); out.push(finishOne(id)); } finally { S.setMode("dark"); } }
-  return out; };
+const finishOne = async (id) => { const f = penpot.currentPage.getShapeById(id); if (S.mode === "light") S.lightFix(f, S.fresh); S.fixIconOrder(f); S.retext(f);
+  await wait(2000); S.recenter(f); S.applyPins(f); return id; };
+const collapsed = (id) => { const tb = penpot.currentPage.getShapeById(id)?.children.find(c => c.name === "TabBar"); return !!tb && tb.width < 800; };
+const drawIn = async (n, m) => { S.setMode(m); S.lastRel = null; try { const id = await S.draw[n](); await wait(400); return await finishOne(id); } finally { S.setMode("dark"); } };
+S.both = async (n) => { penpot.selection = []; let dark = await drawIn(n, "dark"); const light = await drawIn(n, "light");
+  if (collapsed(dark)) dark = await drawIn(n, "dark");
+  return [dark, light]; };
 const report = (st) => fetch("http://127.0.0.1:8787/upload?name=job-status.txt", { method: "POST", body: st.status + " " + st.done.length + "/" + st.list.length + " " + (st.current || "") + (st.error ? " " + st.error : "") }).catch(() => null);
 S.job = (list) => { const st = S.jobState = { status: "running", done: [], list: list.map(String) }; report(st);
   (async () => { for (const n of list) { st.current = String(n); await S.both(n); st.done.push(String(n)); report(st); } })()
@@ -105,7 +115,7 @@ const alertDialog = (f, title, desc, ok = "Supprimer", w = 480, o = {}) => { S.o
   if (ok) S.footer(d, o.cancel === undefined ? "Annuler" : o.cancel, ok, o.variant || "destructive"); return d; };
 const formDialog = (f, title, w = 440, desc) => { S.overlay(f); const d = S.dialog(f, w, title, desc); dialogAt(f, d, w, 300); return d; };
 const input = (p, v, o = {}) => { const i = S.box(p, { name: "Input", fill: C.bg, stroke: o.error ? C.red : (o.focus ? C.mfg : C.border), radius: 6, dir: "row", gap: 8, pad: [8, 10], vs: "auto", align: "center", w: o.w });
-  if (!o.w) S.fillX(i); if (o.focus) i.shadows = [{ style: "drop-shadow", offsetX: 0, offsetY: 0, blur: 0, spread: 3, color: { color: "#71717A", opacity: 0.35 } }]; if (o.h) { i.resize(i.width, o.h); i.flex.verticalSizing = "fix"; i.flex.alignItems = "start"; }
+  if (!o.w) S.fillX(i); if (o.focus) i.shadows = [{ style: "drop-shadow", offsetX: 0, offsetY: 0, blur: 0, spread: 3, color: { color: "#71717A", opacity: 0.35 } }]; if (o.h) { i.resize(i.width, o.h); i.flex.verticalSizing = "fix"; i.flex.alignItems = "start"; if (!o.w) S.fillX(i); }
   if (o.icon) S.icon(i, o.icon, 14, C.dim); S.fillX(S.txt(i, v, { size: o.size || 13, weight: o.weight || 400, mono: !!o.mono, color: o.placeholder ? C.dim : C.fg, lh: 1.4 })); if (o.right) o.right(i); return i; };
 const select = (p, v, o = {}) => { const s = S.box(p, { name: "Select", fill: C.bg, stroke: o.open ? C.mfg : C.border, radius: 6, dir: "row", gap: 6, pad: [7, 10], vs: "auto", align: "center", w: o.w, hs: o.w ? undefined : "auto" });
   if (o.fill) S.fillX(s); if (o.disabled) s.opacity = 0.5; if (o.lead) o.lead(s); S.txt(s, v, { size: 12, mono: !!o.mono }); if (o.w || o.fill) S.spacer(s); S.icon(s, "chevDown", 12, C.dim); s.name = "Select-" + v; return s; };
@@ -132,7 +142,7 @@ const pageHead = (p, t, sub, right) => { const h = S.row(p, { gap: 12, align: "s
 const SETTINGS = [["building", "Workspace"], ["sliders", "Général"], ["palette", "Apparence"], ["fileText", "Domaines & guidelines"], ["plug", "Intégrations"], ["cloud", "Synchronisation"], ["shield", "Sécurité"], ["package", "Sources de composants"], ["keyboard", "Raccourcis"]];
 const settingsScreen = async (page, name, col, row, active) => { await S.page(page);
   const r = S.baseScreen(name, col, row, null, ["Paramètres", "Workspace"], ["settings", "Paramètres"]); S.activate(r.frame, "Paramètres");
-  const bc = find(r.frame, "Breadcrumb"); const last = penpotUtils.findShapes(s => s.type === "text", bc).pop(); if (last && last.characters !== active) S.setText(last, active);
+  const bc = find(r.frame, "Breadcrumb"); const last = penpotUtils.findShape(s => s.type === "text" && s.characters === "Workspace", bc); if (last && active !== "Workspace") S.setText(last, active);
   const c = r.content; c.flex.dir = "row"; c.flex.columnGap = 24; c.flex.alignItems = "start";
   const nav = S.box(c, { name: "SettingsNav", w: 220, dir: "column", gap: 2, vs: "auto" }); S.box(nav, { name: "gap", w: 1, h: 2 }); S.label(nav, "Workspace"); S.box(nav, { name: "gap", w: 1, h: 4 });
   SETTINGS.forEach(([ic, l]) => S.navItem(nav, ic, l, { active: l === active })); S.fixIconOrder(r.frame);

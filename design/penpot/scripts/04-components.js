@@ -45,5 +45,5 @@ S.toLight = (root) => { penpotUtils.analyzeDescendants(root, (r, s) => { try {
   penpotUtils.findShapes(s=>s.name==="logo", root).forEach(l=>{ const par = l.parent, idx = par.children.findIndex(c => c.id === l.id), sz = Math.round(l.width); if (!par.layoutChild && !par.flex) return; const nw = penpot.createShapeFromSvg(S.kanbanLogo("light", sz)); nw.name="logo"; par.insertChild(idx, nw); l.remove(); });
   penpotUtils.findShapes(s=>s.name==="Overlay", root).forEach(o=>o.fills=[{fillColor:"#09090B",fillOpacity:0.5}]);
   penpotUtils.findShapes(s=>s.shadows?.length>0, root).forEach(s=>s.shadows = s.shadows.map(x=>({...x, color:{color:"#000000", opacity:0.12}}))); };
-S.lightClone = (id, dx=1540) => { const src = penpotUtils.findShapeById(id); const cl = src.clone(); cl.name = src.name+" (clair)"; cl.x = src.x + dx; cl.y = src.y; S.toLight(cl); return cl.id; };
+S.lightClone = (id, dx=1540) => { const src = penpot.currentPage.getShapeById(id); const cl = src.clone(); cl.name = src.name+" (clair)"; cl.x = src.x + dx; cl.y = src.y; S.toLight(cl); return cl.id; };
 return "components ok";
