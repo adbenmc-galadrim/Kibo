@@ -59,7 +59,8 @@ Plugin : Fichier → MCP Server → Connect. Garder l'onglet au premier plan : C
 `python3 scripts/receiver.py` lancé (il sert les scripts et reçoit les exports), exécuter dans le plugin :
 
 ```js
-storage.load = async (n) => new Compartment({ storage, penpot, penpotUtils, setTimeout, fetch, console, Promise })
+storage.sleep = (fn, ms = 0) => { if (ms < 30) Promise.resolve().then(fn); else fetch("http://127.0.0.1:8787/sleep?ms=" + ms).then(fn, fn); return 0; };
+storage.load = async (n) => new Compartment({ storage, penpot, penpotUtils, setTimeout: storage.sleep, fetch, console, Promise })
   .evaluate("(async()=>{" + await (await fetch("http://127.0.0.1:8787/" + n)).text() + "\n})()");
 for (const n of ["01-core", "02-icons", "03-shell", "04-components", "05-tabs", "06-export", "07-data", "08-extra"]) await storage.load(n + ".js");
 ```
@@ -82,6 +83,10 @@ Pièges :
 - Changer un texte ou cloner un écran ne recalcule pas son rendu : `S.setText` / `S.retext` (sinon l'export garde l'ancien texte ou l'ancienne couleur).
 - Dans un conteneur flex, `appendChild` ne réordonne pas : créer sans parent puis `parent.insertChild(i, shape)`.
 - Un appel est limité à 120 s : traiter un ou deux écrans par appel.
+- Onglet masqué (autre onglet au premier plan, fenêtre cachée, écran verrouillé) : Chrome bride `setTimeout` à une fois par minute, un écran passe
+  de 3 à 20 min. Les scripts attendent donc par le receiver (`/sleep?ms=`, passé comme `setTimeout` par `storage.load`).
+- Onglet masqué : l'enregistrement côté serveur prend aussi du retard. Après chaque page, recharger l'onglet, reconnecter le plugin et relister
+  les boards de la page pour vérifier qu'ils sont bien enregistrés ; redessiner ceux qui manquent.
 
 ## Phases 12 à 15 (pages 20 à 24)
 
