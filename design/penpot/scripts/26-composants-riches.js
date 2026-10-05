@@ -4,7 +4,7 @@ const S = storage, C = S.C;
 S.draw = S.draw || {};
 const PAGE = "21 · Composants riches";
 const { find, wait, abs, rel, alertDialog, formDialog, input, select, listbox, help, labeled, pageHead, appScreen, kanbanAt } = S.fx;
-const { iconButton, empty, cell, dashboard, widget, demoCard } = S.fx2;
+const { addItems, iconButton, empty, cell, dashboard, widget, demoCard } = S.fx2;
 
 // ---------- 30b · Autoriser un composant : capacités (§19, spec composants §19 point 1) ----------
 const CAPS = [["box3d", "Afficher de la 3D (WebGL)", "utilise la carte graphique"], ["gamepad", "Lire les manettes branchées"], ["folder", "Lire les fichiers du projet", "dossier des fichiers de ce projet, lecture seule"],
@@ -40,17 +40,19 @@ S.draw["156c"] = async () => { const { frame: f, g } = await dashboard(PAGE, "15
 const board = (p, w, h, o = {}) => { const b = S.box(p, { name: "GameBoard", fill: C.muted, w, h }); const u = Math.round(w / 20);
   [[9, 7], [10, 7], [11, 7]].forEach(([x, y]) => { const s = S.box(b, { name: "Snake", fill: C.fg, w: u - 2, h: u - 2 }); penpotUtils.setParentXY(s, x * u, y * u); });
   const a = S.box(b, { name: "Apple", fill: C.red, w: u - 2, h: u - 2 }); penpotUtils.setParentXY(a, 17 * u, 11 * u);
-  if (o.lost) { const m = S.box(b, { name: "GameOver", fill: C.card, stroke: C.border, radius: 8, dir: "column", gap: 4, pad: [12, 16], hs: "auto", vs: "auto", align: "center" }); S.txt(m, "Partie perdue", { size: 14, weight: 600 }); S.txt(m, "Score 12 · Meilleur 31 · Espace pour rejouer", { size: 12, color: C.mfg }); penpotUtils.setParentXY(m, Math.round(w / 2) - 150, Math.round(h / 2) - 30); }
+  if (o.lost) { const m = S.box(b, { name: "GameOver", fill: C.card, stroke: C.border, radius: 8, dir: "column", gap: 4, pad: [12, 16], hs: "auto", vs: "auto", align: "center" }); S.txt(m, "Partie perdue", { size: 14, weight: 600 }); S.txt(m, "Score 12 · Meilleur 31 · Espace pour rejouer", { size: 12, color: C.mfg }); penpotUtils.setParentXY(m, Math.round(w / 2) - 150, Math.round(h / 2) - 30); m.bringToFront(); }
   return b; };
 const snakeWidget = (g, pos, o = {}) => { const v = widget(g, "Serpent", "gamepad", pos, { head: h => iconButton(h, "maximize", { color: C.fg }) });
   S.txt(v.body, o.lost ? "Score 12 · Meilleur 31" : "Score 0 · Meilleur 31 · Appuie sur Espace pour jouer · F : plein écran", { size: 12, color: C.mfg }); const st = S.row(v.body, { justify: "center" }); board(st, 300, 200, o); return v; };
-S.draw[157] = async () => { const { frame: f, g } = await dashboard(PAGE, "157 · Serpent", 0, 2, { crumbs: ["Kibo", "Jeux"], tab: ["dashboard", "Kibo · Jeux"] }); snakeWidget(g, cell(0, 0, 6, 4)); return f.id; };
-S.draw["157b"] = async () => { const { frame: f, g } = await dashboard(PAGE, "157b · Serpent : plein écran de Kibo", 2, 2, { crumbs: ["Kibo", "Jeux"], tab: ["dashboard", "Kibo · Jeux"] }); snakeWidget(g, cell(0, 0, 6, 4));
+const GAMES = { nav: "Jeux", crumbs: ["Kibo", "Jeux"], tab: ["dashboard", "Kibo · Jeux"] };
+const gamesNav = (f) => { const it = S.navItem(null, "dashboard", "Jeux", { indent: 14, active: true }); addItems(find(f, "Sidebar"), find(f, "SidebarItem / Changements"), [it]); return it; };
+S.draw[157] = async () => { const { frame: f, g } = await dashboard(PAGE, "157 · Serpent", 0, 2, GAMES); gamesNav(f); snakeWidget(g, cell(0, 0, 6, 4)); return f.id; };
+S.draw["157b"] = async () => { const { frame: f, g } = await dashboard(PAGE, "157b · Serpent : plein écran de Kibo", 2, 2, GAMES); gamesNav(f); snakeWidget(g, cell(0, 0, 6, 4));
   const fs = S.box(f, { name: "FocusMode", fill: C.card, w: 1440, h: 940, dir: "column" }); abs(f, fs, 0, 0);
   const bar = S.row(fs, { gap: 8, pad: [10, 12] }); S.border(bar); S.icon(bar, "gamepad", 14, C.mfg); S.fillX(S.txt(bar, "Serpent", { size: 13, weight: 600 })); S.button(bar, "Quitter le plein écran (Échap)", "ghost", { sm: true, icon: "x" });
   const body = S.col(fs, { gap: 10, pad: [12, 12] }); S.child(body, { v: "fill" }); S.txt(body, "Score 0 · Meilleur 31 · Appuie sur Espace pour jouer · F : plein écran", { size: 12, color: C.mfg });
   const st = S.row(body, { justify: "center" }); board(st, 1160, 800); S.frontAbs(f); return f.id; };
-S.draw["157c"] = async () => { const { frame: f, g } = await dashboard(PAGE, "157c · Serpent : partie perdue", 4, 2, { crumbs: ["Kibo", "Jeux"], tab: ["dashboard", "Kibo · Jeux"] }); snakeWidget(g, cell(0, 0, 6, 4), { lost: true }); return f.id; };
+S.draw["157c"] = async () => { const { frame: f, g } = await dashboard(PAGE, "157c · Serpent : partie perdue", 4, 2, GAMES); gamesNav(f); snakeWidget(g, cell(0, 0, 6, 4), { lost: true }); return f.id; };
 
 // ---------- 158 · Sélection partagée (spec composants §19 point 7) ----------
 S.draw[158] = async () => { const { frame: f, g } = await dashboard(PAGE, "158 · Sélection partagée", 0, 3);
