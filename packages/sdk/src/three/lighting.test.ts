@@ -1,15 +1,17 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
 import {
-  ACESFilmicToneMapping,
   BasicShadowMap,
   BoxGeometry,
   DirectionalLight,
   HemisphereLight,
+  LinearSRGBColorSpace,
   Mesh,
   MeshStandardMaterial,
+  NeutralToneMapping,
   NoToneMapping,
   PCFSoftShadowMap,
+  SRGBColorSpace,
   Vector3,
 } from "three";
 import {
@@ -81,15 +83,17 @@ test("shadows turn the key light and the ground on, and fit under the model", ()
   expect(model.receiveShadow).toBe(true);
 });
 
-test("applyToneMapping sets ACES, exposure 1 and the shadow map", () => {
+test("applyToneMapping sets sRGB output, the neutral tone mapping, exposure 1 and the shadow map", () => {
   const target: ToneMappingTarget = {
+    outputColorSpace: LinearSRGBColorSpace,
     toneMapping: NoToneMapping,
     toneMappingExposure: 0,
     shadowMap: { enabled: false, type: BasicShadowMap, needsUpdate: false },
   };
   applyToneMapping(target, { ...LIGHTING_DEFAULTS, shadows: true });
   expect(target).toEqual({
-    toneMapping: ACESFilmicToneMapping,
+    outputColorSpace: SRGBColorSpace,
+    toneMapping: NeutralToneMapping,
     toneMappingExposure: 1,
     shadowMap: { enabled: true, type: PCFSoftShadowMap, needsUpdate: true },
   });

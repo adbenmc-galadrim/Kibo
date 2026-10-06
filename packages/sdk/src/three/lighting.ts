@@ -1,16 +1,17 @@
 import {
-  ACESFilmicToneMapping,
   Box3,
   DirectionalLight,
   Group,
   HemisphereLight,
   Mesh,
+  NeutralToneMapping,
   type Object3D,
   PCFSoftShadowMap,
   PlaneGeometry,
   PMREMGenerator,
   type ShadowMapType,
   ShadowMaterial,
+  SRGBColorSpace,
   type Texture,
   type ToneMapping,
   Vector3,
@@ -133,13 +134,15 @@ export function createLightRig(settings: LightingSettings): LightRig {
 }
 
 export type ToneMappingTarget = {
+  outputColorSpace: string;
   toneMapping: ToneMapping;
   toneMappingExposure: number;
   shadowMap: { enabled: boolean; type: ShadowMapType; needsUpdate: boolean };
 };
 
 export function applyToneMapping(target: ToneMappingTarget, settings: LightingSettings): void {
-  target.toneMapping = ACESFilmicToneMapping;
+  target.outputColorSpace = SRGBColorSpace;
+  target.toneMapping = NeutralToneMapping;
   target.toneMappingExposure = 1;
   target.shadowMap.enabled = settings.shadows;
   target.shadowMap.type = PCFSoftShadowMap;

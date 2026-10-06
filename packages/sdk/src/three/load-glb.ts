@@ -1,5 +1,6 @@
 import { type Group, Mesh } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { decodeEmbeddedImages } from "./embedded-images";
 
 function ensureNormals(root: Group): Group {
   root.traverse((child) => {
@@ -10,7 +11,7 @@ function ensureNormals(root: Group): Group {
 }
 
 export function parseGlb(bytes: ArrayBuffer): Promise<Group> {
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader().register(decodeEmbeddedImages);
   return new Promise((resolve, reject) => {
     loader.parse(
       bytes,
