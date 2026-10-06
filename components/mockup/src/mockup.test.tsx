@@ -267,3 +267,68 @@ test("tickets linked to the frame are listed and open the sheet", async () => {
   expect(m.opened).toHaveLength(1);
   cleanup();
 });
+
+test("a frame that fails without a code says so without empty parentheses", async () => {
+  const m = createMockSdk(manifest, {
+    config: { frame: [FRAME], fit: "contain" },
+    frames: TWO,
+    seed: seedDemo,
+  });
+  m.sdk.design.frame = () => Promise.reject(new Error("boom"));
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  expect(await problemText("alert")).toBe("Maquette indisponible.");
+  cleanup();
+});
+
+test("quick clicks on the zoom buttons never reset the zoom", async () => {
+  mountList([FRAME]);
+  await screen.findByRole("img", { name: "Tickets" });
+  const zoomIn = screen.getByRole("button", { name: "Zoom avant" });
+  fireEvent.click(zoomIn);
+  fireEvent.click(zoomIn);
+  fireEvent.doubleClick(zoomIn);
+  expect(screen.getByText("156 %")).toBeTruthy();
+  cleanup();
+});
+
+test("ctrl, cmd or alt with zoom keys are left to the browser", async () => {
+  mountList([FRAME]);
+  await screen.findByRole("img", { name: "Tickets" });
+  const viewer = screen.getByRole("group", { name: /Aperçu de Tickets/ });
+  for (const mod of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+    for (const key of ["+", "-", "0"]) {
+      const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...mod });
+      viewer.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    }
+  }
+  expect(screen.getByText("100 %")).toBeTruthy();
+  cleanup();
+});
+
+test("a list shortened while on the last frame shows the remaining frame", async () => {
+  const m = createMockSdk(manifest, {
+    config: { frame: [FRAME, OTHER], fit: "contain" },
+    frames: TWO,
+    seed: seedDemo,
+  });
+  const view = () => (
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>
+  );
+  const { rerender } = render(view());
+  await screen.findByRole("img", { name: "Tickets" });
+  fireEvent.click(screen.getByRole("button", { name: "Cadre suivant" }));
+  expect(await screen.findByRole("img", { name: "Réglages" })).toBeTruthy();
+  m.sdk.config.frame = [FRAME];
+  rerender(view());
+  expect(await screen.findByRole("img", { name: "Tickets" })).toBeTruthy();
+  expect(screen.queryByRole("group", { name: "Cadres" })).toBeNull();
+  expect(screen.queryByText(fr.empty)).toBeNull();
+  cleanup();
+});
