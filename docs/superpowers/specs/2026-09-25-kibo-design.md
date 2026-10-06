@@ -913,9 +913,9 @@ Aucun code nouveau en phase 15 : `INVALID_INPUT`, `NOT_CONNECTED`, `PERMISSION_D
 - Après le pilote validé : `--archive` déplace `tmp/plan-data.js`, `tmp/reponses.json`, `tmp/briefs/`, `KIBO.md`, `PASSATION.md`, `LEXIQUE.md`, `TODO.md` dans `~/Documents/emis/archive-<date>/` et pose dans `~/Documents/emis/KIBO.md` un fichier de redirection (« Pilotage dans Kibo, projet EMIS ») ; `~/Documents/emis/CLAUDE.md` §4 est remplacé par une ligne vers Kibo (le reste des règles vit en guideline). `emis-board` est arrêté (`launchctl unload` du LaunchAgent), son code reste dans `bin/`. Le script d'import n'est plus lancé ; les skills `deliver-plan-pr*` ne servent plus pour Emis.
 - L'étude et ce paragraphe sont la **passation** : le rapport de jalon reprend les chiffres (tickets, liens, notes, écarts).
 
-### 23.11 Décisions qui demandent Adam
+### 23.11 Décisions validées par Adam le 2026-10-06
 
-Tranchées par le lead dev, à confirmer (recommandation en premier) :
+Tranchées par le lead dev et **toutes validées par Adam le 2026-10-06** telles que recommandées (l'alternative est conservée pour mémoire) ; Storybook (feuille de route, phase 18) validé en phase 18 :
 1. **Étiquettes `clé:valeur` plutôt que des champs typés** pour phase, sprint et zones (§23.2) ; les champs typés viendraient dans une phase ultérieure. Alternative : un schéma de champs par projet dès maintenant (plus long, touche le CRDT et tous les composants).
 2. **Nouvelle variante `import_ref`** pour l'identité d'import (§23.3). Alternative : détourner `mcp_item { server: "plan" }`, qui afficherait une fausse source MCP.
 3. **Mode `auto` + règles `allow` par profil** avec les garde-fous de §23.5. Alternative : `acceptEdits` seul, qui refuserait `pnpm`, `git push`, `gh pr create` et ferait échouer la boucle.
@@ -929,4 +929,4 @@ Tranchées par le lead dev, à confirmer (recommandation en premier) :
 
 ### 23.12 Jalon
 
-Version **`0.17.0-alpha.1`** (§22.12), `CHANGELOG.md` section `## 0.17.0-alpha.1 — AAAA-MM-JJ`, rapport `docs/superpowers/rapports/<date>-jalon-v0.17.0-alpha.1.md` (chiffres de l'import réel : 72 + 15 + 16 + 3 + 1 + n tickets, liens, notes ; écarts ; risques ; questions ouvertes de §23.11), tag en attente de la validation d'Adam. Écrans : **166** « Fiche : étiquettes et branche », **167** « Modifier le projet : worktrees des agents », **168** « Profil : mode Automatique et règles », **169** « Tickets : filtre d'étiquettes » à dessiner dans Penpot dans une prochaine PR (écart listé au jalon). Budget : étiquettes dans la fiche et pastilles du Kanban touchent l'entrée (≈ +0,4 kB : `TicketDetail`, `fr-labels` différé mais le champ est dans la fiche) ; exigence **≤ 225,5 kB**, plafond 230 jamais relevé.
+Version **`0.17.0-alpha.1`** (§22.12), `CHANGELOG.md` section `## 0.17.0-alpha.1 — AAAA-MM-JJ`, rapport `docs/superpowers/rapports/<date>-jalon-v0.17.0-alpha.1.md` (chiffres de l'import réel : 72 + 15 + 16 + 3 + 1 + n tickets, liens, notes ; écarts ; risques), tag en attente de la validation d'Adam. Écrans : **166** « Fiche : étiquettes et branche », **167** « Modifier le projet : worktrees des agents », **168** « Profil : mode Automatique et règles », **169** « Tickets : filtre d'étiquettes » à dessiner dans Penpot dans une prochaine PR (écart listé au jalon). Budget : étiquettes dans la fiche et pastilles du Kanban touchent l'entrée (≈ +0,4 kB : `TicketDetail`, `fr-labels` différé mais le champ est dans la fiche) ; exigence **≤ 225,5 kB**, plafond 230 jamais relevé.
