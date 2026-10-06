@@ -53,7 +53,9 @@ const MENUS: Record<IntegrationId, RowMenuItem[]> = {
 const GITHUB_ROWS: ReadonlySet<IntegrationId> = new Set(["github", "github-issues", "github-actions"]);
 
 const errorAction = (s: IntegrationStatus): RowAction =>
-  GITHUB_ROWS.has(s.id) && s.error?.code === "NOT_CONNECTED" ? "reconnect" : "retry";
+  s.error?.code === "TOKEN_IGNORED" || (GITHUB_ROWS.has(s.id) && s.error?.code === "NOT_CONNECTED")
+    ? "reconnect"
+    : "retry";
 
 function describe(s: IntegrationStatus): { title: string; description: string } {
   const r = fr.integrations.rows;

@@ -64,6 +64,21 @@ export function PenpotConnectDialog({ open, onOpenChange, onDone }: IntegrationD
           invalid={error?.field === "token"}
           onChange={setToken}
         />
+        <ol aria-label={t.steps.title} className="grid list-decimal gap-1 pl-5 text-xs text-muted-foreground">
+          <li>{t.steps.token}</li>
+          <li>{t.steps.url}</li>
+          <li>
+            {t.steps.selfHosted}{" "}
+            <a
+              href={t.steps.docsUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline underline-offset-2"
+            >
+              {t.steps.docs}
+            </a>
+          </li>
+        </ol>
         {error && <Notice tone={error.tone} title={error.title} detail={error.detail} />}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
