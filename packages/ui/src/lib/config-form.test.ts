@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { ComponentSummary, ConfigSchema, Instance } from "@kibo/schema";
+import { frWidgets } from "../i18n/fr-widgets";
 import {
   configFields,
   configSchemaOf,
@@ -119,4 +120,8 @@ test("labels come from the manifest first, bounds reach the input, asset fields 
   expect(numberBounds({ type: "number", min: 0.5, max: 4 })).toEqual({ min: 0.5, max: 4 });
   expect(numberBounds({ type: "number", min: 0 })).toEqual({ min: 0 });
   expect(numberBounds({ type: "number" })).toEqual({});
+});
+
+test("the viewer lighting presets have French value labels", () => {
+  expect(["soft", "studio", "contrast"].map(frWidgets.valueLabel)).toEqual(["Doux", "Studio", "Contraste"]);
 });

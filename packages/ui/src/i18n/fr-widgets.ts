@@ -3,6 +3,9 @@ const VALUES: Record<string, string> = {
   "mine-and-agents": "Moi + agents",
   all: "Tous",
   mine: "Mes tickets",
+  soft: "Doux",
+  studio: "Studio",
+  contrast: "Contraste",
 };
 
 export const frWidgets = {

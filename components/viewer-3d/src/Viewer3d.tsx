@@ -1,14 +1,33 @@
 import { KiboError } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
-import { loadGlb, ThreeCanvas, type ThreeHandle } from "@kibo/sdk/three";
+import {
+  applyToneMapping,
+  createEnvironment,
+  type LightingSettings,
+  loadGlb,
+  ThreeCanvas,
+  type ThreeHandle,
+} from "@kibo/sdk/three";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Group } from "three";
+import type { Group, Texture } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import manifestJson from "../kibo.component.json";
 import { fr } from "./fr";
+import { type LightingLabels, LightingPanel } from "./LightingPanel";
 import { createStage, type Stage, type ViewerState, viewerState } from "./scene";
+import { useLightingDraft } from "./use-lighting-draft";
+
+const fields = manifestJson.configSchema;
+const LABELS: LightingLabels = {
+  intensity: fields.lightIntensity.label,
+  shadows: fields.shadows.label,
+  environment: fields.environment.label,
+};
 
 function useModel(name: string | null): { state: ViewerState; model: Group | null } {
   const sdk = useSdk();
+  const assets = useRef(sdk.assets);
+  assets.current = sdk.assets;
   const [state, setState] = useState<ViewerState>(viewerState({ model: name }));
   const [model, setModel] = useState<Group | null>(null);
   useEffect(() => {
@@ -19,7 +38,7 @@ function useModel(name: string | null): { state: ViewerState; model: Group | nul
     }
     setState("loading");
     let alive = true;
-    sdk.assets
+    assets.current
       .url(name)
       .then((asset) => loadGlb(asset.url))
       .then(
@@ -38,21 +57,45 @@ function useModel(name: string | null): { state: ViewerState; model: Group | nul
     return () => {
       alive = false;
     };
-  }, [sdk, name]);
+  }, [name]);
   return { state, model };
 }
 
-function Scene3d({ name, model, autoRotate }: { name: string; model: Group | null; autoRotate: boolean }) {
+type SceneProps = { name: string; model: Group | null; autoRotate: boolean; lighting: LightingSettings };
+
+function Scene3d({ name, model, autoRotate, lighting }: SceneProps) {
   const stage = useRef<Stage | null>(null);
   const redraw = useRef<(() => void) | null>(null);
+  const relight = useRef<((settings: LightingSettings) => void) | null>(null);
   const latest = useRef(model);
   latest.current = model;
+  const lightingRef = useRef(lighting);
+  lightingRef.current = lighting;
 
   const setup = useCallback((h: ThreeHandle) => {
     const controls = new OrbitControls(h.camera, h.renderer.domElement);
     const draw = () => h.renderer.render(h.scene, h.camera);
-    const created = createStage(h.scene, h.camera, controls.target);
+    applyToneMapping(h.renderer, lightingRef.current);
+    const created = createStage(h.scene, h.camera, controls.target, lightingRef.current);
     stage.current = created;
+    let env: { texture: Texture; dispose(): void } | null = null;
+    const setEnvironment = (on: boolean) => {
+      if (on && !env) {
+        env = createEnvironment(h.renderer);
+        h.scene.environment = env.texture;
+      }
+      if (!on && env) {
+        h.scene.environment = null;
+        env.dispose();
+        env = null;
+      }
+    };
+    setEnvironment(lightingRef.current.environment);
+    relight.current = (s) => {
+      created.relight(s);
+      applyToneMapping(h.renderer, s);
+      setEnvironment(s.environment);
+    };
     redraw.current = () => {
       controls.update();
       draw();
@@ -63,9 +106,11 @@ function Scene3d({ name, model, autoRotate }: { name: string; model: Group | nul
     return () => {
       controls.removeEventListener("change", draw);
       controls.dispose();
-      created.clear();
+      setEnvironment(false);
+      created.dispose();
       stage.current = null;
       redraw.current = null;
+      relight.current = null;
     };
   }, []);
 
@@ -74,6 +119,11 @@ function Scene3d({ name, model, autoRotate }: { name: string; model: Group | nul
     stage.current?.show(model);
     redraw.current?.();
   }, [model]);
+
+  useEffect(() => {
+    relight.current?.(lighting);
+    redraw.current?.();
+  }, [lighting]);
 
   const turn = useCallback((_: ThreeHandle, dt: number) => stage.current?.turn(dt), []);
 
@@ -93,6 +143,7 @@ export function Viewer3d() {
   const name = typeof sdk.config.model === "string" && sdk.config.model !== "" ? sdk.config.model : null;
   const autoRotate = sdk.config.autoRotate !== false;
   const { state, model } = useModel(name);
+  const lighting = useLightingDraft(sdk);
   return (
     <div className="flex h-full min-h-0 flex-col">
       {name && <p className="truncate px-3 pt-2 text-xs text-muted-foreground">{name}</p>}
@@ -101,13 +152,14 @@ export function Viewer3d() {
         {state === "missing" && <Message text={fr.missing} />}
         {state === "failed" && <Message text={fr.failed} alert />}
         {name && (state === "loading" || state === "ready") && (
-          <Scene3d name={name} model={model} autoRotate={autoRotate} />
+          <Scene3d name={name} model={model} autoRotate={autoRotate} lighting={lighting.draft} />
         )}
         {state === "loading" && (
           <output className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
             {fr.loading}
           </output>
         )}
+        {name && <LightingPanel draft={lighting} labels={LABELS} />}
       </div>
     </div>
   );
