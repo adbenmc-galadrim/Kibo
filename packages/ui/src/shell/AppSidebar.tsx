@@ -48,7 +48,7 @@ type Props = {
   inboxCount: number | null;
   workspaceName: string | null;
   workspaceIcon: string | null;
-  onOpen(target: TabTarget | null, newTab: boolean): void;
+  onOpen(target: TabTarget | null, newTab: boolean, keep?: boolean): void;
   onSearch(): void;
   onNewProject(): void;
   onNewPage(parentId: string | null): void;
@@ -123,6 +123,10 @@ export function AppSidebar(p: Props) {
       if (e.button !== 1) return;
       e.preventDefault();
       onOpen(target, true);
+    },
+    onDoubleClick: (e: MouseEvent) => {
+      e.preventDefault();
+      onOpen(target, false, true);
     },
   });
   const changesEntry = (projectId: string) =>

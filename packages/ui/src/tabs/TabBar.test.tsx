@@ -98,6 +98,52 @@ test("titles follow « Projet · Page », pinned tabs are compact, missing targe
   expect(within(bar).queryByRole("button", { name: "Fermer Kibo" })).toBeNull();
 });
 
+test("a preview tab is italic, labelled, kept by double click, shift+enter or the menu", async () => {
+  const dispatched: TabsAction[] = [];
+  const preview: TabsState = {
+    tabs: [
+      { id: "t1", target: { kind: "page", projectId: "p1", pageId: "1@1" }, pinned: false, preview: true },
+    ],
+    activeId: "t1",
+    recents: [],
+  };
+  render(
+    <TabBar
+      state={preview}
+      describe={(t) => describeTarget(t, ctx)}
+      isDirty={() => false}
+      dispatch={(a) => dispatched.push(a)}
+      onNewTab={() => {}}
+      onOpenWindow={null}
+      error={null}
+    />,
+  );
+  const tab = screen.getByRole("tab", { name: "Kibo · Kanban · aperçu" });
+  expect(tab.getAttribute("data-preview")).toBe("true");
+  expect(tab.querySelector("span.italic")).toBeTruthy();
+  fireEvent.doubleClick(tab);
+  expect(dispatched.at(-1)).toEqual({ type: "keep", id: "t1" });
+  dispatched.length = 0;
+  fireEvent.keyDown(tab, { key: "Enter", shiftKey: true });
+  expect(dispatched).toEqual([{ type: "keep", id: "t1" }]);
+  fireEvent.contextMenu(tab);
+  await userEvent.click(await screen.findByRole("menuitem", { name: "Garder ouvert" }));
+  expect(dispatched.at(-1)).toEqual({ type: "keep", id: "t1" });
+});
+
+test("a permanent tab has a straight title and no « Garder ouvert »", async () => {
+  const actions = renderBar();
+  const tab = screen.getByRole("tab", { name: "Kibo · Kanban" });
+  expect(tab.getAttribute("data-preview")).toBe("false");
+  expect(tab.querySelector("span.italic")).toBeNull();
+  fireEvent.doubleClick(tab);
+  fireEvent.keyDown(tab, { key: "Enter", shiftKey: true });
+  expect(actions.filter((a) => a.type === "keep")).toEqual([]);
+  fireEvent.contextMenu(tab);
+  await screen.findByRole("menuitem", { name: /Épingler l'onglet/ });
+  expect(screen.queryByRole("menuitem", { name: "Garder ouvert" })).toBeNull();
+});
+
 test("a screen tab is named after the screen, outside any project", () => {
   expect(describeTarget({ kind: "screen", screen: "queue" }, ctx)).toMatchObject({
     title: "Files d'attente",

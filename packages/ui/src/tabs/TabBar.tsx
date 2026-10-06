@@ -44,6 +44,7 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: tab.id });
   const Icon = description.icon;
   const close = () => dispatch({ type: "close", id: tab.id });
+  const keep = () => dispatch({ type: "keep", id: tab.id });
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -63,13 +64,20 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
             {...listeners}
             role="tab"
             aria-selected={active}
-            aria-label={description.title}
+            aria-label={tab.preview ? fr.tabs.previewLabel(description.title) : description.title}
             title={description.title}
+            data-preview={tab.preview}
             className={cn(
               "flex h-full items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
               tab.pinned ? "px-3" : "pl-3 pr-1.5",
             )}
             onClick={() => dispatch({ type: "activate", id: tab.id })}
+            onDoubleClick={() => tab.preview && keep()}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || !e.shiftKey || !tab.preview) return;
+              e.preventDefault();
+              keep();
+            }}
           >
             {tab.pinned && (
               <span
@@ -84,7 +92,7 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
                 className={cn(
                   "max-w-48 truncate",
                   tab.target.kind === "file" && "font-mono",
-                  description.missing && "italic",
+                  (description.missing || tab.preview) && "italic",
                 )}
               >
                 {description.title}

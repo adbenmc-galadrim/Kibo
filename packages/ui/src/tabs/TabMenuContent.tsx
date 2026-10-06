@@ -1,6 +1,6 @@
 import type { Tab, TabTarget } from "@kibo/schema";
 import { ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut } from "@kibo/sdk/ui/context-menu";
-import { AppWindow, Copy, Pin, PinOff, X } from "lucide-react";
+import { AppWindow, Bookmark, Copy, Pin, PinOff, X } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import type { TabsAction } from "./tabs-model";
@@ -15,6 +15,12 @@ export function TabMenuContent({ tab, dispatch, onOpenWindow }: TabMenuContentPr
   const mac = isMac();
   return (
     <>
+      {tab.preview && (
+        <ContextMenuItem onSelect={() => dispatch({ type: "keep", id: tab.id })}>
+          <Bookmark />
+          {fr.tabs.keep}
+        </ContextMenuItem>
+      )}
       <ContextMenuItem onSelect={() => dispatch({ type: "pin", id: tab.id, pinned: !tab.pinned })}>
         {tab.pinned ? <PinOff /> : <Pin />}
         {tab.pinned ? fr.tabs.unpin : fr.tabs.pin}

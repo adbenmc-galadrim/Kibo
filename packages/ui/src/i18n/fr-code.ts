@@ -25,6 +25,8 @@ export const frCode = {
     loadFailed: "Impossible de charger les onglets.",
     closed: "Onglet fermé",
     undoClose: "Annuler",
+    previewLabel: (title: string) => `${title} · aperçu`,
+    keep: "Garder ouvert",
   },
   palette: {
     label: "Palette de commandes",
