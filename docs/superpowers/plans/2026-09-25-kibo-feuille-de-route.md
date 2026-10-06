@@ -109,3 +109,9 @@ Capacités déclarées dans le manifeste et appliquées par la CSP de chaque com
 Plan : `2026-10-05-kibo-phase-15.md` · Spec : conception §21, intégrations §15, composants §19 point 13.
 
 Cadres Figma et Penpot affichés dans les composants (intégration côté démon, jeton dans le trousseau, cache local) : Figma par jeton personnel (API REST) en plus du serveur MCP local, Penpot (penpot.app ou instance auto-hébergée) par jeton d'accès, cache hors CRDT revalidé par version et servi hors ligne avec l'état « périmé », images servies par le port bac à sable, capacité `design`, widget intégré « Maquette », liens cadre ⇄ ticket étendus à Penpot, écran 16 et dialogues de connexion ; tests contre de faux serveurs Figma et Penpot locaux.
+
+## Phase 16 · Retours v1.6
+
+Plan : `2026-10-06-kibo-phase-16.md` · Spec : conception §22, composants §20, agents §16.
+
+Quatre défauts repérés au tournage des vidéos (widget et page Graphe cadrés à 41 % : grille compacte des tickets sans dépendance ; cases à cocher rendues en texte dans l'aperçu des notes ; widget Notes en Markdown brut ; widget Tickets étroit qui ne montre que « DEMO- »), éclairage réglable de la visionneuse 3D par le kit `@kibo/sdk/three` (préréglages Doux / Studio / Contraste, intensité, ombres, lumière d'ambiance, défauts plus doux, rendu identique en sombre et en clair), filtre de projet mémorisé sur la page Agents ; parcours E2E étendus, écrans 150 et 151 à dessiner dans une prochaine PR.
