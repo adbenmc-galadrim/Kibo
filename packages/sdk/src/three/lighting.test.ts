@@ -10,14 +10,17 @@ import {
   MeshStandardMaterial,
   NoToneMapping,
   PCFSoftShadowMap,
+  Vector3,
 } from "three";
 import {
   applyToneMapping,
   createLightRig,
   enableShadows,
+  environmentIntensity,
   INTENSITY_RANGE,
   LIGHTING_DEFAULTS,
   LIGHTING_PRESETS,
+  type LightingPreset,
   lightingSettings,
   PRESET_LEVELS,
   type ToneMappingTarget,
@@ -92,4 +95,34 @@ test("applyToneMapping sets ACES, exposure 1 and the shadow map", () => {
   });
   applyToneMapping(target, LIGHTING_DEFAULTS);
   expect(target.shadowMap.enabled).toBe(false);
+});
+
+const lambert = (rig: ReturnType<typeof createLightRig>, normal: Vector3) =>
+  rig.group.children
+    .filter((l): l is DirectionalLight => l instanceof DirectionalLight && l.visible)
+    .reduce((sum, l) => sum + l.intensity * Math.max(0, l.position.clone().normalize().dot(normal)), 0);
+
+test("the environment is a fill light: direct lights dominate in every preset and presets shade a cube differently", () => {
+  for (const preset of LIGHTING_PRESETS) {
+    const s = { ...LIGHTING_DEFAULTS, preset };
+    const levels = PRESET_LEVELS[preset];
+    const direct = levels.hemisphere + levels.key + levels.fill + levels.rim;
+    expect(environmentIntensity(s)).toBe(levels.environment);
+    expect(environmentIntensity(s)).toBeLessThanOrEqual(0.35);
+    expect(direct).toBeGreaterThanOrEqual(2 * levels.environment);
+  }
+  expect(environmentIntensity({ ...LIGHTING_DEFAULTS, intensity: 2 })).toBeCloseTo(
+    PRESET_LEVELS.soft.environment * 2,
+  );
+  const top = new Vector3(0, 1, 0);
+  const away = new Vector3(-1, 0, 0);
+  const ratio = (preset: LightingPreset) => {
+    const rig = createLightRig({ ...LIGHTING_DEFAULTS, preset });
+    const r = lambert(rig, top) / lambert(rig, away);
+    rig.dispose();
+    return r;
+  };
+  const ratios = LIGHTING_PRESETS.map(ratio);
+  expect(new Set(ratios.map((r) => r.toFixed(2))).size).toBe(3);
+  expect(ratio("contrast")).toBeGreaterThan(ratio("soft"));
 });

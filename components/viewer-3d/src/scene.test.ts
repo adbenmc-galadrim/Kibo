@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { LIGHTING_DEFAULTS } from "@kibo/sdk/three";
+import { LIGHTING_DEFAULTS, PRESET_LEVELS } from "@kibo/sdk/three";
 import {
   BoxGeometry,
   DirectionalLight,
@@ -60,4 +60,16 @@ test("relight changes the lights without touching the model", () => {
   expect(scene.children).toContain(model);
   stage.dispose();
   expect(scene.getObjectByName("kibo-light-rig")).toBeUndefined();
+});
+
+test("relight sets the environment level of the scene from the preset and the intensity", () => {
+  const scene = new Scene();
+  const stage = createStage(scene, new PerspectiveCamera(), undefined, LIGHTING_DEFAULTS);
+  expect(scene.environmentIntensity).toBeCloseTo(PRESET_LEVELS.soft.environment);
+  stage.relight({ ...LIGHTING_DEFAULTS, preset: "contrast", intensity: 2 });
+  expect(scene.environmentIntensity).toBeCloseTo(PRESET_LEVELS.contrast.environment * 2);
+  stage.relight({ ...LIGHTING_DEFAULTS, environment: false });
+  expect(scene.environmentIntensity).toBeCloseTo(PRESET_LEVELS.soft.environment);
+  stage.dispose();
+  expect(scene.environmentIntensity).toBe(1);
 });

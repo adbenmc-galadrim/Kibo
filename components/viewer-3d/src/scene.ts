@@ -2,6 +2,7 @@ import {
   createLightRig,
   disposeObject,
   enableShadows,
+  environmentIntensity,
   fitCameraTo,
   type LightingSettings,
 } from "@kibo/sdk/three";
@@ -27,6 +28,7 @@ export function createStage(
 ): Stage {
   const rig = createLightRig(settings);
   scene.add(rig.group);
+  scene.environmentIntensity = environmentIntensity(settings);
   let shadows = settings.shadows;
   let current: Object3D | null = null;
   const clear = () => {
@@ -51,6 +53,7 @@ export function createStage(
     relight(next) {
       shadows = next.shadows;
       rig.apply(next);
+      scene.environmentIntensity = environmentIntensity(next);
       if (current) enableShadows(current, shadows);
     },
     clear,
@@ -58,6 +61,7 @@ export function createStage(
       clear();
       scene.remove(rig.group);
       rig.dispose();
+      scene.environmentIntensity = 1;
     },
   };
 }

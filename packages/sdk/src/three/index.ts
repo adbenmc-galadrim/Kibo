@@ -5,6 +5,7 @@ export {
   createEnvironment,
   createLightRig,
   enableShadows,
+  environmentIntensity,
   INTENSITY_RANGE,
   LIGHTING_DEFAULTS,
   LIGHTING_PRESETS,

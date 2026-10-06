@@ -35,3 +35,9 @@ test("fitCameraTo looks at the center of an offset object", () => {
   expect(camera.near).toBeLessThan(camera.position.distanceTo(target));
   expect(camera.far).toBeGreaterThan(camera.position.distanceTo(target));
 });
+
+test("parseGlb computes normals for a mesh that has none", async () => {
+  const group = await parseGlb(sampleGlb({ normals: false }).slice().buffer);
+  const cube = group.getObjectByName("Cube");
+  expect(cube instanceof Mesh && cube.geometry.getAttribute("normal").count).toBe(8);
+});
