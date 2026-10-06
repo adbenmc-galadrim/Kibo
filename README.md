@@ -17,6 +17,15 @@ bun run start
 Développement de l'UI : `bun packages/daemon/src/main.ts --dev` puis `bun run --cwd packages/ui dev` (Vite sur `http://localhost:5173`, appairage avec le jeton de `~/.kibo/token`).
 Tests : `bun test packages components`, `bun run check`, `bun run typecheck`, E2E : `bun run --cwd e2e test`.
 
+### Commandes `just`
+
+Toutes les commandes courantes sont des recettes du [`justfile`](justfile) : installer `just` (`brew install just` sur macOS, `sudo apt install just` ou `cargo install just` sous Linux), puis `just` pour la liste.
+
+- `just up` construit l'UI et lance le démon en arrière-plan (`--port`, `--home` pour `KIBO_HOME`, `--no-build`) ; `just open`, `just status`, `just logs`, `just restart`, `just down`. PID et journal dans `.kibo-dev/`.
+- `just dev` (démon `--dev` + Vite), `just start` (premier plan), `just desktop` (Tauri en développement).
+- `just dmg`, `just app` (macOS), `just appimage`, `just deb`, `just rpm` (Linux), `just bundle` : paquets de l'hôte, signés ad hoc, sans artefacts de mise à jour.
+- `just check`, `just typecheck`, `just test [chemin]`, `just e2e [--headed] [--theme dark]`, `just ci` (la CI en local).
+
 ## Installer l'application de bureau
 
 Les versions sont publiées sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases) : `.dmg` pour macOS Apple Silicon et Intel, `.AppImage`, `.deb` et `.rpm` pour Linux x86_64. Le guide complet (première ouverture, vérification, sauvegardes, désinstallation) est dans [`docs/installation.md`](docs/installation.md).
