@@ -16,6 +16,7 @@ import type { TabsAction } from "./tabs-model";
 const saved: RpcRequest[] = [];
 let stored: TabsState = { tabs: [], activeId: null, recents: [] };
 mock.module("../api", () => ({
+  onWrite: () => () => {},
   client: {
     rpc: (req: RpcRequest) => {
       if (req.method === "getTabs") return Promise.resolve(stored);

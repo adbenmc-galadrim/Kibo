@@ -152,6 +152,7 @@ mock.module("../state/use-agents", () => ({
   useDaemonOnline: () => false,
 }));
 mock.module("../api", () => ({
+  onWrite: () => () => {},
   client: {
     rpc: (req: RpcRequest) => {
       if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
