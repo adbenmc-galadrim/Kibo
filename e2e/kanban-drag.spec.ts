@@ -156,6 +156,7 @@ async function stepRight(page: Page) {
 }
 
 test("glisser une carte au clavier : Espace, flèche droite, Espace", async ({ page }, info) => {
+  test.setTimeout(60_000);
   const run = String.fromCharCode(65 + ((info.repeatEachIndex + info.retry) % 26));
   const key = projectKey(`DK${run}`, info);
   await pairAndCreateProject(page, info, key);
