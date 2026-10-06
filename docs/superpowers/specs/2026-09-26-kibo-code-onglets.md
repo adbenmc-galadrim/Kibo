@@ -153,3 +153,13 @@ Aucun nouveau code : `FORBIDDEN`, `GIT_BUSY`, `INVALID_INPUT`, `PATH_OUTSIDE_PRO
 - **Persistance** : `preview` est enregistré avec l'onglet (`local_state`, §7) ; au rechargement l'aperçu revient en aperçu, comme VSCode. Un état enregistré sans le champ reste valide (`preview: false`).
 - **Clavier et accessibilité** : `⌘1…9` inchangés ; l'italique n'est jamais le seul indice (libellé « · aperçu », entrée « Garder ouvert ») ; `Entrée` sur l'onglet focalisé l'active, `⇧Entrée` le garde ouvert.
 - **Écart signalé au chef d'équipe** : l'ancienne règle « un clic ordinaire remplace la cible de l'onglet actif » (§7) disparaît au profit de l'onglet d'aperçu ; la spec de conception §8 (« Un onglet Accueil fixe, puis les onglets ouverts ») est précisée (« dont au plus un onglet d'aperçu »). Le `⌘↵` de la palette garde son sens actuel pour un ticket (ouvrir dans le Sheet) et vaut « permanent » pour une page, un projet ou un écran.
+
+## 15. Décisions de la phase 17 : branche cible d'une PR, « Terminé » sur la branche d'intégration (spec de conception §23.6)
+
+Écrites le 2026-10-06 ; elles amendent §9 (PR) et la règle « PR mergée → Terminé » de la spec agents §7.
+
+- `PrInfo` et `GithubPrRef` gagnent `base: string | null` et `head: string | null` (`gh pr view --json number,url,state,isDraft,baseRefName,headRefName`) ; `null` pour les références héritées. `createPr` les renseigne (`head` = branche courante, `base` = base demandée). Le poller les met à jour avec l'état.
+- **Branche d'intégration** = `baseRef` des réglages de worktree du projet sans remote (`origin/dev` ⇒ `dev`), sinon `main`. Le déclencheur `pr_merged` n'est émis que si `base` est `null` ou égal à cette branche ; une PR empilée fusionnée dans sa branche parente laisse le ticket En review, pastille « fusionnée dans <base> ».
+- **Cascade** : après un `pr_merged` sur la branche d'intégration, le poller déclenche `pr_merged` pour chaque ticket du projet dont la `github_pr` est `merged` avec `base` = `head` de la PR qui vient de fusionner, récursivement.
+- Le faux `gh` (`packages/daemon/src/code/testing/fake-gh.ts`) accepte `--base=` et `--head=` à la création et rend `baseRefName`/`headRefName` à la lecture ; `FAKE_GH_MERGE=<url>` dans l'état le passe `MERGED` (fichier d'état édité par le test).
+- Fiche : pastille `GitBranch` pour la `git_branch` du ticket (`feat/…`, infobulle « Base : … » si empilée), à côté des pastilles de PR.
