@@ -247,20 +247,20 @@
     "description": "Affiche un cadre Figma ou un board Penpot et les tickets qui y sont liés",
     "reads": ["ticket"],
     "writes": [],
-    "capabilities": ["design"],
+    "capabilities": ["design", "fullscreen"],
     "configSchema": {
       "frame": {
         "type": "string",
-        "nullable": true,
-        "default": null,
         "frame": true,
-        "label": "Cadre",
-        "help": "Colle l'URL d'un cadre Figma ou d'un board Penpot."
+        "list": true,
+        "default": [],
+        "label": "Cadres",
+        "help": "Un cadre par ligne, dans l'ordre d'affichage : URL Figma ou Penpot. Les flèches passent d'un cadre à l'autre."
       },
       "fit": {
         "enum": ["contain", "width"],
         "default": "contain",
-        "label": "Ajustement"
+        "label": "Ajustement initial"
       }
     }
   },

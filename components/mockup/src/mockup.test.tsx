@@ -5,9 +5,10 @@ import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk, type MockFrame, type MockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { fr } from "./fr";
+import { frProblems } from "./fr-problems";
 import { Component, manifest } from "./index";
 
-runConformance({ manifest, Component }, seedDemo, { config: { frame: null, fit: "contain" } });
+runConformance({ manifest, Component }, seedDemo, { config: { frame: [], fit: "contain" } });
 
 const FRAME = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
 const PENPOT_FRAME =
@@ -58,6 +59,145 @@ const spyFrames = (m: MockSdk) => {
   return asked;
 };
 
+const problemText = (role: "status" | "alert") =>
+  waitFor(() => {
+    const text = screen.getByRole(role).querySelector("p")?.textContent;
+    if (text === undefined) throw new Error("no problem shown yet");
+    return text;
+  });
+
+const OTHER = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=56-78";
+const TWO: MockFrame[] = [
+  { url: FRAME, name: "Tickets" },
+  { url: OTHER, name: "Réglages" },
+];
+const mountList = (frames: unknown, mocks: MockFrame[] = TWO) => {
+  const m = createMockSdk(manifest, {
+    config: { frame: frames, fit: "contain" },
+    frames: mocks,
+    seed: seedDemo,
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return m;
+};
+
+test("several frames: buttons and arrow keys navigate, the counter follows", async () => {
+  const m = mountList([FRAME, OTHER]);
+  await screen.findByRole("img", { name: "Tickets" });
+  expect(screen.getByText("1 / 2")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Cadre précédent" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Cadre suivant" }));
+  expect(await screen.findByRole("img", { name: "Réglages" })).toBeTruthy();
+  expect(screen.getByText("2 / 2")).toBeTruthy();
+  fireEvent.keyDown(screen.getByRole("group", { name: /Aperçu de Réglages/ }), { key: "ArrowLeft" });
+  expect(await screen.findByRole("img", { name: "Tickets" })).toBeTruthy();
+  expect(m.used).toContain("cap:fullscreen");
+  expect(screen.queryByRole("button", { name: /plein écran/i })).toBeNull();
+  expect(m.violations).toEqual([]);
+  cleanup();
+});
+
+test("a legacy single string still shows and has no navigation", async () => {
+  mountList(FRAME);
+  await screen.findByRole("img", { name: "Tickets" });
+  expect(screen.queryByRole("group", { name: "Cadres" })).toBeNull();
+  cleanup();
+});
+
+test("a degraded list still shows its valid frames and skips a bad one", async () => {
+  mountList([FRAME, "", "https://example.com/nope", 42]);
+  await screen.findByRole("img", { name: "Tickets" });
+  expect(screen.getByText("1 / 2")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Cadre suivant" }));
+  expect(await problemText("alert")).toBe("Maquette indisponible (INVALID_INPUT).");
+  expect(screen.getByRole("button", { name: "Réessayer" })).toBeTruthy();
+  cleanup();
+});
+
+test("zoom buttons, keys and double click change the scale, a new frame resets it", async () => {
+  mountList([FRAME, OTHER]);
+  await screen.findByRole("img", { name: "Tickets" });
+  expect(screen.getByText("100 %")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Zoom avant" }));
+  expect(screen.getByText("125 %")).toBeTruthy();
+  const viewer = screen.getByRole("group", { name: /Aperçu de Tickets/ });
+  fireEvent.keyDown(viewer, { key: "+" });
+  expect(screen.getByText("156 %")).toBeTruthy();
+  fireEvent.doubleClick(viewer);
+  expect(screen.getByText("100 %")).toBeTruthy();
+  fireEvent.doubleClick(viewer);
+  expect(screen.getByText("200 %")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Ajuster" }));
+  expect(screen.getByText("100 %")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Zoom arrière" }));
+  expect(screen.getByText("80 %")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Cadre suivant" }));
+  await screen.findByRole("img", { name: "Réglages" });
+  expect(screen.getByText("100 %")).toBeTruthy();
+  cleanup();
+});
+
+test("a frame without dimensions renders and zooms", async () => {
+  mountList([FRAME], [{ url: FRAME, name: "Tickets", width: undefined, height: undefined }]);
+  const img = await screen.findByRole("img", { name: "Tickets" });
+  expect(img.getAttribute("style") ?? "").not.toContain("NaN");
+  fireEvent.click(screen.getByRole("button", { name: "Zoom avant" }));
+  expect(screen.getByText("125 %")).toBeTruthy();
+  expect(img.getAttribute("style") ?? "").not.toContain("NaN");
+  cleanup();
+});
+
+test("refresh spins the icon and disables the button until the frame is back", async () => {
+  const m = mountList([FRAME]);
+  await screen.findByRole("img", { name: "Tickets" });
+  const pending: { release(): void } = { release: () => {} };
+  const real = m.sdk.design.frame;
+  m.sdk.design.frame = (url, opts) =>
+    new Promise((resolve) => {
+      pending.release = () => resolve(real(url, opts));
+    });
+  const button = screen.getByRole("button", { name: fr.refresh });
+  fireEvent.click(button);
+  expect(button.getAttribute("aria-busy")).toBe("true");
+  expect(button.hasAttribute("disabled")).toBe(true);
+  const icon = button.querySelector("svg");
+  expect(icon?.classList.contains("animate-spin")).toBe(true);
+  expect(icon?.classList.contains("motion-reduce:animate-none")).toBe(true);
+  expect(screen.getByRole("img", { name: "Tickets" })).toBeTruthy();
+  pending.release();
+  await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
+  expect(button.querySelector("svg")?.classList.contains("animate-spin")).toBe(false);
+  cleanup();
+});
+
+test("each failure names its cause and offers a retry", async () => {
+  mountList([PENPOT_FRAME], [{ url: PENPOT_FRAME, name: "Accueil", error: "REMOTE_NOT_RENDERED" }]);
+  expect(await problemText("status")).toBe(
+    frProblems.noThumbnail({ provider: "penpot", name: "Penpot", host: "", code: "" }),
+  );
+  cleanup();
+  mountList([PENPOT_FRAME], [{ url: PENPOT_FRAME, name: "Accueil", error: "REMOTE_REJECTED" }]);
+  expect(await problemText("alert")).toBe(
+    "Penpot a refusé le jeton. Reconnecte Penpot dans Paramètres › Intégrations.",
+  );
+  cleanup();
+  mountList([PENPOT_FRAME], [{ url: PENPOT_FRAME, name: "Accueil", error: "PERMISSION_DENIED" }]);
+  expect(await problemText("alert")).toBe(
+    "Ce board est sur une autre instance Penpot (design.penpot.app) que celle connectée.",
+  );
+  cleanup();
+  mountList([FRAME], [{ url: FRAME, name: "Tickets", error: "TIMEOUT" }]);
+  expect(await problemText("alert")).toBe(
+    "Figma ne répond pas. Vérifie ta connexion, ou que l'instance est démarrée.",
+  );
+  expect(screen.getByRole("button", { name: "Réessayer" })).toBeTruthy();
+  cleanup();
+});
+
 const mountSpied = (frame: string, frames: MockFrame[]) => {
   const m = createMockSdk(manifest, { config: { frame, fit: "contain" }, frames, seed: seedDemo });
   const asked = spyFrames(m);
@@ -82,7 +222,6 @@ test("stale and offline frames show their badges, refresh asks the daemon again"
 });
 
 test("another frame after a refresh loads afresh without refresh", async () => {
-  const OTHER = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=56-78";
   const { m, asked, rerender } = mountSpied(FRAME, [
     { url: FRAME, name: "Tickets" },
     { url: OTHER, name: "Réglages" },
@@ -101,13 +240,13 @@ test("another frame after a refresh loads afresh without refresh", async () => {
 
 test("a frame from an unconnected provider explains what to do", async () => {
   mount(PENPOT_FRAME);
-  expect(await screen.findByText(fr.notConnected)).toBeTruthy();
+  expect(await problemText("status")).toBe("Connecte Penpot dans Paramètres › Intégrations.");
   cleanup();
 });
 
 test("an invalid frame url is reported as unavailable", async () => {
   mount("https://example.com/nope");
-  expect((await screen.findByRole("alert")).textContent).toBe(fr.failed);
+  expect(await problemText("alert")).toBe("Maquette indisponible (INVALID_INPUT).");
   cleanup();
 });
 
