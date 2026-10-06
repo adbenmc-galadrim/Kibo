@@ -1,30 +1,40 @@
 import { useEntities, useSdk } from "@kibo/sdk";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { excerpt } from "./excerpt";
 import { fr } from "./fr";
-
-const firstLines = (markdown: string) =>
-  markdown
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l && !l.startsWith("#") && !l.startsWith("```") && !l.startsWith("---"))
-    .slice(0, 4)
-    .map((l) => l.replace(/^[-*]\s+/, "• "));
+import { renderNote, type TicketRef } from "./markdown";
+import { EXCERPT_PROSE } from "./markdown-styles";
+import { RenderedMarkdown } from "./RenderedMarkdown";
 
 export function NotesWidget() {
   const sdk = useSdk();
   const notes = useEntities("note");
+  const ticketList = useEntities("ticket");
   const pinned = typeof sdk.config.path === "string" ? sdk.config.path : null;
   const target = notes.data.find((n) => n.path === pinned) ?? notes.data[0] ?? null;
   const path = target?.path ?? null;
   const version = target?.mtime ?? null;
-  const [lines, setLines] = useState<string[]>([]);
+  const [markdown, setMarkdown] = useState("");
   const [failed, setFailed] = useState(false);
+  const tickets = useMemo(
+    () =>
+      new Map<string, TicketRef>(
+        ticketList.data.flatMap((t): [string, TicketRef][] =>
+          t.key === null ? [] : [[t.key, { id: t.id, title: t.title, statusId: t.statusId }]],
+        ),
+      ),
+    [ticketList.data],
+  );
+  const html = useMemo(
+    () => renderNote(excerpt(markdown), tickets, { tasks: "readonly" }),
+    [markdown, tickets],
+  );
 
   useEffect(() => {
     if (path === null || version === null) return;
     let live = true;
     sdk.notes.read(path).then(
-      (c) => live && setLines(firstLines(c.markdown)),
+      (c) => live && setMarkdown(c.markdown),
       (e: unknown) => {
         console.error(e);
         if (live) setFailed(true);
@@ -34,6 +44,11 @@ export function NotesWidget() {
       live = false;
     };
   }, [sdk, path, version]);
+
+  const openTicket = (key: string) => {
+    const t = tickets.get(key);
+    if (t) sdk.openTicket(t.id);
+  };
 
   if (notes.error || failed) {
     return (
@@ -51,13 +66,7 @@ export function NotesWidget() {
           {target.title}
         </button>
       </h3>
-      <ul className="grid gap-1 text-xs text-muted-foreground">
-        {lines.map((l, i) => (
-          <li key={`${i}-${l}`} className="truncate">
-            {l}
-          </li>
-        ))}
-      </ul>
+      <RenderedMarkdown html={html} className={EXCERPT_PROSE} onTicket={openTicket} />
     </div>
   );
 }
