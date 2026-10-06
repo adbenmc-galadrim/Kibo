@@ -376,6 +376,23 @@ test("Mockups: any other failure names its cause and can be retried", async () =
   expect(frameCalls()).toContainEqual({ method: "getDesignFrame", url: FIGMA_URL, refresh: true });
 });
 
+test("Mockups: a failure without a code shows no empty parentheses", async () => {
+  frames = {
+    [PENPOT_URL]: () => {
+      throw new KiboError("INTERNAL", "boom");
+    },
+    [FIGMA_URL]: () => {
+      throw new Error("boom");
+    },
+  };
+  await show();
+  const alerts = await mockups().findAllByRole("alert");
+  expect(alerts.map((a) => a.textContent)).toEqual([
+    "Maquette indisponible.",
+    "Maquette indisponible (INTERNAL).",
+  ]);
+});
+
 test("Mockups: Actualiser asks the daemon again with refresh", async () => {
   await show();
   await screen.findByRole("img", { name: "Tickets / Arbre" });
