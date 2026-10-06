@@ -13,13 +13,18 @@ export type PenpotClient = DesignProviderClient & {
   profile(instance: string, token: string): Promise<{ fullname: string; email: string | null }>;
 };
 
-const Profile = z.object({ fullname: z.string(), email: z.string().nullable().optional() });
-const Page = z.object({
-  objects: z.record(
-    z.string(),
-    z.object({ name: z.string(), width: z.number().optional(), height: z.number().optional() }),
-  ),
+const PENPOT_ANONYMOUS_ID = "00000000-0000-0000-0000-000000000000";
+const Profile = z.object({
+  id: z.string(),
+  fullname: z.string(),
+  email: z.string().nullable().optional(),
 });
+const Board = z.object({
+  name: z.string(),
+  width: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+});
+const Page = z.object({ objects: z.record(z.string(), z.unknown()) });
 const Thumbnails = z.record(z.string(), z.string());
 
 export function createPenpot(deps: {
@@ -65,9 +70,15 @@ export function createPenpot(deps: {
   };
   const metadata = async ({ key, instance, token }: Target): Promise<FrameMeta> => {
     const body = { "file-id": key.fileId, "page-id": key.pageId, "object-id": key.boardId };
-    const board = (await rpc("get-page", body, instance, token, Page)).objects[key.boardId];
-    if (!board) throw new KiboError("REMOTE_NOT_FOUND", `penpot board ${key.boardId} not found`);
-    return { name: board.name, width: board.width ?? null, height: board.height ?? null };
+    const raw = (await rpc("get-page", body, instance, token, Page)).objects[key.boardId];
+    if (raw === undefined) throw new KiboError("REMOTE_NOT_FOUND", `penpot board ${key.boardId} not found`);
+    const board = Board.safeParse(raw);
+    if (!board.success)
+      throw new KiboError(
+        "REMOTE_REJECTED",
+        `unexpected penpot board: ${board.error.issues[0]?.message ?? ""}`,
+      );
+    return { name: board.data.name, width: board.data.width ?? null, height: board.data.height ?? null };
   };
   const thumbnailOf = async ({ key, instance, token }: Target): Promise<string | null> => {
     const map = await rpc(
@@ -99,11 +110,16 @@ export function createPenpot(deps: {
       const meta = await metadata(t);
       const mediaId = await thumbnailOf(t);
       if (mediaId === null)
-        throw new KiboError("REMOTE_NOT_FOUND", "penpot has no thumbnail for this board yet");
+        throw new KiboError("REMOTE_NOT_RENDERED", "penpot has no thumbnail for this board yet");
       return { meta, ...(await download(t.instance, mediaId)), version: mediaId };
     },
     async profile(instance, token) {
       const profile = await rpc("get-profile", {}, instance, token, Profile);
+      if (profile.id === PENPOT_ANONYMOUS_ID)
+        throw new KiboError(
+          "TOKEN_IGNORED",
+          "penpot ignored the access token: access tokens are disabled on this instance",
+        );
       return { fullname: profile.fullname, email: profile.email ?? null };
     },
   };

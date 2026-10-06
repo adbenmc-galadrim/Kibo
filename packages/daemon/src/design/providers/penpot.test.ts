@@ -65,12 +65,30 @@ test("render downloads the thumbnail without the token", async () => {
 });
 
 test("a board without a thumbnail has no version and no render", async () => {
-  const other = "66666666-6666-4666-8666-666666666666";
-  penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, other, { mediaId: null });
-  const bare = { ...key(), boardId: other };
+  penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, PENPOT_IDS.bare, { mediaId: null });
+  const bare = { ...key(), boardId: PENPOT_IDS.bare };
   expect(await client.version(bare)).toBeNull();
   await expect(client.render(bare)).rejects.toThrow("penpot has no thumbnail for this board yet");
-  await expect(client.render(bare)).rejects.toThrow("REMOTE_NOT_FOUND");
+  await expect(client.render(bare)).rejects.toThrow("REMOTE_NOT_RENDERED");
+});
+
+test("a realistic page with path shapes still yields the board", async () => {
+  expect(await client.metadata(key())).toEqual({ name: "Accueil", width: 1440, height: 900 });
+  const page = penpot.requests.find((r) => r.path.endsWith("/get-page"));
+  expect(page?.body).toContain(`"object-id":"${PENPOT_IDS.board}"`);
+});
+
+test("an anonymous profile means the token was ignored", async () => {
+  penpot.ignoreTokens = true;
+  await expect(client.profile(penpot.url, SECRET)).rejects.toThrow("TOKEN_IGNORED");
+  await expect(client.metadata(key())).rejects.toThrow("REMOTE_REJECTED");
+});
+
+test("a 400 answer is a refusal, not an outage", async () => {
+  penpot.failNext(400, JSON.stringify({ type: "validation", code: "params-validation" }), {
+    "content-type": "application/json",
+  });
+  await expect(client.metadata(key())).rejects.toThrow("REMOTE_REJECTED");
 });
 
 test("an unknown board is not found", async () => {
