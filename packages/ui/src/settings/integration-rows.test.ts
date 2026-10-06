@@ -128,4 +128,19 @@ describe("integration rows (screen 16)", () => {
     const r = integrationRow(s({ id: "github-issues", state: "connected", resumeAt: 1 }), opts);
     expect(r.badge).toEqual({ tone: "warn", label: "Limite GitHub atteinte, reprise à 14:32" });
   });
+  test("penpot with an ignored token asks to reconnect", () => {
+    const r = integrationRow(
+      s({
+        id: "penpot",
+        state: "error",
+        account: "Anonymous User · localhost:9010",
+        error: { code: "TOKEN_IGNORED", message: "penpot ignored the stored access token" },
+      }),
+      opts,
+    );
+    expect(r.action).toBe("reconnect");
+    expect(r.error).toBe(
+      "Penpot ignore le jeton (jetons d'accès désactivés sur l'instance) : reconnecte Penpot",
+    );
+  });
 });

@@ -291,6 +291,8 @@ export const frIntegrations = {
     figmaNotConnected: "Figma n'est pas connecté",
     penpotUnreachable: "Instance Penpot injoignable",
     penpotNotConnected: "Penpot n'est pas connecté",
+    penpotTokenIgnored:
+      "Penpot ignore le jeton (jetons d'accès désactivés sur l'instance) : reconnecte Penpot",
     gitMissing: "git introuvable",
     mcpServer: "Connexion impossible : vérifie l'adresse ou la commande du serveur.",
   },

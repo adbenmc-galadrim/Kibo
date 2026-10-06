@@ -51,6 +51,8 @@ export function connectProblem(mode: ConnectMode, e: unknown, address: string): 
   switch (failure.code) {
     case "REMOTE_REJECTED":
       return { tone: "error", ...t.refused, field: "token" };
+    case "TOKEN_IGNORED":
+      return { tone: "error", ...t.penpot.tokenIgnored, field: "token" };
     case "MCP_FAILED":
       return missingTools(failure.message);
     case "INVALID_INPUT":

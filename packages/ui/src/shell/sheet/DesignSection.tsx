@@ -1,4 +1,11 @@
-import { type DesignFrame, externalRefKey, KiboError, parseDesignUrl, type TicketView } from "@kibo/schema";
+import {
+  type DesignFrame,
+  designUrlProblem,
+  externalRefKey,
+  type FrameProblemKind,
+  frameProblemOf,
+  type TicketView,
+} from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
@@ -8,6 +15,7 @@ import { useEffect, useState } from "react";
 import { client } from "../../api";
 import { frDesign } from "../../i18n/fr-design";
 import { failureText } from "../../lib/remote-error";
+import { frameErrorText, linkErrorText } from "./design-errors";
 import { type DesignRef, designRefs, refProvider } from "./design-refs";
 
 const t = frDesign.sheet;
@@ -15,23 +23,11 @@ const t = frDesign.sheet;
 type Thumb =
   | { state: "loading" }
   | { state: "ready"; frame: DesignFrame }
-  | { state: "failed"; text: string };
+  | { state: "failed"; error: unknown };
 
-function frameError(e: unknown, kind: DesignRef["kind"]): string {
-  if (e instanceof KiboError && e.code === "NOT_CONNECTED") return t.notConnected;
-  if (e instanceof KiboError && e.code === "REMOTE_NOT_FOUND" && kind === "penpot_board")
-    return t.noThumbnail;
-  return t.unavailable;
-}
+const QUIET: ReadonlySet<FrameProblemKind> = new Set(["notConnected", "noThumbnail"]);
 
-function linkError(e: unknown): string {
-  if (e instanceof KiboError && e.code === "INVALID_INPUT") return t.invalid;
-  if (e instanceof KiboError && e.code === "NOT_CONNECTED") return t.notConnected;
-  if (e instanceof KiboError && e.code === "MCP_UNAVAILABLE") return frDesign.connect.figma.unreachable.title;
-  return failureText(e);
-}
-
-function useFrame(url: string, kind: DesignRef["kind"], refreshes: number): Thumb {
+function useFrame(url: string, refreshes: number): Thumb {
   const [thumb, setThumb] = useState<Thumb>({ state: "loading" });
   useEffect(() => {
     let live = true;
@@ -39,23 +35,37 @@ function useFrame(url: string, kind: DesignRef["kind"], refreshes: number): Thum
     client
       .rpc({ method: "getDesignFrame", url, refresh: refreshes > 0 })
       .then((frame) => live && setThumb({ state: "ready", frame }))
-      .catch((e: unknown) => live && setThumb({ state: "failed", text: frameError(e, kind) }));
+      .catch((error: unknown) => live && setThumb({ state: "failed", error }));
     return () => {
       live = false;
     };
-  }, [url, kind, refreshes]);
+  }, [url, refreshes]);
   return thumb;
 }
 
 const warning = "border-amber-500/50 text-amber-700 dark:text-amber-400";
 
-function Thumbnail({ thumb, name }: { thumb: Thumb; name: string }) {
-  if (thumb.state === "failed") return <p className="p-3 text-center text-muted-foreground">{thumb.text}</p>;
+function Failure({ error, node, onRetry }: { error: unknown; node: DesignRef; onRetry(): void }) {
+  const { kind } = frameProblemOf(error, refProvider(node));
+  return (
+    <div className="grid justify-items-center gap-2 p-3 text-center">
+      <p role={QUIET.has(kind) ? "status" : "alert"} className="text-muted-foreground">
+        {frameErrorText(error, node)}
+      </p>
+      <Button variant="outline" size="xs" onClick={onRetry}>
+        {frDesign.retry}
+      </Button>
+    </div>
+  );
+}
+
+function Thumbnail({ thumb, node, onRetry }: { thumb: Thumb; node: DesignRef; onRetry(): void }) {
+  if (thumb.state === "failed") return <Failure error={thumb.error} node={node} onRetry={onRetry} />;
   if (thumb.state === "loading") return <Skeleton className="size-full rounded-none" />;
   const { frame } = thumb;
   return (
     <>
-      <img src={frame.url} alt={name} crossOrigin="anonymous" className="size-full object-contain" />
+      <img src={frame.url} alt={node.name} crossOrigin="anonymous" className="size-full object-contain" />
       {(frame.stale || !frame.reachable) && (
         <div className="absolute top-1.5 left-1.5 flex gap-1">
           {frame.stale && (
@@ -85,7 +95,8 @@ function LinkedFrame({
 }) {
   const [refreshes, setRefreshes] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const thumb = useFrame(node.url, node.kind, refreshes);
+  const thumb = useFrame(node.url, refreshes);
+  const refresh = () => setRefreshes((n) => n + 1);
   const unlink = async () => {
     try {
       await client.rpc({
@@ -100,7 +111,7 @@ function LinkedFrame({
   return (
     <li className="grid gap-1.5">
       <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-md border bg-muted">
-        <Thumbnail thumb={thumb} name={node.name} />
+        <Thumbnail thumb={thumb} node={node} onRetry={refresh} />
       </div>
       <div className="flex min-w-0 items-center gap-1">
         <span className="truncate font-medium">{node.name}</span>
@@ -111,7 +122,7 @@ function LinkedFrame({
           aria-label={t.refresh}
           title={t.refresh}
           disabled={thumb.state === "loading"}
-          onClick={() => setRefreshes((n) => n + 1)}
+          onClick={refresh}
         >
           <RefreshCw aria-hidden />
         </Button>
@@ -134,8 +145,9 @@ export function DesignSection({ projectId, ticket }: { projectId: string; ticket
   const [error, setError] = useState<string | null>(null);
   const nodes = designRefs(ticket);
   const link = async () => {
-    if (parseDesignUrl(url) === null) {
-      setError(t.invalid);
+    const problem = designUrlProblem(url);
+    if (problem) {
+      setError(frDesign.urlProblems[problem]);
       return;
     }
     try {
@@ -143,7 +155,7 @@ export function DesignSection({ projectId, ticket }: { projectId: string; ticket
       setUrl("");
       setError(null);
     } catch (e) {
-      setError(linkError(e));
+      setError(linkErrorText(e, url));
     }
   };
   return (

@@ -252,7 +252,9 @@ test("a frame field is a URL input with its help, refused locally when it is not
   expect(screen.queryByRole("button", { name: "Fichiers du projet…" })).toBeNull();
   await user.type(input, "https://example.com");
   expect(input.getAttribute("aria-invalid")).toBe("true");
-  expect(screen.getByText(BAD_FRAME)).toBeTruthy();
+  expect(
+    screen.getByText("Lien Figma (figma.com) ou Penpot (design.penpot.app ou ton instance) attendu."),
+  ).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   expect((await screen.findByRole("alert")).textContent).toBe(BAD_FRAME);
   expect(screen.getAllByText(BAD_FRAME)).toHaveLength(1);

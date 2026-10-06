@@ -170,7 +170,7 @@ const show = async (shown: TicketView = ticket) => {
       onDeleted={() => {}}
     />,
   );
-  await screen.findByRole("alert");
+  await screen.findAllByRole("alert");
   if (shown.externalRefs.some((r) => r.kind === "github_pr")) await screen.findByText("3 min 12 s");
   if (shown.externalRefs.some((r) => r.kind === "figma_node")) await screen.findAllByText("Tickets / Arbre");
   return view;
@@ -308,6 +308,11 @@ test("the CI section opens the logs, filterable to errors", async () => {
 });
 
 const frameCalls = () => calls.filter((c) => c.method === "getDesignFrame");
+const mockups = () => {
+  const section = screen.getByRole("heading", { name: "Maquettes" }).closest("section");
+  if (!section) throw new Error("the mockups section");
+  return within(section);
+};
 
 test("Mockups: each frame is a thumbnail served by the daemon, with its badges", async () => {
   await show();
@@ -333,24 +338,42 @@ test("Mockups: a missing Penpot thumbnail and an unconnected provider are explai
     [FIGMA_URL]: () => {
       throw new KiboError("NOT_CONNECTED", "figma");
     },
-  };
-  await show();
-  expect(await screen.findByText("Connecte Figma ou Penpot dans Paramètres › Intégrations.")).toBeDefined();
-  expect(
-    await screen.findByText("Aucun aperçu : ouvre le fichier dans Penpot pour le générer."),
-  ).toBeDefined();
-  expect(screen.queryByRole("img", { name: "Accueil" })).toBeNull();
-});
-
-test("Mockups: any other failure says the preview is unavailable", async () => {
-  frames = {
-    [PENPOT_URL]: () => frameOf(PENPOT_URL),
-    [FIGMA_URL]: () => {
-      throw new KiboError("REMOTE_UNAVAILABLE", "down");
+    [PENPOT_URL]: () => {
+      throw new KiboError("REMOTE_NOT_RENDERED", "no thumbnail");
     },
   };
   await show();
-  expect(await screen.findByText("Aperçu indisponible")).toBeDefined();
+  const statuses = await mockups().findAllByRole("status");
+  expect(statuses.map((s) => s.textContent)).toEqual([
+    "Connecte Figma dans Paramètres › Intégrations.",
+    "Pas encore d'aperçu : ouvre ce fichier dans Penpot pour le générer, puis actualise.",
+  ]);
+  expect(screen.queryByRole("img", { name: "Accueil" })).toBeNull();
+});
+
+test("Mockups: any other failure names its cause and can be retried", async () => {
+  let down = true;
+  frames = {
+    [PENPOT_URL]: () => {
+      throw new KiboError("REMOTE_NOT_FOUND", "gone");
+    },
+    [FIGMA_URL]: () => {
+      if (down) throw new KiboError("REMOTE_UNAVAILABLE", "down");
+      return frameOf(FIGMA_URL);
+    },
+  };
+  await show();
+  const alerts = await mockups().findAllByRole("alert");
+  expect(alerts.map((a) => a.textContent)).toEqual([
+    "Figma ne répond pas. Vérifie ta connexion, ou que l'instance est démarrée.",
+    "Board introuvable : supprimé, ou le lien vise un autre fichier.",
+  ]);
+  const [retry] = mockups().getAllByRole("button", { name: "Réessayer" });
+  if (!retry) throw new Error("a retry button per failed frame");
+  down = false;
+  await userEvent.setup().click(retry);
+  expect(await screen.findByRole("img", { name: "Tickets / Arbre" })).toBeDefined();
+  expect(frameCalls()).toContainEqual({ method: "getDesignFrame", url: FIGMA_URL, refresh: true });
 });
 
 test("Mockups: Actualiser asks the daemon again with refresh", async () => {
@@ -372,9 +395,7 @@ test("Mockups: a Penpot URL is linked, an invalid one is refused without a call"
   await user.type(input, "https://example.com/x");
   await user.click(screen.getByRole("button", { name: "Lier un cadre" }));
   expect(
-    await screen.findByText(
-      "URL invalide : il faut un lien de cadre Figma (node-id) ou de board Penpot (board-id).",
-    ),
+    await screen.findByText("Lien Figma (figma.com) ou Penpot (design.penpot.app ou ton instance) attendu."),
   ).toBeDefined();
   expect(input.getAttribute("aria-invalid")).toBe("true");
   expect(calls.some((c) => c.method === "linkDesignFrame")).toBe(false);
