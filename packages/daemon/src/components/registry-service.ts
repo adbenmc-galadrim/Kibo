@@ -16,6 +16,7 @@ import {
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import type { BackendSource } from "./backends";
+import { builtinManifestOf } from "./builtin-manifests";
 import type { EventLog } from "./events";
 import type { ActiveVersion } from "./gate";
 import { findUsages, listComponents, type ProjectRef, withoutVersion } from "./registry-listing";
@@ -138,6 +139,8 @@ export function createRegistryService(deps: RegistryServiceDeps): RegistryServic
       return { manifest: s.manifest, code: backendCodeOf(s), trust: a.trust };
     },
     async manifestOf(ref) {
+      const builtin = builtinManifestOf(ref);
+      if (builtin) return builtin;
       const { id, version } = parsedRef(ref);
       const v = versionOf(id, version);
       return (deps.store.get(id, version) ?? (await deps.store.load(id, version, v.hash))).manifest;
