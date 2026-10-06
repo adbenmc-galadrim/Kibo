@@ -25,7 +25,7 @@ export function validateConfig(schema: ConfigSchema | undefined, config: Record<
   const fields = schema ?? {};
   const errors: string[] = [];
   for (const [key, value] of Object.entries(config)) {
-    const field = fields[key];
+    const field = Object.hasOwn(fields, key) ? fields[key] : undefined;
     const error = field ? fieldError(key, field, value) : `${key}: unknown key`;
     if (error) errors.push(error);
   }
