@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { KiboError } from "@kibo/schema";
 import { mockDesignFrame } from "./mock-design";
 
 const FIGMA_URL = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34&t=abc";
@@ -32,4 +33,14 @@ test("a known frame yields a data url, an unknown url NOT_CONNECTED, a bad url I
 test("a penpot board is served with its own png", () => {
   const frame = mockDesignFrame([{ url: PENPOT_URL, name: "Board", png: "AAAA" }], PENPOT_URL, true, 1);
   expect(frame).toMatchObject({ provider: "penpot", name: "Board", url: "data:image/png;base64,AAAA" });
+});
+
+test("a mock frame can fail with a chosen code", () => {
+  expect(() =>
+    mockDesignFrame([{ url: FIGMA_URL, name: "Tickets", error: "REMOTE_NOT_RENDERED" }], FIGMA_URL, false),
+  ).toThrow(KiboError);
+  expect(() =>
+    mockDesignFrame([{ url: FIGMA_URL, name: "Tickets", error: "TIMEOUT" }], FIGMA_URL, false),
+  ).toThrow(expect.objectContaining({ code: "TIMEOUT" }));
+  expect(mockDesignFrame([{ url: FIGMA_URL, name: "Tickets" }], FIGMA_URL, false).name).toBe("Tickets");
 });
