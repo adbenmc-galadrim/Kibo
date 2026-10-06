@@ -56,6 +56,7 @@ function harness(granted: Partial<GrantedPermissions>, quotas: Quotas = createQu
     },
     assets: async () => null,
     design: async () => null,
+    config: async () => null,
     presence: async () => [],
     sharing: async () => {
       throw new KiboError("INTERNAL", "unexpected");

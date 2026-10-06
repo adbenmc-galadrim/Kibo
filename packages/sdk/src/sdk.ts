@@ -239,6 +239,9 @@ export function createSdk(
     async action<T = unknown>(name: string, input?: unknown): Promise<T> {
       return call<T>({ kind: "action", name, input: input ?? null });
     },
+    async setConfig(patch) {
+      await call({ kind: "config.set", patch });
+    },
     notes: notesApi(guard, call),
     mcp: mcpApi(manifest, guard, call, ctx.config),
     presence: {

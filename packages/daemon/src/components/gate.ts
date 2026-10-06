@@ -50,6 +50,7 @@ export type GateHandlers = {
   mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
   assets(projectId: string, instanceId: string, call: AssetsCall): Promise<unknown>;
   design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
+  config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
   presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
 };
@@ -116,6 +117,8 @@ function dispatch(
       return h.assets(projectId, inst.id, call);
     case "design.frame":
       return h.design(projectId, inst.id, call);
+    case "config.set":
+      return h.config(projectId, inst, call.patch);
     default:
       return h.notes(projectId, call);
   }

@@ -1,8 +1,13 @@
 import { Database } from "bun:sqlite";
 import { expect } from "bun:test";
 import { type GrantedPermissions, type Instance, KiboError } from "@kibo/schema";
+import { LoroDoc } from "loro-crdt";
+import type { Docs } from "../docs";
+import type { FilesService } from "../files/service";
+import type { NotesService } from "../notes/service";
 import { createEventLog, ensureEventsTable } from "./events";
 import { createGate, type GateHandlers } from "./gate";
+import type { GateHandlersDeps } from "./gate-handlers";
 import { createQuotas, type Quotas } from "./quotas";
 
 export const granted: GrantedPermissions = {
@@ -41,6 +46,58 @@ export const instances: Record<string, Instance> = {
   },
 };
 
+export const unused = (): never => {
+  throw new Error("unused in this test");
+};
+export const stubDocs: Docs = {
+  workspace: new LoroDoc(),
+  project: unused,
+  projectIds: unused,
+  save: unused,
+  emit: unused,
+  run: unused,
+  trigger: unused,
+  replaceProject: unused,
+  addProject: unused,
+  removeProject: unused,
+  onProjectRemoved: unused,
+  imported: unused,
+  onProjectDoc: unused,
+  assertWritable: unused,
+  setWriteGuard: unused,
+  projectMeta: unused,
+  updateProjectMeta: unused,
+  identity: unused,
+  setIdentity: unused,
+};
+export const stubNotes: NotesService = {
+  info: unused,
+  setDir: unused,
+  handle: unused,
+  refresh: unused,
+  forget: unused,
+  close: unused,
+};
+export const stubFiles: FilesService = {
+  dirOf: unused,
+  info: unused,
+  setDir: unused,
+  list: unused,
+  remove: unused,
+  uploads: { begin: unused, append: unused, finish: unused, cancel: unused, close: unused },
+  url: unused,
+  open: unused,
+  close: unused,
+};
+export const stubHandlerDeps: GateHandlersDeps = {
+  docs: stubDocs,
+  notes: stubNotes,
+  files: stubFiles,
+  backends: unused,
+  runs: unused,
+  manifestOf: unused,
+};
+
 export const idleHandlers: GateHandlers = {
   list: async () => null,
   run: async () => null,
@@ -51,6 +108,7 @@ export const idleHandlers: GateHandlers = {
   mcp: async () => null,
   assets: async () => null,
   design: async () => null,
+  config: async () => null,
   presence: async () => [],
   sharing: async () => {
     throw new KiboError("INTERNAL", "unexpected");
@@ -100,6 +158,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       },
       design: async (_projectId, instanceId, call) => {
         handled.push(`design:${instanceId}:${call.kind}`);
+        return null;
+      },
+      config: async (_projectId, instance, patch) => {
+        handled.push(`config:${instance.id}:${Object.keys(patch).join(",")}`);
         return null;
       },
       presence: async () => {

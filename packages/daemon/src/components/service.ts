@@ -141,6 +141,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       files,
       backends: () => backends,
       runs: deps.runs,
+      manifestOf: (ref) => registry.manifestOf(ref),
       ...(deps.net && { net: deps.net }),
       ...(deps.integrations && { integrations: deps.integrations }),
       ...(deps.presence && { presence: deps.presence }),
