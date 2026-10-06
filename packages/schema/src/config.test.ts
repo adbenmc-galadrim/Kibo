@@ -14,3 +14,11 @@ test("a frame field holds a figma or penpot frame url", () => {
   expect(ConfigField.safeParse({ type: "number", frame: true }).success).toBe(false);
   expect(ConfigField.safeParse({ type: "string", frame: true }).success).toBe(true);
 });
+
+test("an inherited object property is an unknown key", () => {
+  const schema = { size: { type: "number", default: 1 } } as const;
+  expect(validateConfig(schema, { toString: 1, constructor: "x", size: 2 })).toEqual([
+    "toString: unknown key",
+    "constructor: unknown key",
+  ]);
+});
