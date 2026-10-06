@@ -1,4 +1,13 @@
-import type { CodeRequest, RpcRequest } from "@kibo/schema";
+import type { CodeRequest, ComponentCall, RpcRequest } from "@kibo/schema";
+
+const COMPONENT_WRITES: ReadonlySet<ComponentCall["kind"]> = new Set<ComponentCall["kind"]>([
+  "run",
+  "notes.write",
+  "notes.create",
+  "notes.rename",
+  "notes.remove",
+  "notes.attach",
+]);
 
 const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["method"]>([
   "writeFile",
@@ -16,7 +25,7 @@ const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["met
 ]);
 
 export const isProjectWrite = (req: RpcRequest): boolean =>
-  req.method === "command" || (req.method === "componentCall" && req.call.kind === "run");
+  req.method === "command" || (req.method === "componentCall" && COMPONENT_WRITES.has(req.call.kind));
 
 export const isCodeWrite = (req: CodeRequest): boolean => CODE_WRITES.has(req.method);
 
