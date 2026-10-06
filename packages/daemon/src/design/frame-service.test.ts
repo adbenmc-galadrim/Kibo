@@ -185,6 +185,23 @@ test("a penpot board of the configured instance is rendered, then served stale o
   });
 });
 
+test("a cached penpot frame whose thumbnail vanished is served stale", async () => {
+  const url = penpotUrl("http://localhost:9010");
+  penpot.render.mockResolvedValueOnce(render("m1"));
+  await service.frame("i1", url, false);
+  clock.now += DESIGN_FRESH_MS + 1;
+  penpot.version.mockResolvedValueOnce(null);
+  penpot.render.mockRejectedValueOnce(new KiboError("REMOTE_NOT_RENDERED", "gone"));
+  expect(await service.frame("i1", url, false)).toMatchObject({
+    name: "Tickets",
+    stale: true,
+    reachable: false,
+  });
+  penpot.version.mockResolvedValueOnce(null);
+  penpot.render.mockRejectedValueOnce(new KiboError("REMOTE_NOT_FOUND", "deleted"));
+  await expect(service.frame("i1", url, true)).rejects.toThrow("REMOTE_NOT_FOUND");
+});
+
 test("the shell instance may hold 256 tokens, a widget 64", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
   const first = await service.frame("i1", FIGMA_URL, false);
