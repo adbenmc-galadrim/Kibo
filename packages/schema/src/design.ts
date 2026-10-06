@@ -28,6 +28,7 @@ export const MAX_DESIGN_FRAME_BYTES = 4 * 1024 * 1024;
 export const MAX_DESIGN_CACHE_BYTES = 200 * 1024 * 1024;
 export const DESIGN_CACHE_IDLE_MS = 90 * 86_400_000;
 export const DESIGN_TOKENS_SHELL = 256;
+export const FRAME_LIST_MAX = 20;
 export const FrameMime = z.enum(["image/png", "image/webp", "image/jpeg"]);
 export type FrameMime = z.infer<typeof FrameMime>;
 type FrameExtension = "png" | "webp" | "jpg";
