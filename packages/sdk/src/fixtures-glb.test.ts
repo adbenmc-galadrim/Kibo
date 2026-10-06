@@ -16,6 +16,10 @@ test("the sample glb is a valid binary gltf holding one orange cube", async () =
   expect(meshes).toHaveLength(1);
   const [cube] = meshes;
   expect(cube?.geometry.index?.count).toBe(36);
-  expect(cube?.geometry.getAttribute("position").count).toBe(8);
+  expect(cube?.geometry.getAttribute("position").count).toBe(24);
+  const normal = cube?.geometry.getAttribute("normal");
+  expect(normal?.count).toBe(24);
+  const up = [0, 1, 2, 3].map((i) => [normal?.getX(i), normal?.getY(i), normal?.getZ(i)]);
+  expect(up.every(([x, y, z]) => x === 0 && y === 1 && z === 0)).toBe(true);
   expect(cube?.material).toBeInstanceOf(MeshStandardMaterial);
 });

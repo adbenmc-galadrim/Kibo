@@ -33,12 +33,22 @@ export const LIGHTING_DEFAULTS: LightingSettings = {
   environment: true,
 };
 export const INTENSITY_RANGE = { min: 0.25, max: 2 } as const;
-export type PresetLevels = { hemisphere: number; key: number; fill: number; rim: number };
-export const PRESET_LEVELS: Record<LightingPreset, PresetLevels> = {
-  soft: { hemisphere: 1, key: 0.9, fill: 0.35, rim: 0 },
-  studio: { hemisphere: 0.6, key: 1.3, fill: 0.6, rim: 0.5 },
-  contrast: { hemisphere: 0.25, key: 2, fill: 0.15, rim: 0 },
+export type PresetLevels = {
+  hemisphere: number;
+  key: number;
+  fill: number;
+  rim: number;
+  environment: number;
 };
+export const PRESET_LEVELS: Record<LightingPreset, PresetLevels> = {
+  soft: { hemisphere: 1, key: 0.9, fill: 0.35, rim: 0, environment: 0.2 },
+  studio: { hemisphere: 0.6, key: 1.3, fill: 0.6, rim: 0.5, environment: 0.25 },
+  contrast: { hemisphere: 0.25, key: 2, fill: 0.15, rim: 0, environment: 0.1 },
+};
+
+export const environmentIntensity = (s: LightingSettings): number =>
+  PRESET_LEVELS[s.preset].environment * s.intensity;
+
 const GROUND_SIZE = 20;
 const SHADOW_MAP = 1024;
 
