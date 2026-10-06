@@ -14,7 +14,7 @@ const native = {
   WritableStream: globalThis.WritableStream,
 };
 
-GlobalRegistrator.register();
+GlobalRegistrator.register({ settings: { navigation: { disableChildPageNavigation: true } } });
 Object.assign(globalThis, native);
 
 const { cleanup, configure } = await import("@testing-library/react");

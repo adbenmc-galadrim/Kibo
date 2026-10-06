@@ -53,7 +53,20 @@ const neutralised = (target: Element, type: "click" | "auxclick" = "click", butt
   return prevented;
 };
 
-test("a click on an outgoing https link is intercepted and sent to the opener; other schemes are neutralised", () => {
+const recordRequests = () => {
+  const fetchSettings = Object(Reflect.get(Object(Reflect.get(Object(happy), "settings")), "fetch"));
+  const previous: unknown = Reflect.get(fetchSettings, "interceptor");
+  const urls: string[] = [];
+  const record = async ({ request }: { request: Request }) => {
+    urls.push(request.url);
+    return new Response("", { status: 204 });
+  };
+  Reflect.set(fetchSettings, "interceptor", { beforeAsyncRequest: record });
+  return { urls, restore: () => Reflect.set(fetchSettings, "interceptor", previous) };
+};
+
+test("a click on an outgoing https link is intercepted and sent to the opener; other schemes are neutralised", async () => {
+  const requests = recordRequests();
   const open = mock((_url: string) => Promise.resolve());
   const off = installExternalLinks(document, open);
   const https = anchor("https://kibo.dev/docs");
@@ -64,7 +77,13 @@ test("a click on an outgoing https link is intercepted and sent to the opener; o
   }
   expect(open).toHaveBeenCalledTimes(1);
   off();
-  expect(neutralised(https.inner)).toBe(false);
+  try {
+    expect(neutralised(https.inner)).toBe(false);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(requests.urls).toEqual([]);
+  } finally {
+    requests.restore();
+  }
   expect(open).toHaveBeenCalledTimes(1);
 });
 
