@@ -24,12 +24,15 @@ import {
   type FormField,
   fieldKind,
   fieldLabel,
+  isStringList,
+  normalizedValues,
   numberBounds,
   parseFieldInput,
   withFieldValue,
 } from "../lib/config-form";
 import { AssetField } from "./AssetField";
 import { FrameField, isBadFrame } from "./FrameField";
+import { FrameListField, frameListProblem } from "./FrameListField";
 
 type Props = { projectId: string; instance: Instance; title: string; schema: ConfigSchema; onClose(): void };
 type FieldProps = {
@@ -46,12 +49,19 @@ type FieldProps = {
 const missingFile = (fields: FormField[], values: Record<string, FieldValue>): FormField | undefined =>
   fields.find((f) => fieldKind(f.field) === "asset" && !f.field.nullable && !values[f.key]);
 
-const badFrame = (fields: FormField[], values: Record<string, FieldValue>): FormField | undefined =>
-  fields.find((f) => fieldKind(f.field) === "frame" && isBadFrame(values[f.key]));
+function frameError(fields: FormField[], values: Record<string, FieldValue>): string | null {
+  for (const f of fields) {
+    const kind = fieldKind(f.field);
+    if (kind === "frame" && isBadFrame(values[f.key])) return frDesign.field.invalid;
+    const listProblem = kind === "frames" ? frameListProblem(values[f.key]) : null;
+    if (listProblem) return listProblem;
+  }
+  return null;
+}
 
 const hasNoValueToggle = (f: FormField): boolean => {
   const kind = fieldKind(f.field);
-  return f.field.nullable === true && kind !== "asset" && kind !== "frame";
+  return f.field.nullable === true && kind !== "asset" && kind !== "frame" && kind !== "frames";
 };
 
 const valueWhenFilled = (key: string, field: ConfigField): FieldValue =>
@@ -69,6 +79,16 @@ function FieldInput({ id, projectId, field, value, disabled, refreshKey, frameHi
         kind={field.field.asset}
         value={typeof value === "string" ? value : null}
         nullable={field.field.nullable === true}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    );
+  if (kind === "frames")
+    return (
+      <FrameListField
+        id={id}
+        label={label}
+        value={isStringList(value) ? value : []}
         disabled={disabled}
         onChange={onChange}
       />
@@ -169,18 +189,20 @@ export function InstanceSettingsDialog({ projectId, instance, title, schema, onC
       setError(t.fileRequired(fieldLabel(missing.key, missing.field)));
       return;
     }
-    if (badFrame(fields, values)) {
-      setError(frDesign.field.invalid);
+    const badFrame = frameError(fields, values);
+    if (badFrame) {
+      setError(badFrame);
       return;
     }
-    const errors = validateConfig(schema, values);
+    const ready = normalizedValues(fields, values);
+    const errors = validateConfig(schema, ready);
     if (errors.length > 0) {
       setError(t.invalid(errors));
       return;
     }
     setError(null);
     const config = fields.reduce(
-      (acc, f) => withFieldValue(acc, f.key, values[f.key] ?? null),
+      (acc, f) => withFieldValue(acc, f.key, ready[f.key] ?? null),
       instance.config,
     );
     try {

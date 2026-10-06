@@ -25,4 +25,12 @@ export const frWidgets = {
   failed: "Impossible d'enregistrer les réglages.",
   fieldLabel: (key: string) => FIELDS[key] ?? key,
   valueLabel: (value: string | number | boolean) => VALUES[String(value)] ?? String(value),
+  frames: {
+    add: "Ajouter un cadre",
+    item: (n: number) => `Cadre ${n}`,
+    up: (n: number) => `Monter le cadre ${n}`,
+    down: (n: number) => `Descendre le cadre ${n}`,
+    remove: (n: number) => `Retirer le cadre ${n}`,
+    empty: "Aucun cadre. Ajoute l'URL d'un cadre Figma ou d'un board Penpot.",
+  },
 };
