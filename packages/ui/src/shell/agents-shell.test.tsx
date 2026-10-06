@@ -62,6 +62,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () => ({
+  onWrite: () => () => {},
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);

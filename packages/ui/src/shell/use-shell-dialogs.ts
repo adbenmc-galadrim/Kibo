@@ -3,6 +3,12 @@ import { type DialogsState, NO_DIALOG } from "./ShellDialogs";
 
 export type PaletteRequest = { newTab: boolean };
 
+export function anyDialogOpen(dialogs: DialogsState, palette: PaletteRequest | null): boolean {
+  const { newProjectFocus: _focus, newPageParent, ...shown } = dialogs;
+  if (palette !== null || newPageParent !== undefined) return true;
+  return Object.values(shown).some((v) => v !== null && v !== false);
+}
+
 export function useShellDialogs() {
   const [dialogs, setDialogs] = useState<DialogsState>(NO_DIALOG);
   const [focusRun, setFocusRun] = useState<string | null>(null);
