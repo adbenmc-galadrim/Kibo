@@ -89,6 +89,8 @@ Pièges :
   les boards de la page pour vérifier qu'ils sont bien enregistrés ; redessiner ceux qui manquent.
 - Fichier en stockage page par page (flags `enable-feature-fdata-objects-map` et `enable-feature-fdata-pointer-map` de `PENPOT_FLAGS`,
   `docker-compose.yaml`) : une modification ne réécrit plus tout le fichier. Ne pas retirer ces flags, le fichier ne s'ouvrirait plus.
+- Jetons d'accès (`enable-access-tokens` dans `PENPOT_FLAGS`, frontend et backend) : sans ce flag Penpot ignore tout jeton et répond un
+  profil anonyme ; Kibo refuse alors la connexion (« Penpot a ignoré ce jeton »).
 - Persistance : un job annoncé terminé peut n'avoir rien enregistré (onglet figé ou backend redémarré : page 19 entière perdue une fois).
   Dessiner par lots de 2 ou 3 écrans (`S.job([127, "127b"])`), puis comparer le nombre de formes côté serveur (`get-page` depuis l'onglet,
   `fetch("/api/main/methods/get-page?file-id=…&page-id=…&features=…", { credentials: "include" })`) au nombre local
