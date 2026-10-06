@@ -11,6 +11,9 @@
       "path": "../packages/daemon"
     },
     {
+      "path": "../packages/sdk"
+    },
+    {
       "path": "../packages/sync-server"
     },
     {
