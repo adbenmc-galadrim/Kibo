@@ -26,7 +26,7 @@ import { useState } from "react";
 import { buildTree, mineOnly, type TicketNode, withAncestors } from "./build-tree";
 import { EMPTY_QUERY, filterTree, isActive } from "./filter-tickets";
 import { fr } from "./fr";
-import { ASSIGNEE_CELL, COLUMNS, TicketRow } from "./TicketRow";
+import { ASSIGNEE_CELL, COLUMNS, TicketRow, WIDE_CELL } from "./TicketRow";
 import { TicketsEmpty, TicketsNoMatch, TicketsSkeleton } from "./TicketsEmpty";
 import { TicketsToolbar } from "./TicketsToolbar";
 import { descendantCount, ticketMenuEntries } from "./ticket-menu";
@@ -126,7 +126,7 @@ export function TicketsTree() {
   );
 
   return (
-    <section aria-label={fr.title} className="flex h-full flex-col">
+    <section aria-label={fr.title} className="@container flex h-full flex-col">
       <header className="flex h-10 items-center justify-between border-b px-3">
         <span className="flex items-center gap-2 text-sm font-medium">
           {mine ? fr.mineCount(visible.length, tickets.length) : fr.title}
@@ -153,12 +153,12 @@ export function TicketsTree() {
           {shown?.size === 0 ? (
             <TicketsNoMatch onClear={() => setQuery(EMPTY_QUERY)} />
           ) : (
-            <div className="@container min-h-0 flex-1 overflow-auto px-1 py-2">
+            <div className="min-h-0 flex-1 overflow-auto px-1 py-2">
               <div className={cn(COLUMNS, "h-8 text-2xs whitespace-nowrap text-muted-foreground")}>
                 <span className="pl-6">{fr.columns.ticket}</span>
-                <span>{fr.columns.status}</span>
+                <span className={WIDE_CELL}>{fr.columns.status}</span>
                 <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>
-                <span>{fr.columns.progress}</span>
+                <span className={WIDE_CELL}>{fr.columns.progress}</span>
                 <span />
               </div>
               <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
