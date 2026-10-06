@@ -331,6 +331,8 @@ Décisions écrites dans la spec de conception **§21** (2026-10-05), avant le p
 - **§11** : faux Figma (`fake-figma.ts`) et faux Penpot (`fake-penpot.ts`) ; `design.spec.ts` sur 4453–4454 ; faux dérivés : Figma = port + 3000, Penpot = port + 4000.
 - **§13** : Figma distant par OAuth reste hors périmètre ; le rendu Penpot par l'exportateur (session navigateur) aussi : la phase 15 sert la vignette du board.
 
+**Phase 16** (spec de conception §22.8, demande d'Adam « Maquette indisponible ») : le profil anonyme de Penpot (jetons d'accès désactivés sur l'instance : `id` nul) est refusé à la connexion et repéré sur un compte déjà enregistré (`TOKEN_IGNORED`, action « Reconnecter » sur l'écran 16) ; `get-page` n'est validé que pour le board visé (`width`/`height` nullables : les formes `path` de Penpot 2.18 n'ont pas de dimensions) ; `400` ⇒ `REMOTE_REJECTED` ; un board sans vignette ⇒ `REMOTE_NOT_RENDERED` ; le dialogue « Connecter Penpot » explique les trois étapes (jeton, adresse, flag `enable-access-tokens` en auto-hébergé) et lie la documentation Penpot ; les refus d'URL et les erreurs de cadre sont traduits par cause (`designUrlProblem`, `frameProblemOf`). Le faux Penpot (§11) gagne le mode « jetons ignorés » et une page réaliste.
+
 ## Comptes et secrets réels
 
 Aucun pour la CI. Optionnel, pour une vérification manuelle : un dépôt GitHub de test avec un Project v2 et un jeton (portées `repo`, `project`), l'application Figma desktop avec le serveur Dev Mode activé (compte Figma avec siège Dev ou Full) ; phase 15 : un jeton personnel Figma (portées `current_user:read`, `file_content:read`) et un jeton d'accès de l'instance Penpot d'Adam (`http://localhost:9010`), pour le contrôle manuel du jalon seulement.
