@@ -12,5 +12,5 @@ export const frProblems: Record<FrameProblemKind, (ctx: FrameProblemContext) => 
   unreachable: ({ name }) => `${name} ne répond pas. Vérifie ta connexion, ou que l'instance est démarrée.`,
   rateLimited: () => "Limite de requêtes atteinte. Réessaie dans une minute.",
   mcpClosed: () => "Ouvre l'application Figma (serveur MCP), puis actualise.",
-  unavailable: ({ code }) => `Maquette indisponible (${code}).`,
+  unavailable: ({ code }) => (code ? `Maquette indisponible (${code}).` : "Maquette indisponible."),
 };

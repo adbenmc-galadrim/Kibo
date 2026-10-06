@@ -67,7 +67,14 @@ const KEY_PANS: Record<string, Point> = {
   ArrowDown: { x: 0, y: -KEY_PAN },
 };
 
-export function keyAction(e: { key: string; shiftKey: boolean }): ZoomAction | null {
+export function keyAction(e: {
+  key: string;
+  shiftKey: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+}): ZoomAction | null {
+  if (e.ctrlKey || e.metaKey || e.altKey) return null;
   if (e.key === "+" || e.key === "=") return { kind: "zoom", factor: ZOOM_STEP };
   if (e.key === "-") return { kind: "zoom", factor: 1 / ZOOM_STEP };
   if (e.key === "0") return { kind: "fit" };

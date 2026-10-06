@@ -102,6 +102,7 @@ export function FrameViewer({ frame, fit }: Props) {
   };
   const onPointerUp = () => setDragFrom(null);
   const onDoubleClick = (e: MouseEvent<HTMLFieldSetElement>) => {
+    if (e.target instanceof Element && e.target.closest('[role="toolbar"]')) return;
     const focus = focusIn(box.current, e);
     setZoom((z) => clampPan(doubleClick(z, focus), geometry.current.fitted, geometry.current.box));
   };

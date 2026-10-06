@@ -107,3 +107,12 @@ test("wheel, keys, double click and the percent label", () => {
   expect(percent(1)).toBe("100 %");
   expect(percent(1.563)).toBe("156 %");
 });
+
+test("browser and system shortcuts are left alone", () => {
+  for (const key of ["+", "=", "-", "0"]) {
+    expect(keyAction({ key, shiftKey: false, ctrlKey: true })).toBeNull();
+    expect(keyAction({ key, shiftKey: false, metaKey: true })).toBeNull();
+    expect(keyAction({ key, shiftKey: false, altKey: true })).toBeNull();
+  }
+  expect(keyAction({ key: "ArrowLeft", shiftKey: true, metaKey: true })).toBeNull();
+});
