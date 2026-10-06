@@ -80,9 +80,6 @@ test("with a renderer, setup runs once, a frame is drawn, and unmount disposes e
       />,
     ),
   );
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 30));
-  });
   expect(view.getByRole("img", { name: "Cube" })).toBeTruthy();
   expect(setups).toBe(1);
   expect(calls.render).toBeGreaterThanOrEqual(1);
@@ -90,7 +87,8 @@ test("with a renderer, setup runs once, a frame is drawn, and unmount disposes e
   expect(calls.clears).toEqual([ZINC_FALLBACK.light.background]);
   document.documentElement.classList.add("dark");
   try {
-    await waitFor(() => expect(calls.clears[1]).toBe(ZINC_FALLBACK.dark.background));
+    await wait(0);
+    expect(calls.clears).toEqual([ZINC_FALLBACK.light.background, ZINC_FALLBACK.dark.background]);
   } finally {
     document.documentElement.classList.remove("dark");
   }
