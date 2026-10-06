@@ -16,6 +16,7 @@ export const ConfigField = z
     max: z.number().optional(),
     asset: ProjectAssetKind.optional(),
     frame: z.literal(true).optional(),
+    list: z.literal(true).optional(),
   })
   .strict()
   .refine(
@@ -26,6 +27,7 @@ export const ConfigField = z
     (f) => f.frame === undefined || f.type === undefined || f.type === "string",
     "a frame field is a string",
   )
+  .refine((f) => f.list === undefined || f.frame === true, "a list field is a frame field")
   .refine((f) => f.min === undefined || f.max === undefined || f.min <= f.max, "min exceeds max");
 export type ConfigField = z.infer<typeof ConfigField>;
 
