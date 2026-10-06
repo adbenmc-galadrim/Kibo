@@ -169,11 +169,13 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   expect(location.hash).toBe("#/agents");
   expect(await screen.findByRole("heading", { level: 1, name: "Agents" })).toBeTruthy();
   const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
-  expect(bar.getByRole("tab", { name: "Agents" }).getAttribute("aria-selected")).toBe("true");
+  expect(bar.getByRole("tab", { name: "Agents · aperçu" }).getAttribute("aria-selected")).toBe("true");
   await user.click(screen.getByRole("button", { name: "Files d'attente" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Files d'attente" })).toBeTruthy();
-  expect(bar.getByRole("tab", { name: "Files d'attente" }).getAttribute("aria-selected")).toBe("true");
-  expect(bar.queryByRole("tab", { name: "Agents" })).toBeNull();
+  expect(bar.getByRole("tab", { name: "Files d'attente · aperçu" }).getAttribute("aria-selected")).toBe(
+    "true",
+  );
+  expect(bar.queryByRole("tab", { name: /^Agents/ })).toBeNull();
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
   expect(crumbs.getByText("Agents")).toBeTruthy();
   expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");

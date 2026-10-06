@@ -8,7 +8,7 @@ export type Host = {
   openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;
   openView(componentId: string): void;
-  openTarget(target: TabTarget, opts?: { newTab?: boolean }): void;
+  openTarget(target: TabTarget, opts?: { newTab?: boolean; keep?: boolean }): void;
 };
 const HostContext = createContext<Host | null>(null);
 

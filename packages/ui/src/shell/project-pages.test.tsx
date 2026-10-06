@@ -39,7 +39,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
   sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
 });
 const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
-  const onOpen = mock((_t: unknown, _newTab: boolean) => {});
+  const onOpen = mock((_t: unknown, _newTab: boolean, _keep?: boolean) => {});
   const onNewPage = mock((_parentId: string | null) => {});
   const onRenamePage = mock((_p: Page) => {});
   const onDeletePage = mock((_p: Page) => {});
@@ -68,6 +68,15 @@ const command = (req: RpcRequest | undefined) => (req?.method === "command" ? re
 beforeEach(() => {
   calls.length = 0;
   answer = () => null;
+});
+
+test("a click opens a page as a preview, a double click opens it kept", async () => {
+  const { user, onOpen } = show();
+  const kanban = screen.getByRole("button", { name: "Kanban" });
+  await user.click(kanban);
+  expect(onOpen).toHaveBeenLastCalledWith({ kind: "page", projectId: "p1", pageId: "kanban" }, false);
+  await user.dblClick(kanban);
+  expect(onOpen).toHaveBeenLastCalledWith({ kind: "page", projectId: "p1", pageId: "kanban" }, false, true);
 });
 
 test("right click on a page opens its menu; the entries call back or send movePage", async () => {

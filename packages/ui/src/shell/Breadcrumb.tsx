@@ -57,7 +57,7 @@ type ItemProps = {
   current: boolean;
   first: boolean;
   heading: boolean;
-  onOpen(t: TabTarget): void;
+  onOpen(t: TabTarget, keep?: boolean): void;
 };
 
 function CrumbItem({ crumb, current, first, heading, onOpen }: ItemProps) {
@@ -67,7 +67,12 @@ function CrumbItem({ crumb, current, first, heading, onOpen }: ItemProps) {
     <li className="flex min-w-0 items-center gap-1.5">
       {!first && <ChevronRight aria-hidden className="size-3.5 shrink-0" />}
       {!current && target ? (
-        <button type="button" className={LINK} onClick={() => onOpen(target)}>
+        <button
+          type="button"
+          className={LINK}
+          onClick={() => onOpen(target)}
+          onDoubleClick={() => onOpen(target, true)}
+        >
           {label}
         </button>
       ) : (
@@ -82,7 +87,7 @@ function CrumbItem({ crumb, current, first, heading, onOpen }: ItemProps) {
   );
 }
 
-type Props = { crumbs: Crumb[]; heading?: boolean; onOpen(target: TabTarget): void };
+type Props = { crumbs: Crumb[]; heading?: boolean; onOpen(target: TabTarget, keep?: boolean): void };
 
 export function Breadcrumb({ crumbs, heading = false, onOpen }: Props) {
   return (

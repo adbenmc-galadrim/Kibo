@@ -35,7 +35,7 @@ type Props = {
   onNewTicket: () => void;
   onShare: () => void;
   onOpenRun(runId: string): void;
-  onOpen(target: TabTarget): void;
+  onOpen(target: TabTarget, keep?: boolean): void;
   onHelp(key: HelpDialog): void;
 };
 

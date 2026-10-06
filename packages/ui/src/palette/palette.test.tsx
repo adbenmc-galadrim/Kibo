@@ -150,6 +150,28 @@ test("Enter opens a target, ⌘Enter opens the ticket sheet, Tab cycles the filt
   expect(within(dialog).getByText("Tickets", { selector: "[data-filter]" })).toBeTruthy();
 });
 
+test("⌘Enter on a page opens it kept, Enter opens it as a preview", async () => {
+  const opened: unknown[] = [];
+  render(
+    <CommandPalette
+      open
+      onOpenChange={() => {}}
+      newTab={false}
+      context={context}
+      onOpenTarget={(t, newTab, keep) => opened.push({ t, newTab, keep })}
+      onOpenTicketSheet={() => {}}
+      onAction={() => {}}
+    />,
+  );
+  const input = within(screen.getByRole("dialog", { name: "Palette de commandes" })).getByRole("combobox");
+  await userEvent.type(input, "kanban");
+  await userEvent.keyboard("{Meta>}{Enter}{/Meta}");
+  await userEvent.keyboard("{Enter}");
+  const kanban = opened[0];
+  expect(kanban).toMatchObject({ newTab: false, keep: true });
+  expect(opened[1]).toEqual({ ...(kanban as object), keep: undefined });
+});
+
 function setPlatform(platform: string): () => void {
   const original = navigator.platform;
   Object.defineProperty(navigator, "platform", { value: platform, configurable: true });

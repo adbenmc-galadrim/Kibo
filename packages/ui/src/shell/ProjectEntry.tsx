@@ -9,6 +9,7 @@ import { ProjectPages } from "./ProjectPages";
 export type Link = (target: TabTarget | null) => {
   onClick(e: MouseEvent): void;
   onAuxClick(e: MouseEvent): void;
+  onDoubleClick(e: MouseEvent): void;
 };
 
 export type ProjectEntryProps = {
@@ -21,7 +22,7 @@ export type ProjectEntryProps = {
   current: boolean;
   trailing: ReactNode;
   link: Link;
-  onOpen(target: TabTarget, newTab: boolean): void;
+  onOpen(target: TabTarget, newTab: boolean, keep?: boolean): void;
   onNewPage(parentId: string | null): void;
   onRenamePage(page: Page): void;
   onDeletePage(page: Page): void;
