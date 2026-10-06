@@ -363,12 +363,17 @@ describe("service", () => {
 describe("tabs", () => {
   const target = { kind: "project" as const, projectId: "p1" };
   const state = {
-    tabs: [{ id: "t1", target, pinned: true }],
+    tabs: [{ id: "t1", target, pinned: true, preview: false }],
     activeId: "t1",
     recents: [target],
   };
   const tooManyTabs = {
-    tabs: Array.from({ length: MAX_TABS + 1 }, (_, i) => ({ id: `t${i}`, target, pinned: false })),
+    tabs: Array.from({ length: MAX_TABS + 1 }, (_, i) => ({
+      id: `t${i}`,
+      target,
+      pinned: false,
+      preview: false,
+    })),
     activeId: null,
     recents: [],
   };

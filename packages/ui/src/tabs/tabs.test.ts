@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { EMPTY_TABS, type TabsState, type TabTarget } from "@kibo/schema";
-import { activeTarget, closedTargets, tabsReducer } from "./tabs-model";
+import { EMPTY_TABS, salvageTabsState, TabsState, type TabTarget } from "@kibo/schema";
+import { activeTarget, closedTargets, singlePreview, tabsReducer } from "./tabs-model";
 import { hashToTarget, targetToHash } from "./target-hash";
 import { shortcutFor } from "./use-tab-shortcuts";
 
@@ -82,11 +82,11 @@ describe("tabsReducer", () => {
     expect(tabsReducer(out, { type: "closeProject", projectId: "nope" })).toBe(out);
   });
 
-  test("a plain open replaces the active tab, a new-tab open appends, a known target is focused", () => {
+  test("a plain open replaces the preview tab, a new-tab open appends, a known target is focused", () => {
     let s = open(EMPTY_TABS, page("a"), "t1");
     expect(s.tabs.map((t) => t.id)).toEqual(["t1"]);
     s = open(s, page("b"), "t2");
-    expect(s.tabs).toEqual([{ id: "t1", target: page("b"), pinned: false }]);
+    expect(s.tabs).toEqual([{ id: "t1", target: page("b"), pinned: false, preview: true }]);
     s = open(s, page("c"), "t3", true);
     expect(s.activeId).toBe("t3");
     s = open(s, page("b"), "t4", true);
@@ -102,7 +102,10 @@ describe("tabsReducer", () => {
     expect(s.tabs.map((t) => t.id)).toEqual(["t1", "t2"]);
     s = tabsReducer(s, { type: "activate", id: null });
     s = open(s, page("c"), "t3");
-    expect(s.tabs.map((t) => t.id)).toEqual(["t1", "t2", "t3"]);
+    expect(s.tabs.map((t) => [t.id, t.target])).toEqual([
+      ["t1", page("a")],
+      ["t2", page("c")],
+    ]);
   });
 
   test("closing focuses the right neighbour, then the left, then home; pinned tabs resist", () => {
@@ -152,6 +155,69 @@ describe("tabsReducer", () => {
   });
 });
 
+describe("preview tabs", () => {
+  test("a stored state without preview is read as permanent tabs, two previews are reduced to the last", () => {
+    const raw = { tabs: [{ id: "t1", target: page("a"), pinned: false }], activeId: "t1", recents: [] };
+    expect(TabsState.parse(raw).tabs[0]?.preview).toBe(false);
+    expect(salvageTabsState(raw)?.tabs[0]?.preview).toBe(false);
+    const two = [
+      { id: "t1", target: page("a"), pinned: false, preview: true },
+      { id: "t2", target: page("b"), pinned: false, preview: true },
+    ];
+    expect(singlePreview(two).map((t) => t.preview)).toEqual([false, true]);
+    expect(salvageTabsState({ tabs: two, activeId: "t1", recents: [] })?.tabs.map((t) => t.preview)).toEqual([
+      false,
+      true,
+    ]);
+  });
+
+  test("a plain open uses the single preview tab, a kept open or a new tab is permanent", () => {
+    let s = open(EMPTY_TABS, page("a"), "t1");
+    expect(s.tabs).toEqual([{ id: "t1", target: page("a"), pinned: false, preview: true }]);
+    s = open(s, page("b"), "t2");
+    expect(s.tabs.map((t) => [t.id, t.preview])).toEqual([["t1", true]]);
+    expect(activeTarget(s)).toEqual(page("b"));
+    s = tabsReducer(s, { type: "keep", id: "t1" });
+    expect(s.tabs[0]?.preview).toBe(false);
+    s = open(s, page("c"), "t3");
+    expect(s.tabs.map((t) => [t.target, t.preview])).toEqual([
+      [page("b"), false],
+      [page("c"), true],
+    ]);
+    s = open(s, page("d"), "t4", true);
+    expect(s.tabs.map((t) => t.preview)).toEqual([false, true, false]);
+    expect(s.activeId).toBe("t4");
+    s = tabsReducer(s, { type: "open", target: page("e"), newTab: false, id: "t5", keep: true });
+    expect(s.tabs.map((t) => [t.target, t.preview])).toEqual([
+      [page("b"), false],
+      [page("e"), false],
+      [page("d"), false],
+    ]);
+  });
+
+  test("an open target is activated and kept if asked; pin, duplicate and move make permanent", () => {
+    let s = open(EMPTY_TABS, page("a"), "t1");
+    s = open(s, page("a"), "t2");
+    expect(s.tabs).toHaveLength(1);
+    expect(s.tabs[0]?.preview).toBe(true);
+    s = tabsReducer(s, { type: "open", target: page("a"), newTab: false, id: "t3", keep: true });
+    expect(s.tabs).toEqual([{ id: "t1", target: page("a"), pinned: false, preview: false }]);
+    s = open(s, page("b"), "t4");
+    s = tabsReducer(s, { type: "pin", id: "t4", pinned: true });
+    expect(s.tabs.find((t) => t.id === "t4")).toMatchObject({ pinned: true, preview: false });
+    s = open(s, page("c"), "t5");
+    s = tabsReducer(s, { type: "duplicate", id: "t5", newId: "t6" });
+    expect(s.tabs.filter((t) => t.preview)).toHaveLength(0);
+    s = open(s, page("d"), "t7");
+    s = tabsReducer(s, { type: "move", id: "t7", toIndex: 1 });
+    expect(s.tabs.find((t) => t.id === "t7")?.preview).toBe(false);
+    const allPreview = { ...s, tabs: s.tabs.map((t) => ({ ...t, preview: true })) };
+    expect(tabsReducer(s, { type: "replace", state: allPreview }).tabs.filter((t) => t.preview)).toHaveLength(
+      1,
+    );
+  });
+});
+
 test("shortcuts use ⌘ on macOS and Ctrl elsewhere", () => {
   const key = (k: string, mods: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }> = {}) => ({
     key: k,
@@ -173,9 +239,9 @@ test("shortcuts use ⌘ on macOS and Ctrl elsewhere", () => {
 test("closedTargets lists the targets that left the state, pinned tabs excluded by the reducer", () => {
   const state: TabsState = {
     tabs: [
-      { id: "a", target: page("1"), pinned: true },
-      { id: "b", target: page("2"), pinned: false },
-      { id: "c", target: page("3"), pinned: false },
+      { id: "a", target: page("1"), pinned: true, preview: false },
+      { id: "b", target: page("2"), pinned: false, preview: false },
+      { id: "c", target: page("3"), pinned: false, preview: false },
     ],
     activeId: "b",
     recents: [],

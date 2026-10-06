@@ -2,7 +2,8 @@ import { MAX_RECENTS, MAX_TABS, type Tab, type TabsState, type TabTarget } from 
 import { targetToHash } from "./target-hash";
 
 export type TabsAction =
-  | { type: "open"; target: TabTarget; newTab: boolean; id: string }
+  | { type: "open"; target: TabTarget; newTab: boolean; id: string; keep?: boolean }
+  | { type: "keep"; id: string }
   | { type: "activate"; id: string | null }
   | { type: "activateIndex"; index: number }
   | { type: "close"; id: string }
@@ -36,13 +37,35 @@ function closeIds(state: TabsState, ids: Set<string>): TabsState {
   return { ...state, tabs, activeId: (right ?? left)?.id ?? null };
 }
 
-function openTarget(state: TabsState, target: TabTarget, newTab: boolean, id: string): TabsState {
+export function singlePreview(tabs: Tab[]): Tab[] {
+  const last = tabs.map((t) => t.preview).lastIndexOf(true);
+  return tabs.map((t, i) => (t.preview && i !== last ? { ...t, preview: false } : t));
+}
+
+const permanent = (tabs: Tab[], id: string): Tab[] =>
+  tabs.map((t) => (t.id === id ? { ...t, preview: false } : t));
+
+function openTarget(
+  state: TabsState,
+  target: TabTarget,
+  newTab: boolean,
+  id: string,
+  keep: boolean,
+): TabsState {
   const recents = remember(state.recents, target);
   const existing = state.tabs.find((t) => sameTarget(t.target, target));
-  if (existing) return { ...state, activeId: existing.id, recents };
-  const active = state.tabs.find((t) => t.id === state.activeId);
-  if (!newTab && active && !active.pinned) {
-    return { ...state, tabs: state.tabs.map((t) => (t.id === active.id ? { ...t, target } : t)), recents };
+  if (existing) {
+    return {
+      ...state,
+      tabs: keep ? permanent(state.tabs, existing.id) : state.tabs,
+      activeId: existing.id,
+      recents,
+    };
+  }
+  const preview = state.tabs.find((t) => t.preview);
+  if (!newTab && preview) {
+    const tabs = state.tabs.map((t) => (t.id === preview.id ? { ...t, target, preview: !keep } : t));
+    return { ...state, tabs, activeId: preview.id, recents };
   }
   let tabs = state.tabs;
   if (tabs.length >= MAX_TABS) {
@@ -50,7 +73,7 @@ function openTarget(state: TabsState, target: TabTarget, newTab: boolean, id: st
     if (!victim) return { ...state, recents };
     tabs = tabs.filter((t) => t.id !== victim.id);
   }
-  return { tabs: [...tabs, { id, target, pinned: false }], activeId: id, recents };
+  return { tabs: [...tabs, { id, target, pinned: false, preview: !keep }], activeId: id, recents };
 }
 
 function move(state: TabsState, id: string, toIndex: number): TabsState {
@@ -60,13 +83,15 @@ function move(state: TabsState, id: string, toIndex: number): TabsState {
   const pinnedCount = rest.filter((t) => t.pinned).length;
   const [min, max] = tab.pinned ? [0, pinnedCount] : [pinnedCount, rest.length];
   const at = Math.min(max, Math.max(min, toIndex));
-  return { ...state, tabs: [...rest.slice(0, at), tab, ...rest.slice(at)] };
+  return { ...state, tabs: [...rest.slice(0, at), { ...tab, preview: false }, ...rest.slice(at)] };
 }
 
 export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case "open":
-      return openTarget(state, action.target, action.newTab, action.id);
+      return openTarget(state, action.target, action.newTab, action.id, action.keep ?? action.newTab);
+    case "keep":
+      return { ...state, tabs: permanent(state.tabs, action.id) };
     case "activate":
       return action.id === null || state.tabs.some((t) => t.id === action.id)
         ? { ...state, activeId: action.id }
@@ -114,23 +139,26 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "pin":
       return {
         ...state,
-        tabs: pinnedFirst(state.tabs.map((t) => (t.id === action.id ? { ...t, pinned: action.pinned } : t))),
+        tabs: pinnedFirst(
+          state.tabs.map((t) => (t.id === action.id ? { ...t, pinned: action.pinned, preview: false } : t)),
+        ),
       };
     case "duplicate": {
       const index = state.tabs.findIndex((t) => t.id === action.id);
       const tab = state.tabs[index];
       if (!tab || state.tabs.length >= MAX_TABS) return state;
-      const copy = { id: action.newId, target: tab.target, pinned: false };
+      const copy = { id: action.newId, target: tab.target, pinned: false, preview: false };
+      const tabs = permanent(state.tabs, action.id);
       return {
         ...state,
-        tabs: pinnedFirst([...state.tabs.slice(0, index + 1), copy, ...state.tabs.slice(index + 1)]),
+        tabs: pinnedFirst([...tabs.slice(0, index + 1), copy, ...tabs.slice(index + 1)]),
         activeId: copy.id,
       };
     }
     case "move":
       return move(state, action.id, action.toIndex);
     case "replace":
-      return action.state;
+      return { ...action.state, tabs: singlePreview(action.state.tabs) };
   }
 }
 
