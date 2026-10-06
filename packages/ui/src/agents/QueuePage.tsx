@@ -3,6 +3,7 @@ import {
   type ActiveSubagent,
   type AgentProfile,
   type AgentsState,
+  type ProjectSummary,
   type QueueEntry,
   type RpcRequest,
   type RunView,
@@ -17,12 +18,21 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { elapsed, formatDuration } from "./format";
+import { ProjectFilter } from "./ProjectFilter";
+import { effectiveProject, projectRuns } from "./project-filter";
+import { useAgentsProject } from "./project-pref";
 import { QueueCapacity } from "./QueueCapacity";
 import { QueueItem } from "./QueueItem";
-import { byStart, holdsSlot, orderProfiles } from "./queue-runs";
+import { byStart, holdsSlot, orderProfiles, queueNeighbours } from "./queue-runs";
 import { SlotMeter } from "./SlotMeter";
 
-type Props = { state: AgentsState; profiles: AgentProfile[]; now: number; onAnswer: (runId: string) => void };
+type Props = {
+  state: AgentsState;
+  profiles: AgentProfile[];
+  projects: ProjectSummary[];
+  now: number;
+  onAnswer: (runId: string) => void;
+};
 
 export function moveTarget(queue: QueueEntry[], activeId: string, overId: string | null): number | null {
   if (!overId || overId === activeId) return null;
@@ -63,7 +73,7 @@ function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: 
   );
 }
 
-export function QueuePage({ state, profiles, now, onAnswer }: Props) {
+export function QueuePage({ state, profiles, projects, now, onAnswer }: Props) {
   const [failed, setFailed] = useState(false);
   const [cancelling, setCancelling] = useState<RunView | null>(null);
   const act = async (req: RpcRequest) => {
@@ -74,18 +84,23 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
       setFailed(true);
     }
   };
-  const byId = new Map(state.runs.map((r) => [r.id, r]));
-  const queued = state.queue.flatMap((entry) => {
+  const [pref, setPref] = useAgentsProject();
+  const project = effectiveProject(pref, projects);
+  const runs = projectRuns(state.runs, project?.id ?? null);
+  const runIds = new Set(runs.map((r) => r.id));
+  const visibleQueue = state.queue.filter((q) => runIds.has(q.runId));
+  const byId = new Map(runs.map((r) => [r.id, r]));
+  const queued = visibleQueue.flatMap((entry) => {
     const run = byId.get(entry.runId);
     return run ? [{ run, entry }] : [];
   });
   const subagents = new Map<string, { parent: RunView; sub: ActiveSubagent }[]>();
-  for (const parent of state.runs.filter(holdsSlot).sort(byStart)) {
+  for (const parent of runs.filter(holdsSlot).sort(byStart)) {
     for (const sub of parent.subagents)
       subagents.set(sub.type, [...(subagents.get(sub.type) ?? []), { parent, sub }]);
   }
   const profileNames = new Set(profiles.map((p) => p.name));
-  const waiting = state.runs.filter((r) => r.state === "waiting_input");
+  const waiting = runs.filter((r) => r.state === "waiting_input");
   const onDragEnd = (e: DragEndEvent) => {
     const runId = String(e.active.id);
     const index = moveTarget(state.queue, runId, e.over ? String(e.over.id) : null);
@@ -93,6 +108,11 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
   };
   return (
     <div className="grid content-start gap-6 p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        {project && <p className="text-xs text-muted-foreground">{frAgentsPage.project.globalHint}</p>}
+        <span className="flex-1" />
+        <ProjectFilter projects={projects} value={pref} onChange={setPref} />
+      </div>
       {failed && (
         <p role="alert" className="text-sm text-destructive">
           {fr.queue.failed}
@@ -106,8 +126,9 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
       <h2 className="text-md font-semibold">{fr.queue.byProfile}</h2>
       <DndContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
-          {orderProfiles(profiles, state.runs, state.queue).map((p) => {
-            const running = state.runs.filter((r) => r.profileId === p.id && holdsSlot(r)).sort(byStart);
+          {orderProfiles(profiles, runs, visibleQueue).map((p) => {
+            const running = runs.filter((r) => r.profileId === p.id && holdsSlot(r)).sort(byStart);
+            const slotsUsed = state.runs.filter((r) => r.profileId === p.id && holdsSlot(r)).length;
             const mine = queued.filter(({ run }) => run.profileId === p.id);
             const subs = subagents.get(p.name) ?? [];
             return (
@@ -116,8 +137,8 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                 label={p.name}
                 aside={
                   <span className="flex items-center gap-1.5 font-mono text-2xs">
-                    <SlotMeter used={running.length} total={p.maxParallel} />
-                    {`${running.length}/${p.maxParallel}`}
+                    <SlotMeter used={slotsUsed} total={p.maxParallel} />
+                    {`${slotsUsed}/${p.maxParallel}`}
                   </span>
                 }
               >
@@ -141,7 +162,7 @@ export function QueuePage({ state, profiles, now, onAnswer }: Props) {
                         key={run.id}
                         run={run}
                         entry={entry}
-                        count={state.queue.length}
+                        {...queueNeighbours(visibleQueue, run.id)}
                         onMove={(index) => void act({ method: "moveRun", runId: run.id, index })}
                         onPriority={(priority) =>
                           void act({ method: "setRunPriority", runId: run.id, priority })

@@ -1,4 +1,4 @@
-import { type RunView, runSubject } from "@kibo/schema";
+import { type ProjectSummary, type RunView, runSubject } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Input } from "@kibo/sdk/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
@@ -12,20 +12,38 @@ import { filterRuns, RUN_FILTERS, type RunFilter } from "./run-filter";
 type Props = {
   runs: RunView[];
   positions: ReadonlyMap<string, number>;
+  projectColumn: readonly ProjectSummary[] | null;
   now: number;
   onOpenRun: (runId: string) => void;
 };
 
 const isRunFilter = (v: string): v is RunFilter => RUN_FILTERS.some((f) => f === v);
 
+function ProjectCell({ project }: { project: ProjectSummary | null }) {
+  return (
+    <TableCell>
+      {project ? (
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: project.color }} />
+          <span className="truncate">{project.name}</span>
+        </span>
+      ) : (
+        frAgentsPage.project.none
+      )}
+    </TableCell>
+  );
+}
+
 function HistoryRow({
   run,
   position,
+  project,
   now,
   onOpenRun,
 }: {
   run: RunView;
   position: number | null;
+  project: ProjectSummary | null | undefined;
   now: number;
   onOpenRun: (runId: string) => void;
 }) {
@@ -46,6 +64,7 @@ function HistoryRow({
         </button>
       </TableCell>
       <TableCell>{subject}</TableCell>
+      {project !== undefined && <ProjectCell project={project} />}
       <TableCell className="font-mono">{run.profileName}</TableCell>
       <TableCell className="font-mono">
         {run.startedAt === null ? "-" : formatDuration(elapsed(run, now))}
@@ -61,7 +80,7 @@ function HistoryRow({
   );
 }
 
-export function RunHistory({ runs, positions, now, onOpenRun }: Props) {
+export function RunHistory({ runs, positions, projectColumn, now, onOpenRun }: Props) {
   const [filter, setFilter] = useState<RunFilter>("all");
   const [query, setQuery] = useState("");
   const t = frAgentsPage.filters;
@@ -106,6 +125,7 @@ export function RunHistory({ runs, positions, now, onOpenRun }: Props) {
               <TableRow>
                 <TableHead>{c.run}</TableHead>
                 <TableHead>{c.ticket}</TableHead>
+                {projectColumn && <TableHead>{frAgentsPage.project.column}</TableHead>}
                 <TableHead>{c.profile}</TableHead>
                 <TableHead>{c.duration}</TableHead>
                 <TableHead>{c.tokens}</TableHead>
@@ -118,6 +138,9 @@ export function RunHistory({ runs, positions, now, onOpenRun }: Props) {
                   key={r.id}
                   run={r}
                   position={positions.get(r.id) ?? null}
+                  project={
+                    projectColumn ? (projectColumn.find((p) => p.id === r.projectId) ?? null) : undefined
+                  }
                   now={now}
                   onOpenRun={onOpenRun}
                 />
