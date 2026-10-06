@@ -13,11 +13,13 @@ const projectIdOf = (page: Page): string => {
   return decodeURIComponent(match[1]);
 };
 
-async function centerOf(target: Locator): Promise<{ x: number; y: number }> {
+async function pointIn(target: Locator, across = 0.5): Promise<{ x: number; y: number }> {
   const box = await target.boundingBox();
   if (!box) throw new Error("element not laid out");
-  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  return { x: box.x + box.width * across, y: box.y + box.height / 2 };
 }
+
+const scrollLeftOf = (board: Locator) => board.evaluate((el) => el.scrollLeft);
 
 const scrollers = (root: Locator) =>
   root.evaluate((el) =>
@@ -60,8 +62,10 @@ async function dragToInProgress(page: Page, root: Locator, title: string) {
   expect(boardGap?.y).toBe(0);
   for (const gap of columnGaps) expect(gap).toEqual(FLAT);
 
-  const from = await centerOf(card);
-  const to = await centerOf(doing);
+  await card.hover();
+  const from = await pointIn(card);
+  const to = await pointIn(doing, 0.25);
+  const scrolled = await scrollLeftOf(board);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x + 20, from.y + 10, { steps: 4 });
@@ -76,6 +80,7 @@ async function dragToInProgress(page: Page, root: Locator, title: string) {
   expect(await card.evaluate((el) => el.style.transform)).toBe("");
   await expect(card).toHaveClass(/opacity-40/);
   expect(await scrollers(board)).toEqual([boardGap, ...columnGaps]);
+  expect(await scrollLeftOf(board)).toBe(scrolled);
   return {
     board: boardGap,
     drop: async () => {
@@ -87,10 +92,32 @@ async function dragToInProgress(page: Page, root: Locator, title: string) {
   };
 }
 
+async function previewFollowsAutoScroll(page: Page, root: Locator, title: string) {
+  const todo = root.getByRole("region", { name: "À faire" });
+  const board = todo.locator("xpath=..");
+  const card = todo.getByRole("article", { name: new RegExp(title) });
+  await card.hover();
+  const from = await pointIn(card);
+  const edge = await pointIn(board, 1);
+  edge.x -= 8;
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 20, from.y + 10, { steps: 4 });
+  await page.mouse.move(edge.x, edge.y, { steps: 12 });
+  await expect
+    .poll(() => board.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft))
+    .toBeLessThanOrEqual(1);
+  await expect.poll(() => previewAt(page, edge)).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(PREVIEW)).toHaveCount(0);
+  await expect(card).toBeVisible();
+}
+
 test("glisser une carte : l'aperçu passe au-dessus des colonnes, sans barre de défilement", async ({
   page,
 }, info) => {
-  const key = projectKey("DRG", info);
+  const run = String.fromCharCode(65 + ((info.repeatEachIndex + info.retry) % 26));
+  const key = projectKey(`DR${run}`, info);
   await pairAndCreateProject(page, info, key);
   const projectId = projectIdOf(page);
   for (const title of ["Carte du tableau", "Carte de la vue", "Voisine 1", "Voisine 2"]) {
@@ -114,4 +141,5 @@ test("glisser une carte : l'aperçu passe au-dessus des colonnes, sans barre de 
   const dashboard = await dragToInProgress(page, widget, "Carte du tableau");
   await shot(page, info, "kanban-glisser-tableau");
   await dashboard.drop();
+  await previewFollowsAutoScroll(page, widget, "Voisine 1");
 });
