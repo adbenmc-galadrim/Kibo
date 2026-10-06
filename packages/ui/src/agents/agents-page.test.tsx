@@ -3,7 +3,8 @@ import { KiboError, type RpcRequest, runSubject } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { agentsFixture, configFixture, NOW, profilesFixture } from "./fixtures";
+import { frAgentsPage } from "../i18n/fr-agents-page";
+import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let respond: (req: RpcRequest) => Promise<unknown> = () => Promise.resolve(null);
@@ -21,12 +22,21 @@ const { AgentsPage } = await import("./AgentsPage");
 const { ProfileSheet } = await import("./ProfileSheet");
 
 beforeEach(() => {
+  localStorage.clear();
   calls.length = 0;
   respond = () => Promise.resolve(null);
 });
 
 const show = (onOpenRun: (runId: string) => void = () => {}) =>
-  render(<AgentsPage state={agentsFixture()} config={configFixture()} now={NOW} onOpenRun={onOpenRun} />);
+  render(
+    <AgentsPage
+      state={agentsFixture()}
+      config={configFixture()}
+      projects={projectsFixture}
+      now={NOW}
+      onOpenRun={onOpenRun}
+    />,
+  );
 const sheet = () => within(screen.getByRole("dialog"));
 
 function NewProfile() {
@@ -75,6 +85,8 @@ test("the history lists runs newest first with their result", () => {
   show();
   const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
   expect(rows.map((r) => r.firstElementChild?.textContent)).toEqual([
+    "#51",
+    "#50",
     "#47",
     "#46",
     "#45",
@@ -85,10 +97,10 @@ test("the history lists runs newest first with their result", () => {
     "#40",
     "#39",
   ]);
-  expect(rows[0]?.textContent).toContain("En file #3");
-  expect(rows[6]?.textContent).toContain("Attend une réponse");
-  expect(rows[8]?.textContent).toContain("Échec : exit code 1");
-  expect(rows[7]?.textContent).toContain("41m");
+  expect(rows[2]?.textContent).toContain("En file #3");
+  expect(rows[8]?.textContent).toContain("Attend une réponse");
+  expect(rows[10]?.textContent).toContain("Échec : exit code 1");
+  expect(rows[9]?.textContent).toContain("41m");
   expect(screen.getByText("41m").className).toContain("font-mono");
 });
 
@@ -131,6 +143,55 @@ test("clicking anywhere on a history row opens that run, and only once", async (
   for (const row of rows) {
     expect(within(row).getByRole("button").className).not.toContain("after:absolute");
   }
+});
+
+const slotsText = () => {
+  const { host } = agentsFixture();
+  return frAgentsPage.stats.slots(host.used, host.hostSlots);
+};
+const projectTrigger = () => screen.getByRole("button", { name: "Filtrer par projet" });
+const stat = (label: string) =>
+  within(screen.getByRole("list", { name: "Agents" }))
+    .getAllByRole("listitem")
+    .find((li) => li.textContent?.includes(label));
+
+test("screen 162: the project filter narrows queue, waiting, profile counts and history, and is remembered", async () => {
+  show();
+  const user = userEvent.setup();
+  expect(projectTrigger().textContent).toContain("Projet : tous");
+  await user.click(projectTrigger());
+  await user.click(await screen.findByRole("menuitemradio", { name: "API Facturation" }));
+  expect(projectTrigger().textContent).toContain("Projet : API Facturation");
+  expect(localStorage.getItem("kibo.agents.project")).toBe("fac");
+  expect(screen.queryByText("KIB-7")).toBeNull();
+  expect(screen.getByRole("row", { name: /FAC-3/ })).toBeTruthy();
+  expect(stat("en file")?.textContent).toBe("0runs en file d'attente");
+  expect(stat("attend")?.textContent).toBe("0attend une réponse (place libérée)");
+  expect(stat("en cours")?.textContent).toBe(`${slotsText()}runs en cours`);
+  expect(stat("tokens")?.textContent).toContain("1,2M");
+  expect(within(screen.getByRole("article", { name: "opus-dev" })).queryByText("2 actifs")).toBeNull();
+  fireEvent.click(screen.getByRole("radio", { name: "En échec" }));
+  expect(screen.getByText("Aucun run ne correspond à ce filtre.")).toBeTruthy();
+});
+
+test("a vanished project falls back to all without rewriting the preference", () => {
+  localStorage.setItem("kibo.agents.project", "ghost");
+  show();
+  expect(projectTrigger().textContent).toContain("Projet : tous");
+  expect(screen.getAllByRole("row", { name: /KIB-7/ })).toHaveLength(2);
+  expect(screen.getByRole("row", { name: /FAC-3/ })).toBeTruthy();
+  expect(localStorage.getItem("kibo.agents.project")).toBe("ghost");
+});
+
+test("runs without a project only appear under all projects", async () => {
+  show();
+  const user = userEvent.setup();
+  expect(screen.getByRole("row", { name: /Composant Graphique/ })).toBeTruthy();
+  await user.click(projectTrigger());
+  await user.click(await screen.findByRole("menuitemradio", { name: "Kibo" }));
+  expect(screen.queryByRole("row", { name: /Composant Graphique/ })).toBeNull();
+  expect(screen.queryByRole("row", { name: /FAC-3/ })).toBeNull();
+  expect(stat("en file")?.textContent).toBe("3runs en file d'attente");
 });
 
 test("a new profile is created with its guidelines", async () => {
@@ -292,7 +353,15 @@ test("in edit mode a guideline's content is edited in place", async () => {
     path: "guidelines/review.md",
     content: "# Review",
   });
-  render(<AgentsPage state={agentsFixture()} config={config} now={NOW} onOpenRun={() => {}} />);
+  render(
+    <AgentsPage
+      state={agentsFixture()}
+      config={config}
+      projects={projectsFixture}
+      now={NOW}
+      onOpenRun={() => {}}
+    />,
+  );
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
   const row = sheet().getByRole("button", { name: "guidelines/review.md" });

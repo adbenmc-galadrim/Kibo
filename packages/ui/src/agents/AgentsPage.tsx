@@ -1,6 +1,7 @@
 import {
   type AgentProfile,
   type AgentsState,
+  type ProjectSummary,
   type RunState,
   SLOT_STATES,
   type WorkspaceConfig,
@@ -14,12 +15,16 @@ import { frAgentsPage } from "../i18n/fr-agents-page";
 import { isDemoProfile, profileLabel } from "./demo-profile";
 import { formatTokens } from "./format";
 import { ProfileSheet } from "./ProfileSheet";
+import { ProjectFilter } from "./ProjectFilter";
 import { permissionModeLabel } from "./permission-mode";
+import { effectiveProject, projectRuns } from "./project-filter";
+import { useAgentsProject } from "./project-pref";
 import { RunHistory } from "./RunHistory";
 
 type Props = {
   state: AgentsState;
   config: WorkspaceConfig;
+  projects: ProjectSummary[];
   now: number;
   onOpenRun: (runId: string) => void;
 };
@@ -106,21 +111,30 @@ function Stat({ state, value, label, help }: StatProps) {
   );
 }
 
-export function AgentsPage({ state, config, now, onOpenRun }: Props) {
+export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
   const [editing, setEditing] = useState<AgentProfile | null>(null);
+  const [pref, setPref] = useAgentsProject();
+  const project = effectiveProject(pref, projects);
+  const runs = projectRuns(state.runs, project?.id ?? null);
+  const runIds = new Set(runs.map((r) => r.id));
+  const queued = state.queue.filter((q) => runIds.has(q.runId)).length;
   const positions = new Map(state.queue.map((q) => [q.runId, q.position]));
-  const waiting = state.runs.filter((r) => r.state === "waiting_input").length;
+  const waiting = runs.filter((r) => r.state === "waiting_input").length;
   const s = fr.agentsPage.stats;
   return (
     <div className="grid content-start gap-6 p-6">
-      <p className="text-sm text-muted-foreground">{frAgentsPage.subtitle}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-sm text-muted-foreground">{frAgentsPage.subtitle}</p>
+        <span className="flex-1" />
+        <ProjectFilter projects={projects} value={pref} onChange={setPref} />
+      </div>
       <ul aria-label={fr.agentsPage.title} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           state="running"
           value={frAgentsPage.stats.slots(state.host.used, state.host.hostSlots)}
           label={s.running}
         />
-        <Stat state="queued" value={String(state.queue.length)} label={s.queued} />
+        <Stat state="queued" value={String(queued)} label={s.queued} />
         <Stat state="waiting_input" value={String(waiting)} label={s.waiting} />
         <Stat
           state="cancelled"
@@ -140,16 +154,14 @@ export function AgentsPage({ state, config, now, onOpenRun }: Props) {
               <ProfileCard
                 key={p.id}
                 profile={p}
-                active={
-                  state.runs.filter((r) => r.profileId === p.id && SLOT_STATES.includes(r.state)).length
-                }
+                active={runs.filter((r) => r.profileId === p.id && SLOT_STATES.includes(r.state)).length}
                 onEdit={() => setEditing(p)}
               />
             ))}
           </div>
         )}
       </section>
-      <RunHistory runs={state.runs} positions={positions} now={now} onOpenRun={onOpenRun} />
+      <RunHistory runs={runs} positions={positions} now={now} onOpenRun={onOpenRun} />
       {editing && (
         <ProfileSheet
           profile={editing}
