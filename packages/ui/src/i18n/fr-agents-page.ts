@@ -12,6 +12,11 @@ export const frAgentsPage = {
     cancelled: "Annulés",
     waiting: "En attente",
   },
+  project: {
+    label: "Filtrer par projet",
+    all: "Tous les projets",
+    trigger: (name: string | null) => (name ? `Projet : ${name}` : "Projet : tous"),
+  },
   searchKey: "Clé du ticket",
   searchPlaceholder: "KIB-12",
   noMatch: "Aucun run ne correspond à ce filtre.",
