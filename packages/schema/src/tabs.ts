@@ -40,7 +40,12 @@ export const TabTarget = z.discriminatedUnion("kind", [
 ]);
 export type TabTarget = z.infer<typeof TabTarget>;
 
-export const Tab = z.object({ id: z.string().min(1), target: TabTarget, pinned: z.boolean() });
+export const Tab = z.object({
+  id: z.string().min(1),
+  target: TabTarget,
+  pinned: z.boolean(),
+  preview: z.boolean().default(false),
+});
 export type Tab = z.infer<typeof Tab>;
 
 export const MAX_TABS = 50;
@@ -61,16 +66,21 @@ const StoredTabs = z.object({
   recents: z.array(z.unknown()),
 });
 
-const keepValid = <T>(schema: z.ZodType<T>, items: unknown[]): T[] =>
+const keepValid = <T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, items: unknown[]): T[] =>
   items.flatMap((item) => {
     const parsed = schema.safeParse(item);
     return parsed.success ? [parsed.data] : [];
   });
 
+export function singlePreview(tabs: Tab[]): Tab[] {
+  const last = tabs.map((t) => t.preview).lastIndexOf(true);
+  return tabs.map((t, i) => (t.preview && i !== last ? { ...t, preview: false } : t));
+}
+
 export function salvageTabsState(raw: unknown): TabsState | null {
   const stored = StoredTabs.safeParse(raw);
   if (!stored.success) return null;
-  const tabs = keepValid(Tab, stored.data.tabs);
+  const tabs = singlePreview(keepValid(Tab, stored.data.tabs));
   const activeId = tabs.some((t) => t.id === stored.data.activeId) ? stored.data.activeId : null;
   const parsed = TabsState.safeParse({ tabs, activeId, recents: keepValid(TabTarget, stored.data.recents) });
   return parsed.success ? parsed.data : null;

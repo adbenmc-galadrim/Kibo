@@ -52,10 +52,15 @@ const snapshot: ProjectSnapshot = {
 const ctx = { projects: [summary], snapshots: new Map([["p1", snapshot]]) };
 const state: TabsState = {
   tabs: [
-    { id: "pinned", target: { kind: "project", projectId: "p1" }, pinned: true },
-    { id: "board", target: { kind: "page", projectId: "p1", pageId: "1@1" }, pinned: false },
-    { id: "changes", target: { kind: "changes", projectId: "p1", worktree: null }, pinned: false },
-    { id: "gone", target: { kind: "page", projectId: "p1", pageId: "9@9" }, pinned: false },
+    { id: "pinned", target: { kind: "project", projectId: "p1" }, pinned: true, preview: false },
+    { id: "board", target: { kind: "page", projectId: "p1", pageId: "1@1" }, pinned: false, preview: false },
+    {
+      id: "changes",
+      target: { kind: "changes", projectId: "p1", worktree: null },
+      pinned: false,
+      preview: false,
+    },
+    { id: "gone", target: { kind: "page", projectId: "p1", pageId: "9@9" }, pinned: false, preview: false },
   ],
   activeId: "board",
   recents: [],
@@ -213,6 +218,7 @@ const fullPinned = (count: number): TabsState => ({
     id: `pin${i}`,
     target: pageTarget(`pin${i}`),
     pinned: true,
+    preview: false,
   })),
   activeId: null,
   recents: [],

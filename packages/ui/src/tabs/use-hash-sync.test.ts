@@ -9,7 +9,7 @@ const board: TabTarget = { kind: "page", projectId: "p1", pageId: "board" };
 const readme: TabTarget = { kind: "file", projectId: "p1", worktree: "/repo", path: "README.md", line: 1 };
 
 const state = (activeId: string | null, ids: string[]): TabsState => ({
-  tabs: ids.map((id) => ({ id, target: id === "board" ? board : readme, pinned: false })),
+  tabs: ids.map((id) => ({ id, target: id === "board" ? board : readme, pinned: false, preview: false })),
   activeId,
   recents: [],
 });

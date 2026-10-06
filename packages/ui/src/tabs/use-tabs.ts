@@ -8,7 +8,7 @@ export type TabsApi = {
   state: TabsState;
   error: string | null;
   dispatch(action: TabsAction): void;
-  open(target: TabTarget | null, opts?: { newTab?: boolean }): void;
+  open(target: TabTarget | null, opts?: { newTab?: boolean; keep?: boolean }): void;
   closed: readonly TabTarget[];
   closures: number;
   reopen(): void;
@@ -91,11 +91,17 @@ export function useTabs(): TabsApi | null {
     setAll((s) => (s ? reopenLast(s, id) : s));
   }, []);
   const open = useCallback(
-    (target: TabTarget | null, opts: { newTab?: boolean } = {}) =>
+    (target: TabTarget | null, opts: { newTab?: boolean; keep?: boolean } = {}) =>
       dispatch(
         target === null
           ? { type: "activate", id: null }
-          : { type: "open", target, newTab: opts.newTab ?? false, id: crypto.randomUUID() },
+          : {
+              type: "open",
+              target,
+              newTab: opts.newTab ?? false,
+              id: crypto.randomUUID(),
+              ...(opts.keep !== undefined && { keep: opts.keep }),
+            },
       ),
     [dispatch],
   );
