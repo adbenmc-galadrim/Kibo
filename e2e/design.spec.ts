@@ -77,7 +77,9 @@ async function configureWidget(page: Page, url: string, info?: Parameters<typeof
   await page.getByRole("main").getByRole("button", { name: "Actions Maquette" }).click();
   await page.getByRole("menuitem", { name: "Réglages…" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Cadre").fill(url);
+  const first = dialog.getByRole("textbox", { name: "Cadre 1", exact: true });
+  if (!(await first.isVisible())) await dialog.getByRole("button", { name: "Ajouter un cadre" }).click();
+  await first.fill(url);
   if (info) await shot(page, info, "ecran-149");
   await dialog.getByRole("button", { name: "Enregistrer" }).click();
   await expect(dialog).toBeHidden();

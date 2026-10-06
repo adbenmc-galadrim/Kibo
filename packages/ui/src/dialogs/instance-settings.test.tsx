@@ -288,3 +288,44 @@ test("an emptied frame field saves null", async () => {
     },
   ]);
 });
+
+const PENPOT =
+  "https://design.penpot.app/#/view/33333333-3333-4333-8333-333333333333?page-id=44444444-4444-4444-8444-444444444444&board-id=55555555-5555-4555-8555-555555555555";
+const frameListSchema: ConfigSchema = {
+  frame: { type: "string", frame: true, list: true, default: [], label: "Cadres" },
+};
+
+test("a frame list field adds, reorders, removes and drops empty rows", async () => {
+  const { onClose, user } = show(frameListSchema, "p1", { frame: FIGMA_FRAME });
+  const group = screen.getByRole("group", { name: "Cadres" });
+  expect(screen.getByRole("textbox", { name: "Cadre 1" }).getAttribute("value")).toBe(FIGMA_FRAME);
+  await user.click(screen.getByRole("button", { name: "Ajouter un cadre" }));
+  await user.type(screen.getByRole("textbox", { name: "Cadre 2" }), PENPOT);
+  await user.click(screen.getByRole("button", { name: "Ajouter un cadre" }));
+  await user.click(screen.getByRole("button", { name: "Monter le cadre 2" }));
+  expect(screen.getByRole("textbox", { name: "Cadre 1" }).getAttribute("value")).toBe(PENPOT);
+  expect(group).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  await waitFor(() => expect(onClose).toHaveBeenCalled());
+  const sent = calls.find((c) => c.method === "command");
+  expect(sent).toMatchObject({
+    command: { method: "setInstanceConfig", config: { frame: [PENPOT, FIGMA_FRAME] } },
+  });
+});
+
+test("a frame list refuses an invalid url and names the cause", async () => {
+  const { onClose, user } = show(frameListSchema, "p1", { frame: [] });
+  expect(screen.getByText("Aucun cadre. Ajoute l'URL d'un cadre Figma ou d'un board Penpot.")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Ajouter un cadre" }));
+  await user.type(
+    screen.getByRole("textbox", { name: "Cadre 1" }),
+    "https://design.penpot.app/#/workspace?team-id=1&file-id=33333333-3333-4333-8333-333333333333&page-id=44444444-4444-4444-8444-444444444444",
+  );
+  expect(
+    screen.getByText("Sélectionne un board dans Penpot avant de copier l'adresse : il manque board-id."),
+  ).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+  expect(screen.getByRole("alert").textContent).toContain("il manque board-id");
+  expect(onClose).not.toHaveBeenCalled();
+  expect(calls.filter((c) => c.method === "command")).toHaveLength(0);
+});

@@ -5,6 +5,8 @@ import {
   configSchemaOf,
   fieldKind,
   fieldLabel,
+  isStringList,
+  normalizedValues,
   numberBounds,
   parseFieldInput,
   withFieldValue,
@@ -119,4 +121,20 @@ test("labels come from the manifest first, bounds reach the input, asset fields 
   expect(numberBounds({ type: "number", min: 0.5, max: 4 })).toEqual({ min: 0.5, max: 4 });
   expect(numberBounds({ type: "number", min: 0 })).toEqual({ min: 0 });
   expect(numberBounds({ type: "number" })).toEqual({});
+});
+
+test("a frame list field reads a list, a legacy string or nothing as a list", () => {
+  const FIGMA = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
+  const frames: ConfigSchema = { frame: { type: "string", frame: true, list: true, default: [] } };
+  const listField = frames.frame;
+  expect(listField && fieldKind(listField)).toBe("frames");
+  expect(configFields(frames, { frame: [FIGMA, "", 4] })[0]?.value).toEqual([FIGMA]);
+  expect(configFields(frames, { frame: FIGMA })[0]?.value).toEqual([FIGMA]);
+  expect(configFields(frames, { frame: null })[0]?.value).toEqual([]);
+  expect(configFields(frames, {})[0]?.value).toEqual([]);
+  const fields = configFields(frames, {});
+  expect(normalizedValues(fields, { frame: [" ", FIGMA, ""] })).toEqual({ frame: [FIGMA] });
+  expect(isStringList(["a", "b"])).toBe(true);
+  expect(isStringList(["a", 1])).toBe(false);
+  expect(isStringList("a")).toBe(false);
 });
