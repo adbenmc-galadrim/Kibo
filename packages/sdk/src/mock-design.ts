@@ -1,4 +1,4 @@
-import { type DesignFrame, designFrameId, KiboError, parseDesignUrl } from "@kibo/schema";
+import { type DesignFrame, designFrameId, KiboError, type KiboErrorCode, parseDesignUrl } from "@kibo/schema";
 import { PIXEL_PNG } from "./mock-assets";
 
 export type MockFrame = {
@@ -9,6 +9,7 @@ export type MockFrame = {
   png?: string;
   stale?: boolean;
   reachable?: boolean;
+  error?: KiboErrorCode;
 };
 
 const idOf = (url: string): string | null => {
@@ -27,6 +28,7 @@ export function mockDesignFrame(
   const id = designFrameId(parsed.key);
   const frame = frames.find((f) => idOf(f.url) === id);
   if (!frame) throw new KiboError("NOT_CONNECTED", `${parsed.key.provider} is not connected`);
+  if (frame.error) throw new KiboError(frame.error, "mock frame error");
   return {
     id,
     provider: parsed.key.provider,
