@@ -35,6 +35,56 @@ async function createOpusProfile(page: Page, info: TestInfo) {
   await expect(page.getByRole("article", { name: "opus-dev" })).toBeVisible();
 }
 
+const projectFilter = (page: Page) => page.getByRole("button", { name: "Filtrer par projet" });
+
+const projectHeader = (page: Page) => page.locator('[data-slot="table-head"]', { hasText: /^Projet$/ });
+
+const queueNumbers = (page: Page) =>
+  page
+    .locator("[data-queued='true']")
+    .evaluateAll((items) => items.map((item) => /#\d+/.exec(item.textContent ?? "")?.[0] ?? "").sort());
+
+async function pickProject(page: Page, name: string) {
+  await projectFilter(page).click();
+  await page.getByRole("menuitemradio", { name, exact: true }).click();
+}
+
+async function filterByProject(page: Page, info: TestInfo) {
+  const kibRow = page
+    .getByRole("row")
+    .filter({ hasText: /KIB-\d+/ })
+    .first();
+  await expect(projectFilter(page)).toHaveText(/Projet : tous/);
+  await expect(projectHeader(page)).toBeVisible();
+  await expect(kibRow).toContainText("Kibo");
+  await pickProject(page, "Kibo");
+  await expect(projectFilter(page)).toHaveText("Projet : Kibo");
+  await expect(projectHeader(page)).toHaveCount(0);
+  await expect(kibRow).toBeVisible();
+  await page.reload();
+  await expect(projectFilter(page)).toHaveText("Projet : Kibo");
+  await shot(page, info, "agents-filtre-projet");
+
+  await page.getByRole("button", { name: "Files d'attente" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Files d'attente" })).toBeVisible();
+  await expect(projectFilter(page)).toHaveText("Projet : Kibo");
+  await expect(page.getByText(/toute la machine/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Capacité de la machine" })).toBeVisible();
+  await expect(page.locator("[data-queued='true']").first()).toBeVisible();
+  const underKibo = await queueNumbers(page);
+  expect(underKibo.length).toBeGreaterThan(0);
+  await shot(page, info, "files-filtre-projet");
+  await pickProject(page, "API Facturation");
+  await expect(page.locator("[data-queued='true']")).toHaveCount(0);
+  await pickProject(page, "Tous les projets");
+  await expect(page.getByText(/toute la machine/)).toHaveCount(0);
+  await expect(page.locator("[data-queued='true']")).toHaveCount(underKibo.length);
+  expect(await queueNumbers(page)).toEqual(underKibo);
+  await page.goto("/#/agents");
+  await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
+  await expect(projectFilter(page)).toHaveText(/Projet : tous/);
+}
+
 test("agents au travail : cartes, file, journal, réponse, review", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
@@ -131,6 +181,7 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     .getByRole("radiogroup", { name: "Filtrer par état" })
     .getByRole("radio", { name: "Tous" })
     .click();
+  await filterByProject(page, info);
   const drawer = page.getByRole("region", { name: "Agents" });
   for (const [profile, key] of [
     ["sonnet-review", "KIB-7"],

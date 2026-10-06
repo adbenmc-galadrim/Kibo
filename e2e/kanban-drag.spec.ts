@@ -143,3 +143,48 @@ test("glisser une carte : l'aperçu passe au-dessus des colonnes, sans barre de 
   await dashboard.drop();
   await previewFollowsAutoScroll(page, widget, "Voisine 1");
 });
+
+const previewLeft = (page: Page) =>
+  page.locator(PREVIEW).evaluate((el) => Math.round(el.getBoundingClientRect().left));
+
+async function stepRight(page: Page) {
+  const start = await previewLeft(page);
+  await expect(async () => {
+    if ((await previewLeft(page)) === start) await page.keyboard.press("ArrowRight");
+    expect(await previewLeft(page)).toBeGreaterThan(start);
+  }).toPass({ intervals: [1_000] });
+}
+
+test("glisser une carte au clavier : Espace, flèche droite, Espace", async ({ page }, info) => {
+  const run = String.fromCharCode(65 + ((info.repeatEachIndex + info.retry) % 26));
+  const key = projectKey(`DK${run}`, info);
+  await pairAndCreateProject(page, info, key);
+  const projectId = projectIdOf(page);
+  await rpc(page, {
+    method: "command",
+    projectId,
+    command: { method: "createTicket", title: "Carte au clavier", statusId: "todo" },
+  });
+  await createSidebarPage(page, `Kibo ${key}`, "Kanban", "Vue");
+  await addComponent(page, "Kanban");
+  const main = page.getByRole("main");
+  await showAllTickets(main);
+  const todo = main.getByRole("region", { name: "À faire" });
+  const doing = main.getByRole("region", { name: "En cours" });
+  const card = todo.getByRole("article", { name: /Carte au clavier/ });
+  await card.focus();
+  await page.keyboard.press("Space");
+  await expect(page.locator(PREVIEW)).toBeVisible();
+  await stepRight(page);
+  await expect(doing).toHaveClass(/ring-2/);
+  await shot(page, info, "kanban-clavier");
+  await page.keyboard.press("Space");
+  await expect(page.locator(PREVIEW)).toHaveCount(0);
+  await expect(doing.getByRole("article", { name: /Carte au clavier/ })).toBeVisible();
+  await expect(todo.getByRole("article", { name: /Carte au clavier/ })).toHaveCount(0);
+
+  await page.reload();
+  await showAllTickets(main);
+  await expect(doing.getByRole("article", { name: /Carte au clavier/ })).toBeVisible();
+  await expect(todo.getByRole("article", { name: /Carte au clavier/ })).toHaveCount(0);
+});
