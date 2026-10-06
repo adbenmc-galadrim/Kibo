@@ -7,7 +7,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { fr } from "./fr";
 import { Component, manifest } from "./index";
-import { COLUMNS, WIDE_CELL } from "./TicketRow";
+import { COLUMNS, WIDE_CELL, WIDE_TEXT } from "./TicketRow";
 
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const parent = run({
@@ -315,7 +315,7 @@ test("without a selection: no chip and no fading in the tree", async () => {
 
 test("a narrow widget keeps key and title, hides the wide cells below @md", async () => {
   const m = createMockSdk(manifest, { seed, surface: "widget", format: "medium" });
-  const { getByRole, getAllByRole, getByText, container, findByText } = render(
+  const { getByRole, getAllByRole, getByText, getAllByText, container, findByText } = render(
     <SdkProvider sdk={m.sdk}>
       <Component />
     </SdkProvider>,
@@ -335,8 +335,10 @@ test("a narrow widget keeps key and title, hides the wide cells below @md", asyn
   expect(title.className).not.toContain("min-w-16");
   for (const progress of Array.from(container.querySelectorAll("[data-cell='progress']")))
     expect(progress.className).toContain(WIDE_CELL);
-  expect(container.querySelector("[data-cell='status'] span.truncate")?.className).toContain(WIDE_CELL);
-  expect(getByText("Attente client").className).toContain(WIDE_CELL);
+  expect(container.querySelector("[data-cell='status'] span.truncate")?.className).toContain(WIDE_TEXT);
+  expect(getAllByText("Bloqué").length).toBeGreaterThan(0);
+  expect(getAllByText("À faire")[0]?.className).toContain(WIDE_TEXT);
+  expect(getByText("Attente client").className).toContain(WIDE_TEXT);
   for (const plus of getAllByRole("button", { name: /^Nouveau sous-ticket/ }))
     expect(plus.className).toContain("hidden @md:inline-flex");
 });

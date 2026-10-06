@@ -15,6 +15,7 @@ import { zoneId } from "./tree-drop";
 export const COLUMNS =
   "grid grid-cols-[minmax(0,1fr)_1.5rem_2rem] items-center gap-3 px-2 @md:grid-cols-[minmax(0,1fr)_7rem_5rem_4rem] @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_4rem]";
 export const WIDE_CELL = "hidden @md:inline";
+export const WIDE_TEXT = "sr-only @md:not-sr-only";
 export const ASSIGNEE_CELL = "hidden min-w-0 @3xl:flex";
 
 type AssigneeProps = { assignee: Assignee | null; run: TicketRun | null; members: MemberInfo[] };
@@ -157,19 +158,19 @@ export function TicketRow({
               {t.title}
             </button>
             {t.blockedReason && (
-              <span className={cn(WIDE_CELL, "min-w-0 truncate text-2xs text-red-600 dark:text-red-400")}>
+              <span className={cn(WIDE_TEXT, "min-w-0 truncate text-2xs text-red-600 dark:text-red-400")}>
                 {t.blockedReason}
               </span>
             )}
             {t.waitingOn.length > 0 && (
-              <Badge variant="outline" className={cn(WIDE_CELL, "min-w-0 shrink justify-start text-3xs")}>
+              <Badge variant="outline" className={cn(WIDE_TEXT, "min-w-0 shrink justify-start text-3xs")}>
                 <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
               </Badge>
             )}
           </div>
           <span data-cell="status" className="flex items-center gap-2 text-xs">
             <StatusDot statusId={t.statusId} />
-            <span className={cn(WIDE_CELL, "truncate")}>{statusLabel}</span>
+            <span className={cn(WIDE_TEXT, "truncate")}>{statusLabel}</span>
           </span>
           <AssigneeCell assignee={t.assignee} run={run} members={members} />
           <span data-cell="progress" className={cn(WIDE_CELL, "font-mono text-2xs text-muted-foreground")}>
