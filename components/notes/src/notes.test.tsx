@@ -280,3 +280,15 @@ test("a conflict is not bypassed by a checkbox", async () => {
   expect(writes.mock.calls.filter(([, , mtime]) => mtime === null)).toEqual([]);
   expect(m.notes.get("taches.md")?.markdown).toBe(external);
 });
+
+test("the widget renders its excerpt: bold, readonly checkbox, ticket chip", async () => {
+  const m = setup("widget", {
+    "bienvenue.md": "# Bienvenue\n\nMets un mot en **gras** et vois KIB-12.\n\n- [ ] Relire\n",
+  });
+  const opened = spyOn(m.sdk, "openTicket");
+  expect((await screen.findByText("gras")).tagName).toBe("STRONG");
+  expect(screen.queryByText(/\*\*/)).toBeNull();
+  expect(screen.getByRole<HTMLInputElement>("checkbox").disabled).toBe(true);
+  await userEvent.setup().click(await screen.findByRole("button", { name: /KIB-12/ }));
+  expect(opened).toHaveBeenCalledWith(m.snapshot().tickets.find((t) => t.key === "KIB-12")?.id ?? "");
+});
