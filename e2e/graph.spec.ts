@@ -59,6 +59,14 @@ test("trackpad : pincement, déplacement, Tout voir, double clic, minimap", asyn
   await expect.poll(() => canvas.getAttribute("data-zoom")).toBe(initial);
   await shot(page, info, "graphe-tout-voir");
 
+  await page.getByRole("button", { name: "Filtrer", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Tous", exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await page.getByRole("button", { name: "Tout voir" }).click();
+  await expect(canvas).toHaveAttribute("data-zoom", "1");
+  await expect(canvas.getByText("Sans dépendance")).toBeVisible();
+  await shot(page, info, "graphe-isoles-grille");
+
   await canvas.getByRole("button", { name: /KIB-21 / }).dblclick();
   await expect(canvas).toHaveAttribute("data-zoom", "1.25");
 
@@ -125,7 +133,10 @@ test("widget : un contenu par format", async ({ page }, info) => {
   await expect(page.getByRole("dialog")).toBeHidden();
 
   await setFormat(page, /Large · 6 × 6/);
-  await expect(widget.getByRole("region", { name: "Graphe des dépendances" })).toBeVisible();
+  const region = widget.getByRole("region", { name: "Graphe des dépendances" });
+  await expect(region).toBeVisible();
+  await expect(region).toHaveAttribute("data-zoom", /^(0\.[5-9]\d*|1)$/);
+  await expect(region.getByText("Sans dépendance")).toBeVisible();
   await expect(widget.getByRole("button", { name: "Tout voir" })).toBeVisible();
   await expect(widget.getByRole("img", { name: "Vue d'ensemble du graphe" })).toHaveCount(0);
   await shot(page, info, "graphe-widget-large");

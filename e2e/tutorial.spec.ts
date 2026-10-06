@@ -22,6 +22,23 @@ async function openHelpTutorial(page: Page) {
   return page.getByRole("dialog", { name: "Faire le tour de Kibo ?" });
 }
 
+const widget = (page: Page, title: string) =>
+  page.locator("[data-instance]").filter({ has: page.getByText(title, { exact: true }) });
+
+async function expectDemoWidgets(page: Page) {
+  const tickets = widget(page, "Tickets");
+  await expect(tickets.getByText("DEMO-1", { exact: true })).toBeVisible();
+  const title = tickets.getByRole("button", { name: "Noyau de données", exact: true });
+  await expect(title).toBeVisible();
+  const [titleBox, widgetBox] = await Promise.all([title.boundingBox(), tickets.boundingBox()]);
+  if (!titleBox || !widgetBox) throw new Error("tickets widget not laid out");
+  expect(titleBox.width).toBeGreaterThan(40);
+  expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(widgetBox.x + widgetBox.width);
+  const notes = widget(page, "Notes");
+  await expect(notes.locator("strong", { hasText: "gras" })).toBeVisible();
+  await expect(notes.getByText("**gras**")).toHaveCount(0);
+}
+
 async function demoRuns(page: Page) {
   const agents = await rpc(page, { method: "getAgents" });
   return list(agents, "runs").filter((r) => text(r, "profileId") === "demo");
@@ -42,6 +59,8 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
   await expect(demoEntry(page)).toContainText("Démo");
   await expect(dot(page, "Créer un ticket et le déplacer", "en cours")).toBeVisible();
   await shot(page, info, "panneau-etape-1");
+  await expectDemoWidgets(page);
+  await shot(page, info, "tableau-de-bord-demo-widgets");
 
   await goToStep(page);
   await page.getByRole("button", { name: "Ticket", exact: true }).click();
