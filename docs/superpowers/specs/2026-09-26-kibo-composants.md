@@ -508,7 +508,7 @@ Option A appliquée en attendant l'arbitrage d'Adam.
    export function lightingSettings(config: Record<string, unknown>): LightingSettings;  // tolérant : valeur hors liste ou hors bornes ⇒ défaut
    export type LightRig = { group: Group; key: DirectionalLight; apply(settings: LightingSettings): void; fitShadows(model: Object3D): void; dispose(): void };
    export function createLightRig(settings: LightingSettings): LightRig;      // hémisphérique + principale + appoint + contre-jour, intensités du préréglage × intensity ; shadows ⇒ key.castShadow, sol ShadowMaterial
-   export function applyToneMapping(renderer: WebGLRenderer, settings: LightingSettings): void;  // ACESFilmicToneMapping, exposition 1, shadowMap.enabled = shadows, PCFSoftShadowMap
+   export function applyToneMapping(renderer: WebGLRenderer, settings: LightingSettings): void;  // NeutralToneMapping (Khronos PBR Neutral, couleurs fidèles), exposition 1, shadowMap.enabled = shadows, PCFSoftShadowMap
    export function enableShadows(root: Object3D, enabled: boolean): void;      // castShadow/receiveShadow sur chaque Mesh
    export function createEnvironment(renderer: WebGLRenderer): { texture: Texture; dispose(): void };  // PMREMGenerator + RoomEnvironment
    ```
