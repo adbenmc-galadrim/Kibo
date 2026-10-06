@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import type { ComponentFormat, ProjectCommand, ProjectSnapshot, TicketRun } from "@kibo/schema";
+import {
+  type ComponentFormat,
+  type ProjectCommand,
+  type ProjectSnapshot,
+  Ticket,
+  type TicketRun,
+} from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
@@ -187,6 +193,23 @@ test("small counts blocked and ready tickets of the widget's tickets", async () 
   expect(await count("Chemin critique")).toBe("3");
   expect(Number(await count("Bloqués"))).toBeGreaterThan(0);
   expect(Number(await count("Prêts"))).toBeGreaterThan(0);
+});
+
+const seedLinked = (run: (cmd: ProjectCommand) => unknown) => {
+  const create = (title: string) =>
+    Ticket.parse(
+      run({ method: "createTicket", title, parentId: null, assignee: { kind: "human", ref: "adam" } }),
+    ).id;
+  run({ method: "addLink", from: create("Amont"), to: create("Aval"), type: "blocks" });
+};
+
+test("§22.1: the isolated block is labelled, and only when there is one", async () => {
+  setup("view", seed, "full");
+  expect(await screen.findByText("Sans dépendance")).toBeTruthy();
+  cleanup();
+  setup("view", seedLinked, "full");
+  await screen.findByRole("button", { name: /Amont/ });
+  expect(screen.queryByText("Sans dépendance")).toBeNull();
 });
 
 test("D9: empty states", async () => {

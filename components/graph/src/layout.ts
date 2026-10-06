@@ -6,6 +6,8 @@ export const NODE_H = 52;
 export const GAP_X = 96;
 export const GAP_Y = 40;
 export const ISOLATED_GAP = 64;
+export const ISOLATED_GAP_X = 24;
+export const ISOLATED_GAP_Y = 12;
 
 export type NodePosition = {
   id: string;
@@ -15,7 +17,15 @@ export type NodePosition = {
   y: number;
   isolated: boolean;
 };
-export type GraphLayout = { nodes: NodePosition[]; width: number; height: number };
+export type GraphLayout = {
+  nodes: NodePosition[];
+  width: number;
+  height: number;
+  isolatedTop: number | null;
+};
+
+export const isolatedColumns = (count: number, connectedLayers: number): number =>
+  connectedLayers > 0 ? connectedLayers : Math.max(1, Math.ceil(Math.sqrt(count)));
 
 const PASSES = 4;
 
@@ -95,12 +105,21 @@ export function layoutGraph(tickets: GraphTicket[], edges: GraphEdge[]): GraphLa
     }
   }
   const rows = maxOf(layers.map((l) => l.length));
-  const isolatedY = rows === 0 ? 0 : rows * (NODE_H + GAP_Y) - GAP_Y + ISOLATED_GAP;
+  const connectedBottom = rows === 0 ? 0 : rows * (NODE_H + GAP_Y) - GAP_Y + ISOLATED_GAP;
+  const isolatedTop = isolated.length === 0 ? null : connectedBottom;
+  const columns = isolatedColumns(isolated.length, layers.length);
   for (const [i, id] of isolated.entries()) {
-    nodes.push({ id, layer: -1, order: i, x: i * (NODE_W + GAP_X), y: isolatedY, isolated: true });
+    nodes.push({
+      id,
+      layer: -1,
+      order: i,
+      x: (i % columns) * (NODE_W + ISOLATED_GAP_X),
+      y: connectedBottom + Math.floor(i / columns) * (NODE_H + ISOLATED_GAP_Y),
+      isolated: true,
+    });
   }
   nodes.sort((a, b) => a.y - b.y || a.x - b.x);
   const width = nodes.length > 0 ? maxOf(nodes.map((n) => n.x + NODE_W)) : 0;
   const height = nodes.length > 0 ? maxOf(nodes.map((n) => n.y + NODE_H)) : 0;
-  return { nodes, width, height };
+  return { nodes, width, height, isolatedTop };
 }
