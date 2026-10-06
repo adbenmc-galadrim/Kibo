@@ -115,6 +115,6 @@ export const frDesign = {
     unreachable: ({ name }) => `${name} ne répond pas. Vérifie ta connexion, ou que l'instance est démarrée.`,
     rateLimited: () => "Limite de requêtes atteinte. Réessaie dans une minute.",
     mcpClosed: () => "Ouvre l'application Figma (serveur MCP), puis actualise.",
-    unavailable: ({ code }) => `Maquette indisponible (${code}).`,
+    unavailable: ({ code }) => (code ? `Maquette indisponible (${code}).` : "Maquette indisponible."),
   } satisfies Record<FrameProblemKind, (ctx: FrameProblemContext) => string>,
 };

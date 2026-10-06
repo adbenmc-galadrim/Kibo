@@ -43,7 +43,7 @@ test("frame errors name their cause and provider", () => {
     "Figma ne répond pas. Vérifie ta connexion, ou que l'instance est démarrée.",
   );
   expect(frameErrorText(new KiboError("INTERNAL", "x"), figma)).toBe("Maquette indisponible (INTERNAL).");
-  expect(frameErrorText(new Error("boom"), figma)).toBe("Maquette indisponible ().");
+  expect(frameErrorText(new Error("boom"), figma)).toBe("Maquette indisponible.");
 });
 
 test("link errors explain the url or the instance", () => {
