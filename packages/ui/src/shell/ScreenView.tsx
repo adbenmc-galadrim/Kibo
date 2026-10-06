@@ -95,5 +95,7 @@ export function ScreenView(props: Props) {
   if (!agents) return null;
   if (screen === "agents")
     return <AgentsPage state={agents} config={config} projects={projects} now={now} onOpenRun={onAnswer} />;
-  return <QueuePage state={agents} profiles={config.profiles} now={now} onAnswer={onAnswer} />;
+  return (
+    <QueuePage state={agents} profiles={config.profiles} projects={projects} now={now} onAnswer={onAnswer} />
+  );
 }

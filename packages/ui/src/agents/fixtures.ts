@@ -216,11 +216,20 @@ export function agentsFixture(): AgentsState {
         startedAt: NOW - 25 * MIN,
         endedAt: NOW - 22 * MIN,
       }),
+      runFixture({
+        id: "q60",
+        seq: 60,
+        projectId: "fac",
+        ticketKey: "FAC-6",
+        ticketTitle: "Relances automatiques",
+        rank: 12,
+      }),
     ],
     queue: [
       { runId: "q10", position: 1, reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 } },
       { runId: "q18", position: 2, reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 } },
       { runId: "q29", position: 3, reason: { kind: "host", used: 3, total: 3 } },
+      { runId: "q60", position: 4, reason: { kind: "host", used: 3, total: 3 } },
     ],
     host: {
       hostSlots: 3,

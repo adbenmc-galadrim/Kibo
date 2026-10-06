@@ -161,7 +161,13 @@ export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
           </div>
         )}
       </section>
-      <RunHistory runs={runs} positions={positions} now={now} onOpenRun={onOpenRun} />
+      <RunHistory
+        runs={runs}
+        positions={positions}
+        projectColumn={project === null ? projects : null}
+        now={now}
+        onOpenRun={onOpenRun}
+      />
       {editing && (
         <ProfileSheet
           profile={editing}
