@@ -1,0 +1,5 @@
+export const PROSE =
+  "grid gap-3 text-sm text-muted-foreground leading-relaxed [&_a]:text-foreground [&_a]:underline [&_code]:font-mono [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h2]:mt-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:font-semibold [&_h3]:text-foreground [&_img]:max-w-full [&_img]:rounded-md [&_li]:ml-1 [&_li]:list-['•_'] [&_li]:list-inside [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:text-sm [&_pre]:text-foreground [&_li.task]:list-none [&_li.task]:ml-0 [&_li.task>input]:mr-2 [&_li.task>input]:size-3.5 [&_li.task>input]:align-[-2px] [&_li.task>input]:accent-foreground";
+
+export const EXCERPT_PROSE =
+  "grid gap-1 text-xs text-muted-foreground [&_p]:truncate [&_li]:truncate [&_li]:ml-1 [&_li]:list-['•_'] [&_li]:list-inside [&_li.task]:list-none [&_li.task]:ml-0 [&_li.task>input]:mr-1.5 [&_li.task>input]:size-3 [&_li.task>input]:align-[-2px] [&_strong]:text-foreground [&_code]:font-mono [&_a]:underline [&_img]:hidden [&_pre]:hidden";
