@@ -2,6 +2,7 @@ import { localSyncInfo, readProject } from "@kibo/core";
 import {
   type CiRun,
   type ComponentCall,
+  type ComponentManifest,
   type EntityType,
   type FetchInit,
   type FetchResponse,
@@ -13,6 +14,7 @@ import {
   type ProjectAsset,
   type ProjectCommand,
   type TicketRun,
+  validateConfig,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { mockAssetUrl } from "./mock-assets";
@@ -26,6 +28,8 @@ export type MockCallDeps = {
   doc: Parameters<typeof readProject>[0];
   run(cmd: ProjectCommand): unknown;
   data: Map<string, unknown>;
+  manifest: ComponentManifest;
+  configPatches: Record<string, unknown>[];
   folder: MockNotesFolder;
   runs(): TicketRun[];
   peers(): PresencePeer[];
@@ -142,6 +146,12 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return mockAssetUrl(deps.assets ?? [], c.name);
       case "design.frame":
         return mockDesignFrame(deps.frames ?? [], c.url, c.refresh);
+      case "config.set": {
+        const errors = validateConfig(deps.manifest.configSchema, c.patch);
+        if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));
+        deps.configPatches.push(structuredClone(c.patch));
+        return null;
+      }
     }
   };
 }

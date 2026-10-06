@@ -71,6 +71,7 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "fetch":
       return `net:${call.url}`;
     case "action":
+    case "config.set":
       return null;
     case "notes.read":
     case "notes.search":

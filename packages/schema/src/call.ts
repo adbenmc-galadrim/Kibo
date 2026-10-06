@@ -63,5 +63,6 @@ export const ComponentCall = z.discriminatedUnion("kind", [
     url: z.string().min(1).max(DESIGN_URL_MAX),
     refresh: z.boolean().default(false),
   }),
+  z.object({ kind: z.literal("config.set"), patch: z.record(z.string(), z.unknown()) }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

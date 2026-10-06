@@ -1,61 +1,22 @@
 import { expect, test } from "bun:test";
 import { type CiRun, KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
-import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
-import type { NotesService } from "../notes/service";
 import { createGateHandlers } from "./gate-handlers";
+import { stubDocs, stubFiles, stubHandlerDeps, unused } from "./gate-test-kit";
 
-const unused = (): never => {
-  throw new Error("unused in this test");
-};
-const docs: Docs = {
-  workspace: new LoroDoc(),
-  project: unused,
-  projectIds: unused,
-  save: unused,
-  emit: unused,
-  run: unused,
-  trigger: unused,
-  replaceProject: unused,
-  addProject: unused,
-  removeProject: unused,
-  onProjectRemoved: unused,
-  imported: unused,
-  onProjectDoc: unused,
-  assertWritable: unused,
-  setWriteGuard: unused,
-  projectMeta: unused,
-  updateProjectMeta: unused,
-  identity: unused,
-  setIdentity: unused,
-};
-const notes: NotesService = {
-  info: unused,
-  setDir: unused,
-  handle: unused,
-  refresh: unused,
-  forget: unused,
-  close: unused,
-};
 const fileCalls: unknown[] = [];
 const files: FilesService = {
-  dirOf: unused,
-  info: unused,
-  setDir: unused,
+  ...stubFiles,
   list: async (projectId) => {
     fileCalls.push(["list", projectId]);
     return [];
   },
-  remove: unused,
-  uploads: { begin: unused, append: unused, finish: unused, cancel: unused, close: unused },
   url: async (projectId, instanceId, name) => {
     fileCalls.push(["url", projectId, instanceId, name]);
     return { url: "http://127.0.0.1:1/f/x/a.png", expiresAt: 1 };
   },
-  open: unused,
-  close: unused,
 };
 const ok = { content: [], isError: false, truncated: false };
 const ciRun: CiRun = {
@@ -104,11 +65,8 @@ function hooks(seen: unknown[]): ComponentIntegrationHooks {
 
 const handlersWith = (integrations: ComponentIntegrationHooks | null | undefined) =>
   createGateHandlers({
-    docs,
-    notes,
+    ...stubHandlerDeps,
     files,
-    backends: unused,
-    runs: unused,
     ...(integrations !== undefined && { integrations: () => integrations }),
   });
 
@@ -148,17 +106,14 @@ test("ci runs are listed per project", async () => {
 test("instance data writes go through the project write guard", async () => {
   const project = new LoroDoc();
   const guarded = createGateHandlers({
+    ...stubHandlerDeps,
     docs: {
-      ...docs,
+      ...stubDocs,
       project: () => project,
       assertWritable: (projectId) => {
         throw new KiboError("FORBIDDEN", `project ${projectId} is read-only`);
       },
     },
-    notes,
-    files,
-    backends: unused,
-    runs: unused,
   });
   await expect(guarded.data("p", "i1", { kind: "data.set", key: "k", value: 1 })).rejects.toThrow(
     "FORBIDDEN",
