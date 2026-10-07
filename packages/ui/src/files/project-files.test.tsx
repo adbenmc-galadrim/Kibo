@@ -7,6 +7,7 @@ const calls: RpcRequest[] = [];
 let assets: ProjectAsset[] = [];
 let refuse: (req: RpcRequest) => Error | null = () => null;
 let appendGate: Promise<void> | null = null;
+let listGate: Promise<void> | null = null;
 const answer = (req: RpcRequest): unknown => {
   switch (req.method) {
     case "listAssets":
@@ -30,6 +31,7 @@ mock.module("../api", () => ({
     rpc: async (req: RpcRequest) => {
       calls.push(req);
       if (req.method === "appendAssetUpload" && appendGate) await appendGate;
+      if (req.method === "listAssets" && listGate) await listGate;
       const error = refuse(req);
       if (error) throw error;
       return answer(req);
@@ -52,6 +54,7 @@ beforeEach(() => {
   assets = [robot, beep];
   refuse = () => null;
   appendGate = null;
+  listGate = null;
 });
 
 const show = () => {
@@ -232,4 +235,45 @@ test("closing during a send cancels once the append in flight settled, then stay
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(methods()).toEqual(["beginAssetUpload", "appendAssetUpload", "cancelAssetUpload"]);
   expect(screen.queryByRole("alert")).toBeNull();
+});
+
+const gate = () => {
+  let open = () => {};
+  const closed = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { closed, open };
+};
+
+test("each file of a batch keeps its own bar, rises without going back, then leaves once all are listed", async () => {
+  const append = gate();
+  const list = gate();
+  appendGate = append.closed;
+  show();
+  await screen.findByRole("table");
+  const seen = new Map<string, number[]>();
+  const observer = new MutationObserver(() => {
+    for (const bar of Array.from(document.querySelectorAll('[role="progressbar"]'))) {
+      const name = bar.getAttribute("aria-label") ?? "";
+      seen.set(name, [...(seen.get(name) ?? []), Number(bar.getAttribute("aria-valuenow"))]);
+    }
+  });
+  observer.observe(document.body, { subtree: true, childList: true, attributeFilter: ["aria-valuenow"] });
+  pick(glb("a.glb"), glb("b.glb"));
+  const uploads = await screen.findByRole("list", { name: "Envois en cours" });
+  const bars = within(uploads).getAllByRole("progressbar");
+  expect(bars.map((b) => b.getAttribute("aria-label"))).toEqual(["Envoi de a.glb", "Envoi de b.glb"]);
+  expect(bars.map((b) => b.getAttribute("aria-valuenow"))).toEqual(["0", "0"]);
+  listGate = list.closed;
+  append.open();
+  await waitFor(() => expect(bars.map((b) => b.getAttribute("aria-valuenow"))).toEqual(["100", "100"]));
+  expect(within(uploads).getAllByText("Importé")).toHaveLength(2);
+  list.open();
+  await waitFor(() => expect(screen.queryAllByRole("progressbar")).toHaveLength(0));
+  observer.disconnect();
+  for (const name of ["Envoi de a.glb", "Envoi de b.glb"]) {
+    const values = seen.get(name) ?? [];
+    expect(values.length).toBeGreaterThan(2);
+    expect(values.every((v, i) => i === 0 || v >= (values[i - 1] ?? 0))).toBe(true);
+  }
 });
