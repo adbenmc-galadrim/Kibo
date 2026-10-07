@@ -4,6 +4,7 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
+import { LabelChips } from "./LabelChips";
 
 const CI_DOT = {
   ok: "bg-emerald-500",
@@ -43,6 +44,7 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, menu, t
         {menu}
       </div>
       {title}
+      <LabelChips labels={t.labels} />
       {t.blockedReason && (
         <p className="text-2xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
       )}

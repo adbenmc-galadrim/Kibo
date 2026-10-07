@@ -447,3 +447,48 @@ test("without a selection: no chip and no fading", async () => {
   expect(document.querySelector(".opacity-50")).toBeNull();
   expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
 });
+
+const labelled = (run: (cmd: ProjectCommand) => unknown) => {
+  const mine = { kind: "human", ref: "adam" } as const;
+  run({ method: "createTicket", title: "API", assignee: mine, labels: ["area:api", "phase:p1", "urgent"] });
+  run({ method: "createTicket", title: "Web", assignee: mine, labels: ["area:web"] });
+  run({ method: "createTicket", title: "Nue", assignee: mine });
+};
+
+test("labels: cards show two chips then +n, the label menu narrows the board and is read back", async () => {
+  const m = createMockSdk(manifest, { seed: labelled, viewer: "adam" });
+  const mount = () =>
+    render(
+      <SdkProvider sdk={m.sdk}>
+        <Component />
+      </SdkProvider>,
+    );
+  mount();
+  const user = userEvent.setup();
+  const card = within(await screen.findByRole("article", { name: "KIB-1 API" }));
+  expect(card.getByText("area:api")).toBeTruthy();
+  expect(card.getByText("phase:p1")).toBeTruthy();
+  expect(card.queryByText("urgent")).toBeNull();
+  expect(card.getByText("+1")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Étiquette : toutes" }));
+  const menu = await screen.findByRole("menu");
+  expect(
+    within(menu)
+      .getAllByRole("menuitemradio")
+      .map((i) => i.textContent),
+  ).toEqual(["Étiquette : toutes", "area:api", "area:web", "phase:p1", "urgent"]);
+  await user.click(within(menu).getByRole("menuitemradio", { name: "area:web" }));
+  expect(await screen.findByRole("button", { name: "Étiquette : area:web" })).toBeTruthy();
+  expect(screen.getByText("Web")).toBeTruthy();
+  expect(screen.queryByText("API")).toBeNull();
+  expect(screen.queryByText("Nue")).toBeNull();
+  expect(await m.sdk.data.get<string>("labelFilter")).toBe("area:web");
+  cleanup();
+  mount();
+  expect(await screen.findByRole("button", { name: "Étiquette : area:web" })).toBeTruthy();
+  expect(screen.queryByText("API")).toBeNull();
+  await user.click(screen.getByRole("button", { name: /Tout afficher/ }));
+  expect(await screen.findByText("API")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Étiquette : toutes" })).toBeTruthy();
+  expect(await m.sdk.data.get<string>("labelFilter")).toBe("*");
+});

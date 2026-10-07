@@ -1,6 +1,12 @@
 export const fr = {
   filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", all: "Tous" },
   counter: (shown: number, total: number, filter: string) => `${shown} / ${total} · ${filter}`,
+  labelFilter: {
+    label: "Filtrer par étiquette",
+    all: "Étiquette : toutes",
+    one: (label: string) => `Étiquette : ${label}`,
+    failed: "Impossible de lire ou d'enregistrer le filtre d'étiquette.",
+  },
   hidden: (n: number) => `${n} masqué${n > 1 ? "s" : ""} · Tout afficher`,
   newTicketIn: (status: string) => `Nouveau ticket dans ${status}`,
   actions: (key: string) => `Actions ${key}`,
