@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import fc from "fast-check";
 import { branchSlug, GitBranchRef, ImportRef, isGitBranchName } from "./git-branch";
 
 test("git branch names follow check-ref-format", () => {
@@ -48,4 +49,33 @@ test("a branch name never looks like an option", () => {
   for (const bad of ["-x", "--upload-pack=touch", "-b/x"]) expect(isGitBranchName(bad)).toBe(false);
   expect(isGitBranchName("feat/-x")).toBe(true);
   expect(GitBranchRef.safeParse({ kind: "git_branch", branch: "feat/x", base: "-main" }).success).toBe(false);
+});
+
+test("a branch name holds only shell-safe characters", () => {
+  for (const ok of ["feat/coquille-applicative", "release_1.0", "a+b", "Feat/X2"])
+    expect(isGitBranchName(ok)).toBe(true);
+  for (const bad of [
+    "$(touch$IFS.x)",
+    "a`id`",
+    'a"b',
+    "a'b",
+    "a;b",
+    "a&b",
+    "a|b",
+    "a$b",
+    "a<b",
+    "a>b",
+    "a{b}",
+    "a!b",
+    "a=b",
+    "a#b",
+    "a%b",
+    "a,b",
+  ])
+    expect(isGitBranchName(bad)).toBe(false);
+  fc.assert(
+    fc.property(fc.string({ unit: "binary-ascii", maxLength: 40 }), (name) => {
+      if (isGitBranchName(name)) expect(name).toMatch(/^[A-Za-z0-9._/+-]+$/);
+    }),
+  );
 });

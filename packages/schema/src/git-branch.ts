@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const PRINTABLE = /^[\x21-\x7e]+$/;
+const SAFE = /^[A-Za-z0-9._/+-]+$/;
 const FORBIDDEN = /(\.\.|@\{|\/\/|[~^:?*[\\])/;
 
 export function isGitBranchName(name: string): boolean {
@@ -9,7 +9,7 @@ export function isGitBranchName(name: string): boolean {
     return false;
   if (name.split("/").some((part) => part.length === 0 || part.startsWith(".") || part.endsWith(".lock")))
     return false;
-  return PRINTABLE.test(name) && !FORBIDDEN.test(name);
+  return SAFE.test(name) && !FORBIDDEN.test(name);
 }
 
 export const GitBranchName = z.string().min(1).max(200).refine(isGitBranchName, "invalid git branch name");
