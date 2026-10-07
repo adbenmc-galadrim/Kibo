@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
+import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -341,4 +342,43 @@ test("a narrow widget keeps key and title, hides the wide cells below @md", asyn
   expect(getByText("Attente client").className).toContain(WIDE_TEXT);
   for (const plus of getAllByRole("button", { name: /^Nouveau sous-ticket/ }))
     expect(plus.className).toContain("hidden @md:inline-flex");
+});
+
+test("labels: the menu groups the project's labels, checking one narrows the tree, rows show two chips then +n", async () => {
+  const m = createMockSdk(manifest, { seed: (run) => seedDemo(run) });
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("Schéma Loro des tickets (LoroTree)");
+  const row = screen.getByRole("button", { name: "Schéma Loro des tickets (LoroTree)" }).parentElement;
+  const chips = within(row ?? document.body);
+  expect(chips.getByText("area:api")).toBeTruthy();
+  expect(chips.getByText("phase:p1")).toBeTruthy();
+  expect(chips.queryByText("urgent")).toBeNull();
+  const classes = chips.getByText("+1").parentElement?.classList;
+  expect(classes?.contains("hidden") && classes.contains("@md:inline-flex")).toBe(true);
+  await user.click(screen.getByRole("button", { name: "Étiquettes" }));
+  const menu = await screen.findByRole("menu");
+  expect(
+    within(menu)
+      .getAllByRole("menuitemcheckbox")
+      .map((i) => i.textContent),
+  ).toEqual(["urgent", "area:api", "phase:p1"]);
+  expect(within(menu).getByText("Libres")).toBeTruthy();
+  expect(within(menu).getByText("area")).toBeTruthy();
+  await user.click(within(menu).getByRole("menuitemcheckbox", { name: "area:api" }));
+  await user.keyboard("{Escape}");
+  expect(screen.getByRole("button", { name: /^Étiquettes/ }).textContent).toContain("1");
+  expect(screen.getByText("Schéma Loro des tickets (LoroTree)")).toBeTruthy();
+  expect(screen.getByText("Noyau de données")).toBeTruthy();
+  expect(screen.queryByText("Kanban : drag & drop entre colonnes")).toBeNull();
+  expect(screen.queryByText("UI de base")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Effacer" }));
+  expect(await screen.findByText("Kanban : drag & drop entre colonnes")).toBeTruthy();
+});
+
+test("labels: the menu is disabled when the project has no label", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  await screen.findByText("Arbre des pages");
+  expect(screen.getByRole("button", { name: "Étiquettes" }).hasAttribute("disabled")).toBe(true);
 });

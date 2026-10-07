@@ -38,6 +38,11 @@ const BLOCKS: [number, number][] = [
   [16, 22],
 ];
 
+const LABELS: Partial<Record<number, string[]>> = {
+  12: ["area:api", "phase:p1", "urgent"],
+  15: ["phase:p1"],
+};
+
 const LAST_KEY = 29;
 const BLOCKED_REASON = "Audit sécurité externe en attente";
 
@@ -61,6 +66,7 @@ export function seedDemo(run: (cmd: ProjectCommand) => unknown, viewer = "adam")
         title: row?.[1] ?? "—",
         parentId: parent === null ? null : idOf(parent),
         assignee: assignee(row?.[4] ?? null, viewer),
+        ...(LABELS[n] && { labels: LABELS[n] }),
         ...(status !== "blocked" && { statusId: status }),
       }),
     );

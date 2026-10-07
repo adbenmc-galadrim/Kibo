@@ -9,6 +9,7 @@ import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TicketNode } from "./build-tree";
 import { fr } from "./fr";
+import { LabelChips } from "./LabelChips";
 import { TicketRowActions, TicketRowMenu } from "./TicketRowMenu";
 import { zoneId } from "./tree-drop";
 
@@ -157,6 +158,7 @@ export function TicketRow({
             >
               {t.title}
             </button>
+            <LabelChips labels={t.labels} />
             {t.blockedReason && (
               <span className={cn(WIDE_TEXT, "min-w-0 truncate text-2xs text-red-600 dark:text-red-400")}>
                 {t.blockedReason}

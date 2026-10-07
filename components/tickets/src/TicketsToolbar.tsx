@@ -1,4 +1,4 @@
-import type { Status, StatusId } from "@kibo/schema";
+import type { Status, StatusId, Ticket } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -12,10 +12,16 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { ChevronDown, Search } from "lucide-react";
 import { type AssigneeFilter, EMPTY_QUERY, isActive, type TicketsQuery } from "./filter-tickets";
 import { fr } from "./fr";
+import { LabelsMenu } from "./LabelsMenu";
 
 const ASSIGNEES: readonly AssigneeFilter[] = ["all", "me", "agents", "nobody"];
 
-type Props = { query: TicketsQuery; statuses: Status[]; onChange(query: TicketsQuery): void };
+type Props = {
+  query: TicketsQuery;
+  statuses: Status[];
+  tickets: readonly Ticket[];
+  onChange(query: TicketsQuery): void;
+};
 
 const toggled = (set: ReadonlySet<StatusId>, id: StatusId): Set<StatusId> => {
   const next = new Set(set);
@@ -24,7 +30,7 @@ const toggled = (set: ReadonlySet<StatusId>, id: StatusId): Set<StatusId> => {
   return next;
 };
 
-export function TicketsToolbar({ query, statuses, onChange }: Props) {
+export function TicketsToolbar({ query, statuses, tickets, onChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-2">
       <div className="relative w-full sm:w-56">
@@ -65,6 +71,7 @@ export function TicketsToolbar({ query, statuses, onChange }: Props) {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+      <LabelsMenu tickets={tickets} query={query} onChange={onChange} />
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground">{fr.assigneeFilter}</span>
         <ToggleGroup

@@ -1,12 +1,28 @@
 import type { StatusId, Ticket } from "@kibo/schema";
 
 export type AssigneeFilter = "all" | "me" | "agents" | "nobody";
-export type TicketsQuery = { text: string; statuses: ReadonlySet<StatusId>; assignee: AssigneeFilter };
+export type TicketsQuery = {
+  text: string;
+  statuses: ReadonlySet<StatusId>;
+  assignee: AssigneeFilter;
+  labels: ReadonlySet<string>;
+};
 
-export const EMPTY_QUERY: TicketsQuery = { text: "", statuses: new Set(), assignee: "all" };
+export const EMPTY_QUERY: TicketsQuery = {
+  text: "",
+  statuses: new Set(),
+  assignee: "all",
+  labels: new Set(),
+};
 
 export const isActive = (q: TicketsQuery): boolean =>
-  q.text.trim() !== "" || q.statuses.size > 0 || q.assignee !== "all";
+  q.text.trim() !== "" || q.statuses.size > 0 || q.assignee !== "all" || q.labels.size > 0;
+
+export const projectLabels = (tickets: readonly Ticket[]): string[] =>
+  [...new Set(tickets.flatMap((t) => t.labels))].sort();
+
+const labelsMatch = (t: Ticket, chosen: ReadonlySet<string>): boolean =>
+  [...chosen].every((l) => t.labels.includes(l));
 
 const normalize = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
@@ -24,7 +40,8 @@ export function filterTree(tickets: readonly Ticket[], q: TicketsQuery, viewer: 
   const matches = (t: Ticket) =>
     (!needle || normalize(t.title).includes(needle) || normalize(t.key ?? "").includes(needle)) &&
     (q.statuses.size === 0 || q.statuses.has(t.statusId)) &&
-    assigneeMatches(t, q.assignee, viewer);
+    assigneeMatches(t, q.assignee, viewer) &&
+    labelsMatch(t, q.labels);
   const parentOf = new Map(tickets.map((t) => [t.id, t.parentId]));
   const matched = new Set(tickets.filter(matches).map((t) => t.id));
   const visible = new Set<string>();

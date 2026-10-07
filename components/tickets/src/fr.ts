@@ -16,6 +16,7 @@ export const fr = {
   assigneeFilter: "Assigné",
   assignees: { all: "Tous", me: "Moi", agents: "Agents", nobody: "Personne" },
   clear: "Effacer",
+  labels: { button: "Étiquettes", free: "Libres", none: "Aucune étiquette dans ce projet" },
   columns: { ticket: "Ticket", status: "Statut", assignee: "Assigné", progress: "Sous-tickets" },
   unassigned: "—",
   collapse: (key: string) => `Replier ${key}`,
