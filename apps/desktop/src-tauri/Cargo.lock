@@ -2064,7 +2064,7 @@ dependencies = [
 
 [[package]]
 name = "kibo"
-version = "1.6.0"
+version = "0.16.0-alpha.1"
 dependencies = [
  "serde",
  "serde_json",

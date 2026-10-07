@@ -6,6 +6,21 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.16.0-alpha.1 — 2026-10-07
+
+- Kibo passe en alpha jusqu'au lancement : versions `0.<phase>.0-alpha.N`, publiées en pré-release, mises à jour par le canal `alpha`.
+- Graphe : les tickets sans dépendance se rangent en grille compacte.
+- Notes : vraies cases à cocher dans l'aperçu, widget rendu en Markdown.
+- Tickets : le widget étroit reste lisible.
+- Visionneuse 3D : éclairage plus doux, volet de réglages appliqués en direct (préréglages, ombres, tons, environnement).
+- Agents et Files d'attente : filtre par projet mémorisé, colonne Projet.
+- Penpot : connexion expliquée, profil anonyme refusé, causes précises quand un board ne s'affiche pas.
+- Widget « Maquette » : plusieurs cadres, zoom, plein écran, actualisation animée.
+- Kanban : la carte glissée passe au-dessus des colonnes.
+- Onglets d'aperçu à la VSCode : un seul onglet d'aperçu, gardé dès que tu modifies, « Garder ouvert » et double-clic.
+- Imports : barre de progression lissée, qui ne recule plus.
+- Fiabilité : tests sans aucun accès réseau, parcours de bout en bout stabilisés.
+
 ## 1.6.0 — 2026-10-05
 
 - Figma par jeton personnel, en plus du serveur MCP de l'application Figma.
