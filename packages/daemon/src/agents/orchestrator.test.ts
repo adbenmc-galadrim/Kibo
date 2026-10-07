@@ -522,3 +522,52 @@ test("a ticket runs one agent at a time: a second assign is refused until the fi
   releaseFakeRun(h.state, second.sessionId);
   await waitUntil(() => run(h, second.id).state === "done");
 }, 30_000);
+
+test("resuming an ended run is refused while another run of its ticket is active", async () => {
+  const h = setup({ scenario: "done" });
+  h.orch.setHost({ paused: true });
+  await h.orch.stop();
+  const registry = openRunRegistry(h.store);
+  const record = (id: string) => ({
+    id,
+    projectId: "p1",
+    ticketId: "t1",
+    ticketKey: "KIB-1",
+    ticketTitle: "Ticket KIB-1",
+    profileId: "opus",
+    profileName: "opus-dev",
+    sessionId: crypto.randomUUID(),
+    brief: "",
+  });
+  const active = registry.create(record("older-active"), 0);
+  const ended = registry.create(record("newer-ended"), 1);
+  registry.apply(ended.id, { type: "admitted", lane: 1 });
+  registry.apply(ended.id, {
+    type: "spawned",
+    pid: 1,
+    resume: false,
+    workspace: "isolated",
+    cwd: h.home,
+    guidelines: 0,
+  });
+  registry.apply(ended.id, {
+    type: "exited",
+    code: 0,
+    isError: false,
+    result: "ok",
+    tokens: 0,
+    costUsd: 0,
+    denied: [],
+  });
+  const orch = createOrchestrator({ ...h.options, tickMs: 60_000 });
+  try {
+    expect(orch.state().resumable).toContain(ended.id);
+    const events = orch.log(ended.id).length;
+    expect(() => orch.answer(ended.id, "Ajoute les tests")).toThrow("CONFLICT");
+    expect(orch.log(ended.id)).toHaveLength(events);
+    orch.cancel(active.id);
+    expect(orch.answer(ended.id, "Ajoute les tests").state).toBe("queued");
+  } finally {
+    await orch.stop();
+  }
+});

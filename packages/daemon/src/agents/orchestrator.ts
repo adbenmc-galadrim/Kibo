@@ -212,6 +212,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
       }
+      if (isTerminal(target.state) && target.ticketId && activeRunOf(registry.all(), target.ticketId))
+        throw new KiboError("CONFLICT", `ticket ${target.ticketKey} already has an active run`);
       registry.apply(runId, { type: "answered", text, rank: headRank(registry.all()) });
       tick();
       return registry.get(runId);

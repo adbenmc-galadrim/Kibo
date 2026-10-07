@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { AgentsState, RpcRequest, RunView, StatusId } from "@kibo/schema";
+import { type AgentsState, KiboError, type RpcRequest, type RunView, type StatusId } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, kiboProject, NOW, runFixture } from "./fixtures";
@@ -8,6 +8,7 @@ import { chatBox } from "./run-chat";
 const calls: RpcRequest[] = [];
 let status: StatusId = "in_progress";
 let access: "write" | "read" = "write";
+let answer: () => Promise<unknown> = () => Promise.resolve(null);
 
 const project = () => {
   const snapshot = kiboProject();
@@ -22,6 +23,7 @@ mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
+      if (req.method === "answerRun") return answer();
       return Promise.resolve(req.method === "getProject" ? project() : null);
     },
     subscribe: () => () => {},
@@ -43,6 +45,7 @@ beforeEach(() => {
   calls.length = 0;
   status = "in_progress";
   access = "write";
+  answer = () => Promise.resolve(null);
 });
 
 const ticketRun = (p: Partial<RunView>): RunView =>
@@ -103,6 +106,18 @@ test("a finished run can be written to and sent to review from the drawer", asyn
     projectId: "kibo",
     command: { method: "setStatus", ticketId: "t14", statusId: "in_review" },
   });
+});
+
+test("resuming a run whose ticket already has an active run says why", async () => {
+  answer = () => Promise.reject(new KiboError("CONFLICT", "ticket KIB-14 already has an active run"));
+  const run = ticketRun({ state: "done", endedAt: NOW });
+  render(drawer(run, [run.id]));
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Écrire à opus-dev-2"), "Ajoute les tests");
+  await user.click(screen.getByRole("button", { name: "Envoyer" }));
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Un run de ce ticket est déjà en cours ou en file.",
+  );
 });
 
 test("during a turn the box stays open, says the message waits for the next turn, and sends it", async () => {
