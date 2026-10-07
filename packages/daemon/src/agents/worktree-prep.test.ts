@@ -302,6 +302,7 @@ test("settings are checked before they are saved", () => {
     settings({ pathTemplate: "../../x/{slug}" }),
     settings({ pathTemplate: "{nope}" }),
     settings({ setup: "make {nope}" }),
+    settings({ setup: "pnpm worktree '{branch}'" }),
   ]) {
     expect(() => assertWorktreeSettings(bad)).toThrow("INVALID_INPUT");
   }

@@ -20,6 +20,8 @@ export const frProject = {
       path: "Le chemin doit rester dans le dépôt ou à côté de lui.",
       setup: "La commande fait 1000 caractères au plus.",
       setupVariables: "La commande n'accepte que les variables {branch} {slug} {key} {path}.",
+      setupQuoted:
+        "Une variable entre guillemets simples ne serait pas remplacée : utilise des guillemets doubles.",
     },
     save: "Enregistrer",
     cancel: "Annuler",

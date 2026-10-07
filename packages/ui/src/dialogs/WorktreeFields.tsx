@@ -2,6 +2,7 @@ import {
   KiboError,
   renderTemplate,
   resolveWorktreePath,
+  singleQuotedVariable,
   WorktreeSettings as WorktreeSchema,
   type WorktreeSettings,
   type WorktreeVars,
@@ -49,6 +50,7 @@ export function worktreeProblem(value: WorktreeSettings): string | null {
     return t.worktreeErrors.path;
   const setup = parsed.data.setup;
   if (setup !== null && refuses(() => renderTemplate(setup, SAMPLE))) return t.worktreeErrors.setupVariables;
+  if (setup !== null && singleQuotedVariable(setup) !== null) return t.worktreeErrors.setupQuoted;
   return null;
 }
 

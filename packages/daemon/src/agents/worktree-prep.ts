@@ -7,6 +7,7 @@ import {
   KiboError,
   renderTemplate,
   resolveWorktreePath,
+  singleQuotedVariable,
   splitRemote,
   TicketKey,
   WORKTREE_DEFAULTS,
@@ -53,7 +54,14 @@ export const worktreeBase = (settings: WorktreeSettings, branchRef: GitBranchRef
 
 export function assertWorktreeSettings(settings: WorktreeSettings): void {
   resolveWorktreePath("/repo", settings.pathTemplate, SAMPLE_VARS);
-  if (settings.setup !== null) renderTemplate(settings.setup, SAMPLE_VARS);
+  if (settings.setup === null) return;
+  renderTemplate(settings.setup, SAMPLE_VARS);
+  const quoted = singleQuotedVariable(settings.setup);
+  if (quoted !== null)
+    throw new KiboError(
+      "INVALID_INPUT",
+      `setup variable {${quoted}} is inside single quotes and would not expand`,
+    );
 }
 
 export const runShell: ShellRunner = async (command, cwd, env, timeoutMs) => {

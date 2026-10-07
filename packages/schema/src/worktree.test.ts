@@ -5,6 +5,7 @@ import {
   integrationBranch,
   renderTemplate,
   resolveWorktreePath,
+  singleQuotedVariable,
   splitRemote,
   WORKTREE_DEFAULTS,
   WorktreeSettings,
@@ -61,4 +62,15 @@ test("a base ref never looks like an option, neither its remote nor its branch",
   for (const bad of ["-main", "origin/--upload-pack=touch", "origin/-dev", "-origin/dev"])
     expect(base(bad)).toBe(false);
   for (const ok of ["main", "origin/dev", "origin/feat/x"]) expect(base(ok)).toBe(true);
+});
+
+test("a variable between single quotes is found, double quotes and bare ones are not", () => {
+  expect(singleQuotedVariable("pnpm worktree '{branch}'")).toBe("branch");
+  expect(singleQuotedVariable("echo 'at {path} now' && make")).toBe("path");
+  expect(singleQuotedVariable("a \"b\" 'c {slug}'")).toBe("slug");
+  expect(singleQuotedVariable("pnpm worktree {branch}")).toBeNull();
+  expect(singleQuotedVariable('pnpm worktree "{branch}"')).toBeNull();
+  expect(singleQuotedVariable('echo "it\'s {key}"')).toBeNull();
+  expect(singleQuotedVariable("echo \\'{key}")).toBeNull();
+  expect(singleQuotedVariable("echo 'done' {key}")).toBeNull();
 });

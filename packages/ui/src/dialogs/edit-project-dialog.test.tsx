@@ -217,6 +217,18 @@ test("a path out of the repository is explained and blocks the save", async () =
   expect(saveButton().hasAttribute("disabled")).toBe(true);
 });
 
+test("a variable between single quotes is explained and blocks the save", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const user = userEvent.setup();
+  await user.type(field("Commande de préparation"), "pnpm worktree '{{branch}'");
+  expect(
+    screen.getByText(
+      "Une variable entre guillemets simples ne serait pas remplacée : utilise des guillemets doubles.",
+    ),
+  ).toBeTruthy();
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
 test("clearing the three fields forgets the settings", async () => {
   const closed = mock(() => {});
   const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt" };

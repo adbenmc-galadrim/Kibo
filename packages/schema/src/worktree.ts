@@ -53,6 +53,30 @@ export function renderTemplate(template: string, vars: WorktreeVars): string {
   });
 }
 
+type Quote = "none" | "single" | "double";
+
+function nextQuote(quote: Quote, char: string): Quote {
+  if (quote === "single") return char === "'" ? "none" : "single";
+  if (quote === "double") return char === '"' ? "none" : "double";
+  if (char === "'") return "single";
+  return char === '"' ? "double" : "none";
+}
+
+export function singleQuotedVariable(command: string): string | null {
+  let quote: Quote = "none";
+  for (let i = 0; i < command.length; i++) {
+    const char = command.charAt(i);
+    if (char === "\\" && quote !== "single") {
+      i++;
+      continue;
+    }
+    const variable = quote === "single" ? /^\{([a-z]+)\}/.exec(command.slice(i)) : null;
+    if (variable) return variable[1] ?? null;
+    quote = nextQuote(quote, char);
+  }
+  return null;
+}
+
 const segments = (path: string): string[] => path.split("/").filter((s) => s.length > 0 && s !== ".");
 
 function normalizeSegments(parts: readonly string[]): string[] | null {
