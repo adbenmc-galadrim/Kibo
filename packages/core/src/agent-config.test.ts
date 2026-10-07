@@ -18,6 +18,7 @@ import {
   workspaceDescription,
   workspaceName,
 } from "./agent-config";
+import { updateProfile } from "./agent-profiles";
 import { createProjectDoc } from "./project";
 import { createWorkspaceDoc } from "./workspace";
 
@@ -53,6 +54,25 @@ describe("profiles", () => {
     run(ws, { method: "deleteProfile", profileId: p.id });
     expect(listProfiles(ws)).toEqual([]);
     expect(() => getProfile(ws, p.id)).toThrow("NOT_FOUND");
+  });
+
+  test("a patch that leaves the rules out keeps them, an explicit list replaces them", () => {
+    const ws = createWorkspaceDoc();
+    const rules = ["Bash(pnpm *)", "Edit"];
+    const p = run<AgentProfile>(ws, { method: "createProfile", profile: { ...opus, allow: rules } });
+    const { allow: _omitted, ...withoutRules } = opus;
+    const parsed = ConfigCommand.parse({
+      method: "updateProfile",
+      profileId: p.id,
+      patch: { ...withoutRules, maxParallel: 3 },
+    });
+    expect(run<AgentProfile>(ws, parsed).allow).toEqual(rules);
+    expect(updateProfile(ws, p.id, { maxParallel: 4, allow: undefined }).allow).toEqual(rules);
+    expect(getProfile(ws, p.id)).toMatchObject({ maxParallel: 4, allow: rules });
+    expect(() => updateProfile(ws, p.id, { allow: ["Bash(*)"] })).toThrow("INVALID_INPUT");
+    expect(
+      run<AgentProfile>(ws, { method: "updateProfile", profileId: p.id, patch: { allow: [] } }).allow,
+    ).toEqual([]);
   });
 
   test("names are unique and values are validated", () => {

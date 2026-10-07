@@ -137,9 +137,13 @@ export function createProfile(ws: LoroDoc, input: ProfileInput): AgentProfile {
   return profile;
 }
 
-export function updateProfile(ws: LoroDoc, id: string, patch: Partial<ProfileInput>): AgentProfile {
+const definedFields = (patch: Partial<ProfileInput>): Partial<ProfileInput> =>
+  Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+
+export function updateProfile(ws: LoroDoc, id: string, input: Partial<ProfileInput>): AgentProfile {
   requireWorkspace(ws);
-  assertNoSystemFlag(patch);
+  assertNoSystemFlag(input);
+  const patch = definedFields(input);
   const current = getProfile(ws, id);
   assertEditable(current, patch);
   const profile = valid(
