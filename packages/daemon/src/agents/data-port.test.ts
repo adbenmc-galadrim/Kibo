@@ -111,3 +111,27 @@ test("a shared project takes its domains and domain guidelines from the project,
   store.close();
   rmSync(home, { recursive: true, force: true });
 });
+
+test("a run reads the local worktree settings of its project", () => {
+  const dir = mkdtempSync(join(tmpdir(), "kibo-port-"));
+  try {
+    const s = createService(openStore(dir), { user: "adam" });
+    const meta = call(s, {
+      method: "createProject",
+      name: "Emis",
+      key: "EMIS",
+      folder: null,
+      color: "#F97316",
+    }) as ProjectMeta;
+    const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+    s.docs.updateProjectMeta(meta.id, { worktree }, true);
+    const ticket = call(s, {
+      method: "command",
+      projectId: meta.id,
+      command: { method: "createTicket", title: "A" },
+    }) as Ticket;
+    expect(s.agentData.ticketContext(meta.id, ticket.id).project.meta.worktree).toEqual(worktree);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

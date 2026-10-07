@@ -7,7 +7,9 @@ import {
   ProjectPatch,
   type ProjectSyncInfo,
   type RpcRequest,
+  type WorktreeSettings,
 } from "@kibo/schema";
+import { assertWorktreeSettings } from "../agents/worktree-prep";
 import type { Docs } from "../docs";
 import { decodeIcon } from "../icons/decode-icon";
 import type { IconStore } from "../icons/icon-store";
@@ -75,6 +77,11 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
     refuseActiveRuns(projectId);
   };
 
+  const checkWorktree = (worktree: WorktreeSettings | null, ctx: RpcContext) => {
+    requireLocal(ctx);
+    if (worktree !== null) assertWorktreeSettings(worktree);
+  };
+
   const storeLocalFolder = (projectId: string, folder: string | null) => {
     if (folder === null) deps.settings.unset(projectId, LOCAL_FOLDER_KEY);
     else deps.settings.set(projectId, LOCAL_FOLDER_KEY, folder);
@@ -87,6 +94,7 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       deps.docs.project(projectId);
       const patch = parsePatch(req.patch);
       if (patch.folder !== undefined) checkFolder(projectId, patch.folder, ctx);
+      if (patch.worktree !== undefined) checkWorktree(patch.worktree, ctx);
       const outOfDoc = keepsFolderOutOfDoc(deps.sharing(projectId));
       const touchesDoc = patch.name !== undefined || patch.color !== undefined;
       if (touchesDoc || (patch.folder !== undefined && !outOfDoc)) deps.docs.assertWritable(projectId);

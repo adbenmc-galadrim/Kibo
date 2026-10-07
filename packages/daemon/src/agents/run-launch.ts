@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
 import { headRank } from "@kibo/core/scheduler";
-import { type AgentProfile, isTerminal, KiboError, RunEvent, type RunView } from "@kibo/schema";
+import { type AgentProfile, branchRefOf, isTerminal, KiboError, RunEvent, type RunView } from "@kibo/schema";
 import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
@@ -64,6 +64,8 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       projectFolder: ctx.project.meta.folder,
       ticketKey: ctx.ticket.key,
       runDir,
+      worktree: ctx.project.meta.worktree,
+      branchRef: branchRefOf(ctx.ticket.externalRefs),
     });
     const chain = guidelineChain(opts.data.guidelines(run.projectId), {
       projectId: run.projectId,

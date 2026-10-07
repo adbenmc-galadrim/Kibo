@@ -11,7 +11,7 @@ import {
   type ProjectSyncInfo,
 } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
-import { LOCAL_FOLDER_KEY } from "../project-folder";
+import { LOCAL_FOLDER_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { createService } from "../service";
 import { openStore } from "../store";
@@ -111,6 +111,26 @@ test("the folder is local only, must exist, and is refused while runs are active
   );
   expect(renamed.name).toBe("Encore");
   busy.close();
+});
+
+test("worktree settings are local, checked, and work on a read-only shared project", () => {
+  const s = setup({ sharing: SHARED_SYNC });
+  s.service.docs.setWriteGuard(() => {
+    throw new KiboError("FORBIDDEN", "read-only project");
+  });
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" };
+  const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
+    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
+  expect(() => update({ worktree }, REMOTE)).toThrow("FORBIDDEN");
+  for (const pathTemplate of ["/tmp/{slug}", "../../x/{slug}", "{slug}/../../x", "{nope}"])
+    expect(() => update({ worktree: { ...worktree, pathTemplate } })).toThrow("INVALID_INPUT");
+  expect(() => update({ worktree: { ...worktree, setup: "make {nope}" } })).toThrow("INVALID_INPUT");
+  expect(s.settings.get(s.project.id, LOCAL_WORKTREE_KEY)).toBeNull();
+  expect(update({ worktree }).worktree).toEqual(worktree);
+  expect(s.snapshot().meta.worktree).toEqual(worktree);
+  expect(s.summary()?.worktree).toEqual(worktree);
+  expect(update({ worktree: null }).worktree).toBeNull();
+  s.close();
 });
 
 test("a shared project keeps its folder out of the doc", () => {

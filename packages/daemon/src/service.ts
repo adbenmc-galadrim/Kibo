@@ -31,7 +31,7 @@ import { assertInboxCommand, assertNotInbox } from "./inbox/inbox-rules";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
-import { withLocalFolder } from "./project-folder";
+import { withLocalSettings } from "./project-folder";
 import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
 import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
@@ -184,10 +184,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     projectMeta: (projectId) => {
       const doc = docs.project(projectId);
-      return withLocalFolder(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
+      return withLocalSettings(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
     },
     updateProjectMeta: (projectId, patch, folderInDoc) =>
-      writeProjectMeta(docs, projectId, patch, folderInDoc),
+      writeProjectMeta(docs, settings, projectId, patch, folderInDoc),
     identity: (projectId) => identity(projectId),
     setIdentity(fn) {
       identity = fn;
