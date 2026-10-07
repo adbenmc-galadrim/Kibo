@@ -47,5 +47,6 @@ export const frAgentsPage = {
     plan: "Lecture seule (plan)",
     acceptEdits: "Modifications acceptées",
     default: "Demande à chaque action",
+    auto: "Automatique (l'agent décide, sans contournement)",
   },
 } as const;

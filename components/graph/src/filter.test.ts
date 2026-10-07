@@ -14,6 +14,7 @@ const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   domainId: null,
   assignee: { kind: "human", ref: "adam" },
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],

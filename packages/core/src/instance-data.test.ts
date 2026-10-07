@@ -7,7 +7,14 @@ import { getInstance, removeInstance } from "./instances";
 import { createProjectDoc } from "./project";
 
 function setup() {
-  const doc = createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  const doc = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {
     method: "addInstance",
@@ -60,7 +67,14 @@ describe("instance data", () => {
           if (value === null) delete model[key];
           else model[key] = value;
         }
-        const copy = createProjectDoc({ id: "q", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+        const copy = createProjectDoc({
+          id: "q",
+          key: "KIB",
+          name: "Kibo",
+          folder: null,
+          color: "#71717A",
+          worktree: null,
+        });
         copy.import(doc.export({ mode: "snapshot" }));
         expect(readInstanceData(copy, inst.id)).toEqual(model);
       }),

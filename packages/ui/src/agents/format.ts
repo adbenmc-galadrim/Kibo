@@ -47,6 +47,8 @@ export function reasonText(reason: WaitReason | null): string {
       return r.profile(reason.profileName, reason.used, reason.total);
     case "profile_missing":
       return r.profileMissing;
+    case "ticket_busy":
+      return r.ticketBusy;
   }
 }
 

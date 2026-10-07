@@ -23,6 +23,7 @@ const project: ProjectSummary = {
   name: "Kibo",
   folder: "/Users/adam/code/kibo",
   color: "#F97316",
+  worktree: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const local = (): ProjectSnapshot => kiboProject();

@@ -277,9 +277,22 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
     },
     LOCAL_CONTEXT,
   );
-  expect(pr).toEqual({ number: 1, url: "https://github.com/kibo/test/pull/1", state: "open" });
+  expect(pr).toEqual({
+    number: 1,
+    url: "https://github.com/kibo/test/pull/1",
+    state: "open",
+    base: null,
+    head: null,
+  });
   expect(refs()).toEqual([
-    { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
+    {
+      kind: "github_pr",
+      url: "https://github.com/kibo/test/pull/1",
+      number: 1,
+      state: "open",
+      base: null,
+      head: null,
+    },
   ]);
   expect(events).toContainEqual(event());
   expect(statusOf()).toBe("in_review");
@@ -314,7 +327,14 @@ test("a PR without a ticket, or closed without merging, moves no ticket", async 
     command: {
       method: "upsertExternalRef",
       ticketId: ticket.id,
-      ref: { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
+      ref: {
+        kind: "github_pr",
+        url: "https://github.com/kibo/test/pull/1",
+        number: 1,
+        state: "open",
+        base: null,
+        head: null,
+      },
     },
   });
   const state = gh.FAKE_GH_STATE ?? "";
@@ -389,7 +409,7 @@ test("a failing PR lookup is logged and does not stop the others", async () => {
         command: {
           method: "upsertExternalRef",
           ticketId: ticket.id,
-          ref: { kind: "github_pr", url, number, state: "open" },
+          ref: { kind: "github_pr", url, number, state: "open", base: null, head: null },
         },
       });
     upsert("https://example.test/not-a-pr", 7);

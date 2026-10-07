@@ -14,6 +14,7 @@ const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: refs,
   progress: { done: 0, total: 0 },
   waitingOn: [],

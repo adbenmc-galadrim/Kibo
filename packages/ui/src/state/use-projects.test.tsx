@@ -9,7 +9,7 @@ import {
 import { act, render } from "@testing-library/react";
 
 const snapshotOf = (id: string): ProjectSnapshot => ({
-  meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

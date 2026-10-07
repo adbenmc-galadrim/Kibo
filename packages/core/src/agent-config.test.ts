@@ -30,10 +30,11 @@ const opus: ProfileInput = {
   maxParallel: 2,
   subagents: ["sonnet", "haiku"],
   enabled: true,
+  allow: [],
 };
 const run = <T>(doc: LoroDoc, cmd: ConfigCommand) => executeConfigCommand(doc, cmd) as T;
 const project = () =>
-  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
 
 describe("profiles", () => {
   test("are created, listed, updated and deleted", () => {

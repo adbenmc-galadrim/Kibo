@@ -13,7 +13,14 @@ const binding: Binding = {
 };
 
 test("bindings are stored in the project doc and listed in the snapshot", () => {
-  const d = createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  const d = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   addBinding(d, binding);
   expect(() => addBinding(d, binding)).toThrow("INVALID_INPUT");
   expect(getBinding(d, "b1").config.repo).toBe("adam/kibo");
@@ -26,7 +33,14 @@ test("bindings are stored in the project doc and listed in the snapshot", () => 
 });
 
 test("an invalid binding never reaches the doc", () => {
-  const d = createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  const d = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   expect(() => addBinding(d, { ...binding, config: { ...binding.config, repo: "nope" } })).toThrow();
   expect(listBindings(d)).toEqual([]);
 });

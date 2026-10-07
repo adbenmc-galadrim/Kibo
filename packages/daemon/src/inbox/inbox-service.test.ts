@@ -126,13 +126,27 @@ describe("inbox", () => {
         s.docs.run(INBOX_ID, {
           method: "importExternalTicket",
           title: "Issue",
-          ref: { kind: "github_pr", url: "https://github.com/a/b/pull/1", number: 1, state: "open" },
+          ref: {
+            kind: "github_pr",
+            url: "https://github.com/a/b/pull/1",
+            number: 1,
+            state: "open",
+            base: null,
+            head: null,
+          },
         }),
       () =>
         s.docs.run(INBOX_ID, {
           method: "upsertExternalRef",
           ticketId: "1@1",
-          ref: { kind: "github_pr", url: "https://github.com/a/b/pull/1", number: 1, state: "open" },
+          ref: {
+            kind: "github_pr",
+            url: "https://github.com/a/b/pull/1",
+            number: 1,
+            state: "open",
+            base: null,
+            head: null,
+          },
         }),
       () => s.handle({ ...newProject, key: "INB" }),
     ];
@@ -145,7 +159,7 @@ describe("inbox", () => {
   test("a project cannot be registered or replaced under the inbox id", () => {
     const s = createService(openStore(tmp()), { user: "adam" });
     const inbox = s.docs.project(INBOX_ID);
-    const meta = { id: INBOX_ID, key: "KIB", name: "Fake", folder: null, color: "#F97316" };
+    const meta = { id: INBOX_ID, key: "KIB", name: "Fake", folder: null, color: "#F97316", worktree: null };
     expect(() => s.docs.addProject(meta, inbox)).toThrow("INVALID_INPUT");
     expect(() => s.docs.replaceProject(INBOX_ID, inbox)).toThrow("INVALID_INPUT");
     expect(() => s.docs.removeProject(INBOX_ID)).toThrow("INVALID_INPUT");

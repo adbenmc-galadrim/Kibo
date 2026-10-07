@@ -19,7 +19,7 @@ import {
   updateRegisteredProject,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: "/tmp/kibo", color: "#F97316" };
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: "/tmp/kibo", color: "#F97316", worktree: null };
 
 describe("workspace", () => {
   test("registers projects in order", () => {
@@ -107,4 +107,18 @@ describe("project", () => {
       done: 1,
     });
   });
+});
+
+test("local worktree settings never reach the project doc nor the workspace", () => {
+  const local = {
+    ...meta,
+    worktree: { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "make wt" },
+  };
+  const ws = createWorkspaceDoc();
+  registerProject(ws, local);
+  const doc = createProjectDoc(local);
+  expect(doc.getMap("meta").get("worktree")).toBeUndefined();
+  expect(JSON.stringify(ws.toJSON())).not.toContain("make wt");
+  expect(getProjectMeta(doc).worktree).toBeNull();
+  expect(listProjects(ws)[0]?.worktree).toBeNull();
 });

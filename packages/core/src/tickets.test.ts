@@ -15,7 +15,8 @@ import {
   upsertExternalRef,
 } from "./index";
 
-const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+const doc = () =>
+  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
 
 describe("keys", () => {
   test("keys are flat, sequential and independent from the hierarchy", () => {
@@ -162,9 +163,18 @@ test("upsertExternalRef adds a PR once per URL and keeps the latest state", () =
   const t = createTicket(d, { title: "Schéma" });
   expect(t.externalRefs).toEqual([]);
   const url = "https://github.com/kibo/test/pull/3";
-  upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "draft" });
-  const after = upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "merged" });
-  expect(after.externalRefs).toEqual([{ kind: "github_pr", url, number: 3, state: "merged" }]);
+  upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "draft", base: null, head: null });
+  const after = upsertExternalRef(d, t.id, {
+    kind: "github_pr",
+    url,
+    number: 3,
+    state: "merged",
+    base: null,
+    head: null,
+  });
+  expect(after.externalRefs).toEqual([
+    { kind: "github_pr", url, number: 3, state: "merged", base: null, head: null },
+  ]);
 });
 
 describe("order", () => {

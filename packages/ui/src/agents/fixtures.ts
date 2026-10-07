@@ -65,6 +65,7 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 2,
     subagents: ["sonnet", "haiku"],
     enabled: true,
+    allow: [],
     system: false,
   },
   {
@@ -77,6 +78,7 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 3,
     subagents: [],
     enabled: true,
+    allow: [],
     system: false,
   },
   {
@@ -89,6 +91,7 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 1,
     subagents: [],
     enabled: true,
+    allow: [],
     system: false,
   },
 ];
@@ -314,6 +317,7 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
@@ -324,7 +328,14 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
 
 export function kiboProject(): ProjectSnapshot {
   return {
-    meta: { id: "kibo", key: "KIB", name: "Kibo", folder: "/Users/adam/goinfre/Kibo", color: "#F97316" },
+    meta: {
+      id: "kibo",
+      key: "KIB",
+      name: "Kibo",
+      folder: "/Users/adam/goinfre/Kibo",
+      color: "#F97316",
+      worktree: null,
+    },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
     tickets: [
@@ -374,6 +385,7 @@ export const projectsFixture: ProjectSummary[] = [
     name: "Kibo",
     folder: "/Users/adam/goinfre/Kibo",
     color: "#F97316",
+    worktree: null,
     counts: { backlog: 1, todo: 3, in_progress: 4, in_review: 2, blocked: 1, done: 2 },
   },
   {
@@ -382,6 +394,7 @@ export const projectsFixture: ProjectSummary[] = [
     name: "API Facturation",
     folder: null,
     color: "#22C55E",
+    worktree: null,
     counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
   },
 ];

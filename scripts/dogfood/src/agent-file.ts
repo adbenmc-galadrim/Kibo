@@ -46,6 +46,7 @@ export function agentProfile(agent: AgentFile, settings: ProfileSettings): Agent
       ...settings,
       subagents: [],
       enabled: true,
+      allow: [],
     },
     guideline: `# ${agent.name}\n\n${agent.description}\n\n${agent.body}\n`,
     gaps,

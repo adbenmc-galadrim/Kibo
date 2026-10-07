@@ -33,6 +33,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   domainId: "facturation",
   assignee: { kind: "human", ref: "adam" },
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
@@ -43,7 +44,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
   if (projectId === INBOX_ID)
     return {
       ...kibo,
-      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
       nextTicketKey: "INB-3",
@@ -55,7 +56,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
     };
   return {
     ...kibo,
-    meta: { id: "fac", key: "FAC", name: "API Facturation", folder: null, color: "#22C55E" },
+    meta: { id: "fac", key: "FAC", name: "API Facturation", folder: null, color: "#22C55E", worktree: null },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };
 }

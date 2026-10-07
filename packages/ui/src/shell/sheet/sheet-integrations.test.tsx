@@ -113,6 +113,7 @@ const ticket: TicketView = {
   assignee: null,
   domainId: null,
   blockedReason: null,
+  labels: [],
   externalRefs: [
     {
       kind: "github_issue",
@@ -122,7 +123,14 @@ const ticket: TicketView = {
       nodeId: "I_42",
       url: "https://github.com/adam/kibo/issues/42",
     },
-    { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+    {
+      kind: "github_pr",
+      url: "https://github.com/adam/kibo/pull/12",
+      number: 12,
+      state: "open",
+      base: null,
+      head: null,
+    },
     {
       kind: "figma_node",
       fileKey: "AbC123xyz",
@@ -144,7 +152,7 @@ const ticket: TicketView = {
   waitingOn: [],
 };
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   links: [],

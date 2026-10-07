@@ -15,7 +15,7 @@ import {
   restoreLocalAllocation,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
 
 function serverAllocated(): LoroDoc {
   const doc = createProjectDoc(meta);
@@ -123,7 +123,14 @@ describe("server allocator", () => {
 });
 
 test("restoreLocalAllocation keys pending tickets and gives allocation back to the daemon", () => {
-  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6" });
+  const doc = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+  });
   enableServerAllocation(doc);
   createTicket(doc, { title: "En attente" });
   expect(listTickets(doc)[0]?.key).toBeNull();

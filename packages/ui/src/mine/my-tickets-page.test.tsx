@@ -112,7 +112,7 @@ describe("my tickets page", () => {
     if (!base) throw new Error("fixture");
     const inbox: ProjectSnapshot = {
       ...base,
-      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
       tickets: [mineTicket("INB-2", "todo", { kind: "human", ref: "adam" })],
     };
     const snapshots = new Map(mineSnapshots).set(INBOX_ID, inbox);

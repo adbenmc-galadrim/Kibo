@@ -39,13 +39,14 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
   ...patch,
 });
 const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [main],

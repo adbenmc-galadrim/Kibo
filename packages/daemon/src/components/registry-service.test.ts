@@ -50,7 +50,14 @@ let db: Database;
 
 beforeEach(() => {
   ws = createWorkspaceDoc();
-  project = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  project = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   store = createFakeStore();
   stopped = [];
   emitted = 0;

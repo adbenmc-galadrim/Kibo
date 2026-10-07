@@ -3,7 +3,7 @@ import { DEFAULT_WORKFLOW, type ProjectSnapshot, type RpcRequest } from "@kibo/s
 import { renderHook, waitFor } from "@testing-library/react";
 
 const snapshot = (id: string): ProjectSnapshot => ({
-  meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

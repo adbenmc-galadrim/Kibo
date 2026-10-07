@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { buildItems, type PaletteContext } from "./palette-items";
 
-const meta = { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" };
+const meta = { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null };
 const counts = { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 };
 const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => ({
   meta,

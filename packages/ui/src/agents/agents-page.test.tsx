@@ -260,6 +260,7 @@ test("a new profile is created with its guidelines", async () => {
           maxParallel: 2,
           subagents: ["sonnet"],
           enabled: true,
+          allow: [],
         },
       },
     },
@@ -293,6 +294,7 @@ test("a new profile starts with safe defaults", async () => {
         maxParallel: 1,
         subagents: [],
         enabled: true,
+        allow: [],
       },
     },
   });

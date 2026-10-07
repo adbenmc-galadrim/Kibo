@@ -13,8 +13,8 @@ import {
   upsertExternalRef,
 } from "./index";
 
-const inboxMeta = { id: "inbox", key: "INB", name: "Inbox", folder: null, color: "#64748B" };
-const kibo = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const inboxMeta = { id: "inbox", key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null };
+const kibo = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
 
 function seeded() {
   const from = createProjectDoc(inboxMeta);
@@ -87,6 +87,8 @@ describe("transferTicket", () => {
       url: "https://github.com/a/b/pull/3",
       number: 3,
       state: "open",
+      base: null,
+      head: null,
     } as const;
     upsertExternalRef(from, t.id, ref);
     const result = transferTicket(from, to, t.id, null);

@@ -10,6 +10,7 @@ const systemProfile = (id: string, permissionMode: AgentProfile["permissionMode"
   maxParallel: 1,
   subagents: [],
   enabled: true,
+  allow: [],
   system: true,
 });
 

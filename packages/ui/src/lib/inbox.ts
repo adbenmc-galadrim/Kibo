@@ -14,7 +14,14 @@ import { canEdit } from "../state/access";
 const INBOX_COLOR = "#64748B";
 
 export function inboxMeta(): ProjectMeta {
-  return { id: INBOX_ID, key: INBOX_KEY, name: fr.nav.inbox, folder: null, color: INBOX_COLOR };
+  return {
+    id: INBOX_ID,
+    key: INBOX_KEY,
+    name: fr.nav.inbox,
+    folder: null,
+    color: INBOX_COLOR,
+    worktree: null,
+  };
 }
 
 export const displayName = (meta: Pick<ProjectMeta, "id" | "name">): string =>

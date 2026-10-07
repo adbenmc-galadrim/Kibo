@@ -3,6 +3,7 @@ import { ExternalRef, ExternalRefKind } from "./external-ref";
 import { NodeId, Sha256 } from "./ids";
 import { ComponentRef, DataKey, type Instance, Layout } from "./instance";
 import { Binding } from "./integrations";
+import { Labels } from "./label";
 import type { Link } from "./link";
 import type { EntityType } from "./manifest";
 import { type Page, PageKind } from "./page";
@@ -30,6 +31,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     blockedReason: z.string().optional(),
     parentId: NodeId.nullable().optional(),
     assignee: Assignee.nullable().optional(),
+    labels: Labels.optional(),
   }),
   z.object({
     method: z.literal("updateTicket"),
@@ -38,6 +40,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     description: z.string().optional(),
     domainId: z.string().nullable().optional(),
     assignee: Assignee.nullable().optional(),
+    labels: Labels.optional(),
   }),
   z.object({
     method: z.literal("setStatus"),

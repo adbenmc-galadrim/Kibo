@@ -30,6 +30,7 @@ const ticket = (id: string, statusId: TicketView["statusId"]): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],

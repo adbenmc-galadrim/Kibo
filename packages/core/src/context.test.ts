@@ -31,7 +31,14 @@ test("the chain keeps what applies, from workspace to profile", () => {
 });
 
 function kibo() {
-  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  const doc = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+  });
   const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(doc, cmd);
   const dep = run({ method: "createTicket", title: "Schéma Loro", statusId: "in_progress" }) as Ticket;
   const t = run({

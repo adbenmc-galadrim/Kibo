@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import { LOCAL_FOLDER_KEY, withLocalFolder } from "./project-folder";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6" };
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6", worktree: null };
 
 test("a shared project gets its folder back from the local settings", () => {
   const db = new Database(":memory:", { strict: true });

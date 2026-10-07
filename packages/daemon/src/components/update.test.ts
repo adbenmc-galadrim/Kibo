@@ -37,7 +37,14 @@ function setup(
     req: MigrateRequest,
   ) => Promise<{ config: Record<string, unknown>; data: Record<string, unknown> }>,
 ) {
-  const doc = createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  const doc = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {
     method: "addInstance",

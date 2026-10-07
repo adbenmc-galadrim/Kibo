@@ -47,7 +47,13 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     draft: true,
     reviewers: ["adam", "kibo/core"],
   });
-  expect(pr).toEqual({ number: 1, url: "https://github.com/kibo/test/pull/1", state: "draft" });
+  expect(pr).toEqual({
+    number: 1,
+    url: "https://github.com/kibo/test/pull/1",
+    state: "draft",
+    base: null,
+    head: null,
+  });
   expect(fx.git("ls-remote", "origin", "kib-12").trim()).not.toBe("");
   expect(readFakeGhLog(gh)).toContainEqual({
     args: [
@@ -67,6 +73,8 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     number: 1,
     url: "https://github.com/kibo/test/pull/1",
     state: "draft",
+    base: null,
+    head: null,
   });
 });
 

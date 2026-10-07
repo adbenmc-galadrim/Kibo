@@ -149,7 +149,8 @@ export type WaitReason =
   | { kind: "ram"; value: number; threshold: number }
   | { kind: "host"; used: number; total: number }
   | { kind: "profile"; profileName: string; used: number; total: number }
-  | { kind: "profile_missing" };
+  | { kind: "profile_missing" }
+  | { kind: "ticket_busy" };
 
 export type QueueEntry = { runId: string; position: number; reason: WaitReason | null };
 

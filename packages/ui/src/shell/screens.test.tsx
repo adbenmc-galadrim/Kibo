@@ -52,6 +52,7 @@ const kibo: ProjectSummary = {
   key: "KIB",
   folder: "/Users/adam/goinfre/Kibo",
   color: "#14B8A6",
+  worktree: null,
   counts,
 };
 const portfolio: ProjectSummary = {
@@ -95,7 +96,14 @@ test("a 120-character folder wraps on the overview card instead of overflowing (
 });
 
 const empty: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: "/Users/adam/goinfre/Kibo", color: "#14B8A6" },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: "/Users/adam/goinfre/Kibo",
+    color: "#14B8A6",
+    worktree: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

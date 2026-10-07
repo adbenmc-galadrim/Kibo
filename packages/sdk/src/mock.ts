@@ -106,6 +106,7 @@ export function createMockSdk(
     name: "Mock",
     folder: null,
     color: "#71717A",
+    worktree: null,
   });
   const changes = notifier();
   const runChanges = notifier();

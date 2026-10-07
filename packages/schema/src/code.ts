@@ -129,6 +129,8 @@ export const PrInfo = z.object({
   number: z.number().int().positive(),
   url: z.string().url(),
   state: PrState,
+  base: z.string().nullable().default(null),
+  head: z.string().nullable().default(null),
 });
 export type PrInfo = z.infer<typeof PrInfo>;
 

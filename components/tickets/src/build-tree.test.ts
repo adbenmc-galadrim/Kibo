@@ -14,6 +14,7 @@ const t = (id: string, parentId: string | null, assignee: TicketView["assignee"]
   domainId: null,
   assignee,
   parentId,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],

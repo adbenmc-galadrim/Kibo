@@ -17,6 +17,7 @@ const ticket = {
   assignee: null,
   parentId: null,
   externalRefs: [],
+  labels: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
 } satisfies TicketView;

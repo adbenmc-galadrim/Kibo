@@ -14,7 +14,14 @@ import {
 } from "./index";
 
 test("instances stored before v1.0 are listed with componentHash null", () => {
-  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#3B82F6" });
+  const doc = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#3B82F6",
+    worktree: null,
+  });
   doc.getMap("instances").set("i1", {
     id: "i1",
     pageId: "pg1",
@@ -25,7 +32,7 @@ test("instances stored before v1.0 are listed with componentHash null", () => {
   expect(listInstances(doc)[0]?.componentHash).toBeNull();
 });
 
-const META = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#3B82F6" };
+const META = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#3B82F6", worktree: null };
 
 describe("setInstanceLayout", () => {
   test("moves and resizes within the grid, as a format, and the others flow around it", () => {

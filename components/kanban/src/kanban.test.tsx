@@ -203,7 +203,14 @@ const syncedSeed = (run: (cmd: ProjectCommand) => unknown) => {
   run({
     method: "upsertExternalRef",
     ticketId: b.id,
-    ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+    ref: {
+      kind: "github_pr",
+      url: "https://github.com/adam/kibo/pull/12",
+      number: 12,
+      state: "open",
+      base: null,
+      head: null,
+    },
   });
 };
 const ciRun = (overrides: Partial<CiRun>): CiRun => ({

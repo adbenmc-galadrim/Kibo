@@ -265,6 +265,7 @@ export const fr = {
       profile: (name: string, used: number, total: number) =>
         `attend une place du profil ${name} (${used}/${total})`,
       profileMissing: "profil supprimé",
+      ticketBusy: "un run de ce ticket est déjà en cours ou en file",
       next: "admission au prochain passage",
     },
     modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },

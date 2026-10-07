@@ -22,6 +22,7 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
     domainId: null,
     assignee: adam ? { kind: "human", ref: "adam" } : null,
     parentId: null,
+    labels: [],
     externalRefs: [],
     progress: { done: 0, total: 0 },
     waitingOn: [],
@@ -30,7 +31,7 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
 
 export const inboxSnapshot: ProjectSnapshot = {
   ...base,
-  meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+  meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
   tickets: [
     inboxTicket(1, "Idée : export CSV des tickets", "backlog", false),
     inboxTicket(2, "Appeler le comptable", "todo", true),

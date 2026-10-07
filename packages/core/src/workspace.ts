@@ -1,6 +1,7 @@
 import { KiboError, ProjectMeta, ProjectPatch } from "@kibo/schema";
 import { LoroDoc, type LoroList, LoroMap } from "loro-crdt";
 import { stored, valid } from "./config-store";
+import { sharedMetaEntries } from "./project";
 
 export function createWorkspaceDoc(): LoroDoc {
   const doc = new LoroDoc();
@@ -10,7 +11,7 @@ export function createWorkspaceDoc(): LoroDoc {
 }
 
 export function listProjects(ws: LoroDoc): ProjectMeta[] {
-  return (ws.getList("projects").toJSON() as ProjectMeta[]).map((p) => ({ ...p }));
+  return (ws.getList("projects").toJSON() as ProjectMeta[]).map((p) => ({ ...p, worktree: null }));
 }
 
 export function registerProject(ws: LoroDoc, meta: ProjectMeta): void {
@@ -21,7 +22,7 @@ export function registerProject(ws: LoroDoc, meta: ProjectMeta): void {
   }
   const list: LoroList = ws.getList("projects");
   const entry = list.insertContainer(list.length, new LoroMap());
-  for (const [k, v] of Object.entries(meta)) entry.set(k, v);
+  for (const [k, v] of sharedMetaEntries(meta)) entry.set(k, v);
   ws.commit();
 }
 

@@ -11,7 +11,14 @@ import {
 } from "./index";
 
 const setup = () => {
-  const d = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  const d = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+  });
   const [a, b, c] = ["A", "B", "C"].map((title) => createTicket(d, { title }));
   if (!a || !b || !c) throw new Error("setup");
   return { d, a, b, c };

@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { AllowRules } from "./allow-rule";
 
-export const PermissionMode = z.enum(["default", "acceptEdits", "plan"]);
+export const PermissionMode = z.enum(["default", "acceptEdits", "plan", "auto"]);
 export type PermissionMode = z.infer<typeof PermissionMode>;
 
 export const WorkspaceStrategy = z.enum(["worktree", "repo", "isolated"]);
@@ -20,6 +21,7 @@ export const ProfileInput = z.object({
   maxParallel: z.number().int().min(1).max(16),
   subagents: z.array(AgentModel),
   enabled: z.boolean().default(true),
+  allow: AllowRules.default([]),
 });
 export type ProfileInput = z.infer<typeof ProfileInput>;
 

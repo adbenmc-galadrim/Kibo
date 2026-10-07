@@ -3,10 +3,13 @@ import { LoroDoc } from "loro-crdt";
 import { valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
+export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
+  Object.entries(meta).filter(([key]) => key !== "worktree");
+
 export function createProjectDoc(meta: ProjectMeta): LoroDoc {
   const doc = new LoroDoc();
   const m = doc.getMap("meta");
-  for (const [k, v] of Object.entries(meta)) m.set(k, v);
+  for (const [k, v] of sharedMetaEntries(meta)) m.set(k, v);
   m.set("ticketSeq", 0);
   doc.getMap("workflow").set("statuses", DEFAULT_WORKFLOW);
   doc.getTree("pages").enableFractionalIndex(0);
@@ -23,6 +26,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     name: m.get("name") as string,
     folder: (m.get("folder") as string | null) ?? null,
     color: m.get("color") as string,
+    worktree: null,
   };
 }
 

@@ -61,6 +61,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     assignee: (d.get("assignee") as Assignee | null | undefined) ?? null,
     parentId: n.parent()?.id ?? null,
     externalRefs: readExternalRefs(n),
+    labels: (d.get("labels") as string[] | undefined) ?? [],
   };
 }
 

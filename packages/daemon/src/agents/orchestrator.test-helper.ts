@@ -37,13 +37,14 @@ const ticket = (id: string, key: string | null): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
 });
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" },
+  meta: { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [...[1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)), ticket("pending", null)],
@@ -65,6 +66,7 @@ export const profile = (p: Partial<AgentProfile> = {}): AgentProfile => ({
   maxParallel: 4,
   subagents: [],
   enabled: true,
+  allow: [],
   system: false,
   ...p,
 });

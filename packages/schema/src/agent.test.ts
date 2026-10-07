@@ -8,6 +8,8 @@ import {
   GuidelinePath,
   HookInput,
   HookPost,
+  PermissionMode,
+  ProfileInput,
   RpcRequest,
   Rule,
   RunEvent,
@@ -27,11 +29,11 @@ const profile = {
 };
 
 describe("agent profile", () => {
-  test("accepts the three safe permission modes only", () => {
-    for (const mode of ["default", "acceptEdits", "plan"]) {
+  test("accepts the four safe permission modes only", () => {
+    for (const mode of ["default", "acceptEdits", "plan", "auto"]) {
       expect(AgentProfile.safeParse({ ...profile, permissionMode: mode }).success).toBe(true);
     }
-    for (const mode of ["bypassPermissions", "dontAsk", "auto"]) {
+    for (const mode of ["bypassPermissions", "dontAsk", "manual"]) {
       expect(AgentProfile.safeParse({ ...profile, permissionMode: mode }).success).toBe(false);
     }
   });
@@ -139,4 +141,19 @@ test("a workspace patch needs a field; the description is bounded and can be cle
     method: "updateWorkspace",
     patch: { name: "Maison", description: "Mes projets" },
   });
+});
+
+test("profiles accept auto and default allow to an empty list", () => {
+  const p = ProfileInput.parse({
+    name: "x",
+    model: "opus",
+    execution: "cli",
+    permissionMode: "auto",
+    workspace: "worktree",
+    maxParallel: 2,
+    subagents: [],
+  });
+  expect(p.allow).toEqual([]);
+  expect(ProfileInput.safeParse({ ...p, allow: ["Bash"] }).success).toBe(false);
+  expect(PermissionMode.safeParse("bypassPermissions").success).toBe(false);
 });

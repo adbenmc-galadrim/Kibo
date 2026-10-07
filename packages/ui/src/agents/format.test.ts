@@ -33,6 +33,7 @@ test("wait reasons, workspaces and errors are said in French", () => {
   expect(reasonText({ kind: "host", used: 3, total: 3 })).toBe("attend une place sur la machine (3/3)");
   expect(reasonText({ kind: "cpu", value: 91, threshold: 85 })).toBe("CPU 91 % (seuil 85 %)");
   expect(reasonText(null)).toBe("admission au prochain passage");
+  expect(reasonText({ kind: "ticket_busy" })).toBe("un run de ce ticket est déjà en cours ou en file");
   expect(workspaceText("worktree:kib-14")).toBe("worktree kib-14");
   expect(workspaceText("isolated")).toBe("dossier isolé");
   expect(errorText("WORKSPACE_FAILED: the project has no local folder")).toBe(

@@ -4,7 +4,14 @@ import { type LoroDoc, LoroMap } from "loro-crdt";
 import { addBinding, createProjectDoc, createTicket, deleteTicket, validateSharedSnapshot } from "./index";
 
 function sharable(): LoroDoc {
-  const doc = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  const doc = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+  });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });
   doc.getMap("meta").delete("folder");
