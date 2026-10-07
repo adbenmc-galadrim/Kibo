@@ -49,27 +49,6 @@ async function withClient<T>(run: (c: SeedClient) => Promise<T>): Promise<T> {
   }
 }
 
-async function daemonStoresLabels(): Promise<boolean> {
-  return withClient(async (c) => {
-    const probe = await c.rpc({
-      method: "createProject",
-      name: "Sonde",
-      key: "SONDE",
-      folder: null,
-      color: "#64748B",
-    });
-    await c.rpc({
-      method: "command",
-      projectId: probe.id,
-      command: { method: "createTicket", title: "x", labels: ["x"] },
-    });
-    const snap = await c.rpc({ method: "getProject", projectId: probe.id });
-    await c.rpc({ method: "deleteProject", projectId: probe.id });
-    return snap.tickets.some((t) => t.labels.includes("x"));
-  });
-}
-const LABELS_STORED = await daemonStoresLabels();
-
 test("a dry run writes nothing", async () => {
   const folder = join(home, "dry", "emis");
   mkdirSync(folder, { recursive: true });
@@ -92,64 +71,60 @@ test("a dry run writes nothing", async () => {
   expect(await withClient((c) => c.rpc({ method: "listProjects" }))).toEqual([]);
 }, 60_000);
 
-test.skipIf(!LABELS_STORED)(
-  "imports the fixture once, then finds everything, then repairs a missing import ref",
-  async () => {
-    const folder = join(home, "emis");
-    mkdirSync(folder, { recursive: true });
-    const notes = join(home, "notes");
-    const desired = fixtureDesired(notes);
-    const options = { folder, notesDir: notes, dryRun: false, manifestVersions: VERSIONS };
-    const first = await withClient((c) => applyDesired(c, desired, options));
-    expect(first.counts).toMatchObject({ updated: 0, orphan: 0, drift: 0 });
-    expect(first.counts.created).toBe(
-      desired.tickets.length + desired.links.length + desired.notes.length + 4 + 1 + 2 + 1 + 1,
-    );
-    const second = await withClient((c) => applyDesired(c, desired, options));
-    expect(second.counts.lines).toEqual([]);
+test("imports the fixture once, then finds everything, then repairs a missing import ref", async () => {
+  const folder = join(home, "emis");
+  mkdirSync(folder, { recursive: true });
+  const notes = join(home, "notes");
+  const desired = fixtureDesired(notes);
+  const options = { folder, notesDir: notes, dryRun: false, manifestVersions: VERSIONS };
+  const first = await withClient((c) => applyDesired(c, desired, options));
+  expect(first.counts).toMatchObject({ updated: 0, orphan: 0, drift: 0 });
+  expect(first.counts.created).toBe(
+    desired.tickets.length + desired.links.length + desired.notes.length + 4 + 1 + 2 + 1 + 1,
+  );
+  const second = await withClient((c) => applyDesired(c, desired, options));
+  expect(second.counts.lines).toEqual([]);
 
-    const projectId = first.projectId ?? "";
-    const snap = await withClient((c) => c.rpc({ method: "getProject", projectId }));
-    expect(snap.meta).toMatchObject({ name: "Emis", key: "EMIS", folder });
-    expect(snap.pages.map((p) => p.title)).toEqual(["Tableau de bord", "Plan", "Graphe", "Notes"]);
-    expect(snap.instances).toHaveLength(5);
-    const c12 = snap.tickets.find((t) => t.title.startsWith("C1-2 · "));
-    expect(c12).toMatchObject({
-      statusId: "todo",
-      labels: ["area:api", "area:web", "phase:p1", "sprint:s2"],
-    });
-    expect(c12?.externalRefs).toContainEqual({
-      kind: "git_branch",
-      branch: "feat/connexion",
-      base: "spike/sso",
-    });
-    expect(snap.links.filter((l) => l.type === "blocks")).toHaveLength(8);
-    expect(snap.tickets.filter((t) => t.statusId === "blocked")).toHaveLength(2);
-    const c02 = snap.tickets.find((t) => t.title.startsWith("C0-2 · "));
-    expect(readFileSync(join(notes, "briefs", "C0-2.md"), "utf8")).toContain(`tickets: [${c02?.key}]`);
-    const config = await withClient((c) => c.rpc({ method: "getConfig" }));
-    expect(config.profiles.find((p) => p.name === "emis-livraison")).toMatchObject({
-      permissionMode: "auto",
-    });
-    expect(await withClient((c) => c.rpc({ method: "getNotesDir", projectId }))).toMatchObject({
-      dir: notes,
-    });
+  const projectId = first.projectId ?? "";
+  const snap = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  expect(snap.meta).toMatchObject({ name: "Emis", key: "EMIS", folder });
+  expect(snap.pages.map((p) => p.title)).toEqual(["Tableau de bord", "Plan", "Graphe", "Notes"]);
+  expect(snap.instances).toHaveLength(5);
+  const c12 = snap.tickets.find((t) => t.title.startsWith("C1-2 · "));
+  expect(c12).toMatchObject({
+    statusId: "todo",
+    labels: ["area:api", "area:web", "phase:p1", "sprint:s2"],
+  });
+  expect(c12?.externalRefs).toContainEqual({
+    kind: "git_branch",
+    branch: "feat/connexion",
+    base: "spike/sso",
+  });
+  expect(snap.links.filter((l) => l.type === "blocks")).toHaveLength(8);
+  expect(snap.tickets.filter((t) => t.statusId === "blocked")).toHaveLength(2);
+  const c02 = snap.tickets.find((t) => t.title.startsWith("C0-2 · "));
+  expect(readFileSync(join(notes, "briefs", "C0-2.md"), "utf8")).toContain(`tickets: [${c02?.key}]`);
+  const config = await withClient((c) => c.rpc({ method: "getConfig" }));
+  expect(config.profiles.find((p) => p.name === "emis-livraison")).toMatchObject({
+    permissionMode: "auto",
+  });
+  expect(await withClient((c) => c.rpc({ method: "getNotesDir", projectId }))).toMatchObject({
+    dir: notes,
+  });
 
-    await withClient((c) =>
-      c.rpc({
-        method: "command",
-        projectId,
-        command: {
-          method: "removeExternalRef",
-          ticketId: c12?.id ?? "",
-          kind: "import_ref",
-          key: "plan:C1-2",
-        },
-      }),
-    );
-    const third = await withClient((c) => applyDesired(c, desired, options));
-    expect(third.counts).toMatchObject({ created: 0, updated: 1 });
-    expect(third.changes).toContainEqual({ kind: "updated", what: "ticket C1-2", detail: "import_ref" });
-  },
-  60_000,
-);
+  await withClient((c) =>
+    c.rpc({
+      method: "command",
+      projectId,
+      command: {
+        method: "removeExternalRef",
+        ticketId: c12?.id ?? "",
+        kind: "import_ref",
+        key: "plan:C1-2",
+      },
+    }),
+  );
+  const third = await withClient((c) => applyDesired(c, desired, options));
+  expect(third.counts).toMatchObject({ created: 0, updated: 1 });
+  expect(third.changes).toContainEqual({ kind: "updated", what: "ticket C1-2", detail: "import_ref" });
+}, 60_000);
