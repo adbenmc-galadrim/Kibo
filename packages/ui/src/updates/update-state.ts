@@ -75,11 +75,20 @@ export function downloadPercent(state: UpdateStatus): number | null {
   return Math.min(100, Math.round((state.received / state.total) * 100));
 }
 
-export type UpdateFailure = "check" | "backup" | "install" | "appImageOnly";
+export type UpdateFailure = "check" | "noRelease" | "invalid" | "backup" | "install" | "appImageOnly";
 
 const APPIMAGE_ONLY = /appimage|unsupported linux package/i;
+const NO_RELEASE = /could not fetch a valid release json/i;
+const BAD_SIGNATURE = /signature|minisign|public key|base64|invalid symbol|invalid (byte|length|padding)/i;
+const BAD_MANIFEST =
+  /missing field|expected value|invalid type|unknown variant|`platforms` object|at line \d+ column \d+/i;
 
 export function classifyUpdateFailure(step: UpdateStep, detail: string): UpdateFailure {
-  if (step === "check" || step === "backup") return step;
+  if (step === "backup") return step;
+  if (BAD_SIGNATURE.test(detail)) return "invalid";
+  if (step === "check") {
+    if (NO_RELEASE.test(detail)) return "noRelease";
+    return BAD_MANIFEST.test(detail) ? "invalid" : "check";
+  }
   return APPIMAGE_ONLY.test(detail) ? "appImageOnly" : "install";
 }

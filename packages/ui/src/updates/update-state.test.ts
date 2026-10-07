@@ -97,4 +97,27 @@ describe("update state", () => {
     expect(classifyUpdateFailure("install", "permission denied")).toBe("install");
     expect(classifyUpdateFailure("backup", "AppImage")).toBe("backup");
   });
+
+  test("a channel without release, an invalid manifest and a bad signature are told apart from the network", () => {
+    expect(classifyUpdateFailure("check", "Could not fetch a valid release JSON from the remote")).toBe(
+      "noRelease",
+    );
+    for (const detail of [
+      "missing field `version` at line 1 column 2",
+      "expected value at line 1 column 1",
+      "the platform `darwin-aarch64` was not found in the response `platforms` object",
+      'None of the fallback platforms `["linux-x86_64"]` were found in the response `platforms` object',
+    ])
+      expect(classifyUpdateFailure("check", detail)).toBe("invalid");
+    for (const detail of [
+      "The signature abc could not be decoded, please check if it is a valid base64 string.",
+      "Invalid signature",
+      "invalid public key",
+      "Invalid symbol 45, offset 3.",
+    ])
+      expect(classifyUpdateFailure("install", detail)).toBe("invalid");
+    expect(classifyUpdateFailure("check", "error sending request for url (https://github.com/x)")).toBe(
+      "check",
+    );
+  });
 });

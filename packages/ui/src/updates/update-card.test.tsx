@@ -191,6 +191,37 @@ describe("update panel", () => {
   });
 });
 
+test("a channel without release is a neutral status, an invalid release an alert with the releases link", () => {
+  const { rerender } = render(
+    <UpdatePanel
+      snapshot={snap({
+        phase: "error",
+        step: "check",
+        detail: "Could not fetch a valid release JSON from the remote",
+        update: null,
+      })}
+      activeRuns={0}
+      desktop
+      onCheck={noop}
+      onInstall={noop}
+    />,
+  );
+  expect(screen.getByText("Aucune version publiée sur ce canal pour l'instant.")).toBeTruthy();
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.queryByText("Mise à jour impossible")).toBeNull();
+  rerender(
+    <UpdatePanel
+      snapshot={snap({ phase: "error", step: "install", detail: "Invalid signature", update })}
+      activeRuns={0}
+      desktop
+      onCheck={noop}
+      onInstall={noop}
+    />,
+  );
+  expect(screen.getByText(/La version publiée est invalide \(format ou signature\)/)).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Page des releases" })).toBeTruthy();
+});
+
 describe("update card", () => {
   test("on the desktop, it reads the store and counts the runs holding a slot", async () => {
     const port: UpdaterPort = {

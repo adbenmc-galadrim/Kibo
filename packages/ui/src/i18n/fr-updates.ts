@@ -24,6 +24,9 @@ export const frUpdates = {
   failed: "Mise à jour impossible",
   errors: {
     check: "Impossible de joindre GitHub. Vérifie la connexion, puis réessaie.",
+    noRelease: "Aucune version publiée sur ce canal pour l'instant.",
+    invalid:
+      "La version publiée est invalide (format ou signature) : rien n'a été installé. Réessaie plus tard ou télécharge-la depuis la page des releases.",
     backup: "La sauvegarde a échoué : la mise à jour n'a pas été installée. Vérifie la carte Sauvegardes.",
     install:
       "L'installation a échoué ; l'application actuelle reste intacte. Réessaie ou télécharge la version depuis la page des releases.",
