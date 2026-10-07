@@ -147,6 +147,7 @@ test("glisser une carte : l'aperçu passe au-dessus des colonnes, sans barre de 
 const previewLeft = (page: Page) =>
   page.locator(PREVIEW).evaluate((el) => Math.round(el.getBoundingClientRect().left));
 
+// dnd-kit KeyboardSensor listens to keydown only after a setTimeout following activation.
 async function stepRight(page: Page) {
   const start = await previewLeft(page);
   await expect(async () => {
