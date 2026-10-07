@@ -23,15 +23,10 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 type PageKind = "Tableau de bord" | "Vue";
 
 async function fillNewPage(page: Page, title: string, kind: PageKind) {
-  const name = page.getByLabel("Nom", { exact: true });
-  const create = page.getByRole("button", { name: "Créer la page" });
-  await expect(async () => {
-    if ((await name.inputValue()) !== title) await name.fill(title);
-    await page.getByRole("radio", { name: kind, exact: true }).click();
-    await expect(name).toHaveValue(title, { timeout: 1_000 });
-    await expect(create).toBeEnabled({ timeout: 1_000 });
-  }).toPass();
-  await create.click();
+  const dialog = page.getByRole("dialog", { name: "Nouvelle page" });
+  await dialog.getByLabel("Nom", { exact: true }).fill(title);
+  await dialog.getByRole("radio", { name: kind, exact: true }).click();
+  await dialog.getByRole("button", { name: "Créer la page" }).click();
 }
 
 export async function createPage(page: Page, title: string, kind: PageKind) {
