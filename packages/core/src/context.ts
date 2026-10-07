@@ -1,6 +1,7 @@
 import {
   type AgentModel,
   ASK_TOOL,
+  branchRefOf,
   type Domain,
   estimateTokens,
   type Guideline,
@@ -55,6 +56,14 @@ export function guidelineChain(all: Guideline[], target: ChainTarget): Guideline
     );
 }
 
+function ticketFacts(ticket: TicketView): string[] {
+  const facts: string[] = [];
+  const branch = branchRefOf(ticket.externalRefs);
+  if (branch) facts.push(`- Branche : ${branch.branch}${branch.base ? ` (base ${branch.base})` : ""}`);
+  if (ticket.labels.length > 0) facts.push(`- Étiquettes : ${ticket.labels.join(", ")}`);
+  return facts;
+}
+
 export function buildBrief({ project, ticket, domain, note }: BriefInput): string {
   const label = (id: string) => project.workflow.find((s) => s.id === id)?.label ?? id;
   const children = project.tickets.filter((t) => t.parentId === ticket.id);
@@ -68,6 +77,7 @@ export function buildBrief({ project, ticket, domain, note }: BriefInput): strin
     `- Projet : ${project.meta.name}`,
     `- Domaine : ${domain?.name ?? "aucun"}`,
     `- Statut : ${label(ticket.statusId)}`,
+    ...ticketFacts(ticket),
     "",
     "## Description",
     "",

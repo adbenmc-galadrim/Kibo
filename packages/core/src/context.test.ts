@@ -155,3 +155,30 @@ test("the brief lists penpot boards next to figma nodes", () => {
   const brief = buildBrief({ project, ticket: { ...ticket, externalRefs: [board] }, domain: null, note: "" });
   expect(brief).toContain(`## Maquettes\n\n- Fiche : ${url}\n`);
 });
+
+test("the brief names the branch and the labels only when the ticket has them", () => {
+  const { project, ticket } = kibo();
+  const brief = buildBrief({
+    project,
+    ticket: {
+      ...ticket,
+      labels: ["area:api", "phase:p1"],
+      externalRefs: [{ kind: "git_branch", branch: "feat/x", base: "feat/parent" }],
+    },
+    domain: null,
+    note: "",
+  });
+  expect(brief).toContain(
+    "- Statut : À faire\n- Branche : feat/x (base feat/parent)\n- Étiquettes : area:api, phase:p1\n",
+  );
+  const unstacked = buildBrief({
+    project,
+    ticket: { ...ticket, externalRefs: [{ kind: "git_branch", branch: "feat/x", base: null }] },
+    domain: null,
+    note: "",
+  });
+  expect(unstacked).toContain("- Branche : feat/x\n");
+  const bare = buildBrief({ project, ticket, domain: null, note: "" });
+  expect(bare).not.toContain("- Branche");
+  expect(bare).not.toContain("- Étiquettes");
+});

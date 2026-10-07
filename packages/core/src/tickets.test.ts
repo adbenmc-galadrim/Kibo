@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { KiboError } from "@kibo/schema";
 import fc from "fast-check";
-import { LoroDoc } from "loro-crdt";
+import { LoroDoc, type TreeID } from "loro-crdt";
 import {
   childProgress,
   createProjectDoc,
@@ -11,6 +11,7 @@ import {
   listTickets,
   moveTicket,
   setStatus,
+  ticketTree,
   updateTicket,
   upsertExternalRef,
 } from "./index";
@@ -195,5 +196,46 @@ describe("order", () => {
     expect(order()).toEqual(["b", "a", "p", "q", "c"]);
     moveTicket(d, a.id, p.id, 1);
     expect(order()).toEqual(["b", "p", "q", "a", "c"]);
+  });
+});
+
+describe("labels", () => {
+  test("labels are normalized at creation and replaced at update, old nodes read as empty", () => {
+    const d = doc();
+    const t = createTicket(d, { title: "x", labels: ["b", " a", "a"] });
+    expect(t.labels).toEqual(["a", "b"]);
+    expect(updateTicket(d, t.id, { labels: ["phase:p1"] }).labels).toEqual(["phase:p1"]);
+    expect(updateTicket(d, t.id, { title: "y" }).labels).toEqual(["phase:p1"]);
+    expect(updateTicket(d, t.id, { labels: [] }).labels).toEqual([]);
+    expect(() => updateTicket(d, t.id, { labels: ["Bad"] })).toThrow(KiboError);
+    expect(getTicket(d, t.id).labels).toEqual([]);
+    expect(() => createTicket(d, { title: "z", labels: ["a b"] })).toThrow(KiboError);
+    const legacy = createTicket(d, { title: "legacy" });
+    ticketTree(d)
+      .getNodeByID(legacy.id as TreeID)
+      ?.data.delete("labels");
+    expect(getTicket(d, legacy.id).labels).toEqual([]);
+  });
+
+  test("concurrent label updates converge to one normalized list", () => {
+    const label = fc.stringMatching(/^[a-z][a-z0-9]{0,3}(:[a-z0-9]{1,3})?$/);
+    fc.assert(
+      fc.property(fc.array(label, { maxLength: 6 }), fc.array(label, { maxLength: 6 }), (left, right) => {
+        const base = doc();
+        const t = createTicket(base, { title: "x" });
+        const snapshot = base.export({ mode: "snapshot" });
+        const a = LoroDoc.fromSnapshot(snapshot);
+        a.setPeerId(101);
+        const b = LoroDoc.fromSnapshot(snapshot);
+        b.setPeerId(202);
+        updateTicket(a, t.id, { labels: left });
+        updateTicket(b, t.id, { labels: right });
+        a.import(b.export({ mode: "update" }));
+        b.import(a.export({ mode: "update" }));
+        const merged = getTicket(a, t.id).labels;
+        expect(getTicket(b, t.id).labels).toEqual(merged);
+        expect([[...new Set(left)].sort(), [...new Set(right)].sort()]).toContainEqual(merged);
+      }),
+    );
   });
 });
