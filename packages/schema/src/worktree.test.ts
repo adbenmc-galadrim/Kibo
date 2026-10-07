@@ -3,6 +3,7 @@ import fc from "fast-check";
 import { KiboError } from "./errors";
 import {
   integrationBranch,
+  plannedWorktree,
   renderTemplate,
   resolveWorktreePath,
   singleQuotedVariable,
@@ -73,4 +74,30 @@ test("a variable between single quotes is found, double quotes and bare ones are
   expect(singleQuotedVariable('echo "it\'s {key}"')).toBeNull();
   expect(singleQuotedVariable("echo \\'{key}")).toBeNull();
   expect(singleQuotedVariable("echo 'done' {key}")).toBeNull();
+});
+
+test("the planned worktree follows the ticket branch, its base and the settings", () => {
+  const settings = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+  expect(plannedWorktree({ root: "/code/emis", ticketKey: "EMIS-12", branchRef: null, settings })).toEqual({
+    branch: "emis-12",
+    base: "origin/dev",
+    path: "/code/emis-emis-12",
+  });
+  const branchRef = { kind: "git_branch" as const, branch: "feat/x", base: "feat/parent" };
+  expect(plannedWorktree({ root: "/code/emis", ticketKey: "EMIS-12", branchRef, settings })).toEqual({
+    branch: "feat/x",
+    base: "feat/parent",
+    path: "/code/emis-feat-x",
+  });
+  expect(
+    plannedWorktree({ root: "/r", ticketKey: "KIB-3", branchRef: null, settings: WORKTREE_DEFAULTS }).path,
+  ).toBe("/r/.kibo/worktrees/kib-3");
+  expect(() =>
+    plannedWorktree({
+      root: "/r",
+      ticketKey: "KIB-3",
+      branchRef: null,
+      settings: { ...settings, pathTemplate: "/tmp/{slug}" },
+    }),
+  ).toThrow(KiboError);
 });

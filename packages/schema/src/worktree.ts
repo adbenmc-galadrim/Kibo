@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { KiboError } from "./errors";
-import { isGitBranchName } from "./git-branch";
+import { branchSlug, type GitBranchRef, isGitBranchName } from "./git-branch";
 
 export function splitRemote(ref: string): { remote: string | null; branch: string } {
   const at = ref.indexOf("/");
@@ -106,6 +106,30 @@ export function resolveWorktreePath(root: string, template: string, vars: Worktr
   if (!below && !beside)
     throw new KiboError("INVALID_INPUT", `worktree path ${rendered} leaves the repository`);
   return `/${parts.join("/")}`;
+}
+
+export const worktreeBranchOf = (ticketKey: string, branchRef: GitBranchRef | null): string =>
+  branchRef?.branch ?? ticketKey.toLowerCase();
+
+export const worktreeBaseOf = (settings: WorktreeSettings, branchRef: GitBranchRef | null): string =>
+  branchRef?.base ?? settings.baseRef;
+
+export type WorktreePlanInput = {
+  root: string;
+  ticketKey: string;
+  branchRef: GitBranchRef | null;
+  settings: WorktreeSettings;
+};
+export type PlannedWorktree = { branch: string; base: string; path: string };
+
+export function plannedWorktree(input: WorktreePlanInput): PlannedWorktree {
+  const branch = worktreeBranchOf(input.ticketKey, input.branchRef);
+  const vars = { branch, slug: branchSlug(branch), key: input.ticketKey.toLowerCase() };
+  return {
+    branch,
+    base: worktreeBaseOf(input.settings, input.branchRef),
+    path: resolveWorktreePath(input.root, input.settings.pathTemplate, vars),
+  };
 }
 
 export function integrationBranch(settings: WorktreeSettings | null): string {

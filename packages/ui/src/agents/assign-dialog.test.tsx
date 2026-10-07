@@ -47,6 +47,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
     await screen.findByText("attend une place du profil opus-dev (2/2) · entrera en file en position #4"),
   ).toBeTruthy();
   expect(screen.getByText("nouveau worktree kib-15 (depuis main)")).toBeTruthy();
+  expect(screen.getByText("/Users/adam/goinfre/Kibo/.kibo/worktrees/kib-15")).toBeTruthy();
   expect(screen.getByLabelText("Brief (optionnel)").tagName).toBe("INPUT");
   expect(screen.getByText("acceptEdits")).toBeTruthy();
   expect(screen.getByText("workspace · projet Kibo · domaine UI (6 fichiers .md)")).toBeTruthy();
@@ -169,17 +170,36 @@ test("without a profile or a project the dialog explains what to do", () => {
   expect(calls).toEqual([]);
 });
 
-test("the worktree base branch can be given", async () => {
+test("the worktree line recalls the project base and the computed path of the ticket branch", async () => {
+  const project = kiboProject();
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "pnpm worktree {branch}" };
+  const branch = { kind: "git_branch" as const, branch: "feat/drag", base: null };
+  const tickets = project.tickets.map((t) => (t.id === "t14" ? { ...t, externalRefs: [branch] } : t));
   render(
     <AssignDialog
-      project={kiboProject()}
+      project={{ ...project, meta: { ...project.meta, worktree }, tickets }}
       ticketId="t14"
       config={configFixture()}
-      baseBranch="develop"
       onClose={() => {}}
     />,
   );
-  expect(screen.getByText("nouveau worktree kib-14 (depuis develop)")).toBeTruthy();
+  expect(screen.getByText("nouveau worktree feat/drag (depuis origin/dev)")).toBeTruthy();
+  expect(screen.getByText("/Users/adam/goinfre/kibo-feat-drag")).toBeTruthy();
+  await waitFor(() => expect(calls.length).toBe(1));
+});
+
+test("an invalid path template is pointed to the project settings", async () => {
+  const project = kiboProject();
+  const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null };
+  render(
+    <AssignDialog
+      project={{ ...project, meta: { ...project.meta, worktree } }}
+      ticketId="t14"
+      config={configFixture()}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("chemin invalide, voir Modifier le projet")).toBeTruthy();
   await waitFor(() => expect(calls.length).toBe(1));
 });
 

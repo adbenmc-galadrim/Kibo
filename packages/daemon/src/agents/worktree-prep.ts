@@ -13,6 +13,8 @@ import {
   WORKTREE_DEFAULTS,
   WorktreeSettings,
   type WorktreeVars,
+  worktreeBaseOf,
+  worktreeBranchOf,
 } from "@kibo/schema";
 import { runBounded } from "./bounded-process";
 import { cleanEnv } from "./runner";
@@ -46,11 +48,10 @@ export function worktreeBranch(ticketKey: string, branchRef: GitBranchRef | null
   if (branchRef) return branchRef.branch;
   const parsed = TicketKey.safeParse(ticketKey);
   if (!parsed.success) throw failed(`invalid ticket key ${JSON.stringify(ticketKey)}`);
-  return parsed.data.toLowerCase();
+  return worktreeBranchOf(parsed.data, null);
 }
 
-export const worktreeBase = (settings: WorktreeSettings, branchRef: GitBranchRef | null): string =>
-  branchRef?.base ?? settings.baseRef;
+export const worktreeBase = worktreeBaseOf;
 
 export function assertWorktreeSettings(settings: WorktreeSettings): void {
   resolveWorktreePath("/repo", settings.pathTemplate, SAMPLE_VARS);

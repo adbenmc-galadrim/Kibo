@@ -29,7 +29,7 @@ import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { canEdit } from "../state/access";
-import { NoFolderAlert, Notice, needsFolder, spaceText, WaitingAlert } from "./AssignAlerts";
+import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
 import { assignableProfiles, isDemoProfile } from "./demo-profile";
 import { reasonText } from "./format";
 
@@ -38,17 +38,13 @@ type Props = {
   demo?: boolean;
   ticketId: string | null;
   config: WorkspaceConfig | null;
-  baseBranch?: string;
   onClose: () => void;
   onEditProject?: (projectId: string) => void;
 };
 
-const DEFAULT_BASE_BRANCH = "main";
-
 type FormProps = {
   project: ProjectSnapshot;
   ticketId: string | null;
-  baseBranch: string;
   profiles: AgentProfile[];
   domains: Domain[];
   onClose: () => void;
@@ -69,7 +65,7 @@ function queueTone(preview: AssignPreview | null): string | undefined {
   return preview.reason?.kind === "ticket_busy" ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
 }
 
-function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose, onEditProject }: FormProps) {
+function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProject }: FormProps) {
   const id = useId();
   const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
@@ -201,7 +197,9 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
           {ticket && profile && (
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
               <dt className="text-muted-foreground">{fr.assign.space}</dt>
-              <dd>{spaceText(profile, project, ticket, baseBranch)}</dd>
+              <dd>
+                <SpaceText profile={profile} project={project} ticket={ticket} />
+              </dd>
               <dt className="text-muted-foreground">{fr.assign.permissions}</dt>
               <dd>{profile.permissionMode}</dd>
               <dt className="text-muted-foreground">{fr.assign.guidelines}</dt>
@@ -238,15 +236,7 @@ function hasOpenTicket(project: ProjectSnapshot): boolean {
   return project.tickets.some(assignable);
 }
 
-export function AssignDialog({
-  project,
-  demo = false,
-  ticketId,
-  config,
-  baseBranch = DEFAULT_BASE_BRANCH,
-  onClose,
-  onEditProject,
-}: Props) {
+export function AssignDialog({ project, demo = false, ticketId, config, onClose, onEditProject }: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
   if (isInbox(project.meta.id))
     return <Notice title={fr.assign.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
@@ -262,7 +252,6 @@ export function AssignDialog({
     <AssignForm
       project={project}
       ticketId={ticketId}
-      baseBranch={baseBranch}
       profiles={assignable}
       domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}

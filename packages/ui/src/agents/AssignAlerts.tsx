@@ -1,4 +1,12 @@
-import type { AgentProfile, ProjectSnapshot, TicketView } from "@kibo/schema";
+import {
+  type AgentProfile,
+  branchRefOf,
+  KiboError,
+  type ProjectSnapshot,
+  plannedWorktree,
+  type TicketView,
+  WORKTREE_DEFAULTS,
+} from "@kibo/schema";
 import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -12,21 +20,45 @@ import {
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
+import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frProject } from "../i18n/fr-project";
 
 export function needsFolder(profile: AgentProfile, project: ProjectSnapshot): boolean {
   return profile.workspace !== "isolated" && !project.meta.folder;
 }
 
-export function spaceText(
-  profile: AgentProfile,
-  project: ProjectSnapshot,
-  ticket: TicketView,
-  baseBranch: string,
-): string {
+function worktreeSpace(project: ProjectSnapshot, ticket: TicketView, folder: string): ReactNode {
+  try {
+    const plan = plannedWorktree({
+      root: folder,
+      ticketKey: ticket.key ?? ticket.keyLabel,
+      branchRef: branchRefOf(ticket.externalRefs),
+      settings: project.meta.worktree ?? WORKTREE_DEFAULTS,
+    });
+    return (
+      <>
+        <span className="block">{fr.assign.newWorktree(plan.branch, plan.base)}</span>
+        <span className="block break-all font-mono text-xs text-muted-foreground">{plan.path}</span>
+      </>
+    );
+  } catch (e) {
+    if (!(e instanceof KiboError)) throw e;
+    return <span className="text-destructive">{frAgentsPage.assign.invalidWorktreePath}</span>;
+  }
+}
+
+export function SpaceText({
+  profile,
+  project,
+  ticket,
+}: {
+  profile: AgentProfile;
+  project: ProjectSnapshot;
+  ticket: TicketView;
+}) {
+  const folder = project.meta.folder;
   if (needsFolder(profile, project)) return fr.assign.noFolderSpace;
-  if (profile.workspace === "worktree")
-    return fr.assign.newWorktree(ticket.keyLabel.toLowerCase(), baseBranch);
+  if (profile.workspace === "worktree" && folder) return worktreeSpace(project, ticket, folder);
   return profile.workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
 }
 
