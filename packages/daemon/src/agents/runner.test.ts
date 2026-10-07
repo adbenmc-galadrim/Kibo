@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ASK_TOOL, HookEventName } from "@kibo/schema";
+import { ALLOW_MAX, ASK_TOOL, HookEventName, KiboError } from "@kibo/schema";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 import {
   childEnv,
@@ -30,12 +30,16 @@ afterEach(() => {
 });
 
 const kiboHook = { command: "/k/kibo-hook", args: [] };
-const base: Pick<LaunchInput, "model" | "permissionFlag" | "extraArgs" | "systemPromptFile" | "hook"> = {
+const base: Pick<
+  LaunchInput,
+  "model" | "permissionFlag" | "extraArgs" | "systemPromptFile" | "hook" | "allow"
+> = {
   model: "opus",
   permissionFlag: "manual",
   extraArgs: [],
   systemPromptFile: "/r/CLAUDE.md",
   hook: kiboHook,
+  allow: [],
 };
 
 test("the command line never bypasses permissions and pins the session", () => {
@@ -112,6 +116,37 @@ test("settings send every hook event to kibo-hook and allow only the ask tool", 
     expect(group.matcher).toBe(event.endsWith("ToolUse") ? "*" : undefined);
   }
   expect(settings.permissions).toEqual({ allow: [ASK_TOOL] });
+});
+
+test("settings allow ask_user first, then the profile rules, without duplicates", () => {
+  const settings = JSON.parse(claudeSettings(kiboHook, ["Bash(pnpm *)", ASK_TOOL, "Edit"]));
+  expect(settings.permissions.allow).toEqual([ASK_TOOL, "Bash(pnpm *)", "Edit"]);
+});
+
+test("the command line carries the profile rules in its settings", () => {
+  const args = claudeArgs({ ...base, allow: ["Bash(git *)"], sessionId: "s1", resume: false });
+  const settings = JSON.parse(args[args.indexOf("--settings") + 1] ?? "");
+  expect(settings.permissions.allow).toEqual([ASK_TOOL, "Bash(git *)"]);
+});
+
+test("unsafe rules are refused again before claude is launched", () => {
+  const tooMany = Array.from({ length: ALLOW_MAX + 1 }, (_, i) => `Bash(tool${i} *)`);
+  for (const allow of [
+    ["Bash"],
+    ["Bash(*)"],
+    ["Bash( * )"],
+    ["Read(dangerously)"],
+    ["bash(pnpm *)"],
+    tooMany,
+  ]) {
+    expect(() => claudeSettings(kiboHook, allow)).toThrow(KiboError);
+    expect(() => claudeArgs({ ...base, allow, sessionId: "s1", resume: false })).toThrow("INVALID_INPUT");
+  }
+});
+
+test("auto is passed through when the CLI lists it, refused otherwise", () => {
+  expect(permissionFlag("auto", { permissionModes: ["acceptEdits", "auto", "plan"] })).toBe("auto");
+  expect(() => permissionFlag("auto", { permissionModes: ["acceptEdits", "plan"] })).toThrow(KiboError);
 });
 
 test("the child environment drops Claude session variables and adds the run's", () => {

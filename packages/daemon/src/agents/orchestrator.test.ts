@@ -500,3 +500,25 @@ test("the inbox and an unknown ticket are still refused before the write check",
     "NOT_FOUND",
   );
 });
+
+test("a ticket runs one agent at a time: a second assign is refused until the first ends", async () => {
+  const h = setup({
+    scenario: "hold",
+    profiles: [profile({ maxParallel: 1 }), profile({ id: "b", name: "b-dev" })],
+  });
+  const blocker = assign(h, "t2");
+  const first = assign(h, "t1");
+  expect(run(h, first.id).state).toBe("queued");
+  const target = { projectId: "p1", ticketId: "t1", profileId: "b" };
+  expect(() => h.orch.assign({ ...target, brief: "" })).toThrow("CONFLICT");
+  expect(h.orch.state().runs).toHaveLength(2);
+  expect(h.assigned).toEqual(["t2:opus-dev", "t1:opus-dev"]);
+  expect(h.orch.preview(target)).toEqual({ position: null, reason: { kind: "ticket_busy" }, guidelines: 0 });
+  h.orch.cancel(first.id);
+  const second = h.orch.assign({ ...target, brief: "" });
+  expect(run(h, second.id).ticketId).toBe("t1");
+  releaseFakeRun(h.state, blocker.sessionId);
+  await waitUntil(() => run(h, second.id).lastActivity?.event === "PreToolUse");
+  releaseFakeRun(h.state, second.sessionId);
+  await waitUntil(() => run(h, second.id).state === "done");
+}, 30_000);

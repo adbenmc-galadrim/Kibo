@@ -155,6 +155,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
             : firstPrompt(prepared.brief, current.pendingAnswer),
         systemPromptFile: prepared.systemPromptFile,
         hook: opts.hook,
+        allow: profile.allow,
         hookUrl: `${opts.baseUrl()}/hooks/${runId}`,
         token,
         baseEnv: env,

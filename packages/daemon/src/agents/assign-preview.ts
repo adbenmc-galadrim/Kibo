@@ -1,6 +1,12 @@
 import { initRun } from "@kibo/core/run-machine";
 import { orderQueue, type Plan, tailRank } from "@kibo/core/scheduler";
-import type { AgentProfile, AssignPreview, RunView, TicketView } from "@kibo/schema";
+import {
+  type AgentProfile,
+  type AssignPreview,
+  isTerminal,
+  type RunView,
+  type TicketView,
+} from "@kibo/schema";
 
 const PREVIEW_ID = "preview";
 
@@ -14,8 +20,12 @@ export type PreviewInput = {
   plan: (runs: RunView[]) => Plan;
 };
 
+export const activeRunOf = (runs: readonly RunView[], ticketId: string): RunView | null =>
+  runs.find((r) => r.ticketId === ticketId && !isTerminal(r.state)) ?? null;
+
 export function previewAssign(input: PreviewInput): AssignPreview {
   const { runs, ticket, profile, guidelines, at } = input;
+  if (activeRunOf(runs, ticket.id)) return { position: null, reason: { kind: "ticket_busy" }, guidelines };
   const candidate = initRun(
     {
       id: PREVIEW_ID,

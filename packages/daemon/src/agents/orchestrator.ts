@@ -9,7 +9,7 @@ import {
   KiboError,
   type RunView,
 } from "@kibo/schema";
-import { previewAssign } from "./assign-preview";
+import { activeRunOf, previewAssign } from "./assign-preview";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
@@ -144,6 +144,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       const profile = ticketProfileOf(input.profileId, input.projectId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
+      if (activeRunOf(registry.all(), ticket.id))
+        throw new KiboError("CONFLICT", `ticket ${ticket.key} already has an active run`);
       opts.data.assertWritable(input.projectId);
       opts.data.assignTicket(input.projectId, ticket.id, profile.name);
       const view = enqueue({

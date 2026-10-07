@@ -49,4 +49,15 @@ export const frAgentsPage = {
     default: "Demande à chaque action",
     auto: "Automatique (l'agent décide, sans contournement)",
   },
+  profile: {
+    allow: "Autorisations",
+    allowHelp:
+      "Une règle par ligne : Outil ou Outil(motif), par exemple Bash(pnpm *). Jamais de contournement des permissions.",
+    allowInvalid: (rule: string) => `Règle refusée : ${rule}`,
+    allowBash: "Une règle Bash doit porter un motif : Bash(pnpm *).",
+    allowTooMany: "50 règles au plus.",
+  },
+  assign: {
+    ticketBusy: "Un run de ce ticket est déjà en cours ou en file.",
+  },
 } as const;

@@ -109,6 +109,24 @@ test("a free slot means the run starts at once", async () => {
   expect(screen.queryByText(/attend KIB/)).toBeNull();
 });
 
+test("a ticket that already has a run cannot be sent again, and the dialog says why", async () => {
+  preview = () => Promise.resolve({ position: null, reason: { kind: "ticket_busy" }, guidelines: 2 });
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(await screen.findByText("Un run de ce ticket est déjà en cours ou en file.")).toBeTruthy();
+  expect(screen.queryByText("place libre · démarre tout de suite")).toBeNull();
+  expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(true);
+});
+
+test("a run queued meanwhile turns the refusal into the busy message", async () => {
+  preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
+  assign = () => Promise.reject(new KiboError("CONFLICT", "ticket KIB-14 already has an active run"));
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Un run de ce ticket est déjà en cours ou en file.",
+  );
+});
+
 test("a refused assignment is shown and the dialog stays open", async () => {
   assign = () => Promise.reject(new KiboError("NOT_FOUND", "profile opus not found"));
   const onClose = mock(() => {});
