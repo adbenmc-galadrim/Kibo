@@ -109,3 +109,23 @@ test("a Bash rule that starts with an assignment is refused", () => {
   refused("Bash(FOO=1 sh -c *)");
   refused("Bash(PATH=* *)");
 });
+
+test("a quoted or escaped first word is refused", () => {
+  for (const rule of ['Bash("sh" *)', "Bash('bash' -c *)", "Bash(\\sh *)", 'Bash("env" *)', "Bash(g'i't *)"])
+    refused(rule);
+});
+
+test("glob characters other than a final star are refused in the first word", () => {
+  for (const rule of ["Bash(?ash *)", "Bash(ba[s]h *)", "Bash(E?V *)", "Bash(g*t push)", "Bash(git{,x} *)"])
+    refused(rule);
+});
+
+test("an empty command name is refused", () => {
+  refused("Bash(:*)");
+  refused("Bash(./ *)");
+});
+
+test("shell and wrapper names are compared without case", () => {
+  for (const rule of ["Bash(BASH *)", "Bash(Sh -c *)", "Bash(ENV *)", "Bash(/BIN/ZSH *)", "Bash(SU*)"])
+    refused(rule);
+});

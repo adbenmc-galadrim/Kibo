@@ -21,25 +21,25 @@ const WRAPPERS = [
   ".",
 ];
 const RUNS_ANYTHING = [...SHELLS, ...WRAPPERS];
-const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const PLAIN_WORD = /^[A-Za-z0-9._/@+-]+\*?$/;
 
-function commandName(word: string): string {
+function commandName(word: string): string | null {
   const bare = word.endsWith(":*") ? word.slice(0, -2) : word;
-  return bare.slice(bare.lastIndexOf("/") + 1);
+  if (!PLAIN_WORD.test(bare)) return null;
+  const name = bare.slice(bare.lastIndexOf("/") + 1).toLowerCase();
+  return name.length > 0 ? name : null;
 }
 
 function mayRunAnything(name: string): boolean {
-  const star = name.indexOf("*");
-  if (star === -1) return RUNS_ANYTHING.includes(name);
-  const prefix = name.slice(0, star);
+  if (!name.endsWith("*")) return RUNS_ANYTHING.includes(name);
+  const prefix = name.slice(0, -1);
   return RUNS_ANYTHING.some((candidate) => candidate.startsWith(prefix));
 }
 
 function isSafeBashPattern(pattern: string): boolean {
-  if (pattern.length === 0 || pattern.startsWith("*")) return false;
   const [first = ""] = pattern.split(/\s+/);
-  if (ASSIGNMENT.test(first)) return false;
-  return !mayRunAnything(commandName(first));
+  const name = commandName(first);
+  return name !== null && !mayRunAnything(name);
 }
 
 export function isSafeAllowRule(rule: string): boolean {
