@@ -27,3 +27,85 @@ test("allow rules name a tool with an optional pattern and never bypass", () => 
     ),
   );
 });
+
+const refused = (rule: string) => expect(isSafeAllowRule(rule)).toBe(false);
+
+test("the rules planned for Emis stay allowed", () => {
+  for (const rule of [
+    "Bash(pnpm *)",
+    "Bash(git *)",
+    "Bash(git push*)",
+    "Bash(gh pr *)",
+    "Bash(docker compose *)",
+    "Bash(npx playwright *)",
+    "Bash(npm run test:*)",
+    "Bash(shellcheck *)",
+  ])
+    expect(isSafeAllowRule(rule)).toBe(true);
+});
+
+test("a bare star pattern is refused for every tool", () => {
+  refused("Read(*)");
+  refused("Edit( * )");
+  refused("WebFetch(**)");
+});
+
+test("a Bash pattern of only stars is refused", () => {
+  refused("Bash(**)");
+});
+
+test("a Bash pattern that starts with a star is refused", () => {
+  refused("Bash(* push)");
+  refused("Bash(*sh -c *)");
+});
+
+test("a Bash rule that hands the command to a shell is refused", () => {
+  for (const shell of ["sh", "bash", "zsh", "dash", "fish", "ksh", "csh", "tcsh", "ash"]) {
+    refused(`Bash(${shell} *)`);
+    refused(`Bash(${shell} -c *)`);
+    refused(`Bash(${shell})`);
+  }
+});
+
+test("a Bash rule that wraps another command is refused", () => {
+  for (const wrapper of [
+    "env",
+    "exec",
+    "eval",
+    "xargs",
+    "sudo",
+    "doas",
+    "nohup",
+    "command",
+    "builtin",
+    "nice",
+    "timeout",
+    "time",
+    "source",
+    ".",
+  ])
+    refused(`Bash(${wrapper} *)`);
+});
+
+test("a Bash rule that starts with a path to a shell is refused", () => {
+  refused("Bash(/bin/sh *)");
+  refused("Bash(/usr/bin/env bash *)");
+  refused("Bash(./bash -c *)");
+});
+
+test("a Bash rule in the legacy colon form is judged by its command", () => {
+  refused("Bash(sh:*)");
+  refused("Bash(sudo:*)");
+});
+
+test("a Bash glob that may name a shell or a wrapper is refused", () => {
+  refused("Bash(sh*)");
+  refused("Bash(s*)");
+  refused("Bash(/bin/*)");
+  refused("Bash(e* *)");
+});
+
+test("a Bash rule that starts with an assignment is refused", () => {
+  refused("Bash(FOO=1 sh -c *)");
+  refused("Bash(PATH=* *)");
+});
