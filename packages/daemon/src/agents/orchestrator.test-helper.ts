@@ -97,6 +97,7 @@ type Setup = {
   assignFails?: boolean;
   demoProject?: boolean;
   demoAgent?: OrchestratorOptions["demoAgent"];
+  meta?: Partial<ProjectSnapshot["meta"]>;
 };
 
 let current: Harness | null = null;
@@ -117,7 +118,7 @@ export function setup(o: Setup): Harness {
     ticketContext: (projectId, ticketId) => {
       const t = project.tickets.find((x) => x.id === ticketId);
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-      return { project, ticket: t, domain: null };
+      return { project: { ...project, meta: { ...project.meta, ...o.meta } }, ticket: t, domain: null };
     },
     guidelines: () => o.guidelines ?? [],
     assertWritable: (projectId) => {

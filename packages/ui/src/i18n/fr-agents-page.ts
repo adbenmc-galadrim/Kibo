@@ -57,6 +57,11 @@ export const frAgentsPage = {
     allowBash: "Une règle Bash doit porter un motif : Bash(pnpm *).",
     allowTooMany: "50 règles au plus.",
   },
+  setup: {
+    running: (command: string) => `Préparation : ${command} · en cours`,
+    done: (command: string, duration: string) => `Préparation : ${command} · terminée en ${duration}`,
+    failed: (command: string, duration: string) => `Préparation : ${command} · échec après ${duration}`,
+  },
   assign: {
     ticketBusy: "Un run de ce ticket est déjà en cours ou en file.",
     invalidWorktreePath: "chemin invalide, voir Modifier le projet",

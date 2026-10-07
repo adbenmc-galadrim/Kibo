@@ -7,6 +7,7 @@ import {
   KiboError,
   renderTemplate,
   resolveWorktreePath,
+  type SetupStep,
   singleQuotedVariable,
   splitRemote,
   TicketKey,
@@ -34,6 +35,7 @@ export type WorktreeInput = {
   runDir: string;
   git: GitRunner;
   shell: ShellRunner;
+  onSetup?: (step: SetupStep) => void;
 };
 
 export const SETUP_TIMEOUT_MS = 600_000;
@@ -152,7 +154,13 @@ async function runSetup(input: WorktreeInput, setup: string, vars: Required<Work
     KIBO_WORKTREE: vars.path,
     KIBO_TICKET: input.ticketKey,
   };
+  const shown = renderTemplate(setup, vars);
+  const report = input.onSetup ?? (() => {});
+  const started = Date.now();
+  report({ command: shown, status: "running" });
   const result = await input.shell(command, input.root, env, SETUP_TIMEOUT_MS);
+  const status = result.timedOut || result.code !== 0 ? "failed" : "done";
+  report({ command: shown, status, durationMs: Date.now() - started });
   mkdirSync(input.runDir, { recursive: true, mode: 0o700 });
   const values = `KIBO_BRANCH=${vars.branch} KIBO_PATH=${vars.path}`;
   writeFileSync(join(input.runDir, "setup.log"), `$ ${command}\n# ${values}\n${result.output}`, {

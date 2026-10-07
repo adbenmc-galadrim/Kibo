@@ -1,7 +1,13 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { type GitBranchRef, KiboError, WORKTREE_DEFAULTS, type WorktreeSettings } from "@kibo/schema";
+import {
+  type GitBranchRef,
+  KiboError,
+  type SetupStep,
+  WORKTREE_DEFAULTS,
+  type WorktreeSettings,
+} from "@kibo/schema";
 import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
 import { type GitRunner, runGit } from "./workspace-prep";
 import {
@@ -254,6 +260,29 @@ test("a setup command that lies, or lands on the wrong branch, fails with its ou
   await expect(
     prepareWorktree(input(root, { settings: settings({ setup: "git worktree add -b other {path} main" }) })),
   ).rejects.toMatchObject({ code: "WORKSPACE_FAILED", detail: expect.stringContaining("expected emis-12") });
+});
+
+test("a setup command reports its start, then its status and duration, with the values shown", async () => {
+  const root = await repo();
+  const steps: SetupStep[] = [];
+  const s = settings({ setup: `${SETUP} && echo {key}` });
+  await prepareWorktree(input(root, { settings: s, onSetup: (step) => steps.push(step) }));
+  expect(steps.map((step) => step.status)).toEqual(["running", "done"]);
+  expect(steps[0]?.command).toBe(`git worktree add ${root}/.kibo/worktrees/emis-12 emis-12 && echo emis-12`);
+  expect(steps[0]?.durationMs).toBeUndefined();
+  expect(steps[1]?.durationMs).toBeGreaterThanOrEqual(0);
+});
+
+test("a failing or late setup command reports a failed step", async () => {
+  const root = await repo();
+  const steps: SetupStep[] = [];
+  const onSetup = (step: SetupStep) => steps.push(step);
+  await prepareWorktree(input(root, { settings: settings({ setup: "exit 3" }), onSetup })).catch(() => {});
+  const shell: typeof runShell = (command, cwd, env) => runShell(command, cwd, env, 100);
+  await prepareWorktree(input(root, { settings: settings({ setup: "sleep 5" }), shell, onSetup })).catch(
+    () => {},
+  );
+  expect(steps.map((step) => step.status)).toEqual(["running", "failed", "running", "failed"]);
 });
 
 test("a failing setup command reports its exit code and the tail of its output", async () => {

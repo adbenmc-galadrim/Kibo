@@ -3,7 +3,15 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
 import { headRank } from "@kibo/core/scheduler";
-import { type AgentProfile, branchRefOf, isTerminal, KiboError, RunEvent, type RunView } from "@kibo/schema";
+import {
+  type AgentProfile,
+  branchRefOf,
+  isTerminal,
+  KiboError,
+  RunEvent,
+  type RunView,
+  type SetupStep,
+} from "@kibo/schema";
 import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
@@ -54,6 +62,10 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     return read;
   };
 
+  function journalSetup(runId: string, step: SetupStep): void {
+    if (registry.get(runId).state === "starting") registry.apply(runId, { type: "setup", ...step });
+  }
+
   async function prepareTicketRun(run: RunView, profile: AgentProfile, runDir: string): Promise<Prepared> {
     if (!run.projectId || !run.ticketId) throw new KiboError("INVALID_INPUT", `run ${run.id} has no ticket`);
     const ctx = opts.data.ticketContext(run.projectId, run.ticketId);
@@ -66,6 +78,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       runDir,
       worktree: ctx.project.meta.worktree,
       branchRef: branchRefOf(ctx.ticket.externalRefs),
+      onSetup: (step) => journalSetup(run.id, step),
     });
     const chain = guidelineChain(opts.data.guidelines(run.projectId), {
       projectId: run.projectId,

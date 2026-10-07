@@ -164,6 +164,19 @@ test("daemon events keep their raw type as name", () => {
     expect(journalLines([{ id: 1, at: NOW, event }]).at(0)?.name ?? null).toBe(name);
   }
 });
+test("the setup command shows as a preparation line, with its status and duration", () => {
+  const command = "pnpm worktree feat/drag";
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "setup", command, status: "running" } },
+    { id: 2, at: NOW, event: { type: "setup", command, status: "done", durationMs: 12_400 } },
+    { id: 3, at: NOW, event: { type: "setup", command, status: "failed", durationMs: 3_000 } },
+  ];
+  expect(journalLines(log).map((l) => [l.name, l.text, l.tone])).toEqual([
+    ["setup", "Préparation : pnpm worktree feat/drag · en cours", "blue"],
+    ["setup", "Préparation : pnpm worktree feat/drag · terminée en 12s", "green"],
+    ["setup", "Préparation : pnpm worktree feat/drag · échec après 3s", "red"],
+  ]);
+});
 test("the agent's last message and the user's messages are shown whole, on several lines", () => {
   const message = "Fait.\nDeux fichiers modifiés.\nVeux-tu des tests ?\nJe peux aussi documenter.";
   const log: RunLogEntry[] = [

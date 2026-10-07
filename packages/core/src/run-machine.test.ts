@@ -319,3 +319,10 @@ test("the question stays on the run until the next turn starts, so the queue can
   const requeued = reduceRun(reduceRun(asked, exit(), 150), { type: "requeued", rank: 1 }, 151);
   expect(requeued).toMatchObject({ state: "queued", question: "Je continue ?", pendingAnswer: "Vas-y" });
 });
+
+test("a setup step is journaled while starting and changes nothing else", () => {
+  const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
+  const step: RunEvent = { type: "setup", command: "pnpm worktree kib-14", status: "running" };
+  expect(reduceRun(starting, step, 130)).toEqual(starting);
+  expect(() => reduceRun(running(), step, 130)).toThrow("INVALID_TRANSITION");
+});

@@ -65,6 +65,15 @@ export const HookPost = z.object({
 export type HookPost = z.infer<typeof HookPost>;
 export type GuardDecision = { decision: "allow" | "deny"; reason: string };
 
+export const SetupStatus = z.enum(["running", "done", "failed"]);
+export type SetupStatus = z.infer<typeof SetupStatus>;
+export const SetupStep = z.object({
+  command: z.string(),
+  status: SetupStatus,
+  durationMs: z.number().int().nonnegative().optional(),
+});
+export type SetupStep = z.infer<typeof SetupStep>;
+
 export const RunEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("enqueued"), rank: z.number() }),
   z.object({ type: z.literal("admitted"), lane: z.number().int().positive() }),
@@ -93,6 +102,7 @@ export const RunEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("failed"), error: z.string() }),
   z.object({ type: z.literal("reranked"), rank: z.number() }),
   z.object({ type: z.literal("prioritized"), priority: z.boolean() }),
+  SetupStep.extend({ type: z.literal("setup") }),
 ]);
 export type RunEvent = z.infer<typeof RunEvent>;
 

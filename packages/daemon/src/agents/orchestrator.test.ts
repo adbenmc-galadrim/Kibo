@@ -1,8 +1,9 @@
 import { expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import type { Guideline, HookPayload, RunView } from "@kibo/schema";
+import { type Guideline, type HookPayload, type RunView, WORKTREE_DEFAULTS } from "@kibo/schema";
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
+import { repo } from "./git-test-kit";
 import { createOrchestrator } from "./orchestrator";
 import { assign, cleanHarness, profile, run, setup, waitUntil } from "./orchestrator.test-helper";
 import { createRunLauncher, type LiveRun } from "./run-launch";
@@ -570,4 +571,25 @@ test("resuming an ended run is refused while another run of its ticket is active
   } finally {
     await orch.stop();
   }
+});
+
+test("the setup command of a worktree run is journaled before the agent starts", async () => {
+  const folder = await repo();
+  const h = setup({
+    scenario: "done",
+    profiles: [profile({ workspace: "worktree" })],
+    meta: { folder, worktree: { ...WORKTREE_DEFAULTS, setup: "git worktree add {path} {branch}" } },
+  });
+  const r = assign(h, "t1");
+  await waitUntil(() => run(h, r.id).state === "done");
+  const types = h.orch.log(r.id).map((entry) => entry.event.type);
+  expect(types.slice(types.indexOf("admitted"), types.indexOf("spawned") + 1)).toEqual([
+    "admitted",
+    "setup",
+    "setup",
+    "spawned",
+  ]);
+  const steps = h.orch.log(r.id).flatMap((entry) => (entry.event.type === "setup" ? [entry.event] : []));
+  expect(steps.map((step) => step.status)).toEqual(["running", "done"]);
+  expect(steps[0]?.command).toBe(`git worktree add ${realpathSync(folder)}/.kibo/worktrees/kib-1 kib-1`);
 });

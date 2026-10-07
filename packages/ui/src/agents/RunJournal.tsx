@@ -1,9 +1,9 @@
-import type { HookEventName, HookPayload, RunEvent, RunLogEntry } from "@kibo/schema";
+import type { HookEventName, HookPayload, RunEvent, RunLogEntry, SetupStatus } from "@kibo/schema";
 import { LinkifiedText, RUN_TEXT } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { errorText, formatClock } from "./format";
+import { errorText, formatClock, formatDuration } from "./format";
 import { useFollowBottom } from "./use-follow-bottom";
 
 type Tone = "blue" | "amber" | "green" | "red" | "muted";
@@ -63,6 +63,16 @@ function exitLine(event: Exit): Line | null {
   return denied ? { name: event.type, text: denied, tone: "amber" } : null;
 }
 
+const SETUP_TONE: Record<SetupStatus, Tone> = { running: "blue", done: "green", failed: "red" };
+
+function setupLine(event: Extract<RunEvent, { type: "setup" }>): Line {
+  return {
+    name: event.type,
+    text: frAgentsPage.setup[event.status](event.command, formatDuration(event.durationMs ?? 0)),
+    tone: SETUP_TONE[event.status],
+  };
+}
+
 function eventLine(event: RunEvent): Line | null {
   const e = fr.agents.events;
   switch (event.type) {
@@ -84,6 +94,8 @@ function eventLine(event: RunEvent): Line | null {
       return { name: event.type, text: errorText(event.error), tone: "red" };
     case "prioritized":
       return event.priority ? { name: event.type, text: "", tone: "muted" } : null;
+    case "setup":
+      return setupLine(event);
     case "enqueued":
     case "admitted":
     case "reranked":

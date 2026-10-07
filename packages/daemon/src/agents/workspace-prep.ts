@@ -3,6 +3,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import {
   type GitBranchRef,
   KiboError,
+  type SetupStep,
   WORKTREE_DEFAULTS,
   type WorkspaceStrategy,
   type WorktreeSettings,
@@ -25,6 +26,7 @@ export type PrepareInput = {
   branchRef: GitBranchRef | null;
   git?: GitRunner;
   shell?: ShellRunner;
+  onSetup?: (step: SetupStep) => void;
 };
 
 const gitEnv = (): Record<string, string | undefined> => ({
@@ -71,6 +73,7 @@ export async function prepareWorkspace(input: PrepareInput): Promise<PreparedWor
         runDir: input.runDir,
         git,
         shell: input.shell ?? runShell,
+        onSetup: input.onSetup,
       });
     }
     case "repo":

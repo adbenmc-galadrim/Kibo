@@ -178,5 +178,8 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
     case "prioritized":
       requireState(view, event, ["queued"]);
       return { ...view, priority: event.priority };
+    case "setup":
+      requireState(view, event, ["starting"]);
+      return view;
   }
 }
