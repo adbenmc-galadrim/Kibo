@@ -1,174 +1,70 @@
-import {
-  type DesignFrame,
-  type DesignFrameKey,
-  KiboError,
-  parseDesignUrl,
-  type TicketView,
-} from "@kibo/schema";
+import { type DesignFrameKey, frameList, parseDesignUrl } from "@kibo/schema";
 import { useEntities, useSdk } from "@kibo/sdk";
-import { Badge } from "@kibo/sdk/ui/badge";
-import { Button } from "@kibo/sdk/ui/button";
-import { ExternalLink, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { FrameHeader } from "./FrameHeader";
+import { FrameNav } from "./FrameNav";
+import { FrameProblem } from "./FrameProblem";
+import { FrameViewer } from "./FrameViewer";
 import { fr } from "./fr";
+import { LinkedTickets } from "./LinkedTickets";
 import { linkedTickets } from "./linked-tickets";
+import { useFrame } from "./use-frame";
 
-type Problem = "loading" | "empty" | "notConnected" | "noThumbnail" | "failed";
-type FrameView = { status: "ready"; frame: DesignFrame } | { status: Problem };
 type Fit = "contain" | "width";
+type PanelProps = { url: string | null; frameKey: DesignFrameKey | null; fit: Fit };
 
-function problemOf(e: unknown, key: DesignFrameKey): Problem {
-  if (!(e instanceof KiboError)) return "failed";
-  if (e.code === "NOT_CONNECTED") return "notConnected";
-  if (e.code === "REMOTE_NOT_FOUND" && key.provider === "penpot") return "noThumbnail";
-  return "failed";
+const STEPS: Readonly<Record<string, number>> = { ArrowLeft: -1, ArrowRight: 1 };
+
+function Message({ text }: { text: string }) {
+  return <output className="m-auto p-4 text-center text-sm text-muted-foreground">{text}</output>;
 }
 
-function useFrame(url: string | null, key: DesignFrameKey | null, refreshCount: number): FrameView {
-  const sdk = useSdk();
-  const [view, setView] = useState<FrameView>({ status: url ? "loading" : "empty" });
-  useEffect(() => {
-    if (!url || !key) {
-      setView({ status: url ? "failed" : "empty" });
-      return;
-    }
-    if (refreshCount === 0) setView({ status: "loading" });
-    let alive = true;
-    sdk.design.frame(url, { refresh: refreshCount > 0 }).then(
-      (frame) => {
-        if (alive) setView({ status: "ready", frame });
-      },
-      (e: unknown) => {
-        if (!alive) return;
-        const status = problemOf(e, key);
-        if (status === "failed") console.error("[mockup] frame not loaded", e);
-        setView({ status });
-      },
-    );
-    return () => {
-      alive = false;
-    };
-  }, [sdk, url, key, refreshCount]);
-  return view;
-}
-
-function Message({ text, alert = false }: { text: string; alert?: boolean }) {
-  return (
-    <p role={alert ? "alert" : "status"} className="m-auto p-4 text-center text-sm text-muted-foreground">
-      {text}
-    </p>
-  );
-}
-
-const MESSAGES: Record<Exclude<Problem, "failed">, string> = {
-  loading: fr.loading,
-  empty: fr.empty,
-  notConnected: fr.notConnected,
-  noThumbnail: fr.noThumbnail,
-};
-
-function FrameHeader({ frame, onRefresh }: { frame: DesignFrame; onRefresh: () => void }) {
-  return (
-    <div className="flex min-w-0 items-center gap-1.5 px-3 pt-2 pb-1">
-      <p className="min-w-0 flex-1 truncate text-sm font-medium">{frame.name}</p>
-      <Badge variant="secondary">{fr.provider[frame.provider]}</Badge>
-      {frame.stale && <Badge variant="outline">{fr.stale}</Badge>}
-      {!frame.reachable && <Badge variant="outline">{fr.offline}</Badge>}
-      <Button variant="ghost" size="icon-xs" aria-label={fr.refresh} title={fr.refresh} onClick={onRefresh}>
-        <RefreshCw />
-      </Button>
-      <Button variant="ghost" size="icon-xs" asChild>
-        <a
-          href={frame.source}
-          target="_blank"
-          rel="noreferrer noopener"
-          aria-label={fr.open(frame.provider)}
-          title={fr.open(frame.provider)}
-        >
-          <ExternalLink />
-        </a>
-      </Button>
-    </div>
-  );
-}
-
-function FrameImage({ frame, fit }: { frame: DesignFrame; fit: Fit }) {
-  return (
-    <div className="min-h-0 flex-1 overflow-auto px-3">
-      <img
-        src={frame.url}
-        alt={frame.name}
-        crossOrigin="anonymous"
-        className={fit === "contain" ? "size-full object-contain" : "h-auto w-full"}
-      />
-    </div>
-  );
-}
-
-function LinkedTickets({ tickets }: { tickets: TicketView[] }) {
-  const sdk = useSdk();
-  return (
-    <section aria-label={fr.linked} className="max-h-24 shrink-0 overflow-auto border-t px-3 py-2">
-      <p className="mb-1 text-xs text-muted-foreground">{fr.linked}</p>
-      {tickets.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{fr.noLinked}</p>
-      ) : (
-        <div className="flex flex-wrap gap-1">
-          {tickets.map((t) => (
-            <Button
-              key={t.id}
-              variant="outline"
-              size="xs"
-              className="max-w-full"
-              onClick={() => sdk.openTicket(t.id)}
-            >
-              <span className="truncate">{fr.ticket(t.keyLabel, t.title)}</span>
-            </Button>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function configuredUrl(value: unknown): string | null {
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
-}
-
-function FramePanel({
-  url,
-  frameKey,
-  fit,
-}: {
-  url: string | null;
-  frameKey: DesignFrameKey | null;
-  fit: Fit;
-}) {
-  const [refreshCount, setRefreshCount] = useState(0);
-  const view = useFrame(url, frameKey, refreshCount);
+function FramePanel({ url, frameKey, fit }: PanelProps) {
+  const { view, refresh } = useFrame(url, frameKey);
   if (view.status === "ready") {
     return (
       <>
-        <FrameHeader frame={view.frame} onRefresh={() => setRefreshCount((n) => n + 1)} />
-        <FrameImage frame={view.frame} fit={fit} />
+        <FrameHeader frame={view.frame} refreshing={view.refreshing} onRefresh={refresh} />
+        <FrameViewer frame={view.frame} fit={fit} />
       </>
     );
   }
-  if (view.status === "failed") return <Message text={fr.failed} alert />;
-  return <Message text={MESSAGES[view.status]} />;
+  if (view.status === "failed")
+    return <FrameProblem problem={view.problem} frameKey={frameKey} onRetry={refresh} />;
+  return <Message text={view.status === "loading" ? fr.loading : fr.empty} />;
 }
 
 export function Mockup() {
   const sdk = useSdk();
-  const url = configuredUrl(sdk.config.frame);
+  const frames = useMemo(() => frameList(sdk.config.frame), [sdk.config.frame]);
   const fit: Fit = sdk.config.fit === "width" ? "width" : "contain";
+  const [index, setIndex] = useState(0);
+  const current = Math.min(index, Math.max(0, frames.length - 1));
+  const url = frames[current] ?? null;
   const key = useMemo(() => (url ? (parseDesignUrl(url)?.key ?? null) : null), [url]);
   const { data: tickets } = useEntities("ticket");
   const linked = useMemo(() => (key ? linkedTickets(tickets, key) : []), [tickets, key]);
+  useEffect(() => sdk.capability("fullscreen"), [sdk]);
+
+  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    const step = STEPS[e.key];
+    if (step === undefined || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+    const next = current + step;
+    if (next < 0 || next >= frames.length) return;
+    e.preventDefault();
+    setIndex(next);
+  };
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <section
+      aria-label={fr.title}
+      tabIndex={-1}
+      className="flex h-full min-h-0 flex-col outline-none"
+      onKeyDown={onKeyDown}
+    >
       <FramePanel key={url ?? ""} url={url} frameKey={key} fit={fit} />
+      {frames.length > 1 && <FrameNav index={current} count={frames.length} onChange={setIndex} />}
       {key && <LinkedTickets tickets={linked} />}
-    </div>
+    </section>
   );
 }

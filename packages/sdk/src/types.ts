@@ -104,6 +104,7 @@ export type KiboSdk = {
   data: InstanceData;
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
+  setConfig(patch: Record<string, unknown>): Promise<void>;
   notes: NotesApi;
   mcp: McpApi;
   presence: PresenceApi;

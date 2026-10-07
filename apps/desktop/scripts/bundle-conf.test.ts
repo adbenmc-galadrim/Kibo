@@ -58,3 +58,15 @@ test("three external binaries ship with the app: the daemon, the hook and the de
     "binaries/kibo-demo-agent",
   ]);
 });
+
+test("bundles explicit targets without msi, which refuses an alpha version", () => {
+  expect(conf.bundle.targets).toEqual(["app", "dmg", "deb", "rpm", "appimage"]);
+  expect(conf.bundle.createUpdaterArtifacts).toBe(true);
+});
+
+test("the updater asks the alpha channel first, then the latest release", () => {
+  expect(conf.plugins.updater.endpoints).toEqual([
+    "https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha/latest.json",
+    "https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json",
+  ]);
+});

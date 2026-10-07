@@ -33,7 +33,8 @@ export type FrameServiceDeps = {
 type Grant = { path: string; mime: CachedFrame["mime"]; size: number };
 
 export const SHELL_INSTANCE = "shell";
-const unreachable = (e: unknown) => e instanceof KiboError && UNREACHABLE_CODES.has(e.code);
+const servesStale = (e: unknown) =>
+  e instanceof KiboError && (UNREACHABLE_CODES.has(e.code) || e.code === "REMOTE_NOT_RENDERED");
 
 export function createFrameService(deps: FrameServiceDeps): FrameService {
   const fresh = deps.freshMs ?? DESIGN_FRESH_MS;
@@ -116,7 +117,7 @@ export function createFrameService(deps: FrameServiceDeps): FrameService {
       try {
         return view(instanceId, await revalidate(provider, key, id, hit), url, false, true);
       } catch (e) {
-        if (!unreachable(e) || !hit) throw e;
+        if (!servesStale(e) || !hit) throw e;
         const detail = e instanceof KiboError ? e.detail : String(e);
         deps.events.log(key.provider, "warn", `frame ${id} served stale: ${detail}`);
         return view(instanceId, hit, url, true, false);

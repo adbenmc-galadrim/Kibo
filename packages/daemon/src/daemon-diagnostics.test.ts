@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import { AppInfo, type RpcRequest } from "@kibo/schema";
+import { AppInfo, isAppVersion, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { aiScenarioPath } from "./agents/fake-claude-ai";
 import { FAKE_CLAUDE } from "./agents/fake-claude-scenario";
@@ -69,7 +69,7 @@ test("getAppInfo reports the daemon pid and an abbreviated home", async () => {
   const info = AppInfo.parse(await rpc({ method: "getAppInfo" }));
   expect(info.daemonPid).toBe(process.pid);
   expect(info.home).toBe(`~/${basename(home)}`);
-  expect(info.version).toMatch(/^\d+\.\d+\.\d+$/);
+  expect(isAppVersion(info.version)).toBe(true);
   expect(info.version).not.toBe("0.0.0");
 }, 30_000);
 

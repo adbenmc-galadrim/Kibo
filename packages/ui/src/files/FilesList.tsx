@@ -1,10 +1,8 @@
 import type { ProjectAsset } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { Progress } from "@kibo/sdk/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { frFiles as t } from "../i18n/fr-files";
-import type { Sending } from "./use-project-files";
 
 const HEAD = "h-9 px-3 text-2xs font-normal text-muted-foreground";
 const CELL = "px-3 py-2";
@@ -65,18 +63,4 @@ export function FilesBody({
   if (assets === null) return <p className="text-sm text-muted-foreground">{t.loading}</p>;
   if (assets.length === 0) return <p className="text-sm text-muted-foreground">{t.empty}</p>;
   return <FilesTable assets={assets} onRemove={onRemove} />;
-}
-
-export function SendingList({ sending }: { sending: Sending[] }) {
-  if (sending.length === 0) return null;
-  return (
-    <ul aria-label={t.uploads} className="grid gap-2">
-      {sending.map((s) => (
-        <li key={s.key} className="grid gap-1">
-          <span className="truncate font-mono text-xs text-muted-foreground">{s.name}</span>
-          <Progress aria-label={t.uploading(s.name)} value={Math.round(s.ratio * 100)} />
-        </li>
-      ))}
-    </ul>
-  );
 }

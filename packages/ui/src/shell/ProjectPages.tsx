@@ -33,7 +33,7 @@ type Props = {
   activeTarget: TabTarget | null;
   header: ReactNode;
   trailing: ReactNode;
-  onOpen(target: TabTarget, newTab: boolean): void;
+  onOpen(target: TabTarget, newTab: boolean, keep?: boolean): void;
   onNewPage(parentId: string | null): void;
   onRenamePage(page: Page): void;
   onDeletePage(page: Page): void;
@@ -57,6 +57,7 @@ type RowProps = {
   active: boolean;
   onClick(e: MouseEvent): void;
   onAuxClick(e: MouseEvent): void;
+  onDoubleClick(e: MouseEvent): void;
   children: ReactNode;
   icon: ReactNode;
 };
@@ -89,7 +90,7 @@ function DropLine({ className }: { className: string }) {
   );
 }
 
-function PageRow({ page, entries, editable, active, onClick, onAuxClick, children, icon }: RowProps) {
+function PageRow({ page, entries, editable, active, children, icon, ...handlers }: RowProps) {
   const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }), disabled: !editable });
   const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }), disabled: !editable });
   const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }), disabled: !editable });
@@ -114,8 +115,9 @@ function PageRow({ page, entries, editable, active, onClick, onAuxClick, childre
                 ref={drag.setNodeRef}
                 {...drag.attributes}
                 {...drag.listeners}
-                onClick={onClick}
-                onAuxClick={onAuxClick}
+                onClick={handlers.onClick}
+                onAuxClick={handlers.onAuxClick}
+                onDoubleClick={handlers.onDoubleClick}
                 aria-describedby={undefined}
               >
                 {icon}
@@ -211,6 +213,10 @@ export function ProjectPages(p: Props) {
             if (e.button !== 1) return;
             e.preventDefault();
             onOpen(target, true);
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            onOpen(target, false, true);
           }}
           icon={<Icon />}
         >

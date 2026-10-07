@@ -1,8 +1,8 @@
 import {
   DndContext,
   type DragEndEvent,
-  type DragMoveEvent,
   type DragOverEvent,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -21,14 +21,17 @@ import {
   useSharing,
 } from "@kibo/sdk";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
 import { type ColumnOrder, orderColumn } from "./column-order";
+import { DragPreview } from "./DragPreview";
 import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
 import { filterTickets, type KanbanFilter } from "./filter";
 import { fr } from "./fr";
-import { type CiChip, ciChipOf, KanbanCard } from "./KanbanCard";
+import { KanbanCard } from "./KanbanCard";
+import { type CardFacts, type CiChip, ciChipOf } from "./KanbanCardContent";
+import { KanbanCardPreview } from "./KanbanCardPreview";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
@@ -61,11 +64,19 @@ export function Kanban() {
   const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
-  const board = useRef<HTMLDivElement>(null);
+  const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
   const shown = filterTickets(scoped, filter, sdk.viewer);
   const ciOf = (t: TicketView): CiChip | undefined =>
     ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
+  const factsOf = (t: TicketView): CardFacts => ({
+    ticket: t,
+    run: runOf.get(t.id) ?? null,
+    ci: ciOf(t),
+    members: sharing.members,
+    remote: remoteRuns(peers, t.key),
+  });
+  const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
   const columns = new Map(
@@ -106,13 +117,14 @@ export function Kanban() {
     if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
     else void setStatus(t, statusId);
   };
-  const onDragMove = (e: DragMoveEvent) => {
-    board.current?.style.setProperty("--drag-x", `${e.delta.x}px`);
-    board.current?.style.setProperty("--drag-y", `${e.delta.y}px`);
+  const onDragStart = (e: DragStartEvent) => setDragged(String(e.active.id));
+  const endDrag = () => {
+    setDragged(null);
+    setTargetColumn(null);
   };
   const onDragOver = (e: DragOverEvent) => setTargetColumn(dropInColumn(e, visible)?.statusId ?? null);
   const onDragEnd = (e: DragEndEvent) => {
-    setTargetColumn(null);
+    endDrag();
     if (readOnly) return;
     const drop = dropInColumn(e, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
@@ -143,16 +155,16 @@ export function Kanban() {
       </KanbanToolbar>
       <DndContext
         sensors={sensors}
-        onDragMove={onDragMove}
+        onDragStart={onDragStart}
         onDragOver={onDragOver}
-        onDragCancel={() => setTargetColumn(null)}
+        onDragCancel={endDrag}
         onDragEnd={onDragEnd}
         accessibility={{
           screenReaderInstructions: { draggable: fr.drag.help },
           announcements: announce(keyOf),
         }}
       >
-        <div ref={board} className="flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+        <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}
@@ -164,13 +176,9 @@ export function Kanban() {
               {(columns.get(s.id) ?? []).map((t) => (
                 <KanbanCard
                   key={t.id}
-                  ticket={t}
-                  run={runOf.get(t.id) ?? null}
-                  ci={ciOf(t)}
+                  {...factsOf(t)}
                   selected={selected ? selected.has(t.id) : null}
                   statuses={ordered}
-                  members={sharing.members}
-                  remote={remoteRuns(peers, t.key)}
                   readOnly={readOnly}
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
@@ -180,6 +188,9 @@ export function Kanban() {
             </KanbanColumn>
           ))}
         </div>
+        <DragPreview>
+          {draggedTicket ? <KanbanCardPreview {...factsOf(draggedTicket)} readOnly={readOnly} /> : null}
+        </DragPreview>
       </DndContext>
       {blocking && (
         <BlockDialog

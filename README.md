@@ -30,12 +30,14 @@ Toutes les commandes courantes sont des recettes du [`justfile`](justfile) : ins
 
 Les versions sont publiées sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases) : `.dmg` pour macOS Apple Silicon et Intel, `.AppImage`, `.deb` et `.rpm` pour Linux x86_64. Le guide complet (première ouverture, vérification, sauvegardes, désinstallation) est dans [`docs/installation.md`](docs/installation.md).
 
+Kibo est en alpha (`0.<phase>.0-alpha.N`) jusqu'au lancement ; les releases sont marquées pré-release et le canal de mise à jour est la release `alpha`.
+
 - **macOS** : l'application est signée par Kibo (ad hoc), pas par Apple. Ouvre Kibo une première fois : macOS refuse. Réglages Système ▸ Confidentialité et sécurité ▸ « Ouvrir quand même ». Sur macOS 14 et avant, clic droit ▸ Ouvrir ▸ Ouvrir suffit. Avancé : `xattr -d com.apple.quarantine /Applications/Kibo.app`.
-- **Linux** : `curl -fsSL https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/install.sh | bash` installe le bon paquet après avoir vérifié sa somme dans `SHA256SUMS`.
+- **Linux** : `curl -fsSL https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha/install.sh | bash` installe le bon paquet après avoir vérifié sa somme dans `SHA256SUMS`.
 
 Ensuite, Kibo vérifie les nouvelles versions au lancement puis toutes les six heures et les propose dans **Paramètres › Général** ; rien ne s'installe sans ton clic (signature minisign vérifiée, spec `docs/superpowers/specs/2026-09-27-kibo-mises-a-jour.md`). Sur Linux, seule l'AppImage se met à jour toute seule.
 
-Publier une version : `bun apps/desktop/scripts/version.ts set X.Y.Z`, section `## X.Y.Z — AAAA-MM-JJ` dans `CHANGELOG.md` (le tag est refusé sans elle), commit, puis tag `vX.Y.Z` poussé sur `main` ; le workflow `release` construit, signe et publie.
+Publier une version alpha : `bun apps/desktop/scripts/version.ts set 0.N.0-alpha.M`, section `## 0.N.0-alpha.M — AAAA-MM-JJ` dans `CHANGELOG.md` (le tag est refusé sans elle), commit, puis tag `v0.N.0-alpha.M` poussé sur `main` ; le workflow `release` construit, signe, publie une pré-release et met à jour le canal `alpha`.
 
 ## Agents
 

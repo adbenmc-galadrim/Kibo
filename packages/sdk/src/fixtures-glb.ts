@@ -17,54 +17,90 @@ const CORNERS = [
   [-0.5, 0.5, 0.5],
 ];
 
-const FACES = [
-  [4, 5, 6, 4, 6, 7],
-  [1, 0, 3, 1, 3, 2],
-  [5, 1, 2, 5, 2, 6],
-  [0, 4, 7, 0, 7, 3],
-  [7, 6, 2, 7, 2, 3],
-  [0, 1, 5, 0, 5, 4],
+type Face = { normal: number[]; corners: [number, number, number, number] };
+
+const FACES: Face[] = [
+  { normal: [0, 1, 0], corners: [7, 6, 2, 3] },
+  { normal: [0, -1, 0], corners: [0, 1, 5, 4] },
+  { normal: [1, 0, 0], corners: [5, 1, 2, 6] },
+  { normal: [-1, 0, 0], corners: [0, 4, 7, 3] },
+  { normal: [0, 0, 1], corners: [4, 5, 6, 7] },
+  { normal: [0, 0, -1], corners: [1, 0, 3, 2] },
 ];
+
+const quad = ([a, b, c, d]: [number, number, number, number]) => [a, b, c, a, c, d];
 
 const padded = (length: number) => Math.ceil(length / 4) * 4;
 
-function binaryChunk(): { bytes: Uint8Array; positionsLength: number; indicesLength: number } {
-  const positions = new Float32Array(CORNERS.flat());
-  const indices = new Uint16Array(FACES.flat());
-  const positionsLength = positions.byteLength;
-  const indicesLength = indices.byteLength;
-  const bytes = new Uint8Array(padded(positionsLength + indicesLength));
-  bytes.set(new Uint8Array(positions.buffer), 0);
-  bytes.set(new Uint8Array(indices.buffer), positionsLength);
-  return { bytes, positionsLength, indicesLength };
+type CubeBuffers = {
+  bytes: Uint8Array;
+  views: { buffer: number; byteOffset: number; byteLength: number; target: number }[];
+  accessors: Record<string, unknown>[];
+  attributes: Record<string, number>;
+};
+
+function cubeArrays(normals: boolean): {
+  positions: Float32Array;
+  indices: Uint16Array;
+  normals?: Float32Array;
+} {
+  if (!normals) {
+    return {
+      positions: new Float32Array(CORNERS.flat()),
+      indices: new Uint16Array(FACES.flatMap((f) => quad(f.corners))),
+    };
+  }
+  return {
+    positions: new Float32Array(FACES.flatMap((f) => f.corners.flatMap((c) => CORNERS[c] ?? []))),
+    indices: new Uint16Array(FACES.flatMap((_, i) => quad([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 3]))),
+    normals: new Float32Array(FACES.flatMap((f) => [f.normal, f.normal, f.normal, f.normal].flat())),
+  };
 }
 
-function gltfJson(binLength: number, positionsLength: number, indicesLength: number) {
+function cubeBuffers(withNormals: boolean): CubeBuffers {
+  const { positions, indices, normals } = cubeArrays(withNormals);
+  const parts: { data: Float32Array | Uint16Array; target: number }[] = [
+    { data: positions, target: ARRAY_BUFFER },
+    { data: indices, target: ELEMENT_ARRAY_BUFFER },
+    ...(normals ? [{ data: normals, target: ARRAY_BUFFER }] : []),
+  ];
+  const bytes = new Uint8Array(padded(parts.reduce((n, p) => n + p.data.byteLength, 0)));
+  let offset = 0;
+  const views = parts.map((p) => {
+    bytes.set(new Uint8Array(p.data.buffer), offset);
+    const view = { buffer: 0, byteOffset: offset, byteLength: p.data.byteLength, target: p.target };
+    offset += p.data.byteLength;
+    return view;
+  });
+  const vertexCount = positions.length / 3;
+  const accessors: Record<string, unknown>[] = [
+    {
+      bufferView: 0,
+      componentType: FLOAT,
+      count: vertexCount,
+      type: "VEC3",
+      min: [-0.5, -0.5, -0.5],
+      max: [0.5, 0.5, 0.5],
+    },
+    { bufferView: 1, componentType: UNSIGNED_SHORT, count: indices.length, type: "SCALAR" },
+    ...(normals ? [{ bufferView: 2, componentType: FLOAT, count: vertexCount, type: "VEC3" }] : []),
+  ];
+  return { bytes, views, accessors, attributes: normals ? { POSITION: 0, NORMAL: 2 } : { POSITION: 0 } };
+}
+
+function gltfJson(cube: CubeBuffers) {
   return {
     asset: { version: "2.0", generator: "kibo-fixtures" },
     scene: 0,
     scenes: [{ nodes: [0] }],
     nodes: [{ mesh: 0, name: "Cube" }],
-    meshes: [{ name: "Cube", primitives: [{ attributes: { POSITION: 0 }, indices: 1, material: 0 }] }],
+    meshes: [{ name: "Cube", primitives: [{ attributes: cube.attributes, indices: 1, material: 0 }] }],
     materials: [
       { name: "Kibo", pbrMetallicRoughness: { baseColorFactor: [0.98, 0.45, 0.09, 1], metallicFactor: 0 } },
     ],
-    buffers: [{ byteLength: binLength }],
-    bufferViews: [
-      { buffer: 0, byteOffset: 0, byteLength: positionsLength, target: ARRAY_BUFFER },
-      { buffer: 0, byteOffset: positionsLength, byteLength: indicesLength, target: ELEMENT_ARRAY_BUFFER },
-    ],
-    accessors: [
-      {
-        bufferView: 0,
-        componentType: FLOAT,
-        count: CORNERS.length,
-        type: "VEC3",
-        min: [-0.5, -0.5, -0.5],
-        max: [0.5, 0.5, 0.5],
-      },
-      { bufferView: 1, componentType: UNSIGNED_SHORT, count: FACES.flat().length, type: "SCALAR" },
-    ],
+    buffers: [{ byteLength: cube.bytes.byteLength }],
+    bufferViews: cube.views,
+    accessors: cube.accessors,
   };
 }
 
@@ -75,10 +111,10 @@ function jsonChunk(value: unknown): Uint8Array {
   return bytes;
 }
 
-export function sampleGlb(): Uint8Array<ArrayBuffer> {
-  const bin = binaryChunk();
-  const json = jsonChunk(gltfJson(bin.bytes.byteLength, bin.positionsLength, bin.indicesLength));
-  const total = 12 + 8 + json.byteLength + 8 + bin.bytes.byteLength;
+export function sampleGlb(options: { normals?: boolean } = {}): Uint8Array<ArrayBuffer> {
+  const cube = cubeBuffers(options.normals !== false);
+  const json = jsonChunk(gltfJson(cube));
+  const total = 12 + 8 + json.byteLength + 8 + cube.bytes.byteLength;
   const out = new Uint8Array(total);
   const view = new DataView(out.buffer);
   view.setUint32(0, GLB_MAGIC, true);
@@ -88,8 +124,8 @@ export function sampleGlb(): Uint8Array<ArrayBuffer> {
   view.setUint32(16, JSON_CHUNK, true);
   out.set(json, 20);
   const binStart = 20 + json.byteLength;
-  view.setUint32(binStart, bin.bytes.byteLength, true);
+  view.setUint32(binStart, cube.bytes.byteLength, true);
   view.setUint32(binStart + 4, BIN_CHUNK, true);
-  out.set(bin.bytes, binStart + 8);
+  out.set(cube.bytes, binStart + 8);
   return out;
 }

@@ -46,7 +46,7 @@ type Props = {
   onOpenChange(open: boolean): void;
   newTab: boolean;
   context: PaletteContext;
-  onOpenTarget(target: TabTarget, newTab: boolean): void;
+  onOpenTarget(target: TabTarget, newTab: boolean, keep?: boolean): void;
   onOpenTicketSheet(projectId: string, ticketId: string): void;
   onAction(action: PaletteAction): void;
 };
@@ -143,10 +143,11 @@ export function CommandPalette({
     setFilter("all");
   }, [open]);
 
-  const run = (item: PaletteItem, sheet: boolean) => {
+  const run = (item: PaletteItem, held: boolean) => {
     onOpenChange(false);
     if (item.run.kind === "action") onAction(item.run.action);
-    else if (sheet && item.ticket) onOpenTicketSheet(item.ticket.projectId, item.ticket.ticketId);
+    else if (held && item.ticket) onOpenTicketSheet(item.ticket.projectId, item.ticket.ticketId);
+    else if (held) onOpenTarget(item.run.target, newTab, true);
     else onOpenTarget(item.run.target, newTab);
   };
   const onKeyDown = (e: KeyboardEvent) => {
@@ -158,7 +159,7 @@ export function CommandPalette({
     }
     if (e.key !== "Enter" || !(e.metaKey || e.ctrlKey)) return;
     const item = byId.get(value);
-    if (!item?.ticket) return;
+    if (!item || item.run.kind === "action") return;
     e.preventDefault();
     run(item, true);
   };

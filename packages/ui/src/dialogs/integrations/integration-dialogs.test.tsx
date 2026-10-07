@@ -244,6 +244,33 @@ test("penpot: an unreachable instance is explained and the token is cleared", as
   expect(document.body.innerHTML).not.toContain("penpot-secret");
 });
 
+test("penpot: the steps are listed and an ignored token names the flag", async () => {
+  reply = async () => ({
+    id: "penpot",
+    state: "error",
+    account: null,
+    servers: [],
+    resumeAt: null,
+    error: { code: "TOKEN_IGNORED", message: "penpot ignored the access token" },
+  });
+  const user = userEvent.setup();
+  render(<PenpotConnectDialog open onOpenChange={() => {}} onDone={() => {}} />);
+  const steps = screen.getByRole("list", { name: "Comment faire" });
+  expect(steps.textContent).toContain("Jetons d'accès");
+  expect(steps.textContent).toContain("enable-access-tokens");
+  expect(screen.getByRole("link", { name: "Documentation Penpot" }).getAttribute("href")).toBe(
+    "https://help.penpot.app/technical-guide/configuration/",
+  );
+  const url = screen.getByLabelText("Adresse de l'instance");
+  await user.clear(url);
+  await user.type(url, "http://localhost:9010");
+  await user.type(screen.getByLabelText("Jeton d'accès"), "penpot-secret");
+  await user.click(screen.getByRole("button", { name: "Connecter" }));
+  expect(await screen.findByText("Penpot a ignoré ce jeton")).toBeTruthy();
+  expect(screen.getByText(/Ajoute enable-access-tokens à PENPOT_FLAGS, redémarre/)).toBeTruthy();
+  expect(screen.getByLabelText("Jeton d'accès").getAttribute("aria-invalid")).toBe("true");
+});
+
 test("mcp: the exact command is shown and confirmed before adding", async () => {
   reply = async (req) => {
     if (req.method === "previewMcpServer") return { commandLine: "npx -y @upstash/context7-mcp" };

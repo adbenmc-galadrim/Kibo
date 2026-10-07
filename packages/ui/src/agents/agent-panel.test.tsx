@@ -55,7 +55,7 @@ test("the bar sums up slots, queue, running runs and the run waiting for an answ
   render(<AgentBar state={agentsFixture()} now={NOW} online onExpand={onExpand} onSelect={onSelect} />);
   expect(screen.getByText("3/3")).toBeTruthy();
   expect(screen.getByText("Kibo · connecté")).toBeTruthy();
-  expect(screen.getByText("3 en file")).toBeTruthy();
+  expect(screen.getByText("4 en file")).toBeTruthy();
   for (const label of ["opus-dev-1", "opus-dev-3", "sonnet-review-1"]) {
     expect(screen.getByText(label)).toBeTruthy();
   }
@@ -117,14 +117,14 @@ test("the drawer groups runs like the mockup and numbers the queue", async () =>
       onOpenFile={() => {}}
     />,
   );
-  expect(screen.getByText("3/3 places · 3 en file · 1 attend une réponse")).toBeTruthy();
+  expect(screen.getByText("3/3 places · 4 en file · 1 attend une réponse")).toBeTruthy();
   const running = within(screen.getByRole("list", { name: "En cours · 3/3 places" }));
   expect(running.getAllByRole("button").map((b) => b.textContent?.split("KIB")[0])).toEqual([
     "opus-dev-1",
     "opus-dev-3",
     "sonnet-review-1",
   ]);
-  const queued = within(screen.getByRole("list", { name: "En file · 3" }));
+  const queued = within(screen.getByRole("list", { name: "En file · 4" }));
   expect(queued.getByText("#1")).toBeTruthy();
   expect(queued.getByText("KIB-10 · Prioritaire")).toBeTruthy();
   expect(queued.getByText("KIB-29 · attend une place sur la machine (3/3)")).toBeTruthy();

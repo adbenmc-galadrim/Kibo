@@ -10,6 +10,13 @@ type Piece = { at: number; end: number; html: string };
 const KEY = /\b[A-Z][A-Z0-9]{1,5}-\d+\b/g;
 const WIKI = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
 const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+const TASK = /^\[([ xX])\] /;
+
+export type RenderOptions = { tasks?: "interactive" | "readonly" };
+type RenderEnv = { readonlyTasks: boolean };
+
+const isRenderEnv = (v: unknown): v is RenderEnv =>
+  typeof v === "object" && v !== null && "readonlyTasks" in v && typeof v.readonlyTasks === "boolean";
 
 const md = new MarkdownIt({ html: false, linkify: false, typographer: false });
 
@@ -86,9 +93,61 @@ md.renderer.rules.image = (tokens, idx, options, env, self) => {
   return `<img data-asset="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
 };
 
-export function renderNote(markdown: string, tickets: ReadonlyMap<string, TicketRef>): string {
-  const env = {};
+function enclosingList(tokens: Token[], itemIndex: number): Token | null {
+  const level = tokens[itemIndex]?.level ?? 0;
+  for (let i = itemIndex - 1; i >= 0; i -= 1) {
+    const t = tokens[i];
+    if (t && (t.type === "bullet_list_open" || t.type === "ordered_list_open") && t.level === level - 1) {
+      return t;
+    }
+  }
+  return null;
+}
+
+function markTasks(tokens: Token[]) {
+  for (const [i, item] of tokens.entries()) {
+    const paragraph = tokens[i + 1];
+    const inline = tokens[i + 2];
+    const close = tokens[i + 3];
+    const first = inline?.children?.[0];
+    if (item.type !== "list_item_open" || paragraph?.type !== "paragraph_open" || inline?.type !== "inline") {
+      continue;
+    }
+    if (!first || first.type !== "text" || close?.type !== "paragraph_close") continue;
+    const match = TASK.exec(first.content);
+    if (!match) continue;
+    first.content = first.content.slice(match[0].length);
+    item.attrJoin("class", "task");
+    item.attrSet("data-checked", match[1] === " " ? "false" : "true");
+    item.attrSet("data-task-line", String(item.map?.[0] ?? 0));
+    paragraph.hidden = true;
+    close.hidden = true;
+    const list = enclosingList(tokens, i);
+    if (list && !list.attrGet("class")?.split(" ").includes("contains-task")) {
+      list.attrJoin("class", "contains-task");
+    }
+  }
+}
+
+md.renderer.rules.list_item_open = (tokens, idx, options, env, self) => {
+  const token = tokens[idx];
+  const checked = token?.attrGet("data-checked") ?? null;
+  if (!token || checked === null) return self.renderToken(tokens, idx, options);
+  const line = token.attrGet("data-task-line") ?? "0";
+  token.attrs = token.attrs?.filter(([name]) => name === "class") ?? null;
+  const disabled = isRenderEnv(env) && env.readonlyTasks ? " disabled" : "";
+  const mark = checked === "true" ? " checked" : "";
+  return `${self.renderToken(tokens, idx, options)}<input type="checkbox" data-task-line="${line}"${mark}${disabled}>`;
+};
+
+export function renderNote(
+  markdown: string,
+  tickets: ReadonlyMap<string, TicketRef>,
+  options: RenderOptions = {},
+): string {
+  const env: RenderEnv = { readonlyTasks: options.tasks === "readonly" };
   const tokens = md.parse(markdown, env);
+  markTasks(tokens);
   for (const token of tokens) {
     if (token.type === "inline" && token.children) expandInline(token.children, tickets);
   }

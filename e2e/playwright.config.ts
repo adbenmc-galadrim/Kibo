@@ -109,6 +109,8 @@ const allDaemons = [
   { name: "viewer-light", scheme: "light", port: 4438, spec: /viewer\.spec\.ts/, scenario: "question" },
   { name: "selection-dark", scheme: "dark", port: 4441, spec: /selection\.spec\.ts/, scenario: "question" },
   { name: "selection-light", scheme: "light", port: 4442, spec: /selection\.spec\.ts/, scenario: "question" },
+  { name: "kanban-dark", scheme: "dark", port: 4455, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
+  { name: "kanban-light", scheme: "light", port: 4456, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
   {
     name: "files-dark",
     scheme: "dark",

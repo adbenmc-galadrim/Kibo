@@ -18,16 +18,16 @@ import { queueHint } from "./format";
 type Props = {
   run: RunView;
   entry: QueueEntry;
-  count: number;
+  prev: QueueEntry | null;
+  next: QueueEntry | null;
   onMove: (index: number) => void;
   onPriority: (priority: boolean) => void;
   onCancel: () => void;
 };
 
-export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: Props) {
+export function QueueItem({ run, entry, prev, next, onMove, onPriority, onCancel }: Props) {
   const drag = useDraggable({ id: run.id });
   const drop = useDroppable({ id: run.id });
-  const index = entry.position - 1;
   const style = drag.transform
     ? { transform: `translate(${drag.transform.x}px, ${drag.transform.y}px)` }
     : undefined;
@@ -85,10 +85,10 @@ export function QueueItem({ run, entry, count, onMove, onPriority, onCancel }: P
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(index - 1)}>
+          <DropdownMenuItem disabled={prev === null} onSelect={() => prev && onMove(prev.position - 1)}>
             {fr.queue.moveUp}
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(index + 1)}>
+          <DropdownMenuItem disabled={next === null} onSelect={() => next && onMove(next.position - 1)}>
             {fr.queue.moveDown}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onPriority(!run.priority)}>

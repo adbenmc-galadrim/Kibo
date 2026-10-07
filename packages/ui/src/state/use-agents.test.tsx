@@ -57,7 +57,7 @@ function Probe({ runId }: { runId: string | null }) {
 test("agent state, config and run log load, then reload on their topic", async () => {
   const view = render(<Probe runId="r41" />);
   await flush();
-  expect(view.container.textContent).toBe("9 3 0 empty");
+  expect(view.container.textContent).toBe("12 3 0 empty");
   expect(calls.sort()).toEqual(["getAgents", "getConfig", "getRunLog"]);
   calls.length = 0;
   await act(async () => {
@@ -79,14 +79,14 @@ test("a run log the daemon no longer has is reported missing, not thrown", async
   runLog = () => Promise.reject(new KiboError("NOT_FOUND", "run r41"));
   const view = render(<Probe runId="r41" />);
   await flush();
-  expect(view.container.textContent).toBe("9 3 - missing");
+  expect(view.container.textContent).toBe("12 3 - missing");
 });
 
 test("a run log with entries is not missing", async () => {
   runLog = () => Promise.resolve([{ id: 1, at: 0, event: { type: "cancelled" } }]);
   const view = render(<Probe runId="r41" />);
   await flush();
-  expect(view.container.textContent).toBe("9 3 1");
+  expect(view.container.textContent).toBe("12 3 1");
 });
 
 function Online() {

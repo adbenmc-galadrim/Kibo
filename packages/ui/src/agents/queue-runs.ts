@@ -13,3 +13,13 @@ export function orderProfiles(
   const rank = (p: AgentProfile) => (busy.has(p.id) ? 0 : 1);
   return [...profiles].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 }
+
+export function queueNeighbours(
+  visibleQueue: readonly QueueEntry[],
+  runId: string,
+): { prev: QueueEntry | null; next: QueueEntry | null } {
+  const sorted = [...visibleQueue].sort((a, b) => a.position - b.position);
+  const i = sorted.findIndex((q) => q.runId === runId);
+  if (i < 0) return { prev: null, next: null };
+  return { prev: sorted[i - 1] ?? null, next: sorted[i + 1] ?? null };
+}

@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
+  type AgentsState,
   EMPTY_TABS,
   INBOX_ID,
   type ProjectSnapshot,
@@ -61,6 +62,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () => ({
+  onWrite: () => () => {},
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
@@ -88,8 +90,10 @@ mock.module("../state/use-projects", () => ({
   useProjects: () => ({ projects: projectsFixture, error: null, retry: () => {} }),
   useProject: (id: string | null) => (id === "kibo" ? kiboProject() : null),
 }));
+let agents: () => AgentsState = agentsFixture;
+
 mock.module("../state/use-agents", () => ({
-  useAgents: () => agentsFixture(),
+  useAgents: () => agents(),
   useConfig: () => configFixture(),
   useNow: () => NOW,
   useRunLog: () => ({ log: [], missing: false }),
@@ -103,6 +107,7 @@ const { parseRoute } = await import("../route");
 
 beforeEach(() => {
   calls.length = 0;
+  agents = agentsFixture;
 });
 
 const go = (hash: string) =>
@@ -164,11 +169,13 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   expect(location.hash).toBe("#/agents");
   expect(await screen.findByRole("heading", { level: 1, name: "Agents" })).toBeTruthy();
   const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
-  expect(bar.getByRole("tab", { name: "Agents" }).getAttribute("aria-selected")).toBe("true");
+  expect(bar.getByRole("tab", { name: "Agents · aperçu" }).getAttribute("aria-selected")).toBe("true");
   await user.click(screen.getByRole("button", { name: "Files d'attente" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Files d'attente" })).toBeTruthy();
-  expect(bar.getByRole("tab", { name: "Files d'attente" }).getAttribute("aria-selected")).toBe("true");
-  expect(bar.queryByRole("tab", { name: "Agents" })).toBeNull();
+  expect(bar.getByRole("tab", { name: "Files d'attente · aperçu" }).getAttribute("aria-selected")).toBe(
+    "true",
+  );
+  expect(bar.queryByRole("tab", { name: /^Agents/ })).toBeNull();
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
   expect(crumbs.getByText("Agents")).toBeTruthy();
   expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");
@@ -351,6 +358,10 @@ test("right click and the ellipsis open the same project menu; edit and delete o
 });
 
 test("deleting a project closes its tabs and returns to the overview", async () => {
+  agents = () => {
+    const state = agentsFixture();
+    return { ...state, runs: state.runs.filter((r) => r.projectId !== "fac") };
+  };
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/p/fac/");
   const bar = within(screen.getByRole("tablist", { name: "Onglets" }));

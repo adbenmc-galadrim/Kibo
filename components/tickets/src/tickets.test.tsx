@@ -7,6 +7,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { fr } from "./fr";
 import { Component, manifest } from "./index";
+import { COLUMNS, WIDE_CELL, WIDE_TEXT } from "./TicketRow";
 
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const parent = run({
@@ -310,4 +311,34 @@ test("without a selection: no chip and no fading in the tree", async () => {
   expect(document.querySelector(".opacity-50")).toBeNull();
   expect(document.querySelectorAll("[data-selected='true']")).toHaveLength(0);
   expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
+});
+
+test("a narrow widget keeps key and title, hides the wide cells below @md", async () => {
+  const m = createMockSdk(manifest, { seed, surface: "widget", format: "medium" });
+  const { getByRole, getAllByRole, getByText, getAllByText, container, findByText } = render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await findByText("KIB-1");
+  const root = container.querySelector("section");
+  expect(root?.className).toContain("@container");
+  expect(COLUMNS).toBe(
+    "grid grid-cols-[minmax(0,1fr)_1.5rem_2rem] items-center gap-3 px-2 @md:grid-cols-[minmax(0,1fr)_7rem_5rem_4rem] @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_4rem]",
+  );
+  const header = getByText("Sous-tickets").parentElement ?? document.body;
+  expect(within(header).getByText("Ticket").className).not.toContain("hidden");
+  expect(within(header).getByText("Statut").className).toContain(WIDE_CELL);
+  expect(within(header).getByText("Sous-tickets").className).toContain(WIDE_CELL);
+  const title = getByRole("button", { name: /^Arbre des pages/ });
+  expect(title.className).toContain("min-w-0");
+  expect(title.className).not.toContain("min-w-16");
+  for (const progress of Array.from(container.querySelectorAll("[data-cell='progress']")))
+    expect(progress.className).toContain(WIDE_CELL);
+  expect(container.querySelector("[data-cell='status'] span.truncate")?.className).toContain(WIDE_TEXT);
+  expect(getAllByText("Bloqué").length).toBeGreaterThan(0);
+  expect(getAllByText("À faire")[0]?.className).toContain(WIDE_TEXT);
+  expect(getByText("Attente client").className).toContain(WIDE_TEXT);
+  for (const plus of getAllByRole("button", { name: /^Nouveau sous-ticket/ }))
+    expect(plus.className).toContain("hidden @md:inline-flex");
 });

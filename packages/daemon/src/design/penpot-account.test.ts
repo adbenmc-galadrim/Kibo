@@ -11,7 +11,7 @@ import { createSettings, type Settings } from "../integrations/settings";
 import { createFakeHost, type FakeHost } from "../integrations/testing/fake-host";
 import type { SecretStore } from "../integrations/types";
 import { type FakePenpot, startFakePenpot } from "../testing/fake-penpot";
-import { createPenpotAccount, type PenpotAccount } from "./penpot-account";
+import { ANONYMOUS_FULLNAME, createPenpotAccount, type PenpotAccount } from "./penpot-account";
 import { createPenpot } from "./providers/penpot";
 
 const SECRET = "penpot-TESTSECRET-0123456789";
@@ -128,5 +128,26 @@ test("a keychain failure on disconnect keeps the settings, so the token is never
   const account = build(unavailableSecretStore("locked"));
   await expect(account.disconnect()).rejects.toThrow("SECRET_STORE_UNAVAILABLE");
   expect(settings.get("penpot.url")).toBe(penpot.url);
+  expect(settings.get("penpot.account")).toBe("Adam");
+});
+
+test("an ignored token is refused and nothing is written", async () => {
+  penpot.ignoreTokens = true;
+  const account = build(secrets);
+  await expect(account.connect(penpot.url, SECRET)).rejects.toThrow("TOKEN_IGNORED");
+  expect(secrets.dump().size).toBe(0);
+  expect(settings.get("penpot.url")).toBeNull();
+  expect(settings.get("penpot.account")).toBeNull();
+});
+
+test("an account stored as anonymous asks to reconnect until a real token is accepted", async () => {
+  const account = build(secrets);
+  await account.connect(penpot.url, SECRET);
+  settings.set("penpot.account", ANONYMOUS_FULLNAME);
+  expect(await account.status()).toMatchObject({ state: "error", error: { code: "TOKEN_IGNORED" } });
+  penpot.ignoreTokens = true;
+  expect((await account.test()).error?.code).toBe("TOKEN_IGNORED");
+  penpot.ignoreTokens = false;
+  expect(await account.test()).toMatchObject({ state: "connected", account: `Adam · ${host$()}` });
   expect(settings.get("penpot.account")).toBe("Adam");
 });

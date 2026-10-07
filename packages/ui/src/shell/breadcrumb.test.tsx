@@ -27,6 +27,21 @@ test("intermediate crumbs open their target; the last one is plain text", () => 
   expect(screen.getByText("KIB-12").getAttribute("aria-current")).toBe("page");
 });
 
+test("a double click on a crumb opens its target kept", () => {
+  const opened: [TabTarget, boolean | undefined][] = [];
+  render(
+    <Breadcrumb
+      crumbs={[
+        { label: "Kibo", target: { kind: "project", projectId: "p1" } },
+        { label: "KIB-12", target: null },
+      ]}
+      onOpen={(t, keep) => opened.push([t, keep])}
+    />,
+  );
+  fireEvent.doubleClick(screen.getByRole("button", { name: "Kibo" }));
+  expect(opened).toEqual([[{ kind: "project", projectId: "p1" }, true]]);
+});
+
 test("the last crumb stays text even when it carries a target", () => {
   render(
     <Breadcrumb

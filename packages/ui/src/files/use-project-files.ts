@@ -10,9 +10,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { frFiles as t } from "../i18n/fr-files";
 import { slugName } from "./slug";
+import { raise } from "./smooth-progress";
 import { uploadFile } from "./upload";
 
-export type Sending = { key: number; name: string; ratio: number };
+export type Sending = {
+  key: number;
+  name: string;
+  ratio: number;
+  done: boolean;
+  shown: boolean;
+  settled: boolean;
+};
+const queued = (key: number, name: string): Sending => ({
+  key,
+  name,
+  ratio: 0,
+  done: false,
+  shown: false,
+  settled: false,
+});
 type Prepared = { ok: true; name: string; mime: ProjectAssetMime } | { ok: false; problem: string };
 
 function prepare(file: File): Prepared {
@@ -57,6 +73,11 @@ export function useProjectFiles(projectId: string) {
   return { assets, info, failed, reload };
 }
 
+const changed = (list: Sending[], keep: (s: Sending) => boolean, edit: (s: Sending) => Sending) =>
+  list.map((s) => (keep(s) ? edit(s) : s)).filter((s) => !(s.shown && s.settled));
+
+type Item = { problem: string } | { row: Sending; mime: ProjectAssetMime; file: File };
+
 export function useImport(projectId: string, onSent: () => Promise<void>) {
   const [sending, setSending] = useState<Sending[]>([]);
   const [problems, setProblems] = useState<string[]>([]);
@@ -67,32 +88,53 @@ export function useImport(projectId: string, onSent: () => Promise<void>) {
     abort.current = controller;
     return () => controller.abort();
   }, []);
-  const send = async (name: string, mime: ProjectAssetMime, file: File) => {
-    const key = ++keys.current;
-    const progress = (ratio: number) =>
-      setSending((list) => list.map((s) => (s.key === key ? { ...s, ratio } : s)));
-    setSending((list) => [...list, { key, name, ratio: 0 }]);
+  const change = (keep: (s: Sending) => boolean, edit: (s: Sending) => Sending) =>
+    setSending((list) => changed(list, keep, edit));
+  const send = async ({ row, mime, file }: { row: Sending; mime: ProjectAssetMime; file: File }) => {
+    const mine = (s: Sending) => s.key === row.key;
+    const progress = (ratio: number) => change(mine, (s) => ({ ...s, ratio: raise(s.ratio, ratio) }));
     try {
-      await uploadFile(client, projectId, name, mime, file, progress, abort.current.signal);
+      await uploadFile(client, projectId, row.name, mime, file, progress, abort.current.signal);
+      change(mine, (s) => ({ ...s, ratio: 1, done: true }));
       return null;
     } catch (e) {
-      return abort.current.signal.aborted ? null : sendFailure(name, e);
-    } finally {
-      setSending((list) => list.filter((s) => s.key !== key));
+      setSending((list) => list.filter((s) => !mine(s)));
+      return abort.current.signal.aborted ? null : sendFailure(row.name, e);
     }
+  };
+  const itemOf = (file: File): Item => {
+    const prepared = prepare(file);
+    if (!prepared.ok) return { problem: prepared.problem };
+    return { row: queued(++keys.current, prepared.name), mime: prepared.mime, file };
   };
   const importFiles = async (files: File[]) => {
     if (files.length === 0) return;
     setProblems([]);
-    let sent = false;
-    for (const file of files) {
-      const prepared = prepare(file);
-      sent ||= prepared.ok;
-      const problem = prepared.ok ? await send(prepared.name, prepared.mime, file) : prepared.problem;
+    const items = files.map(itemOf);
+    const rows = items.flatMap((item) => ("row" in item ? [item.row] : []));
+    setSending((list) => [...list, ...rows]);
+    for (const item of items) {
+      const problem = "row" in item ? await send(item) : item.problem;
       if (abort.current.signal.aborted) return;
       if (problem) setProblems((list) => [...list, problem]);
     }
-    if (sent) await onSent();
+    if (rows.length > 0) await onSent();
+    const ours = new Set(rows.map((r) => r.key));
+    change(
+      (s) => ours.has(s.key),
+      (s) => ({ ...s, settled: true }),
+    );
   };
-  return { sending, problems, importFiles };
+  const markShown = useCallback(
+    (key: number) =>
+      setSending((list) =>
+        changed(
+          list,
+          (s) => s.key === key,
+          (s) => ({ ...s, shown: true }),
+        ),
+      ),
+    [],
+  );
+  return { sending, problems, importFiles, markShown };
 }

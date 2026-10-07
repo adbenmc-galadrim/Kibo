@@ -17,6 +17,20 @@
       "asset": "model",
       "label": "Modèle (.glb)"
     },
-    "autoRotate": { "type": "boolean", "default": true, "label": "Rotation automatique" }
+    "autoRotate": { "type": "boolean", "default": true, "label": "Rotation automatique" },
+    "lighting": {
+      "type": "string",
+      "enum": ["soft", "studio", "contrast"],
+      "default": "soft",
+      "label": "Éclairage"
+    },
+    "lightIntensity": { "type": "number", "min": 0.25, "max": 2, "default": 1, "label": "Intensité" },
+    "shadows": { "type": "boolean", "default": false, "label": "Ombres" },
+    "environment": {
+      "type": "boolean",
+      "default": true,
+      "label": "Lumière d'ambiance",
+      "help": "Reflets doux d'un studio neutre."
+    }
   }
 }

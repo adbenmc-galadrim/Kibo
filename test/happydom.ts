@@ -14,7 +14,18 @@ const native = {
   WritableStream: globalThis.WritableStream,
 };
 
-GlobalRegistrator.register();
+GlobalRegistrator.register({
+  settings: {
+    disableJavaScriptFileLoading: true,
+    disableCSSFileLoading: true,
+    handleDisabledFileLoadingAsSuccess: true,
+    navigation: {
+      disableMainFrameNavigation: true,
+      disableChildFrameNavigation: true,
+      disableChildPageNavigation: true,
+    },
+  },
+});
 Object.assign(globalThis, native);
 
 const { cleanup, configure } = await import("@testing-library/react");

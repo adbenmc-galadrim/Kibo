@@ -37,6 +37,7 @@ export const fr = {
   blockedStatus: (key: string, reason: string | null) =>
     reason ? `${key} · bloqué : ${reason}` : `${key} · bloqué`,
   more: (n: number) => `+${n}`,
+  isolated: "Sans dépendance",
   emptyView: "Aucune dépendance entre les tickets affichés.",
   emptyWidget: "Aucun chemin critique : aucun ticket bloquant.",
   loadFailed: "Impossible de charger les tickets.",

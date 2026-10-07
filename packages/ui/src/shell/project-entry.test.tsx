@@ -30,7 +30,7 @@ const show = (project: ProjectSummary) =>
             menuEditable
             current={false}
             trailing={null}
-            link={() => ({ onClick: () => {}, onAuxClick: () => {} })}
+            link={() => ({ onClick: () => {}, onAuxClick: () => {}, onDoubleClick: () => {} })}
             onOpen={() => {}}
             onNewPage={() => {}}
             onRenamePage={() => {}}

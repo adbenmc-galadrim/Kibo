@@ -8,6 +8,12 @@ import type { SecretStore } from "../integrations/types";
 import { connectedStatus, errorOf, type LastError, secretStatus } from "./account-status";
 import type { PenpotClient } from "./providers/penpot";
 
+export const ANONYMOUS_FULLNAME = "Anonymous User";
+const TOKEN_IGNORED: LastError = {
+  code: "TOKEN_IGNORED",
+  message: "penpot ignored the stored access token",
+};
+
 export type PenpotAccount = {
   instance(): string | null;
   token(): Promise<string | null>;
@@ -46,7 +52,10 @@ export function createPenpotAccount(deps: {
     token: async () => (instance() === null ? null : secrets.get("penpot")),
     async status() {
       if (instance() === null) return baseStatus("penpot", "disconnected");
-      return (await secretStatus("penpot", secrets)) ?? connectedStatus("penpot", accountLabel(), lastError);
+      const secret = await secretStatus("penpot", secrets);
+      if (secret) return secret;
+      const error = settings.get("penpot.account") === ANONYMOUS_FULLNAME ? TOKEN_IGNORED : lastError;
+      return connectedStatus("penpot", accountLabel(), error);
     },
     async connect(url, token) {
       const origin = instanceOf(url);

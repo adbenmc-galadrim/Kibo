@@ -29,6 +29,7 @@ mock.module("./api", () => ({
     subscribeIntegrations: () => () => {},
   },
   onUnauthorized: () => () => {},
+  onWrite: () => () => {},
 }));
 
 const unmockedApp = "./App?unmocked";

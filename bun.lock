@@ -29,7 +29,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "1.6.0",
+      "version": "0.16.0-alpha.1",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -78,12 +78,14 @@
         "@testing-library/dom": "10.4.2",
         "@testing-library/react": "16.3.0",
         "@types/react": "19.1.13",
+        "@types/react-dom": "19.1.9",
         "fast-check": "4.3.0",
         "react": "19.1.1",
         "react-dom": "19.1.1",
       },
       "peerDependencies": {
         "react": "19.1.1",
+        "react-dom": "19.1.1",
       },
     },
     "components/mcp-source": {
@@ -117,6 +119,7 @@
       "devDependencies": {
         "@testing-library/react": "16.3.0",
         "@types/react": "19.1.13",
+        "fast-check": "4.3.0",
         "react": "19.1.1",
         "react-dom": "19.1.1",
       },
@@ -200,7 +203,9 @@
       },
       "devDependencies": {
         "@testing-library/react": "16.3.0",
+        "@testing-library/user-event": "14.6.1",
         "@types/react": "19.1.13",
+        "fast-check": "4.3.0",
         "react": "19.1.1",
         "react-dom": "19.1.1",
       },
@@ -313,6 +318,7 @@
         "@types/react": "19.1.13",
         "@types/react-dom": "19.1.9",
         "@types/three": "0.186.0",
+        "fast-check": "4.3.0",
         "react": "19.1.1",
         "react-dom": "19.1.1",
       },

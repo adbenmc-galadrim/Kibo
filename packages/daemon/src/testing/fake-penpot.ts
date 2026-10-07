@@ -19,6 +19,7 @@ export type FakePenpot = {
   requests: { method: string; path: string; auth: string | null; body: string }[];
   redirectAssets: boolean;
   offline: boolean;
+  ignoreTokens: boolean;
   addBoard(
     fileId: string,
     pageId: string,
@@ -31,6 +32,7 @@ export type FakePenpot = {
 };
 
 export { PENPOT_IDS, penpotBoardUrl } from "./penpot-ids";
+export const PENPOT_ANONYMOUS_ID = "00000000-0000-0000-0000-000000000000";
 
 const PIXEL = Uint8Array.from(Buffer.from(FAKE_PNG_BASE64, "base64"));
 const json = (body: unknown, status = 200) =>
@@ -73,15 +75,31 @@ export function startFakePenpot(opts: { token: string; port?: number; fullname?:
     const board = boardOf(field(body, "file-id"), pageId, boardId);
     if (!board || !boardId) return notFound();
     const { name, width, height } = board;
-    const object = {
-      id: boardId,
-      type: "frame",
-      name,
-      width,
-      height,
-      selrect: { x: 0, y: 0, width, height },
+    const child = (suffix: string, type: string, size: { width: number | null; height: number | null }) => ({
+      id: `${boardId}-${suffix}`,
+      type,
+      name: `${type} ${suffix}`,
+      "parent-id": boardId,
+      "frame-id": boardId,
+      ...size,
+      fills: [],
+      strokes: [],
+    });
+    const objects = {
+      [boardId]: {
+        id: boardId,
+        type: "frame",
+        name,
+        width,
+        height,
+        selrect: { x: 0, y: 0, width, height },
+        fills: [{ "fill-color": "#ffffff", "fill-opacity": 1 }],
+        shapes: [`${boardId}-path`, `${boardId}-rect`],
+      },
+      [`${boardId}-path`]: child("path", "path", { width: null, height: null }),
+      [`${boardId}-rect`]: child("rect", "rect", { width: 120, height: 40 }),
     };
-    return json({ id: pageId, name: "Page 1", objects: { [boardId]: object } });
+    return json({ id: pageId, name: "Page 1", objects });
   };
 
   const thumbnails = (body: unknown) => {
@@ -96,6 +114,10 @@ export function startFakePenpot(opts: { token: string; port?: number; fullname?:
   };
 
   const command = (req: Request, name: string, body: unknown): Response => {
+    if (state.ignoreTokens) {
+      if (name === "get-profile") return json({ id: PENPOT_ANONYMOUS_ID, fullname: "Anonymous User" });
+      return json({ type: "authentication", code: "authentication-required" }, 401);
+    }
     if (req.headers.get("authorization") !== `Token ${opts.token}`)
       return json({ type: "authentication", code: "unauthorized" }, 401);
     if (name === "get-profile") return json({ id: randomUUID(), fullname, email: "adam@example.test" });
@@ -146,6 +168,14 @@ export function startFakePenpot(opts: { token: string; port?: number; fullname?:
         state.offline = false;
         return new Response(null, { status: 204 });
       }
+      if (req.method === "POST" && u.pathname === "/__test/ignore-tokens") {
+        state.ignoreTokens = true;
+        return new Response(null, { status: 204 });
+      }
+      if (req.method === "POST" && u.pathname === "/__test/honor-tokens") {
+        state.ignoreTokens = false;
+        return new Response(null, { status: 204 });
+      }
       if (state.offline) return new Response("service unavailable", { status: 503 });
       if (failure) {
         const f = failure;
@@ -165,6 +195,7 @@ export function startFakePenpot(opts: { token: string; port?: number; fullname?:
     requests,
     redirectAssets: false,
     offline: false,
+    ignoreTokens: false,
     addBoard(fileId, pageId, boardId, patch = {}) {
       const file = files.get(fileId) ?? {
         name: "Kibo",

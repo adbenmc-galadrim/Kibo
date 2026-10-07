@@ -41,6 +41,6 @@ if (command === "get") {
   assertChangelogHasVersion(readFileSync(CHANGELOG, "utf8"), current);
   console.log(`tag ${argument} matches version ${current}`);
 } else {
-  console.error("usage: version.ts get | set X.Y.Z | check vX.Y.Z");
+  console.error("usage: version.ts get | set X.Y.Z[-alpha.N] | check vX.Y.Z[-alpha.N]");
   process.exit(2);
 }

@@ -11,7 +11,9 @@ test("AppInfo requires a semver version and a known platform", () => {
     uptimeMs: 0,
   };
   expect(AppInfo.safeParse(ok).success).toBe(true);
+  expect(AppInfo.safeParse({ ...ok, version: "0.16.0-alpha.1" }).success).toBe(true);
   expect(AppInfo.safeParse({ ...ok, version: "1.5" }).success).toBe(false);
+  expect(AppInfo.safeParse({ ...ok, version: "0.16.0-beta.1" }).success).toBe(false);
   expect(AppInfo.safeParse({ ...ok, platform: "win32" }).success).toBe(false);
   expect(AppInfo.safeParse({ ...ok, daemonPid: 0 }).success).toBe(false);
 });

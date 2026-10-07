@@ -157,7 +157,7 @@ describe("tabs contracts", () => {
       recents: [{ kind: "future" }, project],
     };
     expect(salvageTabsState(stored)).toEqual({
-      tabs: [{ id: "a", target: { kind: "project", projectId: "p" }, pinned: true }],
+      tabs: [{ id: "a", target: { kind: "project", projectId: "p" }, pinned: true, preview: false }],
       activeId: null,
       recents: [{ kind: "project", projectId: "p" }],
     });

@@ -1,4 +1,4 @@
-import { parseDesignUrl } from "@kibo/schema";
+import { designUrlProblem, parseDesignUrl } from "@kibo/schema";
 import { Input } from "@kibo/sdk/ui/input";
 import { frDesign } from "../i18n/fr-design";
 
@@ -16,7 +16,8 @@ export const isBadFrame = (value: unknown): boolean =>
 
 export function FrameField({ id, label, value, disabled, hint, onChange }: Props) {
   const text = value ?? "";
-  const bad = isBadFrame(text);
+  const problem = text.trim() === "" ? null : designUrlProblem(text);
+  const bad = problem !== null;
   return (
     <div className="grid min-w-0 flex-1 gap-1">
       <Input
@@ -31,9 +32,9 @@ export function FrameField({ id, label, value, disabled, hint, onChange }: Props
         aria-describedby={bad && hint ? `${id}-invalid` : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
-      {bad && hint && (
+      {problem && hint && (
         <p id={`${id}-invalid`} className="text-xs text-destructive">
-          {frDesign.field.invalid}
+          {frDesign.urlProblems[problem]}
         </p>
       )}
     </div>

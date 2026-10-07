@@ -41,6 +41,7 @@ export type MockSdk = {
   openedFiles: FileTarget[];
   openedViews: string[];
   data: Map<string, unknown>;
+  configPatches: Record<string, unknown>[];
   notes: Map<string, MockNote>;
   run(cmd: ProjectCommand): unknown;
   snapshot(): ProjectSnapshot;
@@ -121,6 +122,7 @@ export function createMockSdk(
   let runs = opts.runs ?? [];
   const folder = createMockNotes(opts.notes ?? {}, opts.noteAges ?? {}, PROJECT_KEY, changes.emit);
   const data = new Map<string, unknown>();
+  const configPatches: Record<string, unknown>[] = [];
   const violations: string[] = [];
   const used: string[] = [];
   const opened: string[] = [];
@@ -150,6 +152,8 @@ export function createMockSdk(
       doc,
       run,
       data,
+      manifest,
+      configPatches,
       folder,
       runs: () => runs,
       peers: () => peers,
@@ -266,6 +270,7 @@ export function createMockSdk(
     openedFiles,
     openedViews,
     data,
+    configPatches,
     notes: folder.notes,
     run,
     snapshot: () => readProject(doc),

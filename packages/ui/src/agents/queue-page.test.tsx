@@ -2,7 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, NOW, profilesFixture } from "./fixtures";
+import { agentsFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
@@ -20,12 +20,21 @@ const { moveTarget, QueuePage } = await import("./QueuePage");
 const { PauseAdmission } = await import("./PauseAdmission");
 
 beforeEach(() => {
+  localStorage.clear();
   calls.length = 0;
   outcome = () => Promise.resolve(null);
 });
 
 const show = (onAnswer: (runId: string) => void = () => {}) =>
-  render(<QueuePage state={agentsFixture()} profiles={profilesFixture} now={NOW} onAnswer={onAnswer} />);
+  render(
+    <QueuePage
+      state={agentsFixture()}
+      profiles={profilesFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={onAnswer}
+    />,
+  );
 
 test("capacity shows one card per place, the gauges and the admission rule", () => {
   show();
@@ -44,7 +53,15 @@ test("capacity shows one card per place, the gauges and the admission rule", () 
 
 test("profiles with runs come first, then the idle ones, each group by name", () => {
   const byName = [...profilesFixture].sort((a, b) => a.name.localeCompare(b.name));
-  render(<QueuePage state={agentsFixture()} profiles={byName} now={NOW} onAnswer={() => {}} />);
+  render(
+    <QueuePage
+      state={agentsFixture()}
+      profiles={byName}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
   const columns = screen
     .getAllByRole("region")
     .map((r) => r.getAttribute("aria-label"))
@@ -57,7 +74,15 @@ test("a first turn with a message keeps its queue reason", () => {
   const runs = state.runs.map((r) =>
     r.id === "q18" ? { ...r, pendingAnswer: "Commence par les tests." } : r,
   );
-  render(<QueuePage state={{ ...state, runs }} profiles={profilesFixture} now={NOW} onAnswer={() => {}} />);
+  render(
+    <QueuePage
+      state={{ ...state, runs }}
+      profiles={profilesFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
   const opus = within(screen.getByRole("region", { name: "opus-dev" }));
   const q18 = opus.getAllByRole("listitem").find((li) => li.dataset.run === "q18");
   if (!q18) throw new Error("queue item q18 missing");
@@ -70,7 +95,15 @@ test("a message that resumes a finished run says so, an answer to a question say
   const runs = state.runs.map((r) =>
     r.id === "q29" ? { ...r, turns: 1, pendingAnswer: "Ajoute les tests.", question: null } : r,
   );
-  render(<QueuePage state={{ ...state, runs }} profiles={profilesFixture} now={NOW} onAnswer={() => {}} />);
+  render(
+    <QueuePage
+      state={{ ...state, runs }}
+      profiles={profilesFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
   const opus = within(screen.getByRole("region", { name: "opus-dev" }));
   const item = (runId: string) => {
     const li = opus.getAllByRole("listitem").find((x) => x.dataset.run === runId);
@@ -88,6 +121,7 @@ test("fixed host slots say so and still give the automatic value", () => {
     <QueuePage
       state={{ ...state, host: { ...state.host, autoSlots: 5, slotsFixed: true } }}
       profiles={profilesFixture}
+      projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
     />,
@@ -103,7 +137,7 @@ test("each profile lists its running runs and its queue in order", () => {
   expect(opus.getByText("2/2")).toBeTruthy();
   expect(opus.getByText("KIB-12 · Schéma Loro des tickets")).toBeTruthy();
   const items = opus.getAllByRole("listitem").filter((li) => li.dataset.queued === "true");
-  expect(items.map((li) => li.dataset.run)).toEqual(["q10", "q18", "q29"]);
+  expect(items.map((li) => li.dataset.run)).toEqual(["q10", "q18", "q29", "q60"]);
   const item = (runId: string) => {
     const li = items.find((x) => x.dataset.run === runId);
     if (!li) throw new Error(`queue item ${runId} missing`);
@@ -138,10 +172,15 @@ test("the item menu moves, prioritizes and removes queued runs after a confirmat
   await user.click(await screen.findByRole("menuitem", { name: "Monter" }));
   await user.click(screen.getByRole("button", { name: "Actions KIB-10" }));
   await user.click(await screen.findByRole("menuitem", { name: "Retirer la priorité" }));
-  await user.click(screen.getByRole("button", { name: "Actions KIB-29" }));
+  await user.click(screen.getByRole("button", { name: "Actions FAC-6" }));
   expect((await screen.findByRole("menuitem", { name: "Descendre" })).getAttribute("aria-disabled")).toBe(
     "true",
   );
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions KIB-29" }));
+  expect(
+    (await screen.findByRole("menuitem", { name: "Descendre" })).getAttribute("aria-disabled"),
+  ).toBeNull();
   await user.click(screen.getByRole("menuitem", { name: "Retirer de la file" }));
   const dialog = within(await screen.findByRole("alertdialog"));
   expect(dialog.getByText("Retirer KIB-29 de la file ?")).toBeTruthy();
@@ -194,4 +233,69 @@ test("dropping a run on another one takes that run's place in the whole queue", 
   expect(moveTarget(queue, "q10", "q10")).toBeNull();
   expect(moveTarget(queue, "q10", null)).toBeNull();
   expect(moveTarget(queue, "q10", "r42")).toBeNull();
+});
+
+const projectTrigger = () => screen.getByRole("button", { name: "Filtrer par projet" });
+const queuedItems = (region: HTMLElement) =>
+  within(region)
+    .getAllByRole("listitem")
+    .filter((li) => li.dataset.queued === "true");
+
+test("screen 163: the project filter hides other projects' runs but keeps the machine's capacity", () => {
+  localStorage.setItem("kibo.agents.project", "fac");
+  show();
+  expect(projectTrigger().textContent).toContain("Projet : API Facturation");
+  expect(
+    screen.getByText(
+      "Places, CPU et RAM : toute la machine · les numéros de file comptent tous les projets.",
+    ),
+  ).toBeTruthy();
+  const capacity = within(screen.getByRole("region", { name: "Capacité de la machine" }));
+  expect(capacity.getAllByRole("listitem")).toHaveLength(3);
+  expect(capacity.getByText("62 % · seuil 85 %")).toBeTruthy();
+  const opusRegion = screen.getByRole("region", { name: "opus-dev" });
+  const opus = within(opusRegion);
+  expect(opus.getByText("2/2")).toBeTruthy();
+  expect(opus.queryByText("KIB-12 · Schéma Loro des tickets")).toBeNull();
+  const items = queuedItems(opusRegion);
+  expect(items.map((li) => li.dataset.run)).toEqual(["q60"]);
+  const [first] = items;
+  if (!first) throw new Error("no queued item");
+  expect(within(first).getByText("#4")).toBeTruthy();
+  expect(
+    within(screen.getByRole("region", { name: "En attente de réponse" })).queryByText(/KIB-14/),
+  ).toBeNull();
+  expect(screen.queryByRole("region", { name: "haiku-tests" })?.textContent ?? "").not.toContain(
+    "Dans la place de",
+  );
+});
+
+test("without a filter the queue page shows everything and no reminder", () => {
+  show();
+  expect(projectTrigger().textContent).toContain("Projet : tous");
+  expect(screen.queryByText(/toute la machine/)).toBeNull();
+  expect(queuedItems(screen.getByRole("region", { name: "opus-dev" }))).toHaveLength(4);
+});
+
+test("under a filter, up and down move among the visible runs only", async () => {
+  localStorage.setItem("kibo.agents.project", "kibo");
+  show();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Actions KIB-29" }));
+  expect((await screen.findByRole("menuitem", { name: "Descendre" })).getAttribute("aria-disabled")).toBe(
+    "true",
+  );
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions KIB-18" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Descendre" }));
+  expect(calls).toEqual([{ method: "moveRun", runId: "q18", index: 2 }]);
+  expect(screen.queryByRole("button", { name: "Actions FAC-6" })).toBeNull();
+});
+
+test("the filter chosen on the agents page is the one of the queue page", async () => {
+  show();
+  const user = userEvent.setup();
+  await user.click(projectTrigger());
+  await user.click(await screen.findByRole("menuitemradio", { name: "API Facturation" }));
+  expect(localStorage.getItem("kibo.agents.project")).toBe("fac");
 });

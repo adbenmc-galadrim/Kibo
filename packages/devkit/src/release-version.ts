@@ -1,21 +1,20 @@
-import { changelogVersions, KiboError } from "@kibo/schema";
+import { changelogVersions, isAppVersion, KiboError } from "@kibo/schema";
 
 export type VersionFiles = { tauriConf: string; cargoToml: string; cargoLock: string; packageJson: string };
 
-const SEMVER = /^\d+\.\d+\.\d+$/;
 const JSON_VERSION = /"version":\s*"([^"]*)"/;
 const TOML_VERSION = /^version = "[^"]*"$/m;
 const LOCK_KIBO_VERSION = /(\[\[package\]\]\nname = "kibo"\nversion = )"[^"]*"/;
 
-function assertSemver(version: string, where: string): void {
-  if (!SEMVER.test(version))
-    throw new KiboError("INVALID_INPUT", `${where}: "${version}" is not a X.Y.Z version`);
+function assertAppVersion(version: string, where: string): void {
+  if (!isAppVersion(version))
+    throw new KiboError("INVALID_INPUT", `${where}: "${version}" is not a X.Y.Z or X.Y.Z-alpha.N version`);
 }
 
 export function readAppVersion(tauriConf: string): string {
   const version = JSON_VERSION.exec(tauriConf)?.[1];
   if (version === undefined) throw new KiboError("INVALID_INPUT", "tauri.conf.json has no version");
-  assertSemver(version, "tauri.conf.json");
+  assertAppVersion(version, "tauri.conf.json");
   return version;
 }
 
@@ -25,7 +24,7 @@ function replaceOnce(text: string, pattern: RegExp, replacement: string, where: 
 }
 
 export function withAppVersion(files: VersionFiles, version: string): VersionFiles {
-  assertSemver(version, "requested version");
+  assertAppVersion(version, "requested version");
   return {
     tauriConf: replaceOnce(files.tauriConf, JSON_VERSION, `"version": "${version}"`, "tauri.conf.json"),
     cargoToml: replaceOnce(files.cargoToml, TOML_VERSION, `version = "${version}"`, "Cargo.toml"),

@@ -1,5 +1,12 @@
 import { localSyncInfo, readInstanceData, readProject, writeInstanceData } from "@kibo/core";
-import { KiboError, type PresencePeer, type ProjectSyncInfo, type TicketRun } from "@kibo/schema";
+import {
+  type ComponentManifest,
+  KiboError,
+  type PresencePeer,
+  type ProjectSyncInfo,
+  type TicketRun,
+  validateConfig,
+} from "@kibo/schema";
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -14,6 +21,7 @@ export type GateHandlersDeps = {
   files: FilesService;
   backends: () => Backends;
   runs(projectId: string): TicketRun[];
+  manifestOf(ref: string): Promise<ComponentManifest>;
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
@@ -82,6 +90,19 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       call.kind === "assets.list"
         ? deps.files.list(projectId)
         : deps.files.url(projectId, instanceId, call.name),
+    async config(projectId, instance, patch) {
+      const manifest = await deps.manifestOf(instance.component);
+      const errors = validateConfig(manifest.configSchema, patch);
+      if (errors.length > 0) {
+        throw new KiboError("INVALID_INPUT", `${instance.component}: invalid config (${errors.join("; ")})`);
+      }
+      await docs.run(
+        projectId,
+        { method: "setInstanceConfig", instanceId: instance.id, config: { ...instance.config, ...patch } },
+        { origin: "user", instanceId: instance.id },
+      );
+      return null;
+    },
     presence: async (projectId) => deps.presence?.(projectId) ?? [],
     sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
   };

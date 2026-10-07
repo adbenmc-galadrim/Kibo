@@ -8,7 +8,8 @@ import { client } from "../api";
 import { frFiles as t } from "../i18n/fr-files";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
 import { FilesDirDialog } from "./FilesDirDialog";
-import { FilesBody, SendingList } from "./FilesList";
+import { FilesBody } from "./FilesList";
+import { SendingList } from "./SendingList";
 import { useImport, useProjectFiles } from "./use-project-files";
 
 type Props = { projectId: string; onClose(): void };
@@ -17,7 +18,7 @@ const ACCEPT = ".glb,.png,.jpg,.jpeg,.webp,.gif,.mp3,.ogg,.wav";
 
 export function ProjectFilesDialog({ projectId, onClose }: Props) {
   const { assets, info, failed, reload } = useProjectFiles(projectId);
-  const { sending, problems, importFiles } = useImport(projectId, reload);
+  const { sending, problems, importFiles, markShown } = useImport(projectId, reload);
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [doomed, setDoomed] = useState<ProjectAsset | null>(null);
@@ -77,7 +78,7 @@ export function ProjectFilesDialog({ projectId, onClose }: Props) {
               }}
             />
           </fieldset>
-          <SendingList sending={sending} />
+          <SendingList sending={sending} onShown={markShown} />
           {problems.map((p) => (
             <p key={p} role="alert" className="text-sm text-destructive">
               {p}

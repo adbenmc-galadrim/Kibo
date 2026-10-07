@@ -215,6 +215,14 @@ export function GraphCanvas({ tickets, edges, layout, critical, runs, compact = 
           height: layout.height,
         }}
       >
+        {layout.isolatedTop !== null && (
+          <span
+            className="absolute left-0 text-2xs text-muted-foreground uppercase tracking-wide"
+            style={{ top: layout.isolatedTop - 20 }}
+          >
+            {fr.isolated}
+          </span>
+        )}
         <Edges edges={edges} layout={layout} critical={critical} />
         {layout.nodes.map((n) => {
           const t = byId.get(n.id);

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Environment } from "./ai";
+import { APP_VERSION } from "./app-version";
 
 export const AppPlatform = z.enum(["darwin", "linux"]);
 export type AppPlatform = z.infer<typeof AppPlatform>;
@@ -7,7 +8,7 @@ export const AppArch = z.enum(["arm64", "x64"]);
 export type AppArch = z.infer<typeof AppArch>;
 
 export const AppInfo = z.object({
-  version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  version: z.string().regex(APP_VERSION),
   platform: AppPlatform,
   arch: AppArch,
   home: z.string().min(1),

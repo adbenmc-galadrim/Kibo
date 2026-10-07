@@ -1,0 +1,283 @@
+[
+  {
+    "id": "kanban",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["large", "half", "full"],
+    "size": {
+      "min": {
+        "w": 6,
+        "h": 4
+      }
+    },
+    "title": "Kanban",
+    "description": "Tickets par statut, glisser-déposer",
+    "reads": ["ticket", "status", "run", "ci_run"],
+    "selection": true,
+    "writes": ["ticket"],
+    "data": true,
+    "configSchema": {
+      "filter": {
+        "enum": ["mine-and-agents", "all"],
+        "default": "mine-and-agents"
+      }
+    }
+  },
+  {
+    "id": "tickets",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["medium", "large", "half", "full"],
+    "size": {
+      "min": {
+        "w": 4,
+        "h": 3
+      }
+    },
+    "title": "Tickets",
+    "description": "Arbre des tickets, sous-tickets illimités",
+    "reads": ["ticket", "status", "run"],
+    "selection": true,
+    "writes": ["ticket"],
+    "configSchema": {
+      "filter": {
+        "enum": ["all", "mine"],
+        "default": "all"
+      }
+    }
+  },
+  {
+    "id": "graph",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["small", "medium", "large", "half", "full"],
+    "size": {
+      "min": {
+        "w": 3,
+        "h": 3
+      }
+    },
+    "title": "Graphe de dépendances",
+    "description": "Généré depuis les liens bloque / bloqué par",
+    "reads": ["ticket", "status", "link", "run"],
+    "selection": true,
+    "writes": [],
+    "configSchema": {
+      "filter": {
+        "enum": ["mine-and-agents", "all"],
+        "default": "mine-and-agents"
+      },
+      "hideDone": {
+        "type": "boolean",
+        "default": false
+      }
+    }
+  },
+  {
+    "id": "notes",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["medium", "large", "half", "full"],
+    "size": {
+      "min": {
+        "w": 4,
+        "h": 3
+      }
+    },
+    "title": "Notes",
+    "description": "Markdown local, compatible Obsidian",
+    "reads": ["note", "ticket", "status"],
+    "writes": ["note"],
+    "configSchema": {
+      "path": {
+        "type": "string",
+        "nullable": true,
+        "default": null
+      }
+    }
+  },
+  {
+    "id": "mcp-source",
+    "version": "1.0.0",
+    "kind": "widget",
+    "formats": ["small", "medium", "large", "half"],
+    "size": {
+      "min": {
+        "w": 3,
+        "h": 2
+      }
+    },
+    "title": "Source MCP",
+    "description": "Liste des éléments d'un serveur MCP, un ticket par élément sur demande",
+    "reads": ["ticket"],
+    "writes": ["ticket"],
+    "data": true,
+    "mcp": ["{config.server}"],
+    "configSchema": {
+      "title": {
+        "type": "string",
+        "default": "Source MCP"
+      },
+      "server": {
+        "type": "string"
+      },
+      "mode": {
+        "enum": ["tool", "resource"],
+        "default": "tool"
+      },
+      "tool": {
+        "type": "string"
+      },
+      "uri": {
+        "type": "string"
+      },
+      "args": {
+        "type": "string",
+        "default": "{}"
+      },
+      "refreshMinutes": {
+        "type": "number",
+        "default": 15
+      },
+      "itemsPointer": {
+        "type": "string",
+        "default": "/items"
+      },
+      "idPointer": {
+        "type": "string",
+        "default": "/id"
+      },
+      "titlePointer": {
+        "type": "string",
+        "default": "/name"
+      },
+      "subtitlePointer": {
+        "type": "string"
+      },
+      "urlPointer": {
+        "type": "string"
+      }
+    }
+  },
+  {
+    "id": "viewer-3d",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["medium", "large", "half", "full"],
+    "size": {
+      "min": {
+        "w": 3,
+        "h": 3
+      }
+    },
+    "title": "Visionneuse 3D",
+    "description": "Affiche un modèle .glb du projet",
+    "reads": [],
+    "writes": [],
+    "capabilities": ["webgl", "assets"],
+    "configSchema": {
+      "model": {
+        "type": "string",
+        "nullable": true,
+        "default": null,
+        "asset": "model",
+        "label": "Modèle (.glb)"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "default": true,
+        "label": "Rotation automatique"
+      },
+      "lighting": {
+        "type": "string",
+        "enum": ["soft", "studio", "contrast"],
+        "default": "soft",
+        "label": "Éclairage"
+      },
+      "lightIntensity": {
+        "type": "number",
+        "min": 0.25,
+        "max": 2,
+        "default": 1,
+        "label": "Intensité"
+      },
+      "shadows": {
+        "type": "boolean",
+        "default": false,
+        "label": "Ombres"
+      },
+      "environment": {
+        "type": "boolean",
+        "default": true,
+        "label": "Lumière d'ambiance",
+        "help": "Reflets doux d'un studio neutre."
+      }
+    }
+  },
+  {
+    "id": "snake",
+    "version": "1.0.0",
+    "kind": "widget",
+    "formats": ["medium", "large", "half"],
+    "size": {
+      "min": {
+        "w": 3,
+        "h": 3
+      }
+    },
+    "title": "Serpent",
+    "description": "Un serpent, des pommes, un meilleur score",
+    "reads": [],
+    "writes": [],
+    "data": true,
+    "capabilities": ["fullscreen", "gamepad", "audio"]
+  },
+  {
+    "id": "mockup",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["medium", "large", "half", "full"],
+    "size": {
+      "min": {
+        "w": 3,
+        "h": 3
+      }
+    },
+    "title": "Maquette",
+    "description": "Affiche un cadre Figma ou un board Penpot et les tickets qui y sont liés",
+    "reads": ["ticket"],
+    "writes": [],
+    "capabilities": ["design", "fullscreen"],
+    "configSchema": {
+      "frame": {
+        "type": "string",
+        "frame": true,
+        "list": true,
+        "default": [],
+        "label": "Cadres",
+        "help": "Un cadre par ligne, dans l'ordre d'affichage : URL Figma ou Penpot. Les flèches passent d'un cadre à l'autre."
+      },
+      "fit": {
+        "enum": ["contain", "width"],
+        "default": "contain",
+        "label": "Ajustement initial"
+      }
+    }
+  },
+  {
+    "id": "github-issues",
+    "version": "1.0.0",
+    "kind": "adapter",
+    "title": "GitHub Issues",
+    "description": "Synchronise les tickets avec les issues et un Project GitHub",
+    "reads": ["ticket", "status"],
+    "writes": [],
+    "net": ["api.github.com"],
+    "secrets": [
+      {
+        "name": "github",
+        "hosts": ["api.github.com"]
+      }
+    ]
+  }
+]

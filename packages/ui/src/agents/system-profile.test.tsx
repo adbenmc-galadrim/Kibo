@@ -2,7 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, configFixture, NOW, profilesFixture } from "./fixtures";
+import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
 import { systemProfilesFixture } from "./system-profiles-fixture";
 
 const calls: RpcRequest[] = [];
@@ -26,7 +26,15 @@ beforeEach(() => {
 
 const config = () => ({ ...configFixture(), profiles: [...systemProfilesFixture, ...profilesFixture] });
 const show = () =>
-  render(<AgentsPage state={agentsFixture()} config={config()} now={NOW} onOpenRun={() => {}} />);
+  render(
+    <AgentsPage
+      state={agentsFixture()}
+      config={config()}
+      projects={projectsFixture}
+      now={NOW}
+      onOpenRun={() => {}}
+    />,
+  );
 const sheet = () => within(screen.getByRole("dialog"));
 
 test("a system profile card carries the Système badge, a user profile does not", () => {
@@ -116,7 +124,15 @@ test("a parallel count refused by the daemon is said and goes back", async () =>
 
 test("with only system profiles the page still invites to create a profile", () => {
   const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
-  render(<AgentsPage state={agentsFixture()} config={onlySystem} now={NOW} onOpenRun={() => {}} />);
+  render(
+    <AgentsPage
+      state={agentsFixture()}
+      config={onlySystem}
+      projects={projectsFixture}
+      now={NOW}
+      onOpenRun={() => {}}
+    />,
+  );
   expect(
     screen.getByText("Aucun profil à toi : crée-en un pour assigner des tickets à un agent."),
   ).toBeTruthy();

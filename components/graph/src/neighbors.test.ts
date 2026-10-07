@@ -6,6 +6,7 @@ import { neighborOf, nodesInRect } from "./neighbors";
 const layout: GraphLayout = {
   width: 800,
   height: 300,
+  isolatedTop: null,
   nodes: [
     { id: "a", layer: 0, order: 0, x: 0, y: 0, isolated: false },
     { id: "b", layer: 1, order: 0, x: 272, y: 0, isolated: false },

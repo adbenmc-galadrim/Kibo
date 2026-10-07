@@ -7,7 +7,7 @@ const decoder = new TextDecoder();
 
 export function remoteError(provider: string, status: number, body: string, redact: Redact): KiboError {
   const detail = redact(body).slice(0, 200);
-  if (status === 401 || status === 403)
+  if (status === 400 || status === 401 || status === 403)
     return new KiboError("REMOTE_REJECTED", `${provider} ${status}: ${detail}`);
   if (status === 404) return new KiboError("REMOTE_NOT_FOUND", `${provider} 404: ${detail}`);
   if (status === 429) return new KiboError("RATE_LIMITED", `${provider} rate limit`);

@@ -19,6 +19,7 @@ import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
 import { useClosedTabToast } from "../tabs/use-closed-tab-toast";
 import { useHashSync } from "../tabs/use-hash-sync";
+import { useKeepOnEdit } from "../tabs/use-keep-on-edit";
 import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
@@ -37,7 +38,7 @@ import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView } from "./use-open-view";
 import { useOpened } from "./use-opened";
-import { useShellDialogs } from "./use-shell-dialogs";
+import { anyDialogOpen, useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { inTauri, openWindow } from "./workspace-actions";
 
@@ -73,7 +74,11 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   }, [project]);
 
   const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
-  const go = useCallback((target: TabTarget | null, newTab = false) => open(target, { newTab }), [open]);
+  const go = useCallback(
+    (target: TabTarget | null, newTab = false, keep?: boolean) =>
+      open(target, keep === undefined ? { newTab } : { newTab, keep }),
+    [open],
+  );
   const currentProject = useCallback(() => projectRef.current, []);
   const closeProject = (projectId: string) => {
     tabs.dispatch({ type: "closeProject", projectId });
@@ -93,7 +98,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
       },
       openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),
-      openTarget: (target, opts) => go(target, opts?.newTab),
+      openTarget: (target, opts) => go(target, opts?.newTab, opts?.keep),
       openView: views.openView,
     }),
     [activeProjectId, set, go, views.openView],
@@ -101,6 +106,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
 
   useDestructiveKeyGuard();
   useClosedTabToast(tabs);
+  useKeepOnEdit(tabs, anyDialogOpen(dialogs, palette));
   useTabShortcuts((s) => {
     if (s.kind === "palette") return setPalette({ newTab: false });
     if (s.kind === "newTab") return setPalette({ newTab: true });
@@ -198,7 +204,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 onNewTicket={() => set({ newTicket: {} })}
                 onShare={() => project && set({ share: project.meta.id })}
                 onOpenRun={setFocusRun}
-                onOpen={(t) => go(t)}
+                onOpen={(t, keep) => go(t, false, keep)}
                 onHelp={(key) => set(helpPatch(key))}
               />
               {project?.sync.shared && (

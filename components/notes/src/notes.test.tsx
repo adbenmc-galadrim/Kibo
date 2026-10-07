@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { DEMO_NOTE_AGES, DEMO_NOTES } from "@kibo/sdk/fixtures";
@@ -6,7 +6,7 @@ import { createMockSdk } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-import { editorView, listed, mount, seed, setup } from "./notes.test-helper";
+import { editorView, listed, mount, noConflict, seed, setup } from "./notes.test-helper";
 
 runConformance({ manifest, Component }, seed, { notes: DEMO_NOTES, noteAges: DEMO_NOTE_AGES });
 
@@ -243,4 +243,52 @@ test("a stored sort is read back when the list opens", async () => {
   } finally {
     localStorage.removeItem("kibo.notes.sort");
   }
+});
+
+const TASKS = { "taches.md": "# Tâches\n\n- [x] Relire la spec\n- [ ] Tester\n" };
+const boxes = () => within(screen.getByRole("article")).getAllByRole<HTMLInputElement>("checkbox");
+
+test("a checkbox toggled in reading mode is saved like an edit", async () => {
+  const m = setup("view", TASKS);
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Tâches" });
+  expect(boxes().map((b) => b.checked)).toEqual([true, false]);
+  expect(screen.getByRole("article").textContent).not.toContain("[x]");
+  await user.click(boxes()[1] as HTMLInputElement);
+  await waitFor(() => expect(boxes().map((b) => b.checked)).toEqual([true, true]));
+  await screen.findByText("Enregistré • local", {}, { timeout: 3000 });
+  expect((await m.sdk.notes.read("taches.md")).markdown).toBe(
+    "# Tâches\n\n- [x] Relire la spec\n- [x] Tester\n",
+  );
+  noConflict();
+});
+
+test("a conflict is not bypassed by a checkbox", async () => {
+  const m = setup("view", TASKS);
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { level: 1, name: "Tâches" });
+  const writes = spyOn(m.sdk.notes, "write");
+  const external = "# Tâches\n\n- [ ] Réécrit ailleurs\n";
+  await user.click(boxes()[1] as HTMLInputElement);
+  m.touchNote("taches.md", external);
+  expect((await screen.findByRole("alert", {}, { timeout: 3000 })).textContent).toContain(
+    "Modifié hors de Kibo",
+  );
+  await user.click(boxes()[0] as HTMLInputElement);
+  await new Promise((r) => setTimeout(r, 1000));
+  expect(screen.getByRole("alert").textContent).toContain("Modifié hors de Kibo");
+  expect(writes.mock.calls.filter(([, , mtime]) => mtime === null)).toEqual([]);
+  expect(m.notes.get("taches.md")?.markdown).toBe(external);
+});
+
+test("the widget renders its excerpt: bold, readonly checkbox, ticket chip", async () => {
+  const m = setup("widget", {
+    "bienvenue.md": "# Bienvenue\n\nMets un mot en **gras** et vois KIB-12.\n\n- [ ] Relire\n",
+  });
+  const opened = spyOn(m.sdk, "openTicket");
+  expect((await screen.findByText("gras")).tagName).toBe("STRONG");
+  expect(screen.queryByText(/\*\*/)).toBeNull();
+  expect(screen.getByRole<HTMLInputElement>("checkbox").disabled).toBe(true);
+  await userEvent.setup().click(await screen.findByRole("button", { name: /KIB-12/ }));
+  expect(opened).toHaveBeenCalledWith(m.snapshot().tickets.find((t) => t.key === "KIB-12")?.id ?? "");
 });
