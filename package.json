@@ -13,7 +13,7 @@
     "check": "biome check .",
     "format": "biome check --write .",
     "start": "bun run --cwd packages/ui build && bun packages/daemon/src/main.ts --ui packages/ui/dist",
-    "typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/tickets components/kanban components/graph components/notes components/github-issues components/mcp-source components/viewer-3d components/snake components/mockup e2e scripts/dogfood scripts/install apps/desktop",
+    "typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/tickets components/kanban components/graph components/notes components/github-issues components/mcp-source components/viewer-3d components/snake components/mockup e2e scripts/dogfood scripts/import-emis scripts/install apps/desktop",
     "test": "bun test packages components ./scripts",
     "budget": "bun packages/ui/scripts/bundle-budget.ts"
   },
