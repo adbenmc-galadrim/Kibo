@@ -51,8 +51,8 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     number: 1,
     url: "https://github.com/kibo/test/pull/1",
     state: "draft",
-    base: null,
-    head: null,
+    base: "main",
+    head: "kib-12",
   });
   expect(fx.git("ls-remote", "origin", "kib-12").trim()).not.toBe("");
   expect(readFakeGhLog(gh)).toContainEqual({
@@ -73,8 +73,8 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     number: 1,
     url: "https://github.com/kibo/test/pull/1",
     state: "draft",
-    base: null,
-    head: null,
+    base: "main",
+    head: "kib-12",
   });
 });
 
@@ -114,6 +114,15 @@ test("PR states map from gh JSON", async () => {
   expect(
     toPrInfo('{"number":2,"url":"https://github.com/a/b/pull/2","state":"OPEN","isDraft":true}').state,
   ).toBe("draft");
+  expect(
+    toPrInfo(
+      '{"number":4,"url":"https://github.com/a/b/pull/4","state":"OPEN","isDraft":true,"baseRefName":"dev","headRefName":"feat/x"}',
+    ),
+  ).toEqual({ number: 4, url: "https://github.com/a/b/pull/4", state: "draft", base: "dev", head: "feat/x" });
+  expect(toPrInfo('{"number":4,"url":"https://github.com/a/b/pull/4","state":"MERGED"}')).toMatchObject({
+    base: null,
+    head: null,
+  });
   expect(() => toPrInfo("not json")).toThrow(expect.objectContaining({ code: "GH_FAILED" }));
 });
 

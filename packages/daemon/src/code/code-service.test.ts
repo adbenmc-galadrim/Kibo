@@ -281,8 +281,8 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
     number: 1,
     url: "https://github.com/kibo/test/pull/1",
     state: "open",
-    base: null,
-    head: null,
+    base: "main",
+    head: "kib-1",
   });
   expect(refs()).toEqual([
     {
@@ -290,8 +290,8 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
       url: "https://github.com/kibo/test/pull/1",
       number: 1,
       state: "open",
-      base: null,
-      head: null,
+      base: "main",
+      head: "kib-1",
     },
   ]);
   expect(events).toContainEqual(event());

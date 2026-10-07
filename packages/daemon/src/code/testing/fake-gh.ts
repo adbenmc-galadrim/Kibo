@@ -7,6 +7,7 @@ type FakePr = {
   state: "OPEN" | "MERGED" | "CLOSED";
   isDraft: boolean;
   head: string;
+  base?: string;
 };
 
 const statePath = process.env.FAKE_GH_STATE;
@@ -41,7 +42,14 @@ if (args[0] === "auth" && args[1] === "status") {
 if (args[0] === "pr" && args[1] === "create") {
   const number = prs.length + 1;
   const url = `https://github.com/kibo/test/pull/${number}`;
-  prs.push({ number, url, state: "OPEN", isDraft: args.includes("--draft"), head: flag("head") ?? "" });
+  prs.push({
+    number,
+    url,
+    state: "OPEN",
+    isDraft: args.includes("--draft"),
+    head: flag("head") ?? "",
+    base: flag("base") ?? "",
+  });
   writeFileSync(statePath, JSON.stringify(prs));
   process.stdout.write(`${url}\n`);
   process.exit(0);
@@ -53,7 +61,14 @@ if (args[0] === "pr" && args[1] === "view") {
     process.exit(1);
   }
   process.stdout.write(
-    JSON.stringify({ number: pr.number, url: pr.url, state: pr.state, isDraft: pr.isDraft }),
+    JSON.stringify({
+      number: pr.number,
+      url: pr.url,
+      state: pr.state,
+      isDraft: pr.isDraft,
+      baseRefName: pr.base,
+      headRefName: pr.head,
+    }),
   );
   process.exit(0);
 }

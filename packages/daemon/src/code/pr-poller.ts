@@ -1,6 +1,13 @@
 import type { RuleTrigger } from "@kibo/core/rules";
-import type { ExternalRef, GithubPrRef, TicketView } from "@kibo/schema";
+import {
+  type ExternalRef,
+  type GithubPrRef,
+  integrationBranch,
+  type PrInfo,
+  type TicketView,
+} from "@kibo/schema";
 import { call, type Service } from "../service";
+import { mergeCascade } from "./merge-cascade";
 import { prState } from "./remote-ops";
 import type { Env } from "./run";
 
@@ -31,21 +38,35 @@ export function triggerRules(service: Service, projectId: string, trigger: RuleT
   }
 }
 
+const changed = (ref: GithubPrRef, info: PrInfo): boolean =>
+  ref.state !== info.state || ref.base !== info.base || ref.head !== info.head;
+
+function completeMerge(service: Service, projectId: string, ticketId: string, pr: GithubPrRef): void {
+  const snapshot = call(service, { method: "getProject", projectId });
+  if (pr.base !== null && pr.base !== integrationBranch(snapshot.meta.worktree)) return;
+  triggerRules(service, projectId, { kind: "pr_merged", ticketId });
+  if (pr.head === null) return;
+  const tickets = snapshot.tickets.map((t) => ({ id: t.id, refs: t.externalRefs }));
+  for (const id of mergeCascade(tickets, pr.head))
+    if (id !== ticketId) triggerRules(service, projectId, { kind: "pr_merged", ticketId: id });
+}
+
 export function startPrPoller(service: Service, env: Env, intervalMs: number, log: Log): PrPoller {
   let stopped = false;
   let running = false;
 
   const update = async ({ projectId, folder, ticket, ref }: Tracked) => {
     const info = await prState(ref.url, folder, env);
-    if (stopped || info.state === ref.state) return;
+    if (stopped || !changed(ref, info)) return;
+    const next: GithubPrRef = { ...ref, state: info.state, base: info.base, head: info.head };
     call(service, {
       method: "command",
       projectId,
-      command: { method: "upsertExternalRef", ticketId: ticket.id, ref: { ...ref, state: info.state } },
+      command: { method: "upsertExternalRef", ticketId: ticket.id, ref: next },
     });
     if (ref.state === "draft" && info.state === "open")
       triggerRules(service, projectId, { kind: "pr_opened", ticketId: ticket.id });
-    if (info.state === "merged") triggerRules(service, projectId, { kind: "pr_merged", ticketId: ticket.id });
+    if (info.state === "merged") completeMerge(service, projectId, ticket.id, next);
   };
 
   const poll = async () => {
