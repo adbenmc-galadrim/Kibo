@@ -8,7 +8,8 @@ ARCH="${KIBO_INSTALL_ARCH:-$(uname -m)}"
 fail() { echo "kibo : $*" >&2; exit 1; }
 info() { echo "kibo : $*" >&2; }
 need() { command -v "$1" >/dev/null 2>&1 || fail "la commande $1 est nécessaire"; }
-fetch() { curl -fsSL "${CURL_PROTOCOLS[@]}" "$BASE_URL/$1" -o "$2" || fail "téléchargement impossible : $1"; }
+fetch_from() { curl -fsSL "${CURL_PROTOCOLS[@]}" "$1/$2" -o "$3" || fail "téléchargement impossible : $2"; }
+fetch() { fetch_from "$PACKAGES_URL" "$1" "$2"; }
 sha256() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
   else shasum -a 256 "$1" | cut -d' ' -f1; fi
@@ -45,7 +46,7 @@ FORMAT="$(detect_format)"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-fetch SHA256SUMS "$WORK/SHA256SUMS"
+fetch_from "$BASE_URL" SHA256SUMS "$WORK/SHA256SUMS"
 
 published_version() {
   awk '$1 ~ /^[0-9a-f]{64}$/ && $2 ~ /^Kibo_[0-9]+\.[0-9]+\.[0-9]+(-alpha\.[0-9]+)?_amd64\.AppImage$/ { v = $2; sub(/^Kibo_/, "", v); sub(/_amd64\.AppImage$/, "", v); print v; exit }' "$WORK/SHA256SUMS"
@@ -53,6 +54,11 @@ published_version() {
 VERSION="${KIBO_INSTALL_VERSION:-$(published_version)}"
 [ -n "$VERSION" ] || fail "version introuvable dans SHA256SUMS"
 check_version "$VERSION"
+
+case "$BASE_URL" in
+  */download/alpha) PACKAGES_URL="${BASE_URL%/alpha}/v$VERSION" ;;
+  *) PACKAGES_URL="$BASE_URL" ;;
+esac
 
 case "$FORMAT" in
   deb) ASSET="Kibo_${VERSION}_amd64.deb" ;;

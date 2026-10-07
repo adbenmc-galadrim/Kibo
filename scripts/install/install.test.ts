@@ -233,3 +233,78 @@ test("downloads from the alpha release by default", () => {
     "KIBO_INSTALL_BASE_URL:-https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha}",
   );
 });
+
+function serveChannel(version: string, tampered: string[] = []): Server {
+  const assets: Record<string, Uint8Array<ArrayBuffer>> = {
+    [`Kibo_${version}_amd64.AppImage`]: encode("#!/bin/sh\necho kibo channel\n"),
+    [`Kibo-${version}-1.x86_64.rpm`]: encode("rpm channel"),
+    "icon-512.png": encode("png"),
+  };
+  const sums = Object.entries(assets)
+    .map(([name, bytes]) => `${tampered.includes(name) ? "0".repeat(64) : sum(bytes)}  ${name}`)
+    .join("\n");
+  const requests: string[] = [];
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch(req) {
+      const path = new URL(req.url).pathname;
+      requests.push(path);
+      if (path === "/download/alpha/SHA256SUMS") return new Response(`${sums}\n`);
+      const prefix = `/download/v${version}/`;
+      const bytes = path.startsWith(prefix) ? assets[path.slice(prefix.length)] : undefined;
+      return bytes ? new Response(bytes) : new Response("not found", { status: 404 });
+    },
+  });
+  return { port: server.port ?? 0, requests, stop: () => server.stop() };
+}
+
+test("from the alpha channel, reads the version there and downloads the package from its release", async () => {
+  const server = serveChannel("0.16.0-alpha.1");
+  const home = tempHome();
+  const r = await run(server, home, {
+    KIBO_INSTALL_BASE_URL: `http://127.0.0.1:${server.port}/download/alpha`,
+  });
+  server.stop();
+  expect(r.code).toBe(0);
+  expect(server.requests).toEqual([
+    "/download/alpha/SHA256SUMS",
+    "/download/v0.16.0-alpha.1/Kibo_0.16.0-alpha.1_amd64.AppImage",
+    "/download/v0.16.0-alpha.1/icon-512.png",
+  ]);
+  expect(r.out).toContain("Kibo 0.16.0-alpha.1 installé (appimage)");
+});
+
+test("from the alpha channel, a requested rpm comes from its release and a beta is refused", async () => {
+  const server = serveChannel("0.16.0-alpha.1");
+  const home = tempHome();
+  const tools = fakeTools(home);
+  const r = await run(server, home, {
+    PATH: tools.path,
+    KIBO_INSTALL_FORMAT: "rpm",
+    KIBO_INSTALL_VERSION: "0.16.0-alpha.1",
+    KIBO_INSTALL_BASE_URL: `http://127.0.0.1:${server.port}/download/alpha`,
+  });
+  const beta = await run(server, home, {
+    KIBO_INSTALL_VERSION: "0.16.0-beta.1",
+    KIBO_INSTALL_BASE_URL: `http://127.0.0.1:${server.port}/download/alpha`,
+  });
+  server.stop();
+  expect(r.code).toBe(0);
+  expect(server.requests).toContain("/download/v0.16.0-alpha.1/Kibo-0.16.0-alpha.1-1.x86_64.rpm");
+  expect(server.requests).not.toContain("/download/alpha/Kibo-0.16.0-alpha.1-1.x86_64.rpm");
+  expect(beta.code).toBe(1);
+  expect(beta.err).toContain("version invalide");
+});
+
+test("from the alpha channel, the package is still checked against SHA256SUMS", async () => {
+  const server = serveChannel("0.16.0-alpha.1", ["Kibo_0.16.0-alpha.1_amd64.AppImage"]);
+  const home = tempHome();
+  const r = await run(server, home, {
+    KIBO_INSTALL_BASE_URL: `http://127.0.0.1:${server.port}/download/alpha`,
+  });
+  server.stop();
+  expect(r.code).toBe(1);
+  expect(r.err).toContain("La somme de contrôle ne correspond pas");
+  expect(existsSync(join(home, ".local/bin/kibo"))).toBe(false);
+});
