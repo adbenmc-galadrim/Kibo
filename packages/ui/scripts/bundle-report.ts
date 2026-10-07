@@ -32,7 +32,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
   /\/packages\/ui\/src\/dialogs\/(NotesDirDialog|TrustDialog|OpenViewDialog|RenamePageDialog)\.tsx$/,
   /\/packages\/sdk\/src\/ui\/(alert-dialog|confirm-dialog|reason-dialog)\.tsx$/,
-  /\/packages\/ui\/src\/(ticket\/[A-Za-z-]+\.tsx?|i18n\/fr-ticket-edit\.ts)$/,
+  /\/packages\/ui\/src\/(ticket\/[A-Za-z-]+\.tsx?|i18n\/fr-(ticket-edit|labels)\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/(InstanceSettingsDialog|FrameListField)\.tsx|i18n\/fr-widgets\.ts)$/,
   /\/packages\/ui\/src\/desktop\/install\.ts$/,
   /\/packages\/ui\/src\/settings\/(AppearancePage|SecurityPage|WebAccessCard)\.tsx$/,
