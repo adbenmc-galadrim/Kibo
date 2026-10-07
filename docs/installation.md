@@ -5,6 +5,8 @@ Kibo s'installe comme une application de bureau sur macOS (Apple Silicon et Inte
 <!-- release-start -->
 ## Installer
 
+Kibo est en alpha (`0.<phase>.0-alpha.N`) jusqu'au lancement ; les releases sont marquées pré-release et le canal de mise à jour est la release `alpha`.
+
 ### macOS
 
 1. Télécharge le `.dmg` de ton Mac : `aarch64` pour Apple Silicon, `x64` pour Intel. Ouvre-le et glisse Kibo dans Applications.
@@ -17,7 +19,7 @@ Ensuite, les mises à jour s'installent depuis Paramètres › Général, sans q
 ### Linux (x86_64)
 
 ```sh
-curl -fsSL https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/install.sh | bash
+curl -fsSL https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha/install.sh | bash
 ```
 
 Le script choisit le paquet de ta distribution (`.deb` avec `apt`, `.rpm` avec `dnf`, sinon l'AppImage dans `~/.local/bin` avec son raccourci et son icône), vérifie sa somme dans `SHA256SUMS` et s'arrête si elle ne correspond pas. Il ne demande `sudo` que pour `apt` ou `dnf`. Tu peux aussi télécharger le `.deb`, le `.rpm` ou l'`.AppImage` à la main ; seule l'AppImage se met à jour toute seule.

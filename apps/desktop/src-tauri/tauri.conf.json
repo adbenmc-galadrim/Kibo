@@ -8,7 +8,7 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": "all",
+    "targets": ["app", "dmg", "deb", "rpm", "appimage"],
     "shortDescription": "Centre de contrôle local pour tes projets de code",
     "longDescription": "Kibo organise tes projets de code en pages et composants : Kanban, tickets, graphe, notes.\nIl lance Claude Code en local sur tes tickets, sans jamais quitter ta machine.\nLocal-first : tes données restent dans ~/.kibo.",
     "category": "DeveloperTool",
@@ -50,7 +50,10 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYzM0I5NUM2RkFBODUxMDAKUldRQVVhajZ4cFU3WTJJLzRoOWNETDlSTWkySnNpVzV1Uml5dW0ydGNMT1RjTXpUUG40b1VsQlUK",
-      "endpoints": ["https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json"]
+      "endpoints": [
+        "https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha/latest.json",
+        "https://github.com/adbenmc-galadrim/Kibo/releases/latest/download/latest.json"
+      ]
     }
   }
 }

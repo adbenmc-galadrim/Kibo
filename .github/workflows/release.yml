@@ -15,6 +15,7 @@ jobs:
     permissions: { contents: write }
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      alpha: ${{ steps.tag.outputs.alpha }}
       notes: ${{ steps.notes.outputs.body }}
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
@@ -28,6 +29,7 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then TAG="$GITHUB_REF_NAME"; else TAG="v$(bun apps/desktop/scripts/version.ts get)"; fi
           bun apps/desktop/scripts/version.ts check "$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "alpha=$([[ "$TAG" == *-alpha.* ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - id: notes
         shell: bash
         env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ steps.tag.outputs.tag }}" }
@@ -91,7 +93,7 @@ jobs:
           releaseName: Kibo ${{ needs.version.outputs.tag }}
           releaseBody: ${{ needs.version.outputs.notes }}
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ needs.version.outputs.alpha == 'true' }}
           uploadUpdaterJson: true
           args: --target ${{ matrix.target }} --verbose
   checksums:
@@ -115,5 +117,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.version.outputs.tag }}" }
-        run: gh release edit "$TAG" --draft=false --latest
+      - env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.version.outputs.tag }}", ALPHA: "${{ needs.version.outputs.alpha }}" }
+        shell: bash
+        run: |
+          if [ "$ALPHA" = "true" ]; then
+            gh release edit "$TAG" --draft=false --prerelease --latest=false
+            gh release view alpha >/dev/null 2>&1 || gh release create alpha --prerelease --latest=false --title "Kibo alpha · canal de mise à jour" --notes "Actifs du canal alpha : latest.json, SHA256SUMS, install.sh. Les paquets sont sur la release de chaque version." --target "$GITHUB_SHA"
+            gh release download "$TAG" -D alpha --pattern 'latest.json' --pattern 'SHA256SUMS' --pattern 'install.sh' --pattern 'icon-512.png'
+            gh release upload alpha alpha/latest.json alpha/SHA256SUMS alpha/install.sh alpha/icon-512.png --clobber
+          else
+            gh release edit "$TAG" --draft=false --latest
+          fi

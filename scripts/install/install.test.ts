@@ -175,3 +175,61 @@ test("never calls sudo when the rpm checksum does not match", async () => {
   expect(r.err).toContain("La somme de contrôle ne correspond pas");
   expect(tools.calls()).toBe("");
 });
+
+function serveAlpha(version: string): Server {
+  const assets: Record<string, Uint8Array<ArrayBuffer>> = {
+    [`Kibo_${version}_amd64.AppImage`]: encode("#!/bin/sh\necho kibo alpha\n"),
+    [`Kibo_${version}_amd64.deb`]: encode("deb alpha"),
+    [`Kibo-${version}-1.x86_64.rpm`]: encode("rpm alpha"),
+    "icon-512.png": encode("png"),
+  };
+  const sums = Object.entries(assets)
+    .map(([name, bytes]) => `${sum(bytes)}  ${name}`)
+    .join("\n");
+  const requests: string[] = [];
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch(req) {
+      const name = new URL(req.url).pathname.slice(1);
+      requests.push(name);
+      if (name === "SHA256SUMS") return new Response(`${sums}\n`);
+      const bytes = assets[name];
+      return bytes ? new Response(bytes) : new Response("not found", { status: 404 });
+    },
+  });
+  return { port: server.port ?? 0, requests, stop: () => server.stop() };
+}
+
+test("installs an alpha AppImage found in SHA256SUMS", async () => {
+  const server = serveAlpha("0.16.0-alpha.1");
+  const home = tempHome();
+  const r = await run(server, home);
+  server.stop();
+  expect(r.code).toBe(0);
+  expect(server.requests).toContain("Kibo_0.16.0-alpha.1_amd64.AppImage");
+  expect(r.out).toContain("Kibo 0.16.0-alpha.1 installé (appimage)");
+});
+
+test("installs a requested alpha rpm and refuses any other suffix", async () => {
+  const server = serveAlpha("0.16.0-alpha.2");
+  const home = tempHome();
+  const tools = fakeTools(home);
+  const rpm = await run(server, home, {
+    PATH: tools.path,
+    KIBO_INSTALL_FORMAT: "rpm",
+    KIBO_INSTALL_VERSION: "0.16.0-alpha.2",
+  });
+  const beta = await run(server, home, { KIBO_INSTALL_VERSION: "0.16.0-beta.1" });
+  server.stop();
+  expect(rpm.code).toBe(0);
+  expect(tools.calls()).toContain("Kibo-0.16.0-alpha.2-1.x86_64.rpm");
+  expect(beta.code).toBe(1);
+  expect(beta.err).toContain("version invalide");
+});
+
+test("downloads from the alpha release by default", () => {
+  expect(readFileSync(SCRIPT, "utf8")).toContain(
+    "KIBO_INSTALL_BASE_URL:-https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha}",
+  );
+});

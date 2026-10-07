@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${KIBO_INSTALL_BASE_URL:-https://github.com/adbenmc-galadrim/Kibo/releases/latest/download}"
+BASE_URL="${KIBO_INSTALL_BASE_URL:-https://github.com/adbenmc-galadrim/Kibo/releases/download/alpha}"
 HOME_DIR="${KIBO_INSTALL_HOME:-$HOME}"
 ARCH="${KIBO_INSTALL_ARCH:-$(uname -m)}"
 
@@ -30,7 +30,7 @@ else
 fi
 
 check_version() {
-  [[ "$1" =~ ^[0-9][0-9.]*$ && "$1" != *..* ]] || fail "version invalide : $1 (attendu : chiffres et points, par exemple 1.5.0)"
+  [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-alpha\.[0-9]+)?$ ]] || fail "version invalide : $1 (attendu : 1.5.0 ou 0.16.0-alpha.1)"
 }
 if [ -n "${KIBO_INSTALL_VERSION:-}" ]; then check_version "$KIBO_INSTALL_VERSION"; fi
 need curl
@@ -48,7 +48,7 @@ trap 'rm -rf "$WORK"' EXIT
 fetch SHA256SUMS "$WORK/SHA256SUMS"
 
 published_version() {
-  awk '$1 ~ /^[0-9a-f]{64}$/ && $2 ~ /^Kibo_[0-9][0-9.]*_amd64\.AppImage$/ { v = $2; sub(/^Kibo_/, "", v); sub(/_amd64\.AppImage$/, "", v); print v; exit }' "$WORK/SHA256SUMS"
+  awk '$1 ~ /^[0-9a-f]{64}$/ && $2 ~ /^Kibo_[0-9]+\.[0-9]+\.[0-9]+(-alpha\.[0-9]+)?_amd64\.AppImage$/ { v = $2; sub(/^Kibo_/, "", v); sub(/_amd64\.AppImage$/, "", v); print v; exit }' "$WORK/SHA256SUMS"
 }
 VERSION="${KIBO_INSTALL_VERSION:-$(published_version)}"
 [ -n "$VERSION" ] || fail "version introuvable dans SHA256SUMS"
