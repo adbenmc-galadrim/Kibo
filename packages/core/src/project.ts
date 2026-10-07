@@ -3,8 +3,10 @@ import { LoroDoc } from "loro-crdt";
 import { valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
+export const LOCAL_ONLY_META = "worktree";
+
 export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
-  Object.entries(meta).filter(([key]) => key !== "worktree");
+  Object.entries(meta).filter(([key]) => key !== LOCAL_ONLY_META);
 
 export function createProjectDoc(meta: ProjectMeta): LoroDoc {
   const doc = new LoroDoc();
