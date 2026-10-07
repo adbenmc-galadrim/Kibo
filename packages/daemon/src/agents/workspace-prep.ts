@@ -7,6 +7,7 @@ import {
   type WorkspaceStrategy,
   type WorktreeSettings,
 } from "@kibo/schema";
+import { runBounded } from "./bounded-process";
 import { prepareWorktree, runShell, type ShellRunner } from "./worktree-prep";
 
 export type PreparedWorkspace = { cwd: string; label: string };
@@ -26,23 +27,24 @@ export type PrepareInput = {
   shell?: ShellRunner;
 };
 
+const gitEnv = (): Record<string, string | undefined> => ({
+  ...process.env,
+  GIT_TERMINAL_PROMPT: "0",
+  GIT_ASKPASS: "",
+  SSH_ASKPASS: "",
+  SSH_ASKPASS_REQUIRE: "never",
+  GIT_SSH_COMMAND: `${process.env.GIT_SSH_COMMAND ?? "ssh"} -o BatchMode=yes`,
+});
+
 export const runGit: GitRunner = async (args, cwd, timeoutMs) => {
-  const proc = Bun.spawn(["git", ...args], {
-    cwd,
-    env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
-    ...(timeoutMs !== undefined && { timeout: timeoutMs, killSignal: "SIGKILL" }),
-  });
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  if (proc.signalCode !== null && timeoutMs !== undefined)
-    return { code, stdout, stderr: `git ${args[0]} timed out after ${timeoutMs / 1000}s\n${stderr}` };
-  return { code, stdout, stderr };
+  const res = await runBounded(["git", ...args], { cwd, env: gitEnv(), timeoutMs });
+  if (!res.timedOut) return { code: res.code, stdout: res.stdout, stderr: res.stderr };
+  const code = res.code === 0 ? 1 : res.code;
+  return {
+    code,
+    stdout: res.stdout,
+    stderr: `git ${args[0]} timed out after ${(timeoutMs ?? 0) / 1000}s\n${res.stderr}`,
+  };
 };
 
 const failed = (detail: string) => new KiboError("WORKSPACE_FAILED", detail);

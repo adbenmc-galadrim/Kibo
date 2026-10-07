@@ -1,17 +1,19 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join } from "node:path";
+import { basename, dirname, isAbsolute, join, sep } from "node:path";
 import {
   branchSlug,
   type GitBranchRef,
+  isGitBranchName,
   KiboError,
   renderTemplate,
   resolveWorktreePath,
   splitRemote,
   TicketKey,
   WORKTREE_DEFAULTS,
-  type WorktreeSettings,
+  WorktreeSettings,
   type WorktreeVars,
 } from "@kibo/schema";
+import { runBounded } from "./bounded-process";
 import { cleanEnv } from "./runner";
 import type { GitRunner, PreparedWorkspace } from "./workspace-prep";
 
@@ -55,30 +57,18 @@ export function assertWorktreeSettings(settings: WorktreeSettings): void {
 }
 
 export const runShell: ShellRunner = async (command, cwd, env, timeoutMs) => {
-  const proc = Bun.spawn(["sh", "-c", command], {
-    cwd,
-    env,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
-    detached: true,
-  });
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    process.kill(-proc.pid, "SIGKILL");
-  }, timeoutMs);
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  clearTimeout(timer);
-  return { code, output: `${stdout}${stderr}`, timedOut };
+  const res = await runBounded(["sh", "-c", command], { cwd, env, timeoutMs });
+  return { code: res.code, output: `${res.stdout}${res.stderr}`, timedOut: res.timedOut };
 };
 
 const tail = (output: string) => output.trim().split("\n").slice(-TAIL_LINES).join("\n");
-const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+const envRef = (name: string) => "$".concat("{", name, "}");
+const ENV_REFS: Required<WorktreeVars> = {
+  branch: envRef("KIBO_BRANCH"),
+  slug: envRef("KIBO_SLUG"),
+  key: envRef("KIBO_KEY"),
+  path: envRef("KIBO_PATH"),
+};
 const looksLikeOption = (name: string) => name.split("/").some((part) => part.startsWith("-"));
 
 async function commonDir(path: string, git: GitRunner): Promise<string | null> {
@@ -106,7 +96,7 @@ async function startPoint(root: string, base: string, git: GitRunner): Promise<s
   const { remote, branch } = splitRemote(base);
   const remotes = remote === null ? [] : (await git(["remote"], root)).stdout.split("\n");
   if (remote !== null && remotes.includes(remote)) {
-    const fetched = await git(["fetch", "--quiet", remote, branch], root, FETCH_TIMEOUT_MS);
+    const fetched = await git(["fetch", "--quiet", "--", remote, branch], root, FETCH_TIMEOUT_MS);
     if (fetched.code !== 0) throw gitFailed(`git fetch ${remote} ${branch} failed: ${fetched.stderr.trim()}`);
     return base;
   }
@@ -134,30 +124,31 @@ async function excludeKiboFolder(root: string, git: GitRunner): Promise<void> {
   appendFileSync(file, `${current.length > 0 && !current.endsWith("\n") ? "\n" : ""}.kibo/\n`);
 }
 
-function setupCommand(setup: string, vars: Required<WorktreeVars>): string {
+function setupCommand(setup: string): string {
   try {
-    return renderTemplate(setup, {
-      branch: shellQuote(vars.branch),
-      slug: shellQuote(vars.slug),
-      key: shellQuote(vars.key),
-      path: shellQuote(vars.path),
-    });
+    return renderTemplate(setup, ENV_REFS);
   } catch (e) {
     throw failed(e instanceof KiboError ? e.detail : String(e));
   }
 }
 
 async function runSetup(input: WorktreeInput, setup: string, vars: Required<WorktreeVars>): Promise<void> {
-  const command = setupCommand(setup, vars);
+  const command = setupCommand(setup);
   const env = {
     ...cleanEnv(process.env),
     KIBO_BRANCH: vars.branch,
+    KIBO_SLUG: vars.slug,
+    KIBO_KEY: vars.key,
+    KIBO_PATH: vars.path,
     KIBO_WORKTREE: vars.path,
     KIBO_TICKET: input.ticketKey,
   };
   const result = await input.shell(command, input.root, env, SETUP_TIMEOUT_MS);
   mkdirSync(input.runDir, { recursive: true, mode: 0o700 });
-  writeFileSync(join(input.runDir, "setup.log"), `$ ${command}\n${result.output}`, { mode: 0o600 });
+  const values = `KIBO_BRANCH=${vars.branch} KIBO_PATH=${vars.path}`;
+  writeFileSync(join(input.runDir, "setup.log"), `$ ${command}\n# ${values}\n${result.output}`, {
+    mode: 0o600,
+  });
   if (result.timedOut) throw new KiboError("TIMEOUT", `setup command exceeded ${SETUP_TIMEOUT_MS / 1000}s`);
   if (result.code !== 0) throw failed(`setup command exited with ${result.code}:\n${tail(result.output)}`);
   if (!existsSync(vars.path))
@@ -171,6 +162,24 @@ async function addWorktree(input: WorktreeInput, vars: Required<WorktreeVars>): 
   if (added.code !== 0) throw gitFailed(`git worktree add failed: ${added.stderr.trim()}`);
 }
 
+function realLocation(path: string): string {
+  const rest: string[] = [];
+  let at = path;
+  while (!existsSync(at)) {
+    rest.unshift(basename(at));
+    at = dirname(at);
+  }
+  return join(realpathSync(at), ...rest);
+}
+
+function assertInsideRepo(root: string, path: string): void {
+  const realRoot = realpathSync(root);
+  const real = realLocation(path);
+  const below = real.startsWith(realRoot + sep);
+  const beside = dirname(real) === dirname(realRoot) && real !== realRoot;
+  if (!below && !beside) throw failed(`worktree path ${path} resolves to ${real}, outside the repository`);
+}
+
 function worktreePath(input: WorktreeInput, vars: WorktreeVars): string {
   try {
     return resolveWorktreePath(input.root, input.settings.pathTemplate, vars);
@@ -182,12 +191,15 @@ function worktreePath(input: WorktreeInput, vars: WorktreeVars): string {
 export async function prepareWorktree(input: WorktreeInput): Promise<PreparedWorkspace> {
   const branch = worktreeBranch(input.ticketKey, input.branchRef);
   const base = worktreeBase(input.settings, input.branchRef);
-  if (looksLikeOption(branch) || looksLikeOption(base))
-    throw failed(`branch ${JSON.stringify(branch)} or base ${JSON.stringify(base)} looks like an option`);
+  if (!isGitBranchName(branch) || looksLikeOption(branch))
+    throw failed(`invalid branch name ${JSON.stringify(branch)}`);
+  if (!WorktreeSettings.shape.baseRef.safeParse(base).success || looksLikeOption(base))
+    throw failed(`invalid base ${JSON.stringify(base)}`);
   const named = { branch, slug: branchSlug(branch), key: input.ticketKey.toLowerCase() };
   const vars = { ...named, path: worktreePath(input, named) };
   const label = `worktree:${branch}`;
   if (input.settings.pathTemplate.startsWith(".kibo/")) await excludeKiboFolder(input.root, input.git);
+  assertInsideRepo(input.root, vars.path);
   if (existsSync(vars.path)) {
     await assertWorktreeOf(vars.path, input.root, input.git);
     return { cwd: vars.path, label };

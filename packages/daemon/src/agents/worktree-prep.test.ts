@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { type GitBranchRef, KiboError, WORKTREE_DEFAULTS, type WorktreeSettings } from "@kibo/schema";
 import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
@@ -159,14 +159,81 @@ test("a setup command creates the worktree, gets the variables, and is logged", 
   expect(log).toContain(`$ echo`);
 });
 
-test("variables reach the setup command quoted, never as shell code", async () => {
+const IFS = "$".concat("{IFS}");
+const HOSTILE = [
+  `$(touch${IFS}pwned)`,
+  `\`touch${IFS}pwned\``,
+  `x"$(touch${IFS}pwned)"`,
+  `x'$(touch${IFS}pwned)'`,
+];
+
+test("a branch with shell characters never reaches a shell, whatever the template quoting", async () => {
   const root = await repo();
-  const branch = "x;touch$IFS.pwned";
+  let calls = 0;
+  const shell: typeof runShell = (command, cwd, env, timeoutMs) => {
+    calls += 1;
+    return runShell(command, cwd, env, timeoutMs);
+  };
+  for (const branch of HOSTILE)
+    for (const setup of [
+      `echo {branch} && ${SETUP}`,
+      `echo "{branch}" && ${SETUP}`,
+      `echo '{branch}' && ${SETUP}`,
+    ]) {
+      const ref = branchRef(branch);
+      await expect(
+        prepareWorktree(input(root, { branchRef: ref, settings: settings({ setup }), shell })),
+      ).rejects.toMatchObject({
+        code: "WORKSPACE_FAILED",
+      });
+    }
+  expect(calls).toBe(0);
+  expect(existsSync(join(root, "pwned"))).toBe(false);
+  expect(await git(["branch", "--list"], root)).toBe("* main");
+});
+
+test("variable values reach the setup command through its environment only", async () => {
+  const root = await repo();
+  const seen: { command: string; env: Record<string, string> }[] = [];
+  const shell: typeof runShell = (command, cwd, env, timeoutMs) => {
+    seen.push({ command, env });
+    return runShell(command, cwd, env, timeoutMs);
+  };
+  const setup = `printf '%s|%s|%s|%s' {branch} "{slug}" {key} {path} > seen.txt && ${SETUP}`;
   const ws = await prepareWorktree(
-    input(root, { branchRef: branchRef(branch), settings: settings({ setup: SETUP }) }),
+    input(root, { branchRef: branchRef("feat/x"), settings: settings({ setup }), shell }),
   );
-  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe(branch);
-  expect(existsSync(join(root, ".pwned"))).toBe(false);
+  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe("feat/x");
+  expect(readFileSync(join(root, "seen.txt"), "utf8")).toBe(`feat/x|feat-x|emis-12|${ws.cwd}`);
+  const [call] = seen;
+  expect(call?.command).not.toContain("feat");
+  expect(call?.command).toContain("$".concat("{KIBO_BRANCH}"));
+  expect(call?.env).toMatchObject({
+    KIBO_BRANCH: "feat/x",
+    KIBO_SLUG: "feat-x",
+    KIBO_KEY: "emis-12",
+    KIBO_PATH: ws.cwd,
+    KIBO_WORKTREE: ws.cwd,
+    KIBO_TICKET: "EMIS-12",
+  });
+});
+
+test("a committed symlink cannot move the worktree out of the repository", async () => {
+  const root = await repo();
+  const elsewhere = tmp();
+  symlinkSync(elsewhere, join(root, ".kibo"));
+  await expect(prepareWorktree(input(root))).rejects.toMatchObject({ code: "WORKSPACE_FAILED" });
+  expect(readdirSync(elsewhere)).toEqual([]);
+  expect(await git(["branch", "--list"], root)).toBe("* main");
+});
+
+test("a git command past its deadline is killed with its children", async () => {
+  const root = await repo();
+  const started = Date.now();
+  const res = await runGit(["-c", "alias.slow=!sleep 5", "slow"], root, 200);
+  expect(res.code).not.toBe(0);
+  expect(res.stderr).toContain("timed out");
+  expect(Date.now() - started).toBeLessThan(4000);
 });
 
 test("a branch or a base that looks like an option is refused before touching git", async () => {
