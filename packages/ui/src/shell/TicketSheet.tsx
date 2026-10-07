@@ -11,6 +11,7 @@ import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { KeyRequired } from "./KeyRequired";
+import { importTitle } from "./sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "./TicketDetail";
 
@@ -75,7 +76,7 @@ export function TicketSheet({
               />
             </span>
           </div>
-          <SheetTitle className="text-lg" aria-label={t.title}>
+          <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
             <TicketTitle
               title={t.title}
               editable={editable}

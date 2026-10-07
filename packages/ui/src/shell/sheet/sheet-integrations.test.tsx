@@ -228,6 +228,45 @@ test("a broken issue link shows a badge instead of a link", async () => {
   expect(screen.queryByRole("link", { name: "#42" })).toBeNull();
 });
 
+test("the branch chip sits beside the PR, a stacked merge names its parent, imports stay hidden", async () => {
+  const stacked: TicketView = {
+    ...ticket,
+    externalRefs: [
+      {
+        kind: "github_pr",
+        url: "https://github.com/adam/kibo/pull/12",
+        number: 12,
+        state: "merged",
+        base: "feat/a",
+        head: "feat/x",
+      },
+      { kind: "git_branch", branch: "feat/x", base: "feat/parent" },
+      { kind: "import_ref", source: "plan", id: "C0-9" },
+    ],
+  };
+  await show(stacked);
+  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
+  if (!header) throw new Error("sheet has a header");
+  expect(within(header).getByRole("link", { name: "#12" }).getAttribute("title")).toBe(
+    "fusionnée dans feat/a",
+  );
+  const branch = within(header).getByText("feat/x").closest("[data-slot=badge]");
+  expect(branch?.getAttribute("title")).toBe("Base : feat/parent");
+  expect(branch?.tagName).not.toBe("A");
+  expect(header.textContent).not.toContain("C0-9");
+  expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBe("Importé de plan · C0-9");
+});
+
+test("an unstacked branch chip names the branch", async () => {
+  await show({ ...ticket, externalRefs: [{ kind: "git_branch", branch: "feat/x", base: null }] });
+  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
+  if (!header) throw new Error("sheet has a header");
+  expect(within(header).getByText("feat/x").closest("[data-slot=badge]")?.getAttribute("title")).toBe(
+    "Branche feat/x",
+  );
+  expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBeNull();
+});
+
 test("a sync failure can be retried", async () => {
   await show();
   const alert = screen.getByRole("alert");

@@ -1,8 +1,9 @@
-import { type ExternalRef, githubIssueState, type TicketView } from "@kibo/schema";
+import { type ExternalRef, type GithubPrRef, githubIssueState, type TicketView } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { CircleCheck, CircleDot, GitPullRequest, Unlink } from "lucide-react";
+import { CircleCheck, CircleDot, GitBranch, GitPullRequest, Unlink } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../../i18n/fr";
+import { frRefs } from "./fr-refs";
 
 const t = fr.integrations.sheet;
 
@@ -22,10 +23,27 @@ const isBroken = (ref: ExternalRef) =>
   ref.number !== null &&
   (githubIssueState(ref) === "broken" || ref.url === null);
 
+const prTitle = (ref: GithubPrRef) =>
+  ref.state === "merged" && ref.base !== null ? frRefs.mergedInto(ref.base) : fr.ticket.prState[ref.state];
+
+function branchChip(branch: string, base: string | null) {
+  return (
+    <Badge
+      key={`branch:${branch}`}
+      variant="outline"
+      className="font-mono"
+      title={base ? frRefs.base(base) : frRefs.branch(branch)}
+    >
+      <GitBranch aria-hidden />
+      <span>{branch}</span>
+    </Badge>
+  );
+}
+
 function refChip(ref: ExternalRef, done: boolean): ReactNode {
-  if (ref.kind === "github_pr") {
-    return chip(ref.url, fr.ticket.prState[ref.state], <GitPullRequest aria-hidden />, `#${ref.number}`);
-  }
+  if (ref.kind === "github_pr")
+    return chip(ref.url, prTitle(ref), <GitPullRequest aria-hidden />, `#${ref.number}`);
+  if (ref.kind === "git_branch") return branchChip(ref.branch, ref.base);
   if (ref.kind !== "github_issue" || ref.number === null) return null;
   if (isBroken(ref) || ref.url === null) {
     return (
@@ -44,7 +62,8 @@ function refChip(ref: ExternalRef, done: boolean): ReactNode {
   return chip(ref.url, t.openOnGithub, <Icon aria-hidden />, t.issue(ref.number));
 }
 
-const order = (ref: ExternalRef) => (ref.kind === "github_issue" ? 0 : 1);
+const ORDER: Partial<Record<ExternalRef["kind"], number>> = { github_issue: 0, github_pr: 1, git_branch: 2 };
+const order = (ref: ExternalRef) => ORDER[ref.kind] ?? 3;
 
 export function GithubRefs({ ticket }: { ticket: TicketView }) {
   const chips = [...ticket.externalRefs]

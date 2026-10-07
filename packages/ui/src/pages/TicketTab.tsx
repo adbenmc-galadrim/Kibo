@@ -4,6 +4,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { KeyRequired } from "../shell/KeyRequired";
+import { importTitle } from "../shell/sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "../shell/sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "../shell/TicketDetail";
 import { canEdit } from "../state/access";
@@ -43,7 +44,7 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
             />
           </span>
         </div>
-        <h1 className="text-lg font-semibold" aria-label={t.title}>
+        <h1 className="text-lg font-semibold" aria-label={t.title} title={importTitle(t.externalRefs)}>
           <TicketTitle
             title={t.title}
             editable={editable}
