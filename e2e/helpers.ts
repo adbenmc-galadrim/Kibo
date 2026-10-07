@@ -23,9 +23,15 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 type PageKind = "Tableau de bord" | "Vue";
 
 async function fillNewPage(page: Page, title: string, kind: PageKind) {
-  await page.getByLabel("Nom", { exact: true }).fill(title);
-  await page.getByRole("radio", { name: kind, exact: true }).click();
-  await page.getByRole("button", { name: "Créer la page" }).click();
+  const name = page.getByLabel("Nom", { exact: true });
+  const create = page.getByRole("button", { name: "Créer la page" });
+  await expect(async () => {
+    if ((await name.inputValue()) !== title) await name.fill(title);
+    await page.getByRole("radio", { name: kind, exact: true }).click();
+    await expect(name).toHaveValue(title, { timeout: 1_000 });
+    await expect(create).toBeEnabled({ timeout: 1_000 });
+  }).toPass();
+  await create.click();
 }
 
 export async function createPage(page: Page, title: string, kind: PageKind) {
