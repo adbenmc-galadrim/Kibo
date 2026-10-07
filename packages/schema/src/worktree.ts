@@ -10,12 +10,17 @@ export function splitRemote(ref: string): { remote: string | null; branch: strin
 
 const RemoteBranch = z.string().refine((ref) => {
   const { remote, branch } = splitRemote(ref);
-  return remote !== null && isGitBranchName(branch);
+  return remote !== null && !remote.startsWith("-") && isGitBranchName(branch);
 });
+
+const leadsWithDash = (ref: string) => ref.startsWith("-") || splitRemote(ref).branch.startsWith("-");
 
 const BaseRef = z
   .string()
-  .refine((ref) => isGitBranchName(ref) || RemoteBranch.safeParse(ref).success, "invalid base ref");
+  .refine(
+    (ref) => !leadsWithDash(ref) && (isGitBranchName(ref) || RemoteBranch.safeParse(ref).success),
+    "invalid base ref",
+  );
 
 export const WorktreeSettings = z.object({
   baseRef: BaseRef,

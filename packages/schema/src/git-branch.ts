@@ -4,7 +4,7 @@ const PRINTABLE = /^[\x21-\x7e]+$/;
 const FORBIDDEN = /(\.\.|@\{|\/\/|[~^:?*[\\])/;
 
 export function isGitBranchName(name: string): boolean {
-  if (name.length === 0 || name.length > 200) return false;
+  if (name.length === 0 || name.length > 200 || name.startsWith("-")) return false;
   if (name.startsWith("/") || name.endsWith("/") || name.endsWith(".") || name.endsWith(".lock"))
     return false;
   if (name.split("/").some((part) => part.length === 0 || part.startsWith(".") || part.endsWith(".lock")))

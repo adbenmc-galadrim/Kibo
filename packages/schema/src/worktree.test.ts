@@ -55,3 +55,10 @@ test("integration branch drops the remote and defaults to main", () => {
   );
   expect(WorktreeSettings.parse({ baseRef: "main", pathTemplate: "x", setup: "  " }).setup).toBeNull();
 });
+
+test("a base ref never looks like an option, neither its remote nor its branch", () => {
+  const base = (baseRef: string) => WorktreeSettings.safeParse({ ...WORKTREE_DEFAULTS, baseRef }).success;
+  for (const bad of ["-main", "origin/--upload-pack=touch", "origin/-dev", "-origin/dev"])
+    expect(base(bad)).toBe(false);
+  for (const ok of ["main", "origin/dev", "origin/feat/x"]) expect(base(ok)).toBe(true);
+});

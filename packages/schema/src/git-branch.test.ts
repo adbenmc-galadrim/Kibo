@@ -43,3 +43,9 @@ test("slug replaces slashes and refs parse with defaults", () => {
 test("git branch names are printable ascii only", () => {
   for (const bad of ["café", "a\tb", "a\u0001b", ".hidden", "a/.b"]) expect(isGitBranchName(bad)).toBe(false);
 });
+
+test("a branch name never looks like an option", () => {
+  for (const bad of ["-x", "--upload-pack=touch", "-b/x"]) expect(isGitBranchName(bad)).toBe(false);
+  expect(isGitBranchName("feat/-x")).toBe(true);
+  expect(GitBranchRef.safeParse({ kind: "git_branch", branch: "feat/x", base: "-main" }).success).toBe(false);
+});
