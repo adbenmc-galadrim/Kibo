@@ -3,21 +3,12 @@ import { applyWhatsNew, WHATS_NEW_KEY, whatsNewDecision } from "./whats-new";
 
 beforeEach(() => localStorage.clear());
 
-test("first launch stores the version silently, an upgrade shows once, same version does nothing", () => {
-  expect(whatsNewDecision(null, "1.5.0")).toBe("store");
-  expect(whatsNewDecision("1.4.0", "1.5.0")).toBe("show");
-  expect(whatsNewDecision("1.5.0", "1.5.0")).toBe("none");
-  expect(whatsNewDecision("1.6.0", "1.5.0")).toBe("none");
-});
-
-test("versions compare by numeric triplets, not as text", () => {
-  expect(whatsNewDecision("1.9.0", "1.10.0")).toBe("show");
-  expect(whatsNewDecision("1.10.0", "1.9.0")).toBe("none");
-  expect(whatsNewDecision("1.5.9", "1.5.10")).toBe("show");
-});
-
-test("an unreadable stored version counts as older", () => {
-  expect(whatsNewDecision("dev", "1.5.0")).toBe("show");
+test("what's new shows whenever the installed version differs from the one last seen", () => {
+  expect(whatsNewDecision(null, "0.16.0-alpha.1")).toBe("store");
+  expect(whatsNewDecision("1.6.0", "0.16.0-alpha.1")).toBe("show");
+  expect(whatsNewDecision("0.16.0-alpha.1", "0.16.0-alpha.2")).toBe("show");
+  expect(whatsNewDecision("0.16.0-alpha.2", "0.16.0-alpha.2")).toBe("none");
+  expect(whatsNewDecision("garbage", "0.16.0-alpha.2")).toBe("show");
 });
 
 test("a first launch only stores the installed version", () => {

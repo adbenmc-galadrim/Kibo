@@ -46,6 +46,16 @@ describe("release version", () => {
     ).toThrow(KiboError);
   });
 
+  test("accepts an alpha version in the four files and its tag, refuses any other suffix", () => {
+    const next = withAppVersion(files, "0.16.0-alpha.1");
+    expect(readAppVersion(next.tauriConf)).toBe("0.16.0-alpha.1");
+    expect(next.cargoToml).toContain('version = "0.16.0-alpha.1"');
+    expect(next.cargoLock).toContain('name = "kibo"\nversion = "0.16.0-alpha.1"\n');
+    expect(next.packageJson).toContain('"version": "0.16.0-alpha.1"');
+    expect(() => checkReleaseTag("v0.16.0-alpha.1", "0.16.0-alpha.1")).not.toThrow();
+    expect(() => withAppVersion(files, "0.16.0-beta.1")).toThrow(/not a X\.Y\.Z or X\.Y\.Z-alpha\.N version/);
+  });
+
   test("accepts only the tag that matches the application version", () => {
     expect(() => checkReleaseTag("v1.1.0", "1.1.0")).not.toThrow();
     expect(() => checkReleaseTag("v1.2.0", "1.1.0")).toThrow(KiboError);

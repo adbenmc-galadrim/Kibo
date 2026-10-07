@@ -2,6 +2,7 @@ export * from "./agent";
 export * from "./ai";
 export * from "./ai-rpc";
 export * from "./app-info";
+export * from "./app-version";
 export * from "./asset";
 export * from "./asset-extension";
 export * from "./backup";

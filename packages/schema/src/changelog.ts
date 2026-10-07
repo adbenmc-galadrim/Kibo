@@ -1,4 +1,4 @@
-const HEADING = /^## (\d+\.\d+\.\d+)(?: — .*)?$/;
+const HEADING = /^## (\d+\.\d+\.\d+(?:-alpha\.\d+)?)(?: — .*)?$/;
 
 type Section = { version: string; body: string };
 

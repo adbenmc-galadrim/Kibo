@@ -2,12 +2,9 @@ import { readPref, writePref } from "../lib/local-pref";
 
 export const WHATS_NEW_KEY = "kibo.whatsNew.seenVersion";
 
-const SEMVER = /^\d+\.\d+\.\d+$/;
-
 export function whatsNewDecision(seen: string | null, installed: string): "store" | "show" | "none" {
   if (seen === null) return "store";
-  if (!SEMVER.test(seen)) return "show";
-  return seen.localeCompare(installed, "en", { numeric: true }) < 0 ? "show" : "none";
+  return seen === installed ? "none" : "show";
 }
 
 export const markWhatsNewSeen = (version: string): void => writePref(WHATS_NEW_KEY, version);
