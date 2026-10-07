@@ -73,6 +73,26 @@ async function connectPenpot(page: Page, info: Parameters<typeof shot>[1], insta
   await expect(row(page, "Penpot")).toContainText("Adam");
 }
 
+async function penpotIgnoresTokens(page: Page, info: Parameters<typeof shot>[1], instance: string) {
+  expect((await fetch(`${instance}/__test/ignore-tokens`, { method: "POST" })).ok).toBe(true);
+  await row(page, "Penpot").getByRole("button", { name: "Connecter" }).click();
+  const dialog = page.getByRole("dialog", { name: "Connecter Penpot" });
+  await expect(dialog.getByRole("list", { name: "Comment faire" })).toContainText("enable-access-tokens");
+  await expect(dialog.getByRole("link", { name: "Documentation Penpot" })).toHaveAttribute(
+    "href",
+    /help\.penpot\.app/,
+  );
+  await dialog.getByLabel("Adresse de l'instance").fill(instance);
+  await dialog.getByLabel("Jeton d'accès").fill(E2E_PENPOT_TOKEN);
+  await dialog.getByRole("button", { name: "Connecter", exact: true }).click();
+  await expect(dialog.getByText("Penpot a ignoré ce jeton")).toBeVisible();
+  await shot(page, info, "ecran-147e");
+  await dialog.getByRole("button", { name: "Annuler" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(row(page, "Penpot").getByRole("button", { name: "Connecter" })).toBeVisible();
+  expect((await fetch(`${instance}/__test/honor-tokens`, { method: "POST" })).ok).toBe(true);
+}
+
 async function configureWidget(page: Page, url: string, info?: Parameters<typeof shot>[1]) {
   await page.getByRole("main").getByRole("button", { name: "Actions Maquette" }).click();
   await page.getByRole("menuitem", { name: "Réglages…" }).click();
@@ -127,6 +147,7 @@ test("maquettes Figma et Penpot : connexion, widget, fiche, hors ligne", async (
 
   await openIntegrations(page);
   await connectFigma(page, info);
+  await penpotIgnoresTokens(page, info, penpot);
   await connectPenpot(page, info, penpot);
   await expectNoSecretOnScreen(page);
   await shot(page, info, "ecran-16");

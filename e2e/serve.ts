@@ -69,6 +69,7 @@ function startDesignFakes() {
     width: 1440,
     height: 900,
   });
+  penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, PENPOT_IDS.bare, { name: "Brouillon", mediaId: null });
   return {
     args: [
       "--test-origins",
