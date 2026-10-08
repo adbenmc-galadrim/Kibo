@@ -58,10 +58,18 @@ function store(doc: LoroDoc, candidate: unknown): Question {
   return parsed.data;
 }
 
+function freeInstant(taken: readonly Question[], at: number): number {
+  const used = new Set(taken.map((q) => q.createdAt));
+  let instant = at;
+  while (used.has(instant)) instant += 1;
+  return instant;
+}
+
 export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
   getNode(doc.getTree("tickets"), input.ticketId);
   const title = input.title.trim();
-  const ofTicket = listQuestions(doc).filter((q) => q.ticketId === input.ticketId);
+  const all = listQuestions(doc);
+  const ofTicket = all.filter((q) => q.ticketId === input.ticketId);
   const same = ofTicket.find((q) => isOpen(q) && q.title === title);
   if (same) return same;
   if (ofTicket.length >= QUESTIONS_PER_TICKET_MAX) {
@@ -80,7 +88,7 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
     provisional: input.provisional ?? null,
     blocking: input.blocking ?? false,
     createdBy: input.createdBy,
-    createdAt: input.at ?? Date.now(),
+    createdAt: freeInstant(all, input.at ?? Date.now()),
     importRef: input.importRef ?? null,
     answer: null,
   });
