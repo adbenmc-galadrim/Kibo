@@ -19,7 +19,8 @@ import {
   unstageFiles,
   writeFile,
 } from "./index-ops";
-import { type PrPoller, startPrPoller, triggerRules } from "./pr-poller";
+import { type PrPoller, startPrPoller } from "./pr-poller";
+import { triggerRules } from "./pr-rules";
 import { compare, readDiff, readFile, readStatus, remoteBranches } from "./read";
 import { createPr, ghStatus, prForBranch, push } from "./remote-ops";
 import { openRepo, type WorktreeHandle } from "./repo";

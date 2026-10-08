@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readStatus } from "./read";
-import { createPr, ghStatus, prForBranch, prState, push, toPrInfo } from "./remote-ops";
+import { createPr, ghStatus, prForBranch, prState, prsForBranch, push, toPrInfo } from "./remote-ops";
 import { openRepo, type WorktreeHandle } from "./repo";
 import { createGitFixture, type GitFixture, installFakeGh, readFakeGhLog } from "./testing/git-fixture";
 
@@ -136,6 +136,33 @@ test("reviewers that are not GitHub logins are refused before any push or gh cal
 
 test("prState refuses anything but a pull request URL", async () => {
   await expect(prState("--web", fx.repo, { ...fx.env, ...gh })).rejects.toMatchObject({
+    code: "INVALID_INPUT",
+  });
+  expect(readFakeGhLog(gh)).toEqual([]);
+});
+
+test("prsForBranch lists every PR of a branch, read only", async () => {
+  await createPr(h, { title: "x", body: "", base: "main", draft: true, reviewers: [] });
+  const env = { ...fx.env, ...gh };
+  expect(await prsForBranch("kib-12", fx.repo, env)).toEqual([
+    { number: 1, url: "https://github.com/kibo/test/pull/1", state: "draft", base: "main", head: "kib-12" },
+  ]);
+  expect(await prsForBranch("feat/autre", fx.repo, env)).toEqual([]);
+  expect(readFakeGhLog(gh).at(-1)?.args).toEqual([
+    "pr",
+    "list",
+    "--head=feat/autre",
+    "--state=all",
+    "--json",
+    "number,url,state,isDraft,baseRefName,headRefName",
+  ]);
+});
+
+test("prsForBranch refuses an invalid branch before calling gh", async () => {
+  await expect(prsForBranch("--web", fx.repo, { ...fx.env, ...gh })).rejects.toMatchObject({
+    code: "INVALID_INPUT",
+  });
+  await expect(prsForBranch("a b", fx.repo, { ...fx.env, ...gh })).rejects.toMatchObject({
     code: "INVALID_INPUT",
   });
   expect(readFakeGhLog(gh)).toEqual([]);

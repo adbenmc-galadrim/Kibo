@@ -1,4 +1,4 @@
-import { GhLogin, type GhStatus, KiboError, PrInfo } from "@kibo/schema";
+import { GhLogin, type GhStatus, isGitBranchName, KiboError, PrInfo } from "@kibo/schema";
 import { currentBranch, pushRemote, remoteBranches } from "./read";
 import type { WorktreeHandle } from "./repo";
 import { type Env, firstLine, NETWORK_TIMEOUT_MS, type RunResult, runGh } from "./run";
@@ -37,8 +37,7 @@ function toState(data: unknown): string {
   return field(data, "isDraft") === true ? "draft" : "open";
 }
 
-export function toPrInfo(raw: string): PrInfo {
-  const data = parseJson(raw);
+function parsePrInfo(data: unknown): PrInfo {
   const parsed = PrInfo.safeParse({
     number: field(data, "number"),
     url: field(data, "url"),
@@ -49,6 +48,8 @@ export function toPrInfo(raw: string): PrInfo {
   if (!parsed.success) throw new KiboError("GH_FAILED", "unexpected gh output");
   return parsed.data;
 }
+
+export const toPrInfo = (raw: string): PrInfo => parsePrInfo(parseJson(raw));
 
 async function branchOf(h: WorktreeHandle): Promise<string> {
   const branch = await currentBranch(h);
@@ -84,6 +85,19 @@ export async function prForBranch(h: WorktreeHandle): Promise<PrInfo | null> {
   if (r.code === 0) return toPrInfo(r.stdout);
   if (NO_PR.test(r.stderr)) return null;
   throw ghFailure(r, "pr view");
+}
+
+function toPrList(raw: string): PrInfo[] {
+  const data = parseJson(raw);
+  if (!Array.isArray(data)) throw new KiboError("GH_FAILED", "unexpected gh output");
+  return data.map(parsePrInfo);
+}
+
+export async function prsForBranch(branch: string, cwd: string, env: Env): Promise<PrInfo[]> {
+  if (!isGitBranchName(branch)) throw new KiboError("INVALID_INPUT", `${branch} is not a branch name`);
+  const r = await runGh(["pr", "list", `--head=${branch}`, "--state=all", ...PR_FIELDS], { cwd, env });
+  if (r.code !== 0) throw ghFailure(r, "pr list");
+  return toPrList(r.stdout);
 }
 
 export async function prState(url: string, cwd: string, env: Env): Promise<PrInfo> {

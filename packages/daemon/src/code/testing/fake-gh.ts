@@ -72,5 +72,18 @@ if (args[0] === "pr" && args[1] === "view") {
   );
   process.exit(0);
 }
+if (args[0] === "pr" && args[1] === "list") {
+  const head = flag("head");
+  const view = (pr: FakePr) => ({
+    number: pr.number,
+    url: pr.url,
+    state: pr.state,
+    isDraft: pr.isDraft,
+    baseRefName: pr.base,
+    headRefName: pr.head,
+  });
+  process.stdout.write(JSON.stringify(prs.filter((p) => p.head === head).map(view)));
+  process.exit(0);
+}
 process.stderr.write(`unsupported: ${args.join(" ")}\n`);
 process.exit(1);

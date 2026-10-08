@@ -2,13 +2,19 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { GithubPrRef, ProjectMeta, RpcRequest, Ticket, WorktreeSettings } from "@kibo/schema";
+import type { GithubPrRef, ProjectMeta, RpcRequest, StatusId, Ticket, WorktreeSettings } from "@kibo/schema";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
 import { type PrPoller, startPrPoller } from "./pr-poller";
-import { installFakeGh } from "./testing/git-fixture";
+import { installFakeGh, readFakeGhLog } from "./testing/git-fixture";
 
-type FakePr = { number: number; state: "OPEN" | "MERGED" | "CLOSED"; head: string; base?: string };
+type FakePr = {
+  number: number;
+  state: "OPEN" | "MERGED" | "CLOSED";
+  head: string;
+  base?: string;
+  isDraft?: boolean;
+};
 
 const DEV: WorktreeSettings = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: null };
 
@@ -52,7 +58,7 @@ const urlOf = (n: number) => `https://github.com/kibo/test/pull/${n}`;
 const setFakePrs = (prs: FakePr[]) =>
   writeFileSync(
     gh.FAKE_GH_STATE ?? "",
-    JSON.stringify(prs.map((p) => ({ ...p, url: urlOf(p.number), isDraft: false }))),
+    JSON.stringify(prs.map((p) => ({ isDraft: false, ...p, url: urlOf(p.number) }))),
   );
 
 const command = (cmd: Extract<RpcRequest, { method: "command" }>["command"]) =>
@@ -125,4 +131,92 @@ test("the poller records base and head even when the state is unchanged", async 
   expect(await waitFor(() => prOf(id)?.base === "dev")).toBe(true);
   expect(prOf(id)).toMatchObject({ state: "open", head: "feat/a" });
   expect(ticketOf(id)?.statusId).toBe("in_review");
+});
+
+const branchTicket = (title: string, branch: string, statusId: StatusId = "in_progress") => {
+  const ticket = command({ method: "createTicket", title }) as Ticket;
+  command({ method: "setStatus", ticketId: ticket.id, statusId });
+  command({
+    method: "upsertExternalRef",
+    ticketId: ticket.id,
+    ref: { kind: "git_branch", branch, base: null },
+  });
+  return ticket.id;
+};
+const listCalls = (branch: string) =>
+  readFakeGhLog(gh).filter((c) => c.args[1] === "list" && c.args.includes(`--head=${branch}`)).length;
+
+test("a draft PR opened outside Kibo is attached like one Kibo creates, then followed", async () => {
+  const id = branchTicket("Stockage", "feat/stockage-fichiers");
+  setFakePrs([{ number: 9, state: "OPEN", isDraft: true, base: "dev", head: "feat/stockage-fichiers" }]);
+  start(withWorktree(service, DEV));
+  expect(await waitFor(() => prOf(id) !== undefined)).toBe(true);
+  expect(prOf(id)).toEqual({
+    kind: "github_pr",
+    url: urlOf(9),
+    number: 9,
+    state: "draft",
+    base: "dev",
+    head: "feat/stockage-fichiers",
+  });
+  await Bun.sleep(150);
+  expect(ticketOf(id)?.statusId).toBe("in_progress");
+  expect(listCalls("feat/stockage-fichiers")).toBe(1);
+  setFakePrs([{ number: 9, state: "OPEN", base: "dev", head: "feat/stockage-fichiers" }]);
+  expect(await waitFor(() => ticketOf(id)?.statusId === "in_review")).toBe(true);
+});
+
+test("an open PR opened outside Kibo moves the ticket to review", async () => {
+  const id = branchTicket("Stockage", "feat/stockage-fichiers");
+  setFakePrs([
+    { number: 3, state: "CLOSED", base: "dev", head: "feat/stockage-fichiers" },
+    { number: 9, state: "OPEN", base: "dev", head: "feat/stockage-fichiers" },
+  ]);
+  start(withWorktree(service, DEV));
+  expect(await waitFor(() => ticketOf(id)?.statusId === "in_review")).toBe(true);
+  expect(prOf(id)).toMatchObject({ number: 9, state: "open" });
+});
+
+test("a PR merged outside Kibo on the integration branch is done, with its stack", async () => {
+  const parent = branchTicket("Schéma", "feat/a");
+  const child = reviewedTicket("Coquille", { number: 1, base: "feat/a", head: "feat/b" });
+  setFakePrs([
+    { number: 1, state: "MERGED", base: "feat/a", head: "feat/b" },
+    { number: 2, state: "MERGED", base: "dev", head: "feat/a" },
+  ]);
+  start(withWorktree(service, DEV));
+  expect(await waitFor(() => ticketOf(parent)?.statusId === "done")).toBe(true);
+  expect(await waitFor(() => ticketOf(child)?.statusId === "done")).toBe(true);
+  expect(prOf(parent)).toMatchObject({ number: 2, state: "merged", base: "dev" });
+});
+
+test("a PR merged outside Kibo into a parent branch is attached, status unchanged", async () => {
+  const id = branchTicket("Coquille", "feat/b");
+  setFakePrs([{ number: 1, state: "MERGED", base: "feat/a", head: "feat/b" }]);
+  start(withWorktree(service, DEV));
+  expect(await waitFor(() => prOf(id)?.state === "merged")).toBe(true);
+  await Bun.sleep(150);
+  expect(ticketOf(id)?.statusId).toBe("in_progress");
+});
+
+test("discovery skips done tickets and tickets with a followed PR, and finds nothing without a PR", async () => {
+  const done = branchTicket("Fini", "feat/fini", "done");
+  const followed = reviewedTicket("Suivi", { number: 1, base: "dev", head: "feat/suivi" });
+  command({
+    method: "upsertExternalRef",
+    ticketId: followed,
+    ref: { kind: "git_branch", branch: "feat/suivi", base: null },
+  });
+  const alone = branchTicket("Seul", "feat/seul");
+  setFakePrs([
+    { number: 1, state: "OPEN", base: "dev", head: "feat/suivi" },
+    { number: 2, state: "OPEN", base: "dev", head: "feat/fini" },
+  ]);
+  start(withWorktree(service, DEV));
+  expect(await waitFor(() => listCalls("feat/seul") >= 2)).toBe(true);
+  expect(listCalls("feat/fini")).toBe(0);
+  expect(listCalls("feat/suivi")).toBe(0);
+  expect(prOf(done)).toBeUndefined();
+  expect(prOf(alone)).toBeUndefined();
+  expect(ticketOf(alone)?.statusId).toBe("in_progress");
 });
