@@ -20,7 +20,7 @@ export function livraisonGuideline(process: readonly string[], notesDir: string)
     "- Porte qualité avant chaque push : `pnpm format:check`, `pnpm lint`, `pnpm check-types`, `pnpm test`.",
     "- Ouvrir la PR en draft vers `dev` : `gh pr create --draft --base dev`.",
     "- Un seul `pnpm test:e2e` ou `pnpm storybook` à la fois sur la machine.",
-    "- Toute question passe par `ask_user` : ne jamais trancher une décision à la place d'Adam.",
+    "- Toute décision non tranchée passe par `ask_question` (choix provisoire, tu continues) ou `ask_user` (tu attends) ; **jamais dans le texte final**, Kibo ne le lit pas.",
     "- Ne jamais toucher `tmp/plan-data.js` : le plan vit dans Kibo, projet EMIS.",
     "",
   ].join("\n");

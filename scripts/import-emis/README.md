@@ -20,7 +20,13 @@ bun run --cwd scripts/import-emis import -- --yes --archive    # puis archive le
 | `--yes` | non | obligatoire pour écrire dans le vrai `~/.kibo` |
 | `--archive` | non | déplace les fichiers de pilotage dans `<emis>/archive-<date>/` |
 
-Le plan est validé avant toute écriture (invariants de `plan-check.mjs`) : une erreur arrête le script. Rejouer l'import ne crée ni ne modifie rien si les entrées n'ont pas changé ; rien n'est jamais supprimé (`orphan` et `drift` sont seulement listés). Une note modifiée dans Kibo depuis le dernier import n'est pas écrasée (empreintes dans `<notes>/.import-emis.json`).
+Le plan est validé avant toute écriture (invariants de `plan-check.mjs`) : une erreur arrête le script. Rejouer l'import ne crée ni ne modifie rien si les entrées n'ont pas changé ; rien n'est supprimé hors de la migration des questions (`orphan` et `drift` sont seulement listés). Une note modifiée dans Kibo depuis le dernier import n'est pas écrasée (empreintes dans `<notes>/.import-emis.json`).
+
+## Questions
+
+Chaque arbitrage du plan (`arbitrages[].items[]`) devient une question Kibo (spec §23.12.7) : `importRef plan:Qn`, `blocking`, créée par `import:plan`, rattachée à la PR qu'elle bloque, sinon au ticket « Arbitrages ». La réponse vient de `tmp/reponses.json` (`answered`), ou vaut « Résolue dans le plan Emis » pour une question `resolved` ; elle naît non transmise et part avec le brief du premier run du ticket. Une question déjà répondue dans Kibo n'est jamais réécrite : Kibo gagne. Une question ne change jamais le statut d'un ticket : les PR gardent celui du plan.
+
+**Migration** : les anciens sous-tickets `plan:Qn` et les groupes `plan:arbitrages/<groupe>` sont remplacés. La question est créée (réponse reprise de la section `## Réponse` du ticket si `reponses.json` n'en donne pas), les liens du ticket sont retirés, puis le ticket est supprimé et compté `migrated`. C'est la **seule suppression** du script, bornée à ces références ; un groupe qui porte un autre ticket est gardé (`drift`), un sous-ticket dont la question a quitté le plan est gardé (`orphan`). En `--dry-run`, chaque suppression est imprimée (`would delete ticket EMIS-12 · …`) sans être faite.
 
 ## Sauvegarde avant l'import réel
 

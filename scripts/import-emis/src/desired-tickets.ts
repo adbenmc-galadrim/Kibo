@@ -6,22 +6,9 @@ import {
   type PrInfo,
   type StatusId,
 } from "@kibo/schema";
-import {
-  firstSentence,
-  parseTodo,
-  renderDescription,
-  slugify,
-  stripInlineMarkup,
-  truncate,
-} from "./markdown";
-import {
-  type Answers,
-  type EmisPlan,
-  type FlatPr,
-  flatPrs,
-  type PlanQuestion,
-  type PlanStatus,
-} from "./plan-source";
+import { ARBITRAGES_ID } from "./desired-questions";
+import { firstSentence, parseTodo, renderDescription, stripInlineMarkup, truncate } from "./markdown";
+import { type EmisPlan, type FlatPr, flatPrs, type PlanStatus } from "./plan-source";
 
 export type DesiredTicket = {
   ref: ImportRef;
@@ -36,14 +23,12 @@ export type DesiredTicket = {
 export type DesiredLink = { from: ImportRef; to: ImportRef };
 export type TicketInput = {
   plan: EmisPlan;
-  answers: Answers;
   todo: string | null;
   repoUrl: string;
   prs: Map<number, PrInfo>;
 };
 
 const TITLE_MAX = 80;
-const NO_BLOCKS = "—";
 const DEFAULT_BLOCKED = "Bloquée dans le plan Emis";
 const STATUS: Record<PlanStatus, StatusId> = {
   todo: "todo",
@@ -75,16 +60,8 @@ function parentTicket(
   };
 }
 
-const questionTitle = (q: PlanQuestion) => `${q.ref} · ${truncate(stripInlineMarkup(q.question), TITLE_MAX)}`;
-const isAnswered = (q: PlanQuestion, answers: Answers) => q.resolved || answers[q.ref]?.status === "answered";
-
-function blockedReason(pr: FlatPr, input: TicketInput): string {
-  const note = pr.note?.trim();
-  if (note) return note;
-  const question = input.plan.arbitrages
-    .flatMap((g) => g.items)
-    .find((q) => q.blocks === pr.id && !isAnswered(q, input.answers));
-  return question ? questionTitle(question) : DEFAULT_BLOCKED;
+function blockedReason(pr: FlatPr): string {
+  return pr.note?.trim() || DEFAULT_BLOCKED;
 }
 
 function prRefs(pr: FlatPr, byId: Map<string, FlatPr>, input: TicketInput): ExternalRef[] {
@@ -130,7 +107,7 @@ function prTicket(pr: FlatPr, byId: Map<string, FlatPr>, input: TicketInput): De
     title: `${pr.id} · ${pr.title}`,
     description: renderDescription(pr),
     statusId,
-    blockedReason: statusId === "blocked" ? blockedReason(pr, input) : null,
+    blockedReason: statusId === "blocked" ? blockedReason(pr) : null,
     labels: normalizeLabels([
       `phase:${pr.phase.toLowerCase()}`,
       `sprint:${pr.sprint.toLowerCase()}`,
@@ -149,41 +126,8 @@ function chapterTickets(input: TicketInput): DesiredTicket[] {
   ]);
 }
 
-function questionTicket(
-  q: PlanQuestion,
-  group: { group: string; tone: string },
-  parent: ImportRef,
-  answers: Answers,
-): DesiredTicket {
-  const answer = answers[q.ref]?.answer.trim();
-  const done = isAnswered(q, answers);
-  return {
-    ref: planRef(q.ref),
-    title: questionTitle(q),
-    description: answer ? `${q.question}\n\n## Réponse\n\n${answer}\n` : `${q.question}\n`,
-    statusId: done ? "done" : "blocked",
-    blockedReason: done ? null : `Attend une réponse (${group.group})`,
-    labels: normalizeLabels([`question:${slugify(group.tone)}`]),
-    parent,
-    refs: [],
-  };
-}
-
-function arbitrageTickets(input: TicketInput): DesiredTicket[] {
-  const root = parentTicket(
-    "arbitrages",
-    "Arbitrages",
-    "Questions ouvertes du plan Emis, par groupe.\n",
-    null,
-  );
-  return [
-    root,
-    ...input.plan.arbitrages.flatMap((g) => {
-      const group = parentTicket(`arbitrages/${slugify(g.group)}`, g.group, "", root.ref);
-      return [group, ...g.items.map((q) => questionTicket(q, g, group.ref, input.answers))];
-    }),
-  ];
-}
+const arbitrageTicket = (): DesiredTicket =>
+  parentTicket(ARBITRAGES_ID, "Arbitrages", "Questions du plan Emis sans ticket\n", null);
 
 function todoTickets(todo: string | null): DesiredTicket[] {
   if (todo === null) return [];
@@ -204,17 +148,9 @@ function todoTickets(todo: string | null): DesiredTicket[] {
 }
 
 export function desiredTickets(input: TicketInput): DesiredTicket[] {
-  return [...chapterTickets(input), ...arbitrageTickets(input), ...todoTickets(input.todo)];
+  return [...chapterTickets(input), arbitrageTicket(), ...todoTickets(input.todo)];
 }
 
 export function desiredLinks(plan: EmisPlan): DesiredLink[] {
-  const prs = flatPrs(plan);
-  const known = new Set(prs.map((p) => p.id));
-  return [
-    ...prs.flatMap((p) => p.deps.map((d) => ({ from: planRef(d), to: planRef(p.id) }))),
-    ...plan.arbitrages
-      .flatMap((g) => g.items)
-      .filter((q) => q.blocks !== NO_BLOCKS && known.has(q.blocks))
-      .map((q) => ({ from: planRef(q.ref), to: planRef(q.blocks) })),
-  ];
+  return flatPrs(plan).flatMap((p) => p.deps.map((d) => ({ from: planRef(d), to: planRef(p.id) })));
 }

@@ -11,6 +11,8 @@ const WRITES = new Set([
   "moveTicket",
   "addLink",
   "upsertExternalRef",
+  "createQuestion",
+  "answerQuestion",
 ]);
 
 test("an empty project gets everything created, a second pass changes nothing", () => {
@@ -18,7 +20,7 @@ test("an empty project gets everything created, a second pass changes nothing", 
   expect(first.commands.filter((c) => c.method === "createTicket")).toHaveLength(desired.tickets.length);
   expect(first.commands.filter((c) => c.method === "addLink")).toHaveLength(desired.links.length);
   expect(first.changes.filter((c) => c.kind === "created")).toHaveLength(
-    desired.tickets.length + desired.links.length,
+    desired.tickets.length + desired.links.length + desired.questions.length,
   );
   const after = applyLocally(emptySnapshot(), first);
   const c12 = after.tickets.find((t) => t.title.startsWith("C1-2 · "));
@@ -91,7 +93,7 @@ test("statuses, parents and branches are repaired; a pr state owned by the polle
   ]);
 });
 
-test("links added in Kibo are drift, never removed; nothing is ever deleted", () => {
+test("links added in Kibo are drift, never removed; nothing but legacy tickets is ever deleted", () => {
   const imported = applyLocally(emptySnapshot(), reconcile(emptySnapshot(), desired));
   const id = (title: string) => imported.tickets.find((t) => t.title.startsWith(title))?.id ?? "";
   const extra = {

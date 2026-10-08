@@ -1,4 +1,5 @@
-import { type ProjectCommand, Ticket } from "@kibo/schema";
+import type { ProjectCommand } from "@kibo/schema";
+import { z } from "zod";
 import {
   ensureNotesDir,
   ensurePages,
@@ -22,7 +23,14 @@ export type ApplyOptions = {
 };
 export type ApplyResult = { projectId: string | null; counts: ImportReport; changes: Change[] };
 
-const EMPTY: ReconcileSnapshot = { tickets: [], links: [] };
+const EMPTY: ReconcileSnapshot = { tickets: [], links: [], questions: [] };
+const Created = z.object({ id: z.string().min(1) });
+
+function describe(command: ProjectCommand, snapshot: ReconcileSnapshot): string {
+  if (command.method !== "deleteTicket") return `would send ${JSON.stringify(command)}`;
+  const ticket = snapshot.tickets.find((t) => t.id === command.ticketId);
+  return `would delete ticket ${ticket?.key ?? command.ticketId} · ${ticket?.title ?? ""}`;
+}
 
 function ticketKeys(snapshot: ReconcileSnapshot): Map<string, string> {
   const keys = new Map<string, string>();
@@ -36,7 +44,7 @@ async function ensureTickets(step: Step, projectId: string | null): Promise<Reco
   const plan = reconcile(snapshot, step.desired);
   step.changes.push(...plan.changes);
   if (step.dryRun || projectId === null) {
-    for (const c of plan.commands) step.print(`would send ${JSON.stringify(c)}`);
+    for (const c of plan.commands) step.print(describe(c, snapshot));
     return snapshot;
   }
   const send = (command: ProjectCommand) => step.client.rpc({ method: "command", projectId, command });
@@ -44,7 +52,7 @@ async function ensureTickets(step: Step, projectId: string | null): Promise<Reco
   for (const [index, command] of plan.commands.entries()) {
     const result = await send(resolveCommand(command, ids));
     const placeholder = plan.defines.get(index);
-    if (placeholder) ids.set(placeholder, Ticket.parse(result).id);
+    if (placeholder) ids.set(placeholder, Created.parse(result).id);
   }
   return step.client.rpc({ method: "getProject", projectId });
 }

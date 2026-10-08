@@ -1,6 +1,13 @@
 import type { Change, ChangeKind } from "./reconcile";
 
-export const CHANGE_KINDS: readonly ChangeKind[] = ["created", "updated", "kept", "orphan", "drift"];
+export const CHANGE_KINDS: readonly ChangeKind[] = [
+  "created",
+  "updated",
+  "kept",
+  "orphan",
+  "drift",
+  "migrated",
+];
 export type ImportReport = Record<ChangeKind, number> & { lines: string[] };
 
 export function buildReport(changes: readonly Change[]): ImportReport {
@@ -11,6 +18,7 @@ export function buildReport(changes: readonly Change[]): ImportReport {
     kept: count("kept"),
     orphan: count("orphan"),
     drift: count("drift"),
+    migrated: count("migrated"),
     lines: changes
       .filter((c) => c.kind !== "kept")
       .map((c) => `${c.kind} ${c.what}${c.detail ? ` · ${c.detail}` : ""}`),

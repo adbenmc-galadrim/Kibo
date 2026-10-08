@@ -5,20 +5,31 @@ import {
   KiboError,
   type Link,
   type ProjectCommand,
+  type Question,
   type Ticket,
 } from "@kibo/schema";
 import type { Desired, DesiredTicket } from "./desired";
 import { refKey } from "./desired-tickets";
+import {
+  legacyRef,
+  migrateQuestionTickets,
+  reconcileQuestions,
+  withRecoveredAnswers,
+} from "./reconcile-questions";
 
-export type ChangeKind = "created" | "updated" | "kept" | "orphan" | "drift";
+export type ChangeKind = "created" | "updated" | "kept" | "orphan" | "drift" | "migrated";
 export type Change = { kind: ChangeKind; what: string; detail: string };
-export type ReconcileSnapshot = { tickets: readonly Ticket[]; links: readonly Link[] };
+export type ReconcileSnapshot = {
+  tickets: readonly Ticket[];
+  links: readonly Link[];
+  questions: readonly Question[];
+};
 export type Reconciliation = {
   commands: ProjectCommand[];
   defines: ReadonlyMap<number, string>;
   changes: Change[];
 };
-type Wanted = Pick<Desired, "tickets" | "links">;
+type Wanted = Pick<Desired, "tickets" | "links" | "questions">;
 type Match = { desired: DesiredTicket; existing: Ticket | null; id: string };
 type Phases = {
   create: ProjectCommand[];
@@ -165,7 +176,12 @@ function importedIds(snapshot: ReconcileSnapshot): Map<string, ImportRef> {
   return out;
 }
 
-function linkChanges(snapshot: ReconcileSnapshot, wanted: Wanted, ids: ReadonlyMap<string, string>) {
+function linkChanges(
+  snapshot: ReconcileSnapshot,
+  wanted: Wanted,
+  ids: ReadonlyMap<string, string>,
+  deleted: ReadonlySet<string>,
+) {
   const commands: ProjectCommand[] = [];
   const changes: Change[] = [];
   const pairs = new Set<string>();
@@ -184,6 +200,7 @@ function linkChanges(snapshot: ReconcileSnapshot, wanted: Wanted, ids: ReadonlyM
     const from = imported.get(l.from);
     const to = imported.get(l.to);
     if (l.type !== "blocks" || !from || !to || pairs.has(`${l.from}>${l.to}`)) continue;
+    if (deleted.has(l.from) || deleted.has(l.to)) continue;
     changes.push({ kind: "drift", what: `link ${from.id} → ${to.id}`, detail: "blocks" });
   }
   return { commands, changes };
@@ -192,9 +209,11 @@ function linkChanges(snapshot: ReconcileSnapshot, wanted: Wanted, ids: ReadonlyM
 function orphans(snapshot: ReconcileSnapshot, wanted: Wanted): Change[] {
   const keys = new Set(wanted.tickets.map((t) => refKey(t.ref)));
   return snapshot.tickets.flatMap((t) =>
-    importRefsOf(t)
-      .filter((r) => IMPORT_SOURCES.includes(r.source) && !keys.has(refKey(r)))
-      .map((r) => ({ kind: "orphan" as const, what: `ticket ${r.id}`, detail: t.title })),
+    legacyRef(t) !== null
+      ? []
+      : importRefsOf(t)
+          .filter((r) => IMPORT_SOURCES.includes(r.source) && !keys.has(refKey(r)))
+          .map((r) => ({ kind: "orphan" as const, what: `ticket ${r.id}`, detail: t.title })),
   );
 }
 
@@ -203,11 +222,22 @@ export function reconcile(snapshot: ReconcileSnapshot, wanted: Wanted): Reconcil
   const ids = new Map(matches.map((m) => [refKey(m.desired.ref), m.id]));
   const phases: Phases = { create: [], edit: [], status: [], refs: [] };
   const tickets = ticketChanges(matches, ids, phases);
-  const links = linkChanges(snapshot, wanted, ids);
+  const migration = migrateQuestionTickets(snapshot, wanted.questions, ids);
+  const links = linkChanges(snapshot, wanted, ids, migration.deleted);
+  const before = [...phases.create, ...phases.edit, ...phases.status, ...phases.refs, ...links.commands];
+  const questions = reconcileQuestions(snapshot, withRecoveredAnswers(snapshot, wanted.questions), ids);
+  const defines = new Map(tickets.defines);
+  for (const [index, id] of questions.defines) defines.set(before.length + index, id);
   return {
-    commands: [...phases.create, ...phases.edit, ...phases.status, ...phases.refs, ...links.commands],
-    defines: tickets.defines,
-    changes: [...tickets.changes, ...links.changes, ...orphans(snapshot, wanted)],
+    commands: [...before, ...questions.commands, ...migration.commands],
+    defines,
+    changes: [
+      ...tickets.changes,
+      ...links.changes,
+      ...questions.changes,
+      ...migration.changes,
+      ...orphans(snapshot, wanted),
+    ],
   };
 }
 
@@ -231,6 +261,10 @@ export function resolveCommand(c: ProjectCommand, ids: ReadonlyMap<string, strin
       return { ...c, ticketId: r(c.ticketId), parentId: c.parentId === null ? null : r(c.parentId) };
     case "addLink":
       return { ...c, from: r(c.from), to: r(c.to) };
+    case "createQuestion":
+      return { ...c, ticketId: r(c.ticketId) };
+    case "answerQuestion":
+      return { ...c, questionId: r(c.questionId) };
     default:
       return c;
   }

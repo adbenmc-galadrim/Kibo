@@ -1,12 +1,13 @@
 import { type Layout, layoutFor, type PrInfo, type ProfileInput } from "@kibo/schema";
 import { type DesiredNote, desiredNotes } from "./desired-notes";
+import { type DesiredQuestion, desiredQuestions } from "./desired-questions";
 import { type DesiredLink, type DesiredTicket, desiredLinks, desiredTickets } from "./desired-tickets";
 import type { EmisFiles } from "./emis-files";
 import { livraisonGuideline } from "./livraison-template";
 import { cutClaudeMd } from "./markdown";
 import type { Answers, EmisPlan } from "./plan-source";
 
-export type { DesiredLink, DesiredNote, DesiredTicket };
+export type { DesiredLink, DesiredNote, DesiredQuestion, DesiredTicket };
 export type DesiredInstance = { componentId: string; config: Record<string, unknown>; layout?: Layout };
 export type DesiredPage = { title: string; kind: "dashboard" | "view"; instances: DesiredInstance[] };
 export type DesiredGuideline = { path: string; content: string };
@@ -14,6 +15,7 @@ export type Desired = {
   project: { name: "Emis"; key: "EMIS"; color: string };
   tickets: DesiredTicket[];
   links: DesiredLink[];
+  questions: DesiredQuestion[];
   notes: DesiredNote[];
   pages: DesiredPage[];
   profile: ProfileInput;
@@ -86,6 +88,7 @@ export function desiredState(input: DesiredInput): Desired {
     project: { name: "Emis", key: "EMIS", color: "#B45309" },
     tickets: desiredTickets({ ...input, todo: input.files.todo }),
     links: desiredLinks(input.plan),
+    questions: desiredQuestions(input.plan, input.answers),
     notes: desiredNotes(input.plan, input.files),
     pages: PAGES,
     profile: PROFILE,

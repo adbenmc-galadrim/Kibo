@@ -2,6 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { type ProjectCommand, Ticket } from "@kibo/schema";
 import type { Subprocess } from "bun";
 import { applyDesired } from "./apply";
 import { connectLocalDaemon, readDaemonAccess, type SeedClient } from "./daemon-client";
@@ -80,7 +81,15 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   const first = await withClient((c) => applyDesired(c, desired, options));
   expect(first.counts).toMatchObject({ updated: 0, orphan: 0, drift: 0 });
   expect(first.counts.created).toBe(
-    desired.tickets.length + desired.links.length + desired.notes.length + 4 + 1 + 2 + 1 + 1,
+    desired.tickets.length +
+      desired.links.length +
+      desired.questions.length +
+      desired.notes.length +
+      4 +
+      1 +
+      2 +
+      1 +
+      1,
   );
   const second = await withClient((c) => applyDesired(c, desired, options));
   expect(second.counts.lines).toEqual([]);
@@ -104,8 +113,19 @@ test("imports the fixture once, then finds everything, then repairs a missing im
     branch: "feat/connexion",
     base: "spike/sso",
   });
-  expect(snap.links.filter((l) => l.type === "blocks")).toHaveLength(8);
-  expect(snap.tickets.filter((t) => t.statusId === "blocked")).toHaveLength(2);
+  expect(snap.links.filter((l) => l.type === "blocks")).toHaveLength(6);
+  expect(snap.tickets.filter((t) => t.statusId === "blocked").map((t) => t.title)).toEqual([
+    "C0-3 · Hébergement",
+  ]);
+  expect(snap.tickets.filter((t) => /^Q\d+ · /.test(t.title))).toEqual([]);
+  expect(
+    snap.questions.map((q) => [q.importRef?.id, q.blocking, q.createdBy.kind, q.answer?.text ?? null]),
+  ).toEqual([
+    ["Q1", true, "import", null],
+    ["Q2", true, "import", "Résolue dans le plan Emis"],
+    ["Q3", true, "import", "Oui, un seul bouton."],
+  ]);
+  expect(snap.questions.find((q) => q.importRef?.id === "Q3")?.answer?.deliveredAt).toBeNull();
   const c02 = snap.tickets.find((t) => t.title.startsWith("C0-2 · "));
   expect(readFileSync(join(notes, "briefs", "C0-2.md"), "utf8")).toContain(`tickets: [${c02?.key}]`);
   const config = await withClient((c) => c.rpc({ method: "getConfig" }));
@@ -162,4 +182,64 @@ test("an instance left with an empty config gets the wanted config; a configured
   const config = (id: string) => after.instances.find((i) => i.id === id)?.config;
   expect(config(dashboardGraph)).toEqual({ filter: "all" });
   expect(config(viewGraph)).toEqual({ filter: "mine-and-agents", hideDone: true });
+}, 60_000);
+
+test("the old question sub-tickets are migrated once: answer kept, links removed, tickets deleted", async () => {
+  const projectId = (await withClient((c) => c.rpc({ method: "listProjects" }))).find(
+    (p) => p.name === "Emis",
+  )?.id;
+  if (!projectId) throw new Error("the first import creates Emis");
+  const notes = join(home, "notes");
+  const options = { folder: join(home, "emis"), notesDir: notes, manifestVersions: VERSIONS };
+  const before = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  const ticketOf = (id: string) =>
+    before.tickets.find((t) => t.externalRefs.some((r) => r.kind === "import_ref" && r.id === id))?.id ?? "";
+  const q1 = before.questions.find((q) => q.importRef?.id === "Q1")?.id ?? "";
+  const send = (command: ProjectCommand) =>
+    withClient((c) => c.rpc({ method: "command", projectId, command }));
+  await send({ method: "removeQuestion", questionId: q1 });
+  const group = Ticket.parse(
+    await send({ method: "createTicket", title: "Client — bloquants", parentId: ticketOf("arbitrages") }),
+  );
+  const legacy = Ticket.parse(
+    await send({
+      method: "createTicket",
+      title: "Q1 · Compte AWS au nom du client. Estelle.",
+      description: "**Compte AWS** au nom du client. Estelle.\n\n## Réponse\n\nCompte créé le 7.\n",
+      statusId: "blocked",
+      blockedReason: "Attend une réponse (Client — bloquants)",
+      parentId: group.id,
+    }),
+  );
+  const importRef = (ticketId: string, id: string) =>
+    send({ method: "upsertExternalRef", ticketId, ref: { kind: "import_ref", source: "plan", id } });
+  await importRef(group.id, "arbitrages/client-bloquants");
+  await importRef(legacy.id, "Q1");
+  await send({ method: "addLink", from: legacy.id, to: ticketOf("C0-3"), type: "blocks" });
+
+  const lines: string[] = [];
+  const dry = await withClient((c) =>
+    applyDesired(c, fixtureDesired(notes), { ...options, dryRun: true, print: (l) => lines.push(l) }),
+  );
+  expect(dry.counts.migrated).toBe(2);
+  expect(lines.filter((l) => l.startsWith("would delete ticket"))).toHaveLength(2);
+  const untouched = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  expect(untouched.tickets.some((t) => t.id === legacy.id)).toBe(true);
+
+  const run = await withClient((c) => applyDesired(c, fixtureDesired(notes), { ...options, dryRun: false }));
+  expect(run.counts).toMatchObject({ migrated: 2, orphan: 0, drift: 0 });
+  expect(run.changes).toContainEqual(expect.objectContaining({ kind: "created", what: "question Q1" }));
+  const after = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  expect(after.tickets.some((t) => t.id === legacy.id || t.id === group.id)).toBe(false);
+  expect(after.links.some((l) => l.from === legacy.id)).toBe(false);
+  const migrated = after.questions.find((q) => q.importRef?.id === "Q1");
+  expect(migrated).toMatchObject({ ticketId: ticketOf("C0-3"), blocking: true });
+  expect(migrated?.answer).toMatchObject({ text: "Compte créé le 7.", deliveredAt: null });
+  expect(after.tickets.find((t) => t.id === ticketOf("C0-3"))?.statusId).toBe("blocked");
+
+  const again = await withClient((c) =>
+    applyDesired(c, fixtureDesired(notes), { ...options, dryRun: false }),
+  );
+  expect(again.counts).toMatchObject({ created: 0, updated: 0, migrated: 0 });
+  expect(again.counts.lines).toEqual([]);
 }, 60_000);

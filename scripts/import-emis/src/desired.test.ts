@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import type { ImportRef } from "@kibo/schema";
+import type { ImportRef, StatusId } from "@kibo/schema";
 import { desiredState } from "./desired";
 import { loadEmisFiles } from "./emis-files";
-import { loadAnswers, loadPlan } from "./plan-source";
+import { loadAnswers, loadPlan, type PlanStatus } from "./plan-source";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "emis");
 const plan = loadPlan(join(FIXTURE, "tmp", "plan-data.js"));
@@ -59,32 +59,40 @@ test("chapters, prs, questions and todo items become tickets with stable import 
     state: "open",
     base: null,
   });
-  expect(byRef.get("plan:arbitrages")).toMatchObject({ title: "Arbitrages", parent: null });
-  expect(byRef.get("plan:Q1")).toMatchObject({
-    title: "Q1 · Compte AWS au nom du client. Estelle.",
-    statusId: "blocked",
-    blockedReason: "Attend une réponse (Client — bloquants)",
-    labels: ["question:critical"],
+  expect(byRef.get("plan:arbitrages")).toMatchObject({
+    title: "Arbitrages",
+    parent: null,
+    statusId: "todo",
+    description: "Questions du plan Emis sans ticket\n",
   });
-  expect(byRef.get("plan:Q1")?.parent?.source).toBe("plan");
-  expect(byRef.get("plan:Q2")).toMatchObject({ statusId: "done", blockedReason: null });
-  expect(byRef.get("plan:Q3")).toMatchObject({ statusId: "done" });
-  expect(byRef.get("plan:Q3")?.description).toContain("## Réponse\n\nOui, un seul bouton.");
+  expect(desired.tickets.filter((t) => /^Q\d+$|^arbitrages\//.test(t.ref.id))).toEqual([]);
   expect(byRef.get("todo:DATA-1")).toMatchObject({
     title: "DATA-1 · Liste réelle des sites à confirmer avec le client.",
     labels: ["decision:pending", "priority:p0"],
     parent: { kind: "import_ref", source: "plan", id: "todo" },
   });
   expect(byRef.get("todo:DEV-1")?.labels).toEqual(["priority:unsorted"]);
-  expect(desired.tickets).toHaveLength(2 + 6 + 1 + 2 + 3 + 1 + 2);
-  expect(desired.links).toEqual(
-    expect.arrayContaining([
-      { from: ref("plan", "C0-1"), to: ref("plan", "C0-2") },
-      { from: ref("plan", "Q1"), to: ref("plan", "C0-3") },
-      { from: ref("plan", "Q3"), to: ref("plan", "C1-2") },
-    ]),
-  );
-  expect(desired.links).toHaveLength(6 + 2);
+  expect(desired.tickets).toHaveLength(2 + 6 + 1 + 1 + 2);
+  expect(desired.links).toContainEqual({ from: ref("plan", "C0-1"), to: ref("plan", "C0-2") });
+  expect(desired.links).toHaveLength(6);
+  expect(desired.questions.map((q) => [q.ref.id, q.ticket.id])).toEqual([
+    ["Q1", "C0-3"],
+    ["Q2", "arbitrages"],
+    ["Q3", "C1-2"],
+  ]);
+});
+
+test("questions never change a pr status: every pr keeps the status of the plan", () => {
+  const status: Record<PlanStatus, StatusId> = {
+    todo: "todo",
+    wip: "in_progress",
+    review: "in_review",
+    done: "done",
+    blocked: "blocked",
+  };
+  for (const c of plan.chapters)
+    for (const p of c.prs)
+      expect(desired.tickets.find((t) => t.ref.id === p.id)?.statusId).toBe(status[p.status]);
 });
 
 test("parents always come before their children", () => {
@@ -95,7 +103,7 @@ test("parents always come before their children", () => {
   }
 });
 
-test("a blocked pr without note takes its blocking question, then a default reason", () => {
+test("a blocked pr without note takes the default reason, even when a question blocks it", () => {
   const blocked = {
     ...plan,
     chapters: plan.chapters.map((c) => ({
@@ -112,7 +120,7 @@ test("a blocked pr without note takes its blocking question, then a default reas
     notesDir: "/n",
   });
   const reason = (id: string) => d.tickets.find((t) => t.ref.id === id)?.blockedReason;
-  expect(reason("C1-2")).toBe("Q3 · Un seul bouton de connexion ? À confirmer.");
+  expect(reason("C1-2")).toBe("Bloquée dans le plan Emis");
   expect(reason("C1-3")).toBe("Bloquée dans le plan Emis");
 });
 
@@ -158,6 +166,10 @@ test("notes carry their source and the tickets they cite; the repo readmes are l
   expect(desired.guidelines[1]?.content).toContain("/notes/briefs/");
   expect(desired.guidelines[1]?.content).toContain("Les PR de feature ciblent `dev`.");
   expect(desired.guidelines[1]?.content).not.toContain("plan-check");
+  expect(desired.guidelines[1]?.content).toContain(
+    "- Toute décision non tranchée passe par `ask_question` (choix provisoire, tu continues) ou `ask_user` (tu attends) ; **jamais dans le texte final**, Kibo ne le lit pas.",
+  );
+  expect(desired.guidelines[1]?.content).not.toContain("Toute question passe par `ask_user`");
   expect(desired.profile).toMatchObject({
     name: "emis-livraison",
     model: "opus",
