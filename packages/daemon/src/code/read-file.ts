@@ -26,14 +26,18 @@ function splitRecord(record: string): { fields: string[]; path: string } {
   return { fields: record.slice(0, tab).split(/ +/), path: record.slice(tab + 1) };
 }
 
-export async function headBlob(h: WorktreeHandle, path: string): Promise<Blob | null> {
-  if ((await optional(h, ["rev-parse", "--verify", "-q", "HEAD"])) === "") return null;
-  for (const record of records(await h.git.ok(["ls-tree", "-l", "-z", "HEAD", "--", path]))) {
+export async function revBlob(h: WorktreeHandle, rev: string, path: string): Promise<Blob | null> {
+  for (const record of records(await h.git.ok(["ls-tree", "-l", "-z", rev, "--", path]))) {
     const { fields, path: entry } = splitRecord(record);
     const [, type, sha, size] = fields;
     if (entry === path && type === "blob" && sha) return { sha, size: Number(size) };
   }
   return null;
+}
+
+export async function headBlob(h: WorktreeHandle, path: string): Promise<Blob | null> {
+  if ((await optional(h, ["rev-parse", "--verify", "-q", "HEAD"])) === "") return null;
+  return revBlob(h, "HEAD", path);
 }
 
 export async function indexBlob(h: WorktreeHandle, path: string): Promise<Blob | null> {

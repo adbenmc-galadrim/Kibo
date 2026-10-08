@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  BranchChanges,
   CODE_MUTATION_METHODS,
   CODE_READ_METHODS,
   CodeEvent,
@@ -96,11 +97,34 @@ describe("code contracts", () => {
       "commitDefaults",
       "ghStatus",
       "prForBranch",
+      "branchChanges",
+      "branchDiff",
     ]);
     const reads = new Set<string>(CODE_READ_METHODS);
     expect(LOCAL_ONLY_CODE_METHODS.filter((m) => reads.has(m))).toEqual([]);
     const methods = CodeRequest.options.map((o) => o.shape.method.value);
     expect([...methods].sort()).toEqual([...LOCAL_ONLY_CODE_METHODS, ...CODE_READ_METHODS].sort());
+  });
+
+  test("branch reads take no base from the client, and a safe path", () => {
+    const w = { projectId: "p", worktree: "/w" };
+    expect(CodeRequest.safeParse({ method: "branchChanges", ...w }).success).toBe(true);
+    expect(
+      CodeRequest.safeParse({ method: "branchDiff", ...w, path: "src/a.ts", origPath: null }).success,
+    ).toBe(true);
+    expect(
+      CodeRequest.safeParse({ method: "branchDiff", ...w, path: "../a.ts", origPath: null }).success,
+    ).toBe(false);
+    expect(
+      BranchChanges.safeParse({
+        base: "origin/dev",
+        mergeBase: "a".repeat(40),
+        files: [{ path: "a.ts", origPath: null, kind: "added", additions: 1, deletions: 0 }],
+        additions: 1,
+        deletions: 0,
+        commits: [],
+      }).success,
+    ).toBe(true);
   });
 
   test("CodeEvent is tagged", () => {
