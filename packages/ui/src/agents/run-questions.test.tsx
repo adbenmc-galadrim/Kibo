@@ -1,18 +1,23 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { type AgentsState, KiboError, type RpcRequest, type RunQuestions, type RunView } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, kiboProject, NOW, runFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let deliver: () => Promise<unknown> = () => Promise.resolve({ sent: 1, runId: "r50" });
+let access: "write" | "read" = "write";
+const project = () => {
+  const snapshot = kiboProject();
+  return { ...snapshot, sync: { ...snapshot.sync, access } };
+};
 
 mock.module("../api", () => ({
   client: {
     rpc: (req: RpcRequest) => {
       calls.push(req);
       if (req.method === "deliverAnswers") return deliver();
-      return Promise.resolve(req.method === "getProject" ? kiboProject() : null);
+      return Promise.resolve(req.method === "getProject" ? project() : null);
     },
     subscribe: () => () => {},
     code: () => Promise.resolve([]),
@@ -36,6 +41,7 @@ const { DropdownMenu, DropdownMenuContent } = await import("@kibo/sdk/ui/dropdow
 beforeEach(() => {
   calls.length = 0;
   deliver = () => Promise.resolve({ sent: 1, runId: "r50" });
+  access = "write";
 });
 
 const run: RunView = runFixture({
@@ -90,16 +96,16 @@ test("a finished run with open questions says so in the list and opens the quest
 test("answers waiting for the agent are sent by one click, never by themselves", async () => {
   render(drawer([tally(0, 1)]));
   expect(calls.some((c) => c.method === "deliverAnswers")).toBe(false);
-  expect(screen.getByText("1 réponse à transmettre")).toBeTruthy();
+  expect(await screen.findByText("1 réponse à transmettre")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Ouvrir les questions" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Transmettre à l'agent" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Transmettre à l'agent" }));
   expect(calls).toContainEqual({ method: "deliverAnswers", projectId: "kibo", ticketId: "t14" });
 });
 
 test("without a session to resume the drawer says how the answers will still reach the agent", async () => {
   deliver = () => Promise.reject(new KiboError("INVALID_TRANSITION", "run r50 cannot be resumed"));
   render(drawer([tally(0, 2)]));
-  await userEvent.click(screen.getByRole("button", { name: "Transmettre à l'agent" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Transmettre à l'agent" }));
   expect((await screen.findByRole("alert")).textContent).toBe(
     "Aucune session à reprendre : assigne le ticket, le brief portera les réponses.",
   );
@@ -148,4 +154,14 @@ test("the bell list says the open questions of a finished run", () => {
     </DropdownMenu>,
   );
   expect(screen.getByText("3 questions").className).toContain("text-orange-600");
+});
+
+test("a reader of the project sees no answer to deliver nor its button", async () => {
+  access = "read";
+  render(drawer([tally(1, 2)]));
+  expect(screen.getByText("1 question ouverte")).toBeTruthy();
+  await waitFor(() => expect(calls.some((c) => c.method === "getProject")).toBe(true));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(screen.queryByText("2 réponses à transmettre")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Transmettre à l'agent" })).toBeNull();
 });

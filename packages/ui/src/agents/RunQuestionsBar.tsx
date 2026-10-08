@@ -4,6 +4,8 @@ import { MessageCircleQuestion } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { frRunChat } from "../i18n/fr-run-chat";
+import { canEdit } from "../state/access";
+import { useProject } from "../state/use-projects";
 import { useOpenQuestions } from "./open-questions";
 
 type Props = { run: RunView; questions: RunQuestions | null };
@@ -13,10 +15,12 @@ const failureText = (e: unknown) =>
 
 export function RunQuestionsBar({ run, questions }: Props) {
   const openQuestions = useOpenQuestions();
+  const project = useProject(run.ticketId === null ? null : run.projectId);
+  const writable = project !== null && canEdit(project);
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const open = questions?.open ?? 0;
-  const undelivered = questions?.undelivered ?? 0;
+  const undelivered = writable ? (questions?.undelivered ?? 0) : 0;
   const { projectId, ticketId } = run;
   if (open === 0 && undelivered === 0) return null;
   const deliver = async () => {
