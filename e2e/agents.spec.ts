@@ -1,6 +1,6 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, createGitRepo, rpc, runState, type Seeded, seedWorkspace } from "./agents-seed";
+import { assign, createGitRepo, list, rpc, runState, type Seeded, seedWorkspace, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 test.setTimeout(180_000);
@@ -199,4 +199,100 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     await expect(drawer.getByText(new RegExp(`^${key} · `)).first()).toBeVisible();
   }
   await shot(page, info, "historique-trois-agents");
+});
+
+const prop = (value: unknown, key: string): unknown =>
+  typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
+
+type AskedQuestion = { id: string; title: string; deliveredRunId: string | null };
+
+async function askedQuestions(page: Page, projectId: string, ticketId: string): Promise<AskedQuestion[]> {
+  const snapshot = await rpc(page, { method: "getProject", projectId });
+  const ofTicket = list(snapshot, "questions").filter((q) => prop(q, "ticketId") === ticketId);
+  return ofTicket.map((q) => {
+    const delivered = prop(prop(q, "answer"), "deliveredRunId");
+    return {
+      id: text(q, "id"),
+      title: text(q, "title"),
+      deliveredRunId: typeof delivered === "string" ? delivered : null,
+    };
+  });
+}
+
+async function runProgress(page: Page, runId: string): Promise<string> {
+  const current = list(await rpc(page, { method: "getAgents" }), "runs").find((r) => prop(r, "id") === runId);
+  return `${String(prop(current, "state"))}:${String(prop(current, "turns"))}`;
+}
+
+test("un run pose une question à valider, la réponse attend « Transmettre à l'agent »", async ({
+  page,
+}, info) => {
+  if (!seeded) throw new Error("seed missing");
+  const { projectId } = seeded;
+  const ticketId = seeded.tickets.get(22) ?? "";
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await rpc(page, { method: "setHost", patch: { hostSlots: 12 } });
+  const profile = await rpc(page, {
+    method: "config",
+    command: {
+      method: "createProfile",
+      profile: {
+        name: "emis-livraison",
+        model: "opus",
+        execution: "cli",
+        permissionMode: "acceptEdits",
+        workspace: "isolated",
+        subagents: [],
+        maxParallel: 1,
+      },
+    },
+  });
+  const run = await rpc(page, {
+    method: "assignAgent",
+    projectId,
+    ticketId,
+    profileId: text(profile, "id"),
+    brief: "Toute décision non tranchée passe par ask_question.",
+  });
+  const runId = text(run, "id");
+  await expect.poll(() => runState(page, "KIB-22"), { timeout: 30_000 }).toBe("done");
+  const [question] = await askedQuestions(page, projectId, ticketId);
+  expect(question?.title).toBe("Bloquer le dépôt sur une affaire archivée ?");
+
+  await page.goto("/#/agents");
+  await page
+    .getByRole("radiogroup", { name: "Filtrer par état" })
+    .getByRole("radio", { name: "Tous" })
+    .click();
+  const row = page.getByRole("row", { name: /^KIB-22 · / });
+  await expect(row).toContainText("Terminé · 1 question");
+  await row.getByRole("cell").nth(2).click();
+  const drawer = page.getByRole("region", { name: "Agents" });
+  await expect(drawer.getByText("1 question ouverte")).toBeVisible();
+  await expect(drawer.getByRole("list", { name: "Terminé" })).toContainText("KIB-22 · Terminé · 1 question");
+  await shot(page, info, "ecran-172");
+
+  await rpc(page, {
+    method: "command",
+    projectId,
+    command: {
+      method: "answerQuestion",
+      questionId: question?.id,
+      answer: { kind: "confirm" },
+      by: { kind: "human", ref: "e2e" },
+    },
+  });
+  await expect(drawer.getByText("1 réponse à transmettre")).toBeVisible();
+  await expect(drawer.getByText("1 question ouverte")).toHaveCount(0);
+  expect(await runProgress(page, runId)).toBe("done:1");
+  await shot(page, info, "ecran-172-transmettre");
+
+  await drawer.getByRole("button", { name: "Transmettre à l'agent" }).click();
+  await expect.poll(() => runProgress(page, runId), { timeout: 30_000 }).toBe("done:2");
+  await expect(drawer.getByText("1 réponse à transmettre")).toHaveCount(0);
+  await expect(drawer.getByRole("list", { name: /^Journal de emis-livraison/ })).toContainText(
+    "reprise de la session",
+  );
+  expect((await askedQuestions(page, projectId, ticketId))[0]?.deliveredRunId).toBe(runId);
+  await shot(page, info, "ecran-172-transmis");
 });
