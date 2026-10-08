@@ -183,3 +183,8 @@ test("project and pages", () => {
     ["Notes", "view", ["notes"]],
   ]);
 });
+
+test("the graph shows every ticket: imported tickets have no assignee", () => {
+  const graphs = desired.pages.flatMap((p) => p.instances.filter((i) => i.componentId === "graph"));
+  expect(graphs.map((i) => i.config)).toEqual([{ filter: "all" }, { filter: "all" }]);
+});

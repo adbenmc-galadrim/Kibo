@@ -36,11 +36,13 @@ export const PROFILE_ALLOW = [
   "Bash(npx playwright *)",
 ];
 
-const view = (title: string, componentId: string): DesiredPage => ({
+const view = (title: string, componentId: string, config: Record<string, unknown> = {}): DesiredPage => ({
   title,
   kind: "view",
-  instances: [{ componentId, config: {} }],
+  instances: [{ componentId, config }],
 });
+
+const GRAPH_CONFIG = { filter: "all" };
 
 export const PAGES: DesiredPage[] = [
   {
@@ -48,11 +50,11 @@ export const PAGES: DesiredPage[] = [
     kind: "dashboard",
     instances: [
       { componentId: "kanban", config: {}, layout: layoutFor("large", 0, 0) },
-      { componentId: "graph", config: {}, layout: layoutFor("half", 0, 6) },
+      { componentId: "graph", config: GRAPH_CONFIG, layout: layoutFor("half", 0, 6) },
     ],
   },
   view("Plan", "tickets"),
-  view("Graphe", "graph"),
+  view("Graphe", "graph", GRAPH_CONFIG),
   view("Notes", "notes"),
 ];
 

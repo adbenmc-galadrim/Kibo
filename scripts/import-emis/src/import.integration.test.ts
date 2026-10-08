@@ -90,6 +90,8 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   expect(snap.meta).toMatchObject({ name: "Emis", key: "EMIS", folder });
   expect(snap.pages.map((p) => p.title)).toEqual(["Tableau de bord", "Plan", "Graphe", "Notes"]);
   expect(snap.instances).toHaveLength(5);
+  const graphs = snap.instances.filter((i) => i.component.startsWith("graph@"));
+  expect(graphs.map((i) => i.config)).toEqual([{ filter: "all" }, { filter: "all" }]);
   const c12 = snap.tickets.find((t) => t.title.startsWith("C1-2 · "));
   expect(c12).toMatchObject({
     statusId: "todo",
@@ -127,4 +129,28 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   const third = await withClient((c) => applyDesired(c, desired, options));
   expect(third.counts).toMatchObject({ created: 0, updated: 1 });
   expect(third.changes).toContainEqual({ kind: "updated", what: "ticket C1-2", detail: "import_ref" });
+}, 60_000);
+
+test("an instance left with an empty config gets the wanted config; a configured one is kept", async () => {
+  const projectId = (await withClient((c) => c.rpc({ method: "listProjects" }))).find(
+    (p) => p.name === "Emis",
+  )?.id;
+  if (!projectId) throw new Error("the previous test imports Emis");
+  const notes = join(home, "notes");
+  const options = { folder: join(home, "emis"), notesDir: notes, dryRun: false, manifestVersions: VERSIONS };
+  const before = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  const [dashboardGraph, viewGraph] = before.instances.filter((i) => i.component.startsWith("graph@"));
+  const setConfig = (instanceId: string, config: Record<string, unknown>) =>
+    withClient((c) =>
+      c.rpc({ method: "command", projectId, command: { method: "setInstanceConfig", instanceId, config } }),
+    );
+  await setConfig(dashboardGraph?.id ?? "", {});
+  await setConfig(viewGraph?.id ?? "", { filter: "mine-and-agents", hideDone: true });
+  const run = await withClient((c) => applyDesired(c, fixtureDesired(notes), options));
+  expect(run.counts).toMatchObject({ created: 0, updated: 1 });
+  expect(run.changes).toContainEqual({ kind: "updated", what: "page Tableau de bord", detail: "config" });
+  const after = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  const config = (id: string | undefined) => after.instances.find((i) => i.id === id)?.config;
+  expect(config(dashboardGraph?.id)).toEqual({ filter: "all" });
+  expect(config(viewGraph?.id)).toEqual({ filter: "mine-and-agents", hideDone: true });
 }, 60_000);

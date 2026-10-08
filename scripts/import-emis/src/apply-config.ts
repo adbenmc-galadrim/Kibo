@@ -122,6 +122,8 @@ function componentRefs(
 const topLevel = (pages: readonly Page[], title: string) =>
   pages.find((p) => p.parentId === null && p.title === title) ?? null;
 
+const isEmpty = (config: Record<string, unknown>): boolean => Object.keys(config).length === 0;
+
 async function ensureInstances(
   step: Step,
   page: DesiredPage,
@@ -129,15 +131,22 @@ async function ensureInstances(
   snapshot: ProjectSnapshot | null,
   refs: ReadonlyMap<string, string>,
   send: (c: ProjectCommand) => Promise<unknown>,
-): Promise<number> {
+): Promise<{ added: number; configured: number }> {
   let added = 0;
+  let configured = 0;
   for (const wanted of page.instances) {
-    const placed =
-      target &&
-      snapshot?.instances.some(
-        (i) => i.pageId === target.id && i.component.startsWith(`${wanted.componentId}@`),
-      );
-    if (placed) continue;
+    const placed = target
+      ? snapshot?.instances.find(
+          (i) => i.pageId === target.id && i.component.startsWith(`${wanted.componentId}@`),
+        )
+      : undefined;
+    if (placed) {
+      if (isEmpty(placed.config) && !isEmpty(wanted.config)) {
+        configured += 1;
+        await send({ method: "setInstanceConfig", instanceId: placed.id, config: wanted.config });
+      }
+      continue;
+    }
     const component = refs.get(wanted.componentId);
     if (!component) {
       record(step, "drift", `instance ${page.title}: ${wanted.componentId}`, "component not installed");
@@ -152,7 +161,7 @@ async function ensureInstances(
       ...(wanted.layout ? { layout: wanted.layout } : {}),
     });
   }
-  return added;
+  return { added, configured };
 }
 
 export async function ensurePages(
@@ -173,9 +182,11 @@ export async function ensurePages(
       const created = await send({ method: "addPage", title: page.title, kind: page.kind });
       target = created === undefined ? null : Page.parse(created);
     }
-    const added = await ensureInstances(step, page, target, isNew ? null : snapshot, refs, send);
+    const done = await ensureInstances(step, page, target, isNew ? null : snapshot, refs, send);
     const what = `page ${page.title}`;
     if (isNew) record(step, "created", what);
-    else record(step, added > 0 ? "updated" : "kept", what, added > 0 ? "instances" : "");
+    else if (done.added > 0) record(step, "updated", what, "instances");
+    else if (done.configured > 0) record(step, "updated", what, "config");
+    else record(step, "kept", what, "");
   }
 }

@@ -273,3 +273,23 @@ test("shared selection: an echo of its own selection keeps the keyboard anchor",
   await user.keyboard("{Enter}");
   expect(m.opened).toEqual([idOf("KIB-12")]);
 });
+
+test("unassigned dependencies: hidden by « Moi + agents », drawn with the « all » filter", async () => {
+  const unassigned = (run: (cmd: ProjectCommand) => unknown) => {
+    const create = (title: string) => Ticket.parse(run({ method: "createTicket", title })).id;
+    run({ method: "addLink", from: create("Amont"), to: create("Aval"), type: "blocks" });
+  };
+  const mount = (config: Record<string, unknown>) =>
+    render(
+      <SdkProvider
+        sdk={createMockSdk(manifest, { seed: unassigned, surface: "view", viewer: "adam", config }).sdk}
+      >
+        <Component />
+      </SdkProvider>,
+    );
+  mount({});
+  expect(await screen.findByText("Aucune dépendance entre les tickets affichés.")).toBeTruthy();
+  cleanup();
+  mount({ filter: "all" });
+  expect(await screen.findByRole("button", { name: /Amont/ })).toBeTruthy();
+});
