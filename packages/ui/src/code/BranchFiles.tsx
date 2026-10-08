@@ -51,7 +51,7 @@ export function BranchFiles({ view }: { view: View }) {
       <button
         type="button"
         aria-expanded={open}
-        className={cn("flex min-w-0 items-center gap-1 px-2 py-2 text-left text-xs font-medium", MUTED)}
+        className={cn("flex min-w-0 items-start gap-1 px-2 py-2 text-left text-xs font-medium", MUTED)}
         onClick={() => setOpen((o) => !o)}
       >
         <ChevronDown
@@ -59,7 +59,7 @@ export function BranchFiles({ view }: { view: View }) {
           className={cn("size-3.5 shrink-0 transition-transform", !open && "-rotate-90")}
         />
         <GitBranch aria-hidden className="size-3.5 shrink-0" />
-        <span id={id} className="truncate" title={title}>
+        <span id={id} className="min-w-0 break-words">
           {title}
         </span>
       </button>
