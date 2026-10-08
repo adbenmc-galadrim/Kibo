@@ -8,34 +8,37 @@ import type {
   TabTarget,
 } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const H = "a".repeat(64);
 let components: ComponentSummary[] = [];
 let drafts: DraftSummary[] = [];
 let preview: PublishPreview | null = null;
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "listComponents") return Promise.resolve(components);
-      if (req.method === "getSandboxStatus")
-        return Promise.resolve({
-          kind: "bwrap",
-          available: true,
-          reason: null,
-          fix: null,
-          allowUnsandboxed: false,
-        });
-      if (req.method === "listProjects") return Promise.resolve([]);
-      if (req.method === "listDrafts") return Promise.resolve(drafts);
-      if (req.method === "previewPublish") return Promise.resolve(preview);
-      return Promise.resolve([]);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "listComponents") return Promise.resolve(components);
+        if (req.method === "getSandboxStatus")
+          return Promise.resolve({
+            kind: "bwrap",
+            available: true,
+            reason: null,
+            fix: null,
+            allowUnsandboxed: false,
+          });
+        if (req.method === "listProjects") return Promise.resolve([]);
+        if (req.method === "listDrafts") return Promise.resolve(drafts);
+        if (req.method === "previewPublish") return Promise.resolve(preview);
+        return Promise.resolve([]);
+      },
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+      subscribeAi: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-    subscribeAi: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { ComponentsPage } = await import("./ComponentsPage");
 const { placesOf } = await import("./UsagesSheet");

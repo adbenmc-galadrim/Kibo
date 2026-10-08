@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type AiEvent, type ComponentDraftDetails, KiboError, type RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import {
   aiReady,
   DRAFT_ID,
@@ -31,42 +32,44 @@ const inStatus = (status: "review" | "permissions" | "generating", mode: "create
     },
   });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      switch (req.method) {
-        case "getAiStatus":
-          return aiReady;
-        case "getComponentDraft":
-          return draft;
-        case "getAgents":
-          return null;
-        case "getRunLog":
-          return [];
-        case "reviseComponentDraft":
-          draft = inStatus("generating", draft.mode);
-          return draft;
-        case "reviewComponentDraft":
-          draft = inStatus("permissions", draft.mode);
-          return draft;
-        case "listComponents":
-          return [];
-        default:
-          throw new KiboError("INTERNAL", `unexpected ${req.method}`);
-      }
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        switch (req.method) {
+          case "getAiStatus":
+            return aiReady;
+          case "getComponentDraft":
+            return draft;
+          case "getAgents":
+            return null;
+          case "getRunLog":
+            return [];
+          case "reviseComponentDraft":
+            draft = inStatus("generating", draft.mode);
+            return draft;
+          case "reviewComponentDraft":
+            draft = inStatus("permissions", draft.mode);
+            return draft;
+          case "listComponents":
+            return [];
+          default:
+            throw new KiboError("INTERNAL", `unexpected ${req.method}`);
+        }
+      },
+      subscribeAi: (listener: (e: AiEvent) => void) => {
+        aiListeners.add(listener);
+        return () => aiListeners.delete(listener);
+      },
+      subscribeTopic: () => () => {},
+      subscribe: () => () => {},
+      subscribeEvents: () => () => {},
+      onConnection: () => () => {},
+      online: () => true,
     },
-    subscribeAi: (listener: (e: AiEvent) => void) => {
-      aiListeners.add(listener);
-      return () => aiListeners.delete(listener);
-    },
-    subscribeTopic: () => () => {},
-    subscribe: () => () => {},
-    subscribeEvents: () => () => {},
-    onConnection: () => () => {},
-    online: () => true,
-  },
-}));
+  }),
+);
 
 const { AiDraftPanel } = await import("./AiDraftPanel");
 

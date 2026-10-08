@@ -19,6 +19,7 @@ import {
   NOW,
   projectsFixture,
 } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 import type { Route } from "../route";
 
 const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
@@ -63,31 +64,33 @@ function snapshotOf(projectId: string): ProjectSnapshot {
 }
 
 const calls: RpcRequest[] = [];
-mock.module("../api", () => ({
-  onWrite: () => () => {},
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-      if (req.method === "cliStatus")
-        return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
-      if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
-      if (req.method === "listIntegrations")
-        return Promise.resolve([
-          { id: "git", state: "active", account: null, servers: [], error: null, resumeAt: null },
-        ]);
-      return Promise.resolve(
-        req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
-      );
+mock.module("../api", () =>
+  apiMock({
+    onWrite: () => () => {},
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        if (req.method === "cliStatus")
+          return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
+        if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
+        if (req.method === "listIntegrations")
+          return Promise.resolve([
+            { id: "git", state: "active", account: null, servers: [], error: null, resumeAt: null },
+          ]);
+        return Promise.resolve(
+          req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
+        );
+      },
+      code: () => Promise.resolve([]),
+      subscribe: () => () => {},
+      subscribeCode: () => () => {},
+      subscribeIntegrations: () => () => {},
+      subscribeEvents: () => () => {},
+      subscribeAi: () => () => {},
     },
-    code: () => Promise.resolve([]),
-    subscribe: () => () => {},
-    subscribeCode: () => () => {},
-    subscribeIntegrations: () => () => {},
-    subscribeEvents: () => () => {},
-    subscribeAi: () => () => {},
-  },
-}));
+  }),
+);
 mock.module("../state/use-projects", () => ({
   useProjects: () => ({ projects: projectsFixture, error: null, retry: () => {} }),
   useProject: (id: string | null) => (id === "kibo" ? kiboProject() : null),

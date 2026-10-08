@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { fr } from "../i18n/fr";
 import { agentsFixture, NOW } from "./fixtures";
 import { RUN_LOG } from "./run-log-fixture";
@@ -9,16 +10,18 @@ import { RUN_LOG } from "./run-log-fixture";
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return outcome();
+      },
+      subscribeEvents: () => () => undefined,
+      subscribe: () => () => undefined,
     },
-    subscribeEvents: () => () => undefined,
-    subscribe: () => () => undefined,
-  },
-}));
+  }),
+);
 
 mock.module("../state/use-agents", () => ({
   useAgents: () => agentsFixture(),

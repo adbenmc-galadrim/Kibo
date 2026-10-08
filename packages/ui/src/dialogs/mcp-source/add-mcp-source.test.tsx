@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { layoutFor, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../../api-mock";
 
 const calls: RpcRequest[] = [];
 const context7 = {
@@ -24,16 +25,18 @@ const replies: Record<string, unknown> = {
   command: null,
 };
 
-mock.module("../../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      return replies[req.method] ?? null;
+mock.module("../../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        return replies[req.method] ?? null;
+      },
+      subscribe: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 const { AddComponentDialog } = await import("../AddComponentDialog");
 
 const page = { id: "pg1", title: "Tableau de bord", kind: "dashboard", parentId: null } as const;

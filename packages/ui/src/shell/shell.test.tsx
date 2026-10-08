@@ -12,6 +12,7 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { targetToHash } from "../tabs/target-hash";
 
@@ -161,52 +162,54 @@ mock.module("../state/use-agents", () => ({
   useRunLog: () => ({ log: null, missing: false }),
   useDaemonOnline: () => false,
 }));
-mock.module("../api", () => ({
-  onWrite: () => () => {},
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-      if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
-      if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
-      if (req.method === "getPresence") return Promise.resolve([]);
-      if (req.method === "setPresence") return Promise.resolve(null);
-      saved.push(req);
-      if (req.method === "command" && req.command.method === "addPage")
-        return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    onWrite: () => () => {},
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
+        if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
+        if (req.method === "getPresence") return Promise.resolve([]);
+        if (req.method === "setPresence") return Promise.resolve(null);
+        saved.push(req);
+        if (req.method === "command" && req.command.method === "addPage")
+          return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
+        return Promise.resolve(null);
+      },
+      code: (req: CodeRequest) => {
+        code.push(req);
+        if (req.method === "worktrees")
+          return Promise.resolve([{ path: "/repo", branch: "kib-12", head: null, isMain: true }]);
+        if (req.method === "status") return Promise.resolve(status);
+        if (req.method in changesResponses) return Promise.resolve(changesResponses[req.method]);
+        if (req.method === "readFile")
+          return Promise.resolve({
+            path: "src/a.ts",
+            revision: "worktree",
+            content: "a\nb\n  c\n",
+            hash: "a".repeat(40),
+            size: 7,
+            binary: false,
+            tooLarge: false,
+            lines: 3,
+            modifiedAt: null,
+            tracked: true,
+            dirty: false,
+          });
+        return Promise.resolve(null);
+      },
+      subscribe: () => () => {},
+      subscribeEvents: () => () => {},
+      subscribeAi: () => () => {},
+      subscribeIntegrations: () => () => undefined,
+      subscribeCode: (l: (e: CodeEvent) => void) => {
+        codeListeners.add(l);
+        return () => codeListeners.delete(l);
+      },
     },
-    code: (req: CodeRequest) => {
-      code.push(req);
-      if (req.method === "worktrees")
-        return Promise.resolve([{ path: "/repo", branch: "kib-12", head: null, isMain: true }]);
-      if (req.method === "status") return Promise.resolve(status);
-      if (req.method in changesResponses) return Promise.resolve(changesResponses[req.method]);
-      if (req.method === "readFile")
-        return Promise.resolve({
-          path: "src/a.ts",
-          revision: "worktree",
-          content: "a\nb\n  c\n",
-          hash: "a".repeat(40),
-          size: 7,
-          binary: false,
-          tooLarge: false,
-          lines: 3,
-          modifiedAt: null,
-          tracked: true,
-          dirty: false,
-        });
-      return Promise.resolve(null);
-    },
-    subscribe: () => () => {},
-    subscribeEvents: () => () => {},
-    subscribeAi: () => () => {},
-    subscribeIntegrations: () => () => undefined,
-    subscribeCode: (l: (e: CodeEvent) => void) => {
-      codeListeners.add(l);
-      return () => codeListeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 
 const unmockedShell = "./Shell?unmocked";
 const { Shell }: typeof import("./Shell") = await import(unmockedShell);

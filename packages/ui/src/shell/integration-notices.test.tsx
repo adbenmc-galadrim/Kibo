@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import type { IntegrationEvent } from "@kibo/schema";
 import { act, cleanup, render, screen } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const listeners = new Set<(e: IntegrationEvent) => void>();
-mock.module("../api", () => ({
-  client: {
-    subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-  },
-}));
+  }),
+);
 const { IntegrationNotices } = await import("./IntegrationNotices");
 
 const emit = (e: IntegrationEvent) =>

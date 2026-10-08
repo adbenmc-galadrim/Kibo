@@ -4,18 +4,21 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { agentsFixture, runFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: { method: string }) => {
-      if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
-      return null;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: { method: string }) => {
+        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
+        return null;
+      },
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { TicketDetail } = await import("./TicketDetail");
 const { HostProvider } = await import("./Host");

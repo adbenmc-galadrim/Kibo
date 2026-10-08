@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type AssignPreview, INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { configFixture, kiboProject } from "./fixtures";
 import { systemProfilesFixture } from "./system-profiles-fixture";
 
@@ -15,14 +16,16 @@ const QUEUED: AssignPreview = {
 let preview: () => Promise<unknown> = () => Promise.resolve(QUEUED);
 let assign: () => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return req.method === "previewAssign" ? preview() : assign();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return req.method === "previewAssign" ? preview() : assign();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { AssignDialog } = await import("./AssignDialog");
 

@@ -2,21 +2,24 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type ProjectSummary, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (fail) throw fail;
-      if (req.method === "updateProject")
-        return { id: "kibo", key: "KIB", name: "Noyau", folder: null, color: "#6366F1", worktree: null };
-      if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
-      throw new Error(`unexpected ${req.method}`);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (fail) throw fail;
+        if (req.method === "updateProject")
+          return { id: "kibo", key: "KIB", name: "Noyau", folder: null, color: "#6366F1", worktree: null };
+        if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
+        throw new Error(`unexpected ${req.method}`);
+      },
     },
-  },
-}));
+  }),
+);
 const { EditProjectDialog } = await import("./EditProjectDialog");
 
 const project: ProjectSummary = {

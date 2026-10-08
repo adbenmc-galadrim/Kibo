@@ -12,24 +12,27 @@ import {
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      if (req.method === "listComponents" || req.method === "listDrafts") return [];
-      calls.push(req);
-      const out = answer(req);
-      if (out instanceof Error) throw out;
-      return out;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        if (req.method === "listComponents" || req.method === "listDrafts") return [];
+        calls.push(req);
+        const out = answer(req);
+        if (out instanceof Error) throw out;
+        return out;
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { LayoutEditor } = await import("./LayoutEditor");
 const { shortcutFormats } = await import("./layout-draft");

@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { KiboError, type ProjectAsset, type RpcRequest } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let assets: ProjectAsset[] = [];
@@ -26,18 +27,20 @@ const answer = (req: RpcRequest): unknown => {
       return null;
   }
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "appendAssetUpload" && appendGate) await appendGate;
-      if (req.method === "listAssets" && listGate) await listGate;
-      const error = refuse(req);
-      if (error) throw error;
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "appendAssetUpload" && appendGate) await appendGate;
+        if (req.method === "listAssets" && listGate) await listGate;
+        const error = refuse(req);
+        if (error) throw error;
+        return answer(req);
+      },
     },
-  },
-}));
+  }),
+);
 const { ProjectFilesDialog } = await import("./ProjectFilesDialog");
 
 const robot: ProjectAsset = {

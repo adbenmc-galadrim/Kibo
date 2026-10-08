@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { type CodeEvent, type CodeRequest, type FileContent, KiboError } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: CodeRequest[] = [];
 const listeners = new Set<(e: CodeEvent) => void>();
@@ -21,22 +22,24 @@ const content: FileContent = {
 };
 let readOutcome: () => Promise<unknown> = () => Promise.resolve(content);
 
-mock.module("../api", () => ({
-  client: {
-    code: (req: CodeRequest) => {
-      calls.push(req);
-      if (req.method === "worktrees")
-        return Promise.resolve([{ path: "/repo", branch: "kib-12", head: "a".repeat(40), isMain: true }]);
-      if (req.method === "readFile") return readOutcome();
-      if (req.method === "writeFile") return writeOutcome();
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      code: (req: CodeRequest) => {
+        calls.push(req);
+        if (req.method === "worktrees")
+          return Promise.resolve([{ path: "/repo", branch: "kib-12", head: "a".repeat(40), isMain: true }]);
+        if (req.method === "readFile") return readOutcome();
+        if (req.method === "writeFile") return writeOutcome();
+        return Promise.resolve(null);
+      },
+      subscribeCode: (l: (e: CodeEvent) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-    subscribeCode: (l: (e: CodeEvent) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 const { FilePreviewSheet } = await import("./FilePreviewSheet");
 const { FileTabView } = await import("./FileTabView");
 const { languageOf, highlightLines, plainTokens, MAX_HIGHLIGHT_LINES } = await import("./highlight");

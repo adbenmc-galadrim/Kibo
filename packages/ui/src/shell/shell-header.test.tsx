@@ -5,19 +5,22 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, NOW, runFixture } from "../agents/fixtures";
 import { draftFixture } from "../ai/draft-fixtures";
+import { apiMock } from "../api-mock";
 
 let drafts: ComponentDraft[] = [];
 const aiListeners = new Set<(e: AiEvent) => void>();
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => (req.method === "listComponentDrafts" ? drafts : null),
-    subscribeAi: (l: (e: AiEvent) => void) => {
-      aiListeners.add(l);
-      return () => aiListeners.delete(l);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => (req.method === "listComponentDrafts" ? drafts : null),
+      subscribeAi: (l: (e: AiEvent) => void) => {
+        aiListeners.add(l);
+        return () => aiListeners.delete(l);
+      },
+      subscribeTopic: () => () => {},
     },
-    subscribeTopic: () => () => {},
-  },
-}));
+  }),
+);
 
 const { ShellHeader } = await import("./ShellHeader");
 

@@ -12,6 +12,7 @@ import {
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, runFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
 const WORKING =
   "opus-dev-1 travaille dans ce worktree. Tes modifications peuvent entrer en conflit avec les siennes.";
@@ -58,12 +59,14 @@ const responses: Partial<Record<CodeRequest["method"], (req: CodeRequest) => unk
   compare: () => ({ commits: [], fileCount: 1 }),
 };
 const agents = (): AgentsState => ({ ...agentsFixture(), runs });
-mock.module("../api", () => ({
-  client: {
-    code: (req: CodeRequest) => Promise.resolve(responses[req.method]?.(req) ?? null),
-    subscribeCode: () => () => {},
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      code: (req: CodeRequest) => Promise.resolve(responses[req.method]?.(req) ?? null),
+      subscribeCode: () => () => {},
+    },
+  }),
+);
 mock.module("../state/use-agents", () => ({
   useAgents: () => agents(),
   useConfig: () => null,

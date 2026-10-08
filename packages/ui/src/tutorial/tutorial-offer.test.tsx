@@ -2,24 +2,27 @@ import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { type RpcRequest, TUTORIAL_NEVER, type TutorialState } from "@kibo/schema";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest["method"][] = [];
 let current: TutorialState = TUTORIAL_NEVER;
 let failStart = false;
 const started: TutorialState = { ...TUTORIAL_NEVER, status: "active", projectId: "demo", startedAt: 1 };
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req.method);
-      if (req.method === "startTutorial")
-        return failStart ? Promise.reject(new Error("boom")) : Promise.resolve(started);
-      if (req.method === "resetTutorial") return Promise.resolve(TUTORIAL_NEVER);
-      return Promise.resolve(current);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req.method);
+        if (req.method === "startTutorial")
+          return failStart ? Promise.reject(new Error("boom")) : Promise.resolve(started);
+        if (req.method === "resetTutorial") return Promise.resolve(TUTORIAL_NEVER);
+        return Promise.resolve(current);
+      },
+      subscribeEvents: () => () => {},
     },
-    subscribeEvents: () => () => {},
-  },
-}));
+  }),
+);
 
 const { TutorialOffer } = await import("./TutorialOffer");
 

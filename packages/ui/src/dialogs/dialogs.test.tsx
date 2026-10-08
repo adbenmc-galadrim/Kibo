@@ -2,20 +2,23 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, INBOX_ID, KiboError, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { inboxMeta } from "../lib/inbox";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
 const snapshots = new Map<string, ProjectSnapshot>();
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return outcome();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { NewPageDialog } = await import("./NewPageDialog");
 const { NewTicketDialog } = await import("./NewTicketDialog");

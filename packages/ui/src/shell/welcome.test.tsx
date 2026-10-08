@@ -2,6 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { Environment, RpcRequest, SandboxStatus } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 let env: Environment;
 const isolated: SandboxStatus = {
@@ -13,16 +14,18 @@ const isolated: SandboxStatus = {
 };
 let sandbox: SandboxStatus = isolated;
 let environmentCalls = 0;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      if (req.method === "getSandboxStatus") return sandbox;
-      environmentCalls += 1;
-      return env;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        if (req.method === "getSandboxStatus") return sandbox;
+        environmentCalls += 1;
+        return env;
+      },
+      subscribeEvents: () => () => {},
     },
-    subscribeEvents: () => () => {},
-  },
-}));
+  }),
+);
 const { Welcome } = await import("./Welcome");
 
 const noop = { onCreate() {}, onImport() {}, onConnectGithub() {}, onTutorial() {} };

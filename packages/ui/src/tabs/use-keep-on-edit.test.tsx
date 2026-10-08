@@ -1,20 +1,23 @@
 import { expect, mock, test } from "bun:test";
 import type { TabsState } from "@kibo/schema";
 import { renderHook } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 import type { TabsAction } from "./tabs-model";
 import type { TabsApi } from "./use-tabs";
 
 type Listener = (projectId: string | null) => void;
 let listener: Listener | null = null;
-mock.module("../api", () => ({
-  client: { rpc: () => Promise.resolve(null) },
-  onWrite: (l: Listener) => {
-    listener = l;
-    return () => {
-      listener = null;
-    };
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: { rpc: () => Promise.resolve(null) },
+    onWrite: (l: Listener) => {
+      listener = l;
+      return () => {
+        listener = null;
+      };
+    },
+  }),
+);
 const { useKeepOnEdit } = await import("./use-keep-on-edit");
 
 const state = (preview: boolean): TabsState => ({

@@ -2,6 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { RunEvent, RunLogEntry, RunView, Worktree } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { agentsFixture, NOW } from "./fixtures";
 import { hook, RUN_LOG } from "./run-log-fixture";
 
@@ -9,14 +10,16 @@ const worktrees: Worktree[] = [
   { path: "/repo", branch: "main", head: "a1", isMain: true },
   { path: "/repo/.kibo/worktrees/kib-14", branch: "kib-14", head: "b2", isMain: false },
 ];
-mock.module("../api", () => ({
-  client: {
-    rpc: () => Promise.resolve(null),
-    code: () => Promise.resolve(worktrees),
-    subscribeCode: () => () => {},
-    subscribe: () => () => {},
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: () => Promise.resolve(null),
+      code: () => Promise.resolve(worktrees),
+      subscribeCode: () => () => {},
+      subscribe: () => () => {},
+    },
+  }),
+);
 
 const { AgentDrawer } = await import("./AgentDrawer");
 const { journalLines, RunJournal } = await import("./RunJournal");

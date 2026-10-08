@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest, type RunState } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import {
   DRAFT_ID,
   draftFixture as details,
@@ -22,18 +23,20 @@ const aiReady = {
   profiles: { assistant: true, generateur: true },
 };
 let aiStatus: unknown = aiReady;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getAiStatus") return aiStatus;
-      const out = answer(req);
-      if (out instanceof Error) throw out;
-      return out;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getAiStatus") return aiStatus;
+        const out = answer(req);
+        if (out instanceof Error) throw out;
+        return out;
+      },
+      subscribeAi: () => () => {},
     },
-    subscribeAi: () => () => {},
-  },
-}));
+  }),
+);
 mock.module("../state/use-agents", () => ({
   useAgents: () => ({ runs: [{ id: "run-7", label: "generateur", profileName: "opus", state: runState }] }),
   useConfig: () => null,

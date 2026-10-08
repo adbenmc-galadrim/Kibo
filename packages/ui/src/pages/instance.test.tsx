@@ -20,6 +20,7 @@ import {
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
+import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
 
 const H = "c".repeat(64);
@@ -29,23 +30,25 @@ let components: ComponentSummary[] = [];
 let answer: (req: RpcRequest) => Promise<unknown> = async () => null;
 let runtime: () => Promise<unknown> = async () => ({ sandboxOrigin: "http://127.0.0.1:4318" });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "listComponents") return Promise.resolve(components);
-      if (req.method === "listDrafts") return Promise.resolve([]);
-      if (req.method === "listComponentDrafts" || req.method === "listProjects") return Promise.resolve([]);
-      if (req.method === "getRuntimeInfo") return runtime();
-      if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
-      if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "listComponents") return Promise.resolve(components);
+        if (req.method === "listDrafts") return Promise.resolve([]);
+        if (req.method === "listComponentDrafts" || req.method === "listProjects") return Promise.resolve([]);
+        if (req.method === "getRuntimeInfo") return runtime();
+        if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
+        if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
+        return answer(req);
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { loadTrusted } = await import("../shell/trusted-loader");
 const { InstanceFrame } = await import("./InstanceFrame");

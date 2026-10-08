@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type Environment, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const environment: Environment = {
   daemon: { address: "127.0.0.1:47831", home: "/Users/adam/.kibo" },
@@ -20,24 +21,26 @@ const environment: Environment = {
 
 const isolated = { kind: "sandbox-exec", available: true, reason: null, fix: null, allowUnsandboxed: false };
 const none = () => () => {};
-mock.module("../api", () => ({
-  client: {
-    pair: () => Promise.resolve(),
-    pairWithCode: () => Promise.resolve(),
-    rpc: async (req: { method: string }) =>
-      req.method === "listComponents" || req.method === "listDrafts"
-        ? []
-        : req.method === "getSandboxStatus"
-          ? isolated
-          : environment,
-    subscribe: none,
-    subscribeEvents: none,
-    subscribeAi: none,
-    onRunChanged: none,
-    onConnection: none,
-    online: () => true,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      pair: () => Promise.resolve(),
+      pairWithCode: () => Promise.resolve(),
+      rpc: async (req: { method: string }) =>
+        req.method === "listComponents" || req.method === "listDrafts"
+          ? []
+          : req.method === "getSandboxStatus"
+            ? isolated
+            : environment,
+      subscribe: none,
+      subscribeEvents: none,
+      subscribeAi: none,
+      onRunChanged: none,
+      onConnection: none,
+      online: () => true,
+    },
+  }),
+);
 
 const { Overview } = await import("./Overview");
 const { ProjectHome } = await import("../pages/ProjectHome");

@@ -9,6 +9,7 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../../api-mock";
 
 const FIGMA_URL = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
 const FILE = "11111111-1111-4111-8111-111111111111";
@@ -88,15 +89,17 @@ const replies: Record<string, (req: RpcRequest) => unknown> = {
     return reply();
   },
 };
-mock.module("../../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      return replies[req.method]?.(req) ?? null;
+mock.module("../../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        return replies[req.method]?.(req) ?? null;
+      },
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { TicketSheet } = await import("../TicketSheet");
 const { TicketTab } = await import("../../pages/TicketTab");

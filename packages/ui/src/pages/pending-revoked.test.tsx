@@ -2,16 +2,19 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { ComponentVersionSummary, RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return Promise.resolve(null);
+      },
     },
-  },
-}));
+  }),
+);
 const { PendingTrust } = await import("./PendingTrust");
 
 const MILESTONES = "milestones";

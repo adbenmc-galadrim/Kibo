@@ -3,6 +3,7 @@ import type { RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 const answer = async (req: RpcRequest): Promise<unknown> => {
@@ -11,16 +12,18 @@ const answer = async (req: RpcRequest): Promise<unknown> => {
   throw new Error(`unexpected ${req.method}`);
 };
 let rpcOutcome: (req: RpcRequest) => Promise<unknown> = answer;
-mock.module("../api", () => ({
-  client: {
-    subscribe: () => () => {},
-    subscribeTopic: () => () => {},
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return rpcOutcome(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      subscribe: () => () => {},
+      subscribeTopic: () => () => {},
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return rpcOutcome(req);
+      },
     },
-  },
-}));
+  }),
+);
 const { WorkspacePage } = await import("./WorkspacePage");
 
 const PNG = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "logo.png", {

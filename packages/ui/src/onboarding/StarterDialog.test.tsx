@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 const ok = {
@@ -11,30 +12,32 @@ const ok = {
   loggedIn: true,
   profiles: { assistant: true, generateur: true },
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getAiStatus") return ok;
-      if (req.method === "listComponents" || req.method === "listDrafts") return [];
-      if (req.method === "command" && req.command.method === "addPage") {
-        if (req.command.title === "Tickets") throw new Error("boom");
-        return {
-          id: `pg-${req.command.title}`,
-          title: req.command.title,
-          kind: req.command.kind,
-          parentId: null,
-        };
-      }
-      return { id: "i1" };
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getAiStatus") return ok;
+        if (req.method === "listComponents" || req.method === "listDrafts") return [];
+        if (req.method === "command" && req.command.method === "addPage") {
+          if (req.command.title === "Tickets") throw new Error("boom");
+          return {
+            id: `pg-${req.command.title}`,
+            title: req.command.title,
+            kind: req.command.kind,
+            parentId: null,
+          };
+        }
+        return { id: "i1" };
+      },
+      subscribe: () => () => {},
+      subscribeAi: () => () => {},
+      onRunChanged: () => () => {},
+      onConnection: () => () => {},
+      online: () => true,
     },
-    subscribe: () => () => {},
-    subscribeAi: () => () => {},
-    onRunChanged: () => () => {},
-    onConnection: () => () => {},
-    online: () => true,
-  },
-}));
+  }),
+);
 
 const { StarterDialog } = await import("./StarterDialog");
 

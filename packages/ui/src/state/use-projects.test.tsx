@@ -7,6 +7,7 @@ import {
   type RpcRequest,
 } from "@kibo/schema";
 import { act, render } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const snapshotOf = (id: string): ProjectSnapshot => ({
   meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6", worktree: null },
@@ -26,17 +27,19 @@ const pending = new Map<string, (s: ProjectSnapshot) => void>();
 let listProjects: () => Promise<ProjectSummary[]> = () => Promise.resolve([]);
 let listCalls = 0;
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getProject") return new Promise((resolve) => pending.set(req.projectId, resolve));
-      if (req.method !== "listProjects") return Promise.resolve(null);
-      listCalls += 1;
-      return listProjects();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getProject") return new Promise((resolve) => pending.set(req.projectId, resolve));
+        if (req.method !== "listProjects") return Promise.resolve(null);
+        listCalls += 1;
+        return listProjects();
+      },
+      subscribe: () => () => {},
     },
-    subscribe: () => () => {},
-  },
-}));
+  }),
+);
 
 const unmockedModule = "./use-projects?unmocked";
 const { useProject, useProjects }: typeof import("./use-projects") = await import(unmockedModule);

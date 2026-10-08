@@ -8,22 +8,25 @@ import {
 } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import type { TicketCommand } from "./use-ticket-command";
 
 const calls: RpcRequest[] = [];
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
-      if (req.method === "getPresence") return [];
-      return null;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
+        if (req.method === "getPresence") return [];
+        return null;
+      },
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { LabelsField } = await import("./LabelsField");
 const { TicketSheet } = await import("../shell/TicketSheet");

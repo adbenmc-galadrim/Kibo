@@ -2,18 +2,21 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { INBOX_ID, type RpcRequest } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { fileTargets, inboxSnapshot } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return Promise.resolve(null);
+      },
     },
-  },
-}));
+  }),
+);
 
 const { InboxPage } = await import("./InboxPage");
 

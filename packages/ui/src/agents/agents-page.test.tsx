@@ -3,20 +3,23 @@ import { type AgentProfile, KiboError, type RpcRequest, runSubject } from "@kibo
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { apiMock } from "../api-mock";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let respond: (req: RpcRequest) => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return respond(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return respond(req);
+      },
     },
-  },
-}));
+  }),
+);
 
 const { AgentsPage } = await import("./AgentsPage");
 const { ProfileSheet } = await import("./ProfileSheet");

@@ -10,21 +10,24 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import type { TabsAction } from "./tabs-model";
 
 const saved: RpcRequest[] = [];
 let stored: TabsState = { tabs: [], activeId: null, recents: [] };
-mock.module("../api", () => ({
-  onWrite: () => () => {},
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getTabs") return Promise.resolve(stored);
-      saved.push(req);
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    onWrite: () => () => {},
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getTabs") return Promise.resolve(stored);
+        saved.push(req);
+        return Promise.resolve(null);
+      },
     },
-  },
-}));
+  }),
+);
 const { TabBar } = await import("./TabBar");
 const { describeTarget } = await import("./tab-title");
 const unmockedModule = "./use-tabs?unmocked";

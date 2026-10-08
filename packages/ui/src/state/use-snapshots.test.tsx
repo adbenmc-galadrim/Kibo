@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
 import { renderHook, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const snapshot = (id: string): ProjectSnapshot => ({
   meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6", worktree: null },
@@ -16,15 +17,17 @@ const snapshot = (id: string): ProjectSnapshot => ({
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 const requested: string[] = [];
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getProject") requested.push(req.projectId);
-      return req.method === "getProject" ? Promise.resolve(snapshot(req.projectId)) : Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getProject") requested.push(req.projectId);
+        return req.method === "getProject" ? Promise.resolve(snapshot(req.projectId)) : Promise.resolve(null);
+      },
+      subscribe: () => () => {},
     },
-    subscribe: () => () => {},
-  },
-}));
+  }),
+);
 const unmockedModule = "./use-snapshots?unmocked";
 const { useSnapshots }: typeof import("./use-snapshots") = await import(unmockedModule);
 

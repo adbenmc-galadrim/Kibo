@@ -13,6 +13,7 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 const HASH = `${"3f9a".padEnd(60, "0")}c21e`;
@@ -21,31 +22,33 @@ let drafts: DraftSummary[] = [];
 let approve: () => Promise<unknown> = () => Promise.resolve(null);
 let add: () => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "listMarketSources") return Promise.resolve([]);
-      calls.push(req);
-      if (req.method === "listComponents") return components();
-      if (req.method === "listDrafts") return Promise.resolve(drafts);
-      if (req.method === "approveComponent") return approve();
-      if (req.method === "getGithubConnectOptions")
-        return Promise.resolve({ ghAvailable: false, ghLogin: null, mode: null });
-      if (req.method === "getAiStatus")
-        return Promise.resolve({
-          available: false,
-          reason: "missing",
-          version: null,
-          loggedIn: null,
-          profiles: { assistant: true, generateur: true },
-        });
-      if (req.method === "listComponentDrafts") return Promise.resolve([]);
-      return add();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "listMarketSources") return Promise.resolve([]);
+        calls.push(req);
+        if (req.method === "listComponents") return components();
+        if (req.method === "listDrafts") return Promise.resolve(drafts);
+        if (req.method === "approveComponent") return approve();
+        if (req.method === "getGithubConnectOptions")
+          return Promise.resolve({ ghAvailable: false, ghLogin: null, mode: null });
+        if (req.method === "getAiStatus")
+          return Promise.resolve({
+            available: false,
+            reason: "missing",
+            version: null,
+            loggedIn: null,
+            profiles: { assistant: true, generateur: true },
+          });
+        if (req.method === "listComponentDrafts") return Promise.resolve([]);
+        return add();
+      },
+      subscribe: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { AddComponentDialog } = await import("./AddComponentDialog");
 const { TrustDialog } = await import("./TrustDialog");

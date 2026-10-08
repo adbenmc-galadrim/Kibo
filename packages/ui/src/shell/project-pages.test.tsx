@@ -3,17 +3,20 @@ import { DEFAULT_WORKFLOW, KiboError, type Page, type ProjectSnapshot, type RpcR
 import { SidebarMenu, SidebarMenuItem, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        return answer(req);
+      },
     },
-  },
-}));
+  }),
+);
 const { ProjectPages } = await import("./ProjectPages");
 
 const page = (id: string, title: string, parentId: string | null): Page => ({

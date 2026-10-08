@@ -3,26 +3,29 @@ import { KiboError, type RpcRequest } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { aiReady, burndownManifest, DRAFT_ID, draftFixture as details } from "../ai/draft-fixtures";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getAiStatus") return aiReady;
-      if (req.method === "getAgents" || req.method === "getConfig") return null;
-      const out = answer(req);
-      if (out instanceof Error) throw out;
-      return out;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getAiStatus") return aiReady;
+        if (req.method === "getAgents" || req.method === "getConfig") return null;
+        const out = answer(req);
+        if (out instanceof Error) throw out;
+        return out;
+      },
+      subscribeAi: () => () => {},
+      subscribeTopic: () => () => {},
+      subscribe: () => () => {},
+      onConnection: () => () => {},
+      online: () => true,
     },
-    subscribeAi: () => () => {},
-    subscribeTopic: () => () => {},
-    subscribe: () => () => {},
-    onConnection: () => () => {},
-    online: () => true,
-  },
-}));
+  }),
+);
 
 const { CreateComponentDialog } = await import("./CreateComponentDialog");
 

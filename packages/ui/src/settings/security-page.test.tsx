@@ -8,6 +8,7 @@ import {
 } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let remote: RemoteAccessStatus;
@@ -43,40 +44,42 @@ const on: RemoteAccessStatus = {
 };
 const DAY = 24 * 3600_000;
 
-mock.module("../api", () => ({
-  client: {
-    subscribe: () => () => {},
-    subscribeEvents: () => () => {},
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      switch (req.method) {
-        case "getRemoteAccess":
-          return remote;
-        case "enableRemoteAccess":
-          if (enableFails) throw enableFails;
-          remote = on;
-          return on;
-        case "disableRemoteAccess":
-          remote = off;
-          return null;
-        case "listSessions":
-          return sessions;
-        case "revokeSession":
-          sessions = sessions.filter((s) => s.id !== req.id);
-          return null;
-        case "getSandboxStatus":
-          return sandbox;
-        case "setAllowUnsandboxed":
-          sandbox = { ...sandbox, allowUnsandboxed: req.allow };
-          return sandbox;
-        case "createPairingCode":
-          return { code: "K7Q4M2", expiresAt: codeExpiresAt };
-        default:
-          throw new Error(`unexpected ${req.method}`);
-      }
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      subscribe: () => () => {},
+      subscribeEvents: () => () => {},
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        switch (req.method) {
+          case "getRemoteAccess":
+            return remote;
+          case "enableRemoteAccess":
+            if (enableFails) throw enableFails;
+            remote = on;
+            return on;
+          case "disableRemoteAccess":
+            remote = off;
+            return null;
+          case "listSessions":
+            return sessions;
+          case "revokeSession":
+            sessions = sessions.filter((s) => s.id !== req.id);
+            return null;
+          case "getSandboxStatus":
+            return sandbox;
+          case "setAllowUnsandboxed":
+            sandbox = { ...sandbox, allowUnsandboxed: req.allow };
+            return sandbox;
+          case "createPairingCode":
+            return { code: "K7Q4M2", expiresAt: codeExpiresAt };
+          default:
+            throw new Error(`unexpected ${req.method}`);
+        }
+      },
     },
-  },
-}));
+  }),
+);
 const { SecurityPage } = await import("./SecurityPage");
 
 beforeEach(() => {

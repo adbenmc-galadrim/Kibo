@@ -14,6 +14,7 @@ import {
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { burndownManifest, draftFixture } from "../ai/draft-fixtures";
+import { apiMock } from "../api-mock";
 
 const H = "a".repeat(64);
 const calls: RpcRequest[] = [];
@@ -28,35 +29,37 @@ let publish: () => Promise<PublishResult> = async () => {
 };
 let action: (req: RpcRequest) => Promise<unknown> = async () => null;
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "listComponents") return Promise.resolve(components);
-      if (req.method === "listDrafts") return Promise.resolve(drafts);
-      if (req.method === "listComponentDrafts") return Promise.resolve(componentDrafts);
-      if (req.method === "listMarketStatus") return Promise.resolve([]);
-      if (req.method === "getSandboxStatus")
-        return Promise.resolve({
-          kind: "bwrap",
-          available: true,
-          reason: null,
-          fix: null,
-          allowUnsandboxed: false,
-        });
-      if (req.method === "listProjects")
-        return Promise.resolve([
-          { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#F97316", counts: {} },
-        ]);
-      if (req.method === "previewPublish") return preview();
-      if (req.method === "publishComponent") return publish();
-      return action(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "listComponents") return Promise.resolve(components);
+        if (req.method === "listDrafts") return Promise.resolve(drafts);
+        if (req.method === "listComponentDrafts") return Promise.resolve(componentDrafts);
+        if (req.method === "listMarketStatus") return Promise.resolve([]);
+        if (req.method === "getSandboxStatus")
+          return Promise.resolve({
+            kind: "bwrap",
+            available: true,
+            reason: null,
+            fix: null,
+            allowUnsandboxed: false,
+          });
+        if (req.method === "listProjects")
+          return Promise.resolve([
+            { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#F97316", counts: {} },
+          ]);
+        if (req.method === "previewPublish") return preview();
+        if (req.method === "publishComponent") return publish();
+        return action(req);
+      },
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+      subscribeAi: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-    subscribeAi: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { ComponentsPage } = await import("./ComponentsPage");
 

@@ -11,6 +11,7 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: CodeRequest[] = [];
 const commit = (sha: string, subject: string, pushed: boolean) => ({
@@ -76,15 +77,17 @@ const responses: Partial<Record<CodeRequest["method"], (req: CodeRequest) => unk
   prForBranch: () => null,
   commitDefaults: () => ({ ticketId: null, ticketKey: null, message: "", prTitle: "", prBody: "" }),
 };
-mock.module("../api", () => ({
-  client: {
-    code: (req: CodeRequest) => {
-      calls.push(req);
-      return Promise.resolve(responses[req.method]?.(req) ?? null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      code: (req: CodeRequest) => {
+        calls.push(req);
+        return Promise.resolve(responses[req.method]?.(req) ?? null);
+      },
+      subscribeCode: (_: (e: CodeEvent) => void) => () => {},
     },
-    subscribeCode: (_: (e: CodeEvent) => void) => () => {},
-  },
-}));
+  }),
+);
 const unmockedModule = "./ChangesView?unmocked";
 const { ChangesView }: typeof import("./ChangesView") = await import(unmockedModule);
 

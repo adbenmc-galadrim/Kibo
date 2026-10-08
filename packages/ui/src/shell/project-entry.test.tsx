@@ -2,8 +2,9 @@ import { expect, mock, test } from "bun:test";
 import type { ProjectSummary } from "@kibo/schema";
 import { SidebarMenu, SidebarMenuItem, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { render, screen } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
-mock.module("../api", () => ({ client: { rpc: async () => null } }));
+mock.module("../api", () => apiMock({ client: { rpc: async () => null } }));
 const { ProjectEntry } = await import("./ProjectEntry");
 
 const summary = (demo: boolean): ProjectSummary => ({

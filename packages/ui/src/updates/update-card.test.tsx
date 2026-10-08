@@ -3,15 +3,18 @@ import type { RpcRequest, Topic } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 import type { UpdateInfo, UpdateStatus } from "./update-state";
 import { createUpdateStore, type UpdaterPort, type UpdateSnapshot } from "./update-store";
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => Promise.resolve(req.method === "getAgents" ? agentsFixture() : []),
-    subscribeTopic: (_: Topic, __: () => void) => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => Promise.resolve(req.method === "getAgents" ? agentsFixture() : []),
+      subscribeTopic: (_: Topic, __: () => void) => () => undefined,
+    },
+  }),
+);
 mock.module("../state/use-agents", () => ({ useAgents: () => agentsFixture() }));
 const { UpdateCard, UpdatePanel } = await import("./UpdateCard");
 

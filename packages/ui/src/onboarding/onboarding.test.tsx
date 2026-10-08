@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { AiEvent, RpcRequest, RunState } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 type RunChangedEvent = { type: "run.changed"; runId: string; state: RunState };
@@ -17,28 +18,30 @@ const ok = {
   loggedIn: true,
   profiles: { assistant: true, generateur: true },
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getAiStatus") return ok;
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getAiStatus") return ok;
+        return answer(req);
+      },
+      subscribeAi: (l: (e: AiEvent) => void) => {
+        aiListeners.add(l);
+        return () => aiListeners.delete(l);
+      },
+      onRunChanged: (l: (e: RunChangedEvent) => void) => {
+        runListeners.add(l);
+        return () => runListeners.delete(l);
+      },
+      onConnection: (l: () => void) => {
+        connectionListeners.add(l);
+        return () => connectionListeners.delete(l);
+      },
+      online: () => online,
     },
-    subscribeAi: (l: (e: AiEvent) => void) => {
-      aiListeners.add(l);
-      return () => aiListeners.delete(l);
-    },
-    onRunChanged: (l: (e: RunChangedEvent) => void) => {
-      runListeners.add(l);
-      return () => runListeners.delete(l);
-    },
-    onConnection: (l: () => void) => {
-      connectionListeners.add(l);
-      return () => connectionListeners.delete(l);
-    },
-    online: () => online,
-  },
-}));
+  }),
+);
 const emit = (e: AiEvent | RunChangedEvent) => {
   if (e.type === "run.changed") for (const l of runListeners) l(e);
   else for (const l of aiListeners) l(e);

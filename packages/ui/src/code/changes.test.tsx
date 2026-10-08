@@ -12,6 +12,7 @@ import {
 } from "@kibo/schema";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: CodeRequest[] = [];
 const listeners = new Set<(e: CodeEvent) => void>();
@@ -118,20 +119,22 @@ const responses: Partial<Record<CodeRequest["method"], (req: CodeRequest) => unk
   compare: () => ({ commits: [], fileCount: 3 }),
   createPr: () => ({ number: 7, url: "https://github.com/kibo/test/pull/7", state: "draft" }),
 };
-mock.module("../api", () => ({
-  client: {
-    code: (req: CodeRequest) => {
-      calls.push(req);
-      const override = overrides[req.method];
-      if (override) return override();
-      return Promise.resolve(responses[req.method]?.(req) ?? null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      code: (req: CodeRequest) => {
+        calls.push(req);
+        const override = overrides[req.method];
+        if (override) return override();
+        return Promise.resolve(responses[req.method]?.(req) ?? null);
+      },
+      subscribeCode: (l: (e: CodeEvent) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-    subscribeCode: (l: (e: CodeEvent) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 const unmockedModule = "./ChangesView?unmocked";
 const { ChangesView }: typeof import("./ChangesView") = await import(unmockedModule);
 

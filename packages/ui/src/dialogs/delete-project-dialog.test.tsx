@@ -3,18 +3,21 @@ import { KiboError, type ProjectSnapshot, type ProjectSummary, type RpcRequest }
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (fail) throw fail;
-      return null;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (fail) throw fail;
+        return null;
+      },
     },
-  },
-}));
+  }),
+);
 const { DeleteProjectDialog } = await import("./DeleteProjectDialog");
 
 const project: ProjectSummary = {

@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
@@ -12,21 +13,23 @@ const ok = {
   loggedIn: true,
   profiles: { assistant: true, generateur: true },
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getAiStatus") return ok;
-      if (req.method === "listComponents" || req.method === "listDrafts") return [];
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getAiStatus") return ok;
+        if (req.method === "listComponents" || req.method === "listDrafts") return [];
+        return answer(req);
+      },
+      subscribe: () => () => {},
+      subscribeAi: () => () => {},
+      onRunChanged: () => () => {},
+      onConnection: () => () => {},
+      online: () => true,
     },
-    subscribe: () => () => {},
-    subscribeAi: () => () => {},
-    onRunChanged: () => () => {},
-    onConnection: () => () => {},
-    online: () => true,
-  },
-}));
+  }),
+);
 
 const { NewProjectDialog } = await import("./NewProjectDialog");
 

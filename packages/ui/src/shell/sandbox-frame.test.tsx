@@ -2,6 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { Capability, FileRef, HostToFrame, Phase7Event, RpcRequest, Selection } from "@kibo/schema";
 import { createSignal, focusApi, type NewTicketDefaults, selectionApi, visibilityApi } from "@kibo/sdk";
 import { act, render } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
 import type { Host } from "./Host";
 
@@ -11,23 +12,25 @@ let refusalFailure: Error | null = null;
 const listeners = new Set<(projectId: string | null) => void>();
 const eventListeners = new Set<(event: Phase7Event) => void>();
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      requests.push(req);
-      if (req.method === "reportComponentRefusal" && refusalFailure) return Promise.reject(refusalFailure);
-      return Promise.resolve(["t1"]);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        requests.push(req);
+        if (req.method === "reportComponentRefusal" && refusalFailure) return Promise.reject(refusalFailure);
+        return Promise.resolve(["t1"]);
+      },
+      subscribe: (listener: (projectId: string | null) => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+      subscribeEvents: (listener: (event: Phase7Event) => void) => {
+        eventListeners.add(listener);
+        return () => eventListeners.delete(listener);
+      },
     },
-    subscribe: (listener: (projectId: string | null) => void) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    subscribeEvents: (listener: (event: Phase7Event) => void) => {
-      eventListeners.add(listener);
-      return () => eventListeners.delete(listener);
-    },
-  },
-}));
+  }),
+);
 
 const unmockedModule = "./SandboxFrame?unmocked";
 const { SandboxFrame }: typeof import("./SandboxFrame") = await import(unmockedModule);

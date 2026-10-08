@@ -8,24 +8,27 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let syncState: SyncState = { connected: true, bindings: [], pending: [], errors: [] };
 let syncFailure: Error | null = null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getSyncState") return syncState;
-      if (req.method === "getSyncStatus")
-        return { state: "online", user: { id: "u-adam", name: "Adam" }, projects: [] };
-      if (syncFailure) throw syncFailure;
-      return { pulled: 0, created: 0, updated: 0, pushed: 0, conflicts: 0 };
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getSyncState") return syncState;
+        if (req.method === "getSyncStatus")
+          return { state: "online", user: { id: "u-adam", name: "Adam" }, projects: [] };
+        if (syncFailure) throw syncFailure;
+        return { pulled: 0, created: 0, updated: 0, pushed: 0, conflicts: 0 };
+      },
+      subscribeIntegrations: () => () => undefined,
+      subscribeEvents: () => () => undefined,
     },
-    subscribeIntegrations: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 const { SourceHeader } = await import("./SourceHeader");
 
 const binding = {

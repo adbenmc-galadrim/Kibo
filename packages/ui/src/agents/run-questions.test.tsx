@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type AgentsState, KiboError, type RpcRequest, type RunQuestions, type RunView } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { agentsFixture, kiboProject, NOW, runFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
@@ -12,18 +13,20 @@ const project = () => {
   return { ...snapshot, sync: { ...snapshot.sync, access } };
 };
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "deliverAnswers") return deliver();
-      return Promise.resolve(req.method === "getProject" ? project() : null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "deliverAnswers") return deliver();
+        return Promise.resolve(req.method === "getProject" ? project() : null);
+      },
+      subscribe: () => () => {},
+      code: () => Promise.resolve([]),
+      subscribeCode: () => () => {},
     },
-    subscribe: () => () => {},
-    code: () => Promise.resolve([]),
-    subscribeCode: () => () => {},
-  },
-}));
+  }),
+);
 
 const unmockedProjects = "../state/use-projects?unmocked";
 const realProjects: typeof import("../state/use-projects") = await import(unmockedProjects);

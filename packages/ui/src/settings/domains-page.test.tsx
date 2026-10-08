@@ -4,19 +4,22 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { configFixture, projectsFixture } from "../agents/fixtures";
 import { formatTokens } from "../agents/format";
+import { apiMock } from "../api-mock";
 import { previewBlocks } from "./preview";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return outcome();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { DomainsPage } = await import("./DomainsPage");
 const { SettingsNav } = await import("./SettingsNav");
