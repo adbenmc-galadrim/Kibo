@@ -85,7 +85,8 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   const second = await withClient((c) => applyDesired(c, desired, options));
   expect(second.counts.lines).toEqual([]);
 
-  const projectId = first.projectId ?? "";
+  const projectId = first.projectId;
+  if (projectId === null) throw new Error("the import creates the project");
   const snap = await withClient((c) => c.rpc({ method: "getProject", projectId }));
   expect(snap.meta).toMatchObject({ name: "Emis", key: "EMIS", folder });
   expect(snap.pages.map((p) => p.title)).toEqual(["Tableau de bord", "Plan", "Graphe", "Notes"]);
@@ -93,11 +94,12 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   const graphs = snap.instances.filter((i) => i.component.startsWith("graph@"));
   expect(graphs.map((i) => i.config)).toEqual([{ filter: "all" }, { filter: "all" }]);
   const c12 = snap.tickets.find((t) => t.title.startsWith("C1-2 · "));
+  if (!c12) throw new Error("the import creates C1-2");
   expect(c12).toMatchObject({
     statusId: "todo",
     labels: ["area:api", "area:web", "phase:p1", "sprint:s2"],
   });
-  expect(c12?.externalRefs).toContainEqual({
+  expect(c12.externalRefs).toContainEqual({
     kind: "git_branch",
     branch: "feat/connexion",
     base: "spike/sso",
@@ -120,7 +122,7 @@ test("imports the fixture once, then finds everything, then repairs a missing im
       projectId,
       command: {
         method: "removeExternalRef",
-        ticketId: c12?.id ?? "",
+        ticketId: c12.id,
         kind: "import_ref",
         key: "plan:C1-2",
       },
@@ -139,18 +141,25 @@ test("an instance left with an empty config gets the wanted config; a configured
   const notes = join(home, "notes");
   const options = { folder: join(home, "emis"), notesDir: notes, dryRun: false, manifestVersions: VERSIONS };
   const before = await withClient((c) => c.rpc({ method: "getProject", projectId }));
-  const [dashboardGraph, viewGraph] = before.instances.filter((i) => i.component.startsWith("graph@"));
+  const graphOn = (title: string) => {
+    const page = before.pages.find((p) => p.title === title);
+    const instance = before.instances.find((i) => i.pageId === page?.id && i.component.startsWith("graph@"));
+    if (!instance) throw new Error(`no graph instance on ${title}`);
+    return instance.id;
+  };
+  const dashboardGraph = graphOn("Tableau de bord");
+  const viewGraph = graphOn("Graphe");
   const setConfig = (instanceId: string, config: Record<string, unknown>) =>
     withClient((c) =>
       c.rpc({ method: "command", projectId, command: { method: "setInstanceConfig", instanceId, config } }),
     );
-  await setConfig(dashboardGraph?.id ?? "", {});
-  await setConfig(viewGraph?.id ?? "", { filter: "mine-and-agents", hideDone: true });
+  await setConfig(dashboardGraph, {});
+  await setConfig(viewGraph, { filter: "mine-and-agents", hideDone: true });
   const run = await withClient((c) => applyDesired(c, fixtureDesired(notes), options));
   expect(run.counts).toMatchObject({ created: 0, updated: 1 });
   expect(run.changes).toContainEqual({ kind: "updated", what: "page Tableau de bord", detail: "config" });
   const after = await withClient((c) => c.rpc({ method: "getProject", projectId }));
-  const config = (id: string | undefined) => after.instances.find((i) => i.id === id)?.config;
-  expect(config(dashboardGraph?.id)).toEqual({ filter: "all" });
-  expect(config(viewGraph?.id)).toEqual({ filter: "mine-and-agents", hideDone: true });
+  const config = (id: string) => after.instances.find((i) => i.id === id)?.config;
+  expect(config(dashboardGraph)).toEqual({ filter: "all" });
+  expect(config(viewGraph)).toEqual({ filter: "mine-and-agents", hideDone: true });
 }, 60_000);
