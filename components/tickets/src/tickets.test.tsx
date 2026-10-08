@@ -401,3 +401,29 @@ test("labels: a project with more distinct labels than a ticket may hold shows t
   const menu = await screen.findByRole("menu");
   expect(within(menu).getAllByRole("menuitemcheckbox")).toHaveLength(30);
 });
+
+test("a row shows its open questions after the waiting badge, never a zero", async () => {
+  const m = createMockSdk(manifest, { seed });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByText("KIB-1");
+  expect(screen.queryByText(/questions?$/)).toBeNull();
+  const sync = m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? "";
+  act(() => {
+    for (const title of ["Port du démon ?", "Jeton par appareil ?"])
+      m.run({
+        method: "createQuestion",
+        ticketId: sync,
+        title,
+        createdBy: { kind: "agent", ref: "opus-dev" },
+      });
+  });
+  const badge = (await screen.findByText("2 questions")).closest("[data-slot=badge]");
+  expect(badge?.classList.contains("hidden")).toBe(true);
+  expect(badge?.classList.contains("@md:inline-flex")).toBe(true);
+  expect(badge?.className).toContain("text-orange-600");
+  expect(screen.getAllByText(/questions?$/)).toHaveLength(1);
+});

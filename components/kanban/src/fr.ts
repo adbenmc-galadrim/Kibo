@@ -31,6 +31,7 @@ export const fr = {
   },
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
   waitingOn: (key: string) => `attend ${key}`,
+  questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
   ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans verdict" },
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
