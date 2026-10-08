@@ -382,3 +382,22 @@ test("labels: the menu is disabled when the project has no label", async () => {
   await screen.findByText("Arbre des pages");
   expect(screen.getByRole("button", { name: "Étiquettes" }).hasAttribute("disabled")).toBe(true);
 });
+
+test("labels: a project with more distinct labels than a ticket may hold shows the tree and the menu", async () => {
+  const m = createMockSdk(manifest, {
+    seed: (run) => {
+      for (let t = 0; t < 3; t++)
+        run({
+          method: "createTicket",
+          title: `Lot ${t}`,
+          labels: Array.from({ length: 10 }, (_, i) => `area:t${t}-${i}`),
+        });
+    },
+  });
+  mount(m);
+  const user = userEvent.setup();
+  await screen.findByText("Lot 0");
+  await user.click(screen.getByRole("button", { name: "Étiquettes" }));
+  const menu = await screen.findByRole("menu");
+  expect(within(menu).getAllByRole("menuitemcheckbox")).toHaveLength(30);
+});

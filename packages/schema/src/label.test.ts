@@ -38,3 +38,8 @@ test("labels group by prefix, free labels first", () => {
     { prefix: "sprint", labels: ["sprint:s2"] },
   ]);
 });
+
+test("groupLabels accepts the union of a project's labels beyond the per-ticket limit", () => {
+  const many = Array.from({ length: LABEL_MAX * 2 }, (_, i) => `area:a${String(i).padStart(2, "0")}`);
+  expect(groupLabels(many)).toEqual([{ prefix: "area", labels: many }]);
+});

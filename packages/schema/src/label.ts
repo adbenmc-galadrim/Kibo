@@ -6,7 +6,7 @@ export const LabelName = z.string().regex(/^[a-z0-9][a-z0-9:_./-]{0,39}$/);
 export const Labels = z.array(LabelName).max(LABEL_MAX);
 export type Labels = z.infer<typeof Labels>;
 
-export function normalizeLabels(labels: readonly string[]): string[] {
+function distinctLabels(labels: readonly string[]): string[] {
   const seen = new Set<string>();
   for (const raw of labels) {
     const label = raw.trim();
@@ -14,8 +14,13 @@ export function normalizeLabels(labels: readonly string[]): string[] {
       throw new KiboError("INVALID_INPUT", `invalid label ${JSON.stringify(raw)}`);
     seen.add(label);
   }
-  if (seen.size > LABEL_MAX) throw new KiboError("INVALID_INPUT", `at most ${LABEL_MAX} labels`);
   return [...seen].sort();
+}
+
+export function normalizeLabels(labels: readonly string[]): string[] {
+  const distinct = distinctLabels(labels);
+  if (distinct.length > LABEL_MAX) throw new KiboError("INVALID_INPUT", `at most ${LABEL_MAX} labels`);
+  return distinct;
 }
 
 export function labelPrefix(label: string): string | null {
@@ -24,7 +29,7 @@ export function labelPrefix(label: string): string | null {
 }
 
 export function groupLabels(labels: readonly string[]): { prefix: string | null; labels: string[] }[] {
-  const sorted = normalizeLabels(labels);
+  const sorted = distinctLabels(labels);
   const free = sorted.filter((l) => labelPrefix(l) === null);
   const prefixes = [...new Set(sorted.map(labelPrefix).filter((p): p is string => p !== null))].sort();
   const groups = prefixes.map((prefix) => ({
