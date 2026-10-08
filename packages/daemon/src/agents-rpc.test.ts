@@ -38,6 +38,7 @@ function questionsStub(calls: string[], undelivered: Question[] = [], blocking: 
         return blocking;
       },
     },
+    projectIds: () => ["p1"],
     viewer: () => HUMAN.ref,
     assertWritable: (projectId) => calls.push(`writable:${projectId}`),
   };

@@ -204,6 +204,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const agentData = createDataPort(docs, settings);
   const questions: AgentQuestions = {
     data: agentData,
+    projectIds: () => docs.projectIds(),
     viewer: (projectId) => docs.identity(projectId),
     assertWritable: (projectId) => docs.assertWritable(projectId),
   };

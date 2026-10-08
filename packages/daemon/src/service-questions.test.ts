@@ -192,3 +192,9 @@ test("open questions stay on the run that asked them, answers to deliver follow 
     { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
   ]);
 });
+
+test("the agents state still answers when a run belongs to a removed project", () => {
+  const { s, run, runs } = setup("done");
+  runs.push({ ...run, id: "r9", seq: 9, projectId: "removed", ticketId: "t9" });
+  expect(call(s, { method: "getAgents" }).questions).toEqual([]);
+});

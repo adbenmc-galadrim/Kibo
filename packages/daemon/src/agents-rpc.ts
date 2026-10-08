@@ -25,6 +25,7 @@ export type AgentQuestions = {
     AgentDataPort,
     "runQuestions" | "undeliveredAnswers" | "markAnswersDelivered" | "answerRunQuestion"
   >;
+  projectIds(): readonly string[];
   viewer(projectId: string): string;
   assertWritable(projectId: string): void;
 };
@@ -46,8 +47,9 @@ export function deliverTicketAnswers(
 
 function agentsState(port: AgentsPort, q: AgentQuestions) {
   const state = port.state();
+  const known = new Set(q.projectIds());
   const undeliveredOf = (projectId: string, ticketId: string) =>
-    q.data.undeliveredAnswers(projectId, ticketId).length;
+    known.has(projectId) ? q.data.undeliveredAnswers(projectId, ticketId).length : 0;
   return { ...state, questions: runTallies(q.data.runQuestions(), state.runs, undeliveredOf) };
 }
 
