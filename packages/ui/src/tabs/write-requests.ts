@@ -7,6 +7,7 @@ const COMPONENT_WRITES: ReadonlySet<ComponentCall["kind"]> = new Set<ComponentCa
   "notes.rename",
   "notes.remove",
   "notes.attach",
+  "questions.deliver",
 ]);
 
 const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["method"]>([

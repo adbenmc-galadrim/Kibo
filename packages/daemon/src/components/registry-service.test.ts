@@ -199,6 +199,7 @@ describe("listing and uninstall", () => {
       ["viewer-3d", true],
       ["snake", true],
       ["mockup", true],
+      ["questions", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -231,6 +232,7 @@ describe("listing and uninstall", () => {
       "viewer-3d",
       "snake",
       "mockup",
+      "questions",
     ]);
   });
 });

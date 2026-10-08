@@ -39,6 +39,7 @@ test("project commands and code writes count, reads and component data do not", 
   expect(isProjectWrite(notes({ kind: "notes.create", path: "a.md", markdown: "" }))).toBe(true);
   expect(isProjectWrite(notes({ kind: "notes.read", path: "a.md" }))).toBe(false);
   expect(isProjectWrite(notes({ kind: "action", name: "x", input: null }))).toBe(false);
+  expect(isProjectWrite(notes({ kind: "questions.deliver", ticketId: "t1" }))).toBe(true);
   const hash = "0".repeat(40);
   expect(
     isCodeWrite({

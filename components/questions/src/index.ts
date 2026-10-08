@@ -4,4 +4,4 @@ import manifestJson from "../kibo.component.json";
 import { frLazy } from "./fr-lazy";
 
 export const manifest = ComponentManifest.parse(manifestJson);
-export const Component = lazyPanel(() => import("./TicketsTree").then((m) => m.TicketsTree), frLazy);
+export const Component = lazyPanel(() => import("./QuestionsPanel").then((m) => m.QuestionsPanel), frLazy);

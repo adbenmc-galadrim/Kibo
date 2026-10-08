@@ -28,6 +28,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource|viewer-3d\/src\/Viewer3d|snake\/src\/Snake|mockup\/src\/Mockup)\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
+  /\/components\/questions\/src\/(QuestionsPanel|QuestionsView|QuestionsWidget)\.tsx$/,
+  /\/packages\/ui\/src\/i18n\/fr-questions\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
   /\/packages\/ui\/src\/dialogs\/(NotesDirDialog|TrustDialog|OpenViewDialog|RenamePageDialog)\.tsx$/,

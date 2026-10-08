@@ -23,6 +23,7 @@
     "@kibo/component-mcp-source": "workspace:*",
     "@kibo/component-mockup": "workspace:*",
     "@kibo/component-notes": "workspace:*",
+    "@kibo/component-questions": "workspace:*",
     "@kibo/component-snake": "workspace:*",
     "@kibo/component-tickets": "workspace:*",
     "@kibo/component-viewer-3d": "workspace:*",

@@ -9,6 +9,7 @@ import {
   Gamepad,
   LayoutDashboard,
   ListTree,
+  MessageCircleQuestion,
   Network,
   Plug,
   SquareKanban,
@@ -22,6 +23,7 @@ test("built-in components resolve by exact id@version", () => {
     "mcp-source@1.0.0",
     "mockup@1.0.0",
     "notes@1.0.0",
+    "questions@1.0.0",
     "snake@1.0.0",
     "tickets@1.0.0",
     "viewer-3d@1.0.0",
@@ -46,10 +48,11 @@ test("a page shows the icon of its kind, or of the component a view holds", () =
   expect(pageIcon(view, [])).toBe(AppWindow);
   expect(pageIcon(view, [kanban])).toBe(SquareKanban);
   expect(pageIcon(view, [{ ...kanban, component: "tickets@1.0.0" }])).toBe(ListTree);
+  expect(pageIcon(view, [{ ...kanban, component: "questions@1.0.0" }])).toBe(MessageCircleQuestion);
   expect(pageIcon(view, [{ ...kanban, component: "nope@1.0.0" }])).toBe(Blocks);
 });
 
-test("graph, notes, the MCP source and the snake are built-ins with their icons", () => {
+test("graph, notes, the MCP source, the snake and questions are built-ins with their icons", () => {
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([
     "kanban",
     "tickets",
@@ -59,6 +62,7 @@ test("graph, notes, the MCP source and the snake are built-ins with their icons"
     "viewer-3d",
     "snake",
     "mockup",
+    "questions",
   ]);
   expect(componentIcon("mcp-source@1.0.0")).toBe(Plug);
   expect(componentIcon("viewer-3d@1.0.0")).toBe(Box);
@@ -66,6 +70,7 @@ test("graph, notes, the MCP source and the snake are built-ins with their icons"
   expect(componentIcon("mockup@1.0.0")).toBe(Frame);
   expect(componentIcon("graph@1.0.0")).toBe(Network);
   expect(componentIcon("notes@1.0.0")).toBe(FileText);
+  expect(componentIcon("questions@1.0.0")).toBe(MessageCircleQuestion);
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([...BUILTIN_IDS]);
 });
 
@@ -82,6 +87,7 @@ test("every built-in declares a size minimum that fits its formats", () => {
     "viewer-3d": { w: 3, h: 3 },
     snake: { w: 3, h: 3 },
     mockup: { w: 3, h: 3 },
+    questions: { w: 4, h: 3 },
   });
   for (const c of BUILTIN_COMPONENTS) expect(sizeIssue(c.manifest)).toBeNull();
 });

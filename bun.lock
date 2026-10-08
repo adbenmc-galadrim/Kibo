@@ -157,6 +157,26 @@
         "react": "19.1.1",
       },
     },
+    "components/questions": {
+      "name": "@kibo/component-questions",
+      "version": "1.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "lucide-react": "1.48.0",
+      },
+      "devDependencies": {
+        "@testing-library/dom": "10.4.2",
+        "@testing-library/react": "16.3.0",
+        "@testing-library/user-event": "14.6.1",
+        "@types/react": "19.1.13",
+        "fast-check": "4.3.0",
+        "react": "19.1.1",
+      },
+      "peerDependencies": {
+        "react": "19.1.1",
+      },
+    },
     "components/snake": {
       "name": "@kibo/component-snake",
       "version": "1.0.0",
@@ -369,6 +389,7 @@
         "@kibo/component-mcp-source": "workspace:*",
         "@kibo/component-mockup": "workspace:*",
         "@kibo/component-notes": "workspace:*",
+        "@kibo/component-questions": "workspace:*",
         "@kibo/component-snake": "workspace:*",
         "@kibo/component-tickets": "workspace:*",
         "@kibo/component-viewer-3d": "workspace:*",
@@ -687,6 +708,8 @@
     "@kibo/component-mockup": ["@kibo/component-mockup@workspace:components/mockup"],
 
     "@kibo/component-notes": ["@kibo/component-notes@workspace:components/notes"],
+
+    "@kibo/component-questions": ["@kibo/component-questions@workspace:components/questions"],
 
     "@kibo/component-snake": ["@kibo/component-snake@workspace:components/snake"],
 
