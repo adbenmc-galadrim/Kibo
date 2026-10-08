@@ -2,6 +2,7 @@ import {
   type FileRef,
   isTerminal,
   type RunLogEntry,
+  type RunQuestions,
   type RunView,
   runSubject,
   type Worktree,
@@ -21,6 +22,7 @@ import { elapsed, formatDuration, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
 import { ReviewButton } from "./ReviewButton";
 import { type JournalFiles, RunJournal } from "./RunJournal";
+import { RunQuestionsBar } from "./RunQuestionsBar";
 import { chatBox } from "./run-chat";
 
 function journalFiles(
@@ -45,13 +47,14 @@ function journalFiles(
 type DetailProps = {
   run: RunView;
   resumable: boolean;
+  questions: RunQuestions | null;
   now: number;
   log: RunLogEntry[] | null;
   missing: boolean;
   onOpenFile: (ref: FileRef) => void;
 };
 
-export function RunDetail({ run, resumable, now, log, missing, onOpenFile }: DetailProps) {
+export function RunDetail({ run, resumable, questions, now, log, missing, onOpenFile }: DetailProps) {
   const [stopping, setStopping] = useState(false);
   const { worktrees } = useWorktrees(run.cwd && run.workspace !== "isolated" ? run.projectId : null);
   const stop = async () => {
@@ -96,6 +99,7 @@ export function RunDetail({ run, resumable, now, log, missing, onOpenFile }: Det
         missing={missing}
         files={journalFiles(run, worktrees, onOpenFile)}
       />
+      <RunQuestionsBar run={run} questions={questions} />
       {box && (
         <ReplyBox
           key={box.mode}

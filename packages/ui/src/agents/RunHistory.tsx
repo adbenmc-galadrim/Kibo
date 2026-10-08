@@ -1,4 +1,4 @@
-import { type ProjectSummary, type RunView, runSubject } from "@kibo/schema";
+import { type ProjectSummary, type RunQuestions, type RunView, runSubject } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Input } from "@kibo/sdk/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
@@ -6,11 +6,13 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { elapsed, formatDuration, formatTokens, runResultText } from "./format";
+import { elapsed, formatDuration, formatTokens } from "./format";
+import { RunStateLabel } from "./RunStateLabel";
 import { filterRuns, RUN_FILTERS, type RunFilter } from "./run-filter";
 
 type Props = {
   runs: RunView[];
+  questions: readonly RunQuestions[];
   positions: ReadonlyMap<string, number>;
   projectColumn: readonly ProjectSummary[] | null;
   now: number;
@@ -36,12 +38,14 @@ function ProjectCell({ project }: { project: ProjectSummary | null }) {
 
 function HistoryRow({
   run,
+  questions,
   position,
   project,
   now,
   onOpenRun,
 }: {
   run: RunView;
+  questions: readonly RunQuestions[];
   position: number | null;
   project: ProjectSummary | null | undefined;
   now: number;
@@ -73,14 +77,14 @@ function HistoryRow({
       <TableCell>
         <span className="flex items-center gap-2">
           <RunDot state={run.state} />
-          {runResultText(run, position)}
+          <RunStateLabel run={run} questions={questions} position={position} clickable />
         </span>
       </TableCell>
     </TableRow>
   );
 }
 
-export function RunHistory({ runs, positions, projectColumn, now, onOpenRun }: Props) {
+export function RunHistory({ runs, questions, positions, projectColumn, now, onOpenRun }: Props) {
   const [filter, setFilter] = useState<RunFilter>("all");
   const [query, setQuery] = useState("");
   const t = frAgentsPage.filters;
@@ -137,6 +141,7 @@ export function RunHistory({ runs, positions, projectColumn, now, onOpenRun }: P
                 <HistoryRow
                   key={r.id}
                   run={r}
+                  questions={questions}
                   position={positions.get(r.id) ?? null}
                   project={
                     projectColumn ? (projectColumn.find((p) => p.id === r.projectId) ?? null) : undefined

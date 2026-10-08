@@ -110,3 +110,22 @@ test("nothing is shown when disabled or not granted", () => {
     });
   }
 });
+
+test("a question asked by a running agent is announced once, with its ticket", () => {
+  withNotification("granted", (shown) => {
+    const first = agentsFixture();
+    const run = first.runs.find((r) => r.state === "running");
+    if (!run) throw new Error("fixture has no running run");
+    const asked = (open: number): AgentsState => ({
+      ...first,
+      questions: [{ runId: run.id, open, undelivered: 0, latestTitle: "Bloquer le dépôt ?" }],
+    });
+    const view = renderHook(({ state }) => useRunNotifications(state, true), {
+      initialProps: { state: first },
+    });
+    view.rerender({ state: asked(1) });
+    view.rerender({ state: asked(1) });
+    view.rerender({ state: asked(0) });
+    expect(shown).toEqual([`${run.label} a posé une question`]);
+  });
+});

@@ -12,10 +12,11 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Bot, ChevronDown, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
-import { elapsed, formatDuration, reasonText, runResultText } from "./format";
+import { elapsed, formatDuration, reasonText } from "./format";
 import { JournalRuns } from "./journal-runs";
 import { RunDetail } from "./RunDetail";
 import { journalUnavailable } from "./RunJournal";
+import { RunStateLabel } from "./RunStateLabel";
 
 type Props = {
   state: AgentsState;
@@ -30,7 +31,7 @@ type Props = {
   onOpenFile: (ref: FileRef) => void;
 };
 
-type Row = { run: RunView; detail: string; aside: ReactNode };
+type Row = { run: RunView; detail: ReactNode; aside: ReactNode };
 
 function Group({
   title,
@@ -108,7 +109,12 @@ export function AgentDrawer({
     .slice(0, 5)
     .map((run) => ({
       run,
-      detail: runSubject(run, runResultText(run, null)),
+      detail: (
+        <>
+          {run.ticketKey && `${run.ticketKey} · `}
+          <RunStateLabel run={run} questions={state.questions} />
+        </>
+      ),
       aside: formatDuration(now - (run.endedAt ?? now)),
     }));
   const g = fr.agents.groups;
@@ -161,6 +167,7 @@ export function AgentDrawer({
                 key={selected.id}
                 run={selected}
                 resumable={state.resumable.includes(selected.id)}
+                questions={state.questions.find((q) => q.runId === selected.id) ?? null}
                 now={now}
                 log={log}
                 missing={journalUnavailable({ missing, empty }, isTerminal(selected.state))}

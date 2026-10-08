@@ -469,6 +469,35 @@ test("openView goes to the view page showing the component, or offers to create 
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
+test("openView can target another project than the current one, by its snapshot", async () => {
+  const { useOpenView } = await import("./use-open-view");
+  const opened: TabTarget[] = [];
+  const graph = {
+    id: "k2",
+    pageId: "1@1",
+    component: "graph@1.0.0",
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: {},
+    componentHash: null,
+  };
+  const other: ProjectSnapshot = { ...project, meta: { ...project.meta, id: "p2" }, instances: [graph] };
+  function Harness() {
+    const { openView } = useOpenView(
+      () => project,
+      (t) => opened.push(t),
+      (projectId) => (projectId === "p2" ? other : null),
+    );
+    return (
+      <button type="button" onClick={() => openView("graph", "p2")}>
+        open p2
+      </button>
+    );
+  }
+  render(<Harness />);
+  await userEvent.setup().click(screen.getByRole("button", { name: "open p2" }));
+  expect(opened).toEqual([{ kind: "page", projectId: "p2", pageId: "1@1" }]);
+});
+
 test("a read-only project hides page and ticket creation and shows the banner", async () => {
   renderShell();
   await go("#/p/p3/");

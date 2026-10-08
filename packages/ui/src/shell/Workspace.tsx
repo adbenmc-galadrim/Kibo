@@ -10,7 +10,6 @@ import { projectDomainsOf } from "../lib/project-domains";
 import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { canEdit } from "../state/access";
-import { AgentsProvider } from "../state/agents-context";
 import { useConfig, useNow } from "../state/use-agents";
 import { useProject } from "../state/use-projects";
 import { useDestructiveKeyGuard } from "../tabs/key-guard";
@@ -23,6 +22,7 @@ import { useKeepOnEdit } from "../tabs/use-keep-on-edit";
 import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
+import { AgentsShellProvider } from "./AgentsShellProvider";
 import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
@@ -36,7 +36,7 @@ import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useAppHelp } from "./use-app-help";
-import { useOpenView } from "./use-open-view";
+import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { anyDialogOpen, useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
@@ -85,7 +85,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     setLastProjectId((id) => (id === projectId ? null : id));
     go(null);
   };
-  const views = useOpenView(currentProject, go);
+  const views = useOpenView(currentProject, go, useSnapshotLookup(snapshots));
 
   const host = useMemo<Host>(
     () => ({
@@ -145,7 +145,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
 
   return (
     <HostProvider host={host}>
-      <AgentsProvider agents={agents}>
+      <AgentsShellProvider agents={agents} openView={views.openView}>
         <PageActionsProvider>
           <div className="flex h-svh flex-col [--tabbar-h:2.5rem]">
             <TabBar
@@ -294,7 +294,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
             </SidebarProvider>
           </div>
         </PageActionsProvider>
-      </AgentsProvider>
+      </AgentsShellProvider>
     </HostProvider>
   );
 }

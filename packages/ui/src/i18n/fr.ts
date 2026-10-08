@@ -7,6 +7,8 @@ import { frIntegrations } from "./fr-integrations";
 import { frMarket } from "./fr-market";
 import { frSecurity } from "./fr-security";
 
+const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
+
 export const fr = {
   app: {
     name: "Kibo",
@@ -254,7 +256,9 @@ export const fr = {
       done: "Terminé",
       failed: "Échec",
       cancelled: "Annulé",
+      doneWithQuestions: (n: number) => `Terminé · ${questionCount(n)}`,
     },
+    questionCount,
     position: (n: number) => `En file #${n}`,
     failedWith: (error: string) => `Échec : ${error}`,
     reasons: {

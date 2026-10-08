@@ -9,6 +9,7 @@ import {
   queueHint,
   reasonText,
   runResultText,
+  runStateText,
   workspaceText,
 } from "./format";
 
@@ -86,4 +87,20 @@ test("the queue says why a resumed run waits: an answer, a message, or the usual
     "admission en pause",
   );
   expect(queueHint(runFixture({ id: "n", state: "queued", turns: 1 }), null)).toBe(reasonText(null));
+});
+
+test("a finished run with open questions says how many, the other states do not", () => {
+  const q = (runId: string, open: number) => ({ runId, open, undelivered: 0, latestTitle: "Quel port ?" });
+  const done = runFixture({ id: "a", state: "done" });
+  expect(runStateText(done, [q("a", 1)])).toEqual({ text: "Terminé · 1 question", open: 1 });
+  expect(runStateText(done, [q("b", 1), q("a", 2)])).toEqual({ text: "Terminé · 2 questions", open: 2 });
+  expect(runStateText(done, [q("a", 0)])).toEqual({ text: "Terminé", open: 0 });
+  expect(runStateText(runFixture({ id: "a", state: "running" }), [q("a", 1)])).toEqual({
+    text: "En cours",
+    open: 0,
+  });
+  expect(runStateText(runFixture({ id: "a", state: "queued" }), [], 3)).toEqual({
+    text: "En file #3",
+    open: 0,
+  });
 });
