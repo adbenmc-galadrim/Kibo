@@ -4,6 +4,12 @@ import { reconcile, sameImportRef } from "./reconcile";
 import { applyLocally, emptySnapshot, fixtureDesired, ref, withTicket } from "./reconcile.test-kit";
 
 const desired = fixtureDesired();
+const imports = reconcile(emptySnapshot(), desired);
+const memoryOf = (key: string) => {
+  const m = imports.memory[key];
+  if (!m) throw new Error(`no memory for ${key}`);
+  return m;
+};
 const WRITES = new Set([
   "createTicket",
   "updateTicket",
@@ -42,7 +48,11 @@ test("a ticket found by title gets its import ref, renames are updates, stranger
   expect(r.changes).toContainEqual(expect.objectContaining({ kind: "updated", what: "ticket C0" }));
 
   const renamed = withTicket(emptySnapshot(), { title: "Autre", externalRefs: [ref("plan", "C0")] });
-  expect(reconcile(renamed, desired).commands).toEqual(
+  expect(reconcile(renamed, desired).commands.filter((c) => "ticketId" in c && c.ticketId === "t1")).toEqual(
+    [],
+  );
+  const remembered = { "plan:C0": { ...memoryOf("plan:C0"), title: "Autre" } };
+  expect(reconcile(renamed, desired, remembered).commands).toEqual(
     expect.arrayContaining([expect.objectContaining({ method: "updateTicket", title: "C0 · Socle" })]),
   );
 
@@ -55,42 +65,48 @@ test("a ticket found by title gets its import ref, renames are updates, stranger
   );
 });
 
-test("statuses, parents and branches are repaired; a pr state owned by the poller is kept", () => {
-  const imported = applyLocally(emptySnapshot(), reconcile(emptySnapshot(), desired));
+test("plan changes of parent, status and branch apply when Kibo did not move; a pr state is the poller's", () => {
+  const first = reconcile(emptySnapshot(), desired);
+  const imported = applyLocally(emptySnapshot(), first);
   const id = (title: string) => imported.tickets.find((t) => t.title.startsWith(title))?.id ?? "";
-  const merged = {
+  const polled = {
     ...imported,
     tickets: imported.tickets.map((t) =>
       t.title.startsWith("C0-2 · ")
         ? {
             ...t,
-            statusId: "done" as const,
-            parentId: id("C1 · "),
             externalRefs: t.externalRefs.map((r) =>
               r.kind === "github_pr" ? { ...r, state: "merged" as const } : r,
             ),
           }
-        : t.title.startsWith("C1-2 · ")
-          ? { ...t, externalRefs: t.externalRefs.filter((r) => r.kind !== "git_branch") }
-          : t,
+        : t,
     ),
   };
-  const r = reconcile(merged, desired);
+  const changed = {
+    ...desired,
+    tickets: desired.tickets.map((t) =>
+      t.ref.id === "C0-2"
+        ? { ...t, parent: ref("plan", "C1"), statusId: "done" as const }
+        : t.ref.id === "C1-2"
+          ? { ...t, refs: [{ kind: "git_branch" as const, branch: "feat/connexion", base: null }] }
+          : t.ref.id === "C0-3"
+            ? { ...t, blockedReason: "Attend la DSI" }
+            : t,
+    ),
+  };
+  const r = reconcile(polled, changed, first.memory);
   expect(r.commands).toEqual([
-    { method: "moveTicket", ticketId: id("C0-2 · "), parentId: id("C0 · ") },
-    { method: "setStatus", ticketId: id("C0-2 · "), statusId: "in_review" },
+    { method: "moveTicket", ticketId: id("C0-2 · "), parentId: id("C1 · ") },
+    { method: "setStatus", ticketId: id("C0-2 · "), statusId: "done" },
+    { method: "setStatus", ticketId: id("C0-3 · "), statusId: "blocked", reason: "Attend la DSI" },
     {
       method: "upsertExternalRef",
       ticketId: id("C1-2 · "),
-      ref: { kind: "git_branch", branch: "feat/connexion", base: "spike/sso" },
+      ref: { kind: "git_branch", branch: "feat/connexion", base: null },
     },
   ]);
-  const blocked = imported.tickets.map((t) =>
-    t.title.startsWith("C0-3 · ") ? { ...t, statusId: "todo" as const, blockedReason: null } : t,
-  );
-  expect(reconcile({ ...imported, tickets: blocked }, desired).commands).toEqual([
-    { method: "setStatus", ticketId: id("C0-3 · "), statusId: "blocked", reason: "Attend AWS" },
-  ]);
+  const again = reconcile(applyLocally(polled, r), changed, r.memory);
+  expect(again.commands).toEqual([]);
 });
 
 test("links added in Kibo are drift, never removed; nothing but legacy tickets is ever deleted", () => {

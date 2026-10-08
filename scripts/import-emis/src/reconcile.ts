@@ -10,12 +10,14 @@ import {
 } from "@kibo/schema";
 import type { Desired, DesiredTicket } from "./desired";
 import { refKey } from "./desired-tickets";
+import type { ImportMemory } from "./import-memory";
 import {
   legacyRef,
   migrateQuestionTickets,
   reconcileQuestions,
   withRecoveredAnswers,
 } from "./reconcile-questions";
+import { describeFields, desiredMemory, fieldCommands, same } from "./ticket-fields";
 
 export type ChangeKind = "created" | "updated" | "kept" | "orphan" | "drift" | "migrated";
 export type Change = { kind: ChangeKind; what: string; detail: string };
@@ -28,6 +30,7 @@ export type Reconciliation = {
   commands: ProjectCommand[];
   defines: ReadonlyMap<number, string>;
   changes: Change[];
+  memory: ImportMemory;
 };
 type Wanted = Pick<Desired, "tickets" | "links" | "questions">;
 type Match = { desired: DesiredTicket; existing: Ticket | null; id: string };
@@ -46,18 +49,6 @@ export const sameImportRef = (a: ImportRef, b: ImportRef): boolean => a.source =
 
 const importRefsOf = (t: Ticket): ImportRef[] =>
   t.externalRefs.filter((r): r is ImportRef => r.kind === "import_ref");
-
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value !== null && typeof value === "object")
-    return `{${Object.entries(value)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`)
-      .join(",")}}`;
-  return JSON.stringify(value);
-}
-const same = (a: unknown, b: unknown) => canonical(a) === canonical(b);
 
 function matchTickets(snapshot: ReconcileSnapshot, desired: readonly DesiredTicket[]): Match[] {
   const byRef = new Map<string, Ticket>();
@@ -101,12 +92,11 @@ function createCommand(d: DesiredTicket, parent: string | null): ProjectCommand 
   };
 }
 
-const sameReason = (a: string | null, b: string | null) => (a?.trim() ?? null) === (b?.trim() ?? null);
-
 function refsToSet(d: DesiredTicket, existing: Ticket | null): ExternalRef[] {
   const wanted: ExternalRef[] = [d.ref, ...d.refs];
   if (existing === null) return wanted;
   return wanted.filter((r) => {
+    if (r.kind === "git_branch") return false;
     const current = existing.externalRefs.find(
       (e) => e.kind === r.kind && externalRefKey(e) === externalRefKey(r),
     );
@@ -115,56 +105,38 @@ function refsToSet(d: DesiredTicket, existing: Ticket | null): ExternalRef[] {
   });
 }
 
-function editCommands(m: Match, parent: string | null, phases: Phases): string[] {
-  const t = m.existing;
-  if (t === null) return [];
-  const d = m.desired;
-  const fields: string[] = [];
-  const patch: { title?: string; description?: string; labels?: string[] } = {};
-  if (t.title !== d.title.trim()) patch.title = d.title.trim();
-  if (t.description !== d.description) patch.description = d.description;
-  if (!same(t.labels, d.labels)) patch.labels = d.labels;
-  if (Object.keys(patch).length > 0) {
-    phases.edit.push({ method: "updateTicket", ticketId: t.id, ...patch });
-    fields.push(...Object.keys(patch));
-  }
-  if (t.parentId !== parent) {
-    phases.edit.push({ method: "moveTicket", ticketId: t.id, parentId: parent });
-    fields.push("parent");
-  }
-  if (t.statusId !== d.statusId || !sameReason(t.blockedReason, d.blockedReason)) {
-    phases.status.push({
-      method: "setStatus",
-      ticketId: t.id,
-      statusId: d.statusId,
-      ...(d.blockedReason === null ? {} : { reason: d.blockedReason }),
-    });
-    fields.push("status");
-  }
-  return fields;
-}
-
-function ticketChanges(matches: Match[], ids: ReadonlyMap<string, string>, phases: Phases) {
+function ticketChanges(
+  matches: Match[],
+  ids: ReadonlyMap<string, string>,
+  phases: Phases,
+  memory: ImportMemory,
+) {
   const defines = new Map<number, string>();
   const changes: Change[] = [];
+  const next: ImportMemory = { ...memory };
   for (const m of matches) {
+    const key = refKey(m.desired.ref);
     const what = `ticket ${m.desired.ref.id}`;
     const parent = parentId(m.desired, ids);
+    const title = m.desired.title.replace(`${m.desired.ref.id} · `, "");
+    const refs = refsToSet(m.desired, m.existing);
+    for (const ref of refs) phases.refs.push({ method: "upsertExternalRef", ticketId: m.id, ref });
     if (m.existing === null) {
       defines.set(phases.create.length, m.id);
       phases.create.push(createCommand(m.desired, parent));
+      next[key] = desiredMemory(m.desired);
+      changes.push({ kind: "created", what, detail: title });
+      continue;
     }
-    const fields = editCommands(m, parent, phases);
-    const refs = refsToSet(m.desired, m.existing);
-    for (const ref of refs) phases.refs.push({ method: "upsertExternalRef", ticketId: m.id, ref });
-    if (m.existing !== null && refs.length > 0) fields.push(...refs.map((r) => r.kind));
-    const title = m.desired.title.replace(`${m.desired.ref.id} · `, "");
-    if (m.existing === null) changes.push({ kind: "created", what, detail: title });
-    else if (fields.length > 0)
-      changes.push({ kind: "updated", what, detail: [...new Set(fields)].join(", ") });
-    else changes.push({ kind: "kept", what, detail: title });
+    const outcome = fieldCommands(m.existing, m.desired, parent, memory[key], ids, phases);
+    next[key] = outcome.memory;
+    const change = describeFields(
+      outcome,
+      refs.map((r) => r.kind),
+    );
+    changes.push(change ? { ...change, what } : { kind: "kept", what, detail: title });
   }
-  return { defines, changes };
+  return { defines, changes, memory: next };
 }
 
 function importedIds(snapshot: ReconcileSnapshot): Map<string, ImportRef> {
@@ -217,11 +189,15 @@ function orphans(snapshot: ReconcileSnapshot, wanted: Wanted): Change[] {
   );
 }
 
-export function reconcile(snapshot: ReconcileSnapshot, wanted: Wanted): Reconciliation {
+export function reconcile(
+  snapshot: ReconcileSnapshot,
+  wanted: Wanted,
+  memory: ImportMemory = {},
+): Reconciliation {
   const matches = matchTickets(snapshot, wanted.tickets);
   const ids = new Map(matches.map((m) => [refKey(m.desired.ref), m.id]));
   const phases: Phases = { create: [], edit: [], status: [], refs: [] };
-  const tickets = ticketChanges(matches, ids, phases);
+  const tickets = ticketChanges(matches, ids, phases, memory);
   const migration = migrateQuestionTickets(snapshot, wanted.questions, ids);
   const links = linkChanges(snapshot, wanted, ids, migration.deleted);
   const before = [...phases.create, ...phases.edit, ...phases.status, ...phases.refs, ...links.commands];
@@ -231,6 +207,7 @@ export function reconcile(snapshot: ReconcileSnapshot, wanted: Wanted): Reconcil
   return {
     commands: [...before, ...questions.commands, ...migration.commands],
     defines,
+    memory: tickets.memory,
     changes: [
       ...tickets.changes,
       ...links.changes,

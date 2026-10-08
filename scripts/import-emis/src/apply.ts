@@ -10,6 +10,7 @@ import {
 import type { SeedClient } from "./daemon-client";
 import type { Desired } from "./desired";
 import { refKey } from "./desired-tickets";
+import { loadMemory, saveMemory } from "./import-memory";
 import { writeNotes } from "./notes";
 import { type Change, type ReconcileSnapshot, reconcile, resolveCommand } from "./reconcile";
 import { buildReport, type ImportReport } from "./report";
@@ -39,9 +40,13 @@ function ticketKeys(snapshot: ReconcileSnapshot): Map<string, string> {
   return keys;
 }
 
-async function ensureTickets(step: Step, projectId: string | null): Promise<ReconcileSnapshot> {
+async function ensureTickets(
+  step: Step,
+  projectId: string | null,
+  notesDir: string,
+): Promise<ReconcileSnapshot> {
   const snapshot = projectId ? await step.client.rpc({ method: "getProject", projectId }) : EMPTY;
-  const plan = reconcile(snapshot, step.desired);
+  const plan = reconcile(snapshot, step.desired, loadMemory(notesDir));
   step.changes.push(...plan.changes);
   if (step.dryRun || projectId === null) {
     for (const c of plan.commands) step.print(describe(c, snapshot));
@@ -54,6 +59,7 @@ async function ensureTickets(step: Step, projectId: string | null): Promise<Reco
     const placeholder = plan.defines.get(index);
     if (placeholder) ids.set(placeholder, Created.parse(result).id);
   }
+  saveMemory(notesDir, plan.memory);
   return step.client.rpc({ method: "getProject", projectId });
 }
 
@@ -75,7 +81,7 @@ export async function applyDesired(
   const projectId = project?.id ?? null;
   await ensureProfileAndGuidelines(step, projectId);
   await ensurePages(step, projectId, options.manifestVersions);
-  const after = await ensureTickets(step, projectId);
+  const after = await ensureTickets(step, projectId, options.notesDir);
   step.changes.push(
     ...writeNotes(options.notesDir, desired.notes, ticketKeys(after), { dryRun: options.dryRun }),
   );

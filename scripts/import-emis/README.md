@@ -22,6 +22,8 @@ bun run --cwd scripts/import-emis import -- --yes --archive    # puis archive le
 
 Le plan est validé avant toute écriture (invariants de `plan-check.mjs`) : une erreur arrête le script. Rejouer l'import ne crée ni ne modifie rien si les entrées n'ont pas changé ; rien n'est supprimé hors de la migration des questions (`orphan` et `drift` sont seulement listés). Une note modifiée dans Kibo depuis le dernier import n'est pas écrasée (empreintes dans `<notes>/.import-emis.json`).
 
+**Kibo gagne** (spec §23.7) : titre, description, étiquettes, parent, statut (et raison de blocage) et branche d'un ticket sont posés à la création ; ensuite le script ne les réécrit que si Kibo a encore la valeur du dernier import et que le plan a changé. Sinon le rapport dit `status (Kibo)`, `title (Kibo)`… et rien n'est envoyé. Les valeurs importées sont mémorisées dans `<notes>/.import-emis-tickets.json`, écrit seulement après un import réel ; un ticket importé avant cette mémoire garde ses valeurs Kibo.
+
 ## Questions
 
 Chaque arbitrage du plan (`arbitrages[].items[]`) devient une question Kibo (spec §23.12.7) : `importRef plan:Qn`, `blocking`, créée par `import:plan`, rattachée à la PR qu'elle bloque, sinon au ticket « Arbitrages ». La réponse vient de `tmp/reponses.json` (`answered`), ou vaut « Résolue dans le plan Emis » pour une question `resolved` ; elle naît non transmise et part avec le brief du premier run du ticket. Une question déjà répondue dans Kibo n'est jamais réécrite : Kibo gagne. Une question ne change jamais le statut d'un ticket : les PR gardent celui du plan.

@@ -7,6 +7,7 @@ import type { Subprocess } from "bun";
 import { applyDesired } from "./apply";
 import { connectLocalDaemon, readDaemonAccess, type SeedClient } from "./daemon-client";
 import { PAGES } from "./desired";
+import { loadMemory } from "./import-memory";
 import { builtinVersions } from "./kibo-components";
 import { fixtureDesired } from "./reconcile.test-kit";
 
@@ -242,4 +243,43 @@ test("the old question sub-tickets are migrated once: answer kept, links removed
   );
   expect(again.counts).toMatchObject({ created: 0, updated: 0, migrated: 0 });
   expect(again.counts.lines).toEqual([]);
+}, 60_000);
+
+test("a status moved in Kibo survives a reimport; a plan change on an untouched field still applies", async () => {
+  const projectId = (await withClient((c) => c.rpc({ method: "listProjects" }))).find(
+    (p) => p.name === "Emis",
+  )?.id;
+  if (!projectId) throw new Error("the first import creates Emis");
+  const notes = join(home, "notes");
+  const options = { folder: join(home, "emis"), notesDir: notes, manifestVersions: VERSIONS, dryRun: false };
+  expect(loadMemory(notes)["plan:C1-2"]?.status.statusId).toBe("todo");
+  const before = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  const c12 = before.tickets.find((t) => t.title.startsWith("C1-2 · "));
+  if (!c12) throw new Error("the import creates C1-2");
+  await withClient((c) =>
+    c.rpc({
+      method: "command",
+      projectId,
+      command: { method: "setStatus", ticketId: c12.id, statusId: "in_review" },
+    }),
+  );
+  const plan = fixtureDesired(notes);
+  const revised = {
+    ...plan,
+    tickets: plan.tickets.map((t) =>
+      t.ref.id === "C1-2" ? { ...t, description: `${t.description}Revu.\n` } : t,
+    ),
+  };
+  const run = await withClient((c) => applyDesired(c, revised, options));
+  expect(run.changes).toContainEqual({
+    kind: "updated",
+    what: "ticket C1-2",
+    detail: "description; status (Kibo)",
+  });
+  const after = await withClient((c) => c.rpc({ method: "getProject", projectId }));
+  const kept = after.tickets.find((t) => t.id === c12.id);
+  expect(kept?.statusId).toBe("in_review");
+  expect(kept?.description.endsWith("Revu.\n")).toBe(true);
+  const again = await withClient((c) => applyDesired(c, revised, options));
+  expect(again.counts).toMatchObject({ created: 0, updated: 0 });
 }, 60_000);
