@@ -25,6 +25,7 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     sessionId: `s-${p.id}`,
     brief: "",
+    resumedFrom: null,
     createdAt: NOW - 20 * MIN,
     label: "opus-dev",
     state: "queued",
@@ -50,6 +51,7 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     turns: 0,
     activeMs: p.startedAt != null && p.endedAt != null ? p.endedAt - p.startedAt : 0,
     turnStartedAt: p.state === "running" || p.state === "starting" ? (p.startedAt ?? null) : null,
+    session: null,
     ...p,
   };
 }
@@ -249,6 +251,7 @@ export function agentsFixture(): AgentsState {
     },
     tokensToday: 1_200_000,
     resumable: [],
+    questions: [],
   };
 }
 
@@ -321,6 +324,7 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   pendingSeq: null,
   keyLabel: p.key ?? "KIB-…",
   ...p,
@@ -370,6 +374,7 @@ export function kiboProject(): ProjectSnapshot {
       }),
     ],
     links: [{ id: "l1", from: "t12", to: "t15", type: "blocks" }],
+    questions: [],
     instances: [],
     rules: [],
     bindings: [],

@@ -13,6 +13,7 @@ const run = (p: Partial<RunView>): RunView => ({
   profileName: "opus-dev",
   sessionId: "s1",
   brief: "",
+  resumedFrom: null,
   createdAt: 0,
   label: "opus-dev-2",
   state: "running",
@@ -38,6 +39,7 @@ const run = (p: Partial<RunView>): RunView => ({
   turns: 1,
   activeMs: 0,
   turnStartedAt: null,
+  session: null,
   ...p,
 });
 

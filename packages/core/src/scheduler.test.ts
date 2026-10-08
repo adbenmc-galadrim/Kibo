@@ -15,6 +15,7 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     sessionId: `s-${p.id}`,
     brief: "",
+    resumedFrom: null,
     createdAt: 0,
     label: "opus-dev",
     state: "queued",
@@ -40,6 +41,7 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     turns: 0,
     activeMs: 0,
     turnStartedAt: null,
+    session: null,
     ...p,
   };
 }

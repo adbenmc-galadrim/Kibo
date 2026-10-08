@@ -14,6 +14,7 @@ const snapshotOf = (id: string): ProjectSnapshot => ({
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

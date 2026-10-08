@@ -10,6 +10,7 @@ const QUEUED: AssignPreview = {
   position: 4,
   reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 },
   guidelines: 6,
+  session: null,
 };
 let preview: () => Promise<unknown> = () => Promise.resolve(QUEUED);
 let assign: () => Promise<unknown> = () => Promise.resolve(null);
@@ -63,6 +64,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
       ticketId: "t15",
       profileId: "opus",
       brief: "Garder l'ordre dans le LoroTree.",
+      fresh: false,
     },
   ]);
 });
@@ -85,6 +87,7 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     externalRefs: [],
     progress: { done: 0, total: 0 },
     waitingOn: [],
+    openQuestions: 0,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
@@ -267,6 +270,7 @@ const provisional = (): TicketView => ({
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 
 test("a ticket without its key cannot be sent to an agent", async () => {

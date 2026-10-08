@@ -25,7 +25,8 @@ export const activeRunOf = (runs: readonly RunView[], ticketId: string): RunView
 
 export function previewAssign(input: PreviewInput): AssignPreview {
   const { runs, ticket, profile, guidelines, at } = input;
-  if (activeRunOf(runs, ticket.id)) return { position: null, reason: { kind: "ticket_busy" }, guidelines };
+  if (activeRunOf(runs, ticket.id))
+    return { position: null, reason: { kind: "ticket_busy" }, guidelines, session: null };
   const candidate = initRun(
     {
       id: PREVIEW_ID,
@@ -39,14 +40,16 @@ export function previewAssign(input: PreviewInput): AssignPreview {
       sessionId: PREVIEW_ID,
       brief: "",
       createdAt: at,
+      resumedFrom: null,
     },
     tailRank(runs),
     at,
   );
   const withCandidate = [...runs, candidate];
   const next = input.plan(withCandidate);
-  if (next.admit.some((a) => a.runId === PREVIEW_ID)) return { position: null, reason: null, guidelines };
+  if (next.admit.some((a) => a.runId === PREVIEW_ID))
+    return { position: null, reason: null, guidelines, session: null };
   const position = orderQueue(withCandidate).findIndex((r) => r.id === PREVIEW_ID) + 1;
   const reason = next.waiting.find((w) => w.runId === PREVIEW_ID)?.reason ?? null;
-  return { position, reason, guidelines };
+  return { position, reason, guidelines, session: null };
 }

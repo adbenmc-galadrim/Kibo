@@ -22,6 +22,7 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 const summary: ProjectSummary = {
   id: "p1",
@@ -46,6 +47,7 @@ const snapshot: ProjectSnapshot = {
     ticket(2, "Graphe"),
   ],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

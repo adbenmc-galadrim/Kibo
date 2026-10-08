@@ -30,7 +30,14 @@ test("an inbox ticket is never handed to the orchestrator", () => {
   const port = recordingPort(calls);
   const requests: RpcRequest[] = [
     { method: "previewAssign", projectId: INBOX_ID, ticketId: "1@1", profileId: "dev" },
-    { method: "assignAgent", projectId: INBOX_ID, ticketId: "1@1", profileId: "dev", brief: "" },
+    {
+      method: "assignAgent",
+      projectId: INBOX_ID,
+      ticketId: "1@1",
+      profileId: "dev",
+      brief: "",
+      fresh: false,
+    },
   ];
   for (const req of requests)
     expect(() => handleAgentRequest(port, req)).toThrow("inbox tickets cannot be assigned to an agent");

@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test";
+import { Ticket } from "@kibo/schema";
+import { seedQuestions } from "./fixtures";
 import { createMockSdk } from "./mock";
 import { defineServer } from "./server";
 
@@ -191,4 +193,51 @@ test("the mock drives focus, visibility and selection and records requests", () 
   m.sdk.selection.set(null);
   expect(m.selections).toEqual([null]);
   expect(m.sdk.selection.get()).toBeNull();
+});
+
+test("questions are listed and created under their permissions, always as the viewer", async () => {
+  let ticketId = "";
+  const m = createMockSdk(
+    { ...base, reads: ["question", "ticket"], writes: ["question"] },
+    {
+      viewer: "camille",
+      seed: (run) => {
+        ticketId = Ticket.parse(run({ method: "createTicket", title: "Stockage S3" })).id;
+        seedQuestions(run, [ticketId]);
+      },
+    },
+  );
+  expect((await m.sdk.list("question")).map((q) => q.createdBy.kind)).toEqual(["agent", "agent"]);
+  const created = await m.sdk.run({
+    method: "createQuestion",
+    ticketId,
+    title: "Quel port ?",
+    createdBy: { kind: "agent", ref: "emis-livraison" },
+  });
+  expect(created.createdBy).toEqual({ kind: "human", ref: "camille" });
+  const answered = await m.sdk.run({
+    method: "answerQuestion",
+    questionId: created.id,
+    answer: { kind: "text", text: "443" },
+    by: { kind: "agent", ref: "emis-livraison" },
+  });
+  expect(answered.answer?.by).toEqual({ kind: "human", ref: "camille" });
+  const imported = await m.sdk.run({
+    method: "createQuestion",
+    ticketId,
+    title: "Q1",
+    createdBy: { kind: "import", ref: "plan" },
+  });
+  expect(imported.createdBy).toEqual({ kind: "import", ref: "plan" });
+  expect(m.used).toEqual(["read:question", "write:question"]);
+});
+
+test("questions need read:question to be listed and write:question to be written", async () => {
+  const reader = createMockSdk({ ...base, reads: ["question"], writes: [] });
+  await expect(reader.sdk.run({ method: "removeQuestion", questionId: "q1" })).rejects.toThrow(
+    "PERMISSION_DENIED",
+  );
+  const writer = createMockSdk({ ...base, reads: ["ticket"], writes: ["question"] });
+  await expect(writer.sdk.list("question")).rejects.toThrow("PERMISSION_DENIED");
+  expect([...reader.violations, ...writer.violations]).toEqual(["write removeQuestion", "read question"]);
 });

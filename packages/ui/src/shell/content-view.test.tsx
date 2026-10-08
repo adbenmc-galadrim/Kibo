@@ -18,6 +18,7 @@ const project: ProjectSnapshot = {
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

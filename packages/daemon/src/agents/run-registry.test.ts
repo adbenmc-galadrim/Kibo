@@ -26,6 +26,7 @@ const newRun = (id: string): NewRun => ({
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  resumedFrom: null,
 });
 const spawned: RunEvent = { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 };
 const question: RunEvent = {
@@ -38,6 +39,7 @@ const question: RunEvent = {
     detail: null,
     question: "?",
     agentId: null,
+    ask: null,
   },
 };
 const exit = (tokens: number): RunEvent => ({
@@ -143,6 +145,7 @@ const activity: RunEvent = {
     detail: null,
     question: null,
     agentId: null,
+    ask: null,
   },
 };
 
@@ -169,6 +172,7 @@ test("an interrupted run is closed at its last event, not at the restart; queued
     state: "failed",
     activeMs: 300,
     turnStartedAt: null,
+    session: null,
     endedAt: 1500,
     stateSince: 1500,
   });

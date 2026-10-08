@@ -44,6 +44,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   externalRefs: [],
   progress: { done: 3, total: 5 },
   waitingOn: [],
+  openQuestions: 0,
   ...patch,
 });
 const child = (n: number, parentId: string): TicketView =>
@@ -61,6 +62,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
   pages: [],
   tickets: [main, child(20, main.id), child(21, "20@1")],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

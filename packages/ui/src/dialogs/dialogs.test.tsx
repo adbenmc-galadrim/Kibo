@@ -28,6 +28,7 @@ const project: ProjectSnapshot = {
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -76,6 +77,7 @@ const kibo: ProjectSnapshot = {
       externalRefs: [],
       progress: { done: 0, total: 0 },
       waitingOn: [],
+      openQuestions: 0,
     },
   ],
 };

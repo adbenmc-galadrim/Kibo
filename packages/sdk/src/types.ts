@@ -23,6 +23,7 @@ import type {
   ProjectCommand,
   ProjectSnapshot,
   ProjectSyncInfo,
+  Question,
   Selection,
   Status,
   StatusId,
@@ -41,6 +42,7 @@ export type EntityMap = {
   run: TicketRun;
   note: NoteMeta;
   ci_run: CiRun;
+  question: Question;
 };
 export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null; instanceId?: string };
 export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };

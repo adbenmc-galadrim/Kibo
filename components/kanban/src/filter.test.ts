@@ -19,6 +19,7 @@ const t = (key: string, assignee: TicketView["assignee"], labels: string[] = [])
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 
 test("'mine and agents' keeps my tickets and every agent ticket", () => {

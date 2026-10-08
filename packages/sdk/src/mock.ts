@@ -20,6 +20,7 @@ import {
   type Surface,
   type TicketRun,
 } from "@kibo/schema";
+import { actAs } from "./mock-actor";
 import { createMockCalls, type MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
 import { createMockNotes, type MockNote } from "./mock-notes";
@@ -119,6 +120,8 @@ export function createMockSdk(
     changes.emit();
     return result;
   };
+  const viewer = opts.viewer ?? "adam";
+  const componentRun = (cmd: ProjectCommand) => run(actAs(cmd, viewer));
   opts.seed?.(run);
   let runs = opts.runs ?? [];
   const folder = createMockNotes(opts.notes ?? {}, opts.noteAges ?? {}, PROJECT_KEY, changes.emit);
@@ -147,11 +150,11 @@ export function createMockSdk(
 
   const backend: ProjectBackend = {
     snapshot: async () => readProject(doc),
-    run: async (cmd) => run(cmd),
+    run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
       doc,
-      run,
+      run: componentRun,
       data,
       manifest,
       configPatches,
@@ -170,7 +173,7 @@ export function createMockSdk(
   const inner = createSdk(backend, manifest, {
     instanceId: "mock-instance",
     config: opts.config ?? {},
-    viewer: opts.viewer ?? "adam",
+    viewer,
     surface: opts.surface ?? (manifest.kind === "view" ? "view" : "widget"),
     format: opts.format ?? defaultFormatOf(manifest),
     openTicket: (id) => opened.push(id),

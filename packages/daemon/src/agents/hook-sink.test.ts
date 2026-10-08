@@ -20,6 +20,7 @@ const write: HookPayload = {
   detail: null,
   question: null,
   agentId: null,
+  ask: null,
 };
 
 test("a demo guard that cannot be built denies the call and is logged", () => {
@@ -40,6 +41,7 @@ test("a demo guard that cannot be built denies the call and is logged", () => {
         profileName: "demo",
         sessionId: "s",
         brief: "",
+        resumedFrom: null,
       },
       0,
     );

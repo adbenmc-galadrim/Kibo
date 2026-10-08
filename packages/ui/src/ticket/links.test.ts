@@ -18,6 +18,7 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 const link = (id: string, from: number, to: number, type: Link["type"]): Link => ({
   id,
@@ -45,6 +46,7 @@ const project: ProjectSnapshot = {
     link("l4", 16, 12, "relates"),
     link("l5", 20, 21, "relates"),
   ],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

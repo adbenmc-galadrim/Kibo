@@ -18,6 +18,7 @@ const t = (id: string, parentId: string | null, assignee: TicketView["assignee"]
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 
 test("nests children under their parent, keeping order and depth", () => {

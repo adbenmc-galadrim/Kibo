@@ -37,6 +37,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 
 function snapshotOf(projectId: string): ProjectSnapshot {

@@ -46,6 +46,7 @@ export * from "./permissions";
 export * from "./phase14-rpc";
 export * from "./project";
 export * from "./protocol";
+export * from "./question";
 export * from "./rpc";
 export * from "./rule";
 export * from "./run";

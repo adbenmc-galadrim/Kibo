@@ -65,6 +65,7 @@ const toRecord = (r: RunRow): RunRecord => ({
   sessionId: r.session_id,
   brief: r.brief,
   createdAt: r.created_at,
+  resumedFrom: null,
 });
 
 function parseJson(text: string, what: string): unknown {

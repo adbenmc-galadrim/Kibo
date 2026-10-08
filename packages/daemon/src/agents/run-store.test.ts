@@ -26,6 +26,7 @@ const newRun = (id: string): NewRun => ({
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  resumedFrom: null,
 });
 
 test("runs get increasing sequence numbers and survive a reopen", () => {

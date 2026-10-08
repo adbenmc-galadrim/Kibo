@@ -48,7 +48,13 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
         return ciRuns(projectId);
       }
       const snap = readProject(docs.project(projectId));
-      const lists = { ticket: snap.tickets, status: snap.workflow, link: snap.links, page: snap.pages };
+      const lists = {
+        ticket: snap.tickets,
+        status: snap.workflow,
+        link: snap.links,
+        page: snap.pages,
+        question: snap.questions,
+      };
       return lists[entity];
     },
     run: async (projectId, instanceId, command) =>

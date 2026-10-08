@@ -45,6 +45,7 @@ const snapshot: ProjectSnapshot = {
   pages: [{ id: "1@1", title: "Kanban", kind: "view", parentId: null }],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

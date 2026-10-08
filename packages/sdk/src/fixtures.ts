@@ -1,4 +1,4 @@
-import { type Assignee, type ProjectCommand, type StatusId, Ticket } from "@kibo/schema";
+import { type Assignee, type ProjectCommand, Question, type StatusId, Ticket } from "@kibo/schema";
 
 export { sampleGlb } from "./fixtures-glb";
 
@@ -80,6 +80,35 @@ export function seedDemo(run: (cmd: ProjectCommand) => unknown, viewer = "adam")
   for (const [from, to] of BLOCKS) run({ method: "addLink", from: idOf(from), to: idOf(to), type: "blocks" });
   run({ method: "addLink", from: idOf(12), to: idOf(16), type: "relates" });
   return ids;
+}
+
+export function seedQuestions(run: (cmd: ProjectCommand) => unknown, ticketIds: readonly string[]): void {
+  const [first = "", second = first] = ticketIds;
+  run({
+    method: "createQuestion",
+    ticketId: first,
+    title: "Garder l'ordre des sous-tickets par index fractionnaire ?",
+    context: "Deux déplacements concurrents peuvent inverser l'ordre de deux sous-tickets.",
+    options: ["Oui", "Non"],
+    provisional: "Oui",
+    createdBy: { kind: "agent", ref: "opus-dev-1" },
+  });
+  const answered = Question.parse(
+    run({
+      method: "createQuestion",
+      ticketId: second,
+      title: "Refuser les hooks d'un processus mort ?",
+      options: ["Oui", "Non"],
+      provisional: "Oui",
+      createdBy: { kind: "agent", ref: "opus-dev-2" },
+    }),
+  );
+  run({
+    method: "answerQuestion",
+    questionId: answered.id,
+    answer: { kind: "confirm" },
+    by: { kind: "human", ref: "adam" },
+  });
 }
 
 export const DEMO_NOTES: Record<string, string> = {

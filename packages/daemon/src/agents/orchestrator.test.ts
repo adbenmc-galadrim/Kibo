@@ -103,6 +103,7 @@ test("hooks need the live token of their own run", async () => {
     detail: "ping",
     question: null,
     agentId: null,
+    ask: null,
   };
   const post = (token: string | null) =>
     fetch(`${h.url}/hooks/${a.id}`, {
@@ -187,12 +188,13 @@ test("the preview says where a new run would enter the queue", async () => {
   ];
   const h = setup({ scenario: "hold", profiles: [profile({ maxParallel: 1 })], guidelines });
   const target = { projectId: "p1", ticketId: "t2", profileId: "opus" };
-  expect(h.orch.preview(target)).toEqual({ position: null, reason: null, guidelines: 2 });
+  expect(h.orch.preview(target)).toEqual({ position: null, reason: null, guidelines: 2, session: null });
   const r = assign(h, "t1");
   expect(h.orch.preview(target)).toEqual({
     position: 1,
     reason: { kind: "profile", profileName: "opus-dev", used: 1, total: 1 },
     guidelines: 2,
+    session: null,
   });
   expect(() => h.orch.preview({ ...target, profileId: "gone" })).toThrow("NOT_FOUND");
   expect(h.orch.activeRuns("opus")).toBe(1);
@@ -349,6 +351,7 @@ test("a PreToolUse without tool input reaches the guard as null, never as an emp
     detail: null,
     question: null,
     agentId: null,
+    ask: null,
   };
   expect(h.orch.hooks.receive(r.id, payload, null)).toEqual({ decision: "deny", reason: "no input" });
   expect(h.orch.hooks.receive(r.id, payload, { file_path: "ui.tsx" })).toBeNull();
@@ -435,6 +438,7 @@ test("a process ending while its run is queued again records no exit", async () 
         profileName: "opus-dev",
         sessionId: crypto.randomUUID(),
         brief: "",
+        resumedFrom: null,
       },
       0,
     );
@@ -451,6 +455,7 @@ test("a process ending while its run is queued again records no exit", async () 
         detail: null,
         question: "Quel port ?",
         agentId: null,
+        ask: null,
       },
     });
     registry.apply(view.id, {
@@ -514,7 +519,12 @@ test("a ticket runs one agent at a time: a second assign is refused until the fi
   expect(() => h.orch.assign({ ...target, brief: "" })).toThrow("CONFLICT");
   expect(h.orch.state().runs).toHaveLength(2);
   expect(h.assigned).toEqual(["t2:opus-dev", "t1:opus-dev"]);
-  expect(h.orch.preview(target)).toEqual({ position: null, reason: { kind: "ticket_busy" }, guidelines: 0 });
+  expect(h.orch.preview(target)).toEqual({
+    position: null,
+    reason: { kind: "ticket_busy" },
+    guidelines: 0,
+    session: null,
+  });
   h.orch.cancel(first.id);
   const second = h.orch.assign({ ...target, brief: "" });
   expect(run(h, second.id).ticketId).toBe("t1");
@@ -539,6 +549,7 @@ test("resuming an ended run is refused while another run of its ticket is active
     profileName: "opus-dev",
     sessionId: crypto.randomUUID(),
     brief: "",
+    resumedFrom: null,
   });
   const active = registry.create(record("older-active"), 0);
   const ended = registry.create(record("newer-ended"), 1);

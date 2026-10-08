@@ -20,6 +20,7 @@ test("keeps only what Kibo needs from a tool event", () => {
     detail: "src/hooks/receiver.ts",
     question: null,
     agentId: null,
+    ask: null,
   });
 });
 

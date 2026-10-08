@@ -20,6 +20,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   ...patch,
 });
 const actions = (): TicketMenuActions => ({

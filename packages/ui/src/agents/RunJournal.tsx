@@ -100,6 +100,7 @@ function eventLine(event: RunEvent): Line | null {
     case "admitted":
     case "reranked":
     case "requeued":
+    case "session":
       return null;
   }
 }

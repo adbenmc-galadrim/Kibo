@@ -22,6 +22,13 @@ import { localSyncInfo } from "./keys";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
+import {
+  answerQuestion,
+  createQuestion,
+  listQuestions,
+  openCountByTicket,
+  removeQuestion,
+} from "./questions";
 import { readRules } from "./rules";
 import {
   childProgress,
@@ -98,6 +105,15 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
     case "setInstanceData":
       writeInstanceData(doc, cmd.instanceId, cmd.key, cmd.value);
       return null;
+    case "createQuestion": {
+      const { method: _method, ...input } = cmd;
+      return createQuestion(doc, input);
+    }
+    case "answerQuestion":
+      return answerQuestion(doc, cmd.questionId, cmd.answer, cmd.by, cmd.at ?? Date.now());
+    case "removeQuestion":
+      removeQuestion(doc, cmd.questionId);
+      return null;
   }
 }
 
@@ -114,6 +130,8 @@ export function assertShellCommand(cmd: ProjectCommand): void {
 
 export function readProject(doc: LoroDoc): ProjectSnapshot {
   const meta = getProjectMeta(doc);
+  const questions = listQuestions(doc);
+  const open = openCountByTicket(questions);
   return {
     meta,
     workflow: getWorkflow(doc),
@@ -123,8 +141,10 @@ export function readProject(doc: LoroDoc): ProjectSnapshot {
       progress: childProgress(doc, t.id),
       waitingOn: waitingOn(doc, t.id),
       keyLabel: ticketKeyLabel(t, meta.key),
+      openQuestions: open.get(t.id) ?? 0,
     })),
     links: listLinks(doc),
+    questions,
     instances: listInstances(doc),
     rules: readRules(doc),
     bindings: listBindings(doc),

@@ -45,6 +45,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   ...patch,
 });
 
@@ -118,6 +119,7 @@ const project = (main: TicketView): ProjectSnapshot => ({
   pages: [],
   tickets: [main],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

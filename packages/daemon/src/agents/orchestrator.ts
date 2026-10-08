@@ -158,6 +158,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         profileName: profile.name,
         sessionId: crypto.randomUUID(),
         brief: input.brief,
+        resumedFrom: null,
       });
       tick();
       return registry.get(view.id);
@@ -182,6 +183,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         profileName: profile.name,
         sessionId: task.resumeSessionId ?? crypto.randomUUID(),
         brief: task.prompt,
+        resumedFrom: null,
       });
       tick();
       return registry.get(id);
@@ -254,6 +256,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         host: hostView(),
         tokensToday: registry.tokensSince(startOfDay(now())),
         resumable: resumableRuns(resumeContext(runs)),
+        questions: [],
       };
     },
     log: (runId) => registry.log(runId),

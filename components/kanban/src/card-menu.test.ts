@@ -20,6 +20,7 @@ const ticket = {
   labels: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({
   open: mock(() => {}),

@@ -38,6 +38,7 @@ test("the whole demo run goes through the queue, asks a question, resumes and fi
     ticketId: ticket.id,
     profileId: "demo",
     brief: "",
+    fresh: false,
   });
   const waiting = await waitRun(h, assigned.id, "waiting_input");
   expect(waiting.question).toBe("Faut-il aussi mettre à jour la documentation ?");

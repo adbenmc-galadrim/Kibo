@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo } from "./fixtures";
+import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo, seedQuestions } from "./fixtures";
 import { createMockSdk } from "./mock";
 
 test("the demo data matches design/donnees-fictives.md", async () => {
@@ -54,4 +54,32 @@ test("the demo data seeds a shared project whose keys are still provisional", as
   expect(tickets).toHaveLength(22);
   expect(tickets.every((t) => t.key === null)).toBe(true);
   expect((await m.sdk.list("link")).filter((l) => l.type === "blocks")).toHaveLength(6);
+});
+
+test("the demo questions are one open with options and a provisional choice, one answered", async () => {
+  const m = createMockSdk(
+    {
+      id: "probe",
+      version: "0.1.0",
+      kind: "view",
+      title: "Probe",
+      reads: ["question", "ticket"],
+      writes: [],
+    },
+    {
+      seed: (run) => {
+        const ids = seedDemo(run);
+        seedQuestions(run, [ids["KIB-12"] ?? "", ids["KIB-14"] ?? ""]);
+      },
+    },
+  );
+  const questions = await m.sdk.list("question");
+  const open = questions.find((q) => q.answer === null);
+  const answered = questions.find((q) => q.answer !== null);
+  expect(questions).toHaveLength(2);
+  expect(open?.answer).toBeNull();
+  expect(open?.options.length).toBeGreaterThan(1);
+  expect(open?.options).toContain(open?.provisional ?? "");
+  expect(answered?.ticketId).not.toBe(open?.ticketId);
+  expect((await m.sdk.list("ticket")).find((t) => t.id === open?.ticketId)?.openQuestions).toBe(1);
 });

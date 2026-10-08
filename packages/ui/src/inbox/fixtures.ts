@@ -26,6 +26,7 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
     externalRefs: [],
     progress: { done: 0, total: 0 },
     waitingOn: [],
+    openQuestions: 0,
   };
 }
 

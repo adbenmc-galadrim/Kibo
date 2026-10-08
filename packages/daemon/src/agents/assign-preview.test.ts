@@ -18,6 +18,7 @@ const runOf = (id: string, ticketId: string, state: RunState): RunView => ({
       profileName: "opus-dev",
       sessionId: `s-${id}`,
       brief: "",
+      resumedFrom: null,
       createdAt: 0,
     },
     1,
@@ -42,6 +43,7 @@ const ticket: TicketView & { key: string } = {
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 };
 
 const admitAll = (runs: RunView[]): Plan => ({
@@ -70,6 +72,12 @@ test("the preview says the ticket is busy before any other reason", () => {
     position: null,
     reason: { kind: "ticket_busy" },
     guidelines: 2,
+    session: null,
   });
-  expect(preview([runOf("r1", "t1", "done")])).toEqual({ position: null, reason: null, guidelines: 2 });
+  expect(preview([runOf("r1", "t1", "done")])).toEqual({
+    position: null,
+    reason: null,
+    guidelines: 2,
+    session: null,
+  });
 });

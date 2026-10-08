@@ -41,6 +41,7 @@ const ticket = (id: string, key: string | null): TicketView => ({
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 
 const project: ProjectSnapshot = {
@@ -49,6 +50,7 @@ const project: ProjectSnapshot = {
   pages: [],
   tickets: [...[1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)), ticket("pending", null)],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

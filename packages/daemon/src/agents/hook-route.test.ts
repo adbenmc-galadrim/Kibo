@@ -12,6 +12,7 @@ const payload: HookPayload = {
   detail: "a.ts",
   question: null,
   agentId: null,
+  ask: null,
 };
 
 function sink(receive: HookSink["receive"] = () => null) {

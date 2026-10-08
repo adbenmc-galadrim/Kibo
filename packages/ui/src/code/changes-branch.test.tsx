@@ -114,6 +114,7 @@ const ticket: TicketView = {
   ],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 };
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
   meta: { id: "p1", name: "Emis", key: "EMIS", folder: "/emis", color: "#F97316", worktree: null },
@@ -121,6 +122,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
   pages: [],
   tickets,
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

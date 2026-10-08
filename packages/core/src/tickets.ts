@@ -11,6 +11,7 @@ import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crd
 import { getKeyAllocator, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
+import { pruneQuestions } from "./questions";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export type NewTicket = {
@@ -140,6 +141,7 @@ export function deleteTicket(doc: LoroDoc, id: string): string[] {
   const ids = subtreeIds(getNode(ticketTree(doc), id));
   ticketTree(doc).delete(id as TreeID);
   pruneLinks(doc, ids);
+  pruneQuestions(doc, ids);
   return ids;
 }
 

@@ -108,6 +108,7 @@ const empty: ProjectSnapshot = {
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

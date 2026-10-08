@@ -18,6 +18,7 @@ const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   ...patch,
 });
 const link = (from: string, to: string, type: Link["type"] = "blocks"): Link => ({

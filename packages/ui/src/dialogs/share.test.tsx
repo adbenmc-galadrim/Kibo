@@ -50,6 +50,7 @@ const project = (sync: ProjectSyncInfo): ProjectSnapshot => ({
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

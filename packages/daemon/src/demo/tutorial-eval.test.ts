@@ -34,6 +34,7 @@ const ticket = (id: string, statusId: TicketView["statusId"]): TicketView => ({
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   keyLabel: `DEMO-${id}`,
 });
 const link = (from: string, to: string): Link => ({ id: `${from}${to}`, from, to, type: "blocks" });

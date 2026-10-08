@@ -119,6 +119,24 @@ describe("runs and hooks", () => {
     expect(RunEvent.safeParse({ type: "answered", text: "  ", rank: 0 }).success).toBe(false);
     expect(RunEvent.safeParse({ type: "answered", text: "4747", rank: 0 }).success).toBe(true);
   });
+  test("a session event is either resumed from a run or fresh for a known reason", () => {
+    expect(RunEvent.parse({ type: "session", mode: "resumed", from: "r1" })).toEqual({
+      type: "session",
+      mode: "resumed",
+      from: "r1",
+    });
+    expect(RunEvent.safeParse({ type: "session", mode: "fresh", reason: "user_reset" }).success).toBe(true);
+    expect(RunEvent.safeParse({ type: "session", mode: "fresh", reason: "because" }).success).toBe(false);
+    expect(RunEvent.safeParse({ type: "session", mode: "resumed" }).success).toBe(false);
+    const spawned = { type: "spawned" as const, pid: 1, resume: false, workspace: "w", guidelines: 0 };
+    expect(RunEvent.parse(spawned)).toEqual(spawned);
+    expect(RunEvent.parse({ ...spawned, sessionId: "s2" })).toEqual({ ...spawned, sessionId: "s2" });
+  });
+  test("assignAgent starts from the main session unless asked to start fresh", () => {
+    const assign = { method: "assignAgent", projectId: "p", ticketId: "1@1", profileId: "p1", brief: "" };
+    expect(RpcRequest.parse(assign)).toMatchObject({ fresh: false });
+    expect(RpcRequest.parse({ ...assign, fresh: true })).toMatchObject({ fresh: true });
+  });
   test("agent rpc requests are validated", () => {
     const assign = { method: "assignAgent", projectId: "p", ticketId: "1@1", profileId: "p1", brief: "" };
     expect(RpcRequest.safeParse(assign).success).toBe(true);

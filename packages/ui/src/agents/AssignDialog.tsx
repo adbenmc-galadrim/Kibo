@@ -107,6 +107,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
         ticketId: ticket.id,
         profileId: profile.id,
         brief: brief.trim(),
+        fresh: false,
       });
     } catch (err) {
       setFailure(

@@ -9,6 +9,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

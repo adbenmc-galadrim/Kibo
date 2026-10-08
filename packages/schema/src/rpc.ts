@@ -35,6 +35,7 @@ import type { NotesInfo } from "./note";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
 import { type ProjectMeta, ProjectPatch } from "./project";
+import type { Question } from "./question";
 import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
@@ -49,6 +50,7 @@ export type TicketView = Ticket & {
   progress: { done: number; total: number };
   waitingOn: string[];
   keyLabel: string;
+  openQuestions: number;
 };
 export type ProjectSnapshot = {
   meta: ProjectMeta;
@@ -56,6 +58,7 @@ export type ProjectSnapshot = {
   pages: Page[];
   tickets: TicketView[];
   links: Link[];
+  questions: Question[];
   instances: Instance[];
   rules: Rule[];
   bindings: Binding[];
@@ -123,6 +126,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
     ticketId: NodeId,
     profileId: z.string().min(1),
     brief: z.string().max(10_000),
+    fresh: z.boolean().default(false),
   }),
   z.object({
     method: z.literal("answerRun"),

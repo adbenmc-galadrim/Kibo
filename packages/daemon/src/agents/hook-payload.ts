@@ -51,6 +51,7 @@ function reduce(h: HookInput): HookPayload {
     detail: clip(detailOf(h), 2000),
     question: clip(asked ? text(h.tool_input?.question) : null, 4000),
     agentId: clip(h.agent_id, 200),
+    ask: null,
   };
 }
 
