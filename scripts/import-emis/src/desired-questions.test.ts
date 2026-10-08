@@ -14,7 +14,7 @@ test("each plan question is a blocking imported question on the ticket it blocks
       ref: ref("plan", "Q1"),
       ticket: ref("plan", "C0-3"),
       title: "Compte AWS au nom du client. Estelle.",
-      context: "**Compte AWS** au nom du client. Estelle.\n\nGroupe : Client — bloquants",
+      context: "Groupe : Client — bloquants",
       blocking: true,
       answer: null,
     },
@@ -22,7 +22,7 @@ test("each plan question is a blocking imported question on the ticket it blocks
       ref: ref("plan", "Q2"),
       ticket: ref("plan", "arbitrages"),
       title: "Charge : marge faible.",
-      context: "**Charge** : marge faible.\n\nGroupe : Internes",
+      context: "Groupe : Internes",
       blocking: true,
       answer: { text: "Résolue dans le plan Emis", at: "2026-10-06" },
     },
@@ -30,7 +30,7 @@ test("each plan question is a blocking imported question on the ticket it blocks
       ref: ref("plan", "Q3"),
       ticket: ref("plan", "C1-2"),
       title: "Un seul bouton de connexion ? À confirmer.",
-      context: "**Un seul bouton de connexion ?** À confirmer.\n\nGroupe : Internes",
+      context: "Groupe : Internes",
       blocking: true,
       answer: { text: "Oui, un seul bouton.", at: "2026-10-06T10:00:00Z" },
     },
@@ -63,4 +63,6 @@ test("unknown blocks go to Arbitrages, partial and open answers stay open, title
     ["Q9", "C0-3", null],
   ]);
   expect(out[0]?.title).toHaveLength(200);
+  expect(out[0]?.context).toBe(`${long}\n\nGroupe : G`);
+  expect(out[1]?.context).toBe("Groupe : G");
 });

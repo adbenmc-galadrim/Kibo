@@ -24,16 +24,33 @@ function answerOf(q: PlanQuestion, answers: Answers, planDate: string): DesiredA
   return q.resolved ? { text: RESOLVED_IN_PLAN, at: planDate } : null;
 }
 
+function contextOf(question: string, title: string, group: string): string {
+  const groupLine = `Groupe : ${group}`;
+  const cut = title !== stripInlineMarkup(question);
+  return truncate(cut ? `${question}\n\n${groupLine}` : groupLine, QUESTION_CONTEXT_MAX);
+}
+
+function questionOf(
+  q: PlanQuestion,
+  group: string,
+  known: ReadonlySet<string>,
+  answers: Answers,
+  planDate: string,
+): DesiredQuestion {
+  const title = truncate(stripInlineMarkup(q.question), QUESTION_TITLE_MAX);
+  return {
+    ref: planRef(q.ref),
+    ticket: planRef(known.has(q.blocks) ? q.blocks : ARBITRAGES_ID),
+    title,
+    context: contextOf(q.question, title, group),
+    blocking: true as const,
+    answer: answerOf(q, answers, planDate),
+  };
+}
+
 export function desiredQuestions(plan: EmisPlan, answers: Answers): DesiredQuestion[] {
   const known = new Set(flatPrs(plan).map((p) => p.id));
   return plan.arbitrages.flatMap((group) =>
-    group.items.map((q) => ({
-      ref: planRef(q.ref),
-      ticket: planRef(known.has(q.blocks) ? q.blocks : ARBITRAGES_ID),
-      title: truncate(stripInlineMarkup(q.question), QUESTION_TITLE_MAX),
-      context: truncate(`${q.question}\n\nGroupe : ${group.group}`, QUESTION_CONTEXT_MAX),
-      blocking: true as const,
-      answer: answerOf(q, answers, plan.meta.updatedAt),
-    })),
+    group.items.map((q) => questionOf(q, group.group, known, answers, plan.meta.updatedAt)),
   );
 }

@@ -195,3 +195,18 @@ test("no command deletes anything but a legacy question ticket", () => {
     else expect(c.method).toBe("removeLink");
   }
 });
+
+test("an imported question keeps its context in kibo: no command rewrites it on a reimport", () => {
+  const base = imported();
+  const oldContext = {
+    ...base,
+    questions: base.questions.map((q) => ({ ...q, context: `${q.title}\n\nGroupe : X` })),
+  };
+  const plan = reconcile(oldContext, desired);
+  expect(plan.commands).toEqual([]);
+  expect(plan.changes.filter((c) => c.what.startsWith("question")).map((c) => c.kind)).toEqual([
+    "kept",
+    "kept",
+    "kept",
+  ]);
+});
