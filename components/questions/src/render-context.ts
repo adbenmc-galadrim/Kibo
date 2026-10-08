@@ -38,14 +38,24 @@ function parse(markdown: string): Block[] {
   return blocks;
 }
 
+const CODE_CLASS = "rounded bg-muted px-1 font-mono text-[0.9em]";
+
+function emphasis(text: string, key: string): ReactNode[] {
+  const parts = text.split("**");
+  if (parts.length % 2 === 0) return [text];
+  return parts.map((part, i) =>
+    i % 2 === 1 && part !== "" ? createElement("strong", { key: `${key}-${i}` }, part) : part,
+  );
+}
+
 function inline(text: string): ReactNode[] {
-  return text
-    .split("`")
-    .map((part, i) =>
-      i % 2 === 1
-        ? createElement("code", { key: i, className: "rounded bg-muted px-1 font-mono text-[0.9em]" }, part)
-        : part,
-    );
+  const parts = text.split("`");
+  if (parts.length % 2 === 0) return emphasis(text, "t");
+  return parts.flatMap((part, i) =>
+    i % 2 === 1
+      ? [createElement("code", { key: i, className: CODE_CLASS }, part)]
+      : emphasis(part, String(i)),
+  );
 }
 
 function block(b: Block, key: number): ReactNode {

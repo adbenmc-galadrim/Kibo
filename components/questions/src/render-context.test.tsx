@@ -26,6 +26,14 @@ test("raw HTML stays text and never becomes a node", () => {
   expect(root.textContent).toBe('<script>alert(1)</script> <img src=x onerror="alert(2)"> <b>');
 });
 
+test("bold spans are rendered, outside inline code only", () => {
+  const root = html("Décision **provisoire** et `**brut**`");
+  expect(root.querySelector("p > strong")?.textContent).toBe("provisoire");
+  expect(root.querySelector("code")?.textContent).toBe("**brut**");
+  expect(html("2 ** 3").querySelector("strong")).toBeNull();
+  expect(html("un ` seul").querySelector("code")).toBeNull();
+});
+
 test("an empty context renders nothing", () => {
   expect(renderContext("  \n ")).toBeNull();
 });
