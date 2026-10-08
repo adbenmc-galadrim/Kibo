@@ -98,6 +98,29 @@ export function answerQuestion(
   return store(doc, { ...question, answer: { ...resolveAnswer(question, input), by, at } });
 }
 
+export type DeliveryMark = { ticketId: string; questionIds: readonly string[]; runId: string; at: number };
+
+function deliverable(doc: LoroDoc, mark: DeliveryMark): Question[] {
+  return mark.questionIds.map((id) => {
+    const question = getQuestion(doc, id);
+    if (question.ticketId !== mark.ticketId) {
+      throw new KiboError("INVALID_INPUT", `question ${id} is not on ticket ${mark.ticketId}`);
+    }
+    return question;
+  });
+}
+
+export function markAnswersDelivered(doc: LoroDoc, mark: DeliveryMark): Question[] {
+  const marked = deliverable(doc, mark).flatMap((q) =>
+    q.answer === null || q.answer.deliveredAt !== null
+      ? []
+      : [Question.parse({ ...q, answer: { ...q.answer, deliveredAt: mark.at, deliveredRunId: mark.runId } })],
+  );
+  for (const q of marked) questions(doc).set(q.id, q);
+  if (marked.length > 0) doc.commit();
+  return marked;
+}
+
 export function removeQuestion(doc: LoroDoc, id: string): void {
   if (questions(doc).get(id) === undefined) throw new KiboError("NOT_FOUND", `question ${id} not found`);
   questions(doc).delete(id);

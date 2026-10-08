@@ -30,6 +30,8 @@ export const QuestionAnswer = z.object({
   text: z.string().trim().max(ANSWER_TEXT_MAX),
   by: Actor,
   at: z.number().int(),
+  deliveredAt: z.number().int().nullable().default(null),
+  deliveredRunId: z.string().min(1).nullable().default(null),
 });
 export type QuestionAnswer = z.infer<typeof QuestionAnswer>;
 
@@ -40,6 +42,9 @@ type QuestionShape = {
 };
 
 function answerProblem(q: QuestionShape, answer: QuestionAnswer): string | null {
+  if ((answer.deliveredAt === null) !== (answer.deliveredRunId === null)) {
+    return "a delivery needs both its date and its run";
+  }
   switch (answer.kind) {
     case "option":
       return answer.option !== null && q.options.includes(answer.option) ? null : "answer cites no option";
@@ -96,9 +101,18 @@ export const AskInput = z.object({
 });
 export type AskInput = z.infer<typeof AskInput>;
 
-export type RunQuestions = { runId: string; open: number; latestTitle: string | null };
+export type RunQuestions = { runId: string; open: number; undelivered: number; latestTitle: string | null };
+
+export const DeliveryResult = z.object({
+  sent: z.number().int().nonnegative(),
+  runId: z.string().nullable(),
+});
+export type DeliveryResult = z.infer<typeof DeliveryResult>;
+
+export type AnswerChoice = Omit<QuestionAnswer, "by" | "at" | "deliveredAt" | "deliveredRunId">;
 
 export const isOpen = (q: Question): boolean => q.answer === null;
+const isUndelivered = (q: Question): boolean => q.answer !== null && q.answer.deliveredAt === null;
 
 export function openQuestions(questions: readonly Question[], ticketId: string): Question[] {
   return questions.filter((q) => q.ticketId === ticketId && isOpen(q));
@@ -108,24 +122,40 @@ export function questionsOfRun(questions: readonly Question[], runId: string): Q
   return questions.filter((q) => q.runId === runId);
 }
 
-export function countOpenByRun(questions: readonly Question[]): RunQuestions[] {
-  const latest = new Map<string, { open: number; newest: Question }>();
-  for (const q of questions) {
-    if (q.runId === null || !isOpen(q)) continue;
-    const known = latest.get(q.runId);
-    if (!known) latest.set(q.runId, { open: 1, newest: q });
-    else
-      latest.set(q.runId, {
-        open: known.open + 1,
-        newest: q.createdAt >= known.newest.createdAt ? q : known.newest,
-      });
+type RunTally = { open: number; undelivered: number; newestOpen: Question | null };
+
+function tally(known: RunTally | undefined, q: Question): RunTally {
+  const current = known ?? { open: 0, undelivered: 0, newestOpen: null };
+  if (isOpen(q)) {
+    const newer = current.newestOpen === null || q.createdAt >= current.newestOpen.createdAt;
+    return { ...current, open: current.open + 1, newestOpen: newer ? q : current.newestOpen };
   }
-  return [...latest]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([runId, { open, newest }]) => ({ runId, open, latestTitle: newest.title }));
+  return isUndelivered(q) ? { ...current, undelivered: current.undelivered + 1 } : current;
 }
 
-export function resolveAnswer(q: Question, input: AnswerInput): Omit<QuestionAnswer, "by" | "at"> {
+export function countOpenByRun(questions: readonly Question[]): RunQuestions[] {
+  const runs = new Map<string, RunTally>();
+  for (const q of questions) {
+    if (q.runId === null || (!isOpen(q) && !isUndelivered(q))) continue;
+    runs.set(q.runId, tally(runs.get(q.runId), q));
+  }
+  return [...runs]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([runId, { open, undelivered, newestOpen }]) => ({
+      runId,
+      open,
+      undelivered,
+      latestTitle: newestOpen?.title ?? null,
+    }));
+}
+
+export function undeliveredAnswers(questions: readonly Question[], ticketId: string): Question[] {
+  return questions
+    .filter((q) => q.ticketId === ticketId && isUndelivered(q))
+    .sort((a, b) => (a.answer?.at ?? 0) - (b.answer?.at ?? 0) || a.id.localeCompare(b.id));
+}
+
+export function resolveAnswer(q: Question, input: AnswerInput): AnswerChoice {
   switch (input.kind) {
     case "option":
       if (input.option === undefined || !q.options.includes(input.option)) {
@@ -158,6 +188,10 @@ function answerText(answer: QuestionAnswer): string {
 export function answerPrompt(q: Question): string {
   if (q.answer === null) throw new KiboError("INVALID_INPUT", `question ${q.id} is not answered`);
   return `Réponse à ta question « ${q.title} » : ${answerText(q.answer)}`;
+}
+
+export function deliveryPrompt(questions: readonly Question[]): string {
+  return questions.map((q) => answerPrompt(q)).join("\n");
 }
 
 const cut = (value: string, max: number): string => value.trim().slice(0, max).trim();

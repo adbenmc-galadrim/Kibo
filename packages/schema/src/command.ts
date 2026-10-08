@@ -13,6 +13,7 @@ import {
   AnswerInput,
   QUESTION_CONTEXT_MAX,
   QUESTION_OPTIONS_MAX,
+  QUESTIONS_PER_TICKET_MAX,
   type Question,
   QuestionOption,
   QuestionTitle,
@@ -129,6 +130,13 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     at: z.number().int().optional(),
   }),
   z.object({ method: z.literal("removeQuestion"), questionId: NodeId }),
+  z.object({
+    method: z.literal("markAnswersDelivered"),
+    ticketId: NodeId,
+    questionIds: z.array(NodeId).min(1).max(QUESTIONS_PER_TICKET_MAX),
+    runId: z.string().min(1),
+    at: z.number().int(),
+  }),
 ]);
 export type ProjectCommand = z.infer<typeof ProjectCommand>;
 
@@ -159,6 +167,7 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   createQuestion: "question",
   answerQuestion: "question",
   removeQuestion: "question",
+  markAnswersDelivered: null,
 };
 
 export const isReservedCommand = (method: ProjectCommand["method"]): boolean =>
@@ -191,4 +200,5 @@ export type CommandResult = {
   createQuestion: Question;
   answerQuestion: Question;
   removeQuestion: null;
+  markAnswersDelivered: Question[];
 };

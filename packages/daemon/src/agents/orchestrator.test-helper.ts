@@ -137,6 +137,11 @@ export function setup(o: Setup): Harness {
       done.push(ticketId);
     },
     isDemoProject: () => o.demoProject ?? false,
+    createQuestion: () => null,
+    answerRunQuestion: () => null,
+    runQuestions: () => [],
+    undeliveredAnswers: () => [],
+    markAnswersDelivered: () => undefined,
   };
   let orch: Orchestrator | null = null;
   const sink: HookSink = {

@@ -207,7 +207,15 @@ test("the brief lists the questions of the ticket, the branch commits and the PR
     id: "q2",
     title: "Un admin non affecté accède-t-il aux fichiers ?",
     createdAt: 2,
-    answer: { kind: "confirm", option: "Non", text: "", by: { kind: "human", ref: "adam" }, at: 3 },
+    answer: {
+      kind: "confirm",
+      option: "Non",
+      text: "",
+      by: { kind: "human", ref: "adam" },
+      at: 3,
+      deliveredAt: null,
+      deliveredRunId: null,
+    },
   });
   const bare = question(ticket.id, {
     id: "q3",
@@ -277,6 +285,8 @@ test("a text answer is quoted as is, and nothing is added without question, comm
       text: "Seulement les admins",
       by: { kind: "human", ref: "adam" },
       at: 3,
+      deliveredAt: null,
+      deliveredRunId: null,
     },
   });
   const brief = buildBrief({

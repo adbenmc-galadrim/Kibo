@@ -113,6 +113,7 @@ export const idleHandlers: GateHandlers = {
   sharing: async () => {
     throw new KiboError("INTERNAL", "unexpected");
   },
+  questions: async () => ({ sent: 0, runId: null }),
 };
 
 export const findInstance = (_p: string, id: string): Instance => {
@@ -170,6 +171,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       },
       sharing: async () => {
         throw new KiboError("INTERNAL", "unexpected");
+      },
+      questions: async (projectId, ticketId) => {
+        handled.push(`questions:${projectId}:${ticketId}`);
+        return { sent: 1, runId: "r1" };
       },
     },
     quotas,

@@ -7,6 +7,7 @@ import type {
   ComponentCall,
   ComponentFormat,
   ComponentManifest,
+  DeliveryResult,
   DesignFrame,
   EntityType,
   FetchInitInput,
@@ -75,6 +76,7 @@ export type McpApi = {
   importItem(server: string, item: McpImportItem): Promise<Ticket>;
 };
 
+export type QuestionsApi = { deliver(ticketId: string): Promise<DeliveryResult> };
 export type DesignApi = { frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame> };
 export type AssetsApi = { list(): Promise<ProjectAsset[]>; url(name: string): Promise<AssetUrl> };
 export type FocusApi = {
@@ -115,6 +117,7 @@ export type KiboSdk = {
   capability(name: Capability): void;
   assets: AssetsApi;
   design: DesignApi;
+  questions: QuestionsApi;
   focus: FocusApi;
   visibility: VisibilityApi;
   selection: SelectionApi;

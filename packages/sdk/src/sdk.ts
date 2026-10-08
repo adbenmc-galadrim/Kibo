@@ -7,6 +7,7 @@ import {
   type ComponentCall,
   type ComponentManifest,
   capPermission,
+  type DeliveryResult,
   type DesignFrame,
   type EntityType,
   type FetchInitInput,
@@ -262,6 +263,12 @@ export function createSdk(
     },
     assets: assetsApi(manifest, guard, call),
     design: designApi(manifest, guard, call),
+    questions: {
+      async deliver(ticketId) {
+        guard.needWrite("question");
+        return call<DeliveryResult>({ kind: "questions.deliver", ticketId });
+      },
+    },
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,

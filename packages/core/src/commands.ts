@@ -26,6 +26,7 @@ import {
   answerQuestion,
   createQuestion,
   listQuestions,
+  markAnswersDelivered,
   openCountByTicket,
   removeQuestion,
 } from "./questions";
@@ -114,12 +115,17 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
     case "removeQuestion":
       removeQuestion(doc, cmd.questionId);
       return null;
+    case "markAnswersDelivered": {
+      const { method: _method, ...mark } = cmd;
+      return markAnswersDelivered(doc, mark);
+    }
   }
 }
 
 const DAEMON_ONLY_COMMANDS: ReadonlySet<ProjectCommand["method"]> = new Set([
   "setInstanceComponent",
   "setInstanceData",
+  "markAnswersDelivered",
 ]);
 
 export function assertShellCommand(cmd: ProjectCommand): void {

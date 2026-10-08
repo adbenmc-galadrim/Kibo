@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test";
-import { type Actor, KiboError, Question } from "@kibo/schema";
+import { type Actor, KiboError, type ProjectCommand, Question, undeliveredAnswers } from "@kibo/schema";
 import fc from "fast-check";
-import { executeProjectCommand, readProject } from "./commands";
+import { assertShellCommand, executeProjectCommand, readProject } from "./commands";
 import { createProjectDoc } from "./project";
 import {
   answerQuestion,
   createQuestion,
   listQuestions,
+  markAnswersDelivered,
   type NewQuestion,
   openQuestionCount,
   removeQuestion,
@@ -52,7 +53,15 @@ test("questions live in the project doc, dedupe on open title, answer once, and 
   expect(listQuestions(doc)).toHaveLength(1);
   expect(readProject(doc).tickets[0]?.openQuestions).toBe(1);
   const answered = answerQuestion(doc, q.id, { kind: "confirm" }, HUMAN, 3);
-  expect(answered.answer).toEqual({ kind: "confirm", option: "Non", text: "", by: HUMAN, at: 3 });
+  expect(answered.answer).toEqual({
+    kind: "confirm",
+    option: "Non",
+    text: "",
+    by: HUMAN,
+    at: 3,
+    deliveredAt: null,
+    deliveredRunId: null,
+  });
   expect(() => answerQuestion(doc, q.id, { kind: "text", text: "x" }, HUMAN, 4)).toThrow(
     new KiboError("INVALID_TRANSITION", `question ${q.id} is already answered`),
   );
@@ -135,7 +144,15 @@ test("the three commands dispatch to the doc", () => {
       at: 4,
     }),
   );
-  expect(answered.answer).toEqual({ kind: "option", option: "443", text: "", by: HUMAN, at: 4 });
+  expect(answered.answer).toEqual({
+    kind: "option",
+    option: "443",
+    text: "",
+    by: HUMAN,
+    at: 4,
+    deliveredAt: null,
+    deliveredRunId: null,
+  });
   expect(executeProjectCommand(doc, { method: "removeQuestion", questionId: q.id })).toBeNull();
   expect(listQuestions(doc)).toEqual([]);
 });
@@ -176,6 +193,91 @@ test("the open count of each ticket always matches the unanswered questions", ()
         return t.openQuestions === open && openQuestionCount(doc, t.id) === open;
       });
     }),
+    { numRuns: 60 },
+  );
+});
+
+function answeredPair() {
+  const doc = newProjectDoc("KIB");
+  const t = createTicket(doc, { title: "Stockage S3" });
+  const other = createTicket(doc, { title: "Autre" });
+  const ask = (ticketId: string, title: string) => createQuestion(doc, { ticketId, title, createdBy: AGENT });
+  const [a, b, open, elsewhere] = [ask(t.id, "A"), ask(t.id, "B"), ask(t.id, "C"), ask(other.id, "D")];
+  for (const q of [a, b, elsewhere]) answerQuestion(doc, q.id, { kind: "text", text: "ok" }, HUMAN, 10);
+  return { doc, t, a, b, open, elsewhere };
+}
+
+test("delivered answers keep their first delivery, and open questions are skipped", () => {
+  const { doc, t, a, b, open } = answeredPair();
+  const first = markAnswersDelivered(doc, {
+    ticketId: t.id,
+    questionIds: [a.id, open.id],
+    runId: "r1",
+    at: 20,
+  });
+  expect(first.map((q) => q.id)).toEqual([a.id]);
+  expect(first[0]?.answer).toMatchObject({ deliveredAt: 20, deliveredRunId: "r1" });
+  const second = markAnswersDelivered(doc, {
+    ticketId: t.id,
+    questionIds: [a.id, b.id],
+    runId: "r2",
+    at: 30,
+  });
+  expect(second.map((q) => q.id)).toEqual([b.id]);
+  const byId = new Map(readProject(doc).questions.map((q) => [q.id, q]));
+  expect(byId.get(a.id)?.answer).toMatchObject({ deliveredAt: 20, deliveredRunId: "r1" });
+  expect(byId.get(b.id)?.answer).toMatchObject({ deliveredAt: 30, deliveredRunId: "r2" });
+  expect(byId.get(open.id)?.answer).toBeNull();
+});
+
+test("marking refuses an unknown question or one of another ticket, and writes nothing", () => {
+  const { doc, t, a, elsewhere } = answeredPair();
+  const mark = (ids: string[]) =>
+    markAnswersDelivered(doc, { ticketId: t.id, questionIds: ids, runId: "r1", at: 20 });
+  expect(() => mark([a.id, "nope"])).toThrow(new KiboError("NOT_FOUND", "question nope not found"));
+  expect(() => mark([a.id, elsewhere.id])).toThrow(
+    new KiboError("INVALID_INPUT", `question ${elsewhere.id} is not on ticket ${t.id}`),
+  );
+  expect(undeliveredAnswers(listQuestions(doc), t.id)).toHaveLength(2);
+});
+
+test("the reserved command dispatches to the doc and stays out of the shell", () => {
+  const { doc, t, a } = answeredPair();
+  const command: ProjectCommand = {
+    method: "markAnswersDelivered",
+    ticketId: t.id,
+    questionIds: [a.id],
+    runId: "r1",
+    at: 20,
+  };
+  expect(() => assertShellCommand(command)).toThrow(
+    new KiboError("PERMISSION_DENIED", "command markAnswersDelivered is reserved to the daemon"),
+  );
+  const marked = executeProjectCommand(doc, command);
+  expect(Array.isArray(marked) && marked.length).toBe(1);
+});
+
+test("after marking, no marked answer is left to deliver", () => {
+  fc.assert(
+    fc.property(
+      fc.array(fc.nat(5), { maxLength: 6 }),
+      fc.array(fc.nat(5), { maxLength: 6 }),
+      (asked, picked) => {
+        const doc = newProjectDoc("KIB");
+        const t = createTicket(doc, { title: "T" });
+        const qs = [...new Set(asked)].map((n) =>
+          createQuestion(doc, { ticketId: t.id, title: `Q${n}`, createdBy: AGENT }),
+        );
+        qs.forEach((q, i) => {
+          if (i % 2 === 0) answerQuestion(doc, q.id, { kind: "text", text: "ok" }, HUMAN, i);
+        });
+        const ids = [...new Set(picked)].flatMap((n) => (qs[n] ? [qs[n].id] : []));
+        if (ids.length > 0)
+          markAnswersDelivered(doc, { ticketId: t.id, questionIds: ids, runId: "r", at: 99 });
+        const left = new Set(undeliveredAnswers(listQuestions(doc), t.id).map((q) => q.id));
+        return ids.every((id) => !left.has(id));
+      },
+    ),
     { numRuns: 60 },
   );
 });

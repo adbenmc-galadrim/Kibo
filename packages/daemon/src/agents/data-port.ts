@@ -3,15 +3,26 @@ import {
   getKeyAllocator,
   listProjectDomainGuidelines,
   listProjectDomains,
+  listQuestions,
   listTickets,
   readProject,
 } from "@kibo/core";
 import { listDomains, listGuidelines, listProfiles } from "@kibo/core/agent-config";
 import { evaluateRules, type RuleTrigger, readRules } from "@kibo/core/rules";
-import { KiboError, type ProjectCommand } from "@kibo/schema";
+import {
+  type Actor,
+  type AskInput,
+  countOpenByRun,
+  isOpen,
+  KiboError,
+  OPEN_PER_RUN_MAX,
+  type ProjectCommand,
+  Question,
+  undeliveredAnswers,
+} from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { isDemoProject } from "../demo/demo-project";
-import type { Docs } from "../docs";
+import type { CommandMeta, Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
 import type { AgentDataPort } from "./orchestrator";
 
@@ -36,8 +47,80 @@ function guidelinesOf(docs: Docs, projectId: string) {
   return [...outsideDomains, ...listProjectDomainGuidelines(doc), ...listGuidelines(doc)];
 }
 
-export function createDataPort(docs: Docs, settings: Pick<ProjectSettings, "get">): AgentDataPort {
+const FROM_DAEMON: CommandMeta = { origin: "agent", instanceId: null };
+
+type QuestionsPort = Pick<
+  AgentDataPort,
+  "createQuestion" | "answerRunQuestion" | "runQuestions" | "undeliveredAnswers" | "markAnswersDelivered"
+>;
+
+function openOfRun(docs: Docs, projectId: string, runId: string): Question[] {
+  return listQuestions(docs.project(projectId)).filter((q) => q.runId === runId && isOpen(q));
+}
+
+function createRunQuestion(
+  docs: Docs,
+  projectId: string,
+  ticketId: string,
+  run: { id: string; profileName: string },
+  ask: AskInput,
+): Question | null {
+  if (openOfRun(docs, projectId, run.id).length >= OPEN_PER_RUN_MAX) return null;
+  const created = docs.run(
+    projectId,
+    {
+      method: "createQuestion",
+      ticketId,
+      title: ask.title,
+      context: ask.context,
+      options: ask.options,
+      provisional: ask.provisional,
+      blocking: ask.blocking,
+      runId: run.id,
+      createdBy: { kind: "agent", ref: run.profileName },
+    },
+    FROM_DAEMON,
+  );
+  return Question.parse(created);
+}
+
+function answerRunQuestion(docs: Docs, projectId: string, runId: string, text: string, by: Actor) {
+  const blocking = openOfRun(docs, projectId, runId).filter((q) => q.blocking);
+  const target = blocking.at(-1);
+  if (!target) return null;
+  const answered = docs.run(
+    projectId,
+    { method: "answerQuestion", questionId: target.id, answer: { kind: "text", text }, by },
+    FROM_DAEMON,
+  );
+  return Question.parse(answered);
+}
+
+function questionsPort(docs: Docs, now: () => number): QuestionsPort {
   return {
+    createQuestion: (projectId, ticketId, run, ask) => createRunQuestion(docs, projectId, ticketId, run, ask),
+    answerRunQuestion: (projectId, runId, text, by) => answerRunQuestion(docs, projectId, runId, text, by),
+    runQuestions: () => countOpenByRun(docs.projectIds().flatMap((id) => listQuestions(docs.project(id)))),
+    undeliveredAnswers: (projectId, ticketId) =>
+      undeliveredAnswers(listQuestions(docs.project(projectId)), ticketId),
+    markAnswersDelivered(projectId, ticketId, questionIds, runId) {
+      if (questionIds.length === 0) return;
+      docs.run(
+        projectId,
+        { method: "markAnswersDelivered", ticketId, questionIds: [...questionIds], runId, at: now() },
+        FROM_DAEMON,
+      );
+    },
+  };
+}
+
+export function createDataPort(
+  docs: Docs,
+  settings: Pick<ProjectSettings, "get">,
+  now: () => number = Date.now,
+): AgentDataPort {
+  return {
+    ...questionsPort(docs, now),
     profiles: () => listProfiles(docs.workspace),
     ticketContext(projectId, ticketId) {
       const project = { ...readProject(docs.project(projectId)), meta: docs.projectMeta(projectId) };
