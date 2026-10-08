@@ -30,6 +30,7 @@ import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { canEdit } from "../state/access";
 import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
+import { AssignSession } from "./AssignSession";
 import { assignableProfiles, isDemoProfile } from "./demo-profile";
 import { reasonText } from "./format";
 
@@ -73,6 +74,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
   const [brief, setBrief] = useState("");
   const [preview, setPreview] = useState<AssignPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
+  const [fresh, setFresh] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const ticket = project.tickets.find((t) => t.id === chosenTicket) ?? null;
   const profile = profiles.find((p) => p.id === profileId) ?? null;
@@ -85,6 +87,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
   useEffect(() => {
     setPreview(null);
     setPreviewFailed(false);
+    setFresh(false);
     if (!chosenTicket || !profileId || !keyed || folderMissing) return;
     let alive = true;
     client.rpc({ method: "previewAssign", projectId, ticketId: chosenTicket, profileId }).then(
@@ -107,7 +110,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
         ticketId: ticket.id,
         profileId: profile.id,
         brief: brief.trim(),
-        fresh: false,
+        fresh,
       });
     } catch (err) {
       setFailure(
@@ -209,6 +212,9 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
               </dd>
               <dt className="text-muted-foreground">{fr.assign.queue}</dt>
               <dd className={queueTone(preview)}>{queueText(preview)}</dd>
+              {preview && !busy && (
+                <AssignSession session={preview.session} fresh={fresh} onFreshChange={setFresh} />
+              )}
             </dl>
           )}
           {previewFailed && (

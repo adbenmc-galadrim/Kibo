@@ -13,6 +13,7 @@ import { Bot, ChevronDown, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { elapsed, formatDuration, reasonText, runResultText } from "./format";
+import { JournalRuns } from "./journal-runs";
 import { RunDetail } from "./RunDetail";
 import { journalUnavailable } from "./RunJournal";
 
@@ -155,15 +156,17 @@ export function AgentDrawer({
         </nav>
         <div className="flex min-h-0 flex-col p-3">
           {selected ? (
-            <RunDetail
-              key={selected.id}
-              run={selected}
-              resumable={state.resumable.includes(selected.id)}
-              now={now}
-              log={log}
-              missing={journalUnavailable({ missing, empty }, isTerminal(selected.state))}
-              onOpenFile={onOpenFile}
-            />
+            <JournalRuns.Provider value={state.runs}>
+              <RunDetail
+                key={selected.id}
+                run={selected}
+                resumable={state.resumable.includes(selected.id)}
+                now={now}
+                log={log}
+                missing={journalUnavailable({ missing, empty }, isTerminal(selected.state))}
+                onOpenFile={onOpenFile}
+              />
+            </JournalRuns.Provider>
           ) : (
             <p className="text-sm text-muted-foreground">{fr.agents.pick}</p>
           )}

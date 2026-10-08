@@ -434,3 +434,43 @@ test("with a local folder no folder warning is shown", async () => {
   expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(false);
   await waitFor(() => expect(calls.length).toBe(1));
 });
+
+const RESUMABLE: AssignPreview = {
+  position: null,
+  reason: null,
+  guidelines: 2,
+  session: { runId: "r9", label: "opus-dev-2", turns: 3, tokens: 12_000, resumable: true, reason: null },
+};
+
+test("a resumable main session is announced and Start over sends fresh", async () => {
+  preview = () => Promise.resolve(RESUMABLE);
+  const onClose = mock(() => {});
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={onClose} />);
+  expect(await screen.findByText("reprend opus-dev-2 (3 tours, 12k tokens)")).toBeTruthy();
+  const reset = screen.getByRole("checkbox", { name: "Repartir de zéro" });
+  expect(reset.getAttribute("aria-checked")).toBe("false");
+  const user = userEvent.setup();
+  await user.click(reset);
+  expect(reset.getAttribute("aria-checked")).toBe("true");
+  await user.click(screen.getByRole("button", { name: "Mettre en file" }));
+  await waitFor(() => expect(onClose).toHaveBeenCalled());
+  expect(calls.at(-1)).toMatchObject({ method: "assignAgent", ticketId: "t14", fresh: true });
+});
+
+test("a session that cannot be resumed says why, without the reset box", async () => {
+  preview = () =>
+    Promise.resolve({
+      ...RESUMABLE,
+      session: { ...RESUMABLE.session, resumable: false, reason: "transcript_missing" },
+    });
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(await screen.findByText("nouvelle (transcript introuvable)")).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: "Repartir de zéro" })).toBeNull();
+});
+
+test("a ticket without a started run opens a first session", async () => {
+  preview = () => Promise.resolve({ ...RESUMABLE, session: null });
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(await screen.findByText("nouvelle (première session du ticket)")).toBeTruthy();
+  expect(screen.queryByRole("checkbox")).toBeNull();
+});

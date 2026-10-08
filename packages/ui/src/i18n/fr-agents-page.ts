@@ -1,3 +1,14 @@
+import type { RunSession, SessionFreshReason } from "@kibo/schema";
+
+const turnsText = (n: number) => `${n} tour${n > 1 ? "s" : ""}`;
+const SESSION_REASONS: Record<SessionFreshReason, string> = {
+  no_previous: "première session du ticket",
+  profile_changed: "autre profil",
+  transcript_missing: "transcript introuvable",
+  workspace_changed: "autre dossier de travail",
+  user_reset: "repartie de zéro",
+};
+
 export const frAgentsPage = {
   subtitle: "Un run est le travail d'un agent sur un ticket.",
   stats: {
@@ -65,5 +76,19 @@ export const frAgentsPage = {
   assign: {
     ticketBusy: "Un run de ce ticket est déjà en cours ou en file.",
     invalidWorktreePath: "chemin invalide, voir Modifier le projet",
+    session: {
+      label: "Session",
+      resume: (label: string, turns: number, tokens: string) =>
+        `reprend ${label} (${turnsText(turns)}, ${tokens} tokens)`,
+      fresh: (reason: SessionFreshReason) => `nouvelle (${SESSION_REASONS[reason]})`,
+      reset: "Repartir de zéro",
+      reasons: SESSION_REASONS,
+    },
+  },
+  events: {
+    session: (mode: RunSession["mode"], detail: string) =>
+      mode === "resumed" ? `Session : reprise du run ${detail}` : `Session : nouvelle (${detail})`,
+    resumedRun: (label: string, turns: number) => `${label} (${turnsText(turns)})`,
+    previousRun: "précédent",
   },
 } as const;

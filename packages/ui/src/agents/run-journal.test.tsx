@@ -267,3 +267,27 @@ test("the journal follows new lines unless the reader scrolled up", () => {
   );
   expect(list.scrollTop).toBe(800);
 });
+
+test("the session line names the run it resumes, or why the session is new, in grey", () => {
+  const resumed: RunEvent = { type: "session", mode: "resumed", from: "r41" };
+  const fresh: RunEvent = { type: "session", mode: "fresh", reason: "transcript_missing" };
+  const runs = [{ ...run("r41"), turns: 3 }];
+  expect(journalLines([{ id: 1, at: NOW, event: resumed }], runs)).toMatchObject([
+    { name: "session", text: "Session : reprise du run opus-dev-2 (3 tours)", tone: "muted" },
+  ]);
+  expect(journalLines([{ id: 1, at: NOW, event: resumed }])).toMatchObject([
+    { text: "Session : reprise du run précédent" },
+  ]);
+  expect(journalLines([{ id: 2, at: NOW, event: fresh }])).toMatchObject([
+    { name: "session", text: "Session : nouvelle (transcript introuvable)", tone: "muted" },
+  ]);
+});
+
+test("the drawer journal knows the runs of the agents state", async () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "session", mode: "resumed", from: "r41" } },
+    ...RUN_LOG,
+  ];
+  renderDrawer({ ...run("r40"), projectId: "kibo" }, log);
+  expect(await screen.findByText(/^Session : reprise du run opus-dev-2 \(\d+ tours?\)$/)).toBeTruthy();
+});
