@@ -482,20 +482,29 @@ test("openView can target another project than the current one, by its snapshot"
   };
   const other: ProjectSnapshot = { ...project, meta: { ...project.meta, id: "p2" }, instances: [graph] };
   function Harness() {
-    const { openView } = useOpenView(
+    const { openView, dialog } = useOpenView(
       () => project,
       (t) => opened.push(t),
       (projectId) => (projectId === "p2" ? other : null),
     );
     return (
-      <button type="button" onClick={() => openView("graph", "p2")}>
-        open p2
-      </button>
+      <>
+        <button type="button" onClick={() => openView("graph", "p2")}>
+          open p2
+        </button>
+        <button type="button" onClick={() => openView("questions", "p2")}>
+          questions p2
+        </button>
+        {dialog}
+      </>
     );
   }
   render(<Harness />);
-  await userEvent.setup().click(screen.getByRole("button", { name: "open p2" }));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "open p2" }));
   expect(opened).toEqual([{ kind: "page", projectId: "p2", pageId: "1@1" }]);
+  await user.click(screen.getByRole("button", { name: "questions p2" }));
+  expect(await screen.findByRole("dialog", { name: "Créer une page Questions ?" })).toBeTruthy();
 });
 
 test("a read-only project hides page and ticket creation and shows the banner", async () => {
