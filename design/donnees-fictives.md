@@ -66,3 +66,22 @@ FAC-31 En cours · FAC-34 À faire · POR-9 À faire.
 ## Domaines
 
 Core (3 guidelines : core.md, loro-patterns.md, tests.md) · Agents · UI · Sécurité · DevOps · Intégrations · Facturation.
+
+## Étiquettes (phase 17)
+
+KIB-12 `area:core`, `phase:p1` · KIB-14 `area:agents`, `urgent` · KIB-16 `area:agents`, `phase:p2` · KIB-15 `area:ui`, `phase:p1` ·
+KIB-11 `area:securite`, `phase:p1`, `urgent` · KIB-7 `area:ui`. Branche de KIB-12 : `feat/schema-loro` (base `feat/noyau-donnees`), PR #18.
+
+## Questions (phase 17)
+
+Les deux décisions d'EMIS-11, transposées : posées par opus-dev-2 sur KIB-14 par `ask_question`, options Oui / Non, provisoire « Non » pour les deux.
+
+| Ticket | Question | Par | Options · provisoire | État |
+|---|---|---|---|---|
+| KIB-14 | Un composant non autorisé lit-il les fichiers du projet ? | opus-dev-2 | Oui / Non · Non (accès refusé pour l'instant) | Ouverte |
+| KIB-14 | Bloquer l'écriture sur un projet archivé ? | opus-dev-2 | Oui / Non · Non (écriture autorisée pour l'instant) | Répondue « Oui » par Adam, à transmettre |
+| KIB-14 | Quel port pour le récepteur ? (bloquante, `ask_user`) | opus-dev-2 | 7420 / Port libre choisi au lancement | Ouverte |
+| KIB-11 | Exiger une review humaine avant fusion ? | sonnet-review | Oui / Non · Oui | Ouverte |
+| KIB-11 | Renouveler le jeton local à chaque démarrage ? | sonnet-review | Oui / Non · Non | Répondue « Non », transmise à sonnet-review |
+
+Pastilles : KIB-14 « 2 questions », KIB-11 « 1 question ». Session principale de KIB-14 : opus-dev-2 · 3 tours ; de KIB-11 : sonnet-review · 2 tours, 12 k tokens.
