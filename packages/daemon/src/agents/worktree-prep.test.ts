@@ -14,6 +14,7 @@ import {
   assertWorktreeSettings,
   FETCH_TIMEOUT_MS,
   prepareWorktree,
+  recentCommits,
   runShell,
   type WorktreeInput,
   worktreeBase,
@@ -335,4 +336,32 @@ test("settings are checked before they are saved", () => {
   ]) {
     expect(() => assertWorktreeSettings(bad)).toThrow("INVALID_INPUT");
   }
+});
+
+test("recent commits are the short hash and subject of the branch since its base, newest first, at most max", async () => {
+  const root = await repo();
+  await git(["switch", "-q", "-c", "feat/x"], root);
+  for (const n of [1, 2, 3]) await git([...commit, "--allow-empty", "-m", `feat: étape ${n}`], root);
+  const lines = await recentCommits(runGit, root, "main");
+  expect(lines.map((l) => l.replace(/^[0-9a-f]+ /, ""))).toEqual([
+    "feat: étape 3",
+    "feat: étape 2",
+    "feat: étape 1",
+  ]);
+  expect(lines[0]).toBe(`${await git(["rev-parse", "--short", "HEAD"], root)} feat: étape 3`);
+  expect(await recentCommits(runGit, root, "main", 2)).toHaveLength(2);
+  expect(await recentCommits(runGit, root, "feat/x")).toEqual([]);
+});
+
+test("an unknown base gives no commits instead of failing the run", async () => {
+  const root = await repo();
+  const errors: unknown[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => errors.push(args);
+  try {
+    expect(await recentCommits(runGit, root, "origin/nowhere")).toEqual([]);
+  } finally {
+    console.error = original;
+  }
+  expect(errors).toHaveLength(1);
 });

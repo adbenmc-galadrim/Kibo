@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { guidelineChain } from "@kibo/core/context";
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
@@ -7,9 +8,10 @@ import {
   HostSettings,
   isTerminal,
   KiboError,
+  mainSessionOf,
   type RunView,
 } from "@kibo/schema";
-import { activeRunOf, previewAssign } from "./assign-preview";
+import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
@@ -148,6 +150,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         throw new KiboError("CONFLICT", `ticket ${ticket.key} already has an active run`);
       opts.data.assertWritable(input.projectId);
       opts.data.assignTicket(input.projectId, ticket.id, profile.name);
+      const main = mainSessionOf(registry.all(), ticket.id);
+      const inherited = !input.fresh && main !== null && main.profileId === profile.id ? main : null;
       const view = enqueue({
         id: crypto.randomUUID(),
         projectId: input.projectId,
@@ -156,9 +160,9 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         ticketTitle: ticket.title,
         profileId: profile.id,
         profileName: profile.name,
-        sessionId: crypto.randomUUID(),
+        sessionId: inherited?.sessionId ?? crypto.randomUUID(),
         brief: input.brief,
-        resumedFrom: null,
+        resumedFrom: inherited?.id ?? null,
       });
       tick();
       return registry.get(view.id);
@@ -190,7 +194,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     },
     preview(input) {
       const profile = ticketProfileOf(input.profileId, input.projectId);
-      const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
+      const { project, ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       const key = ticket.key;
       if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       const guidelines = guidelineChain(opts.data.guidelines(input.projectId), {
@@ -207,6 +211,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         guidelines,
         at: now(),
         plan,
+        plannedCwd: plannedCwd(profile.workspace, project.meta, { ...ticket, key }),
+        transcriptExists: (path) => path !== null && existsSync(path),
       });
     },
     answer(runId, text) {

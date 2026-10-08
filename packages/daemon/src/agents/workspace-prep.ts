@@ -9,9 +9,10 @@ import {
   type WorktreeSettings,
 } from "@kibo/schema";
 import { runBounded } from "./bounded-process";
-import { prepareWorktree, runShell, type ShellRunner } from "./worktree-prep";
+import { prepareWorktree, recentCommits, runShell, type ShellRunner, worktreeBase } from "./worktree-prep";
 
-export type PreparedWorkspace = { cwd: string; label: string };
+export type PlacedWorkspace = { cwd: string; label: string };
+export type PreparedWorkspace = PlacedWorkspace & { commits: string[] };
 export type GitRunner = (
   args: string[],
   cwd: string,
@@ -65,23 +66,26 @@ export async function prepareWorkspace(input: PrepareInput): Promise<PreparedWor
       const folder = requireFolder(input.projectFolder);
       const top = await git(["rev-parse", "--show-toplevel"], folder);
       if (top.code !== 0) throw new KiboError("NOT_A_REPO", `${folder} is not a git repository`);
-      return prepareWorktree({
+      const settings = input.worktree ?? WORKTREE_DEFAULTS;
+      const placed = await prepareWorktree({
         root: top.stdout.trim(),
         ticketKey: input.ticketKey,
         branchRef: input.branchRef,
-        settings: input.worktree ?? WORKTREE_DEFAULTS,
+        settings,
         runDir: input.runDir,
         git,
         shell: input.shell ?? runShell,
         onSetup: input.onSetup,
       });
+      const commits = await recentCommits(git, placed.cwd, worktreeBase(settings, input.branchRef));
+      return { ...placed, commits };
     }
     case "repo":
-      return { cwd: requireFolder(input.projectFolder), label: "repo" };
+      return { cwd: requireFolder(input.projectFolder), label: "repo", commits: [] };
     case "isolated": {
       const cwd = join(input.runDir, "workspace");
       mkdirSync(cwd, { recursive: true, mode: 0o700 });
-      return { cwd, label: "isolated" };
+      return { cwd, label: "isolated", commits: [] };
     }
   }
 }

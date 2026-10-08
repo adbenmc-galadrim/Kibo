@@ -598,6 +598,7 @@ test("the setup command of a worktree run is journaled before the agent starts",
     "admitted",
     "setup",
     "setup",
+    "session",
     "spawned",
   ]);
   const steps = h.orch.log(r.id).flatMap((entry) => (entry.event.type === "setup" ? [entry.event] : []));

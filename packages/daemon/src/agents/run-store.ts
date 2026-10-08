@@ -50,6 +50,7 @@ type RunRow = {
   session_id: string;
   brief: string;
   created_at: number;
+  resumed_from: string | null;
 };
 type EventRow = { id: number; run_id: string; at: number; data: string };
 
@@ -65,8 +66,14 @@ const toRecord = (r: RunRow): RunRecord => ({
   sessionId: r.session_id,
   brief: r.brief,
   createdAt: r.created_at,
-  resumedFrom: null,
+  resumedFrom: r.resumed_from,
 });
+
+function addResumedFrom(db: Database): void {
+  const columns = db.query("PRAGMA table_info(runs)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === "resumed_from"))
+    db.exec("ALTER TABLE runs ADD COLUMN resumed_from TEXT");
+}
 
 function parseJson(text: string, what: string): unknown {
   try {
@@ -93,6 +100,7 @@ export function openRunStore(home: string): RunStore {
     db.exec("PRAGMA synchronous = FULL");
     db.exec("PRAGMA foreign_keys = ON");
     for (const sql of SCHEMA) db.exec(sql);
+    addResumedFrom(db);
     const check = db.query("PRAGMA integrity_check").get() as { integrity_check: string } | null;
     if (check?.integrity_check !== "ok") throw new Error(check?.integrity_check ?? "integrity_check failed");
   } catch (e) {
@@ -103,8 +111,8 @@ export function openRunStore(home: string): RunStore {
   const nextSeq = db.query("SELECT COALESCE(MAX(seq), 0) + 1 AS seq FROM runs");
   const insertRun = db.query(
     "INSERT INTO runs (id, seq, project_id, ticket_id, ticket_key, ticket_title, profile_id, profile_name, " +
-      "session_id, brief, created_at) VALUES ($id, $seq, $project_id, $ticket_id, $ticket_key, $ticket_title, " +
-      "$profile_id, $profile_name, $session_id, $brief, $created_at)",
+      "session_id, brief, created_at, resumed_from) VALUES ($id, $seq, $project_id, $ticket_id, $ticket_key, " +
+      "$ticket_title, $profile_id, $profile_name, $session_id, $brief, $created_at, $resumed_from)",
   );
   const runExists = db.query("SELECT 1 AS found FROM runs WHERE id = $id");
   const insertEvent = db.query(
@@ -130,6 +138,7 @@ export function openRunStore(home: string): RunStore {
       session_id: run.sessionId,
       brief: run.brief,
       created_at: at,
+      resumed_from: run.resumedFrom,
     });
     const enqueued: RunEvent = { type: "enqueued", rank };
     insertEvent.get({ run_id: run.id, at, data: JSON.stringify(enqueued) });

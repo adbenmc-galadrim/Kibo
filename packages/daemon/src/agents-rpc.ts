@@ -34,6 +34,7 @@ export function handleAgentRequest(port: AgentsPort, req: RpcRequest): unknown {
         ticketId: req.ticketId,
         profileId: req.profileId,
         brief: req.brief,
+        fresh: req.fresh,
       });
     case "answerRun":
       return port.answer(req.runId, req.text);

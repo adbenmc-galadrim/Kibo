@@ -73,6 +73,7 @@ test("repo works in the project folder, isolated in a private run folder", async
   ).toEqual({
     cwd: folder,
     label: "repo",
+    commits: [],
   });
   await expect(
     prepareWorkspace({
@@ -92,7 +93,7 @@ test("repo works in the project folder, isolated in a private run folder", async
     ticketKey: "KIB-1",
     runDir,
   });
-  expect(isolated).toEqual({ cwd: join(runDir, "workspace"), label: "isolated" });
+  expect(isolated).toEqual({ cwd: join(runDir, "workspace"), label: "isolated", commits: [] });
   expect(existsSync(isolated.cwd)).toBe(true);
 });
 
@@ -226,4 +227,25 @@ test("a refusal of git is a GIT_FAILED with git's message", async () => {
     code: "GIT_FAILED",
     detail: "git worktree add failed: fatal: 'x' is a missing but locked",
   });
+});
+
+test("a worktree brings the commits of its branch since the base, other spaces bring none", async () => {
+  const folder = await repo();
+  const runDir = join(tmp(), "run");
+  const input = {
+    worktree: null,
+    branchRef: null,
+    strategy: "worktree" as const,
+    projectFolder: folder,
+    ticketKey: "KIB-15",
+    runDir,
+  };
+  const first = await prepareWorkspace(input);
+  expect(first.commits).toEqual([]);
+  await git([...commit, "--allow-empty", "-m", "feat: premier pas"], first.cwd);
+  const hash = await git(["rev-parse", "--short", "HEAD"], first.cwd);
+  const again = await prepareWorkspace(input);
+  expect(again.commits).toEqual([`${hash} feat: premier pas`]);
+  const inRepo = await prepareWorkspace({ ...input, strategy: "repo" });
+  expect(inRepo.commits).toEqual([]);
 });

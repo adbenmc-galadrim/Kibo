@@ -19,7 +19,7 @@ import {
 } from "@kibo/schema";
 import { runBounded } from "./bounded-process";
 import { cleanEnv } from "./runner";
-import type { GitRunner, PreparedWorkspace } from "./workspace-prep";
+import type { GitRunner, PlacedWorkspace } from "./workspace-prep";
 
 export type ShellRunner = (
   command: string,
@@ -205,7 +205,17 @@ function worktreePath(input: WorktreeInput, vars: WorktreeVars): string {
   }
 }
 
-export async function prepareWorktree(input: WorktreeInput): Promise<PreparedWorkspace> {
+export async function recentCommits(git: GitRunner, cwd: string, base: string, max = 50): Promise<string[]> {
+  const res = await git(
+    ["log", "--no-decorate", "--format=%h %s", `--max-count=${max}`, `${base}..HEAD`, "--"],
+    cwd,
+  );
+  if (res.code === 0) return res.stdout.split("\n").filter((line) => line.length > 0);
+  console.error(`[kibo-daemon] commits since ${base} unavailable in ${cwd}: ${res.stderr.trim()}`);
+  return [];
+}
+
+export async function prepareWorktree(input: WorktreeInput): Promise<PlacedWorkspace> {
   const branch = worktreeBranch(input.ticketKey, input.branchRef);
   const base = worktreeBase(input.settings, input.branchRef);
   if (!isGitBranchName(branch) || looksLikeOption(branch))

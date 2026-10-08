@@ -1,4 +1,4 @@
-import { realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
@@ -8,9 +8,11 @@ import {
   branchRefOf,
   isTerminal,
   KiboError,
+  mainSessionOf,
   RunEvent,
   type RunView,
   type SetupStep,
+  undeliveredAnswers,
 } from "@kibo/schema";
 import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
@@ -25,6 +27,7 @@ import {
   readCliCaps,
   resolveClaudeBin,
 } from "./runner";
+import { decideSession, type SessionDecision } from "./session-decision";
 import { transcriptTokensAt } from "./transcript";
 import { prepareWorkspace, writeRunContext } from "./workspace-prep";
 
@@ -38,13 +41,21 @@ export type LaunchDeps = {
   stopping: () => boolean;
 };
 
-type Prepared = { cwd: string; label: string; guidelines: number; brief: string; systemPromptFile: string };
+type Prepared = {
+  cwd: string;
+  label: string;
+  guidelines: number;
+  brief: string;
+  systemPromptFile: string;
+  answers: string[];
+};
 
 const LOST_TASK = "INTERRUPTED: the task was lost when the daemon restarted";
 const EXIT_STATES = new Set(["starting", "running", "done", "failed", "cancelled"]);
 const firstPrompt = (brief: string, pending: string | null) =>
   pending === null ? brief : `${brief}\n\n${pending}`;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const transcriptExists = (path: string | null) => path !== null && existsSync(path);
 
 export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<void> {
   const { opts, registry, tasks, live } = deps;
@@ -85,7 +96,13 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       domainId: ctx.ticket.domainId,
       profileId: profile.id,
     });
-    const context = buildRunContext({ ...ctx, note: run.brief, chain, subagents: profile.subagents });
+    const context = buildRunContext({
+      ...ctx,
+      note: run.brief,
+      chain,
+      subagents: profile.subagents,
+      commits: workspace.commits,
+    });
     const { systemPromptFile } = writeRunContext(runDir, context.files);
     return {
       cwd: workspace.cwd,
@@ -93,6 +110,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       guidelines: chain.length,
       brief: context.brief,
       systemPromptFile,
+      answers: undeliveredAnswers(ctx.project.questions, ctx.ticket.id).map((q) => q.id),
     };
   }
 
@@ -101,7 +119,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       { path: "CLAUDE.md", content: buildSystemPrompt([], profile.subagents) },
       { path: "brief.md", content: run.brief },
     ]);
-    return { cwd: task.cwd, label: task.cwd, guidelines: 0, brief: run.brief, systemPromptFile };
+    return { cwd: task.cwd, label: task.cwd, guidelines: 0, brief: run.brief, systemPromptFile, answers: [] };
   }
 
   function recordExit(runId: string, outcome: ProcessOutcome, task: TaskSpec | undefined): RunView | null {
@@ -122,6 +140,34 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       ...(task && result ? { output: result.raw } : {}),
     });
     return registry.apply(runId, exited);
+  }
+
+  function chooseSession(current: RunView, ticketId: string, cwd: string): SessionDecision {
+    const { resumedFrom } = current;
+    const previous = resumedFrom ? registry.get(resumedFrom) : mainSessionOf(registry.all(), ticketId);
+    const decision = decideSession({
+      run: current,
+      previous,
+      cwd,
+      transcriptExists,
+      newId: () => crypto.randomUUID(),
+    });
+    registry.apply(
+      current.id,
+      decision.resume
+        ? { type: "session", mode: "resumed", from: decision.from }
+        : { type: "session", mode: "fresh", reason: decision.reason },
+    );
+    return decision;
+  }
+
+  function markAnswersDelivered(run: RunView, answers: string[]): void {
+    if (!run.projectId || !run.ticketId || answers.length === 0) return;
+    try {
+      opts.data.markAnswersDelivered(run.projectId, run.ticketId, answers, run.id);
+    } catch (e) {
+      console.error(`[kibo-daemon] delivering answers to run ${run.id} failed`, e);
+    }
   }
 
   function startRules(runId: string, projectId: string, ticketId: string): void {
@@ -154,6 +200,11 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const current = registry.get(runId);
       if (deps.stopping() || current.state !== "starting") return;
       const cwd = realpathSync(prepared.cwd);
+      const ticketId = task ? null : current.ticketId;
+      const firstTicketTurn = ticketId !== null && current.turns === 0;
+      const session = firstTicketTurn
+        ? chooseSession(current, ticketId, cwd)
+        : { resume, sessionId: current.sessionId };
       const { token, hash } = mint(runId);
       opts.store.saveTokenHash(runId, hash, now());
       const proc = launch({
@@ -162,8 +213,8 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         model: profile.model,
         permissionFlag: flag,
         extraArgs: task?.extraArgs ?? [],
-        sessionId: current.sessionId,
-        resume,
+        sessionId: session.sessionId,
+        resume: session.resume,
         prompt:
           current.turns > 0
             ? (current.pendingAnswer ?? "")
@@ -180,11 +231,13 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       registry.apply(runId, {
         type: "spawned",
         pid: proc.pid,
-        resume,
+        resume: session.resume,
         workspace: prepared.label,
         cwd,
         guidelines: prepared.guidelines,
+        ...(session.sessionId === current.sessionId ? {} : { sessionId: session.sessionId }),
       });
+      if (firstTicketTurn) markAnswersDelivered(current, prepared.answers);
       if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);
       const outcome = await proc.exited;
       live.delete(runId);

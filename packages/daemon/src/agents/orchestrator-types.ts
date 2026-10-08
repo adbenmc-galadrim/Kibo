@@ -72,7 +72,13 @@ export type OrchestratorOptions = {
   newToken?: (runId: string) => { token: string; hash: string };
 };
 
-export type AssignInput = { projectId: string; ticketId: string; profileId: string; brief: string };
+export type AssignInput = {
+  projectId: string;
+  ticketId: string;
+  profileId: string;
+  brief: string;
+  fresh?: boolean;
+};
 export type ToolGuard = (call: {
   tool: string;
   input: Record<string, unknown> | null;

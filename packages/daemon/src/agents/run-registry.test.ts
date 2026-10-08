@@ -224,3 +224,27 @@ test("a journal closed at the restart time by an older daemon replays unchanged"
   expect(reopened.log("r1").filter((e) => e.event.type === "failed")).toHaveLength(1);
   reopened.close();
 });
+
+test("a replayed journal keeps the inherited origin, its session line and the session it ran", () => {
+  const h = home();
+  const store = openRunStore(h);
+  const reg = openRunRegistry(store, now);
+  reg.create(newRun("old"), 0);
+  reg.apply("old", { type: "admitted", lane: 1 });
+  reg.apply("old", spawned);
+  reg.create({ ...newRun("next"), sessionId: "s-old", resumedFrom: "old" }, 1);
+  reg.apply("next", { type: "admitted", lane: 2 });
+  reg.apply("next", { type: "session", mode: "fresh", reason: "transcript_missing" });
+  reg.apply("next", { ...spawned, sessionId: "s-fresh" });
+  store.close();
+
+  const reopened = openRunStore(h);
+  const again = openRunRegistry(reopened, now);
+  expect(again.get("old")).toMatchObject({ sessionId: "s-old", resumedFrom: null, session: null });
+  expect(again.get("next")).toMatchObject({
+    sessionId: "s-fresh",
+    resumedFrom: "old",
+    session: { mode: "fresh", reason: "transcript_missing" },
+  });
+  reopened.close();
+});

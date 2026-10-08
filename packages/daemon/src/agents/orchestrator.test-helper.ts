@@ -9,8 +9,10 @@ import {
   type HostLoad,
   KiboError,
   type ProjectSnapshot,
+  type Question,
   type RunView,
   type TicketView,
+  undeliveredAnswers,
 } from "@kibo/schema";
 import { FAKE_CLAUDE, type FakeScenarioName, scenarioPath } from "./fake-claude-scenario";
 import { defaultHookLauncher } from "./hook-launcher";
@@ -85,8 +87,11 @@ export type Harness = {
   done: string[];
   notices: Notice[];
   tokens: Map<string, string>;
+  delivered: Delivery[];
   stopServer: () => void;
 };
+
+export type Delivery = { ticketId: string; questionIds: string[]; runId: string };
 
 type Setup = {
   scenario: FakeScenarioName;
@@ -100,6 +105,8 @@ type Setup = {
   demoProject?: boolean;
   demoAgent?: OrchestratorOptions["demoAgent"];
   meta?: Partial<ProjectSnapshot["meta"]>;
+  questions?: Question[];
+  markFails?: boolean;
 };
 
 let current: Harness | null = null;
@@ -114,13 +121,16 @@ export function setup(o: Setup): Harness {
   const done: string[] = [];
   const notices: Notice[] = [];
   const tokens = new Map<string, string>();
+  const delivered: Delivery[] = [];
+  const questions = o.questions ?? [];
   const profiles = o.profiles ?? [profile()];
   const data: AgentDataPort = {
     profiles: () => profiles,
     ticketContext: (projectId, ticketId) => {
       const t = project.tickets.find((x) => x.id === ticketId);
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-      return { project: { ...project, meta: { ...project.meta, ...o.meta } }, ticket: t, domain: null };
+      const meta = { ...project.meta, ...o.meta };
+      return { project: { ...project, meta, questions }, ticket: t, domain: null };
     },
     guidelines: () => o.guidelines ?? [],
     assertWritable: (projectId) => {
@@ -140,8 +150,11 @@ export function setup(o: Setup): Harness {
     createQuestion: () => null,
     answerRunQuestion: () => null,
     runQuestions: () => [],
-    undeliveredAnswers: () => [],
-    markAnswersDelivered: () => undefined,
+    undeliveredAnswers: (_projectId, ticketId) => undeliveredAnswers(questions, ticketId),
+    markAnswersDelivered: (_projectId, ticketId, questionIds, runId) => {
+      if (o.markFails) throw new KiboError("INVALID_INPUT", "delivery refused");
+      delivered.push({ ticketId, questionIds: [...questionIds], runId });
+    },
   };
   let orch: Orchestrator | null = null;
   const sink: HookSink = {
@@ -196,6 +209,7 @@ export function setup(o: Setup): Harness {
     done,
     notices,
     tokens,
+    delivered,
     stopServer: () => server.stop(true),
   };
   return current;
@@ -225,5 +239,5 @@ export const run = (h: Harness, id: string): RunView => {
   return found;
 };
 
-export const assign = (h: Harness, ticketId: string, profileId = "opus") =>
-  h.orch.assign({ projectId: "p1", ticketId, profileId, brief: "" });
+export const assign = (h: Harness, ticketId: string, profileId = "opus", fresh = false) =>
+  h.orch.assign({ projectId: "p1", ticketId, profileId, brief: "", fresh });
