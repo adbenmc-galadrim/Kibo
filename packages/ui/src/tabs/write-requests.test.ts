@@ -57,3 +57,15 @@ test("project commands and code writes count, reads and component data do not", 
   expect(projectIdOf({ method: "status", projectId: "p2", worktree: "/wt" })).toBe("p2");
   expect(projectIdOf({ method: "getTabs" })).toBeNull();
 });
+
+test("delivering answers to the agent is a write of the project, from the drawer or a component", () => {
+  expect(isProjectWrite({ method: "deliverAnswers", projectId: "p1", ticketId: "t1" })).toBe(true);
+  expect(
+    isProjectWrite({
+      method: "componentCall",
+      projectId: "p1",
+      instanceId: "i1",
+      call: { kind: "questions.deliver", ticketId: "t1" },
+    }),
+  ).toBe(true);
+});
