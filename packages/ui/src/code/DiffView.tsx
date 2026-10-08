@@ -67,7 +67,7 @@ const SplitHunk = memo(function SplitHunk({ hunk, wrap }: HunkProps) {
 
 type Props = {
   diff: FileDiff;
-  area: ChangeArea;
+  area: ChangeArea | null;
   mode: DiffMode;
   busy: boolean;
   wrap: boolean;

@@ -1,4 +1,4 @@
-import type { ChangeArea, ChangeKind, FileChange } from "@kibo/schema";
+import type { ChangeArea, FileChange } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
@@ -9,6 +9,7 @@ import { ChevronDown, Ellipsis } from "lucide-react";
 import { useId, useState } from "react";
 import { fr } from "../i18n/fr";
 import { fileMenuEntries } from "./file-menu";
+import { ADDED, KIND_TONE, MUTED, REMOVED, splitPath } from "./file-tones";
 
 export type FileSelection = { path: string; area: ChangeArea };
 
@@ -36,23 +37,6 @@ type FileHandlers = Pick<
   Props,
   "onSelect" | "onToggle" | "onOpenInTab" | "onOpenExternal" | "onCopyPath" | "onDiscard"
 >;
-
-const ADDED = "text-green-800 dark:text-green-400";
-const REMOVED = "text-red-700 dark:text-red-400";
-const MUTED = "text-zinc-600 dark:text-zinc-400";
-const KIND_TONE: Record<ChangeKind, string> = {
-  modified: "text-amber-700 dark:text-amber-400",
-  added: ADDED,
-  untracked: ADDED,
-  deleted: REMOVED,
-  renamed: "text-sky-700 dark:text-sky-400",
-  conflicted: REMOVED,
-};
-
-const splitPath = (path: string) => {
-  const slash = path.lastIndexOf("/");
-  return { name: path.slice(slash + 1), dir: slash >= 0 ? path.slice(0, slash + 1) : "" };
-};
 
 type RowProps = { file: FileChange; active: boolean; busy: boolean; readOnly: boolean } & FileHandlers;
 

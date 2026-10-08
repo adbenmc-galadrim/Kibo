@@ -1,4 +1,4 @@
-import type { FileChange, FileDiff } from "@kibo/schema";
+import type { ChangeArea, FileChange, FileDiff } from "@kibo/schema";
 import { useState } from "react";
 import { useWrap } from "../files/wrap-pref";
 import { fr } from "../i18n/fr";
@@ -9,7 +9,7 @@ import { type DiffMode, DiffView } from "./DiffView";
 type Props = {
   projectId: string;
   worktree: string;
-  file: FileChange | null;
+  file: (Pick<FileChange, "path" | "kind"> & { area: ChangeArea | null }) | null;
   diff: FileDiff | null;
   mode: DiffMode;
   onModeChange(mode: DiffMode): void;
@@ -60,7 +60,7 @@ export function DiffColumn({ file, diff, ...p }: Props) {
           mode={p.mode}
           busy={p.busy}
           wrap={wrap}
-          onHunk={p.readOnly ? undefined : p.onHunk}
+          onHunk={p.readOnly || file.area === null ? undefined : p.onHunk}
         />
       )}
     </>

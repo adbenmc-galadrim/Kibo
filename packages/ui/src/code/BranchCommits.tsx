@@ -10,6 +10,7 @@ import { UndoCommitDialog } from "./UndoCommitDialog";
 const COMPACT = "h-7 px-2 text-xs has-[>svg]:px-2";
 
 type Props = {
+  base: string | null;
   commits: CommitInfo[];
   busy: boolean;
   onModify(commit: CommitInfo): void;
@@ -17,7 +18,7 @@ type Props = {
   onUndo(commit: CommitInfo): Promise<void>;
 };
 
-export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: Props) {
+export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo }: Props) {
   const id = useId();
   const unpushed = commits.filter((c) => !c.pushed);
   const pushed = commits.filter((c) => c.pushed);
@@ -27,9 +28,10 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
     <section aria-labelledby={id} className="grid min-w-0 gap-2 border-t pt-4">
       <header className="flex items-center justify-between">
         <h3 id={id} className="text-xs font-semibold">
-          {fr.commit.unpushed}
+          {base ? fr.commit.branchCommits : fr.commit.latestCommits}
         </h3>
         <span
+          title={fr.commit.unpushedCount(unpushed.length)}
           className={cn(
             "font-mono text-2xs",
             unpushed.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground",
@@ -38,6 +40,9 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
           ↑{unpushed.length}
         </span>
       </header>
+      {base && commits.length === 0 && (
+        <p className="text-xs text-muted-foreground">{fr.commit.noBranchCommits(base)}</p>
+      )}
       <ul className="grid min-w-0 gap-2">
         {unpushed.map((c, i) => (
           <li key={c.sha} className="min-w-0 rounded-lg border p-3">
@@ -46,6 +51,7 @@ export function UnpushedCommits({ commits, busy, onModify, onReword, onUndo }: P
               <span className="font-mono text-2xs text-muted-foreground">{c.shortSha}</span>
               <span className="truncate">{c.subject}</span>
             </p>
+            <p className="mt-1 text-2xs text-orange-700 dark:text-orange-400">{fr.commit.notPushed}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {i === 0 && (
                 <Button
