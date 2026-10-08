@@ -100,7 +100,7 @@ test("a refused resume surfaces and marks nothing; no session or no answer behav
   expect(empty.calls.answers).toEqual([]);
 });
 
-test("the drawer answers the open blocking question, marks it, then resumes the run", () => {
+test("the drawer answers the open blocking question, resumes the run, then marks it", () => {
   const run = runView({ id: "r1", state: "waiting_input" });
   const q = answered("q1", { blocking: true });
   const { d, calls, order } = deps([run], [], q);
@@ -108,7 +108,7 @@ test("the drawer answers the open blocking question, marks it, then resumes the 
   expect(calls.drawer).toEqual(["r1:443"]);
   expect(calls.marks).toEqual([["p1", "t1", ["q1"], "r1"]]);
   expect(calls.answers).toEqual([["r1", "443"]]);
-  expect(order).toEqual(["drawer", "mark", "answer"]);
+  expect(order).toEqual(["drawer", "answer", "mark"]);
   const bare = deps([run], [], null);
   answerFromDrawer(bare.d, run, "443", HUMAN);
   expect(bare.calls.marks).toEqual([]);
@@ -117,4 +117,15 @@ test("the drawer answers the open blocking question, marks it, then resumes the 
   answerFromDrawer(running.d, runView({ id: "r1", state: "running" }), "et les tests ?", HUMAN);
   expect(running.calls.drawer).toEqual([]);
   expect(running.calls.answers).toEqual([["r1", "et les tests ?"]]);
+});
+
+test("a drawer answer the run refuses leaves the question answered but not delivered", () => {
+  const run = runView({ id: "r1", state: "waiting_input" });
+  const { d, calls } = deps([run], [], answered("q1", { blocking: true }));
+  d.answer = () => {
+    throw new KiboError("CONFLICT", "ticket KIB-14 already has an active run");
+  };
+  expect(() => answerFromDrawer(d, run, "443", HUMAN)).toThrow(KiboError);
+  expect(calls.drawer).toEqual(["r1:443"]);
+  expect(calls.marks).toEqual([]);
 });

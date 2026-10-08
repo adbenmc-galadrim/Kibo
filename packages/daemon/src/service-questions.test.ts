@@ -86,7 +86,8 @@ function setup(runState: RunView["state"]) {
   );
   const run = runView({ id: "r1", projectId: project.id, ticketId: ticket.id, state: runState });
   const answers: [string, string][] = [];
-  s.attachAgents(fakeAgents([run], answers));
+  const runs = [run];
+  s.attachAgents(fakeAgents(runs, answers));
   const messages: ChangeMessage[] = [];
   s.onChange((m) => messages.push(m));
   const agentQuestion = (title: string, blocking: boolean) =>
@@ -109,7 +110,7 @@ function setup(runState: RunView["state"]) {
     return Question.parse(call(s, { method: "command", projectId: project.id, command }));
   };
   const snapshot = () => call(s, { method: "getProject", projectId: project.id });
-  return { s, project, ticket, answers, messages, agentQuestion, answer, snapshot };
+  return { s, project, ticket, run, runs, answers, messages, agentQuestion, answer, snapshot };
 }
 
 test("a component or a user writes questions as the viewer, whatever it announces", () => {
@@ -164,4 +165,30 @@ test("delivering the answers of a ticket sends one message to its session and ma
   expect(answers).toEqual([["r1", `${answerPrompt(first)}\n${answerPrompt(second)}`]]);
   expect(snapshot().questions.every((q) => q.answer?.deliveredRunId === "r1")).toBe(true);
   expect(s.deliverAnswers(project.id, ticket.id)).toEqual({ sent: 0, runId: null });
+});
+
+test("an inherited run of the ticket shows the answers still to deliver and receives them", () => {
+  const { s, project, ticket, run, runs, answers, agentQuestion, answer, snapshot } = setup("done");
+  const answered = answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
+  runs.push({ ...run, id: "r2", seq: 2, sessionId: run.sessionId, resumedFrom: "r1", state: "done" });
+  expect(call(s, { method: "getAgents" }).questions).toEqual([
+    { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
+  ]);
+  expect(call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toEqual({
+    sent: 1,
+    runId: "r2",
+  });
+  expect(answers).toEqual([["r2", answerPrompt(answered)]]);
+  expect(snapshot().questions[0]?.answer?.deliveredRunId).toBe("r2");
+});
+
+test("open questions stay on the run that asked them, answers to deliver follow the main run", () => {
+  const { s, run, runs, agentQuestion, answer } = setup("done");
+  agentQuestion("Garder les archives ?", false);
+  answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
+  runs.push({ ...run, id: "r2", seq: 2, state: "running" });
+  expect(call(s, { method: "getAgents" }).questions).toEqual([
+    { runId: "r1", open: 1, undelivered: 0, latestTitle: "Garder les archives ?" },
+    { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
+  ]);
 });

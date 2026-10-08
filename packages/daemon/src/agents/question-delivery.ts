@@ -41,9 +41,12 @@ export function deliverBlockingAnswer(deps: DeliveryDeps, question: Question): b
 }
 
 export function answerFromDrawer(deps: DeliveryDeps, run: RunView, text: string, by: Actor): RunView {
-  if (run.state === "waiting_input" && run.projectId) {
-    const question = deps.data.answerRunQuestion(run.projectId, run.id, text, by);
-    if (question) deps.data.markAnswersDelivered(run.projectId, question.ticketId, [question.id], run.id);
-  }
-  return deps.answer(run.id, text);
+  const question =
+    run.state === "waiting_input" && run.projectId
+      ? deps.data.answerRunQuestion(run.projectId, run.id, text, by)
+      : null;
+  const answered = deps.answer(run.id, text);
+  if (question && run.projectId)
+    deps.data.markAnswersDelivered(run.projectId, question.ticketId, [question.id], run.id);
+  return answered;
 }

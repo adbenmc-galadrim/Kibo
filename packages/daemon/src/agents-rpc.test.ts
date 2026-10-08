@@ -84,13 +84,13 @@ test("the agents state carries the question counts of the runs", () => {
   });
 });
 
-test("answering a waiting run from the drawer answers and marks its blocking question first", () => {
+test("answering a waiting run from the drawer answers its blocking question, then marks it once sent", () => {
   const calls: string[] = [];
   const waiting = runView({ id: "r1", state: "waiting_input" });
   const port = agentsPort(calls, [waiting, runView({ id: "r2", state: "running" })]);
   const questions = questionsStub(calls, [], answered("q1", { blocking: true }));
   handleAgentRequest(port, { method: "answerRun", runId: "r1", text: "443" }, questions);
-  expect(calls).toEqual(["drawer:p1:r1:443:human:adam", "mark:p1:t1:q1:r1", "answer:r1:443"]);
+  expect(calls).toEqual(["drawer:p1:r1:443:human:adam", "answer:r1:443", "mark:p1:t1:q1:r1"]);
   calls.length = 0;
   handleAgentRequest(port, { method: "answerRun", runId: "r2", text: "et les tests ?" }, questions);
   expect(calls).toEqual(["answer:r2:et les tests ?"]);

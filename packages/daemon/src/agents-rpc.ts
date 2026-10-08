@@ -2,6 +2,7 @@ import { type DeliveryResult, KiboError, type RpcRequest, type RunView } from "@
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
 import { answerFromDrawer, type DeliveryDeps, deliverAnswers } from "./agents/question-delivery";
 import { assertNotInboxForAgents } from "./inbox/inbox-rules";
+import { runTallies } from "./questions/run-tallies";
 
 export type AgentsPort = Pick<
   Orchestrator,
@@ -43,6 +44,13 @@ export function deliverTicketAnswers(
   return deliverAnswers(deliveryDeps(port, q), projectId, ticketId);
 }
 
+function agentsState(port: AgentsPort, q: AgentQuestions) {
+  const state = port.state();
+  const undeliveredOf = (projectId: string, ticketId: string) =>
+    q.data.undeliveredAnswers(projectId, ticketId).length;
+  return { ...state, questions: runTallies(q.data.runQuestions(), state.runs, undeliveredOf) };
+}
+
 function answerRun(port: AgentsPort, q: AgentQuestions, runId: string, text: string): RunView {
   const run = port.state().runs.find((r) => r.id === runId);
   if (!run?.projectId || run.state !== "waiting_input") return port.answer(runId, text);
@@ -52,7 +60,7 @@ function answerRun(port: AgentsPort, q: AgentQuestions, runId: string, text: str
 export function handleAgentRequest(port: AgentsPort, req: RpcRequest, q: AgentQuestions): unknown {
   switch (req.method) {
     case "getAgents":
-      return { ...port.state(), questions: q.data.runQuestions() };
+      return agentsState(port, q);
     case "getRunLog":
       return port.log(req.runId);
     case "previewAssign":
