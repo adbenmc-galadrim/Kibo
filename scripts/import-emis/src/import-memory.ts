@@ -18,10 +18,18 @@ export const ImportMemory = z.record(z.string(), TicketMemory);
 export type ImportMemory = z.infer<typeof ImportMemory>;
 const MemoryFile = z.object({ version: z.literal(1), tickets: ImportMemory });
 
+function parseJson(file: string): unknown {
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    throw new KiboError("INVALID_INPUT", `${file} is not valid JSON`);
+  }
+}
+
 export function loadMemory(dir: string): ImportMemory {
   const file = join(dir, MEMORY_FILE);
   if (!existsSync(file)) return {};
-  const parsed = MemoryFile.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  const parsed = MemoryFile.safeParse(parseJson(file));
   if (!parsed.success) throw new KiboError("INVALID_INPUT", `${file} is not an import memory`);
   return parsed.data.tickets;
 }

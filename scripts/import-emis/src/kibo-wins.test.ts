@@ -3,7 +3,7 @@ import type { StatusId, Ticket } from "@kibo/schema";
 import fc from "fast-check";
 import type { DesiredTicket } from "./desired";
 import { reconcile } from "./reconcile";
-import { applyLocally, emptySnapshot, fixtureDesired } from "./reconcile.test-kit";
+import { applyLocally, emptySnapshot, fixtureDesired, withLegacyArbitrages } from "./reconcile.test-kit";
 
 const desired = fixtureDesired();
 const first = reconcile(emptySnapshot(), desired);
@@ -81,6 +81,55 @@ test("a branch edited or removed in Kibo is not rewritten", () => {
   });
   const plan = editPlan("C1-2", { refs: [{ kind: "git_branch", branch: "feat/connexion", base: null }] });
   expect(reconcile(removed, plan, first.memory).commands).toEqual([]);
+});
+
+test("a branch changed by the plan is written when Kibo still has the imported one", () => {
+  const target = { kind: "git_branch" as const, branch: "feat/connexion-v2", base: null };
+  const r = reconcile(imported, editPlan("C1-2", { refs: [target] }), first.memory);
+  expect(r.commands).toEqual([{ method: "upsertExternalRef", ticketId: idOf("C1-2"), ref: target }]);
+  expect(r.changes).toContainEqual({ kind: "updated", what: "ticket C1-2", detail: "git_branch" });
+  expect(r.memory["plan:C1-2"]?.branch).toEqual(target);
+});
+
+test("a first run on the old import, without memory: old texts stay Kibo's, questions still migrate", () => {
+  const oldDescription = "Questions ouvertes du plan Emis, par groupe.\n";
+  const oldReason = "Q1 · Compte AWS au nom du client. Estelle.";
+  const old = withLegacyArbitrages({
+    ...imported,
+    questions: [],
+    tickets: imported.tickets.map((t) =>
+      t.id === idOf("arbitrages")
+        ? { ...t, description: oldDescription }
+        : t.id === idOf("C0-3")
+          ? { ...t, blockedReason: oldReason }
+          : t,
+    ),
+  });
+  const r = reconcile(old, desired);
+  expect(r.changes).toContainEqual({ kind: "kept", what: "ticket arbitrages", detail: "description (Kibo)" });
+  expect(r.changes).toContainEqual({ kind: "kept", what: "ticket C0-3", detail: "status (Kibo)" });
+  const touches = (id: string) =>
+    r.commands.some((c) => "ticketId" in c && c.ticketId === id && c.method !== "createQuestion");
+  expect(touches(idOf("arbitrages"))).toBe(false);
+  expect(touches(idOf("C0-3"))).toBe(false);
+  expect(r.commands.filter((c) => c.method === "createQuestion")).toHaveLength(3);
+  expect(r.commands.filter((c) => c.method === "removeLink")).toHaveLength(2);
+  expect(r.commands.filter((c) => c.method === "deleteTicket")).toHaveLength(5);
+  expect(r.changes.filter((c) => c.kind === "migrated")).toHaveLength(5);
+  const relinked = {
+    ...old,
+    links: old.links.filter((l) => !(l.from === idOf("C0-1") && l.to === idOf("C0-2"))),
+  };
+  expect(reconcile(relinked, desired).commands).toContainEqual({
+    method: "addLink",
+    from: idOf("C0-1"),
+    to: idOf("C0-2"),
+    type: "blocks",
+  });
+  const after = applyLocally(old, r);
+  expect(after.tickets.find((t) => t.id === idOf("arbitrages"))?.description).toBe(oldDescription);
+  expect(after.tickets.find((t) => t.id === idOf("C0-3"))?.blockedReason).toBe(oldReason);
+  expect(reconcile(after, desired, r.memory).commands).toEqual([]);
 });
 
 test("a ticket imported before the memory keeps its Kibo values and the memory starts from the plan", () => {

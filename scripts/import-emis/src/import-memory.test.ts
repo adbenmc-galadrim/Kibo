@@ -15,6 +15,13 @@ test("the memory round-trips through its file, absent means empty, garbage is re
     expect(loadMemory(join(dir, "notes"))).toEqual(memory);
     writeFileSync(join(dir, "notes", MEMORY_FILE), '{"version":2}');
     expect(() => loadMemory(join(dir, "notes"))).toThrow("not an import memory");
+    writeFileSync(join(dir, "notes", MEMORY_FILE), "{ tronqué");
+    expect(() => loadMemory(join(dir, "notes"))).toThrow(
+      expect.objectContaining({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("is not valid JSON"),
+      }),
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
