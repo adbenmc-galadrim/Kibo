@@ -2,6 +2,7 @@ import { z } from "zod";
 import { KiboError } from "./errors";
 import { ImportRef } from "./git-branch";
 import { NodeId } from "./ids";
+import type { RunView } from "./run";
 
 export const QUESTION_TITLE_MAX = 200;
 export const QUESTION_CONTEXT_MAX = 8000;
@@ -215,7 +216,7 @@ function toolProvisional(
   blocking: boolean,
 ): string | null | undefined {
   const provisional = raw === undefined ? "" : cut(raw, QUESTION_OPTION_MAX);
-  if (provisional && options.includes(provisional)) return provisional;
+  if (provisional && (options.length === 0 || options.includes(provisional))) return provisional;
   return blocking ? null : undefined;
 }
 
@@ -239,4 +240,27 @@ export function askInputFromTool(
     blocking,
   });
   return parsed.success ? parsed.data : null;
+}
+
+export type NoticeText = { title: string; body: string };
+type NoticeRun = Pick<RunView, "id" | "label" | "state" | "ticketKey">;
+
+export function askedNotice(run: Pick<RunView, "label" | "ticketKey">, title: string): NoticeText {
+  return {
+    title: `${run.label} a posé une question`,
+    body: run.ticketKey ? `${run.ticketKey} · ${title}` : title,
+  };
+}
+
+export function questionNotices(
+  previous: readonly RunQuestions[],
+  next: readonly RunQuestions[],
+  runs: readonly NoticeRun[],
+): NoticeText[] {
+  const before = new Map(previous.map((q) => [q.runId, q.open]));
+  return next.flatMap((q) => {
+    const run = runs.find((r) => r.id === q.runId);
+    if (!run || run.state === "waiting_input" || q.open <= (before.get(q.runId) ?? 0)) return [];
+    return [askedNotice(run, q.latestTitle ?? "")];
+  });
 }

@@ -8,6 +8,7 @@ import {
 import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
+  type DeliveryResult,
   INBOX_ID,
   isInbox,
   KiboError,
@@ -19,7 +20,7 @@ import {
 import type { LoroDoc } from "loro-crdt";
 import { createDataPort } from "./agents/data-port";
 import type { AgentDataPort } from "./agents/orchestrator";
-import { type AgentsPort, handleAgentRequest } from "./agents-rpc";
+import { type AgentQuestions, type AgentsPort, deliverTicketAnswers, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
@@ -36,6 +37,8 @@ import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
 import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
 import { createProjectRemoval } from "./projects/remove";
+import { questionActorInterceptor } from "./questions/question-actor";
+import { afterQuestionCommands } from "./questions/question-events";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
 import { readConfig, runConfigCommand } from "./workspace-config";
@@ -54,6 +57,7 @@ export type Service = {
   docs: Docs;
   icons: IconStore;
   agentData: AgentDataPort;
+  deliverAnswers(projectId: string, ticketId: string): DeliveryResult;
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
   attachIntegrations(rpc: IntegrationRpc): () => void;
@@ -122,6 +126,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
       components?.afterCommand(projectId);
+      afterQuestionCommands(done, { emit: (m) => docs.emit(m), agents, questions });
     },
   });
   const docs: Docs = {
@@ -196,6 +201,13 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       };
     },
   };
+  const agentData = createDataPort(docs, settings);
+  const questions: AgentQuestions = {
+    data: agentData,
+    viewer: (projectId) => docs.identity(projectId),
+    assertWritable: (projectId) => docs.assertWritable(projectId),
+  };
+  path.commands.intercept(questionActorInterceptor(questions.viewer));
   const componentsReady = (): ComponentsPort => {
     if (!components) throw new KiboError("INTERNAL", "components are not ready");
     return components;
@@ -225,7 +237,9 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   return {
     docs,
     icons,
-    agentData: createDataPort(docs, settings),
+    agentData,
+    deliverAnswers: (projectId, ticketId) =>
+      deliverTicketAnswers(agentsReady(), questions, projectId, ticketId),
     attachAgents(port) {
       agents = port;
       const offTopic = port.onChange(() => docs.emit({ topic: "agents" }));
@@ -285,7 +299,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         case "saveTabs":
           return saveTabs(store, req.state);
         default:
-          return handleAgentRequest(agentsReady(), req);
+          return handleAgentRequest(agentsReady(), req, questions);
       }
     },
     onChange(listener) {

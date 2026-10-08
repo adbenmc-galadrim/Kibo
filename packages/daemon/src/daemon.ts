@@ -31,6 +31,7 @@ import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { createProjectAdmin } from "./projects/admin";
+import { agentQuestionHooks } from "./questions/agent-hooks";
 import { listInterfaces } from "./remote/interfaces";
 import { PairingCodes } from "./remote/pairing-codes";
 import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
@@ -161,6 +162,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     integrations: () => integrations.hooks,
     presence: (projectId) => collab.presence.peers(projectId),
     sharing: (projectId) => collab.syncInfo(projectId),
+    deliverAnswers: (projectId, ticketId) => service.deliverAnswers(projectId, ticketId),
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
@@ -235,10 +237,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
-    hooks: {
-      verify: (runId, runToken) => agents?.hooks.verify(runId, runToken) ?? false,
-      receive: (runId, payload, toolInput) => agents?.hooks.receive(runId, payload, toolInput) ?? null,
-    },
+    hooks: agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {})),
     assets: components.assets,
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,

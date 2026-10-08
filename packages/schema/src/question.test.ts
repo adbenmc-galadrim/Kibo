@@ -5,12 +5,14 @@ import { KiboError } from "./errors";
 import {
   AnswerInput,
   answerPrompt,
+  askedNotice,
   askInputFromTool,
   countOpenByRun,
   DeliveryResult,
   deliveryPrompt,
   isOpen,
   Question,
+  questionNotices,
   resolveAnswer,
   undeliveredAnswers,
 } from "./question";
@@ -111,7 +113,8 @@ test("the tool input of ask_user and ask_question is reduced and bounded", () =>
     blocking: true,
   });
   expect(askInputFromTool({ question: "" }, true)).toBeNull();
-  expect(askInputFromTool({ question: "x", provisional: "Oui" }, false)).toBeNull();
+  expect(askInputFromTool({ question: "x" }, false)).toBeNull();
+  expect(askInputFromTool({ question: "x", options: ["A", "B"], provisional: "C" }, false)).toBeNull();
   expect(askInputFromTool({ question: "x".repeat(300) }, true)?.title).toHaveLength(200);
   expect(askInputFromTool(null, true)).toBeNull();
 });
@@ -207,4 +210,44 @@ test("marking answers delivered is reserved to the daemon, delivering them is an
     projectId: "p1",
     ticketId: "t1",
   });
+});
+
+test("an ask_question provisional choice is kept when the agent gives no options", () => {
+  expect(askInputFromTool({ question: "x", provisional: " Oui " }, false)).toEqual({
+    title: "x",
+    context: "",
+    options: [],
+    provisional: "Oui",
+    blocking: false,
+  });
+  expect(askInputFromTool({ question: "x", provisional: "Oui" }, true)?.provisional).toBe("Oui");
+});
+
+const RUNS = [
+  { id: "r1", label: "opus-dev", state: "done", ticketKey: "KIB-14" },
+  { id: "r2", label: "opus-dev-2", state: "waiting_input", ticketKey: "KIB-15" },
+  { id: "r3", label: "sonnet", state: "running", ticketKey: null },
+] as const;
+const tally = (runId: string, open: number, latestTitle: string | null = "Quel port ?") => ({
+  runId,
+  open,
+  undelivered: 0,
+  latestTitle,
+});
+
+test("a question notice follows a rise of open questions, outside the waiting runs", () => {
+  expect(askedNotice({ label: "opus-dev", ticketKey: "KIB-14" }, "Quel port ?")).toEqual({
+    title: "opus-dev a posé une question",
+    body: "KIB-14 · Quel port ?",
+  });
+  expect(questionNotices([], [tally("r1", 1)], RUNS)).toEqual([
+    { title: "opus-dev a posé une question", body: "KIB-14 · Quel port ?" },
+  ]);
+  expect(questionNotices([tally("r1", 2)], [tally("r1", 1)], RUNS)).toEqual([]);
+  expect(questionNotices([tally("r1", 1)], [tally("r1", 1)], RUNS)).toEqual([]);
+  expect(questionNotices([], [tally("r2", 1)], RUNS)).toEqual([]);
+  expect(questionNotices([], [tally("r9", 1)], RUNS)).toEqual([]);
+  expect(questionNotices([tally("r3", 1)], [tally("r3", 2, "Base ?")], RUNS)).toEqual([
+    { title: "sonnet a posé une question", body: "Base ?" },
+  ]);
 });

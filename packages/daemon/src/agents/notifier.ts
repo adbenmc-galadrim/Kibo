@@ -1,4 +1,4 @@
-import { type RunState, type RunView, runSubject } from "@kibo/schema";
+import { askedNotice, type Question, type RunState, type RunView, runSubject } from "@kibo/schema";
 import { fr } from "./fr";
 
 export type Notice = { title: string; body: string };
@@ -15,6 +15,10 @@ export function noticeFor(previous: RunState, run: RunView): Notice | null {
     default:
       return null;
   }
+}
+
+export function questionNotice(run: RunView, question: Question): Notice | null {
+  return question.blocking ? null : askedNotice(run, question.title);
 }
 
 export function stdoutNotifier(write: (line: string) => void): (notice: Notice) => void {

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import {
   type AgentModel,
   AllowRules,
-  ASK_TOOL,
+  ASK_TOOLS,
   HookEventName,
   KiboError,
   type PermissionMode,
@@ -46,7 +46,7 @@ export type RunProcess = { pid: number; kill(): void; exited: Promise<ProcessOut
 const TOOL_EVENTS = new Set<string>(["PreToolUse", "PostToolUse"]);
 
 function profileRules(allow: readonly string[]): string[] {
-  const rules = AllowRules.safeParse(allow.filter((rule) => rule !== ASK_TOOL));
+  const rules = AllowRules.safeParse(allow.filter((rule) => !ASK_TOOLS.includes(rule)));
   if (!rules.success)
     throw new KiboError("INVALID_INPUT", "the profile carries an unsafe or malformed permission rule");
   return [...new Set(rules.data)];
@@ -66,7 +66,7 @@ export function claudeSettings(hook: HookLauncher, allow: readonly string[] = []
       ],
     ]),
   );
-  return JSON.stringify({ hooks, permissions: { allow: [ASK_TOOL, ...rules] } });
+  return JSON.stringify({ hooks, permissions: { allow: [...ASK_TOOLS, ...rules] } });
 }
 
 const RESERVED_ARGS = new Set([

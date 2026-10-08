@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ALLOW_MAX, ASK_TOOL, HookEventName, KiboError } from "@kibo/schema";
+import { ALLOW_MAX, ASK_QUESTION_TOOL, ASK_TOOL, HookEventName, KiboError } from "@kibo/schema";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 import {
   childEnv,
@@ -108,25 +108,27 @@ test("the CLI capabilities are read from claude --help", async () => {
   );
 });
 
-test("settings send every hook event to kibo-hook and allow only the ask tool", () => {
+test("settings send every hook event to kibo-hook and allow only the ask tools", () => {
   const settings = JSON.parse(claudeSettings(kiboHook));
   for (const event of HookEventName.options) {
     const [group] = settings.hooks[event];
     expect(group.hooks).toEqual([{ type: "command", command: "'/k/kibo-hook' 'event'", timeout: 10 }]);
     expect(group.matcher).toBe(event.endsWith("ToolUse") ? "*" : undefined);
   }
-  expect(settings.permissions).toEqual({ allow: [ASK_TOOL] });
+  expect(settings.permissions).toEqual({ allow: [ASK_TOOL, ASK_QUESTION_TOOL] });
 });
 
-test("settings allow ask_user first, then the profile rules, without duplicates", () => {
-  const settings = JSON.parse(claudeSettings(kiboHook, ["Bash(pnpm *)", ASK_TOOL, "Edit"]));
-  expect(settings.permissions.allow).toEqual([ASK_TOOL, "Bash(pnpm *)", "Edit"]);
+test("settings allow the ask tools first, then the profile rules, without duplicates", () => {
+  const settings = JSON.parse(
+    claudeSettings(kiboHook, ["Bash(pnpm *)", ASK_QUESTION_TOOL, ASK_TOOL, "Edit"]),
+  );
+  expect(settings.permissions.allow).toEqual([ASK_TOOL, ASK_QUESTION_TOOL, "Bash(pnpm *)", "Edit"]);
 });
 
 test("the command line carries the profile rules in its settings", () => {
   const args = claudeArgs({ ...base, allow: ["Bash(git *)"], sessionId: "s1", resume: false });
   const settings = JSON.parse(args[args.indexOf("--settings") + 1] ?? "");
-  expect(settings.permissions.allow).toEqual([ASK_TOOL, "Bash(git *)"]);
+  expect(settings.permissions.allow).toEqual([ASK_TOOL, ASK_QUESTION_TOOL, "Bash(git *)"]);
 });
 
 test("unsafe rules are refused again before claude is launched", () => {
