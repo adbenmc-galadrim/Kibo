@@ -120,7 +120,9 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   ]);
   expect(snap.tickets.filter((t) => /^Q\d+ · /.test(t.title))).toEqual([]);
   expect(
-    snap.questions.map((q) => [q.importRef?.id, q.blocking, q.createdBy.kind, q.answer?.text ?? null]),
+    snap.questions
+      .map((q) => [q.importRef?.id ?? "", q.blocking, q.createdBy.kind, q.answer?.text ?? null] as const)
+      .sort(([a], [b]) => a.localeCompare(b)),
   ).toEqual([
     ["Q1", true, "import", null],
     ["Q2", true, "import", "Résolue dans le plan Emis"],
