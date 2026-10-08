@@ -6,6 +6,19 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.17.0-alpha.1 — 2026-10-09
+
+- Étiquettes sur les tickets (`clé:valeur`), dans la fiche, avec filtres et pastilles dans Tickets et Kanban.
+- Branche de travail d'un ticket, affichée sur sa fiche.
+- Worktrees des agents configurables par projet : branche de base, chemin, commande de préparation ; « Assigner » rappelle le worktree prévu.
+- Mode Automatique et autorisations des profils d'agent ; un seul run à la fois par ticket.
+- PR : « En review » dès la PR brouillon, même ouverte hors de Kibo ; « Terminé » quand elle est fusionnée sur la branche d'intégration, y compris pour les PR empilées.
+- Changements : le travail de toute la branche depuis sa base, ses commits poussés ou non, « Voir la PR ».
+- Questions des agents : bloquantes ou à valider, composant Questions (widget et vue), pastille « n questions », « Terminé · n questions », « Transmettre à l'agent ».
+- Le même agent reprend sa session sur un ticket ; « Repartir de zéro » dans « Assigner ».
+- Import du projet Emis rejouable, sans jamais écraser ce que tu as modifié dans Kibo.
+- Le toast « Onglet fermé » disparaît (⌘⇧T rouvre toujours l'onglet).
+
 ## 0.16.0-alpha.1 — 2026-10-07
 
 - Kibo passe en alpha jusqu'au lancement : versions `0.<phase>.0-alpha.N`, publiées en pré-release, mises à jour par le canal `alpha`.
