@@ -23,8 +23,6 @@ export const frCode = {
     title: (project: string, item: string) => `${project} · ${item}`,
     saveFailed: "Impossible d'enregistrer les onglets.",
     loadFailed: "Impossible de charger les onglets.",
-    closed: "Onglet fermé",
-    undoClose: "Annuler",
     previewLabel: (title: string) => `${title} · aperçu`,
     keep: "Garder ouvert",
   },

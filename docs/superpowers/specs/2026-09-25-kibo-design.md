@@ -276,7 +276,7 @@ Toutes les maquettes sont dans Penpot, en **thème sombre et en thème clair**.
   - 152. Notes : éditeur, barre d'outils, menu `/`, bulle, images (phase 12, §18.7)
   - 153. Graphe : navigation et sélection (phase 12, §18.7)
   - 154. Widget Graphe par format (phase 12, §18.7)
-  - 155. Onglet fermé, Annuler (phase 12, §18.5)
+  - 155. Onglet fermé, Annuler (phase 12, §18.5 ; toast retiré le 2026-10-08)
   - 156. Visionneuse 3D (phase 13, §19)
   - 157. Serpent et plein écran de Kibo (phase 13, §19)
   - 158. Sélection partagée (phase 13, §19)
@@ -580,7 +580,7 @@ L'icône de l'application suit la grille d'Apple : sur une toile de 1024 px, la 
 
 ### 18.5 Clavier : aucune touche seule ne ferme ni ne détruit
 
-Spec code et onglets §13 : garde globale sur `Backspace` et `Delete` hors champ éditable, toast « Onglet fermé · Annuler » à toute fermeture d'onglet, `⌘⇧T` rouvre le dernier onglet fermé (pile de 10, en mémoire).
+Spec code et onglets §13 : garde globale sur `Backspace` et `Delete` hors champ éditable, `⌘⇧T` rouvre le dernier onglet fermé (pile de 10, en mémoire) ; le toast « Onglet fermé · Annuler » est retiré à la demande d'Adam le 2026-10-08.
 
 ### 18.6 Agents : historique
 
@@ -820,7 +820,7 @@ Aucun code nouveau en phase 15 : `INVALID_INPUT`, `NOT_CONNECTED`, `PERMISSION_D
 ### 22.11 Onglets d'aperçu à la VSCode (demande d'Adam)
 
 - Demande : « le même système d'onglet que sur VSCode, c'est-à-dire qu'on navigue sur les pages mais rien n'est permanent dans la barre des onglets ; si on double-clique sur un onglet alors il reste. Joue également sur l'italique ou non comme sur VSCode. » Précision : le **double-clic sur une entrée du menu latéral** (rail : projets, pages, Agents…) ouvre la page en onglet **permanent** ; le simple clic reste un aperçu.
-- **Décision** (détail et règles complètes : spec code et onglets **§14**, qui amende son §7) : au plus **un onglet d'aperçu** (`Tab.preview`), titre en italique et libellé accessible « · aperçu », remplacé par chaque navigation (rail, palette, liens, fil d'Ariane, clic dans une page, adresse) ; rendu **permanent** par double-clic sur l'onglet, « Garder ouvert » (menu contextuel), double-clic sur une entrée de navigation, `⌘`-clic / clic du milieu / `⌘T` (nouvel onglet permanent), épingler, dupliquer, glisser-déposer, réouverture (« Annuler », `⌘⇧T`), et par **toute modification** du contenu (commande de projet ou écriture `code` émise hors dialogue pendant que l'aperçu est actif). Un onglet déjà ouvert est activé sans aperçu en double ; l'Accueil reste fixe ; épinglé reste au-dessus de permanent ; `preview` est persisté par workspace et restauré ; « Fermer », `⌘W`, toast « Onglet fermé · Annuler » et `⌘⇧T` inchangés et valables pour l'aperçu.
+- **Décision** (détail et règles complètes : spec code et onglets **§14**, qui amende son §7) : au plus **un onglet d'aperçu** (`Tab.preview`), titre en italique et libellé accessible « · aperçu », remplacé par chaque navigation (rail, palette, liens, fil d'Ariane, clic dans une page, adresse) ; rendu **permanent** par double-clic sur l'onglet, « Garder ouvert » (menu contextuel), double-clic sur une entrée de navigation, `⌘`-clic / clic du milieu / `⌘T` (nouvel onglet permanent), épingler, dupliquer, glisser-déposer, réouverture (`⌘⇧T`), et par **toute modification** du contenu (commande de projet ou écriture `code` émise hors dialogue pendant que l'aperçu est actif). Un onglet déjà ouvert est activé sans aperçu en double ; l'Accueil reste fixe ; épinglé reste au-dessus de permanent ; `preview` est persisté par workspace et restauré ; « Fermer », `⌘W` et `⌘⇧T` inchangés et valables pour l'aperçu.
 - **Écart avec §8 et la spec code et onglets §7** (signalé au chef d'équipe) : « un clic ordinaire remplace la cible de l'onglet actif » disparaît ; un onglet permanent n'est plus jamais remplacé par un clic. Écran **165** « Barre d'onglets : onglet d'aperçu, Garder ouvert » (165b après double-clic). Budget : la barre et le réducteur sont dans l'entrée (≈ +0,4 kB), le menu contextuel reste différé.
 
 ### 22.12 Versions : alpha jusqu'au lancement (décision d'Adam du 2026-10-06)

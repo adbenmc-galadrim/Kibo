@@ -250,14 +250,13 @@ test("closing a project's tabs does not fill the closed pile", async () => {
   expect(api().closed).toEqual([]);
 });
 
-test("closing a tab and its duplicate counts two closes", async () => {
+test("closing a tab and its duplicate stacks both targets", async () => {
   const api = await mountTabs();
   act(() => api().open(pageTarget("1"), { newTab: true }));
   const first = api().state.activeId ?? "";
   act(() => api().dispatch({ type: "duplicate", id: first, newId: "copy" }));
   act(() => api().dispatch({ type: "close", id: "copy" }));
   act(() => api().dispatch({ type: "close", id: first }));
-  expect(api().closures).toBe(2);
   expect(api().closed).toEqual([pageTarget("1"), pageTarget("1")]);
 });
 
