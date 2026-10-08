@@ -1,3 +1,6 @@
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { list, rpc, runState, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
@@ -92,4 +95,71 @@ test("conversation avec un run terminé, puis passage en review à la demande", 
   const review = page.getByRole("region", { name: "En review" });
   await expect(review.getByRole("article").filter({ hasText: "KIB-1" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Passer en review" })).toBeHidden();
+});
+
+test("réassigner un ticket reprend sa session principale", async ({ page }, info) => {
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  const folder = realpathSync(mkdtempSync(join(tmpdir(), "kibo-e2e-session-")));
+  try {
+    const projectId = text(
+      await rpc(page, { method: "createProject", name: "Session", key: "SES", folder, color: "#22C55E" }),
+      "id",
+    );
+    const command = (cmd: Record<string, unknown>) =>
+      rpc(page, { method: "command", projectId, command: cmd });
+    const board = text(await command({ method: "addPage", title: "Kanban", kind: "view" }), "id");
+    await command({ method: "addInstance", pageId: board, component: "kanban@1.0.0" });
+    const ticketId = text(await command({ method: "createTicket", title: "Brief de reprise" }), "id");
+    const profile = await rpc(page, {
+      method: "config",
+      command: {
+        method: "createProfile",
+        profile: {
+          name: "repo-dev",
+          model: "opus",
+          execution: "cli",
+          permissionMode: "acceptEdits",
+          workspace: "repo",
+          subagents: [],
+          maxParallel: 1,
+        },
+      },
+    });
+    await rpc(page, {
+      method: "assignAgent",
+      projectId,
+      ticketId,
+      profileId: text(profile, "id"),
+      brief: "",
+    });
+    await expect.poll(() => runState(page, "SES-1"), { timeout: 20_000 }).toBe("done");
+
+    await page.goto(`/#/p/${projectId}/${encodeURIComponent(board)}`);
+    await page.getByRole("button", { name: "Brief de reprise" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Assigner à un agent" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("combobox", { name: "Profil" }).click();
+    await page.getByRole("option", { name: /^repo-dev · / }).click();
+    await expect(dialog.getByText(/^reprend repo-dev-1 \(1 tour, 1,5k tokens\)$/)).toBeVisible();
+    const reset = dialog.getByRole("checkbox", { name: "Repartir de zéro" });
+    await expect(reset).not.toBeChecked();
+    await shot(page, info, "assigner-session");
+    await dialog.getByRole("button", { name: "Mettre en file" }).click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => lastRunTurns(page), { timeout: 20_000 }).toBe(1);
+    await expect.poll(() => runState(page, "SES-1"), { timeout: 20_000 }).toBe("done");
+
+    await page.getByRole("button", { name: "Déplier les agents" }).click();
+    await page
+      .getByRole("navigation", { name: "Runs" })
+      .getByRole("button", { name: /repo-dev-1/ })
+      .first()
+      .click();
+    const journal = page.getByRole("list", { name: "Journal de repo-dev-1" });
+    await expect(journal.getByText("Session : reprise du run repo-dev-1 (1 tour)")).toBeVisible();
+    await shot(page, info, "journal-session");
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
 });
