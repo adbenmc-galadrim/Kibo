@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -146,11 +146,12 @@ const branchTicket = (title: string, branch: string, statusId: StatusId = "in_pr
 const listCalls = (branch: string) =>
   readFakeGhLog(gh).filter((c) => c.args[1] === "list" && c.args.includes(`--head=${branch}`)).length;
 
-test("a draft PR opened outside Kibo is attached like one Kibo creates, then followed", async () => {
+test("a draft PR opened outside Kibo moves the ticket to review, ready does not retrigger", async () => {
   const id = branchTicket("Stockage", "feat/stockage-fichiers");
   setFakePrs([{ number: 9, state: "OPEN", isDraft: true, base: "dev", head: "feat/stockage-fichiers" }]);
+  const rules = spyOn(service, "triggerRules");
   start(withWorktree(service, DEV));
-  expect(await waitFor(() => prOf(id) !== undefined)).toBe(true);
+  expect(await waitFor(() => ticketOf(id)?.statusId === "in_review")).toBe(true);
   expect(prOf(id)).toEqual({
     kind: "github_pr",
     url: urlOf(9),
@@ -159,11 +160,12 @@ test("a draft PR opened outside Kibo is attached like one Kibo creates, then fol
     base: "dev",
     head: "feat/stockage-fichiers",
   });
-  await Bun.sleep(150);
-  expect(ticketOf(id)?.statusId).toBe("in_progress");
   expect(listCalls("feat/stockage-fichiers")).toBe(1);
   setFakePrs([{ number: 9, state: "OPEN", base: "dev", head: "feat/stockage-fichiers" }]);
-  expect(await waitFor(() => ticketOf(id)?.statusId === "in_review")).toBe(true);
+  expect(await waitFor(() => prOf(id)?.state === "open")).toBe(true);
+  await Bun.sleep(150);
+  expect(rules.mock.calls.map(([, t]) => t.kind)).toEqual(["pr_opened"]);
+  expect(listCalls("feat/stockage-fichiers")).toBe(1);
 });
 
 test("an open PR opened outside Kibo moves the ticket to review", async () => {

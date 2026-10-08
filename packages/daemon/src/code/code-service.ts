@@ -128,8 +128,7 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
         projectId: req.projectId,
         command: { method: "upsertExternalRef", ticketId: req.ticketId, ref: { kind: "github_pr", ...pr } },
       });
-      if (pr.state === "open")
-        triggerRules(service, req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
+      triggerRules(service, req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
     }
     return pr;
   };

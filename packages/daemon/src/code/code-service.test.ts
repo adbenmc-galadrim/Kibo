@@ -366,15 +366,21 @@ const setFakePrs = (patch: Record<string, unknown>) => {
   writeFileSync(state, JSON.stringify(prs.map((p) => ({ ...p, ...patch }))));
 };
 
-test("a draft PR moves the ticket only once it is marked ready", async () => {
-  const c = start({ prPollMs: 50 });
-  const ticket = createTicket("Schéma");
-  await createLinkedPr(c, ticket.id, true);
-  expect(refs()?.[0]?.state).toBe("draft");
-  expect(statusOf()).toBe(ticket.statusId);
-  setFakePrs({ isDraft: false });
-  expect(await waitFor(() => refs()?.[0]?.state === "open")).toBe(true);
-  expect(statusOf()).toBe("in_review");
+test("a draft PR created by Kibo moves the ticket to review, ready does not retrigger", async () => {
+  const rules = spyOn(service, "triggerRules");
+  try {
+    const c = start({ prPollMs: 50 });
+    const ticket = createTicket("Schéma");
+    await createLinkedPr(c, ticket.id, true);
+    expect(refs()?.[0]?.state).toBe("draft");
+    expect(statusOf()).toBe("in_review");
+    setFakePrs({ isDraft: false });
+    expect(await waitFor(() => refs()?.[0]?.state === "open")).toBe(true);
+    expect(statusOf()).toBe("in_review");
+    expect(rules.mock.calls.map(([, t]) => t.kind)).toEqual(["pr_opened"]);
+  } finally {
+    rules.mockRestore();
+  }
 });
 
 test("a failing rule is logged, the PR is still created and followed", async () => {

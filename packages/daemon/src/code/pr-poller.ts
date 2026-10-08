@@ -1,7 +1,7 @@
 import type { GithubPrRef, PrInfo, TicketView } from "@kibo/schema";
 import { call, type Service } from "../service";
 import { attachPr, type Candidate, discoveryCandidates, findPr } from "./pr-discovery";
-import { completeMerge, isFollowed, recordPr, triggerRules } from "./pr-rules";
+import { completeMerge, isFollowed, recordPr } from "./pr-rules";
 import { prState } from "./remote-ops";
 import type { Env } from "./run";
 
@@ -33,8 +33,6 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
     if (stopped || !changed(ref, info)) return;
     const next: GithubPrRef = { ...ref, state: info.state, base: info.base, head: info.head };
     recordPr(service, projectId, ticket.id, next);
-    if (ref.state === "draft" && info.state === "open")
-      triggerRules(service, projectId, { kind: "pr_opened", ticketId: ticket.id });
     if (info.state === "merged") completeMerge(service, projectId, ticket.id, next);
   };
 

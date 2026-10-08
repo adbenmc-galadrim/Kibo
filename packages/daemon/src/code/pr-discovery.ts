@@ -47,7 +47,8 @@ export function attachPr(service: Service, candidate: Candidate, info: PrInfo): 
   if (previous && same(previous, info)) return;
   const ref: GithubPrRef = { kind: "github_pr", ...info };
   recordPr(service, projectId, ticketId, ref);
-  if (info.state === "open") triggerRules(service, projectId, { kind: "pr_opened", ticketId });
+  if (isFollowed(ref) && !(previous && isFollowed(previous)))
+    triggerRules(service, projectId, { kind: "pr_opened", ticketId });
   if (info.state === "merged" && previous?.state !== "merged")
     completeMerge(service, projectId, ticketId, ref);
 }
