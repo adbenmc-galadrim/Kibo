@@ -170,7 +170,7 @@ function Section({ area, title, files, bulk, selected, busy, readOnly, ...handle
         )}
       </div>
       {open && (
-        <ul className="grid gap-0.5">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
           {files.map((f) => (
             <Row
               key={`${area}:${f.path}`}

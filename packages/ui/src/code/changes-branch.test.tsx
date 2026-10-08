@@ -185,3 +185,13 @@ test("a remote viewer reads the branch work too", async () => {
   await screen.findByRole("region", { name: "Branche · 2 fichiers · +52 −3 depuis origin/dev" });
   await screen.findByRole("region", { name: "@@ -1 +1,2 @@ apps/api/src/files.ts" });
 });
+
+test("branch lists keep long paths inside their column", async () => {
+  renderView();
+  const files = await screen.findByRole("region", {
+    name: "Branche · 2 fichiers · +52 −3 depuis origin/dev",
+  });
+  const commits = (await screen.findByRole("heading", { name: "Commits de la branche" })).closest("section");
+  for (const grid of [files, files.querySelector("ul"), commits, commits?.querySelector("ul")])
+    expect(grid?.className).toContain("grid-cols-[minmax(0,1fr)]");
+});

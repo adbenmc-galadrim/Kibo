@@ -47,7 +47,7 @@ export function BranchFiles({ view }: { view: View }) {
   if (!changes?.base || changes.files.length === 0) return null;
   const title = fr.changes.branch(changes.files.length, changes.additions, changes.deletions, changes.base);
   return (
-    <section aria-labelledby={id} className="grid min-w-0 gap-0.5 border-t pt-2">
+    <section aria-labelledby={id} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 border-t pt-2">
       <button
         type="button"
         aria-expanded={open}
@@ -64,7 +64,7 @@ export function BranchFiles({ view }: { view: View }) {
         </span>
       </button>
       {open && (
-        <ul className="grid gap-0.5">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
           {changes.files.map((f) => (
             <Row
               key={f.path}

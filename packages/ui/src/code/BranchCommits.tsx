@@ -25,7 +25,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
   const [rewording, setRewording] = useState<CommitInfo | null>(null);
   const [undoing, setUndoing] = useState<CommitInfo | null>(null);
   return (
-    <section aria-labelledby={id} className="grid min-w-0 gap-2 border-t pt-4">
+    <section aria-labelledby={id} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 border-t pt-4">
       <header className="flex items-center justify-between">
         <h3 id={id} className="text-xs font-semibold">
           {base ? fr.commit.branchCommits : fr.commit.latestCommits}
@@ -43,7 +43,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
       {base && commits.length === 0 && (
         <p className="text-xs text-muted-foreground">{fr.commit.noBranchCommits(base)}</p>
       )}
-      <ul className="grid min-w-0 gap-2">
+      <ul className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
         {unpushed.map((c, i) => (
           <li key={c.sha} className="min-w-0 rounded-lg border p-3">
             <p className="flex min-w-0 items-center gap-2 text-xs">
