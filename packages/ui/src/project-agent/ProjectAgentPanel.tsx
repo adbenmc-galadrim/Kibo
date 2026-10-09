@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { client } from "../api";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { useHost } from "../shell/Host";
+import { useConfig } from "../state/use-agents";
 import { useRunLog } from "../state/use-run-log";
 import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
@@ -34,7 +35,8 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
     () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
     [log, view],
   );
-  const labels = useMemo(() => projectLabels(project), [project]);
+  const profiles = useConfig()?.profiles;
+  const labels = useMemo(() => projectLabels(project, profiles), [project, profiles]);
 
   const send = async (text: string) => {
     await client.rpc({ method: "sendProjectAgentMessage", projectId, text });

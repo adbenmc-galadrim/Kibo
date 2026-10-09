@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import type { ProposedAction } from "@kibo/schema";
-import { actionDiff, actionTitle, groupActions, projectLabels, replacesContent } from "./batch-groups";
+import {
+  actionDiff,
+  actionTitle,
+  defaultLabels,
+  groupActions,
+  projectLabels,
+  replacesContent,
+} from "./batch-groups";
 import { emisProject, pendingBatch } from "./fixtures";
 
 test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
@@ -104,7 +111,7 @@ test("actionDiff shows before → after from the captured state", () => {
 
 test("custom workflow labels are used when given", () => {
   const status: ProposedAction = { id: 2, type: "setStatus", ticket: "EMIS-11", statusId: "done", why: "" };
-  const labels = { status: (id: string) => id.toUpperCase(), ticket: () => null };
+  const labels = { ...defaultLabels, status: (id: string) => id.toUpperCase() };
   expect(actionDiff(status, { actionId: 2, fields: { statusId: "todo" } }, labels)).toEqual({
     before: "TODO",
     after: "DONE",
@@ -136,4 +143,11 @@ test("a parent change shows the captured parentId as a key from the project, nev
     ),
   ).toEqual({ before: "ticket introuvable", after: "new:1" });
   expect(actionDiff(move("EMIS-11"), undefined, labels)).toEqual({ before: "—", after: "EMIS-11" });
+});
+
+test("an assignment names the profile, never its id", () => {
+  const assign: ProposedAction = { id: 1, type: "assignAgent", ticket: "EMIS-1", profileId: "p-42", why: "" };
+  const labels = projectLabels(emisProject(), [{ id: "p-42", name: "opus-dev" }]);
+  expect(actionTitle(assign, labels)).toBe("Assigner EMIS-1 à opus-dev");
+  expect(actionTitle({ ...assign, profileId: "gone" }, labels)).toBe("Assigner EMIS-1 à gone");
 });

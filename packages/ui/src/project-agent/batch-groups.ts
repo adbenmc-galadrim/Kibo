@@ -1,6 +1,7 @@
 import {
   ACTION_GROUPS,
   type ActionGroup,
+  type AgentProfile,
   type AnswerInput,
   DEFAULT_WORKFLOW,
   type ExpectedState,
@@ -11,7 +12,11 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 
 export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
 export type ActionDiff = { before: string; after: string };
-export type DiffLabels = { status(statusId: string): string; ticket(ticketId: string): string | null };
+export type DiffLabels = {
+  status(statusId: string): string;
+  ticket(ticketId: string): string | null;
+  profile(profileId: string): string;
+};
 
 const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes"];
 const t = frProjectAgent.action;
@@ -20,12 +25,17 @@ const NOTHING = "—";
 export const defaultLabels: DiffLabels = {
   status: (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id,
   ticket: () => null,
+  profile: (id) => id,
 };
 
-export function projectLabels(project: ProjectSnapshot): DiffLabels {
+export function projectLabels(
+  project: ProjectSnapshot,
+  profiles: readonly Pick<AgentProfile, "id" | "name">[] = [],
+): DiffLabels {
   return {
     status: (id) => project.workflow.find((s) => s.id === id)?.label ?? id,
     ticket: (id) => project.tickets.find((t) => t.id === id)?.keyLabel ?? null,
+    profile: (id) => profiles.find((p) => p.id === id)?.name ?? id,
   };
 }
 
@@ -53,7 +63,7 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
     case "unlink":
       return t.unlink(action.from, action.to);
     case "assignAgent":
-      return t.assignAgent(action.ticket, action.profileId);
+      return t.assignAgent(action.ticket, labels.profile(action.profileId));
     case "deliverAnswers":
       return t.deliverAnswers(action.ticket);
     case "cancelRun":
