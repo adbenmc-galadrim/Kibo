@@ -1,4 +1,5 @@
 import {
+  EMBED_CHECK_CHALLENGE_TTL_MS,
   EMBED_CHECK_ERROR_TTL_MS,
   EMBED_CHECK_MAX,
   EMBED_CHECK_MAX_BYTES,
@@ -43,7 +44,12 @@ function frameOptionsRefuse(value: string | null): boolean {
   return value.split(",").some((v) => ["deny", "sameorigin"].includes(v.trim().toLowerCase()));
 }
 
+function isChallenge(headers: Headers): boolean {
+  return headers.get("cf-mitigated")?.trim().toLowerCase() === "challenge";
+}
+
 export function embedCheckOf(status: number, headers: Headers, uiOrigins: readonly string[]): EmbedCheck {
+  if (isChallenge(headers)) return { ok: true, challenged: true };
   if (status === 404) return { ok: false, code: "REMOTE_NOT_FOUND" };
   if (status === 401 || status === 403) return { ok: false, code: "REMOTE_REJECTED" };
   if (status >= 500) return { ok: false, code: "REMOTE_UNAVAILABLE" };
@@ -63,6 +69,11 @@ const DETAILS: Record<Exclude<EmbedCheck, { ok: true }>["code"], string> = {
 
 type Cached = { check: EmbedCheck; expiresAt: number };
 
+function ttlOf(check: EmbedCheck): number {
+  if (!check.ok) return EMBED_CHECK_ERROR_TTL_MS;
+  return check.challenged ? EMBED_CHECK_CHALLENGE_TTL_MS : EMBED_CHECK_TTL_MS;
+}
+
 export function createEmbedChecker(deps: {
   fetch: IntegrationFetch;
   now(): number;
@@ -71,10 +82,7 @@ export function createEmbedChecker(deps: {
   const cache = new Map<string, Cached>();
   const remember = (target: string, check: EmbedCheck) => {
     cache.delete(target);
-    cache.set(target, {
-      check,
-      expiresAt: deps.now() + (check.ok ? EMBED_CHECK_TTL_MS : EMBED_CHECK_ERROR_TTL_MS),
-    });
+    cache.set(target, { check, expiresAt: deps.now() + ttlOf(check) });
     for (const oldest of cache.keys()) {
       if (cache.size <= EMBED_CHECK_MAX) break;
       cache.delete(oldest);

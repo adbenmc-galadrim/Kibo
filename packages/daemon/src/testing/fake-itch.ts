@@ -18,9 +18,21 @@ const GAME_PAGE =
 const html = (headers: Record<string, string> = {}) =>
   new Response(GAME_PAGE, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
 
+const challenge = () =>
+  new Response("<!doctype html><title>Just a moment...</title>", {
+    status: 403,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cf-mitigated": "challenge",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "default-src 'none'; frame-ancestors 'self'",
+    },
+  });
+
 function route(pathname: string): Response {
   if (pathname === "/embed-upload/1") return html();
   if (pathname === "/embed-upload/2") return html({ "x-frame-options": "SAMEORIGIN" });
+  if (pathname === "/embed-upload/5") return challenge();
   if (pathname === "/embed-upload/4") return html({ "content-security-policy": "frame-ancestors 'self'" });
   return new Response("not found", { status: 404 });
 }

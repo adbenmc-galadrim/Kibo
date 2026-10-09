@@ -86,6 +86,12 @@ test("itch refusals are reported by code: refused, not found, offline", async ()
   expect((await open(instanceId, later)).target).toBe(later);
 });
 
+test("a Cloudflare challenge is not conclusive: the game is allowed", async () => {
+  const challenged = "https://itch.io/embed-upload/5";
+  expect((await open(await game(), challenged)).target).toBe(challenged);
+  expect(itch.requests).toContainEqual({ method: "GET", path: "/embed-upload/5" });
+});
+
 test("a sandboxed component without cap:embed is refused and journaled", async () => {
   const fixture = copyFixture("undeclared", { linkModules: false });
   cpSync(fixture.dir, join(kibo.home, "components", "src", "undeclared"), { recursive: true });

@@ -24,6 +24,7 @@ export const EMBED_TOKENS_PER_INSTANCE = 16;
 export const EMBED_TOKENS_SHELL = 64;
 export const EMBED_CHECK_TTL_MS = 3_600_000;
 export const EMBED_CHECK_ERROR_TTL_MS = 60_000;
+export const EMBED_CHECK_CHALLENGE_TTL_MS = 300_000;
 export const EMBED_CHECK_MAX = 256;
 export const EMBED_CHECK_TIMEOUT_MS = 5_000;
 export const EMBED_CHECK_MAX_BYTES = 65_536;
@@ -57,5 +58,5 @@ export function embedTargetProblem(url: string, embeds: readonly string[]): Embe
 }
 
 export type EmbedCheck =
-  | { ok: true }
+  | { ok: true; challenged?: true }
   | { ok: false; code: "EMBED_REFUSED" | "REMOTE_NOT_FOUND" | "REMOTE_REJECTED" | "REMOTE_UNAVAILABLE" };

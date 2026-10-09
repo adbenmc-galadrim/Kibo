@@ -8,6 +8,7 @@ const of = (status: number, headers: Record<string, string> = {}) =>
   embedCheckOf(status, new Headers(headers), UI);
 const refused: EmbedCheck = { ok: false, code: "EMBED_REFUSED" };
 const ok: EmbedCheck = { ok: true };
+const challenged: EmbedCheck = { ok: true, challenged: true };
 
 describe("embedCheckOf reads the status and the headers only", () => {
   test.each<[number, Record<string, string>, EmbedCheck]>([
@@ -28,6 +29,20 @@ describe("embedCheckOf reads the status and the headers only", () => {
     [403, {}, { ok: false, code: "REMOTE_REJECTED" }],
     [503, {}, { ok: false, code: "REMOTE_UNAVAILABLE" }],
     [500, {}, { ok: false, code: "REMOTE_UNAVAILABLE" }],
+    [
+      403,
+      {
+        "cf-mitigated": "challenge",
+        "x-frame-options": "SAMEORIGIN",
+        "content-security-policy": "frame-ancestors 'none'",
+      },
+      challenged,
+    ],
+    [403, { "cf-mitigated": "Challenge" }, challenged],
+    [200, { "cf-mitigated": "challenge", "x-frame-options": "DENY" }, challenged],
+    [503, { "cf-mitigated": "challenge" }, challenged],
+    [403, { "x-frame-options": "SAMEORIGIN" }, { ok: false, code: "REMOTE_REJECTED" }],
+    [403, { "cf-mitigated": "block" }, { ok: false, code: "REMOTE_REJECTED" }],
   ])("%d %o", (status, headers, expected) => {
     expect(of(status, headers)).toEqual(expected);
   });
@@ -89,6 +104,22 @@ describe("createEmbedChecker", () => {
     now = 3_599_999 + 3_600_000;
     await checker.check(TARGET, false);
     expect(seen).toHaveLength(3);
+  });
+
+  test("a Cloudflare challenge is allowed but cached five minutes only", async () => {
+    let now = 0;
+    const { fetch, seen } = fakeFetch(() => ({
+      status: 403,
+      headers: { "cf-mitigated": "challenge", "x-frame-options": "SAMEORIGIN" },
+    }));
+    const checker = createEmbedChecker({ fetch, now: () => now, uiOrigins: () => UI });
+    await checker.check(TARGET, false);
+    now = 299_999;
+    await checker.check(TARGET, false);
+    expect(seen).toHaveLength(1);
+    now = 300_000;
+    await checker.check(TARGET, false);
+    expect(seen).toHaveLength(2);
   });
 
   test("a refusal is thrown and cached sixty seconds", async () => {

@@ -30,6 +30,14 @@ test("the other uploads refuse to be framed or do not exist", async () => {
   expect((await get("/elsewhere")).status).toBe(404);
 });
 
+test("the fifth upload answers like a Cloudflare challenge", async () => {
+  const res = await get("/embed-upload/5");
+  expect(res.status).toBe(403);
+  expect(res.headers.get("cf-mitigated")).toBe("challenge");
+  expect(res.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+  expect(res.headers.get("content-security-policy")).toContain("frame-ancestors 'self'");
+});
+
 test("goes offline and back, and logs every request", async () => {
   expect((await fetch(`${itch.url}/__test/offline`, { method: "POST" })).status).toBe(204);
   expect(itch.offline).toBe(true);
