@@ -30,7 +30,11 @@ test("a failing closer does not stop the others and the failures are aggregated"
   expect(failure).toBeInstanceOf(AggregateError);
   if (!(failure instanceof AggregateError)) return;
   expect(failure.message).toBe("daemon shutdown failed");
-  expect(failure.errors.map((e: Error) => e.message)).toEqual(["runs failed"]);
+  expect(failure.errors.map((e: Error) => e.message)).toEqual([
+    "sandbox failed",
+    "remote failed",
+    "runs failed",
+  ]);
 });
 
 test("the front failures surface when the back closes cleanly", async () => {
