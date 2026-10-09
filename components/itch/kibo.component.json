@@ -16,7 +16,7 @@
       "nullable": true,
       "default": null,
       "label": "Jeu",
-      "help": "Sur la page du jeu : Partager › Intégrer, puis colle le code ou l'adresse https://itch.io/embed-upload/<id>."
+      "help": "Sur la page du jeu : Partager › Intégrer, puis colle le code ou l'adresse https://itch.io/embed-upload/<id>. Sauvegardes liées au port de l'interface : perdues s'il change."
     },
     "page": {
       "type": "string",
