@@ -31,6 +31,6 @@ const INSTANCE_CODES: ReadonlySet<KiboErrorCode> = new Set(["INVALID_INPUT", "PE
 
 export function frameProblemOf(e: unknown, provider: DesignProvider): FrameProblem {
   if (!(e instanceof KiboError)) return { kind: "unavailable", code: null };
-  if (provider === "penpot" && INSTANCE_CODES.has(e.code)) return { kind: "otherInstance", code: e.code };
+  if (provider !== "figma" && INSTANCE_CODES.has(e.code)) return { kind: "otherInstance", code: e.code };
   return { kind: BY_CODE[e.code] ?? "unavailable", code: e.code };
 }

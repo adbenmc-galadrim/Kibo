@@ -3,7 +3,7 @@ import {
   ASSET_URL_TTL_MS,
   DESIGN_FRESH_MS,
   type DesignFrameKey,
-  type DesignProvider,
+  type ImageDesignProvider,
   KiboError,
 } from "@kibo/schema";
 import { createEventLog } from "../integrations/events";
@@ -25,7 +25,7 @@ const render = (version: string): FrameRender => ({
   version,
 });
 
-const fakeProvider = (id: DesignProvider) => ({
+const fakeProvider = (id: ImageDesignProvider) => ({
   id,
   connected: mock(async () => true),
   version: mock(async (_key: DesignFrameKey): Promise<string | null> => null),

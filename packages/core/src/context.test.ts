@@ -38,6 +38,7 @@ function kibo() {
     folder: null,
     color: "#F97316",
     worktree: null,
+    storybook: null,
   });
   const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(doc, cmd);
   const dep = run({ method: "createTicket", title: "Schéma Loro", statusId: "in_progress" }) as Ticket;

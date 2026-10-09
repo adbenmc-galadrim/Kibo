@@ -13,7 +13,15 @@ mock.module("../api", () =>
         calls.push(req);
         if (fail) throw fail;
         if (req.method === "updateProject")
-          return { id: "kibo", key: "KIB", name: "Noyau", folder: null, color: "#6366F1", worktree: null };
+          return {
+            id: "kibo",
+            key: "KIB",
+            name: "Noyau",
+            folder: null,
+            color: "#6366F1",
+            worktree: null,
+            storybook: null,
+          };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
       },
@@ -29,6 +37,7 @@ const project: ProjectSummary = {
   folder: "/Users/adam/code/kibo",
   color: "#F97316",
   worktree: null,
+  storybook: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };

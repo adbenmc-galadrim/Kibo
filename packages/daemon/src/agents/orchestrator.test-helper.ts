@@ -48,7 +48,15 @@ const ticket = (id: string, key: string | null): TicketView => ({
 });
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null },
+  meta: {
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [...[1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)), ticket("pending", null)],

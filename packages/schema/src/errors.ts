@@ -59,6 +59,7 @@ export const KIBO_ERROR_CODES = [
   "DAEMON_RUNNING",
   "PROJECT_FOLDER_MISSING",
   "PROJECT_FOLDER_NOT_FOUND",
+  "EMBED_REFUSED",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

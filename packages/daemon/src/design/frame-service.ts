@@ -4,9 +4,9 @@ import {
   DESIGN_TOKENS_SHELL,
   type DesignFrame,
   type DesignFrameKey,
-  type DesignProvider,
   designFrameId,
   frameExtension,
+  type ImageDesignProvider,
   KiboError,
 } from "@kibo/schema";
 import type { ServedFile } from "../components/file-response";
@@ -23,7 +23,7 @@ export type FrameService = {
 };
 export type FrameServiceDeps = {
   cache: FrameCache;
-  providers: Record<DesignProvider, DesignProviderClient>;
+  providers: Record<ImageDesignProvider, DesignProviderClient>;
   penpotInstance(): string | null;
   sandboxOrigin(): string | null;
   now(): number;
@@ -33,6 +33,10 @@ export type FrameServiceDeps = {
 type Grant = { path: string; mime: CachedFrame["mime"]; size: number };
 
 export const SHELL_INSTANCE = "shell";
+const imageKey = (key: DesignFrameKey): Exclude<DesignFrameKey, { provider: "storybook" }> => {
+  if (key.provider === "storybook") throw new KiboError("INVALID_INPUT", "storybook frames are not wired");
+  return key;
+};
 const servesStale = (e: unknown) =>
   e instanceof KiboError && (UNREACHABLE_CODES.has(e.code) || e.code === "REMOTE_NOT_RENDERED");
 
@@ -104,7 +108,9 @@ export function createFrameService(deps: FrameServiceDeps): FrameService {
   };
   return {
     async frame(instanceId, raw, refresh) {
-      const { key, url } = parseFrameUrl(raw, deps.penpotInstance());
+      const parsed = parseFrameUrl(raw, deps.penpotInstance());
+      const key = imageKey(parsed.key);
+      const url = parsed.url;
       const id = designFrameId(key);
       const hit = deps.cache.get(id);
       if (hit && !refresh && deps.now() - hit.fetchedAt < fresh)
@@ -123,7 +129,7 @@ export function createFrameService(deps: FrameServiceDeps): FrameService {
         return view(instanceId, hit, url, true, false);
       }
     },
-    metadata: (key) => deps.providers[key.provider].metadata(key),
+    metadata: (key) => deps.providers[imageKey(key).provider].metadata(key),
     async open(token) {
       const grant = widgetTokens.lookup(token) ?? shellTokens.lookup(token);
       if (!grant) return null;

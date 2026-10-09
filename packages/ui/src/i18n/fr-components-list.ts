@@ -26,6 +26,7 @@ export const frComponentsList = {
     gamepad: "Manette",
     assets: "Fichiers du projet",
     design: "Maquettes",
+    embed: "Cadre intégré",
   } satisfies Record<Capability, string>,
   place: (project: string, page: string) => `${project} › ${page}`,
 };

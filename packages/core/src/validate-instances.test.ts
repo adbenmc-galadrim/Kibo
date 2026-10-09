@@ -23,7 +23,15 @@ import {
   validateSharedSnapshot,
 } from "./index";
 
-const META = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#3B82F6", worktree: null };
+const META = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#3B82F6",
+  worktree: null,
+  storybook: null,
+};
 const EDITOR: UpdateAuthor = { userId: "u1", role: "editor" };
 
 function projectWith(layout: Layout): { doc: LoroDoc; instance: Instance } {

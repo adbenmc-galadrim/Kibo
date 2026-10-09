@@ -15,6 +15,7 @@ const manifest: ComponentManifest = {
   secrets: [],
   mcp: [],
   capabilities: ["gamepad"],
+  embeds: [],
   selection: true,
   configVersion: 0,
   changes: [],

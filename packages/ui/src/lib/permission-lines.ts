@@ -7,6 +7,7 @@ import {
   RESERVED_MCP_IDS,
 } from "@kibo/schema";
 import {
+  AppWindow,
   Box,
   Database,
   File,
@@ -50,11 +51,13 @@ const CAPABILITY_ICONS: Record<Capability, LucideIcon> = {
   gamepad: Gamepad2,
   assets: FolderOpen,
   design: Frame,
+  embed: AppWindow,
 };
 const CAPABILITY_HELP: Partial<Record<Capability, string>> = {
   webgl: caps.webglHelp,
   assets: caps.assetsHelp,
   design: caps.designHelp,
+  embed: caps.embedHelp,
 };
 
 function capabilityLine(c: Capability): PermissionLine {

@@ -17,7 +17,15 @@ import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [{ id: "1@1", title: "Board", kind: "view", parentId: null }],
   tickets: [
@@ -59,7 +67,15 @@ const project: ProjectSnapshot = {
 };
 const repo: ProjectSnapshot = {
   ...project,
-  meta: { id: "p2", name: "Portfolio", key: "POR", folder: "/repo", color: "#8B5CF6", worktree: null },
+  meta: {
+    id: "p2",
+    name: "Portfolio",
+    key: "POR",
+    folder: "/repo",
+    color: "#8B5CF6",
+    worktree: null,
+    storybook: null,
+  },
   pages: [],
   tickets: [],
 };
@@ -80,7 +96,15 @@ const inboxTicket = (id: string, key: string, statusId: "todo" | "done") => {
 };
 const inbox: ProjectSnapshot = {
   ...project,
-  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B", worktree: null },
+  meta: {
+    id: INBOX_ID,
+    name: "Inbox",
+    key: "INB",
+    folder: null,
+    color: "#64748B",
+    worktree: null,
+    storybook: null,
+  },
   pages: [],
   tickets: [
     inboxTicket("i1", "INB-1", "todo"),

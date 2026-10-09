@@ -17,7 +17,15 @@ import {
 } from "./index";
 
 const doc = () =>
-  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 describe("keys", () => {
   test("keys are flat, sequential and independent from the hierarchy", () => {

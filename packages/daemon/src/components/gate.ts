@@ -123,6 +123,9 @@ function dispatch(
       return h.config(projectId, inst, call.patch);
     case "questions.deliver":
       return h.questions(projectId, call.ticketId);
+    case "embed.open":
+    case "design.storybooks":
+      throw new KiboError("INTERNAL", `${call.kind} is not wired`);
     default:
       return h.notes(projectId, call);
   }

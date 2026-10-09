@@ -26,7 +26,15 @@ async function connect(device: TestDevice): Promise<TestClient> {
   return c;
 }
 
-const META = { id: "p-kibo", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const META = {
+  id: "p-kibo",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 
 function ownerDocOf(adam: TestDevice): LoroDoc {
   const doc = createProjectDoc(META);

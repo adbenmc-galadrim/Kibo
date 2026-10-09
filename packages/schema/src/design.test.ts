@@ -4,9 +4,13 @@ import {
   DesignFrameKey,
   type DesignFrameKey as DesignFrameKeyType,
   designFrameId,
+  FrameMime,
   frameExtension,
   frameKeyOfRef,
+  ImageFrameMime,
+  isHtmlFrame,
   PenpotBoardRef,
+  StorybookFrameKey,
 } from "./design";
 import { parseDesignUrl } from "./design-url";
 
@@ -142,4 +146,26 @@ test("frameKeyOfRef reads figma and penpot refs only", () => {
       head: null,
     }),
   ).toBeNull();
+});
+
+test("a storybook key holds a bare origin and a lowercase story id", () => {
+  const key = { provider: "storybook", origin: "http://localhost:6006", storyId: "a--b" };
+  expect(StorybookFrameKey.safeParse(key).success).toBe(true);
+  expect(StorybookFrameKey.safeParse({ ...key, origin: "https://sb.example.com" }).success).toBe(true);
+  expect(StorybookFrameKey.safeParse({ ...key, origin: "http://sb.example.com" }).success).toBe(false);
+  expect(StorybookFrameKey.safeParse({ ...key, origin: "https://sb.example.com/path" }).success).toBe(false);
+  expect(StorybookFrameKey.safeParse({ ...key, origin: "https://sb.example.com/?a=1" }).success).toBe(false);
+  expect(StorybookFrameKey.safeParse({ ...key, origin: "https://u:p@sb.example.com" }).success).toBe(false);
+  expect(StorybookFrameKey.safeParse({ ...key, storyId: "Screens--Home" }).success).toBe(false);
+  expect(DesignFrameKey.safeParse(key).success).toBe(true);
+  expect(designFrameId({ provider: "storybook", origin: "http://localhost:6006", storyId: "a--b" })).toBe(
+    "storybook:localhost:6006/a--b",
+  );
+});
+
+test("a frame is an image or an html page, and only images have an extension", () => {
+  expect(FrameMime.parse("text/html")).toBe("text/html");
+  expect(ImageFrameMime.safeParse("text/html").success).toBe(false);
+  expect(isHtmlFrame({ mime: "text/html" })).toBe(true);
+  expect(isHtmlFrame({ mime: "image/png" })).toBe(false);
 });

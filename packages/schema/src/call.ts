@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
 import { DESIGN_URL_MAX } from "./design";
+import { EMBED_URL_MAX } from "./embed";
 import { Base64, NodeId } from "./ids";
 import { DataKey } from "./instance";
 import { McpImportItem, McpServerId } from "./integrations";
@@ -63,6 +64,8 @@ export const ComponentCall = z.discriminatedUnion("kind", [
     url: z.string().min(1).max(DESIGN_URL_MAX),
     refresh: z.boolean().default(false),
   }),
+  z.object({ kind: z.literal("design.storybooks") }),
+  z.object({ kind: z.literal("embed.open"), url: z.string().min(1).max(EMBED_URL_MAX) }),
   z.object({ kind: z.literal("config.set"), patch: z.record(z.string(), z.unknown()) }),
   z.object({ kind: z.literal("questions.deliver"), ticketId: NodeId }),
 ]);

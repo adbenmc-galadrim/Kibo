@@ -18,7 +18,15 @@ import {
   writeMembers,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 const OWNER: UpdateAuthor = { userId: "u-adam", role: "owner" };
 
 function sharedServer(): LoroDoc {

@@ -4,7 +4,15 @@ import { render, screen } from "@testing-library/react";
 import { ProjectHome } from "./ProjectHome";
 
 const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

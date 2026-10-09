@@ -34,6 +34,7 @@ const meta = {
   folder: "/Users/adam/kibo",
   color: "#F97316",
   worktree: null,
+  storybook: null,
 };
 
 const replicaIndex = fc.nat({ max: 4 });

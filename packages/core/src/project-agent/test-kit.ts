@@ -73,7 +73,15 @@ export const link = (id: string, from: string, to: string, type: Link["type"] = 
 
 export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
   return {
-    meta: { id: PROJECT_ID, key: "EMIS", name: "Emis", folder: null, color: "#14B8A6", worktree: null },
+    meta: {
+      id: PROJECT_ID,
+      key: "EMIS",
+      name: "Emis",
+      folder: null,
+      color: "#14B8A6",
+      worktree: null,
+      storybook: null,
+    },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
     tickets: [],

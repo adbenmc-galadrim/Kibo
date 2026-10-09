@@ -8,5 +8,7 @@ export const frTrustCapabilities = {
   assetsHelp: "dossier des fichiers de ce projet, lecture seule",
   design: "Afficher des maquettes Figma et Penpot",
   designHelp: "images rendues par Kibo avec ton compte, lecture seule",
+  embed: "Afficher des pages d'un site déclaré dans un cadre isolé",
+  embedHelp: "sans accès à tes données ni à Kibo",
   selection: "Partage la sélection avec les composants de la page",
 };

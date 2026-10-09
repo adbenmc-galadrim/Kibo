@@ -46,7 +46,15 @@ function snapshotOf(projectId: string): ProjectSnapshot {
   if (projectId === INBOX_ID)
     return {
       ...kibo,
-      meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
+      meta: {
+        id: INBOX_ID,
+        key: "INB",
+        name: "Inbox",
+        folder: null,
+        color: "#64748B",
+        worktree: null,
+        storybook: null,
+      },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
       nextTicketKey: "INB-3",
@@ -58,7 +66,15 @@ function snapshotOf(projectId: string): ProjectSnapshot {
     };
   return {
     ...kibo,
-    meta: { id: "fac", key: "FAC", name: "API Facturation", folder: null, color: "#22C55E", worktree: null },
+    meta: {
+      id: "fac",
+      key: "FAC",
+      name: "API Facturation",
+      folder: null,
+      color: "#22C55E",
+      worktree: null,
+      storybook: null,
+    },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };
 }

@@ -341,6 +341,7 @@ export function kiboProject(): ProjectSnapshot {
       folder: "/Users/adam/goinfre/Kibo",
       color: "#F97316",
       worktree: null,
+      storybook: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -393,6 +394,7 @@ export const projectsFixture: ProjectSummary[] = [
     folder: "/Users/adam/goinfre/Kibo",
     color: "#F97316",
     worktree: null,
+    storybook: null,
     counts: { backlog: 1, todo: 3, in_progress: 4, in_review: 2, blocked: 1, done: 2 },
   },
   {
@@ -402,6 +404,7 @@ export const projectsFixture: ProjectSummary[] = [
     folder: null,
     color: "#22C55E",
     worktree: null,
+    storybook: null,
     counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
   },
 ];

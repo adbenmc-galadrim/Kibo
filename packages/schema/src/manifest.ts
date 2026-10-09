@@ -27,6 +27,8 @@ export type BuiltinEntityType = z.infer<typeof BuiltinEntityType>;
 export const EntityType = BuiltinEntityType;
 export type EntityType = BuiltinEntityType;
 
+export const EmbedHost = z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/);
+
 export const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
 export type ComponentId = z.infer<typeof ComponentId>;
 export const ComponentKind = z.enum(["widget", "view", "both", "adapter"]);
@@ -71,6 +73,7 @@ export const ComponentManifest = z.object({
   formats: z.array(ComponentFormat).min(1).max(5).optional(),
   size: SizeSpec.optional(),
   capabilities: z.array(Capability).default([]),
+  embeds: z.array(EmbedHost).default([]),
   selection: z.boolean().default(false),
 });
 export type ComponentManifest = z.infer<typeof ComponentManifest>;

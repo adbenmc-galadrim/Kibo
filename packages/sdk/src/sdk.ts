@@ -9,6 +9,7 @@ import {
   capPermission,
   type DeliveryResult,
   type DesignFrame,
+  type EmbedView,
   type EntityType,
   type FetchInitInput,
   type FetchResponse,
@@ -23,6 +24,7 @@ import {
   type ProjectCommand,
   type ProjectSyncInfo,
   ruleCovers,
+  type StorybookOrigin,
   type Ticket,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
@@ -30,6 +32,7 @@ import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import type {
   AssetsApi,
   DesignApi,
+  EmbedApi,
   EntityMap,
   InstanceData,
   KiboSdk,
@@ -178,10 +181,26 @@ function assetsApi(manifest: ComponentManifest, guard: Guard, call: Call): Asset
 }
 
 function designApi(manifest: ComponentManifest, guard: Guard, call: Call): DesignApi {
+  const need = () => {
+    if (!manifest.capabilities.includes("design")) guard.deny(capPermission("design"));
+  };
   return {
     async frame(url, opts = {}) {
-      if (!manifest.capabilities.includes("design")) guard.deny(capPermission("design"));
+      need();
       return call<DesignFrame>({ kind: "design.frame", url, refresh: opts.refresh ?? false });
+    },
+    async storybooks() {
+      need();
+      return call<StorybookOrigin[]>({ kind: "design.storybooks" });
+    },
+  };
+}
+
+function embedApi(manifest: ComponentManifest, guard: Guard, call: Call): EmbedApi {
+  return {
+    async open(url) {
+      if (!manifest.capabilities.includes("embed")) guard.deny(capPermission("embed"));
+      return call<EmbedView>({ kind: "embed.open", url });
     },
   };
 }
@@ -263,6 +282,7 @@ export function createSdk(
     },
     assets: assetsApi(manifest, guard, call),
     design: designApi(manifest, guard, call),
+    embed: embedApi(manifest, guard, call),
     questions: {
       async deliver(ticketId) {
         guard.needWrite("question");

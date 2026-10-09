@@ -53,6 +53,7 @@ function createProject(
     folder: req.folder,
     color: req.color,
     worktree: null,
+    storybook: null,
   };
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, createProjectDoc(meta));

@@ -35,7 +35,15 @@ const opus: ProfileInput = {
 };
 const run = <T>(doc: LoroDoc, cmd: ConfigCommand) => executeConfigCommand(doc, cmd) as T;
 const project = () =>
-  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 describe("profiles", () => {
   test("are created, listed, updated and deleted", () => {

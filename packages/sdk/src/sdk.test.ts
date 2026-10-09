@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { ComponentManifest } from "@kibo/schema";
+import { type ComponentCall, ComponentManifest } from "@kibo/schema";
 import { createMockSdk } from "./mock";
+import { createSdk } from "./sdk";
+import type { ProjectBackend, SdkContext } from "./types";
 
 const manifest = ComponentManifest.parse({
   id: "probe",
@@ -75,4 +77,53 @@ test("runs are read only when declared, and their listeners hear run changes", a
   const without = createMockSdk(manifest);
   await expect(without.sdk.list("run")).rejects.toThrow("PERMISSION_DENIED");
   expect(without.violations).toEqual(["read run"]);
+});
+
+describe("embed and storybooks", () => {
+  const ITCH = "https://itch.io/embed-upload/1";
+  const ctx: SdkContext = {
+    instanceId: "i1",
+    config: {},
+    viewer: "adam",
+    surface: "widget",
+    format: "medium",
+    openTicket: () => undefined,
+    openNewTicket: () => undefined,
+    openFile: () => undefined,
+    openView: () => undefined,
+  };
+  const backendOf = (calls: ComponentCall[]): ProjectBackend => ({
+    snapshot: async () => {
+      throw new Error("unused");
+    },
+    run: async () => null,
+    call: async (c) => {
+      calls.push(c);
+      return c.kind === "design.storybooks" ? [] : { url: "about:blank" };
+    },
+    subscribe: () => () => undefined,
+    runs: async () => [],
+    subscribeRuns: () => () => undefined,
+  });
+  const probe = (capabilities: string[], embeds: string[] = []) =>
+    ComponentManifest.parse({ ...manifest, kind: "widget", capabilities, embeds });
+
+  test("embed.open needs the embed capability and calls the daemon", async () => {
+    const calls: ComponentCall[] = [];
+    const without = createSdk(backendOf(calls), probe([]), ctx, "gated");
+    await expect(without.embed.open(ITCH)).rejects.toThrow("PERMISSION_DENIED");
+    expect(calls).toEqual([]);
+    const sdk = createSdk(backendOf(calls), probe(["embed"], ["itch.io"]), ctx, "gated");
+    await sdk.embed.open(ITCH);
+    expect(calls).toEqual([{ kind: "embed.open", url: ITCH }]);
+  });
+
+  test("design.storybooks needs the design capability", async () => {
+    const calls: ComponentCall[] = [];
+    const without = createSdk(backendOf(calls), probe([]), ctx, "gated");
+    await expect(without.design.storybooks()).rejects.toThrow("PERMISSION_DENIED");
+    const sdk = createSdk(backendOf(calls), probe(["design"]), ctx, "gated");
+    expect(await sdk.design.storybooks()).toEqual([]);
+    expect(calls).toEqual([{ kind: "design.storybooks" }]);
+  });
 });

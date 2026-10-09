@@ -11,6 +11,7 @@ export const INBOX_META: ProjectMeta = {
   folder: null,
   color: "#64748B",
   worktree: null,
+  storybook: null,
 };
 
 export function loadInbox(store: Store): LoroDoc {

@@ -4,7 +4,15 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProjectHeaderMenu } from "./ProjectHeaderMenu";
 
-const project = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const project = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 const actions = () => ({
   newPage: () => {},
   share: () => {},

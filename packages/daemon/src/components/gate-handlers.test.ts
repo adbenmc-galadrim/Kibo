@@ -141,6 +141,7 @@ test("design frames reach the design gate with the calling instance, or fail whe
         seen.push([ctx.projectId, ctx.instanceId, url, refresh]);
         return unused();
       },
+      storybooks: async () => unused(),
     },
   });
   await expect(h.design("p", "i1", { kind: "design.frame", ...frame })).rejects.toThrow("unused");

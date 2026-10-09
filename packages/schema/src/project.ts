@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ProjectKey } from "./ids";
+import { StorybookSettings } from "./storybook";
 import { WorktreeSettings } from "./worktree";
 
 export const ProjectMeta = z.object({
@@ -9,6 +10,7 @@ export const ProjectMeta = z.object({
   folder: z.string().nullable(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   worktree: WorktreeSettings.nullable().default(null),
+  storybook: StorybookSettings.nullable().default(null),
 });
 export type ProjectMeta = z.infer<typeof ProjectMeta>;
 
@@ -18,13 +20,8 @@ export const ProjectPatch = z
     color: ProjectMeta.shape.color.optional(),
     folder: z.string().min(1).max(4096).nullable().optional(),
     worktree: WorktreeSettings.nullable().optional(),
+    storybook: StorybookSettings.nullable().optional(),
   })
   .strict()
-  .refine(
-    (p) =>
-      p.name !== undefined || p.color !== undefined || p.folder !== undefined || p.worktree !== undefined,
-    {
-      message: "empty patch",
-    },
-  );
+  .refine((p) => Object.values(p).some((v) => v !== undefined), { message: "empty patch" });
 export type ProjectPatch = z.infer<typeof ProjectPatch>;

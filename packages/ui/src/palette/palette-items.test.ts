@@ -10,7 +10,15 @@ const model = kibo.tickets[0];
 if (!model) throw new Error("fixture without ticket");
 const inbox: ProjectSnapshot = {
   ...kibo,
-  meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
+  meta: {
+    id: INBOX_ID,
+    key: "INB",
+    name: "Inbox",
+    folder: null,
+    color: "#64748B",
+    worktree: null,
+    storybook: null,
+  },
   tickets: [{ ...model, id: "i3", key: "INB-3", keyLabel: "INB-3", title: "Appeler le comptable" }],
   links: [],
 };

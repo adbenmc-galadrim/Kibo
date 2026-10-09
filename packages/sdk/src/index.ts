@@ -2,6 +2,7 @@ export { type CiTone, ciTone, latestCiRunPerWorkflow, ticketRuns, worstCiTone } 
 export * from "./adapter";
 export * from "./agent-badge";
 export * from "./client";
+export * from "./embed-frame";
 export * from "./file-link";
 export * from "./lazy";
 export * from "./markdown-lite";

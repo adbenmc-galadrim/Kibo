@@ -13,8 +13,24 @@ import {
   upsertExternalRef,
 } from "./index";
 
-const inboxMeta = { id: "inbox", key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null };
-const kibo = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const inboxMeta = {
+  id: "inbox",
+  key: "INB",
+  name: "Inbox",
+  folder: null,
+  color: "#64748B",
+  worktree: null,
+  storybook: null,
+};
+const kibo = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 
 function seeded() {
   const from = createProjectDoc(inboxMeta);

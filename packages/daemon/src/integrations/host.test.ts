@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ChangeMessage, ProjectMeta, Ticket } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { CommandEvent } from "../docs";
+import { createProjectSettings } from "../notes/settings";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
 import { createIntegrationHost } from "./host";
@@ -16,12 +17,14 @@ let service: Service;
 let host: IntegrationHost;
 let project: ProjectMeta;
 let notices: Notice[];
+let uiPort: number | null;
 
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "kibo-host-"));
   store = openStore(home);
   service = createService(store, { user: "adam" });
   notices = [];
+  uiPort = null;
   host = createIntegrationHost({
     user: "adam",
     home,
@@ -29,6 +32,7 @@ beforeEach(() => {
     service,
     notify: (n) => notices.push(n),
     sandboxOrigin: () => null,
+    uiPort: () => uiPort,
   });
   project = call(service, {
     method: "createProject",
@@ -266,4 +270,22 @@ test("broadcasts and notices go through the change channel", () => {
 
 test("a project without folder has no git remote", async () => {
   expect(await host.gitRemoteUrl(project.id)).toBeNull();
+});
+
+test("project settings are read from the local table", () => {
+  expect(host.projectSettings.get(project.id, "storybook")).toBeNull();
+  createProjectSettings(store.db).set(project.id, "storybook", "x");
+  expect(host.projectSettings.get(project.id, "storybook")).toBe("x");
+});
+
+test("a folder outside any repository has no worktree", async () => {
+  const folder = join(home, "plain");
+  mkdirSync(folder);
+  expect(await host.worktrees(folder)).toEqual([]);
+});
+
+test("ui origins follow the listening port, none before it listens", () => {
+  expect(host.uiOrigins()).toEqual([]);
+  uiPort = 4100;
+  expect(host.uiOrigins()).toEqual(["http://127.0.0.1:4100", "http://localhost:4100"]);
 });

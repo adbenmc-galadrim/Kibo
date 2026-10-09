@@ -27,6 +27,11 @@ test("every refused url has one cause, every accepted url has none", () => {
     "figma-node-missing",
   );
   expect(designUrlProblem("https://example.com/nope")).toBe("unknown-site");
+  expect(designUrlProblem("http://sb.example.com/iframe.html?id=a--b")).toBe("storybook-insecure");
+  expect(designUrlProblem("https://sb.example.com/iframe.html?viewMode=story")).toBe(
+    "storybook-story-missing",
+  );
+  expect(designUrlProblem("https://sb.example.com/iframe.html?id=a--b")).toBeNull();
   expect(designUrlProblem("https://user:pw@design.penpot.app/#/workspace")).toBe("credentials");
   expect(designUrlProblem("pas une url")).toBe("not-a-url");
   expect(designUrlProblem("")).toBe("not-a-url");

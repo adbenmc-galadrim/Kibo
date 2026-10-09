@@ -45,7 +45,15 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
 });
 
 const project = (t: TicketView): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   links: [],

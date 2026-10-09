@@ -21,6 +21,7 @@ test("instances stored before v1.0 are listed with componentHash null", () => {
     folder: null,
     color: "#3B82F6",
     worktree: null,
+    storybook: null,
   });
   doc.getMap("instances").set("i1", {
     id: "i1",
@@ -32,7 +33,15 @@ test("instances stored before v1.0 are listed with componentHash null", () => {
   expect(listInstances(doc)[0]?.componentHash).toBeNull();
 });
 
-const META = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#3B82F6", worktree: null };
+const META = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#3B82F6",
+  worktree: null,
+  storybook: null,
+};
 
 describe("setInstanceLayout", () => {
   test("moves and resizes within the grid, as a format, and the others flow around it", () => {

@@ -16,7 +16,15 @@ import { openStore } from "../store";
 import { applyRules } from "./data-port";
 
 const doc = () =>
-  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 test("a finished run leaves its ticket in its status, and a started one moves it on", () => {
   const d = doc();

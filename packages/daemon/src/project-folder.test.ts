@@ -3,7 +3,15 @@ import { expect, spyOn, test } from "bun:test";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import { LOCAL_FOLDER_KEY, LOCAL_WORKTREE_KEY, withLocalSettings } from "./project-folder";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#14B8A6",
+  worktree: null,
+  storybook: null,
+};
 
 test("a shared project gets its folder back from the local settings", () => {
   const db = new Database(":memory:", { strict: true });

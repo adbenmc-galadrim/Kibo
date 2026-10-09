@@ -18,5 +18,9 @@ test("each error code has one cause, by provider", () => {
   expect(of("RATE_LIMITED").kind).toBe("rateLimited");
   expect(of("MCP_UNAVAILABLE", "figma").kind).toBe("mcpClosed");
   expect(of("INTERNAL")).toEqual({ kind: "unavailable", code: "INTERNAL" });
+  expect(of("INVALID_INPUT", "storybook")).toEqual({ kind: "otherInstance", code: "INVALID_INPUT" });
+  expect(of("PERMISSION_DENIED", "storybook").kind).toBe("otherInstance");
+  expect(of("REMOTE_UNAVAILABLE", "storybook").kind).toBe("unreachable");
+  expect(of("REMOTE_NOT_FOUND", "storybook").kind).toBe("notFound");
   expect(frameProblemOf(new Error("boom"), "figma")).toEqual({ kind: "unavailable", code: null });
 });

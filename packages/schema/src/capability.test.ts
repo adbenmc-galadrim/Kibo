@@ -9,8 +9,8 @@ import {
   Selection,
 } from "./capability";
 
-test("the six capabilities and their permission names", () => {
-  expect([...CAPABILITIES]).toEqual(["webgl", "audio", "fullscreen", "gamepad", "assets", "design"]);
+test("the seven capabilities and their permission names", () => {
+  expect([...CAPABILITIES]).toEqual(["webgl", "audio", "fullscreen", "gamepad", "assets", "design", "embed"]);
   expect(Capability.safeParse("network").success).toBe(false);
   expect(capPermission("webgl")).toBe("cap:webgl");
   expect(capabilityOfPermission("cap:assets")).toBe("assets");
@@ -32,6 +32,19 @@ test("capabilityIssue refuses duplicates and adapters", () => {
   expect(capabilityIssue({ kind: "adapter", capabilities: ["assets"] })).toBe(
     "INVALID_MANIFEST: an adapter has no capability",
   );
+});
+
+test("capabilityIssue ties the embed capability to declared embeds", () => {
+  expect(capabilityIssue({ kind: "widget", capabilities: ["embed"] })).toBe(
+    "INVALID_MANIFEST: embed needs embeds",
+  );
+  expect(capabilityIssue({ kind: "widget", capabilities: ["embed"], embeds: [] })).toBe(
+    "INVALID_MANIFEST: embed needs embeds",
+  );
+  expect(capabilityIssue({ kind: "widget", embeds: ["itch.io"] })).toBe(
+    "INVALID_MANIFEST: embeds need the embed capability",
+  );
+  expect(capabilityIssue({ kind: "widget", capabilities: ["embed"], embeds: ["itch.io"] })).toBeNull();
 });
 
 test("a selection holds 1 to 200 unique ticket ids", () => {

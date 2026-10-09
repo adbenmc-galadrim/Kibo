@@ -125,3 +125,12 @@ test("capabilities and selection are optional manifest fields", () => {
   expect(rich.capabilities).toEqual(["webgl", "assets"]);
   expect(ComponentManifest.safeParse({ ...m, capabilities: ["network"] }).success).toBe(false);
 });
+
+test("embeds are exact lowercase hosts, empty by default", () => {
+  const m = ComponentManifest.parse({ ...base, kind: "widget" });
+  expect(m.embeds).toEqual([]);
+  expect(ComponentManifest.parse({ ...m, embeds: ["itch.io"] }).embeds).toEqual(["itch.io"]);
+  for (const host of ["ITCH.IO", "itch.io/", "localhost", "https://itch.io", "*.itch.io"]) {
+    expect(ComponentManifest.safeParse({ ...m, embeds: [host] }).success).toBe(false);
+  }
+});

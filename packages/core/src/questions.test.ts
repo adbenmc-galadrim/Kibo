@@ -18,7 +18,15 @@ const AGENT: Actor = { kind: "agent", ref: "emis-livraison" };
 const HUMAN: Actor = { kind: "human", ref: "adam" };
 
 const newProjectDoc = (key: string) =>
-  createProjectDoc({ id: "p1", key, name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key,
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 const stored = (ticketId: string) => ({
   id: "q",

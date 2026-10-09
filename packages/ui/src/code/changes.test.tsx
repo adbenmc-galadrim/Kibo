@@ -139,7 +139,15 @@ const unmockedModule = "./ChangesView?unmocked";
 const { ChangesView }: typeof import("./ChangesView") = await import(unmockedModule);
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: "/repo", color: "#F97316", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: "/repo",
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

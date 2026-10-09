@@ -86,6 +86,7 @@ const third = (configSchema: ConfigSchema | undefined): ComponentSummary[] => [
           secrets: [],
           mcp: [],
           capabilities: [],
+          embeds: [],
           selection: false,
           configVersion: 0,
           changes: [],

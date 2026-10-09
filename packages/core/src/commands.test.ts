@@ -3,7 +3,15 @@ import type { Page, Ticket } from "@kibo/schema";
 import { createProjectDoc, executeProjectCommand, readProject } from "./index";
 
 const doc = () =>
-  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 describe("project commands", () => {
   test("builds a page with a kanban and a ticket, visible in the snapshot", () => {
