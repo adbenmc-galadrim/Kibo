@@ -95,6 +95,7 @@ async function prepareTurn(ctx: AgentContext, run: RunView, runDir: string): Pro
       ? overviewPrompt(ctx, state, memory, message)
       : digestPrompt(ctx, state, run, previous, current, message);
   ctx.turnNotes.set(run.id, hashes);
+  ctx.baselines.set(run.id, previous ?? current);
   ctx.store.saveFingerprint(run.id, current, ctx.now());
   return {
     cwd: workingDir(ctx.data.projectFolder(projectId), runDir),

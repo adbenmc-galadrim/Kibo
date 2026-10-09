@@ -1,4 +1,5 @@
 import type { NoteHash } from "@kibo/core/project-agent/fingerprint";
+import type { ProjectFingerprint } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { Orchestrator } from "../agents/orchestrator";
 import type { ProjectAgentStore } from "./store";
@@ -16,4 +17,7 @@ export type ProjectAgentDeps = {
   now?: () => number;
 };
 
-export type AgentContext = Required<ProjectAgentDeps> & { turnNotes: Map<string, NoteHash[]> };
+export type AgentContext = Required<ProjectAgentDeps> & {
+  turnNotes: Map<string, NoteHash[]>;
+  baselines: Map<string, ProjectFingerprint>;
+};

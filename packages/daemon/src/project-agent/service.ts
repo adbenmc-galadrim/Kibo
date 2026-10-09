@@ -6,6 +6,7 @@ import {
   MEMORY_NOTE_PATH,
   type ProjectAgentSummary,
   type ProjectAgentView,
+  type ProjectFingerprint,
   type RunView,
 } from "@kibo/schema";
 import type { ProjectTurnPort } from "../agents/orchestrator-types";
@@ -26,6 +27,7 @@ export type ProjectAgentService = {
   decide(input: DecideInput): Promise<Batch>;
   reset(projectId: string): ProjectAgentView;
   summaries(): ProjectAgentSummary[];
+  baseline(runId: string): ProjectFingerprint | null;
   propose(run: RunView, input: unknown): string;
   turns: ProjectTurnPort;
   mcp: AgentMcpSink;
@@ -73,6 +75,7 @@ function reset(ctx: AgentContext, projectId: string): ProjectAgentView {
     if (run && !isTerminal(run.state)) ctx.agents().cancel(run.id);
     ctx.store.closeSession(open.runId, at);
     ctx.turnNotes.delete(open.runId);
+    ctx.baselines.delete(open.runId);
     ctx.emit();
   }
   return view(ctx, projectId);
@@ -107,13 +110,19 @@ function mcpSink(ctx: AgentContext): AgentMcpSink {
 }
 
 export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentService {
-  const ctx: AgentContext = { ...deps, now: deps.now ?? Date.now, turnNotes: new Map() };
+  const ctx: AgentContext = {
+    ...deps,
+    now: deps.now ?? Date.now,
+    turnNotes: new Map(),
+    baselines: new Map(),
+  };
   const core: ProjectAgentCore = {
     view: (projectId, runId) => view(ctx, projectId, runId),
     send: (projectId, text) => send(ctx, projectId, text),
     decide: (input) => decideBatch(ctx, input, (projectId, text) => send(ctx, projectId, text)),
     reset: (projectId) => reset(ctx, projectId),
     summaries: () => summaries(ctx),
+    baseline: (runId) => ctx.baselines.get(runId) ?? ctx.store.fingerprint(runId),
     propose: (run, input) => proposeBatch(ctx, run, input),
     turns: createTurnPort(ctx),
     mcp: mcpSink(ctx),

@@ -56,6 +56,22 @@ test("prepare composes the first turn with the overview and the next turns with 
   expect(kit.calls.filter((c) => c.startsWith("note:"))).toHaveLength(1);
 });
 
+test("the digest baseline of a turn is the fingerprint the previous turn opened with", async () => {
+  const run = await openTurn();
+  const first = kit.store.fingerprint(run.id);
+  expect(kit.svc.baseline(run.id)).toEqual(first);
+  const current = kit.current();
+  kit.setProject({
+    ...current,
+    tickets: current.tickets.map((t) => (t.id === "t11" ? { ...t, title: "renommé" } : t)),
+  });
+  await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
+  expect(kit.store.fingerprint(run.id)?.tickets.t11?.title).toBe("renommé");
+  expect(kit.svc.baseline(run.id)).toEqual(first);
+  kit.svc.reset(PROJECT_ID);
+  expect(kit.svc.baseline(run.id)).toEqual(kit.store.fingerprint(run.id));
+});
+
 test("propose validates, captures expected state, supersedes the previous pending batch and answers in French", async () => {
   const run = await openTurn();
   const emitted = kit.emits();
@@ -66,8 +82,9 @@ test("propose validates, captures expected state, supersedes the previous pendin
     "Lot 2 enregistré, en attente de validation d'adam.",
   );
   expect(kit.store.batches(run.id).map((b) => b.status)).toEqual(["superseded", "pending"]);
-  const invalid = kit.svc.propose(run, proposal("done", "EMIS-999"));
-  expect(invalid).toContain("#1 setStatus");
+  expect(() => kit.svc.propose(run, proposal("done", "EMIS-999"))).toThrow(
+    expect.objectContaining({ code: "INVALID_INPUT", detail: expect.stringContaining("#1 setStatus") }),
+  );
   expect(kit.store.batches(run.id)).toHaveLength(2);
   expect(kit.notices).toEqual([
     { title: "Lot à valider", body: "Agent de projet · Emis : lot n° 1" },

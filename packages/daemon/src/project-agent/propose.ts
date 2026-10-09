@@ -31,7 +31,7 @@ export function proposeBatch(ctx: AgentContext, run: RunView, input: unknown): s
     throw new KiboError("CONFLICT", `run ${run.id} is not the open project agent session`);
   const batchCtx = batchContext(ctx, run, projectId);
   const validation = validateBatch(parsed.data, batchCtx);
-  if (!validation.ok) return renderProblems(validation.problems);
+  if (!validation.ok) throw new KiboError("INVALID_INPUT", renderProblems(validation.problems));
   const at = ctx.now();
   const previous = ctx.store.pendingBatch(projectId);
   if (previous) ctx.store.appendBatchEvent(previous.id, { type: "superseded" }, at);
