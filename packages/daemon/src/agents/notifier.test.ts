@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { RunView } from "@kibo/schema";
 import { answered } from "../questions/questions.test-helper";
-import { noticeFor, questionNotice, stdoutNotifier } from "./notifier";
+import { batchNotice, noticeFor, questionNotice, stdoutNotifier } from "./notifier";
 
 const run = (p: Partial<RunView>): RunView => ({
   id: "r1",
@@ -80,4 +80,11 @@ test("a question to validate notifies, a blocking one leaves it to the waiting n
     body: "KIB-14 · Bloquer le dépôt ?",
   });
   expect(questionNotice(run({ state: "running" }), { ...open, blocking: true })).toBeNull();
+});
+
+test("a batch to validate names the project and the batch number", () => {
+  expect(batchNotice("Emis", { seq: 3 })).toEqual({
+    title: "Lot à valider",
+    body: "Agent de projet · Emis : lot n° 3",
+  });
 });
