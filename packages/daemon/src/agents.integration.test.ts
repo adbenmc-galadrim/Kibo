@@ -23,6 +23,7 @@ import {
 import { commit, git, cleanupTmp as removeRepos, repo } from "./agents/git-test-kit";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
+import { unwiredProjectTurns } from "./agents/project-run";
 import { openRunStore, type RunStore } from "./agents/run-store";
 import { startServer } from "./server";
 import { createService } from "./service";
@@ -69,6 +70,7 @@ function boot(scenario: FakeScenarioName): Stack {
     sampler: () => ({ cpu: 5, ram: 5 }),
     hostInfo: { cores: 8, ramGb: 16 },
     notify: () => {},
+    projectTurns: unwiredProjectTurns,
     env: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,

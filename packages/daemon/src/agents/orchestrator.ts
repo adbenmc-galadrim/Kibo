@@ -22,6 +22,7 @@ import {
   type OrchestratorOptions,
   type TaskSpec,
 } from "./orchestrator-types";
+import { createProjectRun } from "./project-run";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
@@ -33,6 +34,7 @@ export type {
   DemoAgent,
   Orchestrator,
   OrchestratorOptions,
+  ProjectTurnPort,
   TaskInput,
   TicketContext,
   ToolGuard,
@@ -191,6 +193,11 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         kind: "ticket",
         resumedFrom: null,
       });
+      tick();
+      return registry.get(id);
+    },
+    startProjectRun(input) {
+      const id = createProjectRun({ registry, profileOf, assertWritable: opts.data.assertWritable }, input);
       tick();
       return registry.get(id);
     },

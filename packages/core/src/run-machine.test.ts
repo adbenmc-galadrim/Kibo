@@ -356,3 +356,57 @@ test("spawned replaces the session id only when it carries one", () => {
   expect(reduceRun(starting, withId, 120).sessionId).toBe("new");
   expect(reduceRun(starting, spawned(false), 120).sessionId).toBe("s1");
 });
+
+const projectRecord: RunRecord = {
+  ...record,
+  ticketId: null,
+  ticketKey: null,
+  ticketTitle: "Agent de projet · Emis",
+  profileId: "project-agent",
+  profileName: "project-agent",
+  kind: "project",
+};
+const message = (text: string, rank = -2): RunEvent => ({ type: "answered", text, rank });
+const projectRunning = () =>
+  reduceRun(
+    reduceRun(initRun(projectRecord, 5, 100), { type: "admitted", lane: 1 }, 110),
+    spawned(false),
+    120,
+  );
+
+test("a project run takes messages while queued or running, without ticket", () => {
+  const queued = reduceRun(initRun(projectRecord, 5, 100), message("Où en est-on ?"), 101);
+  expect(queued).toMatchObject({ state: "queued", pendingAnswer: "Où en est-on ?" });
+  expect(reduceRun(queued, message("Et EMIS-11 ?"), 102).pendingAnswer).toBe(
+    "Où en est-on ?\n\nEt EMIS-11 ?",
+  );
+  expect(reduceRun(projectRunning(), message("Et ensuite ?"), 130)).toMatchObject({
+    state: "running",
+    pendingAnswer: "Et ensuite ?",
+  });
+});
+
+test("a project run goes back to the head of the queue on a message after any end", () => {
+  const ended = [
+    reduceRun(projectRunning(), exit(), 200),
+    reduceRun(projectRunning(), exit(1), 200),
+    reduceRun(projectRunning(), { type: "cancelled" }, 200),
+    reduceRun(initRun(projectRecord, 0, 0), { type: "cancelled" }, 1),
+    reduceRun(initRun(projectRecord, 0, 0), { type: "failed", error: "INTERRUPTED: restart" }, 1),
+  ];
+  for (const view of ended) {
+    expect(reduceRun(view, message("Encore ?", -4), 300)).toMatchObject({
+      state: "queued",
+      priority: true,
+      rank: -4,
+      pendingAnswer: "Encore ?",
+      error: null,
+      endedAt: null,
+    });
+  }
+});
+
+test("a ticket-kind run without ticket keeps refusing messages outside a question", () => {
+  const task = { ...record, projectId: null, ticketId: null, ticketKey: null };
+  expect(() => reduceRun(initRun(task, 5, 100), message("x"), 101)).toThrow("INVALID_TRANSITION");
+});

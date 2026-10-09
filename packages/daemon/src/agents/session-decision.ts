@@ -53,3 +53,13 @@ export function sessionPreview(main: RunView | null, check: ResumeCheck): Sessio
     reason,
   };
 }
+
+export function decideProjectSession(
+  run: RunView,
+  transcriptExists: TranscriptCheck,
+  newId: () => string,
+): SessionDecision {
+  if (run.turns === 0) return { resume: false, sessionId: run.sessionId, reason: "no_previous" };
+  if (transcriptExists(run.transcriptPath)) return { resume: true, sessionId: run.sessionId, from: run.id };
+  return { resume: false, sessionId: newId(), reason: "transcript_missing" };
+}

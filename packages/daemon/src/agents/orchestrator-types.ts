@@ -54,6 +54,10 @@ export type AgentDataPort = {
 export const DEMO_PROFILE_ID = "demo";
 export type DemoAgent = { bin: string; env(): Record<string, string> };
 
+export type ProjectTurn = { cwd: string; systemPrompt: string; prompt: string };
+export type ProjectTurnPort = { prepare(run: RunView, runDir: string): Promise<ProjectTurn> };
+export type ProjectRunInput = { projectId: string; projectName: string; text: string };
+
 export type OrchestratorOptions = {
   home: string;
   store: RunStore;
@@ -65,6 +69,7 @@ export type OrchestratorOptions = {
   sampler: () => HostLoad;
   hostInfo: HostInfo;
   notify: (notice: Notice) => void;
+  projectTurns: ProjectTurnPort;
   env?: Record<string, string | undefined>;
   userHome?: string;
   now?: () => number;
@@ -98,6 +103,7 @@ export type TaskInput = {
 export type Orchestrator = {
   assign(input: AssignInput): RunView;
   submit(task: TaskInput): RunView;
+  startProjectRun(input: ProjectRunInput): RunView;
   preview(input: Omit<AssignInput, "brief">): AssignPreview;
   answer(runId: string, text: string): RunView;
   cancel(runId: string): RunView;

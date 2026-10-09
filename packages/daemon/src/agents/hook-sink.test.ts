@@ -156,3 +156,53 @@ test("the call before the tool, a run without ticket, a full run and a failing p
     errors.mockRestore();
   }
 });
+
+test("the sink denies a shell call of a project run even when the CLI let it through", () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-sink-"));
+  dirs.push(home);
+  const store = openRunStore(home);
+  try {
+    const registry = openRunRegistry(store);
+    const run = (id: string, kind: "ticket" | "project") =>
+      registry.create(
+        {
+          id,
+          projectId: "p1",
+          ticketId: kind === "ticket" ? "t1" : null,
+          ticketKey: kind === "ticket" ? "EMIS-1" : null,
+          ticketTitle: "Agent de projet · Emis",
+          profileId: kind === "ticket" ? "opus" : "project-agent",
+          profileName: "x",
+          sessionId: `s-${id}`,
+          brief: "",
+          kind,
+          resumedFrom: null,
+        },
+        0,
+      );
+    run("p", "project");
+    run("t", "ticket");
+    const tasks = new Map([
+      [
+        "p",
+        {
+          cwd: home,
+          extraArgs: [],
+          env: {},
+          resume: false,
+          guard: () => ({ decision: "allow" as const, reason: "task" }),
+        },
+      ],
+    ]);
+    const sink = createHookSink({ live: new Map(), tasks, registry });
+    const bash = { ...write, tool: "Bash" };
+    expect(sink.receive("p", bash, { command: "ls" })).toMatchObject({ decision: "deny" });
+    expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "EMIS-1" })).toEqual({
+      decision: "allow",
+      reason: "task",
+    });
+    expect(sink.receive("t", bash, { command: "ls" })).toBeNull();
+  } finally {
+    store.close();
+  }
+});

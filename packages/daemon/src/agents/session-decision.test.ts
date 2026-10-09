@@ -1,7 +1,12 @@
 import { expect, test } from "bun:test";
 import { initRun } from "@kibo/core/run-machine";
 import type { RunRecord, RunView } from "@kibo/schema";
-import { decideSession, sessionPreview, type TranscriptCheck } from "./session-decision";
+import {
+  decideProjectSession,
+  decideSession,
+  sessionPreview,
+  type TranscriptCheck,
+} from "./session-decision";
 
 const record = (id: string, patch: Partial<RunRecord> = {}): RunRecord => ({
   id,
@@ -89,5 +94,31 @@ test("the preview announces the main session and whether it can be resumed", () 
   expect(sessionPreview(previous, { ...check, cwd: null })).toMatchObject({
     resumable: false,
     reason: "workspace_changed",
+  });
+});
+
+const projectRun = (turns: number): RunView => ({
+  ...initRun(record("p1", { ticketId: null, ticketKey: null, kind: "project", sessionId: "s-p1" }), 1, 0),
+  turns,
+  transcriptPath: turns > 0 ? "/t/s-p1.jsonl" : null,
+});
+
+test("a project run starts fresh on its first turn and resumes its own session after", () => {
+  const exists: TranscriptCheck = (path) => path === "/t/s-p1.jsonl";
+  const newId = () => "s-new";
+  expect(decideProjectSession(projectRun(0), exists, newId)).toEqual({
+    resume: false,
+    sessionId: "s-p1",
+    reason: "no_previous",
+  });
+  expect(decideProjectSession(projectRun(2), exists, newId)).toEqual({
+    resume: true,
+    sessionId: "s-p1",
+    from: "p1",
+  });
+  expect(decideProjectSession(projectRun(2), () => false, newId)).toEqual({
+    resume: false,
+    sessionId: "s-new",
+    reason: "transcript_missing",
   });
 });

@@ -8,6 +8,7 @@ import {
   type Guideline,
   type HostLoad,
   KiboError,
+  PROJECT_AGENT_PROFILE_ID,
   type ProjectSnapshot,
   type Question,
   type RunView,
@@ -75,6 +76,15 @@ export const profile = (p: Partial<AgentProfile> = {}): AgentProfile => ({
   ...p,
 });
 
+export const projectAgentProfile = (): AgentProfile =>
+  profile({
+    id: PROJECT_AGENT_PROFILE_ID,
+    name: "project-agent",
+    permissionMode: "default",
+    maxParallel: 1,
+    system: true,
+  });
+
 export type Harness = {
   orch: Orchestrator;
   options: OrchestratorOptions;
@@ -88,6 +98,8 @@ export type Harness = {
   notices: Notice[];
   tokens: Map<string, string>;
   delivered: Delivery[];
+  prepared: string[];
+  route: (target: Orchestrator) => void;
   stopServer: () => void;
 };
 
@@ -122,6 +134,9 @@ export function setup(o: Setup): Harness {
   const notices: Notice[] = [];
   const tokens = new Map<string, string>();
   const delivered: Delivery[] = [];
+  const prepared: string[] = [];
+  const projectDir = join(home, "project");
+  mkdirSync(projectDir);
   const questions = o.questions ?? [];
   const profiles = o.profiles ?? [profile()];
   const data: AgentDataPort = {
@@ -190,6 +205,16 @@ export function setup(o: Setup): Harness {
     },
     userHome: home,
     tickMs: 100,
+    projectTurns: {
+      prepare: async (run) => {
+        prepared.push(run.id);
+        return {
+          cwd: projectDir,
+          systemPrompt: "# rôle",
+          prompt: `[tour ${run.turns + 1}] ${run.pendingAnswer}`,
+        };
+      },
+    },
     newToken: (runId) => {
       const minted = newRunToken();
       tokens.set(runId, minted.token);
@@ -210,6 +235,10 @@ export function setup(o: Setup): Harness {
     notices,
     tokens,
     delivered,
+    prepared,
+    route: (target) => {
+      orch = target;
+    },
     stopServer: () => server.stop(true),
   };
   return current;

@@ -5,6 +5,7 @@ import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
+import { unwiredProjectTurns } from "./agents/project-run";
 import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
@@ -282,6 +283,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     sampler: opts.sampler ?? createLoadSampler(),
     hostInfo: readHostInfo(),
     notify: opts.notify ?? (() => {}),
+    projectTurns: unwiredProjectTurns,
     ...(opts.agentEnv && { env: opts.agentEnv }),
   });
   closers.push(() => orchestrator.stop());

@@ -3,7 +3,12 @@ import type { RunRecord, RunView } from "@kibo/schema";
 import { initRun } from "./run-machine";
 import { canResume, isLatestOfTicket, type ResumeContext, resumableRuns } from "./run-resume";
 
-const record = (id: string, seq: number, ticketId: string | null = "t1"): RunRecord => ({
+const record = (
+  id: string,
+  seq: number,
+  ticketId: string | null = "t1",
+  kind: RunRecord["kind"] = "ticket",
+): RunRecord => ({
   id,
   seq,
   projectId: "p1",
@@ -14,7 +19,7 @@ const record = (id: string, seq: number, ticketId: string | null = "t1"): RunRec
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
-  kind: "ticket",
+  kind,
   resumedFrom: null,
   createdAt: 0,
 });
@@ -54,4 +59,22 @@ test("a finished ticket run resumes when it is the latest, its process gone and 
   const active = { ...run, state: "running" as const };
   expect(canResume(active, context([active]))).toBe(false);
   expect(resumableRuns(context([run, ended("b", 2), ended("c", 3, "t2"), task]))).toEqual(["b", "c"]);
+});
+
+const projectRun = (id: string, seq: number, projectId = "p1"): RunView => ({
+  ...initRun({ ...record(id, seq, null, "project"), projectId, profileId: "project-agent" }, 0, 0),
+  state: "done",
+  startedAt: 10,
+  endedAt: 20,
+});
+
+test("a finished project run resumes until a newer project run of the same project exists", () => {
+  const run = projectRun("a", 1);
+  const profiles = { profileIds: new Set(["project-agent"]) };
+  expect(canResume(run, context([run], profiles))).toBe(true);
+  expect(canResume(run, context([run, projectRun("o", 2, "p2")], profiles))).toBe(true);
+  expect(canResume(run, context([run, projectRun("b", 2)], profiles))).toBe(false);
+  expect(canResume(run, context([run]))).toBe(false);
+  const neverStarted = { ...run, state: "failed" as const, startedAt: null };
+  expect(canResume(neverStarted, context([neverStarted], profiles))).toBe(true);
 });
