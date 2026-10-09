@@ -1229,7 +1229,7 @@ Version **`0.19.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 
 - **Demande** : « un statut démarrable, c'est-à-dire qu'aucune dépendance bloquante n'existe et que la conception peut démarrer. » **Décision** (recommandation acceptée par Adam) : un **état calculé**, pas une colonne du workflow (un statut se déplace à la main, « démarrable » se vérifie ; calculé, il est toujours juste, zéro token).
 - **Règle** (pure, `@kibo/schema`, partagée par le démon, l'interface et l'agent de projet) : un ticket est démarrable si son statut est dans la catégorie « pas commencé » (Backlog, À faire, ou tout statut ajouté avant le premier statut « en cours » du workflow), si tous les tickets qui le bloquent (`blocks`) sont dans un statut final, si aucune **question bloquante** n'est ouverte sur lui, et si aucun run n'est actif sur lui (en file, en cours, en attente). `TicketView.startable: boolean`, dérivé dans `readProject` comme `openQuestions`.
-- **Interface** : pastille « Démarrable » (neutre, zinc) sur les cartes du Kanban et dans Tickets ; filtre « Démarrables » dans Kanban, Tickets et Graphe ; l'agent de projet le reçoit dans `list_tickets` et l'instantané.
+- **Interface** : pastille « Démarrable » (neutre, zinc) sur les cartes du Kanban et dans Tickets ; filtre « Démarrables » dans Kanban, Tickets et Graphe (dans la barre du Kanban : après « Grouper ») ; l'agent de projet le reçoit dans `list_tickets` et l'instantané.
 
 ### 26.9 Graphe lisible (demande d'Adam du 2026-10-09, amende §22.1 et composants §8.1)
 
@@ -1239,8 +1239,9 @@ Version **`0.19.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
   - **terminés repliés** : masqués par défaut, bouton « Afficher les terminés (n) » ;
   - **liens réduits** : un lien impliqué par un chemin (A→C quand A→B→C) n'est pas tracé (réduction transitive), il apparaît au survol de A ou C ;
   - **mode focus** : un clic sur un ticket montre ses bloqueurs et ce qu'il débloque sur deux niveaux, le reste s'estompe ; Échap sort.
-- **En option** (menu « Affichage ») : **regroupement par étiquette** (préfixe au choix, ex. `chapitre:`) en cadres repliables, un cadre replié = un nœud « C2 · 8 tickets » ; **zoom sémantique** (de loin : clé et pastille ; de près : titre et étiquettes).
-- Écrans Penpot à dessiner avec les données d'Emis (phase 20) : **188** (vagues, terminés repliés), **188b** (focus), **188c** (regroupement par étiquette), **188d** (zoom éloigné).
+  - **zoom sémantique**, toujours actif (choix d’Adam du 2026-10-10, sur la maquette 188d) : en dessous d’un seuil de zoom, chaque carte se réduit à sa clé et sa pastille ; au-dessus, titre et étiquettes.
+- **En option** (menu « Affichage », désactivée par défaut) : **regroupement par étiquette** (préfixe au choix, ex. `chapitre:`) en cadres repliables, un cadre replié = un nœud « C2 · 8 tickets ». Le menu garde « Déplier tous les cadres » et « Replier tous les cadres ».
+- Écrans Penpot à dessiner avec les données d'Emis (phase 20) : **188** (vagues, terminés repliés), **188b** (focus), **188c** (regroupement par étiquette), **188d** (zoom éloigné), **188k** (pastille et filtre « Démarrables » du Kanban) ; validés par Adam le 2026-10-10.
 
 ### 26.10 Jalon
 
