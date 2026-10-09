@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { changeNames, diffFingerprints } from "./digest";
 import { fingerprint } from "./fingerprint";
 import { answered, project, question, run, ticket } from "./test-kit";
 
@@ -51,6 +52,19 @@ describe("fingerprint", () => {
     expect(fp.questions).toEqual({ q1: "answered", q2: "open" });
     expect(fp.runs).toEqual({ r1: "running" });
     expect(fp.notes).toEqual({ "a.md": "h1", "b.md": "h2" });
+  });
+
+  test("never fingerprints a project run, so the digest never reports the agent's own turns", () => {
+    const at = (state: "starting" | "running") =>
+      fingerprint({
+        project: snapshot,
+        runs: [run({ id: "r1", state: "running" }), run({ id: "p1", kind: "project", state })],
+        notes: [],
+      });
+    expect(at("starting").runs).toEqual({ r1: "running" });
+    expect(
+      diffFingerprints(at("starting"), at("running"), changeNames(snapshot, [], at("starting"))),
+    ).toEqual([]);
   });
 
   test("sorts every record by key", () => {

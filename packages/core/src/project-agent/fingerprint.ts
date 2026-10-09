@@ -29,7 +29,9 @@ export function fingerprint(input: {
       project.questions.map((q) => [q.id, q.answer === null ? "open" : "answered"] as const),
     ),
     runs: sortedRecord(
-      input.runs.filter((r) => r.projectId === project.meta.id).map((r) => [r.id, r.state] as const),
+      input.runs
+        .filter((r) => r.projectId === project.meta.id && r.kind !== "project")
+        .map((r) => [r.id, r.state] as const),
     ),
     notes: sortedRecord(input.notes.map((n) => [n.path, n.hash] as const)),
   };

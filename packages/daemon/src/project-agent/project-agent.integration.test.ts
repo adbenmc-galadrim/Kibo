@@ -95,9 +95,7 @@ test("a project turn reads the project through the real MCP server, its batch is
   expect(second?.prompt).toContain("Et maintenant ?");
   const changes = second?.mcp[0];
   expect(changes).toMatchObject({ tool: "project_changes", isError: false });
-  const digest = second?.prompt.split("\n\n# Message")[0]?.split("\n") ?? [];
-  expect(digest.length).toBeGreaterThan(4);
-  for (const line of digest) expect(changes?.text.split("\n")).toContain(line);
+  expect(second?.prompt.split("\n\n# Message")[0]).toBe(changes?.text.trim());
 }, 90_000);
 
 test("an invalid batch is refused by the tool and corrected in the same turn; a stale action keeps the human edit", async () => {
