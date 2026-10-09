@@ -1165,3 +1165,74 @@ Version **`0.18.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 ### 25.11 Jalon
 
 Version **`0.19.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0.19.md`, tag posé par le chef d'équipe après sa vérification de bout en bout (délégation d'Adam du 2026-10-09) : sur un Kibo lancé en dev, le jeu `https://sigmatronic.itch.io/una-war` par son code d'intégration (jeu jouable, plein écran, lien « Ouvrir sur itch.io »), un jeu non intégrable (comportement réel d'itch.io consigné, 25.4), puis le Storybook d'Emis (`pnpm storybook`, port 6006) dans un widget Maquette du projet Emis avec une story `Screens/*` comparée à son cadre Figma, et un worktree d'Emis qui définit `STORYBOOK_PORT`. Risques consignés au rapport : comportement d'itch.io pour un jeu non intégrable, WebView macOS et iframes tierces (manette, audio), cloisonnement du stockage du jeu par port, Storybook qui n'écoute que sur `::1`.
+
+## 26. Décisions de la phase 20 : voir et comprendre ce que font les agents (demande d'Adam du 2026-10-09)
+
+**Demande** : « Les agents sont tous cachés. J'aimerais avoir un visuel sur ce qui est fait, retrouver l'historique de ce qui est fait dans un ticket, voir la progression (pas une barre avec pourcentage : pour un ticket donné, ce que l'agent a fait, ce qu'il reste à faire), un volet Agent en pied de page qui se déroule et se redimensionne et dont toute la barre est cliquable, des mentions d'agent cliquables qui montrent son historique et ce qu'il a dit, un vrai travail sur l'explication de ce qu'un agent fait. » Ajout du même jour : refonte de la page Questions, avec un **destinataire** par question. **Choix d'Adam au brainstorming du 2026-10-09** : usages direct et après coup à égalité ; progression = **plan tenu par l'agent** par un outil MCP, repli sur sa liste TodoWrite ; explication = **fil narratif** tiré de la transcription ; fil **copié dans Kibo** et gardé ; **compte rendu structuré** en fin de run ; **rappels** automatiques, jamais de blocage ; partage d'équipe du **plan et du compte rendu** seulement ; mention = **carte au survol, volet au clic, page dédiée** ; actions **en français courant** ; volet du pied de page en **trois colonnes** (P2-A) avec runs actifs et terminés depuis 24 h ; onglet Activité en **chronologie unique avec plan latéral** (P3-B), empilé (P3-A) sur écran étroit ; maquettes de la page 28 gardées telles quelles ; destinataires **par projet, modifiables**, proposés par l'agent, corrigés par Adam ; page Questions filtrée par destinataire, avec export et réponse recollée ; refonte Questions dans cette phase ; communication des agents avec l'agent de projet en **phase 21** (§27). Maquettes de référence : page Penpot « 28 · Pistes visibilité agents » (P1 à P6), captures `screens/2026-10-09-pistes-agents/`. Amende §7, §8, §23.12 et la spec agents.
+
+### 26.1 Chemin utilisateur
+
+1. Adam lance un agent : la carte du ticket le dit.
+2. Il travaille ailleurs : la **barre repliée** du pied de page dit combien d'agents travaillent et lequel l'attend.
+3. Il jette un œil : le **volet déroulé** montre chaque run, l'étape en cours de son plan, son fil.
+4. Il veut comprendre : le **fil narratif** (phrases de l'agent, actions repliées en français, détail technique au dépli).
+5. Il revient sur un ticket : l'onglet **Activité** donne le compte rendu, le plan et la chronologie de tous les runs.
+6. Il enquête : fichiers, commandes, diff, raisonnement, au dernier niveau.
+
+### 26.2 Fil narratif (démon, `runs.db`)
+
+- **Source** : la transcription Claude Code du run (`transcript_path` des hooks, déjà reçu ; accepté seulement s'il est sous `~/.claude/projects/` et que son nom est le `sessionId` du run). À chaque hook du run (`PostToolUse`, `Stop`, `SubagentStop`, `Notification`) et à la fin du processus, le démon lit **les lignes nouvelles** (décalage mémorisé par run, lecture bornée à 4 Mio par passe) ; aucune lecture hors run actif, sauf une passe finale.
+- **Moments** : table append-only `run_moments { id, run_id, seq, at, kind, data }`, `kind` ∈ `message` (texte de l'agent, ≤ 8 000 caractères), `actions` (groupe d'appels d'outils entre deux messages), `reasoning` (bloc de raisonnement, seulement s'il est présent en clair dans la transcription), `reminder` (§26.4), `raw` (entrée non reconnue, ≤ 2 000 caractères, sans erreur). Une **action** : `{ tool, label, target?, outcome: "ok" | "error" | "denied", detail? }` ; `detail` = sortie ou diff tronqués à 4 000 caractères.
+- **Libellés en français courant**, déterministes (table dans `@kibo/schema`, testée) : lecture (« A lu 3 fichiers »), modification (« A modifié `LoginForm.tsx` (+8 −3) »), création, recherche, commandes reconnues (tests `test`/`vitest`/`jest`/`pytest`/`bun test` avec comptes réussis/échecs lus dans la sortie quand le format est connu ; installation ; `git commit`/`push`/`checkout`), questions posées, outils MCP de Kibo ; sinon « A lancé `<commande>` ». Un échec (résultat en erreur, code de sortie non nul, test rouge, outil refusé) est marqué `error` et **remonte au moment** (rouge même replié).
+- **Nettoyage avant écriture** : masquage des secrets (motifs : jetons `sk-…`, `ghp_…`, `github_pat_…`, `xox…`, clés AWS, en-têtes `Authorization`, affectations `*_TOKEN=`, `*_KEY=`, `*_SECRET=`, `PASSWORD=`, blocs `-----BEGIN … PRIVATE KEY-----`) remplacés par `‹masqué›` ; propriété fast-check : aucun motif de secret ne survit. Les moments restent **locaux** (jamais dans le CRDT ni synchronisés), gardés sans limite de durée, compris dans les sauvegardes avec `runs.db`.
+- **Diffusion** : événement WebSocket `run.moments { runId, moments }` ; RPC `runMoments { runId, after? }` (pagination par `seq`).
+- **Transcription illisible ou au format inconnu** : les moments se limitent aux actions des hooks (comme aujourd'hui), avec une ligne « Fil partiel : transcription illisible ».
+
+### 26.3 Plan et compte rendu : outil `ticket_progress` (amende §23.12.2)
+
+- Les runs de **ticket** gagnent un troisième outil MCP `ticket_progress` :
+  - `{ plan: Step[] }` : `Step = { id, title (≤ 160), status: "todo" | "doing" | "done" | "blocked", note? (≤ 300) }`, 30 étapes au plus ; remplace le plan entier ;
+  - `{ report: { done (≤ 1 000), decisions: string[] (≤ 10, ≤ 300 chacune), toCheck: string[] (≤ 10), files: string[] (≤ 100), next (≤ 300) } }` : compte rendu du run ;
+  - un appel peut porter l'un, l'autre ou les deux. Réponse : « Plan enregistré » / « Compte rendu enregistré ».
+- **Stockage partagé** : sur le ticket, dans le CRDT du projet, `progress: { plan: Step[], planRunId, planAt, reports: RunReport[] }` (20 comptes rendus au plus, les plus anciens sortent), par une commande **réservée au démon** `setTicketProgress` (`COMMAND_WRITES = null`, refusée aux composants). Le plan d'un ticket est **repris d'un run à l'autre** : le run suivant le reçoit dans ses consignes et le met à jour.
+- **Vérification des fichiers** : au `Stop`, le démon compare `report.files` aux fichiers réellement modifiés dans l'espace de travail du run (`git diff --name-only <base du run>` + fichiers non suivis) et enregistre `undeclared` (modifiés, non cités) et `unchanged` (cités, non modifiés) dans le compte rendu ; l'interface les affiche (« 1 fichier modifié non mentionné »).
+- **Lien étape ↔ moments** : chaque moment porte l'`id` de l'étape `doing` du plan au moment où il est écrit (déterministe) ; une étape renvoie à ses moments.
+- **Repli** : sans `ticket_progress` dans le run, le dernier appel `TodoWrite` capté par les hooks devient le plan affiché, marqué « plan interne de l'agent » (local, non partagé).
+- **Consignes du run** (`CLAUDE.md`) : déclarer le plan avant de modifier, le tenir à jour à chaque étape, remplir le compte rendu avant de terminer, écrire les phrases du fil pour un lecteur humain.
+
+### 26.4 Rappels (jamais de blocage)
+
+- Première modification (`Edit`, `Write`, `MultiEdit`, `NotebookEdit`) d'un run sans plan : le hook `PreToolUse` **autorise** l'outil et ajoute le contexte « Déclare ton plan avec ticket_progress ». Une fois par run.
+- Premier `Stop` d'un run sans compte rendu : le hook `Stop` demande **une** reprise courte (« Remplis ton compte rendu avec ticket_progress, puis termine ») ; le `Stop` suivant passe toujours. Une fois par run.
+- Chaque rappel est un moment `reminder` (« Kibo a rappelé de déclarer le plan »). Un run terminé sans compte rendu affiche « Pas de compte rendu pour ce run ».
+
+### 26.5 Questions : destinataires (amende §23.12)
+
+- **Destinataires par projet**, partagés (CRDT) : `questionRecipients: { id, name (≤ 40) }[]`, 20 au plus ; défaut à la création ou à la migration : `me` « Moi (technique) », `product` « Produit », `client` « Client ». Commandes `addQuestionRecipient`, `renameQuestionRecipient`, `removeQuestionRecipient` (refus `CONFLICT` si une question ouverte l'utilise ; `me` non supprimable).
+- `Question` gagne `recipient: string` (défaut `me`) et `sentAt: number | null` (question envoyée hors de Kibo). `ask_user` et `ask_question` gagnent `recipient?` : l'agent propose l'id ou le nom d'un destinataire du projet (la liste figure dans ses consignes) ; inconnu ou absent ⇒ `me`. Commande `setQuestionRecipient { questionId, recipient }` (Adam corrige d'un clic) et `markQuestionSent { questionId }`.
+- **Page Questions** (composant intégré Questions, vue) : filtres par destinataire en tête avec le nombre de questions ouvertes (« Tous · Moi (technique) · Produit · Client · + Destinataire ») ; chaque question montre destinataire (menu), agent (mention cliquable §26.7), âge, options ; **« Exporter »** produit un texte prêt à coller (ticket, contexte, question, options, choix provisoire), le copie et pose `sentAt` ; **« Coller la réponse »** enregistre une réponse texte d'Adam, qui suit ensuite la règle de transmission (§23.12.3 : « Transmettre à l'agent » seulement s'il y a une réponse d'Adam non transmise). Réglages du projet : section « Destinataires des questions ».
+
+### 26.6 Interface (§8)
+
+- **Barre du pied de page** (P1) : **toute la barre** ouvre et ferme le volet (clic, Entrée, Espace) ; résumé (« 3/3 places · 3 en file · 1 attend une réponse ») et puces des runs actifs avec l'étape en cours (« 2/5 · Corriger la validation ») ; poignée en haut : glisser redimensionne de 160 px à 80 % de la fenêtre, hauteur mémorisée par fenêtre ; double-clic sur la poignée : hauteur par défaut (45 %).
+- **Volet déroulé** (P2-A), trois colonnes : runs actifs puis « Terminés depuis 24 h » avec le compte rendu en une ligne (« KIB-14 · fait, 2 points à vérifier ») ; fil narratif du run choisi ; plan (étapes, état, lien vers leurs moments, « plan interne de l'agent » en repli).
+- **Fiche ticket, onglet « Activité »** : compte rendu du dernier run en tête ; puis, si la fiche fait au moins **1 100 px** de large, **chronologie unique** (moments, étapes, runs, questions, rappels) avec le **plan en colonne** (P3-B) ; plus étroite, **empilé** : plan puis runs dépliables (P3-A).
+- **Mentions d'agent cliquables** partout où un run est nommé (carte Kanban, fiche, Tickets, files d'attente, page Agents, questions, conversation et lots de l'agent de projet, notifications) : composant partagé `AgentMention` ; **survol** : carte (profil, état, ticket, étape, dernier message, « Voir l'historique », « Répondre » s'il attend) ; **clic** : volet latéral (plan, fil, compte rendu, runs précédents du même ticket) ; **« Ouvrir en grand »** : page dédiée du run (adresse propre, onglet de Kibo) avec l'historique des runs du profil, le fil complet, « Afficher le raisonnement ».
+- shadcn/ui, tokens zinc, orange réservé aux agents, sombre et clair ; écrans chargés à la demande ; budget de l'entrée ≤ 230 kB, plafond jamais relevé.
+
+### 26.7 Sécurité et tests
+
+- La transcription n'est lue que pour un run du démon, à un chemin vérifié (§26.2) ; jamais envoyée ni synchronisée ; seuls le plan et le compte rendu (texte écrit par l'agent pour être lu) partent dans le CRDT. `ticket_progress` n'écrit que sur le ticket du run (le projet et le ticket sont imposés par le démon).
+- Tests sans token : unitaires (analyse de transcription sur des fichiers d'exemple, dont formats inconnus et lignes tronquées ; libellés ; masquage, propriétés fast-check ; plan et compte rendu ; comparaison de fichiers ; rappels une seule fois) ; intégration (faux `claude` qui écrit une transcription et appelle `ticket_progress`) ; E2E (barre cliquable et redimensionnable, volet, onglet Activité dans les deux largeurs, mention → carte → volet → page, page Questions filtrée, export, réponse collée), sombre et clair.
+
+### 26.8 Jalon
+
+Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0.20.md`, tag posé par le chef d'équipe après sa vérification de bout en bout sur un vrai run. Écrans Penpot : reprendre la page 28 (P1 à P6) en écrans numérotés **183** (barre), **184** (volet), **185** et **185b** (Activité large et étroite), **186** à **186c** (mention : carte, volet, page), **187** à **187c** (Questions : page, export, réponse collée, destinataires).
+
+## 27. Décisions de la phase 21 : les agents parlent à l'agent de projet (demande d'Adam du 2026-10-09)
+
+**Demande** : « Les agents peuvent communiquer avec l'agent de projet : création de nouveaux tickets, remontée de contexte et autre. » Choix d'Adam au brainstorming du 2026-10-09 ; le détail sera écrit avant le plan de la phase 21.
+
+- Les runs de ticket gagnent l'outil MCP **`signal_project { kind, title, body?, ticket? }`**, `kind` ∈ `ticket` (ticket à créer), `context`, `blocker`, `question`. Les signaux sont stockés (démon), visibles dans le fil du run émetteur et dans l'onglet Activité.
+- **Réveil automatique** de l'agent de projet pour `ticket` et `blocker` : un tour court mis en file comme tout run, **une fois par 10 minutes au plus par projet**, les signaux arrivés entre-temps regroupés ; l'agent lit les signaux et propose un lot (§24.4), qu'Adam valide. `context` et `question` restent **en boîte** : pastille sur le bouton de l'agent de projet, lus au prochain tour.
+- Rien n'est créé sans validation d'un lot ; un agent de ticket ne crée jamais un ticket lui-même. Maquette de référence : P5 de la page 28.
