@@ -1,12 +1,12 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 
 type State = "idle" | "copied" | "failed";
 
 export function CopyButton({ text, variant = "ghost" }: { text: string; variant?: "ghost" | "outline" }) {
-  const t = fr.security;
+  const t = frSecurity;
   const [state, setState] = useState<State>("idle");
   const copy = async () => {
     try {

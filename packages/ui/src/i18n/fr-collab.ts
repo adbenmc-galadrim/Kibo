@@ -5,7 +5,6 @@ type ErrorTexts = Partial<Record<KiboErrorCode, string>> & { fallback: string };
 export const frCollab = {
   sync: {
     section: "Synchronisation",
-    title: "Synchronisation",
     subtitle:
       "Partage tes projets avec ton équipe via ton propre serveur. Rien ne part tant que tu n'as pas cliqué « Partager ».",
     dialogTitle: "Se connecter à un serveur",
@@ -96,11 +95,5 @@ export const frCollab = {
     roles: { owner: "Propriétaire", editor: "Éditeur", viewer: "Lecteur" },
     upToDate: "Synchronisé",
     never: "Jamais",
-    indicator: {
-      synced: "synchronisé",
-      syncing: "synchronisation…",
-      offline: "sync hors ligne",
-      error: "erreur de sync",
-    },
   },
 } as const;

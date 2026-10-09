@@ -6,6 +6,7 @@ import { client } from "../api";
 import { PublisherChangedDialog } from "../dialogs/PublisherChangedDialog";
 import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
 import { buildUpdateSummary } from "../lib/market-update";
 import { isRemoteView } from "../lib/remote-view";
@@ -46,7 +47,7 @@ export function MarketUpdateDialog({
   onDone,
   remote = isRemoteView(),
 }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const projects = useProjects().projects ?? [];
   const [error, setError] = useState<string | null>(null);
   const [fail] = useState(() => (text: string) => setError(text));

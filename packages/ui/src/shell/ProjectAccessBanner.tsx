@@ -1,6 +1,6 @@
 import type { ProjectAccess } from "@kibo/schema";
 import { CloudOff, Eye, Unplug } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frShare } from "../i18n/fr-share";
 import { isSuspended, syncErrorText } from "../lib/sync-errors";
 import { useSyncServerStatus } from "../state/use-sync-server";
@@ -15,8 +15,8 @@ function bannerOf(access: ProjectAccess, suspended: string | null) {
   if (access === "revoked") return { Icon: Unplug, className: DANGER, text: frShare.revoked };
   if (access === "read-only") return { Icon: Eye, className: MUTED, text: frShare.readOnly };
   if (suspended === null || !isSuspended(suspended)) return null;
-  const reason = syncErrorText(fr.sync.projectErrors, suspended);
-  return { Icon: CloudOff, className: MUTED, text: frShare.suspended(reason, fr.sync.suspendedHint) };
+  const reason = syncErrorText(frCollab.sync.projectErrors, suspended);
+  return { Icon: CloudOff, className: MUTED, text: frShare.suspended(reason, frCollab.sync.suspendedHint) };
 }
 
 export function ProjectAccessBanner({ access, suspended = null }: Props) {

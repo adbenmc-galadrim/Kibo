@@ -1,4 +1,4 @@
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { IsolationCard } from "./IsolationCard";
 import { RemoteAccessCard } from "./RemoteAccessCard";
 import { SessionsCard } from "./SessionsCard";
@@ -10,8 +10,8 @@ export function SecurityPage() {
     <SettingsLayout active="security">
       <div className="flex flex-col gap-4 p-8">
         <div>
-          <h1 className="text-xl font-semibold">{fr.security.title}</h1>
-          <p className="text-sm text-muted-foreground">{fr.security.subtitle}</p>
+          <h1 className="text-xl font-semibold">{frSecurity.title}</h1>
+          <p className="text-sm text-muted-foreground">{frSecurity.subtitle}</p>
         </div>
         <RemoteAccessCard />
         <WebAccessCard />

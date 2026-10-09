@@ -1,10 +1,10 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { useState } from "react";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { PairingCodeDialog } from "./PairingCodeDialog";
 
-const t = fr.security.webAccess;
+const t = frSecurity.webAccess;
 
 export function WebAccessCard() {
   const [open, setOpen] = useState(false);

@@ -105,6 +105,4 @@ export const frSecurity = {
     subtitle:
       "Une vérification demande ton attention. Tu peux continuer : seuls les backends sandboxés sont arrêtés.",
   },
-  remoteFrame:
-    "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",
 } as const;

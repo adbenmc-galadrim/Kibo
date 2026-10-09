@@ -13,6 +13,7 @@ import { useState } from "react";
 import { client } from "../api";
 import { ConnectServerDialog } from "../dialogs/ConnectServerDialog";
 import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { isRemoteView } from "../lib/remote-view";
 import { syncFailure } from "../lib/sync-errors";
 import { useSyncServerStatus } from "../state/use-sync-server";
@@ -22,7 +23,7 @@ import { SyncEmptyState } from "./SyncEmptyState";
 import { SyncProjectsCard } from "./SyncProjectsCard";
 import { AccountCard, ServerCard } from "./SyncServerCards";
 
-const t = fr.sync;
+const t = frCollab.sync;
 
 function DisconnectDialog({
   open,
@@ -101,7 +102,7 @@ export function SyncSettingsPage({ viewer, remote = isRemoteView(), ...p }: Prop
     <SettingsLayout active="sync">
       <div className="flex flex-col gap-4 p-8">
         <div>
-          <h1 className="text-xl font-semibold">{t.title}</h1>
+          <h1 className="text-xl font-semibold">{fr.sync.title}</h1>
           {configured && <p className="text-sm text-muted-foreground">{t.subtitle}</p>}
         </div>
         {error && (

@@ -1,7 +1,7 @@
 import type { SandboxStatus } from "@kibo/schema";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 
-const t = fr.security.isolation;
+const t = frSecurity.isolation;
 
 export function sandboxProblem(status: SandboxStatus): string {
   if (status.kind === null) return t.problems.none;

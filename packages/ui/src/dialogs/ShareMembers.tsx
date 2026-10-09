@@ -5,6 +5,7 @@ import { UserPlus } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frShare } from "../i18n/fr-share";
 import { manageErrorText } from "../lib/share-errors";
 import { CopyButton } from "../settings/CopyButton";
@@ -61,7 +62,7 @@ export function Members({ projectId, owner, me, members, onChange, onError }: Me
                   <SelectContent>
                     {MemberRole.options.map((r) => (
                       <SelectItem key={r} value={r}>
-                        {fr.sync.roles[r]}
+                        {frCollab.sync.roles[r]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -71,7 +72,7 @@ export function Members({ projectId, owner, me, members, onChange, onError }: Me
                 </Button>
               </>
             ) : (
-              <span className="text-muted-foreground">{fr.sync.roles[m.role]}</span>
+              <span className="text-muted-foreground">{frCollab.sync.roles[m.role]}</span>
             )}
           </li>
         ))}
@@ -99,8 +100,8 @@ export function Invite({ projectId, onError }: { projectId: string; onError: OnE
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="editor">{fr.sync.roles.editor}</SelectItem>
-            <SelectItem value="viewer">{fr.sync.roles.viewer}</SelectItem>
+            <SelectItem value="editor">{frCollab.sync.roles.editor}</SelectItem>
+            <SelectItem value="viewer">{frCollab.sync.roles.viewer}</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={() => void generate()}>

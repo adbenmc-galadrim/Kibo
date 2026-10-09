@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kibo
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { relativeTime } from "../lib/relative-time";
 import { securityFailure } from "../lib/security-error";
 import { useRpcQuery } from "../state/use-rpc-query";
 
-const t = fr.security.sessions;
+const t = frSecurity.sessions;
 const HEAD = "h-9 px-3 text-2xs font-normal text-muted-foreground";
 const CELL = "px-3 py-2.5";
 const day = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });

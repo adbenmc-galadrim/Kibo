@@ -7,7 +7,7 @@ import { Code, Download, Package, ShieldCheck } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { client } from "../api";
 import { PermissionList } from "../dialogs/TrustDialog";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { marketErrorCode, marketErrorText } from "../lib/market-errors";
 import { isRemoteView } from "../lib/remote-view";
 import { InstallRefusedDialog, type RefusalCode, refusalOf } from "./InstallRefusedDialog";
@@ -62,7 +62,7 @@ function Notice({ text, onUnlock }: { text: string; onUnlock?: () => void }) {
       <span className="text-destructive">{text}</span>
       {onUnlock && (
         <Button size="sm" variant="outline" onClick={onUnlock}>
-          {fr.market.unlock}
+          {frMarket.market.unlock}
         </Button>
       )}
     </div>
@@ -72,7 +72,7 @@ function Notice({ text, onUnlock }: { text: string; onUnlock?: () => void }) {
 type BodyProps = { detail: MarketPackageDetail; sourceUrl: string | null; showCode: boolean };
 
 function PackageBody({ detail, sourceUrl, showCode }: BodyProps) {
-  const t = fr.market;
+  const t = frMarket.market;
   return (
     <div className="grid gap-4">
       <p className="text-sm text-muted-foreground">{detail.description}</p>
@@ -102,7 +102,7 @@ export function MarketPackageSheet({
   onUnlock,
   remote = isRemoteView(),
 }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const { detail, sourceUrl, error, setError } = usePackage(target);
   const [showCode, setShowCode] = useState(false);
   const [busy, setBusy] = useState(false);

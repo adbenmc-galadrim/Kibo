@@ -16,11 +16,12 @@ import { TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { sandboxActive, sandboxProblem } from "../lib/sandbox-problem";
 import { securityFailure } from "../lib/security-error";
 import { useRpcQuery } from "../state/use-rpc-query";
 
-const t = fr.security.isolation;
+const t = frSecurity.isolation;
 
 function IsolationState({ status }: { status: SandboxStatus }) {
   if (status.available)

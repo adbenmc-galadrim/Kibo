@@ -2,7 +2,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { useEffect, useState } from "react";
 import { CodeLines } from "../files/CodeLines";
 import { highlightLines, languageOf, plainTokens, type Token } from "../files/highlight";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 
 type File = { path: string; content: string };
 
@@ -36,7 +36,7 @@ export function SourceCode({ files }: { files: File[] }) {
   return (
     <div className="grid h-96 shrink-0 grid-cols-[11rem_1fr] overflow-hidden rounded-lg border">
       <nav
-        aria-label={fr.market.files}
+        aria-label={frMarket.market.files}
         className="flex flex-col gap-0.5 overflow-auto border-r bg-muted/30 p-1"
       >
         {files.map((f) => (

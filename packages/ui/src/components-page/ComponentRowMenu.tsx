@@ -13,6 +13,7 @@ import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
 import type { FlashTone } from "../lib/use-flash";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
@@ -133,7 +134,7 @@ export function ComponentRowMenu({ row, onDone, onModifyWithAi, onPublishToMarke
           {publishable(row) && (
             <DropdownMenuItem onSelect={() => onPublishToMarket(row)}>
               <Upload aria-hidden />
-              {fr.market.publish}
+              {frMarket.market.publish}
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />

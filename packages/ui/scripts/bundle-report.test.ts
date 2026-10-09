@@ -320,4 +320,14 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
+
+  test("the marketplace, security and sync texts are forbidden in the entry, not the shell texts", () => {
+    const texts = ["market", "security", "collab"].map((n) => `/x/packages/ui/src/i18n/fr-${n}.ts`);
+    for (const p of texts) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr.ts"))).toBe(false);
+    const market = "/x/packages/ui/src/i18n/fr-market.ts";
+    const chunks = [chunk("index.js", { isEntry: true, moduleIds: [market] })];
+    const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
+    expect(report.forbidden).toEqual([{ file: "index.js", module: market }]);
+  });
 });

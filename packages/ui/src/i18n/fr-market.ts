@@ -58,9 +58,6 @@ export const frMarket = {
     missing: (ref: string) => `Composant absent : ${ref}`,
     missingOffered: (source: string) => `Disponible sur la marketplace ${source}, avec la même empreinte.`,
     installMissing: "Installer",
-    backendStopped: "Backend arrêté — isolation OS indisponible",
-    backendStoppedHelp:
-      "L'interface reste utilisable. Les commandes d'installation sont sur la page Composants.",
     otherVersion: "Choisir une autre version",
     otherVersionItem: (version: string) => `Passer en ${version}`,
     otherVersionFailed: "Impossible de changer de version.",
@@ -127,7 +124,6 @@ export const frMarket = {
     },
   },
   marketSources: {
-    title: "Sources de composants",
     subtitle: "Les catalogues où tu installes des composants. Chaque catalogue est signé par sa source.",
     footnote:
       "Aucune source n'est ajoutée par défaut. Compare l'empreinte de la clé avec celle communiquée par l'éditeur avant d'ajouter une source.",

@@ -11,7 +11,7 @@ import {
 import { TableCell, TableRow } from "@kibo/sdk/ui/table";
 import { Loader2, MoreHorizontal, RefreshCw, Store, Trash2 } from "lucide-react";
 import { DetailsBlock } from "../components-page/DetailsBlock";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { fingerprintHead } from "../lib/fingerprint";
 import { storedErrorText } from "../lib/market-errors";
 import { relativeTime } from "../lib/relative-time";
@@ -21,13 +21,13 @@ const CELL = "px-4 py-3 text-xs";
 const DAY = 86_400_000;
 
 function updatedText(at: number | null, now: number): string {
-  if (at === null) return fr.marketSources.never;
+  if (at === null) return frMarket.marketSources.never;
   const days = Math.floor((now - at) / DAY);
-  return days === 1 ? fr.marketSources.yesterday : relativeTime(at, now);
+  return days === 1 ? frMarket.marketSources.yesterday : relativeTime(at, now);
 }
 
 function StateCell({ source, pending }: { source: MarketSourceInfo; pending: SourceAction | null }) {
-  const t = fr.marketSources;
+  const t = frMarket.marketSources;
   if (pending)
     return (
       <output className="flex items-center gap-2 text-muted-foreground">
@@ -58,7 +58,7 @@ type Props = {
 };
 
 export function SourceRow({ source, pending, remote, now, onAction }: Props) {
-  const t = fr.marketSources;
+  const t = frMarket.marketSources;
   return (
     <TableRow>
       <TableCell className={`${CELL} font-medium`}>

@@ -75,6 +75,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/schema\/src\/(design-url|config-validate|design-problem)\.ts$/,
   /\/packages\/ui\/src\/(i18n\/fr-design\.ts|dialogs\/integrations\/((FigmaConnectDialog|PenpotConnectDialog)\.tsx|design-problem\.ts))$/,
   /\/packages\/ui\/src\/(shell\/sheet\/((DesignSection|DesignProperty)\.tsx|design-refs\.ts)|dialogs\/FrameField\.tsx)$/,
+  /\/packages\/ui\/src\/i18n\/fr-(market|security|collab)\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

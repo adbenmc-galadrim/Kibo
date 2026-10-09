@@ -4,6 +4,7 @@ import { Check, Folder, GraduationCap, Plus, RotateCw, TriangleAlert } from "luc
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { sandboxStopped } from "../lib/sandbox-problem";
 import { useRpcQuery } from "../state/use-rpc-query";
 import { WorkspaceMark } from "./WorkspaceMark";
@@ -110,7 +111,7 @@ function useEnvironment(): EnvironmentQuery {
 
 function subtitleOf(checks: CheckView[], sandbox: SandboxStatus | null): string {
   if (agentsBlocked(checks)) return fr.welcome.failed;
-  if (sandbox && sandboxStopped(sandbox)) return fr.security.welcome.subtitle;
+  if (sandbox && sandboxStopped(sandbox)) return frSecurity.welcome.subtitle;
   return fr.welcome.subtitle;
 }
 

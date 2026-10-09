@@ -5,7 +5,7 @@ import { MarketFilters } from "../components-page/MarketFilters";
 import { MarketInstallFlow } from "../components-page/MarketInstallFlow";
 import type { MarketTarget } from "../components-page/MarketPackageSheet";
 import { useMarketHits, useMarketSources } from "../components-page/use-market-hits";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { CatalogSection, VersionPill } from "./CatalogRow";
 
 type Props = {
@@ -24,7 +24,7 @@ function Failure({ text }: { text: string }) {
 }
 
 function MarketRow({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) {
-  const t = fr.market;
+  const t = frMarket.market;
   return (
     <button
       type="button"
@@ -61,7 +61,7 @@ export function MarketCatalogSection({ query, onCount, onInstalled, remote }: Pr
   return (
     <div className="grid gap-0.5">
       <div className="flex items-center gap-1.5">
-        <CatalogSection label={fr.market.tabMarket} />
+        <CatalogSection label={frMarket.market.tabMarket} />
         <span className="ml-auto flex gap-1.5 pt-2">
           <MarketFilters
             sources={sources}

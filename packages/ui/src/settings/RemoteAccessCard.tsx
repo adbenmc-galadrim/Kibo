@@ -16,12 +16,13 @@ import { Fingerprint, Globe } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { securityErrorText, securityFailure } from "../lib/security-error";
 import { useRpcQuery } from "../state/use-rpc-query";
 import { CopyButton } from "./CopyButton";
 import { EnableRemoteAccessDialog } from "./EnableRemoteAccessDialog";
 
-const t = fr.security.remote;
+const t = frSecurity.remote;
 
 function RemoteDetails({ status, onDisable }: { status: RemoteAccessStatus; onDisable(): void }) {
   const url = status.url ?? "";

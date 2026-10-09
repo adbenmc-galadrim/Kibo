@@ -1,11 +1,8 @@
 import type { KiboErrorCode } from "@kibo/schema";
 import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
-import { frCollab } from "./fr-collab";
 import { frComponents } from "./fr-components";
 import { frIntegrations } from "./fr-integrations";
-import { frMarket } from "./fr-market";
-import { frSecurity } from "./fr-security";
 
 const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
 
@@ -507,12 +504,28 @@ export const fr = {
     batch: "Lot à valider",
   },
   integrations: frIntegrations,
-  security: frSecurity,
+  security: {
+    remoteFrame:
+      "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",
+  },
+  market: {
+    backendStopped: "Backend arrêté — isolation OS indisponible",
+    backendStoppedHelp:
+      "L'interface reste utilisable. Les commandes d'installation sont sur la page Composants.",
+  },
+  marketSources: { title: "Sources de composants" },
+  sync: {
+    title: "Synchronisation",
+    indicator: {
+      synced: "synchronisé",
+      syncing: "synchronisation…",
+      offline: "sync hors ligne",
+      error: "erreur de sync",
+    },
+  },
   ...frCode,
   ...frComponents,
-  ...frMarket,
   ...frAi,
-  ...frCollab,
   common: {
     cancel: "Annuler",
     close: "Fermer",

@@ -7,12 +7,12 @@ import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { Ellipsis } from "lucide-react";
 import { useMemo } from "react";
-import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frSyncPage } from "../i18n/fr-sync-page";
 import { relativeTime } from "../lib/relative-time";
 import { isSuspended, syncErrorText } from "../lib/sync-errors";
 
-const t = fr.sync;
+const t = frCollab.sync;
 const HEAD = "h-9 px-3 text-2xs font-normal text-muted-foreground";
 const CELL = "px-3 py-2.5";
 

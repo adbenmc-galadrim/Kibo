@@ -14,6 +14,7 @@ import { ChevronRight } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { syncFailure } from "../lib/sync-errors";
 
 type Props = {
@@ -24,7 +25,7 @@ type Props = {
   onConnected(): void;
 };
 
-const t = fr.sync;
+const t = frCollab.sync;
 
 function Field({
   id,

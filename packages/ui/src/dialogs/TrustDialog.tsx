@@ -20,6 +20,7 @@ import { TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { permissionLines } from "../lib/permission-lines";
 import { isRemoteView } from "../lib/remote-view";
 import type { TrustTarget } from "../lib/trust-target";
@@ -165,7 +166,7 @@ export function TrustDialog({
             value="trusted"
             title={t.trusted}
             help={t.trustedHelp}
-            warning={target.market ? fr.market.fromMarketplace : null}
+            warning={target.market ? frMarket.market.fromMarketplace : null}
           />
         </RadioGroup>
         <p className="text-xs text-muted-foreground">{t.footer}</p>
