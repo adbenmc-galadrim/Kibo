@@ -48,6 +48,16 @@ Ce document permet de reprendre la phase 19 (jeux itch.io et Storybook) sans ré
 - Worktrees de la phase : `p19-spec`, `p19-t1` à `p19-t6` (intégrées, supprimables), `p19-t8` (à venir), `p19-passation` (ce document).
 - Script d'intégration : `.claude/worktrees/_outils/integ19.sh <tâche>` (rebase sur `phase/19`, gate, avance rapide, push) ; verrou `.integ.lock`.
 
+## Demande d'Adam pour la suite (2026-10-09)
+
+À traiter après le jalon v0.19, **avec une discussion préalable avec Adam avant tout développement** (possibilités, conseils, options ; seule exception à la délégation) :
+
+- les agents de ticket communiquent avec l'agent de projet : création de tickets, remontée de contexte, etc. ;
+- visibilité de ce que fait un agent : historique retrouvable dans un ticket, progression concrète (ce qui est fait, ce qui reste à faire), pas une barre de pourcentage ;
+- volet Agent du pied de page qui se déroule et se redimensionne, barre entière cliquable (pas seulement le chevron) ;
+- toute mention d'un agent cliquable : son historique et, si possible, ce qu'il a dit ;
+- un vrai travail d'explication de ce que fait un agent (« beaucoup trop caché actuellement »).
+
 ## Pour Adam
 
 - Alertes Dependabot (1 élevée, 1 modérée) sur la branche par défaut.
