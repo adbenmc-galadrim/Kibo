@@ -14,6 +14,7 @@ import type {
   Ticket,
   WorkspaceConfig,
 } from "@kibo/schema";
+import { z } from "zod";
 import {
   FAKE_CLAUDE,
   type FakeScenarioName,
@@ -30,6 +31,7 @@ import { createService } from "./service";
 import { openStore, type Store } from "./store";
 
 const TOKEN = "c".repeat(64);
+const RpcReply = z.object({ ok: z.boolean(), result: z.unknown().optional() });
 const noProjectTurns: ProjectTurnPort = {
   prepare: async () => {
     throw new Error("no project run in these tests");
@@ -131,7 +133,7 @@ async function client(s: Stack) {
       headers: { "content-type": "application/json", origin, cookie },
       body: JSON.stringify(body),
     });
-    const json = (await res.json()) as { ok: boolean; result?: T };
+    const json = RpcReply.parse(await res.json());
     expect({ status: res.status, body: json }).toMatchObject({ status });
     return json.result as T;
   };

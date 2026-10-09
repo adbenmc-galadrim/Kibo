@@ -26,6 +26,8 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0)) await cleanup();
 });
 
+const RpcReply = z.object({ ok: z.boolean(), result: z.unknown() });
+
 async function client(d: Daemon): Promise<Rpc> {
   const headers = { "content-type": "application/json", origin: d.url };
   const paired = await fetch(`${d.url}/api/pair`, {
@@ -40,9 +42,9 @@ async function client(d: Daemon): Promise<Rpc> {
       headers: { ...headers, cookie },
       body: JSON.stringify(body),
     });
-    const json = (await res.json()) as { ok: boolean; result: T };
+    const json = RpcReply.parse(await res.json());
     if (!json.ok) throw new Error(`rpc ${JSON.stringify(body)} failed: ${JSON.stringify(json)}`);
-    return json.result;
+    return json.result as T;
   };
 }
 
