@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.19.0-alpha.1 — 2026-10-09
+
+- Jeu itch.io : un widget qui affiche un jeu HTML5 d'itch.io depuis son code d'intégration, plein écran dans Kibo, sans compte ; hors ligne, il le dit.
+- Storybook : une story s'affiche dans le widget Maquette comme un cadre Figma ou Penpot, interactive, avec le Storybook du projet ou celui d'un worktree, et se compare à la maquette côte à côte ou en superposition (opacité, curseur).
+- Réglage Storybook dans Modifier le projet.
+- Correctifs : le bouton « Transmettre à l'agent » n'apparaît que s'il y a une réponse d'Adam à transmettre ; un projet s'ouvre sur son tableau de bord (plus de page blanche) et le retour arrière reste sain ; la minimap du graphe n'est jamais sélectionnable.
+
 ## 0.18.0-alpha.1 — 2026-10-09
 
 - Agent de projet : un chef de projet par projet, dans un panneau latéral (⌘J). Il lit le projet, garde sa mémoire et propose des lots d'actions (tickets, agents, questions, notes) que tu valides d'un clic ; aucune action sans ta validation.
